@@ -2,95 +2,94 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* 
+ * Let's Roll - Ordem Paranormal VTT
+ * Design System: "Tecnologia oculta + horror investigativo"
+ * Estética: Documentos secretos da Ordo Realitas
+ */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-
+    /* Light mode - não usado, mas mantido para fallback */
+    --background: 210 20% 98%;
+    --foreground: 220 20% 10%;
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-
+    --card-foreground: 220 20% 10%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-
+    --popover-foreground: 220 20% 10%;
+    --primary: 0 70% 45%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 220 15% 92%;
+    --secondary-foreground: 220 20% 10%;
+    --muted: 220 15% 92%;
+    --muted-foreground: 220 10% 45%;
+    --accent: 220 15% 92%;
+    --accent-foreground: 220 20% 10%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 220 15% 85%;
+    --input: 220 15% 85%;
+    --ring: 0 70% 45%;
     --radius: 0.5rem;
-
-    --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --success: 145 50% 45%;
+    --success-foreground: 0 0% 98%;
+    --paranormal: 280 50% 35%;
+    --paranormal-foreground: 0 0% 98%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Ordo Realitas Dark Theme */
+    --background: 210 15% 4%;
+    --foreground: 0 0% 90%;
+    
+    --card: 210 12% 7%;
+    --card-foreground: 0 0% 90%;
+    
+    --popover: 210 12% 7%;
+    --popover-foreground: 0 0% 90%;
+    
+    /* Vermelho Ritual - Destaque primário */
+    --primary: 358 70% 42%;
+    --primary-foreground: 0 0% 98%;
+    
+    /* Cinza Grafite - Elementos secundários */
+    --secondary: 210 10% 12%;
+    --secondary-foreground: 0 0% 85%;
+    
+    /* Muted - Textos secundários */
+    --muted: 210 10% 15%;
+    --muted-foreground: 210 8% 55%;
+    
+    /* Ciano Espectral - Accent */
+    --accent: 187 60% 48%;
+    --accent-foreground: 210 15% 4%;
+    
+    /* Destructive */
+    --destructive: 0 62% 35%;
+    --destructive-foreground: 0 0% 98%;
+    
+    /* Borders e Inputs */
+    --border: 210 10% 18%;
+    --input: 210 10% 15%;
+    --ring: 358 70% 42%;
+    
+    /* Success - Verde Pálido */
+    --success: 145 35% 42%;
+    --success-foreground: 0 0% 98%;
+    
+    /* Paranormal - Roxo Abissal */
+    --paranormal: 285 55% 32%;
+    --paranormal-foreground: 0 0% 98%;
+    
+    /* Sidebar */
+    --sidebar-background: 210 12% 5%;
+    --sidebar-foreground: 0 0% 85%;
+    --sidebar-primary: 358 70% 42%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 210 10% 10%;
+    --sidebar-accent-foreground: 0 0% 90%;
+    --sidebar-border: 210 10% 12%;
+    --sidebar-ring: 358 70% 42%;
   }
 }
 
@@ -99,7 +98,188 @@ All colors MUST be HSL.
     @apply border-border;
   }
 
+  html {
+    @apply scroll-smooth;
+  }
+
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  /* Scrollbar personalizada estilo Ordo */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-background;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-muted rounded-full;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground/50;
+  }
+
+  /* Selection personalizada */
+  ::selection {
+    @apply bg-primary/30 text-foreground;
+  }
+}
+
+@layer components {
+  /* Card de dossiê */
+  .dossier-card {
+    @apply relative bg-card border border-border rounded-lg overflow-hidden;
+    @apply before:absolute before:inset-0 before:bg-gradient-to-br before:from-primary/5 before:to-transparent before:pointer-events-none;
+  }
+
+  /* Carimbo classificado */
+  .classified-stamp {
+    @apply absolute -rotate-12 text-primary/20 font-display text-4xl tracking-widest pointer-events-none select-none;
+  }
+
+  /* Barra de status estilo militar */
+  .status-bar {
+    @apply h-2 rounded-full bg-muted overflow-hidden;
+  }
+
+  .status-bar-fill {
+    @apply h-full transition-all duration-500 ease-out;
+  }
+
+  /* Efeito de ruído de fundo */
+  .noise-overlay {
+    @apply pointer-events-none fixed inset-0 z-50 opacity-[0.015];
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  }
+
+  /* Container de seção com borda sutil */
+  .section-container {
+    @apply relative p-6 bg-card/50 border border-border/50 rounded-lg backdrop-blur-sm;
+  }
+
+  /* Input estilo terminal */
+  .terminal-input {
+    @apply bg-background/50 border-border/50 focus:border-accent focus:ring-accent/20;
+  }
+
+  /* Badge de patente */
+  .patent-badge {
+    @apply inline-flex items-center px-3 py-1 text-xs font-medium uppercase tracking-wider;
+    @apply bg-primary/10 text-primary border border-primary/20 rounded;
+  }
+
+  /* Indicador de NEX */
+  .nex-indicator {
+    @apply inline-flex items-center justify-center w-10 h-10 text-lg font-bold;
+    @apply bg-accent/10 text-accent border-2 border-accent/30 rounded-full;
+  }
+
+  /* Linha divisória estilizada */
+  .divider-line {
+    @apply relative h-px bg-gradient-to-r from-transparent via-border to-transparent;
+  }
+
+  /* Texto de ritual/paranormal */
+  .ritual-text {
+    font-family: 'Crimson Text', serif;
+    @apply text-paranormal italic;
+  }
+
+  /* Botão de ação primária com glow */
+  .action-button {
+    @apply relative overflow-hidden transition-all duration-300;
+    @apply hover:shadow-[0_0_20px_hsl(var(--primary)/0.4)];
+  }
+
+  /* Container de atributo */
+  .attribute-box {
+    @apply flex flex-col items-center justify-center p-4 bg-secondary/50 border border-border rounded-lg;
+    @apply transition-all duration-200 hover:border-accent/50 hover:bg-secondary;
+  }
+
+  /* Skill row */
+  .skill-row {
+    @apply flex items-center justify-between p-2 border-b border-border/30 last:border-0;
+    @apply transition-colors hover:bg-secondary/30;
+  }
+}
+
+@layer utilities {
+  /* Efeito de glitch */
+  .glitch-effect {
+    animation: glitch 0.3s ease-in-out;
+  }
+
+  /* Efeito de pulse glow */
+  .pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+
+  /* Texto com gradiente */
+  .text-gradient-primary {
+    @apply bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent;
+  }
+
+  .text-gradient-accent {
+    @apply bg-gradient-to-r from-accent to-accent/70 bg-clip-text text-transparent;
+  }
+
+  .text-gradient-paranormal {
+    @apply bg-gradient-to-r from-paranormal to-paranormal/70 bg-clip-text text-transparent;
+  }
+
+  /* Bordas com glow */
+  .border-glow-primary {
+    @apply border-primary shadow-[0_0_10px_hsl(var(--primary)/0.3)];
+  }
+
+  .border-glow-accent {
+    @apply border-accent shadow-[0_0_10px_hsl(var(--accent)/0.3)];
+  }
+
+  .border-glow-paranormal {
+    @apply border-paranormal shadow-[0_0_10px_hsl(var(--paranormal)/0.3)];
+  }
+
+  /* Fade in com delay customizável */
+  .animate-fade-in-delay-1 {
+    animation: fade-in 0.5s ease-out 0.1s forwards;
+    opacity: 0;
+  }
+
+  .animate-fade-in-delay-2 {
+    animation: fade-in 0.5s ease-out 0.2s forwards;
+    opacity: 0;
+  }
+
+  .animate-fade-in-delay-3 {
+    animation: fade-in 0.5s ease-out 0.3s forwards;
+    opacity: 0;
+  }
+
+  .animate-fade-in-delay-4 {
+    animation: fade-in 0.5s ease-out 0.4s forwards;
+    opacity: 0;
+  }
+
+  /* Background patterns */
+  .bg-grid-pattern {
+    background-image: 
+      linear-gradient(to right, hsl(var(--border)/0.1) 1px, transparent 1px),
+      linear-gradient(to bottom, hsl(var(--border)/0.1) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+
+  .bg-dots-pattern {
+    background-image: radial-gradient(circle, hsl(var(--border)/0.3) 1px, transparent 1px);
+    background-size: 16px 16px;
   }
 }

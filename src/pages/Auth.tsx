@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams, Navigate } from 'react-router-dom';
+import { useSearchParams, Navigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Shield, Loader2, Eye, EyeOff } from 'lucide-react';
+import { Skull, Loader2, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { z } from 'zod';
 
 const authSchema = z.object({
@@ -74,38 +74,43 @@ export default function Auth() {
         if (error) {
           if (error.message.includes('Invalid login credentials')) {
             toast({
-              title: 'Acesso negado',
-              description: 'Email ou senha incorretos. Verifique suas credenciais.',
+              title: 'Acesso Negado',
+              description: 'Credenciais inválidas. Verifique seu email e senha.',
               variant: 'destructive',
             });
           } else {
             toast({
-              title: 'Erro ao entrar',
-              description: error.message,
-              variant: 'destructive',
-            });
-          }
-        }
-      } else {
-        const { error } = await signUp(email, password, displayName || undefined);
-        if (error) {
-          if (error.message.includes('User already registered')) {
-            toast({
-              title: 'Usuário já cadastrado',
-              description: 'Este email já está registrado. Tente fazer login.',
-              variant: 'destructive',
-            });
-          } else {
-            toast({
-              title: 'Erro ao criar conta',
+              title: 'Erro de Autenticação',
               description: error.message,
               variant: 'destructive',
             });
           }
         } else {
           toast({
-            title: 'Conta criada!',
-            description: 'Bem-vindo à Ordo Realitas, agente.',
+            title: 'Acesso Autorizado',
+            description: 'Bem-vindo de volta, Agente.',
+          });
+        }
+      } else {
+        const { error } = await signUp(email, password, displayName || undefined);
+        if (error) {
+          if (error.message.includes('User already registered')) {
+            toast({
+              title: 'Registro Existente',
+              description: 'Este email já está cadastrado. Tente fazer login.',
+              variant: 'destructive',
+            });
+          } else {
+            toast({
+              title: 'Erro no Registro',
+              description: error.message,
+              variant: 'destructive',
+            });
+          }
+        } else {
+          toast({
+            title: 'Registro Completo',
+            description: 'Bem-vindo à Ordo Realitas, Agente.',
           });
         }
       }
@@ -115,35 +120,43 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4 relative">
+    <div className="min-h-screen bg-background relative overflow-hidden flex items-center justify-center">
       {/* Background effects */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-paranormal/5" />
-      <div className="absolute top-1/4 left-1/4 w-[300px] h-[300px] bg-primary/10 blur-[100px] rounded-full" />
-      <div className="absolute bottom-1/4 right-1/4 w-[200px] h-[200px] bg-paranormal/10 blur-[100px] rounded-full" />
+      <div className="noise-overlay" />
+      <div className="absolute inset-0 bg-grid-pattern opacity-20" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-radial from-primary/10 via-transparent to-transparent blur-3xl" />
       
-      <div className="relative z-10 w-full max-w-md">
-        <div className="ordo-panel p-8">
+      {/* Back button */}
+      <Link 
+        to="/" 
+        className="absolute top-6 left-6 z-20 flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <ArrowLeft className="w-4 h-4" />
+        <span className="text-sm">Voltar</span>
+      </Link>
+
+      {/* Auth card */}
+      <div className="relative z-10 w-full max-w-md mx-4">
+        <div className="dossier-card p-8 animate-scale-in">
           {/* Header */}
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/20 border border-primary rounded-sm mb-4">
-              <Shield className="w-8 h-8 text-primary" />
+            <div className="w-16 h-16 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center mx-auto mb-4">
+              <Skull className="w-8 h-8 text-primary" />
             </div>
-            <h1 className="font-display text-3xl tracking-wider mb-2">
-              {mode === 'signin' ? 'ACESSO AO SISTEMA' : 'RECRUTAMENTO'}
+            <h1 className="font-display text-3xl tracking-wide text-foreground">
+              {mode === 'signin' ? 'ACESSO RESTRITO' : 'NOVO REGISTRO'}
             </h1>
-            <p className="text-muted-foreground text-sm">
-              {mode === 'signin' 
-                ? 'Identifique-se para acessar os arquivos da Ordo' 
-                : 'Preencha seus dados para iniciar o processo'}
+            <p className="text-muted-foreground text-sm mt-2">
+              {mode === 'signin' ? 'Identifique-se para continuar' : 'Crie sua credencial de agente'}
             </p>
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
             {mode === 'signup' && (
               <div className="space-y-2">
-                <Label htmlFor="displayName" className="text-muted-foreground">
-                  CODINOME
+                <Label htmlFor="displayName" className="text-xs text-muted-foreground uppercase tracking-wider">
+                  Codinome
                 </Label>
                 <Input
                   id="displayName"
@@ -151,26 +164,27 @@ export default function Auth() {
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
                   placeholder="Como deseja ser chamado?"
-                  className="bg-muted/50 border-border focus:border-primary"
+                  className="terminal-input h-12"
+                  disabled={loading}
                 />
                 {errors.displayName && (
                   <p className="text-destructive text-xs">{errors.displayName}</p>
                 )}
               </div>
             )}
-            
+
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-muted-foreground">
-                EMAIL
+              <Label htmlFor="email" className="text-xs text-muted-foreground uppercase tracking-wider">
+                Email
               </Label>
               <Input
                 id="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="seu@email.com"
-                className="bg-muted/50 border-border focus:border-primary"
-                required
+                placeholder="agente@ordo.gov"
+                className="terminal-input h-12"
+                disabled={loading}
               />
               {errors.email && (
                 <p className="text-destructive text-xs">{errors.email}</p>
@@ -178,8 +192,8 @@ export default function Auth() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-muted-foreground">
-                SENHA
+              <Label htmlFor="password" className="text-xs text-muted-foreground uppercase tracking-wider">
+                Senha
               </Label>
               <div className="relative">
                 <Input
@@ -188,15 +202,15 @@ export default function Auth() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="bg-muted/50 border-border focus:border-primary pr-10"
-                  required
+                  className="terminal-input h-12 pr-12"
+                  disabled={loading}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
               {errors.password && (
@@ -206,36 +220,37 @@ export default function Auth() {
 
             <Button
               type="submit"
-              className="w-full font-display tracking-wider mt-6"
+              className="w-full h-12 action-button font-display text-lg tracking-wide"
               disabled={loading}
             >
               {loading ? (
-                <Loader2 className="w-4 h-4 animate-spin mr-2" />
-              ) : null}
-              {mode === 'signin' ? 'ACESSAR' : 'CADASTRAR'}
+                <>
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  Processando...
+                </>
+              ) : (
+                mode === 'signin' ? 'AUTENTICAR' : 'REGISTRAR'
+              )}
             </Button>
           </form>
 
           {/* Toggle mode */}
           <div className="mt-6 text-center">
-            <p className="text-muted-foreground text-sm">
-              {mode === 'signin' ? 'Ainda não é um agente?' : 'Já possui cadastro?'}
-            </p>
             <button
               type="button"
               onClick={() => setMode(mode === 'signin' ? 'signup' : 'signin')}
-              className="text-secondary hover:text-secondary/80 text-sm font-medium mt-1"
+              className="text-sm text-muted-foreground hover:text-accent transition-colors"
             >
-              {mode === 'signin' ? 'Criar conta' : 'Fazer login'}
+              {mode === 'signin' ? (
+                <>Não tem cadastro? <span className="text-accent">Registre-se</span></>
+              ) : (
+                <>Já tem conta? <span className="text-accent">Faça login</span></>
+              )}
             </button>
           </div>
-        </div>
 
-        {/* Back link */}
-        <div className="text-center mt-4">
-          <a href="/" className="text-muted-foreground hover:text-foreground text-sm">
-            ← Voltar ao início
-          </a>
+          {/* Classified stamp */}
+          <div className="classified-stamp -bottom-4 -right-4 text-2xl">CONFIDENCIAL</div>
         </div>
       </div>
     </div>
