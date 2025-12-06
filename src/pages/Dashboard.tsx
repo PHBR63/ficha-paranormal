@@ -12,23 +12,31 @@ import {
   Users, 
   Settings,
   Loader2,
-  AlertTriangle
+  AlertTriangle,
+  Skull,
+  ChevronRight,
+  Trash2
 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface Character {
   id: string;
   name: string;
   class: string;
+  origin: string;
   nex: number;
   patent: string;
   hp_current: number;
   hp_max: number;
+  pe_current: number;
+  pe_max: number;
   san_current: number;
   san_max: number;
 }
 
 export default function Dashboard() {
   const { user, signOut } = useAuth();
+  const { toast } = useToast();
   const [characters, setCharacters] = useState<Character[]>([]);
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<{ display_name: string | null } | null>(null);
@@ -49,7 +57,7 @@ export default function Dashboard() {
       // Fetch characters
       const { data: charactersData } = await supabase
         .from('characters')
-        .select('id, name, class, nex, patent, hp_current, hp_max, san_current, san_max')
+        .select('id, name, class, origin, nex, patent, hp_current, hp_max, pe_current, pe_max, san_current, san_max')
         .eq('user_id', user.id)
         .order('updated_at', { ascending: false });
       
@@ -60,169 +68,269 @@ export default function Dashboard() {
     fetchData();
   }, [user]);
 
+  const handleDeleteCharacter = async (id: string, name: string) => {
+    if (!confirm(`Tem certeza que deseja excluir ${name}? Esta ação não pode ser desfeita.`)) {
+      return;
+    }
+
+    const { error } = await supabase
+      .from('characters')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível excluir o personagem.',
+        variant: 'destructive',
+      });
+    } else {
+      setCharacters(characters.filter(c => c.id !== id));
+      toast({
+        title: 'Agente Removido',
+        description: `O dossiê de ${name} foi arquivado permanentemente.`,
+      });
+    }
+  };
+
   const displayName = profile?.display_name || user?.email?.split('@')[0] || 'Agente';
 
-  return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border bg-card/50">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary/20 border border-primary rounded-sm flex items-center justify-center">
-              <Shield className="w-6 h-6 text-primary" />
-            </div>
-            <span className="font-display text-xl tracking-wider">LET'S ROLL</span>
-          </div>
+  const getClassIcon = (characterClass: string) => {
+    switch (characterClass) {
+      case 'Combatente': return Shield;
+      case 'Especialista': return User;
+      case 'Ocultista': return Skull;
+      default: return FileText;
+    }
+  };
 
+  return (
+    <div className="min-h-screen bg-background relative">
+      {/* Background effects */}
+      <div className="noise-overlay" />
+      <div className="absolute inset-0 bg-grid-pattern opacity-20" />
+
+      {/* Header */}
+      <header className="relative z-10 border-b border-border/50 backdrop-blur-sm sticky top-0 bg-background/80">
+        <div className="container mx-auto px-6 py-4 flex items-center justify-between">
+          <Link to="/" className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-primary/20 border border-primary/30 flex items-center justify-center">
+              <Skull className="w-6 h-6 text-primary" />
+            </div>
+            <div>
+              <h1 className="font-display text-xl tracking-wide text-foreground">LET'S ROLL</h1>
+              <p className="text-[10px] text-muted-foreground tracking-[0.2em] uppercase">Painel do Agente</p>
+            </div>
+          </Link>
+          
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 text-muted-foreground">
               <User className="w-4 h-4" />
-              <span className="text-sm">{displayName}</span>
+              <span className="text-sm hidden sm:block">{displayName}</span>
             </div>
             <Button 
               variant="ghost" 
-              size="sm" 
+              size="icon"
               onClick={signOut}
-              className="text-muted-foreground hover:text-destructive"
+              className="text-muted-foreground hover:text-foreground"
             >
-              <LogOut className="w-4 h-4" />
+              <LogOut className="w-5 h-5" />
             </Button>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="relative z-10 container mx-auto px-6 py-8">
         {/* Welcome section */}
-        <div className="mb-8">
-          <h1 className="font-display text-4xl tracking-wider mb-2">
-            BEM-VINDO, <span className="text-primary">{displayName.toUpperCase()}</span>
-          </h1>
-          <p className="text-muted-foreground">
-            Central de operações da Ordo Realitas. Gerencie seus agentes e missões.
-          </p>
-        </div>
-
-        {/* Quick stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <div className="ordo-panel p-4">
-            <div className="flex items-center gap-3">
-              <FileText className="w-8 h-8 text-secondary" />
-              <div>
-                <p className="text-2xl font-display">{characters.length}</p>
-                <p className="text-xs text-muted-foreground">AGENTES</p>
-              </div>
-            </div>
-          </div>
-          <div className="ordo-panel p-4">
-            <div className="flex items-center gap-3">
-              <Users className="w-8 h-8 text-muted-foreground" />
-              <div>
-                <p className="text-2xl font-display">0</p>
-                <p className="text-xs text-muted-foreground">MESAS</p>
-              </div>
-            </div>
-          </div>
-          <div className="ordo-panel p-4">
-            <div className="flex items-center gap-3">
-              <AlertTriangle className="w-8 h-8 text-muted-foreground" />
-              <div>
-                <p className="text-2xl font-display">0</p>
-                <p className="text-xs text-muted-foreground">MISSÕES</p>
-              </div>
-            </div>
-          </div>
-          <div className="ordo-panel p-4">
-            <div className="flex items-center gap-3">
-              <Settings className="w-8 h-8 text-muted-foreground" />
-              <div>
-                <p className="text-2xl font-display">-</p>
-                <p className="text-xs text-muted-foreground">CONFIG</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Characters section */}
-        <section>
-          <div className="flex justify-between items-center mb-6">
-            <div className="dossier-header flex-1">
-              <h2 className="font-display text-2xl tracking-wider">DOSSIÊS DE AGENTES</h2>
+        <section className="mb-8">
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div>
+              <p className="text-accent text-sm tracking-[0.2em] uppercase">Central de Operações</p>
+              <h2 className="font-display text-4xl tracking-wide text-foreground">
+                BEM-VINDO, <span className="text-primary">{displayName.toUpperCase()}</span>
+              </h2>
+              <p className="text-muted-foreground mt-1">
+                Gerencie seus agentes e missões na Ordo Realitas.
+              </p>
             </div>
             <Link to="/character/create">
-              <Button className="font-display tracking-wider">
-                <Plus className="w-4 h-4 mr-2" />
-                NOVO AGENTE
+              <Button className="action-button">
+                <Plus className="w-5 h-5 mr-2" />
+                Novo Agente
               </Button>
             </Link>
           </div>
+        </section>
+
+        {/* Quick stats */}
+        <section className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+          <div className="dossier-card p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center">
+                <FileText className="w-5 h-5 text-accent" />
+              </div>
+              <div>
+                <p className="font-display text-2xl text-foreground">{characters.length}</p>
+                <p className="text-xs text-muted-foreground uppercase tracking-wider">Agentes</p>
+              </div>
+            </div>
+          </div>
+          <div className="dossier-card p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
+                <Users className="w-5 h-5 text-muted-foreground" />
+              </div>
+              <div>
+                <p className="font-display text-2xl text-foreground">0</p>
+                <p className="text-xs text-muted-foreground uppercase tracking-wider">Mesas</p>
+              </div>
+            </div>
+          </div>
+          <div className="dossier-card p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
+                <AlertTriangle className="w-5 h-5 text-muted-foreground" />
+              </div>
+              <div>
+                <p className="font-display text-2xl text-foreground">0</p>
+                <p className="text-xs text-muted-foreground uppercase tracking-wider">Missões</p>
+              </div>
+            </div>
+          </div>
+          <div className="dossier-card p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
+                <Settings className="w-5 h-5 text-muted-foreground" />
+              </div>
+              <div>
+                <p className="font-display text-2xl text-foreground">—</p>
+                <p className="text-xs text-muted-foreground uppercase tracking-wider">Config</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Characters section */}
+        <section>
+          <div className="flex items-center gap-4 mb-6">
+            <div className="divider-line flex-1" />
+            <h3 className="font-display text-xl tracking-wider text-primary">DOSSIÊS DE AGENTES</h3>
+            <div className="divider-line flex-1" />
+          </div>
 
           {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="w-6 h-6 animate-spin text-primary" />
+            <div className="flex items-center justify-center py-16">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div>
           ) : characters.length === 0 ? (
-            <div className="ordo-panel p-12 text-center">
-              <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="font-display text-xl tracking-wider mb-2">NENHUM AGENTE CADASTRADO</h3>
+            <div className="section-container text-center py-16">
+              <FileText className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
+              <h3 className="font-display text-2xl text-foreground mb-2">
+                NENHUM DOSSIÊ ENCONTRADO
+              </h3>
               <p className="text-muted-foreground mb-6">
-                Você ainda não possui agentes registrados no sistema.
+                Crie seu primeiro agente para começar suas missões.
               </p>
               <Link to="/character/create">
-                <Button className="font-display tracking-wider">
-                  <Plus className="w-4 h-4 mr-2" />
-                  CRIAR PRIMEIRO AGENTE
+                <Button className="action-button">
+                  <Plus className="w-5 h-5 mr-2" />
+                  Criar Primeiro Agente
                 </Button>
               </Link>
             </div>
           ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {characters.map((char, index) => (
-                <Link
-                  key={char.id}
-                  to={`/character/${char.id}`}
-                  className="ordo-panel p-4 hover:border-primary/50 transition-colors animate-fade-in"
-                  style={{ animationDelay: `${index * 0.05}s` }}
-                >
-                  <div className="flex justify-between items-start mb-3">
-                    <div>
-                      <h3 className="font-display text-lg tracking-wider">{char.name}</h3>
-                      <p className="text-xs text-muted-foreground">{char.class} • {char.patent}</p>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-secondary font-display text-xl">{char.nex}%</span>
-                      <p className="text-xs text-muted-foreground">NEX</p>
-                    </div>
-                  </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {characters.map((character, index) => {
+                const ClassIcon = getClassIcon(character.class);
+                const hpPercent = (character.hp_current / character.hp_max) * 100;
+                const sanPercent = (character.san_current / character.san_max) * 100;
+                
+                return (
+                  <div
+                    key={character.id}
+                    className="dossier-card group animate-fade-in"
+                    style={{ animationDelay: `${index * 0.05}s` }}
+                  >
+                    <div className="p-6">
+                      {/* Header */}
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-lg bg-secondary flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                            <ClassIcon className="w-6 h-6 text-accent group-hover:text-primary transition-colors" />
+                          </div>
+                          <div>
+                            <h4 className="font-display text-xl tracking-wide text-foreground">
+                              {character.name}
+                            </h4>
+                            <p className="text-muted-foreground text-sm">
+                              {character.class} • {character.origin}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="nex-indicator">
+                          {character.nex}%
+                        </div>
+                      </div>
 
-                  {/* HP Bar */}
-                  <div className="mb-2">
-                    <div className="flex justify-between text-xs mb-1">
-                      <span className="text-muted-foreground">PV</span>
-                      <span className="text-destructive">{char.hp_current}/{char.hp_max}</span>
-                    </div>
-                    <div className="status-bar status-bar-hp">
-                      <div 
-                        className="status-bar-fill"
-                        style={{ width: `${(char.hp_current / char.hp_max) * 100}%` }}
-                      />
-                    </div>
-                  </div>
+                      {/* Status bars */}
+                      <div className="space-y-3 mb-4">
+                        <div>
+                          <div className="flex justify-between text-xs mb-1">
+                            <span className="text-muted-foreground uppercase tracking-wider">PV</span>
+                            <span className="text-primary">{character.hp_current}/{character.hp_max}</span>
+                          </div>
+                          <div className="status-bar">
+                            <div 
+                              className="status-bar-fill bg-primary"
+                              style={{ width: `${hpPercent}%` }}
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <div className="flex justify-between text-xs mb-1">
+                            <span className="text-muted-foreground uppercase tracking-wider">SAN</span>
+                            <span className="text-paranormal">{character.san_current}/{character.san_max}</span>
+                          </div>
+                          <div className="status-bar">
+                            <div 
+                              className="status-bar-fill bg-paranormal"
+                              style={{ width: `${sanPercent}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
 
-                  {/* SAN Bar */}
-                  <div>
-                    <div className="flex justify-between text-xs mb-1">
-                      <span className="text-muted-foreground">SAN</span>
-                      <span className="text-paranormal">{char.san_current}/{char.san_max}</span>
+                      {/* Patent badge */}
+                      <div className="mb-4">
+                        <span className="patent-badge">{character.patent}</span>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex items-center gap-2">
+                        <Link to={`/character/${character.id}`} className="flex-1">
+                          <Button variant="secondary" className="w-full group-hover:bg-primary/20 transition-colors">
+                            Abrir Dossiê
+                            <ChevronRight className="w-4 h-4 ml-1" />
+                          </Button>
+                        </Link>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDeleteCharacter(character.id, character.name)}
+                          className="text-muted-foreground hover:text-destructive"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
-                    <div className="status-bar status-bar-san">
-                      <div 
-                        className="status-bar-fill"
-                        style={{ width: `${(char.san_current / char.san_max) * 100}%` }}
-                      />
+
+                    {/* Classified stamp */}
+                    <div className="classified-stamp -bottom-2 -right-2 text-xl opacity-5">
+                      ORDO
                     </div>
                   </div>
-                </Link>
-              ))}
+                );
+              })}
             </div>
           )}
         </section>
