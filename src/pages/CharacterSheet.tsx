@@ -14,10 +14,15 @@ import {
   Brain,
   Edit2,
   Trash2,
-  Save
+  Save,
+  Dices
 } from 'lucide-react';
 import { ORIGINS, SKILLS, getPatentByNex, calculateDerivedStats } from '@/lib/character-data';
+import { getPELimitByNex } from '@/lib/dice-roller';
 import { Input } from '@/components/ui/input';
+import { DiceRoller } from '@/components/dice/DiceRoller';
+import { rollSkillTest, DiceRollResult } from '@/lib/dice-roller';
+import { cn } from '@/lib/utils';
 
 interface Character {
   id: string;
