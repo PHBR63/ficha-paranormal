@@ -14,6 +14,229 @@ export type Database = {
   }
   public: {
     Tables: {
+      campaign_invites: {
+        Row: {
+          campaign_id: string
+          created_at: string
+          created_by: string
+          expires_at: string | null
+          id: string
+          invite_code: string
+          max_uses: number | null
+          uses: number
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string
+          created_by: string
+          expires_at?: string | null
+          id?: string
+          invite_code: string
+          max_uses?: number | null
+          uses?: number
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string
+          created_by?: string
+          expires_at?: string | null
+          id?: string
+          invite_code?: string
+          max_uses?: number | null
+          uses?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_invites_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaign_members: {
+        Row: {
+          campaign_id: string
+          character_id: string | null
+          id: string
+          joined_at: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          campaign_id: string
+          character_id?: string | null
+          id?: string
+          joined_at?: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          campaign_id?: string
+          character_id?: string | null
+          id?: string
+          joined_at?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_members_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_members_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: false
+            referencedRelation: "characters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaign_messages: {
+        Row: {
+          campaign_id: string
+          character_id: string | null
+          content: string
+          created_at: string
+          id: string
+          message_type: string
+          metadata: Json | null
+          recipient_id: string | null
+          user_id: string
+        }
+        Insert: {
+          campaign_id: string
+          character_id?: string | null
+          content: string
+          created_at?: string
+          id?: string
+          message_type?: string
+          metadata?: Json | null
+          recipient_id?: string | null
+          user_id: string
+        }
+        Update: {
+          campaign_id?: string
+          character_id?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          message_type?: string
+          metadata?: Json | null
+          recipient_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_messages_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_messages_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: false
+            referencedRelation: "characters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaign_sessions: {
+        Row: {
+          campaign_id: string
+          created_at: string
+          ended_at: string | null
+          id: string
+          notes: Json | null
+          scheduled_at: string | null
+          session_number: number
+          started_at: string | null
+          status: string
+          summary: string | null
+          title: string | null
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          notes?: Json | null
+          scheduled_at?: string | null
+          session_number: number
+          started_at?: string | null
+          status?: string
+          summary?: string | null
+          title?: string | null
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          notes?: Json | null
+          scheduled_at?: string | null
+          session_number?: number
+          started_at?: string | null
+          status?: string
+          summary?: string | null
+          title?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_sessions_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaigns: {
+        Row: {
+          cover_image_url: string | null
+          created_at: string
+          current_session: number
+          description: string | null
+          id: string
+          master_id: string
+          name: string
+          settings: Json
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          cover_image_url?: string | null
+          created_at?: string
+          current_session?: number
+          description?: string | null
+          id?: string
+          master_id: string
+          name: string
+          settings?: Json
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          cover_image_url?: string | null
+          created_at?: string
+          current_session?: number
+          description?: string | null
+          id?: string
+          master_id?: string
+          name?: string
+          settings?: Json
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       characters: {
         Row: {
           agility: number

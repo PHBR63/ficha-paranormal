@@ -10,6 +10,8 @@ import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import CharacterCreate from "./pages/CharacterCreate";
 import CharacterSheet from "./pages/CharacterSheet";
+import Campaigns from "./pages/Campaigns";
+import CampaignView from "./pages/CampaignView";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -37,6 +39,16 @@ const App = () => (
             <Route path="/character/:id" element={
               <ProtectedRoute>
                 <CharacterSheet />
+              </ProtectedRoute>
+            } />
+            <Route path="/campaigns" element={
+              <ProtectedRoute>
+                <Campaigns />
+              </ProtectedRoute>
+            } />
+            <Route path="/campaigns/:id" element={
+              <ProtectedRoute>
+                <CampaignView />
               </ProtectedRoute>
             } />
             <Route path="*" element={<NotFound />} />

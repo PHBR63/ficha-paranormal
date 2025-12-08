@@ -153,12 +153,20 @@ export default function Dashboard() {
                 Gerencie seus agentes e missões na Ordo Realitas.
               </p>
             </div>
-            <Link to="/character/create">
-              <Button className="action-button">
-                <Plus className="w-5 h-5 mr-2" />
-                Novo Agente
-              </Button>
-            </Link>
+            <div className="flex gap-3">
+              <Link to="/campaigns">
+                <Button variant="outline" className="font-display tracking-wider">
+                  <Users className="w-5 h-5 mr-2" />
+                  Campanhas
+                </Button>
+              </Link>
+              <Link to="/character/create">
+                <Button className="action-button font-display tracking-wider">
+                  <Plus className="w-5 h-5 mr-2" />
+                  Novo Agente
+                </Button>
+              </Link>
+            </div>
           </div>
         </section>
 
