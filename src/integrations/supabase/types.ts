@@ -242,6 +242,7 @@ export type Database = {
           agility: number
           background: string | null
           class: string
+          conditions: Json
           created_at: string
           defense: number
           hp_current: number
@@ -273,6 +274,7 @@ export type Database = {
           agility?: number
           background?: string | null
           class: string
+          conditions?: Json
           created_at?: string
           defense?: number
           hp_current?: number
@@ -304,6 +306,7 @@ export type Database = {
           agility?: number
           background?: string | null
           class?: string
+          conditions?: Json
           created_at?: string
           defense?: number
           hp_current?: number

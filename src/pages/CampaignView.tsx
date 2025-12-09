@@ -25,7 +25,8 @@ import {
   Trash2,
   User,
   X,
-  UserCog
+  UserCog,
+  Activity
 } from 'lucide-react';
 import {
   Dialog,
@@ -39,6 +40,7 @@ import {
 import { cn } from '@/lib/utils';
 import { rollSkillTest } from '@/lib/dice-roller';
 import { CharacterSelectDialog } from '@/components/campaign/CharacterSelectDialog';
+import { MemberConditionsPanel } from '@/components/campaign/MemberConditionsPanel';
 
 interface Campaign {
   id: string;
@@ -61,9 +63,13 @@ interface CampaignMember {
     avatar_url: string | null;
   };
   characters?: {
+    id: string;
     name: string;
     class: string;
     nex: number;
+    hp_current: number;
+    hp_max: number;
+    conditions: string[];
   } | null;
 }
 
@@ -159,7 +165,7 @@ export default function CampaignView() {
           if (member.character_id) {
             const { data: charData } = await supabase
               .from('characters')
-              .select('name, class, nex')
+              .select('id, name, class, nex, hp_current, hp_max, conditions')
               .eq('id', member.character_id)
               .single();
             character = charData;
@@ -429,14 +435,18 @@ export default function CampaignView() {
       if (characterId) {
         const { data: charData } = await supabase
           .from('characters')
-          .select('name, class, nex')
+          .select('id, name, class, nex, hp_current, hp_max, conditions')
           .eq('id', characterId)
           .single();
 
         if (charData) {
+          const typedCharData = {
+            ...charData,
+            conditions: Array.isArray(charData.conditions) ? charData.conditions as string[] : [],
+          };
           setMembers(prev => prev.map(m => 
             m.id === currentMember.id 
-              ? { ...m, character_id: characterId, characters: charData }
+              ? { ...m, character_id: characterId, characters: typedCharData }
               : m
           ));
         }
@@ -638,6 +648,10 @@ export default function CampaignView() {
                   <MessageSquare className="w-4 h-4 mr-2" />
                   CHAT
                 </TabsTrigger>
+                <TabsTrigger value="conditions" className="font-display tracking-wider">
+                  <Activity className="w-4 h-4 mr-2" />
+                  CONDIÇÕES
+                </TabsTrigger>
                 <TabsTrigger value="notes" className="font-display tracking-wider">
                   <Scroll className="w-4 h-4 mr-2" />
                   NOTAS
@@ -731,6 +745,22 @@ export default function CampaignView() {
                     )}
                   </Button>
                 </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="conditions" className="flex-1 p-4 m-0 overflow-auto">
+              <div className="max-w-2xl mx-auto">
+                <div className="flex items-center gap-2 mb-6">
+                  <Activity className="w-5 h-5 text-primary" />
+                  <h3 className="font-display text-lg tracking-wider text-primary">
+                    STATUS DOS AGENTES
+                  </h3>
+                </div>
+                <MemberConditionsPanel
+                  members={members}
+                  isMaster={isMaster}
+                  onMemberUpdate={fetchCampaignData}
+                />
               </div>
             </TabsContent>
 
