@@ -24,7 +24,8 @@ import {
   Calendar,
   Trash2,
   User,
-  X
+  X,
+  UserCog
 } from 'lucide-react';
 import {
   Dialog,
@@ -37,6 +38,7 @@ import {
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { rollSkillTest } from '@/lib/dice-roller';
+import { CharacterSelectDialog } from '@/components/campaign/CharacterSelectDialog';
 
 interface Campaign {
   id: string;
@@ -106,8 +108,10 @@ export default function CampaignView() {
   const [sending, setSending] = useState(false);
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const [generatingInvite, setGeneratingInvite] = useState(false);
+  const [characterSelectOpen, setCharacterSelectOpen] = useState(false);
 
   const isMaster = campaign?.master_id === user?.id;
+  const currentMember = members.find(m => m.user_id === user?.id);
 
   useEffect(() => {
     if (id && user) {
@@ -403,6 +407,61 @@ export default function CampaignView() {
     }
   };
 
+  const handleCharacterSelect = async (characterId: string | null) => {
+    if (!user || !id || !currentMember) return;
+
+    try {
+      const { error } = await supabase
+        .from('campaign_members')
+        .update({ character_id: characterId })
+        .eq('id', currentMember.id);
+
+      if (error) throw error;
+
+      // Update local state
+      setMembers(prev => prev.map(m => 
+        m.id === currentMember.id 
+          ? { ...m, character_id: characterId }
+          : m
+      ));
+
+      // Refetch to get updated character info
+      if (characterId) {
+        const { data: charData } = await supabase
+          .from('characters')
+          .select('name, class, nex')
+          .eq('id', characterId)
+          .single();
+
+        if (charData) {
+          setMembers(prev => prev.map(m => 
+            m.id === currentMember.id 
+              ? { ...m, character_id: characterId, characters: charData }
+              : m
+          ));
+        }
+      } else {
+        setMembers(prev => prev.map(m => 
+          m.id === currentMember.id 
+            ? { ...m, character_id: null, characters: null }
+            : m
+        ));
+      }
+
+      toast({ 
+        title: characterId ? 'Personagem selecionado!' : 'Personagem removido',
+        description: characterId ? 'Seu agente foi vinculado à campanha.' : 'Você não está mais usando um personagem nesta campanha.',
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Erro ao selecionar personagem',
+        description: error.message,
+        variant: 'destructive',
+      });
+      throw error;
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -441,66 +500,81 @@ export default function CampaignView() {
               </div>
             </div>
             
-            {isMaster && (
-              <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="sm" className="font-display">
-                    <UserPlus className="w-4 h-4 mr-2" />
-                    CONVIDAR
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="bg-card border-border">
-                  <DialogHeader>
-                    <DialogTitle className="font-display text-xl tracking-wider">
-                      CONVIDAR JOGADORES
-                    </DialogTitle>
-                    <DialogDescription>
-                      Compartilhe o código abaixo com os jogadores.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="py-4">
-                    {invite ? (
-                      <div className="space-y-4">
-                        <div className="flex items-center gap-2">
-                          <Input
-                            value={invite.invite_code}
-                            readOnly
-                            className="font-display text-center text-2xl tracking-widest"
-                          />
-                          <Button variant="outline" size="icon" onClick={copyInviteCode}>
-                            <Copy className="w-4 h-4" />
-                          </Button>
-                        </div>
-                        <p className="text-xs text-muted-foreground text-center">
-                          Usado {invite.uses} vezes • 
-                          {invite.expires_at && ` Expira em ${new Date(invite.expires_at).toLocaleDateString()}`}
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="text-center">
-                        <p className="text-muted-foreground mb-4">
-                          Nenhum código ativo. Gere um novo código.
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                  <DialogFooter>
-                    <Button
-                      variant="outline"
-                      onClick={generateInviteCode}
-                      disabled={generatingInvite}
-                    >
-                      {generatingInvite ? (
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      ) : (
-                        <RefreshCw className="w-4 h-4 mr-2" />
-                      )}
-                      {invite ? 'GERAR NOVO' : 'GERAR CÓDIGO'}
+            <div className="flex items-center gap-2">
+              {/* Character Select Button - for players */}
+              {!isMaster && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="font-display"
+                  onClick={() => setCharacterSelectOpen(true)}
+                >
+                  <UserCog className="w-4 h-4 mr-2" />
+                  {currentMember?.characters ? currentMember.characters.name : 'SELECIONAR AGENTE'}
+                </Button>
+              )}
+
+              {isMaster && (
+                <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="sm" className="font-display">
+                      <UserPlus className="w-4 h-4 mr-2" />
+                      CONVIDAR
                     </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-            )}
+                  </DialogTrigger>
+                  <DialogContent className="bg-card border-border">
+                    <DialogHeader>
+                      <DialogTitle className="font-display text-xl tracking-wider">
+                        CONVIDAR JOGADORES
+                      </DialogTitle>
+                      <DialogDescription>
+                        Compartilhe o código abaixo com os jogadores.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4">
+                      {invite ? (
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-2">
+                            <Input
+                              value={invite.invite_code}
+                              readOnly
+                              className="font-display text-center text-2xl tracking-widest"
+                            />
+                            <Button variant="outline" size="icon" onClick={copyInviteCode}>
+                              <Copy className="w-4 h-4" />
+                            </Button>
+                          </div>
+                          <p className="text-xs text-muted-foreground text-center">
+                            Usado {invite.uses} vezes • 
+                            {invite.expires_at && ` Expira em ${new Date(invite.expires_at).toLocaleDateString()}`}
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="text-center">
+                          <p className="text-muted-foreground mb-4">
+                            Nenhum código ativo. Gere um novo código.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                    <DialogFooter>
+                      <Button
+                        variant="outline"
+                        onClick={generateInviteCode}
+                        disabled={generatingInvite}
+                      >
+                        {generatingInvite ? (
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        ) : (
+                          <RefreshCw className="w-4 h-4 mr-2" />
+                        )}
+                        {invite ? 'GERAR NOVO' : 'GERAR CÓDIGO'}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              )}
+            </div>
           </div>
         </div>
       </header>
@@ -730,6 +804,15 @@ export default function CampaignView() {
           </Tabs>
         </main>
       </div>
+
+      {/* Character Select Dialog */}
+      <CharacterSelectDialog
+        open={characterSelectOpen}
+        onOpenChange={setCharacterSelectOpen}
+        campaignId={id || ''}
+        currentCharacterId={currentMember?.character_id || null}
+        onCharacterSelect={handleCharacterSelect}
+      />
     </div>
   );
 }
