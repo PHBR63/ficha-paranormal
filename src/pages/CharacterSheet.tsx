@@ -21,8 +21,11 @@ import { ORIGINS, SKILLS, getPatentByNex, calculateDerivedStats } from '@/lib/ch
 import { getPELimitByNex } from '@/lib/dice-roller';
 import { Input } from '@/components/ui/input';
 import { DiceRoller } from '@/components/dice/DiceRoller';
+import { DiceRoller3D } from '@/components/dice/DiceRoller3D';
 import { rollSkillTest, DiceRollResult } from '@/lib/dice-roller';
 import { cn } from '@/lib/utils';
+import { AnimatedProgress } from '@/components/ui/animated-progress';
+import { ConditionList } from '@/components/ui/condition-badge';
 
 interface Character {
   id: string;
@@ -50,6 +53,7 @@ interface Character {
   rituals: Array<{ name: string; circle: number; element: string }>;
   background: string | null;
   notes: string | null;
+  conditions: string[];
 }
 
 const ATTRIBUTE_LABELS: Record<string, string> = {
@@ -75,6 +79,7 @@ export default function CharacterSheet() {
   const [hpCurrent, setHpCurrent] = useState(0);
   const [peCurrent, setPeCurrent] = useState(0);
   const [sanCurrent, setSanCurrent] = useState(0);
+  const [showDiceRoller, setShowDiceRoller] = useState(false);
 
   useEffect(() => {
     async function fetchCharacter() {
@@ -97,7 +102,11 @@ export default function CharacterSheet() {
         return;
       }
 
-      setCharacter(data as unknown as Character);
+      const charData = {
+        ...data,
+        conditions: Array.isArray(data.conditions) ? data.conditions as string[] : [],
+      };
+      setCharacter(charData as unknown as Character);
       setHpCurrent(data.hp_current);
       setPeCurrent(data.pe_current);
       setSanCurrent(data.san_current);
@@ -262,8 +271,8 @@ export default function CharacterSheet() {
           </div>
         </div>
 
-        {/* Main stats */}
-        <div className="grid grid-cols-4 gap-4 mb-6">
+        {/* Main stats with animated progress */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <div className="ordo-panel p-4 text-center">
             <Shield className="w-6 h-6 mx-auto mb-2 text-muted-foreground" />
             <p className="text-xs text-muted-foreground">DEFESA</p>
@@ -284,12 +293,14 @@ export default function CharacterSheet() {
               <p className="font-display text-3xl text-destructive">{hpCurrent}</p>
             )}
             <p className="text-xs text-muted-foreground">/ {character.hp_max}</p>
-            <div className="status-bar status-bar-hp mt-2">
-              <div 
-                className="status-bar-fill"
-                style={{ width: `${(hpCurrent / character.hp_max) * 100}%` }}
-              />
-            </div>
+            <AnimatedProgress
+              value={hpCurrent}
+              max={character.hp_max}
+              variant="health"
+              size="md"
+              showLabel={false}
+              className="mt-2"
+            />
           </div>
 
           <div className="ordo-panel p-4 text-center border-secondary/30">
@@ -306,12 +317,14 @@ export default function CharacterSheet() {
               <p className="font-display text-3xl text-secondary">{peCurrent}</p>
             )}
             <p className="text-xs text-muted-foreground">/ {character.pe_max}</p>
-            <div className="status-bar status-bar-pe mt-2">
-              <div 
-                className="status-bar-fill"
-                style={{ width: `${(peCurrent / character.pe_max) * 100}%` }}
-              />
-            </div>
+            <AnimatedProgress
+              value={peCurrent}
+              max={character.pe_max}
+              variant="energy"
+              size="md"
+              showLabel={false}
+              className="mt-2"
+            />
           </div>
 
           <div className={`ordo-panel p-4 text-center border-paranormal/30 ${isSanLow ? 'paranormal-glow' : ''}`}>
@@ -328,14 +341,45 @@ export default function CharacterSheet() {
               <p className="font-display text-3xl text-paranormal">{sanCurrent}</p>
             )}
             <p className="text-xs text-muted-foreground">/ {character.san_max}</p>
-            <div className="status-bar status-bar-san mt-2">
-              <div 
-                className="status-bar-fill"
-                style={{ width: `${sanPercentage}%` }}
-              />
-            </div>
+            <AnimatedProgress
+              value={sanCurrent}
+              max={character.san_max}
+              variant="sanity"
+              size="md"
+              showLabel={false}
+              className="mt-2"
+            />
           </div>
         </div>
+
+        {/* Conditions */}
+        {character.conditions && character.conditions.length > 0 && (
+          <div className="ordo-panel p-4 mb-6">
+            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-3">CONDIÇÕES ATIVAS</p>
+            <ConditionList conditions={character.conditions} size="md" />
+          </div>
+        )}
+
+        {/* 3D Dice Roller Button */}
+        <div className="mb-6 flex justify-center">
+          <Button
+            variant="outline"
+            onClick={() => setShowDiceRoller(!showDiceRoller)}
+            className="font-display tracking-wider"
+          >
+            <Dices className="w-5 h-5 mr-2" />
+            {showDiceRoller ? 'OCULTAR DADOS' : 'ROLAR DADOS 3D'}
+          </Button>
+        </div>
+
+        {showDiceRoller && (
+          <div className="mb-6">
+            <DiceRoller3D 
+              attributeValue={character.agility} 
+              skillName="Teste Geral"
+            />
+          </div>
+        )}
 
         {/* Tabs */}
         <Tabs defaultValue="attributes" className="space-y-4">

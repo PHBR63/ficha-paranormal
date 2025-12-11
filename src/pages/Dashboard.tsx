@@ -4,7 +4,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { 
-  Shield, 
   Plus, 
   LogOut, 
   User, 
@@ -13,11 +12,10 @@ import {
   Settings,
   Loader2,
   AlertTriangle,
-  Skull,
-  ChevronRight,
-  Trash2
+  Skull
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { CharacterCard } from '@/components/cards/CharacterCard';
 
 interface Character {
   id: string;
@@ -32,6 +30,8 @@ interface Character {
   pe_max: number;
   san_current: number;
   san_max: number;
+  photo_url?: string | null;
+  conditions?: string[];
 }
 
 export default function Dashboard() {
@@ -57,11 +57,15 @@ export default function Dashboard() {
       // Fetch characters
       const { data: charactersData } = await supabase
         .from('characters')
-        .select('id, name, class, origin, nex, patent, hp_current, hp_max, pe_current, pe_max, san_current, san_max')
+        .select('id, name, class, origin, nex, patent, hp_current, hp_max, pe_current, pe_max, san_current, san_max, photo_url, conditions')
         .eq('user_id', user.id)
         .order('updated_at', { ascending: false });
       
-      setCharacters(charactersData || []);
+      const chars = (charactersData || []).map(c => ({
+        ...c,
+        conditions: Array.isArray(c.conditions) ? c.conditions as string[] : [],
+      }));
+      setCharacters(chars);
       setLoading(false);
     }
 
@@ -94,15 +98,6 @@ export default function Dashboard() {
   };
 
   const displayName = profile?.display_name || user?.email?.split('@')[0] || 'Agente';
-
-  const getClassIcon = (characterClass: string) => {
-    switch (characterClass) {
-      case 'Combatente': return Shield;
-      case 'Especialista': return User;
-      case 'Ocultista': return Skull;
-      default: return FileText;
-    }
-  };
 
   return (
     <div className="min-h-screen bg-background relative">
@@ -248,97 +243,29 @@ export default function Dashboard() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {characters.map((character, index) => {
-                const ClassIcon = getClassIcon(character.class);
-                const hpPercent = (character.hp_current / character.hp_max) * 100;
-                const sanPercent = (character.san_current / character.san_max) * 100;
-                
-                return (
-                  <div
-                    key={character.id}
-                    className="dossier-card group animate-fade-in"
-                    style={{ animationDelay: `${index * 0.05}s` }}
-                  >
-                    <div className="p-6">
-                      {/* Header */}
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 rounded-lg bg-secondary flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                            <ClassIcon className="w-6 h-6 text-accent group-hover:text-primary transition-colors" />
-                          </div>
-                          <div>
-                            <h4 className="font-display text-xl tracking-wide text-foreground">
-                              {character.name}
-                            </h4>
-                            <p className="text-muted-foreground text-sm">
-                              {character.class} • {character.origin}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="nex-indicator">
-                          {character.nex}%
-                        </div>
-                      </div>
-
-                      {/* Status bars */}
-                      <div className="space-y-3 mb-4">
-                        <div>
-                          <div className="flex justify-between text-xs mb-1">
-                            <span className="text-muted-foreground uppercase tracking-wider">PV</span>
-                            <span className="text-primary">{character.hp_current}/{character.hp_max}</span>
-                          </div>
-                          <div className="status-bar">
-                            <div 
-                              className="status-bar-fill bg-primary"
-                              style={{ width: `${hpPercent}%` }}
-                            />
-                          </div>
-                        </div>
-                        <div>
-                          <div className="flex justify-between text-xs mb-1">
-                            <span className="text-muted-foreground uppercase tracking-wider">SAN</span>
-                            <span className="text-paranormal">{character.san_current}/{character.san_max}</span>
-                          </div>
-                          <div className="status-bar">
-                            <div 
-                              className="status-bar-fill bg-paranormal"
-                              style={{ width: `${sanPercent}%` }}
-                            />
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Patent badge */}
-                      <div className="mb-4">
-                        <span className="patent-badge">{character.patent}</span>
-                      </div>
-
-                      {/* Actions */}
-                      <div className="flex items-center gap-2">
-                        <Link to={`/character/${character.id}`} className="flex-1">
-                          <Button variant="secondary" className="w-full group-hover:bg-primary/20 transition-colors">
-                            Abrir Dossiê
-                            <ChevronRight className="w-4 h-4 ml-1" />
-                          </Button>
-                        </Link>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDeleteCharacter(character.id, character.name)}
-                          className="text-muted-foreground hover:text-destructive"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-
-                    {/* Classified stamp */}
-                    <div className="classified-stamp -bottom-2 -right-2 text-xl opacity-5">
-                      ORDO
-                    </div>
-                  </div>
-                );
-              })}
+              {characters.map((character, index) => (
+                <CharacterCard
+                  key={character.id}
+                  character={{
+                    id: character.id,
+                    name: character.name,
+                    class: character.class,
+                    origin: character.origin,
+                    nex: character.nex,
+                    patent: character.patent,
+                    hp_current: character.hp_current,
+                    hp_max: character.hp_max,
+                    pe_current: character.pe_current,
+                    pe_max: character.pe_max,
+                    san_current: character.san_current,
+                    san_max: character.san_max,
+                    photo_url: character.photo_url,
+                    conditions: character.conditions || [],
+                  }}
+                  onDelete={() => handleDeleteCharacter(character.id, character.name)}
+                  index={index}
+                />
+              ))}
             </div>
           )}
         </section>
