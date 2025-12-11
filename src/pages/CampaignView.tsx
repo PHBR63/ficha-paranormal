@@ -26,7 +26,8 @@ import {
   User,
   X,
   UserCog,
-  Activity
+  Activity,
+  Swords
 } from 'lucide-react';
 import {
   Dialog,
@@ -41,6 +42,8 @@ import { cn } from '@/lib/utils';
 import { rollSkillTest } from '@/lib/dice-roller';
 import { CharacterSelectDialog } from '@/components/campaign/CharacterSelectDialog';
 import { MemberConditionsPanel } from '@/components/campaign/MemberConditionsPanel';
+import { CombatTracker } from '@/components/combat/CombatTracker';
+import { DiceRoller3D } from '@/components/dice/DiceRoller3D';
 
 interface Campaign {
   id: string;
@@ -648,6 +651,10 @@ export default function CampaignView() {
                   <MessageSquare className="w-4 h-4 mr-2" />
                   CHAT
                 </TabsTrigger>
+                <TabsTrigger value="combat" className="font-display tracking-wider">
+                  <Swords className="w-4 h-4 mr-2" />
+                  COMBATE
+                </TabsTrigger>
                 <TabsTrigger value="conditions" className="font-display tracking-wider">
                   <Activity className="w-4 h-4 mr-2" />
                   CONDIÇÕES
@@ -746,6 +753,13 @@ export default function CampaignView() {
                   </Button>
                 </div>
               </div>
+            </TabsContent>
+
+            <TabsContent value="combat" className="flex-1 p-4 m-0 overflow-auto">
+              <CombatTracker
+                campaignId={id}
+                isMaster={isMaster}
+              />
             </TabsContent>
 
             <TabsContent value="conditions" className="flex-1 p-4 m-0 overflow-auto">
