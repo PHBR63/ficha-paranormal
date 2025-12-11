@@ -15,17 +15,21 @@ import {
   Edit2,
   Trash2,
   Save,
-  Dices
+  Dices,
+  Swords,
+  Package,
+  Sparkles,
+  BookOpen
 } from 'lucide-react';
 import { ORIGINS, SKILLS, getPatentByNex, calculateDerivedStats } from '@/lib/character-data';
 import { getPELimitByNex } from '@/lib/dice-roller';
 import { Input } from '@/components/ui/input';
-import { DiceRoller } from '@/components/dice/DiceRoller';
 import { DiceRoller3D } from '@/components/dice/DiceRoller3D';
-import { rollSkillTest, DiceRollResult } from '@/lib/dice-roller';
 import { cn } from '@/lib/utils';
 import { AnimatedProgress } from '@/components/ui/animated-progress';
 import { ConditionList } from '@/components/ui/condition-badge';
+import { AttributeGrid } from '@/components/character/AttributeWithDice';
+import { SkillsGrid } from '@/components/character/SkillsGrid';
 
 interface Character {
   id: string;
@@ -54,15 +58,8 @@ interface Character {
   background: string | null;
   notes: string | null;
   conditions: string[];
+  photo_url?: string | null;
 }
-
-const ATTRIBUTE_LABELS: Record<string, string> = {
-  agility: 'AGI',
-  strength: 'FOR',
-  intellect: 'INT',
-  presence: 'PRE',
-  vigor: 'VIG',
-};
 
 export default function CharacterSheet() {
   const { id } = useParams<{ id: string }>();
@@ -79,7 +76,11 @@ export default function CharacterSheet() {
   const [hpCurrent, setHpCurrent] = useState(0);
   const [peCurrent, setPeCurrent] = useState(0);
   const [sanCurrent, setSanCurrent] = useState(0);
-  const [showDiceRoller, setShowDiceRoller] = useState(false);
+  
+  // Dice roller state
+  const [diceRollerOpen, setDiceRollerOpen] = useState(false);
+  const [rollAttribute, setRollAttribute] = useState(0);
+  const [rollSkillName, setRollSkillName] = useState('');
 
   useEffect(() => {
     async function fetchCharacter() {
@@ -179,6 +180,18 @@ export default function CharacterSheet() {
     }
   };
 
+  const handleAttributeRoll = (attributeValue: number, attributeName: string) => {
+    setRollAttribute(attributeValue);
+    setRollSkillName(attributeName);
+    setDiceRollerOpen(true);
+  };
+
+  const handleSkillRoll = (total: number, skillName: string, attributeValue: number) => {
+    setRollAttribute(attributeValue);
+    setRollSkillName(skillName);
+    setDiceRollerOpen(true);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -190,10 +203,16 @@ export default function CharacterSheet() {
   if (!character) return null;
 
   const origin = ORIGINS.find(o => o.id === character.origin);
-  const trainedSkills = SKILLS.filter(s => character.skills[s.id] > 0);
-
   const sanPercentage = (sanCurrent / character.san_max) * 100;
   const isSanLow = sanPercentage < 30;
+
+  const attributes = {
+    agility: character.agility,
+    strength: character.strength,
+    intellect: character.intellect,
+    presence: character.presence,
+    vigor: character.vigor,
+  };
 
   return (
     <div className={`min-h-screen bg-background ${isSanLow ? 'animate-flicker' : ''}`}>
@@ -247,263 +266,306 @@ export default function CharacterSheet() {
       </header>
 
       <main className="container mx-auto px-4 py-6">
-        {/* Top info bar */}
-        <div className="ordo-panel p-4 mb-6">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-6">
-              <div>
-                <p className="text-xs text-muted-foreground">CLASSE</p>
-                <p className="font-display text-lg">{character.class}</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">ORIGEM</p>
-                <p className="font-display text-lg">{origin?.name || character.origin}</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">PATENTE</p>
-                <p className="font-display text-lg">{character.patent}</p>
+        {/* 2-Column Layout */}
+        <div className="grid lg:grid-cols-[380px_1fr] gap-6">
+          {/* Left Column - Character Info & Stats */}
+          <div className="space-y-4">
+            {/* Character Photo & Basic Info Card */}
+            <div className="ordo-panel p-4">
+              <div className="flex gap-4">
+                {/* Photo */}
+                <div className="w-24 h-24 rounded-lg bg-secondary/50 border border-border flex items-center justify-center flex-shrink-0 overflow-hidden">
+                  {character.photo_url ? (
+                    <img 
+                      src={character.photo_url} 
+                      alt={character.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <Shield className="w-10 h-10 text-muted-foreground/50" />
+                  )}
+                </div>
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-muted-foreground">CLASSE</p>
+                  <p className="font-display text-lg">{character.class}</p>
+                  <p className="text-xs text-muted-foreground mt-2">ORIGEM</p>
+                  <p className="font-display">{origin?.name || character.origin}</p>
+                </div>
+                {/* NEX */}
+                <div className="text-right">
+                  <p className="text-xs text-muted-foreground">NEX</p>
+                  <p className="font-display text-3xl text-secondary">{character.nex}%</p>
+                  <span className="patent-badge text-[10px]">{character.patent}</span>
+                </div>
               </div>
             </div>
-            <div className="text-right">
-              <p className="text-xs text-muted-foreground">NEX</p>
-              <p className="font-display text-4xl text-secondary">{character.nex}%</p>
+
+            {/* Status Bars - Vertical */}
+            <div className="ordo-panel p-4 space-y-4">
+              {/* Defense */}
+              <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <Shield className="w-5 h-5 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">DEFESA</span>
+                </div>
+                <span className="font-display text-2xl">{character.defense}</span>
+              </div>
+
+              {/* HP */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Heart className="w-5 h-5 text-destructive" />
+                    <span className="text-sm text-muted-foreground">PONTOS DE VIDA</span>
+                  </div>
+                  {editMode ? (
+                    <Input
+                      type="number"
+                      value={hpCurrent}
+                      onChange={(e) => setHpCurrent(Math.max(0, Math.min(character.hp_max, parseInt(e.target.value) || 0)))}
+                      className="w-20 text-center font-display text-lg h-8 bg-transparent border-destructive/50"
+                    />
+                  ) : (
+                    <span className="font-display text-xl text-destructive">{hpCurrent}/{character.hp_max}</span>
+                  )}
+                </div>
+                <AnimatedProgress value={hpCurrent} max={character.hp_max} variant="health" size="md" glow={hpCurrent / character.hp_max <= 0.25} />
+              </div>
+
+              {/* PE */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Zap className="w-5 h-5 text-secondary" />
+                    <span className="text-sm text-muted-foreground">PONTOS DE ESFORÇO</span>
+                  </div>
+                  {editMode ? (
+                    <Input
+                      type="number"
+                      value={peCurrent}
+                      onChange={(e) => setPeCurrent(Math.max(0, Math.min(character.pe_max, parseInt(e.target.value) || 0)))}
+                      className="w-20 text-center font-display text-lg h-8 bg-transparent border-secondary/50"
+                    />
+                  ) : (
+                    <span className="font-display text-xl text-secondary">{peCurrent}/{character.pe_max}</span>
+                  )}
+                </div>
+                <AnimatedProgress value={peCurrent} max={character.pe_max} variant="energy" size="md" />
+              </div>
+
+              {/* SAN */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Brain className="w-5 h-5 text-paranormal" />
+                    <span className="text-sm text-muted-foreground">SANIDADE</span>
+                  </div>
+                  {editMode ? (
+                    <Input
+                      type="number"
+                      value={sanCurrent}
+                      onChange={(e) => setSanCurrent(Math.max(0, Math.min(character.san_max, parseInt(e.target.value) || 0)))}
+                      className="w-20 text-center font-display text-lg h-8 bg-transparent border-paranormal/50"
+                    />
+                  ) : (
+                    <span className="font-display text-xl text-paranormal">{sanCurrent}/{character.san_max}</span>
+                  )}
+                </div>
+                <AnimatedProgress value={sanCurrent} max={character.san_max} variant="sanity" size="md" glow={isSanLow} />
+              </div>
+            </div>
+
+            {/* Conditions */}
+            {character.conditions && character.conditions.length > 0 && (
+              <div className="ordo-panel p-4">
+                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-3">CONDIÇÕES ATIVAS</p>
+                <ConditionList conditions={character.conditions} size="md" />
+              </div>
+            )}
+
+            {/* Attributes with Dice */}
+            <div className="ordo-panel p-4">
+              <p className="text-xs text-muted-foreground uppercase tracking-wider mb-3">
+                ATRIBUTOS <span className="text-primary">(clique para rolar)</span>
+              </p>
+              <AttributeGrid 
+                attributes={attributes} 
+                onRoll={handleAttributeRoll}
+              />
             </div>
           </div>
-        </div>
 
-        {/* Main stats with animated progress */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <div className="ordo-panel p-4 text-center">
-            <Shield className="w-6 h-6 mx-auto mb-2 text-muted-foreground" />
-            <p className="text-xs text-muted-foreground">DEFESA</p>
-            <p className="font-display text-3xl">{character.defense}</p>
-          </div>
-
-          <div className="ordo-panel p-4 text-center border-destructive/30">
-            <Heart className="w-6 h-6 mx-auto mb-2 text-destructive" />
-            <p className="text-xs text-muted-foreground">PV</p>
-            {editMode ? (
-              <Input
-                type="number"
-                value={hpCurrent}
-                onChange={(e) => setHpCurrent(Math.max(0, Math.min(character.hp_max, parseInt(e.target.value) || 0)))}
-                className="text-center font-display text-2xl h-10 bg-transparent border-destructive/50"
-              />
-            ) : (
-              <p className="font-display text-3xl text-destructive">{hpCurrent}</p>
+          {/* Right Column - Skills, Powers, Inventory */}
+          <div className="space-y-4">
+            {/* Dice Roller (expandable) */}
+            {diceRollerOpen && (
+              <div className="ordo-panel p-4 animate-fade-in">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="font-display text-sm tracking-wider text-primary">
+                    ROLANDO: {rollSkillName}
+                  </p>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setDiceRollerOpen(false)}
+                  >
+                    Fechar
+                  </Button>
+                </div>
+                <DiceRoller3D 
+                  attributeValue={rollAttribute} 
+                  skillName={rollSkillName}
+                />
+              </div>
             )}
-            <p className="text-xs text-muted-foreground">/ {character.hp_max}</p>
-            <AnimatedProgress
-              value={hpCurrent}
-              max={character.hp_max}
-              variant="health"
-              size="md"
-              showLabel={false}
-              className="mt-2"
-            />
-          </div>
 
-          <div className="ordo-panel p-4 text-center border-secondary/30">
-            <Zap className="w-6 h-6 mx-auto mb-2 text-secondary" />
-            <p className="text-xs text-muted-foreground">PE</p>
-            {editMode ? (
-              <Input
-                type="number"
-                value={peCurrent}
-                onChange={(e) => setPeCurrent(Math.max(0, Math.min(character.pe_max, parseInt(e.target.value) || 0)))}
-                className="text-center font-display text-2xl h-10 bg-transparent border-secondary/50"
-              />
-            ) : (
-              <p className="font-display text-3xl text-secondary">{peCurrent}</p>
+            {/* Quick Dice Button */}
+            {!diceRollerOpen && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setRollAttribute(character.agility);
+                  setRollSkillName('Teste Geral');
+                  setDiceRollerOpen(true);
+                }}
+                className="w-full font-display tracking-wider"
+              >
+                <Dices className="w-5 h-5 mr-2" />
+                ROLAR DADOS
+              </Button>
             )}
-            <p className="text-xs text-muted-foreground">/ {character.pe_max}</p>
-            <AnimatedProgress
-              value={peCurrent}
-              max={character.pe_max}
-              variant="energy"
-              size="md"
-              showLabel={false}
-              className="mt-2"
-            />
-          </div>
 
-          <div className={`ordo-panel p-4 text-center border-paranormal/30 ${isSanLow ? 'paranormal-glow' : ''}`}>
-            <Brain className="w-6 h-6 mx-auto mb-2 text-paranormal" />
-            <p className="text-xs text-muted-foreground">SAN</p>
-            {editMode ? (
-              <Input
-                type="number"
-                value={sanCurrent}
-                onChange={(e) => setSanCurrent(Math.max(0, Math.min(character.san_max, parseInt(e.target.value) || 0)))}
-                className="text-center font-display text-2xl h-10 bg-transparent border-paranormal/50"
-              />
-            ) : (
-              <p className="font-display text-3xl text-paranormal">{sanCurrent}</p>
-            )}
-            <p className="text-xs text-muted-foreground">/ {character.san_max}</p>
-            <AnimatedProgress
-              value={sanCurrent}
-              max={character.san_max}
-              variant="sanity"
-              size="md"
-              showLabel={false}
-              className="mt-2"
-            />
-          </div>
-        </div>
+            {/* Tabs for Skills, Powers, Inventory */}
+            <Tabs defaultValue="skills" className="space-y-4">
+              <TabsList className="bg-card border border-border w-full justify-start">
+                <TabsTrigger value="skills" className="font-display tracking-wider">
+                  <BookOpen className="w-4 h-4 mr-2" />
+                  PERÍCIAS
+                </TabsTrigger>
+                <TabsTrigger value="powers" className="font-display tracking-wider">
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  PODERES
+                </TabsTrigger>
+                <TabsTrigger value="inventory" className="font-display tracking-wider">
+                  <Package className="w-4 h-4 mr-2" />
+                  INVENTÁRIO
+                </TabsTrigger>
+              </TabsList>
 
-        {/* Conditions */}
-        {character.conditions && character.conditions.length > 0 && (
-          <div className="ordo-panel p-4 mb-6">
-            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-3">CONDIÇÕES ATIVAS</p>
-            <ConditionList conditions={character.conditions} size="md" />
-          </div>
-        )}
+              <TabsContent value="skills" className="animate-fade-in">
+                <div className="ordo-panel p-4">
+                  <SkillsGrid 
+                    skills={character.skills} 
+                    attributes={attributes}
+                    onRoll={handleSkillRoll}
+                  />
+                </div>
+              </TabsContent>
 
-        {/* 3D Dice Roller Button */}
-        <div className="mb-6 flex justify-center">
-          <Button
-            variant="outline"
-            onClick={() => setShowDiceRoller(!showDiceRoller)}
-            className="font-display tracking-wider"
-          >
-            <Dices className="w-5 h-5 mr-2" />
-            {showDiceRoller ? 'OCULTAR DADOS' : 'ROLAR DADOS 3D'}
-          </Button>
-        </div>
-
-        {showDiceRoller && (
-          <div className="mb-6">
-            <DiceRoller3D 
-              attributeValue={character.agility} 
-              skillName="Teste Geral"
-            />
-          </div>
-        )}
-
-        {/* Tabs */}
-        <Tabs defaultValue="attributes" className="space-y-4">
-          <TabsList className="bg-card border border-border">
-            <TabsTrigger value="attributes" className="font-display tracking-wider">ATRIBUTOS</TabsTrigger>
-            <TabsTrigger value="skills" className="font-display tracking-wider">PERÍCIAS</TabsTrigger>
-            <TabsTrigger value="powers" className="font-display tracking-wider">PODERES</TabsTrigger>
-            <TabsTrigger value="inventory" className="font-display tracking-wider">INVENTÁRIO</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="attributes" className="animate-fade-in">
-            <div className="ordo-panel p-6">
-              <h3 className="font-display text-xl tracking-wider mb-4 text-primary dossier-header">
-                ATRIBUTOS BASE
-              </h3>
-              <div className="grid grid-cols-5 gap-4">
-                {Object.entries(ATTRIBUTE_LABELS).map(([key, label]) => {
-                  const value = character[key as keyof Character] as number;
-                  return (
-                    <div key={key} className="text-center p-4 bg-muted/30 rounded-sm">
-                      <p className="text-xs text-muted-foreground mb-1">{label}</p>
-                      <p className="font-display text-4xl">{value}</p>
+              <TabsContent value="powers" className="animate-fade-in">
+                <div className="ordo-panel p-4">
+                  <h3 className="font-display text-sm tracking-wider mb-4 text-primary">
+                    PODERES E HABILIDADES
+                  </h3>
+                  {character.powers.length > 0 ? (
+                    <div className="space-y-3">
+                      {character.powers.map((power, i) => (
+                        <div 
+                          key={i}
+                          className="p-4 bg-paranormal/5 border border-paranormal/20 rounded-lg"
+                        >
+                          <h4 className="font-display text-lg text-paranormal">{power.name}</h4>
+                          {power.description && (
+                            <p className="text-sm text-muted-foreground mt-1 font-ritual italic">
+                              {power.description}
+                            </p>
+                          )}
+                        </div>
+                      ))}
                     </div>
-                  );
-                })}
-              </div>
-            </div>
-          </TabsContent>
+                  ) : (
+                    <p className="text-muted-foreground">Nenhum poder registrado.</p>
+                  )}
 
-          <TabsContent value="skills" className="animate-fade-in">
-            <div className="ordo-panel p-6">
-              <h3 className="font-display text-xl tracking-wider mb-4 text-primary dossier-header">
-                PERÍCIAS TREINADAS
-              </h3>
-              {trainedSkills.length > 0 ? (
-                <div className="grid md:grid-cols-2 gap-2">
-                  {trainedSkills.map(skill => {
-                    const attrValue = character[skill.attribute as keyof Character] as number;
-                    const trainingBonus = 5;
-                    const total = attrValue + trainingBonus;
-                    return (
-                      <div 
-                        key={skill.id}
-                        className="flex items-center justify-between p-3 bg-muted/30 rounded-sm"
-                      >
-                        <div className="flex items-center gap-2">
-                          <span>{skill.name}</span>
-                          <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                            {ATTRIBUTE_LABELS[skill.attribute]}
+                  {/* Rituals */}
+                  {character.rituals && character.rituals.length > 0 && (
+                    <>
+                      <h3 className="font-display text-sm tracking-wider mt-6 mb-4 text-paranormal">
+                        RITUAIS
+                      </h3>
+                      <div className="space-y-2">
+                        {character.rituals.map((ritual, i) => (
+                          <div 
+                            key={i}
+                            className="flex items-center justify-between p-3 bg-paranormal/10 border border-paranormal/30 rounded-lg"
+                          >
+                            <span className="font-medium">{ritual.name}</span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs px-2 py-0.5 rounded bg-paranormal/20 text-paranormal">
+                                {ritual.element}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                Círculo {ritual.circle}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="inventory" className="animate-fade-in">
+                <div className="ordo-panel p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-display text-sm tracking-wider text-primary">
+                      INVENTÁRIO
+                    </h3>
+                    <span className="text-xs text-muted-foreground">
+                      {character.inventory.reduce((acc, item) => acc + item.slots, 0)} / {5 * Math.max(1, character.strength)} espaços
+                    </span>
+                  </div>
+                  {character.inventory.length > 0 ? (
+                    <div className="space-y-2">
+                      {character.inventory.map((item, i) => (
+                        <div 
+                          key={i}
+                          className="flex items-center justify-between p-3 bg-muted/30 border border-border/50 rounded-lg"
+                        >
+                          <div>
+                            <span className="font-medium">{item.name}</span>
+                            <span className="text-xs text-muted-foreground ml-2">
+                              {item.category}
+                            </span>
+                          </div>
+                          <span className="text-xs px-2 py-1 bg-secondary/50 rounded">
+                            {item.slots} espaço{item.slots !== 1 ? 's' : ''}
                           </span>
                         </div>
-                        <span className="font-display text-xl text-secondary">+{total}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <p className="text-muted-foreground">Nenhuma perícia treinada.</p>
-              )}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="powers" className="animate-fade-in">
-            <div className="ordo-panel p-6">
-              <h3 className="font-display text-xl tracking-wider mb-4 text-primary dossier-header">
-                PODERES E HABILIDADES
-              </h3>
-              {character.powers.length > 0 ? (
-                <div className="space-y-3">
-                  {character.powers.map((power, i) => (
-                    <div 
-                      key={i}
-                      className="p-4 bg-paranormal/5 border border-paranormal/20 rounded-sm"
-                    >
-                      <h4 className="font-display text-lg text-paranormal">{power.name}</h4>
-                      {power.description && (
-                        <p className="text-sm text-muted-foreground mt-1 font-ritual italic">
-                          {power.description}
-                        </p>
-                      )}
+                      ))}
                     </div>
-                  ))}
+                  ) : (
+                    <p className="text-muted-foreground">Inventário vazio.</p>
+                  )}
                 </div>
-              ) : (
-                <p className="text-muted-foreground">Nenhum poder registrado.</p>
-              )}
-            </div>
-          </TabsContent>
+              </TabsContent>
+            </Tabs>
 
-          <TabsContent value="inventory" className="animate-fade-in">
-            <div className="ordo-panel p-6">
-              <h3 className="font-display text-xl tracking-wider mb-4 text-primary dossier-header">
-                INVENTÁRIO
-              </h3>
-              {character.inventory.length > 0 ? (
-                <div className="space-y-2">
-                  {character.inventory.map((item, i) => (
-                    <div 
-                      key={i}
-                      className="flex items-center justify-between p-3 bg-muted/30 rounded-sm"
-                    >
-                      <span>{item.name}</span>
-                      <span className="text-xs text-muted-foreground">{item.category}</span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-muted-foreground">Inventário vazio.</p>
-              )}
-            </div>
-          </TabsContent>
-        </Tabs>
-
-        {/* Background */}
-        {character.background && (
-          <div className="ordo-panel p-6 mt-6">
-            <h3 className="font-display text-xl tracking-wider mb-4 text-primary dossier-header">
-              HISTÓRICO
-            </h3>
-            <p className="text-muted-foreground font-ritual italic whitespace-pre-wrap">
-              {character.background}
-            </p>
+            {/* Background */}
+            {character.background && (
+              <div className="ordo-panel p-4">
+                <h3 className="font-display text-sm tracking-wider mb-3 text-primary">
+                  HISTÓRIA
+                </h3>
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                  {character.background}
+                </p>
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </main>
     </div>
   );

@@ -134,6 +134,16 @@
 }
 
 @layer components {
+  /* Ordo Panel - main container style */
+  .ordo-panel {
+    @apply relative bg-card/50 border border-border rounded-lg overflow-hidden backdrop-blur-sm;
+    @apply before:absolute before:inset-0 before:bg-gradient-to-br before:from-primary/5 before:to-transparent before:pointer-events-none;
+  }
+
+  .ordo-panel:hover {
+    @apply border-border/80;
+  }
+
   /* Card de dossiê */
   .dossier-card {
     @apply relative bg-card border border-border rounded-lg overflow-hidden;
@@ -210,6 +220,17 @@
     @apply flex items-center justify-between p-2 border-b border-border/30 last:border-0;
     @apply transition-colors hover:bg-secondary/30;
   }
+
+  /* Paranormal glow effect */
+  .paranormal-glow {
+    animation: paranormal-pulse 2s ease-in-out infinite;
+    box-shadow: 0 0 20px hsl(var(--paranormal) / 0.3);
+  }
+
+  /* Flicker animation for low sanity */
+  .animate-flicker {
+    animation: flicker 4s ease-in-out infinite;
+  }
 }
 
 @layer utilities {
@@ -281,5 +302,35 @@
   .bg-dots-pattern {
     background-image: radial-gradient(circle, hsl(var(--border)/0.3) 1px, transparent 1px);
     background-size: 16px 16px;
+  }
+}
+
+@keyframes paranormal-pulse {
+  0%, 100% {
+    box-shadow: 0 0 10px hsl(var(--paranormal) / 0.2);
+  }
+  50% {
+    box-shadow: 0 0 25px hsl(var(--paranormal) / 0.4);
+  }
+}
+
+@keyframes flicker {
+  0%, 100% {
+    opacity: 1;
+  }
+  92% {
+    opacity: 1;
+  }
+  93% {
+    opacity: 0.8;
+  }
+  94% {
+    opacity: 1;
+  }
+  95% {
+    opacity: 0.9;
+  }
+  96% {
+    opacity: 1;
   }
 }

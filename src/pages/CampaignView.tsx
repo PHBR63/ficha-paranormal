@@ -11,23 +11,18 @@ import { useToast } from '@/hooks/use-toast';
 import { 
   ArrowLeft, 
   Loader2, 
-  Users, 
   Crown, 
   Send,
-  Settings,
   Copy,
   RefreshCw,
   UserPlus,
   Dices,
   MessageSquare,
   Scroll,
-  Calendar,
-  Trash2,
-  User,
-  X,
   UserCog,
   Activity,
-  Swords
+  Swords,
+  Users
 } from 'lucide-react';
 import {
   Dialog,
@@ -44,6 +39,8 @@ import { CharacterSelectDialog } from '@/components/campaign/CharacterSelectDial
 import { MemberConditionsPanel } from '@/components/campaign/MemberConditionsPanel';
 import { CombatTracker } from '@/components/combat/CombatTracker';
 import { DiceRoller3D } from '@/components/dice/DiceRoller3D';
+import { PlayersSidebar } from '@/components/campaign/PlayersSidebar';
+import { CampaignStatusGrid } from '@/components/campaign/CampaignStatusGrid';
 
 interface Campaign {
   id: string;
@@ -72,6 +69,11 @@ interface CampaignMember {
     nex: number;
     hp_current: number;
     hp_max: number;
+    pe_current: number;
+    pe_max: number;
+    san_current: number;
+    san_max: number;
+    photo_url: string | null;
     conditions: string[];
   } | null;
 }
@@ -168,7 +170,7 @@ export default function CampaignView() {
           if (member.character_id) {
             const { data: charData } = await supabase
               .from('characters')
-              .select('id, name, class, nex, hp_current, hp_max, conditions')
+              .select('id, name, class, nex, hp_current, hp_max, pe_current, pe_max, san_current, san_max, photo_url, conditions')
               .eq('id', member.character_id)
               .single();
             character = charData;
@@ -438,7 +440,7 @@ export default function CampaignView() {
       if (characterId) {
         const { data: charData } = await supabase
           .from('characters')
-          .select('id, name, class, nex, hp_current, hp_max, conditions')
+          .select('id, name, class, nex, hp_current, hp_max, pe_current, pe_max, san_current, san_max, photo_url, conditions')
           .eq('id', characterId)
           .single();
 
@@ -594,59 +596,15 @@ export default function CampaignView() {
 
       {/* Main content */}
       <div className="flex-1 flex">
-        {/* Sidebar - Members */}
-        <aside className="w-64 border-r border-border bg-card/50 hidden lg:block">
-          <div className="p-4">
-            <h3 className="font-display text-sm tracking-wider text-muted-foreground mb-4">
-              MEMBROS ({members.length})
-            </h3>
-            <div className="space-y-2">
-              {members.map((member) => (
-                <div
-                  key={member.id}
-                  className={cn(
-                    'p-3 rounded-lg bg-muted/30 border border-border/50',
-                    member.role === 'master' && 'border-primary/30'
-                  )}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      {member.role === 'master' ? (
-                        <Crown className="w-4 h-4 text-primary" />
-                      ) : (
-                        <User className="w-4 h-4 text-muted-foreground" />
-                      )}
-                      <span className="text-sm font-medium">
-                        {member.profiles?.display_name || 'Jogador'}
-                      </span>
-                    </div>
-                    {isMaster && member.role !== 'master' && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="w-6 h-6 opacity-0 group-hover:opacity-100"
-                        onClick={() => removeMember(member.id)}
-                      >
-                        <X className="w-3 h-3" />
-                      </Button>
-                    )}
-                  </div>
-                  {member.characters && (
-                    <p className="text-xs text-muted-foreground mt-1 ml-6">
-                      {member.characters.name} • {member.characters.class} {member.characters.nex}%
-                    </p>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        </aside>
-
-        {/* Chat area */}
-        <main className="flex-1 flex flex-col">
+        {/* Main area */}
+        <main className="flex-1 flex flex-col min-w-0">
           <Tabs defaultValue="chat" className="flex-1 flex flex-col">
             <div className="border-b border-border bg-card/30">
               <TabsList className="bg-transparent px-4">
+                <TabsTrigger value="status" className="font-display tracking-wider">
+                  <Users className="w-4 h-4 mr-2" />
+                  AGENTES
+                </TabsTrigger>
                 <TabsTrigger value="chat" className="font-display tracking-wider">
                   <MessageSquare className="w-4 h-4 mr-2" />
                   CHAT
@@ -669,13 +627,28 @@ export default function CampaignView() {
                     MESTRE
                   </TabsTrigger>
                 )}
-              </TabsList>
+            </TabsList>
             </div>
 
-            <TabsContent value="chat" className="flex-1 flex flex-col m-0">
+            {/* Status Grid Tab - New */}
+            <TabsContent value="status" className="flex-1 p-4 m-0 overflow-auto">
+              <div className="max-w-5xl mx-auto">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-2">
+                    <Users className="w-5 h-5 text-primary" />
+                    <h3 className="font-display text-lg tracking-wider text-primary">
+                      STATUS DOS AGENTES
+                    </h3>
+                  </div>
+                </div>
+                <CampaignStatusGrid members={members} isMaster={isMaster} />
+              </div>
+            </TabsContent>
+
+            <TabsContent value="chat" className="flex-1 flex flex-col m-0 min-h-0">
               {/* Messages */}
               <ScrollArea className="flex-1 p-4">
-                <div className="space-y-3">
+                <div className="space-y-3 max-w-3xl mx-auto">
                   {messages.map((msg) => {
                     const isOwn = msg.user_id === user?.id;
                     const isMasterMsg = msg.user_id === campaign.master_id;
@@ -724,7 +697,7 @@ export default function CampaignView() {
               </ScrollArea>
 
               {/* Input */}
-              <div className="p-4 border-t border-border bg-card/50">
+              <div className="p-4 border-t border-border bg-card/50 max-w-3xl mx-auto w-full">
                 <div className="flex items-center gap-2">
                   <Button
                     variant="outline"
@@ -847,6 +820,14 @@ export default function CampaignView() {
             )}
           </Tabs>
         </main>
+        
+        {/* Players Sidebar - Right side */}
+        <PlayersSidebar
+          members={members}
+          masterId={campaign.master_id}
+          isMaster={isMaster}
+          onRemoveMember={removeMember}
+        />
       </div>
 
       {/* Character Select Dialog */}
