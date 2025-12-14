@@ -1,12 +1,16 @@
 import { ORIGINS, CLASSES, SKILLS, getPatentByNex } from '@/lib/character-data';
 import { CLASS_PROFICIENCIES, CLASS_INITIAL_ABILITIES } from '@/lib/character-builder-engine';
-import { Shield, Footprints, Swords } from 'lucide-react';
+import { Shield, Footprints, Swords, Edit2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { motion } from 'framer-motion';
 import type { CharacterFormData } from '@/pages/CharacterCreate';
 import type { RebuildResult } from '@/lib/character-builder-engine';
 
 interface StepReviewProps {
   formData: CharacterFormData;
   buildResult: RebuildResult;
+  updateFormData?: (updates: Partial<CharacterFormData>) => void;
+  onStepClick?: (step: number) => void;
 }
 
 const ATTRIBUTE_LABELS: Record<string, string> = {
@@ -17,7 +21,7 @@ const ATTRIBUTE_LABELS: Record<string, string> = {
   vigor: 'VIG',
 };
 
-export function StepReview({ formData, buildResult }: StepReviewProps) {
+export function StepReview({ formData, buildResult, onStepClick }: StepReviewProps) {
   const origin = ORIGINS.find(o => o.id === formData.origin);
   const characterClass = CLASSES.find(c => c.id === formData.characterClass);
   const patent = getPatentByNex(formData.nex);
@@ -29,6 +33,17 @@ export function StepReview({ formData, buildResult }: StepReviewProps) {
     return skill?.name || id;
   });
 
+  const EditButton = ({ step }: { step: number }) => (
+    <Button
+      variant="ghost"
+      size="sm"
+      onClick={() => onStepClick?.(step)}
+      className="opacity-0 group-hover:opacity-100 transition-opacity"
+    >
+      <Edit2 className="w-3 h-3" />
+    </Button>
+  );
+
   return (
     <div className="space-y-6">
       <div className="text-center mb-8">
@@ -39,7 +54,11 @@ export function StepReview({ formData, buildResult }: StepReviewProps) {
       </div>
 
       {/* Header card */}
-      <div className="ordo-panel p-6">
+      <motion.div 
+        className="ordo-panel p-6 group"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
         <div className="flex justify-between items-start mb-4">
           <div>
             <h3 className="font-display text-3xl tracking-wider text-primary">{formData.name || 'Sem nome'}</h3>
@@ -55,9 +74,12 @@ export function StepReview({ formData, buildResult }: StepReviewProps) {
               {formData.gender && <span>{formData.gender}</span>}
             </div>
           </div>
-          <div className="text-right">
-            <span className="font-display text-4xl text-secondary">{formData.nex}%</span>
-            <p className="text-xs text-muted-foreground">NEX</p>
+          <div className="flex items-start gap-2">
+            <EditButton step={0} />
+            <div className="text-right">
+              <span className="font-display text-4xl text-secondary">{formData.nex}%</span>
+              <p className="text-xs text-muted-foreground">NEX</p>
+            </div>
           </div>
         </div>
 
@@ -75,7 +97,7 @@ export function StepReview({ formData, buildResult }: StepReviewProps) {
             <span className="text-sm">{patent}</span>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
@@ -116,8 +138,11 @@ export function StepReview({ formData, buildResult }: StepReviewProps) {
       </div>
 
       {/* Attributes */}
-      <div className="ordo-panel p-4">
-        <h4 className="font-display text-lg tracking-wider mb-3 text-primary">ATRIBUTOS</h4>
+      <div className="ordo-panel p-4 group">
+        <div className="flex items-center justify-between mb-3">
+          <h4 className="font-display text-lg tracking-wider text-primary">ATRIBUTOS</h4>
+          <EditButton step={1} />
+        </div>
         <div className="grid grid-cols-5 gap-2">
           {Object.entries(formData.attributes).map(([key, value]) => (
             <div key={key} className="text-center p-2 bg-muted/50 rounded-sm">
@@ -137,10 +162,7 @@ export function StepReview({ formData, buildResult }: StepReviewProps) {
           </div>
           <div className="flex flex-wrap gap-2">
             {proficiencies.map((prof) => (
-              <span 
-                key={prof}
-                className="px-3 py-1 bg-muted text-sm rounded-sm"
-              >
+              <span key={prof} className="px-3 py-1 bg-muted text-sm rounded-sm">
                 {prof}
               </span>
             ))}
@@ -149,17 +171,17 @@ export function StepReview({ formData, buildResult }: StepReviewProps) {
       )}
 
       {/* Skills */}
-      <div className="ordo-panel p-4">
-        <h4 className="font-display text-lg tracking-wider mb-3 text-primary">
-          PERÍCIAS TREINADAS ({trainedSkillNames.length})
-        </h4>
+      <div className="ordo-panel p-4 group">
+        <div className="flex items-center justify-between mb-3">
+          <h4 className="font-display text-lg tracking-wider text-primary">
+            PERÍCIAS TREINADAS ({trainedSkillNames.length})
+          </h4>
+          <EditButton step={4} />
+        </div>
         {trainedSkillNames.length > 0 ? (
           <div className="flex flex-wrap gap-2">
             {trainedSkillNames.map(name => (
-              <span 
-                key={name}
-                className="px-3 py-1 bg-secondary/20 text-secondary text-sm rounded-sm"
-              >
+              <span key={name} className="px-3 py-1 bg-secondary/20 text-secondary text-sm rounded-sm">
                 {name}
               </span>
             ))}
@@ -175,10 +197,7 @@ export function StepReview({ formData, buildResult }: StepReviewProps) {
           <h4 className="font-display text-lg tracking-wider mb-3 text-primary">HABILIDADES DE CLASSE</h4>
           <div className="flex flex-wrap gap-2">
             {abilities.map((ability) => (
-              <span 
-                key={ability}
-                className="px-3 py-1 bg-primary/20 text-primary text-sm rounded-sm"
-              >
+              <span key={ability} className="px-3 py-1 bg-primary/20 text-primary text-sm rounded-sm">
                 {ability}
               </span>
             ))}
@@ -232,7 +251,12 @@ export function StepReview({ formData, buildResult }: StepReviewProps) {
       )}
 
       {/* Status */}
-      <div className={`ordo-panel p-4 ${canFinalize ? 'bg-success/5 border-success/20' : 'bg-warning/5 border-warning/20'}`}>
+      <motion.div 
+        className={`ordo-panel p-4 ${canFinalize ? 'bg-success/5 border-success/20' : 'bg-warning/5 border-warning/20'}`}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.3 }}
+      >
         <p className="text-sm text-center">
           {canFinalize ? (
             <span className="text-success font-medium">✓ DOSSIÊ PRONTO PARA REGISTRO</span>
@@ -240,7 +264,7 @@ export function StepReview({ formData, buildResult }: StepReviewProps) {
             <span className="text-warning font-medium">⚠ Complete todas as escolhas pendentes</span>
           )}
         </p>
-      </div>
+      </motion.div>
     </div>
   );
 }

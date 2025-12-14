@@ -1,7 +1,8 @@
 import { useState, useRef } from 'react';
-import { Camera, X, Loader2, Upload } from 'lucide-react';
+import { Camera, X, Loader2, Upload, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 
 interface ImageUploaderProps {
   value?: string | null;
@@ -18,6 +19,9 @@ const sizeClasses = {
   lg: 'w-40 h-40',
 };
 
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+
 export function ImageUploader({
   value,
   onChange,
@@ -30,25 +34,55 @@ export function ImageUploader({
   const [isDragging, setIsDragging] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(value || null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
 
-  const handleFileSelect = async (file: File) => {
-    if (!file.type.startsWith('image/')) {
-      return;
+  const validateFile = (file: File): boolean => {
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      toast({
+        title: 'Formato inválido',
+        description: 'Use apenas imagens JPG, PNG, WebP ou GIF.',
+        variant: 'destructive',
+      });
+      return false;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
+    if (file.size > MAX_FILE_SIZE) {
+      toast({
+        title: 'Arquivo muito grande',
+        description: 'O tamanho máximo é 5MB.',
+        variant: 'destructive',
+      });
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleFileSelect = async (file: File) => {
+    if (!validateFile(file)) {
       return;
     }
 
     setIsLoading(true);
 
-    // Create local preview
     const reader = new FileReader();
     reader.onload = (e) => {
       const url = e.target?.result as string;
       setPreviewUrl(url);
       onChange(url, file);
       setIsLoading(false);
+      toast({
+        title: 'Foto adicionada',
+        description: 'A imagem foi carregada com sucesso.',
+      });
+    };
+    reader.onerror = () => {
+      setIsLoading(false);
+      toast({
+        title: 'Erro ao carregar',
+        description: 'Não foi possível ler o arquivo.',
+        variant: 'destructive',
+      });
     };
     reader.readAsDataURL(file);
   };
@@ -135,6 +169,7 @@ export function ImageUploader({
         <div className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground group-hover:text-primary transition-colors">
           <Upload className="w-6 h-6 mb-1" />
           <span className="text-xs text-center px-2">{placeholder}</span>
+          <span className="text-[10px] opacity-70 mt-1">Max 5MB</span>
         </div>
       )}
     </div>

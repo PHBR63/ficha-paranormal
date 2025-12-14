@@ -1,18 +1,25 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, ArrowRight, Check, Loader2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { StepConcept } from '@/components/character/StepConcept';
 import { StepAttributes } from '@/components/character/StepAttributes';
 import { StepOrigin } from '@/components/character/StepOrigin';
 import { StepClass } from '@/components/character/StepClass';
 import { StepSkills } from '@/components/character/StepSkills';
 import { StepReview } from '@/components/character/StepReview';
+import { CharacterCreationStepper } from '@/components/character/CharacterCreationStepper';
+import { StatsPreviewWidget } from '@/components/character/StatsPreviewWidget';
+import { RestoreDraftDialog } from '@/components/character/RestoreDraftDialog';
+import { ExitConfirmDialog } from '@/components/character/ExitConfirmDialog';
 import { ORIGINS, calculateDerivedStats, calculateDefense } from '@/lib/character-data';
 import { rebuildCharacterSheet, buildStateToFormData, CLASS_PROFICIENCIES, CLASS_INITIAL_ABILITIES } from '@/lib/character-builder-engine';
+import { useCharacterAutoSave, loadCharacterDraft, clearCharacterDraft } from '@/hooks/useCharacterAutoSave';
+import confetti from 'canvas-confetti';
 
 export type CharacterFormData = {
   // Conceito
@@ -65,6 +72,37 @@ const STEPS = [
   { id: 'review', title: 'REVISÃO' },
 ];
 
+const initialFormData: CharacterFormData = {
+  name: '',
+  playerName: '',
+  concept: '',
+  age: null,
+  gender: '',
+  appearance: '',
+  personality: '',
+  photoUrl: null,
+  photoFile: null,
+  origin: '',
+  characterClass: '',
+  nex: 5,
+  attributes: {
+    agility: 1,
+    strength: 1,
+    intellect: 1,
+    presence: 1,
+    vigor: 1,
+  },
+  originSkills: [],
+  classSkillChoices: {},
+  freeSkills: [],
+  conflictResolutions: {},
+  skills: {},
+  powers: [],
+  background: '',
+  proficiencies: [],
+  abilities: [],
+};
+
 export default function CharacterCreate() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -72,78 +110,152 @@ export default function CharacterCreate() {
   
   const [currentStep, setCurrentStep] = useState(0);
   const [saving, setSaving] = useState(false);
-  
-  const [formData, setFormData] = useState<CharacterFormData>({
-    name: '',
-    playerName: '',
-    concept: '',
-    age: null,
-    gender: '',
-    appearance: '',
-    personality: '',
-    photoUrl: null,
-    photoFile: null,
-    origin: '',
-    characterClass: '',
-    nex: 5,
-    attributes: {
-      agility: 1,
-      strength: 1,
-      intellect: 1,
-      presence: 1,
-      vigor: 1,
-    },
-    originSkills: [],
-    classSkillChoices: {},
-    freeSkills: [],
-    conflictResolutions: {},
-    skills: {},
-    powers: [],
-    background: '',
-    proficiencies: [],
-    abilities: [],
-  });
+  const [formData, setFormData] = useState<CharacterFormData>(initialFormData);
+  const [showRestoreDialog, setShowRestoreDialog] = useState(false);
+  const [showExitDialog, setShowExitDialog] = useState(false);
+  const [draftData, setDraftData] = useState<ReturnType<typeof loadCharacterDraft>>(null);
 
-  const updateFormData = (updates: Partial<CharacterFormData>) => {
+  // Auto-save hook
+  useCharacterAutoSave(formData, currentStep, formData.name.length > 0);
+
+  // Check for draft on mount
+  useEffect(() => {
+    const draft = loadCharacterDraft();
+    if (draft && draft.formData.name) {
+      setDraftData(draft);
+      setShowRestoreDialog(true);
+    }
+  }, []);
+
+  const handleRestoreDraft = useCallback(() => {
+    if (draftData) {
+      setFormData({ ...draftData.formData, photoFile: null });
+      setCurrentStep(draftData.currentStep);
+      toast({
+        title: 'Rascunho restaurado',
+        description: 'Seu progresso anterior foi recuperado.',
+      });
+    }
+    setShowRestoreDialog(false);
+  }, [draftData, toast]);
+
+  const handleDiscardDraft = useCallback(() => {
+    clearCharacterDraft();
+    setShowRestoreDialog(false);
+  }, []);
+
+  const updateFormData = useCallback((updates: Partial<CharacterFormData>) => {
     setFormData(prev => ({ ...prev, ...updates }));
-  };
+  }, []);
 
   // Rebuild character sheet state
-  const buildState = {
+  const buildState = useMemo(() => ({
     ...formData,
-  };
+  }), [formData]);
   
-  const buildResult = rebuildCharacterSheet(buildState);
+  const buildResult = useMemo(() => rebuildCharacterSheet(buildState), [buildState]);
 
-  const canProceed = () => {
-    switch (currentStep) {
-      case 0: return formData.name.trim().length >= 2;
-      case 1: {
-        const total = Object.values(formData.attributes).reduce((a, b) => a + b, 0);
-        return total === 9 || total === 10; // 4 or 5 points distributed (base 5 + 4/5 = 9/10)
-      }
-      case 2: return formData.origin !== '';
-      case 3: return formData.characterClass !== '';
-      case 4: {
-        // Must have resolved all choices and conflicts
-        return buildResult.pendingChoices.length === 0 && buildResult.pendingConflicts.length === 0;
-      }
-      case 5: return buildResult.canFinalize;
-      default: return false;
+  // Derived stats for preview
+  const previewStats = useMemo(() => {
+    if (!formData.characterClass) {
+      return { hp: 0, pe: 0, san: 0, defense: 10, movement: 9 };
     }
-  };
+    const stats = calculateDerivedStats(
+      formData.characterClass,
+      formData.attributes.vigor,
+      formData.attributes.presence,
+      formData.nex,
+      formData.origin
+    );
+    return {
+      ...stats,
+      defense: calculateDefense(formData.attributes.agility),
+      movement: 9,
+    };
+  }, [formData.characterClass, formData.attributes, formData.nex, formData.origin]);
 
-  const handleNext = () => {
+  // Calculate completed steps
+  const completedSteps = useMemo(() => {
+    const completed: number[] = [];
+    
+    // Step 0: Concept
+    if (formData.name.trim().length >= 2) {
+      completed.push(0);
+    }
+    
+    // Step 1: Attributes
+    const total = Object.values(formData.attributes).reduce((a, b) => a + b, 0);
+    if (total === 9 || total === 10) {
+      completed.push(1);
+    }
+    
+    // Step 2: Origin
+    if (formData.origin !== '') {
+      completed.push(2);
+    }
+    
+    // Step 3: Class
+    if (formData.characterClass !== '') {
+      completed.push(3);
+    }
+    
+    // Step 4: Skills
+    if (buildResult.pendingChoices.length === 0 && buildResult.pendingConflicts.length === 0 && formData.characterClass) {
+      completed.push(4);
+    }
+    
+    // Step 5: Review (can finalize)
+    if (buildResult.canFinalize) {
+      completed.push(5);
+    }
+    
+    return completed;
+  }, [formData, buildResult]);
+
+  const canProceed = useCallback(() => {
+    return completedSteps.includes(currentStep);
+  }, [completedSteps, currentStep]);
+
+  const canNavigateToStep = useCallback((step: number) => {
+    // Can always go back
+    if (step < currentStep) return true;
+    // Can go forward if all previous steps are complete
+    for (let i = 0; i < step; i++) {
+      if (!completedSteps.includes(i)) return false;
+    }
+    return true;
+  }, [currentStep, completedSteps]);
+
+  const handleStepClick = useCallback((step: number) => {
+    if (canNavigateToStep(step)) {
+      setCurrentStep(step);
+    }
+  }, [canNavigateToStep]);
+
+  const handleNext = useCallback(() => {
     if (currentStep < STEPS.length - 1) {
       setCurrentStep(prev => prev + 1);
     }
-  };
+  }, [currentStep]);
 
-  const handleBack = () => {
+  const handleBack = useCallback(() => {
     if (currentStep > 0) {
       setCurrentStep(prev => prev - 1);
     }
-  };
+  }, [currentStep]);
+
+  const handleExitRequest = useCallback(() => {
+    if (formData.name) {
+      setShowExitDialog(true);
+    } else {
+      navigate('/dashboard');
+    }
+  }, [formData.name, navigate]);
+
+  const handleExitConfirm = useCallback(() => {
+    setShowExitDialog(false);
+    navigate('/dashboard');
+  }, [navigate]);
 
   const handleSave = async () => {
     if (!user) return;
@@ -173,7 +285,6 @@ export default function CharacterCreate() {
             variant: 'destructive',
           });
         } else {
-          // Get public URL
           const { data: { publicUrl } } = supabase.storage
             .from('character-avatars')
             .getPublicUrl(fileName);
@@ -199,9 +310,7 @@ export default function CharacterCreate() {
         ...formData.powers
       ];
 
-      // Build all trained skills
       const allSkills = buildStateToFormData(buildState);
-
       const proficiencies = CLASS_PROFICIENCIES[formData.characterClass] || [];
       const abilities = CLASS_INITIAL_ABILITIES[formData.characterClass] || [];
 
@@ -240,6 +349,17 @@ export default function CharacterCreate() {
 
       if (error) throw error;
 
+      // Clear draft after successful save
+      clearCharacterDraft();
+
+      // Celebration effect
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#a855f7', '#ec4899', '#6366f1'],
+      });
+
       toast({
         title: 'Agente registrado!',
         description: `${formData.name} foi adicionado ao sistema da Ordo Realitas.`,
@@ -258,34 +378,57 @@ export default function CharacterCreate() {
   };
 
   const renderStep = () => {
-    switch (currentStep) {
-      case 0:
-        return <StepConcept formData={formData} updateFormData={updateFormData} />;
-      case 1:
-        return <StepAttributes formData={formData} updateFormData={updateFormData} />;
-      case 2:
-        return <StepOrigin formData={formData} updateFormData={updateFormData} />;
-      case 3:
-        return <StepClass formData={formData} updateFormData={updateFormData} />;
-      case 4:
-        return <StepSkills formData={formData} updateFormData={updateFormData} buildResult={buildResult} />;
-      case 5:
-        return <StepReview formData={formData} buildResult={buildResult} />;
-      default:
-        return null;
-    }
+    const stepVariants = {
+      enter: { opacity: 0, x: 20 },
+      center: { opacity: 1, x: 0 },
+      exit: { opacity: 0, x: -20 },
+    };
+
+    const content = (() => {
+      switch (currentStep) {
+        case 0:
+          return <StepConcept formData={formData} updateFormData={updateFormData} />;
+        case 1:
+          return <StepAttributes formData={formData} updateFormData={updateFormData} />;
+        case 2:
+          return <StepOrigin formData={formData} updateFormData={updateFormData} />;
+        case 3:
+          return <StepClass formData={formData} updateFormData={updateFormData} />;
+        case 4:
+          return <StepSkills formData={formData} updateFormData={updateFormData} buildResult={buildResult} />;
+        case 5:
+          return <StepReview formData={formData} buildResult={buildResult} updateFormData={updateFormData} onStepClick={handleStepClick} />;
+        default:
+          return null;
+      }
+    })();
+
+    return (
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={currentStep}
+          variants={stepVariants}
+          initial="enter"
+          animate="center"
+          exit="exit"
+          transition={{ duration: 0.3 }}
+        >
+          {content}
+        </motion.div>
+      </AnimatePresence>
+    );
   };
 
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b border-border bg-card/50">
+      <header className="border-b border-border bg-card/50 sticky top-0 z-30 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center gap-4">
             <Button 
               variant="ghost" 
               size="sm" 
-              onClick={() => navigate('/dashboard')}
+              onClick={handleExitRequest}
               className="text-muted-foreground"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
@@ -298,48 +441,18 @@ export default function CharacterCreate() {
       </header>
 
       <main className="container mx-auto px-4 py-8 max-w-4xl">
-        {/* Progress */}
+        {/* Stepper */}
         <div className="mb-8">
-          <div className="flex justify-between items-center mb-4">
-            {STEPS.map((step, index) => (
-              <div 
-                key={step.id}
-                className={`flex items-center ${index < STEPS.length - 1 ? 'flex-1' : ''}`}
-              >
-                <div 
-                  className={`
-                    w-8 h-8 rounded-sm flex items-center justify-center font-display text-sm
-                    ${index < currentStep 
-                      ? 'bg-primary text-primary-foreground' 
-                      : index === currentStep 
-                        ? 'bg-primary/20 border border-primary text-primary' 
-                        : 'bg-muted text-muted-foreground'}
-                  `}
-                >
-                  {index < currentStep ? <Check className="w-4 h-4" /> : index + 1}
-                </div>
-                {index < STEPS.length - 1 && (
-                  <div 
-                    className={`flex-1 h-0.5 mx-2 ${
-                      index < currentStep ? 'bg-primary' : 'bg-muted'
-                    }`}
-                  />
-                )}
-              </div>
-            ))}
-          </div>
-          <div className="text-center">
-            <p className="font-display text-lg tracking-wider text-primary">
-              {STEPS[currentStep].title}
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Passo {currentStep + 1} de {STEPS.length}
-            </p>
-          </div>
+          <CharacterCreationStepper
+            currentStep={currentStep}
+            completedSteps={completedSteps}
+            onStepClick={handleStepClick}
+            canNavigate={canNavigateToStep}
+          />
         </div>
 
         {/* Step content */}
-        <div className="ordo-panel p-6 mb-6 animate-fade-in">
+        <div className="ordo-panel p-6 mb-6">
           {renderStep()}
         </div>
 
@@ -380,6 +493,32 @@ export default function CharacterCreate() {
           )}
         </div>
       </main>
+
+      {/* Stats Preview Widget */}
+      <StatsPreviewWidget
+        hp={previewStats.hp}
+        pe={previewStats.pe}
+        san={previewStats.san}
+        defense={previewStats.defense}
+        movement={previewStats.movement}
+        characterClass={formData.characterClass}
+        show={currentStep >= 1 && currentStep <= 4 && !!formData.characterClass}
+      />
+
+      {/* Dialogs */}
+      <RestoreDraftDialog
+        open={showRestoreDialog}
+        onRestore={handleRestoreDraft}
+        onDiscard={handleDiscardDraft}
+        characterName={draftData?.formData.name}
+        savedAt={draftData?.savedAt}
+      />
+
+      <ExitConfirmDialog
+        open={showExitDialog}
+        onConfirm={handleExitConfirm}
+        onCancel={() => setShowExitDialog(false)}
+      />
     </div>
   );
 }
