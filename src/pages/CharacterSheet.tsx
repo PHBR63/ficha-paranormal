@@ -39,6 +39,8 @@ import { NexProgressionModal } from '@/components/character/NexProgressionModal'
 import { RitualSelectionModal } from '@/components/character/RitualSelectionModal';
 import { CharacterEditModal } from '@/components/character/CharacterEditModal';
 import { CharacterHistoryPanel, logCharacterChanges } from '@/components/character/CharacterHistoryPanel';
+import { EffectiveStatsWidget } from '@/components/character/EffectiveStatsWidget';
+import { TurnPETracker } from '@/components/character/TurnPETracker';
 
 interface Character {
   id: string;
@@ -46,7 +48,7 @@ interface Character {
   player_name: string | null;
   origin: string;
   class: string;
-  class_track: string | null; // Trilha da classe
+  class_track: string | null;
   nex: number;
   patent: string;
   agility: number;
@@ -61,11 +63,12 @@ interface Character {
   san_current: number;
   san_max: number;
   defense: number;
+  movement: number; // Deslocamento base
   skills: Record<string, number>;
   powers: Array<{ name: string; description: string }>;
-  abilities: string[]; // Habilidades de classe + trilha
+  abilities: string[];
   inventory: Array<{ name: string; category: string; slots: number; itemType?: string; isEquipped?: boolean; equipSlot?: string }>;
-  rituals: string[]; // IDs dos rituais selecionados
+  rituals: string[];
   background: string | null;
   notes: string | null;
   conditions: string[];
@@ -620,16 +623,28 @@ export default function CharacterSheet() {
               </div>
             </div>
 
+            {/* Stats Efetivos com Condições */}
+            {character.conditions && character.conditions.length > 0 ? (
+              <EffectiveStatsWidget
+                baseDefense={character.defense}
+                baseMovement={character.movement || 9}
+                conditions={character.conditions}
+              />
+            ) : (
+              <div className="ordo-panel p-4 space-y-4">
+                {/* Defense sem modificadores */}
+                <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <Shield className="w-5 h-5 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">DEFESA</span>
+                  </div>
+                  <span className="font-display text-2xl">{character.defense}</span>
+                </div>
+              </div>
+            )}
+
             {/* Status Bars - Vertical */}
             <div className="ordo-panel p-4 space-y-4">
-              {/* Defense */}
-              <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                <div className="flex items-center gap-2">
-                  <Shield className="w-5 h-5 text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">DEFESA</span>
-                </div>
-                <span className="font-display text-2xl">{character.defense}</span>
-              </div>
 
               {/* HP */}
               <div className="space-y-2">
@@ -694,6 +709,16 @@ export default function CharacterSheet() {
                 <AnimatedProgress value={sanCurrent} max={character.san_max} variant="san" size="md" glow={isSanLow} />
               </div>
             </div>
+
+            {/* PE Tracker por Turno */}
+            <TurnPETracker
+              nex={character.nex}
+              peCurrent={peCurrent}
+              peMax={character.pe_max}
+              onPEChange={(newPE) => {
+                setPeCurrent(newPE);
+              }}
+            />
 
             {/* Conditions */}
             {character.conditions && character.conditions.length > 0 && (
