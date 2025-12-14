@@ -237,6 +237,50 @@ export type Database = {
         }
         Relationships: []
       }
+      character_change_history: {
+        Row: {
+          change_type: string
+          character_id: string
+          created_at: string
+          description: string | null
+          field_name: string
+          id: string
+          new_value: string | null
+          old_value: string | null
+          user_id: string
+        }
+        Insert: {
+          change_type: string
+          character_id: string
+          created_at?: string
+          description?: string | null
+          field_name: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          user_id: string
+        }
+        Update: {
+          change_type?: string
+          character_id?: string
+          created_at?: string
+          description?: string | null
+          field_name?: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "character_change_history_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: false
+            referencedRelation: "characters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       characters: {
         Row: {
           abilities: Json
