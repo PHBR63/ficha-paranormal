@@ -1,7 +1,15 @@
-import { ORIGINS, CLASSES, SKILLS, getPatentByNex } from '@/lib/character-data';
+// Componente de revisão final do personagem antes de salvar
+// Mostra todos os dados: conceito, atributos, origem, classe, trilha, rituais, perícias, etc.
+
+import { ORIGINS, CLASSES, SKILLS, getPatentByNex, getTrackById } from '@/lib/character-data';
 import { CLASS_PROFICIENCIES, CLASS_INITIAL_ABILITIES } from '@/lib/character-builder-engine';
-import { Shield, Footprints, Swords, Edit2 } from 'lucide-react';
+import { ALL_RITUALS } from '@/lib/rituals-data';
+import { 
+  Shield, Footprints, Swords, Edit2, Route, Sparkles, 
+  Droplets, Skull, BookOpen, Zap, Ghost 
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { motion } from 'framer-motion';
 import type { CharacterFormData } from '@/pages/CharacterCreate';
 import type { RebuildResult } from '@/lib/character-builder-engine';
@@ -13,6 +21,7 @@ interface StepReviewProps {
   onStepClick?: (step: number) => void;
 }
 
+// Mapeamento de atributos para labels
 const ATTRIBUTE_LABELS: Record<string, string> = {
   agility: 'AGI',
   strength: 'FOR',
@@ -21,23 +30,49 @@ const ATTRIBUTE_LABELS: Record<string, string> = {
   vigor: 'VIG',
 };
 
+// Configuração visual para elementos de rituais
+const ELEMENT_CONFIG: Record<string, { icon: typeof Droplets; color: string; bg: string }> = {
+  sangue: { icon: Droplets, color: 'text-red-400', bg: 'bg-red-500/20' },
+  morte: { icon: Skull, color: 'text-purple-400', bg: 'bg-purple-500/20' },
+  conhecimento: { icon: BookOpen, color: 'text-blue-400', bg: 'bg-blue-500/20' },
+  energia: { icon: Zap, color: 'text-yellow-400', bg: 'bg-yellow-500/20' },
+  medo: { icon: Ghost, color: 'text-emerald-400', bg: 'bg-emerald-500/20' },
+};
+
 export function StepReview({ formData, buildResult, onStepClick }: StepReviewProps) {
   const origin = ORIGINS.find(o => o.id === formData.origin);
   const characterClass = CLASSES.find(c => c.id === formData.characterClass);
   const patent = getPatentByNex(formData.nex);
+  const track = formData.classTrack ? getTrackById(formData.classTrack) : null;
 
   const { derivedStats, defense, movement, allTrainedSkills, proficiencies, abilities, powers, canFinalize } = buildResult;
+
+  // Separar habilidades de classe e de trilha
+  const trackAbilities = formData.trackAbilities || [];
+  const classAbilities = abilities.filter(a => !trackAbilities.includes(a));
+
+  // Obter rituais selecionados com detalhes
+  const selectedRituals = (formData.rituals || []).map(id => ALL_RITUALS.find(r => r.id === id)).filter(Boolean);
 
   const trainedSkillNames = allTrainedSkills.map(id => {
     const skill = SKILLS.find(s => s.id === id);
     return skill?.name || id;
   });
 
-  const EditButton = ({ step }: { step: number }) => (
+  // Função para calcular step index baseado no id (considerando steps dinâmicos)
+  const getStepIndex = (stepId: string): number => {
+    const isOcultist = formData.characterClass === 'Ocultista';
+    const baseSteps = ['concept', 'nex', 'attributes', 'origin', 'class', 'track'];
+    const afterTrack = isOcultist ? ['rituals', 'skills', 'abilities', 'review'] : ['skills', 'abilities', 'review'];
+    const allSteps = [...baseSteps, ...afterTrack];
+    return allSteps.indexOf(stepId);
+  };
+
+  const EditButton = ({ stepId }: { stepId: string }) => (
     <Button
       variant="ghost"
       size="sm"
-      onClick={() => onStepClick?.(step)}
+      onClick={() => onStepClick?.(getStepIndex(stepId))}
       className="opacity-0 group-hover:opacity-100 transition-opacity"
     >
       <Edit2 className="w-3 h-3" />
@@ -46,6 +81,7 @@ export function StepReview({ formData, buildResult, onStepClick }: StepReviewPro
 
   return (
     <div className="space-y-6">
+      {/* Título */}
       <div className="text-center mb-8">
         <h2 className="font-display text-2xl tracking-wider mb-2">REVISÃO DO DOSSIÊ</h2>
         <p className="text-muted-foreground text-sm">
@@ -53,7 +89,7 @@ export function StepReview({ formData, buildResult, onStepClick }: StepReviewPro
         </p>
       </div>
 
-      {/* Header card */}
+      {/* Header card com informações básicas */}
       <motion.div 
         className="ordo-panel p-6 group"
         initial={{ opacity: 0, y: 10 }}
@@ -75,7 +111,7 @@ export function StepReview({ formData, buildResult, onStepClick }: StepReviewPro
             </div>
           </div>
           <div className="flex items-start gap-2">
-            <EditButton step={0} />
+            <EditButton stepId="concept" />
             <div className="text-right">
               <span className="font-display text-4xl text-secondary">{formData.nex}%</span>
               <p className="text-xs text-muted-foreground">NEX</p>
@@ -83,7 +119,8 @@ export function StepReview({ formData, buildResult, onStepClick }: StepReviewPro
           </div>
         </div>
 
-        <div className="flex gap-4 flex-wrap">
+        {/* Tags de classe, origem, patente e trilha */}
+        <div className="flex gap-3 flex-wrap">
           <div className="ordo-panel px-3 py-1.5 bg-muted/50">
             <span className="text-xs text-muted-foreground">Origem:</span>{' '}
             <span className="text-sm">{origin?.name || '-'}</span>
@@ -96,10 +133,16 @@ export function StepReview({ formData, buildResult, onStepClick }: StepReviewPro
             <span className="text-xs text-muted-foreground">Patente:</span>{' '}
             <span className="text-sm">{patent}</span>
           </div>
+          {track && (
+            <div className="ordo-panel px-3 py-1.5 bg-primary/10 border-primary/30">
+              <span className="text-xs text-primary/70">Trilha:</span>{' '}
+              <span className="text-sm text-primary">{track.name}</span>
+            </div>
+          )}
         </div>
       </motion.div>
 
-      {/* Stats */}
+      {/* Stats principais */}
       <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
         <div className="ordo-panel p-4 text-center">
           <p className="text-xs text-muted-foreground mb-1">DEFESA</p>
@@ -137,11 +180,11 @@ export function StepReview({ formData, buildResult, onStepClick }: StepReviewPro
         </div>
       </div>
 
-      {/* Attributes */}
+      {/* Atributos */}
       <div className="ordo-panel p-4 group">
         <div className="flex items-center justify-between mb-3">
           <h4 className="font-display text-lg tracking-wider text-primary">ATRIBUTOS</h4>
-          <EditButton step={1} />
+          <EditButton stepId="attributes" />
         </div>
         <div className="grid grid-cols-5 gap-2">
           {Object.entries(formData.attributes).map(([key, value]) => (
@@ -153,7 +196,7 @@ export function StepReview({ formData, buildResult, onStepClick }: StepReviewPro
         </div>
       </div>
 
-      {/* Proficiencies */}
+      {/* Proficiências */}
       {proficiencies.length > 0 && (
         <div className="ordo-panel p-4">
           <div className="flex items-center gap-2 mb-3">
@@ -170,13 +213,13 @@ export function StepReview({ formData, buildResult, onStepClick }: StepReviewPro
         </div>
       )}
 
-      {/* Skills */}
+      {/* Perícias */}
       <div className="ordo-panel p-4 group">
         <div className="flex items-center justify-between mb-3">
           <h4 className="font-display text-lg tracking-wider text-primary">
             PERÍCIAS TREINADAS ({trainedSkillNames.length})
           </h4>
-          <EditButton step={4} />
+          <EditButton stepId="skills" />
         </div>
         {trainedSkillNames.length > 0 ? (
           <div className="flex flex-wrap gap-2">
@@ -191,12 +234,17 @@ export function StepReview({ formData, buildResult, onStepClick }: StepReviewPro
         )}
       </div>
 
-      {/* Abilities */}
-      {abilities.length > 0 && (
-        <div className="ordo-panel p-4">
-          <h4 className="font-display text-lg tracking-wider mb-3 text-primary">HABILIDADES DE CLASSE</h4>
+      {/* Habilidades de Classe */}
+      {classAbilities.length > 0 && (
+        <div className="ordo-panel p-4 group">
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="font-display text-lg tracking-wider text-primary">
+              HABILIDADES DE CLASSE
+            </h4>
+            <EditButton stepId="abilities" />
+          </div>
           <div className="flex flex-wrap gap-2">
-            {abilities.map((ability) => (
+            {classAbilities.map((ability) => (
               <span key={ability} className="px-3 py-1 bg-primary/20 text-primary text-sm rounded-sm">
                 {ability}
               </span>
@@ -205,10 +253,93 @@ export function StepReview({ formData, buildResult, onStepClick }: StepReviewPro
         </div>
       )}
 
-      {/* Powers */}
+      {/* Trilha e Habilidades da Trilha */}
+      {track && (
+        <div className="ordo-panel p-4 group border-primary/30 bg-gradient-to-br from-primary/5 to-transparent">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Route className="w-5 h-5 text-primary" />
+              <h4 className="font-display text-lg tracking-wider text-primary">
+                TRILHA: {track.name.toUpperCase()}
+              </h4>
+            </div>
+            <EditButton stepId="track" />
+          </div>
+          <p className="text-sm text-muted-foreground mb-4">{track.description}</p>
+          
+          {trackAbilities.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-xs text-primary/70 uppercase tracking-wider">
+                Habilidades Desbloqueadas (NEX {formData.nex}%)
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {trackAbilities.map((ability) => {
+                  const trackAbility = track.abilities.find(a => a.name === ability);
+                  return (
+                    <Badge
+                      key={ability}
+                      variant="secondary"
+                      className="bg-primary/20 text-primary hover:bg-primary/30"
+                    >
+                      {ability}
+                      {trackAbility && (
+                        <span className="ml-1 text-xs opacity-60">NEX {trackAbility.minNex}%</span>
+                      )}
+                    </Badge>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Rituais (apenas para Ocultistas) */}
+      {selectedRituals.length > 0 && (
+        <div className="ordo-panel p-4 group border-paranormal/30 bg-gradient-to-br from-paranormal/5 to-transparent">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-paranormal" />
+              <h4 className="font-display text-lg tracking-wider text-paranormal">
+                RITUAIS ({selectedRituals.length})
+              </h4>
+            </div>
+            <EditButton stepId="rituals" />
+          </div>
+          <div className="grid md:grid-cols-2 gap-2">
+            {selectedRituals.map((ritual) => {
+              if (!ritual) return null;
+              const config = ELEMENT_CONFIG[ritual.element];
+              const Icon = config?.icon || Sparkles;
+              return (
+                <div 
+                  key={ritual.id}
+                  className={`p-3 rounded-lg border border-paranormal/20 ${config?.bg || 'bg-paranormal/10'}`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">{ritual.name}</span>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-xs">
+                        <Icon className={`w-3 h-3 mr-1 ${config?.color}`} />
+                        {ritual.element}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">{ritual.circle}º</span>
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
+                    {ritual.execution} • {ritual.range} • {ritual.cost} PE
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Poderes de Origem */}
       {powers.length > 0 && (
         <div className="ordo-panel p-4">
-          <h4 className="font-display text-lg tracking-wider mb-3 text-primary">PODERES</h4>
+          <h4 className="font-display text-lg tracking-wider mb-3 text-primary">PODERES DE ORIGEM</h4>
           <div className="space-y-2">
             {powers.map((power, i) => (
               <div key={i} className="p-3 bg-paranormal/10 rounded-sm">
@@ -222,7 +353,7 @@ export function StepReview({ formData, buildResult, onStepClick }: StepReviewPro
         </div>
       )}
 
-      {/* Appearance & Personality */}
+      {/* Aparência & Personalidade */}
       {(formData.appearance || formData.personality) && (
         <div className="grid md:grid-cols-2 gap-4">
           {formData.appearance && (
@@ -250,7 +381,7 @@ export function StepReview({ formData, buildResult, onStepClick }: StepReviewPro
         </div>
       )}
 
-      {/* Status */}
+      {/* Status de finalização */}
       <motion.div 
         className={`ordo-panel p-4 ${canFinalize ? 'bg-success/5 border-success/20' : 'bg-warning/5 border-warning/20'}`}
         initial={{ opacity: 0 }}
