@@ -30,6 +30,8 @@ import { AnimatedProgress } from '@/components/ui/animated-progress';
 import { ConditionList } from '@/components/ui/condition-badge';
 import { AttributeGrid } from '@/components/character/AttributeWithDice';
 import { SkillsGrid } from '@/components/character/SkillsGrid';
+import { InventoryPanel } from '@/components/inventory/InventoryPanel';
+import { InventoryItem } from '@/lib/inventory-system';
 
 interface Character {
   id: string;
@@ -519,36 +521,36 @@ export default function CharacterSheet() {
 
               <TabsContent value="inventory" className="animate-fade-in">
                 <div className="ordo-panel p-4">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-display text-sm tracking-wider text-primary">
-                      INVENTÁRIO
-                    </h3>
-                    <span className="text-xs text-muted-foreground">
-                      {character.inventory.reduce((acc, item) => acc + item.slots, 0)} / {5 * Math.max(1, character.strength)} espaços
-                    </span>
-                  </div>
-                  {character.inventory.length > 0 ? (
-                    <div className="space-y-2">
-                      {character.inventory.map((item, i) => (
-                        <div 
-                          key={i}
-                          className="flex items-center justify-between p-3 bg-muted/30 border border-border/50 rounded-lg"
-                        >
-                          <div>
-                            <span className="font-medium">{item.name}</span>
-                            <span className="text-xs text-muted-foreground ml-2">
-                              {item.category}
-                            </span>
-                          </div>
-                          <span className="text-xs px-2 py-1 bg-secondary/50 rounded">
-                            {item.slots} espaço{item.slots !== 1 ? 's' : ''}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-muted-foreground">Inventário vazio.</p>
-                  )}
+                  <InventoryPanel
+                    inventory={character.inventory.map((item, i) => ({
+                      id: `item-${i}`,
+                      name: item.name,
+                      category: (item.category as InventoryItem['category']) || '0',
+                      slots: item.slots,
+                      quantity: 1,
+                    }))}
+                    strength={character.strength}
+                    patent={character.patent}
+                    onInventoryChange={async (newInventory) => {
+                      const updatedInventory = newInventory.map(item => ({
+                        name: item.name,
+                        category: item.category,
+                        slots: item.slots,
+                      }));
+                      
+                      const { error } = await supabase
+                        .from('characters')
+                        .update({ inventory: updatedInventory })
+                        .eq('id', character.id);
+
+                      if (!error) {
+                        setCharacter(prev => prev ? {
+                          ...prev,
+                          inventory: updatedInventory,
+                        } : null);
+                      }
+                    }}
+                  />
                 </div>
               </TabsContent>
             </Tabs>
