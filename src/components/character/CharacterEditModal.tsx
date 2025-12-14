@@ -287,29 +287,41 @@ export function CharacterEditModal({
     setPhotoFile(null);
   };
 
-  // Verifica se há qualquer mudança
-  const hasAnyChanges = useMemo(() => {
-    if (name !== character.name) return true;
-    if ((playerName || '') !== (character.player_name || '')) return true;
-    if (agility !== character.agility) return true;
-    if (strength !== character.strength) return true;
-    if (intellect !== character.intellect) return true;
-    if (presence !== character.presence) return true;
-    if (vigor !== character.vigor) return true;
-    if (defense !== character.defense) return true;
-    if ((background || '') !== (character.background || '')) return true;
-    if ((notes || '') !== (character.notes || '')) return true;
-    if (photoFile !== null) return true; // Nova foto selecionada
-    if (photoUrl !== (character.photo_url || null)) return true;
-    
-    // Verifica perícias
+  // Rastreia quais campos foram alterados
+  const changedFields = useMemo(() => {
     const originalSkillKeys = Object.keys(character.skills).filter(k => character.skills[k] > 0);
     const currentSkillKeys = Object.keys(trainedSkills);
-    if (originalSkillKeys.length !== currentSkillKeys.length) return true;
-    if (!originalSkillKeys.every(k => trainedSkills[k])) return true;
-    
-    return false;
-  }, [name, playerName, agility, strength, intellect, presence, vigor, defense, background, notes, trainedSkills, character]);
+    const skillsChanged = originalSkillKeys.length !== currentSkillKeys.length || 
+      !originalSkillKeys.every(k => trainedSkills[k]);
+
+    return {
+      name: name !== character.name,
+      playerName: (playerName || '') !== (character.player_name || ''),
+      age: String(age || '') !== String(character.age || ''),
+      gender: (gender || '') !== (character.gender || ''),
+      appearance: (appearance || '') !== (character.appearance || ''),
+      personality: (personality || '') !== (character.personality || ''),
+      background: (background || '') !== (character.background || ''),
+      notes: (notes || '') !== (character.notes || ''),
+      photo: photoFile !== null || photoUrl !== (character.photo_url || null),
+      agility: agility !== character.agility,
+      strength: strength !== character.strength,
+      intellect: intellect !== character.intellect,
+      presence: presence !== character.presence,
+      vigor: vigor !== character.vigor,
+      defense: defense !== character.defense,
+      skills: skillsChanged,
+    };
+  }, [name, playerName, age, gender, appearance, personality, background, notes, photoFile, photoUrl, agility, strength, intellect, presence, vigor, defense, trainedSkills, character]);
+
+  // Verifica se há qualquer mudança
+  const hasAnyChanges = useMemo(() => {
+    return Object.values(changedFields).some(Boolean);
+  }, [changedFields]);
+
+  // Classe CSS para campos alterados
+  const getFieldClass = (isChanged: boolean) => 
+    isChanged ? 'ring-2 ring-warning/50 bg-warning/5' : '';
 
   const handleTrySave = () => {
     if (!name.trim()) return;
@@ -429,8 +441,11 @@ export function CharacterEditModal({
             <TabsContent value="info" className="space-y-4 mt-0">
               {/* Foto e nome */}
               <div className="flex gap-4">
-                <div className="flex flex-col items-center space-y-2">
-                  <Label className="text-center">Foto</Label>
+                <div className={`flex flex-col items-center space-y-2 p-2 rounded-lg transition-all ${changedFields.photo ? 'ring-2 ring-warning/50 bg-warning/5' : ''}`}>
+                  <Label className="text-center flex items-center gap-1">
+                    Foto
+                    {changedFields.photo && <span className="w-2 h-2 rounded-full bg-warning animate-pulse" />}
+                  </Label>
                   <ImageUploader
                     value={photoUrl}
                     onChange={handlePhotoChange}
@@ -441,23 +456,31 @@ export function CharacterEditModal({
                 </div>
                 <div className="flex-1 space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="name">Nome do Personagem *</Label>
+                    <Label htmlFor="name" className="flex items-center gap-1">
+                      Nome do Personagem *
+                      {changedFields.name && <span className="w-2 h-2 rounded-full bg-warning animate-pulse" />}
+                    </Label>
                     <Input
                       id="name"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       placeholder="Nome do personagem"
                       maxLength={100}
+                      className={getFieldClass(changedFields.name)}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="playerName">Nome do Jogador</Label>
+                    <Label htmlFor="playerName" className="flex items-center gap-1">
+                      Nome do Jogador
+                      {changedFields.playerName && <span className="w-2 h-2 rounded-full bg-warning animate-pulse" />}
+                    </Label>
                     <Input
                       id="playerName"
                       value={playerName}
                       onChange={(e) => setPlayerName(e.target.value)}
                       placeholder="Seu nome"
                       maxLength={100}
+                      className={getFieldClass(changedFields.playerName)}
                     />
                   </div>
                 </div>
@@ -465,7 +488,10 @@ export function CharacterEditModal({
 
               <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="age">Idade</Label>
+                  <Label htmlFor="age" className="flex items-center gap-1">
+                    Idade
+                    {changedFields.age && <span className="w-2 h-2 rounded-full bg-warning animate-pulse" />}
+                  </Label>
                   <Input
                     id="age"
                     type="number"
@@ -474,25 +500,34 @@ export function CharacterEditModal({
                     placeholder="30"
                     min={1}
                     max={150}
+                    className={getFieldClass(changedFields.age)}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="gender">Gênero</Label>
+                  <Label htmlFor="gender" className="flex items-center gap-1">
+                    Gênero
+                    {changedFields.gender && <span className="w-2 h-2 rounded-full bg-warning animate-pulse" />}
+                  </Label>
                   <Input
                     id="gender"
                     value={gender}
                     onChange={(e) => setGender(e.target.value)}
                     placeholder="Ex: Masculino"
                     maxLength={50}
+                    className={getFieldClass(changedFields.gender)}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Defesa Base</Label>
+                  <Label className="flex items-center gap-1">
+                    Defesa Base
+                    {changedFields.defense && <span className="w-2 h-2 rounded-full bg-warning animate-pulse" />}
+                  </Label>
                   <Input
                     type="number"
                     value={defense}
                     onChange={(e) => setDefense(Math.max(0, parseInt(e.target.value) || 0))}
                     min={0}
+                    className={getFieldClass(changedFields.defense)}
                   />
                 </div>
               </div>
@@ -560,6 +595,7 @@ export function CharacterEditModal({
                   color="hsl(var(--accent))"
                   onDecrease={() => handleAttributeChange('agility', -1)}
                   onIncrease={() => handleAttributeChange('agility', 1)}
+                  isChanged={changedFields.agility}
                 />
                 <AttributeEditor
                   label="FORÇA"
@@ -568,6 +604,7 @@ export function CharacterEditModal({
                   color="hsl(var(--destructive))"
                   onDecrease={() => handleAttributeChange('strength', -1)}
                   onIncrease={() => handleAttributeChange('strength', 1)}
+                  isChanged={changedFields.strength}
                 />
                 <AttributeEditor
                   label="INTELECTO"
@@ -576,6 +613,7 @@ export function CharacterEditModal({
                   color="hsl(var(--primary))"
                   onDecrease={() => handleAttributeChange('intellect', -1)}
                   onIncrease={() => handleAttributeChange('intellect', 1)}
+                  isChanged={changedFields.intellect}
                 />
                 <AttributeEditor
                   label="PRESENÇA"
@@ -584,6 +622,7 @@ export function CharacterEditModal({
                   color="hsl(var(--paranormal))"
                   onDecrease={() => handleAttributeChange('presence', -1)}
                   onIncrease={() => handleAttributeChange('presence', 1)}
+                  isChanged={changedFields.presence}
                 />
                 <AttributeEditor
                   label="VIGOR"
@@ -592,6 +631,7 @@ export function CharacterEditModal({
                   color="hsl(var(--success))"
                   onDecrease={() => handleAttributeChange('vigor', -1)}
                   onIncrease={() => handleAttributeChange('vigor', 1)}
+                  isChanged={changedFields.vigor}
                 />
               </div>
 
@@ -607,9 +647,15 @@ export function CharacterEditModal({
             {/* SKILLS TAB */}
             <TabsContent value="skills" className="space-y-4 mt-0">
               <div className="flex items-center justify-between">
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground flex items-center gap-2">
                   Perícias Treinadas:{' '}
                   <span className="font-display text-lg text-primary">{trainedSkillCount}</span>
+                  {changedFields.skills && (
+                    <span className="text-xs text-warning flex items-center gap-1">
+                      <span className="w-2 h-2 rounded-full bg-warning animate-pulse" />
+                      Alterado
+                    </span>
+                  )}
                 </p>
                 <Badge variant="outline" className="text-xs">
                   +5 de bônus por treino
@@ -661,7 +707,10 @@ export function CharacterEditModal({
             {/* BIO TAB */}
             <TabsContent value="bio" className="space-y-4 mt-0">
               <div className="space-y-2">
-                <Label htmlFor="appearance">Aparência</Label>
+                <Label htmlFor="appearance" className="flex items-center gap-1">
+                  Aparência
+                  {changedFields.appearance && <span className="w-2 h-2 rounded-full bg-warning animate-pulse" />}
+                </Label>
                 <Textarea
                   id="appearance"
                   value={appearance}
@@ -669,11 +718,15 @@ export function CharacterEditModal({
                   placeholder="Descreva a aparência física do personagem..."
                   rows={3}
                   maxLength={1000}
+                  className={getFieldClass(changedFields.appearance)}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="personality">Personalidade</Label>
+                <Label htmlFor="personality" className="flex items-center gap-1">
+                  Personalidade
+                  {changedFields.personality && <span className="w-2 h-2 rounded-full bg-warning animate-pulse" />}
+                </Label>
                 <Textarea
                   id="personality"
                   value={personality}
@@ -681,11 +734,15 @@ export function CharacterEditModal({
                   placeholder="Como o personagem age e se comporta..."
                   rows={3}
                   maxLength={1000}
+                  className={getFieldClass(changedFields.personality)}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="background">História</Label>
+                <Label htmlFor="background" className="flex items-center gap-1">
+                  História
+                  {changedFields.background && <span className="w-2 h-2 rounded-full bg-warning animate-pulse" />}
+                </Label>
                 <Textarea
                   id="background"
                   value={background}
@@ -693,11 +750,15 @@ export function CharacterEditModal({
                   placeholder="A história e background do personagem..."
                   rows={4}
                   maxLength={2000}
+                  className={getFieldClass(changedFields.background)}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="notes">Notas do Jogador</Label>
+                <Label htmlFor="notes" className="flex items-center gap-1">
+                  Notas do Jogador
+                  {changedFields.notes && <span className="w-2 h-2 rounded-full bg-warning animate-pulse" />}
+                </Label>
                 <Textarea
                   id="notes"
                   value={notes}
@@ -705,6 +766,7 @@ export function CharacterEditModal({
                   placeholder="Anotações pessoais, lembretes, itens especiais..."
                   rows={3}
                   maxLength={2000}
+                  className={getFieldClass(changedFields.notes)}
                 />
               </div>
             </TabsContent>
@@ -846,7 +908,7 @@ export function CharacterEditModal({
   );
 }
 
-// Componente de editor de atributo
+// Componente de editor de atributo com indicador de alteração
 function AttributeEditor({
   label,
   abbr,
@@ -854,6 +916,7 @@ function AttributeEditor({
   color,
   onDecrease,
   onIncrease,
+  isChanged = false,
 }: {
   label: string;
   abbr: string;
@@ -861,13 +924,14 @@ function AttributeEditor({
   color: string;
   onDecrease: () => void;
   onIncrease: () => void;
+  isChanged?: boolean;
 }) {
   return (
     <div 
-      className="flex items-center justify-between p-3 rounded-lg border"
+      className={`flex items-center justify-between p-3 rounded-lg border transition-all ${isChanged ? 'ring-2 ring-warning/50' : ''}`}
       style={{ 
-        backgroundColor: `${color}10`,
-        borderColor: `${color}30`,
+        backgroundColor: isChanged ? 'hsl(var(--warning) / 0.1)' : `${color}10`,
+        borderColor: isChanged ? 'hsl(var(--warning) / 0.5)' : `${color}30`,
       }}
     >
       <div className="flex items-center gap-3">
@@ -877,7 +941,10 @@ function AttributeEditor({
         >
           {abbr}
         </span>
-        <span className="text-sm text-muted-foreground">{label}</span>
+        <span className="text-sm text-muted-foreground flex items-center gap-1">
+          {label}
+          {isChanged && <span className="w-2 h-2 rounded-full bg-warning animate-pulse" />}
+        </span>
       </div>
       
       <div className="flex items-center gap-2">
