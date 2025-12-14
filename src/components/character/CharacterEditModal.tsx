@@ -10,6 +10,16 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -35,6 +45,9 @@ import {
   Plus,
   Minus,
   AlertCircle,
+  AlertTriangle,
+  ArrowDown,
+  ArrowUp,
 } from 'lucide-react';
 import { ORIGINS, SKILLS, CLASSES, calculateDerivedStats } from '@/lib/character-data';
 
@@ -128,12 +141,26 @@ export function CharacterEditModal({
   // Defesa base customizada
   const [defense, setDefense] = useState(character.defense);
 
+  // Estado para confirmação de mudanças críticas
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+
   // Cálculos de pontos
   const totalAttributePoints = agility + strength + intellect + presence + vigor;
   const originData = ORIGINS.find(o => o.id === character.origin);
 
   // Conta perícias treinadas
   const trainedSkillCount = Object.keys(trainedSkills).length;
+
+  // Stats originais do personagem
+  const originalStats = useMemo(() => {
+    return calculateDerivedStats(
+      character.class,
+      character.vigor,
+      character.presence,
+      character.nex,
+      character.origin
+    );
+  }, [character]);
 
   // Calcula stats derivados para preview
   const derivedStats = useMemo(() => {
@@ -145,6 +172,41 @@ export function CharacterEditModal({
       character.origin
     );
   }, [character.class, vigor, presence, character.nex, character.origin]);
+
+  // Detecta se houve mudanças nos atributos
+  const attributeChanges = useMemo(() => {
+    const changes: Array<{ attr: string; from: number; to: number }> = [];
+    
+    if (agility !== character.agility) {
+      changes.push({ attr: 'Agilidade', from: character.agility, to: agility });
+    }
+    if (strength !== character.strength) {
+      changes.push({ attr: 'Força', from: character.strength, to: strength });
+    }
+    if (intellect !== character.intellect) {
+      changes.push({ attr: 'Intelecto', from: character.intellect, to: intellect });
+    }
+    if (presence !== character.presence) {
+      changes.push({ attr: 'Presença', from: character.presence, to: presence });
+    }
+    if (vigor !== character.vigor) {
+      changes.push({ attr: 'Vigor', from: character.vigor, to: vigor });
+    }
+    
+    return changes;
+  }, [agility, strength, intellect, presence, vigor, character]);
+
+  // Calcula impacto nos stats derivados
+  const statsImpact = useMemo(() => {
+    return {
+      hp: derivedStats.hp - originalStats.hp,
+      pe: derivedStats.pe - originalStats.pe,
+      san: derivedStats.san - originalStats.san,
+    };
+  }, [derivedStats, originalStats]);
+
+  const hasAttributeChanges = attributeChanges.length > 0;
+  const hasSignificantChanges = statsImpact.hp !== 0 || statsImpact.pe !== 0 || statsImpact.san !== 0;
 
   // Handler para mudar atributo
   const handleAttributeChange = (
@@ -179,11 +241,25 @@ export function CharacterEditModal({
     });
   };
 
+  // Handler para tentar salvar (pode abrir confirmação)
+  const handleTrySave = () => {
+    if (!name.trim()) return;
+    
+    // Se houver mudanças significativas, mostra confirmação
+    if (hasSignificantChanges) {
+      setShowConfirmDialog(true);
+    } else {
+      handleSave();
+    }
+  };
+
   // Handler para salvar
   const handleSave = async () => {
     if (!name.trim()) return;
 
     setSaving(true);
+    setShowConfirmDialog(false);
+    
     try {
       await onSave({
         name: name.trim(),
@@ -518,18 +594,119 @@ export function CharacterEditModal({
             Cancelar
           </Button>
           <Button 
-            onClick={handleSave} 
+            onClick={handleTrySave} 
             disabled={saving || !name.trim()}
+            className={hasSignificantChanges ? 'bg-warning hover:bg-warning/90 text-warning-foreground' : ''}
           >
             {saving ? (
               <Loader2 className="w-4 h-4 animate-spin mr-2" />
+            ) : hasSignificantChanges ? (
+              <AlertTriangle className="w-4 h-4 mr-2" />
             ) : (
               <Save className="w-4 h-4 mr-2" />
             )}
-            Salvar Alterações
+            {hasSignificantChanges ? 'Revisar Mudanças' : 'Salvar Alterações'}
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      {/* Dialog de confirmação para mudanças significativas */}
+      <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-display tracking-wider flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-warning" />
+              CONFIRMAR MUDANÇAS NOS ATRIBUTOS
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-4">
+                <p>
+                  Você está prestes a alterar atributos que afetam os stats derivados do personagem.
+                </p>
+
+                {/* Lista de mudanças nos atributos */}
+                {attributeChanges.length > 0 && (
+                  <div className="p-3 bg-muted/50 rounded-lg space-y-2">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      Alterações nos Atributos
+                    </p>
+                    {attributeChanges.map((change, i) => (
+                      <div key={i} className="flex items-center justify-between text-sm">
+                        <span>{change.attr}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-muted-foreground">{change.from}</span>
+                          <span className="text-muted-foreground">→</span>
+                          <span className={change.to > change.from ? 'text-success' : 'text-destructive'}>
+                            {change.to}
+                          </span>
+                          {change.to > change.from ? (
+                            <ArrowUp className="w-3 h-3 text-success" />
+                          ) : (
+                            <ArrowDown className="w-3 h-3 text-destructive" />
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Impacto nos stats */}
+                <div className="p-3 bg-warning/10 border border-warning/30 rounded-lg space-y-2">
+                  <p className="text-xs font-medium text-warning uppercase tracking-wider">
+                    Impacto nos Stats Derivados
+                  </p>
+                  <div className="grid grid-cols-3 gap-3 text-center">
+                    {statsImpact.hp !== 0 && (
+                      <div>
+                        <p className="text-xs text-muted-foreground">PV Máx</p>
+                        <p className={`font-display text-lg ${statsImpact.hp > 0 ? 'text-success' : 'text-destructive'}`}>
+                          {statsImpact.hp > 0 ? '+' : ''}{statsImpact.hp}
+                        </p>
+                      </div>
+                    )}
+                    {statsImpact.pe !== 0 && (
+                      <div>
+                        <p className="text-xs text-muted-foreground">PE Máx</p>
+                        <p className={`font-display text-lg ${statsImpact.pe > 0 ? 'text-success' : 'text-destructive'}`}>
+                          {statsImpact.pe > 0 ? '+' : ''}{statsImpact.pe}
+                        </p>
+                      </div>
+                    )}
+                    {statsImpact.san !== 0 && (
+                      <div>
+                        <p className="text-xs text-muted-foreground">SAN Máx</p>
+                        <p className={`font-display text-lg ${statsImpact.san > 0 ? 'text-success' : 'text-destructive'}`}>
+                          {statsImpact.san > 0 ? '+' : ''}{statsImpact.san}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <p className="text-xs text-muted-foreground">
+                  Discuta com o mestre antes de fazer alterações significativas.
+                  Esta ação pode afetar o balanceamento do jogo.
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={saving}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleSave}
+              disabled={saving}
+              className="bg-warning hover:bg-warning/90 text-warning-foreground"
+            >
+              {saving ? (
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              ) : (
+                <Save className="w-4 h-4 mr-2" />
+              )}
+              Confirmar Mudanças
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }
