@@ -74,19 +74,22 @@ export function ColorThemeProvider({ children }: { children: React.ReactNode }) 
     }
   }, [user]);
 
-  const setColorTheme = useCallback(async (theme: ColorTheme) => {
+  const setColorTheme = useCallback((theme: ColorTheme) => {
+    // Update state immediately for instant visual feedback
     setColorThemeState(theme);
     
-    // Save to database if user is logged in
+    // Save to database in background if user is logged in
     if (user) {
-      try {
-        await supabase
-          .from('profiles')
-          .update({ theme_preference: theme })
-          .eq('user_id', user.id);
-      } catch (err) {
-        console.error('Error saving theme preference:', err);
-      }
+      (async () => {
+        try {
+          await supabase
+            .from('profiles')
+            .update({ theme_preference: theme })
+            .eq('user_id', user.id);
+        } catch (err) {
+          console.error('Error saving theme preference:', err);
+        }
+      })();
     }
   }, [user]);
 
