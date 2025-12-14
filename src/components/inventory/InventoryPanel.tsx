@@ -13,7 +13,9 @@ import {
   MoreHorizontal,
   ChevronDown,
   ChevronUp,
-  Boxes
+  Boxes,
+  CircleCheck,
+  Circle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -40,14 +42,20 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
   InventoryItem,
   getLoadStatus,
   getPatentLimits,
   countItemsByCategory,
-  PATENT_LIMITS,
   addToInventory,
   removeFromInventory,
 } from '@/lib/inventory-system';
+import { EquipmentSlots, EquipmentSlotType, EQUIPMENT_SLOTS, getAppropriateSlot } from './EquipmentSlots';
 
 // Categorias de itens para organização visual
 export type ItemType = 'weapon' | 'armor' | 'consumable' | 'ritual' | 'valuable' | 'misc';
@@ -69,8 +77,9 @@ const CATEGORY_LABELS: Record<string, { label: string; color: string }> = {
   'IV': { label: 'Cat. IV', color: 'bg-red-500/20 text-red-400 border-red-500/50' },
 };
 
-interface ExtendedInventoryItem extends InventoryItem {
+export interface ExtendedInventoryItem extends InventoryItem {
   itemType?: ItemType;
+  equipSlot?: EquipmentSlotType;
 }
 
 interface InventoryPanelProps {
@@ -79,6 +88,7 @@ interface InventoryPanelProps {
   patent: string;
   onInventoryChange?: (newInventory: ExtendedInventoryItem[]) => void;
   readOnly?: boolean;
+  showEquipment?: boolean;
 }
 
 export function InventoryPanel({
@@ -87,6 +97,7 @@ export function InventoryPanel({
   patent,
   onInventoryChange,
   readOnly = false,
+  showEquipment = true,
 }: InventoryPanelProps) {
   const [expandedCategories, setExpandedCategories] = useState<Set<ItemType>>(new Set(['weapon', 'armor', 'consumable']));
   const [addDialogOpen, setAddDialogOpen] = useState(false);
@@ -101,6 +112,26 @@ export function InventoryPanel({
   // Calcular status de carga
   const loadStatus = useMemo(() => getLoadStatus(inventory, strength), [inventory, strength]);
   const patentLimits = useMemo(() => getPatentLimits(patent), [patent]);
+
+  // Mapear itens equipados por slot
+  const equippedItems = useMemo(() => {
+    const slots: Record<EquipmentSlotType, ExtendedInventoryItem | null> = {
+      primary_weapon: null,
+      secondary_weapon: null,
+      armor: null,
+      head: null,
+      accessory_1: null,
+      accessory_2: null,
+    };
+
+    inventory.forEach(item => {
+      if (item.isEquipped && item.equipSlot) {
+        slots[item.equipSlot] = item;
+      }
+    });
+
+    return slots;
+  }, [inventory]);
 
   // Agrupar itens por tipo
   const groupedItems = useMemo(() => {
@@ -158,6 +189,7 @@ export function InventoryPanel({
       onInventoryChange(result.newInventory.map(i => ({
         ...i,
         itemType: (i as ExtendedInventoryItem).itemType || 'misc',
+        equipSlot: (i as ExtendedInventoryItem).equipSlot,
       })));
       setNewItem({ name: '', category: '0', slots: 1, quantity: 1, itemType: 'misc' });
       setAddDialogOpen(false);
@@ -170,7 +202,45 @@ export function InventoryPanel({
     onInventoryChange(newInventory.map(i => ({
       ...i,
       itemType: (i as ExtendedInventoryItem).itemType || 'misc',
+      equipSlot: (i as ExtendedInventoryItem).equipSlot,
     })));
+  };
+
+  const handleEquipItem = (itemId: string) => {
+    if (!onInventoryChange) return;
+
+    const item = inventory.find(i => i.id === itemId);
+    if (!item) return;
+
+    // Encontrar slot apropriado
+    const slot = getAppropriateSlot(item, equippedItems);
+    if (!slot) return;
+
+    const newInventory = inventory.map(i => ({
+      ...i,
+      isEquipped: i.id === itemId ? true : i.isEquipped,
+      equipSlot: i.id === itemId ? slot : i.equipSlot,
+    }));
+
+    onInventoryChange(newInventory);
+  };
+
+  const handleUnequipItem = (itemId: string) => {
+    if (!onInventoryChange) return;
+
+    const newInventory = inventory.map(i => ({
+      ...i,
+      isEquipped: i.id === itemId ? false : i.isEquipped,
+      equipSlot: i.id === itemId ? undefined : i.equipSlot,
+    }));
+
+    onInventoryChange(newInventory);
+  };
+
+  const canEquipItem = (item: ExtendedInventoryItem): boolean => {
+    if (item.isEquipped) return false;
+    const slot = getAppropriateSlot(item, equippedItems);
+    return slot !== null;
   };
 
   const loadPercentage = (loadStatus.currentLoad / loadStatus.maxCapacity) * 100;
@@ -196,7 +266,7 @@ export function InventoryPanel({
                 ADICIONAR
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-md bg-popover">
               <DialogHeader>
                 <DialogTitle className="font-display">Adicionar Item</DialogTitle>
               </DialogHeader>
@@ -216,10 +286,10 @@ export function InventoryPanel({
                       value={newItem.itemType}
                       onValueChange={(v) => setNewItem({ ...newItem, itemType: v as ItemType })}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="bg-background">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-popover border-border z-50">
                         {Object.entries(ITEM_TYPE_CONFIG).map(([key, config]) => (
                           <SelectItem key={key} value={key}>
                             <div className="flex items-center gap-2">
@@ -237,10 +307,10 @@ export function InventoryPanel({
                       value={newItem.category}
                       onValueChange={(v) => setNewItem({ ...newItem, category: v as InventoryItem['category'] })}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="bg-background">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-popover border-border z-50">
                         <SelectItem value="0">Sem Categoria</SelectItem>
                         <SelectItem value="I">Categoria I</SelectItem>
                         <SelectItem value="II">Categoria II</SelectItem>
@@ -279,6 +349,16 @@ export function InventoryPanel({
           </Dialog>
         )}
       </div>
+
+      {/* Equipment Slots */}
+      {showEquipment && (
+        <div className="ordo-panel p-3">
+          <EquipmentSlots 
+            inventory={inventory} 
+            onUnequip={!readOnly ? handleUnequipItem : undefined}
+          />
+        </div>
+      )}
 
       {/* Barra de Carga */}
       <div className="p-3 bg-muted/30 rounded-lg border border-border/50 space-y-2">
@@ -369,6 +449,8 @@ export function InventoryPanel({
                     key={item.id}
                     item={item}
                     onRemove={!readOnly ? handleRemoveItem : undefined}
+                    onEquip={!readOnly && canEquipItem(item) ? handleEquipItem : undefined}
+                    onUnequip={!readOnly && item.isEquipped ? handleUnequipItem : undefined}
                   />
                 ))}
               </CollapsibleContent>
@@ -390,51 +472,97 @@ export function InventoryPanel({
 interface InventoryItemRowProps {
   item: ExtendedInventoryItem;
   onRemove?: (id: string) => void;
+  onEquip?: (id: string) => void;
+  onUnequip?: (id: string) => void;
 }
 
-function InventoryItemRow({ item, onRemove }: InventoryItemRowProps) {
+function InventoryItemRow({ item, onRemove, onEquip, onUnequip }: InventoryItemRowProps) {
   const categoryConfig = CATEGORY_LABELS[item.category] || CATEGORY_LABELS['0'];
 
   return (
-    <div className="flex items-center justify-between p-3 bg-card/50 border border-border/30 rounded-lg ml-4 group hover:border-primary/30 transition-colors">
-      <div className="flex items-center gap-3 flex-1 min-w-0">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="font-medium truncate">{item.name}</span>
-            {item.quantity > 1 && (
-              <Badge variant="outline" className="text-xs">
-                x{item.quantity}
-              </Badge>
+    <TooltipProvider>
+      <div className={cn(
+        "flex items-center justify-between p-3 border rounded-lg ml-4 group transition-colors",
+        item.isEquipped 
+          ? "bg-primary/10 border-primary/30" 
+          : "bg-card/50 border-border/30 hover:border-primary/30"
+      )}>
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          {/* Equip Button */}
+          {(onEquip || onUnequip) && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  className={cn(
+                    "w-6 h-6 rounded-full flex items-center justify-center transition-colors",
+                    item.isEquipped 
+                      ? "text-primary hover:text-primary/70" 
+                      : "text-muted-foreground/50 hover:text-primary"
+                  )}
+                  onClick={() => item.isEquipped ? onUnequip?.(item.id) : onEquip?.(item.id)}
+                >
+                  {item.isEquipped ? (
+                    <CircleCheck className="w-5 h-5" />
+                  ) : (
+                    <Circle className="w-5 h-5" />
+                  )}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="left" className="bg-popover border-border">
+                <p className="text-xs">
+                  {item.isEquipped ? 'Desequipar' : 'Equipar'}
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          )}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <span className={cn(
+                "font-medium truncate",
+                item.isEquipped && "text-primary"
+              )}>
+                {item.name}
+              </span>
+              {item.quantity > 1 && (
+                <Badge variant="outline" className="text-xs">
+                  x{item.quantity}
+                </Badge>
+              )}
+              {item.isEquipped && (
+                <Badge className="text-[10px] bg-primary/20 text-primary border-0">
+                  EQUIPADO
+                </Badge>
+              )}
+            </div>
+            {item.description && (
+              <p className="text-xs text-muted-foreground truncate mt-0.5">
+                {item.description}
+              </p>
             )}
           </div>
-          {item.description && (
-            <p className="text-xs text-muted-foreground truncate mt-0.5">
-              {item.description}
-            </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Badge 
+            variant="outline" 
+            className={cn("text-[10px] border", categoryConfig.color)}
+          >
+            {categoryConfig.label}
+          </Badge>
+          <span className="text-xs text-muted-foreground px-2 py-1 bg-muted/50 rounded">
+            {item.slots * item.quantity} esp.
+          </span>
+          {onRemove && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10 h-7 w-7 p-0"
+              onClick={() => onRemove(item.id)}
+            >
+              <Trash2 className="w-3 h-3" />
+            </Button>
           )}
         </div>
       </div>
-      <div className="flex items-center gap-2">
-        <Badge 
-          variant="outline" 
-          className={cn("text-[10px] border", categoryConfig.color)}
-        >
-          {categoryConfig.label}
-        </Badge>
-        <span className="text-xs text-muted-foreground px-2 py-1 bg-muted/50 rounded">
-          {item.slots * item.quantity} esp.
-        </span>
-        {onRemove && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10 h-7 w-7 p-0"
-            onClick={() => onRemove(item.id)}
-          >
-            <Trash2 className="w-3 h-3" />
-          </Button>
-        )}
-      </div>
-    </div>
+    </TooltipProvider>
   );
 }

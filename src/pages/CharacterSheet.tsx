@@ -55,7 +55,7 @@ interface Character {
   defense: number;
   skills: Record<string, number>;
   powers: Array<{ name: string; description: string }>;
-  inventory: Array<{ name: string; category: string; slots: number }>;
+  inventory: Array<{ name: string; category: string; slots: number; itemType?: string; isEquipped?: boolean; equipSlot?: string }>;
   rituals: Array<{ name: string; circle: number; element: string }>;
   background: string | null;
   notes: string | null;
@@ -528,6 +528,9 @@ export default function CharacterSheet() {
                       category: (item.category as InventoryItem['category']) || '0',
                       slots: item.slots,
                       quantity: 1,
+                      itemType: (item.itemType as any) || 'misc',
+                      isEquipped: item.isEquipped || false,
+                      equipSlot: item.equipSlot as any,
                     }))}
                     strength={character.strength}
                     patent={character.patent}
@@ -536,6 +539,9 @@ export default function CharacterSheet() {
                         name: item.name,
                         category: item.category,
                         slots: item.slots,
+                        itemType: item.itemType,
+                        isEquipped: item.isEquipped,
+                        equipSlot: item.equipSlot,
                       }));
                       
                       const { error } = await supabase
