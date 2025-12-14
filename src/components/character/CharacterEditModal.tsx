@@ -51,6 +51,8 @@ import {
   RotateCcw,
 } from 'lucide-react';
 import { ORIGINS, SKILLS, CLASSES, calculateDerivedStats } from '@/lib/character-data';
+import { ImageUploader } from '@/components/ui/image-uploader';
+import { supabase } from '@/integrations/supabase/client';
 
 // Limite de pontos de atributos
 const MIN_ATTRIBUTE = 1;
@@ -72,6 +74,7 @@ interface CharacterEditData {
   vigor: number;
   skills: Record<string, number>;
   defense: number;
+  photo_url: string | null;
 }
 
 interface CharacterEditModalProps {
@@ -97,6 +100,7 @@ interface CharacterEditModalProps {
     vigor: number;
     skills: Record<string, number>;
     defense: number;
+    photo_url?: string | null;
   };
   onSave: (data: CharacterEditData) => Promise<void>;
 }
@@ -141,6 +145,11 @@ export function CharacterEditModal({
 
   // Defesa base customizada
   const [defense, setDefense] = useState(character.defense);
+
+  // Foto do personagem
+  const [photoUrl, setPhotoUrl] = useState<string | null>(character.photo_url || null);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   // Estado para confirmação de mudanças críticas
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
@@ -272,6 +281,10 @@ export function CharacterEditModal({
     
     // Restaura defesa
     setDefense(character.defense);
+    
+    // Restaura foto
+    setPhotoUrl(character.photo_url || null);
+    setPhotoFile(null);
   };
 
   // Verifica se há qualquer mudança
@@ -286,6 +299,8 @@ export function CharacterEditModal({
     if (defense !== character.defense) return true;
     if ((background || '') !== (character.background || '')) return true;
     if ((notes || '') !== (character.notes || '')) return true;
+    if (photoFile !== null) return true; // Nova foto selecionada
+    if (photoUrl !== (character.photo_url || null)) return true;
     
     // Verifica perícias
     const originalSkillKeys = Object.keys(character.skills).filter(k => character.skills[k] > 0);
@@ -307,6 +322,42 @@ export function CharacterEditModal({
     }
   };
 
+  // Handler para upload de foto
+  const handlePhotoChange = (url: string | null, file?: File) => {
+    setPhotoUrl(url);
+    setPhotoFile(file || null);
+  };
+
+  // Upload foto para Supabase Storage
+  const uploadPhoto = async (): Promise<string | null> => {
+    if (!photoFile) return photoUrl; // Retorna URL existente se não houver novo arquivo
+    
+    setUploadingPhoto(true);
+    
+    try {
+      const fileExt = photoFile.name.split('.').pop();
+      const fileName = `${character.id}-${Date.now()}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('character-avatars')
+        .upload(filePath, photoFile, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage
+        .from('character-avatars')
+        .getPublicUrl(filePath);
+
+      return data.publicUrl;
+    } catch (error) {
+      console.error('Erro ao fazer upload da foto:', error);
+      return photoUrl; // Mantém URL existente em caso de erro
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
   // Handler para salvar
   const handleSave = async () => {
     if (!name.trim()) return;
@@ -315,6 +366,9 @@ export function CharacterEditModal({
     setShowConfirmDialog(false);
     
     try {
+      // Upload da foto primeiro se houver
+      const finalPhotoUrl = await uploadPhoto();
+      
       await onSave({
         name: name.trim(),
         player_name: playerName.trim() || null,
@@ -331,6 +385,7 @@ export function CharacterEditModal({
         vigor,
         skills: trainedSkills,
         defense,
+        photo_url: finalPhotoUrl,
       });
       onClose();
     } catch (error) {
@@ -372,26 +427,39 @@ export function CharacterEditModal({
           <ScrollArea className="h-[400px] mt-4 pr-4">
             {/* INFO TAB */}
             <TabsContent value="info" className="space-y-4 mt-0">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Nome do Personagem *</Label>
-                  <Input
-                    id="name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Nome do personagem"
-                    maxLength={100}
+              {/* Foto e nome */}
+              <div className="flex gap-4">
+                <div className="flex flex-col items-center space-y-2">
+                  <Label className="text-center">Foto</Label>
+                  <ImageUploader
+                    value={photoUrl}
+                    onChange={handlePhotoChange}
+                    size="lg"
+                    shape="square"
+                    placeholder="Foto do personagem"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="playerName">Nome do Jogador</Label>
-                  <Input
-                    id="playerName"
-                    value={playerName}
-                    onChange={(e) => setPlayerName(e.target.value)}
-                    placeholder="Seu nome"
-                    maxLength={100}
-                  />
+                <div className="flex-1 space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Nome do Personagem *</Label>
+                    <Input
+                      id="name"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="Nome do personagem"
+                      maxLength={100}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="playerName">Nome do Jogador</Label>
+                    <Input
+                      id="playerName"
+                      value={playerName}
+                      onChange={(e) => setPlayerName(e.target.value)}
+                      placeholder="Seu nome"
+                      maxLength={100}
+                    />
+                  </div>
                 </div>
               </div>
 
