@@ -45,6 +45,7 @@ import { TurnPETracker } from '@/components/character/TurnPETracker';
 import { RestModal } from '@/components/character/RestModal';
 import { CharacterCombatTracker } from '@/components/character/CharacterCombatTracker';
 import { ConditionManager, type ActiveCondition } from '@/components/character/ConditionManager';
+import { AttackSystem, type WeaponData } from '@/components/character/AttackSystem';
 
 interface Character {
   id: string;
@@ -71,7 +72,7 @@ interface Character {
   skills: Record<string, number>;
   powers: Array<{ name: string; description: string }>;
   abilities: string[];
-  inventory: Array<{ name: string; category: string; slots: number; itemType?: string; isEquipped?: boolean; equipSlot?: string }>;
+  inventory: Array<{ id?: string; name: string; category: string; slots: number; itemType?: string; isEquipped?: boolean; equipSlot?: string }>;
   rituals: string[];
   background: string | null;
   notes: string | null;
@@ -788,6 +789,27 @@ export default function CharacterSheet() {
               }}
               onPEChange={(newPE) => {
                 setPeCurrent(newPE);
+              }}
+            />
+
+            {/* Attack System */}
+            <AttackSystem
+              weapons={character.inventory
+                .filter(item => item.isEquipped && item.itemType === 'weapon')
+                .map(item => ({
+                  id: item.id || crypto.randomUUID(),
+                  name: item.name,
+                  attackAttribute: item.category === 'I' || item.category === 'II' 
+                    ? 'agility' as const 
+                    : 'strength' as const,
+                  damage: '1d6', // Default, idealmente viria do item
+                  damageType: 'Impacto',
+                  range: item.category === 'II' || item.category === 'III' ? 'Curto' : undefined,
+                } as WeaponData))}
+              attributes={attributes}
+              skillBonuses={{
+                luta: character.skills['luta'] || 0,
+                pontaria: character.skills['pontaria'] || 0,
               }}
             />
 
