@@ -12,6 +12,7 @@ import { StepAttributes } from '@/components/character/StepAttributes';
 import { StepOrigin } from '@/components/character/StepOrigin';
 import { StepClass } from '@/components/character/StepClass';
 import { StepTrack } from '@/components/character/StepTrack';
+import { StepRituals } from '@/components/character/StepRituals';
 import { StepSkills } from '@/components/character/StepSkills';
 import { StepAbilities } from '@/components/character/StepAbilities';
 import { StepReview } from '@/components/character/StepReview';
@@ -19,7 +20,7 @@ import { CharacterCreationStepper } from '@/components/character/CharacterCreati
 import { StatsPreviewWidget } from '@/components/character/StatsPreviewWidget';
 import { RestoreDraftDialog } from '@/components/character/RestoreDraftDialog';
 import { ExitConfirmDialog } from '@/components/character/ExitConfirmDialog';
-import { ORIGINS, calculateDerivedStats, calculateDefense } from '@/lib/character-data';
+import { ORIGINS, CLASSES, calculateDerivedStats, calculateDefense } from '@/lib/character-data';
 import { rebuildCharacterSheet, buildStateToFormData, CLASS_PROFICIENCIES } from '@/lib/character-builder-engine';
 import { getCoreAbilities, getChoosableAbilities } from '@/lib/class-abilities';
 import { useCharacterAutoSave, loadCharacterDraft, clearCharacterDraft } from '@/hooks/useCharacterAutoSave';
@@ -67,15 +68,20 @@ export type CharacterFormData = {
   abilities: string[];
   classTrack: string;
   trackAbilities: string[];
+  
+  // Rituais (apenas para Ocultistas)
+  rituals: string[];
 };
 
-const STEPS = [
+// Base steps - rituais será inserido dinamicamente para Ocultistas
+const BASE_STEPS = [
   { id: 'concept', title: 'CONCEITO' },
   { id: 'nex', title: 'NEX' },
   { id: 'attributes', title: 'ATRIBUTOS' },
   { id: 'origin', title: 'ORIGEM' },
   { id: 'class', title: 'CLASSE' },
   { id: 'track', title: 'TRILHA' },
+  // Rituais é inserido aqui para Ocultistas
   { id: 'skills', title: 'PERÍCIAS' },
   { id: 'abilities', title: 'HABILIDADES' },
   { id: 'review', title: 'REVISÃO' },
@@ -112,6 +118,7 @@ const initialFormData: CharacterFormData = {
   abilities: [],
   classTrack: '',
   trackAbilities: [],
+  rituals: [],
 };
 
 export default function CharacterCreate() {
@@ -166,6 +173,23 @@ export default function CharacterCreate() {
   
   const buildResult = useMemo(() => rebuildCharacterSheet(buildState), [buildState]);
 
+  // Steps dinâmicos - inclui Rituais apenas para Ocultistas
+  const isOcultist = formData.characterClass === 'Ocultista';
+  const STEPS = useMemo(() => {
+    if (isOcultist) {
+      // Insere o step de Rituais após Trilha (índice 5 no BASE_STEPS)
+      const steps = [...BASE_STEPS];
+      steps.splice(6, 0, { id: 'rituals', title: 'RITUAIS' });
+      return steps;
+    }
+    return BASE_STEPS;
+  }, [isOcultist]);
+
+  // Obter quantidade de rituais permitidos para validação
+  const ocultistClass = CLASSES.find(c => c.id === 'Ocultista');
+  const ritualsPerNex = (ocultistClass as any)?.ritualsPerNex || {};
+  const requiredRituals = ritualsPerNex[formData.nex]?.count || 0;
+
   // Derived stats for preview
   const previewStats = useMemo(() => {
     if (!formData.characterClass) {
@@ -185,56 +209,57 @@ export default function CharacterCreate() {
     };
   }, [formData.characterClass, formData.attributes, formData.nex, formData.origin]);
 
-  // Calculate completed steps
+  // Calcula completed steps baseado no step ID ao invés de índice fixo
   const completedSteps = useMemo(() => {
     const completed: number[] = [];
     
-    // Step 0: Concept
-    if (formData.name.trim().length >= 2) {
-      completed.push(0);
-    }
-    
-    // Step 1: NEX (always complete, has default value)
-    completed.push(1);
-    
-    // Step 2: Attributes
-    const total = Object.values(formData.attributes).reduce((a, b) => a + b, 0);
-    if (total === 9 || total === 10) {
-      completed.push(2);
-    }
-    
-    // Step 3: Origin
-    if (formData.origin !== '') {
-      completed.push(3);
-    }
-    
-    // Step 4: Class
-    if (formData.characterClass !== '') {
-      completed.push(4);
-    }
-    
-    // Step 5: Track (complete if track is selected)
-    if (formData.classTrack !== '') {
-      completed.push(5);
-    }
-    
-    // Step 6: Skills
-    if (buildResult.pendingChoices.length === 0 && buildResult.pendingConflicts.length === 0 && formData.characterClass) {
-      completed.push(6);
-    }
-    
-    // Step 7: Abilities (always complete if class is selected, choices are optional)
-    if (formData.characterClass !== '') {
-      completed.push(7);
-    }
-    
-    // Step 8: Review (can finalize)
-    if (buildResult.canFinalize && formData.classTrack !== '') {
-      completed.push(8);
-    }
+    STEPS.forEach((step, index) => {
+      switch (step.id) {
+        case 'concept':
+          if (formData.name.trim().length >= 2) completed.push(index);
+          break;
+        case 'nex':
+          // Sempre completo (tem valor padrão)
+          completed.push(index);
+          break;
+        case 'attributes':
+          const total = Object.values(formData.attributes).reduce((a, b) => a + b, 0);
+          if (total === 9 || total === 10) completed.push(index);
+          break;
+        case 'origin':
+          if (formData.origin !== '') completed.push(index);
+          break;
+        case 'class':
+          if (formData.characterClass !== '') completed.push(index);
+          break;
+        case 'track':
+          if (formData.classTrack !== '') completed.push(index);
+          break;
+        case 'rituals':
+          // Completo se selecionou a quantidade correta de rituais
+          if (formData.rituals.length === requiredRituals) completed.push(index);
+          break;
+        case 'skills':
+          if (buildResult.pendingChoices.length === 0 && buildResult.pendingConflicts.length === 0 && formData.characterClass) {
+            completed.push(index);
+          }
+          break;
+        case 'abilities':
+          // Sempre completo se classe foi selecionada (escolhas são opcionais)
+          if (formData.characterClass !== '') completed.push(index);
+          break;
+        case 'review':
+          // Verifica se pode finalizar e, se for Ocultista, se rituais estão completos
+          const ritualsOk = !isOcultist || formData.rituals.length === requiredRituals;
+          if (buildResult.canFinalize && formData.classTrack !== '' && ritualsOk) {
+            completed.push(index);
+          }
+          break;
+      }
+    });
     
     return completed;
-  }, [formData, buildResult]);
+  }, [formData, buildResult, STEPS, requiredRituals, isOcultist]);
 
   const canProceed = useCallback(() => {
     return completedSteps.includes(currentStep);
@@ -260,7 +285,7 @@ export default function CharacterCreate() {
     if (currentStep < STEPS.length - 1) {
       setCurrentStep(prev => prev + 1);
     }
-  }, [currentStep]);
+  }, [currentStep, STEPS.length]);
 
   const handleBack = useCallback(() => {
     if (currentStep > 0) {
@@ -381,6 +406,7 @@ export default function CharacterCreate() {
         proficiencies: proficiencies,
         abilities: allAbilities,
         class_track: formData.classTrack || null,
+        rituals: formData.rituals || [],
       });
 
       if (error) throw error;
@@ -420,25 +446,30 @@ export default function CharacterCreate() {
       exit: { opacity: 0, x: -20 },
     };
 
+    // Usar step.id para renderizar o componente correto
+    const currentStepId = STEPS[currentStep]?.id;
+    
     const content = (() => {
-      switch (currentStep) {
-        case 0:
+      switch (currentStepId) {
+        case 'concept':
           return <StepConcept formData={formData} updateFormData={updateFormData} />;
-        case 1:
+        case 'nex':
           return <StepNex formData={formData} updateFormData={updateFormData} />;
-        case 2:
+        case 'attributes':
           return <StepAttributes formData={formData} updateFormData={updateFormData} />;
-        case 3:
+        case 'origin':
           return <StepOrigin formData={formData} updateFormData={updateFormData} />;
-        case 4:
+        case 'class':
           return <StepClass formData={formData} updateFormData={updateFormData} />;
-        case 5:
+        case 'track':
           return <StepTrack formData={formData} updateFormData={updateFormData} />;
-        case 6:
+        case 'rituals':
+          return <StepRituals formData={formData} updateFormData={updateFormData} />;
+        case 'skills':
           return <StepSkills formData={formData} updateFormData={updateFormData} buildResult={buildResult} />;
-        case 7:
+        case 'abilities':
           return <StepAbilities formData={formData} updateFormData={updateFormData} />;
-        case 8:
+        case 'review':
           return <StepReview formData={formData} buildResult={buildResult} updateFormData={updateFormData} onStepClick={handleStepClick} />;
         default:
           return null;
@@ -486,6 +517,7 @@ export default function CharacterCreate() {
         {/* Stepper */}
         <div className="mb-8">
           <CharacterCreationStepper
+            steps={STEPS}
             currentStep={currentStep}
             completedSteps={completedSteps}
             onStepClick={handleStepClick}

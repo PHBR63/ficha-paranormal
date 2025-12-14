@@ -1,5 +1,11 @@
+// Componente stepper visual para criação de personagem
+// Suporta steps dinâmicos (ex: Rituais apenas para Ocultistas)
+
 import { motion } from 'framer-motion';
-import { Check, User, Dices, MapPin, Sword, BookOpen, FileCheck } from 'lucide-react';
+import { 
+  Check, User, Dices, MapPin, Sword, BookOpen, FileCheck, 
+  BarChart3, Route, Sparkles, Crosshair 
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   Tooltip,
@@ -8,22 +14,27 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 
-interface Step {
+// Mapeamento de step.id para ícone
+const STEP_ICON_MAP: Record<string, React.ElementType> = {
+  concept: User,
+  nex: BarChart3,
+  attributes: Dices,
+  origin: MapPin,
+  class: Sword,
+  track: Route,
+  rituals: Sparkles,
+  skills: BookOpen,
+  abilities: Crosshair,
+  review: FileCheck,
+};
+
+interface StepDefinition {
   id: string;
   title: string;
-  icon: React.ElementType;
 }
 
-const STEP_ICONS: Step[] = [
-  { id: 'concept', title: 'Conceito', icon: User },
-  { id: 'attributes', title: 'Atributos', icon: Dices },
-  { id: 'origin', title: 'Origem', icon: MapPin },
-  { id: 'class', title: 'Classe', icon: Sword },
-  { id: 'skills', title: 'Perícias', icon: BookOpen },
-  { id: 'review', title: 'Revisão', icon: FileCheck },
-];
-
 interface CharacterCreationStepperProps {
+  steps: StepDefinition[];
   currentStep: number;
   completedSteps: number[];
   onStepClick?: (step: number) => void;
@@ -31,6 +42,7 @@ interface CharacterCreationStepperProps {
 }
 
 export function CharacterCreationStepper({
+  steps,
   currentStep,
   completedSteps,
   onStepClick,
@@ -41,8 +53,8 @@ export function CharacterCreationStepper({
       <div className="w-full">
         {/* Desktop view */}
         <div className="hidden md:flex justify-between items-center mb-4">
-          {STEP_ICONS.map((step, index) => {
-            const Icon = step.icon;
+          {steps.map((step, index) => {
+            const Icon = STEP_ICON_MAP[step.id] || BookOpen;
             const isCompleted = completedSteps.includes(index);
             const isCurrent = index === currentStep;
             const canClick = canNavigate ? canNavigate(index) : index <= Math.max(...completedSteps, currentStep);
@@ -50,7 +62,7 @@ export function CharacterCreationStepper({
             return (
               <div
                 key={step.id}
-                className={cn('flex items-center', index < STEP_ICONS.length - 1 && 'flex-1')}
+                className={cn('flex items-center', index < steps.length - 1 && 'flex-1')}
               >
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -97,7 +109,7 @@ export function CharacterCreationStepper({
                   </TooltipContent>
                 </Tooltip>
 
-                {index < STEP_ICONS.length - 1 && (
+                {index < steps.length - 1 && (
                   <div className="flex-1 h-1 mx-3 rounded-full overflow-hidden bg-muted/30">
                     <motion.div
                       className="h-full bg-primary"
@@ -114,8 +126,8 @@ export function CharacterCreationStepper({
 
         {/* Mobile view */}
         <div className="md:hidden">
-          <div className="flex justify-center gap-2 mb-4">
-            {STEP_ICONS.map((step, index) => {
+          <div className="flex justify-center gap-2 mb-4 flex-wrap">
+            {steps.map((step, index) => {
               const isCompleted = completedSteps.includes(index);
               const isCurrent = index === currentStep;
 
@@ -144,10 +156,10 @@ export function CharacterCreationStepper({
             animate={{ opacity: 1, y: 0 }}
             className="font-display text-lg tracking-wider text-primary"
           >
-            {STEP_ICONS[currentStep]?.title.toUpperCase()}
+            {steps[currentStep]?.title.toUpperCase()}
           </motion.p>
           <p className="text-sm text-muted-foreground">
-            Passo {currentStep + 1} de {STEP_ICONS.length}
+            Passo {currentStep + 1} de {steps.length}
           </p>
         </div>
       </div>
