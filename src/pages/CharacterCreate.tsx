@@ -24,6 +24,10 @@ export type CharacterFormData = {
   appearance: string;
   personality: string;
   
+  // Photo
+  photoUrl: string | null;
+  photoFile: File | null;
+  
   // Core
   origin: string;
   characterClass: string;
@@ -77,6 +81,8 @@ export default function CharacterCreate() {
     gender: '',
     appearance: '',
     personality: '',
+    photoUrl: null,
+    photoFile: null,
     origin: '',
     characterClass: '',
     nex: 5,

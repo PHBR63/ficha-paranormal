@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
+import { ThemeSelector } from '@/components/ui/theme-selector';
 import { 
   Plus, 
   LogOut, 
@@ -119,6 +120,7 @@ export default function Dashboard() {
           </Link>
           
           <div className="flex items-center gap-4">
+            <ThemeSelector />
             <div className="flex items-center gap-2 text-muted-foreground">
               <User className="w-4 h-4" />
               <span className="text-sm hidden sm:block">{displayName}</span>

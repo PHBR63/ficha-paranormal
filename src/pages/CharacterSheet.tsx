@@ -332,7 +332,7 @@ export default function CharacterSheet() {
                     <span className="font-display text-xl text-destructive">{hpCurrent}/{character.hp_max}</span>
                   )}
                 </div>
-                <AnimatedProgress value={hpCurrent} max={character.hp_max} variant="health" size="md" glow={hpCurrent / character.hp_max <= 0.25} />
+                <AnimatedProgress value={hpCurrent} max={character.hp_max} variant="hp" size="md" glow={hpCurrent / character.hp_max <= 0.25} />
               </div>
 
               {/* PE */}
@@ -353,7 +353,7 @@ export default function CharacterSheet() {
                     <span className="font-display text-xl text-secondary">{peCurrent}/{character.pe_max}</span>
                   )}
                 </div>
-                <AnimatedProgress value={peCurrent} max={character.pe_max} variant="energy" size="md" />
+                <AnimatedProgress value={peCurrent} max={character.pe_max} variant="pe" size="md" />
               </div>
 
               {/* SAN */}
@@ -374,7 +374,7 @@ export default function CharacterSheet() {
                     <span className="font-display text-xl text-paranormal">{sanCurrent}/{character.san_max}</span>
                   )}
                 </div>
-                <AnimatedProgress value={sanCurrent} max={character.san_max} variant="sanity" size="md" glow={isSanLow} />
+                <AnimatedProgress value={sanCurrent} max={character.san_max} variant="san" size="md" glow={isSanLow} />
               </div>
             </div>
 
