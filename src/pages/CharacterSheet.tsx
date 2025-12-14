@@ -43,6 +43,7 @@ import { CharacterHistoryPanel, logCharacterChanges } from '@/components/charact
 import { EffectiveStatsWidget } from '@/components/character/EffectiveStatsWidget';
 import { TurnPETracker } from '@/components/character/TurnPETracker';
 import { RestModal } from '@/components/character/RestModal';
+import { CharacterCombatTracker } from '@/components/character/CharacterCombatTracker';
 
 interface Character {
   id: string;
@@ -742,6 +743,26 @@ export default function CharacterSheet() {
                 <ConditionList conditions={character.conditions} size="md" />
               </div>
             )}
+
+            {/* Combat Tracker */}
+            <CharacterCombatTracker
+              character={{
+                name: character.name,
+                agility: character.agility,
+                defense: character.defense,
+                hp_current: hpCurrent,
+                hp_max: character.hp_max,
+                pe_current: peCurrent,
+                pe_max: character.pe_max,
+                conditions: character.conditions,
+              }}
+              onHPChange={(newHP) => {
+                setHpCurrent(newHP);
+              }}
+              onPEChange={(newPE) => {
+                setPeCurrent(newPE);
+              }}
+            />
 
             {/* Attributes with Dice */}
             <div className="ordo-panel p-4">
