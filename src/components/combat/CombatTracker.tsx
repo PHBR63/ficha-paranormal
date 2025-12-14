@@ -348,7 +348,7 @@ export function CombatTracker({
                         <AnimatedProgress
                           value={combatant.hp}
                           max={combatant.hpMax}
-                          variant="health"
+                          variant="hp"
                           size="sm"
                         />
                       </div>
@@ -362,7 +362,7 @@ export function CombatTracker({
                         <AnimatedProgress
                           value={combatant.pe}
                           max={combatant.peMax}
-                          variant="energy"
+                          variant="pe"
                           size="sm"
                         />
                       </div>
@@ -376,7 +376,7 @@ export function CombatTracker({
                         <AnimatedProgress
                           value={combatant.san}
                           max={combatant.sanMax}
-                          variant="sanity"
+                          variant="san"
                           size="sm"
                         />
                       </div>

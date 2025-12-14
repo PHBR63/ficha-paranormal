@@ -140,7 +140,7 @@ export function CampaignStatusGrid({ members, isMaster }: CampaignStatusGridProp
                   <AnimatedProgress
                     value={char.hp_current}
                     max={char.hp_max}
-                    variant="health"
+                    variant="hp"
                     size="sm"
                     showLabel
                     showValue
@@ -149,7 +149,7 @@ export function CampaignStatusGrid({ members, isMaster }: CampaignStatusGridProp
                   <AnimatedProgress
                     value={char.pe_current}
                     max={char.pe_max}
-                    variant="energy"
+                    variant="pe"
                     size="sm"
                     showLabel
                     showValue
@@ -157,7 +157,7 @@ export function CampaignStatusGrid({ members, isMaster }: CampaignStatusGridProp
                   <AnimatedProgress
                     value={char.san_current}
                     max={char.san_max}
-                    variant="sanity"
+                    variant="san"
                     size="sm"
                     showLabel
                     showValue

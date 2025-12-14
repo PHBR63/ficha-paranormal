@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 interface AnimatedProgressProps {
   value: number;
   max: number;
-  variant?: 'health' | 'energy' | 'sanity' | 'default';
+  variant?: 'hp' | 'pe' | 'san' | 'xp' | 'default';
   size?: 'sm' | 'md' | 'lg';
   showLabel?: boolean;
   showValue?: boolean;
@@ -15,25 +15,35 @@ interface AnimatedProgressProps {
 }
 
 const variantStyles = {
-  health: {
-    bar: 'bg-primary',
-    glow: 'shadow-[0_0_10px_hsl(var(--primary)/0.5)]',
-    track: 'bg-primary/20',
+  hp: {
+    bar: 'bg-[hsl(var(--status-hp))]',
+    glow: 'shadow-[0_0_10px_hsl(var(--status-hp)/0.5)]',
+    track: 'bg-[hsl(var(--status-hp)/0.2)]',
+    label: 'PV',
   },
-  energy: {
-    bar: 'bg-accent',
-    glow: 'shadow-[0_0_10px_hsl(var(--accent)/0.5)]',
-    track: 'bg-accent/20',
+  pe: {
+    bar: 'bg-[hsl(var(--status-pe))]',
+    glow: 'shadow-[0_0_10px_hsl(var(--status-pe)/0.5)]',
+    track: 'bg-[hsl(var(--status-pe)/0.2)]',
+    label: 'PE',
   },
-  sanity: {
-    bar: 'bg-paranormal',
-    glow: 'shadow-[0_0_10px_hsl(var(--paranormal)/0.5)]',
-    track: 'bg-paranormal/20',
+  san: {
+    bar: 'bg-[hsl(var(--status-san))]',
+    glow: 'shadow-[0_0_10px_hsl(var(--status-san)/0.5)]',
+    track: 'bg-[hsl(var(--status-san)/0.2)]',
+    label: 'SAN',
+  },
+  xp: {
+    bar: 'bg-[hsl(var(--status-xp))]',
+    glow: 'shadow-[0_0_10px_hsl(var(--status-xp)/0.5)]',
+    track: 'bg-[hsl(var(--status-xp)/0.2)]',
+    label: 'XP',
   },
   default: {
-    bar: 'bg-muted-foreground',
-    glow: 'shadow-[0_0_10px_hsl(var(--muted-foreground)/0.5)]',
+    bar: 'bg-primary',
+    glow: 'shadow-[0_0_10px_hsl(var(--primary)/0.5)]',
     track: 'bg-muted',
+    label: 'Progress',
   },
 };
 
@@ -72,18 +82,15 @@ export function AnimatedProgress({
         <div className="flex justify-between items-center mb-1">
           {showLabel && (
             <span className="text-xs uppercase tracking-wider text-muted-foreground">
-              {variant === 'health' && 'PV'}
-              {variant === 'energy' && 'PE'}
-              {variant === 'sanity' && 'SAN'}
-              {variant === 'default' && 'Progress'}
+              {styles.label}
             </span>
           )}
           {showValue && (
             <motion.span 
               className={cn(
-                "text-xs font-medium",
-                isCritical && "text-destructive animate-pulse",
-                isLow && !isCritical && "text-primary"
+                "text-xs font-medium text-foreground",
+                isCritical && "text-[hsl(var(--status-hp))] animate-pulse",
+                isLow && !isCritical && variant === 'hp' && "text-[hsl(var(--status-hp))]"
               )}
               key={value}
               initial={animate ? { scale: 1.2 } : undefined}

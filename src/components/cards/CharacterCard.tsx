@@ -90,9 +90,9 @@ export function CharacterCard({
           </Link>
         </div>
         <div className="mt-3 grid grid-cols-3 gap-2">
-          <AnimatedProgress value={character.hp_current} max={character.hp_max} variant="health" size="sm" />
-          <AnimatedProgress value={character.pe_current} max={character.pe_max} variant="energy" size="sm" />
-          <AnimatedProgress value={character.san_current} max={character.san_max} variant="sanity" size="sm" />
+          <AnimatedProgress value={character.hp_current} max={character.hp_max} variant="hp" size="sm" />
+          <AnimatedProgress value={character.pe_current} max={character.pe_max} variant="pe" size="sm" />
+          <AnimatedProgress value={character.san_current} max={character.san_max} variant="san" size="sm" />
         </div>
       </MagicCard>
     );
@@ -162,7 +162,7 @@ export function CharacterCard({
             <AnimatedProgress 
               value={character.hp_current} 
               max={character.hp_max} 
-              variant="health" 
+              variant="hp" 
               showLabel 
               showValue
               glow={hpPercent <= 25}
@@ -170,14 +170,14 @@ export function CharacterCard({
             <AnimatedProgress 
               value={character.pe_current} 
               max={character.pe_max} 
-              variant="energy" 
+              variant="pe" 
               showLabel 
               showValue
             />
             <AnimatedProgress 
               value={character.san_current} 
               max={character.san_max} 
-              variant="sanity" 
+              variant="san" 
               showLabel 
               showValue
               glow={sanPercent <= 30}

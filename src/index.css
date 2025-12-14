@@ -13,15 +13,15 @@
 
 @layer base {
   :root {
-    /* Light mode - não usado, mas mantido para fallback */
+    /* Light mode - fallback */
     --background: 209 40% 96%;
     --foreground: 222 47% 11%;
     --card: 210 40% 98%;
     --card-foreground: 222 47% 11%;
     --popover: 214 31% 91%;
     --popover-foreground: 222 47% 11%;
-    --primary: 200 98% 39%;
-    --primary-foreground: 204 100% 97%;
+    --primary: 263 70% 50%;
+    --primary-foreground: 0 0% 100%;
     --secondary: 215 24% 26%;
     --secondary-foreground: 210 40% 98%;
     --muted: 215 20% 65%;
@@ -32,12 +32,19 @@
     --destructive-foreground: 0 85% 97%;
     --border: 212 26% 83%;
     --input: 212 26% 83%;
-    --ring: 200 98% 39%;
+    --ring: 263 70% 50%;
     --radius: 0.5rem;
-    --success: 145 50% 45%;
+    --success: 142 71% 45%;
     --success-foreground: 0 0% 98%;
-    --paranormal: 280 50% 35%;
+    --paranormal: 322 80% 55%;
     --paranormal-foreground: 0 0% 98%;
+    
+    /* Fixed status colors */
+    --status-hp: 0 72% 51%;
+    --status-pe: 142 71% 45%;
+    --status-san: 322 80% 55%;
+    --status-xp: 45 93% 47%;
+    
     --chart-1: 198 93% 59%;
     --chart-2: 213 93% 67%;
     --chart-3: 215 20% 65%;
@@ -45,12 +52,12 @@
     --chart-5: 215 19% 34%;
     --sidebar: 210 40% 98%;
     --sidebar-foreground: 222 47% 11%;
-    --sidebar-primary: 200 98% 39%;
-    --sidebar-primary-foreground: 204 100% 97%;
+    --sidebar-primary: 263 70% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 215 24% 26%;
     --sidebar-accent-foreground: 210 40% 98%;
     --sidebar-border: 212 26% 83%;
-    --sidebar-ring: 200 98% 39%;
+    --sidebar-ring: 263 70% 50%;
     --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
     --font-serif: 'Lora', ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
     --font-mono: 'Space Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
@@ -66,73 +73,124 @@
     --spacing: 0.25rem;
   }
 
+  /* Base Dark Theme - cores neutras compartilhadas */
   .dark {
-    /* Ordo Realitas Dark Theme */
-    --background: 222 47% 11%;
+    --background: 260 84% 4%;
     --foreground: 210 40% 98%;
 
-    --card: 217 32% 17%;
+    --card: 260 30% 12%;
     --card-foreground: 210 40% 98%;
 
-    --popover: 215 24% 26%;
+    --popover: 260 25% 15%;
     --popover-foreground: 210 40% 98%;
 
-    /* Vermelho Ritual - Destaque primário */
-    --primary: 198 93% 59%;
-    --primary-foreground: 204 80% 15%;
+    --secondary: 260 20% 20%;
+    --secondary-foreground: 210 40% 98%;
 
-    /* Cinza Grafite - Elementos secundários */
-    --secondary: 212 26% 83%;
-    --secondary-foreground: 228 84% 4%;
+    --muted: 260 15% 30%;
+    --muted-foreground: 210 40% 85%;
 
-    /* Muted - Textos secundários */
-    --muted: 215 16% 46%;
-    --muted-foreground: 210 40% 98%;
+    --accent: 260 25% 18%;
+    --accent-foreground: 210 40% 90%;
 
-    /* Ciano Espectral - Accent */
-    --accent: 228 84% 4%;
-    --accent-foreground: 215 20% 65%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
 
-    /* Destructive */
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 85% 97%;
+    --border: 260 20% 25%;
+    --input: 260 20% 20%;
 
-    /* Borders e Inputs */
-    --border: 215 19% 34%;
-    --input: 215 19% 34%;
-    --ring: 198 93% 59%;
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
 
-    /* Success - Verde Pálido */
-    --success: 145 35% 42%;
-    --success-foreground: 0 0% 98%;
+    --paranormal: 322 80% 55%;
+    --paranormal-foreground: 0 0% 100%;
 
-    /* Paranormal - Roxo Abissal */
-    --paranormal: 285 55% 32%;
-    --paranormal-foreground: 0 0% 98%;
+    /* Fixed status colors - never change between themes */
+    --status-hp: 0 72% 51%;
+    --status-pe: 142 71% 45%;
+    --status-san: 322 80% 55%;
+    --status-xp: 45 93% 47%;
 
     /* Sidebar */
-    --sidebar-background: 210 12% 5%;
+    --sidebar-background: 260 80% 3%;
     --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 198 93% 59%;
-    --sidebar-primary-foreground: 204 80% 15%;
-    --sidebar-accent: 215 20% 65%;
-    --sidebar-accent-foreground: 228 84% 4%;
-    --sidebar-border: 215 19% 34%;
-    --sidebar-ring: 198 93% 59%;
-    --chart-1: 199 95% 73%;
-    --chart-2: 211 96% 78%;
-    --chart-3: 215 20% 65%;
-    --chart-4: 215 16% 46%;
-    --chart-5: 215 19% 34%;
-    --sidebar: 217 32% 17%;
-    --shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
-    --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
-    --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
-    --shadow: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
-    --shadow-md: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 2px 4px -1px hsl(0 0% 0% / 0.1);
-    --shadow-lg: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 4px 6px -1px hsl(0 0% 0% / 0.1);
-    --shadow-xl: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 8px 10px -1px hsl(0 0% 0% / 0.1);
-    --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.25);
+    --sidebar-border: 260 20% 20%;
+    
+    --chart-1: 263 70% 60%;
+    --chart-2: 280 60% 55%;
+    --chart-3: 260 20% 50%;
+    --chart-4: 260 15% 40%;
+    --chart-5: 260 20% 30%;
+    --sidebar: 260 30% 12%;
+    --shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.2);
+    --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.2);
+    --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.3), 0 1px 2px -1px hsl(0 0% 0% / 0.2);
+    --shadow: 0 1px 3px 0px hsl(0 0% 0% / 0.3), 0 1px 2px -1px hsl(0 0% 0% / 0.2);
+    --shadow-md: 0 1px 3px 0px hsl(0 0% 0% / 0.3), 0 2px 4px -1px hsl(0 0% 0% / 0.2);
+    --shadow-lg: 0 1px 3px 0px hsl(0 0% 0% / 0.3), 0 4px 6px -1px hsl(0 0% 0% / 0.2);
+    --shadow-xl: 0 1px 3px 0px hsl(0 0% 0% / 0.3), 0 8px 10px -1px hsl(0 0% 0% / 0.2);
+    --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.5);
+  }
+
+  /* Purple Theme (Default) - Roxo Abissal */
+  .dark[data-color-theme="purple"],
+  .dark:not([data-color-theme]) {
+    --primary: 263 70% 50%;
+    --primary-foreground: 0 0% 100%;
+    --ring: 263 70% 50%;
+    --sidebar-primary: 263 70% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 263 40% 25%;
+    --sidebar-accent-foreground: 263 70% 85%;
+    --sidebar-ring: 263 70% 50%;
+  }
+
+  /* Red Theme - Sangue Ritual */
+  .dark[data-color-theme="red"] {
+    --primary: 0 72% 51%;
+    --primary-foreground: 0 0% 100%;
+    --ring: 0 72% 51%;
+    --sidebar-primary: 0 72% 51%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 40% 20%;
+    --sidebar-accent-foreground: 0 72% 85%;
+    --sidebar-ring: 0 72% 51%;
+  }
+
+  /* Green Theme - Conhecimento */
+  .dark[data-color-theme="green"] {
+    --primary: 142 71% 45%;
+    --primary-foreground: 0 0% 100%;
+    --ring: 142 71% 45%;
+    --sidebar-primary: 142 71% 45%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 142 40% 20%;
+    --sidebar-accent-foreground: 142 71% 85%;
+    --sidebar-ring: 142 71% 45%;
+  }
+
+  /* Blue Theme - Ciano Espectral */
+  .dark[data-color-theme="blue"] {
+    --primary: 199 89% 48%;
+    --primary-foreground: 0 0% 100%;
+    --ring: 199 89% 48%;
+    --sidebar-primary: 199 89% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 199 40% 20%;
+    --sidebar-accent-foreground: 199 89% 85%;
+    --sidebar-ring: 199 89% 48%;
+  }
+
+  /* Amber Theme - Energia Arcana */
+  .dark[data-color-theme="amber"] {
+    --primary: 38 92% 50%;
+    --primary-foreground: 0 0% 10%;
+    --ring: 38 92% 50%;
+    --sidebar-primary: 38 92% 50%;
+    --sidebar-primary-foreground: 0 0% 10%;
+    --sidebar-accent: 38 40% 20%;
+    --sidebar-accent-foreground: 38 92% 85%;
+    --sidebar-ring: 38 92% 50%;
   }
 }
 
@@ -184,13 +242,14 @@
   }
 
   .ordo-panel:hover {
-    @apply border-border/80;
+    @apply border-primary/30;
   }
 
   /* Card de dossiê */
   .dossier-card {
     @apply relative bg-card border border-border rounded-lg overflow-hidden;
     @apply before:absolute before:inset-0 before:bg-gradient-to-br before:from-primary/5 before:to-transparent before:pointer-events-none;
+    @apply hover:border-primary/40 transition-colors;
   }
 
   /* Carimbo classificado */
@@ -220,7 +279,7 @@
 
   /* Input estilo terminal */
   .terminal-input {
-    @apply bg-background/50 border-border/50 focus:border-accent focus:ring-accent/20;
+    @apply bg-background/50 border-border/50 focus:border-primary focus:ring-primary/20;
   }
 
   /* Badge de patente */
@@ -232,7 +291,7 @@
   /* Indicador de NEX */
   .nex-indicator {
     @apply inline-flex items-center justify-center w-10 h-10 text-lg font-bold;
-    @apply bg-accent/10 text-accent border-2 border-accent/30 rounded-full;
+    @apply bg-primary/10 text-primary border-2 border-primary/30 rounded-full;
   }
 
   /* Linha divisória estilizada */
@@ -248,20 +307,20 @@
 
   /* Botão de ação primária com glow */
   .action-button {
-    @apply relative overflow-hidden transition-all duration-300;
+    @apply relative overflow-hidden transition-all duration-300 bg-primary text-primary-foreground hover:bg-primary/90;
     @apply hover:shadow-[0_0_20px_hsl(var(--primary)/0.4)];
   }
 
   /* Container de atributo */
   .attribute-box {
-    @apply flex flex-col items-center justify-center p-4 bg-secondary/50 border border-border rounded-lg;
-    @apply transition-all duration-200 hover:border-accent/50 hover:bg-secondary;
+    @apply flex flex-col items-center justify-center p-4 bg-card border border-border rounded-lg;
+    @apply transition-all duration-200 hover:border-primary/50 hover:bg-card/80;
   }
 
   /* Skill row */
   .skill-row {
     @apply flex items-center justify-between p-2 border-b border-border/30 last:border-0;
-    @apply transition-colors hover:bg-secondary/30;
+    @apply transition-colors hover:bg-muted/20;
   }
 
   /* Paranormal glow effect */
@@ -273,6 +332,23 @@
   /* Flicker animation for low sanity */
   .animate-flicker {
     animation: flicker 4s ease-in-out infinite;
+  }
+
+  /* Status bar colors - fixed, theme-independent */
+  .status-hp {
+    background-color: hsl(var(--status-hp));
+  }
+  
+  .status-pe {
+    background-color: hsl(var(--status-pe));
+  }
+  
+  .status-san {
+    background-color: hsl(var(--status-san));
+  }
+  
+  .status-xp {
+    background-color: hsl(var(--status-xp));
   }
 }
 
@@ -375,5 +451,16 @@
   }
   96% {
     opacity: 1;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
