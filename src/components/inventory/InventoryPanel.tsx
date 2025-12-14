@@ -74,6 +74,8 @@ import {
   PATENT_LIMITS,
 } from '@/lib/inventory-system';
 import { EquipmentSlots, EquipmentSlotType, EQUIPMENT_SLOTS, getAppropriateSlot } from './EquipmentSlots';
+import { WeaponCatalogModal } from './WeaponCatalogModal';
+import type { CatalogWeapon } from '@/lib/weapons-catalog';
 
 // Categorias de itens para organização visual
 export type ItemType = 'weapon' | 'armor' | 'consumable' | 'ritual' | 'valuable' | 'misc';
@@ -119,6 +121,7 @@ export function InventoryPanel({
 }: InventoryPanelProps) {
   const [expandedCategories, setExpandedCategories] = useState<Set<ItemType>>(new Set(['weapon', 'armor', 'consumable']));
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [weaponCatalogOpen, setWeaponCatalogOpen] = useState(false);
   const [newItem, setNewItem] = useState<Partial<ExtendedInventoryItem>>({
     name: '',
     category: '0',
@@ -284,6 +287,57 @@ export function InventoryPanel({
     onInventoryChange(newInventory);
   };
 
+  // Handler para adicionar arma do catálogo
+  const handleAddWeaponFromCatalog = (weapon: CatalogWeapon) => {
+    if (!onInventoryChange) return;
+
+    const item: ExtendedInventoryItem = {
+      id: crypto.randomUUID(),
+      name: weapon.name,
+      category: weapon.category,
+      slots: weapon.spaces,
+      quantity: 1,
+      itemType: 'weapon',
+      description: weapon.description,
+      // Dados extras para o sistema de ataque
+      damage: weapon.damage,
+      damageType: weapon.damageType,
+      critical: weapon.critical,
+      criticalMultiplier: weapon.criticalMultiplier,
+      range: weapon.range,
+      special: weapon.special,
+      ammoType: weapon.ammoType,
+    } as ExtendedInventoryItem & { 
+      damage?: string; 
+      damageType?: string; 
+      critical?: number; 
+      criticalMultiplier?: number;
+      range?: string;
+      special?: string;
+    };
+
+    const result = addToInventory(inventory, item, patent);
+    
+    if (result.success) {
+      onInventoryChange(result.newInventory.map(i => ({
+        ...i,
+        itemType: (i as ExtendedInventoryItem).itemType || 'misc',
+        equipSlot: (i as ExtendedInventoryItem).equipSlot,
+      })));
+      setWeaponCatalogOpen(false);
+      toast({
+        title: 'Arma adicionada',
+        description: `${weapon.name} foi adicionada ao inventário.`,
+      });
+    } else {
+      toast({
+        title: 'Limite de patente atingido',
+        description: result.error,
+        variant: 'destructive',
+      });
+    }
+  };
+
   const canEquipItem = (item: ExtendedInventoryItem): boolean => {
     if (item.isEquipped) return false;
     const slot = getAppropriateSlot(item, equippedItems);
@@ -306,13 +360,25 @@ export function InventoryPanel({
           INVENTÁRIO
         </h3>
         {!readOnly && (
-          <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm" variant="outline" className="font-display text-xs">
-                <Plus className="w-3 h-3 mr-1" />
-                ADICIONAR
-              </Button>
-            </DialogTrigger>
+          <div className="flex gap-2">
+            {/* Botão Catálogo de Armas */}
+            <Button 
+              size="sm" 
+              variant="outline" 
+              className="font-display text-xs"
+              onClick={() => setWeaponCatalogOpen(true)}
+            >
+              <Sword className="w-3 h-3 mr-1" />
+              ARMAS
+            </Button>
+            {/* Botão Adicionar Item Manual */}
+            <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm" variant="outline" className="font-display text-xs">
+                  <Plus className="w-3 h-3 mr-1" />
+                  ITEM
+                </Button>
+              </DialogTrigger>
             <DialogContent className="sm:max-w-md bg-popover">
               <DialogHeader>
                 <DialogTitle className="font-display">Adicionar Item</DialogTitle>
@@ -445,8 +511,19 @@ export function InventoryPanel({
               </div>
             </DialogContent>
           </Dialog>
+          </div>
         )}
       </div>
+
+      {/* Weapon Catalog Modal */}
+      <WeaponCatalogModal
+        open={weaponCatalogOpen}
+        onOpenChange={setWeaponCatalogOpen}
+        patent={patent}
+        patentLimits={patentLimits}
+        categoryCounts={categoryCounts}
+        onAddWeapon={handleAddWeaponFromCatalog}
+      />
 
       {/* Equipment Slots */}
       {showEquipment && (
