@@ -20,7 +20,8 @@ import {
   Swords,
   Package,
   Sparkles,
-  BookOpen
+  BookOpen,
+  ArrowUp,
 } from 'lucide-react';
 import { ORIGINS, SKILLS, getPatentByNex, calculateDerivedStats, getTrackById } from '@/lib/character-data';
 import { ALL_RITUALS } from '@/lib/rituals-data';
@@ -34,6 +35,7 @@ import { AttributeGrid } from '@/components/character/AttributeWithDice';
 import { SkillsGrid } from '@/components/character/SkillsGrid';
 import { InventoryPanel } from '@/components/inventory/InventoryPanel';
 import { InventoryItem } from '@/lib/inventory-system';
+import { NexProgressionModal } from '@/components/character/NexProgressionModal';
 
 interface Character {
   id: string;
@@ -87,6 +89,9 @@ export default function CharacterSheet() {
   const [diceRollerOpen, setDiceRollerOpen] = useState(false);
   const [rollAttribute, setRollAttribute] = useState(0);
   const [rollSkillName, setRollSkillName] = useState('');
+  
+  // NEX progression modal
+  const [nexModalOpen, setNexModalOpen] = useState(false);
 
   useEffect(() => {
     async function fetchCharacter() {
@@ -201,6 +206,74 @@ export default function CharacterSheet() {
     setDiceRollerOpen(true);
   };
 
+  // Handler para progressão de NEX
+  const handleLevelUp = async (newNex: number, newStats: {
+    hp_max: number;
+    pe_max: number;
+    san_max: number;
+    patent: string;
+    newAbilities: string[];
+  }) => {
+    if (!character) return;
+
+    // Combina habilidades existentes com novas
+    const updatedAbilities = [
+      ...character.abilities,
+      ...newStats.newAbilities,
+    ];
+
+    const { error } = await supabase
+      .from('characters')
+      .update({
+        nex: newNex,
+        hp_max: newStats.hp_max,
+        hp_current: hpCurrent + (newStats.hp_max - character.hp_max), // Adiciona o bônus de HP
+        pe_max: newStats.pe_max,
+        pe_current: peCurrent + (newStats.pe_max - character.pe_max), // Adiciona o bônus de PE
+        san_max: newStats.san_max,
+        san_current: sanCurrent + (newStats.san_max - character.san_max), // Adiciona o bônus de SAN
+        patent: newStats.patent,
+        abilities: updatedAbilities,
+      })
+      .eq('id', character.id);
+
+    if (error) {
+      toast({
+        title: 'Erro ao subir de NEX',
+        description: error.message,
+        variant: 'destructive',
+      });
+      throw error;
+    }
+
+    // Atualiza estado local
+    const newHpCurrent = hpCurrent + (newStats.hp_max - character.hp_max);
+    const newPeCurrent = peCurrent + (newStats.pe_max - character.pe_max);
+    const newSanCurrent = sanCurrent + (newStats.san_max - character.san_max);
+
+    setCharacter(prev => prev ? {
+      ...prev,
+      nex: newNex,
+      hp_max: newStats.hp_max,
+      hp_current: newHpCurrent,
+      pe_max: newStats.pe_max,
+      pe_current: newPeCurrent,
+      san_max: newStats.san_max,
+      san_current: newSanCurrent,
+      patent: newStats.patent,
+      abilities: updatedAbilities,
+    } : null);
+
+    setHpCurrent(newHpCurrent);
+    setPeCurrent(newPeCurrent);
+    setSanCurrent(newSanCurrent);
+
+    toast({
+      title: `NEX aumentado para ${newNex}%!`,
+      description: `${character.name} subiu de nível e ficou mais forte!`,
+    });
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -302,11 +375,22 @@ export default function CharacterSheet() {
                   <p className="text-xs text-muted-foreground mt-2">ORIGEM</p>
                   <p className="font-display">{origin?.name || character.origin}</p>
                 </div>
-                {/* NEX */}
+                {/* NEX com botão de progressão */}
                 <div className="text-right">
                   <p className="text-xs text-muted-foreground">NEX</p>
                   <p className="font-display text-3xl text-secondary">{character.nex}%</p>
                   <span className="patent-badge text-[10px]">{character.patent}</span>
+                  {character.nex < 99 && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setNexModalOpen(true)}
+                      className="mt-2 text-xs h-7 border-primary/50 text-primary hover:bg-primary/10"
+                    >
+                      <ArrowUp className="w-3 h-3 mr-1" />
+                      SUBIR NEX
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>
@@ -656,6 +740,28 @@ export default function CharacterSheet() {
           </div>
         </div>
       </main>
+
+      {/* Modal de Progressão de NEX */}
+      <NexProgressionModal
+        open={nexModalOpen}
+        onClose={() => setNexModalOpen(false)}
+        character={{
+          id: character.id,
+          name: character.name,
+          class: character.class,
+          class_track: character.class_track,
+          nex: character.nex,
+          vigor: character.vigor,
+          presence: character.presence,
+          origin: character.origin,
+          hp_max: character.hp_max,
+          pe_max: character.pe_max,
+          san_max: character.san_max,
+          rituals: character.rituals,
+          abilities: character.abilities,
+        }}
+        onLevelUp={handleLevelUp}
+      />
     </div>
   );
 }

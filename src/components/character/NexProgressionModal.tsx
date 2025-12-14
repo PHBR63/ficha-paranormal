@@ -1,0 +1,406 @@
+// Modal de Progressão de NEX
+// Permite subir de nível, recalcular stats e desbloquear habilidades/rituais
+
+import { useState, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  ArrowUp,
+  Sparkles,
+  Heart,
+  Zap,
+  Brain,
+  Shield,
+  ChevronRight,
+  Lock,
+  Unlock,
+  BookOpen,
+  Route,
+  Check,
+  Loader2,
+} from 'lucide-react';
+import { 
+  CLASSES, 
+  getPatentByNex, 
+  calculateDerivedStats, 
+  getTrackById,
+  getAvailableTrackAbilities,
+} from '@/lib/character-data';
+import { getMaxRitualCircle, getRitualCount } from '@/lib/rituals-data';
+import confetti from 'canvas-confetti';
+
+// NEX válidos (incremento de 5%)
+const NEX_VALUES = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 99];
+
+interface NexProgressionModalProps {
+  open: boolean;
+  onClose: () => void;
+  character: {
+    id: string;
+    name: string;
+    class: string;
+    class_track: string | null;
+    nex: number;
+    vigor: number;
+    presence: number;
+    origin: string;
+    hp_max: number;
+    pe_max: number;
+    san_max: number;
+    rituals: string[];
+    abilities: string[];
+  };
+  onLevelUp: (newNex: number, newStats: {
+    hp_max: number;
+    pe_max: number;
+    san_max: number;
+    patent: string;
+    newAbilities: string[];
+  }) => Promise<void>;
+}
+
+export function NexProgressionModal({ 
+  open, 
+  onClose, 
+  character, 
+  onLevelUp 
+}: NexProgressionModalProps) {
+  const [selectedNex, setSelectedNex] = useState<number | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  const currentNexIndex = NEX_VALUES.indexOf(character.nex);
+  const nextNex = currentNexIndex < NEX_VALUES.length - 1 ? NEX_VALUES[currentNexIndex + 1] : null;
+
+  // Calcula stats para NEX atual e próximo
+  const currentStats = useMemo(() => {
+    return calculateDerivedStats(
+      character.class,
+      character.vigor,
+      character.presence,
+      character.nex,
+      character.origin
+    );
+  }, [character]);
+
+  const nextStats = useMemo(() => {
+    if (!nextNex) return null;
+    return calculateDerivedStats(
+      character.class,
+      character.vigor,
+      character.presence,
+      nextNex,
+      character.origin
+    );
+  }, [character, nextNex]);
+
+  // Habilidades da trilha atual vs próximo NEX
+  const track = character.class_track ? getTrackById(character.class_track) : null;
+  
+  const currentTrackAbilities = useMemo(() => {
+    if (!track) return [];
+    return getAvailableTrackAbilities(track.id, character.nex);
+  }, [track, character.nex]);
+
+  const nextTrackAbilities = useMemo(() => {
+    if (!track || !nextNex) return [];
+    return getAvailableTrackAbilities(track.id, nextNex);
+  }, [track, nextNex]);
+
+  const newTrackAbilities = nextTrackAbilities.filter(
+    a => !currentTrackAbilities.some(c => c.id === a.id)
+  );
+
+  // Rituais disponíveis (para Ocultistas)
+  const isOcultist = character.class === 'Ocultista';
+  const ocultistClass = CLASSES.find(c => c.id === 'Ocultista') as any;
+  const ritualsPerNex = ocultistClass?.ritualsPerNex || {};
+  
+  const currentRitualInfo = ritualsPerNex[character.nex] || { count: 0, maxCircle: 1 };
+  const nextRitualInfo = nextNex ? (ritualsPerNex[nextNex] || { count: 0, maxCircle: 1 }) : null;
+  
+  const newRitualSlots = nextRitualInfo ? nextRitualInfo.count - currentRitualInfo.count : 0;
+  const newMaxCircle = nextRitualInfo && nextRitualInfo.maxCircle > currentRitualInfo.maxCircle;
+
+  // Patent
+  const currentPatent = getPatentByNex(character.nex);
+  const nextPatent = nextNex ? getPatentByNex(nextNex) : null;
+  const patentChanged = nextPatent && nextPatent !== currentPatent;
+
+  const handleLevelUp = async () => {
+    if (!nextNex || !nextStats) return;
+    
+    setSaving(true);
+    
+    try {
+      // Calcula novas habilidades (adiciona as da trilha)
+      const newAbilities = newTrackAbilities.map(a => a.name);
+      
+      await onLevelUp(nextNex, {
+        hp_max: nextStats.hp,
+        pe_max: nextStats.pe,
+        san_max: nextStats.san,
+        patent: nextPatent || currentPatent,
+        newAbilities,
+      });
+
+      // Efeito de celebração
+      confetti({
+        particleCount: 150,
+        spread: 100,
+        origin: { y: 0.5 },
+        colors: ['#a855f7', '#ec4899', '#6366f1', '#22c55e'],
+      });
+
+      onClose();
+    } catch (error) {
+      console.error('Erro ao subir de NEX:', error);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (!nextNex) {
+    return (
+      <Dialog open={open} onOpenChange={onClose}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-display tracking-wider text-center">
+              NEX MÁXIMO ALCANÇADO
+            </DialogTitle>
+          </DialogHeader>
+          <div className="text-center py-8">
+            <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-primary/20 flex items-center justify-center">
+              <Sparkles className="w-10 h-10 text-primary" />
+            </div>
+            <p className="text-4xl font-display text-primary mb-2">{character.nex}%</p>
+            <p className="text-muted-foreground">
+              {character.name} alcançou o nível máximo de experiência!
+            </p>
+          </div>
+          <DialogFooter>
+            <Button onClick={onClose} className="w-full">Fechar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-2xl max-h-[90vh]">
+        <DialogHeader>
+          <DialogTitle className="font-display tracking-wider text-center flex items-center justify-center gap-2">
+            <ArrowUp className="w-5 h-5 text-primary" />
+            PROGRESSÃO DE NEX
+          </DialogTitle>
+          <DialogDescription className="text-center">
+            {character.name} está pronto para evoluir!
+          </DialogDescription>
+        </DialogHeader>
+
+        <ScrollArea className="max-h-[60vh] pr-4">
+          <div className="space-y-6 py-4">
+            {/* Comparação de NEX */}
+            <div className="flex items-center justify-center gap-6">
+              <div className="text-center">
+                <p className="text-xs text-muted-foreground mb-1">ATUAL</p>
+                <div className="w-24 h-24 rounded-lg bg-muted/50 border border-border flex flex-col items-center justify-center">
+                  <span className="font-display text-3xl">{character.nex}%</span>
+                  <span className="text-xs text-muted-foreground">{currentPatent}</span>
+                </div>
+              </div>
+              
+              <motion.div
+                animate={{ x: [0, 5, 0] }}
+                transition={{ duration: 1, repeat: Infinity }}
+              >
+                <ChevronRight className="w-8 h-8 text-primary" />
+              </motion.div>
+              
+              <div className="text-center">
+                <p className="text-xs text-primary mb-1">NOVO</p>
+                <div className="w-24 h-24 rounded-lg bg-primary/20 border border-primary flex flex-col items-center justify-center">
+                  <span className="font-display text-3xl text-primary">{nextNex}%</span>
+                  <span className="text-xs text-primary/70">{nextPatent}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Mudança de Patente */}
+            {patentChanged && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="p-4 bg-success/10 border border-success/30 rounded-lg text-center"
+              >
+                <Badge variant="secondary" className="bg-success/20 text-success mb-2">
+                  <Unlock className="w-3 h-3 mr-1" />
+                  PROMOÇÃO!
+                </Badge>
+                <p className="text-success font-display text-lg">
+                  {currentPatent} → {nextPatent}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Novos itens e recursos disponíveis!
+                </p>
+              </motion.div>
+            )}
+
+            {/* Stats Changes */}
+            {nextStats && (
+              <div className="space-y-2">
+                <h4 className="font-display text-sm tracking-wider text-muted-foreground">
+                  AUMENTO DE STATS
+                </h4>
+                <div className="grid grid-cols-3 gap-3">
+                  {/* HP */}
+                  <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-lg text-center">
+                    <Heart className="w-5 h-5 text-destructive mx-auto mb-1" />
+                    <p className="text-xs text-muted-foreground">PV MÁX</p>
+                    <p className="font-display text-lg">
+                      {character.hp_max} → <span className="text-destructive">{nextStats.hp}</span>
+                    </p>
+                    <Badge variant="outline" className="text-xs text-destructive border-destructive/50">
+                      +{nextStats.hp - character.hp_max}
+                    </Badge>
+                  </div>
+                  
+                  {/* PE */}
+                  <div className="p-3 bg-secondary/10 border border-secondary/30 rounded-lg text-center">
+                    <Zap className="w-5 h-5 text-secondary mx-auto mb-1" />
+                    <p className="text-xs text-muted-foreground">PE MÁX</p>
+                    <p className="font-display text-lg">
+                      {character.pe_max} → <span className="text-secondary">{nextStats.pe}</span>
+                    </p>
+                    <Badge variant="outline" className="text-xs text-secondary border-secondary/50">
+                      +{nextStats.pe - character.pe_max}
+                    </Badge>
+                  </div>
+                  
+                  {/* SAN */}
+                  <div className="p-3 bg-paranormal/10 border border-paranormal/30 rounded-lg text-center">
+                    <Brain className="w-5 h-5 text-paranormal mx-auto mb-1" />
+                    <p className="text-xs text-muted-foreground">SAN MÁX</p>
+                    <p className="font-display text-lg">
+                      {character.san_max} → <span className="text-paranormal">{nextStats.san}</span>
+                    </p>
+                    <Badge variant="outline" className="text-xs text-paranormal border-paranormal/50">
+                      +{nextStats.san - character.san_max}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Novas Habilidades da Trilha */}
+            {newTrackAbilities.length > 0 && track && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="space-y-2"
+              >
+                <div className="flex items-center gap-2">
+                  <Route className="w-4 h-4 text-primary" />
+                  <h4 className="font-display text-sm tracking-wider text-primary">
+                    NOVAS HABILIDADES DA TRILHA
+                  </h4>
+                </div>
+                <div className="space-y-2">
+                  {newTrackAbilities.map((ability) => (
+                    <div 
+                      key={ability.id}
+                      className="p-3 bg-primary/10 border border-primary/30 rounded-lg"
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <Unlock className="w-4 h-4 text-primary" />
+                        <span className="font-medium text-primary">{ability.name}</span>
+                        <Badge variant="outline" className="text-xs">NEX {ability.minNex}%</Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground">{ability.description}</p>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+
+            {/* Novos Rituais (Ocultistas) */}
+            {isOcultist && (newRitualSlots > 0 || newMaxCircle) && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="space-y-2"
+              >
+                <div className="flex items-center gap-2">
+                  <BookOpen className="w-4 h-4 text-paranormal" />
+                  <h4 className="font-display text-sm tracking-wider text-paranormal">
+                    PROGRESSÃO DE RITUAIS
+                  </h4>
+                </div>
+                <div className="p-4 bg-paranormal/10 border border-paranormal/30 rounded-lg">
+                  <div className="grid grid-cols-2 gap-4">
+                    {newRitualSlots > 0 && (
+                      <div className="text-center">
+                        <p className="text-xs text-muted-foreground mb-1">RITUAIS CONHECIDOS</p>
+                        <p className="font-display text-xl">
+                          {currentRitualInfo.count} → <span className="text-paranormal">{nextRitualInfo?.count}</span>
+                        </p>
+                        <Badge variant="outline" className="text-xs text-paranormal border-paranormal/50">
+                          +{newRitualSlots} novo{newRitualSlots > 1 ? 's' : ''}
+                        </Badge>
+                      </div>
+                    )}
+                    {newMaxCircle && (
+                      <div className="text-center">
+                        <p className="text-xs text-muted-foreground mb-1">CÍRCULO MÁXIMO</p>
+                        <p className="font-display text-xl">
+                          {currentRitualInfo.maxCircle}º → <span className="text-paranormal">{nextRitualInfo?.maxCircle}º</span>
+                        </p>
+                        <Badge variant="outline" className="text-xs text-paranormal border-paranormal/50">
+                          <Unlock className="w-3 h-3 mr-1" />
+                          Desbloqueado!
+                        </Badge>
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground text-center mt-3">
+                    Você poderá escolher novos rituais após subir de NEX.
+                  </p>
+                </div>
+              </motion.div>
+            )}
+          </div>
+        </ScrollArea>
+
+        <DialogFooter className="gap-2">
+          <Button variant="outline" onClick={onClose} disabled={saving}>
+            Cancelar
+          </Button>
+          <Button 
+            onClick={handleLevelUp} 
+            disabled={saving}
+            className="bg-primary hover:bg-primary/90"
+          >
+            {saving ? (
+              <Loader2 className="w-4 h-4 animate-spin mr-2" />
+            ) : (
+              <ArrowUp className="w-4 h-4 mr-2" />
+            )}
+            SUBIR PARA NEX {nextNex}%
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
