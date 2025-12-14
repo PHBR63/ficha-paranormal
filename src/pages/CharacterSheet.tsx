@@ -37,6 +37,7 @@ import { InventoryPanel } from '@/components/inventory/InventoryPanel';
 import { InventoryItem } from '@/lib/inventory-system';
 import { NexProgressionModal } from '@/components/character/NexProgressionModal';
 import { RitualSelectionModal } from '@/components/character/RitualSelectionModal';
+import { CharacterEditModal } from '@/components/character/CharacterEditModal';
 
 interface Character {
   id: string;
@@ -98,6 +99,9 @@ export default function CharacterSheet() {
   const [ritualModalOpen, setRitualModalOpen] = useState(false);
   const [pendingRitualSlots, setPendingRitualSlots] = useState(0);
   const [pendingMaxCircle, setPendingMaxCircle] = useState(1);
+  
+  // Character edit modal
+  const [editModalOpen, setEditModalOpen] = useState(false);
 
   useEffect(() => {
     async function fetchCharacter() {
@@ -326,6 +330,99 @@ export default function CharacterSheet() {
     });
   };
 
+  // Handler para salvar edição completa do personagem
+  const handleCharacterEdit = async (data: {
+    name: string;
+    player_name: string | null;
+    age: number | null;
+    gender: string | null;
+    appearance: string | null;
+    personality: string | null;
+    background: string | null;
+    notes: string | null;
+    agility: number;
+    strength: number;
+    intellect: number;
+    presence: number;
+    vigor: number;
+    skills: Record<string, number>;
+    defense: number;
+  }) => {
+    if (!character) return;
+
+    // Recalcula stats derivados com os novos atributos
+    const newStats = calculateDerivedStats(
+      character.class,
+      data.vigor,
+      data.presence,
+      character.nex,
+      character.origin
+    );
+
+    const { error } = await supabase
+      .from('characters')
+      .update({
+        name: data.name,
+        player_name: data.player_name,
+        age: data.age,
+        gender: data.gender,
+        appearance: data.appearance,
+        personality: data.personality,
+        background: data.background,
+        notes: data.notes,
+        agility: data.agility,
+        strength: data.strength,
+        intellect: data.intellect,
+        presence: data.presence,
+        vigor: data.vigor,
+        skills: data.skills,
+        defense: data.defense,
+        hp_max: newStats.hp,
+        pe_max: newStats.pe,
+        san_max: newStats.san,
+        hp_current: Math.min(hpCurrent, newStats.hp),
+        pe_current: Math.min(peCurrent, newStats.pe),
+        san_current: Math.min(sanCurrent, newStats.san),
+      })
+      .eq('id', character.id);
+
+    if (error) {
+      toast({
+        title: 'Erro ao salvar',
+        description: error.message,
+        variant: 'destructive',
+      });
+      throw error;
+    }
+
+    setCharacter(prev => prev ? {
+      ...prev,
+      name: data.name,
+      player_name: data.player_name,
+      background: data.background,
+      notes: data.notes,
+      agility: data.agility,
+      strength: data.strength,
+      intellect: data.intellect,
+      presence: data.presence,
+      vigor: data.vigor,
+      skills: data.skills,
+      defense: data.defense,
+      hp_max: newStats.hp,
+      pe_max: newStats.pe,
+      san_max: newStats.san,
+    } : null);
+
+    setHpCurrent(Math.min(hpCurrent, newStats.hp));
+    setPeCurrent(Math.min(peCurrent, newStats.pe));
+    setSanCurrent(Math.min(sanCurrent, newStats.san));
+
+    toast({
+      title: 'Personagem atualizado!',
+      description: 'As alterações foram salvas com sucesso.',
+    });
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -377,15 +474,25 @@ export default function CharacterSheet() {
                   SALVAR
                 </Button>
               ) : (
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => setEditMode(true)}
-                  className="font-display"
-                >
-                  <Edit2 className="w-4 h-4 mr-2" />
-                  EDITAR
-                </Button>
+                <>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setEditModalOpen(true)}
+                    className="font-display"
+                  >
+                    <Edit2 className="w-4 h-4 mr-2" />
+                    EDITAR FICHA
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => setEditMode(true)}
+                    className="font-display text-muted-foreground"
+                  >
+                    STATUS
+                  </Button>
+                </>
               )}
               <Button 
                 variant="ghost" 
@@ -823,6 +930,14 @@ export default function CharacterSheet() {
         maxCircle={pendingMaxCircle}
         newSlots={pendingRitualSlots}
         onConfirm={handleRitualsConfirm}
+      />
+      
+      {/* Modal de edição completa do personagem */}
+      <CharacterEditModal
+        open={editModalOpen}
+        onClose={() => setEditModalOpen(false)}
+        character={character}
+        onSave={handleCharacterEdit}
       />
     </div>
   );
