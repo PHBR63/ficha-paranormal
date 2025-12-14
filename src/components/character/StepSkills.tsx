@@ -1,9 +1,24 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { SKILLS } from '@/lib/character-data';
+import { getClassSkillRules } from '@/lib/character-builder-engine';
 import { cn } from '@/lib/utils';
-import { AlertTriangle, Check, Lock } from 'lucide-react';
+import { AlertTriangle, Check, Lock, Search, ChevronDown, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Progress } from '@/components/ui/progress';
+import { motion, AnimatePresence } from 'framer-motion';
 import { SkillChoiceModal, ConflictResolutionModal } from './SkillChoiceModal';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import type { CharacterFormData } from '@/pages/CharacterCreate';
 import type { RebuildResult } from '@/lib/character-builder-engine';
 
@@ -21,11 +36,23 @@ const ATTRIBUTE_LABELS: Record<string, string> = {
   vigor: 'VIG',
 };
 
+const ATTRIBUTE_COLORS: Record<string, string> = {
+  agility: 'text-blue-400 bg-blue-400/10 border-blue-400/30',
+  strength: 'text-red-400 bg-red-400/10 border-red-400/30',
+  intellect: 'text-yellow-400 bg-yellow-400/10 border-yellow-400/30',
+  presence: 'text-purple-400 bg-purple-400/10 border-purple-400/30',
+  vigor: 'text-green-400 bg-green-400/10 border-green-400/30',
+};
+
+const ATTRIBUTE_ORDER = ['agility', 'strength', 'intellect', 'presence', 'vigor'];
+
 export function StepSkills({ formData, updateFormData, buildResult }: StepSkillsProps) {
   const [choiceModalOpen, setChoiceModalOpen] = useState(false);
   const [conflictModalOpen, setConflictModalOpen] = useState(false);
   const [activeChoice, setActiveChoice] = useState<typeof buildResult.pendingChoices[0] | null>(null);
   const [activeConflict, setActiveConflict] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [expandedAttributes, setExpandedAttributes] = useState<string[]>(ATTRIBUTE_ORDER);
 
   const {
     originSkills,
@@ -35,17 +62,44 @@ export function StepSkills({ formData, updateFormData, buildResult }: StepSkills
     allTrainedSkills,
   } = buildResult;
 
-  // Calculate free skill points
-  const freePointsTotal = classSkills.free.length + formData.freeSkills.length;
+  // Use unified calculation from engine
+  const classRules = useMemo(() => {
+    if (!formData.characterClass) return { mandatory: [], choices: [], freePoints: 0 };
+    return getClassSkillRules(formData.characterClass, formData.attributes.intellect);
+  }, [formData.characterClass, formData.attributes.intellect]);
+
+  const totalFreePoints = classRules.freePoints;
   const usedFreePoints = formData.freeSkills.length;
-  const classData = formData.characterClass === 'Combatente' 
-    ? 1 + formData.attributes.intellect
-    : formData.characterClass === 'Especialista'
-    ? 7 + formData.attributes.intellect
-    : formData.characterClass === 'Ocultista'
-    ? 3 + formData.attributes.intellect
-    : 0;
-  const remainingFreePoints = Math.max(0, classData - usedFreePoints);
+  const remainingFreePoints = Math.max(0, totalFreePoints - usedFreePoints);
+  const progressPercentage = totalFreePoints > 0 ? ((totalFreePoints - remainingFreePoints) / totalFreePoints) * 100 : 0;
+
+  // Group skills by attribute
+  const skillsByAttribute = useMemo(() => {
+    const grouped: Record<string, typeof SKILLS> = {};
+    
+    ATTRIBUTE_ORDER.forEach(attr => {
+      grouped[attr] = SKILLS.filter(s => s.attribute === attr);
+    });
+    
+    return grouped;
+  }, []);
+
+  // Filter skills by search
+  const filteredSkillsByAttribute = useMemo(() => {
+    if (!searchQuery.trim()) return skillsByAttribute;
+    
+    const query = searchQuery.toLowerCase();
+    const filtered: Record<string, typeof SKILLS> = {};
+    
+    ATTRIBUTE_ORDER.forEach(attr => {
+      filtered[attr] = skillsByAttribute[attr].filter(s =>
+        s.name.toLowerCase().includes(query) ||
+        s.description.toLowerCase().includes(query)
+      );
+    });
+    
+    return filtered;
+  }, [skillsByAttribute, searchQuery]);
 
   const handleChoiceSelect = (choiceId: string, skillId: string) => {
     updateFormData({
@@ -81,252 +135,366 @@ export function StepSkills({ formData, updateFormData, buildResult }: StepSkills
     }
   };
 
+  const toggleAttribute = (attr: string) => {
+    setExpandedAttributes(prev =>
+      prev.includes(attr)
+        ? prev.filter(a => a !== attr)
+        : [...prev, attr]
+    );
+  };
+
   // Skills that can't be selected as free (already trained)
-  const unavailableSkills = new Set([
+  const unavailableSkills = useMemo(() => new Set([
     ...originSkills,
     ...classSkills.mandatory,
     ...Object.values(formData.classSkillChoices),
     ...Object.values(formData.conflictResolutions),
-  ]);
+  ]), [originSkills, classSkills.mandatory, formData.classSkillChoices, formData.conflictResolutions]);
 
   return (
-    <div className="space-y-6">
-      <div className="text-center mb-8">
-        <h2 className="font-display text-2xl tracking-wider mb-2">PERÍCIAS</h2>
-        <p className="text-muted-foreground text-sm">
-          Configure as perícias do seu personagem. Algumas são automáticas, outras você escolhe.
-        </p>
-      </div>
-
-      {/* Pending Choices Warning */}
-      {(pendingChoices.length > 0 || pendingConflicts.length > 0) && (
-        <div className="ordo-panel p-4 bg-warning/10 border-warning/30">
-          <div className="flex items-center gap-2 text-warning mb-2">
-            <AlertTriangle className="w-4 h-4" />
-            <span className="font-medium text-sm">Ações pendentes</span>
-          </div>
-          <div className="space-y-2">
-            {pendingChoices.map(choice => (
-              <Button
-                key={choice.id}
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setActiveChoice(choice);
-                  setChoiceModalOpen(true);
-                }}
-                className="mr-2"
-              >
-                Escolher: {choice.label}
-              </Button>
-            ))}
-            {pendingConflicts.map(skillId => {
-              const skill = SKILLS.find(s => s.id === skillId);
-              return (
-                <Button
-                  key={skillId}
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setActiveConflict(skillId);
-                    setConflictModalOpen(true);
-                  }}
-                  className="mr-2 border-warning text-warning"
-                >
-                  Resolver conflito: {skill?.name}
-                </Button>
-              );
-            })}
-          </div>
+    <TooltipProvider>
+      <div className="space-y-6">
+        <div className="text-center mb-8">
+          <h2 className="font-display text-2xl tracking-wider mb-2">PERÍCIAS</h2>
+          <p className="text-muted-foreground text-sm">
+            Configure as perícias do seu personagem. Algumas são automáticas, outras você escolhe.
+          </p>
         </div>
-      )}
 
-      {/* Origin Skills - Automatic */}
-      {originSkills.length > 0 && (
-        <div className="ordo-panel p-4">
-          <h3 className="font-display text-sm tracking-wider text-secondary mb-3">
-            ✓ PERÍCIAS DA ORIGEM (automático)
-          </h3>
-          <div className="flex flex-wrap gap-2">
-            {originSkills.map(skillId => {
-              const skill = SKILLS.find(s => s.id === skillId);
-              if (!skill) return null;
-              return (
-                <div
-                  key={skillId}
-                  className="flex items-center gap-2 px-3 py-2 bg-secondary/20 text-secondary rounded-sm"
-                >
-                  <Check className="w-3 h-3" />
-                  <span className="text-sm">{skill.name}</span>
-                  <span className="text-xs opacity-70">({ATTRIBUTE_LABELS[skill.attribute]})</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
+        {/* Pending Choices Warning */}
+        <AnimatePresence>
+          {(pendingChoices.length > 0 || pendingConflicts.length > 0) && (
+            <motion.div 
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="ordo-panel p-4 bg-warning/10 border-warning/30"
+            >
+              <div className="flex items-center gap-2 text-warning mb-2">
+                <AlertTriangle className="w-4 h-4" />
+                <span className="font-medium text-sm">Ações pendentes</span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {pendingChoices.map(choice => (
+                  <Button
+                    key={choice.id}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setActiveChoice(choice);
+                      setChoiceModalOpen(true);
+                    }}
+                  >
+                    Escolher: {choice.label}
+                  </Button>
+                ))}
+                {pendingConflicts.map(skillId => {
+                  const skill = SKILLS.find(s => s.id === skillId);
+                  return (
+                    <Button
+                      key={skillId}
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setActiveConflict(skillId);
+                        setConflictModalOpen(true);
+                      }}
+                      className="border-warning text-warning"
+                    >
+                      Resolver conflito: {skill?.name}
+                    </Button>
+                  );
+                })}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-      {/* Class Mandatory Skills */}
-      {classSkills.mandatory.length > 0 && (
-        <div className="ordo-panel p-4">
-          <h3 className="font-display text-sm tracking-wider text-primary mb-3">
-            ✓ PERÍCIAS OBRIGATÓRIAS DA CLASSE
-          </h3>
-          <div className="flex flex-wrap gap-2">
-            {classSkills.mandatory.map(skillId => {
-              const skill = SKILLS.find(s => s.id === skillId);
-              const isConflict = originSkills.includes(skillId);
-              const resolution = formData.conflictResolutions[skillId];
-              const resolvedSkill = resolution ? SKILLS.find(s => s.id === resolution) : null;
-              
-              if (!skill) return null;
-              
-              return (
-                <div key={skillId} className="flex items-center gap-2">
-                  {isConflict ? (
-                    resolvedSkill ? (
-                      <div className="flex items-center gap-2 px-3 py-2 bg-primary/20 rounded-sm">
-                        <Check className="w-3 h-3 text-primary" />
-                        <span className="text-sm line-through text-muted-foreground">{skill.name}</span>
-                        <span className="text-sm">→ {resolvedSkill.name}</span>
-                      </div>
+        {/* Origin Skills - Automatic */}
+        {originSkills.length > 0 && (
+          <motion.div 
+            className="ordo-panel p-4"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <h3 className="font-display text-sm tracking-wider text-secondary mb-3">
+              ✓ PERÍCIAS DA ORIGEM (automático)
+            </h3>
+            <div className="flex flex-wrap gap-2">
+              {originSkills.map(skillId => {
+                const skill = SKILLS.find(s => s.id === skillId);
+                if (!skill) return null;
+                return (
+                  <div
+                    key={skillId}
+                    className="flex items-center gap-2 px-3 py-2 bg-secondary/20 text-secondary rounded-sm"
+                  >
+                    <Check className="w-3 h-3" />
+                    <span className="text-sm">{skill.name}</span>
+                    <span className="text-xs opacity-70">({ATTRIBUTE_LABELS[skill.attribute]})</span>
+                  </div>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
+
+        {/* Class Mandatory Skills */}
+        {classSkills.mandatory.length > 0 && (
+          <motion.div 
+            className="ordo-panel p-4"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            <h3 className="font-display text-sm tracking-wider text-primary mb-3">
+              ✓ PERÍCIAS OBRIGATÓRIAS DA CLASSE
+            </h3>
+            <div className="flex flex-wrap gap-2">
+              {classSkills.mandatory.map(skillId => {
+                const skill = SKILLS.find(s => s.id === skillId);
+                const isConflict = originSkills.includes(skillId);
+                const resolution = formData.conflictResolutions[skillId];
+                const resolvedSkill = resolution ? SKILLS.find(s => s.id === resolution) : null;
+                
+                if (!skill) return null;
+                
+                return (
+                  <div key={skillId} className="flex items-center gap-2">
+                    {isConflict ? (
+                      resolvedSkill ? (
+                        <div className="flex items-center gap-2 px-3 py-2 bg-primary/20 rounded-sm">
+                          <Check className="w-3 h-3 text-primary" />
+                          <span className="text-sm line-through text-muted-foreground">{skill.name}</span>
+                          <span className="text-sm">→ {resolvedSkill.name}</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2 px-3 py-2 bg-warning/20 text-warning rounded-sm">
+                          <AlertTriangle className="w-3 h-3" />
+                          <span className="text-sm">{skill.name} (conflito)</span>
+                        </div>
+                      )
                     ) : (
-                      <div className="flex items-center gap-2 px-3 py-2 bg-warning/20 text-warning rounded-sm">
-                        <AlertTriangle className="w-3 h-3" />
-                        <span className="text-sm">{skill.name} (conflito)</span>
+                      <div className="flex items-center gap-2 px-3 py-2 bg-primary/20 text-primary rounded-sm">
+                        <Check className="w-3 h-3" />
+                        <span className="text-sm">{skill.name}</span>
+                        <span className="text-xs opacity-70">({ATTRIBUTE_LABELS[skill.attribute]})</span>
                       </div>
-                    )
-                  ) : (
-                    <div className="flex items-center gap-2 px-3 py-2 bg-primary/20 text-primary rounded-sm">
-                      <Check className="w-3 h-3" />
-                      <span className="text-sm">{skill.name}</span>
-                      <span className="text-xs opacity-70">({ATTRIBUTE_LABELS[skill.attribute]})</span>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
+
+        {/* Class Choice Skills */}
+        {Object.keys(formData.classSkillChoices).length > 0 && (
+          <motion.div 
+            className="ordo-panel p-4"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+          >
+            <h3 className="font-display text-sm tracking-wider text-primary mb-3">
+              ESCOLHAS DA CLASSE
+            </h3>
+            <div className="flex flex-wrap gap-2">
+              {Object.entries(formData.classSkillChoices).map(([choiceId, skillId]) => {
+                const skill = SKILLS.find(s => s.id === skillId);
+                return (
+                  <div key={choiceId} className="flex items-center gap-2 px-3 py-2 bg-primary/20 text-primary rounded-sm">
+                    <Check className="w-3 h-3" />
+                    <span className="text-sm">{skill?.name}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
+
+        {/* Free Skills Counter with Progress Bar */}
+        <motion.div 
+          className="ordo-panel p-4"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-sm text-muted-foreground">PERÍCIAS LIVRES</p>
+            <p className={cn(
+              'font-display text-2xl',
+              remainingFreePoints === 0 ? 'text-success' : 'text-secondary'
+            )}>
+              {usedFreePoints} / {totalFreePoints}
+            </p>
           </div>
+          <Progress value={progressPercentage} className="h-2" />
+          {remainingFreePoints === 0 && (
+            <motion.p 
+              className="text-xs text-success mt-2 text-center"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+            >
+              ✓ Todas as perícias livres selecionadas
+            </motion.p>
+          )}
+        </motion.div>
+
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar perícia..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
         </div>
-      )}
 
-      {/* Class Choice Skills */}
-      {buildResult.pendingChoices.length > 0 || Object.keys(formData.classSkillChoices).length > 0 ? (
-        <div className="ordo-panel p-4">
-          <h3 className="font-display text-sm tracking-wider text-primary mb-3">
-            ESCOLHAS DA CLASSE
-          </h3>
-          <div className="space-y-2">
-            {Object.entries(formData.classSkillChoices).map(([choiceId, skillId]) => {
-              const skill = SKILLS.find(s => s.id === skillId);
-              return (
-                <div key={choiceId} className="flex items-center gap-2 px-3 py-2 bg-primary/20 text-primary rounded-sm inline-block mr-2">
-                  <Check className="w-3 h-3" />
-                  <span className="text-sm">{skill?.name}</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      ) : null}
+        {/* Free Skills Selection - Grouped by Attribute */}
+        <div className="space-y-3">
+          {ATTRIBUTE_ORDER.map((attr) => {
+            const skills = filteredSkillsByAttribute[attr];
+            const isExpanded = expandedAttributes.includes(attr);
+            const attrLabel = ATTRIBUTE_LABELS[attr];
+            const attrColors = ATTRIBUTE_COLORS[attr];
+            const trainedInAttr = skills.filter(s => 
+              unavailableSkills.has(s.id) || formData.freeSkills.includes(s.id)
+            ).length;
 
-      {/* Free Skills Counter */}
-      <div className="ordo-panel p-4 text-center">
-        <p className="text-sm text-muted-foreground mb-1">PERÍCIAS LIVRES RESTANTES</p>
-        <p className={`font-display text-4xl ${remainingFreePoints === 0 ? 'text-success' : 'text-secondary'}`}>
-          {remainingFreePoints} / {classData}
-        </p>
-      </div>
-
-      {/* Free Skills Selection */}
-      <div className="ordo-panel p-4">
-        <h3 className="font-display text-sm tracking-wider text-muted-foreground mb-3">
-          SELECIONAR PERÍCIAS LIVRES
-        </h3>
-        <div className="grid md:grid-cols-2 gap-2 max-h-[300px] overflow-y-auto pr-2">
-          {SKILLS.map((skill) => {
-            const isUnavailable = unavailableSkills.has(skill.id);
-            const isSelected = formData.freeSkills.includes(skill.id);
-            const attrValue = formData.attributes[skill.attribute as keyof typeof formData.attributes];
-            const trainingBonus = isSelected || isUnavailable ? 5 : 0;
-            const totalBonus = attrValue + trainingBonus;
+            if (skills.length === 0) return null;
 
             return (
-              <button
-                key={skill.id}
-                onClick={() => !isUnavailable && toggleFreeSkill(skill.id)}
-                disabled={isUnavailable || (!isSelected && remainingFreePoints <= 0)}
-                className={cn(
-                  'p-3 text-left transition-all flex items-center justify-between rounded-sm border',
-                  isUnavailable && 'opacity-50 cursor-not-allowed bg-muted/50 border-transparent',
-                  isSelected && !isUnavailable && 'border-secondary bg-secondary/10',
-                  !isSelected && !isUnavailable && remainingFreePoints <= 0 && 'opacity-50 cursor-not-allowed border-border',
-                  !isSelected && !isUnavailable && remainingFreePoints > 0 && 'border-border hover:border-secondary/50'
-                )}
+              <Collapsible
+                key={attr}
+                open={isExpanded}
+                onOpenChange={() => toggleAttribute(attr)}
               >
-                <div className="flex items-center gap-2">
-                  <div className={cn(
-                    'w-6 h-6 rounded-sm border flex items-center justify-center text-xs',
-                    isSelected || isUnavailable
-                      ? 'bg-secondary border-secondary text-secondary-foreground' 
-                      : 'border-border text-muted-foreground'
+                <CollapsibleTrigger asChild>
+                  <button className={cn(
+                    'w-full ordo-panel p-3 flex items-center justify-between transition-all',
+                    'hover:border-primary/30',
+                    isExpanded && 'border-primary/20'
                   )}>
-                    {isUnavailable ? <Lock className="w-3 h-3" /> : isSelected ? '✓' : null}
+                    <div className="flex items-center gap-3">
+                      <span className={cn(
+                        'px-2 py-1 rounded text-xs font-medium border',
+                        attrColors
+                      )}>
+                        {attrLabel}
+                      </span>
+                      <span className="font-display text-sm tracking-wider">
+                        {attr.charAt(0).toUpperCase() + attr.slice(1)}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        ({trainedInAttr}/{skills.length} treinadas)
+                      </span>
+                    </div>
+                    {isExpanded ? (
+                      <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                    )}
+                  </button>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div className="grid md:grid-cols-2 gap-2 mt-2 pl-4">
+                    {skills.map((skill) => {
+                      const isUnavailable = unavailableSkills.has(skill.id);
+                      const isSelected = formData.freeSkills.includes(skill.id);
+                      const attrValue = formData.attributes[skill.attribute as keyof typeof formData.attributes];
+                      const trainingBonus = isSelected || isUnavailable ? 5 : 0;
+                      const totalBonus = attrValue + trainingBonus;
+
+                      return (
+                        <Tooltip key={skill.id}>
+                          <TooltipTrigger asChild>
+                            <button
+                              onClick={() => !isUnavailable && toggleFreeSkill(skill.id)}
+                              disabled={isUnavailable || (!isSelected && remainingFreePoints <= 0)}
+                              className={cn(
+                                'p-3 text-left transition-all flex items-center justify-between rounded-sm border',
+                                isUnavailable && 'opacity-50 cursor-not-allowed bg-muted/50 border-transparent',
+                                isSelected && !isUnavailable && 'border-secondary bg-secondary/10',
+                                !isSelected && !isUnavailable && remainingFreePoints <= 0 && 'opacity-50 cursor-not-allowed border-border',
+                                !isSelected && !isUnavailable && remainingFreePoints > 0 && 'border-border hover:border-secondary/50'
+                              )}
+                            >
+                              <div className="flex items-center gap-2">
+                                <div className={cn(
+                                  'w-6 h-6 rounded-sm border flex items-center justify-center text-xs',
+                                  isSelected || isUnavailable
+                                    ? 'bg-secondary border-secondary text-secondary-foreground' 
+                                    : 'border-border text-muted-foreground'
+                                )}>
+                                  {isUnavailable ? <Lock className="w-3 h-3" /> : isSelected ? '✓' : null}
+                                </div>
+                                <span className="font-medium text-sm">{skill.name}</span>
+                                {skill.requiresTraining && (
+                                  <span className="text-xs text-warning">T</span>
+                                )}
+                              </div>
+                              <div className="text-right">
+                                <span className={cn(
+                                  'font-display text-lg',
+                                  isSelected || isUnavailable ? 'text-secondary' : 'text-muted-foreground'
+                                )}>
+                                  +{totalBonus}
+                                </span>
+                              </div>
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent side="top">
+                            <p className="font-medium">{skill.name}</p>
+                            <p className="text-xs text-muted-foreground">{skill.description}</p>
+                            {skill.requiresTraining && (
+                              <p className="text-xs text-warning mt-1">Requer treinamento para usar</p>
+                            )}
+                          </TooltipContent>
+                        </Tooltip>
+                      );
+                    })}
                   </div>
-                  <span className="font-medium text-sm">{skill.name}</span>
-                  <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                    {ATTRIBUTE_LABELS[skill.attribute]}
-                  </span>
-                  {skill.requiresTraining && (
-                    <span className="text-xs text-warning">T</span>
-                  )}
-                </div>
-                <div className="text-right">
-                  <span className={cn(
-                    'font-display text-lg',
-                    isSelected || isUnavailable ? 'text-secondary' : 'text-muted-foreground'
-                  )}>
-                    +{totalBonus}
-                  </span>
-                </div>
-              </button>
+                </CollapsibleContent>
+              </Collapsible>
             );
           })}
         </div>
+
+        {/* Info */}
+        <div className="ordo-panel p-4 bg-primary/5 border-primary/20">
+          <p className="text-sm text-muted-foreground">
+            <span className="text-primary font-medium">NOTA:</span> Perícias marcadas com <span className="text-warning">T</span> requerem treinamento para serem usadas.
+            Cada perícia treinada adiciona +5 ao bônus base do atributo.
+          </p>
+        </div>
+
+        {/* Choice Modal */}
+        {activeChoice && (
+          <SkillChoiceModal
+            open={choiceModalOpen}
+            onOpenChange={setChoiceModalOpen}
+            title={`Escolha: ${activeChoice.label}`}
+            description="Selecione uma das opções abaixo para seu personagem."
+            options={activeChoice.options}
+            selectedSkill={formData.classSkillChoices[activeChoice.id] || null}
+            onSelect={(skillId) => handleChoiceSelect(activeChoice.id, skillId)}
+            excludeSkills={[...originSkills, ...classSkills.mandatory]}
+          />
+        )}
+
+        {/* Conflict Resolution Modal */}
+        {activeConflict && (
+          <ConflictResolutionModal
+            open={conflictModalOpen}
+            onOpenChange={setConflictModalOpen}
+            conflictSkillId={activeConflict}
+            alreadyTrainedSkills={allTrainedSkills}
+            onSelect={(skillId) => handleConflictResolve(activeConflict, skillId)}
+          />
+        )}
       </div>
-
-      {/* Info */}
-      <div className="ordo-panel p-4 bg-primary/5 border-primary/20">
-        <p className="text-sm text-muted-foreground">
-          <span className="text-primary font-medium">NOTA:</span> Perícias marcadas com <span className="text-warning">T</span> requerem treinamento para serem usadas.
-          Cada perícia treinada adiciona +5 ao bônus base do atributo.
-        </p>
-      </div>
-
-      {/* Choice Modal */}
-      {activeChoice && (
-        <SkillChoiceModal
-          open={choiceModalOpen}
-          onOpenChange={setChoiceModalOpen}
-          title={`Escolha: ${activeChoice.label}`}
-          description="Selecione uma das opções abaixo para seu personagem."
-          options={activeChoice.options}
-          selectedSkill={formData.classSkillChoices[activeChoice.id] || null}
-          onSelect={(skillId) => handleChoiceSelect(activeChoice.id, skillId)}
-          excludeSkills={[...originSkills, ...classSkills.mandatory]}
-        />
-      )}
-
-      {/* Conflict Resolution Modal */}
-      {activeConflict && (
-        <ConflictResolutionModal
-          open={conflictModalOpen}
-          onOpenChange={setConflictModalOpen}
-          conflictSkillId={activeConflict}
-          alreadyTrainedSkills={allTrainedSkills}
-          onSelect={(skillId) => handleConflictResolve(activeConflict, skillId)}
-        />
-      )}
-    </div>
+    </TooltipProvider>
   );
 }
