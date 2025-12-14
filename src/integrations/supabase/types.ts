@@ -239,17 +239,23 @@ export type Database = {
       }
       characters: {
         Row: {
+          abilities: Json
+          age: number | null
           agility: number
+          appearance: string | null
           background: string | null
           class: string
+          concept: string | null
           conditions: Json
           created_at: string
           defense: number
+          gender: string | null
           hp_current: number
           hp_max: number
           id: string
           intellect: number
           inventory: Json
+          movement: number
           name: string
           nex: number
           notes: string | null
@@ -257,10 +263,12 @@ export type Database = {
           patent: string
           pe_current: number
           pe_max: number
+          personality: string | null
           photo_url: string | null
           player_name: string | null
           powers: Json
           presence: number
+          proficiencies: Json
           rituals: Json
           san_current: number
           san_max: number
@@ -271,17 +279,23 @@ export type Database = {
           vigor: number
         }
         Insert: {
+          abilities?: Json
+          age?: number | null
           agility?: number
+          appearance?: string | null
           background?: string | null
           class: string
+          concept?: string | null
           conditions?: Json
           created_at?: string
           defense?: number
+          gender?: string | null
           hp_current?: number
           hp_max?: number
           id?: string
           intellect?: number
           inventory?: Json
+          movement?: number
           name: string
           nex?: number
           notes?: string | null
@@ -289,10 +303,12 @@ export type Database = {
           patent?: string
           pe_current?: number
           pe_max?: number
+          personality?: string | null
           photo_url?: string | null
           player_name?: string | null
           powers?: Json
           presence?: number
+          proficiencies?: Json
           rituals?: Json
           san_current?: number
           san_max?: number
@@ -303,17 +319,23 @@ export type Database = {
           vigor?: number
         }
         Update: {
+          abilities?: Json
+          age?: number | null
           agility?: number
+          appearance?: string | null
           background?: string | null
           class?: string
+          concept?: string | null
           conditions?: Json
           created_at?: string
           defense?: number
+          gender?: string | null
           hp_current?: number
           hp_max?: number
           id?: string
           intellect?: number
           inventory?: Json
+          movement?: number
           name?: string
           nex?: number
           notes?: string | null
@@ -321,10 +343,12 @@ export type Database = {
           patent?: string
           pe_current?: number
           pe_max?: number
+          personality?: string | null
           photo_url?: string | null
           player_name?: string | null
           powers?: Json
           presence?: number
+          proficiencies?: Json
           rituals?: Json
           san_current?: number
           san_max?: number
