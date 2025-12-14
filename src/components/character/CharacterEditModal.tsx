@@ -48,6 +48,7 @@ import {
   AlertTriangle,
   ArrowDown,
   ArrowUp,
+  RotateCcw,
 } from 'lucide-react';
 import { ORIGINS, SKILLS, CLASSES, calculateDerivedStats } from '@/lib/character-data';
 
@@ -241,7 +242,60 @@ export function CharacterEditModal({
     });
   };
 
-  // Handler para tentar salvar (pode abrir confirmação)
+  // Handler para resetar todos os valores
+  const handleReset = () => {
+    // Restaura informações básicas
+    setName(character.name);
+    setPlayerName(character.player_name || '');
+    setAge(character.age || '');
+    setGender(character.gender || '');
+    setAppearance(character.appearance || '');
+    setPersonality(character.personality || '');
+    setBackground(character.background || '');
+    setNotes(character.notes || '');
+    
+    // Restaura atributos
+    setAgility(character.agility);
+    setStrength(character.strength);
+    setIntellect(character.intellect);
+    setPresence(character.presence);
+    setVigor(character.vigor);
+    
+    // Restaura perícias
+    const skills: Record<string, number> = {};
+    Object.keys(character.skills).forEach(key => {
+      if (character.skills[key] > 0) {
+        skills[key] = character.skills[key];
+      }
+    });
+    setTrainedSkills(skills);
+    
+    // Restaura defesa
+    setDefense(character.defense);
+  };
+
+  // Verifica se há qualquer mudança
+  const hasAnyChanges = useMemo(() => {
+    if (name !== character.name) return true;
+    if ((playerName || '') !== (character.player_name || '')) return true;
+    if (agility !== character.agility) return true;
+    if (strength !== character.strength) return true;
+    if (intellect !== character.intellect) return true;
+    if (presence !== character.presence) return true;
+    if (vigor !== character.vigor) return true;
+    if (defense !== character.defense) return true;
+    if ((background || '') !== (character.background || '')) return true;
+    if ((notes || '') !== (character.notes || '')) return true;
+    
+    // Verifica perícias
+    const originalSkillKeys = Object.keys(character.skills).filter(k => character.skills[k] > 0);
+    const currentSkillKeys = Object.keys(trainedSkills);
+    if (originalSkillKeys.length !== currentSkillKeys.length) return true;
+    if (!originalSkillKeys.every(k => trainedSkills[k])) return true;
+    
+    return false;
+  }, [name, playerName, agility, strength, intellect, presence, vigor, defense, background, notes, trainedSkills, character]);
+
   const handleTrySave = () => {
     if (!name.trim()) return;
     
@@ -590,6 +644,19 @@ export function CharacterEditModal({
         </Tabs>
 
         <DialogFooter className="gap-2 mt-4">
+          {/* Botão de Reset */}
+          {hasAnyChanges && (
+            <Button 
+              variant="ghost" 
+              onClick={handleReset} 
+              disabled={saving}
+              className="mr-auto text-muted-foreground hover:text-foreground"
+            >
+              <RotateCcw className="w-4 h-4 mr-2" />
+              Restaurar Original
+            </Button>
+          )}
+          
           <Button variant="outline" onClick={onClose} disabled={saving}>
             Cancelar
           </Button>
