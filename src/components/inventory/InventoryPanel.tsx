@@ -1,3 +1,13 @@
+/**
+ * InventoryPanel - Painel de inventário com validação por patente
+ * 
+ * Funcionalidades:
+ * - Validação automática de limites por categoria/patente
+ * - Indicador visual de slots disponíveis
+ * - Bloqueio de adição quando limite atingido
+ * - Sistema de carga com penalidades
+ */
+
 import { useState, useMemo } from 'react';
 import { 
   Package, 
@@ -15,19 +25,25 @@ import {
   ChevronUp,
   Boxes,
   CircleCheck,
-  Circle
+  Circle,
+  Lock,
+  CheckCircle2,
+  XCircle,
+  Info,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import {
   Select,
@@ -54,6 +70,8 @@ import {
   countItemsByCategory,
   addToInventory,
   removeFromInventory,
+  canAddItem,
+  PATENT_LIMITS,
 } from '@/lib/inventory-system';
 import { EquipmentSlots, EquipmentSlotType, EQUIPMENT_SLOTS, getAppropriateSlot } from './EquipmentSlots';
 
@@ -170,6 +188,24 @@ export function InventoryPanel({
     setExpandedCategories(newExpanded);
   };
 
+  // Toast para notificações
+  const { toast } = useToast();
+
+  // Verifica se pode adicionar item da categoria selecionada
+  const canAddSelectedCategory = useMemo(() => {
+    if (!newItem.category || newItem.category === '0') return { allowed: true };
+    
+    const mockItem: InventoryItem = {
+      id: 'temp',
+      name: 'temp',
+      category: newItem.category as InventoryItem['category'],
+      slots: 1,
+      quantity: 1,
+    };
+    
+    return canAddItem(mockItem, inventory, patent);
+  }, [newItem.category, inventory, patent]);
+
   const handleAddItem = () => {
     if (!newItem.name || !onInventoryChange) return;
 
@@ -193,6 +229,17 @@ export function InventoryPanel({
       })));
       setNewItem({ name: '', category: '0', slots: 1, quantity: 1, itemType: 'misc' });
       setAddDialogOpen(false);
+      toast({
+        title: 'Item adicionado',
+        description: `${item.name} foi adicionado ao inventário.`,
+      });
+    } else {
+      // Mostra erro de limite atingido
+      toast({
+        title: 'Limite de patente atingido',
+        description: result.error,
+        variant: 'destructive',
+      });
     }
   };
 
@@ -312,14 +359,51 @@ export function InventoryPanel({
                       </SelectTrigger>
                       <SelectContent className="bg-popover border-border z-50">
                         <SelectItem value="0">Sem Categoria</SelectItem>
-                        <SelectItem value="I">Categoria I</SelectItem>
-                        <SelectItem value="II">Categoria II</SelectItem>
-                        <SelectItem value="III">Categoria III</SelectItem>
-                        <SelectItem value="IV">Categoria IV</SelectItem>
+                        {(['I', 'II', 'III', 'IV'] as const).map(cat => {
+                          const count = categoryCounts[cat];
+                          const limit = patentLimits[cat];
+                          const isAtLimit = count >= limit;
+                          const isDisabled = limit === 0;
+                          
+                          return (
+                            <SelectItem 
+                              key={cat} 
+                              value={cat}
+                              disabled={isDisabled}
+                              className={cn(
+                                isAtLimit && !isDisabled && "text-destructive",
+                                isDisabled && "opacity-50"
+                              )}
+                            >
+                              <div className="flex items-center gap-2">
+                                {isDisabled ? (
+                                  <Lock className="w-3 h-3 text-muted-foreground" />
+                                ) : isAtLimit ? (
+                                  <XCircle className="w-3 h-3 text-destructive" />
+                                ) : (
+                                  <CheckCircle2 className="w-3 h-3 text-green-500" />
+                                )}
+                                <span>Categoria {cat}</span>
+                                <span className="text-xs text-muted-foreground">
+                                  ({count}/{limit})
+                                </span>
+                              </div>
+                            </SelectItem>
+                          );
+                        })}
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
+
+                {/* Aviso de limite atingido */}
+                {!canAddSelectedCategory.allowed && (
+                  <div className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/30 rounded-lg text-destructive text-sm">
+                    <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                    <span>{canAddSelectedCategory.reason}</span>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-xs text-muted-foreground">Espaços</label>
@@ -341,8 +425,22 @@ export function InventoryPanel({
                     />
                   </div>
                 </div>
-                <Button onClick={handleAddItem} className="w-full font-display">
-                  ADICIONAR AO INVENTÁRIO
+                <Button 
+                  onClick={handleAddItem} 
+                  className="w-full font-display"
+                  disabled={!canAddSelectedCategory.allowed || !newItem.name}
+                >
+                  {!canAddSelectedCategory.allowed ? (
+                    <>
+                      <Lock className="w-4 h-4 mr-2" />
+                      LIMITE ATINGIDO
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-4 h-4 mr-2" />
+                      ADICIONAR AO INVENTÁRIO
+                    </>
+                  )}
                 </Button>
               </div>
             </DialogContent>
@@ -387,29 +485,83 @@ export function InventoryPanel({
       </div>
 
       {/* Limites por Categoria (Patente) */}
-      <div className="grid grid-cols-4 gap-2">
-        {(['I', 'II', 'III', 'IV'] as const).map((cat: 'I' | 'II' | 'III' | 'IV') => {
-          const count = categoryCounts[cat];
-          const limit = patentLimits[cat];
-          const isAtLimit = count >= limit;
-          const config = CATEGORY_LABELS[cat];
+      <div className="p-3 bg-muted/30 rounded-lg border border-border/50 space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-sm">
+            <Shield className="w-4 h-4 text-primary" />
+            <span className="text-muted-foreground">Patente:</span>
+            <span className="font-display text-primary">{patent}</span>
+          </div>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger>
+                <Info className="w-4 h-4 text-muted-foreground hover:text-foreground transition-colors" />
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs">
+                <p className="text-sm">
+                  Sua patente determina quantos itens de cada categoria você pode requisitar da Ordem. 
+                  Itens sem categoria não contam para esses limites.
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+        
+        <div className="grid grid-cols-4 gap-2">
+          {(['I', 'II', 'III', 'IV'] as const).map((cat: 'I' | 'II' | 'III' | 'IV') => {
+            const count = categoryCounts[cat];
+            const limit = patentLimits[cat];
+            const isAtLimit = count >= limit && limit > 0;
+            const isLocked = limit === 0;
+            const hasSlots = count < limit;
+            const config = CATEGORY_LABELS[cat];
 
-          return (
-            <div 
-              key={cat}
-              className={cn(
-                "p-2 rounded-lg border text-center",
-                config.color,
-                isAtLimit && limit > 0 && "border-yellow-500/50 bg-yellow-500/10"
-              )}
-            >
-              <p className="text-[10px] opacity-70">{config.label}</p>
-              <p className="font-display text-lg">
-                {count}/{limit}
-              </p>
-            </div>
-          );
-        })}
+            return (
+              <TooltipProvider key={cat}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div 
+                      className={cn(
+                        "p-2 rounded-lg border text-center transition-all cursor-help",
+                        isLocked && "opacity-40 bg-muted/50",
+                        isAtLimit && "border-destructive/50 bg-destructive/10",
+                        hasSlots && !isLocked && config.color,
+                        !isLocked && !isAtLimit && "hover:scale-105"
+                      )}
+                    >
+                      <div className="flex items-center justify-center gap-1 mb-1">
+                        {isLocked ? (
+                          <Lock className="w-3 h-3 text-muted-foreground" />
+                        ) : isAtLimit ? (
+                          <XCircle className="w-3 h-3 text-destructive" />
+                        ) : (
+                          <CheckCircle2 className="w-3 h-3 text-green-500" />
+                        )}
+                        <p className="text-[10px] opacity-70">{config.label}</p>
+                      </div>
+                      <p className={cn(
+                        "font-display text-lg",
+                        isAtLimit && "text-destructive",
+                        isLocked && "text-muted-foreground"
+                      )}>
+                        {count}/{limit}
+                      </p>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {isLocked ? (
+                      <p>Categoria bloqueada para sua patente</p>
+                    ) : isAtLimit ? (
+                      <p>Limite atingido! Remova itens para adicionar novos.</p>
+                    ) : (
+                      <p>{limit - count} slot(s) disponível(is)</p>
+                    )}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            );
+          })}
+        </div>
       </div>
 
       {/* Lista de Itens Agrupados */}
