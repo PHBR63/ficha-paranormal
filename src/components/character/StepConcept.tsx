@@ -1,16 +1,25 @@
-import { useState } from 'react';
-import { Dices, User } from 'lucide-react';
+import { Dices, User, Sparkles } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { ImageUploader } from '@/components/ui/image-uploader';
 import { rollAge } from '@/lib/character-builder-engine';
+import { motion } from 'framer-motion';
 import type { CharacterFormData } from '@/pages/CharacterCreate';
 
 interface StepConceptProps {
   formData: CharacterFormData;
   updateFormData: (updates: Partial<CharacterFormData>) => void;
 }
+
+const CONCEPT_SUGGESTIONS = [
+  'Ex-policial assombrado pelo caso que não conseguiu resolver',
+  'Médica que testemunhou algo que a ciência não explica',
+  'Jornalista investigativo que foi longe demais',
+  'Veterano de guerra com memórias perturbadoras',
+  'Padre que perdeu a fé após um exorcismo fracassado',
+  'Hacker que descobriu segredos que não deveria',
+];
 
 export function StepConcept({ formData, updateFormData }: StepConceptProps) {
   const handleRollAge = () => {
@@ -25,6 +34,11 @@ export function StepConcept({ formData, updateFormData }: StepConceptProps) {
     });
   };
 
+  const handleSuggestionClick = () => {
+    const randomSuggestion = CONCEPT_SUGGESTIONS[Math.floor(Math.random() * CONCEPT_SUGGESTIONS.length)];
+    updateFormData({ concept: randomSuggestion });
+  };
+
   return (
     <div className="space-y-6">
       <div className="text-center mb-8">
@@ -37,7 +51,12 @@ export function StepConcept({ formData, updateFormData }: StepConceptProps) {
       {/* Photo and Name row */}
       <div className="flex flex-col md:flex-row gap-6 items-start">
         {/* Photo Upload */}
-        <div className="flex flex-col items-center gap-2">
+        <motion.div 
+          className="flex flex-col items-center gap-2"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.1 }}
+        >
           <label className="block text-sm font-medium text-foreground">Foto</label>
           <ImageUploader
             value={formData.photoUrl}
@@ -46,10 +65,15 @@ export function StepConcept({ formData, updateFormData }: StepConceptProps) {
             shape="square"
             placeholder="Adicionar foto"
           />
-        </div>
+        </motion.div>
 
         {/* Name fields */}
-        <div className="flex-1 space-y-4">
+        <motion.div 
+          className="flex-1 space-y-4"
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.2 }}
+        >
           <div className="grid md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-2 text-foreground">
@@ -75,9 +99,21 @@ export function StepConcept({ formData, updateFormData }: StepConceptProps) {
 
           {/* Conceito */}
           <div>
-            <label className="block text-sm font-medium mb-2 text-foreground">
-              Conceito <span className="text-muted-foreground text-xs">(uma frase que define seu personagem)</span>
-            </label>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-sm font-medium text-foreground">
+                Conceito <span className="text-muted-foreground text-xs">(uma frase que define seu personagem)</span>
+              </label>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={handleSuggestionClick}
+                className="text-xs text-muted-foreground hover:text-primary"
+              >
+                <Sparkles className="w-3 h-3 mr-1" />
+                Sugestão
+              </Button>
+            </div>
             <Input
               value={formData.concept || ''}
               onChange={(e) => updateFormData({ concept: e.target.value })}
@@ -85,11 +121,16 @@ export function StepConcept({ formData, updateFormData }: StepConceptProps) {
               className="bg-card border-border"
             />
           </div>
-        </div>
+        </motion.div>
       </div>
 
       {/* Idade e Gênero */}
-      <div className="grid md:grid-cols-2 gap-4">
+      <motion.div 
+        className="grid md:grid-cols-2 gap-4"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+      >
         <div>
           <label className="block text-sm font-medium mb-2 text-foreground">Idade</label>
           <div className="flex gap-2">
@@ -126,10 +167,15 @@ export function StepConcept({ formData, updateFormData }: StepConceptProps) {
             className="bg-card border-border"
           />
         </div>
-      </div>
+      </motion.div>
 
       {/* Aparência e Personalidade */}
-      <div className="grid md:grid-cols-2 gap-4">
+      <motion.div 
+        className="grid md:grid-cols-2 gap-4"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4 }}
+      >
         <div>
           <label className="block text-sm font-medium mb-2 text-foreground">Aparência</label>
           <Textarea
@@ -148,11 +194,33 @@ export function StepConcept({ formData, updateFormData }: StepConceptProps) {
             className="bg-card border-border h-24 resize-none"
           />
         </div>
-      </div>
+      </motion.div>
+
+      {/* Background / Histórico */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5 }}
+      >
+        <label className="block text-sm font-medium mb-2 text-foreground">
+          Histórico <span className="text-muted-foreground text-xs">(opcional)</span>
+        </label>
+        <Textarea
+          value={formData.background || ''}
+          onChange={(e) => updateFormData({ background: e.target.value })}
+          placeholder="Conte a história do seu personagem... Como ele descobriu o paranormal? O que o motivou a se juntar à Ordo Realitas?"
+          className="bg-card border-border h-32 resize-none"
+        />
+      </motion.div>
 
       {/* Preview */}
       {formData.name && (
-        <div className="ordo-panel p-4">
+        <motion.div 
+          className="ordo-panel p-4"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.2 }}
+        >
           <div className="flex items-center gap-4">
             {formData.photoUrl ? (
               <img 
@@ -177,7 +245,7 @@ export function StepConcept({ formData, updateFormData }: StepConceptProps) {
               </div>
             </div>
           </div>
-        </div>
+        </motion.div>
       )}
     </div>
   );
