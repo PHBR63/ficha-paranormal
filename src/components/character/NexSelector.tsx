@@ -20,18 +20,19 @@ const PATENT_ICONS: Record<string, React.ElementType> = {
   'Agente de Elite': Gem,
 };
 
-const PATENT_COLORS: Record<string, string> = {
-  'Recruta': 'from-slate-500 to-slate-600',
-  'Operador': 'from-blue-500 to-blue-600',
-  'Agente Especial': 'from-purple-500 to-purple-600',
-  'Oficial de Operações': 'from-amber-500 to-amber-600',
-  'Agente de Elite': 'from-red-500 to-red-600',
+// Cores de patente com text color para garantir contraste
+const PATENT_STYLES: Record<string, { gradient: string; text: string }> = {
+  'Recruta': { gradient: 'from-slate-500 to-slate-600', text: 'text-slate-50' },
+  'Operador': { gradient: 'from-blue-500 to-blue-600', text: 'text-blue-50' },
+  'Agente Especial': { gradient: 'from-purple-500 to-purple-600', text: 'text-purple-50' },
+  'Oficial de Operações': { gradient: 'from-amber-500 to-amber-600', text: 'text-amber-950' },
+  'Agente de Elite': { gradient: 'from-red-500 to-red-600', text: 'text-red-50' },
 };
 
 export function NexSelector({ value, onChange }: NexSelectorProps) {
   const patent = getPatentByNex(value);
   const PatentIcon = PATENT_ICONS[patent] || Shield;
-  const patentColor = PATENT_COLORS[patent] || 'from-slate-500 to-slate-600';
+  const patentStyle = PATENT_STYLES[patent] || { gradient: 'from-slate-500 to-slate-600', text: 'text-slate-50' };
   
   const patentData = PATENTS.find(p => p.nex === value);
   
@@ -67,10 +68,10 @@ export function NexSelector({ value, onChange }: NexSelectorProps) {
       >
         <div className={cn(
           "flex items-center gap-3 px-6 py-3 rounded-lg bg-gradient-to-r",
-          patentColor
+          patentStyle.gradient
         )}>
-          <PatentIcon className="w-6 h-6 text-white" />
-          <span className="font-display text-xl tracking-wider text-white">
+          <PatentIcon className={cn("w-6 h-6", patentStyle.text)} />
+          <span className={cn("font-display text-xl tracking-wider", patentStyle.text)}>
             {patent}
           </span>
         </div>

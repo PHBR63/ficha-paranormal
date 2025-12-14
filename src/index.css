@@ -13,54 +13,62 @@
 
 @layer base {
   :root {
-    /* Light mode - fallback */
-    --background: 209 40% 96%;
+    /* Light mode - padronizado com bom contraste */
+    --background: 0 0% 100%;
     --foreground: 222 47% 11%;
-    --card: 210 40% 98%;
+    --card: 0 0% 98%;
     --card-foreground: 222 47% 11%;
-    --popover: 214 31% 91%;
+    --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
     --primary: 263 70% 50%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 215 24% 26%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 215 20% 65%;
-    --muted-foreground: 222 47% 11%;
-    --accent: 210 40% 98%;
-    --accent-foreground: 215 19% 34%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 25% 40%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222 47% 11%;
     --destructive: 0 72% 50%;
-    --destructive-foreground: 0 85% 97%;
-    --border: 212 26% 83%;
-    --input: 212 26% 83%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 214 32% 85%;
+    --input: 214 32% 85%;
     --ring: 263 70% 50%;
     --radius: 0.5rem;
     --success: 142 71% 45%;
-    --success-foreground: 0 0% 98%;
+    --success-foreground: 0 0% 100%;
     --paranormal: 322 80% 55%;
-    --paranormal-foreground: 0 0% 98%;
+    --paranormal-foreground: 0 0% 100%;
     
-    /* Fixed status colors */
+    /* Fixed status colors - cores de status nunca mudam */
     --status-hp: 0 72% 51%;
     --status-pe: 142 71% 45%;
     --status-san: 322 80% 55%;
     --status-xp: 45 93% 47%;
     
-    --chart-1: 198 93% 59%;
-    --chart-2: 213 93% 67%;
-    --chart-3: 215 20% 65%;
-    --chart-4: 215 16% 46%;
-    --chart-5: 215 19% 34%;
-    --sidebar: 210 40% 98%;
+    /* Chart colors para light mode */
+    --chart-1: 263 70% 50%;
+    --chart-2: 280 60% 55%;
+    --chart-3: 210 40% 50%;
+    --chart-4: 210 30% 40%;
+    --chart-5: 210 20% 30%;
+    
+    /* Sidebar light mode */
+    --sidebar: 0 0% 98%;
+    --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 222 47% 11%;
     --sidebar-primary: 263 70% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 215 24% 26%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 212 26% 83%;
+    --sidebar-accent: 210 40% 96%;
+    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-border: 214 32% 85%;
     --sidebar-ring: 263 70% 50%;
+    
+    /* Font families */
     --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
     --font-serif: 'Lora', ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
     --font-mono: 'Space Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    
+    /* Shadows */
     --shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
     --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
     --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
@@ -88,7 +96,7 @@
     --secondary-foreground: 210 40% 98%;
 
     --muted: 260 15% 30%;
-    --muted-foreground: 210 40% 85%;
+    --muted-foreground: 210 30% 70%;
 
     --accent: 260 25% 18%;
     --accent-foreground: 210 40% 90%;
@@ -181,13 +189,13 @@
     --sidebar-ring: 199 89% 48%;
   }
 
-  /* Amber Theme - Energia Arcana */
+  /* Amber Theme - Energia Arcana (cor clara precisa de texto escuro) */
   .dark[data-color-theme="amber"] {
     --primary: 38 92% 50%;
-    --primary-foreground: 0 0% 10%;
+    --primary-foreground: 0 0% 5%;
     --ring: 38 92% 50%;
     --sidebar-primary: 38 92% 50%;
-    --sidebar-primary-foreground: 0 0% 10%;
+    --sidebar-primary-foreground: 0 0% 5%;
     --sidebar-accent: 38 40% 20%;
     --sidebar-accent-foreground: 38 92% 85%;
     --sidebar-ring: 38 92% 50%;
