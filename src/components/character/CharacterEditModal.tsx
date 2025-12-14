@@ -20,6 +20,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -49,10 +55,47 @@ import {
   ArrowDown,
   ArrowUp,
   RotateCcw,
+  HelpCircle,
 } from 'lucide-react';
 import { ORIGINS, SKILLS, CLASSES, calculateDerivedStats } from '@/lib/character-data';
 import { ImageUploader } from '@/components/ui/image-uploader';
 import { supabase } from '@/integrations/supabase/client';
+
+// Tooltips explicativos para cada campo
+const FIELD_TOOLTIPS = {
+  photo: 'Imagem do personagem. Clique para fazer upload de uma foto.',
+  name: 'Nome pelo qual o personagem é conhecido no mundo do jogo.',
+  playerName: 'Seu nome real como jogador, para identificação na mesa.',
+  age: 'Idade do personagem em anos. Afeta como NPCs podem reagir a ele.',
+  gender: 'Identidade de gênero do personagem. Livre para personalização.',
+  defense: 'Valor base de defesa. Representa o quão difícil é acertar o personagem. DEF = 10 + AGI + Equipamento.',
+  appearance: 'Descrição física: altura, peso, cabelo, olhos, cicatrizes, tatuagens, estilo de roupa, etc.',
+  personality: 'Traços de personalidade, manias, vícios, medos, objetivos e como o personagem interage com outros.',
+  background: 'A história de vida do personagem: onde nasceu, como cresceu, eventos marcantes e como se envolveu com o Outro Lado.',
+  notes: 'Anotações pessoais, lembretes, itens especiais, contatos, missões e qualquer informação adicional.',
+  agility: 'Reflexos, coordenação e velocidade. Afeta Defesa, iniciativa e perícias como Acrobacia e Furtividade.',
+  strength: 'Força física bruta. Afeta dano corpo a corpo e perícias como Atletismo e Luta.',
+  intellect: 'Capacidade mental, memória e raciocínio. Afeta PE Máximo e perícias como Investigação e Ciências.',
+  presence: 'Força de vontade e carisma. Afeta SAN Máxima e perícias como Intimidação e Diplomacia.',
+  vigor: 'Resistência física e saúde. Afeta PV Máximo e perícias como Fortitude.',
+  skills: 'Perícias treinadas concedem +5 de bônus. Clique para treinar/destreinar.',
+};
+
+// Componente de tooltip para campos
+function FieldTooltip({ content }: { content: string }) {
+  return (
+    <TooltipProvider delayDuration={300}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <HelpCircle className="w-3.5 h-3.5 text-muted-foreground/50 hover:text-muted-foreground cursor-help ml-1" />
+        </TooltipTrigger>
+        <TooltipContent side="top" className="max-w-[250px] text-xs">
+          <p>{content}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
 
 // Limite de pontos de atributos
 const MIN_ATTRIBUTE = 1;
@@ -445,6 +488,7 @@ export function CharacterEditModal({
                   <Label className="text-center flex items-center gap-1">
                     Foto
                     {changedFields.photo && <span className="w-2 h-2 rounded-full bg-warning animate-pulse" />}
+                    <FieldTooltip content={FIELD_TOOLTIPS.photo} />
                   </Label>
                   <ImageUploader
                     value={photoUrl}
@@ -459,6 +503,7 @@ export function CharacterEditModal({
                     <Label htmlFor="name" className="flex items-center gap-1">
                       Nome do Personagem *
                       {changedFields.name && <span className="w-2 h-2 rounded-full bg-warning animate-pulse" />}
+                      <FieldTooltip content={FIELD_TOOLTIPS.name} />
                     </Label>
                     <Input
                       id="name"
@@ -473,6 +518,7 @@ export function CharacterEditModal({
                     <Label htmlFor="playerName" className="flex items-center gap-1">
                       Nome do Jogador
                       {changedFields.playerName && <span className="w-2 h-2 rounded-full bg-warning animate-pulse" />}
+                      <FieldTooltip content={FIELD_TOOLTIPS.playerName} />
                     </Label>
                     <Input
                       id="playerName"
@@ -491,6 +537,7 @@ export function CharacterEditModal({
                   <Label htmlFor="age" className="flex items-center gap-1">
                     Idade
                     {changedFields.age && <span className="w-2 h-2 rounded-full bg-warning animate-pulse" />}
+                    <FieldTooltip content={FIELD_TOOLTIPS.age} />
                   </Label>
                   <Input
                     id="age"
@@ -507,6 +554,7 @@ export function CharacterEditModal({
                   <Label htmlFor="gender" className="flex items-center gap-1">
                     Gênero
                     {changedFields.gender && <span className="w-2 h-2 rounded-full bg-warning animate-pulse" />}
+                    <FieldTooltip content={FIELD_TOOLTIPS.gender} />
                   </Label>
                   <Input
                     id="gender"
@@ -521,6 +569,7 @@ export function CharacterEditModal({
                   <Label className="flex items-center gap-1">
                     Defesa Base
                     {changedFields.defense && <span className="w-2 h-2 rounded-full bg-warning animate-pulse" />}
+                    <FieldTooltip content={FIELD_TOOLTIPS.defense} />
                   </Label>
                   <Input
                     type="number"
@@ -596,6 +645,7 @@ export function CharacterEditModal({
                   onDecrease={() => handleAttributeChange('agility', -1)}
                   onIncrease={() => handleAttributeChange('agility', 1)}
                   isChanged={changedFields.agility}
+                  tooltip={FIELD_TOOLTIPS.agility}
                 />
                 <AttributeEditor
                   label="FORÇA"
@@ -605,6 +655,7 @@ export function CharacterEditModal({
                   onDecrease={() => handleAttributeChange('strength', -1)}
                   onIncrease={() => handleAttributeChange('strength', 1)}
                   isChanged={changedFields.strength}
+                  tooltip={FIELD_TOOLTIPS.strength}
                 />
                 <AttributeEditor
                   label="INTELECTO"
@@ -614,6 +665,7 @@ export function CharacterEditModal({
                   onDecrease={() => handleAttributeChange('intellect', -1)}
                   onIncrease={() => handleAttributeChange('intellect', 1)}
                   isChanged={changedFields.intellect}
+                  tooltip={FIELD_TOOLTIPS.intellect}
                 />
                 <AttributeEditor
                   label="PRESENÇA"
@@ -623,6 +675,7 @@ export function CharacterEditModal({
                   onDecrease={() => handleAttributeChange('presence', -1)}
                   onIncrease={() => handleAttributeChange('presence', 1)}
                   isChanged={changedFields.presence}
+                  tooltip={FIELD_TOOLTIPS.presence}
                 />
                 <AttributeEditor
                   label="VIGOR"
@@ -632,6 +685,7 @@ export function CharacterEditModal({
                   onDecrease={() => handleAttributeChange('vigor', -1)}
                   onIncrease={() => handleAttributeChange('vigor', 1)}
                   isChanged={changedFields.vigor}
+                  tooltip={FIELD_TOOLTIPS.vigor}
                 />
               </div>
 
@@ -656,6 +710,7 @@ export function CharacterEditModal({
                       Alterado
                     </span>
                   )}
+                  <FieldTooltip content={FIELD_TOOLTIPS.skills} />
                 </p>
                 <Badge variant="outline" className="text-xs">
                   +5 de bônus por treino
@@ -710,6 +765,7 @@ export function CharacterEditModal({
                 <Label htmlFor="appearance" className="flex items-center gap-1">
                   Aparência
                   {changedFields.appearance && <span className="w-2 h-2 rounded-full bg-warning animate-pulse" />}
+                  <FieldTooltip content={FIELD_TOOLTIPS.appearance} />
                 </Label>
                 <Textarea
                   id="appearance"
@@ -726,6 +782,7 @@ export function CharacterEditModal({
                 <Label htmlFor="personality" className="flex items-center gap-1">
                   Personalidade
                   {changedFields.personality && <span className="w-2 h-2 rounded-full bg-warning animate-pulse" />}
+                  <FieldTooltip content={FIELD_TOOLTIPS.personality} />
                 </Label>
                 <Textarea
                   id="personality"
@@ -742,6 +799,7 @@ export function CharacterEditModal({
                 <Label htmlFor="background" className="flex items-center gap-1">
                   História
                   {changedFields.background && <span className="w-2 h-2 rounded-full bg-warning animate-pulse" />}
+                  <FieldTooltip content={FIELD_TOOLTIPS.background} />
                 </Label>
                 <Textarea
                   id="background"
@@ -758,6 +816,7 @@ export function CharacterEditModal({
                 <Label htmlFor="notes" className="flex items-center gap-1">
                   Notas do Jogador
                   {changedFields.notes && <span className="w-2 h-2 rounded-full bg-warning animate-pulse" />}
+                  <FieldTooltip content={FIELD_TOOLTIPS.notes} />
                 </Label>
                 <Textarea
                   id="notes"
@@ -908,7 +967,7 @@ export function CharacterEditModal({
   );
 }
 
-// Componente de editor de atributo com indicador de alteração
+// Componente de editor de atributo com indicador de alteração e tooltip
 function AttributeEditor({
   label,
   abbr,
@@ -917,6 +976,7 @@ function AttributeEditor({
   onDecrease,
   onIncrease,
   isChanged = false,
+  tooltip,
 }: {
   label: string;
   abbr: string;
@@ -925,6 +985,7 @@ function AttributeEditor({
   onDecrease: () => void;
   onIncrease: () => void;
   isChanged?: boolean;
+  tooltip?: string;
 }) {
   return (
     <div 
@@ -944,6 +1005,7 @@ function AttributeEditor({
         <span className="text-sm text-muted-foreground flex items-center gap-1">
           {label}
           {isChanged && <span className="w-2 h-2 rounded-full bg-warning animate-pulse" />}
+          {tooltip && <FieldTooltip content={tooltip} />}
         </span>
       </div>
       
