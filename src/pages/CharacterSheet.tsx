@@ -23,7 +23,7 @@ import {
   BookOpen,
   ArrowUp,
 } from 'lucide-react';
-import { ORIGINS, SKILLS, getPatentByNex, calculateDerivedStats, getTrackById } from '@/lib/character-data';
+import { ORIGINS, SKILLS, CLASSES, getPatentByNex, calculateDerivedStats, getTrackById } from '@/lib/character-data';
 import { ALL_RITUALS } from '@/lib/rituals-data';
 import { getPELimitByNex } from '@/lib/dice-roller';
 import { Input } from '@/components/ui/input';
@@ -36,6 +36,7 @@ import { SkillsGrid } from '@/components/character/SkillsGrid';
 import { InventoryPanel } from '@/components/inventory/InventoryPanel';
 import { InventoryItem } from '@/lib/inventory-system';
 import { NexProgressionModal } from '@/components/character/NexProgressionModal';
+import { RitualSelectionModal } from '@/components/character/RitualSelectionModal';
 
 interface Character {
   id: string;
@@ -92,6 +93,11 @@ export default function CharacterSheet() {
   
   // NEX progression modal
   const [nexModalOpen, setNexModalOpen] = useState(false);
+  
+  // Ritual selection modal (após progressão de NEX)
+  const [ritualModalOpen, setRitualModalOpen] = useState(false);
+  const [pendingRitualSlots, setPendingRitualSlots] = useState(0);
+  const [pendingMaxCircle, setPendingMaxCircle] = useState(1);
 
   useEffect(() => {
     async function fetchCharacter() {
@@ -227,11 +233,11 @@ export default function CharacterSheet() {
       .update({
         nex: newNex,
         hp_max: newStats.hp_max,
-        hp_current: hpCurrent + (newStats.hp_max - character.hp_max), // Adiciona o bônus de HP
+        hp_current: hpCurrent + (newStats.hp_max - character.hp_max),
         pe_max: newStats.pe_max,
-        pe_current: peCurrent + (newStats.pe_max - character.pe_max), // Adiciona o bônus de PE
+        pe_current: peCurrent + (newStats.pe_max - character.pe_max),
         san_max: newStats.san_max,
-        san_current: sanCurrent + (newStats.san_max - character.san_max), // Adiciona o bônus de SAN
+        san_current: sanCurrent + (newStats.san_max - character.san_max),
         patent: newStats.patent,
         abilities: updatedAbilities,
       })
@@ -271,6 +277,52 @@ export default function CharacterSheet() {
     toast({
       title: `NEX aumentado para ${newNex}%!`,
       description: `${character.name} subiu de nível e ficou mais forte!`,
+    });
+
+    // Verifica se Ocultista ganhou novos slots de ritual
+    if (character.class === 'Ocultista') {
+      const ocultistClass = CLASSES.find(c => c.id === 'Ocultista') as any;
+      const ritualsPerNex = ocultistClass?.ritualsPerNex || {};
+      
+      const oldRitualInfo = ritualsPerNex[character.nex] || { count: 0, maxCircle: 1 };
+      const newRitualInfo = ritualsPerNex[newNex] || { count: 0, maxCircle: 1 };
+      
+      const newSlots = newRitualInfo.count - oldRitualInfo.count;
+      
+      if (newSlots > 0) {
+        // Abre modal para escolher novos rituais
+        setPendingRitualSlots(newSlots);
+        setPendingMaxCircle(newRitualInfo.maxCircle);
+        setRitualModalOpen(true);
+      }
+    }
+  };
+
+  // Handler para salvar novos rituais escolhidos
+  const handleRitualsConfirm = async (selectedRituals: string[]) => {
+    if (!character) return;
+
+    const updatedRituals = [...character.rituals, ...selectedRituals];
+
+    const { error } = await supabase
+      .from('characters')
+      .update({ rituals: updatedRituals })
+      .eq('id', character.id);
+
+    if (error) {
+      toast({
+        title: 'Erro ao salvar rituais',
+        description: error.message,
+        variant: 'destructive',
+      });
+      throw error;
+    }
+
+    setCharacter(prev => prev ? { ...prev, rituals: updatedRituals } : null);
+
+    toast({
+      title: 'Novos rituais aprendidos!',
+      description: `${selectedRituals.length} ritual(is) adicionado(s) ao seu grimório.`,
     });
   };
 
@@ -761,6 +813,16 @@ export default function CharacterSheet() {
           abilities: character.abilities,
         }}
         onLevelUp={handleLevelUp}
+      />
+      
+      {/* Modal de seleção de rituais após progressão */}
+      <RitualSelectionModal
+        open={ritualModalOpen}
+        onClose={() => setRitualModalOpen(false)}
+        currentRituals={character.rituals}
+        maxCircle={pendingMaxCircle}
+        newSlots={pendingRitualSlots}
+        onConfirm={handleRitualsConfirm}
       />
     </div>
   );
