@@ -12,13 +12,15 @@ import { StepAttributes } from '@/components/character/StepAttributes';
 import { StepOrigin } from '@/components/character/StepOrigin';
 import { StepClass } from '@/components/character/StepClass';
 import { StepSkills } from '@/components/character/StepSkills';
+import { StepAbilities } from '@/components/character/StepAbilities';
 import { StepReview } from '@/components/character/StepReview';
 import { CharacterCreationStepper } from '@/components/character/CharacterCreationStepper';
 import { StatsPreviewWidget } from '@/components/character/StatsPreviewWidget';
 import { RestoreDraftDialog } from '@/components/character/RestoreDraftDialog';
 import { ExitConfirmDialog } from '@/components/character/ExitConfirmDialog';
 import { ORIGINS, calculateDerivedStats, calculateDefense } from '@/lib/character-data';
-import { rebuildCharacterSheet, buildStateToFormData, CLASS_PROFICIENCIES, CLASS_INITIAL_ABILITIES } from '@/lib/character-builder-engine';
+import { rebuildCharacterSheet, buildStateToFormData, CLASS_PROFICIENCIES } from '@/lib/character-builder-engine';
+import { getCoreAbilities, getChoosableAbilities } from '@/lib/class-abilities';
 import { useCharacterAutoSave, loadCharacterDraft, clearCharacterDraft } from '@/hooks/useCharacterAutoSave';
 import confetti from 'canvas-confetti';
 
@@ -71,6 +73,7 @@ const STEPS = [
   { id: 'origin', title: 'ORIGEM' },
   { id: 'class', title: 'CLASSE' },
   { id: 'skills', title: 'PERÍCIAS' },
+  { id: 'abilities', title: 'HABILIDADES' },
   { id: 'review', title: 'REVISÃO' },
 ];
 
@@ -209,9 +212,14 @@ export default function CharacterCreate() {
       completed.push(5);
     }
     
-    // Step 6: Review (can finalize)
-    if (buildResult.canFinalize) {
+    // Step 6: Abilities (always complete if class is selected, choices are optional)
+    if (formData.characterClass !== '') {
       completed.push(6);
+    }
+    
+    // Step 7: Review (can finalize)
+    if (buildResult.canFinalize) {
+      completed.push(7);
     }
     
     return completed;
@@ -317,7 +325,16 @@ export default function CharacterCreate() {
 
       const allSkills = buildStateToFormData(buildState);
       const proficiencies = CLASS_PROFICIENCIES[formData.characterClass] || [];
-      const abilities = CLASS_INITIAL_ABILITIES[formData.characterClass] || [];
+      
+      // Combine core abilities with user-selected abilities
+      const coreAbilities = getCoreAbilities(formData.characterClass, formData.nex);
+      const choosableAbilities = getChoosableAbilities(formData.characterClass, formData.nex);
+      const allAbilities = [
+        ...coreAbilities.map(a => a.name),
+        ...formData.abilities
+          .filter(id => choosableAbilities.some(a => a.id === id))
+          .map(id => choosableAbilities.find(a => a.id === id)?.name || id)
+      ];
 
       const { error } = await supabase.from('characters').insert({
         user_id: user.id,
@@ -349,7 +366,7 @@ export default function CharacterCreate() {
         photo_url: photoUrl,
         movement: 9,
         proficiencies: proficiencies,
-        abilities: abilities,
+        abilities: allAbilities,
       });
 
       if (error) throw error;
@@ -404,6 +421,8 @@ export default function CharacterCreate() {
         case 5:
           return <StepSkills formData={formData} updateFormData={updateFormData} buildResult={buildResult} />;
         case 6:
+          return <StepAbilities formData={formData} updateFormData={updateFormData} />;
+        case 7:
           return <StepReview formData={formData} buildResult={buildResult} updateFormData={updateFormData} onStepClick={handleStepClick} />;
         default:
           return null;
