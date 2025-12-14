@@ -347,6 +347,7 @@ export default function CharacterSheet() {
     vigor: number;
     skills: Record<string, number>;
     defense: number;
+    photo_url: string | null;
   }) => {
     if (!character) return;
 
@@ -377,6 +378,7 @@ export default function CharacterSheet() {
         vigor: data.vigor,
         skills: data.skills,
         defense: data.defense,
+        photo_url: data.photo_url,
         hp_max: newStats.hp,
         pe_max: newStats.pe,
         san_max: newStats.san,
@@ -408,6 +410,7 @@ export default function CharacterSheet() {
       vigor: data.vigor,
       skills: data.skills,
       defense: data.defense,
+      photo_url: data.photo_url,
       hp_max: newStats.hp,
       pe_max: newStats.pe,
       san_max: newStats.san,
