@@ -1,6 +1,7 @@
 import { CLASSES, calculateDerivedStats } from '@/lib/character-data';
 import { cn } from '@/lib/utils';
-import { Sword, Wrench, Sparkles } from 'lucide-react';
+import { Sword, Wrench, Sparkles, Shield, BookOpen } from 'lucide-react';
+import { CLASS_PROFICIENCIES, CLASS_INITIAL_ABILITIES, getClassSkillRules } from '@/lib/character-builder-engine';
 import type { CharacterFormData } from '@/pages/CharacterCreate';
 
 interface StepClassProps {
@@ -20,16 +21,26 @@ export function StepClass({ formData, updateFormData }: StepClassProps) {
         formData.characterClass,
         formData.attributes.vigor,
         formData.attributes.presence,
-        formData.nex
+        formData.nex,
+        formData.origin
       )
     : null;
+
+  const handleSelectClass = (classId: string) => {
+    // Reset class skill choices when changing class
+    updateFormData({ 
+      characterClass: classId,
+      classSkillChoices: {},
+      freeSkills: [],
+    });
+  };
 
   return (
     <div className="space-y-6">
       <div className="text-center mb-8">
         <h2 className="font-display text-2xl tracking-wider mb-2">CLASSE</h2>
         <p className="text-muted-foreground text-sm">
-          Escolha a classe do seu personagem. Isso afeta seus pontos de vida, esforço e sanidade.
+          Escolha a classe do seu personagem. Isso afeta seus pontos de vida, esforço, sanidade e perícias.
         </p>
       </div>
 
@@ -41,13 +52,16 @@ export function StepClass({ formData, updateFormData }: StepClassProps) {
             cls.id,
             formData.attributes.vigor,
             formData.attributes.presence,
-            formData.nex
+            formData.nex,
+            formData.origin
           );
+          const proficiencies = CLASS_PROFICIENCIES[cls.id] || [];
+          const skillRules = getClassSkillRules(cls.id, formData.attributes.intellect);
 
           return (
             <button
               key={cls.id}
-              onClick={() => updateFormData({ characterClass: cls.id })}
+              onClick={() => handleSelectClass(cls.id)}
               className={cn(
                 'ordo-panel p-5 text-left transition-all hover:border-primary/50 flex flex-col',
                 isSelected && 'border-primary bg-primary/5'
@@ -85,13 +99,15 @@ export function StepClass({ formData, updateFormData }: StepClassProps) {
                 </div>
               </div>
 
-              {/* Features */}
-              <div className="space-y-1">
-                {cls.features.map((feature, i) => (
-                  <p key={i} className="text-xs text-muted-foreground">
-                    • {feature}
-                  </p>
-                ))}
+              {/* Skills info */}
+              <div className="text-xs text-muted-foreground mb-2">
+                <span className="text-secondary font-medium">{skillRules.freePoints}</span> perícias à escolha
+                {skillRules.mandatory.length > 0 && (
+                  <span> + {skillRules.mandatory.length} obrigatórias</span>
+                )}
+                {skillRules.choices.length > 0 && (
+                  <span> + {skillRules.choices.length} escolhas</span>
+                )}
               </div>
 
               {isSelected && (
@@ -103,6 +119,46 @@ export function StepClass({ formData, updateFormData }: StepClassProps) {
           );
         })}
       </div>
+
+      {formData.characterClass && (
+        <div className="grid md:grid-cols-2 gap-4">
+          {/* Proficiencies */}
+          <div className="ordo-panel p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Shield className="w-4 h-4 text-primary" />
+              <h4 className="font-display text-sm tracking-wider text-primary">PROFICIÊNCIAS</h4>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {CLASS_PROFICIENCIES[formData.characterClass]?.map((prof) => (
+                <span 
+                  key={prof}
+                  className="px-2 py-1 bg-muted text-xs rounded-sm"
+                >
+                  {prof}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* Initial Abilities */}
+          <div className="ordo-panel p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <BookOpen className="w-4 h-4 text-primary" />
+              <h4 className="font-display text-sm tracking-wider text-primary">HABILIDADE NEX 5%</h4>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {CLASS_INITIAL_ABILITIES[formData.characterClass]?.map((ability) => (
+                <span 
+                  key={ability}
+                  className="px-2 py-1 bg-paranormal/20 text-paranormal text-xs rounded-sm"
+                >
+                  {ability}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {stats && (
         <div className="ordo-panel p-4 bg-primary/5 border-primary/20">

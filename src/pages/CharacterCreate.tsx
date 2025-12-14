@@ -5,20 +5,31 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, ArrowRight, Check, Loader2 } from 'lucide-react';
-import { StepBasicInfo } from '@/components/character/StepBasicInfo';
+import { StepConcept } from '@/components/character/StepConcept';
 import { StepAttributes } from '@/components/character/StepAttributes';
 import { StepOrigin } from '@/components/character/StepOrigin';
 import { StepClass } from '@/components/character/StepClass';
 import { StepSkills } from '@/components/character/StepSkills';
 import { StepReview } from '@/components/character/StepReview';
-import { ORIGINS, CLASSES, calculateDerivedStats } from '@/lib/character-data';
+import { ORIGINS, calculateDerivedStats, calculateDefense } from '@/lib/character-data';
+import { rebuildCharacterSheet, buildStateToFormData, CLASS_PROFICIENCIES, CLASS_INITIAL_ABILITIES } from '@/lib/character-builder-engine';
 
 export type CharacterFormData = {
+  // Conceito
   name: string;
   playerName: string;
+  concept: string;
+  age: number | null;
+  gender: string;
+  appearance: string;
+  personality: string;
+  
+  // Core
   origin: string;
   characterClass: string;
   nex: number;
+  
+  // Atributos
   attributes: {
     agility: number;
     strength: number;
@@ -26,13 +37,23 @@ export type CharacterFormData = {
     presence: number;
     vigor: number;
   };
+  
+  // Perícias
+  originSkills: string[];
+  classSkillChoices: Record<string, string>;
+  freeSkills: string[];
+  conflictResolutions: Record<string, string>;
   skills: Record<string, number>;
+  
+  // Outros
   powers: Array<{ name: string; description: string }>;
   background: string;
+  proficiencies: string[];
+  abilities: string[];
 };
 
 const STEPS = [
-  { id: 'basic', title: 'INFORMAÇÕES' },
+  { id: 'concept', title: 'CONCEITO' },
   { id: 'attributes', title: 'ATRIBUTOS' },
   { id: 'origin', title: 'ORIGEM' },
   { id: 'class', title: 'CLASSE' },
@@ -51,6 +72,11 @@ export default function CharacterCreate() {
   const [formData, setFormData] = useState<CharacterFormData>({
     name: '',
     playerName: '',
+    concept: '',
+    age: null,
+    gender: '',
+    appearance: '',
+    personality: '',
     origin: '',
     characterClass: '',
     nex: 5,
@@ -61,26 +87,42 @@ export default function CharacterCreate() {
       presence: 1,
       vigor: 1,
     },
+    originSkills: [],
+    classSkillChoices: {},
+    freeSkills: [],
+    conflictResolutions: {},
     skills: {},
     powers: [],
     background: '',
+    proficiencies: [],
+    abilities: [],
   });
 
   const updateFormData = (updates: Partial<CharacterFormData>) => {
     setFormData(prev => ({ ...prev, ...updates }));
   };
 
+  // Rebuild character sheet state
+  const buildState = {
+    ...formData,
+  };
+  
+  const buildResult = rebuildCharacterSheet(buildState);
+
   const canProceed = () => {
     switch (currentStep) {
       case 0: return formData.name.trim().length >= 2;
       case 1: {
         const total = Object.values(formData.attributes).reduce((a, b) => a + b, 0);
-        return total === 9; // 4 points distributed (base 5 + 4 = 9)
+        return total === 9 || total === 10; // 4 or 5 points distributed (base 5 + 4/5 = 9/10)
       }
       case 2: return formData.origin !== '';
       case 3: return formData.characterClass !== '';
-      case 4: return true; // Skills are optional at creation
-      case 5: return true;
+      case 4: {
+        // Must have resolved all choices and conflicts
+        return buildResult.pendingChoices.length === 0 && buildResult.pendingConflicts.length === 0;
+      }
+      case 5: return buildResult.canFinalize;
       default: return false;
     }
   };
@@ -107,14 +149,24 @@ export default function CharacterCreate() {
         formData.characterClass,
         formData.attributes.vigor,
         formData.attributes.presence,
-        formData.nex
+        formData.nex,
+        formData.origin
       );
 
       const originData = ORIGINS.find(o => o.id === formData.origin);
       const powers = [
-        ...(originData?.powers || []).map(p => ({ name: p, description: '' })),
+        ...(originData?.powers || []).map(p => ({ 
+          name: p, 
+          description: originData?.powerDescription || '' 
+        })),
         ...formData.powers
       ];
+
+      // Build all trained skills
+      const allSkills = buildStateToFormData(buildState);
+
+      const proficiencies = CLASS_PROFICIENCIES[formData.characterClass] || [];
+      const abilities = CLASS_INITIAL_ABILITIES[formData.characterClass] || [];
 
       const { error } = await supabase.from('characters').insert({
         user_id: user.id,
@@ -134,10 +186,18 @@ export default function CharacterCreate() {
         pe_max: derivedStats.pe,
         san_current: derivedStats.san,
         san_max: derivedStats.san,
-        defense: 10 + formData.attributes.agility,
-        skills: formData.skills,
+        defense: calculateDefense(formData.attributes.agility),
+        skills: allSkills,
         powers: powers,
         background: formData.background || null,
+        concept: formData.concept || null,
+        age: formData.age,
+        gender: formData.gender || null,
+        appearance: formData.appearance || null,
+        personality: formData.personality || null,
+        movement: 9,
+        proficiencies: proficiencies,
+        abilities: abilities,
       });
 
       if (error) throw error;
@@ -162,7 +222,7 @@ export default function CharacterCreate() {
   const renderStep = () => {
     switch (currentStep) {
       case 0:
-        return <StepBasicInfo formData={formData} updateFormData={updateFormData} />;
+        return <StepConcept formData={formData} updateFormData={updateFormData} />;
       case 1:
         return <StepAttributes formData={formData} updateFormData={updateFormData} />;
       case 2:
@@ -170,9 +230,9 @@ export default function CharacterCreate() {
       case 3:
         return <StepClass formData={formData} updateFormData={updateFormData} />;
       case 4:
-        return <StepSkills formData={formData} updateFormData={updateFormData} />;
+        return <StepSkills formData={formData} updateFormData={updateFormData} buildResult={buildResult} />;
       case 5:
-        return <StepReview formData={formData} />;
+        return <StepReview formData={formData} buildResult={buildResult} />;
       default:
         return null;
     }
@@ -269,7 +329,7 @@ export default function CharacterCreate() {
           ) : (
             <Button
               onClick={handleSave}
-              disabled={saving}
+              disabled={saving || !buildResult.canFinalize}
               className="font-display tracking-wider bg-primary hover:bg-primary/90"
             >
               {saving ? (
