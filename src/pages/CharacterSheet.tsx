@@ -631,25 +631,21 @@ export default function CharacterSheet() {
               </div>
             </div>
 
-            {/* Stats Efetivos com Condições */}
-            {character.conditions && character.conditions.length > 0 ? (
-              <EffectiveStatsWidget
-                baseDefense={character.defense}
-                baseMovement={character.movement || 9}
-                conditions={character.conditions}
-              />
-            ) : (
-              <div className="ordo-panel p-4 space-y-4">
-                {/* Defense sem modificadores */}
-                <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                  <div className="flex items-center gap-2">
-                    <Shield className="w-5 h-5 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">DEFESA</span>
-                  </div>
-                  <span className="font-display text-2xl">{character.defense}</span>
-                </div>
-              </div>
-            )}
+            {/* Stats Efetivos com Condições e Proteções */}
+            <EffectiveStatsWidget
+              baseDefense={character.defense}
+              baseMovement={character.movement || 9}
+              conditions={character.conditions || []}
+              inventory={character.inventory as Array<{
+                name: string;
+                isEquipped?: boolean;
+                itemType?: string;
+                rd?: number;
+                agilityPenalty?: number;
+                speedPenalty?: number;
+                armorType?: string;
+              }>}
+            />
 
             {/* Status Bars - Vertical */}
             <div className="ordo-panel p-4 space-y-4">
