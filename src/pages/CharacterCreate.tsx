@@ -337,14 +337,16 @@ export default function CharacterCreate() {
       const allSkills = buildStateToFormData(buildState);
       const proficiencies = CLASS_PROFICIENCIES[formData.characterClass] || [];
       
-      // Combine core abilities with user-selected abilities
+      // Combine core abilities with user-selected abilities and track abilities
       const coreAbilities = getCoreAbilities(formData.characterClass, formData.nex);
       const choosableAbilities = getChoosableAbilities(formData.characterClass, formData.nex);
       const allAbilities = [
         ...coreAbilities.map(a => a.name),
         ...formData.abilities
           .filter(id => choosableAbilities.some(a => a.id === id))
-          .map(id => choosableAbilities.find(a => a.id === id)?.name || id)
+          .map(id => choosableAbilities.find(a => a.id === id)?.name || id),
+        // Inclui habilidades da trilha desbloqueadas pelo NEX atual
+        ...formData.trackAbilities
       ];
 
       const { error } = await supabase.from('characters').insert({
@@ -378,6 +380,7 @@ export default function CharacterCreate() {
         movement: 9,
         proficiencies: proficiencies,
         abilities: allAbilities,
+        class_track: formData.classTrack || null,
       });
 
       if (error) throw error;

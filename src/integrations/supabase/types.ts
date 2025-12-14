@@ -245,6 +245,7 @@ export type Database = {
           appearance: string | null
           background: string | null
           class: string
+          class_track: string | null
           concept: string | null
           conditions: Json
           created_at: string
@@ -285,6 +286,7 @@ export type Database = {
           appearance?: string | null
           background?: string | null
           class: string
+          class_track?: string | null
           concept?: string | null
           conditions?: Json
           created_at?: string
@@ -325,6 +327,7 @@ export type Database = {
           appearance?: string | null
           background?: string | null
           class?: string
+          class_track?: string | null
           concept?: string | null
           conditions?: Json
           created_at?: string
