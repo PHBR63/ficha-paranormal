@@ -22,7 +22,8 @@ import {
   Sparkles,
   BookOpen
 } from 'lucide-react';
-import { ORIGINS, SKILLS, getPatentByNex, calculateDerivedStats } from '@/lib/character-data';
+import { ORIGINS, SKILLS, getPatentByNex, calculateDerivedStats, getTrackById } from '@/lib/character-data';
+import { ALL_RITUALS } from '@/lib/rituals-data';
 import { getPELimitByNex } from '@/lib/dice-roller';
 import { Input } from '@/components/ui/input';
 import { DiceRoller3D } from '@/components/dice/DiceRoller3D';
@@ -40,6 +41,7 @@ interface Character {
   player_name: string | null;
   origin: string;
   class: string;
+  class_track: string | null; // Trilha da classe
   nex: number;
   patent: string;
   agility: number;
@@ -56,8 +58,9 @@ interface Character {
   defense: number;
   skills: Record<string, number>;
   powers: Array<{ name: string; description: string }>;
+  abilities: string[]; // Habilidades de classe + trilha
   inventory: Array<{ name: string; category: string; slots: number; itemType?: string; isEquipped?: boolean; equipSlot?: string }>;
-  rituals: Array<{ name: string; circle: number; element: string }>;
+  rituals: string[]; // IDs dos rituais selecionados
   background: string | null;
   notes: string | null;
   conditions: string[];
@@ -109,6 +112,9 @@ export default function CharacterSheet() {
       const charData = {
         ...data,
         conditions: Array.isArray(data.conditions) ? data.conditions as string[] : [],
+        abilities: Array.isArray(data.abilities) ? data.abilities as string[] : [],
+        rituals: Array.isArray(data.rituals) ? data.rituals as string[] : [],
+        class_track: data.class_track || null,
       };
       setCharacter(charData as unknown as Character);
       setHpCurrent(data.hp_current);
@@ -468,55 +474,128 @@ export default function CharacterSheet() {
               </TabsContent>
 
               <TabsContent value="powers" className="animate-fade-in">
-                <div className="ordo-panel p-4">
-                  <h3 className="font-display text-sm tracking-wider mb-4 text-primary">
-                    PODERES E HABILIDADES
-                  </h3>
-                  {character.powers.length > 0 ? (
-                    <div className="space-y-3">
-                      {character.powers.map((power, i) => (
-                        <div 
-                          key={i}
-                          className="p-4 bg-paranormal/5 border border-paranormal/20 rounded-lg"
-                        >
-                          <h4 className="font-display text-lg text-paranormal">{power.name}</h4>
-                          {power.description && (
-                            <p className="text-sm text-muted-foreground mt-1 font-ritual italic">
-                              {power.description}
-                            </p>
-                          )}
-                        </div>
-                      ))}
+                <div className="ordo-panel p-4 space-y-6">
+                  {/* Habilidades de Classe */}
+                  {character.abilities && character.abilities.length > 0 && (
+                    <div>
+                      <h3 className="font-display text-sm tracking-wider mb-4 text-primary">
+                        HABILIDADES
+                      </h3>
+                      <div className="flex flex-wrap gap-2">
+                        {character.abilities.map((ability, i) => (
+                          <span
+                            key={i}
+                            className="px-3 py-1.5 bg-primary/20 text-primary text-sm rounded-lg"
+                          >
+                            {ability}
+                          </span>
+                        ))}
+                      </div>
                     </div>
-                  ) : (
-                    <p className="text-muted-foreground">Nenhum poder registrado.</p>
                   )}
 
-                  {/* Rituals */}
-                  {character.rituals && character.rituals.length > 0 && (
-                    <>
-                      <h3 className="font-display text-sm tracking-wider mt-6 mb-4 text-paranormal">
-                        RITUAIS
+                  {/* Trilha de Classe */}
+                  {character.class_track && (() => {
+                    const track = getTrackById(character.class_track);
+                    if (!track) return null;
+                    const unlockedAbilities = track.abilities.filter(a => a.minNex <= character.nex);
+                    return (
+                      <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Sparkles className="w-4 h-4 text-primary" />
+                          <h4 className="font-display text-lg text-primary">
+                            Trilha: {track.name}
+                          </h4>
+                        </div>
+                        <p className="text-sm text-muted-foreground mb-3">{track.description}</p>
+                        {unlockedAbilities.length > 0 && (
+                          <div className="space-y-2">
+                            <p className="text-xs text-primary/70 uppercase tracking-wider">
+                              Habilidades da Trilha (NEX {character.nex}%)
+                            </p>
+                            {unlockedAbilities.map((ability) => (
+                              <div 
+                                key={ability.id}
+                                className="p-3 bg-primary/10 border border-primary/30 rounded-lg"
+                              >
+                                <div className="flex items-center justify-between">
+                                  <span className="font-medium text-primary">{ability.name}</span>
+                                  <span className="text-xs text-muted-foreground">NEX {ability.minNex}%</span>
+                                </div>
+                                <p className="text-sm text-muted-foreground mt-1">{ability.description}</p>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+
+                  {/* Poderes de Origem */}
+                  {character.powers.length > 0 && (
+                    <div>
+                      <h3 className="font-display text-sm tracking-wider mb-4 text-paranormal">
+                        PODERES DE ORIGEM
                       </h3>
-                      <div className="space-y-2">
-                        {character.rituals.map((ritual, i) => (
+                      <div className="space-y-3">
+                        {character.powers.map((power, i) => (
                           <div 
                             key={i}
-                            className="flex items-center justify-between p-3 bg-paranormal/10 border border-paranormal/30 rounded-lg"
+                            className="p-4 bg-paranormal/5 border border-paranormal/20 rounded-lg"
                           >
-                            <span className="font-medium">{ritual.name}</span>
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs px-2 py-0.5 rounded bg-paranormal/20 text-paranormal">
-                                {ritual.element}
-                              </span>
-                              <span className="text-xs text-muted-foreground">
-                                Círculo {ritual.circle}
-                              </span>
-                            </div>
+                            <h4 className="font-display text-lg text-paranormal">{power.name}</h4>
+                            {power.description && (
+                              <p className="text-sm text-muted-foreground mt-1 font-ritual italic">
+                                {power.description}
+                              </p>
+                            )}
                           </div>
                         ))}
                       </div>
-                    </>
+                    </div>
+                  )}
+
+                  {/* Rituais - agora usa IDs e busca dados completos */}
+                  {character.rituals && character.rituals.length > 0 && (
+                    <div>
+                      <h3 className="font-display text-sm tracking-wider mb-4 text-paranormal">
+                        RITUAIS ({character.rituals.length})
+                      </h3>
+                      <div className="space-y-2">
+                        {character.rituals.map((ritualId, i) => {
+                          const ritual = ALL_RITUALS.find(r => r.id === ritualId);
+                          if (!ritual) return null;
+                          return (
+                            <div 
+                              key={i}
+                              className="flex items-center justify-between p-3 bg-paranormal/10 border border-paranormal/30 rounded-lg"
+                            >
+                              <div>
+                                <span className="font-medium">{ritual.name}</span>
+                                <p className="text-xs text-muted-foreground">
+                                  {ritual.execution} • {ritual.range} • {ritual.cost} PE
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs px-2 py-0.5 rounded bg-paranormal/20 text-paranormal capitalize">
+                                  {ritual.element}
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  {ritual.circle}º Círculo
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Mensagem se não há nada */}
+                  {(!character.powers || character.powers.length === 0) && 
+                   (!character.abilities || character.abilities.length === 0) &&
+                   (!character.rituals || character.rituals.length === 0) && (
+                    <p className="text-muted-foreground">Nenhum poder ou habilidade registrado.</p>
                   )}
                 </div>
               </TabsContent>
