@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, ArrowRight, Check, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { StepConcept } from '@/components/character/StepConcept';
+import { StepNex } from '@/components/character/StepNex';
 import { StepAttributes } from '@/components/character/StepAttributes';
 import { StepOrigin } from '@/components/character/StepOrigin';
 import { StepClass } from '@/components/character/StepClass';
@@ -65,6 +66,7 @@ export type CharacterFormData = {
 
 const STEPS = [
   { id: 'concept', title: 'CONCEITO' },
+  { id: 'nex', title: 'NEX' },
   { id: 'attributes', title: 'ATRIBUTOS' },
   { id: 'origin', title: 'ORIGEM' },
   { id: 'class', title: 'CLASSE' },
@@ -183,30 +185,33 @@ export default function CharacterCreate() {
       completed.push(0);
     }
     
-    // Step 1: Attributes
+    // Step 1: NEX (always complete, has default value)
+    completed.push(1);
+    
+    // Step 2: Attributes
     const total = Object.values(formData.attributes).reduce((a, b) => a + b, 0);
     if (total === 9 || total === 10) {
-      completed.push(1);
-    }
-    
-    // Step 2: Origin
-    if (formData.origin !== '') {
       completed.push(2);
     }
     
-    // Step 3: Class
-    if (formData.characterClass !== '') {
+    // Step 3: Origin
+    if (formData.origin !== '') {
       completed.push(3);
     }
     
-    // Step 4: Skills
-    if (buildResult.pendingChoices.length === 0 && buildResult.pendingConflicts.length === 0 && formData.characterClass) {
+    // Step 4: Class
+    if (formData.characterClass !== '') {
       completed.push(4);
     }
     
-    // Step 5: Review (can finalize)
-    if (buildResult.canFinalize) {
+    // Step 5: Skills
+    if (buildResult.pendingChoices.length === 0 && buildResult.pendingConflicts.length === 0 && formData.characterClass) {
       completed.push(5);
+    }
+    
+    // Step 6: Review (can finalize)
+    if (buildResult.canFinalize) {
+      completed.push(6);
     }
     
     return completed;
@@ -389,14 +394,16 @@ export default function CharacterCreate() {
         case 0:
           return <StepConcept formData={formData} updateFormData={updateFormData} />;
         case 1:
-          return <StepAttributes formData={formData} updateFormData={updateFormData} />;
+          return <StepNex formData={formData} updateFormData={updateFormData} />;
         case 2:
-          return <StepOrigin formData={formData} updateFormData={updateFormData} />;
+          return <StepAttributes formData={formData} updateFormData={updateFormData} />;
         case 3:
-          return <StepClass formData={formData} updateFormData={updateFormData} />;
+          return <StepOrigin formData={formData} updateFormData={updateFormData} />;
         case 4:
-          return <StepSkills formData={formData} updateFormData={updateFormData} buildResult={buildResult} />;
+          return <StepClass formData={formData} updateFormData={updateFormData} />;
         case 5:
+          return <StepSkills formData={formData} updateFormData={updateFormData} buildResult={buildResult} />;
+        case 6:
           return <StepReview formData={formData} buildResult={buildResult} updateFormData={updateFormData} onStepClick={handleStepClick} />;
         default:
           return null;
