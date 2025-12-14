@@ -197,6 +197,9 @@ export function CharacterEditModal({
   // Estado para confirmação de mudanças críticas
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
+  // Estado para erros de validação
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
   // Cálculos de pontos
   const totalAttributePoints = agility + strength + intellect + presence + vigor;
   const originData = ORIGINS.find(o => o.id === character.origin);
@@ -366,8 +369,80 @@ export function CharacterEditModal({
   const getFieldClass = (isChanged: boolean) => 
     isChanged ? 'ring-2 ring-warning/50 bg-warning/5' : '';
 
+  // Função de validação do formulário
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
+
+    // Validação do nome (obrigatório)
+    if (!name.trim()) {
+      newErrors.name = 'O nome do personagem é obrigatório.';
+    } else if (name.trim().length < 2) {
+      newErrors.name = 'O nome deve ter pelo menos 2 caracteres.';
+    } else if (name.trim().length > 100) {
+      newErrors.name = 'O nome deve ter no máximo 100 caracteres.';
+    }
+
+    // Validação da idade (se preenchida)
+    if (age) {
+      const ageNum = Number(age);
+      if (isNaN(ageNum) || ageNum < 1 || ageNum > 150) {
+        newErrors.age = 'A idade deve estar entre 1 e 150 anos.';
+      }
+    }
+
+    // Validação da defesa
+    if (defense < 0) {
+      newErrors.defense = 'A defesa não pode ser negativa.';
+    } else if (defense > 99) {
+      newErrors.defense = 'A defesa deve ser no máximo 99.';
+    }
+
+    // Validação dos atributos
+    const attrs = { agility, strength, intellect, presence, vigor };
+    Object.entries(attrs).forEach(([attr, val]) => {
+      if (val < MIN_ATTRIBUTE || val > MAX_ATTRIBUTE) {
+        newErrors[attr] = `O atributo deve estar entre ${MIN_ATTRIBUTE} e ${MAX_ATTRIBUTE}.`;
+      }
+    });
+
+    // Validação de campos de texto longos
+    if (appearance.length > 1000) {
+      newErrors.appearance = 'A aparência deve ter no máximo 1000 caracteres.';
+    }
+    if (personality.length > 1000) {
+      newErrors.personality = 'A personalidade deve ter no máximo 1000 caracteres.';
+    }
+    if (background.length > 2000) {
+      newErrors.background = 'A história deve ter no máximo 2000 caracteres.';
+    }
+    if (notes.length > 2000) {
+      newErrors.notes = 'As notas devem ter no máximo 2000 caracteres.';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  // Limpa erro específico quando usuário começa a digitar
+  const clearError = (field: string) => {
+    if (errors[field]) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
+  };
+
   const handleTrySave = () => {
-    if (!name.trim()) return;
+    // Valida o formulário antes de salvar
+    if (!validateForm()) {
+      // Se houver erro no nome, vai para a aba INFO
+      if (errors.name) {
+        setActiveTab('info');
+      }
+      return;
+    }
     
     // Se houver mudanças significativas, mostra confirmação
     if (hasSignificantChanges) {
@@ -508,11 +583,20 @@ export function CharacterEditModal({
                     <Input
                       id="name"
                       value={name}
-                      onChange={(e) => setName(e.target.value)}
+                      onChange={(e) => {
+                        setName(e.target.value);
+                        clearError('name');
+                      }}
                       placeholder="Nome do personagem"
                       maxLength={100}
-                      className={getFieldClass(changedFields.name)}
+                      className={`${getFieldClass(changedFields.name)} ${errors.name ? 'ring-2 ring-destructive border-destructive' : ''}`}
                     />
+                    {errors.name && (
+                      <p className="text-xs text-destructive flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        {errors.name}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="playerName" className="flex items-center gap-1">
@@ -543,12 +627,21 @@ export function CharacterEditModal({
                     id="age"
                     type="number"
                     value={age}
-                    onChange={(e) => setAge(e.target.value)}
+                    onChange={(e) => {
+                      setAge(e.target.value);
+                      clearError('age');
+                    }}
                     placeholder="30"
                     min={1}
                     max={150}
-                    className={getFieldClass(changedFields.age)}
+                    className={`${getFieldClass(changedFields.age)} ${errors.age ? 'ring-2 ring-destructive border-destructive' : ''}`}
                   />
+                  {errors.age && (
+                    <p className="text-xs text-destructive flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3" />
+                      {errors.age}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="gender" className="flex items-center gap-1">
@@ -574,10 +667,20 @@ export function CharacterEditModal({
                   <Input
                     type="number"
                     value={defense}
-                    onChange={(e) => setDefense(Math.max(0, parseInt(e.target.value) || 0))}
+                    onChange={(e) => {
+                      setDefense(Math.max(0, parseInt(e.target.value) || 0));
+                      clearError('defense');
+                    }}
                     min={0}
-                    className={getFieldClass(changedFields.defense)}
+                    max={99}
+                    className={`${getFieldClass(changedFields.defense)} ${errors.defense ? 'ring-2 ring-destructive border-destructive' : ''}`}
                   />
+                  {errors.defense && (
+                    <p className="text-xs text-destructive flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3" />
+                      {errors.defense}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -762,75 +865,146 @@ export function CharacterEditModal({
             {/* BIO TAB */}
             <TabsContent value="bio" className="space-y-4 mt-0">
               <div className="space-y-2">
-                <Label htmlFor="appearance" className="flex items-center gap-1">
-                  Aparência
-                  {changedFields.appearance && <span className="w-2 h-2 rounded-full bg-warning animate-pulse" />}
-                  <FieldTooltip content={FIELD_TOOLTIPS.appearance} />
-                </Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="appearance" className="flex items-center gap-1">
+                    Aparência
+                    {changedFields.appearance && <span className="w-2 h-2 rounded-full bg-warning animate-pulse" />}
+                    <FieldTooltip content={FIELD_TOOLTIPS.appearance} />
+                  </Label>
+                  <span className={`text-xs ${appearance.length > 900 ? 'text-warning' : 'text-muted-foreground'}`}>
+                    {appearance.length}/1000
+                  </span>
+                </div>
                 <Textarea
                   id="appearance"
                   value={appearance}
-                  onChange={(e) => setAppearance(e.target.value)}
+                  onChange={(e) => {
+                    setAppearance(e.target.value);
+                    clearError('appearance');
+                  }}
                   placeholder="Descreva a aparência física do personagem..."
                   rows={3}
                   maxLength={1000}
-                  className={getFieldClass(changedFields.appearance)}
+                  className={`${getFieldClass(changedFields.appearance)} ${errors.appearance ? 'ring-2 ring-destructive border-destructive' : ''}`}
                 />
+                {errors.appearance && (
+                  <p className="text-xs text-destructive flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
+                    {errors.appearance}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="personality" className="flex items-center gap-1">
-                  Personalidade
-                  {changedFields.personality && <span className="w-2 h-2 rounded-full bg-warning animate-pulse" />}
-                  <FieldTooltip content={FIELD_TOOLTIPS.personality} />
-                </Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="personality" className="flex items-center gap-1">
+                    Personalidade
+                    {changedFields.personality && <span className="w-2 h-2 rounded-full bg-warning animate-pulse" />}
+                    <FieldTooltip content={FIELD_TOOLTIPS.personality} />
+                  </Label>
+                  <span className={`text-xs ${personality.length > 900 ? 'text-warning' : 'text-muted-foreground'}`}>
+                    {personality.length}/1000
+                  </span>
+                </div>
                 <Textarea
                   id="personality"
                   value={personality}
-                  onChange={(e) => setPersonality(e.target.value)}
+                  onChange={(e) => {
+                    setPersonality(e.target.value);
+                    clearError('personality');
+                  }}
                   placeholder="Como o personagem age e se comporta..."
                   rows={3}
                   maxLength={1000}
-                  className={getFieldClass(changedFields.personality)}
+                  className={`${getFieldClass(changedFields.personality)} ${errors.personality ? 'ring-2 ring-destructive border-destructive' : ''}`}
                 />
+                {errors.personality && (
+                  <p className="text-xs text-destructive flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
+                    {errors.personality}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="background" className="flex items-center gap-1">
-                  História
-                  {changedFields.background && <span className="w-2 h-2 rounded-full bg-warning animate-pulse" />}
-                  <FieldTooltip content={FIELD_TOOLTIPS.background} />
-                </Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="background" className="flex items-center gap-1">
+                    História
+                    {changedFields.background && <span className="w-2 h-2 rounded-full bg-warning animate-pulse" />}
+                    <FieldTooltip content={FIELD_TOOLTIPS.background} />
+                  </Label>
+                  <span className={`text-xs ${background.length > 1800 ? 'text-warning' : 'text-muted-foreground'}`}>
+                    {background.length}/2000
+                  </span>
+                </div>
                 <Textarea
                   id="background"
                   value={background}
-                  onChange={(e) => setBackground(e.target.value)}
+                  onChange={(e) => {
+                    setBackground(e.target.value);
+                    clearError('background');
+                  }}
                   placeholder="A história e background do personagem..."
                   rows={4}
                   maxLength={2000}
-                  className={getFieldClass(changedFields.background)}
+                  className={`${getFieldClass(changedFields.background)} ${errors.background ? 'ring-2 ring-destructive border-destructive' : ''}`}
                 />
+                {errors.background && (
+                  <p className="text-xs text-destructive flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
+                    {errors.background}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="notes" className="flex items-center gap-1">
-                  Notas do Jogador
-                  {changedFields.notes && <span className="w-2 h-2 rounded-full bg-warning animate-pulse" />}
-                  <FieldTooltip content={FIELD_TOOLTIPS.notes} />
-                </Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="notes" className="flex items-center gap-1">
+                    Notas do Jogador
+                    {changedFields.notes && <span className="w-2 h-2 rounded-full bg-warning animate-pulse" />}
+                    <FieldTooltip content={FIELD_TOOLTIPS.notes} />
+                  </Label>
+                  <span className={`text-xs ${notes.length > 1800 ? 'text-warning' : 'text-muted-foreground'}`}>
+                    {notes.length}/2000
+                  </span>
+                </div>
                 <Textarea
                   id="notes"
                   value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
+                  onChange={(e) => {
+                    setNotes(e.target.value);
+                    clearError('notes');
+                  }}
                   placeholder="Anotações pessoais, lembretes, itens especiais..."
                   rows={3}
                   maxLength={2000}
-                  className={getFieldClass(changedFields.notes)}
+                  className={`${getFieldClass(changedFields.notes)} ${errors.notes ? 'ring-2 ring-destructive border-destructive' : ''}`}
                 />
+                {errors.notes && (
+                  <p className="text-xs text-destructive flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
+                    {errors.notes}
+                  </p>
+                )}
               </div>
             </TabsContent>
           </ScrollArea>
         </Tabs>
+
+        {/* Resumo de erros */}
+        {Object.keys(errors).length > 0 && (
+          <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-lg flex items-start gap-2">
+            <AlertCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
+            <div className="text-xs text-destructive">
+              <p className="font-medium">Corrija os erros antes de salvar:</p>
+              <ul className="list-disc list-inside mt-1 space-y-0.5">
+                {Object.values(errors).map((error, i) => (
+                  <li key={i}>{error}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        )}
 
         <DialogFooter className="gap-2 mt-4">
           {/* Botão de Reset */}
@@ -851,7 +1025,7 @@ export function CharacterEditModal({
           </Button>
           <Button 
             onClick={handleTrySave} 
-            disabled={saving || !name.trim()}
+            disabled={saving}
             className={hasSignificantChanges ? 'bg-warning hover:bg-warning/90 text-warning-foreground' : ''}
           >
             {saving ? (
