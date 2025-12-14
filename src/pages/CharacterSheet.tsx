@@ -38,6 +38,7 @@ import { InventoryItem } from '@/lib/inventory-system';
 import { NexProgressionModal } from '@/components/character/NexProgressionModal';
 import { RitualSelectionModal } from '@/components/character/RitualSelectionModal';
 import { CharacterEditModal } from '@/components/character/CharacterEditModal';
+import { CharacterHistoryPanel, logCharacterChanges } from '@/components/character/CharacterHistoryPanel';
 
 interface Character {
   id: string;
@@ -349,7 +350,7 @@ export default function CharacterSheet() {
     defense: number;
     photo_url: string | null;
   }) => {
-    if (!character) return;
+    if (!character || !user) return;
 
     // Recalcula stats derivados com os novos atributos
     const newStats = calculateDerivedStats(
@@ -359,6 +360,59 @@ export default function CharacterSheet() {
       character.nex,
       character.origin
     );
+
+    // Registra alterações no histórico
+    const changes: Array<{
+      changeType: string;
+      fieldName: string;
+      oldValue: string | null;
+      newValue: string | null;
+      description?: string;
+    }> = [];
+
+    // Verifica mudanças em campos de informação
+    if (data.name !== character.name) {
+      changes.push({ changeType: 'info', fieldName: 'name', oldValue: character.name, newValue: data.name });
+    }
+    if ((data.player_name || '') !== (character.player_name || '')) {
+      changes.push({ changeType: 'info', fieldName: 'player_name', oldValue: character.player_name, newValue: data.player_name });
+    }
+    if ((data.background || '') !== (character.background || '')) {
+      changes.push({ changeType: 'info', fieldName: 'background', oldValue: character.background, newValue: data.background });
+    }
+    if ((data.notes || '') !== (character.notes || '')) {
+      changes.push({ changeType: 'info', fieldName: 'notes', oldValue: character.notes, newValue: data.notes });
+    }
+    if (data.photo_url !== (character.photo_url || null)) {
+      changes.push({ changeType: 'photo', fieldName: 'photo_url', oldValue: 'Foto anterior', newValue: 'Nova foto' });
+    }
+
+    // Verifica mudanças em atributos
+    if (data.agility !== character.agility) {
+      changes.push({ changeType: 'attribute', fieldName: 'agility', oldValue: String(character.agility), newValue: String(data.agility) });
+    }
+    if (data.strength !== character.strength) {
+      changes.push({ changeType: 'attribute', fieldName: 'strength', oldValue: String(character.strength), newValue: String(data.strength) });
+    }
+    if (data.intellect !== character.intellect) {
+      changes.push({ changeType: 'attribute', fieldName: 'intellect', oldValue: String(character.intellect), newValue: String(data.intellect) });
+    }
+    if (data.presence !== character.presence) {
+      changes.push({ changeType: 'attribute', fieldName: 'presence', oldValue: String(character.presence), newValue: String(data.presence) });
+    }
+    if (data.vigor !== character.vigor) {
+      changes.push({ changeType: 'attribute', fieldName: 'vigor', oldValue: String(character.vigor), newValue: String(data.vigor) });
+    }
+    if (data.defense !== character.defense) {
+      changes.push({ changeType: 'defense', fieldName: 'defense', oldValue: String(character.defense), newValue: String(data.defense) });
+    }
+
+    // Verifica mudanças em perícias
+    const oldSkillCount = Object.keys(character.skills).filter(k => character.skills[k] > 0).length;
+    const newSkillCount = Object.keys(data.skills).filter(k => data.skills[k] > 0).length;
+    if (oldSkillCount !== newSkillCount || !Object.keys(character.skills).filter(k => character.skills[k] > 0).every(k => data.skills[k])) {
+      changes.push({ changeType: 'skill', fieldName: 'skills', oldValue: `${oldSkillCount} perícias`, newValue: `${newSkillCount} perícias` });
+    }
 
     const { error } = await supabase
       .from('characters')
@@ -395,6 +449,11 @@ export default function CharacterSheet() {
         variant: 'destructive',
       });
       throw error;
+    }
+
+    // Registra alterações no histórico (após salvar com sucesso)
+    if (changes.length > 0) {
+      await logCharacterChanges(character.id, user.id, changes);
     }
 
     setCharacter(prev => prev ? {
@@ -478,6 +537,10 @@ export default function CharacterSheet() {
                 </Button>
               ) : (
                 <>
+                  <CharacterHistoryPanel 
+                    characterId={character.id} 
+                    characterName={character.name} 
+                  />
                   <Button 
                     variant="outline" 
                     size="sm"
