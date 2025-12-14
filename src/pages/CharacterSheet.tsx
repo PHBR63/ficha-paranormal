@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
+import { ThemeSelector } from '@/components/ui/theme-selector';
 import { 
   ArrowLeft, 
   Loader2, 
@@ -233,6 +234,7 @@ export default function CharacterSheet() {
               <h1 className="font-display text-xl tracking-wider">{character.name}</h1>
             </div>
             <div className="flex items-center gap-2">
+              <ThemeSelector />
               {editMode ? (
                 <Button 
                   size="sm" 
