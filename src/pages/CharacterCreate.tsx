@@ -151,6 +151,37 @@ export default function CharacterCreate() {
     setSaving(true);
 
     try {
+      // Upload photo to Supabase Storage if exists
+      let photoUrl: string | null = null;
+      
+      if (formData.photoFile) {
+        const fileExt = formData.photoFile.name.split('.').pop();
+        const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('character-avatars')
+          .upload(fileName, formData.photoFile, {
+            cacheControl: '3600',
+            upsert: false,
+          });
+
+        if (uploadError) {
+          console.error('Error uploading photo:', uploadError);
+          toast({
+            title: 'Aviso',
+            description: 'Não foi possível fazer upload da foto, mas o personagem será salvo.',
+            variant: 'destructive',
+          });
+        } else {
+          // Get public URL
+          const { data: { publicUrl } } = supabase.storage
+            .from('character-avatars')
+            .getPublicUrl(fileName);
+          
+          photoUrl = publicUrl;
+        }
+      }
+
       const derivedStats = calculateDerivedStats(
         formData.characterClass,
         formData.attributes.vigor,
@@ -201,6 +232,7 @@ export default function CharacterCreate() {
         gender: formData.gender || null,
         appearance: formData.appearance || null,
         personality: formData.personality || null,
+        photo_url: photoUrl,
         movement: 9,
         proficiencies: proficiencies,
         abilities: abilities,
