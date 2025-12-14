@@ -75,7 +75,9 @@ import {
 } from '@/lib/inventory-system';
 import { EquipmentSlots, EquipmentSlotType, EQUIPMENT_SLOTS, getAppropriateSlot } from './EquipmentSlots';
 import { WeaponCatalogModal } from './WeaponCatalogModal';
+import { ArmorCatalogModal } from './ArmorCatalogModal';
 import type { CatalogWeapon } from '@/lib/weapons-catalog';
+import type { CatalogArmor } from '@/lib/armor-catalog';
 
 // Categorias de itens para organização visual
 export type ItemType = 'weapon' | 'armor' | 'consumable' | 'ritual' | 'valuable' | 'misc';
@@ -122,6 +124,7 @@ export function InventoryPanel({
   const [expandedCategories, setExpandedCategories] = useState<Set<ItemType>>(new Set(['weapon', 'armor', 'consumable']));
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [weaponCatalogOpen, setWeaponCatalogOpen] = useState(false);
+  const [armorCatalogOpen, setArmorCatalogOpen] = useState(false);
   const [newItem, setNewItem] = useState<Partial<ExtendedInventoryItem>>({
     name: '',
     category: '0',
@@ -338,6 +341,54 @@ export function InventoryPanel({
     }
   };
 
+  // Handler para adicionar proteção do catálogo
+  const handleAddArmorFromCatalog = (armor: CatalogArmor) => {
+    if (!onInventoryChange) return;
+
+    const item: ExtendedInventoryItem = {
+      id: crypto.randomUUID(),
+      name: armor.name,
+      category: armor.category,
+      slots: armor.spaces,
+      quantity: 1,
+      itemType: 'armor',
+      description: armor.description,
+      // Dados extras para o sistema de proteção
+      rd: armor.rd,
+      agilityPenalty: armor.agilityPenalty,
+      speedPenalty: armor.speedPenalty,
+      armorType: armor.type,
+      special: armor.special,
+    } as ExtendedInventoryItem & { 
+      rd?: number; 
+      agilityPenalty?: number; 
+      speedPenalty?: number;
+      armorType?: string;
+      special?: string;
+    };
+
+    const result = addToInventory(inventory, item, patent);
+    
+    if (result.success) {
+      onInventoryChange(result.newInventory.map(i => ({
+        ...i,
+        itemType: (i as ExtendedInventoryItem).itemType || 'misc',
+        equipSlot: (i as ExtendedInventoryItem).equipSlot,
+      })));
+      setArmorCatalogOpen(false);
+      toast({
+        title: 'Proteção adicionada',
+        description: `${armor.name} foi adicionada ao inventário.`,
+      });
+    } else {
+      toast({
+        title: 'Limite de patente atingido',
+        description: result.error,
+        variant: 'destructive',
+      });
+    }
+  };
+
   const canEquipItem = (item: ExtendedInventoryItem): boolean => {
     if (item.isEquipped) return false;
     const slot = getAppropriateSlot(item, equippedItems);
@@ -370,6 +421,16 @@ export function InventoryPanel({
             >
               <Sword className="w-3 h-3 mr-1" />
               ARMAS
+            </Button>
+            {/* Botão Catálogo de Proteções */}
+            <Button 
+              size="sm" 
+              variant="outline" 
+              className="font-display text-xs"
+              onClick={() => setArmorCatalogOpen(true)}
+            >
+              <Shield className="w-3 h-3 mr-1" />
+              PROTEÇÕES
             </Button>
             {/* Botão Adicionar Item Manual */}
             <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
@@ -525,7 +586,15 @@ export function InventoryPanel({
         onAddWeapon={handleAddWeaponFromCatalog}
       />
 
-      {/* Equipment Slots */}
+      {/* Armor Catalog Modal */}
+      <ArmorCatalogModal
+        open={armorCatalogOpen}
+        onOpenChange={setArmorCatalogOpen}
+        patent={patent}
+        currentInventory={inventory}
+        onSelectArmor={handleAddArmorFromCatalog}
+      />
+
       {showEquipment && (
         <div className="ordo-panel p-3">
           <EquipmentSlots 
