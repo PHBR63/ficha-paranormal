@@ -44,6 +44,7 @@ import { EffectiveStatsWidget } from '@/components/character/EffectiveStatsWidge
 import { TurnPETracker } from '@/components/character/TurnPETracker';
 import { RestModal } from '@/components/character/RestModal';
 import { CharacterCombatTracker } from '@/components/character/CharacterCombatTracker';
+import { ConditionManager, type ActiveCondition } from '@/components/character/ConditionManager';
 
 interface Character {
   id: string;
@@ -736,13 +737,39 @@ export default function CharacterSheet() {
               DESCANSAR
             </Button>
 
-            {/* Conditions */}
-            {character.conditions && character.conditions.length > 0 && (
-              <div className="ordo-panel p-4">
-                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-3">CONDIÇÕES ATIVAS</p>
-                <ConditionList conditions={character.conditions} size="md" />
-              </div>
-            )}
+            {/* Condition Manager */}
+            <ConditionManager
+              conditions={character.conditions.map(c => {
+                // Converte strings para ActiveCondition
+                if (typeof c === 'string') {
+                  return { id: c.toLowerCase().replace(/\s+/g, ''), name: c, turnsRemaining: null, addedAt: new Date() };
+                }
+                return c as ActiveCondition;
+              })}
+              onConditionsChange={async (newConditions) => {
+                // Salva no banco
+                const conditionNames = newConditions.map(c => c.name);
+                const { error } = await supabase
+                  .from('characters')
+                  .update({ conditions: conditionNames })
+                  .eq('id', character.id);
+
+                if (error) {
+                  toast({
+                    title: 'Erro ao salvar condições',
+                    description: error.message,
+                    variant: 'destructive',
+                  });
+                  return;
+                }
+
+                // Atualiza estado local
+                setCharacter(prev => prev ? {
+                  ...prev,
+                  conditions: conditionNames,
+                } : null);
+              }}
+            />
 
             {/* Combat Tracker */}
             <CharacterCombatTracker
