@@ -39,6 +39,8 @@ export function StepClass({ formData, updateFormData }: StepClassProps) {
       characterClass: classId,
       classSkillChoices: {},
       freeSkills: [],
+      classTrack: '',
+      trackAbilities: [],
     });
   };
 

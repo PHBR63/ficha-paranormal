@@ -11,6 +11,7 @@ import { StepNex } from '@/components/character/StepNex';
 import { StepAttributes } from '@/components/character/StepAttributes';
 import { StepOrigin } from '@/components/character/StepOrigin';
 import { StepClass } from '@/components/character/StepClass';
+import { StepTrack } from '@/components/character/StepTrack';
 import { StepSkills } from '@/components/character/StepSkills';
 import { StepAbilities } from '@/components/character/StepAbilities';
 import { StepReview } from '@/components/character/StepReview';
@@ -64,6 +65,8 @@ export type CharacterFormData = {
   background: string;
   proficiencies: string[];
   abilities: string[];
+  classTrack: string;
+  trackAbilities: string[];
 };
 
 const STEPS = [
@@ -72,6 +75,7 @@ const STEPS = [
   { id: 'attributes', title: 'ATRIBUTOS' },
   { id: 'origin', title: 'ORIGEM' },
   { id: 'class', title: 'CLASSE' },
+  { id: 'track', title: 'TRILHA' },
   { id: 'skills', title: 'PERÍCIAS' },
   { id: 'abilities', title: 'HABILIDADES' },
   { id: 'review', title: 'REVISÃO' },
@@ -106,6 +110,8 @@ const initialFormData: CharacterFormData = {
   background: '',
   proficiencies: [],
   abilities: [],
+  classTrack: '',
+  trackAbilities: [],
 };
 
 export default function CharacterCreate() {
@@ -207,19 +213,24 @@ export default function CharacterCreate() {
       completed.push(4);
     }
     
-    // Step 5: Skills
-    if (buildResult.pendingChoices.length === 0 && buildResult.pendingConflicts.length === 0 && formData.characterClass) {
+    // Step 5: Track (complete if track is selected)
+    if (formData.classTrack !== '') {
       completed.push(5);
     }
     
-    // Step 6: Abilities (always complete if class is selected, choices are optional)
-    if (formData.characterClass !== '') {
+    // Step 6: Skills
+    if (buildResult.pendingChoices.length === 0 && buildResult.pendingConflicts.length === 0 && formData.characterClass) {
       completed.push(6);
     }
     
-    // Step 7: Review (can finalize)
-    if (buildResult.canFinalize) {
+    // Step 7: Abilities (always complete if class is selected, choices are optional)
+    if (formData.characterClass !== '') {
       completed.push(7);
+    }
+    
+    // Step 8: Review (can finalize)
+    if (buildResult.canFinalize && formData.classTrack !== '') {
+      completed.push(8);
     }
     
     return completed;
@@ -419,10 +430,12 @@ export default function CharacterCreate() {
         case 4:
           return <StepClass formData={formData} updateFormData={updateFormData} />;
         case 5:
-          return <StepSkills formData={formData} updateFormData={updateFormData} buildResult={buildResult} />;
+          return <StepTrack formData={formData} updateFormData={updateFormData} />;
         case 6:
-          return <StepAbilities formData={formData} updateFormData={updateFormData} />;
+          return <StepSkills formData={formData} updateFormData={updateFormData} buildResult={buildResult} />;
         case 7:
+          return <StepAbilities formData={formData} updateFormData={updateFormData} />;
+        case 8:
           return <StepReview formData={formData} buildResult={buildResult} updateFormData={updateFormData} onStepClick={handleStepClick} />;
         default:
           return null;
