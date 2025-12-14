@@ -22,6 +22,7 @@ import {
   Sparkles,
   BookOpen,
   ArrowUp,
+  Moon,
 } from 'lucide-react';
 import { ORIGINS, SKILLS, CLASSES, getPatentByNex, calculateDerivedStats, getTrackById } from '@/lib/character-data';
 import { ALL_RITUALS } from '@/lib/rituals-data';
@@ -41,6 +42,7 @@ import { CharacterEditModal } from '@/components/character/CharacterEditModal';
 import { CharacterHistoryPanel, logCharacterChanges } from '@/components/character/CharacterHistoryPanel';
 import { EffectiveStatsWidget } from '@/components/character/EffectiveStatsWidget';
 import { TurnPETracker } from '@/components/character/TurnPETracker';
+import { RestModal } from '@/components/character/RestModal';
 
 interface Character {
   id: string;
@@ -106,6 +108,9 @@ export default function CharacterSheet() {
   
   // Character edit modal
   const [editModalOpen, setEditModalOpen] = useState(false);
+  
+  // Rest modal
+  const [restModalOpen, setRestModalOpen] = useState(false);
 
   useEffect(() => {
     async function fetchCharacter() {
@@ -720,6 +725,16 @@ export default function CharacterSheet() {
               }}
             />
 
+            {/* Rest Button */}
+            <Button
+              variant="outline"
+              onClick={() => setRestModalOpen(true)}
+              className="w-full font-display tracking-wider"
+            >
+              <Moon className="w-4 h-4 mr-2" />
+              DESCANSAR
+            </Button>
+
             {/* Conditions */}
             {character.conditions && character.conditions.length > 0 && (
               <div className="ordo-panel p-4">
@@ -1029,6 +1044,61 @@ export default function CharacterSheet() {
         onClose={() => setEditModalOpen(false)}
         character={character}
         onSave={handleCharacterEdit}
+      />
+      
+      {/* Modal de descanso */}
+      <RestModal
+        open={restModalOpen}
+        onOpenChange={setRestModalOpen}
+        character={{
+          hp_current: hpCurrent,
+          hp_max: character.hp_max,
+          pe_current: peCurrent,
+          pe_max: character.pe_max,
+          san_current: sanCurrent,
+          san_max: character.san_max,
+          vigor: character.vigor,
+          presence: character.presence,
+          conditions: character.conditions,
+        }}
+        onRest={async (newStats) => {
+          // Atualiza no banco de dados
+          const { error } = await supabase
+            .from('characters')
+            .update({
+              hp_current: newStats.hp_current,
+              pe_current: newStats.pe_current,
+              san_current: newStats.san_current,
+              conditions: newStats.conditions,
+            })
+            .eq('id', character.id);
+
+          if (error) {
+            toast({
+              title: 'Erro ao salvar descanso',
+              description: error.message,
+              variant: 'destructive',
+            });
+            return;
+          }
+
+          // Atualiza estado local
+          setHpCurrent(newStats.hp_current);
+          setPeCurrent(newStats.pe_current);
+          setSanCurrent(newStats.san_current);
+          setCharacter(prev => prev ? {
+            ...prev,
+            hp_current: newStats.hp_current,
+            pe_current: newStats.pe_current,
+            san_current: newStats.san_current,
+            conditions: newStats.conditions,
+          } : null);
+
+          toast({
+            title: 'Descanso concluído!',
+            description: 'Seus recursos foram recuperados.',
+          });
+        }}
       />
     </div>
   );
