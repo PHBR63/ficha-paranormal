@@ -4,7 +4,7 @@
  */
 
 import { useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { ChevronDown, Search, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SKILLS } from '@/lib/character-data';
@@ -207,75 +207,62 @@ export function SkillsByAttribute({
               </CollapsibleTrigger>
               
               <CollapsibleContent>
-                <AnimatePresence>
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="pl-4 pt-2 space-y-1"
-                  >
-                    {attrSkills.map((skill, index) => {
-                      const isTrained = skills[skill.id] > 0;
-                      const trainingBonus = isTrained ? 5 : 0;
-                      const total = attrValue + trainingBonus;
-                      
-                      return (
-                        <motion.div
-                          key={skill.id}
-                          initial={{ opacity: 0, x: -10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: index * 0.02 }}
-                          className={cn(
-                            "group flex items-center justify-between",
-                            "p-2 rounded-lg cursor-pointer",
-                            "transition-all duration-200",
-                            isTrained 
-                              ? "bg-secondary/30 hover:bg-secondary/50" 
-                              : "hover:bg-muted/30"
-                          )}
-                          onClick={() => onRoll?.(total, skill.name, attrValue)}
-                        >
-                          <div className="flex items-center gap-2">
-                            <span className={cn(
-                              "text-sm",
-                              isTrained ? "font-medium" : "text-muted-foreground"
-                            )}>
-                              {skill.name}
-                            </span>
-                            {isTrained && (
-                              <span 
-                                className="text-[10px] px-1.5 py-0.5 rounded"
-                                style={{ backgroundColor: `${color}20`, color }}
-                              >
-                                Treinado
-                              </span>
-                            )}
-                          </div>
-                          
-                          <div className="flex items-center gap-2">
+                <div className="pl-4 pt-2 space-y-1">
+                  {attrSkills.map((skill) => {
+                    const isTrained = skills[skill.id] > 0;
+                    const trainingBonus = isTrained ? 5 : 0;
+                    const total = attrValue + trainingBonus;
+                    
+                    return (
+                      <div
+                        key={skill.id}
+                        className={cn(
+                          "group flex items-center justify-between",
+                          "p-2 rounded-lg cursor-pointer",
+                          "transition-all duration-200",
+                          isTrained 
+                            ? "bg-secondary/30 hover:bg-secondary/50" 
+                            : "hover:bg-muted/30"
+                        )}
+                        onClick={() => onRoll?.(total, skill.name, attrValue)}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className={cn(
+                            "text-sm",
+                            isTrained ? "font-medium" : "text-muted-foreground"
+                          )}>
+                            {skill.name}
+                          </span>
+                          {isTrained && (
                             <span 
-                              className={cn(
-                                "font-display text-lg",
-                                isTrained ? "" : "text-muted-foreground"
-                              )}
-                              style={isTrained ? { color } : undefined}
+                              className="text-[10px] px-1.5 py-0.5 rounded"
+                              style={{ backgroundColor: `${color}20`, color }}
                             >
-                              +{total}
+                              Treinado
                             </span>
-                            
-                            {/* D20 vermelho no hover */}
-                            <motion.div
-                              className="opacity-0 group-hover:opacity-100 transition-opacity"
-                              whileHover={{ rotate: 15 }}
-                            >
-                              <D20Icon className="w-4 h-4 text-destructive" />
-                            </motion.div>
+                          )}
+                        </div>
+                        
+                        <div className="flex items-center gap-2">
+                          <span 
+                            className={cn(
+                              "font-display text-lg",
+                              isTrained ? "" : "text-muted-foreground"
+                            )}
+                            style={isTrained ? { color } : undefined}
+                          >
+                            +{total}
+                          </span>
+                          
+                          {/* D20 vermelho no hover */}
+                          <div className="opacity-0 group-hover:opacity-100 group-hover:rotate-12 transition-all duration-200">
+                            <D20Icon className="w-4 h-4 text-destructive" />
                           </div>
-                        </motion.div>
-                      );
-                    })}
-                  </motion.div>
-                </AnimatePresence>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </CollapsibleContent>
             </Collapsible>
           );
