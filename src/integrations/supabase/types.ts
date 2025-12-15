@@ -338,6 +338,7 @@ export type Database = {
       characters: {
         Row: {
           abilities: Json
+          affinity_active: boolean | null
           age: number | null
           agility: number
           appearance: string | null
@@ -348,6 +349,7 @@ export type Database = {
           conditions: Json
           created_at: string
           defense: number
+          elemental_affinity: string | null
           gender: string | null
           general_powers: Json | null
           hp_current: number
@@ -381,6 +383,7 @@ export type Database = {
         }
         Insert: {
           abilities?: Json
+          affinity_active?: boolean | null
           age?: number | null
           agility?: number
           appearance?: string | null
@@ -391,6 +394,7 @@ export type Database = {
           conditions?: Json
           created_at?: string
           defense?: number
+          elemental_affinity?: string | null
           gender?: string | null
           general_powers?: Json | null
           hp_current?: number
@@ -424,6 +428,7 @@ export type Database = {
         }
         Update: {
           abilities?: Json
+          affinity_active?: boolean | null
           age?: number | null
           agility?: number
           appearance?: string | null
@@ -434,6 +439,7 @@ export type Database = {
           conditions?: Json
           created_at?: string
           defense?: number
+          elemental_affinity?: string | null
           gender?: string | null
           general_powers?: Json | null
           hp_current?: number
