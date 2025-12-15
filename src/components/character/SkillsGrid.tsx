@@ -1,7 +1,18 @@
+/**
+ * SkillsGrid - Grid de perícias do personagem
+ * Com barra de pesquisa, separação de treinadas/não-treinadas
+ * Clique dispara rolagem imediata via callback
+ */
+
+import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Dices } from 'lucide-react';
+import { Dices, Search, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SKILLS } from '@/lib/character-data';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+
+// Props da grade de perícias
 interface SkillsGridProps {
   skills: Record<string, number>;
   attributes: Record<string, number>;
@@ -27,43 +38,117 @@ export function SkillsGrid({
   attributes,
   onRoll
 }: SkillsGridProps) {
-  const trainedSkills = SKILLS.filter(s => skills[s.id] > 0);
-  const untrainedSkills = SKILLS.filter(s => !skills[s.id] || skills[s.id] === 0);
-  return <div className="space-y-6">
-      {/* Trained Skills */}
-      {trainedSkills.length > 0 && <div>
+  // Estado da barra de pesquisa
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Filtra perícias baseado na pesquisa
+  const filteredSkills = useMemo(() => {
+    if (!searchQuery.trim()) return SKILLS;
+    const query = searchQuery.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    return SKILLS.filter(skill => {
+      const name = skill.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      const attr = skill.attribute.toLowerCase();
+      return name.includes(query) || attr.includes(query);
+    });
+  }, [searchQuery]);
+
+  // Separa treinadas e não-treinadas
+  const trainedSkills = filteredSkills.filter(s => skills[s.id] > 0);
+  const untrainedSkills = filteredSkills.filter(s => !skills[s.id] || skills[s.id] === 0);
+
+  return (
+    <div className="space-y-4">
+      {/* Barra de pesquisa */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <Input
+          type="text"
+          placeholder="Buscar perícia..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-10 pr-10 bg-muted/30 border-border focus:border-primary"
+        />
+        {searchQuery && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setSearchQuery('')}
+            className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8"
+          >
+            <X className="w-4 h-4" />
+          </Button>
+        )}
+      </div>
+
+      {/* Resultado da pesquisa vazio */}
+      {filteredSkills.length === 0 && (
+        <div className="text-center py-8 text-muted-foreground">
+          <Search className="w-8 h-8 mx-auto mb-2 opacity-30" />
+          <p>Nenhuma perícia encontrada para "{searchQuery}"</p>
+        </div>
+      )}
+
+      {/* Perícias Treinadas */}
+      {trainedSkills.length > 0 && (
+        <div>
           <h4 className="font-display text-sm tracking-wider text-primary mb-3">
             PERÍCIAS TREINADAS ({trainedSkills.length})
           </h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
             {trainedSkills.map((skill, index) => {
-          const attrValue = attributes[skill.attribute] || 0;
-          const trainingBonus = 5;
-          const total = attrValue + trainingBonus;
-          const color = ATTRIBUTE_COLORS[skill.attribute];
-          return <SkillRow key={skill.id} name={skill.name} attribute={ATTRIBUTE_LABELS[skill.attribute]} total={total} color={color} trained index={index} onClick={() => onRoll?.(total, skill.name, attrValue)} />;
-        })}
+              const attrValue = attributes[skill.attribute] || 0;
+              const trainingBonus = 5;
+              const total = attrValue + trainingBonus;
+              const color = ATTRIBUTE_COLORS[skill.attribute];
+              return (
+                <SkillRow 
+                  key={skill.id} 
+                  name={skill.name} 
+                  attribute={ATTRIBUTE_LABELS[skill.attribute]} 
+                  total={total} 
+                  color={color} 
+                  trained 
+                  index={index} 
+                  onClick={() => onRoll?.(total, skill.name, attrValue)} 
+                />
+              );
+            })}
           </div>
-        </div>}
-      
-      {/* Untrained Skills (collapsed by default) */}
-      <details className="group">
-        <summary className="cursor-pointer list-none">
-          <h4 className="font-display text-sm tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
-            OUTRAS PERÍCIAS ({untrainedSkills.length})
-            <span className="text-xs group-open:rotate-90 transition-transform">▶</span>
-          </h4>
-        </summary>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
-          {untrainedSkills.map((skill, index) => {
-          const attrValue = attributes[skill.attribute] || 0;
-          const total = attrValue; // No training bonus
-          const color = ATTRIBUTE_COLORS[skill.attribute];
-          return <SkillRow key={skill.id} name={skill.name} attribute={ATTRIBUTE_LABELS[skill.attribute]} total={total} color={color} trained={false} index={index} onClick={() => onRoll?.(total, skill.name, attrValue)} />;
-        })}
         </div>
-      </details>
-    </div>;
+      )}
+      
+      {/* Perícias Não-Treinadas (expandíveis) */}
+      {untrainedSkills.length > 0 && (
+        <details className="group" open={searchQuery.length > 0}>
+          <summary className="cursor-pointer list-none">
+            <h4 className="font-display text-sm tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
+              OUTRAS PERÍCIAS ({untrainedSkills.length})
+              <span className="text-xs group-open:rotate-90 transition-transform">▶</span>
+            </h4>
+          </summary>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
+            {untrainedSkills.map((skill, index) => {
+              const attrValue = attributes[skill.attribute] || 0;
+              const total = attrValue; // Sem bônus de treinamento
+              const color = ATTRIBUTE_COLORS[skill.attribute];
+              return (
+                <SkillRow 
+                  key={skill.id} 
+                  name={skill.name} 
+                  attribute={ATTRIBUTE_LABELS[skill.attribute]} 
+                  total={total} 
+                  color={color} 
+                  trained={false} 
+                  index={index} 
+                  onClick={() => onRoll?.(total, skill.name, attrValue)} 
+                />
+              );
+            })}
+          </div>
+        </details>
+      )}
+    </div>
+  );
 }
 interface SkillRowProps {
   name: string;

@@ -1,10 +1,10 @@
 /**
  * CharacterSheet - Ficha de personagem redesenhada
  * Layout de 3 colunas em desktop, modo compacto em mobile
- * Com painel de ajuda e referência rápida
+ * Com modal de rolagem imediata e histórico de rolagens
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -18,7 +18,6 @@ import {
   Loader2, 
   Edit2,
   Trash2,
-  Dices,
   Package,
   Sparkles,
   BookOpen,
@@ -27,7 +26,7 @@ import {
 import { ORIGINS, CLASSES, getTrackById } from '@/lib/character-data';
 import { ALL_RITUALS } from '@/lib/rituals-data';
 import { cn } from '@/lib/utils';
-import { DiceRoller3D } from '@/components/dice/DiceRoller3D';
+import { DiceRollResult } from '@/lib/dice-roller';
 import { AttributeGrid } from '@/components/character/AttributeWithDice';
 import { SkillsGrid } from '@/components/character/SkillsGrid';
 import { InventoryPanel } from '@/components/inventory/InventoryPanel';
@@ -39,7 +38,6 @@ import { CharacterHistoryPanel, logCharacterChanges } from '@/components/charact
 import { EffectiveStatsWidget } from '@/components/character/EffectiveStatsWidget';
 import { TurnPETracker } from '@/components/character/TurnPETracker';
 import { RestModal } from '@/components/character/RestModal';
-import { CharacterCombatTracker } from '@/components/character/CharacterCombatTracker';
 import { ConditionManager, type ActiveCondition } from '@/components/character/ConditionManager';
 import { AttackSystem, type WeaponData } from '@/components/character/AttackSystem';
 import { calculateDerivedStats } from '@/lib/character-data';
@@ -50,6 +48,10 @@ import { QuickReferenceCard } from '@/components/character/QuickReferenceCard';
 import { IdentityCard } from '@/components/character/IdentityCard';
 import { CombatStatsCard } from '@/components/character/CombatStatsCard';
 import { MobileCharacterSheet } from '@/components/character/MobileCharacterSheet';
+
+// Novos componentes de rolagem
+import { DiceRollModal } from '@/components/dice/DiceRollModal';
+import { DiceRollHistoryDrawer, DiceRollHistoryCompact } from '@/components/dice/DiceRollHistory';
 
 interface Character {
   id: string;
@@ -101,10 +103,14 @@ export default function CharacterSheet() {
   const [peCurrent, setPeCurrent] = useState(0);
   const [sanCurrent, setSanCurrent] = useState(0);
   
-  // Dice roller state
-  const [diceRollerOpen, setDiceRollerOpen] = useState(false);
+  // Estado da modal de rolagem imediata
+  const [diceModalOpen, setDiceModalOpen] = useState(false);
+  const [rollLabel, setRollLabel] = useState('');
   const [rollAttribute, setRollAttribute] = useState(0);
-  const [rollSkillName, setRollSkillName] = useState('');
+  const [rollSkillBonus, setRollSkillBonus] = useState(0);
+  
+  // Histórico de rolagens
+  const [rollHistory, setRollHistory] = useState<DiceRollResult[]>([]);
   
   // NEX progression modal
   const [nexModalOpen, setNexModalOpen] = useState(false);
@@ -119,6 +125,16 @@ export default function CharacterSheet() {
   
   // Rest modal
   const [restModalOpen, setRestModalOpen] = useState(false);
+
+  // Callback para adicionar rolagem ao histórico
+  const handleRollComplete = useCallback((result: DiceRollResult) => {
+    setRollHistory(prev => [result, ...prev].slice(0, 50)); // Mantém últimas 50 rolagens
+  }, []);
+
+  // Limpar histórico
+  const handleClearHistory = useCallback(() => {
+    setRollHistory([]);
+  }, []);
 
   // Fetch character data
   useEffect(() => {
@@ -224,19 +240,23 @@ export default function CharacterSheet() {
     }
   };
 
-  // Handler para rolar atributo
-  const handleAttributeRoll = (attributeValue: number, attributeName: string) => {
+  // Handler para rolar atributo (abre modal imediatamente)
+  const handleAttributeRoll = useCallback((attributeValue: number, attributeName: string) => {
+    setRollLabel(attributeName);
     setRollAttribute(attributeValue);
-    setRollSkillName(attributeName);
-    setDiceRollerOpen(true);
-  };
+    setRollSkillBonus(0);
+    setDiceModalOpen(true);
+  }, []);
 
-  // Handler para rolar perícia
-  const handleSkillRoll = (total: number, skillName: string, attributeValue: number) => {
+  // Handler para rolar perícia (abre modal imediatamente)
+  const handleSkillRoll = useCallback((total: number, skillName: string, attributeValue: number) => {
+    // total = atributo + bônus de perícia, então bônus = total - atributo
+    const skillBonus = total - attributeValue;
+    setRollLabel(skillName);
     setRollAttribute(attributeValue);
-    setRollSkillName(skillName);
-    setDiceRollerOpen(true);
-  };
+    setRollSkillBonus(skillBonus);
+    setDiceModalOpen(true);
+  }, []);
 
   // Handler para progressão de NEX
   const handleLevelUp = async (newNex: number, newStats: {
@@ -538,6 +558,10 @@ export default function CharacterSheet() {
             </div>
             <div className="flex items-center gap-1 sm:gap-2">
               <ThemeSelector />
+              <DiceRollHistoryDrawer 
+                rolls={rollHistory}
+                onClear={handleClearHistory}
+              />
               <CharacterHistoryPanel 
                 characterId={character.id} 
                 characterName={character.name} 
@@ -604,9 +628,10 @@ export default function CharacterSheet() {
               rituals: character.rituals,
             }}
             onOpenDiceRoller={() => {
+              setRollLabel('Teste Geral');
               setRollAttribute(character.agility);
-              setRollSkillName('Teste Geral');
-              setDiceRollerOpen(true);
+              setRollSkillBonus(0);
+              setDiceModalOpen(true);
             }}
             onOpenRest={() => setRestModalOpen(true)}
             onLevelUp={() => setNexModalOpen(true)}
@@ -711,59 +736,11 @@ export default function CharacterSheet() {
               }}
             />
 
-            {/* Combat Tracker */}
-            <CharacterCombatTracker
-              character={{
-                name: character.name,
-                agility: character.agility,
-                defense: character.defense,
-                hp_current: hpCurrent,
-                hp_max: character.hp_max,
-                pe_current: peCurrent,
-                pe_max: character.pe_max,
-                conditions: character.conditions,
-              }}
-              onHPChange={(newHP) => setHpCurrent(newHP)}
-              onPEChange={(newPE) => setPeCurrent(newPE)}
+            {/* Histórico de rolagens compacto */}
+            <DiceRollHistoryCompact 
+              rolls={rollHistory}
+              maxRolls={5}
             />
-          </div>
-
-          {/* COLUNA 3: Ações e Rolagens */}
-          <div className="space-y-4">
-            {/* Dice Roller */}
-            {diceRollerOpen ? (
-              <div className="ordo-panel p-4 animate-fade-in">
-                <div className="flex items-center justify-between mb-3">
-                  <p className="font-display text-sm tracking-wider text-primary">
-                    ROLANDO: {rollSkillName}
-                  </p>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => setDiceRollerOpen(false)}
-                  >
-                    Fechar
-                  </Button>
-                </div>
-                <DiceRoller3D 
-                  attributeValue={rollAttribute} 
-                  skillName={rollSkillName}
-                />
-              </div>
-            ) : (
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setRollAttribute(character.agility);
-                  setRollSkillName('Teste Geral');
-                  setDiceRollerOpen(true);
-                }}
-                className="w-full font-display tracking-wider h-12"
-              >
-                <Dices className="w-5 h-5 mr-2" />
-                ROLAR DADOS
-              </Button>
-            )}
 
             {/* Referência rápida */}
             <QuickReferenceCard
@@ -1135,6 +1112,16 @@ export default function CharacterSheet() {
             description: 'Seus recursos foram recuperados.',
           });
         }}
+      />
+      
+      {/* Modal de rolagem imediata */}
+      <DiceRollModal
+        open={diceModalOpen}
+        onClose={() => setDiceModalOpen(false)}
+        label={rollLabel}
+        attributeValue={rollAttribute}
+        skillBonus={rollSkillBonus}
+        onRollComplete={handleRollComplete}
       />
     </div>
   );
