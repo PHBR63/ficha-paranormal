@@ -175,18 +175,18 @@ export function StepOrigin({ formData, updateFormData }: StepOriginProps) {
                 
                 <div className="space-y-2">
                   <div>
-                    <p className="text-xs text-secondary mb-1">Perícias:</p>
-                    <p className="text-xs text-foreground">
+                    <p className="text-sm font-semibold text-primary mb-1">Perícias:</p>
+                    <p className="text-sm text-foreground">
                       {isAmnésico ? (
-                        <span className="text-paranormal">Escolha duas perícias</span>
+                        <span className="text-paranormal font-medium">Escolha duas perícias</span>
                       ) : (
                         origin.skills.join(', ')
                       )}
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs text-paranormal mb-1">Poder:</p>
-                    <p className="text-xs text-foreground">
+                    <p className="text-sm font-semibold text-paranormal mb-1">Poder:</p>
+                    <p className="text-sm text-foreground">
                       {origin.powers.join(', ')}
                     </p>
                   </div>
