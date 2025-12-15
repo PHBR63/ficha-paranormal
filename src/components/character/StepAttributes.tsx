@@ -3,7 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Minus, Plus, AlertTriangle, Info, Heart, Zap, Brain } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
-import { calculateDerivedStats, calculateDefense } from '@/lib/character-data';
+import { calculateDerivedStats, calculateDefense, getExtraAttributePoints } from '@/lib/character-data';
+import { getMaxAttributeByNex } from '@/lib/character-builder-engine';
 import type { CharacterFormData } from '@/pages/CharacterCreate';
 import {
   Tooltip,
@@ -13,7 +14,6 @@ import {
 } from '@/components/ui/tooltip';
 import { RuleBookTip } from './RuleBookTip';
 import { getRulebookContent } from '@/lib/rulebook-content';
-import { getExtraAttributePoints } from '@/lib/character-data';
 
 interface StepAttributesProps {
   formData: CharacterFormData;
@@ -74,6 +74,9 @@ export function StepAttributes({ formData, updateFormData }: StepAttributesProps
     return entry ? entry[0] : null;
   });
 
+  // Limite máximo de atributo baseado no NEX (3 para NEX 5-15%, 4 para 20-35%, 5 para 40%+)
+  const maxAttribute = getMaxAttributeByNex(formData.nex);
+
   // Cálculo de pontos disponíveis incluindo bônus por NEX
   const totalPoints = Object.values(formData.attributes).reduce((a, b) => a + b, 0);
   const basePoints = 5; // Pontos base (1 em cada atributo)
@@ -119,7 +122,8 @@ export function StepAttributes({ formData, updateFormData }: StepAttributesProps
       setReducedAttribute(null);
     }
     
-    if (newValue < 0 || newValue > 3) return;
+    // Usa limite dinâmico baseado no NEX
+    if (newValue < 0 || newValue > maxAttribute) return;
     if (delta > 0 && remainingPoints <= 0) return;
 
     updateFormData({
@@ -141,7 +145,10 @@ export function StepAttributes({ formData, updateFormData }: StepAttributesProps
         <div className="text-center mb-8">
           <h2 className="font-display text-2xl tracking-wider mb-2">ATRIBUTOS BASE</h2>
           <p className="text-muted-foreground text-sm">
-            Distribua seus pontos entre os atributos. Cada atributo começa em 1 e pode chegar a 3.
+            Distribua seus pontos entre os atributos. Cada atributo começa em 1 e pode chegar a {maxAttribute}.
+            {formData.nex > 15 && (
+              <span className="text-primary ml-1">(limite aumentado por NEX {formData.nex}%)</span>
+            )}
           </p>
           {/* Mostra breakdown dos pontos disponíveis */}
           <div className="flex flex-wrap justify-center gap-2 mt-3 text-xs">
@@ -156,6 +163,11 @@ export function StepAttributes({ formData, updateFormData }: StepAttributesProps
             {nexBonus > 0 && (
               <span className="px-2 py-1 rounded bg-primary/20 border border-primary/30 text-primary">
                 NEX {formData.nex}%: +{nexBonus}
+              </span>
+            )}
+            {maxAttribute > 3 && (
+              <span className="px-2 py-1 rounded bg-accent/20 border border-accent/30 text-accent">
+                Máx/Atrib: {maxAttribute}
               </span>
             )}
           </div>
@@ -388,7 +400,7 @@ export function StepAttributes({ formData, updateFormData }: StepAttributesProps
                     size="icon"
                     className="w-8 h-8 border-border"
                     onClick={() => updateAttribute(attr.id as keyof typeof formData.attributes, 1)}
-                    disabled={value >= 3 || remainingPoints <= 0}
+                    disabled={value >= maxAttribute || remainingPoints <= 0}
                   >
                     <Plus className="w-4 h-4" />
                   </Button>
