@@ -59,6 +59,10 @@ interface MobileCharacterSheetProps {
     powers: Array<{ name: string; description: string }>;
     rituals: string[];
     skills?: Record<string, number>;
+    // Novos campos para exibição completa
+    paranormal_powers?: Array<{ id: string; name: string; element: string; description: string }>;
+    general_powers?: Array<{ id: string; name: string; description: string; category?: string }>;
+    inventory?: Array<{ id?: string; name: string; category: string; slots: number; itemType?: string; isEquipped?: boolean; equipSlot?: string }>;
   };
   onOpenDiceRoller: () => void;
   onOpenRest: () => void;
@@ -414,10 +418,10 @@ export function MobileCharacterSheet({
             exit={{ opacity: 0, x: 20 }}
             className="space-y-3"
           >
-            {/* Habilidades */}
+            {/* Habilidades de Classe */}
             {character.abilities.length > 0 && (
               <div className="ordo-panel p-3">
-                <p className="text-[10px] text-primary uppercase mb-2">HABILIDADES</p>
+                <p className="text-[10px] text-primary uppercase mb-2">HABILIDADES DE CLASSE</p>
                 <div className="flex flex-wrap gap-1">
                   {character.abilities.map((ability, i) => (
                     <span 
@@ -431,14 +435,61 @@ export function MobileCharacterSheet({
               </div>
             )}
 
-            {/* Poderes */}
+            {/* Poderes Paranormais */}
+            {character.paranormal_powers && character.paranormal_powers.length > 0 && (
+              <div className="ordo-panel p-3">
+                <p className="text-[10px] text-paranormal uppercase mb-2">
+                  <Sparkles className="w-3 h-3 inline mr-1" />
+                  PODERES PARANORMAIS ({character.paranormal_powers.length})
+                </p>
+                <div className="space-y-2">
+                  {character.paranormal_powers.map((power, i) => (
+                    <div key={i} className="p-2 bg-paranormal/10 rounded border border-paranormal/20">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-sm text-paranormal">{power.name}</span>
+                        <span className="text-[9px] px-1.5 py-0.5 bg-paranormal/30 rounded capitalize">
+                          {power.element}
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground mt-1 line-clamp-2">{power.description}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Poderes Gerais */}
+            {character.general_powers && character.general_powers.length > 0 && (
+              <div className="ordo-panel p-3">
+                <p className="text-[10px] text-success uppercase mb-2">
+                  PODERES GERAIS ({character.general_powers.length})
+                </p>
+                <div className="space-y-2">
+                  {character.general_powers.map((power, i) => (
+                    <div key={i} className="p-2 bg-success/10 rounded border border-success/20">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-sm text-success">{power.name}</span>
+                        {power.category && (
+                          <span className="text-[9px] px-1.5 py-0.5 bg-success/30 rounded capitalize">
+                            {power.category}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[10px] text-muted-foreground mt-1 line-clamp-2">{power.description}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Poderes de Origem */}
             {character.powers.length > 0 && (
               <div className="ordo-panel p-3">
-                <p className="text-[10px] text-paranormal uppercase mb-2">PODERES DE ORIGEM</p>
+                <p className="text-[10px] text-secondary uppercase mb-2">PODERES DE ORIGEM</p>
                 <div className="space-y-2">
                   {character.powers.map((power, i) => (
-                    <div key={i} className="p-2 bg-paranormal/10 rounded">
-                      <span className="font-medium text-sm text-paranormal">{power.name}</span>
+                    <div key={i} className="p-2 bg-secondary/10 rounded">
+                      <span className="font-medium text-sm">{power.name}</span>
                       {power.description && (
                         <p className="text-[10px] text-muted-foreground mt-1">{power.description}</p>
                       )}
@@ -452,6 +503,7 @@ export function MobileCharacterSheet({
             {character.rituals.length > 0 && (
               <div className="ordo-panel p-3">
                 <p className="text-[10px] text-paranormal uppercase mb-2">
+                  <Scroll className="w-3 h-3 inline mr-1" />
                   RITUAIS ({character.rituals.length})
                 </p>
                 <div className="flex flex-wrap gap-1">
@@ -467,11 +519,16 @@ export function MobileCharacterSheet({
               </div>
             )}
 
+            {/* Mensagem quando não há nenhum poder */}
             {character.abilities.length === 0 && 
              character.powers.length === 0 && 
-             character.rituals.length === 0 && (
+             character.rituals.length === 0 &&
+             (!character.paranormal_powers || character.paranormal_powers.length === 0) &&
+             (!character.general_powers || character.general_powers.length === 0) && (
               <div className="ordo-panel p-3">
-                <p className="text-muted-foreground text-sm">Nenhum poder registrado.</p>
+                <p className="text-muted-foreground text-sm text-center py-4">
+                  Nenhum poder registrado.
+                </p>
               </div>
             )}
           </motion.div>
@@ -485,12 +542,68 @@ export function MobileCharacterSheet({
             exit={{ opacity: 0, x: 20 }}
             className="space-y-3"
           >
-            <div className="ordo-panel p-3">
-              <p className="text-xs text-muted-foreground uppercase mb-3">INVENTÁRIO</p>
-              <p className="text-sm text-muted-foreground">
-                Acesse a versão desktop para gerenciar o inventário completo.
-              </p>
-            </div>
+            {/* Itens equipados */}
+            {character.inventory && character.inventory.filter(i => i.isEquipped).length > 0 && (
+              <div className="ordo-panel p-3">
+                <p className="text-[10px] text-primary uppercase mb-2">
+                  <Swords className="w-3 h-3 inline mr-1" />
+                  EQUIPADO
+                </p>
+                <div className="space-y-1">
+                  {character.inventory.filter(i => i.isEquipped).map((item, i) => (
+                    <div key={i} className="flex items-center justify-between p-2 bg-primary/10 rounded">
+                      <div className="flex items-center gap-2">
+                        <Package className="w-4 h-4 text-primary" />
+                        <span className="text-sm">{item.name}</span>
+                      </div>
+                      {item.equipSlot && (
+                        <span className="text-[9px] text-muted-foreground capitalize">{item.equipSlot}</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Todos os itens */}
+            {character.inventory && character.inventory.length > 0 ? (
+              <div className="ordo-panel p-3">
+                <p className="text-[10px] text-muted-foreground uppercase mb-2">
+                  <Package className="w-3 h-3 inline mr-1" />
+                  INVENTÁRIO ({character.inventory.length} itens)
+                </p>
+                <div className="space-y-1">
+                  {character.inventory.map((item, i) => (
+                    <div 
+                      key={i} 
+                      className={cn(
+                        "flex items-center justify-between p-2 rounded",
+                        item.isEquipped ? "bg-primary/5 border border-primary/20" : "bg-muted/30"
+                      )}
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Package className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                        <span className="text-sm truncate">{item.name}</span>
+                      </div>
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        <span className="text-[9px] px-1.5 py-0.5 bg-muted rounded">
+                          Cat. {item.category}
+                        </span>
+                        <span className="text-[9px] text-muted-foreground">
+                          {item.slots}esp
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="ordo-panel p-3">
+                <p className="text-muted-foreground text-sm text-center py-4">
+                  Nenhum item no inventário.
+                </p>
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

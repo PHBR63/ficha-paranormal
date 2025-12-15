@@ -741,6 +741,11 @@ export default function CharacterSheet() {
               abilities: character.abilities,
               powers: character.powers,
               rituals: character.rituals,
+              // Campos que estavam faltando:
+              skills: character.skills,
+              paranormal_powers: character.paranormal_powers,
+              general_powers: character.general_powers,
+              inventory: character.inventory,
             }}
             onOpenDiceRoller={() => {
               setRollLabel('Teste Geral');
