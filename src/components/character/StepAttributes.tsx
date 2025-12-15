@@ -99,6 +99,15 @@ export function StepAttributes({ formData, updateFormData }: StepAttributesProps
 
   const hasExceedingAttributes = attributesExceedingLimit.length > 0;
 
+  // Detecta se há mais de um atributo em 0 (não permitido)
+  const zeroAttributes = useMemo(() => {
+    return Object.entries(formData.attributes)
+      .filter(([, value]) => value === 0)
+      .map(([key]) => key);
+  }, [formData.attributes]);
+
+  const hasMultipleZeros = zeroAttributes.length > 1;
+
   // Preview stats based on current attributes
   const previewStats = useMemo(() => {
     if (!formData.characterClass) {
@@ -147,8 +156,8 @@ export function StepAttributes({ formData, updateFormData }: StepAttributesProps
     });
   };
 
-  // Validação: atributos dentro do limite E pontos distribuídos corretamente
-  const isValid = totalPoints === maxPoints && !hasExceedingAttributes;
+  // Validação: atributos dentro do limite, pontos distribuídos corretamente, e no máximo 1 zero
+  const isValid = totalPoints === maxPoints && !hasExceedingAttributes && !hasMultipleZeros;
 
   // Conteúdo educativo do livro
   const rulebookContent = getRulebookContent('attributes');
@@ -331,8 +340,36 @@ export function StepAttributes({ formData, updateFormData }: StepAttributesProps
           )}
         </AnimatePresence>
 
-        {/* Zero warning */}
-        {!hasReducedToZero && !hasExceedingAttributes && (
+        {/* Alerta de múltiplos atributos em zero */}
+        <AnimatePresence>
+          {hasMultipleZeros && (
+            <motion.div 
+              className="ordo-panel p-4 bg-destructive/10 border-destructive/30"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+            >
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-destructive">Apenas um atributo pode ser 0</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Você só pode reduzir <strong>um único</strong> atributo para 0. 
+                    Aumente pelo menos um dos seguintes atributos: {' '}
+                    <span className="text-destructive font-medium">
+                      {zeroAttributes.map(id => 
+                        ATTRIBUTES.find(a => a.id === id)?.name
+                      ).join(', ')}
+                    </span>
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Zero warning - só mostra se não tem múltiplos zeros */}
+        {!hasReducedToZero && !hasExceedingAttributes && !hasMultipleZeros && (
           <motion.div 
             className="ordo-panel p-4 bg-paranormal/5 border-paranormal/20"
             initial={{ opacity: 0 }}
@@ -343,7 +380,7 @@ export function StepAttributes({ formData, updateFormData }: StepAttributesProps
               <div>
                 <p className="text-sm font-medium text-paranormal">Regra do Zero</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Você pode reduzir <strong>um</strong> atributo para 0 e ganhar +1 ponto extra para distribuir. 
+                  Você pode reduzir <strong>um</strong> atributo para 0 e liberar +1 ponto para distribuir. 
                   Porém, testes com atributo 0 rolam 2d20 e pegam o <strong>menor</strong> resultado.
                 </p>
               </div>
