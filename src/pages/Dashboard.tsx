@@ -4,20 +4,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { ThemeSelector } from '@/components/ui/theme-selector';
-import { 
-  Plus, 
-  LogOut, 
-  User, 
-  FileText, 
-  Users, 
-  Settings,
-  Loader2,
-  AlertTriangle,
-  Skull
-} from 'lucide-react';
+import { Plus, LogOut, User, FileText, Users, Settings, Loader2, AlertTriangle, Skull } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { CharacterCard } from '@/components/cards/CharacterCard';
-
 interface Character {
   id: string;
   name: string;
@@ -34,74 +23,67 @@ interface Character {
   photo_url?: string | null;
   conditions?: string[];
 }
-
 export default function Dashboard() {
-  const { user, signOut } = useAuth();
-  const { toast } = useToast();
+  const {
+    user,
+    signOut
+  } = useAuth();
+  const {
+    toast
+  } = useToast();
   const [characters, setCharacters] = useState<Character[]>([]);
   const [loading, setLoading] = useState(true);
-  const [profile, setProfile] = useState<{ display_name: string | null } | null>(null);
-
+  const [profile, setProfile] = useState<{
+    display_name: string | null;
+  } | null>(null);
   useEffect(() => {
     async function fetchData() {
       if (!user) return;
 
       // Fetch profile
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('display_name')
-        .eq('user_id', user.id)
-        .single();
-      
+      const {
+        data: profileData
+      } = await supabase.from('profiles').select('display_name').eq('user_id', user.id).single();
       setProfile(profileData);
 
       // Fetch characters
-      const { data: charactersData } = await supabase
-        .from('characters')
-        .select('id, name, class, origin, nex, patent, hp_current, hp_max, pe_current, pe_max, san_current, san_max, photo_url, conditions')
-        .eq('user_id', user.id)
-        .order('updated_at', { ascending: false });
-      
+      const {
+        data: charactersData
+      } = await supabase.from('characters').select('id, name, class, origin, nex, patent, hp_current, hp_max, pe_current, pe_max, san_current, san_max, photo_url, conditions').eq('user_id', user.id).order('updated_at', {
+        ascending: false
+      });
       const chars = (charactersData || []).map(c => ({
         ...c,
-        conditions: Array.isArray(c.conditions) ? c.conditions as string[] : [],
+        conditions: Array.isArray(c.conditions) ? c.conditions as string[] : []
       }));
       setCharacters(chars);
       setLoading(false);
     }
-
     fetchData();
   }, [user]);
-
   const handleDeleteCharacter = async (id: string, name: string) => {
     if (!confirm(`Tem certeza que deseja excluir ${name}? Esta ação não pode ser desfeita.`)) {
       return;
     }
-
-    const { error } = await supabase
-      .from('characters')
-      .delete()
-      .eq('id', id);
-
+    const {
+      error
+    } = await supabase.from('characters').delete().eq('id', id);
     if (error) {
       toast({
         title: 'Erro',
         description: 'Não foi possível excluir o personagem.',
-        variant: 'destructive',
+        variant: 'destructive'
       });
     } else {
       setCharacters(characters.filter(c => c.id !== id));
       toast({
         title: 'Agente Removido',
-        description: `O dossiê de ${name} foi arquivado permanentemente.`,
+        description: `O dossiê de ${name} foi arquivado permanentemente.`
       });
     }
   };
-
   const displayName = profile?.display_name || user?.email?.split('@')[0] || 'Agente';
-
-  return (
-    <div className="min-h-screen bg-background relative">
+  return <div className="min-h-screen bg-background relative">
       {/* Background effects */}
       <div className="noise-overlay" />
       <div className="absolute inset-0 bg-grid-pattern opacity-20" />
@@ -125,12 +107,7 @@ export default function Dashboard() {
               <User className="w-4 h-4" />
               <span className="text-sm hidden sm:block">{displayName}</span>
             </div>
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={signOut}
-              className="text-muted-foreground hover:text-foreground"
-            >
+            <Button variant="ghost" size="icon" onClick={signOut} className="text-muted-foreground hover:text-foreground">
               <LogOut className="w-5 h-5" />
             </Button>
           </div>
@@ -142,7 +119,7 @@ export default function Dashboard() {
         <section className="mb-8">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div>
-              <p className="text-accent text-sm tracking-[0.2em] uppercase">Central de Operações</p>
+              <p className="text-sm tracking-[0.2em] uppercase text-secondary-foreground">Central de Operações</p>
               <h2 className="font-display text-4xl tracking-wide text-foreground">
                 BEM-VINDO, <span className="text-primary">{displayName.toUpperCase()}</span>
               </h2>
@@ -223,12 +200,9 @@ export default function Dashboard() {
             <div className="divider-line flex-1" />
           </div>
 
-          {loading ? (
-            <div className="flex items-center justify-center py-16">
+          {loading ? <div className="flex items-center justify-center py-16">
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
-            </div>
-          ) : characters.length === 0 ? (
-            <div className="section-container text-center py-16">
+            </div> : characters.length === 0 ? <div className="section-container text-center py-16">
               <FileText className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
               <h3 className="font-display text-2xl text-foreground mb-2">
                 NENHUM DOSSIÊ ENCONTRADO
@@ -242,36 +216,25 @@ export default function Dashboard() {
                   Criar Primeiro Agente
                 </Button>
               </Link>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {characters.map((character, index) => (
-                <CharacterCard
-                  key={character.id}
-                  character={{
-                    id: character.id,
-                    name: character.name,
-                    class: character.class,
-                    origin: character.origin,
-                    nex: character.nex,
-                    patent: character.patent,
-                    hp_current: character.hp_current,
-                    hp_max: character.hp_max,
-                    pe_current: character.pe_current,
-                    pe_max: character.pe_max,
-                    san_current: character.san_current,
-                    san_max: character.san_max,
-                    photo_url: character.photo_url,
-                    conditions: character.conditions || [],
-                  }}
-                  onDelete={() => handleDeleteCharacter(character.id, character.name)}
-                  index={index}
-                />
-              ))}
-            </div>
-          )}
+            </div> : <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {characters.map((character, index) => <CharacterCard key={character.id} character={{
+            id: character.id,
+            name: character.name,
+            class: character.class,
+            origin: character.origin,
+            nex: character.nex,
+            patent: character.patent,
+            hp_current: character.hp_current,
+            hp_max: character.hp_max,
+            pe_current: character.pe_current,
+            pe_max: character.pe_max,
+            san_current: character.san_current,
+            san_max: character.san_max,
+            photo_url: character.photo_url,
+            conditions: character.conditions || []
+          }} onDelete={() => handleDeleteCharacter(character.id, character.name)} index={index} />)}
+            </div>}
         </section>
       </main>
-    </div>
-  );
+    </div>;
 }
