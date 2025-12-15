@@ -19,6 +19,7 @@ interface StepTrackProps {
   updateFormData: (updates: Partial<CharacterFormData>) => void;
 }
 
+// Ícones das trilhas (incluindo novas trilhas do suplemento)
 const TRACK_ICONS: Record<string, React.ReactNode> = {
   // Combatente
   'aniquilador': <Skull className="w-5 h-5" />,
@@ -26,18 +27,28 @@ const TRACK_ICONS: Record<string, React.ReactNode> = {
   'guerreiro': <Sword className="w-5 h-5" />,
   'operacoes-especiais': <Target className="w-5 h-5" />,
   'tropa-choque': <Shield className="w-5 h-5" />,
+  'cacador-monstros': <Crosshair className="w-5 h-5" />, // Suplemento
+  'protetor': <Shield className="w-5 h-5" />, // Suplemento
   // Especialista
   'atirador-elite': <Crosshair className="w-5 h-5" />,
   'infiltrador': <Ghost className="w-5 h-5" />,
   'medico-campo': <Heart className="w-5 h-5" />,
   'negociador': <MessagesSquare className="w-5 h-5" />,
   'tecnico': <Wrench className="w-5 h-5" />,
+  'analista-cena': <Brain className="w-5 h-5" />, // Suplemento
+  'perito-criminal': <Target className="w-5 h-5" />, // Suplemento
   // Ocultista
   'conduíte': <Zap className="w-5 h-5" />,
   'flagelador': <Droplets className="w-5 h-5" />,
   'graduado': <GraduationCap className="w-5 h-5" />,
   'intuitivo': <Brain className="w-5 h-5" />,
   'lamina-paranormal': <Flame className="w-5 h-5" />,
+  'ritualista-campo': <Sparkles className="w-5 h-5" />, // Suplemento
+  'canalista': <Zap className="w-5 h-5" />, // Suplemento
+  // Sobrevivente (nova classe do suplemento)
+  'andarilho': <Flame className="w-5 h-5" />,
+  'marcado': <Skull className="w-5 h-5" />,
+  'sortudo': <Sparkles className="w-5 h-5" />,
 };
 
 const NEX_MILESTONES = [5, 25, 50, 75, 99];

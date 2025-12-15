@@ -1,6 +1,11 @@
+/**
+ * StepClass - Seleção de classe do personagem
+ * Inclui classes base e a classe Sobrevivente do suplemento "Sobrevivendo ao Horror"
+ */
+
 import { CLASSES, calculateDerivedStats } from '@/lib/character-data';
 import { cn } from '@/lib/utils';
-import { Sword, Wrench, Sparkles, Shield, BookOpen, Heart, Zap, Brain } from 'lucide-react';
+import { Sword, Wrench, Sparkles, Shield, BookOpen, Heart, Zap, Brain, Footprints } from 'lucide-react';
 import { CLASS_PROFICIENCIES, CLASS_INITIAL_ABILITIES, getClassSkillRules } from '@/lib/character-builder-engine';
 import { motion } from 'framer-motion';
 import type { CharacterFormData } from '@/pages/CharacterCreate';
@@ -13,16 +18,20 @@ interface StepClassProps {
   updateFormData: (updates: Partial<CharacterFormData>) => void;
 }
 
+// Ícones das classes (incluindo Sobrevivente do suplemento)
 const CLASS_ICONS: Record<string, LucideIcon> = {
   Combatente: Sword,
   Especialista: Wrench,
   Ocultista: Sparkles,
+  Sobrevivente: Footprints, // Nova classe do suplemento
 };
 
+// Cores das classes (incluindo Sobrevivente)
 const CLASS_COLORS: Record<string, { bg: string; border: string; text: string }> = {
   Combatente: { bg: 'bg-destructive/10', border: 'border-destructive/30', text: 'text-destructive' },
   Especialista: { bg: 'bg-secondary/10', border: 'border-secondary/30', text: 'text-secondary' },
   Ocultista: { bg: 'bg-paranormal/10', border: 'border-paranormal/30', text: 'text-paranormal' },
+  Sobrevivente: { bg: 'bg-warning/10', border: 'border-warning/30', text: 'text-warning' }, // Cor única para Sobrevivente
 };
 
 export function StepClass({ formData, updateFormData }: StepClassProps) {
@@ -63,10 +72,11 @@ export function StepClass({ formData, updateFormData }: StepClassProps) {
         <RuleBookTip section={rulebookContent} defaultExpanded={false} />
       )}
 
-      <div className="grid md:grid-cols-3 gap-4">
+      {/* Grid de classes - 4 colunas para incluir Sobrevivente */}
+      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
         {CLASSES.map((cls, index) => {
-          const Icon = CLASS_ICONS[cls.id];
-          const colors = CLASS_COLORS[cls.id];
+          const Icon = CLASS_ICONS[cls.id] || Sparkles;
+          const colors = CLASS_COLORS[cls.id] || CLASS_COLORS.Combatente;
           const isSelected = formData.characterClass === cls.id;
           const previewStats = calculateDerivedStats(
             cls.id,

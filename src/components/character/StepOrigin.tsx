@@ -1,9 +1,14 @@
+/**
+ * StepOrigin - Seleção de origem do personagem
+ * Inclui 26 origens base + 22 origens do suplemento "Sobrevivendo ao Horror"
+ */
+
 import { useState, useMemo } from 'react';
 import { ORIGINS, SKILLS } from '@/lib/character-data';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Dices, AlertCircle, Search, Sparkles } from 'lucide-react';
+import { Dices, AlertCircle, Search, Sparkles, BookMarked } from 'lucide-react';
 import { rollOrigin, getOriginSkills } from '@/lib/character-builder-engine';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AmnesicSkillModal } from './AmnesicSkillModal';
@@ -16,20 +21,31 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { Badge } from '@/components/ui/badge';
 
 interface StepOriginProps {
   formData: CharacterFormData;
   updateFormData: (updates: Partial<CharacterFormData>) => void;
 }
 
+// Origens do suplemento "Sobrevivendo ao Horror" (para destacar visualmente)
+const SUPPLEMENT_ORIGINS = [
+  'astro-mirim', 'baba', 'bibliotecario', 'bombeiro', 'caminhoneiro', 'catador',
+  'coveiro', 'cozinheiro', 'defensor-publico', 'engenheiro-transito', 'exorcista',
+  'garcom', 'guia-turistico', 'influenciador-digital', 'jornalista',
+  'motorista-aplicativo', 'musico-rua', 'personal-trainer', 'pescador',
+  'psicologo', 'tatuador', 'youtuber'
+];
+
 // Origin icons/categories for visual grouping
 const ORIGIN_CATEGORIES: Record<string, string[]> = {
-  'Combate': ['atleta', 'lutador', 'militar', 'policial'],
-  'Investigação': ['academico', 'investigador', 'ti', 'teorico-da-conspiracao'],
-  'Social': ['artista', 'diplomata', 'executivo', 'religioso'],
-  'Sobrevivência': ['criminoso', 'desgarrado', 'operario', 'trabalhador-rural'],
-  'Paranormal': ['amnésico', 'cultista-arrependido', 'vitima'],
-  'Outros': ['agente-de-saude', 'chef', 'engenheiro', 'servidor-publico', 'trambiqueiro', 'universitario'],
+  'Combate': ['atleta', 'lutador', 'militar', 'policial', 'bombeiro', 'personal-trainer'],
+  'Investigação': ['academico', 'investigador', 'ti', 'teorico-da-conspiracao', 'bibliotecario', 'jornalista'],
+  'Social': ['artista', 'diplomata', 'executivo', 'religioso', 'influenciador-digital', 'youtuber', 'astro-mirim'],
+  'Sobrevivência': ['criminoso', 'desgarrado', 'operario', 'trabalhador-rural', 'caminhoneiro', 'catador', 'pescador'],
+  'Paranormal': ['amnesico', 'cultista-arrependido', 'vitima', 'exorcista', 'coveiro'],
+  'Serviço': ['agente-de-saude', 'chef', 'engenheiro', 'servidor-publico', 'baba', 'cozinheiro', 'defensor-publico', 'garcom', 'guia-turistico', 'motorista-aplicativo', 'psicologo'],
+  'Outros': ['trambiqueiro', 'universitario', 'engenheiro-transito', 'musico-rua', 'tatuador'],
 };
 
 export function StepOrigin({ formData, updateFormData }: StepOriginProps) {
@@ -137,9 +153,10 @@ export function StepOrigin({ formData, updateFormData }: StepOriginProps) {
 
         <div className="grid md:grid-cols-2 gap-3 max-h-[400px] overflow-y-auto pr-2">
           {filteredOrigins.map((origin, index) => {
-            const isAmnésico = origin.id === 'amnésico';
+            const isAmnésico = origin.id === 'amnesico';
             const hasSanityPenalty = origin.sanityModifier !== undefined;
             const isSelected = formData.origin === origin.id;
+            const isFromSupplement = SUPPLEMENT_ORIGINS.includes(origin.id);
             
             return (
               <motion.button
@@ -151,13 +168,19 @@ export function StepOrigin({ formData, updateFormData }: StepOriginProps) {
                 className={cn(
                   'ordo-panel p-4 text-left transition-all group',
                   'hover:border-primary/50 hover:bg-primary/5',
-                  isSelected && 'border-primary bg-primary/10 shadow-[0_0_20px_hsl(var(--primary)/0.2)]'
+                  isSelected && 'border-primary bg-primary/10 shadow-[0_0_20px_hsl(var(--primary)/0.2)]',
+                  isFromSupplement && !isSelected && 'border-warning/20'
                 )}
               >
-                <div className="flex items-center gap-2 mb-1">
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
                   <h3 className="font-display text-lg tracking-wider group-hover:text-primary transition-colors">
                     {origin.name}
                   </h3>
+                  {isFromSupplement && (
+                    <Badge variant="outline" className="text-[10px] py-0 h-4 bg-warning/10 border-warning/30 text-warning">
+                      Suplemento
+                    </Badge>
+                  )}
                   {hasSanityPenalty && (
                     <Tooltip>
                       <TooltipTrigger>
