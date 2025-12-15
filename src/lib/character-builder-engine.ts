@@ -1,7 +1,7 @@
 // Ordem Paranormal RPG v1.3 - Character Builder Engine
 // Motor de regras para criação de personagem 100% fiel às regras oficiais
 
-import { ORIGINS, CLASSES, SKILLS, calculateDerivedStats, getPatentByNex, calculateDefense } from './character-data';
+import { ORIGINS, CLASSES, SKILLS, calculateDerivedStats, getPatentByNex, calculateDefense, getExtraAttributePoints } from './character-data';
 
 // ============= TYPES =============
 
@@ -159,9 +159,10 @@ export const ORIGIN_TABLE: Array<{ min: number; max: number; originId: string }>
  * Valida a distribuição de atributos
  * - Base: 1 em cada (total 5)
  * - Pool: 4 pontos (ou 5 se reduzir um atributo para 0)
- * - Limite: máximo 3 na criação
+ * - Bônus NEX: pontos extras baseados no nível de exposição (NEX 20%+ = +1, etc.)
+ * - Limite: máximo 3 na criação (NEX 5%)
  */
-export function validateAttributes(allocation: AttributeAllocation): {
+export function validateAttributes(allocation: AttributeAllocation, nex: number = 5): {
   valid: boolean;
   pool: number;
   usedPoints: number;
@@ -176,24 +177,25 @@ export function validateAttributes(allocation: AttributeAllocation): {
     errors.push('Nenhum atributo pode ser menor que 0.');
   }
   
-  // Verificar se algum está acima de 3
-  if (values.some(v => v > 3)) {
-    errors.push('Na criação, nenhum atributo pode ser maior que 3.');
+  // Limite máximo na criação depende do NEX
+  const maxAttribute = getMaxAttributeByNex(nex);
+  if (values.some(v => v > maxAttribute)) {
+    errors.push(`Com NEX ${nex}%, nenhum atributo pode ser maior que ${maxAttribute}.`);
   }
   
-  // Calcular pool: 4 base, +1 se algum atributo = 0
+  // Calcular pool base: 4 pontos, +1 se algum atributo = 0
   const hasZero = values.some(v => v === 0);
-  const pool = hasZero ? 5 : 4;
+  const basePool = hasZero ? 5 : 4;
   
-  // Total esperado = base (5) + pool (4 ou 5) = 9 ou 10
+  // Adicionar pontos extras por NEX
+  const nexBonus = getExtraAttributePoints(nex);
+  const pool = basePool + nexBonus;
+  
+  // Total esperado = base (5) + pool (com bônus NEX)
   const totalExpected = 5 + pool;
   const totalActual = values.reduce((a, b) => a + b, 0);
   const usedPoints = totalActual - 5; // Pontos usados além da base
   const remainingPoints = pool - usedPoints;
-  
-  if (totalActual !== totalExpected && remainingPoints !== 0) {
-    // Ainda tem pontos para distribuir, não é erro
-  }
   
   return {
     valid: errors.length === 0 && remainingPoints >= 0 && remainingPoints <= pool,
@@ -202,6 +204,18 @@ export function validateAttributes(allocation: AttributeAllocation): {
     remainingPoints: Math.max(0, remainingPoints),
     errors,
   };
+}
+
+/**
+ * Retorna o valor máximo de atributo permitido baseado no NEX
+ */
+function getMaxAttributeByNex(nex: number): number {
+  // Na criação (NEX 5%) o máximo é 3
+  // A cada avanço de NEX, o limite pode aumentar (regra do livro)
+  // Por simplicidade: NEX 5-15% = 3, NEX 20-35% = 4, NEX 40%+ = 5
+  if (nex <= 15) return 3;
+  if (nex <= 35) return 4;
+  return 5;
 }
 
 /**
@@ -295,8 +309,8 @@ export function rollOrigin(): { dice: number[]; total: number; originId: string 
  * Pipeline principal: reconstrói a ficha completa a partir do estado
  */
 export function rebuildCharacterSheet(state: CharacterBuildState): RebuildResult {
-  // 1. Validar atributos
-  const attrValidation = validateAttributes(state.attributes);
+  // 1. Validar atributos (passando NEX para considerar pontos extras)
+  const attrValidation = validateAttributes(state.attributes, state.nex);
   
   // 2. Obter perícias da origem
   const originSkills = state.origin ? getOriginSkills(state.origin) : [];
