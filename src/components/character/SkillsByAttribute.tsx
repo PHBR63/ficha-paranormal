@@ -5,6 +5,7 @@
 
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
+import { Filter } from 'lucide-react';
 import { ChevronDown, Search, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SKILLS } from '@/lib/character-data';
@@ -73,8 +74,9 @@ export function SkillsByAttribute({
   onRoll,
   className,
 }: SkillsByAttributeProps) {
-  // Estado de pesquisa
+  // Estado de pesquisa e filtro
   const [searchQuery, setSearchQuery] = useState('');
+  const [showOnlyTrained, setShowOnlyTrained] = useState(false);
   
   // Estados de abertura dos grupos
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
@@ -95,21 +97,25 @@ export function SkillsByAttribute({
       vigor: [],
     };
     
-    // Filtrar por pesquisa
+    // Filtrar por pesquisa e treino
     const query = searchQuery.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     
     SKILLS.forEach(skill => {
+      // Filtrar por pesquisa
       if (query) {
         const name = skill.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
         if (!name.includes(query)) return;
       }
+      // Filtrar apenas treinadas
+      if (showOnlyTrained && !(skills[skill.id] > 0)) return;
+      
       if (grouped[skill.attribute]) {
         grouped[skill.attribute].push(skill);
       }
     });
     
     return grouped;
-  }, [searchQuery]);
+  }, [searchQuery, showOnlyTrained, skills]);
 
   // Toggle grupo
   const toggleGroup = (attr: string) => {
@@ -122,26 +128,39 @@ export function SkillsByAttribute({
         Perícias
       </h3>
       
-      {/* Barra de pesquisa */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input
-          type="text"
-          placeholder="Buscar perícia..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10 pr-10 bg-muted/30 border-border focus:border-primary h-9"
-        />
-        {searchQuery && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setSearchQuery('')}
-            className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
-          >
-            <X className="w-3 h-3" />
-          </Button>
-        )}
+      {/* Barra de pesquisa e filtro */}
+      <div className="flex gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            type="text"
+            placeholder="Buscar perícia..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10 pr-10 bg-muted/30 border-border focus:border-primary h-9"
+          />
+          {searchQuery && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setSearchQuery('')}
+              className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+            >
+              <X className="w-3 h-3" />
+            </Button>
+          )}
+        </div>
+        
+        {/* Botão de filtro treinadas */}
+        <Button
+          variant={showOnlyTrained ? "default" : "outline"}
+          size="sm"
+          onClick={() => setShowOnlyTrained(!showOnlyTrained)}
+          className="h-9 gap-1.5 shrink-0"
+        >
+          <Filter className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">Treinadas</span>
+        </Button>
       </div>
 
       {/* Grupos por atributo */}
