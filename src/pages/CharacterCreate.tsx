@@ -30,7 +30,7 @@ import {
   getAbilityChoicesByNex,
   getExtraSkillsByNex
 } from '@/lib/character-data';
-import { rebuildCharacterSheet, buildStateToFormData, CLASS_PROFICIENCIES, getClassSkillRules } from '@/lib/character-builder-engine';
+import { rebuildCharacterSheet, buildStateToFormData, CLASS_PROFICIENCIES, getClassSkillRules, validateAttributes } from '@/lib/character-builder-engine';
 import { getCoreAbilities, getChoosableAbilities } from '@/lib/class-abilities';
 import { useCharacterAutoSave, loadCharacterDraft, clearCharacterDraft } from '@/hooks/useCharacterAutoSave';
 import confetti from 'canvas-confetti';
@@ -297,8 +297,11 @@ export default function CharacterCreate() {
           completed.push(index);
           break;
         case 'attributes':
-          const total = Object.values(formData.attributes).reduce((a, b) => a + b, 0);
-          if (total === 9 || total === 10) completed.push(index);
+          // Usa validateAttributes do engine para considerar NEX corretamente
+          const attrValidation = validateAttributes(formData.attributes, formData.nex);
+          if (attrValidation.valid && attrValidation.remainingPoints === 0) {
+            completed.push(index);
+          }
           break;
         case 'origin':
           if (formData.origin !== '') completed.push(index);

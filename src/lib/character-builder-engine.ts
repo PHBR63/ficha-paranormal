@@ -219,8 +219,9 @@ export function validateAttributes(allocation: AttributeAllocation, nex: number 
 
 /**
  * Retorna o valor máximo de atributo permitido baseado no NEX
+ * Exportada para uso em outros componentes
  */
-function getMaxAttributeByNex(nex: number): number {
+export function getMaxAttributeByNex(nex: number): number {
   // Na criação (NEX 5%) o máximo é 3
   // A cada avanço de NEX, o limite pode aumentar (regra do livro)
   // Por simplicidade: NEX 5-15% = 3, NEX 20-35% = 4, NEX 40%+ = 5
