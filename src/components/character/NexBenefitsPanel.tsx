@@ -147,7 +147,7 @@ export function NexBenefitsPanel({
           <TrendingUp className="w-4 h-4" />
           BENEFÍCIOS DO NEX {nex}%
         </h4>
-        <Badge variant="outline" className="font-display">
+        <Badge variant="outline" className="font-display font-normal">
           {patent}
         </Badge>
       </div>
