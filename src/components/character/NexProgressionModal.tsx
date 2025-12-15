@@ -1,5 +1,8 @@
-// Modal de Progressão de NEX
-// Permite subir de nível, recalcular stats e desbloquear habilidades/rituais
+/**
+ * Modal de Progressão de NEX
+ * Permite subir de nível, recalcular stats, desbloquear habilidades/rituais,
+ * escolher poderes paranormais via Transcender e selecionar Afinidade Elemental no NEX 50%
+ */
 
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -14,6 +17,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   ArrowUp,
   Sparkles,
@@ -28,6 +32,9 @@ import {
   Route,
   Check,
   Loader2,
+  Droplet,
+  Skull,
+  Star,
 } from 'lucide-react';
 import { 
   CLASSES, 
@@ -37,10 +44,27 @@ import {
   getAvailableTrackAbilities,
 } from '@/lib/character-data';
 import { getMaxRitualCircle, getRitualCount } from '@/lib/rituals-data';
+import {
+  ParanormalPower,
+  ParanormalElement,
+  ELEMENT_LABELS,
+  ELEMENT_COLORS,
+  ELEMENT_BG_COLORS,
+  AFFINITY_DESCRIPTIONS,
+} from '@/lib/paranormal-powers';
+import { ParanormalPowerSelectModal } from './ParanormalPowerSelectModal';
 import confetti from 'canvas-confetti';
 
 // NEX válidos (incremento de 5%)
 const NEX_VALUES = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 99];
+
+// Ícones por elemento para seleção de afinidade
+const AFFINITY_ICONS: Record<ParanormalElement, React.ComponentType<{ className?: string }>> = {
+  sangue: Droplet,
+  morte: Skull,
+  conhecimento: BookOpen,
+  energia: Zap,
+};
 
 interface NexProgressionModalProps {
   open: boolean;
@@ -59,6 +83,9 @@ interface NexProgressionModalProps {
     san_max: number;
     rituals: string[];
     abilities: string[];
+    paranormal_powers?: ParanormalPower[];
+    elemental_affinity?: ParanormalElement | null;
+    affinity_active?: boolean;
   };
   onLevelUp: (newNex: number, newStats: {
     hp_max: number;
@@ -66,6 +93,9 @@ interface NexProgressionModalProps {
     san_max: number;
     patent: string;
     newAbilities: string[];
+    elemental_affinity?: ParanormalElement | null;
+    affinity_active?: boolean;
+    paranormal_powers?: ParanormalPower[];
   }) => Promise<void>;
 }
 
@@ -77,9 +107,31 @@ export function NexProgressionModal({
 }: NexProgressionModalProps) {
   const [selectedNex, setSelectedNex] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
-
+  
+  // Estado para seleção de Afinidade Elemental
+  const [selectedAffinity, setSelectedAffinity] = useState<ParanormalElement | null>(null);
+  
+  // Estado para modal de seleção de poderes paranormais
+  const [powerSelectOpen, setPowerSelectOpen] = useState(false);
+  const [pendingPowers, setPendingPowers] = useState<ParanormalPower[]>(
+    character.paranormal_powers || []
+  );
+  
+  // Verificar se está subindo para NEX 50% (escolhe afinidade)
   const currentNexIndex = NEX_VALUES.indexOf(character.nex);
   const nextNex = currentNexIndex < NEX_VALUES.length - 1 ? NEX_VALUES[currentNexIndex + 1] : null;
+  const isReachingNex50 = nextNex === 50 && !character.elemental_affinity;
+  
+  // Verificar se terá habilidade Transcender disponível
+  const hasTranscender = useMemo(() => {
+    // Verifica se o personagem tem a habilidade Transcender (Ocultista ou trilha específica)
+    const abilities = character.abilities || [];
+    return abilities.some(a => 
+      typeof a === 'string' 
+        ? a.toLowerCase().includes('transcender')
+        : (a as any)?.name?.toLowerCase().includes('transcender')
+    );
+  }, [character.abilities]);
 
   // Calcula stats para NEX atual e próximo
   const currentStats = useMemo(() => {
@@ -119,6 +171,11 @@ export function NexProgressionModal({
   const newTrackAbilities = nextTrackAbilities.filter(
     a => !currentTrackAbilities.some(c => c.id === a.id)
   );
+  
+  // Verifica se alguma nova habilidade é Transcender
+  const newTranscenderAbility = newTrackAbilities.find(a => 
+    a.name.toLowerCase().includes('transcender')
+  );
 
   // Rituais disponíveis (para Ocultistas)
   const isOcultist = character.class === 'Ocultista';
@@ -136,8 +193,19 @@ export function NexProgressionModal({
   const nextPatent = nextNex ? getPatentByNex(nextNex) : null;
   const patentChanged = nextPatent && nextPatent !== currentPatent;
 
+  // Handler para selecionar poder paranormal
+  const handleSelectPower = (power: ParanormalPower) => {
+    setPendingPowers(prev => [...prev, power]);
+    setPowerSelectOpen(false);
+  };
+
   const handleLevelUp = async () => {
     if (!nextNex || !nextStats) return;
+    
+    // Validação: se está chegando no NEX 50%, precisa escolher afinidade
+    if (isReachingNex50 && !selectedAffinity) {
+      return; // Não permite subir sem escolher afinidade
+    }
     
     setSaving(true);
     
@@ -145,12 +213,29 @@ export function NexProgressionModal({
       // Calcula novas habilidades (adiciona as da trilha)
       const newAbilities = newTrackAbilities.map(a => a.name);
       
+      // Determina afinidade e se está ativa
+      let newAffinity = character.elemental_affinity || null;
+      let newAffinityActive = character.affinity_active || false;
+      
+      if (isReachingNex50 && selectedAffinity) {
+        newAffinity = selectedAffinity;
+      }
+      
+      // Se já tem afinidade e está subindo de NEX (primeira vez após escolher),
+      // ativa a afinidade
+      if (newAffinity && !newAffinityActive && nextNex > 50) {
+        newAffinityActive = true;
+      }
+      
       await onLevelUp(nextNex, {
         hp_max: nextStats.hp,
         pe_max: nextStats.pe,
         san_max: nextStats.san,
         patent: nextPatent || currentPatent,
         newAbilities,
+        elemental_affinity: newAffinity,
+        affinity_active: newAffinityActive,
+        paranormal_powers: pendingPowers,
       });
 
       // Efeito de celebração
@@ -196,211 +281,339 @@ export function NexProgressionModal({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh]">
-        <DialogHeader>
-          <DialogTitle className="font-display tracking-wider text-center flex items-center justify-center gap-2">
-            <ArrowUp className="w-5 h-5 text-primary" />
-            PROGRESSÃO DE NEX
-          </DialogTitle>
-          <DialogDescription className="text-center">
-            {character.name} está pronto para evoluir!
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={onClose}>
+        <DialogContent className="sm:max-w-2xl max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle className="font-display tracking-wider text-center flex items-center justify-center gap-2">
+              <ArrowUp className="w-5 h-5 text-primary" />
+              PROGRESSÃO DE NEX
+            </DialogTitle>
+            <DialogDescription className="text-center">
+              {character.name} está pronto para evoluir!
+            </DialogDescription>
+          </DialogHeader>
 
-        <ScrollArea className="max-h-[60vh] pr-4">
-          <div className="space-y-6 py-4">
-            {/* Comparação de NEX */}
-            <div className="flex items-center justify-center gap-6">
-              <div className="text-center">
-                <p className="text-xs text-muted-foreground mb-1">ATUAL</p>
-                <div className="w-24 h-24 rounded-lg bg-muted/50 border border-border flex flex-col items-center justify-center">
-                  <span className="font-display text-3xl">{character.nex}%</span>
-                  <span className="text-xs text-muted-foreground">{currentPatent}</span>
-                </div>
-              </div>
-              
-              <motion.div
-                animate={{ x: [0, 5, 0] }}
-                transition={{ duration: 1, repeat: Infinity }}
-              >
-                <ChevronRight className="w-8 h-8 text-primary" />
-              </motion.div>
-              
-              <div className="text-center">
-                <p className="text-xs text-primary mb-1">NOVO</p>
-                <div className="w-24 h-24 rounded-lg bg-primary/20 border border-primary flex flex-col items-center justify-center">
-                  <span className="font-display text-3xl text-primary">{nextNex}%</span>
-                  <span className="text-xs text-primary/70">{nextPatent}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Mudança de Patente */}
-            {patentChanged && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="p-4 bg-success/10 border border-success/30 rounded-lg text-center"
-              >
-                <Badge variant="secondary" className="bg-success/20 text-success mb-2">
-                  <Unlock className="w-3 h-3 mr-1" />
-                  PROMOÇÃO!
-                </Badge>
-                <p className="text-success font-display text-lg">
-                  {currentPatent} → {nextPatent}
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Novos itens e recursos disponíveis!
-                </p>
-              </motion.div>
-            )}
-
-            {/* Stats Changes */}
-            {nextStats && (
-              <div className="space-y-2">
-                <h4 className="font-display text-sm tracking-wider text-muted-foreground">
-                  AUMENTO DE STATS
-                </h4>
-                <div className="grid grid-cols-3 gap-3">
-                  {/* HP */}
-                  <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-lg text-center">
-                    <Heart className="w-5 h-5 text-destructive mx-auto mb-1" />
-                    <p className="text-xs text-muted-foreground">PV MÁX</p>
-                    <p className="font-display text-lg">
-                      {character.hp_max} → <span className="text-destructive">{nextStats.hp}</span>
-                    </p>
-                    <Badge variant="outline" className="text-xs text-destructive border-destructive/50">
-                      +{nextStats.hp - character.hp_max}
-                    </Badge>
+          <ScrollArea className="max-h-[60vh] pr-4">
+            <div className="space-y-6 py-4">
+              {/* Comparação de NEX */}
+              <div className="flex items-center justify-center gap-6">
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground mb-1">ATUAL</p>
+                  <div className="w-24 h-24 rounded-lg bg-muted/50 border border-border flex flex-col items-center justify-center">
+                    <span className="font-display text-3xl">{character.nex}%</span>
+                    <span className="text-xs text-muted-foreground">{currentPatent}</span>
                   </div>
-                  
-                  {/* PE */}
-                  <div className="p-3 bg-secondary/10 border border-secondary/30 rounded-lg text-center">
-                    <Zap className="w-5 h-5 text-secondary mx-auto mb-1" />
-                    <p className="text-xs text-muted-foreground">PE MÁX</p>
-                    <p className="font-display text-lg">
-                      {character.pe_max} → <span className="text-secondary">{nextStats.pe}</span>
-                    </p>
-                    <Badge variant="outline" className="text-xs text-secondary border-secondary/50">
-                      +{nextStats.pe - character.pe_max}
-                    </Badge>
-                  </div>
-                  
-                  {/* SAN */}
-                  <div className="p-3 bg-paranormal/10 border border-paranormal/30 rounded-lg text-center">
-                    <Brain className="w-5 h-5 text-paranormal mx-auto mb-1" />
-                    <p className="text-xs text-muted-foreground">SAN MÁX</p>
-                    <p className="font-display text-lg">
-                      {character.san_max} → <span className="text-paranormal">{nextStats.san}</span>
-                    </p>
-                    <Badge variant="outline" className="text-xs text-paranormal border-paranormal/50">
-                      +{nextStats.san - character.san_max}
-                    </Badge>
+                </div>
+                
+                <motion.div
+                  animate={{ x: [0, 5, 0] }}
+                  transition={{ duration: 1, repeat: Infinity }}
+                >
+                  <ChevronRight className="w-8 h-8 text-primary" />
+                </motion.div>
+                
+                <div className="text-center">
+                  <p className="text-xs text-primary mb-1">NOVO</p>
+                  <div className="w-24 h-24 rounded-lg bg-primary/20 border border-primary flex flex-col items-center justify-center">
+                    <span className="font-display text-3xl text-primary">{nextNex}%</span>
+                    <span className="text-xs text-primary/70">{nextPatent}</span>
                   </div>
                 </div>
               </div>
-            )}
 
-            {/* Novas Habilidades da Trilha */}
-            {newTrackAbilities.length > 0 && track && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-                className="space-y-2"
-              >
-                <div className="flex items-center gap-2">
-                  <Route className="w-4 h-4 text-primary" />
-                  <h4 className="font-display text-sm tracking-wider text-primary">
-                    NOVAS HABILIDADES DA TRILHA
-                  </h4>
-                </div>
-                <div className="space-y-2">
-                  {newTrackAbilities.map((ability) => (
-                    <div 
-                      key={ability.id}
-                      className="p-3 bg-primary/10 border border-primary/30 rounded-lg"
-                    >
-                      <div className="flex items-center gap-2 mb-1">
-                        <Unlock className="w-4 h-4 text-primary" />
-                        <span className="font-medium text-primary">{ability.name}</span>
-                        <Badge variant="outline" className="text-xs">NEX {ability.minNex}%</Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">{ability.description}</p>
-                    </div>
-                  ))}
-                </div>
-              </motion.div>
-            )}
-
-            {/* Novos Rituais (Ocultistas) */}
-            {isOcultist && (newRitualSlots > 0 || newMaxCircle) && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="space-y-2"
-              >
-                <div className="flex items-center gap-2">
-                  <BookOpen className="w-4 h-4 text-paranormal" />
-                  <h4 className="font-display text-sm tracking-wider text-paranormal">
-                    PROGRESSÃO DE RITUAIS
-                  </h4>
-                </div>
-                <div className="p-4 bg-paranormal/10 border border-paranormal/30 rounded-lg">
-                  <div className="grid grid-cols-2 gap-4">
-                    {newRitualSlots > 0 && (
-                      <div className="text-center">
-                        <p className="text-xs text-muted-foreground mb-1">RITUAIS CONHECIDOS</p>
-                        <p className="font-display text-xl">
-                          {currentRitualInfo.count} → <span className="text-paranormal">{nextRitualInfo?.count}</span>
-                        </p>
-                        <Badge variant="outline" className="text-xs text-paranormal border-paranormal/50">
-                          +{newRitualSlots} novo{newRitualSlots > 1 ? 's' : ''}
-                        </Badge>
-                      </div>
-                    )}
-                    {newMaxCircle && (
-                      <div className="text-center">
-                        <p className="text-xs text-muted-foreground mb-1">CÍRCULO MÁXIMO</p>
-                        <p className="font-display text-xl">
-                          {currentRitualInfo.maxCircle}º → <span className="text-paranormal">{nextRitualInfo?.maxCircle}º</span>
-                        </p>
-                        <Badge variant="outline" className="text-xs text-paranormal border-paranormal/50">
-                          <Unlock className="w-3 h-3 mr-1" />
-                          Desbloqueado!
-                        </Badge>
-                      </div>
-                    )}
-                  </div>
-                  <p className="text-xs text-muted-foreground text-center mt-3">
-                    Você poderá escolher novos rituais após subir de NEX.
+              {/* Mudança de Patente */}
+              {patentChanged && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="p-4 bg-success/10 border border-success/30 rounded-lg text-center"
+                >
+                  <Badge variant="secondary" className="bg-success/20 text-success mb-2">
+                    <Unlock className="w-3 h-3 mr-1" />
+                    PROMOÇÃO!
+                  </Badge>
+                  <p className="text-success font-display text-lg">
+                    {currentPatent} → {nextPatent}
                   </p>
-                </div>
-              </motion.div>
-            )}
-          </div>
-        </ScrollArea>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Novos itens e recursos disponíveis!
+                  </p>
+                </motion.div>
+              )}
 
-        <DialogFooter className="gap-2">
-          <Button variant="outline" onClick={onClose} disabled={saving}>
-            Cancelar
-          </Button>
-          <Button 
-            onClick={handleLevelUp} 
-            disabled={saving}
-            className="bg-primary hover:bg-primary/90"
-          >
-            {saving ? (
-              <Loader2 className="w-4 h-4 animate-spin mr-2" />
-            ) : (
-              <ArrowUp className="w-4 h-4 mr-2" />
-            )}
-            SUBIR PARA NEX {nextNex}%
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+              {/* Seleção de Afinidade Elemental (NEX 50%) */}
+              {isReachingNex50 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="space-y-3"
+                >
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-paranormal" />
+                    <h4 className="font-display text-sm tracking-wider text-paranormal">
+                      ESCOLHER AFINIDADE ELEMENTAL
+                    </h4>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Ao atingir NEX 50%, você desenvolve uma afinidade com um dos elementos paranormais.
+                    Poderes desse elemento terão efeitos aprimorados.
+                  </p>
+                  
+                  <div className="grid grid-cols-2 gap-3">
+                    {(['sangue', 'morte', 'conhecimento', 'energia'] as ParanormalElement[]).map((element) => {
+                      const Icon = AFFINITY_ICONS[element];
+                      const isSelected = selectedAffinity === element;
+                      const colorClass = ELEMENT_COLORS[element];
+                      const bgClass = ELEMENT_BG_COLORS[element];
+                      
+                      return (
+                        <Card
+                          key={element}
+                          className={`
+                            cursor-pointer transition-all duration-200
+                            ${isSelected 
+                              ? 'ring-2 ring-primary border-primary bg-primary/10' 
+                              : 'hover:border-primary/50 hover:bg-muted/50'
+                            }
+                          `}
+                          onClick={() => setSelectedAffinity(element)}
+                        >
+                          <CardHeader className="pb-2">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <div className={`p-2 rounded ${bgClass}`}>
+                                  <Icon className={`h-4 w-4 ${colorClass}`} />
+                                </div>
+                                <CardTitle className="text-sm">{ELEMENT_LABELS[element]}</CardTitle>
+                              </div>
+                              {isSelected && (
+                                <Check className="h-5 w-5 text-primary" />
+                              )}
+                            </div>
+                          </CardHeader>
+                          <CardContent>
+                            <CardDescription className="text-xs">
+                              {AFFINITY_DESCRIPTIONS[element]}
+                            </CardDescription>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                  
+                  {!selectedAffinity && (
+                    <p className="text-xs text-warning text-center">
+                      ⚠️ Você precisa escolher uma afinidade elemental para continuar
+                    </p>
+                  )}
+                </motion.div>
+              )}
+
+              {/* Stats Changes */}
+              {nextStats && (
+                <div className="space-y-2">
+                  <h4 className="font-display text-sm tracking-wider text-muted-foreground">
+                    AUMENTO DE STATS
+                  </h4>
+                  <div className="grid grid-cols-3 gap-3">
+                    {/* HP */}
+                    <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-lg text-center">
+                      <Heart className="w-5 h-5 text-destructive mx-auto mb-1" />
+                      <p className="text-xs text-muted-foreground">PV MÁX</p>
+                      <p className="font-display text-lg">
+                        {character.hp_max} → <span className="text-destructive">{nextStats.hp}</span>
+                      </p>
+                      <Badge variant="outline" className="text-xs text-destructive border-destructive/50">
+                        +{nextStats.hp - character.hp_max}
+                      </Badge>
+                    </div>
+                    
+                    {/* PE */}
+                    <div className="p-3 bg-secondary/10 border border-secondary/30 rounded-lg text-center">
+                      <Zap className="w-5 h-5 text-secondary mx-auto mb-1" />
+                      <p className="text-xs text-muted-foreground">PE MÁX</p>
+                      <p className="font-display text-lg">
+                        {character.pe_max} → <span className="text-secondary">{nextStats.pe}</span>
+                      </p>
+                      <Badge variant="outline" className="text-xs text-secondary border-secondary/50">
+                        +{nextStats.pe - character.pe_max}
+                      </Badge>
+                    </div>
+                    
+                    {/* SAN */}
+                    <div className="p-3 bg-paranormal/10 border border-paranormal/30 rounded-lg text-center">
+                      <Brain className="w-5 h-5 text-paranormal mx-auto mb-1" />
+                      <p className="text-xs text-muted-foreground">SAN MÁX</p>
+                      <p className="font-display text-lg">
+                        {character.san_max} → <span className="text-paranormal">{nextStats.san}</span>
+                      </p>
+                      <Badge variant="outline" className="text-xs text-paranormal border-paranormal/50">
+                        +{nextStats.san - character.san_max}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Novas Habilidades da Trilha */}
+              {newTrackAbilities.length > 0 && track && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 }}
+                  className="space-y-2"
+                >
+                  <div className="flex items-center gap-2">
+                    <Route className="w-4 h-4 text-primary" />
+                    <h4 className="font-display text-sm tracking-wider text-primary">
+                      NOVAS HABILIDADES DA TRILHA
+                    </h4>
+                  </div>
+                  <div className="space-y-2">
+                    {newTrackAbilities.map((ability) => (
+                      <div 
+                        key={ability.id}
+                        className="p-3 bg-primary/10 border border-primary/30 rounded-lg"
+                      >
+                        <div className="flex items-center gap-2 mb-1">
+                          <Unlock className="w-4 h-4 text-primary" />
+                          <span className="font-medium text-primary">{ability.name}</span>
+                          <Badge variant="outline" className="text-xs">NEX {ability.minNex}%</Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground">{ability.description}</p>
+                        
+                        {/* Botão para escolher poder paranormal se for Transcender */}
+                        {ability.name.toLowerCase().includes('transcender') && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="mt-2"
+                            onClick={() => setPowerSelectOpen(true)}
+                          >
+                            <Sparkles className="w-4 h-4 mr-2" />
+                            Escolher Poder Paranormal
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Seção de Poderes Paranormais Pendentes */}
+              {pendingPowers.length > (character.paranormal_powers?.length || 0) && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="space-y-2"
+                >
+                  <div className="flex items-center gap-2">
+                    <Star className="w-4 h-4 text-paranormal" />
+                    <h4 className="font-display text-sm tracking-wider text-paranormal">
+                      NOVOS PODERES PARANORMAIS
+                    </h4>
+                  </div>
+                  <div className="space-y-2">
+                    {pendingPowers
+                      .filter(p => !character.paranormal_powers?.some(cp => cp.id === p.id))
+                      .map((power) => (
+                        <div
+                          key={power.id}
+                          className="p-3 bg-paranormal/10 border border-paranormal/30 rounded-lg"
+                        >
+                          <div className="flex items-center gap-2 mb-1">
+                            <Check className="w-4 h-4 text-paranormal" />
+                            <span className="font-medium text-paranormal">{power.name}</span>
+                            <Badge variant="outline" className="text-xs">
+                              {ELEMENT_LABELS[power.element]}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground">{power.description}</p>
+                        </div>
+                      ))}
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Novos Rituais (Ocultistas) */}
+              {isOcultist && (newRitualSlots > 0 || newMaxCircle) && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="space-y-2"
+                >
+                  <div className="flex items-center gap-2">
+                    <BookOpen className="w-4 h-4 text-paranormal" />
+                    <h4 className="font-display text-sm tracking-wider text-paranormal">
+                      PROGRESSÃO DE RITUAIS
+                    </h4>
+                  </div>
+                  <div className="p-4 bg-paranormal/10 border border-paranormal/30 rounded-lg">
+                    <div className="grid grid-cols-2 gap-4">
+                      {newRitualSlots > 0 && (
+                        <div className="text-center">
+                          <p className="text-xs text-muted-foreground mb-1">RITUAIS CONHECIDOS</p>
+                          <p className="font-display text-xl">
+                            {currentRitualInfo.count} → <span className="text-paranormal">{nextRitualInfo?.count}</span>
+                          </p>
+                          <Badge variant="outline" className="text-xs text-paranormal border-paranormal/50">
+                            +{newRitualSlots} novo{newRitualSlots > 1 ? 's' : ''}
+                          </Badge>
+                        </div>
+                      )}
+                      {newMaxCircle && (
+                        <div className="text-center">
+                          <p className="text-xs text-muted-foreground mb-1">CÍRCULO MÁXIMO</p>
+                          <p className="font-display text-xl">
+                            {currentRitualInfo.maxCircle}º → <span className="text-paranormal">{nextRitualInfo?.maxCircle}º</span>
+                          </p>
+                          <Badge variant="outline" className="text-xs text-paranormal border-paranormal/50">
+                            <Unlock className="w-3 h-3 mr-1" />
+                            Desbloqueado!
+                          </Badge>
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground text-center mt-3">
+                      Você poderá escolher novos rituais após subir de NEX.
+                    </p>
+                  </div>
+                </motion.div>
+              )}
+            </div>
+          </ScrollArea>
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={onClose} disabled={saving}>
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleLevelUp} 
+              disabled={saving || (isReachingNex50 && !selectedAffinity)}
+              className="bg-primary hover:bg-primary/90"
+            >
+              {saving ? (
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              ) : (
+                <ArrowUp className="w-4 h-4 mr-2" />
+              )}
+              SUBIR PARA NEX {nextNex}%
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Seleção de Poderes Paranormais */}
+      <ParanormalPowerSelectModal
+        open={powerSelectOpen}
+        onOpenChange={setPowerSelectOpen}
+        onSelectPower={handleSelectPower}
+        characterPowers={pendingPowers}
+        elementalAffinity={selectedAffinity || character.elemental_affinity}
+        affinityActive={character.affinity_active}
+      />
+    </>
   );
 }
