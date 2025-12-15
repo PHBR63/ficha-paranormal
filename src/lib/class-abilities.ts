@@ -17,66 +17,225 @@ export interface ClassAbility {
 }
 
 // ==================== HABILIDADES DO COMBATENTE ====================
+// Textos oficiais do livro base Ordem Paranormal RPG
 
 export const COMBATENTE_ABILITIES: ClassAbility[] = [
+  // ========== HABILIDADES CORE (automáticas) ==========
+  
   // NEX 5% - Inicial
   { 
     id: 'ataque-especial', 
     name: 'Ataque Especial', 
-    description: 'Ao acertar um ataque, você pode gastar 2 PE para causar +1d8 de dano. Para cada +2 PE extras gastos, causa +1d8 de dano adicional (limitado pelo seu NEX/5).', 
+    description: 'Quando faz um ataque, você pode gastar 2 PE para receber +5 no teste de ataque ou na rolagem de dano. Conforme avança de NEX, você pode gastar +1 PE para receber mais bônus de +5 (veja a Tabela 1.3). Você pode aplicar cada bônus de +5 em ataque ou dano. Por exemplo, em NEX 55%, você pode gastar 4 PE para receber +5 no teste de ataque e +10 na rolagem de dano.', 
     minNex: 5, 
     classId: 'Combatente', 
     isCore: true 
   },
   
-  // NEX 10%
-  { id: 'incansavel', name: 'Incansável', description: 'Uma vez por cena, você pode ignorar os efeitos de uma condição de fadiga ou exaustão por uma rodada.', minNex: 10, classId: 'Combatente' },
-  { id: 'golpe-brutal', name: 'Golpe Brutal', description: 'Quando você acerta um ataque crítico, causa +1d12 de dano adicional.', minNex: 10, classId: 'Combatente' },
-  { id: 'proteger-aliado', name: 'Proteger Aliado', description: 'Quando um aliado adjacente sofrer um ataque, você pode usar sua reação para se tornar o alvo do ataque.', minNex: 10, classId: 'Combatente' },
-  { id: 'reflexos-combate', name: 'Reflexos de Combate', description: 'Você não fica desprevenido contra ataques corpo a corpo e pode fazer ataques de oportunidade mesmo quando desprevenido.', minNex: 10, classId: 'Combatente' },
+  // Habilidade de Trilha - explicação do sistema
+  { 
+    id: 'habilidade-trilha-combatente', 
+    name: 'Habilidade de Trilha', 
+    description: 'Em NEX 10% você escolhe uma das trilhas de combatente e recebe o primeiro poder da trilha escolhida. Você recebe um novo poder da trilha escolhida em NEX 40%, 65% e 99%.', 
+    minNex: 10, 
+    classId: 'Combatente', 
+    isCore: true 
+  },
   
-  // NEX 15%
-  { id: 'saque-rapido', name: 'Saque Rápido', description: 'Você pode sacar ou guardar itens como ação livre e recebe +2 em Iniciativa.', minNex: 15, classId: 'Combatente' },
-  { id: 'tolerancia-dor', name: 'Tolerância à Dor', description: 'Você recebe resistência a dano 2 (todos os tipos, exceto mental).', minNex: 15, classId: 'Combatente' },
+  // NEX 20% - Aumento de Atributo
+  { 
+    id: 'aumento-atributo-20', 
+    name: 'Aumento de Atributo', 
+    description: 'Aumente um atributo em +1. Você não pode aumentar um atributo além de 5 dessa forma.', 
+    minNex: 20, 
+    classId: 'Combatente', 
+    isCore: true 
+  },
   
-  // NEX 20%
-  { id: 'ataque-extra', name: 'Ataque Extra', description: 'Você pode fazer um ataque adicional quando usa a ação atacar.', minNex: 20, classId: 'Combatente', isCore: true },
-  { id: 'especialista-armas', name: 'Especialista em Armas', description: 'Escolha um tipo de arma (espadas, armas de fogo, etc.). Você recebe +2 em ataques e +1 no multiplicador de crítico com esse tipo.', minNex: 20, classId: 'Combatente' },
-  { id: 'dureza', name: 'Dureza', description: 'Seu limite de PV aumenta em +10.', minNex: 20, classId: 'Combatente' },
+  // NEX 35% - Grau de Treinamento
+  { 
+    id: 'grau-treinamento-35', 
+    name: 'Grau de Treinamento', 
+    description: 'Escolha um número de perícias treinadas igual a 2 + Int. Seu grau de treinamento nessas perícias aumenta (de treinado para veterano, ou de veterano para expert).', 
+    minNex: 35, 
+    classId: 'Combatente', 
+    isCore: true 
+  },
   
-  // NEX 25%
-  { id: 'furia-combate', name: 'Fúria de Combate', description: 'Quando sua vida cai abaixo da metade, você recebe +2 em ataques e +4 em dano até o fim do combate.', minNex: 25, classId: 'Combatente' },
-  { id: 'veterano-guerra', name: 'Veterano de Guerra', description: 'Você recebe +2 em todos os testes de resistência (Fortitude, Reflexos e Vontade).', minNex: 25, classId: 'Combatente' },
+  // NEX 50% - Aumento de Atributo + Versatilidade
+  { 
+    id: 'aumento-atributo-50', 
+    name: 'Aumento de Atributo', 
+    description: 'Aumente um atributo em +1. Você não pode aumentar um atributo além de 5 dessa forma.', 
+    minNex: 50, 
+    classId: 'Combatente', 
+    isCore: true 
+  },
+  { 
+    id: 'versatilidade', 
+    name: 'Versatilidade', 
+    description: 'Escolha entre receber um poder de combatente ou o primeiro poder de uma trilha de combatente que não a sua.', 
+    minNex: 50, 
+    classId: 'Combatente', 
+    isCore: true 
+  },
   
-  // NEX 30%
-  { id: 'precisao-mortal', name: 'Precisão Mortal', description: 'Sua margem de ameaça com armas aumenta em +2.', minNex: 30, classId: 'Combatente' },
-  { id: 'investida-implacavel', name: 'Investida Implacável', description: 'Quando faz uma investida, você não sofre penalidade em Defesa e causa +2d8 de dano.', minNex: 30, classId: 'Combatente' },
+  // NEX 70% - Grau de Treinamento
+  { 
+    id: 'grau-treinamento-70', 
+    name: 'Grau de Treinamento', 
+    description: 'Escolha um número de perícias treinadas igual a 2 + Int. Seu grau de treinamento nessas perícias aumenta (de treinado para veterano, ou de veterano para expert).', 
+    minNex: 70, 
+    classId: 'Combatente', 
+    isCore: true 
+  },
   
-  // NEX 35%
-  { id: 'mestre-criticos', name: 'Mestre de Críticos', description: 'Quando confirma um crítico, você pode gastar 2 PE para maximizar o dano do crítico.', minNex: 35, classId: 'Combatente' },
-  { id: 'resistencia-superior', name: 'Resistência Superior', description: 'Sua resistência a dano aumenta para 5 (todos os tipos, exceto mental).', minNex: 35, classId: 'Combatente' },
+  // NEX 80% - Aumento de Atributo
+  { 
+    id: 'aumento-atributo-80', 
+    name: 'Aumento de Atributo', 
+    description: 'Aumente um atributo em +1. Você não pode aumentar um atributo além de 5 dessa forma.', 
+    minNex: 80, 
+    classId: 'Combatente', 
+    isCore: true 
+  },
   
-  // NEX 40%
-  { id: 'golpe-devastador', name: 'Golpe Devastador', description: 'Uma vez por turno, quando acerta um ataque, pode gastar 5 PE para causar +3d12 de dano.', minNex: 40, classId: 'Combatente' },
+  // ========== PODERES DE COMBATENTE (escolhíveis) ==========
+  // Recebe em NEX 15%, 30%, 45%, 60%, 75%, 90%
   
-  // NEX 45%
-  { id: 'indomavel', name: 'Indomável', description: 'Você é imune a efeitos de medo e recebe +5 em testes de Vontade.', minNex: 45, classId: 'Combatente' },
-  
-  // NEX 50%
-  { id: 'segundo-ataque-extra', name: 'Segundo Ataque Extra', description: 'Você pode fazer dois ataques adicionais quando usa a ação atacar (três ataques no total).', minNex: 50, classId: 'Combatente', isCore: true },
-  { id: 'mestre-armas', name: 'Mestre das Armas', description: 'Seus ataques ignoram 5 pontos de resistência a dano do alvo.', minNex: 50, classId: 'Combatente' },
-  
-  // NEX 55%+
-  { id: 'ultimo-suspiro', name: 'Último Suspiro', description: 'Uma vez por dia, quando seria reduzido a 0 PV, você fica com 1 PV em vez disso.', minNex: 55, classId: 'Combatente' },
-  { id: 'ira-implacavel', name: 'Ira Implacável', description: 'Quando ativa Fúria de Combate, os bônus aumentam para +4 em ataques e +8 em dano.', minNex: 60, classId: 'Combatente' },
-  { id: 'destruidor', name: 'Destruidor', description: 'Seus ataques ignoram resistência a dano completamente.', minNex: 65, classId: 'Combatente' },
-  
-  // NEX 75%
-  { id: 'terceiro-ataque-extra', name: 'Terceiro Ataque Extra', description: 'Você pode fazer três ataques adicionais quando usa a ação atacar (quatro ataques no total).', minNex: 75, classId: 'Combatente', isCore: true },
-  { id: 'lenda-combate', name: 'Lenda do Combate', description: 'Você não pode ser surpreendido, recebe +10 em iniciativa e seus ataques causam +2d8 de dano permanente.', minNex: 75, classId: 'Combatente' },
-  
-  // NEX 99%
-  { id: 'avatar-guerra', name: 'Avatar da Guerra', description: 'Uma vez por dia, você pode entrar em um estado de combate perfeito por 1 minuto. Durante esse tempo, todos os seus ataques são críticos automáticos e você é imune a dano.', minNex: 99, classId: 'Combatente', isCore: true },
+  { 
+    id: 'armamento-pesado', 
+    name: 'Armamento Pesado', 
+    description: 'Você recebe proficiência com armas pesadas. Pré-requisito: For 2.', 
+    minNex: 15, 
+    classId: 'Combatente' 
+  },
+  { 
+    id: 'artista-marcial', 
+    name: 'Artista Marcial', 
+    description: 'Seus ataques desarmados causam 1d6 pontos de dano, podendo causar dano letal se tornar ágeis (veja p. 59). Em NEX 35%, o dano aumenta para 1d8 e, em NEX 70%, para 1d10.', 
+    minNex: 15, 
+    classId: 'Combatente' 
+  },
+  { 
+    id: 'ataque-de-oportunidade', 
+    name: 'Ataque de Oportunidade', 
+    description: 'Sempre que um adversário dentro de seu alcance ao seu sair, você pode gastar uma reação e 1 PE para fazer um ataque corpo a corpo contra ele.', 
+    minNex: 15, 
+    classId: 'Combatente' 
+  },
+  { 
+    id: 'combater-duas-armas', 
+    name: 'Combater com Duas Armas', 
+    description: 'Se estiver empunhando duas armas e pelo menos uma for leve, e fizer a ação agredir, você pode fazer dois ataques, um com cada arma. Se fizer isso, sofre –2 em todos os testes de ataque até o seu próximo turno. Pré-requisitos: Agi 3, treinado em Luta ou Pontaria.', 
+    minNex: 15, 
+    classId: 'Combatente' 
+  },
+  { 
+    id: 'combate-defensivo', 
+    name: 'Combate Defensivo', 
+    description: 'Quando usa a ação agredir, você pode combater defensivamente. Se fizer isso, até seu próximo turno, sofre –2 em todos os testes de ataque, mas recebe +5 na Defesa. Pré-requisito: Int 2.', 
+    minNex: 15, 
+    classId: 'Combatente' 
+  },
+  { 
+    id: 'golpe-demolidor', 
+    name: 'Golpe Demolidor', 
+    description: 'Quando usa a manobra quebrar um objeto, você pode gastar 1 PE para causar dois dados de dano do mesmo tipo de sua arma. Pré-requisitos: For 2, treinado em Luta.', 
+    minNex: 15, 
+    classId: 'Combatente' 
+  },
+  { 
+    id: 'golpe-pesado', 
+    name: 'Golpe Pesado', 
+    description: 'Enquanto estiver empunhando uma arma corpo a corpo, o dano dela aumenta em mais um dado do mesmo tipo.', 
+    minNex: 15, 
+    classId: 'Combatente' 
+  },
+  { 
+    id: 'incansavel', 
+    name: 'Incansável', 
+    description: 'Uma vez por cena, você pode gastar 2 PE para fazer uma ação de investigação adicional, mas deve usar Força ou Agilidade como atributo-base do teste.', 
+    minNex: 15, 
+    classId: 'Combatente' 
+  },
+  { 
+    id: 'presteza-atletica', 
+    name: 'Presteza Atlética', 
+    description: 'Quando faz um teste de facilitar a investigação, você pode gastar 1 PE para usar Força ou Agilidade no lugar do atributo-base da perícia. Se passar no teste, o próximo aliado que usar essa ação também recebe +5 no teste.', 
+    minNex: 15, 
+    classId: 'Combatente' 
+  },
+  { 
+    id: 'protecao-pesada', 
+    name: 'Proteção Pesada', 
+    description: 'Você recebe proficiência com Proteções Pesadas. Pré-requisito: NEX 30%.', 
+    minNex: 30, 
+    classId: 'Combatente' 
+  },
+  { 
+    id: 'reflexos-defensivos', 
+    name: 'Reflexos Defensivos', 
+    description: 'Você recebe +2 em Defesa e em testes de resistência. Pré-requisitos: Agi 2.', 
+    minNex: 15, 
+    classId: 'Combatente' 
+  },
+  { 
+    id: 'saque-rapido', 
+    name: 'Saque Rápido', 
+    description: 'Você pode sacar ou guardar itens como uma ação livre, em vez de ação de movimento. Além disso, pode recarregar uma arma de fogo sem contar munição uma vez por rodada. Pré-requisito: treinado em Iniciativa.', 
+    minNex: 15, 
+    classId: 'Combatente' 
+  },
+  { 
+    id: 'segurar-gatilho', 
+    name: 'Segurar o Gatilho', 
+    description: 'Sempre que acerta um ataque com uma arma de fogo, pode fazer outro ataque com a mesma arma contra o mesmo alvo, pagando 2 PE por ataque adicional no turno. Pode repetir até errar, atingir o limite de PE por rodada. Pré-requisito: NEX 60%.', 
+    minNex: 60, 
+    classId: 'Combatente' 
+  },
+  { 
+    id: 'sentido-tatico', 
+    name: 'Sentido Tático', 
+    description: 'Você pode gastar uma ação de movimento e 2 PE para analisar o ambiente. Se fizer isso, recebe um bônus em Defesa e testes de resistência igual ao seu Intelecto até o final da cena. Pré-requisitos: Int 2, treinado em Percepção e Tática.', 
+    minNex: 15, 
+    classId: 'Combatente' 
+  },
+  { 
+    id: 'tanque-de-guerra', 
+    name: 'Tanque de Guerra', 
+    description: 'Se estiver usando uma proteção pesada, sua Defesa e resistência a dano que ela fornece aumentam em +2. Pré-requisito: Proteção Pesada.', 
+    minNex: 30, 
+    classId: 'Combatente' 
+  },
+  { 
+    id: 'tiro-certeiro', 
+    name: 'Tiro Certeiro', 
+    description: 'Se estiver usando uma arma de disparo, você soma sua Agilidade nas rolagens de dano e ignora a cobertura dos alvos envolvidos em combate corpo a corpo (mesmo se não usar a ação mirar). Pré-requisito: treinado em Pontaria.', 
+    minNex: 15, 
+    classId: 'Combatente' 
+  },
+  { 
+    id: 'tiro-de-cobertura', 
+    name: 'Tiro de Cobertura', 
+    description: 'Você pode gastar uma ação padrão e 1 PE para disparar uma arma de fogo na direção de um ser no alcance da arma para forçá-lo a se proteger. Faça um teste de Pontaria contra a Vontade do alvo. Se vencer, até o início do seu próximo turno o alvo não pode sair do lugar onde está e sofre –5 em testes de ataque. Se estiver em local extremamente perigoso, sofre também um efeito de medo.', 
+    minNex: 15, 
+    classId: 'Combatente' 
+  },
+  { 
+    id: 'transcender', 
+    name: 'Transcender', 
+    description: 'Escolha um poder paranormal (veja p. 114). Você recebe o poder escolhido, mas não ganha Sanidade nem aumento de NEX. Você pode escolher este poder várias vezes.', 
+    minNex: 15, 
+    classId: 'Combatente' 
+  },
+  { 
+    id: 'treinamento-pericia', 
+    name: 'Treinamento em Perícia', 
+    description: 'Escolha duas perícias. Se estiver em NEX 35%, você pode escolher perícias nas quais já é treinado para se tornar veterano. Em NEX 70%, pode escolher perícias nas quais já é veterano para se tornar expert. Você pode escolher este poder várias vezes.', 
+    minNex: 15, 
+    classId: 'Combatente' 
+  },
 ];
 
 // ==================== HABILIDADES DO ESPECIALISTA ====================
