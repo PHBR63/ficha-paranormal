@@ -285,10 +285,10 @@ export function StepAttributes({ formData, updateFormData }: StepAttributesProps
                   <div className="flex items-center gap-2 mb-1">
                     <span className="font-display text-lg tracking-wider">{attr.name}</span>
                     <span className={cn(
-                      'text-xs px-2 py-0.5 rounded',
+                      'text-sm font-display font-bold px-2.5 py-1 rounded tracking-wider',
                       isZero 
                         ? 'bg-paranormal/20 text-paranormal' 
-                        : 'bg-accent/20 text-accent'
+                        : 'bg-primary/20 text-primary'
                     )}>
                       {attr.abbr}
                     </span>
