@@ -28,7 +28,8 @@ import {
   calculateDefense,
   getOcultistRituals,
   getAbilityChoicesByNex,
-  getExtraSkillsByNex
+  getExtraSkillsByNex,
+  getPatentByNex
 } from '@/lib/character-data';
 import { rebuildCharacterSheet, buildStateToFormData, CLASS_PROFICIENCIES, getClassSkillRules, validateAttributes } from '@/lib/character-builder-engine';
 import { getCoreAbilities, getChoosableAbilities } from '@/lib/class-abilities';
@@ -451,6 +452,9 @@ export default function CharacterCreate() {
         ...formData.trackAbilities
       ];
 
+      // Calcula a patente baseada no NEX
+      const patent = getPatentByNex(formData.nex);
+
       const { error } = await supabase.from('characters').insert({
         user_id: user.id,
         name: formData.name,
@@ -458,6 +462,7 @@ export default function CharacterCreate() {
         origin: formData.origin,
         class: formData.characterClass,
         nex: formData.nex,
+        patent: patent, // Patente calculada pelo NEX
         agility: formData.attributes.agility,
         strength: formData.attributes.strength,
         intellect: formData.attributes.intellect,
