@@ -1171,12 +1171,12 @@ function AttributeEditor({
     >
       <div className="flex items-center gap-3">
         <span 
-          className="font-display text-lg w-12"
+          className="font-display text-lg font-bold w-12 drop-shadow-sm"
           style={{ color }}
         >
           {abbr}
         </span>
-        <span className="text-sm text-muted-foreground flex items-center gap-1">
+        <span className="text-sm text-foreground/80 font-medium flex items-center gap-1">
           {label}
           {isChanged && <span className="w-2 h-2 rounded-full bg-warning animate-pulse" />}
           {tooltip && <FieldTooltip content={tooltip} />}
