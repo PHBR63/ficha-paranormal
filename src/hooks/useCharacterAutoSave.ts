@@ -17,7 +17,7 @@ export function useCharacterAutoSave(
 ) {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Save to localStorage
+// Save to localStorage (com tratamento de quota)
   const save = useCallback(() => {
     if (!enabled) return;
     
@@ -28,9 +28,25 @@ export function useCharacterAutoSave(
     };
     
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      const jsonData = JSON.stringify(data);
+      
+      // Se os dados forem muito grandes (>500KB), não salvar
+      if (jsonData.length > 500000) {
+        console.warn('Character draft too large to save, skipping auto-save');
+        return;
+      }
+      
+      localStorage.setItem(STORAGE_KEY, jsonData);
     } catch (error) {
-      console.error('Failed to save character draft:', error);
+      // Se der QuotaExceededError, limpar o draft antigo e tentar novamente
+      if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+        try {
+          localStorage.removeItem(STORAGE_KEY);
+          // Não tenta salvar novamente para evitar loop
+        } catch {
+          // Silently fail - não podemos fazer mais nada
+        }
+      }
     }
   }, [formData, currentStep, enabled]);
 
