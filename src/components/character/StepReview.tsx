@@ -546,6 +546,47 @@ export function StepReview({
                   </span>
                 </motion.div>
               )}
+
+              {/* Bloco de diagnóstico - aparece quando não há pendências visíveis mas canFinalize é false */}
+              {(() => {
+                const attrValidation = validateAttributes(formData.attributes);
+                const hasVisibleIssues = 
+                  (!formData.name || formData.name.trim().length < 2) ||
+                  !formData.origin ||
+                  !formData.characterClass ||
+                  attrValidation.remainingPoints > 0 ||
+                  attrValidation.errors.length > 0 ||
+                  (buildResult.pendingChoices && buildResult.pendingChoices.length > 0) ||
+                  (buildResult.pendingConflicts && buildResult.pendingConflicts.length > 0);
+
+                // Se não há pendências visíveis mas ainda não pode finalizar, mostra diagnóstico
+                if (!hasVisibleIssues && !canFinalize) {
+                  return (
+                    <motion.div 
+                      className="mt-4 p-3 bg-muted/50 border border-dashed border-muted-foreground/30 rounded-md text-xs text-muted-foreground"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.5 }}
+                    >
+                      <p className="font-semibold mb-2 text-foreground/70">🔍 Diagnóstico (debug):</p>
+                      <ul className="space-y-1 font-mono">
+                        <li>• nome: "{formData.name}" (min 2 chars: {formData.name.trim().length >= 2 ? '✓' : '✗'})</li>
+                        <li>• origem: {formData.origin || '(vazia)'} {formData.origin ? '✓' : '✗'}</li>
+                        <li>• classe: {formData.characterClass || '(vazia)'} {formData.characterClass ? '✓' : '✗'}</li>
+                        <li>• atributos válidos: {attrValidation.valid ? '✓' : '✗'}</li>
+                        <li>• pontos restantes: {attrValidation.remainingPoints} {attrValidation.remainingPoints === 0 ? '✓' : '✗'}</li>
+                        <li>• erros de atributo: {attrValidation.errors.length > 0 ? attrValidation.errors.join(', ') : 'nenhum ✓'}</li>
+                        <li>• escolhas pendentes: {buildResult.pendingChoices?.length || 0} {buildResult.pendingChoices?.length === 0 ? '✓' : '✗'}</li>
+                        <li>• conflitos pendentes: {buildResult.pendingConflicts?.length || 0} {buildResult.pendingConflicts?.length === 0 ? '✓' : '✗'}</li>
+                        {buildResult.pendingConflicts && buildResult.pendingConflicts.length > 0 && (
+                          <li className="text-warning">  → {buildResult.pendingConflicts.join(', ')}</li>
+                        )}
+                      </ul>
+                    </motion.div>
+                  );
+                }
+                return null;
+              })()}
             </div>
           </div>
         )}
