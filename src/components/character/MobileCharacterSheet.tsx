@@ -26,6 +26,7 @@ import {
   Search,
   SortAsc,
   Filter,
+  ChevronRight,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -33,6 +34,9 @@ import { AnimatedProgress } from '@/components/ui/animated-progress';
 import { cn } from '@/lib/utils';
 import { ORIGINS, getTrackById } from '@/lib/character-data';
 import { getPELimitByNex } from '@/lib/dice-roller';
+import { PowerDetailModal, PowerDetailData, PowerType } from './PowerDetailModal';
+import { ALL_RITUALS } from '@/lib/rituals-data';
+import { ALL_CLASS_ABILITIES } from '@/lib/class-abilities';
 
 // Tipos
 interface MobileCharacterSheetProps {
@@ -487,6 +491,9 @@ export function MobileCharacterSheet({
   onEditStats,
 }: MobileCharacterSheetProps) {
   const [activeTab, setActiveTab] = useState<MobileTab>('overview');
+  const [powerModalOpen, setPowerModalOpen] = useState(false);
+  const [selectedPower, setSelectedPower] = useState<PowerDetailData | null>(null);
+  
   const originData = ORIGINS.find(o => o.id === character.origin);
   const trackData = character.class_track ? getTrackById(character.class_track) : null;
   const peLimit = getPELimitByNex(character.nex);
@@ -496,6 +503,23 @@ export function MobileCharacterSheet({
   const sanPercent = (character.san_current / character.san_max) * 100;
   const isHpLow = hpPercent <= 25;
   const isSanLow = sanPercent <= 30;
+
+  // Handler para abrir modal de detalhes do poder
+  const handlePowerClick = (power: PowerDetailData) => {
+    setSelectedPower(power);
+    setPowerModalOpen(true);
+  };
+
+  // Buscar descrição de habilidade de classe pelo nome
+  const getAbilityDescription = (abilityName: string): string => {
+    const ability = ALL_CLASS_ABILITIES.find(a => a.name === abilityName);
+    return ability?.description || '';
+  };
+
+  // Buscar dados completos do ritual pelo nome
+  const getRitualData = (ritualName: string) => {
+    return ALL_RITUALS.find(r => r.name === ritualName || r.id === ritualName);
+  };
 
   return (
     <div className="pb-20">
@@ -760,7 +784,7 @@ export function MobileCharacterSheet({
               )}
             </div>
 
-            {/* Habilidades de Classe - Expandíveis */}
+            {/* Habilidades de Classe - Clicáveis */}
             {character.abilities.length > 0 && (
               <CollapsibleSection 
                 title="HABILIDADES DE CLASSE" 
@@ -770,15 +794,24 @@ export function MobileCharacterSheet({
               >
                 <div className="space-y-2">
                   {character.abilities.map((ability, i) => (
-                    <div key={i} className="p-2.5 bg-primary/10 rounded-lg border border-primary/20">
+                    <button
+                      key={i}
+                      onClick={() => handlePowerClick({
+                        type: 'ability',
+                        name: ability,
+                        description: getAbilityDescription(ability),
+                      })}
+                      className="w-full p-2.5 bg-primary/10 rounded-lg border border-primary/20 flex items-center justify-between active:bg-primary/20 transition-colors text-left"
+                    >
                       <span className="font-medium text-sm text-primary">{ability}</span>
-                    </div>
+                      <ChevronRight className="w-4 h-4 text-primary/50" />
+                    </button>
                   ))}
                 </div>
               </CollapsibleSection>
             )}
 
-            {/* Poderes Paranormais - Com ícones por elemento */}
+            {/* Poderes Paranormais - Clicáveis */}
             {character.paranormal_powers && character.paranormal_powers.length > 0 && (
               <CollapsibleSection 
                 title="PODERES PARANORMAIS" 
@@ -792,10 +825,19 @@ export function MobileCharacterSheet({
                     const elementColor = getElementColor(power.element);
                     
                     return (
-                      <div key={i} className={cn(
-                        "p-3 rounded-lg border",
-                        elementColor
-                      )}>
+                      <button
+                        key={i}
+                        onClick={() => handlePowerClick({
+                          type: 'paranormal',
+                          name: power.name,
+                          description: power.description,
+                          element: power.element,
+                        })}
+                        className={cn(
+                          "w-full p-3 rounded-lg border text-left active:opacity-80 transition-opacity",
+                          elementColor
+                        )}
+                      >
                         <div className="flex items-start gap-2">
                           <span className="text-lg">{elementIcon}</span>
                           <div className="flex-1 min-w-0">
@@ -811,17 +853,18 @@ export function MobileCharacterSheet({
                                 {power.element}
                               </span>
                             </div>
-                            <p className="text-[11px] text-muted-foreground mt-1">{power.description}</p>
+                            <p className="text-[11px] text-muted-foreground mt-1 line-clamp-2">{power.description}</p>
                           </div>
+                          <ChevronRight className="w-4 h-4 text-muted-foreground/50 flex-shrink-0" />
                         </div>
-                      </div>
+                      </button>
                     );
                   })}
                 </div>
               </CollapsibleSection>
             )}
 
-            {/* Poderes Gerais */}
+            {/* Poderes Gerais - Clicáveis */}
             {character.general_powers && character.general_powers.length > 0 && (
               <CollapsibleSection 
                 title="PODERES GERAIS" 
@@ -830,23 +873,37 @@ export function MobileCharacterSheet({
               >
                 <div className="space-y-2">
                   {character.general_powers.map((power, i) => (
-                    <div key={i} className="p-3 bg-success/10 rounded-lg border border-success/20">
-                      <div className="flex items-center gap-2 flex-wrap mb-1">
-                        <span className="font-medium text-sm text-success">{power.name}</span>
-                        {power.category && (
-                          <span className="text-[9px] px-1.5 py-0.5 bg-success/30 text-success rounded capitalize">
-                            {power.category}
-                          </span>
-                        )}
+                    <button
+                      key={i}
+                      onClick={() => handlePowerClick({
+                        type: 'general',
+                        name: power.name,
+                        description: power.description,
+                        category: power.category,
+                      })}
+                      className="w-full p-3 bg-success/10 rounded-lg border border-success/20 text-left active:bg-success/20 transition-colors"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap mb-1">
+                            <span className="font-medium text-sm text-success">{power.name}</span>
+                            {power.category && (
+                              <span className="text-[9px] px-1.5 py-0.5 bg-success/30 text-success rounded capitalize">
+                                {power.category}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-muted-foreground line-clamp-2">{power.description}</p>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-success/50 flex-shrink-0 ml-2" />
                       </div>
-                      <p className="text-[11px] text-muted-foreground">{power.description}</p>
-                    </div>
+                    </button>
                   ))}
                 </div>
               </CollapsibleSection>
             )}
 
-            {/* Poderes de Origem */}
+            {/* Poderes de Origem - Clicáveis */}
             {character.powers.length > 0 && (
               <CollapsibleSection 
                 title="PODERES DE ORIGEM" 
@@ -855,18 +912,31 @@ export function MobileCharacterSheet({
               >
                 <div className="space-y-2">
                   {character.powers.map((power, i) => (
-                    <div key={i} className="p-3 bg-secondary/10 rounded-lg border border-secondary/20">
-                      <span className="font-medium text-sm">{power.name}</span>
-                      {power.description && (
-                        <p className="text-[11px] text-muted-foreground mt-1">{power.description}</p>
-                      )}
-                    </div>
+                    <button
+                      key={i}
+                      onClick={() => handlePowerClick({
+                        type: 'origin',
+                        name: power.name,
+                        description: power.description,
+                      })}
+                      className="w-full p-3 bg-secondary/10 rounded-lg border border-secondary/20 text-left active:bg-secondary/20 transition-colors"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1 min-w-0">
+                          <span className="font-medium text-sm">{power.name}</span>
+                          {power.description && (
+                            <p className="text-[11px] text-muted-foreground mt-1 line-clamp-2">{power.description}</p>
+                          )}
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-secondary/50 flex-shrink-0 ml-2" />
+                      </div>
+                    </button>
                   ))}
                 </div>
               </CollapsibleSection>
             )}
 
-            {/* Rituais - Com círculos e detalhes */}
+            {/* Rituais - Clicáveis com detalhes completos */}
             {character.rituals.length > 0 && (
               <CollapsibleSection 
                 title="RITUAIS" 
@@ -874,14 +944,42 @@ export function MobileCharacterSheet({
                 badge={character.rituals.length}
               >
                 <div className="space-y-2">
-                  {character.rituals.map((ritualId, i) => (
-                    <div key={i} className="p-2.5 bg-paranormal/10 rounded-lg border border-paranormal/20 flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-paranormal/20 flex items-center justify-center flex-shrink-0">
-                        <Scroll className="w-4 h-4 text-paranormal" />
-                      </div>
-                      <span className="text-sm text-paranormal">{ritualId}</span>
-                    </div>
-                  ))}
+                  {character.rituals.map((ritualId, i) => {
+                    const ritualData = getRitualData(ritualId);
+                    return (
+                      <button
+                        key={i}
+                        onClick={() => handlePowerClick({
+                          type: 'ritual',
+                          name: ritualData?.name || ritualId,
+                          description: ritualData?.description || '',
+                          circle: ritualData?.circle,
+                          element: ritualData?.element,
+                          execution: ritualData?.execution,
+                          range: ritualData?.range,
+                          target: ritualData?.target,
+                          duration: ritualData?.duration,
+                          resistance: ritualData?.resistance,
+                        })}
+                        className="w-full p-2.5 bg-paranormal/10 rounded-lg border border-paranormal/20 flex items-center gap-3 active:bg-paranormal/20 transition-colors text-left"
+                      >
+                        <div className="w-8 h-8 rounded-full bg-paranormal/20 flex items-center justify-center flex-shrink-0">
+                          {ritualData?.circle ? (
+                            <span className="text-sm font-display text-paranormal">{ritualData.circle}º</span>
+                          ) : (
+                            <Scroll className="w-4 h-4 text-paranormal" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm text-paranormal font-medium">{ritualData?.name || ritualId}</span>
+                          {ritualData?.element && (
+                            <p className="text-[10px] text-muted-foreground capitalize">{ritualData.element}</p>
+                          )}
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-paranormal/50 flex-shrink-0" />
+                      </button>
+                    );
+                  })}
                 </div>
               </CollapsibleSection>
             )}
@@ -1046,6 +1144,13 @@ export function MobileCharacterSheet({
           ))}
         </div>
       </div>
+
+      {/* Modal de detalhes do poder */}
+      <PowerDetailModal
+        open={powerModalOpen}
+        onOpenChange={setPowerModalOpen}
+        power={selectedPower}
+      />
     </div>
   );
 }
