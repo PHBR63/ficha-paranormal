@@ -284,57 +284,12 @@ export default function Campaigns() {
                 </DialogContent>
               </Dialog>
 
-              <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button className="font-display tracking-wider">
-                    <Plus className="w-4 h-4 mr-2" />
-                    NOVA CAMPANHA
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="bg-card border-border">
-                  <DialogHeader>
-                    <DialogTitle className="font-display text-xl tracking-wider">
-                      NOVA CAMPANHA
-                    </DialogTitle>
-                    <DialogDescription>
-                      Crie uma nova campanha e convide jogadores.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4 py-4">
-                    <div>
-                      <label className="text-sm text-muted-foreground mb-2 block">
-                        Nome da Campanha
-                      </label>
-                      <Input
-                        value={newCampaignName}
-                        onChange={(e) => setNewCampaignName(e.target.value)}
-                        placeholder="Ex: O Mistério de Silent Hill"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm text-muted-foreground mb-2 block">
-                        Descrição (opcional)
-                      </label>
-                      <Textarea
-                        value={newCampaignDescription}
-                        onChange={(e) => setNewCampaignDescription(e.target.value)}
-                        placeholder="Uma breve descrição da campanha..."
-                        rows={3}
-                      />
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button
-                      onClick={handleCreateCampaign}
-                      disabled={creating || !newCampaignName.trim()}
-                      className="font-display tracking-wider"
-                    >
-                      {creating && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                      CRIAR CAMPANHA
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
+              <Link to="/campaigns/create">
+                <Button className="font-display tracking-wider">
+                  <Plus className="w-4 h-4 mr-2" />
+                  NOVA CAMPANHA
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
