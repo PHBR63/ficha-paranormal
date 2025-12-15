@@ -564,6 +564,23 @@ export default function CharacterSheet() {
     });
   };
 
+  // Calcula bônus de poderes paranormais (DEVE vir antes de qualquer return condicional)
+  const paranormalEffects = useParanormalEffects({
+    powers: character ? (character.paranormal_powers || []).map(p => {
+      const fullPower = PARANORMAL_POWERS.find(fp => fp.id === p.id);
+      return fullPower || {
+        id: p.id,
+        name: p.name,
+        element: p.element as ParanormalElement | 'generic',
+        description: p.description,
+        effect: { type: 'special' as const, description: p.description },
+      };
+    }) : [],
+    nex: character?.nex || 0,
+    elementalAffinity: (character?.elemental_affinity as ParanormalElement | null) || null,
+    affinityActive: character?.affinity_active || false,
+  });
+
   // Loading state
   if (loading) {
     return (
@@ -574,23 +591,6 @@ export default function CharacterSheet() {
   }
 
   if (!character) return null;
-
-  // Calcula bônus de poderes paranormais
-  const paranormalEffects = useParanormalEffects({
-    powers: (character.paranormal_powers || []).map(p => {
-      const fullPower = PARANORMAL_POWERS.find(fp => fp.id === p.id);
-      return fullPower || {
-        id: p.id,
-        name: p.name,
-        element: p.element as ParanormalElement | 'generic',
-        description: p.description,
-        effect: { type: 'special' as const, description: p.description },
-      };
-    }),
-    nex: character.nex,
-    elementalAffinity: character.elemental_affinity as ParanormalElement | null,
-    affinityActive: character.affinity_active,
-  });
 
   // Verificar sanidade baixa para efeito visual
   const sanPercentage = (sanCurrent / character.san_max) * 100;
