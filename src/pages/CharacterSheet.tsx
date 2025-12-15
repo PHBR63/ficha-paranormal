@@ -25,7 +25,18 @@ import {
   Heart,
   FileText,
   Skull,
+  MoreVertical,
+  History,
+  Dices,
+  Palette,
 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { ORIGINS, CLASSES, getTrackById } from '@/lib/character-data';
 import { ALL_RITUALS } from '@/lib/rituals-data';
 import { ALL_CLASS_ABILITIES } from '@/lib/class-abilities';
@@ -672,8 +683,8 @@ export default function CharacterSheet() {
               </h1>
             </div>
             
-            {/* Lado direito: Ações */}
-            <div className="flex items-center gap-1 flex-shrink-0">
+            {/* Lado direito: Ações - Desktop */}
+            <div className="hidden sm:flex items-center gap-1 flex-shrink-0">
               <ThemeSelector />
               <DiceRollHistoryDrawer 
                 rolls={rollHistory}
@@ -687,18 +698,10 @@ export default function CharacterSheet() {
                 variant="outline" 
                 size="sm"
                 onClick={() => setEditModalOpen(true)}
-                className="font-display hidden sm:flex"
+                className="font-display"
               >
                 <Edit2 className="w-4 h-4 mr-2" />
                 EDITAR
-              </Button>
-              <Button 
-                variant="outline" 
-                size="icon"
-                onClick={() => setEditModalOpen(true)}
-                className="sm:hidden h-8 w-8"
-              >
-                <Edit2 className="w-4 h-4" />
               </Button>
               <Button 
                 variant="ghost" 
@@ -708,6 +711,45 @@ export default function CharacterSheet() {
               >
                 <Trash2 className="w-4 h-4" />
               </Button>
+            </div>
+
+            {/* Lado direito: Menu dropdown - Mobile */}
+            <div className="flex sm:hidden items-center gap-1 flex-shrink-0">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="icon" className="h-8 w-8">
+                    <MoreVertical className="w-4 h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48 bg-popover z-50">
+                  <DropdownMenuItem onClick={() => setEditModalOpen(true)}>
+                    <Edit2 className="w-4 h-4 mr-2" />
+                    Editar Personagem
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => {
+                    // Abre o histórico de rolagens
+                    const historyBtn = document.querySelector('[data-dice-history-trigger]') as HTMLButtonElement;
+                    historyBtn?.click();
+                  }}>
+                    <Dices className="w-4 h-4 mr-2" />
+                    Histórico de Dados
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => {
+                    // Abre o histórico do personagem
+                    const charHistoryBtn = document.querySelector('[data-character-history-trigger]') as HTMLButtonElement;
+                    charHistoryBtn?.click();
+                  }}>
+                    <History className="w-4 h-4 mr-2" />
+                    Histórico de Alterações
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleDelete} className="text-destructive focus:text-destructive">
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Excluir Personagem
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <ThemeSelector />
             </div>
           </div>
         </div>

@@ -158,9 +158,14 @@ export function CharacterHistoryPanel({
   }, {} as Record<string, ChangeEntry[]>);
   return <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2 text-xs text-justify">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="gap-2 text-xs text-justify"
+          data-character-history-trigger
+        >
           <History className="w-4 h-4" />
-          Histórico de edição do personagem  
+          <span className="hidden sm:inline">Histórico de edição</span>
         </Button>
       </SheetTrigger>
       <SheetContent className="w-full sm:max-w-md">
