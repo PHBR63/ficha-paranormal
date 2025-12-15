@@ -256,7 +256,7 @@ export const ESPECIALISTA_ABILITIES: ClassAbility[] = [
   { 
     id: 'perito', 
     name: 'Perito', 
-    description: 'Escolha duas perícias nas quais você é treinado (exceto Luta e Pontaria). Quando faz um teste de uma dessas perícias, pode gastar 2 PE para somar +1d6 ao resultado. Conforme avança de NEX, pode gastar +1 PE para aumentar o dado de bônus (veja Tabela 1.4). Exemplo: em NEX 55%, pode gastar 4 PE para receber +1d10 no teste.', 
+    description: 'Escolha duas perícias nas quais você é treinado (exceto Luta e Pontaria). Quando faz um teste de uma dessas perícias, pode gastar 2 PE para somar +1d6 ao resultado. Conforme avança de NEX, o dado melhora: +1d8 em NEX 55%, +1d12 em NEX 85%.', 
     minNex: 5, 
     classId: 'Especialista', 
     isCore: true 
@@ -292,12 +292,12 @@ export const ESPECIALISTA_ABILITIES: ClassAbility[] = [
     isCore: true 
   },
   
-  // NEX 40% - Engenhosidade
+  // NEX 75% - Engenhosidade
   { 
     id: 'engenhosidade', 
     name: 'Engenhosidade', 
-    description: 'Quando usa sua habilidade Eclético, pode gastar 2 PE adicionais para receber os benefícios de veterano na perícia. Em NEX 75%, pode gastar 4 PE adicionais para receber os benefícios de expert.', 
-    minNex: 40, 
+    description: 'Quando usa sua habilidade Eclético, pode gastar 2 PE adicionais para receber os benefícios de veterano na perícia. Pode gastar 4 PE adicionais para receber os benefícios de expert.', 
+    minNex: 75, 
     classId: 'Especialista', 
     isCore: true 
   },
