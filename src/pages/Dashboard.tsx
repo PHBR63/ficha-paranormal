@@ -88,24 +88,24 @@ export default function Dashboard() {
       <div className="noise-overlay" />
       <div className="absolute inset-0 bg-grid-pattern opacity-20" />
 
-      {/* Header */}
+      {/* Header - Responsivo */}
       <header className="relative z-10 border-b border-border/50 backdrop-blur-sm sticky top-0 bg-background/80">
-        <div className="container mx-auto px-6 py-4 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-primary/20 border border-primary/30 flex items-center justify-center">
-              <Skull className="w-6 h-6 text-primary" />
+        <div className="container mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
+          <Link to="/" className="flex items-center gap-2 sm:gap-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-primary/20 border border-primary/30 flex items-center justify-center">
+              <Skull className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
             </div>
             <div>
-              <h1 className="font-display text-xl tracking-wide text-foreground">LET'S ROLL</h1>
-              <p className="text-[10px] text-muted-foreground tracking-[0.2em] uppercase">Painel do Agente</p>
+              <h1 className="font-display text-lg sm:text-xl tracking-wide text-foreground">LET'S ROLL</h1>
+              <p className="text-[9px] sm:text-[10px] text-muted-foreground tracking-[0.15em] sm:tracking-[0.2em] uppercase hidden sm:block">Painel do Agente</p>
             </div>
           </Link>
           
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             <ThemeSelector />
             <div className="flex items-center gap-2 text-muted-foreground">
               <User className="w-4 h-4" />
-              <span className="text-sm hidden sm:block">{displayName}</span>
+              <span className="text-sm hidden md:block">{displayName}</span>
             </div>
             <Button variant="ghost" size="icon" onClick={signOut} className="text-muted-foreground hover:text-foreground">
               <LogOut className="w-5 h-5" />
@@ -114,30 +114,32 @@ export default function Dashboard() {
         </div>
       </header>
 
-      <main className="relative z-10 container mx-auto px-6 py-8">
-        {/* Welcome section */}
-        <section className="mb-8">
-          <div className="flex items-center justify-between flex-wrap gap-4">
+      <main className="relative z-10 container mx-auto px-4 sm:px-6 py-4 sm:py-8">
+        {/* Welcome section - Responsivo */}
+        <section className="mb-6 sm:mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <p className="text-sm tracking-[0.2em] uppercase text-secondary-foreground">Central de Operações</p>
-              <h2 className="font-display text-4xl tracking-wide text-foreground">
+              <p className="text-xs sm:text-sm tracking-[0.15em] sm:tracking-[0.2em] uppercase text-secondary-foreground">Central de Operações</p>
+              <h2 className="font-display text-2xl sm:text-4xl tracking-wide text-foreground">
                 BEM-VINDO, <span className="text-primary">{displayName.toUpperCase()}</span>
               </h2>
-              <p className="text-muted-foreground mt-1">
+              <p className="text-sm text-muted-foreground mt-1 hidden sm:block">
                 Gerencie seus agentes e missões na Ordo Realitas.
               </p>
             </div>
-            <div className="flex gap-3">
-              <Link to="/campaigns">
-                <Button variant="outline" className="font-display tracking-wider">
-                  <Users className="w-5 h-5 mr-2" />
-                  Campanhas
+            <div className="flex gap-2 sm:gap-3">
+              <Link to="/campaigns" className="flex-1 sm:flex-none">
+                <Button variant="outline" className="w-full sm:w-auto font-display tracking-wider text-xs sm:text-sm">
+                  <Users className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">Campanhas</span>
+                  <span className="sm:hidden">Mesas</span>
                 </Button>
               </Link>
-              <Link to="/character/create">
-                <Button className="action-button font-display tracking-wider">
-                  <Plus className="w-5 h-5 mr-2" />
-                  Novo Agente
+              <Link to="/character/create" className="flex-1 sm:flex-none">
+                <Button className="w-full sm:w-auto action-button font-display tracking-wider text-xs sm:text-sm">
+                  <Plus className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">Novo Agente</span>
+                  <span className="sm:hidden">Novo</span>
                 </Button>
               </Link>
             </div>

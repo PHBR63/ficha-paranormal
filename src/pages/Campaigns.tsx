@@ -230,32 +230,32 @@ export default function Campaigns() {
 
   return (
     <div className="min-h-screen bg-background bg-grid-pattern">
-      {/* Header */}
+      {/* Header - Responsivo */}
       <header className="border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 sm:gap-4 min-w-0">
               <Link to="/dashboard">
-                <Button variant="ghost" size="sm" className="text-muted-foreground">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Dashboard
+                <Button variant="ghost" size="sm" className="text-muted-foreground px-2 sm:px-3">
+                  <ArrowLeft className="w-4 h-4" />
+                  <span className="hidden sm:inline ml-2">Dashboard</span>
                 </Button>
               </Link>
-              <div className="h-6 w-px bg-border" />
-              <h1 className="font-display text-2xl tracking-wider">CAMPANHAS</h1>
+              <div className="h-6 w-px bg-border hidden sm:block" />
+              <h1 className="font-display text-xl sm:text-2xl tracking-wider">CAMPANHAS</h1>
             </div>
             
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2">
               <Dialog open={joinDialogOpen} onOpenChange={setJoinDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="outline" className="font-display tracking-wider">
-                    <LogIn className="w-4 h-4 mr-2" />
-                    ENTRAR
+                  <Button variant="outline" className="font-display tracking-wider text-xs sm:text-sm px-2 sm:px-4">
+                    <LogIn className="w-4 h-4" />
+                    <span className="hidden sm:inline ml-2">ENTRAR</span>
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="bg-card border-border">
+                <DialogContent className="bg-card border-border max-w-[95vw] sm:max-w-md">
                   <DialogHeader>
-                    <DialogTitle className="font-display text-xl tracking-wider">
+                    <DialogTitle className="font-display text-lg sm:text-xl tracking-wider">
                       ENTRAR EM CAMPANHA
                     </DialogTitle>
                     <DialogDescription>
@@ -267,7 +267,7 @@ export default function Campaigns() {
                       value={inviteCode}
                       onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
                       placeholder="CÓDIGO DE CONVITE"
-                      className="font-display text-center text-xl tracking-widest"
+                      className="font-display text-center text-lg sm:text-xl tracking-widest"
                       maxLength={8}
                     />
                   </div>
@@ -275,7 +275,7 @@ export default function Campaigns() {
                     <Button
                       onClick={handleJoinCampaign}
                       disabled={joining || !inviteCode.trim()}
-                      className="font-display tracking-wider"
+                      className="font-display tracking-wider w-full sm:w-auto"
                     >
                       {joining && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                       ENTRAR
@@ -285,9 +285,9 @@ export default function Campaigns() {
               </Dialog>
 
               <Link to="/campaigns/create">
-                <Button className="font-display tracking-wider">
-                  <Plus className="w-4 h-4 mr-2" />
-                  NOVA CAMPANHA
+                <Button className="font-display tracking-wider text-xs sm:text-sm px-2 sm:px-4">
+                  <Plus className="w-4 h-4" />
+                  <span className="hidden sm:inline ml-2">NOVA CAMPANHA</span>
                 </Button>
               </Link>
             </div>
@@ -295,29 +295,29 @@ export default function Campaigns() {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
         {campaigns.length === 0 ? (
-          <div className="text-center py-16">
-            <div className="w-24 h-24 mx-auto mb-6 rounded-lg bg-muted/50 flex items-center justify-center">
-              <Users className="w-12 h-12 text-muted-foreground" />
+          <div className="text-center py-10 sm:py-16">
+            <div className="w-20 h-20 sm:w-24 sm:h-24 mx-auto mb-4 sm:mb-6 rounded-lg bg-muted/50 flex items-center justify-center">
+              <Users className="w-10 h-10 sm:w-12 sm:h-12 text-muted-foreground" />
             </div>
-            <h2 className="font-display text-2xl tracking-wider mb-2">NENHUMA CAMPANHA</h2>
-            <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+            <h2 className="font-display text-xl sm:text-2xl tracking-wider mb-2">NENHUMA CAMPANHA</h2>
+            <p className="text-sm sm:text-base text-muted-foreground mb-4 sm:mb-6 max-w-md mx-auto px-4">
               Você ainda não participa de nenhuma campanha. Crie uma nova ou entre com um código de convite.
             </p>
-            <div className="flex justify-center gap-4">
-              <Button variant="outline" onClick={() => setJoinDialogOpen(true)}>
+            <div className="flex flex-col sm:flex-row justify-center gap-2 sm:gap-4 px-4">
+              <Button variant="outline" onClick={() => setJoinDialogOpen(true)} className="w-full sm:w-auto">
                 <LogIn className="w-4 h-4 mr-2" />
                 Entrar com Código
               </Button>
-              <Button onClick={() => setCreateDialogOpen(true)}>
+              <Button onClick={() => setCreateDialogOpen(true)} className="w-full sm:w-auto">
                 <Plus className="w-4 h-4 mr-2" />
                 Criar Campanha
               </Button>
             </div>
           </div>
         ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {campaigns.map((campaign) => {
               const isMaster = campaign.master_id === user?.id;
               
@@ -328,18 +328,18 @@ export default function Campaigns() {
                   className="group"
                 >
                   <div className={cn(
-                    'ordo-panel p-6 h-full transition-all duration-300',
+                    'ordo-panel p-4 sm:p-6 h-full transition-all duration-300',
                     'hover:border-primary/50 hover:shadow-[0_0_20px_hsl(var(--primary)/0.2)]',
                     isMaster && 'border-primary/30'
                   )}>
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex-1">
+                    <div className="flex items-start justify-between mb-3 sm:mb-4">
+                      <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           {isMaster && (
-                            <Crown className="w-4 h-4 text-primary" />
+                            <Crown className="w-3 h-3 sm:w-4 sm:h-4 text-primary flex-shrink-0" />
                           )}
                           <span className={cn(
-                            'text-xs px-2 py-0.5 rounded font-display tracking-wider',
+                            'text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded font-display tracking-wider flex-shrink-0',
                             campaign.status === 'active' 
                               ? 'bg-success/20 text-success' 
                               : 'bg-muted text-muted-foreground'
@@ -349,31 +349,31 @@ export default function Campaigns() {
                              campaign.status === 'completed' ? 'CONCLUÍDA' : 'ARQUIVADA'}
                           </span>
                         </div>
-                        <h3 className="font-display text-xl tracking-wider group-hover:text-primary transition-colors">
+                        <h3 className="font-display text-lg sm:text-xl tracking-wider group-hover:text-primary transition-colors truncate">
                           {campaign.name}
                         </h3>
                       </div>
                     </div>
 
                     {campaign.description && (
-                      <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+                      <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4 line-clamp-2">
                         {campaign.description}
                       </p>
                     )}
 
-                    <div className="flex items-center justify-between text-sm text-muted-foreground">
-                      <div className="flex items-center gap-4">
+                    <div className="flex items-center justify-between text-xs sm:text-sm text-muted-foreground">
+                      <div className="flex items-center gap-3 sm:gap-4">
                         <div className="flex items-center gap-1">
-                          <Users className="w-4 h-4" />
+                          <Users className="w-3 h-3 sm:w-4 sm:h-4" />
                           <span>{campaign.member_count}</span>
                         </div>
                         <div className="flex items-center gap-1">
-                          <Calendar className="w-4 h-4" />
-                          <span>Sessão {campaign.current_session}</span>
+                          <Calendar className="w-3 h-3 sm:w-4 sm:h-4" />
+                          <span>S{campaign.current_session}</span>
                         </div>
                       </div>
                       {isMaster && (
-                        <span className="text-primary font-display text-xs tracking-wider">
+                        <span className="text-primary font-display text-[10px] sm:text-xs tracking-wider">
                           MESTRE
                         </span>
                       )}
