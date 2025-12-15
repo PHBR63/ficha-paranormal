@@ -29,6 +29,8 @@ import {
 import { ORIGINS, CLASSES, getTrackById } from '@/lib/character-data';
 import { ALL_RITUALS } from '@/lib/rituals-data';
 import { ALL_CLASS_ABILITIES } from '@/lib/class-abilities';
+import { PARANORMAL_POWERS } from '@/lib/paranormal-powers';
+import { GENERAL_POWERS } from '@/lib/general-powers';
 import { cn } from '@/lib/utils';
 import { DiceRollResult } from '@/lib/dice-roller';
 import { InventoryPanel } from '@/components/inventory/InventoryPanel';
@@ -91,6 +93,9 @@ interface Character {
   gender?: string | null;
   appearance?: string | null;
   personality?: string | null;
+  // Novos campos do suplemento "Sobrevivendo ao Horror"
+  paranormal_powers?: Array<{ id: string; name: string; element: string; description: string }>;
+  general_powers?: Array<{ id: string; name: string; description: string; category?: string }>;
 }
 
 export default function CharacterSheet() {
@@ -881,6 +886,55 @@ export default function CharacterSheet() {
                           badgeVariant="paranormal"
                         />
                       ))}
+                    </div>
+                  )}
+
+                  {/* Poderes Paranormais (do suplemento) */}
+                  {character.paranormal_powers && character.paranormal_powers.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-xs text-muted-foreground uppercase tracking-wider">
+                        Poderes Paranormais
+                      </p>
+                      {character.paranormal_powers.map((power) => {
+                        const powerData = PARANORMAL_POWERS.find(p => p.id === power.id);
+                        const elementEmoji = {
+                          sangue: '🩸',
+                          morte: '💀',
+                          conhecimento: '📖',
+                          energia: '⚡',
+                          medo: '👁️'
+                        }[power.element] || '✨';
+                        return (
+                          <SheetAccordionItem
+                            key={power.id}
+                            title={`${elementEmoji} ${power.name}`}
+                            description={powerData?.effect.description || power.description}
+                            badge={power.element}
+                            badgeVariant="secondary"
+                          />
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Poderes Gerais (do suplemento) */}
+                  {character.general_powers && character.general_powers.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-xs text-muted-foreground uppercase tracking-wider">
+                        Poderes Gerais
+                      </p>
+                      {character.general_powers.map((power) => {
+                        const powerData = GENERAL_POWERS.find(p => p.id === power.id);
+                        return (
+                          <SheetAccordionItem
+                            key={power.id}
+                            title={power.name}
+                            description={powerData?.description || power.description}
+                            badge={power.category || 'Geral'}
+                            badgeVariant="default"
+                          />
+                        );
+                      })}
                     </div>
                   )}
                 </div>

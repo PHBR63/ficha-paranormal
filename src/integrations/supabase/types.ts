@@ -349,6 +349,7 @@ export type Database = {
           created_at: string
           defense: number
           gender: string | null
+          general_powers: Json | null
           hp_current: number
           hp_max: number
           id: string
@@ -359,6 +360,7 @@ export type Database = {
           nex: number
           notes: string | null
           origin: string
+          paranormal_powers: Json | null
           patent: string
           pe_current: number
           pe_max: number
@@ -390,6 +392,7 @@ export type Database = {
           created_at?: string
           defense?: number
           gender?: string | null
+          general_powers?: Json | null
           hp_current?: number
           hp_max?: number
           id?: string
@@ -400,6 +403,7 @@ export type Database = {
           nex?: number
           notes?: string | null
           origin: string
+          paranormal_powers?: Json | null
           patent?: string
           pe_current?: number
           pe_max?: number
@@ -431,6 +435,7 @@ export type Database = {
           created_at?: string
           defense?: number
           gender?: string | null
+          general_powers?: Json | null
           hp_current?: number
           hp_max?: number
           id?: string
@@ -441,6 +446,7 @@ export type Database = {
           nex?: number
           notes?: string | null
           origin?: string
+          paranormal_powers?: Json | null
           patent?: string
           pe_current?: number
           pe_max?: number

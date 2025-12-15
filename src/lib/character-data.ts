@@ -1,8 +1,12 @@
 // Ordem Paranormal RPG v1.3 - Character Data (Atualizado com dados oficiais do livro)
+// Inclui conteúdo do suplemento "Sobrevivendo ao Horror"
 
-// ==================== ORIGENS (26 origens oficiais) ====================
+import { SUPPLEMENT_ORIGINS } from './supplement-origins';
+import { SOBREVIVENTE_CLASS, SUPPLEMENT_TRACKS } from './supplement-classes';
 
-export const ORIGINS = [
+// ==================== ORIGENS BASE (26 origens oficiais) ====================
+
+const CORE_ORIGINS = [
   {
     id: 'academico',
     name: 'Acadêmico',
@@ -215,9 +219,12 @@ export const ORIGINS = [
   },
 ];
 
-// ==================== CLASSES ====================
+// Combina origens base com origens do suplemento
+export const ORIGINS = [...CORE_ORIGINS, ...SUPPLEMENT_ORIGINS];
 
-export const CLASSES = [
+// ==================== CLASSES BASE ====================
+
+const CORE_CLASSES = [
   {
     id: 'Combatente',
     name: 'Combatente',
@@ -319,6 +326,9 @@ export const CLASSES = [
     },
   },
 ];
+
+// Combina classes base com classe do suplemento (Sobrevivente)
+export const CLASSES = [...CORE_CLASSES, SOBREVIVENTE_CLASS];
 
 // ==================== TRILHAS DE CLASSE ====================
 
@@ -539,6 +549,8 @@ export const CLASS_TRACKS: ClassTrack[] = [
       { id: 'avatar-lamina', name: 'Avatar da Lâmina', description: 'Sua arma imbuída causa +3d6 de dano paranormal e você recebe +2 em ataques.', minNex: 99 },
     ],
   },
+  // Adiciona as trilhas do suplemento "Sobrevivendo ao Horror"
+  ...SUPPLEMENT_TRACKS,
 ];
 
 // ==================== PERÍCIAS ====================
@@ -789,7 +801,8 @@ export function calculateFreeSkills(classId: string, intellect: number): number 
  * Retorna os rituais disponíveis para um Ocultista baseado no NEX
  */
 export function getOcultistRituals(nex: number): { count: number; maxCircle: number } | null {
-  const ocultista = CLASSES.find(c => c.id === 'Ocultista');
+  // Busca especificamente nas classes base (CORE_CLASSES) pois só o Ocultista tem ritualsPerNex
+  const ocultista = CORE_CLASSES.find(c => c.id === 'Ocultista') as typeof CORE_CLASSES[2] | undefined;
   if (!ocultista?.ritualsPerNex) return null;
   
   const rituals = ocultista.ritualsPerNex[nex as keyof typeof ocultista.ritualsPerNex];
