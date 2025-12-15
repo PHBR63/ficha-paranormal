@@ -4,16 +4,12 @@
 import { ORIGINS, CLASSES, SKILLS, getPatentByNex, getTrackById } from '@/lib/character-data';
 import { CLASS_PROFICIENCIES, CLASS_INITIAL_ABILITIES } from '@/lib/character-builder-engine';
 import { ALL_RITUALS } from '@/lib/rituals-data';
-import { 
-  Shield, Footprints, Swords, Edit2, Route, Sparkles, 
-  Droplets, Skull, BookOpen, Zap, Ghost 
-} from 'lucide-react';
+import { Shield, Footprints, Swords, Edit2, Route, Sparkles, Droplets, Skull, BookOpen, Zap, Ghost } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { motion } from 'framer-motion';
 import type { CharacterFormData } from '@/pages/CharacterCreate';
 import type { RebuildResult } from '@/lib/character-builder-engine';
-
 interface StepReviewProps {
   formData: CharacterFormData;
   buildResult: RebuildResult;
@@ -27,25 +23,60 @@ const ATTRIBUTE_LABELS: Record<string, string> = {
   strength: 'FOR',
   intellect: 'INT',
   presence: 'PRE',
-  vigor: 'VIG',
+  vigor: 'VIG'
 };
 
 // Configuração visual para elementos de rituais
-const ELEMENT_CONFIG: Record<string, { icon: typeof Droplets; color: string; bg: string }> = {
-  sangue: { icon: Droplets, color: 'text-red-400', bg: 'bg-red-500/20' },
-  morte: { icon: Skull, color: 'text-purple-400', bg: 'bg-purple-500/20' },
-  conhecimento: { icon: BookOpen, color: 'text-blue-400', bg: 'bg-blue-500/20' },
-  energia: { icon: Zap, color: 'text-yellow-400', bg: 'bg-yellow-500/20' },
-  medo: { icon: Ghost, color: 'text-emerald-400', bg: 'bg-emerald-500/20' },
+const ELEMENT_CONFIG: Record<string, {
+  icon: typeof Droplets;
+  color: string;
+  bg: string;
+}> = {
+  sangue: {
+    icon: Droplets,
+    color: 'text-red-400',
+    bg: 'bg-red-500/20'
+  },
+  morte: {
+    icon: Skull,
+    color: 'text-purple-400',
+    bg: 'bg-purple-500/20'
+  },
+  conhecimento: {
+    icon: BookOpen,
+    color: 'text-blue-400',
+    bg: 'bg-blue-500/20'
+  },
+  energia: {
+    icon: Zap,
+    color: 'text-yellow-400',
+    bg: 'bg-yellow-500/20'
+  },
+  medo: {
+    icon: Ghost,
+    color: 'text-emerald-400',
+    bg: 'bg-emerald-500/20'
+  }
 };
-
-export function StepReview({ formData, buildResult, onStepClick }: StepReviewProps) {
+export function StepReview({
+  formData,
+  buildResult,
+  onStepClick
+}: StepReviewProps) {
   const origin = ORIGINS.find(o => o.id === formData.origin);
   const characterClass = CLASSES.find(c => c.id === formData.characterClass);
   const patent = getPatentByNex(formData.nex);
   const track = formData.classTrack ? getTrackById(formData.classTrack) : null;
-
-  const { derivedStats, defense, movement, allTrainedSkills, proficiencies, abilities, powers, canFinalize } = buildResult;
+  const {
+    derivedStats,
+    defense,
+    movement,
+    allTrainedSkills,
+    proficiencies,
+    abilities,
+    powers,
+    canFinalize
+  } = buildResult;
 
   // Separar habilidades de classe e de trilha
   const trackAbilities = formData.trackAbilities || [];
@@ -53,7 +84,6 @@ export function StepReview({ formData, buildResult, onStepClick }: StepReviewPro
 
   // Obter rituais selecionados com detalhes
   const selectedRituals = (formData.rituals || []).map(id => ALL_RITUALS.find(r => r.id === id)).filter(Boolean);
-
   const trainedSkillNames = allTrainedSkills.map(id => {
     const skill = SKILLS.find(s => s.id === id);
     return skill?.name || id;
@@ -67,20 +97,14 @@ export function StepReview({ formData, buildResult, onStepClick }: StepReviewPro
     const allSteps = [...baseSteps, ...afterTrack];
     return allSteps.indexOf(stepId);
   };
-
-  const EditButton = ({ stepId }: { stepId: string }) => (
-    <Button
-      variant="ghost"
-      size="sm"
-      onClick={() => onStepClick?.(getStepIndex(stepId))}
-      className="opacity-0 group-hover:opacity-100 transition-opacity"
-    >
+  const EditButton = ({
+    stepId
+  }: {
+    stepId: string;
+  }) => <Button variant="ghost" size="sm" onClick={() => onStepClick?.(getStepIndex(stepId))} className="opacity-0 group-hover:opacity-100 transition-opacity">
       <Edit2 className="w-3 h-3" />
-    </Button>
-  );
-
-  return (
-    <div className="space-y-6">
+    </Button>;
+  return <div className="space-y-6">
       {/* Título */}
       <div className="text-center mb-8">
         <h2 className="font-display text-2xl tracking-wider mb-2">REVISÃO DO DOSSIÊ</h2>
@@ -90,20 +114,18 @@ export function StepReview({ formData, buildResult, onStepClick }: StepReviewPro
       </div>
 
       {/* Header card com informações básicas */}
-      <motion.div 
-        className="ordo-panel p-6 group"
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
+      <motion.div className="ordo-panel p-6 group" initial={{
+      opacity: 0,
+      y: 10
+    }} animate={{
+      opacity: 1,
+      y: 0
+    }}>
         <div className="flex justify-between items-start mb-4">
           <div>
             <h3 className="font-display text-3xl tracking-wider text-primary">{formData.name || 'Sem nome'}</h3>
-            {formData.concept && (
-              <p className="text-sm text-muted-foreground italic mt-1">"{formData.concept}"</p>
-            )}
-            {formData.playerName && (
-              <p className="text-sm text-muted-foreground">Jogador: {formData.playerName}</p>
-            )}
+            {formData.concept && <p className="text-sm text-muted-foreground italic mt-1">"{formData.concept}"</p>}
+            {formData.playerName && <p className="text-sm text-muted-foreground">Jogador: {formData.playerName}</p>}
             <div className="flex gap-2 text-xs text-muted-foreground mt-1">
               {formData.age && <span>{formData.age} anos</span>}
               {formData.age && formData.gender && <span>•</span>}
@@ -133,12 +155,10 @@ export function StepReview({ formData, buildResult, onStepClick }: StepReviewPro
             <span className="text-xs text-muted-foreground">Patente:</span>{' '}
             <span className="text-sm">{patent}</span>
           </div>
-          {track && (
-            <div className="ordo-panel px-3 py-1.5 bg-primary/10 border-primary/30">
+          {track && <div className="ordo-panel px-3 py-1.5 bg-primary/10 border-primary/30">
               <span className="text-xs text-primary/70">Trilha:</span>{' '}
               <span className="text-sm text-primary">{track.name}</span>
-            </div>
-          )}
+            </div>}
         </div>
       </motion.div>
 
@@ -187,31 +207,25 @@ export function StepReview({ formData, buildResult, onStepClick }: StepReviewPro
           <EditButton stepId="attributes" />
         </div>
         <div className="grid grid-cols-5 gap-2">
-          {Object.entries(formData.attributes).map(([key, value]) => (
-            <div key={key} className="text-center p-2 bg-muted/50 rounded-sm">
+          {Object.entries(formData.attributes).map(([key, value]) => <div key={key} className="text-center p-2 bg-muted/50 rounded-sm">
               <p className="text-xs text-muted-foreground">{ATTRIBUTE_LABELS[key]}</p>
               <p className="font-display text-2xl">{value}</p>
-            </div>
-          ))}
+            </div>)}
         </div>
       </div>
 
       {/* Proficiências */}
-      {proficiencies.length > 0 && (
-        <div className="ordo-panel p-4">
+      {proficiencies.length > 0 && <div className="ordo-panel p-4">
           <div className="flex items-center gap-2 mb-3">
             <Shield className="w-4 h-4 text-primary" />
             <h4 className="font-display text-lg tracking-wider text-primary">PROFICIÊNCIAS</h4>
           </div>
           <div className="flex flex-wrap gap-2">
-            {proficiencies.map((prof) => (
-              <span key={prof} className="px-3 py-1 bg-muted text-sm rounded-sm">
+            {proficiencies.map(prof => <span key={prof} className="px-3 py-1 bg-muted text-sm rounded-sm">
                 {prof}
-              </span>
-            ))}
+              </span>)}
           </div>
-        </div>
-      )}
+        </div>}
 
       {/* Perícias */}
       <div className="ordo-panel p-4 group">
@@ -221,22 +235,15 @@ export function StepReview({ formData, buildResult, onStepClick }: StepReviewPro
           </h4>
           <EditButton stepId="skills" />
         </div>
-        {trainedSkillNames.length > 0 ? (
-          <div className="flex flex-wrap gap-2">
-            {trainedSkillNames.map(name => (
-              <span key={name} className="px-3 py-1.5 bg-secondary text-secondary-foreground font-semibold text-sm rounded-sm shadow-sm">
+        {trainedSkillNames.length > 0 ? <div className="flex flex-wrap gap-2">
+            {trainedSkillNames.map(name => <span key={name} className="px-3 py-1.5 bg-secondary text-secondary-foreground font-semibold text-sm rounded-sm shadow-sm">
                 {name}
-              </span>
-            ))}
-          </div>
-        ) : (
-          <p className="text-sm text-muted-foreground">Nenhuma perícia treinada.</p>
-        )}
+              </span>)}
+          </div> : <p className="text-sm text-muted-foreground">Nenhuma perícia treinada.</p>}
       </div>
 
       {/* Habilidades de Classe */}
-      {classAbilities.length > 0 && (
-        <div className="ordo-panel p-4 group">
+      {classAbilities.length > 0 && <div className="ordo-panel p-4 group">
           <div className="flex items-center justify-between mb-3">
             <h4 className="font-display text-lg tracking-wider text-primary">
               HABILIDADES DE CLASSE
@@ -244,18 +251,14 @@ export function StepReview({ formData, buildResult, onStepClick }: StepReviewPro
             <EditButton stepId="abilities" />
           </div>
           <div className="flex flex-wrap gap-2">
-            {classAbilities.map((ability) => (
-              <span key={ability} className="px-3 py-1 bg-primary/20 text-primary text-sm rounded-sm">
+            {classAbilities.map(ability => <span key={ability} className="px-3 py-1 bg-primary/20 text-primary text-sm rounded-sm">
                 {ability}
-              </span>
-            ))}
+              </span>)}
           </div>
-        </div>
-      )}
+        </div>}
 
       {/* Trilha e Habilidades da Trilha */}
-      {track && (
-        <div className="ordo-panel p-4 group border-primary/30 bg-gradient-to-br from-primary/5 to-transparent">
+      {track && <div className="ordo-panel p-4 group border-primary/30 bg-gradient-to-br from-primary/5 to-transparent">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <Route className="w-5 h-5 text-primary" />
@@ -267,36 +270,24 @@ export function StepReview({ formData, buildResult, onStepClick }: StepReviewPro
           </div>
           <p className="text-sm text-muted-foreground mb-4">{track.description}</p>
           
-          {trackAbilities.length > 0 && (
-            <div className="space-y-2">
+          {trackAbilities.length > 0 && <div className="space-y-2">
               <p className="text-xs text-primary/70 uppercase tracking-wider">
                 Habilidades Desbloqueadas (NEX {formData.nex}%)
               </p>
               <div className="flex flex-wrap gap-2">
-                {trackAbilities.map((ability) => {
-                  const trackAbility = track.abilities.find(a => a.name === ability);
-                  return (
-                    <Badge
-                      key={ability}
-                      variant="secondary"
-                      className="bg-primary/20 text-primary hover:bg-primary/30"
-                    >
+                {trackAbilities.map(ability => {
+            const trackAbility = track.abilities.find(a => a.name === ability);
+            return <Badge key={ability} variant="secondary" className="bg-primary/20 text-primary hover:bg-primary/30">
                       {ability}
-                      {trackAbility && (
-                        <span className="ml-1 text-xs opacity-60">NEX {trackAbility.minNex}%</span>
-                      )}
-                    </Badge>
-                  );
-                })}
+                      {trackAbility && <span className="ml-1 text-xs opacity-60">NEX {trackAbility.minNex}%</span>}
+                    </Badge>;
+          })}
               </div>
-            </div>
-          )}
-        </div>
-      )}
+            </div>}
+        </div>}
 
       {/* Rituais (apenas para Ocultistas) */}
-      {selectedRituals.length > 0 && (
-        <div className="ordo-panel p-4 group border-paranormal/30 bg-gradient-to-br from-paranormal/5 to-transparent">
+      {selectedRituals.length > 0 && <div className="ordo-panel p-4 group border-paranormal/30 bg-gradient-to-br from-paranormal/5 to-transparent">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-paranormal" />
@@ -307,15 +298,11 @@ export function StepReview({ formData, buildResult, onStepClick }: StepReviewPro
             <EditButton stepId="rituals" />
           </div>
           <div className="grid md:grid-cols-2 gap-2">
-            {selectedRituals.map((ritual) => {
-              if (!ritual) return null;
-              const config = ELEMENT_CONFIG[ritual.element];
-              const Icon = config?.icon || Sparkles;
-              return (
-                <div 
-                  key={ritual.id}
-                  className={`p-3 rounded-lg border border-paranormal/20 ${config?.bg || 'bg-paranormal/10'}`}
-                >
+            {selectedRituals.map(ritual => {
+          if (!ritual) return null;
+          const config = ELEMENT_CONFIG[ritual.element];
+          const Icon = config?.icon || Sparkles;
+          return <div key={ritual.id} className={`p-3 rounded-lg border border-paranormal/20 ${config?.bg || 'bg-paranormal/10'}`}>
                   <div className="flex items-center justify-between">
                     <span className="font-medium">{ritual.name}</span>
                     <div className="flex items-center gap-2">
@@ -329,73 +316,53 @@ export function StepReview({ formData, buildResult, onStepClick }: StepReviewPro
                   <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
                     {ritual.execution} • {ritual.range} • {ritual.cost} PE
                   </p>
-                </div>
-              );
-            })}
+                </div>;
+        })}
           </div>
-        </div>
-      )}
+        </div>}
 
       {/* Poderes de Origem */}
-      {powers.length > 0 && (
-        <div className="ordo-panel p-4">
+      {powers.length > 0 && <div className="ordo-panel p-4">
           <h4 className="font-display text-lg tracking-wider mb-3 text-primary">PODERES DE ORIGEM</h4>
           <div className="space-y-2">
-            {powers.map((power, i) => (
-              <div key={i} className="p-3 bg-paranormal/10 rounded-sm">
+            {powers.map((power, i) => <div key={i} className="p-3 bg-paranormal/10 rounded-sm">
                 <p className="font-medium text-paranormal">{power.name}</p>
-                {power.description && (
-                  <p className="text-xs text-muted-foreground mt-1">{power.description}</p>
-                )}
-              </div>
-            ))}
+                {power.description && <p className="text-xs text-muted-foreground mt-1">{power.description}</p>}
+              </div>)}
           </div>
-        </div>
-      )}
+        </div>}
 
       {/* Aparência & Personalidade */}
-      {(formData.appearance || formData.personality) && (
-        <div className="grid md:grid-cols-2 gap-4">
-          {formData.appearance && (
-            <div className="ordo-panel p-4">
+      {(formData.appearance || formData.personality) && <div className="grid md:grid-cols-2 gap-4">
+          {formData.appearance && <div className="ordo-panel p-4">
               <h4 className="font-display text-sm tracking-wider mb-2 text-primary">APARÊNCIA</h4>
               <p className="text-sm text-muted-foreground">{formData.appearance}</p>
-            </div>
-          )}
-          {formData.personality && (
-            <div className="ordo-panel p-4">
+            </div>}
+          {formData.personality && <div className="ordo-panel p-4">
               <h4 className="font-display text-sm tracking-wider mb-2 text-primary">PERSONALIDADE</h4>
               <p className="text-sm text-muted-foreground">{formData.personality}</p>
-            </div>
-          )}
-        </div>
-      )}
+            </div>}
+        </div>}
 
       {/* Background */}
-      {formData.background && (
-        <div className="ordo-panel p-4">
+      {formData.background && <div className="ordo-panel p-4">
           <h4 className="font-display text-lg tracking-wider mb-3 text-primary">HISTÓRICO</h4>
-          <p className="text-sm text-muted-foreground font-ritual italic whitespace-pre-wrap">
+          <p className="text-sm text-muted-foreground italic whitespace-pre-wrap font-sans">
             {formData.background}
           </p>
-        </div>
-      )}
+        </div>}
 
       {/* Status de finalização */}
-      <motion.div 
-        className={`ordo-panel p-4 ${canFinalize ? 'bg-success/5 border-success/20' : 'bg-warning/5 border-warning/20'}`}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.3 }}
-      >
+      <motion.div className={`ordo-panel p-4 ${canFinalize ? 'bg-success/5 border-success/20' : 'bg-warning/5 border-warning/20'}`} initial={{
+      opacity: 0
+    }} animate={{
+      opacity: 1
+    }} transition={{
+      delay: 0.3
+    }}>
         <p className="text-sm text-center">
-          {canFinalize ? (
-            <span className="text-success font-medium">✓ DOSSIÊ PRONTO PARA REGISTRO</span>
-          ) : (
-            <span className="text-warning font-medium">⚠ Complete todas as escolhas pendentes</span>
-          )}
+          {canFinalize ? <span className="text-success font-medium">✓ DOSSIÊ PRONTO PARA REGISTRO</span> : <span className="text-warning font-medium">⚠ Complete todas as escolhas pendentes</span>}
         </p>
       </motion.div>
-    </div>
-  );
+    </div>;
 }
