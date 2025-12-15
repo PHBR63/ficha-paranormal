@@ -9,12 +9,13 @@ interface AttributeWithDiceProps {
   className?: string;
 }
 
+// Cores dos atributos usando variáveis CSS do design system
 const ATTRIBUTE_COLORS: Record<string, string> = {
-  AGI: 'hsl(var(--accent))',
-  FOR: 'hsl(var(--destructive))',
-  INT: 'hsl(var(--primary))',
-  PRE: 'hsl(var(--paranormal))',
-  VIG: 'hsl(var(--success))',
+  AGI: 'hsl(var(--attr-agility))',
+  FOR: 'hsl(var(--attr-strength))',
+  INT: 'hsl(var(--attr-intellect))',
+  PRE: 'hsl(var(--attr-presence))',
+  VIG: 'hsl(var(--attr-vigor))',
 };
 
 const ATTRIBUTE_FULL_NAMES: Record<string, string> = {
