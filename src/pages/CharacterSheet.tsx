@@ -655,23 +655,25 @@ export default function CharacterSheet() {
 
   return (
     <div className={cn("min-h-screen bg-background sheet-background", isSanLow && "animate-flicker")}>
-      {/* Header fixo */}
+      {/* Header fixo - responsivo para mobile */}
       <header className="border-b border-border bg-card/80 sticky top-0 z-10 backdrop-blur-sm">
-        <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Link to="/dashboard">
-                <Button variant="ghost" size="sm" className="text-muted-foreground">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Voltar
+        <div className="container mx-auto px-2 sm:px-4 py-2 sm:py-3">
+          <div className="flex items-center justify-between gap-2">
+            {/* Lado esquerdo: Voltar + Nome */}
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <Link to="/dashboard" className="flex-shrink-0">
+                <Button variant="ghost" size="sm" className="text-muted-foreground h-8 px-2 sm:px-3">
+                  <ArrowLeft className="w-4 h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Voltar</span>
                 </Button>
               </Link>
-              <div className="h-6 w-px bg-border hidden sm:block" />
-              <h1 className="font-display text-lg sm:text-xl tracking-wider truncate max-w-[200px] sm:max-w-none text-primary">
+              <h1 className="font-display text-sm sm:text-xl tracking-wider truncate text-primary">
                 {character.name}
               </h1>
             </div>
-            <div className="flex items-center gap-1 sm:gap-2">
+            
+            {/* Lado direito: Ações */}
+            <div className="flex items-center gap-1 flex-shrink-0">
               <ThemeSelector />
               <DiceRollHistoryDrawer 
                 rolls={rollHistory}
@@ -694,7 +696,7 @@ export default function CharacterSheet() {
                 variant="outline" 
                 size="icon"
                 onClick={() => setEditModalOpen(true)}
-                className="sm:hidden"
+                className="sm:hidden h-8 w-8"
               >
                 <Edit2 className="w-4 h-4" />
               </Button>
@@ -702,7 +704,7 @@ export default function CharacterSheet() {
                 variant="ghost" 
                 size="icon"
                 onClick={handleDelete}
-                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-8"
               >
                 <Trash2 className="w-4 h-4" />
               </Button>
