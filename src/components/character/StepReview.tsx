@@ -3,9 +3,9 @@
 // Inclui painel educativo do livro de regras
 
 import { ORIGINS, CLASSES, SKILLS, getPatentByNex, getTrackById } from '@/lib/character-data';
-import { CLASS_PROFICIENCIES, CLASS_INITIAL_ABILITIES } from '@/lib/character-builder-engine';
+import { CLASS_PROFICIENCIES, CLASS_INITIAL_ABILITIES, validateAttributes } from '@/lib/character-builder-engine';
 import { ALL_RITUALS } from '@/lib/rituals-data';
-import { Shield, Footprints, Swords, Edit2, Route, Sparkles, Droplets, Skull, BookOpen, Zap, Ghost } from 'lucide-react';
+import { Shield, Footprints, Swords, Edit2, Route, Sparkles, Droplets, Skull, BookOpen, Zap, Ghost, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { motion } from 'framer-motion';
@@ -373,9 +373,71 @@ export function StepReview({
     }} transition={{
       delay: 0.3
     }}>
-        <p className="text-sm text-center">
-          {canFinalize ? <span className="text-success font-medium">✓ DOSSIÊ PRONTO PARA REGISTRO</span> : <span className="text-warning font-medium">⚠ Complete todas as escolhas pendentes</span>}
-        </p>
+        {canFinalize ? (
+          <p className="text-sm text-center">
+            <span className="text-success font-medium">✓ DOSSIÊ PRONTO PARA REGISTRO</span>
+          </p>
+        ) : (
+          <div className="space-y-3">
+            <p className="text-sm text-center">
+              <span className="text-warning font-medium">⚠ Complete todas as escolhas pendentes</span>
+            </p>
+            {/* Lista detalhada de pendências */}
+            <div className="space-y-2">
+              {/* Verificar nome */}
+              {(!formData.name || formData.name.trim().length < 2) && (
+                <div className="flex items-center gap-2 text-sm text-warning bg-warning/10 p-2 rounded-md cursor-pointer hover:bg-warning/20 transition-colors" onClick={() => onStepClick?.(0)}>
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  <span>Defina um <strong>nome</strong> para o personagem (mínimo 2 caracteres)</span>
+                </div>
+              )}
+              {/* Verificar origem */}
+              {!formData.origin && (
+                <div className="flex items-center gap-2 text-sm text-warning bg-warning/10 p-2 rounded-md cursor-pointer hover:bg-warning/20 transition-colors" onClick={() => onStepClick?.(3)}>
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  <span>Escolha uma <strong>origem</strong> para o personagem</span>
+                </div>
+              )}
+              {/* Verificar classe */}
+              {!formData.characterClass && (
+                <div className="flex items-center gap-2 text-sm text-warning bg-warning/10 p-2 rounded-md cursor-pointer hover:bg-warning/20 transition-colors" onClick={() => onStepClick?.(4)}>
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  <span>Escolha uma <strong>classe</strong> para o personagem</span>
+                </div>
+              )}
+              {/* Verificar atributos */}
+              {(() => {
+                const attrValidation = validateAttributes(formData.attributes);
+                if (!attrValidation.valid || attrValidation.remainingPoints > 0) {
+                  return (
+                    <div className="flex items-center gap-2 text-sm text-warning bg-warning/10 p-2 rounded-md cursor-pointer hover:bg-warning/20 transition-colors" onClick={() => onStepClick?.(2)}>
+                      <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                      <span>Distribua todos os <strong>pontos de atributo</strong> ({attrValidation.remainingPoints} restantes)</span>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+              {/* Verificar escolhas de perícia da classe */}
+              {buildResult.pendingChoices.map(choice => (
+                <div key={choice.id} className="flex items-center gap-2 text-sm text-warning bg-warning/10 p-2 rounded-md cursor-pointer hover:bg-warning/20 transition-colors" onClick={() => onStepClick?.(formData.characterClass === 'Ocultista' ? 7 : 6)}>
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  <span>Escolha: <strong>{choice.label}</strong></span>
+                </div>
+              ))}
+              {/* Verificar conflitos de perícia */}
+              {buildResult.pendingConflicts.map(skillId => {
+                const skill = SKILLS.find(s => s.id === skillId);
+                return (
+                  <div key={skillId} className="flex items-center gap-2 text-sm text-warning bg-warning/10 p-2 rounded-md cursor-pointer hover:bg-warning/20 transition-colors" onClick={() => onStepClick?.(formData.characterClass === 'Ocultista' ? 7 : 6)}>
+                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                    <span>Resolva o conflito da perícia <strong>{skill?.name || skillId}</strong></span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </motion.div>
     </div>;
 }
