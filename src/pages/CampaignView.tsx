@@ -1,3 +1,7 @@
+/**
+ * CampaignView - Página principal de visualização e gerenciamento da campanha
+ * Integra chat, combate, sessões, notas e gerenciamento de jogadores
+ */
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -22,7 +26,8 @@ import {
   UserCog,
   Activity,
   Swords,
-  Users
+  Users,
+  CalendarDays,
 } from 'lucide-react';
 import {
   Dialog,
@@ -41,6 +46,9 @@ import { CombatTracker } from '@/components/combat/CombatTracker';
 import { DiceRoller3D } from '@/components/dice/DiceRoller3D';
 import { PlayersSidebar } from '@/components/campaign/PlayersSidebar';
 import { CampaignStatusGrid } from '@/components/campaign/CampaignStatusGrid';
+import { SessionManager } from '@/components/campaign/SessionManager';
+import { ActiveSessionBanner } from '@/components/campaign/ActiveSessionBanner';
+import { NotesPanel } from '@/components/campaign/NotesPanel';
 
 interface Campaign {
   id: string;
@@ -102,6 +110,14 @@ interface CampaignInvite {
   uses: number;
 }
 
+// Tipo para sessão ativa
+interface ActiveSession {
+  id: string;
+  session_number: number;
+  title: string | null;
+  started_at: string;
+}
+
 export default function CampaignView() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
@@ -113,6 +129,7 @@ export default function CampaignView() {
   const [members, setMembers] = useState<CampaignMember[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [invite, setInvite] = useState<CampaignInvite | null>(null);
+  const [activeSession, setActiveSession] = useState<ActiveSession | null>(null);
   const [loading, setLoading] = useState(true);
   
   const [messageInput, setMessageInput] = useState('');
@@ -120,14 +137,18 @@ export default function CampaignView() {
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const [generatingInvite, setGeneratingInvite] = useState(false);
   const [characterSelectOpen, setCharacterSelectOpen] = useState(false);
+  const [endSessionDialogOpen, setEndSessionDialogOpen] = useState(false);
 
   const isMaster = campaign?.master_id === user?.id;
   const currentMember = members.find(m => m.user_id === user?.id);
 
+  // Busca dados ao montar e subscribe para updates
   useEffect(() => {
     if (id && user) {
       fetchCampaignData();
+      fetchActiveSession();
       subscribeToMessages();
+      subscribeToSessions();
     }
   }, [id, user]);
 
@@ -298,6 +319,32 @@ export default function CampaignView() {
     return () => {
       supabase.removeChannel(channel);
     };
+  };
+
+  // Busca sessão ativa da campanha
+  const fetchActiveSession = async () => {
+    if (!id) return;
+    try {
+      const { data } = await supabase
+        .from('campaign_sessions')
+        .select('id, session_number, title, started_at')
+        .eq('campaign_id', id)
+        .eq('status', 'active')
+        .single();
+      setActiveSession(data || null);
+    } catch {
+      setActiveSession(null);
+    }
+  };
+
+  // Subscribe para mudanças em sessões (realtime)
+  const subscribeToSessions = () => {
+    if (!id) return;
+    const channel = supabase
+      .channel(`sessions-${id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'campaign_sessions', filter: `campaign_id=eq.${id}` }, () => fetchActiveSession())
+      .subscribe();
+    return () => supabase.removeChannel(channel);
   };
 
   const sendMessage = async (type: string = 'chat', content: string = messageInput, metadata: any = {}) => {
@@ -621,6 +668,10 @@ export default function CampaignView() {
                   <Scroll className="w-4 h-4 mr-2" />
                   NOTAS
                 </TabsTrigger>
+                <TabsTrigger value="sessions" className="font-display tracking-wider">
+                  <CalendarDays className="w-4 h-4 mr-2" />
+                  SESSÕES
+                </TabsTrigger>
                 {isMaster && (
                   <TabsTrigger value="master" className="font-display tracking-wider text-primary">
                     <Crown className="w-4 h-4 mr-2" />
@@ -751,14 +802,19 @@ export default function CampaignView() {
               </div>
             </TabsContent>
 
-            <TabsContent value="notes" className="flex-1 p-4 m-0">
+            <TabsContent value="notes" className="flex-1 p-4 m-0 overflow-auto">
               <div className="ordo-panel p-6 h-full">
-                <h3 className="font-display text-lg tracking-wider mb-4 text-primary">
-                  NOTAS DA CAMPANHA
-                </h3>
-                <Textarea
-                  placeholder="Anote informações importantes aqui..."
-                  className="min-h-[300px] resize-none"
+                <NotesPanel campaignId={id || ''} isMaster={isMaster} />
+              </div>
+            </TabsContent>
+
+            <TabsContent value="sessions" className="flex-1 p-4 m-0 overflow-auto">
+              <div className="max-w-3xl mx-auto">
+                <SessionManager
+                  campaignId={id || ''}
+                  currentSession={campaign?.current_session || 0}
+                  isMaster={isMaster}
+                  onSessionUpdate={fetchActiveSession}
                 />
               </div>
             </TabsContent>
