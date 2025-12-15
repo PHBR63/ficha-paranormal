@@ -324,6 +324,54 @@ html.dark[data-color-theme="amber"] {
     @apply border-primary/30;
   }
 
+  /* === NOVOS ESTILOS FICHA DE PAPEL === */
+  
+  /* Painel estilo ficha de papel com borda roxa */
+  .sheet-panel {
+    @apply relative bg-card/80 rounded-lg overflow-hidden backdrop-blur-sm;
+    @apply border-2 border-primary/40;
+    box-shadow: 
+      0 0 10px hsl(var(--primary) / 0.15),
+      inset 0 1px 0 hsl(var(--primary) / 0.1);
+  }
+
+  .sheet-panel:hover {
+    @apply border-primary/60;
+    box-shadow: 
+      0 0 15px hsl(var(--primary) / 0.25),
+      inset 0 1px 0 hsl(var(--primary) / 0.15);
+  }
+
+  /* Painel interno (para subseções) */
+  .sheet-panel-inner {
+    @apply bg-secondary/30 border border-border/50 rounded-lg;
+    @apply transition-all duration-200;
+  }
+
+  .sheet-panel-inner:hover {
+    @apply border-primary/30 bg-secondary/40;
+  }
+
+  /* Fundo de ficha com textura sutil */
+  .sheet-background {
+    background: 
+      linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--card)) 100%);
+  }
+
+  /* Grid de layout 2 colunas */
+  .sheet-grid {
+    @apply grid gap-4;
+    grid-template-columns: 1fr;
+  }
+
+  @media (min-width: 1024px) {
+    .sheet-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  /* === FIM DOS ESTILOS DE FICHA === */
+
   /* Card de dossiê */
   .dossier-card {
     @apply relative bg-card border border-border rounded-lg overflow-hidden;
