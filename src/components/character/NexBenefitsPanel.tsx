@@ -28,12 +28,10 @@ import {
 import { cn } from '@/lib/utils';
 import { 
   calculateDerivedStats, 
-  getPatentByNex, 
   getNexProgression,
   getOcultistRituals,
   CLASSES
 } from '@/lib/character-data';
-import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 
 interface NexBenefitsPanelProps {
@@ -77,9 +75,6 @@ export function NexBenefitsPanel({
   
   // Rituais (apenas Ocultista)
   const rituals = characterClass === 'Ocultista' ? getOcultistRituals(nex) : null;
-  
-  // Patente
-  const patent = getPatentByNex(nex);
 
   // Função para mostrar diferença
   const renderDiff = (current: number, previous: number | undefined) => {
@@ -141,15 +136,12 @@ export function NexBenefitsPanel({
       animate={{ opacity: 1, y: 0 }}
       className="ordo-panel p-4 space-y-4"
     >
-      {/* Header */}
+      {/* Header - Sem badge de patente */}
       <div className="flex items-center justify-between">
         <h4 className="font-display text-sm tracking-wider text-muted-foreground flex items-center gap-2">
           <TrendingUp className="w-4 h-4" />
           BENEFÍCIOS DO NEX {nex}%
         </h4>
-        <Badge variant="outline" className="font-display font-normal">
-          {patent}
-        </Badge>
       </div>
 
       <Separator />
