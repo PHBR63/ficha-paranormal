@@ -463,67 +463,243 @@ export const ESPECIALISTA_ABILITIES: ClassAbility[] = [
 // ==================== HABILIDADES DO OCULTISTA ====================
 
 export const OCULTISTA_ABILITIES: ClassAbility[] = [
-  // NEX 5% - Inicial
+  // ==================== HABILIDADES CORE (AUTOMÁTICAS) ====================
+  
+  // NEX 5% - Escolhido pelo Outro Lado (Base da Classe)
   { 
-    id: 'afinidade-paranormal', 
-    name: 'Afinidade Paranormal', 
-    description: 'Você pode lançar rituais de 1º círculo. Escolha um elemento: você recebe +2 em rituais desse elemento e -2 em rituais do elemento oposto.', 
+    id: 'escolhido-pelo-outro-lado', 
+    name: 'Escolhido pelo Outro Lado', 
+    description: 'Você teve uma experiência paranormal e foi marcado pelo Outro Lado, absorvendo conhecimento proibido necessário para realizar rituais. Você pode lançar rituais de 1º círculo. Conforme seu NEX aumenta, pode lançar rituais de círculos maiores: 2º círculo em NEX 25%, 3º círculo em NEX 55%, 4º círculo em NEX 85%. Você começa com três rituais de 1º círculo e aprende um ritual adicional sempre que avança de NEX.', 
     minNex: 5, 
     classId: 'Ocultista', 
     isCore: true 
   },
   
-  // NEX 10%
-  { id: 'ritual-bonus', name: 'Ritual Bônus', description: 'Você aprende um ritual adicional de qualquer círculo que possa lançar.', minNex: 10, classId: 'Ocultista' },
-  { id: 'resistencia-paranormal', name: 'Resistência Paranormal', description: 'Você recebe +5 em testes de resistência contra efeitos do Outro Lado e rituais.', minNex: 10, classId: 'Ocultista' },
-  { id: 'sangue-ritual', name: 'Sangue Ritual', description: 'Você pode usar PV no lugar de PE para lançar rituais (1 para 1). PV gastos assim não podem ser curados por 1 dia.', minNex: 10, classId: 'Ocultista' },
-  { id: 'conjuracao-precisa', name: 'Conjuração Precisa', description: 'Você pode excluir um número de alvos igual ao seu Intelecto de seus rituais de área.', minNex: 10, classId: 'Ocultista' },
+  // NEX 10% - Habilidade de Trilha
+  { 
+    id: 'habilidade-de-trilha-ocultista', 
+    name: 'Habilidade de Trilha', 
+    description: 'Em NEX 10%, você escolhe uma das trilhas de ocultista disponíveis e recebe o primeiro poder da trilha escolhida. Você recebe um novo poder da trilha em NEX 40%, 65% e 99%.', 
+    minNex: 10, 
+    classId: 'Ocultista', 
+    isCore: true 
+  },
   
-  // NEX 15%
-  { id: 'foco-paranormal', name: 'Foco Paranormal', description: 'Você recebe +2 em testes de rituais.', minNex: 15, classId: 'Ocultista' },
-  { id: 'mente-blindada', name: 'Mente Blindada', description: 'Você recebe resistência a dano mental 5 e +2 em Vontade.', minNex: 15, classId: 'Ocultista' },
+  // NEX 20% - Aumento de Atributo
+  { 
+    id: 'aumento-atributo-ocultista-20', 
+    name: 'Aumento de Atributo', 
+    description: 'Em NEX 20%, aumente um atributo à sua escolha em +1. Nenhum atributo pode ultrapassar 5 por esse método.', 
+    minNex: 20, 
+    classId: 'Ocultista', 
+    isCore: true 
+  },
   
-  // NEX 20%
-  { id: 'segundo-circulo', name: 'Segundo Círculo', description: 'Você pode lançar rituais de 2º círculo.', minNex: 20, classId: 'Ocultista', isCore: true },
-  { id: 'canalizar-energia', name: 'Canalizar Energia', description: 'Você pode gastar 2 PE para recuperar 2d8 PV ou causar 2d8 de dano paranormal em um alvo adjacente.', minNex: 20, classId: 'Ocultista' },
-  { id: 'poder-expandido', name: 'Poder Expandido', description: 'O custo em PE para aprimoramentos de rituais é reduzido em 1 (mínimo 1).', minNex: 20, classId: 'Ocultista' },
+  // NEX 25% - 2º Círculo
+  { 
+    id: 'segundo-circulo', 
+    name: '2º Círculo de Rituais', 
+    description: 'Você pode lançar rituais de 2º círculo.', 
+    minNex: 25, 
+    classId: 'Ocultista', 
+    isCore: true 
+  },
   
-  // NEX 25%
-  { id: 'fluxo-poder', name: 'Fluxo de Poder', description: 'Uma vez por cena, você pode lançar um ritual como ação livre.', minNex: 25, classId: 'Ocultista' },
-  { id: 'ritual-acelerado', name: 'Ritual Acelerado', description: 'Você pode gastar +2 PE para lançar um ritual de execução padrão como ação de movimento.', minNex: 25, classId: 'Ocultista' },
+  // NEX 35% - Grau de Treinamento
+  { 
+    id: 'grau-treinamento-ocultista-35', 
+    name: 'Grau de Treinamento', 
+    description: 'Em NEX 35%, escolha um número de perícias treinadas igual a 3 + Int. O grau de treinamento dessas perícias aumenta em um nível (treinado → veterano → expert).', 
+    minNex: 35, 
+    classId: 'Ocultista', 
+    isCore: true 
+  },
   
-  // NEX 30%
-  { id: 'resistencia-superior-ocultista', name: 'Resistência Superior', description: 'Sua resistência a dano mental aumenta para 10.', minNex: 30, classId: 'Ocultista' },
-  { id: 'canalizar-maior', name: 'Canalizar Maior', description: 'O dano/cura do seu Canalizar Energia aumenta para 4d8.', minNex: 30, classId: 'Ocultista' },
+  // NEX 50% - Aumento de Atributo + Versatilidade
+  { 
+    id: 'aumento-atributo-ocultista-50', 
+    name: 'Aumento de Atributo', 
+    description: 'Em NEX 50%, aumente um atributo à sua escolha em +1. Nenhum atributo pode ultrapassar 5 por esse método.', 
+    minNex: 50, 
+    classId: 'Ocultista', 
+    isCore: true 
+  },
+  { 
+    id: 'versatilidade-ocultista', 
+    name: 'Versatilidade', 
+    description: 'Em NEX 50%, escolha entre receber um poder de ocultista ou receber o primeiro poder de uma trilha de ocultista que não a sua.', 
+    minNex: 50, 
+    classId: 'Ocultista', 
+    isCore: true 
+  },
   
-  // NEX 35%
-  { id: 'terceiro-circulo', name: 'Terceiro Círculo', description: 'Você pode lançar rituais de 3º círculo.', minNex: 35, classId: 'Ocultista', isCore: true },
-  { id: 'reserva-arcana', name: 'Reserva Arcana', description: 'Você recebe +10 PE máximos permanentes.', minNex: 35, classId: 'Ocultista' },
-  { id: 'formula-memorizada', name: 'Fórmula Memorizada', description: 'Escolha um ritual de 1º ou 2º círculo. Você pode lançá-lo gastando metade do PE.', minNex: 35, classId: 'Ocultista' },
+  // NEX 55% - 3º Círculo
+  { 
+    id: 'terceiro-circulo', 
+    name: '3º Círculo de Rituais', 
+    description: 'Você pode lançar rituais de 3º círculo.', 
+    minNex: 55, 
+    classId: 'Ocultista', 
+    isCore: true 
+  },
   
-  // NEX 40%
-  { id: 'mestre-elementos', name: 'Mestre dos Elementos', description: 'Você não sofre mais penalidade em rituais do elemento oposto ao seu.', minNex: 40, classId: 'Ocultista' },
+  // NEX 70% - Grau de Treinamento
+  { 
+    id: 'grau-treinamento-ocultista-70', 
+    name: 'Grau de Treinamento', 
+    description: 'Em NEX 70%, escolha um número de perícias treinadas igual a 3 + Int. O grau de treinamento dessas perícias aumenta em um nível (treinado → veterano → expert).', 
+    minNex: 70, 
+    classId: 'Ocultista', 
+    isCore: true 
+  },
   
-  // NEX 45%
-  { id: 'transcender-limites', name: 'Transcender Limites', description: 'Uma vez por dia, você pode lançar um ritual sem gastar PE.', minNex: 45, classId: 'Ocultista' },
+  // NEX 80% - Aumento de Atributo
+  { 
+    id: 'aumento-atributo-ocultista-80', 
+    name: 'Aumento de Atributo', 
+    description: 'Em NEX 80%, aumente um atributo à sua escolha em +1. Nenhum atributo pode ultrapassar 5 por esse método.', 
+    minNex: 80, 
+    classId: 'Ocultista', 
+    isCore: true 
+  },
   
-  // NEX 50%
-  { id: 'quarto-circulo', name: 'Quarto Círculo', description: 'Você pode lançar rituais de 4º círculo.', minNex: 50, classId: 'Ocultista', isCore: true },
-  { id: 'mestre-rituais', name: 'Mestre dos Rituais', description: 'O custo de PE dos seus rituais é reduzido em 2 (mínimo 1).', minNex: 50, classId: 'Ocultista' },
-  { id: 'conjuracao-poderosa', name: 'Conjuração Poderosa', description: 'O dano dos seus rituais aumenta em +1 dado.', minNex: 50, classId: 'Ocultista' },
+  // NEX 85% - 4º Círculo
+  { 
+    id: 'quarto-circulo', 
+    name: '4º Círculo de Rituais', 
+    description: 'Você pode lançar rituais de 4º círculo.', 
+    minNex: 85, 
+    classId: 'Ocultista', 
+    isCore: true 
+  },
   
-  // NEX 55%+
-  { id: 'magia-instintiva', name: 'Magia Instintiva', description: 'Você pode lançar rituais mesmo se estiver imobilizado ou sem componentes.', minNex: 55, classId: 'Ocultista' },
-  { id: 'poder-absoluto', name: 'Poder Absoluto', description: 'A DT dos seus rituais aumenta em +2.', minNex: 60, classId: 'Ocultista' },
-  { id: 'rituais-devastadores', name: 'Rituais Devastadores', description: 'O dano dos seus rituais aumenta em +2 dados.', minNex: 65, classId: 'Ocultista' },
-  { id: 'arcano-supremo', name: 'Arcano Supremo', description: 'Você pode lançar rituais de 1º e 2º círculo como ação livre.', minNex: 70, classId: 'Ocultista' },
+  // NEX 95% - Aumento de Atributo
+  { 
+    id: 'aumento-atributo-ocultista-95', 
+    name: 'Aumento de Atributo', 
+    description: 'Em NEX 95%, aumente um atributo à sua escolha em +1. Nenhum atributo pode ultrapassar 5 por esse método.', 
+    minNex: 95, 
+    classId: 'Ocultista', 
+    isCore: true 
+  },
   
-  // NEX 75%
-  { id: 'transcendencia', name: 'Transcendência', description: 'Você pode gastar 10 PE para ficar imune a todo dano por uma rodada.', minNex: 75, classId: 'Ocultista' },
-  { id: 'conexao-profunda', name: 'Conexão Profunda', description: 'Você pode usar seu PE para alimentar rituais de aliados (a qualquer distância).', minNex: 75, classId: 'Ocultista' },
+  // ==================== PODERES ESCOLHÍVEIS ====================
+  // Disponíveis em NEX 15%, 30% e a cada 15% subsequentes
   
-  // NEX 99%
-  { id: 'avatar-outro-lado', name: 'Avatar do Outro Lado', description: 'Você se torna parcialmente uma criatura do Outro Lado. Recebe imunidade a efeitos de medo e doenças, voo 18m, e +10 em todos os testes de rituais.', minNex: 99, classId: 'Ocultista', isCore: true },
+  { 
+    id: 'camuflar-ocultismo', 
+    name: 'Camuflar Ocultismo', 
+    description: 'Você pode gastar uma ação livre para esconder símbolos e sigilos desenhados ou gravados em objetos ou na sua pele, tornando-os invisíveis para outras pessoas além de você. Além disso, ao lançar um ritual, pode gastar +2 PE para lançá-lo sem componentes ritualísticos e sem gesticular, usando apenas concentração. Outros seres só perceberão que você lançou um ritual se passarem em um teste de Ocultismo (DT 25).', 
+    minNex: 15, 
+    classId: 'Ocultista' 
+  },
+  { 
+    id: 'criar-selo', 
+    name: 'Criar Selo', 
+    description: 'Você pode fabricar selos paranormais de rituais que conheça. Fabricar um selo gasta uma ação demorada e um número de PE igual ao custo do ritual. Você pode ter um número máximo de selos criados ao mesmo tempo igual à sua Presença.', 
+    minNex: 15, 
+    classId: 'Ocultista' 
+  },
+  { 
+    id: 'envolto-em-misterio', 
+    name: 'Envolto em Mistério', 
+    description: 'Sua aparência e postura assombrosas permitem manipular e assustar pessoas ignorantes ou supersticiosas. O mestre define quando esse poder pode ser usado. Como regra geral, você recebe +5 em Enganação e Intimidação contra pessoas não treinadas em Ocultismo.', 
+    minNex: 15, 
+    classId: 'Ocultista' 
+  },
+  { 
+    id: 'especialista-em-elemento', 
+    name: 'Especialista em Elemento', 
+    description: 'Escolha um elemento. A DT para resistir aos seus rituais desse elemento aumenta em +2.', 
+    minNex: 15, 
+    classId: 'Ocultista' 
+  },
+  { 
+    id: 'ferramentas-paranormais', 
+    name: 'Ferramentas Paranormais', 
+    description: 'Você reduz a categoria de um item paranormal em 1 e pode ativar itens paranormais sem pagar seu custo em PE.', 
+    minNex: 15, 
+    classId: 'Ocultista' 
+  },
+  { 
+    id: 'guiado-pelo-paranormal', 
+    name: 'Guiado pelo Paranormal', 
+    description: 'Uma vez por cena, você pode gastar 2 PE para fazer uma ação de investigação adicional.', 
+    minNex: 15, 
+    classId: 'Ocultista' 
+  },
+  { 
+    id: 'identificacao-paranormal', 
+    name: 'Identificação Paranormal', 
+    description: 'Você recebe +10 em testes de Ocultismo para identificar criaturas, objetos ou rituais paranormais.', 
+    minNex: 15, 
+    classId: 'Ocultista' 
+  },
+  { 
+    id: 'improvisar-componentes', 
+    name: 'Improvisar Componentes', 
+    description: 'Uma vez por cena, você pode gastar uma ação completa para fazer um teste de Investigação (DT 15). Se passar, encontra objetos que podem servir como componentes ritualísticos de um elemento à sua escolha. O mestre decide se é possível usar este poder na cena atual.', 
+    minNex: 15, 
+    classId: 'Ocultista' 
+  },
+  { 
+    id: 'intuicao-paranormal', 
+    name: 'Intuição Paranormal', 
+    description: 'Sempre que usa a ação facilitar a investigação, você pode usar Intelecto ou Presença no teste, à sua escolha.', 
+    minNex: 15, 
+    classId: 'Ocultista' 
+  },
+  { 
+    id: 'ritual-potente', 
+    name: 'Ritual Potente', 
+    description: 'Você soma seu Intelecto nas rolagens de dano ou efeitos de cura de seus rituais. Pré-requisito: Int 2.', 
+    minNex: 15, 
+    classId: 'Ocultista' 
+  },
+  { 
+    id: 'ritual-predileto', 
+    name: 'Ritual Predileto', 
+    description: 'Escolha um ritual que você conhece. O custo desse ritual é reduzido em –1 PE. Essa redução se acumula com reduções vindas de outras fontes.', 
+    minNex: 15, 
+    classId: 'Ocultista' 
+  },
+  { 
+    id: 'tatuagem-ritualistica', 
+    name: 'Tatuagem Ritualística', 
+    description: 'Símbolos marcados em sua pele reduzem em –1 PE o custo de rituais de alcance pessoal que têm você como alvo.', 
+    minNex: 15, 
+    classId: 'Ocultista' 
+  },
+  { 
+    id: 'transcender-ocultista', 
+    name: 'Transcender', 
+    description: 'Escolha um poder paranormal. Você recebe o poder escolhido, mas não ganha Sanidade nem aumento de NEX. Você pode escolher este poder várias vezes.', 
+    minNex: 15, 
+    classId: 'Ocultista' 
+  },
+  { 
+    id: 'treinamento-em-pericia-ocultista', 
+    name: 'Treinamento em Perícia', 
+    description: 'Escolha duas perícias. Em NEX 35%, você pode escolher perícias nas quais já é treinado para se tornarem veteranas. Em NEX 70%, pode escolher perícias nas quais já é veterano para se tornarem expert. Você pode escolher este poder várias vezes.', 
+    minNex: 15, 
+    classId: 'Ocultista' 
+  },
+  
+  // Poderes com pré-requisitos de NEX mais alto
+  { 
+    id: 'mestre-em-elemento', 
+    name: 'Mestre em Elemento', 
+    description: 'Escolha um elemento. O custo para lançar rituais desse elemento diminui em –1 PE. Pré-requisitos: Especialista em Elemento escolhido, NEX 45%.', 
+    minNex: 45, 
+    classId: 'Ocultista' 
+  },
+  { 
+    id: 'fluxo-de-poder', 
+    name: 'Fluxo de Poder', 
+    description: 'Você pode manter dois efeitos sustentados de rituais ativos ao mesmo tempo, pagando o custo de cada efeito separadamente. Pré-requisito: NEX 60%.', 
+    minNex: 60, 
+    classId: 'Ocultista' 
+  },
 ];
 
 // ==================== TODAS AS HABILIDADES ====================
