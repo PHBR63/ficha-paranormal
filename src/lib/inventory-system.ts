@@ -12,6 +12,11 @@ export interface InventoryItem {
   ammoCurrent?: number;
   ammoMax?: number;
   description?: string;
+  // Campos para itens consumíveis
+  consumable?: boolean;
+  uses?: number;
+  maxUses?: number;
+  effect?: string;
 }
 
 export interface PatentLimits {
@@ -237,4 +242,97 @@ export function unequipItem(
     ...item,
     isEquipped: item.id === itemId ? false : item.isEquipped
   }));
+}
+
+// ============== SISTEMA DE CONSUMO DE ITENS ==============
+
+export interface UseItemResult {
+  success: boolean;
+  newInventory: InventoryItem[];
+  message: string;
+  itemRemoved: boolean;
+  remainingUses?: number;
+}
+
+/**
+ * Usa um item consumível do inventário
+ * - Decrementa os usos restantes
+ * - Remove o item se não tiver mais usos
+ * - Retorna informações sobre o resultado
+ */
+export function useConsumableItem(
+  inventory: InventoryItem[],
+  itemId: string
+): UseItemResult {
+  const itemIndex = inventory.findIndex(i => i.id === itemId);
+  
+  if (itemIndex < 0) {
+    return {
+      success: false,
+      newInventory: inventory,
+      message: 'Item não encontrado no inventário.',
+      itemRemoved: false,
+    };
+  }
+
+  const item = inventory[itemIndex];
+
+  // Verifica se o item é consumível
+  if (!item.consumable) {
+    return {
+      success: false,
+      newInventory: inventory,
+      message: `${item.name} não é um item consumível.`,
+      itemRemoved: false,
+    };
+  }
+
+  // Verifica se tem usos restantes
+  const currentUses = item.uses ?? 0;
+  if (currentUses <= 0) {
+    return {
+      success: false,
+      newInventory: inventory,
+      message: `${item.name} não tem mais usos disponíveis.`,
+      itemRemoved: false,
+    };
+  }
+
+  // Decrementa o uso
+  const newUses = currentUses - 1;
+  
+  if (newUses <= 0) {
+    // Remove o item completamente
+    const newInventory = inventory.filter((_, i) => i !== itemIndex);
+    return {
+      success: true,
+      newInventory,
+      message: `${item.name} usado! (último uso - item consumido)`,
+      itemRemoved: true,
+      remainingUses: 0,
+    };
+  }
+
+  // Atualiza os usos restantes
+  const newInventory = [...inventory];
+  newInventory[itemIndex] = {
+    ...item,
+    uses: newUses,
+  };
+
+  return {
+    success: true,
+    newInventory,
+    message: `${item.name} usado! (${newUses}/${item.maxUses ?? currentUses} usos restantes)`,
+    itemRemoved: false,
+    remainingUses: newUses,
+  };
+}
+
+/**
+ * Verifica se um item pode ser usado
+ */
+export function canUseItem(item: InventoryItem): boolean {
+  if (!item.consumable) return false;
+  return (item.uses ?? 0) > 0;
 }
