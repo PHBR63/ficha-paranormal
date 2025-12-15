@@ -353,7 +353,11 @@ function ProgressionCard({
           key={value}
           initial={{ scale: 1.1 }}
           animate={{ scale: 1 }}
-          className={cn('font-display text-2xl', color)}
+          className={cn(
+            // Aumenta legibilidade do número principal (texto/ícone ilegível)
+            'font-display text-3xl font-bold tracking-wide drop-shadow-md',
+            color
+          )}
         >
           {value}
         </motion.span>
