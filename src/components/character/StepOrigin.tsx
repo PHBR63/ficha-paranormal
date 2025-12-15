@@ -245,7 +245,7 @@ export function StepOrigin({ formData, updateFormData }: StepOriginProps) {
                   {originSkillNames.map(name => (
                     <span 
                       key={name}
-                      className="px-2 py-0.5 bg-secondary/20 text-secondary text-xs rounded-sm"
+                      className="px-2 py-1 bg-primary/20 text-primary font-medium text-sm rounded border border-primary/30"
                     >
                       {name}
                     </span>
