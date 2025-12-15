@@ -29,8 +29,9 @@ import {
 import { ORIGINS, CLASSES, getTrackById } from '@/lib/character-data';
 import { ALL_RITUALS } from '@/lib/rituals-data';
 import { ALL_CLASS_ABILITIES } from '@/lib/class-abilities';
-import { PARANORMAL_POWERS } from '@/lib/paranormal-powers';
+import { PARANORMAL_POWERS, ParanormalPower, ParanormalElement } from '@/lib/paranormal-powers';
 import { GENERAL_POWERS } from '@/lib/general-powers';
+import { ParanormalPowersPanel } from '@/components/character/ParanormalPowersPanel';
 import { cn } from '@/lib/utils';
 import { DiceRollResult } from '@/lib/dice-roller';
 import { InventoryPanel } from '@/components/inventory/InventoryPanel';
@@ -93,9 +94,11 @@ interface Character {
   gender?: string | null;
   appearance?: string | null;
   personality?: string | null;
-  // Novos campos do suplemento "Sobrevivendo ao Horror"
+  // Campos de poderes paranormais e afinidade elemental
   paranormal_powers?: Array<{ id: string; name: string; element: string; description: string }>;
   general_powers?: Array<{ id: string; name: string; description: string; category?: string }>;
+  elemental_affinity?: string | null;
+  affinity_active?: boolean;
 }
 
 export default function CharacterSheet() {
@@ -170,6 +173,8 @@ export default function CharacterSheet() {
         abilities: Array.isArray(data.abilities) ? data.abilities as string[] : [],
         rituals: Array.isArray(data.rituals) ? data.rituals as string[] : [],
         class_track: data.class_track || null,
+        elemental_affinity: data.elemental_affinity || null,
+        affinity_active: data.affinity_active || false,
       };
       setCharacter(charData as unknown as Character);
       setHpCurrent(data.hp_current);
@@ -259,6 +264,9 @@ export default function CharacterSheet() {
     san_max: number;
     patent: string;
     newAbilities: string[];
+    elemental_affinity?: ParanormalElement | null;
+    affinity_active?: boolean;
+    paranormal_powers?: ParanormalPower[];
   }) => {
     if (!character) return;
 
@@ -266,6 +274,16 @@ export default function CharacterSheet() {
       ...character.abilities,
       ...newStats.newAbilities,
     ];
+
+    // Prepara poderes paranormais atualizados
+    const updatedParanormalPowers = newStats.paranormal_powers 
+      ? newStats.paranormal_powers.map(p => ({
+          id: p.id,
+          name: p.name,
+          element: p.element,
+          description: p.description,
+        }))
+      : character.paranormal_powers;
 
     const { error } = await supabase
       .from('characters')
@@ -279,6 +297,9 @@ export default function CharacterSheet() {
         san_current: sanCurrent + (newStats.san_max - character.san_max),
         patent: newStats.patent,
         abilities: updatedAbilities,
+        elemental_affinity: newStats.elemental_affinity ?? character.elemental_affinity,
+        affinity_active: newStats.affinity_active ?? character.affinity_active,
+        paranormal_powers: updatedParanormalPowers,
       })
       .eq('id', character.id);
 
@@ -306,6 +327,9 @@ export default function CharacterSheet() {
       san_current: newSanCurrent,
       patent: newStats.patent,
       abilities: updatedAbilities,
+      elemental_affinity: newStats.elemental_affinity ?? prev.elemental_affinity,
+      affinity_active: newStats.affinity_active ?? prev.affinity_active,
+      paranormal_powers: updatedParanormalPowers,
     } : null);
 
     setHpCurrent(newHpCurrent);
@@ -889,31 +913,27 @@ export default function CharacterSheet() {
                     </div>
                   )}
 
-                  {/* Poderes Paranormais (do suplemento) */}
+                  {/* Poderes Paranormais (usando o novo painel) */}
                   {character.paranormal_powers && character.paranormal_powers.length > 0 && (
                     <div className="space-y-2">
                       <p className="text-xs text-muted-foreground uppercase tracking-wider">
                         Poderes Paranormais
                       </p>
-                      {character.paranormal_powers.map((power) => {
-                        const powerData = PARANORMAL_POWERS.find(p => p.id === power.id);
-                        const elementEmoji = {
-                          sangue: '🩸',
-                          morte: '💀',
-                          conhecimento: '📖',
-                          energia: '⚡',
-                          medo: '👁️'
-                        }[power.element] || '✨';
-                        return (
-                          <SheetAccordionItem
-                            key={power.id}
-                            title={`${elementEmoji} ${power.name}`}
-                            description={powerData?.effect.description || power.description}
-                            badge={power.element}
-                            badgeVariant="secondary"
-                          />
-                        );
-                      })}
+                      <ParanormalPowersPanel
+                        powers={character.paranormal_powers.map(p => {
+                          const fullPower = PARANORMAL_POWERS.find(fp => fp.id === p.id);
+                          return fullPower || {
+                            id: p.id,
+                            name: p.name,
+                            element: p.element as ParanormalElement | 'generic',
+                            description: p.description,
+                            effect: { type: 'special' as const, description: p.description },
+                          };
+                        })}
+                        elementalAffinity={character.elemental_affinity as ParanormalElement | null}
+                        affinityActive={character.affinity_active}
+                        nex={character.nex}
+                      />
                     </div>
                   )}
 
@@ -1005,6 +1025,18 @@ export default function CharacterSheet() {
           san_max: character.san_max,
           rituals: character.rituals,
           abilities: character.abilities,
+          paranormal_powers: character.paranormal_powers?.map(p => {
+            const fullPower = PARANORMAL_POWERS.find(fp => fp.id === p.id);
+            return fullPower || {
+              id: p.id,
+              name: p.name,
+              element: p.element as ParanormalElement | 'generic',
+              description: p.description,
+              effect: { type: 'special' as const, description: p.description },
+            };
+          }),
+          elemental_affinity: character.elemental_affinity as ParanormalElement | null,
+          affinity_active: character.affinity_active,
         }}
         onLevelUp={handleLevelUp}
       />
