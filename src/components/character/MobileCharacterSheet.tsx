@@ -3,7 +3,7 @@
  * Usa abas deslizantes e layout otimizado para telas pequenas
  */
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   User, 
@@ -23,7 +23,11 @@ import {
   ArrowUp,
   Home,
   Scroll,
+  Search,
+  SortAsc,
+  Filter,
 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { AnimatedProgress } from '@/components/ui/animated-progress';
 import { cn } from '@/lib/utils';
@@ -225,6 +229,254 @@ function getCategoryColor(category: string): string {
 
 // Tab de navegação mobile
 type MobileTab = 'overview' | 'skills' | 'powers' | 'inventory';
+
+// Tipos de filtro e ordenação para perícias
+type SkillFilter = 'all' | 'trained' | 'AGI' | 'FOR' | 'INT' | 'PRE' | 'VIG';
+type SkillSort = 'bonus' | 'alpha' | 'attribute';
+
+// Componente de conteúdo das perícias com filtros
+interface SkillsTabContentProps {
+  character: MobileCharacterSheetProps['character'];
+  onOpenDiceRoller: () => void;
+}
+
+function SkillsTabContent({ character, onOpenDiceRoller }: SkillsTabContentProps) {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeFilter, setActiveFilter] = useState<SkillFilter>('all');
+  const [sortBy, setSortBy] = useState<SkillSort>('bonus');
+
+  // Lista completa de perícias com bônus padrão 0
+  const allSkills: Record<string, number> = useMemo(() => ({
+    // Agilidade
+    'acrobacia': character.skills?.['acrobacia'] || 0,
+    'furtividade': character.skills?.['furtividade'] || 0,
+    'pilotagem': character.skills?.['pilotagem'] || 0,
+    'pontaria': character.skills?.['pontaria'] || 0,
+    'reflexos': character.skills?.['reflexos'] || 0,
+    // Força
+    'atletismo': character.skills?.['atletismo'] || 0,
+    'luta': character.skills?.['luta'] || 0,
+    // Intelecto
+    'atualidades': character.skills?.['atualidades'] || 0,
+    'ciências': character.skills?.['ciências'] || 0,
+    'investigação': character.skills?.['investigação'] || 0,
+    'medicina': character.skills?.['medicina'] || 0,
+    'ocultismo': character.skills?.['ocultismo'] || 0,
+    'profissão': character.skills?.['profissão'] || 0,
+    'sobrevivência': character.skills?.['sobrevivência'] || 0,
+    'tática': character.skills?.['tática'] || 0,
+    'tecnologia': character.skills?.['tecnologia'] || 0,
+    // Presença
+    'artes': character.skills?.['artes'] || 0,
+    'diplomacia': character.skills?.['diplomacia'] || 0,
+    'enganação': character.skills?.['enganação'] || 0,
+    'intimidação': character.skills?.['intimidação'] || 0,
+    'intuição': character.skills?.['intuição'] || 0,
+    'percepção': character.skills?.['percepção'] || 0,
+    'vontade': character.skills?.['vontade'] || 0,
+    // Vigor
+    'fortitude': character.skills?.['fortitude'] || 0,
+  }), [character.skills]);
+
+  // Filtrar e ordenar perícias
+  const filteredSkills = useMemo(() => {
+    let entries = Object.entries(allSkills);
+
+    // Aplicar filtro de busca
+    if (searchQuery.trim()) {
+      entries = entries.filter(([skill]) =>
+        skill.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    // Aplicar filtro por tipo
+    if (activeFilter === 'trained') {
+      entries = entries.filter(([_, bonus]) => bonus > 0);
+    } else if (['AGI', 'FOR', 'INT', 'PRE', 'VIG'].includes(activeFilter)) {
+      entries = entries.filter(([skill]) => getSkillAttribute(skill) === activeFilter);
+    }
+
+    // Aplicar ordenação
+    entries.sort((a, b) => {
+      switch (sortBy) {
+        case 'bonus':
+          return b[1] - a[1]; // Maior bônus primeiro
+        case 'alpha':
+          return a[0].localeCompare(b[0]); // Alfabética
+        case 'attribute':
+          const attrA = getSkillAttribute(a[0]);
+          const attrB = getSkillAttribute(b[0]);
+          if (attrA !== attrB) return attrA.localeCompare(attrB);
+          return b[1] - a[1]; // Dentro do mesmo atributo, ordena por bônus
+        default:
+          return 0;
+      }
+    });
+
+    return entries;
+  }, [allSkills, searchQuery, activeFilter, sortBy]);
+
+  // Contadores
+  const trainedCount = Object.values(allSkills).filter(v => v > 0).length;
+  const totalCount = Object.keys(allSkills).length;
+
+  // Filtros disponíveis
+  const filters: { id: SkillFilter; label: string; color?: string }[] = [
+    { id: 'all', label: 'Todas' },
+    { id: 'trained', label: `Treinadas (${trainedCount})` },
+    { id: 'AGI', label: 'AGI', color: 'bg-blue-500/20 text-blue-400' },
+    { id: 'FOR', label: 'FOR', color: 'bg-orange-500/20 text-orange-400' },
+    { id: 'INT', label: 'INT', color: 'bg-purple-500/20 text-purple-400' },
+    { id: 'PRE', label: 'PRE', color: 'bg-pink-500/20 text-pink-400' },
+    { id: 'VIG', label: 'VIG', color: 'bg-green-500/20 text-green-400' },
+  ];
+
+  // Opções de ordenação
+  const sortOptions: { id: SkillSort; label: string }[] = [
+    { id: 'bonus', label: 'Bônus' },
+    { id: 'alpha', label: 'A-Z' },
+    { id: 'attribute', label: 'Atributo' },
+  ];
+
+  return (
+    <motion.div
+      key="skills"
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: 20 }}
+      className="space-y-3"
+    >
+      {/* Header com contador */}
+      <div className="ordo-panel p-3">
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-xs text-muted-foreground uppercase">PERÍCIAS</p>
+          <span className="text-[10px] px-2 py-0.5 bg-primary/20 text-primary rounded-full">
+            {trainedCount}/{totalCount} treinadas
+          </span>
+        </div>
+
+        {/* Barra de busca */}
+        <div className="relative mb-3">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar perícia..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9 h-10 text-sm bg-background/50"
+          />
+        </div>
+
+        {/* Filtros por atributo */}
+        <div className="flex gap-1.5 overflow-x-auto pb-2 scrollbar-hide">
+          {filters.map((filter) => (
+            <button
+              key={filter.id}
+              onClick={() => setActiveFilter(filter.id)}
+              className={cn(
+                "flex-shrink-0 px-2.5 py-1.5 rounded-full text-[11px] font-medium transition-all",
+                activeFilter === filter.id
+                  ? filter.color || "bg-primary text-primary-foreground"
+                  : "bg-muted/50 text-muted-foreground hover:bg-muted"
+              )}
+            >
+              {filter.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Ordenação */}
+        <div className="flex items-center gap-2 mt-2 pt-2 border-t border-border">
+          <SortAsc className="w-3.5 h-3.5 text-muted-foreground" />
+          <span className="text-[10px] text-muted-foreground">Ordenar:</span>
+          <div className="flex gap-1">
+            {sortOptions.map((option) => (
+              <button
+                key={option.id}
+                onClick={() => setSortBy(option.id)}
+                className={cn(
+                  "px-2 py-1 rounded text-[10px] transition-all",
+                  sortBy === option.id
+                    ? "bg-secondary/20 text-secondary"
+                    : "bg-muted/30 text-muted-foreground hover:bg-muted/50"
+                )}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Lista de perícias */}
+      <div className="ordo-panel p-3">
+        {filteredSkills.length > 0 ? (
+          <div className="space-y-1">
+            {filteredSkills.map(([skill, bonus]) => {
+              const skillAttr = getSkillAttribute(skill);
+              const attrColor = getAttributeColor(skillAttr);
+              const isTrained = bonus > 0;
+              
+              return (
+                <button
+                  key={skill}
+                  onClick={onOpenDiceRoller}
+                  className={cn(
+                    "w-full flex items-center justify-between p-2.5 rounded-lg transition-colors",
+                    isTrained 
+                      ? "bg-muted/40 active:bg-muted/60" 
+                      : "bg-muted/20 active:bg-muted/40 opacity-70"
+                  )}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className={cn(
+                      "w-6 h-6 rounded flex items-center justify-center text-[10px] font-bold",
+                      attrColor
+                    )}>
+                      {skillAttr}
+                    </span>
+                    <span className={cn(
+                      "text-sm capitalize",
+                      !isTrained && "text-muted-foreground"
+                    )}>
+                      {skill.replace(/_/g, ' ')}
+                    </span>
+                    {isTrained && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={cn(
+                      "font-display text-lg",
+                      isTrained ? "text-primary" : "text-muted-foreground"
+                    )}>
+                      {bonus >= 0 ? `+${bonus}` : bonus}
+                    </span>
+                    <Dices className="w-4 h-4 text-muted-foreground" />
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="text-center py-6">
+            <Filter className="w-10 h-10 mx-auto text-muted-foreground/30 mb-2" />
+            <p className="text-muted-foreground text-sm">Nenhuma perícia encontrada.</p>
+            <p className="text-[10px] text-muted-foreground/70 mt-1">
+              Tente ajustar os filtros
+            </p>
+          </div>
+        )}
+      </div>
+      
+      {/* Dica de uso */}
+      <div className="px-3 py-2 bg-primary/5 rounded-lg border border-primary/20">
+        <p className="text-[10px] text-muted-foreground text-center">
+          💡 Toque em uma perícia para rolar o teste
+        </p>
+      </div>
+    </motion.div>
+  );
+}
 
 // Componente principal
 export function MobileCharacterSheet({
@@ -470,76 +722,10 @@ export function MobileCharacterSheet({
         )}
 
         {activeTab === 'skills' && (
-          <motion.div
-            key="skills"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            className="space-y-3"
-          >
-            {/* Resumo de perícias */}
-            <div className="ordo-panel p-3">
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-xs text-muted-foreground uppercase">PERÍCIAS TREINADAS</p>
-                {character.skills && (
-                  <span className="text-[10px] px-2 py-0.5 bg-primary/20 text-primary rounded-full">
-                    {Object.values(character.skills).filter(v => v > 0).length} treinadas
-                  </span>
-                )}
-              </div>
-              
-              {/* Perícias agrupadas por atributo */}
-              {character.skills && Object.entries(character.skills).filter(([_, v]) => v > 0).length > 0 ? (
-                <div className="space-y-1">
-                  {Object.entries(character.skills)
-                    .filter(([_, value]) => value > 0)
-                    .sort(([, a], [, b]) => b - a) // Ordena por bônus (maior primeiro)
-                    .map(([skill, bonus]) => {
-                      // Determina o atributo da perícia para colorir
-                      const skillAttr = getSkillAttribute(skill);
-                      const attrColor = getAttributeColor(skillAttr);
-                      
-                      return (
-                        <button
-                          key={skill}
-                          onClick={onOpenDiceRoller}
-                          className="w-full flex items-center justify-between p-2.5 bg-muted/30 rounded-lg active:bg-muted/50 transition-colors"
-                        >
-                          <div className="flex items-center gap-2">
-                            <span className={cn(
-                              "w-6 h-6 rounded flex items-center justify-center text-[10px] font-bold",
-                              attrColor
-                            )}>
-                              {skillAttr}
-                            </span>
-                            <span className="text-sm capitalize">{skill.replace(/_/g, ' ')}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-primary font-display text-lg">+{bonus}</span>
-                            <Dices className="w-4 h-4 text-muted-foreground" />
-                          </div>
-                        </button>
-                      );
-                    })}
-                </div>
-              ) : (
-                <div className="text-center py-6">
-                  <BookOpen className="w-10 h-10 mx-auto text-muted-foreground/30 mb-2" />
-                  <p className="text-muted-foreground text-sm">Nenhuma perícia treinada.</p>
-                  <p className="text-[10px] text-muted-foreground/70 mt-1">
-                    Treine perícias ao subir de NEX
-                  </p>
-                </div>
-              )}
-            </div>
-            
-            {/* Dica de uso */}
-            <div className="px-3 py-2 bg-primary/5 rounded-lg border border-primary/20">
-              <p className="text-[10px] text-muted-foreground text-center">
-                💡 Toque em uma perícia para rolar o teste
-              </p>
-            </div>
-          </motion.div>
+          <SkillsTabContent 
+            character={character} 
+            onOpenDiceRoller={onOpenDiceRoller} 
+          />
         )}
 
         {activeTab === 'powers' && (
