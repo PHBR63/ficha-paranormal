@@ -442,7 +442,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      validate_campaign_invite: {
+        Args: { code: string }
+        Returns: {
+          campaign_id: string
+          message: string
+          valid: boolean
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

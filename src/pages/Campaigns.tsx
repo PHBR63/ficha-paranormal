@@ -149,37 +149,30 @@ export default function Campaigns() {
     }
   };
 
+  // Função para entrar em campanha usando RPC seguro
   const handleJoinCampaign = async () => {
     if (!user || !inviteCode.trim()) return;
 
     setJoining(true);
     try {
-      // Find invite
-      const { data: invite, error: inviteError } = await supabase
-        .from('campaign_invites')
-        .select('*, campaigns(*)')
-        .eq('invite_code', inviteCode.trim().toUpperCase())
-        .single();
+      // Valida o código usando função RPC segura (não expõe a tabela)
+      const { data: validation, error: validationError } = await supabase
+        .rpc('validate_campaign_invite', { code: inviteCode.trim() });
 
-      if (inviteError || !invite) {
-        throw new Error('Código de convite inválido.');
+      if (validationError) throw validationError;
+
+      const result = validation?.[0];
+      if (!result?.valid) {
+        throw new Error(result?.message || 'Código de convite inválido.');
       }
 
-      // Check if expired
-      if (invite.expires_at && new Date(invite.expires_at) < new Date()) {
-        throw new Error('Este convite expirou.');
-      }
+      const campaignId = result.campaign_id;
 
-      // Check max uses
-      if (invite.max_uses && invite.uses >= invite.max_uses) {
-        throw new Error('Este convite atingiu o limite de usos.');
-      }
-
-      // Check if already a member
+      // Verifica se já é membro
       const { data: existingMember } = await supabase
         .from('campaign_members')
         .select('id')
-        .eq('campaign_id', invite.campaign_id)
+        .eq('campaign_id', campaignId)
         .eq('user_id', user.id)
         .single();
 
@@ -187,26 +180,27 @@ export default function Campaigns() {
         throw new Error('Você já é membro desta campanha.');
       }
 
-      // Add as member
+      // Adiciona como membro
       const { error: memberError } = await supabase
         .from('campaign_members')
         .insert({
-          campaign_id: invite.campaign_id,
+          campaign_id: campaignId,
           user_id: user.id,
           role: 'player',
         });
 
       if (memberError) throw memberError;
 
-      // Increment invite uses
-      await supabase
-        .from('campaign_invites')
-        .update({ uses: invite.uses + 1 })
-        .eq('id', invite.id);
+      // Busca o nome da campanha para exibir no toast
+      const { data: campaign } = await supabase
+        .from('campaigns')
+        .select('name')
+        .eq('id', campaignId)
+        .single();
 
       toast({
         title: 'Você entrou na campanha!',
-        description: `Bem-vindo a "${(invite.campaigns as any).name}".`,
+        description: `Bem-vindo a "${campaign?.name || 'campanha'}".`,
       });
 
       setJoinDialogOpen(false);
