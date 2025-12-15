@@ -153,7 +153,7 @@ export function StepReview({ formData, buildResult, onStepClick }: StepReviewPro
           <p className="font-display text-3xl text-destructive">{derivedStats.hp}</p>
         </div>
         <div className="ordo-panel p-4 text-center border-secondary/50 bg-secondary/10">
-          <p className="text-sm font-semibold text-secondary mb-1">PE</p>
+          <p className="text-sm font-bold text-foreground mb-1">PE</p>
           <p className="font-display text-3xl text-foreground">{derivedStats.pe}</p>
         </div>
         <div className="ordo-panel p-4 text-center border-paranormal/30">
