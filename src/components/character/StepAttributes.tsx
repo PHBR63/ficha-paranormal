@@ -86,6 +86,15 @@ export function StepAttributes({ formData, updateFormData }: StepAttributesProps
   const maxPoints = basePoints + distributedPoints + bonusFromZero + nexBonus;
   const remainingPoints = maxPoints - totalPoints;
 
+  // Detecta atributos que excedem o limite do NEX atual (pode acontecer se mudar NEX)
+  const attributesExceedingLimit = useMemo(() => {
+    return Object.entries(formData.attributes)
+      .filter(([, value]) => value > maxAttribute)
+      .map(([key]) => key);
+  }, [formData.attributes, maxAttribute]);
+
+  const hasExceedingAttributes = attributesExceedingLimit.length > 0;
+
   // Preview stats based on current attributes
   const previewStats = useMemo(() => {
     if (!formData.characterClass) {
@@ -134,7 +143,8 @@ export function StepAttributes({ formData, updateFormData }: StepAttributesProps
     });
   };
 
-  const isValid = totalPoints === maxPoints;
+  // Validação: atributos dentro do limite E pontos distribuídos corretamente
+  const isValid = totalPoints === maxPoints && !hasExceedingAttributes;
 
   // Conteúdo educativo do livro
   const rulebookContent = getRulebookContent('attributes');
@@ -284,8 +294,36 @@ export function StepAttributes({ formData, updateFormData }: StepAttributesProps
           )}
         </AnimatePresence>
 
+        {/* Alerta de atributos excedendo limite do NEX */}
+        <AnimatePresence>
+          {hasExceedingAttributes && (
+            <motion.div 
+              className="ordo-panel p-4 bg-destructive/10 border-destructive/30"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+            >
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-destructive">Atributos acima do limite</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Com NEX {formData.nex}%, o máximo por atributo é <strong>{maxAttribute}</strong>. 
+                    Reduza os seguintes atributos: {' '}
+                    <span className="text-destructive font-medium">
+                      {attributesExceedingLimit.map(id => 
+                        ATTRIBUTES.find(a => a.id === id)?.name
+                      ).join(', ')}
+                    </span>
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Zero warning */}
-        {!hasReducedToZero && (
+        {!hasReducedToZero && !hasExceedingAttributes && (
           <motion.div 
             className="ordo-panel p-4 bg-paranormal/5 border-paranormal/20"
             initial={{ opacity: 0 }}
@@ -312,6 +350,7 @@ export function StepAttributes({ formData, updateFormData }: StepAttributesProps
             const isThisReduced = reducedAttribute === attr.id;
             const canReduceToZero = !hasReducedToZero || isThisReduced;
             const minValue = canReduceToZero ? 0 : 1;
+            const exceedsLimit = value > maxAttribute; // Verifica se excede o limite do NEX
             
             return (
               <motion.div 
@@ -321,7 +360,8 @@ export function StepAttributes({ formData, updateFormData }: StepAttributesProps
                 transition={{ delay: index * 0.1 }}
                 className={cn(
                   'ordo-panel p-4 flex items-center justify-between transition-all',
-                  isZero && 'border-paranormal/50 bg-paranormal/5'
+                  isZero && 'border-paranormal/50 bg-paranormal/5',
+                  exceedsLimit && 'border-destructive/50 bg-destructive/5 animate-pulse'
                 )}
               >
                 <div className="flex-1">
@@ -363,6 +403,11 @@ export function StepAttributes({ formData, updateFormData }: StepAttributesProps
                         ⚠ DESVANTAGEM
                       </span>
                     )}
+                    {exceedsLimit && (
+                      <span className="text-xs text-destructive animate-pulse font-medium">
+                        ⚠ EXCEDE LIMITE (máx {maxAttribute})
+                      </span>
+                    )}
                   </div>
                   <p className="text-xs text-muted-foreground">{attr.description}</p>
                 </div>
@@ -381,18 +426,27 @@ export function StepAttributes({ formData, updateFormData }: StepAttributesProps
                     <Minus className="w-4 h-4" />
                   </Button>
 
-                  <div className="w-12 text-center">
+                  <div className="w-12 text-center relative">
                     <motion.span 
                       key={value}
                       initial={{ scale: 1.3 }}
                       animate={{ scale: 1 }}
                       className="font-display text-3xl"
                       style={{ 
-                        color: isZero ? 'hsl(var(--paranormal))' : `hsl(var(${attr.colorVar}))`
+                        color: exceedsLimit 
+                          ? 'hsl(var(--destructive))' 
+                          : isZero 
+                            ? 'hsl(var(--paranormal))' 
+                            : `hsl(var(${attr.colorVar}))`
                       }}
                     >
                       {value}
                     </motion.span>
+                    {exceedsLimit && (
+                      <span className="absolute -top-1 -right-1 text-[10px] bg-destructive text-destructive-foreground px-1 rounded">
+                        -{value - maxAttribute}
+                      </span>
+                    )}
                   </div>
 
                   <Button
