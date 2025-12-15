@@ -1,7 +1,9 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap");
+/**
+ * Let's Roll - Ordem Paranormal VTT
+ * 
+ * NOTA: Fontes são carregadas via index.html com preconnect + display=swap
+ * para melhor performance (evita blocking render)
+ */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -500,6 +502,30 @@ html.dark[data-color-theme="amber"] {
  * UTILITÁRIOS
  * ======================================== */
 @layer utilities {
+  /* Esconde scrollbar mantendo funcionalidade de scroll */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* Evita conflito de scroll (overscroll) */
+  .overscroll-contain {
+    overscroll-behavior: contain;
+  }
+  
+  /* Touch action para melhor resposta em mobile */
+  .touch-pan-x {
+    touch-action: pan-x;
+  }
+  
+  .touch-pan-y {
+    touch-action: pan-y;
+  }
+  
   /* Efeito de glitch */
   .glitch-effect {
     animation: glitch 0.3s ease-in-out;
