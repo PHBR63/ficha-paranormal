@@ -179,7 +179,7 @@ export function StepAttributes({ formData, updateFormData }: StepAttributesProps
               </span>
             )}
             {maxAttribute > 3 && (
-              <span className="px-2 py-1 rounded bg-accent/20 border border-accent/30 text-accent">
+              <span className="px-2.5 py-1.5 rounded-md bg-amber-500/30 border border-amber-400/50 text-amber-300 font-semibold shadow-sm">
                 Máx/Atrib: {maxAttribute}
               </span>
             )}
