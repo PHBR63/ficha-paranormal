@@ -118,7 +118,7 @@ export const CURSED_ITEMS: CursedItem[] = [
     id: 'manto-das-sombras',
     name: 'Manto das Sombras',
     category: 3,
-    element: 'medo',
+    element: 'morte', // Alterado de 'medo' para 'morte' (elemento oficial)
     description: 'Um manto negro que parece feito de escuridão solidificada.',
     benefit: '+10 em Furtividade. Você pode se tornar invisível em áreas de penumbra como ação de movimento.',
     curse: 'A luz do sol causa 1d6 de dano por rodada de exposição direta.',
@@ -185,7 +185,7 @@ export const CURSED_ITEMS: CursedItem[] = [
     id: 'mascara-do-outro',
     name: 'Máscara do Outro',
     category: 4,
-    element: 'medo',
+    element: 'conhecimento', // Alterado de 'medo' para 'conhecimento' (elemento oficial)
     description: 'Uma máscara branca sem feições que parece olhar através de você.',
     benefit: 'Você pode possuir temporariamente uma criatura (teste de Vontade resistido). Dura 1 cena.',
     curse: 'Algo do Outro Lado também pode possuí-lo. Uma vez por sessão, o Mestre pode assumir controle por 1 rodada.',

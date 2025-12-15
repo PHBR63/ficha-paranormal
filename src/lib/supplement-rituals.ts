@@ -1,6 +1,7 @@
 /**
  * Ordem Paranormal RPG - Suplemento Sobrevivendo ao Horror
  * Novos Rituais do Suplemento
+ * NOTA: Elemento "medo" removido - não existe no livro oficial
  */
 
 import { Ritual } from './rituals-data';
@@ -208,59 +209,6 @@ export const SUPPLEMENT_RITUALS: Ritual[] = [
     enhancements: [
       { cost: 2, description: 'Afeta todos os dispositivos em alcance curto.' },
       { cost: 3, description: 'A explosão causa 4d6 de dano.' },
-    ],
-  },
-
-  // === RITUAIS DE MEDO ===
-  {
-    id: 'terror-absoluto',
-    name: 'Terror Absoluto',
-    circle: 3,
-    element: 'medo',
-    execution: 'Padrão',
-    range: 'Médio',
-    target: 'Criaturas à sua escolha',
-    duration: 'Cena',
-    resistance: 'Vontade parcial',
-    description: 'Você projeta o medo mais profundo de cada alvo. Alvos que falharem no teste ficam paralisados de medo. Mesmo os que passarem sofrem -4 em todos os testes.',
-    cost: 6,
-    enhancements: [
-      { cost: 3, description: 'Alvos paralisados também sofrem 3d6 de dano mental por turno.' },
-      { cost: 5, description: 'O efeito persiste mesmo após o alvo sair do alcance.' },
-    ],
-  },
-  {
-    id: 'loucura',
-    name: 'Loucura',
-    circle: 2,
-    element: 'medo',
-    execution: 'Padrão',
-    range: 'Curto',
-    target: '1 criatura',
-    duration: 'Cena',
-    resistance: 'Vontade anula',
-    description: 'Você enlouquece temporariamente o alvo. Ele não pode distinguir aliados de inimigos e ataca o alvo mais próximo.',
-    cost: 3,
-    enhancements: [
-      { cost: 3, description: 'O alvo prioriza atacar seus próprios aliados.' },
-      { cost: 5, description: 'A duração aumenta para 1 dia.' },
-    ],
-  },
-  {
-    id: 'pesadelo-desperto',
-    name: 'Pesadelo Desperto',
-    circle: 1,
-    element: 'medo',
-    execution: 'Padrão',
-    range: 'Curto',
-    target: '1 criatura',
-    duration: 'Cena',
-    resistance: 'Vontade parcial',
-    description: 'O alvo começa a ter alucinações de seus piores medos. Sofre -2 em todos os testes e 1d6 de dano mental por turno. Metade se passar no teste.',
-    cost: 2,
-    enhancements: [
-      { cost: 2, description: 'As alucinações parecem tão reais que o alvo pode atacá-las, gastando suas ações.' },
-      { cost: 3, description: 'O dano aumenta para 2d6.' },
     ],
   },
 ];

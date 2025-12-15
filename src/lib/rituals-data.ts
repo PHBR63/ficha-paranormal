@@ -1,12 +1,14 @@
 // Ordem Paranormal RPG v1.3 - Sistema de Rituais
 // Inclui conteúdo do suplemento "Sobrevivendo ao Horror"
+// NOTA: Elemento "medo" removido - não existe no livro oficial
 
 import { SUPPLEMENT_RITUALS } from './supplement-rituals';
+
 export interface Ritual {
   id: string;
   name: string;
   circle: number; // 1 a 4
-  element: 'sangue' | 'morte' | 'conhecimento' | 'energia' | 'medo';
+  element: 'sangue' | 'morte' | 'conhecimento' | 'energia';
   execution: string; // Padrão, Completa, Reação, etc.
   range: string;
   target: string;
@@ -228,59 +230,6 @@ export const FIRST_CIRCLE_RITUALS: Ritual[] = [
       { cost: 3, description: 'O bônus aumenta para +10.' },
     ],
   },
-
-  // MEDO
-  {
-    id: 'amedrontar',
-    name: 'Amedrontar',
-    circle: 1,
-    element: 'medo',
-    execution: 'Padrão',
-    range: 'Curto',
-    target: '1 criatura',
-    duration: 'Cena',
-    resistance: 'Vontade parcial',
-    description: 'O alvo fica com medo de você. Sofre -2 em ataques contra você. Se falhar no teste, foge por 1 rodada.',
-    cost: 1,
-    enhancements: [
-      { cost: 2, description: 'A penalidade aumenta para -4.' },
-      { cost: 3, description: 'O alvo fica paralisado por 1 rodada se falhar no teste.' },
-    ],
-  },
-  {
-    id: 'perturbacao',
-    name: 'Perturbação',
-    circle: 1,
-    element: 'medo',
-    execution: 'Padrão',
-    range: 'Curto',
-    target: '1 criatura',
-    duration: 'Cena',
-    resistance: 'Vontade anula',
-    description: 'Você causa alucinações perturbadoras. O alvo sofre -2 em todos os testes.',
-    cost: 1,
-    enhancements: [
-      { cost: 2, description: 'A penalidade aumenta para -4.' },
-      { cost: 2, description: 'Afeta até 3 criaturas.' },
-    ],
-  },
-  {
-    id: 'visao-do-medo',
-    name: 'Visão do Medo',
-    circle: 1,
-    element: 'medo',
-    execution: 'Padrão',
-    range: 'Curto',
-    target: '1 criatura',
-    duration: 'Instantânea',
-    resistance: 'Vontade parcial',
-    description: 'Você mostra ao alvo sua maior fobia. Causa 2d6 de dano mental. Se falhar no teste, fica atordoado por 1 rodada.',
-    cost: 1,
-    enhancements: [
-      { cost: 2, description: 'Aumenta o dano em +1d6.' },
-      { cost: 3, description: 'Mesmo se passar no teste, o alvo fica abalado por 1 rodada.' },
-    ],
-  },
 ];
 
 // ==================== RITUAIS DE 2º CÍRCULO ====================
@@ -304,7 +253,7 @@ export const SECOND_CIRCLE_RITUALS: Ritual[] = [
     ],
   },
   {
-    id: 'sangue-fervente',
+    id: 'sangue-fervente-ritual',
     name: 'Sangue Fervente',
     circle: 2,
     element: 'sangue',
@@ -425,42 +374,6 @@ export const SECOND_CIRCLE_RITUALS: Ritual[] = [
       { cost: 2, description: 'O fogo persiste por 3 rodadas, causando 2d6 por turno a quem entrar.' },
     ],
   },
-
-  // MEDO
-  {
-    id: 'pavor',
-    name: 'Pavor',
-    circle: 2,
-    element: 'medo',
-    execution: 'Padrão',
-    range: 'Médio',
-    target: 'Criaturas à sua escolha',
-    duration: 'Cena',
-    resistance: 'Vontade parcial',
-    description: 'Você emana uma aura de terror. Alvos que falharem fogem em pânico. Mesmo passando, sofrem -4 em testes.',
-    cost: 3,
-    enhancements: [
-      { cost: 3, description: 'Alvos que falharem ficam paralisados de medo.' },
-      { cost: 2, description: 'A duração aumenta para 1 dia.' },
-    ],
-  },
-  {
-    id: 'pesadelo',
-    name: 'Pesadelo',
-    circle: 2,
-    element: 'medo',
-    execution: 'Completa',
-    range: 'Ilimitado',
-    target: '1 criatura',
-    duration: '1 noite',
-    resistance: 'Vontade anula',
-    description: 'Você invade os sonhos do alvo. Ele não recupera PV, PE ou SAN naquela noite e acorda fatigado.',
-    cost: 2,
-    enhancements: [
-      { cost: 3, description: 'O alvo sofre 3d6 de dano mental.' },
-      { cost: 5, description: 'Você pode enviar uma mensagem ou imagem específica.' },
-    ],
-  },
 ];
 
 // ==================== RITUAIS DE 3º CÍRCULO ====================
@@ -555,25 +468,6 @@ export const THIRD_CIRCLE_RITUALS: Ritual[] = [
       { cost: 3, description: 'Raios atingem um alvo por turno, causando 8d6 adicional.' },
     ],
   },
-
-  // MEDO
-  {
-    id: 'loucura',
-    name: 'Loucura',
-    circle: 3,
-    element: 'medo',
-    execution: 'Padrão',
-    range: 'Curto',
-    target: '1 criatura',
-    duration: 'Cena',
-    resistance: 'Vontade anula',
-    description: 'O alvo enlouquece temporariamente. Age de forma errática, determinada pelo mestre.',
-    cost: 5,
-    enhancements: [
-      { cost: 5, description: 'A loucura é permanente (só pode ser curada com ritual de 4º círculo).' },
-      { cost: 3, description: 'Afeta até 3 criaturas.' },
-    ],
-  },
 ];
 
 // ==================== RITUAIS DE 4º CÍRCULO ====================
@@ -666,36 +560,6 @@ export const FOURTH_CIRCLE_RITUALS: Ritual[] = [
     resistance: 'Reflexos parcial',
     description: 'Você desencadeia destruição absoluta. Tudo na área sofre 20d6 de dano. Estruturas são destruídas automaticamente.',
     cost: 15,
-  },
-
-  // MEDO
-  {
-    id: 'forma-medo',
-    name: 'Forma do Medo',
-    circle: 4,
-    element: 'medo',
-    execution: 'Padrão',
-    range: 'Pessoal',
-    target: 'Você',
-    duration: 'Cena',
-    description: 'Você se torna a personificação do medo. Criaturas que o virem devem passar em Vontade ou fogem em pânico. Você é imune a medo.',
-    cost: 8,
-  },
-  {
-    id: 'tormento-eterno',
-    name: 'Tormento Eterno',
-    circle: 4,
-    element: 'medo',
-    execution: 'Padrão',
-    range: 'Curto',
-    target: '1 criatura',
-    duration: 'Permanente',
-    resistance: 'Vontade anula',
-    description: 'O alvo é assombrado por pesadelos eternos. Nunca mais consegue descansar normalmente e perde 1 SAN por dia.',
-    cost: 10,
-    enhancements: [
-      { cost: 5, description: 'A perda de SAN aumenta para 1d6 por dia.' },
-    ],
   },
 ];
 

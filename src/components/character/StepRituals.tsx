@@ -44,7 +44,7 @@ interface StepRitualsProps {
   updateFormData: (updates: Partial<CharacterFormData>) => void;
 }
 
-// Configuração visual para cada elemento
+// Configuração visual para cada elemento (4 elementos oficiais, sem "medo")
 const ELEMENT_CONFIG = {
   sangue: {
     icon: Droplets,
@@ -81,15 +81,6 @@ const ELEMENT_CONFIG = {
     text: 'text-yellow-400',
     bg: 'bg-yellow-500/10',
     badgeBg: 'bg-yellow-500/20 text-yellow-300',
-  },
-  medo: {
-    icon: Ghost,
-    label: 'Medo',
-    color: 'from-emerald-900/20 to-emerald-950/20',
-    border: 'border-emerald-500/50',
-    text: 'text-emerald-400',
-    bg: 'bg-emerald-500/10',
-    badgeBg: 'bg-emerald-500/20 text-emerald-300',
   },
 };
 
