@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { ORIGINS, CLASSES, getTrackById } from '@/lib/character-data';
 import { ALL_RITUALS } from '@/lib/rituals-data';
+import { ALL_CLASS_ABILITIES } from '@/lib/class-abilities';
 import { cn } from '@/lib/utils';
 import { DiceRollResult } from '@/lib/dice-roller';
 import { InventoryPanel } from '@/components/inventory/InventoryPanel';
@@ -824,14 +825,21 @@ export default function CharacterSheet() {
                       <p className="text-xs text-muted-foreground uppercase tracking-wider">
                         Habilidades de Classe
                       </p>
-                      {character.abilities.map((ability, i) => (
-                        <SheetAccordionItem
-                          key={i}
-                          title={ability}
-                          badge="Classe"
-                          badgeVariant="default"
-                        />
-                      ))}
+                      {character.abilities.map((abilityName, i) => {
+                        // Busca a habilidade na lista de habilidades da classe para obter descrição
+                        const abilityData = ALL_CLASS_ABILITIES.find(
+                          a => a.name === abilityName && a.classId === character.class
+                        );
+                        return (
+                          <SheetAccordionItem
+                            key={i}
+                            title={abilityName}
+                            description={abilityData?.description}
+                            badge="Classe"
+                            badgeVariant="default"
+                          />
+                        );
+                      })}
                     </div>
                   )}
 
