@@ -1,6 +1,7 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap");
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -9,50 +10,78 @@
  * Let's Roll - Ordem Paranormal VTT
  * Design System: "Tecnologia oculta + horror investigativo"
  * Estética: Documentos secretos da Ordo Realitas
+ * 
+ * IMPORTANTE: Todas as cores usam formato HSL (hue saturation lightness)
+ * Exemplo: 263 70% 50% = hsl(263, 70%, 50%)
  */
 
 @layer base {
+  /* ========================================
+   * LIGHT MODE - Modo claro com bom contraste
+   * ======================================== */
   :root {
-    /* Light mode - padronizado com bom contraste */
+    /* Cores de superfície */
     --background: 0 0% 100%;
     --foreground: 222 47% 11%;
+    
+    /* Cards e containers */
     --card: 0 0% 98%;
     --card-foreground: 222 47% 11%;
+    
+    /* Popovers e dropdowns */
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
+    
+    /* Cor primária (roxo) */
     --primary: 263 70% 50%;
     --primary-foreground: 0 0% 100%;
+    
+    /* Cor secundária */
     --secondary: 210 40% 96%;
     --secondary-foreground: 222 47% 11%;
+    
+    /* Elementos muted/suaves */
     --muted: 210 40% 96%;
     --muted-foreground: 215 25% 40%;
+    
+    /* Accent */
     --accent: 210 40% 96%;
     --accent-foreground: 222 47% 11%;
+    
+    /* Destructive/Erro */
     --destructive: 0 72% 50%;
     --destructive-foreground: 0 0% 100%;
+    
+    /* Bordas e inputs */
     --border: 214 32% 85%;
     --input: 214 32% 85%;
     --ring: 263 70% 50%;
+    
+    /* Radius padrão */
     --radius: 0.5rem;
+    
+    /* Sucesso */
     --success: 142 71% 45%;
     --success-foreground: 0 0% 100%;
+    
+    /* Paranormal (rosa/magenta) */
     --paranormal: 322 80% 55%;
     --paranormal-foreground: 0 0% 100%;
     
-    /* Fixed status colors - cores de status nunca mudam */
+    /* Cores de status - FIXAS, não mudam entre temas */
     --status-hp: 0 72% 51%;
     --status-pe: 142 71% 45%;
     --status-san: 322 80% 55%;
     --status-xp: 45 93% 47%;
     
-    /* Chart colors para light mode */
+    /* Chart colors */
     --chart-1: 263 70% 50%;
     --chart-2: 280 60% 55%;
     --chart-3: 210 40% 50%;
     --chart-4: 210 30% 40%;
     --chart-5: 210 20% 30%;
     
-    /* Sidebar light mode */
+    /* Sidebar */
     --sidebar: 0 0% 98%;
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 222 47% 11%;
@@ -64,9 +93,10 @@
     --sidebar-ring: 263 70% 50%;
     
     /* Font families */
-    --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
-    --font-serif: 'Lora', ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
-    --font-mono: 'Space Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    --font-serif: 'Lora', ui-serif, Georgia, serif;
+    --font-mono: 'Space Mono', ui-monospace, monospace;
+    --font-display: 'Bebas Neue', sans-serif;
     
     /* Shadows */
     --shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
@@ -77,59 +107,74 @@
     --shadow-lg: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 4px 6px -1px hsl(0 0% 0% / 0.1);
     --shadow-xl: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 8px 10px -1px hsl(0 0% 0% / 0.1);
     --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.25);
+    
+    /* Spacing */
     --tracking-normal: 0em;
     --spacing: 0.25rem;
   }
 
-  /* Base Dark Theme - cores neutras compartilhadas */
+  /* ========================================
+   * DARK MODE - Base compartilhada entre todos os temas
+   * ======================================== */
   .dark {
+    /* Cores de superfície - fundo escuro profundo */
     --background: 260 84% 4%;
     --foreground: 210 40% 98%;
 
+    /* Cards - levemente mais claros que o fundo */
     --card: 260 30% 12%;
     --card-foreground: 210 40% 98%;
 
+    /* Popovers/Dropdowns - fundo sólido para contraste */
     --popover: 260 25% 15%;
     --popover-foreground: 210 40% 98%;
 
+    /* Secundário */
     --secondary: 260 20% 20%;
     --secondary-foreground: 210 40% 98%;
 
+    /* Muted - elementos suaves */
     --muted: 260 15% 30%;
     --muted-foreground: 210 30% 70%;
 
+    /* Accent */
     --accent: 260 25% 18%;
     --accent-foreground: 210 40% 90%;
 
+    /* Destructive */
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
+    /* Bordas e inputs */
     --border: 260 20% 25%;
     --input: 260 20% 20%;
 
+    /* Success e Paranormal */
     --success: 142 71% 45%;
     --success-foreground: 0 0% 100%;
-
     --paranormal: 322 80% 55%;
     --paranormal-foreground: 0 0% 100%;
 
-    /* Fixed status colors - never change between themes */
+    /* Status colors - FIXOS */
     --status-hp: 0 72% 51%;
     --status-pe: 142 71% 45%;
     --status-san: 322 80% 55%;
     --status-xp: 45 93% 47%;
 
     /* Sidebar */
+    --sidebar: 260 30% 12%;
     --sidebar-background: 260 80% 3%;
     --sidebar-foreground: 210 40% 98%;
     --sidebar-border: 260 20% 20%;
     
+    /* Charts */
     --chart-1: 263 70% 60%;
     --chart-2: 280 60% 55%;
     --chart-3: 260 20% 50%;
     --chart-4: 260 15% 40%;
     --chart-5: 260 20% 30%;
-    --sidebar: 260 30% 12%;
+    
+    /* Shadows - mais intensos no dark mode */
     --shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.2);
     --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.2);
     --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.3), 0 1px 2px -1px hsl(0 0% 0% / 0.2);
@@ -140,7 +185,11 @@
     --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.5);
   }
 
-  /* Purple Theme (Default) - Roxo Abissal */
+  /* ========================================
+   * TEMAS DE COR - Primary varia por tema
+   * ======================================== */
+   
+  /* ROXO ABISSAL (Padrão) */
   .dark[data-color-theme="purple"],
   .dark:not([data-color-theme]) {
     --primary: 263 70% 50%;
@@ -153,7 +202,7 @@
     --sidebar-ring: 263 70% 50%;
   }
 
-  /* Red Theme - Sangue Ritual */
+  /* SANGUE RITUAL (Vermelho) */
   .dark[data-color-theme="red"] {
     --primary: 0 72% 51%;
     --primary-foreground: 0 0% 100%;
@@ -165,7 +214,7 @@
     --sidebar-ring: 0 72% 51%;
   }
 
-  /* Green Theme - Conhecimento */
+  /* CONHECIMENTO (Verde) */
   .dark[data-color-theme="green"] {
     --primary: 142 71% 45%;
     --primary-foreground: 0 0% 100%;
@@ -177,7 +226,7 @@
     --sidebar-ring: 142 71% 45%;
   }
 
-  /* Blue Theme - Ciano Espectral */
+  /* CIANO ESPECTRAL (Azul) */
   .dark[data-color-theme="blue"] {
     --primary: 199 89% 48%;
     --primary-foreground: 0 0% 100%;
@@ -189,7 +238,7 @@
     --sidebar-ring: 199 89% 48%;
   }
 
-  /* Amber Theme - Energia Arcana (cor clara precisa de texto escuro) */
+  /* ENERGIA ARCANA (Âmbar) - cor clara, precisa texto escuro */
   .dark[data-color-theme="amber"] {
     --primary: 38 92% 50%;
     --primary-foreground: 0 0% 5%;
@@ -202,6 +251,9 @@
   }
 }
 
+/* ========================================
+ * ESTILOS BASE
+ * ======================================== */
 @layer base {
   * {
     @apply border-border;
@@ -213,10 +265,10 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: var(--font-sans);
   }
 
-  /* Scrollbar personalizada estilo Ordo */
+  /* Scrollbar personalizada */
   ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
@@ -236,14 +288,17 @@
     @apply bg-muted-foreground/50;
   }
 
-  /* Selection personalizada */
+  /* Selection */
   ::selection {
     @apply bg-primary/30 text-foreground;
   }
 }
 
+/* ========================================
+ * COMPONENTES CUSTOMIZADOS
+ * ======================================== */
 @layer components {
-  /* Ordo Panel - main container style */
+  /* Painel estilo Ordo Realitas */
   .ordo-panel {
     @apply relative bg-card/50 border border-border rounded-lg overflow-hidden backdrop-blur-sm;
     @apply before:absolute before:inset-0 before:bg-gradient-to-br before:from-primary/5 before:to-transparent before:pointer-events-none;
@@ -265,7 +320,7 @@
     @apply absolute -rotate-12 text-primary/20 font-display text-4xl tracking-widest pointer-events-none select-none;
   }
 
-  /* Barra de status estilo militar */
+  /* Barra de status */
   .status-bar {
     @apply h-2 rounded-full bg-muted overflow-hidden;
   }
@@ -274,13 +329,13 @@
     @apply h-full transition-all duration-500 ease-out;
   }
 
-  /* Efeito de ruído de fundo */
+  /* Noise overlay sutil */
   .noise-overlay {
     @apply pointer-events-none fixed inset-0 z-50 opacity-[0.015];
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
   }
 
-  /* Container de seção com borda sutil */
+  /* Section container */
   .section-container {
     @apply relative p-6 bg-card/50 border border-border/50 rounded-lg backdrop-blur-sm;
   }
@@ -302,18 +357,18 @@
     @apply bg-primary/10 text-primary border-2 border-primary/30 rounded-full;
   }
 
-  /* Linha divisória estilizada */
+  /* Linha divisória */
   .divider-line {
     @apply relative h-px bg-gradient-to-r from-transparent via-border to-transparent;
   }
 
-  /* Texto de ritual/paranormal */
+  /* Texto paranormal/ritual */
   .ritual-text {
-    font-family: 'Crimson Text', serif;
+    font-family: var(--font-serif);
     @apply text-paranormal italic;
   }
 
-  /* Botão de ação primária com glow */
+  /* Botão de ação com glow */
   .action-button {
     @apply relative overflow-hidden transition-all duration-300 bg-primary text-primary-foreground hover:bg-primary/90;
     @apply hover:shadow-[0_0_20px_hsl(var(--primary)/0.4)];
@@ -331,18 +386,18 @@
     @apply transition-colors hover:bg-muted/20;
   }
 
-  /* Paranormal glow effect */
+  /* Paranormal glow */
   .paranormal-glow {
     animation: paranormal-pulse 2s ease-in-out infinite;
     box-shadow: 0 0 20px hsl(var(--paranormal) / 0.3);
   }
 
-  /* Flicker animation for low sanity */
+  /* Flicker para sanidade baixa */
   .animate-flicker {
     animation: flicker 4s ease-in-out infinite;
   }
 
-  /* Status bar colors - fixed, theme-independent */
+  /* Cores de status - classes fixas */
   .status-hp {
     background-color: hsl(var(--status-hp));
   }
@@ -358,20 +413,40 @@
   .status-xp {
     background-color: hsl(var(--status-xp));
   }
+  
+  /* Texto de status */
+  .text-status-hp {
+    color: hsl(var(--status-hp));
+  }
+  
+  .text-status-pe {
+    color: hsl(var(--status-pe));
+  }
+  
+  .text-status-san {
+    color: hsl(var(--status-san));
+  }
+  
+  .text-status-xp {
+    color: hsl(var(--status-xp));
+  }
 }
 
+/* ========================================
+ * UTILITÁRIOS
+ * ======================================== */
 @layer utilities {
   /* Efeito de glitch */
   .glitch-effect {
     animation: glitch 0.3s ease-in-out;
   }
 
-  /* Efeito de pulse glow */
+  /* Pulse glow */
   .pulse-glow {
     animation: pulse-glow 2s ease-in-out infinite;
   }
 
-  /* Texto com gradiente */
+  /* Gradientes de texto */
   .text-gradient-primary {
     @apply bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent;
   }
@@ -397,7 +472,7 @@
     @apply border-paranormal shadow-[0_0_10px_hsl(var(--paranormal)/0.3)];
   }
 
-  /* Fade in com delay customizável */
+  /* Fade in com delays */
   .animate-fade-in-delay-1 {
     animation: fade-in 0.5s ease-out 0.1s forwards;
     opacity: 0;
@@ -421,17 +496,20 @@
   /* Background patterns */
   .bg-grid-pattern {
     background-image: 
-      linear-gradient(to right, hsl(var(--border)/0.1) 1px, transparent 1px),
-      linear-gradient(to bottom, hsl(var(--border)/0.1) 1px, transparent 1px);
+      linear-gradient(to right, hsl(var(--border) / 0.1) 1px, transparent 1px),
+      linear-gradient(to bottom, hsl(var(--border) / 0.1) 1px, transparent 1px);
     background-size: 20px 20px;
   }
 
   .bg-dots-pattern {
-    background-image: radial-gradient(circle, hsl(var(--border)/0.3) 1px, transparent 1px);
+    background-image: radial-gradient(circle, hsl(var(--border) / 0.3) 1px, transparent 1px);
     background-size: 16px 16px;
   }
 }
 
+/* ========================================
+ * ANIMAÇÕES
+ * ======================================== */
 @keyframes paranormal-pulse {
   0%, 100% {
     box-shadow: 0 0 10px hsl(var(--paranormal) / 0.2);
@@ -470,5 +548,35 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes glitch {
+  0%, 100% {
+    transform: translate(0);
+    opacity: 1;
+  }
+  25% {
+    transform: translate(-2px, 1px);
+    opacity: 0.9;
+  }
+  50% {
+    transform: translate(2px, -1px);
+    opacity: 0.85;
+  }
+  75% {
+    transform: translate(-1px, -1px);
+    opacity: 0.9;
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 15px hsl(var(--primary) / 0.3);
+    border-color: hsl(var(--primary) / 0.5);
+  }
+  50% {
+    box-shadow: 0 0 25px hsl(var(--primary) / 0.5);
+    border-color: hsl(var(--primary) / 0.8);
   }
 }
