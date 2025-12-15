@@ -5,12 +5,63 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Shield, Heart, Zap, Star, Edit2, Check, X } from 'lucide-react';
+import { Shield, Heart, Zap, Star, Edit2, Check, X, Award, Crown, Gem } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { AnimatedProgress } from '@/components/ui/animated-progress';
 import { cn } from '@/lib/utils';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+
+// Configuração visual das patentes
+const PATENT_CONFIG: Record<string, { 
+  icon: React.ElementType; 
+  gradient: string; 
+  textColor: string;
+  creditLimit: string;
+  itemLimits: { I: number | string; II: number | string; III: number | string; IV: number | string };
+}> = {
+  'Recruta': { 
+    icon: Shield, 
+    gradient: 'from-slate-500 to-slate-600', 
+    textColor: 'text-slate-50',
+    creditLimit: 'Baixo',
+    itemLimits: { I: 2, II: 0, III: 0, IV: 0 },
+  },
+  'Operador': { 
+    icon: Star, 
+    gradient: 'from-blue-500 to-blue-600', 
+    textColor: 'text-blue-50',
+    creditLimit: 'Médio',
+    itemLimits: { I: '∞', II: 2, III: 0, IV: 0 },
+  },
+  'Agente Especial': { 
+    icon: Award, 
+    gradient: 'from-purple-500 to-purple-600', 
+    textColor: 'text-purple-50',
+    creditLimit: 'Alto',
+    itemLimits: { I: '∞', II: '∞', III: 1, IV: 0 },
+  },
+  'Oficial de Operações': { 
+    icon: Crown, 
+    gradient: 'from-amber-500 to-amber-600', 
+    textColor: 'text-amber-950',
+    creditLimit: 'Ilimitado',
+    itemLimits: { I: '∞', II: '∞', III: '∞', IV: 1 },
+  },
+  'Agente de Elite': { 
+    icon: Gem, 
+    gradient: 'from-red-500 to-red-600', 
+    textColor: 'text-red-50',
+    creditLimit: 'Ilimitado',
+    itemLimits: { I: '∞', II: '∞', III: '∞', IV: '∞' },
+  },
+};
 
 interface CharacterSheetHeaderProps {
   name: string;
@@ -83,6 +134,10 @@ export function CharacterSheetHeader({
     morrendo: false,
   });
 
+  // Configuração da patente atual
+  const patentConfig = PATENT_CONFIG[patent] || PATENT_CONFIG['Recruta'];
+  const PatentIcon = patentConfig.icon;
+
   // Calcular percentuais (usando valores totais com bônus)
   const hpPercent = (hpCurrent / totalHpMax) * 100;
   const isHpLow = hpPercent <= 25;
@@ -144,8 +199,9 @@ export function CharacterSheetHeader({
             </p>
           </div>
 
-          {/* NEX e Patente */}
-          <div className="flex items-center gap-4">
+          {/* NEX e Patente - Separados visualmente */}
+          <div className="flex items-center gap-4 flex-wrap">
+            {/* NEX */}
             <div className="flex items-center gap-2">
               <span className="text-xs text-muted-foreground uppercase">NEX</span>
               <motion.span 
@@ -157,7 +213,44 @@ export function CharacterSheetHeader({
                 {nex}%
               </motion.span>
             </div>
-            <span className="patent-badge text-xs">{patent}</span>
+
+            {/* Patente - Badge visual com tooltip */}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <motion.div
+                    key={patent}
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className={cn(
+                      "flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gradient-to-r cursor-help",
+                      patentConfig.gradient
+                    )}
+                  >
+                    <PatentIcon className={cn("w-4 h-4", patentConfig.textColor)} />
+                    <span className={cn("font-display text-sm tracking-wider", patentConfig.textColor)}>
+                      {patent}
+                    </span>
+                  </motion.div>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="max-w-xs">
+                  <div className="space-y-2">
+                    <p className="font-medium">{patent}</p>
+                    <div className="text-xs space-y-1">
+                      <p><strong>Limite de Crédito:</strong> {patentConfig.creditLimit}</p>
+                      <p>
+                        <strong>Itens:</strong> Cat I: {patentConfig.itemLimits.I}, 
+                        Cat II: {patentConfig.itemLimits.II}, 
+                        Cat III: {patentConfig.itemLimits.III}, 
+                        Cat IV: {patentConfig.itemLimits.IV}
+                      </p>
+                    </div>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            {/* Botão de subir NEX */}
             {nex < 99 && onLevelUp && (
               <Button
                 variant="outline"
