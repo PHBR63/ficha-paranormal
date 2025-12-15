@@ -35,8 +35,9 @@ export function DiceRollModal({
   const [isRolling, setIsRolling] = useState(false);
   const [result, setResult] = useState<DiceRollResult | null>(null);
   const [animatingDice, setAnimatingDice] = useState<number[]>([]);
+  const [hasRolled, setHasRolled] = useState(false);
 
-  // Função para rolar os dados
+  // Função para rolar os dados - sem dependências que causem loop
   const rollDice = useCallback(() => {
     setIsRolling(true);
     setResult(null);
@@ -44,10 +45,10 @@ export function DiceRollModal({
     // Simula animação dos dados por 1.2 segundos
     const animationFrames = 15;
     let frame = 0;
+    const diceCount = attributeValue <= 0 ? 2 : attributeValue;
     
     const interval = setInterval(() => {
       // Gera dados aleatórios para animação
-      const diceCount = attributeValue <= 0 ? 2 : attributeValue;
       const randomDice = Array.from({ length: diceCount }, () => 
         Math.floor(Math.random() * 20) + 1
       );
@@ -86,19 +87,23 @@ export function DiceRollModal({
     return () => clearInterval(interval);
   }, [attributeValue, skillBonus, label, onRollComplete]);
 
-  // Rola automaticamente quando a modal abre
+  // Rola automaticamente APENAS quando a modal abre pela primeira vez
   useEffect(() => {
-    if (open) {
+    if (open && !hasRolled) {
       const timeout = setTimeout(() => {
         rollDice();
+        setHasRolled(true);
       }, 200);
       return () => clearTimeout(timeout);
-    } else {
-      // Reset ao fechar
+    }
+    
+    // Reset ao fechar
+    if (!open) {
       setResult(null);
       setAnimatingDice([]);
+      setHasRolled(false);
     }
-  }, [open, rollDice]);
+  }, [open, hasRolled, rollDice]);
 
   // Calcula total para exibição
   const total = result?.total || 0;
