@@ -138,6 +138,7 @@ export default function CampaignView() {
   const [generatingInvite, setGeneratingInvite] = useState(false);
   const [characterSelectOpen, setCharacterSelectOpen] = useState(false);
   const [endSessionDialogOpen, setEndSessionDialogOpen] = useState(false);
+  const [endingSession, setEndingSession] = useState(false);
 
   const isMaster = campaign?.master_id === user?.id;
   const currentMember = members.find(m => m.user_id === user?.id);
@@ -345,6 +346,44 @@ export default function CampaignView() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'campaign_sessions', filter: `campaign_id=eq.${id}` }, () => fetchActiveSession())
       .subscribe();
     return () => supabase.removeChannel(channel);
+  };
+
+  // Encerra a sessão ativa
+  const handleEndSession = async () => {
+    if (!activeSession || !isMaster) return;
+
+    setEndingSession(true);
+    try {
+      const { error } = await supabase
+        .from('campaign_sessions')
+        .update({ 
+          status: 'completed', 
+          ended_at: new Date().toISOString() 
+        })
+        .eq('id', activeSession.id);
+
+      if (error) throw error;
+
+      // Atualiza o número da sessão na campanha
+      await supabase
+        .from('campaigns')
+        .update({ current_session: activeSession.session_number })
+        .eq('id', id);
+
+      setActiveSession(null);
+      toast({
+        title: 'Sessão encerrada!',
+        description: `Sessão #${activeSession.session_number} foi finalizada.`,
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Erro ao encerrar sessão',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setEndingSession(false);
+    }
   };
 
   const sendMessage = async (type: string = 'chat', content: string = messageInput, metadata: any = {}) => {
@@ -640,6 +679,18 @@ export default function CampaignView() {
           </div>
         </div>
       </header>
+
+      {/* Banner de sessão ativa */}
+      {activeSession && (
+        <ActiveSessionBanner
+          sessionNumber={activeSession.session_number}
+          sessionTitle={activeSession.title}
+          startedAt={activeSession.started_at}
+          isMaster={isMaster}
+          memberCount={members.length}
+          onEndSession={handleEndSession}
+        />
+      )}
 
       {/* Main content */}
       <div className="flex-1 flex">
