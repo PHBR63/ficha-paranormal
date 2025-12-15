@@ -1,5 +1,7 @@
 // Ordem Paranormal RPG v1.3 - Sistema de Rituais
+// Inclui conteúdo do suplemento "Sobrevivendo ao Horror"
 
+import { SUPPLEMENT_RITUALS } from './supplement-rituals';
 export interface Ritual {
   id: string;
   name: string;
@@ -704,6 +706,7 @@ export const ALL_RITUALS: Ritual[] = [
   ...SECOND_CIRCLE_RITUALS,
   ...THIRD_CIRCLE_RITUALS,
   ...FOURTH_CIRCLE_RITUALS,
+  ...SUPPLEMENT_RITUALS, // Rituais do suplemento "Sobrevivendo ao Horror"
 ];
 
 // ==================== FUNÇÕES AUXILIARES ====================
