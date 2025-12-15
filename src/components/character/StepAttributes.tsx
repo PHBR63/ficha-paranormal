@@ -19,6 +19,7 @@ interface StepAttributesProps {
   updateFormData: (updates: Partial<CharacterFormData>) => void;
 }
 
+// Configuração dos atributos com cores do design system
 const ATTRIBUTES = [
   { 
     id: 'agility', 
@@ -26,7 +27,7 @@ const ATTRIBUTES = [
     abbr: 'AGI', 
     description: 'Reflexos, equilíbrio e coordenação motora.',
     effects: ['Afeta Defesa (+1 por ponto)', 'Usado em Acrobacia, Furtividade, Pontaria', 'Determina Reflexos em combate'],
-    color: 'text-blue-400'
+    colorVar: '--attr-agility'
   },
   { 
     id: 'strength', 
@@ -34,7 +35,7 @@ const ATTRIBUTES = [
     abbr: 'FOR', 
     description: 'Poder físico e capacidade muscular.',
     effects: ['Afeta dano corpo a corpo', 'Usado em Atletismo, Luta', 'Determina capacidade de carga'],
-    color: 'text-red-400'
+    colorVar: '--attr-strength'
   },
   { 
     id: 'intellect', 
@@ -42,7 +43,7 @@ const ATTRIBUTES = [
     abbr: 'INT', 
     description: 'Raciocínio, memória e conhecimento.',
     effects: ['Determina perícias livres extras', 'Usado em Ciências, Investigação, Medicina', 'Essencial para rituais'],
-    color: 'text-yellow-400'
+    colorVar: '--attr-intellect'
   },
   { 
     id: 'presence', 
@@ -50,7 +51,7 @@ const ATTRIBUTES = [
     abbr: 'PRE', 
     description: 'Carisma, força de vontade e percepção.',
     effects: ['Afeta PE (Pontos de Esforço)', 'Usado em Diplomacia, Intimidação, Vontade', 'Resistência mental'],
-    color: 'text-purple-400'
+    colorVar: '--attr-presence'
   },
   { 
     id: 'vigor', 
@@ -58,7 +59,7 @@ const ATTRIBUTES = [
     abbr: 'VIG', 
     description: 'Resistência física e saúde.',
     effects: ['Afeta PV (Pontos de Vida)', 'Usado em Fortitude', 'Resistência a venenos e doenças'],
-    color: 'text-green-400'
+    colorVar: '--attr-vigor'
   },
 ];
 
@@ -305,12 +306,13 @@ export function StepAttributes({ formData, updateFormData }: StepAttributesProps
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <span className="font-display text-lg tracking-wider">{attr.name}</span>
-                    <span className={cn(
-                      'text-sm font-display font-bold px-2.5 py-1 rounded tracking-wider',
-                      isZero 
-                        ? 'bg-paranormal/20 text-paranormal' 
-                        : 'bg-primary/20 text-primary'
-                    )}>
+                    <span 
+                      className="text-sm font-display font-bold px-2.5 py-1 rounded tracking-wider"
+                      style={{
+                        backgroundColor: isZero ? 'hsl(var(--paranormal) / 0.2)' : `hsl(var(${attr.colorVar}) / 0.2)`,
+                        color: isZero ? 'hsl(var(--paranormal))' : `hsl(var(${attr.colorVar}))`
+                      }}
+                    >
                       {attr.abbr}
                     </span>
                     
@@ -363,10 +365,10 @@ export function StepAttributes({ formData, updateFormData }: StepAttributesProps
                       key={value}
                       initial={{ scale: 1.3 }}
                       animate={{ scale: 1 }}
-                      className={cn(
-                        'font-display text-3xl',
-                        isZero ? 'text-paranormal' : 'text-primary'
-                      )}
+                      className="font-display text-3xl"
+                      style={{ 
+                        color: isZero ? 'hsl(var(--paranormal))' : `hsl(var(${attr.colorVar}))`
+                      }}
                     >
                       {value}
                     </motion.span>
