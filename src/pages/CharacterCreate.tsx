@@ -641,7 +641,7 @@ export default function CharacterCreate() {
         </div>
       </main>
 
-      {/* Stats Preview Widget */}
+      {/* Stats Preview Widget - Com breakdown detalhado */}
       <StatsPreviewWidget
         hp={previewStats.hp}
         pe={previewStats.pe}
@@ -650,6 +650,11 @@ export default function CharacterCreate() {
         movement={previewStats.movement}
         characterClass={formData.characterClass}
         show={currentStep >= 1 && currentStep <= 4 && !!formData.characterClass}
+        vigor={formData.attributes.vigor}
+        presence={formData.attributes.presence}
+        agility={formData.attributes.agility}
+        nex={formData.nex}
+        originId={formData.origin}
       />
 
       {/* Dialogs */}
