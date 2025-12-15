@@ -1,8 +1,18 @@
+/**
+ * StepSkills - Passo de seleção de perícias
+ * 
+ * Integrado com:
+ * - Perícias da origem (automáticas)
+ * - Perícias obrigatórias da classe
+ * - Perícias de escolha da classe
+ * - Perícias livres (baseadas em INT + classe + NEX)
+ */
+
 import { useState, useMemo } from 'react';
-import { SKILLS } from '@/lib/character-data';
+import { SKILLS, getExtraSkillsByNex } from '@/lib/character-data';
 import { getClassSkillRules } from '@/lib/character-builder-engine';
 import { cn } from '@/lib/utils';
-import { AlertTriangle, Check, Lock, Search, ChevronDown, ChevronRight } from 'lucide-react';
+import { AlertTriangle, Check, Lock, Search, ChevronDown, ChevronRight, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
@@ -62,13 +72,18 @@ export function StepSkills({ formData, updateFormData, buildResult }: StepSkills
     allTrainedSkills,
   } = buildResult;
 
-  // Use unified calculation from engine
+  // Use unified calculation from engine + NEX bonus
   const classRules = useMemo(() => {
     if (!formData.characterClass) return { mandatory: [], choices: [], freePoints: 0 };
     return getClassSkillRules(formData.characterClass, formData.attributes.intellect);
   }, [formData.characterClass, formData.attributes.intellect]);
 
-  const totalFreePoints = classRules.freePoints;
+  // Perícias extras por NEX
+  const nexExtraSkills = getExtraSkillsByNex(formData.nex);
+  
+  // Total de perícias livres = base da classe + bônus por NEX
+  const baseFreePoints = classRules.freePoints;
+  const totalFreePoints = baseFreePoints + nexExtraSkills;
   const usedFreePoints = formData.freeSkills.length;
   const remainingFreePoints = Math.max(0, totalFreePoints - usedFreePoints);
   const progressPercentage = totalFreePoints > 0 ? ((totalFreePoints - remainingFreePoints) / totalFreePoints) * 100 : 0;
@@ -321,7 +336,21 @@ export function StepSkills({ formData, updateFormData, buildResult }: StepSkills
           transition={{ delay: 0.2 }}
         >
           <div className="flex items-center justify-between mb-3">
-            <p className="text-sm text-muted-foreground">PERÍCIAS LIVRES</p>
+            <div className="flex items-center gap-2">
+              <p className="text-sm text-muted-foreground">PERÍCIAS LIVRES</p>
+              {/* Breakdown de onde vem os pontos */}
+              <div className="flex gap-1 text-xs">
+                <span className="px-1.5 py-0.5 rounded bg-muted/50 text-muted-foreground">
+                  Classe: {baseFreePoints}
+                </span>
+                {nexExtraSkills > 0 && (
+                  <span className="px-1.5 py-0.5 rounded bg-primary/20 text-primary flex items-center gap-1">
+                    <TrendingUp className="w-3 h-3" />
+                    NEX: +{nexExtraSkills}
+                  </span>
+                )}
+              </div>
+            </div>
             <p className={cn(
               'font-display text-2xl',
               remainingFreePoints === 0 ? 'text-success' : 'text-secondary'

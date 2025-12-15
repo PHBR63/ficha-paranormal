@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -20,8 +20,16 @@ import { CharacterCreationStepper } from '@/components/character/CharacterCreati
 import { StatsPreviewWidget } from '@/components/character/StatsPreviewWidget';
 import { RestoreDraftDialog } from '@/components/character/RestoreDraftDialog';
 import { ExitConfirmDialog } from '@/components/character/ExitConfirmDialog';
-import { ORIGINS, CLASSES, calculateDerivedStats, calculateDefense } from '@/lib/character-data';
-import { rebuildCharacterSheet, buildStateToFormData, CLASS_PROFICIENCIES } from '@/lib/character-builder-engine';
+import { 
+  ORIGINS, 
+  CLASSES, 
+  calculateDerivedStats, 
+  calculateDefense,
+  getOcultistRituals,
+  getAbilityChoicesByNex,
+  getExtraSkillsByNex
+} from '@/lib/character-data';
+import { rebuildCharacterSheet, buildStateToFormData, CLASS_PROFICIENCIES, getClassSkillRules } from '@/lib/character-builder-engine';
 import { getCoreAbilities, getChoosableAbilities } from '@/lib/class-abilities';
 import { useCharacterAutoSave, loadCharacterDraft, clearCharacterDraft } from '@/hooks/useCharacterAutoSave';
 import confetti from 'canvas-confetti';
@@ -162,9 +170,74 @@ export default function CharacterCreate() {
     setShowRestoreDialog(false);
   }, []);
 
+  // Referência para o NEX anterior (para detectar mudanças)
+  const previousNexRef = useRef(formData.nex);
+
   const updateFormData = useCallback((updates: Partial<CharacterFormData>) => {
     setFormData(prev => ({ ...prev, ...updates }));
   }, []);
+
+  // Efeito para reset automático quando o NEX mudar
+  useEffect(() => {
+    const previousNex = previousNexRef.current;
+    const currentNex = formData.nex;
+
+    // Se o NEX mudou, verificar se precisa resetar seleções
+    if (previousNex !== currentNex) {
+      let needsUpdate = false;
+      const updates: Partial<CharacterFormData> = {};
+
+      // Verificar rituais (apenas Ocultista)
+      if (formData.characterClass === 'Ocultista') {
+        const ritualsAllowed = getOcultistRituals(currentNex);
+        if (ritualsAllowed && formData.rituals.length > ritualsAllowed.count) {
+          // Manter apenas os primeiros rituais permitidos
+          updates.rituals = formData.rituals.slice(0, ritualsAllowed.count);
+          needsUpdate = true;
+          toast({
+            title: 'Rituais ajustados',
+            description: `O novo NEX permite apenas ${ritualsAllowed.count} rituais. Alguns foram removidos.`,
+          });
+        }
+      }
+
+      // Verificar habilidades opcionais
+      const maxAbilities = getAbilityChoicesByNex(currentNex);
+      const currentAbilities = formData.abilities.length;
+      if (currentAbilities > maxAbilities) {
+        updates.abilities = formData.abilities.slice(0, maxAbilities);
+        needsUpdate = true;
+        toast({
+          title: 'Habilidades ajustadas',
+          description: `O novo NEX permite apenas ${maxAbilities} habilidades opcionais. Algumas foram removidas.`,
+        });
+      }
+
+      // Verificar perícias livres
+      if (formData.characterClass) {
+        const classRules = getClassSkillRules(formData.characterClass, formData.attributes.intellect);
+        const nexExtraSkills = getExtraSkillsByNex(currentNex);
+        const totalAllowed = classRules.freePoints + nexExtraSkills;
+        
+        if (formData.freeSkills.length > totalAllowed) {
+          updates.freeSkills = formData.freeSkills.slice(0, totalAllowed);
+          needsUpdate = true;
+          toast({
+            title: 'Perícias ajustadas',
+            description: `O novo NEX permite apenas ${totalAllowed} perícias livres. Algumas foram removidas.`,
+          });
+        }
+      }
+
+      // Aplicar atualizações se necessário
+      if (needsUpdate) {
+        setFormData(prev => ({ ...prev, ...updates }));
+      }
+
+      // Atualizar referência
+      previousNexRef.current = currentNex;
+    }
+  }, [formData.nex, formData.characterClass, formData.rituals.length, formData.abilities.length, formData.freeSkills.length, formData.attributes.intellect, toast]);
 
   // Rebuild character sheet state
   const buildState = useMemo(() => ({
