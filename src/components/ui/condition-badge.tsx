@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { CONDITIONS, type Condition } from "@/lib/conditions";
@@ -32,14 +33,14 @@ const iconSizes = {
   lg: 'text-lg',
 };
 
-export function ConditionBadge({
+export const ConditionBadge = React.forwardRef<HTMLDivElement, ConditionBadgeProps>(({
   conditionId,
   size = 'md',
   showTooltip = true,
   onRemove,
   turnsRemaining,
   animate = true,
-}: ConditionBadgeProps) {
+}, ref) => {
   const condition = CONDITIONS[conditionId];
   const effect = CONDITION_EFFECTS[conditionId];
   
@@ -51,6 +52,7 @@ export function ConditionBadge({
 
   const badge = (
     <motion.div
+      ref={ref}
       layout
       initial={animate ? { scale: 0, opacity: 0 } : undefined}
       animate={{ scale: 1, opacity: 1 }}
@@ -132,7 +134,9 @@ export function ConditionBadge({
       </Tooltip>
     </TooltipProvider>
   );
-}
+});
+
+ConditionBadge.displayName = "ConditionBadge";
 
 function getColorClasses(color: string) {
   switch (color) {
