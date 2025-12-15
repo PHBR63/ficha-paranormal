@@ -1,5 +1,6 @@
 // Componente de revisão final do personagem antes de salvar
 // Mostra todos os dados: conceito, atributos, origem, classe, trilha, rituais, perícias, etc.
+// Inclui painel educativo do livro de regras
 
 import { ORIGINS, CLASSES, SKILLS, getPatentByNex, getTrackById } from '@/lib/character-data';
 import { CLASS_PROFICIENCIES, CLASS_INITIAL_ABILITIES } from '@/lib/character-builder-engine';
@@ -8,8 +9,11 @@ import { Shield, Footprints, Swords, Edit2, Route, Sparkles, Droplets, Skull, Bo
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { motion } from 'framer-motion';
+import { RuleBookTip } from './RuleBookTip';
+import { getRulebookContent } from '@/lib/rulebook-content';
 import type { CharacterFormData } from '@/pages/CharacterCreate';
 import type { RebuildResult } from '@/lib/character-builder-engine';
+
 interface StepReviewProps {
   formData: CharacterFormData;
   buildResult: RebuildResult;
@@ -97,6 +101,9 @@ export function StepReview({
     const allSteps = [...baseSteps, ...afterTrack];
     return allSteps.indexOf(stepId);
   };
+  // Conteúdo educativo do livro
+  const rulebookContent = getRulebookContent('review');
+
   const EditButton = ({
     stepId
   }: {
@@ -104,6 +111,7 @@ export function StepReview({
   }) => <Button variant="ghost" size="sm" onClick={() => onStepClick?.(getStepIndex(stepId))} className="opacity-0 group-hover:opacity-100 transition-opacity">
       <Edit2 className="w-3 h-3" />
     </Button>;
+
   return <div className="space-y-6">
       {/* Título */}
       <div className="text-center mb-8">
@@ -112,6 +120,11 @@ export function StepReview({
           Confira as informações do seu agente antes de finalizar o cadastro.
         </p>
       </div>
+
+      {/* Painel educativo do livro de regras */}
+      {rulebookContent && (
+        <RuleBookTip section={rulebookContent} defaultExpanded={false} />
+      )}
 
       {/* Header card com informações básicas */}
       <motion.div className="ordo-panel p-6 group" initial={{

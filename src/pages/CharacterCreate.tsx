@@ -20,6 +20,7 @@ import { CharacterCreationStepper } from '@/components/character/CharacterCreati
 import { StatsPreviewWidget } from '@/components/character/StatsPreviewWidget';
 import { RestoreDraftDialog } from '@/components/character/RestoreDraftDialog';
 import { ExitConfirmDialog } from '@/components/character/ExitConfirmDialog';
+import { CreationHelpButton } from '@/components/character/CreationHelpModal';
 import { 
   ORIGINS, 
   CLASSES, 
@@ -671,6 +672,9 @@ export default function CharacterCreate() {
         onConfirm={handleExitConfirm}
         onCancel={() => setShowExitDialog(false)}
       />
+
+      {/* Botão flutuante de ajuda - abre modal com glossário e fórmulas */}
+      <CreationHelpButton />
     </div>
   );
 }
