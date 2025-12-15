@@ -131,6 +131,8 @@ export function InventoryPanel({
   const [weaponCatalogOpen, setWeaponCatalogOpen] = useState(false);
   const [armorCatalogOpen, setArmorCatalogOpen] = useState(false);
   const [itemCatalogOpen, setItemCatalogOpen] = useState(false);
+  const [useItemConfirmOpen, setUseItemConfirmOpen] = useState(false);
+  const [itemToUse, setItemToUse] = useState<ExtendedInventoryItem | null>(null);
   const [newItem, setNewItem] = useState<Partial<ExtendedInventoryItem>>({
     name: '',
     category: '0',
@@ -296,11 +298,20 @@ export function InventoryPanel({
     onInventoryChange(newInventory);
   };
 
-  // Handler para usar item consumível
-  const handleUseItem = (itemId: string) => {
-    if (!onInventoryChange) return;
+  // Handler para abrir modal de confirmação de uso
+  const handleRequestUseItem = (itemId: string) => {
+    const item = inventory.find(i => i.id === itemId);
+    if (item) {
+      setItemToUse(item);
+      setUseItemConfirmOpen(true);
+    }
+  };
 
-    const result = useConsumableItem(inventory, itemId);
+  // Handler para confirmar uso do item
+  const handleConfirmUseItem = () => {
+    if (!onInventoryChange || !itemToUse) return;
+
+    const result = useConsumableItem(inventory, itemToUse.id);
     
     if (result.success) {
       onInventoryChange(result.newInventory.map(i => ({
@@ -320,6 +331,9 @@ export function InventoryPanel({
         variant: 'destructive',
       });
     }
+    
+    setUseItemConfirmOpen(false);
+    setItemToUse(null);
   };
 
   // Handler para adicionar arma do catálogo
@@ -693,6 +707,87 @@ export function InventoryPanel({
         onAddItem={handleAddItemFromCatalog}
       />
 
+      {/* Modal de Confirmação de Uso de Item */}
+      <Dialog open={useItemConfirmOpen} onOpenChange={setUseItemConfirmOpen}>
+        <DialogContent className="sm:max-w-md bg-popover">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 font-display">
+              <Zap className="w-5 h-5 text-green-400" />
+              Usar Item
+            </DialogTitle>
+            <DialogDescription>
+              Confirme o uso do item abaixo.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {itemToUse && (
+            <div className="space-y-4 py-2">
+              {/* Nome e info do item */}
+              <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg border border-border/50">
+                <div className="w-12 h-12 rounded-lg bg-green-500/20 flex items-center justify-center">
+                  <FlaskConical className="w-6 h-6 text-green-400" />
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-medium">{itemToUse.name}</h4>
+                  <p className="text-xs text-muted-foreground">
+                    {itemToUse.uses}/{itemToUse.maxUses ?? itemToUse.uses} usos restantes
+                  </p>
+                </div>
+              </div>
+
+              {/* Descrição */}
+              {itemToUse.description && (
+                <p className="text-sm text-muted-foreground">
+                  {itemToUse.description}
+                </p>
+              )}
+
+              {/* Efeito */}
+              {itemToUse.effect && (
+                <div className="p-3 bg-green-500/10 border border-green-500/30 rounded-lg">
+                  <div className="flex items-center gap-2 text-green-400 text-sm font-medium mb-1">
+                    <Zap className="w-4 h-4" />
+                    Efeito
+                  </div>
+                  <p className="text-sm">{itemToUse.effect}</p>
+                </div>
+              )}
+
+              {/* Aviso se for último uso */}
+              {itemToUse.uses === 1 && (
+                <div className="p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                  <div className="flex items-center gap-2 text-yellow-400 text-sm">
+                    <AlertTriangle className="w-4 h-4" />
+                    <span>Este é o último uso. O item será removido do inventário.</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Botões */}
+              <div className="flex gap-3 pt-2">
+                <Button 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={() => {
+                    setUseItemConfirmOpen(false);
+                    setItemToUse(null);
+                  }}
+                >
+                  Cancelar
+                </Button>
+                <Button 
+                  className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                  onClick={handleConfirmUseItem}
+                >
+                  <Zap className="w-4 h-4 mr-2" />
+                  Confirmar Uso
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {showEquipment && (
         <div className="ordo-panel p-3">
           <EquipmentSlots 
@@ -847,7 +942,7 @@ export function InventoryPanel({
                     onRemove={!readOnly ? handleRemoveItem : undefined}
                     onEquip={!readOnly && canEquipItem(item) ? handleEquipItem : undefined}
                     onUnequip={!readOnly && item.isEquipped ? handleUnequipItem : undefined}
-                    onUse={!readOnly && canUseItem(item) ? handleUseItem : undefined}
+                    onUse={!readOnly && canUseItem(item) ? handleRequestUseItem : undefined}
                   />
                 ))}
               </CollapsibleContent>
