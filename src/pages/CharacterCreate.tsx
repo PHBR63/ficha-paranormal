@@ -306,8 +306,11 @@ export default function CharacterCreate() {
           break;
         case 'attributes':
           // Usa validateAttributes do engine para considerar NEX corretamente
+          // A validação considera atributo 0 como válido (regra do zero)
           const attrValidation = validateAttributes(formData.attributes, formData.nex);
-          if (attrValidation.valid && attrValidation.remainingPoints === 0) {
+          // Verifica se é válido E se todos os pontos foram distribuídos
+          // Nota: remainingPoints === 0 significa que usou todos os pontos disponíveis
+          if (attrValidation.valid && attrValidation.remainingPoints === 0 && attrValidation.errors.length === 0) {
             completed.push(index);
           }
           break;

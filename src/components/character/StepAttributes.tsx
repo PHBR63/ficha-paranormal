@@ -78,14 +78,15 @@ export function StepAttributes({ formData, updateFormData }: StepAttributesProps
   const maxAttribute = getMaxAttributeByNex(formData.nex);
 
   // Cálculo de pontos disponíveis incluindo bônus por NEX
-  // REGRA: Todos começam com 1 em cada atributo (5 pontos base) + 4 para distribuir = 9 total
-  // Se reduzir um atributo a 0, você NÃO ganha ponto extra - você apenas libera 1 ponto
-  // que estava naquele atributo para usar em outro lugar
+  // REGRA DO LIVRO:
+  // - Todo agente começa com 1 em cada atributo (5 pontos base)
+  // - Você tem 4 pontos adicionais para distribuir
+  // - Se reduzir UM atributo para 0, você libera o 1 ponto que estava nele
+  // - O total máximo sempre é: 5 + 4 + NEX bonus = 9 + NEX
   const totalPoints = Object.values(formData.attributes).reduce((a, b) => a + b, 0);
   const distributedPoints = 4; // Pontos para distribuir além do 1 inicial em cada
   const nexBonus = getExtraAttributePoints(formData.nex); // Pontos extras por NEX
   // Total máximo: 5 (base) + 4 (distribuir) + NEX bonus = 9 + NEX
-  // Se reduzir a 0, você pode colocar o ponto que estava ali em outro lugar
   const maxPoints = 5 + distributedPoints + nexBonus;
   const remainingPoints = maxPoints - totalPoints;
 

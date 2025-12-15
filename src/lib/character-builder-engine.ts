@@ -169,10 +169,12 @@ export const ORIGIN_TABLE: Array<{ min: number; max: number; originId: string }>
 
 /**
  * Valida a distribuição de atributos
- * - Base: 1 em cada (total 5)
- * - Pool: 4 pontos (ou 5 se reduzir um atributo para 0)
- * - Bônus NEX: pontos extras baseados no nível de exposição (NEX 20%+ = +1, etc.)
- * - Limite: máximo 3 na criação (NEX 5%)
+ * REGRA DO LIVRO:
+ * - Todo agente começa com 1 em cada atributo (5 pontos base já distribuídos)
+ * - Você tem 4 pontos adicionais para distribuir
+ * - Pode reduzir UM atributo para 0, liberando 1 ponto extra (total 5 para distribuir)
+ * - Bônus NEX: pontos extras baseados no nível de exposição
+ * - Limite máximo por atributo depende do NEX
  */
 export function validateAttributes(allocation: AttributeAllocation, nex: number = 5): {
   valid: boolean;
@@ -189,30 +191,47 @@ export function validateAttributes(allocation: AttributeAllocation, nex: number 
     errors.push('Nenhum atributo pode ser menor que 0.');
   }
   
+  // Verificar se mais de um atributo está em 0 (não permitido)
+  const zeroCount = values.filter(v => v === 0).length;
+  if (zeroCount > 1) {
+    errors.push('Apenas um atributo pode ser reduzido para 0.');
+  }
+  
   // Limite máximo na criação depende do NEX
   const maxAttribute = getMaxAttributeByNex(nex);
   if (values.some(v => v > maxAttribute)) {
     errors.push(`Com NEX ${nex}%, nenhum atributo pode ser maior que ${maxAttribute}.`);
   }
   
-  // Calcular pool base: 4 pontos, +1 se algum atributo = 0
-  const hasZero = values.some(v => v === 0);
-  const basePool = hasZero ? 5 : 4;
-  
   // Adicionar pontos extras por NEX
   const nexBonus = getExtraAttributePoints(nex);
+  
+  // Pool base = 4 pontos para distribuir além do 1 inicial em cada
+  // Total esperado (sem zero): 5 (base) + 4 (pool) + NEX bonus = 9 + NEX
+  // Se um atributo está em 0: o ponto que estava ali pode ser redistribuído
+  // Então o total ainda é 9 + NEX (a soma de todos os valores)
+  const basePool = 4;
   const pool = basePool + nexBonus;
   
-  // Total esperado = base (5) + pool (com bônus NEX)
-  const totalExpected = 5 + pool;
+  // Cálculo correto:
+  // - Base inicial = 5 (1 em cada atributo)
+  // - Pool para distribuir = 4 + NEX bonus
+  // - Se um atributo foi reduzido a 0, você "libera" o 1 ponto que estava nele
+  // - Portanto, o total máximo de pontos distribuídos = 5 + 4 + NEX = 9 + NEX
+  // - Se usou a regra do zero, um dos "1" base virou 0, mas o ponto foi para outro lugar
+  // - O total de pontos em atributos sempre deve ser: 5 + pool = 5 + 4 + NEX = 9 + NEX
+  //   (a menos que use regra do zero, onde seria 4 + 5 + NEX = 9 + NEX - mesma coisa!)
+  
   const totalActual = values.reduce((a, b) => a + b, 0);
-  const usedPoints = totalActual - 5; // Pontos usados além da base
-  const remainingPoints = pool - usedPoints;
+  const maxTotal = 5 + pool; // 5 base + 4 pool + NEX bonus
+  
+  // Pontos restantes = quanto falta para atingir o máximo
+  const remainingPoints = maxTotal - totalActual;
   
   return {
-    valid: errors.length === 0 && remainingPoints >= 0 && remainingPoints <= pool,
+    valid: errors.length === 0 && remainingPoints === 0,
     pool,
-    usedPoints: Math.max(0, usedPoints),
+    usedPoints: totalActual - 5, // Pontos usados além da base (pode ser negativo se alguém tem 0)
     remainingPoints: Math.max(0, remainingPoints),
     errors,
   };
