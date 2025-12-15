@@ -163,12 +163,22 @@ export default function Auth() {
                   type="text"
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
+                  onBlur={() => {
+                    if (displayName && displayName.length < 2) {
+                      setErrors(prev => ({ ...prev, displayName: 'Nome deve ter pelo menos 2 caracteres' }));
+                    } else {
+                      setErrors(prev => { const { displayName, ...rest } = prev; return rest; });
+                    }
+                  }}
                   placeholder="Como deseja ser chamado?"
-                  className="terminal-input h-11 sm:h-12 text-sm sm:text-base"
+                  className={`terminal-input h-11 sm:h-12 text-sm sm:text-base transition-all duration-200 ${
+                    errors.displayName ? 'border-destructive ring-1 ring-destructive/50' : 
+                    displayName && displayName.length >= 2 ? 'border-success ring-1 ring-success/50' : ''
+                  }`}
                   disabled={loading}
                 />
                 {errors.displayName && (
-                  <p className="text-destructive text-xs">{errors.displayName}</p>
+                  <p className="text-destructive text-xs animate-fade-in">{errors.displayName}</p>
                 )}
               </div>
             )}
@@ -181,13 +191,25 @@ export default function Auth() {
                 id="email"
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  // Validação em tempo real
+                  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                  if (e.target.value && !emailRegex.test(e.target.value)) {
+                    setErrors(prev => ({ ...prev, email: 'Email inválido' }));
+                  } else {
+                    setErrors(prev => { const { email, ...rest } = prev; return rest; });
+                  }
+                }}
                 placeholder="agente@ordo.gov"
-                className="terminal-input h-11 sm:h-12 text-sm sm:text-base"
+                className={`terminal-input h-11 sm:h-12 text-sm sm:text-base transition-all duration-200 ${
+                  errors.email ? 'border-destructive ring-1 ring-destructive/50' : 
+                  email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? 'border-success ring-1 ring-success/50' : ''
+                }`}
                 disabled={loading}
               />
               {errors.email && (
-                <p className="text-destructive text-xs">{errors.email}</p>
+                <p className="text-destructive text-xs animate-fade-in">{errors.email}</p>
               )}
             </div>
 
@@ -200,9 +222,20 @@ export default function Auth() {
                   id="password"
                   type={showPassword ? 'text' : 'password'}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    // Validação em tempo real
+                    if (e.target.value && e.target.value.length < 6) {
+                      setErrors(prev => ({ ...prev, password: 'A senha deve ter pelo menos 6 caracteres' }));
+                    } else {
+                      setErrors(prev => { const { password, ...rest } = prev; return rest; });
+                    }
+                  }}
                   placeholder="••••••••"
-                  className="terminal-input h-11 sm:h-12 pr-12 text-sm sm:text-base"
+                  className={`terminal-input h-11 sm:h-12 pr-12 text-sm sm:text-base transition-all duration-200 ${
+                    errors.password ? 'border-destructive ring-1 ring-destructive/50' : 
+                    password && password.length >= 6 ? 'border-success ring-1 ring-success/50' : ''
+                  }`}
                   disabled={loading}
                 />
                 <button
@@ -214,7 +247,7 @@ export default function Auth() {
                 </button>
               </div>
               {errors.password && (
-                <p className="text-destructive text-xs">{errors.password}</p>
+                <p className="text-destructive text-xs animate-fade-in">{errors.password}</p>
               )}
             </div>
 
@@ -238,14 +271,17 @@ export default function Auth() {
           <div className="mt-6 text-center">
             <button
               type="button"
-              onClick={() => setMode(mode === 'signin' ? 'signup' : 'signin')}
-              className="text-sm text-muted-foreground hover:text-accent transition-colors"
+              onClick={() => {
+                setMode(mode === 'signin' ? 'signup' : 'signin');
+                setErrors({}); // Limpa erros ao trocar de modo
+              }}
+              className="text-sm text-muted-foreground hover:text-foreground transition-all duration-300 hover:scale-105 active:scale-95 py-2 px-4 rounded-lg hover:bg-primary/10"
             >
-            {mode === 'signin' ? (
-              <>Não tem cadastro? <span className="text-primary font-medium">Registre-se</span></>
-            ) : (
-              <>Já tem conta? <span className="text-primary font-medium">Faça login</span></>
-            )}
+              {mode === 'signin' ? (
+                <>Não tem cadastro? <span className="text-primary font-medium">Registre-se</span></>
+              ) : (
+                <>Já tem conta? <span className="text-primary font-medium">Faça login</span></>
+              )}
             </button>
           </div>
 
