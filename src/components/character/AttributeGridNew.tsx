@@ -66,41 +66,36 @@ export function AttributeGridNew({
           const color = ATTRIBUTE_COLORS[key];
           
           return (
-            <motion.div
+            <div
               key={key}
               className={cn(
                 "relative group cursor-pointer",
                 "flex flex-col items-center justify-center",
                 "p-3 rounded-lg",
                 "sheet-panel-inner",
-                "hover:border-primary/50",
+                "hover:border-primary/50 hover:scale-[1.03] active:scale-[0.97]",
                 "transition-all duration-200"
               )}
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
               onClick={() => onRoll?.(value, display.label)}
             >
               {/* D20 vermelho clicável */}
-              <motion.div
-                className="absolute -top-2 -right-2 text-destructive opacity-70 group-hover:opacity-100 transition-opacity"
-                whileHover={{ rotate: 15, scale: 1.1 }}
-              >
+              <div className="absolute -top-2 -right-2 text-destructive opacity-70 group-hover:opacity-100 group-hover:rotate-12 transition-all duration-200">
                 <D20Icon className="w-5 h-5" />
-              </motion.div>
+              </div>
               
               {/* Valor do atributo */}
-              <motion.span 
+              <span 
                 className="font-display text-3xl"
                 style={{ color }}
               >
                 {value}
-              </motion.span>
+              </span>
               
               {/* Nome do atributo */}
               <span className="text-[10px] text-muted-foreground uppercase tracking-wider mt-1">
                 {display.abbr}
               </span>
-            </motion.div>
+            </div>
           );
         })}
       </div>
