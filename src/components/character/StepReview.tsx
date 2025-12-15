@@ -482,7 +482,12 @@ export function StepReview({
                   >
                     <AlertCircle className="w-4 h-4 flex-shrink-0" />
                   </motion.div>
-                  <span>Resolva as <strong>escolhas de perícias</strong> pendentes ({buildResult.pendingChoices.length})</span>
+                  <span>
+                    Resolva as <strong>escolhas de perícias</strong> pendentes{' '}
+                    <span className="inline-flex items-center justify-center bg-warning/30 text-warning font-bold px-2 py-0.5 rounded-full text-xs ml-1">
+                      {buildResult.pendingChoices.length} escolha{buildResult.pendingChoices.length > 1 ? 's' : ''}
+                    </span>
+                  </span>
                 </motion.div>
               )}
               {/* Verificar conflitos de perícias */}
@@ -500,7 +505,12 @@ export function StepReview({
                   >
                     <AlertCircle className="w-4 h-4 flex-shrink-0" />
                   </motion.div>
-                  <span>Resolva os <strong>conflitos de perícias</strong> ({buildResult.conflicts.length})</span>
+                  <span>
+                    Resolva os <strong>conflitos de perícias</strong>{' '}
+                    <span className="inline-flex items-center justify-center bg-destructive/30 text-destructive font-bold px-2 py-0.5 rounded-full text-xs ml-1">
+                      {buildResult.conflicts.length} conflito{buildResult.conflicts.length > 1 ? 's' : ''}
+                    </span>
+                  </span>
                 </motion.div>
               )}
             </div>
