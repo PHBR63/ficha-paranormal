@@ -1,5 +1,9 @@
-// Ordem Paranormal RPG v1.3 - Class Abilities by NEX
-// Sistema de habilidades de classe que escalam com o nível de experiência
+/**
+ * Ordem Paranormal RPG v1.3 - Class Abilities by NEX
+ * Sistema de habilidades de classe que escalam com o nível de experiência
+ */
+
+import { getAbilityChoicesByNex } from './character-data';
 
 export interface ClassAbility {
   id: string;
@@ -246,14 +250,11 @@ export function getChoosableAbilities(classId: string, nex: number): ClassAbilit
 
 /**
  * Calcula quantas habilidades o personagem pode escolher baseado no NEX
- * Regra: 1 escolha a cada 5% de NEX (a partir do 10%)
+ * Usa a tabela de progressão oficial do NEX
  */
 export function getAbilityChoiceCount(nex: number): number {
-  // NEX 5% = 0 escolhas (só core)
-  // NEX 10% = 1 escolha
-  // NEX 15% = 2 escolhas
-  // ...
-  return Math.max(0, Math.floor(nex / 5) - 1);
+  // Usa a função centralizada da tabela de progressão
+  return getAbilityChoicesByNex(nex);
 }
 
 /**

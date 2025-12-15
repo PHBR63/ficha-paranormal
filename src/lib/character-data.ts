@@ -574,6 +574,75 @@ export const SKILLS = [
   { id: 'vontade', name: 'Vontade', attribute: 'presence', description: 'Resistir a manipulação mental, medo e efeitos que afetam a mente.', requiresTraining: false },
 ];
 
+// ==================== PROGRESSÃO POR NEX (TABELA OFICIAL) ====================
+
+/**
+ * Tabela de progressão por NEX - Define benefícios ganhos a cada nível
+ * Baseado nas regras oficiais do livro Ordem Paranormal v1.3
+ * 
+ * - attributePoints: Pontos de atributo extras acumulados
+ * - extraSkills: Perícias extras acumuladas (além das da classe)
+ * - abilityChoices: Quantidade de habilidades opcionais da classe
+ * - trackAbilityUnlocks: Habilidades de trilha desbloqueadas
+ */
+export interface NexProgressionData {
+  attributePoints: number;  // Pontos de atributo extras (acumulados)
+  extraSkills: number;      // Perícias extras (acumuladas)
+  abilityChoices: number;   // Habilidades opcionais disponíveis
+  trackAbilityUnlocks: number; // Habilidades de trilha desbloqueadas
+}
+
+export const NEX_PROGRESSION: Record<number, NexProgressionData> = {
+  5:  { attributePoints: 0, extraSkills: 0, abilityChoices: 1, trackAbilityUnlocks: 1 },
+  10: { attributePoints: 0, extraSkills: 1, abilityChoices: 1, trackAbilityUnlocks: 1 },
+  15: { attributePoints: 1, extraSkills: 1, abilityChoices: 1, trackAbilityUnlocks: 1 },
+  20: { attributePoints: 1, extraSkills: 2, abilityChoices: 2, trackAbilityUnlocks: 1 },
+  25: { attributePoints: 2, extraSkills: 2, abilityChoices: 2, trackAbilityUnlocks: 2 },
+  30: { attributePoints: 2, extraSkills: 3, abilityChoices: 2, trackAbilityUnlocks: 2 },
+  35: { attributePoints: 3, extraSkills: 3, abilityChoices: 3, trackAbilityUnlocks: 2 },
+  40: { attributePoints: 3, extraSkills: 4, abilityChoices: 3, trackAbilityUnlocks: 2 },
+  45: { attributePoints: 4, extraSkills: 4, abilityChoices: 3, trackAbilityUnlocks: 2 },
+  50: { attributePoints: 4, extraSkills: 5, abilityChoices: 4, trackAbilityUnlocks: 3 },
+  55: { attributePoints: 5, extraSkills: 5, abilityChoices: 4, trackAbilityUnlocks: 3 },
+  60: { attributePoints: 5, extraSkills: 6, abilityChoices: 4, trackAbilityUnlocks: 3 },
+  65: { attributePoints: 6, extraSkills: 6, abilityChoices: 5, trackAbilityUnlocks: 3 },
+  70: { attributePoints: 6, extraSkills: 7, abilityChoices: 5, trackAbilityUnlocks: 3 },
+  75: { attributePoints: 7, extraSkills: 7, abilityChoices: 5, trackAbilityUnlocks: 4 },
+  80: { attributePoints: 7, extraSkills: 8, abilityChoices: 6, trackAbilityUnlocks: 4 },
+  85: { attributePoints: 8, extraSkills: 8, abilityChoices: 6, trackAbilityUnlocks: 4 },
+  90: { attributePoints: 8, extraSkills: 9, abilityChoices: 6, trackAbilityUnlocks: 4 },
+  95: { attributePoints: 9, extraSkills: 9, abilityChoices: 7, trackAbilityUnlocks: 4 },
+  99: { attributePoints: 10, extraSkills: 10, abilityChoices: 7, trackAbilityUnlocks: 5 },
+};
+
+/**
+ * Retorna os benefícios de progressão para um dado NEX
+ */
+export function getNexProgression(nex: number): NexProgressionData {
+  return NEX_PROGRESSION[nex] || NEX_PROGRESSION[5];
+}
+
+/**
+ * Calcula pontos de atributo extras por NEX
+ */
+export function getExtraAttributePoints(nex: number): number {
+  return getNexProgression(nex).attributePoints;
+}
+
+/**
+ * Calcula perícias extras por NEX
+ */
+export function getExtraSkillsByNex(nex: number): number {
+  return getNexProgression(nex).extraSkills;
+}
+
+/**
+ * Calcula quantidade de habilidades opcionais por NEX
+ */
+export function getAbilityChoicesByNex(nex: number): number {
+  return getNexProgression(nex).abilityChoices;
+}
+
 // ==================== NÍVEIS DE TREINAMENTO ====================
 
 export const TRAINING_LEVELS = [

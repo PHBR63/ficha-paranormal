@@ -12,6 +12,8 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 
+import { getExtraAttributePoints } from '@/lib/character-data';
+
 interface StepAttributesProps {
   formData: CharacterFormData;
   updateFormData: (updates: Partial<CharacterFormData>) => void;
@@ -61,6 +63,7 @@ const ATTRIBUTES = [
 ];
 
 export function StepAttributes({ formData, updateFormData }: StepAttributesProps) {
+  // Estado para controle da regra de reduzir atributo a 0
   const [hasReducedToZero, setHasReducedToZero] = useState(() => {
     return Object.values(formData.attributes).some(v => v === 0);
   });
@@ -69,11 +72,13 @@ export function StepAttributes({ formData, updateFormData }: StepAttributesProps
     return entry ? entry[0] : null;
   });
 
+  // Cálculo de pontos disponíveis incluindo bônus por NEX
   const totalPoints = Object.values(formData.attributes).reduce((a, b) => a + b, 0);
-  const basePoints = 5;
-  const distributedPoints = 4;
-  const bonusFromZero = hasReducedToZero ? 1 : 0;
-  const maxPoints = basePoints + distributedPoints + bonusFromZero;
+  const basePoints = 5; // Pontos base (1 em cada atributo)
+  const distributedPoints = 4; // Pontos para distribuir
+  const bonusFromZero = hasReducedToZero ? 1 : 0; // Bônus por reduzir atributo a 0
+  const nexBonus = getExtraAttributePoints(formData.nex); // Pontos extras por NEX
+  const maxPoints = basePoints + distributedPoints + bonusFromZero + nexBonus;
   const remainingPoints = maxPoints - totalPoints;
 
   // Preview stats based on current attributes
@@ -131,8 +136,24 @@ export function StepAttributes({ formData, updateFormData }: StepAttributesProps
         <div className="text-center mb-8">
           <h2 className="font-display text-2xl tracking-wider mb-2">ATRIBUTOS BASE</h2>
           <p className="text-muted-foreground text-sm">
-            Distribua {distributedPoints} pontos entre os atributos. Cada atributo começa em 1 e pode chegar a 3.
+            Distribua seus pontos entre os atributos. Cada atributo começa em 1 e pode chegar a 3.
           </p>
+          {/* Mostra breakdown dos pontos disponíveis */}
+          <div className="flex flex-wrap justify-center gap-2 mt-3 text-xs">
+            <span className="px-2 py-1 rounded bg-muted/50 border border-border">
+              Base: {distributedPoints}
+            </span>
+            {bonusFromZero > 0 && (
+              <span className="px-2 py-1 rounded bg-paranormal/20 border border-paranormal/30 text-paranormal">
+                Atributo Zero: +{bonusFromZero}
+              </span>
+            )}
+            {nexBonus > 0 && (
+              <span className="px-2 py-1 rounded bg-primary/20 border border-primary/30 text-primary">
+                NEX {formData.nex}%: +{nexBonus}
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Points counter with progress bar */}
