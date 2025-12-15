@@ -30,6 +30,7 @@ import {
   CheckCircle2,
   XCircle,
   Info,
+  Zap,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -72,6 +73,8 @@ import {
   removeFromInventory,
   canAddItem,
   PATENT_LIMITS,
+  useConsumableItem,
+  canUseItem,
 } from '@/lib/inventory-system';
 import { EquipmentSlots, EquipmentSlotType, EQUIPMENT_SLOTS, getAppropriateSlot } from './EquipmentSlots';
 import { WeaponCatalogModal } from './WeaponCatalogModal';
@@ -291,6 +294,32 @@ export function InventoryPanel({
     }));
 
     onInventoryChange(newInventory);
+  };
+
+  // Handler para usar item consumível
+  const handleUseItem = (itemId: string) => {
+    if (!onInventoryChange) return;
+
+    const result = useConsumableItem(inventory, itemId);
+    
+    if (result.success) {
+      onInventoryChange(result.newInventory.map(i => ({
+        ...i,
+        itemType: (i as ExtendedInventoryItem).itemType || 'misc',
+        equipSlot: (i as ExtendedInventoryItem).equipSlot,
+      })));
+      toast({
+        title: result.itemRemoved ? 'Item consumido' : 'Item usado',
+        description: result.message,
+        variant: result.itemRemoved ? 'default' : 'default',
+      });
+    } else {
+      toast({
+        title: 'Não foi possível usar',
+        description: result.message,
+        variant: 'destructive',
+      });
+    }
   };
 
   // Handler para adicionar arma do catálogo
@@ -818,6 +847,7 @@ export function InventoryPanel({
                     onRemove={!readOnly ? handleRemoveItem : undefined}
                     onEquip={!readOnly && canEquipItem(item) ? handleEquipItem : undefined}
                     onUnequip={!readOnly && item.isEquipped ? handleUnequipItem : undefined}
+                    onUse={!readOnly && canUseItem(item) ? handleUseItem : undefined}
                   />
                 ))}
               </CollapsibleContent>
@@ -841,10 +871,14 @@ interface InventoryItemRowProps {
   onRemove?: (id: string) => void;
   onEquip?: (id: string) => void;
   onUnequip?: (id: string) => void;
+  onUse?: (id: string) => void;
 }
 
-function InventoryItemRow({ item, onRemove, onEquip, onUnequip }: InventoryItemRowProps) {
+function InventoryItemRow({ item, onRemove, onEquip, onUnequip, onUse }: InventoryItemRowProps) {
   const categoryConfig = CATEGORY_LABELS[item.category] || CATEGORY_LABELS['0'];
+  // Verifica se é consumível e tem usos
+  const isConsumable = item.consumable && (item.uses ?? 0) > 0;
+  const usesDisplay = item.consumable ? `${item.uses ?? 0}/${item.maxUses ?? item.uses ?? 0}` : null;
 
   return (
     <TooltipProvider>
@@ -895,6 +929,20 @@ function InventoryItemRow({ item, onRemove, onEquip, onUnequip }: InventoryItemR
                   x{item.quantity}
                 </Badge>
               )}
+              {/* Badge de usos para consumíveis */}
+              {usesDisplay && (
+                <Badge 
+                  variant="outline" 
+                  className={cn(
+                    "text-[10px]",
+                    (item.uses ?? 0) > 0 
+                      ? "bg-green-500/20 text-green-400 border-green-500/50" 
+                      : "bg-muted text-muted-foreground"
+                  )}
+                >
+                  {usesDisplay} usos
+                </Badge>
+              )}
               {item.isEquipped && (
                 <Badge className="text-[10px] bg-primary/20 text-primary border-0">
                   EQUIPADO
@@ -909,6 +957,28 @@ function InventoryItemRow({ item, onRemove, onEquip, onUnequip }: InventoryItemR
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {/* Botão Usar (para consumíveis) */}
+          {onUse && isConsumable && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 px-2 text-xs bg-green-500/10 border-green-500/30 text-green-400 hover:bg-green-500/20 hover:text-green-300"
+                  onClick={() => onUse(item.id)}
+                >
+                  <Zap className="w-3 h-3 mr-1" />
+                  Usar
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent className="bg-popover border-border max-w-xs">
+                <p className="text-xs font-medium mb-1">Usar {item.name}</p>
+                {item.effect && (
+                  <p className="text-xs text-muted-foreground">{item.effect}</p>
+                )}
+              </TooltipContent>
+            </Tooltip>
+          )}
           <Badge 
             variant="outline" 
             className={cn("text-[10px] border", categoryConfig.color)}
