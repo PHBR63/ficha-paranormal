@@ -18,19 +18,21 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 
-// Configuração visual das patentes
+// Configuração visual das patentes (valores corrigidos conforme livro)
 const PATENT_CONFIG: Record<string, { 
   icon: React.ElementType; 
   gradient: string; 
   textColor: string;
   creditLimit: string;
-  itemLimits: { I: number | string; II: number | string; III: number | string; IV: number | string };
+  requiredPP: number;
+  itemLimits: { I: number; II: number; III: number; IV: number };
 }> = {
   'Recruta': { 
     icon: Shield, 
     gradient: 'from-slate-500 to-slate-600', 
     textColor: 'text-slate-50',
     creditLimit: 'Baixo',
+    requiredPP: 0,
     itemLimits: { I: 2, II: 0, III: 0, IV: 0 },
   },
   'Operador': { 
@@ -38,28 +40,32 @@ const PATENT_CONFIG: Record<string, {
     gradient: 'from-blue-500 to-blue-600', 
     textColor: 'text-blue-50',
     creditLimit: 'Médio',
-    itemLimits: { I: '∞', II: 2, III: 0, IV: 0 },
+    requiredPP: 20,
+    itemLimits: { I: 3, II: 1, III: 0, IV: 0 },
   },
   'Agente Especial': { 
     icon: Award, 
     gradient: 'from-purple-500 to-purple-600', 
     textColor: 'text-purple-50',
     creditLimit: 'Alto',
-    itemLimits: { I: '∞', II: '∞', III: 1, IV: 0 },
+    requiredPP: 50,
+    itemLimits: { I: 3, II: 2, III: 1, IV: 0 },
   },
   'Oficial de Operações': { 
     icon: Crown, 
     gradient: 'from-amber-500 to-amber-600', 
     textColor: 'text-amber-950',
     creditLimit: 'Ilimitado',
-    itemLimits: { I: '∞', II: '∞', III: '∞', IV: 1 },
+    requiredPP: 100,
+    itemLimits: { I: 3, II: 3, III: 2, IV: 1 },
   },
   'Agente de Elite': { 
     icon: Gem, 
     gradient: 'from-red-500 to-red-600', 
     textColor: 'text-red-50',
     creditLimit: 'Ilimitado',
-    itemLimits: { I: '∞', II: '∞', III: '∞', IV: '∞' },
+    requiredPP: 200,
+    itemLimits: { I: 3, II: 3, III: 3, IV: 2 },
   },
 };
 
