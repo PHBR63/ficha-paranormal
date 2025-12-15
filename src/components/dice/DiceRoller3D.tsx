@@ -1,3 +1,7 @@
+/**
+ * DiceRoller3D - Componente de rolagem de dados com animação 3D
+ * Removida a tabela de DT (o Mestre informa a dificuldade)
+ */
 "use client";
 
 import { useState, useCallback } from "react";
@@ -6,7 +10,7 @@ import confetti from "canvas-confetti";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Dices, Sparkles } from "lucide-react";
-import { rollSkillTest, DIFFICULTY_TABLE, type DiceRollResult } from "@/lib/dice-roller";
+import { rollSkillTest, type DiceRollResult } from "@/lib/dice-roller";
 
 interface DiceRoller3DProps {
   attributeValue: number;
@@ -198,24 +202,6 @@ export function DiceRoller3D({
                   >
                     = {result.total}
                   </motion.div>
-                </div>
-
-                {/* Difficulty check */}
-                <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border">
-                  {Object.entries(DIFFICULTY_TABLE).map(([name, dt]) => (
-                    <div
-                      key={name}
-                      className={cn(
-                        "flex justify-between text-sm px-2 py-1 rounded",
-                        result.total >= dt
-                          ? "bg-success/20 text-success"
-                          : "bg-muted text-muted-foreground"
-                      )}
-                    >
-                      <span>{name}</span>
-                      <span>{dt}</span>
-                    </div>
-                  ))}
                 </div>
 
                 {/* Clear button */}

@@ -1,12 +1,12 @@
+/**
+ * DiceRoller - Componente de rolagem de dados simplificado
+ * Removida a tabela de DT (o Mestre informa a dificuldade)
+ */
 import { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Dices, X } from 'lucide-react';
-import { 
-  rollSkillTest, 
-  DiceRollResult,
-  DIFFICULTY_TABLE 
-} from '@/lib/dice-roller';
+import { rollSkillTest, DiceRollResult } from '@/lib/dice-roller';
 
 interface DiceRollerProps {
   attributeValue: number;
@@ -130,26 +130,6 @@ export function DiceRoller({
                 ★ CRÍTICO!
               </p>
             )}
-          </div>
-
-          {/* Referência de DT */}
-          <div className="mt-3 pt-3 border-t border-border/50">
-            <p className="text-xs text-muted-foreground mb-1">VS. DIFICULDADE</p>
-            <div className="flex flex-wrap gap-1 text-xs">
-              {Object.entries(DIFFICULTY_TABLE).map(([name, dt]) => (
-                <span
-                  key={name}
-                  className={cn(
-                    'px-2 py-0.5 rounded',
-                    result.total >= dt 
-                      ? 'bg-success/20 text-success'
-                      : 'bg-muted/50 text-muted-foreground'
-                  )}
-                >
-                  {name} ({dt})
-                </span>
-              ))}
-            </div>
           </div>
         </div>
       )}
