@@ -439,23 +439,34 @@ export function StepReview({
                 </motion.div>
               )}
               {/* Verificar atributos - só mostra pendência se restar pontos a distribuir */}
-              {validateAttributes(formData.attributes).remainingPoints > 0 && (
-                <motion.div 
-                  className="flex items-center gap-2 text-sm text-warning bg-warning/10 p-2 rounded-md cursor-pointer hover:bg-warning/20 transition-colors" 
-                  onClick={() => onStepClick?.(2)}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.25 }}
-                >
-                  <motion.div
-                    animate={{ scale: [1, 1.2, 1] }}
-                    transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut", delay: 0.6 }}
-                  >
-                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                  </motion.div>
-                  <span>Distribua todos os <strong>pontos de atributo</strong> disponíveis</span>
-                </motion.div>
-              )}
+              {(() => {
+                const attrValidation = validateAttributes(formData.attributes);
+                if (attrValidation.remainingPoints > 0) {
+                  return (
+                    <motion.div 
+                      className="flex items-center gap-2 text-sm text-warning bg-warning/10 p-2 rounded-md cursor-pointer hover:bg-warning/20 transition-colors" 
+                      onClick={() => onStepClick?.(2)}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.25 }}
+                    >
+                      <motion.div
+                        animate={{ scale: [1, 1.2, 1] }}
+                        transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut", delay: 0.6 }}
+                      >
+                        <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                      </motion.div>
+                      <span>
+                        Distribua todos os <strong>pontos de atributo</strong>{' '}
+                        <span className="inline-flex items-center justify-center bg-warning/30 text-warning font-bold px-2 py-0.5 rounded-full text-xs ml-1">
+                          {attrValidation.remainingPoints} restante{attrValidation.remainingPoints > 1 ? 's' : ''}
+                        </span>
+                      </span>
+                    </motion.div>
+                  );
+                }
+                return null;
+              })()}
               {/* Verificar escolhas de perícias pendentes */}
               {buildResult.pendingChoices && buildResult.pendingChoices.length > 0 && (
                 <motion.div 
