@@ -99,6 +99,15 @@ export const CLASS_SKILL_RULES: Record<string, {
     choices: [],
     freeFormula: (int) => 3 + int,
   },
+  // Nova classe do suplemento "Sobrevivendo ao Horror"
+  'Sobrevivente': {
+    mandatory: ['sobrevivencia'],
+    choices: [
+      { id: 'survival', options: ['fortitude', 'reflexos'], pick: 1, label: 'Fortitude ou Reflexos' },
+      { id: 'awareness', options: ['percepcao', 'intuicao'], pick: 1, label: 'Percepção ou Intuição' },
+    ],
+    freeFormula: (int) => 4 + int,
+  },
 };
 
 // ============= CLASS PROFICIENCIES =============
@@ -107,6 +116,7 @@ export const CLASS_PROFICIENCIES: Record<string, string[]> = {
   'Combatente': ['Armas simples', 'Armas táticas', 'Proteções leves'],
   'Especialista': ['Armas simples', 'Proteções leves'],
   'Ocultista': ['Armas simples'],
+  'Sobrevivente': ['Armas simples', 'Armas improvisadas'], // Suplemento
 };
 
 // ============= CLASS INITIAL ABILITIES (NEX 5%) =============
@@ -115,6 +125,7 @@ export const CLASS_INITIAL_ABILITIES: Record<string, string[]> = {
   'Combatente': ['Ataque Especial (2d6+FOR de dano)'],
   'Especialista': ['Eclético (+5 em teste de perícia não treinada, 1x/cena)'],
   'Ocultista': ['Afinidade Paranormal (pode lançar rituais)'],
+  'Sobrevivente': ['Vontade de Viver', 'Improviso'], // Suplemento
 };
 
 // ============= SKILLS WITH TRAINING REQUIREMENT =============
