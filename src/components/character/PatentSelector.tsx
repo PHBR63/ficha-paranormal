@@ -22,11 +22,12 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 
-// Dados das patentes conforme o livro base
+// Dados das patentes conforme o livro base (valores corrigidos)
 export const PATENT_DATA = [
   {
     id: 'recruta',
     name: 'Recruta',
+    requiredPP: 0,
     icon: Shield,
     creditLimit: 'Baixo',
     itemLimits: { I: 2, II: 0, III: 0, IV: 0 },
@@ -38,9 +39,10 @@ export const PATENT_DATA = [
   {
     id: 'operador',
     name: 'Operador',
+    requiredPP: 20,
     icon: Star,
     creditLimit: 'Médio',
-    itemLimits: { I: Infinity, II: 2, III: 0, IV: 0 },
+    itemLimits: { I: 3, II: 1, III: 0, IV: 0 },
     description: 'Já possui alguma experiência e resolveu alguns casos paranormais.',
     gradient: 'from-blue-500 to-blue-600',
     textColor: 'text-blue-50',
@@ -49,9 +51,10 @@ export const PATENT_DATA = [
   {
     id: 'agente-especial',
     name: 'Agente Especial',
+    requiredPP: 50,
     icon: Award,
     creditLimit: 'Alto',
-    itemLimits: { I: Infinity, II: Infinity, III: 1, IV: 0 },
+    itemLimits: { I: 3, II: 2, III: 1, IV: 0 },
     description: 'Veterano com experiência comprovada em múltiplas missões.',
     gradient: 'from-purple-500 to-purple-600',
     textColor: 'text-purple-50',
@@ -60,9 +63,10 @@ export const PATENT_DATA = [
   {
     id: 'oficial-de-operacoes',
     name: 'Oficial de Operações',
+    requiredPP: 100,
     icon: Crown,
     creditLimit: 'Ilimitado',
-    itemLimits: { I: Infinity, II: Infinity, III: Infinity, IV: 1 },
+    itemLimits: { I: 3, II: 3, III: 2, IV: 1 },
     description: 'Líder experiente com acesso a recursos de alto nível.',
     gradient: 'from-amber-500 to-amber-600',
     textColor: 'text-amber-950',
@@ -71,9 +75,10 @@ export const PATENT_DATA = [
   {
     id: 'agente-de-elite',
     name: 'Agente de Elite',
+    requiredPP: 200,
     icon: Gem,
     creditLimit: 'Ilimitado',
-    itemLimits: { I: Infinity, II: Infinity, III: Infinity, IV: Infinity },
+    itemLimits: { I: 3, II: 3, III: 3, IV: 2 },
     description: 'Elite da Ordem. Acesso irrestrito a equipamentos e recursos.',
     gradient: 'from-red-500 to-red-600',
     textColor: 'text-red-50',
