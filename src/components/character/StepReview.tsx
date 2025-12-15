@@ -440,7 +440,7 @@ export function StepReview({
               )}
               {/* Verificar atributos - só mostra pendência se restar pontos a distribuir */}
               {(() => {
-                const attrValidation = validateAttributes(formData.attributes);
+                const attrValidation = validateAttributes(formData.attributes, formData.nex);
                 if (attrValidation.remainingPoints > 0) {
                   return (
                     <motion.div 
@@ -493,7 +493,7 @@ export function StepReview({
               {/* Verificar erros de atributo (ex: acima do limite) */}
               {(() => {
                 // Recalcula validação apenas para mostrar mensagens detalhadas
-                const attrValidation = validateAttributes(formData.attributes);
+                const attrValidation = validateAttributes(formData.attributes, formData.nex);
                 if (attrValidation.errors.length === 0) return null;
 
                 return (
@@ -547,9 +547,9 @@ export function StepReview({
                 </motion.div>
               )}
 
-              {/* Bloco de diagnóstico - aparece quando não há pendências visíveis mas canFinalize é false */}
-              {(() => {
-                const attrValidation = validateAttributes(formData.attributes);
+              {/* Bloco de diagnóstico - aparece APENAS em dev quando não há pendências visíveis mas canFinalize é false */}
+              {import.meta.env.DEV && (() => {
+                const attrValidation = validateAttributes(formData.attributes, formData.nex);
                 const hasVisibleIssues = 
                   (!formData.name || formData.name.trim().length < 2) ||
                   !formData.origin ||
