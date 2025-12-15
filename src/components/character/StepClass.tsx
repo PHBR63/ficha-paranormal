@@ -5,6 +5,8 @@ import { CLASS_PROFICIENCIES, CLASS_INITIAL_ABILITIES, getClassSkillRules } from
 import { motion } from 'framer-motion';
 import type { CharacterFormData } from '@/pages/CharacterCreate';
 import type { LucideIcon } from 'lucide-react';
+import { RuleBookTip } from './RuleBookTip';
+import { getRulebookContent } from '@/lib/rulebook-content';
 
 interface StepClassProps {
   formData: CharacterFormData;
@@ -44,6 +46,9 @@ export function StepClass({ formData, updateFormData }: StepClassProps) {
     });
   };
 
+  // Conteúdo educativo do livro
+  const rulebookContent = getRulebookContent('class');
+
   return (
     <div className="space-y-6">
       <div className="text-center mb-8">
@@ -52,6 +57,11 @@ export function StepClass({ formData, updateFormData }: StepClassProps) {
           Escolha a classe do seu personagem. Isso afeta seus pontos de vida, esforço, sanidade e perícias.
         </p>
       </div>
+
+      {/* Painel educativo do livro de regras */}
+      {rulebookContent && (
+        <RuleBookTip section={rulebookContent} defaultExpanded={false} />
+      )}
 
       <div className="grid md:grid-cols-3 gap-4">
         {CLASSES.map((cls, index) => {

@@ -1,5 +1,6 @@
 // Componente de seleção de rituais para Ocultistas
 // Permite escolher rituais baseados no NEX e círculo máximo disponível
+// Inclui painel educativo do livro de regras
 
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -35,6 +36,8 @@ import {
 import { CharacterFormData } from '@/pages/CharacterCreate';
 import { ALL_RITUALS, Ritual, getMaxRitualCircle, getRitualCount } from '@/lib/rituals-data';
 import { CLASSES } from '@/lib/character-data';
+import { RuleBookTip } from './RuleBookTip';
+import { getRulebookContent } from '@/lib/rulebook-content';
 
 interface StepRitualsProps {
   formData: CharacterFormData;
@@ -318,6 +321,9 @@ export function StepRituals({ formData, updateFormData }: StepRitualsProps) {
     setSelectedElement(null);
   };
 
+  // Conteúdo educativo do livro
+  const rulebookContent = getRulebookContent('rituals');
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -330,6 +336,11 @@ export function StepRituals({ formData, updateFormData }: StepRitualsProps) {
           NEX {formData.nex}% • Círculos 1-{maxCircle} disponíveis
         </p>
       </div>
+
+      {/* Painel educativo do livro de regras */}
+      {rulebookContent && (
+        <RuleBookTip section={rulebookContent} defaultExpanded={false} />
+      )}
 
       {/* Contador de rituais */}
       <div className={`

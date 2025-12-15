@@ -5,12 +5,15 @@
  * - NexSelector: Seleção visual do NEX
  * - NexBenefitsPanel: Painel de benefícios completo
  * - Comparação visual quando muda o NEX
+ * - RuleBookTip: Explicações do livro de regras
  */
 
 import { useState, useEffect } from 'react';
 import { CharacterFormData } from '@/pages/CharacterCreate';
 import { NexSelector } from './NexSelector';
 import { NexBenefitsPanel } from './NexBenefitsPanel';
+import { RuleBookTip } from './RuleBookTip';
+import { getRulebookContent } from '@/lib/rulebook-content';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AlertTriangle } from 'lucide-react';
 
@@ -37,6 +40,9 @@ export function StepNex({ formData, updateFormData }: StepNexProps) {
     }
   }, [previousNex]);
 
+  // Conteúdo educativo do livro
+  const rulebookContent = getRulebookContent('nex');
+
   return (
     <div className="space-y-6">
       {/* Título e descrição */}
@@ -49,6 +55,11 @@ export function StepNex({ formData, updateFormData }: StepNexProps) {
           Agentes iniciantes começam com 5%, mas o mestre pode permitir níveis mais altos.
         </p>
       </div>
+
+      {/* Painel educativo do livro de regras */}
+      {rulebookContent && (
+        <RuleBookTip section={rulebookContent} defaultExpanded={false} />
+      )}
 
       {/* Seletor de NEX */}
       <NexSelector
