@@ -27,6 +27,10 @@ interface CharacterSheetHeaderProps {
   sanMax: number;
   defense: number;
   movement: number;
+  // Bônus de poderes paranormais
+  hpBonus?: number;
+  peBonus?: number;
+  defenseBonus?: number;
   onStatsChange?: (stats: { hp: number; pe: number; san: number }) => void;
   onLevelUp?: () => void;
   className?: string;
@@ -54,10 +58,18 @@ export function CharacterSheetHeader({
   sanMax,
   defense,
   movement,
+  hpBonus = 0,
+  peBonus = 0,
+  defenseBonus = 0,
   onStatsChange,
   onLevelUp,
   className,
 }: CharacterSheetHeaderProps) {
+  // Stats totais com bônus
+  const totalHpMax = hpMax + hpBonus;
+  const totalPeMax = peMax + peBonus;
+  const totalDefense = defense + defenseBonus;
+
   // Estado de edição
   const [editMode, setEditMode] = useState(false);
   const [tempHp, setTempHp] = useState(hpCurrent);
@@ -71,14 +83,14 @@ export function CharacterSheetHeader({
     morrendo: false,
   });
 
-  // Calcular percentuais
-  const hpPercent = (hpCurrent / hpMax) * 100;
+  // Calcular percentuais (usando valores totais com bônus)
+  const hpPercent = (hpCurrent / totalHpMax) * 100;
   const isHpLow = hpPercent <= 25;
 
   const handleSave = () => {
     onStatsChange?.({
-      hp: Math.max(0, Math.min(hpMax, tempHp)),
-      pe: Math.max(0, Math.min(peMax, tempPe)),
+      hp: Math.max(0, Math.min(totalHpMax, tempHp)),
+      pe: Math.max(0, Math.min(totalPeMax, tempPe)),
       san: Math.max(0, Math.min(sanMax, tempSan)),
     });
     setEditMode(false);
@@ -186,6 +198,9 @@ export function CharacterSheetHeader({
             <div className="flex items-center gap-1">
               <Heart className={cn("w-4 h-4", isHpLow ? "text-destructive" : "text-destructive/70")} />
               <span className="text-xs font-medium">HP</span>
+              {hpBonus > 0 && (
+                <span className="text-[10px] text-success font-medium">(+{hpBonus})</span>
+              )}
             </div>
             {editMode ? (
               <Input
@@ -194,15 +209,15 @@ export function CharacterSheetHeader({
                 onChange={(e) => setTempHp(parseInt(e.target.value) || 0)}
                 className="w-14 h-6 text-center text-xs"
                 min={0}
-                max={hpMax}
+                max={totalHpMax}
               />
             ) : (
               <span className={cn("text-sm font-display", isHpLow && "text-destructive")}>
-                {hpCurrent}/{hpMax}
+                {hpCurrent}/{totalHpMax}
               </span>
             )}
           </div>
-          <AnimatedProgress value={editMode ? tempHp : hpCurrent} max={hpMax} variant="hp" size="sm" />
+          <AnimatedProgress value={editMode ? tempHp : hpCurrent} max={totalHpMax} variant="hp" size="sm" />
         </div>
 
         {/* PE */}
@@ -211,6 +226,9 @@ export function CharacterSheetHeader({
             <div className="flex items-center gap-1">
               <Zap className="w-4 h-4 text-success" />
               <span className="text-xs font-medium">PE</span>
+              {peBonus > 0 && (
+                <span className="text-[10px] text-success font-medium">(+{peBonus})</span>
+              )}
             </div>
             {editMode ? (
               <Input
@@ -219,15 +237,15 @@ export function CharacterSheetHeader({
                 onChange={(e) => setTempPe(parseInt(e.target.value) || 0)}
                 className="w-14 h-6 text-center text-xs"
                 min={0}
-                max={peMax}
+                max={totalPeMax}
               />
             ) : (
               <span className="text-sm font-display text-success">
-                {peCurrent}/{peMax}
+                {peCurrent}/{totalPeMax}
               </span>
             )}
           </div>
-          <AnimatedProgress value={editMode ? tempPe : peCurrent} max={peMax} variant="pe" size="sm" />
+          <AnimatedProgress value={editMode ? tempPe : peCurrent} max={totalPeMax} variant="pe" size="sm" />
         </div>
 
         {/* SAN */}
@@ -290,7 +308,10 @@ export function CharacterSheetHeader({
         <div className="flex items-center gap-4 text-sm">
           <div className="flex items-center gap-1">
             <span className="text-muted-foreground">DEF</span>
-            <span className="font-display text-lg text-primary">{defense}</span>
+            <span className="font-display text-lg text-primary">{totalDefense}</span>
+            {defenseBonus > 0 && (
+              <span className="text-[10px] text-success font-medium">(+{defenseBonus})</span>
+            )}
           </div>
           <div className="flex items-center gap-1">
             <span className="text-muted-foreground">DESL</span>
