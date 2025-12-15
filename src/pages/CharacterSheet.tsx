@@ -744,6 +744,46 @@ export default function CharacterSheet() {
                   }}
                 />
               </SheetAccordionSection>
+
+              {/* História e Biografia (acordeão) */}
+              <SheetAccordionSection
+                title="Biografia"
+                icon={BookOpen}
+                defaultOpen={false}
+              >
+                {character.background ? (
+                  <div className="space-y-4">
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                      {character.background}
+                    </p>
+                    {character.notes && (
+                      <div className="pt-4 border-t border-border/50">
+                        <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">
+                          Notas
+                        </p>
+                        <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                          {character.notes}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    Nenhuma história registrada. Clique em "Editar" para adicionar.
+                  </p>
+                )}
+              </SheetAccordionSection>
+
+              {/* Histórico de Rolagens Compacto */}
+              <div className="sheet-panel p-4">
+                <h3 className="font-display text-sm tracking-wider text-primary mb-3 uppercase">
+                  Últimas Rolagens
+                </h3>
+                <DiceRollHistoryCompact 
+                  rolls={rollHistory}
+                  maxRolls={5}
+                />
+              </div>
             </div>
 
             {/* === COLUNA DIREITA === */}
@@ -864,46 +904,6 @@ export default function CharacterSheet() {
                   </div>
                 </SheetAccordionSection>
               )}
-
-              {/* História e Biografia (acordeão) */}
-              <SheetAccordionSection
-                title="Biografia"
-                icon={BookOpen}
-                defaultOpen={false}
-              >
-                {character.background ? (
-                  <div className="space-y-4">
-                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                      {character.background}
-                    </p>
-                    {character.notes && (
-                      <div className="pt-4 border-t border-border/50">
-                        <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">
-                          Notas
-                        </p>
-                        <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                          {character.notes}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    Nenhuma história registrada. Clique em "Editar" para adicionar.
-                  </p>
-                )}
-              </SheetAccordionSection>
-
-              {/* Histórico de Rolagens Compacto */}
-              <div className="sheet-panel p-4">
-                <h3 className="font-display text-sm tracking-wider text-primary mb-3 uppercase">
-                  Últimas Rolagens
-                </h3>
-                <DiceRollHistoryCompact 
-                  rolls={rollHistory}
-                  maxRolls={5}
-                />
-              </div>
 
               {/* Botão de Descanso */}
               <Button
