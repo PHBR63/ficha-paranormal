@@ -185,70 +185,72 @@
     --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.5);
   }
 
-  /* ========================================
-   * TEMAS DE COR - Primary varia por tema
-   * ======================================== */
-   
-  /* ROXO ABISSAL (Padrão) */
-  .dark[data-color-theme="purple"],
-  .dark:not([data-color-theme]) {
-    --primary: 263 70% 50%;
-    --primary-foreground: 0 0% 100%;
-    --ring: 263 70% 50%;
-    --sidebar-primary: 263 70% 50%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 263 40% 25%;
-    --sidebar-accent-foreground: 263 70% 85%;
-    --sidebar-ring: 263 70% 50%;
-  }
+}
 
-  /* SANGUE RITUAL (Vermelho) */
-  .dark[data-color-theme="red"] {
-    --primary: 0 72% 51%;
-    --primary-foreground: 0 0% 100%;
-    --ring: 0 72% 51%;
-    --sidebar-primary: 0 72% 51%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 40% 20%;
-    --sidebar-accent-foreground: 0 72% 85%;
-    --sidebar-ring: 0 72% 51%;
-  }
+/* ========================================
+ * TEMAS DE COR - Primary varia por tema
+ * Fora do @layer base para funcionar corretamente
+ * ======================================== */
+ 
+/* ROXO ABISSAL (Padrão) */
+.dark[data-color-theme="purple"],
+.dark:not([data-color-theme]) {
+  --primary: 263 70% 50%;
+  --primary-foreground: 0 0% 100%;
+  --ring: 263 70% 50%;
+  --sidebar-primary: 263 70% 50%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 263 40% 25%;
+  --sidebar-accent-foreground: 263 70% 85%;
+  --sidebar-ring: 263 70% 50%;
+}
 
-  /* CONHECIMENTO (Verde) */
-  .dark[data-color-theme="green"] {
-    --primary: 142 71% 45%;
-    --primary-foreground: 0 0% 100%;
-    --ring: 142 71% 45%;
-    --sidebar-primary: 142 71% 45%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 142 40% 20%;
-    --sidebar-accent-foreground: 142 71% 85%;
-    --sidebar-ring: 142 71% 45%;
-  }
+/* SANGUE RITUAL (Vermelho) */
+.dark[data-color-theme="red"] {
+  --primary: 0 72% 51%;
+  --primary-foreground: 0 0% 100%;
+  --ring: 0 72% 51%;
+  --sidebar-primary: 0 72% 51%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 0 40% 20%;
+  --sidebar-accent-foreground: 0 72% 85%;
+  --sidebar-ring: 0 72% 51%;
+}
 
-  /* CIANO ESPECTRAL (Azul) */
-  .dark[data-color-theme="blue"] {
-    --primary: 199 89% 48%;
-    --primary-foreground: 0 0% 100%;
-    --ring: 199 89% 48%;
-    --sidebar-primary: 199 89% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 199 40% 20%;
-    --sidebar-accent-foreground: 199 89% 85%;
-    --sidebar-ring: 199 89% 48%;
-  }
+/* CONHECIMENTO (Verde) */
+.dark[data-color-theme="green"] {
+  --primary: 142 71% 45%;
+  --primary-foreground: 0 0% 100%;
+  --ring: 142 71% 45%;
+  --sidebar-primary: 142 71% 45%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 142 40% 20%;
+  --sidebar-accent-foreground: 142 71% 85%;
+  --sidebar-ring: 142 71% 45%;
+}
 
-  /* ENERGIA ARCANA (Âmbar) - cor clara, precisa texto escuro */
-  .dark[data-color-theme="amber"] {
-    --primary: 38 92% 50%;
-    --primary-foreground: 0 0% 5%;
-    --ring: 38 92% 50%;
-    --sidebar-primary: 38 92% 50%;
-    --sidebar-primary-foreground: 0 0% 5%;
-    --sidebar-accent: 38 40% 20%;
-    --sidebar-accent-foreground: 38 92% 85%;
-    --sidebar-ring: 38 92% 50%;
-  }
+/* CIANO ESPECTRAL (Azul) */
+.dark[data-color-theme="blue"] {
+  --primary: 199 89% 48%;
+  --primary-foreground: 0 0% 100%;
+  --ring: 199 89% 48%;
+  --sidebar-primary: 199 89% 48%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 199 40% 20%;
+  --sidebar-accent-foreground: 199 89% 85%;
+  --sidebar-ring: 199 89% 48%;
+}
+
+/* ENERGIA ARCANA (Âmbar) - cor clara, precisa texto escuro */
+.dark[data-color-theme="amber"] {
+  --primary: 38 92% 50%;
+  --primary-foreground: 0 0% 5%;
+  --ring: 38 92% 50%;
+  --sidebar-primary: 38 92% 50%;
+  --sidebar-primary-foreground: 0 0% 5%;
+  --sidebar-accent: 38 40% 20%;
+  --sidebar-accent-foreground: 38 92% 85%;
+  --sidebar-ring: 38 92% 50%;
 }
 
 /* ========================================
