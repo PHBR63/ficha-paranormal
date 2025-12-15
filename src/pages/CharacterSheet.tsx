@@ -4,7 +4,7 @@
  * Com bordas roxas, acordeões colapsáveis e visual temático
  */
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -40,6 +40,7 @@ import { NexProgressionModal } from '@/components/character/NexProgressionModal'
 import { RitualSelectionModal } from '@/components/character/RitualSelectionModal';
 import { CharacterEditModal } from '@/components/character/CharacterEditModal';
 import { CharacterHistoryPanel, logCharacterChanges } from '@/components/character/CharacterHistoryPanel';
+import { ParanormalPowerSelectModal } from '@/components/character/ParanormalPowerSelectModal';
 import { ConditionManager, type ActiveCondition } from '@/components/character/ConditionManager';
 import { RestModal } from '@/components/character/RestModal';
 import { calculateDerivedStats } from '@/lib/character-data';
@@ -134,6 +135,7 @@ export default function CharacterSheet() {
   const [pendingMaxCircle, setPendingMaxCircle] = useState(1);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [restModalOpen, setRestModalOpen] = useState(false);
+  const [paranormalPowerModalOpen, setParanormalPowerModalOpen] = useState(false);
 
   // Callback para adicionar rolagem ao histórico
   const handleRollComplete = useCallback((result: DiceRollResult) => {
@@ -386,6 +388,54 @@ export default function CharacterSheet() {
       description: `${selectedRituals.length} ritual(is) adicionado(s).`,
     });
   };
+
+  // Handler para adicionar poder paranormal
+  const handleParanormalPowerSelect = async (power: ParanormalPower) => {
+    if (!character) return;
+
+    const currentPowers = character.paranormal_powers || [];
+    const newPower = {
+      id: power.id,
+      name: power.name,
+      element: power.element,
+      description: power.description,
+    };
+    
+    const updatedPowers = [...currentPowers, newPower];
+
+    const { error } = await supabase
+      .from('characters')
+      .update({ paranormal_powers: updatedPowers })
+      .eq('id', character.id);
+
+    if (error) {
+      toast({
+        title: 'Erro ao salvar poder',
+        description: error.message,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setCharacter(prev => prev ? { ...prev, paranormal_powers: updatedPowers } : null);
+    setParanormalPowerModalOpen(false);
+
+    toast({
+      title: 'Poder Paranormal adquirido!',
+      description: `${power.name} foi adicionado.`,
+    });
+  };
+
+  // Verifica se o personagem tem a habilidade Transcender
+  const hasTranscender = useMemo(() => {
+    if (!character) return false;
+    const abilities = character.abilities || [];
+    return abilities.some(a => 
+      typeof a === 'string' 
+        ? a.toLowerCase().includes('transcender')
+        : false
+    );
+  }, [character?.abilities]);
 
   // Handler para edição do personagem
   const handleCharacterEdit = async (data: {
@@ -914,11 +964,25 @@ export default function CharacterSheet() {
                   )}
 
                   {/* Poderes Paranormais (usando o novo painel) */}
-                  {character.paranormal_powers && character.paranormal_powers.length > 0 && (
-                    <div className="space-y-2">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
                       <p className="text-xs text-muted-foreground uppercase tracking-wider">
                         Poderes Paranormais
                       </p>
+                      {hasTranscender && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 text-xs text-paranormal hover:text-paranormal"
+                          onClick={() => setParanormalPowerModalOpen(true)}
+                        >
+                          <Sparkles className="w-3 h-3 mr-1" />
+                          Transcender
+                        </Button>
+                      )}
+                    </div>
+                    
+                    {character.paranormal_powers && character.paranormal_powers.length > 0 ? (
                       <ParanormalPowersPanel
                         powers={character.paranormal_powers.map(p => {
                           const fullPower = PARANORMAL_POWERS.find(fp => fp.id === p.id);
@@ -934,8 +998,25 @@ export default function CharacterSheet() {
                         affinityActive={character.affinity_active}
                         nex={character.nex}
                       />
-                    </div>
-                  )}
+                    ) : hasTranscender ? (
+                      <div className="text-center py-4 text-muted-foreground text-sm border border-dashed border-muted rounded-lg">
+                        <Sparkles className="w-6 h-6 mx-auto mb-2 opacity-50" />
+                        <p>Nenhum poder paranormal.</p>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="mt-2 text-paranormal"
+                          onClick={() => setParanormalPowerModalOpen(true)}
+                        >
+                          Escolher Poder
+                        </Button>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground italic">
+                        Requer habilidade Transcender
+                      </p>
+                    )}
+                  </div>
 
                   {/* Poderes Gerais (do suplemento) */}
                   {character.general_powers && character.general_powers.length > 0 && (
@@ -1117,6 +1198,25 @@ export default function CharacterSheet() {
         attributeValue={rollAttribute}
         skillBonus={rollSkillBonus}
         onRollComplete={handleRollComplete}
+      />
+
+      {/* Modal de seleção de poderes paranormais */}
+      <ParanormalPowerSelectModal
+        open={paranormalPowerModalOpen}
+        onOpenChange={setParanormalPowerModalOpen}
+        onSelectPower={handleParanormalPowerSelect}
+        characterPowers={(character.paranormal_powers || []).map(p => {
+          const fullPower = PARANORMAL_POWERS.find(fp => fp.id === p.id);
+          return fullPower || {
+            id: p.id,
+            name: p.name,
+            element: p.element as ParanormalElement | 'generic',
+            description: p.description,
+            effect: { type: 'special' as const, description: p.description },
+          };
+        })}
+        elementalAffinity={character.elemental_affinity as ParanormalElement | null}
+        affinityActive={character.affinity_active}
       />
     </div>
   );
