@@ -7,6 +7,8 @@ import { Dices, AlertCircle, Search, Sparkles } from 'lucide-react';
 import { rollOrigin, getOriginSkills } from '@/lib/character-builder-engine';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AmnesicSkillModal } from './AmnesicSkillModal';
+import { RuleBookTip } from './RuleBookTip';
+import { getRulebookContent } from '@/lib/rulebook-content';
 import type { CharacterFormData } from '@/pages/CharacterCreate';
 import {
   Tooltip,
@@ -81,6 +83,9 @@ export function StepOrigin({ formData, updateFormData }: StepOriginProps) {
     SKILLS.find(s => s.id === id)?.name || id
   );
 
+  // Conteúdo educativo do livro
+  const rulebookContent = getRulebookContent('origin');
+
   return (
     <TooltipProvider>
       <div className="space-y-6">
@@ -90,6 +95,11 @@ export function StepOrigin({ formData, updateFormData }: StepOriginProps) {
             Escolha a origem do seu personagem. Isso define suas perícias iniciais e um poder especial.
           </p>
         </div>
+
+        {/* Painel educativo do livro de regras */}
+        {rulebookContent && (
+          <RuleBookTip section={rulebookContent} defaultExpanded={false} />
+        )}
 
         {/* Search and Roll */}
         <div className="flex flex-col sm:flex-row gap-4 mb-4">

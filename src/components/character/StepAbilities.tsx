@@ -29,6 +29,8 @@ import {
   getAbilityChoiceCount,
   ClassAbility
 } from '@/lib/class-abilities';
+import { RuleBookTip } from './RuleBookTip';
+import { getRulebookContent } from '@/lib/rulebook-content';
 
 interface StepAbilitiesProps {
   formData: CharacterFormData;
@@ -89,6 +91,9 @@ export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) 
     );
   }
 
+  // Conteúdo educativo do livro
+  const rulebookContent = getRulebookContent('abilities');
+
   return (
     <TooltipProvider>
       <div className="space-y-6">
@@ -105,6 +110,11 @@ export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) 
             Habilidades fundamentais são automáticas; as demais são escolhidas.
           </p>
         </div>
+
+        {/* Painel educativo do livro de regras */}
+        {rulebookContent && (
+          <RuleBookTip section={rulebookContent} defaultExpanded={false} />
+        )}
 
         {/* Choice Counter */}
         {maxChoices > 0 && (

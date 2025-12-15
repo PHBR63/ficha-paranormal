@@ -10,6 +10,8 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { RuleBookTip } from './RuleBookTip';
+import { getRulebookContent } from '@/lib/rulebook-content';
 import type { CharacterFormData } from '@/pages/CharacterCreate';
 
 interface StepTrackProps {
@@ -76,6 +78,9 @@ export function StepTrack({ formData, updateFormData }: StepTrackProps) {
     );
   }
 
+  // Conteúdo educativo do livro
+  const rulebookContent = getRulebookContent('track');
+
   return (
     <TooltipProvider>
       <div className="space-y-6">
@@ -92,6 +97,11 @@ export function StepTrack({ formData, updateFormData }: StepTrackProps) {
             </Badge>
           </div>
         </div>
+
+        {/* Painel educativo do livro de regras */}
+        {rulebookContent && (
+          <RuleBookTip section={rulebookContent} defaultExpanded={false} />
+        )}
 
         {/* NEX Timeline Legend */}
         <div className="flex items-center justify-center gap-1 mb-6 overflow-x-auto pb-2">

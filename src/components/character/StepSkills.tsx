@@ -6,6 +6,7 @@
  * - Perícias obrigatórias da classe
  * - Perícias de escolha da classe
  * - Perícias livres (baseadas em INT + classe + NEX)
+ * - RuleBookTip: Explicações do livro de regras
  */
 
 import { useState, useMemo } from 'react';
@@ -18,6 +19,8 @@ import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SkillChoiceModal, ConflictResolutionModal } from './SkillChoiceModal';
+import { RuleBookTip } from './RuleBookTip';
+import { getRulebookContent } from '@/lib/rulebook-content';
 import {
   Tooltip,
   TooltipContent,
@@ -166,6 +169,9 @@ export function StepSkills({ formData, updateFormData, buildResult }: StepSkills
     ...Object.values(formData.conflictResolutions),
   ]), [originSkills, classSkills.mandatory, formData.classSkillChoices, formData.conflictResolutions]);
 
+  // Conteúdo educativo do livro
+  const rulebookContent = getRulebookContent('skills');
+
   return (
     <TooltipProvider>
       <div className="space-y-6">
@@ -175,6 +181,11 @@ export function StepSkills({ formData, updateFormData, buildResult }: StepSkills
             Configure as perícias do seu personagem. Algumas são automáticas, outras você escolhe.
           </p>
         </div>
+
+        {/* Painel educativo do livro de regras */}
+        {rulebookContent && (
+          <RuleBookTip section={rulebookContent} defaultExpanded={false} />
+        )}
 
         {/* Pending Choices Warning */}
         <AnimatePresence>

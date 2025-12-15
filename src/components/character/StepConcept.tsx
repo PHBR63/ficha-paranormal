@@ -6,6 +6,8 @@ import { ImageUploader } from '@/components/ui/image-uploader';
 import { rollAge } from '@/lib/character-builder-engine';
 import { motion } from 'framer-motion';
 import type { CharacterFormData } from '@/pages/CharacterCreate';
+import { RuleBookTip } from './RuleBookTip';
+import { getRulebookContent } from '@/lib/rulebook-content';
 
 interface StepConceptProps {
   formData: CharacterFormData;
@@ -39,6 +41,9 @@ export function StepConcept({ formData, updateFormData }: StepConceptProps) {
     updateFormData({ concept: randomSuggestion });
   };
 
+  // Conteúdo educativo do livro
+  const rulebookContent = getRulebookContent('concept');
+
   return (
     <div className="space-y-6">
       <div className="text-center mb-8">
@@ -47,6 +52,11 @@ export function StepConcept({ formData, updateFormData }: StepConceptProps) {
           Comece definindo quem é seu personagem. O nome e o conceito guiarão suas escolhas.
         </p>
       </div>
+
+      {/* Painel educativo do livro de regras */}
+      {rulebookContent && (
+        <RuleBookTip section={rulebookContent} defaultExpanded={false} />
+      )}
 
       {/* Photo and Name row */}
       <div className="flex flex-col md:flex-row gap-6 items-start">

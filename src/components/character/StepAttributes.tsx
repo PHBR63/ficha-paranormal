@@ -11,7 +11,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-
+import { RuleBookTip } from './RuleBookTip';
+import { getRulebookContent } from '@/lib/rulebook-content';
 import { getExtraAttributePoints } from '@/lib/character-data';
 
 interface StepAttributesProps {
@@ -131,6 +132,9 @@ export function StepAttributes({ formData, updateFormData }: StepAttributesProps
 
   const isValid = totalPoints === maxPoints;
 
+  // Conteúdo educativo do livro
+  const rulebookContent = getRulebookContent('attributes');
+
   return (
     <TooltipProvider>
       <div className="space-y-6">
@@ -156,6 +160,11 @@ export function StepAttributes({ formData, updateFormData }: StepAttributesProps
             )}
           </div>
         </div>
+
+        {/* Painel educativo do livro de regras */}
+        {rulebookContent && (
+          <RuleBookTip section={rulebookContent} defaultExpanded={false} />
+        )}
 
         {/* Points counter with progress bar */}
         <motion.div 
