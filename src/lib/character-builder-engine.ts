@@ -43,6 +43,7 @@ export interface CharacterBuildState {
   origin: string;
   characterClass: string;
   nex: number;
+  patent: string; // Patente selecionada manualmente (independente do NEX)
   attributes: AttributeAllocation;
   originSkills: string[];
   classSkillChoices: Record<string, string>;
@@ -433,7 +434,7 @@ export function rebuildCharacterSheet(state: CharacterBuildState): RebuildResult
     proficiencies,
     powers: [...originPowers, ...state.powers],
     abilities,
-    patent: getPatentByNex(state.nex),
+    patent: state.patent || 'Recruta', // Usar patente selecionada manualmente
     canFinalize,
     pendingChoices,
     pendingConflicts,

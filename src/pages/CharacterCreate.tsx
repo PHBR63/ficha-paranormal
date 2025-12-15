@@ -8,6 +8,7 @@ import { ArrowLeft, ArrowRight, Check, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { StepConcept } from '@/components/character/StepConcept';
 import { StepNex } from '@/components/character/StepNex';
+import { StepPatent } from '@/components/character/StepPatent';
 import { StepAttributes } from '@/components/character/StepAttributes';
 import { StepOrigin } from '@/components/character/StepOrigin';
 import { StepClass } from '@/components/character/StepClass';
@@ -28,8 +29,7 @@ import {
   calculateDefense,
   getOcultistRituals,
   getAbilityChoicesByNex,
-  getExtraSkillsByNex,
-  getPatentByNex
+  getExtraSkillsByNex
 } from '@/lib/character-data';
 import { rebuildCharacterSheet, buildStateToFormData, CLASS_PROFICIENCIES, getClassSkillRules, validateAttributes } from '@/lib/character-builder-engine';
 import { getCoreAbilities, getChoosableAbilities } from '@/lib/class-abilities';
@@ -54,6 +54,7 @@ export type CharacterFormData = {
   origin: string;
   characterClass: string;
   nex: number;
+  patent: string; // Patente selecionada manualmente (independente do NEX)
   
   // Atributos
   attributes: {
@@ -87,6 +88,7 @@ export type CharacterFormData = {
 const BASE_STEPS = [
   { id: 'concept', title: 'CONCEITO' },
   { id: 'nex', title: 'NEX' },
+  { id: 'patent', title: 'PATENTE' }, // Novo step de patente independente
   { id: 'attributes', title: 'ATRIBUTOS' },
   { id: 'origin', title: 'ORIGEM' },
   { id: 'class', title: 'CLASSE' },
@@ -110,6 +112,7 @@ const initialFormData: CharacterFormData = {
   origin: '',
   characterClass: '',
   nex: 5,
+  patent: 'Recruta', // Patente padrão
   attributes: {
     agility: 1,
     strength: 1,
@@ -297,6 +300,10 @@ export default function CharacterCreate() {
           // Sempre completo (tem valor padrão)
           completed.push(index);
           break;
+        case 'patent':
+          // Sempre completo (tem valor padrão)
+          completed.push(index);
+          break;
         case 'attributes':
           // Usa validateAttributes do engine para considerar NEX corretamente
           const attrValidation = validateAttributes(formData.attributes, formData.nex);
@@ -452,9 +459,6 @@ export default function CharacterCreate() {
         ...formData.trackAbilities
       ];
 
-      // Calcula a patente baseada no NEX
-      const patent = getPatentByNex(formData.nex);
-
       const { error } = await supabase.from('characters').insert({
         user_id: user.id,
         name: formData.name,
@@ -462,7 +466,7 @@ export default function CharacterCreate() {
         origin: formData.origin,
         class: formData.characterClass,
         nex: formData.nex,
-        patent: patent, // Patente calculada pelo NEX
+        patent: formData.patent || 'Recruta', // Patente selecionada manualmente
         agility: formData.attributes.agility,
         strength: formData.attributes.strength,
         intellect: formData.attributes.intellect,
@@ -537,6 +541,8 @@ export default function CharacterCreate() {
           return <StepConcept formData={formData} updateFormData={updateFormData} />;
         case 'nex':
           return <StepNex formData={formData} updateFormData={updateFormData} />;
+        case 'patent':
+          return <StepPatent formData={formData} updateFormData={updateFormData} />;
         case 'attributes':
           return <StepAttributes formData={formData} updateFormData={updateFormData} />;
         case 'origin':
