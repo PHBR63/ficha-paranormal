@@ -125,9 +125,15 @@ export function DiceRollHistoryDrawer({
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <Button variant="outline" size="sm" className="font-display relative">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="font-display relative"
+          data-dice-history-trigger
+        >
           <History className="w-4 h-4 mr-2" />
-          HISTÓRICO DE ROLAGENS
+          <span className="hidden sm:inline">HISTÓRICO DE ROLAGENS</span>
+          <span className="sm:hidden">Dados</span>
           {rolls.length > 0 && (
             <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center">
               {rolls.length > 99 ? '99+' : rolls.length}
