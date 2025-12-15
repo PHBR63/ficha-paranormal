@@ -12,6 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import CharacterCreate from "./pages/CharacterCreate";
 import CharacterSheet from "./pages/CharacterSheet";
 import Campaigns from "./pages/Campaigns";
+import CampaignCreate from "./pages/CampaignCreate";
 import CampaignView from "./pages/CampaignView";
 import NotFound from "./pages/NotFound";
 
@@ -46,6 +47,11 @@ const App = () => (
               <Route path="/campaigns" element={
                 <ProtectedRoute>
                   <Campaigns />
+                </ProtectedRoute>
+              } />
+              <Route path="/campaigns/create" element={
+                <ProtectedRoute>
+                  <CampaignCreate />
                 </ProtectedRoute>
               } />
               <Route path="/campaigns/:id" element={
