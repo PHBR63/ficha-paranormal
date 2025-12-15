@@ -26,13 +26,13 @@ export interface PatentLimits {
   IV: number;
 }
 
-// Limites de itens por patente
+// Limites de itens por patente (conforme livro de regras)
 export const PATENT_LIMITS: Record<string, PatentLimits> = {
-  'Recruta': { I: 2, II: 0, III: 0, IV: 0 },
-  'Operador': { I: 3, II: 1, III: 0, IV: 0 },
-  'Agente Especial': { I: 3, II: 2, III: 1, IV: 0 },
-  'Oficial de Operações': { I: 4, II: 3, III: 2, IV: 1 },
-  'Agente de Elite': { I: 5, II: 4, III: 3, IV: 2 },
+  'Recruta': { I: 2, II: 0, III: 0, IV: 0 },           // 0 PP
+  'Operador': { I: 3, II: 1, III: 0, IV: 0 },          // 20 PP
+  'Agente Especial': { I: 3, II: 2, III: 1, IV: 0 },   // 50 PP
+  'Oficial de Operações': { I: 3, II: 3, III: 2, IV: 1 }, // 100 PP
+  'Agente de Elite': { I: 3, II: 3, III: 3, IV: 2 },   // 200 PP
 };
 
 // Créditos por patente (por missão)
