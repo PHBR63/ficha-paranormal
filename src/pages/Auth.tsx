@@ -241,11 +241,11 @@ export default function Auth() {
               onClick={() => setMode(mode === 'signin' ? 'signup' : 'signin')}
               className="text-sm text-muted-foreground hover:text-accent transition-colors"
             >
-              {mode === 'signin' ? (
-                <>Não tem cadastro? <span className="text-accent">Registre-se</span></>
-              ) : (
-                <>Já tem conta? <span className="text-accent">Faça login</span></>
-              )}
+            {mode === 'signin' ? (
+              <>Não tem cadastro? <span className="text-primary font-medium">Registre-se</span></>
+            ) : (
+              <>Já tem conta? <span className="text-primary font-medium">Faça login</span></>
+            )}
             </button>
           </div>
 
