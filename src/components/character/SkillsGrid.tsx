@@ -136,10 +136,11 @@ function SkillRow({
           {name}
         </span>
         <span 
-          className="text-[10px] px-1.5 py-0.5 rounded font-display"
+          className="text-[11px] px-2 py-0.5 rounded font-display font-bold shadow-sm"
           style={{ 
-            backgroundColor: `${color}20`,
-            color 
+            backgroundColor: `${color}30`,
+            color,
+            textShadow: '0 1px 2px rgba(0,0,0,0.3)'
           }}
         >
           {attribute}
