@@ -1,6 +1,6 @@
 /**
  * CharacterSheet - Ficha de personagem redesenhada
- * Layout de 3 colunas: Identidade | Combate | Ações
+ * Layout de 3 colunas em desktop, modo compacto em mobile
  * Com painel de ajuda e referência rápida
  */
 
@@ -12,14 +12,13 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { ThemeSelector } from '@/components/ui/theme-selector';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { 
   ArrowLeft, 
   Loader2, 
   Edit2,
   Trash2,
-  Save,
   Dices,
-  Swords,
   Package,
   Sparkles,
   BookOpen,
@@ -50,6 +49,7 @@ import { CharacterSheetHelp } from '@/components/character/CharacterSheetHelp';
 import { QuickReferenceCard } from '@/components/character/QuickReferenceCard';
 import { IdentityCard } from '@/components/character/IdentityCard';
 import { CombatStatsCard } from '@/components/character/CombatStatsCard';
+import { MobileCharacterSheet } from '@/components/character/MobileCharacterSheet';
 
 interface Character {
   id: string;
@@ -89,6 +89,7 @@ export default function CharacterSheet() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   const [character, setCharacter] = useState<Character | null>(null);
   const [loading, setLoading] = useState(true);
@@ -572,8 +573,49 @@ export default function CharacterSheet() {
       </header>
 
       <main className="container mx-auto px-4 py-4 sm:py-6">
-        {/* Layout de 3 colunas em desktop, stack em mobile */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+        {/* Modo mobile: layout compacto */}
+        {isMobile ? (
+          <MobileCharacterSheet
+            character={{
+              id: character.id,
+              name: character.name,
+              class: character.class,
+              class_track: character.class_track,
+              origin: character.origin,
+              nex: character.nex,
+              patent: character.patent,
+              photo_url: character.photo_url,
+              hp_current: hpCurrent,
+              hp_max: character.hp_max,
+              pe_current: peCurrent,
+              pe_max: character.pe_max,
+              san_current: sanCurrent,
+              san_max: character.san_max,
+              defense: character.defense,
+              movement: character.movement || 9,
+              agility: character.agility,
+              strength: character.strength,
+              intellect: character.intellect,
+              presence: character.presence,
+              vigor: character.vigor,
+              conditions: character.conditions,
+              abilities: character.abilities,
+              powers: character.powers,
+              rituals: character.rituals,
+            }}
+            onOpenDiceRoller={() => {
+              setRollAttribute(character.agility);
+              setRollSkillName('Teste Geral');
+              setDiceRollerOpen(true);
+            }}
+            onOpenRest={() => setRestModalOpen(true)}
+            onLevelUp={() => setNexModalOpen(true)}
+            onEditStats={() => setEditModalOpen(true)}
+          />
+        ) : (
+          <>
+          {/* Modo desktop: Layout de 3 colunas */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           
           {/* COLUNA 1: Identidade */}
           <div className="space-y-4">
@@ -764,7 +806,7 @@ export default function CharacterSheet() {
           </div>
         </div>
 
-        {/* Tabs de Conteúdo (largura total) */}
+        {/* Tabs de Conteúdo (largura total) - apenas desktop */}
         <div className="mt-6">
           <Tabs defaultValue="skills" className="space-y-4">
             <TabsList className="bg-card border border-border w-full justify-start flex-wrap">
@@ -995,6 +1037,8 @@ export default function CharacterSheet() {
             </TabsContent>
           </Tabs>
         </div>
+          </>
+        )}
       </main>
 
       {/* Painel de ajuda flutuante */}
