@@ -239,75 +239,225 @@ export const COMBATENTE_ABILITIES: ClassAbility[] = [
 ];
 
 // ==================== HABILIDADES DO ESPECIALISTA ====================
+// Textos oficiais do livro base Ordem Paranormal RPG
 
 export const ESPECIALISTA_ABILITIES: ClassAbility[] = [
+  // ========== HABILIDADES CORE (automáticas) ==========
+  
   // NEX 5% - Inicial
   { 
     id: 'ecletico', 
     name: 'Eclético', 
-    description: 'Você pode fazer qualquer teste de perícia, mesmo que não seja treinado. Se for treinado, recebe +2 no teste.', 
+    description: 'Quando faz um teste de uma perícia, você pode gastar 2 PE para receber os benefícios de ser treinado nessa perícia.', 
     minNex: 5, 
     classId: 'Especialista', 
     isCore: true 
   },
   { 
-    id: 'pericia', 
-    name: 'Perícia', 
-    description: 'Você recebe treinamento em uma perícia à sua escolha (não precisa ser da sua classe).', 
+    id: 'perito', 
+    name: 'Perito', 
+    description: 'Escolha duas perícias nas quais você é treinado (exceto Luta e Pontaria). Quando faz um teste de uma dessas perícias, pode gastar 2 PE para somar +1d6 ao resultado. Conforme avança de NEX, pode gastar +1 PE para aumentar o dado de bônus (veja Tabela 1.4). Exemplo: em NEX 55%, pode gastar 4 PE para receber +1d10 no teste.', 
     minNex: 5, 
     classId: 'Especialista', 
     isCore: true 
   },
   
-  // NEX 10%
-  { id: 'especialidade', name: 'Especialidade', description: 'Escolha uma perícia treinada. Você recebe +5 em testes dessa perícia.', minNex: 10, classId: 'Especialista' },
-  { id: 'talento-natural', name: 'Talento Natural', description: 'Você recebe +2 PE máximos permanentes.', minNex: 10, classId: 'Especialista' },
-  { id: 'adaptavel', name: 'Adaptável', description: 'Uma vez por cena, você pode rolar novamente um teste de perícia.', minNex: 10, classId: 'Especialista' },
-  { id: 'proficiencia-arma', name: 'Proficiência em Arma', description: 'Você recebe proficiência em uma arma à sua escolha.', minNex: 10, classId: 'Especialista' },
+  // Habilidade de Trilha - explicação do sistema
+  { 
+    id: 'habilidade-trilha-especialista', 
+    name: 'Habilidade de Trilha', 
+    description: 'Em NEX 10%, você escolhe uma das trilhas de especialista disponíveis e recebe o primeiro poder da trilha escolhida. Você recebe um novo poder da trilha escolhida em NEX 40%, 65% e 99%.', 
+    minNex: 10, 
+    classId: 'Especialista', 
+    isCore: true 
+  },
   
-  // NEX 15%
-  { id: 'ataque-furtivo', name: 'Ataque Furtivo', description: 'Quando ataca um alvo desprevenido ou flanqueado, você causa +1d6 de dano.', minNex: 15, classId: 'Especialista' },
-  { id: 'pesquisador', name: 'Pesquisador', description: 'Você recebe +5 em Investigação e Ciências.', minNex: 15, classId: 'Especialista' },
+  // NEX 20% - Aumento de Atributo
+  { 
+    id: 'aumento-atributo-20-esp', 
+    name: 'Aumento de Atributo', 
+    description: 'Aumente um atributo em +1. Você não pode aumentar um atributo além de 5 dessa forma.', 
+    minNex: 20, 
+    classId: 'Especialista', 
+    isCore: true 
+  },
   
-  // NEX 20%
-  { id: 'pericia-bonus', name: 'Perícia Bônus', description: 'Você ganha treinamento em duas perícias adicionais à sua escolha.', minNex: 20, classId: 'Especialista', isCore: true },
-  { id: 'intuicao-apurada', name: 'Intuição Apurada', description: 'Você pode gastar 2 PE para receber +5 em um teste de Intuição, Investigação ou Percepção.', minNex: 20, classId: 'Especialista' },
-  { id: 'conhecimento-amplo', name: 'Conhecimento Amplo', description: 'Você recebe +2 em todos os testes de perícias baseadas em Intelecto.', minNex: 20, classId: 'Especialista' },
+  // NEX 35% - Grau de Treinamento
+  { 
+    id: 'grau-treinamento-35-esp', 
+    name: 'Grau de Treinamento', 
+    description: 'Escolha um número de perícias treinadas igual a 2 + Int. O grau de treinamento dessas perícias aumenta em um nível (treinado → veterano → expert).', 
+    minNex: 35, 
+    classId: 'Especialista', 
+    isCore: true 
+  },
   
-  // NEX 25%
-  { id: 'mente-afiada', name: 'Mente Afiada', description: 'Você recebe +5 em iniciativa e não pode ser surpreendido.', minNex: 25, classId: 'Especialista' },
-  { id: 'oportunismo', name: 'Oportunismo', description: 'O dano extra do seu Ataque Furtivo aumenta para +2d6.', minNex: 25, classId: 'Especialista' },
+  // NEX 40% - Engenhosidade
+  { 
+    id: 'engenhosidade', 
+    name: 'Engenhosidade', 
+    description: 'Quando usa sua habilidade Eclético, pode gastar 2 PE adicionais para receber os benefícios de veterano na perícia. Em NEX 75%, pode gastar 4 PE adicionais para receber os benefícios de expert.', 
+    minNex: 40, 
+    classId: 'Especialista', 
+    isCore: true 
+  },
   
-  // NEX 30%
-  { id: 'improvisador', name: 'Improvisador', description: 'Você pode usar qualquer objeto como ferramenta improvisada sem penalidade.', minNex: 30, classId: 'Especialista' },
-  { id: 'evasao', name: 'Evasão', description: 'Quando passa em um teste de Reflexos para meio dano, não sofre dano nenhum.', minNex: 30, classId: 'Especialista' },
+  // NEX 50% - Aumento de Atributo + Versatilidade
+  { 
+    id: 'aumento-atributo-50-esp', 
+    name: 'Aumento de Atributo', 
+    description: 'Aumente um atributo em +1. Você não pode aumentar um atributo além de 5 dessa forma.', 
+    minNex: 50, 
+    classId: 'Especialista', 
+    isCore: true 
+  },
+  { 
+    id: 'versatilidade-esp', 
+    name: 'Versatilidade', 
+    description: 'Escolha entre receber um poder de especialista ou o primeiro poder de uma trilha de especialista que não a sua.', 
+    minNex: 50, 
+    classId: 'Especialista', 
+    isCore: true 
+  },
   
-  // NEX 35%
-  { id: 'virtuose', name: 'Virtuose', description: 'Escolha duas perícias treinadas. Você recebe +5 adicional em testes dessas perícias.', minNex: 35, classId: 'Especialista' },
-  { id: 'ataque-preciso', name: 'Ataque Preciso', description: 'O dano extra do seu Ataque Furtivo aumenta para +3d6.', minNex: 35, classId: 'Especialista' },
+  // NEX 70% - Grau de Treinamento
+  { 
+    id: 'grau-treinamento-70-esp', 
+    name: 'Grau de Treinamento', 
+    description: 'Escolha um número de perícias treinadas igual a 2 + Int. O grau de treinamento dessas perícias aumenta em um nível (treinado → veterano → expert).', 
+    minNex: 70, 
+    classId: 'Especialista', 
+    isCore: true 
+  },
   
-  // NEX 40%
-  { id: 'sexto-sentido', name: 'Sexto Sentido', description: 'Você sente presenças hostis em alcance curto e nunca é pego desprevenido.', minNex: 40, classId: 'Especialista' },
+  // NEX 80% - Aumento de Atributo
+  { 
+    id: 'aumento-atributo-80-esp', 
+    name: 'Aumento de Atributo', 
+    description: 'Aumente um atributo em +1. Você não pode aumentar um atributo além de 5 dessa forma.', 
+    minNex: 80, 
+    classId: 'Especialista', 
+    isCore: true 
+  },
   
-  // NEX 45%
-  { id: 'talento-sublime', name: 'Talento Sublime', description: 'Quando faz um teste de perícia, se obtiver 10 ou menos no d20, considera como 11.', minNex: 45, classId: 'Especialista' },
+  // NEX 95% - Aumento de Atributo
+  { 
+    id: 'aumento-atributo-95-esp', 
+    name: 'Aumento de Atributo', 
+    description: 'Aumente um atributo em +1. Você não pode aumentar um atributo além de 5 dessa forma.', 
+    minNex: 95, 
+    classId: 'Especialista', 
+    isCore: true 
+  },
   
-  // NEX 50%
-  { id: 'segunda-pericia-bonus', name: 'Segunda Perícia Bônus', description: 'Você ganha treinamento em mais duas perícias adicionais.', minNex: 50, classId: 'Especialista', isCore: true },
-  { id: 'mestre-oficios', name: 'Mestre dos Ofícios', description: 'Você recebe +10 em uma perícia de sua escolha.', minNex: 50, classId: 'Especialista' },
-  { id: 'ataque-letal', name: 'Ataque Letal', description: 'O dano extra do seu Ataque Furtivo aumenta para +5d6.', minNex: 50, classId: 'Especialista' },
+  // ========== PODERES DE ESPECIALISTA (escolhíveis) ==========
+  // Recebe em NEX 15%, 30%, 45%, 60%, 75%, 90%
   
-  // NEX 55%+
-  { id: 'habilidoso-demais', name: 'Habilidoso Demais', description: 'Você recebe +2 em todos os testes de perícia.', minNex: 55, classId: 'Especialista' },
-  { id: 'acao-ardilosa', name: 'Ação Ardilosa', description: 'Você pode fazer uma ação de movimento adicional por turno.', minNex: 60, classId: 'Especialista' },
-  { id: 'golpe-certeiro', name: 'Golpe Certeiro', description: 'O dano extra do seu Ataque Furtivo aumenta para +7d6.', minNex: 65, classId: 'Especialista' },
-  
-  // NEX 75%
-  { id: 'terceira-pericia-bonus', name: 'Terceira Perícia Bônus', description: 'Você ganha treinamento em mais duas perícias adicionais.', minNex: 75, classId: 'Especialista', isCore: true },
-  { id: 'genio', name: 'Gênio', description: 'Você pode gastar 5 PE para ter sucesso automático em um teste de perícia (exceto resistência).', minNex: 75, classId: 'Especialista' },
-  
-  // NEX 99%
-  { id: 'lenda-viva', name: 'Lenda Viva', description: 'Você é considerado treinado em todas as perícias com +10 de bônus. Sua margem de crítico em perícias é sempre 19-20.', minNex: 99, classId: 'Especialista', isCore: true },
+  { 
+    id: 'artista-marcial-esp', 
+    name: 'Artista Marcial', 
+    description: 'Seus ataques desarmados causam 1d6 de dano, podendo causar dano letal e contam como armas ágeis. Em NEX 35%, o dano aumenta para 1d8 e, em NEX 70%, para 1d10.', 
+    minNex: 15, 
+    classId: 'Especialista' 
+  },
+  { 
+    id: 'balistica-avancada', 
+    name: 'Balística Avançada', 
+    description: 'Você recebe proficiência com armas táticas de fogo e +2 em rolagens de dano com armas de fogo.', 
+    minNex: 15, 
+    classId: 'Especialista' 
+  },
+  { 
+    id: 'conhecimento-aplicado', 
+    name: 'Conhecimento Aplicado', 
+    description: 'Quando faz um teste de perícia (exceto Luta e Pontaria), você pode gastar 2 PE para mudar o atributo-base da perícia para Intelecto. Pré-requisito: Int 2.', 
+    minNex: 15, 
+    classId: 'Especialista' 
+  },
+  { 
+    id: 'hacker', 
+    name: 'Hacker', 
+    description: 'Você recebe +5 em testes de Tecnologia para invadir sistemas e diminui o tempo necessário para hackear qualquer sistema para uma ação completa. Pré-requisito: treinado em Tecnologia.', 
+    minNex: 15, 
+    classId: 'Especialista' 
+  },
+  { 
+    id: 'maos-rapidas', 
+    name: 'Mãos Rápidas', 
+    description: 'Ao fazer um teste de Crime, você pode pagar 1 PE para fazê-lo como uma ação livre. Pré-requisitos: Agi 3, treinado em Crime.', 
+    minNex: 15, 
+    classId: 'Especialista' 
+  },
+  { 
+    id: 'mochila-utilidades', 
+    name: 'Mochila de Utilidades', 
+    description: 'Um item à sua escolha (exceto armas) conta como se estivesse uma categoria abaixo e ocupa 1 espaço a menos.', 
+    minNex: 15, 
+    classId: 'Especialista' 
+  },
+  { 
+    id: 'movimento-tatico', 
+    name: 'Movimento Tático', 
+    description: 'Você pode gastar 1 PE para ignorar penalidades em deslocamento por terreno difícil e se posicionar até o final do turno. Pré-requisito: treinado em Atletismo.', 
+    minNex: 15, 
+    classId: 'Especialista' 
+  },
+  { 
+    id: 'na-trilha-certa', 
+    name: 'Na Trilha Certa', 
+    description: 'Sempre que tiver sucesso em um teste para procurar pistas, você pode gastar 1 PE para receber +5 cumulativo em testes subsequentes para a mesma busca. Se passar em um segundo teste, pode pagar 2 PE para receber um total de +10 no próximo teste, e assim por diante.', 
+    minNex: 15, 
+    classId: 'Especialista' 
+  },
+  { 
+    id: 'nerd', 
+    name: 'Nerd', 
+    description: 'Você é um repositório de conhecimento útil (e inútil). Uma vez por cena, pode gastar 2 PE para fazer um teste de Atualidades (DT 20). Se passar: Em investigação: recebe uma pista extra. Em combate: descobre uma fraqueza do inimigo. Em outro contexto: o mestre fornece uma informação relevante. A fonte pode ser qualquer coisa plausível (livro, filme, série etc.).', 
+    minNex: 15, 
+    classId: 'Especialista' 
+  },
+  { 
+    id: 'ninja-urbano', 
+    name: 'Ninja Urbano', 
+    description: 'Você recebe proficiência com armas táticas de ataque corpo a corpo e de disparo e recebe +2 em rolagens de dano com essas armas.', 
+    minNex: 15, 
+    classId: 'Especialista' 
+  },
+  { 
+    id: 'pensamento-agil', 
+    name: 'Pensamento Ágil', 
+    description: 'Uma vez por rodada, durante uma cena de investigação, você pode gastar 2 PE para fazer uma ação de procurar pistas adicional.', 
+    minNex: 15, 
+    classId: 'Especialista' 
+  },
+  { 
+    id: 'perito-explosivos', 
+    name: 'Perito em Explosivos', 
+    description: 'Você soma seu Intelecto à DT para resistir aos seus explosivos e pode excluir um número de alvos da explosão igual ao seu valor de Intelecto.', 
+    minNex: 15, 
+    classId: 'Especialista' 
+  },
+  { 
+    id: 'primeira-impressao', 
+    name: 'Primeira Impressão', 
+    description: 'Você recebe +5 no primeiro teste de Diplomacia, Enganação, Intimidação ou Intuição que fizer em uma cena.', 
+    minNex: 15, 
+    classId: 'Especialista' 
+  },
+  { 
+    id: 'transcender-esp', 
+    name: 'Transcender', 
+    description: 'Escolha um poder paranormal (veja p. 114). Você recebe o poder escolhido, mas não ganha Sanidade nem aumento de NEX. Você pode escolher este poder várias vezes.', 
+    minNex: 15, 
+    classId: 'Especialista' 
+  },
+  { 
+    id: 'treinamento-pericia-esp', 
+    name: 'Treinamento em Perícia', 
+    description: 'Escolha duas perícias. Em NEX 35%, pode escolher perícias treinadas para se tornarem veteranas. Em NEX 70%, pode escolher perícias veteranas para se tornarem expert. Você pode escolher este poder várias vezes.', 
+    minNex: 15, 
+    classId: 'Especialista' 
+  },
 ];
 
 // ==================== HABILIDADES DO OCULTISTA ====================
