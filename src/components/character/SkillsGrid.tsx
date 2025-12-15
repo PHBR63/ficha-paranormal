@@ -105,9 +105,16 @@ function SkillRow({
       </div>
       
       <div className="flex items-center gap-2">
-        <span className={cn('font-display text-lg', trained ? 'text-secondary-foreground' : 'text-muted-foreground')} style={trained ? {
-        color
-      } : undefined}>
+        <span 
+          className={cn(
+            'font-display text-lg font-bold',
+            trained ? 'drop-shadow-sm' : 'text-muted-foreground'
+          )} 
+          style={trained ? {
+            color,
+            textShadow: '0 1px 2px rgba(0,0,0,0.4)'
+          } : undefined}
+        >
           +{total}
         </span>
         
