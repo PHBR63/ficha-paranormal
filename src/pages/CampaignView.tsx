@@ -578,54 +578,60 @@ export default function CampaignView() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
+      {/* Header - Responsivo */}
       <header className="border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+        <div className="container mx-auto px-3 sm:px-4 py-2 sm:py-3">
+          <div className="flex items-center justify-between gap-2">
+            {/* Lado esquerdo - Info da campanha */}
+            <div className="flex items-center gap-2 sm:gap-4 min-w-0">
               <Link to="/campaigns">
-                <Button variant="ghost" size="sm" className="text-muted-foreground">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Campanhas
+                <Button variant="ghost" size="sm" className="text-muted-foreground px-2 sm:px-3">
+                  <ArrowLeft className="w-4 h-4" />
+                  <span className="hidden sm:inline ml-2">Campanhas</span>
                 </Button>
               </Link>
-              <div className="h-6 w-px bg-border" />
-              <div>
-                <div className="flex items-center gap-2">
-                  {isMaster && <Crown className="w-4 h-4 text-primary" />}
-                  <h1 className="font-display text-xl tracking-wider">{campaign.name}</h1>
+              <div className="h-6 w-px bg-border hidden sm:block" />
+              <div className="min-w-0">
+                <div className="flex items-center gap-1 sm:gap-2">
+                  {isMaster && <Crown className="w-3 h-3 sm:w-4 sm:h-4 text-primary flex-shrink-0" />}
+                  <h1 className="font-display text-base sm:text-xl tracking-wider truncate max-w-[120px] sm:max-w-none">
+                    {campaign.name}
+                  </h1>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Sessão {campaign.current_session} • {members.length} membros
+                <p className="text-[10px] sm:text-xs text-muted-foreground">
+                  Sessão {campaign.current_session} • {members.length} <span className="hidden sm:inline">membros</span>
                 </p>
               </div>
             </div>
             
-            <div className="flex items-center gap-2">
+            {/* Lado direito - Ações */}
+            <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
               {/* Character Select Button - for players */}
               {!isMaster && (
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  className="font-display"
+                  className="font-display text-[10px] sm:text-xs px-2 sm:px-3"
                   onClick={() => setCharacterSelectOpen(true)}
                 >
-                  <UserCog className="w-4 h-4 mr-2" />
-                  {currentMember?.characters ? currentMember.characters.name : 'SELECIONAR AGENTE'}
+                  <UserCog className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span className="hidden sm:inline ml-1 sm:ml-2">
+                    {currentMember?.characters ? currentMember.characters.name : 'SELECIONAR'}
+                  </span>
                 </Button>
               )}
 
               {isMaster && (
                 <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button variant="outline" size="sm" className="font-display">
-                      <UserPlus className="w-4 h-4 mr-2" />
-                      CONVIDAR
+                    <Button variant="outline" size="sm" className="font-display text-[10px] sm:text-xs px-2 sm:px-3">
+                      <UserPlus className="w-3 h-3 sm:w-4 sm:h-4" />
+                      <span className="hidden sm:inline ml-1 sm:ml-2">CONVIDAR</span>
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="bg-card border-border">
+                  <DialogContent className="bg-card border-border max-w-[95vw] sm:max-w-md">
                     <DialogHeader>
-                      <DialogTitle className="font-display text-xl tracking-wider">
+                      <DialogTitle className="font-display text-lg sm:text-xl tracking-wider">
                         CONVIDAR JOGADORES
                       </DialogTitle>
                       <DialogDescription>
@@ -639,7 +645,7 @@ export default function CampaignView() {
                             <Input
                               value={invite.invite_code}
                               readOnly
-                              className="font-display text-center text-2xl tracking-widest"
+                              className="font-display text-center text-xl sm:text-2xl tracking-widest"
                             />
                             <Button variant="outline" size="icon" onClick={copyInviteCode}>
                               <Copy className="w-4 h-4" />
@@ -663,6 +669,7 @@ export default function CampaignView() {
                         variant="outline"
                         onClick={generateInviteCode}
                         disabled={generatingInvite}
+                        className="w-full sm:w-auto"
                       >
                         {generatingInvite ? (
                           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -697,39 +704,39 @@ export default function CampaignView() {
         {/* Main area */}
         <main className="flex-1 flex flex-col min-w-0">
           <Tabs defaultValue="chat" className="flex-1 flex flex-col">
-            <div className="border-b border-border bg-card/30">
-              <TabsList className="bg-transparent px-4">
-                <TabsTrigger value="status" className="font-display tracking-wider">
-                  <Users className="w-4 h-4 mr-2" />
-                  AGENTES
+            <div className="border-b border-border bg-card/30 overflow-x-auto">
+              <TabsList className="bg-transparent px-2 sm:px-4 min-w-max">
+                <TabsTrigger value="status" className="font-display tracking-wider text-xs sm:text-sm px-2 sm:px-3">
+                  <Users className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">AGENTES</span>
                 </TabsTrigger>
-                <TabsTrigger value="chat" className="font-display tracking-wider">
-                  <MessageSquare className="w-4 h-4 mr-2" />
-                  CHAT
+                <TabsTrigger value="chat" className="font-display tracking-wider text-xs sm:text-sm px-2 sm:px-3">
+                  <MessageSquare className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">CHAT</span>
                 </TabsTrigger>
-                <TabsTrigger value="combat" className="font-display tracking-wider">
-                  <Swords className="w-4 h-4 mr-2" />
-                  COMBATE
+                <TabsTrigger value="combat" className="font-display tracking-wider text-xs sm:text-sm px-2 sm:px-3">
+                  <Swords className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">COMBATE</span>
                 </TabsTrigger>
-                <TabsTrigger value="conditions" className="font-display tracking-wider">
-                  <Activity className="w-4 h-4 mr-2" />
-                  CONDIÇÕES
+                <TabsTrigger value="conditions" className="font-display tracking-wider text-xs sm:text-sm px-2 sm:px-3">
+                  <Activity className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">CONDIÇÕES</span>
                 </TabsTrigger>
-                <TabsTrigger value="notes" className="font-display tracking-wider">
-                  <Scroll className="w-4 h-4 mr-2" />
-                  NOTAS
+                <TabsTrigger value="notes" className="font-display tracking-wider text-xs sm:text-sm px-2 sm:px-3">
+                  <Scroll className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">NOTAS</span>
                 </TabsTrigger>
-                <TabsTrigger value="sessions" className="font-display tracking-wider">
-                  <CalendarDays className="w-4 h-4 mr-2" />
-                  SESSÕES
+                <TabsTrigger value="sessions" className="font-display tracking-wider text-xs sm:text-sm px-2 sm:px-3">
+                  <CalendarDays className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">SESSÕES</span>
                 </TabsTrigger>
                 {isMaster && (
-                  <TabsTrigger value="master" className="font-display tracking-wider text-primary">
-                    <Crown className="w-4 h-4 mr-2" />
-                    MESTRE
+                  <TabsTrigger value="master" className="font-display tracking-wider text-xs sm:text-sm px-2 sm:px-3 text-primary">
+                    <Crown className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+                    <span className="hidden sm:inline">MESTRE</span>
                   </TabsTrigger>
                 )}
-            </TabsList>
+              </TabsList>
             </div>
 
             {/* Status Grid Tab - New */}
@@ -798,27 +805,31 @@ export default function CampaignView() {
                 </div>
               </ScrollArea>
 
-              {/* Input */}
-              <div className="p-4 border-t border-border bg-card/50 max-w-3xl mx-auto w-full">
-                <div className="flex items-center gap-2">
+              {/* Input - Responsivo */}
+              <div className="p-2 sm:p-4 border-t border-border bg-card/50 max-w-3xl mx-auto w-full">
+                <div className="flex items-center gap-1.5 sm:gap-2">
                   <Button
                     variant="outline"
                     size="icon"
                     onClick={() => rollDice(1, 'Teste rápido')}
                     title="Rolar 1d20"
+                    className="w-9 h-9 sm:w-10 sm:h-10 flex-shrink-0"
                   >
                     <Dices className="w-4 h-4" />
                   </Button>
                   <Input
                     value={messageInput}
                     onChange={(e) => setMessageInput(e.target.value)}
-                    placeholder="Digite uma mensagem..."
+                    placeholder="Mensagem..."
                     onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
                     disabled={sending}
+                    className="text-sm sm:text-base"
                   />
                   <Button
                     onClick={() => sendMessage()}
                     disabled={sending || !messageInput.trim()}
+                    size="icon"
+                    className="w-9 h-9 sm:w-10 sm:h-10 flex-shrink-0"
                   >
                     {sending ? (
                       <Loader2 className="w-4 h-4 animate-spin" />

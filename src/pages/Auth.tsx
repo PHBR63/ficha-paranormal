@@ -120,39 +120,39 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden flex items-center justify-center">
+    <div className="min-h-screen bg-background relative overflow-hidden flex items-center justify-center p-4">
       {/* Background effects */}
       <div className="noise-overlay" />
       <div className="absolute inset-0 bg-grid-pattern opacity-20" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-radial from-primary/10 via-transparent to-transparent blur-3xl" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] sm:w-[600px] h-[400px] sm:h-[600px] bg-gradient-radial from-primary/10 via-transparent to-transparent blur-3xl" />
       
       {/* Back button */}
       <Link 
         to="/" 
-        className="absolute top-6 left-6 z-20 flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+        className="absolute top-4 left-4 sm:top-6 sm:left-6 z-20 flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
-        <span className="text-sm">Voltar</span>
+        <span className="text-sm hidden sm:inline">Voltar</span>
       </Link>
 
       {/* Auth card */}
-      <div className="relative z-10 w-full max-w-md mx-4">
-        <div className="dossier-card p-8 animate-scale-in">
+      <div className="relative z-10 w-full max-w-md">
+        <div className="dossier-card p-6 sm:p-8 animate-scale-in">
           {/* Header */}
-          <div className="text-center mb-8">
-            <div className="w-16 h-16 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center mx-auto mb-4">
-              <Skull className="w-8 h-8 text-primary" />
+          <div className="text-center mb-6 sm:mb-8">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center mx-auto mb-3 sm:mb-4">
+              <Skull className="w-7 h-7 sm:w-8 sm:h-8 text-primary" />
             </div>
-            <h1 className="font-display text-3xl tracking-wide text-foreground">
+            <h1 className="font-display text-2xl sm:text-3xl tracking-wide text-foreground">
               {mode === 'signin' ? 'ACESSO RESTRITO' : 'NOVO REGISTRO'}
             </h1>
-            <p className="text-muted-foreground text-sm mt-2">
+            <p className="text-muted-foreground text-xs sm:text-sm mt-2">
               {mode === 'signin' ? 'Identifique-se para continuar' : 'Crie sua credencial de agente'}
             </p>
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
             {mode === 'signup' && (
               <div className="space-y-2">
                 <Label htmlFor="displayName" className="text-xs text-muted-foreground uppercase tracking-wider">
@@ -164,7 +164,7 @@ export default function Auth() {
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
                   placeholder="Como deseja ser chamado?"
-                  className="terminal-input h-12"
+                  className="terminal-input h-11 sm:h-12 text-sm sm:text-base"
                   disabled={loading}
                 />
                 {errors.displayName && (
@@ -183,7 +183,7 @@ export default function Auth() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="agente@ordo.gov"
-                className="terminal-input h-12"
+                className="terminal-input h-11 sm:h-12 text-sm sm:text-base"
                 disabled={loading}
               />
               {errors.email && (
@@ -202,7 +202,7 @@ export default function Auth() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="terminal-input h-12 pr-12"
+                  className="terminal-input h-11 sm:h-12 pr-12 text-sm sm:text-base"
                   disabled={loading}
                 />
                 <button
@@ -220,12 +220,12 @@ export default function Auth() {
 
             <Button
               type="submit"
-              className="w-full h-12 action-button font-display text-lg tracking-wide"
+              className="w-full h-11 sm:h-12 action-button font-display text-base sm:text-lg tracking-wide"
               disabled={loading}
             >
               {loading ? (
                 <>
-                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 mr-2 animate-spin" />
                   Processando...
                 </>
               ) : (

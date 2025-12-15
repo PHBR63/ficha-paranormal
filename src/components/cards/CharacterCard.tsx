@@ -110,17 +110,17 @@ export function CharacterCard({
         gradientOpacity={0.2}
         tiltAmount={8}
       >
-        <div className="p-6 relative">
+        <div className="p-4 sm:p-6 relative">
           {/* Classified stamp watermark */}
           <div className="absolute -bottom-2 -right-2 text-xl font-display tracking-widest text-primary/5 -rotate-12 select-none pointer-events-none">
             ORDO
           </div>
 
           {/* Header */}
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex items-center gap-3">
+          <div className="flex items-start justify-between mb-3 sm:mb-4">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
               <motion.div 
-                className="w-12 h-12 rounded-lg flex items-center justify-center transition-colors"
+                className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center transition-colors flex-shrink-0"
                 style={{ backgroundColor: `${classConfig.color}15` }}
                 whileHover={{ scale: 1.1, rotate: 5 }}
               >
@@ -132,16 +132,16 @@ export function CharacterCard({
                   />
                 ) : (
                   <ClassIcon 
-                    className="w-6 h-6 transition-colors" 
+                    className="w-5 h-5 sm:w-6 sm:h-6 transition-colors" 
                     style={{ color: classConfig.color }}
                   />
                 )}
               </motion.div>
-              <div>
-                <h4 className="font-display text-xl tracking-wide text-foreground">
+              <div className="min-w-0">
+                <h4 className="font-display text-lg sm:text-xl tracking-wide text-foreground truncate">
                   {character.name}
                 </h4>
-                <p className="text-muted-foreground text-sm">
+                <p className="text-muted-foreground text-xs sm:text-sm truncate">
                   {character.class} • {character.origin}
                 </p>
               </div>
@@ -149,7 +149,7 @@ export function CharacterCard({
             
             {/* NEX indicator */}
             <motion.div 
-              className="nex-indicator relative"
+              className="nex-indicator relative w-9 h-9 sm:w-10 sm:h-10 text-sm sm:text-base flex-shrink-0"
               whileHover={{ scale: 1.1 }}
             >
               <span>{character.nex}%</span>
