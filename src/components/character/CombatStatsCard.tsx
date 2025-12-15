@@ -111,15 +111,14 @@ export function CombatStatsCard({
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <motion.div
-              animate={isHpLow ? { scale: [1, 1.2, 1] } : {}}
-              transition={{ repeat: isHpLow ? Infinity : 0, duration: 1 }}
-            >
+            <div className={cn(
+              isHpLow && "animate-pulse"
+            )}>
               <Heart className={cn(
                 "w-5 h-5",
                 isHpLow ? "text-destructive" : "text-destructive/70"
               )} />
-            </motion.div>
+            </div>
             <span className="text-sm font-medium">HP</span>
           </div>
           {editMode ? (
@@ -201,15 +200,14 @@ export function CombatStatsCard({
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <motion.div
-              animate={isSanLow ? { rotate: [0, -5, 5, 0] } : {}}
-              transition={{ repeat: isSanLow ? Infinity : 0, duration: 0.5 }}
-            >
+            <div className={cn(
+              isSanLow && "animate-pulse"
+            )}>
               <Brain className={cn(
                 "w-5 h-5",
                 isSanLow ? "text-paranormal" : "text-paranormal/70"
               )} />
-            </motion.div>
+            </div>
             <span className="text-sm font-medium">SAN</span>
           </div>
           {editMode ? (
