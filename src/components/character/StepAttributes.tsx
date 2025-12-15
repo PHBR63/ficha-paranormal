@@ -78,12 +78,15 @@ export function StepAttributes({ formData, updateFormData }: StepAttributesProps
   const maxAttribute = getMaxAttributeByNex(formData.nex);
 
   // Cálculo de pontos disponíveis incluindo bônus por NEX
+  // REGRA: Todos começam com 1 em cada atributo (5 pontos base) + 4 para distribuir = 9 total
+  // Se reduzir um atributo a 0, você NÃO ganha ponto extra - você apenas libera 1 ponto
+  // que estava naquele atributo para usar em outro lugar
   const totalPoints = Object.values(formData.attributes).reduce((a, b) => a + b, 0);
-  const basePoints = 5; // Pontos base (1 em cada atributo)
-  const distributedPoints = 4; // Pontos para distribuir
-  const bonusFromZero = hasReducedToZero ? 1 : 0; // Bônus por reduzir atributo a 0
+  const distributedPoints = 4; // Pontos para distribuir além do 1 inicial em cada
   const nexBonus = getExtraAttributePoints(formData.nex); // Pontos extras por NEX
-  const maxPoints = basePoints + distributedPoints + bonusFromZero + nexBonus;
+  // Total máximo: 5 (base) + 4 (distribuir) + NEX bonus = 9 + NEX
+  // Se reduzir a 0, você pode colocar o ponto que estava ali em outro lugar
+  const maxPoints = 5 + distributedPoints + nexBonus;
   const remainingPoints = maxPoints - totalPoints;
 
   // Detecta atributos que excedem o limite do NEX atual (pode acontecer se mudar NEX)
@@ -165,9 +168,9 @@ export function StepAttributes({ formData, updateFormData }: StepAttributesProps
             <span className="px-2 py-1 rounded bg-muted/50 border border-border">
               Base: {distributedPoints}
             </span>
-            {bonusFromZero > 0 && (
+            {hasReducedToZero && (
               <span className="px-2 py-1 rounded bg-paranormal/20 border border-paranormal/30 text-paranormal">
-                Atributo Zero: +{bonusFromZero}
+                Atributo Zero: Ativo
               </span>
             )}
             {nexBonus > 0 && (
