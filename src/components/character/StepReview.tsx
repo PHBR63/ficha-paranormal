@@ -438,8 +438,8 @@ export function StepReview({
                   <span>Escolha uma <strong>classe</strong> para o personagem</span>
                 </motion.div>
               )}
-              {/* Verificar atributos */}
-              {!validateAttributes(formData.attributes).valid && (
+              {/* Verificar atributos - só mostra pendência se restar pontos a distribuir */}
+              {validateAttributes(formData.attributes).remainingPoints > 0 && (
                 <motion.div 
                   className="flex items-center gap-2 text-sm text-warning bg-warning/10 p-2 rounded-md cursor-pointer hover:bg-warning/20 transition-colors" 
                   onClick={() => onStepClick?.(2)}
