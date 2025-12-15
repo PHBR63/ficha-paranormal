@@ -350,68 +350,170 @@ export interface TrackAbility {
 
 export const CLASS_TRACKS: ClassTrack[] = [
   // === TRILHAS DO COMBATENTE ===
-  // NOTA: Habilidades de trilha precisam ser corrigidas com textos oficiais do livro
-  // Níveis corretos: 10% (1ª), 40% (2ª), 65% (3ª), 99% (4ª)
-  // AGUARDANDO TEXTOS OFICIAIS DO USUÁRIO - Placeholder com estrutura correta
+  // Textos oficiais do livro base Ordem Paranormal RPG
   {
     id: 'aniquilador',
     name: 'Aniquilador',
     classId: 'Combatente',
-    description: 'Você se especializou em causar o máximo de dano possível.',
+    description: 'Você é treinado para abater alvos com eficiência e velocidade. Suas armas são suas melhores amigas e você cuida tão bem delas quanto de seus companheiros de equipe. Talvez até melhor.',
     abilities: [
-      // TODO: Substituir por textos oficiais do livro
-      { id: 'favorita', name: 'Favorita', description: '[AGUARDANDO TEXTO OFICIAL] - Habilidade inicial da trilha Aniquilador.', minNex: 10, isInitial: true },
-      { id: 'aniquilador-40', name: 'Habilidade NEX 40%', description: '[AGUARDANDO TEXTO OFICIAL] - Segunda habilidade da trilha Aniquilador.', minNex: 40 },
-      { id: 'aniquilador-65', name: 'Habilidade NEX 65%', description: '[AGUARDANDO TEXTO OFICIAL] - Terceira habilidade da trilha Aniquilador.', minNex: 65 },
-      { id: 'aniquilador-99', name: 'Habilidade NEX 99%', description: '[AGUARDANDO TEXTO OFICIAL] - Quarta habilidade da trilha Aniquilador.', minNex: 99 },
+      { 
+        id: 'a-favorita', 
+        name: 'A Favorita', 
+        description: 'Escolha uma arma para ser sua favorita, como katana ou fuzil de assalto. A categoria da arma escolhida é reduzida em I.', 
+        minNex: 10, 
+        isInitial: true 
+      },
+      { 
+        id: 'tecnica-secreta', 
+        name: 'Técnica Secreta', 
+        description: 'A categoria da arma favorita passa a ser reduzida em II. Quando faz um ataque com ela, você pode gastar 2 PE para executar um dos efeitos abaixo como parte do ataque. Você pode adicionar mais efeitos gastando +2 PE por efeito adicional.\n\n• Amplo. O ataque pode atingir um alvo adicional em seu alcance e adjacente ao original (use o mesmo teste de ataque para ambos).\n• Destruidor. Aumenta o multiplicador de crítico da arma em +1.', 
+        minNex: 40 
+      },
+      { 
+        id: 'tecnica-sublime', 
+        name: 'Técnica Sublime', 
+        description: 'Você adiciona os seguintes efeitos à lista de sua Técnica Secreta:\n\n• Letal. Aumenta a margem de ameaça em +2. Você pode escolher este efeito duas vezes para aumentar a margem de ameaça em +5.\n• Perfurante. Ignora até 5 pontos de resistência a dano de qualquer tipo do alvo.', 
+        minNex: 65 
+      },
+      { 
+        id: 'maquina-de-matar', 
+        name: 'Máquina de Matar', 
+        description: 'A categoria da arma favorita passa a ser reduzida em III, ela recebe +2 na margem de ameaça e seu dano aumenta em um dado do mesmo tipo.', 
+        minNex: 99 
+      },
     ],
   },
   {
     id: 'comandante-campo',
     name: 'Comandante de Campo',
     classId: 'Combatente',
-    description: 'Você lidera seus aliados em combate com maestria tática.',
+    description: 'Sem um oficial uma batalha não passa de uma briga de bar. Você é treinado para coordenar e auxiliar seus companheiros em combate, tomando decisões rápidas e tirando melhor proveito da situação e do talento de seus aliados.',
     abilities: [
-      { id: 'comandante-10', name: 'Habilidade NEX 10%', description: '[AGUARDANDO TEXTO OFICIAL] - Habilidade inicial da trilha Comandante de Campo.', minNex: 10, isInitial: true },
-      { id: 'comandante-40', name: 'Habilidade NEX 40%', description: '[AGUARDANDO TEXTO OFICIAL] - Segunda habilidade da trilha Comandante de Campo.', minNex: 40 },
-      { id: 'comandante-65', name: 'Habilidade NEX 65%', description: '[AGUARDANDO TEXTO OFICIAL] - Terceira habilidade da trilha Comandante de Campo.', minNex: 65 },
-      { id: 'comandante-99', name: 'Habilidade NEX 99%', description: '[AGUARDANDO TEXTO OFICIAL] - Quarta habilidade da trilha Comandante de Campo.', minNex: 99 },
+      { 
+        id: 'inspirar-confianca', 
+        name: 'Inspirar Confiança', 
+        description: 'Sua liderança inspira seus aliados. Você pode gastar uma reação e 2 PE para fazer um aliado em alcance curto rolar novamente um teste recém realizado.', 
+        minNex: 10, 
+        isInitial: true 
+      },
+      { 
+        id: 'estrategista', 
+        name: 'Estrategista', 
+        description: 'Você pode direcionar aliados em alcance curto. Gaste uma ação padrão e 1 PE por aliado que quiser direcionar (limitado pelo seu Intelecto). No próximo turno dos aliados afetados, eles ganham uma ação de movimento adicional.', 
+        minNex: 40 
+      },
+      { 
+        id: 'brecha-na-guarda', 
+        name: 'Brecha na Guarda', 
+        description: 'Uma vez por rodada, quando um aliado causar dano em um inimigo que esteja em seu alcance curto, você pode gastar uma reação e 2 PE para que você ou outro aliado em alcance curto faça um ataque adicional contra o mesmo inimigo. Além disso, o alcance de Inspirar Confiança e Estrategista aumenta para médio.', 
+        minNex: 65 
+      },
+      { 
+        id: 'oficial-comandante', 
+        name: 'Oficial Comandante', 
+        description: 'Você pode gastar uma ação padrão e 5 PE para que cada aliado que você possa ver em alcance médio receba uma ação padrão adicional no próximo turno dele.', 
+        minNex: 99 
+      },
     ],
   },
   {
     id: 'guerreiro',
     name: 'Guerreiro',
     classId: 'Combatente',
-    description: 'Você é um combatente versátil, dominando diversas técnicas.',
+    description: 'Você treinou sua musculatura e movimentos a ponto de transformar seu corpo em uma verdadeira arma. Com golpes corpo a corpo tão poderosos quanto uma bala, você enfrenta inimigos sem medo.',
     abilities: [
-      { id: 'guerreiro-10', name: 'Habilidade NEX 10%', description: '[AGUARDANDO TEXTO OFICIAL] - Habilidade inicial da trilha Guerreiro.', minNex: 10, isInitial: true },
-      { id: 'guerreiro-40', name: 'Habilidade NEX 40%', description: '[AGUARDANDO TEXTO OFICIAL] - Segunda habilidade da trilha Guerreiro.', minNex: 40 },
-      { id: 'guerreiro-65', name: 'Habilidade NEX 65%', description: '[AGUARDANDO TEXTO OFICIAL] - Terceira habilidade da trilha Guerreiro.', minNex: 65 },
-      { id: 'guerreiro-99', name: 'Habilidade NEX 99%', description: '[AGUARDANDO TEXTO OFICIAL] - Quarta habilidade da trilha Guerreiro.', minNex: 99 },
+      { 
+        id: 'tecnica-letal', 
+        name: 'Técnica Letal', 
+        description: 'Você recebe um aumento de +2 na margem de ameaça com todos os seus ataques corpo a corpo.', 
+        minNex: 10, 
+        isInitial: true 
+      },
+      { 
+        id: 'revidar', 
+        name: 'Revidar', 
+        description: 'Sempre que bloquear um ataque, você pode gastar uma reação e 2 PE para fazer um ataque corpo a corpo no inimigo que o atacou.', 
+        minNex: 40 
+      },
+      { 
+        id: 'forca-opressora', 
+        name: 'Força Opressora', 
+        description: 'Quando acerta um ataque corpo a corpo, você pode gastar 1 PE para realizar uma manobra derrubar ou empurrar contra o alvo do ataque como ação livre. Se escolher empurrar, recebe um bônus de +5 para cada 10 pontos de dano que causou no alvo. Se escolher derrubar e vencer no teste oposto, você pode gastar 1 PE para fazer um ataque adicional contra o alvo caído.', 
+        minNex: 65 
+      },
+      { 
+        id: 'potencia-maxima', 
+        name: 'Potência Máxima', 
+        description: 'Quando usa seu Ataque Especial com armas corpo a corpo, todos os bônus numéricos são dobrados. Por exemplo, se usar 5 PE para receber +5 no ataque e +15 no dano, você recebe +10 no ataque e +30 no dano.', 
+        minNex: 99 
+      },
     ],
   },
   {
     id: 'operacoes-especiais',
     name: 'Operações Especiais',
     classId: 'Combatente',
-    description: 'Você foi treinado em táticas furtivas e precisas.',
+    description: 'Você é um combatente eficaz. Suas ações são calculadas e otimizadas, sempre antevendo os movimentos inimigos e se posicionando da maneira mais inteligente no campo de batalha.',
     abilities: [
-      { id: 'operacoes-10', name: 'Habilidade NEX 10%', description: '[AGUARDANDO TEXTO OFICIAL] - Habilidade inicial da trilha Operações Especiais.', minNex: 10, isInitial: true },
-      { id: 'operacoes-40', name: 'Habilidade NEX 40%', description: '[AGUARDANDO TEXTO OFICIAL] - Segunda habilidade da trilha Operações Especiais.', minNex: 40 },
-      { id: 'operacoes-65', name: 'Habilidade NEX 65%', description: '[AGUARDANDO TEXTO OFICIAL] - Terceira habilidade da trilha Operações Especiais.', minNex: 65 },
-      { id: 'operacoes-99', name: 'Habilidade NEX 99%', description: '[AGUARDANDO TEXTO OFICIAL] - Quarta habilidade da trilha Operações Especiais.', minNex: 99 },
+      { 
+        id: 'iniciativa-aprimorada', 
+        name: 'Iniciativa Aprimorada', 
+        description: 'Você recebe +5 em Iniciativa e uma ação de movimento adicional na primeira rodada.', 
+        minNex: 10, 
+        isInitial: true 
+      },
+      { 
+        id: 'ataque-extra', 
+        name: 'Ataque Extra', 
+        description: 'Uma vez por rodada, quando faz um ataque, você pode gastar 2 PE para fazer um ataque adicional.', 
+        minNex: 40 
+      },
+      { 
+        id: 'surto-de-adrenalina', 
+        name: 'Surto de Adrenalina', 
+        description: 'Uma vez por rodada, você pode gastar 5 PE para realizar uma ação padrão ou de movimento adicional.', 
+        minNex: 65 
+      },
+      { 
+        id: 'sempre-alerta', 
+        name: 'Sempre Alerta', 
+        description: 'Você recebe uma ação padrão adicional no início de cada cena de combate.', 
+        minNex: 99 
+      },
     ],
   },
   {
     id: 'tropa-choque',
     name: 'Tropa de Choque',
     classId: 'Combatente',
-    description: 'Você é uma fortaleza ambulante, especializado em resistir e proteger.',
+    description: 'Você é duro na queda. Treinou seu corpo para resistir a traumas físicos, tornando-o praticamente inquebrável, e por isso não teme se colocar entre seus aliados e o perigo.',
     abilities: [
-      { id: 'tropa-10', name: 'Habilidade NEX 10%', description: '[AGUARDANDO TEXTO OFICIAL] - Habilidade inicial da trilha Tropa de Choque.', minNex: 10, isInitial: true },
-      { id: 'tropa-40', name: 'Habilidade NEX 40%', description: '[AGUARDANDO TEXTO OFICIAL] - Segunda habilidade da trilha Tropa de Choque.', minNex: 40 },
-      { id: 'tropa-65', name: 'Habilidade NEX 65%', description: '[AGUARDANDO TEXTO OFICIAL] - Terceira habilidade da trilha Tropa de Choque.', minNex: 65 },
-      { id: 'tropa-99', name: 'Habilidade NEX 99%', description: '[AGUARDANDO TEXTO OFICIAL] - Quarta habilidade da trilha Tropa de Choque.', minNex: 99 },
+      { 
+        id: 'casca-grossa', 
+        name: 'Casca Grossa', 
+        description: 'Você recebe +1 PV para cada 5% de NEX e, quando faz um bloqueio, soma seu Vigor na resistência a dano recebida.', 
+        minNex: 10, 
+        isInitial: true 
+      },
+      { 
+        id: 'cai-dentro', 
+        name: 'Cai Dentro', 
+        description: 'Sempre que um oponente em alcance curto ataca um de seus aliados, você pode gastar uma reação e 1 PE para fazer com que esse oponente faça um teste de Vontade (DT Vig). Se falhar, o oponente deve atacar você em vez de seu aliado. Este poder só funciona se você puder ser efetivamente atacado e estiver no alcance do ataque (por exemplo, adjacente a um oponente atacando em corpo a corpo ou dentro do alcance de uma arma de ataque à distância). Um oponente que passe no teste de Vontade não pode ser afetado por seu poder Cai Dentro até o final da cena.', 
+        minNex: 40 
+      },
+      { 
+        id: 'duro-de-matar', 
+        name: 'Duro de Matar', 
+        description: 'Ao sofrer dano não paranormal, você pode gastar uma reação e 2 PE para reduzir esse dano à metade. Em NEX 85%, você pode usar esta habilidade para reduzir dano paranormal.', 
+        minNex: 65 
+      },
+      { 
+        id: 'inquebravel', 
+        name: 'Inquebrável', 
+        description: 'Enquanto estiver machucado, você recebe +5 na Defesa e resistência a dano 5. Enquanto estiver morrendo, em vez do normal, você não fica indefeso e ainda pode realizar ações. Você ainda segue as regras de morte normalmente.', 
+        minNex: 99 
+      },
     ],
   },
 
