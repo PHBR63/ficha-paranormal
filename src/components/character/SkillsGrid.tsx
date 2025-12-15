@@ -14,8 +14,9 @@ const ATTRIBUTE_LABELS: Record<string, string> = {
   presence: 'PRE',
   vigor: 'VIG'
 };
+// Cores dos atributos para os badges de perícias
 const ATTRIBUTE_COLORS: Record<string, string> = {
-  agility: 'hsl(var(--accent))',
+  agility: 'hsl(200, 85%, 60%)', // Azul claro para Agilidade
   strength: 'hsl(var(--destructive))',
   intellect: 'hsl(var(--primary))',
   presence: 'hsl(var(--paranormal))',
