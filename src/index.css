@@ -189,12 +189,12 @@
 
 /* ========================================
  * TEMAS DE COR - Primary varia por tema
- * Fora do @layer base para funcionar corretamente
+ * Usa seletores com alta especificidade para sobrescrever @layer base
  * ======================================== */
  
-/* ROXO ABISSAL (Padrão) */
-.dark[data-color-theme="purple"],
-.dark:not([data-color-theme]) {
+/* ROXO ABISSAL (Padrão) - quando não há tema ou tema é purple */
+html.dark:not([data-color-theme]),
+html.dark[data-color-theme="purple"] {
   --primary: 263 70% 50%;
   --primary-foreground: 0 0% 100%;
   --ring: 263 70% 50%;
@@ -206,7 +206,7 @@
 }
 
 /* SANGUE RITUAL (Vermelho) */
-.dark[data-color-theme="red"] {
+html.dark[data-color-theme="red"] {
   --primary: 0 72% 51%;
   --primary-foreground: 0 0% 100%;
   --ring: 0 72% 51%;
@@ -218,7 +218,7 @@
 }
 
 /* CONHECIMENTO (Verde) */
-.dark[data-color-theme="green"] {
+html.dark[data-color-theme="green"] {
   --primary: 142 71% 45%;
   --primary-foreground: 0 0% 100%;
   --ring: 142 71% 45%;
@@ -230,7 +230,7 @@
 }
 
 /* CIANO ESPECTRAL (Azul) */
-.dark[data-color-theme="blue"] {
+html.dark[data-color-theme="blue"] {
   --primary: 199 89% 48%;
   --primary-foreground: 0 0% 100%;
   --ring: 199 89% 48%;
@@ -242,7 +242,7 @@
 }
 
 /* ENERGIA ARCANA (Âmbar) - cor clara, precisa texto escuro */
-.dark[data-color-theme="amber"] {
+html.dark[data-color-theme="amber"] {
   --primary: 38 92% 50%;
   --primary-foreground: 0 0% 5%;
   --ring: 38 92% 50%;
