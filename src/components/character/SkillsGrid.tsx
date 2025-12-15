@@ -14,13 +14,13 @@ const ATTRIBUTE_LABELS: Record<string, string> = {
   presence: 'PRE',
   vigor: 'VIG'
 };
-// Cores personalizadas dos atributos para os badges de perícias
+// Cores dos atributos usando variáveis CSS do design system
 const ATTRIBUTE_COLORS: Record<string, string> = {
-  agility: 'hsl(200, 85%, 60%)',   // Azul claro - Agilidade
-  strength: 'hsl(15, 90%, 55%)',   // Laranja vibrante - Força
-  intellect: 'hsl(260, 70%, 65%)', // Roxo suave - Intelecto
-  presence: 'hsl(320, 75%, 60%)',  // Magenta/Rosa - Presença
-  vigor: 'hsl(145, 70%, 45%)'      // Verde esmeralda - Vigor
+  agility: 'hsl(var(--attr-agility))',
+  strength: 'hsl(var(--attr-strength))',
+  intellect: 'hsl(var(--attr-intellect))',
+  presence: 'hsl(var(--attr-presence))',
+  vigor: 'hsl(var(--attr-vigor))'
 };
 export function SkillsGrid({
   skills,
