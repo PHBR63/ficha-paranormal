@@ -386,55 +386,112 @@ export function StepReview({
             <div className="space-y-2">
               {/* Verificar nome */}
               {(!formData.name || formData.name.trim().length < 2) && (
-                <div className="flex items-center gap-2 text-sm text-warning bg-warning/10 p-2 rounded-md cursor-pointer hover:bg-warning/20 transition-colors" onClick={() => onStepClick?.(0)}>
-                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                <motion.div 
+                  className="flex items-center gap-2 text-sm text-warning bg-warning/10 p-2 rounded-md cursor-pointer hover:bg-warning/20 transition-colors" 
+                  onClick={() => onStepClick?.(0)}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.1 }}
+                >
+                  <motion.div
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                  >
+                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  </motion.div>
                   <span>Defina um <strong>nome</strong> para o personagem (mínimo 2 caracteres)</span>
-                </div>
+                </motion.div>
               )}
               {/* Verificar origem */}
               {!formData.origin && (
-                <div className="flex items-center gap-2 text-sm text-warning bg-warning/10 p-2 rounded-md cursor-pointer hover:bg-warning/20 transition-colors" onClick={() => onStepClick?.(3)}>
-                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                <motion.div 
+                  className="flex items-center gap-2 text-sm text-warning bg-warning/10 p-2 rounded-md cursor-pointer hover:bg-warning/20 transition-colors" 
+                  onClick={() => onStepClick?.(3)}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.15 }}
+                >
+                  <motion.div
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut", delay: 0.2 }}
+                  >
+                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  </motion.div>
                   <span>Escolha uma <strong>origem</strong> para o personagem</span>
-                </div>
+                </motion.div>
               )}
               {/* Verificar classe */}
               {!formData.characterClass && (
-                <div className="flex items-center gap-2 text-sm text-warning bg-warning/10 p-2 rounded-md cursor-pointer hover:bg-warning/20 transition-colors" onClick={() => onStepClick?.(4)}>
-                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                <motion.div 
+                  className="flex items-center gap-2 text-sm text-warning bg-warning/10 p-2 rounded-md cursor-pointer hover:bg-warning/20 transition-colors" 
+                  onClick={() => onStepClick?.(4)}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  <motion.div
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut", delay: 0.4 }}
+                  >
+                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  </motion.div>
                   <span>Escolha uma <strong>classe</strong> para o personagem</span>
-                </div>
+                </motion.div>
               )}
               {/* Verificar atributos */}
-              {(() => {
-                const attrValidation = validateAttributes(formData.attributes);
-                if (!attrValidation.valid || attrValidation.remainingPoints > 0) {
-                  return (
-                    <div className="flex items-center gap-2 text-sm text-warning bg-warning/10 p-2 rounded-md cursor-pointer hover:bg-warning/20 transition-colors" onClick={() => onStepClick?.(2)}>
-                      <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                      <span>Distribua todos os <strong>pontos de atributo</strong> ({attrValidation.remainingPoints} restantes)</span>
-                    </div>
-                  );
-                }
-                return null;
-              })()}
-              {/* Verificar escolhas de perícia da classe */}
-              {buildResult.pendingChoices.map(choice => (
-                <div key={choice.id} className="flex items-center gap-2 text-sm text-warning bg-warning/10 p-2 rounded-md cursor-pointer hover:bg-warning/20 transition-colors" onClick={() => onStepClick?.(formData.characterClass === 'Ocultista' ? 7 : 6)}>
-                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                  <span>Escolha: <strong>{choice.label}</strong></span>
-                </div>
-              ))}
-              {/* Verificar conflitos de perícia */}
-              {buildResult.pendingConflicts.map(skillId => {
-                const skill = SKILLS.find(s => s.id === skillId);
-                return (
-                  <div key={skillId} className="flex items-center gap-2 text-sm text-warning bg-warning/10 p-2 rounded-md cursor-pointer hover:bg-warning/20 transition-colors" onClick={() => onStepClick?.(formData.characterClass === 'Ocultista' ? 7 : 6)}>
+              {!validateAttributes(formData.attributes).valid && (
+                <motion.div 
+                  className="flex items-center gap-2 text-sm text-warning bg-warning/10 p-2 rounded-md cursor-pointer hover:bg-warning/20 transition-colors" 
+                  onClick={() => onStepClick?.(2)}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.25 }}
+                >
+                  <motion.div
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut", delay: 0.6 }}
+                  >
                     <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                    <span>Resolva o conflito da perícia <strong>{skill?.name || skillId}</strong></span>
-                  </div>
-                );
-              })}
+                  </motion.div>
+                  <span>Distribua todos os <strong>pontos de atributo</strong> disponíveis</span>
+                </motion.div>
+              )}
+              {/* Verificar escolhas de perícias pendentes */}
+              {buildResult.pendingChoices && buildResult.pendingChoices.length > 0 && (
+                <motion.div 
+                  className="flex items-center gap-2 text-sm text-warning bg-warning/10 p-2 rounded-md cursor-pointer hover:bg-warning/20 transition-colors" 
+                  onClick={() => onStepClick?.(getStepIndex('skills'))}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.3 }}
+                >
+                  <motion.div
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut", delay: 0.8 }}
+                  >
+                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  </motion.div>
+                  <span>Resolva as <strong>escolhas de perícias</strong> pendentes ({buildResult.pendingChoices.length})</span>
+                </motion.div>
+              )}
+              {/* Verificar conflitos de perícias */}
+              {buildResult.conflicts && buildResult.conflicts.length > 0 && (
+                <motion.div 
+                  className="flex items-center gap-2 text-sm text-warning bg-warning/10 p-2 rounded-md cursor-pointer hover:bg-warning/20 transition-colors" 
+                  onClick={() => onStepClick?.(getStepIndex('skills'))}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.35 }}
+                >
+                  <motion.div
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+                  >
+                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  </motion.div>
+                  <span>Resolva os <strong>conflitos de perícias</strong> ({buildResult.conflicts.length})</span>
+                </motion.div>
+              )}
             </div>
           </div>
         )}
