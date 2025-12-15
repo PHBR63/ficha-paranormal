@@ -203,9 +203,14 @@ export function StepAttributes({ formData, updateFormData }: StepAttributesProps
             initial={{ scale: 1.2 }}
             animate={{ scale: 1 }}
             className={cn(
-              'font-display text-4xl',
-              isValid ? 'text-success' : 'text-accent'
+              'font-display text-5xl font-bold drop-shadow-lg',
+              isValid ? 'text-emerald-400' : 'text-amber-400'
             )}
+            style={{
+              textShadow: isValid 
+                ? '0 0 20px rgba(52, 211, 153, 0.5)' 
+                : '0 0 20px rgba(251, 191, 36, 0.5)'
+            }}
           >
             {remainingPoints}
           </motion.p>
