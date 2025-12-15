@@ -148,6 +148,60 @@ export type Database = {
           },
         ]
       }
+      campaign_notes: {
+        Row: {
+          campaign_id: string
+          content: string
+          created_at: string
+          id: string
+          is_private: boolean
+          note_type: string
+          session_id: string | null
+          title: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          campaign_id: string
+          content: string
+          created_at?: string
+          id?: string
+          is_private?: boolean
+          note_type?: string
+          session_id?: string | null
+          title?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          campaign_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          is_private?: boolean
+          note_type?: string
+          session_id?: string | null
+          title?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_notes_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_notes_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaign_sessions: {
         Row: {
           campaign_id: string
@@ -442,6 +496,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      is_campaign_master: {
+        Args: { _campaign_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_campaign_member: {
+        Args: { _campaign_id: string; _user_id: string }
+        Returns: boolean
+      }
       validate_campaign_invite: {
         Args: { code: string }
         Returns: {
