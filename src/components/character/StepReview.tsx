@@ -490,8 +490,38 @@ export function StepReview({
                   </span>
                 </motion.div>
               )}
-              {/* Verificar conflitos de perícias */}
-              {buildResult.conflicts && buildResult.conflicts.length > 0 && (
+              {/* Verificar erros de atributo (ex: acima do limite) */}
+              {(() => {
+                // Recalcula validação apenas para mostrar mensagens detalhadas
+                const attrValidation = validateAttributes(formData.attributes);
+                if (attrValidation.errors.length === 0) return null;
+
+                return (
+                  <motion.div 
+                    className="flex items-center gap-2 text-sm text-warning bg-warning/10 p-2 rounded-md cursor-pointer hover:bg-warning/20 transition-colors" 
+                    onClick={() => onStepClick?.(2)}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.34 }}
+                  >
+                    <motion.div
+                      animate={{ scale: [1, 1.2, 1] }}
+                      transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+                    >
+                      <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                    </motion.div>
+                    <span>
+                      Ajuste os <strong>atributos</strong>{' '}
+                      <span className="inline-flex items-center justify-center bg-destructive/30 text-destructive font-bold px-2 py-0.5 rounded-full text-xs ml-1">
+                        {attrValidation.errors.length} erro{attrValidation.errors.length > 1 ? 's' : ''}
+                      </span>
+                    </span>
+                  </motion.div>
+                );
+              })()}
+
+              {/* Verificar conflitos de perícias - usa pendingConflicts (o que realmente impede finalizar) */}
+              {buildResult.pendingConflicts && buildResult.pendingConflicts.length > 0 && (
                 <motion.div 
                   className="flex items-center gap-2 text-sm text-warning bg-warning/10 p-2 rounded-md cursor-pointer hover:bg-warning/20 transition-colors" 
                   onClick={() => onStepClick?.(getStepIndex('skills'))}
@@ -508,7 +538,10 @@ export function StepReview({
                   <span>
                     Resolva os <strong>conflitos de perícias</strong>{' '}
                     <span className="inline-flex items-center justify-center bg-destructive/30 text-destructive font-bold px-2 py-0.5 rounded-full text-xs ml-1">
-                      {buildResult.conflicts.length} conflito{buildResult.conflicts.length > 1 ? 's' : ''}
+                      {buildResult.pendingConflicts.length} conflito{buildResult.pendingConflicts.length > 1 ? 's' : ''}
+                    </span>
+                    <span className="text-xs text-muted-foreground ml-2">
+                      ({buildResult.pendingConflicts.slice(0, 3).join(', ')}{buildResult.pendingConflicts.length > 3 ? '…' : ''})
                     </span>
                   </span>
                 </motion.div>
