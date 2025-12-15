@@ -224,7 +224,7 @@ export function StepReview({ formData, buildResult, onStepClick }: StepReviewPro
         {trainedSkillNames.length > 0 ? (
           <div className="flex flex-wrap gap-2">
             {trainedSkillNames.map(name => (
-              <span key={name} className="px-3 py-1 bg-secondary/20 text-secondary text-sm rounded-sm">
+              <span key={name} className="px-3 py-1.5 bg-secondary/30 text-secondary font-medium text-sm rounded-sm border border-secondary/40">
                 {name}
               </span>
             ))}
