@@ -111,60 +111,58 @@ export const SOBREVIVENTE_ABILITIES: ClassAbility[] = [
 
 // ==================== NOVAS TRILHAS DO SUPLEMENTO ====================
 
+// NOTA: Trilhas do suplemento também seguem os níveis corretos: 10%, 40%, 65%, 99%
+// AGUARDANDO TEXTOS OFICIAIS - Estrutura corrigida
 export const SUPPLEMENT_TRACKS: ClassTrack[] = [
   // === TRILHAS DO SOBREVIVENTE ===
   {
     id: 'andarilho',
     name: 'Andarilho',
     classId: 'Sobrevivente',
-    description: 'Você vive na estrada, nunca ficando muito tempo em um lugar. Aprendeu a sobreviver com pouco e a encontrar recursos onde outros não veem.',
+    description: 'Você vive na estrada, nunca ficando muito tempo em um lugar.',
     abilities: [
-      { id: 'viajante', name: 'Viajante', description: 'Você recebe +5 em Sobrevivência e pode encontrar comida, água e abrigo em qualquer ambiente com um teste de Sobrevivência.', minNex: 5, isInitial: true },
-      { id: 'mochileiro', name: 'Mochileiro', description: 'Você pode carregar o dobro de itens sem penalidade e sempre encontra o que precisa na sua mochila (itens de categoria 0).', minNex: 25 },
-      { id: 'conhecedor-trilhas', name: 'Conhecedor de Trilhas', description: 'Você nunca se perde e pode guiar grupos em segurança. Reduz encontros aleatórios pela metade.', minNex: 50 },
-      { id: 'nomade', name: 'Nômade', description: 'Você pode descansar em qualquer lugar como se fosse um local seguro. Recupera PV, PE e SAN normalmente mesmo em ambientes hostis.', minNex: 75 },
-      { id: 'mestre-estrada', name: 'Mestre da Estrada', description: 'Você sabe exatamente onde precisa estar. Uma vez por dia, pode "coincidir" de estar em um local conveniente para a trama.', minNex: 99 },
+      { id: 'andarilho-10', name: 'Habilidade NEX 10%', description: '[AGUARDANDO TEXTO OFICIAL] - Habilidade inicial da trilha Andarilho.', minNex: 10, isInitial: true },
+      { id: 'andarilho-40', name: 'Habilidade NEX 40%', description: '[AGUARDANDO TEXTO OFICIAL] - Segunda habilidade da trilha Andarilho.', minNex: 40 },
+      { id: 'andarilho-65', name: 'Habilidade NEX 65%', description: '[AGUARDANDO TEXTO OFICIAL] - Terceira habilidade da trilha Andarilho.', minNex: 65 },
+      { id: 'andarilho-99', name: 'Habilidade NEX 99%', description: '[AGUARDANDO TEXTO OFICIAL] - Quarta habilidade da trilha Andarilho.', minNex: 99 },
     ],
   },
   {
     id: 'marcado',
     name: 'Marcado',
     classId: 'Sobrevivente',
-    description: 'O paranormal deixou marcas em você - físicas e mentais. Mas essas cicatrizes também lhe deram poder.',
+    description: 'O paranormal deixou marcas em você - físicas e mentais.',
     abilities: [
-      { id: 'cicatriz-paranormal', name: 'Cicatriz Paranormal', description: 'Você tem uma marca do Outro Lado. Pode sentir presenças paranormais em alcance curto.', minNex: 5, isInitial: true },
-      { id: 'dor-familiar', name: 'Dor Familiar', description: 'Você está acostumado com a dor. Ignora os efeitos da condição Debilitado.', minNex: 25 },
-      { id: 'afinidade-sombria', name: 'Afinidade Sombria', description: 'Criaturas do Outro Lado hesitam em atacá-lo. Elas sofrem -2 em ataques contra você.', minNex: 50 },
-      { id: 'marca-protecao', name: 'Marca de Proteção', description: 'Sua marca o protege. Você recebe resistência a dano paranormal 10.', minNex: 75 },
-      { id: 'um-deles', name: 'Um Deles', description: 'Você é parcialmente uma criatura do Outro Lado. Pode se comunicar com entidades e não é atacado automaticamente por elas.', minNex: 99 },
+      { id: 'marcado-10', name: 'Habilidade NEX 10%', description: '[AGUARDANDO TEXTO OFICIAL] - Habilidade inicial da trilha Marcado.', minNex: 10, isInitial: true },
+      { id: 'marcado-40', name: 'Habilidade NEX 40%', description: '[AGUARDANDO TEXTO OFICIAL] - Segunda habilidade da trilha Marcado.', minNex: 40 },
+      { id: 'marcado-65', name: 'Habilidade NEX 65%', description: '[AGUARDANDO TEXTO OFICIAL] - Terceira habilidade da trilha Marcado.', minNex: 65 },
+      { id: 'marcado-99', name: 'Habilidade NEX 99%', description: '[AGUARDANDO TEXTO OFICIAL] - Quarta habilidade da trilha Marcado.', minNex: 99 },
     ],
   },
   {
     id: 'sortudo',
     name: 'Sortudo',
     classId: 'Sobrevivente',
-    description: 'Você tem uma sorte absurda. As coisas simplesmente dão certo para você, mesmo quando não deveriam.',
+    description: 'Você tem uma sorte absurda. As coisas simplesmente dão certo para você.',
     abilities: [
-      { id: 'golpe-sorte', name: 'Golpe de Sorte', description: 'Uma vez por cena, você pode rolar novamente qualquer teste que tenha falhado.', minNex: 5, isInitial: true },
-      { id: 'desviar-azar', name: 'Desviar o Azar', description: 'Uma vez por cena, quando você seria atingido por um ataque, pode forçar o atacante a rolar novamente.', minNex: 25 },
-      { id: 'sempre-preparado', name: 'Sempre Preparado', description: 'Você "por acaso" tem o item certo. Uma vez por cena, pode declarar que tem um item de categoria I ou menor.', minNex: 50 },
-      { id: 'milagre', name: 'Milagre', description: 'Uma vez por sessão, algo "milagroso" acontece para salvá-lo. O Mestre deve criar uma coincidência favorável.', minNex: 75 },
-      { id: 'favorito-destino', name: 'Favorito do Destino', description: 'O universo conspira a seu favor. Você pode rolar 3d20 e escolher o melhor resultado em qualquer teste.', minNex: 99 },
+      { id: 'sortudo-10', name: 'Habilidade NEX 10%', description: '[AGUARDANDO TEXTO OFICIAL] - Habilidade inicial da trilha Sortudo.', minNex: 10, isInitial: true },
+      { id: 'sortudo-40', name: 'Habilidade NEX 40%', description: '[AGUARDANDO TEXTO OFICIAL] - Segunda habilidade da trilha Sortudo.', minNex: 40 },
+      { id: 'sortudo-65', name: 'Habilidade NEX 65%', description: '[AGUARDANDO TEXTO OFICIAL] - Terceira habilidade da trilha Sortudo.', minNex: 65 },
+      { id: 'sortudo-99', name: 'Habilidade NEX 99%', description: '[AGUARDANDO TEXTO OFICIAL] - Quarta habilidade da trilha Sortudo.', minNex: 99 },
     ],
   },
 
-  // === NOVAS TRILHAS DO COMBATENTE ===
+  // === NOVAS TRILHAS DO COMBATENTE (Suplemento) ===
   {
     id: 'cacador-monstros',
     name: 'Caçador de Monstros',
     classId: 'Combatente',
     description: 'Você se especializou em caçar e eliminar criaturas do Outro Lado.',
     abilities: [
-      { id: 'marca-presa', name: 'Marcar Presa', description: 'Como ação de movimento, você pode marcar uma criatura. Recebe +2 em ataques e +1d6 de dano contra ela até o fim da cena.', minNex: 5, isInitial: true },
-      { id: 'conhecer-inimigo', name: 'Conhecer o Inimigo', description: 'Você recebe +5 em testes de Ocultismo para identificar criaturas paranormais e suas fraquezas.', minNex: 25 },
-      { id: 'armas-profanas', name: 'Armas Profanas', description: 'Seus ataques ignoram resistência a dano de criaturas do Outro Lado.', minNex: 50 },
-      { id: 'cacador-veterano', name: 'Caçador Veterano', description: 'Você causa dano dobrado contra criaturas do Outro Lado com sua presa marcada.', minNex: 75 },
-      { id: 'flagelo-outro-lado', name: 'Flagelo do Outro Lado', description: 'Criaturas do Outro Lado sentem sua presença e temem você. Sofrem -4 em ataques contra você e -2 em testes de resistência contra seus ataques.', minNex: 99 },
+      { id: 'cacador-10', name: 'Habilidade NEX 10%', description: '[AGUARDANDO TEXTO OFICIAL] - Habilidade inicial da trilha Caçador de Monstros.', minNex: 10, isInitial: true },
+      { id: 'cacador-40', name: 'Habilidade NEX 40%', description: '[AGUARDANDO TEXTO OFICIAL] - Segunda habilidade da trilha Caçador de Monstros.', minNex: 40 },
+      { id: 'cacador-65', name: 'Habilidade NEX 65%', description: '[AGUARDANDO TEXTO OFICIAL] - Terceira habilidade da trilha Caçador de Monstros.', minNex: 65 },
+      { id: 'cacador-99', name: 'Habilidade NEX 99%', description: '[AGUARDANDO TEXTO OFICIAL] - Quarta habilidade da trilha Caçador de Monstros.', minNex: 99 },
     ],
   },
   {
@@ -173,26 +171,24 @@ export const SUPPLEMENT_TRACKS: ClassTrack[] = [
     classId: 'Combatente',
     description: 'Você se dedica a proteger os outros, mesmo que isso signifique se sacrificar.',
     abilities: [
-      { id: 'escudo-humano', name: 'Escudo Humano', description: 'Você pode usar sua reação para receber um ataque direcionado a um aliado adjacente.', minNex: 5, isInitial: true },
-      { id: 'presenca-protetora', name: 'Presença Protetora', description: 'Aliados adjacentes recebem +2 em Defesa.', minNex: 25 },
-      { id: 'sacrificio', name: 'Sacrifício', description: 'Quando um aliado seria reduzido a 0 PV, você pode gastar PV igual ao dano para impedir.', minNex: 50 },
-      { id: 'guardiao', name: 'Guardião', description: 'Você pode fazer ataques de oportunidade contra qualquer inimigo que ataque um aliado adjacente.', minNex: 75 },
-      { id: 'bastiao', name: 'Bastião', description: 'Aliados em alcance curto são considerados adjacentes para suas habilidades de proteção. Todos recebem +4 em Defesa.', minNex: 99 },
+      { id: 'protetor-10', name: 'Habilidade NEX 10%', description: '[AGUARDANDO TEXTO OFICIAL] - Habilidade inicial da trilha Protetor.', minNex: 10, isInitial: true },
+      { id: 'protetor-40', name: 'Habilidade NEX 40%', description: '[AGUARDANDO TEXTO OFICIAL] - Segunda habilidade da trilha Protetor.', minNex: 40 },
+      { id: 'protetor-65', name: 'Habilidade NEX 65%', description: '[AGUARDANDO TEXTO OFICIAL] - Terceira habilidade da trilha Protetor.', minNex: 65 },
+      { id: 'protetor-99', name: 'Habilidade NEX 99%', description: '[AGUARDANDO TEXTO OFICIAL] - Quarta habilidade da trilha Protetor.', minNex: 99 },
     ],
   },
 
-  // === NOVAS TRILHAS DO ESPECIALISTA ===
+  // === NOVAS TRILHAS DO ESPECIALISTA (Suplemento) ===
   {
     id: 'analista-cena',
     name: 'Analista de Cena',
     classId: 'Especialista',
     description: 'Você é especialista em analisar cenas de crime e reconstruir eventos.',
     abilities: [
-      { id: 'olho-detalhe', name: 'Olho para Detalhes', description: 'Você recebe +5 em Investigação e Percepção para analisar cenas e encontrar pistas.', minNex: 5, isInitial: true },
-      { id: 'reconstruir-eventos', name: 'Reconstruir Eventos', description: 'Ao analisar uma cena, você pode "ver" os eventos que ocorreram nas últimas 24 horas.', minNex: 25 },
-      { id: 'nada-escapa', name: 'Nada Escapa', description: 'Você automaticamente encontra todas as pistas físicas em uma cena, sem precisar de teste.', minNex: 50 },
-      { id: 'perfil-criminoso', name: 'Perfil do Criminoso', description: 'Ao analisar pistas, você pode determinar características do culpado (idade aproximada, altura, hábitos, etc).', minNex: 75 },
-      { id: 'visao-retrospectiva', name: 'Visão Retrospectiva', description: 'Uma vez por missão, você pode ter uma visão completa dos eventos que ocorreram em um local.', minNex: 99 },
+      { id: 'analista-10', name: 'Habilidade NEX 10%', description: '[AGUARDANDO TEXTO OFICIAL] - Habilidade inicial da trilha Analista de Cena.', minNex: 10, isInitial: true },
+      { id: 'analista-40', name: 'Habilidade NEX 40%', description: '[AGUARDANDO TEXTO OFICIAL] - Segunda habilidade da trilha Analista de Cena.', minNex: 40 },
+      { id: 'analista-65', name: 'Habilidade NEX 65%', description: '[AGUARDANDO TEXTO OFICIAL] - Terceira habilidade da trilha Analista de Cena.', minNex: 65 },
+      { id: 'analista-99', name: 'Habilidade NEX 99%', description: '[AGUARDANDO TEXTO OFICIAL] - Quarta habilidade da trilha Analista de Cena.', minNex: 99 },
     ],
   },
   {
@@ -201,26 +197,24 @@ export const SUPPLEMENT_TRACKS: ClassTrack[] = [
     classId: 'Especialista',
     description: 'Você é um especialista forense, capaz de analisar evidências com precisão científica.',
     abilities: [
-      { id: 'analise-forense', name: 'Análise Forense', description: 'Você pode analisar substâncias, materiais e amostras biológicas com +5 em Ciências.', minNex: 5, isInitial: true },
-      { id: 'balistica', name: 'Balística', description: 'Você pode determinar o tipo de arma, distância do disparo e trajetória de projéteis.', minNex: 25 },
-      { id: 'toxicologia', name: 'Toxicologia', description: 'Você pode identificar venenos, drogas e substâncias químicas, e determinar doses e efeitos.', minNex: 50 },
-      { id: 'dna-tracking', name: 'Rastreamento de DNA', description: 'Com uma amostra biológica, você pode rastrear a pessoa em bancos de dados da Ordem.', minNex: 75 },
-      { id: 'ciencia-impossivel', name: 'Ciência do Impossível', description: 'Você pode analisar até mesmo fenômenos paranormais com métodos científicos, ganhando +10 em Ocultismo para entender eventos.', minNex: 99 },
+      { id: 'perito-10', name: 'Habilidade NEX 10%', description: '[AGUARDANDO TEXTO OFICIAL] - Habilidade inicial da trilha Perito Criminal.', minNex: 10, isInitial: true },
+      { id: 'perito-40', name: 'Habilidade NEX 40%', description: '[AGUARDANDO TEXTO OFICIAL] - Segunda habilidade da trilha Perito Criminal.', minNex: 40 },
+      { id: 'perito-65', name: 'Habilidade NEX 65%', description: '[AGUARDANDO TEXTO OFICIAL] - Terceira habilidade da trilha Perito Criminal.', minNex: 65 },
+      { id: 'perito-99', name: 'Habilidade NEX 99%', description: '[AGUARDANDO TEXTO OFICIAL] - Quarta habilidade da trilha Perito Criminal.', minNex: 99 },
     ],
   },
 
-  // === NOVAS TRILHAS DO OCULTISTA ===
+  // === NOVAS TRILHAS DO OCULTISTA (Suplemento) ===
   {
     id: 'ritualista-campo',
     name: 'Ritualista de Campo',
     classId: 'Ocultista',
     description: 'Você adapta rituais para uso prático em campo, tornando-os mais rápidos e eficientes.',
     abilities: [
-      { id: 'ritual-rapido', name: 'Ritual Rápido', description: 'Rituais com execução "Padrão" podem ser lançados como ação de movimento, gastando +1 PE.', minNex: 5, isInitial: true },
-      { id: 'componentes-improvisados', name: 'Componentes Improvisados', description: 'Você pode substituir componentes de rituais por itens comuns disponíveis.', minNex: 25 },
-      { id: 'eficiencia', name: 'Eficiência', description: 'O custo em PE dos seus rituais é reduzido em 1 (mínimo 1).', minNex: 50 },
-      { id: 'ritual-instantaneo', name: 'Ritual Instantâneo', description: 'Uma vez por cena, você pode lançar um ritual como ação livre.', minNex: 75 },
-      { id: 'mestre-campo', name: 'Mestre de Campo', description: 'Você pode lançar rituais de 1º e 2º círculo sem gastar PE, uma vez cada por cena.', minNex: 99 },
+      { id: 'ritualista-10', name: 'Habilidade NEX 10%', description: '[AGUARDANDO TEXTO OFICIAL] - Habilidade inicial da trilha Ritualista de Campo.', minNex: 10, isInitial: true },
+      { id: 'ritualista-40', name: 'Habilidade NEX 40%', description: '[AGUARDANDO TEXTO OFICIAL] - Segunda habilidade da trilha Ritualista de Campo.', minNex: 40 },
+      { id: 'ritualista-65', name: 'Habilidade NEX 65%', description: '[AGUARDANDO TEXTO OFICIAL] - Terceira habilidade da trilha Ritualista de Campo.', minNex: 65 },
+      { id: 'ritualista-99', name: 'Habilidade NEX 99%', description: '[AGUARDANDO TEXTO OFICIAL] - Quarta habilidade da trilha Ritualista de Campo.', minNex: 99 },
     ],
   },
   {
@@ -229,11 +223,10 @@ export const SUPPLEMENT_TRACKS: ClassTrack[] = [
     classId: 'Ocultista',
     description: 'Você se conecta diretamente com entidades do Outro Lado, canalizando seu poder.',
     abilities: [
-      { id: 'contato', name: 'Contato', description: 'Você pode se comunicar com entidades do Outro Lado. Recebe +5 em testes para negociar ou obter informações.', minNex: 5, isInitial: true },
-      { id: 'emprestar-poder', name: 'Emprestar Poder', description: 'Uma vez por cena, você pode pedir poder emprestado a uma entidade, recuperando 1d6 PE.', minNex: 25 },
-      { id: 'protetor-espiritual', name: 'Protetor Espiritual', description: 'Uma entidade o protege. Você recebe +2 em Defesa e +2 em testes de resistência.', minNex: 50 },
-      { id: 'possessao-voluntaria', name: 'Possessão Voluntária', description: 'Você pode permitir que uma entidade o possua por uma cena, recebendo +5 em todos os testes mas perdendo 1d6 SAN.', minNex: 75 },
-      { id: 'avatar-entidade', name: 'Avatar da Entidade', description: 'Uma vez por dia, você pode se fundir completamente com uma entidade, recebendo +10 em todos os testes e poderes especiais por 1 minuto.', minNex: 99 },
+      { id: 'canalista-10', name: 'Habilidade NEX 10%', description: '[AGUARDANDO TEXTO OFICIAL] - Habilidade inicial da trilha Canalista.', minNex: 10, isInitial: true },
+      { id: 'canalista-40', name: 'Habilidade NEX 40%', description: '[AGUARDANDO TEXTO OFICIAL] - Segunda habilidade da trilha Canalista.', minNex: 40 },
+      { id: 'canalista-65', name: 'Habilidade NEX 65%', description: '[AGUARDANDO TEXTO OFICIAL] - Terceira habilidade da trilha Canalista.', minNex: 65 },
+      { id: 'canalista-99', name: 'Habilidade NEX 99%', description: '[AGUARDANDO TEXTO OFICIAL] - Quarta habilidade da trilha Canalista.', minNex: 99 },
     ],
   },
 ];
