@@ -350,17 +350,20 @@ export interface TrackAbility {
 
 export const CLASS_TRACKS: ClassTrack[] = [
   // === TRILHAS DO COMBATENTE ===
+  // NOTA: Habilidades de trilha precisam ser corrigidas com textos oficiais do livro
+  // Níveis corretos: 10% (1ª), 40% (2ª), 65% (3ª), 99% (4ª)
+  // AGUARDANDO TEXTOS OFICIAIS DO USUÁRIO - Placeholder com estrutura correta
   {
     id: 'aniquilador',
     name: 'Aniquilador',
     classId: 'Combatente',
     description: 'Você se especializou em causar o máximo de dano possível.',
     abilities: [
-      { id: 'golpe-demolidor', name: 'Golpe Demolidor', description: 'Quando acerta um ataque corpo a corpo, pode gastar 2 PE para causar +2d8 de dano.', minNex: 5, isInitial: true },
-      { id: 'golpe-cruel', name: 'Golpe Cruel', description: 'Sua margem de ameaça com ataques corpo a corpo aumenta em +2.', minNex: 25 },
-      { id: 'massacre', name: 'Massacre', description: 'Quando reduz um inimigo a 0 PV, pode fazer um ataque adicional como ação livre.', minNex: 50 },
-      { id: 'destruicao-total', name: 'Destruição Total', description: 'Seus ataques ignoram resistência a dano.', minNex: 75 },
-      { id: 'exterminio', name: 'Extermínio', description: 'Quando usa Golpe Demolidor, o dano extra aumenta para +4d8.', minNex: 99 },
+      // TODO: Substituir por textos oficiais do livro
+      { id: 'favorita', name: 'Favorita', description: '[AGUARDANDO TEXTO OFICIAL] - Habilidade inicial da trilha Aniquilador.', minNex: 10, isInitial: true },
+      { id: 'aniquilador-40', name: 'Habilidade NEX 40%', description: '[AGUARDANDO TEXTO OFICIAL] - Segunda habilidade da trilha Aniquilador.', minNex: 40 },
+      { id: 'aniquilador-65', name: 'Habilidade NEX 65%', description: '[AGUARDANDO TEXTO OFICIAL] - Terceira habilidade da trilha Aniquilador.', minNex: 65 },
+      { id: 'aniquilador-99', name: 'Habilidade NEX 99%', description: '[AGUARDANDO TEXTO OFICIAL] - Quarta habilidade da trilha Aniquilador.', minNex: 99 },
     ],
   },
   {
@@ -369,11 +372,10 @@ export const CLASS_TRACKS: ClassTrack[] = [
     classId: 'Combatente',
     description: 'Você lidera seus aliados em combate com maestria tática.',
     abilities: [
-      { id: 'inspirar-confianca', name: 'Inspirar Confiança', description: 'Você pode gastar 2 PE para que aliados em alcance curto recebam +2 em ataques e testes de resistência até o início do seu próximo turno.', minNex: 5, isInitial: true },
-      { id: 'estrategista', name: 'Estrategista', description: 'No início do combate, você pode gastar 3 PE para que aliados ajam na sua iniciativa.', minNex: 25 },
-      { id: 'autoridade', name: 'Autoridade', description: 'Aliados em alcance curto recebem +2 em Vontade.', minNex: 50 },
-      { id: 'comandar-ataque', name: 'Comandar Ataque', description: 'Você pode gastar uma ação padrão e 2 PE para que um aliado faça um ataque como reação.', minNex: 75 },
-      { id: 'liderar-assalto', name: 'Liderar Assalto', description: 'Todos os aliados em alcance curto causam +1d6 de dano em ataques.', minNex: 99 },
+      { id: 'comandante-10', name: 'Habilidade NEX 10%', description: '[AGUARDANDO TEXTO OFICIAL] - Habilidade inicial da trilha Comandante de Campo.', minNex: 10, isInitial: true },
+      { id: 'comandante-40', name: 'Habilidade NEX 40%', description: '[AGUARDANDO TEXTO OFICIAL] - Segunda habilidade da trilha Comandante de Campo.', minNex: 40 },
+      { id: 'comandante-65', name: 'Habilidade NEX 65%', description: '[AGUARDANDO TEXTO OFICIAL] - Terceira habilidade da trilha Comandante de Campo.', minNex: 65 },
+      { id: 'comandante-99', name: 'Habilidade NEX 99%', description: '[AGUARDANDO TEXTO OFICIAL] - Quarta habilidade da trilha Comandante de Campo.', minNex: 99 },
     ],
   },
   {
@@ -382,11 +384,10 @@ export const CLASS_TRACKS: ClassTrack[] = [
     classId: 'Combatente',
     description: 'Você é um combatente versátil, dominando diversas técnicas.',
     abilities: [
-      { id: 'tecnica-combate', name: 'Técnica de Combate', description: 'Você aprende uma técnica de combate à sua escolha.', minNex: 5, isInitial: true },
-      { id: 'dureza', name: 'Dureza', description: 'Você recebe +1 em Defesa e resistência a dano 2.', minNex: 25 },
-      { id: 'tecnica-adicional', name: 'Técnica Adicional', description: 'Você aprende mais uma técnica de combate.', minNex: 50 },
-      { id: 'veterano-batalhas', name: 'Veterano de Batalhas', description: 'Você recebe +2 em testes de resistência e +5 PV.', minNex: 75 },
-      { id: 'mestre-combate', name: 'Mestre do Combate', description: 'Você aprende mais duas técnicas de combate.', minNex: 99 },
+      { id: 'guerreiro-10', name: 'Habilidade NEX 10%', description: '[AGUARDANDO TEXTO OFICIAL] - Habilidade inicial da trilha Guerreiro.', minNex: 10, isInitial: true },
+      { id: 'guerreiro-40', name: 'Habilidade NEX 40%', description: '[AGUARDANDO TEXTO OFICIAL] - Segunda habilidade da trilha Guerreiro.', minNex: 40 },
+      { id: 'guerreiro-65', name: 'Habilidade NEX 65%', description: '[AGUARDANDO TEXTO OFICIAL] - Terceira habilidade da trilha Guerreiro.', minNex: 65 },
+      { id: 'guerreiro-99', name: 'Habilidade NEX 99%', description: '[AGUARDANDO TEXTO OFICIAL] - Quarta habilidade da trilha Guerreiro.', minNex: 99 },
     ],
   },
   {
@@ -395,11 +396,10 @@ export const CLASS_TRACKS: ClassTrack[] = [
     classId: 'Combatente',
     description: 'Você foi treinado em táticas furtivas e precisas.',
     abilities: [
-      { id: 'ataque-furtivo', name: 'Ataque Furtivo', description: 'Quando ataca um alvo desprevenido ou flanqueado, causa +2d6 de dano.', minNex: 5, isInitial: true },
-      { id: 'assassinar', name: 'Assassinar', description: 'Ao atacar um alvo desprevenido, o dano é automaticamente crítico.', minNex: 25 },
-      { id: 'sombra', name: 'Sombra', description: 'Você recebe +5 em Furtividade e não sofre penalidade por se mover rapidamente.', minNex: 50 },
-      { id: 'ataque-letal', name: 'Ataque Letal', description: 'Seu Ataque Furtivo causa +4d6 de dano.', minNex: 75 },
-      { id: 'golpe-fatal', name: 'Golpe Fatal', description: 'Quando acerta um ataque crítico, o alvo deve fazer um teste de Fortitude (DT = dano) ou é reduzido a 0 PV.', minNex: 99 },
+      { id: 'operacoes-10', name: 'Habilidade NEX 10%', description: '[AGUARDANDO TEXTO OFICIAL] - Habilidade inicial da trilha Operações Especiais.', minNex: 10, isInitial: true },
+      { id: 'operacoes-40', name: 'Habilidade NEX 40%', description: '[AGUARDANDO TEXTO OFICIAL] - Segunda habilidade da trilha Operações Especiais.', minNex: 40 },
+      { id: 'operacoes-65', name: 'Habilidade NEX 65%', description: '[AGUARDANDO TEXTO OFICIAL] - Terceira habilidade da trilha Operações Especiais.', minNex: 65 },
+      { id: 'operacoes-99', name: 'Habilidade NEX 99%', description: '[AGUARDANDO TEXTO OFICIAL] - Quarta habilidade da trilha Operações Especiais.', minNex: 99 },
     ],
   },
   {
@@ -408,26 +408,25 @@ export const CLASS_TRACKS: ClassTrack[] = [
     classId: 'Combatente',
     description: 'Você é uma fortaleza ambulante, especializado em resistir e proteger.',
     abilities: [
-      { id: 'parede-aco', name: 'Parede de Aço', description: 'Quando usa uma ação para defender, você e aliados adjacentes recebem +2 em Defesa até seu próximo turno.', minNex: 5, isInitial: true },
-      { id: 'bloqueio', name: 'Bloqueio', description: 'Quando é atingido por um ataque, pode gastar 2 PE para reduzir o dano em 1d12.', minNex: 25 },
-      { id: 'inquebravel', name: 'Inquebrável', description: 'Você recebe +10 PV e resistência a dano 5.', minNex: 50 },
-      { id: 'muralha-viva', name: 'Muralha Viva', description: 'Inimigos não podem passar por você e sofrem -2 em ataques contra aliados adjacentes a você.', minNex: 75 },
-      { id: 'colosso', name: 'Colosso', description: 'Você é imune a ser movido contra sua vontade e recebe +2 em Defesa.', minNex: 99 },
+      { id: 'tropa-10', name: 'Habilidade NEX 10%', description: '[AGUARDANDO TEXTO OFICIAL] - Habilidade inicial da trilha Tropa de Choque.', minNex: 10, isInitial: true },
+      { id: 'tropa-40', name: 'Habilidade NEX 40%', description: '[AGUARDANDO TEXTO OFICIAL] - Segunda habilidade da trilha Tropa de Choque.', minNex: 40 },
+      { id: 'tropa-65', name: 'Habilidade NEX 65%', description: '[AGUARDANDO TEXTO OFICIAL] - Terceira habilidade da trilha Tropa de Choque.', minNex: 65 },
+      { id: 'tropa-99', name: 'Habilidade NEX 99%', description: '[AGUARDANDO TEXTO OFICIAL] - Quarta habilidade da trilha Tropa de Choque.', minNex: 99 },
     ],
   },
 
   // === TRILHAS DO ESPECIALISTA ===
+  // Níveis corretos: 10% (1ª), 40% (2ª), 65% (3ª), 99% (4ª)
   {
     id: 'atirador-elite',
     name: 'Atirador de Elite',
     classId: 'Especialista',
     description: 'Você domina o combate à distância com precisão mortal.',
     abilities: [
-      { id: 'mira-paciente', name: 'Mira Paciente', description: 'Você pode gastar uma ação de movimento para receber +2 em seu próximo ataque à distância neste turno.', minNex: 5, isInitial: true },
-      { id: 'disparo-letal', name: 'Disparo Letal', description: 'Quando acerta um ataque à distância, pode gastar 2 PE para causar +2d8 de dano.', minNex: 25 },
-      { id: 'alcance-ampliado', name: 'Alcance Ampliado', description: 'O alcance de suas armas de disparo é dobrado.', minNex: 50 },
-      { id: 'tiro-certeiro', name: 'Tiro Certeiro', description: 'Sua margem de ameaça com ataques à distância aumenta em +2.', minNex: 75 },
-      { id: 'tiro-perfeito', name: 'Tiro Perfeito', description: 'Uma vez por rodada, você pode gastar 5 PE para que um ataque à distância seja automaticamente um crítico.', minNex: 99 },
+      { id: 'atirador-10', name: 'Habilidade NEX 10%', description: '[AGUARDANDO TEXTO OFICIAL] - Habilidade inicial da trilha Atirador de Elite.', minNex: 10, isInitial: true },
+      { id: 'atirador-40', name: 'Habilidade NEX 40%', description: '[AGUARDANDO TEXTO OFICIAL] - Segunda habilidade da trilha Atirador de Elite.', minNex: 40 },
+      { id: 'atirador-65', name: 'Habilidade NEX 65%', description: '[AGUARDANDO TEXTO OFICIAL] - Terceira habilidade da trilha Atirador de Elite.', minNex: 65 },
+      { id: 'atirador-99', name: 'Habilidade NEX 99%', description: '[AGUARDANDO TEXTO OFICIAL] - Quarta habilidade da trilha Atirador de Elite.', minNex: 99 },
     ],
   },
   {
@@ -436,11 +435,10 @@ export const CLASS_TRACKS: ClassTrack[] = [
     classId: 'Especialista',
     description: 'Você é especialista em entrar onde não deveria.',
     abilities: [
-      { id: 'mestre-furtividade', name: 'Mestre da Furtividade', description: 'Você recebe +5 em Furtividade e Crime.', minNex: 5, isInitial: true },
-      { id: 'camaleao', name: 'Camaleão', description: 'Você pode fazer testes de Furtividade mesmo sendo observado, gastando 2 PE.', minNex: 25 },
-      { id: 'evasao', name: 'Evasão', description: 'Quando passa em um teste de Reflexos para meio dano, não sofre dano nenhum.', minNex: 50 },
-      { id: 'invisivel', name: 'Invisível', description: 'Você pode gastar 3 PE para ficar invisível por uma rodada.', minNex: 75 },
-      { id: 'fantasma', name: 'Fantasma', description: 'Você pode passar através de paredes e objetos sólidos, gastando 5 PE por turno.', minNex: 99 },
+      { id: 'infiltrador-10', name: 'Habilidade NEX 10%', description: '[AGUARDANDO TEXTO OFICIAL] - Habilidade inicial da trilha Infiltrador.', minNex: 10, isInitial: true },
+      { id: 'infiltrador-40', name: 'Habilidade NEX 40%', description: '[AGUARDANDO TEXTO OFICIAL] - Segunda habilidade da trilha Infiltrador.', minNex: 40 },
+      { id: 'infiltrador-65', name: 'Habilidade NEX 65%', description: '[AGUARDANDO TEXTO OFICIAL] - Terceira habilidade da trilha Infiltrador.', minNex: 65 },
+      { id: 'infiltrador-99', name: 'Habilidade NEX 99%', description: '[AGUARDANDO TEXTO OFICIAL] - Quarta habilidade da trilha Infiltrador.', minNex: 99 },
     ],
   },
   {
@@ -449,11 +447,10 @@ export const CLASS_TRACKS: ClassTrack[] = [
     classId: 'Especialista',
     description: 'Você mantém sua equipe viva em situações críticas.',
     abilities: [
-      { id: 'primeiros-socorros-avancados', name: 'Primeiros Socorros Avançados', description: 'Quando usa Medicina para primeiros socorros, o alvo recupera +2d6 PV.', minNex: 5, isInitial: true },
-      { id: 'cirurgiao-campo', name: 'Cirurgião de Campo', description: 'Você pode tratar condições graves (como envenenamento e sangramento) com um teste de Medicina.', minNex: 25 },
-      { id: 'ressuscitador', name: 'Ressuscitador', description: 'Você pode estabilizar um aliado a 0 PV como ação de movimento.', minNex: 50 },
-      { id: 'medico-milagroso', name: 'Médico Milagroso', description: 'Quando usa primeiros socorros, o alvo também recupera 1d6 PE.', minNex: 75 },
-      { id: 'salva-vidas', name: 'Salva-Vidas', description: 'Uma vez por dia, pode trazer de volta um aliado que morreu há menos de 1 rodada.', minNex: 99 },
+      { id: 'medico-10', name: 'Habilidade NEX 10%', description: '[AGUARDANDO TEXTO OFICIAL] - Habilidade inicial da trilha Médico de Campo.', minNex: 10, isInitial: true },
+      { id: 'medico-40', name: 'Habilidade NEX 40%', description: '[AGUARDANDO TEXTO OFICIAL] - Segunda habilidade da trilha Médico de Campo.', minNex: 40 },
+      { id: 'medico-65', name: 'Habilidade NEX 65%', description: '[AGUARDANDO TEXTO OFICIAL] - Terceira habilidade da trilha Médico de Campo.', minNex: 65 },
+      { id: 'medico-99', name: 'Habilidade NEX 99%', description: '[AGUARDANDO TEXTO OFICIAL] - Quarta habilidade da trilha Médico de Campo.', minNex: 99 },
     ],
   },
   {
@@ -462,11 +459,10 @@ export const CLASS_TRACKS: ClassTrack[] = [
     classId: 'Especialista',
     description: 'Você resolve conflitos com palavras, não violência.',
     abilities: [
-      { id: 'diplomata-nato', name: 'Diplomata Nato', description: 'Você recebe +5 em Diplomacia e Intuição.', minNex: 5, isInitial: true },
-      { id: 'voz-calmante', name: 'Voz Calmante', description: 'Você pode gastar 2 PE para fazer um alvo hostil se tornar indiferente por uma cena.', minNex: 25 },
-      { id: 'leitor-pessoas', name: 'Leitor de Pessoas', description: 'Você automaticamente sabe quando alguém está mentindo.', minNex: 50 },
-      { id: 'palavras-poder', name: 'Palavras de Poder', description: 'Quando faz um teste de Diplomacia ou Intimidação e passa, pode gastar 3 PE para que o alvo obedeça uma ordem simples.', minNex: 75 },
-      { id: 'orador-lendario', name: 'Orador Lendário', description: 'Você pode convencer até mesmo criaturas irracionais ou do Outro Lado.', minNex: 99 },
+      { id: 'negociador-10', name: 'Habilidade NEX 10%', description: '[AGUARDANDO TEXTO OFICIAL] - Habilidade inicial da trilha Negociador.', minNex: 10, isInitial: true },
+      { id: 'negociador-40', name: 'Habilidade NEX 40%', description: '[AGUARDANDO TEXTO OFICIAL] - Segunda habilidade da trilha Negociador.', minNex: 40 },
+      { id: 'negociador-65', name: 'Habilidade NEX 65%', description: '[AGUARDANDO TEXTO OFICIAL] - Terceira habilidade da trilha Negociador.', minNex: 65 },
+      { id: 'negociador-99', name: 'Habilidade NEX 99%', description: '[AGUARDANDO TEXTO OFICIAL] - Quarta habilidade da trilha Negociador.', minNex: 99 },
     ],
   },
   {
@@ -475,26 +471,25 @@ export const CLASS_TRACKS: ClassTrack[] = [
     classId: 'Especialista',
     description: 'Você é o gênio tecnológico da equipe.',
     abilities: [
-      { id: 'inventar', name: 'Inventar', description: 'Você pode criar dispositivos improvisados com um teste de Tecnologia.', minNex: 5, isInitial: true },
-      { id: 'aprimorar-equipamento', name: 'Aprimorar Equipamento', description: 'Você pode gastar 2 PE para dar +2 de bônus a um item até o fim da cena.', minNex: 25 },
-      { id: 'sabotagem', name: 'Sabotagem', description: 'Você pode inutilizar equipamentos inimigos com um teste de Tecnologia.', minNex: 50 },
-      { id: 'super-invencao', name: 'Super Invenção', description: 'Suas invenções improvisadas têm efeitos dobrados.', minNex: 75 },
-      { id: 'tecnomante', name: 'Tecnomante', description: 'Você pode controlar dispositivos eletrônicos à distância.', minNex: 99 },
+      { id: 'tecnico-10', name: 'Habilidade NEX 10%', description: '[AGUARDANDO TEXTO OFICIAL] - Habilidade inicial da trilha Técnico.', minNex: 10, isInitial: true },
+      { id: 'tecnico-40', name: 'Habilidade NEX 40%', description: '[AGUARDANDO TEXTO OFICIAL] - Segunda habilidade da trilha Técnico.', minNex: 40 },
+      { id: 'tecnico-65', name: 'Habilidade NEX 65%', description: '[AGUARDANDO TEXTO OFICIAL] - Terceira habilidade da trilha Técnico.', minNex: 65 },
+      { id: 'tecnico-99', name: 'Habilidade NEX 99%', description: '[AGUARDANDO TEXTO OFICIAL] - Quarta habilidade da trilha Técnico.', minNex: 99 },
     ],
   },
 
   // === TRILHAS DO OCULTISTA ===
+  // Níveis corretos: 10% (1ª), 40% (2ª), 65% (3ª), 99% (4ª)
   {
     id: 'conduíte',
     name: 'Conduíte',
     classId: 'Ocultista',
     description: 'Você canaliza a energia do Outro Lado de forma bruta.',
     abilities: [
-      { id: 'canalizar', name: 'Canalizar', description: 'Você pode gastar 2 PE para causar 2d6 de dano paranormal em um alvo em alcance curto.', minNex: 5, isInitial: true },
-      { id: 'explosao-energia', name: 'Explosão de Energia', description: 'Seu Canalizar afeta todos os alvos em uma área de 3m de raio.', minNex: 25 },
-      { id: 'transcender', name: 'Transcender', description: 'Você pode gastar 5 PE para receber +5 em um teste de ritual.', minNex: 50 },
-      { id: 'surto-paranormal', name: 'Surto Paranormal', description: 'Seu Canalizar causa 4d6 de dano.', minNex: 75 },
-      { id: 'avatar', name: 'Avatar', description: 'Uma vez por dia, você pode se fundir com uma entidade do Outro Lado, recebendo +5 em todos os testes por 1 minuto.', minNex: 99 },
+      { id: 'conduite-10', name: 'Habilidade NEX 10%', description: '[AGUARDANDO TEXTO OFICIAL] - Habilidade inicial da trilha Conduíte.', minNex: 10, isInitial: true },
+      { id: 'conduite-40', name: 'Habilidade NEX 40%', description: '[AGUARDANDO TEXTO OFICIAL] - Segunda habilidade da trilha Conduíte.', minNex: 40 },
+      { id: 'conduite-65', name: 'Habilidade NEX 65%', description: '[AGUARDANDO TEXTO OFICIAL] - Terceira habilidade da trilha Conduíte.', minNex: 65 },
+      { id: 'conduite-99', name: 'Habilidade NEX 99%', description: '[AGUARDANDO TEXTO OFICIAL] - Quarta habilidade da trilha Conduíte.', minNex: 99 },
     ],
   },
   {
@@ -503,11 +498,10 @@ export const CLASS_TRACKS: ClassTrack[] = [
     classId: 'Ocultista',
     description: 'Você usa o próprio corpo como fonte de poder.',
     abilities: [
-      { id: 'sangue-poder', name: 'Sangue é Poder', description: 'Você pode gastar PV no lugar de PE para lançar rituais (1 para 1).', minNex: 5, isInitial: true },
-      { id: 'cicatriz-mistica', name: 'Cicatriz Mística', description: 'Quando usa PV para um ritual, causa +1d6 de dano.', minNex: 25 },
-      { id: 'dor-concentra', name: 'Dor Concentra', description: 'Quando está com menos da metade do PV, recebe +2 em rituais.', minNex: 50 },
-      { id: 'feridas-sagradas', name: 'Feridas Sagradas', description: 'Você pode gastar 5 PV para recuperar 2 PE.', minNex: 75 },
-      { id: 'sacrificio-supremo', name: 'Sacrifício Supremo', description: 'Você pode gastar metade do seu PV atual para dobrar o efeito de um ritual.', minNex: 99 },
+      { id: 'flagelador-10', name: 'Habilidade NEX 10%', description: '[AGUARDANDO TEXTO OFICIAL] - Habilidade inicial da trilha Flagelador.', minNex: 10, isInitial: true },
+      { id: 'flagelador-40', name: 'Habilidade NEX 40%', description: '[AGUARDANDO TEXTO OFICIAL] - Segunda habilidade da trilha Flagelador.', minNex: 40 },
+      { id: 'flagelador-65', name: 'Habilidade NEX 65%', description: '[AGUARDANDO TEXTO OFICIAL] - Terceira habilidade da trilha Flagelador.', minNex: 65 },
+      { id: 'flagelador-99', name: 'Habilidade NEX 99%', description: '[AGUARDANDO TEXTO OFICIAL] - Quarta habilidade da trilha Flagelador.', minNex: 99 },
     ],
   },
   {
@@ -516,11 +510,10 @@ export const CLASS_TRACKS: ClassTrack[] = [
     classId: 'Ocultista',
     description: 'Você estudou o paranormal de forma acadêmica.',
     abilities: [
-      { id: 'formacao-academica', name: 'Formação Acadêmica', description: 'Você recebe +5 em Ocultismo e conhece um ritual adicional.', minNex: 5, isInitial: true },
-      { id: 'pesquisador', name: 'Pesquisador', description: 'Você pode aprender rituais de círculos mais altos que o normal (até seu círculo +1).', minNex: 25 },
-      { id: 'especialista-rituais', name: 'Especialista em Rituais', description: 'O custo em PE dos seus rituais é reduzido em 2 (mínimo 1).', minNex: 50 },
-      { id: 'conhecimento-proibido', name: 'Conhecimento Proibido', description: 'Você conhece três rituais adicionais de qualquer círculo que possa lançar.', minNex: 75 },
-      { id: 'mestre-arcano', name: 'Mestre Arcano', description: 'Você pode lançar rituais de 1º e 2º círculo como ação livre.', minNex: 99 },
+      { id: 'graduado-10', name: 'Habilidade NEX 10%', description: '[AGUARDANDO TEXTO OFICIAL] - Habilidade inicial da trilha Graduado.', minNex: 10, isInitial: true },
+      { id: 'graduado-40', name: 'Habilidade NEX 40%', description: '[AGUARDANDO TEXTO OFICIAL] - Segunda habilidade da trilha Graduado.', minNex: 40 },
+      { id: 'graduado-65', name: 'Habilidade NEX 65%', description: '[AGUARDANDO TEXTO OFICIAL] - Terceira habilidade da trilha Graduado.', minNex: 65 },
+      { id: 'graduado-99', name: 'Habilidade NEX 99%', description: '[AGUARDANDO TEXTO OFICIAL] - Quarta habilidade da trilha Graduado.', minNex: 99 },
     ],
   },
   {
@@ -529,11 +522,10 @@ export const CLASS_TRACKS: ClassTrack[] = [
     classId: 'Ocultista',
     description: 'Seus poderes vêm da intuição e emoção.',
     abilities: [
-      { id: 'instinto-paranormal', name: 'Instinto Paranormal', description: 'Você pode usar Presença no lugar de Intelecto para testes de Ocultismo.', minNex: 5, isInitial: true },
-      { id: 'sexto-sentido', name: 'Sexto Sentido', description: 'Você sente presenças paranormais automaticamente em alcance médio.', minNex: 25 },
-      { id: 'empatia-sobrenatural', name: 'Empatia Sobrenatural', description: 'Você pode se comunicar telepaticamente com aliados em alcance curto.', minNex: 50 },
-      { id: 'premonicao', name: 'Premonição', description: 'Uma vez por dia, você pode prever o futuro próximo, recebendo +5 em iniciativa e não podendo ser surpreendido.', minNex: 75 },
-      { id: 'mente-expandida', name: 'Mente Expandida', description: 'Você pode lançar rituais sem gesticular ou falar.', minNex: 99 },
+      { id: 'intuitivo-10', name: 'Habilidade NEX 10%', description: '[AGUARDANDO TEXTO OFICIAL] - Habilidade inicial da trilha Intuitivo.', minNex: 10, isInitial: true },
+      { id: 'intuitivo-40', name: 'Habilidade NEX 40%', description: '[AGUARDANDO TEXTO OFICIAL] - Segunda habilidade da trilha Intuitivo.', minNex: 40 },
+      { id: 'intuitivo-65', name: 'Habilidade NEX 65%', description: '[AGUARDANDO TEXTO OFICIAL] - Terceira habilidade da trilha Intuitivo.', minNex: 65 },
+      { id: 'intuitivo-99', name: 'Habilidade NEX 99%', description: '[AGUARDANDO TEXTO OFICIAL] - Quarta habilidade da trilha Intuitivo.', minNex: 99 },
     ],
   },
   {
@@ -542,11 +534,10 @@ export const CLASS_TRACKS: ClassTrack[] = [
     classId: 'Ocultista',
     description: 'Você combina magia e combate corpo a corpo.',
     abilities: [
-      { id: 'arma-imbuida', name: 'Arma Imbuída', description: 'Você pode gastar 2 PE para que sua arma cause +1d6 de dano paranormal por uma cena.', minNex: 5, isInitial: true },
-      { id: 'golpe-mistico', name: 'Golpe Místico', description: 'Quando acerta um ataque com arma imbuída, pode gastar 1 PE para empurrar o alvo 3m.', minNex: 25 },
-      { id: 'arma-elemental', name: 'Arma Elemental', description: 'Sua arma imbuída causa dano de um elemento à sua escolha (fogo, frio, eletricidade, etc).', minNex: 50 },
-      { id: 'contra-ataque-mistico', name: 'Contra-ataque Místico', description: 'Quando é atacado em corpo a corpo, pode gastar sua reação e 2 PE para fazer um ataque.', minNex: 75 },
-      { id: 'avatar-lamina', name: 'Avatar da Lâmina', description: 'Sua arma imbuída causa +3d6 de dano paranormal e você recebe +2 em ataques.', minNex: 99 },
+      { id: 'lamina-10', name: 'Habilidade NEX 10%', description: '[AGUARDANDO TEXTO OFICIAL] - Habilidade inicial da trilha Lâmina Paranormal.', minNex: 10, isInitial: true },
+      { id: 'lamina-40', name: 'Habilidade NEX 40%', description: '[AGUARDANDO TEXTO OFICIAL] - Segunda habilidade da trilha Lâmina Paranormal.', minNex: 40 },
+      { id: 'lamina-65', name: 'Habilidade NEX 65%', description: '[AGUARDANDO TEXTO OFICIAL] - Terceira habilidade da trilha Lâmina Paranormal.', minNex: 65 },
+      { id: 'lamina-99', name: 'Habilidade NEX 99%', description: '[AGUARDANDO TEXTO OFICIAL] - Quarta habilidade da trilha Lâmina Paranormal.', minNex: 99 },
     ],
   },
   // Adiciona as trilhas do suplemento "Sobrevivendo ao Horror"
@@ -604,27 +595,30 @@ export interface NexProgressionData {
   trackAbilityUnlocks: number; // Habilidades de trilha desbloqueadas
 }
 
+// NEX_PROGRESSION corrigido conforme regras oficiais:
+// - Primeiro ponto de atributo extra só no NEX 20%
+// - trackAbilityUnlocks: máximo de 4 (NEX 10%, 40%, 65%, 99%)
 export const NEX_PROGRESSION: Record<number, NexProgressionData> = {
-  5:  { attributePoints: 0, extraSkills: 0, abilityChoices: 1, trackAbilityUnlocks: 1 },
-  10: { attributePoints: 0, extraSkills: 1, abilityChoices: 1, trackAbilityUnlocks: 1 },
-  15: { attributePoints: 1, extraSkills: 1, abilityChoices: 1, trackAbilityUnlocks: 1 },
-  20: { attributePoints: 1, extraSkills: 2, abilityChoices: 2, trackAbilityUnlocks: 1 },
-  25: { attributePoints: 2, extraSkills: 2, abilityChoices: 2, trackAbilityUnlocks: 2 },
-  30: { attributePoints: 2, extraSkills: 3, abilityChoices: 2, trackAbilityUnlocks: 2 },
-  35: { attributePoints: 3, extraSkills: 3, abilityChoices: 3, trackAbilityUnlocks: 2 },
-  40: { attributePoints: 3, extraSkills: 4, abilityChoices: 3, trackAbilityUnlocks: 2 },
-  45: { attributePoints: 4, extraSkills: 4, abilityChoices: 3, trackAbilityUnlocks: 2 },
-  50: { attributePoints: 4, extraSkills: 5, abilityChoices: 4, trackAbilityUnlocks: 3 },
-  55: { attributePoints: 5, extraSkills: 5, abilityChoices: 4, trackAbilityUnlocks: 3 },
-  60: { attributePoints: 5, extraSkills: 6, abilityChoices: 4, trackAbilityUnlocks: 3 },
-  65: { attributePoints: 6, extraSkills: 6, abilityChoices: 5, trackAbilityUnlocks: 3 },
+  5:  { attributePoints: 0, extraSkills: 0, abilityChoices: 1, trackAbilityUnlocks: 0 },  // Sem habilidade de trilha ainda
+  10: { attributePoints: 0, extraSkills: 1, abilityChoices: 1, trackAbilityUnlocks: 1 },  // 1ª habilidade de trilha
+  15: { attributePoints: 0, extraSkills: 1, abilityChoices: 1, trackAbilityUnlocks: 1 },  // CORRIGIDO: 0 pontos extras
+  20: { attributePoints: 1, extraSkills: 2, abilityChoices: 2, trackAbilityUnlocks: 1 },  // Primeiro ponto de atributo
+  25: { attributePoints: 1, extraSkills: 2, abilityChoices: 2, trackAbilityUnlocks: 1 },
+  30: { attributePoints: 2, extraSkills: 3, abilityChoices: 2, trackAbilityUnlocks: 1 },
+  35: { attributePoints: 2, extraSkills: 3, abilityChoices: 3, trackAbilityUnlocks: 1 },
+  40: { attributePoints: 3, extraSkills: 4, abilityChoices: 3, trackAbilityUnlocks: 2 },  // 2ª habilidade de trilha
+  45: { attributePoints: 3, extraSkills: 4, abilityChoices: 3, trackAbilityUnlocks: 2 },
+  50: { attributePoints: 4, extraSkills: 5, abilityChoices: 4, trackAbilityUnlocks: 2 },
+  55: { attributePoints: 4, extraSkills: 5, abilityChoices: 4, trackAbilityUnlocks: 2 },
+  60: { attributePoints: 5, extraSkills: 6, abilityChoices: 4, trackAbilityUnlocks: 2 },
+  65: { attributePoints: 5, extraSkills: 6, abilityChoices: 5, trackAbilityUnlocks: 3 },  // 3ª habilidade de trilha
   70: { attributePoints: 6, extraSkills: 7, abilityChoices: 5, trackAbilityUnlocks: 3 },
-  75: { attributePoints: 7, extraSkills: 7, abilityChoices: 5, trackAbilityUnlocks: 4 },
-  80: { attributePoints: 7, extraSkills: 8, abilityChoices: 6, trackAbilityUnlocks: 4 },
-  85: { attributePoints: 8, extraSkills: 8, abilityChoices: 6, trackAbilityUnlocks: 4 },
-  90: { attributePoints: 8, extraSkills: 9, abilityChoices: 6, trackAbilityUnlocks: 4 },
-  95: { attributePoints: 9, extraSkills: 9, abilityChoices: 7, trackAbilityUnlocks: 4 },
-  99: { attributePoints: 10, extraSkills: 10, abilityChoices: 7, trackAbilityUnlocks: 5 },
+  75: { attributePoints: 6, extraSkills: 7, abilityChoices: 5, trackAbilityUnlocks: 3 },
+  80: { attributePoints: 7, extraSkills: 8, abilityChoices: 6, trackAbilityUnlocks: 3 },
+  85: { attributePoints: 7, extraSkills: 8, abilityChoices: 6, trackAbilityUnlocks: 3 },
+  90: { attributePoints: 8, extraSkills: 9, abilityChoices: 6, trackAbilityUnlocks: 3 },
+  95: { attributePoints: 8, extraSkills: 9, abilityChoices: 7, trackAbilityUnlocks: 3 },
+  99: { attributePoints: 9, extraSkills: 10, abilityChoices: 7, trackAbilityUnlocks: 4 },  // 4ª habilidade de trilha
 };
 
 /**
