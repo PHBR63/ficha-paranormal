@@ -44,6 +44,8 @@ import { ParanormalPowerSelectModal } from '@/components/character/ParanormalPow
 import { ConditionManager, type ActiveCondition } from '@/components/character/ConditionManager';
 import { RestModal } from '@/components/character/RestModal';
 import { calculateDerivedStats } from '@/lib/character-data';
+import { AffinitySelectorCard } from '@/components/character/AffinitySelectorCard';
+import { useParanormalEffects } from '@/hooks/useParanormalEffects';
 
 // Novos componentes do redesign 2.0 (estilo ficha de papel)
 import { CharacterSheetHeader } from '@/components/character/CharacterSheetHeader';
@@ -573,9 +575,60 @@ export default function CharacterSheet() {
 
   if (!character) return null;
 
+  // Calcula bônus de poderes paranormais
+  const paranormalEffects = useParanormalEffects({
+    powers: (character.paranormal_powers || []).map(p => {
+      const fullPower = PARANORMAL_POWERS.find(fp => fp.id === p.id);
+      return fullPower || {
+        id: p.id,
+        name: p.name,
+        element: p.element as ParanormalElement | 'generic',
+        description: p.description,
+        effect: { type: 'special' as const, description: p.description },
+      };
+    }),
+    nex: character.nex,
+    elementalAffinity: character.elemental_affinity as ParanormalElement | null,
+    affinityActive: character.affinity_active,
+  });
+
   // Verificar sanidade baixa para efeito visual
   const sanPercentage = (sanCurrent / character.san_max) * 100;
   const isSanLow = sanPercentage < 30;
+  
+  // Verificar se precisa escolher afinidade elemental (NEX >= 50 e sem afinidade)
+  const needsAffinitySelection = character.nex >= 50 && !character.elemental_affinity;
+
+  // Handler para salvar afinidade elemental
+  const handleSelectAffinity = async (element: ParanormalElement) => {
+    const { error } = await supabase
+      .from('characters')
+      .update({ 
+        elemental_affinity: element,
+        affinity_active: true 
+      })
+      .eq('id', character.id);
+
+    if (error) {
+      toast({
+        title: 'Erro ao salvar afinidade',
+        description: error.message,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setCharacter(prev => prev ? { 
+      ...prev, 
+      elemental_affinity: element,
+      affinity_active: true 
+    } : null);
+
+    toast({
+      title: 'Afinidade Elemental definida!',
+      description: `Você agora tem afinidade com ${element}.`,
+    });
+  };
 
   // Preparar atributos
   const attributes = {
@@ -720,9 +773,20 @@ export default function CharacterSheet() {
                 sanMax={character.san_max}
                 defense={character.defense}
                 movement={character.movement || 9}
+                hpBonus={paranormalEffects.hpBonus}
+                peBonus={paranormalEffects.peBonus}
+                defenseBonus={paranormalEffects.defenseBonus}
                 onStatsChange={handleCombatStatsChange}
                 onLevelUp={() => setNexModalOpen(true)}
               />
+
+              {/* Seletor de Afinidade Elemental (se NEX >= 50 e sem afinidade) */}
+              {needsAffinitySelection && (
+                <AffinitySelectorCard
+                  nex={character.nex}
+                  onSelectAffinity={handleSelectAffinity}
+                />
+              )}
 
               {/* Dados Pessoais (acordeão) */}
               <PersonalDataAccordion
