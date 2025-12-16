@@ -181,7 +181,8 @@ export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) 
           </motion.div>
         )}
 
-        <div className="grid md:grid-cols-2 gap-6">
+        {/* Layout responsivo: 1 coluna em telas menores, 2 em lg+ */}
+        <div className="grid lg:grid-cols-2 gap-6 max-w-6xl mx-auto">
           {/* Core Abilities */}
           <div className="space-y-4">
             <div className="flex items-center gap-2">
@@ -192,7 +193,7 @@ export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) 
               Concedidas automaticamente pela classe e NEX
             </p>
             
-            <ScrollArea className="h-[400px] pr-4">
+            <ScrollArea className="h-[450px] pr-4">
               <div className="space-y-3">
                 <AnimatePresence>
                   {coreAbilities.map((ability, index) => {
@@ -325,7 +326,7 @@ export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) 
               Escolha {maxChoices} habilidade{maxChoices !== 1 ? 's' : ''} adicionai{maxChoices !== 1 ? 's' : ''}
             </p>
             
-            <ScrollArea className="h-[400px] pr-4">
+            <ScrollArea className="h-[450px] pr-4">
               <div className="space-y-3">
                 <AnimatePresence>
                   {choosableAbilities.map((ability, index) => {
