@@ -219,28 +219,42 @@ function RitualCard({
               </div>
               <p className="text-xs text-foreground">{ritual.description}</p>
               
-              {/* Aprimoramentos */}
+              {/* Aprimoramentos detalhados */}
               {ritual.enhancements && ritual.enhancements.length > 0 && (
-                <div className="space-y-1">
+                <div className="space-y-2">
                   <h5 className="text-xs font-medium text-primary flex items-center gap-1">
                     <Sparkles className="w-3 h-3" />
                     Aprimoramentos
                   </h5>
-                  <ul className="space-y-1">
-                    {ritual.enhancements.slice(0, 2).map((enh, idx) => (
-                      <li key={idx} className="text-xs text-muted-foreground flex gap-1">
-                        <Badge variant="secondary" className="text-[10px] shrink-0">
-                          +{enh.cost} PE
-                        </Badge>
-                        <span className="line-clamp-1">{enh.description}</span>
-                      </li>
+                  <div className="space-y-2">
+                    {ritual.enhancements.map((enh, idx) => (
+                      <div key={idx} className="p-2 rounded bg-muted/30 border border-border/50">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Badge 
+                            variant="outline" 
+                            className={`text-[10px] font-semibold ${
+                              enh.name === 'Verdadeiro' 
+                                ? 'bg-amber-500/20 text-amber-300 border-amber-500/50' 
+                                : 'bg-blue-500/20 text-blue-300 border-blue-500/50'
+                            }`}
+                          >
+                            {enh.name}
+                          </Badge>
+                          <Badge variant="secondary" className="text-[10px]">
+                            +{enh.cost} PE
+                          </Badge>
+                          {enh.requirements && (
+                            <span className="text-[10px] text-yellow-400 italic">
+                              ({enh.requirements})
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          {enh.description}
+                        </p>
+                      </div>
                     ))}
-                    {ritual.enhancements.length > 2 && (
-                      <li className="text-xs text-muted-foreground">
-                        +{ritual.enhancements.length - 2} aprimoramentos...
-                      </li>
-                    )}
-                  </ul>
+                  </div>
                 </div>
               )}
             </div>
