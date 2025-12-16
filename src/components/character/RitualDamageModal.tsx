@@ -122,6 +122,7 @@ interface RitualDamageModalProps {
   enhancements: string[];
   onApplyDamage?: (result: RitualDamageResult) => void;
   onApplyHealing?: (result: RitualHealingResult) => void;
+  onRequestResistance?: (damage: number) => void; // Callback para solicitar teste de resistência
   onClose?: () => void;
 }
 
@@ -132,6 +133,7 @@ export function RitualDamageModal({
   enhancements,
   onApplyDamage,
   onApplyHealing,
+  onRequestResistance,
   onClose,
 }: RitualDamageModalProps) {
   // Estado do resultado da rolagem
@@ -434,28 +436,41 @@ export function RitualDamageModal({
             </AnimatePresence>
           </div>
 
-          {/* Informações de resistência */}
+          {/* Informações de resistência com botão */}
           {activeEffect.resistance && damageResult && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
-              className="mt-4 p-3 rounded-lg bg-muted/50 border border-border"
+              className="mt-4 p-3 rounded-lg bg-warning/10 border border-warning/30"
             >
-              <div className="flex items-center gap-2 text-sm">
-                <Shield className="w-4 h-4 text-muted-foreground" />
-                <span className="text-muted-foreground">Resistência:</span>
-                <Badge variant="outline" className="capitalize">
-                  {activeEffect.resistance.type}
-                </Badge>
-                <span className="text-xs text-muted-foreground">
-                  ({activeEffect.resistance.effect === 'anula' 
-                    ? 'Anula' 
-                    : activeEffect.resistance.effect === 'parcial'
-                      ? 'Parcial: metade dano ou evita condição'
-                      : 'Reduz à metade'})
-                </span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm">
+                  <Shield className="w-4 h-4 text-warning" />
+                  <span className="text-muted-foreground">Resistência:</span>
+                  <Badge variant="outline" className="capitalize">
+                    {activeEffect.resistance.type}
+                  </Badge>
+                </div>
+                {onRequestResistance && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => onRequestResistance(damageResult.total)}
+                    className="gap-1 h-7 text-xs border-warning/50 hover:bg-warning/10"
+                  >
+                    <Target className="w-3 h-3" />
+                    Testar
+                  </Button>
+                )}
               </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                {activeEffect.resistance.effect === 'anula' 
+                  ? 'Sucesso anula completamente o efeito' 
+                  : activeEffect.resistance.effect === 'parcial'
+                    ? 'Sucesso reduz dano à metade ou evita condição'
+                    : 'Sucesso reduz dano à metade'}
+              </p>
             </motion.div>
           )}
 

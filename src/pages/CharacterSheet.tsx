@@ -75,9 +75,10 @@ import { SheetAccordionSection, SheetAccordionItem } from '@/components/characte
 import { RitualCard } from '@/components/character/RitualCard';
 import { RitualCastModal } from '@/components/character/RitualCastModal';
 import { RitualDamageModal, RitualDamageResult, RitualHealingResult } from '@/components/character/RitualDamageModal';
+import { ResistanceCheckModal, ResistanceCheckResult } from '@/components/character/ResistanceCheckModal';
 import { RitualCastHistory, RitualCastRecord } from '@/components/character/RitualCastHistory';
 import { Ritual } from '@/lib/rituals-data';
-import { getActiveRitualEffect, ritualDealsDamage } from '@/lib/ritual-effects';
+import { getActiveRitualEffect, ritualDealsDamage, RitualEffect } from '@/lib/ritual-effects';
 
 // Componentes existentes que ainda usamos
 import { CharacterSheetHelp } from '@/components/character/CharacterSheetHelp';
@@ -208,6 +209,11 @@ export default function CharacterSheet() {
   const [damageModalOpen, setDamageModalOpen] = useState(false);
   const [ritualForDamage, setRitualForDamage] = useState<Ritual | null>(null);
   const [ritualEnhancements, setRitualEnhancements] = useState<string[]>([]);
+  const [pendingDamage, setPendingDamage] = useState<number>(0);
+  
+  // Modal de resistência (Fase 4)
+  const [resistanceModalOpen, setResistanceModalOpen] = useState(false);
+  const [resistanceEffect, setResistanceEffect] = useState<RitualEffect | null>(null);
   
   // Histórico de rituais conjurados na sessão
   const [castHistory, setCastHistory] = useState<RitualCastRecord[]>([]);
@@ -1808,9 +1814,49 @@ export default function CharacterSheet() {
             });
           }
         }}
+        onRequestResistance={(damage) => {
+          // Abre o modal de resistência com o dano atual
+          setPendingDamage(damage);
+          const effect = ritualForDamage ? getActiveRitualEffect(ritualForDamage.id, ritualEnhancements) : null;
+          setResistanceEffect(effect || null);
+          setResistanceModalOpen(true);
+        }}
         onClose={() => {
           setRitualForDamage(null);
           setRitualEnhancements([]);
+        }}
+      />
+
+      {/* Modal de teste de resistência (Fase 4) */}
+      <ResistanceCheckModal
+        open={resistanceModalOpen}
+        onOpenChange={setResistanceModalOpen}
+        ritual={ritualForDamage}
+        effect={resistanceEffect}
+        damage={pendingDamage}
+        targetAttributes={{
+          vigor: character.vigor,
+          agility: character.agility,
+          presence: character.presence,
+        }}
+        onResult={(result, adjustedDamage) => {
+          if (result.passed) {
+            toast({
+              title: `Resistência bem-sucedida!`,
+              description: adjustedDamage !== undefined 
+                ? `Dano reduzido: ${pendingDamage} → ${adjustedDamage}`
+                : `Efeito evitado ou reduzido`,
+            });
+          } else {
+            toast({
+              title: `Resistência falhou!`,
+              description: `Dano total: ${pendingDamage}`,
+              variant: 'destructive',
+            });
+          }
+          setResistanceModalOpen(false);
+          setPendingDamage(0);
+          setResistanceEffect(null);
         }}
       />
     </div>
