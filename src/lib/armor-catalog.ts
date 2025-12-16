@@ -1,203 +1,200 @@
 /**
- * Catálogo de Equipamentos de Proteção - Ordem Paranormal RPG
- * Contém armaduras, coletes e escudos com RD e penalidades
+ * Catálogo de Proteções - Ordem Paranormal RPG
+ * Baseado EXATAMENTE no livro de regras oficial (Tabela 3.6, pg. 93)
+ * 
+ * IMPORTANTE: O livro tem apenas 3 tipos de proteção base:
+ * - Proteção Leve (+5 Defesa, Cat I, 5 espaços)
+ * - Proteção Pesada (+10 Defesa, Cat II, 5 espaços) 
+ * - Escudo (+2 Defesa, Cat I, 2 espaços)
+ * 
+ * Modificações podem ser aplicadas para criar variações.
  */
+
+// Tipo de modificação de proteção
+export type ArmorModification = 'antibombas' | 'blindada' | 'discreta' | 'reforcada';
+
+// Interface para modificações
+export interface ArmorModificationData {
+  id: ArmorModification;
+  name: string;
+  description: string;
+  effect: string;
+  applicableTo: ('leve' | 'pesada' | 'escudo')[];
+  defenseBonus?: number;
+  spacesModifier?: number;
+  rdBonus?: number;
+}
 
 // Interface para equipamentos de proteção
 export interface CatalogArmor {
   id: string;
   name: string;
   type: 'leve' | 'pesada' | 'escudo';
-  rd: number; // Resistência a Dano
-  agilityPenalty: number; // Penalidade em Agilidade
-  speedPenalty: number; // Penalidade em Deslocamento (metros)
-  category: 'I' | 'II' | 'III' | 'IV';
+  defenseBonus: number; // Bônus de Defesa fornecido pela proteção
+  rd?: number; // Resistência a Dano (apenas Proteção Pesada tem RD 2 contra balístico, corte, impacto e perfuração)
+  agilityPenalty: number; // Penalidade em testes de perícias que sofrem penalidade de carga
+  category: 'I' | 'II';
   spaces: number;
   description: string;
   special?: string;
+  modifications?: ArmorModification[];
 }
 
-// ==================== PROTEÇÕES LEVES ====================
-export const LIGHT_ARMORS: CatalogArmor[] = [
+// ==================== MODIFICAÇÕES PARA PROTEÇÕES ====================
+// Tabela 3.7: Modificações para Proteções (pg. 93)
+
+export const ARMOR_MODIFICATIONS: ArmorModificationData[] = [
   {
-    id: 'colete_kevlar',
-    name: 'Colete de Kevlar',
+    id: 'antibombas',
+    name: 'Antibombas',
+    description: 'Quimicamente tratada para resistir ao calor e revestida de preenchimentos para amortecer estilhaços. Acompanha um capacete com viseira para proteger da luz e barulho de explosões.',
+    effect: '+5 em testes de resistência contra efeitos de área',
+    applicableTo: ['pesada'], // Só pode ser aplicada em proteções pesadas
+  },
+  {
+    id: 'blindada',
+    name: 'Blindada',
+    description: 'Reforçada com placas de aço e cerâmica costuradas dentro das camadas de kevlar. Aumenta a resistência a dano para 5 e o espaço ocupado em +1.',
+    effect: 'Aumenta RD para 5 e espaço em +1',
+    applicableTo: ['pesada'], // Só pode ser aplicada em proteções pesadas
+    rdBonus: 3, // RD 2 -> 5
+    spacesModifier: 1,
+  },
+  {
+    id: 'discreta',
+    name: 'Discreta',
+    description: 'Colete compacto feito com kevlar denso para reduzir o volume. Reduz o número de espaços ocupados em 1, fornece +5 em testes de Crime para ser ocultada e permite que você faça esse teste mesmo que não seja treinado na perícia.',
+    effect: '+5 em testes de ocultar e reduz o espaço em -1',
+    applicableTo: ['leve'], // Só pode ser aplicada em proteções leves
+    spacesModifier: -1,
+  },
+  {
+    id: 'reforcada',
+    name: 'Reforçada',
+    description: 'Aumenta a Defesa fornecida em +2 e o espaço ocupado em +1. Uma proteção não pode ser reforçada e discreta ao mesmo tempo.',
+    effect: 'Aumenta a Defesa em +2 e o espaço em +1',
+    applicableTo: ['leve', 'pesada'],
+    defenseBonus: 2,
+    spacesModifier: 1,
+  },
+];
+
+// ==================== PROTEÇÕES BASE ====================
+// Conforme Tabela 3.6: Proteções (pg. 93)
+
+export const BASE_ARMORS: CatalogArmor[] = [
+  {
+    id: 'protecao_leve',
+    name: 'Proteção Leve',
     type: 'leve',
+    defenseBonus: 5,
+    agilityPenalty: 0,
+    category: 'I',
+    spaces: 5,
+    description: 'Jaqueta de couro pesada ou um colete de kevlar. Essa proteção é tipicamente usada por seguranças e policiais.',
+  },
+  {
+    id: 'protecao_pesada',
+    name: 'Proteção Pesada',
+    type: 'pesada',
+    defenseBonus: 10,
+    rd: 2, // Resistência a balístico, corte, impacto e perfuração 2
+    agilityPenalty: -5, // -5 em testes de perícias que sofrem penalidade de carga
+    category: 'II',
+    spaces: 5,
+    description: 'Equipamento usado por forças especiais da polícia e pelo exército. Consiste de capacete, ombreiras, joelheiras e caneleiras, além de um colete com várias camadas de kevlar. Fornece resistência a balístico, corte, impacto e perfuração 2. No entanto, por ser desconfortável e volumosa, impõe -5 em testes de perícias que sofrem penalidade de carga.',
+    special: 'Resistência a balístico, corte, impacto e perfuração 2. -5 em testes de perícias com penalidade de carga.',
+  },
+  {
+    id: 'escudo',
+    name: 'Escudo',
+    type: 'escudo',
+    defenseBonus: 2,
+    agilityPenalty: 0,
+    category: 'I',
+    spaces: 2,
+    description: 'Um escudo medieval ou moderno, como aqueles usados por tropas de choque. Precisa ser empunhado em uma mão e fornece Defesa +2. Bônus na Defesa fornecido por um escudo acumula com o de uma proteção. Para efeitos de proficiência e penalidade por não proficiência, escudos contam como proteção pesada.',
+    special: 'Empunhado em uma mão. Bônus acumula com proteção. Conta como proteção pesada para proficiência.',
+  },
+];
+
+// ==================== PROTEÇÕES COM MODIFICAÇÕES PRÉ-DEFINIDAS ====================
+// Estas são combinações comuns de proteção + modificação
+
+export const MODIFIED_ARMORS: CatalogArmor[] = [
+  // Proteção Leve Discreta (Cat I por modificação -> Cat II)
+  {
+    id: 'protecao_leve_discreta',
+    name: 'Proteção Leve Discreta',
+    type: 'leve',
+    defenseBonus: 5,
+    agilityPenalty: 0,
+    category: 'II', // Modificação aumenta categoria em 1
+    spaces: 4, // 5 - 1
+    description: 'Colete compacto feito com kevlar denso para reduzir o volume. Pode ser ocultado sob roupas.',
+    special: '+5 em testes de Crime para ocultar, mesmo sem treinamento.',
+    modifications: ['discreta'],
+  },
+  // Proteção Leve Reforçada (Cat I -> Cat II)
+  {
+    id: 'protecao_leve_reforcada',
+    name: 'Proteção Leve Reforçada',
+    type: 'leve',
+    defenseBonus: 7, // 5 + 2
+    agilityPenalty: 0,
+    category: 'II',
+    spaces: 6, // 5 + 1
+    description: 'Colete de kevlar com placas adicionais para maior proteção.',
+    modifications: ['reforcada'],
+  },
+  // Proteção Pesada Antibombas (Cat II -> Cat III)
+  {
+    id: 'protecao_pesada_antibombas',
+    name: 'Proteção Pesada Antibombas',
+    type: 'pesada',
+    defenseBonus: 10,
     rd: 2,
-    agilityPenalty: 0,
-    speedPenalty: 0,
-    category: 'I',
-    spaces: 2,
-    description: 'Colete leve e discreto, feito de fibras de kevlar. Pode ser usado sob roupas.',
-    special: 'Discreto: pode ser escondido sob roupas comuns.'
-  },
-  {
-    id: 'colete_tatico',
-    name: 'Colete Tático',
-    type: 'leve',
-    rd: 4,
-    agilityPenalty: 0,
-    speedPenalty: 0,
-    category: 'I',
-    spaces: 2,
-    description: 'Colete tático padrão da Ordem, com bolsos para equipamentos.',
-    special: 'Possui bolsos que permitem carregar 2 itens de categoria 0.'
-  },
-  {
-    id: 'jaqueta_couro',
-    name: 'Jaqueta de Couro Reforçada',
-    type: 'leve',
-    rd: 1,
-    agilityPenalty: 0,
-    speedPenalty: 0,
-    category: 'I',
-    spaces: 1,
-    description: 'Jaqueta de couro reforçada com placas discretas.',
-    special: 'Discreto: parece uma jaqueta comum.'
-  },
-  {
-    id: 'roupa_tatica',
-    name: 'Roupa Tática Leve',
-    type: 'leve',
-    rd: 3,
-    agilityPenalty: 0,
-    speedPenalty: 0,
-    category: 'II',
-    spaces: 2,
-    description: 'Conjunto de roupa tática com proteção em áreas vitais.',
-  },
-  {
-    id: 'colete_policial',
-    name: 'Colete Policial',
-    type: 'leve',
-    rd: 5,
-    agilityPenalty: -1,
-    speedPenalty: 0,
-    category: 'II',
-    spaces: 3,
-    description: 'Colete balístico de uso policial, mais robusto que o kevlar comum.',
-  }
-];
-
-// ==================== PROTEÇÕES PESADAS ====================
-export const HEAVY_ARMORS: CatalogArmor[] = [
-  {
-    id: 'colete_tactico_pesado',
-    name: 'Colete Tático Pesado',
-    type: 'pesada',
-    rd: 6,
-    agilityPenalty: -2,
-    speedPenalty: -1.5,
-    category: 'II',
-    spaces: 4,
-    description: 'Colete pesado com placas cerâmicas de alta resistência.',
-  },
-  {
-    id: 'armadura_riot',
-    name: 'Armadura de Choque',
-    type: 'pesada',
-    rd: 8,
-    agilityPenalty: -3,
-    speedPenalty: -3,
-    category: 'III',
-    spaces: 5,
-    description: 'Armadura completa usada por forças de choque, cobre todo o corpo.',
-    special: 'Resistência +2 contra dano de impacto.'
-  },
-  {
-    id: 'armadura_tatica_completa',
-    name: 'Armadura Tática Completa',
-    type: 'pesada',
-    rd: 7,
-    agilityPenalty: -2,
-    speedPenalty: -1.5,
-    category: 'III',
-    spaces: 5,
-    description: 'Armadura corporal completa usada por operações especiais.',
-  },
-  {
-    id: 'armadura_eod',
-    name: 'Armadura EOD',
-    type: 'pesada',
-    rd: 10,
     agilityPenalty: -5,
-    speedPenalty: -4.5,
-    category: 'IV',
-    spaces: 8,
-    description: 'Armadura de desarmamento de explosivos, extremamente pesada.',
-    special: 'Resistência +5 contra dano de fogo e explosão.'
+    category: 'II', // Nota: no livro modificações aumentam categoria em I
+    spaces: 5,
+    description: 'Armadura pesada tratada quimicamente para resistir ao calor e estilhaços. Inclui capacete com viseira.',
+    special: 'Resistência a balístico, corte, impacto e perfuração 2. +5 em testes de resistência contra efeitos de área.',
+    modifications: ['antibombas'],
   },
+  // Proteção Pesada Blindada (Cat II -> Cat III)
   {
-    id: 'exoesqueleto_ordem',
-    name: 'Exoesqueleto da Ordem',
+    id: 'protecao_pesada_blindada',
+    name: 'Proteção Pesada Blindada',
     type: 'pesada',
-    rd: 12,
-    agilityPenalty: -1,
-    speedPenalty: 0,
-    category: 'IV',
-    spaces: 10,
-    description: 'Exoesqueleto motorizado experimental da Ordem, combina proteção com mobilidade.',
-    special: 'Força +2 para testes de Luta e carregar peso. Requer bateria (8 horas de uso).'
-  }
-];
-
-// ==================== ESCUDOS ====================
-export const SHIELDS: CatalogArmor[] = [
-  {
-    id: 'escudo_riot',
-    name: 'Escudo de Choque',
-    type: 'escudo',
-    rd: 4,
-    agilityPenalty: -1,
-    speedPenalty: 0,
+    defenseBonus: 10,
+    rd: 5, // 2 + 3
+    agilityPenalty: -5,
     category: 'II',
-    spaces: 3,
-    description: 'Escudo transparente usado por forças de choque.',
-    special: 'Defesa +2 contra ataques à distância vindos da frente. Ocupa uma mão.'
+    spaces: 6, // 5 + 1
+    description: 'Armadura pesada reforçada com placas de aço e cerâmica. Proteção máxima.',
+    special: 'Resistência a balístico, corte, impacto e perfuração 5.',
+    modifications: ['blindada'],
   },
+  // Proteção Pesada Reforçada (Cat II -> Cat III)
   {
-    id: 'escudo_balistico',
-    name: 'Escudo Balístico',
-    type: 'escudo',
-    rd: 6,
-    agilityPenalty: -2,
-    speedPenalty: -1.5,
-    category: 'III',
-    spaces: 4,
-    description: 'Escudo balístico pesado, capaz de deter projéteis de grosso calibre.',
-    special: 'Defesa +4 contra ataques à distância vindos da frente. Ocupa uma mão.'
+    id: 'protecao_pesada_reforcada',
+    name: 'Proteção Pesada Reforçada',
+    type: 'pesada',
+    defenseBonus: 12, // 10 + 2
+    rd: 2,
+    agilityPenalty: -5,
+    category: 'II',
+    spaces: 6, // 5 + 1
+    description: 'Armadura pesada com camadas extras de proteção.',
+    special: 'Resistência a balístico, corte, impacto e perfuração 2.',
+    modifications: ['reforcada'],
   },
-  {
-    id: 'escudo_tatico',
-    name: 'Escudo Tático',
-    type: 'escudo',
-    rd: 3,
-    agilityPenalty: 0,
-    speedPenalty: 0,
-    category: 'I',
-    spaces: 2,
-    description: 'Escudo leve e compacto para operações táticas.',
-    special: 'Defesa +1 contra ataques corpo a corpo. Ocupa uma mão.'
-  },
-  {
-    id: 'escudo_paranormal',
-    name: 'Escudo Paranormal',
-    type: 'escudo',
-    rd: 5,
-    agilityPenalty: 0,
-    speedPenalty: 0,
-    category: 'IV',
-    spaces: 3,
-    description: 'Escudo imbuído com energia paranormal, capaz de bloquear ataques sobrenaturais.',
-    special: 'Defesa +2 contra rituais e ataques paranormais. Ocupa uma mão. Requer 1 PE por cena para ativar.'
-  }
 ];
 
 // Catálogo completo de proteções
 export const ALL_ARMORS: CatalogArmor[] = [
-  ...LIGHT_ARMORS,
-  ...HEAVY_ARMORS,
-  ...SHIELDS
+  ...BASE_ARMORS,
+  ...MODIFIED_ARMORS,
 ];
 
 // Função para buscar proteção por ID
@@ -220,12 +217,41 @@ export function formatPenalties(armor: CatalogArmor): string {
   const penalties: string[] = [];
   
   if (armor.agilityPenalty !== 0) {
-    penalties.push(`AGI ${armor.agilityPenalty}`);
-  }
-  
-  if (armor.speedPenalty !== 0) {
-    penalties.push(`Desl. ${armor.speedPenalty}m`);
+    penalties.push(`${armor.agilityPenalty} em perícias com penalidade de carga`);
   }
   
   return penalties.length > 0 ? penalties.join(', ') : 'Nenhuma';
 }
+
+// Função para obter modificação por ID
+export function getModificationById(id: ArmorModification): ArmorModificationData | undefined {
+  return ARMOR_MODIFICATIONS.find(mod => mod.id === id);
+}
+
+// Função para calcular stats finais com modificações
+export function calculateModifiedStats(
+  baseArmor: CatalogArmor,
+  modifications: ArmorModification[]
+): { defenseBonus: number; rd: number; spaces: number } {
+  let defenseBonus = baseArmor.defenseBonus;
+  let rd = baseArmor.rd || 0;
+  let spaces = baseArmor.spaces;
+
+  modifications.forEach(modId => {
+    const mod = getModificationById(modId);
+    if (mod) {
+      if (mod.defenseBonus) defenseBonus += mod.defenseBonus;
+      if (mod.rdBonus) rd += mod.rdBonus;
+      if (mod.spacesModifier) spaces += mod.spacesModifier;
+    }
+  });
+
+  return { defenseBonus, rd, spaces };
+}
+
+// Labels para UI
+export const ARMOR_TYPE_LABELS = {
+  leve: { label: 'Proteção Leve', color: 'text-green-500' },
+  pesada: { label: 'Proteção Pesada', color: 'text-blue-500' },
+  escudo: { label: 'Escudo', color: 'text-purple-500' },
+};

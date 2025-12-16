@@ -461,15 +461,15 @@ export function InventoryPanel({
       itemType: 'armor',
       description: armor.description,
       // Dados extras para o sistema de proteção
+      defenseBonus: armor.defenseBonus,
       rd: armor.rd,
       agilityPenalty: armor.agilityPenalty,
-      speedPenalty: armor.speedPenalty,
       armorType: armor.type,
       special: armor.special,
     } as ExtendedInventoryItem & { 
+      defenseBonus?: number;
       rd?: number; 
       agilityPenalty?: number; 
-      speedPenalty?: number;
       armorType?: string;
       special?: string;
     };
