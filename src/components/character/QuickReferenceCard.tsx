@@ -71,11 +71,11 @@ export function QuickReferenceCard({
       {/* Conteúdo compacto sempre visível */}
       <div className="px-3 pb-3 grid grid-cols-2 gap-2">
         {/* Limite de PE */}
-        <div className="flex items-center gap-2 p-2 bg-secondary/10 rounded-lg">
-          <Zap className="w-4 h-4 text-secondary" />
+        <div className="flex items-center gap-2 p-2 bg-pe/10 rounded-lg">
+          <Zap className="w-4 h-4 text-pe" />
           <div>
             <p className="text-[10px] text-muted-foreground uppercase">PE/Turno</p>
-            <p className="font-display text-lg text-secondary">{peLimit}</p>
+            <p className="font-display text-lg text-pe">{peLimit}</p>
           </div>
         </div>
 
