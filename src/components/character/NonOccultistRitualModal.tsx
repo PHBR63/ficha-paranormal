@@ -180,13 +180,55 @@ function RitualCard({
                 exit={{ height: 0, opacity: 0 }}
                 className="overflow-hidden"
               >
-                <div className="mt-2 p-2 rounded bg-muted/50 text-xs space-y-1">
-                  <p><strong>Execução:</strong> {ritual.execution}</p>
-                  <p><strong>Alcance:</strong> {ritual.range}</p>
-                  <p><strong>Alvo:</strong> {ritual.target}</p>
-                  <p><strong>Duração:</strong> {ritual.duration}</p>
-                  {ritual.resistance && (
-                    <p><strong>Resistência:</strong> {ritual.resistance}</p>
+                <div className="mt-2 p-2 rounded bg-muted/50 text-xs space-y-2">
+                  <div className="space-y-1">
+                    <p><strong>Execução:</strong> {ritual.execution}</p>
+                    <p><strong>Alcance:</strong> {ritual.range}</p>
+                    <p><strong>Alvo:</strong> {ritual.target}</p>
+                    <p><strong>Duração:</strong> {ritual.duration}</p>
+                    {ritual.resistance && (
+                      <p><strong>Resistência:</strong> {ritual.resistance}</p>
+                    )}
+                  </div>
+                  
+                  {/* Aprimoramentos detalhados */}
+                  {ritual.enhancements && ritual.enhancements.length > 0 && (
+                    <div className="pt-2 border-t border-border/50 space-y-2">
+                      <p className="font-semibold text-primary flex items-center gap-1">
+                        <Sparkles className="w-3 h-3" />
+                        Aprimoramentos
+                      </p>
+                      <div className="space-y-2">
+                        {ritual.enhancements.map((enh, idx) => (
+                          <div key={idx} className="p-2 rounded bg-background/50 border border-border/30">
+                            <div className="flex items-center gap-2 mb-1">
+                              <Badge 
+                                variant="outline" 
+                                className={cn(
+                                  "text-[10px] font-semibold",
+                                  enh.name === 'Verdadeiro' 
+                                    ? 'bg-amber-500/20 text-amber-300 border-amber-500/50' 
+                                    : 'bg-blue-500/20 text-blue-300 border-blue-500/50'
+                                )}
+                              >
+                                {enh.name}
+                              </Badge>
+                              <Badge variant="secondary" className="text-[10px]">
+                                +{enh.cost} PE
+                              </Badge>
+                              {enh.requirements && (
+                                <span className="text-[10px] text-yellow-400 italic">
+                                  ({enh.requirements})
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-muted-foreground leading-relaxed">
+                              {enh.description}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   )}
                 </div>
               </motion.div>

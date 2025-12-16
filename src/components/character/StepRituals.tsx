@@ -213,23 +213,42 @@ function RitualCard({
               {/* Descrição completa */}
               <p className="text-sm text-foreground">{ritual.description}</p>
 
-              {/* Aprimoramentos */}
+              {/* Aprimoramentos detalhados com nome Discente/Verdadeiro */}
               {ritual.enhancements && ritual.enhancements.length > 0 && (
                 <div className="space-y-2">
                   <h5 className="text-sm font-medium text-primary flex items-center gap-1">
                     <Sparkles className="w-3 h-3" />
                     Aprimoramentos
                   </h5>
-                  <ul className="space-y-1">
+                  <div className="space-y-2">
                     {ritual.enhancements.map((enh, idx) => (
-                      <li key={idx} className="text-sm text-muted-foreground flex gap-2">
-                        <Badge variant="secondary" className="text-xs shrink-0">
-                          +{enh.cost} PE
-                        </Badge>
-                        <span>{enh.description}</span>
-                      </li>
+                      <div key={idx} className="p-3 rounded-lg bg-muted/30 border border-border/50">
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <Badge 
+                            variant="outline" 
+                            className={`text-xs font-semibold ${
+                              enh.name === 'Verdadeiro' 
+                                ? 'bg-amber-500/20 text-amber-300 border-amber-500/50' 
+                                : 'bg-blue-500/20 text-blue-300 border-blue-500/50'
+                            }`}
+                          >
+                            {enh.name}
+                          </Badge>
+                          <Badge variant="secondary" className="text-xs">
+                            +{enh.cost} PE
+                          </Badge>
+                          {enh.requirements && (
+                            <span className="text-xs text-yellow-400 italic">
+                              ({enh.requirements})
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground leading-relaxed">
+                          {enh.description}
+                        </p>
+                      </div>
                     ))}
-                  </ul>
+                  </div>
                 </div>
               )}
             </div>
