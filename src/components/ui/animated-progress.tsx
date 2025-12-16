@@ -90,8 +90,8 @@ export function AnimatedProgress({
             <motion.span 
               className={cn(
                 "text-xs font-medium text-foreground",
-                isCritical && "text-[hsl(var(--status-hp))] animate-pulse",
-                isLow && !isCritical && variant === 'hp' && "text-[hsl(var(--status-hp))]"
+                isCritical && "text-destructive animate-pulse",
+                isLow && !isCritical && variant === 'hp' && "text-hp"
               )}
               key={value}
               initial={animate ? { scale: 1.2 } : undefined}
