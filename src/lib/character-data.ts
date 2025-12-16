@@ -837,11 +837,12 @@ export function calculateDerivedStats(
   // SAN = Base + (Multiplicador * ProgressãoSAN)
   let san = classData.sanBase + Math.max(0, nexMultiplier) * classData.sanPerNex;
 
-  // Aplicar modificador de origem (Cultista Arrependido)
+  // Aplicar modificador de origem (Cultista Arrependido, Vítima)
+  // sanityModifier é uma porcentagem (-50 = metade da sanidade)
   if (originId) {
     const origin = ORIGINS.find(o => o.id === originId);
     if (origin?.sanityModifier) {
-      san = san + origin.sanityModifier;
+      san = Math.floor(san * (1 + origin.sanityModifier / 100));
     }
   }
 
