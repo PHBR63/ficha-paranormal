@@ -431,11 +431,12 @@ export function StepSkills({ formData, updateFormData, buildResult }: StepSkills
                 <CollapsibleContent>
                   <div className="grid md:grid-cols-2 gap-2 mt-2 pl-4">
                     {skills.map((skill) => {
+                      // Verifica se a perícia já está treinada por outra fonte (origem, classe, escolhas)
                       const isUnavailable = unavailableSkills.has(skill.id);
+                      // Verifica se foi selecionada como perícia livre
                       const isSelected = formData.freeSkills.includes(skill.id);
-                      const attrValue = formData.attributes[skill.attribute as keyof typeof formData.attributes];
-                      const trainingBonus = isSelected || isUnavailable ? 5 : 0;
-                      const totalBonus = attrValue + trainingBonus;
+                      // Perícia treinada = +5 de bônus (valor do atributo é mostrado apenas na ficha final)
+                      const isTrained = isSelected || isUnavailable;
 
                       return (
                         <Tooltip key={skill.id}>
@@ -454,7 +455,7 @@ export function StepSkills({ formData, updateFormData, buildResult }: StepSkills
                               <div className="flex items-center gap-2">
                                 <div className={cn(
                                   'w-6 h-6 rounded-sm border flex items-center justify-center text-xs',
-                                  isSelected || isUnavailable
+                                  isTrained
                                     ? 'bg-secondary border-secondary text-secondary-foreground' 
                                     : 'border-border text-muted-foreground'
                                 )}>
@@ -466,12 +467,11 @@ export function StepSkills({ formData, updateFormData, buildResult }: StepSkills
                                 )}
                               </div>
                               <div className="text-right">
-                                <span className={cn(
-                                  'font-display text-lg',
-                                  isSelected || isUnavailable ? 'text-secondary' : 'text-muted-foreground'
-                                )}>
-                                  +{totalBonus}
-                                </span>
+                                {isTrained ? (
+                                  <span className="font-display text-lg text-secondary">+5</span>
+                                ) : (
+                                  <span className="text-xs text-muted-foreground">não treinada</span>
+                                )}
                               </div>
                             </button>
                           </TooltipTrigger>
