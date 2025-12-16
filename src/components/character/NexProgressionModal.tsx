@@ -430,13 +430,13 @@ export function NexProgressionModal({
                     </div>
                     
                     {/* PE */}
-                    <div className="p-3 bg-secondary/10 border border-secondary/30 rounded-lg text-center">
-                      <Zap className="w-5 h-5 text-secondary mx-auto mb-1" />
+                    <div className="p-3 bg-success/10 border border-success/30 rounded-lg text-center">
+                      <Zap className="w-5 h-5 text-success mx-auto mb-1" />
                       <p className="text-xs text-muted-foreground">PE MÁX</p>
                       <p className="font-display text-lg">
-                        {character.pe_max} → <span className="text-secondary">{nextStats.pe}</span>
+                        {character.pe_max} → <span className="text-success">{nextStats.pe}</span>
                       </p>
-                      <Badge className="text-xs font-bold bg-secondary text-secondary-foreground shadow-sm">
+                      <Badge className="text-xs font-bold bg-success text-success-foreground shadow-sm">
                         +{nextStats.pe - character.pe_max}
                       </Badge>
                     </div>
