@@ -2,7 +2,7 @@
  * StepOrigin - Seleção de origem do personagem
  * Inclui 26 origens base + 22 origens do suplemento "Sobrevivendo ao Horror"
  * 
- * Layout melhorado com painel de detalhes expandido
+ * Layout melhorado com modal de detalhes
  */
 
 import { useState, useMemo } from 'react';
@@ -22,7 +22,6 @@ import {
   BookOpen,
   Check,
   X,
-  Filter
 } from 'lucide-react';
 import { rollOrigin, getOriginSkills } from '@/lib/character-builder-engine';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -39,11 +38,11 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet';
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 interface StepOriginProps {
   formData: CharacterFormData;
@@ -487,16 +486,16 @@ export function StepOrigin({ formData, updateFormData }: StepOriginProps) {
           )}
         </AnimatePresence>
 
-        {/* Sheet de detalhes da origem */}
-        <Sheet open={!!previewOrigin} onOpenChange={(open) => !open && setPreviewOrigin(null)}>
-          <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
+        {/* Modal de detalhes da origem */}
+        <Dialog open={!!previewOrigin} onOpenChange={(open) => !open && setPreviewOrigin(null)}>
+          <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
             {previewOrigin && (
               <>
-                <SheetHeader className="mb-6">
+                <DialogHeader className="mb-4">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <SheetTitle className="font-display text-2xl tracking-wider">
+                    <DialogTitle className="font-display text-2xl tracking-wider">
                       {previewOrigin.name}
-                    </SheetTitle>
+                    </DialogTitle>
                     {SUPPLEMENT_ORIGINS.includes(previewOrigin.id) && (
                       <Badge className="bg-warning/20 text-warning border-warning/30">
                         Suplemento
@@ -509,9 +508,9 @@ export function StepOrigin({ formData, updateFormData }: StepOriginProps) {
                       </Badge>
                     )}
                   </div>
-                </SheetHeader>
+                </DialogHeader>
 
-                <div className="space-y-6">
+                <div className="space-y-4">
                   {/* Descrição */}
                   <div className="ordo-panel p-4">
                     <h4 className="font-display text-sm tracking-wider text-muted-foreground mb-2">
@@ -573,7 +572,6 @@ export function StepOrigin({ formData, updateFormData }: StepOriginProps) {
                           </h4>
                           <p className="text-sm text-muted-foreground">
                             Personagens com esta origem começam com a Sanidade máxima reduzida pela metade.
-                            Isso representa o trauma ou exposição prévia ao Outro Lado.
                           </p>
                         </div>
                       </div>
@@ -581,7 +579,7 @@ export function StepOrigin({ formData, updateFormData }: StepOriginProps) {
                   )}
 
                   {/* Botões de ação */}
-                  <div className="flex gap-3 pt-4">
+                  <div className="flex gap-3 pt-2">
                     <Button
                       className="flex-1 gap-2"
                       onClick={() => {
@@ -602,8 +600,8 @@ export function StepOrigin({ formData, updateFormData }: StepOriginProps) {
                 </div>
               </>
             )}
-          </SheetContent>
-        </Sheet>
+          </DialogContent>
+        </Dialog>
 
         {/* Amnesic Skill Selection Modal */}
         <AmnesicSkillModal
