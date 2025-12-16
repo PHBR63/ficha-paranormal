@@ -90,6 +90,8 @@ export type Database = {
       }
       campaign_members: {
         Row: {
+          active_bonuses: Json | null
+          bonuses_updated_at: string | null
           campaign_id: string
           character_id: string | null
           id: string
@@ -98,6 +100,8 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          active_bonuses?: Json | null
+          bonuses_updated_at?: string | null
           campaign_id: string
           character_id?: string | null
           id?: string
@@ -106,6 +110,8 @@ export type Database = {
           user_id: string
         }
         Update: {
+          active_bonuses?: Json | null
+          bonuses_updated_at?: string | null
           campaign_id?: string
           character_id?: string | null
           id?: string
