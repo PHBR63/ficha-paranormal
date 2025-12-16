@@ -137,8 +137,8 @@ export function WeaponCatalogModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl max-h-[85vh] flex flex-col">
-        <DialogHeader>
+      <DialogContent className="w-[95vw] max-w-2xl h-[90vh] max-h-[90vh] flex flex-col p-4 sm:p-6">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <Book className="w-5 h-5 text-primary" />
             Catálogo de Armas
@@ -149,7 +149,7 @@ export function WeaponCatalogModal({
         </DialogHeader>
 
         {/* Barra de busca */}
-        <div className="relative">
+        <div className="relative flex-shrink-0">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             placeholder="Buscar arma..."
@@ -160,7 +160,7 @@ export function WeaponCatalogModal({
         </div>
 
         {/* Slots disponíveis */}
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex gap-2 flex-wrap flex-shrink-0">
           {(['I', 'II', 'III', 'IV'] as const).map(cat => {
             const count = categoryCounts[cat];
             const limit = patentLimits[cat];
@@ -204,40 +204,44 @@ export function WeaponCatalogModal({
           })}
         </div>
 
-        {/* Tabs de categorias */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
-          <TabsList className="w-full justify-start">
-            <TabsTrigger value="melee" className="gap-1">
-              <Sword className="w-4 h-4" />
-              Corpo a Corpo
-              <Badge variant="secondary" className="text-xs ml-1">
-                {weaponsByTab.melee.length}
-              </Badge>
-            </TabsTrigger>
-            <TabsTrigger value="ranged" className="gap-1">
-              <Crosshair className="w-4 h-4" />
-              À Distância
-              <Badge variant="secondary" className="text-xs ml-1">
-                {weaponsByTab.ranged.length}
-              </Badge>
-            </TabsTrigger>
-            <TabsTrigger value="thrown" className="gap-1">
-              <Target className="w-4 h-4" />
-              Arremesso
-              <Badge variant="secondary" className="text-xs ml-1">
-                {weaponsByTab.thrown.length}
-              </Badge>
-            </TabsTrigger>
-            <TabsTrigger value="special" className="gap-1">
-              <Sparkles className="w-4 h-4" />
-              Especiais
-              <Badge variant="secondary" className="text-xs ml-1">
-                {weaponsByTab.special.length}
-              </Badge>
-            </TabsTrigger>
-          </TabsList>
+        {/* Tabs de categorias - com scroll horizontal em mobile */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0 overflow-hidden">
+          <div className="flex-shrink-0 overflow-x-auto pb-1 -mx-1 px-1">
+            <TabsList className="w-max min-w-full justify-start">
+              <TabsTrigger value="melee" className="gap-1 text-xs sm:text-sm whitespace-nowrap">
+                <Sword className="w-4 h-4" />
+                <span className="hidden sm:inline">Corpo a Corpo</span>
+                <span className="sm:hidden">Corpo</span>
+                <Badge variant="secondary" className="text-xs ml-1">
+                  {weaponsByTab.melee.length}
+                </Badge>
+              </TabsTrigger>
+              <TabsTrigger value="ranged" className="gap-1 text-xs sm:text-sm whitespace-nowrap">
+                <Crosshair className="w-4 h-4" />
+                <span className="hidden sm:inline">À Distância</span>
+                <span className="sm:hidden">Distância</span>
+                <Badge variant="secondary" className="text-xs ml-1">
+                  {weaponsByTab.ranged.length}
+                </Badge>
+              </TabsTrigger>
+              <TabsTrigger value="thrown" className="gap-1 text-xs sm:text-sm whitespace-nowrap">
+                <Target className="w-4 h-4" />
+                <span>Arremesso</span>
+                <Badge variant="secondary" className="text-xs ml-1">
+                  {weaponsByTab.thrown.length}
+                </Badge>
+              </TabsTrigger>
+              <TabsTrigger value="special" className="gap-1 text-xs sm:text-sm whitespace-nowrap">
+                <Sparkles className="w-4 h-4" />
+                <span>Especiais</span>
+                <Badge variant="secondary" className="text-xs ml-1">
+                  {weaponsByTab.special.length}
+                </Badge>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
-          <ScrollArea className="flex-1 -mx-6 px-6">
+          <ScrollArea className="flex-1 min-h-0 -mx-4 sm:-mx-6 px-4 sm:px-6">
             <TabsContent value="melee" className="mt-2">
               <WeaponList 
                 weapons={weaponsByTab.melee}

@@ -262,19 +262,19 @@ export function ArmorCatalogModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
-        <DialogHeader>
+      <DialogContent className="w-[95vw] max-w-2xl h-[90vh] max-h-[90vh] flex flex-col p-4 sm:p-6">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <Shield className="w-5 h-5 text-primary" />
             Catálogo de Proteções
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-sm">
             Selecione armaduras, coletes e escudos para adicionar ao inventário
           </DialogDescription>
         </DialogHeader>
 
         {/* Indicadores de categoria */}
-        <div className="flex items-center gap-2 flex-wrap pb-2 border-b border-border">
+        <div className="flex items-center gap-2 flex-wrap pb-2 border-b border-border flex-shrink-0">
           {categoryStatus.map(({ category, limit, current, isLocked, isFull }) => (
             <TooltipProvider key={category}>
               <Tooltip>
@@ -309,7 +309,7 @@ export function ArmorCatalogModal({
         </div>
 
         {/* Busca */}
-        <div className="relative">
+        <div className="relative flex-shrink-0">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             placeholder="Buscar proteção..."
@@ -343,7 +343,7 @@ export function ArmorCatalogModal({
             </TabsTrigger>
           </TabsList>
 
-          <ScrollArea className="flex-1 mt-4">
+          <ScrollArea className="flex-1 min-h-0 mt-4 -mx-4 sm:-mx-6 px-4 sm:px-6">
             <TabsContent value="leve" className="mt-0 space-y-2">
               <AnimatePresence mode="popLayout">
                 {filteredLight.length > 0 ? (
