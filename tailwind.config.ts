@@ -95,6 +95,10 @@ export default {
   				DEFAULT: 'hsl(var(--hp))',
   				foreground: 'hsl(var(--hp-foreground))'
   			},
+  			san: {
+  				DEFAULT: 'hsl(var(--san))',
+  				foreground: 'hsl(var(--san-foreground))'
+  			},
   			warning: {
   				DEFAULT: 'hsl(var(--warning))',
   				foreground: 'hsl(var(--warning-foreground))'

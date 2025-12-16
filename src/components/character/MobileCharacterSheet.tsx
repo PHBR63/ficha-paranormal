@@ -639,11 +639,11 @@ export function MobileCharacterSheet({
 
               {/* SAN */}
               <div className="flex items-center gap-2">
-                <Brain className={cn("w-4 h-4 flex-shrink-0", isSanLow ? "text-paranormal" : "text-paranormal/70")} />
+                <Brain className={cn("w-4 h-4 flex-shrink-0", isSanLow ? "text-paranormal" : "text-san")} />
                 <div className="flex-1">
                   <AnimatedProgress value={character.san_current} max={character.san_max} variant="san" size="sm" />
                 </div>
-                <span className={cn("text-xs font-display w-14 text-right", isSanLow && "text-paranormal")}>
+                <span className={cn("text-xs font-display w-14 text-right", isSanLow ? "text-paranormal" : "text-san")}>
                   {character.san_current}/{character.san_max}
                 </span>
               </div>
