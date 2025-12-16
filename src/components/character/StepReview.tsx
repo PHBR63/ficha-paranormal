@@ -206,8 +206,8 @@ export function StepReview({
             <p className="text-xs text-muted-foreground">ATAQUE</p>
           </div>
           <p className="font-display text-xl">
-            {allTrainedSkills.includes('luta') ? `+${formData.attributes.strength + 5}` : `+${formData.attributes.strength}`} / 
-            {allTrainedSkills.includes('pontaria') ? `+${formData.attributes.agility + 5}` : `+${formData.attributes.agility}`}
+            {allTrainedSkills.includes('luta') ? '+5' : '+0'} / 
+            {allTrainedSkills.includes('pontaria') ? '+5' : '+0'}
           </p>
           <p className="text-xs text-muted-foreground">Luta / Pont.</p>
         </div>
