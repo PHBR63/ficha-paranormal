@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ColorThemeProvider } from "@/contexts/ColorThemeContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { AdminRoute } from "@/components/auth/AdminRoute";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
@@ -14,6 +15,7 @@ import CharacterSheet from "./pages/CharacterSheet";
 import Campaigns from "./pages/Campaigns";
 import CampaignCreate from "./pages/CampaignCreate";
 import CampaignView from "./pages/CampaignView";
+import AdminImport from "./pages/AdminImport";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -58,6 +60,11 @@ const App = () => (
                 <ProtectedRoute>
                   <CampaignView />
                 </ProtectedRoute>
+              } />
+              <Route path="/admin/import" element={
+                <AdminRoute>
+                  <AdminImport />
+                </AdminRoute>
               } />
               <Route path="*" element={<NotFound />} />
             </Routes>

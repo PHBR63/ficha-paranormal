@@ -4,9 +4,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { ThemeSelector } from '@/components/ui/theme-selector';
-import { Plus, LogOut, User, FileText, Users, Settings, Loader2, AlertTriangle, Skull } from 'lucide-react';
+import { Plus, LogOut, User, FileText, Users, Settings, Loader2, AlertTriangle, Skull, Shield } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { CharacterCard } from '@/components/cards/CharacterCard';
+import { useAdminCheck } from '@/hooks/useAdminCheck';
 interface Character {
   id: string;
   name: string;
@@ -31,6 +32,7 @@ export default function Dashboard() {
   const {
     toast
   } = useToast();
+  const { isAdmin } = useAdminCheck();
   const [characters, setCharacters] = useState<Character[]>([]);
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<{
@@ -128,6 +130,15 @@ export default function Dashboard() {
               </p>
             </div>
             <div className="flex gap-2 sm:gap-3">
+              {isAdmin && (
+                <Link to="/admin/import" className="flex-1 sm:flex-none">
+                  <Button variant="secondary" className="w-full sm:w-auto font-display tracking-wider text-xs sm:text-sm">
+                    <Shield className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
+                    <span className="hidden sm:inline">Admin</span>
+                    <span className="sm:hidden">Adm</span>
+                  </Button>
+                </Link>
+              )}
               <Link to="/campaigns" className="flex-1 sm:flex-none">
                 <Button variant="outline" className="w-full sm:w-auto font-display tracking-wider text-xs sm:text-sm">
                   <Users className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
