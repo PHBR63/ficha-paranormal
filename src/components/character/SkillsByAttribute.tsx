@@ -229,8 +229,10 @@ export function SkillsByAttribute({
                 <div className="pl-4 pt-2 space-y-1">
                   {attrSkills.map((skill) => {
                     const isTrained = skills[skill.id] > 0;
+                    // Apenas bônus de treinamento, sem somar atributo na exibição
                     const trainingBonus = isTrained ? 5 : 0;
-                    const total = attrValue + trainingBonus;
+                    // Total só é usado na rolagem
+                    const rollTotal = attrValue + trainingBonus;
                     
                     return (
                       <div
@@ -243,7 +245,7 @@ export function SkillsByAttribute({
                             ? "bg-secondary/30 hover:bg-secondary/50" 
                             : "hover:bg-muted/30"
                         )}
-                        onClick={() => onRoll?.(total, skill.name, attrValue)}
+                        onClick={() => onRoll?.(rollTotal, skill.name, attrValue)}
                       >
                         <div className="flex items-center gap-2">
                           <span className={cn(
@@ -270,7 +272,7 @@ export function SkillsByAttribute({
                             )}
                             style={isTrained ? { color } : undefined}
                           >
-                            +{total}
+                            +{trainingBonus}
                           </span>
                           
                           {/* D20 vermelho no hover */}
