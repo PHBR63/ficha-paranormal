@@ -110,6 +110,7 @@ interface CharacterSheetHeaderProps {
   bonusSummary?: BonusSummary; // Dados completos para o painel expandido
   onStatsChange?: (stats: { hp: number; pe: number; san: number }) => void;
   onLevelUp?: () => void;
+  onToggleConditionalBonus?: (bonusId: string, active: boolean) => void; // Toggle de bônus condicionais
   className?: string;
 }
 
@@ -147,6 +148,7 @@ export function CharacterSheetHeader({
   bonusSummary,
   onStatsChange,
   onLevelUp,
+  onToggleConditionalBonus,
   className,
 }: CharacterSheetHeaderProps) {
   // Stats totais com bônus
@@ -718,6 +720,7 @@ export function CharacterSheetHeader({
           onOpenChange={setBonusPanelOpen}
           bonusSummary={bonusSummary}
           activeBonusSources={activeBonusSources}
+          onToggleConditionalBonus={onToggleConditionalBonus}
         />
       )}
     </div>
