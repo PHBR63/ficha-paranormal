@@ -73,6 +73,7 @@ import { CombatWeaponsTable } from '@/components/character/CombatWeaponsTable';
 import { SheetAccordionSection, SheetAccordionItem } from '@/components/character/SheetAccordionSection';
 import { RitualCard } from '@/components/character/RitualCard';
 import { RitualCastModal } from '@/components/character/RitualCastModal';
+import { RitualCastHistory, RitualCastRecord } from '@/components/character/RitualCastHistory';
 import { Ritual } from '@/lib/rituals-data';
 
 // Componentes existentes que ainda usamos
@@ -199,6 +200,9 @@ export default function CharacterSheet() {
   // Modal de conjuração de rituais
   const [castModalOpen, setCastModalOpen] = useState(false);
   const [ritualToCast, setRitualToCast] = useState<Ritual | null>(null);
+  
+  // Histórico de rituais conjurados na sessão
+  const [castHistory, setCastHistory] = useState<RitualCastRecord[]>([]);
 
   // Hook de bônus de defesa e resistências (precisa estar antes dos handlers que o usam)
   const defenseBonuses = useDefenseBonuses({
@@ -351,10 +355,11 @@ export default function CharacterSheet() {
     setCastModalOpen(true);
   }, []);
 
-  // Handler para confirmar conjuração de ritual (desconta PE)
+  // Handler para confirmar conjuração de ritual (desconta PE e registra no histórico)
   const handleCastRitual = useCallback(async (ritual: Ritual, peCost: number, enhancements: string[]) => {
     if (!character) return;
 
+    const peBeforeCast = peCurrent;
     const newPe = peCurrent - peCost;
     if (newPe < 0) return;
 
@@ -375,6 +380,18 @@ export default function CharacterSheet() {
     setPeCurrent(newPe);
     setCharacter(prev => prev ? { ...prev, pe_current: newPe } : null);
 
+    // Registrar no histórico da sessão
+    const castRecord: RitualCastRecord = {
+      id: `${ritual.id}-${Date.now()}`,
+      ritual,
+      peCost,
+      enhancements,
+      timestamp: new Date(),
+      peBeforeCast,
+      peAfterCast: newPe,
+    };
+    setCastHistory(prev => [castRecord, ...prev]);
+
     const enhText = enhancements.length > 0 
       ? ` (${enhancements.join(', ')})` 
       : '';
@@ -384,7 +401,7 @@ export default function CharacterSheet() {
       description: `${peCost} PE consumido${enhText}. PE restante: ${newPe}`,
     });
 
-    // Registrar no histórico de mudanças
+    // Registrar no histórico de mudanças permanente
     await logCharacterChanges(character.id, user?.id || '', [{
       fieldName: 'pe_current',
       changeType: 'ritual_cast',
@@ -393,6 +410,15 @@ export default function CharacterSheet() {
       description: `Conjurou ${ritual.name}${enhText} (-${peCost} PE)`,
     }]);
   }, [character, peCurrent, toast, user?.id]);
+
+  // Limpar histórico de conjurações
+  const handleClearCastHistory = useCallback(() => {
+    setCastHistory([]);
+    toast({
+      title: 'Histórico limpo',
+      description: 'O histórico de conjurações foi resetado.',
+    });
+  }, [toast]);
 
   // Handler para deletar personagem
   const handleDelete = async () => {
@@ -1501,6 +1527,17 @@ export default function CharacterSheet() {
                     })}
                   </div>
                 </SheetAccordionSection>
+              )}
+
+              {/* Histórico de Rituais Conjurados */}
+              {character.rituals && character.rituals.length > 0 && (
+                <div className="flex justify-end">
+                  <RitualCastHistory
+                    history={castHistory}
+                    onClear={handleClearCastHistory}
+                    characterName={character.name}
+                  />
+                </div>
               )}
 
               {/* Botão de Descanso */}
