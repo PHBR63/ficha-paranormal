@@ -617,11 +617,11 @@ export function MobileCharacterSheet({
 
               {/* HP */}
               <div className="flex items-center gap-2">
-                <Heart className={cn("w-4 h-4 flex-shrink-0", isHpLow ? "text-destructive" : "text-destructive/70")} />
+                <Heart className={cn("w-4 h-4 flex-shrink-0", isHpLow ? "text-destructive" : "text-hp")} />
                 <div className="flex-1">
                   <AnimatedProgress value={character.hp_current} max={character.hp_max} variant="hp" size="sm" />
                 </div>
-                <span className={cn("text-xs font-display w-14 text-right", isHpLow && "text-destructive")}>
+                <span className={cn("text-xs font-display w-14 text-right", isHpLow ? "text-destructive" : "text-hp")}>
                   {character.hp_current}/{character.hp_max}
                 </span>
               </div>

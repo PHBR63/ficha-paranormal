@@ -69,7 +69,9 @@
     /* PE - Pontos de Esforço (azul ciano energético) */
     --pe: 199 89% 48%;
     --pe-foreground: 0 0% 100%;
-    
+    --hp: 0 72% 51%;
+    --hp-foreground: 0 0% 100%;
+
     /* Warning */
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 5%;
@@ -166,11 +168,13 @@
     --border: 260 20% 25%;
     --input: 260 20% 20%;
 
-    /* Success, PE, Warning e Paranormal */
+    /* Success, PE, HP, Warning e Paranormal */
     --success: 142 71% 45%;
     --success-foreground: 0 0% 100%;
     --pe: 199 89% 48%;
     --pe-foreground: 0 0% 100%;
+    --hp: 0 72% 51%;
+    --hp-foreground: 0 0% 100%;
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 5%;
     --paranormal: 322 80% 55%;
