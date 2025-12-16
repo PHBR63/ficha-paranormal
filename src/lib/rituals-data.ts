@@ -384,6 +384,23 @@ export const FIRST_CIRCLE_RITUALS: Ritual[] = [
       { name: 'Verdadeiro', cost: 5, description: 'Muda bônus para +5 e sofre apenas metade do dano físico.', requirements: 'Requer 3º círculo e afinidade' },
     ],
   },
+  {
+    id: 'distorcer-aparencia',
+    name: 'Distorcer Aparência',
+    circle: 1,
+    element: 'sangue',
+    execution: 'Padrão',
+    range: 'Pessoal',
+    target: 'Você',
+    duration: 'Cena',
+    resistance: 'Vontade desacredita',
+    description: 'Você modifica sua aparência de modo a parecer outra pessoa. Isso inclui altura, peso, tom de pele, cor de cabelo, timbre de voz, impressão digital, córnea etc. Você recebe +10 em testes de Enganação para disfarce, mas não recebe habilidades da nova forma nem modifica suas demais estatísticas.',
+    cost: 1,
+    enhancements: [
+      { name: 'Discente', cost: 2, description: 'Muda o alcance para "curto" e o alvo para "1 ser". Um alvo involuntário pode anular o efeito com um teste de Vontade.', requirements: 'Requer 2º círculo' },
+      { name: 'Verdadeiro', cost: 5, description: 'Como em Discente, mas muda o alvo para "seres escolhidos".', requirements: 'Requer 3º círculo' },
+    ],
+  },
 
   // === RITUAIS DE CONHECIMENTO ===
   {
@@ -1565,8 +1582,8 @@ export const FOURTH_CIRCLE_RITUALS: Ritual[] = [
     execution: 'Padrão',
     range: 'Toque',
     target: '1 pessoa',
-    duration: 'Cena',
-    description: 'Canaliza o medo puro do Outro Lado no alvo, potencializando seus poderes paranormais.',
+    duration: 'Permanente até ser descarregada',
+    description: 'Você transfere parte de seu poder para outra pessoa. Escolha um ritual de até 3º círculo que você conheça; o alvo pode conjurar este ritual em sua forma básica uma vez, sem pagar seu custo em PE (mas pode usar formas avançadas gastando seus próprios PE para isso). Até o ritual transferido ser conjurado, seus PE máximos diminuem em um valor igual ao custo dele.',
     cost: 6,
     enhancements: [],
   },
