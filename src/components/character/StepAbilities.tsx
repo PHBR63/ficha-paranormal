@@ -35,14 +35,17 @@ import { getRulebookContent } from '@/lib/rulebook-content';
 
 // Mapeamento de habilidades que evoluem com NEX
 // Cada entrada contém os marcos de evolução e suas descrições
+// Mapeamento de habilidades que evoluem com NEX
+// Cada entrada contém os marcos de evolução e suas descrições
+// Progressão de círculos conforme livro: 2º em 25%, 3º em 55%, 4º em 85%
 const EVOLVING_ABILITIES: Record<string, { nexMarkers: number[]; evolutions: string[] }> = {
   'escolhido-pelo-outro-lado': {
     nexMarkers: [5, 25, 55, 85],
     evolutions: [
       'Rituais de 1º círculo (3 rituais iniciais)',
-      'Rituais de 2º círculo',
-      'Rituais de 3º círculo', 
-      'Rituais de 4º círculo'
+      'Desbloqueia rituais de 2º círculo (sem limite nesta evolução)',
+      'Desbloqueia rituais de 3º círculo (sem limite nesta evolução)', 
+      'Desbloqueia rituais de 4º círculo (sem limite nesta evolução)'
     ]
   },
   'ataque-especial': {

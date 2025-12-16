@@ -240,13 +240,16 @@ export function StepRituals({ formData, updateFormData }: StepRitualsProps) {
   // Obter dados do Ocultista baseado no NEX
   const ocultistClass = CLASSES.find(c => c.id === 'Ocultista');
   const ritualsPerNex = (ocultistClass as any)?.ritualsPerNex || {};
-  const ritualInfo = ritualsPerNex[formData.nex] || { count: 1, maxCircle: 1 };
+  const ritualInfo = ritualsPerNex[formData.nex] || { count: 3, maxCircle: 1 };
   const maxRituals = ritualInfo.count;
   const maxCircle = ritualInfo.maxCircle;
+  // Flag que indica se está desbloqueando um novo círculo (sem limite de rituais)
+  const isUnlockingCircle = ritualInfo.unlockCircle === true;
 
   // Rituais selecionados
   const selectedRituals = formData.rituals || [];
-  const remainingSlots = maxRituals - selectedRituals.length;
+  // Se está desbloqueando círculo, não há limite de slots
+  const remainingSlots = isUnlockingCircle ? Infinity : maxRituals - selectedRituals.length;
 
   // Filtrar rituais disponíveis
   const filteredRituals = useMemo(() => {
@@ -333,10 +336,31 @@ export function StepRituals({ formData, updateFormData }: StepRitualsProps) {
         <RuleBookTip section={rulebookContent} defaultExpanded={false} />
       )}
 
+      {/* Banner especial de desbloqueio de círculo */}
+      {isUnlockingCircle && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="p-4 rounded-lg border-2 border-primary bg-gradient-to-r from-primary/20 to-primary/5 text-center"
+        >
+          <div className="flex items-center justify-center gap-2 text-primary mb-2">
+            <Sparkles className="w-5 h-5" />
+            <span className="font-display text-lg tracking-wider">
+              🔓 NOVO CÍRCULO DESBLOQUEADO!
+            </span>
+            <Sparkles className="w-5 h-5" />
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Você desbloqueou o <strong className="text-primary">{maxCircle}º Círculo</strong>!
+            Nesta evolução, você pode aprender <strong className="text-primary">rituais sem limite</strong> de quantidade.
+          </p>
+        </motion.div>
+      )}
+
       {/* Contador de rituais */}
       <div className={`
         p-4 rounded-lg border text-center
-        ${remainingSlots === 0 
+        ${!isUnlockingCircle && remainingSlots === 0 
           ? 'bg-primary/10 border-primary/50' 
           : 'bg-muted/50 border-border'
         }
@@ -345,16 +369,22 @@ export function StepRituals({ formData, updateFormData }: StepRitualsProps) {
           <span className="text-3xl font-display text-primary">
             {selectedRituals.length}
           </span>
-          <span className="text-muted-foreground">/</span>
-          <span className="text-3xl font-display text-muted-foreground">
-            {maxRituals}
+          {!isUnlockingCircle && (
+            <>
+              <span className="text-muted-foreground">/</span>
+              <span className="text-3xl font-display text-muted-foreground">
+                {maxRituals}
+              </span>
+            </>
+          )}
+          <span className="text-muted-foreground ml-2">
+            rituais selecionados{isUnlockingCircle ? ' (sem limite)' : ''}
           </span>
-          <span className="text-muted-foreground ml-2">rituais selecionados</span>
         </div>
-        {remainingSlots === 0 && (
+        {!isUnlockingCircle && remainingSlots === 0 && (
           <p className="text-sm text-primary mt-1">✓ Todos os rituais escolhidos!</p>
         )}
-        {remainingSlots > 0 && (
+        {!isUnlockingCircle && remainingSlots > 0 && (
           <p className="text-sm text-muted-foreground mt-1">
             Escolha mais {remainingSlots} ritual{remainingSlots > 1 ? 'is' : ''}
           </p>
@@ -405,7 +435,8 @@ export function StepRituals({ formData, updateFormData }: StepRitualsProps) {
                     </TooltipTrigger>
                     {isLocked && (
                       <TooltipContent>
-                        <p>Disponível a partir de NEX {circle === 2 ? '20%' : circle === 3 ? '35%' : '50%'}</p>
+                        {/* Tooltips corrigidos conforme livro de regras */}
+                        <p>Disponível a partir de NEX {circle === 2 ? '25%' : circle === 3 ? '55%' : '85%'}</p>
                       </TooltipContent>
                     )}
                   </Tooltip>
