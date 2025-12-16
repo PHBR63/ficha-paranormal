@@ -81,12 +81,8 @@ export function StepSkills({ formData, updateFormData, buildResult }: StepSkills
     return getClassSkillRules(formData.characterClass, formData.attributes.intellect);
   }, [formData.characterClass, formData.attributes.intellect]);
 
-  // Perícias extras por NEX
-  const nexExtraSkills = getExtraSkillsByNex(formData.nex);
-  
-  // Total de perícias livres = base da classe + bônus por NEX
-  const baseFreePoints = classRules.freePoints;
-  const totalFreePoints = baseFreePoints + nexExtraSkills;
+  // Total de perícias livres = apenas base da classe (perícias extras vêm do poder "Treinamento em Perícia")
+  const totalFreePoints = classRules.freePoints;
   const usedFreePoints = formData.freeSkills.length;
   const remainingFreePoints = Math.max(0, totalFreePoints - usedFreePoints);
   const progressPercentage = totalFreePoints > 0 ? ((totalFreePoints - remainingFreePoints) / totalFreePoints) * 100 : 0;
@@ -349,17 +345,11 @@ export function StepSkills({ formData, updateFormData, buildResult }: StepSkills
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <p className="text-sm text-muted-foreground">PERÍCIAS LIVRES</p>
-              {/* Breakdown de onde vem os pontos */}
+              {/* Breakdown de onde vem os pontos - apenas da classe */}
               <div className="flex gap-1 text-xs">
                 <span className="px-1.5 py-0.5 rounded bg-muted/50 text-muted-foreground">
-                  Classe: {baseFreePoints}
+                  Classe: {totalFreePoints}
                 </span>
-                {nexExtraSkills > 0 && (
-                  <span className="px-1.5 py-0.5 rounded bg-primary/20 text-primary flex items-center gap-1">
-                    <TrendingUp className="w-3 h-3" />
-                    NEX: +{nexExtraSkills}
-                  </span>
-                )}
               </div>
             </div>
             <p className={cn(
