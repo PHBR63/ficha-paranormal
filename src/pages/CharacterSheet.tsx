@@ -270,13 +270,13 @@ export default function CharacterSheet() {
     enabled: !!character,
   });
 
-  // Hook de buffs de armas de rituais (Fase 5)
+  // Hook de buffs de armas de rituais (Fase 5) - com persistência via localStorage
   const {
     activeBuffs: weaponBuffs,
     addBuff: addWeaponBuff,
     removeBuff: removeWeaponBuff,
     clearAllBuffs: clearWeaponBuffs,
-  } = useWeaponBuffs();
+  } = useWeaponBuffs(id);
 
   // Callback para adicionar rolagem ao histórico
   const handleRollComplete = useCallback((result: DiceRollResult) => {
