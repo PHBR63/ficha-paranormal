@@ -205,7 +205,7 @@ export function CombatStatsCard({
             )}>
               <Brain className={cn(
                 "w-5 h-5",
-                isSanLow ? "text-paranormal" : "text-paranormal/70"
+                isSanLow ? "text-paranormal" : "text-san"
               )} />
             </div>
             <span className="text-sm font-medium">SAN</span>
@@ -230,7 +230,7 @@ export function CombatStatsCard({
               animate={{ scale: 1 }}
               className={cn(
                 "font-display text-xl",
-                isSanLow ? "text-paranormal" : "text-paranormal/70"
+                isSanLow ? "text-paranormal" : "text-san"
               )}
             >
               {sanCurrent}/{sanMax}

@@ -358,7 +358,7 @@ export function CharacterSheetHeader({
         <div className="space-y-1">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1">
-              <Star className="w-4 h-4 text-paranormal" />
+              <Star className="w-4 h-4 text-san" />
               <span className="text-xs font-medium">SAN</span>
             </div>
             {editMode ? (
@@ -371,7 +371,7 @@ export function CharacterSheetHeader({
                 max={sanMax}
               />
             ) : (
-              <span className="text-sm font-display text-paranormal">
+              <span className="text-sm font-display text-san">
                 {sanCurrent}/{sanMax}
               </span>
             )}
