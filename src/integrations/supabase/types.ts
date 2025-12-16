@@ -241,6 +241,79 @@ export type Database = {
           },
         ]
       }
+      campaign_ritual_casts: {
+        Row: {
+          campaign_id: string
+          character_id: string
+          created_at: string
+          enhancements: string[] | null
+          id: string
+          pe_after: number
+          pe_before: number
+          pe_cost: number
+          ritual_circle: number
+          ritual_element: string
+          ritual_id: string
+          ritual_name: string
+          session_id: string | null
+          user_id: string
+        }
+        Insert: {
+          campaign_id: string
+          character_id: string
+          created_at?: string
+          enhancements?: string[] | null
+          id?: string
+          pe_after: number
+          pe_before: number
+          pe_cost: number
+          ritual_circle: number
+          ritual_element: string
+          ritual_id: string
+          ritual_name: string
+          session_id?: string | null
+          user_id: string
+        }
+        Update: {
+          campaign_id?: string
+          character_id?: string
+          created_at?: string
+          enhancements?: string[] | null
+          id?: string
+          pe_after?: number
+          pe_before?: number
+          pe_cost?: number
+          ritual_circle?: number
+          ritual_element?: string
+          ritual_id?: string
+          ritual_name?: string
+          session_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_ritual_casts_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_ritual_casts_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: false
+            referencedRelation: "characters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_ritual_casts_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaign_sessions: {
         Row: {
           campaign_id: string
