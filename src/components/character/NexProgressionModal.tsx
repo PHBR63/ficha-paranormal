@@ -442,13 +442,13 @@ export function NexProgressionModal({
                     </div>
                     
                     {/* SAN */}
-                    <div className="p-3 bg-paranormal/10 border border-paranormal/30 rounded-lg text-center">
-                      <Brain className="w-5 h-5 text-paranormal mx-auto mb-1" />
+                    <div className="p-3 bg-san/10 border border-san/30 rounded-lg text-center">
+                      <Brain className="w-5 h-5 text-san mx-auto mb-1" />
                       <p className="text-xs text-muted-foreground">SAN MÁX</p>
                       <p className="font-display text-lg">
-                        {character.san_max} → <span className="text-paranormal">{nextStats.san}</span>
+                        {character.san_max} → <span className="text-san">{nextStats.san}</span>
                       </p>
-                      <Badge className="text-xs font-bold bg-paranormal text-white shadow-sm">
+                      <Badge className="text-xs font-bold bg-san text-san-foreground shadow-sm">
                         +{nextStats.san - character.san_max}
                       </Badge>
                     </div>
