@@ -44,6 +44,8 @@ import { PowerDetailModal, PowerDetailData, PowerType } from './PowerDetailModal
 import { ALL_RITUALS } from '@/lib/rituals-data';
 import { ALL_CLASS_ABILITIES } from '@/lib/class-abilities';
 import { useDefenseBonuses } from '@/hooks/useDefenseBonuses';
+import { useCharacterBonusSummary } from '@/hooks/useCharacterBonusSummary';
+import { BonusSummaryCard } from './BonusSummaryCard';
 
 // Tipos
 interface MobileCharacterSheetProps {
@@ -519,6 +521,18 @@ export function MobileCharacterSheet({
     inventory: character.inventory || [],
   });
 
+  // Hook de resumo de todos os bônus do personagem
+  const bonusSummary = useCharacterBonusSummary({
+    origin: character.origin,
+    abilities: character.abilities,
+    generalPowers: character.general_powers || [],
+    paranormalPowers: character.paranormal_powers || [],
+    inventory: character.inventory || [],
+    nex: character.nex,
+    elementalAffinity: null, // Não temos esse campo no mobile props
+    affinityActive: false,
+  });
+
   // Defesa total com bônus
   const totalDefense = character.defense + defenseBonuses.totalBonus;
 
@@ -842,6 +856,9 @@ export function MobileCharacterSheet({
                 </div>
               </div>
             </CollapsibleSection>
+
+            {/* Resumo de Bônus Ativos (modo compacto) */}
+            <BonusSummaryCard summary={bonusSummary} compact />
 
             {/* Condições ativas */}
             {character.conditions.length > 0 && (

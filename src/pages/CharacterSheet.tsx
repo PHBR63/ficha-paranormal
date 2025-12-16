@@ -60,6 +60,8 @@ import { calculateDerivedStats } from '@/lib/character-data';
 import { AffinitySelectorCard } from '@/components/character/AffinitySelectorCard';
 import { useParanormalEffects } from '@/hooks/useParanormalEffects';
 import { useDefenseBonuses } from '@/hooks/useDefenseBonuses';
+import { useCharacterBonusSummary } from '@/hooks/useCharacterBonusSummary';
+import { BonusSummaryCard } from '@/components/character/BonusSummaryCard';
 
 // Novos componentes do redesign 2.0 (estilo ficha de papel)
 import { CharacterSheetHeader } from '@/components/character/CharacterSheetHeader';
@@ -197,6 +199,18 @@ export default function CharacterSheet() {
     abilities: character?.abilities || [],
     generalPowers: character?.general_powers || [],
     inventory: character?.inventory || [],
+  });
+
+  // Hook de resumo de todos os bônus do personagem
+  const bonusSummary = useCharacterBonusSummary({
+    origin: character?.origin || '',
+    abilities: character?.abilities || [],
+    generalPowers: character?.general_powers || [],
+    paranormalPowers: character?.paranormal_powers || [],
+    inventory: character?.inventory || [],
+    nex: character?.nex || 5,
+    elementalAffinity: character?.elemental_affinity,
+    affinityActive: character?.affinity_active,
   });
 
   // Callback para adicionar rolagem ao histórico
@@ -1183,6 +1197,9 @@ export default function CharacterSheet() {
                 presence={character.presence}
                 resistanceBonuses={defenseBonuses.resistances}
               />
+
+              {/* Resumo de Todos os Bônus Ativos */}
+              <BonusSummaryCard summary={bonusSummary} />
 
               {/* Perícias por Atributo */}
               <SkillsByAttribute
