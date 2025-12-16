@@ -180,6 +180,10 @@ export function CharacterSheetHeader({
   const isHpLow = hpPercent <= 25;
   const isPeLow = pePercent <= 25;
   const isSanLow = sanPercent <= 30;
+  
+  // Estados de colapso (HP ou SAN = 0)
+  const isUnconscious = displayHp === 0;
+  const isMentalCollapse = displaySan === 0;
 
   const handleSave = () => {
     onStatsChange?.({
@@ -485,7 +489,103 @@ export function CharacterSheetHeader({
         </div>
       </div>
 
-      {/* Estados de condição + Stats secundários */}
+      {/* Banners de Estado Crítico (HP ou SAN = 0) */}
+      <AnimatePresence mode="wait">
+        {/* Colapso Total */}
+        {isUnconscious && isMentalCollapse && (
+          <motion.div
+            key="total-collapse-header"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden"
+          >
+            <motion.div
+              animate={{ 
+                boxShadow: [
+                  '0 0 0 0 rgba(239, 68, 68, 0)',
+                  '0 0 15px 3px rgba(239, 68, 68, 0.3)',
+                  '0 0 0 0 rgba(239, 68, 68, 0)',
+                ],
+              }}
+              transition={{ duration: 1.5, repeat: Infinity }}
+              className="text-center py-2 px-3 rounded-lg bg-gradient-to-r from-destructive/20 via-paranormal/20 to-destructive/20 border border-destructive/50"
+            >
+              <motion.span
+                animate={{ opacity: [1, 0.5, 1] }}
+                transition={{ duration: 0.8, repeat: Infinity }}
+                className="text-destructive font-display text-xs tracking-wider"
+              >
+                💀 COLAPSO TOTAL - Inconsciente + Enlouquecido
+              </motion.span>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {/* Inconsciente */}
+        {isUnconscious && !isMentalCollapse && (
+          <motion.div
+            key="unconscious-header"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden"
+          >
+            <motion.div
+              animate={{ 
+                boxShadow: [
+                  '0 0 0 0 rgba(239, 68, 68, 0)',
+                  '0 0 12px 2px rgba(239, 68, 68, 0.25)',
+                  '0 0 0 0 rgba(239, 68, 68, 0)',
+                ],
+              }}
+              transition={{ duration: 1.5, repeat: Infinity }}
+              className="flex items-center justify-center gap-2 py-1.5 px-3 rounded-lg bg-destructive/15 border border-destructive/40"
+            >
+              <motion.div animate={{ opacity: [1, 0.6, 1] }} transition={{ duration: 1, repeat: Infinity }}>
+                <Heart className="w-3.5 h-3.5 text-destructive" />
+              </motion.div>
+              <span className="text-destructive font-display text-xs tracking-wider">
+                INCONSCIENTE - HP zerado
+              </span>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {/* Colapso Mental */}
+        {isMentalCollapse && !isUnconscious && (
+          <motion.div
+            key="mental-collapse-header"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden"
+          >
+            <motion.div
+              animate={{ 
+                boxShadow: [
+                  '0 0 0 0 rgba(168, 85, 247, 0)',
+                  '0 0 12px 2px rgba(168, 85, 247, 0.25)',
+                  '0 0 0 0 rgba(168, 85, 247, 0)',
+                ],
+              }}
+              transition={{ duration: 1.5, repeat: Infinity }}
+              className="flex items-center justify-center gap-2 py-1.5 px-3 rounded-lg bg-paranormal/15 border border-paranormal/40"
+            >
+              <motion.div 
+                animate={{ opacity: [1, 0.6, 1], rotate: [-2, 2, -2] }} 
+                transition={{ duration: 0.8, repeat: Infinity }}
+              >
+                <Star className="w-3.5 h-3.5 text-paranormal" />
+              </motion.div>
+              <span className="text-paranormal font-display text-xs tracking-wider">
+                COLAPSO MENTAL - SAN zerada
+              </span>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="flex items-center justify-between pt-2 border-t border-border/50">
         {/* Checkboxes de estado */}
         <div className="flex items-center gap-4">
