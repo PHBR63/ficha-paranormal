@@ -15,16 +15,21 @@ import {
   TableRow,
 } from '@/components/ui/table';
 
+// Interface para arma com dados completos
 interface WeaponEntry {
   id: string;
   name: string;
   type: 'Briga' | 'Arremesso' | 'Disparo' | 'Corpo a Corpo';
   damage: string;
+  damageType?: string; // Tipo de dano (Corte, Balístico, Impacto, etc.)
   ammoCurrenteRent?: number;
   ammoMax?: number;
   range?: string;
-  critical?: string;
+  critical?: string; // Valor de crítico (ex: "19")
+  criticalMultiplier?: string; // Multiplicador (ex: "x3")
+  special?: string; // Propriedades especiais
   notes?: string;
+  ammoType?: string; // Tipo de munição
 }
 
 interface CombatWeaponsTableProps {
@@ -121,12 +126,19 @@ export function CombatWeaponsTable({
                   </span>
                 </TableCell>
                 <TableCell className="font-display text-destructive">
-                  {weapon.damage}
+                  <div className="flex flex-col">
+                    <span>{weapon.damage}</span>
+                    {weapon.damageType && (
+                      <span className="text-[10px] text-muted-foreground font-normal">
+                        {weapon.damageType}
+                      </span>
+                    )}
+                  </div>
                 </TableCell>
                 <TableCell>
-                  {weapon.ammoMax !== undefined ? (
+                  {weapon.ammoMax !== undefined || weapon.ammoType ? (
                     <span className="text-sm">
-                      {weapon.ammoCurrenteRent ?? weapon.ammoMax}/{weapon.ammoMax}
+                      {weapon.ammoMax ? `${weapon.ammoCurrenteRent ?? weapon.ammoMax}/${weapon.ammoMax}` : weapon.ammoType || '—'}
                     </span>
                   ) : (
                     <span className="text-muted-foreground">—</span>
@@ -136,7 +148,14 @@ export function CombatWeaponsTable({
                   {weapon.range || <span className="text-muted-foreground">—</span>}
                 </TableCell>
                 <TableCell>
-                  {weapon.critical || '20'}
+                  <div className="flex flex-col">
+                    <span>{weapon.critical || '20'}{weapon.criticalMultiplier ? ` ${weapon.criticalMultiplier}` : ' x2'}</span>
+                    {weapon.special && (
+                      <span className="text-[10px] text-muted-foreground" title={weapon.special}>
+                        {weapon.special.length > 20 ? weapon.special.substring(0, 20) + '...' : weapon.special}
+                      </span>
+                    )}
+                  </div>
                 </TableCell>
               </motion.tr>
             ))}

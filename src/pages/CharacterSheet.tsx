@@ -74,6 +74,37 @@ import { MobileCharacterSheet } from '@/components/character/MobileCharacterShee
 import { DiceRollModal } from '@/components/dice/DiceRollModal';
 import { DiceRollHistoryDrawer, DiceRollHistoryCompact } from '@/components/dice/DiceRollHistory';
 
+// Interface estendida para itens do inventário com todos os campos persistidos
+interface InventoryItemPersisted {
+  id?: string;
+  name: string;
+  category: string;
+  slots: number;
+  quantity?: number;
+  itemType?: string;
+  isEquipped?: boolean;
+  equipSlot?: string;
+  description?: string;
+  // Campos de armas
+  damage?: string;
+  damageType?: string;
+  critical?: number;
+  criticalMultiplier?: number;
+  range?: string;
+  special?: string;
+  ammoType?: string;
+  // Campos de armaduras
+  rd?: number;
+  agilityPenalty?: number;
+  speedPenalty?: number;
+  armorType?: string;
+  // Campos de consumíveis
+  effect?: string;
+  uses?: number;
+  maxUses?: number;
+  consumable?: boolean;
+}
+
 // Interface do personagem
 interface Character {
   id: string;
@@ -100,7 +131,7 @@ interface Character {
   skills: Record<string, number>;
   powers: Array<{ name: string; description: string }>;
   abilities: string[];
-  inventory: Array<{ id?: string; name: string; category: string; slots: number; itemType?: string; isEquipped?: boolean; equipSlot?: string }>;
+  inventory: InventoryItemPersisted[];
   rituals: string[];
   background: string | null;
   notes: string | null;
@@ -657,16 +688,41 @@ export default function CharacterSheet() {
     vigor: character.vigor,
   };
 
-  // Preparar armas para tabela de combate
+  // Preparar armas para tabela de combate usando dados reais do item
   const equippedWeapons = character.inventory
     .filter(item => item.isEquipped && item.itemType === 'weapon')
     .map(item => ({
       id: item.id || crypto.randomUUID(),
       name: item.name,
-      type: (item.category === 'I' || item.category === 'II' ? 'Disparo' : 'Corpo a Corpo') as 'Disparo' | 'Corpo a Corpo',
-      damage: '1d6',
-      range: item.category === 'II' || item.category === 'III' ? 'Curto' : undefined,
+      // Determina tipo baseado no range - se tem range é disparo, senão corpo a corpo
+      type: (item.range && item.range !== 'Corpo a corpo' ? 'Disparo' : 'Corpo a Corpo') as 'Disparo' | 'Corpo a Corpo',
+      // Usa dados reais da arma se disponíveis
+      damage: item.damage || '1d6',
+      damageType: item.damageType,
+      range: item.range,
+      critical: item.critical ? `${item.critical}` : undefined,
+      criticalMultiplier: item.criticalMultiplier ? `x${item.criticalMultiplier}` : undefined,
+      special: item.special,
+      ammoType: item.ammoType,
     }));
+  
+  // Calcular proteção total de armaduras equipadas
+  const armorStats = useMemo(() => {
+    const equippedArmors = character.inventory
+      .filter(item => item.isEquipped && item.itemType === 'armor' && item.rd !== undefined);
+    
+    const totalRD = equippedArmors.reduce((sum, armor) => sum + (armor.rd || 0), 0);
+    const totalAgilityPenalty = equippedArmors.reduce((sum, armor) => sum + (armor.agilityPenalty || 0), 0);
+    const totalSpeedPenalty = equippedArmors.reduce((sum, armor) => sum + (armor.speedPenalty || 0), 0);
+    
+    return {
+      totalRD,
+      totalAgilityPenalty,
+      totalSpeedPenalty,
+      hasArmor: equippedArmors.length > 0,
+      equippedArmors: equippedArmors.map(a => ({ name: a.name, rd: a.rd || 0 })),
+    };
+  }, [character.inventory]);
 
   // Obter dados da origem
   const originData = ORIGINS.find(o => o.id === character.origin);
@@ -832,6 +888,9 @@ export default function CharacterSheet() {
                 hpBonus={paranormalEffects.hpBonus}
                 peBonus={paranormalEffects.peBonus}
                 defenseBonus={paranormalEffects.defenseBonus}
+                armorRD={armorStats.totalRD}
+                armorPenalty={armorStats.totalAgilityPenalty}
+                equippedArmors={armorStats.equippedArmors}
                 onStatsChange={handleCombatStatsChange}
                 onLevelUp={() => setNexModalOpen(true)}
               />
@@ -908,31 +967,73 @@ export default function CharacterSheet() {
                 defaultOpen={false}
               >
                 <InventoryPanel
-                  inventory={character.inventory.map((item, i) => ({
-                    id: `item-${i}`,
+                  inventory={character.inventory.map((item) => ({
+                    // Usa ID persistido ou gera novo UUID se não existir
+                    id: item.id || crypto.randomUUID(),
                     name: item.name,
                     category: (item.category as InventoryItem['category']) || '0',
                     slots: item.slots,
-                    quantity: 1,
+                    quantity: item.quantity || 1,
                     itemType: (item.itemType as any) || 'misc',
                     isEquipped: item.isEquipped || false,
                     equipSlot: item.equipSlot as any,
+                    description: item.description,
+                    // Campos de armas
+                    damage: item.damage,
+                    damageType: item.damageType,
+                    critical: item.critical,
+                    criticalMultiplier: item.criticalMultiplier,
+                    range: item.range,
+                    special: item.special,
+                    ammoType: item.ammoType,
+                    // Campos de armaduras
+                    rd: item.rd,
+                    agilityPenalty: item.agilityPenalty,
+                    speedPenalty: item.speedPenalty,
+                    armorType: item.armorType,
+                    // Campos de consumíveis
+                    effect: item.effect,
+                    uses: item.uses,
+                    maxUses: item.maxUses,
+                    consumable: item.consumable,
                   }))}
                   strength={character.strength}
                   patent={character.patent}
                   onInventoryChange={async (newInventory) => {
-                    const updatedInventory = newInventory.map(item => ({
+                    // Persiste TODOS os campos importantes do item
+                    const updatedInventory: InventoryItemPersisted[] = newInventory.map(item => ({
+                      id: item.id,
                       name: item.name,
                       category: item.category,
                       slots: item.slots,
+                      quantity: item.quantity,
                       itemType: item.itemType,
                       isEquipped: item.isEquipped,
                       equipSlot: item.equipSlot,
+                      description: (item as any).description,
+                      // Campos de armas
+                      damage: (item as any).damage,
+                      damageType: (item as any).damageType,
+                      critical: (item as any).critical,
+                      criticalMultiplier: (item as any).criticalMultiplier,
+                      range: (item as any).range,
+                      special: (item as any).special,
+                      ammoType: (item as any).ammoType,
+                      // Campos de armaduras
+                      rd: (item as any).rd,
+                      agilityPenalty: (item as any).agilityPenalty,
+                      speedPenalty: (item as any).speedPenalty,
+                      armorType: (item as any).armorType,
+                      // Campos de consumíveis
+                      effect: (item as any).effect,
+                      uses: (item as any).uses,
+                      maxUses: (item as any).maxUses,
+                      consumable: (item as any).consumable,
                     }));
                     
                     const { error } = await supabase
                       .from('characters')
-                      .update({ inventory: updatedInventory })
+                      .update({ inventory: JSON.parse(JSON.stringify(updatedInventory)) })
                       .eq('id', character.id);
 
                     if (!error) {
