@@ -41,12 +41,27 @@ import {
   Loader2,
   FileJson,
   Crown,
-  User
+  User,
+  History,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+
+// Interface para logs de auditoria
+interface AuditLog {
+  id: string;
+  created_at: string;
+  action_type: string;
+  target_user_id: string;
+  performed_by: string;
+  old_value: string | null;
+  new_value: string | null;
+  details: Record<string, unknown>;
+}
 
 // Tipo para role do usuário
 type AppRole = 'admin' | 'moderator' | 'user';
@@ -91,6 +106,9 @@ export default function AdminUsers() {
   const [users, setUsers] = useState<UserWithRole[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+  const [showAuditLogs, setShowAuditLogs] = useState(false);
+  const [loadingLogs, setLoadingLogs] = useState(false);
   
   // Dialog de confirmação
   const [confirmDialog, setConfirmDialog] = useState<{
@@ -100,6 +118,26 @@ export default function AdminUsers() {
     currentRole: AppRole;
     newRole: AppRole;
   } | null>(null);
+
+  // Buscar logs de auditoria
+  const fetchAuditLogs = async () => {
+    setLoadingLogs(true);
+    try {
+      const { data, error } = await supabase
+        .from('audit_logs')
+        .select('*')
+        .eq('action_type', 'role_change')
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (error) throw error;
+      setAuditLogs((data as AuditLog[]) || []);
+    } catch (error) {
+      console.error('Erro ao buscar logs:', error);
+    } finally {
+      setLoadingLogs(false);
+    }
+  };
 
   // Obter iniciais do nome
   const getInitials = (name: string | null) => {
@@ -157,7 +195,7 @@ export default function AdminUsers() {
   }, []);
 
   // Alterar role do usuário
-  const changeUserRole = async (userId: string, newRole: AppRole) => {
+  const changeUserRole = async (userId: string, newRole: AppRole, oldRole: AppRole, userName: string) => {
     setActionLoading(userId);
     try {
       // Remover roles existentes do usuário
@@ -177,8 +215,29 @@ export default function AdminUsers() {
         if (insertError) throw insertError;
       }
 
+      // Registrar log de auditoria
+      const { error: logError } = await supabase
+        .from('audit_logs')
+        .insert({
+          action_type: 'role_change',
+          target_user_id: userId,
+          performed_by: currentUser?.id,
+          old_value: oldRole,
+          new_value: newRole,
+          details: { target_user_name: userName }
+        });
+
+      if (logError) {
+        console.error('Erro ao registrar log:', logError);
+      }
+
       toast.success(`Permissão alterada para ${roleConfig[newRole].label}`);
       fetchUsers();
+      
+      // Atualizar logs se estiver visível
+      if (showAuditLogs) {
+        fetchAuditLogs();
+      }
     } catch (error) {
       console.error('Erro ao alterar role:', error);
       toast.error('Erro ao alterar permissão do usuário');
@@ -191,7 +250,12 @@ export default function AdminUsers() {
   // Confirmar mudança de role
   const handleConfirmChange = () => {
     if (confirmDialog) {
-      changeUserRole(confirmDialog.userId, confirmDialog.newRole);
+      changeUserRole(
+        confirmDialog.userId, 
+        confirmDialog.newRole, 
+        confirmDialog.currentRole,
+        confirmDialog.userName
+      );
     }
   };
 
@@ -383,6 +447,95 @@ export default function AdminUsers() {
               </Table>
             )}
           </CardContent>
+        </Card>
+
+        {/* Seção de Logs de Auditoria */}
+        <Card className="border-border/50 mt-6">
+          <CardHeader 
+            className="cursor-pointer"
+            onClick={() => {
+              setShowAuditLogs(!showAuditLogs);
+              if (!showAuditLogs && auditLogs.length === 0) {
+                fetchAuditLogs();
+              }
+            }}
+          >
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <History className="h-5 w-5 text-primary" />
+                Log de Auditoria
+              </div>
+              {showAuditLogs ? (
+                <ChevronUp className="h-5 w-5 text-muted-foreground" />
+              ) : (
+                <ChevronDown className="h-5 w-5 text-muted-foreground" />
+              )}
+            </CardTitle>
+            <CardDescription>
+              Histórico de alterações de permissões
+            </CardDescription>
+          </CardHeader>
+          
+          {showAuditLogs && (
+            <CardContent>
+              {loadingLogs ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : auditLogs.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  Nenhum registro de auditoria encontrado
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Data/Hora</TableHead>
+                      <TableHead>Usuário Alterado</TableHead>
+                      <TableHead>De</TableHead>
+                      <TableHead>Para</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {auditLogs.map((log) => {
+                      const oldRole = (log.old_value as AppRole) || 'user';
+                      const newRole = (log.new_value as AppRole) || 'user';
+                      const targetName = (log.details as { target_user_name?: string })?.target_user_name || 'Usuário';
+
+                      return (
+                        <TableRow key={log.id}>
+                          <TableCell className="text-muted-foreground">
+                            {format(new Date(log.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+                          </TableCell>
+                          <TableCell className="font-medium">
+                            {targetName}
+                          </TableCell>
+                          <TableCell>
+                            <Badge 
+                              variant={oldRole === 'user' ? 'secondary' : 'outline'}
+                              className={`gap-1 ${roleConfig[oldRole]?.badgeClass || ''}`}
+                            >
+                              {roleConfig[oldRole]?.icon}
+                              {roleConfig[oldRole]?.label || oldRole}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge 
+                              variant={newRole === 'user' ? 'secondary' : 'outline'}
+                              className={`gap-1 ${roleConfig[newRole]?.badgeClass || ''}`}
+                            >
+                              {roleConfig[newRole]?.icon}
+                              {roleConfig[newRole]?.label || newRole}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          )}
         </Card>
       </div>
 
