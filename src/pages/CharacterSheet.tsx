@@ -78,6 +78,7 @@ import { RitualCastModal } from '@/components/character/RitualCastModal';
 import { RitualDamageModal, RitualDamageResult, RitualHealingResult } from '@/components/character/RitualDamageModal';
 import { ResistanceCheckModal, ResistanceCheckResult } from '@/components/character/ResistanceCheckModal';
 import { RitualConditionModal, PendingCondition, extractConditionsFromEffect } from '@/components/character/RitualConditionApplicator';
+import { RitualEffectWizard } from '@/components/character/RitualEffectWizard';
 import { RitualCastHistory, RitualCastRecord } from '@/components/character/RitualCastHistory';
 import { Ritual } from '@/lib/rituals-data';
 import { getActiveRitualEffect, ritualDealsDamage, RitualEffect } from '@/lib/ritual-effects';
@@ -222,6 +223,12 @@ export default function CharacterSheet() {
   const [pendingRitualConditions, setPendingRitualConditions] = useState<PendingCondition[]>([]);
   const [conditionRitualName, setConditionRitualName] = useState('');
   const [conditionRitualElement, setConditionRitualElement] = useState('');
+  
+  // Wizard de efeitos integrado (Fase 7)
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const [wizardRitual, setWizardRitual] = useState<Ritual | null>(null);
+  const [wizardEnhancements, setWizardEnhancements] = useState<string[]>([]);
+  const [wizardPeCost, setWizardPeCost] = useState(0);
   
   // Histórico de rituais conjurados na sessão
   const [castHistory, setCastHistory] = useState<RitualCastRecord[]>([]);
@@ -441,32 +448,31 @@ export default function CharacterSheet() {
       ? ` (${enhancements.join(', ')})` 
       : '';
 
-    // Verifica se o ritual causa dano/cura e abre o modal correspondente
+    // Verifica se o ritual tem efeitos a processar
     const activeEffect = getActiveRitualEffect(ritual.id, enhancements);
-    const hasDamageOrHealing = activeEffect?.damage || activeEffect?.healing || activeEffect?.tempHP;
-    const hasWeaponEffect = activeEffect?.weaponEffect;
+    const hasEffects = activeEffect && (
+      activeEffect.damage || 
+      activeEffect.healing || 
+      activeEffect.tempHP ||
+      activeEffect.weaponEffect ||
+      activeEffect.appliesConditions?.length ||
+      activeEffect.defenseModifier !== undefined ||
+      activeEffect.attackModifier !== undefined
+    );
     
-    // Fase 5: Adiciona buff de arma se o ritual tiver efeito de arma
-    if (hasWeaponEffect) {
-      addWeaponBuff(ritual, enhancements);
-    }
-    
-    if (hasDamageOrHealing) {
-      // Abre o modal de dano/cura
-      setRitualForDamage(ritual);
-      setRitualEnhancements(enhancements);
-      setDamageModalOpen(true);
+    // Fase 7: Se o ritual tem efeitos, abre o wizard integrado
+    if (hasEffects) {
+      setWizardRitual(ritual);
+      setWizardEnhancements(enhancements);
+      setWizardPeCost(peCost);
+      setWizardOpen(true);
       
       toast({
         title: `${ritual.name} conjurado!`,
-        description: `${peCost} PE consumido${enhText}. ${hasWeaponEffect ? 'Arma encantada! ' : ''}Role o dano!`,
-      });
-    } else if (hasWeaponEffect) {
-      toast({
-        title: `${ritual.name} conjurado!`,
-        description: `${peCost} PE consumido${enhText}. Arma encantada até o fim da cena!`,
+        description: `${peCost} PE consumido${enhText}. Processando efeitos...`,
       });
     } else {
+      // Ritual sem efeitos mapeados
       toast({
         title: `${ritual.name} conjurado!`,
         description: `${peCost} PE consumido${enhText}. PE restante: ${newPe}${isInCampaign ? ' • Sincronizado' : ''}`,
@@ -1955,6 +1961,88 @@ export default function CharacterSheet() {
             title: 'Condições aplicadas!',
             description: `${uniqueNew.map(c => c.name).join(', ')} adicionadas a ${character.name}`,
           });
+        }}
+      />
+
+      {/* Wizard de efeitos integrado (Fase 7) */}
+      <RitualEffectWizard
+        open={wizardOpen}
+        onOpenChange={setWizardOpen}
+        ritual={wizardRitual}
+        enhancements={wizardEnhancements}
+        peCost={wizardPeCost}
+        targetAttributes={{
+          vigor: character.vigor,
+          agility: character.agility,
+          presence: character.presence,
+        }}
+        onApplyDamage={(damage, type, ignoresRD) => {
+          toast({
+            title: `${damage} de dano!`,
+            description: `Dano de ${type}${ignoresRD ? ' (ignora RD)' : ''}`,
+          });
+        }}
+        onApplyHealing={(amount, type) => {
+          if (type === 'healing') {
+            const newHp = Math.min(character.hp_max, hpCurrent + amount);
+            setHpCurrent(newHp);
+            setCharacter(prev => prev ? { ...prev, hp_current: newHp } : null);
+            supabase
+              .from('characters')
+              .update({ hp_current: newHp })
+              .eq('id', character.id);
+            toast({
+              title: `+${amount} PV recuperados!`,
+              description: `PV atual: ${newHp}/${character.hp_max}`,
+            });
+          } else {
+            toast({
+              title: `+${amount} PV Temporários!`,
+              description: `Dura até o final da cena.`,
+            });
+          }
+        }}
+        onApplyConditions={async (newConditions) => {
+          if (newConditions.length === 0) return;
+          
+          const existingConditions = (character.conditions || []).map(c => {
+            if (typeof c === 'string') {
+              return { id: c.toLowerCase().replace(/\s+/g, ''), name: c, turnsRemaining: null, addedAt: new Date() };
+            }
+            return c as ActiveCondition;
+          });
+          
+          const uniqueNew = newConditions.filter(
+            nc => !existingConditions.some(ec => ec.id === nc.id)
+          );
+          
+          if (uniqueNew.length === 0) return;
+          
+          const allConditions = [...existingConditions, ...uniqueNew];
+          const conditionNames = allConditions.map(c => c.name);
+          
+          await supabase
+            .from('characters')
+            .update({ conditions: conditionNames })
+            .eq('id', character.id);
+
+          setCharacter(prev => prev ? {
+            ...prev,
+            conditions: conditionNames,
+          } : null);
+
+          toast({
+            title: 'Condições aplicadas!',
+            description: uniqueNew.map(c => c.name).join(', '),
+          });
+        }}
+        onAddWeaponBuff={(ritual, enhancements) => {
+          addWeaponBuff(ritual, enhancements);
+        }}
+        onComplete={() => {
+          setWizardRitual(null);
+          setWizardEnhancements([]);
+          setWizardPeCost(0);
         }}
       />
     </div>
