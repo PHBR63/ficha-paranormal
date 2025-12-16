@@ -71,6 +71,7 @@ import { SkillsByAttribute } from '@/components/character/SkillsByAttribute';
 import { PersonalDataAccordion } from '@/components/character/PersonalDataAccordion';
 import { CombatWeaponsTable } from '@/components/character/CombatWeaponsTable';
 import { SheetAccordionSection, SheetAccordionItem } from '@/components/character/SheetAccordionSection';
+import { RitualCard } from '@/components/character/RitualCard';
 
 // Componentes existentes que ainda usamos
 import { CharacterSheetHelp } from '@/components/character/CharacterSheetHelp';
@@ -1434,12 +1435,11 @@ export default function CharacterSheet() {
                       const ritual = ALL_RITUALS.find(r => r.id === ritualId);
                       if (!ritual) return null;
                       return (
-                        <SheetAccordionItem
+                        <RitualCard
                           key={i}
-                          title={ritual.name}
-                          description={`${ritual.execution} • ${ritual.range} • ${ritual.cost} PE`}
-                          badge={`${ritual.circle}º Círculo`}
-                          badgeVariant="paranormal"
+                          ritual={ritual}
+                          isNonOccultist={character.class !== 'Ocultista'}
+                          peCurrent={peCurrent}
                         />
                       );
                     })}
