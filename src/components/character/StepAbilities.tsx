@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { CharacterFormData } from '@/pages/CharacterCreate';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
@@ -19,7 +20,7 @@ import {
   Star,
   Lock,
   CheckCircle2,
-  Info,
+  Eye,
   TrendingUp
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -32,6 +33,7 @@ import {
 } from '@/lib/class-abilities';
 import { RuleBookTip } from './RuleBookTip';
 import { getRulebookContent } from '@/lib/rulebook-content';
+import { AbilityDetailModal } from './AbilityDetailModal';
 
 // Mapeamento de habilidades que evoluem com NEX
 // Cada entrada contém os marcos de evolução e suas descrições
@@ -92,6 +94,10 @@ const CLASS_COLORS: Record<string, string> = {
 export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) {
   const { characterClass, nex, abilities } = formData;
   
+  // Estado para o modal de detalhes
+  const [selectedAbilityForDetail, setSelectedAbilityForDetail] = useState<ClassAbility | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  
   const coreAbilities = characterClass ? getCoreAbilities(characterClass, nex) : [];
   const choosableAbilities = characterClass ? getChoosableAbilities(characterClass, nex) : [];
   const maxChoices = getAbilityChoiceCount(nex);
@@ -102,6 +108,12 @@ export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) 
   
   const ClassIcon = CLASS_ICONS[characterClass] || Star;
   const classColor = CLASS_COLORS[characterClass] || '';
+  
+  // Abre o modal com os detalhes da habilidade
+  const openAbilityDetail = (ability: ClassAbility) => {
+    setSelectedAbilityForDetail(ability);
+    setIsDetailModalOpen(true);
+  };
 
   const handleToggleAbility = (abilityId: string) => {
     const isSelected = abilities.includes(abilityId);
@@ -226,58 +238,34 @@ export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) 
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: index * 0.05 }}
                         className={cn(
-                          "p-4 rounded-lg border bg-gradient-to-r",
+                          "p-4 rounded-lg border bg-gradient-to-r cursor-pointer hover:ring-2 hover:ring-primary/30 transition-all",
                           classColor
                         )}
+                        onClick={() => openAbilityDetail(ability)}
                       >
                         <div className="flex items-start gap-3">
                           <CheckCircle2 className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
                           <div className="flex-1">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <h4 className="font-medium text-foreground">{ability.name}</h4>
-                              <Badge variant="outline" className="text-xs">
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <h4 className="font-medium text-foreground">{ability.name}</h4>
+                                <Badge variant="outline" className="text-xs">
+                                  NEX {ability.minNex}%
+                                </Badge>
+                                {/* Indicador de habilidade que evolui */}
+                                {hasEvolution && (
+                                  <Badge variant="secondary" className="text-xs gap-1">
+                                    <TrendingUp className="w-3 h-3" />
+                                    Evolui
+                                  </Badge>
+                                )}
+                              </div>
+                              <Eye className="w-4 h-4 text-muted-foreground hover:text-primary transition-colors flex-shrink-0" />
                                 NEX {ability.minNex}%
-                              </Badge>
-                              {/* Indicador de habilidade que evolui */}
-                              {hasEvolution && (
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Badge variant="secondary" className="text-xs gap-1 cursor-help">
-                                      <TrendingUp className="w-3 h-3" />
-                                      Evolui
-                                    </Badge>
-                                  </TooltipTrigger>
-                                  <TooltipContent side="right" className="max-w-xs p-3">
-                                    <p className="font-semibold mb-2">Progressão por NEX:</p>
-                                    <ul className="space-y-1 text-xs">
-                                      {evolution.nexMarkers.map((nexMark, i) => (
-                                        <li 
-                                          key={nexMark}
-                                          className={cn(
-                                            "flex items-center gap-2",
-                                            nex >= nexMark ? "text-primary" : "text-muted-foreground"
-                                          )}
-                                        >
-                                          <span className={cn(
-                                            "w-4 h-4 rounded-full flex items-center justify-center text-[10px] border",
-                                            nex >= nexMark 
-                                              ? "bg-primary/20 border-primary text-primary" 
-                                              : "bg-muted border-muted-foreground"
-                                          )}>
-                                            {nex >= nexMark ? '✓' : i + 1}
-                                          </span>
-                                          <span className="font-medium">NEX {nexMark}%:</span>
-                                          <span>{evolution.evolutions[i]}</span>
-                                        </li>
-                                      ))}
-                                    </ul>
-                                  </TooltipContent>
-                                </Tooltip>
-                              )}
                             </div>
                             
                             {/* Descrição base */}
-                            <p className="text-sm text-muted-foreground mt-1">
+                            <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
                               {ability.description}
                             </p>
                             
@@ -340,34 +328,35 @@ export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) 
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: index * 0.05 }}
                         className={cn(
-                          "p-4 rounded-lg border transition-all cursor-pointer",
+                          "p-4 rounded-lg border transition-all",
                           isSelected 
                             ? cn("bg-gradient-to-r", classColor)
                             : "bg-card/50 hover:bg-card/80",
-                          isDisabled && "opacity-50 cursor-not-allowed"
+                          isDisabled && "opacity-50"
                         )}
-                        onClick={() => !isDisabled && handleToggleAbility(ability.id)}
                       >
                         <div className="flex items-start gap-3">
+                          {/* Checkbox clicável separadamente */}
                           <Checkbox
                             checked={isSelected}
                             disabled={isDisabled}
-                            className="mt-0.5"
+                            className="mt-0.5 cursor-pointer"
+                            onClick={(e) => e.stopPropagation()}
+                            onCheckedChange={() => !isDisabled && handleToggleAbility(ability.id)}
                           />
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <h4 className="font-medium text-foreground">{ability.name}</h4>
-                              <Badge variant="outline" className="text-xs">
-                                NEX {ability.minNex}%
-                              </Badge>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Info className="w-4 h-4 text-muted-foreground" />
-                                </TooltipTrigger>
-                                <TooltipContent className="max-w-xs">
-                                  {ability.description}
-                                </TooltipContent>
-                              </Tooltip>
+                          {/* Área clicável para abrir modal */}
+                          <div 
+                            className="flex-1 cursor-pointer hover:opacity-80 transition-opacity"
+                            onClick={() => openAbilityDetail(ability)}
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <h4 className="font-medium text-foreground">{ability.name}</h4>
+                                <Badge variant="outline" className="text-xs">
+                                  NEX {ability.minNex}%
+                                </Badge>
+                              </div>
+                              <Eye className="w-4 h-4 text-muted-foreground hover:text-primary transition-colors flex-shrink-0" />
                             </div>
                             <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
                               {ability.description}
@@ -417,6 +406,21 @@ export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) 
             </div>
           </>
         )}
+        
+        {/* Modal de detalhes da habilidade */}
+        <AbilityDetailModal
+          ability={selectedAbilityForDetail}
+          isOpen={isDetailModalOpen}
+          onClose={() => {
+            setIsDetailModalOpen(false);
+            setSelectedAbilityForDetail(null);
+          }}
+          nex={nex}
+          isSelected={selectedAbilityForDetail ? abilities.includes(selectedAbilityForDetail.id) : false}
+          isCore={selectedAbilityForDetail ? coreAbilities.some(ca => ca.id === selectedAbilityForDetail.id) : false}
+          onToggle={selectedAbilityForDetail ? () => handleToggleAbility(selectedAbilityForDetail.id) : undefined}
+          canSelect={remainingChoices > 0 || (selectedAbilityForDetail ? abilities.includes(selectedAbilityForDetail.id) : false)}
+        />
       </div>
     </TooltipProvider>
   );
