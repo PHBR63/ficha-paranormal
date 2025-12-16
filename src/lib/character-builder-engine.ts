@@ -125,9 +125,15 @@ export const CLASS_PROFICIENCIES: Record<string, string[]> = {
 // Habilidades iniciais da classe - nome correto conforme livro de regras
 export const CLASS_INITIAL_ABILITIES: Record<string, string[]> = {
   'Combatente': ['Ataque Especial (2 PE, +5 no ataque ou dano)'],
-  'Especialista': ['Eclético (+5 em teste de perícia não treinada, 1x/cena)'],
+  'Especialista': [
+    'Eclético (2 PE para ser considerado treinado em qualquer perícia)',
+    'Perito (2 PE para somar +1d6 em teste de 2 perícias escolhidas)'
+  ],
   'Ocultista': ['Escolhido pelo Outro Lado (pode lançar rituais)'],
-  'Sobrevivente': ['Vontade de Viver', 'Improviso'], // Suplemento
+  'Sobrevivente': [
+    'Vontade de Viver (2 PE, ficar com 1 PV ao invés de 0, 1x/cena)',
+    'Improviso (armas improvisadas causam 1d6 dano)'
+  ],
 };
 
 // ============= SKILLS WITH TRAINING REQUIREMENT =============

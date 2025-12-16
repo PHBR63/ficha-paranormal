@@ -97,19 +97,18 @@ export function SkillsGrid({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
             {trainedSkills.map((skill, index) => {
               const attrValue = attributes[skill.attribute] || 0;
-              const trainingBonus = 5;
-              const total = attrValue + trainingBonus;
+              const trainingBonus = 5; // Bônus de treinamento fixo
               const color = ATTRIBUTE_COLORS[skill.attribute];
               return (
                 <SkillRow 
                   key={skill.id} 
                   name={skill.name} 
                   attribute={ATTRIBUTE_LABELS[skill.attribute]} 
-                  total={total} 
+                  total={trainingBonus} // Mostrar apenas bônus de treinamento
                   color={color} 
                   trained 
                   index={index} 
-                  onClick={() => onRoll?.(total, skill.name, attrValue)} 
+                  onClick={() => onRoll?.(attrValue + trainingBonus, skill.name, attrValue)} // Soma apenas na rolagem
                 />
               );
             })}
@@ -129,18 +128,18 @@ export function SkillsGrid({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
             {untrainedSkills.map((skill, index) => {
               const attrValue = attributes[skill.attribute] || 0;
-              const total = attrValue; // Sem bônus de treinamento
+              const trainingBonus = 0; // Sem bônus de treinamento
               const color = ATTRIBUTE_COLORS[skill.attribute];
               return (
                 <SkillRow 
                   key={skill.id} 
                   name={skill.name} 
                   attribute={ATTRIBUTE_LABELS[skill.attribute]} 
-                  total={total} 
+                  total={trainingBonus} // Mostrar 0 para não treinadas
                   color={color} 
                   trained={false} 
                   index={index} 
-                  onClick={() => onRoll?.(total, skill.name, attrValue)} 
+                  onClick={() => onRoll?.(attrValue + trainingBonus, skill.name, attrValue)} // Soma apenas na rolagem
                 />
               );
             })}
