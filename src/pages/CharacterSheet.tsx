@@ -71,7 +71,6 @@ import { SkillsByAttribute } from '@/components/character/SkillsByAttribute';
 import { PersonalDataAccordion } from '@/components/character/PersonalDataAccordion';
 import { CombatWeaponsTable } from '@/components/character/CombatWeaponsTable';
 import { SheetAccordionSection, SheetAccordionItem } from '@/components/character/SheetAccordionSection';
-import { QuickReferenceCard } from '@/components/character/QuickReferenceCard';
 
 // Componentes existentes que ainda usamos
 import { CharacterSheetHelp } from '@/components/character/CharacterSheetHelp';
@@ -1223,15 +1222,6 @@ export default function CharacterSheet() {
                 affinityElement={character.elemental_affinity}
                 nex={character.nex}
                 onRollComplete={handleRollComplete}
-              />
-
-              {/* Referência Rápida com Resistências */}
-              <QuickReferenceCard
-                nex={character.nex}
-                vigor={character.vigor}
-                agility={character.agility}
-                presence={character.presence}
-                resistanceBonuses={defenseBonuses.resistances}
               />
 
               {/* Resumo de Todos os Bônus Ativos */}
