@@ -1,6 +1,6 @@
 /**
  * Página administrativa para gerenciamento de usuários
- * Permite visualizar usuários e promover/remover roles de admin
+ * Permite visualizar usuários e alterar suas permissões (Admin, Moderador, Usuário)
  */
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -17,6 +17,13 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -30,16 +37,19 @@ import { toast } from 'sonner';
 import { 
   ArrowLeft, 
   Shield, 
-  ShieldOff, 
   Users,
   Loader2,
   FileJson,
-  Crown
+  Crown,
+  User
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+
+// Tipo para role do usuário
+type AppRole = 'admin' | 'moderator' | 'user';
 
 // Tipagem para usuário com role
 interface UserWithRole {
@@ -47,8 +57,31 @@ interface UserWithRole {
   display_name: string | null;
   avatar_url: string | null;
   created_at: string;
-  role: 'admin' | 'moderator' | 'user' | null;
+  role: AppRole;
 }
+
+// Configuração visual de cada role
+const roleConfig: Record<AppRole, { 
+  label: string; 
+  icon: React.ReactNode; 
+  badgeClass: string;
+}> = {
+  admin: {
+    label: 'Administrador',
+    icon: <Crown className="h-3 w-3" />,
+    badgeClass: 'bg-amber-500/20 text-amber-500 border-amber-500/30',
+  },
+  moderator: {
+    label: 'Moderador',
+    icon: <Shield className="h-3 w-3" />,
+    badgeClass: 'bg-blue-500/20 text-blue-500 border-blue-500/30',
+  },
+  user: {
+    label: 'Usuário',
+    icon: <User className="h-3 w-3" />,
+    badgeClass: '',
+  },
+};
 
 export default function AdminUsers() {
   const navigate = useNavigate();
@@ -62,10 +95,17 @@ export default function AdminUsers() {
   // Dialog de confirmação
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean;
-    action: 'promote' | 'demote';
     userId: string;
     userName: string;
-  }>({ open: false, action: 'promote', userId: '', userName: '' });
+    currentRole: AppRole;
+    newRole: AppRole;
+  } | null>(null);
+
+  // Obter iniciais do nome
+  const getInitials = (name: string | null) => {
+    if (!name) return '?';
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
 
   // Buscar usuários com seus roles
   const fetchUsers = async () => {
@@ -79,21 +119,29 @@ export default function AdminUsers() {
 
       if (profilesError) throw profilesError;
 
-      // Buscar todos os roles de admin
+      // Buscar todos os roles
       const { data: roles, error: rolesError } = await supabase
         .from('user_roles')
         .select('user_id, role');
 
       if (rolesError) throw rolesError;
 
-      // Combinar dados
-      const usersWithRoles: UserWithRole[] = (profiles || []).map(profile => {
-        const userRole = roles?.find(r => r.user_id === profile.user_id);
-        return {
-          ...profile,
-          role: userRole?.role || null
-        };
+      // Mapear roles por user_id (priorizar admin > moderator)
+      const roleMap = new Map<string, AppRole>();
+      roles?.forEach((r) => {
+        const currentRole = roleMap.get(r.user_id);
+        const newRole = r.role as AppRole;
+        // Priorizar admin > moderator > user
+        if (!currentRole || newRole === 'admin' || (newRole === 'moderator' && currentRole === 'user')) {
+          roleMap.set(r.user_id, newRole);
+        }
       });
+
+      // Combinar dados - se não tem role na tabela, é 'user'
+      const usersWithRoles: UserWithRole[] = (profiles || []).map(profile => ({
+        ...profile,
+        role: roleMap.get(profile.user_id) || 'user'
+      }));
 
       setUsers(usersWithRoles);
     } catch (error) {
@@ -108,65 +156,63 @@ export default function AdminUsers() {
     fetchUsers();
   }, []);
 
-  // Promover usuário a admin
-  const promoteToAdmin = async (userId: string) => {
+  // Alterar role do usuário
+  const changeUserRole = async (userId: string, newRole: AppRole) => {
     setActionLoading(userId);
     try {
-      const { error } = await supabase
-        .from('user_roles')
-        .insert({ user_id: userId, role: 'admin' });
-
-      if (error) throw error;
-
-      toast.success('Usuário promovido a administrador!');
-      fetchUsers();
-    } catch (error: unknown) {
-      console.error('Erro ao promover usuário:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
-      toast.error(`Erro ao promover usuário: ${errorMessage}`);
-    } finally {
-      setActionLoading(null);
-      setConfirmDialog({ open: false, action: 'promote', userId: '', userName: '' });
-    }
-  };
-
-  // Remover role de admin
-  const demoteFromAdmin = async (userId: string) => {
-    setActionLoading(userId);
-    try {
-      const { error } = await supabase
+      // Remover roles existentes do usuário
+      const { error: deleteError } = await supabase
         .from('user_roles')
         .delete()
-        .eq('user_id', userId)
-        .eq('role', 'admin');
+        .eq('user_id', userId);
 
-      if (error) throw error;
+      if (deleteError) throw deleteError;
 
-      toast.success('Permissão de administrador removida');
+      // Se nova role não é 'user', inserir na tabela
+      if (newRole !== 'user') {
+        const { error: insertError } = await supabase
+          .from('user_roles')
+          .insert({ user_id: userId, role: newRole });
+
+        if (insertError) throw insertError;
+      }
+
+      toast.success(`Permissão alterada para ${roleConfig[newRole].label}`);
       fetchUsers();
-    } catch (error: unknown) {
-      console.error('Erro ao remover admin:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
-      toast.error(`Erro ao remover permissão: ${errorMessage}`);
+    } catch (error) {
+      console.error('Erro ao alterar role:', error);
+      toast.error('Erro ao alterar permissão do usuário');
     } finally {
       setActionLoading(null);
-      setConfirmDialog({ open: false, action: 'promote', userId: '', userName: '' });
+      setConfirmDialog(null);
     }
   };
 
-  // Confirmar ação
-  const handleConfirmAction = () => {
-    if (confirmDialog.action === 'promote') {
-      promoteToAdmin(confirmDialog.userId);
-    } else {
-      demoteFromAdmin(confirmDialog.userId);
+  // Confirmar mudança de role
+  const handleConfirmChange = () => {
+    if (confirmDialog) {
+      changeUserRole(confirmDialog.userId, confirmDialog.newRole);
     }
   };
 
-  // Obter iniciais do nome
-  const getInitials = (name: string | null) => {
-    if (!name) return '?';
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  // Abrir dialog de confirmação
+  const openConfirmDialog = (userItem: UserWithRole, newRole: AppRole) => {
+    // Não permitir alterar própria role
+    if (userItem.user_id === currentUser?.id) {
+      toast.error('Você não pode alterar sua própria permissão');
+      return;
+    }
+
+    // Se a role é a mesma, não fazer nada
+    if (userItem.role === newRole) return;
+
+    setConfirmDialog({
+      open: true,
+      userId: userItem.user_id,
+      userName: userItem.display_name || 'Usuário',
+      currentRole: userItem.role,
+      newRole,
+    });
   };
 
   return (
@@ -222,10 +268,10 @@ export default function AdminUsers() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Users className="h-5 w-5 text-primary" />
-              Usuários do Sistema
+              Usuários do Sistema ({users.length})
             </CardTitle>
             <CardDescription>
-              Gerencie permissões de administrador para os usuários cadastrados
+              Gerencie permissões dos usuários: Administrador, Moderador ou Usuário
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -244,98 +290,90 @@ export default function AdminUsers() {
                     <TableHead>Usuário</TableHead>
                     <TableHead>Cadastro</TableHead>
                     <TableHead>Permissão</TableHead>
-                    <TableHead className="text-right">Ações</TableHead>
+                    <TableHead className="text-right">Alterar Para</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {users.map((user) => {
-                    const isCurrentUser = user.user_id === currentUser?.id;
-                    const isAdmin = user.role === 'admin';
-                    const isLoading = actionLoading === user.user_id;
+                  {users.map((userItem) => {
+                    const isCurrentUser = userItem.user_id === currentUser?.id;
+                    const isLoading = actionLoading === userItem.user_id;
+                    const config = roleConfig[userItem.role];
 
                     return (
-                      <TableRow key={user.user_id}>
+                      <TableRow key={userItem.user_id}>
+                        {/* Avatar e Nome */}
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <Avatar className="h-10 w-10">
-                              <AvatarImage src={user.avatar_url || undefined} />
+                              <AvatarImage src={userItem.avatar_url || undefined} />
                               <AvatarFallback className="bg-primary/10 text-primary">
-                                {getInitials(user.display_name)}
+                                {getInitials(userItem.display_name)}
                               </AvatarFallback>
                             </Avatar>
                             <div>
                               <p className="font-medium text-foreground">
-                                {user.display_name || 'Sem nome'}
+                                {userItem.display_name || 'Sem nome'}
                                 {isCurrentUser && (
                                   <span className="text-xs text-muted-foreground ml-2">(você)</span>
                                 )}
                               </p>
                               <p className="text-xs text-muted-foreground font-mono">
-                                {user.user_id.slice(0, 8)}...
+                                {userItem.user_id.slice(0, 8)}...
                               </p>
                             </div>
                           </div>
                         </TableCell>
+
+                        {/* Data de cadastro */}
                         <TableCell className="text-muted-foreground">
-                          {format(new Date(user.created_at), "dd/MM/yyyy", { locale: ptBR })}
+                          {format(new Date(userItem.created_at), "dd/MM/yyyy", { locale: ptBR })}
                         </TableCell>
+
+                        {/* Badge da role atual */}
                         <TableCell>
-                          {isAdmin ? (
-                            <Badge variant="default" className="bg-amber-500/20 text-amber-500 border-amber-500/30">
-                              <Crown className="h-3 w-3 mr-1" />
-                              Admin
-                            </Badge>
-                          ) : (
-                            <Badge variant="secondary">
-                              Usuário
-                            </Badge>
-                          )}
+                          <Badge 
+                            variant={userItem.role === 'user' ? 'secondary' : 'outline'}
+                            className={`gap-1 ${config.badgeClass}`}
+                          >
+                            {config.icon}
+                            {config.label}
+                          </Badge>
                         </TableCell>
+
+                        {/* Select para alterar role */}
                         <TableCell className="text-right">
-                          {isAdmin ? (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                              disabled={isCurrentUser || isLoading}
-                              onClick={() => setConfirmDialog({
-                                open: true,
-                                action: 'demote',
-                                userId: user.user_id,
-                                userName: user.display_name || 'este usuário'
-                              })}
-                            >
-                              {isLoading ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : (
-                                <>
-                                  <ShieldOff className="h-4 w-4 mr-1" />
-                                  Remover Admin
-                                </>
-                              )}
-                            </Button>
+                          {isLoading ? (
+                            <Loader2 className="h-4 w-4 animate-spin ml-auto" />
                           ) : (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-primary hover:text-primary hover:bg-primary/10"
-                              disabled={isLoading}
-                              onClick={() => setConfirmDialog({
-                                open: true,
-                                action: 'promote',
-                                userId: user.user_id,
-                                userName: user.display_name || 'este usuário'
-                              })}
+                            <Select
+                              value={userItem.role}
+                              onValueChange={(value: AppRole) => openConfirmDialog(userItem, value)}
+                              disabled={isCurrentUser}
                             >
-                              {isLoading ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : (
-                                <>
-                                  <Shield className="h-4 w-4 mr-1" />
-                                  Promover
-                                </>
-                              )}
-                            </Button>
+                              <SelectTrigger className="w-44 ml-auto">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="admin">
+                                  <div className="flex items-center gap-2">
+                                    <Crown className="h-4 w-4 text-amber-500" />
+                                    Administrador
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="moderator">
+                                  <div className="flex items-center gap-2">
+                                    <Shield className="h-4 w-4 text-blue-500" />
+                                    Moderador
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="user">
+                                  <div className="flex items-center gap-2">
+                                    <User className="h-4 w-4 text-muted-foreground" />
+                                    Usuário
+                                  </div>
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
                           )}
                         </TableCell>
                       </TableRow>
@@ -350,29 +388,42 @@ export default function AdminUsers() {
 
       {/* Dialog de Confirmação */}
       <AlertDialog 
-        open={confirmDialog.open} 
-        onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, open }))}
+        open={!!confirmDialog?.open} 
+        onOpenChange={() => setConfirmDialog(null)}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>
-              {confirmDialog.action === 'promote' 
-                ? 'Promover a Administrador?' 
-                : 'Remover Administrador?'}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {confirmDialog.action === 'promote' 
-                ? `${confirmDialog.userName} terá acesso total às funcionalidades administrativas do sistema.`
-                : `${confirmDialog.userName} perderá acesso às funcionalidades administrativas do sistema.`}
+            <AlertDialogTitle>Confirmar alteração de permissão</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div>
+                {confirmDialog && (
+                  <span>
+                    Deseja alterar a permissão de <strong>{confirmDialog.userName}</strong> de{' '}
+                    <Badge 
+                      variant={confirmDialog.currentRole === 'user' ? 'secondary' : 'outline'}
+                      className={`mx-1 gap-1 ${roleConfig[confirmDialog.currentRole].badgeClass}`}
+                    >
+                      {roleConfig[confirmDialog.currentRole].icon}
+                      {roleConfig[confirmDialog.currentRole].label}
+                    </Badge>{' '}
+                    para{' '}
+                    <Badge 
+                      variant={confirmDialog.newRole === 'user' ? 'secondary' : 'outline'}
+                      className={`mx-1 gap-1 ${roleConfig[confirmDialog.newRole].badgeClass}`}
+                    >
+                      {roleConfig[confirmDialog.newRole].icon}
+                      {roleConfig[confirmDialog.newRole].label}
+                    </Badge>
+                    ?
+                  </span>
+                )}
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleConfirmAction}
-              className={confirmDialog.action === 'demote' ? 'bg-destructive hover:bg-destructive/90' : ''}
-            >
-              {confirmDialog.action === 'promote' ? 'Promover' : 'Remover'}
+            <AlertDialogAction onClick={handleConfirmChange}>
+              Confirmar
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
