@@ -76,7 +76,7 @@ import {
   useConsumableItem,
   canUseItem,
 } from '@/lib/inventory-system';
-import { EquipmentSlots, EquipmentSlotType, EQUIPMENT_SLOTS, getAppropriateSlot } from './EquipmentSlots';
+import { EquipmentSlots, EquipmentSlotType, EQUIPMENT_SLOTS, getAppropriateSlot, isTwoHandedWeapon } from './EquipmentSlots';
 import { WeaponCatalogModal } from './WeaponCatalogModal';
 import { ArmorCatalogModal } from './ArmorCatalogModal';
 import { ItemCatalogModal } from './ItemCatalogModal';
@@ -145,25 +145,45 @@ export function InventoryPanel({
   const loadStatus = useMemo(() => getLoadStatus(inventory, strength), [inventory, strength]);
   const patentLimits = useMemo(() => getPatentLimits(patent), [patent]);
 
-  // Mapear itens equipados por slot
+  // Mapear itens equipados por slot (atualizado com shield, removido head)
   const equippedItems = useMemo(() => {
     const slots: Record<EquipmentSlotType, ExtendedInventoryItem | null> = {
       primary_weapon: null,
       secondary_weapon: null,
       armor: null,
-      head: null,
+      shield: null,
       accessory_1: null,
       accessory_2: null,
     };
 
     inventory.forEach(item => {
       if (item.isEquipped && item.equipSlot) {
+        // Migrar itens do slot 'head' antigo para 'armor' ou 'shield'
+        if ((item.equipSlot as string) === 'head') {
+          // Não fazer nada - item será desequipado
+          return;
+        }
         slots[item.equipSlot] = item;
       }
     });
 
     return slots;
   }, [inventory]);
+
+  // Verificar se a arma principal é de duas mãos
+  const isPrimaryTwoHanded = useMemo(() => {
+    const primaryWeapon = equippedItems.primary_weapon;
+    if (!primaryWeapon) return false;
+    
+    // Verificar propriedade "Duas mãos"
+    const properties = (primaryWeapon as any).properties as string[] | undefined;
+    if (!properties) return false;
+    
+    return properties.some(prop => 
+      prop.toLowerCase().includes('duas mãos') || 
+      prop.toLowerCase().includes('duas maos')
+    );
+  }, [equippedItems.primary_weapon]);
 
   // Agrupar itens por tipo
   const groupedItems = useMemo(() => {
@@ -273,17 +293,57 @@ export function InventoryPanel({
     const item = inventory.find(i => i.id === itemId);
     if (!item) return;
 
-    // Encontrar slot apropriado
-    const slot = getAppropriateSlot(item, equippedItems);
-    if (!slot) return;
+    // Encontrar slot apropriado (passando flag de duas mãos)
+    const slot = getAppropriateSlot(item, equippedItems, isPrimaryTwoHanded);
+    if (!slot) {
+      // Mostrar toast explicando por que não pode equipar
+      const extItem = item as ExtendedInventoryItem & { properties?: string[] };
+      if (extItem.properties?.some(p => p.toLowerCase().includes('duas mãos'))) {
+        toast({
+          title: 'Não foi possível equipar',
+          description: 'Desequipe a arma secundária e escudo primeiro para usar uma arma de duas mãos.',
+          variant: 'destructive',
+        });
+      } else if (isPrimaryTwoHanded && (item.itemType === 'weapon' || (item as any).armorType === 'escudo')) {
+        toast({
+          title: 'Não foi possível equipar',
+          description: 'A arma principal ocupa as duas mãos.',
+          variant: 'destructive',
+        });
+      }
+      return;
+    }
 
-    const newInventory = inventory.map(i => ({
-      ...i,
-      isEquipped: i.id === itemId ? true : i.isEquipped,
-      equipSlot: i.id === itemId ? slot : i.equipSlot,
-    }));
+    // Se estamos equipando uma arma de duas mãos, desequipar secundária e escudo
+    const extItem = item as ExtendedInventoryItem & { properties?: string[] };
+    const isTwoHanded = extItem.properties?.some(p => 
+      p.toLowerCase().includes('duas mãos') || p.toLowerCase().includes('duas maos')
+    );
+
+    let newInventory = inventory.map(i => {
+      // Desequipar arma secundária e escudo se nova arma é de duas mãos
+      if (isTwoHanded && slot === 'primary_weapon') {
+        if (i.equipSlot === 'secondary_weapon' || i.equipSlot === 'shield') {
+          return { ...i, isEquipped: false, equipSlot: undefined };
+        }
+      }
+      
+      return {
+        ...i,
+        isEquipped: i.id === itemId ? true : i.isEquipped,
+        equipSlot: i.id === itemId ? slot : i.equipSlot,
+      };
+    });
 
     onInventoryChange(newInventory);
+    
+    // Toast de sucesso se arma de duas mãos
+    if (isTwoHanded && slot === 'primary_weapon') {
+      toast({
+        title: 'Arma de duas mãos equipada',
+        description: 'Slot secundário e escudo foram liberados.',
+      });
+    }
   };
 
   const handleUnequipItem = (itemId: string) => {
@@ -483,7 +543,7 @@ export function InventoryPanel({
 
   const canEquipItem = (item: ExtendedInventoryItem): boolean => {
     if (item.isEquipped) return false;
-    const slot = getAppropriateSlot(item, equippedItems);
+    const slot = getAppropriateSlot(item, equippedItems, isPrimaryTwoHanded);
     return slot !== null;
   };
 

@@ -1,6 +1,10 @@
 /**
  * Hook para cálculo de proteção baseado em equipamentos
  * Calcula RD total, penalidades e bônus de defesa das proteções equipadas
+ * 
+ * Regras corrigidas:
+ * - Armaduras (leve/pesada) dão RD e podem ter penalidades
+ * - Escudos dão bônus de defesa (não RD) e podem ter penalidades
  */
 
 import { useMemo } from 'react';
@@ -16,9 +20,14 @@ export interface ArmorStats {
 
 // Interface para resultado do cálculo
 export interface ProtectionCalculation {
+  // RD apenas de armaduras (não escudos)
   totalRD: number;
+  // Penalidades somadas (armadura + escudo)
   totalAgilityPenalty: number;
   totalSpeedPenalty: number;
+  // Bônus de defesa do escudo
+  shieldDefenseBonus: number;
+  // Armaduras equipadas
   equippedArmors: Array<{
     name: string;
     rd: number;
@@ -26,9 +35,27 @@ export interface ProtectionCalculation {
     speedPenalty: number;
     type: string;
   }>;
+  // Escudo equipado
+  equippedShield: {
+    name: string;
+    defenseBonus: number;
+    agilityPenalty: number;
+    speedPenalty: number;
+  } | null;
+  // Valores efetivos (com bônus de escudo)
   effectiveDefense: number;
   effectiveMovement: number;
   hasArmorEquipped: boolean;
+  hasShieldEquipped: boolean;
+}
+
+/**
+ * Extrai bônus de defesa do campo special do escudo
+ */
+function extractShieldDefenseBonus(special?: string): number {
+  if (!special) return 0;
+  const match = special.match(/Defesa \+(\d+)/i);
+  return match ? parseInt(match[1]) : 0;
 }
 
 /**
@@ -43,18 +70,25 @@ export function useArmorCalculation(
     name: string;
     isEquipped?: boolean;
     itemType?: string;
+    equipSlot?: string;
     rd?: number;
     agilityPenalty?: number;
     speedPenalty?: number;
     armorType?: string;
+    special?: string;
   }>,
   baseDefense: number,
   baseMovement: number
 ): ProtectionCalculation {
   return useMemo(() => {
-    // Filtra apenas proteções equipadas
+    // Filtra armaduras equipadas (não escudos)
     const equippedArmors = inventory
-      .filter(item => item.isEquipped && item.itemType === 'armor' && item.rd !== undefined)
+      .filter(item => 
+        item.isEquipped && 
+        item.itemType === 'armor' && 
+        item.armorType !== 'escudo' &&
+        item.rd !== undefined
+      )
       .map(item => ({
         name: item.name,
         rd: item.rd || 0,
@@ -63,14 +97,42 @@ export function useArmorCalculation(
         type: item.armorType || 'leve',
       }));
 
-    // Soma totais
+    // Filtra escudo equipado
+    const shieldItem = inventory.find(item => 
+      item.isEquipped && 
+      item.itemType === 'armor' && 
+      item.armorType === 'escudo'
+    );
+
+    const equippedShield = shieldItem ? {
+      name: shieldItem.name,
+      defenseBonus: extractShieldDefenseBonus(shieldItem.special),
+      agilityPenalty: shieldItem.agilityPenalty || 0,
+      speedPenalty: shieldItem.speedPenalty || 0,
+    } : null;
+
+    // RD apenas de armaduras (escudos NÃO dão RD, dão bônus de defesa)
     const totalRD = equippedArmors.reduce((sum, armor) => sum + armor.rd, 0);
-    const totalAgilityPenalty = equippedArmors.reduce((sum, armor) => sum + armor.agilityPenalty, 0);
-    const totalSpeedPenalty = equippedArmors.reduce((sum, armor) => sum + armor.speedPenalty, 0);
+    
+    // Penalidades de armadura
+    const armorAgilityPenalty = equippedArmors.reduce((sum, armor) => sum + armor.agilityPenalty, 0);
+    const armorSpeedPenalty = equippedArmors.reduce((sum, armor) => sum + armor.speedPenalty, 0);
+    
+    // Penalidades de escudo
+    const shieldAgilityPenalty = equippedShield?.agilityPenalty || 0;
+    const shieldSpeedPenalty = equippedShield?.speedPenalty || 0;
+    
+    // Totais (armadura + escudo)
+    const totalAgilityPenalty = armorAgilityPenalty + shieldAgilityPenalty;
+    const totalSpeedPenalty = armorSpeedPenalty + shieldSpeedPenalty;
+    
+    // Bônus de defesa do escudo
+    const shieldDefenseBonus = equippedShield?.defenseBonus || 0;
 
     // Calcula valores efetivos
     // Penalidade de agilidade afeta a defesa (Defesa = 10 + AGI)
-    const effectiveDefense = Math.max(10, baseDefense + totalAgilityPenalty);
+    // Bônus de escudo é aplicado à defesa
+    const effectiveDefense = Math.max(10, baseDefense + totalAgilityPenalty + shieldDefenseBonus);
     
     // Penalidade de deslocamento reduz movimento em metros
     const effectiveMovement = Math.max(1.5, baseMovement + totalSpeedPenalty);
@@ -79,10 +141,13 @@ export function useArmorCalculation(
       totalRD,
       totalAgilityPenalty,
       totalSpeedPenalty,
+      shieldDefenseBonus,
       equippedArmors,
+      equippedShield,
       effectiveDefense,
       effectiveMovement,
       hasArmorEquipped: equippedArmors.length > 0,
+      hasShieldEquipped: equippedShield !== null,
     };
   }, [inventory, baseDefense, baseMovement]);
 }
@@ -95,16 +160,24 @@ export function calculateArmorProtection(
     name: string;
     isEquipped?: boolean;
     itemType?: string;
+    equipSlot?: string;
     rd?: number;
     agilityPenalty?: number;
     speedPenalty?: number;
     armorType?: string;
+    special?: string;
   }>,
   baseDefense: number,
   baseMovement: number
 ): ProtectionCalculation {
+  // Filtra armaduras equipadas (não escudos)
   const equippedArmors = inventory
-    .filter(item => item.isEquipped && item.itemType === 'armor' && item.rd !== undefined)
+    .filter(item => 
+      item.isEquipped && 
+      item.itemType === 'armor' && 
+      item.armorType !== 'escudo' &&
+      item.rd !== undefined
+    )
     .map(item => ({
       name: item.name,
       rd: item.rd || 0,
@@ -113,20 +186,38 @@ export function calculateArmorProtection(
       type: item.armorType || 'leve',
     }));
 
-  const totalRD = equippedArmors.reduce((sum, armor) => sum + armor.rd, 0);
-  const totalAgilityPenalty = equippedArmors.reduce((sum, armor) => sum + armor.agilityPenalty, 0);
-  const totalSpeedPenalty = equippedArmors.reduce((sum, armor) => sum + armor.speedPenalty, 0);
+  // Filtra escudo equipado
+  const shieldItem = inventory.find(item => 
+    item.isEquipped && 
+    item.itemType === 'armor' && 
+    item.armorType === 'escudo'
+  );
 
-  const effectiveDefense = Math.max(10, baseDefense + totalAgilityPenalty);
+  const equippedShield = shieldItem ? {
+    name: shieldItem.name,
+    defenseBonus: extractShieldDefenseBonus(shieldItem.special),
+    agilityPenalty: shieldItem.agilityPenalty || 0,
+    speedPenalty: shieldItem.speedPenalty || 0,
+  } : null;
+
+  const totalRD = equippedArmors.reduce((sum, armor) => sum + armor.rd, 0);
+  const totalAgilityPenalty = equippedArmors.reduce((sum, armor) => sum + armor.agilityPenalty, 0) + (equippedShield?.agilityPenalty || 0);
+  const totalSpeedPenalty = equippedArmors.reduce((sum, armor) => sum + armor.speedPenalty, 0) + (equippedShield?.speedPenalty || 0);
+  const shieldDefenseBonus = equippedShield?.defenseBonus || 0;
+
+  const effectiveDefense = Math.max(10, baseDefense + totalAgilityPenalty + shieldDefenseBonus);
   const effectiveMovement = Math.max(1.5, baseMovement + totalSpeedPenalty);
 
   return {
     totalRD,
     totalAgilityPenalty,
     totalSpeedPenalty,
+    shieldDefenseBonus,
     equippedArmors,
+    equippedShield,
     effectiveDefense,
     effectiveMovement,
     hasArmorEquipped: equippedArmors.length > 0,
+    hasShieldEquipped: equippedShield !== null,
   };
 }
