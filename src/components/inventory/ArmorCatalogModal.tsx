@@ -34,9 +34,9 @@ import {
 } from '@/components/ui/collapsible';
 import { 
   CatalogArmor, 
-  LIGHT_ARMORS, 
-  HEAVY_ARMORS, 
-  SHIELDS,
+  BASE_ARMORS,
+  MODIFIED_ARMORS,
+  ALL_ARMORS,
   getArmorTypeName,
   formatPenalties
 } from '@/lib/armor-catalog';
@@ -100,16 +100,31 @@ function ArmorCard({
                   <TooltipTrigger asChild>
                     <span className="flex items-center gap-1 text-primary font-medium">
                       <Shield className="w-3.5 h-3.5" />
-                      RD {armor.rd}
+                      +{armor.defenseBonus} Def
                     </span>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>Resistência a Dano: reduz {armor.rd} de dano recebido</p>
+                    <p>Bônus de Defesa: +{armor.defenseBonus}</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
 
-              {(armor.agilityPenalty !== 0 || armor.speedPenalty !== 0) && (
+              {armor.rd && armor.rd > 0 && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="flex items-center gap-1 text-blue-400 font-medium">
+                        RD {armor.rd}
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Resistência a Dano: reduz {armor.rd} de dano recebido</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+
+              {armor.agilityPenalty !== 0 && (
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -241,9 +256,9 @@ export function ArmorCatalogModal({
   };
 
   // Proteções filtradas por tipo
-  const filteredLight = filterArmors(LIGHT_ARMORS);
-  const filteredHeavy = filterArmors(HEAVY_ARMORS);
-  const filteredShields = filterArmors(SHIELDS);
+  const filteredLight = filterArmors(ALL_ARMORS.filter(a => a.type === 'leve'));
+  const filteredHeavy = filterArmors(ALL_ARMORS.filter(a => a.type === 'pesada'));
+  const filteredShields = filterArmors(ALL_ARMORS.filter(a => a.type === 'escudo'));
 
   // Status das categorias para indicadores visuais
   const categoryStatus = useMemo(() => {
