@@ -5,6 +5,7 @@
  * - Escolha simples entre opções da classe
  * - Terceira opção "escolher outra perícia" quando há conflito com origem (Combatente)
  * - Resolução de conflitos de perícias
+ * - Validação de perícias válidas do sistema
  */
 
 import { useState } from 'react';
@@ -19,8 +20,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { SKILLS } from '@/lib/character-data';
+import { isValidSkillId } from '@/lib/character-builder-engine';
 import { cn } from '@/lib/utils';
 import { AlertTriangle, Sparkles, Check } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 
 interface SkillChoiceModalProps {
   open: boolean;
@@ -65,7 +68,18 @@ export function SkillChoiceModal({
     s => !alreadyTrainedSkills.includes(s.id) && !options.includes(s.id)
   );
 
+  // Valida e seleciona a perícia
   const handleSelect = (skillId: string) => {
+    // Validação de segurança: verificar se é uma perícia válida
+    if (!isValidSkillId(skillId)) {
+      toast({
+        title: "Perícia inválida",
+        description: "A perícia selecionada não é válida. Por favor, escolha outra.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     onSelect(skillId);
     setShowFreeChoice(false);
     onOpenChange(false);
@@ -221,7 +235,18 @@ export function ConflictResolutionModal({
     s => !alreadyTrainedSkills.includes(s.id) && s.id !== conflictSkillId
   );
 
+  // Valida e seleciona a perícia de substituição
   const handleSelect = (skillId: string) => {
+    // Validação de segurança: verificar se é uma perícia válida
+    if (!isValidSkillId(skillId)) {
+      toast({
+        title: "Perícia inválida",
+        description: "A perícia selecionada não é válida. Por favor, escolha outra.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     onSelect(skillId);
     onOpenChange(false);
   };
