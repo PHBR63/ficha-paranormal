@@ -360,10 +360,14 @@ export function rebuildCharacterSheet(state: CharacterBuildState): RebuildResult
     : { mandatory: [], choices: [], freePoints: 0 };
   
   // 4. Perícias da classe vindas de escolhas
+  // Nota: Aceita qualquer perícia válida em classSkillChoices,
+  // incluindo escolhas alternativas quando há conflito com origem
   const classSkillsFromChoices: string[] = [];
   for (const choice of classRules.choices) {
     const selected = state.classSkillChoices[choice.id];
-    if (selected && choice.options.includes(selected)) {
+    if (selected) {
+      // Se o usuário escolheu uma perícia (seja das opções ou alternativa),
+      // ela deve ser incluída. A validação é feita na UI.
       classSkillsFromChoices.push(selected);
     }
   }
