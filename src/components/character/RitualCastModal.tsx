@@ -1,17 +1,19 @@
 /**
  * RitualCastModal - Modal de confirmação para conjurar rituais
  * Permite escolher aprimoramentos e mostra custo total em PE
- * Inclui efeito de partículas coloridas ao conjurar
+ * Inclui validação de requisitos de círculo/afinidade e limite de PE por turno
+ * Fase 2: Sistema completo de validação
  */
 
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useMemo } from 'react';
+import { motion } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { 
   Zap, 
   AlertTriangle, 
@@ -21,10 +23,14 @@ import {
   Timer,
   Shield,
   Users,
+  Lock,
+  Flame,
+  Info,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Ritual } from '@/lib/rituals-data';
 import { getElementConfig } from '@/lib/element-config';
+import { useRitualValidation, TurnPEState } from '@/hooks/useRitualValidation';
 
 // Função para disparar efeito de partículas do elemento
 function triggerElementParticles(elementHex: string, elementHexLight: string) {
@@ -62,6 +68,9 @@ interface RitualCastModalProps {
   peCurrent: number;
   peMax: number;
   isNonOccultist?: boolean;
+  nex?: number;
+  elementalAffinity?: string | null;
+  turnPEState?: TurnPEState;
   onConfirm: (ritual: Ritual, peCost: number, enhancements: string[]) => void;
 }
 
@@ -72,10 +81,28 @@ export function RitualCastModal({
   peCurrent,
   peMax,
   isNonOccultist = false,
+  nex = 5,
+  elementalAffinity,
+  turnPEState,
   onConfirm,
 }: RitualCastModalProps) {
   // Estado dos aprimoramentos selecionados
   const [selectedEnhancements, setSelectedEnhancements] = useState<string[]>([]);
+
+  // Hook de validação de rituais
+  const {
+    maxCircle,
+    peLimitPerTurn,
+    validateEnhancement,
+    validatePECost,
+    getAvailableEnhancements,
+  } = useRitualValidation(nex, elementalAffinity, peCurrent, peMax, turnPEState);
+
+  // Aprimoramentos com validação
+  const enhancementsWithValidation = useMemo(() => {
+    if (!ritual) return [];
+    return getAvailableEnhancements(ritual);
+  }, [ritual, getAvailableEnhancements]);
 
   if (!ritual) return null;
 
@@ -89,8 +116,14 @@ export function RitualCastModal({
   // Calcula custo base
   const baseCost = ritual.cost * costMultiplier;
 
-  // Calcula custo dos aprimoramentos
-  const enhancementsCost = selectedEnhancements.reduce((total, enhName) => {
+  // Filtra apenas aprimoramentos válidos selecionados
+  const validSelectedEnhancements = selectedEnhancements.filter(enhName => {
+    const enh = enhancementsWithValidation.find(e => e.name === enhName);
+    return enh?.validation.isValid;
+  });
+
+  // Calcula custo dos aprimoramentos (apenas válidos)
+  const enhancementsCost = validSelectedEnhancements.reduce((total, enhName) => {
     const enh = ritual.enhancements?.find(e => e.name === enhName);
     return total + (enh ? enh.cost * costMultiplier : 0);
   }, 0);
@@ -98,11 +131,24 @@ export function RitualCastModal({
   // Custo total
   const totalCost = baseCost + enhancementsCost;
 
-  // Verifica se tem PE suficiente
-  const canAfford = peCurrent >= totalCost;
+  // Validação de PE com limite por turno
+  const peValidation = validatePECost(
+    ritual.cost,
+    validSelectedEnhancements.map(name => {
+      const enh = ritual.enhancements?.find(e => e.name === name);
+      return { name, cost: enh?.cost || 0 };
+    }),
+    isNonOccultist
+  );
 
-  // Toggle de aprimoramento
+  // Pode conjurar se validação de PE passar
+  const canCast = peValidation.isValid;
+
+  // Toggle de aprimoramento (só permite se válido)
   const toggleEnhancement = (enhName: string) => {
+    const enh = enhancementsWithValidation.find(e => e.name === enhName);
+    if (!enh?.validation.isValid) return;
+
     setSelectedEnhancements(prev =>
       prev.includes(enhName)
         ? prev.filter(e => e !== enhName)
@@ -112,19 +158,19 @@ export function RitualCastModal({
 
   // Handler de confirmação com efeito visual
   const handleConfirm = () => {
-    if (canAfford && elementConfig) {
+    if (canCast && elementConfig) {
       // Dispara efeito de partículas antes de fechar
       triggerElementParticles(elementConfig.hex, elementConfig.hexLight);
       
       // Pequeno delay para o efeito ser visível
       setTimeout(() => {
-        onConfirm(ritual, totalCost, selectedEnhancements);
+        onConfirm(ritual, totalCost, validSelectedEnhancements);
         setSelectedEnhancements([]);
         onOpenChange(false);
       }, 300);
-    } else if (canAfford) {
+    } else if (canCast) {
       // Fallback sem efeito se não tiver config de elemento
-      onConfirm(ritual, totalCost, selectedEnhancements);
+      onConfirm(ritual, totalCost, validSelectedEnhancements);
       setSelectedEnhancements([]);
       onOpenChange(false);
     }
@@ -230,69 +276,138 @@ export function RitualCastModal({
               </div>
             </div>
 
-            {/* Aprimoramentos */}
-            {ritual.enhancements && ritual.enhancements.length > 0 && (
+            {/* Aprimoramentos com validação */}
+            {enhancementsWithValidation.length > 0 && (
               <div className="space-y-2">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Aprimoramentos (opcional)
-                </p>
-                {ritual.enhancements.map((enh, i) => {
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Aprimoramentos (opcional)
+                  </p>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                          <Info className="w-3 h-3" />
+                          <span>Seu círculo: {maxCircle}º</span>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Baseado no seu NEX ({nex}%)</p>
+                        {elementalAffinity && (
+                          <p className="text-xs text-muted-foreground">
+                            Afinidade: {elementalAffinity}
+                          </p>
+                        )}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+                {enhancementsWithValidation.map((enh, i) => {
                   const enhCost = enh.cost * costMultiplier;
                   const isSelected = selectedEnhancements.includes(enh.name);
+                  const isLocked = !enh.validation.isValid;
                   
                   return (
-                    <motion.div
-                      key={i}
-                      initial={false}
-                      animate={{
-                        scale: isSelected ? 1.02 : 1,
-                        borderColor: isSelected ? 'hsl(var(--primary))' : 'hsl(var(--border))',
-                      }}
-                      className={cn(
-                        "p-3 rounded-lg border cursor-pointer transition-colors",
-                        isSelected ? "bg-primary/5" : "bg-card hover:bg-accent/5"
-                      )}
-                      onClick={() => toggleEnhancement(enh.name)}
-                    >
-                      <div className="flex items-start gap-3">
-                        <Checkbox
-                          checked={isSelected}
-                          onCheckedChange={() => toggleEnhancement(enh.name)}
-                          className="mt-0.5"
-                        />
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between">
-                            <span className={cn(
-                              "font-medium text-sm",
-                              isSelected && elementConfig?.text
-                            )}>
-                              {enh.name}
-                            </span>
-                            <Badge variant="outline" className="text-xs">
-                              +{enhCost} PE
-                            </Badge>
-                          </div>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {enh.description}
-                          </p>
-                          {enh.requirements && (
-                            <p className="text-[10px] text-yellow-400/80 mt-1 flex items-center gap-1">
-                              <AlertTriangle className="w-3 h-3" />
-                              {enh.requirements}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </motion.div>
+                    <TooltipProvider key={i}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <motion.div
+                            initial={false}
+                            animate={{
+                              scale: isSelected && !isLocked ? 1.02 : 1,
+                              borderColor: isLocked 
+                                ? 'hsl(var(--muted))' 
+                                : isSelected 
+                                  ? 'hsl(var(--primary))' 
+                                  : 'hsl(var(--border))',
+                            }}
+                            className={cn(
+                              "p-3 rounded-lg border transition-colors",
+                              isLocked 
+                                ? "bg-muted/30 cursor-not-allowed opacity-60" 
+                                : isSelected 
+                                  ? "bg-primary/5 cursor-pointer" 
+                                  : "bg-card hover:bg-accent/5 cursor-pointer"
+                            )}
+                            onClick={() => !isLocked && toggleEnhancement(enh.name)}
+                          >
+                            <div className="flex items-start gap-3">
+                              {isLocked ? (
+                                <Lock className="w-4 h-4 mt-0.5 text-muted-foreground" />
+                              ) : (
+                                <Checkbox
+                                  checked={isSelected}
+                                  onCheckedChange={() => toggleEnhancement(enh.name)}
+                                  className="mt-0.5"
+                                  disabled={isLocked}
+                                />
+                              )}
+                              <div className="flex-1">
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className={cn(
+                                    "font-medium text-sm",
+                                    isLocked && "text-muted-foreground",
+                                    isSelected && !isLocked && elementConfig?.text
+                                  )}>
+                                    {enh.name}
+                                  </span>
+                                  <div className="flex items-center gap-1.5">
+                                    {enh.validation.requiresAffinity && (
+                                      <Flame className={cn(
+                                        "w-3 h-3",
+                                        isLocked ? "text-muted-foreground" : "text-orange-400"
+                                      )} />
+                                    )}
+                                    <Badge 
+                                      variant="outline" 
+                                      className={cn(
+                                        "text-xs",
+                                        isLocked && "bg-muted/50 text-muted-foreground"
+                                      )}
+                                    >
+                                      +{enhCost} PE
+                                    </Badge>
+                                  </div>
+                                </div>
+                                <p className={cn(
+                                  "text-xs mt-1",
+                                  isLocked ? "text-muted-foreground/70" : "text-muted-foreground"
+                                )}>
+                                  {enh.description}
+                                </p>
+                                {isLocked && enh.validation.reason && (
+                                  <p className="text-[10px] text-destructive/80 mt-1 flex items-center gap-1">
+                                    <Lock className="w-3 h-3" />
+                                    {enh.validation.reason}
+                                  </p>
+                                )}
+                                {!isLocked && enh.requirements && (
+                                  <p className="text-[10px] text-success/80 mt-1 flex items-center gap-1">
+                                    <Shield className="w-3 h-3" />
+                                    {enh.requirements} ✓
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </motion.div>
+                        </TooltipTrigger>
+                        {isLocked && (
+                          <TooltipContent side="left">
+                            <p className="font-medium">Requisito não atendido</p>
+                            <p className="text-xs text-muted-foreground">{enh.validation.reason}</p>
+                          </TooltipContent>
+                        )}
+                      </Tooltip>
+                    </TooltipProvider>
                   );
                 })}
               </div>
             )}
 
-            {/* Resumo de custo */}
+            {/* Resumo de custo com validação de PE por turno */}
             <div className={cn(
               "p-4 rounded-lg border-2",
-              canAfford 
+              canCast 
                 ? "bg-success/5 border-success/30" 
                 : "bg-destructive/5 border-destructive/30"
             )}>
@@ -301,7 +416,7 @@ export function RitualCastModal({
                 <div className="text-right">
                   <span className={cn(
                     "text-2xl font-bold",
-                    canAfford ? "text-pe" : "text-destructive"
+                    canCast ? "text-pe" : "text-destructive"
                   )}>
                     {totalCost}
                   </span>
@@ -319,7 +434,7 @@ export function RitualCastModal({
                   <div 
                     className={cn(
                       "h-full transition-all duration-300",
-                      canAfford ? "bg-pe" : "bg-destructive"
+                      canCast ? "bg-pe" : "bg-destructive"
                     )}
                     style={{ width: `${(peCurrent / peMax) * 100}%` }}
                   />
@@ -328,7 +443,7 @@ export function RitualCastModal({
                     className="h-full bg-foreground/30 -mt-2"
                     style={{ 
                       width: `${(totalCost / peMax) * 100}%`,
-                      marginLeft: `${((peCurrent - totalCost) / peMax) * 100}%`
+                      marginLeft: `${Math.max(0, ((peCurrent - totalCost) / peMax) * 100)}%`
                     }}
                   />
                 </div>
@@ -342,10 +457,31 @@ export function RitualCastModal({
                 </p>
               </div>
 
-              {!canAfford && (
+              {/* Limite de PE por turno */}
+              {turnPEState && (
+                <div className="mt-2 pt-2 border-t border-border/50">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">Limite por turno</span>
+                    <span className={cn(
+                      "font-medium",
+                      peValidation.exceedsLimit ? "text-destructive" : "text-pe"
+                    )}>
+                      {turnPEState.peSpentThisTurn + totalCost} / {peLimitPerTurn} PE
+                    </span>
+                  </div>
+                  {peValidation.exceedsLimit && (
+                    <p className="text-[10px] text-yellow-400/80 mt-1">
+                      Excede em {peValidation.exceededBy} PE o limite do turno
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Mensagem de erro */}
+              {!canCast && (
                 <p className="text-xs text-destructive mt-2 flex items-center gap-1">
                   <AlertTriangle className="w-3 h-3" />
-                  PE insuficiente para conjurar este ritual
+                  {peValidation.reason}
                 </p>
               )}
             </div>
@@ -361,12 +497,12 @@ export function RitualCastModal({
           </Button>
           <Button
             onClick={handleConfirm}
-            disabled={!canAfford}
+            disabled={!canCast}
             className={cn(
               "gap-2",
-              canAfford && elementConfig?.bg,
-              canAfford && elementConfig?.text,
-              canAfford && "hover:opacity-90"
+              canCast && elementConfig?.bg,
+              canCast && elementConfig?.text,
+              canCast && "hover:opacity-90"
             )}
           >
             <Zap className="w-4 h-4" />
