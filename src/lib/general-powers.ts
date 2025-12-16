@@ -13,6 +13,10 @@ export interface GeneralPower {
   minNex: number;
   requirement?: string; // Requisito para adquirir (outra habilidade, atributo, etc)
   category: 'combate' | 'pericia' | 'paranormal' | 'social' | 'sobrevivencia';
+  // Campos especiais para poderes que concedem rituais
+  grantsRitual?: boolean; // Se true, abre modal de seleção de ritual
+  ritualMaxCircle?: number; // Círculo máximo do ritual que pode ser escolhido
+  ritualCount?: number; // Quantidade de rituais que pode escolher
 }
 
 // ==================== PODERES GERAIS ====================
@@ -214,6 +218,10 @@ export const GENERAL_POWERS: GeneralPower[] = [
     description: 'Você aprende um ritual de 1º círculo (mesmo não sendo Ocultista). Pode lançá-lo gastando o dobro do PE.',
     minNex: 15,
     category: 'paranormal',
+    // Campos especiais para seleção de ritual
+    grantsRitual: true,
+    ritualMaxCircle: 1,
+    ritualCount: 1,
   },
   {
     id: 'sangue-resistente',

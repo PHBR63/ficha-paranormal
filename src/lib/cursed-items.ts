@@ -19,6 +19,10 @@ export interface CursedItem {
   curse: string;
   attunement?: boolean; // Requer sintonização
   slots?: number; // Espaços de inventário
+  // Campos especiais para itens que concedem rituais
+  grantsRituals?: boolean; // Se true, permite usar rituais
+  ritualMaxCircle?: number; // Círculo máximo dos rituais disponíveis
+  ritualCount?: number; // Quantidade de rituais que o item contém
 }
 
 // ==================== ITENS AMALDIÇOADOS ====================
@@ -135,6 +139,10 @@ export const CURSED_ITEMS: CursedItem[] = [
     curse: 'O grimório sussurra. Você sofre -2 em testes de Vontade e SAN.',
     attunement: true,
     slots: 1,
+    // Campos especiais para rituais
+    grantsRituals: true,
+    ritualMaxCircle: 3,
+    ritualCount: 3,
   },
   {
     id: 'armadura-do-flagelado',

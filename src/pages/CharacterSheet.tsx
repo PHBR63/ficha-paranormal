@@ -41,7 +41,7 @@ import { ORIGINS, CLASSES, getTrackById } from '@/lib/character-data';
 import { ALL_RITUALS } from '@/lib/rituals-data';
 import { ALL_CLASS_ABILITIES } from '@/lib/class-abilities';
 import { PARANORMAL_POWERS, ParanormalPower, ParanormalElement } from '@/lib/paranormal-powers';
-import { GENERAL_POWERS } from '@/lib/general-powers';
+import { GENERAL_POWERS, getGeneralPowerById } from '@/lib/general-powers';
 import { ParanormalPowersPanel } from '@/components/character/ParanormalPowersPanel';
 import { cn } from '@/lib/utils';
 import { DiceRollResult } from '@/lib/dice-roller';
@@ -54,6 +54,8 @@ import { CharacterHistoryPanel, logCharacterChanges } from '@/components/charact
 import { ParanormalPowerSelectModal } from '@/components/character/ParanormalPowerSelectModal';
 import { ConditionManager, type ActiveCondition } from '@/components/character/ConditionManager';
 import { RestModal } from '@/components/character/RestModal';
+import { NonOccultistRitualModal, RitualSource } from '@/components/character/NonOccultistRitualModal';
+import { LearnedRitual } from '@/components/character/GeneralPowersPanel';
 import { calculateDerivedStats } from '@/lib/character-data';
 import { AffinitySelectorCard } from '@/components/character/AffinitySelectorCard';
 import { useParanormalEffects } from '@/hooks/useParanormalEffects';
@@ -149,6 +151,11 @@ export default function CharacterSheet() {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [restModalOpen, setRestModalOpen] = useState(false);
   const [paranormalPowerModalOpen, setParanormalPowerModalOpen] = useState(false);
+  
+  // Modal de rituais para não-ocultistas
+  const [nonOccultistRitualModalOpen, setNonOccultistRitualModalOpen] = useState(false);
+  const [ritualModalSource, setRitualModalSource] = useState<RitualSource>('ritual-aprendido');
+  const [learnedRitualsFromPowers, setLearnedRitualsFromPowers] = useState<LearnedRitual[]>([]);
 
   // Callback para adicionar rolagem ao histórico
   const handleRollComplete = useCallback((result: DiceRollResult) => {
@@ -1138,15 +1145,49 @@ export default function CharacterSheet() {
                         Poderes Gerais
                       </p>
                       {character.general_powers.map((power) => {
-                        const powerData = GENERAL_POWERS.find(p => p.id === power.id);
+                        const powerData = getGeneralPowerById(power.id);
+                        const hasRitualGrant = powerData?.grantsRitual && character.class !== 'Ocultista';
+                        
                         return (
-                          <SheetAccordionItem
-                            key={power.id}
-                            title={power.name}
-                            description={powerData?.description || power.description}
-                            badge={power.category || 'Geral'}
-                            badgeVariant="default"
-                          />
+                          <div key={power.id}>
+                            <SheetAccordionItem
+                              title={power.name}
+                              description={powerData?.description || power.description}
+                              badge={power.category || 'Geral'}
+                              badgeVariant="default"
+                            />
+                            {/* Mostrar botão para escolher ritual se o poder conceder */}
+                            {hasRitualGrant && (
+                              <div className="ml-4 mt-1 p-2 rounded bg-paranormal/10 border border-paranormal/30">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2 text-xs">
+                                    <Sparkles className="w-3 h-3 text-paranormal" />
+                                    <span className="text-paranormal">
+                                      {learnedRitualsFromPowers.filter(r => r.source === 'ritual-aprendido').length > 0 
+                                        ? `Ritual: ${ALL_RITUALS.find(r => r.id === learnedRitualsFromPowers.find(lr => lr.source === 'ritual-aprendido')?.ritualId)?.name || 'Escolhido'}`
+                                        : 'Nenhum ritual escolhido'}
+                                    </span>
+                                  </div>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 text-xs text-paranormal hover:text-paranormal"
+                                    onClick={() => {
+                                      setRitualModalSource('ritual-aprendido');
+                                      setNonOccultistRitualModalOpen(true);
+                                    }}
+                                  >
+                                    {learnedRitualsFromPowers.some(r => r.source === 'ritual-aprendido') ? 'Alterar' : 'Escolher'}
+                                  </Button>
+                                </div>
+                                {learnedRitualsFromPowers.some(r => r.source === 'ritual-aprendido') && (
+                                  <p className="text-[10px] text-yellow-400/80 mt-1">
+                                    ⚠️ Custo: ×2 PE (não-ocultista)
+                                  </p>
+                                )}
+                              </div>
+                            )}
+                          </div>
                         );
                       })}
                     </div>
@@ -1330,6 +1371,35 @@ export default function CharacterSheet() {
         })}
         elementalAffinity={character.elemental_affinity as ParanormalElement | null}
         affinityActive={character.affinity_active}
+      />
+
+      {/* Modal de seleção de ritual para não-ocultistas */}
+      <NonOccultistRitualModal
+        open={nonOccultistRitualModalOpen}
+        onClose={() => setNonOccultistRitualModalOpen(false)}
+        source={ritualModalSource}
+        currentRituals={[
+          ...character.rituals,
+          ...learnedRitualsFromPowers.map(r => r.ritualId)
+        ]}
+        onConfirm={(ritualIds) => {
+          // Salvar os rituais aprendidos via poderes gerais
+          const newRituals: LearnedRitual[] = ritualIds.map(id => ({
+            ritualId: id,
+            source: ritualModalSource,
+            peMultiplier: ritualModalSource === 'ritual-aprendido' ? 2 : 1,
+          }));
+          
+          // Substituir rituais da mesma fonte
+          const filteredRituals = learnedRitualsFromPowers.filter(r => r.source !== ritualModalSource);
+          setLearnedRitualsFromPowers([...filteredRituals, ...newRituals]);
+          setNonOccultistRitualModalOpen(false);
+          
+          toast({
+            title: 'Ritual aprendido!',
+            description: `Você aprendeu ${ritualIds.length} ritual(is). Lembre-se: custo de PE é dobrado para não-ocultistas.`,
+          });
+        }}
       />
     </div>
   );
