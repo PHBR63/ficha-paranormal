@@ -268,11 +268,17 @@ export default function CharacterCreate() {
   const ritualsPerNex = (ocultistClass as any)?.ritualsPerNex || {};
   const requiredRituals = ritualsPerNex[formData.nex]?.count || 0;
 
-  // Derived stats for preview
+  // Derived stats for preview - se monta progressivamente durante a criação
   const previewStats = useMemo(() => {
+    // DEF e MOV podem ser calculados desde os atributos
+    const defense = calculateDefense(formData.attributes.agility);
+    const movement = formData.origin === 'atleta' ? 12 : 9;
+    
+    // PV, PE, SAN só podem ser calculados com classe
     if (!formData.characterClass) {
-      return { hp: 0, pe: 0, san: 0, defense: 10, movement: 9 };
+      return { hp: null, pe: null, san: null, defense, movement };
     }
+    
     const stats = calculateDerivedStats(
       formData.characterClass,
       formData.attributes.vigor,
@@ -282,8 +288,8 @@ export default function CharacterCreate() {
     );
     return {
       ...stats,
-      defense: calculateDefense(formData.attributes.agility),
-      movement: 9,
+      defense,
+      movement,
     };
   }, [formData.characterClass, formData.attributes, formData.nex, formData.origin]);
 
@@ -657,7 +663,7 @@ export default function CharacterCreate() {
         </div>
       </main>
 
-      {/* Stats Preview Widget - Com breakdown detalhado */}
+      {/* Stats Preview Widget - Aparece a partir do step de atributos e vai se montando */}
       <StatsPreviewWidget
         hp={previewStats.hp}
         pe={previewStats.pe}
@@ -665,7 +671,7 @@ export default function CharacterCreate() {
         defense={previewStats.defense}
         movement={previewStats.movement}
         characterClass={formData.characterClass}
-        show={currentStep >= 1 && currentStep <= 4 && !!formData.characterClass}
+        show={currentStep >= 3 && currentStep < STEPS.length - 1}
         vigor={formData.attributes.vigor}
         presence={formData.attributes.presence}
         agility={formData.attributes.agility}

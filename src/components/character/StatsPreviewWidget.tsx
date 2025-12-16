@@ -18,9 +18,9 @@ import {
 } from '@/components/ui/tooltip';
 
 interface StatsPreviewWidgetProps {
-  hp: number;
-  pe: number;
-  san: number;
+  hp: number | null;
+  pe: number | null;
+  san: number | null;
   defense: number;
   movement: number;
   characterClass?: string;
@@ -139,49 +139,56 @@ export function StatsPreviewWidget({
               </div>
               
               <div className="space-y-3">
-                {/* PV */}
-                <StatItemWithBreakdown 
-                  icon={Heart} 
-                  label="PV" 
-                  value={hp} 
-                  color="text-destructive"
-                  expanded={expanded}
-                  breakdown={hpBreakdown ? [
-                    { label: 'Base Classe', value: hpBreakdown.base },
-                    { label: 'Vigor', value: hpBreakdown.fromVigor, prefix: '+' },
-                    { label: 'Progressão NEX', value: hpBreakdown.fromNex, prefix: '+' },
-                  ] : undefined}
-                />
+                {/* PV - só mostra se tem classe */}
+                {hp !== null && (
+                  <StatItemWithBreakdown 
+                    icon={Heart} 
+                    label="PV" 
+                    value={hp} 
+                    color="text-destructive"
+                    expanded={expanded}
+                    breakdown={hpBreakdown ? [
+                      { label: 'Base Classe', value: hpBreakdown.base },
+                      { label: 'Vigor', value: hpBreakdown.fromVigor, prefix: '+' },
+                      { label: 'Progressão NEX', value: hpBreakdown.fromNex, prefix: '+' },
+                    ] : undefined}
+                  />
+                )}
                 
-                {/* PE */}
-                <StatItemWithBreakdown 
-                  icon={Zap} 
-                  label="PE" 
-                  value={pe} 
-                  color="text-success"
-                  expanded={expanded}
-                  breakdown={peBreakdown ? [
-                    { label: 'Base Classe', value: peBreakdown.base },
-                    { label: 'Presença', value: peBreakdown.fromPresence, prefix: '+' },
-                    { label: 'Progressão NEX', value: peBreakdown.fromNex, prefix: '+' },
-                  ] : undefined}
-                />
+                {/* PE - só mostra se tem classe */}
+                {pe !== null && (
+                  <StatItemWithBreakdown 
+                    icon={Zap} 
+                    label="PE" 
+                    value={pe} 
+                    color="text-pe"
+                    expanded={expanded}
+                    breakdown={peBreakdown ? [
+                      { label: 'Base Classe', value: peBreakdown.base },
+                      { label: 'Presença', value: peBreakdown.fromPresence, prefix: '+' },
+                      { label: 'Progressão NEX', value: peBreakdown.fromNex, prefix: '+' },
+                    ] : undefined}
+                  />
+                )}
                 
-                {/* SAN */}
-                <StatItemWithBreakdown 
-                  icon={Brain} 
-                  label="SAN" 
-                  value={san} 
-                  color="text-paranormal"
-                  expanded={expanded}
-                  breakdown={sanBreakdown ? [
-                    { label: 'Base Classe', value: sanBreakdown.base },
-                    { label: 'Progressão NEX', value: sanBreakdown.fromNex, prefix: '+' },
-                    ...(sanBreakdown.originMod !== 0 ? [{ label: 'Origem', value: sanBreakdown.originMod }] : []),
-                  ] : undefined}
-                />
+                {/* SAN - só mostra se tem classe */}
+                {san !== null && (
+                  <StatItemWithBreakdown 
+                    icon={Brain} 
+                    label="SAN" 
+                    value={san} 
+                    color="text-paranormal"
+                    expanded={expanded}
+                    breakdown={sanBreakdown ? [
+                      { label: 'Base Classe', value: sanBreakdown.base },
+                      { label: 'Progressão NEX', value: sanBreakdown.fromNex, prefix: '+' },
+                      ...(sanBreakdown.originMod !== 0 ? [{ label: 'Origem', value: sanBreakdown.originMod }] : []),
+                    ] : undefined}
+                  />
+                )}
                 
-                <div className="h-px bg-border my-2" />
+                {/* Separador só aparece se tem stats de classe */}
+                {hp !== null && <div className="h-px bg-border my-2" />}
                 
                 {/* DEF */}
                 <StatItemWithBreakdown 
