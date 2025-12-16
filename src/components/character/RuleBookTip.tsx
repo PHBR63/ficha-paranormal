@@ -2,7 +2,7 @@
  * RuleBookTip - Componente de dica do livro de regras
  * 
  * Exibe informações educativas do livro de regras de forma estilizada
- * durante a criação de personagem.
+ * durante a criação de personagem. Suporta markdown (tabelas, blockquotes, listas).
  */
 
 import { useState } from 'react';
@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { BookOpen, ChevronDown, ChevronUp, Quote, Lightbulb } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { MarkdownRenderer } from '@/components/ui/markdown-renderer';
 import type { RulebookTip as RulebookTipType, RulebookSection } from '@/lib/rulebook-content';
 
 interface RuleBookTipProps {
@@ -24,7 +25,7 @@ interface RuleBookTipProps {
 }
 
 /**
- * Componente que exibe uma dica individual
+ * Componente que exibe uma dica individual com suporte a markdown
  */
 function TipCard({ tip, variant = 'default' }: { tip: RulebookTipType; variant?: 'default' | 'compact' | 'highlight' }) {
   return (
@@ -38,10 +39,8 @@ function TipCard({ tip, variant = 'default' }: { tip: RulebookTipType; variant?:
         {tip.title}
       </h4>
 
-      {/* Conteúdo principal */}
-      <p className="text-sm text-muted-foreground leading-relaxed">
-        {tip.content}
-      </p>
+      {/* Conteúdo principal com suporte a markdown */}
+      <MarkdownRenderer content={tip.content} />
 
       {/* Citação do livro (se houver) */}
       {tip.quote && (
