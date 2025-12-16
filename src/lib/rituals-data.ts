@@ -35,17 +35,65 @@ export interface Ritual {
 // ==================== RITUAIS DE 1º CÍRCULO ====================
 
 export const FIRST_CIRCLE_RITUALS: Ritual[] = [
-  // === RITUAIS VARIÁVEIS ===
+  // === RITUAIS DE AMALDIÇOAR ARMA (4 versões, uma para cada elemento exceto Medo) ===
   {
-    id: 'amaldicoar-arma',
-    name: 'Amaldiçoar Arma',
+    id: 'amaldicoar-arma-conhecimento',
+    name: 'Amaldiçoar Arma (Conhecimento)',
     circle: 1,
-    element: 'energia', // Escolha entre Conhecimento, Energia, Morte, Sangue
+    element: 'conhecimento',
     execution: 'Padrão',
     range: 'Toque',
     target: '1 arma corpo a corpo ou pacote de munição',
     duration: 'Cena',
-    description: 'Quando aprender este ritual, escolha um elemento entre Conhecimento, Energia, Morte e Sangue. Este ritual passa a ser do elemento escolhido. Você imbui a arma ou munições com o elemento, fazendo com que causem +1d6 de dano do tipo do elemento.',
+    description: 'Você imbui a arma ou munições com o elemento Conhecimento, fazendo com que causem +1d6 de dano do tipo do elemento.',
+    cost: 1,
+    enhancements: [
+      { name: 'Discente', cost: 2, description: 'Muda o bônus de dano para +2d6.', requirements: 'Requer 2º círculo' },
+      { name: 'Verdadeiro', cost: 5, description: 'Muda o bônus de dano para +4d6.', requirements: 'Requer 3º círculo e afinidade' },
+    ],
+  },
+  {
+    id: 'amaldicoar-arma-energia',
+    name: 'Amaldiçoar Arma (Energia)',
+    circle: 1,
+    element: 'energia',
+    execution: 'Padrão',
+    range: 'Toque',
+    target: '1 arma corpo a corpo ou pacote de munição',
+    duration: 'Cena',
+    description: 'Você imbui a arma ou munições com o elemento Energia, fazendo com que causem +1d6 de dano do tipo do elemento.',
+    cost: 1,
+    enhancements: [
+      { name: 'Discente', cost: 2, description: 'Muda o bônus de dano para +2d6.', requirements: 'Requer 2º círculo' },
+      { name: 'Verdadeiro', cost: 5, description: 'Muda o bônus de dano para +4d6.', requirements: 'Requer 3º círculo e afinidade' },
+    ],
+  },
+  {
+    id: 'amaldicoar-arma-morte',
+    name: 'Amaldiçoar Arma (Morte)',
+    circle: 1,
+    element: 'morte',
+    execution: 'Padrão',
+    range: 'Toque',
+    target: '1 arma corpo a corpo ou pacote de munição',
+    duration: 'Cena',
+    description: 'Você imbui a arma ou munições com o elemento Morte, fazendo com que causem +1d6 de dano do tipo do elemento.',
+    cost: 1,
+    enhancements: [
+      { name: 'Discente', cost: 2, description: 'Muda o bônus de dano para +2d6.', requirements: 'Requer 2º círculo' },
+      { name: 'Verdadeiro', cost: 5, description: 'Muda o bônus de dano para +4d6.', requirements: 'Requer 3º círculo e afinidade' },
+    ],
+  },
+  {
+    id: 'amaldicoar-arma-sangue',
+    name: 'Amaldiçoar Arma (Sangue)',
+    circle: 1,
+    element: 'sangue',
+    execution: 'Padrão',
+    range: 'Toque',
+    target: '1 arma corpo a corpo ou pacote de munição',
+    duration: 'Cena',
+    description: 'Você imbui a arma ou munições com o elemento Sangue, fazendo com que causem +1d6 de dano do tipo do elemento.',
     cost: 1,
     enhancements: [
       { name: 'Discente', cost: 2, description: 'Muda o bônus de dano para +2d6.', requirements: 'Requer 2º círculo' },
