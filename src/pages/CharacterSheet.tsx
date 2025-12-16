@@ -72,6 +72,8 @@ import { PersonalDataAccordion } from '@/components/character/PersonalDataAccord
 import { CombatWeaponsTable } from '@/components/character/CombatWeaponsTable';
 import { SheetAccordionSection, SheetAccordionItem } from '@/components/character/SheetAccordionSection';
 import { RitualCard } from '@/components/character/RitualCard';
+import { RitualCastModal } from '@/components/character/RitualCastModal';
+import { Ritual } from '@/lib/rituals-data';
 
 // Componentes existentes que ainda usamos
 import { CharacterSheetHelp } from '@/components/character/CharacterSheetHelp';
@@ -193,6 +195,10 @@ export default function CharacterSheet() {
   const [nonOccultistRitualModalOpen, setNonOccultistRitualModalOpen] = useState(false);
   const [ritualModalSource, setRitualModalSource] = useState<RitualSource>('ritual-aprendido');
   const [learnedRitualsFromPowers, setLearnedRitualsFromPowers] = useState<LearnedRitual[]>([]);
+
+  // Modal de conjuração de rituais
+  const [castModalOpen, setCastModalOpen] = useState(false);
+  const [ritualToCast, setRitualToCast] = useState<Ritual | null>(null);
 
   // Hook de bônus de defesa e resistências (precisa estar antes dos handlers que o usam)
   const defenseBonuses = useDefenseBonuses({
@@ -338,6 +344,55 @@ export default function CharacterSheet() {
       } : null);
     }
   };
+
+  // Handler para abrir modal de conjuração de ritual
+  const handleOpenCastModal = useCallback((ritual: Ritual) => {
+    setRitualToCast(ritual);
+    setCastModalOpen(true);
+  }, []);
+
+  // Handler para confirmar conjuração de ritual (desconta PE)
+  const handleCastRitual = useCallback(async (ritual: Ritual, peCost: number, enhancements: string[]) => {
+    if (!character) return;
+
+    const newPe = peCurrent - peCost;
+    if (newPe < 0) return;
+
+    const { error } = await supabase
+      .from('characters')
+      .update({ pe_current: newPe })
+      .eq('id', character.id);
+
+    if (error) {
+      toast({
+        title: 'Erro ao conjurar',
+        description: error.message,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setPeCurrent(newPe);
+    setCharacter(prev => prev ? { ...prev, pe_current: newPe } : null);
+
+    const enhText = enhancements.length > 0 
+      ? ` (${enhancements.join(', ')})` 
+      : '';
+
+    toast({
+      title: `${ritual.name} conjurado!`,
+      description: `${peCost} PE consumido${enhText}. PE restante: ${newPe}`,
+    });
+
+    // Registrar no histórico de mudanças
+    await logCharacterChanges(character.id, user?.id || '', [{
+      fieldName: 'pe_current',
+      changeType: 'ritual_cast',
+      oldValue: String(peCurrent),
+      newValue: String(newPe),
+      description: `Conjurou ${ritual.name}${enhText} (-${peCost} PE)`,
+    }]);
+  }, [character, peCurrent, toast, user?.id]);
 
   // Handler para deletar personagem
   const handleDelete = async () => {
@@ -1440,6 +1495,7 @@ export default function CharacterSheet() {
                           ritual={ritual}
                           isNonOccultist={character.class !== 'Ocultista'}
                           peCurrent={peCurrent}
+                          onCast={handleOpenCastModal}
                         />
                       );
                     })}
@@ -1626,6 +1682,17 @@ export default function CharacterSheet() {
             description: `Você aprendeu ${ritualIds.length} ritual(is). Lembre-se: custo de PE é dobrado para não-ocultistas.`,
           });
         }}
+      />
+
+      {/* Modal de conjuração de ritual */}
+      <RitualCastModal
+        open={castModalOpen}
+        onOpenChange={setCastModalOpen}
+        ritual={ritualToCast}
+        peCurrent={peCurrent}
+        peMax={character.pe_max}
+        isNonOccultist={character.class !== 'Ocultista'}
+        onConfirm={handleCastRitual}
       />
     </div>
   );
