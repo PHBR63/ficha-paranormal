@@ -16,6 +16,7 @@ import Campaigns from "./pages/Campaigns";
 import CampaignCreate from "./pages/CampaignCreate";
 import CampaignView from "./pages/CampaignView";
 import AdminImport from "./pages/AdminImport";
+import AdminUsers from "./pages/AdminUsers";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -64,6 +65,11 @@ const App = () => (
               <Route path="/admin/import" element={
                 <AdminRoute>
                   <AdminImport />
+                </AdminRoute>
+              } />
+              <Route path="/admin/users" element={
+                <AdminRoute>
+                  <AdminUsers />
                 </AdminRoute>
               } />
               <Route path="*" element={<NotFound />} />
