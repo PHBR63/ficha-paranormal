@@ -26,7 +26,7 @@ export const COMBATENTE_ABILITIES: ClassAbility[] = [
   { 
     id: 'ataque-especial', 
     name: 'Ataque Especial', 
-    description: 'Quando faz um ataque, você pode gastar 2 PE para receber +5 no teste de ataque ou na rolagem de dano. Conforme avança de NEX, você pode gastar +1 PE para receber mais bônus de +5 (veja a Tabela 1.3). Você pode aplicar cada bônus de +5 em ataque ou dano. Por exemplo, em NEX 55%, você pode gastar 4 PE para receber +5 no teste de ataque e +10 na rolagem de dano.', 
+    description: 'Quando faz um ataque, você pode gastar 2 PE para receber +5 no teste de ataque ou na rolagem de dano. Conforme avança de NEX, pode gastar mais PE para receber bônus maiores: 3 PE para +10 em NEX 25%, 4 PE para +15 em NEX 55%, 5 PE para +20 em NEX 85%. Você pode dividir o bônus entre ataque e dano. Por exemplo, em NEX 55%, pode gastar 4 PE para receber +5 no ataque e +10 no dano.', 
     minNex: 5, 
     classId: 'Combatente', 
     isCore: true 
@@ -266,7 +266,7 @@ export const ESPECIALISTA_ABILITIES: ClassAbility[] = [
 { 
     id: 'perito', 
     name: 'Perito', 
-    description: 'Escolha duas perícias nas quais você é treinado (exceto Luta e Pontaria). Quando faz um teste de uma dessas perícias, pode gastar 2 PE para somar +1d6 ao resultado. Conforme avança de NEX, o dado melhora: +1d8 (3 PE) em NEX 25%, +1d10 (4 PE) em NEX 45%, +1d12 (5 PE) em NEX 65%, +2d12 (6 PE) em NEX 85%.', 
+    description: 'Escolha duas perícias nas quais você é treinado (exceto Luta e Pontaria). Quando faz um teste de uma dessas perícias, pode gastar 2 PE para somar +1d6 ao resultado. Conforme avança de NEX, o dado e custo melhoram: +1d8 (3 PE) em NEX 25%, +1d10 (4 PE) em NEX 55%, +1d12 (5 PE) em NEX 85%.', 
     minNex: 5, 
     classId: 'Especialista', 
     isCore: true 
