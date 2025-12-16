@@ -510,7 +510,7 @@ export function StepSkills({ formData, updateFormData, buildResult }: StepSkills
           </p>
         </div>
 
-        {/* Choice Modal */}
+        {/* Choice Modal - com suporte a terceira opção para Combatente */}
         {activeChoice && (
           <SkillChoiceModal
             open={choiceModalOpen}
@@ -520,7 +520,10 @@ export function StepSkills({ formData, updateFormData, buildResult }: StepSkills
             options={activeChoice.options}
             selectedSkill={formData.classSkillChoices[activeChoice.id] || null}
             onSelect={(skillId) => handleChoiceSelect(activeChoice.id, skillId)}
-            excludeSkills={[...originSkills, ...classSkills.mandatory]}
+            excludeSkills={originSkills}
+            // Permite escolha livre quando há conflito (especialmente para Combatente)
+            allowFreeChoice={formData.characterClass === 'Combatente'}
+            alreadyTrainedSkills={allTrainedSkills}
           />
         )}
 
