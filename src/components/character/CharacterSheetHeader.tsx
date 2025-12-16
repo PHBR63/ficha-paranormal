@@ -306,9 +306,9 @@ export function CharacterSheetHeader({
             )}
 
             {/* Indicador de Bônus Ativos */}
-            <AnimatePresence>
-              {activeBonusCount > 0 && (
-                <TooltipProvider>
+            <TooltipProvider delayDuration={100}>
+              <AnimatePresence>
+                {activeBonusCount > 0 && (
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <motion.div
@@ -363,7 +363,7 @@ export function CharacterSheetHeader({
                         </motion.div>
                       </motion.div>
                     </TooltipTrigger>
-                    <TooltipContent side="bottom" className="max-w-xs">
+                    <TooltipContent side="bottom" className="max-w-xs z-50">
                       <div className="space-y-1">
                         <p className="font-medium flex items-center gap-1">
                           <Sparkles className="w-4 h-4 text-primary" />
@@ -380,9 +380,9 @@ export function CharacterSheetHeader({
                       </div>
                     </TooltipContent>
                   </Tooltip>
-                </TooltipProvider>
-              )}
-            </AnimatePresence>
+                )}
+              </AnimatePresence>
+            </TooltipProvider>
           </div>
         </div>
 
