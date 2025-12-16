@@ -758,18 +758,86 @@ export function MobileCharacterSheet({
                   <span className="text-muted-foreground">Crítico:</span>
                   <span className="text-primary font-display">20</span>
                 </div>
-                <div className="pt-2 border-t border-border grid grid-cols-3 gap-1 text-[10px]">
-                  <div className="text-center p-1 bg-muted/30 rounded">
-                    <p className="text-muted-foreground">Fort</p>
-                    <p className="font-display">{character.vigor}d</p>
-                  </div>
-                  <div className="text-center p-1 bg-muted/30 rounded">
-                    <p className="text-muted-foreground">Ref</p>
-                    <p className="font-display">{character.agility}d</p>
-                  </div>
-                  <div className="text-center p-1 bg-muted/30 rounded">
-                    <p className="text-muted-foreground">Von</p>
-                    <p className="font-display">{character.presence}d</p>
+                <div className="pt-2 border-t border-border">
+                  <p className="text-[10px] text-muted-foreground mb-1">RESISTÊNCIAS</p>
+                  <div className="grid grid-cols-3 gap-1 text-[10px]">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="text-center p-1 bg-muted/30 rounded cursor-help">
+                            <p className="text-muted-foreground">Fort</p>
+                            <p className="font-display">
+                              {character.vigor}d
+                              {defenseBonuses.resistances.fortitude > 0 && (
+                                <span className="text-success ml-0.5">+{defenseBonuses.resistances.fortitude}</span>
+                              )}
+                            </p>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="text-xs">
+                          <p className="font-medium">Fortitude (VIG)</p>
+                          <p className="text-muted-foreground">Pool: {character.vigor}d20</p>
+                          {defenseBonuses.resistances.fortitude > 0 && (
+                            <p className="text-success">Bônus: +{defenseBonuses.resistances.fortitude}</p>
+                          )}
+                          {defenseBonuses.resistances.breakdown.filter(b => b.fortitude > 0 && b.active).map((b, i) => (
+                            <p key={i} className="text-[10px]">{b.source}: +{b.fortitude}</p>
+                          ))}
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="text-center p-1 bg-muted/30 rounded cursor-help">
+                            <p className="text-muted-foreground">Ref</p>
+                            <p className="font-display">
+                              {character.agility}d
+                              {defenseBonuses.resistances.reflexos > 0 && (
+                                <span className="text-success ml-0.5">+{defenseBonuses.resistances.reflexos}</span>
+                              )}
+                            </p>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="text-xs">
+                          <p className="font-medium">Reflexos (AGI)</p>
+                          <p className="text-muted-foreground">Pool: {character.agility}d20</p>
+                          {defenseBonuses.resistances.reflexos > 0 && (
+                            <p className="text-success">Bônus: +{defenseBonuses.resistances.reflexos}</p>
+                          )}
+                          {defenseBonuses.resistances.breakdown.filter(b => b.reflexos > 0 && b.active).map((b, i) => (
+                            <p key={i} className="text-[10px]">{b.source}: +{b.reflexos}</p>
+                          ))}
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="text-center p-1 bg-muted/30 rounded cursor-help">
+                            <p className="text-muted-foreground">Von</p>
+                            <p className="font-display">
+                              {character.presence}d
+                              {defenseBonuses.resistances.vontade > 0 && (
+                                <span className="text-success ml-0.5">+{defenseBonuses.resistances.vontade}</span>
+                              )}
+                            </p>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="text-xs">
+                          <p className="font-medium">Vontade (PRE)</p>
+                          <p className="text-muted-foreground">Pool: {character.presence}d20</p>
+                          {defenseBonuses.resistances.vontade > 0 && (
+                            <p className="text-success">Bônus: +{defenseBonuses.resistances.vontade}</p>
+                          )}
+                          {defenseBonuses.resistances.breakdown.filter(b => b.vontade > 0 && b.active).map((b, i) => (
+                            <p key={i} className="text-[10px]">{b.source}: +{b.vontade}</p>
+                          ))}
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </div>
                 </div>
               </div>
