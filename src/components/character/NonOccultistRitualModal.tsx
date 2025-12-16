@@ -29,12 +29,13 @@ import {
   Skull,
   BookOpen,
   Zap,
+  Ghost,
   Circle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ALL_RITUALS, Ritual } from '@/lib/rituals-data';
 
-// Configuração visual dos elementos
+// Configuração visual dos elementos (5 elementos oficiais)
 const ELEMENT_CONFIG = {
   sangue: { 
     icon: Droplet, 
@@ -63,6 +64,13 @@ const ELEMENT_CONFIG = {
     color: 'text-blue-400', 
     bgColor: 'bg-blue-500/20',
     borderColor: 'border-blue-500/50' 
+  },
+  medo: { 
+    icon: Ghost, 
+    label: 'Medo', 
+    color: 'text-emerald-400', 
+    bgColor: 'bg-emerald-500/20',
+    borderColor: 'border-emerald-500/50' 
   },
 } as const;
 
