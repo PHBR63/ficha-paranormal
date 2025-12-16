@@ -61,6 +61,7 @@ import { AffinitySelectorCard } from '@/components/character/AffinitySelectorCar
 import { useParanormalEffects } from '@/hooks/useParanormalEffects';
 import { useDefenseBonuses } from '@/hooks/useDefenseBonuses';
 import { useCharacterBonusSummary } from '@/hooks/useCharacterBonusSummary';
+import { useBonusSync } from '@/hooks/useBonusSync';
 import { BonusSummaryCard } from '@/components/character/BonusSummaryCard';
 
 // Novos componentes do redesign 2.0 (estilo ficha de papel)
@@ -211,6 +212,13 @@ export default function CharacterSheet() {
     nex: character?.nex || 5,
     elementalAffinity: character?.elemental_affinity,
     affinityActive: character?.affinity_active,
+  });
+
+  // Sincroniza bônus com a campanha (se estiver em uma)
+  useBonusSync({
+    characterId: id || '',
+    bonusSummary,
+    enabled: !!character,
   });
 
   // Callback para adicionar rolagem ao histórico
