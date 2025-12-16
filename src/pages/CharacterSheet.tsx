@@ -62,6 +62,7 @@ import { useParanormalEffects } from '@/hooks/useParanormalEffects';
 import { useDefenseBonuses } from '@/hooks/useDefenseBonuses';
 import { useCharacterBonusSummary } from '@/hooks/useCharacterBonusSummary';
 import { useBonusSync } from '@/hooks/useBonusSync';
+import { useCampaignRitualSync } from '@/hooks/useCampaignRitualSync';
 import { BonusSummaryCard } from '@/components/character/BonusSummaryCard';
 
 // Novos componentes do redesign 2.0 (estilo ficha de papel)
@@ -231,6 +232,16 @@ export default function CharacterSheet() {
     enabled: !!character,
   });
 
+  // Sincroniza conjurações de rituais com a campanha em tempo real
+  const { 
+    isInCampaign, 
+    syncRitualCast,
+  } = useCampaignRitualSync({
+    characterId: id || '',
+    userId: user?.id || '',
+    enabled: !!character,
+  });
+
   // Callback para adicionar rolagem ao histórico
   const handleRollComplete = useCallback((result: DiceRollResult) => {
     setRollHistory(prev => [result, ...prev].slice(0, 50));
@@ -392,13 +403,18 @@ export default function CharacterSheet() {
     };
     setCastHistory(prev => [castRecord, ...prev]);
 
+    // Sincroniza com a campanha em tempo real (se estiver em uma)
+    if (isInCampaign) {
+      await syncRitualCast(ritual, peCost, enhancements, peBeforeCast, newPe);
+    }
+
     const enhText = enhancements.length > 0 
       ? ` (${enhancements.join(', ')})` 
       : '';
 
     toast({
       title: `${ritual.name} conjurado!`,
-      description: `${peCost} PE consumido${enhText}. PE restante: ${newPe}`,
+      description: `${peCost} PE consumido${enhText}. PE restante: ${newPe}${isInCampaign ? ' • Sincronizado' : ''}`,
     });
 
     // Registrar no histórico de mudanças permanente
@@ -409,7 +425,7 @@ export default function CharacterSheet() {
       newValue: String(newPe),
       description: `Conjurou ${ritual.name}${enhText} (-${peCost} PE)`,
     }]);
-  }, [character, peCurrent, toast, user?.id]);
+  }, [character, peCurrent, toast, user?.id, isInCampaign, syncRitualCast]);
 
   // Limpar histórico de conjurações
   const handleClearCastHistory = useCallback(() => {
