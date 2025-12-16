@@ -139,56 +139,95 @@ export function StatsPreviewWidget({
               </div>
               
               <div className="space-y-3">
-                {/* PV - só mostra se tem classe */}
-                {hp !== null && (
-                  <StatItemWithBreakdown 
-                    icon={Heart} 
-                    label="PV" 
-                    value={hp} 
-                    color="text-destructive"
-                    expanded={expanded}
-                    breakdown={hpBreakdown ? [
-                      { label: 'Base Classe', value: hpBreakdown.base },
-                      { label: 'Vigor', value: hpBreakdown.fromVigor, prefix: '+' },
-                      { label: 'Progressão NEX', value: hpBreakdown.fromNex, prefix: '+' },
-                    ] : undefined}
-                  />
-                )}
+                {/* PV - só mostra se tem classe com animação de entrada */}
+                <AnimatePresence>
+                  {hp !== null && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.8, x: 20 }}
+                      animate={{ opacity: 1, scale: 1, x: 0 }}
+                      exit={{ opacity: 0, scale: 0.8, x: 20 }}
+                      transition={{ type: 'spring', stiffness: 500, damping: 30, delay: 0 }}
+                    >
+                      <StatItemWithBreakdown 
+                        icon={Heart} 
+                        label="PV" 
+                        value={hp} 
+                        color="text-destructive"
+                        expanded={expanded}
+                        isNew={true}
+                        breakdown={hpBreakdown ? [
+                          { label: 'Base Classe', value: hpBreakdown.base },
+                          { label: 'Vigor', value: hpBreakdown.fromVigor, prefix: '+' },
+                          { label: 'Progressão NEX', value: hpBreakdown.fromNex, prefix: '+' },
+                        ] : undefined}
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
                 
-                {/* PE - só mostra se tem classe */}
-                {pe !== null && (
-                  <StatItemWithBreakdown 
-                    icon={Zap} 
-                    label="PE" 
-                    value={pe} 
-                    color="text-pe"
-                    expanded={expanded}
-                    breakdown={peBreakdown ? [
-                      { label: 'Base Classe', value: peBreakdown.base },
-                      { label: 'Presença', value: peBreakdown.fromPresence, prefix: '+' },
-                      { label: 'Progressão NEX', value: peBreakdown.fromNex, prefix: '+' },
-                    ] : undefined}
-                  />
-                )}
+                {/* PE - só mostra se tem classe com animação de entrada */}
+                <AnimatePresence>
+                  {pe !== null && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.8, x: 20 }}
+                      animate={{ opacity: 1, scale: 1, x: 0 }}
+                      exit={{ opacity: 0, scale: 0.8, x: 20 }}
+                      transition={{ type: 'spring', stiffness: 500, damping: 30, delay: 0.1 }}
+                    >
+                      <StatItemWithBreakdown 
+                        icon={Zap} 
+                        label="PE" 
+                        value={pe} 
+                        color="text-pe"
+                        expanded={expanded}
+                        isNew={true}
+                        breakdown={peBreakdown ? [
+                          { label: 'Base Classe', value: peBreakdown.base },
+                          { label: 'Presença', value: peBreakdown.fromPresence, prefix: '+' },
+                          { label: 'Progressão NEX', value: peBreakdown.fromNex, prefix: '+' },
+                        ] : undefined}
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
                 
-                {/* SAN - só mostra se tem classe */}
-                {san !== null && (
-                  <StatItemWithBreakdown 
-                    icon={Brain} 
-                    label="SAN" 
-                    value={san} 
-                    color="text-paranormal"
-                    expanded={expanded}
-                    breakdown={sanBreakdown ? [
-                      { label: 'Base Classe', value: sanBreakdown.base },
-                      { label: 'Progressão NEX', value: sanBreakdown.fromNex, prefix: '+' },
-                      ...(sanBreakdown.originMod !== 0 ? [{ label: 'Origem', value: sanBreakdown.originMod }] : []),
-                    ] : undefined}
-                  />
-                )}
+                {/* SAN - só mostra se tem classe com animação de entrada */}
+                <AnimatePresence>
+                  {san !== null && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.8, x: 20 }}
+                      animate={{ opacity: 1, scale: 1, x: 0 }}
+                      exit={{ opacity: 0, scale: 0.8, x: 20 }}
+                      transition={{ type: 'spring', stiffness: 500, damping: 30, delay: 0.2 }}
+                    >
+                      <StatItemWithBreakdown 
+                        icon={Brain} 
+                        label="SAN" 
+                        value={san} 
+                        color="text-paranormal"
+                        expanded={expanded}
+                        isNew={true}
+                        breakdown={sanBreakdown ? [
+                          { label: 'Base Classe', value: sanBreakdown.base },
+                          { label: 'Progressão NEX', value: sanBreakdown.fromNex, prefix: '+' },
+                          ...(sanBreakdown.originMod !== 0 ? [{ label: 'Origem', value: sanBreakdown.originMod }] : []),
+                        ] : undefined}
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
                 
                 {/* Separador só aparece se tem stats de classe */}
-                {hp !== null && <div className="h-px bg-border my-2" />}
+                <AnimatePresence>
+                  {hp !== null && (
+                    <motion.div 
+                      initial={{ opacity: 0, scaleX: 0 }}
+                      animate={{ opacity: 1, scaleX: 1 }}
+                      transition={{ delay: 0.3 }}
+                      className="h-px bg-border my-2 origin-left"
+                    />
+                  )}
+                </AnimatePresence>
                 
                 {/* DEF */}
                 <StatItemWithBreakdown 
@@ -254,6 +293,7 @@ interface StatItemWithBreakdownProps {
   color: string;
   expanded: boolean;
   breakdown?: BreakdownItem[];
+  isNew?: boolean; // Indica se o stat acabou de aparecer (para efeito pulse)
 }
 
 function StatItemWithBreakdown({ 
@@ -262,21 +302,26 @@ function StatItemWithBreakdown({
   value, 
   color, 
   expanded,
-  breakdown 
+  breakdown,
+  isNew = false
 }: StatItemWithBreakdownProps) {
   if (!expanded) {
     // Modo compacto - apenas valor com tooltip
     return (
       <Tooltip>
         <TooltipTrigger asChild>
-          <div className="flex items-center gap-2 cursor-help">
-            <Icon className={cn('w-4 h-4', color)} />
+          <div className={cn(
+            "flex items-center gap-2 cursor-help rounded-md px-1 -mx-1 transition-colors",
+            isNew && "animate-pulse"
+          )}>
+            <Icon className={cn('w-4 h-4', color, isNew && 'drop-shadow-[0_0_6px_currentColor]')} />
             <span className="text-xs text-muted-foreground w-8">{label}</span>
             <motion.span
               key={String(value)}
-              initial={{ scale: 1.2, opacity: 0 }}
+              initial={{ scale: 1.3, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              className={cn('font-display text-lg', color)}
+              transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+              className={cn('font-display text-lg', color, isNew && 'drop-shadow-[0_0_8px_currentColor]')}
             >
               {value}
             </motion.span>
@@ -303,15 +348,16 @@ function StatItemWithBreakdown({
 
   // Modo expandido - mostra breakdown inline
   return (
-    <div className="space-y-1">
+    <div className={cn("space-y-1", isNew && "animate-pulse")}>
       <div className="flex items-center gap-2">
-        <Icon className={cn('w-4 h-4', color)} />
+        <Icon className={cn('w-4 h-4', color, isNew && 'drop-shadow-[0_0_6px_currentColor]')} />
         <span className="text-xs text-muted-foreground w-8">{label}</span>
         <motion.span
           key={String(value)}
-          initial={{ scale: 1.2, opacity: 0 }}
+          initial={{ scale: 1.3, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className={cn('font-display text-lg', color)}
+          transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+          className={cn('font-display text-lg', color, isNew && 'drop-shadow-[0_0_8px_currentColor]')}
         >
           {value}
         </motion.span>
