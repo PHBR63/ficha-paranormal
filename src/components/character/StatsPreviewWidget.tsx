@@ -318,9 +318,9 @@ function StatItemWithBreakdown({
             <span className="text-xs text-muted-foreground w-8">{label}</span>
             <motion.span
               key={String(value)}
-              initial={{ scale: 1.3, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.2 }}
               className={cn('font-display text-lg', color, isNew && 'drop-shadow-[0_0_8px_currentColor]')}
             >
               {value}
@@ -354,9 +354,9 @@ function StatItemWithBreakdown({
         <span className="text-xs text-muted-foreground w-8">{label}</span>
         <motion.span
           key={String(value)}
-          initial={{ scale: 1.3, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.2 }}
           className={cn('font-display text-lg', color, isNew && 'drop-shadow-[0_0_8px_currentColor]')}
         >
           {value}
