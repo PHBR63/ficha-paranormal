@@ -100,6 +100,16 @@ export const COMBATENTE_ABILITIES: ClassAbility[] = [
     isCore: true 
   },
   
+  // NEX 95% - Aumento de Atributo
+  { 
+    id: 'aumento-atributo-95', 
+    name: 'Aumento de Atributo', 
+    description: 'Aumente um atributo em +1. Você não pode aumentar um atributo além de 5 dessa forma.', 
+    minNex: 95, 
+    classId: 'Combatente', 
+    isCore: true 
+  },
+  
   // ========== PODERES DE COMBATENTE (escolhíveis) ==========
   // Recebe em NEX 15%, 30%, 45%, 60%, 75%, 90%
   
@@ -113,14 +123,14 @@ export const COMBATENTE_ABILITIES: ClassAbility[] = [
   { 
     id: 'artista-marcial', 
     name: 'Artista Marcial', 
-    description: 'Seus ataques desarmados causam 1d6 pontos de dano, podendo causar dano letal se tornar ágeis (veja p. 59). Em NEX 35%, o dano aumenta para 1d8 e, em NEX 70%, para 1d10.', 
+    description: 'Seus ataques desarmados causam 1d6 pontos de dano, podem causar dano letal e se tornam ágeis (veja p. 59). Em NEX 35%, o dano aumenta para 1d8 e, em NEX 70%, para 1d10.', 
     minNex: 15, 
     classId: 'Combatente' 
   },
   { 
     id: 'ataque-de-oportunidade', 
     name: 'Ataque de Oportunidade', 
-    description: 'Sempre que um adversário dentro de seu alcance ao seu sair, você pode gastar uma reação e 1 PE para fazer um ataque corpo a corpo contra ele.', 
+    description: 'Sempre que um ser sair voluntariamente de um espaço adjacente ao seu, você pode gastar uma reação e 1 PE para fazer um ataque corpo a corpo contra ele.', 
     minNex: 15, 
     classId: 'Combatente' 
   },
@@ -141,7 +151,7 @@ export const COMBATENTE_ABILITIES: ClassAbility[] = [
   { 
     id: 'golpe-demolidor', 
     name: 'Golpe Demolidor', 
-    description: 'Quando usa a manobra quebrar um objeto, você pode gastar 1 PE para causar dois dados de dano do mesmo tipo de sua arma. Pré-requisitos: For 2, treinado em Luta.', 
+    description: 'Quando usa a manobra quebrar ou ataca um objeto, você pode gastar 1 PE para causar dois dados de dano extra do mesmo tipo de sua arma. Pré-requisitos: For 2, treinado em Luta.', 
     minNex: 15, 
     classId: 'Combatente' 
   },
@@ -162,7 +172,7 @@ export const COMBATENTE_ABILITIES: ClassAbility[] = [
   { 
     id: 'presteza-atletica', 
     name: 'Presteza Atlética', 
-    description: 'Quando faz um teste de facilitar a investigação, você pode gastar 1 PE para usar Força ou Agilidade no lugar do atributo-base da perícia. Se passar no teste, o próximo aliado que usar essa ação também recebe +5 no teste.', 
+    description: 'Quando faz um teste de facilitar a investigação, você pode gastar 1 PE para usar Força ou Agilidade no lugar do atributo-base da perícia. Se passar no teste, o próximo aliado que usar seu bônus também recebe +2 no teste.', 
     minNex: 15, 
     classId: 'Combatente' 
   },
@@ -183,14 +193,14 @@ export const COMBATENTE_ABILITIES: ClassAbility[] = [
   { 
     id: 'saque-rapido', 
     name: 'Saque Rápido', 
-    description: 'Você pode sacar ou guardar itens como uma ação livre, em vez de ação de movimento. Além disso, pode recarregar uma arma de fogo sem contar munição uma vez por rodada. Pré-requisito: treinado em Iniciativa.', 
+    description: 'Você pode sacar ou guardar itens como uma ação livre (em vez de ação de movimento). Além disso, caso esteja usando a regra opcional de contagem de munição, uma vez por rodada pode recarregar uma arma de disparo como uma ação livre. Pré-requisito: treinado em Iniciativa.', 
     minNex: 15, 
     classId: 'Combatente' 
   },
   { 
     id: 'segurar-gatilho', 
     name: 'Segurar o Gatilho', 
-    description: 'Sempre que acerta um ataque com uma arma de fogo, pode fazer outro ataque com a mesma arma contra o mesmo alvo, pagando 2 PE por ataque adicional no turno. Pode repetir até errar, atingir o limite de PE por rodada. Pré-requisito: NEX 60%.', 
+    description: 'Sempre que acerta um ataque com uma arma de fogo, pode fazer outro ataque com a mesma arma contra o mesmo alvo, pagando 2 PE por cada ataque já realizado no turno. Ou seja, pode fazer o primeiro ataque extra gastando 2 PE e, se acertar, pode fazer um segundo ataque extra gastando mais 4 PE e assim por diante, até errar um ataque ou atingir o limite de seus PE por rodada. Pré-requisito: NEX 60%.', 
     minNex: 60, 
     classId: 'Combatente' 
   },
@@ -211,28 +221,28 @@ export const COMBATENTE_ABILITIES: ClassAbility[] = [
   { 
     id: 'tiro-certeiro', 
     name: 'Tiro Certeiro', 
-    description: 'Se estiver usando uma arma de disparo, você soma sua Agilidade nas rolagens de dano e ignora a cobertura dos alvos envolvidos em combate corpo a corpo (mesmo se não usar a ação mirar). Pré-requisito: treinado em Pontaria.', 
+    description: 'Se estiver usando uma arma de disparo, você soma sua Agilidade nas rolagens de dano e ignora a penalidade contra alvos envolvidos em combate corpo a corpo (mesmo se não usar a ação mirar). Pré-requisito: treinado em Pontaria.', 
     minNex: 15, 
     classId: 'Combatente' 
   },
   { 
     id: 'tiro-de-cobertura', 
     name: 'Tiro de Cobertura', 
-    description: 'Você pode gastar uma ação padrão e 1 PE para disparar uma arma de fogo na direção de um ser no alcance da arma para forçá-lo a se proteger. Faça um teste de Pontaria contra a Vontade do alvo. Se vencer, até o início do seu próximo turno o alvo não pode sair do lugar onde está e sofre –5 em testes de ataque. Se estiver em local extremamente perigoso, sofre também um efeito de medo.', 
+    description: 'Você pode gastar uma ação padrão e 1 PE para disparar uma arma de fogo na direção de um ser no alcance da arma para forçá-lo a se proteger. Faça um teste de Pontaria contra a Vontade do alvo. Se vencer, até o início do seu próximo turno o alvo não pode sair do lugar onde está e sofre –5 em testes de ataque. A critério do mestre, o alvo recebe +5 no teste de Vontade se estiver em um lugar extremamente perigoso, como uma casa em chamas ou um barco afundando. Este é um efeito de medo.', 
     minNex: 15, 
     classId: 'Combatente' 
   },
   { 
     id: 'transcender', 
     name: 'Transcender', 
-    description: 'Escolha um poder paranormal (veja p. 114). Você recebe o poder escolhido, mas não ganha Sanidade nem aumento de NEX. Você pode escolher este poder várias vezes.', 
+    description: 'Escolha um poder paranormal (veja a página 114). Você recebe o poder escolhido, mas não ganha Sanidade neste aumento de NEX. Você pode escolher este poder várias vezes.', 
     minNex: 15, 
     classId: 'Combatente' 
   },
   { 
     id: 'treinamento-pericia', 
     name: 'Treinamento em Perícia', 
-    description: 'Escolha duas perícias. Se estiver em NEX 35%, você pode escolher perícias nas quais já é treinado para se tornar veterano. Em NEX 70%, pode escolher perícias nas quais já é veterano para se tornar expert. Você pode escolher este poder várias vezes.', 
+    description: 'Escolha duas perícias. Você se torna treinado nessas perícias. A partir de NEX 35%, você pode escolher perícias nas quais já é treinado para se tornar veterano. A partir de NEX 70%, pode escolher perícias nas quais já é veterano para se tornar expert. Você pode escolher este poder várias vezes.', 
     minNex: 15, 
     classId: 'Combatente' 
   },
