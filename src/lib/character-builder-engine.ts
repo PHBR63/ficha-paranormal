@@ -122,10 +122,11 @@ export const CLASS_PROFICIENCIES: Record<string, string[]> = {
 
 // ============= CLASS INITIAL ABILITIES (NEX 5%) =============
 
+// Habilidades iniciais da classe - nome correto conforme livro de regras
 export const CLASS_INITIAL_ABILITIES: Record<string, string[]> = {
   'Combatente': ['Ataque Especial (2 PE, +5 no ataque ou dano)'],
   'Especialista': ['Eclético (+5 em teste de perícia não treinada, 1x/cena)'],
-  'Ocultista': ['Afinidade Paranormal (pode lançar rituais)'],
+  'Ocultista': ['Escolhido pelo Outro Lado (pode lançar rituais)'],
   'Sobrevivente': ['Vontade de Viver', 'Improviso'], // Suplemento
 };
 

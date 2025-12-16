@@ -19,7 +19,8 @@ import {
   Star,
   Lock,
   CheckCircle2,
-  Info
+  Info,
+  TrendingUp
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { 
@@ -31,6 +32,42 @@ import {
 } from '@/lib/class-abilities';
 import { RuleBookTip } from './RuleBookTip';
 import { getRulebookContent } from '@/lib/rulebook-content';
+
+// Mapeamento de habilidades que evoluem com NEX
+// Cada entrada contém os marcos de evolução e suas descrições
+const EVOLVING_ABILITIES: Record<string, { nexMarkers: number[]; evolutions: string[] }> = {
+  'escolhido-pelo-outro-lado': {
+    nexMarkers: [5, 25, 55, 85],
+    evolutions: [
+      'Rituais de 1º círculo (3 rituais iniciais)',
+      'Rituais de 2º círculo',
+      'Rituais de 3º círculo', 
+      'Rituais de 4º círculo'
+    ]
+  },
+  'ataque-especial': {
+    nexMarkers: [5, 20, 40, 60, 80, 99],
+    evolutions: [
+      '+5 dano ou ataque (2 PE)',
+      '+10 dano ou ataque (4 PE)',
+      '+15 dano ou ataque (6 PE)',
+      '+20 dano ou ataque (8 PE)',
+      '+25 dano ou ataque (10 PE)',
+      '+30 dano ou ataque (12 PE)'
+    ]
+  },
+  'versatil': {
+    nexMarkers: [5, 20, 40, 60, 80, 99],
+    evolutions: [
+      '2 perícias',
+      '4 perícias',
+      '6 perícias',
+      '8 perícias',
+      '10 perícias',
+      '12 perícias'
+    ]
+  }
+};
 
 interface StepAbilitiesProps {
   formData: CharacterFormData;
@@ -155,33 +192,115 @@ export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) 
             <ScrollArea className="h-[400px] pr-4">
               <div className="space-y-3">
                 <AnimatePresence>
-                  {coreAbilities.map((ability, index) => (
-                    <motion.div
-                      key={ability.id}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                      className={cn(
-                        "p-4 rounded-lg border bg-gradient-to-r",
-                        classColor
-                      )}
-                    >
-                      <div className="flex items-start gap-3">
-                        <CheckCircle2 className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <h4 className="font-medium text-foreground">{ability.name}</h4>
-                            <Badge variant="outline" className="text-xs">
-                              NEX {ability.minNex}%
-                            </Badge>
+                  {coreAbilities.map((ability, index) => {
+                    // Verificar se a habilidade evolui com NEX
+                    const evolution = EVOLVING_ABILITIES[ability.id];
+                    const hasEvolution = !!evolution;
+                    
+                    // Calcular evolução atual e próxima
+                    let currentEvolutionIndex = 0;
+                    let nextEvolutionNex: number | null = null;
+                    
+                    if (hasEvolution) {
+                      for (let i = evolution.nexMarkers.length - 1; i >= 0; i--) {
+                        if (nex >= evolution.nexMarkers[i]) {
+                          currentEvolutionIndex = i;
+                          break;
+                        }
+                      }
+                      // Encontrar próximo marco
+                      const nextIndex = currentEvolutionIndex + 1;
+                      if (nextIndex < evolution.nexMarkers.length) {
+                        nextEvolutionNex = evolution.nexMarkers[nextIndex];
+                      }
+                    }
+                    
+                    return (
+                      <motion.div
+                        key={ability.id}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                        className={cn(
+                          "p-4 rounded-lg border bg-gradient-to-r",
+                          classColor
+                        )}
+                      >
+                        <div className="flex items-start gap-3">
+                          <CheckCircle2 className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h4 className="font-medium text-foreground">{ability.name}</h4>
+                              <Badge variant="outline" className="text-xs">
+                                NEX {ability.minNex}%
+                              </Badge>
+                              {/* Indicador de habilidade que evolui */}
+                              {hasEvolution && (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Badge variant="secondary" className="text-xs gap-1 cursor-help">
+                                      <TrendingUp className="w-3 h-3" />
+                                      Evolui
+                                    </Badge>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="right" className="max-w-xs p-3">
+                                    <p className="font-semibold mb-2">Progressão por NEX:</p>
+                                    <ul className="space-y-1 text-xs">
+                                      {evolution.nexMarkers.map((nexMark, i) => (
+                                        <li 
+                                          key={nexMark}
+                                          className={cn(
+                                            "flex items-center gap-2",
+                                            nex >= nexMark ? "text-primary" : "text-muted-foreground"
+                                          )}
+                                        >
+                                          <span className={cn(
+                                            "w-4 h-4 rounded-full flex items-center justify-center text-[10px] border",
+                                            nex >= nexMark 
+                                              ? "bg-primary/20 border-primary text-primary" 
+                                              : "bg-muted border-muted-foreground"
+                                          )}>
+                                            {nex >= nexMark ? '✓' : i + 1}
+                                          </span>
+                                          <span className="font-medium">NEX {nexMark}%:</span>
+                                          <span>{evolution.evolutions[i]}</span>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </TooltipContent>
+                                </Tooltip>
+                              )}
+                            </div>
+                            
+                            {/* Descrição base */}
+                            <p className="text-sm text-muted-foreground mt-1">
+                              {ability.description}
+                            </p>
+                            
+                            {/* Painel de evolução atual (para habilidades que evoluem) */}
+                            {hasEvolution && (
+                              <div className="mt-3 p-2 rounded bg-background/50 border border-border/50">
+                                <div className="flex items-center gap-2 text-xs">
+                                  <span className="text-muted-foreground">Nível atual:</span>
+                                  <Badge variant="default" className="text-xs">
+                                    {evolution.evolutions[currentEvolutionIndex]}
+                                  </Badge>
+                                </div>
+                                {nextEvolutionNex && (
+                                  <div className="flex items-center gap-2 text-xs mt-1">
+                                    <span className="text-muted-foreground">Próxima evolução:</span>
+                                    <span className="text-primary">
+                                      NEX {nextEvolutionNex}% → {evolution.evolutions[currentEvolutionIndex + 1]}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </div>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            {ability.description}
-                          </p>
                         </div>
-                      </div>
-                    </motion.div>
-                  ))}
+                      </motion.div>
+                    );
+                  })}
                 </AnimatePresence>
                 
                 {coreAbilities.length === 0 && (
