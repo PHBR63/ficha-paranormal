@@ -79,12 +79,13 @@ const powerTypeConfig: Record<PowerType, {
   },
 };
 
-// Ícones de elementos para poderes paranormais
+// Ícones de elementos para poderes paranormais (inclui todos os 5 elementos)
 const elementConfig: Record<string, { icon: string; color: string; bgColor: string }> = {
   sangue: { icon: '🩸', color: 'text-red-400', bgColor: 'bg-red-500/20' },
   morte: { icon: '💀', color: 'text-purple-400', bgColor: 'bg-purple-500/20' },
   conhecimento: { icon: '📖', color: 'text-blue-400', bgColor: 'bg-blue-500/20' },
   energia: { icon: '⚡', color: 'text-yellow-400', bgColor: 'bg-yellow-500/20' },
+  medo: { icon: '👻', color: 'text-emerald-400', bgColor: 'bg-emerald-500/20' },
 };
 
 export function PowerDetailModal({ open, onOpenChange, power }: PowerDetailModalProps) {
