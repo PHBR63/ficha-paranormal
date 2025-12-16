@@ -688,46 +688,57 @@ export const SKILLS = [
 // ==================== PROGRESSÃO POR NEX (TABELA OFICIAL) ====================
 
 /**
- * Tabela de progressão por NEX - Define benefícios ganhos a cada nível
- * Baseado nas regras oficiais do livro Ordem Paranormal v1.3
+ * ==================== PROGRESSÃO DE NEX ====================
+ * Fonte: Tabelas 1.3, 1.4 e 1.5 do livro Ordem Paranormal RPG
+ *
+ * AUMENTO DE ATRIBUTO: NEX 20%, 50%, 80%, 95% (4 total)
+ * PODERES DE CLASSE: NEX 15%, 30%, 45%, 60%, 75%, 90% (6 total)
+ * HABILIDADE DE TRILHA: NEX 10%, 40%, 65%, 99% (4 total)
+ * GRAU DE TREINAMENTO: NEX 35%, 70% (2 total)
+ * VERSATILIDADE: NEX 50% (1 total)
+ *
+ * Melhorias da habilidade base da classe (25%, 55%, 85%):
+ * - Combatente: Ataque Especial (3 PE +10 → 4 PE +15 → 5 PE +20)
+ * - Especialista: Perito (+1d8 → +1d10 → +1d12)
+ * - Ocultista: Círculos de ritual (2º → 3º → 4º)
  * 
  * - attributePoints: Pontos de atributo extras acumulados
  * - extraSkills: Perícias extras acumuladas (além das da classe)
- * - abilityChoices: Quantidade de habilidades opcionais da classe
+ * - abilityChoices: Quantidade de poderes de classe escolhidos (acumulado)
  * - trackAbilityUnlocks: Habilidades de trilha desbloqueadas
  */
 export interface NexProgressionData {
   attributePoints: number;  // Pontos de atributo extras (acumulados)
   extraSkills: number;      // Perícias extras (acumuladas)
-  abilityChoices: number;   // Habilidades opcionais disponíveis
+  abilityChoices: number;   // Poderes de classe disponíveis (acumulado)
   trackAbilityUnlocks: number; // Habilidades de trilha desbloqueadas
 }
 
-// NEX_PROGRESSION corrigido conforme regras oficiais:
-// - Primeiro ponto de atributo extra só no NEX 20%
-// - trackAbilityUnlocks: máximo de 4 (NEX 10%, 40%, 65%, 99%)
-// CORRIGIDO: extraSkills sempre 0 - perícias extras vêm apenas do poder "Treinamento em Perícia"
+// NEX_PROGRESSION CORRIGIDO conforme Tabelas 1.3, 1.4 e 1.5 do livro oficial:
+// - Aumento de Atributo: APENAS em 20%, 50%, 80%, 95% (4 total)
+// - Poderes de Classe: APENAS em 15%, 30%, 45%, 60%, 75%, 90% (6 total)
+// - Habilidade de Trilha: 10%, 40%, 65%, 99% (4 total)
 export const NEX_PROGRESSION: Record<number, NexProgressionData> = {
-  5:  { attributePoints: 0, extraSkills: 0, abilityChoices: 1, trackAbilityUnlocks: 0 },
-  10: { attributePoints: 0, extraSkills: 0, abilityChoices: 1, trackAbilityUnlocks: 1 },  // 1ª habilidade de trilha
-  15: { attributePoints: 0, extraSkills: 0, abilityChoices: 1, trackAbilityUnlocks: 1 },
-  20: { attributePoints: 1, extraSkills: 0, abilityChoices: 2, trackAbilityUnlocks: 1 },  // Primeiro ponto de atributo
-  25: { attributePoints: 1, extraSkills: 0, abilityChoices: 2, trackAbilityUnlocks: 1 },
-  30: { attributePoints: 2, extraSkills: 0, abilityChoices: 2, trackAbilityUnlocks: 1 },
-  35: { attributePoints: 2, extraSkills: 0, abilityChoices: 3, trackAbilityUnlocks: 1 },
-  40: { attributePoints: 3, extraSkills: 0, abilityChoices: 3, trackAbilityUnlocks: 2 },  // 2ª habilidade de trilha
-  45: { attributePoints: 3, extraSkills: 0, abilityChoices: 3, trackAbilityUnlocks: 2 },
-  50: { attributePoints: 4, extraSkills: 0, abilityChoices: 4, trackAbilityUnlocks: 2 },
-  55: { attributePoints: 4, extraSkills: 0, abilityChoices: 4, trackAbilityUnlocks: 2 },
-  60: { attributePoints: 5, extraSkills: 0, abilityChoices: 4, trackAbilityUnlocks: 2 },
-  65: { attributePoints: 5, extraSkills: 0, abilityChoices: 5, trackAbilityUnlocks: 3 },  // 3ª habilidade de trilha
-  70: { attributePoints: 6, extraSkills: 0, abilityChoices: 5, trackAbilityUnlocks: 3 },
-  75: { attributePoints: 6, extraSkills: 0, abilityChoices: 5, trackAbilityUnlocks: 3 },
-  80: { attributePoints: 7, extraSkills: 0, abilityChoices: 6, trackAbilityUnlocks: 3 },
-  85: { attributePoints: 7, extraSkills: 0, abilityChoices: 6, trackAbilityUnlocks: 3 },
-  90: { attributePoints: 8, extraSkills: 0, abilityChoices: 6, trackAbilityUnlocks: 3 },
-  95: { attributePoints: 8, extraSkills: 0, abilityChoices: 7, trackAbilityUnlocks: 3 },
-  99: { attributePoints: 9, extraSkills: 0, abilityChoices: 7, trackAbilityUnlocks: 4 },  // 4ª habilidade de trilha
+  5:  { attributePoints: 0, extraSkills: 0, abilityChoices: 0, trackAbilityUnlocks: 0 },  // Inicial
+  10: { attributePoints: 0, extraSkills: 0, abilityChoices: 0, trackAbilityUnlocks: 1 },  // 1ª habilidade de trilha
+  15: { attributePoints: 0, extraSkills: 0, abilityChoices: 1, trackAbilityUnlocks: 1 },  // 1º poder de classe
+  20: { attributePoints: 1, extraSkills: 0, abilityChoices: 1, trackAbilityUnlocks: 1 },  // 1º aumento de atributo
+  25: { attributePoints: 1, extraSkills: 0, abilityChoices: 1, trackAbilityUnlocks: 1 },  // Melhoria habilidade base (2º círculo/etc)
+  30: { attributePoints: 1, extraSkills: 0, abilityChoices: 2, trackAbilityUnlocks: 1 },  // 2º poder de classe
+  35: { attributePoints: 1, extraSkills: 0, abilityChoices: 2, trackAbilityUnlocks: 1 },  // 1º grau de treinamento
+  40: { attributePoints: 1, extraSkills: 0, abilityChoices: 2, trackAbilityUnlocks: 2 },  // 2ª habilidade de trilha
+  45: { attributePoints: 1, extraSkills: 0, abilityChoices: 3, trackAbilityUnlocks: 2 },  // 3º poder de classe
+  50: { attributePoints: 2, extraSkills: 0, abilityChoices: 3, trackAbilityUnlocks: 2 },  // 2º aumento de atributo + Versatilidade
+  55: { attributePoints: 2, extraSkills: 0, abilityChoices: 3, trackAbilityUnlocks: 2 },  // Melhoria habilidade base (3º círculo/etc)
+  60: { attributePoints: 2, extraSkills: 0, abilityChoices: 4, trackAbilityUnlocks: 2 },  // 4º poder de classe
+  65: { attributePoints: 2, extraSkills: 0, abilityChoices: 4, trackAbilityUnlocks: 3 },  // 3ª habilidade de trilha
+  70: { attributePoints: 2, extraSkills: 0, abilityChoices: 4, trackAbilityUnlocks: 3 },  // 2º grau de treinamento
+  75: { attributePoints: 2, extraSkills: 0, abilityChoices: 5, trackAbilityUnlocks: 3 },  // 5º poder de classe
+  80: { attributePoints: 3, extraSkills: 0, abilityChoices: 5, trackAbilityUnlocks: 3 },  // 3º aumento de atributo
+  85: { attributePoints: 3, extraSkills: 0, abilityChoices: 5, trackAbilityUnlocks: 3 },  // Melhoria habilidade base (4º círculo/etc)
+  90: { attributePoints: 3, extraSkills: 0, abilityChoices: 6, trackAbilityUnlocks: 3 },  // 6º poder de classe
+  95: { attributePoints: 4, extraSkills: 0, abilityChoices: 6, trackAbilityUnlocks: 3 },  // 4º aumento de atributo
+  99: { attributePoints: 4, extraSkills: 0, abilityChoices: 6, trackAbilityUnlocks: 4 },  // 4ª habilidade de trilha (final)
 };
 
 /**
