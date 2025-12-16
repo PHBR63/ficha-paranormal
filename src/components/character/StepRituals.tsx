@@ -244,6 +244,11 @@ export function StepRituals({ formData, updateFormData }: StepRitualsProps) {
   const ritualInfo = ritualsPerNex[formData.nex] || { count: 3, maxCircle: 1 };
   const maxRituals = ritualInfo.count;
   const maxCircle = ritualInfo.maxCircle;
+  
+  // Detectar se está em um NEX de desbloqueio de círculo (25%, 55%, 85%)
+  const previousNex = formData.nex > 5 ? formData.nex - 5 : 5;
+  const previousRitualInfo = ritualsPerNex[previousNex] || { count: 3, maxCircle: 1 };
+  const isNewCircleUnlocked = maxCircle > previousRitualInfo.maxCircle;
 
   // Rituais selecionados e slots restantes
   const selectedRituals = formData.rituals || [];
@@ -332,6 +337,23 @@ export function StepRituals({ formData, updateFormData }: StepRitualsProps) {
       {/* Painel educativo do livro de regras */}
       {rulebookContent && (
         <RuleBookTip section={rulebookContent} defaultExpanded={false} />
+      )}
+
+      {/* Banner de novo círculo desbloqueado */}
+      {isNewCircleUnlocked && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="p-3 rounded-lg border border-primary/50 bg-primary/10 text-center"
+        >
+          <div className="flex items-center justify-center gap-2 text-primary">
+            <Sparkles className="w-4 h-4" />
+            <span className="font-medium text-sm">
+              {maxCircle}º Círculo Desbloqueado!
+            </span>
+            <Sparkles className="w-4 h-4" />
+          </div>
+        </motion.div>
       )}
 
       {/* Contador de rituais */}

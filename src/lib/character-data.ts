@@ -307,25 +307,24 @@ const CORE_CLASSES = [
     // - Começa com 3 rituais no NEX 5%
     // - +1 ritual a cada 5% NEX
     // - Círculo 2 em NEX 25%, Círculo 3 em NEX 55%, Círculo 4 em NEX 85%
-    // - Quando desbloqueia um novo círculo (unlockCircle: true), não há limite de rituais
     ritualsPerNex: {
       5:  { count: 3, maxCircle: 1 },
       10: { count: 4, maxCircle: 1 },
       15: { count: 5, maxCircle: 1 },
       20: { count: 6, maxCircle: 1 },
-      25: { count: 7, maxCircle: 2, unlockCircle: true },   // Desbloqueia 2º círculo
+      25: { count: 7, maxCircle: 2 },   // Desbloqueia 2º círculo
       30: { count: 8, maxCircle: 2 },
       35: { count: 9, maxCircle: 2 },
       40: { count: 10, maxCircle: 2 },
       45: { count: 11, maxCircle: 2 },
       50: { count: 12, maxCircle: 2 },
-      55: { count: 13, maxCircle: 3, unlockCircle: true },  // Desbloqueia 3º círculo
+      55: { count: 13, maxCircle: 3 },  // Desbloqueia 3º círculo
       60: { count: 14, maxCircle: 3 },
       65: { count: 15, maxCircle: 3 },
       70: { count: 16, maxCircle: 3 },
       75: { count: 17, maxCircle: 3 },
       80: { count: 18, maxCircle: 3 },
-      85: { count: 19, maxCircle: 4, unlockCircle: true },  // Desbloqueia 4º círculo
+      85: { count: 19, maxCircle: 4 },  // Desbloqueia 4º círculo
       90: { count: 20, maxCircle: 4 },
       95: { count: 21, maxCircle: 4 },
       99: { count: 22, maxCircle: 4 },
