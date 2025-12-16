@@ -1,15 +1,12 @@
 /**
  * useWeaponBuffs - Hook para gerenciar buffs temporários em armas
  * Fase 5: Rituais como Amaldiçoar Arma aplicam buffs que aparecem na tabela de combate
- * Fase 7: Persistência via localStorage para sobreviver reload
+ * Fase 8: Persistência via Supabase (nuvem) em vez de localStorage
  */
 
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { RitualEffect, getActiveRitualEffect, formatDamageFormula, DamageFormula } from '@/lib/ritual-effects';
 import { Ritual } from '@/lib/rituals-data';
-
-// Chave base para localStorage
-const STORAGE_KEY_PREFIX = 'weapon-buffs-';
 
 // Interface para buff de arma ativo
 export interface WeaponBuff {
@@ -51,68 +48,57 @@ interface UseWeaponBuffsReturn {
 }
 
 /**
- * Carrega buffs do localStorage para um personagem específico
+ * Filtra buffs muito antigos (mais de 24h - provavelmente sessão expirada)
  */
-function loadBuffsFromStorage(characterId: string): WeaponBuff[] {
-  try {
-    const stored = localStorage.getItem(`${STORAGE_KEY_PREFIX}${characterId}`);
-    if (!stored) return [];
-    
-    const buffs: WeaponBuff[] = JSON.parse(stored);
-    
-    // Filtra buffs muito antigos (mais de 24h - provavelmente sessão expirada)
-    const dayInMs = 24 * 60 * 60 * 1000;
-    const now = Date.now();
-    
-    return buffs.filter(buff => {
-      const appliedAt = new Date(buff.appliedAt).getTime();
-      return now - appliedAt < dayInMs;
-    });
-  } catch (error) {
-    console.error('Erro ao carregar buffs do localStorage:', error);
-    return [];
-  }
+function filterExpiredBuffs(buffs: WeaponBuff[]): WeaponBuff[] {
+  const dayInMs = 24 * 60 * 60 * 1000;
+  const now = Date.now();
+  
+  return buffs.filter(buff => {
+    const appliedAt = new Date(buff.appliedAt).getTime();
+    return now - appliedAt < dayInMs;
+  });
 }
 
 /**
- * Salva buffs no localStorage para um personagem específico
+ * Hook para gerenciar buffs de armas de rituais com persistência na nuvem
+ * @param characterId - ID do personagem (não usado diretamente, mantido para compatibilidade)
+ * @param initialBuffs - Buffs carregados do banco de dados
+ * @param onBuffsChange - Callback para persistir mudanças no banco
  */
-function saveBuffsToStorage(characterId: string, buffs: WeaponBuff[]): void {
-  try {
-    if (buffs.length === 0) {
-      localStorage.removeItem(`${STORAGE_KEY_PREFIX}${characterId}`);
-    } else {
-      localStorage.setItem(`${STORAGE_KEY_PREFIX}${characterId}`, JSON.stringify(buffs));
-    }
-  } catch (error) {
-    console.error('Erro ao salvar buffs no localStorage:', error);
-  }
-}
-
-/**
- * Hook para gerenciar buffs de armas de rituais com persistência
- * @param characterId - ID do personagem para persistência isolada
- */
-export function useWeaponBuffs(characterId?: string): UseWeaponBuffsReturn {
-  // Inicializa estado com buffs do localStorage se characterId fornecido
+export function useWeaponBuffs(
+  characterId?: string,
+  initialBuffs?: WeaponBuff[],
+  onBuffsChange?: (buffs: WeaponBuff[]) => void
+): UseWeaponBuffsReturn {
+  // Ref para evitar chamadas desnecessárias ao onBuffsChange
+  const isInitialMount = useRef(true);
+  
+  // Inicializa estado com buffs do banco, filtrando expirados
   const [state, setState] = useState<WeaponBuffsState>(() => ({
-    activeBuffs: characterId ? loadBuffsFromStorage(characterId) : [],
+    activeBuffs: initialBuffs ? filterExpiredBuffs(initialBuffs) : [],
   }));
 
-  // Recarrega buffs quando characterId muda
+  // Atualiza estado quando initialBuffs mudam (ex: reload do personagem)
   useEffect(() => {
-    if (characterId) {
-      const loadedBuffs = loadBuffsFromStorage(characterId);
-      setState({ activeBuffs: loadedBuffs });
+    if (initialBuffs) {
+      const filteredBuffs = filterExpiredBuffs(initialBuffs);
+      setState({ activeBuffs: filteredBuffs });
+      isInitialMount.current = true; // Reseta flag para não disparar onChange
     }
-  }, [characterId]);
+  }, [initialBuffs]);
 
-  // Persiste buffs quando mudam
+  // Persiste buffs quando mudam (exceto na montagem inicial)
   useEffect(() => {
-    if (characterId) {
-      saveBuffsToStorage(characterId, state.activeBuffs);
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
     }
-  }, [characterId, state.activeBuffs]);
+    
+    if (onBuffsChange) {
+      onBuffsChange(state.activeBuffs);
+    }
+  }, [state.activeBuffs, onBuffsChange]);
 
   // Adiciona um buff de ritual que afeta armas
   const addBuff = useCallback((ritual: Ritual, enhancements: string[]) => {
@@ -132,7 +118,7 @@ export function useWeaponBuffs(characterId?: string): UseWeaponBuffsReturn {
       attackBonus: effect.weaponEffect.attackBonus,
       criticalBonus: effect.weaponEffect.criticalBonus,
       criticalMultiplierBonus: effect.weaponEffect.criticalMultiplierBonus,
-      appliedAt: new Date().toISOString(), // ISO string para serialização
+      appliedAt: new Date().toISOString(),
       duration: 'cena',
       enhancements,
     };

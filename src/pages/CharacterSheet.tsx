@@ -120,6 +120,14 @@ interface InventoryItemPersisted {
   consumable?: boolean;
 }
 
+// Interface para condição persistida (objeto completo)
+interface PersistedCondition {
+  id: string;
+  name: string;
+  turnsRemaining: number | null;
+  addedAt: string; // ISO string para serialização
+}
+
 // Interface do personagem
 interface Character {
   id: string;
@@ -150,7 +158,7 @@ interface Character {
   rituals: string[];
   background: string | null;
   notes: string | null;
-  conditions: string[];
+  conditions: (string | PersistedCondition)[]; // Suporta string legado ou objeto completo
   photo_url?: string | null;
   age?: number | null;
   gender?: string | null;
@@ -161,8 +169,42 @@ interface Character {
   general_powers?: Array<{ id: string; name: string; description: string; category?: string }>;
   elemental_affinity?: string | null;
   affinity_active?: boolean;
+  // Buffs ativos de rituais (persistidos na nuvem)
+  active_buffs?: import('@/hooks/useWeaponBuffs').WeaponBuff[];
 }
 
+// Helper para converter condições persistidas para ActiveCondition
+function parseCondition(c: string | PersistedCondition): ActiveCondition {
+  if (typeof c === 'string') {
+    return { 
+      id: c.toLowerCase().replace(/\s+/g, ''), 
+      name: c, 
+      turnsRemaining: null, 
+      addedAt: new Date() 
+    };
+  }
+  return {
+    id: c.id,
+    name: c.name,
+    turnsRemaining: c.turnsRemaining,
+    addedAt: new Date(c.addedAt), // Converte string ISO para Date
+  };
+}
+
+// Helper para converter ActiveCondition para persistência
+function serializeCondition(c: ActiveCondition): PersistedCondition {
+  return {
+    id: c.id,
+    name: c.name,
+    turnsRemaining: c.turnsRemaining,
+    addedAt: c.addedAt instanceof Date ? c.addedAt.toISOString() : c.addedAt as string,
+  };
+}
+
+// Helper para extrair nomes de condições (para compatibilidade com MobileCharacterSheet)
+function getConditionNames(conditions: (string | PersistedCondition)[]): string[] {
+  return conditions.map(c => typeof c === 'string' ? c : c.name);
+}
 export default function CharacterSheet() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
@@ -270,13 +312,27 @@ export default function CharacterSheet() {
     enabled: !!character,
   });
 
-  // Hook de buffs de armas de rituais (Fase 5) - com persistência via localStorage
+  // Handler para salvar buffs de armas na nuvem
+  const handleWeaponBuffsChange = useCallback(async (buffs: import('@/hooks/useWeaponBuffs').WeaponBuff[]) => {
+    if (!character) return;
+    
+    const { error } = await supabase
+      .from('characters')
+      .update({ active_buffs: JSON.parse(JSON.stringify(buffs)) })
+      .eq('id', character.id);
+
+    if (error) {
+      console.error('Erro ao salvar buffs:', error);
+    }
+  }, [character?.id]);
+
+  // Hook de buffs de armas de rituais (Fase 8) - com persistência na nuvem
   const {
     activeBuffs: weaponBuffs,
     addBuff: addWeaponBuff,
     removeBuff: removeWeaponBuff,
     clearAllBuffs: clearWeaponBuffs,
-  } = useWeaponBuffs(id);
+  } = useWeaponBuffs(id, character?.active_buffs, handleWeaponBuffsChange);
 
   // Callback para adicionar rolagem ao histórico
   const handleRollComplete = useCallback((result: DiceRollResult) => {
@@ -312,12 +368,15 @@ export default function CharacterSheet() {
 
       const charData = {
         ...data,
-        conditions: Array.isArray(data.conditions) ? data.conditions as string[] : [],
+        // Suporta condições como string legado ou objeto completo
+        conditions: Array.isArray(data.conditions) ? data.conditions : [],
         abilities: Array.isArray(data.abilities) ? data.abilities as string[] : [],
         rituals: Array.isArray(data.rituals) ? data.rituals as string[] : [],
         class_track: data.class_track || null,
         elemental_affinity: data.elemental_affinity || null,
         affinity_active: data.affinity_active || false,
+        // Carrega buffs ativos da nuvem
+        active_buffs: Array.isArray(data.active_buffs) ? data.active_buffs : [],
       };
       setCharacter(charData as unknown as Character);
       setHpCurrent(data.hp_current);
@@ -1071,7 +1130,7 @@ export default function CharacterSheet() {
               intellect: character.intellect,
               presence: character.presence,
               vigor: character.vigor,
-              conditions: character.conditions,
+              conditions: getConditionNames(character.conditions),
               abilities: character.abilities,
               powers: character.powers,
               rituals: character.rituals,
@@ -1194,17 +1253,14 @@ export default function CharacterSheet() {
                   Condições Ativas
                 </h3>
                 <ConditionManager
-                  conditions={character.conditions.map(c => {
-                    if (typeof c === 'string') {
-                      return { id: c.toLowerCase().replace(/\s+/g, ''), name: c, turnsRemaining: null, addedAt: new Date() };
-                    }
-                    return c as ActiveCondition;
-                  })}
+                  conditions={character.conditions.map(parseCondition)}
                   onConditionsChange={async (newConditions) => {
-                    const conditionNames = newConditions.map(c => c.name);
+                    // Serializa condições completas para persistir na nuvem
+                    const serializedConditions = newConditions.map(serializeCondition);
+                    
                     const { error } = await supabase
                       .from('characters')
-                      .update({ conditions: conditionNames })
+                      .update({ conditions: JSON.parse(JSON.stringify(serializedConditions)) })
                       .eq('id', character.id);
 
                     if (error) {
@@ -1218,7 +1274,7 @@ export default function CharacterSheet() {
 
                     setCharacter(prev => prev ? {
                       ...prev,
-                      conditions: conditionNames,
+                      conditions: serializedConditions,
                     } : null);
                   }}
                 />
@@ -1703,7 +1759,7 @@ export default function CharacterSheet() {
           san_max: character.san_max,
           vigor: character.vigor,
           presence: character.presence,
-          conditions: character.conditions,
+          conditions: getConditionNames(character.conditions),
         }}
         onRest={async (newStats) => {
           const { error } = await supabase
@@ -1922,13 +1978,8 @@ export default function CharacterSheet() {
         pendingConditions={pendingRitualConditions}
         targetName={character.name}
         onApplyConditions={async (newConditions) => {
-          // Merge com condições existentes
-          const existingConditions = (character.conditions || []).map(c => {
-            if (typeof c === 'string') {
-              return { id: c.toLowerCase().replace(/\s+/g, ''), name: c, turnsRemaining: null, addedAt: new Date() };
-            }
-            return c as ActiveCondition;
-          });
+          // Merge com condições existentes usando helper
+          const existingConditions = (character.conditions || []).map(parseCondition);
           
           // Filtra duplicatas
           const uniqueNew = newConditions.filter(
@@ -1936,11 +1987,11 @@ export default function CharacterSheet() {
           );
           
           const allConditions = [...existingConditions, ...uniqueNew];
-          const conditionNames = allConditions.map(c => c.name);
+          const serializedConditions = allConditions.map(serializeCondition);
           
           const { error } = await supabase
             .from('characters')
-            .update({ conditions: conditionNames })
+            .update({ conditions: JSON.parse(JSON.stringify(serializedConditions)) })
             .eq('id', character.id);
 
           if (error) {
@@ -1954,7 +2005,7 @@ export default function CharacterSheet() {
 
           setCharacter(prev => prev ? {
             ...prev,
-            conditions: conditionNames,
+            conditions: serializedConditions,
           } : null);
 
           toast({
@@ -1996,6 +2047,7 @@ export default function CharacterSheet() {
               description: `PV atual: ${newHp}/${character.hp_max}`,
             });
           } else {
+            // PV Temporários
             toast({
               title: `+${amount} PV Temporários!`,
               description: `Dura até o final da cena.`,
@@ -2005,12 +2057,7 @@ export default function CharacterSheet() {
         onApplyConditions={async (newConditions) => {
           if (newConditions.length === 0) return;
           
-          const existingConditions = (character.conditions || []).map(c => {
-            if (typeof c === 'string') {
-              return { id: c.toLowerCase().replace(/\s+/g, ''), name: c, turnsRemaining: null, addedAt: new Date() };
-            }
-            return c as ActiveCondition;
-          });
+          const existingConditions = (character.conditions || []).map(parseCondition);
           
           const uniqueNew = newConditions.filter(
             nc => !existingConditions.some(ec => ec.id === nc.id)
@@ -2019,16 +2066,16 @@ export default function CharacterSheet() {
           if (uniqueNew.length === 0) return;
           
           const allConditions = [...existingConditions, ...uniqueNew];
-          const conditionNames = allConditions.map(c => c.name);
+          const serializedConditions = allConditions.map(serializeCondition);
           
           await supabase
             .from('characters')
-            .update({ conditions: conditionNames })
+            .update({ conditions: JSON.parse(JSON.stringify(serializedConditions)) })
             .eq('id', character.id);
 
           setCharacter(prev => prev ? {
             ...prev,
-            conditions: conditionNames,
+            conditions: serializedConditions,
           } : null);
 
           toast({

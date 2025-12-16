@@ -450,6 +450,7 @@ export type Database = {
       characters: {
         Row: {
           abilities: Json
+          active_buffs: Json | null
           affinity_active: boolean | null
           age: number | null
           agility: number
@@ -495,6 +496,7 @@ export type Database = {
         }
         Insert: {
           abilities?: Json
+          active_buffs?: Json | null
           affinity_active?: boolean | null
           age?: number | null
           agility?: number
@@ -540,6 +542,7 @@ export type Database = {
         }
         Update: {
           abilities?: Json
+          active_buffs?: Json | null
           affinity_active?: boolean | null
           age?: number | null
           agility?: number
