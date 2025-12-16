@@ -35,41 +35,52 @@ import { RuleBookTip } from './RuleBookTip';
 import { getRulebookContent } from '@/lib/rulebook-content';
 import { AbilityDetailModal } from './AbilityDetailModal';
 
-// Mapeamento de habilidades que evoluem com NEX
-// Cada entrada contém os marcos de evolução e suas descrições
-// Mapeamento de habilidades que evoluem com NEX
-// Cada entrada contém os marcos de evolução e suas descrições
-// Progressão de círculos conforme livro: 2º em 25%, 3º em 55%, 4º em 85%
+// ==================== MARCOS DE PROGRESSÃO OFICIAIS (Tabelas 1.3, 1.4, 1.5) ====================
+// Mapeamento de habilidades que evoluem com NEX conforme livro oficial
+
 const EVOLVING_ABILITIES: Record<string, { nexMarkers: number[]; evolutions: string[] }> = {
+  // Combatente - Ataque Especial (Tabela 1.3)
+  // NEX 5%: 2 PE, +5 | NEX 25%: 3 PE, +10 | NEX 55%: 4 PE, +15 | NEX 85%: 5 PE, +20
+  'ataque-especial': {
+    nexMarkers: [5, 25, 55, 85],
+    evolutions: [
+      '2 PE para +5 (ataque ou dano)',
+      '3 PE para +10 (ataque ou dano)',
+      '4 PE para +15 (ataque ou dano)',
+      '5 PE para +20 (ataque ou dano)'
+    ]
+  },
+  
+  // Especialista - Perito (Tabela 1.4)
+  // NEX 5%: +1d6 (2 PE) | NEX 25%: +1d8 (3 PE) | NEX 55%: +1d10 (4 PE) | NEX 85%: +1d12 (5 PE)
+  'perito': {
+    nexMarkers: [5, 25, 55, 85],
+    evolutions: [
+      '+1d6 ao resultado (2 PE)',
+      '+1d8 ao resultado (3 PE)',
+      '+1d10 ao resultado (4 PE)',
+      '+1d12 ao resultado (5 PE)'
+    ]
+  },
+  
+  // Ocultista - Escolhido pelo Outro Lado (Tabela 1.5)
+  // NEX 5%: 1º círculo | NEX 25%: 2º círculo | NEX 55%: 3º círculo | NEX 85%: 4º círculo
   'escolhido-pelo-outro-lado': {
     nexMarkers: [5, 25, 55, 85],
     evolutions: [
-      'Rituais de 1º círculo (3 rituais iniciais)',
-      'Desbloqueia rituais de 2º círculo (sem limite nesta evolução)',
-      'Desbloqueia rituais de 3º círculo (sem limite nesta evolução)', 
-      'Desbloqueia rituais de 4º círculo (sem limite nesta evolução)'
+      'Rituais de 1º círculo',
+      'Rituais de 2º círculo',
+      'Rituais de 3º círculo', 
+      'Rituais de 4º círculo'
     ]
   },
-  'ataque-especial': {
-    nexMarkers: [5, 20, 40, 60, 80, 99],
+  
+  // Especialista - Engenhosidade (NEX 40% e 75%)
+  'engenhosidade': {
+    nexMarkers: [40, 75],
     evolutions: [
-      '+5 dano ou ataque (2 PE)',
-      '+10 dano ou ataque (4 PE)',
-      '+15 dano ou ataque (6 PE)',
-      '+20 dano ou ataque (8 PE)',
-      '+25 dano ou ataque (10 PE)',
-      '+30 dano ou ataque (12 PE)'
-    ]
-  },
-  'versatil': {
-    nexMarkers: [5, 20, 40, 60, 80, 99],
-    evolutions: [
-      '2 perícias',
-      '4 perícias',
-      '6 perícias',
-      '8 perícias',
-      '10 perícias',
-      '12 perícias'
+      'Veterano (+2 PE adicional)',
+      'Expert (+4 PE adicional)'
     ]
   }
 };
@@ -168,30 +179,67 @@ export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) 
           <RuleBookTip section={rulebookContent} defaultExpanded={false} />
         )}
 
-        {/* Choice Counter */}
-        {maxChoices > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className={cn(
-              "flex items-center justify-between p-4 rounded-lg border bg-gradient-to-r",
-              classColor
-            )}
-          >
+        {/* Choice Counter com validação visual */}
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className={cn(
+            "p-4 rounded-lg border bg-gradient-to-r space-y-3",
+            classColor
+          )}
+        >
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Star className="w-5 h-5 text-primary" />
-              <span className="font-medium">Escolhas de Habilidades</span>
+              <Sword className="w-5 h-5 text-primary" />
+              <span className="font-medium">Poderes de Classe</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">
-                {selectedChoices.length} / {maxChoices} escolhidas
+                {selectedChoices.length} / {maxChoices} escolhidos
               </span>
               <Badge variant={remainingChoices > 0 ? "secondary" : "default"}>
-                {remainingChoices > 0 ? `${remainingChoices} restantes` : 'Completo'}
+                {remainingChoices > 0 ? `${remainingChoices} restante${remainingChoices > 1 ? 's' : ''}` : 'Completo'}
               </Badge>
             </div>
-          </motion.div>
-        )}
+          </div>
+          
+          {/* Marcos de NEX onde se ganha poderes */}
+          <div className="flex flex-wrap gap-1.5">
+            <span className="text-xs text-muted-foreground mr-2">Ganhos em:</span>
+            {[15, 30, 45, 60, 75, 90].map((nexMarker) => {
+              const isReached = nex >= nexMarker;
+              const isCurrent = nex === nexMarker;
+              // Contar quantos poderes deveria ter até este NEX
+              const powersAtThisNex = [15, 30, 45, 60, 75, 90].filter(n => n <= nexMarker).length;
+              const hasPowerAtThisNex = powersAtThisNex <= selectedChoices.length;
+              
+              return (
+                <Badge
+                  key={nexMarker}
+                  variant="outline"
+                  className={cn(
+                    'text-xs px-2 py-0.5 transition-all',
+                    isReached 
+                      ? hasPowerAtThisNex
+                        ? 'bg-success/20 text-success border-success/30'
+                        : 'bg-warning/20 text-warning border-warning/30'
+                      : 'text-muted-foreground opacity-50',
+                    isCurrent && 'ring-1 ring-offset-1 ring-offset-background ring-primary'
+                  )}
+                >
+                  {isReached && hasPowerAtThisNex ? (
+                    <CheckCircle2 className="w-3 h-3 mr-1" />
+                  ) : isReached ? (
+                    <Star className="w-3 h-3 mr-1" />
+                  ) : (
+                    <Lock className="w-3 h-3 mr-1 opacity-50" />
+                  )}
+                  {nexMarker}%
+                </Badge>
+              );
+            })}
+          </div>
+        </motion.div>
 
         {/* Layout responsivo: 1 coluna em telas menores, 2 em lg+ */}
         <div className="grid lg:grid-cols-2 gap-6 max-w-6xl mx-auto">
@@ -261,7 +309,6 @@ export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) 
                                 )}
                               </div>
                               <Eye className="w-4 h-4 text-muted-foreground hover:text-primary transition-colors flex-shrink-0" />
-                                NEX {ability.minNex}%
                             </div>
                             
                             {/* Descrição base */}
