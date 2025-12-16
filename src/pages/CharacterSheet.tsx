@@ -59,6 +59,7 @@ import { LearnedRitual } from '@/components/character/GeneralPowersPanel';
 import { calculateDerivedStats } from '@/lib/character-data';
 import { AffinitySelectorCard } from '@/components/character/AffinitySelectorCard';
 import { useParanormalEffects } from '@/hooks/useParanormalEffects';
+import { useDefenseBonuses } from '@/hooks/useDefenseBonuses';
 
 // Novos componentes do redesign 2.0 (estilo ficha de papel)
 import { CharacterSheetHeader } from '@/components/character/CharacterSheetHeader';
@@ -657,6 +658,17 @@ export default function CharacterSheet() {
       equippedArmors: equippedArmors.map(a => ({ name: a.name, rd: a.rd || 0 })),
     };
   }, [character?.inventory]);
+
+  // Calcular bônus de defesa de origem, habilidades de classe e poderes gerais
+  const defenseBonuses = useDefenseBonuses({
+    origin: character?.origin || '',
+    abilities: character?.abilities || [],
+    generalPowers: character?.general_powers || [],
+    inventory: character?.inventory || [],
+  });
+
+  // Bônus total de defesa combinando todas as fontes
+  const totalDefenseBonus = paranormalEffects.defenseBonus + defenseBonuses.totalBonus;
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -895,7 +907,17 @@ export default function CharacterSheet() {
                 movement={character.movement || 9}
                 hpBonus={paranormalEffects.hpBonus}
                 peBonus={paranormalEffects.peBonus}
-                defenseBonus={paranormalEffects.defenseBonus}
+                defenseBonus={totalDefenseBonus}
+                defenseBonusBreakdown={[
+                  // Adiciona bônus paranormais ao breakdown
+                  ...(paranormalEffects.defenseBonus > 0 ? [{
+                    source: 'Poderes Paranormais',
+                    type: 'paranormal' as const,
+                    bonus: paranormalEffects.defenseBonus,
+                    active: true,
+                  }] : []),
+                  ...defenseBonuses.breakdown,
+                ]}
                 armorRD={armorStats.totalRD}
                 armorPenalty={armorStats.totalAgilityPenalty}
                 equippedArmors={armorStats.equippedArmors}
