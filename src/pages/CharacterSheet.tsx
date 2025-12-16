@@ -1100,15 +1100,31 @@ export default function CharacterSheet() {
               {/* Tabela de Combate */}
               <CombatWeaponsTable
                 weapons={equippedWeapons}
-                onRollAttack={(weapon) => {
-                  const attr = weapon.type === 'Disparo' ? character.agility : character.strength;
-                  const skill = weapon.type === 'Disparo' ? 'Pontaria' : 'Luta';
-                  const skillBonus = character.skills[skill.toLowerCase()] ? 5 : 0;
-                  setRollLabel(`Ataque: ${weapon.name}`);
-                  setRollAttribute(attr);
-                  setRollSkillBonus(skillBonus);
-                  setDiceModalOpen(true);
+                attributes={attributes}
+                skills={character.skills}
+                currentPE={peCurrent}
+                maxPE={character.pe_max}
+                onPEChange={async (newPE) => {
+                  const { error } = await supabase
+                    .from('characters')
+                    .update({ pe_current: newPE })
+                    .eq('id', character.id);
+                  if (!error) {
+                    setPeCurrent(newPE);
+                    setCharacter(prev => prev ? { ...prev, pe_current: newPE } : null);
+                  }
                 }}
+                characterClass={character.class}
+                abilities={character.abilities || []}
+                paranormalPowers={character.paranormal_powers?.map(p => ({
+                  id: p.id,
+                  name: p.name,
+                  element: p.element,
+                })) || []}
+                hasAffinity={character.affinity_active || false}
+                affinityElement={character.elemental_affinity}
+                nex={character.nex}
+                onRollComplete={handleRollComplete}
               />
 
               {/* Perícias por Atributo */}
