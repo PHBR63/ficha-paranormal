@@ -43,6 +43,7 @@ import {
   Tent,
   Zap,
   Recycle,
+  Target,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -54,6 +55,7 @@ import {
   PARANORMAL_ITEMS,
   DOCUMENT_ITEMS,
   SURVIVAL_ITEMS,
+  TRAINED_ITEMS,
   type CatalogItem,
   type ItemType,
   ITEM_TYPE_LABELS,
@@ -88,6 +90,7 @@ const TYPE_ICONS: Record<ItemType, React.ElementType> = {
   paranormal: Sparkles,
   document: FileText,
   survival: Tent,
+  trained: Target,
 };
 
 export function ItemCatalogModal({
@@ -137,6 +140,7 @@ export function ItemCatalogModal({
     paranormal: filterItems(PARANORMAL_ITEMS),
     document: filterItems(DOCUMENT_ITEMS),
     survival: filterItems(SURVIVAL_ITEMS),
+    trained: filterItems(TRAINED_ITEMS),
   }), [searchQuery]);
 
   // Handler para adicionar item
