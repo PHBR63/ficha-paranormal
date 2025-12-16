@@ -1729,7 +1729,7 @@ export function getRitualsByCircle(circle: number): Ritual[] {
 export function getMaxRitualCircle(nex: number): number {
   if (nex >= 80) return 4;
   if (nex >= 50) return 3;
-  if (nex >= 20) return 2;
+  if (nex >= 25) return 2; // Conforme regras oficiais do livro (p.117)
   return 1;
 }
 
