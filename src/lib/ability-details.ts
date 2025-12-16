@@ -293,16 +293,19 @@ export const COMBATENTE_DETAILS: Record<string, AbilityDetails> = {
 // ==================== DETALHES DOS PODERES DO ESPECIALISTA ====================
 
 export const ESPECIALISTA_DETAILS: Record<string, AbilityDetails> = {
+  // === HABILIDADES CORE ===
   'ecletico': {
     id: 'ecletico',
     examples: [
       'Gaste 2 PE para usar Medicina como se fosse treinado',
-      'Faça um teste de Tecnologia sem treinamento, pagando 2 PE'
+      'Faça um teste de Tecnologia sem treinamento, pagando 2 PE',
+      'Em uma emergência, faça Pilotagem mesmo sem ter o treinamento'
     ],
     synergies: [
-      { abilityId: 'engenhosidade', abilityName: 'Engenhosidade', description: 'Em NEX 40%+, pode pagar mais para ser veterano/expert' }
+      { abilityId: 'engenhosidade', abilityName: 'Engenhosidade', description: 'Em NEX 40%+, pode pagar mais para ser veterano/expert' },
+      { abilityId: 'conhecimento-aplicado', abilityName: 'Conhecimento Aplicado', description: 'Use Int como base mesmo em perícias não treinadas' }
     ],
-    tips: 'Muito versátil! Use para cobrir perícias que ninguém no grupo tem.'
+    tips: 'Muito versátil! Use para cobrir perícias que ninguém no grupo tem. Guarde PE para emergências.'
   },
   
   'perito': {
@@ -318,9 +321,14 @@ export const ESPECIALISTA_DETAILS: Record<string, AbilityDetails> = {
     },
     examples: [
       'Escolha Investigação e Tecnologia como perícias de Perito',
-      'Gaste 2 PE para somar 1d6 em um teste crucial de Investigação'
+      'Gaste 2 PE para somar 1d6 em um teste crucial de Investigação',
+      'Em NEX 55%, gaste 4 PE para adicionar 1d10 em Ocultismo'
     ],
-    tips: 'Escolha perícias que você usa frequentemente. O dado extra pode fazer a diferença em testes difíceis.'
+    synergies: [
+      { abilityId: 'na-trilha-certa', abilityName: 'Na Trilha Certa', description: 'Combine bônus cumulativos em investigações' },
+      { abilityId: 'pensamento-agil', abilityName: 'Pensamento Ágil', description: 'Mais testes = mais chances de usar Perito' }
+    ],
+    tips: 'Escolha perícias que você usa frequentemente. O dado extra pode virar um teste falho em sucesso.'
   },
   
   'engenhosidade': {
@@ -328,26 +336,50 @@ export const ESPECIALISTA_DETAILS: Record<string, AbilityDetails> = {
     evolution: {
       nexMarkers: [40, 75],
       descriptions: [
-        'Eclético pode pagar +2 PE para ser veterano',
-        'Eclético pode pagar +4 PE para ser expert'
+        'Eclético pode pagar +2 PE para ser veterano (+10)',
+        'Eclético pode pagar +4 PE para ser expert (+15)'
       ]
     },
     synergies: [
       { abilityId: 'ecletico', abilityName: 'Eclético', description: 'Melhora diretamente o Eclético' }
     ],
-    tips: 'Em NEX alto, você pode fazer qualquer perícia como expert por 6 PE total. Muito poderoso!'
+    tips: 'Em NEX alto, você pode fazer qualquer perícia como expert por 6 PE total. Extremamente poderoso!'
+  },
+  
+  // === PODERES ESCOLHÍVEIS ===
+  'artista-marcial-esp': {
+    id: 'artista-marcial-esp',
+    evolution: {
+      nexMarkers: [15, 35, 70],
+      descriptions: [
+        'Ataques desarmados causam 1d6 de dano',
+        'Dano aumenta para 1d8',
+        'Dano aumenta para 1d10'
+      ]
+    },
+    examples: [
+      'Ataque um inimigo desarmado causando dano letal',
+      'Use Agilidade para ataques (arma ágil)',
+      'Nunca fique vulnerável mesmo sem armas'
+    ],
+    synergies: [
+      { abilityId: 'ninja-urbano', abilityName: 'Ninja Urbano', description: 'Combine combate desarmado com armas táticas' }
+    ],
+    tips: 'Ótimo para builds furtivos que não podem carregar armas. Sempre preparado!'
   },
   
   'balistica-avancada': {
     id: 'balistica-avancada',
     examples: [
       'Use pistolas, rifles e submetralhadoras táticas',
-      'Ganhe +2 em todo dano com armas de fogo'
+      'Ganhe +2 em todo dano com armas de fogo',
+      'Atire com uma pistola causando +2 de dano fixo'
     ],
     synergies: [
-      { abilityId: 'ninja-urbano', abilityName: 'Ninja Urbano', description: 'Combine proficiências para máxima versatilidade' }
+      { abilityId: 'ninja-urbano', abilityName: 'Ninja Urbano', description: 'Combine para proficiência completa em armas táticas' },
+      { abilityId: 'transcender-esp', abilityName: 'Transcender', description: 'Adicione poderes paranormais para combate sobrenatural' }
     ],
-    tips: 'Bom para Especialistas que querem combater. O bônus de +2 dano é sempre ativo.'
+    tips: 'Bom para Especialistas que querem combater. O +2 dano é sempre ativo e não custa PE.'
   },
   
   'conhecimento-aplicado': {
@@ -357,9 +389,14 @@ export const ESPECIALISTA_DETAILS: Record<string, AbilityDetails> = {
     },
     examples: [
       'Use Intelecto em vez de Força para Atletismo',
-      'Resolva problemas físicos com conhecimento técnico'
+      'Resolva problemas físicos com conhecimento técnico',
+      'Faça Intimidação baseada em conhecimento de fraquezas (Int)'
     ],
-    tips: 'Perfeito para Especialistas com Int alto e outros atributos baixos.'
+    synergies: [
+      { abilityId: 'perito', abilityName: 'Perito', description: 'Aplique Perito em mais situações usando Int' },
+      { abilityId: 'nerd', abilityName: 'Nerd', description: 'Combine conhecimento para resolver qualquer situação' }
+    ],
+    tips: 'Perfeito para Especialistas com Int alto. Transforma fraquezas físicas em força intelectual.'
   },
   
   'hacker': {
@@ -368,62 +405,217 @@ export const ESPECIALISTA_DETAILS: Record<string, AbilityDetails> = {
       skills: ['Tecnologia']
     },
     examples: [
-      'Invada sistemas com +5 no teste',
-      'Hackeie qualquer sistema como ação completa (muito mais rápido)'
+      'Invada sistemas de segurança da Ordem com +5 no teste',
+      'Hackeie câmeras de vigilância como ação completa',
+      'Acesse arquivos confidenciais rapidamente em missão'
     ],
-    tips: 'Em missões modernas, acesso a sistemas é crucial. Este poder economiza muito tempo.'
+    synergies: [
+      { abilityId: 'perito', abilityName: 'Perito', description: 'Combine +5 fixo com o dado de Perito em Tecnologia' },
+      { abilityId: 'pensamento-agil', abilityName: 'Pensamento Ágil', description: 'Mais ações para múltiplos hacks' }
+    ],
+    tips: 'Em missões modernas, acesso a sistemas é crucial. A ação completa economiza muito tempo.'
+  },
+  
+  'maos-rapidas': {
+    id: 'maos-rapidas',
+    prerequisites: {
+      attributes: [{ attribute: 'Agi', value: 3 }],
+      skills: ['Crime']
+    },
+    examples: [
+      'Plante evidências em um suspeito como ação livre',
+      'Roube as chaves de um guarda sem que perceba',
+      'Desarme uma armadilha rapidamente durante fuga'
+    ],
+    synergies: [
+      { abilityId: 'ninja-urbano', abilityName: 'Ninja Urbano', description: 'Combine furtividade com mãos rápidas' },
+      { abilityId: 'perito', abilityName: 'Perito', description: 'Adicione Perito em Crime para sucesso garantido' }
+    ],
+    tips: 'Transforme ações de Crime em ações livres por apenas 1 PE. Perfeito para infiltrações.'
+  },
+  
+  'mochila-utilidades': {
+    id: 'mochila-utilidades',
+    examples: [
+      'Um kit médico que normalmente ocupa 2 espaços passa a ocupar 1',
+      'Equipamento pesado se torna mais portátil',
+      'Carregue mais itens essenciais para missões'
+    ],
+    synergies: [
+      { abilityId: 'perito-explosivos', abilityName: 'Perito em Explosivos', description: 'Carregue mais explosivos com menos peso' }
+    ],
+    tips: 'Escolha itens que você usa frequentemente. Ótimo para kits médicos, ferramentas ou equipamentos especiais.'
+  },
+  
+  'movimento-tatico': {
+    id: 'movimento-tatico',
+    prerequisites: {
+      skills: ['Atletismo']
+    },
+    examples: [
+      'Atravesse escombros sem reduzir movimento',
+      'Mova-se por terreno difícil durante combate',
+      'Posicione-se taticamente ignorando obstáculos'
+    ],
+    synergies: [
+      { abilityId: 'ninja-urbano', abilityName: 'Ninja Urbano', description: 'Mobilidade + combate furtivo' },
+      { abilityId: 'artista-marcial-esp', abilityName: 'Artista Marcial', description: 'Aproxime-se rapidamente para combate desarmado' }
+    ],
+    tips: 'Essencial em combates com terreno difícil. O posicionamento pode decidir batalhas.'
+  },
+  
+  'na-trilha-certa': {
+    id: 'na-trilha-certa',
+    examples: [
+      'Primeira pista: +5 no próximo teste (1 PE)',
+      'Segunda pista consecutiva: +10 total no próximo (2 PE adicionais)',
+      'Encadeie sucessos para bônus massivos em investigações'
+    ],
+    synergies: [
+      { abilityId: 'perito', abilityName: 'Perito', description: 'Perito + bônus cumulativo = sucesso garantido' },
+      { abilityId: 'pensamento-agil', abilityName: 'Pensamento Ágil', description: 'Mais testes = mais chance de encadear bônus' }
+    ],
+    tips: 'Os bônus são cumulativos! Invista PE no início da investigação para acelerar o processo.'
   },
   
   'nerd': {
     id: 'nerd',
     examples: [
-      'Em investigação: "Eu vi isso em um documentário!" - ganhe uma pista extra',
-      'Em combate: "Essa criatura apareceu no livro X!" - descubra uma fraqueza'
+      'Em investigação: "Vi isso em um documentário!" - pista extra',
+      'Em combate: "Essa criatura apareceu no livro X!" - descubra fraqueza',
+      'Qualquer situação: informação relevante baseada em cultura pop'
     ],
-    tips: 'Muito útil em qualquer situação. Use uma vez por cena para informação valiosa.'
+    synergies: [
+      { abilityId: 'conhecimento-aplicado', abilityName: 'Conhecimento Aplicado', description: 'Conhecimento em todas as áreas' },
+      { abilityId: 'perito', abilityName: 'Perito', description: 'Combine com Perito em Atualidades' }
+    ],
+    tips: 'Use uma vez por cena para informação valiosa. DT 20 em Atualidades - invista nessa perícia!'
   },
   
   'ninja-urbano': {
     id: 'ninja-urbano',
     examples: [
-      'Use katanas, arcos e bestas táticas',
-      'Ganhe +2 dano com armas táticas corpo a corpo e de disparo'
+      'Use katanas, arcos e bestas táticas com proficiência',
+      'Ganhe +2 dano com armas corpo a corpo táticas',
+      'Elimine alvos silenciosamente com armas de disparo silenciosas'
     ],
     synergies: [
-      { abilityId: 'balistica-avancada', abilityName: 'Balística Avançada', description: 'Combine para cobrir todas as armas táticas' }
+      { abilityId: 'balistica-avancada', abilityName: 'Balística Avançada', description: 'Combine para cobertura completa de armas táticas' },
+      { abilityId: 'artista-marcial-esp', abilityName: 'Artista Marcial', description: 'Alterne entre desarmado e armas táticas' }
     ],
-    tips: 'Ótimo para builds furtivos que precisam eliminar alvos silenciosamente.'
+    tips: 'Ótimo para builds furtivos. O +2 dano funciona corpo a corpo E à distância com armas táticas.'
+  },
+  
+  'pensamento-agil': {
+    id: 'pensamento-agil',
+    examples: [
+      'Faça uma ação adicional de procurar pistas gastando 2 PE',
+      'Investigue mais rapidamente que o resto do grupo',
+      'Em cenas com limite de tempo, maximize suas descobertas'
+    ],
+    synergies: [
+      { abilityId: 'perito', abilityName: 'Perito', description: 'Mais testes = mais chances de usar Perito' },
+      { abilityId: 'na-trilha-certa', abilityName: 'Na Trilha Certa', description: 'Mais testes para encadear bônus' }
+    ],
+    tips: 'Uma vez por rodada durante investigação. Acelera muito a resolução de mistérios.'
+  },
+  
+  'perito-explosivos': {
+    id: 'perito-explosivos',
+    examples: [
+      'Seus explosivos têm DT aumentada baseada em Int',
+      'Exclua aliados da área de explosão (até seu valor de Int)',
+      'Use granadas com precisão cirúrgica'
+    ],
+    synergies: [
+      { abilityId: 'mochila-utilidades', abilityName: 'Mochila de Utilidades', description: 'Carregue mais explosivos' },
+      { abilityId: 'conhecimento-aplicado', abilityName: 'Conhecimento Aplicado', description: 'Int alto melhora ambos os poderes' }
+    ],
+    tips: 'Com Int 5, você pode excluir 5 aliados de uma explosão. Perfeito para emboscadas.'
+  },
+  
+  'primeira-impressao': {
+    id: 'primeira-impressao',
+    examples: [
+      '+5 na primeira Diplomacia para convencer um NPC importante',
+      '+5 na primeira Intimidação contra um inimigo',
+      '+5 na primeira Enganação para criar um disfarce'
+    ],
+    synergies: [
+      { abilityId: 'perito', abilityName: 'Perito', description: 'Combine Perito com o bônus de primeira impressão' },
+      { abilityId: 'nerd', abilityName: 'Nerd', description: 'Use conhecimento para causar melhor impressão' }
+    ],
+    tips: 'Funciona em Diplomacia, Enganação, Intimidação ou Intuição. Planeje seu primeiro teste!'
+  },
+  
+  'transcender-esp': {
+    id: 'transcender-esp',
+    examples: [
+      'Ganhe um poder paranormal mesmo sendo Especialista',
+      'Escolha poderes que complementem suas perícias',
+      'Combine conhecimento mundano com habilidades sobrenaturais'
+    ],
+    synergies: [
+      { abilityId: 'balistica-avancada', abilityName: 'Balística Avançada', description: 'Combine combate mundano com poderes paranormais' }
+    ],
+    tips: 'ATENÇÃO: Não ganha Sanidade neste aumento de NEX. Pode ser escolhido múltiplas vezes.'
+  },
+  
+  'treinamento-pericia-esp': {
+    id: 'treinamento-pericia-esp',
+    evolution: {
+      nexMarkers: [15, 35, 70],
+      descriptions: [
+        'Torna-se treinado em 2 perícias',
+        'Pode escolher perícias já treinadas para veterano',
+        'Pode escolher perícias veteranas para expert'
+      ]
+    },
+    examples: [
+      'Treine Percepção e Investigação para ser um detetive completo',
+      'Em NEX 35%, torne-se veterano em suas perícias principais',
+      'Em NEX 70%, alcance expert nas perícias essenciais'
+    ],
+    tips: 'Pode ser escolhido múltiplas vezes. Especialistas brilham com perícias - invista!'
   }
 };
 
 // ==================== DETALHES DOS PODERES DO OCULTISTA ====================
 
 export const OCULTISTA_DETAILS: Record<string, AbilityDetails> = {
+  // === HABILIDADES CORE ===
   'escolhido-pelo-outro-lado': {
     id: 'escolhido-pelo-outro-lado',
     evolution: {
       nexMarkers: [5, 25, 55, 85],
       descriptions: [
-        'Rituais de 1º círculo',
-        'Rituais de 2º círculo',
-        'Rituais de 3º círculo',
-        'Rituais de 4º círculo'
+        'Rituais de 1º círculo (3 rituais iniciais)',
+        'Rituais de 2º círculo desbloqueados',
+        'Rituais de 3º círculo desbloqueados',
+        'Rituais de 4º círculo desbloqueados'
       ]
     },
     examples: [
-      'Em NEX 5%, lance rituais básicos como Arma Atroz',
-      'Em NEX 25%, acesse rituais poderosos de 2º círculo',
-      'Em NEX 55%, utilize rituais devastadores de 3º círculo'
+      'Em NEX 5%, lance rituais básicos como Arma Atroz ou Proteção',
+      'Em NEX 25%, acesse rituais poderosos como Velocidade',
+      'Em NEX 55%, utilize rituais devastadores de 3º círculo',
+      'Em NEX 85%, domine os rituais mais poderosos do jogo'
     ],
-    tips: 'Escolha rituais que complementem o grupo. Não foque apenas em dano - utilidades são valiosas.'
+    tips: 'Você aprende 1 ritual novo a cada aumento de NEX. Escolha rituais que complementem o grupo.'
   },
   
   'afinidade-elemental': {
     id: 'afinidade-elemental',
     examples: [
-      'Escolha Sangue para rituais de cura e vitalidade',
-      'Escolha Energia para rituais de dano e destruição',
-      'Escolha Conhecimento para rituais de informação e controle'
+      'Sangue: rituais de cura, vitalidade e manipulação de vida',
+      'Energia: rituais de dano, destruição e manipulação de forças',
+      'Conhecimento: rituais de informação, controle mental e adivinhação',
+      'Morte: rituais de necromancia, medo e enfraquecimento',
+      'Medo: rituais de terror, ilusão e manipulação emocional'
+    ],
+    synergies: [
+      { abilityId: 'especialista-em-elemento', abilityName: 'Especialista em Elemento', description: 'Aumente a DT de rituais do seu elemento' },
+      { abilityId: 'mestre-em-elemento', abilityName: 'Mestre em Elemento', description: 'Reduza o custo de rituais do seu elemento' }
     ],
     tips: 'Escolha com cuidado - define seu estilo de ocultismo. Alguns rituais só funcionam com elementos específicos.'
   },
@@ -432,9 +624,277 @@ export const OCULTISTA_DETAILS: Record<string, AbilityDetails> = {
     id: 'poder-paranormal',
     examples: [
       'Ganhe um poder paranormal à sua escolha',
-      'Poderes paranormais oferecem habilidades únicas do Outro Lado'
+      'Poderes como Abrigo Mental protegem contra ataques psíquicos',
+      'Poderes como Telecinese permitem manipular objetos à distância'
     ],
-    tips: 'Alguns poderes paranormais são muito poderosos. Pesquise as opções antes de escolher.'
+    tips: 'Pesquise os poderes paranormais disponíveis. Alguns são extremamente poderosos em builds específicos.'
+  },
+  
+  'segundo-circulo': {
+    id: 'segundo-circulo',
+    examples: [
+      'Desbloqueie rituais mais poderosos como Velocidade',
+      'Acesse curas mais fortes e danos maiores',
+      'Rituais de utilidade avançados disponíveis'
+    ],
+    tips: 'Marco importante em NEX 25%. Planeje quais rituais de 2º círculo você quer aprender.'
+  },
+  
+  'terceiro-circulo': {
+    id: 'terceiro-circulo',
+    examples: [
+      'Rituais devastadores de alto nível',
+      'Capacidades que mudam o rumo de combates',
+      'Utilidades poderosas para investigação'
+    ],
+    tips: 'Em NEX 55% você se torna um ocultista de verdade. Escolha rituais que definam seu estilo.'
+  },
+  
+  'quarto-circulo': {
+    id: 'quarto-circulo',
+    examples: [
+      'Os rituais mais poderosos do Outro Lado',
+      'Capacidades que desafiam a realidade',
+      'Poder absoluto sobre seu elemento'
+    ],
+    tips: 'Ápice do poder paranormal em NEX 85%. Use com sabedoria - ou loucura.'
+  },
+  
+  // === PODERES ESCOLHÍVEIS ===
+  'camuflar-ocultismo': {
+    id: 'camuflar-ocultismo',
+    examples: [
+      'Esconda sigilos tatuados em sua pele de olhares curiosos',
+      'Lance um ritual sem que ninguém perceba (+2 PE)',
+      'Disfarce atividades paranormais em ambientes públicos'
+    ],
+    synergies: [
+      { abilityId: 'tatuagem-ritualistica', abilityName: 'Tatuagem Ritualística', description: 'Esconda suas tatuagens e lance rituais pessoais secretamente' },
+      { abilityId: 'envolto-em-misterio', abilityName: 'Envolto em Mistério', description: 'Controle quando revelar sua natureza paranormal' }
+    ],
+    tips: 'DT 25 em Ocultismo para perceber seu ritual. Perfeito para infiltrações e situações sociais.'
+  },
+  
+  'criar-selo': {
+    id: 'criar-selo',
+    examples: [
+      'Crie um selo de Proteção para usar em emergência',
+      'Prepare selos de cura para o grupo antes de missões',
+      'Tenha rituais prontos sem gastar ações em combate'
+    ],
+    synergies: [
+      { abilityId: 'ritual-predileto', abilityName: 'Ritual Predileto', description: 'Reduza o custo de criar selos do seu ritual favorito' },
+      { abilityId: 'tatuagem-ritualistica', abilityName: 'Tatuagem Ritualística', description: 'Combine selos com tatuagens para máxima eficiência' }
+    ],
+    tips: 'Máximo de selos = sua Presença. Prepare-se antes das missões! Selos não exigem componentes na ativação.'
+  },
+  
+  'envolto-em-misterio': {
+    id: 'envolto-em-misterio',
+    examples: [
+      '+5 em Enganação contra pessoas não treinadas em Ocultismo',
+      '+5 em Intimidação usando sua aura sobrenatural',
+      'Manipule cultistas e supersticiosos com facilidade'
+    ],
+    synergies: [
+      { abilityId: 'camuflar-ocultismo', abilityName: 'Camuflar Ocultismo', description: 'Controle quando revelar e quando esconder sua natureza' },
+      { abilityId: 'intuicao-paranormal', abilityName: 'Intuição Paranormal', description: 'Combine presença misteriosa com intuição sobrenatural' }
+    ],
+    tips: 'Funciona contra a maioria dos NPCs mundanos. Use para interrogatórios e negociações.'
+  },
+  
+  'especialista-em-elemento': {
+    id: 'especialista-em-elemento',
+    examples: [
+      'Rituais de Energia com DT +2 para resistir',
+      'Rituais de Sangue mais difíceis de ignorar',
+      'Seus rituais do elemento escolhido são mais poderosos'
+    ],
+    synergies: [
+      { abilityId: 'mestre-em-elemento', abilityName: 'Mestre em Elemento', description: 'Pré-requisito para Mestre em Elemento' },
+      { abilityId: 'afinidade-elemental', abilityName: 'Afinidade Elemental', description: 'Combine com sua afinidade para maximizar um elemento' }
+    ],
+    tips: 'Escolha o elemento que você mais usa. +2 na DT faz grande diferença contra inimigos.'
+  },
+  
+  'ferramentas-paranormais': {
+    id: 'ferramentas-paranormais',
+    examples: [
+      'Um item paranormal de categoria II conta como I',
+      'Ative itens paranormais sem gastar PE',
+      'Use itens amaldiçoados com menos risco'
+    ],
+    synergies: [
+      { abilityId: 'ritual-potente', abilityName: 'Ritual Potente', description: 'Maximize uso de itens e rituais' },
+      { abilityId: 'criar-selo', abilityName: 'Criar Selo', description: 'Combine selos com itens paranormais' }
+    ],
+    tips: 'Essencial se você encontrar muitos itens paranormais. Economiza PE e espaço de inventário.'
+  },
+  
+  'guiado-pelo-paranormal': {
+    id: 'guiado-pelo-paranormal',
+    examples: [
+      'Use seus poderes para encontrar pistas ocultas',
+      'Faça uma ação de investigação adicional por 2 PE',
+      'O Outro Lado sussurra segredos para você'
+    ],
+    synergies: [
+      { abilityId: 'intuicao-paranormal', abilityName: 'Intuição Paranormal', description: 'Combine para ser o investigador sobrenatural do grupo' },
+      { abilityId: 'identificacao-paranormal', abilityName: 'Identificação Paranormal', description: 'Investigue e identifique ameaças paranormais' }
+    ],
+    tips: 'Uma vez por cena. Ótimo para investigações onde o tempo é essencial.'
+  },
+  
+  'identificacao-paranormal': {
+    id: 'identificacao-paranormal',
+    examples: [
+      '+10 para identificar o que é aquela criatura do Outro Lado',
+      '+10 para entender um objeto amaldiçoado',
+      '+10 para reconhecer um ritual sendo lançado'
+    ],
+    synergies: [
+      { abilityId: 'guiado-pelo-paranormal', abilityName: 'Guiado pelo Paranormal', description: 'Investigue e identifique ameaças' },
+      { abilityId: 'intuicao-paranormal', abilityName: 'Intuição Paranormal', description: 'Combine intuição com conhecimento' }
+    ],
+    tips: '+10 é um bônus enorme! Você se torna o especialista do grupo em ameaças paranormais.'
+  },
+  
+  'improvisar-componentes': {
+    id: 'improvisar-componentes',
+    examples: [
+      'Encontre componentes de Sangue em um açougue',
+      'Improvise componentes de Energia em uma usina',
+      'Use objetos do ambiente como componentes rituais'
+    ],
+    synergies: [
+      { abilityId: 'ritual-predileto', abilityName: 'Ritual Predileto', description: 'Combine com rituais de custo reduzido' },
+      { abilityId: 'camuflar-ocultismo', abilityName: 'Camuflar Ocultismo', description: 'Lance rituais sem componentes preparados' }
+    ],
+    tips: 'DT 15 em Investigação. Use quando ficar sem componentes em campo. Depende do ambiente.'
+  },
+  
+  'intuicao-paranormal': {
+    id: 'intuicao-paranormal',
+    examples: [
+      'Some Int ou Pre em testes de facilitar investigação',
+      'Ajude aliados com insights sobrenaturais',
+      'Perceba conexões ocultas entre pistas'
+    ],
+    synergies: [
+      { abilityId: 'guiado-pelo-paranormal', abilityName: 'Guiado pelo Paranormal', description: 'Seja o investigador paranormal definitivo' },
+      { abilityId: 'ritual-potente', abilityName: 'Ritual Potente', description: 'Int alto beneficia ambos os poderes' }
+    ],
+    tips: 'Escolha Int ou Pre baseado no seu build. Ajudar o grupo é sempre valioso.'
+  },
+  
+  'ritual-potente': {
+    id: 'ritual-potente',
+    prerequisites: {
+      attributes: [{ attribute: 'Int', value: 2 }]
+    },
+    examples: [
+      'Some Int ao dano de Raio Destruidor',
+      'Some Int à cura de Rituais de Sangue',
+      'Todos os seus rituais ficam mais fortes'
+    ],
+    synergies: [
+      { abilityId: 'especialista-em-elemento', abilityName: 'Especialista em Elemento', description: 'Rituais mais fortes E mais difíceis de resistir' },
+      { abilityId: 'mestre-em-elemento', abilityName: 'Mestre em Elemento', description: 'Rituais mais fortes E mais baratos' }
+    ],
+    tips: 'Essencial para Ocultistas focados em dano ou cura. Invista em Intelecto!'
+  },
+  
+  'ritual-predileto': {
+    id: 'ritual-predileto',
+    examples: [
+      'Proteção custa -1 PE (de 1 para 0 PE base)',
+      'Seu ritual mais usado fica mais eficiente',
+      'A redução acumula com outras fontes'
+    ],
+    synergies: [
+      { abilityId: 'mestre-em-elemento', abilityName: 'Mestre em Elemento', description: 'Reduções de custo acumulam!' },
+      { abilityId: 'tatuagem-ritualistica', abilityName: 'Tatuagem Ritualística', description: 'Combine reduções para rituais pessoais' }
+    ],
+    tips: 'Escolha seu ritual mais usado. Com múltiplas reduções, rituais podem custar 0 PE!'
+  },
+  
+  'tatuagem-ritualistica': {
+    id: 'tatuagem-ritualistica',
+    examples: [
+      '-1 PE em Proteção (alcance pessoal, você como alvo)',
+      '-1 PE em qualquer buff pessoal',
+      'Combine com outras reduções de custo'
+    ],
+    synergies: [
+      { abilityId: 'ritual-predileto', abilityName: 'Ritual Predileto', description: 'Reduções acumulam para o mesmo ritual' },
+      { abilityId: 'camuflar-ocultismo', abilityName: 'Camuflar Ocultismo', description: 'Esconda suas tatuagens místicas' }
+    ],
+    tips: 'Funciona apenas em rituais de alcance pessoal COM VOCÊ como alvo. Muito bom para buffs.'
+  },
+  
+  'transcender-ocultista': {
+    id: 'transcender-ocultista',
+    examples: [
+      'Ganhe um poder paranormal adicional',
+      'Expanda suas capacidades sobrenaturais',
+      'Pode ser escolhido múltiplas vezes'
+    ],
+    tips: 'ATENÇÃO: Não ganha Sanidade neste aumento de NEX. Use para poderes paranormais poderosos.'
+  },
+  
+  'treinamento-em-pericia-ocultista': {
+    id: 'treinamento-em-pericia-ocultista',
+    evolution: {
+      nexMarkers: [15, 35, 70],
+      descriptions: [
+        'Torna-se treinado em 2 perícias',
+        'Pode escolher perícias já treinadas para veterano',
+        'Pode escolher perícias veteranas para expert'
+      ]
+    },
+    examples: [
+      'Treine Ocultismo e Vontade para resistência mental',
+      'Em NEX 35%, torne-se veterano em suas perícias principais',
+      'Em NEX 70%, alcance expert em Ocultismo'
+    ],
+    tips: 'Pode ser escolhido múltiplas vezes. Ocultistas se beneficiam de Ocultismo e Vontade altos.'
+  },
+  
+  // === PODERES COM NEX ALTO ===
+  'mestre-em-elemento': {
+    id: 'mestre-em-elemento',
+    prerequisites: {
+      nex: 45,
+      abilities: ['Especialista em Elemento']
+    },
+    examples: [
+      'Rituais de Energia custam -1 PE',
+      'Lance mais rituais do seu elemento favorito',
+      'Combine com outras reduções de custo'
+    ],
+    synergies: [
+      { abilityId: 'especialista-em-elemento', abilityName: 'Especialista em Elemento', description: 'Requer este poder. Rituais fortes E baratos' },
+      { abilityId: 'ritual-predileto', abilityName: 'Ritual Predileto', description: 'Reduções de custo acumulam!' },
+      { abilityId: 'ritual-potente', abilityName: 'Ritual Potente', description: 'Rituais baratos E poderosos' }
+    ],
+    tips: 'NEX 45%+ e requer Especialista. Com múltiplas reduções, rituais ficam muito eficientes.'
+  },
+  
+  'fluxo-de-poder': {
+    id: 'fluxo-de-poder',
+    prerequisites: {
+      nex: 60
+    },
+    examples: [
+      'Mantenha Proteção E Arma Atroz ao mesmo tempo',
+      'Sustente dois efeitos com uma única ação livre',
+      'Dobre sua versatilidade em combate'
+    ],
+    synergies: [
+      { abilityId: 'ritual-predileto', abilityName: 'Ritual Predileto', description: 'Reduza o custo de manutenção' },
+      { abilityId: 'tatuagem-ritualistica', abilityName: 'Tatuagem Ritualística', description: 'Rituais pessoais sustentados custam menos' }
+    ],
+    tips: 'NEX 60%+. Você ainda paga o custo de cada efeito, mas economiza ações. Muito poderoso!'
   }
 };
 
@@ -476,13 +936,18 @@ export function parsePrerequisitesFromDescription(description: string): AbilityD
   }
   if (skills.length > 0) prerequisites.skills = skills;
   
-  // NEX (Ex: "NEX 30%")
-  const nexMatch = prereqText.match(/NEX\s*(\d+)%/i);
+  // NEX mínimo (Ex: "NEX 30%", "NEX 60%")
+  const nexMatch = prereqText.match(/NEX\s*(\d+)%?/i);
   if (nexMatch) prerequisites.nex = parseInt(nexMatch[1]);
   
-  // Outros poderes (Ex: "Proteção Pesada")
-  const abilityMatch = prereqText.match(/Proteção Pesada|Armamento Pesado/i);
-  if (abilityMatch) prerequisites.abilities = [abilityMatch[0]];
+  // Outros poderes (Ex: "Proteção Pesada", "Especialista em Elemento")
+  const abilityMatches = prereqText.match(/(?:poder|habilidade)?\s*"?([A-Z][^,."]+)"?/gi);
+  if (abilityMatches) {
+    const abilities = abilityMatches
+      .map(m => m.replace(/^(?:poder|habilidade)?\s*"?/i, '').replace(/"?\s*$/, ''))
+      .filter(a => a.length > 2 && !a.match(/^(For|Agi|Int|Vig|Pre|NEX|treinado)/i));
+    if (abilities.length > 0) prerequisites.abilities = abilities;
+  }
   
   return Object.keys(prerequisites).length > 0 ? prerequisites : undefined;
 }
