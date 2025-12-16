@@ -123,7 +123,7 @@ export const COMBATENTE_ABILITIES: ClassAbility[] = [
   { 
     id: 'artista-marcial', 
     name: 'Artista Marcial', 
-    description: 'Seus ataques desarmados causam 1d6 pontos de dano, podem causar dano letal e se tornam ágeis (veja p. 59). Em NEX 35%, o dano aumenta para 1d8 e, em NEX 70%, para 1d10.', 
+    description: 'Seus ataques desarmados causam 1d6 pontos de dano, podem causar dano letal e se tornam ágeis (veja p. 89). Em NEX 35%, o dano aumenta para 1d8 e, em NEX 70%, para 1d10.', 
     minNex: 15, 
     classId: 'Combatente' 
   },
@@ -137,14 +137,14 @@ export const COMBATENTE_ABILITIES: ClassAbility[] = [
   { 
     id: 'combater-duas-armas', 
     name: 'Combater com Duas Armas', 
-    description: 'Se estiver empunhando duas armas e pelo menos uma for leve, e fizer a ação agredir, você pode fazer dois ataques, um com cada arma. Se fizer isso, sofre –2 em todos os testes de ataque até o seu próximo turno. Pré-requisitos: Agi 3, treinado em Luta ou Pontaria.', 
+    description: 'Se estiver empunhando duas armas (e pelo menos uma for leve) e fizer uma ação agredir, você pode fazer dois ataques, um com cada arma. Se fizer isso, sofre –5 em todos os testes de ataque até seu próximo turno. Pré-requisitos: Agi 3, treinado em Luta ou Pontaria.', 
     minNex: 15, 
     classId: 'Combatente' 
   },
   { 
     id: 'combate-defensivo', 
     name: 'Combate Defensivo', 
-    description: 'Quando usa a ação agredir, você pode combater defensivamente. Se fizer isso, até seu próximo turno, sofre –2 em todos os testes de ataque, mas recebe +5 na Defesa. Pré-requisito: Int 2.', 
+    description: 'Quando usa a ação agredir, você pode combater defensivamente. Se fizer isso, até seu próximo turno, sofre –5 em todos os testes de ataque, mas recebe +5 na Defesa. Pré-requisito: Int 2.', 
     minNex: 15, 
     classId: 'Combatente' 
   },
@@ -165,14 +165,14 @@ export const COMBATENTE_ABILITIES: ClassAbility[] = [
   { 
     id: 'incansavel', 
     name: 'Incansável', 
-    description: 'Uma vez por cena, você pode gastar 2 PE para fazer uma ação de investigação adicional, mas deve usar Força ou Agilidade como atributo-base do teste.', 
+    description: 'Uma vez por cena, você pode gastar 2 PE para fazer uma ação de investigação adicional, mas deve usar Força ou Agilidade como atributo-base do teste. Você recebe +5 no teste.', 
     minNex: 15, 
     classId: 'Combatente' 
   },
   { 
     id: 'presteza-atletica', 
     name: 'Presteza Atlética', 
-    description: 'Quando faz um teste de facilitar a investigação, você pode gastar 1 PE para usar Força ou Agilidade no lugar do atributo-base da perícia. Se passar no teste, o próximo aliado que usar seu bônus também recebe +2 no teste.', 
+    description: 'Quando faz um teste de facilitar a investigação, você pode gastar 1 PE para usar Força ou Agilidade no lugar do atributo-base da perícia. Se passar no teste, o próximo aliado que usar seu bônus também recebe +5 no teste.', 
     minNex: 15, 
     classId: 'Combatente' 
   },
