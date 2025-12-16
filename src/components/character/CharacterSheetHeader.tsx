@@ -330,10 +330,10 @@ export function CharacterSheetHeader({
         <div className="space-y-1">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1">
-              <Zap className="w-4 h-4 text-success" />
+              <Zap className="w-4 h-4 text-pe" />
               <span className="text-xs font-medium">PE</span>
               {peBonus > 0 && (
-                <span className="text-[10px] text-success font-medium">(+{peBonus})</span>
+                <span className="text-[10px] text-pe font-medium">(+{peBonus})</span>
               )}
             </div>
             {editMode ? (
@@ -346,7 +346,7 @@ export function CharacterSheetHeader({
                 max={totalPeMax}
               />
             ) : (
-              <span className="text-sm font-display text-success">
+              <span className="text-sm font-display text-pe">
                 {peCurrent}/{totalPeMax}
               </span>
             )}

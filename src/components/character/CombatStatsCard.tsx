@@ -161,7 +161,7 @@ export function CombatStatsCard({
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Zap className="w-5 h-5 text-secondary" />
+            <Zap className="w-5 h-5 text-pe" />
             <span className="text-sm font-medium">PE</span>
           </div>
           {editMode ? (
@@ -182,7 +182,7 @@ export function CombatStatsCard({
               key={peCurrent}
               initial={{ scale: 1.2 }}
               animate={{ scale: 1 }}
-              className="font-display text-xl text-secondary"
+              className="font-display text-xl text-pe"
             >
               {peCurrent}/{peMax}
             </motion.span>

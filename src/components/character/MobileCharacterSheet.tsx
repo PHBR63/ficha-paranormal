@@ -628,11 +628,11 @@ export function MobileCharacterSheet({
 
               {/* PE */}
               <div className="flex items-center gap-2">
-                <Zap className="w-4 h-4 text-secondary flex-shrink-0" />
+                <Zap className="w-4 h-4 text-pe flex-shrink-0" />
                 <div className="flex-1">
                   <AnimatedProgress value={character.pe_current} max={character.pe_max} variant="pe" size="sm" />
                 </div>
-                <span className="text-xs font-display text-secondary w-14 text-right">
+                <span className="text-xs font-display text-pe w-14 text-right">
                   {character.pe_current}/{character.pe_max}
                 </span>
               </div>
@@ -659,7 +659,7 @@ export function MobileCharacterSheet({
                   <span>{character.movement}m</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <Zap className="w-3 h-3 text-secondary" />
+                  <Zap className="w-3 h-3 text-pe" />
                   <span>{peLimit} PE/turno</span>
                 </div>
               </div>
@@ -703,7 +703,7 @@ export function MobileCharacterSheet({
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Limite PE/turno:</span>
-                  <span className="text-secondary font-display">{peLimit}</span>
+                  <span className="text-pe font-display">{peLimit}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Crítico:</span>

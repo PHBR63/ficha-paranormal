@@ -22,9 +22,9 @@ const variantStyles = {
     label: 'PV',
   },
   pe: {
-    bar: 'bg-[hsl(var(--status-pe))]',
-    glow: 'shadow-[0_0_10px_hsl(var(--status-pe)/0.5)]',
-    track: 'bg-[hsl(var(--status-pe)/0.2)]',
+    bar: 'bg-pe',
+    glow: 'shadow-[0_0_10px_hsl(var(--pe)/0.5)]',
+    track: 'bg-pe/20',
     label: 'PE',
   },
   san: {

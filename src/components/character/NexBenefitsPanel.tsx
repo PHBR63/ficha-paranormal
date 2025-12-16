@@ -188,7 +188,7 @@ export function NexBenefitsPanel({
               label="PE" 
               value={stats.pe}
               previousValue={previousStats?.pe}
-              color="text-success bg-success/10"
+              color="text-pe bg-pe/10"
             />
             <StatCard 
               icon={Brain} 
