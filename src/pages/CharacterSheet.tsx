@@ -77,6 +77,7 @@ import { RitualCard } from '@/components/character/RitualCard';
 import { RitualCastModal } from '@/components/character/RitualCastModal';
 import { RitualDamageModal, RitualDamageResult, RitualHealingResult } from '@/components/character/RitualDamageModal';
 import { ResistanceCheckModal, ResistanceCheckResult } from '@/components/character/ResistanceCheckModal';
+import { RitualConditionModal, PendingCondition, extractConditionsFromEffect } from '@/components/character/RitualConditionApplicator';
 import { RitualCastHistory, RitualCastRecord } from '@/components/character/RitualCastHistory';
 import { Ritual } from '@/lib/rituals-data';
 import { getActiveRitualEffect, ritualDealsDamage, RitualEffect } from '@/lib/ritual-effects';
@@ -215,6 +216,12 @@ export default function CharacterSheet() {
   // Modal de resistência (Fase 4)
   const [resistanceModalOpen, setResistanceModalOpen] = useState(false);
   const [resistanceEffect, setResistanceEffect] = useState<RitualEffect | null>(null);
+  
+  // Modal de condições (Fase 6)
+  const [conditionModalOpen, setConditionModalOpen] = useState(false);
+  const [pendingRitualConditions, setPendingRitualConditions] = useState<PendingCondition[]>([]);
+  const [conditionRitualName, setConditionRitualName] = useState('');
+  const [conditionRitualElement, setConditionRitualElement] = useState('');
   
   // Histórico de rituais conjurados na sessão
   const [castHistory, setCastHistory] = useState<RitualCastRecord[]>([]);
@@ -1844,6 +1851,20 @@ export default function CharacterSheet() {
           setResistanceEffect(effect || null);
           setResistanceModalOpen(true);
         }}
+        onRequestConditions={() => {
+          // Abre o modal de condições (Fase 6)
+          if (!ritualForDamage) return;
+          const effect = getActiveRitualEffect(ritualForDamage.id, ritualEnhancements);
+          if (!effect) return;
+          
+          const conditions = extractConditionsFromEffect(effect);
+          if (conditions.length === 0) return;
+          
+          setPendingRitualConditions(conditions);
+          setConditionRitualName(ritualForDamage.name);
+          setConditionRitualElement(ritualForDamage.element);
+          setConditionModalOpen(true);
+        }}
         onClose={() => {
           setRitualForDamage(null);
           setRitualEnhancements([]);
@@ -1880,6 +1901,60 @@ export default function CharacterSheet() {
           setResistanceModalOpen(false);
           setPendingDamage(0);
           setResistanceEffect(null);
+        }}
+      />
+
+      {/* Modal de aplicação de condições de rituais (Fase 6) */}
+      <RitualConditionModal
+        open={conditionModalOpen}
+        onClose={() => {
+          setConditionModalOpen(false);
+          setPendingRitualConditions([]);
+        }}
+        ritualName={conditionRitualName}
+        ritualElement={conditionRitualElement}
+        pendingConditions={pendingRitualConditions}
+        targetName={character.name}
+        onApplyConditions={async (newConditions) => {
+          // Merge com condições existentes
+          const existingConditions = (character.conditions || []).map(c => {
+            if (typeof c === 'string') {
+              return { id: c.toLowerCase().replace(/\s+/g, ''), name: c, turnsRemaining: null, addedAt: new Date() };
+            }
+            return c as ActiveCondition;
+          });
+          
+          // Filtra duplicatas
+          const uniqueNew = newConditions.filter(
+            nc => !existingConditions.some(ec => ec.id === nc.id)
+          );
+          
+          const allConditions = [...existingConditions, ...uniqueNew];
+          const conditionNames = allConditions.map(c => c.name);
+          
+          const { error } = await supabase
+            .from('characters')
+            .update({ conditions: conditionNames })
+            .eq('id', character.id);
+
+          if (error) {
+            toast({
+              title: 'Erro ao aplicar condições',
+              description: error.message,
+              variant: 'destructive',
+            });
+            return;
+          }
+
+          setCharacter(prev => prev ? {
+            ...prev,
+            conditions: conditionNames,
+          } : null);
+
+          toast({
+            title: 'Condições aplicadas!',
+            description: `${uniqueNew.map(c => c.name).join(', ')} adicionadas a ${character.name}`,
+          });
         }}
       />
     </div>

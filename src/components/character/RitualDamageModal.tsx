@@ -123,6 +123,7 @@ interface RitualDamageModalProps {
   onApplyDamage?: (result: RitualDamageResult) => void;
   onApplyHealing?: (result: RitualHealingResult) => void;
   onRequestResistance?: (damage: number) => void; // Callback para solicitar teste de resistência
+  onRequestConditions?: () => void; // Callback para abrir modal de condições (Fase 6)
   onClose?: () => void;
 }
 
@@ -134,6 +135,7 @@ export function RitualDamageModal({
   onApplyDamage,
   onApplyHealing,
   onRequestResistance,
+  onRequestConditions,
   onClose,
 }: RitualDamageModalProps) {
   // Estado do resultado da rolagem
@@ -474,26 +476,39 @@ export function RitualDamageModal({
             </motion.div>
           )}
 
-          {/* Condições aplicadas */}
+          {/* Condições aplicadas (Fase 6) */}
           {activeEffect.appliesConditions && activeEffect.appliesConditions.length > 0 && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.6 }}
-              className="mt-3 p-3 rounded-lg bg-destructive/10 border border-destructive/30"
+              className="mt-3 p-3 rounded-lg bg-orange-500/10 border border-orange-500/30"
             >
-              <div className="text-sm">
-                <span className="text-muted-foreground">Aplica condição:</span>
-                <div className="flex gap-1 mt-1 flex-wrap">
-                  {activeEffect.appliesConditions.map((cond, i) => (
-                    <Badge key={i} variant="destructive" className="capitalize">
-                      {cond.conditionId}
-                      {cond.duration && (
-                        <span className="ml-1 opacity-70">({cond.duration})</span>
-                      )}
-                    </Badge>
-                  ))}
+              <div className="flex items-center justify-between">
+                <div className="text-sm">
+                  <span className="text-muted-foreground">Aplica condição:</span>
+                  <div className="flex gap-1 mt-1 flex-wrap">
+                    {activeEffect.appliesConditions.map((cond, i) => (
+                      <Badge key={i} className="capitalize bg-orange-500/20 text-orange-400 hover:bg-orange-500/30">
+                        {cond.conditionId}
+                        {cond.duration && (
+                          <span className="ml-1 opacity-70">({cond.duration})</span>
+                        )}
+                      </Badge>
+                    ))}
+                  </div>
                 </div>
+                {onRequestConditions && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={onRequestConditions}
+                    className="gap-1 h-7 text-xs border-orange-500/50 hover:bg-orange-500/10 text-orange-400"
+                  >
+                    <Target className="w-3 h-3" />
+                    Aplicar
+                  </Button>
+                )}
               </div>
             </motion.div>
           )}
