@@ -3,6 +3,7 @@
  * 
  * Baseado EXATAMENTE no livro de regras oficial (pgs. 94-97)
  * Inclui armas corpo a corpo, à distância, de fogo e explosivos
+ * Modificações conforme Tabela 3.5 (pg. 93)
  */
 
 // Tipos de dano disponíveis
@@ -24,11 +25,134 @@ export type RangeType = 'Corpo a corpo' | 'Curto' | 'Médio' | 'Longo' | 'Extrem
 // Tipo de munição
 export type AmmoType = 'balas_curtas' | 'balas_longas' | 'cartuchos' | 'flechas' | 'virotes' | 'combustivel' | 'foguete';
 
+// ==================== SISTEMA DE MODIFICAÇÕES (Tabela 3.5) ====================
+
+// Tipos de modificação disponíveis
+export type MeleeWeaponModification = 'certeira' | 'cruel' | 'discreta' | 'perigosa' | 'tatica';
+export type FirearmModification = 'alongada' | 'calibre_grosso' | 'compensador' | 'mira_laser';
+export type WeaponModification = MeleeWeaponModification | FirearmModification;
+
+// Interface para dados de modificação
+export interface WeaponModificationData {
+  id: WeaponModification;
+  name: string;
+  description: string;
+  applicableTo: ('melee' | 'ranged' | 'firearm')[];
+  categoryIncrease: number; // +1 ou 0
+  attackBonus?: number;      // Certeira/Compensador: +2
+  criticalBonus?: number;    // Cruel: +1 margem
+  damageBonus?: string;      // Perigosa/Calibre Grosso: +1 dado
+  rangeBonus?: number;       // Alongada: +1 categoria alcance
+  properties?: string[];     // Tática: adiciona propriedades
+  special?: string;          // Descrição de efeito especial
+}
+
+// Catálogo de modificações para armas corpo a corpo (Tabela 3.5)
+export const MELEE_WEAPON_MODIFICATIONS: WeaponModificationData[] = [
+  {
+    id: 'certeira',
+    name: 'Certeira',
+    description: 'A arma é balanceada e precisa, concedendo +2 em testes de ataque.',
+    applicableTo: ['melee', 'ranged'],
+    categoryIncrease: 1,
+    attackBonus: 2,
+  },
+  {
+    id: 'cruel',
+    name: 'Cruel',
+    description: 'A arma possui lâmina ou ponta especialmente afiada, aumentando a margem de ameaça em 1.',
+    applicableTo: ['melee', 'ranged'],
+    categoryIncrease: 1,
+    criticalBonus: 1,
+  },
+  {
+    id: 'discreta',
+    name: 'Discreta',
+    description: 'A arma é facilmente escondida, concedendo +5 em testes de Crime para ocultá-la.',
+    applicableTo: ['melee', 'ranged'],
+    categoryIncrease: 0,
+    special: '+5 em testes de Crime para esconder a arma',
+  },
+  {
+    id: 'perigosa',
+    name: 'Perigosa',
+    description: 'A arma é mais pesada ou possui lâmina maior, causando +1 dado de dano.',
+    applicableTo: ['melee', 'ranged'],
+    categoryIncrease: 1,
+    damageBonus: '+1 dado',
+  },
+  {
+    id: 'tatica',
+    name: 'Tática',
+    description: 'A arma possui modificações que a tornam mais versátil. Ganha a propriedade Versátil (ou Arremessável, se já for Versátil).',
+    applicableTo: ['melee'],
+    categoryIncrease: 1,
+    properties: ['Versátil ou Arremessável'],
+    special: 'Ganha Versátil. Se já tiver Versátil, ganha Arremessável.',
+  },
+];
+
+// Catálogo de modificações para armas de fogo (Tabela 3.5)
+export const FIREARM_MODIFICATIONS: WeaponModificationData[] = [
+  {
+    id: 'alongada',
+    name: 'Alongada',
+    description: 'O cano da arma é mais longo, aumentando o alcance em uma categoria.',
+    applicableTo: ['firearm'],
+    categoryIncrease: 1,
+    rangeBonus: 1,
+    special: 'Curto → Médio → Longo → Extremo',
+  },
+  {
+    id: 'calibre_grosso',
+    name: 'Calibre Grosso',
+    description: 'A arma foi modificada para usar munição mais pesada, causando +1 dado de dano.',
+    applicableTo: ['firearm'],
+    categoryIncrease: 1,
+    damageBonus: '+1 dado',
+  },
+  {
+    id: 'compensador',
+    name: 'Compensador',
+    description: 'A arma possui compensador de recuo, concedendo +2 em testes de ataque.',
+    applicableTo: ['firearm'],
+    categoryIncrease: 1,
+    attackBonus: 2,
+  },
+  {
+    id: 'mira_laser',
+    name: 'Mira Laser',
+    description: 'A arma possui mira laser, ignorando penalidades por alcance.',
+    applicableTo: ['firearm'],
+    categoryIncrease: 1,
+    special: 'Ignora penalidades por alcance',
+  },
+];
+
+// Todas as modificações disponíveis
+export const ALL_WEAPON_MODIFICATIONS: WeaponModificationData[] = [
+  ...MELEE_WEAPON_MODIFICATIONS,
+  ...FIREARM_MODIFICATIONS,
+];
+
+// Interface para arma com modificações aplicadas
+export interface ModifiedWeaponStats {
+  baseWeapon: CatalogWeapon;
+  modifications: WeaponModification[];
+  finalCategory: CatalogWeapon['category'];
+  attackBonus: number;
+  criticalMargin: number;
+  damage: string;
+  range?: RangeType;
+  addedProperties: string[];
+  specialEffects: string[];
+}
+
 // Interface completa para arma do catálogo
 export interface CatalogWeapon {
   id: string;
   name: string;
-  category: 'I' | 'II' | 'III' | 'IV' | '0' | 'especial'; // 'especial' para armas como Coronhada
+  category: 'I' | 'II' | 'III' | 'IV' | '0' | 'especial';
   type: 'melee' | 'ranged' | 'thrown' | 'firearm';
   damage: string;
   damageType: DamageType;
@@ -41,6 +165,7 @@ export interface CatalogWeapon {
   special?: string;
   ammoType?: AmmoType;
   description?: string;
+  appliedModifications?: WeaponModification[]; // Modificações aplicadas
 }
 
 // ==================== ARMAS SIMPLES - CORPO A CORPO ====================
@@ -827,4 +952,153 @@ export const AMMO_LABELS: Record<AmmoType, string> = {
   virotes: 'Virotes',
   combustivel: 'Combustível',
   foguete: 'Foguete',
+};
+
+// ==================== FUNÇÕES DE MODIFICAÇÃO ====================
+
+// Ordem de categorias para cálculo
+const CATEGORY_ORDER: CatalogWeapon['category'][] = ['0', 'I', 'II', 'III', 'IV'];
+
+// Obter modificação por ID
+export function getWeaponModificationById(id: WeaponModification): WeaponModificationData | undefined {
+  return ALL_WEAPON_MODIFICATIONS.find(m => m.id === id);
+}
+
+// Verificar se modificação é aplicável a uma arma
+export function canApplyModification(weapon: CatalogWeapon, modId: WeaponModification): boolean {
+  const mod = getWeaponModificationById(modId);
+  if (!mod) return false;
+  
+  // Verifica se o tipo da arma é compatível
+  if (weapon.type === 'thrown') return false; // Explosivos não podem ser modificados
+  if (weapon.category === 'especial') return false; // Armas especiais não podem ser modificadas
+  
+  return mod.applicableTo.includes(weapon.type);
+}
+
+// Obter modificações disponíveis para uma arma
+export function getAvailableModifications(weapon: CatalogWeapon): WeaponModificationData[] {
+  return ALL_WEAPON_MODIFICATIONS.filter(mod => canApplyModification(weapon, mod.id));
+}
+
+// Calcular nova categoria após modificações
+export function getModifiedCategory(
+  baseCategory: CatalogWeapon['category'], 
+  modifications: WeaponModification[]
+): CatalogWeapon['category'] {
+  if (baseCategory === 'especial') return 'especial';
+  
+  const baseIndex = CATEGORY_ORDER.indexOf(baseCategory);
+  if (baseIndex === -1) return baseCategory;
+  
+  // Calcula total de aumentos de categoria
+  const totalIncrease = modifications.reduce((acc, modId) => {
+    const mod = getWeaponModificationById(modId);
+    return acc + (mod?.categoryIncrease || 0);
+  }, 0);
+  
+  // Aplica o aumento, máximo Cat IV
+  const newIndex = Math.min(baseIndex + totalIncrease, CATEGORY_ORDER.length - 1);
+  return CATEGORY_ORDER[newIndex];
+}
+
+// Calcular próxima categoria de alcance
+function getNextRange(range: RangeType | undefined): RangeType | undefined {
+  if (!range) return undefined;
+  const rangeOrder: RangeType[] = ['Corpo a corpo', 'Curto', 'Médio', 'Longo', 'Extremo'];
+  const index = rangeOrder.indexOf(range);
+  if (index === -1 || index >= rangeOrder.length - 1) return range;
+  return rangeOrder[index + 1];
+}
+
+// Aumentar dado de dano (ex: 1d6 → 2d6, 2d6 → 3d6)
+function increaseDamageDie(damage: string): string {
+  // Padrão: XdY ou XdY/ZdW (versátil)
+  const match = damage.match(/^(\d+)d(\d+)(\/(\d+)d(\d+))?$/);
+  if (!match) return damage;
+  
+  const diceCount = parseInt(match[1]);
+  const dieType = match[2];
+  
+  if (match[3]) {
+    // Arma versátil: aumenta ambos os danos
+    const versatileDice = parseInt(match[4]);
+    return `${diceCount + 1}d${dieType}/${versatileDice + 1}d${match[5]}`;
+  }
+  
+  return `${diceCount + 1}d${dieType}`;
+}
+
+// Calcular estatísticas finais com modificações
+export function calculateModifiedWeaponStats(
+  baseWeapon: CatalogWeapon, 
+  modifications: WeaponModification[]
+): ModifiedWeaponStats {
+  let attackBonus = 0;
+  let criticalMargin = baseWeapon.critical;
+  let damage = baseWeapon.damage;
+  let range = baseWeapon.range;
+  const addedProperties: string[] = [];
+  const specialEffects: string[] = [];
+  
+  // Aplica cada modificação
+  for (const modId of modifications) {
+    const mod = getWeaponModificationById(modId);
+    if (!mod) continue;
+    
+    // Bônus de ataque (Certeira, Compensador)
+    if (mod.attackBonus) {
+      attackBonus += mod.attackBonus;
+    }
+    
+    // Bônus de crítico (Cruel)
+    if (mod.criticalBonus) {
+      criticalMargin -= mod.criticalBonus; // Reduz margem = aumenta chance
+    }
+    
+    // Bônus de dano (Perigosa, Calibre Grosso)
+    if (mod.damageBonus) {
+      damage = increaseDamageDie(damage);
+    }
+    
+    // Bônus de alcance (Alongada)
+    if (mod.rangeBonus) {
+      range = getNextRange(range);
+    }
+    
+    // Propriedades adicionais (Tática)
+    if (mod.properties) {
+      addedProperties.push(...mod.properties);
+    }
+    
+    // Efeitos especiais (Discreta, Mira Laser)
+    if (mod.special) {
+      specialEffects.push(mod.special);
+    }
+  }
+  
+  return {
+    baseWeapon,
+    modifications,
+    finalCategory: getModifiedCategory(baseWeapon.category, modifications),
+    attackBonus,
+    criticalMargin: Math.max(criticalMargin, 1), // Mínimo 1
+    damage,
+    range,
+    addedProperties,
+    specialEffects,
+  };
+}
+
+// Labels para modificações na UI
+export const MODIFICATION_LABELS: Record<WeaponModification, { label: string; color: string; icon: string }> = {
+  certeira: { label: 'Certeira', color: 'text-blue-500', icon: 'Target' },
+  cruel: { label: 'Cruel', color: 'text-red-500', icon: 'Skull' },
+  discreta: { label: 'Discreta', color: 'text-gray-500', icon: 'EyeOff' },
+  perigosa: { label: 'Perigosa', color: 'text-orange-500', icon: 'AlertTriangle' },
+  tatica: { label: 'Tática', color: 'text-purple-500', icon: 'Wrench' },
+  alongada: { label: 'Alongada', color: 'text-cyan-500', icon: 'Maximize2' },
+  calibre_grosso: { label: 'Calibre Grosso', color: 'text-amber-500', icon: 'CircleDot' },
+  compensador: { label: 'Compensador', color: 'text-green-500', icon: 'Crosshair' },
+  mira_laser: { label: 'Mira Laser', color: 'text-red-400', icon: 'Focus' },
 };
