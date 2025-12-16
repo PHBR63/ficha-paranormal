@@ -630,7 +630,33 @@ export default function CharacterSheet() {
     affinityActive: character?.affinity_active || false,
   });
 
-  // Loading state
+  // Calcular proteção total de armaduras equipadas (DEVE vir antes de qualquer return condicional)
+  const armorStats = useMemo(() => {
+    if (!character) {
+      return {
+        totalRD: 0,
+        totalAgilityPenalty: 0,
+        totalSpeedPenalty: 0,
+        hasArmor: false,
+        equippedArmors: [],
+      };
+    }
+    
+    const equippedArmors = character.inventory
+      .filter(item => item.isEquipped && item.itemType === 'armor' && item.rd !== undefined);
+    
+    const totalRD = equippedArmors.reduce((sum, armor) => sum + (armor.rd || 0), 0);
+    const totalAgilityPenalty = equippedArmors.reduce((sum, armor) => sum + (armor.agilityPenalty || 0), 0);
+    const totalSpeedPenalty = equippedArmors.reduce((sum, armor) => sum + (armor.speedPenalty || 0), 0);
+    
+    return {
+      totalRD,
+      totalAgilityPenalty,
+      totalSpeedPenalty,
+      hasArmor: equippedArmors.length > 0,
+      equippedArmors: equippedArmors.map(a => ({ name: a.name, rd: a.rd || 0 })),
+    };
+  }, [character?.inventory]);
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -705,24 +731,6 @@ export default function CharacterSheet() {
       special: item.special,
       ammoType: item.ammoType,
     }));
-  
-  // Calcular proteção total de armaduras equipadas
-  const armorStats = useMemo(() => {
-    const equippedArmors = character.inventory
-      .filter(item => item.isEquipped && item.itemType === 'armor' && item.rd !== undefined);
-    
-    const totalRD = equippedArmors.reduce((sum, armor) => sum + (armor.rd || 0), 0);
-    const totalAgilityPenalty = equippedArmors.reduce((sum, armor) => sum + (armor.agilityPenalty || 0), 0);
-    const totalSpeedPenalty = equippedArmors.reduce((sum, armor) => sum + (armor.speedPenalty || 0), 0);
-    
-    return {
-      totalRD,
-      totalAgilityPenalty,
-      totalSpeedPenalty,
-      hasArmor: equippedArmors.length > 0,
-      equippedArmors: equippedArmors.map(a => ({ name: a.name, rd: a.rd || 0 })),
-    };
-  }, [character.inventory]);
 
   // Obter dados da origem
   const originData = ORIGINS.find(o => o.id === character.origin);
