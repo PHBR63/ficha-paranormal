@@ -843,11 +843,14 @@ export function calculateDerivedStats(
   let san = classData.sanBase + Math.max(0, nexMultiplier) * classData.sanPerNex;
 
   // Aplicar modificador de origem (Cultista Arrependido, Vítima)
-  // sanityModifier é uma porcentagem (-50 = metade da sanidade)
+  // sanityModifier é uma porcentagem sobre a SANIDADE BASE (NEX 5%), não sobre o total
+  // Exemplo: -50 = metade da sanidade base é subtraída (penalidade fixa)
   if (originId) {
     const origin = ORIGINS.find(o => o.id === originId);
     if (origin?.sanityModifier) {
-      san = Math.floor(san * (1 + origin.sanityModifier / 100));
+      // Calcula a penalidade baseada na sanidade BASE da classe, não no total
+      const baseSanPenalty = Math.floor(classData.sanBase * Math.abs(origin.sanityModifier) / 100);
+      san = san - baseSanPenalty;
     }
   }
 
