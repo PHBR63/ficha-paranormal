@@ -3,6 +3,16 @@
 
 import { ORIGINS, CLASSES, SKILLS, calculateDerivedStats, getPatentByNex, calculateDefense, getExtraAttributePoints } from './character-data';
 
+// Set de IDs válidos de perícias para validação rápida
+const VALID_SKILL_IDS = new Set(SKILLS.map(s => s.id));
+
+/**
+ * Valida se um ID de perícia é válido no sistema
+ */
+export function isValidSkillId(skillId: string): boolean {
+  return VALID_SKILL_IDS.has(skillId);
+}
+
 // ============= TYPES =============
 
 export interface AttributeAllocation {
@@ -365,9 +375,8 @@ export function rebuildCharacterSheet(state: CharacterBuildState): RebuildResult
   const classSkillsFromChoices: string[] = [];
   for (const choice of classRules.choices) {
     const selected = state.classSkillChoices[choice.id];
-    if (selected) {
-      // Se o usuário escolheu uma perícia (seja das opções ou alternativa),
-      // ela deve ser incluída. A validação é feita na UI.
+    // Valida que a perícia escolhida é uma perícia válida do sistema
+    if (selected && isValidSkillId(selected)) {
       classSkillsFromChoices.push(selected);
     }
   }
@@ -382,7 +391,7 @@ export function rebuildCharacterSheet(state: CharacterBuildState): RebuildResult
   // 6. Calcular todas as perícias treinadas
   const allTrainedSkills = new Set<string>();
   
-  // Adicionar perícias da origem
+  // Adicionar perícias da origem (já validadas pela origem)
   originSkills.forEach(s => allTrainedSkills.add(s));
   
   // Adicionar perícias obrigatórias da classe (se não houver conflito)
@@ -390,9 +399,9 @@ export function rebuildCharacterSheet(state: CharacterBuildState): RebuildResult
     if (!originSkills.includes(skillId)) {
       allTrainedSkills.add(skillId);
     } else {
-      // Conflito: usar resolução se existir
+      // Conflito: usar resolução se existir e for válida
       const resolution = state.conflictResolutions[skillId];
-      if (resolution) {
+      if (resolution && isValidSkillId(resolution)) {
         allTrainedSkills.add(resolution);
       }
     }
@@ -401,8 +410,12 @@ export function rebuildCharacterSheet(state: CharacterBuildState): RebuildResult
   // Adicionar perícias das escolhas
   classSkillsFromChoices.forEach(s => allTrainedSkills.add(s));
   
-  // Adicionar perícias livres
-  state.freeSkills.forEach(s => allTrainedSkills.add(s));
+  // Adicionar perícias livres (validando cada uma)
+  state.freeSkills.forEach(s => {
+    if (isValidSkillId(s)) {
+      allTrainedSkills.add(s);
+    }
+  });
   
   // 7. Calcular stats derivados
   const derivedStats = state.characterClass
