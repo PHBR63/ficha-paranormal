@@ -479,7 +479,7 @@ export const OCULTISTA_ABILITIES: ClassAbility[] = [
   { 
     id: 'escolhido-pelo-outro-lado', 
     name: 'Escolhido pelo Outro Lado', 
-    description: 'Você teve uma experiência paranormal e foi marcado pelo Outro Lado, absorvendo conhecimento proibido necessário para realizar rituais. Você pode lançar rituais de 1º círculo. Conforme seu NEX aumenta, pode lançar rituais de círculos maiores: 2º círculo em NEX 25%, 3º círculo em NEX 55%, 4º círculo em NEX 85%. Você começa com três rituais de 1º círculo e aprende um ritual adicional sempre que avança de NEX.', 
+    description: 'Você teve uma experiência paranormal e foi marcado pelo Outro Lado, absorvendo conhecimento proibido necessário para realizar rituais. Você pode lançar rituais de 1º círculo. Conforme seu NEX aumenta, pode lançar rituais de círculos maiores: 2º círculo em NEX 25%, 3º círculo em NEX 55%, 4º círculo em NEX 85%. Você começa com três rituais de 1º círculo e aprende um ritual adicional sempre que avança de NEX. Não há limite de rituais conhecidos.', 
     minNex: 5, 
     classId: 'Ocultista', 
     isCore: true 
@@ -606,7 +606,7 @@ export const OCULTISTA_ABILITIES: ClassAbility[] = [
   { 
     id: 'criar-selo', 
     name: 'Criar Selo', 
-    description: 'Você pode fabricar selos paranormais de rituais que conheça. Fabricar um selo gasta uma ação demorada e um número de PE igual ao custo do ritual. Você pode ter um número máximo de selos criados ao mesmo tempo igual à sua Presença.', 
+    description: 'Você sabe fabricar selos paranormais de rituais que conhece. Fabricar um selo gasta uma ação de intento e um número de PE igual ao custo do ritual. Você pode ter um número máximo de selos criados ao mesmo tempo igual à sua Presença.', 
     minNex: 15, 
     classId: 'Ocultista' 
   },
@@ -655,7 +655,7 @@ export const OCULTISTA_ABILITIES: ClassAbility[] = [
   { 
     id: 'intuicao-paranormal', 
     name: 'Intuição Paranormal', 
-    description: 'Sempre que usa a ação facilitar a investigação, você pode usar Intelecto ou Presença no teste, à sua escolha.', 
+    description: 'Sempre que usa a ação facilitar investigação, você soma seu Intelecto ou Presença no teste (à sua escolha).', 
     minNex: 15, 
     classId: 'Ocultista' 
   },
@@ -683,14 +683,14 @@ export const OCULTISTA_ABILITIES: ClassAbility[] = [
   { 
     id: 'transcender-ocultista', 
     name: 'Transcender', 
-    description: 'Escolha um poder paranormal. Você recebe o poder escolhido, mas não ganha Sanidade nem aumento de NEX. Você pode escolher este poder várias vezes.', 
+    description: 'Escolha um poder paranormal. Você recebe o poder escolhido, mas não ganha Sanidade neste aumento de NEX. Você pode escolher este poder várias vezes.', 
     minNex: 15, 
     classId: 'Ocultista' 
   },
   { 
     id: 'treinamento-em-pericia-ocultista', 
     name: 'Treinamento em Perícia', 
-    description: 'Escolha duas perícias. Em NEX 35%, você pode escolher perícias nas quais já é treinado para se tornarem veteranas. Em NEX 70%, pode escolher perícias nas quais já é veterano para se tornarem expert. Você pode escolher este poder várias vezes.', 
+    description: 'Escolha duas perícias. Você recebe treinamento nessas perícias. A partir de NEX 35%, você pode escolher perícias nas quais já é treinado para se tornar veterano. A partir de NEX 70%, você pode escolher perícias nas quais já é veterano para se tornar expert. Você pode escolher este poder várias vezes.', 
     minNex: 15, 
     classId: 'Ocultista' 
   },
@@ -706,7 +706,7 @@ export const OCULTISTA_ABILITIES: ClassAbility[] = [
   { 
     id: 'fluxo-de-poder', 
     name: 'Fluxo de Poder', 
-    description: 'Você pode manter dois efeitos sustentados de rituais ativos ao mesmo tempo, pagando o custo de cada efeito separadamente. Pré-requisito: NEX 60%.', 
+    description: 'Você pode manter dois efeitos sustentados de rituais ativos ao mesmo tempo com apenas uma ação livre, pagando o custo de cada efeito separadamente. Pré-requisito: NEX 60%.', 
     minNex: 60, 
     classId: 'Ocultista' 
   },
