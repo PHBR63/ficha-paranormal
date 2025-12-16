@@ -68,10 +68,8 @@ export function NexBenefitsPanel({
     ? calculateDerivedStats(characterClass, vigor, presence, previousNex, originId)
     : null;
   
-  // Dados da classe
+  // Dados da classe - perícias extras vêm apenas do poder "Treinamento em Perícia", não do NEX
   const classData = CLASSES.find(c => c.id === characterClass);
-  const freeSkillsBase = classData ? intellect + classData.freeSkillsBase : 0;
-  const totalFreeSkills = freeSkillsBase + progression.extraSkills;
   
   // Rituais (apenas Ocultista)
   const rituals = characterClass === 'Ocultista' ? getOcultistRituals(nex) : null;
@@ -105,12 +103,6 @@ export function NexBenefitsPanel({
           label="Atributos" 
           value={`+${progression.attributePoints}`}
           color="text-primary"
-        />
-        <BenefitBadge 
-          icon={BookOpen} 
-          label="Perícias" 
-          value={`+${progression.extraSkills}`}
-          color="text-secondary"
         />
         <BenefitBadge 
           icon={Swords} 
@@ -187,14 +179,6 @@ export function NexBenefitsPanel({
             previousValue={previousProgression?.attributePoints}
             description="Extras para distribuir"
             color="text-primary"
-          />
-          <ProgressionCard
-            icon={BookOpen}
-            label="Perícias Extras"
-            value={progression.extraSkills}
-            previousValue={previousProgression?.extraSkills}
-            description={characterClass ? `Total: ${totalFreeSkills}` : "Além das da classe"}
-            color="text-secondary"
           />
           <ProgressionCard
             icon={Swords}

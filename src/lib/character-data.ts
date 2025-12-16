@@ -702,27 +702,28 @@ export interface NexProgressionData {
 // NEX_PROGRESSION corrigido conforme regras oficiais:
 // - Primeiro ponto de atributo extra só no NEX 20%
 // - trackAbilityUnlocks: máximo de 4 (NEX 10%, 40%, 65%, 99%)
+// CORRIGIDO: extraSkills sempre 0 - perícias extras vêm apenas do poder "Treinamento em Perícia"
 export const NEX_PROGRESSION: Record<number, NexProgressionData> = {
-  5:  { attributePoints: 0, extraSkills: 0, abilityChoices: 1, trackAbilityUnlocks: 0 },  // Sem habilidade de trilha ainda
-  10: { attributePoints: 0, extraSkills: 1, abilityChoices: 1, trackAbilityUnlocks: 1 },  // 1ª habilidade de trilha
-  15: { attributePoints: 0, extraSkills: 1, abilityChoices: 1, trackAbilityUnlocks: 1 },  // CORRIGIDO: 0 pontos extras
-  20: { attributePoints: 1, extraSkills: 2, abilityChoices: 2, trackAbilityUnlocks: 1 },  // Primeiro ponto de atributo
-  25: { attributePoints: 1, extraSkills: 2, abilityChoices: 2, trackAbilityUnlocks: 1 },
-  30: { attributePoints: 2, extraSkills: 3, abilityChoices: 2, trackAbilityUnlocks: 1 },
-  35: { attributePoints: 2, extraSkills: 3, abilityChoices: 3, trackAbilityUnlocks: 1 },
-  40: { attributePoints: 3, extraSkills: 4, abilityChoices: 3, trackAbilityUnlocks: 2 },  // 2ª habilidade de trilha
-  45: { attributePoints: 3, extraSkills: 4, abilityChoices: 3, trackAbilityUnlocks: 2 },
-  50: { attributePoints: 4, extraSkills: 5, abilityChoices: 4, trackAbilityUnlocks: 2 },
-  55: { attributePoints: 4, extraSkills: 5, abilityChoices: 4, trackAbilityUnlocks: 2 },
-  60: { attributePoints: 5, extraSkills: 6, abilityChoices: 4, trackAbilityUnlocks: 2 },
-  65: { attributePoints: 5, extraSkills: 6, abilityChoices: 5, trackAbilityUnlocks: 3 },  // 3ª habilidade de trilha
-  70: { attributePoints: 6, extraSkills: 7, abilityChoices: 5, trackAbilityUnlocks: 3 },
-  75: { attributePoints: 6, extraSkills: 7, abilityChoices: 5, trackAbilityUnlocks: 3 },
-  80: { attributePoints: 7, extraSkills: 8, abilityChoices: 6, trackAbilityUnlocks: 3 },
-  85: { attributePoints: 7, extraSkills: 8, abilityChoices: 6, trackAbilityUnlocks: 3 },
-  90: { attributePoints: 8, extraSkills: 9, abilityChoices: 6, trackAbilityUnlocks: 3 },
-  95: { attributePoints: 8, extraSkills: 9, abilityChoices: 7, trackAbilityUnlocks: 3 },
-  99: { attributePoints: 9, extraSkills: 10, abilityChoices: 7, trackAbilityUnlocks: 4 },  // 4ª habilidade de trilha
+  5:  { attributePoints: 0, extraSkills: 0, abilityChoices: 1, trackAbilityUnlocks: 0 },
+  10: { attributePoints: 0, extraSkills: 0, abilityChoices: 1, trackAbilityUnlocks: 1 },  // 1ª habilidade de trilha
+  15: { attributePoints: 0, extraSkills: 0, abilityChoices: 1, trackAbilityUnlocks: 1 },
+  20: { attributePoints: 1, extraSkills: 0, abilityChoices: 2, trackAbilityUnlocks: 1 },  // Primeiro ponto de atributo
+  25: { attributePoints: 1, extraSkills: 0, abilityChoices: 2, trackAbilityUnlocks: 1 },
+  30: { attributePoints: 2, extraSkills: 0, abilityChoices: 2, trackAbilityUnlocks: 1 },
+  35: { attributePoints: 2, extraSkills: 0, abilityChoices: 3, trackAbilityUnlocks: 1 },
+  40: { attributePoints: 3, extraSkills: 0, abilityChoices: 3, trackAbilityUnlocks: 2 },  // 2ª habilidade de trilha
+  45: { attributePoints: 3, extraSkills: 0, abilityChoices: 3, trackAbilityUnlocks: 2 },
+  50: { attributePoints: 4, extraSkills: 0, abilityChoices: 4, trackAbilityUnlocks: 2 },
+  55: { attributePoints: 4, extraSkills: 0, abilityChoices: 4, trackAbilityUnlocks: 2 },
+  60: { attributePoints: 5, extraSkills: 0, abilityChoices: 4, trackAbilityUnlocks: 2 },
+  65: { attributePoints: 5, extraSkills: 0, abilityChoices: 5, trackAbilityUnlocks: 3 },  // 3ª habilidade de trilha
+  70: { attributePoints: 6, extraSkills: 0, abilityChoices: 5, trackAbilityUnlocks: 3 },
+  75: { attributePoints: 6, extraSkills: 0, abilityChoices: 5, trackAbilityUnlocks: 3 },
+  80: { attributePoints: 7, extraSkills: 0, abilityChoices: 6, trackAbilityUnlocks: 3 },
+  85: { attributePoints: 7, extraSkills: 0, abilityChoices: 6, trackAbilityUnlocks: 3 },
+  90: { attributePoints: 8, extraSkills: 0, abilityChoices: 6, trackAbilityUnlocks: 3 },
+  95: { attributePoints: 8, extraSkills: 0, abilityChoices: 7, trackAbilityUnlocks: 3 },
+  99: { attributePoints: 9, extraSkills: 0, abilityChoices: 7, trackAbilityUnlocks: 4 },  // 4ª habilidade de trilha
 };
 
 /**
