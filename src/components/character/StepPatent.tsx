@@ -15,19 +15,23 @@ const patentRulebookContent = {
     title: 'Patente e Pontos de Prestígio',
     content: `A patente representa sua posição hierárquica na Ordo Realitas e é determinada pelos **Pontos de Prestígio (PP)** acumulados em missões.
 
-**Patentes disponíveis:**
-- **Recruta** (0 PP): Agente novato sem experiência comprovada
-- **Operador** (20 PP): Experiência em algumas missões
-- **Agente Especial** (50 PP): Veterano comprovado
-- **Oficial de Operações** (100 PP): Líder experiente
-- **Agente de Elite** (200 PP): Elite da Ordem
+### Patentes disponíveis:
 
-A patente determina:
-• **Limite de Crédito** para requisição de equipamentos
-• **Categorias de itens** disponíveis (I a IV)
-• **Quantidade máxima** de itens por categoria
+| Patente | PP Necessários | Descrição |
+|---------|----------------|-----------|
+| **Recruta** | 0 PP | Agente novato sem experiência comprovada |
+| **Operador** | 20 PP | Experiência em algumas missões |
+| **Agente Especial** | 50 PP | Veterano comprovado |
+| **Oficial de Operações** | 100 PP | Líder experiente |
+| **Agente de Elite** | 200 PP | Elite da Ordem |
 
-⚠️ **Importante:** A patente é independente do NEX. Um agente pode ter NEX alto mas patente baixa (recém-transferido de outra divisão) ou NEX baixo com patente alta (veterano administrativo).`,
+### A patente determina:
+
+- **Limite de Crédito** para requisição de equipamentos
+- **Categorias de itens** disponíveis (I a IV)
+- **Quantidade máxima** de itens por categoria
+
+> ⚠️ **Importante:** A patente é independente do NEX. Um agente pode ter NEX alto mas patente baixa (recém-transferido de outra divisão) ou NEX baixo com patente alta (veterano administrativo).`,
     source: 'Ordem Paranormal RPG - Cap. 2: Patentes',
   },
 };
