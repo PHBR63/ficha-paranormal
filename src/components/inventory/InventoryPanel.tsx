@@ -6,6 +6,7 @@
  * - Indicador visual de slots disponíveis
  * - Bloqueio de adição quando limite atingido
  * - Sistema de carga com penalidades
+ * - Sistema de modificações para armas
  */
 
 import { useState, useMemo } from 'react';
@@ -31,6 +32,7 @@ import {
   XCircle,
   Info,
   Zap,
+  Wrench,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -80,7 +82,14 @@ import { EquipmentSlots, EquipmentSlotType, EQUIPMENT_SLOTS, getAppropriateSlot,
 import { WeaponCatalogModal } from './WeaponCatalogModal';
 import { ArmorCatalogModal } from './ArmorCatalogModal';
 import { ItemCatalogModal } from './ItemCatalogModal';
-import type { CatalogWeapon } from '@/lib/weapons-catalog';
+import { WeaponModificationModal } from './WeaponModificationModal';
+import type { CatalogWeapon, WeaponModification } from '@/lib/weapons-catalog';
+import { 
+  calculateModifiedWeaponStats, 
+  getModifiedCategory, 
+  MODIFICATION_LABELS,
+  getWeaponModificationById,
+} from '@/lib/weapons-catalog';
 import type { CatalogArmor } from '@/lib/armor-catalog';
 import type { CatalogItem } from '@/lib/items-catalog';
 import { ProtectionWidget } from './ProtectionWidget';
@@ -134,6 +143,9 @@ export function InventoryPanel({
   const [itemCatalogOpen, setItemCatalogOpen] = useState(false);
   const [useItemConfirmOpen, setUseItemConfirmOpen] = useState(false);
   const [itemToUse, setItemToUse] = useState<ExtendedInventoryItem | null>(null);
+  // Estado para modal de modificação de armas
+  const [weaponModModalOpen, setWeaponModModalOpen] = useState(false);
+  const [weaponToModify, setWeaponToModify] = useState<ExtendedInventoryItem | null>(null);
   const [newItem, setNewItem] = useState<Partial<ExtendedInventoryItem>>({
     name: '',
     category: '0',
@@ -548,6 +560,81 @@ export function InventoryPanel({
     return slot !== null;
   };
 
+  // Handler para abrir modal de modificação de arma
+  const handleOpenWeaponMod = (item: ExtendedInventoryItem) => {
+    setWeaponToModify(item);
+    setWeaponModModalOpen(true);
+  };
+
+  // Handler para aplicar modificações em arma
+  const handleApplyWeaponModifications = (modifications: WeaponModification[]) => {
+    if (!weaponToModify || !onInventoryChange) return;
+
+    // Criar objeto CatalogWeapon a partir do item
+    const baseWeapon: CatalogWeapon = {
+      id: weaponToModify.id,
+      name: weaponToModify.name.replace(/\s*\(Mod\.\)$/, ''), // Remove indicador anterior
+      category: (weaponToModify as any).baseCategory || weaponToModify.category,
+      type: (weaponToModify as any).weaponType || 'melee',
+      damage: (weaponToModify as any).baseDamage || (weaponToModify as any).damage || '1d6',
+      damageType: (weaponToModify as any).damageType || 'Corte',
+      critical: (weaponToModify as any).baseCritical || (weaponToModify as any).critical || 20,
+      criticalMultiplier: (weaponToModify as any).criticalMultiplier || 2,
+      range: (weaponToModify as any).range,
+      spaces: weaponToModify.slots,
+      proficiency: (weaponToModify as any).proficiency || 'simples',
+      properties: (weaponToModify as any).properties,
+      special: (weaponToModify as any).special,
+      ammoType: (weaponToModify as any).ammoType,
+    };
+
+    // Calcular estatísticas modificadas
+    const modifiedStats = calculateModifiedWeaponStats(baseWeapon, modifications);
+    const hasModifications = modifications.length > 0;
+
+    // Converter categoria "especial" para "0" (o sistema de inventário não suporta "especial")
+    const inventoryCategory = modifiedStats.finalCategory === 'especial' 
+      ? '0' as const
+      : modifiedStats.finalCategory;
+
+    // Atualizar item no inventário
+    const updatedInventory = inventory.map(item => {
+      if (item.id === weaponToModify.id) {
+        return {
+          ...item,
+          name: hasModifications 
+            ? `${baseWeapon.name} (Mod.)` 
+            : baseWeapon.name,
+          category: inventoryCategory,
+          appliedModifications: modifications,
+          // Preservar dados base para recálculo futuro
+          baseCategory: baseWeapon.category,
+          baseDamage: baseWeapon.damage,
+          baseCritical: baseWeapon.critical,
+          // Aplicar estatísticas modificadas
+          damage: modifiedStats.damage,
+          critical: modifiedStats.criticalMargin,
+          attackBonus: modifiedStats.attackBonus,
+          modifiedRange: modifiedStats.range,
+          addedProperties: modifiedStats.addedProperties,
+          specialEffects: modifiedStats.specialEffects,
+        } as ExtendedInventoryItem;
+      }
+      return item;
+    });
+
+    onInventoryChange(updatedInventory);
+    setWeaponModModalOpen(false);
+    setWeaponToModify(null);
+
+    toast({
+      title: hasModifications ? 'Modificações aplicadas' : 'Modificações removidas',
+      description: hasModifications 
+        ? `${modifications.length} modificação(ões) aplicada(s) em ${baseWeapon.name}.`
+        : `Todas as modificações foram removidas de ${baseWeapon.name}.`,
+    });
+  };
+
   const loadPercentage = (loadStatus.currentLoad / loadStatus.maxCapacity) * 100;
   const loadColor = loadStatus.isOverloaded 
     ? 'text-destructive' 
@@ -768,7 +855,31 @@ export function InventoryPanel({
         onAddItem={handleAddItemFromCatalog}
       />
 
-      {/* Modal de Confirmação de Uso de Item */}
+      {/* Weapon Modification Modal */}
+      {weaponToModify && (
+        <WeaponModificationModal
+          open={weaponModModalOpen}
+          onOpenChange={setWeaponModModalOpen}
+          weapon={{
+            id: weaponToModify.id,
+            name: weaponToModify.name.replace(/\s*\(Mod\.\)$/, ''),
+            category: ((weaponToModify as any).baseCategory || weaponToModify.category) as CatalogWeapon['category'],
+            type: (weaponToModify as any).weaponType || 'melee',
+            damage: (weaponToModify as any).baseDamage || (weaponToModify as any).damage || '1d6',
+            damageType: (weaponToModify as any).damageType || 'Corte',
+            critical: (weaponToModify as any).baseCritical || (weaponToModify as any).critical || 20,
+            criticalMultiplier: (weaponToModify as any).criticalMultiplier || 2,
+            range: (weaponToModify as any).range,
+            spaces: weaponToModify.slots,
+            proficiency: (weaponToModify as any).proficiency || 'simples',
+            properties: (weaponToModify as any).properties,
+            special: (weaponToModify as any).special,
+            ammoType: (weaponToModify as any).ammoType,
+          }}
+          currentModifications={(weaponToModify as any).appliedModifications || []}
+          onApplyModifications={handleApplyWeaponModifications}
+        />
+      )}
       <Dialog open={useItemConfirmOpen} onOpenChange={setUseItemConfirmOpen}>
         <DialogContent className="sm:max-w-md bg-popover">
           <DialogHeader>
@@ -1001,14 +1112,15 @@ export function InventoryPanel({
               </CollapsibleTrigger>
               <CollapsibleContent className="space-y-1 mt-1">
                 {items.map((item) => (
-                  <InventoryItemRow
-                    key={item.id}
-                    item={item}
-                    onRemove={!readOnly ? handleRemoveItem : undefined}
-                    onEquip={!readOnly && canEquipItem(item) ? handleEquipItem : undefined}
-                    onUnequip={!readOnly && item.isEquipped ? handleUnequipItem : undefined}
-                    onUse={!readOnly && canUseItem(item) ? handleRequestUseItem : undefined}
-                  />
+                    <InventoryItemRow
+                      key={item.id}
+                      item={item}
+                      onRemove={!readOnly ? handleRemoveItem : undefined}
+                      onEquip={!readOnly && canEquipItem(item) ? handleEquipItem : undefined}
+                      onUnequip={!readOnly && item.isEquipped ? handleUnequipItem : undefined}
+                      onUse={!readOnly && canUseItem(item) ? handleRequestUseItem : undefined}
+                      onModify={!readOnly && item.itemType === 'weapon' ? handleOpenWeaponMod : undefined}
+                    />
                 ))}
               </CollapsibleContent>
             </Collapsible>
@@ -1032,13 +1144,17 @@ interface InventoryItemRowProps {
   onEquip?: (id: string) => void;
   onUnequip?: (id: string) => void;
   onUse?: (id: string) => void;
+  onModify?: (item: ExtendedInventoryItem) => void;
 }
 
-function InventoryItemRow({ item, onRemove, onEquip, onUnequip, onUse }: InventoryItemRowProps) {
+function InventoryItemRow({ item, onRemove, onEquip, onUnequip, onUse, onModify }: InventoryItemRowProps) {
   const categoryConfig = CATEGORY_LABELS[item.category] || CATEGORY_LABELS['0'];
   // Verifica se é consumível e tem usos
   const isConsumable = item.consumable && (item.uses ?? 0) > 0;
   const usesDisplay = item.consumable ? `${item.uses ?? 0}/${item.maxUses ?? item.uses ?? 0}` : null;
+  // Verificar se arma tem modificações aplicadas
+  const appliedMods = (item as any).appliedModifications as WeaponModification[] | undefined;
+  const hasModifications = appliedMods && appliedMods.length > 0;
 
   return (
     <TooltipProvider>
@@ -1117,6 +1233,39 @@ function InventoryItemRow({ item, onRemove, onEquip, onUnequip, onUse }: Invento
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {/* Botão Modificar (para armas) */}
+          {onModify && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={cn(
+                    "h-7 px-2 text-xs",
+                    hasModifications 
+                      ? "bg-purple-500/10 border-purple-500/30 text-purple-400 hover:bg-purple-500/20" 
+                      : "bg-muted/50 border-border hover:bg-muted"
+                  )}
+                  onClick={() => onModify(item)}
+                >
+                  <Wrench className="w-3 h-3 mr-1" />
+                  {hasModifications ? `${appliedMods!.length}` : 'Mod'}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent className="bg-popover border-border max-w-xs">
+                <p className="text-xs font-medium mb-1">Modificar Arma</p>
+                {hasModifications && (
+                  <div className="flex flex-wrap gap-1">
+                    {appliedMods!.map(mod => (
+                      <Badge key={mod} variant="secondary" className="text-[10px]">
+                        {MODIFICATION_LABELS[mod]?.label || mod}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </TooltipContent>
+            </Tooltip>
+          )}
           {/* Botão Usar (para consumíveis) */}
           {onUse && isConsumable && (
             <Tooltip>
