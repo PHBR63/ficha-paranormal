@@ -842,15 +842,16 @@ export function calculateDerivedStats(
   // SAN = Base + (Multiplicador * ProgressãoSAN)
   let san = classData.sanBase + Math.max(0, nexMultiplier) * classData.sanPerNex;
 
-  // Aplicar modificador de origem (Cultista Arrependido, Vítima)
+  // Aplicar modificador de origem (Cultista Arrependido, etc.)
   // sanityModifier é uma porcentagem sobre a SANIDADE BASE (NEX 5%), não sobre o total
   // Exemplo: -50 = metade da sanidade base é subtraída (penalidade fixa)
+  // Exemplo: +25 = 25% da sanidade base é adicionada (bônus fixo)
   if (originId) {
     const origin = ORIGINS.find(o => o.id === originId);
     if (origin?.sanityModifier) {
-      // Calcula a penalidade baseada na sanidade BASE da classe, não no total
-      const baseSanPenalty = Math.floor(classData.sanBase * Math.abs(origin.sanityModifier) / 100);
-      san = san - baseSanPenalty;
+      // Calcula o modificador baseado na sanidade BASE da classe
+      const baseModifier = Math.floor(classData.sanBase * origin.sanityModifier / 100);
+      san = san + baseModifier; // + para bônus, - automático para penalidade (valor negativo)
     }
   }
 
