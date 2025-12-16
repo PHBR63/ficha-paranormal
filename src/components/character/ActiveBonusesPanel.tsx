@@ -1,12 +1,13 @@
 /**
  * ActiveBonusesPanel - Painel expandido mostrando todos os bônus ativos do personagem
  * Organizado por categorias com detalhes de cada fonte
+ * Permite ativar/desativar bônus condicionais
  */
 
 import { motion } from 'framer-motion';
 import { 
   Shield, Swords, Heart, Zap, Brain, Star, Sparkles, 
-  Target, Crosshair, Activity, Flame, X 
+  Target, Crosshair, Activity, Flame, ToggleLeft, ToggleRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { 
@@ -18,7 +19,8 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { BonusSummary, BonusBreakdown } from '@/hooks/useCharacterBonusSummary';
+import { Switch } from '@/components/ui/switch';
+import { BonusSummary, BonusBreakdown, ConditionalBonus } from '@/hooks/useCharacterBonusSummary';
 
 // Configuração de ícones e cores por tipo de bônus
 const BONUS_TYPE_CONFIG = {
@@ -34,6 +36,78 @@ interface ActiveBonusesPanelProps {
   onOpenChange: (open: boolean) => void;
   bonusSummary: BonusSummary;
   activeBonusSources: string[];
+  onToggleConditionalBonus?: (bonusId: string, active: boolean) => void;
+}
+
+// Componente para card de bônus condicional toggleável
+function ConditionalBonusCard({ 
+  bonus, 
+  onToggle 
+}: { 
+  bonus: ConditionalBonus; 
+  onToggle?: (id: string, active: boolean) => void;
+}) {
+  const config = BONUS_TYPE_CONFIG[bonus.source] || BONUS_TYPE_CONFIG.general_power;
+  const Icon = config.icon;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={cn(
+        "p-3 rounded-lg border transition-all duration-200",
+        bonus.active 
+          ? "bg-primary/10 border-primary/30 shadow-sm shadow-primary/10" 
+          : "bg-muted/30 border-border"
+      )}
+    >
+      <div className="flex items-start justify-between gap-3">
+        {/* Info do bônus */}
+        <div className="flex items-start gap-3 flex-1">
+          <div className={cn(
+            "p-2 rounded-md transition-colors",
+            bonus.active ? config.bg : "bg-muted"
+          )}>
+            <Icon className={cn("w-4 h-4", bonus.active ? config.color : "text-muted-foreground")} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <span className={cn(
+                "font-medium text-sm",
+                bonus.active ? "text-foreground" : "text-muted-foreground"
+              )}>
+                {bonus.name}
+              </span>
+            </div>
+            <span className="text-[11px] text-muted-foreground block mt-0.5">
+              {bonus.condition}
+            </span>
+            <div className="flex flex-wrap gap-1 mt-1.5">
+              {bonus.effects.map((effect, i) => (
+                <Badge 
+                  key={i} 
+                  variant={bonus.active ? "default" : "secondary"}
+                  className={cn(
+                    "text-[10px] px-1.5 py-0",
+                    bonus.active && "bg-success/20 text-success border-success/30"
+                  )}
+                >
+                  {effect}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Toggle Switch */}
+        <Switch
+          checked={bonus.active}
+          onCheckedChange={(checked) => onToggle?.(bonus.id, checked)}
+          className="data-[state=checked]:bg-primary"
+        />
+      </div>
+    </motion.div>
+  );
 }
 
 // Componente para renderizar um item de bônus individual
@@ -61,7 +135,8 @@ function BonusItem({ bonus, showType = true }: { bonus: BonusBreakdown; showType
           <span className="font-medium text-sm truncate">{bonus.source}</span>
           <span className={cn(
             "font-display text-sm shrink-0",
-            typeof bonus.value === 'number' && bonus.value > 0 ? "text-success" : "text-primary"
+            bonus.active && typeof bonus.value === 'number' && bonus.value > 0 ? "text-success" : 
+            bonus.active ? "text-primary" : "text-muted-foreground"
           )}>
             {typeof bonus.value === 'number' ? `+${bonus.value}` : bonus.value}
           </span>
@@ -82,6 +157,11 @@ function BonusItem({ bonus, showType = true }: { bonus: BonusBreakdown; showType
           {!bonus.active && (
             <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-muted">
               Inativo
+            </Badge>
+          )}
+          {bonus.toggleable && (
+            <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-primary/30 text-primary">
+              Toggleável
             </Badge>
           )}
         </div>
@@ -136,6 +216,7 @@ export function ActiveBonusesPanel({
   onOpenChange,
   bonusSummary,
   activeBonusSources,
+  onToggleConditionalBonus,
 }: ActiveBonusesPanelProps) {
   // Conta total de bônus ativos
   const totalBonuses = activeBonusSources.length;
@@ -154,6 +235,7 @@ export function ActiveBonusesPanel({
   const hasSkills = Object.keys(bonusSummary.skills).length > 0;
   const hasSpecial = bonusSummary.special.length > 0;
   const hasStats = bonusSummary.hpBonus > 0 || bonusSummary.peBonus > 0;
+  const hasConditional = bonusSummary.conditionalBonuses && bonusSummary.conditionalBonuses.length > 0;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -182,6 +264,31 @@ export function ActiveBonusesPanel({
         {/* Conteúdo com scroll */}
         <ScrollArea className="h-[calc(100vh-80px)]">
           <div className="p-4 space-y-6">
+            
+            {/* === BÔNUS CONDICIONAIS (Toggle) === */}
+            {hasConditional && (
+              <>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 mb-3">
+                    <ToggleRight className="w-5 h-5 text-primary" />
+                    <span className="font-display text-sm uppercase tracking-wider">Bônus Condicionais</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Ative quando as condições forem atendidas
+                  </p>
+                  <div className="space-y-2">
+                    {bonusSummary.conditionalBonuses.map((bonus) => (
+                      <ConditionalBonusCard
+                        key={bonus.id}
+                        bonus={bonus}
+                        onToggle={onToggleConditionalBonus}
+                      />
+                    ))}
+                  </div>
+                </div>
+                <Separator />
+              </>
+            )}
             
             {/* === STATS (HP/PE) === */}
             <BonusSection

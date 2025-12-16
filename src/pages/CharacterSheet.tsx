@@ -171,6 +171,8 @@ interface Character {
   affinity_active?: boolean;
   // Buffs ativos de rituais (persistidos na nuvem)
   active_buffs?: import('@/hooks/useWeaponBuffs').WeaponBuff[];
+  // Bônus condicionais ativados manualmente
+  active_conditional_bonuses?: string[];
 }
 
 // Helper para converter condições persistidas para ActiveCondition
@@ -293,7 +295,36 @@ export default function CharacterSheet() {
     nex: character?.nex || 5,
     elementalAffinity: character?.elemental_affinity,
     affinityActive: character?.affinity_active,
+    activeConditionalBonuses: character?.active_conditional_bonuses || [],
   });
+
+  // Handler para toggle de bônus condicionais
+  const handleToggleConditionalBonus = useCallback(async (bonusId: string, active: boolean) => {
+    if (!character) return;
+    
+    const currentBonuses = character.active_conditional_bonuses || [];
+    const newBonuses = active 
+      ? [...currentBonuses, bonusId]
+      : currentBonuses.filter(id => id !== bonusId);
+    
+    // Atualiza estado local imediatamente
+    setCharacter(prev => prev ? { ...prev, active_conditional_bonuses: newBonuses } : null);
+    
+    // Persiste no banco (usando active_buffs como JSON que já existe)
+    const { error } = await supabase
+      .from('characters')
+      .update({ 
+        active_buffs: JSON.parse(JSON.stringify({
+          weaponBuffs: character.active_buffs || [],
+          conditionalBonuses: newBonuses,
+        }))
+      })
+      .eq('id', character.id);
+
+    if (error) {
+      console.error('Erro ao salvar bônus condicional:', error);
+    }
+  }, [character]);
 
   // Sincroniza bônus com a campanha (se estiver em uma)
   useBonusSync({
@@ -1218,6 +1249,7 @@ export default function CharacterSheet() {
                 bonusSummary={bonusSummary}
                 onStatsChange={handleCombatStatsChange}
                 onLevelUp={() => setNexModalOpen(true)}
+                onToggleConditionalBonus={handleToggleConditionalBonus}
               />
 
               {/* Seletor de Afinidade Elemental (se NEX >= 50 e sem afinidade) */}

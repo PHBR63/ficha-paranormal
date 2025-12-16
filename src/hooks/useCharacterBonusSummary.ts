@@ -6,6 +6,8 @@
  * - useParanormalEffects (poderes paranormais)
  * - Poderes gerais (combate, perícias, etc.)
  * - Habilidades de classe
+ * 
+ * Suporta bônus condicionais que podem ser ativados/desativados manualmente
  */
 
 import { useMemo } from 'react';
@@ -19,7 +21,44 @@ export interface BonusBreakdown {
   type: 'origin' | 'ability' | 'general_power' | 'paranormal' | 'equipment';
   conditional?: string;  // Condição se houver
   active: boolean;       // Se está ativo
+  toggleable?: boolean;  // Se pode ser ativado/desativado manualmente
+  toggleId?: string;     // ID único para toggle
 }
+
+// Interface para bônus condicional toggleável
+export interface ConditionalBonus {
+  id: string;           // ID único do bônus
+  name: string;         // Nome do bônus (ex: "Fanático")
+  condition: string;    // Condição (ex: "HP < 50%")
+  active: boolean;      // Se está ativado manualmente
+  effects: string[];    // Lista de efeitos (ex: ["+2 ataque", "+2 dano"])
+  source: 'general_power' | 'ability' | 'paranormal' | 'origin';
+}
+
+// Lista de bônus condicionais conhecidos
+export const CONDITIONAL_BONUSES: Omit<ConditionalBonus, 'active'>[] = [
+  {
+    id: 'fanatico',
+    name: 'Fanático',
+    condition: 'HP < 50%',
+    effects: ['+2 ataque', '+2 dano'],
+    source: 'general_power',
+  },
+  {
+    id: 'ataque-poderoso',
+    name: 'Ataque Poderoso',
+    condition: 'Ação de ataque (-2 ataque)',
+    effects: ['+5 dano'],
+    source: 'general_power',
+  },
+  {
+    id: 'foco-arma',
+    name: 'Foco em Arma',
+    condition: 'Com arma escolhida',
+    effects: ['+2 ataque'],
+    source: 'general_power',
+  },
+];
 
 // Interface para bônus de combate
 export interface CombatBonuses {
@@ -62,6 +101,7 @@ export interface BonusSummary {
   skills: SkillBonuses;
   special: BonusBreakdown[]; // Efeitos especiais não numéricos
   paranormalEffects: ParanormalEffects;
+  conditionalBonuses: ConditionalBonus[]; // Bônus condicionais disponíveis
   // Stats calculados
   hpBonus: number;
   peBonus: number;
@@ -77,6 +117,7 @@ interface UseCharacterBonusSummaryProps {
   nex: number;
   elementalAffinity?: string | null;
   affinityActive?: boolean;
+  activeConditionalBonuses?: string[]; // IDs dos bônus condicionais ativos
 }
 
 /**
@@ -91,6 +132,7 @@ export function useCharacterBonusSummary({
   nex,
   elementalAffinity,
   affinityActive = false,
+  activeConditionalBonuses = [],
 }: UseCharacterBonusSummaryProps): BonusSummary {
   // Usa hooks existentes
   const defenseBonuses = useDefenseBonuses({ origin, abilities, generalPowers, inventory });
@@ -100,6 +142,9 @@ export function useCharacterBonusSummary({
     elementalAffinity: elementalAffinity as any, 
     affinityActive 
   });
+
+  // Helper para verificar se um bônus condicional está ativo
+  const isConditionalActive = (id: string) => activeConditionalBonuses.includes(id);
 
   return useMemo(() => {
     // Inicializa estruturas
@@ -138,54 +183,93 @@ export function useCharacterBonusSummary({
 
     const hasPower = (id: string) => generalPowers.some(p => p.id === id);
 
-    // === PROCESSA PODERES GERAIS ===
-
-    // Foco em Arma: +2 ataque com tipo de arma
+    // === CONSTRÓI LISTA DE BÔNUS CONDICIONAIS DISPONÍVEIS ===
+    const conditionalBonuses: ConditionalBonus[] = [];
+    
+    // Foco em Arma (condicional - só com arma escolhida)
     if (hasPower('foco-arma')) {
+      const isActive = isConditionalActive('foco-arma');
+      conditionalBonuses.push({
+        id: 'foco-arma',
+        name: 'Foco em Arma',
+        condition: 'Com arma escolhida',
+        active: isActive,
+        effects: ['+2 ataque'],
+        source: 'general_power',
+      });
       combat.attack.breakdown.push({
         source: 'Foco em Arma',
         value: 2,
         type: 'general_power',
         conditional: 'com arma escolhida',
-        active: true,
+        active: isActive,
+        toggleable: true,
+        toggleId: 'foco-arma',
       });
-      combat.attack.total += 2;
+      if (isActive) {
+        combat.attack.total += 2;
+      }
     }
 
-    // Ataque Poderoso: +5 dano (-2 ataque)
+    // Ataque Poderoso (condicional - escolha por ação)
     if (hasPower('ataque-poderoso')) {
+      const isActive = isConditionalActive('ataque-poderoso');
+      conditionalBonuses.push({
+        id: 'ataque-poderoso',
+        name: 'Ataque Poderoso',
+        condition: 'Ação de ataque (-2 ataque)',
+        active: isActive,
+        effects: ['+5 dano', '-2 ataque'],
+        source: 'general_power',
+      });
       combat.damage.breakdown.push({
         source: 'Ataque Poderoso',
         value: 5,
         type: 'general_power',
         conditional: 'por -2 no ataque',
-        active: true,
+        active: isActive,
+        toggleable: true,
+        toggleId: 'ataque-poderoso',
       });
-      // Não soma ao total pois é opcional
-      special.push({
-        source: 'Ataque Poderoso',
-        value: '+5 dano por -2 ataque',
-        type: 'general_power',
-        active: true,
-      });
+      if (isActive) {
+        combat.damage.total += 5;
+        combat.attack.total -= 2; // Penalidade
+      }
     }
 
     // Fanático: +2 ataque e dano (PV < 50%)
     if (hasPower('fanatico')) {
+      const isActive = isConditionalActive('fanatico');
+      conditionalBonuses.push({
+        id: 'fanatico',
+        name: 'Fanático',
+        condition: 'HP < 50%',
+        active: isActive,
+        effects: ['+2 ataque', '+2 dano'],
+        source: 'general_power',
+      });
       combat.attack.breakdown.push({
         source: 'Fanático',
         value: 2,
         type: 'general_power',
         conditional: 'com menos de 50% PV',
-        active: false, // Condicional
+        active: isActive,
+        toggleable: true,
+        toggleId: 'fanatico',
       });
       combat.damage.breakdown.push({
         source: 'Fanático',
         value: 2,
         type: 'general_power',
         conditional: 'com menos de 50% PV',
-        active: false,
+        active: isActive,
+        toggleable: true,
+        toggleId: 'fanatico',
       });
+      if (isActive) {
+        combat.attack.total += 2;
+        combat.damage.total += 2;
+      }
     }
 
     // Iniciativa Melhorada: +5 Iniciativa
@@ -432,10 +516,11 @@ export function useCharacterBonusSummary({
       skills,
       special,
       paranormalEffects,
+      conditionalBonuses,
       hpBonus: paranormalEffects.hpBonus,
       peBonus: paranormalEffects.peBonus,
     };
-  }, [defenseBonuses, paranormalEffects, abilities, generalPowers]);
+  }, [defenseBonuses, paranormalEffects, abilities, generalPowers, activeConditionalBonuses, isConditionalActive]);
 }
 
 /**
