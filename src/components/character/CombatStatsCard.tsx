@@ -4,7 +4,7 @@
  */
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Heart, Zap, Brain, Edit2, Check, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -50,6 +50,10 @@ export function CombatStatsCard({
   // Estados críticos
   const isHpLow = hpPercent <= 25;
   const isSanLow = sanPercent <= 30;
+  
+  // Estados de colapso (HP ou SAN = 0)
+  const isUnconscious = displayHp === 0; // Inconsciente
+  const isMentalCollapse = displaySan === 0; // Colapso mental
 
   const handleSave = () => {
     onStatsChange?.({
@@ -251,27 +255,134 @@ export function CombatStatsCard({
         />
       </div>
 
-      {/* Indicador de estado crítico */}
-      {(isHpLow || isSanLow) && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className={cn(
-            "text-xs text-center py-1 px-2 rounded",
-            isHpLow && isSanLow 
-              ? "bg-destructive/20 text-destructive" 
+      {/* Indicadores de estado crítico e colapso */}
+      <AnimatePresence mode="wait">
+        {/* Estado de Colapso Total (HP e SAN = 0) */}
+        {isUnconscious && isMentalCollapse && (
+          <motion.div
+            key="total-collapse"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ 
+              opacity: 1, 
+              scale: 1,
+              boxShadow: [
+                '0 0 0 0 rgba(239, 68, 68, 0)',
+                '0 0 20px 5px rgba(239, 68, 68, 0.4)',
+                '0 0 0 0 rgba(239, 68, 68, 0)',
+              ],
+            }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            transition={{ boxShadow: { duration: 1.5, repeat: Infinity } }}
+            className="relative text-center py-2 px-3 rounded-lg bg-gradient-to-r from-destructive/30 via-paranormal/30 to-destructive/30 border border-destructive/50"
+          >
+            <motion.div
+              animate={{ opacity: [1, 0.5, 1] }}
+              transition={{ duration: 0.8, repeat: Infinity }}
+              className="text-destructive font-display text-sm tracking-wider"
+            >
+              💀 COLAPSO TOTAL
+            </motion.div>
+            <p className="text-[10px] text-muted-foreground mt-0.5">
+              Inconsciente + Colapso Mental
+            </p>
+          </motion.div>
+        )}
+
+        {/* Estado Inconsciente (HP = 0) */}
+        {isUnconscious && !isMentalCollapse && (
+          <motion.div
+            key="unconscious"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ 
+              opacity: 1, 
+              scale: 1,
+              boxShadow: [
+                '0 0 0 0 rgba(239, 68, 68, 0)',
+                '0 0 15px 3px rgba(239, 68, 68, 0.3)',
+                '0 0 0 0 rgba(239, 68, 68, 0)',
+              ],
+            }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            transition={{ boxShadow: { duration: 1.5, repeat: Infinity } }}
+            className="relative text-center py-2 px-3 rounded-lg bg-destructive/20 border border-destructive/40"
+          >
+            <motion.div
+              animate={{ opacity: [1, 0.6, 1] }}
+              transition={{ duration: 1, repeat: Infinity }}
+              className="flex items-center justify-center gap-2"
+            >
+              <Heart className="w-4 h-4 text-destructive" />
+              <span className="text-destructive font-display text-sm tracking-wider">
+                INCONSCIENTE
+              </span>
+            </motion.div>
+            <p className="text-[10px] text-muted-foreground mt-0.5">
+              HP chegou a 0 - Caído em combate
+            </p>
+          </motion.div>
+        )}
+
+        {/* Estado Colapso Mental (SAN = 0) */}
+        {isMentalCollapse && !isUnconscious && (
+          <motion.div
+            key="mental-collapse"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ 
+              opacity: 1, 
+              scale: 1,
+              boxShadow: [
+                '0 0 0 0 rgba(168, 85, 247, 0)',
+                '0 0 15px 3px rgba(168, 85, 247, 0.3)',
+                '0 0 0 0 rgba(168, 85, 247, 0)',
+              ],
+            }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            transition={{ boxShadow: { duration: 1.5, repeat: Infinity } }}
+            className="relative text-center py-2 px-3 rounded-lg bg-paranormal/20 border border-paranormal/40"
+          >
+            <motion.div
+              animate={{ 
+                opacity: [1, 0.6, 1],
+                rotate: [-1, 1, -1],
+              }}
+              transition={{ duration: 0.8, repeat: Infinity }}
+              className="flex items-center justify-center gap-2"
+            >
+              <Brain className="w-4 h-4 text-paranormal" />
+              <span className="text-paranormal font-display text-sm tracking-wider">
+                COLAPSO MENTAL
+              </span>
+            </motion.div>
+            <p className="text-[10px] text-muted-foreground mt-0.5">
+              SAN chegou a 0 - Enlouquecido temporariamente
+            </p>
+          </motion.div>
+        )}
+
+        {/* Aviso de estado baixo (não em colapso) */}
+        {!isUnconscious && !isMentalCollapse && (isHpLow || isSanLow) && (
+          <motion.div
+            key="warning"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className={cn(
+              "text-xs text-center py-1 px-2 rounded",
+              isHpLow && isSanLow 
+                ? "bg-destructive/20 text-destructive" 
+                : isHpLow 
+                  ? "bg-destructive/20 text-destructive"
+                  : "bg-paranormal/20 text-paranormal"
+            )}
+          >
+            {isHpLow && isSanLow 
+              ? "⚠ Estado crítico!" 
               : isHpLow 
-                ? "bg-destructive/20 text-destructive"
-                : "bg-paranormal/20 text-paranormal"
-          )}
-        >
-          {isHpLow && isSanLow 
-            ? "⚠ Estado crítico!" 
-            : isHpLow 
-              ? "⚠ HP baixo!" 
-              : "⚠ Sanidade baixa!"}
-        </motion.div>
-      )}
+                ? "⚠ HP baixo!" 
+                : "⚠ Sanidade baixa!"}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
