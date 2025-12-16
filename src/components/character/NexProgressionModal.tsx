@@ -424,7 +424,7 @@ export function NexProgressionModal({
                       <p className="font-display text-lg">
                         {character.hp_max} → <span className="text-destructive">{nextStats.hp}</span>
                       </p>
-                      <Badge variant="outline" className="text-xs text-destructive border-destructive/50">
+                      <Badge className="text-xs font-bold bg-destructive text-destructive-foreground shadow-sm">
                         +{nextStats.hp - character.hp_max}
                       </Badge>
                     </div>
@@ -436,7 +436,7 @@ export function NexProgressionModal({
                       <p className="font-display text-lg">
                         {character.pe_max} → <span className="text-secondary">{nextStats.pe}</span>
                       </p>
-                      <Badge variant="outline" className="text-xs text-secondary border-secondary/50">
+                      <Badge className="text-xs font-bold bg-secondary text-secondary-foreground shadow-sm">
                         +{nextStats.pe - character.pe_max}
                       </Badge>
                     </div>
@@ -448,7 +448,7 @@ export function NexProgressionModal({
                       <p className="font-display text-lg">
                         {character.san_max} → <span className="text-paranormal">{nextStats.san}</span>
                       </p>
-                      <Badge variant="outline" className="text-xs text-paranormal border-paranormal/50">
+                      <Badge className="text-xs font-bold bg-paranormal text-white shadow-sm">
                         +{nextStats.san - character.san_max}
                       </Badge>
                     </div>
