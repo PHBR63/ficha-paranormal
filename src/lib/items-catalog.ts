@@ -14,7 +14,8 @@ export type ItemType =
   | 'field'        // Itens de campo e ferramentas
   | 'paranormal'   // Itens paranormais e rituais
   | 'survival'     // Sobrevivência e utilidades
-  | 'document';    // Documentos e credenciais
+  | 'document'     // Documentos e credenciais
+  | 'trained';     // Itens que requerem treinamento especial
 
 // Interface completa para item do catálogo
 export interface CatalogItem {
@@ -645,6 +646,133 @@ export const SURVIVAL_ITEMS: CatalogItem[] = [
   },
 ];
 
+// ==================== ITENS TREINADOS ====================
+// Itens que requerem treinamento especial ou proficiência para uso
+export const TRAINED_ITEMS: CatalogItem[] = [
+  {
+    id: 'paraquedas',
+    name: 'Paraquedas',
+    type: 'trained',
+    category: 'II',
+    spaces: 3,
+    description: 'Equipamento de salto para inserção aérea.',
+    effect: 'Permite salto de aeronaves. Requer treinamento em Pilotagem ou Acrobacia. Sem treinamento, teste de DT 20 para aterrissagem segura.',
+    consumable: false,
+  },
+  {
+    id: 'equipamento_mergulho',
+    name: 'Equipamento de Mergulho',
+    type: 'trained',
+    category: 'II',
+    spaces: 4,
+    description: 'Cilindro de oxigênio, regulador, máscara e nadadeiras.',
+    effect: 'Permite respirar embaixo d\'água por 1 hora. Requer treinamento em Atletismo (natação). Sem treinamento, -4 em testes.',
+    consumable: false,
+  },
+  {
+    id: 'kit_explosivos',
+    name: 'Kit de Explosivos',
+    type: 'trained',
+    category: 'III',
+    spaces: 2,
+    description: 'Explosivo plástico C4, detonadores e temporizadores.',
+    effect: 'Causa 8d6 de dano em área de 6m. Requer teste de Tecnologia (DT 15) para armar. Falha crítica detona imediatamente.',
+    uses: 3,
+    consumable: true,
+  },
+  {
+    id: 'kit_desarmamento',
+    name: 'Kit de Desarmamento de Bombas',
+    type: 'trained',
+    category: 'III',
+    spaces: 2,
+    description: 'Ferramentas especializadas para neutralizar explosivos.',
+    effect: '+4 em testes de Tecnologia para desarmar explosivos. Requer treinamento ou sofre -4.',
+    consumable: false,
+  },
+  {
+    id: 'kit_pilotagem',
+    name: 'Kit de Pilotagem',
+    type: 'trained',
+    category: 'II',
+    spaces: 1,
+    description: 'Mapas aeronáuticos, checklist e equipamentos de navegação.',
+    effect: '+2 em testes de Pilotagem. Necessário para planejar rotas e procedimentos de voo.',
+    consumable: false,
+  },
+  {
+    id: 'sniper_ghillie',
+    name: 'Traje Ghillie',
+    type: 'trained',
+    category: 'II',
+    spaces: 3,
+    description: 'Camuflagem tática para operações de reconhecimento.',
+    effect: '+4 em Furtividade em ambientes naturais. Requer 10 minutos para vestir. -4 em movimento rápido.',
+    consumable: false,
+  },
+  {
+    id: 'kit_rappel',
+    name: 'Kit de Rapel Tático',
+    type: 'trained',
+    category: 'II',
+    spaces: 2,
+    description: 'Equipamento completo para descida rápida: freio, mosquetões, cordas.',
+    effect: 'Permite descida de até 50m. +4 em descidas rápidas. Requer treinamento em Atletismo.',
+    consumable: false,
+  },
+  {
+    id: 'kit_medico_campo',
+    name: 'Kit Médico de Campo Avançado',
+    type: 'trained',
+    category: 'III',
+    spaces: 3,
+    description: 'Equipamento completo para procedimentos médicos de emergência.',
+    effect: 'Permite estabilizar feridos graves. +4 em Medicina. Requer treinamento em Medicina ou -4 no teste.',
+    uses: 5,
+    consumable: true,
+  },
+  {
+    id: 'kit_interrogatorio',
+    name: 'Kit de Interrogatório',
+    type: 'trained',
+    category: 'III',
+    spaces: 1,
+    description: 'Equipamentos para técnicas avançadas de interrogatório.',
+    effect: '+4 em Intimidação para extrair informações. Uso antiético pode ter consequências.',
+    consumable: false,
+  },
+  {
+    id: 'kit_contramedidas',
+    name: 'Kit de Contramedidas Eletrônicas',
+    type: 'trained',
+    category: 'IV',
+    spaces: 2,
+    description: 'Equipamento para detectar e neutralizar vigilância eletrônica.',
+    effect: 'Detecta grampos, câmeras e rastreadores. +4 em Tecnologia para varredura. Pode bloquear sinais em 10m.',
+    consumable: false,
+  },
+  {
+    id: 'kit_forense',
+    name: 'Kit Forense Completo',
+    type: 'trained',
+    category: 'III',
+    spaces: 3,
+    description: 'Equipamento profissional de análise de cenas de crime.',
+    effect: '+4 em Investigação para análise forense. Inclui luminol, kits de DNA e equipamentos de coleta.',
+    consumable: false,
+  },
+  {
+    id: 'drone_combate',
+    name: 'Drone de Combate',
+    type: 'trained',
+    category: 'IV',
+    spaces: 3,
+    description: 'Drone armado para suporte tático.',
+    effect: 'Pode disparar à distância (2d6 balístico). Requer teste de Tecnologia para controlar. Alcance 500m.',
+    consumable: false,
+  },
+];
+
 // Catálogo completo de itens
 export const ALL_ITEMS: CatalogItem[] = [
   ...MEDICAL_ITEMS,
@@ -654,6 +782,7 @@ export const ALL_ITEMS: CatalogItem[] = [
   ...PARANORMAL_ITEMS,
   ...DOCUMENT_ITEMS,
   ...SURVIVAL_ITEMS,
+  ...TRAINED_ITEMS,
 ];
 
 // Função para buscar item por ID
@@ -670,6 +799,7 @@ export const ITEM_TYPE_LABELS: Record<ItemType, { label: string; emoji: string }
   paranormal: { label: 'Paranormal', emoji: '👁️' },
   survival: { label: 'Sobrevivência', emoji: '🏕️' },
   document: { label: 'Documentos', emoji: '📄' },
+  trained: { label: 'Treinados', emoji: '🎯' },
 };
 
 // Função para obter nome do tipo
