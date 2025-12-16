@@ -218,7 +218,7 @@ export function CharacterSheetHelp({ characterClass, nex }: CharacterSheetHelpPr
                       </div>
                       <div className="p-2 bg-card rounded border border-border">
                         <p className="text-muted-foreground">PE/turno (NEX {nex || 5}%)</p>
-                        <p className="font-display text-lg text-secondary">
+                        <p className="font-display text-lg text-pe">
                           {nex ? (nex <= 5 ? 1 : nex <= 15 ? 2 : nex <= 25 ? 3 : nex <= 35 ? 4 : 5) : 1}
                         </p>
                       </div>
