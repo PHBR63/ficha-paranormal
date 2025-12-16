@@ -485,34 +485,34 @@ html.dark[data-color-theme="amber"] {
     animation: flicker 4s ease-in-out infinite;
   }
 
-  /* Cores de status - classes fixas */
+  /* Cores de status - classes fixas (usando novas variáveis) */
   .status-hp {
-    background-color: hsl(var(--status-hp));
+    background-color: hsl(var(--hp));
   }
   
   .status-pe {
-    background-color: hsl(var(--status-pe));
+    background-color: hsl(var(--pe));
   }
   
   .status-san {
-    background-color: hsl(var(--status-san));
+    background-color: hsl(var(--san));
   }
   
   .status-xp {
     background-color: hsl(var(--status-xp));
   }
   
-  /* Texto de status */
+  /* Texto de status (usando novas variáveis) */
   .text-status-hp {
-    color: hsl(var(--status-hp));
+    color: hsl(var(--hp));
   }
   
   .text-status-pe {
-    color: hsl(var(--status-pe));
+    color: hsl(var(--pe));
   }
   
   .text-status-san {
-    color: hsl(var(--status-san));
+    color: hsl(var(--san));
   }
   
   .text-status-xp {
