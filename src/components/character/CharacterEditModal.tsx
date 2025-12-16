@@ -729,7 +729,7 @@ export function CharacterEditModal({
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">PE Máx</p>
-                    <p className="font-display text-xl text-secondary">{derivedStats.pe}</p>
+                    <p className="font-display text-xl text-pe">{derivedStats.pe}</p>
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">SAN Máx</p>

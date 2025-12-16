@@ -75,7 +75,7 @@ export function TurnPETracker({
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Zap className="w-5 h-5 text-secondary" />
+            <Zap className="w-5 h-5 text-pe" />
             <span className="font-display text-sm tracking-wider text-muted-foreground">
               PE / TURNO
             </span>
@@ -104,7 +104,7 @@ export function TurnPETracker({
             <span className="text-muted-foreground">Gasto neste turno</span>
             <span className={cn(
               'font-display',
-              isAtLimit ? 'text-destructive' : isNearLimit ? 'text-primary' : 'text-secondary'
+              isAtLimit ? 'text-destructive' : isNearLimit ? 'text-primary' : 'text-pe'
             )}>
               {peSpentThisTurn} / {peLimit}
             </span>
@@ -121,7 +121,7 @@ export function TurnPETracker({
                   ? 'bg-destructive' 
                   : isNearLimit 
                     ? 'bg-primary' 
-                    : 'bg-secondary'
+                    : 'bg-pe'
               )}
             />
           </div>
@@ -163,7 +163,7 @@ export function TurnPETracker({
                       className={cn(
                         'h-8 min-w-[3rem] font-display',
                         canSpend 
-                          ? 'border-secondary/50 text-secondary hover:bg-secondary/20' 
+                          ? 'border-pe/50 text-pe hover:bg-pe/20' 
                           : 'opacity-50'
                       )}
                     >
@@ -187,7 +187,7 @@ export function TurnPETracker({
         <div className="flex items-center justify-between pt-2 border-t border-border">
           <span className="text-sm text-muted-foreground">PE Disponível</span>
           <div className="flex items-center gap-2">
-            <span className="font-display text-xl text-secondary">{peCurrent}</span>
+            <span className="font-display text-xl text-pe">{peCurrent}</span>
             <span className="text-sm text-muted-foreground">/ {peMax}</span>
           </div>
         </div>
