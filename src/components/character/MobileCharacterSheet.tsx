@@ -31,12 +31,19 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { AnimatedProgress } from '@/components/ui/animated-progress';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { ORIGINS, getTrackById } from '@/lib/character-data';
 import { getPELimitByNex } from '@/lib/dice-roller';
 import { PowerDetailModal, PowerDetailData, PowerType } from './PowerDetailModal';
 import { ALL_RITUALS } from '@/lib/rituals-data';
 import { ALL_CLASS_ABILITIES } from '@/lib/class-abilities';
+import { useDefenseBonuses } from '@/hooks/useDefenseBonuses';
 
 // Tipos
 interface MobileCharacterSheetProps {
@@ -70,7 +77,7 @@ interface MobileCharacterSheetProps {
     // Novos campos para exibição completa
     paranormal_powers?: Array<{ id: string; name: string; element: string; description: string }>;
     general_powers?: Array<{ id: string; name: string; description: string; category?: string }>;
-    inventory?: Array<{ id?: string; name: string; category: string; slots: number; itemType?: string; isEquipped?: boolean; equipSlot?: string }>;
+    inventory?: Array<{ id?: string; name: string; category: string; slots: number; itemType?: string; isEquipped?: boolean; equipSlot?: string; armorType?: string }>;
   };
   onOpenDiceRoller: () => void;
   onOpenRest: () => void;
@@ -504,6 +511,17 @@ export function MobileCharacterSheet({
   const isHpLow = hpPercent <= 25;
   const isSanLow = sanPercent <= 30;
 
+  // Calcular bônus de defesa de origem, habilidades de classe e poderes gerais
+  const defenseBonuses = useDefenseBonuses({
+    origin: character.origin,
+    abilities: character.abilities,
+    generalPowers: character.general_powers || [],
+    inventory: character.inventory || [],
+  });
+
+  // Defesa total com bônus
+  const totalDefense = character.defense + defenseBonuses.totalBonus;
+
   // Handler para abrir modal de detalhes do poder
   const handlePowerClick = (power: PowerDetailData) => {
     setSelectedPower(power);
@@ -650,10 +668,41 @@ export function MobileCharacterSheet({
 
               {/* Stats rápidos */}
               <div className="flex justify-between pt-2 mt-2 border-t border-border text-xs">
-                <div className="flex items-center gap-1">
-                  <Shield className="w-3 h-3 text-muted-foreground" />
-                  <span>DEF {character.defense}</span>
-                </div>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="flex items-center gap-1 cursor-help">
+                        <Shield className="w-3 h-3 text-muted-foreground" />
+                        <span>DEF {totalDefense}</span>
+                        {defenseBonuses.totalBonus > 0 && (
+                          <span className="text-[9px] text-success">(+{defenseBonuses.totalBonus})</span>
+                        )}
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="max-w-xs">
+                      <div className="space-y-1 text-xs">
+                        <p className="font-medium">Defesa: {totalDefense}</p>
+                        <p className="text-muted-foreground">Base: {character.defense}</p>
+                        {defenseBonuses.breakdown.length > 0 && (
+                          <div className="pt-1 border-t border-border">
+                            {defenseBonuses.breakdown.map((bonus, i) => (
+                              <p 
+                                key={i} 
+                                className={cn(
+                                  "flex justify-between",
+                                  !bonus.active && "text-muted-foreground line-through"
+                                )}
+                              >
+                                <span>{bonus.source}</span>
+                                <span className={bonus.active ? "text-success" : ""}>+{bonus.bonus}</span>
+                              </p>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
                 <div className="flex items-center gap-1">
                   <Footprints className="w-3 h-3 text-muted-foreground" />
                   <span>{character.movement}m</span>

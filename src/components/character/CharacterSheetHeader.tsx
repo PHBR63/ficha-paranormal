@@ -69,6 +69,15 @@ const PATENT_CONFIG: Record<string, {
   },
 };
 
+// Interface para breakdown de bônus de defesa
+interface DefenseBonusBreakdown {
+  source: string;
+  type: 'origin' | 'ability' | 'general_power' | 'paranormal';
+  bonus: number;
+  conditional?: string;
+  active: boolean;
+}
+
 interface CharacterSheetHeaderProps {
   name: string;
   photoUrl?: string | null;
@@ -88,6 +97,7 @@ interface CharacterSheetHeaderProps {
   hpBonus?: number;
   peBonus?: number;
   defenseBonus?: number;
+  defenseBonusBreakdown?: DefenseBonusBreakdown[];
   // Dados de proteção de armaduras
   armorRD?: number;
   armorPenalty?: number;
@@ -122,6 +132,7 @@ export function CharacterSheetHeader({
   hpBonus = 0,
   peBonus = 0,
   defenseBonus = 0,
+  defenseBonusBreakdown = [],
   armorRD = 0,
   armorPenalty = 0,
   equippedArmors = [],
@@ -412,13 +423,57 @@ export function CharacterSheetHeader({
 
         {/* Stats secundários */}
         <div className="flex items-center gap-4 text-sm">
-          <div className="flex items-center gap-1">
-            <span className="text-muted-foreground">DEF</span>
-            <span className="font-display text-lg text-primary">{totalDefense}</span>
-            {defenseBonus > 0 && (
-              <span className="text-[10px] text-success font-medium">(+{defenseBonus})</span>
-            )}
-          </div>
+          {/* Defesa com tooltip de breakdown */}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center gap-1 cursor-help">
+                  <span className="text-muted-foreground">DEF</span>
+                  <span className="font-display text-lg text-primary">{totalDefense}</span>
+                  {defenseBonus > 0 && (
+                    <span className="text-[10px] text-success font-medium">(+{defenseBonus})</span>
+                  )}
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="max-w-xs">
+                <div className="space-y-2">
+                  <p className="font-medium">Defesa Total: {totalDefense}</p>
+                  <div className="text-xs space-y-1">
+                    <p className="text-muted-foreground">Base: {defense}</p>
+                    {defenseBonusBreakdown.length > 0 && (
+                      <div className="pt-1 border-t border-border">
+                        <p className="font-medium text-primary mb-1">Bônus:</p>
+                        {defenseBonusBreakdown.map((bonus, i) => (
+                          <p 
+                            key={i} 
+                            className={cn(
+                              "flex justify-between gap-2",
+                              !bonus.active && "text-muted-foreground line-through"
+                            )}
+                          >
+                            <span>
+                              {bonus.source}
+                              {bonus.conditional && (
+                                <span className="text-[10px] text-muted-foreground ml-1">
+                                  ({bonus.conditional})
+                                </span>
+                              )}
+                            </span>
+                            <span className={bonus.active ? "text-success" : ""}>
+                              +{bonus.bonus}
+                            </span>
+                          </p>
+                        ))}
+                      </div>
+                    )}
+                    {defenseBonus === 0 && defenseBonusBreakdown.length === 0 && (
+                      <p className="text-muted-foreground italic">Sem bônus ativos</p>
+                    )}
+                  </div>
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
           {/* RD de Armadura */}
           {armorRD > 0 && (
             <TooltipProvider>
