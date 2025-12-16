@@ -37,10 +37,15 @@ export function CombatStatsCard({
   const [tempPe, setTempPe] = useState(peCurrent);
   const [tempSan, setTempSan] = useState(sanCurrent);
 
-  // Percentuais para animações
-  const hpPercent = (hpCurrent / hpMax) * 100;
-  const pePercent = (peCurrent / peMax) * 100;
-  const sanPercent = (sanCurrent / sanMax) * 100;
+  // Percentuais para animações (clampados entre 0 e 100)
+  const hpPercent = Math.min(100, Math.max(0, (hpCurrent / hpMax) * 100));
+  const pePercent = Math.min(100, Math.max(0, (peCurrent / peMax) * 100));
+  const sanPercent = Math.min(100, Math.max(0, (sanCurrent / sanMax) * 100));
+
+  // Valores de exibição (clampados para não mostrar negativos ou acima do max)
+  const displayHp = Math.max(0, hpCurrent);
+  const displayPe = Math.max(0, peCurrent);
+  const displaySan = Math.max(0, sanCurrent);
 
   // Estados críticos
   const isHpLow = hpPercent <= 25;
@@ -136,7 +141,7 @@ export function CombatStatsCard({
             </div>
           ) : (
             <motion.span 
-              key={hpCurrent}
+              key={displayHp}
               initial={{ scale: 1.2 }}
               animate={{ scale: 1 }}
               className={cn(
@@ -144,7 +149,7 @@ export function CombatStatsCard({
                 isHpLow ? "text-destructive" : "text-hp"
               )}
             >
-              {hpCurrent}/{hpMax}
+              {displayHp}/{hpMax}
             </motion.span>
           )}
         </div>
@@ -179,12 +184,12 @@ export function CombatStatsCard({
             </div>
           ) : (
             <motion.span 
-              key={peCurrent}
+              key={displayPe}
               initial={{ scale: 1.2 }}
               animate={{ scale: 1 }}
               className="font-display text-xl text-pe"
             >
-              {peCurrent}/{peMax}
+              {displayPe}/{peMax}
             </motion.span>
           )}
         </div>
@@ -225,7 +230,7 @@ export function CombatStatsCard({
             </div>
           ) : (
             <motion.span 
-              key={sanCurrent}
+              key={displaySan}
               initial={{ scale: 1.2 }}
               animate={{ scale: 1 }}
               className={cn(
@@ -233,7 +238,7 @@ export function CombatStatsCard({
                 isSanLow ? "text-paranormal" : "text-san"
               )}
             >
-              {sanCurrent}/{sanMax}
+              {displaySan}/{sanMax}
             </motion.span>
           )}
         </div>

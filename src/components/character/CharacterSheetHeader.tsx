@@ -167,9 +167,19 @@ export function CharacterSheetHeader({
   const patentConfig = PATENT_CONFIG[patent] || PATENT_CONFIG['Recruta'];
   const PatentIcon = patentConfig.icon;
 
-  // Calcular percentuais (usando valores totais com bônus)
-  const hpPercent = (hpCurrent / totalHpMax) * 100;
+  // Calcular percentuais (usando valores totais com bônus, clampados entre 0 e 100)
+  const hpPercent = Math.min(100, Math.max(0, (hpCurrent / totalHpMax) * 100));
+  const pePercent = Math.min(100, Math.max(0, (peCurrent / totalPeMax) * 100));
+  const sanPercent = Math.min(100, Math.max(0, (sanCurrent / sanMax) * 100));
+  
+  // Valores de exibição (clampados para não mostrar negativos)
+  const displayHp = Math.max(0, hpCurrent);
+  const displayPe = Math.max(0, peCurrent);
+  const displaySan = Math.max(0, sanCurrent);
+  
   const isHpLow = hpPercent <= 25;
+  const isPeLow = pePercent <= 25;
+  const isSanLow = sanPercent <= 30;
 
   const handleSave = () => {
     onStatsChange?.({
@@ -414,7 +424,7 @@ export function CharacterSheetHeader({
               />
             ) : (
               <span className={cn("text-sm font-display", isHpLow ? "text-destructive" : "text-hp")}>
-                {hpCurrent}/{totalHpMax}
+                {displayHp}/{totalHpMax}
               </span>
             )}
           </div>
@@ -441,8 +451,8 @@ export function CharacterSheetHeader({
                 max={totalPeMax}
               />
             ) : (
-              <span className="text-sm font-display text-pe">
-                {peCurrent}/{totalPeMax}
+              <span className={cn("text-sm font-display", isPeLow ? "text-warning" : "text-pe")}>
+                {displayPe}/{totalPeMax}
               </span>
             )}
           </div>
@@ -466,8 +476,8 @@ export function CharacterSheetHeader({
                 max={sanMax}
               />
             ) : (
-              <span className="text-sm font-display text-san">
-                {sanCurrent}/{sanMax}
+              <span className={cn("text-sm font-display", isSanLow ? "text-paranormal" : "text-san")}>
+                {displaySan}/{sanMax}
               </span>
             )}
           </div>
