@@ -172,6 +172,7 @@ export default function CharacterSheet() {
   const [rollLabel, setRollLabel] = useState('');
   const [rollAttribute, setRollAttribute] = useState(0);
   const [rollSkillBonus, setRollSkillBonus] = useState(0);
+  const [rollResistanceBonus, setRollResistanceBonus] = useState(0);
   
   // Histórico de rolagens
   const [rollHistory, setRollHistory] = useState<DiceRollResult[]>([]);
@@ -189,6 +190,14 @@ export default function CharacterSheet() {
   const [nonOccultistRitualModalOpen, setNonOccultistRitualModalOpen] = useState(false);
   const [ritualModalSource, setRitualModalSource] = useState<RitualSource>('ritual-aprendido');
   const [learnedRitualsFromPowers, setLearnedRitualsFromPowers] = useState<LearnedRitual[]>([]);
+
+  // Hook de bônus de defesa e resistências (precisa estar antes dos handlers que o usam)
+  const defenseBonuses = useDefenseBonuses({
+    origin: character?.origin || '',
+    abilities: character?.abilities || [],
+    generalPowers: character?.general_powers || [],
+    inventory: character?.inventory || [],
+  });
 
   // Callback para adicionar rolagem ao histórico
   const handleRollComplete = useCallback((result: DiceRollResult) => {
@@ -241,22 +250,46 @@ export default function CharacterSheet() {
     fetchCharacter();
   }, [id, user, navigate, toast]);
 
-  // Handler para rolar atributo
+  // Handler para rolar atributo (inclui detecção de resistências)
   const handleAttributeRoll = useCallback((attributeValue: number, attributeName: string) => {
     setRollLabel(attributeName);
     setRollAttribute(attributeValue);
     setRollSkillBonus(0);
+    
+    // Detecta se é um teste de resistência e aplica bônus
+    const labelLower = attributeName.toLowerCase();
+    let resistBonus = 0;
+    if (labelLower.includes('fortitude') || labelLower.includes('vigor')) {
+      resistBonus = defenseBonuses.resistances.fortitude;
+    } else if (labelLower.includes('reflexos') || labelLower.includes('agilidade')) {
+      resistBonus = defenseBonuses.resistances.reflexos;
+    } else if (labelLower.includes('vontade') || labelLower.includes('presença')) {
+      resistBonus = defenseBonuses.resistances.vontade;
+    }
+    setRollResistanceBonus(resistBonus);
     setDiceModalOpen(true);
-  }, []);
+  }, [defenseBonuses.resistances]);
 
-  // Handler para rolar perícia
+  // Handler para rolar perícia (inclui detecção de resistências)
   const handleSkillRoll = useCallback((total: number, skillName: string, attributeValue: number) => {
     const skillBonus = total - attributeValue;
     setRollLabel(skillName);
     setRollAttribute(attributeValue);
     setRollSkillBonus(skillBonus);
+    
+    // Detecta se é um teste de resistência e aplica bônus
+    const labelLower = skillName.toLowerCase();
+    let resistBonus = 0;
+    if (labelLower.includes('fortitude')) {
+      resistBonus = defenseBonuses.resistances.fortitude;
+    } else if (labelLower.includes('reflexos')) {
+      resistBonus = defenseBonuses.resistances.reflexos;
+    } else if (labelLower.includes('vontade')) {
+      resistBonus = defenseBonuses.resistances.vontade;
+    }
+    setRollResistanceBonus(resistBonus);
     setDiceModalOpen(true);
-  }, []);
+  }, [defenseBonuses.resistances]);
 
   // Handler para mudança de stats
   const handleCombatStatsChange = async (stats: { hp: number; pe: number; san: number }) => {
@@ -660,15 +693,7 @@ export default function CharacterSheet() {
     };
   }, [character?.inventory]);
 
-  // Calcular bônus de defesa de origem, habilidades de classe e poderes gerais
-  const defenseBonuses = useDefenseBonuses({
-    origin: character?.origin || '',
-    abilities: character?.abilities || [],
-    generalPowers: character?.general_powers || [],
-    inventory: character?.inventory || [],
-  });
-
-  // Bônus total de defesa combinando todas as fontes
+  // Bônus total de defesa combinando todas as fontes (defenseBonuses já está definido acima)
   const totalDefenseBonus = paranormalEffects.defenseBonus + defenseBonuses.totalBonus;
   if (loading) {
     return (
@@ -1508,6 +1533,7 @@ export default function CharacterSheet() {
         label={rollLabel}
         attributeValue={rollAttribute}
         skillBonus={rollSkillBonus}
+        resistanceBonus={rollResistanceBonus}
         onRollComplete={handleRollComplete}
       />
 

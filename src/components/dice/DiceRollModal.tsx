@@ -23,6 +23,7 @@ interface DiceRollModalProps {
   label: string;
   attributeValue: number;
   skillBonus?: number;
+  resistanceBonus?: number; // Bônus de resistência (Fortitude, Reflexos, Vontade)
   onRollComplete?: (result: DiceRollResult) => void;
 }
 
@@ -71,6 +72,7 @@ export function DiceRollModal({
   label,
   attributeValue,
   skillBonus = 0,
+  resistanceBonus = 0,
   onRollComplete,
 }: DiceRollModalProps) {
   // Estados
@@ -116,10 +118,11 @@ export function DiceRollModal({
           animationRef.current = null;
         }
         
-        // Executa a rolagem real
+        // Executa a rolagem real - inclui bônus de resistência no skillBonus total
+        const totalBonus = skillBonus + resistanceBonus;
         const rollResult = rollSkillTest({
           attributeValue,
-          skillBonus,
+          skillBonus: totalBonus,
           label,
         });
         
@@ -244,7 +247,7 @@ export function DiceRollModal({
                 className="space-y-3"
               >
                 {/* Breakdown do cálculo */}
-                <div className="flex items-center justify-center gap-2 text-sm">
+                <div className="flex flex-wrap items-center justify-center gap-2 text-sm">
                   <span className="px-3 py-1 rounded bg-secondary/50 font-medium">
                     d20: {result.keptDice}
                   </span>
@@ -253,6 +256,14 @@ export function DiceRollModal({
                       <span className="text-muted-foreground">+</span>
                       <span className="px-3 py-1 rounded bg-primary/20 text-primary font-medium">
                         Perícia: +{skillBonus}
+                      </span>
+                    </>
+                  )}
+                  {resistanceBonus > 0 && (
+                    <>
+                      <span className="text-muted-foreground">+</span>
+                      <span className="px-3 py-1 rounded bg-green-500/20 text-green-500 font-medium">
+                        Resistência: +{resistanceBonus}
                       </span>
                     </>
                   )}
