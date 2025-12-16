@@ -74,8 +74,10 @@ import { CombatWeaponsTable } from '@/components/character/CombatWeaponsTable';
 import { SheetAccordionSection, SheetAccordionItem } from '@/components/character/SheetAccordionSection';
 import { RitualCard } from '@/components/character/RitualCard';
 import { RitualCastModal } from '@/components/character/RitualCastModal';
+import { RitualDamageModal, RitualDamageResult, RitualHealingResult } from '@/components/character/RitualDamageModal';
 import { RitualCastHistory, RitualCastRecord } from '@/components/character/RitualCastHistory';
 import { Ritual } from '@/lib/rituals-data';
+import { getActiveRitualEffect, ritualDealsDamage } from '@/lib/ritual-effects';
 
 // Componentes existentes que ainda usamos
 import { CharacterSheetHelp } from '@/components/character/CharacterSheetHelp';
@@ -201,6 +203,11 @@ export default function CharacterSheet() {
   // Modal de conjuração de rituais
   const [castModalOpen, setCastModalOpen] = useState(false);
   const [ritualToCast, setRitualToCast] = useState<Ritual | null>(null);
+  
+  // Modal de dano/cura de rituais (Fase 3)
+  const [damageModalOpen, setDamageModalOpen] = useState(false);
+  const [ritualForDamage, setRitualForDamage] = useState<Ritual | null>(null);
+  const [ritualEnhancements, setRitualEnhancements] = useState<string[]>([]);
   
   // Histórico de rituais conjurados na sessão
   const [castHistory, setCastHistory] = useState<RitualCastRecord[]>([]);
@@ -412,10 +419,26 @@ export default function CharacterSheet() {
       ? ` (${enhancements.join(', ')})` 
       : '';
 
-    toast({
-      title: `${ritual.name} conjurado!`,
-      description: `${peCost} PE consumido${enhText}. PE restante: ${newPe}${isInCampaign ? ' • Sincronizado' : ''}`,
-    });
+    // Verifica se o ritual causa dano/cura e abre o modal correspondente
+    const activeEffect = getActiveRitualEffect(ritual.id, enhancements);
+    const hasDamageOrHealing = activeEffect?.damage || activeEffect?.healing || activeEffect?.tempHP;
+    
+    if (hasDamageOrHealing) {
+      // Abre o modal de dano/cura
+      setRitualForDamage(ritual);
+      setRitualEnhancements(enhancements);
+      setDamageModalOpen(true);
+      
+      toast({
+        title: `${ritual.name} conjurado!`,
+        description: `${peCost} PE consumido${enhText}. Role o dano!`,
+      });
+    } else {
+      toast({
+        title: `${ritual.name} conjurado!`,
+        description: `${peCost} PE consumido${enhText}. PE restante: ${newPe}${isInCampaign ? ' • Sincronizado' : ''}`,
+      });
+    }
 
     // Registrar no histórico de mudanças permanente
     await logCharacterChanges(character.id, user?.id || '', [{
@@ -1748,6 +1771,47 @@ export default function CharacterSheet() {
         nex={character.nex}
         elementalAffinity={character.elemental_affinity}
         onConfirm={handleCastRitual}
+      />
+
+      {/* Modal de dano/cura do ritual (Fase 3) */}
+      <RitualDamageModal
+        open={damageModalOpen}
+        onOpenChange={setDamageModalOpen}
+        ritual={ritualForDamage}
+        enhancements={ritualEnhancements}
+        onApplyDamage={(result) => {
+          // Log do resultado de dano para o mestre/jogador
+          toast({
+            title: `${result.total} de dano!`,
+            description: `${result.formula} de ${result.damageType}${result.ignoresRD ? ' (ignora RD)' : ''}`,
+          });
+        }}
+        onApplyHealing={(result) => {
+          // Aplica cura automaticamente no personagem
+          if (result.type === 'healing') {
+            const newHp = Math.min(character.hp_max, hpCurrent + result.total);
+            setHpCurrent(newHp);
+            setCharacter(prev => prev ? { ...prev, hp_current: newHp } : null);
+            supabase
+              .from('characters')
+              .update({ hp_current: newHp })
+              .eq('id', character.id);
+            toast({
+              title: `+${result.total} PV recuperados!`,
+              description: `PV atual: ${newHp}/${character.hp_max}`,
+            });
+          } else {
+            // PV temporários - apenas mostra o resultado
+            toast({
+              title: `+${result.total} PV Temporários!`,
+              description: `Dura até o final da cena.`,
+            });
+          }
+        }}
+        onClose={() => {
+          setRitualForDamage(null);
+          setRitualEnhancements([]);
+        }}
       />
     </div>
   );
