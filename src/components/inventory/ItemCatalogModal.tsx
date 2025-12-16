@@ -34,28 +34,20 @@ import {
   CheckCircle2,
   XCircle,
   Package,
-  Heart,
-  Search as SearchIcon,
-  Radio,
-  Backpack,
-  Sparkles,
-  FileText,
-  Tent,
+  Briefcase,
+  Bomb,
+  Wrench,
+  Eye,
   Zap,
   Recycle,
-  Target,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   ALL_ITEMS,
-  MEDICAL_ITEMS,
-  INVESTIGATION_ITEMS,
-  COMMUNICATION_ITEMS,
-  FIELD_ITEMS,
+  ACCESSORIES,
+  EXPLOSIVES,
+  OPERATIONAL_ITEMS,
   PARANORMAL_ITEMS,
-  DOCUMENT_ITEMS,
-  SURVIVAL_ITEMS,
-  TRAINED_ITEMS,
   type CatalogItem,
   type ItemType,
   ITEM_TYPE_LABELS,
@@ -83,14 +75,10 @@ const CATEGORY_COLORS: Record<string, string> = {
 
 // Ícones por tipo de item
 const TYPE_ICONS: Record<ItemType, React.ElementType> = {
-  medical: Heart,
-  investigation: SearchIcon,
-  communication: Radio,
-  field: Backpack,
-  paranormal: Sparkles,
-  document: FileText,
-  survival: Tent,
-  trained: Target,
+  acessorio: Briefcase,
+  explosivo: Bomb,
+  operacional: Wrench,
+  paranormal: Eye,
 };
 
 export function ItemCatalogModal({
@@ -106,7 +94,7 @@ export function ItemCatalogModal({
   // Estado para item selecionado (detalhes)
   const [selectedItem, setSelectedItem] = useState<CatalogItem | null>(null);
   // Estado para tab ativa
-  const [activeTab, setActiveTab] = useState<ItemType>('medical');
+  const [activeTab, setActiveTab] = useState<ItemType>('acessorio');
 
   // Verifica se pode adicionar item de uma categoria
   const canAddCategory = (category: '0' | 'I' | 'II' | 'III' | 'IV'): boolean => {
@@ -133,14 +121,10 @@ export function ItemCatalogModal({
 
   // Itens filtrados por tab
   const itemsByTab = useMemo(() => ({
-    medical: filterItems(MEDICAL_ITEMS),
-    investigation: filterItems(INVESTIGATION_ITEMS),
-    communication: filterItems(COMMUNICATION_ITEMS),
-    field: filterItems(FIELD_ITEMS),
+    acessorio: filterItems(ACCESSORIES),
+    explosivo: filterItems(EXPLOSIVES),
+    operacional: filterItems(OPERATIONAL_ITEMS),
     paranormal: filterItems(PARANORMAL_ITEMS),
-    document: filterItems(DOCUMENT_ITEMS),
-    survival: filterItems(SURVIVAL_ITEMS),
-    trained: filterItems(TRAINED_ITEMS),
   }), [searchQuery]);
 
   // Handler para adicionar item
@@ -419,7 +403,7 @@ function ItemDetailModal({ item, onClose, canAdd, isLocked, onAdd }: ItemDetailM
               Cat. {item.category === '0' ? 'Livre' : item.category}
             </Badge>
             <Badge variant="outline" className="text-xs">
-              {ITEM_TYPE_LABELS[item.type].emoji} {ITEM_TYPE_LABELS[item.type].label}
+              {ITEM_TYPE_LABELS[item.type].label}
             </Badge>
             <Badge variant="outline" className="text-xs">{item.spaces} espaço(s)</Badge>
             {item.consumable && (
