@@ -19,7 +19,8 @@ import {
   Package, 
   Sparkles,
   Loader2,
-  Download
+  Download,
+  Users
 } from 'lucide-react';
 import { JsonExamples, ImportType, TYPE_LABELS } from '@/components/admin/JsonExamples';
 import { ImportPreview } from '@/components/admin/ImportPreview';
@@ -215,14 +216,34 @@ export default function AdminImport() {
                 </p>
               </div>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleExport}
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Exportar {TYPE_LABELS[activeTab]}
-            </Button>
+            
+            {/* Navegação Admin */}
+            <div className="flex gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled
+              >
+                <FileJson className="h-4 w-4 mr-2" />
+                Importação
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate('/admin/users')}
+              >
+                <Users className="h-4 w-4 mr-2" />
+                Usuários
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExport}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Exportar
+              </Button>
+            </div>
           </div>
         </div>
       </div>
