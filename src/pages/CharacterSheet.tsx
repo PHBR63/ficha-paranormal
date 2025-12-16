@@ -63,6 +63,7 @@ import { useDefenseBonuses } from '@/hooks/useDefenseBonuses';
 import { useCharacterBonusSummary } from '@/hooks/useCharacterBonusSummary';
 import { useBonusSync } from '@/hooks/useBonusSync';
 import { useCampaignRitualSync } from '@/hooks/useCampaignRitualSync';
+import { useWeaponBuffs } from '@/hooks/useWeaponBuffs';
 import { BonusSummaryCard } from '@/components/character/BonusSummaryCard';
 
 // Novos componentes do redesign 2.0 (estilo ficha de papel)
@@ -255,6 +256,14 @@ export default function CharacterSheet() {
     enabled: !!character,
   });
 
+  // Hook de buffs de armas de rituais (Fase 5)
+  const {
+    activeBuffs: weaponBuffs,
+    addBuff: addWeaponBuff,
+    removeBuff: removeWeaponBuff,
+    clearAllBuffs: clearWeaponBuffs,
+  } = useWeaponBuffs();
+
   // Callback para adicionar rolagem ao histórico
   const handleRollComplete = useCallback((result: DiceRollResult) => {
     setRollHistory(prev => [result, ...prev].slice(0, 50));
@@ -428,6 +437,12 @@ export default function CharacterSheet() {
     // Verifica se o ritual causa dano/cura e abre o modal correspondente
     const activeEffect = getActiveRitualEffect(ritual.id, enhancements);
     const hasDamageOrHealing = activeEffect?.damage || activeEffect?.healing || activeEffect?.tempHP;
+    const hasWeaponEffect = activeEffect?.weaponEffect;
+    
+    // Fase 5: Adiciona buff de arma se o ritual tiver efeito de arma
+    if (hasWeaponEffect) {
+      addWeaponBuff(ritual, enhancements);
+    }
     
     if (hasDamageOrHealing) {
       // Abre o modal de dano/cura
@@ -437,7 +452,12 @@ export default function CharacterSheet() {
       
       toast({
         title: `${ritual.name} conjurado!`,
-        description: `${peCost} PE consumido${enhText}. Role o dano!`,
+        description: `${peCost} PE consumido${enhText}. ${hasWeaponEffect ? 'Arma encantada! ' : ''}Role o dano!`,
+      });
+    } else if (hasWeaponEffect) {
+      toast({
+        title: `${ritual.name} conjurado!`,
+        description: `${peCost} PE consumido${enhText}. Arma encantada até o fim da cena!`,
       });
     } else {
       toast({
@@ -1349,6 +1369,9 @@ export default function CharacterSheet() {
                 affinityElement={character.elemental_affinity}
                 nex={character.nex}
                 onRollComplete={handleRollComplete}
+                weaponBuffs={weaponBuffs}
+                onRemoveWeaponBuff={removeWeaponBuff}
+                onClearAllWeaponBuffs={clearWeaponBuffs}
               />
 
               {/* Resumo de Todos os Bônus Ativos */}
