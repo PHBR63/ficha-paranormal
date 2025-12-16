@@ -1215,6 +1215,7 @@ export default function CharacterSheet() {
                   ...Object.entries(bonusSummary.skills).map(([skill, data]) => `${skill} +${data.total}`),
                   ...bonusSummary.special.map(s => s.source),
                 ]}
+                bonusSummary={bonusSummary}
                 onStatsChange={handleCombatStatsChange}
                 onLevelUp={() => setNexModalOpen(true)}
               />

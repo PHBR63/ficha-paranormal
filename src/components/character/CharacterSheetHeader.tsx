@@ -17,6 +17,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { ActiveBonusesPanel } from './ActiveBonusesPanel';
+import { BonusSummary } from '@/hooks/useCharacterBonusSummary';
 
 // Configuração visual das patentes (valores corrigidos conforme livro)
 const PATENT_CONFIG: Record<string, { 
@@ -105,6 +107,7 @@ interface CharacterSheetHeaderProps {
   // Indicador de bônus ativos
   activeBonusCount?: number;
   activeBonusSources?: string[];
+  bonusSummary?: BonusSummary; // Dados completos para o painel expandido
   onStatsChange?: (stats: { hp: number; pe: number; san: number }) => void;
   onLevelUp?: () => void;
   className?: string;
@@ -141,6 +144,7 @@ export function CharacterSheetHeader({
   equippedArmors = [],
   activeBonusCount = 0,
   activeBonusSources = [],
+  bonusSummary,
   onStatsChange,
   onLevelUp,
   className,
@@ -155,6 +159,9 @@ export function CharacterSheetHeader({
   const [tempHp, setTempHp] = useState(hpCurrent);
   const [tempPe, setTempPe] = useState(peCurrent);
   const [tempSan, setTempSan] = useState(sanCurrent);
+  
+  // Estado do painel de bônus expandido
+  const [bonusPanelOpen, setBonusPanelOpen] = useState(false);
   
   // Estados de condição (visual apenas por enquanto)
   const [conditions, setConditions] = useState<ConditionStates>({
@@ -305,17 +312,19 @@ export function CharacterSheetHeader({
               </Button>
             )}
 
-            {/* Indicador de Bônus Ativos */}
+            {/* Indicador de Bônus Ativos - Clicável para abrir painel */}
             <TooltipProvider delayDuration={100}>
               <AnimatePresence>
                 {activeBonusCount > 0 && (
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <motion.div
+                      <motion.button
+                        type="button"
                         initial={{ scale: 0, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         exit={{ scale: 0, opacity: 0 }}
-                        className="relative cursor-help"
+                        onClick={() => setBonusPanelOpen(true)}
+                        className="relative cursor-pointer focus:outline-none"
                       >
                         {/* Glow pulsante de fundo */}
                         <motion.div
@@ -332,7 +341,7 @@ export function CharacterSheetHeader({
                         />
                         {/* Badge principal */}
                         <motion.div
-                          className="relative flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-primary/20 to-secondary/20 border border-primary/40"
+                          className="relative flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-primary/20 to-secondary/20 border border-primary/40 hover:border-primary/60 transition-colors"
                           animate={{
                             boxShadow: [
                               '0 0 0 0 rgba(var(--primary-rgb), 0)',
@@ -345,6 +354,8 @@ export function CharacterSheetHeader({
                             repeat: Infinity,
                             ease: "easeInOut",
                           }}
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
                         >
                           <motion.div
                             animate={{ rotate: [0, 10, -10, 0] }}
@@ -361,7 +372,7 @@ export function CharacterSheetHeader({
                           </span>
                           <span className="text-[10px] text-muted-foreground">bônus</span>
                         </motion.div>
-                      </motion.div>
+                      </motion.button>
                     </TooltipTrigger>
                     <TooltipContent side="bottom" className="max-w-xs z-50">
                       <div className="space-y-1">
@@ -370,11 +381,11 @@ export function CharacterSheetHeader({
                           Bônus Ativos ({activeBonusCount})
                         </p>
                         <div className="text-xs space-y-0.5 text-muted-foreground">
-                          {activeBonusSources.slice(0, 5).map((source, i) => (
+                          {activeBonusSources.slice(0, 3).map((source, i) => (
                             <p key={i}>• {source}</p>
                           ))}
-                          {activeBonusSources.length > 5 && (
-                            <p className="italic">...e mais {activeBonusSources.length - 5}</p>
+                          {activeBonusSources.length > 3 && (
+                            <p className="italic text-primary">Clique para ver todos →</p>
                           )}
                         </div>
                       </div>
@@ -699,6 +710,16 @@ export function CharacterSheetHeader({
           </div>
         </div>
       </div>
+
+      {/* Painel expandido de bônus ativos */}
+      {bonusSummary && (
+        <ActiveBonusesPanel
+          open={bonusPanelOpen}
+          onOpenChange={setBonusPanelOpen}
+          bonusSummary={bonusSummary}
+          activeBonusSources={activeBonusSources}
+        />
+      )}
     </div>
   );
 }
