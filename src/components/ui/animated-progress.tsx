@@ -14,11 +14,12 @@ interface AnimatedProgressProps {
   glow?: boolean;
 }
 
+// Estilos de variantes para as barras de progresso
 const variantStyles = {
   hp: {
-    bar: 'bg-[hsl(var(--status-hp))]',
-    glow: 'shadow-[0_0_10px_hsl(var(--status-hp)/0.5)]',
-    track: 'bg-[hsl(var(--status-hp)/0.2)]',
+    bar: 'bg-hp',
+    glow: 'shadow-[0_0_10px_hsl(var(--hp)/0.5)]',
+    track: 'bg-hp/20',
     label: 'PV',
   },
   pe: {

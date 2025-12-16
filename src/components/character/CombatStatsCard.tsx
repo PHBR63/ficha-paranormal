@@ -116,7 +116,7 @@ export function CombatStatsCard({
             )}>
               <Heart className={cn(
                 "w-5 h-5",
-                isHpLow ? "text-destructive" : "text-destructive/70"
+                isHpLow ? "text-destructive" : "text-hp"
               )} />
             </div>
             <span className="text-sm font-medium">HP</span>
@@ -141,7 +141,7 @@ export function CombatStatsCard({
               animate={{ scale: 1 }}
               className={cn(
                 "font-display text-xl",
-                isHpLow && "text-destructive"
+                isHpLow ? "text-destructive" : "text-hp"
               )}
             >
               {hpCurrent}/{hpMax}

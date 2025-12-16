@@ -302,7 +302,7 @@ export function CharacterSheetHeader({
         <div className="space-y-1">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1">
-              <Heart className={cn("w-4 h-4", isHpLow ? "text-destructive" : "text-destructive/70")} />
+              <Heart className={cn("w-4 h-4", isHpLow ? "text-destructive" : "text-hp")} />
               <span className="text-xs font-medium">HP</span>
               {hpBonus > 0 && (
                 <span className="text-[10px] text-success font-medium">(+{hpBonus})</span>
@@ -318,7 +318,7 @@ export function CharacterSheetHeader({
                 max={totalHpMax}
               />
             ) : (
-              <span className={cn("text-sm font-display", isHpLow && "text-destructive")}>
+              <span className={cn("text-sm font-display", isHpLow ? "text-destructive" : "text-hp")}>
                 {hpCurrent}/{totalHpMax}
               </span>
             )}
