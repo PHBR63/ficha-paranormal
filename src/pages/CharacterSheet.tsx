@@ -929,7 +929,7 @@ export default function CharacterSheet() {
           <div className="sheet-grid">
             {/* === COLUNA ESQUERDA === */}
             <div className="space-y-4">
-              {/* Cabeçalho com avatar e stats principais */}
+            {/* Cabeçalho com avatar e stats principais */}
               <CharacterSheetHeader
                 name={character.name}
                 photoUrl={character.photo_url}
@@ -961,6 +961,34 @@ export default function CharacterSheet() {
                 armorRD={armorStats.totalRD}
                 armorPenalty={armorStats.totalAgilityPenalty}
                 equippedArmors={armorStats.equippedArmors}
+                // Indicador de bônus ativos
+                activeBonusCount={
+                  (bonusSummary.defense.total > 0 ? 1 : 0) +
+                  (bonusSummary.resistances.fortitude.total > 0 ? 1 : 0) +
+                  (bonusSummary.resistances.reflexos.total > 0 ? 1 : 0) +
+                  (bonusSummary.resistances.vontade.total > 0 ? 1 : 0) +
+                  (bonusSummary.combat.attack.total > 0 ? 1 : 0) +
+                  (bonusSummary.combat.initiative.total > 0 ? 1 : 0) +
+                  (bonusSummary.combat.criticalMargin.total > 0 ? 1 : 0) +
+                  (bonusSummary.damageReduction.physical.total > 0 ? 1 : 0) +
+                  (bonusSummary.damageReduction.paranormal.total > 0 ? 1 : 0) +
+                  Object.keys(bonusSummary.skills).length +
+                  (bonusSummary.hpBonus > 0 ? 1 : 0) +
+                  (bonusSummary.peBonus > 0 ? 1 : 0) +
+                  bonusSummary.special.length
+                }
+                activeBonusSources={[
+                  ...(bonusSummary.defense.total > 0 ? [`Defesa +${bonusSummary.defense.total}`] : []),
+                  ...(bonusSummary.resistances.fortitude.total > 0 ? [`Fortitude +${bonusSummary.resistances.fortitude.total}`] : []),
+                  ...(bonusSummary.resistances.reflexos.total > 0 ? [`Reflexos +${bonusSummary.resistances.reflexos.total}`] : []),
+                  ...(bonusSummary.resistances.vontade.total > 0 ? [`Vontade +${bonusSummary.resistances.vontade.total}`] : []),
+                  ...(bonusSummary.combat.attack.total > 0 ? [`Ataque +${bonusSummary.combat.attack.total}`] : []),
+                  ...(bonusSummary.combat.initiative.total > 0 ? [`Iniciativa +${bonusSummary.combat.initiative.total}`] : []),
+                  ...(bonusSummary.hpBonus > 0 ? [`PV +${bonusSummary.hpBonus}`] : []),
+                  ...(bonusSummary.peBonus > 0 ? [`PE +${bonusSummary.peBonus}`] : []),
+                  ...Object.entries(bonusSummary.skills).map(([skill, data]) => `${skill} +${data.total}`),
+                  ...bonusSummary.special.map(s => s.source),
+                ]}
                 onStatsChange={handleCombatStatsChange}
                 onLevelUp={() => setNexModalOpen(true)}
               />
