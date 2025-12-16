@@ -87,6 +87,14 @@ export default {
   				DEFAULT: 'hsl(var(--success))',
   				foreground: 'hsl(var(--success-foreground))'
   			},
+  			pe: {
+  				DEFAULT: 'hsl(var(--pe))',
+  				foreground: 'hsl(var(--pe-foreground))'
+  			},
+  			warning: {
+  				DEFAULT: 'hsl(var(--warning))',
+  				foreground: 'hsl(var(--warning-foreground))'
+  			},
   			paranormal: {
   				DEFAULT: 'hsl(var(--paranormal))',
   				foreground: 'hsl(var(--paranormal-foreground))'

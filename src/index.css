@@ -66,6 +66,14 @@
     --success: 142 71% 45%;
     --success-foreground: 0 0% 100%;
     
+    /* PE - Pontos de Esforço (azul ciano energético) */
+    --pe: 199 89% 48%;
+    --pe-foreground: 0 0% 100%;
+    
+    /* Warning */
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 5%;
+    
     /* Paranormal (rosa/magenta) */
     --paranormal: 322 80% 55%;
     --paranormal-foreground: 0 0% 100%;
@@ -158,9 +166,13 @@
     --border: 260 20% 25%;
     --input: 260 20% 20%;
 
-    /* Success e Paranormal */
+    /* Success, PE, Warning e Paranormal */
     --success: 142 71% 45%;
     --success-foreground: 0 0% 100%;
+    --pe: 199 89% 48%;
+    --pe-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 5%;
     --paranormal: 322 80% 55%;
     --paranormal-foreground: 0 0% 100%;
 
