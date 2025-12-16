@@ -25,7 +25,7 @@ import { ELEMENT_CONFIG, getElementConfig } from '@/lib/element-config';
 interface RitualCardProps {
   ritual: Ritual;
   isNonOccultist?: boolean;
-  onCast?: (ritual: Ritual, enhancement?: 'Discente' | 'Verdadeiro') => void;
+  onCast: (ritual: Ritual) => void;
   peCurrent?: number;
 }
 
@@ -218,24 +218,22 @@ export function RitualCard({ ritual, isNonOccultist = false, onCast, peCurrent }
                   </div>
                 )}
 
-                {/* Botão de conjurar (opcional) */}
-                {onCast && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={!canAfford}
-                    onClick={() => onCast(ritual)}
-                    className={cn(
-                      "w-full mt-2",
-                      elementConfig?.border,
-                      elementConfig?.text,
-                      "hover:bg-accent/10"
-                    )}
-                  >
-                    <Zap className="w-3 h-3 mr-1" />
-                    Conjurar ({actualCost} PE)
-                  </Button>
-                )}
+                {/* Botão de conjurar */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!canAfford}
+                  onClick={() => onCast(ritual)}
+                  className={cn(
+                    "w-full mt-2",
+                    elementConfig?.border,
+                    elementConfig?.text,
+                    "hover:bg-accent/10"
+                  )}
+                >
+                  <Zap className="w-3 h-3 mr-1" />
+                  Conjurar ({actualCost} PE)
+                </Button>
               </motion.div>
             )}
           </AnimatePresence>
