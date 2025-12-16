@@ -1,9 +1,9 @@
 /**
- * useDefenseBonuses - Hook para calcular bônus de defesa de múltiplas fontes
+ * useDefenseBonuses - Hook para calcular bônus de defesa e resistências de múltiplas fontes
  * 
  * Fontes de bônus consideradas:
  * - Origem: Policial → "Patrulha" (+2 Defesa)
- * - Habilidade de Classe: "Reflexos Defensivos" (+2 Defesa)
+ * - Habilidade de Classe: "Reflexos Defensivos" (+2 Defesa, +2 Resistências)
  * - Habilidade de Classe: "Tanque de Guerra" (+2 Defesa com proteção pesada)
  * - Poder Geral: "Esquiva" (+2 Defesa, não cumulativo com armadura média/pesada)
  */
@@ -19,10 +19,30 @@ export interface DefenseBonusBreakdown {
   active: boolean;       // Se o bônus está ativo
 }
 
+// Interface para bônus de resistências
+export interface ResistanceBonuses {
+  fortitude: number;    // Bônus em testes de Fortitude (VIG)
+  reflexos: number;     // Bônus em testes de Reflexos (AGI)
+  vontade: number;      // Bônus em testes de Vontade (PRE)
+  breakdown: ResistanceBonusBreakdown[];
+}
+
+// Interface para breakdown de bônus de resistência
+export interface ResistanceBonusBreakdown {
+  source: string;
+  type: 'ability' | 'general_power' | 'paranormal';
+  fortitude: number;
+  reflexos: number;
+  vontade: number;
+  active: boolean;
+}
+
 // Interface de retorno do hook
 export interface DefenseBonuses {
   totalBonus: number;
   breakdown: DefenseBonusBreakdown[];
+  // Bônus de resistências
+  resistances: ResistanceBonuses;
 }
 
 // Tipos de armadura para verificação
@@ -51,7 +71,7 @@ interface UseDefenseBonusesProps {
 }
 
 /**
- * Hook que calcula bônus de defesa de origens, habilidades de classe e poderes gerais
+ * Hook que calcula bônus de defesa e resistências de origens, habilidades de classe e poderes gerais
  */
 export function useDefenseBonuses({
   origin,
@@ -61,6 +81,7 @@ export function useDefenseBonuses({
 }: UseDefenseBonusesProps): DefenseBonuses {
   return useMemo(() => {
     const breakdown: DefenseBonusBreakdown[] = [];
+    const resistanceBreakdown: ResistanceBonusBreakdown[] = [];
     
     // Verifica armaduras equipadas
     const equippedArmor = inventory.find(
@@ -89,7 +110,7 @@ export function useDefenseBonuses({
       });
     }
     
-    // 2. HABILIDADE DE CLASSE: Reflexos Defensivos (+2 Defesa)
+    // 2. HABILIDADE DE CLASSE: Reflexos Defensivos (+2 Defesa E +2 Resistências)
     // Verifica variações do nome da habilidade
     const hasReflexosDefensivos = normalizedAbilities.some(a => 
       a.includes('reflexos defensivos') || 
@@ -101,10 +122,21 @@ export function useDefenseBonuses({
     );
     
     if (hasReflexosDefensivos) {
+      // Bônus de Defesa
       breakdown.push({
         source: 'Reflexos Defensivos',
         type: 'ability',
         bonus: 2,
+        active: true,
+      });
+      
+      // Bônus de Resistências (+2 em Fortitude, Reflexos e Vontade)
+      resistanceBreakdown.push({
+        source: 'Reflexos Defensivos',
+        type: 'ability',
+        fortitude: 2,
+        reflexos: 2,
+        vontade: 2,
         active: true,
       });
     }
@@ -145,12 +177,70 @@ export function useDefenseBonuses({
       });
     }
     
-    // Calcula o bônus total (apenas dos ativos)
+    // 5. PODER GERAL: Resistência Mental (+2 Vontade)
+    const hasResistenciaMental = generalPowers.some(p => 
+      p.id === 'resistencia-mental' ||
+      p.name.toLowerCase().includes('resistência mental') ||
+      p.name.toLowerCase().includes('resistencia mental')
+    );
+    
+    if (hasResistenciaMental) {
+      resistanceBreakdown.push({
+        source: 'Resistência Mental',
+        type: 'general_power',
+        fortitude: 0,
+        reflexos: 0,
+        vontade: 2,
+        active: true,
+      });
+    }
+    
+    // 6. PODER GERAL: Constituição Forte (+2 Fortitude)
+    const hasConstituicaoForte = generalPowers.some(p => 
+      p.id === 'constituicao-forte' ||
+      p.name.toLowerCase().includes('constituição forte') ||
+      p.name.toLowerCase().includes('constituicao forte')
+    );
+    
+    if (hasConstituicaoForte) {
+      resistanceBreakdown.push({
+        source: 'Constituição Forte',
+        type: 'general_power',
+        fortitude: 2,
+        reflexos: 0,
+        vontade: 0,
+        active: true,
+      });
+    }
+    
+    // Calcula o bônus total de defesa (apenas dos ativos)
     const totalBonus = breakdown
       .filter(b => b.active)
       .reduce((sum, b) => sum + b.bonus, 0);
     
-    return { totalBonus, breakdown };
+    // Calcula o bônus total de cada resistência
+    const totalFortitude = resistanceBreakdown
+      .filter(b => b.active)
+      .reduce((sum, b) => sum + b.fortitude, 0);
+    
+    const totalReflexos = resistanceBreakdown
+      .filter(b => b.active)
+      .reduce((sum, b) => sum + b.reflexos, 0);
+    
+    const totalVontade = resistanceBreakdown
+      .filter(b => b.active)
+      .reduce((sum, b) => sum + b.vontade, 0);
+    
+    return { 
+      totalBonus, 
+      breakdown,
+      resistances: {
+        fortitude: totalFortitude,
+        reflexos: totalReflexos,
+        vontade: totalVontade,
+        breakdown: resistanceBreakdown,
+      }
+    };
   }, [origin, abilities, generalPowers, inventory]);
 }
 
@@ -164,4 +254,28 @@ export function hasAbility(abilities: string[], abilityId: string): boolean {
     const normalizedA = a.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     return normalizedA.includes(normalized) || a === abilityId;
   });
+}
+
+/**
+ * Retorna o nome legível de uma resistência
+ */
+export function getResistanceName(resistance: 'fortitude' | 'reflexos' | 'vontade'): string {
+  const names = {
+    fortitude: 'Fortitude',
+    reflexos: 'Reflexos',
+    vontade: 'Vontade',
+  };
+  return names[resistance];
+}
+
+/**
+ * Retorna o atributo base de uma resistência
+ */
+export function getResistanceAttribute(resistance: 'fortitude' | 'reflexos' | 'vontade'): string {
+  const attributes = {
+    fortitude: 'VIG',
+    reflexos: 'AGI',
+    vontade: 'PRE',
+  };
+  return attributes[resistance];
 }
