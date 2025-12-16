@@ -88,6 +88,10 @@ interface CharacterSheetHeaderProps {
   hpBonus?: number;
   peBonus?: number;
   defenseBonus?: number;
+  // Dados de proteção de armaduras
+  armorRD?: number;
+  armorPenalty?: number;
+  equippedArmors?: Array<{ name: string; rd: number }>;
   onStatsChange?: (stats: { hp: number; pe: number; san: number }) => void;
   onLevelUp?: () => void;
   className?: string;
@@ -118,6 +122,9 @@ export function CharacterSheetHeader({
   hpBonus = 0,
   peBonus = 0,
   defenseBonus = 0,
+  armorRD = 0,
+  armorPenalty = 0,
+  equippedArmors = [],
   onStatsChange,
   onLevelUp,
   className,
@@ -412,6 +419,31 @@ export function CharacterSheetHeader({
               <span className="text-[10px] text-success font-medium">(+{defenseBonus})</span>
             )}
           </div>
+          {/* RD de Armadura */}
+          {armorRD > 0 && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-1 cursor-help">
+                    <Shield className="w-4 h-4 text-secondary" />
+                    <span className="text-muted-foreground">RD</span>
+                    <span className="font-display text-lg text-secondary">{armorRD}</span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  <div className="space-y-1">
+                    <p className="font-medium">Redução de Dano</p>
+                    {equippedArmors.map((armor, i) => (
+                      <p key={i} className="text-xs">{armor.name}: RD {armor.rd}</p>
+                    ))}
+                    {armorPenalty < 0 && (
+                      <p className="text-xs text-yellow-400">Penalidade: {armorPenalty} Agilidade</p>
+                    )}
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
           <div className="flex items-center gap-1">
             <span className="text-muted-foreground">DESL</span>
             <span className="font-display text-lg">{movement}m</span>
