@@ -263,10 +263,10 @@ export const ESPECIALISTA_ABILITIES: ClassAbility[] = [
     classId: 'Especialista', 
     isCore: true 
   },
-  { 
+{ 
     id: 'perito', 
     name: 'Perito', 
-    description: 'Escolha duas perícias nas quais você é treinado (exceto Luta e Pontaria). Quando faz um teste de uma dessas perícias, pode gastar 2 PE para somar +1d6 ao resultado. Conforme avança de NEX, o dado melhora: +1d8 em NEX 55%, +1d12 em NEX 85%.', 
+    description: 'Escolha duas perícias nas quais você é treinado (exceto Luta e Pontaria). Quando faz um teste de uma dessas perícias, pode gastar 2 PE para somar +1d6 ao resultado. Conforme avança de NEX, o dado melhora: +1d8 (3 PE) em NEX 25%, +1d10 (4 PE) em NEX 45%, +1d12 (5 PE) em NEX 65%, +2d12 (6 PE) em NEX 85%.', 
     minNex: 5, 
     classId: 'Especialista', 
     isCore: true 
@@ -296,18 +296,18 @@ export const ESPECIALISTA_ABILITIES: ClassAbility[] = [
   { 
     id: 'grau-treinamento-35-esp', 
     name: 'Grau de Treinamento', 
-    description: 'Escolha um número de perícias treinadas igual a 2 + Int. O grau de treinamento dessas perícias aumenta em um nível (treinado → veterano → expert).', 
+    description: 'Escolha um número de perícias treinadas igual a 5 + Int. O grau de treinamento dessas perícias aumenta em um nível (treinado → veterano → expert).', 
     minNex: 35, 
     classId: 'Especialista', 
     isCore: true 
   },
   
-  // NEX 75% - Engenhosidade
+  // NEX 40% - Engenhosidade
   { 
     id: 'engenhosidade', 
     name: 'Engenhosidade', 
-    description: 'Quando usa sua habilidade Eclético, pode gastar 2 PE adicionais para receber os benefícios de veterano na perícia. Pode gastar 4 PE adicionais para receber os benefícios de expert.', 
-    minNex: 75, 
+    description: 'Em NEX 40%, quando usa sua habilidade Eclético, você pode gastar 2 PE adicionais para receber os benefícios de ser veterano na perícia. Em NEX 75%, você pode gastar 4 PE adicionais para receber os benefícios de ser expert na perícia.', 
+    minNex: 40, 
     classId: 'Especialista', 
     isCore: true 
   },
@@ -334,7 +334,7 @@ export const ESPECIALISTA_ABILITIES: ClassAbility[] = [
   { 
     id: 'grau-treinamento-70-esp', 
     name: 'Grau de Treinamento', 
-    description: 'Escolha um número de perícias treinadas igual a 2 + Int. O grau de treinamento dessas perícias aumenta em um nível (treinado → veterano → expert).', 
+    description: 'Escolha um número de perícias treinadas igual a 5 + Int. O grau de treinamento dessas perícias aumenta em um nível (treinado → veterano → expert).', 
     minNex: 70, 
     classId: 'Especialista', 
     isCore: true 
@@ -384,10 +384,10 @@ export const ESPECIALISTA_ABILITIES: ClassAbility[] = [
     minNex: 15, 
     classId: 'Especialista' 
   },
-  { 
+{ 
     id: 'hacker', 
     name: 'Hacker', 
-    description: 'Você recebe +5 em testes de Tecnologia para invadir sistemas e diminui o tempo necessário para hackear qualquer sistema para uma ação completa. Pré-requisito: treinado em Tecnologia.', 
+    description: 'Você recebe +5 em testes de Tecnologia para invadir sistemas e elimina o tempo necessário para hackear qualquer sistema para uma ação completa. Pré-requisito: treinado em Tecnologia.', 
     minNex: 15, 
     classId: 'Especialista' 
   },
@@ -412,10 +412,10 @@ export const ESPECIALISTA_ABILITIES: ClassAbility[] = [
     minNex: 15, 
     classId: 'Especialista' 
   },
-  { 
+{ 
     id: 'na-trilha-certa', 
     name: 'Na Trilha Certa', 
-    description: 'Sempre que tiver sucesso em um teste para procurar pistas, você pode gastar 1 PE para receber +5 cumulativo em testes subsequentes para a mesma busca. Se passar em um segundo teste, pode pagar 2 PE para receber um total de +10 no próximo teste, e assim por diante.', 
+    description: 'Sempre que tiver sucesso em um teste para procurar pistas, você pode gastar 1 PE para receber +5 no próximo teste. Os custos e os bônus são cumulativos (se passar num segundo teste, pode pagar 2 PE para receber um total de +5 no próximo teste, e assim por diante).', 
     minNex: 15, 
     classId: 'Especialista' 
   },
