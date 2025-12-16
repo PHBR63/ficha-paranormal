@@ -50,6 +50,7 @@ import {
   ALL_WEAPONS,
   MELEE_WEAPONS,
   RANGED_WEAPONS,
+  FIREARMS,
   THROWN_WEAPONS,
   SPECIAL_WEAPONS,
   type CatalogWeapon,
@@ -73,12 +74,14 @@ const CATEGORY_COLORS: Record<string, string> = {
   'II': 'bg-blue-500/20 text-blue-400 border-blue-500/50',
   'III': 'bg-purple-500/20 text-purple-400 border-purple-500/50',
   'IV': 'bg-red-500/20 text-red-400 border-red-500/50',
+  'especial': 'bg-yellow-500/20 text-yellow-400 border-yellow-500/50',
 };
 
 // Ícones por tipo
-const TYPE_ICONS = {
+const TYPE_ICONS: Record<string, typeof Sword> = {
   melee: Sword,
   ranged: Crosshair,
+  firearm: Zap,
   thrown: Target,
 };
 
@@ -97,15 +100,18 @@ export function WeaponCatalogModal({
   // Estado para tab ativa
   const [activeTab, setActiveTab] = useState('melee');
 
+  // Tipo de categoria de arma
+  type WeaponCategory = 'I' | 'II' | 'III' | 'IV' | '0' | 'especial';
+
   // Verifica se pode adicionar arma de uma categoria
-  const canAddCategory = (category: 'I' | 'II' | 'III' | 'IV' | '0'): boolean => {
-    if (category === '0') return true;
+  const canAddCategory = (category: WeaponCategory): boolean => {
+    if (category === '0' || category === 'especial') return true;
     return categoryCounts[category] < patentLimits[category];
   };
 
   // Verifica se categoria está bloqueada (limite 0)
-  const isCategoryLocked = (category: 'I' | 'II' | 'III' | 'IV' | '0'): boolean => {
-    if (category === '0') return false;
+  const isCategoryLocked = (category: WeaponCategory): boolean => {
+    if (category === '0' || category === 'especial') return false;
     return patentLimits[category] === 0;
   };
 
@@ -125,6 +131,7 @@ export function WeaponCatalogModal({
   const weaponsByTab = useMemo(() => ({
     melee: filterWeapons(MELEE_WEAPONS),
     ranged: filterWeapons(RANGED_WEAPONS),
+    firearm: filterWeapons(FIREARMS),
     thrown: filterWeapons(THROWN_WEAPONS),
     special: filterWeapons(SPECIAL_WEAPONS),
   }), [searchQuery]);
@@ -219,14 +226,23 @@ export function WeaponCatalogModal({
               <TabsTrigger value="ranged" className="gap-1 text-xs sm:text-sm whitespace-nowrap">
                 <Crosshair className="w-4 h-4" />
                 <span className="hidden sm:inline">À Distância</span>
-                <span className="sm:hidden">Distância</span>
+                <span className="sm:hidden">Dist.</span>
                 <Badge variant="secondary" className="text-xs ml-1">
                   {weaponsByTab.ranged.length}
                 </Badge>
               </TabsTrigger>
+              <TabsTrigger value="firearm" className="gap-1 text-xs sm:text-sm whitespace-nowrap">
+                <Zap className="w-4 h-4" />
+                <span className="hidden sm:inline">Armas de Fogo</span>
+                <span className="sm:hidden">Fogo</span>
+                <Badge variant="secondary" className="text-xs ml-1">
+                  {weaponsByTab.firearm.length}
+                </Badge>
+              </TabsTrigger>
               <TabsTrigger value="thrown" className="gap-1 text-xs sm:text-sm whitespace-nowrap">
                 <Target className="w-4 h-4" />
-                <span>Arremesso</span>
+                <span className="hidden sm:inline">Explosivos</span>
+                <span className="sm:hidden">Expl.</span>
                 <Badge variant="secondary" className="text-xs ml-1">
                   {weaponsByTab.thrown.length}
                 </Badge>
@@ -254,6 +270,15 @@ export function WeaponCatalogModal({
             <TabsContent value="ranged" className="mt-2">
               <WeaponList 
                 weapons={weaponsByTab.ranged}
+                canAddCategory={canAddCategory}
+                isCategoryLocked={isCategoryLocked}
+                onSelect={setSelectedWeapon}
+                onAdd={handleAddWeapon}
+              />
+            </TabsContent>
+            <TabsContent value="firearm" className="mt-2">
+              <WeaponList 
+                weapons={weaponsByTab.firearm}
                 canAddCategory={canAddCategory}
                 isCategoryLocked={isCategoryLocked}
                 onSelect={setSelectedWeapon}
@@ -294,11 +319,14 @@ export function WeaponCatalogModal({
   );
 }
 
+// Tipo de categoria de arma para WeaponList
+type WeaponCategoryType = 'I' | 'II' | 'III' | 'IV' | '0' | 'especial';
+
 // Componente de lista de armas
 interface WeaponListProps {
   weapons: CatalogWeapon[];
-  canAddCategory: (cat: 'I' | 'II' | 'III' | 'IV' | '0') => boolean;
-  isCategoryLocked: (cat: 'I' | 'II' | 'III' | 'IV' | '0') => boolean;
+  canAddCategory: (cat: WeaponCategoryType) => boolean;
+  isCategoryLocked: (cat: WeaponCategoryType) => boolean;
   onSelect: (weapon: CatalogWeapon) => void;
   onAdd: (weapon: CatalogWeapon) => void;
 }
