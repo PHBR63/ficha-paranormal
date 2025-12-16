@@ -1,10 +1,12 @@
 /**
  * RitualCastModal - Modal de confirmação para conjurar rituais
  * Permite escolher aprimoramentos e mostra custo total em PE
+ * Inclui efeito de partículas coloridas ao conjurar
  */
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import confetti from 'canvas-confetti';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -21,8 +23,37 @@ import {
   Users,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Ritual, RitualEnhancement } from '@/lib/rituals-data';
+import { Ritual } from '@/lib/rituals-data';
 import { getElementConfig } from '@/lib/element-config';
+
+// Função para disparar efeito de partículas do elemento
+function triggerElementParticles(elementHex: string, elementHexLight: string) {
+  // Primeiro burst - partículas do elemento
+  confetti({
+    particleCount: 60,
+    spread: 70,
+    origin: { y: 0.6, x: 0.5 },
+    colors: [elementHex, elementHexLight, '#ffffff'],
+    ticks: 200,
+    gravity: 0.8,
+    scalar: 1.2,
+    shapes: ['circle', 'square'],
+  });
+
+  // Segundo burst com delay - efeito de "energia"
+  setTimeout(() => {
+    confetti({
+      particleCount: 30,
+      spread: 100,
+      origin: { y: 0.5, x: 0.5 },
+      colors: [elementHex, elementHexLight],
+      ticks: 150,
+      gravity: 0.6,
+      scalar: 0.8,
+      shapes: ['circle'],
+    });
+  }, 150);
+}
 
 interface RitualCastModalProps {
   open: boolean;
@@ -79,9 +110,20 @@ export function RitualCastModal({
     );
   };
 
-  // Handler de confirmação
+  // Handler de confirmação com efeito visual
   const handleConfirm = () => {
-    if (canAfford) {
+    if (canAfford && elementConfig) {
+      // Dispara efeito de partículas antes de fechar
+      triggerElementParticles(elementConfig.hex, elementConfig.hexLight);
+      
+      // Pequeno delay para o efeito ser visível
+      setTimeout(() => {
+        onConfirm(ritual, totalCost, selectedEnhancements);
+        setSelectedEnhancements([]);
+        onOpenChange(false);
+      }, 300);
+    } else if (canAfford) {
+      // Fallback sem efeito se não tiver config de elemento
       onConfirm(ritual, totalCost, selectedEnhancements);
       setSelectedEnhancements([]);
       onOpenChange(false);

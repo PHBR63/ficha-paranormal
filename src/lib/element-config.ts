@@ -26,6 +26,8 @@ export interface ElementConfig {
   bg: string;            // Background sólido
   badgeBg: string;       // Background para badges
   glow: string;          // Cor do glow/shadow
+  hex: string;           // Cor hexadecimal para efeitos
+  hexLight: string;      // Cor hexadecimal clara
 }
 
 // Configuração visual centralizada para cada elemento
@@ -40,6 +42,8 @@ export const ELEMENT_CONFIG: Record<ParanormalElementType, ElementConfig> = {
     bg: 'bg-red-500/10',
     badgeBg: 'bg-red-500/20 text-red-300',
     glow: 'shadow-red-500/30',
+    hex: '#ef4444',
+    hexLight: '#fca5a5',
   },
   morte: {
     icon: Skull,
@@ -51,6 +55,8 @@ export const ELEMENT_CONFIG: Record<ParanormalElementType, ElementConfig> = {
     bg: 'bg-purple-500/10',
     badgeBg: 'bg-purple-500/20 text-purple-300',
     glow: 'shadow-purple-500/30',
+    hex: '#a855f7',
+    hexLight: '#d8b4fe',
   },
   conhecimento: {
     icon: BookOpen,
@@ -62,6 +68,8 @@ export const ELEMENT_CONFIG: Record<ParanormalElementType, ElementConfig> = {
     bg: 'bg-blue-500/10',
     badgeBg: 'bg-blue-500/20 text-blue-300',
     glow: 'shadow-blue-500/30',
+    hex: '#3b82f6',
+    hexLight: '#93c5fd',
   },
   energia: {
     icon: Zap,
@@ -73,6 +81,8 @@ export const ELEMENT_CONFIG: Record<ParanormalElementType, ElementConfig> = {
     bg: 'bg-yellow-500/10',
     badgeBg: 'bg-yellow-500/20 text-yellow-300',
     glow: 'shadow-yellow-500/30',
+    hex: '#eab308',
+    hexLight: '#fde047',
   },
   medo: {
     icon: Ghost,
@@ -84,6 +94,8 @@ export const ELEMENT_CONFIG: Record<ParanormalElementType, ElementConfig> = {
     bg: 'bg-emerald-500/10',
     badgeBg: 'bg-emerald-500/20 text-emerald-300',
     glow: 'shadow-emerald-500/30',
+    hex: '#10b981',
+    hexLight: '#6ee7b7',
   },
 };
 
