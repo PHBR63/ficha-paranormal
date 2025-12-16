@@ -9,6 +9,7 @@
  * - Habilidades de classe disponíveis
  * - Rituais (se Ocultista)
  * - Círculo máximo de rituais
+ * - NOVO: Timeline visual de marcos de progressão
  */
 
 import { motion, AnimatePresence } from 'framer-motion';
@@ -23,7 +24,12 @@ import {
   Sparkles,
   ChevronUp,
   ChevronDown,
-  TrendingUp
+  TrendingUp,
+  GraduationCap,
+  Shield,
+  Flame,
+  CheckCircle2,
+  Circle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { 
@@ -33,6 +39,25 @@ import {
   CLASSES
 } from '@/lib/character-data';
 import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
+
+// ==================== MARCOS DE NEX (Tabelas 1.3, 1.4, 1.5) ====================
+// Define em quais NEX cada tipo de benefício é obtido
+
+const NEX_MILESTONES = {
+  // Aumento de Atributo: NEX 20%, 50%, 80%, 95%
+  attributeIncrease: [20, 50, 80, 95],
+  // Poderes de Classe: NEX 15%, 30%, 45%, 60%, 75%, 90%
+  classPowers: [15, 30, 45, 60, 75, 90],
+  // Habilidade de Trilha: NEX 10%, 40%, 65%, 99%
+  trackAbilities: [10, 40, 65, 99],
+  // Grau de Treinamento: NEX 35%, 70%
+  trainingGrade: [35, 70],
+  // Versatilidade: NEX 50%
+  versatility: [50],
+  // Melhoria da Habilidade Base: NEX 25%, 55%, 85%
+  coreAbilityUpgrade: [25, 55, 85],
+} as const;
 
 interface NexBenefitsPanelProps {
   nex: number;
@@ -68,31 +93,39 @@ export function NexBenefitsPanel({
     ? calculateDerivedStats(characterClass, vigor, presence, previousNex, originId)
     : null;
   
-  // Dados da classe - perícias extras vêm apenas do poder "Treinamento em Perícia", não do NEX
+  // Dados da classe
   const classData = CLASSES.find(c => c.id === characterClass);
   
   // Rituais (apenas Ocultista)
   const rituals = characterClass === 'Ocultista' ? getOcultistRituals(nex) : null;
 
-  // Função para mostrar diferença
-  const renderDiff = (current: number, previous: number | undefined) => {
-    if (previous === undefined || previous === current) return null;
-    const diff = current - previous;
-    if (diff === 0) return null;
+  // Função para verificar se o NEX atual está em um marco específico
+  const isAtMilestone = (milestoneNex: number) => nex >= milestoneNex;
+  const isCurrentMilestone = (milestoneNex: number) => nex === milestoneNex;
+
+  // Obter descrição da melhoria da habilidade base por classe
+  const getCoreUpgradeDescription = (milestoneNex: number) => {
+    if (!characterClass) return '';
     
-    return (
-      <motion.span
-        initial={{ opacity: 0, y: -5 }}
-        animate={{ opacity: 1, y: 0 }}
-        className={cn(
-          'text-xs ml-1 font-medium',
-          diff > 0 ? 'text-success' : 'text-destructive'
-        )}
-      >
-        {diff > 0 ? <ChevronUp className="inline w-3 h-3" /> : <ChevronDown className="inline w-3 h-3" />}
-        {diff > 0 ? `+${diff}` : diff}
-      </motion.span>
-    );
+    const upgrades: Record<string, Record<number, string>> = {
+      'Combatente': {
+        25: '3 PE, +10',
+        55: '4 PE, +15',
+        85: '5 PE, +20'
+      },
+      'Especialista': {
+        25: '+1d8 (3 PE)',
+        55: '+1d10 (4 PE)',
+        85: '+1d12 (5 PE)'
+      },
+      'Ocultista': {
+        25: '2º Círculo',
+        55: '3º Círculo',
+        85: '4º Círculo'
+      }
+    };
+    
+    return upgrades[characterClass]?.[milestoneNex] || '';
   };
 
   if (compact) {
@@ -106,7 +139,7 @@ export function NexBenefitsPanel({
         />
         <BenefitBadge 
           icon={Swords} 
-          label="Habilidades" 
+          label="Poderes" 
           value={`${progression.abilityChoices}`}
           color="text-destructive"
         />
@@ -128,7 +161,7 @@ export function NexBenefitsPanel({
       animate={{ opacity: 1, y: 0 }}
       className="ordo-panel p-4 space-y-4"
     >
-      {/* Header - Sem badge de patente */}
+      {/* Header */}
       <div className="flex items-center justify-between">
         <h4 className="font-display text-sm tracking-wider text-muted-foreground flex items-center gap-2">
           <TrendingUp className="w-4 h-4" />
@@ -170,7 +203,7 @@ export function NexBenefitsPanel({
 
       {/* Benefícios de Progressão */}
       <div className="space-y-2">
-        <p className="text-xs text-muted-foreground font-medium">PROGRESSÃO</p>
+        <p className="text-xs text-muted-foreground font-medium">PROGRESSÃO ACUMULADA</p>
         <div className="grid grid-cols-2 gap-3">
           <ProgressionCard
             icon={Star}
@@ -182,10 +215,10 @@ export function NexBenefitsPanel({
           />
           <ProgressionCard
             icon={Swords}
-            label="Habilidades de Classe"
+            label="Poderes de Classe"
             value={progression.abilityChoices}
             previousValue={previousProgression?.abilityChoices}
-            description="Opcionais disponíveis"
+            description="Escolhas disponíveis"
             color="text-destructive"
           />
           <ProgressionCard
@@ -228,7 +261,149 @@ export function NexBenefitsPanel({
           </motion.div>
         )}
       </AnimatePresence>
+
+      <Separator />
+
+      {/* Timeline de Marcos de NEX */}
+      <div className="space-y-3">
+        <p className="text-xs text-muted-foreground font-medium">MARCOS DE PROGRESSÃO</p>
+        
+        {/* Aumento de Atributo */}
+        <MilestoneRow
+          icon={Star}
+          label="Aumento de Atributo"
+          milestones={NEX_MILESTONES.attributeIncrease}
+          currentNex={nex}
+          color="text-primary"
+          bgColor="bg-primary/20"
+        />
+
+        {/* Poderes de Classe */}
+        <MilestoneRow
+          icon={Swords}
+          label="Poder de Classe"
+          milestones={NEX_MILESTONES.classPowers}
+          currentNex={nex}
+          color="text-destructive"
+          bgColor="bg-destructive/20"
+        />
+
+        {/* Habilidade de Trilha */}
+        <MilestoneRow
+          icon={Award}
+          label="Habilidade de Trilha"
+          milestones={NEX_MILESTONES.trackAbilities}
+          currentNex={nex}
+          color="text-warning"
+          bgColor="bg-warning/20"
+        />
+
+        {/* Grau de Treinamento */}
+        <MilestoneRow
+          icon={GraduationCap}
+          label="Grau de Treinamento"
+          milestones={NEX_MILESTONES.trainingGrade}
+          currentNex={nex}
+          color="text-blue-400"
+          bgColor="bg-blue-400/20"
+        />
+
+        {/* Versatilidade */}
+        <MilestoneRow
+          icon={Shield}
+          label="Versatilidade"
+          milestones={NEX_MILESTONES.versatility}
+          currentNex={nex}
+          color="text-emerald-400"
+          bgColor="bg-emerald-400/20"
+        />
+
+        {/* Melhoria da Habilidade Base */}
+        {characterClass && (
+          <MilestoneRow
+            icon={Flame}
+            label={
+              characterClass === 'Combatente' ? 'Ataque Especial' :
+              characterClass === 'Especialista' ? 'Perito' :
+              characterClass === 'Ocultista' ? 'Círculo de Rituais' : 'Habilidade Base'
+            }
+            milestones={NEX_MILESTONES.coreAbilityUpgrade}
+            currentNex={nex}
+            color="text-paranormal"
+            bgColor="bg-paranormal/20"
+            descriptions={NEX_MILESTONES.coreAbilityUpgrade.map(m => getCoreUpgradeDescription(m))}
+          />
+        )}
+      </div>
     </motion.div>
+  );
+}
+
+// ==================== COMPONENTES AUXILIARES ====================
+
+// Componente para linha de marcos
+interface MilestoneRowProps {
+  icon: React.ElementType;
+  label: string;
+  milestones: readonly number[];
+  currentNex: number;
+  color: string;
+  bgColor: string;
+  descriptions?: string[];
+}
+
+function MilestoneRow({ 
+  icon: Icon, 
+  label, 
+  milestones, 
+  currentNex, 
+  color, 
+  bgColor,
+  descriptions 
+}: MilestoneRowProps) {
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center gap-2">
+        <Icon className={cn('w-3.5 h-3.5', color)} />
+        <span className="text-xs font-medium text-foreground">{label}</span>
+      </div>
+      <div className="flex flex-wrap gap-1.5 pl-5">
+        {milestones.map((milestone, idx) => {
+          const isReached = currentNex >= milestone;
+          const isCurrent = currentNex === milestone;
+          
+          return (
+            <motion.div
+              key={milestone}
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: idx * 0.05 }}
+            >
+              <Badge
+                variant="outline"
+                className={cn(
+                  'text-xs px-2 py-0.5 transition-all duration-200',
+                  isReached 
+                    ? cn(bgColor, color, 'border-current') 
+                    : 'text-muted-foreground border-muted opacity-50',
+                  isCurrent && 'ring-2 ring-offset-1 ring-offset-background ring-current scale-110'
+                )}
+              >
+                {isReached ? (
+                  <CheckCircle2 className="w-3 h-3 mr-1" />
+                ) : (
+                  <Circle className="w-3 h-3 mr-1" />
+                )}
+                {milestone}%
+                {descriptions?.[idx] && isReached && (
+                  <span className="ml-1 opacity-80">({descriptions[idx]})</span>
+                )}
+              </Badge>
+            </motion.div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
