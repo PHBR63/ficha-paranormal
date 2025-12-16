@@ -4,8 +4,8 @@
  */
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Shield, Heart, Zap, Star, Edit2, Check, X, Award, Crown, Gem } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Shield, Heart, Zap, Star, Edit2, Check, X, Award, Crown, Gem, Sparkles } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -102,6 +102,9 @@ interface CharacterSheetHeaderProps {
   armorRD?: number;
   armorPenalty?: number;
   equippedArmors?: Array<{ name: string; rd: number }>;
+  // Indicador de bônus ativos
+  activeBonusCount?: number;
+  activeBonusSources?: string[];
   onStatsChange?: (stats: { hp: number; pe: number; san: number }) => void;
   onLevelUp?: () => void;
   className?: string;
@@ -136,6 +139,8 @@ export function CharacterSheetHeader({
   armorRD = 0,
   armorPenalty = 0,
   equippedArmors = [],
+  activeBonusCount = 0,
+  activeBonusSources = [],
   onStatsChange,
   onLevelUp,
   className,
@@ -285,6 +290,85 @@ export function CharacterSheetHeader({
                 ↑ SUBIR
               </Button>
             )}
+
+            {/* Indicador de Bônus Ativos */}
+            <AnimatePresence>
+              {activeBonusCount > 0 && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <motion.div
+                        initial={{ scale: 0, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0, opacity: 0 }}
+                        className="relative cursor-help"
+                      >
+                        {/* Glow pulsante de fundo */}
+                        <motion.div
+                          className="absolute inset-0 bg-primary/30 rounded-full blur-md"
+                          animate={{
+                            scale: [1, 1.3, 1],
+                            opacity: [0.5, 0.8, 0.5],
+                          }}
+                          transition={{
+                            duration: 2,
+                            repeat: Infinity,
+                            ease: "easeInOut",
+                          }}
+                        />
+                        {/* Badge principal */}
+                        <motion.div
+                          className="relative flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-primary/20 to-secondary/20 border border-primary/40"
+                          animate={{
+                            boxShadow: [
+                              '0 0 0 0 rgba(var(--primary-rgb), 0)',
+                              '0 0 8px 2px rgba(var(--primary-rgb), 0.3)',
+                              '0 0 0 0 rgba(var(--primary-rgb), 0)',
+                            ],
+                          }}
+                          transition={{
+                            duration: 2,
+                            repeat: Infinity,
+                            ease: "easeInOut",
+                          }}
+                        >
+                          <motion.div
+                            animate={{ rotate: [0, 10, -10, 0] }}
+                            transition={{
+                              duration: 3,
+                              repeat: Infinity,
+                              ease: "easeInOut",
+                            }}
+                          >
+                            <Sparkles className="w-3.5 h-3.5 text-primary" />
+                          </motion.div>
+                          <span className="text-xs font-medium text-primary">
+                            {activeBonusCount}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground">bônus</span>
+                        </motion.div>
+                      </motion.div>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="max-w-xs">
+                      <div className="space-y-1">
+                        <p className="font-medium flex items-center gap-1">
+                          <Sparkles className="w-4 h-4 text-primary" />
+                          Bônus Ativos ({activeBonusCount})
+                        </p>
+                        <div className="text-xs space-y-0.5 text-muted-foreground">
+                          {activeBonusSources.slice(0, 5).map((source, i) => (
+                            <p key={i}>• {source}</p>
+                          ))}
+                          {activeBonusSources.length > 5 && (
+                            <p className="italic">...e mais {activeBonusSources.length - 5}</p>
+                          )}
+                        </div>
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+            </AnimatePresence>
           </div>
         </div>
 
