@@ -83,6 +83,7 @@ import { ItemCatalogModal } from './ItemCatalogModal';
 import type { CatalogWeapon } from '@/lib/weapons-catalog';
 import type { CatalogArmor } from '@/lib/armor-catalog';
 import type { CatalogItem } from '@/lib/items-catalog';
+import { ProtectionWidget } from './ProtectionWidget';
 
 // Categorias de itens para organização visual
 export type ItemType = 'weapon' | 'armor' | 'consumable' | 'ritual' | 'valuable' | 'misc';
@@ -849,11 +850,15 @@ export function InventoryPanel({
       </Dialog>
 
       {showEquipment && (
-        <div className="ordo-panel p-3">
+        <div className="ordo-panel p-3 space-y-3">
           <EquipmentSlots 
             inventory={inventory} 
             onUnequip={!readOnly ? handleUnequipItem : undefined}
+            isPrimaryTwoHanded={isPrimaryTwoHanded}
           />
+          
+          {/* Widget de Proteção Total */}
+          <ProtectionWidget inventory={inventory} />
         </div>
       )}
 
