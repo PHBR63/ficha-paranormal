@@ -1737,7 +1737,7 @@ export default function CharacterSheet() {
         }}
       />
 
-      {/* Modal de conjuração de ritual */}
+      {/* Modal de conjuração de ritual com validação de requisitos */}
       <RitualCastModal
         open={castModalOpen}
         onOpenChange={setCastModalOpen}
@@ -1745,6 +1745,8 @@ export default function CharacterSheet() {
         peCurrent={peCurrent}
         peMax={character.pe_max}
         isNonOccultist={character.class !== 'Ocultista'}
+        nex={character.nex}
+        elementalAffinity={character.elemental_affinity}
         onConfirm={handleCastRitual}
       />
     </div>
