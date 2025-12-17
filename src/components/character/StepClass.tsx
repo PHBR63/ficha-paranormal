@@ -72,8 +72,8 @@ export function StepClass({ formData, updateFormData }: StepClassProps) {
         <RuleBookTip section={rulebookContent} defaultExpanded={false} />
       )}
 
-      {/* Grid de classes - 4 colunas para incluir Sobrevivente */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Grid de classes */}
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
         {CLASSES.map((cls, index) => {
           const Icon = CLASS_ICONS[cls.id] || Sparkles;
           const colors = CLASS_COLORS[cls.id] || CLASS_COLORS.Combatente;
