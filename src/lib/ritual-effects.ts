@@ -1124,6 +1124,336 @@ export const RITUAL_EFFECTS: Record<string, RitualEffectsByLevel> = {
       special: 'Área de 9m. Pode comandar ações dos afetados.',
     },
   },
+
+  // === RITUAIS DE 3º CÍRCULO ===
+
+  // === SANGUE ===
+
+  // Ferver Sangue
+  'ferver-sangue': {
+    base: {
+      damage: { diceCount: 4, diceType: 8, damageType: 'sangue' },
+      appliesConditions: [{ conditionId: 'fraco', duration: 'sustentado' }],
+      resistance: { type: 'fortitude', effect: 'parcial' },
+      special: 'Sustentado. Causa 4d8 Sangue e fraco por turno. Passar 2x encerra.',
+    },
+    verdadeiro: {
+      damage: { diceCount: 4, diceType: 8, damageType: 'sangue' },
+      special: 'Seres escolhidos em alcance curto.',
+    },
+  },
+
+  // Forma Monstruosa
+  'forma-monstruosa': {
+    base: {
+      attackModifier: 5,
+      tempHP: { diceCount: 0, diceType: 0, bonus: 30 },
+      special: 'Vira monstro Grande. +5 ataque/dano, 30 PV temp. Fúria (não fala/conjura, deve atacar).',
+    },
+    discente: {
+      special: 'Imune a atordoamento, fadiga, sangramento, sono, veneno.',
+    },
+    verdadeiro: {
+      attackModifier: 10,
+      tempHP: { diceCount: 0, diceType: 0, bonus: 50 },
+      special: '+10 ataque/dano, 50 PV temp.',
+    },
+  },
+
+  // Odor da Caçada
+  'odor-da-cacada': {
+    base: {
+      skillModifier: {
+        skills: ['Atletismo'],
+        bonus: 5,
+      },
+      special: 'Recebe faro. +5 Atletismo em perseguição, não perde PV por esforço. Fome/Sede depois.',
+    },
+    discente: {
+      special: 'Toque, 1 ser.',
+    },
+    verdadeiro: {
+      special: 'Curto, até 5 seres.',
+    },
+  },
+
+  // Purgatório
+  'purgatorio': {
+    base: {
+      damage: { diceCount: 6, diceType: 6, damageType: 'sangue' },
+      areaEffect: { shape: 'esfera', radius: 6 },
+      resistance: { type: 'fortitude', effect: 'parcial' },
+      special: 'Inimigos vulneráveis a dano físico. Sair causa 6d6 Sangue e pode impedir movimento.',
+    },
+  },
+
+  // Vomitar Pestes
+  'vomitar-pestes': {
+    base: {
+      damage: { diceCount: 5, diceType: 12, damageType: 'sangue' },
+      resistance: { type: 'reflexos', effect: 'reduz_metade' },
+      special: 'Enxame Grande causa 5d12 Sangue. Movimento 12m.',
+    },
+    discente: {
+      appliesConditions: [{ conditionId: 'agarrado', duration: 'sustentado' }],
+      special: 'Agarra quem falhar no Reflexos.',
+    },
+    verdadeiro: {
+      special: 'Enxame Enorme (6m), voo 18m.',
+    },
+  },
+
+  // === MORTE ===
+
+  // Âncora Temporal
+  'ancora-temporal': {
+    base: {
+      appliesConditions: [{ conditionId: 'imóvel', duration: 'sustentado' }],
+      resistance: { type: 'vontade', effect: 'parcial' },
+      special: 'Impede deslocamento se falhar na Vontade no início do turno. Passar 2x encerra.',
+    },
+    verdadeiro: {
+      special: 'Seres à escolha em alcance curto.',
+    },
+  },
+
+  // Fedor Pútrido
+  'fedor-putrido': {
+    base: {
+      skillModifier: {
+        skills: ['Furtividade'],
+        bonus: 5,
+      },
+      damage: { diceCount: 1, diceType: 4, damageType: 'morte' },
+      special: 'Animais se afastam, -20 Diplomacia. +5 Furtividade, +10 Enganação (fingir morto). 1d4 Morte/rd.',
+    },
+    discente: {
+      special: 'Toque, 1 ser.',
+    },
+    verdadeiro: {
+      special: 'Curto, até 5 seres.',
+    },
+  },
+
+  // Poeira da Podridão
+  'poeira-da-podridao': {
+    base: {
+      damage: { diceCount: 4, diceType: 8, damageType: 'morte' },
+      areaEffect: { shape: 'esfera', radius: 6 },
+      resistance: { type: 'fortitude', effect: 'reduz_metade' },
+      special: 'Nuvem causa 4d8 Morte no início do turno e impede cura.',
+    },
+    discente: {
+      damage: { diceCount: 6, diceType: 8, damageType: 'morte' },
+      special: 'Muda para 6d8 de dano.',
+    },
+    verdadeiro: {
+      damage: { diceCount: 6, diceType: 8, damageType: 'morte' },
+      special: 'Área 9m de raio.',
+    },
+  },
+
+  // Tentáculos de Lodo
+  'tentaculos-de-lodo': {
+    base: {
+      damage: { diceCount: 4, diceType: 6, damageType: 'impacto' },
+      appliesConditions: [{ conditionId: 'agarrado', duration: 'sustentado' }],
+      resistance: { type: 'reflexos', effect: 'anula' },
+      special: '4 tentáculos (Def 10, 20 PV). Agarram e causam 4d6 impacto.',
+    },
+    discente: {
+      special: '6 tentáculos.',
+    },
+    verdadeiro: {
+      special: '8 tentáculos que devoram (dano dobrado a agarrados).',
+    },
+  },
+
+  // Zerar Entropia
+  'zerar-entropia': {
+    base: {
+      special: 'Paralisa alvo no tempo. Invulnerável e não age. Vontade no início do turno para sair.',
+    },
+    discente: {
+      special: 'Afeta objeto Enorme ou menor. Vira estátua temporal.',
+    },
+    verdadeiro: {
+      special: 'Toque, até 5 seres voluntários. Podem sair quando quiserem.',
+    },
+  },
+
+  // === CONHECIMENTO ===
+
+  // Alterar Memória
+  'alterar-memoria': {
+    base: {
+      resistance: { type: 'vontade', effect: 'anula' },
+      special: 'Modifica 5min de memória das últimas 24h.',
+    },
+    discente: {
+      special: 'Modifica 1h de memória.',
+    },
+    verdadeiro: {
+      special: 'Modifica até 1 dia de memória de qualquer época.',
+    },
+  },
+
+  // Contato Paranormal
+  'contato-paranormal': {
+    base: {
+      special: 'Faz 3 perguntas a entidade. Respostas vagas. Pode exigir serviço.',
+    },
+    discente: {
+      special: 'Faz 5 perguntas.',
+    },
+    verdadeiro: {
+      special: 'Faz 8 perguntas com respostas mais claras.',
+    },
+  },
+
+  // Mergulho Mental
+  'mergulho-mental': {
+    base: {
+      resistance: { type: 'vontade', effect: 'anula' },
+      special: 'Vasculha mente do alvo. Encontra informação superficial.',
+    },
+    discente: {
+      special: 'Encontra memórias profundas. Causa 2d6 dano mental.',
+      damage: { diceCount: 2, diceType: 6, damageType: 'conhecimento' },
+    },
+    verdadeiro: {
+      special: 'Controle total sobre memórias. Causa 4d6 dano mental.',
+      damage: { diceCount: 4, diceType: 6, damageType: 'conhecimento' },
+    },
+  },
+
+  // Relembrar Fragmento
+  'relembrar-fragmento': {
+    base: {
+      special: 'Revive memória de objeto ou local (últimas 24h).',
+    },
+    discente: {
+      special: 'Revive memórias de até 1 semana.',
+    },
+    verdadeiro: {
+      special: 'Revive memórias de qualquer época.',
+    },
+  },
+
+  // Vidência
+  'videncia': {
+    base: {
+      special: 'Cria sensor invisível em local conhecido. Vê e ouve.',
+    },
+    discente: {
+      special: 'Sensor pode se mover 9m/turno.',
+    },
+    verdadeiro: {
+      special: 'Sensor em qualquer lugar do mesmo plano. Conjura rituais através dele.',
+    },
+  },
+
+  // === ENERGIA ===
+
+  // Convocação Instantânea
+  'convocacao-instantanea': {
+    base: {
+      special: 'Marca objeto Médio ou menor. Pode convocá-lo de qualquer distância.',
+    },
+    discente: {
+      special: 'Marca objeto Grande.',
+    },
+    verdadeiro: {
+      special: 'Marca até 5 objetos.',
+    },
+  },
+
+  // Milagre Ionizante
+  'milagre-ionizante': {
+    base: {
+      damage: { diceCount: 10, diceType: 6, damageType: 'energia' },
+      areaEffect: { shape: 'esfera', radius: 6 },
+      resistance: { type: 'reflexos', effect: 'reduz_metade' },
+      special: 'Esfera de plasma causa 10d6 Energia.',
+    },
+    discente: {
+      damage: { diceCount: 15, diceType: 6, damageType: 'energia' },
+      special: 'Muda para 15d6.',
+    },
+    verdadeiro: {
+      damage: { diceCount: 20, diceType: 6, damageType: 'energia' },
+      special: 'Muda para 20d6. Ignora RD.',
+    },
+  },
+
+  // Mutar
+  'mutar': {
+    base: {
+      special: 'Concede 1 mutação de criatura a você mesmo.',
+    },
+    discente: {
+      special: 'Concede 2 mutações.',
+    },
+    verdadeiro: {
+      special: 'Concede 3 mutações.',
+    },
+  },
+
+  // Salto Fantasma
+  'salto-fantasma': {
+    base: {
+      special: 'Teletransporta até 30m para local que possa ver.',
+    },
+    discente: {
+      special: 'Teletransporta até 90m.',
+    },
+    verdadeiro: {
+      special: 'Teletransporta até 90m levando até 5 aliados.',
+    },
+  },
+
+  // Transfigurar Água
+  'transfigurar-agua': {
+    base: {
+      special: 'Controla 4 espaços de água. Move, molda ou congela.',
+    },
+    discente: {
+      damage: { diceCount: 6, diceType: 8, damageType: 'impacto' },
+      special: 'Projétil de gelo causa 6d8 impacto.',
+    },
+    verdadeiro: {
+      special: 'Controla 10 espaços. Pode criar Elemental de Água.',
+    },
+  },
+
+  // Transfigurar Terra
+  'transfigurar-terra': {
+    base: {
+      special: 'Controla 4 espaços de terra/pedra. Move ou molda.',
+    },
+    discente: {
+      damage: { diceCount: 6, diceType: 8, damageType: 'impacto' },
+      special: 'Projétil de pedra causa 6d8 impacto.',
+    },
+    verdadeiro: {
+      special: 'Controla 10 espaços. Pode criar Elemental de Terra.',
+    },
+  },
+
+  // === MEDO ===
+
+  // Dissipar Ritual
+  'dissipar-ritual': {
+    base: {
+      special: 'Dissipa ritual de círculo igual ou menor ao seu limite.',
+    },
+    discente: {
+      special: 'Dissipa rituais de qualquer círculo.',
+    },
+    verdadeiro: {
+      special: 'Dissipa rituais em área de 6m.',
+    },
+  },
 };
 
 // ==================== FUNÇÕES AUXILIARES ====================
