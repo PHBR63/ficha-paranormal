@@ -259,6 +259,102 @@ function addLogEntry(entry: Omit<HookExecutionLogEntry, 'id' | 'timestamp'>): Ho
 }
 
 // ========================================
+// ESTATÍSTICAS DE COMBATE
+// ========================================
+
+export interface RitualCombatStats {
+  timesTriggered: number;
+  timesApplied: number;
+  damageBlocked: number;
+}
+
+export interface CombatStats {
+  totalDamageReceived: number;
+  totalDamageBlocked: number;
+  totalHooksTriggered: number;
+  totalHooksApplied: number;
+  damageEvents: number;
+  blockedEvents: number;
+  ritualStats: Record<string, RitualCombatStats>;
+  triggerCounts: Record<string, number>;
+}
+
+let combatStats: CombatStats = {
+  totalDamageReceived: 0,
+  totalDamageBlocked: 0,
+  totalHooksTriggered: 0,
+  totalHooksApplied: 0,
+  damageEvents: 0,
+  blockedEvents: 0,
+  ritualStats: {},
+  triggerCounts: {},
+};
+
+/**
+ * Retorna as estatísticas de combate atuais
+ */
+export function getCombatStats(): CombatStats {
+  return { ...combatStats, ritualStats: { ...combatStats.ritualStats }, triggerCounts: { ...combatStats.triggerCounts } };
+}
+
+/**
+ * Reseta as estatísticas de combate
+ */
+export function resetCombatStats(): void {
+  combatStats = {
+    totalDamageReceived: 0,
+    totalDamageBlocked: 0,
+    totalHooksTriggered: 0,
+    totalHooksApplied: 0,
+    damageEvents: 0,
+    blockedEvents: 0,
+    ritualStats: {},
+    triggerCounts: {},
+  };
+}
+
+/**
+ * Atualiza estatísticas quando um hook é disparado
+ */
+function recordHookTrigger(ritualName: string, trigger: string, applied: boolean, damageBlocked: number = 0): void {
+  combatStats.totalHooksTriggered++;
+  if (applied) {
+    combatStats.totalHooksApplied++;
+  }
+  
+  // Atualiza contagem de triggers
+  combatStats.triggerCounts[trigger] = (combatStats.triggerCounts[trigger] || 0) + 1;
+  
+  // Atualiza stats do ritual
+  if (!combatStats.ritualStats[ritualName]) {
+    combatStats.ritualStats[ritualName] = {
+      timesTriggered: 0,
+      timesApplied: 0,
+      damageBlocked: 0,
+    };
+  }
+  
+  combatStats.ritualStats[ritualName].timesTriggered++;
+  if (applied) {
+    combatStats.ritualStats[ritualName].timesApplied++;
+    combatStats.ritualStats[ritualName].damageBlocked += damageBlocked;
+  }
+}
+
+/**
+ * Registra um evento de dano nas estatísticas
+ */
+function recordDamageEvent(originalDamage: number, finalDamage: number, blocked: boolean): void {
+  combatStats.damageEvents++;
+  combatStats.totalDamageReceived += finalDamage;
+  combatStats.totalDamageBlocked += (originalDamage - finalDamage);
+  
+  if (blocked) {
+    combatStats.blockedEvents++;
+  }
+}
+
+// ========================================
 // ESTADO GLOBAL DE HOOKS ATIVOS
 // ========================================
 
@@ -434,21 +530,31 @@ export function executeHooksForDamage(
     const results = executeHooks(context);
     allResults.push(...results);
     
-    // Processa modificações
+    // Processa modificações e registra estatísticas
     for (const result of results) {
+      let damageBlockedByHook = 0;
+      
       if (result.modifications?.blockDamage) {
         blocked = true;
+        damageBlockedByHook = currentDamage;
         currentDamage = 0;
         messages.push(`🛡️ ${result.ritualName}: ${result.modifications.message || 'Dano bloqueado!'}`);
       } else if (result.modifications?.newDamageAmount !== undefined) {
         const oldDamage = currentDamage;
+        damageBlockedByHook = oldDamage - result.modifications.newDamageAmount;
         currentDamage = result.modifications.newDamageAmount;
         messages.push(`🛡️ ${result.ritualName}: Dano ${oldDamage} → ${currentDamage}`);
       } else if (result.modifications?.message) {
         messages.push(`⚡ ${result.ritualName}: ${result.modifications.message}`);
       }
+      
+      // Registra estatísticas do hook
+      recordHookTrigger(result.ritualName, trigger, result.applied, damageBlockedByHook);
     }
   }
+  
+  // Registra estatísticas do evento de dano
+  recordDamageEvent(damageAmount, currentDamage, blocked);
   
   // Registra no log
   const logEntry = addLogEntry({
