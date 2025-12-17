@@ -2241,7 +2241,7 @@ export default function CharacterSheet() {
             skills: character.skills as unknown as Record<string, { trained: boolean; bonus: number }>,
             inventory: character.inventory,
             conditions: character.conditions.map(parseCondition),
-            rituals: character.rituals as any || [],
+            rituals: (character.rituals || []).map((id: string) => ALL_RITUALS.find(r => r.id === id)).filter(Boolean) as any,
             class: character.class,
             elementalAffinity: character.elemental_affinity,
           }}

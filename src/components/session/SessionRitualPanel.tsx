@@ -4,9 +4,9 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Sparkles, Zap, AlertTriangle, Flame, Droplets, Wind, Mountain, Heart, Skull, Moon, Sun } from 'lucide-react';
+import { Sparkles, Zap, AlertTriangle, Droplets, Skull, Moon, Sun, Clock, Target, Timer } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Ritual, RitualEnhancement } from '@/lib/rituals-data';
+import { Ritual } from '@/lib/rituals-data';
 import { useRitualValidation, TurnPEState } from '@/hooks/useRitualValidation';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -22,23 +22,42 @@ interface SessionRitualPanelProps {
   onPESpend: (amount: number) => boolean;
 }
 
+// Normaliza elemento para lowercase para comparação
+const normalizeElement = (element: string): string => element.toLowerCase();
+
 const ELEMENT_ICONS: Record<string, React.ReactNode> = {
-  'Sangue': <Droplets className="h-4 w-4" />,
-  'Morte': <Skull className="h-4 w-4" />,
-  'Energia': <Zap className="h-4 w-4" />,
-  'Conhecimento': <Sun className="h-4 w-4" />,
-  'Medo': <Moon className="h-4 w-4" />,
+  'sangue': <Droplets className="h-4 w-4" />,
+  'morte': <Skull className="h-4 w-4" />,
+  'energia': <Zap className="h-4 w-4" />,
+  'conhecimento': <Sun className="h-4 w-4" />,
+  'medo': <Moon className="h-4 w-4" />,
 };
 
 const ELEMENT_COLORS: Record<string, string> = {
-  'Sangue': 'text-red-500 bg-red-500/10 border-red-500/30',
-  'Morte': 'text-purple-500 bg-purple-500/10 border-purple-500/30',
-  'Energia': 'text-yellow-500 bg-yellow-500/10 border-yellow-500/30',
-  'Conhecimento': 'text-blue-500 bg-blue-500/10 border-blue-500/30',
-  'Medo': 'text-gray-500 bg-gray-500/10 border-gray-500/30',
+  'sangue': 'text-red-500 bg-red-500/10 border-red-500/30',
+  'morte': 'text-purple-500 bg-purple-500/10 border-purple-500/30',
+  'energia': 'text-yellow-500 bg-yellow-500/10 border-yellow-500/30',
+  'conhecimento': 'text-blue-500 bg-blue-500/10 border-blue-500/30',
+  'medo': 'text-gray-500 bg-gray-500/10 border-gray-500/30',
+};
+
+const ELEMENT_LABELS: Record<string, string> = {
+  'sangue': 'Sangue',
+  'morte': 'Morte',
+  'energia': 'Energia',
+  'conhecimento': 'Conhecimento',
+  'medo': 'Medo',
 };
 
 const CIRCLE_LABELS = ['', '1º', '2º', '3º', '4º'];
+
+// Tempo de execução com ícones
+const EXECUTION_BADGES: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' }> = {
+  'Padrão': { label: 'Padrão', variant: 'secondary' },
+  'Completa': { label: 'Completa', variant: 'outline' },
+  'Reação': { label: 'Reação', variant: 'default' },
+  'Livre': { label: 'Livre', variant: 'default' },
+};
 
 export const SessionRitualPanel: React.FC<SessionRitualPanelProps> = ({
   rituals,
@@ -53,9 +72,9 @@ export const SessionRitualPanel: React.FC<SessionRitualPanelProps> = ({
 }) => {
   const [selectedRitual, setSelectedRitual] = useState<Ritual | null>(null);
   const [selectedEnhancements, setSelectedEnhancements] = useState<string[]>([]);
-  const [lastCast, setLastCast] = useState<{ name: string; cost: number } | null>(null);
+  const [lastCast, setLastCast] = useState<{ name: string; cost: number; element: string } | null>(null);
 
-  const { validatePECost, canCastRitual, getAvailableEnhancements, maxCircle, peLimitPerTurn } = useRitualValidation(
+  const { canCastRitual, getAvailableEnhancements, maxCircle, peLimitPerTurn } = useRitualValidation(
     nex,
     elementalAffinity,
     peCurrent,
@@ -76,28 +95,15 @@ export const SessionRitualPanel: React.FC<SessionRitualPanelProps> = ({
     );
   };
 
-  const handleCast = () => {
-    if (!selectedRitual) return;
-
-    const baseCost = isNonOccultist ? selectedRitual.cost * 2 : selectedRitual.cost;
-    const enhancementCosts = selectedEnhancements.reduce((sum, name) => {
-      const enh = selectedRitual.enhancements?.find(e => e.name === name);
-      return sum + (enh?.cost || 0);
-    }, 0);
-    const totalCost = baseCost + enhancementCosts;
-
-    const canSpend = onPESpend(totalCost);
-    if (!canSpend) return;
-
-    setLastCast({ name: selectedRitual.name, cost: totalCost });
-    onCast(selectedRitual, totalCost, selectedEnhancements);
-    setSelectedRitual(null);
-    setSelectedEnhancements([]);
+  // Calcula custo base considerando não-ocultista (custo dobrado conforme regra oficial)
+  const getBaseCost = (ritual: Ritual): number => {
+    return isNonOccultist ? ritual.cost * 2 : ritual.cost;
   };
 
-  const getTotalCost = () => {
+  // Calcula custo total com aprimoramentos
+  const getTotalCost = (): number => {
     if (!selectedRitual) return 0;
-    const baseCost = isNonOccultist ? selectedRitual.cost * 2 : selectedRitual.cost;
+    const baseCost = getBaseCost(selectedRitual);
     const enhancementCosts = selectedEnhancements.reduce((sum, name) => {
       const enh = selectedRitual.enhancements?.find(e => e.name === name);
       return sum + (enh?.cost || 0);
@@ -105,8 +111,66 @@ export const SessionRitualPanel: React.FC<SessionRitualPanelProps> = ({
     return baseCost + enhancementCosts;
   };
 
+  const handleCast = () => {
+    if (!selectedRitual) return;
+
+    const totalCost = getTotalCost();
+
+    // Validações antes de conjurar
+    if (totalCost > peCurrent) {
+      return; // PE insuficiente
+    }
+
+    const peSpentThisTurn = turnPEState?.peSpentThisTurn || 0;
+    if (peSpentThisTurn + totalCost > peLimitPerTurn) {
+      return; // Excede limite de PE por turno
+    }
+
+    const canSpend = onPESpend(totalCost);
+    if (!canSpend) return;
+
+    setLastCast({ 
+      name: selectedRitual.name, 
+      cost: totalCost,
+      element: selectedRitual.element 
+    });
+    onCast(selectedRitual, totalCost, selectedEnhancements);
+    setSelectedRitual(null);
+    setSelectedEnhancements([]);
+  };
+
   const peSpentThisTurn = turnPEState?.peSpentThisTurn || 0;
-  const peRemainingThisTurn = peLimitPerTurn - peSpentThisTurn;
+  const peRemainingThisTurn = Math.max(0, peLimitPerTurn - peSpentThisTurn);
+
+  // Verifica se pode conjurar o ritual atual
+  const canCastCurrentRitual = (): boolean => {
+    if (!selectedRitual) return false;
+    const totalCost = getTotalCost();
+    
+    // PE insuficiente
+    if (totalCost > peCurrent) return false;
+    
+    // Excede limite de PE por turno
+    if (peSpentThisTurn + totalCost > peLimitPerTurn) return false;
+    
+    return true;
+  };
+
+  // Razão pela qual não pode conjurar
+  const getCantCastReason = (): string | null => {
+    if (!selectedRitual) return null;
+    const totalCost = getTotalCost();
+    
+    if (totalCost > peCurrent) {
+      return `PE insuficiente (${peCurrent}/${totalCost})`;
+    }
+    
+    if (peSpentThisTurn + totalCost > peLimitPerTurn) {
+      return `Excede limite de PE/turno (${peSpentThisTurn + totalCost}/${peLimitPerTurn})`;
+    }
+    
+    return null;
+  };
 
   if (rituals.length === 0) {
     return (
@@ -129,7 +193,7 @@ export const SessionRitualPanel: React.FC<SessionRitualPanelProps> = ({
           </div>
           <div className="h-8 w-px bg-border" />
           <div>
-            <p className="text-xs text-muted-foreground">Limite/Turno</p>
+            <p className="text-xs text-muted-foreground">Gasto/Limite Turno</p>
             <p className={cn(
               "font-mono text-lg font-bold",
               peRemainingThisTurn <= 0 ? "text-destructive" : "text-muted-foreground"
@@ -138,9 +202,16 @@ export const SessionRitualPanel: React.FC<SessionRitualPanelProps> = ({
             </p>
           </div>
         </div>
-        <Badge variant="outline">
-          Círculo máx: {CIRCLE_LABELS[maxCircle] || maxCircle}
-        </Badge>
+        <div className="flex flex-col items-end gap-1">
+          <Badge variant="outline">
+            Círculo máx: {CIRCLE_LABELS[maxCircle] || maxCircle}
+          </Badge>
+          {isNonOccultist && (
+            <Badge variant="secondary" className="text-xs">
+              Custo 2x (não-ocultista)
+            </Badge>
+          )}
+        </div>
       </div>
 
       {/* Warning if at limit */}
@@ -156,8 +227,10 @@ export const SessionRitualPanel: React.FC<SessionRitualPanelProps> = ({
         <div className="space-y-2 pr-2">
           {rituals.map((ritual) => {
             const canCast = canCastRitual(ritual);
-            const baseCost = isNonOccultist ? ritual.cost * 2 : ritual.cost;
-            const elementColor = ELEMENT_COLORS[ritual.element] || 'text-muted-foreground bg-muted/10';
+            const baseCost = getBaseCost(ritual);
+            const elementKey = normalizeElement(ritual.element);
+            const elementColor = ELEMENT_COLORS[elementKey] || 'text-muted-foreground bg-muted/10';
+            const executionBadge = EXECUTION_BADGES[ritual.execution] || EXECUTION_BADGES['Padrão'];
             
             return (
               <motion.div
@@ -171,14 +244,18 @@ export const SessionRitualPanel: React.FC<SessionRitualPanelProps> = ({
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 flex-1 min-w-0">
                     <div className={cn("p-1.5 rounded border", elementColor)}>
-                      {ELEMENT_ICONS[ritual.element] || <Sparkles className="h-4 w-4" />}
+                      {ELEMENT_ICONS[elementKey] || <Sparkles className="h-4 w-4" />}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-sm truncate">{ritual.name}</p>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
                         <span>{CIRCLE_LABELS[ritual.circle]} Círculo</span>
                         <span>•</span>
-                        <span>{ritual.element}</span>
+                        <span>{ELEMENT_LABELS[elementKey] || ritual.element}</span>
+                        <span>•</span>
+                        <Badge variant={executionBadge.variant} className="text-[10px] h-4 px-1">
+                          {executionBadge.label}
+                        </Badge>
                         {ritual.enhancements && ritual.enhancements.length > 0 && (
                           <>
                             <span>•</span>
@@ -217,10 +294,17 @@ export const SessionRitualPanel: React.FC<SessionRitualPanelProps> = ({
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="p-3 rounded-lg border-2 border-primary bg-primary/10"
+            className={cn(
+              "p-3 rounded-lg border-2",
+              ELEMENT_COLORS[normalizeElement(lastCast.element)]?.replace('bg-', 'border-').split(' ')[0] || "border-primary",
+              "bg-primary/10"
+            )}
           >
             <div className="flex items-center justify-between">
-              <span className="font-medium">{lastCast.name}</span>
+              <div className="flex items-center gap-2">
+                {ELEMENT_ICONS[normalizeElement(lastCast.element)] || <Sparkles className="h-4 w-4" />}
+                <span className="font-medium">{lastCast.name}</span>
+              </div>
               <Badge className="bg-primary text-primary-foreground">
                 -{lastCast.cost} PE
               </Badge>
@@ -231,7 +315,7 @@ export const SessionRitualPanel: React.FC<SessionRitualPanelProps> = ({
 
       {/* Enhancement Selection Modal */}
       <Dialog open={!!selectedRitual} onOpenChange={() => setSelectedRitual(null)}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-primary" />
@@ -240,19 +324,38 @@ export const SessionRitualPanel: React.FC<SessionRitualPanelProps> = ({
           </DialogHeader>
           
           {selectedRitual && (
-            <div className="space-y-4">
+            <div className="space-y-4 flex-1 overflow-hidden flex flex-col">
               {/* Ritual Info */}
-              <div className="p-3 rounded-lg bg-muted/30 text-sm">
+              <div className="p-3 rounded-lg bg-muted/30 text-sm space-y-2">
                 <p className="text-muted-foreground line-clamp-3">
                   {selectedRitual.description}
                 </p>
+                <div className="flex flex-wrap gap-2 text-xs">
+                  <div className="flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    <span>{selectedRitual.execution}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Target className="h-3 w-3" />
+                    <span>{selectedRitual.range}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Timer className="h-3 w-3" />
+                    <span>{selectedRitual.duration}</span>
+                  </div>
+                </div>
+                {selectedRitual.resistance && (
+                  <p className="text-xs text-warning">
+                    Resistência: {selectedRitual.resistance}
+                  </p>
+                )}
               </div>
 
               {/* Enhancements */}
               {selectedRitual.enhancements && selectedRitual.enhancements.length > 0 && (
-                <div className="space-y-2">
+                <div className="space-y-2 flex-1 min-h-0 flex flex-col">
                   <p className="text-sm font-medium">Aprimoramentos</p>
-                  <ScrollArea className="h-[200px]">
+                  <ScrollArea className="flex-1">
                     <div className="space-y-2 pr-2">
                       {getAvailableEnhancements(selectedRitual).map((enhData) => (
                         <label
@@ -280,9 +383,12 @@ export const SessionRitualPanel: React.FC<SessionRitualPanelProps> = ({
                             <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
                               {enhData.description}
                             </p>
-                            {!enhData.validation.isValid && enhData.validation.reason && (
-                              <p className="text-xs text-destructive mt-1">
-                                {enhData.validation.reason}
+                            {enhData.requirements && (
+                              <p className={cn(
+                                "text-xs mt-1",
+                                enhData.validation.isValid ? "text-muted-foreground" : "text-destructive"
+                              )}>
+                                {enhData.requirements}
                               </p>
                             )}
                           </div>
@@ -294,25 +400,42 @@ export const SessionRitualPanel: React.FC<SessionRitualPanelProps> = ({
               )}
 
               {/* Cost Summary */}
-              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
-                <span className="font-medium">Custo Total</span>
-                <span className={cn(
-                  "font-mono text-lg font-bold",
-                  getTotalCost() > peCurrent && "text-destructive"
-                )}>
-                  {getTotalCost()} PE
-                </span>
-              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
+                  <span className="font-medium">Custo Total</span>
+                  <div className="text-right">
+                    <span className={cn(
+                      "font-mono text-lg font-bold",
+                      !canCastCurrentRitual() && "text-destructive"
+                    )}>
+                      {getTotalCost()} PE
+                    </span>
+                    {isNonOccultist && (
+                      <p className="text-xs text-muted-foreground">
+                        (base {selectedRitual.cost} × 2)
+                      </p>
+                    )}
+                  </div>
+                </div>
 
-              {/* Cast Button */}
-              <Button
-                className="w-full gap-2"
-                onClick={handleCast}
-                disabled={getTotalCost() > peCurrent || getTotalCost() > peRemainingThisTurn}
-              >
-                <Sparkles className="h-4 w-4" />
-                Conjurar Ritual
-              </Button>
+                {/* Error message */}
+                {getCantCastReason() && (
+                  <div className="flex items-center gap-2 p-2 rounded-lg bg-destructive/10 text-destructive text-xs">
+                    <AlertTriangle className="h-3 w-3" />
+                    {getCantCastReason()}
+                  </div>
+                )}
+
+                {/* Cast Button */}
+                <Button
+                  className="w-full gap-2"
+                  onClick={handleCast}
+                  disabled={!canCastCurrentRitual()}
+                >
+                  <Sparkles className="h-4 w-4" />
+                  Conjurar Ritual
+                </Button>
+              </div>
             </div>
           )}
         </DialogContent>
