@@ -111,7 +111,7 @@ export function StatsPreviewWidget({
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: 20 }}
           className={cn(
-            'fixed right-4 top-1/2 -translate-y-1/2 z-40',
+            'fixed right-6 top-28 z-30',
             'hidden lg:block'
           )}
         >
