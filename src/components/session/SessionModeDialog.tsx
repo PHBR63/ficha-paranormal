@@ -173,11 +173,11 @@ export function SessionModeDialog({
 
   // Extrai armas equipadas do inventário
   const equippedWeapons: WeaponData[] = character.inventory
-    .filter(item => item.isEquipped && item.weaponType)
+    .filter(item => item.isEquipped && item.itemType === 'weapon')
     .map(item => ({
       id: item.id || item.name,
       name: item.name,
-      type: item.weaponType || 'Corpo a Corpo',
+      type: item.weaponType || (item.range && item.range !== 'Corpo a corpo' ? 'Disparo' : 'Corpo a Corpo'),
       damage: item.damage || '1d4',
       criticalRange: item.criticalRange,
       criticalMultiplier: item.criticalMultiplier,
