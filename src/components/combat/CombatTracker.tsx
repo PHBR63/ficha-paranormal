@@ -25,7 +25,10 @@ import {
   executeHooksForDamage,
   cleanupExpiredHooks,
   detectDamageInfo,
+  getExecutionLog,
+  clearExecutionLog,
   type HookExecutionResult,
+  type HookExecutionLogEntry,
   type DamageInfo,
 } from "@/lib/ritual-hooks-engine";
 import {
@@ -35,6 +38,7 @@ import {
   type SustainedRitual,
 } from "@/lib/sustained-rituals";
 import { ActiveRitualsPanel } from "./ActiveRitualsPanel";
+import { HookExecutionLog } from "./HookExecutionLog";
 import {
   Swords,
   Play,
@@ -71,6 +75,7 @@ export function CombatTracker({
   });
   const [newCombatantName, setNewCombatantName] = useState("");
   const [newCombatantAgility, setNewCombatantAgility] = useState(1);
+  const [hookLogKey, setHookLogKey] = useState(0); // Force re-render of hook log
 
   const updateState = useCallback((newState: CombatState) => {
     setCombatState(newState);
@@ -254,6 +259,9 @@ export function CombatTracker({
       // Aplica resultado
       finalDelta = damageResult.blocked ? 0 : -damageResult.finalDamage;
       hookMessages.push(...damageResult.messages);
+      
+      // Atualiza key para forçar re-render do log
+      setHookLogKey(k => k + 1);
 
       // Testa concentração se recebeu dano
       if (!damageResult.blocked && damageResult.finalDamage > 0) {
@@ -574,6 +582,18 @@ export function CombatTracker({
             });
           }}
         />
+      )}
+
+      {/* Hook Execution Log */}
+      {combatState.isActive && (
+        <div className="mt-4 p-4 bg-secondary/30 rounded-lg border border-border">
+          <HookExecutionLog
+            key={hookLogKey}
+            entries={getExecutionLog()}
+            onClear={clearExecutionLog}
+            maxEntries={20}
+          />
+        </div>
       )}
 
       {/* Combat log */}
