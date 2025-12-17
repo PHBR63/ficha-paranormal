@@ -22,7 +22,10 @@ import {
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAutoConditions, type ActiveCondition } from '@/hooks/useAutoConditions';
+import { useRitualCombatBonuses } from '@/hooks/useRitualCombatBonuses';
+import { RitualBonusesPanel } from './RitualBonusesPanel';
 import type { SessionLogEntry } from './SessionLog';
+import type { SustainedRitual } from '@/lib/sustained-rituals';
 
 interface SessionCombatPanelProps {
   // Recursos atuais
@@ -37,6 +40,8 @@ interface SessionCombatPanelProps {
   rd: number;
   // Condições ativas
   conditions: ActiveCondition[];
+  // Rituais sustentados
+  sustainedRituals?: SustainedRitual[];
   // Callbacks
   onHPChange: (newHP: number, damage?: number) => void;
   onPEChange: (newPE: number) => void;
@@ -56,6 +61,7 @@ export function SessionCombatPanel({
   defense,
   rd,
   conditions,
+  sustainedRituals = [],
   onHPChange,
   onPEChange,
   onSANChange,
@@ -74,6 +80,13 @@ export function SessionCombatPanel({
   } | null>(null);
 
   const { processResourceChange, processDamageWhileDying } = useAutoConditions();
+  
+  // Bônus de rituais sustentados
+  const ritualCombatSummary = useRitualCombatBonuses(sustainedRituals);
+  
+  // Calcula defesa e RD totais com bônus de rituais
+  const totalDefense = defense + ritualCombatSummary.totalDefenseBonus;
+  const totalRD = rd + ritualCombatSummary.damageReductions.reduce((sum, r) => sum + r.amount, 0);
 
   // Cálculos de estado
   const hpPercent = Math.max(0, Math.min(100, (hp / hpMax) * 100));
@@ -396,15 +409,28 @@ export function SessionCombatPanel({
         <div className="flex items-center gap-1.5">
           <Shield className="w-4 h-4 text-primary" />
           <span className="text-xs text-muted-foreground">Defesa:</span>
-          <span className="font-mono text-sm font-medium">{defense}</span>
+          <span className="font-mono text-sm font-medium">{totalDefense}</span>
+          {ritualCombatSummary.totalDefenseBonus > 0 && (
+            <span className="text-[10px] text-purple-400">(+{ritualCombatSummary.totalDefenseBonus})</span>
+          )}
         </div>
         <div className="w-px h-4 bg-border" />
         <div className="flex items-center gap-1.5">
           <Swords className="w-4 h-4 text-amber-500" />
           <span className="text-xs text-muted-foreground">RD:</span>
-          <span className="font-mono text-sm font-medium">{rd}</span>
+          <span className="font-mono text-sm font-medium">{totalRD}</span>
+          {ritualCombatSummary.damageReductions.length > 0 && (
+            <span className="text-[10px] text-cyan-400">(+ritual)</span>
+          )}
         </div>
       </div>
+
+      {/* Painel de Bônus de Rituais */}
+      <AnimatePresence>
+        {ritualCombatSummary.hasActiveRituals && (
+          <RitualBonusesPanel summary={ritualCombatSummary} />
+        )}
+      </AnimatePresence>
 
       {/* Seção de Dano */}
       <div className="space-y-2 p-3 rounded-lg bg-destructive/5 border border-destructive/20">
