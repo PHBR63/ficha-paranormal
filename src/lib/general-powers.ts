@@ -1,9 +1,17 @@
 /**
- * Ordem Paranormal RPG - Suplemento Sobrevivendo ao Horror
- * Poderes Gerais (disponíveis para qualquer classe)
+ * ⚠️ CONTEÚDO NÃO OFICIAL - HOMEBREW ⚠️
  * 
- * Poderes Gerais são habilidades que qualquer personagem pode adquirir,
- * independentemente de sua classe. Contam como escolhas de habilidade.
+ * ATENÇÃO: Os poderes neste arquivo NÃO fazem parte do livro base 
+ * Ordem Paranormal RPG v1.3. São conteúdo homebrew/caseiro opcional.
+ * 
+ * O sistema oficial trabalha apenas com:
+ * - Poder de Origem (1 por personagem, vinculado à origem)
+ * - Habilidades de Classe (NEX 15%, 30%, 45%, 60%, 75%, 90%)
+ * - Habilidades de Trilha (NEX 10%, 40%, 65%, 99%)
+ * - Poderes Paranormais (apenas Ocultistas)
+ * - Rituais (Ocultistas ou via origens específicas)
+ * 
+ * Use estes poderes apenas se sua mesa permitir conteúdo homebrew.
  */
 
 export interface GeneralPower {
@@ -11,15 +19,18 @@ export interface GeneralPower {
   name: string;
   description: string;
   minNex: number;
-  requirement?: string; // Requisito para adquirir (outra habilidade, atributo, etc)
+  requirement?: string;
   category: 'combate' | 'pericia' | 'paranormal' | 'social' | 'sobrevivencia';
-  // Campos especiais para poderes que concedem rituais
-  grantsRitual?: boolean; // Se true, abre modal de seleção de ritual
-  ritualMaxCircle?: number; // Círculo máximo do ritual que pode ser escolhido
-  ritualCount?: number; // Quantidade de rituais que pode escolher
+  grantsRitual?: boolean;
+  ritualMaxCircle?: number;
+  ritualCount?: number;
 }
 
-// ==================== PODERES GERAIS ====================
+// Flag global indicando que TODO este conteúdo é homebrew
+export const GENERAL_POWERS_ARE_HOMEBREW = true;
+
+// ==================== PODERES GERAIS (HOMEBREW) ====================
+// ⚠️ Conteúdo não oficial - use apenas com autorização do mestre
 
 export const GENERAL_POWERS: GeneralPower[] = [
   // === COMBATE ===
