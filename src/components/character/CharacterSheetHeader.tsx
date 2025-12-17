@@ -6,7 +6,7 @@
 
 import { useState, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, Heart, Zap, Star, Edit2, Check, X, Award, Crown, Gem, Sparkles, Droplet, Skull, BookOpen } from 'lucide-react';
+import { Shield, Heart, Zap, Star, Edit2, Check, X, Award, Crown, Gem, Sparkles, Droplet, Skull, BookOpen, Sword, Dices } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -102,6 +102,14 @@ interface CharacterSheetHeaderProps {
   peBonus?: number;
   defenseBonus?: number;
   defenseBonusBreakdown?: DefenseBonusBreakdown[];
+  // Bônus de rituais de combate
+  ritualAttackBonus?: number;
+  ritualDamageBonus?: number;
+  ritualWeaponEffects?: Array<{
+    source: string;
+    damageType?: string;
+    extraDice?: { count: number; type: number };
+  }>;
   // Dados de proteção de armaduras
   armorRD?: number;
   armorPenalty?: number;
@@ -143,6 +151,9 @@ export const CharacterSheetHeader = memo(function CharacterSheetHeader({
   peBonus = 0,
   defenseBonus = 0,
   defenseBonusBreakdown = [],
+  ritualAttackBonus = 0,
+  ritualDamageBonus = 0,
+  ritualWeaponEffects = [],
   armorRD = 0,
   armorPenalty = 0,
   equippedArmors = [],
@@ -757,6 +768,140 @@ export const CharacterSheetHeader = memo(function CharacterSheetHeader({
               </TooltipProvider>
             );
           })()}
+          
+          {/* Indicador de Bônus de Ataque por Rituais */}
+          {ritualAttackBonus > 0 && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <motion.div
+                    className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500/20 border border-red-500/40 cursor-help"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                  >
+                    <motion.div
+                      animate={{ 
+                        scale: [1, 1.15, 1],
+                      }}
+                      transition={{
+                        duration: 1.5,
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                      }}
+                    >
+                      <Sword className="w-3.5 h-3.5 text-red-400" />
+                    </motion.div>
+                    <span className="text-xs font-medium text-red-300">+{ritualAttackBonus} ATQ</span>
+                  </motion.div>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="max-w-xs">
+                  <div className="space-y-1">
+                    <p className="font-medium flex items-center gap-1.5">
+                      <Sparkles className="w-4 h-4 text-purple-400" />
+                      Bônus de Ataque por Rituais
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      +{ritualAttackBonus} em testes de ataque
+                    </p>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+          
+          {/* Indicador de Bônus de Dano por Rituais */}
+          {ritualDamageBonus > 0 && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <motion.div
+                    className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-500/20 border border-orange-500/40 cursor-help"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: "spring", stiffness: 500, damping: 30, delay: 0.05 }}
+                  >
+                    <motion.div
+                      animate={{ 
+                        rotate: [0, -10, 10, 0],
+                      }}
+                      transition={{
+                        duration: 1.5,
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                      }}
+                    >
+                      <Skull className="w-3.5 h-3.5 text-orange-400" />
+                    </motion.div>
+                    <span className="text-xs font-medium text-orange-300">+{ritualDamageBonus} DANO</span>
+                  </motion.div>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="max-w-xs">
+                  <div className="space-y-1">
+                    <p className="font-medium flex items-center gap-1.5">
+                      <Sparkles className="w-4 h-4 text-purple-400" />
+                      Bônus de Dano por Rituais
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      +{ritualDamageBonus} em rolagens de dano
+                    </p>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+          
+          {/* Indicador de Dados Extras por Rituais */}
+          {ritualWeaponEffects.length > 0 && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <motion.div
+                    className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 cursor-help"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: "spring", stiffness: 500, damping: 30, delay: 0.1 }}
+                  >
+                    <motion.div
+                      animate={{ 
+                        rotate: [0, 180, 360],
+                      }}
+                      transition={{
+                        duration: 3,
+                        repeat: Infinity,
+                        ease: "linear",
+                      }}
+                    >
+                      <Dices className="w-3.5 h-3.5 text-amber-400" />
+                    </motion.div>
+                    <span className="text-xs font-medium text-amber-300">
+                      +{ritualWeaponEffects.map(e => `${e.extraDice?.count || 1}d${e.extraDice?.type || 6}`).join(', ')}
+                    </span>
+                  </motion.div>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="max-w-xs">
+                  <div className="space-y-2">
+                    <p className="font-medium flex items-center gap-1.5">
+                      <Sparkles className="w-4 h-4 text-purple-400" />
+                      Dados Extras em Ataques
+                    </p>
+                    <div className="text-xs space-y-1">
+                      {ritualWeaponEffects.map((effect, i) => (
+                        <p key={i} className="flex justify-between gap-3">
+                          <span className="text-muted-foreground">{effect.source}</span>
+                          <span className="text-amber-300 font-mono">
+                            +{effect.extraDice?.count || 1}d{effect.extraDice?.type || 6}
+                            {effect.damageType && ` ${effect.damageType}`}
+                          </span>
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+          
           {/* RD de Armadura */}
           {armorRD > 0 && (
             <TooltipProvider>
