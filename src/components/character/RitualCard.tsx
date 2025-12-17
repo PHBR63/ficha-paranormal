@@ -3,7 +3,7 @@
  * Mostra elemento, círculo, custo PE, descrição e aprimoramentos
  */
 
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -29,7 +29,7 @@ interface RitualCardProps {
   peCurrent?: number;
 }
 
-export function RitualCard({ ritual, isNonOccultist = false, onCast, peCurrent }: RitualCardProps) {
+export const RitualCard = memo(function RitualCard({ ritual, isNonOccultist = false, onCast, peCurrent }: RitualCardProps) {
   const [isOpen, setIsOpen] = useState(false);
   
   // Obtém configuração visual do elemento
@@ -241,7 +241,7 @@ export function RitualCard({ ritual, isNonOccultist = false, onCast, peCurrent }
       </motion.div>
     </Collapsible>
   );
-}
+});
 
 // Componente auxiliar para itens de detalhe
 interface DetailItemProps {
