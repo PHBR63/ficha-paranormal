@@ -68,7 +68,9 @@ import { useCampaignRitualSync } from '@/hooks/useCampaignRitualSync';
 import { useWeaponBuffs } from '@/hooks/useWeaponBuffs';
 import { useAutoConditions, type ActiveCondition as AutoCondition } from '@/hooks/useAutoConditions';
 import { useRitualCombatBonuses } from '@/hooks/useRitualCombatBonuses';
+import { useSustainedRituals } from '@/hooks/useSustainedRituals';
 import { BonusSummaryCard } from '@/components/character/BonusSummaryCard';
+import { SustainedRitualsPanel } from '@/components/character/SustainedRitualsPanel';
 
 // Novos componentes do redesign 2.0 (estilo ficha de papel)
 import { CharacterSheetHeader } from '@/components/character/CharacterSheetHeader';
@@ -85,8 +87,7 @@ import { RitualConditionModal, PendingCondition, extractConditionsFromEffect } f
 import { RitualEffectWizard } from '@/components/character/RitualEffectWizard';
 import { RitualCastHistory, RitualCastRecord } from '@/components/character/RitualCastHistory';
 import { Ritual } from '@/lib/rituals-data';
-import { getActiveRitualEffect, ritualDealsDamage, RitualEffect } from '@/lib/ritual-effects';
-import { getSustainedRitualsForCharacter } from '@/lib/sustained-rituals';
+import { getActiveRitualEffect, ritualDealsDamage, RitualEffect, SustainConfig } from '@/lib/ritual-effects';
 
 // Componentes existentes que ainda usamos
 import { CharacterSheetHelp } from '@/components/character/CharacterSheetHelp';
@@ -291,8 +292,16 @@ export default function CharacterSheet() {
   // Hook CONSOLIDADO de todos os bônus do personagem (inclui defenseBonuses e paranormalEffects)
   // OTIMIZAÇÃO: Evita chamadas duplicadas de hooks
   
-  // Obtém rituais sustentados do personagem para cálculo de defesa e combate
-  const sustainedRituals = character?.id ? getSustainedRitualsForCharacter(character.id) : [];
+  // Hook reativo de rituais sustentados (com persistência e realtime)
+  const {
+    rituals: sustainedRituals,
+    activateRitual,
+    deactivateRitual,
+    clearAll: clearSustainedRituals,
+  } = useSustainedRituals({
+    characterId: character?.id,
+    enabled: !!character,
+  });
   
   // Bônus de combate de rituais sustentados (ataque, dano, dados extras)
   const ritualCombatSummary = useRitualCombatBonuses(sustainedRituals);
@@ -1834,6 +1843,12 @@ export default function CharacterSheet() {
                 </div>
               </SheetAccordionSection>
 
+              {/* Painel de Rituais Sustentados */}
+              <SustainedRitualsPanel
+                rituals={sustainedRituals}
+                onDeactivate={deactivateRitual}
+                onClearAll={clearSustainedRituals}
+              />
 
               {/* Botão de Descanso */}
               <Button
@@ -2253,6 +2268,13 @@ export default function CharacterSheet() {
         }}
         onAddWeaponBuff={(ritual, enhancements) => {
           addWeaponBuff(ritual, enhancements);
+        }}
+        onActivateSustained={async (ritual, enhancements, sustain) => {
+          await activateRitual(ritual, enhancements, sustain);
+          toast({
+            title: 'Ritual Sustentado Ativo!',
+            description: `${ritual.name} está ativo. Efeitos aplicados automaticamente.`,
+          });
         }}
         onComplete={() => {
           setWizardRitual(null);

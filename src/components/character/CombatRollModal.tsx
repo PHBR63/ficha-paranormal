@@ -14,8 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { rollSkillTest, rollDamage, DiceRollResult } from '@/lib/dice-roller';
-import { useRitualBonusesForCombat, useRitualCombatBonuses } from '@/hooks/useRitualCombatBonuses';
-import type { SustainedRitual } from '@/lib/sustained-rituals';
+import { useRitualBonusesForCombat, useRitualCombatBonuses, SustainedRitualInput } from '@/hooks/useRitualCombatBonuses';
 import {
   Tooltip,
   TooltipContent,
@@ -82,7 +81,7 @@ interface CombatRollModalProps {
   paranormalPowers: Array<{ id: string; name: string; element: string }>;
   hasAffinity: boolean;
   affinityElement?: string | null;
-  sustainedRituals?: SustainedRitual[]; // Agora usa rituais sustentados
+  sustainedRituals?: SustainedRitualInput[]; // Agora usa rituais sustentados
   nex: number;
   
   // Callback

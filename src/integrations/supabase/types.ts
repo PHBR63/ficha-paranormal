@@ -447,6 +447,65 @@ export type Database = {
           },
         ]
       }
+      character_sustained_rituals: {
+        Row: {
+          character_id: string
+          circle: number
+          created_at: string | null
+          element: string
+          id: string
+          is_concentrating: boolean | null
+          pe_spent_total: number | null
+          ritual_id: string
+          ritual_name: string
+          selected_enhancements: string[] | null
+          started_at: string | null
+          sustain_config: Json | null
+          turns_active: number | null
+          user_id: string
+        }
+        Insert: {
+          character_id: string
+          circle?: number
+          created_at?: string | null
+          element: string
+          id?: string
+          is_concentrating?: boolean | null
+          pe_spent_total?: number | null
+          ritual_id: string
+          ritual_name: string
+          selected_enhancements?: string[] | null
+          started_at?: string | null
+          sustain_config?: Json | null
+          turns_active?: number | null
+          user_id: string
+        }
+        Update: {
+          character_id?: string
+          circle?: number
+          created_at?: string | null
+          element?: string
+          id?: string
+          is_concentrating?: boolean | null
+          pe_spent_total?: number | null
+          ritual_id?: string
+          ritual_name?: string
+          selected_enhancements?: string[] | null
+          started_at?: string | null
+          sustain_config?: Json | null
+          turns_active?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "character_sustained_rituals_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: false
+            referencedRelation: "characters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       characters: {
         Row: {
           abilities: Json

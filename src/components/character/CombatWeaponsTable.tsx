@@ -22,7 +22,7 @@ import { DiceRollResult } from '@/lib/dice-roller';
 import { WeaponBuff } from '@/hooks/useWeaponBuffs';
 import { WeaponBuffIndicator, WeaponBuffsPanel } from './WeaponBuffIndicator';
 import { formatDamageFormula } from '@/lib/ritual-effects';
-import type { SustainedRitual } from '@/lib/sustained-rituals';
+import type { SustainedRitualInput } from '@/hooks/useRitualCombatBonuses';
 
 // Interface para arma com dados completos
 export interface WeaponEntry {
@@ -67,7 +67,7 @@ interface CombatWeaponsTableProps {
   paranormalPowers?: Array<{ id: string; name: string; element: string }>;
   hasAffinity?: boolean;
   affinityElement?: string | null;
-  sustainedRituals?: SustainedRitual[]; // Rituais sustentados ativos
+  sustainedRituals?: SustainedRitualInput[]; // Rituais sustentados ativos
   nex?: number;
   
   // Callback para histórico

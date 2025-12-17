@@ -100,6 +100,8 @@ interface RitualEffectWizardProps {
   onApplyHealing?: (amount: number, type: 'healing' | 'tempHP') => void;
   onApplyConditions?: (conditions: ActiveCondition[]) => void;
   onAddWeaponBuff?: (ritual: Ritual, enhancements: string[]) => void;
+  // Callback para ativar ritual sustentado
+  onActivateSustained?: (ritual: Ritual, enhancements: string[], sustain: import('@/lib/ritual-effects').SustainConfig) => void;
   onComplete?: () => void;
 }
 
@@ -837,6 +839,7 @@ export function RitualEffectWizard({
   onApplyHealing,
   onApplyConditions,
   onAddWeaponBuff,
+  onActivateSustained,
   onComplete,
 }: RitualEffectWizardProps) {
   // Estado do wizard
@@ -964,8 +967,12 @@ export function RitualEffectWizard({
     if (ritual && activeEffect?.weaponEffect) {
       onAddWeaponBuff?.(ritual, enhancements);
     }
+    // Ativa ritual sustentado se tiver configuração de sustentação
+    if (ritual && activeEffect?.sustain) {
+      onActivateSustained?.(ritual, enhancements, activeEffect.sustain);
+    }
     goToNextStep();
-  }, [ritual, enhancements, activeEffect, onAddWeaponBuff, goToNextStep]);
+  }, [ritual, enhancements, activeEffect, onAddWeaponBuff, onActivateSustained, goToNextStep]);
 
   // Handler de fechamento
   const handleClose = useCallback(() => {
