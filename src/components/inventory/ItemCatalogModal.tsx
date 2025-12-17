@@ -383,8 +383,8 @@ function ItemDetailModal({ item, onClose, canAdd, isLocked, onAdd }: ItemDetailM
 
   return (
     <Dialog open={!!item} onOpenChange={() => onClose()}>
-      <DialogContent className="w-full max-w-[95vw] sm:max-w-md p-4 sm:p-6">
-        <DialogHeader>
+      <DialogContent className="w-full max-w-[95vw] sm:max-w-md max-h-[85vh] flex flex-col p-4 sm:p-6">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
             <div className={cn(
               "w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0",
@@ -396,47 +396,51 @@ function ItemDetailModal({ item, onClose, canAdd, isLocked, onAdd }: ItemDetailM
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-3 sm:space-y-4">
-          {/* Badges - scroll horizontal em mobile */}
-          <div className="flex flex-wrap gap-1.5 sm:gap-2">
-            <Badge variant="outline" className={cn("text-xs", CATEGORY_COLORS[item.category])}>
-              Cat. {item.category === '0' ? 'Livre' : item.category}
-            </Badge>
-            <Badge variant="outline" className="text-xs">
-              {ITEM_TYPE_LABELS[item.type].label}
-            </Badge>
-            <Badge variant="outline" className="text-xs">{item.spaces} espaço(s)</Badge>
-            {item.consumable && (
-              <Badge variant="secondary" className="text-xs">
-                <Recycle className="w-3 h-3 mr-1" />
-                Consumível
+        <ScrollArea className="flex-1 -mx-4 px-4 sm:-mx-6 sm:px-6 overflow-y-auto">
+          <div className="space-y-3 sm:space-y-4 pb-2">
+            {/* Badges - scroll horizontal em mobile */}
+            <div className="flex flex-wrap gap-1.5 sm:gap-2">
+              <Badge variant="outline" className={cn("text-xs", CATEGORY_COLORS[item.category])}>
+                Cat. {item.category === '0' ? 'Livre' : item.category}
               </Badge>
+              <Badge variant="outline" className="text-xs">
+                {ITEM_TYPE_LABELS[item.type].label}
+              </Badge>
+              <Badge variant="outline" className="text-xs">{item.spaces} espaço(s)</Badge>
+              {item.consumable && (
+                <Badge variant="secondary" className="text-xs">
+                  <Recycle className="w-3 h-3 mr-1" />
+                  Consumível
+                </Badge>
+              )}
+            </div>
+
+            {/* Descrição */}
+            <p className="text-sm text-muted-foreground whitespace-pre-wrap break-words">{item.description}</p>
+
+            {/* Efeito */}
+            {item.effect && (
+              <div className="p-2.5 sm:p-3 bg-primary/10 border border-primary/30 rounded-lg">
+                <div className="flex items-center gap-2 text-primary text-sm font-medium mb-1">
+                  <Zap className="w-4 h-4 flex-shrink-0" />
+                  Efeito
+                </div>
+                <p className="text-sm whitespace-pre-wrap break-words">{item.effect}</p>
+              </div>
+            )}
+
+            {/* Usos */}
+            {item.uses && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Recycle className="w-4 h-4 flex-shrink-0" />
+                {item.uses} uso(s)
+              </div>
             )}
           </div>
+        </ScrollArea>
 
-          {/* Descrição */}
-          <p className="text-sm text-muted-foreground">{item.description}</p>
-
-          {/* Efeito */}
-          {item.effect && (
-            <div className="p-2.5 sm:p-3 bg-primary/10 border border-primary/30 rounded-lg">
-              <div className="flex items-center gap-2 text-primary text-sm font-medium mb-1">
-                <Zap className="w-4 h-4 flex-shrink-0" />
-                Efeito
-              </div>
-              <p className="text-sm">{item.effect}</p>
-            </div>
-          )}
-
-          {/* Usos */}
-          {item.uses && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Recycle className="w-4 h-4 flex-shrink-0" />
-              {item.uses} uso(s)
-            </div>
-          )}
-
-          {/* Botão de adicionar - touch friendly */}
+        {/* Botão de adicionar - touch friendly */}
+        <div className="flex-shrink-0 pt-2">
           <Button
             className="w-full h-12 sm:h-10 text-base sm:text-sm"
             disabled={isLocked || !canAdd}

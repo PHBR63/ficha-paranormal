@@ -451,116 +451,118 @@ function WeaponDetailModal({ weapon, onClose, canAdd, isLocked, onAdd }: WeaponD
 
   return (
     <Dialog open={!!weapon} onOpenChange={() => onClose()}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
+      <DialogContent className="w-full max-w-[95vw] sm:max-w-md max-h-[85vh] flex flex-col p-4 sm:p-6">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <div className={cn(
-              "w-8 h-8 rounded-lg flex items-center justify-center",
+              "w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0",
               CATEGORY_COLORS[weapon.category]
             )}>
               <TypeIcon className="w-4 h-4" />
             </div>
-            {weapon.name}
+            <span className="truncate">{weapon.name}</span>
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
-          {/* Badges */}
-          <div className="flex flex-wrap gap-2">
-            <Badge variant="outline" className={CATEGORY_COLORS[weapon.category]}>
-              Categoria {weapon.category === '0' ? 'Livre' : weapon.category}
-            </Badge>
-            <Badge variant="outline" className={profConfig.color}>
-              {profConfig.label}
-            </Badge>
-            {weapon.range && (
-              <Badge variant="outline">{weapon.range}</Badge>
-            )}
-            <Badge variant="outline">{weapon.spaces} espaço(s)</Badge>
-          </div>
-
-          {/* Descrição */}
-          {weapon.description && (
-            <p className="text-sm text-muted-foreground">{weapon.description}</p>
-          )}
-
-          {/* Stats */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="p-3 bg-destructive/10 rounded-lg text-center">
-              <p className="text-xs text-muted-foreground">Dano</p>
-              <p className="font-display text-xl text-destructive">{weapon.damage}</p>
-              <p className="text-xs text-muted-foreground">{weapon.damageType}</p>
-            </div>
-            <div className="p-3 bg-yellow-500/10 rounded-lg text-center">
-              <p className="text-xs text-muted-foreground">Crítico</p>
-              <p className="font-display text-xl text-yellow-500">
-                {weapon.critical === 20 ? '20' : `${weapon.critical}-20`}
-              </p>
-              <p className="text-xs text-muted-foreground">x{weapon.criticalMultiplier}</p>
-            </div>
-          </div>
-
-          {/* Propriedades */}
-          {weapon.properties && weapon.properties.length > 0 && (
-            <div>
-              <p className="text-xs text-muted-foreground mb-2">Propriedades:</p>
-              <div className="flex flex-wrap gap-1">
-                {weapon.properties.map(prop => (
-                  <Badge key={prop} variant="secondary" className="text-xs">
-                    {prop}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Especial */}
-          {weapon.special && (
-            <div className="p-3 bg-primary/10 border border-primary/30 rounded-lg">
-              <div className="flex items-center gap-2 text-primary text-sm font-medium mb-1">
-                <Sparkles className="w-4 h-4" />
-                Especial
-              </div>
-              <p className="text-sm">{weapon.special}</p>
-            </div>
-          )}
-
-          {/* Munição */}
-          {weapon.ammoType && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Info className="w-4 h-4" />
-              Usa munição: {weapon.ammoType}
-            </div>
-          )}
-
-          {/* Botões */}
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={onClose} className="flex-1">
-              Fechar
-            </Button>
-            <Button
-              onClick={onAdd}
-              disabled={isLocked || !canAdd}
-              className="flex-1"
-            >
-              {isLocked ? (
-                <>
-                  <Lock className="w-4 h-4 mr-2" />
-                  Bloqueado
-                </>
-              ) : canAdd ? (
-                <>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Adicionar
-                </>
-              ) : (
-                <>
-                  <XCircle className="w-4 h-4 mr-2" />
-                  Limite Atingido
-                </>
+        <ScrollArea className="flex-1 -mx-4 px-4 sm:-mx-6 sm:px-6 overflow-y-auto">
+          <div className="space-y-4 pb-2">
+            {/* Badges */}
+            <div className="flex flex-wrap gap-2">
+              <Badge variant="outline" className={CATEGORY_COLORS[weapon.category]}>
+                Categoria {weapon.category === '0' ? 'Livre' : weapon.category}
+              </Badge>
+              <Badge variant="outline" className={profConfig.color}>
+                {profConfig.label}
+              </Badge>
+              {weapon.range && (
+                <Badge variant="outline">{weapon.range}</Badge>
               )}
-            </Button>
+              <Badge variant="outline">{weapon.spaces} espaço(s)</Badge>
+            </div>
+
+            {/* Descrição */}
+            {weapon.description && (
+              <p className="text-sm text-muted-foreground whitespace-pre-wrap break-words">{weapon.description}</p>
+            )}
+
+            {/* Stats */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="p-3 bg-destructive/10 rounded-lg text-center">
+                <p className="text-xs text-muted-foreground">Dano</p>
+                <p className="font-display text-xl text-destructive">{weapon.damage}</p>
+                <p className="text-xs text-muted-foreground">{weapon.damageType}</p>
+              </div>
+              <div className="p-3 bg-yellow-500/10 rounded-lg text-center">
+                <p className="text-xs text-muted-foreground">Crítico</p>
+                <p className="font-display text-xl text-yellow-500">
+                  {weapon.critical === 20 ? '20' : `${weapon.critical}-20`}
+                </p>
+                <p className="text-xs text-muted-foreground">x{weapon.criticalMultiplier}</p>
+              </div>
+            </div>
+
+            {/* Propriedades */}
+            {weapon.properties && weapon.properties.length > 0 && (
+              <div>
+                <p className="text-xs text-muted-foreground mb-2">Propriedades:</p>
+                <div className="flex flex-wrap gap-1">
+                  {weapon.properties.map(prop => (
+                    <Badge key={prop} variant="secondary" className="text-xs">
+                      {prop}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Especial */}
+            {weapon.special && (
+              <div className="p-3 bg-primary/10 border border-primary/30 rounded-lg">
+                <div className="flex items-center gap-2 text-primary text-sm font-medium mb-1">
+                  <Sparkles className="w-4 h-4" />
+                  Especial
+                </div>
+                <p className="text-sm whitespace-pre-wrap break-words">{weapon.special}</p>
+              </div>
+            )}
+
+            {/* Munição */}
+            {weapon.ammoType && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Info className="w-4 h-4 flex-shrink-0" />
+                Usa munição: {weapon.ammoType}
+              </div>
+            )}
           </div>
+        </ScrollArea>
+
+        {/* Botões */}
+        <div className="flex gap-2 flex-shrink-0 pt-2">
+          <Button variant="outline" onClick={onClose} className="flex-1">
+            Fechar
+          </Button>
+          <Button
+            onClick={onAdd}
+            disabled={isLocked || !canAdd}
+            className="flex-1"
+          >
+            {isLocked ? (
+              <>
+                <Lock className="w-4 h-4 mr-2" />
+                Bloqueado
+              </>
+            ) : canAdd ? (
+              <>
+                <Plus className="w-4 h-4 mr-2" />
+                Adicionar
+              </>
+            ) : (
+              <>
+                <XCircle className="w-4 h-4 mr-2" />
+                Limite Atingido
+              </>
+            )}
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
