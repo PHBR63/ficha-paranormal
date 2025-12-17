@@ -8,7 +8,7 @@ import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Dices, Search, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { SKILLS } from '@/lib/character-data';
+import { SKILLS, getSkillBonus } from '@/lib/character-data';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
@@ -98,10 +98,8 @@ export function SkillsGrid({
           {trainedSkills.map((skill, index) => {
             const attrValue = attributes[skill.attribute] || 0;
             const trainingLevel = skills[skill.id] || 0;
-            // Converter grau de treinamento em bônus real:
-            // 0 = Destreinado (0), 1 = Treinado (+5), 2 = Veterano (+10), 3 = Expert (+15)
-            const TRAINING_BONUS_MAP = [0, 5, 10, 15];
-            const trainingBonus = TRAINING_BONUS_MAP[trainingLevel] ?? 0;
+            // Usar função centralizada para converter grau em bônus
+            const trainingBonus = getSkillBonus(trainingLevel);
             const color = ATTRIBUTE_COLORS[skill.attribute];
             return (
               <SkillRow 

@@ -951,3 +951,22 @@ export function getAvailableTrackAbilities(trackId: string, nex: number): TrackA
   
   return track.abilities.filter(ability => ability.minNex <= nex);
 }
+
+// ==================== BÔNUS DE TREINAMENTO ====================
+
+/**
+ * Converte grau de treinamento em bônus numérico
+ * 0 = Destreinado (+0), 1 = Treinado (+5), 2 = Veterano (+10), 3 = Expert (+15)
+ * Conforme Ordem Paranormal RPG v1.3
+ */
+export const TRAINING_BONUS_MAP = [0, 5, 10, 15] as const;
+
+export const TRAINING_LABELS = ['Destreinado', 'Treinado', 'Veterano', 'Expert'] as const;
+
+export function getSkillBonus(trainingLevel: number): number {
+  return TRAINING_BONUS_MAP[trainingLevel] ?? 0;
+}
+
+export function getTrainingLabel(trainingLevel: number): string {
+  return TRAINING_LABELS[trainingLevel] ?? 'Destreinado';
+}

@@ -7,6 +7,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Search, Star, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { rollSkillTest } from '@/lib/dice-roller';
+import { getSkillBonus } from '@/lib/character-data';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface SkillData {
@@ -121,7 +122,9 @@ export const SkillRollsPanel: React.FC<SkillRollsPanelProps> = ({
     
     const attrValue = attributes[group.attribute] || 0;
     const skillData = skills[skillKey];
-    const skillBonus = skillData?.trained ? (skillData.bonus || 0) : 0;
+    // Converter grau de treinamento em bônus real usando função centralizada
+    const trainingLevel = getTrainingLevel(skillKey);
+    const skillBonus = getSkillBonus(trainingLevel);
     
     return attrValue + skillBonus + conditionModifier;
   };
