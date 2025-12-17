@@ -440,6 +440,19 @@ export function ConditionManager({
                   })}
                 </AnimatePresence>
 
+                {/* Botão Processar Início de Turno */}
+                {hasStartOfTurnEffects && (
+                  <Button
+                    variant="default"
+                    size="sm"
+                    className="w-full text-xs bg-orange-600 hover:bg-orange-700"
+                    onClick={handleProcessStartOfTurn}
+                  >
+                    <Play className="w-3 h-3 mr-2" />
+                    Processar Início de Turno
+                  </Button>
+                )}
+
                 {/* Botão para reduzir todos os turnos */}
                 {conditions.some(c => c.turnsRemaining !== null) && (
                   <Button
@@ -449,8 +462,18 @@ export function ConditionManager({
                     onClick={handleReduceAllTurns}
                   >
                     <Timer className="w-3 h-3 mr-2" />
-                    Passar Turno (reduzir contadores)
+                    Fim do Turno (reduzir contadores)
                   </Button>
+                )}
+
+                {/* Resultados do início de turno */}
+                {turnResults.length > 0 && (
+                  <div className="p-2 bg-muted/50 rounded-lg border border-border">
+                    <p className="text-xs font-medium mb-1">Último início de turno:</p>
+                    {turnResults.map((msg, i) => (
+                      <p key={i} className="text-xs text-muted-foreground">{msg}</p>
+                    ))}
+                  </div>
                 )}
               </div>
             ) : (

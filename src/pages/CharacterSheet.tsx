@@ -65,6 +65,7 @@ import { useCharacterBonusSummary } from '@/hooks/useCharacterBonusSummary';
 import { useBonusSync } from '@/hooks/useBonusSync';
 import { useCampaignRitualSync } from '@/hooks/useCampaignRitualSync';
 import { useWeaponBuffs } from '@/hooks/useWeaponBuffs';
+import { useAutoConditions, type ActiveCondition as AutoCondition } from '@/hooks/useAutoConditions';
 import { BonusSummaryCard } from '@/components/character/BonusSummaryCard';
 
 // Novos componentes do redesign 2.0 (estilo ficha de papel)
@@ -121,12 +122,13 @@ interface InventoryItemPersisted {
   consumable?: boolean;
 }
 
-// Interface para condição persistida (objeto completo)
+// Interface para condição persistida (objeto completo com dyingCounter para Morrendo)
 interface PersistedCondition {
   id: string;
   name: string;
   turnsRemaining: number | null;
   addedAt: string; // ISO string para serialização
+  dyingCounter?: number; // Para condição Morrendo (3, 2, 1, 0 = morte)
 }
 
 // Interface do personagem
@@ -191,6 +193,7 @@ function parseCondition(c: string | PersistedCondition): ActiveCondition {
     name: c.name,
     turnsRemaining: c.turnsRemaining,
     addedAt: new Date(c.addedAt), // Converte string ISO para Date
+    dyingCounter: c.dyingCounter, // Preserva contador de morrendo
   };
 }
 
@@ -201,6 +204,7 @@ function serializeCondition(c: ActiveCondition): PersistedCondition {
     name: c.name,
     turnsRemaining: c.turnsRemaining,
     addedAt: c.addedAt instanceof Date ? c.addedAt.toISOString() : c.addedAt as string,
+    dyingCounter: c.dyingCounter, // Preserva contador de morrendo
   };
 }
 
@@ -285,6 +289,9 @@ export default function CharacterSheet() {
     generalPowers: character?.general_powers || [],
     inventory: character?.inventory || [],
   });
+
+  // Hook de aplicação automática de condições (HP=0 → Inconsciente, SAN=0 → Enlouquecendo)
+  const { processResourceChange } = useAutoConditions();
 
   // Hook de resumo de todos os bônus do personagem
   const bonusSummary = useCharacterBonusSummary({
@@ -461,29 +468,62 @@ export default function CharacterSheet() {
     setDiceModalOpen(true);
   }, [defenseBonuses.resistances]);
 
-  // Handler para mudança de stats
+  // Handler para mudança de stats com aplicação automática de condições
   const handleCombatStatsChange = async (stats: { hp: number; pe: number; san: number }) => {
     if (!character) return;
 
+    // Verifica e aplica condições automáticas baseado nos novos valores
+    const currentConditions = character.conditions.map(parseCondition);
+    const autoResult = processResourceChange(
+      stats.hp,
+      character.hp_max,
+      stats.san,
+      character.san_max,
+      currentConditions
+    );
+
+    // Se houver mudanças nas condições, inclui na atualização
+    const hasConditionChanges = autoResult.newConditions.length !== currentConditions.length ||
+      autoResult.newConditions.some((c, i) => c.id !== currentConditions[i]?.id);
+
+    const updateData: Record<string, unknown> = {
+      hp_current: stats.hp,
+      pe_current: stats.pe,
+      san_current: stats.san,
+    };
+
+    if (hasConditionChanges) {
+      const serializedConditions = autoResult.newConditions.map(serializeCondition);
+      updateData.conditions = JSON.parse(JSON.stringify(serializedConditions));
+    }
+
     const { error } = await supabase
       .from('characters')
-      .update({
-        hp_current: stats.hp,
-        pe_current: stats.pe,
-        san_current: stats.san,
-      })
+      .update(updateData)
       .eq('id', character.id);
 
     if (!error) {
       setHpCurrent(stats.hp);
       setPeCurrent(stats.pe);
       setSanCurrent(stats.san);
-      setCharacter(prev => prev ? {
-        ...prev,
-        hp_current: stats.hp,
-        pe_current: stats.pe,
-        san_current: stats.san,
-      } : null);
+      
+      if (hasConditionChanges) {
+        const serializedConditions = autoResult.newConditions.map(serializeCondition);
+        setCharacter(prev => prev ? {
+          ...prev,
+          hp_current: stats.hp,
+          pe_current: stats.pe,
+          san_current: stats.san,
+          conditions: serializedConditions,
+        } : null);
+      } else {
+        setCharacter(prev => prev ? {
+          ...prev,
+          hp_current: stats.hp,
+          pe_current: stats.pe,
+          san_current: stats.san,
+        } : null);
+      }
     }
   };
 
