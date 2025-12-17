@@ -1588,10 +1588,10 @@ export const RITUAL_EFFECTS: Record<string, RitualEffectsByLevel> = {
   'pronunciar-sigilo': {
     base: {
       resistance: { type: 'vontade', effect: 'parcial' },
-      special: 'Descobre nome verdadeiro. Dá vantagem contra alvo (+5 testes, -5 resistências).',
+      special: 'Descobre nome verdadeiro. Concede vantagem categórica contra o alvo.',
     },
     discente: {
-      special: 'Bônus +10, penalidade -10.',
+      special: 'Vantagem ampliada contra o alvo nomeado.',
     },
     verdadeiro: {
       special: 'Alvo não pode mentir para você ou atacá-lo.',
@@ -1616,18 +1616,18 @@ export const RITUAL_EFFECTS: Record<string, RitualEffectsByLevel> = {
   // Deflagração de Energia
   'deflagracao-de-energia': {
     base: {
-      damage: { diceCount: 20, diceType: 6, damageType: 'energia' },
+      damage: { diceCount: 20, diceType: 10, damageType: 'energia' },
       areaEffect: { shape: 'esfera', radius: 12 },
       resistance: { type: 'reflexos', effect: 'reduz_metade' },
-      special: 'Explosão massiva 20d6 Energia em área de 12m.',
+      special: 'Explosão massiva 20d10 Energia em área de 12m.',
     },
     discente: {
-      damage: { diceCount: 30, diceType: 6, damageType: 'energia' },
-      special: '30d6 de dano.',
+      damage: { diceCount: 30, diceType: 10, damageType: 'energia' },
+      special: '30d10 de dano.',
     },
     verdadeiro: {
-      damage: { diceCount: 40, diceType: 6, damageType: 'energia' },
-      special: '40d6 de dano, ignora RD.',
+      damage: { diceCount: 40, diceType: 10, damageType: 'energia' },
+      special: '40d10 de dano, ignora RD.',
     },
   },
 
@@ -1649,9 +1649,7 @@ export const RITUAL_EFFECTS: Record<string, RitualEffectsByLevel> = {
   // Canalizar o Medo
   'canalizar-o-medo': {
     base: {
-      tempHP: { diceCount: 0, diceType: 0, bonus: 50 },
-      attackModifier: 5,
-      special: 'Absorve medo ambiente. +50 PV temp, +5 ataque/dano.',
+      special: 'Transfere ritual para outro conjurador. Reduz PE máximo do alvo temporariamente.',
     },
   },
 
