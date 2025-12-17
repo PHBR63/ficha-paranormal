@@ -87,6 +87,21 @@ export function StatsPreviewWidget({
   originId,
 }: StatsPreviewWidgetProps) {
   const [expanded, setExpanded] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  
+  // Posição inicial do widget (carrega do localStorage se disponível)
+  const getInitialPosition = () => {
+    if (typeof window === 'undefined') return { x: 0, y: 0 };
+    const saved = localStorage.getItem('statsWidgetPosition');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        return { x: 0, y: 0 };
+      }
+    }
+    return { x: 0, y: 0 };
+  };
   
   const classColors = {
     Combatente: 'from-destructive/20 to-destructive/5 border-destructive/30',
@@ -107,25 +122,43 @@ export function StatsPreviewWidget({
     <AnimatePresence>
       {show && (
         <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
+          drag
+          dragMomentum={false}
+          dragElastic={0.1}
+          initial={{ opacity: 0, x: 20, ...getInitialPosition() }}
+          animate={{ opacity: 1, x: getInitialPosition().x, y: getInitialPosition().y }}
           exit={{ opacity: 0, x: 20 }}
+          onDragStart={() => setIsDragging(true)}
+          onDragEnd={(_, info) => {
+            setIsDragging(false);
+            const newPos = { x: info.point.x - window.innerWidth + 150, y: info.point.y - 112 };
+            localStorage.setItem('statsWidgetPosition', JSON.stringify(newPos));
+          }}
+          whileDrag={{ scale: 1.02, cursor: 'grabbing' }}
           className={cn(
             'fixed right-6 top-28 z-30',
-            'hidden lg:block'
+            'hidden lg:block',
+            isDragging ? 'cursor-grabbing' : 'cursor-grab'
           )}
         >
           <TooltipProvider>
             <div className={cn(
-              'ordo-panel p-4 bg-gradient-to-b border-2 transition-all duration-300',
+              'ordo-panel p-4 bg-gradient-to-b border-2 transition-all duration-300 select-none',
               bgClass,
-              expanded ? 'w-64' : 'w-auto'
+              expanded ? 'w-64' : 'w-auto',
+              isDragging && 'shadow-lg ring-2 ring-primary/30'
             )}>
-              {/* Header com toggle */}
+              {/* Header com toggle e indicador de drag */}
               <div className="flex items-center justify-between mb-3">
-                <p className="text-xs text-muted-foreground font-display tracking-wider">
-                  PREVIEW
-                </p>
+                <div className="flex items-center gap-2">
+                  <div className="flex gap-0.5">
+                    <div className="w-1 h-3 rounded-full bg-muted-foreground/30" />
+                    <div className="w-1 h-3 rounded-full bg-muted-foreground/30" />
+                  </div>
+                  <p className="text-xs text-muted-foreground font-display tracking-wider">
+                    PREVIEW
+                  </p>
+                </div>
                 <button
                   onClick={() => setExpanded(!expanded)}
                   className="p-1 rounded hover:bg-muted/50 transition-colors"
