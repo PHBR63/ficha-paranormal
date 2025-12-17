@@ -38,6 +38,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ORIGINS, CLASSES, getTrackById } from '@/lib/character-data';
 import { ALL_RITUALS } from '@/lib/rituals-data';
 import { ALL_CLASS_ABILITIES } from '@/lib/class-abilities';
@@ -1345,7 +1346,7 @@ export default function CharacterSheet() {
               {/* Resumo de Todos os Bônus Ativos - após condições */}
               <BonusSummaryCard summary={bonusSummary} />
 
-              {/* Rituais e Histórico (acordeão unificado) */}
+              {/* Rituais e Histórico (acordeão com abas) */}
               {character.rituals && character.rituals.length > 0 && (
                 <SheetAccordionSection
                   title="Rituais"
@@ -1354,35 +1355,57 @@ export default function CharacterSheet() {
                   defaultOpen={false}
                   variant="paranormal"
                 >
-                  <div className="space-y-4">
-                    {/* Lista de Rituais */}
-                    <div className="space-y-2">
-                      {character.rituals.map((ritualId, i) => {
-                        const ritual = ALL_RITUALS.find(r => r.id === ritualId);
-                        if (!ritual) return null;
-                        return (
-                          <RitualCard
-                            key={i}
-                            ritual={ritual}
-                            isNonOccultist={character.class !== 'Ocultista'}
-                            peCurrent={peCurrent}
-                            onCast={handleOpenCastModal}
-                          />
-                        );
-                      })}
-                    </div>
+                  <Tabs defaultValue="rituais" className="w-full">
+                    <TabsList className="w-full grid grid-cols-2 mb-3 bg-paranormal/10">
+                      <TabsTrigger 
+                        value="rituais" 
+                        className="text-xs data-[state=active]:bg-paranormal data-[state=active]:text-paranormal-foreground"
+                      >
+                        <Skull className="w-3.5 h-3.5 mr-1.5" />
+                        Rituais ({character.rituals.length})
+                      </TabsTrigger>
+                      <TabsTrigger 
+                        value="historico"
+                        className="text-xs data-[state=active]:bg-paranormal data-[state=active]:text-paranormal-foreground"
+                      >
+                        <History className="w-3.5 h-3.5 mr-1.5" />
+                        Histórico ({castHistory.length})
+                      </TabsTrigger>
+                    </TabsList>
 
-                    {/* Histórico de Conjurações (dentro do mesmo acordeão) */}
-                    {castHistory.length > 0 && (
-                      <div className="pt-3 border-t border-paranormal/20">
+                    <TabsContent value="rituais" className="mt-0">
+                      <div className="space-y-2">
+                        {character.rituals.map((ritualId, i) => {
+                          const ritual = ALL_RITUALS.find(r => r.id === ritualId);
+                          if (!ritual) return null;
+                          return (
+                            <RitualCard
+                              key={i}
+                              ritual={ritual}
+                              isNonOccultist={character.class !== 'Ocultista'}
+                              peCurrent={peCurrent}
+                              onCast={handleOpenCastModal}
+                            />
+                          );
+                        })}
+                      </div>
+                    </TabsContent>
+
+                    <TabsContent value="historico" className="mt-0">
+                      {castHistory.length > 0 ? (
                         <RitualCastHistory
                           history={castHistory}
                           onClear={handleClearCastHistory}
                           characterName={character.name}
                         />
-                      </div>
-                    )}
-                  </div>
+                      ) : (
+                        <div className="text-center py-6 text-muted-foreground">
+                          <History className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                          <p className="text-sm">Nenhuma conjuração registrada</p>
+                        </div>
+                      )}
+                    </TabsContent>
+                  </Tabs>
                 </SheetAccordionSection>
               )}
 
