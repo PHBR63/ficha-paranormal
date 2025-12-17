@@ -50,11 +50,19 @@ const ATTRIBUTE_LABELS: Record<string, string> = {
 };
 
 const ATTRIBUTE_COLORS: Record<string, string> = {
-  agility: 'text-blue-400 bg-blue-400/10 border-blue-400/30',
-  strength: 'text-red-400 bg-red-400/10 border-red-400/30',
-  intellect: 'text-yellow-400 bg-yellow-400/10 border-yellow-400/30',
-  presence: 'text-purple-400 bg-purple-400/10 border-purple-400/30',
-  vigor: 'text-green-400 bg-green-400/10 border-green-400/30',
+  agility: 'bg-blue-500/20 border-blue-400/50',
+  strength: 'bg-red-500/20 border-red-400/50',
+  intellect: 'bg-yellow-500/20 border-yellow-400/50',
+  presence: 'bg-purple-500/20 border-purple-400/50',
+  vigor: 'bg-green-500/20 border-green-400/50',
+};
+
+const ATTRIBUTE_TEXT_COLORS: Record<string, string> = {
+  agility: 'text-blue-300',
+  strength: 'text-red-300',
+  intellect: 'text-yellow-300',
+  presence: 'text-purple-300',
+  vigor: 'text-green-300',
 };
 
 const ATTRIBUTE_ORDER = ['agility', 'strength', 'intellect', 'presence', 'vigor'];
@@ -388,16 +396,19 @@ export function StepSkills({ formData, updateFormData, buildResult }: StepSkills
               const value = formData.attributes[attr as keyof typeof formData.attributes];
               const label = ATTRIBUTE_LABELS[attr];
               const colors = ATTRIBUTE_COLORS[attr];
+              const textColor = ATTRIBUTE_TEXT_COLORS[attr];
               return (
                 <div 
                   key={attr}
                   className={cn(
-                    'flex items-center gap-2 px-3 py-1.5 rounded border',
+                    'flex items-center gap-2 px-3 py-2 rounded border',
                     colors
                   )}
                 >
-                  <span className="text-xs font-medium">{label}</span>
-                  <span className="font-display text-lg">{value >= 0 ? `+${value}` : value}</span>
+                  <span className={cn('text-xs font-semibold', textColor)}>{label}</span>
+                  <span className={cn('font-display text-xl font-bold', textColor)}>
+                    {value >= 0 ? `+${value}` : value}
+                  </span>
                 </div>
               );
             })}
