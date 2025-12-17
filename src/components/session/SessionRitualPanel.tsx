@@ -1,14 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Sparkles, Zap, AlertTriangle, Droplets, Skull, Moon, Sun, Clock, Target, Timer } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Sparkles, Zap, AlertTriangle, Droplets, Skull, Moon, Sun, Clock, Target, Timer, Swords } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Ritual } from '@/lib/rituals-data';
 import { useRitualValidation, TurnPEState } from '@/hooks/useRitualValidation';
+import { getActiveRitualEffect } from '@/lib/ritual-effects';
 import { motion, AnimatePresence } from 'framer-motion';
+
+export type BuffDuration = 'cena' | 'rodadas' | 'sustentado';
+
+export interface RitualCastOptions {
+  duration?: BuffDuration;
+  turnsRemaining?: number;
+}
 
 interface SessionRitualPanelProps {
   rituals: Ritual[];
@@ -18,7 +29,7 @@ interface SessionRitualPanelProps {
   elementalAffinity?: string | null;
   turnPEState?: TurnPEState;
   isNonOccultist?: boolean;
-  onCast: (ritual: Ritual, cost: number, enhancements: string[]) => void;
+  onCast: (ritual: Ritual, cost: number, enhancements: string[], options?: RitualCastOptions) => void;
   onPESpend: (amount: number) => boolean;
 }
 
@@ -73,6 +84,8 @@ export const SessionRitualPanel: React.FC<SessionRitualPanelProps> = ({
   const [selectedRitual, setSelectedRitual] = useState<Ritual | null>(null);
   const [selectedEnhancements, setSelectedEnhancements] = useState<string[]>([]);
   const [lastCast, setLastCast] = useState<{ name: string; cost: number; element: string } | null>(null);
+  const [buffDuration, setBuffDuration] = useState<BuffDuration>('cena');
+  const [roundsCount, setRoundsCount] = useState<number>(3);
 
   const { canCastRitual, getAvailableEnhancements, maxCircle, peLimitPerTurn } = useRitualValidation(
     nex,
@@ -82,9 +95,18 @@ export const SessionRitualPanel: React.FC<SessionRitualPanelProps> = ({
     turnPEState
   );
 
+  // Verifica se o ritual selecionado tem efeito de arma
+  const hasWeaponEffect = useMemo(() => {
+    if (!selectedRitual) return false;
+    const effect = getActiveRitualEffect(selectedRitual.id, selectedEnhancements);
+    return !!effect?.weaponEffect;
+  }, [selectedRitual, selectedEnhancements]);
+
   const handleOpenEnhancements = (ritual: Ritual) => {
     setSelectedRitual(ritual);
     setSelectedEnhancements([]);
+    setBuffDuration('cena');
+    setRoundsCount(3);
   };
 
   const handleToggleEnhancement = (enhancementName: string) => {
@@ -134,9 +156,20 @@ export const SessionRitualPanel: React.FC<SessionRitualPanelProps> = ({
       cost: totalCost,
       element: selectedRitual.element 
     });
-    onCast(selectedRitual, totalCost, selectedEnhancements);
+
+    // Prepara opções de duração se for buff de arma
+    const options: RitualCastOptions | undefined = hasWeaponEffect 
+      ? {
+          duration: buffDuration,
+          turnsRemaining: buffDuration === 'rodadas' ? roundsCount : undefined,
+        }
+      : undefined;
+
+    onCast(selectedRitual, totalCost, selectedEnhancements, options);
     setSelectedRitual(null);
     setSelectedEnhancements([]);
+    setBuffDuration('cena');
+    setRoundsCount(3);
   };
 
   const peSpentThisTurn = turnPEState?.peSpentThisTurn || 0;
@@ -396,6 +429,61 @@ export const SessionRitualPanel: React.FC<SessionRitualPanelProps> = ({
                       ))}
                     </div>
                   </ScrollArea>
+                </div>
+              )}
+
+              {/* Weapon Buff Duration Selector */}
+              {hasWeaponEffect && (
+                <div className="p-3 rounded-lg border border-primary/30 bg-primary/5 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Swords className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-medium">Buff de Arma</span>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label className="text-xs text-muted-foreground">Duração do efeito</Label>
+                    <RadioGroup 
+                      value={buffDuration} 
+                      onValueChange={(v) => setBuffDuration(v as BuffDuration)}
+                      className="flex flex-wrap gap-2"
+                    >
+                      <div className="flex items-center space-x-1.5">
+                        <RadioGroupItem value="cena" id="dur-cena" className="h-3.5 w-3.5" />
+                        <Label htmlFor="dur-cena" className="text-xs cursor-pointer">Cena</Label>
+                      </div>
+                      <div className="flex items-center space-x-1.5">
+                        <RadioGroupItem value="rodadas" id="dur-rodadas" className="h-3.5 w-3.5" />
+                        <Label htmlFor="dur-rodadas" className="text-xs cursor-pointer">Rodadas</Label>
+                      </div>
+                      <div className="flex items-center space-x-1.5">
+                        <RadioGroupItem value="sustentado" id="dur-sustentado" className="h-3.5 w-3.5" />
+                        <Label htmlFor="dur-sustentado" className="text-xs cursor-pointer">Sustentado</Label>
+                      </div>
+                    </RadioGroup>
+                  </div>
+
+                  {buffDuration === 'rodadas' && (
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="rounds-input" className="text-xs text-muted-foreground whitespace-nowrap">
+                        Nº de rodadas:
+                      </Label>
+                      <Input
+                        id="rounds-input"
+                        type="number"
+                        min={1}
+                        max={20}
+                        value={roundsCount}
+                        onChange={(e) => setRoundsCount(Math.max(1, Math.min(20, parseInt(e.target.value) || 1)))}
+                        className="h-7 w-16 text-center text-sm"
+                      />
+                    </div>
+                  )}
+
+                  <p className="text-[10px] text-muted-foreground">
+                    {buffDuration === 'cena' && 'O buff permanece até o fim da cena/combate'}
+                    {buffDuration === 'rodadas' && `O buff expira após ${roundsCount} rodada${roundsCount > 1 ? 's' : ''}`}
+                    {buffDuration === 'sustentado' && 'Você deve sustentar o ritual a cada turno'}
+                  </p>
                 </div>
               )}
 
