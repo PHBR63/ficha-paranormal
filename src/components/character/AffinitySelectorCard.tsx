@@ -4,11 +4,11 @@
  */
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Sparkles, Droplet, Skull, BookOpen, Zap, Check, Loader2 } from 'lucide-react';
+import { Sparkles, Droplet, Skull, BookOpen, Zap, Check, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
 import {
   ParanormalElement,
   ELEMENT_LABELS,
@@ -32,6 +32,7 @@ interface AffinitySelectorCardProps {
 
 export function AffinitySelectorCard({ nex, onSelectAffinity }: AffinitySelectorCardProps) {
   const [selectedElement, setSelectedElement] = useState<ParanormalElement | null>(null);
+  const [expandedElement, setExpandedElement] = useState<ParanormalElement | null>(null);
   const [saving, setSaving] = useState(false);
 
   // Só exibe se NEX >= 50
@@ -70,6 +71,7 @@ export function AffinitySelectorCard({ nex, onSelectAffinity }: AffinitySelector
         {(['sangue', 'morte', 'conhecimento', 'energia'] as ParanormalElement[]).map((element) => {
           const Icon = AFFINITY_ICONS[element];
           const isSelected = selectedElement === element;
+          const isExpanded = expandedElement === element;
           const colorClass = ELEMENT_COLORS[element];
           const bgClass = ELEMENT_BG_COLORS[element];
 
@@ -99,9 +101,38 @@ export function AffinitySelectorCard({ nex, onSelectAffinity }: AffinitySelector
                 </div>
               </CardHeader>
               <CardContent className="px-3 pb-3">
-                <CardDescription className="text-xs line-clamp-2">
-                  {AFFINITY_DESCRIPTIONS[element]}
-                </CardDescription>
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={isExpanded ? 'expanded' : 'collapsed'}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.15 }}
+                  >
+                    <CardDescription className={`text-xs ${isExpanded ? '' : 'line-clamp-2'}`}>
+                      {AFFINITY_DESCRIPTIONS[element]}
+                    </CardDescription>
+                  </motion.div>
+                </AnimatePresence>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setExpandedElement(isExpanded ? null : element);
+                  }}
+                  className="mt-1.5 text-[10px] text-paranormal hover:text-paranormal/80 flex items-center gap-0.5 transition-colors"
+                >
+                  {isExpanded ? (
+                    <>
+                      <ChevronUp className="w-3 h-3" />
+                      Ver menos
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDown className="w-3 h-3" />
+                      Ver mais
+                    </>
+                  )}
+                </button>
               </CardContent>
             </Card>
           );
