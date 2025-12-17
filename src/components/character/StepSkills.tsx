@@ -13,7 +13,7 @@ import { useState, useMemo } from 'react';
 import { SKILLS, getExtraSkillsByNex } from '@/lib/character-data';
 import { getClassSkillRules } from '@/lib/character-builder-engine';
 import { cn } from '@/lib/utils';
-import { AlertTriangle, Check, Lock, Search, ChevronDown, ChevronRight, TrendingUp } from 'lucide-react';
+import { AlertTriangle, Check, Lock, Search, ChevronDown, ChevronRight, TrendingUp, ChevronsUpDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
@@ -172,6 +172,24 @@ export function StepSkills({ formData, updateFormData, buildResult }: StepSkills
     ...Object.values(formData.classSkillChoices),
     ...Object.values(formData.conflictResolutions),
   ]), [originSkills, classSkills.mandatory, formData.classSkillChoices, formData.conflictResolutions]);
+
+  // Contador de perícias treinadas por atributo
+  const trainedByAttribute = useMemo(() => {
+    const counts: Record<string, { trained: number; total: number }> = {};
+    ATTRIBUTE_ORDER.forEach(attr => {
+      const attrSkills = skillsByAttribute[attr] || [];
+      const trained = attrSkills.filter(s => 
+        unavailableSkills.has(s.id) || formData.freeSkills.includes(s.id)
+      ).length;
+      counts[attr] = { trained, total: attrSkills.length };
+    });
+    return counts;
+  }, [skillsByAttribute, unavailableSkills, formData.freeSkills]);
+
+  const allExpanded = expandedAttributes.length === ATTRIBUTE_ORDER.length;
+  const toggleAllSections = () => {
+    setExpandedAttributes(allExpanded ? [] : [...ATTRIBUTE_ORDER]);
+  };
 
   // Conteúdo educativo do livro
   const rulebookContent = getRulebookContent('skills');
@@ -400,17 +418,17 @@ export function StepSkills({ formData, updateFormData, buildResult }: StepSkills
                 const textColor = ATTRIBUTE_TEXT_COLORS[attr];
                 const attrSkills = skillsByAttribute[attr] || [];
                 const isHighlighted = expandedAttributes.length === 1 && expandedAttributes[0] === attr;
+                const { trained, total } = trainedByAttribute[attr];
                 
                 return (
                   <Tooltip key={attr}>
                     <TooltipTrigger asChild>
                       <button 
                         onClick={() => {
-                          // Expande apenas esta seção
                           setExpandedAttributes([attr]);
                         }}
                         className={cn(
-                          'flex items-center gap-2 px-3 py-2 rounded border transition-all cursor-pointer',
+                          'flex flex-col items-center gap-1 px-3 py-2 rounded border transition-all cursor-pointer',
                           colors,
                           isHighlighted && 'ring-2 ring-offset-1 ring-offset-background scale-105 shadow-lg',
                           isHighlighted && attr === 'agility' && 'ring-blue-400',
@@ -420,9 +438,17 @@ export function StepSkills({ formData, updateFormData, buildResult }: StepSkills
                           isHighlighted && attr === 'vigor' && 'ring-green-400',
                         )}
                       >
-                        <span className={cn('text-xs font-semibold', textColor)}>{label}</span>
-                        <span className={cn('font-display text-xl font-bold', textColor)}>
-                          {value >= 0 ? `+${value}` : value}
+                        <div className="flex items-center gap-2">
+                          <span className={cn('text-xs font-semibold', textColor)}>{label}</span>
+                          <span className={cn('font-display text-xl font-bold', textColor)}>
+                            {value >= 0 ? `+${value}` : value}
+                          </span>
+                        </div>
+                        <span className={cn(
+                          'text-[10px] font-medium',
+                          trained === total ? 'text-green-400' : 'text-muted-foreground'
+                        )}>
+                          {trained}/{total} treinadas
                         </span>
                       </button>
                     </TooltipTrigger>
@@ -439,15 +465,26 @@ export function StepSkills({ formData, updateFormData, buildResult }: StepSkills
           </TooltipProvider>
         </motion.div>
 
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar perícia..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
+        {/* Search + Expand/Collapse */}
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar perícia..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={toggleAllSections}
+            className="shrink-0"
+            title={allExpanded ? 'Recolher todas' : 'Expandir todas'}
+          >
+            <ChevronsUpDown className="h-4 w-4" />
+          </Button>
         </div>
 
         {/* Free Skills Selection - Grouped by Attribute */}
