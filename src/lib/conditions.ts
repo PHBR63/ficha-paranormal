@@ -1,6 +1,10 @@
 // Ordem Paranormal RPG v1.3 - Sistema de Condições
-// Baseado no livro de regras oficial
+// Baseado no livro de regras oficial - Atualizado com todas as condições e efeitos contextuais
 
+/**
+ * Interface principal para condições
+ * Inclui suporte para modificadores contextuais (corpo a corpo vs distância)
+ */
 export interface Condition {
   id: string;
   name: string;
@@ -13,7 +17,24 @@ export interface Condition {
   turnsRemaining?: number;
 }
 
+/**
+ * Interface para modificadores contextuais
+ * Permite efeitos diferentes dependendo do tipo de ataque/situação
+ */
+export interface ContextualModifier {
+  melee?: number;      // Modificador para ataques corpo a corpo
+  ranged?: number;     // Modificador para ataques à distância
+  attack?: number;     // Modificador para ataques em geral
+  initiative?: number; // Modificador para iniciativa
+  perception?: number; // Modificador para percepção
+}
+
+/**
+ * Lista completa de condições do Ordem Paranormal RPG v1.3
+ * Inclui todas as condições do livro básico + Desprevenido e Surpreendido
+ */
 export const CONDITIONS: Record<string, Omit<Condition, 'turnsRemaining'>> = {
+  // === CONDIÇÕES DE COMBATE ===
   sangrando: {
     id: 'sangrando',
     name: 'Sangrando',
@@ -60,6 +81,27 @@ export const CONDITIONS: Record<string, Omit<Condition, 'turnsRemaining'>> = {
     effect: 'Defesa -5 contra ataques corpo a corpo. +5 contra ataques à distância.',
     removal: 'Gastar ação de movimento para se levantar.',
   },
+  desprevenido: {
+    id: 'desprevenido',
+    name: 'Desprevenido',
+    icon: '😶',
+    color: 'warning',
+    description: 'Você não está preparado para o perigo.',
+    effect: 'Não pode usar reações. Defesa -5.',
+    removal: 'Perceber a ameaça ou fim do turno.',
+  },
+  surpreendido: {
+    id: 'surpreendido',
+    name: 'Surpreendido',
+    icon: '😲',
+    color: 'warning',
+    description: 'Você foi pego de surpresa!',
+    effect: 'Não age na primeira rodada. Defesa -5 contra atacantes que te surpreenderam.',
+    removal: 'Fim da primeira rodada de combate.',
+    autoRemove: true,
+  },
+
+  // === CONDIÇÕES SENSORIAIS ===
   cego: {
     id: 'cego',
     name: 'Cego',
@@ -78,6 +120,8 @@ export const CONDITIONS: Record<string, Omit<Condition, 'turnsRemaining'>> = {
     effect: 'Falha automática em testes de Percepção auditiva. -2 em Iniciativa.',
     removal: 'Depende da causa.',
   },
+
+  // === CONDIÇÕES FÍSICAS ===
   exausto: {
     id: 'exausto',
     name: 'Exausto',
@@ -87,59 +131,14 @@ export const CONDITIONS: Record<string, Omit<Condition, 'turnsRemaining'>> = {
     effect: '-2 em todos os testes e -3m de deslocamento.',
     removal: 'Descanso completo.',
   },
-  apavorado: {
-    id: 'apavorado',
-    name: 'Apavorado',
-    icon: '😱',
-    color: 'sanity',
-    description: 'O medo domina suas ações.',
-    effect: 'Deve fugir da fonte do medo. -2 em todos os testes.',
-    removal: 'Teste de Vontade DT 15 ou fim da cena.',
-  },
-  fascinado: {
-    id: 'fascinado',
-    name: 'Fascinado',
-    icon: '😍',
-    color: 'energy',
-    description: 'Algo capturou completamente sua atenção.',
-    effect: '-5 em testes de Percepção. Não pode realizar ações exceto observar a fonte.',
-    removal: 'Ameaça óbvia ou fim do efeito.',
-  },
-  inconsciente: {
-    id: 'inconsciente',
-    name: 'Inconsciente',
-    icon: '💤',
-    color: 'muted-foreground',
-    description: 'Você está completamente fora de combate.',
-    effect: 'Não pode realizar nenhuma ação. Defesa 5. Indefeso.',
-    removal: 'Recuperar ao menos 1 PV ou ser acordado.',
-  },
-  morrendo: {
-    id: 'morrendo',
-    name: 'Morrendo',
-    icon: '💀',
-    color: 'destructive',
-    description: 'Você está à beira da morte.',
-    effect: 'Inconsciente. Contador de 3 rodadas até morrer. Dano reduz 1 rodada.',
-    removal: 'Teste de Medicina DT 20 por aliado. Recupera 1 PV.',
-  },
   envenenado: {
     id: 'envenenado',
     name: 'Envenenado',
     icon: '🧪',
     color: 'success',
     description: 'Veneno corre em suas veias.',
-    effect: 'Varia conforme o veneno. Geralmente dano por turno.',
+    effect: 'Varia conforme o veneno. Geralmente 1d4 dano por turno.',
     removal: 'Teste de Fortitude, Medicina ou antídoto.',
-  },
-  paralisado: {
-    id: 'paralisado',
-    name: 'Paralisado',
-    icon: '🧊',
-    color: 'accent',
-    description: 'Você não consegue se mover.',
-    effect: 'Não pode se mover ou realizar ações físicas. Defesa 5. Indefeso.',
-    removal: 'Depende da causa.',
   },
   debilitado: {
     id: 'debilitado',
@@ -177,14 +176,25 @@ export const CONDITIONS: Record<string, Omit<Condition, 'turnsRemaining'>> = {
     effect: 'Deslocamento 0. Pode realizar outras ações normalmente.',
     removal: 'Depende da causa.',
   },
-  indefeso: {
-    id: 'indefeso',
-    name: 'Indefeso',
-    icon: '🎯',
-    color: 'destructive',
-    description: 'Você está completamente exposto.',
-    effect: 'Ataques contra você são automáticos e causam dano crítico.',
-    removal: 'Sair da condição que causou indefeso.',
+
+  // === CONDIÇÕES MENTAIS ===
+  apavorado: {
+    id: 'apavorado',
+    name: 'Apavorado',
+    icon: '😱',
+    color: 'sanity',
+    description: 'O medo domina suas ações.',
+    effect: 'Deve fugir da fonte do medo. -2 em todos os testes.',
+    removal: 'Teste de Vontade DT 15 ou fim da cena.',
+  },
+  fascinado: {
+    id: 'fascinado',
+    name: 'Fascinado',
+    icon: '😍',
+    color: 'energy',
+    description: 'Algo capturou completamente sua atenção.',
+    effect: '-5 em testes de Percepção. Não pode realizar ações exceto observar a fonte.',
+    removal: 'Ameaça óbvia ou fim do efeito.',
   },
   confuso: {
     id: 'confuso',
@@ -213,26 +223,146 @@ export const CONDITIONS: Record<string, Omit<Condition, 'turnsRemaining'>> = {
     effect: 'Não controla suas ações. O Mestre decide o que você faz.',
     removal: 'Cena de descanso e tratamento psicológico.',
   },
+
+  // === CONDIÇÕES CRÍTICAS ===
+  inconsciente: {
+    id: 'inconsciente',
+    name: 'Inconsciente',
+    icon: '💤',
+    color: 'muted-foreground',
+    description: 'Você está completamente fora de combate.',
+    effect: 'Não pode realizar nenhuma ação. Defesa 5. Indefeso.',
+    removal: 'Recuperar ao menos 1 PV ou ser acordado.',
+  },
+  morrendo: {
+    id: 'morrendo',
+    name: 'Morrendo',
+    icon: '💀',
+    color: 'destructive',
+    description: 'Você está à beira da morte.',
+    effect: 'Inconsciente. Contador de 3 rodadas até morrer. Dano adicional reduz 1 rodada.',
+    removal: 'Teste de Medicina DT 20 por aliado ou recuperar 1 PV.',
+  },
+  paralisado: {
+    id: 'paralisado',
+    name: 'Paralisado',
+    icon: '🧊',
+    color: 'accent',
+    description: 'Você não consegue se mover.',
+    effect: 'Não pode se mover ou realizar ações físicas. Defesa 5. Indefeso.',
+    removal: 'Depende da causa.',
+  },
+  indefeso: {
+    id: 'indefeso',
+    name: 'Indefeso',
+    icon: '🎯',
+    color: 'destructive',
+    description: 'Você está completamente exposto.',
+    effect: 'Ataques contra você são automáticos e causam dano crítico.',
+    removal: 'Sair da condição que causou indefeso.',
+  },
 };
 
+/**
+ * Modificadores de defesa contextuais por condição
+ * Usado para condições como Caído que têm efeitos diferentes por tipo de ataque
+ */
+export const CONTEXTUAL_DEFENSE_MODIFIERS: Record<string, ContextualModifier> = {
+  caido: {
+    melee: -5,   // -5 contra corpo a corpo
+    ranged: +5,  // +5 contra distância
+  },
+  desprevenido: {
+    melee: -5,
+    ranged: -5,
+  },
+  surpreendido: {
+    melee: -5,
+    ranged: -5,
+  },
+};
+
+/**
+ * Modificadores de ataque por condição
+ */
+export const ATTACK_MODIFIERS: Record<string, number> = {
+  cego: -5,
+};
+
+/**
+ * Modificadores de iniciativa por condição
+ */
+export const INITIATIVE_MODIFIERS: Record<string, number> = {
+  surdo: -2,
+};
+
+/**
+ * Categorias de condições para organização na UI
+ */
 export const CONDITION_CATEGORIES = {
-  combat: ['sangrando', 'vulneravel', 'atordoado', 'agarrado', 'caido'],
+  combat: ['sangrando', 'vulneravel', 'atordoado', 'agarrado', 'caido', 'desprevenido', 'surpreendido'],
   sensory: ['cego', 'surdo'],
   mental: ['apavorado', 'fascinado', 'confuso', 'perturbado', 'enlouquecendo'],
   physical: ['exausto', 'envenenado', 'debilitado', 'fragilizado', 'lento', 'imobilizado'],
   critical: ['inconsciente', 'morrendo', 'paralisado', 'indefeso'],
 };
 
+/**
+ * Obtém uma condição pelo ID
+ */
 export function getConditionById(id: string): Condition | undefined {
   const condition = CONDITIONS[id];
   if (!condition) return undefined;
   return { ...condition };
 }
 
+/**
+ * Obtém todas as condições
+ */
 export function getAllConditions(): Condition[] {
   return Object.values(CONDITIONS);
 }
 
+/**
+ * Obtém condições por categoria
+ */
 export function getConditionsByCategory(category: keyof typeof CONDITION_CATEGORIES): Condition[] {
   return CONDITION_CATEGORIES[category].map(id => CONDITIONS[id]).filter(Boolean) as Condition[];
+}
+
+/**
+ * Calcula o modificador de defesa contextual
+ * @param conditionId - ID da condição
+ * @param attackType - Tipo de ataque ('melee' | 'ranged')
+ */
+export function getContextualDefenseModifier(conditionId: string, attackType: 'melee' | 'ranged'): number {
+  const modifier = CONTEXTUAL_DEFENSE_MODIFIERS[conditionId];
+  if (!modifier) return 0;
+  return modifier[attackType] ?? 0;
+}
+
+/**
+ * Calcula o modificador de ataque por condições
+ */
+export function getAttackModifierFromConditions(conditions: string[]): number {
+  let modifier = 0;
+  for (const conditionId of conditions) {
+    if (ATTACK_MODIFIERS[conditionId]) {
+      modifier += ATTACK_MODIFIERS[conditionId];
+    }
+  }
+  return modifier;
+}
+
+/**
+ * Calcula o modificador de iniciativa por condições
+ */
+export function getInitiativeModifierFromConditions(conditions: string[]): number {
+  let modifier = 0;
+  for (const conditionId of conditions) {
+    if (INITIATIVE_MODIFIERS[conditionId]) {
+      modifier += INITIATIVE_MODIFIERS[conditionId];
+    }
+  }
+  return modifier;
 }
