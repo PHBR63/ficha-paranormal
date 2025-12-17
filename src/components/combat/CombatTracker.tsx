@@ -39,6 +39,7 @@ import {
 } from "@/lib/sustained-rituals";
 import { ActiveRitualsPanel } from "./ActiveRitualsPanel";
 import { HookExecutionLog } from "./HookExecutionLog";
+import { CombatStatsPanel } from "./CombatStatsPanel";
 import {
   Swords,
   Play,
@@ -584,15 +585,18 @@ export function CombatTracker({
         />
       )}
 
-      {/* Hook Execution Log */}
+      {/* Combat Stats and Hook Execution Log */}
       {combatState.isActive && (
-        <div className="mt-4 p-4 bg-secondary/30 rounded-lg border border-border">
-          <HookExecutionLog
-            key={hookLogKey}
-            entries={getExecutionLog()}
-            onClear={clearExecutionLog}
-            maxEntries={20}
-          />
+        <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="p-4 bg-secondary/30 rounded-lg border border-border">
+            <HookExecutionLog
+              key={hookLogKey}
+              entries={getExecutionLog()}
+              onClear={clearExecutionLog}
+              maxEntries={20}
+            />
+          </div>
+          <CombatStatsPanel refreshKey={hookLogKey} />
         </div>
       )}
 
