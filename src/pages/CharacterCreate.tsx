@@ -34,6 +34,7 @@ import {
 import { rebuildCharacterSheet, buildStateToFormData, CLASS_PROFICIENCIES, getClassSkillRules, validateAttributes } from '@/lib/character-builder-engine';
 import { getCoreAbilities, getChoosableAbilities } from '@/lib/class-abilities';
 import { useCharacterAutoSave, loadCharacterDraft, clearCharacterDraft } from '@/hooks/useCharacterAutoSave';
+import { validateCharacter } from '@/lib/character-validation';
 import confetti from 'canvas-confetti';
 
 export type CharacterFormData = {
@@ -401,6 +402,24 @@ export default function CharacterCreate() {
   const handleSave = async () => {
     if (!user) return;
     
+    // Validar dados do personagem antes de salvar
+    const validation = validateCharacter({
+      name: formData.name,
+      class: formData.characterClass,
+      class_track: formData.classTrack,
+      origin: formData.origin,
+      nex: formData.nex,
+    });
+
+    if (!validation.valid) {
+      toast({
+        title: 'Dados inválidos',
+        description: validation.errors.join('\n'),
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setSaving(true);
 
     try {
