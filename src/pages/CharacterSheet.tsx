@@ -2244,6 +2244,7 @@ export default function CharacterSheet() {
             rituals: (character.rituals || []).map((id: string) => ALL_RITUALS.find(r => r.id === id)).filter(Boolean) as any,
             class: character.class,
             elementalAffinity: character.elemental_affinity,
+            activeBuffs: character.active_buffs as any || [],
           }}
           onCharacterUpdate={async (updates) => {
             if (updates.hp !== undefined) setHpCurrent(updates.hp);
@@ -2257,6 +2258,16 @@ export default function CharacterSheet() {
                 .eq('id', character.id);
               if (!error) {
                 setCharacter(prev => prev ? { ...prev, conditions: serialized } : null);
+              }
+            }
+            // Persiste buffs de arma no banco
+            if ((updates as any).activeBuffs !== undefined) {
+              const { error } = await supabase
+                .from('characters')
+                .update({ active_buffs: (updates as any).activeBuffs })
+                .eq('id', character.id);
+              if (!error) {
+                setCharacter(prev => prev ? { ...prev, active_buffs: (updates as any).activeBuffs } : null);
               }
             }
           }}

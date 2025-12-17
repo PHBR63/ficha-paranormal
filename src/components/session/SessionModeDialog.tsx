@@ -96,6 +96,8 @@ interface CharacterData {
   // Classe e afinidade
   class?: string;
   elementalAffinity?: string | null;
+  // Buffs ativos (persistidos)
+  activeBuffs?: WeaponBuff[];
 }
 
 interface SessionModeDialogProps {
@@ -116,7 +118,31 @@ export function SessionModeDialog({
   const [turnPEState, setTurnPEState] = useState<TurnPEState>({ peSpentThisTurn: 0, turnNumber: 1 });
   const [currentRound, setCurrentRound] = useState(1);
   const [conditionsWithDuration, setConditionsWithDuration] = useState<ConditionWithDuration[]>([]);
-  const [weaponBuffs, setWeaponBuffs] = useState<WeaponBuff[]>([]);
+  
+  // Inicializa weapon buffs do banco de dados
+  const [weaponBuffs, setWeaponBuffs] = useState<WeaponBuff[]>(() => {
+    if (character.activeBuffs && Array.isArray(character.activeBuffs)) {
+      // Filtra buffs muito antigos (mais de 24h)
+      const dayInMs = 24 * 60 * 60 * 1000;
+      const now = Date.now();
+      return character.activeBuffs.filter(buff => {
+        const appliedAt = new Date(buff.appliedAt).getTime();
+        return now - appliedAt < dayInMs;
+      });
+    }
+    return [];
+  });
+
+  // Persiste buffs no banco quando mudam
+  useEffect(() => {
+    // Só persiste se houver mudança real
+    const currentBuffsJson = JSON.stringify(weaponBuffs);
+    const savedBuffsJson = JSON.stringify(character.activeBuffs || []);
+    
+    if (currentBuffsJson !== savedBuffsJson) {
+      onCharacterUpdate({ activeBuffs: weaponBuffs } as any);
+    }
+  }, [weaponBuffs]);
 
   // Sincroniza condições com duration tracking
   useEffect(() => {
@@ -316,7 +342,41 @@ export function SessionModeDialog({
     setCurrentRound(prev => prev + 1);
     setTurnPEState(prev => ({ peSpentThisTurn: 0, turnNumber: prev.turnNumber + 1 }));
     addEntry('turn', `Nova rodada: ${currentRound + 1}`);
+
+    // Processa expiração de buffs por rodadas
+    setWeaponBuffs(prev => {
+      const updated = prev.map(buff => {
+        if (buff.duration === 'rodadas' && buff.turnsRemaining !== undefined && buff.turnsRemaining > 0) {
+          return { ...buff, turnsRemaining: buff.turnsRemaining - 1 };
+        }
+        return buff;
+      });
+
+      // Remove buffs expirados
+      const expired = updated.filter(b => b.duration === 'rodadas' && b.turnsRemaining === 0);
+      const active = updated.filter(b => !(b.duration === 'rodadas' && b.turnsRemaining === 0));
+
+      if (expired.length > 0) {
+        expired.forEach(buff => {
+          addEntry('system', `Buff expirado: ${buff.ritualName}`);
+        });
+      }
+
+      return active;
+    });
   }, [addEntry, currentRound]);
+
+  // Limpa buffs de cena (ao fim da cena/combate)
+  const handleEndScene = useCallback(() => {
+    const sceneBuffs = weaponBuffs.filter(b => b.duration === 'cena');
+    if (sceneBuffs.length > 0) {
+      setWeaponBuffs(prev => prev.filter(b => b.duration !== 'cena'));
+      sceneBuffs.forEach(buff => {
+        addEntry('system', `Buff de cena encerrado: ${buff.ritualName}`);
+      });
+    }
+    addEntry('system', 'Cena encerrada - buffs de cena removidos');
+  }, [weaponBuffs, addEntry]);
 
   const handleRollResult = useCallback((result: { type: string; roll: number; total: number }) => {
     addEntry('roll', `${result.type}: d20(${result.roll}) = ${result.total}`, {
@@ -529,6 +589,47 @@ export function SessionModeDialog({
               size="sm"
               maxVisible={6}
             />
+          </div>
+        )}
+
+        {/* Buffs de Arma Ativos - Indicador no Header */}
+        {weaponBuffs.length > 0 && (
+          <div className="px-4 py-2 border-b bg-primary/5 shrink-0">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-3.5 h-3.5 text-primary" />
+                <span className="text-xs font-medium text-primary">
+                  {weaponBuffs.length} Buff{weaponBuffs.length > 1 ? 's' : ''} de Arma
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                {weaponBuffs.slice(0, 3).map(buff => (
+                  <Badge 
+                    key={buff.id} 
+                    variant="outline" 
+                    className="text-[10px] h-5 px-1.5 border-primary/30 bg-primary/10"
+                  >
+                    {buff.ritualName}
+                    {buff.duration === 'rodadas' && buff.turnsRemaining !== undefined && (
+                      <span className="ml-1 text-muted-foreground">({buff.turnsRemaining}r)</span>
+                    )}
+                  </Badge>
+                ))}
+                {weaponBuffs.length > 3 && (
+                  <Badge variant="outline" className="text-[10px] h-5 px-1.5">
+                    +{weaponBuffs.length - 3}
+                  </Badge>
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-5 px-1.5 text-[10px] text-muted-foreground hover:text-destructive"
+                  onClick={handleEndScene}
+                >
+                  Fim da Cena
+                </Button>
+              </div>
+            </div>
           </div>
         )}
 
