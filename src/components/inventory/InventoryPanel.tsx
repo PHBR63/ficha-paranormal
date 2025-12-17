@@ -649,49 +649,49 @@ export function InventoryPanel({
   return (
     <div className="space-y-4">
       {/* Header com Peso e Limites */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <h3 className="font-display text-sm tracking-wider text-primary flex items-center gap-2">
           <Package className="w-4 h-4" />
           INVENTÁRIO
         </h3>
         {!readOnly && (
-          <div className="flex gap-2">
+          <div className="grid grid-cols-4 sm:flex gap-1.5 sm:gap-2">
             {/* Botão Catálogo de Armas */}
             <Button 
               size="sm" 
               variant="outline" 
-              className="font-display text-xs"
+              className="font-display text-[10px] sm:text-xs h-8 px-2 sm:px-3 touch-manipulation"
               onClick={() => setWeaponCatalogOpen(true)}
             >
-              <Sword className="w-3 h-3 mr-1" />
-              ARMAS
+              <Sword className="w-3.5 h-3.5 sm:w-3 sm:h-3 sm:mr-1" />
+              <span className="hidden sm:inline">ARMAS</span>
             </Button>
             {/* Botão Catálogo de Proteções */}
             <Button 
               size="sm" 
               variant="outline" 
-              className="font-display text-xs"
+              className="font-display text-[10px] sm:text-xs h-8 px-2 sm:px-3 touch-manipulation"
               onClick={() => setArmorCatalogOpen(true)}
             >
-              <Shield className="w-3 h-3 mr-1" />
-              PROTEÇÕES
+              <Shield className="w-3.5 h-3.5 sm:w-3 sm:h-3 sm:mr-1" />
+              <span className="hidden sm:inline">PROTEÇÕES</span>
             </Button>
             {/* Botão Catálogo de Itens Gerais */}
             <Button 
               size="sm" 
               variant="outline" 
-              className="font-display text-xs"
+              className="font-display text-[10px] sm:text-xs h-8 px-2 sm:px-3 touch-manipulation"
               onClick={() => setItemCatalogOpen(true)}
             >
-              <Package className="w-3 h-3 mr-1" />
-              ITENS
+              <Package className="w-3.5 h-3.5 sm:w-3 sm:h-3 sm:mr-1" />
+              <span className="hidden sm:inline">ITENS</span>
             </Button>
             {/* Botão Adicionar Item Manual */}
             <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
               <DialogTrigger asChild>
-                <Button size="sm" variant="outline" className="font-display text-xs">
-                  <Plus className="w-3 h-3 mr-1" />
-                  ITEM
+                <Button size="sm" variant="outline" className="font-display text-[10px] sm:text-xs h-8 px-2 sm:px-3 touch-manipulation">
+                  <Plus className="w-3.5 h-3.5 sm:w-3 sm:h-3 sm:mr-1" />
+                  <span className="hidden sm:inline">ITEM</span>
                 </Button>
               </DialogTrigger>
             <DialogContent className="sm:max-w-md bg-popover">
@@ -1037,7 +1037,7 @@ export function InventoryPanel({
           </TooltipProvider>
         </div>
         
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {(['I', 'II', 'III', 'IV'] as const).map((cat: 'I' | 'II' | 'III' | 'IV') => {
             const count = categoryCounts[cat];
             const limit = patentLimits[cat];
@@ -1180,21 +1180,21 @@ function InventoryItemRow({ item, onRemove, onEquip, onUnequip, onUse, onModify,
     <TooltipProvider>
       <div 
         className={cn(
-          "flex items-center justify-between p-3 border rounded-lg ml-4 group transition-colors cursor-pointer",
+          "flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 border rounded-lg ml-2 sm:ml-4 group transition-colors cursor-pointer gap-2 sm:gap-0",
           item.isEquipped 
             ? "bg-primary/10 border-primary/30" 
             : "bg-card/50 border-border/30 hover:border-primary/30 hover:bg-card/80"
         )}
         onClick={() => onViewDetails?.(item)}
       >
-        <div className="flex items-center gap-3 flex-1 min-w-0">
+        <div className="flex items-start sm:items-center gap-2 sm:gap-3 flex-1 min-w-0">
           {/* Equip Button */}
           {(onEquip || onUnequip) && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
                   className={cn(
-                    "w-6 h-6 rounded-full flex items-center justify-center transition-colors",
+                    "w-8 h-8 sm:w-6 sm:h-6 rounded-full flex items-center justify-center transition-colors flex-shrink-0 touch-manipulation",
                     item.isEquipped 
                       ? "text-primary hover:text-primary/70" 
                       : "text-muted-foreground/50 hover:text-primary"
@@ -1202,13 +1202,13 @@ function InventoryItemRow({ item, onRemove, onEquip, onUnequip, onUse, onModify,
                   onClick={(e) => { e.stopPropagation(); item.isEquipped ? onUnequip?.(item.id) : onEquip?.(item.id); }}
                 >
                   {item.isEquipped ? (
-                    <CircleCheck className="w-5 h-5" />
+                    <CircleCheck className="w-6 h-6 sm:w-5 sm:h-5" />
                   ) : (
-                    <Circle className="w-5 h-5" />
+                    <Circle className="w-6 h-6 sm:w-5 sm:h-5" />
                   )}
                 </button>
               </TooltipTrigger>
-              <TooltipContent side="left" className="bg-popover border-border">
+              <TooltipContent side="left" className="bg-popover border-border hidden sm:block">
                 <p className="text-xs">
                   {item.isEquipped ? 'Desequipar' : 'Equipar'}
                 </p>
@@ -1216,15 +1216,15 @@ function InventoryItemRow({ item, onRemove, onEquip, onUnequip, onUse, onModify,
             </Tooltip>
           )}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-1 sm:gap-2">
               <span className={cn(
-                "font-medium truncate",
+                "font-medium text-sm sm:text-base break-words",
                 item.isEquipped && "text-primary"
               )}>
                 {item.name}
               </span>
               {item.quantity > 1 && (
-                <Badge variant="outline" className="text-xs">
+                <Badge variant="outline" className="text-[10px] sm:text-xs flex-shrink-0">
                   x{item.quantity}
                 </Badge>
               )}
@@ -1233,29 +1233,29 @@ function InventoryItemRow({ item, onRemove, onEquip, onUnequip, onUse, onModify,
                 <Badge 
                   variant="outline" 
                   className={cn(
-                    "text-[10px]",
+                    "text-[10px] flex-shrink-0",
                     (item.uses ?? 0) > 0 
                       ? "bg-green-500/20 text-green-400 border-green-500/50" 
                       : "bg-muted text-muted-foreground"
                   )}
                 >
-                  {usesDisplay} usos
+                  {usesDisplay}
                 </Badge>
               )}
               {item.isEquipped && (
-                <Badge className="text-[10px] bg-primary/20 text-primary border-0">
+                <Badge className="text-[10px] bg-primary/20 text-primary border-0 flex-shrink-0">
                   EQUIPADO
                 </Badge>
               )}
             </div>
             {item.description && (
-              <p className="text-xs text-muted-foreground truncate mt-0.5">
+              <p className="text-xs text-muted-foreground line-clamp-2 sm:truncate mt-0.5">
                 {item.description}
               </p>
             )}
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap sm:flex-nowrap justify-end sm:justify-start">
           {/* Botão Modificar (para armas) */}
           {onModify && (
             <Tooltip>
@@ -1264,18 +1264,18 @@ function InventoryItemRow({ item, onRemove, onEquip, onUnequip, onUse, onModify,
                   variant="outline"
                   size="sm"
                   className={cn(
-                    "h-7 px-2 text-xs",
+                    "h-8 sm:h-7 px-2 text-xs touch-manipulation",
                     hasModifications 
                       ? "bg-purple-500/10 border-purple-500/30 text-purple-400 hover:bg-purple-500/20" 
                       : "bg-muted/50 border-border hover:bg-muted"
                   )}
                   onClick={(e) => { e.stopPropagation(); onModify(item); }}
                 >
-                  <Wrench className="w-3 h-3 mr-1" />
+                  <Wrench className="w-3.5 h-3.5 sm:w-3 sm:h-3 mr-1" />
                   {hasModifications ? `${appliedMods!.length}` : 'Mod'}
                 </Button>
               </TooltipTrigger>
-              <TooltipContent className="bg-popover border-border max-w-xs">
+              <TooltipContent className="bg-popover border-border max-w-xs hidden sm:block">
                 <p className="text-xs font-medium mb-1">Modificar Arma</p>
                 {hasModifications && (
                   <div className="flex flex-wrap gap-1">
@@ -1296,14 +1296,14 @@ function InventoryItemRow({ item, onRemove, onEquip, onUnequip, onUse, onModify,
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-7 px-2 text-xs bg-green-500/10 border-green-500/30 text-green-400 hover:bg-green-500/20 hover:text-green-300"
+                  className="h-8 sm:h-7 px-2 text-xs bg-green-500/10 border-green-500/30 text-green-400 hover:bg-green-500/20 hover:text-green-300 touch-manipulation"
                   onClick={(e) => { e.stopPropagation(); onUse(item.id); }}
                 >
-                  <Zap className="w-3 h-3 mr-1" />
+                  <Zap className="w-3.5 h-3.5 sm:w-3 sm:h-3 mr-1" />
                   Usar
                 </Button>
               </TooltipTrigger>
-              <TooltipContent className="bg-popover border-border max-w-xs">
+              <TooltipContent className="bg-popover border-border max-w-xs hidden sm:block">
                 <p className="text-xs font-medium mb-1">Usar {item.name}</p>
                 {item.effect && (
                   <p className="text-xs text-muted-foreground">{item.effect}</p>
@@ -1313,21 +1313,21 @@ function InventoryItemRow({ item, onRemove, onEquip, onUnequip, onUse, onModify,
           )}
           <Badge 
             variant="outline" 
-            className={cn("text-[10px] border", categoryConfig.color)}
+            className={cn("text-[10px] border flex-shrink-0", categoryConfig.color)}
           >
             {categoryConfig.label}
           </Badge>
-          <span className="text-xs text-muted-foreground px-2 py-1 bg-muted/50 rounded">
+          <span className="text-[10px] sm:text-xs text-muted-foreground px-1.5 sm:px-2 py-1 bg-muted/50 rounded flex-shrink-0">
             {item.slots * item.quantity} esp.
           </span>
           {onRemove && (
             <Button
               variant="ghost"
               size="sm"
-              className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10 h-7 w-7 p-0"
+              className="sm:opacity-0 sm:group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-8 sm:h-7 sm:w-7 p-0 touch-manipulation"
               onClick={(e) => { e.stopPropagation(); onRemove(item.id); }}
             >
-              <Trash2 className="w-3 h-3" />
+              <Trash2 className="w-4 h-4 sm:w-3 sm:h-3" />
             </Button>
           )}
         </div>
