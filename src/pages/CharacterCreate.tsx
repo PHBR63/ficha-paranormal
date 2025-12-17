@@ -83,6 +83,9 @@ export type CharacterFormData = {
   
   // Rituais (apenas para Ocultistas)
   rituals: string[];
+  
+  // Poder paranormal da origem (Cultista Arrependido)
+  originParanormalPower: string | null;
 };
 
 // Base steps - rituais será inserido dinamicamente para Ocultistas
@@ -133,6 +136,7 @@ const initialFormData: CharacterFormData = {
   classTrack: '',
   trackAbilities: [],
   rituals: [],
+  originParanormalPower: null,
 };
 
 export default function CharacterCreate() {
@@ -485,6 +489,11 @@ export default function CharacterCreate() {
         ...formData.trackAbilities
       ];
 
+      // Monta array de poderes paranormais (Cultista Arrependido)
+      const paranormalPowers = formData.originParanormalPower 
+        ? [{ id: formData.originParanormalPower, source: 'origin' }] 
+        : [];
+
       const { error } = await supabase.from('characters').insert({
         user_id: user.id,
         name: formData.name,
@@ -519,6 +528,7 @@ export default function CharacterCreate() {
         abilities: allAbilities,
         class_track: formData.classTrack || null,
         rituals: formData.rituals || [],
+        paranormal_powers: paranormalPowers,
       });
 
       if (error) throw error;

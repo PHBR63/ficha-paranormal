@@ -42,7 +42,17 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
+import { 
+  PARANORMAL_POWERS, 
+  getPowerById,
+  canChoosePower,
+  ELEMENT_LABELS,
+  ELEMENT_COLORS,
+  ELEMENT_BG_COLORS,
+  type ParanormalPower 
+} from '@/lib/paranormal-powers';
 
 interface StepOriginProps {
   formData: CharacterFormData;
@@ -86,10 +96,16 @@ const ORIGIN_CATEGORIES: Record<string, { label: string; origins: string[] }> = 
   },
 };
 
+// Poderes sem pré-requisitos (disponíveis para Cultista Arrependido)
+const getAvailablePowersForCultist = (): ParanormalPower[] => {
+  return PARANORMAL_POWERS.filter(p => !p.prerequisite);
+};
+
 export function StepOrigin({ formData, updateFormData }: StepOriginProps) {
   const [lastRoll, setLastRoll] = useState<{ dice: number[]; total: number } | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showAmnesicModal, setShowAmnesicModal] = useState(false);
+  const [showParanormalModal, setShowParanormalModal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [previewOrigin, setPreviewOrigin] = useState<typeof ORIGINS[0] | null>(null);
   const [showOnlySupplement, setShowOnlySupplement] = useState(false);
@@ -125,18 +141,29 @@ export function StepOrigin({ formData, updateFormData }: StepOriginProps) {
 
   const handleSelectOrigin = (originId: string) => {
     const isAmnésico = originId === 'amnésico' || originId === 'amnesico';
+    const isCultistaArrependido = originId === 'cultista-arrependido';
     
     if (isAmnésico) {
       setShowAmnesicModal(true);
       updateFormData({ 
         origin: originId,
         originSkills: formData.originSkills.length === 2 ? formData.originSkills : [],
+        originParanormalPower: null,
+      });
+    } else if (isCultistaArrependido) {
+      const skills = getOriginSkills(originId);
+      setShowParanormalModal(true);
+      updateFormData({ 
+        origin: originId,
+        originSkills: skills,
+        originParanormalPower: formData.originParanormalPower,
       });
     } else {
       const skills = getOriginSkills(originId);
       updateFormData({ 
         origin: originId,
         originSkills: skills,
+        originParanormalPower: null,
       });
     }
   };
@@ -144,6 +171,11 @@ export function StepOrigin({ formData, updateFormData }: StepOriginProps) {
   const handleAmnesicSkillsConfirm = (skills: string[]) => {
     updateFormData({ originSkills: skills });
     setShowAmnesicModal(false);
+  };
+
+  const handleParanormalPowerSelect = (power: ParanormalPower) => {
+    updateFormData({ originParanormalPower: power.id });
+    setShowParanormalModal(false);
   };
 
   const handleRollOrigin = () => {
@@ -482,6 +514,41 @@ export function StepOrigin({ formData, updateFormData }: StepOriginProps) {
                   <p className="text-[11px] text-paranormal/80 mt-1">{selectedOrigin.powerDescription}</p>
                 </div>
               </div>
+
+              {/* Poder Paranormal (Cultista Arrependido) */}
+              {formData.origin === 'cultista-arrependido' && (
+                <div className="flex items-start gap-2 mt-2 pt-2 border-t border-border/50">
+                  <Sparkles className="w-4 h-4 text-paranormal shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-xs text-muted-foreground mb-1">Poder Paranormal Escolhido</p>
+                    {formData.originParanormalPower ? (
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 bg-paranormal/20 text-paranormal font-medium text-xs rounded border border-paranormal/30">
+                          {getPowerById(formData.originParanormalPower)?.name || formData.originParanormalPower}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 text-xs px-2"
+                          onClick={() => setShowParanormalModal(true)}
+                        >
+                          Alterar
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-xs gap-1 border-paranormal/30 text-paranormal hover:bg-paranormal/10"
+                        onClick={() => setShowParanormalModal(true)}
+                      >
+                        <Sparkles className="w-3 h-3" />
+                        Escolher Poder Paranormal
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
@@ -610,6 +677,70 @@ export function StepOrigin({ formData, updateFormData }: StepOriginProps) {
           onConfirm={handleAmnesicSkillsConfirm}
           currentSelection={formData.originSkills}
         />
+
+        {/* Paranormal Power Selection Modal (Cultista Arrependido) */}
+        <Dialog open={showParanormalModal} onOpenChange={setShowParanormalModal}>
+          <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
+            <DialogHeader>
+              <DialogTitle className="font-display text-xl tracking-wider flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-paranormal" />
+                Escolher Poder Paranormal
+              </DialogTitle>
+              <DialogDescription>
+                Como Cultista Arrependido, você possui um poder paranormal à sua escolha.
+                Escolha um poder sem pré-requisitos.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <ScrollArea className="flex-1 -mx-6 px-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pb-4">
+                {getAvailablePowersForCultist().map(power => {
+                  const isSelected = formData.originParanormalPower === power.id;
+                  const elementColor = ELEMENT_COLORS[power.element];
+                  const elementBg = ELEMENT_BG_COLORS[power.element];
+                  
+                  return (
+                    <div
+                      key={power.id}
+                      onClick={() => handleParanormalPowerSelect(power)}
+                      className={cn(
+                        "p-3 rounded-lg border cursor-pointer transition-all duration-200",
+                        "hover:border-primary hover:shadow-md",
+                        isSelected 
+                          ? "border-paranormal bg-paranormal/10 ring-2 ring-paranormal/30" 
+                          : "border-border bg-card"
+                      )}
+                    >
+                      <div className="flex items-start gap-2">
+                        <div className={cn("p-1.5 rounded shrink-0", elementBg)}>
+                          <Sparkles className={cn("h-3.5 w-3.5", elementColor)} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-medium text-sm text-foreground">{power.name}</h4>
+                            {isSelected && <Check className="w-4 h-4 text-paranormal" />}
+                          </div>
+                          <Badge variant="outline" className={cn("text-[10px] mt-1", elementColor)}>
+                            {ELEMENT_LABELS[power.element]}
+                          </Badge>
+                          <p className="text-xs text-muted-foreground mt-1.5 line-clamp-3">
+                            {power.description}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </ScrollArea>
+            
+            <div className="flex justify-end gap-2 pt-4 border-t">
+              <Button variant="outline" onClick={() => setShowParanormalModal(false)}>
+                Cancelar
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </TooltipProvider>
   );
