@@ -1,6 +1,7 @@
 /**
  * RitualCard - Card de ritual para exibição na ficha de personagem
  * Mostra elemento, círculo, custo PE, descrição e aprimoramentos
+ * @optimized React.memo para evitar re-renders desnecessários
  */
 
 import { useState, memo } from 'react';

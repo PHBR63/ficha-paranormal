@@ -1,5 +1,6 @@
 /**
  * BonusSummaryCard - Componente que exibe resumo de todos os bônus ativos do personagem
+ * @optimized React.memo para evitar re-renders desnecessários
  * 
  * Mostra de forma organizada:
  * - Bônus de defesa
