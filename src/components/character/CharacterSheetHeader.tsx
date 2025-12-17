@@ -674,7 +674,10 @@ export const CharacterSheetHeader = memo(function CharacterSheetHeader({
                               !bonus.active && "text-muted-foreground line-through"
                             )}
                           >
-                            <span>
+                            <span className="flex items-center gap-1">
+                              {bonus.type === 'ritual' && (
+                                <Sparkles className="w-3 h-3 text-purple-400" />
+                              )}
                               {bonus.source}
                               {bonus.conditional && (
                                 <span className="text-[10px] text-muted-foreground ml-1">
@@ -697,6 +700,63 @@ export const CharacterSheetHeader = memo(function CharacterSheetHeader({
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
+          
+          {/* Indicador de Rituais Ativos com bônus de defesa */}
+          {(() => {
+            const activeRitualBonuses = defenseBonusBreakdown.filter(b => b.type === 'ritual' && b.active);
+            if (activeRitualBonuses.length === 0) return null;
+            
+            const totalRitualBonus = activeRitualBonuses.reduce((sum, b) => sum + b.bonus, 0);
+            
+            return (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <motion.div
+                      className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-500/20 border border-purple-500/40 cursor-help"
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                    >
+                      <motion.div
+                        animate={{ 
+                          rotate: [0, 5, -5, 0],
+                          scale: [1, 1.1, 1],
+                        }}
+                        transition={{
+                          duration: 2,
+                          repeat: Infinity,
+                          ease: "easeInOut",
+                        }}
+                      >
+                        <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+                      </motion.div>
+                      <span className="text-xs font-medium text-purple-300">+{totalRitualBonus}</span>
+                    </motion.div>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="max-w-xs">
+                    <div className="space-y-2">
+                      <p className="font-medium flex items-center gap-1.5">
+                        <Sparkles className="w-4 h-4 text-purple-400" />
+                        Rituais Ativos
+                      </p>
+                      <div className="text-xs space-y-1">
+                        {activeRitualBonuses.map((bonus, i) => (
+                          <p key={i} className="flex justify-between gap-3">
+                            <span className="text-muted-foreground">{bonus.source}</span>
+                            <span className="text-purple-300 font-medium">+{bonus.bonus} DEF</span>
+                          </p>
+                        ))}
+                      </div>
+                      <p className="text-[10px] text-muted-foreground italic pt-1 border-t border-border">
+                        Sustentando rituais de proteção
+                      </p>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            );
+          })()}
           {/* RD de Armadura */}
           {armorRD > 0 && (
             <TooltipProvider>
