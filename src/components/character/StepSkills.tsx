@@ -178,36 +178,6 @@ export function StepSkills({ formData, updateFormData, buildResult }: StepSkills
           </p>
         </div>
 
-        {/* Painel de atributos para referência */}
-        <motion.div 
-          className="ordo-panel p-3"
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-muted-foreground uppercase tracking-wider">Seus Atributos</span>
-            <span className="text-xs text-muted-foreground">(usados nos testes de perícia)</span>
-          </div>
-          <div className="flex flex-wrap justify-center gap-3">
-            {ATTRIBUTE_ORDER.map((attr) => {
-              const value = formData.attributes[attr as keyof typeof formData.attributes];
-              const label = ATTRIBUTE_LABELS[attr];
-              const colors = ATTRIBUTE_COLORS[attr];
-              return (
-                <div 
-                  key={attr}
-                  className={cn(
-                    'flex items-center gap-2 px-3 py-1.5 rounded border',
-                    colors
-                  )}
-                >
-                  <span className="text-xs font-medium">{label}</span>
-                  <span className="font-display text-lg">{value >= 0 ? `+${value}` : value}</span>
-                </div>
-              );
-            })}
-          </div>
-        </motion.div>
 
         {/* Painel educativo do livro de regras */}
         {rulebookContent && (
@@ -400,6 +370,38 @@ export function StepSkills({ formData, updateFormData, buildResult }: StepSkills
               ✓ Todas as perícias livres selecionadas
             </motion.p>
           )}
+        </motion.div>
+
+        {/* Painel de atributos para referência */}
+        <motion.div 
+          className="ordo-panel p-3"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25 }}
+        >
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs text-muted-foreground uppercase tracking-wider">Seus Atributos</span>
+            <span className="text-xs text-muted-foreground">(usados nos testes)</span>
+          </div>
+          <div className="flex flex-wrap justify-center gap-3">
+            {ATTRIBUTE_ORDER.map((attr) => {
+              const value = formData.attributes[attr as keyof typeof formData.attributes];
+              const label = ATTRIBUTE_LABELS[attr];
+              const colors = ATTRIBUTE_COLORS[attr];
+              return (
+                <div 
+                  key={attr}
+                  className={cn(
+                    'flex items-center gap-2 px-3 py-1.5 rounded border',
+                    colors
+                  )}
+                >
+                  <span className="text-xs font-medium">{label}</span>
+                  <span className="font-display text-lg">{value >= 0 ? `+${value}` : value}</span>
+                </div>
+              );
+            })}
+          </div>
         </motion.div>
 
         {/* Search */}
