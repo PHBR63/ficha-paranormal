@@ -49,6 +49,7 @@ import { cn } from '@/lib/utils';
 import { CONDITIONS, CONDITION_CATEGORIES, type Condition } from '@/lib/conditions';
 import { CONDITION_EFFECTS, processStartOfTurn, type CombatantState } from '@/lib/game-engine';
 import { toast } from 'sonner';
+import { ConditionTimer, ConditionTimerSegmented, DyingTimer } from './ConditionTimer';
 
 // Interface para condição ativa com duração
 export interface ActiveCondition {
@@ -344,29 +345,32 @@ export function ConditionManager({
                               <span className="text-lg">{conditionData.icon}</span>
                               <span className="font-medium truncate">{conditionData.name}</span>
                               
-                              {/* Contador de Morrendo */}
+                              {/* Contador de Morrendo com timer visual */}
                               {condition.id === 'morrendo' && condition.dyingCounter !== undefined && (
-                                <Badge 
-                                  variant="destructive" 
-                                  className="text-xs font-mono animate-pulse"
-                                >
-                                  <Skull className="w-3 h-3 mr-1" />
-                                  {condition.dyingCounter} rodadas
-                                </Badge>
+                                <DyingTimer 
+                                  counter={condition.dyingCounter} 
+                                  className="ml-1"
+                                />
                               )}
                               
-                              {/* Contador de Turnos normal */}
+                              {/* Timer visual para condições temporárias */}
                               {condition.turnsRemaining !== null && condition.id !== 'morrendo' && (
-                                <Badge 
-                                  variant="outline" 
-                                  className={cn(
-                                    "text-xs font-mono",
-                                    condition.turnsRemaining <= 1 && "text-destructive border-destructive"
+                                <div className="flex items-center gap-1.5 ml-1">
+                                  <ConditionTimer
+                                    turnsRemaining={condition.turnsRemaining}
+                                    maxTurns={5}
+                                    size="sm"
+                                    animate={true}
+                                  />
+                                  {condition.turnsRemaining <= 2 && (
+                                    <span className={cn(
+                                      "text-[10px] font-medium",
+                                      condition.turnsRemaining <= 1 ? "text-destructive" : "text-warning"
+                                    )}>
+                                      {condition.turnsRemaining === 1 ? 'Último!' : 'Acabando'}
+                                    </span>
                                   )}
-                                >
-                                  <Timer className="w-3 h-3 mr-1" />
-                                  {condition.turnsRemaining}
-                                </Badge>
+                                </div>
                               )}
                             </div>
                             <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
@@ -614,39 +618,62 @@ function ConditionOption({ id, condition, isActive, onAdd }: ConditionOptionProp
       {!isActive && (
         <div className="mt-2 pt-2 border-t border-border/50">
           {showTurnsInput ? (
-            <div className="flex items-center gap-2">
-              <Input
-                type="number"
-                min={1}
-                value={turns}
-                onChange={(e) => setTurns(e.target.value)}
-                placeholder="Turnos"
-                className="h-8 w-20 text-sm"
-                autoFocus
-              />
-              <Button
-                size="sm"
-                className="h-8"
-                onClick={() => handleAdd(false)}
-              >
-                Adicionar
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-8"
-                onClick={() => handleAdd(true)}
-              >
-                Permanente
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-8"
-                onClick={() => setShowTurnsInput(false)}
-              >
-                <X className="w-3 h-3" />
-              </Button>
+            <div className="space-y-2">
+              {/* Botões de duração rápida */}
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-muted-foreground mr-1">Turnos:</span>
+                {[1, 2, 3, 5, 10].map((t) => (
+                  <Button
+                    key={t}
+                    size="sm"
+                    variant={turns === String(t) ? "default" : "outline"}
+                    className="h-7 w-7 p-0 text-xs"
+                    onClick={() => setTurns(String(t))}
+                  >
+                    {t}
+                  </Button>
+                ))}
+                <Input
+                  type="number"
+                  min={1}
+                  value={turns}
+                  onChange={(e) => setTurns(e.target.value)}
+                  placeholder="?"
+                  className="h-7 w-12 text-xs text-center"
+                />
+              </div>
+              
+              {/* Ações */}
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  className="h-8 flex-1"
+                  onClick={() => handleAdd(false)}
+                  disabled={!turns || parseInt(turns) < 1}
+                >
+                  <Timer className="w-3 h-3 mr-1" />
+                  Adicionar ({turns || '?'} turnos)
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="h-8"
+                  onClick={() => handleAdd(true)}
+                >
+                  ∞
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-8 w-8 p-0"
+                  onClick={() => {
+                    setShowTurnsInput(false);
+                    setTurns('');
+                  }}
+                >
+                  <X className="w-3 h-3" />
+                </Button>
+              </div>
             </div>
           ) : (
             <div className="flex gap-2">
