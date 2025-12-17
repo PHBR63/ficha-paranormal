@@ -307,6 +307,61 @@ export const STEP_CONTENT: Record<string, RulebookSection> = {
       }
     ]
   },
+
+  // ---- INFORMAÇÕES BÁSICAS ----
+  basicInfo: {
+    main: {
+      title: 'Identificação do Agente',
+      content: 'As informações básicas ajudam a dar vida ao seu personagem. O nome, o jogador que o controla e o histórico formam a base da identidade do seu agente.',
+      quote: '"Um agente sem história é apenas uma ficha. Dê vida ao seu personagem."',
+      quoteSource: 'Livro de Regras',
+      details: [
+        'Nome do Personagem: Como ele é conhecido na Ordo',
+        'Nome do Jogador: Quem controla este agente',
+        'Histórico: Anote detalhes importantes, motivações e eventos passados',
+      ],
+    },
+    extras: [
+      {
+        title: 'Dicas de Background',
+        content: 'Use o histórico para registrar: como descobriu o paranormal, por que entrou na Ordem, relações importantes, medos e objetivos pessoais. Isso enriquece a interpretação.',
+      }
+    ]
+  },
+
+  // ---- PATENTE ----
+  patent: {
+    main: {
+      title: 'Patentes na Ordo Realitas',
+      content: `A patente representa seu posto hierárquico dentro da Ordem. Ela determina seu acesso a recursos, influência e responsabilidades.
+
+| Patente | NEX Mínimo | Descrição |
+|---------|------------|-----------|
+| Recruta | 5% | Acabou de entrar na organização |
+| Operador | 10% | Agente de campo básico |
+| Agente Especial | 20% | Veterano com experiência |
+| Oficial de Operações | 50% | Lidera operações |
+| Agente de Elite | 75% | Poucos chegam a este nível |
+| Veterano | 99% | Lendas vivas da Ordem |`,
+      quote: '"A patente não é apenas um título. É prova do que você sobreviveu."',
+      quoteSource: 'Livro de Regras',
+      details: [
+        'A patente determina: limite de crédito, equipamentos disponíveis, acesso a informações',
+        'Patentes mais altas trazem mais responsabilidade e missões perigosas',
+        'Você pode ter uma patente menor que seu NEX permitiria (cobertura, escolha pessoal)',
+      ],
+    },
+    extras: [
+      {
+        title: 'Importante',
+        content: '> Mesmo que seu NEX permita uma patente alta, você pode escolher uma menor por motivos narrativos. Alguns agentes preferem manter um perfil baixo.',
+      },
+      {
+        title: 'Limite de Crédito',
+        content: 'Cada patente define quanto a Ordem disponibiliza para equipamentos e despesas. Patentes mais altas têm acesso a itens paranormais e recursos especiais.',
+      }
+    ]
+  },
 };
 
 // ========================================
