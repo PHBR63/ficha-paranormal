@@ -1260,19 +1260,6 @@ export default function CharacterSheet() {
                 />
               )}
 
-              {/* Dados Pessoais (acordeão) */}
-              <PersonalDataAccordion
-                data={{
-                  name: character.name,
-                  playerName: character.player_name,
-                  characterClass: character.class,
-                  origin: originData?.name || character.origin,
-                  age: character.age,
-                  gender: character.gender,
-                  appearance: character.appearance,
-                  personality: character.personality,
-                }}
-              />
 
               {/* Grid de Atributos */}
               <AttributeGridNew
@@ -1438,6 +1425,21 @@ export default function CharacterSheet() {
                 </div>
               )}
 
+              {/* Dados Pessoais (acordeão) - após rituais */}
+              <PersonalDataAccordion
+                data={{
+                  name: character.name,
+                  playerName: character.player_name,
+                  characterClass: character.class,
+                  origin: originData?.name || character.origin,
+                  age: character.age,
+                  gender: character.gender,
+                  appearance: character.appearance,
+                  personality: character.personality,
+                }}
+              />
+
+              {/* História e Biografia (acordeão) */}
               <SheetAccordionSection
                 title="Biografia"
                 icon={BookOpen}
