@@ -1345,7 +1345,7 @@ export default function CharacterSheet() {
               {/* Resumo de Todos os Bônus Ativos - após condições */}
               <BonusSummaryCard summary={bonusSummary} />
 
-              {/* Rituais (acordeão) */}
+              {/* Rituais e Histórico (acordeão unificado) */}
               {character.rituals && character.rituals.length > 0 && (
                 <SheetAccordionSection
                   title="Rituais"
@@ -1354,33 +1354,36 @@ export default function CharacterSheet() {
                   defaultOpen={false}
                   variant="paranormal"
                 >
-                  <div className="space-y-2">
-                    {character.rituals.map((ritualId, i) => {
-                      const ritual = ALL_RITUALS.find(r => r.id === ritualId);
-                      if (!ritual) return null;
-                      return (
-                        <RitualCard
-                          key={i}
-                          ritual={ritual}
-                          isNonOccultist={character.class !== 'Ocultista'}
-                          peCurrent={peCurrent}
-                          onCast={handleOpenCastModal}
+                  <div className="space-y-4">
+                    {/* Lista de Rituais */}
+                    <div className="space-y-2">
+                      {character.rituals.map((ritualId, i) => {
+                        const ritual = ALL_RITUALS.find(r => r.id === ritualId);
+                        if (!ritual) return null;
+                        return (
+                          <RitualCard
+                            key={i}
+                            ritual={ritual}
+                            isNonOccultist={character.class !== 'Ocultista'}
+                            peCurrent={peCurrent}
+                            onCast={handleOpenCastModal}
+                          />
+                        );
+                      })}
+                    </div>
+
+                    {/* Histórico de Conjurações (dentro do mesmo acordeão) */}
+                    {castHistory.length > 0 && (
+                      <div className="pt-3 border-t border-paranormal/20">
+                        <RitualCastHistory
+                          history={castHistory}
+                          onClear={handleClearCastHistory}
+                          characterName={character.name}
                         />
-                      );
-                    })}
+                      </div>
+                    )}
                   </div>
                 </SheetAccordionSection>
-              )}
-
-              {/* Histórico de Rituais Conjurados */}
-              {character.rituals && character.rituals.length > 0 && (
-                <div className="flex justify-end">
-                  <RitualCastHistory
-                    history={castHistory}
-                    onClear={handleClearCastHistory}
-                    characterName={character.name}
-                  />
-                </div>
               )}
 
               {/* Inventário (acordeão) - após rituais */}
