@@ -23,13 +23,19 @@ import { motion, AnimatePresence } from 'framer-motion';
 export interface SessionLogEntry {
   id: string;
   timestamp: Date;
-  type: 'damage' | 'heal' | 'pe' | 'san' | 'condition' | 'roll' | 'turn' | 'system' | 'death';
+  type: 'damage' | 'heal' | 'pe' | 'san' | 'condition' | 'roll' | 'turn' | 'system' | 'death' | 'ritual' | 'attack';
   message: string;
   details?: {
     value?: number;
     previousValue?: number;
     conditionId?: string;
     rollResult?: number;
+    attackResult?: any;
+    skillResult?: any;
+    ritualId?: string;
+    cost?: number;
+    enhancements?: string[];
+    previousPE?: number;
   };
   canUndo?: boolean;
 }
@@ -92,6 +98,16 @@ const TYPE_CONFIG: Record<SessionLogEntry['type'], {
     icon: <Skull className="w-3.5 h-3.5" />, 
     color: 'text-destructive',
     bgColor: 'bg-destructive/20'
+  },
+  ritual: { 
+    icon: <Zap className="w-3.5 h-3.5" />, 
+    color: 'text-purple-500',
+    bgColor: 'bg-purple-500/10'
+  },
+  attack: { 
+    icon: <Shield className="w-3.5 h-3.5" />, 
+    color: 'text-orange-500',
+    bgColor: 'bg-orange-500/10'
   },
 };
 

@@ -392,7 +392,8 @@ export function SessionModeDialog({
     const newCondition: ActiveCondition = {
       id: conditionId,
       name: conditionData.name,
-      appliedAt: new Date(),
+      turnsRemaining: duration || null,
+      addedAt: new Date(),
     };
     
     // Adiciona ao tracking de duração
