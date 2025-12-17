@@ -1,9 +1,9 @@
 /**
  * RitualCard - Card de ritual para exibição na ficha de personagem
- * Mostra elemento, círculo, custo PE, descrição e aprimoramentos
+ * Mostra elemento, círculo, custo PE, tipo (kind), descrição e aprimoramentos
  */
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -17,10 +17,43 @@ import {
   Timer, 
   Shield,
   Zap,
+  Flame,
+  Heart,
+  Eye,
+  Brain,
+  Skull,
+  Wand2,
+  Shuffle,
+  Ghost,
+  Swords,
+  Hand,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Ritual } from '@/lib/rituals-data';
 import { ELEMENT_CONFIG, getElementConfig } from '@/lib/element-config';
+import { getRitualKind, RitualKind, ritualHasHooks, getRitualHooks } from '@/lib/ritual-effects';
+import { getTriggerLabel, getTriggerIcon } from '@/lib/ritual-hooks-engine';
+
+// Configuração visual dos tipos de ritual
+const RITUAL_KIND_CONFIG: Record<RitualKind, { 
+  label: string; 
+  icon: React.ElementType; 
+  color: string;
+  bg: string;
+}> = {
+  damage: { label: 'Dano', icon: Flame, color: 'text-red-400', bg: 'bg-red-500/20' },
+  buff: { label: 'Buff', icon: Zap, color: 'text-green-400', bg: 'bg-green-500/20' },
+  debuff: { label: 'Debuff', icon: Skull, color: 'text-purple-400', bg: 'bg-purple-500/20' },
+  healing: { label: 'Cura', icon: Heart, color: 'text-pink-400', bg: 'bg-pink-500/20' },
+  stateOverride: { label: 'Especial', icon: Wand2, color: 'text-yellow-400', bg: 'bg-yellow-500/20' },
+  narrativeOverride: { label: 'Narrativo', icon: Skull, color: 'text-red-500', bg: 'bg-red-600/20' },
+  sense: { label: 'Sentido', icon: Eye, color: 'text-cyan-400', bg: 'bg-cyan-500/20' },
+  interceptor: { label: 'Reação', icon: Shield, color: 'text-blue-400', bg: 'bg-blue-500/20' },
+  summon: { label: 'Invocação', icon: Ghost, color: 'text-indigo-400', bg: 'bg-indigo-500/20' },
+  control: { label: 'Controle', icon: Brain, color: 'text-fuchsia-400', bg: 'bg-fuchsia-500/20' },
+  transformation: { label: 'Transformação', icon: Shuffle, color: 'text-orange-400', bg: 'bg-orange-500/20' },
+  utility: { label: 'Utilidade', icon: Hand, color: 'text-slate-400', bg: 'bg-slate-500/20' },
+};
 
 interface RitualCardProps {
   ritual: Ritual;
@@ -40,6 +73,21 @@ function RitualCardComponent({ ritual, isNonOccultist = false, onCast, peCurrent
   const baseCost = ritual.cost;
   const actualCost = isNonOccultist ? baseCost * 2 : baseCost;
   const canAfford = peCurrent === undefined || peCurrent >= actualCost;
+  
+  // Obtém tipo semântico do ritual
+  const ritualKind = useMemo(() => {
+    const ritualId = ritual.id || ritual.name.toLowerCase().replace(/\s+/g, '-');
+    return getRitualKind(ritualId);
+  }, [ritual]);
+  
+  const kindConfig = ritualKind ? RITUAL_KIND_CONFIG[ritualKind] : null;
+  const KindIcon = kindConfig?.icon || Sparkles;
+  
+  // Obtém hooks do ritual
+  const hooks = useMemo(() => {
+    const ritualId = ritual.id || ritual.name.toLowerCase().replace(/\s+/g, '-');
+    return getRitualHooks(ritualId);
+  }, [ritual]);
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
@@ -85,6 +133,21 @@ function RitualCardComponent({ ritual, isNonOccultist = false, onCast, peCurrent
                 >
                   {ritual.circle}º Círculo
                 </Badge>
+                {/* Badge do tipo semântico */}
+                {kindConfig && (
+                  <Badge 
+                    variant="outline" 
+                    className={cn(
+                      "text-[10px] px-1.5 py-0 gap-1",
+                      kindConfig.bg,
+                      kindConfig.color,
+                      "border-transparent"
+                    )}
+                  >
+                    <KindIcon className="w-2.5 h-2.5" />
+                    {kindConfig.label}
+                  </Badge>
+                )}
               </div>
               
               {/* Info compacta */}
@@ -98,6 +161,14 @@ function RitualCardComponent({ ritual, isNonOccultist = false, onCast, peCurrent
                   <Target className="w-3 h-3" />
                   {ritual.range}
                 </span>
+                {hooks.length > 0 && (
+                  <>
+                    <span>•</span>
+                    <span className="text-yellow-400 flex items-center gap-1">
+                      ⚡ {hooks.length} hook{hooks.length > 1 ? 's' : ''}
+                    </span>
+                  </>
+                )}
               </div>
             </div>
             
@@ -139,6 +210,36 @@ function RitualCardComponent({ ritual, isNonOccultist = false, onCast, peCurrent
                 <p className="text-xs text-muted-foreground leading-relaxed">
                   {ritual.description}
                 </p>
+                
+                {/* Hooks (gatilhos) do ritual */}
+                {hooks.length > 0 && (
+                  <div className="space-y-1.5">
+                    <p className="text-[10px] uppercase tracking-wider text-yellow-400/80 font-medium flex items-center gap-1">
+                      ⚡ Gatilhos Automáticos
+                    </p>
+                    {hooks.map((hook, i) => (
+                      <div 
+                        key={i}
+                        className="p-2 rounded-lg bg-yellow-500/10 border border-yellow-500/20 text-xs"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm">{getTriggerIcon(hook.trigger)}</span>
+                          <span className="font-medium text-yellow-300">
+                            {getTriggerLabel(hook.trigger)}
+                          </span>
+                        </div>
+                        <p className="text-muted-foreground mt-1 text-[11px]">
+                          {hook.effect}
+                        </p>
+                        {hook.condition && (
+                          <p className="text-[10px] text-yellow-400/60 mt-1">
+                            Condição: {hook.condition}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
                 
                 {/* Detalhes técnicos */}
                 <div className="grid grid-cols-2 gap-2">
