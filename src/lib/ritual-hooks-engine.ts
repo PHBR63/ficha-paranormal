@@ -204,6 +204,61 @@ export interface HookExecutionResult {
 }
 
 // ========================================
+// LOG DE EXECUÇÃO DE HOOKS
+// ========================================
+
+export interface HookExecutionLogEntry {
+  id: string;
+  timestamp: number;
+  trigger: HookTrigger;
+  triggers: HookTrigger[]; // Todos os triggers verificados
+  damageInfo?: DamageInfo;
+  originalDamage?: number;
+  finalDamage?: number;
+  blocked: boolean;
+  results: HookExecutionResult[];
+  targetId?: string;
+  messages: string[];
+}
+
+let executionLog: HookExecutionLogEntry[] = [];
+let logIdCounter = 0;
+
+/**
+ * Retorna o log de execução de hooks
+ */
+export function getExecutionLog(): HookExecutionLogEntry[] {
+  return [...executionLog];
+}
+
+/**
+ * Limpa o log de execução
+ */
+export function clearExecutionLog(): void {
+  executionLog = [];
+}
+
+/**
+ * Adiciona uma entrada ao log
+ */
+function addLogEntry(entry: Omit<HookExecutionLogEntry, 'id' | 'timestamp'>): HookExecutionLogEntry {
+  logIdCounter++;
+  const logEntry: HookExecutionLogEntry = {
+    ...entry,
+    id: `log_${logIdCounter}_${Date.now()}`,
+    timestamp: Date.now(),
+  };
+  executionLog.push(logEntry);
+  
+  // Mantém apenas as últimas 100 entradas
+  if (executionLog.length > 100) {
+    executionLog = executionLog.slice(-100);
+  }
+  
+  return logEntry;
+}
+
+// ========================================
 // ESTADO GLOBAL DE HOOKS ATIVOS
 // ========================================
 
@@ -341,6 +396,7 @@ export function executeHooksForDamage(
   finalDamage: number;
   blocked: boolean;
   messages: string[];
+  logEntry: HookExecutionLogEntry;
 } {
   // Detecta informações do dano
   const damageInfo = detectDamageInfo(damageAmount, damageType, damageSource);
@@ -394,11 +450,25 @@ export function executeHooksForDamage(
     }
   }
   
+  // Registra no log
+  const logEntry = addLogEntry({
+    trigger: orderedTriggers[0] || 'onPreDamage',
+    triggers: orderedTriggers,
+    damageInfo,
+    originalDamage: damageAmount,
+    finalDamage: currentDamage,
+    blocked,
+    results: allResults,
+    targetId,
+    messages,
+  });
+  
   return {
     results: allResults,
     finalDamage: currentDamage,
     blocked,
     messages,
+    logEntry,
   };
 }
 
