@@ -1,11 +1,10 @@
 /**
  * Ordem Paranormal RPG v1.3 - Class Abilities by NEX
  * Sistema de habilidades de classe que escalam com o nível de experiência
- * Inclui conteúdo do suplemento "Sobrevivendo ao Horror"
+ * Apenas classes oficiais do livro base: Combatente, Especialista, Ocultista
  */
 
 import { getAbilityChoicesByNex } from './character-data';
-import { SOBREVIVENTE_ABILITIES } from './supplement-classes';
 
 export interface ClassAbility {
   id: string;
@@ -718,7 +717,6 @@ export const ALL_CLASS_ABILITIES: ClassAbility[] = [
   ...COMBATENTE_ABILITIES,
   ...ESPECIALISTA_ABILITIES,
   ...OCULTISTA_ABILITIES,
-  ...SOBREVIVENTE_ABILITIES, // Habilidades do suplemento "Sobrevivendo ao Horror"
 ];
 
 // ==================== FUNÇÕES AUXILIARES ====================
