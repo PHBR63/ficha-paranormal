@@ -91,28 +91,32 @@ export function SkillsGrid({
       {/* Perícias Treinadas */}
       {trainedSkills.length > 0 && (
         <div>
-          <h4 className="font-display text-sm tracking-wider text-primary mb-3">
-            PERÍCIAS TREINADAS ({trainedSkills.length})
-          </h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-            {trainedSkills.map((skill, index) => {
-              const attrValue = attributes[skill.attribute] || 0;
-              const trainingBonus = 5; // Bônus de treinamento fixo
-              const color = ATTRIBUTE_COLORS[skill.attribute];
-              return (
-                <SkillRow 
-                  key={skill.id} 
-                  name={skill.name} 
-                  attribute={ATTRIBUTE_LABELS[skill.attribute]} 
-                  total={trainingBonus} // Mostrar apenas bônus de treinamento
-                  color={color} 
-                  trained 
-                  index={index} 
-                  onClick={() => onRoll?.(attrValue + trainingBonus, skill.name, attrValue)} // Soma apenas na rolagem
-                />
-              );
-            })}
-          </div>
+        <h4 className="font-display text-sm tracking-wider text-primary mb-3">
+          PERÍCIAS TREINADAS ({trainedSkills.length})
+        </h4>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          {trainedSkills.map((skill, index) => {
+            const attrValue = attributes[skill.attribute] || 0;
+            const trainingLevel = skills[skill.id] || 0;
+            // Converter grau de treinamento em bônus real:
+            // 0 = Destreinado (0), 1 = Treinado (+5), 2 = Veterano (+10), 3 = Expert (+15)
+            const TRAINING_BONUS_MAP = [0, 5, 10, 15];
+            const trainingBonus = TRAINING_BONUS_MAP[trainingLevel] ?? 0;
+            const color = ATTRIBUTE_COLORS[skill.attribute];
+            return (
+              <SkillRow 
+                key={skill.id} 
+                name={skill.name} 
+                attribute={ATTRIBUTE_LABELS[skill.attribute]} 
+                total={trainingBonus}
+                color={color} 
+                trained 
+                index={index} 
+                onClick={() => onRoll?.(attrValue + trainingBonus, skill.name, attrValue)}
+              />
+            );
+          })}
+        </div>
         </div>
       )}
       
@@ -128,18 +132,18 @@ export function SkillsGrid({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
             {untrainedSkills.map((skill, index) => {
               const attrValue = attributes[skill.attribute] || 0;
-              const trainingBonus = 0; // Sem bônus de treinamento
+              const trainingBonus = 0;
               const color = ATTRIBUTE_COLORS[skill.attribute];
               return (
                 <SkillRow 
                   key={skill.id} 
                   name={skill.name} 
                   attribute={ATTRIBUTE_LABELS[skill.attribute]} 
-                  total={trainingBonus} // Mostrar 0 para não treinadas
+                  total={trainingBonus}
                   color={color} 
                   trained={false} 
                   index={index} 
-                  onClick={() => onRoll?.(attrValue + trainingBonus, skill.name, attrValue)} // Soma apenas na rolagem
+                  onClick={() => onRoll?.(attrValue + trainingBonus, skill.name, attrValue)}
                 />
               );
             })}
