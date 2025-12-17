@@ -36,9 +36,11 @@ import { SkillRollsPanel } from './SkillRollsPanel';
 import { ConditionManagerPanel, type ConditionWithDuration } from './ConditionManagerPanel';
 import { ConditionList } from '@/components/ui/condition-badge';
 import { processStartOfTurn } from '@/lib/game-engine';
+import { getActiveRitualEffect } from '@/lib/ritual-effects';
 import type { ActiveCondition } from '@/hooks/useAutoConditions';
 import type { Ritual } from '@/lib/rituals-data';
 import type { TurnPEState } from '@/hooks/useRitualValidation';
+import type { WeaponBuff } from '@/hooks/useWeaponBuffs';
 
 interface WeaponData {
   id: string;
@@ -114,6 +116,7 @@ export function SessionModeDialog({
   const [turnPEState, setTurnPEState] = useState<TurnPEState>({ peSpentThisTurn: 0, turnNumber: 1 });
   const [currentRound, setCurrentRound] = useState(1);
   const [conditionsWithDuration, setConditionsWithDuration] = useState<ConditionWithDuration[]>([]);
+  const [weaponBuffs, setWeaponBuffs] = useState<WeaponBuff[]>([]);
 
   // Sincroniza condições com duration tracking
   useEffect(() => {
@@ -354,7 +357,38 @@ export function SessionModeDialog({
       enhancements,
       previousPE: character.pe,
     }, true);
+
+    // Check if ritual has weapon effect and add buff
+    const effect = getActiveRitualEffect(ritual.id, enhancements);
+    if (effect?.weaponEffect) {
+      const newBuff: WeaponBuff = {
+        id: `${ritual.id}-${Date.now()}`,
+        ritualId: ritual.id,
+        ritualName: ritual.name,
+        element: ritual.element,
+        bonusDamage: effect.weaponEffect.bonusDamage,
+        attackBonus: effect.weaponEffect.attackBonus,
+        criticalBonus: effect.weaponEffect.criticalBonus,
+        criticalMultiplierBonus: effect.weaponEffect.criticalMultiplierBonus,
+        appliedAt: new Date().toISOString(),
+        duration: 'cena',
+        enhancements,
+      };
+      setWeaponBuffs(prev => [...prev, newBuff]);
+      addEntry('system', `Buff de arma aplicado: ${ritual.name}`);
+    }
   }, [addEntry, character.pe]);
+
+  // Weapon buff handlers
+  const handleRemoveWeaponBuff = useCallback((buffId: string) => {
+    setWeaponBuffs(prev => prev.filter(b => b.id !== buffId));
+    addEntry('system', 'Buff de arma removido');
+  }, [addEntry]);
+
+  const handleClearWeaponBuffs = useCallback(() => {
+    setWeaponBuffs([]);
+    addEntry('system', 'Todos os buffs de arma limpos');
+  }, [addEntry]);
 
   const handlePESpend = useCallback((amount: number): boolean => {
     if (amount > character.pe) return false;
@@ -585,8 +619,10 @@ export function SessionModeDialog({
                   }}
                   skills={character.skills}
                   conditions={character.conditions.map(c => c.id)}
+                  weaponBuffs={weaponBuffs}
                   onAttackResult={handleAttackResult}
                   onAmmoConsume={handleAmmoConsume}
+                  onRemoveWeaponBuff={handleRemoveWeaponBuff}
                 />
               </TabsContent>
 
