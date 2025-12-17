@@ -1447,6 +1447,257 @@ export const RITUAL_EFFECTS: Record<string, RitualEffectsByLevel> = {
       special: 'Flexibilidade ampliada contra círculos superiores.',
     },
   },
+
+  // === RITUAIS DE 4º CÍRCULO ===
+
+  // === SANGUE ===
+
+  // Capturar o Coração
+  'capturar-o-coracao': {
+    base: {
+      appliesConditions: [{ conditionId: 'fascinado', duration: 'cena' }],
+      resistance: { type: 'vontade', effect: 'parcial' },
+      special: 'Paixão obsessiva. Alvo ajuda você se falhar na Vontade no turno. Passar 2x encerra.',
+    },
+  },
+
+  // Invólucro de Carne
+  'involucro-de-carne': {
+    base: {
+      special: 'Cria cópia física sua (sem mente). Pode dar ordem (movimento) ou controlar (transe).',
+    },
+  },
+
+  // Martírio de Sangue
+  'martirio-de-sangue': {
+    base: {
+      attackModifier: 5,
+      defenseModifier: 5,
+      tempHP: { diceCount: 0, diceType: 0, bonus: 30 },
+      special: 'Transformação final. +5 ataque/dano/defesa, 30 PV temp, faro, visão no escuro. PERDE O PERSONAGEM no fim da cena (vira criatura).',
+    },
+    discente: {
+      attackModifier: 10,
+      defenseModifier: 10,
+      tempHP: { diceCount: 0, diceType: 0, bonus: 40 },
+      special: '+10 bônus, 40 PV temp.',
+    },
+    verdadeiro: {
+      attackModifier: 20,
+      defenseModifier: 20,
+      tempHP: { diceCount: 0, diceType: 0, bonus: 50 },
+      special: '+20 bônus, 50 PV temp.',
+    },
+  },
+
+  // Vínculo de Sangue
+  'vinculo-de-sangue': {
+    base: {
+      resistance: { type: 'fortitude', effect: 'anula' },
+      special: 'Divide dano com o alvo (ele sofre metade do seu dano se falhar). Ou você sofre metade do dano dele (inverso).',
+    },
+  },
+
+  // === MORTE ===
+
+  // Convocar o Algoz
+  'convocar-o-algoz': {
+    base: {
+      damage: { diceCount: 6, diceType: 6, damageType: 'morte' },
+      appliesConditions: [{ conditionId: 'abalado', duration: 'sustentado' }],
+      resistance: { type: 'vontade', effect: 'parcial' },
+      special: 'Cria algoz que persegue vítima. Causa abalado (Vontade) ou 0 PV/6d6 Morte (Fortitude).',
+    },
+  },
+
+  // Distorção Temporal
+  'distorcao-temporal': {
+    base: {
+      special: 'Bolsão temporal por 3 rodadas. Você age mas não interage com externo.',
+    },
+  },
+
+  // Fim Inevitável
+  'fim-inevitavel': {
+    base: {
+      damage: { diceCount: 0, diceType: 0, bonus: 100, damageType: 'morte' },
+      areaEffect: { shape: 'esfera', radius: 1.5 },
+      resistance: { type: 'fortitude', effect: 'parcial' },
+      special: 'Buraco negro. Puxa seres (30m) e deixa caídos. Dano 100 Morte se tocar. 4 rodadas.',
+    },
+    discente: {
+      special: '5 rodadas, você imune ao efeito.',
+    },
+    verdadeiro: {
+      special: '6 rodadas, seres escolhidos imunes.',
+    },
+  },
+
+  // Singularidade Temporal
+  'singularidade-temporal': {
+    base: {
+      special: 'Avança tempo do objeto Médio (destrói/danifica).',
+    },
+    discente: {
+      special: 'Afeta objeto Grande.',
+    },
+    verdadeiro: {
+      special: 'Afeta objeto Enorme.',
+    },
+  },
+
+  // === CONHECIMENTO ===
+
+  // Controle Mental
+  'controle-mental': {
+    base: {
+      appliesConditions: [{ conditionId: 'dominado', duration: 'sustentado' }],
+      resistance: { type: 'vontade', effect: 'parcial' },
+      special: 'Domina alvo (exceto suicídio). Teste por turno para livrar (fica pasmo).',
+    },
+    discente: {
+      special: 'Até 5 alvos.',
+    },
+    verdadeiro: {
+      special: 'Duração cena.',
+    },
+  },
+
+  // Inexistir
+  'inexistir': {
+    base: {
+      special: 'Apaga existência do alvo das mentes. Ninguém lembra dele. Duração 1 dia.',
+    },
+    discente: {
+      special: 'Duração 1 semana.',
+    },
+    verdadeiro: {
+      special: 'Duração 1 mês.',
+    },
+  },
+
+  // Possessão
+  'possessao': {
+    base: {
+      resistance: { type: 'vontade', effect: 'anula' },
+      special: 'Corpo em transe, mente no alvo. Controla o alvo. Vontade por rodada para sair.',
+    },
+  },
+
+  // Pronunciar Sigilo
+  'pronunciar-sigilo': {
+    base: {
+      resistance: { type: 'vontade', effect: 'parcial' },
+      special: 'Descobre nome verdadeiro. Dá vantagem contra alvo (+5 testes, -5 resistências).',
+    },
+    discente: {
+      special: 'Bônus +10, penalidade -10.',
+    },
+    verdadeiro: {
+      special: 'Alvo não pode mentir para você ou atacá-lo.',
+    },
+  },
+
+  // === ENERGIA ===
+
+  // Alterar Destino
+  'alterar-destino': {
+    base: {
+      special: 'Escolhe resultado de 1 teste seu ou de aliado (em vez de rolar).',
+    },
+    discente: {
+      special: 'Afeta teste de inimigo (escolhe resultado ruim).',
+    },
+    verdadeiro: {
+      special: 'Escolhe resultado de qualquer teste na cena.',
+    },
+  },
+
+  // Deflagração de Energia
+  'deflagracao-de-energia': {
+    base: {
+      damage: { diceCount: 20, diceType: 6, damageType: 'energia' },
+      areaEffect: { shape: 'esfera', radius: 12 },
+      resistance: { type: 'reflexos', effect: 'reduz_metade' },
+      special: 'Explosão massiva 20d6 Energia em área de 12m.',
+    },
+    discente: {
+      damage: { diceCount: 30, diceType: 6, damageType: 'energia' },
+      special: '30d6 de dano.',
+    },
+    verdadeiro: {
+      damage: { diceCount: 40, diceType: 6, damageType: 'energia' },
+      special: '40d6 de dano, ignora RD.',
+    },
+  },
+
+  // Teletransporte
+  'teletransporte': {
+    base: {
+      special: 'Teletransporta para local conhecido no mesmo plano.',
+    },
+    discente: {
+      special: 'Leva até 5 pessoas voluntárias.',
+    },
+    verdadeiro: {
+      special: 'Teletransporta para qualquer lugar, mesmo desconhecido (risco de erro).',
+    },
+  },
+
+  // === MEDO ===
+
+  // Canalizar o Medo
+  'canalizar-o-medo': {
+    base: {
+      tempHP: { diceCount: 0, diceType: 0, bonus: 50 },
+      attackModifier: 5,
+      special: 'Absorve medo ambiente. +50 PV temp, +5 ataque/dano.',
+    },
+  },
+
+  // Conhecendo o Medo
+  'conhecendo-o-medo': {
+    base: {
+      resistance: { type: 'vontade', effect: 'parcial' },
+      special: 'Descobre maior medo do alvo. Pode usar contra ele (+5 em testes de Medo).',
+    },
+    discente: {
+      special: 'Bônus +10 contra o medo descoberto.',
+    },
+    verdadeiro: {
+      special: 'Materializa o medo (criatura ilusória que só o alvo vê).',
+    },
+  },
+
+  // Lâmina do Medo
+  'lamina-do-medo': {
+    base: {
+      weaponEffect: {
+        bonusDamage: { diceCount: 4, diceType: 6, damageType: 'medo' },
+      },
+      special: 'Arma causa +4d6 Medo. Crítico aplica apavorado.',
+      appliesConditions: [{ conditionId: 'apavorado', duration: 'cena' }],
+    },
+  },
+
+  // Medo Tangível
+  'medo-tangivel': {
+    base: {
+      damage: { diceCount: 10, diceType: 6, damageType: 'medo' },
+      resistance: { type: 'vontade', effect: 'reduz_metade' },
+      special: 'Manifesta medo como ataque físico. 10d6 Medo.',
+    },
+  },
+
+  // Presença do Medo
+  'presenca-do-medo': {
+    base: {
+      areaEffect: { shape: 'esfera', radius: 18 },
+      appliesConditions: [{ conditionId: 'apavorado', duration: 'cena' }],
+      resistance: { type: 'vontade', effect: 'parcial' },
+      special: 'Aura de terror. Inimigos na área ficam apavorados (Vontade parcial: abalado).',
+    },
+  },
 };
 
 // ==================== FUNÇÕES AUXILIARES ====================
