@@ -637,20 +637,20 @@ export const RITUAL_EFFECTS: Record<string, RitualEffectsByLevel> = {
     },
   },
 
-  // === RITUAIS DE 2º CÍRCULO ===
-
-  // Âncora Temporal
-  'ancora-temporal': {
+  // Velocidade Mortal (1º Círculo - Morte)
+  'velocidade-mortal': {
     base: {
-      special: 'Cria ponto de ancoragem. Pode retornar como ação livre, recuperando PV, PE e SAN do momento da ancoragem.',
+      special: 'Concede 1 ação de movimento extra por turno.',
     },
     discente: {
-      special: 'Pode levar 1 aliado adicional.',
+      special: 'Concede 1 ação padrão extra por turno.',
     },
     verdadeiro: {
-      special: 'Leva aliados em alcance curto e pode atacar no destino.',
+      special: 'Afeta alvos escolhidos em alcance curto.',
     },
   },
+
+  // === RITUAIS DE 2º CÍRCULO ===
 
   // Caminhos de Sangue
   'caminhos-de-sangue': {
@@ -666,19 +666,6 @@ export const RITUAL_EFFECTS: Record<string, RitualEffectsByLevel> = {
       damage: { diceCount: 6, diceType: 6, damageType: 'sangue' },
       areaEffect: { shape: 'esfera', radius: 6 },
       special: 'Cria esfera de sangue que causa 6d6 em inimigos por turno.',
-    },
-  },
-
-  // Velocidade Mortal
-  'velocidade-mortal': {
-    base: {
-      special: 'Concede 1 ação de movimento extra por turno.',
-    },
-    discente: {
-      special: 'Concede 1 ação padrão extra por turno.',
-    },
-    verdadeiro: {
-      special: 'Afeta alvos escolhidos em alcance curto.',
     },
   },
 
