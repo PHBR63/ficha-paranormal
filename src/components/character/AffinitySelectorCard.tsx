@@ -170,7 +170,7 @@ export function AffinitySelectorCard({ nex, onSelectAffinity }: AffinitySelector
 
       {/* Modal de Detalhes da Afinidade */}
       <Dialog open={!!detailElement} onOpenChange={(open) => !open && setDetailElement(null)}>
-        <DialogContent className="max-w-lg max-h-[85vh] flex flex-col">
+        <DialogContent className="w-[95vw] max-w-lg max-h-[90vh] sm:max-h-[85vh] flex flex-col overflow-hidden p-4 sm:p-6">
           {detailElement && (
             <>
               <DialogHeader>
@@ -192,7 +192,7 @@ export function AffinitySelectorCard({ nex, onSelectAffinity }: AffinitySelector
                 </div>
               </DialogHeader>
 
-              <ScrollArea className="flex-1 -mx-6 px-6">
+              <ScrollArea className="flex-1 min-h-0 -mx-4 sm:-mx-6 px-4 sm:px-6">
                 <div className="space-y-4 pb-4">
                   {/* Descrição detalhada */}
                   <div className="p-3 rounded-lg bg-paranormal/10 border border-paranormal/30">
