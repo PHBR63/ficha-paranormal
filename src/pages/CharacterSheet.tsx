@@ -2224,9 +2224,14 @@ export default function CharacterSheet() {
             vigor: character.vigor,
             agility: character.agility,
             presence: character.presence,
+            intellect: character.intellect,
+            strength: character.strength,
             skills: character.skills as unknown as Record<string, { trained: boolean; bonus: number }>,
             inventory: character.inventory,
             conditions: character.conditions.map(parseCondition),
+            rituals: character.rituals as any || [],
+            class: character.class,
+            elementalAffinity: character.elemental_affinity,
           }}
           onCharacterUpdate={async (updates) => {
             if (updates.hp !== undefined) setHpCurrent(updates.hp);
