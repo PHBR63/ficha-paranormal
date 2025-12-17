@@ -281,10 +281,28 @@ export function extractConditionsFromEffect(effect: RitualEffect): PendingCondit
     return [];
   }
 
-  return effect.appliesConditions.map(ac => ({
-    conditionId: ac.conditionId,
-    conditionName: CONDITIONS[ac.conditionId]?.name || ac.conditionId,
-    duration: ac.duration || 'cena',
-    turnsCount: ac.turnsCount,
-  }));
+  return effect.appliesConditions.map(ac => {
+    // Suporta tanto id quanto conditionId (compatibilidade)
+    const conditionId = ac.id || ac.conditionId || '';
+    
+    // Converte duração numérica para 'rodada' com turnsCount
+    let duration: PendingCondition['duration'] = 'cena';
+    let turnsCount = ac.turnsCount;
+    
+    if (typeof ac.duration === 'number') {
+      duration = 'rodada';
+      turnsCount = ac.duration;
+    } else if (ac.duration === 'rodada' || ac.duration === 'cena' || ac.duration === 'sustentado' || ac.duration === 'permanente') {
+      duration = ac.duration;
+    } else if (ac.isPermanent) {
+      duration = 'permanente';
+    }
+    
+    return {
+      conditionId,
+      conditionName: CONDITIONS[conditionId]?.name || conditionId,
+      duration,
+      turnsCount,
+    };
+  });
 }
