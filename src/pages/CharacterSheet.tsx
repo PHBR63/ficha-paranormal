@@ -115,6 +115,7 @@ interface InventoryItemPersisted {
   ammoType?: string;
   // Campos de armaduras
   rd?: number;
+  defenseBonus?: number;
   agilityPenalty?: number;
   speedPenalty?: number;
   armorType?: string;
@@ -986,6 +987,8 @@ export default function CharacterSheet() {
     if (!character) {
       return {
         totalRD: 0,
+        armorDefenseBonus: 0,
+        shieldDefenseBonus: 0,
         totalAgilityPenalty: 0,
         totalSpeedPenalty: 0,
         hasArmor: false,
@@ -993,24 +996,36 @@ export default function CharacterSheet() {
       };
     }
     
+    // Armaduras (não escudos)
     const equippedArmors = character.inventory
-      .filter(item => item.isEquipped && item.itemType === 'armor' && item.rd !== undefined);
+      .filter(item => item.isEquipped && item.itemType === 'armor' && item.armorType !== 'escudo');
+    
+    // Escudo
+    const equippedShield = character.inventory
+      .find(item => item.isEquipped && item.itemType === 'armor' && item.armorType === 'escudo');
     
     const totalRD = equippedArmors.reduce((sum, armor) => sum + (armor.rd || 0), 0);
+    // Bônus de defesa das armaduras (Proteção Leve +5, Proteção Pesada +10)
+    const armorDefenseBonus = equippedArmors.reduce((sum, armor) => sum + (armor.defenseBonus || 0), 0);
+    // Bônus de defesa do escudo (+2)
+    const shieldDefenseBonus = equippedShield?.defenseBonus || 0;
     const totalAgilityPenalty = equippedArmors.reduce((sum, armor) => sum + (armor.agilityPenalty || 0), 0);
     const totalSpeedPenalty = equippedArmors.reduce((sum, armor) => sum + (armor.speedPenalty || 0), 0);
     
     return {
       totalRD,
+      armorDefenseBonus,
+      shieldDefenseBonus,
       totalAgilityPenalty,
       totalSpeedPenalty,
       hasArmor: equippedArmors.length > 0,
-      equippedArmors: equippedArmors.map(a => ({ name: a.name, rd: a.rd || 0 })),
+      equippedArmors: equippedArmors.map(a => ({ name: a.name, rd: a.rd || 0, defenseBonus: a.defenseBonus || 0 })),
     };
   }, [character?.inventory]);
 
   // Bônus total de defesa combinando todas as fontes (defenseBonuses já está definido acima)
-  const totalDefenseBonus = paranormalEffects.defenseBonus + defenseBonuses.totalBonus;
+  // Inclui: poderes paranormais + bônus de origem/habilidades + bônus de armadura + bônus de escudo
+  const totalDefenseBonus = paranormalEffects.defenseBonus + defenseBonuses.totalBonus + armorStats.armorDefenseBonus + armorStats.shieldDefenseBonus;
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -1252,6 +1267,20 @@ export default function CharacterSheet() {
                 peBonus={paranormalEffects.peBonus}
                 defenseBonus={totalDefenseBonus}
                 defenseBonusBreakdown={[
+                  // Adiciona bônus de armadura ao breakdown
+                  ...(armorStats.armorDefenseBonus > 0 ? armorStats.equippedArmors.filter(a => a.defenseBonus > 0).map(armor => ({
+                    source: armor.name,
+                    type: 'origin' as const,
+                    bonus: armor.defenseBonus,
+                    active: true,
+                  })) : []),
+                  // Adiciona bônus de escudo ao breakdown
+                  ...(armorStats.shieldDefenseBonus > 0 ? [{
+                    source: 'Escudo',
+                    type: 'origin' as const,
+                    bonus: armorStats.shieldDefenseBonus,
+                    active: true,
+                  }] : []),
                   // Adiciona bônus paranormais ao breakdown
                   ...(paranormalEffects.defenseBonus > 0 ? [{
                     source: 'Poderes Paranormais',
