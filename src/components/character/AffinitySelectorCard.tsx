@@ -8,7 +8,7 @@ import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
+
 import {
   Dialog,
   DialogContent,
@@ -170,35 +170,35 @@ export function AffinitySelectorCard({ nex, onSelectAffinity }: AffinitySelector
 
       {/* Modal de Detalhes da Afinidade */}
       <Dialog open={!!detailElement} onOpenChange={(open) => !open && setDetailElement(null)}>
-        <DialogContent className="w-[95vw] max-w-lg max-h-[90vh] sm:max-h-[85vh] flex flex-col overflow-hidden p-4 sm:p-6">
+        <DialogContent className="w-[95vw] max-w-lg max-h-[90vh] sm:max-h-[85vh] p-0 overflow-hidden flex flex-col">
           {detailElement && (
-            <>
-              <DialogHeader>
-                <div className="flex items-center gap-3">
-                  <div className={cn('p-2 rounded-lg', ELEMENT_BG_COLORS[detailElement])}>
-                    {(() => {
-                      const Icon = AFFINITY_ICONS[detailElement];
-                      return <Icon className={cn('h-6 w-6', ELEMENT_COLORS[detailElement])} />;
-                    })()}
+            <div className="flex flex-1 min-h-0 flex-col">
+              <div className="p-4 sm:p-6">
+                <DialogHeader>
+                  <div className="flex items-center gap-3">
+                    <div className={cn('p-2 rounded-lg', ELEMENT_BG_COLORS[detailElement])}>
+                      {(() => {
+                        const Icon = AFFINITY_ICONS[detailElement];
+                        return <Icon className={cn('h-6 w-6', ELEMENT_COLORS[detailElement])} />;
+                      })()}
+                    </div>
+                    <div>
+                      <DialogTitle className="text-xl">
+                        Afinidade: {ELEMENT_LABELS[detailElement]}
+                      </DialogTitle>
+                      <p className="text-xs text-muted-foreground">
+                        {elementPowers.length} poderes paranormais
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <DialogTitle className="text-xl">
-                      Afinidade: {ELEMENT_LABELS[detailElement]}
-                    </DialogTitle>
-                    <p className="text-xs text-muted-foreground">
-                      {elementPowers.length} poderes paranormais
-                    </p>
-                  </div>
-                </div>
-              </DialogHeader>
+                </DialogHeader>
+              </div>
 
-              <ScrollArea className="flex-1 min-h-0 -mx-4 sm:-mx-6 px-4 sm:px-6">
+              <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 overscroll-contain">
                 <div className="space-y-4 pb-4">
                   {/* Descrição detalhada */}
                   <div className="p-3 rounded-lg bg-paranormal/10 border border-paranormal/30">
-                    <p className="text-sm">
-                      {AFFINITY_DETAILED_DESCRIPTIONS[detailElement]}
-                    </p>
+                    <p className="text-sm">{AFFINITY_DETAILED_DESCRIPTIONS[detailElement]}</p>
                   </div>
 
                   {/* Lista de Poderes */}
@@ -209,10 +209,7 @@ export function AffinitySelectorCard({ nex, onSelectAffinity }: AffinitySelector
                     </h4>
                     <div className="space-y-3">
                       {elementPowers.map((power) => (
-                        <div
-                          key={power.id}
-                          className="p-3 rounded-lg bg-secondary/50 border border-border"
-                        >
+                        <div key={power.id} className="p-3 rounded-lg bg-secondary/50 border border-border">
                           <div className="flex items-start justify-between gap-2 mb-1">
                             <h5 className="font-medium text-sm">{power.name}</h5>
                             {power.prerequisite && (
@@ -221,15 +218,11 @@ export function AffinitySelectorCard({ nex, onSelectAffinity }: AffinitySelector
                               </Badge>
                             )}
                           </div>
-                          <p className="text-xs text-muted-foreground mb-2">
-                            {power.description}
-                          </p>
+                          <p className="text-xs text-muted-foreground mb-2">{power.description}</p>
                           {power.affinityEffect && (
                             <div className="flex items-start gap-2 p-2 rounded bg-paranormal/10 border border-paranormal/30">
                               <Sparkles className="w-3.5 h-3.5 text-paranormal shrink-0 mt-0.5" />
-                              <p className="text-xs text-paranormal font-medium">
-                                {power.affinityEffect}
-                              </p>
+                              <p className="text-xs text-paranormal font-medium">{power.affinityEffect}</p>
                             </div>
                           )}
                         </div>
@@ -237,13 +230,10 @@ export function AffinitySelectorCard({ nex, onSelectAffinity }: AffinitySelector
                     </div>
                   </div>
                 </div>
-              </ScrollArea>
+              </div>
 
-              <div className="pt-4 border-t flex justify-between items-center">
-                <Button
-                  variant="outline"
-                  onClick={() => setDetailElement(null)}
-                >
+              <div className="p-4 sm:p-6 pt-4 border-t flex justify-between items-center bg-background">
+                <Button variant="outline" onClick={() => setDetailElement(null)}>
                   Fechar
                 </Button>
                 <Button
@@ -257,7 +247,7 @@ export function AffinitySelectorCard({ nex, onSelectAffinity }: AffinitySelector
                   Escolher {ELEMENT_LABELS[detailElement]}
                 </Button>
               </div>
-            </>
+            </div>
           )}
         </DialogContent>
       </Dialog>
