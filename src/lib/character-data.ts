@@ -579,8 +579,8 @@ export const CLASS_TRACKS: ClassTrack[] = [
     classId: 'Especialista',
     description: 'Sua principal habilidade é a manutenção, reparo e improvisação de equipamentos, garantindo que o grupo esteja sempre preparado.',
     abilities: [
-      { id: 'inventario-otimizado', name: 'Inventário Otimizado', description: 'Você soma seu Intelecto à Força para calcular sua capacidade de carga. Além disso, itens ocupam 1 espaço a menos.', minNex: 10, isInitial: true },
-      { id: 'remendo', name: 'Remendo', description: 'Você pode gastar uma ação completa e 1 PE para remover a condição quebrado de um equipamento adjacente. Além disso, qualquer equipamento que você carregue tem sua categoria reduzida em 1.', minNex: 40 },
+      { id: 'inventario-otimizado', name: 'Inventário Otimizado', description: 'Você soma seu Intelecto à Força para calcular sua capacidade de carga. Além disso, itens ocupam 1 espaço a menos (mas nunca reduzido a 0).', minNex: 10, isInitial: true },
+      { id: 'remendo', name: 'Remendo', description: 'Você pode gastar uma ação completa e 1 PE para remover a condição quebrado de um equipamento adjacente. Além disso, qualquer equipamento que você carregue tem sua categoria reduzida em 1 (mas nunca reduzida a 0).', minNex: 40 },
       { id: 'improvisar', name: 'Improvisar', description: 'Você pode improvisar equipamentos com materiais ao redor. Escolha um equipamento geral e gaste uma ação completa e 2 PE. Esse item funciona normalmente até o final da cena, mas é inutilizado ao término.', minNex: 65 },
       { id: 'preparado-para-tudo', name: 'Preparado para Tudo', description: 'Sempre que precisar de um item qualquer (exceto armas), você pode gastar uma ação de movimento e 3 PE por categoria para declarar que ele estava guardado em sua mochila. Depois disso, o item segue normalmente as regras de inventário.', minNex: 99 },
     ],
