@@ -21,6 +21,18 @@ import {
   canAct,
 } from "@/lib/game-engine";
 import {
+  executeHooks,
+  cleanupExpiredHooks,
+  type HookExecutionResult,
+} from "@/lib/ritual-hooks-engine";
+import {
+  processSustainedRitualsOnTurnStart,
+  testConcentration,
+  getSustainedRitualsForCharacter,
+  type SustainedRitual,
+} from "@/lib/sustained-rituals";
+import { ActiveRitualsPanel } from "./ActiveRitualsPanel";
+import {
   Swords,
   Play,
   Pause,
@@ -33,6 +45,7 @@ import {
   Zap,
   ChevronRight,
   RotateCcw,
+  Sparkles,
 } from "lucide-react";
 import confetti from "canvas-confetti";
 
@@ -138,43 +151,120 @@ export function CombatTracker({
     const newState = nextTurn(combatState);
     const currentCombatant = newState.combatants[newState.currentTurnIndex];
     
+    // Limpa hooks expirados
+    const expiredHooks = cleanupExpiredHooks(newState.round);
+    
+    // Dispara hooks de início de turno
+    const turnStartHooks = executeHooks({
+      trigger: 'onTurnStart',
+      round: newState.round,
+      targetId: currentCombatant.id,
+    });
+    
     // Process start of turn effects
     const turnResult = processStartOfTurn(currentCombatant);
     
-    if (turnResult.damage > 0 || turnResult.messages.length > 0) {
-      const updatedCombatants = newState.combatants.map((c, i) => {
-        if (i !== newState.currentTurnIndex) return c;
-        return {
-          ...c,
-          hp: Math.max(0, c.hp - turnResult.damage),
-          conditions: c.conditions.filter(cond => !turnResult.removedConditions.includes(cond)),
-          dyingCounter: turnResult.dyingCounterReduced && c.dyingCounter !== undefined 
-            ? c.dyingCounter - 1 
-            : c.dyingCounter,
-        };
-      });
-
-      updateState({
-        ...newState,
-        combatants: updatedCombatants,
-        log: [
-          ...newState.log,
-          ...turnResult.messages.map(msg => ({
-            timestamp: new Date(),
-            type: 'condition' as const,
-            message: msg,
-          })),
-        ],
-      });
-    } else {
-      updateState(newState);
+    // Processa rituais sustentados
+    const sustainedRituals = getSustainedRitualsForCharacter(currentCombatant.id);
+    let sustainPECost = 0;
+    const sustainMessages: string[] = [];
+    
+    if (sustainedRituals.length > 0) {
+      const sustainResult = processSustainedRitualsOnTurnStart(
+        currentCombatant.id,
+        newState.round,
+        currentCombatant.pe
+      );
+      sustainPECost = sustainResult.totalPECost;
+      sustainMessages.push(...sustainResult.results.map(r => r.message));
     }
+    
+    // Coleta mensagens dos hooks
+    const hookMessages = turnStartHooks.map(h => 
+      `⚡ ${h.ritualName}: ${h.modifications?.message || h.effect}`
+    );
+    
+    // Atualiza combatente com dano de condições e custo de sustentação
+    const updatedCombatants = newState.combatants.map((c, i) => {
+      if (i !== newState.currentTurnIndex) return c;
+      return {
+        ...c,
+        hp: Math.max(0, c.hp - turnResult.damage),
+        pe: Math.max(0, c.pe - sustainPECost),
+        conditions: c.conditions.filter(cond => !turnResult.removedConditions.includes(cond)),
+        dyingCounter: turnResult.dyingCounterReduced && c.dyingCounter !== undefined 
+          ? c.dyingCounter - 1 
+          : c.dyingCounter,
+      };
+    });
+
+    // Monta log
+    const allMessages = [
+      ...turnResult.messages,
+      ...hookMessages,
+      ...sustainMessages,
+    ];
+    
+    if (expiredHooks.length > 0) {
+      allMessages.push(`${expiredHooks.length} efeito(s) de ritual expirou(aram).`);
+    }
+
+    updateState({
+      ...newState,
+      combatants: updatedCombatants,
+      log: [
+        ...newState.log,
+        ...allMessages.map(msg => ({
+          timestamp: new Date(),
+          type: 'condition' as const,
+          message: msg,
+        })),
+      ],
+    });
   }, [combatState, updateState]);
 
-  const updateCombatantHP = useCallback((id: string, delta: number) => {
+  const updateCombatantHP = useCallback((id: string, delta: number, damageType?: string) => {
+    const combatant = combatState.combatants.find(c => c.id === id);
+    if (!combatant) return;
+
+    let finalDelta = delta;
+    const hookMessages: string[] = [];
+
+    // Se for dano (delta negativo), dispara hooks de pré-dano
+    if (delta < 0) {
+      const preDamageHooks = executeHooks({
+        trigger: 'onPreDamage',
+        targetId: id,
+        damageAmount: Math.abs(delta),
+        damageType,
+        currentHP: combatant.hp,
+        round: combatState.round,
+      });
+
+      for (const result of preDamageHooks) {
+        if (result.modifications?.blockDamage) {
+          finalDelta = 0;
+          hookMessages.push(`🛡️ ${result.ritualName}: ${result.modifications.message || 'Dano bloqueado!'}`);
+        } else if (result.modifications?.newDamageAmount !== undefined) {
+          finalDelta = -result.modifications.newDamageAmount;
+          hookMessages.push(`🛡️ ${result.ritualName}: ${result.modifications.message || 'Dano modificado'}`);
+        }
+      }
+
+      // Testa concentração se recebeu dano
+      if (finalDelta < 0) {
+        const concentrationResults = testConcentration(id, Math.abs(finalDelta));
+        for (const result of concentrationResults) {
+          hookMessages.push(result.concentrationBroken 
+            ? `💔 ${result.message}` 
+            : `✨ ${result.message}`);
+        }
+      }
+    }
+
     const updatedCombatants = combatState.combatants.map(c => {
       if (c.id !== id) return c;
-      const newHP = Math.max(0, Math.min(c.hpMax, c.hp + delta));
+      const newHP = Math.max(0, Math.min(c.hpMax, c.hp + finalDelta));
       return { ...c, hp: newHP };
     });
 
@@ -185,10 +275,15 @@ export function CombatTracker({
         ...combatState.log,
         {
           timestamp: new Date(),
-          type: delta > 0 ? 'heal' : 'damage',
-          target: combatState.combatants.find(c => c.id === id)?.name,
-          message: `${delta > 0 ? '+' : ''}${delta} PV`,
+          type: finalDelta > 0 ? 'heal' : 'damage',
+          target: combatant.name,
+          message: `${finalDelta > 0 ? '+' : ''}${finalDelta} PV`,
         },
+        ...hookMessages.map(msg => ({
+          timestamp: new Date(),
+          type: 'condition' as const,
+          message: msg,
+        })),
       ],
     });
   }, [combatState, updateState]);
@@ -440,6 +535,31 @@ export function CombatTracker({
           })}
         </AnimatePresence>
       </div>
+
+      {/* Active Rituals Panel (for current combatant) */}
+      {combatState.isActive && currentCombatant && (
+        <ActiveRitualsPanel
+          characterId={currentCombatant.id}
+          characterName={currentCombatant.name}
+          sustainedRituals={getSustainedRitualsForCharacter(currentCombatant.id)}
+          currentRound={combatState.round}
+          currentPE={currentCombatant.pe}
+          isMaster={isMaster}
+          onConcentrationDropped={(ritual) => {
+            updateState({
+              ...combatState,
+              log: [
+                ...combatState.log,
+                {
+                  timestamp: new Date(),
+                  type: 'condition' as const,
+                  message: `${currentCombatant.name} encerrou concentração em ${ritual.ritualName}`,
+                },
+              ],
+            });
+          }}
+        />
+      )}
 
       {/* Combat log */}
       {combatState.log.length > 0 && (
