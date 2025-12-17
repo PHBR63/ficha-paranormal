@@ -105,6 +105,8 @@ export interface BonusSummary {
   // Stats calculados
   hpBonus: number;
   peBonus: number;
+  // Hooks internos expostos para evitar chamadas duplicadas
+  defenseBonuses: import('./useDefenseBonuses').DefenseBonuses;
 }
 
 // Props do hook
@@ -519,6 +521,8 @@ export function useCharacterBonusSummary({
       conditionalBonuses,
       hpBonus: paranormalEffects.hpBonus,
       peBonus: paranormalEffects.peBonus,
+      // Expõe hooks internos para evitar chamadas duplicadas
+      defenseBonuses,
     };
   }, [defenseBonuses, paranormalEffects, abilities, generalPowers, activeConditionalBonuses, isConditionalActive]);
 }

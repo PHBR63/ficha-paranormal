@@ -12,6 +12,7 @@ interface UseBonusSyncProps {
   characterId: string;
   bonusSummary: BonusSummary;
   enabled?: boolean;
+  isInCampaign?: boolean; // OTIMIZAÇÃO: Evita query para verificar membership
 }
 
 /**
@@ -68,14 +69,17 @@ export function useBonusSync({
   characterId,
   bonusSummary,
   enabled = true,
+  isInCampaign,
 }: UseBonusSyncProps) {
   // Ref para evitar atualizações desnecessárias
   const lastSyncRef = useRef<string>('');
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
+  const membershipRef = useRef<{ id: string; campaign_id: string } | null>(null);
 
   // Função de sincronização
   const syncBonuses = useCallback(async () => {
-    if (!characterId || !enabled) return;
+    // OTIMIZAÇÃO: Se sabemos que não está em campanha, não faz nada
+    if (!characterId || !enabled || isInCampaign === false) return;
 
     try {
       // Serializa o resumo de bônus
@@ -87,16 +91,25 @@ export function useBonusSync({
         return;
       }
 
-      // Busca membership do personagem na campanha
-      const { data: membership, error: memberError } = await supabase
-        .from('campaign_members')
-        .select('id, campaign_id')
-        .eq('character_id', characterId)
-        .maybeSingle();
+      // OTIMIZAÇÃO: Usa cache de membership se disponível
+      let membership = membershipRef.current;
+      
+      // Só busca membership se não temos cache
+      if (!membership) {
+        const { data, error: memberError } = await supabase
+          .from('campaign_members')
+          .select('id, campaign_id')
+          .eq('character_id', characterId)
+          .maybeSingle();
 
-      if (memberError) {
-        console.error('[BonusSync] Erro ao buscar membership:', memberError);
-        return;
+        if (memberError) {
+          console.error('[BonusSync] Erro ao buscar membership:', memberError);
+          return;
+        }
+
+        // Cacheia resultado
+        membershipRef.current = data;
+        membership = data;
       }
 
       // Se não está em campanha, não precisa sincronizar
@@ -120,32 +133,32 @@ export function useBonusSync({
 
       // Atualiza ref de última sincronização
       lastSyncRef.current = serializedJson;
-      console.log('[BonusSync] Bônus sincronizados com sucesso');
     } catch (err) {
       console.error('[BonusSync] Erro inesperado:', err);
     }
-  }, [characterId, bonusSummary, enabled]);
+  }, [characterId, bonusSummary, enabled, isInCampaign]);
 
   // Sincroniza com debounce quando os bônus mudam
+  // OTIMIZAÇÃO: Aumentado debounce de 2s para 5s
   useEffect(() => {
-    if (!enabled) return;
+    if (!enabled || isInCampaign === false) return;
 
     // Limpa timeout anterior
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
     }
 
-    // Aguarda 2 segundos antes de sincronizar (evita muitas requisições)
+    // Aguarda 5 segundos antes de sincronizar (evita muitas requisições)
     debounceRef.current = setTimeout(() => {
       syncBonuses();
-    }, 2000);
+    }, 5000);
 
     return () => {
       if (debounceRef.current) {
         clearTimeout(debounceRef.current);
       }
     };
-  }, [syncBonuses, enabled]);
+  }, [syncBonuses, enabled, isInCampaign]);
 
   // Sincroniza imediatamente ao montar
   useEffect(() => {
