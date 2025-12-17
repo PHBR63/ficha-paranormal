@@ -17,6 +17,7 @@ import CampaignCreate from "./pages/CampaignCreate";
 import CampaignView from "./pages/CampaignView";
 import AdminImport from "./pages/AdminImport";
 import AdminUsers from "./pages/AdminUsers";
+import AdminDataIntegrity from "./pages/AdminDataIntegrity";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -70,6 +71,11 @@ const App = () => (
               <Route path="/admin/users" element={
                 <AdminRoute>
                   <AdminUsers />
+                </AdminRoute>
+              } />
+              <Route path="/admin/data-integrity" element={
+                <AdminRoute>
+                  <AdminDataIntegrity />
                 </AdminRoute>
               } />
               <Route path="*" element={<NotFound />} />
