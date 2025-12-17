@@ -6,6 +6,153 @@
 import { Hook, HookTrigger, RitualEffect, getActiveRitualEffect } from './ritual-effects';
 
 // ========================================
+// TIPOS DE DANO E DETECÇÃO
+// ========================================
+
+export type DamageCategory = 
+  | 'physical'      // Corte, Impacto, Perfuração
+  | 'ballistic'     // Balístico (armas de fogo, projéteis)
+  | 'elemental'     // Fogo, Frio, Eletricidade, Químico
+  | 'paranormal'    // Energia, Conhecimento, Sangue, Morte, Medo
+  | 'fall'          // Queda
+  | 'environmental' // Ambiente (afogamento, sufocamento)
+  | 'unknown';
+
+export interface DamageInfo {
+  amount: number;
+  type: string;
+  category: DamageCategory;
+  source?: string;
+  isProjectile: boolean;
+  isFall: boolean;
+  isMelee: boolean;
+  isRanged: boolean;
+  element?: string;
+}
+
+// Mapeamento de tipos de dano para categorias
+const DAMAGE_TYPE_CATEGORIES: Record<string, DamageCategory> = {
+  // Físico
+  'corte': 'physical',
+  'impacto': 'physical',
+  'perfuração': 'physical',
+  'contusão': 'physical',
+  
+  // Balístico
+  'balístico': 'ballistic',
+  'balistico': 'ballistic',
+  'projétil': 'ballistic',
+  'projetil': 'ballistic',
+  'tiro': 'ballistic',
+  
+  // Elemental
+  'fogo': 'elemental',
+  'frio': 'elemental',
+  'eletricidade': 'elemental',
+  'químico': 'elemental',
+  'quimico': 'elemental',
+  'ácido': 'elemental',
+  'acido': 'elemental',
+  
+  // Paranormal
+  'energia': 'paranormal',
+  'conhecimento': 'paranormal',
+  'sangue': 'paranormal',
+  'morte': 'paranormal',
+  'medo': 'paranormal',
+  
+  // Queda
+  'queda': 'fall',
+  
+  // Ambiente
+  'afogamento': 'environmental',
+  'sufocamento': 'environmental',
+};
+
+// Palavras-chave que indicam projétil
+const PROJECTILE_KEYWORDS = [
+  'balístico', 'balistico', 'projétil', 'projetil', 'tiro',
+  'bala', 'flecha', 'dardo', 'arremesso', 'lançado',
+  'arma de fogo', 'pistola', 'rifle', 'espingarda'
+];
+
+// Palavras-chave que indicam dano de queda
+const FALL_KEYWORDS = ['queda', 'caiu', 'precipício', 'altura'];
+
+/**
+ * Detecta automaticamente informações do dano baseado no tipo e contexto
+ */
+export function detectDamageInfo(
+  amount: number,
+  damageType?: string,
+  source?: string
+): DamageInfo {
+  const typeLower = (damageType || '').toLowerCase();
+  const sourceLower = (source || '').toLowerCase();
+  
+  // Detecta categoria
+  let category: DamageCategory = 'unknown';
+  for (const [key, cat] of Object.entries(DAMAGE_TYPE_CATEGORIES)) {
+    if (typeLower.includes(key)) {
+      category = cat;
+      break;
+    }
+  }
+  
+  // Detecta se é projétil
+  const isProjectile = PROJECTILE_KEYWORDS.some(kw => 
+    typeLower.includes(kw) || sourceLower.includes(kw)
+  );
+  
+  // Detecta se é queda
+  const isFall = FALL_KEYWORDS.some(kw => 
+    typeLower.includes(kw) || sourceLower.includes(kw)
+  ) || category === 'fall';
+  
+  // Detecta corpo a corpo vs distância
+  const isRanged = isProjectile || sourceLower.includes('distância') || 
+                   sourceLower.includes('arremesso');
+  const isMelee = !isRanged && (category === 'physical' || 
+                  sourceLower.includes('corpo a corpo'));
+  
+  // Detecta elemento paranormal
+  let element: string | undefined;
+  if (category === 'paranormal') {
+    const elements = ['energia', 'conhecimento', 'sangue', 'morte', 'medo'];
+    element = elements.find(e => typeLower.includes(e));
+  }
+  
+  return {
+    amount,
+    type: damageType || 'desconhecido',
+    category,
+    source,
+    isProjectile,
+    isFall,
+    isMelee,
+    isRanged,
+    element,
+  };
+}
+
+/**
+ * Determina quais triggers específicos devem ser disparados
+ */
+export function getTriggersForDamage(damageInfo: DamageInfo): HookTrigger[] {
+  const triggers: HookTrigger[] = ['onPreDamage'];
+  
+  if (damageInfo.isFall) {
+    triggers.push('onFallDamage');
+  }
+  
+  if (damageInfo.isProjectile) {
+    triggers.push('onProjectileHit');
+  }
+  
+  return triggers;
+}
+
+// ========================================
 // INTERFACES
 // ========================================
 
@@ -29,8 +176,10 @@ export interface HookExecutionContext {
   rollType?: string;
   damageAmount?: number;
   damageType?: string;
+  damageInfo?: DamageInfo; // Info completa do dano
   targetId?: string;
   sourceId?: string;
+  weaponName?: string;
   
   // Estado do personagem
   currentHP?: number;
@@ -43,6 +192,7 @@ export interface HookExecutionResult {
   ritualName: string;
   effect: string;
   applied: boolean;
+  triggeredBy?: HookTrigger;
   modifications?: {
     rollModifier?: number;
     damageModifier?: number;
@@ -169,11 +319,87 @@ export function executeHooks(context: HookExecutionContext): HookExecutionResult
   for (const activeHook of sortedHooks) {
     const result = executeSingleHook(activeHook, context);
     if (result.applied) {
-      results.push(result);
+      results.push({ ...result, triggeredBy: context.trigger });
     }
   }
   
   return results;
+}
+
+/**
+ * Dispara hooks para um evento de dano com detecção automática
+ * Esta é a função principal para uso externo
+ */
+export function executeHooksForDamage(
+  targetId: string,
+  damageAmount: number,
+  damageType?: string,
+  damageSource?: string,
+  additionalContext?: Partial<HookExecutionContext>
+): { 
+  results: HookExecutionResult[];
+  finalDamage: number;
+  blocked: boolean;
+  messages: string[];
+} {
+  // Detecta informações do dano
+  const damageInfo = detectDamageInfo(damageAmount, damageType, damageSource);
+  
+  // Determina quais triggers disparar
+  const triggers = getTriggersForDamage(damageInfo);
+  
+  const allResults: HookExecutionResult[] = [];
+  const messages: string[] = [];
+  let currentDamage = damageAmount;
+  let blocked = false;
+  
+  // Executa hooks para cada trigger relevante em ordem de especificidade
+  // (triggers específicos primeiro, depois genéricos)
+  const orderedTriggers = triggers.sort((a, b) => {
+    // onFallDamage e onProjectileHit são mais específicos
+    const specificTriggers: HookTrigger[] = ['onFallDamage', 'onProjectileHit'];
+    const aSpecific = specificTriggers.includes(a) ? 0 : 1;
+    const bSpecific = specificTriggers.includes(b) ? 0 : 1;
+    return aSpecific - bSpecific;
+  });
+  
+  for (const trigger of orderedTriggers) {
+    if (blocked) break; // Se já foi bloqueado, não precisa continuar
+    
+    const context: HookExecutionContext = {
+      trigger,
+      damageAmount: currentDamage,
+      damageType,
+      damageInfo,
+      targetId,
+      ...additionalContext,
+    };
+    
+    const results = executeHooks(context);
+    allResults.push(...results);
+    
+    // Processa modificações
+    for (const result of results) {
+      if (result.modifications?.blockDamage) {
+        blocked = true;
+        currentDamage = 0;
+        messages.push(`🛡️ ${result.ritualName}: ${result.modifications.message || 'Dano bloqueado!'}`);
+      } else if (result.modifications?.newDamageAmount !== undefined) {
+        const oldDamage = currentDamage;
+        currentDamage = result.modifications.newDamageAmount;
+        messages.push(`🛡️ ${result.ritualName}: Dano ${oldDamage} → ${currentDamage}`);
+      } else if (result.modifications?.message) {
+        messages.push(`⚡ ${result.ritualName}: ${result.modifications.message}`);
+      }
+    }
+  }
+  
+  return {
+    results: allResults,
+    finalDamage: currentDamage,
+    blocked,
+    messages,
+  };
 }
 
 /**
@@ -212,19 +438,45 @@ function executeSingleHook(
  */
 function evaluateCondition(condition: string, context: HookExecutionContext): boolean {
   const conditionLower = condition.toLowerCase();
+  const damageInfo = context.damageInfo;
   
-  // Condições baseadas em tipo de dano
+  // Condições baseadas em tipo de dano (usando DamageInfo se disponível)
   if (conditionLower.includes('dano não é de medo')) {
+    if (damageInfo) return damageInfo.element !== 'medo';
     return context.damageType?.toLowerCase() !== 'medo';
   }
   
   if (conditionLower.includes('dano de queda')) {
+    if (damageInfo) return damageInfo.isFall;
     return context.damageType?.toLowerCase() === 'queda';
   }
   
-  if (conditionLower.includes('projétil')) {
+  if (conditionLower.includes('projétil') || conditionLower.includes('projetil')) {
+    if (damageInfo) return damageInfo.isProjectile;
     return context.damageType?.toLowerCase().includes('balístico') ||
            context.damageType?.toLowerCase().includes('perfuração');
+  }
+  
+  if (conditionLower.includes('corpo a corpo') || conditionLower.includes('melee')) {
+    if (damageInfo) return damageInfo.isMelee;
+    return context.damageType?.toLowerCase().includes('corte') ||
+           context.damageType?.toLowerCase().includes('impacto');
+  }
+  
+  if (conditionLower.includes('distância') || conditionLower.includes('ranged')) {
+    if (damageInfo) return damageInfo.isRanged;
+    return false;
+  }
+  
+  // Condições baseadas em categoria
+  if (conditionLower.includes('dano físico')) {
+    if (damageInfo) return damageInfo.category === 'physical';
+    return false;
+  }
+  
+  if (conditionLower.includes('dano paranormal') || conditionLower.includes('dano de elemento')) {
+    if (damageInfo) return damageInfo.category === 'paranormal';
+    return false;
   }
   
   // Condições baseadas em teste
@@ -342,33 +594,101 @@ function processPreDamageHook(
 }
 
 /**
- * Processa hooks de interceptação (Desacelerar Impacto)
+ * Processa hooks de interceptação (Desacelerar Impacto, Armadura de Sangue)
  */
 function processInterceptorHook(
   hook: Hook,
   context: HookExecutionContext
 ): HookExecutionResult['modifications'] {
   const effectLower = hook.effect.toLowerCase();
+  const damageInfo = context.damageInfo;
   
-  // Anula dano de queda
-  if (context.trigger === 'onFallDamage' && effectLower.includes('ignora')) {
-    return {
-      blockDamage: true,
-      newDamageAmount: 0,
-      message: 'Dano de queda ignorado!',
-    };
-  }
-  
-  // Redução de dano de projétil
-  if (context.trigger === 'onProjectileHit') {
-    const reductionMatch = hook.effect.match(/(\d+)\s*de\s*rd/i);
+  // ===== DANO DE QUEDA (onFallDamage) =====
+  if (context.trigger === 'onFallDamage') {
+    // Ignora completamente
+    if (effectLower.includes('ignora') || effectLower.includes('imune')) {
+      return {
+        blockDamage: true,
+        newDamageAmount: 0,
+        message: 'Dano de queda ignorado (ritual ativo)!',
+      };
+    }
+    
+    // Reduz pela metade
+    if (effectLower.includes('metade') && context.damageAmount) {
+      return {
+        newDamageAmount: Math.floor(context.damageAmount / 2),
+        message: 'Dano de queda reduzido pela metade!',
+      };
+    }
+    
+    // Redução fixa
+    const reductionMatch = hook.effect.match(/reduz?\s*(\d+)/i);
     if (reductionMatch && context.damageAmount) {
       const reduction = parseInt(reductionMatch[1]);
       return {
         damageModifier: -reduction,
         newDamageAmount: Math.max(0, context.damageAmount - reduction),
-        message: `RD ${reduction} contra projéteis!`,
+        message: `Dano de queda reduzido em ${reduction}!`,
       };
+    }
+  }
+  
+  // ===== PROJÉTEIS (onProjectileHit) =====
+  if (context.trigger === 'onProjectileHit') {
+    // Bloqueia completamente
+    if (effectLower.includes('bloqueia') || effectLower.includes('desvia')) {
+      return {
+        blockDamage: true,
+        newDamageAmount: 0,
+        message: 'Projétil bloqueado/desviado!',
+      };
+    }
+    
+    // RD contra projéteis
+    const rdMatch = hook.effect.match(/rd\s*(\d+)/i) || hook.effect.match(/(\d+)\s*de\s*rd/i);
+    if (rdMatch && context.damageAmount) {
+      const rd = parseInt(rdMatch[1]);
+      return {
+        damageModifier: -rd,
+        newDamageAmount: Math.max(0, context.damageAmount - rd),
+        message: `RD ${rd} contra projéteis aplicada!`,
+      };
+    }
+    
+    // Redução percentual
+    if (effectLower.includes('metade') && context.damageAmount) {
+      return {
+        newDamageAmount: Math.floor(context.damageAmount / 2),
+        message: 'Dano de projétil reduzido pela metade!',
+      };
+    }
+  }
+  
+  // Processamento genérico baseado no tipo de dano detectado
+  if (damageInfo) {
+    // Verificações baseadas na categoria
+    if (damageInfo.category === 'ballistic' && effectLower.includes('balístico')) {
+      const rdMatch = hook.effect.match(/rd\s*(\d+)/i);
+      if (rdMatch && context.damageAmount) {
+        const rd = parseInt(rdMatch[1]);
+        return {
+          damageModifier: -rd,
+          newDamageAmount: Math.max(0, context.damageAmount - rd),
+          message: `RD ${rd} contra dano balístico!`,
+        };
+      }
+    }
+    
+    if (damageInfo.element && effectLower.includes(damageInfo.element)) {
+      // Resistência elemental específica
+      if (effectLower.includes('imune') || effectLower.includes('ignora')) {
+        return {
+          blockDamage: true,
+          newDamageAmount: 0,
+          message: `Imune a dano de ${damageInfo.element}!`,
+        };
+      }
     }
   }
   

@@ -22,8 +22,11 @@ import {
 } from "@/lib/game-engine";
 import {
   executeHooks,
+  executeHooksForDamage,
   cleanupExpiredHooks,
+  detectDamageInfo,
   type HookExecutionResult,
+  type DamageInfo,
 } from "@/lib/ritual-hooks-engine";
 import {
   processSustainedRitualsOnTurnStart,
@@ -223,37 +226,38 @@ export function CombatTracker({
     });
   }, [combatState, updateState]);
 
-  const updateCombatantHP = useCallback((id: string, delta: number, damageType?: string) => {
+  const updateCombatantHP = useCallback((
+    id: string, 
+    delta: number, 
+    damageType?: string,
+    damageSource?: string
+  ) => {
     const combatant = combatState.combatants.find(c => c.id === id);
     if (!combatant) return;
 
     let finalDelta = delta;
     const hookMessages: string[] = [];
 
-    // Se for dano (delta negativo), dispara hooks de pré-dano
+    // Se for dano (delta negativo), usa sistema de detecção automática
     if (delta < 0) {
-      const preDamageHooks = executeHooks({
-        trigger: 'onPreDamage',
-        targetId: id,
-        damageAmount: Math.abs(delta),
+      const damageResult = executeHooksForDamage(
+        id,
+        Math.abs(delta),
         damageType,
-        currentHP: combatant.hp,
-        round: combatState.round,
-      });
-
-      for (const result of preDamageHooks) {
-        if (result.modifications?.blockDamage) {
-          finalDelta = 0;
-          hookMessages.push(`🛡️ ${result.ritualName}: ${result.modifications.message || 'Dano bloqueado!'}`);
-        } else if (result.modifications?.newDamageAmount !== undefined) {
-          finalDelta = -result.modifications.newDamageAmount;
-          hookMessages.push(`🛡️ ${result.ritualName}: ${result.modifications.message || 'Dano modificado'}`);
+        damageSource,
+        {
+          currentHP: combatant.hp,
+          round: combatState.round,
         }
-      }
+      );
+
+      // Aplica resultado
+      finalDelta = damageResult.blocked ? 0 : -damageResult.finalDamage;
+      hookMessages.push(...damageResult.messages);
 
       // Testa concentração se recebeu dano
-      if (finalDelta < 0) {
-        const concentrationResults = testConcentration(id, Math.abs(finalDelta));
+      if (!damageResult.blocked && damageResult.finalDamage > 0) {
+        const concentrationResults = testConcentration(id, damageResult.finalDamage);
         for (const result of concentrationResults) {
           hookMessages.push(result.concentrationBroken 
             ? `💔 ${result.message}` 
@@ -277,7 +281,7 @@ export function CombatTracker({
           timestamp: new Date(),
           type: finalDelta > 0 ? 'heal' : 'damage',
           target: combatant.name,
-          message: `${finalDelta > 0 ? '+' : ''}${finalDelta} PV`,
+          message: `${finalDelta > 0 ? '+' : ''}${finalDelta} PV${damageType ? ` (${damageType})` : ''}`,
         },
         ...hookMessages.map(msg => ({
           timestamp: new Date(),
@@ -287,6 +291,17 @@ export function CombatTracker({
       ],
     });
   }, [combatState, updateState]);
+
+  // Funções específicas para tipos de dano
+  const applyFallDamage = useCallback((id: string, fallHeight: number) => {
+    // 1d6 por 1.5m de queda (simplificado: altura / 1.5 * 3.5 média)
+    const averageDamage = Math.floor((fallHeight / 1.5) * 3.5);
+    updateCombatantHP(id, -averageDamage, 'queda', `queda de ${fallHeight}m`);
+  }, [updateCombatantHP]);
+
+  const applyProjectileDamage = useCallback((id: string, damage: number, weaponName?: string) => {
+    updateCombatantHP(id, -damage, 'balístico', weaponName || 'projétil');
+  }, [updateCombatantHP]);
 
   const currentCombatant = combatState.combatants[combatState.currentTurnIndex];
 
