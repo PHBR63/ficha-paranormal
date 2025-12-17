@@ -30,6 +30,7 @@ import {
   History,
   Dices,
   Palette,
+  Gamepad2,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -1224,6 +1225,7 @@ export default function CharacterSheet() {
             onOpenRest={() => setRestModalOpen(true)}
             onLevelUp={() => setNexModalOpen(true)}
             onEditStats={() => setEditModalOpen(true)}
+            onOpenSession={() => setSessionModeOpen(true)}
           />
         ) : (
           /* Desktop: Layout de 2 colunas estilo ficha de papel */
@@ -1797,6 +1799,16 @@ export default function CharacterSheet() {
               >
                 <Moon className="w-4 h-4 mr-2" />
                 DESCANSAR
+              </Button>
+
+              {/* Botão Modo Sessão */}
+              <Button
+                variant="default"
+                onClick={() => setSessionModeOpen(true)}
+                className="w-full font-display tracking-wider"
+              >
+                <Gamepad2 className="w-4 h-4 mr-2" />
+                MODO SESSÃO
               </Button>
             </div>
           </div>
