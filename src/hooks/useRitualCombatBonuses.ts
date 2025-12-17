@@ -5,7 +5,13 @@
 
 import { useMemo } from 'react';
 import { getActiveRitualEffect, RitualEffect } from '@/lib/ritual-effects';
-import { SustainedRitual } from '@/lib/sustained-rituals';
+
+// Interface mínima para ritual sustentado (compatível com ambos os tipos)
+export interface SustainedRitualInput {
+  ritualId: string;
+  ritualName?: string;
+  selectedEnhancements: string[];
+}
 
 // Interface para bônus de combate de ritual
 export interface RitualCombatBonus {
@@ -75,7 +81,7 @@ function getEffectLevel(selectedEnhancements: string[]): 'base' | 'discente' | '
  * @returns Resumo consolidado de bônus de combate
  */
 export function useRitualCombatBonuses(
-  sustainedRituals: SustainedRitual[] = []
+  sustainedRituals: SustainedRitualInput[] = []
 ): RitualCombatSummary {
   return useMemo(() => {
     const bonuses: RitualCombatBonus[] = [];
@@ -187,7 +193,7 @@ export function useRitualCombatBonuses(
  * Hook auxiliar para obter bônus formatados para exibição no CombatRollModal
  */
 export function useRitualBonusesForCombat(
-  sustainedRituals: SustainedRitual[] = []
+  sustainedRituals: SustainedRitualInput[] = []
 ): Array<{
   id: string;
   name: string;
