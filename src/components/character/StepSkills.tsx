@@ -391,28 +391,52 @@ export function StepSkills({ formData, updateFormData, buildResult }: StepSkills
             <span className="text-xs text-muted-foreground uppercase tracking-wider">Seus Atributos</span>
             <span className="text-xs text-muted-foreground">(usados nos testes)</span>
           </div>
-          <div className="flex flex-wrap justify-center gap-3">
-            {ATTRIBUTE_ORDER.map((attr) => {
-              const value = formData.attributes[attr as keyof typeof formData.attributes];
-              const label = ATTRIBUTE_LABELS[attr];
-              const colors = ATTRIBUTE_COLORS[attr];
-              const textColor = ATTRIBUTE_TEXT_COLORS[attr];
-              return (
-                <div 
-                  key={attr}
-                  className={cn(
-                    'flex items-center gap-2 px-3 py-2 rounded border',
-                    colors
-                  )}
-                >
-                  <span className={cn('text-xs font-semibold', textColor)}>{label}</span>
-                  <span className={cn('font-display text-xl font-bold', textColor)}>
-                    {value >= 0 ? `+${value}` : value}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
+          <TooltipProvider delayDuration={200}>
+            <div className="flex flex-wrap justify-center gap-3">
+              {ATTRIBUTE_ORDER.map((attr) => {
+                const value = formData.attributes[attr as keyof typeof formData.attributes];
+                const label = ATTRIBUTE_LABELS[attr];
+                const colors = ATTRIBUTE_COLORS[attr];
+                const textColor = ATTRIBUTE_TEXT_COLORS[attr];
+                const attrSkills = skillsByAttribute[attr] || [];
+                const isHighlighted = expandedAttributes.length === 1 && expandedAttributes[0] === attr;
+                
+                return (
+                  <Tooltip key={attr}>
+                    <TooltipTrigger asChild>
+                      <button 
+                        onClick={() => {
+                          // Expande apenas esta seção
+                          setExpandedAttributes([attr]);
+                        }}
+                        className={cn(
+                          'flex items-center gap-2 px-3 py-2 rounded border transition-all cursor-pointer',
+                          colors,
+                          isHighlighted && 'ring-2 ring-offset-1 ring-offset-background scale-105 shadow-lg',
+                          isHighlighted && attr === 'agility' && 'ring-blue-400',
+                          isHighlighted && attr === 'strength' && 'ring-red-400',
+                          isHighlighted && attr === 'intellect' && 'ring-yellow-400',
+                          isHighlighted && attr === 'presence' && 'ring-purple-400',
+                          isHighlighted && attr === 'vigor' && 'ring-green-400',
+                        )}
+                      >
+                        <span className={cn('text-xs font-semibold', textColor)}>{label}</span>
+                        <span className={cn('font-display text-xl font-bold', textColor)}>
+                          {value >= 0 ? `+${value}` : value}
+                        </span>
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="max-w-[200px]">
+                      <p className="font-semibold text-xs mb-1">Perícias de {label}:</p>
+                      <p className="text-xs text-muted-foreground">
+                        {attrSkills.map(s => s.name).join(', ')}
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              })}
+            </div>
+          </TooltipProvider>
         </motion.div>
 
         {/* Search */}
