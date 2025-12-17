@@ -682,6 +682,423 @@ export const RITUAL_EFFECTS: Record<string, RitualEffectsByLevel> = {
     },
   },
 
+  // Aprimorar Físico
+  'aprimorar-fisico': {
+    base: {
+      special: '+1 em Agilidade ou Força.',
+    },
+    discente: {
+      special: '+2 em Agilidade ou Força.',
+    },
+    verdadeiro: {
+      special: '+3 em Agilidade ou Força.',
+    },
+  },
+
+  // Descarnar
+  'descarnar': {
+    base: {
+      damage: { diceCount: 6, diceType: 8, damageType: 'sangue' },
+      appliesConditions: [{ conditionId: 'sangrando', duration: 'permanente' }],
+      resistance: { type: 'fortitude', effect: 'parcial' },
+      special: 'Hemorragia causa 2d8/rodada (Fortitude evita).',
+    },
+    discente: {
+      damage: { diceCount: 10, diceType: 8, damageType: 'sangue' },
+      appliesConditions: [{ conditionId: 'sangrando', duration: 'permanente' }],
+      special: 'Hemorragia causa 4d8/rodada.',
+    },
+    verdadeiro: {
+      weaponEffect: {
+        bonusDamage: { diceCount: 4, diceType: 8, damageType: 'sangue' },
+      },
+      appliesConditions: [{ conditionId: 'sangrando', duration: 'permanente' }],
+      special: 'Seus ataques causam +4d8 Sangue e hemorragia.',
+    },
+  },
+
+  // Flagelo de Sangue
+  'flagelo-de-sangue': {
+    base: {
+      damage: { diceCount: 10, diceType: 6, damageType: 'sangue' },
+      appliesConditions: [{ conditionId: 'enjoado', duration: 'cena' }],
+      resistance: { type: 'fortitude', effect: 'parcial' },
+      special: 'Grava marca. Desobediência causa 10d6 Sangue e enjoado.',
+    },
+    discente: {
+      special: 'Afeta 1 ser (exceto criaturas de Sangue).',
+    },
+    verdadeiro: {
+      special: 'Duração 1 dia.',
+    },
+  },
+
+  // Hemofagia
+  'hemofagia': {
+    base: {
+      damage: { diceCount: 6, diceType: 6, damageType: 'sangue' },
+      healing: { diceCount: 3, diceType: 6 },
+      resistance: { type: 'fortitude', effect: 'reduz_metade' },
+      special: 'Causa 6d6 Sangue, recupera metade em PV.',
+    },
+    discente: {
+      damage: { diceCount: 6, diceType: 6, damageType: 'sangue' },
+      special: 'Sem resistência. Combina com ataque corpo a corpo.',
+    },
+    verdadeiro: {
+      damage: { diceCount: 4, diceType: 6, damageType: 'sangue' },
+      special: 'Sustentada. Ação padrão para 4d6 dano, recupera metade.',
+    },
+  },
+
+  // Sede de Adrenalina
+  'sede-de-adrenalina': {
+    base: {
+      special: 'Repete teste de Acrobacia/Atletismo falho OU reduz dano de queda em 4d6.',
+    },
+    discente: {
+      special: 'Reduz dano de queda em 8d6.',
+    },
+    verdadeiro: {
+      special: 'Reduz dano de queda em 12d6.',
+    },
+  },
+
+  // Transfusão Vital
+  'transfusao-vital': {
+    base: {
+      healing: { diceCount: 0, diceType: 0, bonus: 30 },
+      special: 'Transfere até 30 PV seus para o alvo.',
+    },
+    discente: {
+      healing: { diceCount: 0, diceType: 0, bonus: 50 },
+      special: 'Transfere até 50 PV.',
+    },
+    verdadeiro: {
+      healing: { diceCount: 0, diceType: 0, bonus: 100 },
+      special: 'Transfere até 100 PV.',
+    },
+  },
+
+  // Desacelerar Impacto
+  'desacelerar-impacto': {
+    base: {
+      damageReduction: {
+        types: ['balístico', 'impacto'],
+        amount: 50, // Representa redução de queda
+      },
+      special: 'Reduz velocidade de queda (sem dano). Projéteis causam metade.',
+    },
+    verdadeiro: {
+      special: 'Aumenta para até 100 espaços.',
+    },
+  },
+
+  // Eco Espiral
+  'eco-espiral': {
+    base: {
+      resistance: { type: 'fortitude', effect: 'reduz_metade' },
+      special: 'Concentra 1ª rodada, descarrega 2ª. Dano igual ao sofrido na concentração.',
+    },
+    discente: {
+      special: 'Até 5 seres.',
+    },
+    verdadeiro: {
+      special: 'Duração 3 rodadas (concentra 2, descarrega 3).',
+    },
+  },
+
+  // Língua Morta
+  'lingua-morta': {
+    base: {
+      special: 'Cadáver responde 1 pergunta/rodada (máx 3).',
+    },
+    discente: {
+      special: 'Máx 4 perguntas. Cadáver vira Enraizado no fim.',
+    },
+    verdadeiro: {
+      special: 'Máx 5 perguntas. Cadáver vira Marionete no fim.',
+    },
+  },
+
+  // Miasma Entrópico
+  'miasma-entropico': {
+    base: {
+      damage: { diceCount: 4, diceType: 8, damageType: 'químico' },
+      appliesConditions: [{ conditionId: 'enjoado', duration: 'rodada', turnsCount: 1 }],
+      areaEffect: { shape: 'esfera', radius: 6 },
+      resistance: { type: 'fortitude', effect: 'parcial' },
+    },
+    discente: {
+      damage: { diceCount: 6, diceType: 8, damageType: 'morte' },
+      appliesConditions: [{ conditionId: 'enjoado', duration: 'rodada', turnsCount: 1 }],
+    },
+    verdadeiro: {
+      damage: { diceCount: 6, diceType: 8, damageType: 'morte' },
+      special: 'Duração 3 rodadas (dano repetido no turno).',
+    },
+  },
+
+  // Paradoxo
+  'paradoxo': {
+    base: {
+      damage: { diceCount: 6, diceType: 6, damageType: 'morte' },
+      areaEffect: { shape: 'esfera', radius: 6 },
+      resistance: { type: 'fortitude', effect: 'reduz_metade' },
+    },
+    discente: {
+      damage: { diceCount: 4, diceType: 6, damageType: 'morte' },
+      areaEffect: { shape: 'esfera', radius: 1.5 },
+      special: 'Duração cena. Causa 4d6 a quem entrar. Pode mover a esfera.',
+    },
+    verdadeiro: {
+      damage: { diceCount: 13, diceType: 6, damageType: 'morte' },
+      special: 'Se reduzir a 0 PV, vira cinzas (Fortitude evita).',
+    },
+  },
+
+  // Aprimorar Mente
+  'aprimorar-mente': {
+    base: {
+      special: '+1 em Intelecto ou Presença.',
+    },
+    discente: {
+      special: '+2 em Intelecto ou Presença.',
+    },
+    verdadeiro: {
+      special: '+3 em Intelecto ou Presença.',
+    },
+  },
+
+  // Aurora da Verdade
+  'aurora-da-verdade': {
+    base: {
+      areaEffect: { shape: 'esfera', radius: 3 },
+      resistance: { type: 'vontade', effect: 'parcial' },
+      special: 'Obriga verdade. Revela escondidos/invisíveis.',
+    },
+    discente: {
+      areaEffect: { shape: 'esfera', radius: 9 },
+      special: 'Alcance longo, área 9m. Conjurador não é afetado.',
+    },
+    verdadeiro: {
+      areaEffect: { shape: 'esfera', radius: 9 },
+      special: 'Alcance extremo, duração cena.',
+    },
+  },
+
+  // Detecção de Ameaças
+  'deteccao-de-ameacas': {
+    base: {
+      areaEffect: { shape: 'esfera', radius: 18 },
+      special: 'Sente perigo na área. Percepção DT 20 para direção/distância.',
+    },
+    discente: {
+      defenseModifier: 5,
+      special: 'Não fica desprevenido. +5 resistência vs armadilhas.',
+    },
+    verdadeiro: {
+      special: 'Duração 1 dia.',
+    },
+  },
+
+  // Esconder dos Olhos
+  'esconder-dos-olhos': {
+    base: {
+      skillModifier: {
+        skills: ['Furtividade'],
+        bonus: 15,
+      },
+      special: 'Invisível (+15 Furtividade). Ataque encerra.',
+    },
+    discente: {
+      skillModifier: {
+        skills: ['Furtividade'],
+        bonus: 15,
+      },
+      areaEffect: { shape: 'esfera', radius: 3 },
+      special: 'Esfera de invisibilidade 3m (você e aliados).',
+    },
+    verdadeiro: {
+      skillModifier: {
+        skills: ['Furtividade'],
+        bonus: 15,
+      },
+      special: 'Toque, 1 ser. Ataque não dissipa.',
+    },
+  },
+
+  // Invadir Mente
+  'invadir-mente': {
+    base: {
+      damage: { diceCount: 6, diceType: 6, damageType: 'conhecimento' },
+      appliesConditions: [{ conditionId: 'atordoado', duration: 'rodada', turnsCount: 1 }],
+      resistance: { type: 'vontade', effect: 'parcial' },
+      special: 'Rajada: 6d6 e atordoado. OU Ligação telepática entre 2 pessoas.',
+    },
+    discente: {
+      damage: { diceCount: 10, diceType: 6, damageType: 'conhecimento' },
+      special: 'Rajada 10d6. Ligação permite ver pelos sentidos do alvo.',
+    },
+    verdadeiro: {
+      damage: { diceCount: 10, diceType: 6, damageType: 'conhecimento' },
+      special: 'Rajada em seres escolhidos. Ligação até 5 pessoas.',
+    },
+  },
+
+  // Localização
+  'localizacao': {
+    base: {
+      areaEffect: { shape: 'esfera', radius: 90 },
+      special: 'Encontra direção/distância de pessoa ou objeto.',
+    },
+    discente: {
+      special: 'Toque, 1h. Encontra caminho/rota em lugar.',
+    },
+    verdadeiro: {
+      areaEffect: { shape: 'esfera', radius: 1000 },
+      special: 'Área 1km de raio.',
+    },
+  },
+
+  // Chamas do Caos
+  'chamas-do-caos': {
+    base: {
+      weaponEffect: {
+        bonusDamage: { diceCount: 1, diceType: 6, damageType: 'fogo' },
+      },
+      damage: { diceCount: 3, diceType: 6, damageType: 'fogo' },
+      special: 'Chamejar: +1d6 fogo. Esquentar: 1d6/rd. Modelar: 3d6 ao atravessar.',
+    },
+    discente: {
+      damage: { diceCount: 4, diceType: 6, damageType: 'energia' },
+      resistance: { type: 'reflexos', effect: 'reduz_metade' },
+      special: 'Projeta labareda 4d6 Energia.',
+    },
+    verdadeiro: {
+      damage: { diceCount: 8, diceType: 6, damageType: 'energia' },
+      special: 'Labareda causa 8d6 Energia.',
+    },
+  },
+
+  // Contenção Fantasmagórica
+  'contencao-fantasmagorica': {
+    base: {
+      appliesConditions: [{ conditionId: 'agarrado', duration: 'cena' }],
+      resistance: { type: 'reflexos', effect: 'anula' },
+      special: '3 laços prendem (agarrado). Atletismo ou destruir (Def 10, 10 PV, RD 5).',
+    },
+    discente: {
+      appliesConditions: [{ conditionId: 'agarrado', duration: 'cena' }],
+      special: '6 laços, múltiplos alvos.',
+    },
+    verdadeiro: {
+      damage: { diceCount: 2, diceType: 6, bonus: 2, damageType: 'energia' },
+      special: 'Laços destruídos explodem (2d6+2 Energia).',
+    },
+  },
+
+  // Dissonância Acústica
+  'dissonancia-acustica': {
+    base: {
+      appliesConditions: [{ conditionId: 'surdo', duration: 'sustentado' }],
+      areaEffect: { shape: 'esfera', radius: 6 },
+      special: 'Seres ficam surdos. Impede conjuração de rituais na área.',
+    },
+    discente: {
+      areaEffect: { shape: 'esfera', radius: 3 },
+      special: 'Alvo objeto. Emana silêncio 3m raio.',
+    },
+    verdadeiro: {
+      special: 'Duração cena. Som não sai da área.',
+    },
+  },
+
+  // Sopro do Caos
+  'sopro-do-caos': {
+    base: {
+      appliesConditions: [{ conditionId: 'vulneravel', duration: 'sustentado' }],
+      special: 'Ascender: levita (vulnerável). Sopro: empurra. Vento: vento forte.',
+    },
+    discente: {
+      special: 'Afeta alvos Grandes.',
+    },
+    verdadeiro: {
+      special: 'Afeta alvos Enormes.',
+    },
+  },
+
+  // Tela de Ruído
+  'tela-de-ruido': {
+    base: {
+      tempHP: { diceCount: 0, diceType: 0, bonus: 30 },
+      damageReduction: {
+        types: ['balístico', 'corte', 'impacto', 'perfuração'],
+        amount: 15,
+      },
+      special: '30 PV temp contra dano físico. OU Reação RD 15 contra 1 ataque.',
+    },
+    discente: {
+      tempHP: { diceCount: 0, diceType: 0, bonus: 60 },
+      damageReduction: {
+        types: ['balístico', 'corte', 'impacto', 'perfuração'],
+        amount: 30,
+      },
+      special: '60 PV temp, RD 30.',
+    },
+    verdadeiro: {
+      special: 'Esfera imóvel em alvo Enorme-. Bloqueia tudo.',
+    },
+  },
+
+  // Tremeluzir
+  'tremeluzir': {
+    base: {
+      damage: { diceCount: 1, diceType: 4, damageType: 'energia' },
+      special: 'Atravessa objetos sólidos (25% falha). 1d4 Energia/rodada.',
+    },
+    discente: {
+      special: 'Toque, 1 ser.',
+    },
+    verdadeiro: {
+      special: 'Curto, até 5 seres.',
+    },
+  },
+
+  // Proteção contra Rituais
+  'protecao-contra-rituais': {
+    base: {
+      damageReduction: {
+        types: ['sangue', 'morte', 'conhecimento', 'energia', 'medo'],
+        amount: 5,
+      },
+      defenseModifier: 5,
+      special: 'RD paranormal 5, +5 resistência vs rituais.',
+    },
+    discente: {
+      special: 'Até 5 seres.',
+    },
+    verdadeiro: {
+      damageReduction: {
+        types: ['sangue', 'morte', 'conhecimento', 'energia', 'medo'],
+        amount: 10,
+      },
+      defenseModifier: 10,
+      special: 'RD 10, +10 resistência.',
+    },
+  },
+
+  // Rejeitar Névoa
+  'rejeitar-nevoa': {
+    base: {
+      areaEffect: { shape: 'esfera', radius: 6 },
+      special: 'Aumenta custo (+2 PE/círculo) e tempo de rituais na área. Anula Cinerária.',
+    },
+    discente: {
+      special: 'Reduz DT de rituais na área em -5.',
+    },
+  },
+
   // === RITUAIS DE MEDO ===
 
   // Pânico
