@@ -179,14 +179,20 @@ export function CombatRollModal({
   }, [weapon, attributes]);
 
   const attackSkill = useMemo(() => {
-    if (!weapon) return { name: '', bonus: 0 };
+    if (!weapon) return { name: '', bonus: 0, training: 0 };
     const skillName = weapon.type === 'Disparo' || weapon.type === 'Arremesso' 
       ? 'pontaria' 
       : 'luta';
     const skillValue = skills[skillName] || 0;
-    // Bônus de perícia: 5 se treinado, +5 por grau (veterano, expert)
-    const bonus = skillValue > 0 ? skillValue : 0;
-    return { name: skillName === 'pontaria' ? 'Pontaria' : 'Luta', bonus };
+    // Converter grau de treinamento em bônus real:
+    // 0 = Destreinado (0), 1 = Treinado (+5), 2 = Veterano (+10), 3 = Expert (+15)
+    const TRAINING_BONUS_MAP = [0, 5, 10, 15];
+    const bonus = TRAINING_BONUS_MAP[skillValue] ?? 0;
+    return { 
+      name: skillName === 'pontaria' ? 'Pontaria' : 'Luta', 
+      bonus,
+      training: skillValue 
+    };
   }, [weapon, skills]);
 
   // Calcular bônus disponíveis baseado nas habilidades do personagem
