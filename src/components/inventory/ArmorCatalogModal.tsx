@@ -191,12 +191,12 @@ function ArmorCard({
             animate={{ opacity: 1 }}
             className="mt-3 pt-3 border-t border-border space-y-2"
           >
-            <p className="text-sm text-muted-foreground">{armor.description}</p>
+            <p className="text-sm text-muted-foreground whitespace-pre-wrap break-words">{armor.description}</p>
             
             {armor.special && (
               <div className="flex items-start gap-2 p-2 rounded bg-primary/10 text-sm">
                 <Info className="w-4 h-4 text-primary mt-0.5 shrink-0" />
-                <span className="text-foreground">{armor.special}</span>
+                <span className="text-foreground whitespace-pre-wrap break-words">{armor.special}</span>
               </div>
             )}
           </motion.div>
