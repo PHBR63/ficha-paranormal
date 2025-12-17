@@ -2215,24 +2215,33 @@ export default function CharacterSheet() {
             name: character.name,
             nex: character.nex,
             hp: hpCurrent,
-            hpMax: hpMax,
+            hpMax: character.hp_max,
             pe: peCurrent,
-            peMax: peMax,
+            peMax: character.pe_max,
             san: sanCurrent,
-            sanMax: sanMax,
+            sanMax: character.san_max,
             defense: character.defense,
             vigor: character.vigor,
             agility: character.agility,
             presence: character.presence,
-            skills: character.skills as Record<string, { trained: boolean; bonus: number }>,
-            inventory: inventoryItems,
-            conditions: activeConditions,
+            skills: character.skills as unknown as Record<string, { trained: boolean; bonus: number }>,
+            inventory: character.inventory,
+            conditions: character.conditions.map(parseCondition),
           }}
-          onCharacterUpdate={(updates) => {
+          onCharacterUpdate={async (updates) => {
             if (updates.hp !== undefined) setHpCurrent(updates.hp);
             if (updates.pe !== undefined) setPeCurrent(updates.pe);
             if (updates.san !== undefined) setSanCurrent(updates.san);
-            if (updates.conditions) setActiveConditions(updates.conditions);
+            if (updates.conditions) {
+              const serialized = updates.conditions.map(serializeCondition);
+              const { error } = await supabase
+                .from('characters')
+                .update({ conditions: JSON.parse(JSON.stringify(serialized)) })
+                .eq('id', character.id);
+              if (!error) {
+                setCharacter(prev => prev ? { ...prev, conditions: serialized } : null);
+              }
+            }
           }}
         />
       )}
