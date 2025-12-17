@@ -1288,6 +1288,7 @@ export default function CharacterSheet() {
                   ...bonusSummary.special.map(s => s.source),
                 ]}
                 bonusSummary={bonusSummary}
+                elementalAffinity={character.elemental_affinity}
                 onStatsChange={handleCombatStatsChange}
                 onLevelUp={() => setNexModalOpen(true)}
                 onToggleConditionalBonus={handleToggleConditionalBonus}

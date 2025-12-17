@@ -5,7 +5,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, Heart, Zap, Star, Edit2, Check, X, Award, Crown, Gem, Sparkles } from 'lucide-react';
+import { Shield, Heart, Zap, Star, Edit2, Check, X, Award, Crown, Gem, Sparkles, Droplet, Skull, BookOpen } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -18,6 +18,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { ActiveBonusesPanel } from './ActiveBonusesPanel';
+import { ParanormalElement, ELEMENT_LABELS, ELEMENT_COLORS, ELEMENT_BG_COLORS } from '@/lib/paranormal-powers';
 import { BonusSummary } from '@/hooks/useCharacterBonusSummary';
 
 // Configuração visual das patentes (valores corrigidos conforme livro)
@@ -108,6 +109,7 @@ interface CharacterSheetHeaderProps {
   activeBonusCount?: number;
   activeBonusSources?: string[];
   bonusSummary?: BonusSummary; // Dados completos para o painel expandido
+  elementalAffinity?: string | null; // Afinidade elemental escolhida
   onStatsChange?: (stats: { hp: number; pe: number; san: number }) => void;
   onLevelUp?: () => void;
   onToggleConditionalBonus?: (bonusId: string, active: boolean) => void; // Toggle de bônus condicionais
@@ -146,6 +148,7 @@ export function CharacterSheetHeader({
   activeBonusCount = 0,
   activeBonusSources = [],
   bonusSummary,
+  elementalAffinity,
   onStatsChange,
   onLevelUp,
   onToggleConditionalBonus,
@@ -599,7 +602,47 @@ export function CharacterSheetHeader({
         )}
       </AnimatePresence>
 
-      <div className="flex items-center justify-end pt-2 border-t border-border/50">
+      <div className="flex items-center justify-between pt-2 border-t border-border/50">
+        {/* Afinidade Elemental */}
+        <div className="flex items-center">
+          {elementalAffinity && (() => {
+            const affinity = elementalAffinity as ParanormalElement;
+            const AffinityIcon = {
+              sangue: Droplet,
+              morte: Skull,
+              conhecimento: BookOpen,
+              energia: Zap,
+            }[affinity] || Sparkles;
+            return (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <motion.div
+                      initial={{ scale: 0, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      className={cn(
+                        "flex items-center gap-2 px-3 py-1.5 rounded-lg cursor-help",
+                        ELEMENT_BG_COLORS[affinity]
+                      )}
+                    >
+                      <AffinityIcon className={cn("w-4 h-4", ELEMENT_COLORS[affinity])} />
+                      <span className={cn("font-display text-sm tracking-wider", ELEMENT_COLORS[affinity])}>
+                        {ELEMENT_LABELS[affinity]}
+                      </span>
+                    </motion.div>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">
+                    <p className="font-medium">Afinidade Elemental</p>
+                    <p className="text-xs text-muted-foreground">
+                      Poderes de {ELEMENT_LABELS[affinity]} têm efeitos aprimorados
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            );
+          })()}
+        </div>
+
         {/* Stats secundários */}
         <div className="flex items-center gap-4 text-sm">
           {/* Defesa com tooltip de breakdown */}
