@@ -1342,7 +1342,48 @@ export default function CharacterSheet() {
                 />
               </div>
 
-              {/* Inventário (acordeão) */}
+              {/* Resumo de Todos os Bônus Ativos - após condições */}
+              <BonusSummaryCard summary={bonusSummary} />
+
+              {/* Rituais (acordeão) */}
+              {character.rituals && character.rituals.length > 0 && (
+                <SheetAccordionSection
+                  title="Rituais"
+                  icon={Skull}
+                  count={character.rituals.length}
+                  defaultOpen={false}
+                  variant="paranormal"
+                >
+                  <div className="space-y-2">
+                    {character.rituals.map((ritualId, i) => {
+                      const ritual = ALL_RITUALS.find(r => r.id === ritualId);
+                      if (!ritual) return null;
+                      return (
+                        <RitualCard
+                          key={i}
+                          ritual={ritual}
+                          isNonOccultist={character.class !== 'Ocultista'}
+                          peCurrent={peCurrent}
+                          onCast={handleOpenCastModal}
+                        />
+                      );
+                    })}
+                  </div>
+                </SheetAccordionSection>
+              )}
+
+              {/* Histórico de Rituais Conjurados */}
+              {character.rituals && character.rituals.length > 0 && (
+                <div className="flex justify-end">
+                  <RitualCastHistory
+                    history={castHistory}
+                    onClear={handleClearCastHistory}
+                    characterName={character.name}
+                  />
+                </div>
+              )}
+
+              {/* Inventário (acordeão) - após rituais */}
               <SheetAccordionSection
                 title="Inventário"
                 icon={Package}
@@ -1428,44 +1469,6 @@ export default function CharacterSheet() {
                   }}
                 />
               </SheetAccordionSection>
-
-              {/* Rituais (acordeão) - após inventário */}
-              {character.rituals && character.rituals.length > 0 && (
-                <SheetAccordionSection
-                  title="Rituais"
-                  icon={Skull}
-                  count={character.rituals.length}
-                  defaultOpen={false}
-                  variant="paranormal"
-                >
-                  <div className="space-y-2">
-                    {character.rituals.map((ritualId, i) => {
-                      const ritual = ALL_RITUALS.find(r => r.id === ritualId);
-                      if (!ritual) return null;
-                      return (
-                        <RitualCard
-                          key={i}
-                          ritual={ritual}
-                          isNonOccultist={character.class !== 'Ocultista'}
-                          peCurrent={peCurrent}
-                          onCast={handleOpenCastModal}
-                        />
-                      );
-                    })}
-                  </div>
-                </SheetAccordionSection>
-              )}
-
-              {/* Histórico de Rituais Conjurados */}
-              {character.rituals && character.rituals.length > 0 && (
-                <div className="flex justify-end">
-                  <RitualCastHistory
-                    history={castHistory}
-                    onClear={handleClearCastHistory}
-                    characterName={character.name}
-                  />
-                </div>
-              )}
 
               {/* Dados Pessoais (acordeão) - após rituais */}
               <PersonalDataAccordion
@@ -1556,9 +1559,6 @@ export default function CharacterSheet() {
                 onRemoveWeaponBuff={removeWeaponBuff}
                 onClearAllWeaponBuffs={clearWeaponBuffs}
               />
-
-              {/* Resumo de Todos os Bônus Ativos */}
-              <BonusSummaryCard summary={bonusSummary} />
 
               {/* Perícias por Atributo (acordeão colapsado) */}
               <SheetAccordionSection
