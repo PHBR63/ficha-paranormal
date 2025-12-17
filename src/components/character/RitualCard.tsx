@@ -1,10 +1,9 @@
 /**
  * RitualCard - Card de ritual para exibição na ficha de personagem
  * Mostra elemento, círculo, custo PE, descrição e aprimoramentos
- * @optimized React.memo para evitar re-renders desnecessários
  */
 
-import { useState, memo } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -30,7 +29,7 @@ interface RitualCardProps {
   peCurrent?: number;
 }
 
-export const RitualCard = memo(function RitualCard({ ritual, isNonOccultist = false, onCast, peCurrent }: RitualCardProps) {
+function RitualCardComponent({ ritual, isNonOccultist = false, onCast, peCurrent }: RitualCardProps) {
   const [isOpen, setIsOpen] = useState(false);
   
   // Obtém configuração visual do elemento
@@ -242,7 +241,9 @@ export const RitualCard = memo(function RitualCard({ ritual, isNonOccultist = fa
       </motion.div>
     </Collapsible>
   );
-});
+}
+
+export const RitualCard = React.memo(RitualCardComponent);
 
 // Componente auxiliar para itens de detalhe
 interface DetailItemProps {
