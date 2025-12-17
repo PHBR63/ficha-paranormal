@@ -1151,7 +1151,7 @@ export const RITUAL_EFFECTS: Record<string, RitualEffectsByLevel> = {
       special: 'Vira monstro Grande. +5 ataque/dano, 30 PV temp. Fúria (não fala/conjura, deve atacar).',
     },
     discente: {
-      special: 'Imune a atordoamento, fadiga, sangramento, sono, veneno.',
+      special: 'Resistência a fadiga, sangramento, sono e veneno.',
     },
     verdadeiro: {
       attackModifier: 10,
@@ -1259,13 +1259,13 @@ export const RITUAL_EFFECTS: Record<string, RitualEffectsByLevel> = {
       damage: { diceCount: 4, diceType: 6, damageType: 'impacto' },
       appliesConditions: [{ conditionId: 'agarrado', duration: 'sustentado' }],
       resistance: { type: 'reflexos', effect: 'anula' },
-      special: '4 tentáculos (Def 10, 20 PV). Agarram e causam 4d6 impacto.',
+      special: 'Cria tentáculos (Def 10, 20 PV). Agarram e causam 4d6 impacto.',
     },
     discente: {
-      special: '6 tentáculos.',
+      special: 'Área e alcance ampliados.',
     },
     verdadeiro: {
-      special: '8 tentáculos que devoram (dano dobrado a agarrados).',
+      special: 'Área máxima, alcance longo, DT de resistência aumentada.',
     },
   },
 
@@ -1294,7 +1294,7 @@ export const RITUAL_EFFECTS: Record<string, RitualEffectsByLevel> = {
       special: 'Modifica 1h de memória.',
     },
     verdadeiro: {
-      special: 'Modifica até 1 dia de memória de qualquer época.',
+      special: 'Modifica até 1 dia de memória de qualquer época (ainda com limites temporais definidos pelo ritual).',
     },
   },
 
@@ -1318,12 +1318,10 @@ export const RITUAL_EFFECTS: Record<string, RitualEffectsByLevel> = {
       special: 'Vasculha mente do alvo. Encontra informação superficial.',
     },
     discente: {
-      special: 'Encontra memórias profundas. Causa 2d6 dano mental.',
-      damage: { diceCount: 2, diceType: 6, damageType: 'conhecimento' },
+      special: 'Encontra memórias profundas e detalhadas.',
     },
     verdadeiro: {
-      special: 'Controle total sobre memórias. Causa 4d6 dano mental.',
-      damage: { diceCount: 4, diceType: 6, damageType: 'conhecimento' },
+      special: 'Acesso completo às memórias do alvo. Leitura aprofundada.',
     },
   },
 
@@ -1371,31 +1369,26 @@ export const RITUAL_EFFECTS: Record<string, RitualEffectsByLevel> = {
   // Milagre Ionizante
   'milagre-ionizante': {
     base: {
-      damage: { diceCount: 10, diceType: 6, damageType: 'energia' },
-      areaEffect: { shape: 'esfera', radius: 6 },
-      resistance: { type: 'reflexos', effect: 'reduz_metade' },
-      special: 'Esfera de plasma causa 10d6 Energia.',
+      special: 'Cura doenças e venenos do alvo.',
     },
     discente: {
-      damage: { diceCount: 15, diceType: 6, damageType: 'energia' },
-      special: 'Muda para 15d6.',
+      special: 'Cura doenças e venenos de múltiplos alvos.',
     },
     verdadeiro: {
-      damage: { diceCount: 20, diceType: 6, damageType: 'energia' },
-      special: 'Muda para 20d6. Ignora RD.',
+      special: 'Cura completa de doenças, venenos e efeitos debilitantes.',
     },
   },
 
   // Mutar
   'mutar': {
     base: {
-      special: 'Concede 1 mutação de criatura a você mesmo.',
+      special: 'Altera forma ou função específica do corpo, conforme escolha narrativa.',
     },
     discente: {
-      special: 'Concede 2 mutações.',
+      special: 'Alterações mais complexas ou duradouras.',
     },
     verdadeiro: {
-      special: 'Concede 3 mutações.',
+      special: 'Transformação completa, múltiplas alterações simultâneas.',
     },
   },
 
@@ -1451,7 +1444,7 @@ export const RITUAL_EFFECTS: Record<string, RitualEffectsByLevel> = {
       special: 'Dissipa rituais de qualquer círculo.',
     },
     verdadeiro: {
-      special: 'Dissipa rituais em área de 6m.',
+      special: 'Flexibilidade ampliada contra círculos superiores.',
     },
   },
 };
