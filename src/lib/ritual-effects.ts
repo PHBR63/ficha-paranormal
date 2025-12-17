@@ -403,6 +403,240 @@ export const RITUAL_EFFECTS: Record<string, RitualEffectsByLevel> = {
     },
   },
 
+  // Luz
+  'luz': {
+    base: {
+      special: 'Objeto emite luz em área de 9m de raio.',
+    },
+    discente: {
+      appliesConditions: [{ conditionId: 'ofuscado', duration: 'sustentado' }],
+      special: 'Cria 4 esferas móveis. Alvo fica ofuscado e sem camuflagem por escuridão.',
+    },
+    verdadeiro: {
+      skillModifier: {
+        skills: ['Vontade'],
+        bonus: 20,
+      },
+      appliesConditions: [{ conditionId: 'ofuscado', duration: 'cena' }],
+      special: 'Luz solar. Aliados +20 Vontade, inimigos ofuscados.',
+    },
+  },
+
+  // Polarização Caótica
+  'polarizacao-caotica': {
+    base: {
+      damageReduction: {
+        types: ['balístico', 'corte', 'impacto', 'perfuração'],
+        amount: 5,
+      },
+      special: 'Atrair: puxa objeto metálico (espaço 2-). Repelir: RD 5 contra metálicos.',
+    },
+    discente: {
+      damage: { diceCount: 1, diceType: 6, damageType: 'impacto' },
+      special: 'Arremessa até 10 objetos (1 a 1d6 dano por espaço). Reflexos reduz metade.',
+      resistance: { type: 'reflexos', effect: 'reduz_metade' },
+    },
+    verdadeiro: {
+      special: 'Levita e move ser/objeto (espaço 10-) por 9m.',
+    },
+  },
+
+  // Amaldiçoar Tecnologia
+  'amaldicoar-tecnologia': {
+    base: {
+      weaponEffect: {
+        attackBonus: 0,
+      },
+      special: 'Concede 1 modificação de arma de fogo à escolha.',
+    },
+    discente: {
+      special: 'Concede 2 modificações de arma de fogo.',
+    },
+    verdadeiro: {
+      special: 'Concede 3 modificações de arma de fogo.',
+    },
+  },
+
+  // Apagar as Luzes
+  'apagar-as-luzes': {
+    base: {
+      special: 'Apaga fontes de luz em alcance curto.',
+    },
+    discente: {
+      special: 'Apaga fontes de luz em alcance médio.',
+    },
+    verdadeiro: {
+      appliesConditions: [{ conditionId: 'cego', duration: 'cena' }],
+      special: 'Apaga fontes de luz em alcance longo e cria escuridão mágica.',
+    },
+  },
+
+  // Espirais da Perdição
+  'espirais-da-perdicao': {
+    base: {
+      attackModifier: -2, // Representa -1d4 como penalidade média
+      special: 'Alvo sofre -1d4 em testes de ataque.',
+    },
+    discente: {
+      attackModifier: -3, // Representa -1d6 como penalidade média
+      special: 'Alvo sofre -1d6 em testes de ataque.',
+    },
+    verdadeiro: {
+      attackModifier: -7, // Representa -2d6 como penalidade média
+      special: 'Alvos escolhidos sofrem -2d6 em testes de ataque.',
+    },
+  },
+
+  // Nuvem de Cinzas
+  'nuvem-de-cinzas': {
+    base: {
+      areaEffect: { shape: 'esfera', radius: 6 },
+      special: 'Camuflagem leve a 1,5m, total a partir de 3m. Vento dispersa.',
+    },
+    discente: {
+      special: 'Seres escolhidos enxergam através da nuvem.',
+    },
+    verdadeiro: {
+      attackModifier: -2,
+      special: 'Nuvem sólida. Deslocamento 3m, -2 em ataque dentro dela.',
+    },
+  },
+
+  // Corpo Adaptado
+  'corpo-adaptado': {
+    base: {
+      special: 'Imune a calor/frio extremos. Respira na água. Não sufoca em fumaça.',
+    },
+    discente: {
+      special: 'Duração 1 dia.',
+    },
+    verdadeiro: {
+      special: 'Alcance curto, alvos escolhidos.',
+    },
+  },
+
+  // Ódio Incontrolável
+  'odio-incontrolavel': {
+    base: {
+      attackModifier: 2,
+      damageReduction: {
+        types: ['balístico', 'corte', 'impacto', 'perfuração'],
+        amount: 5,
+      },
+      special: '+2 ataque/dano corpo a corpo, RD 5 física. Deve sempre atacar.',
+    },
+    discente: {
+      attackModifier: 2,
+      damageReduction: {
+        types: ['balístico', 'corte', 'impacto', 'perfuração'],
+        amount: 5,
+      },
+      special: '+2 ataque/dano, RD 5. Ataque corpo a corpo adicional com ação agredir.',
+    },
+    verdadeiro: {
+      attackModifier: 5,
+      special: '+5 ataque/dano corpo a corpo. Sofre metade do dano físico.',
+    },
+  },
+
+  // Distorcer Aparência
+  'distorcer-aparencia': {
+    base: {
+      skillModifier: {
+        skills: ['Enganação'],
+        bonus: 10,
+      },
+      special: 'Modifica aparência. +10 Enganação para disfarce.',
+      resistance: { type: 'vontade', effect: 'anula' },
+    },
+    discente: {
+      skillModifier: {
+        skills: ['Enganação'],
+        bonus: 10,
+      },
+      special: 'Alcance curto, 1 ser. Vontade anula se involuntário.',
+    },
+    verdadeiro: {
+      skillModifier: {
+        skills: ['Enganação'],
+        bonus: 10,
+      },
+      special: 'Alcance curto, seres escolhidos.',
+    },
+  },
+
+  // Desfazer Sinapses
+  'desfazer-sinapses': {
+    base: {
+      damage: { diceCount: 2, diceType: 6, bonus: 2, damageType: 'conhecimento' },
+      appliesConditions: [{ conditionId: 'frustrado', duration: 'rodada', turnsCount: 1 }],
+      resistance: { type: 'vontade', effect: 'parcial' },
+    },
+    discente: {
+      damage: { diceCount: 3, diceType: 6, bonus: 3, damageType: 'conhecimento' },
+      appliesConditions: [{ conditionId: 'frustrado', duration: 'rodada', turnsCount: 1 }],
+      special: 'Alcance longo, até 5 alvos.',
+      resistance: { type: 'vontade', effect: 'parcial' },
+    },
+    verdadeiro: {
+      damage: { diceCount: 8, diceType: 6, bonus: 8, damageType: 'conhecimento' },
+      appliesConditions: [{ conditionId: 'esmorecido', duration: 'cena' }],
+      special: 'Alcance extremo. Falha: esmorecido. Sucesso: frustrado.',
+      resistance: { type: 'vontade', effect: 'parcial' },
+    },
+  },
+
+  // Enfeitiçar
+  'enfeiticar': {
+    base: {
+      skillModifier: {
+        skills: ['Diplomacia'],
+        bonus: 10,
+      },
+      special: 'Alvo prestativo (+10 Diplomacia). Hostis +5 na resistência.',
+      resistance: { type: 'vontade', effect: 'anula' },
+    },
+    discente: {
+      special: 'Pode sugerir uma ação aceitável para o alvo.',
+      resistance: { type: 'vontade', effect: 'anula' },
+    },
+    verdadeiro: {
+      skillModifier: {
+        skills: ['Diplomacia'],
+        bonus: 10,
+      },
+      special: 'Afeta todos os alvos no alcance.',
+      resistance: { type: 'vontade', effect: 'anula' },
+    },
+  },
+
+  // Terceiro Olho
+  'terceiro-olho': {
+    base: {
+      special: 'Enxerga auras paranormais em alcance longo. Sabe elemento e poder aproximado.',
+    },
+    discente: {
+      special: 'Duração 1 dia.',
+    },
+    verdadeiro: {
+      special: 'Enxerga criaturas e objetos invisíveis.',
+    },
+  },
+
+  // Cinerária (Medo - 1º Círculo)
+  'cineraria': {
+    base: {
+      areaEffect: { shape: 'esfera', radius: 6 },
+      special: 'Névoa paranormal. Rituais na área +5 DT.',
+    },
+    discente: {
+      special: 'Rituais na área +5 DT e -2 PE no custo.',
+    },
+    verdadeiro: {
+      special: 'Rituais na área +5 DT, -2 PE e dano maximizado.',
+    },
+  },
+
   // === RITUAIS DE 2º CÍRCULO ===
 
   // Âncora Temporal
