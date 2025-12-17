@@ -410,7 +410,7 @@ export const RITUAL_EFFECTS: Record<string, RitualEffectsByLevel> = {
     },
     discente: {
       appliesConditions: [{ conditionId: 'ofuscado', duration: 'sustentado' }],
-      special: 'Cria 4 esferas móveis. Alvo fica ofuscado e sem camuflagem por escuridão.',
+      special: 'Cria 4 esferas móveis. Criaturas na área iluminada ficam ofuscadas.',
     },
     verdadeiro: {
       skillModifier: {
@@ -433,7 +433,7 @@ export const RITUAL_EFFECTS: Record<string, RitualEffectsByLevel> = {
     },
     discente: {
       damage: { diceCount: 1, diceType: 6, damageType: 'impacto' },
-      special: 'Arremessa até 10 objetos (1 a 1d6 dano por espaço). Reflexos reduz metade.',
+      special: 'Arremessa até 10 objetos (dano fixo por objeto). Reflexos reduz metade.',
       resistance: { type: 'reflexos', effect: 'reduz_metade' },
     },
     verdadeiro: {
@@ -531,7 +531,7 @@ export const RITUAL_EFFECTS: Record<string, RitualEffectsByLevel> = {
         types: ['balístico', 'corte', 'impacto', 'perfuração'],
         amount: 5,
       },
-      special: '+2 ataque/dano, RD 5. Ataque corpo a corpo adicional com ação agredir.',
+      special: '+2 ataque/dano corpo a corpo, RD 5 física. Frenesi intensificado.',
     },
     verdadeiro: {
       attackModifier: 5,
