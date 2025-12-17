@@ -1,8 +1,8 @@
 // Ordem Paranormal RPG v1.3 - Character Data (Atualizado com dados oficiais do livro)
-// Inclui conteúdo do suplemento "Sobrevivendo ao Horror" e Origens da Comunidade
+// Classes oficiais: Combatente, Especialista, Ocultista (15 trilhas no total)
 
 import { SUPPLEMENT_ORIGINS } from './supplement-origins';
-import { SOBREVIVENTE_CLASS, SUPPLEMENT_TRACKS } from './supplement-classes';
+import { SUPPLEMENT_TRACKS } from './supplement-classes';
 
 // ==================== ORIGENS PRINCIPAIS (26 origens do livro base) ====================
 // Textos fiéis ao manual oficial Ordem Paranormal RPG
@@ -332,8 +332,8 @@ const CORE_CLASSES = [
   },
 ];
 
-// Combina classes base com classe do suplemento (Sobrevivente)
-export const CLASSES = [...CORE_CLASSES, SOBREVIVENTE_CLASS];
+// Classes disponíveis (apenas as 3 classes oficiais do livro base)
+export const CLASSES = [...CORE_CLASSES];
 
 // ==================== TRILHAS DE CLASSE ====================
 
