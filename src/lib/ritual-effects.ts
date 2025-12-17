@@ -438,17 +438,13 @@ export const RITUAL_EFFECTS: Record<string, RitualEffectsByLevel> = {
   // Velocidade Mortal
   'velocidade-mortal': {
     base: {
-      attackModifier: 2,
-      special: '+9m de deslocamento. +2 ataques com ação padrão (máx 3).',
+      special: 'Concede 1 ação de movimento extra por turno.',
     },
     discente: {
-      attackModifier: 4,
-      special: '+12m de deslocamento. +3 ataques com ação padrão (máx 4).',
+      special: 'Concede 1 ação padrão extra por turno.',
     },
     verdadeiro: {
-      attackModifier: 6,
-      defenseModifier: 10,
-      special: '+15m de deslocamento. +4 ataques com ação padrão (máx 5). +10 Defesa.',
+      special: 'Afeta alvos escolhidos em alcance curto.',
     },
   },
 
