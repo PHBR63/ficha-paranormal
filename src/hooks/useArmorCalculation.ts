@@ -12,6 +12,7 @@ import { useMemo } from 'react';
 // Interface para item de proteção equipado
 export interface ArmorStats {
   rd: number;
+  defenseBonus: number;
   agilityPenalty: number;
   speedPenalty: number;
   armorType?: string;
@@ -22,15 +23,18 @@ export interface ArmorStats {
 export interface ProtectionCalculation {
   // RD apenas de armaduras (não escudos)
   totalRD: number;
+  // Bônus de defesa das armaduras (Proteção Leve +5, Proteção Pesada +10)
+  armorDefenseBonus: number;
   // Penalidades somadas (armadura + escudo)
   totalAgilityPenalty: number;
   totalSpeedPenalty: number;
-  // Bônus de defesa do escudo
+  // Bônus de defesa do escudo (+2)
   shieldDefenseBonus: number;
   // Armaduras equipadas
   equippedArmors: Array<{
     name: string;
     rd: number;
+    defenseBonus: number;
     agilityPenalty: number;
     speedPenalty: number;
     type: string;
@@ -42,7 +46,7 @@ export interface ProtectionCalculation {
     agilityPenalty: number;
     speedPenalty: number;
   } | null;
-  // Valores efetivos (com bônus de escudo)
+  // Valores efetivos (com bônus de armadura + escudo)
   effectiveDefense: number;
   effectiveMovement: number;
   hasArmorEquipped: boolean;
@@ -72,6 +76,7 @@ export function useArmorCalculation(
     itemType?: string;
     equipSlot?: string;
     rd?: number;
+    defenseBonus?: number;
     agilityPenalty?: number;
     speedPenalty?: number;
     armorType?: string;
@@ -86,12 +91,12 @@ export function useArmorCalculation(
       .filter(item => 
         item.isEquipped && 
         item.itemType === 'armor' && 
-        item.armorType !== 'escudo' &&
-        item.rd !== undefined
+        item.armorType !== 'escudo'
       )
       .map(item => ({
         name: item.name,
         rd: item.rd || 0,
+        defenseBonus: item.defenseBonus || 0,
         agilityPenalty: item.agilityPenalty || 0,
         speedPenalty: item.speedPenalty || 0,
         type: item.armorType || 'leve',
@@ -104,17 +109,21 @@ export function useArmorCalculation(
       item.armorType === 'escudo'
     );
 
+    // Escudo: usa defenseBonus do item ou extrai do special como fallback
     const equippedShield = shieldItem ? {
       name: shieldItem.name,
-      defenseBonus: extractShieldDefenseBonus(shieldItem.special),
+      defenseBonus: shieldItem.defenseBonus || extractShieldDefenseBonus(shieldItem.special),
       agilityPenalty: shieldItem.agilityPenalty || 0,
       speedPenalty: shieldItem.speedPenalty || 0,
     } : null;
 
-    // RD apenas de armaduras (escudos NÃO dão RD, dão bônus de defesa)
+    // RD apenas de armaduras (escudos NÃO dão RD)
     const totalRD = equippedArmors.reduce((sum, armor) => sum + armor.rd, 0);
     
-    // Penalidades de armadura
+    // Bônus de defesa das armaduras (Proteção Leve +5, Proteção Pesada +10)
+    const armorDefenseBonus = equippedArmors.reduce((sum, armor) => sum + armor.defenseBonus, 0);
+    
+    // Penalidades de armadura (Proteção Pesada -5 em testes de carga)
     const armorAgilityPenalty = equippedArmors.reduce((sum, armor) => sum + armor.agilityPenalty, 0);
     const armorSpeedPenalty = equippedArmors.reduce((sum, armor) => sum + armor.speedPenalty, 0);
     
@@ -126,19 +135,20 @@ export function useArmorCalculation(
     const totalAgilityPenalty = armorAgilityPenalty + shieldAgilityPenalty;
     const totalSpeedPenalty = armorSpeedPenalty + shieldSpeedPenalty;
     
-    // Bônus de defesa do escudo
+    // Bônus de defesa do escudo (+2)
     const shieldDefenseBonus = equippedShield?.defenseBonus || 0;
 
     // Calcula valores efetivos
-    // Penalidade de agilidade afeta a defesa (Defesa = 10 + AGI)
-    // Bônus de escudo é aplicado à defesa
-    const effectiveDefense = Math.max(10, baseDefense + totalAgilityPenalty + shieldDefenseBonus);
+    // Defesa = 10 + AGI + Bônus Armadura + Bônus Escudo
+    // NOTA: Penalidade de armadura pesada (-5) é em testes de perícias, NÃO na defesa
+    const effectiveDefense = Math.max(10, baseDefense + armorDefenseBonus + shieldDefenseBonus);
     
     // Penalidade de deslocamento reduz movimento em metros
     const effectiveMovement = Math.max(1.5, baseMovement + totalSpeedPenalty);
 
     return {
       totalRD,
+      armorDefenseBonus,
       totalAgilityPenalty,
       totalSpeedPenalty,
       shieldDefenseBonus,
@@ -162,6 +172,7 @@ export function calculateArmorProtection(
     itemType?: string;
     equipSlot?: string;
     rd?: number;
+    defenseBonus?: number;
     agilityPenalty?: number;
     speedPenalty?: number;
     armorType?: string;
@@ -175,12 +186,12 @@ export function calculateArmorProtection(
     .filter(item => 
       item.isEquipped && 
       item.itemType === 'armor' && 
-      item.armorType !== 'escudo' &&
-      item.rd !== undefined
+      item.armorType !== 'escudo'
     )
     .map(item => ({
       name: item.name,
       rd: item.rd || 0,
+      defenseBonus: item.defenseBonus || 0,
       agilityPenalty: item.agilityPenalty || 0,
       speedPenalty: item.speedPenalty || 0,
       type: item.armorType || 'leve',
@@ -195,21 +206,23 @@ export function calculateArmorProtection(
 
   const equippedShield = shieldItem ? {
     name: shieldItem.name,
-    defenseBonus: extractShieldDefenseBonus(shieldItem.special),
+    defenseBonus: shieldItem.defenseBonus || extractShieldDefenseBonus(shieldItem.special),
     agilityPenalty: shieldItem.agilityPenalty || 0,
     speedPenalty: shieldItem.speedPenalty || 0,
   } : null;
 
   const totalRD = equippedArmors.reduce((sum, armor) => sum + armor.rd, 0);
+  const armorDefenseBonus = equippedArmors.reduce((sum, armor) => sum + armor.defenseBonus, 0);
   const totalAgilityPenalty = equippedArmors.reduce((sum, armor) => sum + armor.agilityPenalty, 0) + (equippedShield?.agilityPenalty || 0);
   const totalSpeedPenalty = equippedArmors.reduce((sum, armor) => sum + armor.speedPenalty, 0) + (equippedShield?.speedPenalty || 0);
   const shieldDefenseBonus = equippedShield?.defenseBonus || 0;
 
-  const effectiveDefense = Math.max(10, baseDefense + totalAgilityPenalty + shieldDefenseBonus);
+  const effectiveDefense = Math.max(10, baseDefense + armorDefenseBonus + shieldDefenseBonus);
   const effectiveMovement = Math.max(1.5, baseMovement + totalSpeedPenalty);
 
   return {
     totalRD,
+    armorDefenseBonus,
     totalAgilityPenalty,
     totalSpeedPenalty,
     shieldDefenseBonus,

@@ -35,6 +35,7 @@ interface InventoryItemWithArmor {
   isEquipped?: boolean;
   itemType?: string;
   rd?: number;
+  defenseBonus?: number;
   agilityPenalty?: number;
   speedPenalty?: number;
   armorType?: string;
@@ -63,36 +64,56 @@ export function EffectiveStatsWidget({
 }: EffectiveStatsWidgetProps) {
   // Calcula proteção das armaduras equipadas
   const armorStats = useMemo(() => {
+    // Armaduras (não escudos)
     const equippedArmors = inventory
-      .filter(item => item.isEquipped && item.itemType === 'armor' && item.rd !== undefined)
+      .filter(item => item.isEquipped && item.itemType === 'armor' && item.armorType !== 'escudo')
       .map(item => ({
         name: item.name,
         rd: item.rd || 0,
+        defenseBonus: item.defenseBonus || 0,
         agilityPenalty: item.agilityPenalty || 0,
         speedPenalty: item.speedPenalty || 0,
         type: item.armorType || 'leve',
       }));
 
+    // Escudo
+    const shieldItem = inventory.find(item => 
+      item.isEquipped && item.itemType === 'armor' && item.armorType === 'escudo'
+    );
+    const equippedShield = shieldItem ? {
+      name: shieldItem.name,
+      defenseBonus: shieldItem.defenseBonus || 0,
+      agilityPenalty: shieldItem.agilityPenalty || 0,
+      speedPenalty: shieldItem.speedPenalty || 0,
+    } : null;
+
     const totalRD = equippedArmors.reduce((sum, armor) => sum + armor.rd, 0);
+    const armorDefenseBonus = equippedArmors.reduce((sum, armor) => sum + armor.defenseBonus, 0);
+    const shieldDefenseBonus = equippedShield?.defenseBonus || 0;
     const totalAgilityPenalty = equippedArmors.reduce((sum, armor) => sum + armor.agilityPenalty, 0);
     const totalSpeedPenalty = equippedArmors.reduce((sum, armor) => sum + armor.speedPenalty, 0);
 
     return {
       totalRD,
+      armorDefenseBonus,
+      shieldDefenseBonus,
       totalAgilityPenalty,
       totalSpeedPenalty,
       equippedArmors,
+      equippedShield,
       hasArmorEquipped: equippedArmors.length > 0,
+      hasShieldEquipped: equippedShield !== null,
     };
   }, [inventory]);
 
-  // Aplica penalidade de armadura na defesa base
-  const defenseWithArmorPenalty = baseDefense + armorStats.totalAgilityPenalty;
+  // Aplica bônus de armadura e escudo na defesa base
+  // Defesa = 10 + AGI + Bônus Armadura + Bônus Escudo
+  const defenseWithProtection = baseDefense + armorStats.armorDefenseBonus + armorStats.shieldDefenseBonus;
 
   // Calcula valores efetivos usando game-engine (aplicando condições)
-  const effectiveDefense = getEffectiveDefense(defenseWithArmorPenalty, conditions);
-  const effectiveDefenseMelee = getEffectiveDefense(defenseWithArmorPenalty, conditions, 'melee');
-  const effectiveDefenseRanged = getEffectiveDefense(defenseWithArmorPenalty, conditions, 'ranged');
+  const effectiveDefense = getEffectiveDefense(defenseWithProtection, conditions);
+  const effectiveDefenseMelee = getEffectiveDefense(defenseWithProtection, conditions, 'melee');
+  const effectiveDefenseRanged = getEffectiveDefense(defenseWithProtection, conditions, 'ranged');
   
   const testModifier = getTestModifier(conditions);
   const attackModifier = getAttackModifierFromConditions(conditions);
@@ -125,12 +146,17 @@ export function EffectiveStatsWidget({
   const defenseBreakdown: { source: string; modifier: number }[] = [];
   const testBreakdown: { condition: string; modifier: number }[] = [];
 
-  // Adiciona penalidades de armadura ao breakdown
+  // Adiciona bônus de defesa das armaduras ao breakdown
   armorStats.equippedArmors.forEach(armor => {
-    if (armor.agilityPenalty !== 0) {
-      defenseBreakdown.push({ source: armor.name, modifier: armor.agilityPenalty });
+    if (armor.defenseBonus !== 0) {
+      defenseBreakdown.push({ source: armor.name, modifier: armor.defenseBonus });
     }
   });
+
+  // Adiciona bônus de defesa do escudo ao breakdown
+  if (armorStats.equippedShield && armorStats.equippedShield.defenseBonus !== 0) {
+    defenseBreakdown.push({ source: armorStats.equippedShield.name, modifier: armorStats.equippedShield.defenseBonus });
+  }
 
   // Adiciona modificadores de condições
   for (const conditionId of conditions) {
