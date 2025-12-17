@@ -1,20 +1,27 @@
 /**
  * Widget que mostra stats efetivos com modificadores de condições e proteções aplicados
  * Integra automaticamente os efeitos do game-engine.ts e cálculo de armadura
+ * Inclui modificadores contextuais (corpo a corpo vs distância) e restrições de ação
  */
 
 import { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, Footprints, XCircle, Ban, AlertTriangle, ShieldCheck, ArrowDown } from 'lucide-react';
+import { Shield, Footprints, XCircle, Ban, AlertTriangle, ShieldCheck, ArrowDown, Swords, Target, HandMetal } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   getEffectiveDefense,
   getTestModifier,
   canAct,
   canMove,
+  canReact,
+  getMaxActions,
   CONDITION_EFFECTS,
 } from '@/lib/game-engine';
-import { CONDITIONS } from '@/lib/conditions';
+import { 
+  CONDITIONS, 
+  CONTEXTUAL_DEFENSE_MODIFIERS, 
+  getAttackModifierFromConditions 
+} from '@/lib/conditions';
 import {
   Tooltip,
   TooltipContent,
@@ -39,6 +46,7 @@ interface EffectiveStatsWidgetProps {
   conditions: string[];
   inventory?: InventoryItemWithArmor[];
   className?: string;
+  showContextualDefense?: boolean; // Mostrar defesa corpo a corpo vs distância
 }
 
 /**
@@ -51,6 +59,7 @@ export function EffectiveStatsWidget({
   conditions,
   inventory = [],
   className,
+  showContextualDefense = true,
 }: EffectiveStatsWidgetProps) {
   // Calcula proteção das armaduras equipadas
   const armorStats = useMemo(() => {
@@ -82,12 +91,20 @@ export function EffectiveStatsWidget({
 
   // Calcula valores efetivos usando game-engine (aplicando condições)
   const effectiveDefense = getEffectiveDefense(defenseWithArmorPenalty, conditions);
+  const effectiveDefenseMelee = getEffectiveDefense(defenseWithArmorPenalty, conditions, 'melee');
+  const effectiveDefenseRanged = getEffectiveDefense(defenseWithArmorPenalty, conditions, 'ranged');
+  
   const testModifier = getTestModifier(conditions);
+  const attackModifier = getAttackModifierFromConditions(conditions);
   const playerCanAct = canAct(conditions);
   const playerCanMove = canMove(conditions);
+  const playerCanReact = canReact(conditions);
+  const maxActions = getMaxActions(conditions);
+
+  // Verifica se tem modificadores contextuais de defesa (ex: Caído)
+  const hasContextualDefense = conditions.some(c => CONTEXTUAL_DEFENSE_MODIFIERS[c]);
 
   // Calcula modificador de defesa por condições
-  const defenseModifierFromConditions = effectiveDefense - defenseWithArmorPenalty;
   const totalDefenseChange = effectiveDefense - baseDefense;
 
   // Calcula modificador de movimento
@@ -132,7 +149,9 @@ export function EffectiveStatsWidget({
   const hasDefenseChange = totalDefenseChange !== 0;
   const hasMovementChange = effectiveMovement !== baseMovement;
   const hasTestPenalty = testModifier !== 0;
-  const hasCriticalStatus = !playerCanAct || !playerCanMove;
+  const hasAttackPenalty = attackModifier !== 0;
+  const hasCriticalStatus = !playerCanAct || !playerCanMove || !playerCanReact;
+  const hasActionLimit = maxActions < 2;
   const hasRD = armorStats.totalRD > 0;
 
   return (
@@ -255,6 +274,45 @@ export function EffectiveStatsWidget({
           </TooltipContent>
         </Tooltip>
 
+        {/* Defesa Contextual (Corpo a corpo vs Distância) */}
+        {showContextualDefense && hasContextualDefense && (
+          <div className="grid grid-cols-2 gap-2">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center justify-between p-2 bg-destructive/10 border border-destructive/30 rounded-lg">
+                  <div className="flex items-center gap-1">
+                    <Swords className="w-4 h-4 text-destructive" />
+                    <span className="text-xs text-muted-foreground">C.a.C.</span>
+                  </div>
+                  <span className="font-display text-lg text-destructive">
+                    {effectiveDefenseMelee}
+                  </span>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p className="text-xs">Defesa contra ataques corpo a corpo</p>
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center justify-between p-2 bg-primary/10 border border-primary/30 rounded-lg">
+                  <div className="flex items-center gap-1">
+                    <Target className="w-4 h-4 text-primary" />
+                    <span className="text-xs text-muted-foreground">Dist.</span>
+                  </div>
+                  <span className="font-display text-lg text-primary">
+                    {effectiveDefenseRanged}
+                  </span>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p className="text-xs">Defesa contra ataques à distância</p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
+        )}
+
         {/* Deslocamento Efetivo */}
         <Tooltip>
           <TooltipTrigger asChild>
@@ -326,6 +384,31 @@ export function EffectiveStatsWidget({
           </div>
         )}
 
+        {/* Modificador de Ataques */}
+        {hasAttackPenalty && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex items-center justify-between p-3 bg-destructive/10 border border-destructive/30 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <Swords className="w-5 h-5 text-destructive" />
+                  <span className="text-sm text-muted-foreground">ATAQUES</span>
+                </div>
+                <span className="font-display text-2xl text-destructive">
+                  {attackModifier}
+                </span>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="left" className="max-w-xs">
+              <div className="space-y-1">
+                <p className="font-medium text-sm">Penalidade em Ataques:</p>
+                <p className="text-xs text-muted-foreground">
+                  Aplicada a todos os ataques (condição Cego, etc.)
+                </p>
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        )}
+
         {/* Modificador de Testes */}
         {hasTestPenalty && (
           <Tooltip>
@@ -353,6 +436,18 @@ export function EffectiveStatsWidget({
           </Tooltip>
         )}
 
+        {/* Limite de Ações (Lento) */}
+        {hasActionLimit && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="flex items-center gap-2 p-3 bg-warning/20 border border-warning/50 rounded-lg text-warning"
+          >
+            <AlertTriangle className="w-5 h-5" />
+            <span className="font-display text-sm tracking-wider">APENAS {maxActions} AÇÃO POR TURNO</span>
+          </motion.div>
+        )}
+
         {/* Status Críticos */}
         {hasCriticalStatus && (
           <div className="space-y-2">
@@ -374,6 +469,16 @@ export function EffectiveStatsWidget({
               >
                 <XCircle className="w-5 h-5" />
                 <span className="font-display text-sm tracking-wider">NÃO PODE MOVER</span>
+              </motion.div>
+            )}
+            {!playerCanReact && playerCanAct && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="flex items-center gap-2 p-3 bg-warning/20 border border-warning/50 rounded-lg text-warning"
+              >
+                <HandMetal className="w-5 h-5" />
+                <span className="font-display text-sm tracking-wider">NÃO PODE REAGIR</span>
               </motion.div>
             )}
           </div>

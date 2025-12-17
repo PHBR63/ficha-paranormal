@@ -4,8 +4,9 @@
  * Funcionalidades:
  * - Adicionar/remover condições
  * - Contador de duração em turnos
+ * - Contador de morte para condição Morrendo
  * - Descrição e efeitos de cada condição
- * - Redução automática de turnos
+ * - Processamento de início de turno (dano, redução de contadores)
  */
 
 import { useState } from 'react';
@@ -36,27 +37,34 @@ import {
   ChevronUp,
   Search,
   AlertTriangle,
-  Info,
   Skull,
   Eye,
   Brain,
   Activity,
   Zap,
+  Play,
+  Heart,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { CONDITIONS, CONDITION_CATEGORIES, type Condition } from '@/lib/conditions';
+import { CONDITION_EFFECTS, processStartOfTurn, type CombatantState } from '@/lib/game-engine';
+import { toast } from 'sonner';
 
 // Interface para condição ativa com duração
 export interface ActiveCondition {
   id: string;
   name: string;
   turnsRemaining: number | null; // null = permanente até remoção manual
-  addedAt: Date;
+  addedAt: Date | string;
+  dyingCounter?: number; // Para condição Morrendo (3, 2, 1, 0 = morte)
 }
 
 interface ConditionManagerProps {
   conditions: ActiveCondition[];
   onConditionsChange: (conditions: ActiveCondition[]) => void;
+  characterName?: string; // Para mensagens de início de turno
+  onDamageFromCondition?: (damage: number, isVerdadeiro: boolean) => void; // Callback para aplicar dano
+  onCharacterDeath?: () => void; // Callback quando morre
 }
 
 // Mapeamento de categorias para ícones
@@ -77,7 +85,13 @@ const CATEGORY_LABELS: Record<string, string> = {
   critical: 'Críticas',
 };
 
-export function ConditionManager({ conditions, onConditionsChange }: ConditionManagerProps) {
+export function ConditionManager({ 
+  conditions, 
+  onConditionsChange,
+  characterName = 'Personagem',
+  onDamageFromCondition,
+  onCharacterDeath,
+}: ConditionManagerProps) {
   // Estado para controlar abertura do modal
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   // Estado para busca
@@ -86,6 +100,8 @@ export function ConditionManager({ conditions, onConditionsChange }: ConditionMa
   const [isExpanded, setIsExpanded] = useState(false);
   // Estado para categoria expandida no modal
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
+  // Estado para mostrar resultados do início de turno
+  const [turnResults, setTurnResults] = useState<string[]>([]);
 
   // Adiciona uma condição
   const handleAddCondition = (conditionId: string, turns: number | null = null) => {
@@ -101,8 +117,14 @@ export function ConditionManager({ conditions, onConditionsChange }: ConditionMa
       id: conditionId,
       name: conditionData.name,
       turnsRemaining: turns,
-      addedAt: new Date(),
+      addedAt: new Date().toISOString(),
     };
+
+    // Se for condição Morrendo, inicia com contador 3
+    if (conditionId === 'morrendo') {
+      newCondition.dyingCounter = 3;
+      toast.error('💀 Condição MORRENDO adicionada! 3 rodadas até a morte.', { duration: 5000 });
+    }
 
     onConditionsChange([...conditions, newCondition]);
     setIsAddModalOpen(false);
@@ -134,14 +156,104 @@ export function ConditionManager({ conditions, onConditionsChange }: ConditionMa
     );
   };
 
-  // Define turnos manualmente
-  const handleSetTurns = (conditionId: string, turns: number | null) => {
+  // Reduz contador de morrendo manualmente
+  const handleReduceDyingCounter = (conditionId: string) => {
+    const morrendoCondition = conditions.find(c => c.id === 'morrendo');
+    if (!morrendoCondition || morrendoCondition.dyingCounter === undefined) return;
+
+    const newCounter = morrendoCondition.dyingCounter - 1;
+    
+    if (newCounter <= 0) {
+      toast.error('💀 MORTE! O contador de morrendo chegou a 0.', { duration: 10000 });
+      onCharacterDeath?.();
+      return;
+    }
+
     onConditionsChange(
       conditions.map(c => {
-        if (c.id !== conditionId) return c;
-        return { ...c, turnsRemaining: turns };
+        if (c.id !== 'morrendo') return c;
+        return { ...c, dyingCounter: newCounter };
       })
     );
+    
+    toast.warning(`⚠️ Contador de morrendo: ${newCounter} rodadas restantes.`, { duration: 3000 });
+  };
+
+  // Processa início de turno - aplica dano de condições e reduz contadores
+  const handleProcessStartOfTurn = () => {
+    const conditionIds = conditions.map(c => c.id);
+    const morrendoCondition = conditions.find(c => c.id === 'morrendo');
+    
+    // Cria um CombatantState mock para usar o processStartOfTurn
+    const mockCombatant: CombatantState = {
+      id: 'current',
+      name: characterName,
+      initiative: 0,
+      initiativeRoll: [],
+      hp: 1, // Não usado aqui
+      hpMax: 1,
+      pe: 0,
+      peMax: 0,
+      san: 0,
+      sanMax: 0,
+      defense: 10,
+      baseDefense: 10,
+      conditions: conditionIds,
+      turnState: { peSpentThisTurn: 0, peLimit: 0, hasActed: false, hasMoved: false, hasReacted: false, actionsRemaining: 2 },
+      dyingCounter: morrendoCondition?.dyingCounter,
+    };
+
+    const result = processStartOfTurn(mockCombatant);
+    const messages: string[] = [];
+
+    // Processa dano
+    if (result.damage > 0) {
+      messages.push(`🩸 Dano de condições: ${result.damage}`);
+      onDamageFromCondition?.(result.damage, result.isDamageVerdadeiro);
+    }
+
+    // Processa contador de morrendo
+    if (result.dyingResult) {
+      if (result.dyingResult.isDead) {
+        toast.error(result.dyingResult.message, { duration: 10000 });
+        onCharacterDeath?.();
+        return;
+      }
+      
+      // Atualiza contador de morrendo
+      const newConditions = conditions.map(c => {
+        if (c.id === 'morrendo') {
+          return { ...c, dyingCounter: result.dyingResult!.newCounter };
+        }
+        return c;
+      });
+      
+      messages.push(result.dyingResult.message);
+      onConditionsChange(newConditions.filter(c => !result.removedConditions.includes(c.id)));
+    } else {
+      // Remove condições autoRemove
+      if (result.removedConditions.length > 0) {
+        onConditionsChange(conditions.filter(c => !result.removedConditions.includes(c.id)));
+      }
+    }
+
+    // Adiciona mensagens de remoção
+    result.messages.forEach(msg => {
+      if (!messages.includes(msg)) {
+        messages.push(msg);
+      }
+    });
+
+    setTurnResults(messages);
+    
+    if (messages.length > 0) {
+      toast.info(`⏰ Início de Turno processado`, {
+        description: messages.join('\n'),
+        duration: 5000,
+      });
+    } else {
+      toast.success('Início de turno: nenhum efeito de condição ativo.');
+    }
   };
 
   // Reduz todos os contadores (para usar no fim do turno)
@@ -180,6 +292,12 @@ export function ConditionManager({ conditions, onConditionsChange }: ConditionMa
       }
     }
   }
+
+  // Verifica se tem condições que causam efeito no início do turno
+  const hasStartOfTurnEffects = conditions.some(c => {
+    const effect = CONDITION_EFFECTS[c.id];
+    return effect?.startOfTurnEffect || c.id === 'morrendo';
+  });
 
   return (
     <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
@@ -225,7 +343,20 @@ export function ConditionManager({ conditions, onConditionsChange }: ConditionMa
                             <div className="flex items-center gap-2">
                               <span className="text-lg">{conditionData.icon}</span>
                               <span className="font-medium truncate">{conditionData.name}</span>
-                              {condition.turnsRemaining !== null && (
+                              
+                              {/* Contador de Morrendo */}
+                              {condition.id === 'morrendo' && condition.dyingCounter !== undefined && (
+                                <Badge 
+                                  variant="destructive" 
+                                  className="text-xs font-mono animate-pulse"
+                                >
+                                  <Skull className="w-3 h-3 mr-1" />
+                                  {condition.dyingCounter} rodadas
+                                </Badge>
+                              )}
+                              
+                              {/* Contador de Turnos normal */}
+                              {condition.turnsRemaining !== null && condition.id !== 'morrendo' && (
                                 <Badge 
                                   variant="outline" 
                                   className={cn(
