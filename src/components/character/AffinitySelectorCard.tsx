@@ -3,19 +3,19 @@
  * Exibido para personagens NEX 50%+ que ainda não escolheram afinidade
  */
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-
+import { Input } from '@/components/ui/input';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Sparkles, Droplet, Skull, BookOpen, Zap, Check, Loader2, Info, Star } from 'lucide-react';
+import { Sparkles, Droplet, Skull, BookOpen, Zap, Check, Loader2, Info, Star, Search, ChevronRight } from 'lucide-react';
 import {
   ParanormalElement,
   ELEMENT_LABELS,
@@ -23,8 +23,10 @@ import {
   ELEMENT_BG_COLORS,
   AFFINITY_DESCRIPTIONS,
   getPowersByElement,
+  ParanormalPower,
 } from '@/lib/paranormal-powers';
 import { cn } from '@/lib/utils';
+import { PowerDetailModal, PowerDetailData } from './PowerDetailModal';
 
 // Ícones por elemento
 const AFFINITY_ICONS: Record<ParanormalElement, React.ComponentType<{ className?: string }>> = {
@@ -47,10 +49,22 @@ interface AffinitySelectorCardProps {
   onSelectAffinity: (element: ParanormalElement) => Promise<void>;
 }
 
+// Converte ParanormalPower para PowerDetailData
+function toPowerDetailData(power: ParanormalPower): PowerDetailData {
+  return {
+    type: 'paranormal',
+    name: power.name,
+    description: power.description + (power.affinityEffect ? `\n\n**Efeito de Afinidade:** ${power.affinityEffect}` : ''),
+    element: power.element,
+  };
+}
+
 export function AffinitySelectorCard({ nex, onSelectAffinity }: AffinitySelectorCardProps) {
   const [selectedElement, setSelectedElement] = useState<ParanormalElement | null>(null);
   const [detailElement, setDetailElement] = useState<ParanormalElement | null>(null);
   const [saving, setSaving] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedPower, setSelectedPower] = useState<PowerDetailData | null>(null);
 
   // Só exibe se NEX >= 50
   if (nex < 50) return null;
@@ -67,6 +81,18 @@ export function AffinitySelectorCard({ nex, onSelectAffinity }: AffinitySelector
   };
 
   const elementPowers = detailElement ? getPowersByElement(detailElement) : [];
+  
+  // Filtra poderes pelo termo de busca
+  const filteredPowers = useMemo(() => {
+    if (!searchTerm.trim()) return elementPowers;
+    const term = searchTerm.toLowerCase();
+    return elementPowers.filter(
+      (p) =>
+        p.name.toLowerCase().includes(term) ||
+        p.description.toLowerCase().includes(term) ||
+        (p.affinityEffect && p.affinityEffect.toLowerCase().includes(term))
+    );
+  }, [elementPowers, searchTerm]);
 
   return (
     <>
@@ -134,6 +160,7 @@ export function AffinitySelectorCard({ nex, onSelectAffinity }: AffinitySelector
                       onClick={(e) => {
                         e.stopPropagation();
                         setDetailElement(element);
+                        setSearchTerm('');
                       }}
                     >
                       <Info className="w-3 h-3 mr-1" />
@@ -173,7 +200,7 @@ export function AffinitySelectorCard({ nex, onSelectAffinity }: AffinitySelector
         <DialogContent className="w-[95vw] max-w-lg max-h-[90vh] sm:max-h-[85vh] p-0 overflow-hidden flex flex-col">
           {detailElement && (
             <div className="flex flex-1 min-h-0 flex-col">
-              <div className="p-4 sm:p-6">
+              <div className="p-4 sm:p-6 pb-3">
                 <DialogHeader>
                   <div className="flex items-center gap-3">
                     <div className={cn('p-2 rounded-lg', ELEMENT_BG_COLORS[detailElement])}>
@@ -187,11 +214,22 @@ export function AffinitySelectorCard({ nex, onSelectAffinity }: AffinitySelector
                         Afinidade: {ELEMENT_LABELS[detailElement]}
                       </DialogTitle>
                       <p className="text-xs text-muted-foreground">
-                        {elementPowers.length} poderes paranormais
+                        {filteredPowers.length} de {elementPowers.length} poderes
                       </p>
                     </div>
                   </div>
                 </DialogHeader>
+
+                {/* Campo de Busca */}
+                <div className="relative mt-4">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar poderes..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-9 h-9 text-sm"
+                  />
+                </div>
               </div>
 
               <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 overscroll-contain">
@@ -207,27 +245,45 @@ export function AffinitySelectorCard({ nex, onSelectAffinity }: AffinitySelector
                       <Star className="w-4 h-4 text-paranormal" />
                       PODERES BENEFICIADOS
                     </h4>
-                    <div className="space-y-3">
-                      {elementPowers.map((power) => (
-                        <div key={power.id} className="p-3 rounded-lg bg-secondary/50 border border-border">
-                          <div className="flex items-start justify-between gap-2 mb-1">
-                            <h5 className="font-medium text-sm">{power.name}</h5>
-                            {power.prerequisite && (
-                              <Badge variant="outline" className="text-[10px] shrink-0">
-                                Requer {power.prerequisite.count} poder(es)
-                              </Badge>
-                            )}
-                          </div>
-                          <p className="text-xs text-muted-foreground mb-2">{power.description}</p>
-                          {power.affinityEffect && (
-                            <div className="flex items-start gap-2 p-2 rounded bg-paranormal/10 border border-paranormal/30">
-                              <Sparkles className="w-3.5 h-3.5 text-paranormal shrink-0 mt-0.5" />
-                              <p className="text-xs text-paranormal font-medium">{power.affinityEffect}</p>
+                    
+                    {filteredPowers.length === 0 ? (
+                      <div className="text-center py-6 text-muted-foreground">
+                        <Search className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                        <p className="text-sm">Nenhum poder encontrado para "{searchTerm}"</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {filteredPowers.map((power) => (
+                          <button
+                            key={power.id}
+                            type="button"
+                            onClick={() => setSelectedPower(toPowerDetailData(power))}
+                            className="w-full text-left p-3 rounded-lg bg-secondary/50 border border-border hover:bg-secondary/80 hover:border-paranormal/50 transition-colors group"
+                          >
+                            <div className="flex items-center justify-between gap-2 mb-1">
+                              <h5 className="font-medium text-sm group-hover:text-paranormal transition-colors">
+                                {power.name}
+                              </h5>
+                              <div className="flex items-center gap-2">
+                                {power.prerequisite && (
+                                  <Badge variant="outline" className="text-[10px] shrink-0">
+                                    Requer {power.prerequisite.count}
+                                  </Badge>
+                                )}
+                                <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-paranormal transition-colors" />
+                              </div>
                             </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
+                            <p className="text-xs text-muted-foreground line-clamp-2">{power.description}</p>
+                            {power.affinityEffect && (
+                              <div className="flex items-start gap-2 p-2 mt-2 rounded bg-paranormal/10 border border-paranormal/30">
+                                <Sparkles className="w-3.5 h-3.5 text-paranormal shrink-0 mt-0.5" />
+                                <p className="text-xs text-paranormal font-medium line-clamp-2">{power.affinityEffect}</p>
+                              </div>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -251,6 +307,13 @@ export function AffinitySelectorCard({ nex, onSelectAffinity }: AffinitySelector
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Modal de Detalhes do Poder */}
+      <PowerDetailModal
+        open={!!selectedPower}
+        onOpenChange={(open) => !open && setSelectedPower(null)}
+        power={selectedPower}
+      />
     </>
   );
 }
