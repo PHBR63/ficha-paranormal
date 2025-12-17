@@ -10,6 +10,8 @@
  */
 
 import { useState, useMemo } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { MobileInventoryCard } from './MobileInventoryCard';
 import { 
   Package, 
   Weight, 
@@ -157,6 +159,8 @@ export function InventoryPanel({
     quantity: 1,
     itemType: 'misc',
   });
+
+  const isMobile = useIsMobile();
 
   // Calcular status de carga
   const loadStatus = useMemo(() => getLoadStatus(inventory, strength), [inventory, strength]);
@@ -1127,6 +1131,21 @@ export function InventoryPanel({
               </CollapsibleTrigger>
               <CollapsibleContent className="space-y-1 mt-1">
                 {items.map((item) => (
+                  isMobile ? (
+                    <MobileInventoryCard
+                      key={item.id}
+                      item={item}
+                      onRemove={!readOnly ? handleRemoveItem : undefined}
+                      onEquip={!readOnly && canEquipItem(item) ? handleEquipItem : undefined}
+                      onUnequip={!readOnly && item.isEquipped ? handleUnequipItem : undefined}
+                      onUse={!readOnly && canUseItem(item) ? handleRequestUseItem : undefined}
+                      onModify={!readOnly && item.itemType === 'weapon' ? handleOpenWeaponMod : undefined}
+                      onViewDetails={(item) => {
+                        setSelectedItem(item);
+                        setItemDetailOpen(true);
+                      }}
+                    />
+                  ) : (
                     <InventoryItemRow
                       key={item.id}
                       item={item}
@@ -1140,6 +1159,7 @@ export function InventoryPanel({
                         setItemDetailOpen(true);
                       }}
                     />
+                  )
                 ))}
               </CollapsibleContent>
             </Collapsible>
