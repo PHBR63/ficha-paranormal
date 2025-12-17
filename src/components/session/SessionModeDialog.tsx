@@ -409,9 +409,19 @@ export function SessionModeDialog({
   }, [character.inventory, onCharacterUpdate]);
 
   // Ritual handlers
-  const handleRitualCast = useCallback((ritual: Ritual, cost: number, enhancements: string[]) => {
+  const handleRitualCast = useCallback((
+    ritual: Ritual, 
+    cost: number, 
+    enhancements: string[],
+    options?: { duration?: 'cena' | 'rodadas' | 'sustentado'; turnsRemaining?: number }
+  ) => {
     const enhStr = enhancements.length > 0 ? ` [${enhancements.join(', ')}]` : '';
-    addEntry('ritual', `Ritual conjurado: ${ritual.name}${enhStr} (-${cost} PE)`, {
+    const durationStr = options?.duration === 'rodadas' && options.turnsRemaining 
+      ? ` (${options.turnsRemaining} rodadas)` 
+      : options?.duration === 'sustentado' 
+        ? ' (sustentado)' 
+        : '';
+    addEntry('ritual', `Ritual conjurado: ${ritual.name}${enhStr}${durationStr} (-${cost} PE)`, {
       ritualId: ritual.id,
       cost,
       enhancements,
@@ -431,11 +441,18 @@ export function SessionModeDialog({
         criticalBonus: effect.weaponEffect.criticalBonus,
         criticalMultiplierBonus: effect.weaponEffect.criticalMultiplierBonus,
         appliedAt: new Date().toISOString(),
-        duration: 'cena',
+        duration: options?.duration || 'cena',
+        turnsRemaining: options?.turnsRemaining,
         enhancements,
       };
       setWeaponBuffs(prev => [...prev, newBuff]);
-      addEntry('system', `Buff de arma aplicado: ${ritual.name}`);
+      
+      const durationMsg = options?.duration === 'rodadas' && options.turnsRemaining
+        ? ` por ${options.turnsRemaining} rodadas`
+        : options?.duration === 'sustentado'
+          ? ' (sustentado)'
+          : ' até fim da cena';
+      addEntry('system', `Buff de arma aplicado: ${ritual.name}${durationMsg}`);
     }
   }, [addEntry, character.pe]);
 
