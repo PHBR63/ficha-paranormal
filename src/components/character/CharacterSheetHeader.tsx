@@ -76,7 +76,7 @@ const PATENT_CONFIG: Record<string, {
 // Interface para breakdown de bônus de defesa
 interface DefenseBonusBreakdown {
   source: string;
-  type: 'origin' | 'ability' | 'general_power' | 'paranormal';
+  type: 'origin' | 'ability' | 'general_power' | 'paranormal' | 'ritual';
   bonus: number;
   conditional?: string;
   active: boolean;

@@ -6,14 +6,16 @@
  * - Habilidade de Classe: "Reflexos Defensivos" (+2 Defesa, +2 Resistências)
  * - Habilidade de Classe: "Tanque de Guerra" (+2 Defesa com proteção pesada)
  * - Poder Geral: "Esquiva" (+2 Defesa, não cumulativo com armadura média/pesada)
+ * - Rituais Ativos: Rituais sustentados com defenseModifier (Embaralhar, etc.)
  */
 
 import { useMemo } from 'react';
+import { getActiveRitualEffect } from '@/lib/ritual-effects';
 
 // Interface para breakdown de bônus de defesa
 export interface DefenseBonusBreakdown {
   source: string;        // Nome da fonte (ex: "Patrulha", "Reflexos Defensivos")
-  type: 'origin' | 'ability' | 'general_power' | 'paranormal';
+  type: 'origin' | 'ability' | 'general_power' | 'paranormal' | 'ritual';
   bonus: number;         // Valor do bônus
   conditional?: string;  // Condição se houver (ex: "com proteção pesada")
   active: boolean;       // Se o bônus está ativo
@@ -30,7 +32,7 @@ export interface ResistanceBonuses {
 // Interface para breakdown de bônus de resistência
 export interface ResistanceBonusBreakdown {
   source: string;
-  type: 'ability' | 'general_power' | 'paranormal';
+  type: 'ability' | 'general_power' | 'paranormal' | 'ritual';
   fortitude: number;
   reflexos: number;
   vontade: number;
@@ -57,6 +59,13 @@ interface InventoryItemWithArmor {
   armorType?: string;
 }
 
+// Interface para ritual ativo
+export interface ActiveRitualForDefense {
+  ritualId: string;
+  ritualName: string;
+  enhancements: string[];
+}
+
 // Props do hook
 interface UseDefenseBonusesProps {
   origin: string;                    // ID da origem do personagem
@@ -68,16 +77,18 @@ interface UseDefenseBonusesProps {
     category?: string;
   }>;
   inventory?: InventoryItemWithArmor[]; // Inventário para verificar armaduras equipadas
+  activeRituals?: ActiveRitualForDefense[]; // Rituais ativos com defenseModifier
 }
 
 /**
- * Hook que calcula bônus de defesa e resistências de origens, habilidades de classe e poderes gerais
+ * Hook que calcula bônus de defesa e resistências de origens, habilidades de classe, poderes gerais e rituais
  */
 export function useDefenseBonuses({
   origin,
   abilities,
   generalPowers = [],
   inventory = [],
+  activeRituals = [],
 }: UseDefenseBonusesProps): DefenseBonuses {
   return useMemo(() => {
     const breakdown: DefenseBonusBreakdown[] = [];
@@ -213,6 +224,19 @@ export function useDefenseBonuses({
       });
     }
     
+    // 7. RITUAIS ATIVOS: Processa rituais sustentados com defenseModifier
+    activeRituals.forEach(ritual => {
+      const effect = getActiveRitualEffect(ritual.ritualId, ritual.enhancements);
+      if (effect?.defenseModifier) {
+        breakdown.push({
+          source: ritual.ritualName,
+          type: 'ritual',
+          bonus: effect.defenseModifier,
+          active: true,
+        });
+      }
+    });
+    
     // Calcula o bônus total de defesa (apenas dos ativos)
     const totalBonus = breakdown
       .filter(b => b.active)
@@ -241,7 +265,7 @@ export function useDefenseBonuses({
         breakdown: resistanceBreakdown,
       }
     };
-  }, [origin, abilities, generalPowers, inventory]);
+  }, [origin, abilities, generalPowers, inventory, activeRituals]);
 }
 
 /**

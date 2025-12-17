@@ -85,6 +85,7 @@ import { RitualEffectWizard } from '@/components/character/RitualEffectWizard';
 import { RitualCastHistory, RitualCastRecord } from '@/components/character/RitualCastHistory';
 import { Ritual } from '@/lib/rituals-data';
 import { getActiveRitualEffect, ritualDealsDamage, RitualEffect } from '@/lib/ritual-effects';
+import { getSustainedRitualsForCharacter } from '@/lib/sustained-rituals';
 
 // Componentes existentes que ainda usamos
 import { CharacterSheetHelp } from '@/components/character/CharacterSheetHelp';
@@ -288,6 +289,18 @@ export default function CharacterSheet() {
 
   // Hook CONSOLIDADO de todos os bônus do personagem (inclui defenseBonuses e paranormalEffects)
   // OTIMIZAÇÃO: Evita chamadas duplicadas de hooks
+  
+  // Obtém rituais sustentados do personagem para cálculo de defesa
+  const sustainedRituals = character?.id ? getSustainedRitualsForCharacter(character.id) : [];
+  const activeRitualsForDefense = useMemo(() => 
+    sustainedRituals.map(r => ({
+      ritualId: r.ritualId,
+      ritualName: r.ritualName,
+      enhancements: r.selectedEnhancements,
+    })),
+    [sustainedRituals]
+  );
+  
   const bonusSummary = useCharacterBonusSummary({
     origin: character?.origin || '',
     abilities: character?.abilities || [],
@@ -298,6 +311,7 @@ export default function CharacterSheet() {
     elementalAffinity: character?.elemental_affinity,
     affinityActive: character?.affinity_active,
     activeConditionalBonuses: character?.active_conditional_bonuses || [],
+    activeRituals: activeRitualsForDefense,
   });
 
   // Extrai hooks internos do bonusSummary para evitar chamadas duplicadas
