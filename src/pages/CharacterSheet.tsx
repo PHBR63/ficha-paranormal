@@ -91,6 +91,7 @@ import { CharacterSheetHelp } from '@/components/character/CharacterSheetHelp';
 import { MobileCharacterSheet } from '@/components/character/MobileCharacterSheet';
 import { DiceRollModal } from '@/components/dice/DiceRollModal';
 import { DiceRollHistoryDrawer, DiceRollHistoryCompact } from '@/components/dice/DiceRollHistory';
+import { SessionModeDialog } from '@/components/session/SessionModeDialog';
 
 // Interface estendida para itens do inventário com todos os campos persistidos
 interface InventoryItemPersisted {
@@ -248,6 +249,7 @@ export default function CharacterSheet() {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [restModalOpen, setRestModalOpen] = useState(false);
   const [paranormalPowerModalOpen, setParanormalPowerModalOpen] = useState(false);
+  const [sessionModeOpen, setSessionModeOpen] = useState(false);
   
   // Modal de rituais para não-ocultistas
   const [nonOccultistRitualModalOpen, setNonOccultistRitualModalOpen] = useState(false);
@@ -2202,6 +2204,38 @@ export default function CharacterSheet() {
           setWizardPeCost(0);
         }}
       />
+
+      {/* Modo Sessão Presencial */}
+      {character && (
+        <SessionModeDialog
+          open={sessionModeOpen}
+          onOpenChange={setSessionModeOpen}
+          character={{
+            id: character.id,
+            name: character.name,
+            nex: character.nex,
+            hp: hpCurrent,
+            hpMax: hpMax,
+            pe: peCurrent,
+            peMax: peMax,
+            san: sanCurrent,
+            sanMax: sanMax,
+            defense: character.defense,
+            vigor: character.vigor,
+            agility: character.agility,
+            presence: character.presence,
+            skills: character.skills as Record<string, { trained: boolean; bonus: number }>,
+            inventory: inventoryItems,
+            conditions: activeConditions,
+          }}
+          onCharacterUpdate={(updates) => {
+            if (updates.hp !== undefined) setHpCurrent(updates.hp);
+            if (updates.pe !== undefined) setPeCurrent(updates.pe);
+            if (updates.san !== undefined) setSanCurrent(updates.san);
+            if (updates.conditions) setActiveConditions(updates.conditions);
+          }}
+        />
+      )}
     </div>
   );
 }
