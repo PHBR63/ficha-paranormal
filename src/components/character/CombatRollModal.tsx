@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { rollSkillTest, rollDamage, DiceRollResult } from '@/lib/dice-roller';
+import { getSkillBonus } from '@/lib/character-data';
 import { useRitualBonusesForCombat, useRitualCombatBonuses, SustainedRitualInput } from '@/hooks/useRitualCombatBonuses';
 import {
   Tooltip,
@@ -184,10 +185,8 @@ export function CombatRollModal({
       ? 'pontaria' 
       : 'luta';
     const skillValue = skills[skillName] || 0;
-    // Converter grau de treinamento em bônus real:
-    // 0 = Destreinado (0), 1 = Treinado (+5), 2 = Veterano (+10), 3 = Expert (+15)
-    const TRAINING_BONUS_MAP = [0, 5, 10, 15];
-    const bonus = TRAINING_BONUS_MAP[skillValue] ?? 0;
+    // Usar função centralizada para converter grau em bônus
+    const bonus = getSkillBonus(skillValue);
     return { 
       name: skillName === 'pontaria' ? 'Pontaria' : 'Luta', 
       bonus,

@@ -6,6 +6,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Sword, Target, Crosshair, Hand, Zap, AlertTriangle, CheckCircle2, XCircle, Sparkles, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { rollSkillTest } from '@/lib/dice-roller';
+import { getSkillBonus } from '@/lib/character-data';
 import { getAttackModifierFromConditions } from '@/lib/conditions';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { WeaponBuff } from '@/hooks/useWeaponBuffs';
@@ -281,7 +282,9 @@ export const SessionAttackPanel: React.FC<SessionAttackPanelProps> = ({
     const typeConfig = WEAPON_TYPE_SKILLS[weapon.type] || WEAPON_TYPE_SKILLS['Corpo a Corpo'];
     const attrValue = attributes[typeConfig.attribute] || 0;
     const skillData = skills[typeConfig.skill];
-    const skillBonus = skillData?.trained ? (skillData.bonus || 0) : 0;
+    // O campo bonus contém o grau de treinamento (0-3), converter para bônus real
+    const trainingLevel = skillData?.trained ? (skillData.bonus || 1) : 0;
+    const skillBonus = getSkillBonus(trainingLevel);
     
     // Include buff attack bonus
     return attrValue + skillBonus + conditionModifier + buffBonuses.attackBonus;
