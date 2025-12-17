@@ -8,33 +8,7 @@
 import { CharacterFormData } from '@/pages/CharacterCreate';
 import { PatentSelector } from './PatentSelector';
 import { RuleBookTip } from './RuleBookTip';
-
-// Conteúdo educativo sobre patentes
-const patentRulebookContent = {
-  main: {
-    title: 'Patente e Pontos de Prestígio',
-    content: `A patente representa sua posição hierárquica na Ordo Realitas e é determinada pelos **Pontos de Prestígio (PP)** acumulados em missões.
-
-### Patentes disponíveis:
-
-| Patente | PP Necessários | Descrição |
-|---------|----------------|-----------|
-| **Recruta** | 0 PP | Agente novato sem experiência comprovada |
-| **Operador** | 20 PP | Experiência em algumas missões |
-| **Agente Especial** | 50 PP | Veterano comprovado |
-| **Oficial de Operações** | 100 PP | Líder experiente |
-| **Agente de Elite** | 200 PP | Elite da Ordem |
-
-### A patente determina:
-
-- **Limite de Crédito** para requisição de equipamentos
-- **Categorias de itens** disponíveis (I a IV)
-- **Quantidade máxima** de itens por categoria
-
-> ⚠️ **Importante:** A patente é independente do NEX. Um agente pode ter NEX alto mas patente baixa (recém-transferido de outra divisão) ou NEX baixo com patente alta (veterano administrativo).`,
-    source: 'Ordem Paranormal RPG - Cap. 2: Patentes',
-  },
-};
+import { getRulebookContent } from '@/lib/rulebook-content';
 
 interface StepPatentProps {
   formData: CharacterFormData;
@@ -42,6 +16,9 @@ interface StepPatentProps {
 }
 
 export function StepPatent({ formData, updateFormData }: StepPatentProps) {
+  // Obtém conteúdo educativo centralizado
+  const rulebookContent = getRulebookContent('patent');
+
   // Handler para mudança de patente
   const handlePatentChange = (patent: string) => {
     updateFormData({ patent });
@@ -61,7 +38,9 @@ export function StepPatent({ formData, updateFormData }: StepPatentProps) {
       </div>
 
       {/* Painel educativo */}
-      <RuleBookTip section={patentRulebookContent} defaultExpanded={false} />
+      {rulebookContent && (
+        <RuleBookTip section={rulebookContent} defaultExpanded={false} />
+      )}
 
       {/* Seletor de Patente */}
       <PatentSelector
