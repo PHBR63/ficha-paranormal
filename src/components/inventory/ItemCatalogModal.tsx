@@ -1,12 +1,7 @@
 /**
  * ItemCatalogModal - Modal para selecionar itens gerais do catálogo
  * 
- * Funcionalidades:
- * - Lista todos os itens gerais do catálogo
- * - Filtro por tipo e categoria
- * - Busca por nome
- * - Exibe detalhes completos do item
- * - Adiciona ao inventário
+ * Layout com cards expansíveis similar ao ArmorCatalogModal
  */
 
 import { useState, useMemo } from 'react';
@@ -21,12 +16,19 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import {
   Tooltip,
   TooltipContent,
+  TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import {
   Search,
   Plus,
@@ -38,8 +40,13 @@ import {
   Bomb,
   Wrench,
   Eye,
+  Target,
   Zap,
   Recycle,
+  ChevronDown,
+  ChevronUp,
+  Info,
+  X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -48,9 +55,12 @@ import {
   EXPLOSIVES,
   OPERATIONAL_ITEMS,
   PARANORMAL_ITEMS,
+  AMMUNITION,
   type CatalogItem,
   type ItemType,
   ITEM_TYPE_LABELS,
+  ELEMENT_COLORS,
+  type ParanormalElement,
 } from '@/lib/items-catalog';
 import type { PatentLimits } from '@/lib/inventory-system';
 
@@ -79,7 +89,167 @@ const TYPE_ICONS: Record<ItemType, React.ElementType> = {
   explosivo: Bomb,
   operacional: Wrench,
   paranormal: Eye,
+  municao: Target,
 };
+
+// Card expansível de item (igual ao ArmorCard)
+function ItemCard({
+  item,
+  onSelect,
+  canAdd,
+  reason,
+}: {
+  item: CatalogItem;
+  onSelect: () => void;
+  canAdd: boolean;
+  reason?: string;
+}) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const TypeIcon = TYPE_ICONS[item.type];
+
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      className={cn(
+        "border rounded-lg p-3 transition-all",
+        canAdd
+          ? "border-border hover:border-primary/50 bg-card"
+          : "border-destructive/30 bg-destructive/5 opacity-60"
+      )}
+    >
+      <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
+        {/* Cabeçalho do card */}
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h4 className="font-semibold text-foreground truncate">{item.name}</h4>
+              <Badge variant="outline" className={cn("text-xs shrink-0", CATEGORY_COLORS[item.category])}>
+                Cat. {item.category === '0' ? '-' : item.category}
+              </Badge>
+              <Badge variant="secondary" className="text-xs shrink-0">
+                {ITEM_TYPE_LABELS[item.type].label}
+              </Badge>
+            </div>
+
+            {/* Stats principais */}
+            <div className="flex items-center gap-3 mt-2 text-sm flex-wrap">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="flex items-center gap-1 text-muted-foreground">
+                      <Package className="w-3.5 h-3.5" />
+                      {item.spaces === '*' ? 'Especial' : `${item.spaces} espaço(s)`}
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{item.spaces === '*' ? 'Não ocupa espaço ou regra especial' : `Ocupa ${item.spaces} espaço(s) no inventário`}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+
+              {item.consumable && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="flex items-center gap-1 text-amber-400">
+                        <Recycle className="w-3.5 h-3.5" />
+                        Consumível
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Item é gasto ao usar</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+
+              {item.uses && (
+                <span className="flex items-center gap-1 text-muted-foreground">
+                  {item.uses} uso(s)
+                </span>
+              )}
+
+              {item.element && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className={cn("flex items-center gap-1 font-medium", ELEMENT_COLORS[item.element])}>
+                        {item.element}
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Elemento paranormal: {item.element}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+            </div>
+          </div>
+
+          {/* Botões de ação */}
+          <div className="flex items-center gap-1 shrink-0">
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                {isExpanded ? (
+                  <ChevronUp className="w-4 h-4" />
+                ) : (
+                  <ChevronDown className="w-4 h-4" />
+                )}
+              </Button>
+            </CollapsibleTrigger>
+
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span>
+                    <Button
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={onSelect}
+                      disabled={!canAdd}
+                    >
+                      {canAdd ? (
+                        <Plus className="w-4 h-4" />
+                      ) : (
+                        <Lock className="w-4 h-4" />
+                      )}
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{canAdd ? 'Adicionar ao inventário' : reason}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+        </div>
+
+        {/* Detalhes expandidos */}
+        <CollapsibleContent>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="mt-3 pt-3 border-t border-border space-y-2"
+          >
+            <p className="text-sm text-muted-foreground whitespace-pre-wrap break-words">
+              {item.description}
+            </p>
+
+            {item.effect && (
+              <div className="flex items-start gap-2 p-2 rounded bg-primary/10 text-sm">
+                <Zap className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                <span className="text-foreground whitespace-pre-wrap break-words">{item.effect}</span>
+              </div>
+            )}
+          </motion.div>
+        </CollapsibleContent>
+      </Collapsible>
+    </motion.div>
+  );
+}
 
 export function ItemCatalogModal({
   open,
@@ -89,381 +259,175 @@ export function ItemCatalogModal({
   categoryCounts,
   onAddItem,
 }: ItemCatalogModalProps) {
-  // Estado para busca
-  const [searchQuery, setSearchQuery] = useState('');
-  // Estado para item selecionado (detalhes)
-  const [selectedItem, setSelectedItem] = useState<CatalogItem | null>(null);
-  // Estado para tab ativa
+  const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<ItemType>('acessorio');
 
   // Verifica se pode adicionar item de uma categoria
-  const canAddCategory = (category: '0' | 'I' | 'II' | 'III' | 'IV'): boolean => {
-    if (category === '0') return true;
-    return categoryCounts[category] < patentLimits[category];
+  const canAddCategory = (category: '0' | 'I' | 'II' | 'III' | 'IV'): { allowed: boolean; reason?: string } => {
+    if (category === '0') return { allowed: true };
+    
+    const limit = patentLimits[category];
+    const current = categoryCounts[category];
+
+    if (limit === 0) {
+      return { allowed: false, reason: `Categoria ${category} não disponível para ${patent}` };
+    }
+
+    if (current >= limit) {
+      return { allowed: false, reason: `Limite de itens Cat. ${category} atingido (${current}/${limit})` };
+    }
+
+    return { allowed: true };
   };
 
-  // Verifica se categoria está bloqueada (limite 0)
-  const isCategoryLocked = (category: '0' | 'I' | 'II' | 'III' | 'IV'): boolean => {
-    if (category === '0') return false;
-    return patentLimits[category] === 0;
-  };
-
-  // Filtra itens pela busca
-  const filterItems = (items: CatalogItem[]): CatalogItem[] => {
-    if (!searchQuery) return items;
-    const query = searchQuery.toLowerCase();
+  // Filtra itens baseado na busca
+  const filterItems = (items: CatalogItem[]) => {
+    if (!searchTerm) return items;
+    const term = searchTerm.toLowerCase();
     return items.filter(item =>
-      item.name.toLowerCase().includes(query) ||
-      item.description.toLowerCase().includes(query) ||
-      item.effect?.toLowerCase().includes(query)
+      item.name.toLowerCase().includes(term) ||
+      item.description.toLowerCase().includes(term) ||
+      (item.effect && item.effect.toLowerCase().includes(term))
     );
   };
 
-  // Itens filtrados por tab
-  const itemsByTab = useMemo(() => ({
+  // Itens filtrados por tipo
+  const filteredItems = useMemo(() => ({
     acessorio: filterItems(ACCESSORIES),
     explosivo: filterItems(EXPLOSIVES),
     operacional: filterItems(OPERATIONAL_ITEMS),
     paranormal: filterItems(PARANORMAL_ITEMS),
-  }), [searchQuery]);
+    municao: filterItems(AMMUNITION),
+  }), [searchTerm]);
 
-  // Handler para adicionar item
-  const handleAddItem = (item: CatalogItem) => {
-    onAddItem(item);
-    setSelectedItem(null);
-  };
+  // Status das categorias para indicadores visuais
+  const categoryStatus = useMemo(() => {
+    return (['I', 'II', 'III', 'IV'] as const).map(cat => {
+      const limit = patentLimits[cat];
+      const current = categoryCounts[cat];
+      return {
+        category: cat,
+        limit,
+        current,
+        isLocked: limit === 0,
+        isFull: current >= limit && limit > 0
+      };
+    });
+  }, [patentLimits, categoryCounts]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      {/* 
-        Mobile: fullscreen com padding seguro
-        Desktop: max-w-2xl centralizado
-      */}
-      <DialogContent className="w-full max-w-[100vw] sm:max-w-2xl max-h-[90vh] sm:max-h-[85vh] flex flex-col p-3 sm:p-6 gap-3 sm:gap-4">
+      <DialogContent className="w-[95vw] max-w-2xl h-[90vh] max-h-[90vh] flex flex-col p-4 sm:p-6">
         <DialogHeader className="flex-shrink-0">
-          <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
-            <Package className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-            <span className="truncate">Catálogo de Itens Gerais</span>
-            <Badge variant="outline" className="ml-auto text-xs">
-              {patent}
-            </Badge>
+          <DialogTitle className="flex items-center gap-2">
+            <Package className="w-5 h-5 text-primary" />
+            Catálogo de Itens Gerais
           </DialogTitle>
+          <DialogDescription className="text-sm">
+            Selecione itens para adicionar ao inventário
+          </DialogDescription>
         </DialogHeader>
 
-        {/* Barra de busca - touch friendly */}
-        <div className="relative flex-shrink-0">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-          <Input
-            placeholder="Buscar item..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 h-11 sm:h-10 text-base sm:text-sm"
-          />
-        </div>
-
-        {/* Slots disponíveis - scroll horizontal em mobile */}
-        <div className="flex gap-2 overflow-x-auto pb-1 -mx-3 px-3 sm:mx-0 sm:px-0 sm:flex-wrap flex-shrink-0 scrollbar-hide">
-          {(['I', 'II', 'III', 'IV'] as const).map(cat => {
-            const count = categoryCounts[cat];
-            const limit = patentLimits[cat];
-            const isLocked = limit === 0;
-            const isFull = count >= limit && !isLocked;
-
-            return (
-              <Tooltip key={cat}>
+        {/* Indicadores de categoria */}
+        <div className="flex items-center gap-2 flex-wrap pb-2 border-b border-border flex-shrink-0">
+          {categoryStatus.map(({ category, limit, current, isLocked, isFull }) => (
+            <TooltipProvider key={category}>
+              <Tooltip>
                 <TooltipTrigger asChild>
-                  <Badge
-                    variant="outline"
-                    className={cn(
-                      "text-xs whitespace-nowrap flex-shrink-0 h-7 sm:h-6 px-2 cursor-default",
-                      isLocked && "opacity-50",
-                      isFull && "border-destructive text-destructive",
-                      !isLocked && !isFull && CATEGORY_COLORS[cat]
-                    )}
-                  >
+                  <div className={cn(
+                    "flex items-center gap-1 px-2 py-1 rounded text-xs font-medium",
+                    isLocked && "bg-muted text-muted-foreground",
+                    isFull && !isLocked && "bg-destructive/20 text-destructive",
+                    !isLocked && !isFull && "bg-primary/20 text-primary"
+                  )}>
                     {isLocked ? (
-                      <Lock className="w-3 h-3 mr-1" />
+                      <Lock className="w-3 h-3" />
                     ) : isFull ? (
-                      <XCircle className="w-3 h-3 mr-1" />
+                      <XCircle className="w-3 h-3" />
                     ) : (
-                      <CheckCircle2 className="w-3 h-3 mr-1" />
+                      <CheckCircle2 className="w-3 h-3" />
                     )}
-                    Cat. {cat}: {count}/{limit}
-                  </Badge>
+                    <span>Cat. {category}: {current}/{limit}</span>
+                  </div>
                 </TooltipTrigger>
                 <TooltipContent>
-                  {isLocked 
-                    ? 'Categoria bloqueada para sua patente'
-                    : isFull 
-                      ? 'Limite atingido'
-                      : `${limit - count} slot(s) disponível(is)`
+                  {isLocked
+                    ? `Categoria ${category} bloqueada para ${patent}`
+                    : isFull
+                    ? `Limite atingido para Categoria ${category}`
+                    : `${limit - current} slots disponíveis na Categoria ${category}`
                   }
                 </TooltipContent>
               </Tooltip>
-            );
-          })}
+            </TooltipProvider>
+          ))}
         </div>
 
-        {/* Tabs de categorias - scroll horizontal otimizado para mobile */}
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as ItemType)} className="flex-1 flex flex-col min-h-0">
-          <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0 flex-shrink-0 scrollbar-hide">
-            <TabsList className="w-max sm:w-full inline-flex sm:flex justify-start gap-1 p-1 h-auto">
-              {(Object.keys(ITEM_TYPE_LABELS) as ItemType[]).map(type => {
-                const Icon = TYPE_ICONS[type];
-                const count = itemsByTab[type].length;
-                return (
-                  <TabsTrigger 
-                    key={type} 
-                    value={type} 
-                    className="gap-1.5 text-xs px-3 py-2 sm:px-2 sm:py-1.5 whitespace-nowrap min-h-[44px] sm:min-h-0"
-                  >
-                    <Icon className="w-4 h-4 sm:w-3 sm:h-3" />
-                    <span className="hidden xs:inline sm:inline">{ITEM_TYPE_LABELS[type].label}</span>
-                    <Badge variant="secondary" className="text-[10px] px-1.5 ml-0.5">
-                      {count}
-                    </Badge>
-                  </TabsTrigger>
-                );
-              })}
-            </TabsList>
-          </div>
+        {/* Busca */}
+        <div className="relative flex-shrink-0">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar item..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+          {searchTerm && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+              onClick={() => setSearchTerm('')}
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          )}
+        </div>
 
-          {/* Lista de itens com scroll isolado (overscroll-contain evita conflitos) */}
-          <ScrollArea className="flex-1 -mx-3 px-3 sm:-mx-6 sm:px-6 mt-2 overscroll-contain">
+        {/* Tabs de tipo */}
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as ItemType)} className="flex-1 flex flex-col min-h-0">
+          <TabsList className="grid grid-cols-5 w-full flex-shrink-0">
+            {(Object.keys(ITEM_TYPE_LABELS) as ItemType[]).map(type => {
+              const Icon = TYPE_ICONS[type];
+              return (
+                <TabsTrigger key={type} value={type} className="text-xs sm:text-sm gap-1 px-1 sm:px-2">
+                  <Icon className="w-3.5 h-3.5 hidden sm:block" />
+                  <span className="truncate">{ITEM_TYPE_LABELS[type].label.replace('Itens ', '')}</span>
+                  <Badge variant="secondary" className="text-[10px] px-1 hidden md:inline-flex">
+                    {filteredItems[type].length}
+                  </Badge>
+                </TabsTrigger>
+              );
+            })}
+          </TabsList>
+
+          <ScrollArea className="flex-1 min-h-0 mt-4 -mx-4 sm:-mx-6 px-4 sm:px-6">
             {(Object.keys(ITEM_TYPE_LABELS) as ItemType[]).map(type => (
-              <TabsContent key={type} value={type} className="mt-0 focus-visible:outline-none">
-                <ItemList 
-                  items={itemsByTab[type]}
-                  canAddCategory={canAddCategory}
-                  isCategoryLocked={isCategoryLocked}
-                  onSelect={setSelectedItem}
-                  onAdd={handleAddItem}
-                />
+              <TabsContent key={type} value={type} className="mt-0 space-y-2">
+                <AnimatePresence mode="popLayout">
+                  {filteredItems[type].length > 0 ? (
+                    filteredItems[type].map(item => {
+                      const status = canAddCategory(item.category);
+                      return (
+                        <ItemCard
+                          key={item.id}
+                          item={item}
+                          onSelect={() => onAddItem(item)}
+                          canAdd={status.allowed}
+                          reason={status.reason}
+                        />
+                      );
+                    })
+                  ) : (
+                    <p className="text-center text-muted-foreground py-8">
+                      Nenhum item encontrado
+                    </p>
+                  )}
+                </AnimatePresence>
               </TabsContent>
             ))}
           </ScrollArea>
         </Tabs>
-
-        {/* Modal de detalhes do item */}
-        <ItemDetailModal
-          item={selectedItem}
-          onClose={() => setSelectedItem(null)}
-          canAdd={selectedItem ? canAddCategory(selectedItem.category) : false}
-          isLocked={selectedItem ? isCategoryLocked(selectedItem.category) : false}
-          onAdd={() => selectedItem && handleAddItem(selectedItem)}
-        />
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-// Componente de lista de itens
-interface ItemListProps {
-  items: CatalogItem[];
-  canAddCategory: (cat: '0' | 'I' | 'II' | 'III' | 'IV') => boolean;
-  isCategoryLocked: (cat: '0' | 'I' | 'II' | 'III' | 'IV') => boolean;
-  onSelect: (item: CatalogItem) => void;
-  onAdd: (item: CatalogItem) => void;
-}
-
-function ItemList({ items, canAddCategory, isCategoryLocked, onSelect, onAdd }: ItemListProps) {
-  if (items.length === 0) {
-    return (
-      <div className="text-center py-8 text-muted-foreground">
-        <Search className="w-10 h-10 mx-auto mb-2 opacity-30" />
-        <p>Nenhum item encontrado</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-2 pb-4">
-      <AnimatePresence mode="popLayout">
-        {items.map(item => {
-          const canAdd = canAddCategory(item.category);
-          const isLocked = isCategoryLocked(item.category);
-          const TypeIcon = TYPE_ICONS[item.type];
-
-          return (
-            <motion.div
-              key={item.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.15 }}
-              layout
-              className={cn(
-                "p-3 sm:p-3 rounded-lg border transition-colors cursor-pointer active:bg-muted/30",
-                isLocked && "opacity-40",
-                !canAdd && !isLocked && "opacity-60",
-                canAdd && "hover:border-primary/50 hover:bg-primary/5"
-              )}
-              onClick={() => onSelect(item)}
-            >
-              <div className="flex items-start gap-2 sm:gap-3">
-                {/* Ícone - touch target adequado */}
-                <div className={cn(
-                  "w-10 h-10 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center flex-shrink-0",
-                  CATEGORY_COLORS[item.category]
-                )}>
-                  <TypeIcon className="w-5 h-5" />
-                </div>
-
-                {/* Info - texto responsivo */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-                    <span className="font-medium text-sm sm:text-base leading-tight">{item.name}</span>
-                    <Badge variant="outline" className={cn("text-[10px] sm:text-xs px-1.5", CATEGORY_COLORS[item.category])}>
-                      Cat. {item.category === '0' ? '-' : item.category}
-                    </Badge>
-                    {item.consumable && (
-                      <Badge variant="secondary" className="text-[10px] sm:text-xs px-1.5 hidden xs:flex">
-                        <Recycle className="w-3 h-3 mr-0.5" />
-                        Consumível
-                      </Badge>
-                    )}
-                  </div>
-                  
-                  <p className="text-xs text-muted-foreground mt-0.5 sm:mt-1 line-clamp-2 sm:line-clamp-1">
-                    {item.description}
-                  </p>
-
-                  {item.effect && (
-                    <p className="text-xs text-primary/70 mt-0.5 sm:mt-1 truncate hidden sm:block">
-                      <Zap className="w-3 h-3 inline mr-1" />
-                      {item.effect}
-                    </p>
-                  )}
-                </div>
-
-                {/* Botão adicionar - touch friendly (min 44px) */}
-                <Button
-                  size="icon"
-                  variant={canAdd ? "default" : "outline"}
-                  disabled={isLocked || !canAdd}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onAdd(item);
-                  }}
-                  className="flex-shrink-0 w-10 h-10 sm:w-auto sm:h-auto sm:px-3 sm:py-2"
-                >
-                  {isLocked ? (
-                    <Lock className="w-4 h-4" />
-                  ) : canAdd ? (
-                    <>
-                      <Plus className="w-4 h-4 sm:mr-1" />
-                      <span className="hidden sm:inline">A</span>
-                    </>
-                  ) : (
-                    <XCircle className="w-4 h-4" />
-                  )}
-                </Button>
-              </div>
-            </motion.div>
-          );
-        })}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-// Modal de detalhes do item
-interface ItemDetailModalProps {
-  item: CatalogItem | null;
-  onClose: () => void;
-  canAdd: boolean;
-  isLocked: boolean;
-  onAdd: () => void;
-}
-
-function ItemDetailModal({ item, onClose, canAdd, isLocked, onAdd }: ItemDetailModalProps) {
-  if (!item) return null;
-
-  const TypeIcon = TYPE_ICONS[item.type];
-
-  return (
-    <Dialog open={!!item} onOpenChange={() => onClose()}>
-      <DialogContent className="w-full max-w-[95vw] sm:max-w-md max-h-[85vh] flex flex-col p-4 sm:p-6">
-        <DialogHeader className="flex-shrink-0">
-          <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
-            <div className={cn(
-              "w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0",
-              CATEGORY_COLORS[item.category]
-            )}>
-              <TypeIcon className="w-4 h-4" />
-            </div>
-            <span className="truncate">{item.name}</span>
-          </DialogTitle>
-        </DialogHeader>
-
-        <ScrollArea className="flex-1 -mx-4 px-4 sm:-mx-6 sm:px-6 overflow-y-auto">
-          <div className="space-y-3 sm:space-y-4 pb-2">
-            {/* Badges - scroll horizontal em mobile */}
-            <div className="flex flex-wrap gap-1.5 sm:gap-2">
-              <Badge variant="outline" className={cn("text-xs", CATEGORY_COLORS[item.category])}>
-                Cat. {item.category === '0' ? 'Livre' : item.category}
-              </Badge>
-              <Badge variant="outline" className="text-xs">
-                {ITEM_TYPE_LABELS[item.type].label}
-              </Badge>
-              <Badge variant="outline" className="text-xs">{item.spaces} espaço(s)</Badge>
-              {item.consumable && (
-                <Badge variant="secondary" className="text-xs">
-                  <Recycle className="w-3 h-3 mr-1" />
-                  Consumível
-                </Badge>
-              )}
-            </div>
-
-            {/* Descrição */}
-            <p className="text-sm text-muted-foreground whitespace-pre-wrap break-words">{item.description}</p>
-
-            {/* Efeito */}
-            {item.effect && (
-              <div className="p-2.5 sm:p-3 bg-primary/10 border border-primary/30 rounded-lg">
-                <div className="flex items-center gap-2 text-primary text-sm font-medium mb-1">
-                  <Zap className="w-4 h-4 flex-shrink-0" />
-                  Efeito
-                </div>
-                <p className="text-sm whitespace-pre-wrap break-words">{item.effect}</p>
-              </div>
-            )}
-
-            {/* Usos */}
-            {item.uses && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Recycle className="w-4 h-4 flex-shrink-0" />
-                {item.uses} uso(s)
-              </div>
-            )}
-          </div>
-        </ScrollArea>
-
-        {/* Botão de adicionar - touch friendly */}
-        <div className="flex-shrink-0 pt-2">
-          <Button
-            className="w-full h-12 sm:h-10 text-base sm:text-sm"
-            disabled={isLocked || !canAdd}
-            onClick={onAdd}
-          >
-            {isLocked ? (
-              <>
-                <Lock className="w-4 h-4 mr-2" />
-                Categoria Bloqueada
-              </>
-            ) : canAdd ? (
-              <>
-                <Plus className="w-4 h-4 mr-2" />
-                Adicionar ao Inventário
-              </>
-            ) : (
-              <>
-                <XCircle className="w-4 h-4 mr-2" />
-                Limite de Categoria Atingido
-              </>
-            )}
-          </Button>
-        </div>
       </DialogContent>
     </Dialog>
   );

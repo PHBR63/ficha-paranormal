@@ -15,7 +15,8 @@ export type ItemType =
   | 'acessorio'     // Kit de Perícia, Utensílio, Vestimenta
   | 'explosivo'     // Granadas e explosivos
   | 'operacional'   // Itens operacionais de campo
-  | 'paranormal';   // Itens paranormais ligados ao Outro Lado
+  | 'paranormal'    // Itens paranormais ligados ao Outro Lado
+  | 'municao';      // Munições para armas de fogo
 
 // Elementos paranormais
 export type ParanormalElement = 'Sangue' | 'Morte' | 'Conhecimento' | 'Energia' | 'Medo';
@@ -525,6 +526,75 @@ export const PARANORMAL_ITEMS: CatalogItem[] = [
   },
 ];
 
+// ==================== MUNIÇÕES ====================
+// Tabela 3.7: Armas e Munições - Munição (pg. 91)
+// "Armas de fogo usam munição. Este livro usa um sistema abstrato: 
+// em vez de contar cada bala, você compra pacotes de munição."
+
+export const AMMUNITION: CatalogItem[] = [
+  {
+    id: 'municao_curta',
+    name: 'Munição Curta',
+    type: 'municao',
+    category: '0',
+    spaces: 1,
+    description: 'Pacote de munição para pistolas, revólveres, submetralhadoras e outras armas de calibre pequeno. Cada pacote representa munição suficiente para uma cena de combate — você não precisa contar balas individualmente.',
+    effect: 'Suficiente para uma cena de combate. Armas: pistolas, revólveres, submetralhadoras.',
+    consumable: true,
+  },
+  {
+    id: 'municao_longa',
+    name: 'Munição Longa',
+    type: 'municao',
+    category: '0',
+    spaces: 1,
+    description: 'Pacote de munição para fuzis, carabinas, metralhadoras e outras armas de calibre médio/grande. Cada pacote representa munição suficiente para uma cena de combate.',
+    effect: 'Suficiente para uma cena de combate. Armas: fuzis, carabinas, metralhadoras.',
+    consumable: true,
+  },
+  {
+    id: 'cartuchos',
+    name: 'Cartuchos',
+    type: 'municao',
+    category: '0',
+    spaces: 1,
+    description: 'Pacote de cartuchos para espingardas. Cada pacote representa munição suficiente para uma cena de combate.',
+    effect: 'Suficiente para uma cena de combate. Armas: espingardas.',
+    consumable: true,
+  },
+  {
+    id: 'flechas',
+    name: 'Flechas/Virotes',
+    type: 'municao',
+    category: '0',
+    spaces: 1,
+    description: 'Pacote de flechas para arcos ou virotes para bestas. Cada pacote representa munição suficiente para uma cena de combate. Flechas e virotes podem ser recuperados após o combate (50% de chance de recuperar cada projétil usado).',
+    effect: 'Suficiente para uma cena de combate. Armas: arcos, bestas. 50% de chance de recuperação.',
+    consumable: true,
+  },
+  {
+    id: 'combustivel',
+    name: 'Combustível',
+    type: 'municao',
+    category: '0',
+    spaces: 1,
+    description: 'Galão de combustível para lança-chamas. Cada galão representa combustível suficiente para uma cena de combate.',
+    effect: 'Suficiente para uma cena de combate. Armas: lança-chamas.',
+    consumable: true,
+  },
+  {
+    id: 'foguete',
+    name: 'Foguete',
+    type: 'municao',
+    category: 'I',
+    spaces: 1,
+    description: 'Foguete individual para lança-foguetes (bazuca). Diferente de outras munições, cada foguete é contado individualmente devido ao seu tamanho e custo.',
+    effect: 'Um disparo. Armas: lança-foguetes/bazuca.',
+    uses: 1,
+    consumable: true,
+  },
+];
+
 // ==================== CATÁLOGO COMPLETO ====================
 
 export const ALL_ITEMS: CatalogItem[] = [
@@ -532,6 +602,7 @@ export const ALL_ITEMS: CatalogItem[] = [
   ...EXPLOSIVES,
   ...OPERATIONAL_ITEMS,
   ...PARANORMAL_ITEMS,
+  ...AMMUNITION,
 ];
 
 // Função para buscar item por ID
@@ -548,8 +619,9 @@ export function getItemsByType(type: ItemType): CatalogItem[] {
 export const ITEM_TYPE_LABELS: Record<ItemType, { label: string; icon: string }> = {
   acessorio: { label: 'Acessórios', icon: 'Briefcase' },
   explosivo: { label: 'Explosivos', icon: 'Bomb' },
-  operacional: { label: 'Itens Operacionais', icon: 'Wrench' },
-  paranormal: { label: 'Itens Paranormais', icon: 'Eye' },
+  operacional: { label: 'Operacionais', icon: 'Wrench' },
+  paranormal: { label: 'Paranormais', icon: 'Eye' },
+  municao: { label: 'Munições', icon: 'Target' },
 };
 
 // Função para obter nome do tipo
