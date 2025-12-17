@@ -14,6 +14,8 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { rollSkillTest, rollDamage, DiceRollResult } from '@/lib/dice-roller';
+import { useRitualBonusesForCombat, useRitualCombatBonuses } from '@/hooks/useRitualCombatBonuses';
+import type { SustainedRitual } from '@/lib/sustained-rituals';
 import {
   Tooltip,
   TooltipContent,
@@ -80,7 +82,7 @@ interface CombatRollModalProps {
   paranormalPowers: Array<{ id: string; name: string; element: string }>;
   hasAffinity: boolean;
   affinityElement?: string | null;
-  activeRituals?: string[];
+  sustainedRituals?: SustainedRitual[]; // Agora usa rituais sustentados
   nex: number;
   
   // Callback
@@ -139,10 +141,13 @@ export function CombatRollModal({
   paranormalPowers,
   hasAffinity,
   affinityElement,
-  activeRituals = [],
+  sustainedRituals = [],
   nex,
   onRollComplete,
 }: CombatRollModalProps) {
+  // Bônus de rituais sustentados processados automaticamente
+  const ritualBonuses = useRitualBonusesForCombat(sustainedRituals);
+  const ritualCombatSummary = useRitualCombatBonuses(sustainedRituals);
   // Estados do modal
   const [phase, setPhase] = useState<CombatPhase>('setup');
   const [selectedBonuses, setSelectedBonuses] = useState<string[]>([]);
@@ -270,35 +275,23 @@ export function CombatRollModal({
       });
     }
 
-    // === RITUAIS ATIVOS ===
-    
-    // Frenesi
-    if (activeRituals.includes('frenesi')) {
+    // === BÔNUS DE RITUAIS SUSTENTADOS (processados pelo hook) ===
+    // Os bônus de rituais como Frenesi, Velocidade, Forma Monstruosa, etc.
+    // são processados automaticamente pelo hook useRitualBonusesForCombat
+    ritualBonuses.forEach(ritual => {
       bonuses.push({
-        id: 'frenesi',
-        name: 'Frenesi (+4 ataque, +8 dano)',
-        source: 'ritual',
-        attackBonus: 4,
-        damageBonus: 8,
-        isPassive: true,
-        description: 'Bônus de ritual ativo',
+        id: ritual.id,
+        name: ritual.name,
+        source: ritual.source,
+        attackBonus: ritual.attackBonus,
+        damageBonus: ritual.damageBonus,
+        isPassive: ritual.isPassive,
+        description: ritual.description,
       });
-    }
-
-    // Velocidade (ritual de Energia)
-    if (activeRituals.includes('velocidade')) {
-      bonuses.push({
-        id: 'velocidade',
-        name: 'Velocidade (+2 ataque)',
-        source: 'ritual',
-        attackBonus: 2,
-        isPassive: true,
-        description: 'Bônus de ritual ativo',
-      });
-    }
+    });
 
     return bonuses;
-  }, [abilities, paranormalPowers, hasAffinity, affinityElement, weapon, attributes, activeRituals]);
+  }, [abilities, paranormalPowers, hasAffinity, affinityElement, weapon, attributes, ritualBonuses]);
 
   // Bônus passivos (sempre ativos)
   const passiveBonuses = useMemo(() => 

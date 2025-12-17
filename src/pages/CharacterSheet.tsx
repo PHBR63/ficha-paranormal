@@ -67,6 +67,7 @@ import { useBonusSync } from '@/hooks/useBonusSync';
 import { useCampaignRitualSync } from '@/hooks/useCampaignRitualSync';
 import { useWeaponBuffs } from '@/hooks/useWeaponBuffs';
 import { useAutoConditions, type ActiveCondition as AutoCondition } from '@/hooks/useAutoConditions';
+import { useRitualCombatBonuses } from '@/hooks/useRitualCombatBonuses';
 import { BonusSummaryCard } from '@/components/character/BonusSummaryCard';
 
 // Novos componentes do redesign 2.0 (estilo ficha de papel)
@@ -290,8 +291,12 @@ export default function CharacterSheet() {
   // Hook CONSOLIDADO de todos os bônus do personagem (inclui defenseBonuses e paranormalEffects)
   // OTIMIZAÇÃO: Evita chamadas duplicadas de hooks
   
-  // Obtém rituais sustentados do personagem para cálculo de defesa
+  // Obtém rituais sustentados do personagem para cálculo de defesa e combate
   const sustainedRituals = character?.id ? getSustainedRitualsForCharacter(character.id) : [];
+  
+  // Bônus de combate de rituais sustentados (ataque, dano, dados extras)
+  const ritualCombatSummary = useRitualCombatBonuses(sustainedRituals);
+  
   const activeRitualsForDefense = useMemo(() => 
     sustainedRituals.map(r => ({
       ritualId: r.ritualId,
@@ -1322,6 +1327,9 @@ export default function CharacterSheet() {
                 peBonus={paranormalEffects.peBonus}
                 defenseBonus={totalDefenseBonus}
                 defenseBonusBreakdown={memoizedDefenseBonusBreakdown}
+                ritualAttackBonus={ritualCombatSummary.totalAttackBonus}
+                ritualDamageBonus={ritualCombatSummary.totalDamageBonus}
+                ritualWeaponEffects={ritualCombatSummary.weaponEffects}
                 armorRD={armorStats.totalRD}
                 armorPenalty={armorStats.totalAgilityPenalty}
                 equippedArmors={armorStats.equippedArmors}
@@ -1618,6 +1626,7 @@ export default function CharacterSheet() {
                 })) || []}
                 hasAffinity={character.affinity_active || false}
                 affinityElement={character.elemental_affinity}
+                sustainedRituals={sustainedRituals}
                 nex={character.nex}
                 onRollComplete={handleRollComplete}
                 weaponBuffs={weaponBuffs}
