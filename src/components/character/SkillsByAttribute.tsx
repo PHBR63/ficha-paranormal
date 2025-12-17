@@ -3,7 +3,7 @@
  * Com d20 vermelho para rolar cada perícia
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, memo } from 'react';
 import { motion } from 'framer-motion';
 import { Filter } from 'lucide-react';
 import { ChevronDown, Search, X } from 'lucide-react';
@@ -68,7 +68,7 @@ function D20Icon({ className, style }: { className?: string; style?: React.CSSPr
   );
 }
 
-export function SkillsByAttribute({
+export const SkillsByAttribute = memo(function SkillsByAttribute({
   skills,
   attributes,
   onRoll,
@@ -291,4 +291,4 @@ export function SkillsByAttribute({
       </div>
     </div>
   );
-}
+});

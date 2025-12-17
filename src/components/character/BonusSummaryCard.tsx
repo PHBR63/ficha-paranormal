@@ -10,7 +10,7 @@
  * - Efeitos especiais
  */
 
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Shield, 
@@ -154,7 +154,7 @@ const BonusLine = ({
   );
 };
 
-export function BonusSummaryCard({ summary, className, compact = false }: BonusSummaryCardProps) {
+export const BonusSummaryCard = memo(function BonusSummaryCard({ summary, className, compact = false }: BonusSummaryCardProps) {
   const [isExpanded, setIsExpanded] = useState(!compact);
 
   // Verifica se há bônus para mostrar
@@ -415,4 +415,4 @@ export function BonusSummaryCard({ summary, className, compact = false }: BonusS
       </AnimatePresence>
     </motion.div>
   );
-}
+});
