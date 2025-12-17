@@ -1229,7 +1229,7 @@ export default function CharacterSheet() {
           /* Desktop: Layout de 2 colunas estilo ficha de papel */
           <div className="sheet-grid">
             {/* === COLUNA ESQUERDA === */}
-            <div className="space-y-4">
+            <div className="space-y-4 min-w-0">
             {/* Cabeçalho com avatar e stats principais */}
               <CharacterSheetHeader
                 name={character.name}
@@ -1554,7 +1554,7 @@ export default function CharacterSheet() {
             </div>
 
             {/* === COLUNA DIREITA === */}
-            <div className="space-y-4">
+            <div className="space-y-4 min-w-0">
               {/* Tabela de Combate */}
               <CombatWeaponsTable
                 weapons={equippedWeapons}
