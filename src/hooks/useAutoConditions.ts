@@ -13,13 +13,13 @@ import {
 import { toast } from 'sonner';
 
 /**
- * Interface para condição ativa (como salvo no banco)
+ * Interface para condição ativa (compatível com ConditionManager)
  */
 export interface ActiveCondition {
   id: string;
   name: string;
   turnsRemaining: number | null;
-  addedAt: string;
+  addedAt: string | Date; // Aceita string ISO ou Date
   dyingCounter?: number; // Para condição morrendo
 }
 
