@@ -599,41 +599,7 @@ export function CharacterSheetHeader({
         )}
       </AnimatePresence>
 
-      <div className="flex items-center justify-between pt-2 border-t border-border/50">
-        {/* Checkboxes de estado */}
-        <div className="flex items-center gap-6">
-          <label className="flex items-center gap-2 text-sm cursor-pointer hover:text-foreground transition-colors">
-            <Checkbox 
-              checked={conditions.lesaoGrave}
-              onCheckedChange={(checked) => setConditions(prev => ({ ...prev, lesaoGrave: !!checked }))}
-              className="w-5 h-5 border-2 data-[state=checked]:bg-orange-600 data-[state=checked]:border-orange-600"
-            />
-            <span className={cn(conditions.lesaoGrave ? 'text-orange-400 font-medium' : 'text-muted-foreground')}>
-              Lesão grave
-            </span>
-          </label>
-          <label className="flex items-center gap-2 text-sm cursor-pointer hover:text-foreground transition-colors">
-            <Checkbox 
-              checked={conditions.inconsciente}
-              onCheckedChange={(checked) => setConditions(prev => ({ ...prev, inconsciente: !!checked }))}
-              className="w-5 h-5 border-2 data-[state=checked]:bg-yellow-600 data-[state=checked]:border-yellow-600"
-            />
-            <span className={cn(conditions.inconsciente ? 'text-yellow-400 font-medium' : 'text-muted-foreground')}>
-              Inconsciente
-            </span>
-          </label>
-          <label className="flex items-center gap-2 text-sm cursor-pointer hover:text-foreground transition-colors">
-            <Checkbox 
-              checked={conditions.morrendo}
-              onCheckedChange={(checked) => setConditions(prev => ({ ...prev, morrendo: !!checked }))}
-              className="w-5 h-5 border-2 data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600"
-            />
-            <span className={cn(conditions.morrendo ? 'text-red-400 font-medium' : 'text-muted-foreground')}>
-              Morrendo
-            </span>
-          </label>
-        </div>
-
+      <div className="flex items-center justify-end pt-2 border-t border-border/50">
         {/* Stats secundários */}
         <div className="flex items-center gap-4 text-sm">
           {/* Defesa com tooltip de breakdown */}
