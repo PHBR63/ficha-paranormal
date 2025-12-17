@@ -61,8 +61,7 @@ import { NonOccultistRitualModal, RitualSource } from '@/components/character/No
 import { LearnedRitual } from '@/components/character/GeneralPowersPanel';
 import { calculateDerivedStats } from '@/lib/character-data';
 import { AffinitySelectorCard } from '@/components/character/AffinitySelectorCard';
-import { useParanormalEffects } from '@/hooks/useParanormalEffects';
-import { useDefenseBonuses } from '@/hooks/useDefenseBonuses';
+// Hook consolidado - expõe defenseBonuses e paranormalEffects internamente
 import { useCharacterBonusSummary } from '@/hooks/useCharacterBonusSummary';
 import { useBonusSync } from '@/hooks/useBonusSync';
 import { useCampaignRitualSync } from '@/hooks/useCampaignRitualSync';
@@ -287,18 +286,8 @@ export default function CharacterSheet() {
   // Histórico de rituais conjurados na sessão
   const [castHistory, setCastHistory] = useState<RitualCastRecord[]>([]);
 
-  // Hook de bônus de defesa e resistências (precisa estar antes dos handlers que o usam)
-  const defenseBonuses = useDefenseBonuses({
-    origin: character?.origin || '',
-    abilities: character?.abilities || [],
-    generalPowers: character?.general_powers || [],
-    inventory: character?.inventory || [],
-  });
-
-  // Hook de aplicação automática de condições (HP=0 → Inconsciente, SAN=0 → Enlouquecendo)
-  const { processResourceChange } = useAutoConditions();
-
-  // Hook de resumo de todos os bônus do personagem
+  // Hook CONSOLIDADO de todos os bônus do personagem (inclui defenseBonuses e paranormalEffects)
+  // OTIMIZAÇÃO: Evita chamadas duplicadas de hooks
   const bonusSummary = useCharacterBonusSummary({
     origin: character?.origin || '',
     abilities: character?.abilities || [],
@@ -310,6 +299,13 @@ export default function CharacterSheet() {
     affinityActive: character?.affinity_active,
     activeConditionalBonuses: character?.active_conditional_bonuses || [],
   });
+
+  // Extrai hooks internos do bonusSummary para evitar chamadas duplicadas
+  const defenseBonuses = bonusSummary.defenseBonuses;
+  const paranormalEffects = bonusSummary.paranormalEffects;
+
+  // Hook de aplicação automática de condições (HP=0 → Inconsciente, SAN=0 → Enlouquecendo)
+  const { processResourceChange } = useAutoConditions();
 
   // Handler para toggle de bônus condicionais
   const handleToggleConditionalBonus = useCallback(async (bonusId: string, active: boolean) => {
@@ -339,13 +335,6 @@ export default function CharacterSheet() {
     }
   }, [character]);
 
-  // Sincroniza bônus com a campanha (se estiver em uma)
-  useBonusSync({
-    characterId: id || '',
-    bonusSummary,
-    enabled: !!character,
-  });
-
   // Sincroniza conjurações de rituais com a campanha em tempo real
   const { 
     isInCampaign, 
@@ -354,6 +343,15 @@ export default function CharacterSheet() {
     characterId: id || '',
     userId: user?.id || '',
     enabled: !!character,
+  });
+
+  // OTIMIZAÇÃO: Sincroniza bônus com a campanha apenas se estiver em uma
+  // Movido para depois do useCampaignRitualSync para usar isInCampaign
+  useBonusSync({
+    characterId: id || '',
+    bonusSummary,
+    enabled: !!character,
+    isInCampaign, // Evita queries desnecessárias se não está em campanha
   });
 
   // Handler para salvar buffs de armas na nuvem
@@ -965,22 +963,8 @@ export default function CharacterSheet() {
     });
   };
 
-  // Calcula bônus de poderes paranormais (DEVE vir antes de qualquer return condicional)
-  const paranormalEffects = useParanormalEffects({
-    powers: character ? (character.paranormal_powers || []).map(p => {
-      const fullPower = PARANORMAL_POWERS.find(fp => fp.id === p.id);
-      return fullPower || {
-        id: p.id,
-        name: p.name,
-        element: p.element as ParanormalElement | 'generic',
-        description: p.description,
-        effect: { type: 'special' as const, description: p.description },
-      };
-    }) : [],
-    nex: character?.nex || 0,
-    elementalAffinity: (character?.elemental_affinity as ParanormalElement | null) || null,
-    affinityActive: character?.affinity_active || false,
-  });
+  // NOTA: paranormalEffects já é extraído do bonusSummary no início do componente
+  // Removida chamada duplicada de useParanormalEffects para otimização
 
   // Calcular proteção total de armaduras equipadas (DEVE vir antes de qualquer return condicional)
   const armorStats = useMemo(() => {
@@ -1026,6 +1010,63 @@ export default function CharacterSheet() {
   // Bônus total de defesa combinando todas as fontes (defenseBonuses já está definido acima)
   // Inclui: poderes paranormais + bônus de origem/habilidades + bônus de armadura + bônus de escudo
   const totalDefenseBonus = paranormalEffects.defenseBonus + defenseBonuses.totalBonus + armorStats.armorDefenseBonus + armorStats.shieldDefenseBonus;
+
+  // OTIMIZAÇÃO: Memoiza arrays que eram recriados inline a cada render
+  const memoizedDefenseBonusBreakdown = useMemo(() => [
+    // Bônus de armadura
+    ...(armorStats.armorDefenseBonus > 0 ? armorStats.equippedArmors.filter(a => a.defenseBonus > 0).map(armor => ({
+      source: armor.name,
+      type: 'origin' as const,
+      bonus: armor.defenseBonus,
+      active: true,
+    })) : []),
+    // Bônus de escudo
+    ...(armorStats.shieldDefenseBonus > 0 ? [{
+      source: 'Escudo',
+      type: 'origin' as const,
+      bonus: armorStats.shieldDefenseBonus,
+      active: true,
+    }] : []),
+    // Bônus paranormais
+    ...(paranormalEffects.defenseBonus > 0 ? [{
+      source: 'Poderes Paranormais',
+      type: 'paranormal' as const,
+      bonus: paranormalEffects.defenseBonus,
+      active: true,
+    }] : []),
+    ...defenseBonuses.breakdown,
+  ], [armorStats, paranormalEffects.defenseBonus, defenseBonuses.breakdown]);
+
+  // OTIMIZAÇÃO: Memoiza contagem de bônus ativos
+  const activeBonusCount = useMemo(() => (
+    (bonusSummary.defense.total > 0 ? 1 : 0) +
+    (bonusSummary.resistances.fortitude.total > 0 ? 1 : 0) +
+    (bonusSummary.resistances.reflexos.total > 0 ? 1 : 0) +
+    (bonusSummary.resistances.vontade.total > 0 ? 1 : 0) +
+    (bonusSummary.combat.attack.total > 0 ? 1 : 0) +
+    (bonusSummary.combat.initiative.total > 0 ? 1 : 0) +
+    (bonusSummary.combat.criticalMargin.total > 0 ? 1 : 0) +
+    (bonusSummary.damageReduction.physical.total > 0 ? 1 : 0) +
+    (bonusSummary.damageReduction.paranormal.total > 0 ? 1 : 0) +
+    Object.keys(bonusSummary.skills).length +
+    (bonusSummary.hpBonus > 0 ? 1 : 0) +
+    (bonusSummary.peBonus > 0 ? 1 : 0) +
+    bonusSummary.special.length
+  ), [bonusSummary]);
+
+  // OTIMIZAÇÃO: Memoiza lista de fontes de bônus ativas
+  const activeBonusSources = useMemo(() => [
+    ...(bonusSummary.defense.total > 0 ? [`Defesa +${bonusSummary.defense.total}`] : []),
+    ...(bonusSummary.resistances.fortitude.total > 0 ? [`Fortitude +${bonusSummary.resistances.fortitude.total}`] : []),
+    ...(bonusSummary.resistances.reflexos.total > 0 ? [`Reflexos +${bonusSummary.resistances.reflexos.total}`] : []),
+    ...(bonusSummary.resistances.vontade.total > 0 ? [`Vontade +${bonusSummary.resistances.vontade.total}`] : []),
+    ...(bonusSummary.combat.attack.total > 0 ? [`Ataque +${bonusSummary.combat.attack.total}`] : []),
+    ...(bonusSummary.combat.initiative.total > 0 ? [`Iniciativa +${bonusSummary.combat.initiative.total}`] : []),
+    ...(bonusSummary.hpBonus > 0 ? [`PV +${bonusSummary.hpBonus}`] : []),
+    ...(bonusSummary.peBonus > 0 ? [`PE +${bonusSummary.peBonus}`] : []),
+    ...Object.entries(bonusSummary.skills).map(([skill, data]) => `${skill} +${data.total}`),
+    ...bonusSummary.special.map(s => s.source),
+  ], [bonusSummary]);
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -1266,61 +1307,12 @@ export default function CharacterSheet() {
                 hpBonus={paranormalEffects.hpBonus}
                 peBonus={paranormalEffects.peBonus}
                 defenseBonus={totalDefenseBonus}
-                defenseBonusBreakdown={[
-                  // Adiciona bônus de armadura ao breakdown
-                  ...(armorStats.armorDefenseBonus > 0 ? armorStats.equippedArmors.filter(a => a.defenseBonus > 0).map(armor => ({
-                    source: armor.name,
-                    type: 'origin' as const,
-                    bonus: armor.defenseBonus,
-                    active: true,
-                  })) : []),
-                  // Adiciona bônus de escudo ao breakdown
-                  ...(armorStats.shieldDefenseBonus > 0 ? [{
-                    source: 'Escudo',
-                    type: 'origin' as const,
-                    bonus: armorStats.shieldDefenseBonus,
-                    active: true,
-                  }] : []),
-                  // Adiciona bônus paranormais ao breakdown
-                  ...(paranormalEffects.defenseBonus > 0 ? [{
-                    source: 'Poderes Paranormais',
-                    type: 'paranormal' as const,
-                    bonus: paranormalEffects.defenseBonus,
-                    active: true,
-                  }] : []),
-                  ...defenseBonuses.breakdown,
-                ]}
+                defenseBonusBreakdown={memoizedDefenseBonusBreakdown}
                 armorRD={armorStats.totalRD}
                 armorPenalty={armorStats.totalAgilityPenalty}
                 equippedArmors={armorStats.equippedArmors}
-                // Indicador de bônus ativos
-                activeBonusCount={
-                  (bonusSummary.defense.total > 0 ? 1 : 0) +
-                  (bonusSummary.resistances.fortitude.total > 0 ? 1 : 0) +
-                  (bonusSummary.resistances.reflexos.total > 0 ? 1 : 0) +
-                  (bonusSummary.resistances.vontade.total > 0 ? 1 : 0) +
-                  (bonusSummary.combat.attack.total > 0 ? 1 : 0) +
-                  (bonusSummary.combat.initiative.total > 0 ? 1 : 0) +
-                  (bonusSummary.combat.criticalMargin.total > 0 ? 1 : 0) +
-                  (bonusSummary.damageReduction.physical.total > 0 ? 1 : 0) +
-                  (bonusSummary.damageReduction.paranormal.total > 0 ? 1 : 0) +
-                  Object.keys(bonusSummary.skills).length +
-                  (bonusSummary.hpBonus > 0 ? 1 : 0) +
-                  (bonusSummary.peBonus > 0 ? 1 : 0) +
-                  bonusSummary.special.length
-                }
-                activeBonusSources={[
-                  ...(bonusSummary.defense.total > 0 ? [`Defesa +${bonusSummary.defense.total}`] : []),
-                  ...(bonusSummary.resistances.fortitude.total > 0 ? [`Fortitude +${bonusSummary.resistances.fortitude.total}`] : []),
-                  ...(bonusSummary.resistances.reflexos.total > 0 ? [`Reflexos +${bonusSummary.resistances.reflexos.total}`] : []),
-                  ...(bonusSummary.resistances.vontade.total > 0 ? [`Vontade +${bonusSummary.resistances.vontade.total}`] : []),
-                  ...(bonusSummary.combat.attack.total > 0 ? [`Ataque +${bonusSummary.combat.attack.total}`] : []),
-                  ...(bonusSummary.combat.initiative.total > 0 ? [`Iniciativa +${bonusSummary.combat.initiative.total}`] : []),
-                  ...(bonusSummary.hpBonus > 0 ? [`PV +${bonusSummary.hpBonus}`] : []),
-                  ...(bonusSummary.peBonus > 0 ? [`PE +${bonusSummary.peBonus}`] : []),
-                  ...Object.entries(bonusSummary.skills).map(([skill, data]) => `${skill} +${data.total}`),
-                  ...bonusSummary.special.map(s => s.source),
-                ]}
+                activeBonusCount={activeBonusCount}
+                activeBonusSources={activeBonusSources}
                 bonusSummary={bonusSummary}
                 elementalAffinity={character.elemental_affinity}
                 onStatsChange={handleCombatStatsChange}

@@ -1,8 +1,10 @@
 /**
  * AttributeGridNew - Grid de atributos estilo ficha de papel
  * Com d20 vermelho clicável para cada atributo
+ * OTIMIZAÇÃO: Componente memoizado para evitar re-renders desnecessários
  */
 
+import { memo } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
@@ -46,7 +48,7 @@ function D20Icon({ className }: { className?: string }) {
   );
 }
 
-export function AttributeGridNew({ 
+export const AttributeGridNew = memo(function AttributeGridNew({ 
   attributes, 
   onRoll, 
   className 
@@ -101,4 +103,4 @@ export function AttributeGridNew({
       </div>
     </div>
   );
-}
+});

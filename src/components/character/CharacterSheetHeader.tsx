@@ -1,9 +1,10 @@
 /**
  * CharacterSheetHeader - Cabeçalho compacto da ficha com avatar e stats principais
  * Layout estilo ficha de papel com barras de HP, PE, XP lado a lado
+ * OTIMIZAÇÃO: Componente memoizado para evitar re-renders desnecessários
  */
 
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, Heart, Zap, Star, Edit2, Check, X, Award, Crown, Gem, Sparkles, Droplet, Skull, BookOpen } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -123,7 +124,7 @@ interface ConditionStates {
   morrendo: boolean;
 }
 
-export function CharacterSheetHeader({
+export const CharacterSheetHeader = memo(function CharacterSheetHeader({
   name,
   photoUrl,
   characterClass,
@@ -740,4 +741,4 @@ export function CharacterSheetHeader({
       )}
     </div>
   );
-}
+});
