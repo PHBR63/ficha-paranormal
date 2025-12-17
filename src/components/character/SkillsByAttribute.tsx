@@ -1,6 +1,7 @@
 /**
  * SkillsByAttribute - Perícias organizadas por atributo base
  * Com d20 vermelho para rolar cada perícia
+ * @optimized React.memo para evitar re-renders desnecessários
  */
 
 import { useState, useMemo, memo } from 'react';
