@@ -1,10 +1,9 @@
 /**
  * SkillsByAttribute - Perícias organizadas por atributo base
  * Com d20 vermelho para rolar cada perícia
- * @optimized React.memo para evitar re-renders desnecessários
  */
 
-import { useState, useMemo, memo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Filter } from 'lucide-react';
 import { ChevronDown, Search, X } from 'lucide-react';
@@ -69,7 +68,7 @@ function D20Icon({ className, style }: { className?: string; style?: React.CSSPr
   );
 }
 
-export const SkillsByAttribute = memo(function SkillsByAttribute({
+function SkillsByAttributeComponent({
   skills,
   attributes,
   onRoll,
@@ -292,4 +291,6 @@ export const SkillsByAttribute = memo(function SkillsByAttribute({
       </div>
     </div>
   );
-});
+}
+
+export const SkillsByAttribute = React.memo(SkillsByAttributeComponent);

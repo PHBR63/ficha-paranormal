@@ -1,6 +1,5 @@
 /**
  * BonusSummaryCard - Componente que exibe resumo de todos os bônus ativos do personagem
- * @optimized React.memo para evitar re-renders desnecessários
  * 
  * Mostra de forma organizada:
  * - Bônus de defesa
@@ -11,7 +10,7 @@
  * - Efeitos especiais
  */
 
-import { useState, memo } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Shield, 
@@ -155,7 +154,7 @@ const BonusLine = ({
   );
 };
 
-export const BonusSummaryCard = memo(function BonusSummaryCard({ summary, className, compact = false }: BonusSummaryCardProps) {
+function BonusSummaryCardComponent({ summary, className, compact = false }: BonusSummaryCardProps) {
   const [isExpanded, setIsExpanded] = useState(!compact);
 
   // Verifica se há bônus para mostrar
@@ -416,4 +415,6 @@ export const BonusSummaryCard = memo(function BonusSummaryCard({ summary, classN
       </AnimatePresence>
     </motion.div>
   );
-});
+}
+
+export const BonusSummaryCard = React.memo(BonusSummaryCardComponent);
