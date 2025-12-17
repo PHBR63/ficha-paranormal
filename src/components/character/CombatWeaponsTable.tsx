@@ -22,6 +22,7 @@ import { DiceRollResult } from '@/lib/dice-roller';
 import { WeaponBuff } from '@/hooks/useWeaponBuffs';
 import { WeaponBuffIndicator, WeaponBuffsPanel } from './WeaponBuffIndicator';
 import { formatDamageFormula } from '@/lib/ritual-effects';
+import type { SustainedRitual } from '@/lib/sustained-rituals';
 
 // Interface para arma com dados completos
 export interface WeaponEntry {
@@ -66,7 +67,7 @@ interface CombatWeaponsTableProps {
   paranormalPowers?: Array<{ id: string; name: string; element: string }>;
   hasAffinity?: boolean;
   affinityElement?: string | null;
-  activeRituals?: string[];
+  sustainedRituals?: SustainedRitual[]; // Rituais sustentados ativos
   nex?: number;
   
   // Callback para histórico
@@ -108,7 +109,7 @@ export function CombatWeaponsTable({
   paranormalPowers,
   hasAffinity,
   affinityElement,
-  activeRituals,
+  sustainedRituals = [],
   nex,
   onRollComplete,
   onRollAttack, // Fallback antigo
@@ -321,7 +322,7 @@ export function CombatWeaponsTable({
           paranormalPowers={paranormalPowers || []}
           hasAffinity={hasAffinity || false}
           affinityElement={affinityElement}
-          activeRituals={activeRituals}
+          sustainedRituals={sustainedRituals}
           nex={nex || 5}
           onRollComplete={onRollComplete}
         />
