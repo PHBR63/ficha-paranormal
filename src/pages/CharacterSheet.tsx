@@ -25,6 +25,7 @@ import {
   Heart,
   FileText,
   Skull,
+  GraduationCap,
   MoreVertical,
   History,
   Dices,
@@ -1521,7 +1522,7 @@ export default function CharacterSheet() {
               {/* Perícias por Atributo (acordeão colapsado) */}
               <SheetAccordionSection
                 title="Perícias"
-                icon={BookOpen}
+                icon={GraduationCap}
                 count={Object.values(character.skills).filter(v => v > 0).length}
                 defaultOpen={false}
               >
