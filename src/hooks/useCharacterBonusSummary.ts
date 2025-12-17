@@ -11,14 +11,14 @@
  */
 
 import { useMemo } from 'react';
-import { useDefenseBonuses, DefenseBonusBreakdown, ResistanceBonusBreakdown } from './useDefenseBonuses';
+import { useDefenseBonuses, DefenseBonusBreakdown, ResistanceBonusBreakdown, ActiveRitualForDefense } from './useDefenseBonuses';
 import { useParanormalEffects, ParanormalEffects } from './useParanormalEffects';
 
 // Interface para breakdown genérico de bônus
 export interface BonusBreakdown {
   source: string;        // Nome da fonte
   value: number | string; // Valor do bônus (número ou dado)
-  type: 'origin' | 'ability' | 'general_power' | 'paranormal' | 'equipment';
+  type: 'origin' | 'ability' | 'general_power' | 'paranormal' | 'equipment' | 'ritual';
   conditional?: string;  // Condição se houver
   active: boolean;       // Se está ativo
   toggleable?: boolean;  // Se pode ser ativado/desativado manualmente
@@ -120,6 +120,7 @@ interface UseCharacterBonusSummaryProps {
   elementalAffinity?: string | null;
   affinityActive?: boolean;
   activeConditionalBonuses?: string[]; // IDs dos bônus condicionais ativos
+  activeRituals?: ActiveRitualForDefense[]; // Rituais ativos para cálculo de defesa
 }
 
 /**
@@ -135,9 +136,10 @@ export function useCharacterBonusSummary({
   elementalAffinity,
   affinityActive = false,
   activeConditionalBonuses = [],
+  activeRituals = [],
 }: UseCharacterBonusSummaryProps): BonusSummary {
   // Usa hooks existentes
-  const defenseBonuses = useDefenseBonuses({ origin, abilities, generalPowers, inventory });
+  const defenseBonuses = useDefenseBonuses({ origin, abilities, generalPowers, inventory, activeRituals });
   const paranormalEffects = useParanormalEffects({ 
     powers: paranormalPowers, 
     nex, 

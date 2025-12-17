@@ -1328,6 +1328,27 @@ export const RITUAL_EFFECTS: Record<string, RitualEffectsByLevel> = {
     },
   },
 
+  'embaralhar': {
+    base: {
+      kind: 'buff',
+      defenseModifier: 6,
+      sustain: {
+        concentration: false,
+        endTriggers: ['todas cópias destruídas'],
+      },
+      special: 'Cria 3 cópias ilusórias. +6 na Defesa. Se um ataque errar, uma cópia some e o bônus diminui em 2.',
+    },
+    discente: {
+      defenseModifier: 10,
+      special: '5 cópias ilusórias. +10 na Defesa.',
+    },
+    verdadeiro: {
+      defenseModifier: 16,
+      appliesConditions: [{ id: 'ofuscado', duration: 1 }],
+      special: '8 cópias. +16 na Defesa. Atacante fica ofuscado ao destruir cópia.',
+    },
+  },
+
   'velocidade': {
     base: {
       kind: 'buff',
