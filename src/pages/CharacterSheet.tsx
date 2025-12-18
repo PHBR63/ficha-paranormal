@@ -1846,8 +1846,31 @@ export default function CharacterSheet() {
               {/* Painel de Rituais Sustentados */}
               <SustainedRitualsPanel
                 rituals={sustainedRituals}
-                onDeactivate={deactivateRitual}
-                onClearAll={clearSustainedRituals}
+                onDeactivate={(id) => {
+                  const ritual = sustainedRituals.find(r => r.id === id);
+                  deactivateRitual(id);
+                  if (ritual) {
+                    const defenseBonus = ritual.effect?.defenseModifier;
+                    toast({
+                      title: 'Ritual Encerrado',
+                      description: defenseBonus 
+                        ? `${ritual.ritualName} desativado. Defesa reduzida em ${defenseBonus}.`
+                        : `${ritual.ritualName} foi encerrado.`,
+                    });
+                  }
+                }}
+                onClearAll={() => {
+                  const totalDefenseBonus = sustainedRituals.reduce(
+                    (sum, r) => sum + (r.effect?.defenseModifier || 0), 0
+                  );
+                  clearSustainedRituals();
+                  toast({
+                    title: 'Todos os Rituais Encerrados',
+                    description: totalDefenseBonus > 0 
+                      ? `${sustainedRituals.length} rituais desativados. Defesa reduzida em ${totalDefenseBonus}.`
+                      : `${sustainedRituals.length} rituais foram encerrados.`,
+                  });
+                }}
               />
 
               {/* Botão de Descanso */}
