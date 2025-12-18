@@ -98,9 +98,9 @@ export function useDefenseBonuses({
     const breakdown: DefenseBonusBreakdown[] = [];
     const resistanceBreakdown: ResistanceBonusBreakdown[] = [];
     
-    // Verifica armaduras equipadas
+    // Verifica armaduras equipadas (excluindo escudos)
     const equippedArmor = inventory.find(
-      item => item.isEquipped && item.itemType === 'armor'
+      item => item.isEquipped && item.itemType === 'armor' && item.armorType !== 'escudo'
     );
     
     // Normaliza o tipo de armadura para verificação
