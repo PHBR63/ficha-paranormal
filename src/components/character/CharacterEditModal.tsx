@@ -87,7 +87,7 @@ function FieldTooltip({ content }: { content: string }) {
     <TooltipProvider delayDuration={300}>
       <Tooltip>
         <TooltipTrigger asChild>
-          <HelpCircle className="w-3.5 h-3.5 text-muted-foreground/50 hover:text-muted-foreground cursor-help ml-1" />
+          <HelpCircle className="w-3.5 h-3.5 text-foreground/60 hover:text-foreground cursor-help ml-1" />
         </TooltipTrigger>
         <TooltipContent side="top" className="max-w-[250px] text-xs">
           <p>{content}</p>

@@ -1187,8 +1187,8 @@ export function InventoryPanel({
         })}
 
         {inventory.length === 0 && (
-          <div className="text-center py-8 text-muted-foreground">
-            <Boxes className="w-12 h-12 mx-auto mb-2 opacity-30" />
+          <div className="text-center py-8 text-foreground/70">
+            <Boxes className="w-12 h-12 mx-auto mb-2 text-foreground/40" />
             <p className="text-sm">Inventário vazio</p>
           </div>
         )}
@@ -1237,7 +1237,7 @@ function InventoryItemRow({ item, onRemove, onEquip, onUnequip, onUse, onModify,
                     "w-8 h-8 sm:w-6 sm:h-6 rounded-full flex items-center justify-center transition-colors flex-shrink-0 touch-manipulation",
                     item.isEquipped 
                       ? "text-primary hover:text-primary/70" 
-                      : "text-muted-foreground/50 hover:text-primary"
+                      : "text-foreground/60 hover:text-primary"
                   )}
                   onClick={(e) => { e.stopPropagation(); item.isEquipped ? onUnequip?.(item.id) : onEquip?.(item.id); }}
                 >

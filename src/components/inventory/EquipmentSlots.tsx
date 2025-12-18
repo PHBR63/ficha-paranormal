@@ -179,7 +179,7 @@ export function EquipmentSlots({
                         ? "bg-muted/10 border-muted/30 text-muted-foreground/60 cursor-not-allowed"
                         : item 
                           ? "bg-primary/20 border-primary/50 text-primary" 
-                          : "bg-muted/30 border-border/50 text-foreground/50"
+                          : "bg-muted/30 border-border/50 text-foreground/60"
                     )}
                     onClick={() => item && !isBlocked && !isShieldBlocked && onUnequip?.(item.id)}
                     disabled={isBlocked || isShieldBlocked}
@@ -246,7 +246,7 @@ export function EquipmentSlots({
                         ? "bg-muted/20 text-muted-foreground/60"
                         : item 
                           ? "bg-primary/20 text-primary" 
-                          : "bg-muted/30 text-foreground/50"
+                          : "bg-muted/30 text-foreground/60"
                     )}>
                       {(isBlocked || isShieldBlocked) ? (
                         <Lock className="w-5 h-5" />

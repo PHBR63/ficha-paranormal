@@ -785,7 +785,7 @@ export default function CampaignView() {
                             <span className="text-xs font-medium text-muted-foreground">
                               {msg.characters?.name || msg.profiles?.display_name || 'Anônimo'}
                             </span>
-                            <span className="text-xs text-muted-foreground/50">
+                            <span className="text-xs text-foreground/50">
                               {new Date(msg.created_at).toLocaleTimeString('pt-BR', { 
                                 hour: '2-digit', 
                                 minute: '2-digit' 

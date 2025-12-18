@@ -157,7 +157,7 @@ export function MobileInventoryCard({
             "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0",
             item.isEquipped 
               ? "bg-primary/20 text-primary" 
-              : "bg-muted/50 text-muted-foreground/50"
+              : "bg-muted/50 text-foreground/60"
           )}>
             {item.isEquipped ? (
               <CircleCheck className="w-5 h-5" />
@@ -248,7 +248,7 @@ export function MobileInventoryCard({
 
         {/* Dica de swipe (apenas se puder fazer swipe) */}
         {(canSwipeLeft || canSwipeRight) && (
-          <div className="flex justify-center mt-2 gap-4 text-[9px] text-muted-foreground/50">
+          <div className="flex justify-center mt-2 gap-4 text-[9px] text-foreground/60">
             {canSwipeLeft && (
               <span>← {item.isEquipped ? 'Desequipar' : 'Equipar'}</span>
             )}

@@ -216,11 +216,11 @@ export default function Dashboard() {
           {loading ? <div className="flex items-center justify-center py-16">
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div> : characters.length === 0 ? <div className="section-container text-center py-16">
-              <FileText className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
+              <FileText className="w-16 h-16 text-foreground/40 mx-auto mb-4" />
               <h3 className="font-display text-2xl text-foreground mb-2">
                 NENHUM DOSSIÊ ENCONTRADO
               </h3>
-              <p className="text-muted-foreground mb-6">
+              <p className="text-foreground/70 mb-6">
                 Crie seu primeiro agente para começar suas missões.
               </p>
               <Link to="/character/create">
