@@ -151,11 +151,17 @@ export function useRitualCombatBonuses(
       }
     }
     
-    // Consolida totais
-    const totalAttackBonus = bonuses.reduce((sum, b) => sum + (b.attackModifier || 0), 0);
-    const totalDamageBonus = bonuses.reduce((sum, b) => sum + (b.damageModifier || 0), 0);
-    const totalDefenseBonus = bonuses.reduce((sum, b) => sum + (b.defenseModifier || 0), 0);
-    const totalTempHP = bonuses.reduce((sum, b) => sum + (b.tempHP || 0), 0);
+    // Consolida totais - REGRA OFICIAL: Rituais NÃO acumulam entre si
+    // Usa apenas o MAIOR bônus de cada tipo
+    const attackModifiers = bonuses.map(b => b.attackModifier || 0);
+    const damageModifiers = bonuses.map(b => b.damageModifier || 0);
+    const defenseModifiers = bonuses.map(b => b.defenseModifier || 0);
+    const tempHPs = bonuses.map(b => b.tempHP || 0);
+    
+    const totalAttackBonus = attackModifiers.length > 0 ? Math.max(...attackModifiers) : 0;
+    const totalDamageBonus = damageModifiers.length > 0 ? Math.max(...damageModifiers) : 0;
+    const totalDefenseBonus = defenseModifiers.length > 0 ? Math.max(...defenseModifiers) : 0;
+    const totalTempHP = tempHPs.length > 0 ? Math.max(...tempHPs) : 0;
     
     // Coleta weaponEffects
     const weaponEffects = bonuses

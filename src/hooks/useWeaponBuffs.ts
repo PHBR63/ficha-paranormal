@@ -143,26 +143,41 @@ export function useWeaponBuffs(
   }, []);
 
   // Calcula totais agregados de todos os buffs ativos
+  // REGRA OFICIAL: Rituais NÃO acumulam entre si - usa o MAIOR
   const aggregatedBonuses = useMemo(() => {
     const { activeBuffs } = state;
     
-    let totalAttackBonus = 0;
-    let totalCriticalBonus = 0;
-    let totalCriticalMultiplierBonus = 0;
+    // Coleta todos os valores de cada tipo
+    const attackBonuses = activeBuffs.map(b => b.attackBonus || 0);
+    const criticalBonuses = activeBuffs.map(b => b.criticalBonus || 0);
+    const criticalMultiplierBonuses = activeBuffs.map(b => b.criticalMultiplierBonus || 0);
     const allBonusDamage: DamageFormula[] = [];
 
+    // Usa o MAIOR de cada tipo (rituais não acumulam)
+    const totalAttackBonus = attackBonuses.length > 0 ? Math.max(...attackBonuses) : 0;
+    const totalCriticalBonus = criticalBonuses.length > 0 ? Math.max(...criticalBonuses) : 0;
+    const totalCriticalMultiplierBonus = criticalMultiplierBonuses.length > 0 ? Math.max(...criticalMultiplierBonuses) : 0;
+    
+    // Dano extra: também usa apenas o maior dado
+    // Se tiver múltiplos buffs de dano, usa o de maior dice count * dice type
     activeBuffs.forEach(buff => {
-      if (buff.attackBonus) totalAttackBonus += buff.attackBonus;
-      if (buff.criticalBonus) totalCriticalBonus += buff.criticalBonus;
-      if (buff.criticalMultiplierBonus) totalCriticalMultiplierBonus += buff.criticalMultiplierBonus;
       if (buff.bonusDamage) allBonusDamage.push(buff.bonusDamage);
     });
+    
+    // Ordena por "potência" e pega apenas o maior
+    const sortedDamage = allBonusDamage.sort((a, b) => {
+      const powerA = (a.diceCount || 1) * (a.diceType || 0);
+      const powerB = (b.diceCount || 1) * (b.diceType || 0);
+      return powerB - powerA;
+    });
+    
+    const bestDamage = sortedDamage.length > 0 ? [sortedDamage[0]] : [];
 
     return {
       totalAttackBonus,
       totalCriticalBonus,
       totalCriticalMultiplierBonus,
-      allBonusDamage,
+      allBonusDamage: bestDamage,
     };
   }, [state.activeBuffs]);
 
