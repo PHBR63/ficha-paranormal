@@ -96,6 +96,7 @@ import type { CatalogArmor } from '@/lib/armor-catalog';
 import type { CatalogItem } from '@/lib/items-catalog';
 import { ProtectionWidget } from './ProtectionWidget';
 import { InventoryItemDetailModal } from './InventoryItemDetailModal';
+import { validateArmorItem } from '@/hooks/useArmorMigration';
 
 // Categorias de itens para organização visual
 export type ItemType = 'weapon' | 'armor' | 'consumable' | 'ritual' | 'valuable' | 'misc';
@@ -472,29 +473,33 @@ export function InventoryPanel({
   const handleAddArmorFromCatalog = (armor: CatalogArmor) => {
     if (!onInventoryChange) return;
 
-    const item: ExtendedInventoryItem = {
+    // Cria o item base com todos os campos obrigatórios
+    const baseItem = {
       id: crypto.randomUUID(),
       name: armor.name,
       category: armor.category,
       slots: armor.spaces,
       quantity: 1,
-      itemType: 'armor',
+      itemType: 'armor' as const,
       description: armor.description,
-      // Dados extras para o sistema de proteção
+      // Dados extras para o sistema de proteção - OBRIGATÓRIOS
       defenseBonus: armor.defenseBonus,
-      rd: armor.rd,
+      rd: armor.rd ?? 0, // Garante que rd nunca seja undefined
       agilityPenalty: armor.agilityPenalty,
       armorType: armor.type,
       special: armor.special,
-    } as ExtendedInventoryItem & { 
-      defenseBonus?: number;
-      rd?: number; 
+    };
+
+    // Valida e normaliza o item antes de adicionar
+    const validatedItem = validateArmorItem(baseItem) as unknown as ExtendedInventoryItem & { 
+      defenseBonus: number;
+      rd: number; 
       agilityPenalty?: number; 
       armorType?: string;
       special?: string;
     };
 
-    const result = addToInventory(inventory, item, patent);
+    const result = addToInventory(inventory, validatedItem, patent);
     
     if (result.success) {
       onInventoryChange(result.newInventory.map(i => ({
