@@ -661,7 +661,7 @@ export const CharacterSheetHeader = memo(function CharacterSheetHeader({
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className="flex items-center gap-1 cursor-help">
+                <div className="flex items-baseline gap-1 cursor-help whitespace-nowrap">
                   <span className="text-muted-foreground">DEF</span>
                   <AnimatePresence mode="wait">
                     <motion.span
@@ -950,7 +950,7 @@ export const CharacterSheetHeader = memo(function CharacterSheetHeader({
               </Tooltip>
             </TooltipProvider>
           )}
-          <div className="flex items-center gap-1">
+          <div className="flex items-baseline gap-1 whitespace-nowrap">
             <span className="text-muted-foreground">DESL</span>
             <span className="font-display text-lg">{movement}m</span>
           </div>
