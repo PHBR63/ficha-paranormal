@@ -275,7 +275,7 @@ export const CharacterSheetHeader = memo(function CharacterSheetHeader({
                 key={nex}
                 initial={{ scale: 1.2 }}
                 animate={{ scale: 1 }}
-                className="font-display text-2xl text-secondary"
+                className="font-display text-2xl font-bold text-primary drop-shadow-[0_0_8px_hsl(var(--primary)/0.5)]"
               >
                 {nex}%
               </motion.span>
