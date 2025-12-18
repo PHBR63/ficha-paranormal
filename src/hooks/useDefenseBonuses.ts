@@ -323,23 +323,48 @@ export function useDefenseBonuses({
       });
     }
     
-    // Calcula o bônus total de defesa (apenas dos ativos)
-    const totalBonus = breakdown
-      .filter(b => b.active)
-      .reduce((sum, b) => sum + b.bonus, 0);
+    // Calcula o bônus total de defesa aplicando regras de acúmulo
+    // Livro Base v1.3: Rituais não acumulam entre si (usa o maior)
+    const activeBreakdown = breakdown.filter(b => b.active);
     
-    // Calcula o bônus total de cada resistência
-    const totalFortitude = resistanceBreakdown
-      .filter(b => b.active)
-      .reduce((sum, b) => sum + b.fortitude, 0);
+    // Separa rituais dos outros bônus
+    const ritualBonuses = activeBreakdown.filter(b => b.type === 'ritual');
+    const otherBonuses = activeBreakdown.filter(b => b.type !== 'ritual');
     
-    const totalReflexos = resistanceBreakdown
-      .filter(b => b.active)
-      .reduce((sum, b) => sum + b.reflexos, 0);
+    // Rituais: apenas o maior se aplica
+    let ritualBonus = 0;
+    if (ritualBonuses.length > 0) {
+      ritualBonus = Math.max(...ritualBonuses.map(b => b.bonus));
+    }
     
-    const totalVontade = resistanceBreakdown
-      .filter(b => b.active)
-      .reduce((sum, b) => sum + b.vontade, 0);
+    // Outros bônus: acumulam normalmente (fontes diferentes)
+    const otherBonus = otherBonuses.reduce((sum, b) => sum + b.bonus, 0);
+    
+    const totalBonus = ritualBonus + otherBonus;
+    
+    // Calcula o bônus total de cada resistência (mesma lógica)
+    const activeResistanceBreakdown = resistanceBreakdown.filter(b => b.active);
+    
+    // Separa rituais de resistências
+    const ritualResistances = activeResistanceBreakdown.filter(b => b.type === 'ritual');
+    const otherResistances = activeResistanceBreakdown.filter(b => b.type !== 'ritual');
+    
+    // Rituais: maior de cada resistência
+    const ritualFortitude = ritualResistances.length > 0 
+      ? Math.max(...ritualResistances.map(b => b.fortitude)) : 0;
+    const ritualReflexos = ritualResistances.length > 0 
+      ? Math.max(...ritualResistances.map(b => b.reflexos)) : 0;
+    const ritualVontade = ritualResistances.length > 0 
+      ? Math.max(...ritualResistances.map(b => b.vontade)) : 0;
+    
+    // Outros: acumulam
+    const otherFortitude = otherResistances.reduce((sum, b) => sum + b.fortitude, 0);
+    const otherReflexos = otherResistances.reduce((sum, b) => sum + b.reflexos, 0);
+    const otherVontade = otherResistances.reduce((sum, b) => sum + b.vontade, 0);
+    
+    const totalFortitude = ritualFortitude + otherFortitude;
+    const totalReflexos = ritualReflexos + otherReflexos;
+    const totalVontade = ritualVontade + otherVontade;
     
     return { 
       totalBonus, 
