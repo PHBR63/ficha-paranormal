@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
-import { History, ArrowRight, User, Dices, BookOpen, FileText, Heart, Zap, Brain, Trash2 } from 'lucide-react';
+import { History, ArrowRight, User, Dices, BookOpen, FileText, Heart, Zap, Brain, Trash2, Sparkles } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -66,6 +66,16 @@ const changeTypeConfig: Record<string, {
     icon: User,
     color: 'text-muted-foreground',
     label: 'Foto'
+  },
+  transcender: {
+    icon: Sparkles,
+    color: 'text-paranormal',
+    label: 'Transcender'
+  },
+  ritual_cast: {
+    icon: BookOpen,
+    color: 'text-paranormal',
+    label: 'Ritual'
   }
 };
 
@@ -92,7 +102,9 @@ const fieldNameMap: Record<string, string> = {
   pe_current: 'PE Atual',
   pe_max: 'PE Máximo',
   san_current: 'SAN Atual',
-  san_max: 'SAN Máximo'
+  san_max: 'SAN Máximo',
+  paranormal_powers: 'Poder Paranormal',
+  elemental_affinity: 'Afinidade Elemental'
 };
 export function CharacterHistoryPanel({
   characterId,
