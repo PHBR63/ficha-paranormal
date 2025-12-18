@@ -7,15 +7,17 @@
  * - Habilidade de Classe: "Tanque de Guerra" (+2 Defesa com proteção pesada)
  * - Poder Geral: "Esquiva" (+2 Defesa, não cumulativo com armadura média/pesada)
  * - Rituais Ativos: Rituais sustentados com defenseModifier (Embaralhar, etc.)
+ * - Treinamento em Reflexos: +5 (Treinado), +10 (Veterano), +15 (Expert)
  */
 
 import { useMemo } from 'react';
 import { getActiveRitualEffect } from '@/lib/ritual-effects';
+import { getSkillBonus, getTrainingLabel } from '@/lib/character-data';
 
 // Interface para breakdown de bônus de defesa
 export interface DefenseBonusBreakdown {
   source: string;        // Nome da fonte (ex: "Patrulha", "Reflexos Defensivos")
-  type: 'origin' | 'ability' | 'general_power' | 'paranormal' | 'ritual';
+  type: 'origin' | 'ability' | 'general_power' | 'paranormal' | 'ritual' | 'skill_training';
   bonus: number;         // Valor do bônus
   conditional?: string;  // Condição se houver (ex: "com proteção pesada")
   active: boolean;       // Se o bônus está ativo
@@ -78,6 +80,7 @@ interface UseDefenseBonusesProps {
   }>;
   inventory?: InventoryItemWithArmor[]; // Inventário para verificar armaduras equipadas
   activeRituals?: ActiveRitualForDefense[]; // Rituais ativos com defenseModifier
+  skills?: Record<string, number>;   // Perícias com nível de treinamento (0-3)
 }
 
 /**
@@ -89,6 +92,7 @@ export function useDefenseBonuses({
   generalPowers = [],
   inventory = [],
   activeRituals = [],
+  skills = {},
 }: UseDefenseBonusesProps): DefenseBonuses {
   return useMemo(() => {
     const breakdown: DefenseBonusBreakdown[] = [];
@@ -237,6 +241,18 @@ export function useDefenseBonuses({
       }
     });
     
+    // 8. TREINAMENTO EM REFLEXOS: +5 (Treinado), +10 (Veterano), +15 (Expert)
+    const reflexosTraining = skills['reflexos'] || skills['Reflexos'] || 0;
+    if (reflexosTraining > 0) {
+      const trainingBonus = getSkillBonus(reflexosTraining);
+      breakdown.push({
+        source: `Reflexos (${getTrainingLabel(reflexosTraining)})`,
+        type: 'skill_training',
+        bonus: trainingBonus,
+        active: true,
+      });
+    }
+    
     // Calcula o bônus total de defesa (apenas dos ativos)
     const totalBonus = breakdown
       .filter(b => b.active)
@@ -265,7 +281,7 @@ export function useDefenseBonuses({
         breakdown: resistanceBreakdown,
       }
     };
-  }, [origin, abilities, generalPowers, inventory, activeRituals]);
+  }, [origin, abilities, generalPowers, inventory, activeRituals, skills]);
 }
 
 /**

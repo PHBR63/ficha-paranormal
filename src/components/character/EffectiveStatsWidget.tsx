@@ -41,11 +41,11 @@ interface InventoryItemWithArmor {
   armorType?: string;
 }
 
-// Interface para bônus externos de defesa (origem, habilidades, poderes, rituais)
+// Interface para bônus externos de defesa (origem, habilidades, poderes, rituais, treinamento)
 interface DefenseBonusBreakdownItem {
   source: string;
   value: number;
-  type?: 'origin' | 'ability' | 'power' | 'paranormal' | 'ritual';
+  type?: 'origin' | 'ability' | 'power' | 'paranormal' | 'ritual' | 'skill_training';
 }
 
 interface EffectiveStatsWidgetProps {
