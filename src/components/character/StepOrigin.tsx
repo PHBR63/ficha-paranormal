@@ -22,6 +22,9 @@ import {
   BookOpen,
   Check,
   X,
+  Droplet,
+  Skull,
+  Star,
 } from 'lucide-react';
 import { rollOrigin, getOriginSkills } from '@/lib/character-builder-engine';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -44,6 +47,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   PARANORMAL_POWERS, 
   getPowerById,
@@ -109,6 +113,14 @@ export function StepOrigin({ formData, updateFormData }: StepOriginProps) {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [previewOrigin, setPreviewOrigin] = useState<typeof ORIGINS[0] | null>(null);
   const [showOnlySupplement, setShowOnlySupplement] = useState(false);
+  const [paranormalElementFilter, setParanormalElementFilter] = useState<string>('all');
+
+  // Filtro de poderes paranormais por elemento
+  const filteredParanormalPowers = useMemo(() => {
+    const powers = getAvailablePowersForCultist();
+    if (paranormalElementFilter === 'all') return powers;
+    return powers.filter(p => p.element === paranormalElementFilter);
+  }, [paranormalElementFilter]);
 
   // Filtra origens por busca, categoria e suplemento
   const filteredOrigins = useMemo(() => {
@@ -679,8 +691,11 @@ export function StepOrigin({ formData, updateFormData }: StepOriginProps) {
         />
 
         {/* Paranormal Power Selection Modal (Cultista Arrependido) */}
-        <Dialog open={showParanormalModal} onOpenChange={setShowParanormalModal}>
-          <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
+        <Dialog open={showParanormalModal} onOpenChange={(open) => {
+          setShowParanormalModal(open);
+          if (!open) setParanormalElementFilter('all');
+        }}>
+          <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden flex flex-col">
             <DialogHeader>
               <DialogTitle className="font-display text-xl tracking-wider flex items-center gap-2">
                 <Sparkles className="w-5 h-5 text-paranormal" />
@@ -692,9 +707,36 @@ export function StepOrigin({ formData, updateFormData }: StepOriginProps) {
               </DialogDescription>
             </DialogHeader>
             
-            <ScrollArea className="flex-1 -mx-6 px-6">
+            {/* Filtros por elemento */}
+            <Tabs value={paranormalElementFilter} onValueChange={setParanormalElementFilter} className="w-full">
+              <TabsList className="grid grid-cols-6 w-full">
+                <TabsTrigger value="all">Todos</TabsTrigger>
+                <TabsTrigger value="sangue" className="flex items-center gap-1">
+                  <Droplet className="h-3 w-3" />
+                  <span className="hidden sm:inline">Sangue</span>
+                </TabsTrigger>
+                <TabsTrigger value="morte" className="flex items-center gap-1">
+                  <Skull className="h-3 w-3" />
+                  <span className="hidden sm:inline">Morte</span>
+                </TabsTrigger>
+                <TabsTrigger value="conhecimento" className="flex items-center gap-1">
+                  <BookOpen className="h-3 w-3" />
+                  <span className="hidden sm:inline">Conhecimento</span>
+                </TabsTrigger>
+                <TabsTrigger value="energia" className="flex items-center gap-1">
+                  <Zap className="h-3 w-3" />
+                  <span className="hidden sm:inline">Energia</span>
+                </TabsTrigger>
+                <TabsTrigger value="generic" className="flex items-center gap-1">
+                  <Star className="h-3 w-3" />
+                  <span className="hidden sm:inline">Genérico</span>
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+            
+            <ScrollArea className="flex-1 h-[50vh] -mx-6 px-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pb-4">
-                {getAvailablePowersForCultist().map(power => {
+                {filteredParanormalPowers.map(power => {
                   const isSelected = formData.originParanormalPower === power.id;
                   const elementColor = ELEMENT_COLORS[power.element];
                   const elementBg = ELEMENT_BG_COLORS[power.element];
