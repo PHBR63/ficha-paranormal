@@ -74,6 +74,8 @@ import { useSustainedRituals } from '@/hooks/useSustainedRituals';
 import { useEquipmentMigration } from '@/hooks/useEquipmentMigration';
 import { BonusSummaryCard } from '@/components/character/BonusSummaryCard';
 import { SustainedRitualsPanel } from '@/components/character/SustainedRitualsPanel';
+import { ConditionalBonusesPanel } from '@/components/character/ConditionalBonusesPanel';
+import { TrackCombatBonusesBar } from '@/components/character/TrackCombatBonusesBar';
 
 // Novos componentes do redesign 2.0 (estilo ficha de papel)
 import { CharacterSheetHeader } from '@/components/character/CharacterSheetHeader';
@@ -1575,6 +1577,14 @@ export default function CharacterSheet() {
               {/* Resumo de Todos os Bônus Ativos - após condições */}
               <BonusSummaryCard summary={bonusSummary} />
 
+              {/* Painel de Bônus Condicionais (Inquebrável, Disparo Letal, etc.) */}
+              {bonusSummary.conditionalBonuses.length > 0 && (
+                <ConditionalBonusesPanel
+                  conditionalBonuses={bonusSummary.conditionalBonuses}
+                  onToggleBonus={handleToggleConditionalBonus}
+                />
+              )}
+
               {/* Rituais e Histórico (acordeão com abas) */}
               {character.rituals && character.rituals.length > 0 && (
                 <SheetAccordionSection
@@ -1784,6 +1794,14 @@ export default function CharacterSheet() {
 
             {/* === COLUNA DIREITA === */}
             <div className="space-y-4 min-w-0">
+              {/* Barra de bônus de trilha em combate */}
+              <TrackCombatBonusesBar
+                combat={bonusSummary.combat}
+                damageReduction={bonusSummary.damageReduction}
+                effectResistances={bonusSummary.effectResistances}
+                className="mb-2"
+              />
+
               {/* Tabela de Combate */}
               <CombatWeaponsTable
                 weapons={equippedWeapons}
