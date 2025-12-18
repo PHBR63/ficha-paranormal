@@ -283,7 +283,7 @@ export function NexProgressionModal({
   return (
     <>
       <Dialog open={open} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-2xl max-h-[90vh]">
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col">
           <DialogHeader>
             <DialogTitle className="font-display tracking-wider text-center flex items-center justify-center gap-2">
               <ArrowUp className="w-5 h-5 text-primary" />
@@ -294,7 +294,7 @@ export function NexProgressionModal({
             </DialogDescription>
           </DialogHeader>
 
-          <ScrollArea className="max-h-[60vh] pr-4">
+          <ScrollArea className="flex-1 min-h-0 pr-4">
             <div className="space-y-6 py-4">
               {/* Comparação de NEX */}
               <div className="flex items-center justify-center gap-6">

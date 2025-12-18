@@ -527,7 +527,7 @@ export function CharacterEditModal({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-3xl max-h-[90vh]">
+      <DialogContent className="sm:max-w-3xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="font-display tracking-wider text-center">
             EDITAR PERSONAGEM
@@ -554,7 +554,7 @@ export function CharacterEditModal({
             </TabsTrigger>
           </TabsList>
 
-          <ScrollArea className="h-[400px] mt-4 pr-4">
+          <ScrollArea className="flex-1 min-h-0 mt-4 pr-4">
             {/* INFO TAB */}
             <TabsContent value="info" className="space-y-4 mt-0">
               {/* Foto e nome */}

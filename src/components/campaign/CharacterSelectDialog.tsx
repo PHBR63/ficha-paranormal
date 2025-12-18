@@ -149,7 +149,7 @@ export function CharacterSelectDialog({
               </Link>
             </div>
           ) : (
-            <ScrollArea className="max-h-[400px]">
+            <ScrollArea className="flex-1 min-h-0 max-h-[60vh]">
               <div className="grid gap-3 pr-4">
                 {characters.map((char) => {
                   const isSelected = selectedId === char.id;
