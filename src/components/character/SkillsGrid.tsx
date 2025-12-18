@@ -179,7 +179,7 @@ function SkillRow({
     delay: index * 0.02
   }} className={cn('group flex items-center justify-between', 'p-3 rounded-lg cursor-pointer', 'transition-all duration-200', trained ? 'bg-secondary/50 border border-border hover:border-primary/50' : 'bg-muted/20 border border-transparent hover:bg-muted/40')} onClick={onClick}>
       <div className="flex items-center gap-2">
-        <span className={cn('text-sm', trained ? 'font-medium' : 'text-muted-foreground')}>
+        <span className={cn('text-sm', trained ? 'font-medium' : 'text-foreground/70')}>
           {name}
         </span>
         <span style={{
@@ -195,8 +195,8 @@ function SkillRow({
         <span 
           className={cn(
             'font-display text-lg font-bold',
-            trained ? 'drop-shadow-sm' : 'text-muted-foreground'
-          )} 
+            trained ? 'drop-shadow-sm' : 'text-foreground/60'
+          )}
           style={trained ? {
             color,
             textShadow: '0 1px 2px rgba(0,0,0,0.4)'

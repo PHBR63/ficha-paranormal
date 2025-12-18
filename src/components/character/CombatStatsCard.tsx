@@ -82,7 +82,7 @@ export function CombatStatsCard({
     <div className={cn("ordo-panel p-4 space-y-4", className)}>
       {/* Header com botão de edição */}
       <div className="flex items-center justify-between">
-        <span className="text-xs text-muted-foreground uppercase tracking-wider">
+        <span className="text-xs text-foreground/70 uppercase tracking-wider">
           RECURSOS
         </span>
         {editMode ? (
@@ -282,7 +282,7 @@ export function CombatStatsCard({
             >
               💀 COLAPSO TOTAL
             </motion.div>
-            <p className="text-[10px] text-muted-foreground mt-0.5">
+            <p className="text-[10px] text-foreground/60 mt-0.5">
               Inconsciente + Colapso Mental
             </p>
           </motion.div>
@@ -316,7 +316,7 @@ export function CombatStatsCard({
                 INCONSCIENTE
               </span>
             </motion.div>
-            <p className="text-[10px] text-muted-foreground mt-0.5">
+            <p className="text-[10px] text-foreground/60 mt-0.5">
               HP chegou a 0 - Caído em combate
             </p>
           </motion.div>
@@ -353,7 +353,7 @@ export function CombatStatsCard({
                 COLAPSO MENTAL
               </span>
             </motion.div>
-            <p className="text-[10px] text-muted-foreground mt-0.5">
+            <p className="text-[10px] text-foreground/60 mt-0.5">
               SAN chegou a 0 - Enlouquecido temporariamente
             </p>
           </motion.div>

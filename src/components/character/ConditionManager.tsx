@@ -373,7 +373,7 @@ export function ConditionManager({
                                 </div>
                               )}
                             </div>
-                            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                            <p className="text-xs text-foreground/70 mt-1 line-clamp-2">
                               {conditionData.effect}
                             </p>
                           </div>
