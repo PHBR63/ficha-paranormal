@@ -176,9 +176,9 @@ export function TurnTracker({
       {/* PE do Turno */}
       <div className="space-y-1.5">
         <div className="flex items-center justify-between text-xs">
-          <span className="flex items-center gap-1.5 text-energy">
+          <span className="flex items-center gap-1.5 text-pe">
             <Zap className="w-3.5 h-3.5" />
-            PE este turno
+            <span className="text-foreground/80">PE este turno</span>
           </span>
           <span className={cn(
             "font-mono",
@@ -309,7 +309,7 @@ export function TurnTracker({
 
       {/* Quick PE Spend */}
       <div className="space-y-1.5">
-        <span className="text-xs text-muted-foreground">Gastar PE:</span>
+        <span className="text-xs text-foreground/70">Gastar PE:</span>
         <div className="flex gap-1">
           {[1, 2, 3, 5].map(amount => (
             <Button

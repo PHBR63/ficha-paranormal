@@ -67,7 +67,7 @@ function HistoryEntry({ roll, index }: { roll: DiceRollResult; index: number }) 
                   ? roll.isCritical
                     ? 'bg-yellow-500/30 text-yellow-500'
                     : 'bg-primary/30 text-primary'
-                  : 'bg-muted text-muted-foreground'
+                  : 'bg-muted/50 text-foreground/60'
               )}
             >
               {die}

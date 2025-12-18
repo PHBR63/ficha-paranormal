@@ -359,8 +359,8 @@ export function ActiveBonusesPanel({
                     <span className="text-sm text-muted-foreground">Fortitude</span>
                     <span className="font-display text-success">+{bonusSummary.resistances.fortitude.total}</span>
                   </div>
-                  {bonusSummary.resistances.fortitude.breakdown.map((b, i) => (
-                    <div key={`fort-${i}`} className="text-xs text-muted-foreground pl-4">
+              {bonusSummary.resistances.fortitude.breakdown.map((b, i) => (
+                    <div key={`fort-${i}`} className="text-xs text-foreground/60 pl-4">
                       • {b.source}: +{b.fortitude}
                     </div>
                   ))}
@@ -374,8 +374,8 @@ export function ActiveBonusesPanel({
                     <span className="text-sm text-muted-foreground">Reflexos</span>
                     <span className="font-display text-success">+{bonusSummary.resistances.reflexos.total}</span>
                   </div>
-                  {bonusSummary.resistances.reflexos.breakdown.map((b, i) => (
-                    <div key={`ref-${i}`} className="text-xs text-muted-foreground pl-4">
+              {bonusSummary.resistances.reflexos.breakdown.map((b, i) => (
+                    <div key={`ref-${i}`} className="text-xs text-foreground/60 pl-4">
                       • {b.source}: +{b.reflexos}
                     </div>
                   ))}
@@ -389,8 +389,8 @@ export function ActiveBonusesPanel({
                     <span className="text-sm text-muted-foreground">Vontade</span>
                     <span className="font-display text-success">+{bonusSummary.resistances.vontade.total}</span>
                   </div>
-                  {bonusSummary.resistances.vontade.breakdown.map((b, i) => (
-                    <div key={`von-${i}`} className="text-xs text-muted-foreground pl-4">
+              {bonusSummary.resistances.vontade.breakdown.map((b, i) => (
+                    <div key={`von-${i}`} className="text-xs text-foreground/60 pl-4">
                       • {b.source}: +{b.vontade}
                     </div>
                   ))}

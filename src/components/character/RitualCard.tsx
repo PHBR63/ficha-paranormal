@@ -151,7 +151,7 @@ function RitualCardComponent({ ritual, isNonOccultist = false, onCast, peCurrent
               </div>
               
               {/* Info compacta */}
-              <div className="flex items-center gap-2 mt-1 text-[10px] text-muted-foreground">
+              <div className="flex items-center gap-2 mt-1 text-[11px] text-foreground/70">
                 <span className="flex items-center gap-1">
                   <Clock className="w-3 h-3" />
                   {ritual.execution}
@@ -280,7 +280,7 @@ function RitualCardComponent({ ritual, isNonOccultist = false, onCast, peCurrent
                 {/* Aprimoramentos */}
                 {ritual.enhancements && ritual.enhancements.length > 0 && (
                   <div className="space-y-2">
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
+                    <p className="text-[10px] uppercase tracking-wider text-foreground/70 font-medium">
                       Aprimoramentos
                     </p>
                     {ritual.enhancements.map((enh, i) => {

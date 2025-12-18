@@ -261,7 +261,7 @@ export const CharacterSheetHeader = memo(function CharacterSheetHeader({
             <h2 className="font-display text-2xl tracking-wider truncate text-primary">
               {name}
             </h2>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-foreground/70">
               {characterClass} • {origin}
             </p>
           </div>
@@ -270,7 +270,7 @@ export const CharacterSheetHeader = memo(function CharacterSheetHeader({
           <div className="flex items-center gap-4 flex-wrap">
             {/* NEX */}
             <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground uppercase">NEX</span>
+              <span className="text-xs text-foreground/60 uppercase">NEX</span>
               <motion.span 
                 key={nex}
                 initial={{ scale: 1.2 }}
@@ -387,7 +387,7 @@ export const CharacterSheetHeader = memo(function CharacterSheetHeader({
                           <span className="text-xs font-medium text-primary">
                             {activeBonusCount}
                           </span>
-                          <span className="text-[10px] text-muted-foreground">bônus</span>
+                          <span className="text-[10px] text-foreground/60">bônus</span>
                         </motion.div>
                       </motion.button>
                     </TooltipTrigger>

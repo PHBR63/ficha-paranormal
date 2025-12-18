@@ -52,7 +52,7 @@ export function NexSelector({ value, onChange }: NexSelectorProps) {
           step={1}
           className="w-full"
         />
-        <div className="flex justify-between mt-2 text-xs text-muted-foreground">
+        <div className="flex justify-between mt-2 text-xs text-foreground/60">
           <span>5%</span>
           <span>50%</span>
           <span>99%</span>
@@ -85,26 +85,26 @@ export function NexSelector({ value, onChange }: NexSelectorProps) {
 
       {/* Info Panel simplificado */}
       <div className="p-4 rounded-lg bg-muted/30 border border-border space-y-3">
-        <h4 className="font-display text-sm tracking-wider text-muted-foreground">
+        <h4 className="font-display text-sm tracking-wider text-foreground/70">
           SOBRE O NEX {value}%
         </h4>
         
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div>
-            <span className="text-muted-foreground">Nível de Treinamento:</span>
+            <span className="text-foreground/60">Nível de Treinamento:</span>
             <span className="ml-2 text-foreground font-medium">
               {value >= 70 ? 'Expert' : value >= 35 ? 'Veterano' : 'Treinado'}
             </span>
           </div>
           <div>
-            <span className="text-muted-foreground">Experiência:</span>
+            <span className="text-foreground/60">Experiência:</span>
             <span className="ml-2 text-foreground font-medium">
               {value === 5 ? 'Iniciante' : value <= 25 ? 'Novato' : value <= 50 ? 'Experiente' : value <= 75 ? 'Veterano' : 'Lendário'}
             </span>
           </div>
         </div>
         
-        <p className="text-xs text-muted-foreground italic">
+        <p className="text-xs text-foreground/60 italic">
           O NEX representa sua exposição ao paranormal e determina seus pontos de atributo, 
           perícias extras, habilidades de classe e acesso a rituais (para Ocultistas).
         </p>

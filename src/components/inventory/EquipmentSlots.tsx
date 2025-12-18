@@ -176,10 +176,10 @@ export function EquipmentSlots({
                     className={cn(
                       "w-8 h-8 rounded-lg border flex items-center justify-center transition-all",
                       (isBlocked || isShieldBlocked)
-                        ? "bg-muted/10 border-muted/30 text-muted-foreground/30 cursor-not-allowed"
+                        ? "bg-muted/10 border-muted/30 text-muted-foreground/60 cursor-not-allowed"
                         : item 
                           ? "bg-primary/20 border-primary/50 text-primary" 
-                          : "bg-muted/30 border-border/50 text-muted-foreground/50"
+                          : "bg-muted/30 border-border/50 text-foreground/50"
                     )}
                     onClick={() => item && !isBlocked && !isShieldBlocked && onUnequip?.(item.id)}
                     disabled={isBlocked || isShieldBlocked}
@@ -243,10 +243,10 @@ export function EquipmentSlots({
                     <div className={cn(
                       "w-10 h-10 rounded-lg flex items-center justify-center",
                       (isBlocked || isShieldBlocked)
-                        ? "bg-muted/20 text-muted-foreground/30"
+                        ? "bg-muted/20 text-muted-foreground/60"
                         : item 
                           ? "bg-primary/20 text-primary" 
-                          : "bg-muted/30 text-muted-foreground/50"
+                          : "bg-muted/30 text-foreground/50"
                     )}>
                       {(isBlocked || isShieldBlocked) ? (
                         <Lock className="w-5 h-5" />
@@ -263,7 +263,7 @@ export function EquipmentSlots({
                       ) : item ? (
                         <p className="font-medium text-sm truncate">{item.name}</p>
                       ) : (
-                        <p className="text-xs text-muted-foreground/50 italic">Vazio</p>
+                        <p className="text-xs text-muted-foreground italic">Vazio</p>
                       )}
                     </div>
                   </button>

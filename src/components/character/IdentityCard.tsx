@@ -70,7 +70,7 @@ export function IdentityCard({
         <div className="flex-1 min-w-0 space-y-1">
           {/* Classe */}
           <div>
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">CLASSE</p>
+            <p className="text-[10px] text-foreground/60 uppercase tracking-wider">CLASSE</p>
             <p className="font-display text-lg leading-tight">{characterClass}</p>
           </div>
 
@@ -84,7 +84,7 @@ export function IdentityCard({
 
           {/* Origem */}
           <div>
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">ORIGEM</p>
+            <p className="text-[10px] text-foreground/60 uppercase tracking-wider">ORIGEM</p>
             <p className="font-display text-sm leading-tight truncate">
               {originData?.name || origin}
             </p>
@@ -94,7 +94,7 @@ export function IdentityCard({
         {/* NEX e Patente */}
         <div className="text-right flex flex-col items-end justify-between">
           <div>
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">NEX</p>
+            <p className="text-[10px] text-foreground/60 uppercase tracking-wider">NEX</p>
             <motion.p 
               key={nex}
               initial={{ scale: 1.2 }}
