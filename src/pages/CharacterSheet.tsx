@@ -1014,7 +1014,6 @@ export default function CharacterSheet() {
     setCharacter(prev => prev ? { ...prev, rituals: updatedRituals } : null);
     setNonOccultistRitualModalOpen(false);
   };
-  };
 
   // Conta quantas vezes "Transcender" aparece nas habilidades
   const transcenderCount = useMemo(() => {

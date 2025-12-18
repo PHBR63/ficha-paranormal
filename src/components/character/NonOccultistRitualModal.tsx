@@ -75,7 +75,7 @@ const ELEMENT_CONFIG = {
 } as const;
 
 // Tipos de fonte de ritual
-export type RitualSource = 'ritual-aprendido' | 'grimorio-vivo';
+export type RitualSource = 'ritual-aprendido' | 'grimorio-vivo' | 'aprender-ritual-poder';
 
 interface NonOccultistRitualModalProps {
   open: boolean;

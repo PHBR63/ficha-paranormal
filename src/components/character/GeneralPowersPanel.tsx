@@ -72,8 +72,8 @@ const CATEGORY_COLORS: Record<GeneralPower['category'], string> = {
 // Estrutura para rituais aprendidos por poderes gerais
 export interface LearnedRitual {
   ritualId: string;
-  source: 'ritual-aprendido' | 'grimorio-vivo';
-  peMultiplier: number; // 2x para ritual-aprendido, 1x para grimório
+  source: 'ritual-aprendido' | 'grimorio-vivo' | 'aprender-ritual-poder';
+  peMultiplier: number; // 2x para ritual-aprendido e aprender-ritual-poder, 1x para grimório
 }
 
 interface GeneralPowersPanelProps {
