@@ -923,8 +923,8 @@ export default function CharacterSheet() {
     // Calcula a sanidade que seria ganha no NEX atual
     const currentNex = character.nex;
     const previousNex = Math.max(5, currentNex - 5);
-    const currentStats = calculateDerivedStats(character.class, character.vigor, character.presence, currentNex, character.origin);
-    const previousStats = calculateDerivedStats(character.class, character.vigor, character.presence, previousNex, character.origin);
+    const currentStats = calculateDerivedStats(character.class, character.vigor, character.presence, currentNex, character.origin, character.abilities as string[]);
+    const previousStats = calculateDerivedStats(character.class, character.vigor, character.presence, previousNex, character.origin, character.abilities as string[]);
     const sanLoss = currentStats.san - previousStats.san;
     
     // Nova sanidade máxima e atual (reduz pelo custo do Transcender)
@@ -1064,7 +1064,8 @@ export default function CharacterSheet() {
       data.vigor,
       data.presence,
       character.nex,
-      character.origin
+      character.origin,
+      character.abilities as string[]
     );
 
     // Registra alterações

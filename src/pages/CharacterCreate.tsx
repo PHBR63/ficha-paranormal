@@ -289,14 +289,15 @@ export default function CharacterCreate() {
       formData.attributes.vigor,
       formData.attributes.presence,
       formData.nex,
-      formData.origin
+      formData.origin,
+      formData.abilities
     );
     return {
       ...stats,
       defense,
       movement,
     };
-  }, [formData.characterClass, formData.attributes, formData.nex, formData.origin]);
+  }, [formData.characterClass, formData.attributes, formData.nex, formData.origin, formData.abilities]);
 
   // Calcula completed steps baseado no step ID ao invés de índice fixo
   const completedSteps = useMemo(() => {

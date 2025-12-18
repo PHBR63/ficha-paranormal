@@ -169,7 +169,8 @@ export function NexProgressionModal({
       character.vigor,
       character.presence,
       character.nex,
-      character.origin
+      character.origin,
+      character.abilities as string[]
     );
   }, [character]);
 
@@ -180,7 +181,8 @@ export function NexProgressionModal({
       character.vigor,
       character.presence,
       nextNex,
-      character.origin
+      character.origin,
+      character.abilities as string[]
     );
   }, [character, nextNex]);
 
