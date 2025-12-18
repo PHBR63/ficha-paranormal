@@ -108,7 +108,7 @@ export function InventoryItemDetailModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-full max-w-[95vw] sm:max-w-md max-h-[85vh] flex flex-col p-0 gap-0 overflow-hidden">
+      <DialogContent className="w-full max-w-[95vw] sm:max-w-md max-h-[85vh] flex flex-col p-0 gap-0 overflow-hidden [&>button]:top-3 [&>button]:right-3">
         {/* Header com gradiente */}
         <div className={cn(
           "p-4 sm:p-6",
@@ -147,8 +147,8 @@ export function InventoryItemDetailModal({
         </div>
 
         {/* Conteúdo scrollável */}
-        <ScrollArea className="flex-1 px-4 sm:px-6">
-          <div className="space-y-4 py-4">
+        <ScrollArea className="flex-1 min-h-0 overflow-auto">
+          <div className="px-4 sm:px-6 space-y-4 py-4">
             {/* Info básica */}
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
               <span className="flex items-center gap-1">
