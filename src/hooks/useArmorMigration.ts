@@ -134,10 +134,18 @@ export function useArmorMigration() {
   /**
    * Executa a migração e persiste no banco de dados
    */
+  /**
+   * Resultado da migração com contagem
+   */
+  interface MigrationResult {
+    inventory: ArmorInventoryItem[];
+    count: number;
+  }
+
   const runMigration = useCallback(async (
     characterId: string,
     inventory: ArmorInventoryItem[]
-  ): Promise<ArmorInventoryItem[] | null> => {
+  ): Promise<MigrationResult | null> => {
     // Evita executar migração múltiplas vezes
     if (migrationRanRef.current) {
       return null;
@@ -165,7 +173,7 @@ export function useArmorMigration() {
     migrationRanRef.current = true;
     console.log('[ArmorMigration] Migração concluída com sucesso');
     
-    return migratedInventory;
+    return { inventory: migratedInventory, count: migratedCount };
   }, [migrateInventory]);
 
   /**
