@@ -51,6 +51,8 @@ interface ParanormalPowersPanelProps {
   elementalAffinity?: ParanormalElement | null;
   affinityActive?: boolean;
   nex: number;
+  transcenderTotal?: number;
+  transcenderUsed?: number;
 }
 
 export function ParanormalPowersPanel({
@@ -58,7 +60,10 @@ export function ParanormalPowersPanel({
   elementalAffinity,
   affinityActive = false,
   nex,
+  transcenderTotal = 0,
+  transcenderUsed = 0,
 }: ParanormalPowersPanelProps) {
+  const transcenderRemaining = transcenderTotal - transcenderUsed;
   // Calcula bônus ativos dos poderes
   const powerModifiers = useMemo(() => {
     const powerIds = powers.map(p => p.id);
@@ -98,6 +103,44 @@ export function ParanormalPowersPanel({
 
   return (
     <div className="space-y-4">
+      {/* Contador de Transcender */}
+      {transcenderTotal > 0 && (
+        <div className={`
+          flex items-center justify-between p-3 rounded-lg border
+          ${transcenderRemaining > 0 
+            ? 'bg-paranormal/10 border-paranormal/30' 
+            : 'bg-muted/50 border-muted'
+          }
+        `}>
+          <div className="flex items-center gap-2">
+            <Sparkles className={`w-4 h-4 ${transcenderRemaining > 0 ? 'text-paranormal' : 'text-muted-foreground'}`} />
+            <span className="text-sm font-medium">Transcender</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="flex gap-1">
+              {Array.from({ length: transcenderTotal }).map((_, i) => (
+                <div
+                  key={i}
+                  className={`w-2 h-2 rounded-full ${
+                    i < transcenderUsed 
+                      ? 'bg-paranormal' 
+                      : 'bg-muted-foreground/30'
+                  }`}
+                />
+              ))}
+            </div>
+            <Badge 
+              variant={transcenderRemaining > 0 ? 'default' : 'secondary'}
+              className={transcenderRemaining > 0 ? 'bg-paranormal hover:bg-paranormal/90' : ''}
+            >
+              {transcenderRemaining > 0 
+                ? `${transcenderRemaining} disponível${transcenderRemaining > 1 ? 'is' : ''}` 
+                : 'Esgotado'
+              }
+            </Badge>
+          </div>
+        </div>
+      )}
       {/* Indicador de Afinidade Elemental */}
       {elementalAffinity && (
         <div className={`

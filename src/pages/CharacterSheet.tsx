@@ -1958,6 +1958,8 @@ export default function CharacterSheet() {
                         elementalAffinity={character.elemental_affinity as ParanormalElement | null}
                         affinityActive={character.affinity_active}
                         nex={character.nex}
+                        transcenderTotal={transcenderCount}
+                        transcenderUsed={transcenderUsed}
                       />
                     ) : hasTranscender ? (
                       <div className="text-center py-4 text-muted-foreground text-sm border border-dashed border-muted rounded-lg">
