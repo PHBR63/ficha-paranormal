@@ -871,7 +871,7 @@ export default function CharacterSheet() {
   // Handler para adicionar poder paranormal via Transcender
   // REGRA: Ao usar Transcender, o personagem perde a Sanidade que teria ganho no NEX atual
   const handleParanormalPowerSelect = async (power: ParanormalPower) => {
-    if (!character) return;
+    if (!character || !user) return;
 
     const currentPowers = character.paranormal_powers || [];
     const newPower = {
@@ -913,6 +913,24 @@ export default function CharacterSheet() {
       });
       return;
     }
+
+    // Registrar no histórico de alterações
+    await logCharacterChanges(character.id, user.id, [
+      {
+        changeType: 'transcender',
+        fieldName: 'paranormal_powers',
+        oldValue: String(currentPowers.length),
+        newValue: power.name,
+        description: `Adquiriu o poder "${power.name}" (${power.element}) via Transcender`,
+      },
+      ...(sanLoss > 0 ? [{
+        changeType: 'transcender',
+        fieldName: 'san_max',
+        oldValue: String(character.san_max),
+        newValue: String(newSanMax),
+        description: `Perdeu ${sanLoss} SAN máxima pelo Transcender`,
+      }] : []),
+    ]);
 
     setCharacter(prev => prev ? { 
       ...prev, 
