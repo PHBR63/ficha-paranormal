@@ -7,6 +7,7 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
+import { Particles } from '@/components/ui/particles';
 import { 
   ChevronRight,
   Shield,
@@ -36,6 +37,30 @@ const Index = () => {
       
       {/* Scan lines overlay */}
       <div className="absolute inset-0 scan-lines opacity-30 pointer-events-none" />
+      
+      {/* Blood particles - Magic UI */}
+      <Particles
+        className="absolute inset-0 z-[1]"
+        quantity={35}
+        color="#8B0000"
+        size={1.5}
+        vx={0}
+        vy={-0.2}
+        staticity={80}
+        ease={100}
+      />
+      
+      {/* Secondary layer - smaller, slower particles */}
+      <Particles
+        className="absolute inset-0 z-[0]"
+        quantity={20}
+        color="#B22222"
+        size={0.8}
+        vx={0}
+        vy={-0.1}
+        staticity={100}
+        ease={120}
+      />
       
       {/* Red vignette */}
       <div className="absolute inset-0 vignette-red pointer-events-none" />
