@@ -41,6 +41,13 @@ interface InventoryItemWithArmor {
   armorType?: string;
 }
 
+// Interface para bônus externos de defesa (origem, habilidades, poderes, rituais)
+interface DefenseBonusBreakdownItem {
+  source: string;
+  value: number;
+  type?: 'origin' | 'ability' | 'power' | 'paranormal' | 'ritual';
+}
+
 interface EffectiveStatsWidgetProps {
   baseDefense: number;
   baseMovement: number;
@@ -48,6 +55,9 @@ interface EffectiveStatsWidgetProps {
   inventory?: InventoryItemWithArmor[];
   className?: string;
   showContextualDefense?: boolean; // Mostrar defesa corpo a corpo vs distância
+  // Novos props para bônus externos calculados pelo CharacterSheet
+  defenseBonus?: number;           // Bônus total de origem/habilidades/poderes/rituais
+  defenseBonusBreakdown?: DefenseBonusBreakdownItem[]; // Breakdown auditável
 }
 
 /**
@@ -61,6 +71,8 @@ export function EffectiveStatsWidget({
   inventory = [],
   className,
   showContextualDefense = true,
+  defenseBonus = 0,
+  defenseBonusBreakdown = [],
 }: EffectiveStatsWidgetProps) {
   // Calcula proteção das armaduras equipadas
   const armorStats = useMemo(() => {
@@ -106,14 +118,14 @@ export function EffectiveStatsWidget({
     };
   }, [inventory]);
 
-  // Aplica bônus de armadura e escudo na defesa base
-  // Defesa = 10 + AGI + Bônus Armadura + Bônus Escudo
-  const defenseWithProtection = baseDefense + armorStats.armorDefenseBonus + armorStats.shieldDefenseBonus;
+  // Aplica TODOS os bônus na defesa:
+  // Defesa = Base (10+AGI) + Armadura + Escudo + Bônus Externos (origem/habilidades/poderes/rituais)
+  const defenseWithAllBonuses = baseDefense + armorStats.armorDefenseBonus + armorStats.shieldDefenseBonus + defenseBonus;
 
   // Calcula valores efetivos usando game-engine (aplicando condições)
-  const effectiveDefense = getEffectiveDefense(defenseWithProtection, conditions);
-  const effectiveDefenseMelee = getEffectiveDefense(defenseWithProtection, conditions, 'melee');
-  const effectiveDefenseRanged = getEffectiveDefense(defenseWithProtection, conditions, 'ranged');
+  const effectiveDefense = getEffectiveDefense(defenseWithAllBonuses, conditions);
+  const effectiveDefenseMelee = getEffectiveDefense(defenseWithAllBonuses, conditions, 'melee');
+  const effectiveDefenseRanged = getEffectiveDefense(defenseWithAllBonuses, conditions, 'ranged');
   
   const testModifier = getTestModifier(conditions);
   const attackModifier = getAttackModifierFromConditions(conditions);
@@ -143,20 +155,27 @@ export function EffectiveStatsWidget({
   effectiveMovement = Math.max(0, effectiveMovement);
 
   // Coleta detalhes dos modificadores para tooltip
-  const defenseBreakdown: { source: string; modifier: number }[] = [];
+  const defenseBreakdown: { source: string; modifier: number; type?: string }[] = [];
   const testBreakdown: { condition: string; modifier: number }[] = [];
 
   // Adiciona bônus de defesa das armaduras ao breakdown
   armorStats.equippedArmors.forEach(armor => {
     if (armor.defenseBonus !== 0) {
-      defenseBreakdown.push({ source: armor.name, modifier: armor.defenseBonus });
+      defenseBreakdown.push({ source: armor.name, modifier: armor.defenseBonus, type: 'armor' });
     }
   });
 
   // Adiciona bônus de defesa do escudo ao breakdown
   if (armorStats.equippedShield && armorStats.equippedShield.defenseBonus !== 0) {
-    defenseBreakdown.push({ source: armorStats.equippedShield.name, modifier: armorStats.equippedShield.defenseBonus });
+    defenseBreakdown.push({ source: armorStats.equippedShield.name, modifier: armorStats.equippedShield.defenseBonus, type: 'shield' });
   }
+
+  // Adiciona bônus externos (origem, habilidades, poderes, rituais) ao breakdown
+  defenseBonusBreakdown.forEach(item => {
+    if (item.value !== 0) {
+      defenseBreakdown.push({ source: item.source, modifier: item.value, type: item.type || 'external' });
+    }
+  });
 
   // Adiciona modificadores de condições
   for (const conditionId of conditions) {
@@ -165,14 +184,16 @@ export function EffectiveStatsWidget({
     if (!effect || !condition) continue;
 
     if (effect.defenseModifier !== 0) {
-      defenseBreakdown.push({ source: condition.name, modifier: effect.defenseModifier });
+      defenseBreakdown.push({ source: condition.name, modifier: effect.defenseModifier, type: 'condition' });
     }
     if (effect.testModifier !== 0) {
       testBreakdown.push({ condition: condition.name, modifier: effect.testModifier });
     }
   }
 
-  const hasDefenseChange = totalDefenseChange !== 0;
+  // Soma total de bônus positivos (sem condições negativas para hasDefenseChange)
+  const totalPositiveBonuses = armorStats.armorDefenseBonus + armorStats.shieldDefenseBonus + defenseBonus;
+  const hasDefenseChange = totalDefenseChange !== 0 || totalPositiveBonuses > 0;
   const hasMovementChange = effectiveMovement !== baseMovement;
   const hasTestPenalty = testModifier !== 0;
   const hasAttackPenalty = attackModifier !== 0;
@@ -281,20 +302,26 @@ export function EffectiveStatsWidget({
           <TooltipContent side="left" className="max-w-xs">
             <div className="space-y-1">
               <p className="font-medium text-sm">Cálculo de Defesa:</p>
-              <p className="text-muted-foreground text-xs">Base: {baseDefense}</p>
-              {defenseBreakdown.map((item, i) => (
-                <p
-                  key={i}
-                  className={cn(
-                    'text-xs',
-                    item.modifier < 0 ? 'text-destructive' : 'text-primary'
-                  )}
-                >
-                  {item.source}: {item.modifier > 0 ? '+' : ''}{item.modifier}
-                </p>
-              ))}
-              <p className="text-xs font-medium pt-1 border-t border-border/50">
-                Total: {effectiveDefense}
+              <p className="text-muted-foreground text-xs">Base (10 + AGI): {baseDefense}</p>
+              {defenseBreakdown.length > 0 && (
+                <div className="space-y-0.5 pt-1 border-t border-border/50">
+                  {defenseBreakdown.map((item, i) => (
+                    <p
+                      key={i}
+                      className={cn(
+                        'text-xs flex justify-between',
+                        item.modifier < 0 ? 'text-destructive' : 'text-primary'
+                      )}
+                    >
+                      <span>{item.source}:</span>
+                      <span>{item.modifier > 0 ? '+' : ''}{item.modifier}</span>
+                    </p>
+                  ))}
+                </div>
+              )}
+              <p className="text-xs font-medium pt-1 border-t border-border/50 flex justify-between">
+                <span>Total:</span>
+                <span>{effectiveDefense}</span>
               </p>
             </div>
           </TooltipContent>

@@ -463,9 +463,9 @@ export function useCharacterBonusSummary({
       combat.criticalMargin.total += paranormalEffects.threatMarginBonus;
     }
 
-    // Adiciona bônus de defesa paranormal
+    // Adiciona bônus de defesa paranormal ao breakdown se existir
     if (paranormalEffects.defenseBonus > 0) {
-      // Já incluído no defenseBonuses via fonte paranormal
+      // Será somado ao total na estrutura defense abaixo
     }
 
     // Adiciona perícias paranormais
@@ -497,8 +497,16 @@ export function useCharacterBonusSummary({
     // Monta o resumo final
     return {
       defense: {
-        total: defenseBonuses.totalBonus,
-        breakdown: defenseBonuses.breakdown,
+        total: defenseBonuses.totalBonus + paranormalEffects.defenseBonus,
+        breakdown: [
+          ...defenseBonuses.breakdown,
+          ...(paranormalEffects.defenseBonus > 0 ? [{
+            source: 'Poderes Paranormais',
+            type: 'paranormal' as const,
+            bonus: paranormalEffects.defenseBonus,
+            active: true,
+          }] : []),
+        ],
       },
       resistances: {
         fortitude: {

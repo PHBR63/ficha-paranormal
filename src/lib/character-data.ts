@@ -970,3 +970,123 @@ export function getSkillBonus(trainingLevel: number): number {
 export function getTrainingLabel(trainingLevel: number): string {
   return TRAINING_LABELS[trainingLevel] ?? 'Destreinado';
 }
+
+// ==================== CÁLCULO DE DEFESA CONSOLIDADO ====================
+
+/**
+ * Interface para breakdown detalhado de defesa
+ * Permite auditoria completa de onde vem cada bônus
+ */
+export interface DefenseBonusSource {
+  source: string;
+  value: number;
+  type: 'base' | 'agility' | 'armor' | 'shield' | 'origin' | 'ability' | 'power' | 'paranormal' | 'ritual' | 'condition';
+}
+
+export interface DefenseCalculation {
+  base: number;           // 10 (valor base fixo)
+  agility: number;        // Bônus de Agilidade
+  armorBonus: number;     // Bônus de armadura
+  shieldBonus: number;    // Bônus de escudo
+  originBonus: number;    // Bônus de origem (ex: Patrulha)
+  abilityBonus: number;   // Bônus de habilidades de classe
+  powerBonus: number;     // Bônus de poderes gerais (ex: Esquiva)
+  paranormalBonus: number;// Bônus de poderes paranormais
+  ritualBonus: number;    // Bônus de rituais ativos
+  conditionMod: number;   // Modificador de condições (pode ser negativo)
+  total: number;          // Soma final
+  breakdown: DefenseBonusSource[];
+}
+
+/**
+ * Calcula a defesa total do personagem com breakdown completo
+ * Fórmula: DEFESA = 10 + AGI + Σ(bônus válidos)
+ * Conforme Ordem Paranormal RPG v1.3
+ */
+export function calculateTotalDefense(params: {
+  baseDefense: number;         // Defesa base já calculada (10 + AGI)
+  agility: number;
+  armorBonus?: number;
+  armorName?: string;
+  shieldBonus?: number;
+  originBonus?: number;
+  originName?: string;
+  abilityBonus?: number;
+  abilityName?: string;
+  powerBonus?: number;
+  powerName?: string;
+  paranormalBonus?: number;
+  paranormalSource?: string;
+  ritualBonus?: number;
+  ritualName?: string;
+  conditionMod?: number;
+  conditionName?: string;
+}): DefenseCalculation {
+  const {
+    baseDefense,
+    agility,
+    armorBonus = 0,
+    armorName,
+    shieldBonus = 0,
+    originBonus = 0,
+    originName,
+    abilityBonus = 0,
+    abilityName,
+    powerBonus = 0,
+    powerName,
+    paranormalBonus = 0,
+    paranormalSource,
+    ritualBonus = 0,
+    ritualName,
+    conditionMod = 0,
+    conditionName,
+  } = params;
+
+  const breakdown: DefenseBonusSource[] = [
+    { source: 'Base', value: 10, type: 'base' },
+    { source: 'Agilidade', value: agility, type: 'agility' },
+  ];
+
+  if (armorBonus > 0) {
+    breakdown.push({ source: armorName || 'Armadura', value: armorBonus, type: 'armor' });
+  }
+  if (shieldBonus > 0) {
+    breakdown.push({ source: 'Escudo', value: shieldBonus, type: 'shield' });
+  }
+  if (originBonus !== 0) {
+    breakdown.push({ source: originName || 'Origem', value: originBonus, type: 'origin' });
+  }
+  if (abilityBonus !== 0) {
+    breakdown.push({ source: abilityName || 'Habilidade', value: abilityBonus, type: 'ability' });
+  }
+  if (powerBonus !== 0) {
+    breakdown.push({ source: powerName || 'Poder Geral', value: powerBonus, type: 'power' });
+  }
+  if (paranormalBonus !== 0) {
+    breakdown.push({ source: paranormalSource || 'Poder Paranormal', value: paranormalBonus, type: 'paranormal' });
+  }
+  if (ritualBonus !== 0) {
+    breakdown.push({ source: ritualName || 'Ritual', value: ritualBonus, type: 'ritual' });
+  }
+  if (conditionMod !== 0) {
+    breakdown.push({ source: conditionName || 'Condição', value: conditionMod, type: 'condition' });
+  }
+
+  const total = 10 + agility + armorBonus + shieldBonus + originBonus + 
+                abilityBonus + powerBonus + paranormalBonus + ritualBonus + conditionMod;
+
+  return {
+    base: 10,
+    agility,
+    armorBonus,
+    shieldBonus,
+    originBonus,
+    abilityBonus,
+    powerBonus,
+    paranormalBonus,
+    ritualBonus,
+    conditionMod,
+    total,
+    breakdown,
+  };
+}

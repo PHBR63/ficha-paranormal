@@ -536,8 +536,8 @@ export function MobileCharacterSheet({
     affinityActive: false,
   });
 
-  // Defesa total com bônus
-  const totalDefense = character.defense + defenseBonuses.totalBonus;
+  // Defesa total com TODOS os bônus (origem, habilidades, poderes, paranormais)
+  const totalDefense = character.defense + bonusSummary.defense.total;
 
   // Handler para abrir modal de detalhes do poder
   const handlePowerClick = (power: PowerDetailData) => {
@@ -702,18 +702,18 @@ export function MobileCharacterSheet({
                       <div className="flex items-center gap-1 cursor-help">
                         <Shield className="w-3 h-3 text-muted-foreground" />
                         <span>DEF {totalDefense}</span>
-                        {defenseBonuses.totalBonus > 0 && (
-                          <span className="text-[9px] text-success">(+{defenseBonuses.totalBonus})</span>
+                        {bonusSummary.defense.total > 0 && (
+                          <span className="text-[9px] text-success">(+{bonusSummary.defense.total})</span>
                         )}
                       </div>
                     </TooltipTrigger>
                     <TooltipContent side="bottom" className="max-w-xs">
                       <div className="space-y-1 text-xs">
                         <p className="font-medium">Defesa: {totalDefense}</p>
-                        <p className="text-muted-foreground">Base: {character.defense}</p>
-                        {defenseBonuses.breakdown.length > 0 && (
+                        <p className="text-muted-foreground">Base (10 + AGI): {character.defense}</p>
+                        {bonusSummary.defense.breakdown.length > 0 && (
                           <div className="pt-1 border-t border-border">
-                            {defenseBonuses.breakdown.map((bonus, i) => (
+                            {bonusSummary.defense.breakdown.map((bonus, i) => (
                               <p 
                                 key={i} 
                                 className={cn(
