@@ -80,27 +80,16 @@ export interface AutoConditionResult {
 }
 
 // ============== EFEITOS DE CONDIÇÕES ==============
+// Livro Base v1.3 - Efeitos mecânicos oficiais
 
 export const CONDITION_EFFECTS: Record<string, ConditionEffect> = {
   // === COMBATE ===
-  sangrando: {
-    defenseModifier: 0,
-    testModifier: 0,
-    movementModifier: 0,
-    canAct: true,
-    canMove: true,
-    startOfTurnEffect: () => ({
-      damage: Math.floor(Math.random() * 6) + 1, // 1d6
-      isDamageVerdadeiro: true, // Ignora RD
-      message: 'Sofre dano de sangramento (1d6 verdadeiro)'
-    })
-  },
-  vulneravel: {
+  agarrado: {
     defenseModifier: -2,
     testModifier: 0,
-    movementModifier: 0,
+    movementModifier: -2, // 0 deslocamento
     canAct: true,
-    canMove: true,
+    canMove: false,
   },
   atordoado: {
     defenseModifier: -2,
@@ -110,16 +99,9 @@ export const CONDITION_EFFECTS: Record<string, ConditionEffect> = {
     canMove: false,
     canReact: false,
   },
-  agarrado: {
-    defenseModifier: -2,
-    testModifier: 0,
-    movementModifier: -2, // 0 movement
-    canAct: true,
-    canMove: false,
-  },
   // Caído usa modificadores contextuais em CONTEXTUAL_DEFENSE_MODIFIERS
   caido: {
-    defenseModifier: 0, // Base 0, contextual aplica -5 melee ou +5 ranged
+    defenseModifier: 0, // Contextual: -5 melee ou +5 ranged
     testModifier: 0,
     movementModifier: 0,
     canAct: true,
@@ -131,58 +113,120 @@ export const CONDITION_EFFECTS: Record<string, ConditionEffect> = {
     movementModifier: 0,
     canAct: true,
     canMove: true,
-    canReact: false, // Não pode usar reações
+    canReact: false,
   },
-  surpreendido: {
-    defenseModifier: -5,
+  enredado: {
+    defenseModifier: 0,
+    testModifier: -2, // Ataques e Reflexos
+    movementModifier: -1, // -3m
+    canAct: true,
+    canMove: true,
+  },
+  pasmo: {
+    defenseModifier: -2,
     testModifier: 0,
     movementModifier: 0,
-    canAct: false, // Não age na primeira rodada
+    canAct: false,
     canMove: false,
     canReact: false,
+  },
+  sangrando: {
+    defenseModifier: 0,
+    testModifier: 0,
+    movementModifier: 0,
+    canAct: true,
+    canMove: true,
+    startOfTurnEffect: () => ({
+      damage: Math.floor(Math.random() * 6) + 1, // 1d6
+      isDamageVerdadeiro: true,
+      message: 'Sofre 1d6 de dano por sangramento (ignora RD)'
+    })
+  },
+  surpreendido: {
+    defenseModifier: -5, // Contra quem surpreendeu
+    testModifier: 0,
+    movementModifier: 0,
+    canAct: false,
+    canMove: false,
+    canReact: false,
+  },
+  vulneravel: {
+    defenseModifier: -2,
+    testModifier: 0,
+    movementModifier: 0,
+    canAct: true,
+    canMove: true,
   },
 
   // === SENSORIAIS ===
   cego: {
     defenseModifier: 0,
-    testModifier: 0, // -5 em ataques via ATTACK_MODIFIERS
+    testModifier: -5, // Em ataques
     movementModifier: 0,
     canAct: true,
     canMove: true,
   },
   surdo: {
     defenseModifier: 0,
-    testModifier: 0, // -2 em iniciativa via INITIATIVE_MODIFIERS
+    testModifier: 0, // -2 em Iniciativa via INITIATIVE_MODIFIERS
     movementModifier: 0,
     canAct: true,
     canMove: true,
   },
 
   // === FÍSICAS ===
-  exausto: {
+  debilitado: {
     defenseModifier: 0,
-    testModifier: -2,
-    movementModifier: -1, // -3m (representado como -1 = metade ou penalidade fixa)
+    testModifier: -1, // Todos os testes
+    movementModifier: 0,
     canAct: true,
     canMove: true,
+  },
+  doente: {
+    defenseModifier: 0,
+    testModifier: -2, // Todos os testes
+    movementModifier: 0,
+    canAct: true,
+    canMove: true,
+    // Não recupera PV/PE/SAN no descanso - processado no sistema de descanso
+  },
+  enjoado: {
+    defenseModifier: 0,
+    testModifier: 0,
+    movementModifier: 0,
+    canAct: true,
+    canMove: true,
+    maxActions: 1, // Apenas ação padrão
   },
   envenenado: {
     defenseModifier: 0,
-    testModifier: -2,
+    testModifier: -2, // Todos os testes
     movementModifier: 0,
     canAct: true,
     canMove: true,
-    startOfTurnEffect: () => ({
-      damage: Math.floor(Math.random() * 4) + 1, // 1d4 típico
-      message: 'Sofre dano de veneno (1d4)'
-    })
+    // Dano varia conforme veneno específico
   },
-  debilitado: {
+  esmorecido: {
     defenseModifier: 0,
-    testModifier: -1, // em atributo específico
+    testModifier: -2, // Testes de perícia
     movementModifier: 0,
     canAct: true,
     canMove: true,
+  },
+  exausto: {
+    defenseModifier: 0,
+    testModifier: -2, // Todos os testes
+    movementModifier: -1, // Metade
+    canAct: true,
+    canMove: true,
+  },
+  fraco: {
+    defenseModifier: 0,
+    testModifier: -2, // Força e Luta
+    movementModifier: 0,
+    canAct: true,
+    canMove: true,
+    // Carga pela metade - processado no inventário
   },
   fragilizado: {
     defenseModifier: 0,
@@ -190,51 +234,45 @@ export const CONDITION_EFFECTS: Record<string, ConditionEffect> = {
     movementModifier: 0,
     canAct: true,
     canMove: true,
-    // Vulnerável a tipo de dano específico (+50%) - processado no sistema de dano
-  },
-  lento: {
-    defenseModifier: 0,
-    testModifier: 0,
-    movementModifier: -1, // metade
-    canAct: true,
-    canMove: true,
-    maxActions: 1, // Apenas 1 ação por turno
+    // +50% dano de tipo específico - processado no sistema de dano
   },
   imobilizado: {
     defenseModifier: 0,
     testModifier: 0,
-    movementModifier: -2,
+    movementModifier: -2, // 0 deslocamento
     canAct: true,
     canMove: false,
+  },
+  lento: {
+    defenseModifier: 0,
+    testModifier: 0,
+    movementModifier: -1, // Metade
+    canAct: true,
+    canMove: true,
+    maxActions: 1,
+  },
+  machucado: {
+    defenseModifier: 0,
+    testModifier: 0,
+    movementModifier: 0,
+    canAct: true,
+    canMove: true,
+    // Dano ao agir - processado manualmente pelo sistema
   },
 
   // === MENTAIS ===
   apavorado: {
     defenseModifier: 0,
-    testModifier: -2,
+    testModifier: -2, // Todos os testes
     movementModifier: 0,
-    canAct: true, // mas deve fugir
+    canAct: true, // Deve fugir
     canMove: true,
-  },
-  fascinado: {
-    defenseModifier: 0,
-    testModifier: -5, // percepção
-    movementModifier: 0,
-    canAct: false, // só pode observar
-    canMove: false,
   },
   confuso: {
     defenseModifier: 0,
     testModifier: 0,
     movementModifier: 0,
-    canAct: true, // com restrições (1d6)
-    canMove: true,
-  },
-  perturbado: {
-    defenseModifier: 0,
-    testModifier: -2,
-    movementModifier: 0,
-    canAct: true,
+    canAct: true, // Com 1d6
     canMove: true,
   },
   enlouquecendo: {
@@ -242,6 +280,28 @@ export const CONDITION_EFFECTS: Record<string, ConditionEffect> = {
     testModifier: 0,
     movementModifier: 0,
     canAct: false, // Mestre decide
+    canMove: true,
+  },
+  fascinado: {
+    defenseModifier: 0,
+    testModifier: -5, // Percepção
+    movementModifier: 0,
+    canAct: false,
+    canMove: false,
+  },
+  frustrado: {
+    defenseModifier: 0,
+    testModifier: 0,
+    movementModifier: 0,
+    canAct: true,
+    canMove: true,
+    // Não pode gastar PE - processado no sistema de PE
+  },
+  perturbado: {
+    defenseModifier: 0,
+    testModifier: -2, // Todos os testes
+    movementModifier: 0,
+    canAct: true,
     canMove: true,
   },
 
@@ -254,6 +314,14 @@ export const CONDITION_EFFECTS: Record<string, ConditionEffect> = {
     canMove: false,
     canReact: false,
   },
+  indefeso: {
+    defenseModifier: -20, // Acerto automático + crítico
+    testModifier: 0,
+    movementModifier: 0,
+    canAct: false,
+    canMove: false,
+    canReact: false,
+  },
   morrendo: {
     defenseModifier: -10,
     testModifier: -20,
@@ -262,21 +330,13 @@ export const CONDITION_EFFECTS: Record<string, ConditionEffect> = {
     canMove: false,
     canReact: false,
     startOfTurnEffect: () => ({
-      message: 'Contador de morte avança! Faça um teste de Medicina DT 20 para estabilizar.'
+      message: 'Contador de morte avança! Aliado pode fazer Medicina DT 20.'
     })
   },
   paralisado: {
-    defenseModifier: -10,
+    defenseModifier: -10, // Defesa 5, Indefeso
     testModifier: -20,
     movementModifier: -2,
-    canAct: false,
-    canMove: false,
-    canReact: false,
-  },
-  indefeso: {
-    defenseModifier: -20, // ataques automáticos e críticos
-    testModifier: 0,
-    movementModifier: 0,
     canAct: false,
     canMove: false,
     canReact: false,

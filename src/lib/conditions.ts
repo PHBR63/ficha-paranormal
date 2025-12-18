@@ -35,42 +35,24 @@ export interface ContextualModifier {
  */
 export const CONDITIONS: Record<string, Omit<Condition, 'turnsRemaining'>> = {
   // === CONDIÇÕES DE COMBATE ===
-  sangrando: {
-    id: 'sangrando',
-    name: 'Sangrando',
-    icon: '🩸',
-    color: 'health',
-    description: 'Você está perdendo sangue de um ferimento grave.',
-    effect: 'No início do seu turno, sofra 1d6 de dano verdadeiro (ignora RD).',
-    removal: 'Teste de Fortitude DT 20 ou ação de Medicina.',
-  },
-  vulneravel: {
-    id: 'vulneravel',
-    name: 'Vulnerável',
-    icon: '🛡️',
-    color: 'warning',
-    description: 'Sua guarda está aberta.',
-    effect: 'Defesa -2.',
-    removal: 'Gastar uma ação de movimento para se recompor.',
-  },
-  atordoado: {
-    id: 'atordoado',
-    name: 'Atordoado',
-    icon: '💫',
-    color: 'warning',
-    description: 'Você está desorientado e confuso.',
-    effect: 'Não pode realizar ações. Defesa -2.',
-    removal: 'Fim do próximo turno.',
-    autoRemove: true,
-  },
   agarrado: {
     id: 'agarrado',
     name: 'Agarrado',
     icon: '🤼',
     color: 'warning',
     description: 'Você está sendo segurado por algo ou alguém.',
-    effect: 'Deslocamento 0, não pode atacar à distância. Defesa -2.',
+    effect: 'Deslocamento 0. Não pode atacar à distância. –2 Defesa.',
     removal: 'Teste de Atletismo ou Luta para se soltar.',
+  },
+  atordoado: {
+    id: 'atordoado',
+    name: 'Atordoado',
+    icon: '💫',
+    color: 'warning',
+    description: 'Você está desorientado e incapaz de agir.',
+    effect: 'Não pode realizar ações ou reações. –2 Defesa.',
+    removal: 'Fim do próximo turno.',
+    autoRemove: true,
   },
   caido: {
     id: 'caido',
@@ -78,7 +60,7 @@ export const CONDITIONS: Record<string, Omit<Condition, 'turnsRemaining'>> = {
     icon: '⬇️',
     color: 'muted-foreground',
     description: 'Você está no chão.',
-    effect: 'Defesa -5 contra ataques corpo a corpo. +5 contra ataques à distância.',
+    effect: '–5 Defesa contra ataques corpo a corpo. +5 Defesa contra ataques à distância.',
     removal: 'Gastar ação de movimento para se levantar.',
   },
   desprevenido: {
@@ -87,8 +69,36 @@ export const CONDITIONS: Record<string, Omit<Condition, 'turnsRemaining'>> = {
     icon: '😶',
     color: 'warning',
     description: 'Você não está preparado para o perigo.',
-    effect: 'Não pode usar reações. Defesa -5.',
+    effect: 'Não pode usar reações. –5 Defesa.',
     removal: 'Perceber a ameaça ou fim do turno.',
+  },
+  enredado: {
+    id: 'enredado',
+    name: 'Enredado',
+    icon: '🕸️',
+    color: 'warning',
+    description: 'Você está preso em algo que restringe seus movimentos.',
+    effect: '–3m deslocamento. –2 em ataques e Reflexos.',
+    removal: 'Teste de Atletismo ou Acrobacia, ou destruir o que prende.',
+  },
+  pasmo: {
+    id: 'pasmo',
+    name: 'Pasmo',
+    icon: '😯',
+    color: 'warning',
+    description: 'Você ficou brevemente paralisado de surpresa.',
+    effect: 'Não pode realizar ações. –2 Defesa.',
+    removal: 'Fim do seu próximo turno.',
+    autoRemove: true,
+  },
+  sangrando: {
+    id: 'sangrando',
+    name: 'Sangrando',
+    icon: '🩸',
+    color: 'health',
+    description: 'Você está perdendo sangue de um ferimento grave.',
+    effect: 'No início do seu turno, sofre 1d6 de dano (ignora RD).',
+    removal: 'Teste de Fortitude DT 15 ou tratamento médico.',
   },
   surpreendido: {
     id: 'surpreendido',
@@ -96,9 +106,18 @@ export const CONDITIONS: Record<string, Omit<Condition, 'turnsRemaining'>> = {
     icon: '😲',
     color: 'warning',
     description: 'Você foi pego de surpresa!',
-    effect: 'Não age na primeira rodada. Defesa -5 contra atacantes que te surpreenderam.',
+    effect: 'Não age na primeira rodada. Desprevenido contra atacantes que te surpreenderam.',
     removal: 'Fim da primeira rodada de combate.',
     autoRemove: true,
+  },
+  vulneravel: {
+    id: 'vulneravel',
+    name: 'Vulnerável',
+    icon: '🛡️',
+    color: 'warning',
+    description: 'Sua guarda está aberta.',
+    effect: '–2 Defesa.',
+    removal: 'Gastar uma ação de movimento para se recompor.',
   },
 
   // === CONDIÇÕES SENSORIAIS ===
@@ -108,7 +127,7 @@ export const CONDITIONS: Record<string, Omit<Condition, 'turnsRemaining'>> = {
     icon: '👁️',
     color: 'muted-foreground',
     description: 'Você não consegue enxergar.',
-    effect: 'Falha automática em testes de Percepção visual. -5 em ataques. Inimigos invisíveis contra você.',
+    effect: 'Falha automática em testes de Percepção visual. –5 em ataques. Todos os inimigos são invisíveis para você.',
     removal: 'Depende da causa.',
   },
   surdo: {
@@ -117,19 +136,37 @@ export const CONDITIONS: Record<string, Omit<Condition, 'turnsRemaining'>> = {
     icon: '👂',
     color: 'muted-foreground',
     description: 'Você não consegue ouvir.',
-    effect: 'Falha automática em testes de Percepção auditiva. -2 em Iniciativa.',
+    effect: 'Falha automática em testes de Percepção auditiva. –2 em Iniciativa.',
     removal: 'Depende da causa.',
   },
 
   // === CONDIÇÕES FÍSICAS ===
-  exausto: {
-    id: 'exausto',
-    name: 'Exausto',
-    icon: '😫',
+  debilitado: {
+    id: 'debilitado',
+    name: 'Debilitado',
+    icon: '📉',
     color: 'warning',
-    description: 'Você está completamente esgotado.',
-    effect: '-2 em todos os testes e -3m de deslocamento.',
-    removal: 'Descanso completo.',
+    description: 'Suas capacidades estão reduzidas.',
+    effect: '–1 em todos os testes.',
+    removal: 'Descanso ou cura.',
+  },
+  doente: {
+    id: 'doente',
+    name: 'Doente',
+    icon: '🤒',
+    color: 'warning',
+    description: 'Você está sofrendo de uma enfermidade.',
+    effect: '–2 em todos os testes. Descanso não recupera PV, PE ou Sanidade.',
+    removal: 'Tratamento médico ou tempo.',
+  },
+  enjoado: {
+    id: 'enjoado',
+    name: 'Enjoado',
+    icon: '🤢',
+    color: 'warning',
+    description: 'Você está com náuseas.',
+    effect: 'Só pode realizar uma ação padrão por rodada.',
+    removal: 'Depende da causa.',
   },
   envenenado: {
     id: 'envenenado',
@@ -137,25 +174,52 @@ export const CONDITIONS: Record<string, Omit<Condition, 'turnsRemaining'>> = {
     icon: '🧪',
     color: 'success',
     description: 'Veneno corre em suas veias.',
-    effect: 'Varia conforme o veneno. Geralmente 1d4 dano por turno.',
-    removal: 'Teste de Fortitude, Medicina ou antídoto.',
+    effect: '–2 em todos os testes. Efeitos adicionais variam conforme o veneno.',
+    removal: 'Teste de Fortitude, tratamento ou antídoto.',
   },
-  debilitado: {
-    id: 'debilitado',
-    name: 'Debilitado',
-    icon: '📉',
+  esmorecido: {
+    id: 'esmorecido',
+    name: 'Esmorecido',
+    icon: '😔',
+    color: 'muted-foreground',
+    description: 'Você está desanimado e sem energia.',
+    effect: '–2 em todos os testes de perícia.',
+    removal: 'Descanso ou encorajamento.',
+  },
+  exausto: {
+    id: 'exausto',
+    name: 'Exausto',
+    icon: '😫',
     color: 'warning',
-    description: 'Suas capacidades estão reduzidas.',
-    effect: '-1 em um atributo específico (definido pela causa).',
-    removal: 'Descanso ou cura mágica.',
+    description: 'Você está completamente esgotado.',
+    effect: '–2 em todos os testes. Deslocamento pela metade.',
+    removal: 'Descanso completo.',
+  },
+  fraco: {
+    id: 'fraco',
+    name: 'Fraco',
+    icon: '💪',
+    color: 'warning',
+    description: 'Sua força física está comprometida.',
+    effect: '–2 em testes de Força e Luta. Capacidade de carga pela metade.',
+    removal: 'Descanso ou cura.',
   },
   fragilizado: {
     id: 'fragilizado',
     name: 'Fragilizado',
     icon: '💔',
     color: 'health',
-    description: 'Você está enfraquecido e vulnerável.',
-    effect: 'Vulnerável a um tipo de dano específico (+50% dano).',
+    description: 'Você está vulnerável a um tipo de dano.',
+    effect: 'Vulnerável a um tipo de dano específico (sofre +50% de dano desse tipo).',
+    removal: 'Depende da causa.',
+  },
+  imobilizado: {
+    id: 'imobilizado',
+    name: 'Imóvel',
+    icon: '⛓️',
+    color: 'muted-foreground',
+    description: 'Você não pode se mover do lugar.',
+    effect: 'Deslocamento 0. Pode realizar outras ações normalmente.',
     removal: 'Depende da causa.',
   },
   lento: {
@@ -164,17 +228,17 @@ export const CONDITIONS: Record<string, Omit<Condition, 'turnsRemaining'>> = {
     icon: '🐢',
     color: 'muted-foreground',
     description: 'Seus movimentos estão prejudicados.',
-    effect: 'Deslocamento reduzido pela metade. Apenas 1 ação por turno.',
+    effect: 'Deslocamento pela metade. Apenas 1 ação por turno.',
     removal: 'Depende da causa.',
   },
-  imobilizado: {
-    id: 'imobilizado',
-    name: 'Imobilizado',
-    icon: '⛓️',
-    color: 'muted-foreground',
-    description: 'Você não pode se mover do lugar.',
-    effect: 'Deslocamento 0. Pode realizar outras ações normalmente.',
-    removal: 'Depende da causa.',
+  machucado: {
+    id: 'machucado',
+    name: 'Machucado',
+    icon: '🩹',
+    color: 'health',
+    description: 'Você está gravemente ferido e qualquer esforço piora a situação.',
+    effect: 'Ao realizar qualquer ação, sofre dano igual ao dano máximo da arma que causou a condição.',
+    removal: 'Descanso completo ou cura.',
   },
 
   // === CONDIÇÕES MENTAIS ===
@@ -184,17 +248,8 @@ export const CONDITIONS: Record<string, Omit<Condition, 'turnsRemaining'>> = {
     icon: '😱',
     color: 'sanity',
     description: 'O medo domina suas ações.',
-    effect: 'Deve fugir da fonte do medo. -2 em todos os testes.',
-    removal: 'Teste de Vontade DT 15 ou fim da cena.',
-  },
-  fascinado: {
-    id: 'fascinado',
-    name: 'Fascinado',
-    icon: '😍',
-    color: 'energy',
-    description: 'Algo capturou completamente sua atenção.',
-    effect: '-5 em testes de Percepção. Não pode realizar ações exceto observar a fonte.',
-    removal: 'Ameaça óbvia ou fim do efeito.',
+    effect: 'Deve fugir da fonte do medo por todos os meios. –2 em todos os testes.',
+    removal: 'Teste de Vontade DT 15 ou perder de vista a fonte.',
   },
   confuso: {
     id: 'confuso',
@@ -202,17 +257,8 @@ export const CONDITIONS: Record<string, Omit<Condition, 'turnsRemaining'>> = {
     icon: '❓',
     color: 'sanity',
     description: 'Você não sabe distinguir amigo de inimigo.',
-    effect: 'Role 1d6: 1-2 ataca aliado, 3-4 não age, 5-6 age normalmente.',
+    effect: 'No início do turno, role 1d6: 1-2 ataca aliado mais próximo, 3-4 não faz nada, 5-6 age normalmente.',
     removal: 'Teste de Vontade DT 15 ou fim do efeito.',
-  },
-  perturbado: {
-    id: 'perturbado',
-    name: 'Perturbado',
-    icon: '🌀',
-    color: 'sanity',
-    description: 'Sua mente está abalada pelo horror.',
-    effect: '-2 em todos os testes. Pode agir de forma irracional.',
-    removal: 'Descanso ou reduzir SAN atual a 0.',
   },
   enlouquecendo: {
     id: 'enlouquecendo',
@@ -222,6 +268,33 @@ export const CONDITIONS: Record<string, Omit<Condition, 'turnsRemaining'>> = {
     description: 'A loucura está tomando conta.',
     effect: 'Não controla suas ações. O Mestre decide o que você faz.',
     removal: 'Cena de descanso e tratamento psicológico.',
+  },
+  fascinado: {
+    id: 'fascinado',
+    name: 'Fascinado',
+    icon: '😍',
+    color: 'energy',
+    description: 'Algo capturou completamente sua atenção.',
+    effect: '–5 em testes de Percepção. Não pode realizar ações exceto observar a fonte.',
+    removal: 'Ameaça óbvia ou fim do efeito.',
+  },
+  frustrado: {
+    id: 'frustrado',
+    name: 'Frustrado',
+    icon: '😤',
+    color: 'sanity',
+    description: 'Você está frustrado e bloqueado mentalmente.',
+    effect: 'Não pode gastar PE.',
+    removal: 'Descanso ou encorajamento.',
+  },
+  perturbado: {
+    id: 'perturbado',
+    name: 'Perturbado',
+    icon: '🌀',
+    color: 'sanity',
+    description: 'Sua mente está abalada pelo horror.',
+    effect: '–2 em todos os testes. Pode agir de forma irracional.',
+    removal: 'Descanso ou reduzir SAN atual a 0.',
   },
 
   // === CONDIÇÕES CRÍTICAS ===
@@ -233,6 +306,15 @@ export const CONDITIONS: Record<string, Omit<Condition, 'turnsRemaining'>> = {
     description: 'Você está completamente fora de combate.',
     effect: 'Não pode realizar nenhuma ação. Defesa 5. Indefeso.',
     removal: 'Recuperar ao menos 1 PV ou ser acordado.',
+  },
+  indefeso: {
+    id: 'indefeso',
+    name: 'Indefeso',
+    icon: '🎯',
+    color: 'destructive',
+    description: 'Você está completamente exposto.',
+    effect: 'Ataques contra você são acertos automáticos e causam dano crítico.',
+    removal: 'Sair da condição que causou indefeso.',
   },
   morrendo: {
     id: 'morrendo',
@@ -249,17 +331,8 @@ export const CONDITIONS: Record<string, Omit<Condition, 'turnsRemaining'>> = {
     icon: '🧊',
     color: 'accent',
     description: 'Você não consegue se mover.',
-    effect: 'Não pode se mover ou realizar ações físicas. Defesa 5. Indefeso.',
+    effect: 'Não pode realizar ações físicas. Defesa 5. Indefeso.',
     removal: 'Depende da causa.',
-  },
-  indefeso: {
-    id: 'indefeso',
-    name: 'Indefeso',
-    icon: '🎯',
-    color: 'destructive',
-    description: 'Você está completamente exposto.',
-    effect: 'Ataques contra você são automáticos e causam dano crítico.',
-    removal: 'Sair da condição que causou indefeso.',
   },
 };
 
@@ -269,7 +342,7 @@ export const CONDITIONS: Record<string, Omit<Condition, 'turnsRemaining'>> = {
  */
 export const CONTEXTUAL_DEFENSE_MODIFIERS: Record<string, ContextualModifier> = {
   caido: {
-    melee: -5,   // -5 contra corpo a corpo
+    melee: -5,   // –5 contra corpo a corpo
     ranged: +5,  // +5 contra distância
   },
   desprevenido: {
@@ -287,6 +360,7 @@ export const CONTEXTUAL_DEFENSE_MODIFIERS: Record<string, ContextualModifier> = 
  */
 export const ATTACK_MODIFIERS: Record<string, number> = {
   cego: -5,
+  enredado: -2,
 };
 
 /**
@@ -297,14 +371,27 @@ export const INITIATIVE_MODIFIERS: Record<string, number> = {
 };
 
 /**
+ * Modificadores gerais de teste por condição (acumulam)
+ */
+export const TEST_MODIFIERS: Record<string, number> = {
+  apavorado: -2,
+  debilitado: -1,
+  doente: -2,
+  envenenado: -2,
+  esmorecido: -2,
+  exausto: -2,
+  perturbado: -2,
+};
+
+/**
  * Categorias de condições para organização na UI
  */
 export const CONDITION_CATEGORIES = {
-  combat: ['sangrando', 'vulneravel', 'atordoado', 'agarrado', 'caido', 'desprevenido', 'surpreendido'],
+  combat: ['agarrado', 'atordoado', 'caido', 'desprevenido', 'enredado', 'pasmo', 'sangrando', 'surpreendido', 'vulneravel'],
   sensory: ['cego', 'surdo'],
-  mental: ['apavorado', 'fascinado', 'confuso', 'perturbado', 'enlouquecendo'],
-  physical: ['exausto', 'envenenado', 'debilitado', 'fragilizado', 'lento', 'imobilizado'],
-  critical: ['inconsciente', 'morrendo', 'paralisado', 'indefeso'],
+  mental: ['apavorado', 'confuso', 'enlouquecendo', 'fascinado', 'frustrado', 'perturbado'],
+  physical: ['debilitado', 'doente', 'enjoado', 'envenenado', 'esmorecido', 'exausto', 'fraco', 'fragilizado', 'imobilizado', 'lento', 'machucado'],
+  critical: ['inconsciente', 'indefeso', 'morrendo', 'paralisado'],
 };
 
 /**
@@ -365,4 +452,36 @@ export function getInitiativeModifierFromConditions(conditions: string[]): numbe
     }
   }
   return modifier;
+}
+
+/**
+ * Calcula o modificador geral de testes por condições
+ * Livro Base v1.3 - Acumula todas as penalidades
+ */
+export function getTestModifierFromConditions(conditions: string[]): number {
+  let modifier = 0;
+  for (const conditionId of conditions) {
+    if (TEST_MODIFIERS[conditionId]) {
+      modifier += TEST_MODIFIERS[conditionId];
+    }
+  }
+  return modifier;
+}
+
+/**
+ * Verifica se personagem pode gastar PE (Frustrado impede)
+ */
+export function canSpendPEWithConditions(conditions: string[]): boolean {
+  return !conditions.includes('frustrado');
+}
+
+/**
+ * Verifica número máximo de ações por turno
+ * Enjoado e Lento limitam a 1 ação
+ */
+export function getMaxActionsFromConditions(conditions: string[]): number {
+  if (conditions.includes('enjoado') || conditions.includes('lento')) {
+    return 1;
+  }
+  return 2; // Padrão: ação padrão + movimento
 }
