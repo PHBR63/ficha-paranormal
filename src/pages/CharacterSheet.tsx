@@ -326,6 +326,7 @@ export default function CharacterSheet() {
     affinityActive: character?.affinity_active,
     activeConditionalBonuses: character?.active_conditional_bonuses || [],
     activeRituals: activeRitualsForDefense,
+    skills: character?.skills || {},
   });
 
   // Extrai hooks internos do bonusSummary para evitar chamadas duplicadas

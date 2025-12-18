@@ -551,7 +551,8 @@ export function MobileCharacterSheet({
     nex: character.nex,
     elementalAffinity: null,
     affinityActive: false,
-    activeRituals: activeRitualsForDefense, // Agora passa rituais ativos!
+    activeRituals: activeRitualsForDefense,
+    skills: character.skills || {},
   });
 
   // Defesa total com TODOS os bônus (origem, habilidades, poderes, paranormais, rituais)

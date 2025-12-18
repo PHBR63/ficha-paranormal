@@ -29,6 +29,8 @@ const BONUS_TYPE_CONFIG = {
   general_power: { icon: Target, color: 'text-emerald-500', bg: 'bg-emerald-500/10', label: 'Poder Geral' },
   paranormal: { icon: Flame, color: 'text-purple-500', bg: 'bg-purple-500/10', label: 'Paranormal' },
   equipment: { icon: Shield, color: 'text-slate-500', bg: 'bg-slate-500/10', label: 'Equipamento' },
+  ritual: { icon: Sparkles, color: 'text-pink-500', bg: 'bg-pink-500/10', label: 'Ritual' },
+  skill_training: { icon: Activity, color: 'text-cyan-500', bg: 'bg-cyan-500/10', label: 'Treinamento' },
 };
 
 interface ActiveBonusesPanelProps {
