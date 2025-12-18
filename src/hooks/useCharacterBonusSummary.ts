@@ -23,6 +23,8 @@ export interface BonusBreakdown {
   active: boolean;       // Se está ativo
   toggleable?: boolean;  // Se pode ser ativado/desativado manualmente
   toggleId?: string;     // ID único para toggle
+  excluded?: boolean;    // Se foi excluído por regra de não acúmulo
+  excludedReason?: string; // Motivo da exclusão
 }
 
 // Interface para bônus condicional toggleável
