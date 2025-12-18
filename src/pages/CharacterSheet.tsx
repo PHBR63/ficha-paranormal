@@ -69,7 +69,7 @@ import { useWeaponBuffs } from '@/hooks/useWeaponBuffs';
 import { useAutoConditions, type ActiveCondition as AutoCondition } from '@/hooks/useAutoConditions';
 import { useRitualCombatBonuses } from '@/hooks/useRitualCombatBonuses';
 import { useSustainedRituals } from '@/hooks/useSustainedRituals';
-import { useArmorMigration } from '@/hooks/useArmorMigration';
+import { useEquipmentMigration } from '@/hooks/useEquipmentMigration';
 import { BonusSummaryCard } from '@/components/character/BonusSummaryCard';
 import { SustainedRitualsPanel } from '@/components/character/SustainedRitualsPanel';
 
@@ -226,8 +226,8 @@ export default function CharacterSheet() {
   const { toast } = useToast();
   const isMobile = useIsMobile();
 
-  // Hook de migração automática de armaduras
-  const { runMigration, resetMigration } = useArmorMigration();
+  // Hook de migração automática de equipamentos
+  const { runMigration, resetMigration } = useEquipmentMigration();
 
   // Estados principais
   const [character, setCharacter] = useState<Character | null>(null);
@@ -449,14 +449,27 @@ export default function CharacterSheet() {
         ? (data.inventory as unknown as InventoryItemPersisted[]) 
         : [];
       
-      // Executa migração automática de armaduras se necessário
+      // Executa migração automática de equipamentos se necessário
       const migrationResult = await runMigration(id, inventory as any);
       if (migrationResult) {
         inventory = migrationResult.inventory as unknown as InventoryItemPersisted[];
-        console.log('[CharacterSheet] Armaduras migradas automaticamente');
+        console.log('[CharacterSheet] Equipamentos migrados automaticamente');
+        
+        // Monta mensagem detalhada
+        const details: string[] = [];
+        if (migrationResult.armorCount > 0) {
+          details.push(`${migrationResult.armorCount} armadura(s)`);
+        }
+        if (migrationResult.weaponCount > 0) {
+          details.push(`${migrationResult.weaponCount} arma(s)`);
+        }
+        if (migrationResult.itemCount > 0) {
+          details.push(`${migrationResult.itemCount} item(ns)`);
+        }
+        
         toast({
-          title: 'Armaduras Corrigidas',
-          description: `${migrationResult.count} armadura(s) foram atualizadas automaticamente com os valores corretos de defesa e RD.`,
+          title: 'Equipamentos Corrigidos',
+          description: `${details.join(', ')} foram atualizados automaticamente com os valores corretos do catálogo.`,
         });
       }
 
