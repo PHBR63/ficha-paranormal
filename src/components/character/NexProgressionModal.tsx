@@ -2,6 +2,9 @@
  * Modal de Progressão de NEX
  * Permite subir de nível, recalcular stats, desbloquear habilidades/rituais,
  * escolher poderes paranormais via Transcender e selecionar Afinidade Elemental no NEX 50%
+ * 
+ * REGRA TRANSCENDER: Ao usar Transcender para escolher um poder paranormal,
+ * o personagem NÃO recebe o aumento de Sanidade daquele NEX.
  */
 
 import { useState, useMemo } from 'react';
@@ -35,6 +38,7 @@ import {
   Droplet,
   Skull,
   Star,
+  AlertTriangle,
 } from 'lucide-react';
 import { 
   CLASSES, 
@@ -53,6 +57,7 @@ import {
   AFFINITY_DESCRIPTIONS,
 } from '@/lib/paranormal-powers';
 import { ParanormalPowerSelectModal } from './ParanormalPowerSelectModal';
+import { NonOccultistRitualModal, RitualSource } from './NonOccultistRitualModal';
 import confetti from 'canvas-confetti';
 
 // NEX válidos (incremento de 5%)
@@ -65,6 +70,16 @@ const AFFINITY_ICONS: Record<ParanormalElement, React.ComponentType<{ className?
   conhecimento: BookOpen,
   energia: Zap,
 };
+
+/**
+ * Calcula o ganho de sanidade para um específico aumento de NEX
+ */
+function getSanityGainForNex(characterClass: string, currentNex: number, nextNex: number): number {
+  const currentStats = calculateDerivedStats(characterClass, 1, 1, currentNex);
+  const nextStats = calculateDerivedStats(characterClass, 1, 1, nextNex);
+  // A diferença de sanidade entre os dois NEX (considerando apenas a progressão de classe, não vigor/presença)
+  return nextStats.san - currentStats.san;
+}
 
 interface NexProgressionModalProps {
   open: boolean;
@@ -117,6 +132,14 @@ export function NexProgressionModal({
     character.paranormal_powers || []
   );
   
+  // Estado para rastrear se Transcender foi usado nesta progressão
+  // REGRA: Usar Transcender faz perder a Sanidade daquele NEX
+  const [usedTranscender, setUsedTranscender] = useState(false);
+  
+  // Estado para modal de seleção de ritual (poder "Aprender Ritual")
+  const [ritualSelectOpen, setRitualSelectOpen] = useState(false);
+  const [pendingRituals, setPendingRituals] = useState<string[]>([]);
+  
   // Verificar se está subindo para NEX 50% (escolhe afinidade)
   const currentNexIndex = NEX_VALUES.indexOf(character.nex);
   const nextNex = currentNexIndex < NEX_VALUES.length - 1 ? NEX_VALUES[currentNexIndex + 1] : null;
@@ -132,6 +155,12 @@ export function NexProgressionModal({
         : (a as any)?.name?.toLowerCase().includes('transcender')
     );
   }, [character.abilities]);
+  
+  // Calcula a sanidade que seria ganha neste NEX
+  const sanityGainThisNex = useMemo(() => {
+    if (!nextNex) return 0;
+    return getSanityGainForNex(character.class, character.nex, nextNex);
+  }, [character.class, character.nex, nextNex]);
 
   // Calcula stats para NEX atual e próximo
   const currentStats = useMemo(() => {
@@ -196,7 +225,19 @@ export function NexProgressionModal({
   // Handler para selecionar poder paranormal
   const handleSelectPower = (power: ParanormalPower) => {
     setPendingPowers(prev => [...prev, power]);
+    setUsedTranscender(true); // Marca que Transcender foi usado - perde sanidade
     setPowerSelectOpen(false);
+    
+    // Se o poder é "Aprender Ritual", abre modal para escolher o ritual
+    if (power.id === 'aprender-ritual') {
+      setRitualSelectOpen(true);
+    }
+  };
+  
+  // Handler para selecionar ritual (do poder "Aprender Ritual")
+  const handleRitualSelect = (ritualId: string) => {
+    setPendingRituals(prev => [...prev, ritualId]);
+    setRitualSelectOpen(false);
   };
 
   const handleLevelUp = async () => {
@@ -227,10 +268,16 @@ export function NexProgressionModal({
         newAffinityActive = true;
       }
       
+      // REGRA TRANSCENDER: Se usou Transcender, NÃO ganha sanidade deste NEX
+      // A sanidade final = sanidade atual (mantém a mesma, não adiciona o ganho do NEX)
+      const finalSanMax = usedTranscender 
+        ? character.san_max  // Mantém a sanidade atual
+        : nextStats.san;     // Recebe a sanidade normal do novo NEX
+      
       await onLevelUp(nextNex, {
         hp_max: nextStats.hp,
         pe_max: nextStats.pe,
-        san_max: nextStats.san,
+        san_max: finalSanMax,
         patent: nextPatent || currentPatent,
         newAbilities,
         elemental_affinity: newAffinity,
@@ -441,16 +488,29 @@ export function NexProgressionModal({
                       </Badge>
                     </div>
                     
-                    {/* SAN */}
-                    <div className="p-3 bg-san/10 border border-san/30 rounded-lg text-center">
-                      <Brain className="w-5 h-5 text-san mx-auto mb-1" />
+                    {/* SAN - Mostra perda se Transcender foi usado */}
+                    <div className={`p-3 rounded-lg text-center ${
+                      usedTranscender 
+                        ? 'bg-warning/10 border border-warning/30' 
+                        : 'bg-san/10 border border-san/30'
+                    }`}>
+                      <Brain className={`w-5 h-5 mx-auto mb-1 ${usedTranscender ? 'text-warning' : 'text-san'}`} />
                       <p className="text-xs text-muted-foreground">SAN MÁX</p>
                       <p className="font-display text-lg">
-                        {character.san_max} → <span className="text-san">{nextStats.san}</span>
+                        {character.san_max} → <span className={usedTranscender ? 'text-warning' : 'text-san'}>
+                          {usedTranscender ? character.san_max : nextStats.san}
+                        </span>
                       </p>
-                      <Badge className="text-xs font-bold bg-san text-san-foreground shadow-sm">
-                        +{nextStats.san - character.san_max}
-                      </Badge>
+                      {usedTranscender ? (
+                        <Badge className="text-xs font-bold bg-warning text-warning-foreground shadow-sm">
+                          <AlertTriangle className="w-3 h-3 mr-1" />
+                          +0 (Transcender)
+                        </Badge>
+                      ) : (
+                        <Badge className="text-xs font-bold bg-san text-san-foreground shadow-sm">
+                          +{nextStats.san - character.san_max}
+                        </Badge>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -613,6 +673,18 @@ export function NexProgressionModal({
         characterPowers={pendingPowers}
         elementalAffinity={selectedAffinity || character.elemental_affinity}
         affinityActive={character.affinity_active}
+      />
+      
+      {/* Modal de Seleção de Ritual (do poder "Aprender Ritual") */}
+      <NonOccultistRitualModal
+        open={ritualSelectOpen}
+        onClose={() => setRitualSelectOpen(false)}
+        source="ritual-aprendido"
+        currentRituals={[...character.rituals, ...pendingRituals]}
+        onConfirm={(selectedRituals) => {
+          setPendingRituals(prev => [...prev, ...selectedRituals]);
+          setRitualSelectOpen(false);
+        }}
       />
     </>
   );

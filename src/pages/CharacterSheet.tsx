@@ -868,7 +868,8 @@ export default function CharacterSheet() {
     });
   };
 
-  // Handler para adicionar poder paranormal
+  // Handler para adicionar poder paranormal via Transcender
+  // REGRA: Ao usar Transcender, o personagem perde a Sanidade que teria ganho no NEX atual
   const handleParanormalPowerSelect = async (power: ParanormalPower) => {
     if (!character) return;
 
@@ -881,10 +882,27 @@ export default function CharacterSheet() {
     };
     
     const updatedPowers = [...currentPowers, newPower];
+    
+    // Calcula a sanidade que seria ganha no NEX atual
+    // A regra é: perder a sanidade que TERIA ganho naquele NEX
+    // Calculamos baseado na diferença entre NEX atual e anterior
+    const currentNex = character.nex;
+    const previousNex = Math.max(5, currentNex - 5);
+    const currentStats = calculateDerivedStats(character.class, character.vigor, character.presence, currentNex, character.origin);
+    const previousStats = calculateDerivedStats(character.class, character.vigor, character.presence, previousNex, character.origin);
+    const sanLoss = currentStats.san - previousStats.san;
+    
+    // Nova sanidade máxima e atual (reduz pelo custo do Transcender)
+    const newSanMax = Math.max(0, character.san_max - sanLoss);
+    const newSanCurrent = Math.min(character.san_current, newSanMax);
 
     const { error } = await supabase
       .from('characters')
-      .update({ paranormal_powers: updatedPowers })
+      .update({ 
+        paranormal_powers: updatedPowers,
+        san_max: newSanMax,
+        san_current: newSanCurrent,
+      })
       .eq('id', character.id);
 
     if (error) {
@@ -896,25 +914,44 @@ export default function CharacterSheet() {
       return;
     }
 
-    setCharacter(prev => prev ? { ...prev, paranormal_powers: updatedPowers } : null);
+    setCharacter(prev => prev ? { 
+      ...prev, 
+      paranormal_powers: updatedPowers,
+      san_max: newSanMax,
+      san_current: newSanCurrent,
+    } : null);
     setParanormalPowerModalOpen(false);
 
     toast({
       title: 'Poder Paranormal adquirido!',
-      description: `${power.name} foi adicionado.`,
+      description: sanLoss > 0 
+        ? `${power.name} foi adicionado. Você perdeu ${sanLoss} de Sanidade máxima pelo Transcender.`
+        : `${power.name} foi adicionado.`,
     });
   };
 
-  // Verifica se o personagem tem a habilidade Transcender
-  const hasTranscender = useMemo(() => {
-    if (!character) return false;
+  // Conta quantas vezes "Transcender" aparece nas habilidades
+  const transcenderCount = useMemo(() => {
+    if (!character) return 0;
     const abilities = character.abilities || [];
-    return abilities.some(a => 
+    return abilities.filter(a => 
       typeof a === 'string' 
         ? a.toLowerCase().includes('transcender')
         : false
-    );
+    ).length;
   }, [character?.abilities]);
+  
+  // Conta quantos poderes paranormais o personagem tem (cada um = 1 uso de Transcender)
+  const transcenderUsed = useMemo(() => {
+    if (!character) return 0;
+    return (character.paranormal_powers || []).length;
+  }, [character?.paranormal_powers]);
+  
+  // Calcula usos restantes de Transcender
+  const transcenderRemaining = transcenderCount - transcenderUsed;
+  
+  // Verifica se o personagem pode usar Transcender (tem usos disponíveis)
+  const hasTranscender = transcenderRemaining > 0;
 
   // Handler para edição do personagem
   const handleCharacterEdit = async (data: {
@@ -1816,7 +1853,7 @@ export default function CharacterSheet() {
                           onClick={() => setParanormalPowerModalOpen(true)}
                         >
                           <Sparkles className="w-3 h-3 mr-1" />
-                          Transcender
+                          Transcender ({transcenderRemaining})
                         </Button>
                       )}
                     </div>
@@ -1847,8 +1884,14 @@ export default function CharacterSheet() {
                           className="mt-2 text-paranormal"
                           onClick={() => setParanormalPowerModalOpen(true)}
                         >
-                          Escolher Poder
+                          Escolher Poder ({transcenderRemaining})
                         </Button>
+                      </div>
+                    ) : transcenderCount > 0 ? (
+                      <div className="text-center py-4 text-muted-foreground text-sm border border-dashed border-muted rounded-lg">
+                        <Sparkles className="w-6 h-6 mx-auto mb-2 opacity-30" />
+                        <p className="text-xs">Todos os usos de Transcender consumidos.</p>
+                        <p className="text-xs mt-1 opacity-70">{transcenderUsed}/{transcenderCount} poderes adquiridos</p>
                       </div>
                     ) : (
                       <p className="text-xs text-muted-foreground italic">
