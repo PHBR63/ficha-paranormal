@@ -475,9 +475,9 @@ function SkillsTabContent({ character, onOpenDiceRoller }: SkillsTabContentProps
           </div>
         ) : (
           <div className="text-center py-6">
-            <Filter className="w-10 h-10 mx-auto text-muted-foreground/30 mb-2" />
-            <p className="text-muted-foreground text-sm">Nenhuma perícia encontrada.</p>
-            <p className="text-[10px] text-muted-foreground/70 mt-1">
+            <Filter className="w-10 h-10 mx-auto text-foreground/40 mb-2" />
+            <p className="text-foreground/70 text-sm">Nenhuma perícia encontrada.</p>
+            <p className="text-[10px] text-foreground/60 mt-1">
               Tente ajustar os filtros
             </p>
           </div>
@@ -600,7 +600,7 @@ export function MobileCharacterSheet({
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <User className="w-8 h-8 text-muted-foreground/30" />
+                      <User className="w-8 h-8 text-foreground/40" />
                     </div>
                   )}
                 </div>
@@ -1047,7 +1047,7 @@ export function MobileCharacterSheet({
                             </div>
                             <p className="text-[11px] text-muted-foreground mt-1 line-clamp-2">{power.description}</p>
                           </div>
-                          <ChevronRight className="w-4 h-4 text-muted-foreground/50 flex-shrink-0" />
+                          <ChevronRight className="w-4 h-4 text-foreground/50 flex-shrink-0" />
                         </div>
                       </button>
                     );
@@ -1299,9 +1299,9 @@ export function MobileCharacterSheet({
             ) : (
               <div className="ordo-panel p-6">
                 <div className="text-center">
-                  <Package className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
-                  <p className="text-muted-foreground text-sm">Nenhum item no inventário.</p>
-                  <p className="text-[10px] text-muted-foreground/70 mt-1">
+                  <Package className="w-12 h-12 mx-auto text-foreground/40 mb-3" />
+                  <p className="text-foreground/70 text-sm">Nenhum item no inventário.</p>
+                  <p className="text-[10px] text-foreground/60 mt-1">
                     Adicione itens através da versão desktop
                   </p>
                 </div>

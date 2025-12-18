@@ -334,8 +334,8 @@ interface WeaponListProps {
 function WeaponList({ weapons, canAddCategory, isCategoryLocked, onSelect, onAdd }: WeaponListProps) {
   if (weapons.length === 0) {
     return (
-      <div className="text-center py-8 text-muted-foreground">
-        <Search className="w-10 h-10 mx-auto mb-2 opacity-30" />
+      <div className="text-center py-8 text-foreground/70">
+        <Search className="w-10 h-10 mx-auto mb-2 text-foreground/40" />
         <p>Nenhuma arma encontrada</p>
       </div>
     );

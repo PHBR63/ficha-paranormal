@@ -51,11 +51,11 @@ export function CampaignStatusGrid({ members, isMaster }: CampaignStatusGridProp
   if (membersWithCharacters.length === 0) {
     return (
       <div className="text-center py-12">
-        <User className="w-12 h-12 mx-auto text-muted-foreground/30 mb-4" />
-        <p className="text-muted-foreground">
+        <User className="w-12 h-12 mx-auto text-foreground/40 mb-4" />
+        <p className="text-foreground/70">
           Nenhum agente ativo na campanha.
         </p>
-        <p className="text-sm text-muted-foreground/60 mt-1">
+        <p className="text-sm text-foreground/60 mt-1">
           Os jogadores precisam selecionar seus personagens.
         </p>
       </div>

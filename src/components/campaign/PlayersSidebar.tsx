@@ -109,7 +109,7 @@ export function PlayersSidebar({
                         {member.characters.name} • {member.characters.class}
                       </p>
                     ) : (
-                      <p className="text-xs text-muted-foreground/50 italic">
+                      <p className="text-xs text-foreground/60 italic">
                         Sem personagem
                       </p>
                     )}

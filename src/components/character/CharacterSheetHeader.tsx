@@ -249,7 +249,7 @@ export const CharacterSheetHeader = memo(function CharacterSheetHeader({
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-secondary/20">
-              <Shield className="w-12 h-12 text-muted-foreground/30" />
+              <Shield className="w-12 h-12 text-foreground/40" />
             </div>
           )}
         </motion.div>

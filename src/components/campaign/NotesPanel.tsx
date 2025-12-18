@@ -303,8 +303,8 @@ export function NotesPanel({ campaignId, isMaster }: NotesPanelProps) {
             onUpdate={updateNote}
           />
         ) : (
-          <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-            <FileText className="w-12 h-12 mb-4 opacity-50" />
+          <div className="flex flex-col items-center justify-center h-full text-foreground/70">
+            <FileText className="w-12 h-12 mb-4 text-foreground/40" />
             <p>Selecione uma nota ou crie uma nova</p>
           </div>
         )}

@@ -211,7 +211,7 @@ export function EffectiveStatsWidget({
               <div className="flex items-center justify-between p-3 bg-primary/10 border border-primary/30 rounded-lg">
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="w-5 h-5 text-primary" />
-                  <span className="text-sm text-muted-foreground">RD (RESISTÊNCIA)</span>
+                  <span className="text-sm font-medium text-foreground/80">RD (RESISTÊNCIA)</span>
                 </div>
                 <motion.span
                   key={armorStats.totalRD}
@@ -226,7 +226,7 @@ export function EffectiveStatsWidget({
             <TooltipContent side="left" className="max-w-xs">
               <div className="space-y-1">
                 <p className="font-medium text-sm">Resistência a Dano:</p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-foreground/70">
                   Reduz {armorStats.totalRD} pontos de todo dano recebido
                 </p>
                 <div className="pt-1 border-t border-border/50 mt-1">

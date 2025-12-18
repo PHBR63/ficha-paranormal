@@ -228,10 +228,10 @@ export function RitualCastHistory({ history, onClear, characterName }: RitualCas
           {history.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mb-4">
-                <Sparkles className="w-8 h-8 text-muted-foreground/50" />
+                <Sparkles className="w-8 h-8 text-foreground/50" />
               </div>
-              <h4 className="font-medium text-muted-foreground">Nenhum ritual conjurado</h4>
-              <p className="text-sm text-muted-foreground/70 mt-1 max-w-[200px]">
+              <h4 className="font-medium text-foreground/70">Nenhum ritual conjurado</h4>
+              <p className="text-sm text-foreground/60 mt-1 max-w-[200px]">
                 Os rituais conjurados nesta sessão aparecerão aqui
               </p>
             </div>
