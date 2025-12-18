@@ -68,6 +68,7 @@ interface NexBenefitsPanelProps {
   originId?: string;
   previousNex?: number;
   compact?: boolean;
+  abilities?: string[];
 }
 
 export function NexBenefitsPanel({
@@ -79,6 +80,7 @@ export function NexBenefitsPanel({
   originId,
   previousNex,
   compact = false,
+  abilities = [],
 }: NexBenefitsPanelProps) {
   // Obter dados de progressão
   const progression = getNexProgression(nex);
@@ -86,11 +88,11 @@ export function NexBenefitsPanel({
   
   // Calcular stats derivados
   const stats = characterClass 
-    ? calculateDerivedStats(characterClass, vigor, presence, nex, originId)
+    ? calculateDerivedStats(characterClass, vigor, presence, nex, originId, abilities)
     : { hp: 0, pe: 0, san: 0 };
   
   const previousStats = characterClass && previousNex
-    ? calculateDerivedStats(characterClass, vigor, presence, previousNex, originId)
+    ? calculateDerivedStats(characterClass, vigor, presence, previousNex, originId, abilities)
     : null;
   
   // Dados da classe

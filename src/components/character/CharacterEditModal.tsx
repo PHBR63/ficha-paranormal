@@ -144,6 +144,7 @@ interface CharacterEditModalProps {
     skills: Record<string, number>;
     defense: number;
     photo_url?: string | null;
+    abilities?: string[];
   };
   onSave: (data: CharacterEditData) => Promise<void>;
 }
@@ -214,7 +215,8 @@ export function CharacterEditModal({
       character.vigor,
       character.presence,
       character.nex,
-      character.origin
+      character.origin,
+      character.abilities as string[]
     );
   }, [character]);
 
@@ -225,9 +227,10 @@ export function CharacterEditModal({
       vigor,
       presence,
       character.nex,
-      character.origin
+      character.origin,
+      character.abilities as string[]
     );
-  }, [character.class, vigor, presence, character.nex, character.origin]);
+  }, [character.class, vigor, presence, character.nex, character.origin, character.abilities]);
 
   // Detecta se houve mudanças nos atributos
   const attributeChanges = useMemo(() => {
