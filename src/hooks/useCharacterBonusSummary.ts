@@ -58,6 +58,21 @@ export const CONDITIONAL_BONUSES: Omit<ConditionalBonus, 'active'>[] = [
     effects: ['+2 ataque'],
     source: 'general_power',
   },
+  // === HABILIDADES ATIVAS DE COMBATE ===
+  {
+    id: 'combate-defensivo',
+    name: 'Combate Defensivo',
+    condition: 'Ação agredir (até próximo turno)',
+    effects: ['-5 ataque', '+5 Defesa'],
+    source: 'ability',
+  },
+  {
+    id: 'sentido-tatico',
+    name: 'Sentido Tático',
+    condition: 'Gasta 2 PE + ação movimento (cena)',
+    effects: ['+INT Defesa', '+INT resistências'],
+    source: 'ability',
+  },
 ];
 
 // Interface para bônus de combate
@@ -122,6 +137,7 @@ interface UseCharacterBonusSummaryProps {
   activeConditionalBonuses?: string[]; // IDs dos bônus condicionais ativos
   activeRituals?: ActiveRitualForDefense[]; // Rituais ativos para cálculo de defesa
   skills?: Record<string, number>; // Perícias com nível de treinamento (0-3)
+  intellect?: number; // Intelecto do personagem (para Sentido Tático)
 }
 
 /**
@@ -139,9 +155,19 @@ export function useCharacterBonusSummary({
   activeConditionalBonuses = [],
   activeRituals = [],
   skills = {},
+  intellect = 1,
 }: UseCharacterBonusSummaryProps): BonusSummary {
   // Usa hooks existentes
-  const defenseBonuses = useDefenseBonuses({ origin, abilities, generalPowers, inventory, activeRituals, skills });
+  const defenseBonuses = useDefenseBonuses({ 
+    origin, 
+    abilities, 
+    generalPowers, 
+    inventory, 
+    activeRituals, 
+    skills, 
+    activeConditionalBonuses,
+    intellect,
+  });
   const paranormalEffects = useParanormalEffects({ 
     powers: paranormalPowers, 
     nex, 
@@ -276,6 +302,47 @@ export function useCharacterBonusSummary({
         combat.attack.total += 2;
         combat.damage.total += 2;
       }
+    }
+
+    // === HABILIDADES ATIVAS DE COMBATE (toggleáveis) ===
+    
+    // Combate Defensivo: +5 Defesa, -5 ataque (habilidade de classe)
+    if (hasAbility('combate defensivo')) {
+      const isActive = isConditionalActive('combate-defensivo');
+      conditionalBonuses.push({
+        id: 'combate-defensivo',
+        name: 'Combate Defensivo',
+        condition: 'Ação agredir (até próximo turno)',
+        active: isActive,
+        effects: ['+5 Defesa', '-5 ataque'],
+        source: 'ability',
+      });
+      // Penalidade de ataque quando ativo
+      if (isActive) {
+        combat.attack.breakdown.push({
+          source: 'Combate Defensivo',
+          value: -5,
+          type: 'ability',
+          conditional: 'modo defensivo ativo',
+          active: true,
+          toggleable: true,
+          toggleId: 'combate-defensivo',
+        });
+        combat.attack.total -= 5;
+      }
+    }
+
+    // Sentido Tático: +INT Defesa e resistências (habilidade de classe)
+    if (hasAbility('sentido tatico')) {
+      const isActive = isConditionalActive('sentido-tatico');
+      conditionalBonuses.push({
+        id: 'sentido-tatico',
+        name: 'Sentido Tático',
+        condition: '2 PE + ação movimento (cena)',
+        active: isActive,
+        effects: [`+${intellect} Defesa`, `+${intellect} resistências`],
+        source: 'ability',
+      });
     }
 
     // Iniciativa Melhorada: +5 Iniciativa

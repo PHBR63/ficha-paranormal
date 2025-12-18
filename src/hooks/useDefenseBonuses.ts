@@ -81,6 +81,8 @@ interface UseDefenseBonusesProps {
   inventory?: InventoryItemWithArmor[]; // Inventário para verificar armaduras equipadas
   activeRituals?: ActiveRitualForDefense[]; // Rituais ativos com defenseModifier
   skills?: Record<string, number>;   // Perícias com nível de treinamento (0-3)
+  activeConditionalBonuses?: string[]; // IDs dos bônus condicionais ativos
+  intellect?: number;                // Intelecto do personagem (para Sentido Tático)
 }
 
 /**
@@ -93,6 +95,8 @@ export function useDefenseBonuses({
   inventory = [],
   activeRituals = [],
   skills = {},
+  activeConditionalBonuses = [],
+  intellect = 1,
 }: UseDefenseBonusesProps): DefenseBonuses {
   return useMemo(() => {
     const breakdown: DefenseBonusBreakdown[] = [];
@@ -253,6 +257,54 @@ export function useDefenseBonuses({
       });
     }
     
+    // === HABILIDADES ATIVAS (togglável) ===
+    
+    // Combate Defensivo: +5 Defesa, -5 ataque (quando ativado manualmente)
+    const hasCombateDefensivo = normalizedAbilities.some(a => 
+      a.includes('combate defensivo') || a === 'combate-defensivo'
+    ) || abilities.some(a => 
+      a === 'combate-defensivo' || a === 'Combate Defensivo'
+    );
+    
+    if (hasCombateDefensivo) {
+      const isActive = activeConditionalBonuses.includes('combate-defensivo');
+      breakdown.push({
+        source: 'Combate Defensivo',
+        type: 'ability',
+        bonus: 5,
+        conditional: '-5 ataque até próximo turno',
+        active: isActive,
+      });
+    }
+    
+    // Sentido Tático: +INT Defesa e resistências (quando ativado manualmente)
+    const hasSentidoTatico = normalizedAbilities.some(a => 
+      a.includes('sentido tatico') || a === 'sentido-tatico'
+    ) || abilities.some(a => 
+      a === 'sentido-tatico' || a === 'Sentido Tático'
+    );
+    
+    if (hasSentidoTatico) {
+      const isActive = activeConditionalBonuses.includes('sentido-tatico');
+      breakdown.push({
+        source: 'Sentido Tático',
+        type: 'ability',
+        bonus: intellect,
+        conditional: `2 PE + ação movimento (até fim da cena)`,
+        active: isActive,
+      });
+      
+      // Também adiciona às resistências
+      resistanceBreakdown.push({
+        source: 'Sentido Tático',
+        type: 'ability',
+        fortitude: intellect,
+        reflexos: intellect,
+        vontade: intellect,
+        active: isActive,
+      });
+    }
+    
     // Calcula o bônus total de defesa (apenas dos ativos)
     const totalBonus = breakdown
       .filter(b => b.active)
@@ -281,7 +333,7 @@ export function useDefenseBonuses({
         breakdown: resistanceBreakdown,
       }
     };
-  }, [origin, abilities, generalPowers, inventory, activeRituals, skills]);
+  }, [origin, abilities, generalPowers, inventory, activeRituals, skills, activeConditionalBonuses, intellect]);
 }
 
 /**
