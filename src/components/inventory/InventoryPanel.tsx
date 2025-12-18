@@ -1014,8 +1014,10 @@ export function InventoryPanel({
             <Weight className={cn("w-4 h-4", loadColor)} />
             <span className="text-muted-foreground">Carga</span>
           </div>
-          <span className={cn("font-display", loadColor)}>
-            {loadStatus.currentLoad} / {loadStatus.maxCapacity}
+          <span className={cn("font-display font-bold text-base", loadColor)}>
+            <span className="text-primary">{loadStatus.currentLoad}</span>
+            <span className="text-muted-foreground/60 mx-0.5">/</span>
+            <span className="text-foreground">{loadStatus.maxCapacity}</span>
           </span>
         </div>
         <Progress 
