@@ -43,7 +43,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ORIGINS, CLASSES, getTrackById } from '@/lib/character-data';
 import { ALL_RITUALS } from '@/lib/rituals-data';
 import { ALL_CLASS_ABILITIES } from '@/lib/class-abilities';
-import { PARANORMAL_POWERS, ParanormalPower, ParanormalElement } from '@/lib/paranormal-powers';
+import { PARANORMAL_POWERS, ParanormalPower, ParanormalElement, SavedParanormalPower, getPowerById } from '@/lib/paranormal-powers';
 import { GENERAL_POWERS, getGeneralPowerById } from '@/lib/general-powers';
 import { ParanormalPowersPanel } from '@/components/character/ParanormalPowersPanel';
 import { cn } from '@/lib/utils';
@@ -55,6 +55,8 @@ import { RitualSelectionModal } from '@/components/character/RitualSelectionModa
 import { CharacterEditModal } from '@/components/character/CharacterEditModal';
 import { CharacterHistoryPanel, logCharacterChanges } from '@/components/character/CharacterHistoryPanel';
 import { ParanormalPowerSelectModal } from '@/components/character/ParanormalPowerSelectModal';
+import { IntellectSkillSelectModal } from '@/components/character/IntellectSkillSelectModal';
+import { ElementResistanceSelectModal } from '@/components/character/ElementResistanceSelectModal';
 import { ConditionManager, type ActiveCondition } from '@/components/character/ConditionManager';
 import { RestModal } from '@/components/character/RestModal';
 import { NonOccultistRitualModal, RitualSource } from '@/components/character/NonOccultistRitualModal';
@@ -259,6 +261,11 @@ export default function CharacterSheet() {
   const [restModalOpen, setRestModalOpen] = useState(false);
   const [paranormalPowerModalOpen, setParanormalPowerModalOpen] = useState(false);
   const [sessionModeOpen, setSessionModeOpen] = useState(false);
+  
+  // Modais de escolha para poderes paranormais
+  const [intellectSkillModalOpen, setIntellectSkillModalOpen] = useState(false);
+  const [elementResistanceModalOpen, setElementResistanceModalOpen] = useState(false);
+  const [pendingPower, setPendingPower] = useState<ParanormalPower | null>(null);
   
   // Modal de detalhes de habilidade de classe
   const [abilityDetailOpen, setAbilityDetailOpen] = useState(false);
@@ -873,19 +880,47 @@ export default function CharacterSheet() {
   const handleParanormalPowerSelect = async (power: ParanormalPower) => {
     if (!character || !user) return;
 
+    // Verifica se o poder requer uma escolha adicional
+    const fullPower = getPowerById(power.id);
+    if (fullPower?.requiresChoice) {
+      setPendingPower(power);
+      setParanormalPowerModalOpen(false);
+      
+      switch (fullPower.requiresChoice) {
+        case 'skill_intellect':
+          setIntellectSkillModalOpen(true);
+          return;
+        case 'ritual':
+          // Abre modal de rituais para não-ocultistas
+          setRitualModalSource('aprender-ritual-poder');
+          setNonOccultistRitualModalOpen(true);
+          return;
+        case 'element_resistance':
+          setElementResistanceModalOpen(true);
+          return;
+      }
+    }
+
+    // Fluxo normal para poderes sem escolha
+    await saveParanormalPower(power);
+  };
+  
+  // Função auxiliar para salvar poder paranormal com ou sem escolhas
+  const saveParanormalPower = async (power: ParanormalPower, choices?: SavedParanormalPower['choices']) => {
+    if (!character || !user) return;
+
     const currentPowers = character.paranormal_powers || [];
-    const newPower = {
+    const newPower: SavedParanormalPower = {
       id: power.id,
       name: power.name,
       element: power.element,
       description: power.description,
+      choices,
     };
     
     const updatedPowers = [...currentPowers, newPower];
     
     // Calcula a sanidade que seria ganha no NEX atual
-    // A regra é: perder a sanidade que TERIA ganho naquele NEX
-    // Calculamos baseado na diferença entre NEX atual e anterior
     const currentNex = character.nex;
     const previousNex = Math.max(5, currentNex - 5);
     const currentStats = calculateDerivedStats(character.class, character.vigor, character.presence, currentNex, character.origin);
@@ -938,7 +973,7 @@ export default function CharacterSheet() {
       san_max: newSanMax,
       san_current: newSanCurrent,
     } : null);
-    setParanormalPowerModalOpen(false);
+    setPendingPower(null);
 
     toast({
       title: 'Poder Paranormal adquirido!',
@@ -946,6 +981,39 @@ export default function CharacterSheet() {
         ? `${power.name} foi adicionado. Você perdeu ${sanLoss} de Sanidade máxima pelo Transcender.`
         : `${power.name} foi adicionado.`,
     });
+  };
+  
+  // Handler para confirmar escolha de perícias de Intelecto (Expansão de Conhecimento)
+  const handleIntellectSkillConfirm = async (skillIds: string[]) => {
+    if (!pendingPower) return;
+    await saveParanormalPower(pendingPower, { skills: skillIds });
+    setIntellectSkillModalOpen(false);
+  };
+  
+  // Handler para confirmar escolha de elemento de resistência (Resistir a Elemento)
+  const handleElementResistanceConfirm = async (element: ParanormalElement) => {
+    if (!pendingPower) return;
+    await saveParanormalPower(pendingPower, { resistElement: element });
+    setElementResistanceModalOpen(false);
+  };
+  
+  // Handler para confirmar escolha de ritual (Aprender Ritual via poder paranormal)
+  const handleRitualFromPowerConfirm = async (ritualId: string) => {
+    if (!pendingPower || !character) return;
+    
+    // Salva o poder com a escolha do ritual
+    await saveParanormalPower(pendingPower, { ritualId });
+    
+    // Adiciona o ritual à lista de rituais do personagem
+    const updatedRituals = [...(character.rituals || []), ritualId];
+    await supabase
+      .from('characters')
+      .update({ rituals: updatedRituals })
+      .eq('id', character.id);
+    
+    setCharacter(prev => prev ? { ...prev, rituals: updatedRituals } : null);
+    setNonOccultistRitualModalOpen(false);
+  };
   };
 
   // Conta quantas vezes "Transcender" aparece nas habilidades
@@ -2167,6 +2235,34 @@ export default function CharacterSheet() {
         affinityActive={character.affinity_active}
       />
 
+      {/* Modal de escolha de perícias de Intelecto (Expansão de Conhecimento) */}
+      <IntellectSkillSelectModal
+        open={intellectSkillModalOpen}
+        onClose={() => {
+          setIntellectSkillModalOpen(false);
+          setPendingPower(null);
+        }}
+        onConfirm={handleIntellectSkillConfirm}
+        hasAffinity={character.affinity_active && character.elemental_affinity === 'conhecimento'}
+        alreadyChosenSkills={(character.paranormal_powers || [])
+          .filter(p => p.id === 'expansao-de-conhecimento')
+          .flatMap(p => (p as SavedParanormalPower).choices?.skills || [])}
+      />
+
+      {/* Modal de escolha de elemento de resistência (Resistir a Elemento) */}
+      <ElementResistanceSelectModal
+        open={elementResistanceModalOpen}
+        onClose={() => {
+          setElementResistanceModalOpen(false);
+          setPendingPower(null);
+        }}
+        onConfirm={handleElementResistanceConfirm}
+        alreadyResistant={(character.paranormal_powers || [])
+          .filter(p => p.id === 'resistir-a-elemento')
+          .map(p => (p as SavedParanormalPower).choices?.resistElement)
+          .filter(Boolean) as ParanormalElement[]}
+      />
+
       {/* Modal de seleção de ritual para não-ocultistas */}
       <NonOccultistRitualModal
         open={nonOccultistRitualModalOpen}
@@ -2177,6 +2273,12 @@ export default function CharacterSheet() {
           ...learnedRitualsFromPowers.map(r => r.ritualId)
         ]}
         onConfirm={(ritualIds) => {
+          // Caso especial: ritual do poder paranormal "Aprender Ritual"
+          if (ritualModalSource === 'aprender-ritual-poder' && pendingPower && ritualIds.length > 0) {
+            handleRitualFromPowerConfirm(ritualIds[0]);
+            return;
+          }
+          
           // Salvar os rituais aprendidos via poderes gerais
           const newRituals: LearnedRitual[] = ritualIds.map(id => ({
             ritualId: id,
