@@ -1544,6 +1544,7 @@ export default function CharacterSheet() {
                     ammoType: item.ammoType,
                     // Campos de armaduras
                     rd: item.rd,
+                    defenseBonus: item.defenseBonus,
                     agilityPenalty: item.agilityPenalty,
                     speedPenalty: item.speedPenalty,
                     armorType: item.armorType,
@@ -1577,6 +1578,7 @@ export default function CharacterSheet() {
                       ammoType: (item as any).ammoType,
                       // Campos de armaduras
                       rd: (item as any).rd,
+                      defenseBonus: (item as any).defenseBonus,
                       agilityPenalty: (item as any).agilityPenalty,
                       speedPenalty: (item as any).speedPenalty,
                       armorType: (item as any).armorType,
