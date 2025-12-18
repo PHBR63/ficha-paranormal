@@ -69,6 +69,7 @@ import { useWeaponBuffs } from '@/hooks/useWeaponBuffs';
 import { useAutoConditions, type ActiveCondition as AutoCondition } from '@/hooks/useAutoConditions';
 import { useRitualCombatBonuses } from '@/hooks/useRitualCombatBonuses';
 import { useSustainedRituals } from '@/hooks/useSustainedRituals';
+import { useArmorMigration } from '@/hooks/useArmorMigration';
 import { BonusSummaryCard } from '@/components/character/BonusSummaryCard';
 import { SustainedRitualsPanel } from '@/components/character/SustainedRitualsPanel';
 
@@ -224,6 +225,9 @@ export default function CharacterSheet() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const isMobile = useIsMobile();
+
+  // Hook de migração automática de armaduras
+  const { runMigration, resetMigration } = useArmorMigration();
 
   // Estados principais
   const [character, setCharacter] = useState<Character | null>(null);
@@ -417,6 +421,9 @@ export default function CharacterSheet() {
 
   // Fetch character data
   useEffect(() => {
+    // Reset migration state quando mudar de personagem
+    resetMigration();
+    
     async function fetchCharacter() {
       if (!id || !user) return;
 
@@ -437,8 +444,21 @@ export default function CharacterSheet() {
         return;
       }
 
+      // Parse inventory
+      let inventory: InventoryItemPersisted[] = Array.isArray(data.inventory) 
+        ? (data.inventory as unknown as InventoryItemPersisted[]) 
+        : [];
+      
+      // Executa migração automática de armaduras se necessário
+      const migratedInventory = await runMigration(id, inventory as any);
+      if (migratedInventory) {
+        inventory = migratedInventory as unknown as InventoryItemPersisted[];
+        console.log('[CharacterSheet] Armaduras migradas automaticamente');
+      }
+
       const charData = {
         ...data,
+        inventory,
         // Suporta condições como string legado ou objeto completo
         conditions: Array.isArray(data.conditions) ? data.conditions : [],
         abilities: Array.isArray(data.abilities) ? data.abilities as string[] : [],
@@ -457,7 +477,7 @@ export default function CharacterSheet() {
     }
 
     fetchCharacter();
-  }, [id, user, navigate, toast]);
+  }, [id, user, navigate, toast, runMigration, resetMigration]);
 
   // Handler para rolar atributo (inclui detecção de resistências)
   const handleAttributeRoll = useCallback((attributeValue: number, attributeName: string) => {
