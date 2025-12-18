@@ -1,42 +1,55 @@
 /**
  * Index - Landing Page Let's Roll
- * Design baseado na proposta com tema roxo vibrante
+ * Design: Horror Investigativo - Ordem Paranormal
+ * Estética: Documentos classificados da Ordo Realitas
  */
 
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { 
-  Crown, 
-  ScrollText, 
-  Dices, 
-  Sparkles, 
   ChevronRight,
-  Skull
+  Shield,
+  FileText,
+  Dices,
+  Brain,
+  Eye
 } from 'lucide-react';
+import { ParanormalElementsRow, ParanormalElementIcon } from '@/components/ui/paranormal-element-icon';
 
 const Index = () => {
   const { user } = useAuth();
 
   return (
-    <div className="min-h-screen bg-[#1A0033] relative overflow-hidden">
-      {/* Background Effects - Partículas e gradients */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_#2A0033_0%,_#1A0033_70%)]" />
-      <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg viewBox=%220 0 256 256%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noise%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.8%22 numOctaves=%224%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noise)%22 opacity=%220.03%22/%3E%3C/svg%3E')]" />
+    <div className="min-h-screen bg-[#0D0A0B] relative overflow-hidden">
+      {/* Background Effects - Horror Investigativo */}
+      <div className="absolute inset-0 bg-landing-gradient" />
       
-      {/* Glow effect central */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] sm:w-[600px] h-[300px] sm:h-[600px] bg-[#8000FF]/20 rounded-full blur-[80px] sm:blur-[120px]" />
+      {/* Noise texture */}
+      <div className="absolute inset-0 landing-noise pointer-events-none" />
       
-      {/* Header - Responsivo */}
-      <header className="relative z-10 border-b border-[#8000FF]/20 backdrop-blur-sm">
+      {/* Red mist effect */}
+      <div className="absolute top-0 left-0 w-full h-full">
+        <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-[#8B0000]/10 rounded-full blur-[150px] animate-red-mist" />
+        <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-[#B22222]/8 rounded-full blur-[120px] animate-red-mist" style={{ animationDelay: '4s' }} />
+      </div>
+      
+      {/* Scan lines overlay */}
+      <div className="absolute inset-0 scan-lines opacity-30 pointer-events-none" />
+      
+      {/* Red vignette */}
+      <div className="absolute inset-0 vignette-red pointer-events-none" />
+      
+      {/* Header */}
+      <header className="relative z-10 border-b border-[#8B0000]/20 backdrop-blur-sm bg-[#0D0A0B]/50">
         <div className="container mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
           <div className="flex items-center gap-2 sm:gap-3">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-[#8000FF]/20 border border-[#8000FF]/30 flex items-center justify-center">
-              <Skull className="w-5 h-5 sm:w-6 sm:h-6 text-[#8000FF]" />
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-[#8B0000]/20 border border-[#8B0000]/40 flex items-center justify-center">
+              <Eye className="w-5 h-5 sm:w-6 sm:h-6 text-[#B22222]" />
             </div>
             <div>
-              <h1 className="font-display text-xl sm:text-2xl tracking-wide text-white">LET'S ROLL</h1>
-              <p className="text-[8px] sm:text-[10px] text-[#A855F7] tracking-[0.2em] sm:tracking-[0.3em] uppercase hidden sm:block">Ordem Paranormal VTT</p>
+              <h1 className="font-display text-xl sm:text-2xl tracking-wide text-[#F5F5F5]">LET'S ROLL</h1>
+              <p className="text-[8px] sm:text-[10px] text-[#8B0000] tracking-[0.2em] sm:tracking-[0.3em] uppercase hidden sm:block">Ordem Paranormal VTT</p>
             </div>
           </div>
           
@@ -44,7 +57,7 @@ const Index = () => {
             {user ? (
               <Link to="/dashboard">
                 <Button 
-                  className="bg-[#8000FF] hover:bg-[#6B00D6] text-white border-0 shadow-[0_0_20px_rgba(128,0,255,0.3)] hover:shadow-[0_0_30px_rgba(128,0,255,0.5)] transition-all text-xs sm:text-sm px-3 sm:px-4"
+                  className="bg-[#8B0000] hover:bg-[#B22222] text-white border-0 shadow-[0_0_20px_rgba(139,0,0,0.4)] hover:shadow-[0_0_30px_rgba(139,0,0,0.6)] transition-all text-xs sm:text-sm px-3 sm:px-4"
                 >
                   <span className="hidden sm:inline">Acessar Sistema</span>
                   <span className="sm:hidden">Acessar</span>
@@ -54,13 +67,13 @@ const Index = () => {
             ) : (
               <>
                 <Link to="/auth">
-                  <Button variant="ghost" className="text-[#E0E0E0] hover:text-white hover:bg-[#8000FF]/10 text-xs sm:text-sm px-2 sm:px-4">
+                  <Button variant="ghost" className="text-[#C0C0C0] hover:text-white hover:bg-[#8B0000]/10 text-xs sm:text-sm px-2 sm:px-4">
                     Entrar
                   </Button>
                 </Link>
                 <Link to="/auth?mode=signup">
                   <Button 
-                    className="bg-[#8000FF] hover:bg-[#6B00D6] text-white border-0 shadow-[0_0_20px_rgba(128,0,255,0.3)] hover:shadow-[0_0_30px_rgba(128,0,255,0.5)] transition-all text-xs sm:text-sm px-3 sm:px-4"
+                    className="bg-[#8B0000] hover:bg-[#B22222] text-white border-0 shadow-[0_0_20px_rgba(139,0,0,0.4)] hover:shadow-[0_0_30px_rgba(139,0,0,0.6)] transition-all text-xs sm:text-sm px-3 sm:px-4"
                   >
                     <span className="hidden sm:inline">Conecte-se</span>
                     <span className="sm:hidden">Criar</span>
@@ -72,148 +85,233 @@ const Index = () => {
         </div>
       </header>
 
-      {/* Hero Section - Responsivo */}
+      {/* Hero Section */}
       <main className="relative z-10">
-        <section className="container mx-auto px-4 sm:px-6 py-12 sm:py-24 text-center">
+        <section className="container mx-auto px-4 sm:px-6 py-16 sm:py-28 text-center">
           <div className="animate-fade-in max-w-4xl mx-auto">
-            {/* Título Principal */}
-            <h2 className="font-display text-3xl sm:text-5xl md:text-7xl tracking-wide text-white mb-4 sm:mb-6 leading-tight">
-              Sua Mesa de RPG,{' '}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#8000FF] to-[#A855F7]">
-                Reinventada.
+            
+            {/* Classified badge */}
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#8B0000]/40 bg-[#8B0000]/10 mb-6">
+              <div className="w-2 h-2 rounded-full bg-[#B22222] animate-pulse" />
+              <span className="text-[#B22222] text-xs sm:text-sm font-mono tracking-wider uppercase">
+                Arquivo Desclassificado
               </span>
+            </div>
+            
+            {/* Título Principal */}
+            <h2 className="font-display text-4xl sm:text-6xl md:text-8xl tracking-wide text-[#F5F5F5] mb-2 sm:mb-4 leading-tight animate-text-glitch">
+              A MEMBRANA
+            </h2>
+            <h2 className="font-display text-3xl sm:text-5xl md:text-6xl tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-[#8B0000] to-[#B22222] mb-6 sm:mb-8">
+              ESTÁ SE ROMPENDO.
             </h2>
             
             {/* Subtítulo */}
-            <p className="text-[#E0E0E0] text-base sm:text-lg md:text-xl max-w-2xl mx-auto mb-6 sm:mb-8 leading-relaxed px-4">
-              Let's Roll é a plataforma definitiva para mestres e jogadores que buscam{' '}
-              <span className="text-white font-medium">imersão total</span> e{' '}
-              <span className="text-white font-medium">controle absoluto</span>.
+            <p className="text-[#A0A0A0] text-base sm:text-lg md:text-xl max-w-2xl mx-auto mb-8 sm:mb-10 leading-relaxed px-4 font-serif italic">
+              A Ordo Realitas precisa de agentes preparados.{' '}
+              <span className="text-[#C0C0C0]">Rituais, investigações e o Outro Lado</span> aguardam.
             </p>
             
-            {/* Badges - Responsivos */}
-            <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-6 mb-8 sm:mb-10 px-4">
-              {['Gratuito', 'Ilimitado', 'Fácil de usar'].map((badge) => (
+            {/* 5 Elementos Paranormais */}
+            <div className="mb-10 sm:mb-12">
+              <p className="text-[#8B0000] text-xs uppercase tracking-[0.3em] mb-4 font-mono">
+                Os Cinco Elementos do Outro Lado
+              </p>
+              <ParanormalElementsRow size="lg" variant="animated" />
+            </div>
+            
+            {/* Badges temáticos */}
+            <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 mb-8 sm:mb-10 px-4">
+              {[
+                { label: 'Acesso Liberado', icon: '🔓' },
+                { label: 'Nível de Exposição: Baixo', icon: '📊' },
+                { label: 'Confidencial', icon: '🔒' }
+              ].map((badge) => (
                 <span 
-                  key={badge}
-                  className="text-[#A855F7] text-xs sm:text-sm font-medium px-3 sm:px-4 py-1 rounded-full border border-[#8000FF]/30 bg-[#8000FF]/10"
+                  key={badge.label}
+                  className="text-[#A0A0A0] text-xs sm:text-sm font-mono px-3 sm:px-4 py-1.5 rounded border border-[#3D1518]/60 bg-[#1A1214]/50 flex items-center gap-2"
                 >
-                  {badge}
+                  <span>{badge.icon}</span>
+                  {badge.label}
                 </span>
               ))}
             </div>
             
-            {/* CTAs */}
+            {/* CTA Principal */}
             <div className="flex items-center justify-center gap-4 px-4">
               <Link to={user ? "/dashboard" : "/auth?mode=signup"} className="w-full sm:w-auto">
                 <Button 
                   size="lg" 
-                  className="w-full sm:w-auto bg-[#8000FF] hover:bg-[#6B00D6] text-white text-sm sm:text-lg px-6 sm:px-8 py-5 sm:py-6 border-0 shadow-[0_0_30px_rgba(128,0,255,0.4)] hover:shadow-[0_0_40px_rgba(128,0,255,0.6)] transition-all group"
+                  className="w-full sm:w-auto bg-[#8B0000] hover:bg-[#B22222] text-white text-sm sm:text-lg px-8 sm:px-10 py-6 sm:py-7 border border-[#B22222]/30 animate-blood-pulse transition-all group"
                 >
-                  <Dices className="w-4 h-4 sm:w-5 sm:h-5 mr-2 group-hover:rotate-12 transition-transform" />
-                  <span className="hidden sm:inline">{user ? 'Acessar Dashboard' : 'Comece a Aventura (Grátis)'}</span>
-                  <span className="sm:hidden">{user ? 'Dashboard' : 'Começar'}</span>
-                  <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 ml-2" />
+                  <Eye className="w-5 h-5 sm:w-6 sm:h-6 mr-2 group-hover:scale-110 transition-transform" />
+                  <span className="hidden sm:inline">{user ? 'Acessar Dashboard' : 'Acessar a Ordem'}</span>
+                  <span className="sm:hidden">{user ? 'Dashboard' : 'Acessar'}</span>
+                  <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 ml-2 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </Link>
             </div>
           </div>
           
-          {/* Dados 3D decorativos - Menor no mobile */}
-          <div className="relative mt-10 sm:mt-16 flex justify-center">
-            <div className="w-24 h-24 sm:w-32 sm:h-32 relative">
-              <div className="absolute inset-0 bg-[#8000FF]/30 rounded-2xl rotate-45 blur-xl animate-pulse" />
-              <div className="absolute inset-3 sm:inset-4 bg-[#2A0033] border-2 border-[#8000FF]/50 rounded-2xl rotate-45 flex items-center justify-center">
-                <Dices className="w-10 h-10 sm:w-12 sm:h-12 text-[#8000FF] -rotate-45" />
+          {/* Símbolo decorativo */}
+          <div className="relative mt-12 sm:mt-20 flex justify-center">
+            <div className="relative">
+              {/* Glow effect */}
+              <div className="absolute inset-0 bg-[#8B0000]/20 rounded-full blur-3xl animate-pulse scale-150" />
+              
+              {/* Eye symbol */}
+              <div className="relative w-20 h-20 sm:w-28 sm:h-28 flex items-center justify-center">
+                <div className="absolute inset-0 border-2 border-[#8B0000]/40 rounded-full animate-heartbeat" />
+                <div className="absolute inset-2 border border-[#B22222]/30 rounded-full" />
+                <Eye className="w-8 h-8 sm:w-12 sm:h-12 text-[#B22222] animate-pulse" />
               </div>
             </div>
           </div>
         </section>
 
-        {/* Features Grid - Bento Grid Style - Responsivo */}
-        <section className="container mx-auto px-4 sm:px-6 py-12 sm:py-16">
-          <h3 className="font-display text-2xl sm:text-3xl md:text-4xl tracking-wide text-white text-center mb-8 sm:mb-12 px-4">
-            Tudo que Você Precisa para uma{' '}
-            <span className="text-[#A855F7]">Sessão Inesquecível</span>
-          </h3>
+        {/* Features Grid - Estilo Dossiê Classificado */}
+        <section className="container mx-auto px-4 sm:px-6 py-12 sm:py-20">
+          <div className="text-center mb-10 sm:mb-14">
+            <p className="text-[#8B0000] text-xs uppercase tracking-[0.3em] mb-2 font-mono">
+              Recursos Disponíveis
+            </p>
+            <h3 className="font-display text-2xl sm:text-4xl md:text-5xl tracking-wide text-[#F5F5F5]">
+              ARSENAL DO <span className="text-[#B22222]">AGENTE</span>
+            </h3>
+          </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             {[
               {
-                icon: Crown,
-                title: 'Mestre no Comando',
-                description: 'Controle total sobre sessões, NPCs, combates e narrativa. Tudo na ponta dos seus dedos.'
+                icon: Shield,
+                title: 'Controle de Operações',
+                description: 'Mestre no comando total sobre sessões, NPCs, combates e narrativa. O Outro Lado responde a você.',
+                element: 'energia' as const
               },
               {
-                icon: ScrollText,
-                title: 'Fichas Dinâmicas',
-                description: 'Fichas de personagem completas com cálculos automáticos e atualizações em tempo real.'
+                icon: FileText,
+                title: 'Dossiês de Agentes',
+                description: 'Fichas completas com cálculos automáticos, rituais, poderes e atualizações em tempo real.',
+                element: 'conhecimento' as const
               },
               {
                 icon: Dices,
-                title: 'Dados Integrados',
-                description: 'Sistema de rolagem nativo com d20, vantagens, críticos e animações imersivas.'
+                title: 'Sistema de Testes',
+                description: 'Rolagem nativa com d20, vantagens, desvantagens, críticos e animações imersivas.',
+                element: 'sangue' as const
               },
               {
-                icon: Sparkles,
-                title: 'Imersão Total',
-                description: 'Rituais, condições, sanidade e todos os elementos do Ordem Paranormal.'
+                icon: Brain,
+                title: 'Sanidade & O Outro Lado',
+                description: 'Rituais, condições de trauma, DT de Sanidade e todos os elementos paranormais integrados.',
+                element: 'medo' as const
               },
             ].map((feature, index) => (
               <div 
                 key={index} 
-                className="group p-4 sm:p-6 rounded-xl bg-[#2A2A3A] border border-[#8000FF]/20 hover:border-[#8000FF]/50 hover:shadow-[0_0_30px_rgba(128,0,255,0.15)] transition-all duration-300"
+                className="group dossier-classified p-5 sm:p-6 hover:scale-[1.02] transition-all duration-300"
               >
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-[#8000FF]/20 flex items-center justify-center mb-3 sm:mb-4 group-hover:bg-[#8000FF]/30 group-hover:scale-110 transition-all">
-                  <feature.icon className="w-5 h-5 sm:w-6 sm:h-6 text-[#8000FF]" />
+                {/* Classified stamp */}
+                <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <span className="text-[#8B0000]/30 text-[8px] font-mono uppercase tracking-wider rotate-12 inline-block">
+                    Liberado
+                  </span>
                 </div>
-                <h4 className="font-display text-lg sm:text-xl tracking-wide text-white mb-2">{feature.title}</h4>
-                <p className="text-[#A0A0A0] text-xs sm:text-sm leading-relaxed">{feature.description}</p>
+                
+                <div className="flex items-start gap-4">
+                  <div className="flex-shrink-0">
+                    <ParanormalElementIcon 
+                      element={feature.element} 
+                      size="md" 
+                      variant="glow"
+                    />
+                  </div>
+                  <div>
+                    <h4 className="font-display text-lg sm:text-xl tracking-wide text-[#F5F5F5] mb-2">
+                      {feature.title}
+                    </h4>
+                    <p className="text-[#808080] text-xs sm:text-sm leading-relaxed">
+                      {feature.description}
+                    </p>
+                  </div>
+                </div>
+                
+                {/* Bottom accent line */}
+                <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#8B0000]/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
             ))}
           </div>
         </section>
 
-        {/* CTA Final - Responsivo */}
+        {/* CTA Final - A Ordem Precisa de Você */}
         <section className="container mx-auto px-4 sm:px-6 py-16 sm:py-24">
-          <div className="relative text-center p-6 sm:p-12 rounded-2xl bg-gradient-to-b from-[#2A0033] to-[#1A0033] border border-[#8000FF]/30 overflow-hidden">
-            {/* Glow background */}
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_#8000FF20_0%,_transparent_70%)]" />
+          <div className="relative text-center p-8 sm:p-14 rounded-2xl bg-gradient-to-b from-[#1A0505] to-[#0D0A0B] border border-[#8B0000]/30 overflow-hidden">
+            
+            {/* Background effects */}
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(139,0,0,0.15)_0%,_transparent_70%)]" />
+            
+            {/* Scan lines */}
+            <div className="absolute inset-0 scan-lines opacity-20" />
+            
+            {/* Floating elements */}
+            <div className="absolute top-6 left-6 opacity-20">
+              <ParanormalElementIcon element="sangue" size="sm" variant="simple" />
+            </div>
+            <div className="absolute top-6 right-6 opacity-20">
+              <ParanormalElementIcon element="morte" size="sm" variant="simple" />
+            </div>
+            <div className="absolute bottom-6 left-1/4 opacity-15">
+              <ParanormalElementIcon element="conhecimento" size="sm" variant="simple" />
+            </div>
+            <div className="absolute bottom-6 right-1/4 opacity-15">
+              <ParanormalElementIcon element="energia" size="sm" variant="simple" />
+            </div>
             
             <div className="relative z-10">
-              <p className="text-[#A855F7] text-xs sm:text-sm tracking-[0.15em] sm:tracking-[0.2em] uppercase mb-2">Pronto para começar?</p>
-              <h3 className="font-display text-2xl sm:text-4xl tracking-wide text-white mb-3 sm:mb-4">
-                Pronto para Rolar os Dados?
-              </h3>
-              <p className="text-[#A0A0A0] text-sm sm:text-base max-w-xl mx-auto mb-6 sm:mb-8 px-4">
-                Crie sua conta gratuita e comece a construir sua próxima grande aventura. 
-                Convide seus amigos e jogue em minutos.
+              <p className="text-[#B22222] text-xs sm:text-sm tracking-[0.2em] uppercase mb-3 font-mono animate-pulse">
+                ⚠ Alerta de Recrutamento ⚠
               </p>
+              <h3 className="font-display text-3xl sm:text-5xl tracking-wide text-[#F5F5F5] mb-4">
+                A ORDEM <span className="text-[#B22222]">PRECISA DE VOCÊ</span>
+              </h3>
+              <p className="text-[#A0A0A0] text-sm sm:text-base max-w-xl mx-auto mb-8 px-4 font-serif">
+                Junte-se a centenas de agentes. Investigue o desconhecido.
+                Enfrente o Outro Lado. <span className="text-[#C0C0C0]">Proteja a humanidade.</span>
+              </p>
+              
               <Link to={user ? "/dashboard" : "/auth?mode=signup"}>
                 <Button 
                   size="lg" 
-                  className="bg-[#8000FF] hover:bg-[#6B00D6] text-white text-sm sm:text-lg px-6 sm:px-10 py-5 sm:py-6 border-0 shadow-[0_0_30px_rgba(128,0,255,0.4)] hover:shadow-[0_0_40px_rgba(128,0,255,0.6)] transition-all"
+                  className="bg-[#8B0000] hover:bg-[#B22222] text-white text-sm sm:text-lg px-8 sm:px-12 py-6 border border-[#B22222]/30 animate-blood-pulse transition-all group"
                 >
-                  <Dices className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-                  <span className="hidden sm:inline">{user ? 'Ir para Dashboard' : 'Criar Minha Campanha Agora'}</span>
-                  <span className="sm:hidden">{user ? 'Dashboard' : 'Criar Agora'}</span>
+                  <ParanormalElementIcon element="sangue" size="sm" variant="simple" className="mr-2 group-hover:scale-110 transition-transform" />
+                  <span className="hidden sm:inline">{user ? 'Ir para Dashboard' : 'Iniciar Investigação'}</span>
+                  <span className="sm:hidden">{user ? 'Dashboard' : 'Iniciar'}</span>
                 </Button>
               </Link>
-              <p className="text-[#707070] text-xs sm:text-sm mt-4">
-                Sem cartão de crédito • Sem instalação
+              
+              <p className="text-[#606060] text-xs sm:text-sm mt-5 font-mono">
+                Sem custo • Sem instalação • Confidencial
               </p>
             </div>
           </div>
         </section>
       </main>
 
-      {/* Footer - Responsivo */}
-      <footer className="relative z-10 border-t border-[#8000FF]/20 py-6 sm:py-8">
+      {/* Footer */}
+      <footer className="relative z-10 border-t border-[#8B0000]/20 py-6 sm:py-8 bg-[#0D0A0B]/80">
         <div className="container mx-auto px-4 sm:px-6 text-center">
-          <p className="text-[#A0A0A0] text-xs sm:text-sm">
+          <div className="flex items-center justify-center gap-3 mb-3">
+            <ParanormalElementIcon element="sangue" size="sm" variant="simple" className="opacity-40" />
+            <ParanormalElementIcon element="morte" size="sm" variant="simple" className="opacity-40" />
+            <ParanormalElementIcon element="conhecimento" size="sm" variant="simple" className="opacity-40" />
+            <ParanormalElementIcon element="energia" size="sm" variant="simple" className="opacity-40" />
+            <ParanormalElementIcon element="medo" size="sm" variant="simple" className="opacity-40" />
+          </div>
+          <p className="text-[#808080] text-xs sm:text-sm">
             © 2024 Let's Roll — Sistema não oficial para Ordem Paranormal RPG
           </p>
-          <p className="text-[#606060] text-[10px] sm:text-xs mt-2">
+          <p className="text-[#505050] text-[10px] sm:text-xs mt-2">
             Desenvolvido por Muu Walkers • Ordem Paranormal é uma criação de Cellbit
           </p>
         </div>
