@@ -96,6 +96,7 @@ import { MobileCharacterSheet } from '@/components/character/MobileCharacterShee
 import { DiceRollModal } from '@/components/dice/DiceRollModal';
 import { DiceRollHistoryDrawer, DiceRollHistoryCompact } from '@/components/dice/DiceRollHistory';
 import { SessionModeDialog } from '@/components/session/SessionModeDialog';
+import { AbilityDetailModal } from '@/components/character/AbilityDetailModal';
 
 // Interface estendida para itens do inventário com todos os campos persistidos
 interface InventoryItemPersisted {
@@ -258,6 +259,16 @@ export default function CharacterSheet() {
   const [restModalOpen, setRestModalOpen] = useState(false);
   const [paranormalPowerModalOpen, setParanormalPowerModalOpen] = useState(false);
   const [sessionModeOpen, setSessionModeOpen] = useState(false);
+  
+  // Modal de detalhes de habilidade de classe
+  const [abilityDetailOpen, setAbilityDetailOpen] = useState(false);
+  const [selectedAbility, setSelectedAbility] = useState<{
+    id: string;
+    name: string;
+    description: string;
+    minNex: number;
+    classId: string;
+  } | null>(null);
   
   // Modal de rituais para não-ocultistas
   const [nonOccultistRitualModalOpen, setNonOccultistRitualModalOpen] = useState(false);
@@ -1723,6 +1734,12 @@ export default function CharacterSheet() {
                             description={abilityData?.description}
                             badge="Classe"
                             badgeVariant="default"
+                            onClick={() => {
+                              if (abilityData) {
+                                setSelectedAbility(abilityData);
+                                setAbilityDetailOpen(true);
+                              }
+                            }}
                           />
                         );
                       })}
@@ -1746,6 +1763,13 @@ export default function CharacterSheet() {
                             description={ability.description}
                             badge={`NEX ${ability.minNex}%`}
                             badgeVariant="secondary"
+                            onClick={() => {
+                              setSelectedAbility({
+                                ...ability,
+                                classId: character.class_track || '',
+                              });
+                              setAbilityDetailOpen(true);
+                            }}
                           />
                         ))}
                       </div>
@@ -2401,6 +2425,14 @@ export default function CharacterSheet() {
           }}
         />
       )}
+      
+      {/* Modal de detalhes de habilidade */}
+      <AbilityDetailModal
+        ability={selectedAbility}
+        isOpen={abilityDetailOpen}
+        onClose={() => setAbilityDetailOpen(false)}
+        nex={character?.nex || 5}
+      />
     </div>
   );
 }
