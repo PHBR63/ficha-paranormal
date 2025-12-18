@@ -179,7 +179,7 @@ export function AbilityDetailModal({
             </TabsList>
           </div>
 
-          <ScrollArea className="h-[45vh] px-6 py-4">
+          <ScrollArea className="flex-1 min-h-0 px-6 py-4">
             {/* Tab: Descrição */}
             <TabsContent value="description" className="mt-0 space-y-4">
               {/* Descrição completa */}

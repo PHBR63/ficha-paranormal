@@ -464,7 +464,7 @@ function WeaponDetailModal({ weapon, onClose, canAdd, isLocked, onAdd }: WeaponD
           </DialogTitle>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 -mx-4 px-4 sm:-mx-6 sm:px-6 overflow-y-auto">
+        <ScrollArea className="flex-1 min-h-0 -mx-4 px-4 sm:-mx-6 sm:px-6 overflow-y-auto">
           <div className="space-y-4 pb-2">
             {/* Badges */}
             <div className="flex flex-wrap gap-2">
