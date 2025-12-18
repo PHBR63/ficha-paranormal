@@ -40,6 +40,52 @@ interface BonusSummaryCardProps {
   compact?: boolean; // Modo compacto para mobile
 }
 
+// Componente para badge de rituais ativos/excluídos
+const RitualStackBadge = ({ 
+  active, 
+  excluded 
+}: { 
+  active: number; 
+  excluded: number; 
+}) => {
+  if (active === 0 && excluded === 0) return null;
+  
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className="flex items-center gap-1 text-[10px] ml-auto mr-2">
+            {active > 0 && (
+              <span className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-primary/20 text-primary">
+                <Sparkles className="h-2.5 w-2.5" />
+                {active}
+              </span>
+            )}
+            {excluded > 0 && (
+              <span className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-destructive/20 text-destructive">
+                ✗ {excluded}
+              </span>
+            )}
+          </div>
+        </TooltipTrigger>
+        <TooltipContent side="left" className="max-w-xs">
+          <div className="text-xs space-y-1">
+            <p className="font-medium">Bônus de Rituais</p>
+            {active > 0 && (
+              <p className="text-primary">{active} ritual(is) aplicado(s)</p>
+            )}
+            {excluded > 0 && (
+              <p className="text-destructive">
+                {excluded} excluído(s) (rituais não acumulam entre si)
+              </p>
+            )}
+          </div>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+};
+
 // Componente para seção colapsável
 const BonusSection = ({ 
   title, 
@@ -48,6 +94,7 @@ const BonusSection = ({
   defaultOpen = false,
   colorClass = 'text-primary',
   hasContent = true,
+  ritualStats,
 }: { 
   title: string; 
   icon: React.ElementType; 
@@ -55,6 +102,7 @@ const BonusSection = ({
   defaultOpen?: boolean;
   colorClass?: string;
   hasContent?: boolean;
+  ritualStats?: { active: number; excluded: number };
 }) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
@@ -70,11 +118,14 @@ const BonusSection = ({
           <Icon className={cn('h-4 w-4', colorClass)} />
           <span className="text-sm font-medium">{title}</span>
         </div>
-        {isOpen ? (
-          <ChevronUp className="h-4 w-4 text-muted-foreground" />
-        ) : (
-          <ChevronDown className="h-4 w-4 text-muted-foreground" />
-        )}
+        <div className="flex items-center">
+          {ritualStats && <RitualStackBadge active={ritualStats.active} excluded={ritualStats.excluded} />}
+          {isOpen ? (
+            <ChevronUp className="h-4 w-4 text-muted-foreground" />
+          ) : (
+            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+          )}
+        </div>
       </button>
       <AnimatePresence>
         {isOpen && (
@@ -203,6 +254,25 @@ function BonusSummaryCardComponent({ summary, className, compact = false }: Bonu
 
   const hasAnyBonus = hasDefense || hasResistances || hasCombat || hasDR || hasSkills || hasSpecial || hasStats;
 
+  // Calcula estatísticas de rituais por seção
+  const defenseRitualStats = {
+    active: summary.defense.breakdown.filter(b => b.type === 'ritual' && b.active && !b.excluded).length,
+    excluded: summary.defense.breakdown.filter(b => b.type === 'ritual' && b.excluded).length,
+  };
+
+  const combatRitualStats = {
+    active: [
+      ...summary.combat.attack.breakdown.filter(b => b.type === 'ritual' && b.active && !b.excluded),
+      ...summary.combat.damage.breakdown.filter(b => b.type === 'ritual' && b.active && !b.excluded),
+      ...summary.combat.criticalMargin.breakdown.filter(b => b.type === 'ritual' && b.active && !b.excluded),
+    ].length,
+    excluded: [
+      ...summary.combat.attack.breakdown.filter(b => b.type === 'ritual' && b.excluded),
+      ...summary.combat.damage.breakdown.filter(b => b.type === 'ritual' && b.excluded),
+      ...summary.combat.criticalMargin.breakdown.filter(b => b.type === 'ritual' && b.excluded),
+    ].length,
+  };
+
   if (!hasAnyBonus) {
     return null; // Não mostra se não há bônus
   }
@@ -268,6 +338,7 @@ function BonusSummaryCardComponent({ summary, className, compact = false }: Bonu
                 colorClass="text-blue-500"
                 hasContent={hasDefense}
                 defaultOpen={hasDefense}
+                ritualStats={defenseRitualStats.active + defenseRitualStats.excluded > 0 ? defenseRitualStats : undefined}
               >
                 <BonusLine 
                   label="Defesa Total"
@@ -333,6 +404,7 @@ function BonusSummaryCardComponent({ summary, className, compact = false }: Bonu
                 icon={Swords} 
                 colorClass="text-red-500"
                 hasContent={hasCombat}
+                ritualStats={combatRitualStats.active + combatRitualStats.excluded > 0 ? combatRitualStats : undefined}
               >
                 {summary.combat.attack.total !== 0 && (
                   <BonusLine 
