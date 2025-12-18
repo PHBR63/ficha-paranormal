@@ -8,10 +8,11 @@ import { useMemo } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Sparkles, Droplet, Skull, BookOpen, Zap, Star, TrendingUp } from 'lucide-react';
+import { Sparkles, Droplet, Skull, BookOpen, Zap, Star, TrendingUp, Shield, GraduationCap } from 'lucide-react';
 import {
   ParanormalPower,
   ParanormalElement,
+  SavedParanormalPower,
   PARANORMAL_POWERS,
   getPowerById,
   getPowerEffect,
@@ -21,6 +22,8 @@ import {
   ELEMENT_COLORS,
   ELEMENT_BG_COLORS,
 } from '@/lib/paranormal-powers';
+import { ALL_RITUALS } from '@/lib/rituals-data';
+import { SKILLS } from '@/lib/character-data';
 
 // Ícones por elemento
 const ELEMENT_ICONS: Record<ParanormalElement | 'generic', React.ComponentType<{ className?: string }>> = {
@@ -31,8 +34,20 @@ const ELEMENT_ICONS: Record<ParanormalElement | 'generic', React.ComponentType<{
   generic: Star,
 };
 
+// Helper para obter nome de perícia pelo ID
+const getSkillName = (skillId: string): string => {
+  const skill = SKILLS.find(s => s.id === skillId);
+  return skill?.name || skillId;
+};
+
+// Helper para obter nome de ritual pelo ID
+const getRitualName = (ritualId: string): string => {
+  const ritual = ALL_RITUALS.find(r => r.id === ritualId);
+  return ritual?.name || ritualId;
+};
+
 interface ParanormalPowersPanelProps {
-  powers: ParanormalPower[];
+  powers: (ParanormalPower | SavedParanormalPower)[];
   elementalAffinity?: ParanormalElement | null;
   affinityActive?: boolean;
   nex: number;
@@ -58,7 +73,7 @@ export function ParanormalPowersPanel({
 
   // Agrupa poderes por elemento
   const powersByElement = useMemo(() => {
-    const grouped: Record<string, ParanormalPower[]> = {};
+    const grouped: Record<string, (ParanormalPower | SavedParanormalPower)[]> = {};
     powers.forEach(power => {
       const element = power.element;
       if (!grouped[element]) {
@@ -163,6 +178,11 @@ export function ParanormalPowersPanel({
                   const effectText = fullPower 
                     ? getPowerEffect(fullPower, affinityActive, elementalAffinity || undefined)
                     : power.description;
+                  
+                  // Extrai escolhas salvas se existirem
+                  const savedPower = power as SavedParanormalPower;
+                  const choices = savedPower.choices;
+                  const hasChoices = choices && (choices.skills?.length || choices.ritualId || choices.resistElement);
 
                   return (
                     <Tooltip key={power.id}>
@@ -187,6 +207,44 @@ export function ParanormalPowersPanel({
                               <p className="text-sm text-muted-foreground line-clamp-2">
                                 {effectText}
                               </p>
+                              
+                              {/* Exibe escolhas salvas */}
+                              {hasChoices && (
+                                <div className="mt-2 pt-2 border-t border-border/50 space-y-1">
+                                  {/* Perícias escolhidas (Expansão de Conhecimento) */}
+                                  {choices.skills && choices.skills.length > 0 && (
+                                    <div className="flex items-center gap-1.5 text-xs">
+                                      <GraduationCap className="w-3 h-3 text-blue-400" />
+                                      <span className="text-blue-400 font-medium">+5:</span>
+                                      <span className="text-muted-foreground">
+                                        {choices.skills.map(getSkillName).join(', ')}
+                                      </span>
+                                    </div>
+                                  )}
+                                  
+                                  {/* Ritual escolhido (Aprender Ritual) */}
+                                  {choices.ritualId && (
+                                    <div className="flex items-center gap-1.5 text-xs">
+                                      <BookOpen className="w-3 h-3 text-purple-400" />
+                                      <span className="text-purple-400 font-medium">Ritual:</span>
+                                      <span className="text-muted-foreground">
+                                        {getRitualName(choices.ritualId)}
+                                      </span>
+                                    </div>
+                                  )}
+                                  
+                                  {/* Elemento de resistência (Resistir a Elemento) */}
+                                  {choices.resistElement && (
+                                    <div className="flex items-center gap-1.5 text-xs">
+                                      <Shield className="w-3 h-3 text-green-400" />
+                                      <span className="text-green-400 font-medium">Resistência 5:</span>
+                                      <span className="text-muted-foreground">
+                                        {ELEMENT_LABELS[choices.resistElement]}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -205,6 +263,26 @@ export function ParanormalPowersPanel({
                                 Com Afinidade:
                               </p>
                               <p className="text-sm">{fullPower.affinityEffect}</p>
+                            </div>
+                          )}
+                          {hasChoices && (
+                            <div className="border-t border-border/50 pt-2">
+                              <p className="text-xs text-muted-foreground mb-1">Escolhas:</p>
+                              {choices.skills && choices.skills.length > 0 && (
+                                <p className="text-sm text-blue-400">
+                                  Perícias: {choices.skills.map(getSkillName).join(', ')}
+                                </p>
+                              )}
+                              {choices.ritualId && (
+                                <p className="text-sm text-purple-400">
+                                  Ritual: {getRitualName(choices.ritualId)}
+                                </p>
+                              )}
+                              {choices.resistElement && (
+                                <p className="text-sm text-green-400">
+                                  Resistência: {ELEMENT_LABELS[choices.resistElement]}
+                                </p>
+                              )}
                             </div>
                           )}
                         </div>
