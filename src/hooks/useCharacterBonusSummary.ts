@@ -345,7 +345,151 @@ export function useCharacterBonusSummary({
       });
     }
 
-    // Iniciativa Melhorada: +5 Iniciativa
+    // === HABILIDADES DE TRILHA - BÔNUS PASSIVOS ===
+
+    // Iniciativa Aprimorada (Operações Especiais): +5 Iniciativa
+    if (hasAbility('iniciativa aprimorada')) {
+      combat.initiative.breakdown.push({
+        source: 'Iniciativa Aprimorada',
+        value: 5,
+        type: 'ability',
+        active: true,
+      });
+      combat.initiative.total += 5;
+    }
+
+    // Técnica Letal (Guerreiro): +2 margem de ameaça corpo a corpo
+    if (hasAbility('tecnica letal')) {
+      combat.criticalMargin.breakdown.push({
+        source: 'Técnica Letal',
+        value: 2,
+        type: 'ability',
+        conditional: 'corpo a corpo',
+        active: true,
+      });
+      combat.criticalMargin.total += 2;
+    }
+
+    // Mira de Elite (Atirador de Elite): +INT dano com armas de fogo (balas longas)
+    if (hasAbility('mira de elite')) {
+      combat.damage.breakdown.push({
+        source: 'Mira de Elite',
+        value: `+${intellect}`,
+        type: 'ability',
+        conditional: 'armas de fogo (balas longas)',
+        active: true,
+      });
+    }
+
+    // Gatuno (Infiltrador): +5 Atletismo e Crime
+    if (hasAbility('gatuno')) {
+      ['atletismo', 'crime'].forEach(skill => {
+        if (!skills[skill]) skills[skill] = { total: 0, breakdown: [] };
+        skills[skill].breakdown.push({
+          source: 'Gatuno',
+          value: 5,
+          type: 'ability',
+          active: true,
+        });
+        skills[skill].total += 5;
+      });
+    }
+
+    // Mente Sã (Intuitivo): +5 resistência paranormal (em testes)
+    if (hasAbility('mente sa')) {
+      effectResistances.breakdown.push({
+        source: 'Mente Sã',
+        value: 5,
+        type: 'ability',
+        conditional: 'efeitos paranormais',
+        active: true,
+      });
+    }
+
+    // Inabalável (Intuitivo): resistência a dano mental 10
+    if (hasAbility('inabalavel')) {
+      effectResistances.mental = Math.max(effectResistances.mental, 10);
+      effectResistances.breakdown.push({
+        source: 'Inabalável',
+        value: 10,
+        type: 'ability',
+        conditional: 'dano mental',
+        active: true,
+      });
+    }
+
+    // Inquebrável (Tropa de Choque): +5 Defesa, RD 5 quando machucado
+    if (hasAbility('inquebravel')) {
+      const isActive = isConditionalActive('inquebravel');
+      conditionalBonuses.push({
+        id: 'inquebravel',
+        name: 'Inquebrável',
+        condition: 'PV < 50% (machucado)',
+        active: isActive,
+        effects: ['+5 Defesa', 'RD 5'],
+        source: 'ability',
+      });
+      if (isActive) {
+        damageReduction.physical.breakdown.push({
+          source: 'Inquebrável',
+          value: 5,
+          type: 'ability',
+          conditional: 'quando machucado',
+          active: true,
+        });
+        damageReduction.physical.total += 5;
+      }
+    }
+
+    // Disparo Letal (Atirador de Elite): +2 margem de ameaça após mirar
+    if (hasAbility('disparo letal')) {
+      const isActive = isConditionalActive('disparo-letal');
+      conditionalBonuses.push({
+        id: 'disparo-letal',
+        name: 'Disparo Letal',
+        condition: 'Após ação mirar (1 PE)',
+        active: isActive,
+        effects: ['+2 margem de ameaça'],
+        source: 'ability',
+      });
+      if (isActive) {
+        combat.criticalMargin.breakdown.push({
+          source: 'Disparo Letal',
+          value: 2,
+          type: 'ability',
+          conditional: 'após mirar',
+          active: true,
+        });
+        combat.criticalMargin.total += 2;
+      }
+    }
+
+    // Ataque Furtivo (Infiltrador): dados extras de dano
+    if (hasAbility('ataque furtivo') || hasAbility('ataque-furtivo-trilha')) {
+      const isActive = isConditionalActive('ataque-furtivo');
+      // Calcula dados baseado no NEX (passado via props ou assumir básico)
+      let extraDice = '+1d6';
+      conditionalBonuses.push({
+        id: 'ataque-furtivo',
+        name: 'Ataque Furtivo',
+        condition: 'Alvo desprevenido/flanqueado',
+        active: isActive,
+        effects: [`${extraDice} dano`],
+        source: 'ability',
+      });
+      if (isActive) {
+        combat.damage.extraDice.push(extraDice);
+        combat.damage.breakdown.push({
+          source: 'Ataque Furtivo',
+          value: extraDice,
+          type: 'ability',
+          conditional: 'alvo desprevenido/flanqueado',
+          active: true,
+        });
+      }
+    }
+
+    // Iniciativa Melhorada (Poder Geral): +5 Iniciativa
     if (hasPower('iniciativa-melhorada')) {
       combat.initiative.breakdown.push({
         source: 'Iniciativa Melhorada',

@@ -305,6 +305,24 @@ export function useDefenseBonuses({
       });
     }
     
+    // Inquebrável (Tropa de Choque): +5 Defesa quando machucado
+    const hasInquebravel = normalizedAbilities.some(a => 
+      a.includes('inquebravel') || a === 'inquebravel'
+    ) || abilities.some(a => 
+      a === 'inquebravel' || a === 'Inquebrável'
+    );
+    
+    if (hasInquebravel) {
+      const isActive = activeConditionalBonuses.includes('inquebravel');
+      breakdown.push({
+        source: 'Inquebrável',
+        type: 'ability',
+        bonus: 5,
+        conditional: 'quando machucado (PV < 50%)',
+        active: isActive,
+      });
+    }
+    
     // Calcula o bônus total de defesa (apenas dos ativos)
     const totalBonus = breakdown
       .filter(b => b.active)
