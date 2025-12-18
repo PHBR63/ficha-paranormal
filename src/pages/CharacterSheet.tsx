@@ -1727,6 +1727,7 @@ export default function CharacterSheet() {
                         const abilityData = ALL_CLASS_ABILITIES.find(
                           a => a.name === abilityName && a.classId === character.class
                         );
+                        const isAbilityActive = (character.active_conditional_bonuses || []).includes(abilityData?.id || '');
                         return (
                           <SheetAccordionItem
                             key={i}
@@ -1734,6 +1735,7 @@ export default function CharacterSheet() {
                             description={abilityData?.description}
                             badge="Classe"
                             badgeVariant="default"
+                            isActive={isAbilityActive}
                             onClick={() => {
                               if (abilityData) {
                                 setSelectedAbility(abilityData);
@@ -1756,22 +1758,26 @@ export default function CharacterSheet() {
                         <p className="text-xs text-muted-foreground uppercase tracking-wider">
                           Trilha: {track.name}
                         </p>
-                        {unlockedAbilities.map((ability) => (
-                          <SheetAccordionItem
-                            key={ability.id}
-                            title={ability.name}
-                            description={ability.description}
-                            badge={`NEX ${ability.minNex}%`}
-                            badgeVariant="secondary"
-                            onClick={() => {
-                              setSelectedAbility({
-                                ...ability,
-                                classId: character.class_track || '',
-                              });
-                              setAbilityDetailOpen(true);
-                            }}
-                          />
-                        ))}
+                        {unlockedAbilities.map((ability) => {
+                          const isTrackAbilityActive = (character.active_conditional_bonuses || []).includes(ability.id);
+                          return (
+                            <SheetAccordionItem
+                              key={ability.id}
+                              title={ability.name}
+                              description={ability.description}
+                              badge={`NEX ${ability.minNex}%`}
+                              badgeVariant="secondary"
+                              isActive={isTrackAbilityActive}
+                              onClick={() => {
+                                setSelectedAbility({
+                                  ...ability,
+                                  classId: character.class_track || '',
+                                });
+                                setAbilityDetailOpen(true);
+                              }}
+                            />
+                          );
+                        })}
                       </div>
                     );
                   })()}
