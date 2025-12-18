@@ -21,6 +21,8 @@ export interface DefenseBonusBreakdown {
   bonus: number;         // Valor do bônus
   conditional?: string;  // Condição se houver (ex: "com proteção pesada")
   active: boolean;       // Se o bônus está ativo
+  excluded?: boolean;    // Se foi excluído por regra de não acúmulo
+  excludedReason?: string; // Motivo da exclusão (ex: "Não acumula com Ritual X")
 }
 
 // Interface para bônus de resistências
@@ -331,10 +333,21 @@ export function useDefenseBonuses({
     const ritualBonuses = activeBreakdown.filter(b => b.type === 'ritual');
     const otherBonuses = activeBreakdown.filter(b => b.type !== 'ritual');
     
-    // Rituais: apenas o maior se aplica
+    // Rituais: apenas o maior se aplica - marca os excluídos
     let ritualBonus = 0;
+    let bestRitualSource = '';
     if (ritualBonuses.length > 0) {
       ritualBonus = Math.max(...ritualBonuses.map(b => b.bonus));
+      const bestRitual = ritualBonuses.find(b => b.bonus === ritualBonus);
+      bestRitualSource = bestRitual?.source || '';
+      
+      // Marca rituais excluídos no breakdown original
+      breakdown.forEach(b => {
+        if (b.type === 'ritual' && b.active && b.source !== bestRitualSource) {
+          b.excluded = true;
+          b.excludedReason = `Não acumula com ${bestRitualSource} (rituais não acumulam)`;
+        }
+      });
     }
     
     // Outros bônus: acumulam normalmente (fontes diferentes)

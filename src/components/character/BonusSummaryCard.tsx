@@ -102,16 +102,49 @@ const BonusLine = ({
   sources,
   conditional,
   active = true,
+  excluded = false,
+  excludedReason,
 }: { 
   label: string; 
   value: number | string;
   sources?: string[];
   conditional?: string;
   active?: boolean;
+  excluded?: boolean;
+  excludedReason?: string;
 }) => {
   const displayValue = typeof value === 'number' ? 
     (value > 0 ? `+${value}` : value.toString()) : 
     value;
+
+  // Bônus excluído por regra de não acúmulo
+  if (excluded) {
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex items-center justify-between text-xs py-0.5 px-1 rounded text-muted-foreground/50 line-through hover:bg-destructive/10 cursor-help">
+              <span className="flex items-center gap-1">
+                <span className="text-destructive/70">✗</span>
+                {label}
+              </span>
+              <span className="font-mono font-medium text-destructive/50">
+                {displayValue}
+              </span>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent side="left" className="max-w-xs bg-destructive/10 border-destructive/30">
+            <div className="text-xs">
+              <p className="font-medium text-destructive mb-1">Bônus Excluído</p>
+              <p className="text-muted-foreground">
+                {excludedReason || 'Este bônus não foi aplicado por regras de acúmulo do sistema.'}
+              </p>
+            </div>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
 
   return (
     <TooltipProvider>
@@ -239,15 +272,26 @@ function BonusSummaryCardComponent({ summary, className, compact = false }: Bonu
                 <BonusLine 
                   label="Defesa Total"
                   value={summary.defense.total}
-                  sources={summary.defense.breakdown.filter(b => b.active).map(b => `${b.source}: +${b.bonus}`)}
+                  sources={summary.defense.breakdown.filter(b => b.active && !b.excluded).map(b => `${b.source}: +${b.bonus}`)}
                 />
-                {summary.defense.breakdown.filter(b => !b.active).map((b, i) => (
+                {/* Bônus condicionais inativos */}
+                {summary.defense.breakdown.filter(b => !b.active && !b.excluded).map((b, i) => (
                   <BonusLine
-                    key={i}
+                    key={`inactive-${i}`}
                     label={b.source}
                     value={b.bonus}
                     conditional={b.conditional}
                     active={false}
+                  />
+                ))}
+                {/* Bônus excluídos por regra de não acúmulo */}
+                {summary.defense.breakdown.filter(b => b.excluded).map((b, i) => (
+                  <BonusLine
+                    key={`excluded-${i}`}
+                    label={b.source}
+                    value={b.bonus}
+                    excluded={true}
+                    excludedReason={b.excludedReason}
                   />
                 ))}
               </BonusSection>
@@ -290,16 +334,26 @@ function BonusSummaryCardComponent({ summary, className, compact = false }: Bonu
                 colorClass="text-red-500"
                 hasContent={hasCombat}
               >
-                {summary.combat.attack.total > 0 && (
+                {summary.combat.attack.total !== 0 && (
                   <BonusLine 
                     label="Ataque"
                     value={summary.combat.attack.total}
-                    sources={summary.combat.attack.breakdown.filter(b => b.active).map(b => `${b.source}: +${b.value}${b.conditional ? ` (${b.conditional})` : ''}`)}
+                    sources={summary.combat.attack.breakdown.filter(b => b.active && !b.excluded).map(b => `${b.source}: ${typeof b.value === 'number' ? (b.value > 0 ? '+' : '') + b.value : b.value}${b.conditional ? ` (${b.conditional})` : ''}`)}
                   />
                 )}
+                {/* Bônus de ataque excluídos */}
+                {summary.combat.attack.breakdown.filter(b => b.excluded).map((b, i) => (
+                  <BonusLine
+                    key={`attack-excluded-${i}`}
+                    label={`Ataque (${b.source})`}
+                    value={b.value}
+                    excluded={true}
+                    excludedReason={b.excludedReason}
+                  />
+                ))}
                 {(summary.combat.damage.total > 0 || summary.combat.damage.extraDice.length > 0 || summary.combat.damage.breakdown.length > 0) && (
                   <div className="space-y-0.5">
-                    {summary.combat.damage.breakdown.map((b, i) => (
+                    {summary.combat.damage.breakdown.filter(b => !b.excluded).map((b, i) => (
                       <BonusLine
                         key={i}
                         label={`Dano (${b.source})`}
@@ -308,20 +362,30 @@ function BonusSummaryCardComponent({ summary, className, compact = false }: Bonu
                         active={b.active}
                       />
                     ))}
+                    {/* Bônus de dano excluídos */}
+                    {summary.combat.damage.breakdown.filter(b => b.excluded).map((b, i) => (
+                      <BonusLine
+                        key={`damage-excluded-${i}`}
+                        label={`Dano (${b.source})`}
+                        value={b.value}
+                        excluded={true}
+                        excludedReason={b.excludedReason}
+                      />
+                    ))}
                   </div>
                 )}
                 {summary.combat.criticalMargin.total > 0 && (
                   <BonusLine 
                     label="Margem de Crítico"
                     value={summary.combat.criticalMargin.total}
-                    sources={summary.combat.criticalMargin.breakdown.map(b => `${b.source}: +${b.value}`)}
+                    sources={summary.combat.criticalMargin.breakdown.filter(b => !b.excluded).map(b => `${b.source}: +${b.value}`)}
                   />
                 )}
                 {summary.combat.initiative.total > 0 && (
                   <BonusLine 
                     label="Iniciativa"
                     value={summary.combat.initiative.total}
-                    sources={summary.combat.initiative.breakdown.map(b => `${b.source}: +${b.value}`)}
+                    sources={summary.combat.initiative.breakdown.filter(b => !b.excluded).map(b => `${b.source}: +${b.value}`)}
                   />
                 )}
               </BonusSection>
