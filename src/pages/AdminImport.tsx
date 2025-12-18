@@ -1,8 +1,9 @@
 /**
  * Página administrativa para importação de dados em lote
  * Permite importar armas, armaduras, itens e rituais via JSON
+ * Inclui verificação de duplicatas contra o sistema e dentro do JSON
  */
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -20,7 +21,8 @@ import {
   Sparkles,
   Loader2,
   Download,
-  Users
+  Users,
+  AlertTriangle
 } from 'lucide-react';
 import { JsonExamples, ImportType, TYPE_LABELS } from '@/components/admin/JsonExamples';
 import { ImportPreview } from '@/components/admin/ImportPreview';
@@ -32,7 +34,12 @@ import {
   validateBatch,
   parseJsonSafe,
   normalizeToArray,
-  ValidatedItem
+  createValidationContext,
+  ValidatedItem,
+  ALL_WEAPONS,
+  ALL_ARMORS,
+  ALL_ITEMS,
+  ALL_RITUALS
 } from '@/lib/import-validators';
 
 // Ícones para cada tipo
@@ -53,7 +60,15 @@ export default function AdminImport() {
   const [validatedItems, setValidatedItems] = useState<ValidatedItem<unknown>[]>([]);
   const [isImporting, setIsImporting] = useState(false);
 
-  // Função para validar JSON baseado no tipo
+  // Estatísticas do sistema atual
+  const systemStats = useMemo(() => ({
+    weapons: ALL_WEAPONS.length,
+    armor: ALL_ARMORS.length,
+    items: ALL_ITEMS.length,
+    rituals: ALL_RITUALS.length
+  }), []);
+
+  // Função para validar JSON baseado no tipo com verificação de duplicatas
   const validateJson = () => {
     if (!jsonInput.trim()) {
       toast.error('Cole ou carregue um JSON primeiro');
@@ -69,19 +84,38 @@ export default function AdminImport() {
 
     const dataArray = normalizeToArray(parseResult.data);
     
+    // Criar contexto de validação com dados existentes do sistema
+    let existingItems: Array<{ id: string; name: string }> = [];
+    switch (activeTab) {
+      case 'weapons':
+        existingItems = ALL_WEAPONS.map(w => ({ id: w.id, name: w.name }));
+        break;
+      case 'armor':
+        existingItems = ALL_ARMORS.map(a => ({ id: a.id, name: a.name }));
+        break;
+      case 'items':
+        existingItems = ALL_ITEMS.map(i => ({ id: i.id, name: i.name }));
+        break;
+      case 'rituals':
+        existingItems = ALL_RITUALS.map(r => ({ id: r.id, name: r.name }));
+        break;
+    }
+    
+    const context = createValidationContext(existingItems);
+    
     let validated: ValidatedItem<unknown>[];
     switch (activeTab) {
       case 'weapons':
-        validated = validateBatch(dataArray, validateWeapon);
+        validated = validateBatch(dataArray, validateWeapon, context);
         break;
       case 'armor':
-        validated = validateBatch(dataArray, validateArmor);
+        validated = validateBatch(dataArray, validateArmor, context);
         break;
       case 'items':
-        validated = validateBatch(dataArray, validateItem);
+        validated = validateBatch(dataArray, validateItem, context);
         break;
       case 'rituals':
-        validated = validateBatch(dataArray, validateRitual);
+        validated = validateBatch(dataArray, validateRitual, context);
         break;
       default:
         validated = [];
@@ -91,11 +125,14 @@ export default function AdminImport() {
     
     const validCount = validated.filter(v => v.validation.valid).length;
     const invalidCount = validated.filter(v => !v.validation.valid).length;
+    const warningCount = validated.filter(v => v.validation.warnings.length > 0).length;
     
-    if (invalidCount === 0) {
+    if (invalidCount === 0 && warningCount === 0) {
       toast.success(`${validCount} ${validCount === 1 ? 'item válido' : 'itens válidos'} para importação`);
+    } else if (invalidCount === 0) {
+      toast.warning(`${validCount} válidos com ${warningCount} avisos (possíveis duplicatas)`);
     } else {
-      toast.warning(`${validCount} válidos, ${invalidCount} com erros`);
+      toast.error(`${validCount} válidos, ${invalidCount} com erros, ${warningCount} com avisos`);
     }
   };
 
@@ -264,6 +301,21 @@ export default function AdminImport() {
           {/* Conteúdo das tabs */}
           {(Object.keys(TYPE_LABELS) as ImportType[]).map((type) => (
             <TabsContent key={type} value={type} className="space-y-6">
+              {/* Estatísticas do sistema */}
+              <Card className="border-primary/20 bg-primary/5">
+                <CardContent className="py-3">
+                  <div className="flex items-center gap-2 text-sm">
+                    <AlertTriangle className="h-4 w-4 text-primary" />
+                    <span className="text-muted-foreground">
+                      O sistema possui atualmente{' '}
+                      <strong className="text-foreground">{systemStats[type]}</strong>{' '}
+                      {TYPE_LABELS[type].toLowerCase()} cadastrados.
+                      Duplicatas serão detectadas automaticamente.
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+
               {/* Exemplo de formato */}
               <JsonExamples type={type} />
 
