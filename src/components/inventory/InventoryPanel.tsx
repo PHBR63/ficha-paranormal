@@ -96,7 +96,7 @@ import type { CatalogArmor } from '@/lib/armor-catalog';
 import type { CatalogItem } from '@/lib/items-catalog';
 import { ProtectionWidget } from './ProtectionWidget';
 import { InventoryItemDetailModal } from './InventoryItemDetailModal';
-import { validateArmorItem } from '@/hooks/useArmorMigration';
+import { validateArmorItem, validateWeaponItem, validateGeneralItem } from '@/hooks/useEquipmentMigration';
 
 // Categorias de itens para organização visual
 export type ItemType = 'weapon' | 'armor' | 'consumable' | 'ritual' | 'valuable' | 'misc';
@@ -422,13 +422,13 @@ export function InventoryPanel({
   const handleAddWeaponFromCatalog = (weapon: CatalogWeapon) => {
     if (!onInventoryChange) return;
 
-    const item: ExtendedInventoryItem = {
+    const baseItem = {
       id: crypto.randomUUID(),
       name: weapon.name,
       category: weapon.category,
       slots: weapon.spaces,
       quantity: 1,
-      itemType: 'weapon',
+      itemType: 'weapon' as const,
       description: weapon.description,
       // Dados extras para o sistema de ataque
       damage: weapon.damage,
@@ -438,16 +438,22 @@ export function InventoryPanel({
       range: weapon.range,
       special: weapon.special,
       ammoType: weapon.ammoType,
-    } as ExtendedInventoryItem & { 
-      damage?: string; 
-      damageType?: string; 
-      critical?: number; 
-      criticalMultiplier?: number;
+      proficiency: weapon.proficiency,
+      properties: weapon.properties,
+      weaponType: weapon.type,
+    };
+
+    // Valida e normaliza o item antes de adicionar
+    const validatedItem = validateWeaponItem(baseItem) as unknown as ExtendedInventoryItem & { 
+      damage: string; 
+      damageType: string; 
+      critical: number; 
+      criticalMultiplier: number;
       range?: string;
       special?: string;
     };
 
-    const result = addToInventory(inventory, item, patent);
+    const result = addToInventory(inventory, validatedItem, patent);
     
     if (result.success) {
       onInventoryChange(result.newInventory.map(i => ({
@@ -525,27 +531,31 @@ export function InventoryPanel({
   const handleAddItemFromCatalog = (catalogItem: CatalogItem) => {
     if (!onInventoryChange) return;
 
-    const item: ExtendedInventoryItem = {
+    const baseItem = {
       id: crypto.randomUUID(),
       name: catalogItem.name,
       category: catalogItem.category,
       slots: catalogItem.spaces,
       quantity: 1,
-      itemType: 'consumable',
+      itemType: 'item' as const,
       description: catalogItem.description,
       // Dados extras para itens gerais
       effect: catalogItem.effect,
       uses: catalogItem.uses,
       maxUses: catalogItem.uses,
       consumable: catalogItem.consumable,
-    } as ExtendedInventoryItem & { 
+      spaces: typeof catalogItem.spaces === 'number' ? catalogItem.spaces : 1,
+    };
+
+    // Valida e normaliza o item antes de adicionar
+    const validatedItem = validateGeneralItem(baseItem) as unknown as ExtendedInventoryItem & { 
       effect?: string; 
       uses?: number;
       maxUses?: number;
       consumable?: boolean;
     };
 
-    const result = addToInventory(inventory, item, patent);
+    const result = addToInventory(inventory, validatedItem, patent);
     
     if (result.success) {
       onInventoryChange(result.newInventory.map(i => ({
