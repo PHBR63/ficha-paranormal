@@ -441,8 +441,35 @@ export const CharacterSheetHeader = memo(function CharacterSheetHeader({
             <div className="flex items-center gap-1">
               <Heart className={cn("w-4 h-4", isHpLow ? "text-destructive" : "text-hp")} />
               <span className="text-xs font-medium">HP</span>
+              {/* Bônus de HP com tooltip detalhado */}
               {hpBonus > 0 && (
-                <span className="text-[10px] text-success font-medium">(+{hpBonus})</span>
+                <TooltipProvider delayDuration={200}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="text-[10px] text-success font-medium cursor-help">(+{hpBonus})</span>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-[200px]">
+                      <p className="font-semibold text-success mb-1">Bônus de PV: +{hpBonus}</p>
+                      <p className="text-xs text-muted-foreground">De poderes paranormais ativos</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+              {/* Indicador de bônus de trilha para HP */}
+              {bonusSummary?.special?.some(s => s.source.toLowerCase().includes('casca grossa')) && (
+                <TooltipProvider delayDuration={200}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="text-[10px] bg-primary/20 text-primary px-1 rounded font-medium cursor-help">
+                        ⚔ Trilha
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-[220px]">
+                      <p className="font-semibold text-primary mb-1">Casca Grossa</p>
+                      <p className="text-xs text-muted-foreground">+1 PV por 5% de NEX (já incluído no máximo)</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               )}
             </div>
             {editMode ? (
@@ -470,7 +497,17 @@ export const CharacterSheetHeader = memo(function CharacterSheetHeader({
               <Zap className="w-4 h-4 text-pe" />
               <span className="text-xs font-medium">PE</span>
               {peBonus > 0 && (
-                <span className="text-[10px] text-pe font-medium">(+{peBonus})</span>
+                <TooltipProvider delayDuration={200}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="text-[10px] text-pe font-medium cursor-help">(+{peBonus})</span>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-[200px]">
+                      <p className="font-semibold text-pe mb-1">Bônus de PE: +{peBonus}</p>
+                      <p className="text-xs text-muted-foreground">De poderes paranormais ativos</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               )}
             </div>
             {editMode ? (
@@ -497,6 +534,31 @@ export const CharacterSheetHeader = memo(function CharacterSheetHeader({
             <div className="flex items-center gap-1">
               <Star className="w-4 h-4 text-san" />
               <span className="text-xs font-medium">SAN</span>
+              {/* Indicador de bônus de trilha para SAN */}
+              {bonusSummary?.effectResistances?.breakdown?.some(s => 
+                s.source.toLowerCase().includes('mente') || s.source.toLowerCase().includes('inabalavel')
+              ) && (
+                <TooltipProvider delayDuration={200}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="text-[10px] bg-san/20 text-san px-1 rounded font-medium cursor-help">
+                        🧠 Mental
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-[220px]">
+                      <p className="font-semibold text-san mb-1">Resistências Mentais</p>
+                      <div className="text-xs text-muted-foreground space-y-0.5">
+                        {bonusSummary.effectResistances.breakdown
+                          .filter(s => s.source.toLowerCase().includes('mente') || s.source.toLowerCase().includes('inabalavel'))
+                          .map((bonus, i) => (
+                            <p key={i}>• {bonus.source}: {typeof bonus.value === 'number' ? `+${bonus.value}` : bonus.value}</p>
+                          ))
+                        }
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
             </div>
             {editMode ? (
               <Input
@@ -516,6 +578,107 @@ export const CharacterSheetHeader = memo(function CharacterSheetHeader({
           <AnimatedProgress value={editMode ? tempSan : sanCurrent} max={sanMax} variant="san" size="sm" />
         </div>
       </div>
+
+      {/* Indicadores de Bônus de Trilha Ativos */}
+      {bonusSummary && (bonusSummary.combat.initiative.total > 0 || bonusSummary.combat.criticalMargin.total > 0 || bonusSummary.damageReduction.physical.total > 0) && (
+        <div className="flex flex-wrap gap-2 pt-2 border-t border-border/50">
+          {/* Iniciativa */}
+          {bonusSummary.combat.initiative.total > 0 && (
+            <TooltipProvider delayDuration={200}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-1 px-2 py-1 rounded-md bg-primary/10 border border-primary/30 cursor-help">
+                    <Sword className="w-3 h-3 text-primary" />
+                    <span className="text-[10px] font-medium text-primary">
+                      INI +{bonusSummary.combat.initiative.total}
+                    </span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-[220px]">
+                  <p className="font-semibold text-primary mb-1">Bônus de Iniciativa</p>
+                  <div className="text-xs text-muted-foreground space-y-0.5">
+                    {bonusSummary.combat.initiative.breakdown.map((bonus, i) => (
+                      <p key={i}>• {bonus.source}: +{bonus.value}</p>
+                    ))}
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+
+          {/* Margem de Ameaça */}
+          {bonusSummary.combat.criticalMargin.total > 0 && (
+            <TooltipProvider delayDuration={200}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-1 px-2 py-1 rounded-md bg-destructive/10 border border-destructive/30 cursor-help">
+                    <Dices className="w-3 h-3 text-destructive" />
+                    <span className="text-[10px] font-medium text-destructive">
+                      CRIT +{bonusSummary.combat.criticalMargin.total}
+                    </span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-[220px]">
+                  <p className="font-semibold text-destructive mb-1">Margem de Ameaça</p>
+                  <div className="text-xs text-muted-foreground space-y-0.5">
+                    {bonusSummary.combat.criticalMargin.breakdown.map((bonus, i) => (
+                      <p key={i}>• {bonus.source}: +{bonus.value}{bonus.conditional ? ` (${bonus.conditional})` : ''}</p>
+                    ))}
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+
+          {/* Redução de Dano */}
+          {bonusSummary.damageReduction.physical.total > 0 && (
+            <TooltipProvider delayDuration={200}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-1 px-2 py-1 rounded-md bg-secondary/50 border border-secondary cursor-help">
+                    <Shield className="w-3 h-3 text-foreground" />
+                    <span className="text-[10px] font-medium">
+                      RD {bonusSummary.damageReduction.physical.total}
+                    </span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-[220px]">
+                  <p className="font-semibold mb-1">Redução de Dano</p>
+                  <div className="text-xs text-muted-foreground space-y-0.5">
+                    {bonusSummary.damageReduction.physical.breakdown.map((bonus, i) => (
+                      <p key={i}>• {bonus.source}: {bonus.value}{bonus.conditional ? ` (${bonus.conditional})` : ''}</p>
+                    ))}
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+
+          {/* Bônus de Perícias de Trilha */}
+          {Object.keys(bonusSummary.skills).length > 0 && (
+            <TooltipProvider delayDuration={200}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-1 px-2 py-1 rounded-md bg-energy/10 border border-energy/30 cursor-help">
+                    <BookOpen className="w-3 h-3 text-energy" />
+                    <span className="text-[10px] font-medium text-energy">
+                      {Object.keys(bonusSummary.skills).length} Perícias
+                    </span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-[250px]">
+                  <p className="font-semibold text-energy mb-1">Bônus de Perícias</p>
+                  <div className="text-xs text-muted-foreground space-y-0.5 max-h-32 overflow-y-auto">
+                    {Object.entries(bonusSummary.skills).map(([skill, data]) => (
+                      <p key={skill} className="capitalize">• {skill}: +{data.total}</p>
+                    ))}
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+        </div>
+      )}
 
       {/* Banners de Estado Crítico (HP ou SAN = 0) */}
       <AnimatePresence mode="wait">
