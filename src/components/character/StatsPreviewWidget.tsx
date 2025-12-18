@@ -6,7 +6,7 @@
  */
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { Heart, Zap, Brain, Shield, Footprints, ChevronDown, ChevronUp, Info } from 'lucide-react';
+import { Heart, Zap, Brain, Shield, Footprints, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import { CLASSES } from '@/lib/character-data';
@@ -72,6 +72,29 @@ function getSanBreakdown(classId: string, nex: number, originId?: string) {
   return { base: baseSan, fromNex, originMod, formula: `${baseSan} + ${nexMultiplier}×${classData.sanPerNex}${originMod ? ` ${originMod}` : ''}` };
 }
 
+// Componente de item de stat compacto para mobile
+function MobileStatItem({ 
+  icon: Icon, 
+  label, 
+  value, 
+  color 
+}: { 
+  icon: React.ElementType; 
+  label: string; 
+  value: number | string | null; 
+  color: string;
+}) {
+  if (value === null) return null;
+  
+  return (
+    <div className="flex items-center gap-1.5">
+      <Icon className={cn('w-3.5 h-3.5', color)} />
+      <span className="text-[10px] text-muted-foreground">{label}</span>
+      <span className={cn('font-display text-sm', color)}>{value}</span>
+    </div>
+  );
+}
+
 export function StatsPreviewWidget({
   hp,
   pe,
@@ -118,197 +141,230 @@ export function StatsPreviewWidget({
   const peBreakdown = characterClass ? getPeBreakdown(characterClass, presence, nex) : null;
   const sanBreakdown = characterClass ? getSanBreakdown(characterClass, nex, originId) : null;
 
+  if (!show) return null;
+
   return (
-    <AnimatePresence>
-      {show && (
-        <motion.div
-          drag
-          dragMomentum={false}
-          dragElastic={0.1}
-          initial={{ opacity: 0, x: 20, ...getInitialPosition() }}
-          animate={{ opacity: 1, x: getInitialPosition().x, y: getInitialPosition().y }}
-          exit={{ opacity: 0, x: 20 }}
-          onDragStart={() => setIsDragging(true)}
-          onDragEnd={(_, info) => {
-            setIsDragging(false);
-            const newPos = { x: info.point.x - window.innerWidth + 150, y: info.point.y - 112 };
-            localStorage.setItem('statsWidgetPosition', JSON.stringify(newPos));
-          }}
-          whileDrag={{ scale: 1.02, cursor: 'grabbing' }}
-          className={cn(
-            'fixed right-6 top-28 z-30',
-            'hidden lg:block',
-            isDragging ? 'cursor-grabbing' : 'cursor-grab'
-          )}
-        >
-          <TooltipProvider>
-            <div className={cn(
-              'ordo-panel p-4 bg-gradient-to-b border-2 transition-all duration-300 select-none',
-              bgClass,
-              expanded ? 'w-64' : 'w-auto',
-              isDragging && 'shadow-lg ring-2 ring-primary/30'
-            )}>
-              {/* Header com toggle e indicador de drag */}
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <div className="flex gap-0.5">
-                    <div className="w-1 h-3 rounded-full bg-muted-foreground/30" />
-                    <div className="w-1 h-3 rounded-full bg-muted-foreground/30" />
-                  </div>
-                  <p className="text-xs text-muted-foreground font-display tracking-wider">
-                    PREVIEW
-                  </p>
+    <>
+      {/* Mobile - Barra fixa no topo (abaixo do header) */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -20 }}
+        className={cn(
+          'lg:hidden fixed left-0 right-0 top-[53px] z-20',
+          'bg-gradient-to-b border-b border-border/50 backdrop-blur-sm',
+          bgClass.replace('border-', 'border-b-')
+        )}
+      >
+        <div className="container mx-auto px-3 py-2">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div className="flex items-center gap-3 flex-wrap">
+              {hp !== null && (
+                <MobileStatItem icon={Heart} label="PV" value={hp} color="text-destructive" />
+              )}
+              {pe !== null && (
+                <MobileStatItem icon={Zap} label="PE" value={pe} color="text-pe" />
+              )}
+              {san !== null && (
+                <MobileStatItem icon={Brain} label="SAN" value={san} color="text-paranormal" />
+              )}
+            </div>
+            <div className="flex items-center gap-3">
+              <MobileStatItem icon={Shield} label="DEF" value={defense} color="text-primary" />
+              <MobileStatItem icon={Footprints} label="MOV" value={`${movement}m`} color="text-muted-foreground" />
+            </div>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Desktop - Widget flutuante arrastável */}
+      <motion.div
+        drag
+        dragMomentum={false}
+        dragElastic={0.1}
+        initial={{ opacity: 0, x: 20, ...getInitialPosition() }}
+        animate={{ opacity: 1, x: getInitialPosition().x, y: getInitialPosition().y }}
+        exit={{ opacity: 0, x: 20 }}
+        onDragStart={() => setIsDragging(true)}
+        onDragEnd={(_, info) => {
+          setIsDragging(false);
+          const newPos = { x: info.point.x - window.innerWidth + 150, y: info.point.y - 112 };
+          localStorage.setItem('statsWidgetPosition', JSON.stringify(newPos));
+        }}
+        whileDrag={{ scale: 1.02, cursor: 'grabbing' }}
+        className={cn(
+          'fixed right-6 top-28 z-30',
+          'hidden lg:block',
+          isDragging ? 'cursor-grabbing' : 'cursor-grab'
+        )}
+      >
+        <TooltipProvider>
+          <div className={cn(
+            'ordo-panel p-4 bg-gradient-to-b border-2 transition-all duration-300 select-none',
+            bgClass,
+            expanded ? 'w-64' : 'w-auto',
+            isDragging && 'shadow-lg ring-2 ring-primary/30'
+          )}>
+            {/* Header com toggle e indicador de drag */}
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <div className="flex gap-0.5">
+                  <div className="w-1 h-3 rounded-full bg-muted-foreground/30" />
+                  <div className="w-1 h-3 rounded-full bg-muted-foreground/30" />
                 </div>
-                <button
-                  onClick={() => setExpanded(!expanded)}
-                  className="p-1 rounded hover:bg-muted/50 transition-colors"
-                >
-                  {expanded ? (
-                    <ChevronUp className="w-3 h-3 text-muted-foreground" />
-                  ) : (
-                    <ChevronDown className="w-3 h-3 text-muted-foreground" />
-                  )}
-                </button>
+                <p className="text-xs text-muted-foreground font-display tracking-wider">
+                  PREVIEW
+                </p>
               </div>
-              
-              <div className="space-y-3">
-                {/* PV - só mostra se tem classe com animação de entrada */}
-                <AnimatePresence>
-                  {hp !== null && (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.8, x: 20 }}
-                      animate={{ opacity: 1, scale: 1, x: 0 }}
-                      exit={{ opacity: 0, scale: 0.8, x: 20 }}
-                      transition={{ type: 'spring', stiffness: 500, damping: 30, delay: 0 }}
-                    >
-                      <StatItemWithBreakdown 
-                        icon={Heart} 
-                        label="PV" 
-                        value={hp} 
-                        color="text-destructive"
-                        expanded={expanded}
-                        isNew={true}
-                        breakdown={hpBreakdown ? [
-                          { label: 'Base Classe', value: hpBreakdown.base },
-                          { label: 'Vigor', value: hpBreakdown.fromVigor, prefix: '+' },
-                          { label: 'Progressão NEX', value: hpBreakdown.fromNex, prefix: '+' },
-                        ] : undefined}
-                      />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-                
-                {/* PE - só mostra se tem classe com animação de entrada */}
-                <AnimatePresence>
-                  {pe !== null && (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.8, x: 20 }}
-                      animate={{ opacity: 1, scale: 1, x: 0 }}
-                      exit={{ opacity: 0, scale: 0.8, x: 20 }}
-                      transition={{ type: 'spring', stiffness: 500, damping: 30, delay: 0.1 }}
-                    >
-                      <StatItemWithBreakdown 
-                        icon={Zap} 
-                        label="PE" 
-                        value={pe} 
-                        color="text-pe"
-                        expanded={expanded}
-                        isNew={true}
-                        breakdown={peBreakdown ? [
-                          { label: 'Base Classe', value: peBreakdown.base },
-                          { label: 'Presença', value: peBreakdown.fromPresence, prefix: '+' },
-                          { label: 'Progressão NEX', value: peBreakdown.fromNex, prefix: '+' },
-                        ] : undefined}
-                      />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-                
-                {/* SAN - só mostra se tem classe com animação de entrada */}
-                <AnimatePresence>
-                  {san !== null && (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.8, x: 20 }}
-                      animate={{ opacity: 1, scale: 1, x: 0 }}
-                      exit={{ opacity: 0, scale: 0.8, x: 20 }}
-                      transition={{ type: 'spring', stiffness: 500, damping: 30, delay: 0.2 }}
-                    >
-                      <StatItemWithBreakdown 
-                        icon={Brain} 
-                        label="SAN" 
-                        value={san} 
-                        color="text-paranormal"
-                        expanded={expanded}
-                        isNew={true}
-                        breakdown={sanBreakdown ? [
-                          { label: 'Base Classe', value: sanBreakdown.base },
-                          { label: 'Progressão NEX', value: sanBreakdown.fromNex, prefix: '+' },
-                          ...(sanBreakdown.originMod !== 0 ? [{ label: 'Origem', value: sanBreakdown.originMod }] : []),
-                        ] : undefined}
-                      />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-                
-                {/* Separador só aparece se tem stats de classe */}
-                <AnimatePresence>
-                  {hp !== null && (
-                    <motion.div 
-                      initial={{ opacity: 0, scaleX: 0 }}
-                      animate={{ opacity: 1, scaleX: 1 }}
-                      transition={{ delay: 0.3 }}
-                      className="h-px bg-border my-2 origin-left"
-                    />
-                  )}
-                </AnimatePresence>
-                
-                {/* DEF */}
-                <StatItemWithBreakdown 
-                  icon={Shield} 
-                  label="DEF" 
-                  value={defense} 
-                  color="text-primary"
-                  expanded={expanded}
-                  breakdown={[
-                    { label: 'Base', value: 10 },
-                    { label: 'Agilidade', value: agility, prefix: '+' },
-                  ]}
-                />
-                
-                {/* MOV */}
-                <StatItemWithBreakdown 
-                  icon={Footprints} 
-                  label="MOV" 
-                  value={`${movement}m`} 
-                  color="text-muted-foreground"
-                  expanded={expanded}
-                  breakdown={[
-                    { label: 'Base', value: 9 },
-                    ...(originId === 'atleta' ? [{ label: 'Atleta', value: 3, prefix: '+' }] : []),
-                  ]}
-                />
-              </div>
-              
-              {/* Legenda quando expandido */}
+              <button
+                onClick={() => setExpanded(!expanded)}
+                className="p-1 rounded hover:bg-muted/50 transition-colors"
+              >
+                {expanded ? (
+                  <ChevronUp className="w-3 h-3 text-muted-foreground" />
+                ) : (
+                  <ChevronDown className="w-3 h-3 text-muted-foreground" />
+                )}
+              </button>
+            </div>
+            
+            <div className="space-y-3">
+              {/* PV - só mostra se tem classe com animação de entrada */}
               <AnimatePresence>
-                {expanded && (
+                {hp !== null && (
                   <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="mt-3 pt-3 border-t border-border"
+                    initial={{ opacity: 0, scale: 0.8, x: 20 }}
+                    animate={{ opacity: 1, scale: 1, x: 0 }}
+                    exit={{ opacity: 0, scale: 0.8, x: 20 }}
+                    transition={{ type: 'spring', stiffness: 500, damping: 30, delay: 0 }}
                   >
-                    <p className="text-xs text-muted-foreground text-center italic">
-                      Clique para ver o detalhamento
-                    </p>
+                    <StatItemWithBreakdown 
+                      icon={Heart} 
+                      label="PV" 
+                      value={hp} 
+                      color="text-destructive"
+                      expanded={expanded}
+                      isNew={true}
+                      breakdown={hpBreakdown ? [
+                        { label: 'Base Classe', value: hpBreakdown.base },
+                        { label: 'Vigor', value: hpBreakdown.fromVigor, prefix: '+' },
+                        { label: 'Progressão NEX', value: hpBreakdown.fromNex, prefix: '+' },
+                      ] : undefined}
+                    />
                   </motion.div>
                 )}
               </AnimatePresence>
+              
+              {/* PE - só mostra se tem classe com animação de entrada */}
+              <AnimatePresence>
+                {pe !== null && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.8, x: 20 }}
+                    animate={{ opacity: 1, scale: 1, x: 0 }}
+                    exit={{ opacity: 0, scale: 0.8, x: 20 }}
+                    transition={{ type: 'spring', stiffness: 500, damping: 30, delay: 0.1 }}
+                  >
+                    <StatItemWithBreakdown 
+                      icon={Zap} 
+                      label="PE" 
+                      value={pe} 
+                      color="text-pe"
+                      expanded={expanded}
+                      isNew={true}
+                      breakdown={peBreakdown ? [
+                        { label: 'Base Classe', value: peBreakdown.base },
+                        { label: 'Presença', value: peBreakdown.fromPresence, prefix: '+' },
+                        { label: 'Progressão NEX', value: peBreakdown.fromNex, prefix: '+' },
+                      ] : undefined}
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+              
+              {/* SAN - só mostra se tem classe com animação de entrada */}
+              <AnimatePresence>
+                {san !== null && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.8, x: 20 }}
+                    animate={{ opacity: 1, scale: 1, x: 0 }}
+                    exit={{ opacity: 0, scale: 0.8, x: 20 }}
+                    transition={{ type: 'spring', stiffness: 500, damping: 30, delay: 0.2 }}
+                  >
+                    <StatItemWithBreakdown 
+                      icon={Brain} 
+                      label="SAN" 
+                      value={san} 
+                      color="text-paranormal"
+                      expanded={expanded}
+                      isNew={true}
+                      breakdown={sanBreakdown ? [
+                        { label: 'Base Classe', value: sanBreakdown.base },
+                        { label: 'Progressão NEX', value: sanBreakdown.fromNex, prefix: '+' },
+                        ...(sanBreakdown.originMod !== 0 ? [{ label: 'Origem', value: sanBreakdown.originMod }] : []),
+                      ] : undefined}
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+              
+              {/* Separador só aparece se tem stats de classe */}
+              <AnimatePresence>
+                {hp !== null && (
+                  <motion.div 
+                    initial={{ opacity: 0, scaleX: 0 }}
+                    animate={{ opacity: 1, scaleX: 1 }}
+                    transition={{ delay: 0.3 }}
+                    className="h-px bg-border my-2 origin-left"
+                  />
+                )}
+              </AnimatePresence>
+              
+              {/* DEF */}
+              <StatItemWithBreakdown 
+                icon={Shield} 
+                label="DEF" 
+                value={defense} 
+                color="text-primary"
+                expanded={expanded}
+                breakdown={[
+                  { label: 'Base', value: 10 },
+                  { label: 'Agilidade', value: agility, prefix: '+' },
+                ]}
+              />
+              
+              {/* MOV */}
+              <StatItemWithBreakdown 
+                icon={Footprints} 
+                label="MOV" 
+                value={`${movement}m`} 
+                color="text-muted-foreground"
+                expanded={expanded}
+                breakdown={[
+                  { label: 'Base', value: 9 },
+                  ...(originId === 'atleta' ? [{ label: 'Atleta', value: 3, prefix: '+' }] : []),
+                ]}
+              />
             </div>
-          </TooltipProvider>
-        </motion.div>
-      )}
-    </AnimatePresence>
+            
+            {/* Legenda quando expandido */}
+            <AnimatePresence>
+              {expanded && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="mt-3 pt-3 border-t border-border"
+                >
+                  <p className="text-xs text-muted-foreground text-center italic">
+                    Clique para ver o detalhamento
+                  </p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </TooltipProvider>
+      </motion.div>
+    </>
   );
 }
 
@@ -326,7 +382,7 @@ interface StatItemWithBreakdownProps {
   color: string;
   expanded: boolean;
   breakdown?: BreakdownItem[];
-  isNew?: boolean; // Indica se o stat acabou de aparecer (para efeito pulse)
+  isNew?: boolean;
 }
 
 function StatItemWithBreakdown({ 

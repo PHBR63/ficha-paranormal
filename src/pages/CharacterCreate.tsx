@@ -618,29 +618,29 @@ export default function CharacterCreate() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
+    <div className="min-h-screen bg-background pb-20 sm:pb-0">
+      {/* Header - Responsivo */}
       <header className="border-b border-border bg-card/50 sticky top-0 z-30 backdrop-blur-sm">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center gap-4">
+        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             <Button 
               variant="ghost" 
               size="sm" 
               onClick={handleExitRequest}
-              className="text-muted-foreground"
+              className="text-muted-foreground px-2 sm:px-3"
             >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Voltar
+              <ArrowLeft className="w-4 h-4" />
+              <span className="hidden sm:inline ml-2">Voltar</span>
             </Button>
-            <div className="h-6 w-px bg-border" />
-            <h1 className="font-display text-xl tracking-wider">NOVO AGENTE</h1>
+            <div className="h-6 w-px bg-border hidden sm:block" />
+            <h1 className="font-display text-lg sm:text-xl tracking-wider">NOVO AGENTE</h1>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8 max-w-4xl">
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 max-w-4xl">
         {/* Stepper */}
-        <div className="mb-8">
+        <div className="mb-4 sm:mb-8">
           <CharacterCreationStepper
             steps={STEPS}
             currentStep={currentStep}
@@ -651,12 +651,12 @@ export default function CharacterCreate() {
         </div>
 
         {/* Step content */}
-        <div className="ordo-panel p-6 mb-6">
+        <div className="ordo-panel p-3 sm:p-6 mb-4 sm:mb-6">
           {renderStep()}
         </div>
 
-        {/* Navigation */}
-        <div className="flex justify-between">
+        {/* Navigation - Desktop */}
+        <div className="hidden sm:flex justify-between">
           <Button
             variant="outline"
             onClick={handleBack}
@@ -688,6 +688,43 @@ export default function CharacterCreate() {
                 <Check className="w-4 h-4 mr-2" />
               )}
               FINALIZAR CADASTRO
+            </Button>
+          )}
+        </div>
+
+        {/* Navigation - Mobile (Fixed bottom) */}
+        <div className="sm:hidden fixed bottom-0 left-0 right-0 p-3 bg-background/95 backdrop-blur-sm border-t border-border z-40 flex justify-between gap-2">
+          <Button
+            variant="outline"
+            onClick={handleBack}
+            disabled={currentStep === 0}
+            className="font-display tracking-wider flex-1 text-xs h-11"
+          >
+            <ArrowLeft className="w-4 h-4 mr-1" />
+            ANTERIOR
+          </Button>
+
+          {currentStep < STEPS.length - 1 ? (
+            <Button
+              onClick={handleNext}
+              disabled={!canProceed()}
+              className="font-display tracking-wider flex-1 text-xs h-11"
+            >
+              PRÓXIMO
+              <ArrowRight className="w-4 h-4 ml-1" />
+            </Button>
+          ) : (
+            <Button
+              onClick={handleSave}
+              disabled={saving || !buildResult.canFinalize}
+              className="font-display tracking-wider flex-1 text-xs h-11 bg-primary hover:bg-primary/90"
+            >
+              {saving ? (
+                <Loader2 className="w-4 h-4 animate-spin mr-1" />
+              ) : (
+                <Check className="w-4 h-4 mr-1" />
+              )}
+              FINALIZAR
             </Button>
           )}
         </div>
