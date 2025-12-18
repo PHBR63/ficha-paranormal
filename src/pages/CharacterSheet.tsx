@@ -450,10 +450,14 @@ export default function CharacterSheet() {
         : [];
       
       // Executa migração automática de armaduras se necessário
-      const migratedInventory = await runMigration(id, inventory as any);
-      if (migratedInventory) {
-        inventory = migratedInventory as unknown as InventoryItemPersisted[];
+      const migrationResult = await runMigration(id, inventory as any);
+      if (migrationResult) {
+        inventory = migrationResult.inventory as unknown as InventoryItemPersisted[];
         console.log('[CharacterSheet] Armaduras migradas automaticamente');
+        toast({
+          title: 'Armaduras Corrigidas',
+          description: `${migrationResult.count} armadura(s) foram atualizadas automaticamente com os valores corretos de defesa e RD.`,
+        });
       }
 
       const charData = {
