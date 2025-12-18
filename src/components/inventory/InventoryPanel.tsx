@@ -1089,11 +1089,14 @@ export function InventoryPanel({
                         <p className="text-[10px] opacity-70">{config.label}</p>
                       </div>
                       <p className={cn(
-                        "font-display text-lg",
+                        "font-display text-lg font-bold",
                         isAtLimit && "text-destructive",
-                        isLocked && "text-muted-foreground"
+                        isLocked && "text-muted-foreground",
+                        !isAtLimit && !isLocked && "text-foreground"
                       )}>
-                        {count}/{limit}
+                        <span className="text-primary">{count}</span>
+                        <span className="text-muted-foreground/70">/</span>
+                        <span className="text-foreground/80">{limit}</span>
                       </p>
                     </div>
                   </TooltipTrigger>
