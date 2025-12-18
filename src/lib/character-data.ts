@@ -829,13 +829,16 @@ export const PARANORMAL_ELEMENTS = [
  * PV = Base da Classe + VIG + ((NEX/5 - 1) * (Progressão + VIG))
  * PE = Base da Classe + PRE + ((NEX/5 - 1) * (Progressão + PRE))
  * SAN = Base da Classe + ((NEX/5 - 1) * Progressão)
+ * 
+ * @param abilities - Lista de habilidades (incluindo de trilha) para aplicar bônus de PV/SAN
  */
 export function calculateDerivedStats(
   characterClass: string,
   vigor: number,
   presence: number,
   nex: number,
-  originId?: string
+  originId?: string,
+  abilities?: string[]
 ): { hp: number; pe: number; san: number } {
   const classData = CLASSES.find(c => c.id === characterClass);
   if (!classData) {
@@ -843,9 +846,10 @@ export function calculateDerivedStats(
   }
 
   const nexMultiplier = Math.floor(nex / 5) - 1;
+  const nexLevels = Math.floor(nex / 5); // Total de "níveis" (5% = 1, 10% = 2, etc.)
 
   // PV = Base + VIG + (Multiplicador * (ProgressãoPV + VIG))
-  const hp = classData.pvBase + vigor + Math.max(0, nexMultiplier) * (classData.pvPerNex + vigor);
+  let hp = classData.pvBase + vigor + Math.max(0, nexMultiplier) * (classData.pvPerNex + vigor);
 
   // PE = Base + PRE + (Multiplicador * (ProgressãoPE + PRE))
   const pe = classData.peBase + presence + Math.max(0, nexMultiplier) * (classData.pePerNex + presence);
@@ -854,15 +858,38 @@ export function calculateDerivedStats(
   let san = classData.sanBase + Math.max(0, nexMultiplier) * classData.sanPerNex;
 
   // Aplicar modificador de origem (Cultista Arrependido, etc.)
-  // sanityModifier é uma porcentagem sobre a SANIDADE BASE (NEX 5%), não sobre o total
-  // Exemplo: -50 = metade da sanidade base é subtraída (penalidade fixa)
-  // Exemplo: +25 = 25% da sanidade base é adicionada (bônus fixo)
   if (originId) {
     const origin = ORIGINS.find(o => o.id === originId);
     if (origin?.sanityModifier) {
-      // Calcula o modificador baseado na sanidade BASE da classe
       const baseModifier = Math.floor(classData.sanBase * origin.sanityModifier / 100);
-      san = san + baseModifier; // + para bônus, - automático para penalidade (valor negativo)
+      san = san + baseModifier;
+    }
+    
+    // Desgarrado (Calejado): +1 PV para cada 5% de NEX
+    if (originId === 'desgarrado') {
+      hp += nexLevels;
+    }
+    
+    // Vítima (Cicatrizes Psicológicas): +1 SAN para cada 5% de NEX
+    if (originId === 'vitima') {
+      san += nexLevels;
+    }
+  }
+
+  // === HABILIDADES DE TRILHA QUE AFETAM STATS BASE ===
+  if (abilities && abilities.length > 0) {
+    const normalizedAbilities = abilities.map(a => 
+      typeof a === 'string' ? a.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '') : ''
+    );
+    
+    const hasAbility = (name: string) => {
+      const normalized = name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      return normalizedAbilities.some(a => a.includes(normalized));
+    };
+    
+    // Casca Grossa (Tropa de Choque): +1 PV para cada 5% de NEX
+    if (hasAbility('casca grossa') || hasAbility('casca-grossa')) {
+      hp += nexLevels;
     }
   }
 
