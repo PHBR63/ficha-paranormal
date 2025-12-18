@@ -1,12 +1,18 @@
 /**
  * Validadores para importação de dados
- * Verifica campos obrigatórios e tipos de dados
+ * Verifica campos obrigatórios, tipos de dados e duplicatas
  */
 
-import type { CatalogWeapon } from './weapons-catalog';
-import type { CatalogArmor } from './armor-catalog';
-import type { CatalogItem } from './items-catalog';
-import type { Ritual } from './rituals-data';
+import type { CatalogWeapon, ALL_WEAPONS } from './weapons-catalog';
+import type { CatalogArmor, ALL_ARMORS } from './armor-catalog';
+import type { CatalogItem, ALL_ITEMS } from './items-catalog';
+import type { Ritual, ALL_RITUALS } from './rituals-data';
+
+// Re-export dos catálogos para uso na verificação de duplicatas
+export { ALL_WEAPONS } from './weapons-catalog';
+export { ALL_ARMORS } from './armor-catalog';
+export { ALL_ITEMS } from './items-catalog';
+export { ALL_RITUALS } from './rituals-data';
 
 // Interface para resultado de validação
 export interface ValidationResult {
@@ -22,13 +28,90 @@ export interface ValidatedItem<T> {
   index: number;
 }
 
+// Interface para contexto de validação com duplicatas
+export interface ValidationContext {
+  existingIds: Set<string>;
+  existingNames: Set<string>;
+  seenIdsInBatch: Set<string>;
+  seenNamesInBatch: Set<string>;
+}
+
+/**
+ * Cria contexto de validação com dados existentes do sistema
+ */
+export function createValidationContext(
+  existingItems: Array<{ id: string; name: string }>
+): ValidationContext {
+  return {
+    existingIds: new Set(existingItems.map(i => i.id.toLowerCase())),
+    existingNames: new Set(existingItems.map(i => i.name.toLowerCase())),
+    seenIdsInBatch: new Set(),
+    seenNamesInBatch: new Set()
+  };
+}
+
+/**
+ * Verifica duplicatas de um item
+ */
+function checkDuplicates(
+  id: string | undefined,
+  name: string | undefined,
+  context: ValidationContext
+): { errors: string[]; warnings: string[] } {
+  const errors: string[] = [];
+  const warnings: string[] = [];
+
+  if (id) {
+    const lowerId = id.toLowerCase();
+    // Duplicata no próprio JSON
+    if (context.seenIdsInBatch.has(lowerId)) {
+      errors.push(`ID "${id}" duplicado no JSON (já apareceu anteriormente)`);
+    }
+    // Duplicata no sistema
+    if (context.existingIds.has(lowerId)) {
+      warnings.push(`ID "${id}" já existe no sistema (será sobrescrito)`);
+    }
+    context.seenIdsInBatch.add(lowerId);
+  }
+
+  if (name) {
+    const lowerName = name.toLowerCase();
+    // Duplicata no próprio JSON
+    if (context.seenNamesInBatch.has(lowerName)) {
+      warnings.push(`Nome "${name}" duplicado no JSON`);
+    }
+    // Duplicata no sistema
+    if (context.existingNames.has(lowerName)) {
+      warnings.push(`Nome "${name}" já existe no sistema`);
+    }
+    context.seenNamesInBatch.add(lowerName);
+  }
+
+  return { errors, warnings };
+}
+
 /**
  * Valida uma arma do catálogo
  */
-export function validateWeapon(data: unknown, index: number): ValidatedItem<CatalogWeapon> {
+export function validateWeapon(
+  data: unknown, 
+  index: number, 
+  context?: ValidationContext
+): ValidatedItem<CatalogWeapon> {
   const errors: string[] = [];
   const warnings: string[] = [];
   const item = data as Record<string, unknown>;
+
+  // Verificar duplicatas
+  if (context) {
+    const duplicateCheck = checkDuplicates(
+      item.id as string | undefined,
+      item.name as string | undefined,
+      context
+    );
+    errors.push(...duplicateCheck.errors);
+    warnings.push(...duplicateCheck.warnings);
+  }
 
   // Campos obrigatórios
   if (!item.id || typeof item.id !== 'string') {
@@ -80,10 +163,25 @@ export function validateWeapon(data: unknown, index: number): ValidatedItem<Cata
 /**
  * Valida uma armadura do catálogo
  */
-export function validateArmor(data: unknown, index: number): ValidatedItem<CatalogArmor> {
+export function validateArmor(
+  data: unknown, 
+  index: number,
+  context?: ValidationContext
+): ValidatedItem<CatalogArmor> {
   const errors: string[] = [];
   const warnings: string[] = [];
   const item = data as Record<string, unknown>;
+
+  // Verificar duplicatas
+  if (context) {
+    const duplicateCheck = checkDuplicates(
+      item.id as string | undefined,
+      item.name as string | undefined,
+      context
+    );
+    errors.push(...duplicateCheck.errors);
+    warnings.push(...duplicateCheck.warnings);
+  }
 
   // Campos obrigatórios
   if (!item.id || typeof item.id !== 'string') {
@@ -120,10 +218,25 @@ export function validateArmor(data: unknown, index: number): ValidatedItem<Catal
 /**
  * Valida um item do catálogo
  */
-export function validateItem(data: unknown, index: number): ValidatedItem<CatalogItem> {
+export function validateItem(
+  data: unknown, 
+  index: number,
+  context?: ValidationContext
+): ValidatedItem<CatalogItem> {
   const errors: string[] = [];
   const warnings: string[] = [];
   const item = data as Record<string, unknown>;
+
+  // Verificar duplicatas
+  if (context) {
+    const duplicateCheck = checkDuplicates(
+      item.id as string | undefined,
+      item.name as string | undefined,
+      context
+    );
+    errors.push(...duplicateCheck.errors);
+    warnings.push(...duplicateCheck.warnings);
+  }
 
   // Campos obrigatórios
   if (!item.id || typeof item.id !== 'string') {
@@ -157,10 +270,25 @@ export function validateItem(data: unknown, index: number): ValidatedItem<Catalo
 /**
  * Valida um ritual
  */
-export function validateRitual(data: unknown, index: number): ValidatedItem<Ritual> {
+export function validateRitual(
+  data: unknown, 
+  index: number,
+  context?: ValidationContext
+): ValidatedItem<Ritual> {
   const errors: string[] = [];
   const warnings: string[] = [];
   const item = data as Record<string, unknown>;
+
+  // Verificar duplicatas
+  if (context) {
+    const duplicateCheck = checkDuplicates(
+      item.id as string | undefined,
+      item.name as string | undefined,
+      context
+    );
+    errors.push(...duplicateCheck.errors);
+    warnings.push(...duplicateCheck.warnings);
+  }
 
   // Campos obrigatórios
   if (!item.id || typeof item.id !== 'string') {
@@ -207,13 +335,14 @@ export function validateRitual(data: unknown, index: number): ValidatedItem<Ritu
 }
 
 /**
- * Valida um array de dados
+ * Valida um array de dados com verificação de duplicatas
  */
 export function validateBatch<T>(
   data: unknown[],
-  validator: (item: unknown, index: number) => ValidatedItem<T>
+  validator: (item: unknown, index: number, context?: ValidationContext) => ValidatedItem<T>,
+  context?: ValidationContext
 ): ValidatedItem<T>[] {
-  return data.map((item, index) => validator(item, index));
+  return data.map((item, index) => validator(item, index, context));
 }
 
 /**
