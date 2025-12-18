@@ -657,16 +657,39 @@ export const CharacterSheetHeader = memo(function CharacterSheetHeader({
 
         {/* Stats secundários */}
         <div className="flex items-center gap-4 text-sm">
-          {/* Defesa com tooltip de breakdown */}
+          {/* Defesa com tooltip de breakdown e animação em tempo real */}
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
                 <div className="flex items-center gap-1 cursor-help">
                   <span className="text-muted-foreground">DEF</span>
-                  <span className="font-display text-lg text-primary">{totalDefense}</span>
-                  {defenseBonus > 0 && (
-                    <span className="text-[10px] text-success font-medium">(+{defenseBonus})</span>
-                  )}
+                  <AnimatePresence mode="wait">
+                    <motion.span
+                      key={totalDefense}
+                      initial={{ y: -8, opacity: 0, scale: 0.9 }}
+                      animate={{ y: 0, opacity: 1, scale: 1 }}
+                      exit={{ y: 8, opacity: 0, scale: 0.9 }}
+                      transition={{ duration: 0.2, ease: "easeOut" }}
+                      className={cn(
+                        "font-display text-lg",
+                        defenseBonus > 0 ? "text-primary" : ""
+                      )}
+                    >
+                      {totalDefense}
+                    </motion.span>
+                  </AnimatePresence>
+                  <AnimatePresence>
+                    {defenseBonus > 0 && (
+                      <motion.span 
+                        initial={{ opacity: 0, x: -5 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -5 }}
+                        className="text-[10px] text-success font-medium"
+                      >
+                        (+{defenseBonus})
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
                 </div>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="max-w-xs">

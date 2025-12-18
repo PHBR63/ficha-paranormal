@@ -46,6 +46,7 @@ import { ALL_RITUALS } from '@/lib/rituals-data';
 import { ALL_CLASS_ABILITIES } from '@/lib/class-abilities';
 import { useDefenseBonuses } from '@/hooks/useDefenseBonuses';
 import { useCharacterBonusSummary } from '@/hooks/useCharacterBonusSummary';
+import { useSustainedRituals } from '@/hooks/useSustainedRituals';
 import { BonusSummaryCard } from './BonusSummaryCard';
 
 // Tipos
@@ -524,7 +525,23 @@ export function MobileCharacterSheet({
     inventory: character.inventory || [],
   });
 
-  // Hook de resumo de todos os bônus do personagem
+  // Hook reativo de rituais sustentados (com realtime para defesa)
+  const { rituals: sustainedRituals } = useSustainedRituals({
+    characterId: character.id,
+    enabled: true,
+  });
+
+  // Converte rituais sustentados para formato de defesa
+  const activeRitualsForDefense = useMemo(() => 
+    sustainedRituals.map(r => ({
+      ritualId: r.ritualId,
+      ritualName: r.ritualName,
+      enhancements: r.selectedEnhancements,
+    })),
+    [sustainedRituals]
+  );
+
+  // Hook de resumo de todos os bônus do personagem (incluindo rituais ativos)
   const bonusSummary = useCharacterBonusSummary({
     origin: character.origin,
     abilities: character.abilities,
@@ -532,11 +549,12 @@ export function MobileCharacterSheet({
     paranormalPowers: character.paranormal_powers || [],
     inventory: character.inventory || [],
     nex: character.nex,
-    elementalAffinity: null, // Não temos esse campo no mobile props
+    elementalAffinity: null,
     affinityActive: false,
+    activeRituals: activeRitualsForDefense, // Agora passa rituais ativos!
   });
 
-  // Defesa total com TODOS os bônus (origem, habilidades, poderes, paranormais)
+  // Defesa total com TODOS os bônus (origem, habilidades, poderes, paranormais, rituais)
   const totalDefense = character.defense + bonusSummary.defense.total;
 
   // Handler para abrir modal de detalhes do poder
@@ -701,10 +719,30 @@ export function MobileCharacterSheet({
                     <TooltipTrigger asChild>
                       <div className="flex items-center gap-1 cursor-help">
                         <Shield className="w-3 h-3 text-muted-foreground" />
-                        <span>DEF {totalDefense}</span>
-                        {bonusSummary.defense.total > 0 && (
-                          <span className="text-[9px] text-success">(+{bonusSummary.defense.total})</span>
-                        )}
+                        <span>DEF </span>
+                        <AnimatePresence mode="wait">
+                          <motion.span
+                            key={totalDefense}
+                            initial={{ y: -5, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            exit={{ y: 5, opacity: 0 }}
+                            transition={{ duration: 0.15 }}
+                          >
+                            {totalDefense}
+                          </motion.span>
+                        </AnimatePresence>
+                        <AnimatePresence>
+                          {bonusSummary.defense.total > 0 && (
+                            <motion.span 
+                              initial={{ opacity: 0, x: -3 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              exit={{ opacity: 0, x: -3 }}
+                              className="text-[9px] text-success"
+                            >
+                              (+{bonusSummary.defense.total})
+                            </motion.span>
+                          )}
+                        </AnimatePresence>
                       </div>
                     </TooltipTrigger>
                     <TooltipContent side="bottom" className="max-w-xs">
@@ -721,7 +759,12 @@ export function MobileCharacterSheet({
                                   !bonus.active && "text-muted-foreground line-through"
                                 )}
                               >
-                                <span>{bonus.source}</span>
+                                <span className="flex items-center gap-1">
+                                  {bonus.type === 'ritual' && (
+                                    <Sparkles className="w-2.5 h-2.5 text-purple-400" />
+                                  )}
+                                  {bonus.source}
+                                </span>
                                 <span className={bonus.active ? "text-success" : ""}>+{bonus.bonus}</span>
                               </p>
                             ))}
