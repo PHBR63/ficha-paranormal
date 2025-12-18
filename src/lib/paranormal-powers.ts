@@ -24,6 +24,9 @@ export interface PowerEffect {
   description: string;
 }
 
+// Tipos de escolhas que um poder pode requerer
+export type PowerChoiceType = 'skill_intellect' | 'ritual' | 'element_resistance';
+
 // Interface principal do Poder Paranormal
 export interface ParanormalPower {
   id: string;
@@ -34,6 +37,20 @@ export interface ParanormalPower {
   prerequisite?: PowerPrerequisite;
   effect: PowerEffect;
   isGeneric?: boolean; // Pode ser escolhido múltiplas vezes (como Resistir a Elemento)
+  requiresChoice?: PowerChoiceType; // Tipo de escolha que o poder requer
+}
+
+// Interface para poder paranormal salvo no personagem (com escolhas)
+export interface SavedParanormalPower {
+  id: string;
+  name: string;
+  element: ParanormalElement | 'generic';
+  description: string;
+  choices?: {
+    skills?: string[];              // Para Expansão de Conhecimento
+    ritualId?: string;              // Para Aprender Ritual
+    resistElement?: ParanormalElement; // Para Resistir a Elemento
+  };
 }
 
 // ==================== PODERES PARANORMAIS OFICIAIS (22 poderes) ====================
@@ -173,6 +190,7 @@ export const PARANORMAL_POWERS: ParanormalPower[] = [
     element: 'conhecimento',
     description: 'Sua mente foi expandida. Você recebe +5 em uma perícia baseada em Intelecto à sua escolha.',
     affinityEffect: 'Com afinidade: você recebe +5 em duas perícias baseadas em Intelecto.',
+    requiresChoice: 'skill_intellect',
     effect: {
       type: 'skill_bonus',
       target: 'intellect_skill',
@@ -305,6 +323,7 @@ export const PARANORMAL_POWERS: ParanormalPower[] = [
     element: 'generic',
     isGeneric: true,
     description: 'Você aprende um ritual adicional de qualquer círculo que possa lançar.',
+    requiresChoice: 'ritual',
     effect: {
       type: 'special',
       description: 'Aprende 1 ritual adicional'
@@ -316,6 +335,7 @@ export const PARANORMAL_POWERS: ParanormalPower[] = [
     element: 'generic',
     isGeneric: true,
     description: 'Escolha um elemento (Sangue, Morte, Conhecimento ou Energia). Você recebe resistência 5 a esse elemento.',
+    requiresChoice: 'element_resistance',
     effect: {
       type: 'resistance',
       target: 'element',

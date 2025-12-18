@@ -9,8 +9,10 @@ import { useMemo } from 'react';
 import {
   ParanormalPower,
   ParanormalElement,
+  SavedParanormalPower,
   getPowerById,
   calculatePowerModifiers,
+  ELEMENT_LABELS,
 } from '@/lib/paranormal-powers';
 
 export interface ParanormalEffects {
@@ -50,7 +52,7 @@ export interface ParanormalEffects {
 }
 
 interface UseParanormalEffectsParams {
-  powers: ParanormalPower[] | Array<{ id: string; name: string; element: string; description: string }>;
+  powers: ParanormalPower[] | SavedParanormalPower[] | Array<{ id: string; name: string; element: string; description: string; choices?: SavedParanormalPower['choices'] }>;
   nex: number;
   elementalAffinity?: ParanormalElement | null;
   affinityActive?: boolean;
@@ -171,9 +173,18 @@ export function useParanormalEffects({
 
         // === PODERES DE CONHECIMENTO ===
         case 'expansao-de-conhecimento':
-          // +5 em 1 perícia de Int (ou +5 em 2 com afinidade)
-          // Efeito aplicado manualmente pelo jogador
-          effects.activeEffects.push(`Expansão de Conhecimento: +5 em ${hasAffinity ? '2' : '1'} perícia(s) de Int`);
+          // +5 em perícias de Intelecto escolhidas pelo jogador
+          const savedPower = power as SavedParanormalPower;
+          const chosenSkills = savedPower.choices?.skills || [];
+          if (chosenSkills.length > 0) {
+            for (const skillId of chosenSkills) {
+              effects.skillBonuses[skillId] = (effects.skillBonuses[skillId] || 0) + 5;
+            }
+            effects.activeEffects.push(`Expansão de Conhecimento: +5 em ${chosenSkills.join(', ')}`);
+          } else {
+            // Fallback se ainda não escolheu
+            effects.activeEffects.push(`Expansão de Conhecimento: +5 em ${hasAffinity ? '2' : '1'} perícia(s) de Int (escolha pendente)`);
+          }
           break;
 
         case 'percepcao-paranormal':
@@ -246,8 +257,15 @@ export function useParanormalEffects({
           break;
 
         case 'resistir-a-elemento':
-          // Resistência 5 a um elemento (escolhido pelo jogador)
-          effects.activeEffects.push('Resistir a Elemento: Resistência 5 a 1 elemento');
+          // Resistência 5 a um elemento escolhido pelo jogador
+          const resistPower = power as SavedParanormalPower;
+          const resistElement = resistPower.choices?.resistElement;
+          if (resistElement) {
+            effects.elementalResistances[resistElement] = (effects.elementalResistances[resistElement] || 0) + 5;
+            effects.activeEffects.push(`Resistir a Elemento: Resistência 5 a ${ELEMENT_LABELS[resistElement]}`);
+          } else {
+            effects.activeEffects.push('Resistir a Elemento: Resistência 5 a 1 elemento (escolha pendente)');
+          }
           break;
       }
     }
