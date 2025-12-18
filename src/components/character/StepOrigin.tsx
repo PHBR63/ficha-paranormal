@@ -695,7 +695,7 @@ export function StepOrigin({ formData, updateFormData }: StepOriginProps) {
           setShowParanormalModal(open);
           if (!open) setParanormalElementFilter('all');
         }}>
-          <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden flex flex-col">
+          <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden grid grid-rows-[auto_auto_minmax(0,1fr)_auto] gap-4">
             <DialogHeader>
               <DialogTitle className="font-display text-xl tracking-wider flex items-center gap-2">
                 <Sparkles className="w-5 h-5 text-paranormal" />
@@ -734,7 +734,7 @@ export function StepOrigin({ formData, updateFormData }: StepOriginProps) {
               </TabsList>
             </Tabs>
             
-            <ScrollArea className="flex-1 h-[50vh] -mx-6 px-6">
+            <ScrollArea className="min-h-0 -mx-6 px-6 pr-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pb-4">
                 {filteredParanormalPowers.map(power => {
                   const isSelected = formData.originParanormalPower === power.id;
