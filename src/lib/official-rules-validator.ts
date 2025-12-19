@@ -239,7 +239,7 @@ const OFFICIAL_RITUALS_DATA: Record<string, OfficialRitualData> = {
   // === 4º CÍRCULO - CONHECIMENTO ===
   'controle-mental': { name: 'Controle Mental', circle: 4, element: 'conhecimento', cost: 6, resistance: 'Vontade parcial', enhancements: [{ name: 'Discente', cost: 5 }, { name: 'Verdadeiro', cost: 10 }] },
   'despertar-consciencia': { name: 'Despertar Consciência', circle: 4, element: 'conhecimento', cost: 6, enhancements: [{ name: 'Verdadeiro', cost: 12 }] },
-  'possessao': { name: 'Possessão', circle: 4, element: 'conhecimento', cost: 6, resistance: 'Vontade anula', enhancements: [{ name: 'Verdadeiro', cost: 12 }] },
+  'possessao': { name: 'Possessão', circle: 4, element: 'conhecimento', cost: 6, resistance: 'Vontade anula', enhancements: [] },
   'zona-morta': { name: 'Zona Morta', circle: 4, element: 'conhecimento', cost: 6, resistance: 'Vontade parcial', enhancements: [{ name: 'Verdadeiro', cost: 12 }] },
   
   // === 4º CÍRCULO - MEDO ===
