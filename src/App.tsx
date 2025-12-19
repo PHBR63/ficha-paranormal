@@ -29,8 +29,8 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <InstallPromptBanner />
       <BrowserRouter>
+        <InstallPromptBanner />
         <AuthProvider>
           <ColorThemeProvider>
             <Routes>
