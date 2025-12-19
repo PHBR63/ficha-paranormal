@@ -949,6 +949,7 @@ export function getTriggerLabel(trigger: HookTrigger): string {
     onDeath: 'Ao morrer',
     onCast: 'Ao conjurar',
     onConcentrationBreak: 'Ao perder concentração',
+    onResistancePass: 'Ao alvo passar na resistência',
   };
   return labels[trigger] || trigger;
 }
@@ -969,6 +970,7 @@ export function getTriggerIcon(trigger: HookTrigger): string {
     onDeath: '💀',
     onCast: '✨',
     onConcentrationBreak: '💔',
+    onResistancePass: '✅',
   };
   return icons[trigger] || '⚡';
 }

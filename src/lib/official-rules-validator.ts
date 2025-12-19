@@ -186,7 +186,7 @@ const OFFICIAL_RITUALS_DATA: Record<string, OfficialRitualData> = {
   'localizacao': { name: 'Localização', circle: 2, element: 'conhecimento', cost: 2, enhancements: [{ name: 'Discente', cost: 3, circleReq: 3 }, { name: 'Verdadeiro', cost: 7, circleReq: 4 }] },
   
   // === 2º CÍRCULO - MEDO ===
-  'protecao-contra-rituais': { name: 'Proteção contra Rituais', circle: 2, element: 'medo', cost: 2, enhancements: [{ name: 'Discente', cost: 3, circleReq: 3 }, { name: 'Verdadeiro', cost: 7, circleReq: 4 }] },
+  'protecao-contra-rituais': { name: 'Proteção contra Rituais', circle: 2, element: 'medo', cost: 2, enhancements: [{ name: 'Discente', cost: 3, circleReq: 3 }, { name: 'Verdadeiro', cost: 6, circleReq: 4 }] },
   'toque-do-medo': { name: 'Toque do Medo', circle: 2, element: 'medo', cost: 2, resistance: 'Vontade parcial', enhancements: [{ name: 'Discente', cost: 3, circleReq: 3 }, { name: 'Verdadeiro', cost: 7, circleReq: 4 }] },
   
   // === 3º CÍRCULO - ENERGIA ===

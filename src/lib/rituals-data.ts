@@ -425,11 +425,11 @@ export const FIRST_CIRCLE_RITUALS: Ritual[] = [
     range: 'Toque',
     target: '1 pessoa',
     duration: 'Cena',
-    description: 'Alvo entra em frenesi: +2 em ataque e dano corpo a corpo, resistência 5 (balístico, corte, impacto, perfuração). Não pode fazer ações de calma, deve sempre atacar.',
+    description: 'O alvo entra em um frenesi, aumentando sua agressividade e capacidade de luta. Ele recebe +2 em testes de ataque e rolagens de dano corpo a corpo e resistência a balístico, corte, impacto e perfuração 5. Enquanto o efeito durar, o alvo não pode fazer nenhuma ação que exige calma e concentração (como usar a perícia Furtividade ou conjurar rituais), e deve sempre atacar um alvo em sua rodada, mesmo que seja um aliado se ele for o único a seu alcance.',
     cost: 1,
     enhancements: [
-      { name: 'Discente', cost: 2, description: 'Ao usar ação agredir, pode fazer ataque corpo a corpo adicional.', requirements: 'Requer 2º círculo' },
-      { name: 'Verdadeiro', cost: 5, description: 'Muda bônus para +5 e sofre apenas metade do dano físico.', requirements: 'Requer 3º círculo e afinidade' },
+      { name: 'Discente', cost: 2, description: 'Além do normal, sempre que o alvo usar a ação agredir, pode fazer um ataque corpo a corpo adicional contra o mesmo alvo.', requirements: 'Requer 2º círculo' },
+      { name: 'Verdadeiro', cost: 5, description: 'Muda o bônus de ataque e dano para +5 e o alvo passa a sofrer apenas metade do dano dos tipos balístico, corte, impacto e perfuração.', requirements: 'Requer 3º círculo e afinidade' },
     ],
   },
   {
@@ -1001,11 +1001,11 @@ export const SECOND_CIRCLE_RITUALS: Ritual[] = [
     range: 'Toque',
     target: '1 ser',
     duration: 'Cena',
-    description: 'RD paranormal 5 e +5 resistência contra rituais/paranormal.',
+    description: 'Você canaliza uma aura de Medo puro, que protege o alvo contra efeitos paranormais. O alvo recebe resistência a dano paranormal 5 e +5 em testes de resistência contra rituais e habilidades de criaturas paranormais.',
     cost: 2,
     enhancements: [
-      { name: 'Discente', cost: 3, description: 'Até 5 seres.', requirements: 'Requer 3º círculo' },
-      { name: 'Verdadeiro', cost: 6, description: 'RD 10, +10 resistência.', requirements: 'Requer 4º círculo' },
+      { name: 'Discente', cost: 3, description: 'Muda o alvo para até 5 seres tocados.', requirements: 'Requer 3º círculo' },
+      { name: 'Verdadeiro', cost: 6, description: 'Muda o alvo para até 5 seres tocados, a resistência a dano para 10 e o bônus em testes de resistência para +10.', requirements: 'Requer 4º círculo' },
     ],
   },
   {
@@ -1551,7 +1551,7 @@ export const FOURTH_CIRCLE_RITUALS: Ritual[] = [
     target: '1 pessoa viva ou morta',
     duration: '1 dia',
     resistance: 'Vontade anula',
-    description: 'Controla corpo do alvo (troca de mente). Se um morrer, mente presa.',
+    description: 'Você projeta sua consciência no corpo de uma pessoa viva ou morta. Enquanto possuir o alvo, você assume o controle total do corpo dele (se o alvo estiver vivo, a consciência dele troca de lugar com a sua, ficando inerte dentro do seu corpo desacordado). Em termos de jogo, você continua usando a sua ficha, mas com os atributos físicos (Agilidade, Força e Vigor) e deslocamento do alvo. Se o alvo passar no teste de resistência, sabe que você tentou possuí-lo e fica imune a este ritual por um dia. Caso qualquer um dos envolvidos no ritual morra, a mente sobrevivente ficará permanentemente presa no corpo novo, a não ser que use o ritual outra vez para voltar a seu corpo antigo. Retornar para o seu corpo voluntariamente é uma ação livre.',
     cost: 6,
     enhancements: [],
   },

@@ -36,7 +36,8 @@ export type HookTrigger =
   | 'onTurnEnd'        // No fim do turno
   | 'onDeath'          // Quando morreria (Vínculo de Sangue)
   | 'onCast'           // Quando conjura ritual
-  | 'onConcentrationBreak'; // Quando concentração é quebrada
+  | 'onConcentrationBreak' // Quando concentração é quebrada
+  | 'onResistancePass';    // Quando alvo passa no teste de resistência
 
 export interface Hook {
   trigger: HookTrigger;
@@ -124,7 +125,9 @@ export type ActionRestriction =
   | 'cannotUseItems'
   | 'mustFlee'
   | 'mustObey'
-  | 'cannotHarm';
+  | 'cannotHarm'
+  | 'cannotConcentrate'  // Não pode fazer ações de concentração/calma (Ódio Incontrolável)
+  | 'cannotStealth';     // Não pode usar Furtividade (Ódio Incontrolável)
 
 // ========================================
 // EFEITO DE RITUAL (Interface Principal)
@@ -211,7 +214,7 @@ export interface RitualEffect {
   };
   
   mentalControl?: {
-    type: 'charm' | 'dominate' | 'suggestion' | 'fear';
+    type: 'charm' | 'dominate' | 'suggestion' | 'fear' | 'possession';
     canForceHarm?: boolean;
     canForceSuicide?: boolean;
     breakConditions?: string[];
@@ -503,28 +506,22 @@ export const RITUAL_EFFECTS: Record<string, RitualEffectsByLevel> = {
       kind: 'buff',
       attackModifier: 2,
       damageModifier: 2,
-      damageReduction: { types: ['corte', 'perfuração', 'impacto', 'balístico'], amount: 5 },
-      actionRestrictions: ['mustAttack'],
+      damageReduction: { types: ['balístico', 'corte', 'impacto', 'perfuração'], amount: 5 },
+      actionRestrictions: ['mustAttack', 'cannotConcentrate', 'cannotStealth', 'cannotCast'],
       sustain: {
         concentration: false,
-        endTriggers: ['não há inimigos visíveis', 'cai inconsciente'],
+        endTriggers: ['cena termina'],
       },
-      special: '+2 ataque/dano, RD 5. DEVE atacar o mais próximo.',
+      special: '+2 ataque/dano corpo a corpo, RD 5 (balístico, corte, impacto, perfuração). Não pode fazer ações de calma/concentração/furtividade/rituais. DEVE atacar um alvo por rodada (mesmo aliado se for o único).',
     },
     discente: {
-      attackModifier: 4,
-      damageModifier: 4,
-      damageReduction: { types: ['corte', 'perfuração', 'impacto', 'balístico'], amount: 10 },
-      actionRestrictions: ['mustAttack'],
-      special: '+4 ataque/dano, RD 10.',
+      special: 'Ao usar ação agredir, pode fazer um ataque corpo a corpo adicional contra o mesmo alvo.',
     },
     verdadeiro: {
-      attackModifier: 6,
-      damageModifier: 6,
-      damageReduction: { types: ['corte', 'perfuração', 'impacto', 'balístico'], amount: 15 },
-      tempHP: { diceCount: 0, diceType: 0, bonus: 20 },
-      actionRestrictions: ['mustAttack'],
-      special: '+6 ataque/dano, RD 15, +20 PV temp.',
+      attackModifier: 5,
+      damageModifier: 5,
+      actionRestrictions: ['mustAttack', 'cannotConcentrate', 'cannotStealth', 'cannotCast'],
+      special: '+5 ataque/dano corpo a corpo. Sofre apenas metade do dano de balístico, corte, impacto e perfuração (implementar via redução 50%).',
     },
   },
 
@@ -2051,25 +2048,19 @@ export const RITUAL_EFFECTS: Record<string, RitualEffectsByLevel> = {
     base: {
       kind: 'control',
       mentalControl: {
-        type: 'dominate',
-        canForceHarm: true,
+        type: 'possession',
+        canForceHarm: false,
         canForceSuicide: false,
-        breakConditions: ['hospedeiro morre'],
+        breakConditions: ['duração termina', 'retorno voluntário'],
       },
       hooks: [
         {
           trigger: 'onDeath',
-          effect: 'Se hospedeiro morre, conjurador morre',
+          effect: 'Mente sobrevivente fica permanentemente presa no corpo novo',
         },
       ],
       resistance: { type: 'vontade', effect: 'anula' },
-      special: 'Transfere consciência. SEU CORPO MORRE. Hospedeiro morre = você morre.',
-    },
-    discente: {
-      special: 'Corpo original em animação suspensa.',
-    },
-    verdadeiro: {
-      special: 'Salta entre corpos. Consciência persiste.',
+      special: 'Projeta consciência no corpo do alvo. Usa sua ficha mas atributos físicos (AGI, FOR, VIG) e deslocamento do alvo. Se alvo passar resistência, sabe da tentativa e fica imune por 1 dia. Se um morrer, mente presa no corpo novo permanentemente. Retornar voluntariamente é ação livre.',
     },
   },
 
@@ -2217,6 +2208,23 @@ export const RITUAL_EFFECTS: Record<string, RitualEffectsByLevel> = {
   // ========================================
   // MEDO - 2º Círculo
   // ========================================
+
+  'protecao-contra-rituais': {
+    base: {
+      kind: 'buff',
+      sustain: {
+        concentration: false,
+        endTriggers: ['cena termina'],
+      },
+      special: 'Resistência a dano paranormal 5 e +5 em testes de resistência contra rituais e habilidades de criaturas paranormais.',
+    },
+    discente: {
+      special: 'Afeta até 5 seres tocados.',
+    },
+    verdadeiro: {
+      special: 'Até 5 seres, resistência a dano paranormal 10 e +10 em testes de resistência.',
+    },
+  },
 
   'aparicao': {
     base: {
