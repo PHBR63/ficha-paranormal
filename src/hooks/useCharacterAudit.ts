@@ -19,6 +19,10 @@ interface UseCharacterAuditOptions {
   autoRun?: boolean;
   // Se true, aplica correções automáticas sem confirmação
   autoFix?: boolean;
+  // Se true, corrige problemas críticos (severity: 'error') automaticamente
+  autoFixCritical?: boolean;
+  // Callback executado após correções serem aplicadas (para invalidar cache)
+  onFixComplete?: () => Promise<void> | void;
 }
 
 interface UseCharacterAuditReturn {
@@ -55,7 +59,7 @@ export function useCharacterAudit(
   userId: string | null,
   options: UseCharacterAuditOptions = {}
 ): UseCharacterAuditReturn {
-  const { autoRun = true, autoFix = false } = options;
+  const { autoRun = true, autoFix = false, autoFixCritical = false, onFixComplete } = options;
   
   const [auditResult, setAuditResult] = useState<AuditResult | null>(null);
   const [isAuditing, setIsAuditing] = useState(false);
@@ -121,6 +125,11 @@ export function useCharacterAudit(
       );
       
       if (result.success) {
+        // Chama callback para invalidar cache/refetch ANTES de re-auditar
+        if (onFixComplete) {
+          await onFixComplete();
+        }
+        
         // Re-executar auditoria após correções
         await runAudit();
         return { 
@@ -142,7 +151,7 @@ export function useCharacterAudit(
     } finally {
       setIsFixing(false);
     }
-  }, [character, userId, auditResult, runAudit]);
+  }, [character, userId, auditResult, runAudit, onFixComplete]);
   
   // Descarta um problema
   const dismissIssue = useCallback((issueId: string) => {
@@ -155,6 +164,28 @@ export function useCharacterAudit(
       runAudit();
     }
   }, [character?.id, character?.nex, character?.paranormal_powers?.length, autoRun]);
+  
+  // Auto-fix silencioso para problemas críticos (severity: 'error')
+  useEffect(() => {
+    async function autoFixCriticalIssues() {
+      if (!autoFixCritical || !auditResult || isFixing) return;
+      
+      const criticalIssues = auditResult.autoFixableIssues.filter(
+        i => i.severity === 'error'
+      );
+      
+      if (criticalIssues.length === 0) return;
+      
+      console.log('[useCharacterAudit] Auto-corrigindo problemas críticos:', criticalIssues.length);
+      const result = await applyAutoFixes();
+      
+      if (result.success) {
+        console.log('[useCharacterAudit] Correções críticas aplicadas:', result.message);
+      }
+    }
+    
+    autoFixCriticalIssues();
+  }, [autoFixCritical, auditResult?.autoFixableIssues?.length, isFixing]);
   
   // Problemas visíveis (não descartados)
   const visibleIssues = auditResult?.issues.filter(i => !dismissedIssues.has(i.id)) || [];
