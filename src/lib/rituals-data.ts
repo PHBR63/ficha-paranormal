@@ -1517,11 +1517,11 @@ export const FOURTH_CIRCLE_RITUALS: Ritual[] = [
     target: '1 pessoa ou animal',
     duration: 'Sustentada',
     resistance: 'Vontade parcial',
-    description: 'Domina alvo (exceto suicídio). Teste por turno para livrar (fica pasmo).',
+    description: 'Você domina a mente do alvo, que obedece todos os seus comandos, exceto ordens suicidas. Um alvo tem direito a um teste de Vontade no final de cada um de seus turnos para se livrar do efeito. Alvos que passarem no teste ficam pasmos por 1 rodada (apenas uma vez por cena).',
     cost: 6,
     enhancements: [
-      { name: 'Discente', cost: 5, description: 'Até 5 alvos.', requirements: 'Requer afinidade' },
-      { name: 'Verdadeiro', cost: 10, description: 'Até 10 alvos.', requirements: 'Requer afinidade' },
+      { name: 'Discente', cost: 5, description: 'Muda o alvo para até cinco pessoas ou animais.', requirements: 'Requer afinidade' },
+      { name: 'Verdadeiro', cost: 10, description: 'Muda o alvo para até dez pessoas ou animais.', requirements: 'Requer afinidade com Conhecimento' },
     ],
   },
   {

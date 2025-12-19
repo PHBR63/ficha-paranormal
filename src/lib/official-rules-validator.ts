@@ -212,7 +212,7 @@ const OFFICIAL_RITUALS_DATA: Record<string, OfficialRitualData> = {
   
   // === 3º CÍRCULO - CONHECIMENTO ===
   'anular-luz': { name: 'Anular Luz', circle: 3, element: 'conhecimento', cost: 4, enhancements: [{ name: 'Discente', cost: 6, circleReq: 4 }, { name: 'Verdadeiro', cost: 10, circleReq: 4 }] },
-  'controle-mental': { name: 'Controle Mental', circle: 3, element: 'conhecimento', cost: 4, resistance: 'Vontade anula', enhancements: [{ name: 'Discente', cost: 6, circleReq: 4 }, { name: 'Verdadeiro', cost: 10, circleReq: 4 }] },
+  // NOTA: Controle Mental foi movido para 4º Círculo - Conhecimento (seção correta abaixo)
   'distorcer-memórias': { name: 'Distorcer Memórias', circle: 3, element: 'conhecimento', cost: 4, resistance: 'Vontade anula', enhancements: [{ name: 'Discente', cost: 6, circleReq: 4 }, { name: 'Verdadeiro', cost: 10, circleReq: 4 }] },
   'interferencia-nervosa': { name: 'Interferência Nervosa', circle: 3, element: 'conhecimento', cost: 4, resistance: 'Vontade parcial', enhancements: [{ name: 'Discente', cost: 6, circleReq: 4 }, { name: 'Verdadeiro', cost: 10, circleReq: 4 }] },
   'visao-onisciente': { name: 'Visão Onisciente', circle: 3, element: 'conhecimento', cost: 4, enhancements: [{ name: 'Discente', cost: 6, circleReq: 4 }, { name: 'Verdadeiro', cost: 10, circleReq: 4 }] },
@@ -237,6 +237,7 @@ const OFFICIAL_RITUALS_DATA: Record<string, OfficialRitualData> = {
   'regeneracao-absoluta': { name: 'Regeneração Absoluta', circle: 4, element: 'sangue', cost: 6, enhancements: [{ name: 'Verdadeiro', cost: 12 }] },
   
   // === 4º CÍRCULO - CONHECIMENTO ===
+  'controle-mental': { name: 'Controle Mental', circle: 4, element: 'conhecimento', cost: 6, resistance: 'Vontade parcial', enhancements: [{ name: 'Discente', cost: 5 }, { name: 'Verdadeiro', cost: 10 }] },
   'despertar-consciencia': { name: 'Despertar Consciência', circle: 4, element: 'conhecimento', cost: 6, enhancements: [{ name: 'Verdadeiro', cost: 12 }] },
   'possessao': { name: 'Possessão', circle: 4, element: 'conhecimento', cost: 6, resistance: 'Vontade anula', enhancements: [{ name: 'Verdadeiro', cost: 12 }] },
   'zona-morta': { name: 'Zona Morta', circle: 4, element: 'conhecimento', cost: 6, resistance: 'Vontade parcial', enhancements: [{ name: 'Verdadeiro', cost: 12 }] },
