@@ -14,7 +14,8 @@ import {
   FileText,
   Dices,
   Brain,
-  Eye
+  Eye,
+  Smartphone
 } from 'lucide-react';
 import { ParanormalElementsRow, ParanormalElementIcon } from '@/components/ui/paranormal-element-icon';
 
@@ -326,13 +327,23 @@ const Index = () => {
       {/* Footer */}
       <footer className="relative z-10 border-t border-[#8B0000]/20 py-6 sm:py-8 bg-[#0D0A0B]/80">
         <div className="container mx-auto px-4 sm:px-6 text-center">
-          <div className="flex items-center justify-center gap-3 mb-3">
+          <div className="flex items-center justify-center gap-3 mb-4">
             <ParanormalElementIcon element="sangue" size="sm" variant="simple" className="opacity-40" />
             <ParanormalElementIcon element="morte" size="sm" variant="simple" className="opacity-40" />
             <ParanormalElementIcon element="conhecimento" size="sm" variant="simple" className="opacity-40" />
             <ParanormalElementIcon element="energia" size="sm" variant="simple" className="opacity-40" />
             <ParanormalElementIcon element="medo" size="sm" variant="simple" className="opacity-40" />
           </div>
+          
+          {/* Install App Link */}
+          <Link 
+            to="/install" 
+            className="inline-flex items-center gap-2 px-4 py-2 mb-4 rounded-lg border border-[#8B0000]/30 bg-[#8B0000]/10 hover:bg-[#8B0000]/20 text-[#B22222] hover:text-[#F5F5F5] transition-all group"
+          >
+            <Smartphone className="w-4 h-4 group-hover:scale-110 transition-transform" />
+            <span className="text-xs sm:text-sm font-medium">Instalar App no Celular</span>
+          </Link>
+          
           <p className="text-[#808080] text-xs sm:text-sm">
             © 2024 Let's Roll — Sistema não oficial para Ordem Paranormal RPG
           </p>
