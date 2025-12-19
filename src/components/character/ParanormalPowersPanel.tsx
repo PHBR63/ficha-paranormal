@@ -8,7 +8,7 @@ import { useMemo } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Sparkles, Droplet, Skull, BookOpen, Zap, Star, TrendingUp, Shield, GraduationCap } from 'lucide-react';
+import { Sparkles, Droplet, Skull, BookOpen, Zap, Star, TrendingUp, Shield, GraduationCap, AlertTriangle } from 'lucide-react';
 import {
   ParanormalPower,
   ParanormalElement,
@@ -53,6 +53,7 @@ interface ParanormalPowersPanelProps {
   nex: number;
   transcenderTotal?: number;
   transcenderUsed?: number;
+  originId?: string; // Origem do personagem para calcular poderes de origem
 }
 
 export function ParanormalPowersPanel({
@@ -62,8 +63,15 @@ export function ParanormalPowersPanel({
   nex,
   transcenderTotal = 0,
   transcenderUsed = 0,
+  originId,
 }: ParanormalPowersPanelProps) {
   const transcenderRemaining = transcenderTotal - transcenderUsed;
+  
+  // Calcula limite de poderes (Transcender + origem)
+  const powersFromOrigin = originId === 'cultista-arrependido' ? 1 : 0;
+  const maxPowers = transcenderTotal + powersFromOrigin;
+  const excessPowers = Math.max(0, powers.length - maxPowers);
+  const hasExcessPowers = excessPowers > 0;
   // Calcula bônus ativos dos poderes
   const powerModifiers = useMemo(() => {
     const powerIds = powers.map(p => p.id);
@@ -106,6 +114,19 @@ export function ParanormalPowersPanel({
   
   return (
     <div className="space-y-4">
+      {/* Alerta de Poderes Excedentes */}
+      {hasExcessPowers && (
+        <div className="flex items-center gap-2 p-3 rounded-lg border border-destructive/30 bg-destructive/10">
+          <AlertTriangle className="w-4 h-4 text-destructive shrink-0" />
+          <div className="text-sm">
+            <span className="font-medium text-destructive">Poderes excedentes!</span>
+            <span className="text-muted-foreground ml-1">
+              {powers.length}/{maxPowers} poderes ({excessPowers} além do limite)
+            </span>
+          </div>
+        </div>
+      )}
+      
       {/* Contador de Transcender com Tooltip */}
       {transcenderTotal > 0 && (
         <TooltipProvider>
