@@ -1,6 +1,7 @@
 /**
  * MobileCharacterSheet - Versão compacta da ficha para dispositivos móveis
  * Usa abas deslizantes e layout otimizado para telas pequenas
+ * Inclui sistema de auditoria automática integrado
  */
 
 import { useState, useMemo } from 'react';
@@ -47,6 +48,10 @@ import { useDefenseBonuses } from '@/hooks/useDefenseBonuses';
 import { useCharacterBonusSummary } from '@/hooks/useCharacterBonusSummary';
 import { useSustainedRituals } from '@/hooks/useSustainedRituals';
 import { BonusSummaryCard } from './BonusSummaryCard';
+import { MobileAuditBanner } from './MobileAuditBanner';
+import { useCharacterAudit } from '@/hooks/useCharacterAudit';
+import { CharacterForAudit } from '@/lib/character-audit-engine';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Tipos
 interface MobileCharacterSheetProps {
@@ -514,6 +519,44 @@ export function MobileCharacterSheet({
   const isHpLow = hpPercent <= 25;
   const isSanLow = sanPercent <= 30;
 
+  // Preparar dados para auditoria
+  const characterForAudit: CharacterForAudit | null = useMemo(() => ({
+    id: character.id,
+    name: character.name,
+    class: character.class,
+    origin: character.origin,
+    nex: character.nex,
+    hp_max: character.hp_max,
+    pe_max: character.pe_max,
+    san_max: character.san_max,
+    defense: character.defense,
+    agility: character.agility,
+    strength: character.strength,
+    vigor: character.vigor,
+    intellect: character.intellect,
+    presence: character.presence,
+    paranormal_powers: character.paranormal_powers || [],
+    general_powers: character.general_powers || [],
+    skills: character.skills || {},
+    abilities: character.abilities || [],
+    inventory: character.inventory || [],
+  }), [character]);
+
+  // Hook de autenticação para obter userId
+  const { user } = useAuth();
+
+  // Hook de auditoria automática
+  const {
+    auditResult,
+    isAuditing,
+    isFixing,
+    visibleIssues,
+    counts,
+    runAudit,
+    applyAutoFixes,
+    dismissIssue,
+  } = useCharacterAudit(characterForAudit, user?.id || null, { autoRun: true });
+
   // Calcular bônus de defesa de origem, habilidades de classe e poderes gerais
   const defenseBonuses = useDefenseBonuses({
     origin: character.origin,
@@ -574,6 +617,18 @@ export function MobileCharacterSheet({
 
   return (
     <div className="pb-20">
+      {/* Banner de Auditoria - sempre visível no topo */}
+      <MobileAuditBanner
+        auditResult={auditResult}
+        visibleIssues={visibleIssues}
+        counts={counts}
+        isAuditing={isAuditing}
+        isFixing={isFixing}
+        onAutoFix={applyAutoFixes}
+        onDismiss={dismissIssue}
+        onRerunAudit={runAudit}
+      />
+      
       {/* Conteúdo baseado na tab ativa */}
       <AnimatePresence mode="wait">
         {activeTab === 'overview' && (
@@ -582,7 +637,7 @@ export function MobileCharacterSheet({
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 20 }}
-            className="space-y-3"
+            className="space-y-3 mt-3"
           >
             {/* Header compacto com foto e stats principais */}
             <div className="ordo-panel p-3">
