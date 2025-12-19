@@ -18,6 +18,7 @@ import CampaignView from "./pages/CampaignView";
 import AdminImport from "./pages/AdminImport";
 import AdminUsers from "./pages/AdminUsers";
 import AdminDataIntegrity from "./pages/AdminDataIntegrity";
+import Install from "./pages/Install";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +33,7 @@ const App = () => (
           <ColorThemeProvider>
             <Routes>
               <Route path="/" element={<Index />} />
+              <Route path="/install" element={<Install />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/dashboard" element={
                 <ProtectedRoute>
