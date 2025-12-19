@@ -7,6 +7,7 @@
  * - Contador de morte para condição Morrendo
  * - Descrição e efeitos de cada condição
  * - Processamento de início de turno (dano, redução de contadores)
+ * - Suporte a parâmetros de condição (Fragilizado, Machucado, Envenenado)
  */
 
 import { useState } from 'react';
@@ -14,6 +15,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
@@ -23,6 +25,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   Collapsible,
   CollapsibleContent,
@@ -44,20 +53,35 @@ import {
   Zap,
   Play,
   Heart,
+  Settings2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { CONDITIONS, CONDITION_CATEGORIES, type Condition } from '@/lib/conditions';
-import { CONDITION_EFFECTS, processStartOfTurn, type CombatantState } from '@/lib/game-engine';
+import { 
+  CONDITIONS, 
+  CONDITION_CATEGORIES, 
+  type Condition, 
+  type ConditionParams,
+  DAMAGE_TYPES,
+  conditionRequiresParams,
+  getConditionEffectWithParams,
+} from '@/lib/conditions';
+import { 
+  CONDITION_EFFECTS, 
+  processStartOfTurn, 
+  type CombatantState,
+  type ActiveConditionWithParams,
+} from '@/lib/game-engine';
 import { toast } from 'sonner';
 import { ConditionTimer, ConditionTimerSegmented, DyingTimer } from './ConditionTimer';
 
-// Interface para condição ativa com duração
+// Interface para condição ativa com duração e parâmetros
 export interface ActiveCondition {
   id: string;
   name: string;
   turnsRemaining: number | null; // null = permanente até remoção manual
   addedAt: Date | string;
   dyingCounter?: number; // Para condição Morrendo (3, 2, 1, 0 = morte)
+  params?: ConditionParams; // Parâmetros adicionais para condições especiais
 }
 
 interface ConditionManagerProps {
@@ -104,8 +128,8 @@ export function ConditionManager({
   // Estado para mostrar resultados do início de turno
   const [turnResults, setTurnResults] = useState<string[]>([]);
 
-  // Adiciona uma condição
-  const handleAddCondition = (conditionId: string, turns: number | null = null) => {
+  // Adiciona uma condição com parâmetros opcionais
+  const handleAddCondition = (conditionId: string, turns: number | null = null, params?: ConditionParams) => {
     const conditionData = CONDITIONS[conditionId];
     if (!conditionData) return;
 
@@ -119,12 +143,25 @@ export function ConditionManager({
       name: conditionData.name,
       turnsRemaining: turns,
       addedAt: new Date().toISOString(),
+      params, // Adiciona parâmetros
     };
 
     // Se for condição Morrendo, inicia com contador 3
     if (conditionId === 'morrendo') {
       newCondition.dyingCounter = 3;
       toast.error('💀 Condição MORRENDO adicionada! 3 rodadas até a morte.', { duration: 5000 });
+    }
+
+    // Toast informativo para condições com parâmetros
+    if (params) {
+      if (conditionId === 'fragilizado' && params.damageType) {
+        const damageInfo = DAMAGE_TYPES.find(d => d.id === params.damageType);
+        toast.info(`💔 Fragilizado: vulnerável a dano de ${damageInfo?.name || params.damageType} (+50%)`);
+      } else if (conditionId === 'machucado' && params.weaponMaxDamage) {
+        toast.info(`🩹 Machucado: sofre ${params.weaponMaxDamage} de dano ao agir${params.weaponName ? ` (${params.weaponName})` : ''}`);
+      } else if (conditionId === 'envenenado' && params.poisonDamage) {
+        toast.info(`🧪 Envenenado: ${params.poisonDamage} de dano por turno${params.poisonDT ? ` (DT ${params.poisonDT})` : ''}`);
+      }
     }
 
     onConditionsChange([...conditions, newCondition]);
@@ -185,6 +222,12 @@ export function ConditionManager({
     const conditionIds = conditions.map(c => c.id);
     const morrendoCondition = conditions.find(c => c.id === 'morrendo');
     
+    // Converte condições ativas para o formato com parâmetros
+    const activeConditionsWithParams: ActiveConditionWithParams[] = conditions.map(c => ({
+      id: c.id,
+      params: c.params,
+    }));
+    
     // Cria um CombatantState mock para usar o processStartOfTurn
     const mockCombatant: CombatantState = {
       id: 'current',
@@ -204,7 +247,7 @@ export function ConditionManager({
       dyingCounter: morrendoCondition?.dyingCounter,
     };
 
-    const result = processStartOfTurn(mockCombatant);
+    const result = processStartOfTurn(mockCombatant, activeConditionsWithParams);
     const messages: string[] = [];
 
     // Processa dano
@@ -374,8 +417,25 @@ export function ConditionManager({
                               )}
                             </div>
                             <p className="text-xs text-foreground/70 mt-1 line-clamp-2">
-                              {conditionData.effect}
+                              {getConditionEffectWithParams(condition.id, condition.params)}
                             </p>
+                            {/* Badge de parâmetro configurado */}
+                            {condition.params && (
+                              <div className="flex items-center gap-1 mt-1">
+                                <Settings2 className="w-3 h-3 text-primary/60" />
+                                <span className="text-[10px] text-primary/60 font-medium">
+                                  {condition.id === 'fragilizado' && condition.params.damageType && (
+                                    `Vulnerável: ${DAMAGE_TYPES.find(d => d.id === condition.params?.damageType)?.name}`
+                                  )}
+                                  {condition.id === 'machucado' && condition.params.weaponMaxDamage && (
+                                    `Dano: ${condition.params.weaponMaxDamage}${condition.params.weaponName ? ` (${condition.params.weaponName})` : ''}`
+                                  )}
+                                  {condition.id === 'envenenado' && condition.params.poisonDamage && (
+                                    `${condition.params.poisonDamage}/turno${condition.params.poisonDT ? ` DT${condition.params.poisonDT}` : ''}`
+                                  )}
+                                </span>
+                              </div>
+                            )}
                           </div>
 
                           {/* Controles */}
@@ -579,18 +639,161 @@ interface ConditionOptionProps {
   id: string;
   condition: typeof CONDITIONS[string];
   isActive: boolean;
-  onAdd: (id: string, turns: number | null) => void;
+  onAdd: (id: string, turns: number | null, params?: ConditionParams) => void;
 }
 
 function ConditionOption({ id, condition, isActive, onAdd }: ConditionOptionProps) {
   const [turns, setTurns] = useState<string>('');
   const [showTurnsInput, setShowTurnsInput] = useState(false);
+  
+  // Estados para parâmetros específicos
+  const [showParamsInput, setShowParamsInput] = useState(false);
+  const [damageType, setDamageType] = useState<string>('');
+  const [weaponMaxDamage, setWeaponMaxDamage] = useState<string>('');
+  const [weaponName, setWeaponName] = useState<string>('');
+  const [poisonDamage, setPoisonDamage] = useState<string>('');
+  const [poisonDT, setPoisonDT] = useState<string>('');
+  const [poisonName, setPoisonName] = useState<string>('');
+
+  const requiresParams = conditionRequiresParams(id);
 
   const handleAdd = (permanent: boolean = false) => {
     const turnsNum = permanent ? null : (parseInt(turns) || null);
-    onAdd(id, turnsNum);
+    
+    // Monta parâmetros se necessário
+    let params: ConditionParams | undefined;
+    
+    if (id === 'fragilizado' && damageType) {
+      params = { damageType: damageType as ConditionParams['damageType'] };
+    } else if (id === 'machucado' && weaponMaxDamage) {
+      params = { 
+        weaponMaxDamage: parseInt(weaponMaxDamage), 
+        weaponName: weaponName || undefined 
+      };
+    } else if (id === 'envenenado' && poisonDamage) {
+      params = { 
+        poisonDamage, 
+        poisonDT: poisonDT ? parseInt(poisonDT) : undefined,
+        poisonName: poisonName || undefined 
+      };
+    }
+    
+    onAdd(id, turnsNum, params);
+    resetState();
+  };
+
+  const resetState = () => {
     setTurns('');
     setShowTurnsInput(false);
+    setShowParamsInput(false);
+    setDamageType('');
+    setWeaponMaxDamage('');
+    setWeaponName('');
+    setPoisonDamage('');
+    setPoisonDT('');
+    setPoisonName('');
+  };
+
+  // Renderiza inputs de parâmetros específicos
+  const renderParamsInputs = () => {
+    if (id === 'fragilizado') {
+      return (
+        <div className="space-y-2">
+          <Label className="text-xs text-muted-foreground">Tipo de dano vulnerável (+50%)</Label>
+          <Select value={damageType} onValueChange={setDamageType}>
+            <SelectTrigger className="h-8 text-xs bg-background">
+              <SelectValue placeholder="Selecione o tipo de dano" />
+            </SelectTrigger>
+            <SelectContent className="bg-popover border border-border z-50">
+              <div className="p-1 text-[10px] text-muted-foreground font-medium">Físico</div>
+              {DAMAGE_TYPES.filter(d => d.category === 'physical').map(dt => (
+                <SelectItem key={dt.id} value={dt.id} className="text-xs">
+                  {dt.name}
+                </SelectItem>
+              ))}
+              <div className="p-1 text-[10px] text-muted-foreground font-medium border-t mt-1">Elemental</div>
+              {DAMAGE_TYPES.filter(d => d.category === 'elemental').map(dt => (
+                <SelectItem key={dt.id} value={dt.id} className="text-xs">
+                  {dt.name}
+                </SelectItem>
+              ))}
+              <div className="p-1 text-[10px] text-muted-foreground font-medium border-t mt-1">Paranormal</div>
+              {DAMAGE_TYPES.filter(d => d.category === 'paranormal').map(dt => (
+                <SelectItem key={dt.id} value={dt.id} className="text-xs">
+                  {dt.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      );
+    }
+    
+    if (id === 'machucado') {
+      return (
+        <div className="space-y-2">
+          <Label className="text-xs text-muted-foreground">Dano máximo da arma causadora</Label>
+          <div className="flex gap-2">
+            <Input
+              type="number"
+              min={1}
+              value={weaponMaxDamage}
+              onChange={(e) => setWeaponMaxDamage(e.target.value)}
+              placeholder="Ex: 8"
+              className="h-8 text-xs flex-1"
+            />
+            <Input
+              value={weaponName}
+              onChange={(e) => setWeaponName(e.target.value)}
+              placeholder="Nome (opcional)"
+              className="h-8 text-xs flex-1"
+            />
+          </div>
+          <p className="text-[10px] text-muted-foreground">
+            Sofre este dano ao realizar qualquer ação
+          </p>
+        </div>
+      );
+    }
+    
+    if (id === 'envenenado') {
+      return (
+        <div className="space-y-2">
+          <Label className="text-xs text-muted-foreground">Configuração do veneno</Label>
+          <div className="flex gap-2">
+            <div className="flex-1">
+              <Input
+                value={poisonDamage}
+                onChange={(e) => setPoisonDamage(e.target.value)}
+                placeholder="Dano (ex: 1d6)"
+                className="h-8 text-xs"
+              />
+            </div>
+            <div className="w-20">
+              <Input
+                type="number"
+                min={1}
+                value={poisonDT}
+                onChange={(e) => setPoisonDT(e.target.value)}
+                placeholder="DT"
+                className="h-8 text-xs"
+              />
+            </div>
+          </div>
+          <Input
+            value={poisonName}
+            onChange={(e) => setPoisonName(e.target.value)}
+            placeholder="Nome do veneno (opcional)"
+            className="h-8 text-xs"
+          />
+          <p className="text-[10px] text-muted-foreground">
+            Dano por turno + DT do teste de Fortitude
+          </p>
+        </div>
+      );
+    }
+    
+    return null;
   };
 
   return (
@@ -610,6 +813,12 @@ function ConditionOption({ id, condition, isActive, onAdd }: ConditionOptionProp
             {isActive && (
               <Badge variant="secondary" className="text-xs">Ativa</Badge>
             )}
+            {requiresParams && !isActive && (
+              <Badge variant="outline" className="text-[10px] border-primary/30 text-primary/70">
+                <Settings2 className="w-2.5 h-2.5 mr-1" />
+                Configurável
+              </Badge>
+            )}
           </div>
           <p className="text-xs text-muted-foreground mt-1">{condition.effect}</p>
         </div>
@@ -617,8 +826,11 @@ function ConditionOption({ id, condition, isActive, onAdd }: ConditionOptionProp
 
       {!isActive && (
         <div className="mt-2 pt-2 border-t border-border/50">
-          {showTurnsInput ? (
-            <div className="space-y-2">
+          {showTurnsInput || showParamsInput ? (
+            <div className="space-y-3">
+              {/* Inputs de parâmetros específicos */}
+              {requiresParams && showParamsInput && renderParamsInputs()}
+              
               {/* Botões de duração rápida */}
               <div className="flex items-center gap-1.5">
                 <span className="text-xs text-muted-foreground mr-1">Turnos:</span>
@@ -666,10 +878,7 @@ function ConditionOption({ id, condition, isActive, onAdd }: ConditionOptionProp
                   size="sm"
                   variant="ghost"
                   className="h-8 w-8 p-0"
-                  onClick={() => {
-                    setShowTurnsInput(false);
-                    setTurns('');
-                  }}
+                  onClick={resetState}
                 >
                   <X className="w-3 h-3" />
                 </Button>
@@ -677,15 +886,30 @@ function ConditionOption({ id, condition, isActive, onAdd }: ConditionOptionProp
             </div>
           ) : (
             <div className="flex gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-7 text-xs flex-1"
-                onClick={() => setShowTurnsInput(true)}
-              >
-                <Timer className="w-3 h-3 mr-1" />
-                Com duração
-              </Button>
+              {requiresParams ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-xs flex-1"
+                  onClick={() => {
+                    setShowParamsInput(true);
+                    setShowTurnsInput(true);
+                  }}
+                >
+                  <Settings2 className="w-3 h-3 mr-1" />
+                  Configurar
+                </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-xs flex-1"
+                  onClick={() => setShowTurnsInput(true)}
+                >
+                  <Timer className="w-3 h-3 mr-1" />
+                  Com duração
+                </Button>
+              )}
               <Button
                 size="sm"
                 variant="outline"
@@ -693,7 +917,7 @@ function ConditionOption({ id, condition, isActive, onAdd }: ConditionOptionProp
                 onClick={() => handleAdd(true)}
               >
                 <Plus className="w-3 h-3 mr-1" />
-                Permanente
+                {requiresParams ? 'Sem config.' : 'Permanente'}
               </Button>
             </div>
           )}
