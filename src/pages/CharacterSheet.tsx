@@ -81,6 +81,9 @@ import { BonusSummaryCard } from '@/components/character/BonusSummaryCard';
 import { SustainedRitualsPanel } from '@/components/character/SustainedRitualsPanel';
 import { ConditionalBonusesPanel } from '@/components/character/ConditionalBonusesPanel';
 import { TrackCombatBonusesBar } from '@/components/character/TrackCombatBonusesBar';
+import { CharacterAuditBanner } from '@/components/character/CharacterAuditBanner';
+import { useCharacterAudit } from '@/hooks/useCharacterAudit';
+import { CharacterForAudit } from '@/lib/character-audit-engine';
 
 // Novos componentes do redesign 2.0 (estilo ficha de papel)
 import { CharacterSheetHeader } from '@/components/character/CharacterSheetHeader';
@@ -1069,6 +1072,41 @@ export default function CharacterSheet() {
   // Verifica se o personagem pode usar Transcender (tem usos disponíveis)
   const hasTranscender = transcenderRemaining > 0;
 
+  // === SISTEMA DE AUDITORIA AUTOMÁTICA ===
+  // Prepara dados do personagem para auditoria
+  const characterForAudit: CharacterForAudit | null = useMemo(() => {
+    if (!character) return null;
+    return {
+      id: character.id,
+      name: character.name,
+      class: character.class,
+      origin: character.origin,
+      nex: character.nex,
+      vigor: character.vigor,
+      presence: character.presence,
+      agility: character.agility,
+      hp_max: character.hp_max,
+      pe_max: character.pe_max,
+      san_max: character.san_max,
+      defense: character.defense,
+      paranormal_powers: character.paranormal_powers,
+      skills: character.skills,
+      abilities: character.abilities,
+    };
+  }, [character]);
+
+  // Hook de auditoria
+  const {
+    auditResult,
+    isAuditing,
+    isFixing,
+    visibleIssues,
+    counts: auditCounts,
+    runAudit,
+    applyAutoFixes,
+    dismissIssue,
+  } = useCharacterAudit(characterForAudit, user?.id || null, { autoRun: true });
+
   // Handler para edição do personagem
   const handleCharacterEdit = async (data: {
     name: string;
@@ -1556,6 +1594,20 @@ export default function CharacterSheet() {
           <div className="sheet-grid">
             {/* === COLUNA ESQUERDA === */}
             <div className="space-y-4 min-w-0">
+            {/* Banner de Auditoria (se houver problemas) */}
+            {auditCounts.total > 0 && (
+              <CharacterAuditBanner
+                auditResult={auditResult}
+                visibleIssues={visibleIssues}
+                counts={auditCounts}
+                isAuditing={isAuditing}
+                isFixing={isFixing}
+                onAutoFix={applyAutoFixes}
+                onDismiss={dismissIssue}
+                onRerunAudit={runAudit}
+                className="mb-4"
+              />
+            )}
             {/* Cabeçalho com avatar e stats principais */}
               <CharacterSheetHeader
                 name={character.name}
@@ -2061,6 +2113,7 @@ export default function CharacterSheet() {
                         nex={character.nex}
                         transcenderTotal={transcenderCount}
                         transcenderUsed={transcenderUsed}
+                        originId={character.origin}
                       />
                     ) : hasTranscender ? (
                       <div className="text-center py-4 text-muted-foreground text-sm border border-dashed border-muted rounded-lg">

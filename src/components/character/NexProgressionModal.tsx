@@ -70,6 +70,7 @@ import {
   getTranscenderStatus,
   ChoiceOpportunity,
 } from '@/lib/transcender-system';
+import { validateBeforeSave, getMaxParanormalPowers } from '@/lib/character-audit-engine';
 import { ParanormalPowerSelectModal } from './ParanormalPowerSelectModal';
 import { PowerSubchoiceModal } from './PowerSubchoiceModal';
 import { NonOccultistRitualModal, RitualSource } from './NonOccultistRitualModal';
@@ -397,6 +398,43 @@ export function NexProgressionModal({
         description: 'Você precisa escolher uma Afinidade Elemental para continuar.',
       });
       return;
+    }
+    
+    // === VALIDAÇÃO PREVENTIVA ===
+    // Verifica limite de poderes paranormais antes de permitir progressão
+    const powerLimits = getMaxParanormalPowers(nextNex, character.origin);
+    if (pendingPowers.length > powerLimits.total) {
+      toast.error('Limite de poderes excedido', {
+        description: `Máximo de ${powerLimits.total} poderes permitidos (${powerLimits.fromTranscender} Transcender + ${powerLimits.fromOrigin} origem). Remova ${pendingPowers.length - powerLimits.total} poder(es).`,
+      });
+      return;
+    }
+    
+    // Valida dados antes de salvar
+    const validation = validateBeforeSave({
+      class: character.class,
+      origin: character.origin,
+      nex: nextNex,
+      vigor: character.vigor,
+      presence: character.presence,
+      hp_max: nextStats.hp,
+      pe_max: nextStats.pe,
+      san_max: nextStats.san,
+      paranormal_powers: pendingPowers.map(p => ({ id: p.id })),
+    });
+    
+    if (!validation.valid) {
+      toast.error('Erro de validação', {
+        description: validation.errors.join(', '),
+      });
+      return;
+    }
+    
+    // Mostra avisos (não bloqueantes)
+    if (validation.warnings.length > 0) {
+      validation.warnings.forEach(warning => {
+        toast.warning('Aviso', { description: warning });
+      });
     }
     
     setSaving(true);
