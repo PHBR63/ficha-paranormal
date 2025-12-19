@@ -447,6 +447,53 @@ export type Database = {
           },
         ]
       }
+      character_power_choices: {
+        Row: {
+          character_id: string
+          choice_type: string
+          created_at: string | null
+          id: string
+          nex: number
+          resolution: Json | null
+          resolved_at: string | null
+          sanity_delta: number | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          character_id: string
+          choice_type: string
+          created_at?: string | null
+          id?: string
+          nex: number
+          resolution?: Json | null
+          resolved_at?: string | null
+          sanity_delta?: number | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          character_id?: string
+          choice_type?: string
+          created_at?: string | null
+          id?: string
+          nex?: number
+          resolution?: Json | null
+          resolved_at?: string | null
+          sanity_delta?: number | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "character_power_choices_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: false
+            referencedRelation: "characters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       character_sustained_rituals: {
         Row: {
           character_id: string
