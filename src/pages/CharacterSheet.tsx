@@ -48,6 +48,7 @@ import { ALL_CLASS_ABILITIES } from '@/lib/class-abilities';
 import { PARANORMAL_POWERS, ParanormalPower, ParanormalElement, SavedParanormalPower, getPowerById } from '@/lib/paranormal-powers';
 import { GENERAL_POWERS, getGeneralPowerById } from '@/lib/general-powers';
 import { ParanormalPowersPanel } from '@/components/character/ParanormalPowersPanel';
+import { TranscenderHistoryPanel } from '@/components/character/TranscenderHistoryPanel';
 import { cn } from '@/lib/utils';
 import { DiceRollResult } from '@/lib/dice-roller';
 import { InventoryPanel } from '@/components/inventory/InventoryPanel';
@@ -2061,8 +2062,37 @@ export default function CharacterSheet() {
                       </p>
                     )}
                   </div>
+                  
+                  {/* Histórico de Transcender */}
+                  {transcenderUsed > 0 && (
+                    <div className="mt-4 pt-4 border-t border-border">
+                      <TranscenderHistoryPanel
+                        characterId={character.id}
+                        currentNex={character.nex}
+                        onRevert={async (revertedPowerId) => {
+                          // Remover o poder paranormal revertido da lista local
+                          if (character.paranormal_powers) {
+                            const updatedPowers = character.paranormal_powers.filter(
+                              p => p.id !== revertedPowerId
+                            );
+                            
+                            // Atualizar no banco
+                            await supabase
+                              .from('characters')
+                              .update({ paranormal_powers: updatedPowers })
+                              .eq('id', character.id);
+                            
+                            // Atualizar estado local
+                            setCharacter(prev => prev ? {
+                              ...prev,
+                              paranormal_powers: updatedPowers,
+                            } : null);
+                          }
+                        }}
+                      />
+                    </div>
+                  )}
 
-                  {/* Poderes Gerais (do suplemento) */}
                   {character.general_powers && character.general_powers.length > 0 && (
                     <div className="space-y-2">
                       <p className="text-xs text-muted-foreground uppercase tracking-wider">
