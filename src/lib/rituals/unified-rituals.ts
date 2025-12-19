@@ -2,8 +2,7 @@
  * Ordem Paranormal RPG - Rituais Unificados
  * FONTE ÚNICA DE VERDADE para todos os rituais do sistema
  * 
- * Este arquivo contém todos os 97 rituais oficiais com seus metadados,
- * efeitos mecânicos e aprimoramentos em um formato unificado.
+ * Este arquivo consolida todos os rituais oficiais importados dos módulos por círculo.
  */
 
 import type {
@@ -11,6 +10,30 @@ import type {
   RitualElement,
   RitualCircle,
 } from './types';
+
+// Importa rituais de 2º, 3º e 4º círculo dos módulos separados
+import {
+  BLOOD_SECOND_CIRCLE,
+  KNOWLEDGE_SECOND_CIRCLE,
+  ENERGY_SECOND_CIRCLE,
+  FEAR_SECOND_CIRCLE,
+} from './second-circle';
+
+import {
+  BLOOD_THIRD_CIRCLE,
+  DEATH_THIRD_CIRCLE,
+  KNOWLEDGE_THIRD_CIRCLE,
+  ENERGY_THIRD_CIRCLE,
+  FEAR_THIRD_CIRCLE,
+} from './third-circle';
+
+import {
+  BLOOD_FOURTH_CIRCLE,
+  DEATH_FOURTH_CIRCLE,
+  KNOWLEDGE_FOURTH_CIRCLE,
+  ENERGY_FOURTH_CIRCLE,
+  FEAR_FOURTH_CIRCLE,
+} from './fourth-circle';
 
 // ========================================
 // RITUAIS DE 1º CÍRCULO - SANGUE
@@ -1149,7 +1172,23 @@ export const UNIFIED_RITUALS: UnifiedRitual[] = [
   ...KNOWLEDGE_FIRST_CIRCLE,
   ...FEAR_FIRST_CIRCLE,
   // 2º Círculo
+  ...BLOOD_SECOND_CIRCLE,
+  ...KNOWLEDGE_SECOND_CIRCLE,
+  ...ENERGY_SECOND_CIRCLE,
+  ...FEAR_SECOND_CIRCLE,
   ...DEATH_SECOND_CIRCLE,
+  // 3º Círculo
+  ...BLOOD_THIRD_CIRCLE,
+  ...DEATH_THIRD_CIRCLE,
+  ...KNOWLEDGE_THIRD_CIRCLE,
+  ...ENERGY_THIRD_CIRCLE,
+  ...FEAR_THIRD_CIRCLE,
+  // 4º Círculo
+  ...BLOOD_FOURTH_CIRCLE,
+  ...DEATH_FOURTH_CIRCLE,
+  ...KNOWLEDGE_FOURTH_CIRCLE,
+  ...ENERGY_FOURTH_CIRCLE,
+  ...FEAR_FOURTH_CIRCLE,
 ];
 
 // Mapas para acesso rápido
