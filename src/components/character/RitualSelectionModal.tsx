@@ -1,5 +1,6 @@
 // Modal de Seleção de Rituais para Progressão de NEX
 // Permite Ocultistas escolherem novos rituais ao ganhar slots
+// ATUALIZADO: Usa sistema unificado de rituais
 
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -36,7 +37,15 @@ import {
   Check,
   Loader2,
 } from 'lucide-react';
-import { ALL_RITUALS, Ritual } from '@/lib/rituals-data';
+// Sistema unificado de rituais
+import { getAllRituals, getRitualsByMaxCircle } from '@/lib/rituals/ritual-registry';
+import { unifiedToLegacy } from '@/lib/rituals/ritual-adapter';
+import type { UnifiedRitual } from '@/lib/rituals/types';
+// Tipo legado para compatibilidade
+import type { Ritual } from '@/lib/rituals-data';
+
+// Tipo que suporta ambos os formatos
+type RitualInput = Ritual | UnifiedRitual;
 
 interface RitualSelectionModalProps {
   open: boolean;
@@ -97,6 +106,7 @@ const ELEMENT_CONFIG = {
 };
 
 // Card de ritual compacto para seleção
+// Suporta tanto Ritual legado quanto UnifiedRitual
 function RitualCard({
   ritual,
   isSelected,
@@ -104,7 +114,7 @@ function RitualCard({
   isAlreadyKnown,
   onToggle,
 }: {
-  ritual: Ritual;
+  ritual: RitualInput;
   isSelected: boolean;
   isDisabled: boolean;
   isAlreadyKnown: boolean;
@@ -113,6 +123,25 @@ function RitualCard({
   const [isExpanded, setIsExpanded] = useState(false);
   const elementConfig = ELEMENT_CONFIG[ritual.element];
   const ElementIcon = elementConfig.icon;
+  
+  // Extrai resistance como string para exibição
+  const resistanceText = ritual.resistance 
+    ? (typeof ritual.resistance === 'string' 
+        ? ritual.resistance 
+        : `${ritual.resistance.type}`)
+    : undefined;
+  
+  // Extrai enhancements de forma compatível
+  const enhancements = ritual.enhancements?.map(enh => ({
+    name: enh.name,
+    cost: enh.cost,
+    description: enh.description,
+    requirements: 'requirements' in enh 
+      ? enh.requirements 
+      : ('circleReq' in enh 
+          ? `Requer ${enh.circleReq}º círculo${enh.affinityReq ? ' e afinidade' : ''}` 
+          : undefined),
+  }));
 
   return (
     <motion.div
@@ -220,14 +249,14 @@ function RitualCard({
               <p className="text-xs text-foreground">{ritual.description}</p>
               
               {/* Aprimoramentos detalhados */}
-              {ritual.enhancements && ritual.enhancements.length > 0 && (
+              {enhancements && enhancements.length > 0 && (
                 <div className="space-y-2">
                   <h5 className="text-xs font-medium text-primary flex items-center gap-1">
                     <Sparkles className="w-3 h-3" />
                     Aprimoramentos
                   </h5>
                   <div className="space-y-2">
-                    {ritual.enhancements.map((enh, idx) => (
+                    {enhancements.map((enh, idx) => (
                       <div key={idx} className="p-2 rounded bg-muted/30 border border-border/50">
                         <div className="flex items-center gap-2 mb-1">
                           <Badge 
@@ -279,12 +308,12 @@ export function RitualSelectionModal({
   const [selectedElement, setSelectedElement] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  // Filtrar rituais disponíveis
+  // Filtrar rituais disponíveis - usa sistema unificado
   const filteredRituals = useMemo(() => {
-    return ALL_RITUALS.filter(ritual => {
-      // Filtro por círculo máximo
-      if (ritual.circle > maxCircle) return false;
-      
+    // Obtém rituais do sistema unificado até o círculo máximo
+    const allRituals = getRitualsByMaxCircle(maxCircle);
+    
+    return allRituals.filter(ritual => {
       // Filtro por busca
       if (searchTerm) {
         const search = searchTerm.toLowerCase();
@@ -310,7 +339,7 @@ export function RitualSelectionModal({
 
   // Agrupar por círculo
   const ritualsByCircle = useMemo(() => {
-    const grouped: Record<number, Ritual[]> = {};
+    const grouped: Record<number, UnifiedRitual[]> = {};
     filteredRituals.forEach(ritual => {
       if (!grouped[ritual.circle]) {
         grouped[ritual.circle] = [];
