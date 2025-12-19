@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { SessionCard } from './SessionCard';
+import { sendPushNotification } from '@/hooks/usePushNotifications';
 import {
   Dialog,
   DialogContent,
@@ -42,6 +43,7 @@ interface CampaignSession {
 
 interface SessionManagerProps {
   campaignId: string;
+  campaignName?: string;
   currentSession: number;
   isMaster: boolean;
   onSessionUpdate?: () => void;
@@ -49,6 +51,7 @@ interface SessionManagerProps {
 
 export function SessionManager({ 
   campaignId, 
+  campaignName = 'Campanha',
   currentSession, 
   isMaster,
   onSessionUpdate 
@@ -126,17 +129,56 @@ export function SessionManager({
         ? Math.max(...sessions.map(s => s.session_number)) + 1 
         : 1;
 
-      const { error } = await supabase
+      const sessionTitle = newSessionTitle || `Sessão ${nextNumber}`;
+      const scheduledAt = newSessionSchedule || null;
+
+      const { data: newSession, error } = await supabase
         .from('campaign_sessions')
         .insert({
           campaign_id: campaignId,
           session_number: nextNumber,
-          title: newSessionTitle || `Sessão ${nextNumber}`,
-          scheduled_at: newSessionSchedule || null,
+          title: sessionTitle,
+          scheduled_at: scheduledAt,
           status: 'scheduled',
-        });
+        })
+        .select()
+        .single();
 
       if (error) throw error;
+
+      // Busca membros da campanha para notificação
+      const { data: members } = await supabase
+        .from('campaign_members')
+        .select('user_id')
+        .eq('campaign_id', campaignId);
+
+      const userIds = members?.map(m => m.user_id) || [];
+
+      // Envia notificação push para todos os membros
+      if (userIds.length > 0) {
+        const scheduleText = scheduledAt 
+          ? ` agendada para ${new Date(scheduledAt).toLocaleDateString('pt-BR', { 
+              day: '2-digit', 
+              month: '2-digit', 
+              hour: '2-digit', 
+              minute: '2-digit' 
+            })}`
+          : '';
+        
+        try {
+          await sendPushNotification({
+            type: 'session_scheduled',
+            campaignId,
+            sessionId: newSession.id,
+            title: `📅 ${campaignName}`,
+            body: `Nova sessão "${sessionTitle}"${scheduleText}`,
+            userIds
+          });
+        } catch (pushError) {
+          console.error('Error sending push notification:', pushError);
+          // Não falha a criação se a notificação falhar
+        }
+      }
 
       toast({ title: 'Sessão criada!', description: `Sessão ${nextNumber} agendada.` });
       setDialogOpen(false);

@@ -875,6 +875,7 @@ export default function CampaignView() {
               <div className="max-w-3xl mx-auto">
                 <SessionManager
                   campaignId={id || ''}
+                  campaignName={campaign?.name}
                   currentSession={campaign?.current_session || 0}
                   isMaster={isMaster}
                   onSessionUpdate={fetchActiveSession}
