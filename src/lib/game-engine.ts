@@ -5,9 +5,13 @@
 import { 
   CONDITIONS, 
   type Condition, 
+  type ConditionParams,
   CONTEXTUAL_DEFENSE_MODIFIERS,
   getAttackModifierFromConditions,
-  getInitiativeModifierFromConditions 
+  getInitiativeModifierFromConditions,
+  getConditionEffectWithParams,
+  getMachucadoDamage,
+  getFragilizadoMultiplier,
 } from './conditions';
 import { getPELimitByNex } from './dice-roller';
 
@@ -678,18 +682,58 @@ export interface DamageApplication {
   isDying: boolean;
   isDead: boolean;
   dyingCounterChange?: number; // -1 se reduziu contador de morrendo
+  fragilizadoApplied?: boolean; // Se aplicou +50% de dano por fragilizado
+  fragilizadoBonus?: number; // Bônus de dano aplicado
 }
 
+/**
+ * Interface para condição ativa com parâmetros
+ */
+export interface ActiveConditionWithParams {
+  id: string;
+  params?: ConditionParams;
+}
+
+/**
+ * Aplica dano considerando RD, dano verdadeiro e condições com parâmetros
+ * @param currentHP - HP atual
+ * @param maxHP - HP máximo
+ * @param damage - Dano base
+ * @param rd - Redução de dano (RD)
+ * @param isVerdadeiro - Se é dano verdadeiro (ignora RD)
+ * @param wasDying - Se já estava morrendo
+ * @param damageType - Tipo de dano (para Fragilizado)
+ * @param activeConditions - Condições ativas com parâmetros (para Fragilizado)
+ */
 export function applyDamage(
   currentHP: number, 
   maxHP: number,
   damage: number, 
   rd: number = 0,
-  isVerdadeiro: boolean = false, // Dano verdadeiro ignora RD
-  wasDying: boolean = false // Se já estava morrendo
+  isVerdadeiro: boolean = false,
+  wasDying: boolean = false,
+  damageType?: string,
+  activeConditions?: ActiveConditionWithParams[]
 ): DamageApplication {
-  const rdApplied = isVerdadeiro ? 0 : Math.min(rd, damage);
-  const finalDamage = Math.max(0, damage - rdApplied);
+  let effectiveDamage = damage;
+  let fragilizadoApplied = false;
+  let fragilizadoBonus = 0;
+  
+  // Verificar se Fragilizado aplica +50% ao tipo de dano
+  if (damageType && activeConditions) {
+    const fragilizado = activeConditions.find(c => c.id === 'fragilizado');
+    if (fragilizado?.params) {
+      const multiplier = getFragilizadoMultiplier(damageType, fragilizado.params);
+      if (multiplier > 1) {
+        fragilizadoBonus = Math.floor(damage * (multiplier - 1));
+        effectiveDamage = Math.floor(damage * multiplier);
+        fragilizadoApplied = true;
+      }
+    }
+  }
+  
+  const rdApplied = isVerdadeiro ? 0 : Math.min(rd, effectiveDamage);
+  const finalDamage = Math.max(0, effectiveDamage - rdApplied);
   const newHP = currentHP - finalDamage;
   
   const triggeredConditions: string[] = [];
@@ -723,7 +767,100 @@ export function applyDamage(
     isDying,
     isDead,
     dyingCounterChange,
+    fragilizadoApplied,
+    fragilizadoBonus,
   };
+}
+
+/**
+ * Calcula dano de Machucado ao realizar ação
+ * Livro Base v1.3 - Machucado causa dano máximo da arma ao agir
+ * @param activeConditions - Condições ativas com parâmetros
+ * @returns Dano a ser aplicado (0 se não tiver Machucado)
+ */
+export function calculateMachucadoDamage(activeConditions?: ActiveConditionWithParams[]): {
+  damage: number;
+  weaponName?: string;
+  message: string;
+} {
+  if (!activeConditions) {
+    return { damage: 0, message: '' };
+  }
+  
+  const machucado = activeConditions.find(c => c.id === 'machucado');
+  if (!machucado?.params) {
+    // Sem parâmetros, usa valor padrão
+    return { damage: 0, message: '' };
+  }
+  
+  const damage = getMachucadoDamage(machucado.params);
+  if (damage <= 0) {
+    return { damage: 0, message: '' };
+  }
+  
+  const weaponName = machucado.params.weaponName;
+  const message = weaponName 
+    ? `Machucado: sofre ${damage} de dano ao agir (${weaponName})`
+    : `Machucado: sofre ${damage} de dano ao agir`;
+    
+  return { damage, weaponName, message };
+}
+
+/**
+ * Processa dano de veneno no início do turno
+ * Livro Base v1.3 - Envenenado pode ter dano variável por turno
+ * @param activeConditions - Condições ativas com parâmetros
+ * @returns Dano e DT do veneno
+ */
+export function processEnvenenadoDamage(activeConditions?: ActiveConditionWithParams[]): {
+  damage: number;
+  dt?: number;
+  poisonName?: string;
+  message: string;
+} {
+  if (!activeConditions) {
+    return { damage: 0, message: '' };
+  }
+  
+  const envenenado = activeConditions.find(c => c.id === 'envenenado');
+  if (!envenenado?.params) {
+    return { damage: 0, message: '' };
+  }
+  
+  const { poisonDamage, poisonDT, poisonName } = envenenado.params;
+  
+  if (!poisonDamage) {
+    return { damage: 0, dt: poisonDT, poisonName, message: '' };
+  }
+  
+  // Parse e rola o dado de dano (ex: "1d6", "2d4")
+  const diceMatch = poisonDamage.match(/^(\d+)d(\d+)$/);
+  let damage = 0;
+  
+  if (diceMatch) {
+    const numDice = parseInt(diceMatch[1]);
+    const diceSize = parseInt(diceMatch[2]);
+    for (let i = 0; i < numDice; i++) {
+      damage += Math.floor(Math.random() * diceSize) + 1;
+    }
+  } else {
+    // Tenta parsear como número fixo
+    damage = parseInt(poisonDamage) || 0;
+  }
+  
+  if (damage <= 0) {
+    return { damage: 0, dt: poisonDT, poisonName, message: '' };
+  }
+  
+  let message = `Envenenado: sofre ${damage} de dano`;
+  if (poisonName) {
+    message += ` (${poisonName})`;
+  }
+  if (poisonDT) {
+    message += ` - DT ${poisonDT} para resistir`;
+  }
+  
+  return { damage, dt: poisonDT, poisonName, message };
 }
 
 // ============== SISTEMA DE SANIDADE ==============
@@ -774,14 +911,19 @@ export interface StartOfTurnResult {
   messages: string[];
   dyingCounterReduced: boolean;
   dyingResult?: DyingResult;
+  envenenadoDT?: number; // DT para teste de Fortitude contra veneno
 }
 
 /**
  * Processa todos os efeitos de início de turno
  * Inclui: dano de condições, contador de morrendo, remoção automática
+ * Atualizado para suportar parâmetros de condição (Envenenado)
+ * @param combatant - Estado do combatente
+ * @param activeConditionsWithParams - Condições com parâmetros opcionais
  */
 export function processStartOfTurn(
-  combatant: CombatantState
+  combatant: CombatantState,
+  activeConditionsWithParams?: ActiveConditionWithParams[]
 ): StartOfTurnResult {
   let damage = 0;
   let isDamageVerdadeiro = false;
@@ -790,6 +932,7 @@ export function processStartOfTurn(
   const messages: string[] = [];
   let dyingCounterReduced = false;
   let dyingResult: DyingResult | undefined;
+  let envenenadoDT: number | undefined;
 
   for (const conditionId of combatant.conditions) {
     const condition = CONDITIONS[conditionId];
@@ -797,7 +940,20 @@ export function processStartOfTurn(
     
     if (!effect) continue;
 
-    // Efeitos de início de turno (sangrando, envenenado)
+    // Processar Envenenado com parâmetros
+    if (conditionId === 'envenenado' && activeConditionsWithParams) {
+      const envenenadoResult = processEnvenenadoDamage(activeConditionsWithParams);
+      if (envenenadoResult.damage > 0) {
+        damage += envenenadoResult.damage;
+        messages.push(`${combatant.name}: ${envenenadoResult.message}`);
+        if (envenenadoResult.dt) {
+          envenenadoDT = envenenadoResult.dt;
+        }
+        continue; // Não processar startOfTurnEffect padrão
+      }
+    }
+
+    // Efeitos de início de turno (sangrando, etc.)
     if (effect.startOfTurnEffect) {
       const result = effect.startOfTurnEffect();
       if (result.damage) {
@@ -837,6 +993,7 @@ export function processStartOfTurn(
     messages,
     dyingCounterReduced,
     dyingResult,
+    envenenadoDT,
   };
 }
 
