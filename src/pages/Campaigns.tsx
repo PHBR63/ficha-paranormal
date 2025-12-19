@@ -31,6 +31,7 @@ import {
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { PushNotificationToggle } from '@/components/pwa/PushNotificationToggle';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 interface Campaign {
   id: string;
@@ -214,42 +215,50 @@ export default function Campaigns() {
     }
   };
 
+  const themeColors = useThemeColors();
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0D0A0B] flex items-center justify-center relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-[#0D0A0B] via-[#1A0505] to-[#0D0A0B]" />
-        <FlickeringGrid className="opacity-20" squareSize={4} gridGap={8} flickerChance={0.2} color="rgb(139, 0, 0)" maxOpacity={0.2} />
+      <div className="min-h-screen bg-background flex items-center justify-center relative overflow-hidden">
+        <div className="absolute inset-0 bg-landing-gradient-theme" />
+        <FlickeringGrid className="opacity-20" squareSize={4} gridGap={8} flickerChance={0.2} color={`rgb(${themeColors.rgb})`} maxOpacity={0.2} />
         <div className="absolute inset-0 landing-noise pointer-events-none" />
         
         <div className="relative flex flex-col items-center gap-4">
           <div className="relative">
-            <div className="absolute inset-0 bg-[#8B0000]/20 rounded-full blur-xl animate-pulse" />
-            <Eye className="h-10 w-10 text-[#B22222] animate-pulse relative" />
+            <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl animate-pulse" />
+            <Eye className="h-10 w-10 text-primary animate-pulse relative" />
           </div>
-          <p className="text-[#808080] font-mono tracking-wider text-sm">CARREGANDO CAMPANHAS...</p>
+          <p className="text-muted-foreground font-mono tracking-wider text-sm">CARREGANDO CAMPANHAS...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#0D0A0B] relative overflow-hidden">
-      {/* Background Effects */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#0D0A0B] via-[#1A0505] to-[#0D0A0B]" />
-      <FlickeringGrid className="opacity-20" squareSize={4} gridGap={8} flickerChance={0.15} color="rgb(139, 0, 0)" maxOpacity={0.15} />
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      {/* Background Effects - Dynamic */}
+      <div className="absolute inset-0 bg-landing-gradient-theme" />
+      <FlickeringGrid className="opacity-20" squareSize={4} gridGap={8} flickerChance={0.15} color={`rgb(${themeColors.rgb})`} maxOpacity={0.15} />
       <div className="absolute inset-0 landing-noise pointer-events-none" />
       
-      {/* Red mist */}
+      {/* Mist - Dynamic */}
       <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
-        <div className="absolute top-1/4 right-1/3 w-[400px] h-[400px] bg-[#8B0000]/5 rounded-full blur-[120px] animate-red-mist" />
-        <div className="absolute bottom-1/3 left-1/4 w-[300px] h-[300px] bg-[#B22222]/5 rounded-full blur-[100px] animate-red-mist" style={{ animationDelay: '3s' }} />
+        <div 
+          className="absolute top-1/4 right-1/3 w-[400px] h-[400px] rounded-full blur-[120px] animate-red-mist"
+          style={{ backgroundColor: `${themeColors.primary}0D` }}
+        />
+        <div 
+          className="absolute bottom-1/3 left-1/4 w-[300px] h-[300px] rounded-full blur-[100px] animate-red-mist"
+          style={{ backgroundColor: `${themeColors.secondary}0D`, animationDelay: '3s' }}
+        />
       </div>
       
       <div className="absolute inset-0 scan-lines opacity-10 pointer-events-none" />
       
-      <Particles className="absolute inset-0 z-[1]" quantity={15} color="#8B0000" size={1} vx={0} vy={-0.1} staticity={100} ease={120} />
+      <Particles className="absolute inset-0 z-[1]" quantity={15} color={themeColors.primary} size={1} vx={0} vy={-0.1} staticity={100} ease={120} />
       
-      <div className="absolute inset-0 vignette-red pointer-events-none opacity-40" />
+      <div className="absolute inset-0 vignette-theme pointer-events-none opacity-40" />
 
       {/* Header */}
       <header className="relative z-10 border-b border-[#8B0000]/20 bg-[#0D0A0B]/80 backdrop-blur-sm sticky top-0">

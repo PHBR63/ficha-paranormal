@@ -8,6 +8,7 @@ import { ArrowLeft, ArrowRight, Check, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Particles } from '@/components/ui/particles';
 import { FlickeringGrid } from '@/components/ui/flickering-grid';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { StepConcept } from '@/components/character/StepConcept';
 import { StepNex } from '@/components/character/StepNex';
 import { StepPatent } from '@/components/character/StepPatent';
@@ -619,31 +620,38 @@ export default function CharacterCreate() {
     );
   };
 
+  const themeColors = useThemeColors();
+
   return (
     <div className="min-h-screen bg-background pb-20 sm:pb-0 relative overflow-hidden">
-      {/* Atmospheric Effects */}
+      {/* Atmospheric Effects - Dynamic */}
       <div className="fixed inset-0 pointer-events-none z-0">
         <FlickeringGrid 
           className="absolute inset-0 opacity-[0.03]"
           squareSize={3}
           gridGap={8}
           flickerChance={0.02}
-          color="rgb(139, 0, 0)"
+          color={`rgb(${themeColors.rgb})`}
         />
         <Particles
           className="absolute inset-0"
           quantity={25}
           staticity={40}
-          color="#8B0000"
+          color={themeColors.primary}
           size={0.4}
         />
-        {/* Red mist */}
-        <div className="absolute inset-0 bg-gradient-to-t from-red-950/10 via-transparent to-transparent" />
-        {/* Scan lines */}
+        {/* Mist - Dynamic */}
+        <div 
+          className="absolute inset-0 bg-gradient-to-t via-transparent to-transparent"
+          style={{ 
+            backgroundImage: `linear-gradient(to top, ${themeColors.primary}10, transparent, transparent)` 
+          }}
+        />
+        {/* Scan lines - Dynamic */}
         <div 
           className="absolute inset-0 opacity-[0.015]"
           style={{
-            backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(139, 0, 0, 0.1) 2px, rgba(139, 0, 0, 0.1) 4px)',
+            backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 2px, ${themeColors.primary}18 2px, ${themeColors.primary}18 4px)`,
           }}
         />
         {/* Vignette */}
