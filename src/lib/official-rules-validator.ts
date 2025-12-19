@@ -353,6 +353,82 @@ const OFFICIAL_TRACK_ABILITIES: Record<string, { name: string; minNex: number }[
   ],
 };
 
+// ============== DADOS OFICIAIS - PODERES DE CLASSE ==============
+
+/**
+ * Poderes de Combatente oficiais - Livro Base v1.3 p.46-49
+ * Escolhidos em NEX 15%, 30%, 45%, 60%, 75%, 90%
+ */
+const OFFICIAL_COMBATENTE_POWERS: { id: string; name: string; minNex: number; prereq?: string }[] = [
+  { id: 'armamento-pesado', name: 'Armamento Pesado', minNex: 15, prereq: 'For 2' },
+  { id: 'artista-marcial', name: 'Artista Marcial', minNex: 15 },
+  { id: 'ataque-de-oportunidade', name: 'Ataque de Oportunidade', minNex: 15 },
+  { id: 'combater-duas-armas', name: 'Combater com Duas Armas', minNex: 15, prereq: 'Agi 3, Luta ou Pontaria' },
+  { id: 'combate-defensivo', name: 'Combate Defensivo', minNex: 15, prereq: 'Int 2' },
+  { id: 'golpe-demolidor', name: 'Golpe Demolidor', minNex: 15, prereq: 'For 2, Luta' },
+  { id: 'golpe-pesado', name: 'Golpe Pesado', minNex: 15 },
+  { id: 'incansavel', name: 'Incansável', minNex: 15 },
+  { id: 'presteza-atletica', name: 'Presteza Atlética', minNex: 15 },
+  { id: 'protecao-pesada', name: 'Proteção Pesada', minNex: 30 },
+  { id: 'reflexos-defensivos', name: 'Reflexos Defensivos', minNex: 15, prereq: 'Agi 2' },
+  { id: 'saque-rapido', name: 'Saque Rápido', minNex: 15, prereq: 'Iniciativa' },
+  { id: 'segurar-gatilho', name: 'Segurar o Gatilho', minNex: 60 },
+  { id: 'sentido-tatico', name: 'Sentido Tático', minNex: 15, prereq: 'Int 2, Percepção, Tática' },
+  { id: 'tanque-de-guerra', name: 'Tanque de Guerra', minNex: 30, prereq: 'Proteção Pesada' },
+  { id: 'tiro-certeiro', name: 'Tiro Certeiro', minNex: 15, prereq: 'Pontaria' },
+  { id: 'tiro-de-cobertura', name: 'Tiro de Cobertura', minNex: 15 },
+  { id: 'transcender', name: 'Transcender', minNex: 15 },
+  { id: 'treinamento-pericia', name: 'Treinamento em Perícia', minNex: 15 },
+];
+
+/**
+ * Poderes de Especialista oficiais - Livro Base v1.3 p.52-55
+ */
+const OFFICIAL_ESPECIALISTA_POWERS: { id: string; name: string; minNex: number; prereq?: string }[] = [
+  { id: 'artista-marcial-esp', name: 'Artista Marcial', minNex: 15 },
+  { id: 'balistica-avancada', name: 'Balística Avançada', minNex: 15 },
+  { id: 'conhecimento-aplicado', name: 'Conhecimento Aplicado', minNex: 15, prereq: 'Int 2' },
+  { id: 'hacker', name: 'Hacker', minNex: 15, prereq: 'Tecnologia' },
+  { id: 'maos-rapidas', name: 'Mãos Rápidas', minNex: 15, prereq: 'Agi 3, Crime' },
+  { id: 'mochila-utilidades', name: 'Mochila de Utilidades', minNex: 15 },
+  { id: 'movimento-tatico', name: 'Movimento Tático', minNex: 15, prereq: 'Atletismo' },
+  { id: 'na-trilha-certa', name: 'Na Trilha Certa', minNex: 15 },
+  { id: 'nerd', name: 'Nerd', minNex: 15 },
+  { id: 'ninja-urbano', name: 'Ninja Urbano', minNex: 15 },
+  { id: 'pensamento-agil', name: 'Pensamento Ágil', minNex: 15 },
+  { id: 'perito-explosivos', name: 'Perito em Explosivos', minNex: 15 },
+  { id: 'proficiencia-tatica', name: 'Proficiência Tática', minNex: 15 },
+  { id: 'rede-contatos', name: 'Rede de Contatos', minNex: 15 },
+  { id: 'saque-rapido-esp', name: 'Saque Rápido', minNex: 15, prereq: 'Iniciativa' },
+  { id: 'sempre-preparado', name: 'Sempre Preparado', minNex: 15 },
+  { id: 'transcender-esp', name: 'Transcender', minNex: 15 },
+  { id: 'treinamento-pericia-esp', name: 'Treinamento em Perícia', minNex: 15 },
+];
+
+/**
+ * Poderes de Ocultista oficiais - Livro Base v1.3 p.58-61
+ */
+const OFFICIAL_OCULTISTA_POWERS: { id: string; name: string; minNex: number; prereq?: string }[] = [
+  { id: 'afinidade-ritual', name: 'Afinidade com Ritual', minNex: 15 },
+  { id: 'celebrante-reliquia', name: 'Celebrante de Relíquia', minNex: 15 },
+  { id: 'cicatriz-arcana', name: 'Cicatriz Arcana', minNex: 15 },
+  { id: 'colapso', name: 'Colapso', minNex: 15 },
+  { id: 'encantador', name: 'Encantador', minNex: 15, prereq: 'Pre 2' },
+  { id: 'enriquecer-ritual', name: 'Enriquecer Ritual', minNex: 15 },
+  { id: 'esoterico', name: 'Esotérico', minNex: 15 },
+  { id: 'especialista-elemento', name: 'Especialista em Elemento', minNex: 15 },
+  { id: 'foco-vital', name: 'Foco Vital', minNex: 15 },
+  { id: 'grito-guerra', name: 'Grito de Guerra', minNex: 15 },
+  { id: 'item-fetiche', name: 'Item Fetiche', minNex: 15 },
+  { id: 'materia-conhecida', name: 'Matéria Conhecida', minNex: 15 },
+  { id: 'poder-oculto', name: 'Poder Oculto', minNex: 15 },
+  { id: 'potencializar-elemento', name: 'Potencializar Elemento', minNex: 15 },
+  { id: 'proficiencia-simples', name: 'Proficiência Simples', minNex: 15 },
+  { id: 'ritual-rapido', name: 'Ritual Rápido', minNex: 15 },
+  { id: 'tatuagem-mistica', name: 'Tatuagem Mística', minNex: 15 },
+  { id: 'treinamento-pericia-ocu', name: 'Treinamento em Perícia', minNex: 15 },
+];
+
 // ============== FUNÇÕES DE VALIDAÇÃO ==============
 
 /**
@@ -1178,6 +1254,152 @@ function validateTrackCountsByClass(): ValidationResult[] {
   return results;
 }
 
+// ============== VALIDAÇÃO DE PODERES DE CLASSE ==============
+
+/**
+ * Valida existência dos poderes de Combatente
+ */
+function validateCombatentePowers(): ValidationResult[] {
+  const results: ValidationResult[] = [];
+  
+  for (const power of OFFICIAL_COMBATENTE_POWERS) {
+    const exists = COMBATENTE_ABILITIES.some(a => 
+      a.id === power.id || a.name.toLowerCase() === power.name.toLowerCase()
+    );
+    
+    results.push({
+      passed: exists,
+      category: 'Poderes de Classe',
+      test: `Combatente: "${power.name}"`,
+      expected: 'Implementado',
+      actual: exists ? 'Implementado' : 'NÃO ENCONTRADO',
+      reference: 'Livro Base v1.3 p.46-49',
+    });
+  }
+  
+  return results;
+}
+
+/**
+ * Valida existência dos poderes de Especialista
+ */
+function validateEspecialistaPowers(): ValidationResult[] {
+  const results: ValidationResult[] = [];
+  
+  for (const power of OFFICIAL_ESPECIALISTA_POWERS) {
+    const exists = ESPECIALISTA_ABILITIES.some(a => 
+      a.id === power.id || a.name.toLowerCase() === power.name.toLowerCase()
+    );
+    
+    results.push({
+      passed: exists,
+      category: 'Poderes de Classe',
+      test: `Especialista: "${power.name}"`,
+      expected: 'Implementado',
+      actual: exists ? 'Implementado' : 'NÃO ENCONTRADO',
+      reference: 'Livro Base v1.3 p.52-55',
+    });
+  }
+  
+  return results;
+}
+
+/**
+ * Valida existência dos poderes de Ocultista
+ */
+function validateOcultistaPowers(): ValidationResult[] {
+  const results: ValidationResult[] = [];
+  
+  for (const power of OFFICIAL_OCULTISTA_POWERS) {
+    const exists = OCULTISTA_ABILITIES.some(a => 
+      a.id === power.id || a.name.toLowerCase() === power.name.toLowerCase()
+    );
+    
+    results.push({
+      passed: exists,
+      category: 'Poderes de Classe',
+      test: `Ocultista: "${power.name}"`,
+      expected: 'Implementado',
+      actual: exists ? 'Implementado' : 'NÃO ENCONTRADO',
+      reference: 'Livro Base v1.3 p.58-61',
+    });
+  }
+  
+  return results;
+}
+
+/**
+ * Valida NEX correto dos poderes de classe
+ */
+function validateClassPowerNex(): ValidationResult[] {
+  const results: ValidationResult[] = [];
+  
+  const allOfficialPowers = [
+    ...OFFICIAL_COMBATENTE_POWERS.map(p => ({ ...p, className: 'Combatente', abilities: COMBATENTE_ABILITIES })),
+    ...OFFICIAL_ESPECIALISTA_POWERS.map(p => ({ ...p, className: 'Especialista', abilities: ESPECIALISTA_ABILITIES })),
+    ...OFFICIAL_OCULTISTA_POWERS.map(p => ({ ...p, className: 'Ocultista', abilities: OCULTISTA_ABILITIES })),
+  ];
+  
+  for (const power of allOfficialPowers) {
+    const implemented = power.abilities.find(a => 
+      a.id === power.id || a.name.toLowerCase() === power.name.toLowerCase()
+    );
+    
+    if (!implemented) continue;
+    
+    const passed = implemented.minNex === power.minNex;
+    
+    results.push({
+      passed,
+      category: 'Poderes de Classe',
+      test: `NEX de "${power.name}" (${power.className})`,
+      expected: `${power.minNex}%`,
+      actual: `${implemented.minNex}%`,
+      reference: 'Livro Base v1.3',
+    });
+  }
+  
+  return results;
+}
+
+/**
+ * Valida contagem de poderes por classe
+ */
+function validateClassPowerCounts(): ValidationResult[] {
+  const results: ValidationResult[] = [];
+  
+  const counts = {
+    Combatente: {
+      official: OFFICIAL_COMBATENTE_POWERS.length,
+      implemented: COMBATENTE_ABILITIES.filter(a => !a.isCore).length,
+    },
+    Especialista: {
+      official: OFFICIAL_ESPECIALISTA_POWERS.length,
+      implemented: ESPECIALISTA_ABILITIES.filter(a => !a.isCore).length,
+    },
+    Ocultista: {
+      official: OFFICIAL_OCULTISTA_POWERS.length,
+      implemented: OCULTISTA_ABILITIES.filter(a => !a.isCore).length,
+    },
+  };
+  
+  for (const [className, data] of Object.entries(counts)) {
+    // Tolerância: implementado deve ter pelo menos 80% dos oficiais
+    const passed = data.implemented >= Math.floor(data.official * 0.8);
+    
+    results.push({
+      passed,
+      category: 'Poderes de Classe',
+      test: `Quantidade de poderes de ${className}`,
+      expected: `≥${Math.floor(data.official * 0.8)} (80% de ${data.official})`,
+      actual: `${data.implemented} poderes`,
+      reference: 'Livro Base v1.3',
+    });
+  }
+  
+  return results;
+}
+
 // ============== EXECUÇÃO DE VALIDAÇÃO ==============
 
 /**
@@ -1219,6 +1441,12 @@ export function runFullValidation(): ValidationReport {
     ...validateTrackAbilityNex(),
     ...validateTrackInitialAbilities(),
     ...validateTrackCountsByClass(),
+    // Poderes de Classe
+    ...validateCombatentePowers(),
+    ...validateEspecialistaPowers(),
+    ...validateOcultistaPowers(),
+    ...validateClassPowerNex(),
+    ...validateClassPowerCounts(),
   ];
   
   const passed = allResults.filter(r => r.passed).length;
@@ -1245,7 +1473,7 @@ export function getValidationFailures(): ValidationResult[] {
  * Executa validação de uma categoria específica
  */
 export function validateCategory(
-  category: 'rituais' | 'condições' | 'modificadores' | 'dano' | 'poderes' | 'origens' | 'classes' | 'trilhas'
+  category: 'rituais' | 'condições' | 'modificadores' | 'dano' | 'poderes' | 'origens' | 'classes' | 'trilhas' | 'poderes-classe'
 ): ValidationResult[] {
   switch (category) {
     case 'rituais':
@@ -1296,6 +1524,14 @@ export function validateCategory(
         ...validateTrackAbilityNex(),
         ...validateTrackInitialAbilities(),
         ...validateTrackCountsByClass(),
+      ];
+    case 'poderes-classe':
+      return [
+        ...validateCombatentePowers(),
+        ...validateEspecialistaPowers(),
+        ...validateOcultistaPowers(),
+        ...validateClassPowerNex(),
+        ...validateClassPowerCounts(),
       ];
   }
 }
