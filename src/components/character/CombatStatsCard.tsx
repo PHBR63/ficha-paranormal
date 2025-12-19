@@ -9,6 +9,7 @@ import { Heart, Zap, Brain, Edit2, Check, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { AnimatedProgress } from '@/components/ui/animated-progress';
+import { HeartbeatIcon } from '@/components/character/HeartbeatIcon';
 import { cn } from '@/lib/utils';
 
 interface CombatStatsCardProps {
@@ -164,14 +165,7 @@ export function CombatStatsCard({
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className={cn(
-              isHpLow && "animate-pulse"
-            )}>
-              <Heart className={cn(
-                "w-5 h-5",
-                isHpLow ? "text-destructive" : "text-hp"
-              )} />
-            </div>
+            <HeartbeatIcon hpPercent={hpPercent} size="md" />
             <span className="text-sm font-medium">HP</span>
           </div>
           {editMode ? (
