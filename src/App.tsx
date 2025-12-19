@@ -8,6 +8,7 @@ import { ColorThemeProvider } from "@/contexts/ColorThemeContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { AdminRoute } from "@/components/auth/AdminRoute";
 import { InstallPromptBanner } from "@/components/pwa/InstallPromptBanner";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
@@ -25,70 +26,72 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <InstallPromptBanner />
-        <AuthProvider>
-          <ColorThemeProvider>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/install" element={<Install />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/dashboard" element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              } />
-              <Route path="/character/create" element={
-                <ProtectedRoute>
-                  <CharacterCreate />
-                </ProtectedRoute>
-              } />
-              <Route path="/character/:id" element={
-                <ProtectedRoute>
-                  <CharacterSheet />
-                </ProtectedRoute>
-              } />
-              <Route path="/campaigns" element={
-                <ProtectedRoute>
-                  <Campaigns />
-                </ProtectedRoute>
-              } />
-              <Route path="/campaigns/create" element={
-                <ProtectedRoute>
-                  <CampaignCreate />
-                </ProtectedRoute>
-              } />
-              <Route path="/campaigns/:id" element={
-                <ProtectedRoute>
-                  <CampaignView />
-                </ProtectedRoute>
-              } />
-              <Route path="/admin/import" element={
-                <AdminRoute>
-                  <AdminImport />
-                </AdminRoute>
-              } />
-              <Route path="/admin/users" element={
-                <AdminRoute>
-                  <AdminUsers />
-                </AdminRoute>
-              } />
-              <Route path="/admin/data-integrity" element={
-                <AdminRoute>
-                  <AdminDataIntegrity />
-                </AdminRoute>
-              } />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </ColorThemeProvider>
-        </AuthProvider>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+  <ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <InstallPromptBanner />
+          <AuthProvider>
+            <ColorThemeProvider>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/install" element={<Install />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/dashboard" element={
+                  <ProtectedRoute>
+                    <Dashboard />
+                  </ProtectedRoute>
+                } />
+                <Route path="/character/create" element={
+                  <ProtectedRoute>
+                    <CharacterCreate />
+                  </ProtectedRoute>
+                } />
+                <Route path="/character/:id" element={
+                  <ProtectedRoute>
+                    <CharacterSheet />
+                  </ProtectedRoute>
+                } />
+                <Route path="/campaigns" element={
+                  <ProtectedRoute>
+                    <Campaigns />
+                  </ProtectedRoute>
+                } />
+                <Route path="/campaigns/create" element={
+                  <ProtectedRoute>
+                    <CampaignCreate />
+                  </ProtectedRoute>
+                } />
+                <Route path="/campaigns/:id" element={
+                  <ProtectedRoute>
+                    <CampaignView />
+                  </ProtectedRoute>
+                } />
+                <Route path="/admin/import" element={
+                  <AdminRoute>
+                    <AdminImport />
+                  </AdminRoute>
+                } />
+                <Route path="/admin/users" element={
+                  <AdminRoute>
+                    <AdminUsers />
+                  </AdminRoute>
+                } />
+                <Route path="/admin/data-integrity" element={
+                  <AdminRoute>
+                    <AdminDataIntegrity />
+                  </AdminRoute>
+                } />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </ColorThemeProvider>
+          </AuthProvider>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;
