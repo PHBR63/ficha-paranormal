@@ -707,6 +707,75 @@ export const FEAR_SECOND_CIRCLE: UnifiedRitual[] = [
       { name: 'Discente', cost: 2, description: 'Reduz DT de rituais na área em -5.', circleReq: 3 },
     ],
   },
+  {
+    id: 'absorcao-de-medo',
+    name: 'Absorção de Medo',
+    circle: 2,
+    element: 'medo',
+    execution: 'Reação',
+    range: 'Pessoal',
+    target: 'Você',
+    duration: 'Instantânea',
+    description: 'Quando um ritual hostil o atinge, você absorve parte de sua energia. Recupera PE igual ao círculo do ritual.',
+    cost: 0,
+    hasHooks: true,
+    effects: {
+      base: {
+        kind: 'interceptor',
+        hooks: [
+          { trigger: 'onPostDamage', effect: 'Recupera PE igual ao círculo do ritual que o atingiu' },
+        ],
+        summary: 'Reação: recupera PE igual ao círculo do ritual hostil que o atingiu.',
+      },
+      discente: {
+        kind: 'interceptor',
+        summary: 'Recupera PE x2 do círculo do ritual.',
+      },
+      verdadeiro: {
+        kind: 'interceptor',
+        summary: 'Além de recuperar PE, causa dano igual ao custo do ritual no conjurador.',
+      },
+    },
+    enhancements: [
+      { name: 'Discente', cost: 3, description: 'Recupera PE igual ao dobro do círculo.', circleReq: 3 },
+      { name: 'Verdadeiro', cost: 6, description: 'Causa dano igual ao custo do ritual no conjurador.', circleReq: 4, affinityReq: true },
+    ],
+  },
+  {
+    id: 'barreira-de-medo',
+    name: 'Barreira de Medo',
+    circle: 2,
+    element: 'medo',
+    execution: 'Padrão',
+    range: 'Curto',
+    area: 'Parede de 6m de comprimento e 3m de altura',
+    duration: 'Cena',
+    description: 'Você cria uma barreira de puro Medo. Seres que atravessam ficam amedrontados se falharem na Vontade.',
+    cost: 2,
+    resistance: { type: 'vontade', effect: 'anula' },
+    effects: {
+      base: {
+        kind: 'control',
+        conditions: [{ id: 'amedrontado', duration: 'cena' }],
+        areaEffect: { shape: 'linha', length: 6 },
+        resistance: { type: 'vontade', effect: 'anula' },
+        summary: 'Parede de 6m. Atravessar causa amedrontado (Vontade anula).',
+      },
+      discente: {
+        kind: 'control',
+        conditions: [{ id: 'apavorado', duration: 'cena' }],
+        summary: 'Causa apavorado ao atravessar.',
+      },
+      verdadeiro: {
+        kind: 'control',
+        summary: 'Parede de 12m. Causa 4d6 de dano de Medo ao atravessar.',
+      },
+    },
+    enhancements: [
+      { name: 'Discente', cost: 3, description: 'Causa apavorado ao invés de amedrontado.', circleReq: 3 },
+      { name: 'Verdadeiro', cost: 6, description: 'Parede de 12m. Causa 4d6 dano de Medo.', circleReq: 4, affinityReq: true },
+    ],
+  },
 ];
 
 // ========================================
