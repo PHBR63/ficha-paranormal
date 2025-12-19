@@ -101,6 +101,9 @@ export function ParanormalPowersPanel({
     );
   }
 
+  // Marcos oficiais de Transcender
+  const TRANSCENDER_MILESTONES = [15, 30, 45, 60, 75, 90];
+  
   return (
     <div className="space-y-4">
       {/* Contador de Transcender com Tooltip */}
@@ -120,19 +123,35 @@ export function ParanormalPowersPanel({
                   <span className="text-sm font-medium">Slots de Transcender</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  {/* Indicador visual de slots (dots) */}
-                  <div className="flex gap-1">
-                    {Array.from({ length: transcenderTotal }).map((_, i) => (
-                      <div
-                        key={i}
-                        className={`w-2.5 h-2.5 rounded-full transition-colors ${
-                          i < transcenderUsed 
-                            ? 'bg-paranormal shadow-sm shadow-paranormal/50' 
-                            : 'bg-muted-foreground/30 border border-muted-foreground/20'
-                        }`}
-                        title={i < transcenderUsed ? `Usado (NEX ${[15, 30, 45, 60, 75, 90][i]}%)` : 'Disponível'}
-                      />
-                    ))}
+                  {/* Indicador visual de slots com NEX */}
+                  <div className="flex gap-1.5">
+                    {Array.from({ length: transcenderTotal }).map((_, i) => {
+                      const milestoneNex = TRANSCENDER_MILESTONES[i];
+                      const isUsed = i < transcenderUsed;
+                      return (
+                        <TooltipProvider key={i}>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div
+                                className={`
+                                  w-6 h-6 rounded flex items-center justify-center text-[10px] font-medium
+                                  transition-colors cursor-help
+                                  ${isUsed 
+                                    ? 'bg-paranormal text-paranormal-foreground shadow-sm shadow-paranormal/50' 
+                                    : 'bg-muted-foreground/20 text-muted-foreground border border-muted-foreground/20'
+                                  }
+                                `}
+                              >
+                                {milestoneNex}
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent side="bottom" className="text-xs">
+                              NEX {milestoneNex}% — {isUsed ? 'Usado' : 'Disponível'}
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      );
+                    })}
                   </div>
                   <Badge 
                     variant={transcenderRemaining > 0 ? 'default' : 'secondary'}
