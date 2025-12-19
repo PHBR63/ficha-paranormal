@@ -6,6 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
+import { Particles } from '@/components/ui/particles';
+import { FlickeringGrid } from '@/components/ui/flickering-grid';
+import { DecryptedText } from '@/components/ui/decrypted-text';
+import { ParanormalElementIcon } from '@/components/ui/paranormal-element-icon';
 import { 
   Plus, 
   Users, 
@@ -13,8 +17,8 @@ import {
   Calendar, 
   ArrowLeft,
   Loader2,
-  Search,
-  LogIn
+  LogIn,
+  Eye
 } from 'lucide-react';
 import {
   Dialog,
@@ -51,7 +55,6 @@ export default function Campaigns() {
   const [creating, setCreating] = useState(false);
   const [joining, setJoining] = useState(false);
 
-  // Form states
   const [newCampaignName, setNewCampaignName] = useState('');
   const [newCampaignDescription, setNewCampaignDescription] = useState('');
   const [inviteCode, setInviteCode] = useState('');
@@ -64,7 +67,6 @@ export default function Campaigns() {
     if (!user) return;
 
     try {
-      // Fetch campaigns where user is master or member
       const { data: memberCampaigns, error: memberError } = await supabase
         .from('campaign_members')
         .select('campaign_id')
@@ -88,7 +90,6 @@ export default function Campaigns() {
 
       if (error) throw error;
 
-      // Get member counts
       const campaignsWithCounts = await Promise.all(
         (data || []).map(async (campaign) => {
           const { count } = await supabase
@@ -150,13 +151,11 @@ export default function Campaigns() {
     }
   };
 
-  // Função para entrar em campanha usando RPC seguro
   const handleJoinCampaign = async () => {
     if (!user || !inviteCode.trim()) return;
 
     setJoining(true);
     try {
-      // Valida o código usando função RPC segura (não expõe a tabela)
       const { data: validation, error: validationError } = await supabase
         .rpc('validate_campaign_invite', { code: inviteCode.trim() });
 
@@ -169,7 +168,6 @@ export default function Campaigns() {
 
       const campaignId = result.campaign_id;
 
-      // Verifica se já é membro
       const { data: existingMember } = await supabase
         .from('campaign_members')
         .select('id')
@@ -181,7 +179,6 @@ export default function Campaigns() {
         throw new Error('Você já é membro desta campanha.');
       }
 
-      // Adiciona como membro
       const { error: memberError } = await supabase
         .from('campaign_members')
         .insert({
@@ -192,7 +189,6 @@ export default function Campaigns() {
 
       if (memberError) throw memberError;
 
-      // Busca o nome da campanha para exibir no toast
       const { data: campaign } = await supabase
         .from('campaigns')
         .select('name')
@@ -220,47 +216,74 @@ export default function Campaigns() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-muted-foreground font-display tracking-wider">CARREGANDO CAMPANHAS...</p>
+      <div className="min-h-screen bg-[#0D0A0B] flex items-center justify-center relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0D0A0B] via-[#1A0505] to-[#0D0A0B]" />
+        <FlickeringGrid className="opacity-20" squareSize={4} gridGap={8} flickerChance={0.2} color="rgb(139, 0, 0)" maxOpacity={0.2} />
+        <div className="absolute inset-0 landing-noise pointer-events-none" />
+        
+        <div className="relative flex flex-col items-center gap-4">
+          <div className="relative">
+            <div className="absolute inset-0 bg-[#8B0000]/20 rounded-full blur-xl animate-pulse" />
+            <Eye className="h-10 w-10 text-[#B22222] animate-pulse relative" />
+          </div>
+          <p className="text-[#808080] font-mono tracking-wider text-sm">CARREGANDO CAMPANHAS...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background bg-grid-pattern">
-      {/* Header - Responsivo */}
-      <header className="border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-10">
+    <div className="min-h-screen bg-[#0D0A0B] relative overflow-hidden">
+      {/* Background Effects */}
+      <div className="absolute inset-0 bg-gradient-to-b from-[#0D0A0B] via-[#1A0505] to-[#0D0A0B]" />
+      <FlickeringGrid className="opacity-20" squareSize={4} gridGap={8} flickerChance={0.15} color="rgb(139, 0, 0)" maxOpacity={0.15} />
+      <div className="absolute inset-0 landing-noise pointer-events-none" />
+      
+      {/* Red mist */}
+      <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
+        <div className="absolute top-1/4 right-1/3 w-[400px] h-[400px] bg-[#8B0000]/5 rounded-full blur-[120px] animate-red-mist" />
+        <div className="absolute bottom-1/3 left-1/4 w-[300px] h-[300px] bg-[#B22222]/5 rounded-full blur-[100px] animate-red-mist" style={{ animationDelay: '3s' }} />
+      </div>
+      
+      <div className="absolute inset-0 scan-lines opacity-10 pointer-events-none" />
+      
+      <Particles className="absolute inset-0 z-[1]" quantity={15} color="#8B0000" size={1} vx={0} vy={-0.1} staticity={100} ease={120} />
+      
+      <div className="absolute inset-0 vignette-red pointer-events-none opacity-40" />
+
+      {/* Header */}
+      <header className="relative z-10 border-b border-[#8B0000]/20 bg-[#0D0A0B]/80 backdrop-blur-sm sticky top-0">
         <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 sm:gap-4 min-w-0">
               <Link to="/dashboard">
-                <Button variant="ghost" size="sm" className="text-muted-foreground px-2 sm:px-3">
+                <Button variant="ghost" size="sm" className="text-[#808080] hover:text-[#F5F5F5] hover:bg-[#8B0000]/10 px-2 sm:px-3">
                   <ArrowLeft className="w-4 h-4" />
                   <span className="hidden sm:inline ml-2">Dashboard</span>
                 </Button>
               </Link>
-              <div className="h-6 w-px bg-border hidden sm:block" />
-              <h1 className="font-display text-xl sm:text-2xl tracking-wider">CAMPANHAS</h1>
+              <div className="h-6 w-px bg-[#8B0000]/30 hidden sm:block" />
+              <h1 className="font-display text-xl sm:text-2xl tracking-wider text-[#F5F5F5]">
+                <DecryptedText text="CAMPANHAS" speed={40} />
+              </h1>
             </div>
             
             <div className="flex items-center gap-1.5 sm:gap-2">
               <PushNotificationToggle variant="button" className="hidden sm:flex" />
+              
               <Dialog open={joinDialogOpen} onOpenChange={setJoinDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="outline" className="font-display tracking-wider text-xs sm:text-sm px-2 sm:px-4">
+                  <Button className="font-display tracking-wider text-xs sm:text-sm px-2 sm:px-4 bg-[#1A1214] border border-[#8B0000]/30 hover:bg-[#8B0000]/20 hover:border-[#8B0000]/50 text-[#C0C0C0]">
                     <LogIn className="w-4 h-4" />
                     <span className="hidden sm:inline ml-2">ENTRAR</span>
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="bg-card border-border max-w-[95vw] sm:max-w-md">
+                <DialogContent className="bg-[#1A1214] border-[#8B0000]/30 max-w-[95vw] sm:max-w-md">
                   <DialogHeader>
-                    <DialogTitle className="font-display text-lg sm:text-xl tracking-wider">
+                    <DialogTitle className="font-display text-lg sm:text-xl tracking-wider text-[#F5F5F5]">
                       ENTRAR EM CAMPANHA
                     </DialogTitle>
-                    <DialogDescription>
+                    <DialogDescription className="text-[#808080]">
                       Insira o código de convite fornecido pelo Mestre.
                     </DialogDescription>
                   </DialogHeader>
@@ -269,7 +292,7 @@ export default function Campaigns() {
                       value={inviteCode}
                       onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
                       placeholder="CÓDIGO DE CONVITE"
-                      className="font-display text-center text-lg sm:text-xl tracking-widest"
+                      className="font-display text-center text-lg sm:text-xl tracking-widest bg-[#0D0A0B]/50 border-[#8B0000]/30 text-[#F5F5F5] placeholder:text-[#505050] focus:border-[#8B0000]"
                       maxLength={8}
                     />
                   </div>
@@ -277,7 +300,7 @@ export default function Campaigns() {
                     <Button
                       onClick={handleJoinCampaign}
                       disabled={joining || !inviteCode.trim()}
-                      className="font-display tracking-wider w-full sm:w-auto"
+                      className="font-display tracking-wider w-full sm:w-auto bg-[#8B0000] hover:bg-[#B22222] text-white border border-[#B22222]/30"
                     >
                       {joining && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                       ENTRAR
@@ -287,7 +310,7 @@ export default function Campaigns() {
               </Dialog>
 
               <Link to="/campaigns/create">
-                <Button className="font-display tracking-wider text-xs sm:text-sm px-2 sm:px-4">
+                <Button className="font-display tracking-wider text-xs sm:text-sm px-2 sm:px-4 bg-[#8B0000] hover:bg-[#B22222] text-white border border-[#B22222]/30 shadow-[0_0_15px_rgba(139,0,0,0.3)] hover:shadow-[0_0_25px_rgba(139,0,0,0.5)]">
                   <Plus className="w-4 h-4" />
                   <span className="hidden sm:inline ml-2">NOVA CAMPANHA</span>
                 </Button>
@@ -297,73 +320,88 @@ export default function Campaigns() {
         </div>
       </header>
 
-      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
+      <main className="relative z-10 container mx-auto px-3 sm:px-4 py-4 sm:py-8">
         {campaigns.length === 0 ? (
-          <div className="text-center py-10 sm:py-16">
-            <div className="w-20 h-20 sm:w-24 sm:h-24 mx-auto mb-4 sm:mb-6 rounded-lg bg-muted/50 flex items-center justify-center">
-              <Users className="w-10 h-10 sm:w-12 sm:h-12 text-muted-foreground" />
-            </div>
-            <h2 className="font-display text-xl sm:text-2xl tracking-wider mb-2">NENHUMA CAMPANHA</h2>
-            <p className="text-sm sm:text-base text-muted-foreground mb-4 sm:mb-6 max-w-md mx-auto px-4">
-              Você ainda não participa de nenhuma campanha. Crie uma nova ou entre com um código de convite.
-            </p>
-            <div className="flex flex-col sm:flex-row justify-center gap-2 sm:gap-4 px-4">
-              <Button variant="outline" onClick={() => setJoinDialogOpen(true)} className="w-full sm:w-auto">
-                <LogIn className="w-4 h-4 mr-2" />
-                Entrar com Código
-              </Button>
-              <Button onClick={() => setCreateDialogOpen(true)} className="w-full sm:w-auto">
-                <Plus className="w-4 h-4 mr-2" />
-                Criar Campanha
-              </Button>
+          <div className="text-center py-10 sm:py-16 relative">
+            <div className="dossier-classified p-8 sm:p-12 max-w-md mx-auto relative overflow-hidden">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(139,0,0,0.1)_0%,_transparent_70%)]" />
+              
+              <div className="relative z-10">
+                <div className="w-20 h-20 sm:w-24 sm:h-24 mx-auto mb-4 sm:mb-6 rounded-full bg-[#8B0000]/10 border border-[#8B0000]/30 flex items-center justify-center">
+                  <Users className="w-10 h-10 sm:w-12 sm:h-12 text-[#808080]" />
+                </div>
+                <h2 className="font-display text-xl sm:text-2xl tracking-wider text-[#F5F5F5] mb-2">
+                  <DecryptedText text="NENHUMA CAMPANHA" speed={30} />
+                </h2>
+                <p className="text-sm sm:text-base text-[#808080] mb-4 sm:mb-6 max-w-sm mx-auto">
+                  Você ainda não participa de nenhuma campanha. Crie uma nova ou entre com um código de convite.
+                </p>
+                <div className="flex flex-col sm:flex-row justify-center gap-2 sm:gap-4">
+                  <Button onClick={() => setJoinDialogOpen(true)} className="w-full sm:w-auto bg-[#1A1214] border border-[#8B0000]/30 hover:bg-[#8B0000]/20 text-[#C0C0C0]">
+                    <LogIn className="w-4 h-4 mr-2" />
+                    Entrar com Código
+                  </Button>
+                  <Button onClick={() => setCreateDialogOpen(true)} className="w-full sm:w-auto bg-[#8B0000] hover:bg-[#B22222] text-white border border-[#B22222]/30">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Criar Campanha
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="absolute -bottom-2 -right-2 text-[#8B0000]/10 font-display text-5xl tracking-widest rotate-[-15deg] select-none">
+                VAZIO
+              </div>
             </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            {campaigns.map((campaign) => {
+            {campaigns.map((campaign, index) => {
               const isMaster = campaign.master_id === user?.id;
               
               return (
-                <Link
-                  key={campaign.id}
-                  to={`/campaigns/${campaign.id}`}
-                  className="group"
-                >
+                <Link key={campaign.id} to={`/campaigns/${campaign.id}`} className="group">
                   <div className={cn(
-                    'ordo-panel p-4 sm:p-6 h-full transition-all duration-300',
-                    'hover:border-primary/50 hover:shadow-[0_0_20px_hsl(var(--primary)/0.2)]',
-                    isMaster && 'border-primary/30'
+                    'dossier-classified p-4 sm:p-6 h-full transition-all duration-300',
+                    'hover:border-[#8B0000]/60 hover:shadow-[0_0_25px_rgba(139,0,0,0.2)]',
+                    isMaster && 'border-[#8B0000]/40'
                   )}>
+                    {/* Classified tag */}
+                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <span className="text-[#8B0000]/30 text-[8px] font-mono uppercase tracking-wider rotate-12 inline-block">
+                        Liberado
+                      </span>
+                    </div>
+                    
                     <div className="flex items-start justify-between mb-3 sm:mb-4">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           {isMaster && (
-                            <Crown className="w-3 h-3 sm:w-4 sm:h-4 text-primary flex-shrink-0" />
+                            <Crown className="w-3 h-3 sm:w-4 sm:h-4 text-[#B22222] flex-shrink-0" />
                           )}
                           <span className={cn(
-                            'text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded font-display tracking-wider flex-shrink-0',
+                            'text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded font-mono tracking-wider flex-shrink-0',
                             campaign.status === 'active' 
-                              ? 'bg-success/20 text-success' 
-                              : 'bg-muted text-muted-foreground'
+                              ? 'bg-green-900/30 text-green-400 border border-green-600/30' 
+                              : 'bg-[#1A1214] text-[#808080] border border-[#8B0000]/20'
                           )}>
                             {campaign.status === 'active' ? 'ATIVA' : 
                              campaign.status === 'paused' ? 'PAUSADA' : 
                              campaign.status === 'completed' ? 'CONCLUÍDA' : 'ARQUIVADA'}
                           </span>
                         </div>
-                        <h3 className="font-display text-lg sm:text-xl tracking-wider group-hover:text-primary transition-colors truncate">
+                        <h3 className="font-display text-lg sm:text-xl tracking-wider text-[#F5F5F5] group-hover:text-[#B22222] transition-colors truncate">
                           {campaign.name}
                         </h3>
                       </div>
                     </div>
 
                     {campaign.description && (
-                      <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4 line-clamp-2">
+                      <p className="text-xs sm:text-sm text-[#808080] mb-3 sm:mb-4 line-clamp-2">
                         {campaign.description}
                       </p>
                     )}
 
-                    <div className="flex items-center justify-between text-xs sm:text-sm text-muted-foreground">
+                    <div className="flex items-center justify-between text-xs sm:text-sm text-[#606060]">
                       <div className="flex items-center gap-3 sm:gap-4">
                         <div className="flex items-center gap-1">
                           <Users className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -375,11 +413,14 @@ export default function Campaigns() {
                         </div>
                       </div>
                       {isMaster && (
-                        <span className="text-primary font-display text-[10px] sm:text-xs tracking-wider">
+                        <span className="text-[#B22222] font-display text-[10px] sm:text-xs tracking-wider">
                           MESTRE
                         </span>
                       )}
                     </div>
+                    
+                    {/* Bottom accent line */}
+                    <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#8B0000]/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                   </div>
                 </Link>
               );
