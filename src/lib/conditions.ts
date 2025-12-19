@@ -2,6 +2,27 @@
 // Baseado no livro de regras oficial - Atualizado com todas as condições e efeitos contextuais
 
 /**
+ * Parâmetros específicos para condições que requerem informações adicionais
+ * Livro Base v1.3 - Algumas condições têm efeitos variáveis
+ */
+export interface ConditionParams {
+  /** Fragilizado: tipo de dano que causa +50% */
+  damageType?: 'balístico' | 'corte' | 'impacto' | 'perfuração' | 'fogo' | 'frio' | 'eletricidade' | 'químico' | 'mental' | 'sangue' | 'morte' | 'conhecimento' | 'energia' | 'medo';
+  /** Machucado: dano máximo da arma que causou a condição */
+  weaponMaxDamage?: number;
+  /** Machucado: nome da arma para referência */
+  weaponName?: string;
+  /** Envenenado: dado de dano do veneno (ex: "1d6", "2d4") */
+  poisonDamage?: string;
+  /** Envenenado: DT do teste de Fortitude */
+  poisonDT?: number;
+  /** Envenenado: nome do veneno */
+  poisonName?: string;
+  /** Genérico: descrição adicional do efeito */
+  customEffect?: string;
+}
+
+/**
  * Interface principal para condições
  * Inclui suporte para modificadores contextuais (corpo a corpo vs distância)
  */
@@ -15,6 +36,10 @@ export interface Condition {
   removal?: string;
   autoRemove?: boolean;
   turnsRemaining?: number;
+  /** Parâmetros adicionais para condições com efeitos variáveis */
+  params?: ConditionParams;
+  /** IDs de condições que suportam parâmetros */
+  hasParams?: boolean;
 }
 
 /**
@@ -176,6 +201,7 @@ export const CONDITIONS: Record<string, Omit<Condition, 'turnsRemaining'>> = {
     description: 'Veneno corre em suas veias.',
     effect: '–2 em todos os testes. Efeitos adicionais variam conforme o veneno.',
     removal: 'Teste de Fortitude, tratamento ou antídoto.',
+    hasParams: true, // Suporta: poisonDamage, poisonDT, poisonName
   },
   esmorecido: {
     id: 'esmorecido',
@@ -212,6 +238,7 @@ export const CONDITIONS: Record<string, Omit<Condition, 'turnsRemaining'>> = {
     description: 'Você está vulnerável a um tipo de dano.',
     effect: 'Vulnerável a um tipo de dano específico (sofre +50% de dano desse tipo).',
     removal: 'Depende da causa.',
+    hasParams: true, // Suporta: damageType
   },
   imobilizado: {
     id: 'imobilizado',
@@ -239,6 +266,7 @@ export const CONDITIONS: Record<string, Omit<Condition, 'turnsRemaining'>> = {
     description: 'Você está gravemente ferido e qualquer esforço piora a situação.',
     effect: 'Ao realizar qualquer ação, sofre dano igual ao dano máximo da arma que causou a condição.',
     removal: 'Descanso completo ou cura.',
+    hasParams: true, // Suporta: weaponMaxDamage, weaponName
   },
 
   // === CONDIÇÕES MENTAIS ===
@@ -484,4 +512,101 @@ export function getMaxActionsFromConditions(conditions: string[]): number {
     return 1;
   }
   return 2; // Padrão: ação padrão + movimento
+}
+
+/**
+ * Lista de tipos de dano disponíveis para Fragilizado
+ * Livro Base v1.3 - Tipos de dano físicos e paranormais
+ */
+export const DAMAGE_TYPES = [
+  { id: 'balístico', name: 'Balístico', category: 'physical' },
+  { id: 'corte', name: 'Corte', category: 'physical' },
+  { id: 'impacto', name: 'Impacto', category: 'physical' },
+  { id: 'perfuração', name: 'Perfuração', category: 'physical' },
+  { id: 'fogo', name: 'Fogo', category: 'elemental' },
+  { id: 'frio', name: 'Frio', category: 'elemental' },
+  { id: 'eletricidade', name: 'Eletricidade', category: 'elemental' },
+  { id: 'químico', name: 'Químico', category: 'elemental' },
+  { id: 'mental', name: 'Mental', category: 'paranormal' },
+  { id: 'sangue', name: 'Sangue', category: 'paranormal' },
+  { id: 'morte', name: 'Morte', category: 'paranormal' },
+  { id: 'conhecimento', name: 'Conhecimento', category: 'paranormal' },
+  { id: 'energia', name: 'Energia', category: 'paranormal' },
+  { id: 'medo', name: 'Medo', category: 'paranormal' },
+] as const;
+
+export type DamageType = typeof DAMAGE_TYPES[number]['id'];
+
+/**
+ * Verifica se uma condição requer parâmetros
+ */
+export function conditionRequiresParams(conditionId: string): boolean {
+  const condition = CONDITIONS[conditionId];
+  return condition?.hasParams === true;
+}
+
+/**
+ * Obtém a descrição formatada de uma condição com seus parâmetros
+ */
+export function getConditionEffectWithParams(conditionId: string, params?: ConditionParams): string {
+  const condition = CONDITIONS[conditionId];
+  if (!condition) return '';
+  
+  let effect = condition.effect;
+  
+  if (params) {
+    switch (conditionId) {
+      case 'fragilizado':
+        if (params.damageType) {
+          const damageInfo = DAMAGE_TYPES.find(d => d.id === params.damageType);
+          effect = `Vulnerável a dano de ${damageInfo?.name || params.damageType} (sofre +50% de dano desse tipo).`;
+        }
+        break;
+      case 'machucado':
+        if (params.weaponMaxDamage) {
+          effect = `Ao realizar qualquer ação, sofre ${params.weaponMaxDamage} de dano${params.weaponName ? ` (${params.weaponName})` : ''}.`;
+        }
+        break;
+      case 'envenenado':
+        if (params.poisonDamage || params.poisonDT) {
+          const parts = ['–2 em todos os testes'];
+          if (params.poisonDamage) {
+            parts.push(`${params.poisonDamage} de dano por turno`);
+          }
+          if (params.poisonDT) {
+            parts.push(`DT ${params.poisonDT} para resistir`);
+          }
+          if (params.poisonName) {
+            parts.push(`(${params.poisonName})`);
+          }
+          effect = parts.join('. ') + '.';
+        }
+        break;
+    }
+    
+    if (params.customEffect) {
+      effect += ` ${params.customEffect}`;
+    }
+  }
+  
+  return effect;
+}
+
+/**
+ * Calcula dano de Machucado quando personagem realiza ação
+ * Retorna 0 se não tiver a condição ou parâmetros
+ */
+export function getMachucadoDamage(params?: ConditionParams): number {
+  return params?.weaponMaxDamage ?? 0;
+}
+
+/**
+ * Calcula multiplicador de dano para Fragilizado
+ * Retorna 1.5 se o tipo de dano bater com a vulnerabilidade
+ */
+export function getFragilizadoMultiplier(damageType: string, params?: ConditionParams): number {
+  if (params?.damageType && params.damageType === damageType) {
+    return 1.5; // +50% de dano
+  }
+  return 1.0;
 }

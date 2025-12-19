@@ -1725,11 +1725,16 @@ export function getRitualsByCircle(circle: number): Ritual[] {
 
 /**
  * Retorna o círculo máximo de ritual baseado no NEX
+ * Livro Base v1.3 - Progressão oficial do Ocultista:
+ * - 1º Círculo: NEX 5%+
+ * - 2º Círculo: NEX 25%+
+ * - 3º Círculo: NEX 55%+
+ * - 4º Círculo: NEX 85%+
  */
 export function getMaxRitualCircle(nex: number): number {
-  if (nex >= 80) return 4;
-  if (nex >= 50) return 3;
-  if (nex >= 25) return 2; // Conforme regras oficiais do livro (p.117)
+  if (nex >= 85) return 4; // 4º Círculo a partir de NEX 85%
+  if (nex >= 55) return 3; // 3º Círculo a partir de NEX 55%
+  if (nex >= 25) return 2; // 2º Círculo a partir de NEX 25%
   return 1;
 }
 
