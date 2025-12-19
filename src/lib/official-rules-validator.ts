@@ -108,6 +108,10 @@ interface OfficialRitualData {
 }
 
 const OFFICIAL_RITUALS_DATA: Record<string, OfficialRitualData> = {
+  // ============================================
+  // 1º CÍRCULO
+  // ============================================
+  
   // === 1º CÍRCULO - ENERGIA ===
   'amaldicoar-arma-energia': { name: 'Amaldiçoar Arma (Energia)', circle: 1, element: 'energia', cost: 1, enhancements: [{ name: 'Discente', cost: 2, circleReq: 2 }, { name: 'Verdadeiro', cost: 5, circleReq: 3 }] },
   'amaldicoar-tecnologia': { name: 'Amaldiçoar Tecnologia', circle: 1, element: 'energia', cost: 1, enhancements: [{ name: 'Discente', cost: 2, circleReq: 2 }, { name: 'Verdadeiro', cost: 5, circleReq: 3 }] },
@@ -122,6 +126,7 @@ const OFFICIAL_RITUALS_DATA: Record<string, OfficialRitualData> = {
   'amaldicoar-arma-morte': { name: 'Amaldiçoar Arma (Morte)', circle: 1, element: 'morte', cost: 1, enhancements: [{ name: 'Discente', cost: 2, circleReq: 2 }, { name: 'Verdadeiro', cost: 5, circleReq: 3 }] },
   'apagar-as-luzes': { name: 'Apagar as Luzes', circle: 1, element: 'morte', cost: 1, enhancements: [{ name: 'Discente', cost: 2, circleReq: 2 }, { name: 'Verdadeiro', cost: 5, circleReq: 3 }] },
   'cicatrizacao': { name: 'Cicatrização', circle: 1, element: 'morte', cost: 1, enhancements: [{ name: 'Discente', cost: 2, circleReq: 2 }, { name: 'Verdadeiro', cost: 9, circleReq: 4 }] },
+  'cineraria': { name: 'Cinerária', circle: 1, element: 'morte', cost: 1, enhancements: [{ name: 'Discente', cost: 2, circleReq: 2 }, { name: 'Verdadeiro', cost: 5, circleReq: 3 }] },
   'consumir-manancial': { name: 'Consumir Manancial', circle: 1, element: 'morte', cost: 1, enhancements: [{ name: 'Discente', cost: 2, circleReq: 2 }, { name: 'Verdadeiro', cost: 5, circleReq: 3 }] },
   'decadencia': { name: 'Decadência', circle: 1, element: 'morte', cost: 1, resistance: 'Fortitude reduz à metade', enhancements: [{ name: 'Discente', cost: 2, circleReq: 2 }, { name: 'Verdadeiro', cost: 5, circleReq: 3 }] },
   'definhar': { name: 'Definhar', circle: 1, element: 'morte', cost: 1, resistance: 'Fortitude parcial', enhancements: [{ name: 'Discente', cost: 2, circleReq: 2 }, { name: 'Verdadeiro', cost: 5, circleReq: 3 }] },
@@ -133,24 +138,35 @@ const OFFICIAL_RITUALS_DATA: Record<string, OfficialRitualData> = {
   'arma-atroz': { name: 'Arma Atroz', circle: 1, element: 'sangue', cost: 1, enhancements: [{ name: 'Discente', cost: 2, circleReq: 2 }, { name: 'Verdadeiro', cost: 5, circleReq: 3 }] },
   'armadura-de-sangue': { name: 'Armadura de Sangue', circle: 1, element: 'sangue', cost: 1, enhancements: [{ name: 'Discente', cost: 5, circleReq: 3 }, { name: 'Verdadeiro', cost: 9, circleReq: 4 }] },
   'corpo-adaptado': { name: 'Corpo Adaptado', circle: 1, element: 'sangue', cost: 1, enhancements: [{ name: 'Discente', cost: 2, circleReq: 2 }, { name: 'Verdadeiro', cost: 5, circleReq: 3 }] },
+  'distorcer-aparencia': { name: 'Distorcer Aparência', circle: 1, element: 'sangue', cost: 1, resistance: 'Vontade desacredita', enhancements: [{ name: 'Discente', cost: 2, circleReq: 2 }, { name: 'Verdadeiro', cost: 5, circleReq: 3 }] },
   'esfolar': { name: 'Esfolar', circle: 1, element: 'sangue', cost: 1, resistance: 'Reflexos parcial', enhancements: [{ name: 'Discente', cost: 2, circleReq: 2 }, { name: 'Verdadeiro', cost: 5, circleReq: 3 }] },
   'fortalecimento-sensorial': { name: 'Fortalecimento Sensorial', circle: 1, element: 'sangue', cost: 1, enhancements: [{ name: 'Discente', cost: 2, circleReq: 2 }, { name: 'Verdadeiro', cost: 5, circleReq: 4 }] },
   'odio-incontrolavel': { name: 'Ódio Incontrolável', circle: 1, element: 'sangue', cost: 1, enhancements: [{ name: 'Discente', cost: 2 }, { name: 'Verdadeiro', cost: 5, circleReq: 3 }] },
   'pele-de-pedra': { name: 'Pele de Pedra', circle: 1, element: 'sangue', cost: 1, enhancements: [{ name: 'Discente', cost: 2, circleReq: 2 }, { name: 'Verdadeiro', cost: 5, circleReq: 3 }] },
-  // NOTA: Velocidade Mortal foi movido para 2º Círculo - Morte (linha correta)
   
   // === 1º CÍRCULO - CONHECIMENTO ===
   'amaldicoar-arma-conhecimento': { name: 'Amaldiçoar Arma (Conhecimento)', circle: 1, element: 'conhecimento', cost: 1, enhancements: [{ name: 'Discente', cost: 2, circleReq: 2 }, { name: 'Verdadeiro', cost: 5, circleReq: 3 }] },
-  'compreensao': { name: 'Compreensão', circle: 1, element: 'conhecimento', cost: 1, enhancements: [{ name: 'Discente', cost: 2, circleReq: 2 }, { name: 'Verdadeiro', cost: 5, circleReq: 3 }] },
   'comando': { name: 'Comando', circle: 1, element: 'conhecimento', cost: 1, resistance: 'Vontade anula', enhancements: [{ name: 'Discente', cost: 2, circleReq: 2 }, { name: 'Verdadeiro', cost: 5, circleReq: 3 }] },
+  'compreensao': { name: 'Compreensão', circle: 1, element: 'conhecimento', cost: 1, enhancements: [{ name: 'Discente', cost: 2, circleReq: 2 }, { name: 'Verdadeiro', cost: 5, circleReq: 3 }] },
+  'compreensao-paranormal': { name: 'Compreensão Paranormal', circle: 1, element: 'conhecimento', cost: 1, enhancements: [{ name: 'Discente', cost: 2, circleReq: 2 }, { name: 'Verdadeiro', cost: 5, circleReq: 3 }] },
+  'desfazer-sinapses': { name: 'Desfazer Sinapses', circle: 1, element: 'conhecimento', cost: 1, resistance: 'Vontade parcial', enhancements: [{ name: 'Discente', cost: 2, circleReq: 2 }, { name: 'Verdadeiro', cost: 5, circleReq: 3 }] },
+  'enfeiticar': { name: 'Enfeitiçar', circle: 1, element: 'conhecimento', cost: 1, resistance: 'Vontade anula', enhancements: [{ name: 'Discente', cost: 2, circleReq: 2 }, { name: 'Verdadeiro', cost: 5, circleReq: 3 }] },
   'leitura-mental': { name: 'Leitura Mental', circle: 1, element: 'conhecimento', cost: 1, resistance: 'Vontade anula', enhancements: [{ name: 'Discente', cost: 2, circleReq: 2 }, { name: 'Verdadeiro', cost: 5, circleReq: 3 }] },
+  'ouvir-os-sussurros': { name: 'Ouvir os Sussurros', circle: 1, element: 'conhecimento', cost: 1, enhancements: [{ name: 'Discente', cost: 2, circleReq: 2 }, { name: 'Verdadeiro', cost: 5, circleReq: 3 }] },
   'percepcao-extrassensorial': { name: 'Percepção Extrassensorial', circle: 1, element: 'conhecimento', cost: 1, enhancements: [{ name: 'Discente', cost: 2, circleReq: 2 }, { name: 'Verdadeiro', cost: 5, circleReq: 3 }] },
+  'perturbacao': { name: 'Perturbação', circle: 1, element: 'conhecimento', cost: 1, resistance: 'Vontade parcial', enhancements: [{ name: 'Discente', cost: 2, circleReq: 2 }, { name: 'Verdadeiro', cost: 5, circleReq: 3 }] },
   'perturbar-mente': { name: 'Perturbar Mente', circle: 1, element: 'conhecimento', cost: 1, resistance: 'Vontade parcial', enhancements: [{ name: 'Discente', cost: 2, circleReq: 2 }, { name: 'Verdadeiro', cost: 5, circleReq: 3 }] },
   'projecao-psiquica': { name: 'Projeção Psíquica', circle: 1, element: 'conhecimento', cost: 1, enhancements: [{ name: 'Discente', cost: 2, circleReq: 2 }, { name: 'Verdadeiro', cost: 5, circleReq: 3 }] },
+  'tecer-ilusao': { name: 'Tecer Ilusão', circle: 1, element: 'conhecimento', cost: 1, resistance: 'Vontade desacredita', enhancements: [{ name: 'Discente', cost: 2, circleReq: 2 }, { name: 'Verdadeiro', cost: 5, circleReq: 3 }] },
+  'terceiro-olho': { name: 'Terceiro Olho', circle: 1, element: 'conhecimento', cost: 1, enhancements: [{ name: 'Discente', cost: 2, circleReq: 2 }, { name: 'Verdadeiro', cost: 5, circleReq: 3 }] },
   
   // === 1º CÍRCULO - MEDO ===
   'arma-do-medo': { name: 'Arma do Medo', circle: 1, element: 'medo', cost: 1, resistance: 'Vontade parcial', enhancements: [{ name: 'Discente', cost: 2, circleReq: 2 }, { name: 'Verdadeiro', cost: 5, circleReq: 3 }] },
   'medo-do-desconhecido': { name: 'Medo do Desconhecido', circle: 1, element: 'medo', cost: 1, resistance: 'Vontade parcial', enhancements: [{ name: 'Discente', cost: 2, circleReq: 2 }, { name: 'Verdadeiro', cost: 5, circleReq: 3 }] },
+  
+  // ============================================
+  // 2º CÍRCULO
+  // ============================================
   
   // === 2º CÍRCULO - ENERGIA ===
   'chamas-do-caos': { name: 'Chamas do Caos', circle: 2, element: 'energia', cost: 2, enhancements: [{ name: 'Discente', cost: 3, circleReq: 3 }, { name: 'Verdadeiro', cost: 7, circleReq: 3 }] },
@@ -162,22 +178,34 @@ const OFFICIAL_RITUALS_DATA: Record<string, OfficialRitualData> = {
   
   // === 2º CÍRCULO - MORTE ===
   'agonizar': { name: 'Agonizar', circle: 2, element: 'morte', cost: 2, resistance: 'Fortitude parcial', enhancements: [{ name: 'Discente', cost: 3, circleReq: 3 }, { name: 'Verdadeiro', cost: 7, circleReq: 4 }] },
+  'desacelerar-impacto': { name: 'Desacelerar Impacto', circle: 2, element: 'morte', cost: 2, enhancements: [{ name: 'Discente', cost: 3, circleReq: 3 }, { name: 'Verdadeiro', cost: 7, circleReq: 4 }] },
   'desespero-esmagador': { name: 'Desespero Esmagador', circle: 2, element: 'morte', cost: 2, resistance: 'Vontade parcial', enhancements: [{ name: 'Discente', cost: 3, circleReq: 3 }, { name: 'Verdadeiro', cost: 7, circleReq: 4 }] },
+  'eco-espiral': { name: 'Eco Espiral', circle: 2, element: 'morte', cost: 2, enhancements: [{ name: 'Discente', cost: 3, circleReq: 3 }, { name: 'Verdadeiro', cost: 7, circleReq: 4 }] },
+  'lingua-morta': { name: 'Língua Morta', circle: 2, element: 'morte', cost: 2, enhancements: [{ name: 'Discente', cost: 3, circleReq: 3 }, { name: 'Verdadeiro', cost: 7, circleReq: 4 }] },
   'metamorfose-macabra': { name: 'Metamorfose Macabra', circle: 2, element: 'morte', cost: 2, enhancements: [{ name: 'Discente', cost: 3, circleReq: 3 }, { name: 'Verdadeiro', cost: 7, circleReq: 4 }] },
+  'miasma-entropico': { name: 'Miasma Entrópico', circle: 2, element: 'morte', cost: 2, resistance: 'Fortitude parcial', enhancements: [{ name: 'Discente', cost: 3, circleReq: 3 }, { name: 'Verdadeiro', cost: 7, circleReq: 4 }] },
+  'paradoxo': { name: 'Paradoxo', circle: 2, element: 'morte', cost: 2, enhancements: [{ name: 'Discente', cost: 3, circleReq: 3 }, { name: 'Verdadeiro', cost: 7, circleReq: 4 }] },
   'paralisia': { name: 'Paralisia', circle: 2, element: 'morte', cost: 2, resistance: 'Fortitude anula', enhancements: [{ name: 'Discente', cost: 3, circleReq: 3 }, { name: 'Verdadeiro', cost: 7, circleReq: 4 }] },
   'purificacao': { name: 'Purificação', circle: 2, element: 'morte', cost: 2, enhancements: [{ name: 'Discente', cost: 3, circleReq: 3 }, { name: 'Verdadeiro', cost: 7, circleReq: 4 }] },
   'putrefacao': { name: 'Putrefação', circle: 2, element: 'morte', cost: 2, resistance: 'Fortitude parcial', enhancements: [{ name: 'Discente', cost: 3, circleReq: 3 }, { name: 'Verdadeiro', cost: 5, circleReq: 3 }] },
   'velocidade-mortal': { name: 'Velocidade Mortal', circle: 2, element: 'morte', cost: 2, enhancements: [{ name: 'Discente', cost: 3, circleReq: 3 }, { name: 'Verdadeiro', cost: 7, circleReq: 4 }] },
   
   // === 2º CÍRCULO - SANGUE ===
+  'aprimorar-fisico': { name: 'Aprimorar Físico', circle: 2, element: 'sangue', cost: 2, enhancements: [{ name: 'Discente', cost: 3, circleReq: 3 }, { name: 'Verdadeiro', cost: 7, circleReq: 4 }] },
   'aprimoramento-fisico': { name: 'Aprimoramento Físico', circle: 2, element: 'sangue', cost: 2, enhancements: [{ name: 'Discente', cost: 3, circleReq: 3 }, { name: 'Verdadeiro', cost: 7, circleReq: 4 }] },
   'caotico': { name: 'Caótico', circle: 2, element: 'sangue', cost: 2, enhancements: [{ name: 'Discente', cost: 3, circleReq: 3 }, { name: 'Verdadeiro', cost: 5, circleReq: 3 }] },
   'chicote-sanguineo': { name: 'Chicote Sanguíneo', circle: 2, element: 'sangue', cost: 2, enhancements: [{ name: 'Discente', cost: 3, circleReq: 3 }, { name: 'Verdadeiro', cost: 7, circleReq: 4 }] },
   'degeneracao': { name: 'Degeneração', circle: 2, element: 'sangue', cost: 2, resistance: 'Fortitude parcial', enhancements: [{ name: 'Discente', cost: 3, circleReq: 3 }, { name: 'Verdadeiro', cost: 7, circleReq: 4 }] },
+  'descarnar': { name: 'Descarnar', circle: 2, element: 'sangue', cost: 2, resistance: 'Fortitude parcial', enhancements: [{ name: 'Discente', cost: 3, circleReq: 3 }, { name: 'Verdadeiro', cost: 7, circleReq: 4 }] },
+  'flagelo-de-sangue': { name: 'Flagelo de Sangue', circle: 2, element: 'sangue', cost: 2, enhancements: [{ name: 'Discente', cost: 3, circleReq: 3 }, { name: 'Verdadeiro', cost: 7, circleReq: 4 }] },
   'forma-selvagem': { name: 'Forma Selvagem', circle: 2, element: 'sangue', cost: 2, enhancements: [{ name: 'Discente', cost: 3, circleReq: 3 }, { name: 'Verdadeiro', cost: 7, circleReq: 4 }] },
+  'hemofagia': { name: 'Hemofagia', circle: 2, element: 'sangue', cost: 2, enhancements: [{ name: 'Discente', cost: 3, circleReq: 3 }, { name: 'Verdadeiro', cost: 7, circleReq: 4 }] },
+  'sede-de-adrenalina': { name: 'Sede de Adrenalina', circle: 2, element: 'sangue', cost: 2, enhancements: [{ name: 'Discente', cost: 3, circleReq: 3 }, { name: 'Verdadeiro', cost: 7, circleReq: 4 }] },
   'transfusao-arcana': { name: 'Transfusão Arcana', circle: 2, element: 'sangue', cost: 2, enhancements: [{ name: 'Discente', cost: 3, circleReq: 3 }, { name: 'Verdadeiro', cost: 7, circleReq: 4 }] },
+  'transfusao-vital': { name: 'Transfusão Vital', circle: 2, element: 'sangue', cost: 2, enhancements: [{ name: 'Discente', cost: 3, circleReq: 3 }, { name: 'Verdadeiro', cost: 7, circleReq: 4 }] },
   
   // === 2º CÍRCULO - CONHECIMENTO ===
+  'aprimorar-mente': { name: 'Aprimorar Mente', circle: 2, element: 'conhecimento', cost: 2, enhancements: [{ name: 'Discente', cost: 3, circleReq: 3 }, { name: 'Verdadeiro', cost: 7, circleReq: 4 }] },
   'aprimoramento-mental': { name: 'Aprimoramento Mental', circle: 2, element: 'conhecimento', cost: 2, enhancements: [{ name: 'Discente', cost: 3, circleReq: 3 }, { name: 'Verdadeiro', cost: 7, circleReq: 4 }] },
   'aurora-da-verdade': { name: 'Aurora da Verdade', circle: 2, element: 'conhecimento', cost: 2, resistance: 'Vontade parcial', enhancements: [{ name: 'Discente', cost: 3, circleReq: 3 }, { name: 'Verdadeiro', cost: 7, circleReq: 4 }] },
   'deteccao-de-ameacas': { name: 'Detecção de Ameaças', circle: 2, element: 'conhecimento', cost: 2, enhancements: [{ name: 'Discente', cost: 3, circleReq: 3 }, { name: 'Verdadeiro', cost: 5, circleReq: 4 }] },
@@ -187,64 +215,111 @@ const OFFICIAL_RITUALS_DATA: Record<string, OfficialRitualData> = {
   
   // === 2º CÍRCULO - MEDO ===
   'protecao-contra-rituais': { name: 'Proteção contra Rituais', circle: 2, element: 'medo', cost: 2, enhancements: [{ name: 'Discente', cost: 3, circleReq: 3 }, { name: 'Verdadeiro', cost: 6, circleReq: 4 }] },
+  'rejeitar-nevoa': { name: 'Rejeitar Névoa', circle: 2, element: 'medo', cost: 2, enhancements: [{ name: 'Discente', cost: 3, circleReq: 3 }, { name: 'Verdadeiro', cost: 7, circleReq: 4 }] },
   'toque-do-medo': { name: 'Toque do Medo', circle: 2, element: 'medo', cost: 2, resistance: 'Vontade parcial', enhancements: [{ name: 'Discente', cost: 3, circleReq: 3 }, { name: 'Verdadeiro', cost: 7, circleReq: 4 }] },
+  
+  // ============================================
+  // 3º CÍRCULO
+  // ============================================
   
   // === 3º CÍRCULO - ENERGIA ===
   'controle-da-gravidade': { name: 'Controle da Gravidade', circle: 3, element: 'energia', cost: 4, enhancements: [{ name: 'Discente', cost: 6, circleReq: 4 }, { name: 'Verdadeiro', cost: 10, circleReq: 4 }] },
+  'convocacao-instantanea': { name: 'Convocação Instantânea', circle: 3, element: 'energia', cost: 4, enhancements: [{ name: 'Discente', cost: 6, circleReq: 4 }, { name: 'Verdadeiro', cost: 10, circleReq: 4 }] },
   'crisalida-eletrica': { name: 'Crisálida Elétrica', circle: 3, element: 'energia', cost: 4, enhancements: [{ name: 'Discente', cost: 6, circleReq: 4 }, { name: 'Verdadeiro', cost: 10, circleReq: 4 }] },
   'deslocamento': { name: 'Deslocamento', circle: 3, element: 'energia', cost: 4, enhancements: [{ name: 'Discente', cost: 6, circleReq: 4 }, { name: 'Verdadeiro', cost: 10, circleReq: 4 }] },
   'explosao-caotica': { name: 'Explosão Caótica', circle: 3, element: 'energia', cost: 4, resistance: 'Reflexos parcial', enhancements: [{ name: 'Discente', cost: 6, circleReq: 4 }, { name: 'Verdadeiro', cost: 10, circleReq: 4 }] },
+  'milagre-ionizante': { name: 'Milagre Ionizante', circle: 3, element: 'energia', cost: 4, resistance: 'Reflexos parcial', enhancements: [{ name: 'Discente', cost: 6, circleReq: 4 }, { name: 'Verdadeiro', cost: 10, circleReq: 4 }] },
+  'mutar': { name: 'Mutar', circle: 3, element: 'energia', cost: 4, enhancements: [{ name: 'Discente', cost: 6, circleReq: 4 }, { name: 'Verdadeiro', cost: 10, circleReq: 4 }] },
   'portal': { name: 'Portal', circle: 3, element: 'energia', cost: 4, enhancements: [{ name: 'Discente', cost: 6, circleReq: 4 }, { name: 'Verdadeiro', cost: 10, circleReq: 4 }] },
+  'salto-fantasma': { name: 'Salto Fantasma', circle: 3, element: 'energia', cost: 4, enhancements: [{ name: 'Discente', cost: 6, circleReq: 4 }, { name: 'Verdadeiro', cost: 10, circleReq: 4 }] },
+  'transfigurar-agua': { name: 'Transfigurar Água', circle: 3, element: 'energia', cost: 4, enhancements: [{ name: 'Discente', cost: 6, circleReq: 4 }, { name: 'Verdadeiro', cost: 10, circleReq: 4 }] },
+  'transfigurar-terra': { name: 'Transfigurar Terra', circle: 3, element: 'energia', cost: 4, enhancements: [{ name: 'Discente', cost: 6, circleReq: 4 }, { name: 'Verdadeiro', cost: 10, circleReq: 4 }] },
   
   // === 3º CÍRCULO - MORTE ===
+  'ancora-temporal': { name: 'Âncora Temporal', circle: 3, element: 'morte', cost: 4, enhancements: [{ name: 'Discente', cost: 6, circleReq: 4 }, { name: 'Verdadeiro', cost: 10, circleReq: 4 }] },
   'arca-das-trevas': { name: 'Arca das Trevas', circle: 3, element: 'morte', cost: 4, enhancements: [{ name: 'Discente', cost: 6, circleReq: 4 }, { name: 'Verdadeiro', cost: 10, circleReq: 4 }] },
   'barreira-de-repulsao': { name: 'Barreira de Repulsão', circle: 3, element: 'morte', cost: 4, resistance: 'Vontade parcial', enhancements: [{ name: 'Discente', cost: 6, circleReq: 4 }, { name: 'Verdadeiro', cost: 10, circleReq: 4 }] },
   'calamidade-necrotica': { name: 'Calamidade Necrótica', circle: 3, element: 'morte', cost: 4, resistance: 'Fortitude parcial', enhancements: [{ name: 'Discente', cost: 6, circleReq: 4 }, { name: 'Verdadeiro', cost: 10, circleReq: 4 }] },
   'drenar-vida': { name: 'Drenar Vida', circle: 3, element: 'morte', cost: 4, resistance: 'Fortitude parcial', enhancements: [{ name: 'Discente', cost: 6, circleReq: 4 }, { name: 'Verdadeiro', cost: 10, circleReq: 4 }] },
+  'fedor-putrido': { name: 'Fedor Pútrido', circle: 3, element: 'morte', cost: 4, resistance: 'Fortitude parcial', enhancements: [{ name: 'Discente', cost: 6, circleReq: 4 }, { name: 'Verdadeiro', cost: 10, circleReq: 4 }] },
+  'poeira-da-podridao': { name: 'Poeira da Podridão', circle: 3, element: 'morte', cost: 4, resistance: 'Fortitude parcial', enhancements: [{ name: 'Discente', cost: 6, circleReq: 4 }, { name: 'Verdadeiro', cost: 10, circleReq: 4 }] },
   'ressurgencia': { name: 'Ressurgência', circle: 3, element: 'morte', cost: 4, enhancements: [{ name: 'Discente', cost: 6, circleReq: 4 }, { name: 'Verdadeiro', cost: 10, circleReq: 4 }] },
+  'tentaculos-de-lodo': { name: 'Tentáculos de Lodo', circle: 3, element: 'morte', cost: 4, enhancements: [{ name: 'Discente', cost: 6, circleReq: 4 }, { name: 'Verdadeiro', cost: 10, circleReq: 4 }] },
+  'zerar-entropia': { name: 'Zerar Entropia', circle: 3, element: 'morte', cost: 4, enhancements: [{ name: 'Discente', cost: 6, circleReq: 4 }, { name: 'Verdadeiro', cost: 10, circleReq: 4 }] },
   
   // === 3º CÍRCULO - SANGUE ===
   'berserker': { name: 'Berserker', circle: 3, element: 'sangue', cost: 4, enhancements: [{ name: 'Discente', cost: 6, circleReq: 4 }, { name: 'Verdadeiro', cost: 10, circleReq: 4 }] },
   'corpo-fechado': { name: 'Corpo Fechado', circle: 3, element: 'sangue', cost: 4, enhancements: [{ name: 'Discente', cost: 6, circleReq: 4 }, { name: 'Verdadeiro', cost: 10, circleReq: 4 }] },
+  'ferver-sangue': { name: 'Ferver Sangue', circle: 3, element: 'sangue', cost: 4, resistance: 'Fortitude parcial', enhancements: [{ name: 'Discente', cost: 6, circleReq: 4 }, { name: 'Verdadeiro', cost: 10, circleReq: 4 }] },
   'fisico-aprimorado': { name: 'Físico Aprimorado', circle: 3, element: 'sangue', cost: 4, enhancements: [{ name: 'Discente', cost: 6, circleReq: 4 }, { name: 'Verdadeiro', cost: 10, circleReq: 4 }] },
+  'forma-monstruosa': { name: 'Forma Monstruosa', circle: 3, element: 'sangue', cost: 4, enhancements: [{ name: 'Discente', cost: 6, circleReq: 4 }, { name: 'Verdadeiro', cost: 10, circleReq: 4 }] },
   'metamorfose': { name: 'Metamorfose', circle: 3, element: 'sangue', cost: 4, enhancements: [{ name: 'Discente', cost: 6, circleReq: 4 }, { name: 'Verdadeiro', cost: 10, circleReq: 4 }] },
+  'odor-da-cacada': { name: 'Odor da Caçada', circle: 3, element: 'sangue', cost: 4, enhancements: [{ name: 'Discente', cost: 6, circleReq: 4 }, { name: 'Verdadeiro', cost: 10, circleReq: 4 }] },
+  'purgatorio': { name: 'Purgatório', circle: 3, element: 'sangue', cost: 4, enhancements: [{ name: 'Discente', cost: 6, circleReq: 4 }, { name: 'Verdadeiro', cost: 10, circleReq: 4 }] },
   'tentaculos-de-sangue': { name: 'Tentáculos de Sangue', circle: 3, element: 'sangue', cost: 4, enhancements: [{ name: 'Discente', cost: 6, circleReq: 4 }, { name: 'Verdadeiro', cost: 10, circleReq: 4 }] },
+  'vomitar-pestes': { name: 'Vomitar Pestes', circle: 3, element: 'sangue', cost: 4, enhancements: [{ name: 'Discente', cost: 6, circleReq: 4 }, { name: 'Verdadeiro', cost: 10, circleReq: 4 }] },
   
   // === 3º CÍRCULO - CONHECIMENTO ===
+  'alterar-memoria': { name: 'Alterar Memória', circle: 3, element: 'conhecimento', cost: 4, resistance: 'Vontade anula', enhancements: [{ name: 'Discente', cost: 6, circleReq: 4 }, { name: 'Verdadeiro', cost: 10, circleReq: 4 }] },
   'anular-luz': { name: 'Anular Luz', circle: 3, element: 'conhecimento', cost: 4, enhancements: [{ name: 'Discente', cost: 6, circleReq: 4 }, { name: 'Verdadeiro', cost: 10, circleReq: 4 }] },
-  // NOTA: Controle Mental foi movido para 4º Círculo - Conhecimento (seção correta abaixo)
-  'distorcer-memórias': { name: 'Distorcer Memórias', circle: 3, element: 'conhecimento', cost: 4, resistance: 'Vontade anula', enhancements: [{ name: 'Discente', cost: 6, circleReq: 4 }, { name: 'Verdadeiro', cost: 10, circleReq: 4 }] },
+  'contato-paranormal': { name: 'Contato Paranormal', circle: 3, element: 'conhecimento', cost: 4, enhancements: [{ name: 'Discente', cost: 6, circleReq: 4 }, { name: 'Verdadeiro', cost: 10, circleReq: 4 }] },
+  'distorcer-memorias': { name: 'Distorcer Memórias', circle: 3, element: 'conhecimento', cost: 4, resistance: 'Vontade anula', enhancements: [{ name: 'Discente', cost: 6, circleReq: 4 }, { name: 'Verdadeiro', cost: 10, circleReq: 4 }] },
   'interferencia-nervosa': { name: 'Interferência Nervosa', circle: 3, element: 'conhecimento', cost: 4, resistance: 'Vontade parcial', enhancements: [{ name: 'Discente', cost: 6, circleReq: 4 }, { name: 'Verdadeiro', cost: 10, circleReq: 4 }] },
+  'mergulho-mental': { name: 'Mergulho Mental', circle: 3, element: 'conhecimento', cost: 4, resistance: 'Vontade parcial', enhancements: [{ name: 'Discente', cost: 6, circleReq: 4 }, { name: 'Verdadeiro', cost: 10, circleReq: 4 }] },
+  'relembrar-fragmento': { name: 'Relembrar Fragmento', circle: 3, element: 'conhecimento', cost: 4, enhancements: [{ name: 'Discente', cost: 6, circleReq: 4 }, { name: 'Verdadeiro', cost: 10, circleReq: 4 }] },
+  'videncia': { name: 'Vidência', circle: 3, element: 'conhecimento', cost: 4, enhancements: [{ name: 'Discente', cost: 6, circleReq: 4 }, { name: 'Verdadeiro', cost: 10, circleReq: 4 }] },
   'visao-onisciente': { name: 'Visão Onisciente', circle: 3, element: 'conhecimento', cost: 4, enhancements: [{ name: 'Discente', cost: 6, circleReq: 4 }, { name: 'Verdadeiro', cost: 10, circleReq: 4 }] },
   
   // === 3º CÍRCULO - MEDO ===
+  'dissipar-ritual': { name: 'Dissipar Ritual', circle: 3, element: 'medo', cost: 4, enhancements: [{ name: 'Discente', cost: 6, circleReq: 4 }, { name: 'Verdadeiro', cost: 10, circleReq: 4 }] },
   'esfera-de-terror': { name: 'Esfera de Terror', circle: 3, element: 'medo', cost: 4, resistance: 'Vontade parcial', enhancements: [{ name: 'Discente', cost: 6, circleReq: 4 }, { name: 'Verdadeiro', cost: 10, circleReq: 4 }] },
   'pesadelo': { name: 'Pesadelo', circle: 3, element: 'medo', cost: 4, resistance: 'Vontade parcial', enhancements: [{ name: 'Discente', cost: 6, circleReq: 4 }, { name: 'Verdadeiro', cost: 10, circleReq: 4 }] },
   
+  // ============================================
+  // 4º CÍRCULO
+  // ============================================
+  
   // === 4º CÍRCULO - ENERGIA ===
+  'alterar-destino': { name: 'Alterar Destino', circle: 4, element: 'energia', cost: 6, enhancements: [{ name: 'Discente', cost: 5 }, { name: 'Verdadeiro', cost: 10 }] },
   'conjurar-elemental': { name: 'Conjurar Elemental', circle: 4, element: 'energia', cost: 6, enhancements: [{ name: 'Verdadeiro', cost: 12 }] },
+  'deflagracao-de-energia': { name: 'Deflagração de Energia', circle: 4, element: 'energia', cost: 6, resistance: 'Reflexos parcial', enhancements: [{ name: 'Discente', cost: 5 }, { name: 'Verdadeiro', cost: 10 }] },
   'fenda-dimensional': { name: 'Fenda Dimensional', circle: 4, element: 'energia', cost: 6, enhancements: [{ name: 'Verdadeiro', cost: 12 }] },
+  'teletransporte': { name: 'Teletransporte', circle: 4, element: 'energia', cost: 6, enhancements: [{ name: 'Discente', cost: 5 }, { name: 'Verdadeiro', cost: 10 }] },
   'tempestade-caotica': { name: 'Tempestade Caótica', circle: 4, element: 'energia', cost: 6, resistance: 'Reflexos parcial', enhancements: [{ name: 'Verdadeiro', cost: 12 }] },
   
   // === 4º CÍRCULO - MORTE ===
   'catarse-temporal': { name: 'Catarse Temporal', circle: 4, element: 'morte', cost: 6, enhancements: [{ name: 'Verdadeiro', cost: 12 }] },
+  'convocar-o-algoz': { name: 'Convocar o Algoz', circle: 4, element: 'morte', cost: 6, resistance: 'Vontade parcial, Fortitude parcial', enhancements: [] },
   'dedo-da-morte': { name: 'Dedo da Morte', circle: 4, element: 'morte', cost: 6, resistance: 'Fortitude parcial', enhancements: [{ name: 'Verdadeiro', cost: 12 }] },
+  'distorcao-temporal': { name: 'Distorção Temporal', circle: 4, element: 'morte', cost: 6, enhancements: [] },
+  'fim-inevitavel': { name: 'Fim Inevitável', circle: 4, element: 'morte', cost: 6, resistance: 'Fortitude parcial', enhancements: [{ name: 'Discente', cost: 5 }, { name: 'Verdadeiro', cost: 10 }] },
   'hecatombe': { name: 'Hecatombe', circle: 4, element: 'morte', cost: 6, resistance: 'Fortitude parcial', enhancements: [{ name: 'Verdadeiro', cost: 12 }] },
+  'singularidade-temporal': { name: 'Singularidade Temporal', circle: 4, element: 'morte', cost: 6, enhancements: [{ name: 'Discente', cost: 5 }, { name: 'Verdadeiro', cost: 10 }] },
   
   // === 4º CÍRCULO - SANGUE ===
   'avatar-do-sangue': { name: 'Avatar do Sangue', circle: 4, element: 'sangue', cost: 6, enhancements: [{ name: 'Verdadeiro', cost: 12 }] },
+  'capturar-o-coracao': { name: 'Capturar o Coração', circle: 4, element: 'sangue', cost: 6, resistance: 'Vontade parcial', enhancements: [] },
   'forma-aberrante': { name: 'Forma Aberrante', circle: 4, element: 'sangue', cost: 6, enhancements: [{ name: 'Verdadeiro', cost: 12 }] },
-  'regeneracao-absoluta': { name: 'Regeneração Absoluta', circle: 4, element: 'sangue', cost: 6, enhancements: [{ name: 'Verdadeiro', cost: 12 }] },
+  'involucro-de-carne': { name: 'Invólucro de Carne', circle: 4, element: 'sangue', cost: 6, enhancements: [] },
+  'martirio-de-sangue': { name: 'Martírio de Sangue', circle: 4, element: 'sangue', cost: 6, enhancements: [{ name: 'Discente', cost: 5 }, { name: 'Verdadeiro', cost: 10 }] },
+  'vinculo-de-sangue': { name: 'Vínculo de Sangue', circle: 4, element: 'sangue', cost: 6, resistance: 'Fortitude anula', enhancements: [] },
   
   // === 4º CÍRCULO - CONHECIMENTO ===
   'controle-mental': { name: 'Controle Mental', circle: 4, element: 'conhecimento', cost: 6, resistance: 'Vontade parcial', enhancements: [{ name: 'Discente', cost: 5 }, { name: 'Verdadeiro', cost: 10 }] },
   'despertar-consciencia': { name: 'Despertar Consciência', circle: 4, element: 'conhecimento', cost: 6, enhancements: [{ name: 'Verdadeiro', cost: 12 }] },
+  'inexistir': { name: 'Inexistir', circle: 4, element: 'conhecimento', cost: 6, resistance: 'Vontade parcial', enhancements: [{ name: 'Discente', cost: 5 }, { name: 'Verdadeiro', cost: 10 }] },
   'possessao': { name: 'Possessão', circle: 4, element: 'conhecimento', cost: 6, resistance: 'Vontade anula', enhancements: [] },
+  'pronunciar-sigilo': { name: 'Pronunciar Sigilo', circle: 4, element: 'conhecimento', cost: 6, resistance: 'Vontade parcial', enhancements: [{ name: 'Discente', cost: 5 }, { name: 'Verdadeiro', cost: 10 }] },
   'zona-morta': { name: 'Zona Morta', circle: 4, element: 'conhecimento', cost: 6, resistance: 'Vontade parcial', enhancements: [{ name: 'Verdadeiro', cost: 12 }] },
   
   // === 4º CÍRCULO - MEDO ===
   'apocalipse': { name: 'Apocalipse', circle: 4, element: 'medo', cost: 6, resistance: 'Vontade parcial', enhancements: [{ name: 'Verdadeiro', cost: 12 }] },
+  'canalizar-o-medo': { name: 'Canalizar o Medo', circle: 4, element: 'medo', cost: 6, enhancements: [{ name: 'Discente', cost: 5 }, { name: 'Verdadeiro', cost: 10 }] },
+  'conhecendo-o-medo': { name: 'Conhecendo o Medo', circle: 4, element: 'medo', cost: 6, enhancements: [{ name: 'Discente', cost: 5 }, { name: 'Verdadeiro', cost: 10 }] },
+  'lamina-do-medo': { name: 'Lâmina do Medo', circle: 4, element: 'medo', cost: 6, enhancements: [{ name: 'Discente', cost: 5 }, { name: 'Verdadeiro', cost: 10 }] },
   'manifestar-medo': { name: 'Manifestar Medo', circle: 4, element: 'medo', cost: 6, resistance: 'Vontade parcial', enhancements: [{ name: 'Verdadeiro', cost: 12 }] },
+  'medo-tangivel': { name: 'Medo Tangível', circle: 4, element: 'medo', cost: 6, enhancements: [{ name: 'Discente', cost: 5 }, { name: 'Verdadeiro', cost: 10 }] },
+  'presenca-do-medo': { name: 'Presença do Medo', circle: 4, element: 'medo', cost: 6, resistance: 'Vontade parcial', enhancements: [{ name: 'Discente', cost: 5 }, { name: 'Verdadeiro', cost: 10 }] },
 };
 
 /**
