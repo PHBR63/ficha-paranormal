@@ -93,6 +93,8 @@ interface MobileCharacterSheetProps {
   onEditStats: () => void;
   onOpenSkills?: () => void;
   onOpenInventory?: () => void;
+  // Callback para atualizar dados após correções automáticas
+  onRefetch?: () => Promise<void> | void;
 }
 
 // Seção colapsável
@@ -504,6 +506,7 @@ export function MobileCharacterSheet({
   onOpenRest,
   onLevelUp,
   onEditStats,
+  onRefetch,
 }: MobileCharacterSheetProps) {
   const [activeTab, setActiveTab] = useState<MobileTab>('overview');
   const [powerModalOpen, setPowerModalOpen] = useState(false);
@@ -545,7 +548,7 @@ export function MobileCharacterSheet({
   // Hook de autenticação para obter userId
   const { user } = useAuth();
 
-  // Hook de auditoria automática
+  // Hook de auditoria automática com callback para atualizar UI
   const {
     auditResult,
     isAuditing,
@@ -555,7 +558,10 @@ export function MobileCharacterSheet({
     runAudit,
     applyAutoFixes,
     dismissIssue,
-  } = useCharacterAudit(characterForAudit, user?.id || null, { autoRun: true });
+  } = useCharacterAudit(characterForAudit, user?.id || null, { 
+    autoRun: true,
+    onFixComplete: onRefetch, // Atualiza dados após correções
+  });
 
   // Calcular bônus de defesa de origem, habilidades de classe e poderes gerais
   const defenseBonuses = useDefenseBonuses({
