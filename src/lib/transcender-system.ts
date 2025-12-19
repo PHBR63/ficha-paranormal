@@ -569,3 +569,101 @@ export async function getTranscenderStatus(
   
   return { opportunities, usedCount, availableCount };
 }
+
+/**
+ * Sincroniza poderes paranormais legados com a tabela character_power_choices
+ * Cria registros retroativos para poderes que existem no personagem mas não têm registro
+ * 
+ * @param characterId - ID do personagem
+ * @param userId - ID do usuário
+ * @param existingPowers - Lista de poderes paranormais já no personagem
+ * @param currentNex - NEX atual do personagem
+ * @returns Resultado da sincronização
+ */
+export async function syncLegacyPowers(
+  characterId: string,
+  userId: string,
+  existingPowers: Array<{ id: string; name: string }>,
+  currentNex: number
+): Promise<{ 
+  synced: number; 
+  alreadySynced: number;
+  errors: string[];
+}> {
+  const errors: string[] = [];
+  let synced = 0;
+  let alreadySynced = 0;
+  
+  if (existingPowers.length === 0) {
+    return { synced: 0, alreadySynced: 0, errors: [] };
+  }
+  
+  // Buscar escolhas existentes
+  const existingChoices = await getCharacterPowerChoices(characterId);
+  const resolvedChoices = existingChoices.filter(c => 
+    c.choice_type === 'transcender' && c.status === 'resolved'
+  );
+  
+  // Mapear poderes já registrados
+  const registeredPowerIds = new Set(
+    resolvedChoices.map(c => (c.resolution as any)?.powerId).filter(Boolean)
+  );
+  
+  // Marcos de escolha disponíveis
+  const milestones = getPowerChoiceMilestones().filter(m => m <= currentNex);
+  
+  // Para cada poder não registrado, criar um registro retroativo
+  for (let i = 0; i < existingPowers.length; i++) {
+    const power = existingPowers[i];
+    
+    // Pular se já está registrado
+    if (registeredPowerIds.has(power.id)) {
+      alreadySynced++;
+      continue;
+    }
+    
+    // Encontrar um marco não usado
+    const usedMilestones = new Set(resolvedChoices.map(c => c.nex));
+    const availableMilestone = milestones.find(m => !usedMilestones.has(m));
+    
+    if (!availableMilestone) {
+      errors.push(`Sem marco disponível para sincronizar: ${power.name}`);
+      continue;
+    }
+    
+    // Calcular custo de sanidade para este marco
+    const sanityCost = calculateTranscenderSanityCost('Ocultista', availableMilestone - 5, availableMilestone);
+    
+    // Criar registro retroativo
+    const resolution = {
+      picked: 'transcender',
+      powerId: power.id,
+      powerName: power.name,
+      syncedFromLegacy: true,
+    };
+    
+    const { error } = await supabase
+      .from('character_power_choices')
+      .insert({
+        character_id: characterId,
+        user_id: userId,
+        nex: availableMilestone,
+        choice_type: 'transcender',
+        status: 'resolved',
+        resolution,
+        sanity_delta: -sanityCost,
+        resolved_at: new Date().toISOString(),
+      });
+    
+    if (error) {
+      console.error('Erro ao sincronizar poder legado:', error);
+      errors.push(`Erro ao sincronizar ${power.name}: ${error.message}`);
+    } else {
+      synced++;
+      // Adicionar ao set para evitar usar o mesmo marco duas vezes
+      usedMilestones.add(availableMilestone);
+    }
+  }
+  
+  return { synced, alreadySynced, errors };
+}

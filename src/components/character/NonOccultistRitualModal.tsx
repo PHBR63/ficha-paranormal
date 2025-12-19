@@ -352,7 +352,7 @@ export function NonOccultistRitualModal({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
+      <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-paranormal" />
@@ -427,9 +427,10 @@ export function NonOccultistRitualModal({
           </div>
         </div>
 
-        {/* Lista de rituais */}
-        <ScrollArea className="flex-1 min-h-[300px] pr-4">
-          <div className="space-y-4">
+        {/* Lista de rituais com scroll funcional */}
+        <div className="flex-1 min-h-0 overflow-hidden">
+          <ScrollArea className="h-full max-h-[calc(85vh-360px)]">
+            <div className="space-y-4 pr-4">
             {Object.entries(ritualsByCircle)
               .sort(([a], [b]) => Number(a) - Number(b))
               .map(([circle, rituals]) => (
@@ -458,8 +459,9 @@ export function NonOccultistRitualModal({
                 <p className="text-xs mt-1">Tente ajustar os filtros</p>
               </div>
             )}
-          </div>
-        </ScrollArea>
+            </div>
+          </ScrollArea>
+        </div>
 
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={onClose} disabled={isLoading}>
