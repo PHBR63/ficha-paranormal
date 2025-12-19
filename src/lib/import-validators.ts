@@ -6,13 +6,14 @@
 import type { CatalogWeapon, ALL_WEAPONS } from './weapons-catalog';
 import type { CatalogArmor, ALL_ARMORS } from './armor-catalog';
 import type { CatalogItem, ALL_ITEMS } from './items-catalog';
-import type { Ritual, ALL_RITUALS } from './rituals-data';
+import type { Ritual } from './rituals/legacy-exports';
+import { ALL_RITUALS } from './rituals/legacy-exports';
 
 // Re-export dos catálogos para uso na verificação de duplicatas
 export { ALL_WEAPONS } from './weapons-catalog';
 export { ALL_ARMORS } from './armor-catalog';
 export { ALL_ITEMS } from './items-catalog';
-export { ALL_RITUALS } from './rituals-data';
+export { ALL_RITUALS } from './rituals/legacy-exports';
 
 // Interface para resultado de validação
 export interface ValidationResult {

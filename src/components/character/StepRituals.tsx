@@ -34,7 +34,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { CharacterFormData } from '@/pages/CharacterCreate';
-import { ALL_RITUALS, Ritual, getMaxRitualCircle, getRitualCount } from '@/lib/rituals-data';
+import { ALL_RITUALS, Ritual, getMaxRitualCircle, getRitualCount } from '@/lib/rituals/legacy-exports';
 import { CLASSES } from '@/lib/character-data';
 import { RuleBookTip } from './RuleBookTip';
 import { getRulebookContent } from '@/lib/rulebook-content';

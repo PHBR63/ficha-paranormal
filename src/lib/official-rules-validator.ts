@@ -9,7 +9,7 @@
  * - Suplemento Sobrevivendo ao Horror
  */
 
-import { getMaxRitualCircle, getRitualCount, ALL_RITUALS } from './rituals-data';
+import { getMaxRitualCircle, getRitualCount, ALL_RITUALS } from './rituals/legacy-exports';
 import { 
   CONDITIONS, 
   CONDITION_CATEGORIES, 

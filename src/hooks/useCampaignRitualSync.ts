@@ -5,7 +5,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Ritual } from '@/lib/rituals-data';
+import { Ritual } from '@/lib/rituals/legacy-exports';
 import { useToast } from '@/hooks/use-toast';
 
 // Interface para conjuração de ritual na campanha

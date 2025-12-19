@@ -10,7 +10,7 @@ import { getSkillBonus } from '@/lib/character-data';
 import { getAttackModifierFromConditions } from '@/lib/conditions';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { WeaponBuff } from '@/hooks/useWeaponBuffs';
-import { formatDamageFormula } from '@/lib/ritual-effects';
+import { formatDamageFormula } from '@/lib/rituals/legacy-exports';
 
 interface WeaponData {
   id: string;

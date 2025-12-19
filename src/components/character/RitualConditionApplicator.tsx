@@ -17,7 +17,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { CONDITIONS } from '@/lib/conditions';
-import { RitualEffect, ResistanceType, ResistanceEffect } from '@/lib/ritual-effects';
+import { RitualEffect, ResistanceType, ResistanceEffect } from '@/lib/rituals/legacy-exports';
 import { ActiveCondition } from './ConditionManager';
 
 // Interface para condição pendente de aplicação

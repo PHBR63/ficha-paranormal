@@ -44,7 +44,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ORIGINS, CLASSES, getTrackById } from '@/lib/character-data';
-import { ALL_RITUALS } from '@/lib/rituals-data';
+import { ALL_RITUALS } from '@/lib/rituals/legacy-exports';
 import { ALL_CLASS_ABILITIES } from '@/lib/class-abilities';
 import { PARANORMAL_POWERS, ParanormalPower, ParanormalElement, SavedParanormalPower, getPowerById } from '@/lib/paranormal-powers';
 import { GENERAL_POWERS, getGeneralPowerById } from '@/lib/general-powers';
@@ -94,8 +94,7 @@ import { ResistanceCheckModal, ResistanceCheckResult } from '@/components/charac
 import { RitualConditionModal, PendingCondition, extractConditionsFromEffect } from '@/components/character/RitualConditionApplicator';
 import { RitualEffectWizard } from '@/components/character/RitualEffectWizard';
 import { RitualCastHistory, RitualCastRecord } from '@/components/character/RitualCastHistory';
-import { Ritual } from '@/lib/rituals-data';
-import { getActiveRitualEffect, ritualDealsDamage, RitualEffect, SustainConfig } from '@/lib/ritual-effects';
+import { Ritual, getActiveRitualEffect, ritualDealsDamage, RitualEffect, SustainConfig } from '@/lib/rituals/legacy-exports';
 
 // Componentes existentes que ainda usamos
 import { CharacterSheetHelp } from '@/components/character/CharacterSheetHelp';

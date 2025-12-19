@@ -47,7 +47,7 @@ import {
   getTrackById,
   getAvailableTrackAbilities,
 } from '@/lib/character-data';
-import { getMaxRitualCircle, getRitualCount } from '@/lib/rituals-data';
+import { getMaxRitualCircle, getRitualCount } from '@/lib/rituals/legacy-exports';
 import {
   ParanormalPower,
   ParanormalElement,

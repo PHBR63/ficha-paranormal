@@ -15,7 +15,7 @@ import {
 import type { UnifiedRitual } from '@/lib/rituals/types';
 
 // Tipo legado mantido para compatibilidade
-import type { Ritual as LegacyRitual, RitualEnhancement } from '@/lib/rituals-data';
+import type { Ritual as LegacyRitual, RitualEnhancement } from '@/lib/rituals/legacy-exports';
 
 // Interface para resultado da validação de aprimoramento
 export interface EnhancementValidation {

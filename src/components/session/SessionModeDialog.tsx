@@ -36,9 +36,8 @@ import { SkillRollsPanel } from './SkillRollsPanel';
 import { ConditionManagerPanel, type ConditionWithDuration } from './ConditionManagerPanel';
 import { ConditionList } from '@/components/ui/condition-badge';
 import { processStartOfTurn } from '@/lib/game-engine';
-import { getActiveRitualEffect } from '@/lib/ritual-effects';
+import { getActiveRitualEffect, Ritual } from '@/lib/rituals/legacy-exports';
 import type { ActiveCondition } from '@/hooks/useAutoConditions';
-import type { Ritual } from '@/lib/rituals-data';
 import type { TurnPEState } from '@/hooks/useRitualValidation';
 import type { WeaponBuff } from '@/hooks/useWeaponBuffs';
 

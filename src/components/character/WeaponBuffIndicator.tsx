@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Flame, Skull, Brain, Zap, Ghost, X, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { WeaponBuff, ELEMENT_BUFF_COLORS } from '@/hooks/useWeaponBuffs';
-import { formatDamageFormula } from '@/lib/ritual-effects';
+import { formatDamageFormula } from '@/lib/rituals/legacy-exports';
 import { Button } from '@/components/ui/button';
 import {
   Tooltip,

@@ -22,7 +22,7 @@ import {
   ELEMENT_COLORS,
   ELEMENT_BG_COLORS,
 } from '@/lib/paranormal-powers';
-import { ALL_RITUALS } from '@/lib/rituals-data';
+import { ALL_RITUALS } from '@/lib/rituals/legacy-exports';
 import { SKILLS } from '@/lib/character-data';
 
 // Ícones por elemento

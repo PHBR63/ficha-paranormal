@@ -11,8 +11,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { getActiveRitualEffectUnified } from '@/lib/rituals/ritual-adapter';
 import { getRitualById, getEffectiveLevel, getRitualEffect } from '@/lib/rituals/ritual-registry';
 import type { UnifiedRitual, RitualMechanics } from '@/lib/rituals/types';
-import type { Ritual as LegacyRitual } from '@/lib/rituals-data';
-import type { RitualEffect, SustainConfig } from '@/lib/ritual-effects';
+import type { Ritual as LegacyRitual, RitualEffect, SustainConfig } from '@/lib/rituals/legacy-exports';
 import { Json } from '@/integrations/supabase/types';
 
 // Interface para ritual sustentado (do banco)

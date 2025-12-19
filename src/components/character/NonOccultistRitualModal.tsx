@@ -33,7 +33,7 @@ import {
   Circle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { ALL_RITUALS, Ritual } from '@/lib/rituals-data';
+import { ALL_RITUALS, Ritual } from '@/lib/rituals/legacy-exports';
 
 // Configuração visual dos elementos (5 elementos oficiais)
 const ELEMENT_CONFIG = {

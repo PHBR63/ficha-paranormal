@@ -9,9 +9,8 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Sparkles, Zap, AlertTriangle, Droplets, Skull, Moon, Sun, Clock, Target, Timer, Swords } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Ritual } from '@/lib/rituals-data';
+import { Ritual, getActiveRitualEffect } from '@/lib/rituals/legacy-exports';
 import { useRitualValidation, TurnPEState } from '@/hooks/useRitualValidation';
-import { getActiveRitualEffect } from '@/lib/ritual-effects';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export type BuffDuration = 'cena' | 'rodadas' | 'sustentado';

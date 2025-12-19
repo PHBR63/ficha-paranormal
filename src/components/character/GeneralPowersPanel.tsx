@@ -49,7 +49,7 @@ import {
   getGeneralPowerById,
 } from '@/lib/general-powers';
 import { NonOccultistRitualModal, RitualSource } from './NonOccultistRitualModal';
-import { ALL_RITUALS } from '@/lib/rituals-data';
+import { ALL_RITUALS } from '@/lib/rituals/legacy-exports';
 
 // Ícones por categoria
 const CATEGORY_ICONS: Record<GeneralPower['category'], typeof Sword> = {

@@ -7,8 +7,7 @@
  */
 
 import type { UnifiedRitual, RitualMechanics } from './types';
-import type { Ritual as LegacyRitual, RitualEnhancement as LegacyEnhancement } from '@/lib/rituals-data';
-import type { RitualEffect as LegacyRitualEffect } from '@/lib/ritual-effects';
+import type { Ritual as LegacyRitual, RitualEnhancement as LegacyEnhancement, RitualEffect as LegacyRitualEffect } from './legacy-exports';
 import { getRitualById, getEffectiveLevel, getRitualEffect } from './ritual-registry';
 
 // ========================================

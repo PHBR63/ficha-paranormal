@@ -42,9 +42,9 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Ritual } from '@/lib/rituals-data';
 import { getElementConfig } from '@/lib/element-config';
 import { 
+  Ritual,
   RitualEffect, 
   DamageFormula,
   AnyDamageType,
@@ -52,7 +52,7 @@ import {
   ResistanceEffect,
   getActiveRitualEffect,
   formatDamageFormula,
-} from '@/lib/ritual-effects';
+} from '@/lib/rituals/legacy-exports';
 import { CONDITIONS } from '@/lib/conditions';
 import { ActiveCondition } from './ConditionManager';
 import { WeaponBuff } from '@/hooks/useWeaponBuffs';
@@ -101,7 +101,7 @@ interface RitualEffectWizardProps {
   onApplyConditions?: (conditions: ActiveCondition[]) => void;
   onAddWeaponBuff?: (ritual: Ritual, enhancements: string[]) => void;
   // Callback para ativar ritual sustentado
-  onActivateSustained?: (ritual: Ritual, enhancements: string[], sustain: import('@/lib/ritual-effects').SustainConfig) => void;
+  onActivateSustained?: (ritual: Ritual, enhancements: string[], sustain: import('@/lib/rituals/legacy-exports').SustainConfig) => void;
   onComplete?: () => void;
 }
 
