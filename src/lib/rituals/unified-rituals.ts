@@ -362,6 +362,40 @@ const BLOOD_FIRST_CIRCLE: UnifiedRitual[] = [
 
 const DEATH_FIRST_CIRCLE: UnifiedRitual[] = [
   {
+    id: 'amaldicoar-arma-morte',
+    name: 'Amaldiçoar Arma (Morte)',
+    circle: 1,
+    element: 'morte',
+    execution: 'Padrão',
+    range: 'Toque',
+    target: '1 arma corpo a corpo ou pacote de munição',
+    duration: 'Cena',
+    description: 'Você imbui a arma ou munições com o elemento Morte, fazendo com que causem +1d6 de dano do tipo do elemento.',
+    cost: 1,
+    isWeaponBuff: true,
+    effects: {
+      base: {
+        kind: 'buff',
+        weaponEffect: { damageBonus: '1d6', damageType: 'morte' },
+        summary: 'Arma causa +1d6 de dano de Morte.',
+      },
+      discente: {
+        kind: 'buff',
+        weaponEffect: { damageBonus: '2d6', damageType: 'morte' },
+        summary: 'Arma causa +2d6 de dano de Morte.',
+      },
+      verdadeiro: {
+        kind: 'buff',
+        weaponEffect: { damageBonus: '4d6', damageType: 'morte' },
+        summary: 'Arma causa +4d6 de dano de Morte.',
+      },
+    },
+    enhancements: [
+      { name: 'Discente', cost: 2, description: 'Muda o bônus de dano para +2d6.', circleReq: 2 },
+      { name: 'Verdadeiro', cost: 5, description: 'Muda o bônus de dano para +4d6.', circleReq: 3, affinityReq: true },
+    ],
+  },
+  {
     id: 'apagar-as-luzes',
     name: 'Apagar as Luzes',
     circle: 1,
@@ -1025,6 +1059,40 @@ const KNOWLEDGE_FIRST_CIRCLE: UnifiedRitual[] = [
 // ========================================
 
 const FEAR_FIRST_CIRCLE: UnifiedRitual[] = [
+  {
+    id: 'amaldicoar-arma-medo',
+    name: 'Amaldiçoar Arma (Medo)',
+    circle: 1,
+    element: 'medo',
+    execution: 'Padrão',
+    range: 'Toque',
+    target: '1 arma corpo a corpo ou pacote de munição',
+    duration: 'Cena',
+    description: 'Você imbui a arma ou munições com o elemento Medo, fazendo com que causem +1d6 de dano do tipo do elemento.',
+    cost: 1,
+    isWeaponBuff: true,
+    effects: {
+      base: {
+        kind: 'buff',
+        weaponEffect: { damageBonus: '1d6', damageType: 'medo' },
+        summary: 'Arma causa +1d6 de dano de Medo.',
+      },
+      discente: {
+        kind: 'buff',
+        weaponEffect: { damageBonus: '2d6', damageType: 'medo' },
+        summary: 'Arma causa +2d6 de dano de Medo.',
+      },
+      verdadeiro: {
+        kind: 'buff',
+        weaponEffect: { damageBonus: '4d6', damageType: 'medo' },
+        summary: 'Arma causa +4d6 de dano de Medo.',
+      },
+    },
+    enhancements: [
+      { name: 'Discente', cost: 2, description: 'Muda o bônus de dano para +2d6.', circleReq: 2 },
+      { name: 'Verdadeiro', cost: 5, description: 'Muda o bônus de dano para +4d6.', circleReq: 3, affinityReq: true },
+    ],
+  },
   {
     id: 'cineraria',
     name: 'Cinerária',
