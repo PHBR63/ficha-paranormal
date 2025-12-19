@@ -2,7 +2,8 @@
  * RitualCastModal - Modal de confirmação para conjurar rituais
  * Permite escolher aprimoramentos e mostra custo total em PE
  * Inclui validação de requisitos de círculo/afinidade e limite de PE por turno
- * Fase 2: Sistema completo de validação
+ * 
+ * ATUALIZADO: Suporta tanto o sistema unificado quanto o legado
  */
 
 import { useState, useMemo } from 'react';
@@ -29,6 +30,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Ritual } from '@/lib/rituals-data';
+import type { UnifiedRitual } from '@/lib/rituals/types';
 import { getElementConfig } from '@/lib/element-config';
 import { useRitualValidation, TurnPEState } from '@/hooks/useRitualValidation';
 
@@ -61,17 +63,20 @@ function triggerElementParticles(elementHex: string, elementHexLight: string) {
   }, 150);
 }
 
+// Tipo que suporta tanto rituais legados quanto unificados
+type RitualInput = Ritual | UnifiedRitual;
+
 interface RitualCastModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  ritual: Ritual | null;
+  ritual: RitualInput | null;
   peCurrent: number;
   peMax: number;
   isNonOccultist?: boolean;
   nex?: number;
   elementalAffinity?: string | null;
   turnPEState?: TurnPEState;
-  onConfirm: (ritual: Ritual, peCost: number, enhancements: string[]) => void;
+  onConfirm: (ritual: RitualInput, peCost: number, enhancements: string[]) => void;
 }
 
 export function RitualCastModal({
@@ -245,7 +250,11 @@ export function RitualCastModal({
               {ritual.resistance && (
                 <div className="flex items-center gap-1.5 text-muted-foreground">
                   <Shield className="w-3 h-3" />
-                  <span>{ritual.resistance}</span>
+                  <span>
+                    {typeof ritual.resistance === 'string' 
+                      ? ritual.resistance 
+                      : `${ritual.resistance.type?.charAt(0).toUpperCase()}${ritual.resistance.type?.slice(1) || ''}`}
+                  </span>
                 </div>
               )}
               {ritual.target && (

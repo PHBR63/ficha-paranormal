@@ -1,10 +1,14 @@
 /**
  * useRitualCombatBonuses - Hook para extrair bônus de combate de rituais sustentados
  * Processa automaticamente attackModifier, damageModifier, weaponEffect de rituais ativos
+ * 
+ * ATUALIZADO: Agora usa o sistema unificado de rituais
  */
 
 import { useMemo } from 'react';
-import { getActiveRitualEffect, RitualEffect } from '@/lib/ritual-effects';
+import { getActiveRitualEffectUnified } from '@/lib/rituals/ritual-adapter';
+import { getRitualEffect, getEffectiveLevel } from '@/lib/rituals/ritual-registry';
+import type { RitualMechanics } from '@/lib/rituals/types';
 
 // Interface mínima para ritual sustentado (compatível com ambos os tipos)
 export interface SustainedRitualInput {
@@ -64,15 +68,82 @@ function formatRitualName(ritualId: string): string {
 }
 
 /**
- * Hook principal para extrair bônus de combate de rituais sustentados
- * @param sustainedRituals Lista de rituais sustentados ativos
- * @returns Resumo consolidado de bônus de combate
+ * Extrai bônus de combate das mecânicas unificadas
  */
-// Função auxiliar para determinar nível baseado nos enhancements
-function getEffectLevel(selectedEnhancements: string[]): 'base' | 'discente' | 'verdadeiro' {
-  if (selectedEnhancements.includes('Verdadeiro')) return 'verdadeiro';
-  if (selectedEnhancements.includes('Discente')) return 'discente';
-  return 'base';
+function extractBonusFromMechanics(
+  mechanics: RitualMechanics,
+  ritualId: string,
+  ritualName: string,
+  level: 'base' | 'discente' | 'verdadeiro'
+): RitualCombatBonus | null {
+  const bonus: RitualCombatBonus = {
+    source: ritualName,
+    ritualId,
+    level,
+  };
+
+  // Extrai modificadores numéricos
+  if (mechanics.attackBonus !== undefined) {
+    bonus.attackModifier = mechanics.attackBonus;
+  }
+
+  if (mechanics.damageBonus !== undefined) {
+    bonus.damageModifier = typeof mechanics.damageBonus === 'number' 
+      ? mechanics.damageBonus 
+      : 0;
+  }
+
+  if (mechanics.defenseBonus !== undefined) {
+    bonus.defenseModifier = mechanics.defenseBonus;
+  }
+
+  // Extrai weaponEffect
+  if (mechanics.weaponEffect) {
+    const we = mechanics.weaponEffect;
+    bonus.weaponEffect = {
+      damageType: we.damageType,
+      special: we.special,
+    };
+    
+    // Parseia damageBonus se for string de dado
+    if (we.damageBonus && typeof we.damageBonus === 'string') {
+      const diceMatch = we.damageBonus.match(/(\d+)d(\d+)/);
+      if (diceMatch) {
+        bonus.weaponEffect.extraDice = {
+          count: parseInt(diceMatch[1]),
+          type: parseInt(diceMatch[2]),
+        };
+      }
+    }
+    
+    // Também extrai attackBonus do weaponEffect
+    if (we.attackBonus) {
+      bonus.attackModifier = (bonus.attackModifier || 0) + we.attackBonus;
+    }
+  }
+
+  // Extrai tempHP
+  if (mechanics.tempHP) {
+    // Para UI, mostra o valor médio esperado
+    const avgDice = (mechanics.tempHP.diceCount * (mechanics.tempHP.diceType + 1)) / 2;
+    bonus.tempHP = Math.floor(avgDice + (mechanics.tempHP.bonus || 0));
+  }
+
+  // Extrai damageReduction
+  if (mechanics.damageReduction) {
+    bonus.damageReduction = {
+      types: mechanics.damageReduction.types,
+      amount: mechanics.damageReduction.amount,
+    };
+  }
+
+  // Só retorna se tem algum efeito de combate
+  if (bonus.attackModifier || bonus.damageModifier || bonus.defenseModifier ||
+      bonus.weaponEffect || bonus.tempHP || bonus.damageReduction) {
+    return bonus;
+  }
+
+  return null;
 }
 
 /**
@@ -88,11 +159,25 @@ export function useRitualCombatBonuses(
     
     // Processa cada ritual sustentado
     for (const ritual of sustainedRituals) {
-      // Usa selectedEnhancements do ritual
-      const effect = getActiveRitualEffect(ritual.ritualId, ritual.selectedEnhancements || []);
-      if (!effect) continue;
+      const level = getEffectiveLevel(ritual.selectedEnhancements || []);
       
-      const level = getEffectLevel(ritual.selectedEnhancements || []);
+      // Primeiro tenta o sistema unificado
+      const mechanics = getRitualEffect(ritual.ritualId, level);
+      
+      if (mechanics) {
+        const bonus = extractBonusFromMechanics(
+          mechanics,
+          ritual.ritualId,
+          ritual.ritualName || formatRitualName(ritual.ritualId),
+          level
+        );
+        if (bonus) bonuses.push(bonus);
+        continue;
+      }
+      
+      // Fallback para sistema legado
+      const legacyEffect = getActiveRitualEffectUnified(ritual.ritualId, ritual.selectedEnhancements || []);
+      if (!legacyEffect) continue;
       
       const bonus: RitualCombatBonus = {
         source: ritual.ritualName || formatRitualName(ritual.ritualId),
@@ -100,47 +185,44 @@ export function useRitualCombatBonuses(
         level,
       };
       
-      // Extrai modificadores numéricos
-      if (effect.attackModifier) {
-        bonus.attackModifier = effect.attackModifier;
+      // Extrai modificadores numéricos do efeito legado
+      if (legacyEffect.attackModifier) {
+        bonus.attackModifier = legacyEffect.attackModifier;
       }
       
-      if (effect.damageModifier) {
-        bonus.damageModifier = effect.damageModifier;
+      if (legacyEffect.damageModifier) {
+        bonus.damageModifier = legacyEffect.damageModifier;
       }
       
-      if (effect.defenseModifier) {
-        bonus.defenseModifier = effect.defenseModifier;
+      if (legacyEffect.defenseModifier) {
+        bonus.defenseModifier = legacyEffect.defenseModifier;
       }
       
       // Extrai weaponEffect
-      if (effect.weaponEffect) {
+      if (legacyEffect.weaponEffect) {
         bonus.weaponEffect = {
-          damageType: effect.weaponEffect.damageType,
-          extraDice: effect.weaponEffect.extraDice,
-          damageBonus: effect.weaponEffect.damageBonus,
-          special: effect.weaponEffect.special,
+          damageType: legacyEffect.weaponEffect.damageType,
+          extraDice: legacyEffect.weaponEffect.extraDice,
+          damageBonus: legacyEffect.weaponEffect.damageBonus,
+          special: legacyEffect.weaponEffect.special,
         };
       }
       
       // Extrai tempHP
-      if (effect.tempHP) {
-        // Se tempHP tem bonus fixo, usa direto
-        // Se tem dados, calcula o máximo esperado
-        if (effect.tempHP.bonus && effect.tempHP.diceCount === 0) {
-          bonus.tempHP = effect.tempHP.bonus;
-        } else if (effect.tempHP.diceCount && effect.tempHP.diceType) {
-          // Para UI, mostra o valor médio esperado
-          const avgDice = (effect.tempHP.diceCount * (effect.tempHP.diceType + 1)) / 2;
-          bonus.tempHP = Math.floor(avgDice + (effect.tempHP.bonus || 0));
+      if (legacyEffect.tempHP) {
+        if (legacyEffect.tempHP.bonus && legacyEffect.tempHP.diceCount === 0) {
+          bonus.tempHP = legacyEffect.tempHP.bonus;
+        } else if (legacyEffect.tempHP.diceCount && legacyEffect.tempHP.diceType) {
+          const avgDice = (legacyEffect.tempHP.diceCount * (legacyEffect.tempHP.diceType + 1)) / 2;
+          bonus.tempHP = Math.floor(avgDice + (legacyEffect.tempHP.bonus || 0));
         }
       }
       
       // Extrai damageReduction
-      if (effect.damageReduction) {
+      if (legacyEffect.damageReduction) {
         bonus.damageReduction = {
-          types: effect.damageReduction.types,
-          amount: effect.damageReduction.amount,
+          types: legacyEffect.damageReduction.types as string[],
+          amount: legacyEffect.damageReduction.amount,
         };
       }
       
@@ -235,7 +317,6 @@ export function useRitualBonusesForCombat(
       if (bonus.damageModifier) {
         damageBonus = bonus.damageModifier;
       }
-      // weaponEffect com extraDice será processado separadamente no CombatRollModal
       
       return {
         id: `ritual-${bonus.ritualId}`,
