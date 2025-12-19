@@ -135,7 +135,7 @@ const OFFICIAL_RITUALS_DATA: Record<string, OfficialRitualData> = {
   'corpo-adaptado': { name: 'Corpo Adaptado', circle: 1, element: 'sangue', cost: 1, enhancements: [{ name: 'Discente', cost: 2, circleReq: 2 }, { name: 'Verdadeiro', cost: 5, circleReq: 3 }] },
   'esfolar': { name: 'Esfolar', circle: 1, element: 'sangue', cost: 1, resistance: 'Reflexos parcial', enhancements: [{ name: 'Discente', cost: 2, circleReq: 2 }, { name: 'Verdadeiro', cost: 5, circleReq: 3 }] },
   'fortalecimento-sensorial': { name: 'Fortalecimento Sensorial', circle: 1, element: 'sangue', cost: 1, enhancements: [{ name: 'Discente', cost: 2, circleReq: 2 }, { name: 'Verdadeiro', cost: 5, circleReq: 4 }] },
-  'odio-incontrolavel': { name: 'Ódio Incontrolável', circle: 1, element: 'sangue', cost: 1, resistance: 'Vontade anula', enhancements: [{ name: 'Discente', cost: 2, circleReq: 2 }, { name: 'Verdadeiro', cost: 5, circleReq: 3 }] },
+  'odio-incontrolavel': { name: 'Ódio Incontrolável', circle: 1, element: 'sangue', cost: 1, enhancements: [{ name: 'Discente', cost: 2 }, { name: 'Verdadeiro', cost: 5, circleReq: 3 }] },
   'pele-de-pedra': { name: 'Pele de Pedra', circle: 1, element: 'sangue', cost: 1, enhancements: [{ name: 'Discente', cost: 2, circleReq: 2 }, { name: 'Verdadeiro', cost: 5, circleReq: 3 }] },
   // NOTA: Velocidade Mortal foi movido para 2º Círculo - Morte (linha correta)
   
