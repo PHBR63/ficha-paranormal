@@ -346,6 +346,29 @@ export function RulesValidationPanel() {
         grouped[r.category].push(r);
       }
       
+      // Calcula sumário por categoria para o histórico
+      const categorySummary: Record<string, { passed: number; failed: number; total: number }> = {};
+      for (const [category, results] of Object.entries(grouped)) {
+        categorySummary[category] = {
+          passed: results.filter(r => r.passed).length,
+          failed: results.filter(r => !r.passed).length,
+          total: results.length,
+        };
+      }
+      
+      // Salva no histórico (via evento customizado para o dashboard capturar)
+      const historyEntry = {
+        timestamp: result.timestamp.toISOString(),
+        totalTests: result.totalTests,
+        passed: result.passed,
+        failed: result.failed,
+        successRate: Math.round((result.passed / result.totalTests) * 100),
+        categorySummary,
+      };
+      
+      // Dispara evento para salvar no histórico
+      window.dispatchEvent(new CustomEvent('validation-completed', { detail: historyEntry }));
+      
       // Expande categorias com falhas
       const failedCategories = Object.entries(grouped)
         .filter(([_, results]) => results.some(r => !r.passed))

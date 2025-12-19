@@ -46,13 +46,16 @@ import {
   Trash2,
   RefreshCw,
   Users,
-  BookOpen
+  BookOpen,
+  BarChart3
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { CLASSES, CLASS_TRACKS, getClassTracks } from '@/lib/character-data';
 import { checkExistingCharacterValidity } from '@/lib/character-validation';
 import { RulesValidationPanel } from '@/components/admin/RulesValidationPanel';
+import { ValidationHistoryDashboard } from '@/components/admin/ValidationHistoryDashboard';
+import { useValidationHistory } from '@/hooks/useValidationHistory';
 
 interface CharacterData {
   id: string;
@@ -74,6 +77,7 @@ interface CharacterWithIssues extends CharacterData {
 export default function AdminDataIntegrity() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { addEntry } = useValidationHistory();
   
   const [loading, setLoading] = useState(true);
   const [scanning, setScanning] = useState(false);
@@ -85,6 +89,18 @@ export default function AdminDataIntegrity() {
   const [newClass, setNewClass] = useState('');
   const [newTrack, setNewTrack] = useState('');
   const [saving, setSaving] = useState(false);
+
+  // Escuta eventos de validação concluída para salvar no histórico
+  useEffect(() => {
+    const handleValidationCompleted = (event: CustomEvent) => {
+      addEntry(event.detail);
+    };
+
+    window.addEventListener('validation-completed', handleValidationCompleted as EventListener);
+    return () => {
+      window.removeEventListener('validation-completed', handleValidationCompleted as EventListener);
+    };
+  }, [addEntry]);
 
   // Buscar todos os personagens e verificar integridade
   const scanCharacters = async () => {
@@ -250,14 +266,21 @@ export default function AdminDataIntegrity() {
 
       <main className="container mx-auto px-4 py-8">
         <Tabs defaultValue="integrity" className="space-y-6">
-          <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsList className="grid w-full max-w-2xl grid-cols-3">
             <TabsTrigger value="integrity" className="flex items-center gap-2">
               <Database className="w-4 h-4" />
-              Integridade de Dados
+              <span className="hidden sm:inline">Integridade de Dados</span>
+              <span className="sm:hidden">Dados</span>
             </TabsTrigger>
             <TabsTrigger value="rules" className="flex items-center gap-2">
               <BookOpen className="w-4 h-4" />
-              Validação de Regras
+              <span className="hidden sm:inline">Validação de Regras</span>
+              <span className="sm:hidden">Regras</span>
+            </TabsTrigger>
+            <TabsTrigger value="history" className="flex items-center gap-2">
+              <BarChart3 className="w-4 h-4" />
+              <span className="hidden sm:inline">Histórico</span>
+              <span className="sm:hidden">Histórico</span>
             </TabsTrigger>
           </TabsList>
 
@@ -467,6 +490,11 @@ export default function AdminDataIntegrity() {
           {/* Aba de Validação de Regras */}
           <TabsContent value="rules">
             <RulesValidationPanel />
+          </TabsContent>
+
+          {/* Aba de Histórico e Dashboard */}
+          <TabsContent value="history">
+            <ValidationHistoryDashboard />
           </TabsContent>
         </Tabs>
       </main>
