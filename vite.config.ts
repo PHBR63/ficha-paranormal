@@ -48,8 +48,8 @@ export default defineConfig(({ mode }) => ({
       workbox: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff,woff2}"],
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024, // 3MB limit
-        navigateFallback: "/offline.html",
-        navigateFallbackDenylist: [/^\/api/, /^\/auth/],
+        navigateFallback: "/index.html",
+        navigateFallbackDenylist: [/^\/api/, /^\/auth/, /^\/offline\.html/],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
