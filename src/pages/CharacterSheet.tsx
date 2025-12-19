@@ -1652,6 +1652,7 @@ export default function CharacterSheet() {
             onOpenRest={() => setRestModalOpen(true)}
             onLevelUp={() => setNexModalOpen(true)}
             onEditStats={() => setEditModalOpen(true)}
+            onRefetch={refetchCharacter}
           />
         ) : (
           /* Desktop: Layout de 2 colunas estilo ficha de papel */

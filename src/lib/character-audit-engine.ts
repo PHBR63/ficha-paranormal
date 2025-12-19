@@ -355,21 +355,31 @@ export async function auditTranscenderSlots(character: CharacterForAudit): Promi
   }
   
   // Verificar se há discrepância entre poderes e registros
-  if (powersTotal > 0 && slotsUsed < (powersTotal - powersFromOrigin)) {
-    const unregisteredPowers = powersTotal - powersFromOrigin - slotsUsed;
-    if (unregisteredPowers > 0) {
-      issues.push({
-        id: `unregistered_powers_${character.id}`,
-        category: 'records',
-        severity: 'warning',
-        title: 'Poderes Sem Registro de Transcender',
-        description: `${unregisteredPowers} poder(es) paranormal(is) não têm registro correspondente na tabela de escolhas. Isso pode indicar poderes adicionados antes do sistema de Transcender.`,
-        currentValue: slotsUsed,
-        expectedValue: powersTotal - powersFromOrigin,
-        autoFixable: false,
-        fixAction: 'Sincronizar registros de Transcender (requer revisão manual)',
-      });
+  // Conta todos os registros resolvidos (transcender, transcender_legacy, origin_power)
+  const allResolvedChoices = choices.filter(c => c.status === 'resolved');
+  const registeredPowerIds = new Set<string>();
+  allResolvedChoices.forEach(c => {
+    const resolution = c.resolution as { powerId?: string } | null;
+    if (resolution?.powerId) {
+      registeredPowerIds.add(resolution.powerId);
     }
+  });
+  
+  // Conta poderes sem registro
+  const unregisteredPowers = powers.filter(p => !registeredPowerIds.has(p.id));
+  
+  if (unregisteredPowers.length > 0) {
+    issues.push({
+      id: `unregistered_powers_${character.id}`,
+      category: 'records',
+      severity: 'warning',
+      title: 'Poderes Sem Registro de Transcender',
+      description: `${unregisteredPowers.length} poder(es) paranormal(is) não têm registro correspondente na tabela de escolhas. Isso pode indicar poderes adicionados antes do sistema de Transcender.`,
+      currentValue: registeredPowerIds.size,
+      expectedValue: powersTotal,
+      autoFixable: true, // Agora é corrigível automaticamente
+      fixAction: 'Sincronizar registros de Transcender automaticamente',
+    });
   }
   
   return {
@@ -472,7 +482,12 @@ export function auditSkillBonuses(character: CharacterForAudit): { issues: Audit
 export async function autoFixCharacterIssues(
   characterId: string,
   userId: string,
-  issues: AuditIssue[]
+  issues: AuditIssue[],
+  characterData?: {
+    paranormal_powers?: Array<{ id: string; name: string }>;
+    nex?: number;
+    origin?: string;
+  }
 ): Promise<{
   success: boolean;
   fixedCount: number;
@@ -489,7 +504,7 @@ export async function autoFixCharacterIssues(
     return { success: true, fixedCount: 0, errors: [], appliedFixes: [] };
   }
   
-  // Preparar updates
+  // Preparar updates para stats
   const updates: Record<string, number> = {};
   
   for (const issue of fixableIssues) {
@@ -515,10 +530,38 @@ export async function autoFixCharacterIssues(
         updates.defense = issue.expectedValue as number;
         appliedFixes.push(`Defesa corrigida para ${issue.expectedValue}`);
         break;
+        
+      case 'records':
+        // Sincronizar registros de Transcender para poderes legados
+        if (issue.id.startsWith('unregistered_powers_') && characterData) {
+          const powers = characterData.paranormal_powers || [];
+          const nex = characterData.nex || 5;
+          const origin = characterData.origin || '';
+          
+          if (powers.length > 0) {
+            console.log('[AutoFix] Sincronizando registros de Transcender...');
+            const syncResult = await syncTranscenderRecords(
+              characterId,
+              userId,
+              powers,
+              nex,
+              origin
+            );
+            
+            if (syncResult.created > 0) {
+              appliedFixes.push(`${syncResult.created} registro(s) de Transcender sincronizado(s)`);
+            }
+            
+            if (syncResult.errors.length > 0) {
+              errors.push(...syncResult.errors);
+            }
+          }
+        }
+        break;
     }
   }
   
-  // Aplicar updates no banco
+  // Aplicar updates no banco (stats)
   if (Object.keys(updates).length > 0) {
     const { error } = await supabase
       .from('characters')

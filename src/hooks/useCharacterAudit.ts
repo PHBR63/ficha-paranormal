@@ -121,7 +121,12 @@ export function useCharacterAudit(
       const result = await autoFixCharacterIssues(
         character.id,
         userId,
-        auditResult.autoFixableIssues
+        auditResult.autoFixableIssues,
+        {
+          paranormal_powers: character.paranormal_powers,
+          nex: character.nex,
+          origin: character.origin,
+        }
       );
       
       if (result.success) {
