@@ -362,6 +362,35 @@ export const CONDITIONS: Record<string, Omit<Condition, 'turnsRemaining'>> = {
     effect: 'Não pode realizar ações físicas. Defesa 5. Indefeso.',
     removal: 'Depende da causa.',
   },
+
+  // === CONDIÇÕES DE RITUAIS ===
+  'velocidade-mortal-inverso': {
+    id: 'velocidade-mortal-inverso',
+    name: 'Velocidade Mortal (Inverso)',
+    icon: '⏱️',
+    color: 'death',
+    description: 'Você está ligado a um alvo através do ritual Velocidade Mortal no modo inverso.',
+    effect: 'Você recebe metade de todo o dano que o alvo receberia. O dano é aplicado a você antes de ser reduzido no alvo.',
+    removal: 'Encerrar a sustentação do ritual.',
+  },
+  'velocidade-mortal-buff': {
+    id: 'velocidade-mortal-buff',
+    name: 'Velocidade Mortal',
+    icon: '⚡',
+    color: 'death',
+    description: 'Você está sob o efeito do ritual Velocidade Mortal.',
+    effect: 'Pode realizar uma ação de movimento adicional por turno. Esta ação não pode ser usada para conjurar rituais.',
+    removal: 'Fim da sustentação do ritual.',
+  },
+  'velocidade-mortal-discente': {
+    id: 'velocidade-mortal-discente',
+    name: 'Velocidade Mortal (Discente)',
+    icon: '⚡',
+    color: 'death',
+    description: 'Você está sob o efeito do ritual Velocidade Mortal com aprimoramento Discente.',
+    effect: 'Pode realizar uma ação padrão adicional por turno.',
+    removal: 'Fim da sustentação do ritual.',
+  },
 };
 
 /**
@@ -420,6 +449,7 @@ export const CONDITION_CATEGORIES = {
   mental: ['apavorado', 'confuso', 'enlouquecendo', 'fascinado', 'frustrado', 'perturbado'],
   physical: ['debilitado', 'doente', 'enjoado', 'envenenado', 'esmorecido', 'exausto', 'fraco', 'fragilizado', 'imobilizado', 'lento', 'machucado'],
   critical: ['inconsciente', 'indefeso', 'morrendo', 'paralisado'],
+  ritual: ['velocidade-mortal-inverso', 'velocidade-mortal-buff', 'velocidade-mortal-discente'],
 };
 
 /**

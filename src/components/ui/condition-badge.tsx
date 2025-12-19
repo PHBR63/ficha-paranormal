@@ -173,6 +173,12 @@ function getColorClasses(color: string) {
         border: 'border-accent/50',
         text: 'text-accent',
       };
+    case 'death':
+      return {
+        bg: 'bg-purple-500/20',
+        border: 'border-purple-500/50',
+        text: 'text-purple-400',
+      };
     default:
       return {
         bg: 'bg-muted',
