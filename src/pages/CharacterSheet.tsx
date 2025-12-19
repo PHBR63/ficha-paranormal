@@ -1021,16 +1021,15 @@ export default function CharacterSheet() {
     setNonOccultistRitualModalOpen(false);
   };
 
-  // Conta quantas vezes "Transcender" aparece nas habilidades
+  // Importar marcos oficiais de Transcender derivados da tabela NEX_PROGRESSION
+  // Marcos: [15, 30, 45, 60, 75, 90] - cada um oferece 1 oportunidade de Transcender
   const transcenderCount = useMemo(() => {
     if (!character) return 0;
-    const abilities = character.abilities || [];
-    return abilities.filter(a => 
-      typeof a === 'string' 
-        ? a.toLowerCase().includes('transcender')
-        : false
-    ).length;
-  }, [character?.abilities]);
+    // Marcos oficiais de Transcender (derivados de getPowerChoiceMilestones)
+    const milestones = [15, 30, 45, 60, 75, 90];
+    // Conta quantos marcos o personagem já passou/está
+    return milestones.filter(m => m <= character.nex).length;
+  }, [character?.nex]);
   
   // Conta quantos poderes paranormais o personagem tem (cada um = 1 uso de Transcender)
   const transcenderUsed = useMemo(() => {
