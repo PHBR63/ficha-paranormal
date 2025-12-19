@@ -350,6 +350,119 @@ export async function resolveTranscenderChoice(
 }
 
 /**
+ * Reverte uma escolha de Transcender
+ * Só permite reverter se o personagem ainda está no mesmo NEX da escolha
+ * 
+ * @param choiceId - ID da escolha a reverter
+ * @param characterId - ID do personagem
+ * @param currentNex - NEX atual do personagem
+ * @returns Objeto com sucesso e erro se houver
+ */
+export async function revertTranscenderChoice(
+  choiceId: string,
+  characterId: string,
+  currentNex: number
+): Promise<{ 
+  success: boolean; 
+  error?: string;
+  revertedPowerId?: string;
+  sanityCostRestored?: number;
+}> {
+  // 1. Buscar a escolha existente
+  const { data: choice, error: fetchError } = await supabase
+    .from('character_power_choices')
+    .select('*')
+    .eq('id', choiceId)
+    .eq('character_id', characterId)
+    .single();
+  
+  if (fetchError || !choice) {
+    console.error('Erro ao buscar escolha para reverter:', fetchError);
+    return { success: false, error: 'Escolha não encontrada.' };
+  }
+  
+  // 2. Verificar se a escolha está resolvida
+  if (choice.status !== 'resolved') {
+    return { success: false, error: 'Esta escolha ainda não foi finalizada.' };
+  }
+  
+  // 3. Verificar se o personagem ainda está no mesmo NEX
+  // Permite reverter apenas se o NEX atual é igual ou menor que o NEX da escolha
+  if (currentNex > choice.nex) {
+    return { 
+      success: false, 
+      error: `Não é possível reverter. Você já progrediu além do NEX ${choice.nex}%.` 
+    };
+  }
+  
+  // 4. Extrair dados da resolução para retornar
+  const resolution = choice.resolution as any;
+  const revertedPowerId = resolution?.powerId;
+  const sanityCostRestored = Math.abs(choice.sanity_delta || 0);
+  
+  // 5. Deletar a escolha do banco
+  const { error: deleteError } = await supabase
+    .from('character_power_choices')
+    .delete()
+    .eq('id', choiceId);
+  
+  if (deleteError) {
+    console.error('Erro ao reverter escolha de Transcender:', deleteError);
+    return { success: false, error: deleteError.message };
+  }
+  
+  return { 
+    success: true, 
+    revertedPowerId,
+    sanityCostRestored,
+  };
+}
+
+/**
+ * Obtém o histórico detalhado de escolhas de Transcender de um personagem
+ * com informações sobre se cada escolha pode ser revertida
+ */
+export async function getTranscenderHistory(
+  characterId: string,
+  currentNex: number
+): Promise<{
+  choices: Array<{
+    id: string;
+    nex: number;
+    powerId: string;
+    powerName: string;
+    sanityCost: number;
+    resolvedAt: string;
+    canRevert: boolean;
+    revertBlockedReason?: string;
+  }>;
+}> {
+  const choices = await getCharacterPowerChoices(characterId);
+  
+  const transcenderChoices = choices
+    .filter(c => c.choice_type === 'transcender' && c.status === 'resolved')
+    .map(c => {
+      const resolution = c.resolution as any;
+      const canRevert = currentNex <= c.nex;
+      
+      return {
+        id: c.id,
+        nex: c.nex,
+        powerId: resolution?.powerId || '',
+        powerName: resolution?.powerName || 'Poder desconhecido',
+        sanityCost: Math.abs(c.sanity_delta || 0),
+        resolvedAt: c.resolved_at || c.created_at,
+        canRevert,
+        revertBlockedReason: canRevert 
+          ? undefined 
+          : `Você já progrediu além do NEX ${c.nex}%`,
+      };
+    });
+  
+  return { choices: transcenderChoices };
+}
+
+/**
  * Obtém todas as escolhas de poder de um personagem
  */
 export async function getCharacterPowerChoices(
