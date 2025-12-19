@@ -140,9 +140,49 @@ const EXAMPLES: Record<ImportType, { single: object; batch: object[] }> = {
       range: "Médio",
       area: "Explosão 6m",
       duration: "Instantânea",
-      resistance: "Reflexos parcial",
       description: "Você conjura uma esfera de chamas que explode no ponto designado, causando 6d6 pontos de dano de fogo em todas as criaturas na área.",
       cost: 2,
+      resistance: {
+        type: "reflexos",
+        effect: "reduz_metade"
+      },
+      effects: {
+        base: {
+          kind: "damage",
+          damage: {
+            diceCount: 6,
+            diceType: 6,
+            damageType: "fogo"
+          },
+          areaEffect: {
+            shape: "esfera",
+            radius: 6
+          },
+          summary: "6d6 de dano de fogo em área de 6m"
+        },
+        discente: {
+          kind: "damage",
+          damage: {
+            diceCount: 8,
+            diceType: 6,
+            damageType: "fogo"
+          },
+          summary: "Aumenta o dano para 8d6"
+        },
+        verdadeiro: {
+          kind: "damage",
+          damage: {
+            diceCount: 10,
+            diceType: 6,
+            damageType: "fogo"
+          },
+          areaEffect: {
+            shape: "esfera",
+            radius: 9
+          },
+          summary: "Aumenta o dano para 10d6 e a área para 9m"
+        }
+      },
       enhancements: [
         {
           name: "Discente",
@@ -167,6 +207,26 @@ const EXAMPLES: Record<ImportType, { single: object; batch: object[] }> = {
         duration: "Instantânea",
         description: "Você canaliza energia vital para curar ferimentos. O alvo recupera 2d8+2 PV.",
         cost: 1,
+        effects: {
+          base: {
+            kind: "healing",
+            healing: {
+              diceCount: 2,
+              diceType: 8,
+              bonus: 2
+            },
+            summary: "Cura 2d8+2 PV"
+          },
+          discente: {
+            kind: "healing",
+            healing: {
+              diceCount: 4,
+              diceType: 8,
+              bonus: 4
+            },
+            summary: "Cura 4d8+4 PV"
+          }
+        },
         enhancements: [
           {
             name: "Discente",
@@ -176,7 +236,7 @@ const EXAMPLES: Record<ImportType, { single: object; batch: object[] }> = {
         ]
       },
       {
-        id: "medo",
+        id: "medo_ritual",
         name: "Medo",
         circle: 1,
         element: "medo",
@@ -184,9 +244,25 @@ const EXAMPLES: Record<ImportType, { single: object; batch: object[] }> = {
         range: "Curto",
         target: "1 criatura",
         duration: "Cena",
-        resistance: "Vontade anula",
         description: "O alvo fica apavorado e deve fugir de você por 1 rodada.",
-        cost: 1
+        cost: 1,
+        resistance: {
+          type: "vontade",
+          effect: "anula"
+        },
+        effects: {
+          base: {
+            kind: "debuff",
+            conditions: [
+              {
+                id: "apavorado",
+                duration: 1,
+                saveEnds: false
+              }
+            ],
+            summary: "Aplica condição apavorado por 1 rodada"
+          }
+        }
       }
     ]
   }
