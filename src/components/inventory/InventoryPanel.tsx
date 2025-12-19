@@ -133,6 +133,17 @@ export interface ExtendedInventoryItem extends InventoryItem {
   effectiveCategory?: InventoryItem['category'];  // Categoria efetiva após redução
 }
 
+// Props para dados do personagem (para detecção automática de reduções de categoria)
+export interface CharacterDataForInventory {
+  origin: string;
+  classId: string;
+  classTrack?: string;
+  nex: number;
+  abilities?: string[];
+  powers?: string[];
+  generalPowers?: Array<{ id: string; name: string }>;
+}
+
 interface InventoryPanelProps {
   inventory: ExtendedInventoryItem[];
   strength: number;
@@ -140,6 +151,8 @@ interface InventoryPanelProps {
   onInventoryChange?: (newInventory: ExtendedInventoryItem[]) => void;
   readOnly?: boolean;
   showEquipment?: boolean;
+  /** Dados do personagem para detecção automática de habilidades de redução de categoria */
+  characterData?: CharacterDataForInventory;
 }
 
 export function InventoryPanel({
@@ -149,6 +162,7 @@ export function InventoryPanel({
   onInventoryChange,
   readOnly = false,
   showEquipment = true,
+  characterData,
 }: InventoryPanelProps) {
   const [expandedCategories, setExpandedCategories] = useState<Set<ItemType>>(new Set(['weapon', 'armor', 'consumable']));
   const [addDialogOpen, setAddDialogOpen] = useState(false);

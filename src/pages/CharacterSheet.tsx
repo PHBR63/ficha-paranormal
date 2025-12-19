@@ -124,6 +124,7 @@ interface InventoryItemPersisted {
   range?: string;
   special?: string;
   ammoType?: string;
+  weaponType?: string;
   // Campos de armaduras
   rd?: number;
   defenseBonus?: number;
@@ -135,6 +136,9 @@ interface InventoryItemPersisted {
   uses?: number;
   maxUses?: number;
   consumable?: boolean;
+  // Campos de redução de categoria (A Favorita, Ferramenta Favorita, etc.)
+  favoriteAbilityId?: string;
+  effectiveCategory?: string;
 }
 
 // Interface para condição persistida (objeto completo com dyingCounter para Morrendo)
@@ -1715,6 +1719,7 @@ export default function CharacterSheet() {
                     range: item.range,
                     special: item.special,
                     ammoType: item.ammoType,
+                    weaponType: item.weaponType,
                     // Campos de armaduras
                     rd: item.rd,
                     defenseBonus: item.defenseBonus,
@@ -1726,9 +1731,21 @@ export default function CharacterSheet() {
                     uses: item.uses,
                     maxUses: item.maxUses,
                     consumable: item.consumable,
+                    // Campos de redução de categoria
+                    favoriteAbilityId: item.favoriteAbilityId,
+                    effectiveCategory: item.effectiveCategory as any,
                   }))}
                   strength={character.strength}
                   patent={character.patent}
+                  characterData={{
+                    origin: character.origin,
+                    classId: character.class,
+                    classTrack: character.class_track || undefined,
+                    nex: character.nex,
+                    abilities: character.abilities,
+                    powers: character.powers?.map(p => p.name) || [],
+                    generalPowers: character.general_powers,
+                  }}
                   onInventoryChange={async (newInventory) => {
                     // Persiste TODOS os campos importantes do item
                     const updatedInventory: InventoryItemPersisted[] = newInventory.map(item => ({
@@ -1749,6 +1766,7 @@ export default function CharacterSheet() {
                       range: (item as any).range,
                       special: (item as any).special,
                       ammoType: (item as any).ammoType,
+                      weaponType: (item as any).weaponType,
                       // Campos de armaduras
                       rd: (item as any).rd,
                       defenseBonus: (item as any).defenseBonus,
@@ -1760,6 +1778,9 @@ export default function CharacterSheet() {
                       uses: (item as any).uses,
                       maxUses: (item as any).maxUses,
                       consumable: (item as any).consumable,
+                      // Campos de redução de categoria
+                      favoriteAbilityId: (item as any).favoriteAbilityId,
+                      effectiveCategory: (item as any).effectiveCategory,
                     }));
                     
                     const { error } = await supabase
