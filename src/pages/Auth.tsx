@@ -10,6 +10,7 @@ import { FlickeringGrid } from '@/components/ui/flickering-grid';
 import { DecryptedText } from '@/components/ui/decrypted-text';
 import { Loader2, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { z } from 'zod';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 const authSchema = z.object({
   email: z.string().email('Email inválido'),
@@ -121,38 +122,47 @@ export default function Auth() {
     }
   };
 
+  // Theme colors for dynamic effects
+  const themeColors = useThemeColors();
+
   return (
-    <div className="min-h-screen bg-[#0D0A0B] relative overflow-hidden flex items-center justify-center p-4">
-      {/* Background gradient */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#0D0A0B] via-[#1A0505] to-[#0D0A0B]" />
+    <div className="min-h-screen bg-background relative overflow-hidden flex items-center justify-center p-4">
+      {/* Background gradient - Dynamic */}
+      <div className="absolute inset-0 bg-landing-gradient-theme" />
       
-      {/* Flickering Grid */}
+      {/* Flickering Grid - Dynamic color */}
       <FlickeringGrid 
         className="opacity-20"
         squareSize={3}
         gridGap={6}
         flickerChance={0.25}
-        color="rgb(139, 0, 0)"
+        color={`rgb(${themeColors.rgb})`}
         maxOpacity={0.25}
       />
       
       {/* Noise texture */}
       <div className="absolute inset-0 landing-noise pointer-events-none" />
       
-      {/* Red mist effect - mais intenso */}
+      {/* Mist effect - Dynamic color */}
       <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-[#8B0000]/10 rounded-full blur-[150px] animate-red-mist" />
-        <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-[#B22222]/8 rounded-full blur-[120px] animate-red-mist" style={{ animationDelay: '4s' }} />
+        <div 
+          className="absolute top-1/4 left-1/4 w-[500px] h-[500px] rounded-full blur-[150px] animate-red-mist"
+          style={{ backgroundColor: `${themeColors.primary}18` }}
+        />
+        <div 
+          className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] rounded-full blur-[120px] animate-red-mist"
+          style={{ backgroundColor: `${themeColors.secondary}12`, animationDelay: '4s' }}
+        />
       </div>
       
       {/* Scan lines */}
       <div className="absolute inset-0 scan-lines opacity-20 pointer-events-none" />
       
-      {/* Blood particles */}
+      {/* Particles - Dynamic color */}
       <Particles
         className="absolute inset-0 z-[1]"
         quantity={30}
-        color="#8B0000"
+        color={themeColors.primary}
         size={1.3}
         vx={0}
         vy={-0.2}
@@ -160,8 +170,8 @@ export default function Auth() {
         ease={100}
       />
       
-      {/* Red vignette */}
-      <div className="absolute inset-0 vignette-red pointer-events-none" />
+      {/* Vignette - Dynamic */}
+      <div className="absolute inset-0 vignette-theme pointer-events-none" />
       
       {/* Back button */}
       <Link 

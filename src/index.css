@@ -867,15 +867,87 @@ html.dark[data-color-theme="amber"] {
   opacity: 0.04;
 }
 
-/* Red vignette effect */
+/* ========================================
+ * EFEITOS ATMOSFÉRICOS DINÂMICOS POR TEMA
+ * ======================================== */
+
+/* Vignette effects - dynamic per theme */
 .vignette-red {
   box-shadow: inset 0 0 150px rgba(139, 0, 0, 0.3);
 }
 
-/* Classified dossier card style */
+.vignette-theme {
+  box-shadow: inset 0 0 150px hsl(var(--primary) / 0.3);
+}
+
+/* Purple theme vignette */
+html.dark[data-color-theme="purple"] .vignette-theme,
+html.dark:not([data-color-theme]) .vignette-theme {
+  box-shadow: inset 0 0 150px rgba(139, 92, 246, 0.25);
+}
+
+/* Red theme vignette */
+html.dark[data-color-theme="red"] .vignette-theme {
+  box-shadow: inset 0 0 150px rgba(139, 0, 0, 0.3);
+}
+
+/* Green theme vignette */
+html.dark[data-color-theme="green"] .vignette-theme {
+  box-shadow: inset 0 0 150px rgba(34, 197, 94, 0.2);
+}
+
+/* Blue theme vignette */
+html.dark[data-color-theme="blue"] .vignette-theme {
+  box-shadow: inset 0 0 150px rgba(14, 165, 233, 0.25);
+}
+
+/* Amber theme vignette */
+html.dark[data-color-theme="amber"] .vignette-theme {
+  box-shadow: inset 0 0 150px rgba(245, 158, 11, 0.2);
+}
+
+/* Landing page gradient - dynamic */
+.bg-landing-gradient-theme {
+  background: linear-gradient(180deg, #0D0A0B 0%, var(--gradient-via, #1A0520) 50%, #0D0A0B 100%);
+}
+
+html.dark[data-color-theme="purple"] .bg-landing-gradient-theme,
+html.dark:not([data-color-theme]) .bg-landing-gradient-theme {
+  background: linear-gradient(180deg, #0D0A0B 0%, #1A0520 50%, #0D0A0B 100%);
+}
+
+html.dark[data-color-theme="red"] .bg-landing-gradient-theme {
+  background: linear-gradient(180deg, #0D0A0B 0%, #1A0505 50%, #0D0A0B 100%);
+}
+
+html.dark[data-color-theme="green"] .bg-landing-gradient-theme {
+  background: linear-gradient(180deg, #0D0A0B 0%, #051A0A 50%, #0D0A0B 100%);
+}
+
+html.dark[data-color-theme="blue"] .bg-landing-gradient-theme {
+  background: linear-gradient(180deg, #0D0A0B 0%, #051520 50%, #0D0A0B 100%);
+}
+
+html.dark[data-color-theme="amber"] .bg-landing-gradient-theme {
+  background: linear-gradient(180deg, #0D0A0B 0%, #1A1205 50%, #0D0A0B 100%);
+}
+
+/* Legacy gradients */
+.bg-landing-gradient {
+  background: linear-gradient(180deg, #0D0A0B 0%, #1A0505 50%, #0D0A0B 100%);
+}
+
+.bg-blood-gradient {
+  background: linear-gradient(135deg, #8B0000 0%, #B22222 50%, #8B0000 100%);
+}
+
+/* ========================================
+ * DOSSIER CARD - DINÂMICO POR TEMA
+ * ======================================== */
 .dossier-classified {
-  @apply relative bg-[#1A1214] border border-[#3D1518]/60 rounded-lg overflow-hidden;
-  background: linear-gradient(135deg, #1A1214 0%, #0D0A0B 100%);
+  @apply relative rounded-lg overflow-hidden;
+  background: linear-gradient(135deg, hsl(var(--card)) 0%, hsl(var(--background)) 100%);
+  border: 1px solid hsl(var(--primary) / 0.3);
 }
 
 .dossier-classified::before {
@@ -885,10 +957,10 @@ html.dark[data-color-theme="amber"] {
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, transparent, #8B0000, transparent);
+  background: linear-gradient(90deg, transparent, hsl(var(--primary)), transparent);
 }
 
 .dossier-classified:hover {
-  border-color: rgba(139, 0, 0, 0.6);
-  box-shadow: 0 0 30px rgba(139, 0, 0, 0.15);
+  border-color: hsl(var(--primary) / 0.6);
+  box-shadow: 0 0 30px hsl(var(--primary) / 0.15);
 }

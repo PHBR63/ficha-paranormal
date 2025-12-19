@@ -18,10 +18,12 @@ import {
   Bell,
   Eye
 } from "lucide-react";
+import { useThemeColors } from "@/hooks/useThemeColors";
 
 export default function Install() {
   const navigate = useNavigate();
   const { isInstallable, isInstalled, isIOS, promptInstall } = usePWAInstall();
+  const themeColors = useThemeColors();
 
   const handleInstall = async () => {
     const success = await promptInstall();
@@ -37,23 +39,29 @@ export default function Install() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#0D0A0B] relative overflow-hidden">
-      {/* Background Effects */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#0D0A0B] via-[#1A0505] to-[#0D0A0B]" />
-      <FlickeringGrid className="opacity-20" squareSize={4} gridGap={8} flickerChance={0.2} color="rgb(139, 0, 0)" maxOpacity={0.2} />
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      {/* Background Effects - Dynamic */}
+      <div className="absolute inset-0 bg-landing-gradient-theme" />
+      <FlickeringGrid className="opacity-20" squareSize={4} gridGap={8} flickerChance={0.2} color={`rgb(${themeColors.rgb})`} maxOpacity={0.2} />
       <div className="absolute inset-0 landing-noise pointer-events-none" />
       
-      {/* Red mist */}
+      {/* Mist - Dynamic */}
       <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
-        <div className="absolute top-1/3 left-1/3 w-[400px] h-[400px] bg-[#8B0000]/8 rounded-full blur-[120px] animate-red-mist" />
-        <div className="absolute bottom-1/4 right-1/4 w-[300px] h-[300px] bg-[#B22222]/6 rounded-full blur-[100px] animate-red-mist" style={{ animationDelay: '4s' }} />
+        <div 
+          className="absolute top-1/3 left-1/3 w-[400px] h-[400px] rounded-full blur-[120px] animate-red-mist"
+          style={{ backgroundColor: `${themeColors.primary}14` }}
+        />
+        <div 
+          className="absolute bottom-1/4 right-1/4 w-[300px] h-[300px] rounded-full blur-[100px] animate-red-mist"
+          style={{ backgroundColor: `${themeColors.secondary}10`, animationDelay: '4s' }}
+        />
       </div>
       
       <div className="absolute inset-0 scan-lines opacity-15 pointer-events-none" />
       
-      <Particles className="absolute inset-0 z-[1]" quantity={25} color="#8B0000" size={1.2} vx={0} vy={-0.15} staticity={90} ease={110} />
+      <Particles className="absolute inset-0 z-[1]" quantity={25} color={themeColors.primary} size={1.2} vx={0} vy={-0.15} staticity={90} ease={110} />
       
-      <div className="absolute inset-0 vignette-red pointer-events-none opacity-50" />
+      <div className="absolute inset-0 vignette-theme pointer-events-none opacity-50" />
 
       {/* Header */}
       <header className="relative z-10 sticky top-0 border-b border-[#8B0000]/20 bg-[#0D0A0B]/80 backdrop-blur-sm">

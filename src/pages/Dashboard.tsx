@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { CharacterCard } from '@/components/cards/CharacterCard';
 import { useAdminCheck } from '@/hooks/useAdminCheck';
 import { ParanormalElementIcon } from '@/components/ui/paranormal-element-icon';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 interface Character {
   id: string;
@@ -93,38 +94,47 @@ export default function Dashboard() {
     c.hp_current < c.hp_max * 0.3 || c.san_current < c.san_max * 0.3
   );
 
+  // Theme colors for dynamic effects
+  const themeColors = useThemeColors();
+
   return (
-    <div className="min-h-screen bg-[#0D0A0B] relative overflow-hidden">
-      {/* Background Effects - Horror Investigativo */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#0D0A0B] via-[#1A0505] to-[#0D0A0B]" />
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      {/* Background Effects - Dynamic per theme */}
+      <div className="absolute inset-0 bg-landing-gradient-theme" />
       
-      {/* Flickering Grid - Instabilidade da Membrana */}
+      {/* Flickering Grid - Dynamic color */}
       <FlickeringGrid 
         className="opacity-30"
         squareSize={4}
         gridGap={8}
         flickerChance={0.2}
-        color="rgb(139, 0, 0)"
+        color={`rgb(${themeColors.rgb})`}
         maxOpacity={0.2}
       />
       
       {/* Noise texture */}
       <div className="absolute inset-0 landing-noise pointer-events-none" />
       
-      {/* Red mist effect - sutil */}
+      {/* Mist effect - Dynamic color */}
       <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
-        <div className="absolute top-1/3 right-1/4 w-[400px] h-[400px] bg-[#8B0000]/5 rounded-full blur-[120px] animate-red-mist" />
-        <div className="absolute bottom-1/3 left-1/4 w-[300px] h-[300px] bg-[#B22222]/5 rounded-full blur-[100px] animate-red-mist" style={{ animationDelay: '3s' }} />
+        <div 
+          className="absolute top-1/3 right-1/4 w-[400px] h-[400px] rounded-full blur-[120px] animate-red-mist"
+          style={{ backgroundColor: `${themeColors.primary}10` }}
+        />
+        <div 
+          className="absolute bottom-1/3 left-1/4 w-[300px] h-[300px] rounded-full blur-[100px] animate-red-mist"
+          style={{ backgroundColor: `${themeColors.secondary}10`, animationDelay: '3s' }}
+        />
       </div>
       
-      {/* Scan lines overlay - mais sutil */}
+      {/* Scan lines overlay */}
       <div className="absolute inset-0 scan-lines opacity-10 pointer-events-none" />
       
-      {/* Blood particles */}
+      {/* Particles - Dynamic color */}
       <Particles
         className="absolute inset-0 z-[1]"
         quantity={20}
-        color="#8B0000"
+        color={themeColors.primary}
         size={1.2}
         vx={0}
         vy={-0.15}
@@ -132,34 +142,34 @@ export default function Dashboard() {
         ease={120}
       />
       
-      {/* Red vignette */}
-      <div className="absolute inset-0 vignette-red pointer-events-none opacity-50" />
+      {/* Vignette - Dynamic */}
+      <div className="absolute inset-0 vignette-theme pointer-events-none opacity-50" />
 
       {/* Header */}
-      <header className="relative z-10 border-b border-[#8B0000]/20 backdrop-blur-sm sticky top-0 bg-[#0D0A0B]/80">
+      <header className="relative z-10 border-b border-primary/20 backdrop-blur-sm sticky top-0 bg-background/80">
         <div className="container mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2 sm:gap-3 group">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-[#8B0000]/20 border border-[#8B0000]/40 flex items-center justify-center transition-all group-hover:border-[#8B0000]/60 group-hover:bg-[#8B0000]/30">
-              <Eye className={`w-5 h-5 sm:w-6 sm:h-6 text-[#B22222] ${hasLowStats ? 'animate-pulse' : ''}`} />
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-primary/20 border border-primary/40 flex items-center justify-center transition-all group-hover:border-primary/60 group-hover:bg-primary/30">
+              <Eye className={`w-5 h-5 sm:w-6 sm:h-6 text-primary ${hasLowStats ? 'animate-pulse' : ''}`} />
             </div>
             <div>
-              <h1 className="font-display text-lg sm:text-xl tracking-wide text-[#F5F5F5]">LET'S ROLL</h1>
-              <p className="text-[9px] sm:text-[10px] text-[#8B0000] tracking-[0.15em] sm:tracking-[0.2em] uppercase hidden sm:block">Painel do Agente</p>
+              <h1 className="font-display text-lg sm:text-xl tracking-wide text-foreground">LET'S ROLL</h1>
+              <p className="text-[9px] sm:text-[10px] text-primary tracking-[0.15em] sm:tracking-[0.2em] uppercase hidden sm:block">Painel do Agente</p>
             </div>
           </Link>
           
           <div className="flex items-center gap-2 sm:gap-4">
             <ThemeSelector />
             <Link to="/install" className="hidden sm:flex">
-              <Button variant="ghost" size="icon" className="text-[#808080] hover:text-[#F5F5F5] hover:bg-[#8B0000]/10">
+              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground hover:bg-primary/10">
                 <Smartphone className="w-5 h-5" />
               </Button>
             </Link>
-            <div className="flex items-center gap-2 text-[#808080]">
+            <div className="flex items-center gap-2 text-muted-foreground">
               <User className="w-4 h-4" />
-              <span className="text-sm hidden md:block text-[#C0C0C0]">{displayName}</span>
+              <span className="text-sm hidden md:block text-muted-foreground">{displayName}</span>
             </div>
-            <Button variant="ghost" size="icon" onClick={signOut} className="text-[#808080] hover:text-[#F5F5F5] hover:bg-[#8B0000]/10">
+            <Button variant="ghost" size="icon" onClick={signOut} className="text-muted-foreground hover:text-foreground hover:bg-primary/10">
               <LogOut className="w-5 h-5" />
             </Button>
           </div>
