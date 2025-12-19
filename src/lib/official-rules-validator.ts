@@ -23,7 +23,7 @@ import {
   ESPECIALISTA_ABILITIES, 
   OCULTISTA_ABILITIES 
 } from './class-abilities';
-import { ORIGINS, CLASSES } from './character-data';
+import { ORIGINS, CLASSES, CLASS_TRACKS } from './character-data';
 
 // ============== INTERFACES ==============
 
@@ -240,6 +240,118 @@ const OFFICIAL_POWER_NEX = [15, 30, 45, 60, 75, 90];
  * NEX em que cada classe recebe poderes de trilha
  */
 const OFFICIAL_TRACK_NEX = [10, 40, 65, 99];
+
+// ============== DADOS OFICIAIS - TRILHAS ==============
+
+/**
+ * 15 trilhas oficiais do Livro Base v1.3
+ * 5 por classe: Combatente, Especialista, Ocultista
+ */
+const OFFICIAL_TRACKS: Record<string, string[]> = {
+  'Combatente': ['aniquilador', 'comandante-campo', 'guerreiro', 'operacoes-especiais', 'tropa-choque'],
+  'Especialista': ['atirador-elite', 'infiltrador', 'medico-campo', 'negociador', 'tecnico'],
+  'Ocultista': ['condutor', 'flagelador', 'graduado', 'intuitivo', 'lamina-paranormal'],
+};
+
+/**
+ * Habilidades de trilha e seus NEX corretos
+ * Cada trilha tem 4 habilidades: NEX 10%, 40%, 65%, 99%
+ */
+const OFFICIAL_TRACK_ABILITIES: Record<string, { name: string; minNex: number }[]> = {
+  // === COMBATENTE ===
+  'aniquilador': [
+    { name: 'A Favorita', minNex: 10 },
+    { name: 'Técnica Secreta', minNex: 40 },
+    { name: 'Técnica Sublime', minNex: 65 },
+    { name: 'Máquina de Matar', minNex: 99 },
+  ],
+  'comandante-campo': [
+    { name: 'Inspirar Confiança', minNex: 10 },
+    { name: 'Estrategista', minNex: 40 },
+    { name: 'Brecha na Guarda', minNex: 65 },
+    { name: 'Oficial Comandante', minNex: 99 },
+  ],
+  'guerreiro': [
+    { name: 'Técnica Letal', minNex: 10 },
+    { name: 'Revidar', minNex: 40 },
+    { name: 'Força Opressora', minNex: 65 },
+    { name: 'Potência Máxima', minNex: 99 },
+  ],
+  'operacoes-especiais': [
+    { name: 'Iniciativa Aprimorada', minNex: 10 },
+    { name: 'Ataque Extra', minNex: 40 },
+    { name: 'Surto de Adrenalina', minNex: 65 },
+    { name: 'Sempre Alerta', minNex: 99 },
+  ],
+  'tropa-choque': [
+    { name: 'Casca Grossa', minNex: 10 },
+    { name: 'Cai Dentro', minNex: 40 },
+    { name: 'Duro de Matar', minNex: 65 },
+    { name: 'Inquebrável', minNex: 99 },
+  ],
+  // === ESPECIALISTA ===
+  'atirador-elite': [
+    { name: 'Mira de Elite', minNex: 10 },
+    { name: 'Disparo Letal', minNex: 40 },
+    { name: 'Disparo Impactante', minNex: 65 },
+    { name: 'Atirar para Matar', minNex: 99 },
+  ],
+  'infiltrador': [
+    { name: 'Ataque Furtivo', minNex: 10 },
+    { name: 'Gatuno', minNex: 40 },
+    { name: 'Assassinar', minNex: 65 },
+    { name: 'Sombra Fugaz', minNex: 99 },
+  ],
+  'medico-campo': [
+    { name: 'Paramédico', minNex: 10 },
+    { name: 'Equipe de Trauma', minNex: 40 },
+    { name: 'Resgate', minNex: 65 },
+    { name: 'Reanimação', minNex: 99 },
+  ],
+  'negociador': [
+    { name: 'Eloquência', minNex: 10 },
+    { name: 'Discurso Motivador', minNex: 40 },
+    { name: 'Eu Conheço um Cara', minNex: 65 },
+    { name: 'Truque de Mestre', minNex: 99 },
+  ],
+  'tecnico': [
+    { name: 'Inventário Otimizado', minNex: 10 },
+    { name: 'Remendo', minNex: 40 },
+    { name: 'Improvisar', minNex: 65 },
+    { name: 'Preparado para Tudo', minNex: 99 },
+  ],
+  // === OCULTISTA ===
+  'condutor': [
+    { name: 'Ampliar Ritual', minNex: 10 },
+    { name: 'Acelerar Ritual', minNex: 40 },
+    { name: 'Anular Ritual', minNex: 65 },
+    { name: 'Canalizar o Medo', minNex: 99 },
+  ],
+  'flagelador': [
+    { name: 'Poder do Flagelo', minNex: 10 },
+    { name: 'Abraçar a Dor', minNex: 40 },
+    { name: 'Absorver Angústia', minNex: 65 },
+    { name: 'Medo Tangível', minNex: 99 },
+  ],
+  'graduado': [
+    { name: 'Saber Ampliado', minNex: 10 },
+    { name: 'Grimório Ritualístico', minNex: 40 },
+    { name: 'Rituais Eficientes', minNex: 65 },
+    { name: 'Conhecendo o Medo', minNex: 99 },
+  ],
+  'intuitivo': [
+    { name: 'Mente Sã', minNex: 10 },
+    { name: 'Presença Poderosa', minNex: 40 },
+    { name: 'Inabalável', minNex: 65 },
+    { name: 'Presença do Medo', minNex: 99 },
+  ],
+  'lamina-paranormal': [
+    { name: 'Lâmina Maldita', minNex: 10 },
+    { name: 'Gladiador Paranormal', minNex: 40 },
+    { name: 'Conjuração Marcial', minNex: 65 },
+    { name: 'Lâmina do Medo', minNex: 99 },
+  ],
+};
 
 // ============== FUNÇÕES DE VALIDAÇÃO ==============
 
@@ -887,6 +999,185 @@ function validateAbilityStructure(): ValidationResult[] {
   return results;
 }
 
+// ============== VALIDAÇÃO DE TRILHAS ==============
+
+/**
+ * Valida que todas as 15 trilhas oficiais existem
+ */
+function validateTracksExist(): ValidationResult[] {
+  const results: ValidationResult[] = [];
+  const implementedIds = CLASS_TRACKS.map(t => t.id);
+  
+  for (const [className, trackIds] of Object.entries(OFFICIAL_TRACKS)) {
+    for (const trackId of trackIds) {
+      const exists = implementedIds.includes(trackId);
+      
+      results.push({
+        passed: exists,
+        category: 'Trilhas',
+        test: `Trilha "${trackId}" de ${className}`,
+        expected: 'Implementada',
+        actual: exists ? 'Implementada' : 'NÃO ENCONTRADA',
+        reference: 'Livro Base v1.3 p.46-61',
+      });
+    }
+  }
+  
+  return results;
+}
+
+/**
+ * Valida que cada trilha pertence à classe correta
+ */
+function validateTrackClasses(): ValidationResult[] {
+  const results: ValidationResult[] = [];
+  
+  for (const [className, trackIds] of Object.entries(OFFICIAL_TRACKS)) {
+    for (const trackId of trackIds) {
+      const track = CLASS_TRACKS.find(t => t.id === trackId);
+      if (!track) continue;
+      
+      const passed = track.classId === className;
+      
+      results.push({
+        passed,
+        category: 'Trilhas',
+        test: `Classe da trilha "${trackId}"`,
+        expected: className,
+        actual: track.classId,
+        reference: 'Livro Base v1.3',
+      });
+    }
+  }
+  
+  return results;
+}
+
+/**
+ * Valida que cada trilha tem exatamente 4 habilidades
+ */
+function validateTrackAbilityCount(): ValidationResult[] {
+  const results: ValidationResult[] = [];
+  
+  for (const trackId of Object.keys(OFFICIAL_TRACK_ABILITIES)) {
+    const track = CLASS_TRACKS.find(t => t.id === trackId);
+    if (!track) continue;
+    
+    const expected = 4;
+    const actual = track.abilities?.length || 0;
+    
+    results.push({
+      passed: actual === expected,
+      category: 'Trilhas',
+      test: `Quantidade de habilidades de "${trackId}"`,
+      expected: `${expected} habilidades`,
+      actual: `${actual} habilidades`,
+      reference: 'Livro Base v1.3',
+    });
+  }
+  
+  return results;
+}
+
+/**
+ * Valida os NEX corretos das habilidades de trilha (10%, 40%, 65%, 99%)
+ */
+function validateTrackAbilityNex(): ValidationResult[] {
+  const results: ValidationResult[] = [];
+  
+  for (const [trackId, officialAbilities] of Object.entries(OFFICIAL_TRACK_ABILITIES)) {
+    const track = CLASS_TRACKS.find(t => t.id === trackId);
+    if (!track || !track.abilities) continue;
+    
+    for (const officialAbility of officialAbilities) {
+      const implemented = track.abilities.find(a => 
+        a.name.toLowerCase() === officialAbility.name.toLowerCase()
+      );
+      
+      if (!implemented) {
+        results.push({
+          passed: false,
+          category: 'Trilhas',
+          test: `Habilidade "${officialAbility.name}" de ${trackId}`,
+          expected: `Existe em NEX ${officialAbility.minNex}%`,
+          actual: 'NÃO ENCONTRADA',
+          reference: 'Livro Base v1.3',
+        });
+        continue;
+      }
+      
+      const passed = implemented.minNex === officialAbility.minNex;
+      
+      results.push({
+        passed,
+        category: 'Trilhas',
+        test: `NEX de "${officialAbility.name}" (${trackId})`,
+        expected: `${officialAbility.minNex}%`,
+        actual: `${implemented.minNex}%`,
+        reference: 'Livro Base v1.3',
+      });
+    }
+  }
+  
+  return results;
+}
+
+/**
+ * Valida que a primeira habilidade de cada trilha está marcada como inicial
+ */
+function validateTrackInitialAbilities(): ValidationResult[] {
+  const results: ValidationResult[] = [];
+  
+  for (const track of CLASS_TRACKS) {
+    if (!track.abilities || track.abilities.length === 0) continue;
+    
+    // A primeira habilidade (NEX 10%) deve ser isInitial: true
+    const firstAbility = track.abilities.find(a => a.minNex === 10);
+    if (!firstAbility) continue;
+    
+    const passed = firstAbility.isInitial === true;
+    
+    results.push({
+      passed,
+      category: 'Trilhas',
+      test: `Habilidade inicial de "${track.id}"`,
+      expected: 'isInitial = true',
+      actual: firstAbility.isInitial ? 'isInitial = true' : 'isInitial = false/undefined',
+      reference: 'Livro Base v1.3',
+    });
+  }
+  
+  return results;
+}
+
+/**
+ * Valida contagem de trilhas por classe (5 por classe)
+ */
+function validateTrackCountsByClass(): ValidationResult[] {
+  const results: ValidationResult[] = [];
+  
+  const countByClass: Record<string, number> = {};
+  for (const track of CLASS_TRACKS) {
+    countByClass[track.classId] = (countByClass[track.classId] || 0) + 1;
+  }
+  
+  for (const className of ['Combatente', 'Especialista', 'Ocultista']) {
+    const expected = 5;
+    const actual = countByClass[className] || 0;
+    
+    results.push({
+      passed: actual === expected,
+      category: 'Trilhas',
+      test: `Quantidade de trilhas de ${className}`,
+      expected: `${expected} trilhas`,
+      actual: `${actual} trilhas`,
+      reference: 'Livro Base v1.3',
+    });
+  }
+  
+  return results;
+}
+
 // ============== EXECUÇÃO DE VALIDAÇÃO ==============
 
 /**
@@ -921,6 +1212,13 @@ export function runFullValidation(): ValidationReport {
     ...validateClassAbilitiesCount(),
     ...validateCoreAbilities(),
     ...validateAbilityStructure(),
+    // Trilhas
+    ...validateTracksExist(),
+    ...validateTrackClasses(),
+    ...validateTrackAbilityCount(),
+    ...validateTrackAbilityNex(),
+    ...validateTrackInitialAbilities(),
+    ...validateTrackCountsByClass(),
   ];
   
   const passed = allResults.filter(r => r.passed).length;
@@ -947,7 +1245,7 @@ export function getValidationFailures(): ValidationResult[] {
  * Executa validação de uma categoria específica
  */
 export function validateCategory(
-  category: 'rituais' | 'condições' | 'modificadores' | 'dano' | 'poderes' | 'origens' | 'classes'
+  category: 'rituais' | 'condições' | 'modificadores' | 'dano' | 'poderes' | 'origens' | 'classes' | 'trilhas'
 ): ValidationResult[] {
   switch (category) {
     case 'rituais':
@@ -989,6 +1287,15 @@ export function validateCategory(
         ...validateClassAbilitiesCount(),
         ...validateCoreAbilities(),
         ...validateAbilityStructure(),
+      ];
+    case 'trilhas':
+      return [
+        ...validateTracksExist(),
+        ...validateTrackClasses(),
+        ...validateTrackAbilityCount(),
+        ...validateTrackAbilityNex(),
+        ...validateTrackInitialAbilities(),
+        ...validateTrackCountsByClass(),
       ];
   }
 }

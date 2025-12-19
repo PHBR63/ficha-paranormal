@@ -57,6 +57,7 @@ const CATEGORY_ICONS: Record<string, React.ReactNode> = {
   'Poderes Paranormais': <Zap className="w-4 h-4" />,
   'Origens': <Users className="w-4 h-4" />,
   'Classes': <Star className="w-4 h-4" />,
+  'Trilhas': <Swords className="w-4 h-4" />,
 };
 
 export function RulesValidationPanel() {
