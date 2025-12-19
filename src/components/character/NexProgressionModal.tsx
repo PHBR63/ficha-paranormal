@@ -725,14 +725,21 @@ export function NexProgressionModal({
                     </div>
                   ) : transcenderEligible ? (
                     <div className="p-4 bg-muted/50 border border-border rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Info className="w-4 h-4 text-warning" />
+                        <span className="text-xs font-medium text-warning">
+                          Custo: você não receberá o aumento de Sanidade deste NEX (+{sanityGainThisNex} SAN)
+                        </span>
+                      </div>
                       <p className="text-sm text-muted-foreground mb-3">
-                        Você pode usar <strong>Transcender</strong> para ganhar um Poder Paranormal,
-                        mas perderá o aumento de Sanidade deste NEX ({sanityGainThisNex} SAN).
+                        Use <strong>Transcender</strong> para trocar sua escolha de poder de classe 
+                        por um Poder Paranormal à sua escolha.
                       </p>
                       <Button
                         variant="outline"
                         className="w-full border-paranormal/50 hover:bg-paranormal/10"
                         onClick={handleOpenTranscender}
+                        title="Você não receberá o aumento de Sanidade deste NEX"
                       >
                         <Sparkles className="w-4 h-4 mr-2 text-paranormal" />
                         Usar Transcender

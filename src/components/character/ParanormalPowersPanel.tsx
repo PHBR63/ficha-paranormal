@@ -103,43 +103,59 @@ export function ParanormalPowersPanel({
 
   return (
     <div className="space-y-4">
-      {/* Contador de Transcender */}
+      {/* Contador de Transcender com Tooltip */}
       {transcenderTotal > 0 && (
-        <div className={`
-          flex items-center justify-between p-3 rounded-lg border
-          ${transcenderRemaining > 0 
-            ? 'bg-paranormal/10 border-paranormal/30' 
-            : 'bg-muted/50 border-muted'
-          }
-        `}>
-          <div className="flex items-center gap-2">
-            <Sparkles className={`w-4 h-4 ${transcenderRemaining > 0 ? 'text-paranormal' : 'text-muted-foreground'}`} />
-            <span className="text-sm font-medium">Transcender</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="flex gap-1">
-              {Array.from({ length: transcenderTotal }).map((_, i) => (
-                <div
-                  key={i}
-                  className={`w-2 h-2 rounded-full ${
-                    i < transcenderUsed 
-                      ? 'bg-paranormal' 
-                      : 'bg-muted-foreground/30'
-                  }`}
-                />
-              ))}
-            </div>
-            <Badge 
-              variant={transcenderRemaining > 0 ? 'default' : 'secondary'}
-              className={transcenderRemaining > 0 ? 'bg-paranormal hover:bg-paranormal/90' : ''}
-            >
-              {transcenderRemaining > 0 
-                ? `${transcenderRemaining} disponível${transcenderRemaining > 1 ? 'is' : ''}` 
-                : 'Esgotado'
-              }
-            </Badge>
-          </div>
-        </div>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className={`
+                flex items-center justify-between p-3 rounded-lg border cursor-help
+                ${transcenderRemaining > 0 
+                  ? 'bg-paranormal/10 border-paranormal/30' 
+                  : 'bg-muted/50 border-muted'
+                }
+              `}>
+                <div className="flex items-center gap-2">
+                  <Sparkles className={`w-4 h-4 ${transcenderRemaining > 0 ? 'text-paranormal' : 'text-muted-foreground'}`} />
+                  <span className="text-sm font-medium">Slots de Transcender</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {/* Indicador visual de slots (dots) */}
+                  <div className="flex gap-1">
+                    {Array.from({ length: transcenderTotal }).map((_, i) => (
+                      <div
+                        key={i}
+                        className={`w-2.5 h-2.5 rounded-full transition-colors ${
+                          i < transcenderUsed 
+                            ? 'bg-paranormal shadow-sm shadow-paranormal/50' 
+                            : 'bg-muted-foreground/30 border border-muted-foreground/20'
+                        }`}
+                        title={i < transcenderUsed ? `Usado (NEX ${[15, 30, 45, 60, 75, 90][i]}%)` : 'Disponível'}
+                      />
+                    ))}
+                  </div>
+                  <Badge 
+                    variant={transcenderRemaining > 0 ? 'default' : 'secondary'}
+                    className={transcenderRemaining > 0 ? 'bg-paranormal hover:bg-paranormal/90' : ''}
+                  >
+                    {transcenderUsed}/{transcenderTotal}
+                  </Badge>
+                </div>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="max-w-xs">
+              <p className="font-medium mb-1">Transcender</p>
+              <p className="text-xs text-muted-foreground">
+                Transcender permite trocar uma escolha de poder de classe por um Poder Paranormal.
+                O custo é não receber o aumento de Sanidade daquele NEX.
+              </p>
+              <p className="text-xs mt-1">
+                <span className="text-paranormal font-medium">{transcenderUsed}</span> usado{transcenderUsed !== 1 ? 's' : ''} · 
+                <span className="text-muted-foreground"> {transcenderRemaining}</span> disponível{transcenderRemaining !== 1 ? 'is' : ''}
+              </p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       )}
       {/* Indicador de Afinidade Elemental */}
       {elementalAffinity && (
