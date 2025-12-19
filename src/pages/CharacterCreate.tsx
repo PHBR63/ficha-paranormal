@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, ArrowRight, Check, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Particles } from '@/components/ui/particles';
+import { FlickeringGrid } from '@/components/ui/flickering-grid';
 import { StepConcept } from '@/components/character/StepConcept';
 import { StepNex } from '@/components/character/StepNex';
 import { StepPatent } from '@/components/character/StepPatent';
@@ -618,9 +620,38 @@ export default function CharacterCreate() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-20 sm:pb-0">
+    <div className="min-h-screen bg-background pb-20 sm:pb-0 relative overflow-hidden">
+      {/* Atmospheric Effects */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <FlickeringGrid 
+          className="absolute inset-0 opacity-[0.03]"
+          squareSize={3}
+          gridGap={8}
+          flickerChance={0.02}
+          color="rgb(139, 0, 0)"
+        />
+        <Particles
+          className="absolute inset-0"
+          quantity={25}
+          staticity={40}
+          color="#8B0000"
+          size={0.4}
+        />
+        {/* Red mist */}
+        <div className="absolute inset-0 bg-gradient-to-t from-red-950/10 via-transparent to-transparent" />
+        {/* Scan lines */}
+        <div 
+          className="absolute inset-0 opacity-[0.015]"
+          style={{
+            backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(139, 0, 0, 0.1) 2px, rgba(139, 0, 0, 0.1) 4px)',
+          }}
+        />
+        {/* Vignette */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.4)_100%)]" />
+      </div>
+
       {/* Header - Responsivo */}
-      <header className="border-b border-border bg-card/50 sticky top-0 z-30 backdrop-blur-sm">
+      <header className="border-b border-border bg-card/80 sticky top-0 z-30 backdrop-blur-md">
         <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
           <div className="flex items-center gap-2 sm:gap-4">
             <Button 
@@ -633,12 +664,12 @@ export default function CharacterCreate() {
               <span className="hidden sm:inline ml-2">Voltar</span>
             </Button>
             <div className="h-6 w-px bg-border hidden sm:block" />
-            <h1 className="font-display text-lg sm:text-xl tracking-wider">NOVO AGENTE</h1>
+            <h1 className="font-display text-lg sm:text-xl tracking-wider text-primary">NOVO AGENTE</h1>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 max-w-4xl">
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 max-w-4xl relative z-10">
         {/* Stepper */}
         <div className="mb-4 sm:mb-8">
           <CharacterCreationStepper
