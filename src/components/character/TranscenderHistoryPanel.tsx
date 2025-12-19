@@ -6,7 +6,7 @@
 import { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,6 +17,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { 
   Sparkles, 
@@ -27,6 +32,8 @@ import {
   Loader2,
   History,
   AlertTriangle,
+  ChevronDown,
+  Info,
 } from 'lucide-react';
 import { 
   getTranscenderHistory, 
@@ -37,6 +44,7 @@ import { PARANORMAL_POWERS, ParanormalElement, ELEMENT_LABELS } from '@/lib/para
 import { toast } from '@/components/ui/sonner';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import confetti from 'canvas-confetti';
 
 interface TranscenderHistoryPanelProps {
   characterId: string;
@@ -62,6 +70,7 @@ export function TranscenderHistoryPanel({
 }: TranscenderHistoryPanelProps) {
   const [choices, setChoices] = useState<HistoryChoice[]>([]);
   const [loading, setLoading] = useState(true);
+  const [expandedPowers, setExpandedPowers] = useState<Set<string>>(new Set());
   const [reverting, setReverting] = useState<string | null>(null);
   const [confirmRevert, setConfirmRevert] = useState<HistoryChoice | null>(null);
   
@@ -85,6 +94,35 @@ export function TranscenderHistoryPanel({
     loadHistory();
   }, [characterId, currentNex]);
   
+  // Dispara confete para celebrar restauração de SAN
+  const triggerConfetti = () => {
+    // Confete verde para representar SAN restaurada
+    confetti({
+      particleCount: 80,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors: ['#22c55e', '#4ade80', '#86efac', '#bbf7d0'],
+    });
+    
+    // Segunda explosão com delay
+    setTimeout(() => {
+      confetti({
+        particleCount: 50,
+        angle: 60,
+        spread: 55,
+        origin: { x: 0.3, y: 0.6 },
+        colors: ['#22c55e', '#4ade80', '#a855f7', '#c084fc'],
+      });
+      confetti({
+        particleCount: 50,
+        angle: 120,
+        spread: 55,
+        origin: { x: 0.7, y: 0.6 },
+        colors: ['#22c55e', '#4ade80', '#a855f7', '#c084fc'],
+      });
+    }, 150);
+  };
+
   // Handler para reverter escolha
   const handleRevert = async (choice: HistoryChoice) => {
     setReverting(choice.id);
@@ -97,8 +135,11 @@ export function TranscenderHistoryPanel({
       );
       
       if (result.success) {
-        toast.success('Transcender revertido', {
-          description: `${choice.powerName} foi removido. +${result.sanityCostRestored} SAN restaurado.`,
+        // Dispara confete para celebrar!
+        triggerConfetti();
+        
+        toast.success('Transcender revertido!', {
+          description: `${choice.powerName} foi removido. +${result.sanityCostRestored} SAN restaurado!`,
         });
         
         // Atualizar lista local
@@ -118,6 +159,24 @@ export function TranscenderHistoryPanel({
       setReverting(null);
       setConfirmRevert(null);
     }
+  };
+
+  // Toggle para expandir/colapsar descrição do poder
+  const togglePowerExpand = (choiceId: string) => {
+    setExpandedPowers(prev => {
+      const next = new Set(prev);
+      if (next.has(choiceId)) {
+        next.delete(choiceId);
+      } else {
+        next.add(choiceId);
+      }
+      return next;
+    });
+  };
+
+  // Busca detalhes completos do poder
+  const getPowerDetails = (powerId: string) => {
+    return PARANORMAL_POWERS.find(p => p.id === powerId);
   };
   
   // Obter elemento do poder
@@ -157,6 +216,8 @@ export function TranscenderHistoryPanel({
         {choices.map((choice) => {
           const element = getPowerElement(choice.powerId);
           const isReverting = reverting === choice.id;
+          const isExpanded = expandedPowers.has(choice.id);
+          const powerDetails = getPowerDetails(choice.powerId);
           
           return (
             <Card 
@@ -204,6 +265,43 @@ export function TranscenderHistoryPanel({
                         </Badge>
                       )}
                     </div>
+                    
+                    {/* Prévia expandível do poder */}
+                    {powerDetails && (
+                      <Collapsible open={isExpanded} onOpenChange={() => togglePowerExpand(choice.id)}>
+                        <CollapsibleTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 px-2 mt-2 text-xs text-muted-foreground hover:text-foreground"
+                          >
+                            <Info className="w-3 h-3 mr-1" />
+                            Ver descrição
+                            <ChevronDown 
+                              className={`w-3 h-3 ml-1 transition-transform ${isExpanded ? 'rotate-180' : ''}`} 
+                            />
+                          </Button>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="mt-2">
+                          <div className="p-2.5 rounded-md bg-muted/50 border border-border/50 text-xs space-y-2">
+                            <p className="text-foreground/90 leading-relaxed">
+                              {powerDetails.description}
+                            </p>
+                            {powerDetails.affinityEffect && (
+                              <p className="text-paranormal/80 italic">
+                                <Sparkles className="w-3 h-3 inline mr-1" />
+                                {powerDetails.affinityEffect}
+                              </p>
+                            )}
+                            {powerDetails.prerequisite && (
+                              <p className="text-muted-foreground">
+                                <strong>Pré-requisito:</strong> {powerDetails.prerequisite.element} {powerDetails.prerequisite.count}
+                              </p>
+                            )}
+                          </div>
+                        </CollapsibleContent>
+                      </Collapsible>
+                    )}
                   </div>
                   
                   {/* Botão de reverter */}
