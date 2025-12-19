@@ -708,3 +708,203 @@ export const FEAR_SECOND_CIRCLE: UnifiedRitual[] = [
     ],
   },
 ];
+
+// ========================================
+// 2º CÍRCULO - MORTE
+// ========================================
+
+export const DEATH_SECOND_CIRCLE: UnifiedRitual[] = [
+  {
+    id: 'amputar',
+    name: 'Amputar',
+    circle: 2,
+    element: 'morte',
+    execution: 'Padrão',
+    range: 'Toque',
+    target: '1 ser',
+    duration: 'Instantânea',
+    description: 'Causa 6d6 dano de Morte e amputa membro se o alvo falhar na Fortitude. Pode curar amputação própria gastando metade do PE máximo.',
+    cost: 2,
+    resistance: { type: 'fortitude', effect: 'parcial' },
+    effects: {
+      base: {
+        kind: 'damage',
+        damage: { diceCount: 6, diceType: 6, damageType: 'morte' },
+        resistance: { type: 'fortitude', effect: 'parcial' },
+        summary: '6d6 dano Morte. Amputa membro se falhar. Ou cura amputação própria (custa metade PE máx).',
+      },
+      discente: {
+        kind: 'damage',
+        summary: 'Pode amputar cabeça. Cura não gera PE máximo.',
+      },
+      verdadeiro: {
+        kind: 'damage',
+        damage: { diceCount: 12, diceType: 6, damageType: 'morte' },
+        summary: '12d6 dano, amputação em alcance curto.',
+      },
+    },
+    enhancements: [
+      { name: 'Discente', cost: 3, description: 'Pode amputar cabeça. Curar amputação não custa PE máximo.', circleReq: 3, affinityReq: true },
+      { name: 'Verdadeiro', cost: 7, description: 'Alcance curto, 12d6 dano.', circleReq: 4, affinityReq: true },
+    ],
+  },
+  {
+    id: 'armamento-extradimensional',
+    name: 'Armamento Extradimensional',
+    circle: 2,
+    element: 'morte',
+    execution: 'Livre',
+    range: 'Pessoal',
+    target: 'Você',
+    duration: 'Permanente',
+    description: 'Abre lacuna até 30cm de raio para guardar armas/equipamentos. Conjura novamente para acessar.',
+    cost: 1,
+    effects: {
+      base: {
+        kind: 'utility',
+        summary: 'Bolso dimensional de até 30cm de raio para armas/equipamentos.',
+      },
+      discente: {
+        kind: 'utility',
+        summary: 'Bolso de até 1m de raio.',
+      },
+    },
+    enhancements: [
+      { name: 'Discente', cost: 3, description: 'Bolso de até 1m de raio.', circleReq: 3 },
+    ],
+  },
+  {
+    id: 'banimento',
+    name: 'Banimento',
+    circle: 2,
+    element: 'morte',
+    execution: 'Padrão',
+    range: 'Curto',
+    target: '1 criatura paranormal',
+    duration: 'Especial',
+    description: 'Expulsa criatura paranormal para o Outro Lado se falhar na Vontade. Demora mais rodadas quanto mais forte a criatura.',
+    cost: 2,
+    resistance: { type: 'vontade', effect: 'anula' },
+    effects: {
+      base: {
+        kind: 'utility',
+        resistance: { type: 'vontade', effect: 'anula' },
+        summary: 'Expulsa criatura paranormal para o Outro Lado.',
+      },
+      discente: {
+        kind: 'utility',
+        summary: 'Afeta até 3 criaturas. +5 na DT.',
+      },
+      verdadeiro: {
+        kind: 'utility',
+        summary: 'Banimento instantâneo. +10 na DT.',
+      },
+    },
+    enhancements: [
+      { name: 'Discente', cost: 4, description: 'Até 3 criaturas, +5 DT.', circleReq: 3 },
+      { name: 'Verdadeiro', cost: 8, description: 'Banimento instantâneo, +10 DT.', circleReq: 4, affinityReq: true },
+    ],
+  },
+  {
+    id: 'desacelerar-impacto',
+    name: 'Desacelerar Impacto',
+    circle: 2,
+    element: 'morte',
+    execution: 'Reação',
+    range: 'Pessoal',
+    target: 'Você',
+    duration: 'Instantânea',
+    description: 'Reduz em 5d10 dano de queda ou projétil.',
+    cost: 2,
+    hasHooks: true,
+    effects: {
+      base: {
+        kind: 'interceptor',
+        hooks: [
+          { trigger: 'onFallDamage', effect: 'Reduz 5d10 de dano de queda' },
+          { trigger: 'onProjectileHit', effect: 'Reduz 5d10 de dano de projétil' },
+        ],
+        summary: 'Reduz em 5d10 dano de queda ou projétil (reação).',
+      },
+      discente: {
+        kind: 'interceptor',
+        summary: 'Reduz 10d10 de dano.',
+      },
+      verdadeiro: {
+        kind: 'interceptor',
+        summary: 'Nega dano de queda completamente.',
+      },
+    },
+    enhancements: [
+      { name: 'Discente', cost: 4, description: 'Reduz 10d10 de dano.', circleReq: 3 },
+      { name: 'Verdadeiro', cost: 8, description: 'Nega todo dano de queda.', circleReq: 4, affinityReq: true },
+    ],
+  },
+  {
+    id: 'paralisia',
+    name: 'Paralisia',
+    circle: 2,
+    element: 'morte',
+    execution: 'Padrão',
+    range: 'Curto',
+    target: '1 ser',
+    duration: 'Cena',
+    description: 'Alvo fica paralisado se falhar na Fortitude. No turno, pode repetir resistência.',
+    cost: 2,
+    resistance: { type: 'fortitude', effect: 'anula' },
+    effects: {
+      base: {
+        kind: 'debuff',
+        conditions: [{ id: 'paralisado', duration: 'sustentado' }],
+        resistance: { type: 'fortitude', effect: 'anula' },
+        sustain: { concentration: true },
+        summary: 'Alvo fica paralisado. Pode repetir resistência a cada turno.',
+      },
+      discente: {
+        kind: 'debuff',
+        conditions: [{ id: 'paralisado', duration: 'cena' }],
+        summary: 'Não precisa sustentar. Duração cena.',
+      },
+      verdadeiro: {
+        kind: 'debuff',
+        summary: 'Até 5 seres.',
+      },
+    },
+    enhancements: [
+      { name: 'Discente', cost: 4, description: 'Duração cena, sem sustentar.', circleReq: 3 },
+      { name: 'Verdadeiro', cost: 8, description: 'Até 5 seres.', circleReq: 4, affinityReq: true },
+    ],
+  },
+  {
+    id: 'velocidade-mortal',
+    name: 'Velocidade Mortal',
+    circle: 2,
+    element: 'morte',
+    execution: 'Padrão',
+    range: 'Toque',
+    target: '1 ser',
+    duration: 'Cena',
+    description: 'Acelera o tempo. +3m de deslocamento, +1 em Defesa e Reflexos, +1 ação padrão.',
+    cost: 2,
+    effects: {
+      base: {
+        kind: 'buff',
+        defenseBonus: 1,
+        summary: '+3m deslocamento, +1 Defesa/Reflexos, +1 ação padrão por turno.',
+      },
+      discente: {
+        kind: 'buff',
+        defenseBonus: 3,
+        summary: '+9m, +3 Defesa/Reflexos, +2 ações padrão.',
+      },
+      verdadeiro: {
+        kind: 'buff',
+        summary: '+15m, +5 Defesa/Reflexos, +3 ações padrão.',
+      },
+    },
+    enhancements: [
+      { name: 'Discente', cost: 4, description: '+9m, +3 em Defesa/Reflexos, +2 ações padrão.', circleReq: 3 },
+      { name: 'Verdadeiro', cost: 8, description: '+15m, +5 em Defesa/Reflexos, +3 ações padrão.', circleReq: 4, affinityReq: true },
+    ],
+  },
+];
