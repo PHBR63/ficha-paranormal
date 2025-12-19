@@ -4,10 +4,16 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { ThemeSelector } from '@/components/ui/theme-selector';
-import { Plus, LogOut, User, FileText, Users, Settings, Loader2, AlertTriangle, Skull, Shield, Smartphone } from 'lucide-react';
+import { Particles } from '@/components/ui/particles';
+import { FlickeringGrid } from '@/components/ui/flickering-grid';
+import { DecryptedText } from '@/components/ui/decrypted-text';
+import { BlurText } from '@/components/ui/blur-text';
+import { Plus, LogOut, User, FileText, Users, Settings, Loader2, AlertTriangle, Skull, Shield, Smartphone, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { CharacterCard } from '@/components/cards/CharacterCard';
 import { useAdminCheck } from '@/hooks/useAdminCheck';
+import { ParanormalElementIcon } from '@/components/ui/paranormal-element-icon';
+
 interface Character {
   id: string;
   name: string;
@@ -24,36 +30,32 @@ interface Character {
   photo_url?: string | null;
   conditions?: string[];
 }
+
 export default function Dashboard() {
-  const {
-    user,
-    signOut
-  } = useAuth();
-  const {
-    toast
-  } = useToast();
+  const { user, signOut } = useAuth();
+  const { toast } = useToast();
   const { isAdmin } = useAdminCheck();
   const [characters, setCharacters] = useState<Character[]>([]);
   const [loading, setLoading] = useState(true);
-  const [profile, setProfile] = useState<{
-    display_name: string | null;
-  } | null>(null);
+  const [profile, setProfile] = useState<{ display_name: string | null; } | null>(null);
+
   useEffect(() => {
     async function fetchData() {
       if (!user) return;
 
-      // Fetch profile
-      const {
-        data: profileData
-      } = await supabase.from('profiles').select('display_name').eq('user_id', user.id).single();
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('display_name')
+        .eq('user_id', user.id)
+        .single();
       setProfile(profileData);
 
-      // Fetch characters
-      const {
-        data: charactersData
-      } = await supabase.from('characters').select('id, name, class, origin, nex, patent, hp_current, hp_max, pe_current, pe_max, san_current, san_max, photo_url, conditions').eq('user_id', user.id).order('updated_at', {
-        ascending: false
-      });
+      const { data: charactersData } = await supabase
+        .from('characters')
+        .select('id, name, class, origin, nex, patent, hp_current, hp_max, pe_current, pe_max, san_current, san_max, photo_url, conditions')
+        .eq('user_id', user.id)
+        .order('updated_at', { ascending: false });
+      
       const chars = (charactersData || []).map(c => ({
         ...c,
         conditions: Array.isArray(c.conditions) ? c.conditions as string[] : []
@@ -63,13 +65,12 @@ export default function Dashboard() {
     }
     fetchData();
   }, [user]);
+
   const handleDeleteCharacter = async (id: string, name: string) => {
     if (!confirm(`Tem certeza que deseja excluir ${name}? Esta ação não pode ser desfeita.`)) {
       return;
     }
-    const {
-      error
-    } = await supabase.from('characters').delete().eq('id', id);
+    const { error } = await supabase.from('characters').delete().eq('id', id);
     if (error) {
       toast({
         title: 'Erro',
@@ -84,37 +85,81 @@ export default function Dashboard() {
       });
     }
   };
-  const displayName = profile?.display_name || user?.email?.split('@')[0] || 'Agente';
-  return <div className="min-h-screen bg-background relative">
-      {/* Background effects */}
-      <div className="noise-overlay" />
-      <div className="absolute inset-0 bg-grid-pattern opacity-20" />
 
-      {/* Header - Responsivo */}
-      <header className="relative z-10 border-b border-border/50 backdrop-blur-sm sticky top-0 bg-background/80">
+  const displayName = profile?.display_name || user?.email?.split('@')[0] || 'Agente';
+
+  // Check if any character has low HP or SAN
+  const hasLowStats = characters.some(c => 
+    c.hp_current < c.hp_max * 0.3 || c.san_current < c.san_max * 0.3
+  );
+
+  return (
+    <div className="min-h-screen bg-[#0D0A0B] relative overflow-hidden">
+      {/* Background Effects - Horror Investigativo */}
+      <div className="absolute inset-0 bg-gradient-to-b from-[#0D0A0B] via-[#1A0505] to-[#0D0A0B]" />
+      
+      {/* Flickering Grid - Instabilidade da Membrana */}
+      <FlickeringGrid 
+        className="opacity-30"
+        squareSize={4}
+        gridGap={8}
+        flickerChance={0.2}
+        color="rgb(139, 0, 0)"
+        maxOpacity={0.2}
+      />
+      
+      {/* Noise texture */}
+      <div className="absolute inset-0 landing-noise pointer-events-none" />
+      
+      {/* Red mist effect - sutil */}
+      <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
+        <div className="absolute top-1/3 right-1/4 w-[400px] h-[400px] bg-[#8B0000]/5 rounded-full blur-[120px] animate-red-mist" />
+        <div className="absolute bottom-1/3 left-1/4 w-[300px] h-[300px] bg-[#B22222]/5 rounded-full blur-[100px] animate-red-mist" style={{ animationDelay: '3s' }} />
+      </div>
+      
+      {/* Scan lines overlay - mais sutil */}
+      <div className="absolute inset-0 scan-lines opacity-10 pointer-events-none" />
+      
+      {/* Blood particles */}
+      <Particles
+        className="absolute inset-0 z-[1]"
+        quantity={20}
+        color="#8B0000"
+        size={1.2}
+        vx={0}
+        vy={-0.15}
+        staticity={90}
+        ease={120}
+      />
+      
+      {/* Red vignette */}
+      <div className="absolute inset-0 vignette-red pointer-events-none opacity-50" />
+
+      {/* Header */}
+      <header className="relative z-10 border-b border-[#8B0000]/20 backdrop-blur-sm sticky top-0 bg-[#0D0A0B]/80">
         <div className="container mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2 sm:gap-3">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-primary/20 border border-primary/30 flex items-center justify-center">
-              <Skull className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
+          <Link to="/" className="flex items-center gap-2 sm:gap-3 group">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-[#8B0000]/20 border border-[#8B0000]/40 flex items-center justify-center transition-all group-hover:border-[#8B0000]/60 group-hover:bg-[#8B0000]/30">
+              <Eye className={`w-5 h-5 sm:w-6 sm:h-6 text-[#B22222] ${hasLowStats ? 'animate-pulse' : ''}`} />
             </div>
             <div>
-              <h1 className="font-display text-lg sm:text-xl tracking-wide text-foreground">LET'S ROLL</h1>
-              <p className="text-[9px] sm:text-[10px] text-muted-foreground tracking-[0.15em] sm:tracking-[0.2em] uppercase hidden sm:block">Painel do Agente</p>
+              <h1 className="font-display text-lg sm:text-xl tracking-wide text-[#F5F5F5]">LET'S ROLL</h1>
+              <p className="text-[9px] sm:text-[10px] text-[#8B0000] tracking-[0.15em] sm:tracking-[0.2em] uppercase hidden sm:block">Painel do Agente</p>
             </div>
           </Link>
           
           <div className="flex items-center gap-2 sm:gap-4">
             <ThemeSelector />
             <Link to="/install" className="hidden sm:flex">
-              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
+              <Button variant="ghost" size="icon" className="text-[#808080] hover:text-[#F5F5F5] hover:bg-[#8B0000]/10">
                 <Smartphone className="w-5 h-5" />
               </Button>
             </Link>
-            <div className="flex items-center gap-2 text-muted-foreground">
+            <div className="flex items-center gap-2 text-[#808080]">
               <User className="w-4 h-4" />
-              <span className="text-sm hidden md:block">{displayName}</span>
+              <span className="text-sm hidden md:block text-[#C0C0C0]">{displayName}</span>
             </div>
-            <Button variant="ghost" size="icon" onClick={signOut} className="text-muted-foreground hover:text-foreground">
+            <Button variant="ghost" size="icon" onClick={signOut} className="text-[#808080] hover:text-[#F5F5F5] hover:bg-[#8B0000]/10">
               <LogOut className="w-5 h-5" />
             </Button>
           </div>
@@ -122,22 +167,31 @@ export default function Dashboard() {
       </header>
 
       <main className="relative z-10 container mx-auto px-4 sm:px-6 py-4 sm:py-8">
-        {/* Welcome section - Responsivo */}
+        {/* Welcome section */}
         <section className="mb-6 sm:mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <p className="text-xs sm:text-sm tracking-[0.15em] sm:tracking-[0.2em] uppercase text-secondary-foreground">Central de Operações</p>
-              <h2 className="font-display text-2xl sm:text-4xl tracking-wide text-foreground">
-                BEM-VINDO, <span className="text-primary">{displayName.toUpperCase()}</span>
+              <p className="text-[10px] sm:text-xs tracking-[0.2em] uppercase text-[#8B0000] font-mono mb-1">
+                Central de Operações
+              </p>
+              <h2 className="font-display text-2xl sm:text-4xl tracking-wide text-[#F5F5F5] flex items-center gap-2 flex-wrap">
+                <span>BEM-VINDO,</span>
+                <span className="text-[#B22222]">
+                  <DecryptedText 
+                    text={displayName.toUpperCase()} 
+                    speed={40}
+                    className="font-display"
+                  />
+                </span>
               </h2>
-              <p className="text-sm text-muted-foreground mt-1 hidden sm:block">
-                Gerencie seus agentes e missões na Ordo Realitas.
+              <p className="text-sm text-[#808080] mt-1 hidden sm:block">
+                <BlurText text="Gerencie seus agentes e missões na Ordo Realitas." delay={0.3} />
               </p>
             </div>
             <div className="flex gap-2 sm:gap-3">
               {isAdmin && (
                 <Link to="/admin/import" className="flex-1 sm:flex-none">
-                  <Button variant="secondary" className="w-full sm:w-auto font-display tracking-wider text-xs sm:text-sm">
+                  <Button className="w-full sm:w-auto font-display tracking-wider text-xs sm:text-sm bg-[#1A1214] border border-[#8B0000]/30 hover:bg-[#8B0000]/20 hover:border-[#8B0000]/50 text-[#C0C0C0]">
                     <Shield className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
                     <span className="hidden sm:inline">Admin</span>
                     <span className="sm:hidden">Adm</span>
@@ -145,14 +199,14 @@ export default function Dashboard() {
                 </Link>
               )}
               <Link to="/campaigns" className="flex-1 sm:flex-none">
-                <Button variant="outline" className="w-full sm:w-auto font-display tracking-wider text-xs sm:text-sm">
+                <Button className="w-full sm:w-auto font-display tracking-wider text-xs sm:text-sm bg-[#1A1214] border border-[#8B0000]/30 hover:bg-[#8B0000]/20 hover:border-[#8B0000]/50 text-[#C0C0C0]">
                   <Users className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
                   <span className="hidden sm:inline">Campanhas</span>
                   <span className="sm:hidden">Mesas</span>
                 </Button>
               </Link>
               <Link to="/character/create" className="flex-1 sm:flex-none">
-                <Button className="w-full sm:w-auto action-button font-display tracking-wider text-xs sm:text-sm">
+                <Button className="w-full sm:w-auto font-display tracking-wider text-xs sm:text-sm bg-[#8B0000] hover:bg-[#B22222] text-white border border-[#B22222]/30 shadow-[0_0_15px_rgba(139,0,0,0.3)] hover:shadow-[0_0_25px_rgba(139,0,0,0.5)] transition-all">
                   <Plus className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
                   <span className="hidden sm:inline">Novo Agente</span>
                   <span className="sm:hidden">Novo</span>
@@ -162,49 +216,49 @@ export default function Dashboard() {
           </div>
         </section>
 
-        {/* Quick stats */}
-        <section className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
-          <div className="dossier-card p-4">
+        {/* Quick stats - Estilo Dossiê */}
+        <section className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-8 sm:mb-10">
+          <div className="dossier-classified p-4 group hover:scale-[1.02] transition-transform">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center">
-                <FileText className="w-5 h-5 text-accent" />
+              <div className="w-10 h-10 rounded-lg bg-[#8B0000]/10 border border-[#8B0000]/30 flex items-center justify-center">
+                <ParanormalElementIcon element="sangue" size="sm" variant="glow" />
               </div>
               <div>
-                <p className="font-display text-2xl text-foreground">{characters.length}</p>
-                <p className="text-xs text-muted-foreground uppercase tracking-wider">Agentes</p>
+                <p className="font-display text-2xl text-[#F5F5F5]">{characters.length}</p>
+                <p className="text-[10px] text-[#808080] uppercase tracking-wider font-mono">Agentes</p>
               </div>
             </div>
           </div>
-          <div className="dossier-card p-4">
+          <div className="dossier-classified p-4 group hover:scale-[1.02] transition-transform">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
-                <Users className="w-5 h-5 text-muted-foreground" />
+              <div className="w-10 h-10 rounded-lg bg-[#8B0000]/10 border border-[#8B0000]/30 flex items-center justify-center">
+                <ParanormalElementIcon element="conhecimento" size="sm" variant="glow" />
               </div>
               <div>
-                <p className="font-display text-2xl text-foreground">0</p>
-                <p className="text-xs text-muted-foreground uppercase tracking-wider">Mesas</p>
+                <p className="font-display text-2xl text-[#F5F5F5]">0</p>
+                <p className="text-[10px] text-[#808080] uppercase tracking-wider font-mono">Mesas</p>
               </div>
             </div>
           </div>
-          <div className="dossier-card p-4">
+          <div className="dossier-classified p-4 group hover:scale-[1.02] transition-transform">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
-                <AlertTriangle className="w-5 h-5 text-muted-foreground" />
+              <div className="w-10 h-10 rounded-lg bg-[#8B0000]/10 border border-[#8B0000]/30 flex items-center justify-center">
+                <ParanormalElementIcon element="medo" size="sm" variant="glow" />
               </div>
               <div>
-                <p className="font-display text-2xl text-foreground">0</p>
-                <p className="text-xs text-muted-foreground uppercase tracking-wider">Missões</p>
+                <p className="font-display text-2xl text-[#F5F5F5]">0</p>
+                <p className="text-[10px] text-[#808080] uppercase tracking-wider font-mono">Missões</p>
               </div>
             </div>
           </div>
-          <div className="dossier-card p-4">
+          <div className="dossier-classified p-4 group hover:scale-[1.02] transition-transform">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
-                <Settings className="w-5 h-5 text-muted-foreground" />
+              <div className="w-10 h-10 rounded-lg bg-[#8B0000]/10 border border-[#8B0000]/30 flex items-center justify-center">
+                <ParanormalElementIcon element="energia" size="sm" variant="glow" />
               </div>
               <div>
-                <p className="font-display text-2xl text-foreground">—</p>
-                <p className="text-xs text-muted-foreground uppercase tracking-wider">Config</p>
+                <p className="font-display text-2xl text-[#F5F5F5]">—</p>
+                <p className="text-[10px] text-[#808080] uppercase tracking-wider font-mono">Config</p>
               </div>
             </div>
           </div>
@@ -213,46 +267,79 @@ export default function Dashboard() {
         {/* Characters section */}
         <section>
           <div className="flex items-center gap-4 mb-6">
-            <div className="divider-line flex-1" />
-            <h3 className="font-display text-xl tracking-wider text-primary">DOSSIÊS DE AGENTES</h3>
-            <div className="divider-line flex-1" />
+            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#8B0000]/40 to-transparent" />
+            <h3 className="font-display text-lg sm:text-xl tracking-wider text-[#B22222] flex items-center gap-2">
+              <Eye className="w-5 h-5" />
+              DOSSIÊS DE AGENTES
+            </h3>
+            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#8B0000]/40 to-transparent" />
           </div>
 
-          {loading ? <div className="flex items-center justify-center py-16">
-              <Loader2 className="w-8 h-8 animate-spin text-primary" />
-            </div> : characters.length === 0 ? <div className="section-container text-center py-16">
-              <FileText className="w-16 h-16 text-foreground/40 mx-auto mb-4" />
-              <h3 className="font-display text-2xl text-foreground mb-2">
-                NENHUM DOSSIÊ ENCONTRADO
-              </h3>
-              <p className="text-foreground/70 mb-6">
-                Crie seu primeiro agente para começar suas missões.
-              </p>
-              <Link to="/character/create">
-                <Button className="action-button">
-                  <Plus className="w-5 h-5 mr-2" />
-                  Criar Primeiro Agente
-                </Button>
-              </Link>
-            </div> : <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {characters.map((character, index) => <CharacterCard key={character.id} character={{
-            id: character.id,
-            name: character.name,
-            class: character.class,
-            origin: character.origin,
-            nex: character.nex,
-            patent: character.patent,
-            hp_current: character.hp_current,
-            hp_max: character.hp_max,
-            pe_current: character.pe_current,
-            pe_max: character.pe_max,
-            san_current: character.san_current,
-            san_max: character.san_max,
-            photo_url: character.photo_url,
-            conditions: character.conditions || []
-          }} onDelete={() => handleDeleteCharacter(character.id, character.name)} index={index} />)}
-            </div>}
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-16">
+              <div className="relative">
+                <div className="absolute inset-0 bg-[#8B0000]/20 rounded-full blur-xl animate-pulse" />
+                <Eye className="w-12 h-12 text-[#B22222] animate-pulse relative" />
+              </div>
+              <p className="text-[#808080] mt-4 font-mono text-sm">Carregando dossiês...</p>
+            </div>
+          ) : characters.length === 0 ? (
+            <div className="dossier-classified text-center py-12 sm:py-16 relative overflow-hidden">
+              {/* Background effect */}
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(139,0,0,0.1)_0%,_transparent_70%)]" />
+              
+              <div className="relative z-10">
+                <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-[#8B0000]/10 border border-[#8B0000]/30 flex items-center justify-center">
+                  <FileText className="w-10 h-10 text-[#808080]" />
+                </div>
+                <h3 className="font-display text-xl sm:text-2xl text-[#F5F5F5] mb-2">
+                  <DecryptedText text="NENHUM DOSSIÊ ENCONTRADO" speed={30} />
+                </h3>
+                <p className="text-[#808080] mb-6 text-sm sm:text-base">
+                  Crie seu primeiro agente para começar suas missões.
+                </p>
+                <Link to="/character/create">
+                  <Button className="bg-[#8B0000] hover:bg-[#B22222] text-white border border-[#B22222]/30 shadow-[0_0_20px_rgba(139,0,0,0.3)] hover:shadow-[0_0_30px_rgba(139,0,0,0.5)] transition-all">
+                    <Plus className="w-5 h-5 mr-2" />
+                    Criar Primeiro Agente
+                  </Button>
+                </Link>
+              </div>
+              
+              {/* Classified stamp */}
+              <div className="absolute -bottom-2 -right-2 text-[#8B0000]/10 font-display text-6xl tracking-widest rotate-[-15deg] select-none">
+                VAZIO
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+              {characters.map((character, index) => (
+                <CharacterCard 
+                  key={character.id} 
+                  character={{
+                    id: character.id,
+                    name: character.name,
+                    class: character.class,
+                    origin: character.origin,
+                    nex: character.nex,
+                    patent: character.patent,
+                    hp_current: character.hp_current,
+                    hp_max: character.hp_max,
+                    pe_current: character.pe_current,
+                    pe_max: character.pe_max,
+                    san_current: character.san_current,
+                    san_max: character.san_max,
+                    photo_url: character.photo_url,
+                    conditions: character.conditions || []
+                  }} 
+                  onDelete={() => handleDeleteCharacter(character.id, character.name)} 
+                  index={index} 
+                />
+              ))}
+            </div>
+          )}
         </section>
       </main>
-    </div>;
+    </div>
+  );
 }

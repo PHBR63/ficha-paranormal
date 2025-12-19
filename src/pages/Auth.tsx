@@ -5,7 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Skull, Loader2, ArrowLeft, Eye, EyeOff } from 'lucide-react';
+import { Particles } from '@/components/ui/particles';
+import { FlickeringGrid } from '@/components/ui/flickering-grid';
+import { DecryptedText } from '@/components/ui/decrypted-text';
+import { Loader2, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { z } from 'zod';
 
 const authSchema = z.object({
@@ -33,7 +36,6 @@ export default function Auth() {
     setMode(searchParams.get('mode') === 'signup' ? 'signup' : 'signin');
   }, [searchParams]);
 
-  // Redirect if already logged in
   if (user) {
     return <Navigate to="/dashboard" replace />;
   }
@@ -120,42 +122,87 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden flex items-center justify-center p-4">
-      {/* Background effects */}
-      <div className="noise-overlay" />
-      <div className="absolute inset-0 bg-grid-pattern opacity-20" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] sm:w-[600px] h-[400px] sm:h-[600px] bg-gradient-radial from-primary/10 via-transparent to-transparent blur-3xl" />
+    <div className="min-h-screen bg-[#0D0A0B] relative overflow-hidden flex items-center justify-center p-4">
+      {/* Background gradient */}
+      <div className="absolute inset-0 bg-gradient-to-b from-[#0D0A0B] via-[#1A0505] to-[#0D0A0B]" />
+      
+      {/* Flickering Grid */}
+      <FlickeringGrid 
+        className="opacity-20"
+        squareSize={3}
+        gridGap={6}
+        flickerChance={0.25}
+        color="rgb(139, 0, 0)"
+        maxOpacity={0.25}
+      />
+      
+      {/* Noise texture */}
+      <div className="absolute inset-0 landing-noise pointer-events-none" />
+      
+      {/* Red mist effect - mais intenso */}
+      <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
+        <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-[#8B0000]/10 rounded-full blur-[150px] animate-red-mist" />
+        <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-[#B22222]/8 rounded-full blur-[120px] animate-red-mist" style={{ animationDelay: '4s' }} />
+      </div>
+      
+      {/* Scan lines */}
+      <div className="absolute inset-0 scan-lines opacity-20 pointer-events-none" />
+      
+      {/* Blood particles */}
+      <Particles
+        className="absolute inset-0 z-[1]"
+        quantity={30}
+        color="#8B0000"
+        size={1.3}
+        vx={0}
+        vy={-0.2}
+        staticity={80}
+        ease={100}
+      />
+      
+      {/* Red vignette */}
+      <div className="absolute inset-0 vignette-red pointer-events-none" />
       
       {/* Back button */}
       <Link 
         to="/" 
-        className="absolute top-4 left-4 sm:top-6 sm:left-6 z-20 flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+        className="absolute top-4 left-4 sm:top-6 sm:left-6 z-20 flex items-center gap-2 text-[#808080] hover:text-[#F5F5F5] transition-colors group"
       >
-        <ArrowLeft className="w-4 h-4" />
+        <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
         <span className="text-sm hidden sm:inline">Voltar</span>
       </Link>
 
       {/* Auth card */}
       <div className="relative z-10 w-full max-w-md">
-        <div className="dossier-card p-6 sm:p-8 animate-scale-in">
+        <div className="relative p-6 sm:p-8 rounded-xl bg-gradient-to-b from-[#1A1214] to-[#0D0A0B] border border-[#8B0000]/30 shadow-[0_0_40px_rgba(139,0,0,0.15)] animate-scale-in">
+          
+          {/* Static noise overlay on card */}
+          <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none">
+            <div className="absolute inset-0 landing-noise opacity-50" />
+          </div>
+          
           {/* Header */}
-          <div className="text-center mb-6 sm:mb-8">
-            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center mx-auto mb-3 sm:mb-4">
-              <Skull className="w-7 h-7 sm:w-8 sm:h-8 text-primary" />
+          <div className="relative text-center mb-6 sm:mb-8">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-[#8B0000]/20 border border-[#8B0000]/40 flex items-center justify-center mx-auto mb-3 sm:mb-4 relative">
+              <div className="absolute inset-0 bg-[#8B0000]/20 rounded-xl blur-xl animate-pulse" />
+              <Eye className="w-7 h-7 sm:w-8 sm:h-8 text-[#B22222] relative animate-pulse" />
             </div>
-            <h1 className="font-display text-2xl sm:text-3xl tracking-wide text-foreground">
-              {mode === 'signin' ? 'ACESSO RESTRITO' : 'NOVO REGISTRO'}
+            <h1 className="font-display text-2xl sm:text-3xl tracking-wide text-[#F5F5F5]">
+              <DecryptedText 
+                text={mode === 'signin' ? 'ACESSO RESTRITO' : 'NOVO REGISTRO'} 
+                speed={35}
+              />
             </h1>
-            <p className="text-muted-foreground text-xs sm:text-sm mt-2">
+            <p className="text-[#808080] text-xs sm:text-sm mt-2 font-mono">
               {mode === 'signin' ? 'Identifique-se para continuar' : 'Crie sua credencial de agente'}
             </p>
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
+          <form onSubmit={handleSubmit} className="relative space-y-4 sm:space-y-5">
             {mode === 'signup' && (
               <div className="space-y-2">
-                <Label htmlFor="displayName" className="text-xs text-muted-foreground uppercase tracking-wider">
+                <Label htmlFor="displayName" className="text-[10px] text-[#8B0000] uppercase tracking-[0.15em] font-mono">
                   Codinome
                 </Label>
                 <Input
@@ -171,20 +218,20 @@ export default function Auth() {
                     }
                   }}
                   placeholder="Como deseja ser chamado?"
-                  className={`terminal-input h-11 sm:h-12 text-sm sm:text-base transition-all duration-200 ${
-                    errors.displayName ? 'border-destructive ring-1 ring-destructive/50' : 
-                    displayName && displayName.length >= 2 ? 'border-success ring-1 ring-success/50' : ''
+                  className={`h-11 sm:h-12 text-sm sm:text-base bg-[#0D0A0B]/50 border-[#8B0000]/30 text-[#F5F5F5] placeholder:text-[#505050] focus:border-[#8B0000] focus:ring-[#8B0000]/20 transition-all ${
+                    errors.displayName ? 'border-red-500 ring-1 ring-red-500/50' : 
+                    displayName && displayName.length >= 2 ? 'border-green-600/50 ring-1 ring-green-600/30' : ''
                   }`}
                   disabled={loading}
                 />
                 {errors.displayName && (
-                  <p className="text-destructive text-xs animate-fade-in">{errors.displayName}</p>
+                  <p className="text-red-400 text-xs animate-fade-in font-mono">{errors.displayName}</p>
                 )}
               </div>
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-xs text-muted-foreground uppercase tracking-wider">
+              <Label htmlFor="email" className="text-[10px] text-[#8B0000] uppercase tracking-[0.15em] font-mono">
                 Email
               </Label>
               <Input
@@ -193,7 +240,6 @@ export default function Auth() {
                 value={email}
                 onChange={(e) => {
                   setEmail(e.target.value);
-                  // Validação em tempo real
                   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                   if (e.target.value && !emailRegex.test(e.target.value)) {
                     setErrors(prev => ({ ...prev, email: 'Email inválido' }));
@@ -202,19 +248,19 @@ export default function Auth() {
                   }
                 }}
                 placeholder="agente@ordo.gov"
-                className={`terminal-input h-11 sm:h-12 text-sm sm:text-base transition-all duration-200 ${
-                  errors.email ? 'border-destructive ring-1 ring-destructive/50' : 
-                  email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? 'border-success ring-1 ring-success/50' : ''
+                className={`h-11 sm:h-12 text-sm sm:text-base bg-[#0D0A0B]/50 border-[#8B0000]/30 text-[#F5F5F5] placeholder:text-[#505050] focus:border-[#8B0000] focus:ring-[#8B0000]/20 transition-all ${
+                  errors.email ? 'border-red-500 ring-1 ring-red-500/50' : 
+                  email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? 'border-green-600/50 ring-1 ring-green-600/30' : ''
                 }`}
                 disabled={loading}
               />
               {errors.email && (
-                <p className="text-destructive text-xs animate-fade-in">{errors.email}</p>
+                <p className="text-red-400 text-xs animate-fade-in font-mono">{errors.email}</p>
               )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-xs text-muted-foreground uppercase tracking-wider">
+              <Label htmlFor="password" className="text-[10px] text-[#8B0000] uppercase tracking-[0.15em] font-mono">
                 Senha
               </Label>
               <div className="relative">
@@ -224,7 +270,6 @@ export default function Auth() {
                   value={password}
                   onChange={(e) => {
                     setPassword(e.target.value);
-                    // Validação em tempo real
                     if (e.target.value && e.target.value.length < 6) {
                       setErrors(prev => ({ ...prev, password: 'A senha deve ter pelo menos 6 caracteres' }));
                     } else {
@@ -232,28 +277,28 @@ export default function Auth() {
                     }
                   }}
                   placeholder="••••••••"
-                  className={`terminal-input h-11 sm:h-12 pr-12 text-sm sm:text-base transition-all duration-200 ${
-                    errors.password ? 'border-destructive ring-1 ring-destructive/50' : 
-                    password && password.length >= 6 ? 'border-success ring-1 ring-success/50' : ''
+                  className={`h-11 sm:h-12 pr-12 text-sm sm:text-base bg-[#0D0A0B]/50 border-[#8B0000]/30 text-[#F5F5F5] placeholder:text-[#505050] focus:border-[#8B0000] focus:ring-[#8B0000]/20 transition-all ${
+                    errors.password ? 'border-red-500 ring-1 ring-red-500/50' : 
+                    password && password.length >= 6 ? 'border-green-600/50 ring-1 ring-green-600/30' : ''
                   }`}
                   disabled={loading}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#808080] hover:text-[#F5F5F5] transition-colors"
                 >
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
               {errors.password && (
-                <p className="text-destructive text-xs animate-fade-in">{errors.password}</p>
+                <p className="text-red-400 text-xs animate-fade-in font-mono">{errors.password}</p>
               )}
             </div>
 
             <Button
               type="submit"
-              className="w-full h-11 sm:h-12 action-button font-display text-base sm:text-lg tracking-wide"
+              className="w-full h-11 sm:h-12 font-display text-base sm:text-lg tracking-wide bg-[#8B0000] hover:bg-[#B22222] text-white border border-[#B22222]/30 shadow-[0_0_20px_rgba(139,0,0,0.3)] hover:shadow-[0_0_30px_rgba(139,0,0,0.5)] transition-all"
               disabled={loading}
             >
               {loading ? (
@@ -268,25 +313,27 @@ export default function Auth() {
           </form>
 
           {/* Toggle mode */}
-          <div className="mt-6 text-center">
+          <div className="relative mt-6 text-center">
             <button
               type="button"
               onClick={() => {
                 setMode(mode === 'signin' ? 'signup' : 'signin');
-                setErrors({}); // Limpa erros ao trocar de modo
+                setErrors({});
               }}
-              className="text-sm text-muted-foreground hover:text-foreground transition-all duration-300 hover:scale-105 active:scale-95 py-2 px-4 rounded-lg hover:bg-primary/10"
+              className="text-sm text-[#808080] hover:text-[#F5F5F5] transition-all duration-300 hover:scale-105 active:scale-95 py-2 px-4 rounded-lg hover:bg-[#8B0000]/10"
             >
               {mode === 'signin' ? (
-                <>Não tem cadastro? <span className="text-primary font-medium">Registre-se</span></>
+                <>Não tem cadastro? <span className="text-[#B22222] font-medium">Registre-se</span></>
               ) : (
-                <>Já tem conta? <span className="text-primary font-medium">Faça login</span></>
+                <>Já tem conta? <span className="text-[#B22222] font-medium">Faça login</span></>
               )}
             </button>
           </div>
 
           {/* Classified stamp */}
-          <div className="classified-stamp -bottom-4 -right-4 text-2xl">CONFIDENCIAL</div>
+          <div className="absolute -bottom-3 -right-3 text-[#8B0000]/20 font-display text-3xl tracking-widest rotate-[-12deg] select-none animate-stamp">
+            CONFIDENCIAL
+          </div>
         </div>
       </div>
     </div>
