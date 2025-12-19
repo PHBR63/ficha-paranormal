@@ -1,15 +1,18 @@
 /**
  * Sistema Transcender - Ordem Paranormal RPG
  * 
- * Gerencia o uso correto da habilidade Transcender:
- * - Verifica elegibilidade por NEX/trilha
- * - Impede uso múltiplo na mesma oportunidade
- * - Aplica custo de Sanidade atomicamente
- * - Rastreia escolhas e sub-escolhas
+ * REGRAS OFICIAIS:
+ * - Transcender é uma escolha de poder disponível para TODAS as classes
+ * - Disponível nos NEX que oferecem escolha de poder (delta > 0 em abilityChoices)
+ * - Derivado da tabela oficial NEX_PROGRESSION: [15, 30, 45, 60, 75, 90]
+ * - Custo: não ganha Sanidade neste aumento de NEX (override, não dano)
+ * - Cada marco de escolha tem 1 slot: pode usar Transcender OU poder de classe
+ * - Após escolher, o slot fica consumido/lockado para aquele NEX
  */
 
 import { supabase } from '@/integrations/supabase/client';
 import { ParanormalPower, ParanormalElement, PowerChoiceType } from './paranormal-powers';
+import { NEX_PROGRESSION, NexProgressionData } from './character-data';
 
 // Tipos de escolha de poder
 export type PowerChoiceType_DB = 'transcender' | 'class_power' | 'track_power';
@@ -41,8 +44,8 @@ export interface PowerChoice {
 export interface ChoiceOpportunity {
   nex: number;
   choiceType: PowerChoiceType_DB;
-  source: string; // Ex: "Trilha Condutor", "Classe Ocultista"
-  abilityName?: string; // Ex: "Transcender"
+  source: string; // Ex: "Poder de Classe NEX 15%"
+  abilityName?: string;
   status: 'available' | 'used';
   existingChoiceId?: string;
 }
@@ -59,122 +62,190 @@ export interface SubchoiceValidation {
   };
 }
 
-// NEX que oferecem Transcender nas trilhas de Ocultista
-// Baseado nas trilhas oficiais do livro
-const OCULTIST_TRANSCENDER_NEX: Record<string, number[]> = {
-  'condutor': [40, 65],
-  'flagelador': [40, 65],
-  'graduado': [10, 40, 65], // Graduado tem mais oportunidades
-  'intuitivo': [40, 65],
-  'lamina-paranormal': [40, 65],
-};
-
-// Trilhas de suplemento que também possuem Transcender
-const SUPPLEMENT_TRANSCENDER_NEX: Record<string, number[]> = {
-  // Adicionar trilhas de suplemento conforme necessário
-};
-
 /**
- * Obtém as oportunidades de escolha de Transcender para um personagem
+ * Deriva os marcos de escolha de poder da tabela oficial NEX_PROGRESSION
+ * Retorna os NEX onde abilityChoices aumenta (delta > 0)
+ * 
+ * Resultado esperado: [15, 30, 45, 60, 75, 90]
  */
-export function getTranscenderOpportunities(
-  characterClass: string,
-  trackId: string | null,
-  currentNex: number
-): { nex: number; source: string }[] {
-  const opportunities: { nex: number; source: string }[] = [];
+export function getPowerChoiceMilestones(): number[] {
+  const nexValues = Object.keys(NEX_PROGRESSION).map(Number).sort((a, b) => a - b);
+  const milestones: number[] = [];
   
-  // Ocultistas têm Transcender via trilha
-  if (characterClass === 'Ocultista' && trackId) {
-    const trackKey = trackId.toLowerCase().replace(/\s+/g, '-');
-    const nexValues = OCULTIST_TRANSCENDER_NEX[trackKey] || SUPPLEMENT_TRANSCENDER_NEX[trackKey] || [];
-    
-    for (const nex of nexValues) {
-      if (nex <= currentNex) {
-        opportunities.push({
-          nex,
-          source: `Trilha ${trackId}`,
-        });
-      }
+  let prevChoices = 0;
+  for (const nex of nexValues) {
+    const current = NEX_PROGRESSION[nex as keyof typeof NEX_PROGRESSION]?.abilityChoices ?? 0;
+    if (current > prevChoices) {
+      milestones.push(nex);
+      prevChoices = current;
     }
   }
   
-  // Outras classes podem ter Transcender via poderes gerais ou origens específicas
-  // (implementar conforme necessário)
+  return milestones;
+}
+
+/**
+ * Verifica se um NEX específico oferece escolha de poder
+ * @param targetNex - O NEX alvo para verificar
+ * @returns true se este NEX oferece uma escolha de poder
+ */
+export function isValidPowerChoiceNex(targetNex: number): boolean {
+  return getPowerChoiceMilestones().includes(targetNex);
+}
+
+/**
+ * Obtém as oportunidades de Transcender para um personagem
+ * Funciona para TODAS as classes (Combatente, Especialista, Ocultista)
+ * 
+ * @param currentNex - NEX atual do personagem
+ * @returns Lista de oportunidades de escolha até o NEX atual
+ */
+export function getTranscenderOpportunities(currentNex: number): { nex: number; source: string }[] {
+  const milestones = getPowerChoiceMilestones();
   
-  return opportunities;
+  return milestones
+    .filter(nex => nex <= currentNex)
+    .map(nex => ({
+      nex,
+      source: `Poder de Classe NEX ${nex}%`,
+    }));
+}
+
+/**
+ * Verifica se existe um slot aberto para escolha em um NEX específico
+ * Consulta o banco para ver se já existe escolha resolvida para aquele NEX
+ * 
+ * @param characterId - ID do personagem
+ * @param targetNex - NEX alvo
+ * @returns Objeto com status do slot e ID da escolha existente (se houver)
+ */
+export async function hasOpenSlotForNex(
+  characterId: string,
+  targetNex: number
+): Promise<{
+  hasSlot: boolean;
+  isOpen: boolean;
+  existingChoiceId?: string;
+  reason?: string;
+}> {
+  // 1. Verificar se este NEX oferece escolha de poder
+  if (!isValidPowerChoiceNex(targetNex)) {
+    return {
+      hasSlot: false,
+      isOpen: false,
+      reason: `NEX ${targetNex}% não oferece escolha de poder.`,
+    };
+  }
+  
+  // 2. Buscar escolhas existentes para este NEX
+  const { data: existingChoices, error } = await supabase
+    .from('character_power_choices')
+    .select('id, status, choice_type')
+    .eq('character_id', characterId)
+    .eq('nex', targetNex);
+  
+  if (error) {
+    console.error('Erro ao verificar slots de escolha:', error);
+    return {
+      hasSlot: true,
+      isOpen: false,
+      reason: 'Erro ao verificar escolhas anteriores.',
+    };
+  }
+  
+  // 3. Se não há escolhas, o slot está aberto
+  if (!existingChoices || existingChoices.length === 0) {
+    return {
+      hasSlot: true,
+      isOpen: true,
+    };
+  }
+  
+  // 4. Verificar se alguma escolha está resolvida (slot usado)
+  const resolvedChoice = existingChoices.find(c => c.status === 'resolved');
+  if (resolvedChoice) {
+    return {
+      hasSlot: true,
+      isOpen: false,
+      existingChoiceId: resolvedChoice.id,
+      reason: `Escolha do NEX ${targetNex}% já utilizada.`,
+    };
+  }
+  
+  // 5. Existe escolha em aberto (pode continuar)
+  const openChoice = existingChoices.find(c => c.status === 'open');
+  return {
+    hasSlot: true,
+    isOpen: true,
+    existingChoiceId: openChoice?.id,
+  };
 }
 
 /**
  * Verifica se o personagem pode usar Transcender em um determinado NEX
+ * Funciona para TODAS as classes
+ * 
+ * @param characterId - ID do personagem
+ * @param userId - ID do usuário
+ * @param targetNex - NEX alvo (o NEX para o qual está subindo)
+ * @returns Objeto com elegibilidade e razão/ID da escolha existente
  */
 export async function canUseTranscender(
   characterId: string,
   userId: string,
-  targetNex: number,
-  characterClass: string,
-  trackId: string | null
+  targetNex: number
 ): Promise<{
   eligible: boolean;
   reason?: string;
   existingChoiceId?: string;
 }> {
-  // 1. Verificar se há oportunidade de Transcender neste NEX
-  const opportunities = getTranscenderOpportunities(characterClass, trackId, targetNex);
-  const hasOpportunity = opportunities.some(o => o.nex === targetNex);
-  
-  if (!hasOpportunity) {
+  // 1. Verificar se este NEX oferece escolha de poder
+  if (!isValidPowerChoiceNex(targetNex)) {
     return {
       eligible: false,
-      reason: `Não há habilidade Transcender disponível no NEX ${targetNex}% para esta classe/trilha.`,
+      reason: `NEX ${targetNex}% não oferece escolha de poder.`,
     };
   }
   
-  // 2. Verificar se já existe uma escolha feita para este NEX
-  const { data: existingChoices, error } = await supabase
-    .from('character_power_choices')
-    .select('*')
-    .eq('character_id', characterId)
-    .eq('nex', targetNex)
-    .eq('choice_type', 'transcender');
+  // 2. Verificar status do slot
+  const slotStatus = await hasOpenSlotForNex(characterId, targetNex);
   
-  if (error) {
-    console.error('Erro ao verificar escolhas existentes:', error);
+  if (!slotStatus.hasSlot) {
     return {
       eligible: false,
-      reason: 'Erro ao verificar escolhas anteriores.',
+      reason: slotStatus.reason,
     };
   }
   
-  if (existingChoices && existingChoices.length > 0) {
-    const choice = existingChoices[0];
-    if (choice.status === 'resolved') {
-      return {
-        eligible: false,
-        reason: `Transcender já foi usado no NEX ${targetNex}%.`,
-        existingChoiceId: choice.id,
-      };
-    }
-    // Se existe mas não está resolvido, pode continuar
+  if (!slotStatus.isOpen) {
     return {
-      eligible: true,
-      existingChoiceId: choice.id,
+      eligible: false,
+      reason: slotStatus.reason,
+      existingChoiceId: slotStatus.existingChoiceId,
     };
   }
   
-  return { eligible: true };
+  // 3. Slot aberto, pode usar Transcender
+  return {
+    eligible: true,
+    existingChoiceId: slotStatus.existingChoiceId,
+  };
 }
 
 /**
- * Calcula o custo de Sanidade ao usar Transcender
- * O custo é o ganho de SAN que seria recebido naquele NEX
+ * Calcula o ganho de Sanidade que seria recebido em um NEX
+ * Este valor será "cancelado" (override) ao usar Transcender
+ * 
+ * @param characterClass - Classe do personagem
+ * @param currentNex - NEX atual
+ * @param targetNex - NEX alvo
+ * @returns Ganho de sanidade que seria perdido
  */
 export function calculateTranscenderSanityCost(
   characterClass: string,
   currentNex: number,
   targetNex: number
 ): number {
-  // Importar dados de classe
   const classData = getClassSanityProgression(characterClass);
   if (!classData) return 0;
   
@@ -182,7 +253,7 @@ export function calculateTranscenderSanityCost(
   const currentSan = classData.sanBase + (Math.floor(currentNex / 5) - 1) * classData.sanPerNex;
   const nextSan = classData.sanBase + (Math.floor(targetNex / 5) - 1) * classData.sanPerNex;
   
-  return nextSan - currentSan;
+  return Math.max(0, nextSan - currentSan);
 }
 
 /**
@@ -212,7 +283,7 @@ export async function initTranscenderChoice(
     .eq('character_id', characterId)
     .eq('nex', nex)
     .eq('choice_type', 'transcender')
-    .single();
+    .maybeSingle();
   
   if (existing) {
     return { success: true, choiceId: existing.id };
@@ -265,7 +336,7 @@ export async function resolveTranscenderChoice(
     .update({
       status: 'resolved',
       resolution,
-      sanity_delta: -sanityCost, // Negativo pois é perda
+      sanity_delta: -sanityCost, // Negativo pois é perda (override do ganho)
       resolved_at: new Date().toISOString(),
     })
     .eq('id', choiceId);
@@ -349,24 +420,26 @@ export function validatePowerSubchoice(
 
 /**
  * Obtém status consolidado de Transcender para um personagem
+ * Funciona para TODAS as classes
+ * 
+ * @param characterId - ID do personagem
+ * @param currentNex - NEX atual do personagem
+ * @returns Oportunidades disponíveis, usadas e contagens
  */
 export async function getTranscenderStatus(
   characterId: string,
-  characterClass: string,
-  trackId: string | null,
   currentNex: number
 ): Promise<{
   opportunities: ChoiceOpportunity[];
   usedCount: number;
   availableCount: number;
 }> {
-  const rawOpportunities = getTranscenderOpportunities(characterClass, trackId, currentNex);
+  const rawOpportunities = getTranscenderOpportunities(currentNex);
   const choices = await getCharacterPowerChoices(characterId);
   
   const opportunities: ChoiceOpportunity[] = rawOpportunities.map(opp => {
-    const existingChoice = choices.find(
-      c => c.nex === opp.nex && c.choice_type === 'transcender'
-    );
+    // Verificar se existe escolha (Transcender ou outro poder) para este NEX
+    const existingChoice = choices.find(c => c.nex === opp.nex);
     
     return {
       nex: opp.nex,

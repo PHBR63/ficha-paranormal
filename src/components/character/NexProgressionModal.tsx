@@ -178,28 +178,25 @@ export function NexProgressionModal({
   const isReachingNex50 = nextNex === 50 && !character.elemental_affinity;
   
   // Verificar elegibilidade de Transcender quando modal abre
+  // API corrigida: funciona para TODAS as classes, deriva marcos da tabela oficial
   useEffect(() => {
     async function checkTranscender() {
       if (!open || !nextNex || !user) return;
       
       setCheckingTranscender(true);
       try {
-        // Verificar status geral de Transcender
+        // Verificar status geral de Transcender (nova API simplificada)
         const status = await getTranscenderStatus(
           character.id,
-          character.class,
-          character.class_track,
           nextNex
         );
         setTranscenderOpportunities(status.opportunities);
         
-        // Verificar se pode usar neste NEX específico
+        // Verificar se pode usar neste NEX específico (nova API simplificada)
         const eligibility = await canUseTranscender(
           character.id,
           user.id,
-          nextNex,
-          character.class,
-          character.class_track
+          nextNex
         );
         
         setTranscenderEligible(eligibility.eligible);
@@ -214,7 +211,7 @@ export function NexProgressionModal({
     }
     
     checkTranscender();
-  }, [open, nextNex, character.id, character.class, character.class_track, user]);
+  }, [open, nextNex, character.id, user]);
   
   // Verificar se terá habilidade Transcender na trilha
   const hasTranscender = useMemo(() => {
