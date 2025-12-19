@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { ThemeSelector } from '@/components/ui/theme-selector';
-import { Plus, LogOut, User, FileText, Users, Settings, Loader2, AlertTriangle, Skull, Shield } from 'lucide-react';
+import { Plus, LogOut, User, FileText, Users, Settings, Loader2, AlertTriangle, Skull, Shield, Smartphone } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { CharacterCard } from '@/components/cards/CharacterCard';
 import { useAdminCheck } from '@/hooks/useAdminCheck';
@@ -105,6 +105,11 @@ export default function Dashboard() {
           
           <div className="flex items-center gap-2 sm:gap-4">
             <ThemeSelector />
+            <Link to="/install" className="hidden sm:flex">
+              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
+                <Smartphone className="w-5 h-5" />
+              </Button>
+            </Link>
             <div className="flex items-center gap-2 text-muted-foreground">
               <User className="w-4 h-4" />
               <span className="text-sm hidden md:block">{displayName}</span>
