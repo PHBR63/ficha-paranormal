@@ -78,8 +78,52 @@ export function CombatStatsCard({
     setEditMode(true);
   };
 
+  // Efeito de pulsação intensa para estados críticos
+  const showIntensePulse = isHpLow || isSanLow;
+  const pulseColor = isHpLow ? "rgba(220, 38, 38, 0.4)" : "rgba(168, 85, 247, 0.4)";
+
   return (
-    <div className={cn("ordo-panel p-4 space-y-4", className)}>
+    <motion.div 
+      className={cn(
+        "ordo-panel p-4 space-y-4 relative overflow-hidden",
+        showIntensePulse && "border-destructive/50",
+        className
+      )}
+      animate={showIntensePulse ? {
+        boxShadow: [
+          `0 0 0px 0px ${pulseColor}`,
+          `0 0 20px 5px ${pulseColor}`,
+          `0 0 0px 0px ${pulseColor}`,
+        ],
+      } : {}}
+      transition={showIntensePulse ? {
+        duration: 1.5,
+        repeat: Infinity,
+        ease: "easeInOut",
+      } : {}}
+    >
+      {/* Overlay de pulsação vermelha para estados críticos */}
+      <AnimatePresence>
+        {showIntensePulse && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ 
+              opacity: [0, 0.15, 0],
+              scale: [1, 1.02, 1],
+            }}
+            exit={{ opacity: 0 }}
+            transition={{
+              duration: 1.5,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+            className={cn(
+              "absolute inset-0 pointer-events-none rounded-lg",
+              isHpLow ? "bg-destructive" : "bg-paranormal"
+            )}
+          />
+        )}
+      </AnimatePresence>
       {/* Header com botão de edição */}
       <div className="flex items-center justify-between">
         <span className="text-xs text-foreground/70 uppercase tracking-wider">
@@ -383,6 +427,6 @@ export function CombatStatsCard({
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </motion.div>
   );
 }
