@@ -1,13 +1,18 @@
 /**
  * useSustainedRituals - Hook reativo para gerenciar rituais sustentados com persistência
  * e atualizações em tempo real via Supabase Realtime
+ * 
+ * ATUALIZADO: Agora usa o sistema unificado de rituais
  */
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { getActiveRitualEffect, RitualEffect, SustainConfig } from '@/lib/ritual-effects';
-import { Ritual } from '@/lib/rituals-data';
+import { getActiveRitualEffectUnified } from '@/lib/rituals/ritual-adapter';
+import { getRitualById, getEffectiveLevel, getRitualEffect } from '@/lib/rituals/ritual-registry';
+import type { UnifiedRitual, RitualMechanics } from '@/lib/rituals/types';
+import type { Ritual as LegacyRitual } from '@/lib/rituals-data';
+import type { RitualEffect, SustainConfig } from '@/lib/ritual-effects';
 import { Json } from '@/integrations/supabase/types';
 
 // Interface para ritual sustentado (do banco)
@@ -42,8 +47,10 @@ export interface SustainedRitual {
   peSpentTotal: number;
   isConcentrating: boolean;
   startedAt: Date;
-  // Efeito calculado (não persistido)
+  // Efeito calculado (não persistido) - usa sistema unificado
   effect?: RitualEffect;
+  // Mecânicas do sistema unificado
+  mechanics?: RitualMechanics;
 }
 
 // Props do hook
@@ -57,7 +64,7 @@ interface UseSustainedRitualsReturn {
   rituals: SustainedRitual[];
   loading: boolean;
   activateRitual: (
-    ritual: Ritual,
+    ritual: LegacyRitual | UnifiedRitual,
     enhancements: string[],
     sustain: SustainConfig
   ) => Promise<void>;
@@ -69,7 +76,13 @@ interface UseSustainedRitualsReturn {
 
 // Converte do formato DB para o formato frontend
 function fromDB(row: SustainedRitualRow): SustainedRitual {
-  const effect = getActiveRitualEffect(row.ritual_id, row.selected_enhancements || []);
+  // Usa o sistema unificado para obter efeitos
+  const effect = getActiveRitualEffectUnified(row.ritual_id, row.selected_enhancements || []);
+  
+  // Também obtém as mecânicas do sistema unificado diretamente
+  const level = getEffectiveLevel(row.selected_enhancements || []);
+  const mechanics = getRitualEffect(row.ritual_id, level);
+  
   const sustainConfig = (typeof row.sustain_config === 'object' && row.sustain_config !== null)
     ? row.sustain_config as unknown as SustainConfig
     : {};
@@ -88,6 +101,7 @@ function fromDB(row: SustainedRitualRow): SustainedRitual {
     isConcentrating: row.is_concentrating,
     startedAt: new Date(row.started_at),
     effect,
+    mechanics,
   };
 }
 
@@ -180,7 +194,7 @@ export function useSustainedRituals({
 
   // Ativa um ritual sustentado
   const activateRitual = useCallback(async (
-    ritual: Ritual,
+    ritual: LegacyRitual | UnifiedRitual,
     enhancements: string[],
     sustain: SustainConfig
   ) => {

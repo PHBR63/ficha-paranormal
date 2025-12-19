@@ -1,11 +1,21 @@
 /**
  * Hook para validação de rituais e aprimoramentos
  * Fase 2: Validação de requisitos de círculo, afinidade e limite de PE por turno
+ * 
+ * ATUALIZADO: Agora usa o sistema unificado de rituais (ritual-registry.ts)
  */
 
-import { useMemo, useCallback } from 'react';
-import { Ritual, RitualEnhancement, getMaxRitualCircle } from '@/lib/rituals-data';
+import { useState, useMemo, useCallback } from 'react';
 import { getPELimitByNex } from '@/lib/dice-roller';
+import { 
+  getRitualById, 
+  canUseEnhancement as canUseEnhancementRegistry,
+  getEffectiveLevel,
+} from '@/lib/rituals/ritual-registry';
+import type { UnifiedRitual } from '@/lib/rituals/types';
+
+// Tipo legado mantido para compatibilidade
+import type { Ritual as LegacyRitual, RitualEnhancement } from '@/lib/rituals-data';
 
 // Interface para resultado da validação de aprimoramento
 export interface EnhancementValidation {
@@ -33,30 +43,19 @@ export interface TurnPEState {
 }
 
 /**
- * Extrai requisitos de círculo do texto de requisitos do aprimoramento
- * Ex: "Requer 2º círculo" -> 2
+ * Calcula o círculo máximo baseado no NEX
+ * Regra oficial do Ordem Paranormal
  */
-function parseCircleRequirement(requirements?: string): number | undefined {
-  if (!requirements) return undefined;
-  
-  // Padrões possíveis: "Requer 2º círculo", "Requer 3º círculo", etc.
-  const match = requirements.match(/(\d)º?\s*círculo/i);
-  if (match) {
-    return parseInt(match[1], 10);
-  }
-  return undefined;
-}
-
-/**
- * Verifica se o aprimoramento requer afinidade elemental
- */
-function requiresAffinity(requirements?: string): boolean {
-  if (!requirements) return false;
-  return requirements.toLowerCase().includes('afinidade');
+function getMaxRitualCircle(nex: number): number {
+  if (nex >= 99) return 4;
+  if (nex >= 50) return 3;
+  if (nex >= 25) return 2;
+  return 1;
 }
 
 /**
  * Hook principal para validação de rituais
+ * Suporta tanto o tipo UnifiedRitual quanto o tipo legado Ritual
  */
 export function useRitualValidation(
   nex: number,
@@ -76,13 +75,47 @@ export function useRitualValidation(
 
   /**
    * Valida se um aprimoramento pode ser selecionado
+   * Suporta tanto rituais do sistema unificado quanto legado
    */
   const validateEnhancement = useCallback((
-    ritual: Ritual,
-    enhancement: RitualEnhancement
+    ritual: LegacyRitual | UnifiedRitual,
+    enhancement: RitualEnhancement | { name: string; cost: number; circleReq?: number; affinityReq?: boolean; description: string }
   ): EnhancementValidation => {
-    const circleReq = parseCircleRequirement(enhancement.requirements);
-    const needsAffinity = requiresAffinity(enhancement.requirements);
+    // Tenta usar o sistema unificado primeiro
+    const unifiedRitual = getRitualById(ritual.id);
+    
+    if (unifiedRitual) {
+      // Usa a validação do registry unificado
+      const enhName = enhancement.name as 'Discente' | 'Verdadeiro';
+      const result = canUseEnhancementRegistry(
+        ritual.id,
+        enhName,
+        maxCircle,
+        elementalAffinity || undefined
+      );
+      
+      if (!result.canUse) {
+        // Extrai informações de requisitos do aprimoramento unificado
+        const unifiedEnh = unifiedRitual.enhancements?.find(e => e.name === enhName);
+        return {
+          isValid: false,
+          reason: result.reason,
+          requiresCircle: unifiedEnh?.circleReq,
+          requiresAffinity: unifiedEnh?.affinityReq,
+        };
+      }
+      
+      return { isValid: true };
+    }
+    
+    // Fallback para lógica legada se ritual não encontrado no sistema unificado
+    const circleReq = 'circleReq' in enhancement 
+      ? enhancement.circleReq 
+      : parseCircleRequirementLegacy((enhancement as RitualEnhancement).requirements);
+    
+    const needsAffinity = 'affinityReq' in enhancement 
+      ? enhancement.affinityReq 
+      : requiresAffinityLegacy((enhancement as RitualEnhancement).requirements);
 
     // Verifica requisito de círculo
     if (circleReq && maxCircle < circleReq) {
@@ -96,7 +129,6 @@ export function useRitualValidation(
 
     // Verifica requisito de afinidade
     if (needsAffinity) {
-      // Afinidade precisa corresponder ao elemento do ritual
       const hasCorrectAffinity = elementalAffinity?.toLowerCase() === ritual.element.toLowerCase();
       
       if (!elementalAffinity) {
@@ -174,7 +206,7 @@ export function useRitualValidation(
   /**
    * Verifica se o personagem pode conjurar um ritual específico
    */
-  const canCastRitual = useCallback((ritual: Ritual): boolean => {
+  const canCastRitual = useCallback((ritual: LegacyRitual | UnifiedRitual): boolean => {
     // Verifica círculo do ritual
     if (ritual.circle > maxCircle) {
       return false;
@@ -191,8 +223,24 @@ export function useRitualValidation(
   /**
    * Filtra aprimoramentos disponíveis para um ritual
    */
-  const getAvailableEnhancements = useCallback((ritual: Ritual) => {
-    if (!ritual.enhancements) return [];
+  const getAvailableEnhancements = useCallback((ritual: LegacyRitual | UnifiedRitual) => {
+    // Tenta obter do sistema unificado primeiro
+    const unifiedRitual = getRitualById(ritual.id);
+    
+    if (unifiedRitual && unifiedRitual.enhancements) {
+      return unifiedRitual.enhancements.map(enh => ({
+        name: enh.name,
+        cost: enh.cost,
+        description: enh.description,
+        requirements: enh.circleReq 
+          ? `Requer ${enh.circleReq}º círculo${enh.affinityReq ? ' e afinidade' : ''}` 
+          : enh.affinityReq ? 'Requer afinidade' : undefined,
+        validation: validateEnhancement(ritual, enh),
+      }));
+    }
+    
+    // Fallback para formato legado
+    if (!('enhancements' in ritual) || !ritual.enhancements) return [];
 
     return ritual.enhancements.map(enh => ({
       ...enh,
@@ -252,5 +300,26 @@ export function useTurnPETracker(initialTurn: number = 1) {
   };
 }
 
-// Importação necessária para useState
-import { useState } from 'react';
+// ========================================
+// FUNÇÕES LEGADAS PARA COMPATIBILIDADE
+// ========================================
+
+/**
+ * Extrai requisitos de círculo do texto de requisitos (formato legado)
+ */
+function parseCircleRequirementLegacy(requirements?: string): number | undefined {
+  if (!requirements) return undefined;
+  const match = requirements.match(/(\d)º?\s*círculo/i);
+  if (match) {
+    return parseInt(match[1], 10);
+  }
+  return undefined;
+}
+
+/**
+ * Verifica se o aprimoramento requer afinidade (formato legado)
+ */
+function requiresAffinityLegacy(requirements?: string): boolean {
+  if (!requirements) return false;
+  return requirements.toLowerCase().includes('afinidade');
+}
