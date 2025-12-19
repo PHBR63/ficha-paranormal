@@ -17,6 +17,13 @@ import {
   DAMAGE_TYPES,
 } from './conditions';
 import { CONDITION_EFFECTS } from './game-engine';
+import { PARANORMAL_POWERS } from './paranormal-powers';
+import { 
+  COMBATENTE_ABILITIES, 
+  ESPECIALISTA_ABILITIES, 
+  OCULTISTA_ABILITIES 
+} from './class-abilities';
+import { ORIGINS, CLASSES } from './character-data';
 
 // ============== INTERFACES ==============
 
@@ -137,6 +144,102 @@ const OFFICIAL_TEST_MODIFIERS: Record<string, number> = {
   cego: -5, // Em ataques
   enredado: -2, // Ataques e Reflexos
 };
+
+// ============== DADOS OFICIAIS - PODERES PARANORMAIS ==============
+
+/**
+ * Poderes Paranormais oficiais - Livro Base v1.3 p.114-116
+ * 22 poderes: 5 Sangue, 5 Morte, 5 Conhecimento, 5 Energia, 2 Genéricos
+ */
+const OFFICIAL_PARANORMAL_POWERS = {
+  sangue: ['anatomia-insana', 'arma-de-sangue', 'sangue-de-ferro', 'sangue-fervente', 'sangue-vivo'],
+  morte: ['encarar-a-morte', 'escapar-da-morte', 'potencial-aprimorado', 'potencial-reaproveitado', 'surto-temporal'],
+  conhecimento: ['expansao-de-conhecimento', 'percepcao-paranormal', 'precognicao', 'sensitivo', 'visao-do-oculto'],
+  energia: ['afortunado', 'campo-protetor', 'causalidade-fortuita', 'golpe-de-sorte', 'manipular-entropia'],
+  generic: ['aprender-ritual', 'resistir-a-elemento'],
+};
+
+/**
+ * Poderes que exigem pré-requisitos de outros poderes
+ */
+const OFFICIAL_POWER_PREREQUISITES: Record<string, { element: string; count: number }> = {
+  'sangue-fervente': { element: 'sangue', count: 1 },
+  'sangue-vivo': { element: 'sangue', count: 2 },
+  'escapar-da-morte': { element: 'morte', count: 1 },
+  'potencial-reaproveitado': { element: 'morte', count: 1 },
+  'surto-temporal': { element: 'morte', count: 2 },
+  'precognicao': { element: 'conhecimento', count: 1 },
+  'visao-do-oculto': { element: 'conhecimento', count: 2 },
+  'campo-protetor': { element: 'energia', count: 1 },
+  'golpe-de-sorte': { element: 'energia', count: 1 },
+  'manipular-entropia': { element: 'energia', count: 2 },
+};
+
+// ============== DADOS OFICIAIS - ORIGENS ==============
+
+/**
+ * 26 origens oficiais do Livro Base v1.3
+ */
+const OFFICIAL_ORIGINS = [
+  'academico', 'agente-de-saude', 'amnesico', 'artista', 'atleta', 'chef',
+  'criminoso', 'cultista-arrependido', 'desgarrado', 'engenheiro', 'executivo',
+  'investigador', 'lutador', 'magnata', 'mercenario', 'militar', 'operario',
+  'policial', 'religioso', 'servidor-publico', 'ti', 'teorico-da-conspiracao',
+  'trabalhador-rural', 'trambiqueiro', 'universitario', 'vitima',
+];
+
+/**
+ * Origens que concedem perícias específicas
+ */
+const OFFICIAL_ORIGIN_SKILLS: Record<string, string[]> = {
+  'academico': ['ciencias', 'investigacao'],
+  'agente-de-saude': ['intuicao', 'medicina'],
+  'artista': ['artes', 'enganacao'],
+  'atleta': ['acrobacia', 'atletismo'],
+  'chef': ['fortitude', 'profissao'],
+  'criminoso': ['crime', 'furtividade'],
+  'cultista-arrependido': ['ocultismo', 'religiao'],
+  'desgarrado': ['fortitude', 'sobrevivencia'],
+  'engenheiro': ['profissao', 'tecnologia'],
+  'executivo': ['diplomacia', 'profissao'],
+  'investigador': ['investigacao', 'percepcao'],
+  'lutador': ['luta', 'reflexos'],
+  'magnata': ['diplomacia', 'pilotagem'],
+  'mercenario': ['iniciativa', 'intimidacao'],
+  'militar': ['pontaria', 'tatica'],
+  'operario': ['fortitude', 'profissao'],
+  'policial': ['percepcao', 'pontaria'],
+  'religioso': ['religiao', 'vontade'],
+  'servidor-publico': ['intuicao', 'vontade'],
+  'ti': ['investigacao', 'tecnologia'],
+  'teorico-da-conspiracao': ['investigacao', 'ocultismo'],
+  'trabalhador-rural': ['adestramento', 'sobrevivencia'],
+  'trambiqueiro': ['crime', 'enganacao'],
+  'universitario': ['atualidades', 'investigacao'],
+  'vitima': ['reflexos', 'vontade'],
+  // Amnésico não tem perícias fixas
+};
+
+// ============== DADOS OFICIAIS - CLASSES ==============
+
+/**
+ * Classes oficiais e suas estatísticas base
+ */
+const OFFICIAL_CLASS_STATS: Record<string, { pvBase: number; peBase: number; sanBase: number }> = {
+  'Combatente': { pvBase: 20, peBase: 2, sanBase: 12 },
+  'Especialista': { pvBase: 16, peBase: 3, sanBase: 16 },
+  'Ocultista': { pvBase: 12, peBase: 4, sanBase: 20 },
+};
+
+/**
+ * NEX em que cada classe recebe poderes de classe
+ */
+const OFFICIAL_POWER_NEX = [15, 30, 45, 60, 75, 90];
+
+/**
+ * NEX em que cada classe recebe poderes de trilha
+ */
+const OFFICIAL_TRACK_NEX = [10, 40, 65, 99];
 
 // ============== FUNÇÕES DE VALIDAÇÃO ==============
 
@@ -406,6 +509,384 @@ function validateRitualStructure(): ValidationResult[] {
   return results;
 }
 
+// ============== VALIDAÇÃO DE PODERES PARANORMAIS ==============
+
+/**
+ * Valida que todos os 22 poderes paranormais oficiais existem
+ */
+function validateParanormalPowersExist(): ValidationResult[] {
+  const results: ValidationResult[] = [];
+  const implementedIds = PARANORMAL_POWERS.map(p => p.id);
+  
+  const allOfficialPowers = [
+    ...OFFICIAL_PARANORMAL_POWERS.sangue,
+    ...OFFICIAL_PARANORMAL_POWERS.morte,
+    ...OFFICIAL_PARANORMAL_POWERS.conhecimento,
+    ...OFFICIAL_PARANORMAL_POWERS.energia,
+    ...OFFICIAL_PARANORMAL_POWERS.generic,
+  ];
+  
+  for (const powerId of allOfficialPowers) {
+    const exists = implementedIds.includes(powerId);
+    
+    results.push({
+      passed: exists,
+      category: 'Poderes Paranormais',
+      test: `Poder "${powerId}" existe`,
+      expected: 'Implementado',
+      actual: exists ? 'Implementado' : 'NÃO ENCONTRADO',
+      reference: 'Livro Base v1.3 p.114-116',
+    });
+  }
+  
+  return results;
+}
+
+/**
+ * Valida que poderes estão corretamente associados aos elementos
+ */
+function validateParanormalPowerElements(): ValidationResult[] {
+  const results: ValidationResult[] = [];
+  
+  for (const [element, powerIds] of Object.entries(OFFICIAL_PARANORMAL_POWERS)) {
+    for (const powerId of powerIds) {
+      const power = PARANORMAL_POWERS.find(p => p.id === powerId);
+      if (!power) continue;
+      
+      const expectedElement = element === 'generic' ? 'generic' : element;
+      const passed = power.element === expectedElement;
+      
+      results.push({
+        passed,
+        category: 'Poderes Paranormais',
+        test: `Elemento do poder "${powerId}"`,
+        expected: expectedElement,
+        actual: power.element,
+        reference: 'Livro Base v1.3 p.114-116',
+      });
+    }
+  }
+  
+  return results;
+}
+
+/**
+ * Valida os pré-requisitos dos poderes paranormais
+ */
+function validateParanormalPowerPrereqs(): ValidationResult[] {
+  const results: ValidationResult[] = [];
+  
+  for (const [powerId, prereq] of Object.entries(OFFICIAL_POWER_PREREQUISITES)) {
+    const power = PARANORMAL_POWERS.find(p => p.id === powerId);
+    if (!power) continue;
+    
+    const hasCorrectPrereq = power.prerequisite && 
+      power.prerequisite.element === prereq.element &&
+      power.prerequisite.count === prereq.count;
+    
+    results.push({
+      passed: !!hasCorrectPrereq,
+      category: 'Poderes Paranormais',
+      test: `Pré-requisito de "${powerId}"`,
+      expected: `${prereq.element} ${prereq.count}`,
+      actual: power.prerequisite 
+        ? `${power.prerequisite.element} ${power.prerequisite.count}` 
+        : 'Nenhum',
+      reference: 'Livro Base v1.3 p.114-116',
+    });
+  }
+  
+  return results;
+}
+
+/**
+ * Valida contagem de poderes por elemento
+ */
+function validateParanormalPowerCounts(): ValidationResult[] {
+  const results: ValidationResult[] = [];
+  
+  const countByElement: Record<string, number> = {};
+  for (const power of PARANORMAL_POWERS) {
+    countByElement[power.element] = (countByElement[power.element] || 0) + 1;
+  }
+  
+  const expectedCounts = {
+    sangue: 5,
+    morte: 5,
+    conhecimento: 5,
+    energia: 5,
+    generic: 2,
+  };
+  
+  for (const [element, expectedCount] of Object.entries(expectedCounts)) {
+    const actualCount = countByElement[element] || 0;
+    
+    results.push({
+      passed: actualCount === expectedCount,
+      category: 'Poderes Paranormais',
+      test: `Quantidade de poderes de ${element}`,
+      expected: `${expectedCount} poderes`,
+      actual: `${actualCount} poderes`,
+      reference: 'Livro Base v1.3 p.114-116',
+    });
+  }
+  
+  return results;
+}
+
+// ============== VALIDAÇÃO DE ORIGENS ==============
+
+/**
+ * Valida que todas as 26 origens oficiais existem
+ */
+function validateOriginsExist(): ValidationResult[] {
+  const results: ValidationResult[] = [];
+  const implementedIds = ORIGINS.map(o => o.id);
+  
+  for (const originId of OFFICIAL_ORIGINS) {
+    const exists = implementedIds.includes(originId);
+    
+    results.push({
+      passed: exists,
+      category: 'Origens',
+      test: `Origem "${originId}" existe`,
+      expected: 'Implementada',
+      actual: exists ? 'Implementada' : 'NÃO ENCONTRADA',
+      reference: 'Livro Base v1.3 p.22-27',
+    });
+  }
+  
+  return results;
+}
+
+/**
+ * Valida as perícias concedidas por cada origem
+ */
+function validateOriginSkills(): ValidationResult[] {
+  const results: ValidationResult[] = [];
+  
+  for (const [originId, expectedSkills] of Object.entries(OFFICIAL_ORIGIN_SKILLS)) {
+    const origin = ORIGINS.find(o => o.id === originId);
+    if (!origin) continue;
+    
+    const actualSkills = origin.skills || [];
+    const skillsMatch = expectedSkills.length === actualSkills.length &&
+      expectedSkills.every(s => actualSkills.includes(s));
+    
+    results.push({
+      passed: skillsMatch,
+      category: 'Origens',
+      test: `Perícias de "${originId}"`,
+      expected: expectedSkills.join(', '),
+      actual: actualSkills.join(', ') || 'Nenhuma',
+      reference: 'Livro Base v1.3 p.22-27',
+    });
+  }
+  
+  return results;
+}
+
+/**
+ * Valida que todas as origens têm poder de origem
+ */
+function validateOriginPowers(): ValidationResult[] {
+  const results: ValidationResult[] = [];
+  
+  for (const originId of OFFICIAL_ORIGINS) {
+    const origin = ORIGINS.find(o => o.id === originId);
+    if (!origin) continue;
+    
+    const hasPower = origin.powers && origin.powers.length > 0;
+    const hasPowerDesc = origin.powerDescription && origin.powerDescription.length > 0;
+    
+    results.push({
+      passed: hasPower && hasPowerDesc,
+      category: 'Origens',
+      test: `Poder de origem de "${originId}"`,
+      expected: 'Nome e descrição do poder',
+      actual: hasPower && hasPowerDesc 
+        ? `${origin.powers?.[0]}` 
+        : 'Incompleto',
+      reference: 'Livro Base v1.3 p.22-27',
+    });
+  }
+  
+  return results;
+}
+
+// ============== VALIDAÇÃO DE CLASSES ==============
+
+/**
+ * Valida as estatísticas base das classes
+ */
+function validateClassBaseStats(): ValidationResult[] {
+  const results: ValidationResult[] = [];
+  
+  for (const [classId, stats] of Object.entries(OFFICIAL_CLASS_STATS)) {
+    const classData = CLASSES.find(c => c.id === classId);
+    if (!classData) {
+      results.push({
+        passed: false,
+        category: 'Classes',
+        test: `Classe "${classId}" existe`,
+        expected: 'Implementada',
+        actual: 'NÃO ENCONTRADA',
+        reference: 'Livro Base v1.3',
+      });
+      continue;
+    }
+    
+    results.push({
+      passed: classData.pvBase === stats.pvBase,
+      category: 'Classes',
+      test: `PV base de ${classId}`,
+      expected: `${stats.pvBase}`,
+      actual: `${classData.pvBase}`,
+      reference: 'Livro Base v1.3',
+    });
+    
+    results.push({
+      passed: classData.peBase === stats.peBase,
+      category: 'Classes',
+      test: `PE base de ${classId}`,
+      expected: `${stats.peBase}`,
+      actual: `${classData.peBase}`,
+      reference: 'Livro Base v1.3',
+    });
+    
+    results.push({
+      passed: classData.sanBase === stats.sanBase,
+      category: 'Classes',
+      test: `SAN base de ${classId}`,
+      expected: `${stats.sanBase}`,
+      actual: `${classData.sanBase}`,
+      reference: 'Livro Base v1.3',
+    });
+  }
+  
+  return results;
+}
+
+/**
+ * Valida quantidade de habilidades por classe
+ */
+function validateClassAbilitiesCount(): ValidationResult[] {
+  const results: ValidationResult[] = [];
+  
+  const classCounts = {
+    Combatente: COMBATENTE_ABILITIES.length,
+    Especialista: ESPECIALISTA_ABILITIES.length,
+    Ocultista: OCULTISTA_ABILITIES.length,
+  };
+  
+  for (const [className, count] of Object.entries(classCounts)) {
+    // Cada classe deve ter pelo menos 15+ habilidades (core + escolhas)
+    const passed = count >= 15;
+    
+    results.push({
+      passed,
+      category: 'Classes',
+      test: `Habilidades de ${className}`,
+      expected: '≥15 habilidades',
+      actual: `${count} habilidades`,
+      reference: 'Livro Base v1.3',
+    });
+  }
+  
+  return results;
+}
+
+/**
+ * Valida que habilidades core existem para cada classe
+ */
+function validateCoreAbilities(): ValidationResult[] {
+  const results: ValidationResult[] = [];
+  
+  const coreAbilities = {
+    Combatente: ['ataque-especial'],
+    Especialista: ['ecletico', 'perito'],
+    Ocultista: ['afinidade', 'escolhido'],
+  };
+  
+  for (const [className, requiredIds] of Object.entries(coreAbilities)) {
+    const abilities = className === 'Combatente' 
+      ? COMBATENTE_ABILITIES 
+      : className === 'Especialista' 
+        ? ESPECIALISTA_ABILITIES 
+        : OCULTISTA_ABILITIES;
+    
+    for (const abilityId of requiredIds) {
+      const exists = abilities.some(a => a.id === abilityId && a.isCore);
+      
+      results.push({
+        passed: exists,
+        category: 'Classes',
+        test: `Habilidade core "${abilityId}" de ${className}`,
+        expected: 'Existe e isCore=true',
+        actual: exists ? 'Implementada' : 'NÃO ENCONTRADA',
+        reference: 'Livro Base v1.3',
+      });
+    }
+  }
+  
+  return results;
+}
+
+/**
+ * Valida estrutura das habilidades de classe
+ */
+function validateAbilityStructure(): ValidationResult[] {
+  const results: ValidationResult[] = [];
+  
+  const allAbilities = [
+    ...COMBATENTE_ABILITIES,
+    ...ESPECIALISTA_ABILITIES,
+    ...OCULTISTA_ABILITIES,
+  ];
+  
+  const requiredFields = ['id', 'name', 'description', 'minNex', 'classId'];
+  let malformedCount = 0;
+  
+  for (const ability of allAbilities) {
+    for (const field of requiredFields) {
+      if (!(field in ability)) {
+        malformedCount++;
+        break;
+      }
+    }
+  }
+  
+  results.push({
+    passed: malformedCount === 0,
+    category: 'Classes',
+    test: 'Estrutura das habilidades',
+    expected: '0 habilidades malformadas',
+    actual: `${malformedCount} habilidades malformadas`,
+    reference: 'Estrutura padrão de habilidade',
+  });
+  
+  // Valida que minNex está em valores válidos
+  const validNex = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 99];
+  let invalidNexCount = 0;
+  
+  for (const ability of allAbilities) {
+    if (!validNex.includes(ability.minNex)) {
+      invalidNexCount++;
+    }
+  }
+  
+  results.push({
+    passed: invalidNexCount === 0,
+    category: 'Classes',
+    test: 'Valores de NEX das habilidades',
+    expected: '0 com NEX inválido',
+    actual: `${invalidNexCount} com NEX inválido`,
+    reference: 'Livro Base v1.3',
+  });
+  
+  return results;
+}
+
 // ============== EXECUÇÃO DE VALIDAÇÃO ==============
 
 /**
@@ -413,16 +894,33 @@ function validateRitualStructure(): ValidationResult[] {
  */
 export function runFullValidation(): ValidationReport {
   const allResults: ValidationResult[] = [
+    // Rituais
     ...validateRitualCircles(),
     ...validateRitualCounts(),
     ...validateRitualCountsByCircle(),
+    ...validateRitualStructure(),
+    // Condições
     ...validateConditionsExist(),
     ...validateConditionCategories(),
     ...validateConditionParams(),
+    // Dano e Modificadores
     ...validateDamageTypes(),
     ...validateDefenseModifiers(),
     ...validateTestModifiers(),
-    ...validateRitualStructure(),
+    // Poderes Paranormais
+    ...validateParanormalPowersExist(),
+    ...validateParanormalPowerElements(),
+    ...validateParanormalPowerPrereqs(),
+    ...validateParanormalPowerCounts(),
+    // Origens
+    ...validateOriginsExist(),
+    ...validateOriginSkills(),
+    ...validateOriginPowers(),
+    // Classes
+    ...validateClassBaseStats(),
+    ...validateClassAbilitiesCount(),
+    ...validateCoreAbilities(),
+    ...validateAbilityStructure(),
   ];
   
   const passed = allResults.filter(r => r.passed).length;
@@ -448,7 +946,9 @@ export function getValidationFailures(): ValidationResult[] {
 /**
  * Executa validação de uma categoria específica
  */
-export function validateCategory(category: 'rituais' | 'condições' | 'modificadores' | 'dano'): ValidationResult[] {
+export function validateCategory(
+  category: 'rituais' | 'condições' | 'modificadores' | 'dano' | 'poderes' | 'origens' | 'classes'
+): ValidationResult[] {
   switch (category) {
     case 'rituais':
       return [
@@ -470,6 +970,26 @@ export function validateCategory(category: 'rituais' | 'condições' | 'modifica
       ];
     case 'dano':
       return validateDamageTypes();
+    case 'poderes':
+      return [
+        ...validateParanormalPowersExist(),
+        ...validateParanormalPowerElements(),
+        ...validateParanormalPowerPrereqs(),
+        ...validateParanormalPowerCounts(),
+      ];
+    case 'origens':
+      return [
+        ...validateOriginsExist(),
+        ...validateOriginSkills(),
+        ...validateOriginPowers(),
+      ];
+    case 'classes':
+      return [
+        ...validateClassBaseStats(),
+        ...validateClassAbilitiesCount(),
+        ...validateCoreAbilities(),
+        ...validateAbilityStructure(),
+      ];
   }
 }
 
