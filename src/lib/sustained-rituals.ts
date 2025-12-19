@@ -15,6 +15,16 @@ import {
 // INTERFACES
 // ========================================
 
+/**
+ * Modo ativo de um ritual (para rituais com modos como Velocidade Mortal)
+ */
+export interface RitualModeState {
+  modeName: string;
+  targetId?: string;        // ID do alvo (para modo inverso, quem está protegido)
+  targetName?: string;      // Nome do alvo
+  appliedConditions: string[]; // Condições aplicadas pelo modo
+}
+
 export interface SustainedRitual {
   id: string;
   ritualId: string;
@@ -29,6 +39,9 @@ export interface SustainedRitual {
   turnsActive: number;
   peSpentTotal: number;
   isConcentrating: boolean;
+  
+  // Modo ativo do ritual (para rituais com modos)
+  activeMode?: RitualModeState;
   
   // Duração
   startedRound: number;
@@ -338,4 +351,239 @@ export function getElementColor(element: string): string {
     medo: 'text-gray-400',
   };
   return colors[element.toLowerCase()] || 'text-muted-foreground';
+}
+
+// ========================================
+// SISTEMA DE MODOS DE RITUAL
+// ========================================
+
+/**
+ * Configuração de modos para rituais específicos
+ * Define quais condições são aplicadas automaticamente por modo
+ */
+export const RITUAL_MODE_CONDITIONS: Record<string, Record<string, { 
+  casterConditions: string[]; 
+  targetConditions: string[];
+  description: string;
+}>> = {
+  'velocidade-mortal': {
+    'Normal': {
+      casterConditions: [],
+      targetConditions: ['velocidade-mortal-buff'],
+      description: 'Alvo ganha ação de movimento adicional por turno.',
+    },
+    'Inverso': {
+      casterConditions: ['velocidade-mortal-inverso'],
+      targetConditions: [],
+      description: 'Conjurador recebe 50% do dano que o alvo receberia.',
+    },
+  },
+};
+
+/**
+ * Condições aplicadas pelo Discente de Velocidade Mortal
+ */
+export const RITUAL_ENHANCEMENT_CONDITIONS: Record<string, Record<string, {
+  replacesCondition?: string;
+  newCondition: string;
+}>> = {
+  'velocidade-mortal': {
+    'Discente': {
+      replacesCondition: 'velocidade-mortal-buff',
+      newCondition: 'velocidade-mortal-discente',
+    },
+  },
+};
+
+/**
+ * Define o modo ativo de um ritual sustentado
+ * Retorna as condições que devem ser aplicadas/removidas
+ */
+export function setRitualMode(
+  sustainedId: string,
+  modeName: string,
+  targetId?: string,
+  targetName?: string
+): {
+  success: boolean;
+  conditionsToAdd: { characterId: string; conditionId: string }[];
+  conditionsToRemove: { characterId: string; conditionId: string }[];
+  message: string;
+} {
+  const ritual = sustainedRituals.find(r => r.id === sustainedId);
+  if (!ritual) {
+    return {
+      success: false,
+      conditionsToAdd: [],
+      conditionsToRemove: [],
+      message: 'Ritual não encontrado.',
+    };
+  }
+
+  const modeConfig = RITUAL_MODE_CONDITIONS[ritual.ritualId];
+  if (!modeConfig || !modeConfig[modeName]) {
+    return {
+      success: false,
+      conditionsToAdd: [],
+      conditionsToRemove: [],
+      message: `Modo "${modeName}" não disponível para este ritual.`,
+    };
+  }
+
+  const conditionsToAdd: { characterId: string; conditionId: string }[] = [];
+  const conditionsToRemove: { characterId: string; conditionId: string }[] = [];
+
+  // Remove condições do modo anterior (se existir)
+  if (ritual.activeMode) {
+    const oldMode = modeConfig[ritual.activeMode.modeName];
+    if (oldMode) {
+      // Remove condições do conjurador
+      for (const condId of oldMode.casterConditions) {
+        conditionsToRemove.push({ characterId: ritual.casterId, conditionId: condId });
+      }
+      // Remove condições do alvo anterior
+      if (ritual.activeMode.targetId) {
+        for (const condId of oldMode.targetConditions) {
+          conditionsToRemove.push({ characterId: ritual.activeMode.targetId, conditionId: condId });
+        }
+      }
+    }
+  }
+
+  // Aplica condições do novo modo
+  const newMode = modeConfig[modeName];
+  
+  // Condições do conjurador
+  for (const condId of newMode.casterConditions) {
+    conditionsToAdd.push({ characterId: ritual.casterId, conditionId: condId });
+  }
+
+  // Condições do alvo
+  if (targetId) {
+    // Verifica se tem aprimoramento que muda a condição
+    const enhancementConfig = RITUAL_ENHANCEMENT_CONDITIONS[ritual.ritualId];
+    for (let condId of newMode.targetConditions) {
+      // Checa se algum enhancement substitui essa condição
+      if (enhancementConfig) {
+        for (const enhancement of ritual.selectedEnhancements) {
+          const enhConfig = enhancementConfig[enhancement];
+          if (enhConfig && enhConfig.replacesCondition === condId) {
+            condId = enhConfig.newCondition;
+          }
+        }
+      }
+      conditionsToAdd.push({ characterId: targetId, conditionId: condId });
+    }
+  }
+
+  // Atualiza o estado do ritual
+  const ritualIndex = sustainedRituals.findIndex(r => r.id === sustainedId);
+  if (ritualIndex >= 0) {
+    sustainedRituals[ritualIndex] = {
+      ...ritual,
+      activeMode: {
+        modeName,
+        targetId,
+        targetName,
+        appliedConditions: conditionsToAdd.map(c => c.conditionId),
+      },
+    };
+  }
+
+  return {
+    success: true,
+    conditionsToAdd,
+    conditionsToRemove,
+    message: `Modo "${modeName}" ativado para ${ritual.ritualName}.`,
+  };
+}
+
+/**
+ * Retorna os modos disponíveis para um ritual
+ */
+export function getAvailableModesForRitual(ritualId: string): string[] {
+  const modeConfig = RITUAL_MODE_CONDITIONS[ritualId];
+  if (!modeConfig) return [];
+  return Object.keys(modeConfig);
+}
+
+/**
+ * Verifica se um ritual tem modos disponíveis
+ */
+export function ritualHasModes(ritualId: string): boolean {
+  return !!RITUAL_MODE_CONDITIONS[ritualId];
+}
+
+/**
+ * Retorna a descrição de um modo de ritual
+ */
+export function getRitualModeDescription(ritualId: string, modeName: string): string | null {
+  const modeConfig = RITUAL_MODE_CONDITIONS[ritualId];
+  if (!modeConfig || !modeConfig[modeName]) return null;
+  return modeConfig[modeName].description;
+}
+
+/**
+ * Calcula o dano transferido pelo modo Inverso de Velocidade Mortal
+ * Retorna o dano que o conjurador deve receber (50% do dano original)
+ */
+export function calculateInverseDamageTransfer(
+  originalDamage: number,
+  ritualId: string = 'velocidade-mortal'
+): { casterDamage: number; targetDamage: number } {
+  // Velocidade Mortal Inverso: conjurador recebe 50% do dano
+  if (ritualId === 'velocidade-mortal') {
+    const casterDamage = Math.floor(originalDamage / 2);
+    const targetDamage = originalDamage - casterDamage; // Alvo recebe a outra metade
+    return { casterDamage, targetDamage };
+  }
+  
+  return { casterDamage: 0, targetDamage: originalDamage };
+}
+
+/**
+ * Verifica se um personagem está protegendo alguém com modo Inverso
+ */
+export function getInverseProtectionTarget(casterId: string): {
+  targetId: string;
+  targetName: string;
+  ritualName: string;
+} | null {
+  const inverseRitual = sustainedRituals.find(
+    r => r.casterId === casterId && 
+         r.ritualId === 'velocidade-mortal' && 
+         r.activeMode?.modeName === 'Inverso' &&
+         r.activeMode?.targetId
+  );
+  
+  if (!inverseRitual || !inverseRitual.activeMode?.targetId) return null;
+  
+  return {
+    targetId: inverseRitual.activeMode.targetId,
+    targetName: inverseRitual.activeMode.targetName || 'Alvo',
+    ritualName: inverseRitual.ritualName,
+  };
+}
+
+/**
+ * Verifica se um personagem está sendo protegido por modo Inverso
+ */
+export function getInverseProtector(targetId: string): {
+  casterId: string;
+  casterName: string;
+  ritualName: string;
+} | null {
+  const protectingRitual = sustainedRituals.find(
+    r => r.ritualId === 'velocidade-mortal' && 
+         r.activeMode?.modeName === 'Inverso' &&
+         r.activeMode?.targetId === targetId
+  );
+  
+  if (!protectingRitual) return null;
+  
+  return {
+    casterId: protectingRitual.casterId,
+    casterName: protectingRitual.casterName,
+    ritualName: protectingRitual.ritualName,
+  };
 }
