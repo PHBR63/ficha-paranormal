@@ -8,6 +8,29 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Theme transition animation */
+:root {
+  --theme-transition-duration: 300ms;
+}
+
+.theme-transitioning,
+.theme-transitioning * {
+  transition: 
+    background-color var(--theme-transition-duration) ease-in-out,
+    border-color var(--theme-transition-duration) ease-in-out,
+    box-shadow var(--theme-transition-duration) ease-in-out,
+    color var(--theme-transition-duration) ease-in-out !important;
+}
+
+.theme-transitioning .vignette-theme,
+.theme-transitioning .bg-landing-gradient-theme,
+.theme-transitioning [class*="particles"],
+.theme-transitioning [class*="flickering"] {
+  transition: opacity var(--theme-transition-duration) ease-in-out !important;
+  opacity: 0.5;
+}
+
+
 /* 
  * Let's Roll - Ordem Paranormal VTT
  * Design System: "Tecnologia oculta + horror investigativo"
