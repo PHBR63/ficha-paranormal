@@ -46,7 +46,8 @@ import { ORIGINS, CLASSES, getTrackById } from '@/lib/character-data';
 import { ALL_RITUALS } from '@/lib/rituals/legacy-exports';
 import { ALL_CLASS_ABILITIES } from '@/lib/class-abilities';
 import { PARANORMAL_POWERS, ParanormalPower, ParanormalElement, SavedParanormalPower, getPowerById } from '@/lib/paranormal-powers';
-import { syncLegacyPowers } from '@/lib/transcender-system';
+// syncLegacyPowers removido - a sincronização automática foi desativada para evitar
+// criar registros incorretos para Ocultistas que ganham poderes pela classe
 import { GENERAL_POWERS, getGeneralPowerById } from '@/lib/general-powers';
 import { ParanormalPowersPanel } from '@/components/character/ParanormalPowersPanel';
 import { TranscenderHistoryPanel } from '@/components/character/TranscenderHistoryPanel';
@@ -518,21 +519,9 @@ export default function CharacterSheet() {
       setSanCurrent(data.san_current);
       setLoading(false);
       
-      // Sincroniza poderes paranormais legados com a tabela de escolhas
-      // Isso garante que poderes adicionados antes do sistema de Transcender
-      // tenham registros na tabela character_power_choices
-      const existingPowers = Array.isArray(data.paranormal_powers) 
-        ? (data.paranormal_powers as Array<{ id: string; name: string }>)
-        : [];
-      if (existingPowers.length > 0) {
-        syncLegacyPowers(id, user.id, existingPowers, data.nex).then(result => {
-          if (result.synced > 0) {
-            console.log(`[CharacterSheet] ${result.synced} poder(es) paranormal(is) sincronizado(s)`);
-          }
-        }).catch(err => {
-          console.error('[CharacterSheet] Erro ao sincronizar poderes legados:', err);
-        });
-      }
+      // Busca registros de character_power_choices para contagem correta de Transcender
+      // NOTA: A sincronização automática de legados foi removida pois criava registros incorretos
+      // para Ocultistas que ganham poderes paranormais pela classe (não por Transcender)
     }
 
     fetchCharacter();
@@ -1048,11 +1037,31 @@ export default function CharacterSheet() {
     return milestones.filter(m => m <= character.nex).length;
   }, [character?.nex]);
   
-  // Conta quantos poderes paranormais o personagem tem (cada um = 1 uso de Transcender)
-  const transcenderUsed = useMemo(() => {
-    if (!character) return 0;
-    return (character.paranormal_powers || []).length;
-  }, [character?.paranormal_powers]);
+  // Estado para armazenar contagem real de Transcender usado (da tabela character_power_choices)
+  const [transcenderUsedFromDB, setTranscenderUsedFromDB] = useState(0);
+  
+  // Busca registros reais de Transcender no banco
+  useEffect(() => {
+    if (!character?.id) return;
+    
+    const fetchTranscenderCount = async () => {
+      const { data, error } = await supabase
+        .from('character_power_choices')
+        .select('id')
+        .eq('character_id', character.id)
+        .eq('choice_type', 'transcender')
+        .eq('status', 'resolved');
+      
+      if (!error && data) {
+        setTranscenderUsedFromDB(data.length);
+      }
+    };
+    
+    fetchTranscenderCount();
+  }, [character?.id]);
+  
+  // Usa a contagem do banco, não a contagem de paranormal_powers
+  const transcenderUsed = transcenderUsedFromDB;
   
   // Calcula usos restantes de Transcender
   const transcenderRemaining = transcenderCount - transcenderUsed;
