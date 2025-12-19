@@ -55,6 +55,7 @@ import { CLASSES, CLASS_TRACKS, getClassTracks } from '@/lib/character-data';
 import { checkExistingCharacterValidity } from '@/lib/character-validation';
 import { RulesValidationPanel } from '@/components/admin/RulesValidationPanel';
 import { ValidationHistoryDashboard } from '@/components/admin/ValidationHistoryDashboard';
+import { RitualSystemTests } from '@/components/admin/RitualSystemTests';
 import { useValidationHistory } from '@/hooks/useValidationHistory';
 
 interface CharacterData {
@@ -266,16 +267,21 @@ export default function AdminDataIntegrity() {
 
       <main className="container mx-auto px-4 py-8">
         <Tabs defaultValue="integrity" className="space-y-6">
-          <TabsList className="grid w-full max-w-2xl grid-cols-3">
+          <TabsList className="grid w-full max-w-3xl grid-cols-4">
             <TabsTrigger value="integrity" className="flex items-center gap-2">
               <Database className="w-4 h-4" />
-              <span className="hidden sm:inline">Integridade de Dados</span>
+              <span className="hidden sm:inline">Integridade</span>
               <span className="sm:hidden">Dados</span>
             </TabsTrigger>
             <TabsTrigger value="rules" className="flex items-center gap-2">
               <BookOpen className="w-4 h-4" />
-              <span className="hidden sm:inline">Validação de Regras</span>
+              <span className="hidden sm:inline">Regras</span>
               <span className="sm:hidden">Regras</span>
+            </TabsTrigger>
+            <TabsTrigger value="rituals" className="flex items-center gap-2">
+              <Shield className="w-4 h-4" />
+              <span className="hidden sm:inline">Rituais</span>
+              <span className="sm:hidden">Rituais</span>
             </TabsTrigger>
             <TabsTrigger value="history" className="flex items-center gap-2">
               <BarChart3 className="w-4 h-4" />
@@ -490,6 +496,11 @@ export default function AdminDataIntegrity() {
           {/* Aba de Validação de Regras */}
           <TabsContent value="rules">
             <RulesValidationPanel />
+          </TabsContent>
+
+          {/* Aba de Testes de Rituais */}
+          <TabsContent value="rituals">
+            <RitualSystemTests />
           </TabsContent>
 
           {/* Aba de Histórico e Dashboard */}
