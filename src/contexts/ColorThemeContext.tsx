@@ -33,7 +33,9 @@ export function ColorThemeProvider({ children }: { children: React.ReactNode }) 
   const [isLoading, setIsLoading] = useState(false);
   const [hasFetchedFromDb, setHasFetchedFromDb] = useState(false);
 
-  // Apply theme to DOM
+  const [isTransitioning, setIsTransitioning] = useState(false);
+
+  // Apply theme to DOM with transition
   useEffect(() => {
     const root = document.documentElement;
     root.setAttribute('data-color-theme', colorTheme);
@@ -75,8 +77,24 @@ export function ColorThemeProvider({ children }: { children: React.ReactNode }) 
   }, [user]);
 
   const setColorTheme = useCallback((theme: ColorTheme) => {
-    // Update state immediately for instant visual feedback
-    setColorThemeState(theme);
+    if (theme === colorTheme) return;
+    
+    const root = document.documentElement;
+    
+    // Add transition class for smooth fade
+    root.classList.add('theme-transitioning');
+    setIsTransitioning(true);
+    
+    // Update theme after a brief delay for fade-out effect
+    setTimeout(() => {
+      setColorThemeState(theme);
+      
+      // Remove transition class after fade-in completes
+      setTimeout(() => {
+        root.classList.remove('theme-transitioning');
+        setIsTransitioning(false);
+      }, 300);
+    }, 150);
     
     // Save to database in background if user is logged in
     if (user) {
@@ -91,7 +109,7 @@ export function ColorThemeProvider({ children }: { children: React.ReactNode }) 
         }
       })();
     }
-  }, [user]);
+  }, [user, colorTheme]);
 
   return (
     <ColorThemeContext.Provider value={{ colorTheme, setColorTheme, isLoading }}>
