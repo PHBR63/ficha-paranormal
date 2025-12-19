@@ -17,6 +17,7 @@ import {
   KNOWLEDGE_SECOND_CIRCLE,
   ENERGY_SECOND_CIRCLE,
   FEAR_SECOND_CIRCLE,
+  DEATH_SECOND_CIRCLE,
 } from './second-circle';
 
 import {
@@ -599,107 +600,7 @@ const DEATH_FIRST_CIRCLE: UnifiedRitual[] = [
   },
 ];
 
-// ========================================
-// RITUAIS DE 2º CÍRCULO - MORTE
-// ========================================
-
-const DEATH_SECOND_CIRCLE: UnifiedRitual[] = [
-  {
-    id: 'velocidade-mortal',
-    name: 'Velocidade Mortal',
-    circle: 2,
-    element: 'morte',
-    execution: 'Padrão',
-    range: 'Curto',
-    target: '1 ser',
-    duration: 'Sustentada',
-    description: 'Você distorce a passagem do tempo ao redor do alvo, tornando-o extremamente veloz. O alvo pode realizar uma ação de movimento adicional por turno. Esta ação não pode ser usada para conjurar rituais. Você pode conjurar o ritual com efeito inverso, fazendo com que você receba metade de todo o dano que o alvo receberia. Alvos voluntários não precisam fazer testes de resistência.',
-    cost: 2,
-    isSustainable: true,
-    requiresConcentration: true,
-    hasModes: true,
-    effects: {
-      base: {
-        kind: 'buff',
-        sustain: { concentration: true, action: 'free' },
-        modes: [
-          {
-            name: 'Normal',
-            description: 'Alvo ganha ação de movimento adicional por turno.',
-            targetConditions: ['velocidade-mortal-buff'],
-          },
-          {
-            name: 'Inverso',
-            description: 'Conjurador recebe 50% do dano que o alvo receberia.',
-            casterConditions: ['velocidade-mortal-inverso'],
-          },
-        ],
-        summary: 'Alvo ganha ação de movimento adicional OU conjurador absorve 50% do dano do alvo.',
-      },
-      discente: {
-        kind: 'buff',
-        sustain: { concentration: true, action: 'free' },
-        modes: [
-          {
-            name: 'Normal',
-            description: 'Alvo ganha ação padrão adicional por turno.',
-            targetConditions: ['velocidade-mortal-discente'],
-          },
-          {
-            name: 'Inverso',
-            description: 'Conjurador recebe 50% do dano que o alvo receberia.',
-            casterConditions: ['velocidade-mortal-inverso'],
-          },
-        ],
-        summary: 'Alvo ganha ação padrão adicional (pode gastar 2 PE para ataque adicional).',
-      },
-      verdadeiro: {
-        kind: 'buff',
-        sustain: { concentration: true, action: 'free' },
-        summary: 'Afeta seres escolhidos no alcance.',
-      },
-    },
-    enhancements: [
-      { name: 'Discente', cost: 3, description: 'Muda a ação de movimento adicional para uma ação padrão adicional.', circleReq: 3 },
-      { name: 'Verdadeiro', cost: 7, description: 'Muda o alvo para "seres escolhidos no alcance".', circleReq: 4, affinityReq: true },
-    ],
-  },
-  {
-    id: 'desacelerar-impacto',
-    name: 'Desacelerar Impacto',
-    circle: 2,
-    element: 'morte',
-    execution: 'Reação',
-    range: 'Curto',
-    target: '1 ser ou objetos somando até 10 espaços',
-    duration: 'Especial',
-    description: 'Reduz velocidade de queda (sem dano). Projéteis causam metade do dano.',
-    cost: 2,
-    hasHooks: true,
-    effects: {
-      base: {
-        kind: 'interceptor',
-        hooks: [
-          { trigger: 'onFallDamage', effect: 'Reduz dano de queda para 0' },
-          { trigger: 'onProjectileHit', effect: 'Reduz dano de projéteis pela metade' },
-        ],
-        damageReduction: { types: ['impacto', 'balístico'], amount: 50 }, // Representação
-        summary: 'Imunidade a dano de queda. Projéteis causam metade do dano.',
-      },
-      verdadeiro: {
-        kind: 'interceptor',
-        hooks: [
-          { trigger: 'onFallDamage', effect: 'Reduz dano de queda para 0' },
-          { trigger: 'onProjectileHit', effect: 'Reduz dano de projéteis para 0' },
-        ],
-        summary: 'Afeta até 100 espaços. Imunidade total a projéteis e queda.',
-      },
-    },
-    enhancements: [
-      { name: 'Verdadeiro', cost: 3, description: 'Aumenta para até 100 espaços.', circleReq: 3 },
-    ],
-  },
-];
+// DEATH_SECOND_CIRCLE é importado de ./second-circle.ts
 
 // ========================================
 // RITUAIS DE 1º CÍRCULO - ENERGIA
@@ -1155,6 +1056,152 @@ const FEAR_FIRST_CIRCLE: UnifiedRitual[] = [
     enhancements: [
       { name: 'Discente', cost: 2, description: 'Além do normal, rituais conjurados dentro da névoa custam -2 PE.', circleReq: 2 },
       { name: 'Verdadeiro', cost: 5, description: 'Além do normal, rituais conjurados dentro da névoa causam dano maximizado.', circleReq: 3 },
+    ],
+  },
+  {
+    id: 'aura-de-medo',
+    name: 'Aura de Medo',
+    circle: 1,
+    element: 'medo',
+    execution: 'Padrão',
+    range: 'Pessoal',
+    area: 'Emanação de 3m de raio',
+    duration: 'Sustentada',
+    description: 'Você exala uma aura de medo puro. Criaturas na área ficam amedrontadas se falharem na Vontade.',
+    cost: 1,
+    resistance: { type: 'vontade', effect: 'anula' },
+    isSustainable: true,
+    effects: {
+      base: {
+        kind: 'debuff',
+        conditions: [{ id: 'amedrontado', duration: 'sustentado' }],
+        areaEffect: { shape: 'emanação', radius: 3 },
+        resistance: { type: 'vontade', effect: 'anula' },
+        sustain: { action: 'free', concentration: true },
+        summary: 'Aura 3m. Criaturas na área ficam amedrontadas (Vontade anula).',
+      },
+      discente: {
+        kind: 'debuff',
+        conditions: [{ id: 'apavorado', duration: 'sustentado' }],
+        areaEffect: { shape: 'emanação', radius: 6 },
+        summary: 'Aura 6m. Criaturas ficam apavoradas.',
+      },
+      verdadeiro: {
+        kind: 'debuff',
+        conditions: [{ id: 'apavorado', duration: 'sustentado' }],
+        areaEffect: { shape: 'emanação', radius: 9 },
+        summary: 'Aura 9m. Criaturas ficam apavoradas e sofrem -2 em testes.',
+      },
+    },
+    enhancements: [
+      { name: 'Discente', cost: 2, description: 'Raio de 6m. Criaturas ficam apavoradas.', circleReq: 2 },
+      { name: 'Verdadeiro', cost: 5, description: 'Raio de 9m. Apavoradas e -2 em testes.', circleReq: 3, affinityReq: true },
+    ],
+  },
+  {
+    id: 'limiar-do-medo',
+    name: 'Limiar do Medo',
+    circle: 1,
+    element: 'medo',
+    execution: 'Padrão',
+    range: 'Pessoal',
+    target: 'Você',
+    duration: 'Cena',
+    description: 'Você se conecta com o Medo. Recebe +2 em Intimidação e percebe o maior medo de criaturas em 9m.',
+    cost: 1,
+    effects: {
+      base: {
+        kind: 'buff',
+        skillBonus: { skills: ['Intimidação'], bonus: 2 },
+        senseEffect: { type: 'detect', range: 9, information: 'maior medo da criatura' },
+        summary: '+2 em Intimidação. Percebe o maior medo de criaturas em 9m.',
+      },
+      discente: {
+        kind: 'buff',
+        skillBonus: { skills: ['Intimidação'], bonus: 5 },
+        summary: '+5 em Intimidação. Percebe medos e fraquezas.',
+      },
+      verdadeiro: {
+        kind: 'buff',
+        skillBonus: { skills: ['Intimidação'], bonus: 10 },
+        summary: '+10 em Intimidação. Vantagem contra criaturas amedrontadas.',
+      },
+    },
+    enhancements: [
+      { name: 'Discente', cost: 2, description: '+5 em Intimidação e percebe fraquezas.', circleReq: 2 },
+      { name: 'Verdadeiro', cost: 5, description: '+10 em Intimidação. Vantagem contra amedrontados.', circleReq: 3, affinityReq: true },
+    ],
+  },
+  {
+    id: 'sussurros-do-medo',
+    name: 'Sussurros do Medo',
+    circle: 1,
+    element: 'medo',
+    execution: 'Padrão',
+    range: 'Curto',
+    target: '1 ser',
+    duration: 'Cena',
+    description: 'Você implanta vozes de horror na mente do alvo. Ele fica abalado se falhar na Vontade.',
+    cost: 1,
+    resistance: { type: 'vontade', effect: 'parcial' },
+    effects: {
+      base: {
+        kind: 'debuff',
+        conditions: [{ id: 'abalado', duration: 'cena' }],
+        resistance: { type: 'vontade', effect: 'parcial' },
+        summary: 'Alvo fica abalado. Se passar, fica vulnerável.',
+      },
+      discente: {
+        kind: 'debuff',
+        conditions: [{ id: 'amedrontado', duration: 'cena' }],
+        summary: 'Alvo fica amedrontado. Se passar, fica abalado.',
+      },
+      verdadeiro: {
+        kind: 'debuff',
+        conditions: [{ id: 'apavorado', duration: 'cena' }],
+        summary: 'Alvo fica apavorado. Se passar, fica amedrontado.',
+      },
+    },
+    enhancements: [
+      { name: 'Discente', cost: 2, description: 'Alvo fica amedrontado (abalado se passar).', circleReq: 2 },
+      { name: 'Verdadeiro', cost: 5, description: 'Alvo fica apavorado (amedrontado se passar).', circleReq: 3, affinityReq: true },
+    ],
+  },
+  {
+    id: 'toque-do-medo',
+    name: 'Toque do Medo',
+    circle: 1,
+    element: 'medo',
+    execution: 'Padrão',
+    range: 'Toque',
+    target: '1 ser',
+    duration: 'Instantânea',
+    description: 'Seu toque transmite puro terror. Causa 2d8 de dano de Medo.',
+    cost: 1,
+    resistance: { type: 'vontade', effect: 'reduz_metade' },
+    effects: {
+      base: {
+        kind: 'damage',
+        damage: { diceCount: 2, diceType: 8, damageType: 'medo' },
+        resistance: { type: 'vontade', effect: 'reduz_metade' },
+        summary: '2d8 de dano de Medo.',
+      },
+      discente: {
+        kind: 'damage',
+        damage: { diceCount: 4, diceType: 8, damageType: 'medo' },
+        conditions: [{ id: 'abalado', duration: 1 }],
+        summary: '4d8 de dano de Medo + abalado por 1 rodada.',
+      },
+      verdadeiro: {
+        kind: 'damage',
+        damage: { diceCount: 6, diceType: 8, damageType: 'medo' },
+        conditions: [{ id: 'amedrontado', duration: 1 }],
+        summary: '6d8 de dano de Medo + amedrontado por 1 rodada.',
+      },
+    },
+    enhancements: [
+      { name: 'Discente', cost: 2, description: '4d8 dano + abalado 1 rodada.', circleReq: 2 },
+      { name: 'Verdadeiro', cost: 5, description: '6d8 dano + amedrontado 1 rodada.', circleReq: 3, affinityReq: true },
     ],
   },
 ];
