@@ -137,7 +137,7 @@ const OFFICIAL_RITUALS_DATA: Record<string, OfficialRitualData> = {
   'fortalecimento-sensorial': { name: 'Fortalecimento Sensorial', circle: 1, element: 'sangue', cost: 1, enhancements: [{ name: 'Discente', cost: 2, circleReq: 2 }, { name: 'Verdadeiro', cost: 5, circleReq: 4 }] },
   'odio-incontrolavel': { name: 'Ódio Incontrolável', circle: 1, element: 'sangue', cost: 1, resistance: 'Vontade anula', enhancements: [{ name: 'Discente', cost: 2, circleReq: 2 }, { name: 'Verdadeiro', cost: 5, circleReq: 3 }] },
   'pele-de-pedra': { name: 'Pele de Pedra', circle: 1, element: 'sangue', cost: 1, enhancements: [{ name: 'Discente', cost: 2, circleReq: 2 }, { name: 'Verdadeiro', cost: 5, circleReq: 3 }] },
-  'velocidade-mortal': { name: 'Velocidade Mortal', circle: 1, element: 'sangue', cost: 1, enhancements: [{ name: 'Discente', cost: 2, circleReq: 2 }, { name: 'Verdadeiro', cost: 5, circleReq: 3 }] },
+  // NOTA: Velocidade Mortal foi movido para 2º Círculo - Morte (linha correta)
   
   // === 1º CÍRCULO - CONHECIMENTO ===
   'amaldicoar-arma-conhecimento': { name: 'Amaldiçoar Arma (Conhecimento)', circle: 1, element: 'conhecimento', cost: 1, enhancements: [{ name: 'Discente', cost: 2, circleReq: 2 }, { name: 'Verdadeiro', cost: 5, circleReq: 3 }] },
@@ -167,6 +167,7 @@ const OFFICIAL_RITUALS_DATA: Record<string, OfficialRitualData> = {
   'paralisia': { name: 'Paralisia', circle: 2, element: 'morte', cost: 2, resistance: 'Fortitude anula', enhancements: [{ name: 'Discente', cost: 3, circleReq: 3 }, { name: 'Verdadeiro', cost: 7, circleReq: 4 }] },
   'purificacao': { name: 'Purificação', circle: 2, element: 'morte', cost: 2, enhancements: [{ name: 'Discente', cost: 3, circleReq: 3 }, { name: 'Verdadeiro', cost: 7, circleReq: 4 }] },
   'putrefacao': { name: 'Putrefação', circle: 2, element: 'morte', cost: 2, resistance: 'Fortitude parcial', enhancements: [{ name: 'Discente', cost: 3, circleReq: 3 }, { name: 'Verdadeiro', cost: 5, circleReq: 3 }] },
+  'velocidade-mortal': { name: 'Velocidade Mortal', circle: 2, element: 'morte', cost: 2, enhancements: [{ name: 'Discente', cost: 3, circleReq: 3 }, { name: 'Verdadeiro', cost: 7, circleReq: 4 }] },
   
   // === 2º CÍRCULO - SANGUE ===
   'aprimoramento-fisico': { name: 'Aprimoramento Físico', circle: 2, element: 'sangue', cost: 2, enhancements: [{ name: 'Discente', cost: 3, circleReq: 3 }, { name: 'Verdadeiro', cost: 7, circleReq: 4 }] },

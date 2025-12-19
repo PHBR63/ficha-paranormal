@@ -784,11 +784,11 @@ export const SECOND_CIRCLE_RITUALS: Ritual[] = [
     range: 'Curto',
     target: '1 ser',
     duration: 'Sustentada',
-    description: 'Alvo ganha ação de movimento extra (não para rituais).',
+    description: 'Você distorce a passagem do tempo ao redor do alvo, tornando-o extremamente veloz. O alvo pode realizar uma ação de movimento adicional por turno. Esta ação não pode ser usada para conjurar rituais. Você pode conjurar o ritual com efeito inverso, fazendo com que você receba metade de todo o dano que o alvo receberia. Alvos voluntários não precisam fazer testes de resistência.',
     cost: 2,
     enhancements: [
-      { name: 'Discente', cost: 3, description: 'Ação padrão extra.', requirements: 'Requer 3º círculo' },
-      { name: 'Verdadeiro', cost: 7, description: 'Alvos escolhidos.', requirements: 'Requer 4º círculo e afinidade' },
+      { name: 'Discente', cost: 3, description: 'Muda a ação de movimento adicional para uma ação padrão adicional.', requirements: 'Requer 3º círculo' },
+      { name: 'Verdadeiro', cost: 7, description: 'Muda o alvo para "seres escolhidos no alcance".', requirements: 'Requer 4º círculo e afinidade' },
     ],
   },
 
