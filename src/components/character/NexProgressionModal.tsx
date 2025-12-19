@@ -3,11 +3,15 @@
  * Permite subir de nível, recalcular stats, desbloquear habilidades/rituais,
  * escolher poderes paranormais via Transcender e selecionar Afinidade Elemental no NEX 50%
  * 
- * REGRA TRANSCENDER: Ao usar Transcender para escolher um poder paranormal,
- * o personagem NÃO recebe o aumento de Sanidade daquele NEX.
+ * SISTEMA TRANSCENDER ATUALIZADO:
+ * - Verifica elegibilidade por NEX/trilha antes de permitir uso
+ * - Impede uso múltiplo na mesma oportunidade de escolha
+ * - Aplica custo de Sanidade atomicamente
+ * - Rastreia escolhas e sub-escolhas obrigatórias
+ * - Valida sub-escolhas antes de confirmar (skills, rituais, elementos)
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Dialog,
@@ -39,6 +43,7 @@ import {
   Skull,
   Star,
   AlertTriangle,
+  Info,
 } from 'lucide-react';
 import { 
   CLASSES, 
@@ -56,8 +61,20 @@ import {
   ELEMENT_BG_COLORS,
   AFFINITY_DESCRIPTIONS,
 } from '@/lib/paranormal-powers';
+import {
+  canUseTranscender,
+  calculateTranscenderSanityCost,
+  initTranscenderChoice,
+  resolveTranscenderChoice,
+  validatePowerSubchoice,
+  getTranscenderStatus,
+  ChoiceOpportunity,
+} from '@/lib/transcender-system';
 import { ParanormalPowerSelectModal } from './ParanormalPowerSelectModal';
+import { PowerSubchoiceModal } from './PowerSubchoiceModal';
 import { NonOccultistRitualModal, RitualSource } from './NonOccultistRitualModal';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from '@/components/ui/sonner';
 import confetti from 'canvas-confetti';
 
 // NEX válidos (incremento de 5%)
@@ -77,7 +94,6 @@ const AFFINITY_ICONS: Record<ParanormalElement, React.ComponentType<{ className?
 function getSanityGainForNex(characterClass: string, currentNex: number, nextNex: number): number {
   const currentStats = calculateDerivedStats(characterClass, 1, 1, currentNex);
   const nextStats = calculateDerivedStats(characterClass, 1, 1, nextNex);
-  // A diferença de sanidade entre os dois NEX (considerando apenas a progressão de classe, não vigor/presença)
   return nextStats.san - currentStats.san;
 }
 
@@ -120,6 +136,7 @@ export function NexProgressionModal({
   character, 
   onLevelUp 
 }: NexProgressionModalProps) {
+  const { user } = useAuth();
   const [selectedNex, setSelectedNex] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   
@@ -133,21 +150,74 @@ export function NexProgressionModal({
   );
   
   // Estado para rastrear se Transcender foi usado nesta progressão
-  // REGRA: Usar Transcender faz perder a Sanidade daquele NEX
   const [usedTranscender, setUsedTranscender] = useState(false);
+  
+  // Estado para controle de Transcender
+  const [transcenderEligible, setTranscenderEligible] = useState(false);
+  const [transcenderChoiceId, setTranscenderChoiceId] = useState<string | null>(null);
+  const [transcenderOpportunities, setTranscenderOpportunities] = useState<ChoiceOpportunity[]>([]);
+  const [checkingTranscender, setCheckingTranscender] = useState(false);
+  
+  // Estado para poder selecionado e sub-escolhas
+  const [selectedPower, setSelectedPower] = useState<ParanormalPower | null>(null);
+  const [subchoiceModalOpen, setSubchoiceModalOpen] = useState(false);
+  const [pendingSubchoices, setPendingSubchoices] = useState<{
+    skills?: string[];
+    ritualId?: string;
+    resistElement?: ParanormalElement;
+  } | null>(null);
   
   // Estado para modal de seleção de ritual (poder "Aprender Ritual")
   const [ritualSelectOpen, setRitualSelectOpen] = useState(false);
   const [pendingRituals, setPendingRituals] = useState<string[]>([]);
+  const [ritualForSubchoice, setRitualForSubchoice] = useState<string | null>(null);
   
   // Verificar se está subindo para NEX 50% (escolhe afinidade)
   const currentNexIndex = NEX_VALUES.indexOf(character.nex);
   const nextNex = currentNexIndex < NEX_VALUES.length - 1 ? NEX_VALUES[currentNexIndex + 1] : null;
   const isReachingNex50 = nextNex === 50 && !character.elemental_affinity;
   
-  // Verificar se terá habilidade Transcender disponível
+  // Verificar elegibilidade de Transcender quando modal abre
+  useEffect(() => {
+    async function checkTranscender() {
+      if (!open || !nextNex || !user) return;
+      
+      setCheckingTranscender(true);
+      try {
+        // Verificar status geral de Transcender
+        const status = await getTranscenderStatus(
+          character.id,
+          character.class,
+          character.class_track,
+          nextNex
+        );
+        setTranscenderOpportunities(status.opportunities);
+        
+        // Verificar se pode usar neste NEX específico
+        const eligibility = await canUseTranscender(
+          character.id,
+          user.id,
+          nextNex,
+          character.class,
+          character.class_track
+        );
+        
+        setTranscenderEligible(eligibility.eligible);
+        if (eligibility.existingChoiceId) {
+          setTranscenderChoiceId(eligibility.existingChoiceId);
+        }
+      } catch (error) {
+        console.error('Erro ao verificar Transcender:', error);
+      } finally {
+        setCheckingTranscender(false);
+      }
+    }
+    
+    checkTranscender();
+  }, [open, nextNex, character.id, character.class, character.class_track, user]);
+  
+  // Verificar se terá habilidade Transcender na trilha
   const hasTranscender = useMemo(() => {
-    // Verifica se o personagem tem a habilidade Transcender (Ocultista ou trilha específica)
     const abilities = character.abilities || [];
     return abilities.some(a => 
       typeof a === 'string' 
@@ -224,35 +294,145 @@ export function NexProgressionModal({
   const nextPatent = nextNex ? getPatentByNex(nextNex) : null;
   const patentChanged = nextPatent && nextPatent !== currentPatent;
 
+  // Handler para abrir modal de seleção de poderes via Transcender
+  const handleOpenTranscender = async () => {
+    if (!user || !nextNex) return;
+    
+    // Iniciar escolha no banco
+    const result = await initTranscenderChoice(character.id, user.id, nextNex);
+    if (!result.success) {
+      toast.error('Erro ao iniciar Transcender', { description: result.error });
+      return;
+    }
+    
+    setTranscenderChoiceId(result.choiceId || null);
+    setPowerSelectOpen(true);
+  };
+
   // Handler para selecionar poder paranormal
   const handleSelectPower = (power: ParanormalPower) => {
-    setPendingPowers(prev => [...prev, power]);
-    setUsedTranscender(true); // Marca que Transcender foi usado - perde sanidade
     setPowerSelectOpen(false);
     
-    // Se o poder é "Aprender Ritual", abre modal para escolher o ritual
-    if (power.id === 'aprender-ritual') {
-      setRitualSelectOpen(true);
+    // Verificar se o poder requer sub-escolha
+    const validation = validatePowerSubchoice(power);
+    
+    if (validation.requiresChoice) {
+      setSelectedPower(power);
+      
+      // Se for escolha de ritual, abre modal de rituais
+      if (validation.choiceType === 'ritual') {
+        setRitualSelectOpen(true);
+      } else {
+        setSubchoiceModalOpen(true);
+      }
+    } else {
+      // Poder não requer escolha, adiciona diretamente
+      finalizePowerSelection(power);
     }
   };
   
-  // Handler para selecionar ritual (do poder "Aprender Ritual")
+  // Handler para confirmar sub-escolha
+  const handleSubchoiceConfirm = (choices: {
+    skills?: string[];
+    ritualId?: string;
+    resistElement?: ParanormalElement;
+  }) => {
+    setSubchoiceModalOpen(false);
+    
+    if (selectedPower) {
+      setPendingSubchoices(choices);
+      finalizePowerSelection(selectedPower, choices);
+    }
+  };
+  
+  // Handler para selecionar ritual (para sub-escolha ou poder "Aprender Ritual")
+  const handleRitualSelectForSubchoice = (ritualId: string) => {
+    setRitualSelectOpen(false);
+    
+    if (selectedPower) {
+      const choices = { ritualId };
+      setPendingSubchoices(choices);
+      finalizePowerSelection(selectedPower, choices);
+    }
+  };
+  
+  // Finaliza a seleção de poder
+  const finalizePowerSelection = async (
+    power: ParanormalPower,
+    subchoices?: {
+      skills?: string[];
+      ritualId?: string;
+      resistElement?: ParanormalElement;
+    }
+  ) => {
+    // Adiciona o poder à lista pendente
+    setPendingPowers(prev => [...prev, power]);
+    setUsedTranscender(true);
+    
+    // Se o poder é "Aprender Ritual" e não tem sub-escolha ainda, abre modal
+    if (power.id === 'aprender-ritual' && !subchoices?.ritualId) {
+      setSelectedPower(power);
+      setRitualSelectOpen(true);
+      return;
+    }
+    
+    // Limpa estado
+    setSelectedPower(null);
+    setPendingSubchoices(null);
+    
+    toast.success('Poder Paranormal selecionado', {
+      description: `${power.name} será adicionado ao subir de NEX.`,
+    });
+  };
+  
+  // Handler para selecionar ritual (fora do Transcender)
   const handleRitualSelect = (ritualId: string) => {
     setPendingRituals(prev => [...prev, ritualId]);
     setRitualSelectOpen(false);
   };
 
   const handleLevelUp = async () => {
-    if (!nextNex || !nextStats) return;
+    if (!nextNex || !nextStats || !user) return;
     
     // Validação: se está chegando no NEX 50%, precisa escolher afinidade
     if (isReachingNex50 && !selectedAffinity) {
-      return; // Não permite subir sem escolher afinidade
+      toast.error('Escolha obrigatória', {
+        description: 'Você precisa escolher uma Afinidade Elemental para continuar.',
+      });
+      return;
     }
     
     setSaving(true);
     
     try {
+      // Se usou Transcender, resolve a escolha no banco
+      if (usedTranscender && transcenderChoiceId) {
+        const newPower = pendingPowers.find(
+          p => !character.paranormal_powers?.some(cp => cp.id === p.id)
+        );
+        
+        if (newPower) {
+          const sanityCost = calculateTranscenderSanityCost(
+            character.class,
+            character.nex,
+            nextNex
+          );
+          
+          const result = await resolveTranscenderChoice(
+            transcenderChoiceId,
+            newPower,
+            sanityCost,
+            pendingSubchoices || undefined
+          );
+          
+          if (!result.success) {
+            toast.error('Erro ao salvar Transcender', { description: result.error });
+            setSaving(false);
+            return;
+          }
+        }
+      }
+      
       // Calcula novas habilidades (adiciona as da trilha)
       const newAbilities = newTrackAbilities.map(a => a.name);
       
@@ -271,7 +451,6 @@ export function NexProgressionModal({
       }
       
       // REGRA TRANSCENDER: Se usou Transcender, NÃO ganha sanidade deste NEX
-      // A sanidade final = sanidade atual (mantém a mesma, não adiciona o ganho do NEX)
       const finalSanMax = usedTranscender 
         ? character.san_max  // Mantém a sanidade atual
         : nextStats.san;     // Recebe a sanidade normal do novo NEX
@@ -298,6 +477,7 @@ export function NexProgressionModal({
       onClose();
     } catch (error) {
       console.error('Erro ao subir de NEX:', error);
+      toast.error('Erro ao subir de NEX');
     } finally {
       setSaving(false);
     }
@@ -518,6 +698,63 @@ export function NexProgressionModal({
                 </div>
               )}
 
+              {/* Seção de Transcender */}
+              {(newTranscenderAbility || transcenderEligible) && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="space-y-3"
+                >
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-paranormal" />
+                    <h4 className="font-display text-sm tracking-wider text-paranormal">
+                      TRANSCENDER
+                    </h4>
+                    {checkingTranscender && (
+                      <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />
+                    )}
+                  </div>
+                  
+                  {usedTranscender ? (
+                    <div className="p-4 bg-paranormal/10 border border-paranormal/30 rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Check className="w-4 h-4 text-paranormal" />
+                        <span className="font-medium text-paranormal">Transcender utilizado</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Você escolheu um Poder Paranormal nesta progressão.
+                        O ganho de Sanidade deste NEX foi sacrificado.
+                      </p>
+                    </div>
+                  ) : transcenderEligible ? (
+                    <div className="p-4 bg-muted/50 border border-border rounded-lg">
+                      <p className="text-sm text-muted-foreground mb-3">
+                        Você pode usar <strong>Transcender</strong> para ganhar um Poder Paranormal,
+                        mas perderá o aumento de Sanidade deste NEX ({sanityGainThisNex} SAN).
+                      </p>
+                      <Button
+                        variant="outline"
+                        className="w-full border-paranormal/50 hover:bg-paranormal/10"
+                        onClick={handleOpenTranscender}
+                      >
+                        <Sparkles className="w-4 h-4 mr-2 text-paranormal" />
+                        Usar Transcender
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="p-4 bg-muted/30 border border-border rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Lock className="w-4 h-4 text-muted-foreground" />
+                        <span className="font-medium text-muted-foreground">Transcender indisponível</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Você já usou Transcender neste NEX ou não há oportunidade disponível.
+                      </p>
+                    </div>
+                  )}
+                </motion.div>
+              )}
+
               {/* Novas Habilidades da Trilha */}
               {newTrackAbilities.length > 0 && track && (
                 <motion.div
@@ -544,19 +781,6 @@ export function NexProgressionModal({
                           <Badge variant="outline" className="text-xs">NEX {ability.minNex}%</Badge>
                         </div>
                         <p className="text-sm text-muted-foreground">{ability.description}</p>
-                        
-                        {/* Botão para escolher poder paranormal se for Transcender */}
-                        {ability.name.toLowerCase().includes('transcender') && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="mt-2"
-                            onClick={() => setPowerSelectOpen(true)}
-                          >
-                            <Sparkles className="w-4 h-4 mr-2" />
-                            Escolher Poder Paranormal
-                          </Button>
-                        )}
                       </div>
                     ))}
                   </div>
@@ -677,14 +901,41 @@ export function NexProgressionModal({
         affinityActive={character.affinity_active}
       />
       
-      {/* Modal de Seleção de Ritual (do poder "Aprender Ritual") */}
+      {/* Modal de Sub-Escolha de Poder */}
+      {selectedPower && (
+        <PowerSubchoiceModal
+          open={subchoiceModalOpen}
+          onClose={() => {
+            setSubchoiceModalOpen(false);
+            setSelectedPower(null);
+          }}
+          power={selectedPower}
+          hasAffinity={!!character.affinity_active}
+          affinityElement={character.elemental_affinity || undefined}
+          onConfirm={handleSubchoiceConfirm}
+          onOpenRitualSelect={() => {
+            setSubchoiceModalOpen(false);
+            setRitualSelectOpen(true);
+          }}
+        />
+      )}
+      
+      {/* Modal de Seleção de Ritual (para sub-escolha ou poder "Aprender Ritual") */}
       <NonOccultistRitualModal
         open={ritualSelectOpen}
         onClose={() => setRitualSelectOpen(false)}
         source="ritual-aprendido"
         currentRituals={[...character.rituals, ...pendingRituals]}
         onConfirm={(selectedRituals) => {
-          setPendingRituals(prev => [...prev, ...selectedRituals]);
+          if (selectedPower) {
+            // Sub-escolha de ritual para poder
+            if (selectedRituals.length > 0) {
+              handleRitualSelectForSubchoice(selectedRituals[0]);
+            }
+          } else {
+            // Seleção normal de ritual
+            setPendingRituals(prev => [...prev, ...selectedRituals]);
+          }
           setRitualSelectOpen(false);
         }}
       />
