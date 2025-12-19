@@ -12,7 +12,9 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { ThemeSelector } from '@/components/ui/theme-selector';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { 
+import { Particles } from '@/components/ui/particles';
+import { FlickeringGrid } from '@/components/ui/flickering-grid';
+import {
   ArrowLeft, 
   Loader2, 
   Edit2,
@@ -1349,9 +1351,38 @@ export default function CharacterSheet() {
   const originData = ORIGINS.find(o => o.id === character.origin);
 
   return (
-    <div className={cn("min-h-screen bg-background sheet-background", isSanLow && "animate-flicker")}>
+    <div className={cn("min-h-screen bg-background sheet-background relative overflow-hidden", isSanLow && "animate-flicker")}>
+      {/* Atmospheric Effects */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <FlickeringGrid 
+          className="absolute inset-0 opacity-[0.02]"
+          squareSize={4}
+          gridGap={10}
+          flickerChance={0.015}
+          color="rgb(139, 0, 0)"
+        />
+        <Particles
+          className="absolute inset-0"
+          quantity={20}
+          staticity={50}
+          color="#8B0000"
+          size={0.3}
+        />
+        {/* Red mist - subtle */}
+        <div className="absolute inset-0 bg-gradient-to-t from-red-950/5 via-transparent to-transparent" />
+        {/* Scan lines - very subtle */}
+        <div 
+          className="absolute inset-0 opacity-[0.01]"
+          style={{
+            backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(139, 0, 0, 0.1) 2px, rgba(139, 0, 0, 0.1) 4px)',
+          }}
+        />
+        {/* Vignette */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.3)_100%)]" />
+      </div>
+
       {/* Header fixo - responsivo para mobile */}
-      <header className="border-b border-border bg-card/80 sticky top-0 z-10 backdrop-blur-sm">
+      <header className="border-b border-border bg-card/80 sticky top-0 z-10 backdrop-blur-md relative">
         <div className="container mx-auto px-2 sm:px-4 py-2 sm:py-3">
           <div className="flex items-center justify-between gap-2">
             {/* Lado esquerdo: Voltar + Nome */}
@@ -1439,7 +1470,7 @@ export default function CharacterSheet() {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-4 sm:py-6">
+      <main className="container mx-auto px-4 py-4 sm:py-6 relative z-[1]">
         {/* Modo mobile: layout compacto */}
         {isMobile ? (
           <MobileCharacterSheet
