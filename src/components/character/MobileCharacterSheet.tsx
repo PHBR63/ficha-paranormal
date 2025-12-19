@@ -27,7 +27,6 @@ import {
   SortAsc,
   Filter,
   ChevronRight,
-  Gamepad2,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -89,7 +88,6 @@ interface MobileCharacterSheetProps {
   onEditStats: () => void;
   onOpenSkills?: () => void;
   onOpenInventory?: () => void;
-  onOpenSession?: () => void;
 }
 
 // Seção colapsável
@@ -501,7 +499,6 @@ export function MobileCharacterSheet({
   onOpenRest,
   onLevelUp,
   onEditStats,
-  onOpenSession,
 }: MobileCharacterSheetProps) {
   const [activeTab, setActiveTab] = useState<MobileTab>('overview');
   const [powerModalOpen, setPowerModalOpen] = useState(false);
@@ -647,17 +644,6 @@ export function MobileCharacterSheet({
                   <Moon className="w-4 h-4 mr-1" />
                   Descanso
                 </Button>
-                {onOpenSession && (
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={onOpenSession}
-                    className="flex-1 text-xs"
-                  >
-                    <Gamepad2 className="w-4 h-4 mr-1" />
-                    Sessão
-                  </Button>
-                )}
                 {character.nex < 99 && (
                   <Button
                     variant="outline"

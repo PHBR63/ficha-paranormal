@@ -33,7 +33,6 @@ import {
   History,
   Dices,
   Palette,
-  Gamepad2,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -101,7 +100,6 @@ import { CharacterSheetHelp } from '@/components/character/CharacterSheetHelp';
 import { MobileCharacterSheet } from '@/components/character/MobileCharacterSheet';
 import { DiceRollModal } from '@/components/dice/DiceRollModal';
 import { DiceRollHistoryDrawer, DiceRollHistoryCompact } from '@/components/dice/DiceRollHistory';
-import { SessionModeDialog } from '@/components/session/SessionModeDialog';
 import { AbilityDetailModal } from '@/components/character/AbilityDetailModal';
 
 // Interface estendida para itens do inventário com todos os campos persistidos
@@ -268,7 +266,6 @@ export default function CharacterSheet() {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [restModalOpen, setRestModalOpen] = useState(false);
   const [paranormalPowerModalOpen, setParanormalPowerModalOpen] = useState(false);
-  const [sessionModeOpen, setSessionModeOpen] = useState(false);
   
   // Modais de escolha para poderes paranormais
   const [intellectSkillModalOpen, setIntellectSkillModalOpen] = useState(false);
@@ -1527,7 +1524,6 @@ export default function CharacterSheet() {
             onOpenRest={() => setRestModalOpen(true)}
             onLevelUp={() => setNexModalOpen(true)}
             onEditStats={() => setEditModalOpen(true)}
-            onOpenSession={() => setSessionModeOpen(true)}
           />
         ) : (
           /* Desktop: Layout de 2 colunas estilo ficha de papel */
@@ -2162,16 +2158,6 @@ export default function CharacterSheet() {
                 <Moon className="w-4 h-4 mr-2" />
                 DESCANSAR
               </Button>
-
-              {/* Botão Modo Sessão */}
-              <Button
-                variant="default"
-                onClick={() => setSessionModeOpen(true)}
-                className="w-full font-display tracking-wider"
-              >
-                <Gamepad2 className="w-4 h-4 mr-2" />
-                MODO SESSÃO
-              </Button>
             </div>
           </div>
         )}
@@ -2620,62 +2606,6 @@ export default function CharacterSheet() {
         }}
       />
 
-      {/* Modo Sessão Presencial */}
-      {character && (
-        <SessionModeDialog
-          open={sessionModeOpen}
-          onOpenChange={setSessionModeOpen}
-          character={{
-            id: character.id,
-            name: character.name,
-            nex: character.nex,
-            hp: hpCurrent,
-            hpMax: character.hp_max,
-            pe: peCurrent,
-            peMax: character.pe_max,
-            san: sanCurrent,
-            sanMax: character.san_max,
-            defense: character.defense,
-            vigor: character.vigor,
-            agility: character.agility,
-            presence: character.presence,
-            intellect: character.intellect,
-            strength: character.strength,
-            skills: character.skills as unknown as Record<string, { trained: boolean; bonus: number }>,
-            inventory: character.inventory,
-            conditions: character.conditions.map(parseCondition),
-            rituals: (character.rituals || []).map((id: string) => ALL_RITUALS.find(r => r.id === id)).filter(Boolean) as any,
-            class: character.class,
-            elementalAffinity: character.elemental_affinity,
-            activeBuffs: character.active_buffs as any || [],
-          }}
-          onCharacterUpdate={async (updates) => {
-            if (updates.hp !== undefined) setHpCurrent(updates.hp);
-            if (updates.pe !== undefined) setPeCurrent(updates.pe);
-            if (updates.san !== undefined) setSanCurrent(updates.san);
-            if (updates.conditions) {
-              const serialized = updates.conditions.map(serializeCondition);
-              const { error } = await supabase
-                .from('characters')
-                .update({ conditions: JSON.parse(JSON.stringify(serialized)) })
-                .eq('id', character.id);
-              if (!error) {
-                setCharacter(prev => prev ? { ...prev, conditions: serialized } : null);
-              }
-            }
-            // Persiste buffs de arma no banco
-            if ((updates as any).activeBuffs !== undefined) {
-              const { error } = await supabase
-                .from('characters')
-                .update({ active_buffs: (updates as any).activeBuffs })
-                .eq('id', character.id);
-              if (!error) {
-                setCharacter(prev => prev ? { ...prev, active_buffs: (updates as any).activeBuffs } : null);
-              }
-            }
-          }}
-        />
-      )}
       
       {/* Modal de detalhes de habilidade */}
       <AbilityDetailModal
