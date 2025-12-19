@@ -58,6 +58,7 @@ const CATEGORY_ICONS: Record<string, React.ReactNode> = {
   'Origens': <Users className="w-4 h-4" />,
   'Classes': <Star className="w-4 h-4" />,
   'Trilhas': <Swords className="w-4 h-4" />,
+  'Poderes de Classe': <Shield className="w-4 h-4 text-primary" />,
 };
 
 export function RulesValidationPanel() {
