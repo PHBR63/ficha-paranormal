@@ -170,26 +170,25 @@ export function useCharacterAudit(
     }
   }, [character?.id, character?.nex, character?.paranormal_powers?.length, autoRun]);
   
-  // Auto-fix silencioso para problemas críticos (severity: 'error')
+  // Auto-fix silencioso para problemas corrigíveis
   useEffect(() => {
-    async function autoFixCriticalIssues() {
+    async function autoFixAllIssues() {
       if (!autoFixCritical || !auditResult || isFixing) return;
       
-      const criticalIssues = auditResult.autoFixableIssues.filter(
-        i => i.severity === 'error'
-      );
+      // Corrige TODOS os problemas auto-corrigíveis (não só críticos)
+      const fixableIssues = auditResult.autoFixableIssues;
       
-      if (criticalIssues.length === 0) return;
+      if (fixableIssues.length === 0) return;
       
-      console.log('[useCharacterAudit] Auto-corrigindo problemas críticos:', criticalIssues.length);
+      console.log('[useCharacterAudit] Auto-corrigindo problemas silenciosamente:', fixableIssues.length);
       const result = await applyAutoFixes();
       
-      if (result.success) {
-        console.log('[useCharacterAudit] Correções críticas aplicadas:', result.message);
+      if (result.success && result.message.includes('correção')) {
+        console.log('[useCharacterAudit] Correções aplicadas:', result.message);
       }
     }
     
-    autoFixCriticalIssues();
+    autoFixAllIssues();
   }, [autoFixCritical, auditResult?.autoFixableIssues?.length, isFixing]);
   
   // Problemas visíveis (não descartados)
