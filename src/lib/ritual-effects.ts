@@ -2011,20 +2011,23 @@ export const RITUAL_EFFECTS: Record<string, RitualEffectsByLevel> = {
         type: 'dominate',
         canForceHarm: true,
         canForceSuicide: false,
-        breakConditions: ['ordem suicídio', 'novo teste por ordem abusiva'],
+        breakConditions: ['teste de Vontade no final de cada turno do alvo'],
       },
-      resistance: { type: 'vontade', effect: 'anula' },
+      resistance: { type: 'vontade', effect: 'parcial' },
       sustain: {
         concentration: false,
-        endTriggers: ['alvo passa em novo teste'],
+        endTriggers: ['alvo passa em teste de Vontade'],
       },
-      special: 'Dominação total. NUNCA suicídio. Novo teste por ordem contra natureza.',
+      appliesConditions: [
+        { id: 'pasmo', duration: 1 }, // Aplicado ao alvo quando passa no teste (1 rodada, apenas uma vez por cena)
+      ],
+      special: 'Dominação total exceto ordens suicidas. Alvo testa Vontade no fim de cada turno. Se passar, fica pasmo por 1 rodada (1x por cena).',
     },
     discente: {
-      special: 'Controle profundo. Menos chances de resistir.',
+      special: 'Muda o alvo para até cinco pessoas ou animais.',
     },
     verdadeiro: {
-      special: 'Permanente. Múltiplos alvos.',
+      special: 'Muda o alvo para até dez pessoas ou animais. Requer afinidade com Conhecimento.',
     },
   },
 
