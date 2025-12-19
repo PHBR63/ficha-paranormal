@@ -21,7 +21,7 @@ import { CombatRollModal } from './CombatRollModal';
 import { DiceRollResult } from '@/lib/dice-roller';
 import { WeaponBuff } from '@/hooks/useWeaponBuffs';
 import { WeaponBuffIndicator, WeaponBuffsPanel } from './WeaponBuffIndicator';
-import { formatDamageFormula } from '@/lib/ritual-effects';
+import { formatDamageFormula } from '@/lib/rituals/legacy-exports';
 import type { SustainedRitualInput } from '@/hooks/useRitualCombatBonuses';
 
 // Interface para arma com dados completos

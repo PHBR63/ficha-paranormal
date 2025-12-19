@@ -42,7 +42,7 @@ import { cn } from '@/lib/utils';
 import { ORIGINS, getTrackById } from '@/lib/character-data';
 import { getPELimitByNex } from '@/lib/dice-roller';
 import { PowerDetailModal, PowerDetailData, PowerType } from './PowerDetailModal';
-import { ALL_RITUALS } from '@/lib/rituals-data';
+import { ALL_RITUALS } from '@/lib/rituals/legacy-exports';
 import { ALL_CLASS_ABILITIES } from '@/lib/class-abilities';
 import { useDefenseBonuses } from '@/hooks/useDefenseBonuses';
 import { useCharacterBonusSummary } from '@/hooks/useCharacterBonusSummary';

@@ -3,7 +3,7 @@
  * Sistema para registrar, gerenciar e disparar hooks de rituais ativos
  */
 
-import { Hook, HookTrigger, RitualEffect, getActiveRitualEffect } from './ritual-effects';
+import { Hook, HookTrigger, RitualEffect, getActiveRitualEffect } from './rituals/legacy-exports';
 
 // ========================================
 // TIPOS DE DANO E DETECÇÃO

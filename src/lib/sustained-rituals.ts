@@ -3,7 +3,7 @@
  * Gerencia rituais ativos com custo por turno e concentração
  */
 
-import { SustainConfig } from './ritual-effects';
+import { SustainConfig } from './rituals/legacy-exports';
 import { 
   registerRitualHooks, 
   unregisterRitualHooks, 

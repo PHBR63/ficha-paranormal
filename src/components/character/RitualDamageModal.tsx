@@ -28,15 +28,15 @@ import {
   Target,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Ritual } from '@/lib/rituals-data';
 import { getElementConfig } from '@/lib/element-config';
 import { 
+  Ritual,
   DamageFormula, 
   RitualEffect, 
   AnyDamageType,
   getActiveRitualEffect,
   formatDamageFormula,
-} from '@/lib/ritual-effects';
+} from '@/lib/rituals/legacy-exports';
 
 // Ícones para tipos de dano
 const DAMAGE_TYPE_ICONS: Record<string, typeof Skull> = {

@@ -11,7 +11,7 @@
  */
 
 import { useMemo } from 'react';
-import { getActiveRitualEffect } from '@/lib/ritual-effects';
+import { getActiveRitualEffect } from '@/lib/rituals/legacy-exports';
 import { getSkillBonus, getTrainingLabel } from '@/lib/character-data';
 
 // Interface para breakdown de bônus de defesa

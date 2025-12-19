@@ -4,7 +4,7 @@
 
 import { ORIGINS, CLASSES, SKILLS, getPatentByNex, getTrackById } from '@/lib/character-data';
 import { CLASS_PROFICIENCIES, CLASS_INITIAL_ABILITIES, validateAttributes } from '@/lib/character-builder-engine';
-import { ALL_RITUALS } from '@/lib/rituals-data';
+import { ALL_RITUALS } from '@/lib/rituals/legacy-exports';
 import { Shield, Footprints, Swords, Edit2, Route, Sparkles, Droplets, Skull, BookOpen, Zap, Ghost, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';

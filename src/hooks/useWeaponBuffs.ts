@@ -5,8 +5,7 @@
  */
 
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { RitualEffect, getActiveRitualEffect, formatDamageFormula, DamageFormula } from '@/lib/ritual-effects';
-import { Ritual } from '@/lib/rituals-data';
+import { RitualEffect, getActiveRitualEffect, formatDamageFormula, DamageFormula, Ritual } from '@/lib/rituals/legacy-exports';
 
 // Interface para buff de arma ativo
 export interface WeaponBuff {

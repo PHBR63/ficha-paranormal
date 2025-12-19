@@ -25,9 +25,8 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Ritual } from '@/lib/rituals-data';
+import { Ritual, ResistanceType, ResistanceEffect, RitualEffect } from '@/lib/rituals/legacy-exports';
 import { getElementConfig } from '@/lib/element-config';
-import { ResistanceType, ResistanceEffect, RitualEffect } from '@/lib/ritual-effects';
 
 // Ícones para tipos de resistência
 const RESISTANCE_ICONS: Record<ResistanceType, typeof Shield> = {

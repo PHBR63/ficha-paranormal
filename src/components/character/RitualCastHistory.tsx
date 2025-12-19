@@ -18,7 +18,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Ritual } from '@/lib/rituals-data';
+import { Ritual } from '@/lib/rituals/legacy-exports';
 import { getElementConfig } from '@/lib/element-config';
 
 // Interface para registro de conjuração

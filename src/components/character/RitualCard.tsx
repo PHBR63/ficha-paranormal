@@ -29,9 +29,8 @@ import {
   Hand,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Ritual } from '@/lib/rituals-data';
+import { Ritual, getRitualKind, RitualKind, ritualHasHooks, getRitualHooks } from '@/lib/rituals/legacy-exports';
 import { ELEMENT_CONFIG, getElementConfig } from '@/lib/element-config';
-import { getRitualKind, RitualKind, ritualHasHooks, getRitualHooks } from '@/lib/ritual-effects';
 import { getTriggerLabel, getTriggerIcon } from '@/lib/ritual-hooks-engine';
 
 // Configuração visual dos tipos de ritual

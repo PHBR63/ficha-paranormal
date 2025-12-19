@@ -42,7 +42,7 @@ import { getAllRituals, getRitualsByMaxCircle } from '@/lib/rituals/ritual-regis
 import { unifiedToLegacy } from '@/lib/rituals/ritual-adapter';
 import type { UnifiedRitual } from '@/lib/rituals/types';
 // Tipo legado para compatibilidade
-import type { Ritual } from '@/lib/rituals-data';
+import type { Ritual } from '@/lib/rituals/legacy-exports';
 
 // Tipo que suporta ambos os formatos
 type RitualInput = Ritual | UnifiedRitual;
