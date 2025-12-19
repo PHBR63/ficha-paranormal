@@ -26,6 +26,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
+import { PushNotificationToggle } from '@/components/pwa/PushNotificationToggle';
 
 interface Campaign {
   id: string;
@@ -246,6 +247,7 @@ export default function Campaigns() {
             </div>
             
             <div className="flex items-center gap-1.5 sm:gap-2">
+              <PushNotificationToggle variant="button" className="hidden sm:flex" />
               <Dialog open={joinDialogOpen} onOpenChange={setJoinDialogOpen}>
                 <DialogTrigger asChild>
                   <Button variant="outline" className="font-display tracking-wider text-xs sm:text-sm px-2 sm:px-4">
