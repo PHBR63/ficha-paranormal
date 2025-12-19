@@ -36,6 +36,9 @@ import {
   Shield,
   Swords,
   Flame,
+  Users,
+  Star,
+  Zap,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { 
@@ -51,6 +54,9 @@ const CATEGORY_ICONS: Record<string, React.ReactNode> = {
   'Condições': <AlertTriangle className="w-4 h-4" />,
   'Modificadores': <Shield className="w-4 h-4" />,
   'Tipos de Dano': <Flame className="w-4 h-4" />,
+  'Poderes Paranormais': <Zap className="w-4 h-4" />,
+  'Origens': <Users className="w-4 h-4" />,
+  'Classes': <Star className="w-4 h-4" />,
 };
 
 export function RulesValidationPanel() {
@@ -81,8 +87,17 @@ export function RulesValidationPanel() {
       setReport(result);
       setIsRunning(false);
       
+      // Agrupa resultados para encontrar categorias com falhas
+      const grouped: Record<string, ValidationResult[]> = {};
+      for (const r of result.results) {
+        if (!grouped[r.category]) {
+          grouped[r.category] = [];
+        }
+        grouped[r.category].push(r);
+      }
+      
       // Expande categorias com falhas
-      const failedCategories = Object.entries(groupedResults)
+      const failedCategories = Object.entries(grouped)
         .filter(([_, results]) => results.some(r => !r.passed))
         .map(([category]) => category);
       setExpandedCategories(failedCategories);
