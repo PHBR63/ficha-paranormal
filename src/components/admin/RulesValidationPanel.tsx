@@ -51,6 +51,13 @@ import { toast } from 'sonner';
 // Ícones por categoria
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
   'Rituais': <Sparkles className="w-4 h-4" />,
+  'Rituais Detalhados': <Sparkles className="w-4 h-4 text-purple-500" />,
+  'Rituais - Custos PE': <Sparkles className="w-4 h-4 text-blue-500" />,
+  'Rituais - Resistências': <Shield className="w-4 h-4 text-orange-500" />,
+  'Rituais - Aprimoramentos': <Sparkles className="w-4 h-4 text-green-500" />,
+  'Rituais - Custos Aprimoramentos': <Sparkles className="w-4 h-4 text-cyan-500" />,
+  'Rituais - Círculos': <Sparkles className="w-4 h-4 text-red-500" />,
+  'Rituais - Elementos': <Flame className="w-4 h-4 text-yellow-500" />,
   'Condições': <AlertTriangle className="w-4 h-4" />,
   'Modificadores': <Shield className="w-4 h-4" />,
   'Tipos de Dano': <Flame className="w-4 h-4" />,
@@ -216,7 +223,7 @@ export function RulesValidationPanel() {
 
         {/* Resultados por categoria */}
         {report && (
-          <ScrollArea className="h-[400px] -mx-4 px-4">
+          <ScrollArea className="h-[500px] -mx-4 px-4">
             <div className="space-y-2">
               {Object.entries(groupedResults).map(([category, results]) => {
                 const passed = results.filter(r => r.passed).length;
