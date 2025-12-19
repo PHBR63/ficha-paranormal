@@ -1,12 +1,14 @@
 /**
- * Página administrativa para verificar integridade dos dados de personagens
+ * Página administrativa para verificar integridade dos dados e validação de regras
  * Permite visualizar e corrigir personagens com classes ou trilhas inválidas
+ * Também valida conformidade com as regras oficiais do sistema
  */
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Table,
   TableBody,
@@ -43,12 +45,14 @@ import {
   Wrench,
   Trash2,
   RefreshCw,
-  Users
+  Users,
+  BookOpen
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { CLASSES, CLASS_TRACKS, getClassTracks } from '@/lib/character-data';
 import { checkExistingCharacterValidity } from '@/lib/character-validation';
+import { RulesValidationPanel } from '@/components/admin/RulesValidationPanel';
 
 interface CharacterData {
   id: string;
@@ -223,27 +227,15 @@ export default function AdminDataIntegrity() {
               </Button>
               <div>
                 <h1 className="font-display text-xl tracking-wider flex items-center gap-2">
-                  <Database className="w-5 h-5 text-primary" />
-                  INTEGRIDADE DE DADOS
+                  <Shield className="w-5 h-5 text-primary" />
+                  ADMINISTRAÇÃO DO SISTEMA
                 </h1>
                 <p className="text-sm text-muted-foreground">
-                  Verificar e corrigir personagens com dados inválidos
+                  Integridade de dados e validação de regras oficiais
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                onClick={scanCharacters}
-                disabled={scanning}
-              >
-                {scanning ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                )}
-                Reescanear
-              </Button>
               <Button
                 variant="outline"
                 onClick={() => navigate('/admin/users')}
@@ -257,50 +249,80 @@ export default function AdminDataIntegrity() {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        {/* Resumo */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-full bg-primary/10">
-                  <Database className="w-6 h-6 text-primary" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Total de Personagens</p>
-                  <p className="text-2xl font-bold">{allCharactersCount}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        <Tabs defaultValue="integrity" className="space-y-6">
+          <TabsList className="grid w-full max-w-md grid-cols-2">
+            <TabsTrigger value="integrity" className="flex items-center gap-2">
+              <Database className="w-4 h-4" />
+              Integridade de Dados
+            </TabsTrigger>
+            <TabsTrigger value="rules" className="flex items-center gap-2">
+              <BookOpen className="w-4 h-4" />
+              Validação de Regras
+            </TabsTrigger>
+          </TabsList>
 
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-full bg-destructive/10">
-                  <AlertTriangle className="w-6 h-6 text-destructive" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Com Problemas</p>
-                  <p className="text-2xl font-bold">{characters.length}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Aba de Integridade de Dados */}
+          <TabsContent value="integrity" className="space-y-6">
+            {/* Header da aba com botão reescanear */}
+            <div className="flex justify-end">
+              <Button
+                variant="outline"
+                onClick={scanCharacters}
+                disabled={scanning}
+              >
+                {scanning ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                )}
+                Reescanear
+              </Button>
+            </div>
 
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-full bg-green-500/10">
-                  <CheckCircle className="w-6 h-6 text-green-500" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Válidos</p>
-                  <p className="text-2xl font-bold">{allCharactersCount - characters.length}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+            {/* Resumo */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 rounded-full bg-primary/10">
+                      <Database className="w-6 h-6 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Total de Personagens</p>
+                      <p className="text-2xl font-bold">{allCharactersCount}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 rounded-full bg-destructive/10">
+                      <AlertTriangle className="w-6 h-6 text-destructive" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Com Problemas</p>
+                      <p className="text-2xl font-bold">{characters.length}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 rounded-full bg-green-500/10">
+                      <CheckCircle className="w-6 h-6 text-green-500" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Válidos</p>
+                      <p className="text-2xl font-bold">{allCharactersCount - characters.length}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
 
         {/* Tabela de personagens com problemas */}
         <Card>
@@ -440,6 +462,13 @@ export default function AdminDataIntegrity() {
             </CardContent>
           </Card>
         </div>
+          </TabsContent>
+
+          {/* Aba de Validação de Regras */}
+          <TabsContent value="rules">
+            <RulesValidationPanel />
+          </TabsContent>
+        </Tabs>
       </main>
 
       {/* Dialog de Correção */}
