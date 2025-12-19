@@ -83,7 +83,7 @@ import { ConditionalBonusesPanel } from '@/components/character/ConditionalBonus
 import { TrackCombatBonusesBar } from '@/components/character/TrackCombatBonusesBar';
 import { CharacterAuditBanner } from '@/components/character/CharacterAuditBanner';
 import { useCharacterAudit } from '@/hooks/useCharacterAudit';
-import { CharacterForAudit } from '@/lib/character-audit-engine';
+import { CharacterForAudit, canAddParanormalPower } from '@/lib/character-audit-engine';
 
 // Novos componentes do redesign 2.0 (estilo ficha de papel)
 import { CharacterSheetHeader } from '@/components/character/CharacterSheetHeader';
@@ -529,6 +529,43 @@ export default function CharacterSheet() {
 
     fetchCharacter();
   }, [id, user, navigate, toast, runMigration, resetMigration]);
+  
+  // Função de refetch para atualizar dados do personagem após correções
+  const refetchCharacter = useCallback(async () => {
+    if (!id || !user) return;
+    
+    const { data, error } = await supabase
+      .from('characters')
+      .select('*')
+      .eq('id', id)
+      .eq('user_id', user.id)
+      .single();
+    
+    if (!error && data) {
+      const inventory = Array.isArray(data.inventory) 
+        ? (data.inventory as unknown as InventoryItemPersisted[]) 
+        : [];
+      
+      const charData = {
+        ...data,
+        inventory,
+        conditions: Array.isArray(data.conditions) ? data.conditions : [],
+        abilities: Array.isArray(data.abilities) ? data.abilities as string[] : [],
+        rituals: Array.isArray(data.rituals) ? data.rituals as string[] : [],
+        class_track: data.class_track || null,
+        elemental_affinity: data.elemental_affinity || null,
+        affinity_active: data.affinity_active || false,
+        active_buffs: Array.isArray(data.active_buffs) ? data.active_buffs : [],
+      };
+      
+      setCharacter(charData as unknown as Character);
+      setHpCurrent(data.hp_current);
+      setPeCurrent(data.pe_current);
+      setSanCurrent(data.san_current);
+      
+      console.log('[CharacterSheet] Dados do personagem atualizados após correção');
+    }
+  }, [id, user]);
 
   // Handler para rolar atributo (inclui detecção de resistências)
   const handleAttributeRoll = useCallback((attributeValue: number, attributeName: string) => {
@@ -1095,7 +1132,7 @@ export default function CharacterSheet() {
     };
   }, [character]);
 
-  // Hook de auditoria
+  // Hook de auditoria - com callback para atualizar UI após correções
   const {
     auditResult,
     isAuditing,
@@ -1105,7 +1142,34 @@ export default function CharacterSheet() {
     runAudit,
     applyAutoFixes,
     dismissIssue,
-  } = useCharacterAudit(characterForAudit, user?.id || null, { autoRun: true });
+  } = useCharacterAudit(characterForAudit, user?.id || null, { 
+    autoRun: true,
+    onFixComplete: refetchCharacter, // Atualiza UI após correções
+  });
+  
+  // Handler para abrir modal de poderes paranormais com validação de limite
+  const handleOpenParanormalPowerModal = useCallback(() => {
+    if (!character) return;
+    
+    // Valida se pode adicionar mais poderes
+    const validation = canAddParanormalPower(
+      character.paranormal_powers?.length || 0,
+      character.nex,
+      character.origin,
+      transcenderUsed
+    );
+    
+    if (!validation.canAdd) {
+      toast({
+        title: 'Limite de poderes atingido',
+        description: validation.reason,
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    setParanormalPowerModalOpen(true);
+  }, [character, transcenderUsed, toast]);
 
   // Handler para edição do personagem
   const handleCharacterEdit = async (data: {
@@ -2088,7 +2152,7 @@ export default function CharacterSheet() {
                           variant="ghost"
                           size="sm"
                           className="h-6 text-xs text-paranormal hover:text-paranormal"
-                          onClick={() => setParanormalPowerModalOpen(true)}
+                          onClick={handleOpenParanormalPowerModal}
                         >
                           <Sparkles className="w-3 h-3 mr-1" />
                           Transcender ({transcenderRemaining})
@@ -2123,7 +2187,7 @@ export default function CharacterSheet() {
                           variant="ghost"
                           size="sm"
                           className="mt-2 text-paranormal"
-                          onClick={() => setParanormalPowerModalOpen(true)}
+                          onClick={handleOpenParanormalPowerModal}
                         >
                           Escolher Poder ({transcenderRemaining})
                         </Button>

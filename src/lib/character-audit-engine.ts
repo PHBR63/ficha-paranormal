@@ -679,3 +679,105 @@ export function canAddParanormalPower(
     slotsRemaining: transcenderRemaining,
   };
 }
+
+/**
+ * Sincroniza registros de Transcender para poderes legados
+ * Cria registros retroativos para poderes que não têm entrada em character_power_choices
+ * 
+ * IMPORTANTE: Esta função deve ser usada com cuidado - apenas para personagens
+ * criados antes do sistema de Transcender ser implementado.
+ */
+export async function syncTranscenderRecords(
+  characterId: string,
+  userId: string,
+  powers: Array<{ id: string; name: string }>,
+  nex: number,
+  originId: string
+): Promise<{ created: number; errors: string[] }> {
+  const errors: string[] = [];
+  let created = 0;
+  
+  try {
+    // Buscar registros existentes
+    const { data: existingRecords, error: fetchError } = await supabase
+      .from('character_power_choices')
+      .select('resolution')
+      .eq('character_id', characterId)
+      .eq('status', 'resolved');
+    
+    if (fetchError) {
+      console.error('[syncTranscenderRecords] Erro ao buscar registros:', fetchError);
+      return { created: 0, errors: [fetchError.message] };
+    }
+    
+    // Extrai IDs dos poderes já registrados
+    const registeredPowerIds = new Set<string>();
+    existingRecords?.forEach(record => {
+      const resolution = record.resolution as { powerId?: string } | null;
+      if (resolution?.powerId) {
+        registeredPowerIds.add(resolution.powerId);
+      }
+    });
+    
+    // Identifica poderes sem registro
+    const unregisteredPowers = powers.filter(p => !registeredPowerIds.has(p.id));
+    
+    if (unregisteredPowers.length === 0) {
+      console.log('[syncTranscenderRecords] Todos os poderes já têm registro');
+      return { created: 0, errors: [] };
+    }
+    
+    // Obtém milestones de Transcender para atribuir NEX retroativamente
+    const milestones = getPowerChoiceMilestones();
+    const usedMilestones = existingRecords?.length || 0;
+    
+    // Verifica se origem concede poder (Cultista Arrependido)
+    const origin = getOriginById(originId);
+    const originGrantsPower = origin?.id === 'cultista-arrependido';
+    
+    // Cria registros para cada poder não registrado
+    for (let i = 0; i < unregisteredPowers.length; i++) {
+      const power = unregisteredPowers[i];
+      
+      // Primeiro poder de Cultista Arrependido não usa slot de Transcender
+      const isOriginPower = originGrantsPower && i === 0 && !registeredPowerIds.size;
+      
+      // Determina o NEX do milestone para este registro
+      const milestoneIndex = usedMilestones + i - (isOriginPower ? 1 : 0);
+      const assignedNex = milestoneIndex >= 0 && milestoneIndex < milestones.length
+        ? milestones[milestoneIndex]
+        : nex;
+      
+      const { error: insertError } = await supabase
+        .from('character_power_choices')
+        .insert({
+          character_id: characterId,
+          user_id: userId,
+          nex: assignedNex,
+          choice_type: isOriginPower ? 'origin_power' : 'transcender_legacy',
+          status: 'resolved',
+          resolved_at: new Date().toISOString(),
+          sanity_delta: 0, // Não afeta sanidade retroativamente
+          resolution: {
+            powerId: power.id,
+            powerName: power.name,
+            legacySync: true,
+            syncedAt: new Date().toISOString(),
+          },
+        });
+      
+      if (insertError) {
+        console.error('[syncTranscenderRecords] Erro ao criar registro:', insertError);
+        errors.push(`Erro ao registrar ${power.name}: ${insertError.message}`);
+      } else {
+        created++;
+        console.log(`[syncTranscenderRecords] Registro criado para: ${power.name} (NEX ${assignedNex})`);
+      }
+    }
+    
+    return { created, errors };
+  } catch (err) {
+    console.error('[syncTranscenderRecords] Erro geral:', err);
+    return { created: 0, errors: [err instanceof Error ? err.message : 'Erro desconhecido'] };
+  }
+}
