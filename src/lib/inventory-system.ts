@@ -1,6 +1,8 @@
 // Ordem Paranormal RPG v1.3 - Sistema de Inventário
 // Validação de patente, sistema de carga e munição abstrata
 
+import { getEffectiveCategory } from './category-reduction';
+
 export interface InventoryItem {
   id: string;
   name: string;
@@ -17,6 +19,9 @@ export interface InventoryItem {
   uses?: number;
   maxUses?: number;
   effect?: string;
+  // Campos para redução de categoria
+  favoriteAbilityId?: string;  // ID da habilidade que reduz a categoria
+  effectiveCategory?: 'I' | 'II' | 'III' | 'IV' | '0';  // Categoria efetiva após redução
 }
 
 export interface PatentLimits {
@@ -50,30 +55,58 @@ export function getPatentLimits(patent: string): PatentLimits {
   return PATENT_LIMITS[patent] || PATENT_LIMITS['Recruta'];
 }
 
+/**
+ * Conta itens por categoria, considerando a categoria efetiva (após reduções)
+ */
 export function countItemsByCategory(
+  inventory: InventoryItem[], 
+  category: 'I' | 'II' | 'III' | 'IV'
+): number {
+  return inventory.filter(item => {
+    // Usa a categoria efetiva se disponível, senão usa a categoria base
+    const effectiveCat = item.effectiveCategory || item.category;
+    return effectiveCat === category;
+  }).length;
+}
+
+/**
+ * Conta itens por categoria BASE (sem considerar reduções)
+ * Útil para validação de limites de habilidades
+ */
+export function countItemsByBaseCategory(
   inventory: InventoryItem[], 
   category: 'I' | 'II' | 'III' | 'IV'
 ): number {
   return inventory.filter(item => item.category === category).length;
 }
 
+/**
+ * Verifica se um item pode ser adicionado ao inventário
+ * Considera a categoria efetiva do item (após reduções de habilidades)
+ */
 export function canAddItem(
   item: InventoryItem, 
   inventory: InventoryItem[], 
   patent: string
 ): { allowed: boolean; reason?: string } {
+  // Usa a categoria efetiva se disponível
+  const effectiveCategory = item.effectiveCategory || item.category;
+  
   // Itens sem categoria sempre podem ser adicionados
-  if (item.category === '0') {
+  if (effectiveCategory === '0') {
     return { allowed: true };
   }
 
   const limits = getPatentLimits(patent);
-  const currentCount = countItemsByCategory(inventory, item.category);
+  const currentCount = countItemsByCategory(inventory, effectiveCategory);
   
-  if (currentCount >= limits[item.category]) {
+  if (currentCount >= limits[effectiveCategory]) {
+    const categoryDisplay = item.effectiveCategory && item.effectiveCategory !== item.category
+      ? `${effectiveCategory} (reduzida de ${item.category})`
+      : effectiveCategory;
     return { 
       allowed: false, 
-      reason: `Limite de itens Categoria ${item.category} atingido (${currentCount}/${limits[item.category]}) para patente ${patent}`
+      reason: `Limite de itens Categoria ${categoryDisplay} atingido (${currentCount}/${limits[effectiveCategory]}) para patente ${patent}`
     };
   }
 

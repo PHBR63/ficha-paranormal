@@ -35,6 +35,7 @@ import {
   Info,
   Zap,
   Wrench,
+  Star,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -97,6 +98,12 @@ import type { CatalogItem } from '@/lib/items-catalog';
 import { ProtectionWidget } from './ProtectionWidget';
 import { InventoryItemDetailModal } from './InventoryItemDetailModal';
 import { validateArmorItem, validateWeaponItem, validateGeneralItem } from '@/hooks/useEquipmentMigration';
+import { inferWeaponType } from '@/lib/weapon-type-inference';
+import { 
+  getEffectiveCategory, 
+  getCategoryReductionAbility,
+  type CategoryReductionConfig,
+} from '@/lib/category-reduction';
 
 // Categorias de itens para organização visual
 export type ItemType = 'weapon' | 'armor' | 'consumable' | 'ritual' | 'valuable' | 'misc';
@@ -121,6 +128,9 @@ const CATEGORY_LABELS: Record<string, { label: string; color: string }> = {
 export interface ExtendedInventoryItem extends InventoryItem {
   itemType?: ItemType;
   equipSlot?: EquipmentSlotType;
+  // Campos para redução de categoria (A Favorita, Ferramenta Favorita, etc.)
+  favoriteAbilityId?: string;  // ID da habilidade que está sendo aplicada
+  effectiveCategory?: InventoryItem['category'];  // Categoria efetiva após redução
 }
 
 interface InventoryPanelProps {
@@ -598,7 +608,7 @@ export function InventoryPanel({
       id: weaponToModify.id,
       name: weaponToModify.name.replace(/\s*\(Mod\.\)$/, ''), // Remove indicador anterior
       category: (weaponToModify as any).baseCategory || weaponToModify.category,
-      type: (weaponToModify as any).weaponType || 'melee',
+      type: inferWeaponType(weaponToModify as any), // Usar inferência de tipo correta
       damage: (weaponToModify as any).baseDamage || (weaponToModify as any).damage || '1d6',
       damageType: (weaponToModify as any).damageType || 'Corte',
       critical: (weaponToModify as any).baseCritical || (weaponToModify as any).critical || 20,
@@ -887,7 +897,7 @@ export function InventoryPanel({
             id: weaponToModify.id,
             name: weaponToModify.name.replace(/\s*\(Mod\.\)$/, ''),
             category: ((weaponToModify as any).baseCategory || weaponToModify.category) as CatalogWeapon['category'],
-            type: (weaponToModify as any).weaponType || 'melee',
+            type: inferWeaponType(weaponToModify as any), // Usar inferência de tipo correta
             damage: (weaponToModify as any).baseDamage || (weaponToModify as any).damage || '1d6',
             damageType: (weaponToModify as any).damageType || 'Corte',
             critical: (weaponToModify as any).baseCritical || (weaponToModify as any).critical || 20,
@@ -1205,16 +1215,25 @@ interface InventoryItemRowProps {
   onUse?: (id: string) => void;
   onModify?: (item: ExtendedInventoryItem) => void;
   onViewDetails?: (item: ExtendedInventoryItem) => void;
+  onToggleFavorite?: (item: ExtendedInventoryItem) => void;
+  availableAbilities?: CategoryReductionConfig[];
 }
 
-function InventoryItemRow({ item, onRemove, onEquip, onUnequip, onUse, onModify, onViewDetails }: InventoryItemRowProps) {
-  const categoryConfig = CATEGORY_LABELS[item.category] || CATEGORY_LABELS['0'];
+function InventoryItemRow({ item, onRemove, onEquip, onUnequip, onUse, onModify, onViewDetails, onToggleFavorite, availableAbilities }: InventoryItemRowProps) {
+  // Usa a categoria efetiva se disponível
+  const displayCategory = item.effectiveCategory || item.category;
+  const hasReduction = item.effectiveCategory && item.effectiveCategory !== item.category;
+  const categoryConfig = CATEGORY_LABELS[displayCategory] || CATEGORY_LABELS['0'];
   // Verifica se é consumível e tem usos
   const isConsumable = item.consumable && (item.uses ?? 0) > 0;
   const usesDisplay = item.consumable ? `${item.uses ?? 0}/${item.maxUses ?? item.uses ?? 0}` : null;
   // Verificar se arma tem modificações aplicadas
   const appliedMods = (item as any).appliedModifications as WeaponModification[] | undefined;
   const hasModifications = appliedMods && appliedMods.length > 0;
+  // Obter nome da habilidade de redução
+  const reductionAbility = item.favoriteAbilityId 
+    ? getCategoryReductionAbility(item.favoriteAbilityId) 
+    : undefined;
 
   return (
     <TooltipProvider>
@@ -1351,12 +1370,28 @@ function InventoryItemRow({ item, onRemove, onEquip, onUnequip, onUse, onModify,
               </TooltipContent>
             </Tooltip>
           )}
-          <Badge 
-            variant="outline" 
-            className={cn("text-[10px] border flex-shrink-0", categoryConfig.color)}
-          >
-            {categoryConfig.label}
-          </Badge>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Badge 
+                variant="outline" 
+                className={cn(
+                  "text-[10px] border flex-shrink-0",
+                  categoryConfig.color,
+                  hasReduction && "ring-1 ring-yellow-500/50"
+                )}
+              >
+                {hasReduction && <Star className="w-2.5 h-2.5 mr-0.5 text-yellow-400 fill-yellow-400" />}
+                {categoryConfig.label}
+              </Badge>
+            </TooltipTrigger>
+            {hasReduction && (
+              <TooltipContent className="bg-popover border-border hidden sm:block">
+                <p className="text-xs">
+                  <span className="text-yellow-400">{reductionAbility?.abilityName}</span>: Cat. {item.category} → {displayCategory}
+                </p>
+              </TooltipContent>
+            )}
+          </Tooltip>
           <span className="text-[10px] sm:text-xs text-muted-foreground px-1.5 sm:px-2 py-1 bg-muted/50 rounded flex-shrink-0">
             {item.slots * item.quantity} esp.
           </span>
