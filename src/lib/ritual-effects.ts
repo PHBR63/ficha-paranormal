@@ -1349,19 +1349,24 @@ export const RITUAL_EFFECTS: Record<string, RitualEffectsByLevel> = {
     },
   },
 
-  'velocidade': {
+  'velocidade-mortal': {
     base: {
       kind: 'buff',
-      special: '+6m deslocamento. Movimento extra.',
+      sustain: {
+        costPerTurn: 1,
+        concentration: false,
+      },
+      modes: [
+        { name: 'Normal', kind: 'buff', description: 'Alvo ganha ação de movimento extra por turno', effect: { special: 'Ação de movimento adicional por turno. Não pode ser usada para conjurar rituais.' } },
+        { name: 'Inverso', kind: 'interceptor', description: 'Conjurador recebe metade do dano do alvo', effect: { special: 'Conjurador recebe 50% do dano que o alvo receberia.' } },
+      ],
+      special: 'Ação de movimento adicional por turno (não pode conjurar rituais). Modo inverso: conjurador recebe metade do dano do alvo.',
     },
     discente: {
-      defenseModifier: 2,
-      special: '+9m, +2 Defesa. Dois movimentos extras.',
+      special: 'Muda a ação de movimento adicional para uma ação padrão adicional por turno.',
     },
     verdadeiro: {
-      defenseModifier: 4,
-      attackModifier: 2,
-      special: '+12m, +4 Defesa, +2 ataques. Age duas vezes.',
+      special: 'Afeta seres escolhidos no alcance.',
     },
   },
 
