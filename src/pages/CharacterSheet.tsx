@@ -1144,7 +1144,8 @@ export default function CharacterSheet() {
     dismissIssue,
   } = useCharacterAudit(characterForAudit, user?.id || null, { 
     autoRun: true,
-    onFixComplete: refetchCharacter, // Atualiza UI após correções
+    autoFixCritical: true, // Corrige problemas automaticamente
+    onFixComplete: refetchCharacter,
   });
   
   // Handler para abrir modal de poderes paranormais com validação de limite

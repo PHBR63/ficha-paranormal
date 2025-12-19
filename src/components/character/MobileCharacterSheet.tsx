@@ -560,7 +560,8 @@ export function MobileCharacterSheet({
     dismissIssue,
   } = useCharacterAudit(characterForAudit, user?.id || null, { 
     autoRun: true,
-    onFixComplete: onRefetch, // Atualiza dados após correções
+    autoFixCritical: true, // Corrige problemas automaticamente
+    onFixComplete: onRefetch,
   });
 
   // Calcular bônus de defesa de origem, habilidades de classe e poderes gerais
