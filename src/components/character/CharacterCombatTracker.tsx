@@ -71,6 +71,7 @@ interface CharacterCombatTrackerProps {
   character: CharacterCombatData;
   onHPChange: (newHP: number) => void;
   onPEChange: (newPE: number) => void;
+  activeConditionalBonuses?: string[];
 }
 
 // Função para rolar d20
@@ -80,7 +81,10 @@ export function CharacterCombatTracker({
   character,
   onHPChange,
   onPEChange,
+  activeConditionalBonuses = [],
 }: CharacterCombatTrackerProps) {
+  // Conta bônus condicionais ativos
+  const activeBonusCount = activeConditionalBonuses.length;
   // Estado do combate
   const [combatState, setCombatState] = useState<CombatState>({
     isActive: false,
@@ -241,6 +245,36 @@ export function CharacterCombatTracker({
             )}
           </div>
           <div className="flex items-center gap-2">
+            {/* Indicador de Bônus Condicionais Ativos */}
+            {activeBonusCount > 0 && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      className="flex items-center gap-1 px-2 py-1 rounded-full bg-amber-500/20 border border-amber-500/50"
+                    >
+                      <Zap className="w-3 h-3 text-amber-500 animate-pulse" />
+                      <span className="text-xs font-bold text-amber-500">{activeBonusCount}</span>
+                    </motion.div>
+                  </TooltipTrigger>
+                  <TooltipContent side="left" className="max-w-xs">
+                    <div className="space-y-1">
+                      <p className="font-semibold text-amber-500">Bônus Condicionais Ativos</p>
+                      <ul className="text-xs space-y-0.5">
+                        {activeConditionalBonuses.map((bonusId) => (
+                          <li key={bonusId} className="flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                            {bonusId.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
             {combatState.initiative !== null && (
               <Badge variant="outline" className="font-mono">
                 Init: {combatState.initiative}
