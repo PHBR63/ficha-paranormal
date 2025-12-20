@@ -615,8 +615,11 @@ export function MobileCharacterSheet({
     nex: character.nex,
     elementalAffinity: null,
     affinityActive: false,
+    activeConditionalBonuses: [],
     activeRituals: activeRitualsForDefense,
     skills: character.skills || {},
+    intellect: character.intellect || 1,
+    vigor: character.vigor || 1,
   });
 
   // Defesa total com TODOS os bônus (origem, habilidades, poderes, paranormais, rituais)

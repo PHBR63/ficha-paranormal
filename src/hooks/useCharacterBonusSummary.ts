@@ -75,6 +75,14 @@ export const CONDITIONAL_BONUSES: Omit<ConditionalBonus, 'active'>[] = [
     effects: ['+INT Defesa', '+INT resistências'],
     source: 'ability',
   },
+  // === HABILIDADES DE TRILHA ===
+  {
+    id: 'bloqueio-casca-grossa',
+    name: 'Bloqueio (Casca Grossa)',
+    condition: 'Ao bloquear um ataque',
+    effects: ['+VIG na RD do bloqueio'],
+    source: 'ability',
+  },
 ];
 
 // Interface para bônus de combate
@@ -140,6 +148,7 @@ interface UseCharacterBonusSummaryProps {
   activeRituals?: ActiveRitualForDefense[]; // Rituais ativos para cálculo de defesa
   skills?: Record<string, number>; // Perícias com nível de treinamento (0-3)
   intellect?: number; // Intelecto do personagem (para Sentido Tático)
+  vigor?: number; // Vigor do personagem (para Casca Grossa no bloqueio)
 }
 
 /**
@@ -158,6 +167,7 @@ export function useCharacterBonusSummary({
   activeRituals = [],
   skills = {},
   intellect = 1,
+  vigor = 1,
 }: UseCharacterBonusSummaryProps): BonusSummary {
   // Usa hooks existentes
   const defenseBonuses = useDefenseBonuses({ 
@@ -420,6 +430,38 @@ export function useCharacterBonusSummary({
       });
     }
 
+    // Casca Grossa (Tropa de Choque): +VIG na RD ao bloquear
+    // Regra oficial: "quando faz um bloqueio, soma seu Vigor na resistência a dano recebida"
+    if (hasAbility('casca grossa') || hasAbility('casca-grossa')) {
+      const isActive = isConditionalActive('bloqueio-casca-grossa');
+      conditionalBonuses.push({
+        id: 'bloqueio-casca-grossa',
+        name: 'Bloqueio (Casca Grossa)',
+        condition: 'Ao bloquear um ataque',
+        active: isActive,
+        effects: [`+${vigor} RD no bloqueio`],
+        source: 'ability',
+      });
+      if (isActive) {
+        damageReduction.physical.breakdown.push({
+          source: 'Casca Grossa (Bloqueio)',
+          value: vigor,
+          type: 'ability',
+          conditional: 'durante bloqueio',
+          active: true,
+        });
+        damageReduction.physical.total += vigor;
+      }
+      
+      // Também registra como efeito especial para exibição
+      special.push({
+        source: 'Casca Grossa',
+        value: `+1 PV por 5% NEX, +${vigor} RD ao bloquear`,
+        type: 'ability',
+        active: true,
+      });
+    }
+
     // Inquebrável (Tropa de Choque): +5 Defesa, RD 5 quando machucado
     if (hasAbility('inquebravel')) {
       const isActive = isConditionalActive('inquebravel');
@@ -466,11 +508,22 @@ export function useCharacterBonusSummary({
       }
     }
 
-    // Ataque Furtivo (Infiltrador): dados extras de dano
+    // Ataque Furtivo (Infiltrador): dados extras de dano que escalam com NEX
+    // Regra oficial: +1d6 (NEX 10%), +2d6 (NEX 40%), +3d6 (NEX 65%), +4d6 (NEX 99%)
     if (hasAbility('ataque furtivo') || hasAbility('ataque-furtivo-trilha')) {
       const isActive = isConditionalActive('ataque-furtivo');
-      // Calcula dados baseado no NEX (passado via props ou assumir básico)
-      let extraDice = '+1d6';
+      
+      // Calcula quantidade de dados baseado no NEX (regra oficial do Infiltrador)
+      const calculateSneakAttackDice = (characterNex: number): number => {
+        if (characterNex >= 99) return 4; // NEX 99%: +4d6
+        if (characterNex >= 65) return 3; // NEX 65%: +3d6
+        if (characterNex >= 40) return 2; // NEX 40%: +2d6
+        return 1; // NEX 10%: +1d6
+      };
+      
+      const sneakAttackDice = calculateSneakAttackDice(nex);
+      const extraDice = `+${sneakAttackDice}d6`;
+      
       conditionalBonuses.push({
         id: 'ataque-furtivo',
         name: 'Ataque Furtivo',
