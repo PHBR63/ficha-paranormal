@@ -361,6 +361,7 @@ export default function CharacterSheet() {
     activeRituals: activeRitualsForDefense,
     skills: character?.skills || {},
     intellect: character?.intellect || 1,
+    vigor: character?.vigor || 1,
   });
 
   // Extrai hooks internos do bonusSummary para evitar chamadas duplicadas
