@@ -4,7 +4,7 @@
  * Versão responsiva: no mobile fica no header, no desktop é botão flutuante
  */
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence, useDragControls, PanInfo } from 'framer-motion';
 import { 
   HelpCircle, 
@@ -26,6 +26,28 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
+
+// Chaves do localStorage para persistência
+const STORAGE_KEYS = {
+  POSITION: 'character-help-position',
+  DISMISSED: 'character-help-dismissed',
+};
+
+/**
+ * Restaura o botão de ajuda que foi dispensado
+ */
+export function restoreHelpButton() {
+  localStorage.removeItem(STORAGE_KEYS.DISMISSED);
+  // Dispara evento customizado para notificar componentes
+  window.dispatchEvent(new CustomEvent('help-button-restored'));
+}
+
+/**
+ * Verifica se o botão de ajuda está dispensado
+ */
+export function isHelpButtonDismissed(): boolean {
+  return localStorage.getItem(STORAGE_KEYS.DISMISSED) === 'true';
+}
 
 interface CharacterSheetHelpProps {
   characterClass?: string;
@@ -138,13 +160,38 @@ export function HelpButton({ onClick }: { onClick: () => void }) {
 export function CharacterSheetHelp({ characterClass, nex, mode = 'floating', onClose }: CharacterSheetHelpProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
-  const [isDismissed, setIsDismissed] = useState(false);
+  const [isDismissed, setIsDismissed] = useState(() => {
+    // Carrega estado de dismissed do localStorage
+    return localStorage.getItem(STORAGE_KEYS.DISMISSED) === 'true';
+  });
   const isMobile = useIsMobile();
   
   // Para arrastar o botão flutuante
   const constraintsRef = useRef<HTMLDivElement>(null);
   const dragControls = useDragControls();
-  const [dragPosition, setDragPosition] = useState({ x: 0, y: 0 });
+  const [dragPosition, setDragPosition] = useState(() => {
+    // Carrega posição salva do localStorage
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.POSITION);
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch (e) {
+      console.error('Erro ao carregar posição do botão de ajuda:', e);
+    }
+    return { x: 0, y: 0 };
+  });
+
+  // Listener para restaurar o botão de ajuda
+  useEffect(() => {
+    const handleRestore = () => {
+      setIsDismissed(false);
+      setDragPosition({ x: 0, y: 0 });
+    };
+    
+    window.addEventListener('help-button-restored', handleRestore);
+    return () => window.removeEventListener('help-button-restored', handleRestore);
+  }, []);
 
   // Dicas específicas por classe
   const classTips: Record<string, string[]> = {
@@ -176,11 +223,14 @@ export function CharacterSheetHelp({ characterClass, nex, mode = 'floating', onC
   // Handler para dispensar o botão flutuante (mobile)
   const handleDismiss = () => {
     setIsDismissed(true);
+    localStorage.setItem(STORAGE_KEYS.DISMISSED, 'true');
   };
 
-  // Handler para quando o drag termina
+  // Handler para quando o drag termina - salva posição no localStorage
   const handleDragEnd = (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    setDragPosition({ x: info.offset.x, y: info.offset.y });
+    const newPosition = { x: info.offset.x, y: info.offset.y };
+    setDragPosition(newPosition);
+    localStorage.setItem(STORAGE_KEYS.POSITION, JSON.stringify(newPosition));
   };
 
   // No modo inline (mobile header), retorna apenas o painel (sem botão flutuante)
