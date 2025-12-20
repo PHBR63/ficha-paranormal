@@ -71,17 +71,45 @@ export function ExcessPowersRemovalModal({
     });
   };
 
+  // Obtém nomes dos poderes selecionados para exibição
+  const getSelectedPowerNames = () => {
+    return powers
+      .filter(p => selectedPowers.has(p.id))
+      .map(p => p.name);
+  };
+
   // Confirma remoção
   const handleConfirm = async () => {
     if (!canConfirm) return;
     
+    const removedNames = getSelectedPowerNames();
+    const newTotal = powers.length - selectedCount;
+    
     setIsRemoving(true);
     try {
       await onRemovePowers(Array.from(selectedPowers));
+      
+      // Toast detalhado com os poderes removidos
       toast({
-        title: 'Poderes removidos',
-        description: `${selectedCount} poder(es) removido(s) com sucesso.`,
+        title: '✓ Poderes removidos com sucesso',
+        description: (
+          <div className="mt-2 space-y-2">
+            <p className="text-sm">
+              <span className="font-medium">{removedNames.length}</span> poder(es) removido(s):
+            </p>
+            <ul className="text-xs space-y-1 pl-2 border-l-2 border-destructive/30">
+              {removedNames.map((name, i) => (
+                <li key={i} className="text-muted-foreground">• {name}</li>
+              ))}
+            </ul>
+            <p className="text-xs text-muted-foreground pt-1 border-t border-border/50">
+              Novo total: <span className="font-medium text-foreground">{newTotal}/{maxPowers}</span> poderes
+            </p>
+          </div>
+        ),
+        duration: 6000,
       });
+      
       setSelectedPowers(new Set());
       onOpenChange(false);
     } catch (error) {
