@@ -80,6 +80,8 @@ import {
   PATENT_LIMITS,
   useConsumableItem,
   canUseItem,
+  hasInventarioOtimizado,
+  type CarryCapacityOptions,
 } from '@/lib/inventory-system';
 import { EquipmentSlots, EquipmentSlotType, EQUIPMENT_SLOTS, getAppropriateSlot, isTwoHandedWeapon } from './EquipmentSlots';
 import { WeaponCatalogModal } from './WeaponCatalogModal';
@@ -133,7 +135,7 @@ export interface ExtendedInventoryItem extends InventoryItem {
   effectiveCategory?: InventoryItem['category'];  // Categoria efetiva após redução
 }
 
-// Props para dados do personagem (para detecção automática de reduções de categoria)
+// Props para dados do personagem (para detecção automática de reduções de categoria e Inventário Otimizado)
 export interface CharacterDataForInventory {
   origin: string;
   classId: string;
@@ -142,6 +144,8 @@ export interface CharacterDataForInventory {
   abilities?: string[];
   powers?: string[];
   generalPowers?: Array<{ id: string; name: string }>;
+  /** Intelecto do personagem (para Inventário Otimizado do Técnico) */
+  intellect?: number;
 }
 
 interface InventoryPanelProps {
@@ -187,8 +191,24 @@ export function InventoryPanel({
 
   const isMobile = useIsMobile();
 
-  // Calcular status de carga
-  const loadStatus = useMemo(() => getLoadStatus(inventory, strength), [inventory, strength]);
+  // Detectar Inventário Otimizado (Técnico)
+  const hasInvOtimizado = useMemo(() => {
+    if (!characterData) return false;
+    return hasInventarioOtimizado({
+      classTrack: characterData.classTrack,
+      abilities: characterData.abilities,
+      nex: characterData.nex,
+    });
+  }, [characterData?.classTrack, characterData?.abilities, characterData?.nex]);
+
+  // Opções de capacidade de carga
+  const carryOptions: CarryCapacityOptions = useMemo(() => ({
+    intellect: characterData?.intellect,
+    hasInventarioOtimizado: hasInvOtimizado,
+  }), [characterData?.intellect, hasInvOtimizado]);
+
+  // Calcular status de carga (com suporte a Inventário Otimizado)
+  const loadStatus = useMemo(() => getLoadStatus(inventory, strength, carryOptions), [inventory, strength, carryOptions]);
   const patentLimits = useMemo(() => getPatentLimits(patent), [patent]);
 
   // Mapear itens equipados por slot (atualizado com shield, removido head)

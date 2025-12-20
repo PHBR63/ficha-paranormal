@@ -1,7 +1,47 @@
 // Ordem Paranormal RPG v1.3 - Sistema de Inventário
 // Validação de patente, sistema de carga e munição abstrata
+// Inclui suporte a Inventário Otimizado (Técnico - Especialista)
 
 import { getEffectiveCategory } from './category-reduction';
+
+/**
+ * Interface para dados do personagem usados na detecção de habilidades de inventário
+ */
+export interface CharacterInventoryData {
+  classTrack?: string;
+  abilities?: string[];
+  nex?: number;
+}
+
+/**
+ * Verifica se o personagem possui a habilidade Inventário Otimizado (Técnico)
+ * 
+ * Regra oficial: Técnico (Especialista) NEX 10%
+ * "Você soma seu Intelecto à Força para calcular sua capacidade de carga.
+ *  Além disso, itens ocupam 1 espaço a menos (mas nunca reduzido a 0)."
+ * 
+ * @param characterData - Dados do personagem
+ */
+export function hasInventarioOtimizado(characterData?: CharacterInventoryData): boolean {
+  if (!characterData) return false;
+  
+  const { classTrack, abilities = [], nex = 0 } = characterData;
+  
+  // Verifica se é da trilha Técnico com NEX 10%+
+  const trackLower = classTrack?.toLowerCase() || '';
+  if (trackLower.includes('tecnico') || trackLower.includes('técnico')) {
+    return nex >= 10;
+  }
+  
+  // Verifica se tem a habilidade explicitamente
+  const hasAbility = abilities.some(a => {
+    const aLower = a.toLowerCase();
+    return aLower.includes('inventário otimizado') || 
+           aLower.includes('inventario otimizado');
+  });
+  
+  return hasAbility;
+}
 
 export interface InventoryItem {
   id: string;
@@ -119,18 +159,89 @@ export function getAvailableSlots(patent: string): PatentLimits {
 
 // ============== SISTEMA DE CARGA ==============
 
-export function calculateCarryCapacity(strength: number): number {
-  // Capacidade = FOR × 5 espaços (mínimo 2)
-  return Math.max(2, strength * 5);
+/**
+ * Interface para configuração de bônus de carga (Inventário Otimizado, etc.)
+ */
+export interface CarryCapacityOptions {
+  /** Intelecto do personagem (para Inventário Otimizado do Técnico) */
+  intellect?: number;
+  /** Se o personagem possui a habilidade Inventário Otimizado */
+  hasInventarioOtimizado?: boolean;
 }
 
-export function calculateCurrentLoad(inventory: InventoryItem[]): number {
-  return inventory.reduce((sum, item) => sum + (item.slots * item.quantity), 0);
+/**
+ * Calcula a capacidade de carga do personagem
+ * 
+ * Regra base: Capacidade = FOR × 5 espaços
+ * Inventário Otimizado (Técnico): Soma INT à FOR para cálculo
+ * 
+ * @param strength - Força do personagem
+ * @param options - Opções adicionais (intelecto, habilidades)
+ */
+export function calculateCarryCapacity(
+  strength: number, 
+  options?: CarryCapacityOptions
+): number {
+  let baseAttribute = strength;
+  
+  // Inventário Otimizado (Técnico): soma INT à FOR
+  if (options?.hasInventarioOtimizado && options?.intellect) {
+    baseAttribute += options.intellect;
+  }
+  
+  // Capacidade = (FOR + bônus) × 5 espaços (mínimo 2)
+  return Math.max(2, baseAttribute * 5);
 }
 
-export function isOverloaded(inventory: InventoryItem[], strength: number): boolean {
-  const currentLoad = calculateCurrentLoad(inventory);
-  const capacity = calculateCarryCapacity(strength);
+/**
+ * Calcula os espaços efetivos de um item considerando Inventário Otimizado
+ * 
+ * Inventário Otimizado (Técnico): Itens ocupam 1 espaço a menos (mínimo 1)
+ * 
+ * @param baseSlots - Espaços base do item
+ * @param hasInventarioOtimizado - Se possui a habilidade
+ */
+export function calculateEffectiveSlots(
+  baseSlots: number,
+  hasInventarioOtimizado: boolean = false
+): number {
+  if (hasInventarioOtimizado) {
+    // Regra oficial: itens ocupam 1 espaço a menos, mas nunca reduzido a 0
+    return Math.max(1, baseSlots - 1);
+  }
+  return baseSlots;
+}
+
+/**
+ * Calcula a carga atual considerando reduções de espaço
+ * 
+ * @param inventory - Lista de itens do inventário
+ * @param hasInventarioOtimizado - Se possui a habilidade Inventário Otimizado
+ */
+export function calculateCurrentLoad(
+  inventory: InventoryItem[],
+  hasInventarioOtimizado: boolean = false
+): number {
+  return inventory.reduce((sum, item) => {
+    const effectiveSlots = calculateEffectiveSlots(item.slots, hasInventarioOtimizado);
+    return sum + (effectiveSlots * item.quantity);
+  }, 0);
+}
+
+/**
+ * Verifica se o personagem está sobrecarregado
+ * 
+ * @param inventory - Lista de itens do inventário
+ * @param strength - Força do personagem
+ * @param options - Opções adicionais para cálculo de capacidade
+ */
+export function isOverloaded(
+  inventory: InventoryItem[], 
+  strength: number,
+  options?: CarryCapacityOptions
+): boolean {
+  const currentLoad = calculateCurrentLoad(inventory, options?.hasInventarioOtimizado);
+  const capacity = calculateCarryCapacity(strength, options);
   return currentLoad > capacity;
 }
 
@@ -142,12 +253,33 @@ export interface LoadStatus {
     testPenalty: number; // -5 em FOR/AGI/VIG
     movementPenalty: number; // -3m deslocamento
   } | null;
+  /** Se Inventário Otimizado está ativo (para UI) */
+  hasInventarioOtimizado?: boolean;
+  /** Bônus de capacidade do Inventário Otimizado */
+  capacityBonus?: number;
 }
 
-export function getLoadStatus(inventory: InventoryItem[], strength: number): LoadStatus {
-  const currentLoad = calculateCurrentLoad(inventory);
-  const maxCapacity = calculateCarryCapacity(strength);
+/**
+ * Obtém o status completo de carga do personagem
+ * 
+ * @param inventory - Lista de itens do inventário
+ * @param strength - Força do personagem
+ * @param options - Opções adicionais (Inventário Otimizado)
+ */
+export function getLoadStatus(
+  inventory: InventoryItem[], 
+  strength: number,
+  options?: CarryCapacityOptions
+): LoadStatus {
+  const hasInvOtimizado = options?.hasInventarioOtimizado ?? false;
+  const currentLoad = calculateCurrentLoad(inventory, hasInvOtimizado);
+  const maxCapacity = calculateCarryCapacity(strength, options);
   const overloaded = currentLoad > maxCapacity;
+
+  // Calcula o bônus de capacidade do Inventário Otimizado
+  const capacityBonus = hasInvOtimizado && options?.intellect 
+    ? options.intellect * 5 
+    : 0;
 
   return {
     currentLoad,
@@ -156,7 +288,9 @@ export function getLoadStatus(inventory: InventoryItem[], strength: number): Loa
     overloadPenalty: overloaded ? {
       testPenalty: -5,
       movementPenalty: -3,
-    } : null
+    } : null,
+    hasInventarioOtimizado: hasInvOtimizado,
+    capacityBonus,
   };
 }
 
