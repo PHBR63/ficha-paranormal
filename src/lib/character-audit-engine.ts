@@ -305,6 +305,11 @@ export function auditDefense(character: CharacterForAudit): { issues: AuditIssue
 
 /**
  * Audita slots de Transcender vs poderes paranormais
+ * 
+ * CORREÇÃO: Agora considera TODOS os tipos de registro:
+ * - 'transcender': escolha padrão de Transcender
+ * - 'transcender_legacy': registros retroativos para poderes antigos
+ * - 'origin_power': poder concedido pela origem (ex: Cultista Arrependido)
  */
 export async function auditTranscenderSlots(character: CharacterForAudit): Promise<{
   issues: AuditIssue[];
@@ -319,7 +324,7 @@ export async function auditTranscenderSlots(character: CharacterForAudit): Promi
   const issues: AuditIssue[] = [];
   const powers = character.paranormal_powers || [];
   
-  // Calcular slots de Transcender disponíveis
+  // Calcular slots de Transcender disponíveis baseado no NEX
   const milestones = getPowerChoiceMilestones();
   const slotsTotal = milestones.filter(m => m <= character.nex).length;
   
@@ -328,14 +333,27 @@ export async function auditTranscenderSlots(character: CharacterForAudit): Promi
   const originGrantsPower = origin?.id === 'cultista-arrependido'; // Traços do Outro Lado
   const powersFromOrigin = originGrantsPower ? 1 : 0;
   
-  // Buscar registros reais de Transcender
+  // Buscar TODOS os registros resolvidos de escolha de poder
   const choices = await getCharacterPowerChoices(character.id);
-  const transcenderChoices = choices.filter(c => 
-    c.choice_type === 'transcender' && c.status === 'resolved'
+  
+  // Contar registros por tipo (todos os resolvidos)
+  const allResolvedChoices = choices.filter(c => c.status === 'resolved');
+  
+  // Slots usados = escolhas de Transcender ou Transcender Legacy resolvidas
+  const transcenderChoices = allResolvedChoices.filter(c => 
+    c.choice_type === 'transcender' || c.choice_type === 'transcender_legacy'
   );
   const slotsUsed = transcenderChoices.length;
   
-  // Total de poderes que o personagem deveria ter
+  // Registros de origem (não contam como slot)
+  const originPowerRecords = allResolvedChoices.filter(c => 
+    c.choice_type === 'origin_power'
+  );
+  const registeredOriginPowers = originPowerRecords.length;
+  
+  // Total de poderes que o personagem deveria ter:
+  // = slots usados + poderes de origem registrados
+  // Se não há registros, usa o limite teórico
   const maxLegitPowers = slotsTotal + powersFromOrigin;
   const powersTotal = powers.length;
   const excessPowers = Math.max(0, powersTotal - maxLegitPowers);
@@ -354,9 +372,8 @@ export async function auditTranscenderSlots(character: CharacterForAudit): Promi
     });
   }
   
-  // Verificar se há discrepância entre poderes e registros
-  // Conta todos os registros resolvidos (transcender, transcender_legacy, origin_power)
-  const allResolvedChoices = choices.filter(c => c.status === 'resolved');
+  // Verificar discrepância entre poderes e registros
+  // Coleta TODOS os power IDs registrados (de qualquer tipo de escolha)
   const registeredPowerIds = new Set<string>();
   allResolvedChoices.forEach(c => {
     const resolution = c.resolution as { powerId?: string } | null;
@@ -377,7 +394,7 @@ export async function auditTranscenderSlots(character: CharacterForAudit): Promi
       description: `${unregisteredPowers.length} poder(es) paranormal(is) não têm registro correspondente na tabela de escolhas. Isso pode indicar poderes adicionados antes do sistema de Transcender.`,
       currentValue: registeredPowerIds.size,
       expectedValue: powersTotal,
-      autoFixable: true, // Agora é corrigível automaticamente
+      autoFixable: true, // Pode ser sincronizado automaticamente
       fixAction: 'Sincronizar registros de Transcender automaticamente',
     });
   }

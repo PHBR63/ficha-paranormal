@@ -15,7 +15,13 @@ import { ParanormalPower, ParanormalElement, PowerChoiceType } from './paranorma
 import { NEX_PROGRESSION, NexProgressionData } from './character-data';
 
 // Tipos de escolha de poder
-export type PowerChoiceType_DB = 'transcender' | 'class_power' | 'track_power';
+// Inclui tipos legados para compatibilidade retroativa
+export type PowerChoiceType_DB = 
+  | 'transcender'        // Escolha padrão de Transcender
+  | 'transcender_legacy' // Registro retroativo para poderes antigos
+  | 'origin_power'       // Poder concedido pela origem (ex: Cultista Arrependido)
+  | 'class_power'        // Poder de classe (não usado atualmente)
+  | 'track_power';       // Poder de trilha (não usado atualmente)
 
 // Interface para uma escolha de poder salva no banco
 export interface PowerChoice {
