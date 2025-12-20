@@ -82,6 +82,7 @@ import { BonusSummaryCard } from '@/components/character/BonusSummaryCard';
 import { SustainedRitualsPanel } from '@/components/character/SustainedRitualsPanel';
 import { ConditionalBonusesPanel } from '@/components/character/ConditionalBonusesPanel';
 import { TrackCombatBonusesBar } from '@/components/character/TrackCombatBonusesBar';
+import { ActiveAdvancedBonusesBar, useActiveAdvancedBonuses } from '@/components/character/ActiveAdvancedBonusesBar';
 import { CharacterAuditBanner } from '@/components/character/CharacterAuditBanner';
 import { useCharacterAudit } from '@/hooks/useCharacterAudit';
 import { CharacterForAudit, canAddParanormalPower } from '@/lib/character-audit-engine';
@@ -1984,6 +1985,17 @@ export default function CharacterSheet() {
 
             {/* === COLUNA DIREITA === */}
             <div className="space-y-4 min-w-0">
+              {/* Barra de bônus avançados ativos (Assassinar, Potência Máxima, Atirar para Matar) */}
+              <ActiveAdvancedBonusesBar
+                activeBonuses={bonusSummary.conditionalBonuses.map(b => ({
+                  id: b.id,
+                  name: b.name,
+                  effect: b.effects[0] || '',
+                  active: b.active,
+                }))}
+                className="mb-2"
+              />
+
               {/* Barra de bônus de trilha em combate */}
               <TrackCombatBonusesBar
                 combat={bonusSummary.combat}
