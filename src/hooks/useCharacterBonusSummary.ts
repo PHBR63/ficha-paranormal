@@ -83,6 +83,28 @@ export const CONDITIONAL_BONUSES: Omit<ConditionalBonus, 'active'>[] = [
     effects: ['+VIG na RD do bloqueio'],
     source: 'ability',
   },
+  // === BÔNUS CONDICIONAIS AVANÇADOS (Fase 4) ===
+  {
+    id: 'assassinar',
+    name: 'Assassinar',
+    condition: '3 PE + ação movimento (próximo Ataque Furtivo)',
+    effects: ['Dados do Ataque Furtivo são somados 2x', 'Dano dobrado'],
+    source: 'ability',
+  },
+  {
+    id: 'potencia-maxima',
+    name: 'Potência Máxima',
+    condition: 'Ao usar Ataque Especial corpo a corpo',
+    effects: ['Bônus numéricos do Ataque Especial são 2x'],
+    source: 'ability',
+  },
+  {
+    id: 'atirar-matar',
+    name: 'Atirar para Matar',
+    condition: 'Acerto crítico com arma de fogo',
+    effects: ['Dano máximo (não rola dados)'],
+    source: 'ability',
+  },
 ];
 
 // Interface para bônus de combate
@@ -544,7 +566,124 @@ export function useCharacterBonusSummary({
       }
     }
 
-    // Iniciativa Melhorada (Poder Geral): +5 Iniciativa
+    // === BÔNUS CONDICIONAIS AVANÇADOS (Fase 4) ===
+
+    // Assassinar (Infiltrador, NEX 65%): Dobra dados do Ataque Furtivo
+    // Regra oficial: Gasta 3 PE + ação movimento. Próximo Ataque Furtivo tem dados somados 2x
+    if (hasAbility('assassinar')) {
+      const isActive = isConditionalActive('assassinar');
+      
+      // Calcula dados do Ataque Furtivo para dobrar
+      const calculateSneakAttackDiceForAssassinate = (characterNex: number): number => {
+        if (characterNex >= 99) return 4;
+        if (characterNex >= 65) return 3;
+        if (characterNex >= 40) return 2;
+        return 1;
+      };
+      
+      const baseDice = calculateSneakAttackDiceForAssassinate(nex);
+      const doubleDice = baseDice * 2; // Dobra os dados
+      const assassinateDice = `+${doubleDice}d6`;
+      
+      conditionalBonuses.push({
+        id: 'assassinar',
+        name: 'Assassinar',
+        condition: '3 PE + ação movimento (próximo Ataque Furtivo)',
+        active: isActive,
+        effects: [`${assassinateDice} dano (2x)`, 'Dano dobrado'],
+        source: 'ability',
+      });
+      
+      // Se Assassinar está ativo, adiciona dados extras (além dos do Ataque Furtivo base)
+      if (isActive) {
+        // Adiciona dados EXTRAS (a segunda metade do dobro)
+        const extraFromAssassinate = `+${baseDice}d6`;
+        combat.damage.extraDice.push(extraFromAssassinate);
+        combat.damage.breakdown.push({
+          source: 'Assassinar',
+          value: extraFromAssassinate,
+          type: 'ability',
+          conditional: 'dados extras (dobrado)',
+          active: true,
+        });
+        
+        // Registra o multiplicador de dano
+        special.push({
+          source: 'Assassinar',
+          value: 'Dano do Ataque Furtivo dobrado',
+          type: 'ability',
+          active: true,
+        });
+      }
+    }
+
+    // Potência Máxima (Guerreiro, NEX 99%): Dobra bônus do Ataque Especial corpo a corpo
+    // Regra oficial: Todos os bônus numéricos do Ataque Especial são dobrados
+    if (hasAbility('potência máxima') || hasAbility('potencia maxima') || hasAbility('potencia-maxima')) {
+      const isActive = isConditionalActive('potencia-maxima');
+      
+      conditionalBonuses.push({
+        id: 'potencia-maxima',
+        name: 'Potência Máxima',
+        condition: 'Ao usar Ataque Especial corpo a corpo',
+        active: isActive,
+        effects: ['Bônus numéricos 2x', 'Exemplo: +5/+15 → +10/+30'],
+        source: 'ability',
+      });
+      
+      if (isActive) {
+        // Marca como ativo - o multiplicador será aplicado no sistema de ataque
+        special.push({
+          source: 'Potência Máxima',
+          value: 'Bônus do Ataque Especial corpo a corpo são DOBRADOS',
+          type: 'ability',
+          active: true,
+        });
+        
+        // Registra o multiplicador no breakdown de dano
+        combat.damage.breakdown.push({
+          source: 'Potência Máxima',
+          value: 'x2 bônus',
+          type: 'ability',
+          conditional: 'Ataque Especial corpo a corpo',
+          active: true,
+        });
+      }
+    }
+
+    // Atirar para Matar (Atirador de Elite, NEX 99%): Dano máximo em críticos
+    // Regra oficial: Acerto crítico com arma de fogo = dano máximo (não rola dados)
+    if (hasAbility('atirar para matar') || hasAbility('atirar-matar')) {
+      const isActive = isConditionalActive('atirar-matar');
+      
+      conditionalBonuses.push({
+        id: 'atirar-matar',
+        name: 'Atirar para Matar',
+        condition: 'Acerto crítico com arma de fogo',
+        active: isActive,
+        effects: ['Dano máximo (não rola dados)'],
+        source: 'ability',
+      });
+      
+      if (isActive) {
+        // Marca como ativo - o sistema de dano deve usar valor máximo
+        special.push({
+          source: 'Atirar para Matar',
+          value: 'Dano MÁXIMO em crítico (arma de fogo)',
+          type: 'ability',
+          active: true,
+        });
+        
+        combat.damage.breakdown.push({
+          source: 'Atirar para Matar',
+          value: 'MAX',
+          type: 'ability',
+          conditional: 'crítico com arma de fogo',
+          active: true,
+        });
+      }
+    }
+
     if (hasPower('iniciativa-melhorada')) {
       combat.initiative.breakdown.push({
         source: 'Iniciativa Melhorada',

@@ -28,6 +28,11 @@ function getBonusIcon(bonusId: string) {
     'foco-arma': Target,
     'combate-defensivo': Shield,
     'sentido-tatico': Eye,
+    // Fase 4: Bônus condicionais avançados
+    'assassinar': Crosshair,      // Infiltrador: ataque letal
+    'potencia-maxima': Swords,    // Guerreiro: força dobrada
+    'atirar-matar': Target,       // Atirador de Elite: crítico máximo
+    'bloqueio-casca-grossa': Shield,
   };
   return iconMap[bonusId] || Zap;
 }
