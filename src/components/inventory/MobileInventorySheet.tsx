@@ -19,6 +19,9 @@ import {
   AlertTriangle,
   Weight,
   Boxes,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -81,6 +84,16 @@ type CatalogType = 'weapon' | 'armor' | 'item' | null;
 // Tipos de filtro
 type CategoryFilter = 'all' | '0' | 'I' | 'II' | 'III' | 'IV';
 type ItemTypeFilter = 'all' | 'weapon' | 'armor' | 'consumable' | 'misc';
+type SortOption = 'name' | 'category' | 'equipped' | 'type';
+type SortDirection = 'asc' | 'desc';
+
+// Configuração das opções de ordenação
+const SORT_OPTIONS: { id: SortOption; label: string }[] = [
+  { id: 'name', label: 'Nome' },
+  { id: 'category', label: 'Categoria' },
+  { id: 'equipped', label: 'Equipado' },
+  { id: 'type', label: 'Tipo' },
+];
 
 // Configuração dos filtros de categoria
 const CATEGORY_FILTERS: { id: CategoryFilter; label: string; color: string }[] = [
@@ -124,6 +137,10 @@ export function MobileInventorySheet({
   // Estados de filtros
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all');
   const [typeFilter, setTypeFilter] = useState<ItemTypeFilter>('all');
+  
+  // Estados de ordenação
+  const [sortBy, setSortBy] = useState<SortOption>('name');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   
   // Estados de modais
   const [useItemConfirmOpen, setUseItemConfirmOpen] = useState(false);
@@ -211,6 +228,37 @@ export function MobileInventorySheet({
     });
   }, [inventory, searchTerm, categoryFilter, typeFilter]);
 
+  // Ordenar itens filtrados
+  const sortedItems = useMemo(() => {
+    const categoryOrder = { '0': 0, 'I': 1, 'II': 2, 'III': 3, 'IV': 4 };
+    const typeOrder = { 'weapon': 0, 'armor': 1, 'consumable': 2, 'misc': 3, 'valuable': 4, 'ritual': 5 };
+    
+    return [...filteredItems].sort((a, b) => {
+      let comparison = 0;
+      
+      switch (sortBy) {
+        case 'name':
+          comparison = a.name.localeCompare(b.name, 'pt-BR');
+          break;
+        case 'category':
+          comparison = (categoryOrder[a.category as keyof typeof categoryOrder] ?? 5) - 
+                       (categoryOrder[b.category as keyof typeof categoryOrder] ?? 5);
+          break;
+        case 'equipped':
+          comparison = (b.isEquipped ? 1 : 0) - (a.isEquipped ? 1 : 0);
+          break;
+        case 'type':
+          const typeA = a.itemType || 'misc';
+          const typeB = b.itemType || 'misc';
+          comparison = (typeOrder[typeA as keyof typeof typeOrder] ?? 5) - 
+                       (typeOrder[typeB as keyof typeof typeOrder] ?? 5);
+          break;
+      }
+      
+      return sortDirection === 'asc' ? comparison : -comparison;
+    });
+  }, [filteredItems, sortBy, sortDirection]);
+
   // Verificar se há filtros ativos
   const hasActiveFilters = categoryFilter !== 'all' || typeFilter !== 'all';
 
@@ -219,11 +267,23 @@ export function MobileInventorySheet({
     setCategoryFilter('all');
     setTypeFilter('all');
     setSearchTerm('');
+    setSortBy('name');
+    setSortDirection('asc');
+  };
+
+  // Alternar ordenação
+  const toggleSort = (option: SortOption) => {
+    if (sortBy === option) {
+      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(option);
+      setSortDirection('asc');
+    }
   };
 
   // Separar itens equipados e não equipados
-  const equippedList = filteredItems.filter(i => i.isEquipped);
-  const unequippedList = filteredItems.filter(i => !i.isEquipped);
+  const equippedList = sortedItems.filter(i => i.isEquipped);
+  const unequippedList = sortedItems.filter(i => !i.isEquipped);
 
   // Handlers
   const handleRemoveItem = (itemId: string) => {
@@ -602,6 +662,36 @@ export function MobileInventorySheet({
                   Limpar
                 </button>
               )}
+            </div>
+
+            {/* Ordenação */}
+            <div className="flex items-center gap-2 pt-2 border-t border-border/50">
+              <ArrowUpDown className="w-3 h-3 text-muted-foreground flex-shrink-0" />
+              <span className="text-[10px] text-muted-foreground uppercase">Ordenar:</span>
+              <div className="flex gap-1 overflow-x-auto scrollbar-hide">
+                {SORT_OPTIONS.map(({ id, label }) => {
+                  const isActive = sortBy === id;
+                  return (
+                    <button
+                      key={id}
+                      onClick={() => toggleSort(id)}
+                      className={cn(
+                        "flex items-center gap-1 px-2 py-1 rounded text-[10px] font-medium transition-all flex-shrink-0",
+                        isActive
+                          ? "bg-secondary/20 text-secondary"
+                          : "bg-muted/30 text-muted-foreground hover:bg-muted/50"
+                      )}
+                    >
+                      {label}
+                      {isActive && (
+                        sortDirection === 'asc' 
+                          ? <ArrowUp className="w-2.5 h-2.5" /> 
+                          : <ArrowDown className="w-2.5 h-2.5" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
 
