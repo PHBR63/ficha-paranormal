@@ -49,9 +49,12 @@ import { useCharacterBonusSummary } from '@/hooks/useCharacterBonusSummary';
 import { useSustainedRituals } from '@/hooks/useSustainedRituals';
 import { BonusSummaryCard } from './BonusSummaryCard';
 import { MobileAuditBanner } from './MobileAuditBanner';
+import { ExcessPowersRemovalModal } from './ExcessPowersRemovalModal';
 import { useCharacterAudit } from '@/hooks/useCharacterAudit';
-import { CharacterForAudit } from '@/lib/character-audit-engine';
+import { CharacterForAudit, getMaxParanormalPowers } from '@/lib/character-audit-engine';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { SavedParanormalPower } from '@/lib/paranormal-powers';
 
 // Tipos
 interface MobileCharacterSheetProps {
@@ -511,10 +514,18 @@ export function MobileCharacterSheet({
   const [activeTab, setActiveTab] = useState<MobileTab>('overview');
   const [powerModalOpen, setPowerModalOpen] = useState(false);
   const [selectedPower, setSelectedPower] = useState<PowerDetailData | null>(null);
+  const [excessPowersModalOpen, setExcessPowersModalOpen] = useState(false);
   
   const originData = ORIGINS.find(o => o.id === character.origin);
   const trackData = character.class_track ? getTrackById(character.class_track) : null;
   const peLimit = getPELimitByNex(character.nex);
+
+  // Calcula limite de poderes paranormais
+  const powerLimits = useMemo(() => 
+    getMaxParanormalPowers(character.nex, character.origin), 
+    [character.nex, character.origin]
+  );
+  const hasExcessPowers = (character.paranormal_powers?.length || 0) > powerLimits.total;
 
   // Estados críticos
   const hpPercent = (character.hp_current / character.hp_max) * 100;
@@ -1051,7 +1062,7 @@ export function MobileCharacterSheet({
               </CollapsibleSection>
             )}
 
-            {/* Poderes Paranormais - Clicáveis */}
+            {/* Poderes Paranormais - Clicáveis com alerta de excesso */}
             {character.paranormal_powers && character.paranormal_powers.length > 0 && (
               <CollapsibleSection 
                 title="PODERES PARANORMAIS" 
@@ -1060,6 +1071,25 @@ export function MobileCharacterSheet({
                 defaultOpen={true}
               >
                 <div className="space-y-2">
+                  {/* Alerta de poderes excedentes */}
+                  {hasExcessPowers && (
+                    <div className="flex items-center justify-between gap-2 p-2 rounded-lg bg-destructive/10 border border-destructive/30">
+                      <div className="flex items-center gap-2 text-xs">
+                        <span className="text-destructive font-medium">
+                          ⚠️ {character.paranormal_powers.length}/{powerLimits.total} poderes
+                        </span>
+                      </div>
+                      <Button 
+                        variant="destructive" 
+                        size="sm"
+                        className="h-7 text-xs"
+                        onClick={() => setExcessPowersModalOpen(true)}
+                      >
+                        Remover
+                      </Button>
+                    </div>
+                  )}
+
                   {character.paranormal_powers.map((power, i) => {
                     const elementIcon = getElementIcon(power.element);
                     const elementColor = getElementColor(power.element);
@@ -1390,6 +1420,31 @@ export function MobileCharacterSheet({
         open={powerModalOpen}
         onOpenChange={setPowerModalOpen}
         power={selectedPower}
+      />
+
+      {/* Modal de remoção de poderes excedentes */}
+      <ExcessPowersRemovalModal
+        open={excessPowersModalOpen}
+        onOpenChange={setExcessPowersModalOpen}
+        powers={(character.paranormal_powers || []) as SavedParanormalPower[]}
+        maxPowers={powerLimits.total}
+        onRemovePowers={async (powerIds) => {
+          // Remove os poderes selecionados
+          const updatedPowers = character.paranormal_powers?.filter(
+            p => !powerIds.includes(p.id)
+          ) || [];
+          
+          // Atualiza no banco
+          await supabase
+            .from('characters')
+            .update({ paranormal_powers: updatedPowers })
+            .eq('id', character.id);
+          
+          // Atualiza UI
+          if (onRefetch) {
+            await onRefetch();
+          }
+        }}
       />
     </div>
   );

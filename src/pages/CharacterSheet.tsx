@@ -2180,6 +2180,21 @@ export default function CharacterSheet() {
                         transcenderTotal={transcenderCount}
                         transcenderUsed={transcenderUsed}
                         originId={character.origin}
+                        onRemovePowers={async (powerIds) => {
+                          // Remove os poderes selecionados
+                          const updatedPowers = character.paranormal_powers?.filter(
+                            p => !powerIds.includes(p.id)
+                          ) || [];
+                          
+                          // Atualiza no banco
+                          await supabase
+                            .from('characters')
+                            .update({ paranormal_powers: updatedPowers })
+                            .eq('id', character.id);
+                          
+                          // Atualiza estado local
+                          await refetchCharacter();
+                        }}
                       />
                     ) : hasTranscender ? (
                       <div className="text-center py-4 text-muted-foreground text-sm border border-dashed border-muted rounded-lg">
