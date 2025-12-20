@@ -494,6 +494,59 @@ export type Database = {
           },
         ]
       }
+      character_removed_powers: {
+        Row: {
+          character_id: string
+          id: string
+          is_restored: boolean
+          power_data: Json
+          power_description: string | null
+          power_element: string | null
+          power_id: string
+          power_name: string
+          removal_reason: string | null
+          removed_at: string
+          restored_at: string | null
+          user_id: string
+        }
+        Insert: {
+          character_id: string
+          id?: string
+          is_restored?: boolean
+          power_data: Json
+          power_description?: string | null
+          power_element?: string | null
+          power_id: string
+          power_name: string
+          removal_reason?: string | null
+          removed_at?: string
+          restored_at?: string | null
+          user_id: string
+        }
+        Update: {
+          character_id?: string
+          id?: string
+          is_restored?: boolean
+          power_data?: Json
+          power_description?: string | null
+          power_element?: string | null
+          power_id?: string
+          power_name?: string
+          removal_reason?: string | null
+          removed_at?: string
+          restored_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "character_removed_powers_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: false
+            referencedRelation: "characters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       character_sustained_rituals: {
         Row: {
           character_id: string

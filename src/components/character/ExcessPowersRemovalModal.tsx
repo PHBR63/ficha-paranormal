@@ -27,7 +27,8 @@ interface ExcessPowersRemovalModalProps {
   onOpenChange: (open: boolean) => void;
   powers: SavedParanormalPower[];
   maxPowers: number;
-  onRemovePowers: (powerIds: string[]) => Promise<void>;
+  characterId: string;
+  onRemovePowers: (powerIds: string[], powersToArchive: SavedParanormalPower[]) => Promise<void>;
 }
 
 export function ExcessPowersRemovalModal({
@@ -35,6 +36,7 @@ export function ExcessPowersRemovalModal({
   onOpenChange,
   powers,
   maxPowers,
+  characterId,
   onRemovePowers,
 }: ExcessPowersRemovalModalProps) {
   const [selectedPowers, setSelectedPowers] = useState<Set<string>>(new Set());
@@ -71,23 +73,28 @@ export function ExcessPowersRemovalModal({
     });
   };
 
+  // Obtém poderes selecionados para exibição e arquivamento
+  const getSelectedPowers = () => {
+    return powers.filter(p => selectedPowers.has(p.id));
+  };
+
   // Obtém nomes dos poderes selecionados para exibição
   const getSelectedPowerNames = () => {
-    return powers
-      .filter(p => selectedPowers.has(p.id))
-      .map(p => p.name);
+    return getSelectedPowers().map(p => p.name);
   };
 
   // Confirma remoção
   const handleConfirm = async () => {
     if (!canConfirm) return;
     
-    const removedNames = getSelectedPowerNames();
+    const removedPowers = getSelectedPowers();
+    const removedNames = removedPowers.map(p => p.name);
     const newTotal = powers.length - selectedCount;
     
     setIsRemoving(true);
     try {
-      await onRemovePowers(Array.from(selectedPowers));
+      // Passa os IDs e os poderes completos para arquivamento
+      await onRemovePowers(Array.from(selectedPowers), removedPowers);
       
       // Toast detalhado com os poderes removidos
       toast({
