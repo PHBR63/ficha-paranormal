@@ -648,11 +648,28 @@ export function MobileInventorySheet({
         </DialogContent>
       </Dialog>
 
-      {/* Modal de detalhes */}
+      {/* Modal de detalhes do item */}
       <InventoryItemDetailModal
         open={itemDetailOpen}
         onOpenChange={setItemDetailOpen}
         item={selectedItem}
+        onEquip={!readOnly && selectedItem && !selectedItem.isEquipped ? (id) => {
+          handleEquipItem(id);
+          setItemDetailOpen(false);
+        } : undefined}
+        onUnequip={!readOnly && selectedItem?.isEquipped ? (id) => {
+          handleUnequipItem(id);
+          setItemDetailOpen(false);
+        } : undefined}
+        onUse={!readOnly && selectedItem && canUseItem(selectedItem) ? (id) => {
+          setItemToUse(selectedItem);
+          setItemDetailOpen(false);
+          setUseItemConfirmOpen(true);
+        } : undefined}
+        onRemove={!readOnly ? (id) => {
+          handleRemoveItem(id);
+          setItemDetailOpen(false);
+        } : undefined}
       />
     </>
   );
