@@ -5,7 +5,7 @@
  * disponibiliza resultados para exibição na interface.
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   auditCharacter, 
   autoFixCharacterIssues,
@@ -13,6 +13,7 @@ import {
   AuditIssue,
   CharacterForAudit 
 } from '@/lib/character-audit-engine';
+import { toast } from '@/hooks/use-toast';
 
 interface UseCharacterAuditOptions {
   // Se true, executa auditoria automaticamente ao carregar
@@ -170,7 +171,9 @@ export function useCharacterAudit(
     }
   }, [character?.id, character?.nex, character?.paranormal_powers?.length, autoRun]);
   
-  // Auto-fix silencioso para problemas corrigíveis
+  // Auto-fix silencioso para problemas corrigíveis (com notificação discreta)
+  const hasNotifiedRef = useRef(false);
+  
   useEffect(() => {
     async function autoFixAllIssues() {
       if (!autoFixCritical || !auditResult || isFixing) return;
@@ -183,8 +186,22 @@ export function useCharacterAudit(
       console.log('[useCharacterAudit] Auto-corrigindo problemas silenciosamente:', fixableIssues.length);
       const result = await applyAutoFixes();
       
-      if (result.success && result.message.includes('correção')) {
-        console.log('[useCharacterAudit] Correções aplicadas:', result.message);
+      // Notificação discreta apenas uma vez por sessão de correção
+      if (result.success && result.message.includes('correção') && !hasNotifiedRef.current) {
+        hasNotifiedRef.current = true;
+        
+        // Toast discreto com detalhes das correções (texto simples, sem JSX)
+        const issueNames = fixableIssues.map(i => i.title).join(', ');
+        toast({
+          title: '✓ Ficha ajustada automaticamente',
+          description: `${fixableIssues.length} correção(ões): ${issueNames}`,
+          duration: 4000,
+        });
+        
+        // Reset após um tempo para permitir novas notificações
+        setTimeout(() => {
+          hasNotifiedRef.current = false;
+        }, 30000);
       }
     }
     
