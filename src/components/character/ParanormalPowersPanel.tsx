@@ -4,11 +4,12 @@
  * e cálculos automáticos de bônus
  */
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Sparkles, Droplet, Skull, BookOpen, Zap, Star, TrendingUp, Shield, GraduationCap, AlertTriangle } from 'lucide-react';
+import { Sparkles, Droplet, Skull, BookOpen, Zap, Star, TrendingUp, Shield, GraduationCap, AlertTriangle, Trash2 } from 'lucide-react';
 import {
   ParanormalPower,
   ParanormalElement,
@@ -24,6 +25,7 @@ import {
 } from '@/lib/paranormal-powers';
 import { ALL_RITUALS } from '@/lib/rituals/legacy-exports';
 import { SKILLS } from '@/lib/character-data';
+import { ExcessPowersRemovalModal } from './ExcessPowersRemovalModal';
 
 // Ícones por elemento
 const ELEMENT_ICONS: Record<ParanormalElement | 'generic', React.ComponentType<{ className?: string }>> = {
@@ -54,6 +56,7 @@ interface ParanormalPowersPanelProps {
   transcenderTotal?: number;
   transcenderUsed?: number;
   originId?: string; // Origem do personagem para calcular poderes de origem
+  onRemovePowers?: (powerIds: string[]) => Promise<void>; // Callback para remover poderes
 }
 
 export function ParanormalPowersPanel({
@@ -64,7 +67,9 @@ export function ParanormalPowersPanel({
   transcenderTotal = 0,
   transcenderUsed = 0,
   originId,
+  onRemovePowers,
 }: ParanormalPowersPanelProps) {
+  const [removalModalOpen, setRemovalModalOpen] = useState(false);
   const transcenderRemaining = transcenderTotal - transcenderUsed;
   
   // Calcula limite de poderes (Transcender + origem)
@@ -114,16 +119,39 @@ export function ParanormalPowersPanel({
   
   return (
     <div className="space-y-4">
-      {/* Alerta de Poderes Excedentes */}
+      {/* Modal de Remoção de Poderes Excedentes */}
+      {onRemovePowers && (
+        <ExcessPowersRemovalModal
+          open={removalModalOpen}
+          onOpenChange={setRemovalModalOpen}
+          powers={powers as SavedParanormalPower[]}
+          maxPowers={maxPowers}
+          onRemovePowers={onRemovePowers}
+        />
+      )}
+
+      {/* Alerta de Poderes Excedentes com botão de ação */}
       {hasExcessPowers && (
-        <div className="flex items-center gap-2 p-3 rounded-lg border border-destructive/30 bg-destructive/10">
-          <AlertTriangle className="w-4 h-4 text-destructive shrink-0" />
-          <div className="text-sm">
-            <span className="font-medium text-destructive">Poderes excedentes!</span>
-            <span className="text-muted-foreground ml-1">
-              {powers.length}/{maxPowers} poderes ({excessPowers} além do limite)
-            </span>
+        <div className="flex items-center justify-between gap-2 p-3 rounded-lg border border-destructive/30 bg-destructive/10">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-destructive shrink-0" />
+            <div className="text-sm">
+              <span className="font-medium text-destructive">Poderes excedentes!</span>
+              <span className="text-muted-foreground ml-1">
+                {powers.length}/{maxPowers} poderes ({excessPowers} além do limite)
+              </span>
+            </div>
           </div>
+          {onRemovePowers && (
+            <Button 
+              variant="destructive" 
+              size="sm"
+              onClick={() => setRemovalModalOpen(true)}
+            >
+              <Trash2 className="w-4 h-4 mr-1" />
+              Remover
+            </Button>
+          )}
         </div>
       )}
       
