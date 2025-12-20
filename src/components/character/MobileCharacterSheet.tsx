@@ -93,6 +93,8 @@ interface MobileCharacterSheetProps {
     paranormal_powers?: Array<{ id: string; name: string; element: string; description: string }>;
     general_powers?: Array<{ id: string; name: string; description: string; category?: string }>;
     inventory?: Array<{ id?: string; name: string; category: string; slots: number; itemType?: string; isEquipped?: boolean; equipSlot?: string; armorType?: string }>;
+    // Bônus condicionais ativos (persistidos no banco)
+    active_conditional_bonuses?: string[];
   };
   onOpenDiceRoller: () => void;
   onOpenRest: () => void;
@@ -100,6 +102,8 @@ interface MobileCharacterSheetProps {
   onEditStats: () => void;
   onOpenSkills?: () => void;
   onOpenInventory?: () => void;
+  // Callback para toggle de bônus condicionais
+  onToggleConditionalBonus?: (bonusId: string, active: boolean) => void;
   // Callback para atualizar dados após correções automáticas
   onRefetch?: () => Promise<void> | void;
 }
@@ -513,6 +517,7 @@ export function MobileCharacterSheet({
   onOpenRest,
   onLevelUp,
   onEditStats,
+  onToggleConditionalBonus,
   onRefetch,
 }: MobileCharacterSheetProps) {
   const [activeTab, setActiveTab] = useState<MobileTab>('overview');
@@ -615,7 +620,7 @@ export function MobileCharacterSheet({
     nex: character.nex,
     elementalAffinity: null,
     affinityActive: false,
-    activeConditionalBonuses: [],
+    activeConditionalBonuses: character.active_conditional_bonuses || [],
     activeRituals: activeRitualsForDefense,
     skills: character.skills || {},
     intellect: character.intellect || 1,

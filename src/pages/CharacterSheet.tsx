@@ -71,6 +71,7 @@ import { AffinitySelectorCard } from '@/components/character/AffinitySelectorCar
 // Hook consolidado - expõe defenseBonuses e paranormalEffects internamente
 import { useCharacterBonusSummary } from '@/hooks/useCharacterBonusSummary';
 import { useBonusSync } from '@/hooks/useBonusSync';
+import { useConditionalBonusesSync } from '@/hooks/useConditionalBonusesSync';
 import { useCampaignRitualSync } from '@/hooks/useCampaignRitualSync';
 import { useWeaponBuffs } from '@/hooks/useWeaponBuffs';
 import { useAutoConditions, type ActiveCondition as AutoCondition } from '@/hooks/useAutoConditions';
@@ -371,33 +372,18 @@ export default function CharacterSheet() {
   // Hook de aplicação automática de condições (HP=0 → Inconsciente, SAN=0 → Enlouquecendo)
   const { processResourceChange } = useAutoConditions();
 
-  // Handler para toggle de bônus condicionais
-  const handleToggleConditionalBonus = useCallback(async (bonusId: string, active: boolean) => {
-    if (!character) return;
-    
-    const currentBonuses = character.active_conditional_bonuses || [];
-    const newBonuses = active 
-      ? [...currentBonuses, bonusId]
-      : currentBonuses.filter(id => id !== bonusId);
-    
-    // Atualiza estado local imediatamente
+  // Handler para atualizar bônus condicionais no estado local
+  const handleConditionalBonusesChange = useCallback((newBonuses: string[]) => {
     setCharacter(prev => prev ? { ...prev, active_conditional_bonuses: newBonuses } : null);
-    
-    // Persiste no banco (usando active_buffs como JSON que já existe)
-    const { error } = await supabase
-      .from('characters')
-      .update({ 
-        active_buffs: JSON.parse(JSON.stringify({
-          weaponBuffs: character.active_buffs || [],
-          conditionalBonuses: newBonuses,
-        }))
-      })
-      .eq('id', character.id);
+  }, []);
 
-    if (error) {
-      console.error('Erro ao salvar bônus condicional:', error);
-    }
-  }, [character]);
+  // Hook de sincronização de bônus condicionais com o banco
+  const { toggleBonus: handleToggleConditionalBonus, clearAllBonuses: clearConditionalBonuses } = useConditionalBonusesSync({
+    characterId: id || '',
+    activeBonuses: character?.active_conditional_bonuses || [],
+    onBonusesChange: handleConditionalBonusesChange,
+    enabled: !!character,
+  });
 
   // Sincroniza conjurações de rituais com a campanha em tempo real
   const { 
@@ -1644,6 +1630,8 @@ export default function CharacterSheet() {
               paranormal_powers: character.paranormal_powers,
               general_powers: character.general_powers,
               inventory: character.inventory,
+              // Bônus condicionais ativos (persistidos)
+              active_conditional_bonuses: character.active_conditional_bonuses,
             }}
             onOpenDiceRoller={() => {
               setRollLabel('Teste Geral');
@@ -1654,6 +1642,7 @@ export default function CharacterSheet() {
             onOpenRest={() => setRestModalOpen(true)}
             onLevelUp={() => setNexModalOpen(true)}
             onEditStats={() => setEditModalOpen(true)}
+            onToggleConditionalBonus={handleToggleConditionalBonus}
             onRefetch={refetchCharacter}
           />
         ) : (
