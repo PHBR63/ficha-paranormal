@@ -59,6 +59,7 @@ import { CharacterForAudit, getMaxParanormalPowers } from '@/lib/character-audit
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { SavedParanormalPower } from '@/lib/paranormal-powers';
+import { ActiveAdvancedBonusesBar } from './ActiveAdvancedBonusesBar';
 
 // Tipos
 interface MobileCharacterSheetProps {
@@ -777,6 +778,17 @@ export function MobileCharacterSheet({
                 )}
               </div>
             </div>
+
+            {/* Barra de bônus avançados ativos (Assassinar, Potência Máxima, etc.) */}
+            <ActiveAdvancedBonusesBar
+              activeBonuses={bonusSummary.conditionalBonuses.map(b => ({
+                id: b.id,
+                name: b.name,
+                effect: b.effects[0] || '',
+                active: b.active,
+              }))}
+              className="ordo-panel p-3"
+            />
 
             {/* Barras de recursos */}
             <div className="ordo-panel p-3 space-y-2">
