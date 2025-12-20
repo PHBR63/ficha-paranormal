@@ -6,86 +6,89 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Web Push utilities
-function urlBase64ToUint8Array(base64String: string): Uint8Array {
-  const padding = '='.repeat((4 - base64String.length % 4) % 4);
-  const base64 = (base64String + padding)
-    .replace(/-/g, '+')
-    .replace(/_/g, '/');
-  const rawData = atob(base64);
-  const outputArray = new Uint8Array(rawData.length);
-  for (let i = 0; i < rawData.length; ++i) {
-    outputArray[i] = rawData.charCodeAt(i);
-  }
-  return outputArray;
-}
-
-async function sendWebPush(subscription: any, payload: string, vapidKeys: { publicKey: string; privateKey: string }) {
-  const endpoint = subscription.endpoint;
-  const p256dh = subscription.p256dh;
-  const auth = subscription.auth;
-
-  // Import web-push compatible library for Deno
-  const encoder = new TextEncoder();
-  const payloadBytes = encoder.encode(payload);
-
-  // For Deno, we'll use a simple fetch-based approach with VAPID
-  // This is a simplified version - in production you'd want a proper web-push library
-  
-  const response = await fetch(endpoint, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/octet-stream',
-      'Content-Encoding': 'aes128gcm',
-      'TTL': '86400',
-      'Urgency': 'normal',
-    },
-    body: payloadBytes,
-  });
-
-  return response;
-}
+/**
+ * Edge Function: send-push-notification
+ * 
+ * Envia notificações push para membros de uma campanha de forma segura.
+ * Usa função SECURITY DEFINER para acessar subscrições sem expor dados.
+ * 
+ * Parâmetros esperados no body:
+ * - type: 'session_scheduled' | 'session_reminder' | 'session_started'
+ * - campaignId: UUID da campanha (obrigatório para validação)
+ * - sessionId?: UUID da sessão (opcional)
+ * - title: Título da notificação
+ * - body: Corpo da notificação
+ * - userIds?: UUID[] de usuários específicos (opcional, filtra dentro da campanha)
+ */
 
 serve(async (req) => {
+  // Tratamento de preflight CORS
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const vapidPublicKey = Deno.env.get('VAPID_PUBLIC_KEY')!;
-    const vapidPrivateKey = Deno.env.get('VAPID_PRIVATE_KEY')!;
+    // Variáveis de ambiente obrigatórias
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-    const { type, campaignId, sessionId, title, body, userIds } = await req.json();
-
-    console.log(`Sending push notification: type=${type}, campaignId=${campaignId}`);
-
-    // Get subscriptions for target users
-    let query = supabase.from('push_subscriptions').select('*');
-    
-    if (userIds && userIds.length > 0) {
-      query = query.in('user_id', userIds);
+    if (!supabaseUrl || !supabaseServiceKey) {
+      throw new Error('Missing required environment variables');
     }
 
-    const { data: subscriptions, error: subError } = await query;
+    // Cliente Supabase com service role para operações administrativas
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Parse e validação do body
+    const { type, campaignId, sessionId, title, body, userIds } = await req.json();
+
+    // Validação de campos obrigatórios
+    if (!campaignId) {
+      return new Response(
+        JSON.stringify({ error: 'campaignId is required for security validation' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!title || !body) {
+      return new Response(
+        JSON.stringify({ error: 'title and body are required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!type || !['session_scheduled', 'session_reminder', 'session_started'].includes(type)) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid notification type' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log(`[push-notification] type=${type}, campaignId=${campaignId}`);
+
+    // Usar função SECURITY DEFINER para buscar subscrições de forma segura
+    // Isso garante que apenas membros da campanha recebam notificações
+    const { data: subscriptions, error: subError } = await supabase
+      .rpc('get_push_subscriptions_for_campaign', {
+        _campaign_id: campaignId,
+        _user_ids: userIds || null
+      });
 
     if (subError) {
-      console.error('Error fetching subscriptions:', subError);
+      console.error('[push-notification] Error fetching subscriptions:', subError);
       throw subError;
     }
 
-    console.log(`Found ${subscriptions?.length || 0} subscriptions`);
+    console.log(`[push-notification] Found ${subscriptions?.length || 0} subscriptions`);
 
     if (!subscriptions || subscriptions.length === 0) {
       return new Response(
-        JSON.stringify({ success: true, sent: 0, message: 'No subscriptions found' }),
+        JSON.stringify({ success: true, sent: 0, message: 'No subscriptions found for campaign members' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
+    // Payload da notificação
     const payload = JSON.stringify({
       title,
       body,
@@ -95,17 +98,17 @@ serve(async (req) => {
         type,
         campaignId,
         sessionId,
-        url: campaignId ? `/campaigns/${campaignId}` : '/campaigns'
+        url: `/campaigns/${campaignId}`
       }
     });
 
     let successCount = 0;
     let failCount = 0;
-    const failedSubscriptions: string[] = [];
+    const expiredSubscriptionIds: string[] = [];
 
+    // Enviar notificações para cada subscrição
     for (const sub of subscriptions) {
       try {
-        // Use web-push approach with fetch
         const response = await fetch(sub.endpoint, {
           method: 'POST',
           headers: {
@@ -117,29 +120,34 @@ serve(async (req) => {
 
         if (response.ok || response.status === 201) {
           successCount++;
-          console.log(`Push sent successfully to ${sub.user_id}`);
+          console.log(`[push-notification] Sent to user ${sub.user_id}`);
         } else if (response.status === 410 || response.status === 404) {
-          // Subscription expired or invalid - remove it
-          failedSubscriptions.push(sub.id);
+          // Subscrição expirada ou inválida - marcar para remoção
+          expiredSubscriptionIds.push(sub.id);
           failCount++;
-          console.log(`Subscription expired for ${sub.user_id}, marking for removal`);
+          console.log(`[push-notification] Expired subscription for user ${sub.user_id}`);
         } else {
           failCount++;
-          console.error(`Push failed for ${sub.user_id}: ${response.status}`);
+          console.error(`[push-notification] Failed for user ${sub.user_id}: status ${response.status}`);
         }
       } catch (err) {
         failCount++;
-        console.error(`Error sending push to ${sub.user_id}:`, err);
+        console.error(`[push-notification] Error sending to user ${sub.user_id}:`, err);
       }
     }
 
-    // Clean up expired subscriptions
-    if (failedSubscriptions.length > 0) {
-      await supabase
+    // Limpar subscrições expiradas
+    if (expiredSubscriptionIds.length > 0) {
+      const { error: deleteError } = await supabase
         .from('push_subscriptions')
         .delete()
-        .in('id', failedSubscriptions);
-      console.log(`Removed ${failedSubscriptions.length} expired subscriptions`);
+        .in('id', expiredSubscriptionIds);
+      
+      if (deleteError) {
+        console.error('[push-notification] Error removing expired subscriptions:', deleteError);
+      } else {
+        console.log(`[push-notification] Removed ${expiredSubscriptionIds.length} expired subscriptions`);
+      }
     }
 
     return new Response(
@@ -147,14 +155,14 @@ serve(async (req) => {
         success: true, 
         sent: successCount, 
         failed: failCount,
-        removed: failedSubscriptions.length 
+        removed: expiredSubscriptionIds.length 
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error('Push notification error:', error);
+    console.error('[push-notification] Error:', error);
     return new Response(
       JSON.stringify({ error: errorMessage }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
