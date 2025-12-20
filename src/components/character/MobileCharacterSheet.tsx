@@ -4,7 +4,7 @@
  * Inclui sistema de auditoria automática integrado
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   User, 
@@ -30,6 +30,8 @@ import {
   ChevronRight,
   History,
 } from 'lucide-react';
+import { MobileInventorySheet } from '@/components/inventory/MobileInventorySheet';
+import type { ExtendedInventoryItem } from '@/components/inventory/InventoryPanel';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { AnimatedProgress } from '@/components/ui/animated-progress';
@@ -518,6 +520,7 @@ export function MobileCharacterSheet({
   const [selectedPower, setSelectedPower] = useState<PowerDetailData | null>(null);
   const [excessPowersModalOpen, setExcessPowersModalOpen] = useState(false);
   const [removedPowersHistoryOpen, setRemovedPowersHistoryOpen] = useState(false);
+  const [inventorySheetOpen, setInventorySheetOpen] = useState(false);
   
   const originData = ORIGINS.find(o => o.id === character.origin);
   const trackData = character.class_track ? getTrackById(character.class_track) : null;
@@ -635,6 +638,40 @@ export function MobileCharacterSheet({
   const getRitualData = (ritualName: string) => {
     return ALL_RITUALS.find(r => r.name === ritualName || r.id === ritualName);
   };
+
+  // Handler para atualização de inventário no mobile
+  const handleInventoryChange = useCallback(async (newInventory: ExtendedInventoryItem[]) => {
+    try {
+      // Preserva todas as propriedades originais dos itens para o JSON
+      const inventoryJson = newInventory.map(item => ({ ...item }));
+      
+      await supabase
+        .from('characters')
+        .update({ inventory: inventoryJson as unknown as import('@/integrations/supabase/types').Json })
+        .eq('id', character.id);
+      
+      if (onRefetch) {
+        await onRefetch();
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar inventário:', error);
+    }
+  }, [character.id, onRefetch]);
+
+  // Normaliza o inventário para ExtendedInventoryItem[]
+  const normalizedInventory: ExtendedInventoryItem[] = useMemo(() => 
+    (character.inventory || []).map(item => ({
+      id: item.id || crypto.randomUUID(),
+      name: item.name,
+      category: item.category as '0' | 'I' | 'II' | 'III' | 'IV',
+      slots: item.slots || 1,
+      quantity: 1,
+      itemType: (item.itemType as 'weapon' | 'armor' | 'consumable' | 'misc') || 'misc',
+      isEquipped: item.isEquipped,
+      equipSlot: item.equipSlot as any,
+      armorType: item.armorType as any,
+    })),
+  [character.inventory]);
 
   return (
     <div className="pb-20">
@@ -1297,34 +1334,37 @@ export function MobileCharacterSheet({
             className="space-y-3"
           >
             {/* Resumo de capacidade */}
-            {character.inventory && character.inventory.length > 0 && (
+            {normalizedInventory.length > 0 && (
               <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
                 <div className="flex-shrink-0 px-3 py-1.5 bg-muted/50 rounded-full text-[10px] flex items-center gap-1">
                   <Package className="w-3 h-3" />
-                  {character.inventory.length} itens
+                  {normalizedInventory.length} itens
                 </div>
                 <div className="flex-shrink-0 px-3 py-1.5 bg-muted/50 rounded-full text-[10px]">
-                  {character.inventory.reduce((acc, i) => acc + (i.slots || 1), 0)} espaços usados
+                  {normalizedInventory.reduce((acc, i) => acc + (i.slots || 1), 0)} espaços usados
                 </div>
-                {character.inventory.filter(i => i.isEquipped).length > 0 && (
+                {normalizedInventory.filter(i => i.isEquipped).length > 0 && (
                   <div className="flex-shrink-0 px-3 py-1.5 bg-primary/10 rounded-full text-[10px] text-primary">
-                    {character.inventory.filter(i => i.isEquipped).length} equipados
+                    {normalizedInventory.filter(i => i.isEquipped).length} equipados
                   </div>
                 )}
               </div>
             )}
 
-            {/* Itens equipados - Destaque */}
-            {character.inventory && character.inventory.filter(i => i.isEquipped).length > 0 && (
+            {/* Itens equipados - Preview rápido */}
+            {normalizedInventory.filter(i => i.isEquipped).length > 0 && (
               <CollapsibleSection 
                 title="EQUIPAMENTO" 
                 icon={<Swords className="w-4 h-4 text-primary" />}
-                badge={character.inventory.filter(i => i.isEquipped).length}
+                badge={normalizedInventory.filter(i => i.isEquipped).length}
                 defaultOpen={true}
               >
                 <div className="space-y-2">
-                  {character.inventory.filter(i => i.isEquipped).map((item, i) => (
-                    <div key={i} className="p-3 bg-primary/10 rounded-lg border border-primary/30 flex items-center gap-3">
+                  {normalizedInventory.filter(i => i.isEquipped).map((item) => (
+                    <div 
+                      key={item.id} 
+                      className="p-3 bg-primary/10 rounded-lg border border-primary/30 flex items-center gap-3"
+                    >
                       <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center flex-shrink-0">
                         {getItemIcon(item.itemType || item.category)}
                       </div>
@@ -1333,7 +1373,7 @@ export function MobileCharacterSheet({
                         <div className="flex items-center gap-2 mt-0.5">
                           {item.equipSlot && (
                             <span className="text-[9px] px-1.5 py-0.5 bg-primary/30 rounded capitalize">
-                              {item.equipSlot}
+                              {item.equipSlot.replace('_', ' ')}
                             </span>
                           )}
                           <span className="text-[9px] text-muted-foreground">
@@ -1347,59 +1387,30 @@ export function MobileCharacterSheet({
               </CollapsibleSection>
             )}
 
-            {/* Inventário completo */}
-            {character.inventory && character.inventory.length > 0 ? (
-              <CollapsibleSection 
-                title="TODOS OS ITENS" 
-                icon={<Package className="w-4 h-4" />}
-                badge={character.inventory.length}
-                defaultOpen={!character.inventory.some(i => i.isEquipped)}
-              >
-                <div className="space-y-1">
-                  {character.inventory.map((item, i) => (
-                    <div 
-                      key={i} 
-                      className={cn(
-                        "flex items-center gap-3 p-2.5 rounded-lg transition-colors",
-                        item.isEquipped 
-                          ? "bg-primary/5 border border-primary/20" 
-                          : "bg-muted/30 border border-transparent"
-                      )}
-                    >
-                      <div className={cn(
-                        "w-8 h-8 rounded flex items-center justify-center flex-shrink-0",
-                        item.isEquipped ? "bg-primary/20" : "bg-muted/50"
-                      )}>
-                        {getItemIcon(item.itemType || item.category)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <span className="text-sm block truncate">{item.name}</span>
-                        <div className="flex items-center gap-1.5 mt-0.5">
-                          <span className={cn(
-                            "text-[9px] px-1.5 py-0.5 rounded",
-                            getCategoryColor(item.category)
-                          )}>
-                            Cat. {item.category}
-                          </span>
-                          <span className="text-[9px] text-muted-foreground">
-                            {item.slots || 1} esp.
-                          </span>
-                          {item.isEquipped && (
-                            <span className="text-[9px] text-primary">✓ Equip.</span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CollapsibleSection>
-            ) : (
+            {/* Botão para abrir inventário completo */}
+            <Button
+              onClick={() => setInventorySheetOpen(true)}
+              className="w-full h-14 gap-3"
+              variant="outline"
+            >
+              <Package className="w-5 h-5" />
+              <div className="flex flex-col items-start">
+                <span className="font-medium">Gerenciar Inventário</span>
+                <span className="text-[10px] text-muted-foreground">
+                  Adicionar, equipar e usar itens
+                </span>
+              </div>
+              <ChevronRight className="w-5 h-5 ml-auto" />
+            </Button>
+
+            {/* Inventário vazio */}
+            {normalizedInventory.length === 0 && (
               <div className="ordo-panel p-6">
                 <div className="text-center">
                   <Package className="w-12 h-12 mx-auto text-foreground/40 mb-3" />
                   <p className="text-foreground/70 text-sm">Nenhum item no inventário.</p>
                   <p className="text-[10px] text-foreground/60 mt-1">
-                    Adicione itens através da versão desktop
+                    Toque no botão acima para adicionar itens
                   </p>
                 </div>
               </div>
@@ -1505,6 +1516,16 @@ export function MobileCharacterSheet({
             await onRefetch();
           }
         }}
+      />
+
+      {/* Sheet de Inventário Mobile */}
+      <MobileInventorySheet
+        open={inventorySheetOpen}
+        onOpenChange={setInventorySheetOpen}
+        inventory={normalizedInventory}
+        strength={character.strength}
+        patent={character.patent}
+        onInventoryChange={handleInventoryChange}
       />
     </div>
   );
