@@ -55,6 +55,14 @@ interface CombatBonus {
   affinityElement?: string;
 }
 
+// Interface para bônus condicionais avançados (Fase 4)
+interface AdvancedConditionalBonuses {
+  assassinar?: boolean;     // Dobra dados do Ataque Furtivo
+  potenciaMaxima?: boolean; // Dobra bônus do Ataque Especial corpo a corpo
+  atirarParaMatar?: boolean; // Dano máximo em crítico com arma de fogo
+  ataqueFurtivo?: boolean;  // Ataque Furtivo básico
+}
+
 // Props do modal
 interface CombatRollModalProps {
   open: boolean;
@@ -84,6 +92,9 @@ interface CombatRollModalProps {
   affinityElement?: string | null;
   sustainedRituals?: SustainedRitualInput[]; // Agora usa rituais sustentados
   nex: number;
+  
+  // Bônus condicionais avançados (Fase 4)
+  advancedBonuses?: AdvancedConditionalBonuses;
   
   // Callback
   onRollComplete?: (result: DiceRollResult) => void;
@@ -143,6 +154,7 @@ export function CombatRollModal({
   affinityElement,
   sustainedRituals = [],
   nex,
+  advancedBonuses = {},
   onRollComplete,
 }: CombatRollModalProps) {
   // Bônus de rituais sustentados processados automaticamente
@@ -399,15 +411,41 @@ export function CombatRollModal({
     const parsed = parseDamageString(weapon.damage);
     const isCritical = attackResult.isCritical;
     
+    // Verificar se é arma de fogo (para Atirar para Matar)
+    const isFirearm = weapon.type === 'Disparo';
+    // Verificar se é corpo a corpo (para Potência Máxima)
+    const isMelee = weapon.type === 'Corpo a Corpo' || weapon.type === 'Briga';
+    
+    // Aplicar Atirar para Matar: dano máximo em crítico com arma de fogo
+    const useMaxDamage = advancedBonuses.atirarParaMatar && isCritical && isFirearm;
+    
     // Calcular dados base (multiplicados se crítico)
     let diceCount = isCritical ? parsed.count * criticalMultiplier : parsed.count;
     
     // Bônus de dano numérico
     let damageBonus = parsed.bonus;
     
+    // Multiplicador para Potência Máxima (dobra bônus do Ataque Especial)
+    const potenciaMaximaMultiplier = advancedBonuses.potenciaMaxima && isMelee ? 2 : 1;
+    
     // Dados extras (de poderes como Golpe Pesado)
     let extraDiceCount = 0;
     let extraDiceSize = parsed.size;
+    
+    // Dados extras do Ataque Furtivo (com possível dobro do Assassinar)
+    let sneakAttackDice = 0;
+    if (advancedBonuses.ataqueFurtivo) {
+      // Calcula dados do Ataque Furtivo baseado no NEX
+      if (nex >= 99) sneakAttackDice = 4;
+      else if (nex >= 65) sneakAttackDice = 3;
+      else if (nex >= 40) sneakAttackDice = 2;
+      else sneakAttackDice = 1;
+      
+      // Assassinar dobra os dados
+      if (advancedBonuses.assassinar) {
+        sneakAttackDice *= 2;
+      }
+    }
     
     // Aplicar bônus passivos
     passiveBonuses.forEach(b => {
@@ -429,7 +467,9 @@ export function CombatRollModal({
       if (!bonus) return;
       
       if (typeof bonus.damageBonus === 'number') {
-        damageBonus += bonus.damageBonus;
+        // Aplicar multiplicador de Potência Máxima aos bônus do Ataque Especial
+        const multiplier = bonusId.includes('ataque-especial') ? potenciaMaximaMultiplier : 1;
+        damageBonus += bonus.damageBonus * multiplier;
       } else if (typeof bonus.damageBonus === 'string') {
         // Pode ser "1d" (adiciona dado do mesmo tipo) ou "1d6" (dado específico)
         if (bonus.damageBonus === '1d') {
@@ -446,33 +486,53 @@ export function CombatRollModal({
     });
     
     // Bônus de FOR para corpo a corpo
-    if (weapon.type === 'Corpo a Corpo' || weapon.type === 'Briga') {
+    if (isMelee) {
       damageBonus += attributes.strength;
     }
 
-    // Rolar dados principais
+    // Rolar dados principais (ou usar valor máximo se Atirar para Matar)
     const mainDice: number[] = [];
     for (let i = 0; i < diceCount; i++) {
-      mainDice.push(Math.floor(Math.random() * parsed.size) + 1);
+      if (useMaxDamage) {
+        mainDice.push(parsed.size); // Dano máximo
+      } else {
+        mainDice.push(Math.floor(Math.random() * parsed.size) + 1);
+      }
     }
     
     // Rolar dados extras
     const extraDice: number[] = [];
     for (let i = 0; i < extraDiceCount; i++) {
-      extraDice.push(Math.floor(Math.random() * extraDiceSize) + 1);
+      if (useMaxDamage) {
+        extraDice.push(extraDiceSize);
+      } else {
+        extraDice.push(Math.floor(Math.random() * extraDiceSize) + 1);
+      }
     }
     
-    const diceTotal = mainDice.reduce((a, b) => a + b, 0) + extraDice.reduce((a, b) => a + b, 0);
+    // Rolar dados do Ataque Furtivo (d6)
+    const sneakDice: number[] = [];
+    for (let i = 0; i < sneakAttackDice; i++) {
+      sneakDice.push(Math.floor(Math.random() * 6) + 1);
+    }
+    
+    // Combinar dados extras com dados de ataque furtivo
+    const allExtraDice = [...extraDice, ...sneakDice];
+    
+    const diceTotal = mainDice.reduce((a, b) => a + b, 0) + allExtraDice.reduce((a, b) => a + b, 0);
     const total = diceTotal + damageBonus;
 
     setDamageResult({
       dice: mainDice,
-      extraDice: extraDice.length > 0 ? extraDice : undefined,
+      extraDice: allExtraDice.length > 0 ? allExtraDice : undefined,
       bonus: damageBonus,
       total: Math.max(1, total), // Dano mínimo 1
       damageType: weapon.damageType,
       isCritical,
-    });
+      useMaxDamage, // Flag para exibição
+      potenciaMaximaActive: advancedBonuses.potenciaMaxima && isMelee,
+      assassinarActive: advancedBonuses.assassinar,
+    } as any);
     setPhase('damage');
   };
 
