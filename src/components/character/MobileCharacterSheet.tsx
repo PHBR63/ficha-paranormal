@@ -28,6 +28,7 @@ import {
   SortAsc,
   Filter,
   ChevronRight,
+  History,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -50,6 +51,7 @@ import { useSustainedRituals } from '@/hooks/useSustainedRituals';
 import { BonusSummaryCard } from './BonusSummaryCard';
 import { MobileAuditBanner } from './MobileAuditBanner';
 import { ExcessPowersRemovalModal } from './ExcessPowersRemovalModal';
+import { RemovedPowersHistory } from './RemovedPowersHistory';
 import { useCharacterAudit } from '@/hooks/useCharacterAudit';
 import { CharacterForAudit, getMaxParanormalPowers } from '@/lib/character-audit-engine';
 import { useAuth } from '@/contexts/AuthContext';
@@ -515,6 +517,7 @@ export function MobileCharacterSheet({
   const [powerModalOpen, setPowerModalOpen] = useState(false);
   const [selectedPower, setSelectedPower] = useState<PowerDetailData | null>(null);
   const [excessPowersModalOpen, setExcessPowersModalOpen] = useState(false);
+  const [removedPowersHistoryOpen, setRemovedPowersHistoryOpen] = useState(false);
   
   const originData = ORIGINS.find(o => o.id === character.origin);
   const trackData = character.class_track ? getTrackById(character.class_track) : null;
@@ -1071,24 +1074,40 @@ export function MobileCharacterSheet({
                 defaultOpen={true}
               >
                 <div className="space-y-2">
-                  {/* Alerta de poderes excedentes */}
-                  {hasExcessPowers && (
-                    <div className="flex items-center justify-between gap-2 p-2 rounded-lg bg-destructive/10 border border-destructive/30">
-                      <div className="flex items-center gap-2 text-xs">
-                        <span className="text-destructive font-medium">
+                  {/* Barra de ações: excedentes e histórico */}
+                  <div className="flex items-center justify-between gap-2">
+                    {/* Alerta de poderes excedentes */}
+                    {hasExcessPowers ? (
+                      <div className="flex items-center gap-2 p-2 rounded-lg bg-destructive/10 border border-destructive/30 flex-1">
+                        <span className="text-destructive font-medium text-xs">
                           ⚠️ {character.paranormal_powers.length}/{powerLimits.total} poderes
                         </span>
+                        <Button 
+                          variant="destructive" 
+                          size="sm"
+                          className="h-7 text-xs ml-auto"
+                          onClick={() => setExcessPowersModalOpen(true)}
+                        >
+                          Remover
+                        </Button>
                       </div>
-                      <Button 
-                        variant="destructive" 
-                        size="sm"
-                        className="h-7 text-xs"
-                        onClick={() => setExcessPowersModalOpen(true)}
-                      >
-                        Remover
-                      </Button>
-                    </div>
-                  )}
+                    ) : (
+                      <span className="text-xs text-muted-foreground">
+                        {character.paranormal_powers.length}/{powerLimits.total} poderes
+                      </span>
+                    )}
+
+                    {/* Botão de histórico */}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-xs gap-1"
+                      onClick={() => setRemovedPowersHistoryOpen(true)}
+                    >
+                      <History className="w-3.5 h-3.5" />
+                      Histórico
+                    </Button>
+                  </div>
 
                   {character.paranormal_powers.map((power, i) => {
                     const elementIcon = getElementIcon(power.element);
@@ -1428,7 +1447,26 @@ export function MobileCharacterSheet({
         onOpenChange={setExcessPowersModalOpen}
         powers={(character.paranormal_powers || []) as SavedParanormalPower[]}
         maxPowers={powerLimits.total}
-        onRemovePowers={async (powerIds) => {
+        characterId={character.id}
+        onRemovePowers={async (powerIds, powersToArchive) => {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) return;
+
+          // Salva poderes no histórico antes de remover (tipos ainda não sincronizados)
+          for (const power of powersToArchive) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            await (supabase.from('character_removed_powers') as any).insert({
+              character_id: character.id,
+              user_id: user.id,
+              power_id: power.id,
+              power_name: power.name,
+              power_element: power.element || null,
+              power_description: power.description || null,
+              power_data: power,
+              removal_reason: 'excess_limit',
+            });
+          }
+
           // Remove os poderes selecionados
           const updatedPowers = character.paranormal_powers?.filter(
             p => !powerIds.includes(p.id)
@@ -1441,6 +1479,28 @@ export function MobileCharacterSheet({
             .eq('id', character.id);
           
           // Atualiza UI
+          if (onRefetch) {
+            await onRefetch();
+          }
+        }}
+      />
+
+      {/* Modal de histórico de poderes removidos */}
+      <RemovedPowersHistory
+        open={removedPowersHistoryOpen}
+        onOpenChange={setRemovedPowersHistoryOpen}
+        characterId={character.id}
+        currentPowersCount={character.paranormal_powers?.length || 0}
+        maxPowers={powerLimits.total}
+        onRestorePower={async (power) => {
+          // Adiciona o poder de volta ao personagem
+          const updatedPowers = [...(character.paranormal_powers || []), power];
+          
+          await supabase
+            .from('characters')
+            .update({ paranormal_powers: updatedPowers })
+            .eq('id', character.id);
+          
           if (onRefetch) {
             await onRefetch();
           }

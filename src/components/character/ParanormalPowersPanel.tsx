@@ -56,7 +56,8 @@ interface ParanormalPowersPanelProps {
   transcenderTotal?: number;
   transcenderUsed?: number;
   originId?: string; // Origem do personagem para calcular poderes de origem
-  onRemovePowers?: (powerIds: string[]) => Promise<void>; // Callback para remover poderes
+  characterId?: string; // ID do personagem para histórico
+  onRemovePowers?: (powerIds: string[], powersToArchive: SavedParanormalPower[]) => Promise<void>; // Callback para remover poderes
 }
 
 export function ParanormalPowersPanel({
@@ -67,6 +68,7 @@ export function ParanormalPowersPanel({
   transcenderTotal = 0,
   transcenderUsed = 0,
   originId,
+  characterId,
   onRemovePowers,
 }: ParanormalPowersPanelProps) {
   const [removalModalOpen, setRemovalModalOpen] = useState(false);
@@ -120,12 +122,13 @@ export function ParanormalPowersPanel({
   return (
     <div className="space-y-4">
       {/* Modal de Remoção de Poderes Excedentes */}
-      {onRemovePowers && (
+      {onRemovePowers && characterId && (
         <ExcessPowersRemovalModal
           open={removalModalOpen}
           onOpenChange={setRemovalModalOpen}
           powers={powers as SavedParanormalPower[]}
           maxPowers={maxPowers}
+          characterId={characterId}
           onRemovePowers={onRemovePowers}
         />
       )}
