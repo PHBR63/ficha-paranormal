@@ -28,6 +28,16 @@ const CATEGORY_LABELS: Record<string, { label: string; color: string }> = {
 
 const SWIPE_THRESHOLD = 80;
 
+/**
+ * Dispara haptic feedback (vibração) em dispositivos que suportam
+ * @param pattern - duração em ms ou padrão de vibração
+ */
+function triggerHaptic(pattern: number | number[] = 50) {
+  if ('vibrate' in navigator) {
+    navigator.vibrate(pattern);
+  }
+}
+
 interface MobileInventoryCardProps {
   item: ExtendedInventoryItem;
   onRemove?: (id: string) => void;
@@ -69,13 +79,16 @@ export function MobileInventoryCard({
     // Swipe para esquerda = ação primária (equipar/desequipar)
     if (offset.x < -SWIPE_THRESHOLD) {
       if (item.isEquipped && onUnequip) {
+        triggerHaptic(30); // Vibração curta para desequipar
         onUnequip(item.id);
       } else if (!item.isEquipped && onEquip) {
+        triggerHaptic([20, 30, 20]); // Padrão de vibração para equipar
         onEquip(item.id);
       }
     }
     // Swipe para direita = remover
     else if (offset.x > SWIPE_THRESHOLD && onRemove) {
+      triggerHaptic([50, 50, 100]); // Vibração mais longa para remover
       onRemove(item.id);
     }
   };
