@@ -1,13 +1,17 @@
-import { Palette } from 'lucide-react';
+import { Palette, HelpCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useColorTheme, ColorTheme } from '@/contexts/ColorThemeContext';
 import { cn } from '@/lib/utils';
+import { restoreHelpButton, isHelpButtonDismissed } from '@/components/character/CharacterSheetHelp';
+import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 
 const THEMES: { id: ColorTheme; name: string; color: string }[] = [
   { id: 'purple', name: 'Roxo Abissal', color: '#8B5CF6' },
@@ -20,6 +24,24 @@ const THEMES: { id: ColorTheme; name: string; color: string }[] = [
 export function ThemeSelector() {
   const { colorTheme, setColorTheme } = useColorTheme();
   const currentTheme = THEMES.find(t => t.id === colorTheme);
+  const [helpDismissed, setHelpDismissed] = useState(false);
+
+  // Verifica se o botão de ajuda está dispensado
+  useEffect(() => {
+    setHelpDismissed(isHelpButtonDismissed());
+    
+    // Listener para atualizar quando o botão for restaurado
+    const handleRestore = () => setHelpDismissed(false);
+    window.addEventListener('help-button-restored', handleRestore);
+    return () => window.removeEventListener('help-button-restored', handleRestore);
+  }, []);
+
+  // Handler para restaurar o botão de ajuda
+  const handleRestoreHelp = () => {
+    restoreHelpButton();
+    setHelpDismissed(false);
+    toast.success('Botão de ajuda restaurado!');
+  };
 
   return (
     <DropdownMenu>
@@ -56,6 +78,20 @@ export function ThemeSelector() {
             )}
           </DropdownMenuItem>
         ))}
+        
+        {/* Opção para restaurar botão de ajuda se estiver dispensado */}
+        {helpDismissed && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={handleRestoreHelp}
+              className="flex items-center gap-3 cursor-pointer text-muted-foreground"
+            >
+              <HelpCircle className="w-4 h-4" />
+              <span className="flex-1">Restaurar botão de ajuda</span>
+            </DropdownMenuItem>
+          </>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );
