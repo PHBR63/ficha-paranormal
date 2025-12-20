@@ -97,6 +97,19 @@ export const CATEGORY_REDUCTION_ABILITIES: CategoryReductionConfig[] = [
     minNex: 15,
     description: 'Escolha até 3 equipamentos (exceto armas). Cada um ocupa 1 espaço a menos e é considerado uma categoria abaixo.',
   },
+  
+  // ===== TÉCNICO (ESPECIALISTA) =====
+  {
+    abilityId: 'remendo-tecnico',
+    abilityName: 'Remendo (Técnico)',
+    sourceName: 'Técnico (Especialista)',
+    targetType: 'any',
+    reductionAmount: 1,
+    maxItems: 999, // Afeta todos os equipamentos que carrega
+    requiresChoice: false, // Aplica automaticamente a todos os equipamentos
+    minNex: 40,
+    description: 'Qualquer equipamento que você carregue tem sua categoria reduzida em 1 (mas nunca reduzida a 0).',
+  },
 ];
 
 // Ordem das categorias (do menor para maior)
@@ -248,6 +261,15 @@ export function getCharacterCategoryReductionAbilities(
   ) {
     const ability = getCategoryReductionAbility('mochila-utilidades');
     if (ability) result.push(ability);
+  }
+
+  // ===== REMENDO (TÉCNICO - ESPECIALISTA) =====
+  // NEX 40%: Qualquer equipamento tem categoria reduzida em 1
+  if (trackLower.includes('tecnico') || trackLower.includes('técnico')) {
+    if (nex >= 40) {
+      const ability = getCategoryReductionAbility('remendo-tecnico');
+      if (ability) result.push(ability);
+    }
   }
 
   return result;

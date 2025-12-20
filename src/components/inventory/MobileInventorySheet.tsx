@@ -58,6 +58,8 @@ import {
   canUseItem,
   calculateCurrentLoad,
   calculateCarryCapacity,
+  hasInventarioOtimizado,
+  type CarryCapacityOptions,
 } from '@/lib/inventory-system';
 import { getAppropriateSlot, EquipmentSlotType } from './EquipmentSlots';
 import type { ExtendedInventoryItem, CharacterDataForInventory } from './InventoryPanel';
@@ -76,6 +78,8 @@ interface MobileInventorySheetProps {
   onInventoryChange?: (newInventory: ExtendedInventoryItem[]) => void;
   readOnly?: boolean;
   characterData?: CharacterDataForInventory;
+  /** Intelecto do personagem (para Inventário Otimizado do Técnico) */
+  intellect?: number;
 }
 
 // Tipo para os catálogos
@@ -129,6 +133,8 @@ export function MobileInventorySheet({
   patent,
   onInventoryChange,
   readOnly = false,
+  characterData,
+  intellect,
 }: MobileInventorySheetProps) {
   // Estados dos catálogos
   const [activeCatalog, setActiveCatalog] = useState<CatalogType>(null);
@@ -150,9 +156,25 @@ export function MobileInventorySheet({
 
   const { toast } = useToast();
 
-  // Cálculos de inventário
-  const currentLoad = useMemo(() => calculateCurrentLoad(inventory), [inventory]);
-  const maxCapacity = useMemo(() => calculateCarryCapacity(strength), [strength]);
+  // Detectar Inventário Otimizado (Técnico)
+  const hasInvOtimizado = useMemo(() => {
+    if (!characterData) return false;
+    return hasInventarioOtimizado({
+      classTrack: characterData.classTrack,
+      abilities: characterData.abilities,
+      nex: characterData.nex,
+    });
+  }, [characterData?.classTrack, characterData?.abilities, characterData?.nex]);
+
+  // Opções de capacidade de carga (com suporte a Inventário Otimizado)
+  const carryOptions: CarryCapacityOptions = useMemo(() => ({
+    intellect: intellect || characterData?.intellect,
+    hasInventarioOtimizado: hasInvOtimizado,
+  }), [intellect, characterData?.intellect, hasInvOtimizado]);
+
+  // Cálculos de inventário (com suporte a Inventário Otimizado)
+  const currentLoad = useMemo(() => calculateCurrentLoad(inventory, hasInvOtimizado), [inventory, hasInvOtimizado]);
+  const maxCapacity = useMemo(() => calculateCarryCapacity(strength, carryOptions), [strength, carryOptions]);
   const isOverloaded = currentLoad > maxCapacity;
   const patentLimits = useMemo(() => getPatentLimits(patent), [patent]);
   const categoryCounts = useMemo(() => ({
