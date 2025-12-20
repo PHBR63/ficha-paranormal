@@ -78,6 +78,29 @@ interface MobileInventorySheetProps {
 // Tipo para os catálogos
 type CatalogType = 'weapon' | 'armor' | 'item' | null;
 
+// Tipos de filtro
+type CategoryFilter = 'all' | '0' | 'I' | 'II' | 'III' | 'IV';
+type ItemTypeFilter = 'all' | 'weapon' | 'armor' | 'consumable' | 'misc';
+
+// Configuração dos filtros de categoria
+const CATEGORY_FILTERS: { id: CategoryFilter; label: string; color: string }[] = [
+  { id: 'all', label: 'Todos', color: 'bg-primary text-primary-foreground' },
+  { id: '0', label: '0', color: 'bg-muted text-muted-foreground' },
+  { id: 'I', label: 'I', color: 'bg-green-500/20 text-green-400' },
+  { id: 'II', label: 'II', color: 'bg-blue-500/20 text-blue-400' },
+  { id: 'III', label: 'III', color: 'bg-purple-500/20 text-purple-400' },
+  { id: 'IV', label: 'IV', color: 'bg-red-500/20 text-red-400' },
+];
+
+// Configuração dos filtros de tipo
+const TYPE_FILTERS: { id: ItemTypeFilter; label: string; icon: typeof Sword }[] = [
+  { id: 'all', label: 'Todos', icon: Package },
+  { id: 'weapon', label: 'Armas', icon: Sword },
+  { id: 'armor', label: 'Proteção', icon: Shield },
+  { id: 'consumable', label: 'Consumíveis', icon: FlaskConical },
+  { id: 'misc', label: 'Outros', icon: Boxes },
+];
+
 // Configuração dos botões de adicionar
 const ADD_BUTTONS = [
   { type: 'weapon' as const, label: 'Arma', icon: Sword, color: 'text-destructive' },
@@ -97,6 +120,10 @@ export function MobileInventorySheet({
   // Estados dos catálogos
   const [activeCatalog, setActiveCatalog] = useState<CatalogType>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  
+  // Estados de filtros
+  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all');
+  const [typeFilter, setTypeFilter] = useState<ItemTypeFilter>('all');
   
   // Estados de modais
   const [useItemConfirmOpen, setUseItemConfirmOpen] = useState(false);
@@ -152,15 +179,47 @@ export function MobileInventorySheet({
     );
   }, [equippedItems.primary_weapon]);
 
-  // Filtrar itens por busca
+  // Filtrar itens por busca, categoria e tipo
   const filteredItems = useMemo(() => {
-    if (!searchTerm) return inventory;
-    const term = searchTerm.toLowerCase();
-    return inventory.filter(item => 
-      item.name.toLowerCase().includes(term) ||
-      (item.description && item.description.toLowerCase().includes(term))
-    );
-  }, [inventory, searchTerm]);
+    return inventory.filter(item => {
+      // Filtro de busca
+      if (searchTerm) {
+        const term = searchTerm.toLowerCase();
+        const matchesSearch = item.name.toLowerCase().includes(term) ||
+          (item.description && item.description.toLowerCase().includes(term));
+        if (!matchesSearch) return false;
+      }
+      
+      // Filtro de categoria
+      if (categoryFilter !== 'all' && item.category !== categoryFilter) {
+        return false;
+      }
+      
+      // Filtro de tipo
+      if (typeFilter !== 'all') {
+        const itemType = item.itemType || 'misc';
+        if (typeFilter === 'consumable') {
+          if (!item.consumable && itemType !== 'consumable') return false;
+        } else if (typeFilter === 'misc') {
+          if (itemType !== 'misc' && itemType !== 'valuable' && itemType !== 'ritual') return false;
+        } else if (itemType !== typeFilter) {
+          return false;
+        }
+      }
+      
+      return true;
+    });
+  }, [inventory, searchTerm, categoryFilter, typeFilter]);
+
+  // Verificar se há filtros ativos
+  const hasActiveFilters = categoryFilter !== 'all' || typeFilter !== 'all';
+
+  // Limpar todos os filtros
+  const clearFilters = () => {
+    setCategoryFilter('all');
+    setTypeFilter('all');
+    setSearchTerm('');
+  };
 
   // Separar itens equipados e não equipados
   const equippedList = filteredItems.filter(i => i.isEquipped);
@@ -471,8 +530,9 @@ export function MobileInventorySheet({
             </div>
           </div>
 
-          {/* Busca */}
-          <div className="p-3 border-b border-border flex-shrink-0">
+          {/* Busca e Filtros */}
+          <div className="p-3 border-b border-border flex-shrink-0 space-y-3">
+            {/* Barra de busca */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
@@ -490,6 +550,57 @@ export function MobileInventorySheet({
                 >
                   <X className="w-4 h-4" />
                 </Button>
+              )}
+            </div>
+
+            {/* Filtros por tipo */}
+            <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
+              {TYPE_FILTERS.map(({ id, label, icon: Icon }) => (
+                <button
+                  key={id}
+                  onClick={() => setTypeFilter(id)}
+                  className={cn(
+                    "flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[11px] font-medium transition-all",
+                    typeFilter === id
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted/50 text-muted-foreground hover:bg-muted"
+                  )}
+                >
+                  <Icon className="w-3 h-3" />
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {/* Filtros por categoria */}
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] text-muted-foreground uppercase">Cat:</span>
+              <div className="flex gap-1">
+                {CATEGORY_FILTERS.map(({ id, label, color }) => (
+                  <button
+                    key={id}
+                    onClick={() => setCategoryFilter(id)}
+                    className={cn(
+                      "px-2 py-1 rounded text-[10px] font-medium transition-all",
+                      categoryFilter === id
+                        ? color
+                        : "bg-muted/30 text-muted-foreground hover:bg-muted/50"
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              
+              {/* Botão limpar filtros */}
+              {hasActiveFilters && (
+                <button
+                  onClick={clearFilters}
+                  className="ml-auto text-[10px] text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+                >
+                  <X className="w-3 h-3" />
+                  Limpar
+                </button>
               )}
             </div>
           </div>
