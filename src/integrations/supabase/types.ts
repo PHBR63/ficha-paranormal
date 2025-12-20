@@ -833,6 +833,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_push_subscriptions_for_campaign: {
+        Args: { _campaign_id: string; _user_ids?: string[] }
+        Returns: {
+          auth: string
+          endpoint: string
+          id: string
+          p256dh: string
+          user_id: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
