@@ -1,0 +1,659 @@
+/**
+ * MobileInventorySheet - Drawer completo de inventário para mobile
+ * 
+ * Funcionalidades:
+ * - Lista de itens com swipe gestures (MobileInventoryCard)
+ * - Catálogos de armas, armaduras e itens
+ * - Equipamento e uso de consumíveis
+ * - Detalhes de itens
+ */
+
+import { useState, useMemo } from 'react';
+import {
+  Package,
+  Sword,
+  Shield,
+  FlaskConical,
+  Search,
+  X,
+  AlertTriangle,
+  Weight,
+  Boxes,
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Progress } from '@/components/ui/progress';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
+import { MobileInventoryCard } from './MobileInventoryCard';
+import { WeaponCatalogModal } from './WeaponCatalogModal';
+import { ArmorCatalogModal } from './ArmorCatalogModal';
+import { ItemCatalogModal } from './ItemCatalogModal';
+import { InventoryItemDetailModal } from './InventoryItemDetailModal';
+import {
+  getPatentLimits,
+  countItemsByCategory,
+  addToInventory,
+  removeFromInventory,
+  useConsumableItem,
+  canUseItem,
+  calculateCurrentLoad,
+  calculateCarryCapacity,
+} from '@/lib/inventory-system';
+import { getAppropriateSlot, EquipmentSlotType } from './EquipmentSlots';
+import type { ExtendedInventoryItem, CharacterDataForInventory } from './InventoryPanel';
+import type { CatalogWeapon } from '@/lib/weapons-catalog';
+import type { CatalogArmor } from '@/lib/armor-catalog';
+import type { CatalogItem } from '@/lib/items-catalog';
+import { validateArmorItem, validateWeaponItem, validateGeneralItem } from '@/hooks/useEquipmentMigration';
+
+// Props do componente
+interface MobileInventorySheetProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  inventory: ExtendedInventoryItem[];
+  strength: number;
+  patent: string;
+  onInventoryChange?: (newInventory: ExtendedInventoryItem[]) => void;
+  readOnly?: boolean;
+  characterData?: CharacterDataForInventory;
+}
+
+// Tipo para os catálogos
+type CatalogType = 'weapon' | 'armor' | 'item' | null;
+
+// Configuração dos botões de adicionar
+const ADD_BUTTONS = [
+  { type: 'weapon' as const, label: 'Arma', icon: Sword, color: 'text-destructive' },
+  { type: 'armor' as const, label: 'Proteção', icon: Shield, color: 'text-secondary' },
+  { type: 'item' as const, label: 'Item', icon: FlaskConical, color: 'text-green-400' },
+];
+
+export function MobileInventorySheet({
+  open,
+  onOpenChange,
+  inventory,
+  strength,
+  patent,
+  onInventoryChange,
+  readOnly = false,
+}: MobileInventorySheetProps) {
+  // Estados dos catálogos
+  const [activeCatalog, setActiveCatalog] = useState<CatalogType>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  
+  // Estados de modais
+  const [useItemConfirmOpen, setUseItemConfirmOpen] = useState(false);
+  const [itemToUse, setItemToUse] = useState<ExtendedInventoryItem | null>(null);
+  const [itemDetailOpen, setItemDetailOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<ExtendedInventoryItem | null>(null);
+
+  const { toast } = useToast();
+
+  // Cálculos de inventário
+  const currentLoad = useMemo(() => calculateCurrentLoad(inventory), [inventory]);
+  const maxCapacity = useMemo(() => calculateCarryCapacity(strength), [strength]);
+  const isOverloaded = currentLoad > maxCapacity;
+  const patentLimits = useMemo(() => getPatentLimits(patent), [patent]);
+  const categoryCounts = useMemo(() => ({
+    I: countItemsByCategory(inventory, 'I'),
+    II: countItemsByCategory(inventory, 'II'),
+    III: countItemsByCategory(inventory, 'III'),
+    IV: countItemsByCategory(inventory, 'IV'),
+  }), [inventory]);
+
+  // Itens equipados mapeados por slot
+  const equippedItems = useMemo(() => {
+    const slots: Record<EquipmentSlotType, ExtendedInventoryItem | null> = {
+      primary_weapon: null,
+      secondary_weapon: null,
+      armor: null,
+      shield: null,
+      accessory_1: null,
+      accessory_2: null,
+    };
+
+    inventory.forEach(item => {
+      if (item.isEquipped && item.equipSlot) {
+        slots[item.equipSlot] = item;
+      }
+    });
+
+    return slots;
+  }, [inventory]);
+
+  // Verificar se a arma principal é de duas mãos
+  const isPrimaryTwoHanded = useMemo(() => {
+    const primaryWeapon = equippedItems.primary_weapon;
+    if (!primaryWeapon) return false;
+    
+    const properties = (primaryWeapon as any).properties as string[] | undefined;
+    if (!properties) return false;
+    
+    return properties.some(prop => 
+      prop.toLowerCase().includes('duas mãos') || 
+      prop.toLowerCase().includes('duas maos')
+    );
+  }, [equippedItems.primary_weapon]);
+
+  // Filtrar itens por busca
+  const filteredItems = useMemo(() => {
+    if (!searchTerm) return inventory;
+    const term = searchTerm.toLowerCase();
+    return inventory.filter(item => 
+      item.name.toLowerCase().includes(term) ||
+      (item.description && item.description.toLowerCase().includes(term))
+    );
+  }, [inventory, searchTerm]);
+
+  // Separar itens equipados e não equipados
+  const equippedList = filteredItems.filter(i => i.isEquipped);
+  const unequippedList = filteredItems.filter(i => !i.isEquipped);
+
+  // Handlers
+  const handleRemoveItem = (itemId: string) => {
+    if (!onInventoryChange) return;
+    const newInventory = removeFromInventory(inventory, itemId);
+    onInventoryChange(newInventory.map(i => ({
+      ...i,
+      itemType: (i as ExtendedInventoryItem).itemType || 'misc',
+      equipSlot: (i as ExtendedInventoryItem).equipSlot,
+    })));
+    toast({ title: 'Item removido', description: 'O item foi removido do inventário.' });
+  };
+
+  const handleEquipItem = (itemId: string) => {
+    if (!onInventoryChange) return;
+
+    const item = inventory.find(i => i.id === itemId);
+    if (!item) return;
+
+    const slot = getAppropriateSlot(item, equippedItems, isPrimaryTwoHanded);
+    if (!slot) {
+      toast({
+        title: 'Não foi possível equipar',
+        description: 'Nenhum slot disponível para este item.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Se estamos equipando uma arma de duas mãos, desequipar secundária e escudo
+    const extItem = item as ExtendedInventoryItem & { properties?: string[] };
+    const isTwoHanded = extItem.properties?.some(p => 
+      p.toLowerCase().includes('duas mãos') || p.toLowerCase().includes('duas maos')
+    );
+
+    const newInventory = inventory.map(i => {
+      if (isTwoHanded && slot === 'primary_weapon') {
+        if (i.equipSlot === 'secondary_weapon' || i.equipSlot === 'shield') {
+          return { ...i, isEquipped: false, equipSlot: undefined };
+        }
+      }
+      
+      return {
+        ...i,
+        isEquipped: i.id === itemId ? true : i.isEquipped,
+        equipSlot: i.id === itemId ? slot : i.equipSlot,
+      };
+    });
+
+    onInventoryChange(newInventory);
+    
+    if (isTwoHanded && slot === 'primary_weapon') {
+      toast({
+        title: 'Arma de duas mãos equipada',
+        description: 'Slot secundário e escudo foram liberados.',
+      });
+    }
+  };
+
+  const handleUnequipItem = (itemId: string) => {
+    if (!onInventoryChange) return;
+
+    const newInventory = inventory.map(i => ({
+      ...i,
+      isEquipped: i.id === itemId ? false : i.isEquipped,
+      equipSlot: i.id === itemId ? undefined : i.equipSlot,
+    }));
+
+    onInventoryChange(newInventory);
+  };
+
+  const handleRequestUseItem = (itemId: string) => {
+    const item = inventory.find(i => i.id === itemId);
+    if (item) {
+      setItemToUse(item);
+      setUseItemConfirmOpen(true);
+    }
+  };
+
+  const handleConfirmUseItem = () => {
+    if (!onInventoryChange || !itemToUse) return;
+
+    const result = useConsumableItem(inventory, itemToUse.id);
+    
+    if (result.success) {
+      onInventoryChange(result.newInventory.map(i => ({
+        ...i,
+        itemType: (i as ExtendedInventoryItem).itemType || 'misc',
+        equipSlot: (i as ExtendedInventoryItem).equipSlot,
+      })));
+      toast({
+        title: result.itemRemoved ? 'Item consumido' : 'Item usado',
+        description: result.message,
+      });
+    } else {
+      toast({
+        title: 'Não foi possível usar',
+        description: result.message,
+        variant: 'destructive',
+      });
+    }
+    
+    setUseItemConfirmOpen(false);
+    setItemToUse(null);
+  };
+
+  // Handlers de catálogos
+  const handleAddWeaponFromCatalog = (weapon: CatalogWeapon) => {
+    if (!onInventoryChange) return;
+
+    const baseItem = {
+      id: crypto.randomUUID(),
+      name: weapon.name,
+      category: weapon.category,
+      slots: weapon.spaces,
+      quantity: 1,
+      itemType: 'weapon' as const,
+      description: weapon.description,
+      damage: weapon.damage,
+      damageType: weapon.damageType,
+      critical: weapon.critical,
+      criticalMultiplier: weapon.criticalMultiplier,
+      range: weapon.range,
+      special: weapon.special,
+      ammoType: weapon.ammoType,
+      proficiency: weapon.proficiency,
+      properties: weapon.properties,
+      weaponType: weapon.type,
+    };
+
+    const validatedItem = validateWeaponItem(baseItem) as unknown as ExtendedInventoryItem;
+    const result = addToInventory(inventory, validatedItem, patent);
+    
+    if (result.success) {
+      onInventoryChange(result.newInventory.map(i => ({
+        ...i,
+        itemType: (i as ExtendedInventoryItem).itemType || 'misc',
+        equipSlot: (i as ExtendedInventoryItem).equipSlot,
+      })));
+      setActiveCatalog(null);
+      toast({
+        title: 'Arma adicionada',
+        description: `${weapon.name} foi adicionada ao inventário.`,
+      });
+    } else {
+      toast({
+        title: 'Limite de patente atingido',
+        description: result.error,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleAddArmorFromCatalog = (armor: CatalogArmor) => {
+    if (!onInventoryChange) return;
+
+    const baseItem = {
+      id: crypto.randomUUID(),
+      name: armor.name,
+      category: armor.category,
+      slots: armor.spaces,
+      quantity: 1,
+      itemType: 'armor' as const,
+      description: armor.description,
+      defenseBonus: armor.defenseBonus,
+      rd: armor.rd ?? 0,
+      agilityPenalty: armor.agilityPenalty,
+      armorType: armor.type,
+      special: armor.special,
+    };
+
+    const validatedItem = validateArmorItem(baseItem) as unknown as ExtendedInventoryItem;
+    const result = addToInventory(inventory, validatedItem, patent);
+    
+    if (result.success) {
+      onInventoryChange(result.newInventory.map(i => ({
+        ...i,
+        itemType: (i as ExtendedInventoryItem).itemType || 'misc',
+        equipSlot: (i as ExtendedInventoryItem).equipSlot,
+      })));
+      setActiveCatalog(null);
+      toast({
+        title: 'Proteção adicionada',
+        description: `${armor.name} foi adicionada ao inventário.`,
+      });
+    } else {
+      toast({
+        title: 'Limite de patente atingido',
+        description: result.error,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleAddItemFromCatalog = (item: CatalogItem) => {
+    if (!onInventoryChange) return;
+
+    const baseItem = {
+      id: crypto.randomUUID(),
+      name: item.name,
+      category: item.category,
+      slots: typeof item.spaces === 'number' ? item.spaces : 0,
+      quantity: 1,
+      itemType: item.consumable ? 'consumable' as const : 'misc' as const,
+      description: item.description,
+      consumable: item.consumable,
+      uses: item.uses,
+      maxUses: item.uses,
+      effect: item.effect,
+    };
+
+    const validatedItem = validateGeneralItem(baseItem) as unknown as ExtendedInventoryItem;
+    const result = addToInventory(inventory, validatedItem, patent);
+    
+    if (result.success) {
+      onInventoryChange(result.newInventory.map(i => ({
+        ...i,
+        itemType: (i as ExtendedInventoryItem).itemType || 'misc',
+        equipSlot: (i as ExtendedInventoryItem).equipSlot,
+      })));
+      setActiveCatalog(null);
+      toast({
+        title: 'Item adicionado',
+        description: `${item.name} foi adicionado ao inventário.`,
+      });
+    } else {
+      toast({
+        title: 'Limite de patente atingido',
+        description: result.error,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  return (
+    <>
+      <Sheet open={open} onOpenChange={onOpenChange}>
+        <SheetContent side="bottom" className="h-[90vh] flex flex-col p-0">
+          {/* Header */}
+          <SheetHeader className="p-4 border-b border-border flex-shrink-0">
+            <SheetTitle className="flex items-center gap-2">
+              <Package className="w-5 h-5 text-primary" />
+              Inventário
+              <Badge variant="secondary" className="ml-2">
+                {inventory.length} itens
+              </Badge>
+            </SheetTitle>
+          </SheetHeader>
+
+          {/* Status de carga */}
+          <div className="p-4 border-b border-border space-y-3 flex-shrink-0">
+            {/* Barra de carga */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between text-xs">
+                <span className="flex items-center gap-1 text-muted-foreground">
+                  <Weight className="w-3.5 h-3.5" />
+                  Carga
+                </span>
+                <span className={cn(
+                  "font-medium",
+                  isOverloaded && "text-destructive",
+                )}>
+                  {currentLoad} / {maxCapacity} espaços
+                </span>
+              </div>
+              <Progress 
+                value={Math.min((currentLoad / maxCapacity) * 100, 100)} 
+                className={cn(
+                  "h-2",
+                  isOverloaded && "[&>div]:bg-destructive",
+                )}
+              />
+              {isOverloaded && (
+                <div className="flex items-center gap-1.5 text-[10px] text-destructive">
+                  <AlertTriangle className="w-3 h-3" />
+                  Sobrecarregado! -5 em FOR/AGI/VIG, -3m deslocamento
+                </div>
+              )}
+            </div>
+
+            {/* Indicadores de categoria */}
+            <div className="flex gap-1.5 flex-wrap">
+              {(['I', 'II', 'III', 'IV'] as const).map(cat => {
+                const limit = patentLimits[cat];
+                const current = categoryCounts[cat];
+                const isLocked = limit === 0;
+                const isFull = current >= limit && limit > 0;
+                
+                return (
+                  <Badge 
+                    key={cat}
+                    variant="outline" 
+                    className={cn(
+                      "text-[10px] px-2",
+                      isLocked && "bg-muted text-muted-foreground opacity-50",
+                      isFull && !isLocked && "bg-destructive/20 text-destructive border-destructive/30",
+                      !isLocked && !isFull && "bg-primary/10 text-primary border-primary/30",
+                    )}
+                  >
+                    Cat.{cat}: {current}/{limit}
+                  </Badge>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Busca */}
+          <div className="p-3 border-b border-border flex-shrink-0">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar item..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 h-9"
+              />
+              {searchTerm && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+                  onClick={() => setSearchTerm('')}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* Lista de itens */}
+          <ScrollArea className="flex-1">
+            <div className="p-3 space-y-4">
+              {/* Itens equipados */}
+              {equippedList.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 px-1">
+                    <Boxes className="w-4 h-4 text-primary" />
+                    <span className="text-xs font-medium text-primary uppercase tracking-wide">
+                      Equipado ({equippedList.length})
+                    </span>
+                  </div>
+                  <div className="space-y-2">
+                    {equippedList.map(item => (
+                      <MobileInventoryCard
+                        key={item.id}
+                        item={item}
+                        onRemove={!readOnly ? handleRemoveItem : undefined}
+                        onEquip={undefined}
+                        onUnequip={!readOnly ? handleUnequipItem : undefined}
+                        onUse={!readOnly && canUseItem(item) ? handleRequestUseItem : undefined}
+                        onViewDetails={(item) => {
+                          setSelectedItem(item);
+                          setItemDetailOpen(true);
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Itens não equipados */}
+              {unequippedList.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 px-1">
+                    <Package className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                      Inventário ({unequippedList.length})
+                    </span>
+                  </div>
+                  <div className="space-y-2">
+                    {unequippedList.map(item => (
+                      <MobileInventoryCard
+                        key={item.id}
+                        item={item}
+                        onRemove={!readOnly ? handleRemoveItem : undefined}
+                        onEquip={!readOnly ? handleEquipItem : undefined}
+                        onUnequip={undefined}
+                        onUse={!readOnly && canUseItem(item) ? handleRequestUseItem : undefined}
+                        onViewDetails={(item) => {
+                          setSelectedItem(item);
+                          setItemDetailOpen(true);
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Mensagem quando vazio */}
+              {filteredItems.length === 0 && (
+                <div className="text-center py-12">
+                  <Package className="w-12 h-12 mx-auto text-muted-foreground/40 mb-3" />
+                  <p className="text-sm text-muted-foreground">
+                    {searchTerm ? 'Nenhum item encontrado' : 'Inventário vazio'}
+                  </p>
+                  {!searchTerm && !readOnly && (
+                    <p className="text-xs text-muted-foreground/60 mt-1">
+                      Use os botões abaixo para adicionar itens
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          </ScrollArea>
+
+          {/* Botões de adicionar (footer fixo) */}
+          {!readOnly && (
+            <div className="p-3 border-t border-border bg-card flex-shrink-0">
+              <div className="flex gap-2">
+                {ADD_BUTTONS.map(({ type, label, icon: Icon, color }) => (
+                  <Button
+                    key={type}
+                    variant="outline"
+                    className="flex-1 h-11"
+                    onClick={() => setActiveCatalog(type)}
+                  >
+                    <Icon className={cn("w-4 h-4 mr-2", color)} />
+                    <span className="text-xs">{label}</span>
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
+
+      {/* Catálogos */}
+      <WeaponCatalogModal
+        open={activeCatalog === 'weapon'}
+        onOpenChange={(open) => !open && setActiveCatalog(null)}
+        patent={patent}
+        patentLimits={patentLimits}
+        categoryCounts={categoryCounts}
+        onAddWeapon={handleAddWeaponFromCatalog}
+      />
+
+      <ArmorCatalogModal
+        open={activeCatalog === 'armor'}
+        onOpenChange={(open) => !open && setActiveCatalog(null)}
+        patent={patent}
+        currentInventory={inventory}
+        onSelectArmor={handleAddArmorFromCatalog}
+      />
+
+      <ItemCatalogModal
+        open={activeCatalog === 'item'}
+        onOpenChange={(open) => !open && setActiveCatalog(null)}
+        patent={patent}
+        patentLimits={patentLimits}
+        categoryCounts={categoryCounts}
+        onAddItem={handleAddItemFromCatalog}
+      />
+
+      {/* Modal de confirmação de uso */}
+      <Dialog open={useItemConfirmOpen} onOpenChange={setUseItemConfirmOpen}>
+        <DialogContent className="w-[90vw] max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Usar {itemToUse?.name}?</DialogTitle>
+            <DialogDescription>
+              {itemToUse?.consumable 
+                ? 'Este item será consumido após o uso.' 
+                : 'Confirmar uso deste item?'}
+            </DialogDescription>
+          </DialogHeader>
+          {itemToUse && (
+            <div className="p-3 bg-muted/50 rounded-lg">
+              <p className="text-sm">{itemToUse.description}</p>
+              {(itemToUse as any).effect && (
+                <p className="text-sm text-primary mt-2">{(itemToUse as any).effect}</p>
+              )}
+            </div>
+          )}
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setUseItemConfirmOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleConfirmUseItem}>
+              Usar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de detalhes */}
+      <InventoryItemDetailModal
+        open={itemDetailOpen}
+        onOpenChange={setItemDetailOpen}
+        item={selectedItem}
+      />
+    </>
+  );
+}
