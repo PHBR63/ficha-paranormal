@@ -38,12 +38,12 @@ export type TrackAbilityKind =
   | 'grants-ritual';
 
 // =============================================================================
-// MECÂNICAS DE HABILIDADE DE TRILHA (SIMPLIFICADAS)
+// MECÂNICAS DE HABILIDADE DE TRILHA
 // =============================================================================
 
 /**
  * Mecânicas de habilidade de trilha
- * Interface própria que não estende PowerMechanics para evitar conflitos
+ * Interface completa com todas as propriedades possíveis
  */
 export interface TrackAbilityMechanics {
   /** Tipo da habilidade */
@@ -56,6 +56,10 @@ export interface TrackAbilityMechanics {
     perRound?: boolean;
     perScene?: boolean;
     perMission?: boolean;
+    additionalCostPerEffect?: number;
+    costPerTarget?: boolean;
+    costPerCategory?: boolean;
+    trigger?: string;
   };
   
   /** Bônus de dano */
@@ -71,6 +75,7 @@ export interface TrackAbilityMechanics {
     marginBonus?: number;
     multiplierBonus?: number;
     conditions?: { weaponType?: string };
+    duration?: string;
   };
   
   /** Proficiências concedidas */
@@ -82,6 +87,7 @@ export interface TrackAbilityMechanics {
     targetType: 'specific-weapon' | 'any-weapon' | 'item';
     requiresChoice?: boolean;
     choiceDescription?: string;
+    appliesToAllCarried?: boolean;
   };
   
   /** Efeitos de técnica (Aniquilador) */
@@ -122,6 +128,7 @@ export interface TrackAbilityMechanics {
     type: 'range' | 'area' | 'speed' | 'cost' | 'resistance' | 'counter';
     additionalPECost: number;
     effect: string;
+    specificRitual?: string;
   };
   
   /** PE temporário */
@@ -166,20 +173,192 @@ export interface TrackAbilityMechanics {
   
   /** Ações extras */
   extraActions?: Array<{
-    actionType: string;
+    type: string;
     trigger: string;
     weaponRestriction?: string;
+    maneuverOptions?: string[];
+    replaceDamage?: boolean;
   }>;
   
   /** Redução de dano */
   damageReduction?: {
-    reductionType: 'half' | 'fixed';
+    type: 'half' | 'fixed';
     damageTypes: string[];
     fixedAmount?: number;
   };
   
-  /** Dados adicionais genéricos para efeitos complexos */
-  customEffects?: Record<string, unknown>;
+  // ===== PROPRIEDADES ESPECÍFICAS DE TRILHAS =====
+  
+  /** Multiplicador de Ataque Especial (Guerreiro) */
+  specialAttackMultiplier?: number;
+  
+  /** Provocar inimigo (Tropa de Choque) */
+  taunt?: {
+    range: string;
+    resistanceTest: string;
+    dtAttribute: string;
+  };
+  
+  /** Efeitos quando machucado (Tropa de Choque) */
+  whenWounded?: {
+    defenseBonus: number;
+    damageResistance: number;
+  };
+  
+  /** Efeitos quando morrendo (Tropa de Choque) */
+  whenDying?: {
+    canAct: boolean;
+    notHelpless: boolean;
+  };
+  
+  /** Dano máximo em crítico (Atirador de Elite) */
+  maximumDamageOnCritical?: {
+    weaponType: string;
+  };
+  
+  /** Remove penalidade de furtividade ao mover */
+  stealthMovementPenalty?: boolean;
+  
+  /** Multiplicador de ataque furtivo (Assassinar) */
+  sneakAttackMultiplier?: number;
+  
+  /** Ignora penalidade de furtividade */
+  ignoreStealthPenalty?: boolean;
+  
+  /** Controle de estado do alvo */
+  targetStateControl?: {
+    options: string[];
+    resistanceTest: string;
+    dtAttribute: string;
+  };
+  
+  /** Remove condição (Médico de Campo) */
+  removeCondition?: {
+    range: string;
+    excludedConditions: string[];
+  };
+  
+  /** Movimento livre para aliado (Resgate) */
+  freeMovementTo?: {
+    condition: string;
+    perRound: boolean;
+  };
+  
+  /** Bônus ao curar (Resgate) */
+  onHeal?: {
+    targetDefenseBonus: number;
+    duration: string;
+  };
+  
+  /** Ressurreição (Reanimação) */
+  resurrect?: {
+    excludedDeathTypes: string[];
+    sameSceneOnly: boolean;
+  };
+  
+  /** Efeito social (Negociador) */
+  socialEffect?: {
+    range: string;
+    targetAll: boolean;
+    skillOptions: string[];
+    resistanceSkill: string;
+    effect: string;
+    duration: string;
+    immunityOnSuccess: string;
+  };
+  
+  /** Buff para aliados (Discurso Motivador) */
+  allyBuff?: {
+    range: string;
+    skillBonus: number;
+    duration: string;
+    includeSelf: boolean;
+  };
+  
+  /** Rede de contatos (Eu Conheço um Cara) */
+  contacts?: {
+    effects: string[];
+    gmDiscretion: boolean;
+  };
+  
+  /** Copiar habilidade (Truque de Mestre) */
+  copyAbility?: {
+    source: string;
+    seenInScene: boolean;
+    ignorePrerequisites: boolean;
+    payOriginalCosts: boolean;
+  };
+  
+  /** Capacidade de carga (Técnico) */
+  carryCapacity?: {
+    addAttribute: Attribute;
+  };
+  
+  /** Redução de espaço de item */
+  itemSpaceReduction?: number;
+  
+  /** Reparar equipamento (Remendo) */
+  repairEquipment?: {
+    range: string;
+    removeCondition: string;
+  };
+  
+  /** Criar equipamento (Improvisar) */
+  createEquipment?: {
+    type: string;
+    duration: string;
+    destroyedAfter: boolean;
+  };
+  
+  /** Retirar item retroativamente (Preparado para Tudo) */
+  retrieveItem?: {
+    excludeWeapons: boolean;
+    retroactive: boolean;
+  };
+  
+  /** Contra-mágica (Anular Ritual) */
+  counterSpell?: {
+    costMatchesTarget: boolean;
+    testSkill: string;
+    testType: string;
+  };
+  
+  /** Restrição de recuperação de PV */
+  hpRecoveryRestriction?: string;
+  
+  /** Rituais bônus (Saber Ampliado) */
+  bonusRituals?: {
+    perCircle: number;
+    ignoresLimit: boolean;
+  };
+  
+  /** Grimório (Graduado) */
+  grimoire?: {
+    maxRituals: number | 'intellect';
+    allowedCircles: number[];
+    bonusPerNewCircle: number;
+    ignoresLimit: boolean;
+    castingAction: string;
+    requiresWielding: boolean;
+    inventorySlots: number;
+    recreationCost: string;
+  };
+  
+  /** Adiciona atributo ao limite de PE */
+  addAttributeToPELimit?: Attribute;
+  
+  /** Bônus de poder de ritual */
+  ritualPowerBonus?: {
+    addPELimit: boolean;
+    affectsDT: boolean;
+  };
+  
+  /** Redução de dano paranormal com teste */
+  paranormalDamageReduction?: {
+    testSkill: string;
+    onSuccess: string;
+    onFailure: string;
+  };
 }
 
 /**
