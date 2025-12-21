@@ -60,6 +60,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { SavedParanormalPower } from '@/lib/paranormal-powers';
 import { ActiveAdvancedBonusesBar } from './ActiveAdvancedBonusesBar';
+import { ClassPowerBonusesPanel } from './ClassPowerBonusesPanel';
 
 // Tipos
 interface MobileCharacterSheetProps {
@@ -1036,6 +1037,11 @@ export function MobileCharacterSheet({
 
             {/* Resumo de Bônus Ativos (modo compacto) */}
             <BonusSummaryCard summary={bonusSummary} compact />
+
+            {/* Painel de Bônus de Poderes de Classe (compacto) */}
+            {bonusSummary.classPowerBonuses && (
+              <ClassPowerBonusesPanel bonuses={bonusSummary.classPowerBonuses} compact />
+            )}
 
             {/* Condições ativas */}
             {character.conditions.length > 0 && (
