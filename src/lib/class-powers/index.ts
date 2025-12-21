@@ -2,11 +2,11 @@
  * Sistema Unificado de Poderes de Classe
  * Ordem Paranormal RPG v1.3
  * 
- * Ponto de entrada para o sistema de poderes de classe.
- * Exporta tipos, poderes e funções de registro.
+ * Ponto de entrada para o sistema de poderes de classe e trilhas.
+ * Exporta tipos, poderes, trilhas e funções de registro.
  */
 
-// ================== TIPOS ==================
+// ================== TIPOS DE PODERES ==================
 export type {
   ClassId,
   PowerKind,
@@ -42,12 +42,30 @@ export type {
   PowerCalculationContext,
 } from './types';
 
+// ================== TIPOS DE TRILHAS ==================
+export type {
+  TrackAbilityNex,
+  TrackAbilityKind,
+  TrackAbilityMechanics,
+  TrackAbilityProgression,
+  UnifiedTrackAbility,
+  UnifiedTrack,
+  ActiveTrack,
+  TrackCalculationContext,
+  TrackBonusSummary,
+} from './track-types';
+
 // ================== PODERES POR CLASSE ==================
 export { COMBATENTE_POWERS } from './combatente-powers';
 export { ESPECIALISTA_POWERS } from './especialista-powers';
 export { OCULTISTA_POWERS } from './ocultista-powers';
 
-// ================== FUNÇÕES POR CLASSE ==================
+// ================== TRILHAS POR CLASSE ==================
+export { COMBATENTE_TRACKS } from './track-combatente';
+export { ESPECIALISTA_TRACKS } from './track-especialista';
+export { OCULTISTA_TRACKS } from './track-ocultista';
+
+// ================== FUNÇÕES DE PODERES POR CLASSE ==================
 export {
   getCombatenteCorePowers,
   getCombatenteChoosablePowers,
@@ -67,7 +85,7 @@ export {
   getMaxRitualCircle,
 } from './ocultista-powers';
 
-// ================== REGISTRO CENTRAL ==================
+// ================== REGISTRO CENTRAL DE PODERES ==================
 export {
   ALL_CLASS_POWERS,
   getPowerById,
@@ -85,7 +103,29 @@ export {
   getPowerStats,
 } from './power-registry';
 
-// ================== ENGINE DE EFEITOS ==================
+// ================== REGISTRO CENTRAL DE TRILHAS ==================
+export {
+  ALL_TRACKS,
+  getTrackById,
+  getTracksByClass,
+  getTrackIdsByClass,
+  searchTracks,
+  getTracksByTag,
+  getTrackAbilityById,
+  getAbilitiesByTrack,
+  getInitialAbility,
+  getUnlockedAbilities,
+  getNextAbility,
+  getNextAbilityNex,
+  isAbilityUnlocked,
+  getAbilitiesByTag,
+  canChooseTrack,
+  getAvailableTracks,
+  getTrackStats,
+  getGrantedRituals,
+} from './track-registry';
+
+// ================== ENGINE DE EFEITOS DE PODERES ==================
 export {
   // Helpers de escalonamento
   resolveScalingValue,
@@ -120,3 +160,25 @@ export {
   // Debug
   getDetailedPowerBreakdown,
 } from './power-effects-engine';
+
+// ================== ENGINE DE EFEITOS DE TRILHAS ==================
+export {
+  // Criação
+  createEmptyTrackBonusSummary,
+  
+  // Cálculo principal
+  calculateTrackBonuses,
+  calculateActiveTackBonuses,
+  
+  // Funções de consulta
+  hasTrackAbility,
+  calculateSneakAttackDice,
+  calculateParamedicHealing,
+  calculateSpecialAttackBonus,
+  
+  // Adaptadores legado
+  mapLegacyTrackAbilities,
+  
+  // Debug
+  getDetailedTrackBreakdown,
+} from './track-effects-engine';
