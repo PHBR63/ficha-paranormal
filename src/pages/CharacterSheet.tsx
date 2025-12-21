@@ -86,6 +86,7 @@ import { ActiveAdvancedBonusesBar, useActiveAdvancedBonuses } from '@/components
 import { CharacterAuditBanner } from '@/components/character/CharacterAuditBanner';
 import { useCharacterAudit } from '@/hooks/useCharacterAudit';
 import { CharacterForAudit, canAddParanormalPower } from '@/lib/character-audit-engine';
+import { ClassPowerBonusesPanel } from '@/components/character/ClassPowerBonusesPanel';
 
 // Novos componentes do redesign 2.0 (estilo ficha de papel)
 import { CharacterSheetHeader } from '@/components/character/CharacterSheetHeader';
@@ -1797,6 +1798,11 @@ export default function CharacterSheet() {
 
               {/* Resumo de Todos os Bônus Ativos - após condições */}
               <BonusSummaryCard summary={bonusSummary} />
+
+              {/* Painel de Bônus de Poderes de Classe */}
+              {bonusSummary.classPowerBonuses && (
+                <ClassPowerBonusesPanel bonuses={bonusSummary.classPowerBonuses} />
+              )}
 
               {/* Painel de Bônus Condicionais (Inquebrável, Disparo Letal, etc.) */}
               {bonusSummary.conditionalBonuses.length > 0 && (
