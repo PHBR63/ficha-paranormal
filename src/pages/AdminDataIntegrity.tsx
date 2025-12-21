@@ -56,6 +56,8 @@ import { checkExistingCharacterValidity } from '@/lib/character-validation';
 import { RulesValidationPanel } from '@/components/admin/RulesValidationPanel';
 import { ValidationHistoryDashboard } from '@/components/admin/ValidationHistoryDashboard';
 import { RitualSystemTests } from '@/components/admin/RitualSystemTests';
+import { PowerSystemTests } from '@/components/admin/PowerSystemTests';
+import { ClassPowerBonusTests } from '@/components/admin/ClassPowerBonusTests';
 import { useValidationHistory } from '@/hooks/useValidationHistory';
 
 interface CharacterData {
@@ -267,7 +269,7 @@ export default function AdminDataIntegrity() {
 
       <main className="container mx-auto px-4 py-8">
         <Tabs defaultValue="integrity" className="space-y-6">
-          <TabsList className="grid w-full max-w-3xl grid-cols-4">
+          <TabsList className="grid w-full max-w-4xl grid-cols-5">
             <TabsTrigger value="integrity" className="flex items-center gap-2">
               <Database className="w-4 h-4" />
               <span className="hidden sm:inline">Integridade</span>
@@ -282,6 +284,11 @@ export default function AdminDataIntegrity() {
               <Shield className="w-4 h-4" />
               <span className="hidden sm:inline">Rituais</span>
               <span className="sm:hidden">Rituais</span>
+            </TabsTrigger>
+            <TabsTrigger value="powers" className="flex items-center gap-2">
+              <Wrench className="w-4 h-4" />
+              <span className="hidden sm:inline">Poderes</span>
+              <span className="sm:hidden">Poderes</span>
             </TabsTrigger>
             <TabsTrigger value="history" className="flex items-center gap-2">
               <BarChart3 className="w-4 h-4" />
@@ -501,6 +508,12 @@ export default function AdminDataIntegrity() {
           {/* Aba de Testes de Rituais */}
           <TabsContent value="rituals">
             <RitualSystemTests />
+          </TabsContent>
+
+          {/* Aba de Testes de Poderes de Classe */}
+          <TabsContent value="powers" className="space-y-6">
+            <PowerSystemTests />
+            <ClassPowerBonusTests />
           </TabsContent>
 
           {/* Aba de Histórico e Dashboard */}
