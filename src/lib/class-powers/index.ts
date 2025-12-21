@@ -84,3 +84,39 @@ export {
   meetsPrerequisites,
   getPowerStats,
 } from './power-registry';
+
+// ================== ENGINE DE EFEITOS ==================
+export {
+  // Helpers de escalonamento
+  resolveScalingValue,
+  resolveScalingDice,
+  
+  // Verificação de condições
+  checkConditions,
+  isMeleeWeapon,
+  isRangedWeapon,
+  
+  // Criação e aplicação
+  createEmptyBonusSummary,
+  applyMechanics,
+  
+  // Cálculo principal
+  calculatePowerBonuses,
+  
+  // Funções de consulta
+  hasPower,
+  getAttackBonus,
+  getDamageBonus,
+  getResistanceBonus,
+  getSkillBonus,
+  
+  // Custo de PE
+  calculateModifiedPECost,
+  
+  // Adaptadores legado
+  mapLegacyAbilitiesToPowerIds,
+  calculateBonusesFromLegacyAbilities,
+  
+  // Debug
+  getDetailedPowerBreakdown,
+} from './power-effects-engine';
