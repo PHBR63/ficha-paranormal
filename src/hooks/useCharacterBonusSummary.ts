@@ -13,6 +13,8 @@
 import { useMemo } from 'react';
 import { useDefenseBonuses, DefenseBonusBreakdown, ResistanceBonusBreakdown, ActiveRitualForDefense } from './useDefenseBonuses';
 import { useParanormalEffects, ParanormalEffects } from './useParanormalEffects';
+import { useClassPowerBonuses } from './useClassPowerBonuses';
+import type { ActiveClassPower, WeaponCategory, ProtectionCategory } from '@/lib/class-powers/types';
 
 // Interface para breakdown genérico de bônus
 export interface BonusBreakdown {
@@ -154,6 +156,8 @@ export interface BonusSummary {
   peBonus: number;
   // Hooks internos expostos para evitar chamadas duplicadas
   defenseBonuses: import('./useDefenseBonuses').DefenseBonuses;
+  // Novo: Bônus do sistema unificado de poderes de classe (Fase 5)
+  classPowerBonuses?: import('./useClassPowerBonuses').ClassPowerBonusResult;
 }
 
 // Props do hook
@@ -171,6 +175,16 @@ interface UseCharacterBonusSummaryProps {
   skills?: Record<string, number>; // Perícias com nível de treinamento (0-3)
   intellect?: number; // Intelecto do personagem (para Sentido Tático)
   vigor?: number; // Vigor do personagem (para Casca Grossa no bloqueio)
+  // Novos campos para sistema de poderes de classe unificado (Fase 5)
+  classId?: string; // Classe do personagem
+  classTrack?: string | null; // Trilha ativa
+  classPowers?: (string | ActiveClassPower)[]; // Poderes de classe (IDs)
+  strength?: number; // Força
+  agility?: number; // Agilidade
+  presence?: number; // Presença
+  equippedWeaponType?: WeaponCategory; // Tipo de arma equipada
+  equippedProtectionType?: ProtectionCategory; // Tipo de proteção
+  inCombat?: boolean; // Se está em combate
 }
 
 /**
@@ -190,6 +204,16 @@ export function useCharacterBonusSummary({
   skills = {},
   intellect = 1,
   vigor = 1,
+  // Novos campos para sistema unificado
+  classId,
+  classTrack,
+  classPowers = [],
+  strength = 1,
+  agility = 1,
+  presence = 1,
+  equippedWeaponType,
+  equippedProtectionType,
+  inCombat = false,
 }: UseCharacterBonusSummaryProps): BonusSummary {
   // Usa hooks existentes
   const defenseBonuses = useDefenseBonuses({ 
@@ -208,33 +232,140 @@ export function useCharacterBonusSummary({
     elementalAffinity: elementalAffinity as any, 
     affinityActive 
   });
+  
+  // Novo: Usa hook de poderes de classe unificado
+  const classPowerBonuses = useClassPowerBonuses({
+    nex,
+    classId: classId || '',
+    classTrack,
+    attributes: { strength, agility, vigor, intellect, presence },
+    classPowers,
+    abilities,
+    equippedWeaponType,
+    equippedProtectionType,
+    inCombat,
+    inInvestigation: false,
+    isFavoriteWeapon: false, // TODO: detectar arma favorita do inventário
+  });
 
   // Helper para verificar se um bônus condicional está ativo
   const isConditionalActive = (id: string) => activeConditionalBonuses.includes(id);
 
   return useMemo(() => {
-    // Inicializa estruturas
+    // Inicializa estruturas com bônus base do sistema unificado de poderes de classe
     const combat: CombatBonuses = {
-      attack: { total: 0, breakdown: [] },
-      damage: { total: 0, extraDice: [], breakdown: [] },
-      criticalMargin: { total: 0, breakdown: [] },
-      initiative: { total: 0, breakdown: [] },
+      attack: { 
+        total: classPowerBonuses.totals.attack.general + classPowerBonuses.totals.attack.melee, 
+        breakdown: [] 
+      },
+      damage: { 
+        total: classPowerBonuses.totals.damage.general, 
+        extraDice: [...classPowerBonuses.extraDamageDice], 
+        breakdown: [] 
+      },
+      criticalMargin: { 
+        total: classPowerBonuses.totals.criticalMargin, 
+        breakdown: [] 
+      },
+      initiative: { 
+        total: classPowerBonuses.totals.initiative, 
+        breakdown: [] 
+      },
     };
 
     const damageReduction: DamageReduction = {
-      physical: { total: 0, breakdown: [] },
-      paranormal: { total: 0, breakdown: [] },
+      physical: { 
+        total: classPowerBonuses.totals.damageResistance, 
+        breakdown: [] 
+      },
+      paranormal: { 
+        total: classPowerBonuses.totals.paranormalResistance, 
+        breakdown: [] 
+      },
     };
 
     const effectResistances: EffectResistances = {
       poison: 0,
       disease: 0,
-      mental: 0,
+      mental: classPowerBonuses.trackBonuses.mentalDamageResistance,
       breakdown: [],
     };
 
+    // Inicializa perícias com bônus do sistema unificado
     const skills: SkillBonuses = {};
+    for (const [skill, bonus] of Object.entries(classPowerBonuses.skillBonuses)) {
+      if (bonus > 0) {
+        skills[skill] = { 
+          total: bonus, 
+          breakdown: [{
+            source: 'Poderes de Classe',
+            value: bonus,
+            type: 'ability' as const,
+            active: true,
+          }]
+        };
+      }
+    }
+    
     const special: BonusBreakdown[] = [];
+    
+    // Adiciona breakdown de trilha aos efeitos especiais
+    for (const item of classPowerBonuses.breakdown.track) {
+      special.push({
+        source: item.source,
+        value: item.effects.join(', '),
+        type: 'ability' as const,
+        active: true,
+      });
+    }
+    
+    // Adiciona flags especiais do sistema unificado
+    if (classPowerBonuses.unarmedDamage) {
+      special.push({
+        source: 'Artista Marcial',
+        value: `Dano desarmado: ${classPowerBonuses.unarmedDamage}`,
+        type: 'ability' as const,
+        active: true,
+      });
+    }
+    
+    if (classPowerBonuses.canUseHPAsPE) {
+      special.push({
+        source: 'Poder do Flagelo',
+        value: 'Pode usar PV como PE para rituais',
+        type: 'ability' as const,
+        active: true,
+      });
+    }
+    
+    if (classPowerBonuses.canUseOccultismAsAttack) {
+      special.push({
+        source: 'Lâmina Maldita',
+        value: 'Pode usar Ocultismo em ataques corpo a corpo',
+        type: 'ability' as const,
+        active: true,
+      });
+    }
+    
+    // Adiciona bônus de iniciativa ao breakdown
+    if (classPowerBonuses.totals.initiative > 0) {
+      combat.initiative.breakdown.push({
+        source: 'Trilha de Classe',
+        value: classPowerBonuses.totals.initiative,
+        type: 'ability' as const,
+        active: true,
+      });
+    }
+    
+    // Adiciona bônus de margem crítica ao breakdown  
+    if (classPowerBonuses.totals.criticalMargin > 0) {
+      combat.criticalMargin.breakdown.push({
+        source: 'Trilha de Classe',
+        value: classPowerBonuses.totals.criticalMargin,
+        type: 'ability' as const,
+        active: true,
+      });
+    }
 
     // Normaliza abilities para comparação
     const normalizedAbilities = abilities.map(a => 
@@ -936,12 +1067,14 @@ export function useCharacterBonusSummary({
       special,
       paranormalEffects,
       conditionalBonuses,
-      hpBonus: paranormalEffects.hpBonus,
+      hpBonus: paranormalEffects.hpBonus + classPowerBonuses.totals.bonusHP,
       peBonus: paranormalEffects.peBonus,
       // Expõe hooks internos para evitar chamadas duplicadas
       defenseBonuses,
+      // Novo: Expõe bônus do sistema unificado de poderes de classe
+      classPowerBonuses,
     };
-  }, [defenseBonuses, paranormalEffects, abilities, generalPowers, activeConditionalBonuses, isConditionalActive]);
+  }, [defenseBonuses, paranormalEffects, abilities, generalPowers, activeConditionalBonuses, isConditionalActive, classPowerBonuses]);
 }
 
 /**
