@@ -64,6 +64,8 @@ export const OCULTISTA_TRACKS: UnifiedTrack[] = [
               effect: 'Conjura ritual como ação livre'
             },
             activation: {
+              cost: 4,
+              action: 'free',
               perRound: true
             }
           }
