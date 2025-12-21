@@ -350,6 +350,43 @@ export default function CharacterSheet() {
     [sustainedRituals]
   );
   
+  // Detecta tipo de arma e proteção equipada para o sistema de bônus de classe
+  const equippedWeaponType = useMemo(() => {
+    const equippedWeapon = (character?.inventory || []).find(
+      item => item.isEquipped && item.itemType === 'weapon'
+    );
+    if (!equippedWeapon?.weaponType) return undefined;
+    // Mapeia tipos de arma para categorias do sistema (WeaponCategory)
+    const weaponTypeMap: Record<string, 'melee' | 'ranged' | 'firearm' | 'tactical' | 'heavy' | 'unarmed' | 'any'> = {
+      'melee': 'melee',
+      'ranged': 'ranged',
+      'firearm': 'firearm',
+      'tactical': 'tactical',
+      'heavy': 'heavy',
+      'unarmed': 'unarmed',
+      'corpo-a-corpo': 'melee',
+      'distância': 'ranged',
+      'arremesso': 'ranged',
+      'arma-de-fogo': 'firearm',
+    };
+    return weaponTypeMap[equippedWeapon.weaponType.toLowerCase()] || 'any';
+  }, [character?.inventory]);
+
+  const equippedProtectionType = useMemo(() => {
+    const equippedArmor = (character?.inventory || []).find(
+      item => item.isEquipped && (item.itemType === 'armor' || item.itemType === 'protection')
+    );
+    if (!equippedArmor?.armorType) return undefined;
+    // Mapeia tipos de armadura para categorias do sistema (ProtectionCategory)
+    const armorTypeMap: Record<string, 'light' | 'heavy' | 'any'> = {
+      'leve': 'light',
+      'pesada': 'heavy',
+      'light': 'light',
+      'heavy': 'heavy',
+    };
+    return armorTypeMap[equippedArmor.armorType.toLowerCase()] || 'any';
+  }, [character?.inventory]);
+
   const bonusSummary = useCharacterBonusSummary({
     origin: character?.origin || '',
     abilities: character?.abilities || [],
@@ -364,6 +401,16 @@ export default function CharacterSheet() {
     skills: character?.skills || {},
     intellect: character?.intellect || 1,
     vigor: character?.vigor || 1,
+    // Novos campos para sistema unificado de poderes de classe (Fase 5)
+    classId: character?.class,
+    classTrack: character?.class_track,
+    classPowers: character?.powers?.map(p => p.name) || [],
+    strength: character?.strength || 1,
+    agility: character?.agility || 1,
+    presence: character?.presence || 1,
+    equippedWeaponType,
+    equippedProtectionType,
+    inCombat: false, // TODO: detectar estado de combate da sessão
   });
 
   // Extrai hooks internos do bonusSummary para evitar chamadas duplicadas
