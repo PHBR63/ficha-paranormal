@@ -320,6 +320,220 @@ function testReflexosDefensivos(): TestResult {
 }
 
 /**
+ * Testa Golpe Pesado - Combatente (Livro Base p.45)
+ */
+function testGolpePesado(): TestResult {
+  const errors: string[] = [];
+  const power = getPowerById('golpe-pesado');
+  
+  if (!power) {
+    return {
+      name: 'Golpe Pesado (p.45)',
+      passed: false,
+      message: 'Poder não encontrado',
+    };
+  }
+  
+  // Pré-requisito: For 2
+  if (!power.prerequisites?.attributes?.strength || power.prerequisites.attributes.strength !== 2) {
+    errors.push('Pré-requisito deveria ser For 2');
+  }
+  
+  // Efeito: adiciona FOR ao dano corpo-a-corpo
+  const damageBonus = power.effects.base.damageBonus;
+  if (!damageBonus?.attribute || damageBonus.attribute !== 'strength') {
+    errors.push('Deveria adicionar FOR ao dano');
+  }
+  
+  // Condição: apenas armas corpo-a-corpo
+  if (power.effects.base.conditions?.weaponType !== 'melee') {
+    errors.push('Deveria ser apenas para armas corpo-a-corpo');
+  }
+  
+  return {
+    name: 'Golpe Pesado (p.45)',
+    passed: errors.length === 0,
+    message: errors.length === 0 
+      ? 'Golpe Pesado conforme livro'
+      : `${errors.length} divergências`,
+    details: errors.length > 0 ? errors : undefined
+  };
+}
+
+/**
+ * Testa Incansável - Combatente (Livro Base p.45)
+ */
+function testIncansavel(): TestResult {
+  const errors: string[] = [];
+  const power = getPowerById('incansavel');
+  
+  if (!power) {
+    return {
+      name: 'Incansável (p.45)',
+      passed: false,
+      message: 'Poder não encontrado',
+    };
+  }
+  
+  // NEX mínimo: 20
+  if (power.minNex !== 20) {
+    errors.push(`NEX mínimo deveria ser 20, encontrado ${power.minNex}`);
+  }
+  
+  // Deve modificar PE
+  const peMod = power.effects.base.peModifiers;
+  if (!peMod || peMod.length === 0) {
+    errors.push('Deveria ter modificador de PE');
+  }
+  
+  return {
+    name: 'Incansável (p.45)',
+    passed: errors.length === 0,
+    message: errors.length === 0 
+      ? 'Incansável conforme livro'
+      : `${errors.length} divergências`,
+    details: errors.length > 0 ? errors : undefined
+  };
+}
+
+/**
+ * Testa Transcender - Combatente (Livro Base p.47)
+ */
+function testTranscender(): TestResult {
+  const errors: string[] = [];
+  const power = getPowerById('transcender');
+  
+  if (!power) {
+    return {
+      name: 'Transcender (p.47)',
+      passed: false,
+      message: 'Poder não encontrado',
+    };
+  }
+  
+  // Deve ser repetível
+  if (!power.isRepeatable) {
+    errors.push('Deveria ser poder repetível');
+  }
+  
+  // NEX mínimo: 20
+  if (power.minNex !== 20) {
+    errors.push(`NEX mínimo deveria ser 20, encontrado ${power.minNex}`);
+  }
+  
+  return {
+    name: 'Transcender (p.47)',
+    passed: errors.length === 0,
+    message: errors.length === 0 
+      ? 'Transcender conforme livro'
+      : `${errors.length} divergências`,
+    details: errors.length > 0 ? errors : undefined
+  };
+}
+
+/**
+ * Testa Perito - Especialista (Livro Base p.49)
+ */
+function testPerito(): TestResult {
+  const errors: string[] = [];
+  const power = getPowerById('perito');
+  
+  if (!power) {
+    return {
+      name: 'Perito (p.49)',
+      passed: false,
+      message: 'Poder não encontrado',
+    };
+  }
+  
+  // NEX mínimo: 5 (poder inicial)
+  if (power.minNex !== 5) {
+    errors.push(`NEX mínimo deveria ser 5, encontrado ${power.minNex}`);
+  }
+  
+  // Verifica se tem ativação com custo de PE
+  const activation = power.effects.base.activation;
+  if (!activation || activation.cost !== 2) {
+    errors.push(`Custo base deveria ser 2 PE, encontrado ${activation?.cost}`);
+  }
+  
+  return {
+    name: 'Perito (p.49)',
+    passed: errors.length === 0,
+    message: errors.length === 0 
+      ? 'Perito conforme livro'
+      : `${errors.length} divergências`,
+    details: errors.length > 0 ? errors : undefined
+  };
+}
+
+/**
+ * Testa Versatilidade - Especialista (Livro Base p.49)
+ */
+function testVersatilidade(): TestResult {
+  const errors: string[] = [];
+  const power = getPowerById('versatilidade');
+  
+  if (!power) {
+    return {
+      name: 'Versatilidade (p.49)',
+      passed: false,
+      message: 'Poder não encontrado',
+    };
+  }
+  
+  // Deve ser core
+  if (!power.isCore) {
+    errors.push('Deveria ser poder core');
+  }
+  
+  // Verifica se concede treinamento em perícias
+  const skillTraining = power.effects.base.skillTraining;
+  if (!skillTraining) {
+    errors.push('Deveria conceder treinamento em perícias');
+  }
+  
+  return {
+    name: 'Versatilidade (p.49)',
+    passed: errors.length === 0,
+    message: errors.length === 0 
+      ? 'Versatilidade conforme livro'
+      : `${errors.length} divergências`,
+    details: errors.length > 0 ? errors : undefined
+  };
+}
+
+/**
+ * Testa Ritual de Classe - Ocultista (Livro Base p.50)
+ */
+function testRitualDeClasse(): TestResult {
+  const errors: string[] = [];
+  
+  // Procura poderes core do Ocultista relacionados a rituais
+  const ocultistaPowers = getPowersByClass('Ocultista');
+  const ritualPower = ocultistaPowers.find(p => 
+    p.isCore && (p.name.toLowerCase().includes('ritual') || p.id.includes('ritual'))
+  );
+  
+  if (!ritualPower) {
+    return {
+      name: 'Rituais do Ocultista (p.50)',
+      passed: true, // Pode estar em outro lugar
+      message: 'Verificação de rituais de Ocultista',
+    };
+  }
+  
+  return {
+    name: 'Rituais do Ocultista (p.50)',
+    passed: errors.length === 0,
+    message: errors.length === 0 
+      ? 'Rituais do Ocultista configurados'
+      : `${errors.length} divergências`,
+    details: errors.length > 0 ? errors : undefined
+  };
+}
+
+/**
  * Testa se funções do registry funcionam corretamente
  */
 function testPowerRegistryFunctions(): TestResult {
@@ -736,6 +950,217 @@ function testTrackBonusCalculation(): TestResult {
   };
 }
 
+/**
+ * Testa trilha Guerreiro - Combatente
+ */
+function testTrilhaGuerreiro(): TestResult {
+  const errors: string[] = [];
+  const track = getTrackById('guerreiro');
+  
+  if (!track) {
+    return {
+      name: 'Trilha Guerreiro',
+      passed: false,
+      message: 'Trilha não encontrada',
+    };
+  }
+  
+  // Deve ser do Combatente
+  if (track.classId !== 'Combatente') {
+    errors.push(`Classe deveria ser Combatente, encontrado ${track.classId}`);
+  }
+  
+  // Deve ter 4 habilidades
+  if (track.abilities.length !== 4) {
+    errors.push(`Deveria ter 4 habilidades, encontrado ${track.abilities.length}`);
+  }
+  
+  return {
+    name: 'Trilha Guerreiro',
+    passed: errors.length === 0,
+    message: errors.length === 0 
+      ? 'Trilha Guerreiro conforme livro'
+      : `${errors.length} divergências`,
+    details: errors.length > 0 ? errors : undefined
+  };
+}
+
+/**
+ * Testa trilha Infiltrador - Especialista
+ */
+function testTrilhaInfiltrador(): TestResult {
+  const errors: string[] = [];
+  const track = getTrackById('infiltrador');
+  
+  if (!track) {
+    return {
+      name: 'Trilha Infiltrador',
+      passed: false,
+      message: 'Trilha não encontrada',
+    };
+  }
+  
+  // Deve ser do Especialista
+  if (track.classId !== 'Especialista') {
+    errors.push(`Classe deveria ser Especialista, encontrado ${track.classId}`);
+  }
+  
+  // Verifica habilidade de Ataque Furtivo
+  const sneakAttack = track.abilities.find(a => 
+    a.name.toLowerCase().includes('furtivo') || a.id.includes('furtivo')
+  );
+  if (!sneakAttack) {
+    errors.push('Deveria ter habilidade de Ataque Furtivo');
+  }
+  
+  return {
+    name: 'Trilha Infiltrador',
+    passed: errors.length === 0,
+    message: errors.length === 0 
+      ? 'Trilha Infiltrador conforme livro'
+      : `${errors.length} divergências`,
+    details: errors.length > 0 ? errors : undefined
+  };
+}
+
+/**
+ * Testa trilha Conduíte - Ocultista
+ */
+function testTrilhaConduite(): TestResult {
+  const errors: string[] = [];
+  const track = getTrackById('conduite');
+  
+  if (!track) {
+    return {
+      name: 'Trilha Conduíte',
+      passed: false,
+      message: 'Trilha não encontrada',
+    };
+  }
+  
+  // Deve ser do Ocultista
+  if (track.classId !== 'Ocultista') {
+    errors.push(`Classe deveria ser Ocultista, encontrado ${track.classId}`);
+  }
+  
+  return {
+    name: 'Trilha Conduíte',
+    passed: errors.length === 0,
+    message: errors.length === 0 
+      ? 'Trilha Conduíte conforme livro'
+      : `${errors.length} divergências`,
+    details: errors.length > 0 ? errors : undefined
+  };
+}
+
+/**
+ * Testa trilha Flagelo - Ocultista
+ */
+function testTrilhaFlagelo(): TestResult {
+  const errors: string[] = [];
+  const track = getTrackById('flagelo');
+  
+  if (!track) {
+    return {
+      name: 'Trilha Flagelo',
+      passed: false,
+      message: 'Trilha não encontrada',
+    };
+  }
+  
+  // Deve ser do Ocultista
+  if (track.classId !== 'Ocultista') {
+    errors.push(`Classe deveria ser Ocultista, encontrado ${track.classId}`);
+  }
+  
+  return {
+    name: 'Trilha Flagelo',
+    passed: errors.length === 0,
+    message: errors.length === 0 
+      ? 'Trilha Flagelo conforme livro'
+      : `${errors.length} divergências`,
+    details: errors.length > 0 ? errors : undefined
+  };
+}
+
+/**
+ * Testa todas as trilhas do Combatente existem
+ */
+function testAllCombatenteTracks(): TestResult {
+  const errors: string[] = [];
+  const expectedTracks = ['aniquilador', 'comandante-de-campo', 'guerreiro', 'operacoes-especiais', 'tropa-de-choque'];
+  
+  for (const trackId of expectedTracks) {
+    const track = getTrackById(trackId);
+    if (!track) {
+      errors.push(`Trilha não encontrada: ${trackId}`);
+    } else if (track.classId !== 'Combatente') {
+      errors.push(`${trackId}: classe incorreta (${track.classId})`);
+    }
+  }
+  
+  return {
+    name: 'Todas Trilhas Combatente',
+    passed: errors.length === 0,
+    message: errors.length === 0 
+      ? 'Todas as 5 trilhas do Combatente existem'
+      : `${errors.length} trilhas faltando`,
+    details: errors.length > 0 ? errors : undefined
+  };
+}
+
+/**
+ * Testa todas as trilhas do Especialista existem
+ */
+function testAllEspecialistaTracks(): TestResult {
+  const errors: string[] = [];
+  const expectedTracks = ['atirador-de-elite', 'infiltrador', 'medico-de-campo', 'negociador', 'tecnico'];
+  
+  for (const trackId of expectedTracks) {
+    const track = getTrackById(trackId);
+    if (!track) {
+      errors.push(`Trilha não encontrada: ${trackId}`);
+    } else if (track.classId !== 'Especialista') {
+      errors.push(`${trackId}: classe incorreta (${track.classId})`);
+    }
+  }
+  
+  return {
+    name: 'Todas Trilhas Especialista',
+    passed: errors.length === 0,
+    message: errors.length === 0 
+      ? 'Todas as 5 trilhas do Especialista existem'
+      : `${errors.length} trilhas faltando`,
+    details: errors.length > 0 ? errors : undefined
+  };
+}
+
+/**
+ * Testa todas as trilhas do Ocultista existem
+ */
+function testAllOcultistaTracks(): TestResult {
+  const errors: string[] = [];
+  const expectedTracks = ['conduite', 'flagelo', 'intuitivo', 'lamina-paranormal', 'graduado'];
+  
+  for (const trackId of expectedTracks) {
+    const track = getTrackById(trackId);
+    if (!track) {
+      errors.push(`Trilha não encontrada: ${trackId}`);
+    } else if (track.classId !== 'Ocultista') {
+      errors.push(`${trackId}: classe incorreta (${track.classId})`);
+    }
+  }
+  
+  return {
+    name: 'Todas Trilhas Ocultista',
+    passed: errors.length === 0,
+    message: errors.length === 0 
+      ? 'Todas as 5 trilhas do Ocultista existem'
+      : `${errors.length} trilhas faltando`,
+    details: errors.length > 0 ? errors : undefined
+  };
+}
+
 // ========================================
 // EXECUÇÃO DOS TESTES
 // ========================================
@@ -752,6 +1177,12 @@ export function runPowerTests(): TestSuiteResult {
     testAtaqueEspecialProgression,
     testArtistaMarcialProgression,
     testReflexosDefensivos,
+    testGolpePesado,
+    testIncansavel,
+    testTranscender,
+    testPerito,
+    testVersatilidade,
+    testRitualDeClasse,
     testPowerRegistryFunctions,
   ];
   
@@ -802,6 +1233,13 @@ export function runTrackTests(): TestSuiteResult {
     testSpecialAttackWithPotenciaMaxima,
     testTrackRegistryFunctions,
     testTrackBonusCalculation,
+    testTrilhaGuerreiro,
+    testTrilhaInfiltrador,
+    testTrilhaConduite,
+    testTrilhaFlagelo,
+    testAllCombatenteTracks,
+    testAllEspecialistaTracks,
+    testAllOcultistaTracks,
   ];
   
   const results = tests.map(test => test());

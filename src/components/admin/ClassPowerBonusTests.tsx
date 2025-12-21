@@ -128,6 +128,106 @@ const TEST_SCENARIOS: TestScenario[] = [
       defense: 2, // Reflexos Defensivos
     },
   },
+  {
+    name: 'Combatente Guerreiro NEX 65%',
+    description: 'Combatente generalista com proteção pesada',
+    config: {
+      nex: 65,
+      classId: 'combatente',
+      classTrack: 'guerreiro',
+      attributes: { strength: 3, agility: 1, vigor: 3, intellect: 1, presence: 2 },
+      classPowers: ['golpe-pesado', 'incansavel', 'armamento-pesado'],
+      equippedWeaponType: 'melee',
+      equippedProtectionType: 'heavy',
+      inCombat: true,
+    },
+    expectedBonuses: {
+      damage: 3, // FOR via Golpe Pesado
+    },
+  },
+  {
+    name: 'Especialista Infiltrador NEX 40%',
+    description: 'Focado em ataques furtivos',
+    config: {
+      nex: 40,
+      classId: 'especialista',
+      classTrack: 'infiltrador',
+      attributes: { strength: 1, agility: 4, vigor: 1, intellect: 2, presence: 2 },
+      classPowers: ['perito'],
+      equippedWeaponType: 'melee',
+      inCombat: true,
+    },
+    expectedBonuses: {},
+  },
+  {
+    name: 'Especialista Negociador NEX 50%',
+    description: 'Focado em interações sociais',
+    config: {
+      nex: 50,
+      classId: 'especialista',
+      classTrack: 'negociador',
+      attributes: { strength: 1, agility: 2, vigor: 1, intellect: 2, presence: 4 },
+      classPowers: ['versatilidade'],
+      inCombat: false,
+    },
+    expectedBonuses: {},
+  },
+  {
+    name: 'Ocultista Flagelo NEX 75%',
+    description: 'Focado em combate paranormal',
+    config: {
+      nex: 75,
+      classId: 'ocultista',
+      classTrack: 'flagelo',
+      attributes: { strength: 1, agility: 2, vigor: 2, intellect: 3, presence: 3 },
+      classPowers: [],
+      inCombat: true,
+    },
+    expectedBonuses: {},
+  },
+  {
+    name: 'Ocultista Lâmina Paranormal NEX 65%',
+    description: 'Híbrido combate/rituais',
+    config: {
+      nex: 65,
+      classId: 'ocultista',
+      classTrack: 'lamina-paranormal',
+      attributes: { strength: 2, agility: 3, vigor: 2, intellect: 2, presence: 2 },
+      classPowers: [],
+      equippedWeaponType: 'melee',
+      inCombat: true,
+    },
+    expectedBonuses: {},
+  },
+  {
+    name: 'Combatente Artista Marcial NEX 70%',
+    description: 'Combatente desarmado',
+    config: {
+      nex: 70,
+      classId: 'combatente',
+      classTrack: 'aniquilador',
+      attributes: { strength: 3, agility: 3, vigor: 2, intellect: 1, presence: 1 },
+      classPowers: ['artista-marcial', 'golpe-pesado'],
+      equippedWeaponType: 'unarmed',
+      inCombat: true,
+    },
+    expectedBonuses: {
+      damage: 3, // FOR via Golpe Pesado em unarmed
+    },
+  },
+  {
+    name: 'Especialista Médico de Campo NEX 65%',
+    description: 'Focado em suporte',
+    config: {
+      nex: 65,
+      classId: 'especialista',
+      classTrack: 'medico-de-campo',
+      attributes: { strength: 1, agility: 2, vigor: 2, intellect: 3, presence: 2 },
+      classPowers: ['perito'],
+      inCombat: false,
+    },
+    expectedBonuses: {},
+  },
 ];
 
 // ========================================
