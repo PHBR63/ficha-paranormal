@@ -1,0 +1,287 @@
+/**
+ * Sistema Unificado de Trilhas de Classe - Ordem Paranormal RPG v1.3
+ * 
+ * Define os tipos e interfaces para habilidades de trilha com efeitos mecânicos estruturados.
+ * Cada trilha possui 4 habilidades desbloqueadas em NEX 10%, 40%, 65% e 99%.
+ * 
+ * @module track-types
+ */
+
+import type { 
+  ClassId, 
+  ActionType,
+  Attribute,
+  Skill,
+  WeaponCategory
+} from './types';
+
+// =============================================================================
+// TIPOS DE HABILIDADE DE TRILHA
+// =============================================================================
+
+/**
+ * NEX em que as habilidades de trilha são desbloqueadas
+ */
+export type TrackAbilityNex = 10 | 40 | 65 | 99;
+
+/**
+ * Tipo de efeito especial da habilidade de trilha
+ */
+export type TrackAbilityKind = 
+  | 'passive'
+  | 'activated'
+  | 'reaction'
+  | 'triggered'
+  | 'resource'
+  | 'scaling'
+  | 'ritual-modifier'
+  | 'grants-ritual';
+
+// =============================================================================
+// MECÂNICAS DE HABILIDADE DE TRILHA (SIMPLIFICADAS)
+// =============================================================================
+
+/**
+ * Mecânicas de habilidade de trilha
+ * Interface própria que não estende PowerMechanics para evitar conflitos
+ */
+export interface TrackAbilityMechanics {
+  /** Tipo da habilidade */
+  kind: TrackAbilityKind;
+  
+  /** Configuração de ativação */
+  activation?: {
+    cost: number;
+    action: ActionType | 'varies';
+    perRound?: boolean;
+    perScene?: boolean;
+    perMission?: boolean;
+  };
+  
+  /** Bônus de dano */
+  damageBonus?: {
+    value?: number;
+    attribute?: Attribute;
+    extraDice?: { type: 'weapon' | 'fixed'; count: number; dieType?: string };
+    conditions?: { weaponType?: string };
+  };
+  
+  /** Bônus de crítico */
+  criticalBonus?: {
+    marginBonus?: number;
+    multiplierBonus?: number;
+    conditions?: { weaponType?: string };
+  };
+  
+  /** Proficiências concedidas */
+  proficiencies?: string[];
+  
+  /** Redução de categoria */
+  categoryReduction?: {
+    amount: number;
+    targetType: 'specific-weapon' | 'any-weapon' | 'item';
+    requiresChoice?: boolean;
+    choiceDescription?: string;
+  };
+  
+  /** Efeitos de técnica (Aniquilador) */
+  techniqueEffects?: Array<{
+    id: string;
+    name: string;
+    description: string;
+    peCost: number;
+    effects: Record<string, number>;
+  }>;
+  
+  /** Configuração de liderança */
+  leadership?: {
+    range: 'touch' | 'short' | 'medium' | 'long';
+    maxAllies?: number | 'intellect';
+    allyEffects: Record<string, boolean>;
+  };
+  
+  /** Ataque furtivo */
+  sneakAttack?: {
+    scaling: Record<number, { dice: number; dieType: string }>;
+    conditions: string[];
+    peCost: number;
+    usesPerRound: number;
+  };
+  
+  /** Cura */
+  healing?: {
+    baseDice: string;
+    scalingDice?: Record<number, { dice: number; dieType: string }>;
+    peCost: number;
+    extraDicePECost?: number;
+    range: 'self' | 'touch' | 'short';
+  };
+  
+  /** Modificador de ritual */
+  ritualModifier?: {
+    type: 'range' | 'area' | 'speed' | 'cost' | 'resistance' | 'counter';
+    additionalPECost: number;
+    effect: string;
+  };
+  
+  /** PE temporário */
+  temporaryPE?: {
+    trigger: string;
+    amount: number | 'ritual-circle';
+    maxPerScene?: number | 'pe-limit';
+  };
+  
+  /** Ritual concedido */
+  grantsRitual?: string;
+  
+  /** Bônus em perícias */
+  skillBonus?: {
+    skills: Skill[];
+    bonus: number;
+  };
+  
+  /** Bônus em Iniciativa */
+  initiativeBonus?: number;
+  
+  /** PV adicional por % de NEX */
+  hpPerNexPercent?: number;
+  
+  /** Bônus de Vigor no bloqueio */
+  blockVigorBonus?: boolean;
+  
+  /** Resistência paranormal */
+  paranormalResistance?: number;
+  
+  /** Resistência a dano mental */
+  mentalDamageResistance?: number;
+  
+  /** Bônus na DT dos rituais */
+  ritualDTBonus?: number;
+  
+  /** Permite usar PV como PE */
+  hpAsPE?: boolean;
+  
+  /** Permite usar Ocultismo como ataque */
+  occultismAsAttack?: boolean;
+  
+  /** Ações extras */
+  extraActions?: Array<{
+    actionType: string;
+    trigger: string;
+    weaponRestriction?: string;
+  }>;
+  
+  /** Redução de dano */
+  damageReduction?: {
+    reductionType: 'half' | 'fixed';
+    damageTypes: string[];
+    fixedAmount?: number;
+  };
+  
+  /** Dados adicionais genéricos para efeitos complexos */
+  customEffects?: Record<string, unknown>;
+}
+
+/**
+ * Progressão de habilidade de trilha
+ */
+export interface TrackAbilityProgression {
+  [nex: number]: Partial<TrackAbilityMechanics>;
+}
+
+// =============================================================================
+// INTERFACE PRINCIPAL DE HABILIDADE DE TRILHA
+// =============================================================================
+
+/**
+ * Interface unificada de habilidade de trilha
+ */
+export interface UnifiedTrackAbility {
+  id: string;
+  name: string;
+  trackId: string;
+  minNex: TrackAbilityNex;
+  description: string;
+  pageReference?: string;
+  effects: {
+    base: TrackAbilityMechanics;
+    progression?: TrackAbilityProgression;
+  };
+  isInitial?: boolean;
+  tags?: string[];
+}
+
+// =============================================================================
+// INTERFACE DE TRILHA
+// =============================================================================
+
+/**
+ * Interface unificada de trilha de classe
+ */
+export interface UnifiedTrack {
+  id: string;
+  name: string;
+  classId: ClassId;
+  description: string;
+  pageReference?: string;
+  abilities: UnifiedTrackAbility[];
+  isSuplement?: boolean;
+  supplementName?: string;
+  tags?: string[];
+}
+
+// =============================================================================
+// TIPOS DE RUNTIME
+// =============================================================================
+
+/**
+ * Trilha ativa de um personagem
+ */
+export interface ActiveTrack {
+  trackId: string;
+  unlockedAbilities: string[];
+  choices?: Record<string, unknown>;
+}
+
+/**
+ * Contexto para cálculo de bônus de trilha
+ */
+export interface TrackCalculationContext {
+  nex: number;
+  attributes: Record<Attribute, number>;
+  activeTrack?: ActiveTrack;
+  inCombat?: boolean;
+  weaponType?: WeaponCategory;
+  isFavoriteWeapon?: boolean;
+  targetUnaware?: boolean;
+  targetFlanked?: boolean;
+  castingRitual?: boolean;
+  ritualCircle?: number;
+}
+
+/**
+ * Resumo de bônus calculados das trilhas
+ */
+export interface TrackBonusSummary {
+  attackBonus: number;
+  damageBonus: number;
+  extraDamageDice: string[];
+  criticalMarginBonus: number;
+  criticalMultiplierBonus: number;
+  defenseBonus: number;
+  initiativeBonus: number;
+  bonusHP: number;
+  damageResistance: number;
+  paranormalResistance: number;
+  mentalDamageResistance: number;
+  skillBonuses: Record<Skill, number>;
+  categoryReduction: number;
+  ritualDTBonus: number;
+  canUseHPAsPE: boolean;
+  canUseOccultismAsAttack: boolean;
+  breakdown: Array<{
+    source: string;
+    abilityId: string;
+    effects: string[];
+  }>;
+}
