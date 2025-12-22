@@ -9,7 +9,7 @@
  * - Sistema de modificações para armas
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { MobileInventoryCard } from './MobileInventoryCard';
 import { 
@@ -110,6 +110,40 @@ import {
 // Categorias de itens para organização visual
 export type ItemType = 'weapon' | 'armor' | 'consumable' | 'ritual' | 'valuable' | 'misc';
 
+// Mapa de migração de tipos antigos / tipos do catálogo para tipos do inventário
+// IMPORTANTE: Isso é apenas normalização de dados (não altera regras do sistema)
+const ITEM_TYPE_MIGRATION_MAP: Record<string, ItemType> = {
+  // Tipos antigos (bug)
+  item: 'misc',
+
+  // Tipos do catálogo de itens gerais (src/lib/items-catalog.ts)
+  explosivo: 'consumable',
+  municao: 'consumable',
+  acessorio: 'misc',
+  operacional: 'misc',
+  paranormal: 'ritual',
+
+  // Tipos válidos do próprio inventário
+  weapon: 'weapon',
+  armor: 'armor',
+  consumable: 'consumable',
+  ritual: 'ritual',
+  valuable: 'valuable',
+  misc: 'misc',
+};
+
+/**
+ * Normaliza um itemType vindo do banco (ou de versões antigas) para um ItemType válido.
+ * 
+ * @param rawType - O valor original do itemType
+ * @returns Um ItemType válido (fallback: 'misc')
+ */
+function normalizeInventoryItemType(rawType: unknown): ItemType {
+  if (typeof rawType !== 'string' || rawType.trim().length === 0) return 'misc';
+  const key = rawType.trim();
+  return ITEM_TYPE_MIGRATION_MAP[key] ?? 'misc';
+}
+
 const ITEM_TYPE_CONFIG: Record<ItemType, { label: string; icon: typeof Package; color: string }> = {
   weapon: { label: 'Armas', icon: Sword, color: 'text-destructive' },
   armor: { label: 'Proteções', icon: Shield, color: 'text-secondary' },
@@ -188,6 +222,44 @@ export function InventoryPanel({
     quantity: 1,
     itemType: 'misc',
   });
+
+  // Evita loop de persistência: só migra automaticamente quando detectar necessidade real
+  const lastAutoMigrationSignatureRef = useRef<string>('');
+
+  // Migração automática (runtime): normaliza itemType inválido e persiste no banco via onInventoryChange
+  // - Corrige valores antigos como "item" e tipos do catálogo como "explosivo"
+  // - Não altera nenhuma regra, apenas evita crashes e padroniza dados
+  useEffect(() => {
+    if (!onInventoryChange || readOnly) return;
+
+    // Identifica itens que precisam de correção
+    const needsFix = inventory.some((it) => {
+      const normalized = normalizeInventoryItemType(it.itemType);
+      // Se itemType é desconhecido, normalize retorna 'misc' e isso pode ser correção ou fallback
+      // Só consideramos "precisa corrigir" quando o valor original não é um ItemType válido
+      const raw = typeof it.itemType === 'string' ? it.itemType : '';
+      const rawIsValid = ['weapon', 'armor', 'consumable', 'ritual', 'valuable', 'misc'].includes(raw);
+      return !rawIsValid && normalized !== undefined;
+    });
+
+    if (!needsFix) return;
+
+    // Assinatura simples para impedir loops (ids + itemType normalizado)
+    const signature = JSON.stringify(
+      inventory.map((it) => ({ id: it.id, itemType: normalizeInventoryItemType(it.itemType) }))
+    );
+
+    if (lastAutoMigrationSignatureRef.current === signature) return;
+    lastAutoMigrationSignatureRef.current = signature;
+
+    const migrated = inventory.map((it) => ({
+      ...it,
+      itemType: normalizeInventoryItemType(it.itemType),
+    }));
+
+    console.info('[InventoryPanel] Migração automática aplicada: itemType normalizado e persistido.');
+    onInventoryChange(migrated);
+  }, [inventory, onInventoryChange, readOnly]);
 
   const isMobile = useIsMobile();
 
@@ -591,33 +663,12 @@ export function InventoryPanel({
     }
   };
 
-  // Mapeamento de tipos do catálogo (items-catalog.ts) para tipos do inventário (InventoryPanel)
-  // Isso evita erros de "undefined.push()" quando tipos não correspondem
-  const mapCatalogTypeToInventoryType = (catalogType: string): ItemType => {
-    const typeMap: Record<string, ItemType> = {
-      // Tipos do items-catalog.ts
-      'explosivo': 'consumable',    // Granadas são consumíveis
-      'acessorio': 'misc',          // Acessórios vão para misc
-      'operacional': 'misc',        // Itens operacionais vão para misc
-      'paranormal': 'ritual',       // Itens paranormais vão para ritual
-      'municao': 'consumable',      // Munição é consumível
-      // Tipos já existentes no InventoryPanel (passthrough)
-      'weapon': 'weapon',
-      'armor': 'armor',
-      'consumable': 'consumable',
-      'ritual': 'ritual',
-      'valuable': 'valuable',
-      'misc': 'misc',
-    };
-    return typeMap[catalogType] || 'misc'; // Fallback seguro para tipos desconhecidos
-  };
-
   // Handler para adicionar item do catálogo de itens gerais
   const handleAddItemFromCatalog = (catalogItem: CatalogItem) => {
     if (!onInventoryChange) return;
 
     // Mapear tipo do catálogo para tipo válido do inventário
-    const mappedItemType = mapCatalogTypeToInventoryType(catalogItem.type);
+    const mappedItemType = normalizeInventoryItemType(catalogItem.type);
 
     const baseItem = {
       id: crypto.randomUUID(),
