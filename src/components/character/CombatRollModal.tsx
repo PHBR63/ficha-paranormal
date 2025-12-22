@@ -76,6 +76,8 @@ interface BonusSourceDisplay {
   label: string;
   value: number | string;
   type: 'skill' | 'power' | 'ritual' | 'track' | 'attribute' | 'paranormal' | 'other';
+  description?: string; // Descrição detalhada da fonte
+  sourceName?: string;  // Nome específico do poder/ritual que concede o bônus
 }
 
 // Props do modal
@@ -389,18 +391,34 @@ export function CombatRollModal({
     
     // Bônus de perícia (treinamento)
     if (attackSkill.bonus > 0) {
-      sources.push({ label: attackSkill.name, value: attackSkill.bonus, type: 'skill' });
+      sources.push({ 
+        label: attackSkill.name, 
+        value: attackSkill.bonus, 
+        type: 'skill',
+        description: `Treinamento na perícia ${attackSkill.name}`,
+      });
     }
     
     // Bônus de poderes de classe
     if (classPowerBonuses?.attackBonus && classPowerBonuses.attackBonus > 0) {
-      sources.push({ label: 'Poder de Classe', value: classPowerBonuses.attackBonus, type: 'power' });
+      sources.push({ 
+        label: 'Poder de Classe', 
+        value: classPowerBonuses.attackBonus, 
+        type: 'power',
+        description: 'Bônus de ataque de poderes de classe ativos (ex: Ataque Especial, Golpe Brutal)',
+      });
     }
     
     // Bônus passivos de rituais
     passiveBonuses.forEach(b => {
       if (b.attackBonus) {
-        sources.push({ label: b.name, value: b.attackBonus, type: 'ritual' });
+        sources.push({ 
+          label: b.name, 
+          value: b.attackBonus, 
+          type: 'ritual',
+          sourceName: b.name,
+          description: b.description,
+        });
       }
     });
     
@@ -409,7 +427,13 @@ export function CombatRollModal({
       const bonus = availableBonuses.find(b => b.id === bonusId);
       if (bonus?.attackBonus) {
         const type = bonus.source === 'paranormal' ? 'paranormal' : bonus.source === 'ritual' ? 'ritual' : 'other';
-        sources.push({ label: bonus.name, value: bonus.attackBonus, type });
+        sources.push({ 
+          label: bonus.name, 
+          value: bonus.attackBonus, 
+          type,
+          sourceName: bonus.name,
+          description: bonus.description,
+        });
       }
     });
     
@@ -423,24 +447,45 @@ export function CombatRollModal({
     
     // Bônus de Força para corpo a corpo
     if (isMelee && attributes.strength !== 0) {
-      sources.push({ label: 'Força', value: attributes.strength, type: 'attribute' });
+      sources.push({ 
+        label: 'Força', 
+        value: attributes.strength, 
+        type: 'attribute',
+        description: 'Modificador de Força adicionado ao dano de ataques corpo a corpo',
+      });
     }
     
     // Bônus de poderes de classe
     if (classPowerBonuses?.damageBonus && classPowerBonuses.damageBonus > 0) {
-      sources.push({ label: 'Poder de Classe', value: classPowerBonuses.damageBonus, type: 'power' });
+      sources.push({ 
+        label: 'Poder de Classe', 
+        value: classPowerBonuses.damageBonus, 
+        type: 'power',
+        description: 'Bônus de dano de poderes de classe ativos (ex: Ataque Especial, Golpe Pesado)',
+      });
     }
     
     // Dados extras de poderes de classe
     if (classPowerBonuses?.extraDamageDice && classPowerBonuses.extraDamageDice.length > 0) {
-      sources.push({ label: 'Dados Extras', value: classPowerBonuses.extraDamageDice.join(' + '), type: 'power' });
+      sources.push({ 
+        label: 'Dados Extras', 
+        value: classPowerBonuses.extraDamageDice.join(' + '), 
+        type: 'power',
+        description: 'Dados de dano extras de poderes de classe (ex: Golpe Pesado)',
+      });
     }
     
     // Bônus passivos
     passiveBonuses.forEach(b => {
       if (b.damageBonus) {
         const value = typeof b.damageBonus === 'number' ? b.damageBonus : b.damageBonus;
-        sources.push({ label: b.name, value, type: 'ritual' });
+        sources.push({ 
+          label: b.name, 
+          value, 
+          type: 'ritual',
+          sourceName: b.name,
+          description: b.description,
+        });
       }
     });
     
@@ -450,7 +495,13 @@ export function CombatRollModal({
       if (bonus?.damageBonus) {
         const value = typeof bonus.damageBonus === 'number' ? bonus.damageBonus : bonus.damageBonus;
         const type = bonus.source === 'paranormal' ? 'paranormal' : bonus.source === 'ritual' ? 'ritual' : 'other';
-        sources.push({ label: bonus.name, value, type });
+        sources.push({ 
+          label: bonus.name, 
+          value, 
+          type,
+          sourceName: bonus.name,
+          description: bonus.description,
+        });
       }
     });
     
@@ -696,30 +747,48 @@ export function CombatRollModal({
           <Separator />
 
           {/* Fase: Setup - Seleção de bônus */}
-          <AnimatePresence mode="wait">
-            {phase === 'setup' && (
-              <motion.div
-                key="setup"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="space-y-4"
-              >
-                {/* Base de ataque com detalhamento de fontes */}
-                <div className="p-3 rounded-lg bg-muted/50 space-y-2">
-                  <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
-                    Bônus de Ataque
-                  </p>
-                  <div className="flex flex-wrap items-center gap-1.5 text-sm">
-                    <span className="px-2 py-0.5 rounded bg-secondary/50 font-medium">
-                      {weapon.type === 'Disparo' ? 'AGI' : 'FOR'}: {attackAttribute}
-                    </span>
+          <TooltipProvider delayDuration={200}>
+            <AnimatePresence mode="wait">
+              {phase === 'setup' && (
+                <motion.div
+                  key="setup"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="space-y-4"
+                >
+                  {/* Base de ataque com detalhamento de fontes */}
+                  <div className="p-3 rounded-lg bg-muted/50 space-y-2">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
+                      Bônus de Ataque
+                    </p>
+                    <div className="flex flex-wrap items-center gap-1.5 text-sm">
+                      <span className="px-2 py-0.5 rounded bg-secondary/50 font-medium">
+                        {weapon.type === 'Disparo' ? 'AGI' : 'FOR'}: {attackAttribute}
+                      </span>
                     {attackBonusSources.map((source, idx) => (
                       <span key={idx} className="flex items-center gap-1">
                         <span className="text-muted-foreground">+</span>
-                        <span className={cn('px-2 py-0.5 rounded font-medium text-xs', bonusTypeColors[source.type])}>
-                          {source.label}: +{source.value}
-                        </span>
+                        {source.description || source.sourceName ? (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className={cn('px-2 py-0.5 rounded font-medium text-xs cursor-help flex items-center gap-1', bonusTypeColors[source.type])}>
+                                {source.label}: +{source.value}
+                                <Info className="w-3 h-3 opacity-60" />
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="max-w-xs">
+                              <p className="font-medium">{source.sourceName || source.label}</p>
+                              {source.description && (
+                                <p className="text-xs text-muted-foreground mt-1">{source.description}</p>
+                              )}
+                            </TooltipContent>
+                          </Tooltip>
+                        ) : (
+                          <span className={cn('px-2 py-0.5 rounded font-medium text-xs', bonusTypeColors[source.type])}>
+                            {source.label}: +{source.value}
+                          </span>
+                        )}
                       </span>
                     ))}
                     {attackBonusSources.length > 0 && (
@@ -730,7 +799,7 @@ export function CombatRollModal({
                   </div>
                 </div>
 
-                {/* Bônus de dano com detalhamento de fontes */}
+                {/* Bônus de dano com detalhamento de fontes e tooltips */}
                 {damageBonusSources.length > 0 && (
                   <div className="p-3 rounded-lg bg-muted/50 space-y-2">
                     <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
@@ -740,9 +809,26 @@ export function CombatRollModal({
                       {damageBonusSources.map((source, idx) => (
                         <span key={idx} className="flex items-center gap-1">
                           {idx > 0 && <span className="text-muted-foreground">+</span>}
-                          <span className={cn('px-2 py-0.5 rounded font-medium text-xs', bonusTypeColors[source.type])}>
-                            {source.label}: {typeof source.value === 'number' ? `+${source.value}` : source.value}
-                          </span>
+                          {source.description || source.sourceName ? (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className={cn('px-2 py-0.5 rounded font-medium text-xs cursor-help flex items-center gap-1', bonusTypeColors[source.type])}>
+                                  {source.label}: {typeof source.value === 'number' ? `+${source.value}` : source.value}
+                                  <Info className="w-3 h-3 opacity-60" />
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="max-w-xs">
+                                <p className="font-medium">{source.sourceName || source.label}</p>
+                                {source.description && (
+                                  <p className="text-xs text-muted-foreground mt-1">{source.description}</p>
+                                )}
+                              </TooltipContent>
+                            </Tooltip>
+                          ) : (
+                            <span className={cn('px-2 py-0.5 rounded font-medium text-xs', bonusTypeColors[source.type])}>
+                              {source.label}: {typeof source.value === 'number' ? `+${source.value}` : source.value}
+                            </span>
+                          )}
                         </span>
                       ))}
                     </div>
@@ -1037,7 +1123,8 @@ export function CombatRollModal({
                 </div>
               </motion.div>
             )}
-          </AnimatePresence>
+            </AnimatePresence>
+          </TooltipProvider>
         </div>
       </DialogContent>
     </Dialog>

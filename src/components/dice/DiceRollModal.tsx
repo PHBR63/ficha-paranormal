@@ -9,9 +9,15 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Dices, X, RotateCcw, Sparkles } from 'lucide-react';
+import { Dices, X, RotateCcw, Sparkles, Info } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import confetti from 'canvas-confetti';
 import { DiceRollResult, rollSkillTest } from '@/lib/dice-roller';
@@ -21,6 +27,8 @@ export interface BonusSource {
   label: string;
   value: number;
   type: 'skill' | 'resistance' | 'power' | 'track' | 'origin' | 'item' | 'other';
+  description?: string; // Descrição detalhada da fonte do bônus
+  sourceName?: string;  // Nome específico do poder/ritual/item que concede o bônus
 }
 
 // Interface para props da modal
@@ -266,47 +274,69 @@ export function DiceRollModal({
                 transition={{ duration: 0.2 }}
                 className="space-y-3"
               >
-                {/* Breakdown do cálculo - mostra bônus detalhados por origem */}
-                <div className="flex flex-wrap items-center justify-center gap-2 text-sm">
-                  <span className="px-3 py-1 rounded bg-secondary/50 font-medium">
-                    d20: {result.keptDice}
-                  </span>
-                  
-                  {/* Se há detalhamento de bônus, mostra por origem */}
-                  {bonusSources.length > 0 ? (
-                    bonusSources.filter(s => s.value !== 0).map((source, idx) => (
-                      <span key={idx} className="flex items-center gap-1">
-                        <span className="text-muted-foreground">+</span>
-                        <span className={cn(
-                          'px-3 py-1 rounded font-medium',
-                          bonusTypeColors[source.type]
-                        )}>
-                          {source.label}: {source.value > 0 ? '+' : ''}{source.value}
+                {/* Breakdown do cálculo - mostra bônus detalhados por origem com tooltips */}
+                <TooltipProvider delayDuration={200}>
+                  <div className="flex flex-wrap items-center justify-center gap-2 text-sm">
+                    <span className="px-3 py-1 rounded bg-secondary/50 font-medium">
+                      d20: {result.keptDice}
+                    </span>
+                    
+                    {/* Se há detalhamento de bônus, mostra por origem com tooltips */}
+                    {bonusSources.length > 0 ? (
+                      bonusSources.filter(s => s.value !== 0).map((source, idx) => (
+                        <span key={idx} className="flex items-center gap-1">
+                          <span className="text-muted-foreground">+</span>
+                          {source.description || source.sourceName ? (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className={cn(
+                                  'px-3 py-1 rounded font-medium cursor-help flex items-center gap-1',
+                                  bonusTypeColors[source.type]
+                                )}>
+                                  {source.label}: {source.value > 0 ? '+' : ''}{source.value}
+                                  <Info className="w-3 h-3 opacity-60" />
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="max-w-xs">
+                                <p className="font-medium">{source.sourceName || source.label}</p>
+                                {source.description && (
+                                  <p className="text-xs text-muted-foreground mt-1">{source.description}</p>
+                                )}
+                              </TooltipContent>
+                            </Tooltip>
+                          ) : (
+                            <span className={cn(
+                              'px-3 py-1 rounded font-medium',
+                              bonusTypeColors[source.type]
+                            )}>
+                              {source.label}: {source.value > 0 ? '+' : ''}{source.value}
+                            </span>
+                          )}
                         </span>
-                      </span>
-                    ))
-                  ) : (
-                    <>
-                      {/* Fallback para bônus simples sem detalhamento */}
-                      {skillBonus > 0 && (
-                        <>
-                          <span className="text-muted-foreground">+</span>
-                          <span className="px-3 py-1 rounded bg-primary/20 text-primary font-medium">
-                            Perícia: +{skillBonus}
-                          </span>
-                        </>
-                      )}
-                      {resistanceBonus > 0 && (
-                        <>
-                          <span className="text-muted-foreground">+</span>
-                          <span className="px-3 py-1 rounded bg-green-500/20 text-green-500 font-medium">
-                            Resistência: +{resistanceBonus}
-                          </span>
-                        </>
-                      )}
-                    </>
-                  )}
-                </div>
+                      ))
+                    ) : (
+                      <>
+                        {/* Fallback para bônus simples sem detalhamento */}
+                        {skillBonus > 0 && (
+                          <>
+                            <span className="text-muted-foreground">+</span>
+                            <span className="px-3 py-1 rounded bg-primary/20 text-primary font-medium">
+                              Perícia: +{skillBonus}
+                            </span>
+                          </>
+                        )}
+                        {resistanceBonus > 0 && (
+                          <>
+                            <span className="text-muted-foreground">+</span>
+                            <span className="px-3 py-1 rounded bg-green-500/20 text-green-500 font-medium">
+                              Resistência: +{resistanceBonus}
+                            </span>
+                          </>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </TooltipProvider>
 
                 {/* Total grande */}
                 <div className="text-center">

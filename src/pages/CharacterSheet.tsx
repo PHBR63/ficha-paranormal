@@ -626,14 +626,20 @@ export default function CharacterSheet() {
       resistType = 'vontade';
     }
     
-    // Constrói as fontes de bônus para exibição detalhada
+    // Constrói as fontes de bônus para exibição detalhada com descrições
     const sources: BonusSource[] = [];
     if (resistBonus > 0 && resistType) {
+      const descriptions: Record<string, string> = {
+        fortitude: 'Resistência contra venenos, doenças e efeitos físicos',
+        reflexos: 'Resistência contra armadilhas e efeitos que exigem esquiva',
+        vontade: 'Resistência contra efeitos mentais e paranormais',
+      };
       sources.push({
         label: resistType === 'fortitude' ? 'Fortitude' : 
                resistType === 'reflexos' ? 'Reflexos' : 'Vontade',
         value: resistBonus,
         type: 'resistance',
+        description: descriptions[resistType],
       });
     }
     
@@ -653,6 +659,10 @@ export default function CharacterSheet() {
     // Constrói as fontes de bônus para exibição detalhada
     const sources: BonusSource[] = [];
     
+    // Obtém o ID da perícia para buscar detalhes
+    const skillId = skillName.toLowerCase().replace(/\s+/g, '-');
+    const skillBonusEntry = bonusSummary.skills[skillId];
+    
     // Treinamento (skillBonus sem classPowerBonus)
     const trainingBonus = skillBonus - (classPowerBonus || 0);
     if (trainingBonus > 0) {
@@ -660,15 +670,20 @@ export default function CharacterSheet() {
         label: 'Treinamento',
         value: trainingBonus,
         type: 'skill',
+        description: `Perícia treinada em ${skillName}`,
       });
     }
     
-    // Bônus de poder de classe
+    // Bônus de poder de classe com detalhamento
     if (classPowerBonus && classPowerBonus > 0) {
+      // Tenta identificar a fonte do bônus pelo breakdown
+      const powerSourceName = skillBonusEntry?.breakdown?.[0]?.source || 'Poder de Classe';
       sources.push({
         label: 'Poder de Classe',
         value: classPowerBonus,
         type: 'power',
+        sourceName: powerSourceName,
+        description: `Bônus concedido por ${powerSourceName}`,
       });
     }
     
@@ -679,17 +694,32 @@ export default function CharacterSheet() {
     if (labelLower.includes('fortitude')) {
       resistBonus = defenseBonuses.resistances.fortitude;
       if (resistBonus > 0) {
-        sources.push({ label: 'Fortitude', value: resistBonus, type: 'resistance' });
+        sources.push({ 
+          label: 'Fortitude', 
+          value: resistBonus, 
+          type: 'resistance',
+          description: 'Bônus de resistência contra efeitos físicos',
+        });
       }
     } else if (labelLower.includes('reflexos')) {
       resistBonus = defenseBonuses.resistances.reflexos;
       if (resistBonus > 0) {
-        sources.push({ label: 'Reflexos', value: resistBonus, type: 'resistance' });
+        sources.push({ 
+          label: 'Reflexos', 
+          value: resistBonus, 
+          type: 'resistance',
+          description: 'Bônus de resistência contra efeitos que exigem agilidade',
+        });
       }
     } else if (labelLower.includes('vontade')) {
       resistBonus = defenseBonuses.resistances.vontade;
       if (resistBonus > 0) {
-        sources.push({ label: 'Vontade', value: resistBonus, type: 'resistance' });
+        sources.push({ 
+          label: 'Vontade', 
+          value: resistBonus, 
+          type: 'resistance',
+          description: 'Bônus de resistência contra efeitos mentais',
+        });
       }
     }
     
