@@ -1369,6 +1369,25 @@ export function CombatRollModal({
 
                 {/* Total de dano com detalhamento de bônus */}
                 <div className="text-center space-y-2">
+                  {/* Indicador de Buff de Arma Ativo */}
+                  {(damageResult as any).weaponBuffActive && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="flex items-center justify-center gap-2 p-2 rounded-lg bg-gradient-to-r from-paranormal/20 to-purple-500/20 border border-paranormal/40"
+                    >
+                      <Flame className="w-4 h-4 text-paranormal" />
+                      <span className="text-sm font-medium text-paranormal">
+                        Buff de Arma: {weaponBuffBonuses.summary.join(', ')}
+                      </span>
+                      {(damageResult as any).weaponBuffElement && (
+                        <Badge variant="outline" className="bg-paranormal/20 border-paranormal/50 text-paranormal text-xs">
+                          {(damageResult as any).weaponBuffElement}
+                        </Badge>
+                      )}
+                    </motion.div>
+                  )}
+
                   {/* Breakdown de dados */}
                   <p className="text-sm text-muted-foreground">
                     {damageResult.dice.join(' + ')}
