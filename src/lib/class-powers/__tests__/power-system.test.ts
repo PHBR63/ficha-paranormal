@@ -515,9 +515,10 @@ function testVersatilidade(): TestResult {
     errors.push(`NEX mínimo deveria ser 50, encontrado ${power.minNex}`);
   }
   
-  // Versatilidade concede escolha de poder (powerChoice), NÃO treinamento em perícias
-  const powerChoice = power.effects.base.powerChoice || power.effects.base.grantsPowerChoice;
-  if (!powerChoice) {
+  // Versatilidade concede escolha de poder via requiresChoice.type === 'power'
+  const requiresChoice = power.effects?.base?.requiresChoice;
+  const hasPowerChoice = requiresChoice && requiresChoice.type === 'power';
+  if (!hasPowerChoice) {
     errors.push('Deveria conceder escolha de poder de outra classe');
   }
   
