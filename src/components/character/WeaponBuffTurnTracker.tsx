@@ -15,7 +15,9 @@ import {
   Sparkles,
   RefreshCw,
   Infinity,
-  X
+  X,
+  Wrench,
+  CheckCircle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { WeaponBuff, ELEMENT_BUFF_COLORS } from '@/hooks/useWeaponBuffs';
@@ -43,6 +45,10 @@ interface WeaponBuffTurnTrackerProps {
   onAdvanceTurn: () => { expired: WeaponBuff[]; remaining: WeaponBuff[] };
   onSetBuffTurns: (buffId: string, turns: number) => void;
   onRemoveBuff: (buffId: string) => void;
+  /** Indica se houve auto-correção de buffs ao carregar */
+  hadAutoCorrections?: boolean;
+  /** Callback para dismissar o aviso de auto-correção */
+  onDismissCorrectionsNotice?: () => void;
   className?: string;
 }
 
@@ -95,6 +101,8 @@ export function WeaponBuffTurnTracker({
   onAdvanceTurn,
   onSetBuffTurns,
   onRemoveBuff,
+  hadAutoCorrections,
+  onDismissCorrectionsNotice,
   className,
 }: WeaponBuffTurnTrackerProps) {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
@@ -138,6 +146,32 @@ export function WeaponBuffTurnTracker({
 
   return (
     <div className={cn('space-y-3', className)}>
+      {/* Indicador de auto-correção de buffs */}
+      {hadAutoCorrections && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+          exit={{ opacity: 0, height: 0 }}
+          className="flex items-center justify-between gap-2 p-2 rounded-md bg-amber-500/10 border border-amber-500/30 text-xs"
+        >
+          <div className="flex items-center gap-2">
+            <Wrench className="w-3.5 h-3.5 text-amber-400" />
+            <span className="text-amber-300">
+              Buffs foram auto-corrigidos ao carregar
+            </span>
+          </div>
+          {onDismissCorrectionsNotice && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-5 w-5 text-amber-400 hover:text-amber-300 hover:bg-amber-500/20"
+              onClick={onDismissCorrectionsNotice}
+            >
+              <CheckCircle className="w-3.5 h-3.5" />
+            </Button>
+          )}
+        </motion.div>
+      )}
       {/* Header com botão de avançar turno */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">

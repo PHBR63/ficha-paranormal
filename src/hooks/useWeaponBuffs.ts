@@ -50,6 +50,9 @@ interface UseWeaponBuffsReturn {
   allBonusDamage: DamageFormula[];
   // Formatado para UI
   buffsSummary: string;
+  // Indica se houve auto-correção de buffs ao carregar
+  hadAutoCorrections: boolean;
+  clearAutoCorrectionsFlag: () => void;
 }
 
 /**
@@ -175,13 +178,16 @@ export function useWeaponBuffs(
   const isInitialMount = useRef(true);
   const correctionsPersisted = useRef(false);
   
+  // Estado para indicar que houve auto-correções (para UI)
+  const [hadAutoCorrections, setHadAutoCorrections] = useState(false);
+  
   // Inicializa estado com buffs do banco, processando e normalizando
   const [state, setState] = useState<WeaponBuffsState>(() => {
     if (!initialBuffs) return { activeBuffs: [] };
     
     const { processed, hadCorrections } = processLoadedBuffs(initialBuffs);
     
-    // Se houve correções, marca para persistir depois
+    // Se houve correções, marca para persistir depois e para exibir na UI
     if (hadCorrections) {
       correctionsPersisted.current = false;
     }
@@ -195,9 +201,10 @@ export function useWeaponBuffs(
       const { processed, hadCorrections } = processLoadedBuffs(initialBuffs);
       setState({ activeBuffs: processed });
       
-      // Se houve correções, persiste imediatamente
+      // Se houve correções, persiste imediatamente e marca para UI
       if (hadCorrections && onBuffsChange && !correctionsPersisted.current) {
         console.log('[useWeaponBuffs] Persistindo correções de buffs...');
+        setHadAutoCorrections(true);
         onBuffsChange(processed);
         correctionsPersisted.current = true;
       } else {
@@ -205,6 +212,11 @@ export function useWeaponBuffs(
       }
     }
   }, [initialBuffs, onBuffsChange]);
+  
+  // Função para limpar flag de auto-correções (para dismissar notificação)
+  const clearAutoCorrectionsFlag = useCallback(() => {
+    setHadAutoCorrections(false);
+  }, []);
 
   // Persiste buffs quando mudam (exceto na montagem inicial)
   useEffect(() => {
@@ -508,6 +520,8 @@ export function useWeaponBuffs(
     buffsWithTurns,
     ...aggregatedBonuses,
     buffsSummary,
+    hadAutoCorrections,
+    clearAutoCorrectionsFlag,
   };
 }
 

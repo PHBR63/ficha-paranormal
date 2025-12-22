@@ -4,7 +4,7 @@
  */
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { Flame, Skull, Brain, Zap, Ghost, X, Sparkles } from 'lucide-react';
+import { Flame, Skull, Brain, Zap, Ghost, X, Sparkles, Wrench, CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { WeaponBuff, ELEMENT_BUFF_COLORS } from '@/hooks/useWeaponBuffs';
 import { formatDamageFormula } from '@/lib/rituals/legacy-exports';
@@ -175,11 +175,15 @@ export function WeaponBuffsPanel({
   buffs,
   onRemoveBuff,
   onClearAll,
+  hadAutoCorrections,
+  onDismissCorrectionsNotice,
   className,
 }: {
   buffs: WeaponBuff[];
   onRemoveBuff?: (buffId: string) => void;
   onClearAll?: () => void;
+  hadAutoCorrections?: boolean;
+  onDismissCorrectionsNotice?: () => void;
   className?: string;
 }) {
   if (buffs.length === 0) return null;
@@ -193,6 +197,33 @@ export function WeaponBuffsPanel({
         className
       )}
     >
+      {/* Indicador de auto-correção */}
+      {hadAutoCorrections && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+          exit={{ opacity: 0, height: 0 }}
+          className="flex items-center justify-between gap-2 p-2 mb-2 rounded-md bg-amber-500/10 border border-amber-500/30 text-xs"
+        >
+          <div className="flex items-center gap-2">
+            <Wrench className="w-3.5 h-3.5 text-amber-400" />
+            <span className="text-amber-300">
+              Buffs foram auto-corrigidos ao carregar
+            </span>
+          </div>
+          {onDismissCorrectionsNotice && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-5 w-5 text-amber-400 hover:text-amber-300 hover:bg-amber-500/20"
+              onClick={onDismissCorrectionsNotice}
+            >
+              <CheckCircle className="w-3.5 h-3.5" />
+            </Button>
+          )}
+        </motion.div>
+      )}
+      
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-primary" />
