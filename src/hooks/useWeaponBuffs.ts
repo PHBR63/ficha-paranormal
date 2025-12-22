@@ -114,24 +114,50 @@ export function useWeaponBuffs(
       return;
     }
 
-    // Normaliza o dano extra: alguns rituais (ex: Amaldiçoar Arma) usam weaponEffect.damageBonus como string ("2d6")
-    // Aqui convertemos para DamageFormula, que é o formato usado pelo sistema de buffs.
+    // Normaliza o dano extra para DamageFormula
+    // Fontes possíveis (em ordem de prioridade):
+    // 1. weaponEffect.bonusDamage (já no formato DamageFormula)
+    // 2. weaponEffect.extraDice (gerado pelo ritual-adapter a partir de damageBonus string)
+    // 3. weaponEffect.damageBonus (string como "2d6" - rituais do sistema unificado)
     let normalizedBonusDamage: DamageFormula | undefined = effect.weaponEffect.bonusDamage;
 
+    const maybeExtraDice = (effect.weaponEffect as any).extraDice;
     const maybeDamageBonus = (effect.weaponEffect as any).damageBonus;
-    const maybeDamageType = (effect.weaponEffect as any).damageType;
+    const maybeDamageType = (effect.weaponEffect as any).damageType || effect.weaponEffect.damageType;
 
-    if (!normalizedBonusDamage && typeof maybeDamageBonus === 'string' && typeof maybeDamageType === 'string') {
+    // Tenta extraDice primeiro (formato do ritual-adapter)
+    if (!normalizedBonusDamage && maybeExtraDice && typeof maybeExtraDice.count === 'number') {
+      normalizedBonusDamage = {
+        diceCount: maybeExtraDice.count || 1,
+        diceType: maybeExtraDice.type || 6,
+        damageType: maybeDamageType as unknown as DamageFormula['damageType'],
+      };
+      console.log('[useWeaponBuffs] Normalizado via extraDice:', normalizedBonusDamage);
+    }
+
+    // Fallback para damageBonus string (rituais do sistema unificado)
+    if (!normalizedBonusDamage && typeof maybeDamageBonus === 'string') {
       const match = maybeDamageBonus.match(/(\d+)d(\d+)(?:\+(\d+))?/i);
       if (match) {
         normalizedBonusDamage = {
           diceCount: parseInt(match[1]) || 1,
           diceType: parseInt(match[2]) || 6,
           bonus: match[3] ? parseInt(match[3]) : undefined,
-          // Cast intencional: o sistema unificado usa AnyDamageType em string (ex: 'morte', 'sangue')
           damageType: maybeDamageType as unknown as DamageFormula['damageType'],
         };
+        console.log('[useWeaponBuffs] Normalizado via damageBonus string:', normalizedBonusDamage);
       }
+    }
+    
+    // Log de debug se nenhuma fonte foi encontrada
+    if (!normalizedBonusDamage) {
+      console.warn('[useWeaponBuffs] Nenhum bonusDamage encontrado para:', {
+        ritualId: ritual.id,
+        weaponEffect: effect.weaponEffect,
+        bonusDamage: effect.weaponEffect.bonusDamage,
+        extraDice: maybeExtraDice,
+        damageBonus: maybeDamageBonus,
+      });
     }
 
     const newBuff: WeaponBuff = {
@@ -168,20 +194,31 @@ export function useWeaponBuffs(
       return;
     }
 
-    // Normaliza o dano extra (mesma lógica do addBuff)
+    // Normaliza o dano extra para DamageFormula (mesma lógica do addBuff)
+    // Fontes possíveis: bonusDamage, extraDice, damageBonus string
     let normalizedBonusDamage: DamageFormula | undefined = effect.weaponEffect.bonusDamage;
 
+    const maybeExtraDice = (effect.weaponEffect as any).extraDice;
     const maybeDamageBonus = (effect.weaponEffect as any).damageBonus;
-    const maybeDamageType = (effect.weaponEffect as any).damageType;
+    const maybeDamageType = (effect.weaponEffect as any).damageType || effect.weaponEffect.damageType;
 
-    if (!normalizedBonusDamage && typeof maybeDamageBonus === 'string' && typeof maybeDamageType === 'string') {
+    // Tenta extraDice primeiro (formato do ritual-adapter)
+    if (!normalizedBonusDamage && maybeExtraDice && typeof maybeExtraDice.count === 'number') {
+      normalizedBonusDamage = {
+        diceCount: maybeExtraDice.count || 1,
+        diceType: maybeExtraDice.type || 6,
+        damageType: maybeDamageType as unknown as DamageFormula['damageType'],
+      };
+    }
+
+    // Fallback para damageBonus string
+    if (!normalizedBonusDamage && typeof maybeDamageBonus === 'string') {
       const match = maybeDamageBonus.match(/(\d+)d(\d+)(?:\+(\d+))?/i);
       if (match) {
         normalizedBonusDamage = {
           diceCount: parseInt(match[1]) || 1,
           diceType: parseInt(match[2]) || 6,
           bonus: match[3] ? parseInt(match[3]) : undefined,
-          // Cast intencional: o sistema unificado usa AnyDamageType em string (ex: 'morte', 'sangue')
           damageType: maybeDamageType as unknown as DamageFormula['damageType'],
         };
       }
