@@ -71,8 +71,12 @@ import {
   MobileDiceRollModal,
   MobileRitualCastModal,
   MobileResistanceCheckModal,
+  MobileRollHistory,
+  RollHistoryPreview,
+  useRollHistory,
   type WeaponEntry,
   type BonusSource,
+  type RollHistoryEntry,
 } from './mobile';
 import { useWeaponBuffs } from '@/hooks/useWeaponBuffs';
 import { useUnifiedEffects } from '@/hooks/useUnifiedEffects';
@@ -563,6 +567,10 @@ export function MobileCharacterSheet({
     dt: number;
     damageOnFail?: number;
   } | null>(null);
+  const [rollHistoryOpen, setRollHistoryOpen] = useState(false);
+  
+  // Hook de histórico de rolagens
+  const { rolls: rollHistory, addRoll, removeRoll, clearHistory } = useRollHistory();
   
   const originData = ORIGINS.find(o => o.id === character.origin);
   const trackData = character.class_track ? getTrackById(character.class_track) : null;
@@ -952,6 +960,11 @@ export function MobileCharacterSheet({
                   <Moon className="w-4 h-4 mr-1" />
                   Descanso
                 </Button>
+                <MobileRollHistory
+                  rolls={rollHistory}
+                  onClearHistory={clearHistory}
+                  onRemoveRoll={removeRoll}
+                />
                 {character.nex < 99 && (
                   <Button
                     variant="outline"
@@ -1820,6 +1833,23 @@ export function MobileCharacterSheet({
         attributeValue={diceModalConfig?.pool || 1}
         skillBonus={diceModalConfig?.bonus}
         bonusSources={diceModalConfig?.bonusSources}
+        onRollComplete={(result) => {
+          // Registra no histórico
+          const isInitiative = diceModalConfig?.skillName === 'Iniciativa';
+          addRoll({
+            type: isInitiative ? 'initiative' : 'skill',
+            label: diceModalConfig?.skillName || 'Rolagem',
+            diceCount: result.dice.length,
+            results: result.dice,
+            bestResult: result.keptDice,
+            bonus: result.skillBonus + result.otherBonuses,
+            total: result.total,
+            success: undefined, // DT determinado externamente
+            critical: result.isCritical,
+            criticalFail: result.keptDice === 1,
+            skillName: diceModalConfig?.skillName,
+          });
+        }}
       />
 
       {/* Modal de combate completo (ataque + dano) */}
@@ -1847,6 +1877,22 @@ export function MobileCharacterSheet({
           nex={character.nex}
           unifiedEffects={unifiedEffects?.computed}
           weaponBuffs={weaponBuffs}
+          onRollComplete={(result) => {
+            // Registra ataque no histórico
+            addRoll({
+              type: 'attack',
+              label: `Ataque: ${selectedWeapon.name}`,
+              diceCount: result.dice.length,
+              results: result.dice,
+              bestResult: result.keptDice,
+              bonus: result.skillBonus + result.otherBonuses,
+              total: result.total,
+              success: undefined,
+              critical: result.isCritical,
+              criticalFail: result.keptDice === 1,
+              weaponName: selectedWeapon.name,
+            });
+          }}
         />
       )}
 
