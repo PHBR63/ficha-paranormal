@@ -63,6 +63,14 @@ interface AdvancedConditionalBonuses {
   ataqueFurtivo?: boolean;  // Ataque Furtivo básico
 }
 
+// Interface de bônus de poderes de classe pré-calculados
+interface ClassPowerCombatBonuses {
+  attackBonus: number;
+  damageBonus: number;
+  criticalMarginBonus: number;
+  extraDamageDice: string[];
+}
+
 // Props do modal
 interface CombatRollModalProps {
   open: boolean;
@@ -92,6 +100,9 @@ interface CombatRollModalProps {
   affinityElement?: string | null;
   sustainedRituals?: SustainedRitualInput[]; // Agora usa rituais sustentados
   nex: number;
+  
+  // NOVO: Bônus pré-calculados do sistema unificado de poderes de classe
+  classPowerBonuses?: ClassPowerCombatBonuses;
   
   // Bônus condicionais avançados (Fase 4)
   advancedBonuses?: AdvancedConditionalBonuses;
@@ -154,6 +165,7 @@ export function CombatRollModal({
   affinityElement,
   sustainedRituals = [],
   nex,
+  classPowerBonuses, // NOVO: Bônus pré-calculados do sistema unificado
   advancedBonuses = {},
   onRollComplete,
 }: CombatRollModalProps) {
@@ -341,11 +353,16 @@ export function CombatRollModal({
   // Verificar se pode pagar o PE
   const canAffordPE = currentPE >= totalPECost;
 
-  // Calcular bônus total de ataque
+  // Calcular bônus total de ataque (inclui bônus do sistema unificado)
   const totalAttackBonus = useMemo(() => {
     let total = attackSkill.bonus;
     
-    // Adicionar bônus passivos
+    // NOVO: Adicionar bônus passivos de poderes de classe do sistema unificado
+    if (classPowerBonuses?.attackBonus) {
+      total += classPowerBonuses.attackBonus;
+    }
+    
+    // Adicionar bônus passivos (rituais, etc.)
     passiveBonuses.forEach(b => {
       if (b.attackBonus) total += b.attackBonus;
     });
@@ -357,20 +374,25 @@ export function CombatRollModal({
     });
     
     return total;
-  }, [attackSkill.bonus, passiveBonuses, selectedBonuses, availableBonuses]);
+  }, [attackSkill.bonus, passiveBonuses, selectedBonuses, availableBonuses, classPowerBonuses]);
 
   // Calcular margem de crítico efetiva
   const effectiveCritical = useMemo(() => {
     if (!weapon) return 20;
     let critical = parseInt(weapon.critical || '20');
     
-    // Reduzir margem com bônus de crítico (passivos)
+    // NOVO: Aplicar bônus de margem de crítico do sistema unificado
+    if (classPowerBonuses?.criticalMarginBonus) {
+      critical -= classPowerBonuses.criticalMarginBonus;
+    }
+    
+    // Reduzir margem com bônus de crítico (passivos de rituais, etc.)
     passiveBonuses.forEach(b => {
       if (b.criticalBonus) critical -= b.criticalBonus;
     });
     
     return Math.max(1, critical); // Mínimo de 1
-  }, [weapon, passiveBonuses]);
+  }, [weapon, passiveBonuses, classPowerBonuses]);
 
   // Multiplicador de crítico da arma
   const criticalMultiplier = useMemo(() => {
@@ -425,12 +447,29 @@ export function CombatRollModal({
     // Bônus de dano numérico
     let damageBonus = parsed.bonus;
     
+    // NOVO: Adicionar bônus de dano do sistema unificado de poderes de classe
+    if (classPowerBonuses?.damageBonus) {
+      damageBonus += classPowerBonuses.damageBonus;
+    }
+    
     // Multiplicador para Potência Máxima (dobra bônus do Ataque Especial)
     const potenciaMaximaMultiplier = advancedBonuses.potenciaMaxima && isMelee ? 2 : 1;
     
     // Dados extras (de poderes como Golpe Pesado)
     let extraDiceCount = 0;
     let extraDiceSize = parsed.size;
+    
+    // NOVO: Adicionar dados extras do sistema unificado de poderes de classe
+    if (classPowerBonuses?.extraDamageDice && classPowerBonuses.extraDamageDice.length > 0) {
+      classPowerBonuses.extraDamageDice.forEach(diceStr => {
+        const match = diceStr.match(/(\d*)d(\d+)/i);
+        if (match) {
+          const count = parseInt(match[1]) || 1;
+          extraDiceCount += isCritical ? count * criticalMultiplier : count;
+          if (match[2]) extraDiceSize = parseInt(match[2]);
+        }
+      });
+    }
     
     // Dados extras do Ataque Furtivo (com possível dobro do Assassinar)
     let sneakAttackDice = 0;

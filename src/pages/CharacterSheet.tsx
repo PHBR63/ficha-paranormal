@@ -623,8 +623,9 @@ export default function CharacterSheet() {
     setDiceModalOpen(true);
   }, [defenseBonuses.resistances]);
 
-  // Handler para rolar perícia (inclui detecção de resistências)
-  const handleSkillRoll = useCallback((total: number, skillName: string, attributeValue: number) => {
+  // Handler para rolar perícia (inclui bônus de poderes de classe e resistências)
+  const handleSkillRoll = useCallback((total: number, skillName: string, attributeValue: number, classPowerBonus?: number) => {
+    // O total já inclui atributo + treinamento + bônus de poderes de classe
     const skillBonus = total - attributeValue;
     setRollLabel(skillName);
     setRollAttribute(attributeValue);
@@ -2085,6 +2086,12 @@ export default function CharacterSheet() {
                 affinityElement={character.elemental_affinity}
                 sustainedRituals={sustainedRituals}
                 nex={character.nex}
+                classPowerBonuses={{
+                  attackBonus: bonusSummary.combat.attack.total,
+                  damageBonus: bonusSummary.combat.damage.total,
+                  criticalMarginBonus: bonusSummary.combat.criticalMargin.total,
+                  extraDamageDice: bonusSummary.combat.damage.extraDice,
+                }}
                 onRollComplete={handleRollComplete}
                 weaponBuffs={weaponBuffs}
                 onRemoveWeaponBuff={removeWeaponBuff}
@@ -2102,6 +2109,7 @@ export default function CharacterSheet() {
                   skills={character.skills}
                   attributes={attributes}
                   onRoll={handleSkillRoll}
+                  skillBonuses={bonusSummary.skills}
                 />
               </SheetAccordionSection>
 

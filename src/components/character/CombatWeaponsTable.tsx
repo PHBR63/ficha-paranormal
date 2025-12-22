@@ -41,6 +41,14 @@ export interface WeaponEntry {
   ammoType?: string; // Tipo de munição
 }
 
+// Interface de bônus de poderes de classe pré-calculados
+interface ClassPowerCombatBonuses {
+  attackBonus: number;       // Bônus passivo de ataque
+  damageBonus: number;       // Bônus passivo de dano
+  criticalMarginBonus: number; // Redução na margem de crítico
+  extraDamageDice: string[]; // Dados de dano extras
+}
+
 // Props com dados necessários para o sistema de combate
 interface CombatWeaponsTableProps {
   weapons: WeaponEntry[];
@@ -69,6 +77,9 @@ interface CombatWeaponsTableProps {
   affinityElement?: string | null;
   sustainedRituals?: SustainedRitualInput[]; // Rituais sustentados ativos
   nex?: number;
+  
+  // NOVO: Bônus pré-calculados do sistema unificado de poderes de classe
+  classPowerBonuses?: ClassPowerCombatBonuses;
   
   // Callback para histórico
   onRollComplete?: (result: DiceRollResult) => void;
@@ -111,6 +122,8 @@ export function CombatWeaponsTable({
   affinityElement,
   sustainedRituals = [],
   nex,
+  // NOVO: Bônus pré-calculados do sistema unificado
+  classPowerBonuses,
   onRollComplete,
   onRollAttack, // Fallback antigo
   // Fase 5: Props de buffs de arma
@@ -324,6 +337,7 @@ export function CombatWeaponsTable({
           affinityElement={affinityElement}
           sustainedRituals={sustainedRituals}
           nex={nex || 5}
+          classPowerBonuses={classPowerBonuses}
           onRollComplete={onRollComplete}
         />
       )}

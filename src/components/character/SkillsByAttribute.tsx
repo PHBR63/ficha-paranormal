@@ -17,11 +17,19 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 
+// Interface para bônus de perícia consolidados (do sistema unificado)
+interface SkillBonusEntry {
+  total: number;
+  breakdown?: Array<{ source: string; value: number | string }>;
+}
+
 interface SkillsByAttributeProps {
   skills: Record<string, number>;
   attributes: Record<string, number>;
-  onRoll?: (total: number, skillName: string, attributeValue: number) => void;
+  onRoll?: (total: number, skillName: string, attributeValue: number, classPowerBonus?: number) => void;
   className?: string;
+  // Bônus consolidados de poderes de classe (Perito, Versatilidade, etc.)
+  skillBonuses?: Record<string, SkillBonusEntry>;
 }
 
 // Nomes dos atributos
@@ -73,6 +81,7 @@ function SkillsByAttributeComponent({
   attributes,
   onRoll,
   className,
+  skillBonuses = {},
 }: SkillsByAttributeProps) {
   // Estado de pesquisa e filtro
   const [searchQuery, setSearchQuery] = useState('');
@@ -229,10 +238,14 @@ function SkillsByAttributeComponent({
                 <div className="pl-4 pt-2 space-y-1">
                   {attrSkills.map((skill) => {
                     const isTrained = skills[skill.id] > 0;
-                    // Apenas bônus de treinamento, sem somar atributo na exibição
+                    // Bônus de treinamento base
                     const trainingBonus = isTrained ? 5 : 0;
-                    // Total só é usado na rolagem
-                    const rollTotal = attrValue + trainingBonus;
+                    // Bônus de poderes de classe (Perito, Versatilidade, etc.)
+                    const classPowerBonus = skillBonuses[skill.id]?.total || 0;
+                    // Total exibido = treinamento + poderes de classe
+                    const displayBonus = trainingBonus + classPowerBonus;
+                    // Total para rolagem inclui atributo
+                    const rollTotal = attrValue + displayBonus;
                     
                     return (
                       <div
@@ -243,14 +256,16 @@ function SkillsByAttributeComponent({
                           "transition-all duration-200",
                           isTrained 
                             ? "bg-secondary/30 hover:bg-secondary/50" 
-                            : "hover:bg-muted/30"
+                            : classPowerBonus > 0
+                              ? "bg-primary/10 hover:bg-primary/20"
+                              : "hover:bg-muted/30"
                         )}
-                        onClick={() => onRoll?.(rollTotal, skill.name, attrValue)}
+                        onClick={() => onRoll?.(rollTotal, skill.name, attrValue, classPowerBonus)}
                       >
                         <div className="flex items-center gap-2">
                           <span className={cn(
                             "text-sm",
-                            isTrained ? "font-medium" : "text-muted-foreground"
+                            (isTrained || classPowerBonus > 0) ? "font-medium" : "text-muted-foreground"
                           )}>
                             {skill.name}
                           </span>
@@ -262,17 +277,23 @@ function SkillsByAttributeComponent({
                               Treinado
                             </span>
                           )}
+                          {/* Indicador de bônus de poder de classe */}
+                          {classPowerBonus > 0 && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/20 text-primary">
+                              +{classPowerBonus} poder
+                            </span>
+                          )}
                         </div>
                         
                         <div className="flex items-center gap-2">
                           <span 
                             className={cn(
                               "font-display text-lg",
-                              isTrained ? "" : "text-muted-foreground"
+                              (isTrained || classPowerBonus > 0) ? "" : "text-muted-foreground"
                             )}
-                            style={isTrained ? { color } : undefined}
+                            style={(isTrained || classPowerBonus > 0) ? { color } : undefined}
                           >
-                            +{trainingBonus}
+                            +{displayBonus}
                           </span>
                           
                           {/* D20 vermelho no hover */}
