@@ -615,6 +615,405 @@ function testMultiplasFontes(): TestResult {
 }
 
 // =====================================================
+// Testes de Rituais Sustentados
+// =====================================================
+
+/**
+ * Testa bônus de ataque de ritual sustentado
+ */
+function testRitualAttackBonus(): TestResult {
+  const effects: UnifiedEffect[] = [
+    createTestEffect('ritual-armamento-abencoado', 
+      { attackBonus: 2 }, 
+      { source: 'ritual', sourceName: 'Ritual: Armamento Abençoado' }
+    ),
+  ];
+  
+  const result = consolidateEffects(effects, createTestContext());
+  
+  const passed = result.attack.general === 2;
+  
+  return {
+    name: 'Ritual sustentado aplica bônus de ataque',
+    passed,
+    message: `Bônus de ataque de ritual: +${result.attack.general}`,
+  };
+}
+
+/**
+ * Testa bônus de dano de ritual sustentado
+ */
+function testRitualDamageBonus(): TestResult {
+  const effects: UnifiedEffect[] = [
+    createTestEffect('ritual-arma-atroz', 
+      { damageBonus: 4, extraDamageDice: '1d6' }, 
+      { source: 'ritual', sourceName: 'Ritual: Arma Atroz' }
+    ),
+  ];
+  
+  const result = consolidateEffects(effects, createTestContext());
+  
+  const passed = result.damage.general === 4 && result.damage.extraDice.includes('1d6');
+  
+  return {
+    name: 'Ritual sustentado aplica bônus de dano e dados extras',
+    passed,
+    message: `Dano: +${result.damage.general}, Dados extras: ${result.damage.extraDice.join(', ')}`,
+  };
+}
+
+/**
+ * Testa bônus de defesa de ritual sustentado
+ */
+function testRitualDefenseBonus(): TestResult {
+  const effects: UnifiedEffect[] = [
+    createTestEffect('ritual-protecao', 
+      { defenseBonus: 3, damageReduction: 2 }, 
+      { source: 'ritual', sourceName: 'Ritual: Proteção' }
+    ),
+  ];
+  
+  const result = consolidateEffects(effects, createTestContext());
+  
+  const passed = result.defense.general === 3 && result.damageReduction.physical === 2;
+  
+  return {
+    name: 'Ritual sustentado aplica bônus de defesa e RD',
+    passed,
+    message: `Defesa: +${result.defense.general}, RD: ${result.damageReduction.physical}`,
+  };
+}
+
+/**
+ * Testa múltiplos rituais sustentados (regra de não acúmulo)
+ */
+function testMultipleRitualsBonuses(): TestResult {
+  const effects: UnifiedEffect[] = [
+    createTestEffect('ritual-1', 
+      { attackBonus: 3, defenseBonus: 2 }, 
+      { source: 'ritual', sourceName: 'Ritual: Armamento Abençoado' }
+    ),
+    createTestEffect('ritual-2', 
+      { attackBonus: 2, damageBonus: 4 }, 
+      { source: 'ritual', sourceName: 'Ritual: Arma Atroz' }
+    ),
+    // Origem para testar que acumula com rituais
+    createTestEffect('origem-militar', 
+      { attackBonus: 1 }, 
+      { source: 'origin', sourceName: 'Militar' }
+    ),
+  ];
+  
+  const result = consolidateEffects(effects, createTestContext());
+  
+  // Rituais acumulam entre si (3+2 de rituais + 1 de origem = 6)
+  // Defesa: 2 do ritual-1
+  // Dano: 4 do ritual-2
+  const passed = result.attack.general === 6 && result.defense.general === 2 && result.damage.general === 4;
+  
+  return {
+    name: 'Múltiplos rituais acumulam bônus com origens',
+    passed,
+    message: `Ataque: +${result.attack.general}, Defesa: +${result.defense.general}, Dano: +${result.damage.general}`,
+  };
+}
+
+/**
+ * Testa PV temporários de ritual
+ */
+function testRitualTempHP(): TestResult {
+  const effects: UnifiedEffect[] = [
+    createTestEffect('ritual-espessura', 
+      { tempHP: 15 }, 
+      { source: 'ritual', sourceName: 'Ritual: Espessura da Pele' }
+    ),
+  ];
+  
+  const result = consolidateEffects(effects, createTestContext());
+  
+  const passed = result.resources.tempHP === 15;
+  
+  return {
+    name: 'Ritual sustentado aplica PV temporários',
+    passed,
+    message: `PV Temporários: ${result.resources.tempHP}`,
+  };
+}
+
+/**
+ * Testa bônus de perícias de ritual
+ */
+function testRitualSkillBonus(): TestResult {
+  const effects: UnifiedEffect[] = [
+    createTestEffect('ritual-sentidos', 
+      { skillBonus: { percepcao: 5, investigacao: 3 } }, 
+      { source: 'ritual', sourceName: 'Ritual: Sentidos Aguçados' }
+    ),
+  ];
+  
+  const result = consolidateEffects(effects, createTestContext());
+  
+  const percepcaoOk = result.skills['percepcao']?.bonus === 5;
+  const investigacaoOk = result.skills['investigacao']?.bonus === 3;
+  const passed = percepcaoOk && investigacaoOk;
+  
+  return {
+    name: 'Ritual sustentado aplica bônus de perícias',
+    passed,
+    message: `Percepção: +${result.skills['percepcao']?.bonus}, Investigação: +${result.skills['investigacao']?.bonus}`,
+  };
+}
+
+/**
+ * Testa efeitos especiais de ritual
+ */
+function testRitualSpecialEffects(): TestResult {
+  const effects: UnifiedEffect[] = [
+    createTestEffect('ritual-velocidade', 
+      { movementBonus: 3, specialEffects: ['Ação de movimento adicional'] }, 
+      { source: 'ritual', sourceName: 'Ritual: Velocidade Mortal' }
+    ),
+  ];
+  
+  const result = consolidateEffects(effects, createTestContext());
+  
+  const movementOk = result.movement.bonus === 3;
+  const hasSpecialEffect = result.specialEffects.some(e => e.effect.includes('movimento'));
+  const passed = movementOk && hasSpecialEffect;
+  
+  return {
+    name: 'Ritual sustentado aplica efeitos especiais',
+    passed,
+    message: `Movimento: +${result.movement.bonus}, Efeito especial: ${result.specialEffects.map(e => e.effect).join(', ')}`,
+  };
+}
+
+// =====================================================
+// Testes de Bônus de Equipamentos
+// =====================================================
+
+/**
+ * Testa bônus de armadura
+ */
+function testArmorDefenseBonus(): TestResult {
+  const effects: UnifiedEffect[] = [
+    createTestEffect('armor-pesada', 
+      { defenseBonus: 5 }, 
+      { source: 'equipment', sourceName: 'Proteção Pesada' }
+    ),
+  ];
+  
+  const result = consolidateEffects(effects, createTestContext());
+  
+  const passed = result.defense.general === 5;
+  
+  return {
+    name: 'Armadura aplica bônus de defesa',
+    passed,
+    message: `Defesa de armadura: +${result.defense.general}`,
+  };
+}
+
+/**
+ * Testa bônus de escudo
+ */
+function testShieldDefenseBonus(): TestResult {
+  const effects: UnifiedEffect[] = [
+    createTestEffect('escudo-padrao', 
+      { defenseBonus: 2 }, 
+      { source: 'equipment', sourceName: 'Escudo' }
+    ),
+  ];
+  
+  const result = consolidateEffects(effects, createTestContext({ hasShield: true }));
+  
+  const passed = result.defense.general === 2;
+  
+  return {
+    name: 'Escudo aplica bônus de defesa',
+    passed,
+    message: `Defesa de escudo: +${result.defense.general}`,
+  };
+}
+
+/**
+ * Testa combinação armadura + escudo
+ */
+function testArmorPlusShieldDefense(): TestResult {
+  const effects: UnifiedEffect[] = [
+    createTestEffect('armor', 
+      { defenseBonus: 5 }, 
+      { source: 'equipment', sourceName: 'Proteção Pesada' }
+    ),
+    createTestEffect('shield', 
+      { defenseBonus: 2 }, 
+      { source: 'equipment', sourceName: 'Escudo' }
+    ),
+  ];
+  
+  const result = consolidateEffects(effects, createTestContext({ hasShield: true }));
+  
+  // Armadura + Escudo acumulam = 7
+  const passed = result.defense.general === 7;
+  
+  return {
+    name: 'Armadura + Escudo acumulam bônus de defesa',
+    passed,
+    message: `Defesa total: +${result.defense.general} (armadura 5 + escudo 2)`,
+  };
+}
+
+/**
+ * Testa bônus de arma corpo a corpo
+ */
+function testMeleeWeaponBonus(): TestResult {
+  const effects: UnifiedEffect[] = [
+    createTestEffect('arma-corpo-corpo', 
+      { meleeAttackBonus: 1, meleeDamageBonus: 2 }, 
+      { source: 'equipment', sourceName: 'Espada Longa' }
+    ),
+  ];
+  
+  const result = consolidateEffects(effects, createTestContext());
+  
+  const passed = result.attack.melee === 1 && result.damage.melee === 2;
+  
+  return {
+    name: 'Arma corpo a corpo aplica bônus',
+    passed,
+    message: `Ataque corpo a corpo: +${result.attack.melee}, Dano: +${result.damage.melee}`,
+  };
+}
+
+/**
+ * Testa bônus de arma à distância
+ */
+function testRangedWeaponBonus(): TestResult {
+  const effects: UnifiedEffect[] = [
+    createTestEffect('arma-distancia', 
+      { rangedAttackBonus: 2, rangedDamageBonus: 1 }, 
+      { source: 'equipment', sourceName: 'Rifle de Precisão' }
+    ),
+  ];
+  
+  const result = consolidateEffects(effects, createTestContext());
+  
+  const passed = result.attack.ranged === 2 && result.damage.ranged === 1;
+  
+  return {
+    name: 'Arma à distância aplica bônus',
+    passed,
+    message: `Ataque à distância: +${result.attack.ranged}, Dano: +${result.damage.ranged}`,
+  };
+}
+
+/**
+ * Testa item paranormal com bônus de defesa
+ */
+function testParanormalItemDefense(): TestResult {
+  const effects: UnifiedEffect[] = [
+    createTestEffect('item-paranormal', 
+      { defenseBonus: 3 }, 
+      { source: 'paranormal_power', sourceName: 'Amuleto de Proteção' }
+    ),
+    createTestEffect('armor', 
+      { defenseBonus: 4 }, 
+      { source: 'equipment', sourceName: 'Proteção Leve' }
+    ),
+  ];
+  
+  const result = consolidateEffects(effects, createTestContext());
+  
+  // Item paranormal + Armadura acumulam = 7
+  const passed = result.defense.general === 7;
+  
+  return {
+    name: 'Item paranormal acumula com armadura',
+    passed,
+    message: `Defesa total: +${result.defense.general} (armadura 4 + paranormal 3)`,
+  };
+}
+
+/**
+ * Testa redução de dano de equipamento
+ */
+function testEquipmentDamageReduction(): TestResult {
+  const effects: UnifiedEffect[] = [
+    createTestEffect('armor-blindada', 
+      { defenseBonus: 5, damageReduction: 3 }, 
+      { source: 'equipment', sourceName: 'Proteção Pesada Blindada' }
+    ),
+  ];
+  
+  const result = consolidateEffects(effects, createTestContext());
+  
+  const passed = result.defense.general === 5 && result.damageReduction.physical === 3;
+  
+  return {
+    name: 'Armadura blindada aplica RD',
+    passed,
+    message: `Defesa: +${result.defense.general}, RD: ${result.damageReduction.physical}`,
+  };
+}
+
+/**
+ * Testa combinação completa: origem + trilha + equipamento + ritual
+ */
+function testFullCombatLoadout(): TestResult {
+  const effects: UnifiedEffect[] = [
+    // Origem
+    createTestEffect('origem-militar', 
+      { attackBonus: 1 }, 
+      { source: 'origin', sourceName: 'Militar' }
+    ),
+    // Trilha
+    createTestEffect('trilha-op-especiais', 
+      { criticalMarginBonus: 2 }, 
+      { source: 'track', sourceName: 'Operações Especiais' }
+    ),
+    // Armadura
+    createTestEffect('armor', 
+      { defenseBonus: 5 }, 
+      { source: 'equipment', sourceName: 'Proteção Pesada' }
+    ),
+    // Escudo
+    createTestEffect('shield', 
+      { defenseBonus: 2 }, 
+      { source: 'equipment', sourceName: 'Escudo' }
+    ),
+    // Ritual sustentado
+    createTestEffect('ritual-armamento', 
+      { attackBonus: 2, damageBonus: 3 }, 
+      { source: 'ritual', sourceName: 'Armamento Abençoado' }
+    ),
+    // Condição benéfica
+    createTestEffect('inspirado', 
+      { allResistancesBonus: 2 }, 
+      { source: 'condition', sourceName: 'Inspirado' }
+    ),
+  ];
+  
+  const result = consolidateEffects(effects, createTestContext({ hasShield: true }));
+  
+  const ataqueOk = result.attack.general === 3; // 1 (origem) + 2 (ritual)
+  const defesaOk = result.defense.general === 7; // 5 (armadura) + 2 (escudo)
+  const danoOk = result.damage.general === 3; // 3 (ritual)
+  const criticoOk = result.critical.marginBonus === 2; // 2 (trilha)
+  const resistenciasOk = result.resistances.fortitude === 2 && result.resistances.reflexos === 2 && result.resistances.vontade === 2;
+  
+  const passed = ataqueOk && defesaOk && danoOk && criticoOk && resistenciasOk;
+  
+  return {
+    name: 'Cenário completo: origem + trilha + equipamentos + ritual + condição',
+    passed,
+    message: `Ataque: +${result.attack.general}, Defesa: +${result.defense.general}, Dano: +${result.damage.general}, Margem crítico: +${result.critical.marginBonus}`,
+    details: [
+      `Resistências: Fort ${result.resistances.fortitude}, Ref ${result.resistances.reflexos}, Von ${result.resistances.vontade}`,
+    ],
+  };
+}
+
+// =====================================================
 // Runner de Testes
 // =====================================================
 
@@ -691,6 +1090,43 @@ export function runAllSUETests(): TestSuiteResult[] {
     results: scenarioTests,
   });
   
+  // Suite: Rituais Sustentados
+  const ritualTests: TestResult[] = [
+    testRitualAttackBonus(),
+    testRitualDamageBonus(),
+    testRitualDefenseBonus(),
+    testMultipleRitualsBonuses(),
+    testRitualTempHP(),
+    testRitualSkillBonus(),
+    testRitualSpecialEffects(),
+  ];
+  
+  suites.push({
+    suiteName: 'Rituais Sustentados',
+    passed: ritualTests.filter(t => t.passed).length,
+    failed: ritualTests.filter(t => !t.passed).length,
+    results: ritualTests,
+  });
+  
+  // Suite: Bônus de Equipamentos
+  const equipmentTests: TestResult[] = [
+    testArmorDefenseBonus(),
+    testShieldDefenseBonus(),
+    testArmorPlusShieldDefense(),
+    testMeleeWeaponBonus(),
+    testRangedWeaponBonus(),
+    testParanormalItemDefense(),
+    testEquipmentDamageReduction(),
+    testFullCombatLoadout(),
+  ];
+  
+  suites.push({
+    suiteName: 'Bônus de Equipamentos',
+    passed: equipmentTests.filter(t => t.passed).length,
+    failed: equipmentTests.filter(t => !t.passed).length,
+    results: equipmentTests,
+  });
+  
   return suites;
 }
 
@@ -731,6 +1167,7 @@ export function printSUETestResults(): void {
 
 // Exporta funções individuais para uso em painéis de debug
 export {
+  // Consolidação de Efeitos
   testAttackBonusSum,
   testMeleeRangedSeparation,
   testDamageBonus,
@@ -742,6 +1179,7 @@ export {
   testSkillBonuses,
   testResourceBonuses,
   testBehaviorFlags,
+  // Verificação de Condições
   testNoConditions,
   testHPCondition,
   testFirstRoundCondition,
@@ -749,9 +1187,28 @@ export {
   testShieldCondition,
   testActivationCondition,
   testMinAttributeCondition,
+  // Efeitos Inativos
   testInactiveEffects,
   testUnmetConditions,
+  // Cenários Reais
   testMilitarOpEspeciais,
   testCondicaoAgarrado,
   testMultiplasFontes,
+  // Rituais Sustentados
+  testRitualAttackBonus,
+  testRitualDamageBonus,
+  testRitualDefenseBonus,
+  testMultipleRitualsBonuses,
+  testRitualTempHP,
+  testRitualSkillBonus,
+  testRitualSpecialEffects,
+  // Bônus de Equipamentos
+  testArmorDefenseBonus,
+  testShieldDefenseBonus,
+  testArmorPlusShieldDefense,
+  testMeleeWeaponBonus,
+  testRangedWeaponBonus,
+  testParanormalItemDefense,
+  testEquipmentDamageReduction,
+  testFullCombatLoadout,
 };
