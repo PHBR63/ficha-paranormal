@@ -6,10 +6,11 @@
  * - Trilhas (habilidades de trilha)
  * - Condições (status ativos)
  * - Rituais (rituais sustentados/ativos)
+ * - Poderes Paranormais (22 poderes oficiais)
  * 
  * Aplica regras de stacking do Ordem Paranormal RPG
  * 
- * @version 1.0.0
+ * @version 1.1.0
  * @module Ordem Paranormal RPG v1.3
  */
 
@@ -37,6 +38,10 @@ import {
   getRitualEffects,
   SustainedRitualInput,
 } from '@/lib/effects/ritual-effects-adapter';
+import {
+  getParanormalPowerEffects,
+} from '@/lib/effects/paranormal-powers-effects-adapter';
+import type { SavedParanormalPower } from '@/lib/paranormal-powers';
 
 // =====================================================
 // Tipos de Entrada do Hook
@@ -62,6 +67,7 @@ export interface CharacterStateForEffects {
   // Estados ativos
   conditions: string[]; // IDs das condições ativas
   activeRituals: SustainedRitualInput[]; // Rituais sustentados
+  paranormalPowers?: SavedParanormalPower[]; // Poderes paranormais
   
   // Afinidade elemental
   elementalAffinity?: string | null;
@@ -111,6 +117,7 @@ export interface UnifiedEffectsResult {
     track: UnifiedEffect[];
     condition: UnifiedEffect[];
     ritual: UnifiedEffect[];
+    paranormal_power: UnifiedEffect[];
   };
   
   // Helpers
@@ -132,6 +139,7 @@ function groupEffectsBySource(effects: UnifiedEffect[]): UnifiedEffectsResult['b
     track: effects.filter(e => e.source === 'track'),
     condition: effects.filter(e => e.source === 'condition'),
     ritual: effects.filter(e => e.source === 'ritual'),
+    paranormal_power: effects.filter(e => e.source === 'paranormal_power'),
   };
 }
 

@@ -7,6 +7,7 @@
 // - 48 Origens (26 base + 22 suplemento)
 // - 15 Trilhas (5 por classe)
 // - 30+ Condições
+// - 22 Poderes Paranormais (5 por elemento + 2 genéricos)
 // - Rituais sustentados
 //
 
@@ -39,6 +40,13 @@ export {
   calculateRitualBonusTotals, 
   getRitualEffectsSummary 
 } from './ritual-effects-adapter';
+
+export {
+  getParanormalPowerEffects,
+  PARANORMAL_POWER_EFFECTS,
+  getParanormalPowersSummary,
+  listAllParanormalPowerEffects,
+} from './paranormal-powers-effects-adapter';
 
 // Re-exports de tipos
 export type { SustainedRitualInput } from './ritual-effects-adapter';
