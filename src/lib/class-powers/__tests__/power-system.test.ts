@@ -1143,7 +1143,7 @@ function testAllCombatenteTracks(): TestResult {
  */
 function testAllEspecialistaTracks(): TestResult {
   const errors: string[] = [];
-  const expectedTracks = ['atirador-de-elite', 'infiltrador', 'medico-de-campo', 'negociador', 'tecnico'];
+  const expectedTracks = ['atirador-elite', 'infiltrador', 'medico-campo', 'negociador', 'tecnico'];
   
   for (const trackId of expectedTracks) {
     const track = getTrackById(trackId);
