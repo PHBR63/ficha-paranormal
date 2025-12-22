@@ -8,7 +8,8 @@ import { Particles } from '@/components/ui/particles';
 import { FlickeringGrid } from '@/components/ui/flickering-grid';
 import { DecryptedText } from '@/components/ui/decrypted-text';
 import { BlurText } from '@/components/ui/blur-text';
-import { Plus, LogOut, User, FileText, Users, Settings, Loader2, AlertTriangle, Skull, Shield, Smartphone, Eye } from 'lucide-react';
+import { Plus, LogOut, User, FileText, Users, Settings, Loader2, AlertTriangle, Skull, Shield, Smartphone } from 'lucide-react';
+import { LogoBox } from '@/components/ui/logo';
 import { useToast } from '@/hooks/use-toast';
 import { CharacterCard } from '@/components/cards/CharacterCard';
 import { useAdminCheck } from '@/hooks/useAdminCheck';
@@ -149,9 +150,7 @@ export default function Dashboard() {
       <header className="relative z-10 border-b border-primary/20 backdrop-blur-sm sticky top-0 bg-background/80">
         <div className="container mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2 sm:gap-3 group">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-primary/20 border border-primary/40 flex items-center justify-center transition-all group-hover:border-primary/60 group-hover:bg-primary/30">
-              <Eye className={`w-5 h-5 sm:w-6 sm:h-6 text-primary ${hasLowStats ? 'animate-pulse' : ''}`} />
-            </div>
+            <LogoBox size="md" animate={hasLowStats} />
             <div>
               <h1 className="font-display text-lg sm:text-xl tracking-wide text-foreground">LET'S ROLL</h1>
               <p className="text-[9px] sm:text-[10px] text-primary tracking-[0.15em] sm:tracking-[0.2em] uppercase hidden sm:block">Painel do Agente</p>
@@ -276,10 +275,9 @@ export default function Dashboard() {
 
         {/* Characters section */}
         <section>
-          <div className="flex items-center gap-4 mb-6">
+            <div className="flex items-center gap-4 mb-6">
             <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#8B0000]/40 to-transparent" />
             <h3 className="font-display text-lg sm:text-xl tracking-wider text-[#B22222] flex items-center gap-2">
-              <Eye className="w-5 h-5" />
               DOSSIÊS DE AGENTES
             </h3>
             <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#8B0000]/40 to-transparent" />
@@ -288,8 +286,7 @@ export default function Dashboard() {
           {loading ? (
             <div className="flex flex-col items-center justify-center py-16">
               <div className="relative">
-                <div className="absolute inset-0 bg-[#8B0000]/20 rounded-full blur-xl animate-pulse" />
-                <Eye className="w-12 h-12 text-[#B22222] animate-pulse relative" />
+                <LogoBox size="lg" animate />
               </div>
               <p className="text-[#808080] mt-4 font-mono text-sm">Carregando dossiês...</p>
             </div>

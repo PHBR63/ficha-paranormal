@@ -8,13 +8,13 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Particles } from '@/components/ui/particles';
+import { LogoBox, LogoHero } from '@/components/ui/logo';
 import { 
   ChevronRight,
   Shield,
   FileText,
   Dices,
   Brain,
-  Eye,
   Smartphone
 } from 'lucide-react';
 import { ParanormalElementsRow, ParanormalElementIcon } from '@/components/ui/paranormal-element-icon';
@@ -70,9 +70,7 @@ const Index = () => {
       <header className="relative z-10 border-b border-[#8B0000]/20 backdrop-blur-sm bg-[#0D0A0B]/50">
         <div className="container mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
           <div className="flex items-center gap-2 sm:gap-3">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-[#8B0000]/20 border border-[#8B0000]/40 flex items-center justify-center">
-              <Eye className="w-5 h-5 sm:w-6 sm:h-6 text-[#B22222]" />
-            </div>
+            <LogoBox size="md" />
             <div>
               <h1 className="font-display text-xl sm:text-2xl tracking-wide text-[#F5F5F5]">LET'S ROLL</h1>
               <p className="text-[8px] sm:text-[10px] text-[#8B0000] tracking-[0.2em] sm:tracking-[0.3em] uppercase hidden sm:block">Ordem Paranormal VTT</p>
@@ -170,7 +168,6 @@ const Index = () => {
                   size="lg" 
                   className="w-full sm:w-auto bg-[#8B0000] hover:bg-[#B22222] text-white text-sm sm:text-lg px-8 sm:px-10 py-6 sm:py-7 border border-[#B22222]/30 animate-blood-pulse transition-all group"
                 >
-                  <Eye className="w-5 h-5 sm:w-6 sm:h-6 mr-2 group-hover:scale-110 transition-transform" />
                   <span className="hidden sm:inline">{user ? 'Acessar Dashboard' : 'Acessar a Ordem'}</span>
                   <span className="sm:hidden">{user ? 'Dashboard' : 'Acessar'}</span>
                   <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 ml-2 group-hover:translate-x-1 transition-transform" />
@@ -179,19 +176,9 @@ const Index = () => {
             </div>
           </div>
           
-          {/* Símbolo decorativo */}
+          {/* Símbolo decorativo - Logo Hero */}
           <div className="relative mt-12 sm:mt-20 flex justify-center">
-            <div className="relative">
-              {/* Glow effect */}
-              <div className="absolute inset-0 bg-[#8B0000]/20 rounded-full blur-3xl animate-pulse scale-150" />
-              
-              {/* Eye symbol */}
-              <div className="relative w-20 h-20 sm:w-28 sm:h-28 flex items-center justify-center">
-                <div className="absolute inset-0 border-2 border-[#8B0000]/40 rounded-full animate-heartbeat" />
-                <div className="absolute inset-2 border border-[#B22222]/30 rounded-full" />
-                <Eye className="w-8 h-8 sm:w-12 sm:h-12 text-[#B22222] animate-pulse" />
-              </div>
-            </div>
+            <LogoHero size="2xl" />
           </div>
         </section>
 
