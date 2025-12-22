@@ -267,6 +267,14 @@ export default function AdminImport() {
               <Button
                 variant="outline"
                 size="sm"
+                onClick={() => navigate('/admin/data-integrity')}
+              >
+                <Shield className="h-4 w-4 mr-2" />
+                Integridade
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => navigate('/admin/users')}
               >
                 <Users className="h-4 w-4 mr-2" />

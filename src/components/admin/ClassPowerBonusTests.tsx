@@ -3,6 +3,7 @@
  * 
  * Permite testar em tempo real os cálculos de bônus de poderes e trilhas
  * com diferentes configurações de personagem.
+ * Usa o power-effects-engine real para cálculos precisos.
  */
 
 import { useState, useMemo } from 'react';
@@ -42,7 +43,8 @@ import { useClassPowerBonuses, ClassPowerBonusConfig } from '@/hooks/useClassPow
 import { ALL_CLASS_POWERS } from '@/lib/class-powers/power-registry';
 import { ALL_TRACKS } from '@/lib/class-powers/track-registry';
 import { CLASSES, getClassTracks } from '@/lib/character-data';
-import type { WeaponCategory, ProtectionCategory } from '@/lib/class-powers/types';
+import type { WeaponCategory, ProtectionCategory, PowerCalculationContext } from '@/lib/class-powers/types';
+import { calculatePowerBonuses } from '@/lib/class-powers/power-effects-engine';
 
 // ========================================
 // TIPOS
@@ -285,9 +287,10 @@ export function ClassPowerBonusTests() {
     scenario: TestScenario;
     passed: boolean;
     actualBonuses: Record<string, number>;
+    mismatches?: string[];
   }> | null>(null);
 
-  // Executa testes dos cenários
+  // Executa testes dos cenários usando o engine real
   const runScenarioTests = () => {
     const results = TEST_SCENARIOS.map(scenario => {
       // Monta config completa
@@ -310,22 +313,44 @@ export function ClassPowerBonusTests() {
         isFavoriteWeapon: scenario.config.isFavoriteWeapon || false,
       };
 
-      // Calcula bônus (não pode usar hook aqui, então simula com função direta)
-      // Por hora, retorna valores simulados - em produção usaria o engine diretamente
+      // Monta contexto para o power-effects-engine
+      const attrs = testConfig.attributes;
+      const powerContext: PowerCalculationContext = {
+        nex: testConfig.nex,
+        attributes: {
+          strength: attrs.strength ?? 1,
+          agility: attrs.agility ?? 1,
+          vigor: attrs.vigor ?? 1,
+          intellect: attrs.intellect ?? 1,
+          presence: attrs.presence ?? 1,
+        },
+        equippedWeaponType: testConfig.equippedWeaponType,
+        equippedProtectionType: testConfig.equippedProtectionType,
+        inCombat: testConfig.inCombat,
+        inInvestigation: testConfig.inInvestigation,
+      };
+
+      // Calcula bônus usando o engine REAL
+      const powerBonuses = calculatePowerBonuses(testConfig.classPowers || [], powerContext);
+      
+      // Extrai bônus totais
       const actualBonuses = {
-        attack: 0,
-        damage: 0,
-        defense: 0,
-        initiative: 0,
-        critical: 0,
+        attack: powerBonuses.attack.general + powerBonuses.attack.melee + powerBonuses.attack.ranged + powerBonuses.attack.firearm,
+        damage: powerBonuses.damage.general + powerBonuses.damage.melee + powerBonuses.damage.ranged + powerBonuses.damage.firearm,
+        defense: powerBonuses.defense.base + powerBonuses.defense.conditional,
+        initiative: 0, // Iniciativa não está no PowerBonusSummary atual
+        critical: 0, // Crítico não está no PowerBonusSummary atual
       };
 
       // Verifica se expectativas batem
       let passed = true;
+      const mismatches: string[] = [];
+      
       for (const [key, expected] of Object.entries(scenario.expectedBonuses)) {
-        if (actualBonuses[key as keyof typeof actualBonuses] !== expected) {
-          // Por agora, considera pass se tem valor definido (teste de integração)
-          passed = true;
+        const actual = actualBonuses[key as keyof typeof actualBonuses];
+        if (actual !== expected) {
+          passed = false;
+          mismatches.push(`${key}: esperado ${expected}, obtido ${actual}`);
         }
       }
 
@@ -333,6 +358,7 @@ export function ClassPowerBonusTests() {
         scenario,
         passed,
         actualBonuses,
+        mismatches,
       };
     });
 
@@ -696,6 +722,22 @@ export function ClassPowerBonusTests() {
 
             {scenarioResults ? (
               <div className="space-y-3">
+                {/* Resumo de resultados */}
+                <div className="flex gap-4 mb-4">
+                  <Badge variant="secondary" className="bg-green-500/20 text-green-400">
+                    <CheckCircle2 className="h-3 w-3 mr-1" />
+                    {scenarioResults.filter(r => r.passed).length} passaram
+                  </Badge>
+                  <Badge variant="secondary" className={cn(
+                    scenarioResults.filter(r => !r.passed).length > 0 
+                      ? "bg-red-500/20 text-red-400" 
+                      : "bg-muted text-muted-foreground"
+                  )}>
+                    <XCircle className="h-3 w-3 mr-1" />
+                    {scenarioResults.filter(r => !r.passed).length} falharam
+                  </Badge>
+                </div>
+                
                 {scenarioResults.map((result, idx) => (
                   <div 
                     key={idx}
@@ -716,12 +758,29 @@ export function ClassPowerBonusTests() {
                       {result.scenario.description}
                     </p>
                     <div className="ml-7 mt-2 flex flex-wrap gap-2">
-                      {Object.entries(result.scenario.expectedBonuses).map(([key, expected]) => (
-                        <Badge key={key} variant="outline" className="text-xs">
-                          {key}: esperado {expected}, obtido {result.actualBonuses[key as keyof typeof result.actualBonuses]}
-                        </Badge>
-                      ))}
+                      {Object.entries(result.scenario.expectedBonuses).map(([key, expected]) => {
+                        const actual = result.actualBonuses[key as keyof typeof result.actualBonuses];
+                        const match = actual === expected;
+                        return (
+                          <Badge 
+                            key={key} 
+                            variant="outline" 
+                            className={cn(
+                              "text-xs",
+                              match ? "border-green-500/50 text-green-400" : "border-red-500/50 text-red-400"
+                            )}
+                          >
+                            {key}: esperado {expected}, obtido {actual}
+                            {match ? ' ✓' : ' ✗'}
+                          </Badge>
+                        );
+                      })}
                     </div>
+                    {result.mismatches && result.mismatches.length > 0 && (
+                      <div className="ml-7 mt-2 text-xs text-red-400">
+                        Divergências: {result.mismatches.join('; ')}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
