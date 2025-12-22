@@ -69,8 +69,8 @@ import { NonOccultistRitualModal, RitualSource } from '@/components/character/No
 import { LearnedRitual } from '@/components/character/GeneralPowersPanel';
 import { calculateDerivedStats } from '@/lib/character-data';
 import { AffinitySelectorCard } from '@/components/character/AffinitySelectorCard';
-// Hook consolidado - expõe defenseBonuses e paranormalEffects internamente
-import { useCharacterBonusSummary } from '@/hooks/useCharacterBonusSummary';
+// Hook consolidado do SUE - fonte única de verdade para todos os bônus
+import { useBonusSummaryFromSUE } from '@/hooks/useBonusSummaryFromSUE';
 import { useBonusSync } from '@/hooks/useBonusSync';
 import { useConditionalBonusesSync } from '@/hooks/useConditionalBonusesSync';
 import { useCampaignRitualSync } from '@/hooks/useCampaignRitualSync';
@@ -91,7 +91,6 @@ import { ClassPowerBonusesPanel } from '@/components/character/ClassPowerBonuses
 import { AutomationDebugWidget } from '@/components/character/AutomationDebugWidget';
 import { useDeveloperMode } from '@/components/ui/theme-selector';
 import { ActiveEffectsPanel } from '@/components/character/ActiveEffectsPanel';
-import { useUnifiedEffects, CharacterStateForEffects } from '@/hooks/useUnifiedEffects';
 
 // Novos componentes do redesign 2.0 (estilo ficha de papel)
 import { CharacterSheetHeader } from '@/components/character/CharacterSheetHeader';
@@ -399,7 +398,14 @@ export default function CharacterSheet() {
     return armorTypeMap[equippedArmor.armorType.toLowerCase()] || 'any';
   }, [character?.inventory]);
 
-  const bonusSummary = useCharacterBonusSummary({
+  // Monta condições ativas para o SUE
+  const activeConditionsForSUE = useMemo(() => 
+    (character?.conditions || []).map(c => typeof c === 'string' ? c : c.id),
+    [character?.conditions]
+  );
+
+  // Hook SUE como fonte única de verdade para todos os bônus
+  const bonusSummary = useBonusSummaryFromSUE({
     origin: character?.origin || '',
     abilities: character?.abilities || [],
     generalPowers: character?.general_powers || [],
@@ -413,79 +419,28 @@ export default function CharacterSheet() {
     skills: character?.skills || {},
     intellect: character?.intellect || 1,
     vigor: character?.vigor || 1,
-    // Novos campos para sistema unificado de poderes de classe (Fase 5)
-    classId: character?.class,
-    classTrack: character?.class_track,
-    classPowers: character?.powers?.map(p => p.name) || [],
     strength: character?.strength || 1,
     agility: character?.agility || 1,
     presence: character?.presence || 1,
+    classId: character?.class,
+    classTrack: character?.class_track,
+    classPowers: character?.powers?.map(p => p.name) || [],
     equippedWeaponType,
     equippedProtectionType,
-    inCombat: false, // TODO: detectar estado de combate da sessão
+    inCombat: false,
+    hpCurrent,
+    hpMax: character?.hp_max || 0,
+    peCurrent,
+    peMax: character?.pe_max || 0,
+    activeConditions: activeConditionsForSUE,
   });
 
   // Extrai hooks internos do bonusSummary para evitar chamadas duplicadas
   const defenseBonuses = bonusSummary.defenseBonuses;
   const paranormalEffects = bonusSummary.paranormalEffects;
-
-  // === SISTEMA UNIFICADO DE EFEITOS (SUE) ===
-  // Consolida todos os efeitos de origem, trilha, condições e rituais
-  const unifiedEffectsState = useMemo<CharacterStateForEffects | null>(() => {
-    if (!character) return null;
-    
-    // Mapeia condições para o formato esperado pelo SUE
-    const activeConditions = (character.conditions || []).map(c => 
-      typeof c === 'string' ? c : c.id
-    );
-    
-    return {
-      origin: character.origin,
-      classId: character.class,
-      classTrack: character.class_track || null,
-      nex: character.nex,
-      attributes: {
-        strength: character.strength,
-        agility: character.agility,
-        vigor: character.vigor,
-        intellect: character.intellect,
-        presence: character.presence,
-      },
-      conditions: activeConditions,
-      activeRituals: sustainedRituals.map(r => ({
-        ritualId: r.ritualId,
-        ritualName: r.ritualName,
-        element: r.element,
-        circle: r.circle,
-        selectedEnhancements: r.selectedEnhancements,
-        turnsActive: r.turnsActive,
-        isConcentrating: r.isConcentrating,
-      })),
-      elementalAffinity: character.elemental_affinity,
-      affinityActive: character.affinity_active,
-      currentHP: hpCurrent,
-      maxHP: character.hp_max,
-      currentPE: peCurrent,
-      maxPE: character.pe_max,
-      currentSAN: sanCurrent,
-      maxSAN: character.san_max,
-      activatedEffectIds: character.active_conditional_bonuses || [],
-    };
-  }, [character, sustainedRituals, hpCurrent, peCurrent, sanCurrent]);
-
-  // Hook do Sistema Unificado de Efeitos
-  const unifiedEffects = useUnifiedEffects(
-    unifiedEffectsState || {
-      origin: '',
-      classId: '',
-      classTrack: null,
-      nex: 5,
-      attributes: { strength: 1, agility: 1, vigor: 1, intellect: 1, presence: 1 },
-      conditions: [],
-      activeRituals: [],
-      activatedEffectIds: [],
-    }
-  );
+  
+  // Sistema Unificado de Efeitos já computado pelo useBonusSummaryFromSUE
+  const unifiedEffects = bonusSummary.unifiedEffects;
 
   // Hook de aplicação automática de condições (HP=0 → Inconsciente, SAN=0 → Enlouquecendo)
   const { processResourceChange } = useAutoConditions();
