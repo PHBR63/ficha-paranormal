@@ -1526,6 +1526,18 @@ export default function CharacterSheet() {
     ...Object.entries(bonusSummary.skills).map(([skill, data]) => `${skill} +${data.total}`),
     ...bonusSummary.special.map(s => s.source),
   ], [bonusSummary]);
+
+  // Calcula limite de rituais para Ocultistas (ANTES do early return para evitar erro de hooks)
+  const ritualLimits = useMemo(() => {
+    if (!character || character.class !== 'Ocultista') return null;
+    return getOcultistRituals(character.nex);
+  }, [character?.class, character?.nex]);
+  
+  // Verifica se há rituais excedentes
+  const hasExcessRituals = ritualLimits && character
+    ? character.rituals.length > ritualLimits.count 
+    : false;
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -1542,17 +1554,6 @@ export default function CharacterSheet() {
   
   // Verificar se precisa escolher afinidade elemental (NEX >= 50 e sem afinidade)
   const needsAffinitySelection = character.nex >= 50 && !character.elemental_affinity;
-
-  // Calcula limite de rituais para Ocultistas
-  const ritualLimits = useMemo(() => {
-    if (character.class !== 'Ocultista') return null;
-    return getOcultistRituals(character.nex);
-  }, [character.class, character.nex]);
-  
-  // Verifica se há rituais excedentes
-  const hasExcessRituals = ritualLimits 
-    ? character.rituals.length > ritualLimits.count 
-    : false;
 
   // Handler para salvar afinidade elemental
   const handleSelectAffinity = async (element: ParanormalElement) => {
