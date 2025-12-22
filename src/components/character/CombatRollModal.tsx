@@ -6,7 +6,7 @@
 
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sword, Target, Zap, Sparkles, Flame, X, Dices, Shield, Skull, Info, Plus, Minus, RotateCcw } from 'lucide-react';
+import { Sword, Target, Zap, Sparkles, Flame, X, Dices, Shield, Skull, Info, Plus, Minus, RotateCcw, Clock, RefreshCw, Timer, Infinity, Droplets } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -17,7 +17,8 @@ import { cn } from '@/lib/utils';
 import { rollSkillTest, rollDamage, DiceRollResult } from '@/lib/dice-roller';
 import { getSkillBonus } from '@/lib/character-data';
 import { useRitualBonusesForCombat, useRitualCombatBonuses, SustainedRitualInput } from '@/hooks/useRitualCombatBonuses';
-import { WeaponBuff } from '@/hooks/useWeaponBuffs';
+import { WeaponBuff, ELEMENT_BUFF_COLORS } from '@/hooks/useWeaponBuffs';
+import { formatDamageFormula as formatBuffDamage } from '@/lib/rituals/legacy-exports';
 import { formatDamageFormula } from '@/lib/rituals/legacy-exports';
 import {
   Tooltip,
@@ -903,6 +904,128 @@ export function CombatRollModal({
             </Badge>
           </div>
 
+          {/* Indicador de Buffs de Arma Ativos - ANTES de rolar */}
+          {weaponBuffs && weaponBuffs.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: -5 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="rounded-lg bg-gradient-to-r from-paranormal/10 via-purple-500/5 to-paranormal/10 border border-paranormal/30 p-3 space-y-2"
+            >
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-paranormal animate-pulse" />
+                <span className="text-sm font-medium text-paranormal">
+                  Buffs de Arma Ativos
+                </span>
+              </div>
+              
+              {weaponBuffs.map(buff => {
+                // Determinar label e cor da duração
+                const getDurationInfo = () => {
+                  switch (buff.duration) {
+                    case 'cena':
+                      return { 
+                        text: 'Dura toda a cena', 
+                        icon: <Clock className="w-3 h-3" />, 
+                        color: 'bg-green-500/20 text-green-400 border-green-500/40' 
+                      };
+                    case 'sustentado':
+                      return { 
+                        text: 'Ritual sustentado', 
+                        icon: <RefreshCw className="w-3 h-3" />, 
+                        color: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/40' 
+                      };
+                    case 'rodadas':
+                      return { 
+                        text: `${buff.turnsRemaining || '?'} rodada(s)`, 
+                        icon: <Timer className="w-3 h-3" />, 
+                        color: 'bg-orange-500/20 text-orange-400 border-orange-500/40' 
+                      };
+                    default:
+                      return { 
+                        text: 'Permanente', 
+                        icon: <Infinity className="w-3 h-3" />, 
+                        color: 'bg-blue-500/20 text-blue-400 border-blue-500/40' 
+                      };
+                  }
+                };
+                
+                const durationInfo = getDurationInfo();
+                const elementColors = ELEMENT_BUFF_COLORS[buff.element] || { 
+                  bg: 'bg-paranormal/20', 
+                  text: 'text-paranormal', 
+                  border: 'border-paranormal/50' 
+                };
+                
+                // Construir lista de efeitos
+                const effects: string[] = [];
+                if (buff.bonusDamage) {
+                  effects.push(`+${formatBuffDamage(buff.bonusDamage)} dano de ${buff.element}`);
+                }
+                if (buff.attackBonus) {
+                  effects.push(`+${buff.attackBonus} ataque`);
+                }
+                if (buff.criticalBonus) {
+                  effects.push(`-${buff.criticalBonus} margem de crítico`);
+                }
+                if (buff.criticalMultiplierBonus) {
+                  effects.push(`+${buff.criticalMultiplierBonus} multiplicador`);
+                }
+                
+                return (
+                  <div 
+                    key={buff.id}
+                    className={`rounded-md p-2 ${elementColors.bg} ${elementColors.border} border space-y-1.5`}
+                  >
+                    {/* Nome do ritual e elemento */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Droplets className={`w-4 h-4 ${elementColors.text}`} />
+                        <span className={`font-medium text-sm ${elementColors.text}`}>
+                          {buff.ritualName}
+                        </span>
+                        <Badge variant="outline" className={`text-[10px] ${elementColors.border} ${elementColors.text}`}>
+                          {buff.element}
+                        </Badge>
+                      </div>
+                    </div>
+                    
+                    {/* Efeitos do buff */}
+                    {effects.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {effects.map((effect, idx) => (
+                          <span 
+                            key={idx} 
+                            className="text-xs px-1.5 py-0.5 rounded bg-background/50 text-foreground/80"
+                          >
+                            {effect}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    
+                    {/* Duração */}
+                    <div className="flex items-center gap-1.5">
+                      <Badge 
+                        variant="outline" 
+                        className={`text-[10px] gap-1 ${durationInfo.color}`}
+                      >
+                        {durationInfo.icon}
+                        {durationInfo.text}
+                      </Badge>
+                      
+                      {/* Enhancements ativos */}
+                      {buff.enhancements && buff.enhancements.length > 0 && (
+                        <Badge variant="secondary" className="text-[10px]">
+                          {buff.enhancements.join(', ')}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </motion.div>
+          )}
+
           <Separator />
 
           {/* Fase: Setup - Seleção de bônus */}
@@ -1336,66 +1459,114 @@ export function CombatRollModal({
                   </p>
                 </div>
 
-                {/* Dados de dano */}
-                <div className="flex flex-wrap justify-center gap-2">
-                  {damageResult.dice.map((die, i) => (
-                    <motion.div
-                      key={`main-${i}`}
-                      initial={{ scale: 0, rotate: -180 }}
-                      animate={{ scale: 1, rotate: 0 }}
-                      transition={{ delay: i * 0.08, type: 'spring' }}
-                      className={cn(
-                        "w-10 h-10 rounded flex items-center justify-center font-display text-lg font-bold",
-                        damageResult.isCritical 
-                          ? "bg-gradient-to-br from-amber-500 to-orange-600 text-white" 
-                          : "bg-destructive text-destructive-foreground"
+                {/* Seção de Dados de Dano */}
+                <div className="space-y-3">
+                  {/* Label da seção de dados principais */}
+                  <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground uppercase tracking-wider">
+                    <Dices className="w-3 h-3" />
+                    <span>Dados de Dano da Arma</span>
+                  </div>
+                  
+                  {/* Dados principais da arma */}
+                  <div className="flex flex-wrap justify-center gap-2">
+                    {damageResult.dice.map((die, i) => (
+                      <motion.div
+                        key={`main-${i}`}
+                        initial={{ scale: 0, rotate: -180 }}
+                        animate={{ scale: 1, rotate: 0 }}
+                        transition={{ delay: i * 0.08, type: 'spring' }}
+                        className={cn(
+                          "w-10 h-10 rounded flex items-center justify-center font-display text-lg font-bold",
+                          damageResult.isCritical 
+                            ? "bg-gradient-to-br from-amber-500 to-orange-600 text-white" 
+                            : "bg-destructive text-destructive-foreground"
+                        )}
+                      >
+                        {die}
+                      </motion.div>
+                    ))}
+                  </div>
+                  
+                  {/* Dados extras com indicação de origem */}
+                  {damageResult.extraDice && damageResult.extraDice.length > 0 && (
+                    <div className="space-y-2">
+                      {/* Indicador de buff de arma ativo - dados extras */}
+                      {(damageResult as any).weaponBuffActive && weaponBuffs.length > 0 && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 5 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="space-y-2"
+                        >
+                          <div className="flex items-center justify-center gap-2 text-xs uppercase tracking-wider">
+                            <Flame className="w-3 h-3 text-paranormal" />
+                            <span className="text-paranormal">Dano Extra de Buff</span>
+                          </div>
+                          
+                          {/* Detalhes do buff que concedeu os dados */}
+                          {weaponBuffs.map(buff => {
+                            if (!buff.bonusDamage) return null;
+                            const elementColors = ELEMENT_BUFF_COLORS[buff.element] || { 
+                              bg: 'bg-paranormal/20', 
+                              text: 'text-paranormal', 
+                              border: 'border-paranormal/50' 
+                            };
+                            
+                            return (
+                              <div 
+                                key={buff.id}
+                                className={`flex items-center justify-center gap-2 p-2 rounded-md ${elementColors.bg} ${elementColors.border} border`}
+                              >
+                                <Droplets className={`w-4 h-4 ${elementColors.text}`} />
+                                <span className={`text-sm font-medium ${elementColors.text}`}>
+                                  {buff.ritualName}
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  +{formatBuffDamage(buff.bonusDamage)} dano de {buff.element}
+                                </span>
+                                {damageResult.isCritical && (
+                                  <Badge variant="outline" className="text-[10px] border-amber-500/50 text-amber-500">
+                                    x{parseInt(weapon?.criticalMultiplier?.replace('x', '') || '2')} no crítico
+                                  </Badge>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </motion.div>
                       )}
-                    >
-                      {die}
-                    </motion.div>
-                  ))}
-                  {damageResult.extraDice?.map((die, i) => (
-                    <motion.div
-                      key={`extra-${i}`}
-                      initial={{ scale: 0, rotate: -180 }}
-                      animate={{ scale: 1, rotate: 0 }}
-                      transition={{ delay: (damageResult.dice.length + i) * 0.08, type: 'spring' }}
-                      className="w-10 h-10 rounded flex items-center justify-center font-display text-lg font-bold bg-paranormal text-white"
-                    >
-                      {die}
-                    </motion.div>
-                  ))}
+                      
+                      {/* Dados extras visualizados */}
+                      <div className="flex flex-wrap justify-center gap-2">
+                        {damageResult.extraDice.map((die, i) => (
+                          <motion.div
+                            key={`extra-${i}`}
+                            initial={{ scale: 0, rotate: -180 }}
+                            animate={{ scale: 1, rotate: 0 }}
+                            transition={{ delay: (damageResult.dice.length + i) * 0.08, type: 'spring' }}
+                            className={cn(
+                              "w-10 h-10 rounded flex items-center justify-center font-display text-lg font-bold",
+                              (damageResult as any).weaponBuffActive 
+                                ? "bg-paranormal text-white ring-2 ring-paranormal/50"
+                                : "bg-purple-600 text-white"
+                            )}
+                          >
+                            {die}
+                          </motion.div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Total de dano com detalhamento de bônus */}
-                <div className="text-center space-y-2">
-                  {/* Indicador de Buff de Arma Ativo */}
-                  {(damageResult as any).weaponBuffActive && (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      className="flex items-center justify-center gap-2 p-2 rounded-lg bg-gradient-to-r from-paranormal/20 to-purple-500/20 border border-paranormal/40"
-                    >
-                      <Flame className="w-4 h-4 text-paranormal" />
-                      <span className="text-sm font-medium text-paranormal">
-                        Buff de Arma: {weaponBuffBonuses.summary.join(', ')}
-                      </span>
-                      {(damageResult as any).weaponBuffElement && (
-                        <Badge variant="outline" className="bg-paranormal/20 border-paranormal/50 text-paranormal text-xs">
-                          {(damageResult as any).weaponBuffElement}
-                        </Badge>
-                      )}
-                    </motion.div>
-                  )}
-
+                <div className="text-center space-y-2 pt-2">
                   {/* Breakdown de dados */}
                   <p className="text-sm text-muted-foreground">
                     {damageResult.dice.join(' + ')}
-                    {damageResult.extraDice && ` + ${damageResult.extraDice.join(' + ')}`}
+                    {damageResult.extraDice && damageResult.extraDice.length > 0 && ` + ${damageResult.extraDice.join(' + ')}`}
                     {damageResult.bonus !== 0 && ` ${damageResult.bonus >= 0 ? '+' : ''}${damageResult.bonus}`}
                   </p>
                   
-                  {/* Breakdown de fontes de bônus */}
+                  {/* Breakdown de fontes de bônus numérico */}
                   {damageBonusSources.length > 0 && (
                     <div className="flex flex-wrap items-center justify-center gap-1.5 text-xs">
                       {damageBonusSources.map((source, idx) => (
@@ -1425,6 +1596,14 @@ export function CombatRollModal({
                     pontos de dano{' '}
                     {damageResult.damageType && (
                       <Badge variant="outline">{damageResult.damageType}</Badge>
+                    )}
+                    {(damageResult as any).weaponBuffElement && (
+                      <>
+                        {' '}+{' '}
+                        <Badge variant="outline" className="bg-paranormal/10 border-paranormal/50 text-paranormal">
+                          {(damageResult as any).weaponBuffElement}
+                        </Badge>
+                      </>
                     )}
                   </p>
                 </div>
