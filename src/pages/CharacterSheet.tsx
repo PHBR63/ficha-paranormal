@@ -54,6 +54,7 @@ import { TranscenderHistoryPanel } from '@/components/character/TranscenderHisto
 import { cn } from '@/lib/utils';
 import { DiceRollResult } from '@/lib/dice-roller';
 import { InventoryPanel } from '@/components/inventory/InventoryPanel';
+import { DataErrorBoundary } from '@/components/DataErrorBoundary';
 import { InventoryItem } from '@/lib/inventory-system';
 import { NexProgressionModal } from '@/components/character/NexProgressionModal';
 import { RitualSelectionModal } from '@/components/character/RitualSelectionModal';
@@ -2014,103 +2015,105 @@ export default function CharacterSheet() {
                 count={character.inventory.length}
                 defaultOpen={false}
               >
-                <InventoryPanel
-                  inventory={character.inventory.map((item) => ({
-                    // Usa ID persistido ou gera novo UUID se não existir
-                    id: item.id || crypto.randomUUID(),
-                    name: item.name,
-                    category: (item.category as InventoryItem['category']) || '0',
-                    slots: item.slots,
-                    quantity: item.quantity || 1,
-                    itemType: (item.itemType as any) || 'misc',
-                    isEquipped: item.isEquipped || false,
-                    equipSlot: item.equipSlot as any,
-                    description: item.description,
-                    // Campos de armas
-                    damage: item.damage,
-                    damageType: item.damageType,
-                    critical: item.critical,
-                    criticalMultiplier: item.criticalMultiplier,
-                    range: item.range,
-                    special: item.special,
-                    ammoType: item.ammoType,
-                    weaponType: item.weaponType,
-                    // Campos de armaduras
-                    rd: item.rd,
-                    defenseBonus: item.defenseBonus,
-                    agilityPenalty: item.agilityPenalty,
-                    speedPenalty: item.speedPenalty,
-                    armorType: item.armorType,
-                    // Campos de consumíveis
-                    effect: item.effect,
-                    uses: item.uses,
-                    maxUses: item.maxUses,
-                    consumable: item.consumable,
-                    // Campos de redução de categoria
-                    favoriteAbilityId: item.favoriteAbilityId,
-                    effectiveCategory: item.effectiveCategory as any,
-                  }))}
-                  strength={character.strength}
-                  patent={character.patent}
-                  characterData={{
-                    origin: character.origin,
-                    classId: character.class,
-                    classTrack: character.class_track || undefined,
-                    nex: character.nex,
-                    abilities: character.abilities,
-                    powers: character.powers?.map(p => p.name) || [],
-                    generalPowers: character.general_powers,
-                  }}
-                  onInventoryChange={async (newInventory) => {
-                    // Persiste TODOS os campos importantes do item
-                    const updatedInventory: InventoryItemPersisted[] = newInventory.map(item => ({
-                      id: item.id,
+                <DataErrorBoundary fallbackMessage="Erro ao carregar inventário">
+                  <InventoryPanel
+                    inventory={character.inventory.map((item) => ({
+                      // Usa ID persistido ou gera novo UUID se não existir
+                      id: item.id || crypto.randomUUID(),
                       name: item.name,
-                      category: item.category,
+                      category: (item.category as InventoryItem['category']) || '0',
                       slots: item.slots,
-                      quantity: item.quantity,
-                      itemType: item.itemType,
-                      isEquipped: item.isEquipped,
-                      equipSlot: item.equipSlot,
-                      description: (item as any).description,
+                      quantity: item.quantity || 1,
+                      itemType: (item.itemType as any) || 'misc',
+                      isEquipped: item.isEquipped || false,
+                      equipSlot: item.equipSlot as any,
+                      description: item.description,
                       // Campos de armas
-                      damage: (item as any).damage,
-                      damageType: (item as any).damageType,
-                      critical: (item as any).critical,
-                      criticalMultiplier: (item as any).criticalMultiplier,
-                      range: (item as any).range,
-                      special: (item as any).special,
-                      ammoType: (item as any).ammoType,
-                      weaponType: (item as any).weaponType,
+                      damage: item.damage,
+                      damageType: item.damageType,
+                      critical: item.critical,
+                      criticalMultiplier: item.criticalMultiplier,
+                      range: item.range,
+                      special: item.special,
+                      ammoType: item.ammoType,
+                      weaponType: item.weaponType,
                       // Campos de armaduras
-                      rd: (item as any).rd,
-                      defenseBonus: (item as any).defenseBonus,
-                      agilityPenalty: (item as any).agilityPenalty,
-                      speedPenalty: (item as any).speedPenalty,
-                      armorType: (item as any).armorType,
+                      rd: item.rd,
+                      defenseBonus: item.defenseBonus,
+                      agilityPenalty: item.agilityPenalty,
+                      speedPenalty: item.speedPenalty,
+                      armorType: item.armorType,
                       // Campos de consumíveis
-                      effect: (item as any).effect,
-                      uses: (item as any).uses,
-                      maxUses: (item as any).maxUses,
-                      consumable: (item as any).consumable,
+                      effect: item.effect,
+                      uses: item.uses,
+                      maxUses: item.maxUses,
+                      consumable: item.consumable,
                       // Campos de redução de categoria
-                      favoriteAbilityId: (item as any).favoriteAbilityId,
-                      effectiveCategory: (item as any).effectiveCategory,
-                    }));
-                    
-                    const { error } = await supabase
-                      .from('characters')
-                      .update({ inventory: JSON.parse(JSON.stringify(updatedInventory)) })
-                      .eq('id', character.id);
+                      favoriteAbilityId: item.favoriteAbilityId,
+                      effectiveCategory: item.effectiveCategory as any,
+                    }))}
+                    strength={character.strength}
+                    patent={character.patent}
+                    characterData={{
+                      origin: character.origin,
+                      classId: character.class,
+                      classTrack: character.class_track || undefined,
+                      nex: character.nex,
+                      abilities: character.abilities,
+                      powers: character.powers?.map(p => p.name) || [],
+                      generalPowers: character.general_powers,
+                    }}
+                    onInventoryChange={async (newInventory) => {
+                      // Persiste TODOS os campos importantes do item
+                      const updatedInventory: InventoryItemPersisted[] = newInventory.map(item => ({
+                        id: item.id,
+                        name: item.name,
+                        category: item.category,
+                        slots: item.slots,
+                        quantity: item.quantity,
+                        itemType: item.itemType,
+                        isEquipped: item.isEquipped,
+                        equipSlot: item.equipSlot,
+                        description: (item as any).description,
+                        // Campos de armas
+                        damage: (item as any).damage,
+                        damageType: (item as any).damageType,
+                        critical: (item as any).critical,
+                        criticalMultiplier: (item as any).criticalMultiplier,
+                        range: (item as any).range,
+                        special: (item as any).special,
+                        ammoType: (item as any).ammoType,
+                        weaponType: (item as any).weaponType,
+                        // Campos de armaduras
+                        rd: (item as any).rd,
+                        defenseBonus: (item as any).defenseBonus,
+                        agilityPenalty: (item as any).agilityPenalty,
+                        speedPenalty: (item as any).speedPenalty,
+                        armorType: (item as any).armorType,
+                        // Campos de consumíveis
+                        effect: (item as any).effect,
+                        uses: (item as any).uses,
+                        maxUses: (item as any).maxUses,
+                        consumable: (item as any).consumable,
+                        // Campos de redução de categoria
+                        favoriteAbilityId: (item as any).favoriteAbilityId,
+                        effectiveCategory: (item as any).effectiveCategory,
+                      }));
+                      
+                      const { error } = await supabase
+                        .from('characters')
+                        .update({ inventory: JSON.parse(JSON.stringify(updatedInventory)) })
+                        .eq('id', character.id);
 
-                    if (!error) {
-                      setCharacter(prev => prev ? {
-                        ...prev,
-                        inventory: updatedInventory,
-                      } : null);
-                    }
-                  }}
-                />
+                      if (!error) {
+                        setCharacter(prev => prev ? {
+                          ...prev,
+                          inventory: updatedInventory,
+                        } : null);
+                      }
+                    }}
+                  />
+                </DataErrorBoundary>
               </SheetAccordionSection>
 
               {/* Dados Pessoais (acordeão) - após rituais */}
