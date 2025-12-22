@@ -15,6 +15,7 @@ import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { rollSkillTest, rollDamage, DiceRollResult } from '@/lib/dice-roller';
+import { ComputedEffects } from '@/lib/unified-effects-engine';
 import { getSkillBonus } from '@/lib/character-data';
 import { useRitualBonusesForCombat, useRitualCombatBonuses, SustainedRitualInput } from '@/hooks/useRitualCombatBonuses';
 import { WeaponBuff, ELEMENT_BUFF_COLORS } from '@/hooks/useWeaponBuffs';
@@ -117,8 +118,14 @@ interface CombatRollModalProps {
   // NOVO: Bônus pré-calculados do sistema unificado de poderes de classe
   classPowerBonuses?: ClassPowerCombatBonuses;
   
+  // NOVO: Efeitos consolidados do Sistema Unificado de Efeitos (SUE)
+  unifiedEffects?: ComputedEffects;
+  
   // Bônus condicionais avançados (Fase 4)
   advancedBonuses?: AdvancedConditionalBonuses;
+  
+  // Condições ativas do personagem (para exibir penalidades de condição)
+  activeConditions?: string[];
   
   // Buffs de arma ativos (Amaldiçoar Arma, etc.)
   weaponBuffs?: WeaponBuff[];
@@ -181,9 +188,11 @@ export function CombatRollModal({
   affinityElement,
   sustainedRituals = [],
   nex,
-  classPowerBonuses, // NOVO: Bônus pré-calculados do sistema unificado
+  classPowerBonuses, // Bônus pré-calculados do sistema de poderes
+  unifiedEffects, // NOVO: Efeitos do SUE (origem, trilha, condições)
   advancedBonuses = {},
   weaponBuffs = [], // Buffs de arma ativos
+  activeConditions = [], // Condições ativas para exibição
   onRollComplete,
 }: CombatRollModalProps) {
   // Bônus de rituais sustentados processados automaticamente
@@ -441,12 +450,26 @@ export function CombatRollModal({
   // Verificar se pode pagar o PE
   const canAffordPE = currentPE >= totalPECost;
 
-  // Calcular bônus total de ataque (inclui bônus do sistema unificado, weapon buffs e modificador manual)
+  // Calcular bônus total de ataque (inclui bônus do SUE, weapon buffs e modificador manual)
   const totalAttackBonus = useMemo(() => {
     let total = attackSkill.bonus;
+    const isMeleeAttack = weapon?.type === 'Corpo a Corpo' || weapon?.type === 'Briga';
     
-    // Adicionar bônus passivos de poderes de classe do sistema unificado
-    if (classPowerBonuses?.attackBonus) {
+    // === BÔNUS DO SISTEMA UNIFICADO DE EFEITOS (SUE) ===
+    // Inclui origem, trilha, condições e rituais consolidados
+    if (unifiedEffects) {
+      // Bônus geral de ataque
+      total += unifiedEffects.attack.general;
+      // Bônus específico por tipo de ataque
+      if (isMeleeAttack) {
+        total += unifiedEffects.attack.melee;
+      } else {
+        total += unifiedEffects.attack.ranged;
+      }
+    }
+    
+    // Adicionar bônus passivos de poderes de classe (sistema legado - backup)
+    if (classPowerBonuses?.attackBonus && !unifiedEffects) {
       total += classPowerBonuses.attackBonus;
     }
     
@@ -455,7 +478,7 @@ export function CombatRollModal({
       total += weaponBuffBonuses.attackBonus;
     }
     
-    // Adicionar bônus passivos (rituais sustentados, etc.)
+    // Adicionar bônus passivos (rituais sustentados manuais, etc.)
     passiveBonuses.forEach(b => {
       if (b.attackBonus) total += b.attackBonus;
     });
@@ -470,11 +493,12 @@ export function CombatRollModal({
     total += manualAttackMod;
     
     return total;
-  }, [attackSkill.bonus, passiveBonuses, selectedBonuses, availableBonuses, classPowerBonuses, manualAttackMod, weaponBuffBonuses]);
+  }, [attackSkill.bonus, passiveBonuses, selectedBonuses, availableBonuses, classPowerBonuses, manualAttackMod, weaponBuffBonuses, unifiedEffects, weapon]);
 
   // === Detalhamento das fontes de bônus de ataque para exibição ===
   const attackBonusSources = useMemo(() => {
     const sources: BonusSourceDisplay[] = [];
+    const isMeleeAttack = weapon?.type === 'Corpo a Corpo' || weapon?.type === 'Briga';
     
     // Bônus de perícia (treinamento)
     if (attackSkill.bonus > 0) {
@@ -486,8 +510,34 @@ export function CombatRollModal({
       });
     }
     
-    // Bônus de poderes de classe
-    if (classPowerBonuses?.attackBonus && classPowerBonuses.attackBonus > 0) {
+    // === BÔNUS DO SUE (origem, trilha, condições) ===
+    if (unifiedEffects) {
+      // Bônus geral de ataque do SUE
+      if (unifiedEffects.attack.general !== 0) {
+        // Mostrar breakdown detalhado
+        unifiedEffects.attack.breakdown.forEach(entry => {
+          sources.push({
+            label: entry.source,
+            value: entry.value,
+            type: entry.conditional ? 'track' : 'track',
+            description: entry.conditional || `Bônus de ${entry.source}`,
+          });
+        });
+      }
+      // Bônus específico melee/ranged
+      const specificBonus = isMeleeAttack ? unifiedEffects.attack.melee : unifiedEffects.attack.ranged;
+      if (specificBonus !== 0) {
+        sources.push({
+          label: isMeleeAttack ? 'Bônus Corpo a Corpo' : 'Bônus à Distância',
+          value: specificBonus,
+          type: 'track',
+          description: `Bônus específico para ataques ${isMeleeAttack ? 'corpo a corpo' : 'à distância'}`,
+        });
+      }
+    }
+    
+    // Bônus de poderes de classe (sistema legado - backup se SUE não estiver ativo)
+    if (!unifiedEffects && classPowerBonuses?.attackBonus && classPowerBonuses.attackBonus > 0) {
       sources.push({ 
         label: 'Poder de Classe', 
         value: classPowerBonuses.attackBonus, 
@@ -496,7 +546,7 @@ export function CombatRollModal({
       });
     }
     
-    // Bônus passivos de rituais sustentados
+    // Bônus passivos de rituais sustentados manuais
     passiveBonuses.forEach(b => {
       if (b.attackBonus) {
         sources.push({ 
@@ -547,7 +597,7 @@ export function CombatRollModal({
     }
     
     return sources;
-  }, [attackSkill, classPowerBonuses, passiveBonuses, selectedBonuses, availableBonuses, manualAttackMod, weaponBuffBonuses]);
+  }, [attackSkill, classPowerBonuses, passiveBonuses, selectedBonuses, availableBonuses, manualAttackMod, weaponBuffBonuses, unifiedEffects, weapon]);
 
   // === Detalhamento das fontes de bônus de dano para exibição ===
   const damageBonusSources = useMemo(() => {
@@ -564,8 +614,42 @@ export function CombatRollModal({
       });
     }
     
-    // Bônus de poderes de classe
-    if (classPowerBonuses?.damageBonus && classPowerBonuses.damageBonus > 0) {
+    // === BÔNUS DO SUE (origem, trilha, condições) ===
+    if (unifiedEffects) {
+      // Bônus geral de dano
+      if (unifiedEffects.damage.general !== 0 || unifiedEffects.damage.breakdown.length > 0) {
+        unifiedEffects.damage.breakdown.forEach(entry => {
+          sources.push({
+            label: entry.source,
+            value: entry.value,
+            type: 'track',
+            description: entry.conditional || `Bônus de dano de ${entry.source}`,
+          });
+        });
+      }
+      // Bônus específico melee/ranged
+      const specificDamage = isMelee ? unifiedEffects.damage.melee : unifiedEffects.damage.ranged;
+      if (specificDamage !== 0) {
+        sources.push({
+          label: isMelee ? 'Dano Corpo a Corpo' : 'Dano à Distância',
+          value: specificDamage,
+          type: 'track',
+          description: `Bônus de dano específico para ataques ${isMelee ? 'corpo a corpo' : 'à distância'}`,
+        });
+      }
+      // Dados extras do SUE
+      if (unifiedEffects.damage.extraDice.length > 0) {
+        sources.push({
+          label: 'Dados Extras (SUE)',
+          value: unifiedEffects.damage.extraDice.join(' + '),
+          type: 'track',
+          description: 'Dados de dano extras de origem, trilha ou condições',
+        });
+      }
+    }
+    
+    // Bônus de poderes de classe (sistema legado - backup)
+    if (!unifiedEffects && classPowerBonuses?.damageBonus && classPowerBonuses.damageBonus > 0) {
       sources.push({ 
         label: 'Poder de Classe', 
         value: classPowerBonuses.damageBonus, 
@@ -574,8 +658,8 @@ export function CombatRollModal({
       });
     }
     
-    // Dados extras de poderes de classe
-    if (classPowerBonuses?.extraDamageDice && classPowerBonuses.extraDamageDice.length > 0) {
+    // Dados extras de poderes de classe (sistema legado - backup)
+    if (!unifiedEffects && classPowerBonuses?.extraDamageDice && classPowerBonuses.extraDamageDice.length > 0) {
       sources.push({ 
         label: 'Dados Extras', 
         value: classPowerBonuses.extraDamageDice.join(' + '), 
@@ -584,7 +668,7 @@ export function CombatRollModal({
       });
     }
     
-    // Bônus passivos de rituais sustentados
+    // Bônus passivos de rituais sustentados manuais
     passiveBonuses.forEach(b => {
       if (b.damageBonus) {
         const value = typeof b.damageBonus === 'number' ? b.damageBonus : b.damageBonus;
@@ -638,15 +722,18 @@ export function CombatRollModal({
     }
     
     return sources;
-  }, [weapon, attributes, classPowerBonuses, passiveBonuses, selectedBonuses, availableBonuses, manualDamageMod, weaponBuffBonuses]);
+  }, [weapon, attributes, classPowerBonuses, passiveBonuses, selectedBonuses, availableBonuses, manualDamageMod, weaponBuffBonuses, unifiedEffects]);
 
-  // Calcular margem de crítico efetiva (incluindo weapon buffs)
+  // Calcular margem de crítico efetiva (incluindo SUE e weapon buffs)
   const effectiveCritical = useMemo(() => {
     if (!weapon) return 20;
     let critical = parseInt(weapon.critical || '20');
     
-    // Aplicar bônus de margem de crítico do sistema unificado de poderes de classe
-    if (classPowerBonuses?.criticalMarginBonus) {
+    // === BÔNUS DO SUE ===
+    if (unifiedEffects) {
+      critical -= unifiedEffects.critical.marginBonus;
+    } else if (classPowerBonuses?.criticalMarginBonus) {
+      // Sistema legado - backup
       critical -= classPowerBonuses.criticalMarginBonus;
     }
     
@@ -661,14 +748,19 @@ export function CombatRollModal({
     });
     
     return Math.max(1, critical); // Mínimo de 1
-  }, [weapon, passiveBonuses, classPowerBonuses, weaponBuffBonuses]);
+  }, [weapon, passiveBonuses, classPowerBonuses, weaponBuffBonuses, unifiedEffects]);
 
-  // Multiplicador de crítico da arma (incluindo weapon buffs)
+  // Multiplicador de crítico da arma (incluindo SUE e weapon buffs)
   const criticalMultiplier = useMemo(() => {
     let base = 2;
     if (weapon?.criticalMultiplier) {
       const match = weapon.criticalMultiplier.match(/x(\d+)/i);
       base = match ? parseInt(match[1]) : 2;
+    }
+    
+    // === BÔNUS DO SUE ===
+    if (unifiedEffects) {
+      base += unifiedEffects.critical.multiplierBonus;
     }
     
     // Aplicar bônus de multiplicador de weapon buffs
@@ -677,7 +769,7 @@ export function CombatRollModal({
     }
     
     return base;
-  }, [weapon, weaponBuffBonuses]);
+  }, [weapon, weaponBuffBonuses, unifiedEffects]);
 
   // Cores para cada tipo de bônus
   const bonusTypeColors: Record<BonusSourceDisplay['type'], string> = {
@@ -736,20 +828,41 @@ export function CombatRollModal({
     // Bônus de dano numérico
     let damageBonus = parsed.bonus;
     
-    // NOVO: Adicionar bônus de dano do sistema unificado de poderes de classe
-    if (classPowerBonuses?.damageBonus) {
+    // === BÔNUS DO SISTEMA UNIFICADO DE EFEITOS (SUE) ===
+    // Inclui origem, trilha, condições consolidados
+    if (unifiedEffects) {
+      // Bônus geral de dano
+      damageBonus += unifiedEffects.damage.general;
+      // Bônus específico por tipo
+      if (isMelee) {
+        damageBonus += unifiedEffects.damage.melee;
+      } else {
+        damageBonus += unifiedEffects.damage.ranged;
+      }
+    } else if (classPowerBonuses?.damageBonus) {
+      // Sistema legado - backup
       damageBonus += classPowerBonuses.damageBonus;
     }
     
     // Multiplicador para Potência Máxima (dobra bônus do Ataque Especial)
     const potenciaMaximaMultiplier = advancedBonuses.potenciaMaxima && isMelee ? 2 : 1;
     
-    // Dados extras (de poderes como Golpe Pesado)
+    // Dados extras (de poderes como Golpe Pesado, origens, trilhas)
     let extraDiceCount = 0;
     let extraDiceSize = parsed.size;
     
-    // NOVO: Adicionar dados extras do sistema unificado de poderes de classe
-    if (classPowerBonuses?.extraDamageDice && classPowerBonuses.extraDamageDice.length > 0) {
+    // Dados extras do SUE (origem, trilha, condições)
+    if (unifiedEffects && unifiedEffects.damage.extraDice.length > 0) {
+      unifiedEffects.damage.extraDice.forEach(diceStr => {
+        const match = diceStr.match(/(\d*)d(\d+)/i);
+        if (match) {
+          const count = parseInt(match[1]) || 1;
+          extraDiceCount += isCritical ? count * criticalMultiplier : count;
+          if (match[2]) extraDiceSize = parseInt(match[2]);
+        }
+      });
+    } else if (classPowerBonuses?.extraDamageDice && classPowerBonuses.extraDamageDice.length > 0) {
+      // Sistema legado - backup
       classPowerBonuses.extraDamageDice.forEach(diceStr => {
         const match = diceStr.match(/(\d*)d(\d+)/i);
         if (match) {
