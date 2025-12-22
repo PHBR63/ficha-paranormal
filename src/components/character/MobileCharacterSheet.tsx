@@ -48,7 +48,8 @@ import { PowerDetailModal, PowerDetailData, PowerType } from './PowerDetailModal
 import { ALL_RITUALS } from '@/lib/rituals/legacy-exports';
 import { ALL_CLASS_ABILITIES } from '@/lib/class-abilities';
 import { useDefenseBonuses } from '@/hooks/useDefenseBonuses';
-import { useCharacterBonusSummary } from '@/hooks/useCharacterBonusSummary';
+// Hook consolidado do SUE - fonte única de verdade para todos os bônus
+import { useBonusSummaryFromSUE } from '@/hooks/useBonusSummaryFromSUE';
 import { useSustainedRituals } from '@/hooks/useSustainedRituals';
 import { BonusSummaryCard } from './BonusSummaryCard';
 import { MobileAuditBanner } from './MobileAuditBanner';
@@ -625,8 +626,8 @@ export function MobileCharacterSheet({
     [sustainedRituals]
   );
 
-  // Hook de resumo de todos os bônus do personagem (incluindo rituais ativos)
-  const bonusSummary = useCharacterBonusSummary({
+  // Hook SUE como fonte única de verdade para todos os bônus
+  const bonusSummary = useBonusSummaryFromSUE({
     origin: character.origin,
     abilities: character.abilities,
     generalPowers: character.general_powers || [],
@@ -640,6 +641,13 @@ export function MobileCharacterSheet({
     skills: character.skills || {},
     intellect: character.intellect || 1,
     vigor: character.vigor || 1,
+    strength: character.strength || 1,
+    agility: character.agility || 1,
+    presence: character.presence || 1,
+    classId: character.class,
+    classTrack: character.class_track,
+    classPowers: character.powers?.map(p => p.name) || [],
+    activeConditions: character.conditions || [],
   });
 
   // Defesa total com TODOS os bônus (origem, habilidades, poderes, paranormais, rituais)
