@@ -2290,6 +2290,7 @@ export default function CharacterSheet() {
                   criticalMarginBonus: bonusSummary.combat.criticalMargin.total,
                   extraDamageDice: bonusSummary.combat.damage.extraDice,
                 }}
+                unifiedEffects={unifiedEffects.computed}
                 onRollComplete={handleRollComplete}
                 weaponBuffs={weaponBuffs}
                 onRemoveWeaponBuff={removeWeaponBuff}

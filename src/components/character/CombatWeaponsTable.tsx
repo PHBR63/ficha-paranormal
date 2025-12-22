@@ -24,6 +24,7 @@ import { WeaponBuffIndicator } from './WeaponBuffIndicator';
 import { WeaponBuffTurnTracker } from './WeaponBuffTurnTracker';
 import { formatDamageFormula } from '@/lib/rituals/legacy-exports';
 import type { SustainedRitualInput } from '@/hooks/useRitualCombatBonuses';
+import type { ComputedEffects } from '@/lib/unified-effects-engine';
 
 // Interface para arma com dados completos
 export interface WeaponEntry {
@@ -82,6 +83,9 @@ interface CombatWeaponsTableProps {
   // NOVO: Bônus pré-calculados do sistema unificado de poderes de classe
   classPowerBonuses?: ClassPowerCombatBonuses;
   
+  // NOVO: Efeitos consolidados do Sistema Unificado de Efeitos (SUE)
+  unifiedEffects?: ComputedEffects;
+  
   // Callback para histórico
   onRollComplete?: (result: DiceRollResult) => void;
   
@@ -131,6 +135,8 @@ export function CombatWeaponsTable({
   nex,
   // NOVO: Bônus pré-calculados do sistema unificado
   classPowerBonuses,
+  // NOVO: Efeitos consolidados do SUE
+  unifiedEffects,
   onRollComplete,
   onRollAttack, // Fallback antigo
   // Fase 5: Props de buffs de arma
@@ -354,6 +360,7 @@ export function CombatWeaponsTable({
           sustainedRituals={sustainedRituals}
           nex={nex || 5}
           classPowerBonuses={classPowerBonuses}
+          unifiedEffects={unifiedEffects}
           weaponBuffs={weaponBuffs}
           onRollComplete={onRollComplete}
         />
