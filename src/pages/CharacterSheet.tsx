@@ -42,7 +42,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ORIGINS, CLASSES, getTrackById } from '@/lib/character-data';
+import { ORIGINS, CLASSES, getTrackById, getOcultistRituals } from '@/lib/character-data';
 import { ALL_RITUALS } from '@/lib/rituals/legacy-exports';
 import { ALL_CLASS_ABILITIES } from '@/lib/class-abilities';
 import { PARANORMAL_POWERS, ParanormalPower, ParanormalElement, SavedParanormalPower, getPowerById } from '@/lib/paranormal-powers';
@@ -110,6 +110,7 @@ import { MobileCharacterSheet } from '@/components/character/MobileCharacterShee
 import { DiceRollModal, BonusSource } from '@/components/dice/DiceRollModal';
 import { DiceRollHistoryDrawer, DiceRollHistoryCompact } from '@/components/dice/DiceRollHistory';
 import { AbilityDetailModal } from '@/components/character/AbilityDetailModal';
+import { ExcessRitualsRemovalModal } from '@/components/character/ExcessRitualsRemovalModal';
 
 // Interface estendida para itens do inventário com todos os campos persistidos
 interface InventoryItemPersisted {
@@ -325,6 +326,9 @@ export default function CharacterSheet() {
   
   // Histórico de rituais conjurados na sessão
   const [castHistory, setCastHistory] = useState<RitualCastRecord[]>([]);
+  
+  // Modal de remoção de rituais excedentes
+  const [excessRitualsModalOpen, setExcessRitualsModalOpen] = useState(false);
 
   // Hook CONSOLIDADO de todos os bônus do personagem (inclui defenseBonuses e paranormalEffects)
   // OTIMIZAÇÃO: Evita chamadas duplicadas de hooks
@@ -1539,6 +1543,17 @@ export default function CharacterSheet() {
   // Verificar se precisa escolher afinidade elemental (NEX >= 50 e sem afinidade)
   const needsAffinitySelection = character.nex >= 50 && !character.elemental_affinity;
 
+  // Calcula limite de rituais para Ocultistas
+  const ritualLimits = useMemo(() => {
+    if (character.class !== 'Ocultista') return null;
+    return getOcultistRituals(character.nex);
+  }, [character.class, character.nex]);
+  
+  // Verifica se há rituais excedentes
+  const hasExcessRituals = ritualLimits 
+    ? character.rituals.length > ritualLimits.count 
+    : false;
+
   // Handler para salvar afinidade elemental
   const handleSelectAffinity = async (element: ParanormalElement) => {
     const { error } = await supabase
@@ -1924,6 +1939,31 @@ export default function CharacterSheet() {
                     </TabsList>
 
                     <TabsContent value="rituais" className="mt-0">
+                      {/* Alerta de rituais excedentes */}
+                      {ritualLimits && (
+                        <div className="flex items-center justify-between gap-2 mb-3">
+                          {hasExcessRituals ? (
+                            <div className="flex items-center gap-2 p-2 rounded-lg bg-destructive/10 border border-destructive/30 flex-1">
+                              <span className="text-destructive font-medium text-xs">
+                                ⚠️ {character.rituals.length}/{ritualLimits.count} rituais
+                              </span>
+                              <Button 
+                                variant="destructive" 
+                                size="sm"
+                                className="h-7 text-xs ml-auto"
+                                onClick={() => setExcessRitualsModalOpen(true)}
+                              >
+                                Remover
+                              </Button>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">
+                              {character.rituals.length}/{ritualLimits.count} rituais
+                            </span>
+                          )}
+                        </div>
+                      )}
+                      
                       <div className="space-y-2">
                         {character.rituals.map((ritualId, i) => {
                           const ritual = ALL_RITUALS.find(r => r.id === ritualId);
@@ -2952,6 +2992,33 @@ export default function CharacterSheet() {
         onClose={() => setAbilityDetailOpen(false)}
         nex={character?.nex || 5}
       />
+
+      {/* Modal de remoção de rituais excedentes */}
+      {ritualLimits && (
+        <ExcessRitualsRemovalModal
+          open={excessRitualsModalOpen}
+          onOpenChange={setExcessRitualsModalOpen}
+          ritualIds={character.rituals}
+          maxRituals={ritualLimits.count}
+          characterId={character.id}
+          onRemoveRituals={async (ritualsToRemove) => {
+            const newRituals = character.rituals.filter(
+              ritualId => !ritualsToRemove.includes(ritualId)
+            );
+            
+            const { error } = await supabase
+              .from('characters')
+              .update({ rituals: newRituals })
+              .eq('id', character.id);
+
+            if (error) {
+              throw error;
+            }
+
+            await refetchCharacter();
+          }}
+        />
+      )}
     </div>
   );
 }
