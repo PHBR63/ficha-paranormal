@@ -2,7 +2,7 @@
  * Trilhas do Ocultista - Ordem Paranormal RPG v1.3
  * 
  * Define as 5 trilhas oficiais do Ocultista com efeitos mecânicos estruturados:
- * - Condutor: Modificação e manipulação de rituais
+ * - Conduíte: Modificação e manipulação de rituais
  * - Flagelador: Usa dor como fonte de poder paranormal
  * - Graduado: Conhecimento expandido de rituais
  * - Intuitivo: Resistência mental e paranormal
@@ -18,12 +18,12 @@ import type { UnifiedTrack } from './track-types';
  */
 export const OCULTISTA_TRACKS: UnifiedTrack[] = [
   // ==========================================================================
-  // CONDUTOR
+  // CONDUÍTE
   // Modificação e manipulação de rituais
   // ==========================================================================
   {
-    id: 'condutor',
-    name: 'Condutor',
+    id: 'conduite',
+    name: 'Conduíte',
     classId: 'Ocultista',
     description: 'Você domina os aspectos fundamentais da conjuração de rituais e é capaz de aumentar o alcance e a velocidade de suas conjurações. Conforme sua conexão com as entidades paranormais aumenta, você se torna capaz de interferir com os rituais de outros ocultistas.',
     pageReference: 'Livro Base p.62',
@@ -31,7 +31,7 @@ export const OCULTISTA_TRACKS: UnifiedTrack[] = [
       {
         id: 'ampliar-ritual',
         name: 'Ampliar Ritual',
-        trackId: 'condutor',
+        trackId: 'conduite',
         minNex: 10,
         description: 'Quando lança um ritual, você pode gastar 2 PE para aumentar seu alcance em um passo (de curto para médio, de médio para longo ou de longo para extremo), ou dobrar a área de efeito.',
         pageReference: 'Livro Base p.62',
@@ -51,7 +51,7 @@ export const OCULTISTA_TRACKS: UnifiedTrack[] = [
       {
         id: 'acelerar-ritual',
         name: 'Acelerar Ritual',
-        trackId: 'condutor',
+        trackId: 'conduite',
         minNex: 40,
         description: 'Uma vez por rodada, você pode aumentar o custo de um ritual em 4 PE para conjurá-lo como ação livre.',
         pageReference: 'Livro Base p.62',
@@ -75,7 +75,7 @@ export const OCULTISTA_TRACKS: UnifiedTrack[] = [
       {
         id: 'anular-ritual',
         name: 'Anular Ritual',
-        trackId: 'condutor',
+        trackId: 'conduite',
         minNex: 65,
         description: 'Quando for alvo de um ritual, você pode gastar uma quantidade de PE igual ao custo pago por esse ritual e fazer um teste oposto de Ocultismo contra o conjurador. Se vencer, você anula o ritual, cancelando todos os seus efeitos.',
         pageReference: 'Livro Base p.62',
@@ -99,7 +99,7 @@ export const OCULTISTA_TRACKS: UnifiedTrack[] = [
       {
         id: 'canalizar-o-medo',
         name: 'Canalizar o Medo',
-        trackId: 'condutor',
+        trackId: 'conduite',
         minNex: 99,
         description: 'Você aprende o ritual Canalizar o Medo.',
         pageReference: 'Livro Base p.62',
