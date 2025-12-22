@@ -1083,15 +1083,15 @@ function testTrilhaConduite(): TestResult {
 }
 
 /**
- * Testa trilha Flagelo - Ocultista
+ * Testa trilha Flagelador - Ocultista
  */
-function testTrilhaFlagelo(): TestResult {
+function testTrilhaFlagelador(): TestResult {
   const errors: string[] = [];
-  const track = getTrackById('flagelo');
+  const track = getTrackById('flagelador');
   
   if (!track) {
     return {
-      name: 'Trilha Flagelo',
+      name: 'Trilha Flagelador',
       passed: false,
       message: 'Trilha não encontrada',
     };
@@ -1103,10 +1103,10 @@ function testTrilhaFlagelo(): TestResult {
   }
   
   return {
-    name: 'Trilha Flagelo',
+    name: 'Trilha Flagelador',
     passed: errors.length === 0,
     message: errors.length === 0 
-      ? 'Trilha Flagelo conforme livro'
+      ? 'Trilha Flagelador conforme livro'
       : `${errors.length} divergências`,
     details: errors.length > 0 ? errors : undefined
   };
@@ -1169,7 +1169,7 @@ function testAllEspecialistaTracks(): TestResult {
  */
 function testAllOcultistaTracks(): TestResult {
   const errors: string[] = [];
-  const expectedTracks = ['conduite', 'flagelo', 'intuitivo', 'lamina-paranormal', 'graduado'];
+  const expectedTracks = ['conduite', 'flagelador', 'intuitivo', 'lamina-paranormal', 'graduado'];
   
   for (const trackId of expectedTracks) {
     const track = getTrackById(trackId);
@@ -1265,7 +1265,7 @@ export function runTrackTests(): TestSuiteResult {
     testTrilhaGuerreiro,
     testTrilhaInfiltrador,
     testTrilhaConduite,
-    testTrilhaFlagelo,
+    testTrilhaFlagelador,
     testAllCombatenteTracks,
     testAllEspecialistaTracks,
     testAllOcultistaTracks,
