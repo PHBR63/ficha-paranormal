@@ -231,6 +231,15 @@ export function useUnifiedEffects(
     // Efeitos de rituais
     // Parâmetros: sustainedRituals (apenas este parâmetro)
     const ritualEffects = getRitualEffects(characterState.activeRituals);
+    
+    // Efeitos de poderes paranormais
+    // Parâmetros: powers, nex, elementalAffinity, affinityActive
+    const paranormalPowerEffects = getParanormalPowerEffects(
+      characterState.paranormalPowers ?? [],
+      characterState.nex,
+      characterState.elementalAffinity ?? null,
+      characterState.affinityActive ?? false
+    );
 
     // ===== FASE 2: Combina todos os efeitos =====
     const allEffects: UnifiedEffect[] = [
@@ -239,6 +248,7 @@ export function useUnifiedEffects(
       ...trackCombatEffects,
       ...conditionEffects,
       ...ritualEffects,
+      ...paranormalPowerEffects,
     ];
 
     // ===== FASE 3: Cria contexto de cálculo =====
@@ -284,6 +294,7 @@ export function useUnifiedEffects(
     characterState.affinityActive,
     characterState.currentHP,
     characterState.maxHP,
+    characterState.paranormalPowers,
     characterState.activatedEffectIds,
     combatContext?.inCombat,
     combatContext?.isFirstRound,
