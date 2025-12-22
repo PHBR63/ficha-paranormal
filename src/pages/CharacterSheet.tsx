@@ -2050,11 +2050,13 @@ export default function CharacterSheet() {
                 className="mb-2"
               />
 
-              {/* Barra de bônus de trilha em combate */}
+              {/* Barra de bônus de trilha em combate + Botão de Iniciativa */}
               <TrackCombatBonusesBar
                 combat={bonusSummary.combat}
                 damageReduction={bonusSummary.damageReduction}
                 effectResistances={bonusSummary.effectResistances}
+                agility={character.agility}
+                onInitiativeRoll={handleRollComplete}
                 className="mb-2"
               />
 
