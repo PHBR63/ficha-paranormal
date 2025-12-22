@@ -211,7 +211,7 @@ export function InventoryPanel({
   const loadStatus = useMemo(() => getLoadStatus(inventory, strength, carryOptions), [inventory, strength, carryOptions]);
   const patentLimits = useMemo(() => getPatentLimits(patent), [patent]);
 
-  // Mapear itens equipados por slot (atualizado com shield, removido head)
+  // Mapear itens equipados por slot (com validação defensiva para slots inválidos)
   const equippedItems = useMemo(() => {
     const slots: Record<EquipmentSlotType, ExtendedInventoryItem | null> = {
       primary_weapon: null,
@@ -222,14 +222,19 @@ export function InventoryPanel({
       accessory_2: null,
     };
 
+    // Lista de slots válidos para validação
+    const validSlots: EquipmentSlotType[] = ['primary_weapon', 'secondary_weapon', 'armor', 'shield', 'accessory_1', 'accessory_2'];
+
     inventory.forEach(item => {
       if (item.isEquipped && item.equipSlot) {
-        // Migrar itens do slot 'head' antigo para 'armor' ou 'shield'
+        // Migrar itens do slot 'head' antigo - ignorar
         if ((item.equipSlot as string) === 'head') {
-          // Não fazer nada - item será desequipado
           return;
         }
-        slots[item.equipSlot] = item;
+        // Validar se o slot existe antes de atribuir (evita undefined)
+        if (validSlots.includes(item.equipSlot)) {
+          slots[item.equipSlot] = item;
+        }
       }
     });
 
@@ -251,7 +256,7 @@ export function InventoryPanel({
     );
   }, [equippedItems.primary_weapon]);
 
-  // Agrupar itens por tipo
+  // Agrupar itens por tipo (com validação defensiva para evitar undefined)
   const groupedItems = useMemo(() => {
     const groups: Record<ItemType, ExtendedInventoryItem[]> = {
       weapon: [],
@@ -262,8 +267,13 @@ export function InventoryPanel({
       misc: [],
     };
 
+    // Lista de tipos válidos para validação
+    const validTypes: ItemType[] = ['weapon', 'armor', 'consumable', 'ritual', 'valuable', 'misc'];
+
     inventory.forEach(item => {
-      const type = item.itemType || 'misc';
+      const rawType = item.itemType || 'misc';
+      // Valida se o tipo existe no grupo, senão usa 'misc' como fallback
+      const type = validTypes.includes(rawType as ItemType) ? (rawType as ItemType) : 'misc';
       groups[type].push(item);
     });
 
@@ -571,9 +581,33 @@ export function InventoryPanel({
     }
   };
 
+  // Mapeamento de tipos do catálogo (items-catalog.ts) para tipos do inventário (InventoryPanel)
+  // Isso evita erros de "undefined.push()" quando tipos não correspondem
+  const mapCatalogTypeToInventoryType = (catalogType: string): ItemType => {
+    const typeMap: Record<string, ItemType> = {
+      // Tipos do items-catalog.ts
+      'explosivo': 'consumable',    // Granadas são consumíveis
+      'acessorio': 'misc',          // Acessórios vão para misc
+      'operacional': 'misc',        // Itens operacionais vão para misc
+      'paranormal': 'ritual',       // Itens paranormais vão para ritual
+      'municao': 'consumable',      // Munição é consumível
+      // Tipos já existentes no InventoryPanel (passthrough)
+      'weapon': 'weapon',
+      'armor': 'armor',
+      'consumable': 'consumable',
+      'ritual': 'ritual',
+      'valuable': 'valuable',
+      'misc': 'misc',
+    };
+    return typeMap[catalogType] || 'misc'; // Fallback seguro para tipos desconhecidos
+  };
+
   // Handler para adicionar item do catálogo de itens gerais
   const handleAddItemFromCatalog = (catalogItem: CatalogItem) => {
     if (!onInventoryChange) return;
+
+    // Mapear tipo do catálogo para tipo válido do inventário
+    const mappedItemType = mapCatalogTypeToInventoryType(catalogItem.type);
 
     const baseItem = {
       id: crypto.randomUUID(),
@@ -581,7 +615,7 @@ export function InventoryPanel({
       category: catalogItem.category,
       slots: catalogItem.spaces,
       quantity: 1,
-      itemType: 'item' as const,
+      itemType: mappedItemType, // Usa tipo mapeado corretamente
       description: catalogItem.description,
       // Dados extras para itens gerais
       effect: catalogItem.effect,
