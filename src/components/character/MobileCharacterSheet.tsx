@@ -64,6 +64,18 @@ import { supabase } from '@/integrations/supabase/client';
 import { SavedParanormalPower } from '@/lib/paranormal-powers';
 import { ActiveAdvancedBonusesBar } from './ActiveAdvancedBonusesBar';
 import { ClassPowerBonusesPanel } from './ClassPowerBonusesPanel';
+// Componentes mobile de combate
+import {
+  MobileCombatPanel,
+  MobileCombatRollModal,
+  MobileDiceRollModal,
+  MobileRitualCastModal,
+  MobileResistanceCheckModal,
+  type WeaponEntry,
+  type BonusSource,
+} from './mobile';
+import { useWeaponBuffs } from '@/hooks/useWeaponBuffs';
+import { useUnifiedEffects } from '@/hooks/useUnifiedEffects';
 
 // Tipos
 interface MobileCharacterSheetProps {
@@ -533,6 +545,25 @@ export function MobileCharacterSheet({
   const [removedPowersHistoryOpen, setRemovedPowersHistoryOpen] = useState(false);
   const [inventorySheetOpen, setInventorySheetOpen] = useState(false);
   
+  // Estados dos modais de combate mobile
+  const [combatModalOpen, setCombatModalOpen] = useState(false);
+  const [selectedWeapon, setSelectedWeapon] = useState<WeaponEntry | null>(null);
+  const [diceModalOpen, setDiceModalOpen] = useState(false);
+  const [diceModalConfig, setDiceModalConfig] = useState<{
+    skillName: string;
+    pool: number;
+    bonus: number;
+    bonusSources: BonusSource[];
+  } | null>(null);
+  const [ritualCastModalOpen, setRitualCastModalOpen] = useState(false);
+  const [selectedRitual, setSelectedRitual] = useState<typeof ALL_RITUALS[number] | null>(null);
+  const [resistanceModalOpen, setResistanceModalOpen] = useState(false);
+  const [resistanceConfig, setResistanceConfig] = useState<{
+    type: 'fortitude' | 'reflexos' | 'vontade';
+    dt: number;
+    damageOnFail?: number;
+  } | null>(null);
+  
   const originData = ORIGINS.find(o => o.id === character.origin);
   const trackData = character.class_track ? getTrackById(character.class_track) : null;
   const peLimit = getPELimitByNex(character.nex);
@@ -703,6 +734,139 @@ export function MobileCharacterSheet({
       armorType: item.armorType as any,
     })),
   [character.inventory]);
+
+  // Hook de buffs de armas
+  const { activeBuffs: weaponBuffs } = useWeaponBuffs(character.id);
+
+  // Hook de efeitos unificados (SUE) - conversão segura de tipos
+  const paranormalPowersForSUE = useMemo(() => 
+    (character.paranormal_powers || []).map(p => ({
+      ...p,
+      element: p.element as "sangue" | "morte" | "conhecimento" | "energia" | "generic",
+    })),
+    [character.paranormal_powers]
+  );
+
+  const activeRitualsForSUE = useMemo(() => 
+    sustainedRituals.map(r => ({
+      ritualId: r.ritualId,
+      ritualName: r.ritualName,
+      element: r.element,
+      circle: r.circle,
+      enhancements: r.selectedEnhancements,
+    })),
+    [sustainedRituals]
+  );
+
+  const unifiedEffects = useUnifiedEffects({
+    origin: character.origin,
+    classId: character.class,
+    classTrack: character.class_track || null,
+    nex: character.nex,
+    attributes: {
+      strength: character.strength,
+      agility: character.agility,
+      vigor: character.vigor,
+      intellect: character.intellect,
+      presence: character.presence,
+    },
+    conditions: character.conditions || [],
+    activeRituals: activeRitualsForSUE,
+    paranormalPowers: paranormalPowersForSUE,
+  });
+
+  // Lista de armas equipadas para o painel de combate
+  const equippedWeapons: WeaponEntry[] = useMemo(() => {
+    return normalizedInventory
+      .filter(item => item.itemType === 'weapon' && item.isEquipped)
+      .map(item => {
+        // Tenta inferir dados da arma do catálogo
+        const weaponData = (item as any);
+        return {
+          id: item.id,
+          name: item.name,
+          type: weaponData.weaponType || 'corpo-a-corpo',
+          damage: weaponData.damage || '1d6',
+          criticalRange: weaponData.criticalRange || 20,
+          criticalMultiplier: weaponData.criticalMultiplier || 2,
+          range: weaponData.range,
+          ammo: weaponData.ammo,
+          maxAmmo: weaponData.maxAmmo,
+        };
+      });
+  }, [normalizedInventory]);
+
+  // Handler para abrir combate com arma
+  const handleOpenCombat = useCallback((weapon: WeaponEntry) => {
+    setSelectedWeapon(weapon);
+    setCombatModalOpen(true);
+  }, []);
+
+  // Handler para rolagem de perícia (abre modal de dados)
+  const handleSkillRoll = useCallback((skillName: string) => {
+    const skillBonus = character.skills?.[skillName.toLowerCase()] || 0;
+    const skillAttr = getSkillAttribute(skillName);
+    const attrValue = {
+      'AGI': character.agility,
+      'FOR': character.strength,
+      'INT': character.intellect,
+      'PRE': character.presence,
+      'VIG': character.vigor,
+    }[skillAttr] || 1;
+    
+    // Busca bônus do SUE para esta perícia (verificando computed effects)
+    const sueBonuses: BonusSource[] = [];
+    if (unifiedEffects?.computed?.skills) {
+      const skillsMap = unifiedEffects.computed.skills;
+      const skillKey = skillName.toLowerCase();
+      if (skillsMap[skillKey] && typeof skillsMap[skillKey] === 'number') {
+        const skillEffect = skillsMap[skillKey] as number;
+        if (skillEffect > 0) {
+          sueBonuses.push({ 
+            label: 'Efeitos Ativos', 
+            value: skillEffect,
+            type: 'other',
+          });
+        }
+      }
+    }
+    
+    setDiceModalConfig({
+      skillName,
+      pool: attrValue,
+      bonus: skillBonus,
+      bonusSources: [
+        { label: 'Treinamento', value: skillBonus, type: 'skill' as const },
+        ...sueBonuses,
+      ].filter(b => b.value !== 0),
+    });
+    setDiceModalOpen(true);
+  }, [character, unifiedEffects]);
+
+  // Handler para abrir conjuração de ritual
+  const handleCastRitual = useCallback((ritualId: string) => {
+    const ritual = ALL_RITUALS.find(r => r.id === ritualId || r.name === ritualId);
+    if (ritual) {
+      setSelectedRitual(ritual);
+      setRitualCastModalOpen(true);
+    }
+  }, []);
+
+  // Handler para atualizar PE após conjuração
+  const handlePEChange = useCallback(async (newPE: number) => {
+    try {
+      await supabase
+        .from('characters')
+        .update({ pe_current: Math.max(0, Math.min(newPE, character.pe_max)) })
+        .eq('id', character.id);
+      
+      if (onRefetch) {
+        await onRefetch();
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar PE:', error);
+    }
+  }, [character.id, character.pe_max, onRefetch]);
 
   return (
     <div className="pb-20">
@@ -1062,6 +1226,25 @@ export function MobileCharacterSheet({
             {/* Painel de Bônus de Poderes de Classe (compacto) */}
             {bonusSummary.classPowerBonuses && (
               <ClassPowerBonusesPanel bonuses={bonusSummary.classPowerBonuses} compact />
+            )}
+
+            {/* Painel de Combate Mobile */}
+            {equippedWeapons.length > 0 && (
+              <MobileCombatPanel
+                weapons={equippedWeapons}
+                weaponBuffs={weaponBuffs}
+                agility={character.agility}
+                onWeaponClick={handleOpenCombat}
+                onRollInitiative={() => {
+                  setDiceModalConfig({
+                    skillName: 'Iniciativa',
+                    pool: character.agility,
+                    bonus: 0,
+                    bonusSources: [],
+                  });
+                  setDiceModalOpen(true);
+                }}
+              />
             )}
 
             {/* Condições ativas */}
@@ -1623,6 +1806,90 @@ export function MobileCharacterSheet({
         patent={character.patent}
         onInventoryChange={handleInventoryChange}
       />
+
+      {/* ========== MODAIS DE COMBATE MOBILE ========== */}
+      
+      {/* Modal de rolagem de dados genérica */}
+      <MobileDiceRollModal
+        open={diceModalOpen}
+        onClose={() => {
+          setDiceModalOpen(false);
+          setDiceModalConfig(null);
+        }}
+        label={diceModalConfig?.skillName || 'Rolagem'}
+        attributeValue={diceModalConfig?.pool || 1}
+        skillBonus={diceModalConfig?.bonus}
+        bonusSources={diceModalConfig?.bonusSources}
+      />
+
+      {/* Modal de combate completo (ataque + dano) */}
+      {selectedWeapon && (
+        <MobileCombatRollModal
+          open={combatModalOpen}
+          onClose={() => {
+            setCombatModalOpen(false);
+            setSelectedWeapon(null);
+          }}
+          weapon={selectedWeapon}
+          attributes={{
+            strength: character.strength,
+            agility: character.agility,
+            vigor: character.vigor,
+            intellect: character.intellect,
+            presence: character.presence,
+          }}
+          skills={character.skills || {}}
+          currentPE={character.pe_current}
+          maxPE={character.pe_max}
+          onPEChange={handlePEChange}
+          characterClass={character.class}
+          abilities={character.abilities}
+          nex={character.nex}
+          unifiedEffects={unifiedEffects?.computed}
+          weaponBuffs={weaponBuffs}
+        />
+      )}
+
+      {/* Modal de conjuração de ritual */}
+      {selectedRitual && (
+        <MobileRitualCastModal
+          open={ritualCastModalOpen}
+          onOpenChange={(open) => {
+            setRitualCastModalOpen(open);
+            if (!open) setSelectedRitual(null);
+          }}
+          ritual={selectedRitual}
+          peCurrent={character.pe_current}
+          peMax={character.pe_max}
+          nex={character.nex}
+          onConfirm={async (_ritual, peCost, _enhancements) => {
+            await handlePEChange(character.pe_current - peCost);
+          }}
+        />
+      )}
+
+      {/* Modal de teste de resistência */}
+      {resistanceConfig && (
+        <MobileResistanceCheckModal
+          open={resistanceModalOpen}
+          onOpenChange={(open) => {
+            setResistanceModalOpen(open);
+            if (!open) setResistanceConfig(null);
+          }}
+          resistanceType={resistanceConfig.type}
+          effect="reduz_metade"
+          damage={resistanceConfig.damageOnFail}
+          defaultDT={resistanceConfig.dt}
+          targetAttributes={{
+            vigor: character.vigor,
+            agility: character.agility,
+            presence: character.presence,
+          }}
+          onResult={(result, adjustedDamage) => {
+            console.log('Resultado do teste:', result, adjustedDamage);
+          }}
+        />
+      )}
     </div>
   );
 }
