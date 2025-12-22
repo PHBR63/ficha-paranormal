@@ -87,6 +87,7 @@ import { CharacterAuditBanner } from '@/components/character/CharacterAuditBanne
 import { useCharacterAudit } from '@/hooks/useCharacterAudit';
 import { CharacterForAudit, canAddParanormalPower } from '@/lib/character-audit-engine';
 import { ClassPowerBonusesPanel } from '@/components/character/ClassPowerBonusesPanel';
+import { AutomationDebugWidget } from '@/components/character/AutomationDebugWidget';
 
 // Novos componentes do redesign 2.0 (estilo ficha de papel)
 import { CharacterSheetHeader } from '@/components/character/CharacterSheetHeader';
@@ -3020,6 +3021,26 @@ export default function CharacterSheet() {
           }}
         />
       )}
+
+      {/* Widget de Debug de Automações */}
+      <AutomationDebugWidget
+        auditCounts={auditCounts}
+        isAuditing={isAuditing}
+        bonusSummary={bonusSummary}
+        defenseBonuses={defenseBonuses}
+        activeConditions={character.conditions.map(parseCondition).map(c => ({
+          id: c.id,
+          name: c.name,
+          turnsRemaining: c.turnsRemaining,
+        }))}
+        sustainedRituals={sustainedRituals}
+        weaponBuffs={weaponBuffs}
+        activeConditionalBonuses={character.active_conditional_bonuses || []}
+        affinityActive={character.affinity_active || false}
+        elementalAffinity={character.elemental_affinity || undefined}
+        characterDefense={character.defense}
+        characterAgility={character.agility}
+      />
     </div>
   );
 }
