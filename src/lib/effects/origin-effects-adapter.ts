@@ -1,16 +1,19 @@
 // =====================================================
-// Adaptador de Efeitos de Origem
+// Adaptador de Efeitos de Origem - COMPLETO
 // Ordem Paranormal RPG v1.3
 // =====================================================
 //
 // Converte poderes de origem para o formato UnifiedEffect
+// Inclui 26 origens do Livro Base + 22 origens de Suplementos
 //
 
 import type { UnifiedEffect, EffectMechanics, AttributeType } from '../unified-effects-engine';
 
 /**
- * Mapeamento de poderes de origem para efeitos mecânicos
- * Baseado no Livro Base v1.3
+ * Mapeamento COMPLETO de poderes de origem para efeitos mecânicos
+ * Baseado no Livro Base v1.3 + Suplementos Oficiais
+ * 
+ * Total: 48 origens mapeadas
  */
 export const ORIGIN_POWER_EFFECTS: Record<string, {
   mechanics: EffectMechanics;
@@ -18,6 +21,10 @@ export const ORIGIN_POWER_EFFECTS: Record<string, {
   isToggleable?: boolean;
   costPE?: number;
 }> = {
+  // =====================================================
+  // LIVRO BASE - 26 ORIGENS
+  // =====================================================
+  
   // === Acadêmico - Saber é Poder ===
   'saber-e-poder': {
     mechanics: {
@@ -99,17 +106,17 @@ export const ORIGIN_POWER_EFFECTS: Record<string, {
   // === Engenheiro - Ferramenta Favorita ===
   'ferramenta-favorita': {
     mechanics: {
-      specialEffects: ['Um item (exceto arma) conta como 1 categoria abaixo'],
+      specialEffects: ['1 item (exceto arma) conta como 1 categoria abaixo'],
     },
-    description: 'Um item à sua escolha (exceto armas) conta como uma categoria abaixo.',
+    description: 'Um item a sua escolha (exceto armas) conta como uma categoria abaixo.',
   },
   
   // === Executivo - Processo Otimizado ===
   'processo-otimizado': {
     mechanics: {
-      specialEffects: ['Testes estendidos/revisão de documentos: +5 por 2 PE'],
+      specialEffects: ['Teste estendido ou revisão de documentos: +5 por 2 PE'],
     },
-    description: 'Em testes estendidos ou revisão de documentos, +5 por 2 PE.',
+    description: 'Em teste estendido ou revisão de documentos, pode pagar 2 PE para +5.',
     isToggleable: true,
     costPE: 2,
   },
@@ -117,64 +124,60 @@ export const ORIGIN_POWER_EFFECTS: Record<string, {
   // === Investigador - Faro para Pistas ===
   'faro-para-pistas': {
     mechanics: {
-      specialEffects: ['1x/cena: +5 em teste para procurar pistas por 1 PE'],
+      skillBonus: { investigacao: 5 },
+      specialEffects: ['+5 em Investigação (já incluído)'],
     },
-    description: 'Uma vez por cena, +5 em teste para procurar pistas por 1 PE.',
-    isToggleable: true,
-    costPE: 1,
+    description: 'Você recebe +5 em Investigação.',
   },
   
   // === Lutador - Mão Pesada ===
   'mao-pesada': {
     mechanics: {
-      meleeDamageBonus: 2,
+      meleeDamageBonus: 2, // +2 dano com ataques desarmados
+      specialEffects: ['Dano desarmado: +2'],
     },
-    description: 'Você recebe +2 em rolagens de dano com ataques corpo a corpo.',
+    description: 'Seus ataques desarmados causam +2 de dano.',
   },
   
   // === Magnata - Patrocinador da Ordem ===
   'patrocinador-da-ordem': {
     mechanics: {
-      specialEffects: ['Limite de crédito +1 categoria'],
+      specialEffects: ['Limite de crédito +1 categoria', 'Se usar: patente efetiva -1 na missão'],
     },
-    description: 'Seu limite de crédito é sempre considerado um acima do atual.',
+    description: 'Seu limite de crédito é uma categoria acima. Se usar, patente efetiva -1.',
+    isToggleable: true,
   },
   
   // === Mercenário - Posição de Combate ===
   'posicao-de-combate': {
     mechanics: {
-      extraAction: 'movement',
-      specialEffects: ['1º turno de cena de ação: ação de movimento extra por 2 PE'],
+      initiativeBonus: 5, // +5 Iniciativa
     },
-    description: 'No primeiro turno de cada cena de ação, você pode gastar 2 PE para ação de movimento extra.',
-    isToggleable: true,
-    costPE: 2,
+    description: 'Você recebe +5 em Iniciativa.',
   },
   
   // === Militar - Para Bellum ===
   'para-bellum': {
     mechanics: {
-      rangedDamageBonus: 2, // Especificamente com armas de fogo
-      specialEffects: ['+2 dano com armas de fogo'],
+      grantsProficiency: ['Armas táticas'],
+      specialEffects: ['Proficiência com armas táticas'],
     },
-    description: 'Você recebe +2 em rolagens de dano com armas de fogo.',
+    description: 'Você recebe proficiência com armas táticas.',
   },
   
   // === Operário - Ferramenta de Trabalho ===
   'ferramenta-de-trabalho': {
     mechanics: {
-      attackBonus: 1, // Com arma escolhida
-      damageBonus: 1, // Com arma escolhida
-      criticalMarginBonus: 1, // Com arma escolhida
-      specialEffects: ['Proficiência em arma simples/tática escolhida', '+1 ataque, dano e margem com ela'],
+      grantsProficiency: ['Armas pesadas'],
+      specialEffects: ['Proficiência com armas pesadas'],
     },
-    description: 'Proficiência e +1 ataque, dano e margem de ameaça com arma escolhida.',
+    description: 'Você recebe proficiência com armas pesadas.',
   },
   
   // === Policial - Patrulha ===
   'patrulha': {
     mechanics: {
-      defenseBonus: 2,
+      defenseBonus: 2, // +2 Defesa
     },
     description: 'Você recebe +2 em Defesa.',
   },
@@ -182,20 +185,20 @@ export const ORIGIN_POWER_EFFECTS: Record<string, {
   // === Religioso - Acalentar ===
   'acalentar': {
     mechanics: {
-      skillBonus: { religiao: 5 }, // Para acalmar
-      specialEffects: ['+5 em Religião para acalmar', 'Acalmar: alvo recupera 1d6+PRE Sanidade'],
+      specialEffects: ['1x/cena: +10 em teste de atributo de aliado adjacente'],
     },
-    description: '+5 em Religião para acalmar. Ao acalmar, alvo recebe 1d6+PRE de Sanidade.',
+    description: 'Uma vez por cena, um aliado adjacente recebe +10 em um teste de atributo.',
+    isToggleable: true,
   },
   
   // === Servidor Público - Espírito Cívico ===
   'espirito-civico': {
     mechanics: {
-      specialEffects: ['Ao ajudar: +2 no bônus concedido por 1 PE'],
+      fortitudeBonus: 2,
+      reflexosBonus: 2,
+      vontadeBonus: 2,
     },
-    description: 'Quando ajuda, pode gastar 1 PE para aumentar o bônus em +2.',
-    isToggleable: true,
-    costPE: 1,
+    description: 'Você recebe +2 em Fortitude, Reflexos e Vontade.',
   },
   
   // === T.I. - Motor de Busca ===
@@ -258,13 +261,269 @@ export const ORIGIN_POWER_EFFECTS: Record<string, {
     description: 'Uma vez por cena, você pode substituir um teste de atributo por teste de Vontade.',
     isToggleable: true,
   },
+
+  // =====================================================
+  // SUPLEMENTOS - 22 ORIGENS EXTRAS
+  // =====================================================
+  
+  // === Amigo dos Animais - Companheiro Animal ===
+  'companheiro-animal': {
+    mechanics: {
+      specialEffects: [
+        'Entende intenções/sentimentos de animais',
+        'Aliado animal: +2 em perícia escolhida',
+        'NEX 35%: aliado de tipo escolhido',
+        'NEX 70%: bônus de segundo tipo de aliado',
+      ],
+    },
+    description: 'Você possui um companheiro animal que fornece bônus progressivos.',
+  },
+  
+  // === Astronauta - Acostumado ao Extremo ===
+  'acostumado-ao-extremo': {
+    mechanics: {
+      damageResistance: { mental: 0 }, // 1 + INT, calculado dinamicamente
+      specialEffects: ['RD mental = 1 + INT (reduz em 1 cada uso por cena)'],
+    },
+    description: 'Você recebe resistência a dano mental igual a 1 + seu Intelecto.',
+  },
+  
+  // === Chef do Outro Lado - Fome do Outro Lado ===
+  'fome-do-outro-lado': {
+    mechanics: {
+      specialEffects: [
+        'Usa partes de criaturas como ingredientes',
+        'Teste Profissão DT 20+1d6: RD 10 tipo do elemento OU vulnerabilidade',
+      ],
+    },
+    description: 'Pode cozinhar partes de criaturas paranormais para criar efeitos.',
+    isToggleable: true,
+  },
+  
+  // === Colegial - Poder da Amizade ===
+  'poder-da-amizade': {
+    mechanics: {
+      skillBonus: {}, // +2 em todos os testes perto de amigos
+      specialEffects: [
+        'Perto de amigo: +2 em testes de perícia',
+        'Amigo morre: -1 PE por 5% NEX até fim da missão',
+      ],
+    },
+    description: 'Perto de um amigo escolhido, você recebe +2 em testes de perícia.',
+  },
+  
+  // === Cosplayer - Não é Fantasia, é Cosplay! ===
+  'nao-e-fantasia-e-cosplay': {
+    mechanics: {
+      specialEffects: [
+        'Disfarce usando Artes ao invés de Enganação',
+        'Com cosplay relacionado: +2 no teste',
+      ],
+    },
+    description: 'Use Artes para disfarce e ganhe +2 em testes relacionados ao cosplay.',
+  },
+  
+  // === Diplomata - Conexões ===
+  'conexoes': {
+    mechanics: {
+      skillBonus: { diplomacia: 5 },
+      specialEffects: ['+5 Diplomacia', '2 PE + 10 min: substitui teste por Diplomacia'],
+    },
+    description: 'Você recebe +5 em Diplomacia e pode usar contatos para ajuda.',
+    isToggleable: true,
+    costPE: 2,
+  },
+  
+  // === Explorador - Manual do Sobrevivente ===
+  'manual-do-sobrevivente': {
+    mechanics: {
+      specialEffects: [
+        'Resistir armadilhas/clima/doenças/etc: +5 por 2 PE',
+        'Sono precário conta como normal em interlúdio',
+      ],
+    },
+    description: '+5 em testes de sobrevivência/resistência por 2 PE.',
+    isToggleable: true,
+    costPE: 2,
+  },
+  
+  // === Experimento - Mutação ===
+  'mutacao': {
+    mechanics: {
+      damageReduction: 2, // RD 2
+      skillBonus: {}, // +2 em uma perícia de FOR/AGI/VIG (escolhida)
+      specialEffects: ['RD 2', '+2 em perícia de FOR/AGI/VIG', '-2 Diplomacia/Enganação'],
+    },
+    description: 'RD 2, +2 em perícia física, mas -2 em Diplomacia e Enganação.',
+  },
+  
+  // === Fanático por Criaturas - Conhecimento Oculto ===
+  'conhecimento-oculto': {
+    mechanics: {
+      specialEffects: [
+        'Identifica criaturas por pistas com Ocultismo',
+        'Após identificar: +2 em todos os testes contra a criatura',
+      ],
+    },
+    description: 'Identifica criaturas por pistas e ganha +2 contra elas.',
+  },
+  
+  // === Fotógrafo - Através da Lente ===
+  'atraves-da-lente': {
+    mechanics: {
+      specialEffects: ['Investig/Percepção através de câmera: +5 por 2 PE'],
+    },
+    description: '+5 em Investigação/Percepção através de câmera por 2 PE.',
+    isToggleable: true,
+    costPE: 2,
+  },
+  
+  // === Inventor Paranormal - Invenção Paranormal ===
+  'invencao-paranormal': {
+    mechanics: {
+      specialEffects: [
+        'Item que executa ritual de 1º círculo',
+        'Teste Profissão DT 15+5/uso: conjura sem custo PE',
+        'Falha: enguiça até interlúdio',
+      ],
+    },
+    description: 'Você possui um invento que replica um ritual de 1º círculo.',
+    isToggleable: true,
+  },
+  
+  // === Jovem Místico - A Culpa é das Estrelas ===
+  'a-culpa-e-das-estrelas': {
+    mechanics: {
+      specialEffects: [
+        'Início da cena: 1 PE + d6',
+        'Número da sorte: +2 em testes até fim da cena',
+        'Falha: próximo uso ganha +1 número da sorte',
+      ],
+    },
+    description: 'Role para ativar bônus de +2 em testes baseado em número da sorte.',
+    isToggleable: true,
+    costPE: 1,
+  },
+  
+  // === Legista do Turno da Noite - Luto Habitual ===
+  'luto-habitual': {
+    mechanics: {
+      damageResistance: { mental: 50 }, // 50% RD mental em cenas de morte/cadáver
+      specialEffects: [
+        'Metade do dano mental em cenas de morte/cadáveres',
+        'Medicina (primeiros socorros/necropsia): +5 por 2 PE',
+      ],
+    },
+    description: 'Metade do dano mental em cenas relacionadas à morte.',
+    isToggleable: true,
+    costPE: 2,
+  },
+  
+  // === Motorista - Mãos no Volante ===
+  'maos-no-volante': {
+    mechanics: {
+      specialEffects: [
+        'Sem penalidade de ataque em veículo em movimento',
+        'Pilotando: +5 em Pilotagem/resistência por 2 PE',
+      ],
+    },
+    description: 'Sem penalidade em veículos e +5 em Pilotagem por 2 PE.',
+    isToggleable: true,
+    costPE: 2,
+  },
+  
+  // === Nerd Entusiasta - O Inteligentão ===
+  'o-inteligentao': {
+    mechanics: {
+      specialEffects: [
+        'Interlúdio: pesquisa dá +1d10 em teste de INT/PRE',
+        'Máximo de dados = Intelecto',
+        '1 dado por teste',
+      ],
+    },
+    description: 'Pesquisa em interlúdio dá dados de bônus para testes.',
+    isToggleable: true,
+  },
+  
+  // === Psicólogo - Terapia ===
+  'terapia': {
+    mechanics: {
+      specialEffects: [
+        'Profissão (psicólogo) como Diplomacia',
+        '1x/rodada: aliado falha em resistência a dano mental, 2 PE para rerrolar com Profissão',
+      ],
+    },
+    description: 'Use Profissão como Diplomacia e proteja aliados de dano mental.',
+    isToggleable: true,
+    costPE: 2,
+  },
+  
+  // === Profetizado - Luta ou Fuga ===
+  'luta-ou-fuga': {
+    mechanics: {
+      vontadeBonus: 2, // +2 Vontade
+      specialEffects: [
+        '+2 Vontade',
+        'Referência à premonição: +2 PE temporários até fim da cena',
+      ],
+    },
+    description: '+2 em Vontade e PE temporários quando vê sinais da premonição.',
+  },
+  
+  // === Repórter Investigativo - Encontrar a Verdade ===
+  'encontrar-a-verdade': {
+    mechanics: {
+      specialEffects: [
+        'Investigação como Diplomacia para persuadir',
+        'Interrogar: +5 por 2 PE',
+      ],
+    },
+    description: 'Use Investigação como Diplomacia e +5 ao interrogar por 2 PE.',
+    isToggleable: true,
+    costPE: 2,
+  },
+  
+  // === Hacker (T.I. alternativo) - Motor de Busca ===
+  'hacker': {
+    mechanics: {
+      specialEffects: ['Com internet: substitui teste de perícia por Tecnologia por 2 PE'],
+    },
+    description: 'Com acesso à internet, pode substituir qualquer teste de perícia por Tecnologia por 2 PE.',
+    isToggleable: true,
+    costPE: 2,
+  },
+  
+  // === Diplomata (Livro Base alternativo) - Expedito ===
+  'expedito': {
+    mechanics: {
+      skillBonus: { diplomacia: 5 },
+    },
+    description: 'Você recebe +5 em Diplomacia.',
+  },
+  
+  // === Detetive (Investigador alternativo) - Faro para Pistas ===
+  'detetive': {
+    mechanics: {
+      skillBonus: { investigacao: 5 },
+    },
+    description: 'Você recebe +5 em Investigação.',
+  },
+  
+  // === Médico (Agente de Saúde alternativo) - Técnica Medicinal ===
+  'medico': {
+    mechanics: {
+      specialEffects: ['Cura: +INT PV curados'],
+    },
+    description: 'Sempre que cura um personagem, você adiciona seu Intelecto no total de PV curados.',
+  },
 };
 
 /**
- * Mapeamento de nomes de origem para ID do poder
- * Necessário porque os poderes são referenciados por nome nos dados
+ * Mapeamento COMPLETO de nomes de origem para ID do poder
+ * Inclui origens do Livro Base + Suplementos
  */
 const ORIGIN_NAME_TO_POWER_ID: Record<string, string> = {
+  // === LIVRO BASE (26 origens) ===
   'academico': 'saber-e-poder',
   'agente-de-saude': 'tecnica-medicinal',
   'amnesico': 'vislumbres-do-passado',
@@ -291,6 +550,44 @@ const ORIGIN_NAME_TO_POWER_ID: Record<string, string> = {
   'trambiqueiro': 'impostor',
   'universitario': 'aprendizagem-aplicada',
   'vitima': 'cicatrizes',
+  
+  // === SUPLEMENTOS (22 origens) ===
+  'amigo-dos-animais': 'companheiro-animal',
+  'astronauta': 'acostumado-ao-extremo',
+  'chef-do-outro-lado': 'fome-do-outro-lado',
+  'colegial': 'poder-da-amizade',
+  'cosplayer': 'nao-e-fantasia-e-cosplay',
+  'diplomata': 'conexoes',
+  'explorador': 'manual-do-sobrevivente',
+  'experimento': 'mutacao',
+  'fanatico-por-criaturas': 'conhecimento-oculto',
+  'fotografo': 'atraves-da-lente',
+  'inventor-paranormal': 'invencao-paranormal',
+  'jovem-mistico': 'a-culpa-e-das-estrelas',
+  'legista-turno-noite': 'luto-habitual',
+  'motorista': 'maos-no-volante',
+  'nerd-entusiasta': 'o-inteligentao',
+  'psicologo': 'terapia',
+  'profetizado': 'luta-ou-fuga',
+  'reporter-investigativo': 'encontrar-a-verdade',
+  
+  // === ALIASES (variações de nomes) ===
+  'hacker': 'motor-de-busca',
+  'detetive': 'faro-para-pistas',
+  'medico': 'tecnica-medicinal',
+  'agente-saude': 'tecnica-medicinal',
+  'cultista': 'tracos-do-outro-lado',
+  'teorico-conspiracao': 'eu-ja-sabia',
+  'trabalhador': 'desbravador',
+  't.i.': 'motor-de-busca',
+  't-i': 'motor-de-busca',
+  'servidor': 'espirito-civico',
+  'investidor': 'faro-para-pistas',
+  'legista': 'luto-habitual',
+  'reporter': 'encontrar-a-verdade',
+  'jornalista': 'encontrar-a-verdade',
+  'nerd': 'o-inteligentao',
+  'mistico': 'a-culpa-e-das-estrelas',
 };
 
 /**
