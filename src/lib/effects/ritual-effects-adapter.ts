@@ -8,8 +8,8 @@
 //
 
 import type { UnifiedEffect, EffectMechanics, DamageType } from '../unified-effects-engine';
-import { getRitualById, getRitualEffect } from '../rituals/ritual-registry';
-import type { RitualMechanics } from '../rituals/types';
+import { getRitualById } from '../rituals/ritual-registry';
+import type { RitualMechanics, UnifiedRitual } from '../rituals/types';
 
 /**
  * Interface para ritual sustentado (input)
@@ -26,9 +26,10 @@ export interface SustainedRitualInput {
 
 /**
  * Converte mecânicas de ritual para EffectMechanics unificado
+ * Usa os nomes de propriedade corretos da interface RitualMechanics
  */
 function convertRitualMechanicsToEffects(
-  ritual: ReturnType<typeof getRitualById>,
+  ritual: UnifiedRitual | undefined,
   mechanics: RitualMechanics | undefined,
   ritualName: string
 ): EffectMechanics {
@@ -36,78 +37,72 @@ function convertRitualMechanicsToEffects(
   
   if (!mechanics) return effects;
   
-  // === Modificadores de Combate ===
-  if (mechanics.combatModifiers) {
-    const cm = mechanics.combatModifiers;
-    
-    if (cm.attackBonus) {
-      effects.attackBonus = cm.attackBonus;
-    }
-    if (cm.damageBonus) {
-      effects.damageBonus = cm.damageBonus;
-    }
-    if (cm.defenseBonus) {
-      effects.defenseBonus = cm.defenseBonus;
-    }
-    if (cm.criticalBonus) {
-      effects.criticalMarginBonus = cm.criticalBonus;
+  // === Modificadores de Combate (propriedades diretas) ===
+  if (mechanics.attackBonus) {
+    effects.attackBonus = mechanics.attackBonus;
+  }
+  if (mechanics.damageBonus) {
+    if (typeof mechanics.damageBonus === 'number') {
+      effects.damageBonus = mechanics.damageBonus;
     }
   }
+  if (mechanics.defenseBonus) {
+    effects.defenseBonus = mechanics.defenseBonus;
+  }
   
-  // === Redução de Dano ===
+  // === Redução de Dano (DamageReductionConfig tem types[] e amount) ===
   if (mechanics.damageReduction) {
-    for (const dr of mechanics.damageReduction) {
-      if (dr.type === 'all' || !dr.type) {
-        effects.damageReduction = (effects.damageReduction || 0) + dr.value;
-      } else {
-        if (!effects.damageReductionByType) effects.damageReductionByType = {};
-        effects.damageReductionByType[dr.type as DamageType] = 
-          (effects.damageReductionByType[dr.type as DamageType] || 0) + dr.value;
+    const dr = mechanics.damageReduction;
+    effects.damageReduction = dr.amount;
+    // Se tem tipos específicos, adiciona ao byType também
+    if (dr.types && dr.types.length > 0) {
+      if (!effects.damageReductionByType) effects.damageReductionByType = {};
+      for (const dtype of dr.types) {
+        effects.damageReductionByType[dtype as DamageType] = dr.amount;
       }
     }
   }
   
-  // === Bônus de Perícia ===
-  if (mechanics.skillBonuses) {
-    effects.skillBonus = {};
-    for (const sb of mechanics.skillBonuses) {
-      effects.skillBonus[sb.skill] = (effects.skillBonus[sb.skill] || 0) + sb.bonus;
+  // === Bônus de Perícia (SkillBonusConfig tem skills[] e bonus) ===
+  if (mechanics.skillBonus) {
+    const sb = mechanics.skillBonus;
+    if (sb.skills && typeof sb.bonus === 'number') {
+      effects.skillBonus = {};
+      for (const skill of sb.skills) {
+        effects.skillBonus[skill] = sb.bonus;
+      }
     }
   }
   
-  // === PV Temporários ===
+  // === PV Temporários (TempHPFormula extends DiceFormula com diceCount, diceType, bonus) ===
   if (mechanics.tempHP) {
-    // Calcula valor se for fórmula de dado
-    if (mechanics.tempHP.formula) {
-      // Aqui assumimos um valor médio para display
-      const match = mechanics.tempHP.formula.match(/(\d+)d(\d+)(?:\+(\d+))?/);
-      if (match) {
-        const count = parseInt(match[1]);
-        const sides = parseInt(match[2]);
-        const bonus = parseInt(match[3] || '0');
-        effects.tempHP = Math.floor(count * (sides / 2 + 0.5)) + bonus;
-      }
-    } else if (typeof mechanics.tempHP.value === 'number') {
-      effects.tempHP = mechanics.tempHP.value;
+    const thp = mechanics.tempHP;
+    // Calcula valor médio dos dados
+    if (thp.diceCount && thp.diceType) {
+      const avgRoll = Math.floor(thp.diceCount * (thp.diceType / 2 + 0.5)) + (thp.bonus || 0);
+      effects.tempHP = avgRoll;
     }
   }
   
-  // === Efeitos de Arma ===
-  if (mechanics.weaponEffects) {
+  // === Efeitos de Arma (weaponEffect) ===
+  if (mechanics.weaponEffect) {
+    const we = mechanics.weaponEffect;
     if (!effects.specialEffects) effects.specialEffects = [];
-    for (const we of mechanics.weaponEffects) {
-      if (we.damageBonus) {
-        effects.damageBonus = (effects.damageBonus || 0) + we.damageBonus;
-      }
-      if (we.attackBonus) {
-        effects.attackBonus = (effects.attackBonus || 0) + we.attackBonus;
-      }
-      if (we.damageType) {
-        effects.specialEffects.push(`Dano se torna ${we.damageType}`);
-      }
-      if (we.extraDice) {
-        effects.extraDamageDice = we.extraDice;
-      }
+    
+    if (we.damageBonus && typeof we.damageBonus === 'number') {
+      effects.damageBonus = (effects.damageBonus || 0) + we.damageBonus;
+    }
+    if (we.attackBonus) {
+      effects.attackBonus = (effects.attackBonus || 0) + we.attackBonus;
+    }
+    if (we.damageType) {
+      effects.specialEffects.push(`Dano se torna ${we.damageType}`);
+    }
+    if (we.extraDice) {
+      effects.extraDamageDice = `${we.extraDice.diceCount}d${we.extraDice.diceType}`;
+    }
+    if (we.criticalBonus) {
+      effects.criticalMarginBonus = we.criticalBonus;
     }
   }
   
@@ -119,15 +114,12 @@ function convertRitualMechanicsToEffects(
     }
   }
   
-  // === Efeitos de Área ===
-  if (mechanics.area) {
+  // === Efeitos de Área (areaEffect) ===
+  if (mechanics.areaEffect) {
     if (!effects.specialEffects) effects.specialEffects = [];
-    effects.specialEffects.push(`Área: ${mechanics.area.type} ${mechanics.area.size}m`);
-  }
-  
-  // === Movimento ===
-  if (mechanics.movementBonus) {
-    effects.movementBonus = mechanics.movementBonus;
+    const area = mechanics.areaEffect;
+    const size = area.radius || area.length || 0;
+    effects.specialEffects.push(`Área: ${area.shape} ${size}m`);
   }
   
   // === Ação Extra (ex: Velocidade Mortal) ===
@@ -138,6 +130,16 @@ function convertRitualMechanicsToEffects(
   }
   
   return effects;
+}
+
+/**
+ * Obtém mecânicas de um ritual pelo ID
+ */
+function getRitualMechanics(ritual: UnifiedRitual | undefined): RitualMechanics | undefined {
+  if (!ritual) return undefined;
+  
+  // Retorna mecânicas base via effects.base
+  return ritual.effects?.base;
 }
 
 /**
@@ -156,7 +158,7 @@ export function getRitualEffects(
     if (!ritual) continue;
     
     // Obtém mecânicas do ritual
-    const mechanics = getRitualEffect(sustained.ritualId, sustained.selectedEnhancements || []);
+    const mechanics = getRitualMechanics(ritual);
     
     // Converte para formato unificado
     const effectMechanics = convertRitualMechanicsToEffects(
@@ -277,7 +279,6 @@ export function getRitualEffectsSummary(
   isConcentrating: boolean;
 }> {
   return sustainedRituals.map(sr => {
-    const ritual = getRitualById(sr.ritualId);
     const effects = getRitualEffects([sr]);
     
     const effectStrings: string[] = [];

@@ -9,10 +9,11 @@
 
 import type { UnifiedEffect, EffectMechanics, AttributeType } from '../unified-effects-engine';
 import { getTrackById, getUnlockedAbilities } from '../class-powers/track-registry';
-import type { UnifiedTrackAbility } from '../class-powers/track-types';
+import type { UnifiedTrackAbility, TrackAbilityMechanics } from '../class-powers/track-types';
 
 /**
  * Converte uma habilidade de trilha para EffectMechanics
+ * Usa effects.base ao invés de mechanics conforme a interface UnifiedTrackAbility
  */
 function convertTrackAbilityToMechanics(
   ability: UnifiedTrackAbility,
@@ -20,82 +21,35 @@ function convertTrackAbilityToMechanics(
   nex: number
 ): EffectMechanics {
   const mechanics: EffectMechanics = {};
-  const m = ability.mechanics;
+  const m = ability.effects?.base;
   
   if (!m) return mechanics;
   
-  // === Bônus de Combate ===
-  if (m.attackBonus) {
-    if (m.contextCondition?.meleeOnly) {
-      mechanics.meleeAttackBonus = m.attackBonus;
-    } else if (m.contextCondition?.rangedOnly) {
-      mechanics.rangedAttackBonus = m.attackBonus;
-    } else {
-      mechanics.attackBonus = m.attackBonus;
-    }
-  }
-  
+  // === Bônus de Dano ===
   if (m.damageBonus) {
-    if (m.contextCondition?.meleeOnly) {
-      mechanics.meleeDamageBonus = m.damageBonus;
-    } else if (m.contextCondition?.rangedOnly) {
-      mechanics.rangedDamageBonus = m.damageBonus;
-    } else {
-      mechanics.damageBonus = m.damageBonus;
+    const dmgBonus = m.damageBonus;
+    if (dmgBonus.value) {
+      if (dmgBonus.conditions?.weaponType === 'melee') {
+        mechanics.meleeDamageBonus = dmgBonus.value;
+      } else if (dmgBonus.conditions?.weaponType === 'ranged') {
+        mechanics.rangedDamageBonus = dmgBonus.value;
+      } else {
+        mechanics.damageBonus = dmgBonus.value;
+      }
+    }
+    if (dmgBonus.extraDice) {
+      mechanics.extraDamageDice = `${dmgBonus.extraDice.count}${dmgBonus.extraDice.dieType || 'd6'}`;
     }
   }
   
-  // === Dados extras de dano ===
-  if (m.extraDamageDice) {
-    mechanics.extraDamageDice = m.extraDamageDice;
-  }
-  
-  // === Crítico ===
-  if (m.criticalMarginBonus) {
-    mechanics.criticalMarginBonus = m.criticalMarginBonus;
-  }
-  if (m.criticalMultiplierBonus) {
-    mechanics.criticalMultiplierBonus = m.criticalMultiplierBonus;
-  }
-  
-  // === Defesa ===
-  if (m.defenseBonus) {
-    mechanics.defenseBonus = m.defenseBonus;
-  }
-  
-  // === Resistências ===
-  if (m.fortitudeBonus) {
-    mechanics.fortitudeBonus = m.fortitudeBonus;
-  }
-  if (m.reflexosBonus) {
-    mechanics.reflexosBonus = m.reflexosBonus;
-  }
-  if (m.vontadeBonus) {
-    mechanics.vontadeBonus = m.vontadeBonus;
-  }
-  
-  // === Redução de Dano ===
-  if (m.damageResistance) {
-    mechanics.damageReduction = m.damageResistance;
-  }
-  if (m.mentalDamageResistance) {
-    mechanics.paranormalDamageReduction = m.mentalDamageResistance;
-  }
-  
-  // === Recursos ===
-  if (m.hpBonus) {
-    mechanics.hpBonus = m.hpBonus;
-  }
-  if (m.peBonus) {
-    mechanics.peBonus = m.peBonus;
-  }
-  if (m.tempHP) {
-    mechanics.tempHP = m.tempHP;
-  }
-  
-  // === Movimento ===
-  if (m.movementBonus) {
-    mechanics.movementBonus = m.movementBonus;
+  // === Bônus de Crítico ===
+  if (m.criticalBonus) {
+    if (m.criticalBonus.marginBonus) {
+      mechanics.criticalMarginBonus = m.criticalBonus.marginBonus;
+    }
+    if (m.criticalBonus.multiplierBonus) {
+      mechanics.criticalMultiplierBonus = m.criticalBonus.multiplierBonus;
+    }
   }
   
   // === Iniciativa ===
@@ -103,36 +57,81 @@ function convertTrackAbilityToMechanics(
     mechanics.initiativeBonus = m.initiativeBonus;
   }
   
+  // === PV adicional por NEX ===
+  if (m.hpPerNexPercent) {
+    const bonus = m.hpPerNexPercent * Math.floor(nex / 5);
+    mechanics.hpBonus = bonus;
+  }
+  
+  // === Resistência Paranormal ===
+  if (m.paranormalResistance) {
+    mechanics.paranormalDamageReduction = m.paranormalResistance;
+  }
+  
+  // === Resistência a Dano Mental ===
+  if (m.mentalDamageResistance) {
+    mechanics.damageResistance = { mental: m.mentalDamageResistance };
+  }
+  
   // === Perícias ===
-  if (m.skillBonuses) {
-    mechanics.skillBonus = m.skillBonuses;
-  }
-  
-  // === Proficiências ===
-  if (m.grantsProficiency) {
-    mechanics.grantsProficiency = m.grantsProficiency;
-  }
-  
-  // === Efeitos Especiais ===
-  if (ability.description) {
-    if (!mechanics.specialEffects) mechanics.specialEffects = [];
-    // Extrai efeitos especiais da descrição se não forem numéricos
-    if (!m.attackBonus && !m.damageBonus && !m.defenseBonus) {
-      mechanics.specialEffects.push(ability.description);
+  if (m.skillBonus) {
+    mechanics.skillBonus = {};
+    for (const skill of m.skillBonus.skills) {
+      mechanics.skillBonus[skill] = m.skillBonus.bonus;
     }
   }
   
+  // === Proficiências ===
+  if (m.proficiencies) {
+    mechanics.grantsProficiency = m.proficiencies;
+  }
+  
   // === Flags especiais ===
-  if (m.canUseHPAsPE) {
+  if (m.hpAsPE) {
     if (!mechanics.specialEffects) mechanics.specialEffects = [];
     mechanics.specialEffects.push('Pode usar PV como PE para rituais');
   }
-  if (m.canUseOccultismAsAttack) {
+  if (m.occultismAsAttack) {
     if (!mechanics.specialEffects) mechanics.specialEffects = [];
     mechanics.specialEffects.push('Pode usar Ocultismo em ataques corpo a corpo');
   }
   
+  // === Redução de Dano ===
+  if (m.damageReduction) {
+    if (m.damageReduction.type === 'fixed' && m.damageReduction.fixedAmount) {
+      mechanics.damageReduction = m.damageReduction.fixedAmount;
+    }
+  }
+  
+  // === Descrição como efeito especial se não há mecânicas numéricas ===
+  const hasNumericMechanics = 
+    mechanics.attackBonus || mechanics.damageBonus || mechanics.defenseBonus ||
+    mechanics.meleeDamageBonus || mechanics.rangedDamageBonus ||
+    mechanics.criticalMarginBonus || mechanics.initiativeBonus ||
+    mechanics.hpBonus || mechanics.damageReduction;
+    
+  if (!hasNumericMechanics && ability.description) {
+    if (!mechanics.specialEffects) mechanics.specialEffects = [];
+    mechanics.specialEffects.push(ability.description);
+  }
+  
   return mechanics;
+}
+
+/**
+ * Verifica se a habilidade requer ativação manual
+ */
+function requiresActivation(m: TrackAbilityMechanics | undefined): boolean {
+  if (!m) return false;
+  return m.kind === 'activated' || m.kind === 'reaction';
+}
+
+/**
+ * Obtém custo de PE da habilidade
+ */
+function getAbilityPECost(m: TrackAbilityMechanics | undefined): number | undefined {
+  if (!m?.activation) return undefined;
+  return m.activation.cost;
 }
 
 /**
@@ -167,8 +166,8 @@ export function getTrackEffects(
     if (!hasMechanics) continue;
     
     // Verifica se é uma habilidade que requer ativação
-    const requiresActivation = ability.mechanics?.requiresActivation ?? false;
-    const costPE = ability.mechanics?.peCost;
+    const needsActivation = requiresActivation(ability.effects?.base);
+    const costPE = getAbilityPECost(ability.effects?.base);
     
     const effect: UnifiedEffect = {
       id: `track-${ability.id}`,
@@ -178,11 +177,11 @@ export function getTrackEffects(
       sourceId: ability.id,
       sourceName: `Trilha ${track.name}: ${ability.name}`,
       mechanics,
-      isActive: requiresActivation 
+      isActive: needsActivation 
         ? activatedEffects.includes(`track-${ability.id}`)
         : true,
-      isToggleable: requiresActivation,
-      conditions: requiresActivation ? {
+      isToggleable: needsActivation,
+      conditions: needsActivation ? {
         requiresActivation: true,
         costPE,
       } : undefined,
@@ -242,7 +241,7 @@ export function listAllTrackAbilities(trackId: string): Array<{
     id: ability.id,
     name: ability.name,
     minNex: ability.minNex,
-    hasMechanics: !!ability.mechanics && Object.keys(ability.mechanics).length > 0,
+    hasMechanics: !!ability.effects?.base && Object.keys(ability.effects.base).length > 0,
     description: ability.description,
   }));
 }
