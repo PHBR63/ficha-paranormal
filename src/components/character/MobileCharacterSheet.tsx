@@ -53,7 +53,9 @@ import { useSustainedRituals } from '@/hooks/useSustainedRituals';
 import { BonusSummaryCard } from './BonusSummaryCard';
 import { MobileAuditBanner } from './MobileAuditBanner';
 import { ExcessPowersRemovalModal } from './ExcessPowersRemovalModal';
+import { ExcessRitualsRemovalModal } from './ExcessRitualsRemovalModal';
 import { RemovedPowersHistory } from './RemovedPowersHistory';
+import { getOcultistRituals } from '@/lib/character-data';
 import { useCharacterAudit } from '@/hooks/useCharacterAudit';
 import { CharacterForAudit, getMaxParanormalPowers } from '@/lib/character-audit-engine';
 import { useAuth } from '@/contexts/AuthContext';
@@ -526,6 +528,7 @@ export function MobileCharacterSheet({
   const [powerModalOpen, setPowerModalOpen] = useState(false);
   const [selectedPower, setSelectedPower] = useState<PowerDetailData | null>(null);
   const [excessPowersModalOpen, setExcessPowersModalOpen] = useState(false);
+  const [excessRitualsModalOpen, setExcessRitualsModalOpen] = useState(false);
   const [removedPowersHistoryOpen, setRemovedPowersHistoryOpen] = useState(false);
   const [inventorySheetOpen, setInventorySheetOpen] = useState(false);
   
@@ -539,6 +542,16 @@ export function MobileCharacterSheet({
     [character.nex, character.origin]
   );
   const hasExcessPowers = (character.paranormal_powers?.length || 0) > powerLimits.total;
+
+  // Calcula limite de rituais para Ocultistas
+  const ritualLimits = useMemo(() => {
+    if (character.class !== 'Ocultista') return null;
+    return getOcultistRituals(character.nex);
+  }, [character.class, character.nex]);
+  
+  const hasExcessRituals = ritualLimits 
+    ? character.rituals.length > ritualLimits.count 
+    : false;
 
   // Estados críticos
   const hpPercent = (character.hp_current / character.hp_max) * 100;
@@ -1296,6 +1309,30 @@ export function MobileCharacterSheet({
                 badge={character.rituals.length}
               >
                 <div className="space-y-2">
+                  {/* Alerta de rituais excedentes (apenas Ocultista) */}
+                  {ritualLimits && (
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      {hasExcessRituals ? (
+                        <div className="flex items-center gap-2 p-2 rounded-lg bg-destructive/10 border border-destructive/30 flex-1">
+                          <span className="text-destructive font-medium text-xs">
+                            ⚠️ {character.rituals.length}/{ritualLimits.count} rituais
+                          </span>
+                          <Button 
+                            variant="destructive" 
+                            size="sm"
+                            className="h-7 text-xs ml-auto"
+                            onClick={() => setExcessRitualsModalOpen(true)}
+                          >
+                            Remover
+                          </Button>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">
+                          {character.rituals.length}/{ritualLimits.count} rituais
+                        </span>
+                      )}
+                    </div>
+                  )}
                   {character.rituals.map((ritualId, i) => {
                     const ritualData = getRitualData(ritualId);
                     return (
@@ -1521,6 +1558,31 @@ export function MobileCharacterSheet({
           }
         }}
       />
+
+      {/* Modal de remoção de rituais excedentes */}
+      {ritualLimits && (
+        <ExcessRitualsRemovalModal
+          open={excessRitualsModalOpen}
+          onOpenChange={setExcessRitualsModalOpen}
+          ritualIds={character.rituals}
+          maxRituals={ritualLimits.count}
+          characterId={character.id}
+          onRemoveRituals={async (ritualIdsToRemove) => {
+            const updatedRituals = character.rituals.filter(
+              id => !ritualIdsToRemove.includes(id)
+            );
+            
+            await supabase
+              .from('characters')
+              .update({ rituals: updatedRituals })
+              .eq('id', character.id);
+            
+            if (onRefetch) {
+              await onRefetch();
+            }
+          }}
+        />
+      )}
 
       {/* Modal de histórico de poderes removidos */}
       <RemovedPowersHistory
