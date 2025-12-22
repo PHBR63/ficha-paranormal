@@ -90,6 +90,8 @@ import { CharacterForAudit, canAddParanormalPower } from '@/lib/character-audit-
 import { ClassPowerBonusesPanel } from '@/components/character/ClassPowerBonusesPanel';
 import { AutomationDebugWidget } from '@/components/character/AutomationDebugWidget';
 import { useDeveloperMode } from '@/components/ui/theme-selector';
+import { ActiveEffectsPanel } from '@/components/character/ActiveEffectsPanel';
+import { useUnifiedEffects, CharacterStateForEffects } from '@/hooks/useUnifiedEffects';
 
 // Novos componentes do redesign 2.0 (estilo ficha de papel)
 import { CharacterSheetHeader } from '@/components/character/CharacterSheetHeader';
@@ -426,6 +428,64 @@ export default function CharacterSheet() {
   // Extrai hooks internos do bonusSummary para evitar chamadas duplicadas
   const defenseBonuses = bonusSummary.defenseBonuses;
   const paranormalEffects = bonusSummary.paranormalEffects;
+
+  // === SISTEMA UNIFICADO DE EFEITOS (SUE) ===
+  // Consolida todos os efeitos de origem, trilha, condições e rituais
+  const unifiedEffectsState = useMemo<CharacterStateForEffects | null>(() => {
+    if (!character) return null;
+    
+    // Mapeia condições para o formato esperado pelo SUE
+    const activeConditions = (character.conditions || []).map(c => 
+      typeof c === 'string' ? c : c.id
+    );
+    
+    return {
+      origin: character.origin,
+      classId: character.class,
+      classTrack: character.class_track || null,
+      nex: character.nex,
+      attributes: {
+        strength: character.strength,
+        agility: character.agility,
+        vigor: character.vigor,
+        intellect: character.intellect,
+        presence: character.presence,
+      },
+      conditions: activeConditions,
+      activeRituals: sustainedRituals.map(r => ({
+        ritualId: r.ritualId,
+        ritualName: r.ritualName,
+        element: r.element,
+        circle: r.circle,
+        selectedEnhancements: r.selectedEnhancements,
+        turnsActive: r.turnsActive,
+        isConcentrating: r.isConcentrating,
+      })),
+      elementalAffinity: character.elemental_affinity,
+      affinityActive: character.affinity_active,
+      currentHP: hpCurrent,
+      maxHP: character.hp_max,
+      currentPE: peCurrent,
+      maxPE: character.pe_max,
+      currentSAN: sanCurrent,
+      maxSAN: character.san_max,
+      activatedEffectIds: character.active_conditional_bonuses || [],
+    };
+  }, [character, sustainedRituals, hpCurrent, peCurrent, sanCurrent]);
+
+  // Hook do Sistema Unificado de Efeitos
+  const unifiedEffects = useUnifiedEffects(
+    unifiedEffectsState || {
+      origin: '',
+      classId: '',
+      classTrack: null,
+      nex: 5,
+      attributes: { strength: 1, agility: 1, vigor: 1, intellect: 1, presence: 1 },
+      conditions: [],
+      activeRituals: [],
+      activatedEffectIds: [],
+    }
+  );
 
   // Hook de aplicação automática de condições (HP=0 → Inconsciente, SAN=0 → Enlouquecendo)
   const { processResourceChange } = useAutoConditions();
@@ -2542,6 +2602,9 @@ export default function CharacterSheet() {
                   });
                 }}
               />
+
+              {/* Painel do Sistema Unificado de Efeitos */}
+              <ActiveEffectsPanel effectsResult={unifiedEffects} />
 
               {/* Botão de Descanso */}
               <Button
