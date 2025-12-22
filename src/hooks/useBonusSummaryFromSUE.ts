@@ -1,0 +1,516 @@
+/**
+ * useBonusSummaryFromSUE - Hook que converte o Sistema Unificado de Efeitos para BonusSummary
+ * 
+ * Este hook atua como adapter entre o SUE (Sistema Unificado de Efeitos) e a interface
+ * BonusSummary usada pelos componentes existentes. Ele elimina a duplicação de cálculo
+ * e centraliza todas as fontes de bônus no SUE.
+ */
+
+import { useMemo, useCallback } from 'react';
+import { useUnifiedEffects, CharacterStateForEffects, CombatContextInput } from './useUnifiedEffects';
+import { useDefenseBonuses, DefenseBonusBreakdown, ResistanceBonusBreakdown, ActiveRitualForDefense } from './useDefenseBonuses';
+import { useParanormalEffects, ParanormalEffects } from './useParanormalEffects';
+import { useClassPowerBonuses, ClassPowerBonusResult } from './useClassPowerBonuses';
+import type { ComputedEffects } from '@/lib/unified-effects-engine';
+import type { ActiveClassPower, WeaponCategory, ProtectionCategory } from '@/lib/class-powers/types';
+
+// Re-exporta tipos para compatibilidade com código existente
+export type { BonusBreakdown, ConditionalBonus, CombatBonuses, DamageReduction, EffectResistances, SkillBonuses, BonusSummary } from './useCharacterBonusSummary';
+export { CONDITIONAL_BONUSES, hasBonusesInCategory } from './useCharacterBonusSummary';
+
+import { 
+  BonusBreakdown, 
+  ConditionalBonus, 
+  CombatBonuses, 
+  DamageReduction, 
+  EffectResistances, 
+  SkillBonuses, 
+  BonusSummary,
+  CONDITIONAL_BONUSES
+} from './useCharacterBonusSummary';
+
+// Props do hook
+export interface UseBonusSummaryFromSUEProps {
+  // Dados básicos do personagem
+  origin: string;
+  abilities: string[];
+  generalPowers?: Array<{ id: string; name: string; description?: string; category?: string }>;
+  paranormalPowers?: Array<{ id: string; name: string; element: string; description: string }>;
+  inventory?: Array<{ id?: string; name: string; isEquipped?: boolean; itemType?: string; armorType?: string }>;
+  nex: number;
+  elementalAffinity?: string | null;
+  affinityActive?: boolean;
+  activeConditionalBonuses?: string[];
+  activeRituals?: ActiveRitualForDefense[];
+  skills?: Record<string, number>;
+  
+  // Atributos
+  strength?: number;
+  agility?: number;
+  vigor?: number;
+  intellect?: number;
+  presence?: number;
+  
+  // Classe e trilha
+  classId?: string;
+  classTrack?: string | null;
+  classPowers?: (string | ActiveClassPower)[];
+  
+  // Equipamento
+  equippedWeaponType?: WeaponCategory;
+  equippedProtectionType?: ProtectionCategory;
+  
+  // Estado de combate
+  inCombat?: boolean;
+  
+  // HP/PE atuais para cálculo de condições
+  hpCurrent?: number;
+  hpMax?: number;
+  peCurrent?: number;
+  peMax?: number;
+  
+  // Condições ativas
+  activeConditions?: string[];
+}
+
+/**
+ * Converte breakdown do SUE para formato BonusBreakdown
+ */
+function convertToBreakdown(
+  source: string,
+  value: number | string,
+  sourceType: 'origin' | 'ability' | 'general_power' | 'paranormal' | 'equipment' | 'ritual' | 'skill_training',
+  conditional?: string
+): BonusBreakdown {
+  return {
+    source,
+    value,
+    type: sourceType,
+    conditional,
+    active: true,
+  };
+}
+
+/**
+ * Hook que usa o SUE como fonte única de verdade e converte para BonusSummary
+ */
+export function useBonusSummaryFromSUE({
+  origin,
+  abilities,
+  generalPowers = [],
+  paranormalPowers = [],
+  inventory = [],
+  nex,
+  elementalAffinity,
+  affinityActive = false,
+  activeConditionalBonuses = [],
+  activeRituals = [],
+  skills = {},
+  strength = 1,
+  agility = 1,
+  vigor = 1,
+  intellect = 1,
+  presence = 1,
+  classId,
+  classTrack,
+  classPowers = [],
+  equippedWeaponType,
+  equippedProtectionType,
+  inCombat = false,
+  hpCurrent = 0,
+  hpMax = 0,
+  peCurrent = 0,
+  peMax = 0,
+  activeConditions = [],
+}: UseBonusSummaryFromSUEProps): BonusSummary & { unifiedEffects: ReturnType<typeof useUnifiedEffects> } {
+  
+  // Monta o estado do personagem para o SUE
+  const characterState = useMemo<CharacterStateForEffects>(() => ({
+    origin,
+    classId: classId || '',
+    classTrack,
+    nex,
+    attributes: {
+      strength,
+      agility,
+      vigor,
+      intellect,
+      presence,
+    },
+    conditions: activeConditions,
+    activeRituals: activeRituals.map(r => ({
+      ritualId: r.ritualId,
+      ritualName: r.ritualName,
+      element: 'conhecimento', // Default - não disponível no ActiveRitualForDefense
+      circle: 1, // Default - não disponível no ActiveRitualForDefense
+      selectedEnhancements: r.enhancements || [],
+    })),
+    elementalAffinity,
+    affinityActive,
+    currentHP: hpCurrent,
+    maxHP: hpMax,
+    currentPE: peCurrent,
+    maxPE: peMax,
+    activatedEffectIds: activeConditionalBonuses,
+  }), [
+    origin, classTrack, classId, nex,
+    strength, agility, vigor, intellect, presence,
+    activeConditions, activeRituals,
+    hpCurrent, hpMax, peCurrent, peMax,
+    elementalAffinity, affinityActive,
+    activeConditionalBonuses
+  ]);
+  
+  // Obtém efeitos unificados do SUE
+  const unifiedEffects = useUnifiedEffects(characterState);
+  
+  // Mantém hooks legados para dados ainda não migrados para o SUE
+  const defenseBonuses = useDefenseBonuses({ 
+    origin, 
+    abilities, 
+    generalPowers, 
+    inventory, 
+    activeRituals, 
+    skills, 
+    activeConditionalBonuses,
+    intellect,
+  });
+  
+  const paranormalEffects = useParanormalEffects({ 
+    powers: paranormalPowers, 
+    nex, 
+    elementalAffinity: elementalAffinity as any, 
+    affinityActive 
+  });
+  
+  const classPowerBonuses = useClassPowerBonuses({
+    nex,
+    classId: classId || '',
+    classTrack,
+    attributes: { strength, agility, vigor, intellect, presence },
+    classPowers,
+    abilities,
+    equippedWeaponType,
+    equippedProtectionType,
+    inCombat,
+    inInvestigation: false,
+    isFavoriteWeapon: false,
+  });
+  
+  // Helper para verificar bônus condicional ativo
+  const isConditionalActive = useCallback((id: string) => 
+    activeConditionalBonuses.includes(id),
+  [activeConditionalBonuses]);
+  
+  // Converte SUE para BonusSummary
+  const bonusSummary = useMemo<BonusSummary>(() => {
+    const computed = unifiedEffects.computed;
+    
+    // === COMBATE (do SUE) ===
+    const combat: CombatBonuses = {
+      attack: {
+        total: computed.attack.general + computed.attack.melee + computed.attack.ranged,
+        breakdown: computed.attack.breakdown.map(b => 
+          convertToBreakdown(b.source, b.value, 'ability', b.conditional)
+        ),
+      },
+      damage: {
+        total: computed.damage.general + computed.damage.melee + computed.damage.ranged,
+        extraDice: [...computed.damage.extraDice],
+        breakdown: computed.damage.breakdown.map(b => 
+          convertToBreakdown(b.source, b.value, 'ability', b.conditional)
+        ),
+      },
+      criticalMargin: {
+        total: computed.critical.marginBonus,
+        breakdown: computed.critical.breakdown
+          .filter(b => b.type === 'margin')
+          .map(b => convertToBreakdown(b.source, b.value, 'ability')),
+      },
+      initiative: {
+        total: computed.initiative.bonus,
+        breakdown: computed.initiative.breakdown.map(b => 
+          convertToBreakdown(b.source, b.value, 'ability')
+        ),
+      },
+    };
+    
+    // === REDUÇÃO DE DANO (do SUE) ===
+    // O SUE usa tipos de dano específicos do Ordem (balistico, corte, etc.)
+    // O BonusSummary legado usa apenas "physical" e "paranormal" como categorias
+    const damageReduction: DamageReduction = {
+      physical: {
+        total: computed.damageReduction.physical,
+        breakdown: computed.damageReduction.breakdown
+          .filter(b => !b.type || ['balistico', 'corte', 'impacto', 'perfuracao'].includes(b.type as string))
+          .map(b => convertToBreakdown(b.source, b.value, 'ability')),
+      },
+      paranormal: {
+        total: computed.damageReduction.paranormal,
+        breakdown: computed.damageReduction.breakdown
+          .filter(b => ['mental', 'sangue', 'morte', 'conhecimento', 'energia', 'medo'].includes(b.type as string))
+          .map(b => convertToBreakdown(b.source, b.value, 'paranormal')),
+      },
+    };
+    
+    // === RESISTÊNCIAS A EFEITOS ===
+    // O SUE usa DamageType que não inclui 'poison'/'disease' diretamente
+    // Mapeia dos tipos do sistema legado
+    const effectResistances: EffectResistances = {
+      poison: (computed.damageResistance as Record<string, number>)?.['poison'] || 0,
+      disease: (computed.damageResistance as Record<string, number>)?.['disease'] || 0,
+      mental: computed.damageResistance.mental || 0,
+      breakdown: [],
+    };
+    
+    // === PERÍCIAS (do SUE) ===
+    const skillBonuses: SkillBonuses = {};
+    for (const [skill, data] of Object.entries(computed.skills)) {
+      if (data.bonus > 0) {
+        skillBonuses[skill] = {
+          total: data.bonus,
+          breakdown: data.sources.map(s => convertToBreakdown(s, data.bonus, 'ability')),
+        };
+      }
+    }
+    
+    // === EFEITOS ESPECIAIS (do SUE) ===
+    const special: BonusBreakdown[] = computed.specialEffects.map(e => ({
+      source: e.source,
+      value: e.effect,
+      type: 'ability' as const,
+      active: true,
+    }));
+    
+    // === BÔNUS CONDICIONAIS ===
+    const conditionalBonuses: ConditionalBonus[] = [];
+    
+    // Converte efeitos toggleáveis do SUE para bônus condicionais
+    for (const toggle of computed.toggleableEffects) {
+      conditionalBonuses.push({
+        id: toggle.id,
+        name: toggle.name,
+        condition: toggle.condition || '',
+        active: toggle.isActive,
+        effects: toggle.effects,
+        source: 'ability' as const,
+      });
+    }
+    
+    // Adiciona bônus condicionais do sistema legado (poderes gerais)
+    const hasPower = (id: string) => generalPowers.some(p => p.id === id);
+    const hasAbility = (name: string) => {
+      const normalized = name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      return abilities.some(a => {
+        const aLower = typeof a === 'string' ? a.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '') : '';
+        return aLower.includes(normalized);
+      });
+    };
+    
+    // Poderes gerais condicionais
+    if (hasPower('foco-arma')) {
+      const isActive = isConditionalActive('foco-arma');
+      conditionalBonuses.push({
+        id: 'foco-arma',
+        name: 'Foco em Arma',
+        condition: 'Com arma escolhida',
+        active: isActive,
+        effects: ['+2 ataque'],
+        source: 'general_power',
+      });
+      if (isActive) {
+        combat.attack.total += 2;
+        combat.attack.breakdown.push(convertToBreakdown('Foco em Arma', 2, 'general_power', 'com arma escolhida'));
+      }
+    }
+    
+    if (hasPower('ataque-poderoso')) {
+      const isActive = isConditionalActive('ataque-poderoso');
+      conditionalBonuses.push({
+        id: 'ataque-poderoso',
+        name: 'Ataque Poderoso',
+        condition: 'Ação de ataque (-2 ataque)',
+        active: isActive,
+        effects: ['+5 dano', '-2 ataque'],
+        source: 'general_power',
+      });
+      if (isActive) {
+        combat.damage.total += 5;
+        combat.attack.total -= 2;
+        combat.damage.breakdown.push(convertToBreakdown('Ataque Poderoso', 5, 'general_power', 'por -2 no ataque'));
+      }
+    }
+    
+    if (hasPower('fanatico')) {
+      const isActive = isConditionalActive('fanatico');
+      conditionalBonuses.push({
+        id: 'fanatico',
+        name: 'Fanático',
+        condition: 'HP < 50%',
+        active: isActive,
+        effects: ['+2 ataque', '+2 dano'],
+        source: 'general_power',
+      });
+      if (isActive) {
+        combat.attack.total += 2;
+        combat.damage.total += 2;
+        combat.attack.breakdown.push(convertToBreakdown('Fanático', 2, 'general_power', 'com menos de 50% PV'));
+        combat.damage.breakdown.push(convertToBreakdown('Fanático', 2, 'general_power', 'com menos de 50% PV'));
+      }
+    }
+    
+    // Combate Defensivo
+    if (hasAbility('combate defensivo')) {
+      const isActive = isConditionalActive('combate-defensivo');
+      conditionalBonuses.push({
+        id: 'combate-defensivo',
+        name: 'Combate Defensivo',
+        condition: 'Ação agredir (até próximo turno)',
+        active: isActive,
+        effects: ['+5 Defesa', '-5 ataque'],
+        source: 'ability',
+      });
+      if (isActive) {
+        combat.attack.total -= 5;
+        combat.attack.breakdown.push(convertToBreakdown('Combate Defensivo', -5, 'ability', 'modo defensivo ativo'));
+      }
+    }
+    
+    // Sentido Tático
+    if (hasAbility('sentido tatico')) {
+      const isActive = isConditionalActive('sentido-tatico');
+      conditionalBonuses.push({
+        id: 'sentido-tatico',
+        name: 'Sentido Tático',
+        condition: '2 PE + ação movimento (cena)',
+        active: isActive,
+        effects: [`+${intellect} Defesa`, `+${intellect} resistências`],
+        source: 'ability',
+      });
+    }
+    
+    // Iniciativa Melhorada
+    if (hasPower('iniciativa-melhorada')) {
+      combat.initiative.total += 5;
+      combat.initiative.breakdown.push(convertToBreakdown('Iniciativa Melhorada', 5, 'general_power'));
+    }
+    
+    // Dureza Natural
+    if (hasPower('dureza-natural')) {
+      damageReduction.physical.total += 2;
+      damageReduction.physical.breakdown.push(convertToBreakdown('Dureza Natural', 2, 'general_power'));
+    }
+    
+    // Sangue Resistente
+    if (hasPower('sangue-resistente')) {
+      damageReduction.paranormal.total += 5;
+      damageReduction.paranormal.breakdown.push(convertToBreakdown('Sangue Resistente', 5, 'general_power'));
+    }
+    
+    // Constituição Forte
+    if (hasPower('constituicao-forte')) {
+      effectResistances.poison = 5;
+      effectResistances.disease = 5;
+      effectResistances.breakdown.push(convertToBreakdown('Constituição Forte', 5, 'general_power', 'veneno e doença'));
+    }
+    
+    // Resistência Mental
+    if (hasPower('resistencia-mental')) {
+      effectResistances.mental = 5;
+      effectResistances.breakdown.push(convertToBreakdown('Resistência Mental', 5, 'general_power', 'dano mental'));
+    }
+    
+    // === RETORNO ===
+    return {
+      defense: {
+        total: computed.defense.general + defenseBonuses.totalBonus + paranormalEffects.defenseBonus,
+        breakdown: [
+          ...defenseBonuses.breakdown,
+          ...computed.defense.breakdown.map(b => ({
+            source: b.source,
+            type: 'ability' as const,
+            bonus: b.value,
+            active: true,
+            conditional: b.conditional,
+          })),
+          ...(paranormalEffects.defenseBonus > 0 ? [{
+            source: 'Poderes Paranormais',
+            type: 'paranormal' as const,
+            bonus: paranormalEffects.defenseBonus,
+            active: true,
+          }] : []),
+        ],
+      },
+      resistances: {
+        fortitude: {
+          total: computed.resistances.fortitude + defenseBonuses.resistances.fortitude + paranormalEffects.fortitudeBonus,
+          breakdown: [
+            ...defenseBonuses.resistances.breakdown.filter(b => b.fortitude > 0),
+            ...computed.resistances.breakdown.filter(b => b.resistance === 'fortitude').map(b => ({
+              source: b.source,
+              type: 'ability' as const,
+              fortitude: b.value,
+              reflexos: 0,
+              vontade: 0,
+              active: true,
+            })),
+          ],
+        },
+        reflexos: {
+          total: computed.resistances.reflexos + defenseBonuses.resistances.reflexos + paranormalEffects.reflexBonus,
+          breakdown: [
+            ...defenseBonuses.resistances.breakdown.filter(b => b.reflexos > 0),
+            ...computed.resistances.breakdown.filter(b => b.resistance === 'reflexos').map(b => ({
+              source: b.source,
+              type: 'ability' as const,
+              fortitude: 0,
+              reflexos: b.value,
+              vontade: 0,
+              active: true,
+            })),
+          ],
+        },
+        vontade: {
+          total: computed.resistances.vontade + defenseBonuses.resistances.vontade + paranormalEffects.willpowerBonus,
+          breakdown: [
+            ...defenseBonuses.resistances.breakdown.filter(b => b.vontade > 0),
+            ...computed.resistances.breakdown.filter(b => b.resistance === 'vontade').map(b => ({
+              source: b.source,
+              type: 'ability' as const,
+              fortitude: 0,
+              reflexos: 0,
+              vontade: b.value,
+              active: true,
+            })),
+          ],
+        },
+      },
+      combat,
+      damageReduction,
+      effectResistances,
+      skills: skillBonuses,
+      special,
+      paranormalEffects,
+      conditionalBonuses,
+      hpBonus: computed.resources.hpBonus + paranormalEffects.hpBonus + classPowerBonuses.totals.bonusHP,
+      peBonus: computed.resources.peBonus + paranormalEffects.peBonus,
+      defenseBonuses,
+      classPowerBonuses,
+    };
+  }, [
+    unifiedEffects, 
+    defenseBonuses, 
+    paranormalEffects, 
+    classPowerBonuses,
+    abilities, 
+    generalPowers, 
+    isConditionalActive,
+    intellect,
+  ]);
+  
+  // Retorna BonusSummary + acesso ao SUE
+  return {
+    ...bonusSummary,
+    unifiedEffects,
+  };
+}
