@@ -86,6 +86,9 @@ const BONUS_CATEGORIES: BonusCategory[] = [
   },
 ];
 
+// Tipo de categoria de bônus para filtragem
+export type BonusCategoryId = 'combat' | 'defense' | 'ritual' | 'paranormal' | 'skill' | 'resistance';
+
 // Interface para item de bônus processado
 interface ProcessedBonus {
   source: string;
@@ -105,6 +108,7 @@ interface ProcessedCategory {
 
 interface ActiveBonusSummaryWidgetProps {
   bonusSummary: BonusSummary;
+  onCategoryClick?: (categoryId: BonusCategoryId) => void;
   className?: string;
 }
 
@@ -385,6 +389,7 @@ function processBonusSummary(summary: BonusSummary): ProcessedCategory[] {
 
 export const ActiveBonusSummaryWidget = memo(function ActiveBonusSummaryWidget({
   bonusSummary,
+  onCategoryClick,
   className,
 }: ActiveBonusSummaryWidgetProps) {
   // Processa categorias de bônus
@@ -435,17 +440,20 @@ export const ActiveBonusSummaryWidget = memo(function ActiveBonusSummaryWidget({
             {processedCategories.map((cat) => (
               <Tooltip key={cat.category.id}>
                 <TooltipTrigger asChild>
-                  <motion.div
+                  <motion.button
+                    type="button"
                     initial={{ scale: 0, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     exit={{ scale: 0, opacity: 0 }}
                     whileHover={{ scale: 1.15 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => onCategoryClick?.(cat.category.id as BonusCategoryId)}
                     className={cn(
-                      "flex items-center gap-0.5 px-1.5 py-0.5 rounded-md cursor-help",
+                      "flex items-center gap-0.5 px-1.5 py-0.5 rounded-md cursor-pointer",
                       "transition-all duration-200 hover:shadow-sm",
                       cat.category.bgClass,
                       cat.category.borderClass,
-                      "border"
+                      "border focus:outline-none focus:ring-2 focus:ring-primary/50"
                     )}
                   >
                     <cat.category.icon 
@@ -457,7 +465,7 @@ export const ActiveBonusSummaryWidget = memo(function ActiveBonusSummaryWidget({
                     )}>
                       {cat.activeCount}
                     </span>
-                  </motion.div>
+                  </motion.button>
                 </TooltipTrigger>
                 <TooltipContent 
                   side="bottom" 

@@ -33,12 +33,17 @@ const BONUS_TYPE_CONFIG = {
   skill_training: { icon: Activity, color: 'text-cyan-500', bg: 'bg-cyan-500/10', label: 'Treinamento' },
 };
 
+// Tipo de categoria de filtro
+export type BonusPanelFilter = 'all' | 'combat' | 'defense' | 'ritual' | 'paranormal' | 'skill' | 'resistance';
+
 interface ActiveBonusesPanelProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   bonusSummary: BonusSummary;
   activeBonusSources: string[];
   onToggleConditionalBonus?: (bonusId: string, active: boolean) => void;
+  filter?: BonusPanelFilter;
+  onFilterChange?: (filter: BonusPanelFilter) => void;
 }
 
 // Componente para card de bônus condicional toggleável
@@ -213,12 +218,24 @@ function BonusSection({
   );
 }
 
+// Configuração de filtros com labels
+const FILTER_OPTIONS: { id: BonusPanelFilter; label: string; icon: React.ElementType }[] = [
+  { id: 'all', label: 'Todos', icon: Sparkles },
+  { id: 'combat', label: 'Combate', icon: Swords },
+  { id: 'defense', label: 'Defesa', icon: Shield },
+  { id: 'resistance', label: 'Resistências', icon: Activity },
+  { id: 'skill', label: 'Perícias', icon: Target },
+  { id: 'paranormal', label: 'Paranormal', icon: Flame },
+];
+
 export function ActiveBonusesPanel({
   open,
   onOpenChange,
   bonusSummary,
   activeBonusSources,
   onToggleConditionalBonus,
+  filter = 'all',
+  onFilterChange,
 }: ActiveBonusesPanelProps) {
   // Conta total de bônus ativos
   const totalBonuses = activeBonusSources.length;
@@ -239,11 +256,17 @@ export function ActiveBonusesPanel({
   const hasStats = bonusSummary.hpBonus > 0 || bonusSummary.peBonus > 0;
   const hasConditional = bonusSummary.conditionalBonuses && bonusSummary.conditionalBonuses.length > 0;
 
+  // Função para verificar se uma seção deve ser mostrada com base no filtro
+  const shouldShowSection = (sectionFilter: BonusPanelFilter): boolean => {
+    if (filter === 'all') return true;
+    return filter === sectionFilter;
+  };
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-full sm:max-w-md p-0">
         {/* Header */}
-        <SheetHeader className="p-4 border-b border-border bg-gradient-to-r from-primary/5 to-secondary/5">
+        <SheetHeader className="p-4 pb-2 border-b border-border bg-gradient-to-r from-primary/5 to-secondary/5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <motion.div
@@ -257,18 +280,48 @@ export function ActiveBonusesPanel({
                 <SheetTitle className="font-display text-lg">Bônus Ativos</SheetTitle>
                 <p className="text-xs text-muted-foreground">
                   {totalBonuses} {totalBonuses === 1 ? 'bônus ativo' : 'bônus ativos'}
+                  {filter !== 'all' && (
+                    <span className="text-primary ml-1">
+                      • Filtrado: {FILTER_OPTIONS.find(f => f.id === filter)?.label}
+                    </span>
+                  )}
                 </p>
               </div>
             </div>
           </div>
+          
+          {/* Filtros por categoria */}
+          <div className="flex flex-wrap gap-1.5 mt-3 pt-2 border-t border-border/50">
+            {FILTER_OPTIONS.map((option) => {
+              const Icon = option.icon;
+              const isActive = filter === option.id;
+              return (
+                <button
+                  key={option.id}
+                  type="button"
+                  onClick={() => onFilterChange?.(option.id)}
+                  className={cn(
+                    "flex items-center gap-1 px-2 py-1 rounded-md text-xs transition-all",
+                    "border focus:outline-none focus:ring-2 focus:ring-primary/50",
+                    isActive 
+                      ? "bg-primary text-primary-foreground border-primary" 
+                      : "bg-muted/50 text-muted-foreground border-border hover:bg-muted hover:text-foreground"
+                  )}
+                >
+                  <Icon className="w-3 h-3" />
+                  <span>{option.label}</span>
+                </button>
+              );
+            })}
+          </div>
         </SheetHeader>
 
         {/* Conteúdo com scroll */}
-        <ScrollArea className="h-[calc(100vh-80px)]">
+        <ScrollArea className="h-[calc(100vh-140px)]">
           <div className="p-4 space-y-6">
             
-            {/* === BÔNUS CONDICIONAIS (Toggle) === */}
-            {hasConditional && (
+            {/* === BÔNUS CONDICIONAIS (Toggle) - Sempre mostrar quando filtro é 'all' ou 'combat' === */}
+            {hasConditional && (filter === 'all' || filter === 'combat') && (
               <>
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 mb-3">
@@ -292,234 +345,248 @@ export function ActiveBonusesPanel({
               </>
             )}
             
-            {/* === STATS (HP/PE) === */}
-            <BonusSection
-              title="Recursos"
-              icon={Heart}
-              iconColor="text-hp"
-              isEmpty={!hasStats}
-            >
-              {bonusSummary.hpBonus > 0 && (
-                <div className="flex items-center justify-between p-2 rounded-lg bg-hp/10">
-                  <div className="flex items-center gap-2">
-                    <Heart className="w-4 h-4 text-hp" />
-                    <span className="text-sm">HP Máximo</span>
+            {/* === STATS (HP/PE) - Mostrar em 'all' ou 'paranormal' === */}
+            {shouldShowSection('paranormal') && (
+              <BonusSection
+                title="Recursos"
+                icon={Heart}
+                iconColor="text-hp"
+                isEmpty={!hasStats}
+              >
+                {bonusSummary.hpBonus > 0 && (
+                  <div className="flex items-center justify-between p-2 rounded-lg bg-hp/10">
+                    <div className="flex items-center gap-2">
+                      <Heart className="w-4 h-4 text-hp" />
+                      <span className="text-sm">HP Máximo</span>
+                    </div>
+                    <span className="font-display text-success">+{bonusSummary.hpBonus}</span>
                   </div>
-                  <span className="font-display text-success">+{bonusSummary.hpBonus}</span>
-                </div>
-              )}
-              {bonusSummary.peBonus > 0 && (
-                <div className="flex items-center justify-between p-2 rounded-lg bg-pe/10">
-                  <div className="flex items-center gap-2">
-                    <Zap className="w-4 h-4 text-pe" />
-                    <span className="text-sm">PE Máximo</span>
+                )}
+                {bonusSummary.peBonus > 0 && (
+                  <div className="flex items-center justify-between p-2 rounded-lg bg-pe/10">
+                    <div className="flex items-center gap-2">
+                      <Zap className="w-4 h-4 text-pe" />
+                      <span className="text-sm">PE Máximo</span>
+                    </div>
+                    <span className="font-display text-success">+{bonusSummary.peBonus}</span>
                   </div>
-                  <span className="font-display text-success">+{bonusSummary.peBonus}</span>
-                </div>
-              )}
-            </BonusSection>
+                )}
+              </BonusSection>
+            )}
 
-            {hasStats && <Separator />}
+            {hasStats && shouldShowSection('paranormal') && <Separator />}
 
             {/* === DEFESA === */}
-            <BonusSection
-              title="Defesa"
-              icon={Shield}
-              iconColor="text-primary"
-              total={bonusSummary.defense.total}
-              isEmpty={!hasDefense}
-            >
-              {bonusSummary.defense.breakdown.map((bonus, i) => (
-                <BonusItem 
-                  key={`defense-${i}`} 
-                  bonus={{
-                    source: bonus.source,
-                    value: bonus.bonus,
-                    type: bonus.type,
-                    conditional: bonus.conditional,
-                    active: bonus.active,
-                  }} 
-                />
-              ))}
-            </BonusSection>
+            {shouldShowSection('defense') && (
+              <BonusSection
+                title="Defesa"
+                icon={Shield}
+                iconColor="text-primary"
+                total={bonusSummary.defense.total}
+                isEmpty={!hasDefense}
+              >
+                {bonusSummary.defense.breakdown.map((bonus, i) => (
+                  <BonusItem 
+                    key={`defense-${i}`} 
+                    bonus={{
+                      source: bonus.source,
+                      value: bonus.bonus,
+                      type: bonus.type,
+                      conditional: bonus.conditional,
+                      active: bonus.active,
+                    }} 
+                  />
+                ))}
+              </BonusSection>
+            )}
 
-            {hasDefense && <Separator />}
+            {hasDefense && shouldShowSection('defense') && <Separator />}
 
             {/* === RESISTÊNCIAS === */}
-            <BonusSection
-              title="Resistências"
-              icon={Activity}
-              iconColor="text-san"
-              isEmpty={!hasResistances}
-            >
-              {/* Fortitude */}
-              {bonusSummary.resistances.fortitude.total > 0 && (
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between px-2">
-                    <span className="text-sm text-muted-foreground">Fortitude</span>
-                    <span className="font-display text-success">+{bonusSummary.resistances.fortitude.total}</span>
-                  </div>
-              {bonusSummary.resistances.fortitude.breakdown.map((b, i) => (
-                    <div key={`fort-${i}`} className="text-xs text-foreground/60 pl-4">
-                      • {b.source}: +{b.fortitude}
+            {shouldShowSection('resistance') && (
+              <BonusSection
+                title="Resistências"
+                icon={Activity}
+                iconColor="text-san"
+                isEmpty={!hasResistances}
+              >
+                {/* Fortitude */}
+                {bonusSummary.resistances.fortitude.total > 0 && (
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between px-2">
+                      <span className="text-sm text-muted-foreground">Fortitude</span>
+                      <span className="font-display text-success">+{bonusSummary.resistances.fortitude.total}</span>
                     </div>
-                  ))}
-                </div>
-              )}
-              
-              {/* Reflexos */}
-              {bonusSummary.resistances.reflexos.total > 0 && (
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between px-2">
-                    <span className="text-sm text-muted-foreground">Reflexos</span>
-                    <span className="font-display text-success">+{bonusSummary.resistances.reflexos.total}</span>
+                    {bonusSummary.resistances.fortitude.breakdown.map((b, i) => (
+                      <div key={`fort-${i}`} className="text-xs text-foreground/60 pl-4">
+                        • {b.source}: +{b.fortitude}
+                      </div>
+                    ))}
                   </div>
-              {bonusSummary.resistances.reflexos.breakdown.map((b, i) => (
-                    <div key={`ref-${i}`} className="text-xs text-foreground/60 pl-4">
-                      • {b.source}: +{b.reflexos}
+                )}
+                
+                {/* Reflexos */}
+                {bonusSummary.resistances.reflexos.total > 0 && (
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between px-2">
+                      <span className="text-sm text-muted-foreground">Reflexos</span>
+                      <span className="font-display text-success">+{bonusSummary.resistances.reflexos.total}</span>
                     </div>
-                  ))}
-                </div>
-              )}
-              
-              {/* Vontade */}
-              {bonusSummary.resistances.vontade.total > 0 && (
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between px-2">
-                    <span className="text-sm text-muted-foreground">Vontade</span>
-                    <span className="font-display text-success">+{bonusSummary.resistances.vontade.total}</span>
+                    {bonusSummary.resistances.reflexos.breakdown.map((b, i) => (
+                      <div key={`ref-${i}`} className="text-xs text-foreground/60 pl-4">
+                        • {b.source}: +{b.reflexos}
+                      </div>
+                    ))}
                   </div>
-              {bonusSummary.resistances.vontade.breakdown.map((b, i) => (
-                    <div key={`von-${i}`} className="text-xs text-foreground/60 pl-4">
-                      • {b.source}: +{b.vontade}
+                )}
+                
+                {/* Vontade */}
+                {bonusSummary.resistances.vontade.total > 0 && (
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between px-2">
+                      <span className="text-sm text-muted-foreground">Vontade</span>
+                      <span className="font-display text-success">+{bonusSummary.resistances.vontade.total}</span>
                     </div>
-                  ))}
-                </div>
-              )}
-            </BonusSection>
+                    {bonusSummary.resistances.vontade.breakdown.map((b, i) => (
+                      <div key={`von-${i}`} className="text-xs text-foreground/60 pl-4">
+                        • {b.source}: +{b.vontade}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </BonusSection>
+            )}
 
-            {hasResistances && <Separator />}
+            {hasResistances && shouldShowSection('resistance') && <Separator />}
 
             {/* === COMBATE === */}
-            <BonusSection
-              title="Combate"
-              icon={Swords}
-              iconColor="text-destructive"
-              isEmpty={!hasCombat}
-            >
-              {/* Ataque */}
-              {bonusSummary.combat.attack.breakdown.length > 0 && (
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2 px-2">
-                    <Crosshair className="w-3.5 h-3.5 text-muted-foreground" />
-                    <span className="text-xs uppercase tracking-wider text-muted-foreground">Ataque</span>
+            {shouldShowSection('combat') && (
+              <BonusSection
+                title="Combate"
+                icon={Swords}
+                iconColor="text-destructive"
+                isEmpty={!hasCombat}
+              >
+                {/* Ataque */}
+                {bonusSummary.combat.attack.breakdown.length > 0 && (
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 px-2">
+                      <Crosshair className="w-3.5 h-3.5 text-muted-foreground" />
+                      <span className="text-xs uppercase tracking-wider text-muted-foreground">Ataque</span>
+                    </div>
+                    {bonusSummary.combat.attack.breakdown.map((bonus, i) => (
+                      <BonusItem key={`atk-${i}`} bonus={bonus} />
+                    ))}
                   </div>
-                  {bonusSummary.combat.attack.breakdown.map((bonus, i) => (
-                    <BonusItem key={`atk-${i}`} bonus={bonus} />
-                  ))}
-                </div>
-              )}
-              
-              {/* Dano */}
-              {bonusSummary.combat.damage.breakdown.length > 0 && (
-                <div className="space-y-1 mt-2">
-                  <div className="flex items-center gap-2 px-2">
-                    <Target className="w-3.5 h-3.5 text-muted-foreground" />
-                    <span className="text-xs uppercase tracking-wider text-muted-foreground">Dano</span>
+                )}
+                
+                {/* Dano */}
+                {bonusSummary.combat.damage.breakdown.length > 0 && (
+                  <div className="space-y-1 mt-2">
+                    <div className="flex items-center gap-2 px-2">
+                      <Target className="w-3.5 h-3.5 text-muted-foreground" />
+                      <span className="text-xs uppercase tracking-wider text-muted-foreground">Dano</span>
+                    </div>
+                    {bonusSummary.combat.damage.breakdown.map((bonus, i) => (
+                      <BonusItem key={`dmg-${i}`} bonus={bonus} />
+                    ))}
                   </div>
-                  {bonusSummary.combat.damage.breakdown.map((bonus, i) => (
-                    <BonusItem key={`dmg-${i}`} bonus={bonus} />
-                  ))}
-                </div>
-              )}
-              
-              {/* Margem de Crítico */}
-              {bonusSummary.combat.criticalMargin.total > 0 && (
-                <div className="space-y-1 mt-2">
-                  <div className="flex items-center justify-between px-2">
-                    <span className="text-sm">Margem de Ameaça</span>
-                    <span className="font-display text-success">+{bonusSummary.combat.criticalMargin.total}</span>
+                )}
+                
+                {/* Margem de Crítico */}
+                {bonusSummary.combat.criticalMargin.total > 0 && (
+                  <div className="space-y-1 mt-2">
+                    <div className="flex items-center justify-between px-2">
+                      <span className="text-sm">Margem de Ameaça</span>
+                      <span className="font-display text-success">+{bonusSummary.combat.criticalMargin.total}</span>
+                    </div>
+                    {bonusSummary.combat.criticalMargin.breakdown.map((bonus, i) => (
+                      <BonusItem key={`crit-${i}`} bonus={bonus} showType={false} />
+                    ))}
                   </div>
-                  {bonusSummary.combat.criticalMargin.breakdown.map((bonus, i) => (
-                    <BonusItem key={`crit-${i}`} bonus={bonus} showType={false} />
-                  ))}
-                </div>
-              )}
-              
-              {/* Iniciativa */}
-              {bonusSummary.combat.initiative.total > 0 && (
-                <div className="space-y-1 mt-2">
-                  <div className="flex items-center justify-between px-2">
-                    <span className="text-sm">Iniciativa</span>
-                    <span className="font-display text-success">+{bonusSummary.combat.initiative.total}</span>
+                )}
+                
+                {/* Iniciativa */}
+                {bonusSummary.combat.initiative.total > 0 && (
+                  <div className="space-y-1 mt-2">
+                    <div className="flex items-center justify-between px-2">
+                      <span className="text-sm">Iniciativa</span>
+                      <span className="font-display text-success">+{bonusSummary.combat.initiative.total}</span>
+                    </div>
+                    {bonusSummary.combat.initiative.breakdown.map((bonus, i) => (
+                      <BonusItem key={`init-${i}`} bonus={bonus} showType={false} />
+                    ))}
                   </div>
-                  {bonusSummary.combat.initiative.breakdown.map((bonus, i) => (
-                    <BonusItem key={`init-${i}`} bonus={bonus} showType={false} />
-                  ))}
-                </div>
-              )}
-            </BonusSection>
+                )}
+              </BonusSection>
+            )}
 
-            {hasCombat && <Separator />}
+            {hasCombat && shouldShowSection('combat') && <Separator />}
 
             {/* === REDUÇÃO DE DANO === */}
-            <BonusSection
-              title="Redução de Dano"
-              icon={Shield}
-              iconColor="text-slate-400"
-              isEmpty={!hasDR}
-            >
-              {bonusSummary.damageReduction.physical.total > 0 && (
-                <div className="flex items-center justify-between p-2 rounded-lg bg-slate-500/10">
-                  <span className="text-sm">RD Físico</span>
-                  <span className="font-display text-success">{bonusSummary.damageReduction.physical.total}</span>
-                </div>
-              )}
-              {bonusSummary.damageReduction.paranormal.total > 0 && (
-                <div className="flex items-center justify-between p-2 rounded-lg bg-purple-500/10">
-                  <span className="text-sm">RD Paranormal</span>
-                  <span className="font-display text-success">{bonusSummary.damageReduction.paranormal.total}</span>
-                </div>
-              )}
-            </BonusSection>
+            {shouldShowSection('defense') && (
+              <BonusSection
+                title="Redução de Dano"
+                icon={Shield}
+                iconColor="text-slate-400"
+                isEmpty={!hasDR}
+              >
+                {bonusSummary.damageReduction.physical.total > 0 && (
+                  <div className="flex items-center justify-between p-2 rounded-lg bg-slate-500/10">
+                    <span className="text-sm">RD Físico</span>
+                    <span className="font-display text-success">{bonusSummary.damageReduction.physical.total}</span>
+                  </div>
+                )}
+                {bonusSummary.damageReduction.paranormal.total > 0 && (
+                  <div className="flex items-center justify-between p-2 rounded-lg bg-purple-500/10">
+                    <span className="text-sm">RD Paranormal</span>
+                    <span className="font-display text-success">{bonusSummary.damageReduction.paranormal.total}</span>
+                  </div>
+                )}
+              </BonusSection>
+            )}
 
-            {hasDR && <Separator />}
+            {hasDR && shouldShowSection('defense') && <Separator />}
 
             {/* === PERÍCIAS === */}
-            <BonusSection
-              title="Perícias"
-              icon={Brain}
-              iconColor="text-blue-400"
-              isEmpty={!hasSkills}
-            >
-              {Object.entries(bonusSummary.skills).map(([skill, data]) => (
-                <div key={skill} className="space-y-1">
-                  <div className="flex items-center justify-between px-2">
-                    <span className="text-sm capitalize">{skill}</span>
-                    <span className="font-display text-success">+{data.total}</span>
-                  </div>
-                  {data.breakdown.map((bonus, i) => (
-                    <div key={`${skill}-${i}`} className="text-xs text-muted-foreground pl-4">
-                      • {bonus.source}
+            {shouldShowSection('skill') && (
+              <BonusSection
+                title="Perícias"
+                icon={Brain}
+                iconColor="text-blue-400"
+                isEmpty={!hasSkills}
+              >
+                {Object.entries(bonusSummary.skills).map(([skill, data]) => (
+                  <div key={skill} className="space-y-1">
+                    <div className="flex items-center justify-between px-2">
+                      <span className="text-sm capitalize">{skill}</span>
+                      <span className="font-display text-success">+{data.total}</span>
                     </div>
-                  ))}
-                </div>
-              ))}
-            </BonusSection>
+                    {data.breakdown.map((bonus, i) => (
+                      <div key={`${skill}-${i}`} className="text-xs text-muted-foreground pl-4">
+                        • {bonus.source}
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </BonusSection>
+            )}
 
-            {hasSkills && <Separator />}
+            {hasSkills && shouldShowSection('skill') && <Separator />}
 
             {/* === EFEITOS ESPECIAIS === */}
-            <BonusSection
-              title="Efeitos Especiais"
-              icon={Sparkles}
-              iconColor="text-paranormal"
-              isEmpty={!hasSpecial}
-            >
-              {bonusSummary.special.map((bonus, i) => (
-                <BonusItem key={`special-${i}`} bonus={bonus} />
-              ))}
-            </BonusSection>
+            {shouldShowSection('paranormal') && (
+              <BonusSection
+                title="Efeitos Especiais"
+                icon={Sparkles}
+                iconColor="text-paranormal"
+                isEmpty={!hasSpecial}
+              >
+                {bonusSummary.special.map((bonus, i) => (
+                  <BonusItem key={`special-${i}`} bonus={bonus} />
+                ))}
+              </BonusSection>
+            )}
 
             {/* Mensagem se não houver bônus */}
             {totalBonuses === 0 && (

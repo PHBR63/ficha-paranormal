@@ -18,8 +18,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { ActiveBonusesPanel } from './ActiveBonusesPanel';
-import { ActiveBonusSummaryWidget } from './ActiveBonusSummaryWidget';
+import { ActiveBonusesPanel, BonusPanelFilter } from './ActiveBonusesPanel';
+import { ActiveBonusSummaryWidget, BonusCategoryId } from './ActiveBonusSummaryWidget';
 import { ParanormalElement, ELEMENT_LABELS, ELEMENT_COLORS, ELEMENT_BG_COLORS } from '@/lib/paranormal-powers';
 import { BonusSummary } from '@/hooks/useCharacterBonusSummary';
 
@@ -178,8 +178,9 @@ export const CharacterSheetHeader = memo(function CharacterSheetHeader({
   const [tempPe, setTempPe] = useState(peCurrent);
   const [tempSan, setTempSan] = useState(sanCurrent);
   
-  // Estado do painel de bônus expandido
+  // Estado do painel de bônus expandido e filtro de categoria
   const [bonusPanelOpen, setBonusPanelOpen] = useState(false);
+  const [bonusPanelFilter, setBonusPanelFilter] = useState<BonusPanelFilter>('all');
   
   // Estados de condição (visual apenas por enquanto)
   const [conditions, setConditions] = useState<ConditionStates>({
@@ -334,6 +335,10 @@ export const CharacterSheetHeader = memo(function CharacterSheetHeader({
             {bonusSummary && (
               <ActiveBonusSummaryWidget 
                 bonusSummary={bonusSummary}
+                onCategoryClick={(categoryId: BonusCategoryId) => {
+                  setBonusPanelFilter(categoryId as BonusPanelFilter);
+                  setBonusPanelOpen(true);
+                }}
                 className="cursor-pointer"
               />
             )}
@@ -346,7 +351,10 @@ export const CharacterSheetHeader = memo(function CharacterSheetHeader({
                   initial={{ scale: 0, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   exit={{ scale: 0, opacity: 0 }}
-                  onClick={() => setBonusPanelOpen(true)}
+                  onClick={() => {
+                    setBonusPanelFilter('all');
+                    setBonusPanelOpen(true);
+                  }}
                   className="text-[10px] text-primary hover:text-primary/80 underline underline-offset-2 transition-colors"
                 >
                   ver detalhes
@@ -1070,6 +1078,8 @@ export const CharacterSheetHeader = memo(function CharacterSheetHeader({
           bonusSummary={bonusSummary}
           activeBonusSources={activeBonusSources}
           onToggleConditionalBonus={onToggleConditionalBonus}
+          filter={bonusPanelFilter}
+          onFilterChange={setBonusPanelFilter}
         />
       )}
     </div>
