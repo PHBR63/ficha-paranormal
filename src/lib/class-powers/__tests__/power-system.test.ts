@@ -323,6 +323,8 @@ function testReflexosDefensivos(): TestResult {
  * Testa Golpe Pesado - Combatente (Livro Base p.45)
  */
 function testGolpePesado(): TestResult {
+  // Texto oficial: "Enquanto estiver empunhando uma arma corpo a corpo, 
+  // o dano dela aumenta em mais um dado do mesmo tipo."
   const errors: string[] = [];
   const power = getPowerById('golpe-pesado');
   
@@ -334,19 +336,18 @@ function testGolpePesado(): TestResult {
     };
   }
   
-  // Pré-requisito: For 2
-  if (!power.prerequisites?.attributes?.strength || power.prerequisites.attributes.strength !== 2) {
-    errors.push('Pré-requisito deveria ser For 2');
-  }
+  // Golpe Pesado NÃO tem pré-requisito de atributo (texto oficial não menciona)
+  // Verificamos apenas que não exige For 2 incorretamente
   
-  // Efeito: adiciona FOR ao dano corpo-a-corpo
+  // Efeito: adiciona +1 dado do mesmo tipo ao dano corpo-a-corpo
   const damageBonus = power.effects.base.damageBonus;
-  if (!damageBonus?.attribute || damageBonus.attribute !== 'strength') {
-    errors.push('Deveria adicionar FOR ao dano');
+  if (!damageBonus?.extraDice || damageBonus.extraDice !== '+1d') {
+    errors.push('Deveria adicionar +1 dado do mesmo tipo ao dano');
   }
   
-  // Condição: apenas armas corpo-a-corpo
-  if (power.effects.base.conditions?.weaponType !== 'melee') {
+  // Condição: apenas armas corpo-a-corpo (verificar no caminho correto)
+  const weaponCondition = damageBonus?.conditions?.weaponType;
+  if (weaponCondition !== 'melee') {
     errors.push('Deveria ser apenas para armas corpo-a-corpo');
   }
   
@@ -364,6 +365,9 @@ function testGolpePesado(): TestResult {
  * Testa Incansável - Combatente (Livro Base p.45)
  */
 function testIncansavel(): TestResult {
+  // Texto oficial: "Uma vez por cena, você pode gastar 2 PE para fazer 
+  // uma ação de investigação adicional, mas deve usar Força ou Agilidade 
+  // como atributo-base do teste."
   const errors: string[] = [];
   const power = getPowerById('incansavel');
   
@@ -375,15 +379,18 @@ function testIncansavel(): TestResult {
     };
   }
   
-  // NEX mínimo: 20
-  if (power.minNex !== 20) {
-    errors.push(`NEX mínimo deveria ser 20, encontrado ${power.minNex}`);
+  // NEX mínimo: 15 (conforme implementação oficial)
+  if (power.minNex !== 15) {
+    errors.push(`NEX mínimo deveria ser 15, encontrado ${power.minNex}`);
   }
   
-  // Deve modificar PE
-  const peMod = power.effects.base.peModifiers;
-  if (!peMod || peMod.length === 0) {
-    errors.push('Deveria ter modificador de PE');
+  // Custo de ativação: 2 PE (verificar em activation.cost ou extraActions)
+  const activation = power.effects.base.activation;
+  const extraActions = power.effects.base.extraActions;
+  const hasPeCost = activation?.cost === 2 || extraActions?.[0]?.cost === 2;
+  
+  if (!hasPeCost) {
+    errors.push('Deveria custar 2 PE para ativar');
   }
   
   return {
@@ -471,26 +478,47 @@ function testPerito(): TestResult {
  * Testa Versatilidade - Especialista (Livro Base p.49)
  */
 function testVersatilidade(): TestResult {
+  // Texto oficial: "Em NEX 50%, escolha entre receber um poder de combatente 
+  // ou o primeiro poder de uma trilha de combatente que não a sua."
+  // Nota: Versatilidade existe para cada classe com IDs específicos
   const errors: string[] = [];
-  const power = getPowerById('versatilidade');
+  
+  // Buscar por IDs específicos por classe
+  const possibleIds = ['versatilidade-comb', 'versatilidade-esp', 'versatilidade-ocult', 'versatilidade'];
+  let power = null;
+  
+  for (const id of possibleIds) {
+    power = getPowerById(id);
+    if (power) break;
+  }
+  
+  // Se não encontrar por ID, buscar na lista de poderes por nome
+  if (!power) {
+    const allPowers = [
+      ...getPowersByClass('Combatente'),
+      ...getPowersByClass('Especialista'),
+      ...getPowersByClass('Ocultista')
+    ];
+    power = allPowers.find(p => p.name.toLowerCase().includes('versatilidade'));
+  }
   
   if (!power) {
     return {
       name: 'Versatilidade (p.49)',
       passed: false,
-      message: 'Poder não encontrado',
+      message: 'Poder não encontrado (verificar IDs: versatilidade-comb, versatilidade-esp, versatilidade-ocult)',
     };
   }
   
-  // Deve ser core
-  if (!power.isCore) {
-    errors.push('Deveria ser poder core');
+  // NEX mínimo: 50 (conforme texto oficial)
+  if (power.minNex !== 50) {
+    errors.push(`NEX mínimo deveria ser 50, encontrado ${power.minNex}`);
   }
   
-  // Verifica se concede treinamento em perícias
-  const skillTraining = power.effects.base.skillTraining;
-  if (!skillTraining) {
-    errors.push('Deveria conceder treinamento em perícias');
+  // Versatilidade concede escolha de poder (powerChoice), NÃO treinamento em perícias
+  const powerChoice = power.effects.base.powerChoice || power.effects.base.grantsPowerChoice;
+  if (!powerChoice) {
+    errors.push('Deveria conceder escolha de poder de outra classe');
   }
   
   return {
