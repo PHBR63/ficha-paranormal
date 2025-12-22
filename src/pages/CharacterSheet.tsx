@@ -479,8 +479,12 @@ export default function CharacterSheet() {
   const {
     activeBuffs: weaponBuffs,
     addBuff: addWeaponBuff,
+    addBuffWithDuration: addWeaponBuffWithDuration,
     removeBuff: removeWeaponBuff,
     clearAllBuffs: clearWeaponBuffs,
+    advanceTurn: advanceWeaponBuffTurn,
+    setBuffTurns: setWeaponBuffTurns,
+    buffsWithTurns: weaponBuffsWithTurns,
   } = useWeaponBuffs(id, character?.active_buffs, handleWeaponBuffsChange);
 
   // Callback para adicionar rolagem ao histórico
@@ -2225,6 +2229,8 @@ export default function CharacterSheet() {
                 weaponBuffs={weaponBuffs}
                 onRemoveWeaponBuff={removeWeaponBuff}
                 onClearAllWeaponBuffs={clearWeaponBuffs}
+                onAdvanceWeaponBuffTurn={advanceWeaponBuffTurn}
+                onSetWeaponBuffTurns={setWeaponBuffTurns}
               />
 
               {/* Perícias por Atributo (acordeão colapsado) */}
