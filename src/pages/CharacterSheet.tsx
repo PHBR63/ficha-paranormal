@@ -107,7 +107,7 @@ import { Ritual, getActiveRitualEffect, ritualDealsDamage, RitualEffect, Sustain
 // Componentes existentes que ainda usamos
 import { CharacterSheetHelp } from '@/components/character/CharacterSheetHelp';
 import { MobileCharacterSheet } from '@/components/character/MobileCharacterSheet';
-import { DiceRollModal } from '@/components/dice/DiceRollModal';
+import { DiceRollModal, BonusSource } from '@/components/dice/DiceRollModal';
 import { DiceRollHistoryDrawer, DiceRollHistoryCompact } from '@/components/dice/DiceRollHistory';
 import { AbilityDetailModal } from '@/components/character/AbilityDetailModal';
 
@@ -263,6 +263,7 @@ export default function CharacterSheet() {
   const [rollAttribute, setRollAttribute] = useState(0);
   const [rollSkillBonus, setRollSkillBonus] = useState(0);
   const [rollResistanceBonus, setRollResistanceBonus] = useState(0);
+  const [rollBonusSources, setRollBonusSources] = useState<BonusSource[]>([]);
   
   // Histórico de rolagens
   const [rollHistory, setRollHistory] = useState<DiceRollResult[]>([]);
@@ -612,14 +613,32 @@ export default function CharacterSheet() {
     // Detecta se é um teste de resistência e aplica bônus
     const labelLower = attributeName.toLowerCase();
     let resistBonus = 0;
+    let resistType: 'fortitude' | 'reflexos' | 'vontade' | null = null;
+    
     if (labelLower.includes('fortitude') || labelLower.includes('vigor')) {
       resistBonus = defenseBonuses.resistances.fortitude;
+      resistType = 'fortitude';
     } else if (labelLower.includes('reflexos') || labelLower.includes('agilidade')) {
       resistBonus = defenseBonuses.resistances.reflexos;
+      resistType = 'reflexos';
     } else if (labelLower.includes('vontade') || labelLower.includes('presença')) {
       resistBonus = defenseBonuses.resistances.vontade;
+      resistType = 'vontade';
     }
+    
+    // Constrói as fontes de bônus para exibição detalhada
+    const sources: BonusSource[] = [];
+    if (resistBonus > 0 && resistType) {
+      sources.push({
+        label: resistType === 'fortitude' ? 'Fortitude' : 
+               resistType === 'reflexos' ? 'Reflexos' : 'Vontade',
+        value: resistBonus,
+        type: 'resistance',
+      });
+    }
+    
     setRollResistanceBonus(resistBonus);
+    setRollBonusSources(sources);
     setDiceModalOpen(true);
   }, [defenseBonuses.resistances]);
 
@@ -631,17 +650,51 @@ export default function CharacterSheet() {
     setRollAttribute(attributeValue);
     setRollSkillBonus(skillBonus);
     
+    // Constrói as fontes de bônus para exibição detalhada
+    const sources: BonusSource[] = [];
+    
+    // Treinamento (skillBonus sem classPowerBonus)
+    const trainingBonus = skillBonus - (classPowerBonus || 0);
+    if (trainingBonus > 0) {
+      sources.push({
+        label: 'Treinamento',
+        value: trainingBonus,
+        type: 'skill',
+      });
+    }
+    
+    // Bônus de poder de classe
+    if (classPowerBonus && classPowerBonus > 0) {
+      sources.push({
+        label: 'Poder de Classe',
+        value: classPowerBonus,
+        type: 'power',
+      });
+    }
+    
     // Detecta se é um teste de resistência e aplica bônus
     const labelLower = skillName.toLowerCase();
     let resistBonus = 0;
+    
     if (labelLower.includes('fortitude')) {
       resistBonus = defenseBonuses.resistances.fortitude;
+      if (resistBonus > 0) {
+        sources.push({ label: 'Fortitude', value: resistBonus, type: 'resistance' });
+      }
     } else if (labelLower.includes('reflexos')) {
       resistBonus = defenseBonuses.resistances.reflexos;
+      if (resistBonus > 0) {
+        sources.push({ label: 'Reflexos', value: resistBonus, type: 'resistance' });
+      }
     } else if (labelLower.includes('vontade')) {
       resistBonus = defenseBonuses.resistances.vontade;
+      if (resistBonus > 0) {
+        sources.push({ label: 'Vontade', value: resistBonus, type: 'resistance' });
+      }
     }
+    
     setRollResistanceBonus(resistBonus);
+    setRollBonusSources(sources);
     setDiceModalOpen(true);
   }, [defenseBonuses.resistances]);
 
@@ -2533,6 +2586,7 @@ export default function CharacterSheet() {
         attributeValue={rollAttribute}
         skillBonus={rollSkillBonus}
         resistanceBonus={rollResistanceBonus}
+        bonusSources={rollBonusSources}
         onRollComplete={handleRollComplete}
       />
 

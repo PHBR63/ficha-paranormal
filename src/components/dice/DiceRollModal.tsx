@@ -16,6 +16,13 @@ import { cn } from '@/lib/utils';
 import confetti from 'canvas-confetti';
 import { DiceRollResult, rollSkillTest } from '@/lib/dice-roller';
 
+// Interface para detalhamento de bônus por origem
+export interface BonusSource {
+  label: string;
+  value: number;
+  type: 'skill' | 'resistance' | 'power' | 'track' | 'origin' | 'item' | 'other';
+}
+
 // Interface para props da modal
 interface DiceRollModalProps {
   open: boolean;
@@ -24,6 +31,7 @@ interface DiceRollModalProps {
   attributeValue: number;
   skillBonus?: number;
   resistanceBonus?: number; // Bônus de resistência (Fortitude, Reflexos, Vontade)
+  bonusSources?: BonusSource[]; // Detalhamento dos bônus aplicados
   onRollComplete?: (result: DiceRollResult) => void;
 }
 
@@ -73,6 +81,7 @@ export function DiceRollModal({
   attributeValue,
   skillBonus = 0,
   resistanceBonus = 0,
+  bonusSources = [],
   onRollComplete,
 }: DiceRollModalProps) {
   // Estados
@@ -84,6 +93,17 @@ export function DiceRollModal({
   const hasRolledRef = useRef(false);
   // Ref para o intervalo de animação
   const animationRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Cores para cada tipo de bônus
+  const bonusTypeColors: Record<BonusSource['type'], string> = {
+    skill: 'bg-primary/20 text-primary',
+    resistance: 'bg-green-500/20 text-green-500',
+    power: 'bg-purple-500/20 text-purple-500',
+    track: 'bg-orange-500/20 text-orange-500',
+    origin: 'bg-blue-500/20 text-blue-500',
+    item: 'bg-amber-500/20 text-amber-500',
+    other: 'bg-secondary/50 text-secondary-foreground',
+  };
 
   // Calcula quantidade de dados
   const diceCount = attributeValue <= 0 ? 2 : attributeValue;
@@ -246,25 +266,44 @@ export function DiceRollModal({
                 transition={{ duration: 0.2 }}
                 className="space-y-3"
               >
-                {/* Breakdown do cálculo */}
+                {/* Breakdown do cálculo - mostra bônus detalhados por origem */}
                 <div className="flex flex-wrap items-center justify-center gap-2 text-sm">
                   <span className="px-3 py-1 rounded bg-secondary/50 font-medium">
                     d20: {result.keptDice}
                   </span>
-                  {skillBonus > 0 && (
-                    <>
-                      <span className="text-muted-foreground">+</span>
-                      <span className="px-3 py-1 rounded bg-primary/20 text-primary font-medium">
-                        Perícia: +{skillBonus}
+                  
+                  {/* Se há detalhamento de bônus, mostra por origem */}
+                  {bonusSources.length > 0 ? (
+                    bonusSources.filter(s => s.value !== 0).map((source, idx) => (
+                      <span key={idx} className="flex items-center gap-1">
+                        <span className="text-muted-foreground">+</span>
+                        <span className={cn(
+                          'px-3 py-1 rounded font-medium',
+                          bonusTypeColors[source.type]
+                        )}>
+                          {source.label}: {source.value > 0 ? '+' : ''}{source.value}
+                        </span>
                       </span>
-                    </>
-                  )}
-                  {resistanceBonus > 0 && (
+                    ))
+                  ) : (
                     <>
-                      <span className="text-muted-foreground">+</span>
-                      <span className="px-3 py-1 rounded bg-green-500/20 text-green-500 font-medium">
-                        Resistência: +{resistanceBonus}
-                      </span>
+                      {/* Fallback para bônus simples sem detalhamento */}
+                      {skillBonus > 0 && (
+                        <>
+                          <span className="text-muted-foreground">+</span>
+                          <span className="px-3 py-1 rounded bg-primary/20 text-primary font-medium">
+                            Perícia: +{skillBonus}
+                          </span>
+                        </>
+                      )}
+                      {resistanceBonus > 0 && (
+                        <>
+                          <span className="text-muted-foreground">+</span>
+                          <span className="px-3 py-1 rounded bg-green-500/20 text-green-500 font-medium">
+                            Resistência: +{resistanceBonus}
+                          </span>
+                        </>
+                      )}
                     </>
                   )}
                 </div>
