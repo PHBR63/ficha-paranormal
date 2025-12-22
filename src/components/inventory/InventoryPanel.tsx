@@ -272,6 +272,16 @@ export function InventoryPanel({
 
     inventory.forEach(item => {
       const rawType = item.itemType || 'misc';
+      
+      // Log de diagnóstico para tipos desconhecidos (ajuda a detectar dados incorretos)
+      if (!validTypes.includes(rawType as ItemType)) {
+        console.warn(
+          `[InventoryPanel] Tipo de item desconhecido detectado:`,
+          { itemName: item.name, itemType: rawType, itemId: item.id },
+          `Usando fallback 'misc'. Considere corrigir os dados no banco.`
+        );
+      }
+      
       // Valida se o tipo existe no grupo, senão usa 'misc' como fallback
       const type = validTypes.includes(rawType as ItemType) ? (rawType as ItemType) : 'misc';
       groups[type].push(item);
