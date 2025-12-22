@@ -71,6 +71,13 @@ interface ClassPowerCombatBonuses {
   extraDamageDice: string[];
 }
 
+// Interface para fonte de bônus detalhada (exibição)
+interface BonusSourceDisplay {
+  label: string;
+  value: number | string;
+  type: 'skill' | 'power' | 'ritual' | 'track' | 'attribute' | 'paranormal' | 'other';
+}
+
 // Props do modal
 interface CombatRollModalProps {
   open: boolean;
@@ -376,6 +383,80 @@ export function CombatRollModal({
     return total;
   }, [attackSkill.bonus, passiveBonuses, selectedBonuses, availableBonuses, classPowerBonuses]);
 
+  // === Detalhamento das fontes de bônus de ataque para exibição ===
+  const attackBonusSources = useMemo(() => {
+    const sources: BonusSourceDisplay[] = [];
+    
+    // Bônus de perícia (treinamento)
+    if (attackSkill.bonus > 0) {
+      sources.push({ label: attackSkill.name, value: attackSkill.bonus, type: 'skill' });
+    }
+    
+    // Bônus de poderes de classe
+    if (classPowerBonuses?.attackBonus && classPowerBonuses.attackBonus > 0) {
+      sources.push({ label: 'Poder de Classe', value: classPowerBonuses.attackBonus, type: 'power' });
+    }
+    
+    // Bônus passivos de rituais
+    passiveBonuses.forEach(b => {
+      if (b.attackBonus) {
+        sources.push({ label: b.name, value: b.attackBonus, type: 'ritual' });
+      }
+    });
+    
+    // Bônus selecionados
+    selectedBonuses.forEach(bonusId => {
+      const bonus = availableBonuses.find(b => b.id === bonusId);
+      if (bonus?.attackBonus) {
+        const type = bonus.source === 'paranormal' ? 'paranormal' : bonus.source === 'ritual' ? 'ritual' : 'other';
+        sources.push({ label: bonus.name, value: bonus.attackBonus, type });
+      }
+    });
+    
+    return sources;
+  }, [attackSkill, classPowerBonuses, passiveBonuses, selectedBonuses, availableBonuses]);
+
+  // === Detalhamento das fontes de bônus de dano para exibição ===
+  const damageBonusSources = useMemo(() => {
+    const sources: BonusSourceDisplay[] = [];
+    const isMelee = weapon?.type === 'Corpo a Corpo' || weapon?.type === 'Briga';
+    
+    // Bônus de Força para corpo a corpo
+    if (isMelee && attributes.strength !== 0) {
+      sources.push({ label: 'Força', value: attributes.strength, type: 'attribute' });
+    }
+    
+    // Bônus de poderes de classe
+    if (classPowerBonuses?.damageBonus && classPowerBonuses.damageBonus > 0) {
+      sources.push({ label: 'Poder de Classe', value: classPowerBonuses.damageBonus, type: 'power' });
+    }
+    
+    // Dados extras de poderes de classe
+    if (classPowerBonuses?.extraDamageDice && classPowerBonuses.extraDamageDice.length > 0) {
+      sources.push({ label: 'Dados Extras', value: classPowerBonuses.extraDamageDice.join(' + '), type: 'power' });
+    }
+    
+    // Bônus passivos
+    passiveBonuses.forEach(b => {
+      if (b.damageBonus) {
+        const value = typeof b.damageBonus === 'number' ? b.damageBonus : b.damageBonus;
+        sources.push({ label: b.name, value, type: 'ritual' });
+      }
+    });
+    
+    // Bônus selecionados
+    selectedBonuses.forEach(bonusId => {
+      const bonus = availableBonuses.find(b => b.id === bonusId);
+      if (bonus?.damageBonus) {
+        const value = typeof bonus.damageBonus === 'number' ? bonus.damageBonus : bonus.damageBonus;
+        const type = bonus.source === 'paranormal' ? 'paranormal' : bonus.source === 'ritual' ? 'ritual' : 'other';
+        sources.push({ label: bonus.name, value, type });
+      }
+    });
+    
+    return sources;
+  }, [weapon, attributes, classPowerBonuses, passiveBonuses, selectedBonuses, availableBonuses]);
+
   // Calcular margem de crítico efetiva
   const effectiveCritical = useMemo(() => {
     if (!weapon) return 20;
@@ -400,6 +481,17 @@ export function CombatRollModal({
     const match = weapon.criticalMultiplier.match(/x(\d+)/i);
     return match ? parseInt(match[1]) : 2;
   }, [weapon]);
+
+  // Cores para cada tipo de bônus
+  const bonusTypeColors: Record<BonusSourceDisplay['type'], string> = {
+    skill: 'bg-primary/20 text-primary',
+    power: 'bg-purple-500/20 text-purple-500',
+    ritual: 'bg-blue-500/20 text-blue-400',
+    track: 'bg-orange-500/20 text-orange-500',
+    attribute: 'bg-amber-500/20 text-amber-500',
+    paranormal: 'bg-fuchsia-500/20 text-fuchsia-500',
+    other: 'bg-secondary/50 text-secondary-foreground',
+  };
 
   // === HANDLERS DE ROLAGEM ===
 
@@ -613,20 +705,49 @@ export function CombatRollModal({
                 exit={{ opacity: 0, y: -10 }}
                 className="space-y-4"
               >
-                {/* Base de ataque */}
-                <div className="p-3 rounded-lg bg-muted/50">
+                {/* Base de ataque com detalhamento de fontes */}
+                <div className="p-3 rounded-lg bg-muted/50 space-y-2">
                   <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
-                    Base de Ataque
+                    Bônus de Ataque
                   </p>
-                  <p className="text-sm">
-                    {weapon.type === 'Disparo' ? 'AGI' : 'FOR'} {attackAttribute} + {attackSkill.name} +{attackSkill.bonus}
-                    {totalAttackBonus > attackSkill.bonus && (
-                      <span className="text-primary ml-1">
-                        + {totalAttackBonus - attackSkill.bonus} (bônus)
+                  <div className="flex flex-wrap items-center gap-1.5 text-sm">
+                    <span className="px-2 py-0.5 rounded bg-secondary/50 font-medium">
+                      {weapon.type === 'Disparo' ? 'AGI' : 'FOR'}: {attackAttribute}
+                    </span>
+                    {attackBonusSources.map((source, idx) => (
+                      <span key={idx} className="flex items-center gap-1">
+                        <span className="text-muted-foreground">+</span>
+                        <span className={cn('px-2 py-0.5 rounded font-medium text-xs', bonusTypeColors[source.type])}>
+                          {source.label}: +{source.value}
+                        </span>
+                      </span>
+                    ))}
+                    {attackBonusSources.length > 0 && (
+                      <span className="ml-auto font-bold text-primary">
+                        = +{totalAttackBonus}
                       </span>
                     )}
-                  </p>
+                  </div>
                 </div>
+
+                {/* Bônus de dano com detalhamento de fontes */}
+                {damageBonusSources.length > 0 && (
+                  <div className="p-3 rounded-lg bg-muted/50 space-y-2">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
+                      Bônus de Dano
+                    </p>
+                    <div className="flex flex-wrap items-center gap-1.5 text-sm">
+                      {damageBonusSources.map((source, idx) => (
+                        <span key={idx} className="flex items-center gap-1">
+                          {idx > 0 && <span className="text-muted-foreground">+</span>}
+                          <span className={cn('px-2 py-0.5 rounded font-medium text-xs', bonusTypeColors[source.type])}>
+                            {source.label}: {typeof source.value === 'number' ? `+${source.value}` : source.value}
+                          </span>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Bônus passivos */}
                 {passiveBonuses.length > 0 && (
@@ -733,13 +854,22 @@ export function CombatRollModal({
                   ))}
                 </div>
 
-                {/* Resultado */}
-                <div className="text-center space-y-2">
-                  <p className="text-sm text-muted-foreground">
-                    d20: <span className="font-bold text-foreground">{attackResult.keptDice}</span>
-                    {attackResult.skillBonus > 0 && ` + ${attackResult.skillBonus}`}
-                    {attackResult.otherBonuses > 0 && ` + ${attackResult.otherBonuses}`}
-                  </p>
+                {/* Resultado com detalhamento de bônus */}
+                <div className="text-center space-y-3">
+                  {/* Breakdown de bônus de ataque */}
+                  <div className="flex flex-wrap items-center justify-center gap-1.5 text-sm">
+                    <span className="px-2 py-0.5 rounded bg-secondary/50 font-medium">
+                      d20: {attackResult.keptDice}
+                    </span>
+                    {attackBonusSources.map((source, idx) => (
+                      <span key={idx} className="flex items-center gap-1">
+                        <span className="text-muted-foreground">+</span>
+                        <span className={cn('px-2 py-0.5 rounded font-medium text-xs', bonusTypeColors[source.type])}>
+                          {source.label}: +{source.value}
+                        </span>
+                      </span>
+                    ))}
+                  </div>
                   
                   <motion.div
                     initial={{ scale: 0 }}
@@ -840,13 +970,28 @@ export function CombatRollModal({
                   ))}
                 </div>
 
-                {/* Total de dano */}
-                <div className="text-center space-y-1">
+                {/* Total de dano com detalhamento de bônus */}
+                <div className="text-center space-y-2">
+                  {/* Breakdown de dados */}
                   <p className="text-sm text-muted-foreground">
                     {damageResult.dice.join(' + ')}
                     {damageResult.extraDice && ` + ${damageResult.extraDice.join(' + ')}`}
                     {damageResult.bonus !== 0 && ` ${damageResult.bonus >= 0 ? '+' : ''}${damageResult.bonus}`}
                   </p>
+                  
+                  {/* Breakdown de fontes de bônus */}
+                  {damageBonusSources.length > 0 && (
+                    <div className="flex flex-wrap items-center justify-center gap-1.5 text-xs">
+                      {damageBonusSources.map((source, idx) => (
+                        <span 
+                          key={idx} 
+                          className={cn('px-2 py-0.5 rounded font-medium', bonusTypeColors[source.type])}
+                        >
+                          {source.label}: {typeof source.value === 'number' ? `+${source.value}` : source.value}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                   
                   <motion.div
                     initial={{ scale: 0 }}
