@@ -38,7 +38,7 @@ const TRACK_ICONS: Record<string, React.ReactNode> = {
   'analista-cena': <Brain className="w-5 h-5" />, // Suplemento
   'perito-criminal': <Target className="w-5 h-5" />, // Suplemento
   // Ocultista
-  'conduíte': <Zap className="w-5 h-5" />,
+  'conduite': <Zap className="w-5 h-5" />,
   'flagelador': <Droplets className="w-5 h-5" />,
   'graduado': <GraduationCap className="w-5 h-5" />,
   'intuitivo': <Brain className="w-5 h-5" />,
