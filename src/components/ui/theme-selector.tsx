@@ -1,4 +1,4 @@
-import { Palette, HelpCircle } from 'lucide-react';
+import { Palette, HelpCircle, Bug, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -10,8 +10,10 @@ import {
 import { useColorTheme, ColorTheme } from '@/contexts/ColorThemeContext';
 import { cn } from '@/lib/utils';
 import { restoreHelpButton, isHelpButtonDismissed } from '@/components/character/CharacterSheetHelp';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 const THEMES: { id: ColorTheme; name: string; color: string }[] = [
   { id: 'purple', name: 'Roxo Abissal', color: '#8B5CF6' },
@@ -23,8 +25,30 @@ const THEMES: { id: ColorTheme; name: string; color: string }[] = [
 
 export function ThemeSelector() {
   const { colorTheme, setColorTheme } = useColorTheme();
+  const { user } = useAuth();
   const currentTheme = THEMES.find(t => t.id === colorTheme);
   const [helpDismissed, setHelpDismissed] = useState(false);
+  const [developerMode, setDeveloperMode] = useState(false);
+  const [isTogglingDev, setIsTogglingDev] = useState(false);
+
+  // Carrega preferência de modo desenvolvedor
+  useEffect(() => {
+    if (!user) return;
+    
+    const loadDeveloperMode = async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('developer_mode')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (data) {
+        setDeveloperMode(data.developer_mode ?? false);
+      }
+    };
+    
+    loadDeveloperMode();
+  }, [user]);
 
   // Verifica se o botão de ajuda está dispensado
   useEffect(() => {
@@ -43,6 +67,32 @@ export function ThemeSelector() {
     toast.success('Botão de ajuda restaurado!');
   };
 
+  // Handler para toggle do modo desenvolvedor
+  const handleToggleDeveloperMode = useCallback(async () => {
+    if (!user || isTogglingDev) return;
+    
+    setIsTogglingDev(true);
+    const newValue = !developerMode;
+    
+    const { error } = await supabase
+      .from('profiles')
+      .update({ developer_mode: newValue })
+      .eq('user_id', user.id);
+    
+    if (error) {
+      toast.error('Erro ao atualizar preferência');
+      console.error('[ThemeSelector] Erro ao atualizar developer_mode:', error);
+    } else {
+      setDeveloperMode(newValue);
+      toast.success(newValue ? 'Modo desenvolvedor ativado' : 'Modo desenvolvedor desativado');
+      
+      // Dispara evento para componentes que precisam reagir à mudança
+      window.dispatchEvent(new CustomEvent('developer-mode-changed', { detail: { enabled: newValue } }));
+    }
+    
+    setIsTogglingDev(false);
+  }, [user, developerMode, isTogglingDev]);
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -58,7 +108,7 @@ export function ThemeSelector() {
           <span className="sr-only">Selecionar tema</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-48">
+      <DropdownMenuContent align="end" className="w-56">
         {THEMES.map((theme) => (
           <DropdownMenuItem
             key={theme.id}
@@ -79,6 +129,21 @@ export function ThemeSelector() {
           </DropdownMenuItem>
         ))}
         
+        <DropdownMenuSeparator />
+        
+        {/* Modo Desenvolvedor */}
+        <DropdownMenuItem
+          onClick={handleToggleDeveloperMode}
+          disabled={isTogglingDev}
+          className="flex items-center gap-3 cursor-pointer"
+        >
+          <Bug className={cn("w-4 h-4", developerMode && "text-green-500")} />
+          <span className="flex-1">Modo Desenvolvedor</span>
+          {developerMode && (
+            <Check className="w-4 h-4 text-green-500" />
+          )}
+        </DropdownMenuItem>
+        
         {/* Opção para restaurar botão de ajuda se estiver dispensado */}
         {helpDismissed && (
           <>
@@ -95,4 +160,46 @@ export function ThemeSelector() {
       </DropdownMenuContent>
     </DropdownMenu>
   );
+}
+
+/**
+ * Hook para verificar se o modo desenvolvedor está ativado
+ * Usado por componentes que precisam condicionar funcionalidades
+ */
+export function useDeveloperMode() {
+  const { user } = useAuth();
+  const [developerMode, setDeveloperMode] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user) {
+      setDeveloperMode(false);
+      setIsLoading(false);
+      return;
+    }
+    
+    const loadDeveloperMode = async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('developer_mode')
+        .eq('user_id', user.id)
+        .single();
+      
+      setDeveloperMode(data?.developer_mode ?? false);
+      setIsLoading(false);
+    };
+    
+    loadDeveloperMode();
+    
+    // Listener para mudanças via ThemeSelector
+    const handleChange = (e: Event) => {
+      const customEvent = e as CustomEvent<{ enabled: boolean }>;
+      setDeveloperMode(customEvent.detail.enabled);
+    };
+    
+    window.addEventListener('developer-mode-changed', handleChange);
+    return () => window.removeEventListener('developer-mode-changed', handleChange);
+  }, [user]);
+
+  return { developerMode, isLoading };
 }

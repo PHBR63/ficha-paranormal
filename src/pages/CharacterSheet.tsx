@@ -88,6 +88,7 @@ import { useCharacterAudit } from '@/hooks/useCharacterAudit';
 import { CharacterForAudit, canAddParanormalPower } from '@/lib/character-audit-engine';
 import { ClassPowerBonusesPanel } from '@/components/character/ClassPowerBonusesPanel';
 import { AutomationDebugWidget } from '@/components/character/AutomationDebugWidget';
+import { useDeveloperMode } from '@/components/ui/theme-selector';
 
 // Novos componentes do redesign 2.0 (estilo ficha de papel)
 import { CharacterSheetHeader } from '@/components/character/CharacterSheetHeader';
@@ -248,8 +249,9 @@ export default function CharacterSheet() {
 
   // Hook de migração automática de equipamentos
   const { runMigration, resetMigration } = useEquipmentMigration();
-
-  // Estados principais
+  
+  // Hook de modo desenvolvedor (para exibir widget de debug)
+  const { developerMode } = useDeveloperMode();
   const [character, setCharacter] = useState<Character | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -3022,25 +3024,27 @@ export default function CharacterSheet() {
         />
       )}
 
-      {/* Widget de Debug de Automações */}
-      <AutomationDebugWidget
-        auditCounts={auditCounts}
-        isAuditing={isAuditing}
-        bonusSummary={bonusSummary}
-        defenseBonuses={defenseBonuses}
-        activeConditions={character.conditions.map(parseCondition).map(c => ({
-          id: c.id,
-          name: c.name,
-          turnsRemaining: c.turnsRemaining,
-        }))}
-        sustainedRituals={sustainedRituals}
-        weaponBuffs={weaponBuffs}
-        activeConditionalBonuses={character.active_conditional_bonuses || []}
-        affinityActive={character.affinity_active || false}
-        elementalAffinity={character.elemental_affinity || undefined}
-        characterDefense={character.defense}
-        characterAgility={character.agility}
-      />
+      {/* Widget de Debug de Automações - apenas para modo desenvolvedor */}
+      {developerMode && (
+        <AutomationDebugWidget
+          auditCounts={auditCounts}
+          isAuditing={isAuditing}
+          bonusSummary={bonusSummary}
+          defenseBonuses={defenseBonuses}
+          activeConditions={character.conditions.map(parseCondition).map(c => ({
+            id: c.id,
+            name: c.name,
+            turnsRemaining: c.turnsRemaining,
+          }))}
+          sustainedRituals={sustainedRituals}
+          weaponBuffs={weaponBuffs}
+          activeConditionalBonuses={character.active_conditional_bonuses || []}
+          affinityActive={character.affinity_active || false}
+          elementalAffinity={character.elemental_affinity || undefined}
+          characterDefense={character.defense}
+          characterAgility={character.agility}
+        />
+      )}
     </div>
   );
 }
