@@ -338,6 +338,7 @@ export function CombatWeaponsTable({
           sustainedRituals={sustainedRituals}
           nex={nex || 5}
           classPowerBonuses={classPowerBonuses}
+          weaponBuffs={weaponBuffs}
           onRollComplete={onRollComplete}
         />
       )}
