@@ -1,0 +1,336 @@
+/**
+ * MobileRitualCastModal - Modal de conjuração de rituais para mobile
+ * Interface compacta com seleção de aprimoramentos como chips
+ */
+
+import { useState, useMemo } from 'react';
+import { motion } from 'framer-motion';
+import confetti from 'canvas-confetti';
+import { 
+  Drawer, 
+  DrawerContent, 
+  DrawerHeader, 
+  DrawerTitle, 
+  DrawerFooter 
+} from '@/components/ui/drawer';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { 
+  Zap, 
+  Sparkles,
+  Clock,
+  Target,
+  Timer,
+  Shield,
+  Lock,
+  Flame,
+  Check,
+  X,
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Ritual } from '@/lib/rituals/legacy-exports';
+import type { UnifiedRitual } from '@/lib/rituals/types';
+import { getElementConfig } from '@/lib/element-config';
+import { useRitualValidation, TurnPEState } from '@/hooks/useRitualValidation';
+
+// Efeito de partículas do elemento
+function triggerElementParticles(elementHex: string, elementHexLight: string) {
+  confetti({
+    particleCount: 50,
+    spread: 60,
+    origin: { y: 0.7 },
+    colors: [elementHex, elementHexLight, '#ffffff'],
+    ticks: 150,
+  });
+}
+
+type RitualInput = Ritual | UnifiedRitual;
+
+interface MobileRitualCastModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  ritual: RitualInput | null;
+  peCurrent: number;
+  peMax: number;
+  isNonOccultist?: boolean;
+  nex?: number;
+  elementalAffinity?: string | null;
+  turnPEState?: TurnPEState;
+  onConfirm: (ritual: RitualInput, peCost: number, enhancements: string[]) => void;
+}
+
+export function MobileRitualCastModal({
+  open,
+  onOpenChange,
+  ritual,
+  peCurrent,
+  peMax,
+  isNonOccultist = false,
+  nex = 5,
+  elementalAffinity,
+  turnPEState,
+  onConfirm,
+}: MobileRitualCastModalProps) {
+  const [selectedEnhancements, setSelectedEnhancements] = useState<string[]>([]);
+
+  const {
+    maxCircle,
+    peLimitPerTurn,
+    validatePECost,
+    getAvailableEnhancements,
+  } = useRitualValidation(nex, elementalAffinity, peCurrent, peMax, turnPEState);
+
+  const enhancementsWithValidation = useMemo(() => {
+    if (!ritual) return [];
+    return getAvailableEnhancements(ritual);
+  }, [ritual, getAvailableEnhancements]);
+
+  if (!ritual) return null;
+
+  const elementConfig = getElementConfig(ritual.element);
+  const ElementIcon = elementConfig?.icon || Sparkles;
+  const costMultiplier = isNonOccultist ? 2 : 1;
+  const baseCost = ritual.cost * costMultiplier;
+
+  const validSelectedEnhancements = selectedEnhancements.filter(enhName => {
+    const enh = enhancementsWithValidation.find(e => e.name === enhName);
+    return enh?.validation.isValid;
+  });
+
+  const enhancementsCost = validSelectedEnhancements.reduce((total, enhName) => {
+    const enh = ritual.enhancements?.find(e => e.name === enhName);
+    return total + (enh ? enh.cost * costMultiplier : 0);
+  }, 0);
+
+  const totalCost = baseCost + enhancementsCost;
+
+  const peValidation = validatePECost(
+    ritual.cost,
+    validSelectedEnhancements.map(name => {
+      const enh = ritual.enhancements?.find(e => e.name === name);
+      return { name, cost: enh?.cost || 0 };
+    }),
+    isNonOccultist
+  );
+
+  const canCast = peValidation.isValid;
+
+  const toggleEnhancement = (enhName: string) => {
+    const enh = enhancementsWithValidation.find(e => e.name === enhName);
+    if (!enh?.validation.isValid) return;
+
+    setSelectedEnhancements(prev =>
+      prev.includes(enhName)
+        ? prev.filter(e => e !== enhName)
+        : [...prev, enhName]
+    );
+  };
+
+  const handleConfirm = () => {
+    if (canCast && elementConfig) {
+      triggerElementParticles(elementConfig.hex, elementConfig.hexLight);
+      
+      setTimeout(() => {
+        onConfirm(ritual, totalCost, validSelectedEnhancements);
+        setSelectedEnhancements([]);
+        onOpenChange(false);
+      }, 200);
+    } else if (canCast) {
+      onConfirm(ritual, totalCost, validSelectedEnhancements);
+      setSelectedEnhancements([]);
+      onOpenChange(false);
+    }
+  };
+
+  const handleOpenChange = (isOpen: boolean) => {
+    if (!isOpen) {
+      setSelectedEnhancements([]);
+    }
+    onOpenChange(isOpen);
+  };
+
+  return (
+    <Drawer open={open} onOpenChange={handleOpenChange}>
+      <DrawerContent className="max-h-[90vh]">
+        <DrawerHeader className="pb-2">
+          <div className="flex items-center gap-3">
+            <div className={cn(
+              "w-10 h-10 rounded-lg flex items-center justify-center",
+              elementConfig?.bg || "bg-muted",
+              elementConfig?.border || "border-border",
+              "border"
+            )}>
+              <ElementIcon className={cn("w-5 h-5", elementConfig?.text || "text-muted-foreground")} />
+            </div>
+            <div className="flex-1">
+              <DrawerTitle className={cn(
+                "font-display text-base",
+                elementConfig?.text || "text-foreground"
+              )}>
+                {ritual.name}
+              </DrawerTitle>
+              <div className="flex items-center gap-2 mt-0.5">
+                <Badge variant="outline" className={cn("text-[10px]", elementConfig?.badgeBg)}>
+                  {ritual.circle}º Círculo
+                </Badge>
+                <Badge variant="outline" className="text-[10px] capitalize">
+                  {ritual.element}
+                </Badge>
+              </div>
+            </div>
+          </div>
+        </DrawerHeader>
+
+        <ScrollArea className="flex-1 px-4">
+          <div className="space-y-4 py-4">
+            {/* Info compacta */}
+            <div className="grid grid-cols-2 gap-2 text-[10px] text-muted-foreground">
+              <div className="flex items-center gap-1">
+                <Clock className="w-3 h-3" />
+                <span>{ritual.execution}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Target className="w-3 h-3" />
+                <span>{ritual.range}</span>
+              </div>
+              {ritual.duration && (
+                <div className="flex items-center gap-1">
+                  <Timer className="w-3 h-3" />
+                  <span>{ritual.duration}</span>
+                </div>
+              )}
+              {ritual.resistance && (
+                <div className="flex items-center gap-1">
+                  <Shield className="w-3 h-3" />
+                  <span>
+                    {typeof ritual.resistance === 'string' 
+                      ? ritual.resistance 
+                      : ritual.resistance.type}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Descrição */}
+            <p className="text-xs text-muted-foreground leading-relaxed border-l-2 border-border pl-3">
+              {ritual.description}
+            </p>
+
+            {/* Custo base */}
+            <div className="flex items-center justify-between p-2 rounded-lg bg-card border border-border">
+              <span className="text-sm">Custo Base</span>
+              <Badge className="bg-pe/20 text-pe border-pe/50">
+                {baseCost} PE
+              </Badge>
+            </div>
+
+            {/* Aprimoramentos como chips */}
+            {enhancementsWithValidation.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-[10px] text-muted-foreground uppercase">Aprimoramentos</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {enhancementsWithValidation.map((enh, i) => {
+                    const enhCost = enh.cost * costMultiplier;
+                    const isSelected = selectedEnhancements.includes(enh.name);
+                    const isLocked = !enh.validation.isValid;
+                    
+                    return (
+                      <motion.button
+                        key={i}
+                        onClick={() => toggleEnhancement(enh.name)}
+                        disabled={isLocked}
+                        whileTap={{ scale: isLocked ? 1 : 0.95 }}
+                        className={cn(
+                          "px-2.5 py-1.5 rounded-full text-xs font-medium transition-all",
+                          "flex items-center gap-1.5 border",
+                          isLocked 
+                            ? "bg-muted/30 border-muted text-muted-foreground/50 cursor-not-allowed"
+                            : isSelected
+                              ? `${elementConfig?.bg || 'bg-primary/20'} ${elementConfig?.border || 'border-primary'} ${elementConfig?.text || 'text-primary'}`
+                              : "bg-card border-border hover:bg-accent/50"
+                        )}
+                      >
+                        {isLocked ? (
+                          <Lock className="w-3 h-3" />
+                        ) : isSelected ? (
+                          <Check className="w-3 h-3" />
+                        ) : null}
+                        {enh.name}
+                        <span className="text-[10px] opacity-70">+{enhCost}</span>
+                      </motion.button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Custo total */}
+            <div className={cn(
+              "p-3 rounded-lg border-2",
+              canCast 
+                ? "bg-success/5 border-success/30" 
+                : "bg-destructive/5 border-destructive/30"
+            )}>
+              <div className="flex items-center justify-between">
+                <span className="font-display text-sm">Custo Total</span>
+                <div className="text-right">
+                  <span className={cn(
+                    "text-2xl font-bold",
+                    canCast ? "text-pe" : "text-destructive"
+                  )}>
+                    {totalCost}
+                  </span>
+                  <span className="text-xs text-muted-foreground ml-1">PE</span>
+                </div>
+              </div>
+              
+              {/* Barra de PE */}
+              <div className="mt-2">
+                <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1">
+                  <span>PE Atual</span>
+                  <span>{peCurrent} / {peMax}</span>
+                </div>
+                <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                  <div 
+                    className={cn(
+                      "h-full transition-all",
+                      canCast ? "bg-pe" : "bg-destructive"
+                    )}
+                    style={{ width: `${Math.max(0, (peCurrent / peMax) * 100)}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Erro de validação */}
+              {!peValidation.isValid && peValidation.reason && (
+                <p className="text-[10px] text-destructive mt-2 flex items-center gap-1">
+                  <Zap className="w-3 h-3" />
+                  {peValidation.reason}
+                </p>
+              )}
+            </div>
+          </div>
+        </ScrollArea>
+
+        <DrawerFooter className="pt-2">
+          <Button
+            onClick={handleConfirm}
+            disabled={!canCast}
+            className={cn(
+              "w-full h-12 font-display gap-2",
+              canCast && elementConfig?.bg
+            )}
+          >
+            <Sparkles className="w-5 h-5" />
+            CONJURAR
+          </Button>
+          <Button variant="ghost" onClick={() => handleOpenChange(false)} className="font-display">
+            <X className="w-4 h-4 mr-2" />
+            CANCELAR
+          </Button>
+        </DrawerFooter>
+      </DrawerContent>
+    </Drawer>
+  );
+}
