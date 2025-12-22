@@ -95,6 +95,9 @@ interface CombatWeaponsTableProps {
   // Fase 9: Sistema de rodadas para weapon buffs
   onAdvanceWeaponBuffTurn?: () => { expired: WeaponBuff[]; remaining: WeaponBuff[] };
   onSetWeaponBuffTurns?: (buffId: string, turns: number) => void;
+  // Indicador de auto-correção de buffs
+  hadAutoCorrections?: boolean;
+  onDismissCorrectionsNotice?: () => void;
 }
 
 // Ícone por tipo de arma
@@ -137,6 +140,9 @@ export function CombatWeaponsTable({
   // Fase 9: Sistema de rodadas
   onAdvanceWeaponBuffTurn,
   onSetWeaponBuffTurns,
+  // Indicador de auto-correção
+  hadAutoCorrections,
+  onDismissCorrectionsNotice,
 }: CombatWeaponsTableProps) {
   // Estado do modal de combate
   const [selectedWeapon, setSelectedWeapon] = useState<WeaponEntry | null>(null);
@@ -197,6 +203,8 @@ export function CombatWeaponsTable({
           onAdvanceTurn={onAdvanceWeaponBuffTurn}
           onSetBuffTurns={onSetWeaponBuffTurns}
           onRemoveBuff={onRemoveWeaponBuff || (() => {})}
+          hadAutoCorrections={hadAutoCorrections}
+          onDismissCorrectionsNotice={onDismissCorrectionsNotice}
           className="mb-4"
         />
       )}
