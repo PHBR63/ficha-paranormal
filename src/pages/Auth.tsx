@@ -8,7 +8,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Particles } from '@/components/ui/particles';
 import { FlickeringGrid } from '@/components/ui/flickering-grid';
 import { DecryptedText } from '@/components/ui/decrypted-text';
-import { Loader2, ArrowLeft, Eye, EyeOff } from 'lucide-react';
+import { Loader2, ArrowLeft, EyeOff, Eye as EyeIcon } from 'lucide-react';
+import { Logo } from '@/components/ui/logo';
 import { z } from 'zod';
 import { useThemeColors } from '@/hooks/useThemeColors';
 
@@ -193,9 +194,8 @@ export default function Auth() {
           
           {/* Header */}
           <div className="relative text-center mb-6 sm:mb-8">
-            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-[#8B0000]/20 border border-[#8B0000]/40 flex items-center justify-center mx-auto mb-3 sm:mb-4 relative">
-              <div className="absolute inset-0 bg-[#8B0000]/20 rounded-xl blur-xl animate-pulse" />
-              <Eye className="w-7 h-7 sm:w-8 sm:h-8 text-[#B22222] relative animate-pulse" />
+            <div className="flex justify-center mb-3 sm:mb-4">
+              <Logo size="lg" animate glow />
             </div>
             <h1 className="font-display text-2xl sm:text-3xl tracking-wide text-[#F5F5F5]">
               <DecryptedText 
@@ -298,7 +298,7 @@ export default function Auth() {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-[#808080] hover:text-[#F5F5F5] transition-colors"
                 >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
                 </button>
               </div>
               {errors.password && (
