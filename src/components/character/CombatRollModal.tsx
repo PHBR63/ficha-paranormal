@@ -17,6 +17,8 @@ import { cn } from '@/lib/utils';
 import { rollSkillTest, rollDamage, DiceRollResult } from '@/lib/dice-roller';
 import { getSkillBonus } from '@/lib/character-data';
 import { useRitualBonusesForCombat, useRitualCombatBonuses, SustainedRitualInput } from '@/hooks/useRitualCombatBonuses';
+import { WeaponBuff } from '@/hooks/useWeaponBuffs';
+import { formatDamageFormula } from '@/lib/rituals/legacy-exports';
 import {
   Tooltip,
   TooltipContent,
@@ -117,6 +119,9 @@ interface CombatRollModalProps {
   // Bônus condicionais avançados (Fase 4)
   advancedBonuses?: AdvancedConditionalBonuses;
   
+  // Buffs de arma ativos (Amaldiçoar Arma, etc.)
+  weaponBuffs?: WeaponBuff[];
+  
   // Callback
   onRollComplete?: (result: DiceRollResult) => void;
 }
@@ -177,11 +182,62 @@ export function CombatRollModal({
   nex,
   classPowerBonuses, // NOVO: Bônus pré-calculados do sistema unificado
   advancedBonuses = {},
+  weaponBuffs = [], // Buffs de arma ativos
   onRollComplete,
 }: CombatRollModalProps) {
   // Bônus de rituais sustentados processados automaticamente
   const ritualBonuses = useRitualBonusesForCombat(sustainedRituals);
   const ritualCombatSummary = useRitualCombatBonuses(sustainedRituals);
+  
+  // === PROCESSAR WEAPON BUFFS (Amaldiçoar Arma, etc.) ===
+  // REGRA OFICIAL: Rituais NÃO acumulam entre si - usa o MAIOR de cada tipo
+  const weaponBuffBonuses = useMemo(() => {
+    if (weaponBuffs.length === 0) {
+      return {
+        attackBonus: 0,
+        criticalBonus: 0,
+        criticalMultiplierBonus: 0,
+        bonusDamage: null as { diceCount: number; diceType: number; damageType?: string } | null,
+        summary: [] as string[],
+      };
+    }
+    
+    // Coleta todos os valores de cada tipo
+    const attackBonuses = weaponBuffs.map(b => b.attackBonus || 0);
+    const criticalBonuses = weaponBuffs.map(b => b.criticalBonus || 0);
+    const criticalMultiplierBonuses = weaponBuffs.map(b => b.criticalMultiplierBonus || 0);
+    
+    // Usa o MAIOR de cada tipo (rituais não acumulam)
+    const totalAttackBonus = attackBonuses.length > 0 ? Math.max(...attackBonuses) : 0;
+    const totalCriticalBonus = criticalBonuses.length > 0 ? Math.max(...criticalBonuses) : 0;
+    const totalCriticalMultiplierBonus = criticalMultiplierBonuses.length > 0 ? Math.max(...criticalMultiplierBonuses) : 0;
+    
+    // Dano extra: usa apenas o maior dado
+    const allBonusDamage = weaponBuffs
+      .filter(b => b.bonusDamage)
+      .map(b => ({ ...b.bonusDamage!, element: b.element }));
+    
+    // Ordena por "potência" e pega apenas o maior
+    const sortedDamage = allBonusDamage.sort((a, b) => {
+      const powerA = (a.diceCount || 1) * (a.diceType || 0);
+      const powerB = (b.diceCount || 1) * (b.diceType || 0);
+      return powerB - powerA;
+    });
+    
+    const bestDamage = sortedDamage.length > 0 ? sortedDamage[0] : null;
+    
+    // Resumo para exibição
+    const summary = weaponBuffs.map(b => b.ritualName);
+    
+    return {
+      attackBonus: totalAttackBonus,
+      criticalBonus: totalCriticalBonus,
+      criticalMultiplierBonus: totalCriticalMultiplierBonus,
+      bonusDamage: bestDamage,
+      summary,
+    };
+  }, [weaponBuffs]);
+  
   // Estados do modal
   const [phase, setPhase] = useState<CombatPhase>('setup');
   const [selectedBonuses, setSelectedBonuses] = useState<string[]>([]);
@@ -371,16 +427,21 @@ export function CombatRollModal({
   // Verificar se pode pagar o PE
   const canAffordPE = currentPE >= totalPECost;
 
-  // Calcular bônus total de ataque (inclui bônus do sistema unificado e modificador manual)
+  // Calcular bônus total de ataque (inclui bônus do sistema unificado, weapon buffs e modificador manual)
   const totalAttackBonus = useMemo(() => {
     let total = attackSkill.bonus;
     
-    // NOVO: Adicionar bônus passivos de poderes de classe do sistema unificado
+    // Adicionar bônus passivos de poderes de classe do sistema unificado
     if (classPowerBonuses?.attackBonus) {
       total += classPowerBonuses.attackBonus;
     }
     
-    // Adicionar bônus passivos (rituais, etc.)
+    // Adicionar bônus de weapon buffs (Amaldiçoar Arma, etc.)
+    if (weaponBuffBonuses.attackBonus) {
+      total += weaponBuffBonuses.attackBonus;
+    }
+    
+    // Adicionar bônus passivos (rituais sustentados, etc.)
     passiveBonuses.forEach(b => {
       if (b.attackBonus) total += b.attackBonus;
     });
@@ -395,7 +456,7 @@ export function CombatRollModal({
     total += manualAttackMod;
     
     return total;
-  }, [attackSkill.bonus, passiveBonuses, selectedBonuses, availableBonuses, classPowerBonuses, manualAttackMod]);
+  }, [attackSkill.bonus, passiveBonuses, selectedBonuses, availableBonuses, classPowerBonuses, manualAttackMod, weaponBuffBonuses]);
 
   // === Detalhamento das fontes de bônus de ataque para exibição ===
   const attackBonusSources = useMemo(() => {
@@ -421,7 +482,7 @@ export function CombatRollModal({
       });
     }
     
-    // Bônus passivos de rituais
+    // Bônus passivos de rituais sustentados
     passiveBonuses.forEach(b => {
       if (b.attackBonus) {
         sources.push({ 
@@ -433,6 +494,18 @@ export function CombatRollModal({
         });
       }
     });
+    
+    // Bônus de weapon buffs (Amaldiçoar Arma, etc.)
+    if (weaponBuffBonuses.attackBonus > 0) {
+      const buffNames = weaponBuffBonuses.summary.join(', ');
+      sources.push({
+        label: 'Buff de Arma',
+        value: weaponBuffBonuses.attackBonus,
+        type: 'ritual',
+        sourceName: buffNames,
+        description: `Bônus de ataque de ${buffNames}`,
+      });
+    }
     
     // Bônus selecionados
     selectedBonuses.forEach(bonusId => {
@@ -460,7 +533,7 @@ export function CombatRollModal({
     }
     
     return sources;
-  }, [attackSkill, classPowerBonuses, passiveBonuses, selectedBonuses, availableBonuses, manualAttackMod]);
+  }, [attackSkill, classPowerBonuses, passiveBonuses, selectedBonuses, availableBonuses, manualAttackMod, weaponBuffBonuses]);
 
   // === Detalhamento das fontes de bônus de dano para exibição ===
   const damageBonusSources = useMemo(() => {
@@ -497,7 +570,7 @@ export function CombatRollModal({
       });
     }
     
-    // Bônus passivos
+    // Bônus passivos de rituais sustentados
     passiveBonuses.forEach(b => {
       if (b.damageBonus) {
         const value = typeof b.damageBonus === 'number' ? b.damageBonus : b.damageBonus;
@@ -510,6 +583,19 @@ export function CombatRollModal({
         });
       }
     });
+    
+    // Dano extra de weapon buffs (Amaldiçoar Arma, etc.)
+    if (weaponBuffBonuses.bonusDamage) {
+      const buffNames = weaponBuffBonuses.summary.join(', ');
+      const damageStr = `${weaponBuffBonuses.bonusDamage.diceCount}d${weaponBuffBonuses.bonusDamage.diceType}`;
+      sources.push({
+        label: 'Buff de Arma',
+        value: `+${damageStr}`,
+        type: 'ritual',
+        sourceName: buffNames,
+        description: `Dano extra de ${buffNames} (${weaponBuffBonuses.bonusDamage.damageType || 'elemental'})`,
+      });
+    }
     
     // Bônus selecionados
     selectedBonuses.forEach(bonusId => {
@@ -538,32 +624,46 @@ export function CombatRollModal({
     }
     
     return sources;
-  }, [weapon, attributes, classPowerBonuses, passiveBonuses, selectedBonuses, availableBonuses, manualDamageMod]);
+  }, [weapon, attributes, classPowerBonuses, passiveBonuses, selectedBonuses, availableBonuses, manualDamageMod, weaponBuffBonuses]);
 
-  // Calcular margem de crítico efetiva
+  // Calcular margem de crítico efetiva (incluindo weapon buffs)
   const effectiveCritical = useMemo(() => {
     if (!weapon) return 20;
     let critical = parseInt(weapon.critical || '20');
     
-    // NOVO: Aplicar bônus de margem de crítico do sistema unificado
+    // Aplicar bônus de margem de crítico do sistema unificado de poderes de classe
     if (classPowerBonuses?.criticalMarginBonus) {
       critical -= classPowerBonuses.criticalMarginBonus;
     }
     
-    // Reduzir margem com bônus de crítico (passivos de rituais, etc.)
+    // Aplicar bônus de weapon buffs (Amaldiçoar Arma, etc.)
+    if (weaponBuffBonuses.criticalBonus) {
+      critical -= weaponBuffBonuses.criticalBonus;
+    }
+    
+    // Reduzir margem com bônus de crítico (passivos de rituais sustentados, etc.)
     passiveBonuses.forEach(b => {
       if (b.criticalBonus) critical -= b.criticalBonus;
     });
     
     return Math.max(1, critical); // Mínimo de 1
-  }, [weapon, passiveBonuses, classPowerBonuses]);
+  }, [weapon, passiveBonuses, classPowerBonuses, weaponBuffBonuses]);
 
-  // Multiplicador de crítico da arma
+  // Multiplicador de crítico da arma (incluindo weapon buffs)
   const criticalMultiplier = useMemo(() => {
-    if (!weapon?.criticalMultiplier) return 2;
-    const match = weapon.criticalMultiplier.match(/x(\d+)/i);
-    return match ? parseInt(match[1]) : 2;
-  }, [weapon]);
+    let base = 2;
+    if (weapon?.criticalMultiplier) {
+      const match = weapon.criticalMultiplier.match(/x(\d+)/i);
+      base = match ? parseInt(match[1]) : 2;
+    }
+    
+    // Aplicar bônus de multiplicador de weapon buffs
+    if (weaponBuffBonuses.criticalMultiplierBonus) {
+      base += weaponBuffBonuses.criticalMultiplierBonus;
+    }
+    
+    return base;
+  }, [weapon, weaponBuffBonuses]);
 
   // Cores para cada tipo de bônus
   const bonusTypeColors: Record<BonusSourceDisplay['type'], string> = {
@@ -644,6 +744,18 @@ export function CombatRollModal({
           if (match[2]) extraDiceSize = parseInt(match[2]);
         }
       });
+    }
+    
+    // Dados extras de WEAPON BUFFS (Amaldiçoar Arma, etc.)
+    // Estes dados são de tipo elemental específico do ritual
+    let weaponBuffDiceCount = 0;
+    let weaponBuffDiceSize = 6;
+    if (weaponBuffBonuses.bonusDamage) {
+      const buffDamage = weaponBuffBonuses.bonusDamage;
+      weaponBuffDiceCount = isCritical 
+        ? (buffDamage.diceCount || 1) * criticalMultiplier 
+        : (buffDamage.diceCount || 1);
+      weaponBuffDiceSize = buffDamage.diceType || 6;
     }
     
     // Dados extras do Ataque Furtivo (com possível dobro do Assassinar)
@@ -733,8 +845,18 @@ export function CombatRollModal({
       sneakDice.push(Math.floor(Math.random() * 6) + 1);
     }
     
-    // Combinar dados extras com dados de ataque furtivo
-    const allExtraDice = [...extraDice, ...sneakDice];
+    // Rolar dados de WEAPON BUFFS (Amaldiçoar Arma - dano elemental)
+    const weaponBuffDice: number[] = [];
+    for (let i = 0; i < weaponBuffDiceCount; i++) {
+      if (useMaxDamage) {
+        weaponBuffDice.push(weaponBuffDiceSize);
+      } else {
+        weaponBuffDice.push(Math.floor(Math.random() * weaponBuffDiceSize) + 1);
+      }
+    }
+    
+    // Combinar todos os dados extras (poderes + ataque furtivo + weapon buffs)
+    const allExtraDice = [...extraDice, ...sneakDice, ...weaponBuffDice];
     
     const diceTotal = mainDice.reduce((a, b) => a + b, 0) + allExtraDice.reduce((a, b) => a + b, 0);
     const total = diceTotal + damageBonus;
@@ -749,6 +871,8 @@ export function CombatRollModal({
       useMaxDamage, // Flag para exibição
       potenciaMaximaActive: advancedBonuses.potenciaMaxima && isMelee,
       assassinarActive: advancedBonuses.assassinar,
+      weaponBuffActive: weaponBuffDiceCount > 0, // Flag para exibição de buffs
+      weaponBuffElement: weaponBuffBonuses.bonusDamage?.damageType,
     } as any);
     setPhase('damage');
   };
