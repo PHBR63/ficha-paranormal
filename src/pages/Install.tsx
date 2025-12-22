@@ -6,6 +6,7 @@ import { Particles } from "@/components/ui/particles";
 import { FlickeringGrid } from "@/components/ui/flickering-grid";
 import { DecryptedText } from "@/components/ui/decrypted-text";
 import { ParanormalElementIcon } from "@/components/ui/paranormal-element-icon";
+import { Logo } from "@/components/ui/logo";
 import { 
   Download, 
   Smartphone, 
@@ -15,8 +16,7 @@ import {
   ArrowLeft,
   Zap,
   Wifi,
-  Bell,
-  Eye
+  Bell
 } from "lucide-react";
 import { useThemeColors } from "@/hooks/useThemeColors";
 
@@ -92,7 +92,7 @@ export default function Install() {
             <div className="absolute inset-0 bg-[#8B0000]/30 rounded-2xl blur-xl animate-pulse" />
             
             <div className="relative w-full h-full rounded-2xl bg-gradient-to-br from-[#8B0000]/20 to-[#1A0505] border border-[#8B0000]/40 flex items-center justify-center">
-              <Eye className="w-12 h-12 text-[#B22222] animate-pulse" />
+              <Logo size="xl" animate />
             </div>
           </div>
           
