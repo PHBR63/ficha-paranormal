@@ -1,10 +1,12 @@
 /**
  * TrackCombatBonusesBar - Barra de bônus de trilha na seção de combate
  * Mostra modificadores de dano e ataque de habilidades como Mira de Elite e Golpe Pesado
+ * Inclui botão de rolagem de iniciativa com bônus automáticos
  */
 
-import { motion } from 'framer-motion';
-import { Crosshair, Swords, Target, Zap, Shield, Brain, Sparkles } from 'lucide-react';
+import { useState, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Crosshair, Swords, Target, Zap, Shield, Brain, Sparkles, Dices } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { 
   Tooltip,
@@ -12,12 +14,16 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { Button } from '@/components/ui/button';
+import { rollSkillTest, DiceRollResult } from '@/lib/dice-roller';
 import { BonusBreakdown, CombatBonuses, DamageReduction, EffectResistances } from '@/hooks/useCharacterBonusSummary';
 
 interface TrackCombatBonusesBarProps {
   combat: CombatBonuses;
   damageReduction: DamageReduction;
   effectResistances: EffectResistances;
+  agility?: number; // Atributo de Agilidade para iniciativa
+  onInitiativeRoll?: (result: DiceRollResult) => void; // Callback para rolagem
   className?: string;
 }
 
@@ -91,8 +97,35 @@ export function TrackCombatBonusesBar({
   combat,
   damageReduction,
   effectResistances,
+  agility = 0,
+  onInitiativeRoll,
   className,
 }: TrackCombatBonusesBarProps) {
+  // Estado para animação de rolagem
+  const [isRolling, setIsRolling] = useState(false);
+  const [lastResult, setLastResult] = useState<DiceRollResult | null>(null);
+
+  // Handler para rolagem de iniciativa
+  const handleInitiativeRoll = useCallback(() => {
+    if (isRolling) return;
+    
+    setIsRolling(true);
+    
+    // Simula delay de rolagem
+    setTimeout(() => {
+      const result = rollSkillTest({
+        attributeValue: agility,
+        skillBonus: combat.initiative.total,
+        otherBonuses: 0,
+        label: 'Iniciativa',
+      });
+      
+      setLastResult(result);
+      setIsRolling(false);
+      onInitiativeRoll?.(result);
+    }, 300);
+  }, [agility, combat.initiative.total, isRolling, onInitiativeRoll]);
+
   // Filtra apenas bônus de habilidades de trilha
   const attackBonuses = combat.attack.breakdown.filter(b => 
     b.type === 'ability' && b.active
@@ -110,15 +143,16 @@ export function TrackCombatBonusesBar({
     b.type === 'ability' && b.active
   );
 
-  // Se não há bônus de trilha, não mostra nada
+  // Se não há bônus de trilha e não temos callback de iniciativa, não mostra nada
   const hasTrackBonuses = 
     attackBonuses.length > 0 || 
     damageBonuses.length > 0 || 
     criticalBonuses.length > 0 ||
     initiativeBonuses.length > 0 ||
     rdPhysical.length > 0;
-
-  if (!hasTrackBonuses) {
+  
+  // Mostra se tem bônus de trilha OU se tem callback de iniciativa
+  if (!hasTrackBonuses && !onInitiativeRoll) {
     return null;
   }
 
@@ -179,8 +213,8 @@ export function TrackCombatBonusesBar({
         />
       )}
 
-      {/* Iniciativa */}
-      {initiativeBonuses.length > 0 && (
+      {/* Iniciativa - Badge de bônus ou botão de rolagem */}
+      {initiativeBonuses.length > 0 ? (
         <BonusItem
           icon={Zap}
           label="Iniciativa"
@@ -193,6 +227,65 @@ export function TrackCombatBonusesBar({
             </div>
           }
         />
+      ) : null}
+
+      {/* Botão de Rolagem de Iniciativa */}
+      {onInitiativeRoll && (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleInitiativeRoll}
+                  disabled={isRolling}
+                  className={cn(
+                    "h-7 px-2.5 gap-1.5 text-xs font-medium",
+                    "border-primary/40 hover:border-primary hover:bg-primary/10",
+                    isRolling && "animate-pulse"
+                  )}
+                >
+                  <motion.div
+                    animate={isRolling ? { rotate: 360 } : {}}
+                    transition={{ duration: 0.5, repeat: isRolling ? Infinity : 0 }}
+                  >
+                    <Dices className="w-3.5 h-3.5 text-primary" />
+                  </motion.div>
+                  <span>Iniciativa</span>
+                  {combat.initiative.total > 0 && (
+                    <span className="text-primary font-display">+{agility + combat.initiative.total}</span>
+                  )}
+                  {combat.initiative.total === 0 && (
+                    <span className="text-muted-foreground font-display">+{agility}</span>
+                  )}
+                </Button>
+              </motion.div>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="max-w-xs">
+              <div className="space-y-1">
+                <p className="font-medium">Rolar Iniciativa</p>
+                <div className="text-xs space-y-0.5 text-muted-foreground">
+                  <p>d20 + Agilidade ({agility})</p>
+                  {combat.initiative.total > 0 && (
+                    <p className="text-primary">+ Bônus de trilha ({combat.initiative.total})</p>
+                  )}
+                  <p className="text-foreground font-medium">Total: +{agility + combat.initiative.total}</p>
+                </div>
+                {lastResult && (
+                  <div className="pt-1 border-t border-border mt-1">
+                    <p className="text-xs">
+                      Última rolagem: <span className="font-display text-primary">{lastResult.total}</span>
+                    </p>
+                  </div>
+                )}
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       )}
 
       {/* Redução de Dano */}
