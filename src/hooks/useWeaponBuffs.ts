@@ -114,12 +114,32 @@ export function useWeaponBuffs(
       return;
     }
 
+    // Normaliza o dano extra: alguns rituais (ex: Amaldiçoar Arma) usam weaponEffect.damageBonus como string ("2d6")
+    // Aqui convertemos para DamageFormula, que é o formato usado pelo sistema de buffs.
+    let normalizedBonusDamage: DamageFormula | undefined = effect.weaponEffect.bonusDamage;
+
+    const maybeDamageBonus = (effect.weaponEffect as any).damageBonus;
+    const maybeDamageType = (effect.weaponEffect as any).damageType;
+
+    if (!normalizedBonusDamage && typeof maybeDamageBonus === 'string' && typeof maybeDamageType === 'string') {
+      const match = maybeDamageBonus.match(/(\d+)d(\d+)(?:\+(\d+))?/i);
+      if (match) {
+        normalizedBonusDamage = {
+          diceCount: parseInt(match[1]) || 1,
+          diceType: parseInt(match[2]) || 6,
+          bonus: match[3] ? parseInt(match[3]) : undefined,
+          // Cast intencional: o sistema unificado usa AnyDamageType em string (ex: 'morte', 'sangue')
+          damageType: maybeDamageType as unknown as DamageFormula['damageType'],
+        };
+      }
+    }
+
     const newBuff: WeaponBuff = {
       id: `${ritual.id}-${Date.now()}`,
       ritualId: ritual.id,
       ritualName: ritual.name,
       element: ritual.element,
-      bonusDamage: effect.weaponEffect.bonusDamage,
+      bonusDamage: normalizedBonusDamage,
       attackBonus: effect.weaponEffect.attackBonus,
       criticalBonus: effect.weaponEffect.criticalBonus,
       criticalMultiplierBonus: effect.weaponEffect.criticalMultiplierBonus,
@@ -148,12 +168,31 @@ export function useWeaponBuffs(
       return;
     }
 
+    // Normaliza o dano extra (mesma lógica do addBuff)
+    let normalizedBonusDamage: DamageFormula | undefined = effect.weaponEffect.bonusDamage;
+
+    const maybeDamageBonus = (effect.weaponEffect as any).damageBonus;
+    const maybeDamageType = (effect.weaponEffect as any).damageType;
+
+    if (!normalizedBonusDamage && typeof maybeDamageBonus === 'string' && typeof maybeDamageType === 'string') {
+      const match = maybeDamageBonus.match(/(\d+)d(\d+)(?:\+(\d+))?/i);
+      if (match) {
+        normalizedBonusDamage = {
+          diceCount: parseInt(match[1]) || 1,
+          diceType: parseInt(match[2]) || 6,
+          bonus: match[3] ? parseInt(match[3]) : undefined,
+          // Cast intencional: o sistema unificado usa AnyDamageType em string (ex: 'morte', 'sangue')
+          damageType: maybeDamageType as unknown as DamageFormula['damageType'],
+        };
+      }
+    }
+
     const newBuff: WeaponBuff = {
       id: `${ritual.id}-${Date.now()}`,
       ritualId: ritual.id,
       ritualName: ritual.name,
       element: ritual.element,
-      bonusDamage: effect.weaponEffect.bonusDamage,
+      bonusDamage: normalizedBonusDamage,
       attackBonus: effect.weaponEffect.attackBonus,
       criticalBonus: effect.weaponEffect.criticalBonus,
       criticalMultiplierBonus: effect.weaponEffect.criticalMultiplierBonus,
