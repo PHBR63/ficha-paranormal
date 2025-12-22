@@ -1014,6 +1014,400 @@ function testFullCombatLoadout(): TestResult {
 }
 
 // =====================================================
+// Testes de Poderes Paranormais
+// =====================================================
+
+/**
+ * Testa Anatomia Insana (Sangue) - Bônus de Fortitude
+ */
+function testAnatomiaInsana(): TestResult {
+  const effects: UnifiedEffect[] = [
+    createTestEffect('anatomia-insana', 
+      { fortitudeBonus: 2 }, 
+      { source: 'paranormal_power', sourceName: 'Anatomia Insana' }
+    ),
+  ];
+  
+  const result = consolidateEffects(effects, createTestContext());
+  
+  const passed = result.resistances.fortitude === 2;
+  
+  return {
+    name: 'Anatomia Insana aplica +2 Fortitude',
+    passed,
+    message: `Fortitude: +${result.resistances.fortitude}`,
+  };
+}
+
+/**
+ * Testa Anatomia Insana com Afinidade (Sangue) - Bônus aprimorado
+ */
+function testAnatomiaInsanaAfinidade(): TestResult {
+  const effects: UnifiedEffect[] = [
+    createTestEffect('anatomia-insana-afinidade', 
+      { fortitudeBonus: 5 }, 
+      { source: 'paranormal_power', sourceName: 'Anatomia Insana (Afinidade)' }
+    ),
+  ];
+  
+  const result = consolidateEffects(effects, createTestContext());
+  
+  const passed = result.resistances.fortitude === 5;
+  
+  return {
+    name: 'Anatomia Insana com Afinidade aplica +5 Fortitude',
+    passed,
+    message: `Fortitude: +${result.resistances.fortitude}`,
+  };
+}
+
+/**
+ * Testa Sangue de Ferro - Bônus de PV por NEX
+ */
+function testSangueDeFerro(): TestResult {
+  const effects: UnifiedEffect[] = [
+    createTestEffect('sangue-de-ferro', 
+      { hpBonusPerNex: 2 }, 
+      { source: 'paranormal_power', sourceName: 'Sangue de Ferro' }
+    ),
+  ];
+  
+  const result = consolidateEffects(effects, createTestContext({ nex: 50 }));
+  
+  // 50% NEX = 10 incrementos de 5%, logo +20 PV (2 * 10)
+  const expectedBonus = 2 * 10;
+  const passed = result.resources.hpBonus === expectedBonus;
+  
+  return {
+    name: 'Sangue de Ferro aplica +2 PV por 5% NEX',
+    passed,
+    message: `Bônus de PV: +${result.resources.hpBonus} (esperado: ${expectedBonus})`,
+  };
+}
+
+/**
+ * Testa Potencial Aprimorado (Morte) - Bônus de PE por NEX
+ */
+function testPotencialAprimorado(): TestResult {
+  const effects: UnifiedEffect[] = [
+    createTestEffect('potencial-aprimorado', 
+      { peBonusPerNex: 1 }, 
+      { source: 'paranormal_power', sourceName: 'Potencial Aprimorado' }
+    ),
+  ];
+  
+  const result = consolidateEffects(effects, createTestContext({ nex: 50 }));
+  
+  // 50% NEX = 10 incrementos de 5%, logo +10 PE
+  const expectedBonus = 1 * 10;
+  const passed = result.resources.peBonus === expectedBonus;
+  
+  return {
+    name: 'Potencial Aprimorado aplica +1 PE por 5% NEX',
+    passed,
+    message: `Bônus de PE: +${result.resources.peBonus} (esperado: ${expectedBonus})`,
+  };
+}
+
+/**
+ * Testa Precognição (Conhecimento) - Bônus de Defesa e Resistências
+ */
+function testPrecognicao(): TestResult {
+  const effects: UnifiedEffect[] = [
+    createTestEffect('precognicao', 
+      { defenseBonus: 2, allResistancesBonus: 2 }, 
+      { source: 'paranormal_power', sourceName: 'Precognição' }
+    ),
+  ];
+  
+  const result = consolidateEffects(effects, createTestContext());
+  
+  const defesaOk = result.defense.general === 2;
+  const resistenciasOk = result.resistances.fortitude === 2 && 
+                         result.resistances.reflexos === 2 && 
+                         result.resistances.vontade === 2;
+  const passed = defesaOk && resistenciasOk;
+  
+  return {
+    name: 'Precognição aplica +2 Defesa e +2 todas as resistências',
+    passed,
+    message: `Defesa: +${result.defense.general}, Resistências: Fort ${result.resistances.fortitude}, Ref ${result.resistances.reflexos}, Von ${result.resistances.vontade}`,
+  };
+}
+
+/**
+ * Testa Precognição com Afinidade
+ */
+function testPrecognicaoAfinidade(): TestResult {
+  const effects: UnifiedEffect[] = [
+    createTestEffect('precognicao-afinidade', 
+      { defenseBonus: 5, allResistancesBonus: 5 }, 
+      { source: 'paranormal_power', sourceName: 'Precognição (Afinidade)' }
+    ),
+  ];
+  
+  const result = consolidateEffects(effects, createTestContext());
+  
+  const defesaOk = result.defense.general === 5;
+  const resistenciasOk = result.resistances.fortitude === 5;
+  const passed = defesaOk && resistenciasOk;
+  
+  return {
+    name: 'Precognição com Afinidade aplica +5 Defesa e resistências',
+    passed,
+    message: `Defesa: +${result.defense.general}, Fortitude: +${result.resistances.fortitude}`,
+  };
+}
+
+/**
+ * Testa Sensitivo (Conhecimento) - Bônus de perícias sociais
+ */
+function testSensitivo(): TestResult {
+  const effects: UnifiedEffect[] = [
+    createTestEffect('sensitivo', 
+      { skillBonus: { diplomacia: 5, intimidacao: 5, intuicao: 5 } }, 
+      { source: 'paranormal_power', sourceName: 'Sensitivo' }
+    ),
+  ];
+  
+  const result = consolidateEffects(effects, createTestContext());
+  
+  const diplomaciaOk = result.skills['diplomacia']?.bonus === 5;
+  const intimidacaoOk = result.skills['intimidacao']?.bonus === 5;
+  const intuicaoOk = result.skills['intuicao']?.bonus === 5;
+  const passed = diplomaciaOk && intimidacaoOk && intuicaoOk;
+  
+  return {
+    name: 'Sensitivo aplica +5 em Diplomacia, Intimidação, Intuição',
+    passed,
+    message: `Diplomacia: +${result.skills['diplomacia']?.bonus}, Intimidação: +${result.skills['intimidacao']?.bonus}, Intuição: +${result.skills['intuicao']?.bonus}`,
+  };
+}
+
+/**
+ * Testa Golpe de Sorte (Energia) - Bônus de margem de ameaça
+ */
+function testGolpeDeSorte(): TestResult {
+  const effects: UnifiedEffect[] = [
+    createTestEffect('golpe-de-sorte', 
+      { criticalMarginBonus: 1 }, 
+      { source: 'paranormal_power', sourceName: 'Golpe de Sorte' }
+    ),
+  ];
+  
+  const result = consolidateEffects(effects, createTestContext());
+  
+  const passed = result.critical.marginBonus === 1;
+  
+  return {
+    name: 'Golpe de Sorte aplica +1 margem de ameaça',
+    passed,
+    message: `Margem de ameaça: +${result.critical.marginBonus}`,
+  };
+}
+
+/**
+ * Testa Golpe de Sorte com Afinidade
+ */
+function testGolpeDeSorteAfinidade(): TestResult {
+  const effects: UnifiedEffect[] = [
+    createTestEffect('golpe-de-sorte-afinidade', 
+      { criticalMarginBonus: 2 }, 
+      { source: 'paranormal_power', sourceName: 'Golpe de Sorte (Afinidade)' }
+    ),
+  ];
+  
+  const result = consolidateEffects(effects, createTestContext());
+  
+  const passed = result.critical.marginBonus === 2;
+  
+  return {
+    name: 'Golpe de Sorte com Afinidade aplica +2 margem de ameaça',
+    passed,
+    message: `Margem de ameaça: +${result.critical.marginBonus}`,
+  };
+}
+
+/**
+ * Testa Campo Protetor (Energia) - Bônus condicional de Defesa
+ */
+function testCampoProtetor(): TestResult {
+  const effect = createTestEffect('campo-protetor', 
+    { defenseBonus: 5 }, 
+    { 
+      source: 'paranormal_power', 
+      sourceName: 'Campo Protetor',
+      conditions: { requiresActivation: true }
+    }
+  );
+  
+  // Quando ativado (esquivando)
+  const contextAtivado = createTestContext({ activatedEffects: ['campo-protetor'] });
+  const ativo = checkEffectConditions(effect, contextAtivado);
+  
+  // Quando não ativado
+  const contextInativo = createTestContext({ activatedEffects: [] });
+  const inativo = !checkEffectConditions(effect, contextInativo);
+  
+  const passed = ativo && inativo;
+  
+  return {
+    name: 'Campo Protetor requer ativação (esquivar)',
+    passed,
+    message: `Ativado: ${ativo ? 'funciona' : 'falhou'}, Inativo: ${inativo ? 'corretamente inativo' : 'ativo indevidamente'}`,
+  };
+}
+
+/**
+ * Testa Resistir a Elemento - Resistência a dano paranormal
+ */
+function testResistirAElemento(): TestResult {
+  const effects: UnifiedEffect[] = [
+    createTestEffect('resistir-sangue', 
+      { damageResistance: { sangue: 5 } }, 
+      { source: 'paranormal_power', sourceName: 'Resistir a Elemento (Sangue)' }
+    ),
+  ];
+  
+  const result = consolidateEffects(effects, createTestContext());
+  
+  const passed = result.damageResistance['sangue'] === 5;
+  
+  return {
+    name: 'Resistir a Elemento aplica Resistência 5 ao elemento',
+    passed,
+    message: `Resistência Sangue: ${result.damageResistance['sangue']}`,
+  };
+}
+
+/**
+ * Testa Expansão de Conhecimento - Bônus de perícia de Intelecto
+ */
+function testExpansaoDeConhecimento(): TestResult {
+  const effects: UnifiedEffect[] = [
+    createTestEffect('expansao-conhecimento', 
+      { skillBonus: { ocultismo: 5 } }, 
+      { source: 'paranormal_power', sourceName: 'Expansão de Conhecimento' }
+    ),
+  ];
+  
+  const result = consolidateEffects(effects, createTestContext());
+  
+  const passed = result.skills['ocultismo']?.bonus === 5;
+  
+  return {
+    name: 'Expansão de Conhecimento aplica +5 em perícia de Intelecto',
+    passed,
+    message: `Ocultismo: +${result.skills['ocultismo']?.bonus}`,
+  };
+}
+
+/**
+ * Testa Visão do Oculto - Bônus de Percepção
+ */
+function testVisaoDoOculto(): TestResult {
+  const effects: UnifiedEffect[] = [
+    createTestEffect('visao-oculto', 
+      { skillBonus: { percepcao: 5 }, specialEffects: ['Ver criaturas invisíveis'] }, 
+      { source: 'paranormal_power', sourceName: 'Visão do Oculto' }
+    ),
+  ];
+  
+  const result = consolidateEffects(effects, createTestContext());
+  
+  const percepcaoOk = result.skills['percepcao']?.bonus === 5;
+  const hasEfeito = result.specialEffects.some(e => e.effect.includes('invisíveis'));
+  const passed = percepcaoOk && hasEfeito;
+  
+  return {
+    name: 'Visão do Oculto aplica +5 Percepção e ver invisíveis',
+    passed,
+    message: `Percepção: +${result.skills['percepcao']?.bonus}, Efeito especial: ${hasEfeito}`,
+  };
+}
+
+/**
+ * Testa múltiplos poderes paranormais combinados
+ */
+function testMultiplosPoderesParanormais(): TestResult {
+  const effects: UnifiedEffect[] = [
+    // Anatomia Insana (Sangue)
+    createTestEffect('anatomia-insana', 
+      { fortitudeBonus: 2 }, 
+      { source: 'paranormal_power', sourceName: 'Anatomia Insana' }
+    ),
+    // Precognição (Conhecimento)
+    createTestEffect('precognicao', 
+      { defenseBonus: 2, allResistancesBonus: 2 }, 
+      { source: 'paranormal_power', sourceName: 'Precognição' }
+    ),
+    // Golpe de Sorte (Energia)
+    createTestEffect('golpe-sorte', 
+      { criticalMarginBonus: 1 }, 
+      { source: 'paranormal_power', sourceName: 'Golpe de Sorte' }
+    ),
+  ];
+  
+  const result = consolidateEffects(effects, createTestContext());
+  
+  // Fortitude: 2 (Anatomia) + 2 (Precognição) = 4
+  const fortitudeOk = result.resistances.fortitude === 4;
+  const defesaOk = result.defense.general === 2;
+  const criticoOk = result.critical.marginBonus === 1;
+  const passed = fortitudeOk && defesaOk && criticoOk;
+  
+  return {
+    name: 'Múltiplos poderes paranormais acumulam corretamente',
+    passed,
+    message: `Fortitude: +${result.resistances.fortitude}, Defesa: +${result.defense.general}, Margem crítico: +${result.critical.marginBonus}`,
+  };
+}
+
+/**
+ * Testa cenário: Ocultista com poderes paranormais e ritual sustentado
+ */
+function testOcultistaComPoderesParanormais(): TestResult {
+  const effects: UnifiedEffect[] = [
+    // Trilha - Conhecimento do Medo
+    createTestEffect('trilha-medo', 
+      { vontadeBonus: 2 }, 
+      { source: 'track', sourceName: 'Conhecimento do Medo' }
+    ),
+    // Poder Paranormal - Precognição
+    createTestEffect('precognicao', 
+      { defenseBonus: 2, allResistancesBonus: 2 }, 
+      { source: 'paranormal_power', sourceName: 'Precognição' }
+    ),
+    // Ritual sustentado
+    createTestEffect('ritual-protecao', 
+      { defenseBonus: 3 }, 
+      { source: 'ritual', sourceName: 'Proteção' }
+    ),
+    // Condição ativa
+    createTestEffect('medo', 
+      { attackBonus: -2 }, 
+      { source: 'condition', sourceName: 'Medo' }
+    ),
+  ];
+  
+  const result = consolidateEffects(effects, createTestContext());
+  
+  // Defesa: 2 (Precognição) + 3 (Ritual) = 5
+  // Vontade: 2 (Trilha) + 2 (Precognição) = 4
+  // Ataque: -2 (Medo)
+  const defesaOk = result.defense.general === 5;
+  const vontadeOk = result.resistances.vontade === 4;
+  const ataqueOk = result.attack.general === -2;
+  const passed = defesaOk && vontadeOk && ataqueOk;
+  
+  return {
+    name: 'Cenário: Ocultista com poderes paranormais + ritual + condição',
+    passed,
+    message: `Defesa: +${result.defense.general}, Vontade: +${result.resistances.vontade}, Ataque: ${result.attack.general}`,
+  };
+}
+
+// =====================================================
 // Runner de Testes
 // =====================================================
 
@@ -1127,6 +1521,32 @@ export function runAllSUETests(): TestSuiteResult[] {
     results: equipmentTests,
   });
   
+  // Suite: Poderes Paranormais
+  const paranormalTests: TestResult[] = [
+    testAnatomiaInsana(),
+    testAnatomiaInsanaAfinidade(),
+    testSangueDeFerro(),
+    testPotencialAprimorado(),
+    testPrecognicao(),
+    testPrecognicaoAfinidade(),
+    testSensitivo(),
+    testGolpeDeSorte(),
+    testGolpeDeSorteAfinidade(),
+    testCampoProtetor(),
+    testResistirAElemento(),
+    testExpansaoDeConhecimento(),
+    testVisaoDoOculto(),
+    testMultiplosPoderesParanormais(),
+    testOcultistaComPoderesParanormais(),
+  ];
+  
+  suites.push({
+    suiteName: 'Poderes Paranormais',
+    passed: paranormalTests.filter(t => t.passed).length,
+    failed: paranormalTests.filter(t => !t.passed).length,
+    results: paranormalTests,
+  });
+  
   return suites;
 }
 
@@ -1211,4 +1631,20 @@ export {
   testParanormalItemDefense,
   testEquipmentDamageReduction,
   testFullCombatLoadout,
+  // Poderes Paranormais
+  testAnatomiaInsana,
+  testAnatomiaInsanaAfinidade,
+  testSangueDeFerro,
+  testPotencialAprimorado,
+  testPrecognicao,
+  testPrecognicaoAfinidade,
+  testSensitivo,
+  testGolpeDeSorte,
+  testGolpeDeSorteAfinidade,
+  testCampoProtetor,
+  testResistirAElemento,
+  testExpansaoDeConhecimento,
+  testVisaoDoOculto,
+  testMultiplosPoderesParanormais,
+  testOcultistaComPoderesParanormais,
 };
