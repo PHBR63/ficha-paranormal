@@ -6,12 +6,13 @@
 
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sword, Target, Zap, Sparkles, Flame, X, Dices, Shield, Skull, Info } from 'lucide-react';
+import { Sword, Target, Zap, Sparkles, Flame, X, Dices, Shield, Skull, Info, Plus, Minus, RotateCcw } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { rollSkillTest, rollDamage, DiceRollResult } from '@/lib/dice-roller';
 import { getSkillBonus } from '@/lib/character-data';
@@ -193,6 +194,11 @@ export function CombatRollModal({
     isCritical: boolean;
     extraDice?: number[];
   } | null>(null);
+  
+  // Estados dos modificadores manuais (bônus do mestre)
+  const [manualAttackMod, setManualAttackMod] = useState(0);
+  const [manualDamageMod, setManualDamageMod] = useState(0);
+  const [targetDefense, setTargetDefense] = useState<number | null>(null);
 
   // Reset ao abrir/fechar
   const handleClose = () => {
@@ -200,6 +206,9 @@ export function CombatRollModal({
     setSelectedBonuses([]);
     setAttackResult(null);
     setDamageResult(null);
+    setManualAttackMod(0);
+    setManualDamageMod(0);
+    setTargetDefense(null);
     onClose();
   };
 
@@ -362,7 +371,7 @@ export function CombatRollModal({
   // Verificar se pode pagar o PE
   const canAffordPE = currentPE >= totalPECost;
 
-  // Calcular bônus total de ataque (inclui bônus do sistema unificado)
+  // Calcular bônus total de ataque (inclui bônus do sistema unificado e modificador manual)
   const totalAttackBonus = useMemo(() => {
     let total = attackSkill.bonus;
     
@@ -382,8 +391,11 @@ export function CombatRollModal({
       if (bonus?.attackBonus) total += bonus.attackBonus;
     });
     
+    // Adicionar modificador manual do mestre
+    total += manualAttackMod;
+    
     return total;
-  }, [attackSkill.bonus, passiveBonuses, selectedBonuses, availableBonuses, classPowerBonuses]);
+  }, [attackSkill.bonus, passiveBonuses, selectedBonuses, availableBonuses, classPowerBonuses, manualAttackMod]);
 
   // === Detalhamento das fontes de bônus de ataque para exibição ===
   const attackBonusSources = useMemo(() => {
@@ -437,8 +449,18 @@ export function CombatRollModal({
       }
     });
     
+    // Modificador manual do mestre
+    if (manualAttackMod !== 0) {
+      sources.push({
+        label: 'Modificador do Mestre',
+        value: manualAttackMod,
+        type: 'other',
+        description: 'Bônus ou penalidade situacional definido pelo mestre (cobertura, terreno, etc.)',
+      });
+    }
+    
     return sources;
-  }, [attackSkill, classPowerBonuses, passiveBonuses, selectedBonuses, availableBonuses]);
+  }, [attackSkill, classPowerBonuses, passiveBonuses, selectedBonuses, availableBonuses, manualAttackMod]);
 
   // === Detalhamento das fontes de bônus de dano para exibição ===
   const damageBonusSources = useMemo(() => {
@@ -505,8 +527,18 @@ export function CombatRollModal({
       }
     });
     
+    // Modificador manual de dano do mestre
+    if (manualDamageMod !== 0) {
+      sources.push({
+        label: 'Modificador do Mestre',
+        value: manualDamageMod,
+        type: 'other',
+        description: 'Bônus ou penalidade de dano situacional definido pelo mestre',
+      });
+    }
+    
     return sources;
-  }, [weapon, attributes, classPowerBonuses, passiveBonuses, selectedBonuses, availableBonuses]);
+  }, [weapon, attributes, classPowerBonuses, passiveBonuses, selectedBonuses, availableBonuses, manualDamageMod]);
 
   // Calcular margem de crítico efetiva
   const effectiveCritical = useMemo(() => {
@@ -671,6 +703,9 @@ export function CombatRollModal({
     if (isMelee) {
       damageBonus += attributes.strength;
     }
+    
+    // Adicionar modificador manual de dano do mestre
+    damageBonus += manualDamageMod;
 
     // Rolar dados principais (ou usar valor máximo se Atirar para Matar)
     const mainDice: number[] = [];
@@ -895,6 +930,122 @@ export function CombatRollModal({
                   </div>
                 )}
 
+                {/* Modificadores manuais do mestre */}
+                <div className="space-y-3 p-3 rounded-lg bg-muted/30 border border-border">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                    <Shield className="w-3 h-3" />
+                    Modificadores do Mestre
+                  </p>
+                  
+                  {/* Modificador de Ataque */}
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm">Ataque:</span>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={() => setManualAttackMod(prev => prev - 1)}
+                      >
+                        <Minus className="h-3 w-3" />
+                      </Button>
+                      <span className={cn(
+                        "w-10 text-center font-mono font-bold",
+                        manualAttackMod > 0 && "text-green-500",
+                        manualAttackMod < 0 && "text-destructive"
+                      )}>
+                        {manualAttackMod >= 0 ? `+${manualAttackMod}` : manualAttackMod}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={() => setManualAttackMod(prev => prev + 1)}
+                      >
+                        <Plus className="h-3 w-3" />
+                      </Button>
+                      {manualAttackMod !== 0 && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={() => setManualAttackMod(0)}
+                        >
+                          <RotateCcw className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Modificador de Dano */}
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm">Dano:</span>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={() => setManualDamageMod(prev => prev - 1)}
+                      >
+                        <Minus className="h-3 w-3" />
+                      </Button>
+                      <span className={cn(
+                        "w-10 text-center font-mono font-bold",
+                        manualDamageMod > 0 && "text-green-500",
+                        manualDamageMod < 0 && "text-destructive"
+                      )}>
+                        {manualDamageMod >= 0 ? `+${manualDamageMod}` : manualDamageMod}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={() => setManualDamageMod(prev => prev + 1)}
+                      >
+                        <Plus className="h-3 w-3" />
+                      </Button>
+                      {manualDamageMod !== 0 && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={() => setManualDamageMod(0)}
+                        >
+                          <RotateCcw className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* DT do Alvo (opcional) */}
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm">Defesa do Alvo:</span>
+                    <div className="flex items-center gap-1">
+                      <Input
+                        type="number"
+                        value={targetDefense ?? ''}
+                        onChange={(e) => setTargetDefense(e.target.value ? parseInt(e.target.value) : null)}
+                        placeholder="DT"
+                        className="w-16 h-7 text-center text-sm"
+                      />
+                      {targetDefense !== null && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={() => setTargetDefense(null)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <p className="text-[10px] text-muted-foreground">
+                    Use para bônus/penalidades situacionais (cobertura, flanquear, terreno, etc.)
+                  </p>
+                </div>
+
                 {/* Custo de PE */}
                 {totalPECost > 0 && (
                   <div className={cn(
@@ -986,6 +1137,42 @@ export function CombatRollModal({
                     <p className="text-xs text-destructive">
                       (Desvantagem - atributo 0)
                     </p>
+                  )}
+                  
+                  {/* Resultado vs DT do Alvo */}
+                  {targetDefense !== null && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.4 }}
+                      className={cn(
+                        "p-3 rounded-lg border-2 text-center",
+                        attackResult.total >= targetDefense
+                          ? "bg-green-500/10 border-green-500/50 text-green-500"
+                          : "bg-destructive/10 border-destructive/50 text-destructive"
+                      )}
+                    >
+                      <div className="flex items-center justify-center gap-2">
+                        {attackResult.total >= targetDefense ? (
+                          <>
+                            <Target className="w-5 h-5" />
+                            <span className="font-display font-bold text-lg">ACERTOU!</span>
+                          </>
+                        ) : (
+                          <>
+                            <X className="w-5 h-5" />
+                            <span className="font-display font-bold text-lg">ERROU</span>
+                          </>
+                        )}
+                      </div>
+                      <p className="text-xs opacity-75 mt-1">
+                        {attackResult.total} vs Defesa {targetDefense}
+                        {attackResult.total >= targetDefense 
+                          ? ` (${attackResult.total - targetDefense} acima)` 
+                          : ` (faltou ${targetDefense - attackResult.total})`
+                        }
+                      </p>
+                    </motion.div>
                   )}
                 </div>
 
