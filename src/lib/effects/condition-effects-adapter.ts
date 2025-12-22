@@ -387,7 +387,7 @@ export function getConditionEffects(
       isActive: true,
       isToggleable: false,
       duration: conditionDef.autoRemove 
-        ? { type: 'turns', value: conditionDef.turnsRemaining || 1 }
+        ? { type: 'turns', value: 1 }
         : { type: 'until_removed' },
     };
     
