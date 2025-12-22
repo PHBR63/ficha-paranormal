@@ -47,7 +47,9 @@ import {
   RefreshCw,
   Users,
   BookOpen,
-  BarChart3
+  BarChart3,
+  Sparkles,
+  FileJson
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -58,6 +60,7 @@ import { ValidationHistoryDashboard } from '@/components/admin/ValidationHistory
 import { RitualSystemTests } from '@/components/admin/RitualSystemTests';
 import { PowerSystemTests } from '@/components/admin/PowerSystemTests';
 import { ClassPowerBonusTests } from '@/components/admin/ClassPowerBonusTests';
+import { SUETestPanel } from '@/components/admin/SUETestPanel';
 import { useValidationHistory } from '@/hooks/useValidationHistory';
 
 interface CharacterData {
@@ -257,6 +260,13 @@ export default function AdminDataIntegrity() {
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
+                onClick={() => navigate('/admin/import')}
+              >
+                <FileJson className="w-4 h-4 mr-2" />
+                Importação
+              </Button>
+              <Button
+                variant="outline"
                 onClick={() => navigate('/admin/users')}
               >
                 <Users className="w-4 h-4 mr-2" />
@@ -269,7 +279,7 @@ export default function AdminDataIntegrity() {
 
       <main className="container mx-auto px-4 py-8">
         <Tabs defaultValue="integrity" className="space-y-6">
-          <TabsList className="grid w-full max-w-4xl grid-cols-5">
+          <TabsList className="grid w-full max-w-5xl grid-cols-6">
             <TabsTrigger value="integrity" className="flex items-center gap-2">
               <Database className="w-4 h-4" />
               <span className="hidden sm:inline">Integridade</span>
@@ -289,6 +299,11 @@ export default function AdminDataIntegrity() {
               <Wrench className="w-4 h-4" />
               <span className="hidden sm:inline">Poderes</span>
               <span className="sm:hidden">Poderes</span>
+            </TabsTrigger>
+            <TabsTrigger value="sue" className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4" />
+              <span className="hidden sm:inline">SUE</span>
+              <span className="sm:hidden">SUE</span>
             </TabsTrigger>
             <TabsTrigger value="history" className="flex items-center gap-2">
               <BarChart3 className="w-4 h-4" />
@@ -514,6 +529,11 @@ export default function AdminDataIntegrity() {
           <TabsContent value="powers" className="space-y-6">
             <PowerSystemTests />
             <ClassPowerBonusTests />
+          </TabsContent>
+
+          {/* Aba de Testes do Sistema Unificado de Efeitos */}
+          <TabsContent value="sue">
+            <SUETestPanel />
           </TabsContent>
 
           {/* Aba de Histórico e Dashboard */}
