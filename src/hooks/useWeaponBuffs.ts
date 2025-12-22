@@ -34,9 +34,15 @@ interface WeaponBuffsState {
 interface UseWeaponBuffsReturn {
   activeBuffs: WeaponBuff[];
   addBuff: (ritual: Ritual, enhancements: string[]) => void;
+  addBuffWithDuration: (ritual: Ritual, enhancements: string[], duration: 'cena' | 'sustentado' | 'rodadas', turnsRemaining?: number) => void;
   removeBuff: (buffId: string) => void;
   clearAllBuffs: () => void;
+  // Sistema de rodadas
+  advanceTurn: () => { expired: WeaponBuff[]; remaining: WeaponBuff[] };
+  setBuffTurns: (buffId: string, turns: number) => void;
+  // Contadores
   hasWeaponBuff: boolean;
+  buffsWithTurns: WeaponBuff[]; // Buffs que têm contagem de rodadas
   // Totais agregados para aplicar em ataques
   totalAttackBonus: number;
   totalCriticalBonus: number;
@@ -99,7 +105,7 @@ export function useWeaponBuffs(
     }
   }, [state.activeBuffs, onBuffsChange]);
 
-  // Adiciona um buff de ritual que afeta armas
+  // Adiciona um buff de ritual que afeta armas (duração padrão: cena)
   const addBuff = useCallback((ritual: Ritual, enhancements: string[]) => {
     const effect = getActiveRitualEffect(ritual.id, enhancements);
     
@@ -128,6 +134,41 @@ export function useWeaponBuffs(
     }));
   }, []);
 
+  // Adiciona um buff com duração específica (permite definir rodadas)
+  const addBuffWithDuration = useCallback((
+    ritual: Ritual, 
+    enhancements: string[], 
+    duration: 'cena' | 'sustentado' | 'rodadas',
+    turnsRemaining?: number
+  ) => {
+    const effect = getActiveRitualEffect(ritual.id, enhancements);
+    
+    // Só adiciona se o ritual tiver efeito de arma
+    if (!effect?.weaponEffect) {
+      return;
+    }
+
+    const newBuff: WeaponBuff = {
+      id: `${ritual.id}-${Date.now()}`,
+      ritualId: ritual.id,
+      ritualName: ritual.name,
+      element: ritual.element,
+      bonusDamage: effect.weaponEffect.bonusDamage,
+      attackBonus: effect.weaponEffect.attackBonus,
+      criticalBonus: effect.weaponEffect.criticalBonus,
+      criticalMultiplierBonus: effect.weaponEffect.criticalMultiplierBonus,
+      appliedAt: new Date().toISOString(),
+      duration,
+      turnsRemaining: duration === 'rodadas' ? (turnsRemaining ?? 1) : undefined,
+      enhancements,
+    };
+
+    setState(prev => ({
+      ...prev,
+      activeBuffs: [...prev.activeBuffs, newBuff],
+    }));
+  }, []);
+
   // Remove um buff específico
   const removeBuff = useCallback((buffId: string) => {
     setState(prev => ({
@@ -140,6 +181,57 @@ export function useWeaponBuffs(
   const clearAllBuffs = useCallback(() => {
     setState({ activeBuffs: [] });
   }, []);
+
+  // Avança uma rodada: decrementa turnsRemaining e remove buffs expirados
+  const advanceTurn = useCallback((): { expired: WeaponBuff[]; remaining: WeaponBuff[] } => {
+    const expired: WeaponBuff[] = [];
+    const remaining: WeaponBuff[] = [];
+    
+    state.activeBuffs.forEach(buff => {
+      // Se não é um buff de rodadas, mantém ativo
+      if (buff.duration !== 'rodadas') {
+        remaining.push(buff);
+        return;
+      }
+      
+      // Decrementa rodadas restantes
+      const newTurns = (buff.turnsRemaining ?? 1) - 1;
+      
+      if (newTurns <= 0) {
+        // Buff expirou
+        expired.push(buff);
+      } else {
+        // Buff ainda tem rodadas restantes
+        remaining.push({
+          ...buff,
+          turnsRemaining: newTurns,
+        });
+      }
+    });
+    
+    // Atualiza estado com buffs restantes
+    setState({ activeBuffs: remaining });
+    
+    return { expired, remaining };
+  }, [state.activeBuffs]);
+
+  // Define manualmente o número de rodadas de um buff
+  const setBuffTurns = useCallback((buffId: string, turns: number) => {
+    setState(prev => ({
+      ...prev,
+      activeBuffs: prev.activeBuffs.map(buff => 
+        buff.id === buffId 
+          ? { ...buff, turnsRemaining: Math.max(0, turns), duration: 'rodadas' as const }
+          : buff
+      ),
+    }));
+  }, []);
+
+  // Buffs que têm contagem de rodadas (para exibição de UI)
+  const buffsWithTurns = useMemo(() => 
+    state.activeBuffs.filter(b => b.duration === 'rodadas'),
+    [state.activeBuffs]
+  );
 
   // Calcula totais agregados de todos os buffs ativos
   // REGRA OFICIAL: Rituais NÃO acumulam entre si - usa o MAIOR
@@ -202,6 +294,11 @@ export function useWeaponBuffs(
         effects.push(`+${buff.criticalMultiplierBonus} mult. crítico`);
       }
       
+      // Adiciona contagem de rodadas se aplicável
+      if (buff.duration === 'rodadas' && buff.turnsRemaining !== undefined) {
+        effects.push(`${buff.turnsRemaining} rodada(s)`);
+      }
+      
       if (effects.length > 0) {
         parts.push(`${buff.ritualName}: ${effects.join(', ')}`);
       }
@@ -213,9 +310,13 @@ export function useWeaponBuffs(
   return {
     activeBuffs: state.activeBuffs,
     addBuff,
+    addBuffWithDuration,
     removeBuff,
     clearAllBuffs,
+    advanceTurn,
+    setBuffTurns,
     hasWeaponBuff: state.activeBuffs.length > 0,
+    buffsWithTurns,
     ...aggregatedBonuses,
     buffsSummary,
   };

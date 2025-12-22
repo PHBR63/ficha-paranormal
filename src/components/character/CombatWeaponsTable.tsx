@@ -20,7 +20,8 @@ import {
 import { CombatRollModal } from './CombatRollModal';
 import { DiceRollResult } from '@/lib/dice-roller';
 import { WeaponBuff } from '@/hooks/useWeaponBuffs';
-import { WeaponBuffIndicator, WeaponBuffsPanel } from './WeaponBuffIndicator';
+import { WeaponBuffIndicator } from './WeaponBuffIndicator';
+import { WeaponBuffTurnTracker } from './WeaponBuffTurnTracker';
 import { formatDamageFormula } from '@/lib/rituals/legacy-exports';
 import type { SustainedRitualInput } from '@/hooks/useRitualCombatBonuses';
 
@@ -91,6 +92,9 @@ interface CombatWeaponsTableProps {
   weaponBuffs?: WeaponBuff[];
   onRemoveWeaponBuff?: (buffId: string) => void;
   onClearAllWeaponBuffs?: () => void;
+  // Fase 9: Sistema de rodadas para weapon buffs
+  onAdvanceWeaponBuffTurn?: () => { expired: WeaponBuff[]; remaining: WeaponBuff[] };
+  onSetWeaponBuffTurns?: (buffId: string, turns: number) => void;
 }
 
 // Ícone por tipo de arma
@@ -130,6 +134,9 @@ export function CombatWeaponsTable({
   weaponBuffs = [],
   onRemoveWeaponBuff,
   onClearAllWeaponBuffs,
+  // Fase 9: Sistema de rodadas
+  onAdvanceWeaponBuffTurn,
+  onSetWeaponBuffTurns,
 }: CombatWeaponsTableProps) {
   // Estado do modal de combate
   const [selectedWeapon, setSelectedWeapon] = useState<WeaponEntry | null>(null);
@@ -183,12 +190,13 @@ export function CombatWeaponsTable({
         )}
       </h3>
 
-      {/* Painel de buffs ativos (Fase 5) */}
-      {hasBuffs && (
-        <WeaponBuffsPanel
+      {/* Painel de buffs ativos com controle de rodadas (Fase 9) */}
+      {hasBuffs && onAdvanceWeaponBuffTurn && onSetWeaponBuffTurns && (
+        <WeaponBuffTurnTracker
           buffs={weaponBuffs}
-          onRemoveBuff={onRemoveWeaponBuff}
-          onClearAll={onClearAllWeaponBuffs}
+          onAdvanceTurn={onAdvanceWeaponBuffTurn}
+          onSetBuffTurns={onSetWeaponBuffTurns}
+          onRemoveBuff={onRemoveWeaponBuff || (() => {})}
           className="mb-4"
         />
       )}
