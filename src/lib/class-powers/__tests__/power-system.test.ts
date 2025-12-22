@@ -1117,7 +1117,7 @@ function testTrilhaFlagelador(): TestResult {
  */
 function testAllCombatenteTracks(): TestResult {
   const errors: string[] = [];
-  const expectedTracks = ['aniquilador', 'comandante-de-campo', 'guerreiro', 'operacoes-especiais', 'tropa-de-choque'];
+  const expectedTracks = ['aniquilador', 'comandante-campo', 'guerreiro', 'operacoes-especiais', 'tropa-de-choque'];
   
   for (const trackId of expectedTracks) {
     const track = getTrackById(trackId);
