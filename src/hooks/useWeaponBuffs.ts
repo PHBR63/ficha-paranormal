@@ -66,6 +66,101 @@ function filterExpiredBuffs(buffs: WeaponBuff[]): WeaponBuff[] {
 }
 
 /**
+ * Normaliza e valida bonusDamage de buffs carregados do banco
+ * Corrige formatos incorretos ou incompletos que podem ter sido salvos
+ */
+function normalizeBuffBonusDamage(buff: WeaponBuff): WeaponBuff {
+  // Se já tem bonusDamage válido, retorna sem modificar
+  if (buff.bonusDamage && 
+      typeof buff.bonusDamage.diceCount === 'number' && 
+      typeof buff.bonusDamage.diceType === 'number') {
+    return buff;
+  }
+  
+  // Tenta recuperar de formatos alternativos que podem estar no objeto
+  const anyBuff = buff as any;
+  let normalizedBonusDamage: DamageFormula | undefined = undefined;
+  
+  // Verifica extraDice (formato do ritual-adapter)
+  if (anyBuff.extraDice && typeof anyBuff.extraDice.count === 'number') {
+    normalizedBonusDamage = {
+      diceCount: anyBuff.extraDice.count || 1,
+      diceType: anyBuff.extraDice.type || 6,
+      damageType: anyBuff.damageType || buff.element as any,
+    };
+    console.log('[useWeaponBuffs] Buff normalizado via extraDice:', buff.ritualName, normalizedBonusDamage);
+  }
+  
+  // Verifica damageBonus string (ex: "2d6")
+  if (!normalizedBonusDamage && typeof anyBuff.damageBonus === 'string') {
+    const match = anyBuff.damageBonus.match(/(\d+)d(\d+)(?:\+(\d+))?/i);
+    if (match) {
+      normalizedBonusDamage = {
+        diceCount: parseInt(match[1]) || 1,
+        diceType: parseInt(match[2]) || 6,
+        bonus: match[3] ? parseInt(match[3]) : undefined,
+        damageType: anyBuff.damageType || buff.element as any,
+      };
+      console.log('[useWeaponBuffs] Buff normalizado via damageBonus string:', buff.ritualName, normalizedBonusDamage);
+    }
+  }
+  
+  // Verifica se bonusDamage é uma string malformada (ex: salvo como "1d6" em vez de objeto)
+  if (!normalizedBonusDamage && typeof buff.bonusDamage === 'string') {
+    const match = (buff.bonusDamage as unknown as string).match(/(\d+)d(\d+)(?:\+(\d+))?/i);
+    if (match) {
+      normalizedBonusDamage = {
+        diceCount: parseInt(match[1]) || 1,
+        diceType: parseInt(match[2]) || 6,
+        bonus: match[3] ? parseInt(match[3]) : undefined,
+        damageType: buff.element as any,
+      };
+      console.log('[useWeaponBuffs] Buff normalizado de string malformada:', buff.ritualName, normalizedBonusDamage);
+    }
+  }
+  
+  // Se encontrou formato válido, retorna buff corrigido
+  if (normalizedBonusDamage) {
+    return {
+      ...buff,
+      bonusDamage: normalizedBonusDamage,
+    };
+  }
+  
+  // Se não conseguiu normalizar e deveria ter dano, loga warning
+  if (!buff.bonusDamage && buff.ritualName?.toLowerCase().includes('amaldiçoar')) {
+    console.warn('[useWeaponBuffs] Buff sem bonusDamage válido:', {
+      ritualName: buff.ritualName,
+      bonusDamage: buff.bonusDamage,
+      element: buff.element,
+    });
+  }
+  
+  return buff;
+}
+
+/**
+ * Processa buffs do banco: filtra expirados e normaliza bonusDamage
+ */
+function processLoadedBuffs(buffs: WeaponBuff[]): { 
+  processed: WeaponBuff[]; 
+  hadCorrections: boolean;
+} {
+  const filtered = filterExpiredBuffs(buffs);
+  let hadCorrections = false;
+  
+  const processed = filtered.map(buff => {
+    const normalized = normalizeBuffBonusDamage(buff);
+    if (normalized !== buff) {
+      hadCorrections = true;
+    }
+    return normalized;
+  });
+  
+  return { processed, hadCorrections };
+}
+
+/**
  * Hook para gerenciar buffs de armas de rituais com persistência na nuvem
  * @param characterId - ID do personagem (não usado diretamente, mantido para compatibilidade)
  * @param initialBuffs - Buffs carregados do banco de dados
@@ -78,20 +173,38 @@ export function useWeaponBuffs(
 ): UseWeaponBuffsReturn {
   // Ref para evitar chamadas desnecessárias ao onBuffsChange
   const isInitialMount = useRef(true);
+  const correctionsPersisted = useRef(false);
   
-  // Inicializa estado com buffs do banco, filtrando expirados
-  const [state, setState] = useState<WeaponBuffsState>(() => ({
-    activeBuffs: initialBuffs ? filterExpiredBuffs(initialBuffs) : [],
-  }));
+  // Inicializa estado com buffs do banco, processando e normalizando
+  const [state, setState] = useState<WeaponBuffsState>(() => {
+    if (!initialBuffs) return { activeBuffs: [] };
+    
+    const { processed, hadCorrections } = processLoadedBuffs(initialBuffs);
+    
+    // Se houve correções, marca para persistir depois
+    if (hadCorrections) {
+      correctionsPersisted.current = false;
+    }
+    
+    return { activeBuffs: processed };
+  });
 
   // Atualiza estado quando initialBuffs mudam (ex: reload do personagem)
   useEffect(() => {
     if (initialBuffs) {
-      const filteredBuffs = filterExpiredBuffs(initialBuffs);
-      setState({ activeBuffs: filteredBuffs });
-      isInitialMount.current = true; // Reseta flag para não disparar onChange
+      const { processed, hadCorrections } = processLoadedBuffs(initialBuffs);
+      setState({ activeBuffs: processed });
+      
+      // Se houve correções, persiste imediatamente
+      if (hadCorrections && onBuffsChange && !correctionsPersisted.current) {
+        console.log('[useWeaponBuffs] Persistindo correções de buffs...');
+        onBuffsChange(processed);
+        correctionsPersisted.current = true;
+      } else {
+        isInitialMount.current = true; // Reseta flag para não disparar onChange
+      }
     }
-  }, [initialBuffs]);
+  }, [initialBuffs, onBuffsChange]);
 
   // Persiste buffs quando mudam (exceto na montagem inicial)
   useEffect(() => {
