@@ -19,6 +19,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { ActiveBonusesPanel } from './ActiveBonusesPanel';
+import { ActiveBonusSummaryWidget } from './ActiveBonusSummaryWidget';
 import { ParanormalElement, ELEMENT_LABELS, ELEMENT_COLORS, ELEMENT_BG_COLORS } from '@/lib/paranormal-powers';
 import { BonusSummary } from '@/hooks/useCharacterBonusSummary';
 
@@ -329,88 +330,29 @@ export const CharacterSheetHeader = memo(function CharacterSheetHeader({
               </Button>
             )}
 
-            {/* Indicador de Bônus Ativos - Clicável para abrir painel */}
-            <TooltipProvider delayDuration={100}>
-              <AnimatePresence>
-                {activeBonusCount > 0 && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <motion.button
-                        type="button"
-                        initial={{ scale: 0, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        exit={{ scale: 0, opacity: 0 }}
-                        onClick={() => setBonusPanelOpen(true)}
-                        className="relative cursor-pointer focus:outline-none"
-                      >
-                        {/* Glow pulsante de fundo */}
-                        <motion.div
-                          className="absolute inset-0 bg-primary/30 rounded-full blur-md"
-                          animate={{
-                            scale: [1, 1.3, 1],
-                            opacity: [0.5, 0.8, 0.5],
-                          }}
-                          transition={{
-                            duration: 2,
-                            repeat: Infinity,
-                            ease: "easeInOut",
-                          }}
-                        />
-                        {/* Badge principal */}
-                        <motion.div
-                          className="relative flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-primary/20 to-secondary/20 border border-primary/40 hover:border-primary/60 transition-colors"
-                          animate={{
-                            boxShadow: [
-                              '0 0 0 0 rgba(var(--primary-rgb), 0)',
-                              '0 0 8px 2px rgba(var(--primary-rgb), 0.3)',
-                              '0 0 0 0 rgba(var(--primary-rgb), 0)',
-                            ],
-                          }}
-                          transition={{
-                            duration: 2,
-                            repeat: Infinity,
-                            ease: "easeInOut",
-                          }}
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                        >
-                          <motion.div
-                            animate={{ rotate: [0, 10, -10, 0] }}
-                            transition={{
-                              duration: 3,
-                              repeat: Infinity,
-                              ease: "easeInOut",
-                            }}
-                          >
-                            <Sparkles className="w-3.5 h-3.5 text-primary" />
-                          </motion.div>
-                          <span className="text-xs font-medium text-primary">
-                            {activeBonusCount}
-                          </span>
-                          <span className="text-[10px] text-foreground/60">bônus</span>
-                        </motion.div>
-                      </motion.button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom" className="max-w-xs z-50">
-                      <div className="space-y-1">
-                        <p className="font-medium flex items-center gap-1">
-                          <Sparkles className="w-4 h-4 text-primary" />
-                          Bônus Ativos ({activeBonusCount})
-                        </p>
-                        <div className="text-xs space-y-0.5 text-muted-foreground">
-                          {activeBonusSources.slice(0, 3).map((source, i) => (
-                            <p key={i}>• {source}</p>
-                          ))}
-                          {activeBonusSources.length > 3 && (
-                            <p className="italic text-primary">Clique para ver todos →</p>
-                          )}
-                        </div>
-                      </div>
-                    </TooltipContent>
-                  </Tooltip>
-                )}
-              </AnimatePresence>
-            </TooltipProvider>
+            {/* Widget de Resumo de Bônus Ativos - Com tooltips detalhados por categoria */}
+            {bonusSummary && (
+              <ActiveBonusSummaryWidget 
+                bonusSummary={bonusSummary}
+                className="cursor-pointer"
+              />
+            )}
+            
+            {/* Botão para abrir painel completo (quando há bônus) */}
+            <AnimatePresence>
+              {activeBonusCount > 0 && (
+                <motion.button
+                  type="button"
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0, opacity: 0 }}
+                  onClick={() => setBonusPanelOpen(true)}
+                  className="text-[10px] text-primary hover:text-primary/80 underline underline-offset-2 transition-colors"
+                >
+                  ver detalhes
+                </motion.button>
+              )}
+            </AnimatePresence>
           </div>
         </div>
 
