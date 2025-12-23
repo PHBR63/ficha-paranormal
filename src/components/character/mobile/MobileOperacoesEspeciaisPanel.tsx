@@ -74,6 +74,9 @@ interface MobileOperacoesEspeciaisPanelProps {
   peCurrent: number;
   onPEChange: (newPE: number) => void;
   className?: string;
+  // Tracking centralizado
+  usedAbilitiesThisRound?: string[];
+  onAbilityUsed?: (abilityId: string) => void;
 }
 
 export function MobileOperacoesEspeciaisPanel({
@@ -82,9 +85,19 @@ export function MobileOperacoesEspeciaisPanel({
   peCurrent,
   onPEChange,
   className,
+  usedAbilitiesThisRound: externalUsedAbilities,
+  onAbilityUsed,
 }: MobileOperacoesEspeciaisPanelProps) {
-  const [usedAbilitiesThisRound, setUsedAbilitiesThisRound] = useState<Set<string>>(new Set());
+  const [localUsedAbilities, setLocalUsedAbilities] = useState<Set<string>>(new Set());
   const [showSurtoDrawer, setShowSurtoDrawer] = useState(false);
+
+  // Usa tracking externo se fornecido
+  const usedAbilitiesSet = useMemo(() => {
+    if (externalUsedAbilities) {
+      return new Set(externalUsedAbilities);
+    }
+    return localUsedAbilities;
+  }, [externalUsedAbilities, localUsedAbilities]);
 
   // Verifica se é trilha Operações Especiais
   const isOperacoesEspeciais = useMemo(() => {
@@ -105,9 +118,18 @@ export function MobileOperacoesEspeciaisPanel({
     [nex]
   );
 
+  // Marca habilidade como usada
+  const markAbilityAsUsed = useCallback((abilityId: string) => {
+    if (onAbilityUsed) {
+      onAbilityUsed(abilityId);
+    } else {
+      setLocalUsedAbilities(prev => new Set(prev).add(abilityId));
+    }
+  }, [onAbilityUsed]);
+
   // Handler para usar habilidade
   const handleUseAbility = useCallback((abilityId: string, peCost: number, abilityName: string) => {
-    if (usedAbilitiesThisRound.has(abilityId)) {
+    if (usedAbilitiesSet.has(abilityId)) {
       toast({
         title: "Limite por rodada",
         description: `${abilityName} já foi usada.`,
@@ -131,30 +153,32 @@ export function MobileOperacoesEspeciaisPanel({
     }
 
     onPEChange(peCurrent - peCost);
-    setUsedAbilitiesThisRound(prev => new Set(prev).add(abilityId));
+    markAbilityAsUsed(abilityId);
 
     toast({
       title: `${abilityName}!`,
       description: `${peCost} PE gastos.`,
     });
-  }, [peCurrent, onPEChange, usedAbilitiesThisRound]);
+  }, [peCurrent, onPEChange, usedAbilitiesSet, markAbilityAsUsed]);
 
   // Handler para escolha do Surto
   const handleSurtoChoice = useCallback((choice: 'standard' | 'movement') => {
     onPEChange(peCurrent - 5);
-    setUsedAbilitiesThisRound(prev => new Set(prev).add('surto-de-adrenalina'));
+    markAbilityAsUsed('surto-de-adrenalina');
     setShowSurtoDrawer(false);
 
     toast({
       title: "Surto de Adrenalina!",
       description: `+1 ${choice === 'standard' ? 'ação padrão' : 'movimento'}.`,
     });
-  }, [peCurrent, onPEChange]);
+  }, [peCurrent, onPEChange, markAbilityAsUsed]);
 
-  // Reset de usos
+  // Reset de usos (só usado se não tiver tracking externo)
   const resetRoundUsage = useCallback(() => {
-    setUsedAbilitiesThisRound(new Set());
-  }, []);
+    if (!externalUsedAbilities) {
+      setLocalUsedAbilities(new Set());
+    }
+  }, [externalUsedAbilities]);
 
   if (!isOperacoesEspeciais || (unlockedActiveAbilities.length === 0 && unlockedPassiveAbilities.length === 0)) {
     return null;
@@ -193,7 +217,7 @@ export function MobileOperacoesEspeciaisPanel({
           {/* Ativadas */}
           {unlockedActiveAbilities.map((ability) => {
             const Icon = ability.icon;
-            const isUsed = usedAbilitiesThisRound.has(ability.id);
+            const isUsed = usedAbilitiesSet.has(ability.id);
             const canAfford = peCurrent >= ability.peCost;
 
             return (
@@ -231,7 +255,7 @@ export function MobileOperacoesEspeciaisPanel({
           })}
 
           {/* Reset */}
-          {usedAbilitiesThisRound.size > 0 && (
+          {usedAbilitiesSet.size > 0 && !externalUsedAbilities && (
             <Button
               variant="outline"
               size="sm"
