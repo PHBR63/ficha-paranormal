@@ -50,7 +50,7 @@
 
   <body class="dark">
     <div id="root">
-      <!-- Splash Screen inicial antes do React montar -->
+      <!-- Splash Screen PWA personalizado -->
       <div id="initial-loader" style="
         position: fixed;
         inset: 0;
@@ -58,106 +58,309 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        background: #0a0514;
+        background: linear-gradient(180deg, #0a0514 0%, #150a1f 50%, #0a0514 100%);
         z-index: 9999;
         opacity: 1;
-        transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1), transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        overflow: hidden;
       ">
-        <div class="loader-content" style="
-          position: relative;
-          width: 80px;
-          height: 80px;
-          animation: fadeInUp 0.6s ease-out forwards;
+        <!-- Partículas de fundo animadas -->
+        <div class="particles-container" style="
+          position: absolute;
+          inset: 0;
+          overflow: hidden;
+          pointer-events: none;
         ">
-          <!-- Glow effect -->
+          <div class="particle" style="--delay: 0s; --x: 20%; --duration: 4s;"></div>
+          <div class="particle" style="--delay: 0.5s; --x: 40%; --duration: 5s;"></div>
+          <div class="particle" style="--delay: 1s; --x: 60%; --duration: 4.5s;"></div>
+          <div class="particle" style="--delay: 1.5s; --x: 80%; --duration: 3.5s;"></div>
+          <div class="particle" style="--delay: 2s; --x: 10%; --duration: 5.5s;"></div>
+          <div class="particle" style="--delay: 0.3s; --x: 90%; --duration: 4.2s;"></div>
+        </div>
+
+        <!-- Container principal da logo -->
+        <div class="logo-wrapper" style="
+          position: relative;
+          width: 140px;
+          height: 140px;
+          animation: logoEntrance 1s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        ">
+          <!-- Anel orbital animado externo -->
+          <div class="orbital-ring outer" style="
+            position: absolute;
+            inset: -30px;
+            border: 2px solid rgba(255, 140, 0, 0.3);
+            border-radius: 50%;
+            animation: orbitSpin 8s linear infinite, orbitPulse 2s ease-in-out infinite;
+          "></div>
+          
+          <!-- Anel orbital animado interno -->
+          <div class="orbital-ring inner" style="
+            position: absolute;
+            inset: -15px;
+            border: 1px solid rgba(180, 100, 255, 0.2);
+            border-radius: 50%;
+            animation: orbitSpinReverse 6s linear infinite, orbitPulse 2.5s ease-in-out infinite 0.5s;
+          "></div>
+
+          <!-- Glow effect principal -->
           <div style="
             position: absolute;
-            inset: -20px;
-            background: rgba(139, 0, 0, 0.3);
+            inset: -40px;
+            background: radial-gradient(circle, rgba(139, 0, 0, 0.4) 0%, rgba(139, 0, 0, 0.1) 40%, transparent 70%);
             border-radius: 50%;
             filter: blur(20px);
-            animation: pulse 2s ease-in-out infinite, glowExpand 0.8s ease-out forwards;
+            animation: glowPulse 2s ease-in-out infinite;
           "></div>
-          <!-- Logo -->
+
+          <!-- Glow colorido secundário -->
+          <div style="
+            position: absolute;
+            inset: -30px;
+            background: radial-gradient(circle at 30% 30%, rgba(255, 140, 0, 0.2) 0%, transparent 50%),
+                        radial-gradient(circle at 70% 70%, rgba(180, 100, 255, 0.2) 0%, transparent 50%);
+            border-radius: 50%;
+            filter: blur(15px);
+            animation: colorShift 4s ease-in-out infinite;
+          "></div>
+          
+          <!-- Logo principal -->
           <img 
-            src="/logo.png" 
+            src="/pwa-512x512.png" 
             alt="Let's Roll" 
             style="
               width: 100%;
               height: 100%;
               object-fit: contain;
               position: relative;
-              z-index: 1;
-              animation: pulse 2s ease-in-out infinite;
+              z-index: 10;
+              animation: logoPulse 3s ease-in-out infinite;
+              filter: drop-shadow(0 0 20px rgba(139, 0, 0, 0.5));
             "
           />
         </div>
+
+        <!-- Título com efeito de digitação -->
+        <h1 style="
+          margin-top: 2rem;
+          font-family: 'Bebas Neue', sans-serif;
+          font-size: 2rem;
+          letter-spacing: 0.3em;
+          color: rgba(255, 255, 255, 0.95);
+          text-transform: uppercase;
+          animation: titleReveal 0.8s ease-out 0.3s forwards;
+          opacity: 0;
+          text-shadow: 0 0 30px rgba(139, 0, 0, 0.5);
+        ">Let's Roll</h1>
+
+        <!-- Subtítulo -->
         <p style="
-          margin-top: 1.5rem;
-          font-family: 'Cinzel', serif;
-          font-size: 0.75rem;
-          letter-spacing: 0.2em;
+          margin-top: 0.5rem;
+          font-family: 'Crimson Text', serif;
+          font-size: 0.85rem;
+          letter-spacing: 0.15em;
           color: rgba(139, 0, 0, 0.8);
           text-transform: uppercase;
-          animation: fadeInUp 0.6s ease-out 0.2s forwards;
+          animation: subtitleReveal 0.6s ease-out 0.6s forwards;
           opacity: 0;
-        ">Carregando...</p>
+        ">Ordem Paranormal RPG</p>
         
-        <!-- Barra de progresso sutil -->
+        <!-- Indicador de carregamento -->
         <div style="
           position: absolute;
-          bottom: 15%;
+          bottom: 12%;
           left: 50%;
           transform: translateX(-50%);
-          width: 120px;
-          height: 2px;
-          background: rgba(139, 0, 0, 0.2);
-          border-radius: 1px;
-          overflow: hidden;
-          animation: fadeInUp 0.6s ease-out 0.4s forwards;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 1rem;
+          animation: fadeInUp 0.6s ease-out 0.8s forwards;
           opacity: 0;
         ">
-          <div style="
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(139, 0, 0, 0.8), transparent);
-            animation: progressSlide 1.5s ease-in-out infinite;
-          "></div>
+          <!-- Spinner animado -->
+          <div class="loading-spinner" style="
+            width: 32px;
+            height: 32px;
+            position: relative;
+          ">
+            <div style="
+              position: absolute;
+              inset: 0;
+              border: 2px solid rgba(139, 0, 0, 0.2);
+              border-top-color: rgba(139, 0, 0, 0.8);
+              border-radius: 50%;
+              animation: spinnerRotate 1s linear infinite;
+            "></div>
+            <div style="
+              position: absolute;
+              inset: 4px;
+              border: 2px solid rgba(255, 140, 0, 0.1);
+              border-bottom-color: rgba(255, 140, 0, 0.6);
+              border-radius: 50%;
+              animation: spinnerRotateReverse 1.5s linear infinite;
+            "></div>
+          </div>
+
+          <p style="
+            font-family: 'Space Mono', monospace;
+            font-size: 0.7rem;
+            letter-spacing: 0.1em;
+            color: rgba(139, 0, 0, 0.6);
+            text-transform: uppercase;
+          ">Carregando...</p>
         </div>
         
         <style>
-          @keyframes pulse {
-            0%, 100% { opacity: 0.7; transform: scale(1); }
-            50% { opacity: 1; transform: scale(1.05); }
+          /* Animação de entrada da logo */
+          @keyframes logoEntrance {
+            0% {
+              opacity: 0;
+              transform: scale(0.5) rotate(-10deg);
+            }
+            100% {
+              opacity: 1;
+              transform: scale(1) rotate(0deg);
+            }
           }
-          @keyframes fadeInUp {
-            from {
+
+          /* Pulso suave da logo */
+          @keyframes logoPulse {
+            0%, 100% { 
+              transform: scale(1); 
+              filter: drop-shadow(0 0 20px rgba(139, 0, 0, 0.5));
+            }
+            50% { 
+              transform: scale(1.03); 
+              filter: drop-shadow(0 0 30px rgba(139, 0, 0, 0.7));
+            }
+          }
+
+          /* Rotação dos anéis orbitais */
+          @keyframes orbitSpin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+          }
+
+          @keyframes orbitSpinReverse {
+            from { transform: rotate(360deg); }
+            to { transform: rotate(0deg); }
+          }
+
+          @keyframes orbitPulse {
+            0%, 100% { opacity: 0.3; transform: rotate(var(--rotation, 0deg)) scale(1); }
+            50% { opacity: 0.6; transform: rotate(var(--rotation, 0deg)) scale(1.05); }
+          }
+
+          /* Pulso do glow */
+          @keyframes glowPulse {
+            0%, 100% { opacity: 0.6; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.1); }
+          }
+
+          /* Mudança de cor do glow secundário */
+          @keyframes colorShift {
+            0%, 100% { opacity: 0.5; transform: rotate(0deg); }
+            50% { opacity: 0.8; transform: rotate(180deg); }
+          }
+
+          /* Revelação do título */
+          @keyframes titleReveal {
+            0% {
               opacity: 0;
               transform: translateY(20px);
+              letter-spacing: 0.5em;
             }
-            to {
+            100% {
+              opacity: 1;
+              transform: translateY(0);
+              letter-spacing: 0.3em;
+            }
+          }
+
+          /* Revelação do subtítulo */
+          @keyframes subtitleReveal {
+            0% {
+              opacity: 0;
+              transform: translateY(10px);
+            }
+            100% {
               opacity: 1;
               transform: translateY(0);
             }
           }
-          @keyframes glowExpand {
+
+          /* Fade in com movimento */
+          @keyframes fadeInUp {
             from {
-              transform: scale(0.5);
               opacity: 0;
+              transform: translateX(-50%) translateY(20px);
             }
             to {
-              transform: scale(1);
               opacity: 1;
+              transform: translateX(-50%) translateY(0);
             }
           }
-          @keyframes progressSlide {
-            0% { transform: translateX(-100%); }
-            100% { transform: translateX(100%); }
+
+          /* Rotação do spinner */
+          @keyframes spinnerRotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
           }
+
+          @keyframes spinnerRotateReverse {
+            from { transform: rotate(360deg); }
+            to { transform: rotate(0deg); }
+          }
+
+          /* Partículas flutuantes */
+          .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: radial-gradient(circle, rgba(139, 0, 0, 0.8) 0%, transparent 70%);
+            border-radius: 50%;
+            left: var(--x);
+            bottom: -10px;
+            animation: particleFloat var(--duration) ease-in-out infinite;
+            animation-delay: var(--delay);
+            opacity: 0;
+          }
+
+          @keyframes particleFloat {
+            0% {
+              opacity: 0;
+              transform: translateY(0) scale(0.5);
+            }
+            10% {
+              opacity: 0.8;
+            }
+            90% {
+              opacity: 0.8;
+            }
+            100% {
+              opacity: 0;
+              transform: translateY(-100vh) scale(1);
+            }
+          }
+
+          /* Transição de saída */
           #initial-loader.fade-out {
             opacity: 0 !important;
-            transform: scale(1.05);
+            transform: scale(1.02);
             pointer-events: none;
+          }
+
+          #initial-loader.fade-out .logo-wrapper {
+            animation: logoExit 0.4s ease-in forwards;
+          }
+
+          @keyframes logoExit {
+            to {
+              transform: scale(1.2);
+              opacity: 0;
+            }
           }
         </style>
       </div>
