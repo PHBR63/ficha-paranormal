@@ -518,12 +518,22 @@ export function MobileCharacterSheet({
     setDiceModalOpen(true);
   }, [character.agility]);
 
-  // Handler para atualizar condições
-  const handleConditionsChange = useCallback(async (newConditions: string[]) => {
+  // Handler para atualizar condições (converte ActiveCondition[] para formato do banco)
+  const handleConditionsChange = useCallback(async (newConditions: ActiveCondition[]) => {
     try {
+      // Converte ActiveCondition[] para formato JSON para persistir no banco
+      const conditionsJson = newConditions.map(c => ({
+        id: c.id,
+        name: c.name,
+        turnsRemaining: c.turnsRemaining,
+        addedAt: typeof c.addedAt === 'string' ? c.addedAt : c.addedAt.toISOString(),
+        dyingCounter: c.dyingCounter,
+        params: c.params,
+      }));
+      
       await supabase
         .from('characters')
-        .update({ conditions: newConditions })
+        .update({ conditions: conditionsJson as any })
         .eq('id', character.id);
       
       if (onRefetch) {
@@ -533,6 +543,45 @@ export function MobileCharacterSheet({
       console.error('Erro ao atualizar condições:', error);
     }
   }, [character.id, onRefetch]);
+
+  // Converte conditions do banco para ActiveCondition[]
+  const activeConditions: ActiveCondition[] = useMemo(() => {
+    if (!character.conditions || !Array.isArray(character.conditions)) return [];
+    
+    // Verifica se é formato antigo (string[]) ou novo (ActiveCondition[])
+    return character.conditions.map((c: any) => {
+      if (typeof c === 'string') {
+        // Formato antigo: converte string para ActiveCondition
+        return {
+          id: c,
+          name: c,
+          turnsRemaining: null,
+          addedAt: new Date().toISOString(),
+        };
+      }
+      // Formato novo: já é ActiveCondition
+      return {
+        id: c.id || c.name,
+        name: c.name,
+        turnsRemaining: c.turnsRemaining ?? null,
+        addedAt: c.addedAt || new Date().toISOString(),
+        dyingCounter: c.dyingCounter,
+        params: c.params,
+      };
+    });
+  }, [character.conditions]);
+
+  // Handler para dano de condições (ex: sangrando, envenenado)
+  const handleConditionDamage = useCallback((damage: number, isVerdadeiro: boolean) => {
+    console.log(`Dano de condição: ${damage} (${isVerdadeiro ? 'verdadeiro' : 'normal'})`);
+    // Implementar lógica de dano quando necessário
+  }, []);
+
+  // Handler para morte do personagem
+  const handleCharacterDeath = useCallback(() => {
+    console.log('Personagem morreu!');
+    // Implementar lógica de morte quando necessário
+  }, []);
 
   // Handler para seleção de afinidade elemental
   const handleAffinitySelect = useCallback(async (element: string) => {
@@ -641,6 +690,7 @@ export function MobileCharacterSheet({
             <MobileOverviewTab
               key="overview"
               character={character}
+              conditions={activeConditions}
               originName={originData?.name}
               trackName={trackData?.name}
               bonusSummary={bonusSummary}
@@ -658,6 +708,9 @@ export function MobileCharacterSheet({
               onRollInitiative={handleRollInitiative}
               onClearHistory={clearHistory}
               onRemoveRoll={removeRoll}
+              onConditionsChange={handleConditionsChange}
+              onDamageFromCondition={handleConditionDamage}
+              onCharacterDeath={handleCharacterDeath}
             />
             
             {/* Seletor de Afinidade Elemental (NEX 50+) */}
