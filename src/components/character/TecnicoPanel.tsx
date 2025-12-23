@@ -32,6 +32,9 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 
+import type { EffectDuration } from '@/hooks/useActivatedEffects';
+import { TRACK_EFFECT_IDS } from '@/hooks/useActivatedEffects';
+
 interface TecnicoPanelProps {
   classTrack: string | null;
   nex: number;
@@ -42,6 +45,10 @@ interface TecnicoPanelProps {
     strength: number;
     intellect: number;
   };
+  /** Callback para ativar efeito no SUE */
+  onActivateEffect?: (id: string, name: string, duration: EffectDuration, metadata?: Record<string, unknown>) => void;
+  /** Verifica se um efeito está ativo */
+  isEffectActive?: (id: string) => boolean;
 }
 
 /**

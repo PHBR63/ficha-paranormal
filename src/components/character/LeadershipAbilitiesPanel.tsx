@@ -80,6 +80,8 @@ const COMANDANTE_ABILITIES: LeadershipAbility[] = [
   },
 ];
 
+import type { EffectDuration } from '@/hooks/useActivatedEffects';
+
 interface LeadershipAbilitiesPanelProps {
   classTrack: string | null | undefined;
   nex: number;
@@ -90,6 +92,10 @@ interface LeadershipAbilitiesPanelProps {
   // Tracking de uso por rodada
   usedAbilitiesThisRound?: string[];
   onAbilityUsed?: (abilityId: string) => void;
+  /** Callback para ativar efeito no SUE */
+  onActivateEffect?: (id: string, name: string, duration: EffectDuration, metadata?: Record<string, unknown>) => void;
+  /** Verifica se um efeito está ativo */
+  isEffectActive?: (id: string) => boolean;
 }
 
 export function LeadershipAbilitiesPanel({

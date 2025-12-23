@@ -102,6 +102,8 @@ const PASSIVE_INFO = {
   },
 };
 
+import type { EffectDuration } from '@/hooks/useActivatedEffects';
+
 interface GuerreiroAbilitiesPanelProps {
   classTrack: string | null | undefined;
   nex: number;
@@ -110,6 +112,10 @@ interface GuerreiroAbilitiesPanelProps {
   className?: string;
   // Callback para abrir o modal de combate (para fazer o ataque adicional)
   onRequestAttack?: () => void;
+  /** Callback para ativar efeito no SUE */
+  onActivateEffect?: (id: string, name: string, duration: EffectDuration, metadata?: Record<string, unknown>) => void;
+  /** Verifica se um efeito está ativo */
+  isEffectActive?: (id: string) => boolean;
 }
 
 export function GuerreiroAbilitiesPanel({

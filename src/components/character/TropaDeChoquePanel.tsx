@@ -93,6 +93,8 @@ const PASSIVE_ABILITIES = [
   },
 ] as const;
 
+import type { EffectDuration } from '@/hooks/useActivatedEffects';
+
 interface TropaDeChoquePanelProps {
   classTrack: string | null;
   nex: number;
@@ -102,6 +104,10 @@ interface TropaDeChoquePanelProps {
   hpMax: number;
   onPEChange: (newPE: number) => void;
   className?: string;
+  /** Callback para ativar efeito no SUE */
+  onActivateEffect?: (id: string, name: string, duration: EffectDuration, metadata?: Record<string, unknown>) => void;
+  /** Verifica se um efeito está ativo */
+  isEffectActive?: (id: string) => boolean;
 }
 
 export function TropaDeChoquePanel({

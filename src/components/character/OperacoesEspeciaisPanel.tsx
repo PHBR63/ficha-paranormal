@@ -93,6 +93,8 @@ const PASSIVE_ABILITIES = [
   },
 ] as const;
 
+import type { EffectDuration } from '@/hooks/useActivatedEffects';
+
 interface OperacoesEspeciaisPanelProps {
   classTrack: string | null;
   nex: number;
@@ -102,6 +104,10 @@ interface OperacoesEspeciaisPanelProps {
   // Tracking centralizado de uso por rodada
   usedAbilitiesThisRound?: string[];
   onAbilityUsed?: (abilityId: string) => void;
+  /** Callback para ativar efeito no SUE */
+  onActivateEffect?: (id: string, name: string, duration: EffectDuration, metadata?: Record<string, unknown>) => void;
+  /** Verifica se um efeito está ativo */
+  isEffectActive?: (id: string) => boolean;
 }
 
 export function OperacoesEspeciaisPanel({
