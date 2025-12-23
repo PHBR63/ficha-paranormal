@@ -44,3 +44,6 @@ export { MobileCollapsibleSection } from './MobileCollapsibleSection';
 export { MobileTabNavigation, type MobileTab } from './MobileTabNavigation';
 export { MobileQuickActions } from './MobileQuickActions';
 export { MobileCombatDrawer } from './MobileCombatDrawer';
+
+// Componentes virtualizados (Performance)
+export { MobileVirtualizedPowersList, type PowerItem, type PowerItemType } from './MobileVirtualizedPowersList';
