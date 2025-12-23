@@ -1,12 +1,14 @@
 /**
  * StepOrigin - Seleção de origem do personagem
- * Inclui 26 origens base + 22 origens do suplemento "Sobrevivendo ao Horror"
+ * Inclui 26 origens base + origens de suplementos e comunidade
  * 
+ * IDs de origens são gerenciados centralmente em game-ids.ts
  * Layout melhorado com modal de detalhes
  */
 
 import { useState, useMemo } from 'react';
 import { ORIGINS, SKILLS } from '@/lib/character-data';
+import { CORE_ORIGIN_IDS, SUPPLEMENT_ORIGIN_IDS, VALID_SUPPLEMENT_ORIGIN_IDS } from '@/lib/constants/game-ids';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -63,14 +65,8 @@ interface StepOriginProps {
   updateFormData: (updates: Partial<CharacterFormData>) => void;
 }
 
-// Origens do suplemento "Sobrevivendo ao Horror" (para destacar visualmente)
-const SUPPLEMENT_ORIGINS = [
-  'astro-mirim', 'baba', 'bibliotecario', 'bombeiro', 'caminhoneiro', 'catador',
-  'coveiro', 'cozinheiro', 'defensor-publico', 'engenheiro-transito', 'exorcista',
-  'garcom', 'guia-turistico', 'influenciador-digital', 'jornalista',
-  'motorista-aplicativo', 'musico-rua', 'personal-trainer', 'pescador',
-  'psicologo', 'tatuador', 'youtuber'
-];
+// Origens de suplemento - usando IDs de game-ids.ts (fonte da verdade)
+const SUPPLEMENT_ORIGINS_LIST = VALID_SUPPLEMENT_ORIGIN_IDS;
 
 // Categorias para filtros
 const ORIGIN_CATEGORIES: Record<string, { label: string; origins: string[] }> = {
@@ -145,7 +141,7 @@ export function StepOrigin({ formData, updateFormData }: StepOriginProps) {
     
     // Filtro por suplemento
     if (showOnlySupplement) {
-      result = result.filter(origin => SUPPLEMENT_ORIGINS.includes(origin.id));
+      result = result.filter(origin => (SUPPLEMENT_ORIGINS_LIST as readonly string[]).includes(origin.id));
     }
     
     return result;
@@ -325,7 +321,7 @@ export function StepOrigin({ formData, updateFormData }: StepOriginProps) {
               const isAmnésico = origin.id === 'amnesico';
               const hasSanityPenalty = origin.sanityModifier !== undefined;
               const isSelected = formData.origin === origin.id;
-              const isFromSupplement = SUPPLEMENT_ORIGINS.includes(origin.id);
+              const isFromSupplement = (SUPPLEMENT_ORIGINS_LIST as readonly string[]).includes(origin.id);
               
               return (
                 <motion.div
@@ -472,7 +468,7 @@ export function StepOrigin({ formData, updateFormData }: StepOriginProps) {
                   <span className="font-display text-primary tracking-wider">
                     {selectedOrigin.name}
                   </span>
-                  {SUPPLEMENT_ORIGINS.includes(selectedOrigin.id) && (
+                  {(SUPPLEMENT_ORIGINS_LIST as readonly string[]).includes(selectedOrigin.id) && (
                     <Badge variant="outline" className="text-[10px] bg-warning/10 border-warning/30 text-warning">
                       Suplemento
                     </Badge>
@@ -575,7 +571,7 @@ export function StepOrigin({ formData, updateFormData }: StepOriginProps) {
                     <DialogTitle className="font-display text-2xl tracking-wider">
                       {previewOrigin.name}
                     </DialogTitle>
-                    {SUPPLEMENT_ORIGINS.includes(previewOrigin.id) && (
+                    {(SUPPLEMENT_ORIGINS_LIST as readonly string[]).includes(previewOrigin.id) && (
                       <Badge className="bg-warning/20 text-warning border-warning/30">
                         Suplemento
                       </Badge>
