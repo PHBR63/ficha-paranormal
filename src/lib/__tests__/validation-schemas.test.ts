@@ -17,6 +17,7 @@ import {
   validTracks,
   validateField,
   validateAttributesForNex,
+  validateCharacterForm,
   VALID_SKILL_IDS,
 } from '../validation-schemas';
 
@@ -475,5 +476,330 @@ describe('validateAttributesForNex', () => {
     const result = validateAttributesForNex(wrongTotal, 5, 9);
     expect(result.valid).toBe(false);
     expect(result.errors.some(e => e.toLowerCase().includes('total'))).toBe(true);
+  });
+});
+
+// ============================================
+// TESTES: validateCharacterForm (cenários completos)
+// ============================================
+
+describe('validateCharacterForm', () => {
+  // Dados base de um personagem válido
+  const validCharacterData = {
+    name: 'Carlos Silva',
+    playerName: 'João',
+    concept: 'Ex-policial investigador',
+    age: 35,
+    gender: 'Masculino',
+    appearance: 'Alto, cabelos grisalhos',
+    personality: 'Reservado e analítico',
+    background: 'Trabalhou 15 anos na polícia',
+    photoUrl: null,
+    nex: 5,
+    origin: 'investigador',
+    characterClass: 'especialista',
+    classTrack: 'infiltrador',
+    attributes: {
+      agility: 2,
+      strength: 1,
+      intellect: 3,
+      presence: 2,
+      vigor: 1,
+    },
+    freeSkills: ['investigacao', 'percepcao', 'intuicao'],
+    classSkillChoices: {},
+    conflictResolutions: {},
+  };
+
+  describe('personagem válido completo', () => {
+    it('deve validar personagem com todos os campos corretos', () => {
+      const result = validateCharacterForm(validCharacterData);
+      expect(result.valid).toBe(true);
+      expect(result.errors).toHaveLength(0);
+    });
+
+    it('deve validar personagem combatente', () => {
+      const combatente = {
+        ...validCharacterData,
+        characterClass: 'combatente',
+        classTrack: 'guerreiro',
+        attributes: {
+          agility: 2,
+          strength: 3,
+          intellect: 1,
+          presence: 1,
+          vigor: 2,
+        },
+      };
+      const result = validateCharacterForm(combatente);
+      expect(result.valid).toBe(true);
+    });
+
+    it('deve validar personagem ocultista', () => {
+      const ocultista = {
+        ...validCharacterData,
+        characterClass: 'ocultista',
+        classTrack: 'conduite',
+        attributes: {
+          agility: 1,
+          strength: 1,
+          intellect: 2,
+          presence: 3,
+          vigor: 2,
+        },
+      };
+      const result = validateCharacterForm(ocultista);
+      expect(result.valid).toBe(true);
+    });
+  });
+
+  describe('campos obrigatórios ausentes', () => {
+    it('deve rejeitar personagem sem nome', () => {
+      const semNome = { ...validCharacterData, name: '' };
+      const result = validateCharacterForm(semNome);
+      expect(result.valid).toBe(false);
+      expect(result.errors.some(e => e.field === 'name')).toBe(true);
+      expect(result.errors.find(e => e.field === 'name')?.step).toBe(0);
+    });
+
+    it('deve rejeitar personagem com nome muito curto', () => {
+      const nomeInvalido = { ...validCharacterData, name: 'A' };
+      const result = validateCharacterForm(nomeInvalido);
+      expect(result.valid).toBe(false);
+      expect(result.errors.some(e => e.field === 'name')).toBe(true);
+    });
+
+    it('deve rejeitar personagem sem NEX', () => {
+      const semNex = { ...validCharacterData, nex: undefined };
+      const result = validateCharacterForm(semNex);
+      expect(result.valid).toBe(false);
+    });
+
+    it('deve rejeitar personagem sem origem', () => {
+      const semOrigem = { ...validCharacterData, origin: undefined };
+      const result = validateCharacterForm(semOrigem);
+      expect(result.valid).toBe(false);
+    });
+
+    it('deve rejeitar personagem sem classe', () => {
+      const semClasse = { ...validCharacterData, characterClass: undefined };
+      const result = validateCharacterForm(semClasse);
+      expect(result.valid).toBe(false);
+    });
+  });
+
+  describe('valores inválidos', () => {
+    it('deve rejeitar NEX inválido', () => {
+      const nexInvalido = { ...validCharacterData, nex: 7 };
+      const result = validateCharacterForm(nexInvalido);
+      expect(result.valid).toBe(false);
+      expect(result.errors.some(e => e.field === 'nex')).toBe(true);
+      expect(result.errors.find(e => e.field === 'nex')?.step).toBe(1);
+    });
+
+    it('deve rejeitar origem inválida', () => {
+      const origemInvalida = { ...validCharacterData, origin: 'ninja' };
+      const result = validateCharacterForm(origemInvalida);
+      expect(result.valid).toBe(false);
+      expect(result.errors.some(e => e.field === 'origin')).toBe(true);
+      expect(result.errors.find(e => e.field === 'origin')?.step).toBe(3);
+    });
+
+    it('deve rejeitar classe inválida', () => {
+      const classeInvalida = { ...validCharacterData, characterClass: 'mago' };
+      const result = validateCharacterForm(classeInvalida);
+      expect(result.valid).toBe(false);
+      expect(result.errors.some(e => e.field === 'characterClass')).toBe(true);
+      expect(result.errors.find(e => e.field === 'characterClass')?.step).toBe(4);
+    });
+
+    it('deve rejeitar atributos com valores negativos', () => {
+      const atributosNegativos = {
+        ...validCharacterData,
+        attributes: {
+          agility: -1,
+          strength: 2,
+          intellect: 2,
+          presence: 2,
+          vigor: 2,
+        },
+      };
+      const result = validateCharacterForm(atributosNegativos);
+      expect(result.valid).toBe(false);
+    });
+
+    it('deve rejeitar múltiplos atributos em 0', () => {
+      const multiplosZeros = {
+        ...validCharacterData,
+        attributes: {
+          agility: 0,
+          strength: 0,
+          intellect: 3,
+          presence: 3,
+          vigor: 3,
+        },
+      };
+      const result = validateCharacterForm(multiplosZeros);
+      expect(result.valid).toBe(false);
+    });
+
+    it('deve rejeitar perícias inválidas em freeSkills', () => {
+      const periciasInvalidas = {
+        ...validCharacterData,
+        freeSkills: ['pericia-fake', 'magia'],
+      };
+      const result = validateCharacterForm(periciasInvalidas);
+      expect(result.valid).toBe(false);
+    });
+  });
+
+  describe('opções de validação adicional', () => {
+    it('deve reportar escolhas de perícias pendentes', () => {
+      const result = validateCharacterForm(validCharacterData, {
+        pendingChoicesCount: 2,
+      });
+      expect(result.valid).toBe(false);
+      expect(result.errors.some(e => e.field === 'classSkillChoices')).toBe(true);
+      expect(result.errors.find(e => e.field === 'classSkillChoices')?.message).toContain('2 escolha(s)');
+    });
+
+    it('deve usar step correto para ocultista nas escolhas pendentes', () => {
+      const result = validateCharacterForm(validCharacterData, {
+        isOcultist: true,
+        pendingChoicesCount: 1,
+      });
+      expect(result.errors.find(e => e.field === 'classSkillChoices')?.step).toBe(7);
+    });
+
+    it('deve usar step correto para não-ocultista nas escolhas pendentes', () => {
+      const result = validateCharacterForm(validCharacterData, {
+        isOcultist: false,
+        pendingChoicesCount: 1,
+      });
+      expect(result.errors.find(e => e.field === 'classSkillChoices')?.step).toBe(6);
+    });
+
+    it('deve reportar conflitos de perícias não resolvidos', () => {
+      const result = validateCharacterForm(validCharacterData, {
+        pendingConflicts: ['luta', 'percepcao'],
+      });
+      expect(result.valid).toBe(false);
+      expect(result.errors.some(e => e.field === 'conflictResolutions')).toBe(true);
+      expect(result.errors.find(e => e.field === 'conflictResolutions')?.message).toContain('2 conflito(s)');
+      expect(result.errors.find(e => e.field === 'conflictResolutions')?.message).toContain('luta');
+    });
+
+    it('deve reportar pontos de atributo não distribuídos', () => {
+      const result = validateCharacterForm(validCharacterData, {
+        attributePointsRemaining: 3,
+      });
+      expect(result.valid).toBe(false);
+      expect(result.errors.some(e => e.field === 'attributes')).toBe(true);
+      expect(result.errors.find(e => e.field === 'attributes')?.message).toContain('3 ponto(s)');
+      expect(result.errors.find(e => e.field === 'attributes')?.step).toBe(2);
+    });
+
+    it('deve acumular múltiplos erros de opções', () => {
+      const result = validateCharacterForm(validCharacterData, {
+        pendingChoicesCount: 1,
+        pendingConflicts: ['luta'],
+        attributePointsRemaining: 2,
+      });
+      expect(result.valid).toBe(false);
+      expect(result.errors.length).toBeGreaterThanOrEqual(3);
+    });
+
+    it('deve ignorar pendingChoicesCount quando é 0', () => {
+      const result = validateCharacterForm(validCharacterData, {
+        pendingChoicesCount: 0,
+      });
+      expect(result.valid).toBe(true);
+      expect(result.errors.some(e => e.field === 'classSkillChoices')).toBe(false);
+    });
+
+    it('deve ignorar pendingConflicts quando array vazio', () => {
+      const result = validateCharacterForm(validCharacterData, {
+        pendingConflicts: [],
+      });
+      expect(result.valid).toBe(true);
+      expect(result.errors.some(e => e.field === 'conflictResolutions')).toBe(false);
+    });
+
+    it('deve ignorar attributePointsRemaining quando é 0', () => {
+      const result = validateCharacterForm(validCharacterData, {
+        attributePointsRemaining: 0,
+      });
+      expect(result.valid).toBe(true);
+      expect(result.errors.filter(e => e.field === 'attributes' && e.message.includes('ponto(s)'))).toHaveLength(0);
+    });
+  });
+
+  describe('limites de campos de texto', () => {
+    it('deve rejeitar nome muito longo', () => {
+      const nomeLongo = { ...validCharacterData, name: 'A'.repeat(101) };
+      const result = validateCharacterForm(nomeLongo);
+      expect(result.valid).toBe(false);
+      expect(result.errors.some(e => e.field === 'name')).toBe(true);
+    });
+
+    it('deve rejeitar conceito muito longo', () => {
+      const conceitoLongo = { ...validCharacterData, concept: 'A'.repeat(201) };
+      const result = validateCharacterForm(conceitoLongo);
+      expect(result.valid).toBe(false);
+    });
+
+    it('deve rejeitar background muito longo', () => {
+      const backgroundLongo = { ...validCharacterData, background: 'A'.repeat(2001) };
+      const result = validateCharacterForm(backgroundLongo);
+      expect(result.valid).toBe(false);
+    });
+
+    it('deve aceitar campos opcionais vazios', () => {
+      const camposVazios = {
+        ...validCharacterData,
+        playerName: '',
+        concept: '',
+        gender: '',
+        appearance: '',
+        personality: '',
+        background: '',
+      };
+      const result = validateCharacterForm(camposVazios);
+      expect(result.valid).toBe(true);
+    });
+  });
+
+  describe('NEX válidos', () => {
+    const validNexValues = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 99];
+
+    it.each(validNexValues)('deve aceitar NEX %i', (nex) => {
+      const comNex = { ...validCharacterData, nex };
+      const result = validateCharacterForm(comNex);
+      expect(result.errors.some(e => e.field === 'nex')).toBe(false);
+    });
+  });
+
+  describe('classes e trilhas', () => {
+    it('deve aceitar todas as classes válidas', () => {
+      const classes = ['combatente', 'especialista', 'ocultista'];
+      for (const cls of classes) {
+        const comClasse = { ...validCharacterData, characterClass: cls };
+        const result = validateCharacterForm(comClasse);
+        expect(result.errors.some(e => e.field === 'characterClass')).toBe(false);
+      }
+    });
+  });
+
+  describe('origens', () => {
+    const origensValidas = [
+      'academico', 'agente-de-saude', 'amnésico', 'artista', 'atleta',
+      'chef', 'criminoso', 'militar', 'investigador',
+    ];
+
+    it.each(origensValidas)('deve aceitar origem %s', (origem) => {
+      const comOrigem = { ...validCharacterData, origin: origem };
+      const result = validateCharacterForm(comOrigem);
+      expect(result.errors.some(e => e.field === 'origin')).toBe(false);
+    });
   });
 });
