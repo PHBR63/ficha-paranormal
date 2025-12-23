@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { Particles } from "@/components/ui/particles";
@@ -17,25 +17,44 @@ import {
   ArrowLeft,
   Zap,
   Wifi,
-  Bell
+  Bell,
+  ExternalLink,
+  RotateCcw,
+  PartyPopper
 } from "lucide-react";
 import { useThemeColors } from "@/hooks/useThemeColors";
+import confetti from "canvas-confetti";
 
 export default function Install() {
   const navigate = useNavigate();
   const { 
     isInstallable, 
-    isInstalled, 
+    isInstalled,
+    isStandalone,
     isIOS, 
     isAndroid, 
     promptInstall, 
     debugInfo,
     showBrowserInstructions,
-    clearServiceWorkerCache 
+    clearServiceWorkerCache,
+    justInstalled,
+    resetInstallState
   } = usePWAInstall();
   const themeColors = useThemeColors();
   const [showDebug, setShowDebug] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
+
+  // Dispara confetti quando o app é instalado
+  useEffect(() => {
+    if (justInstalled) {
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#8B0000', '#B22222', '#FF4444', '#FFD700']
+      });
+    }
+  }, [justInstalled]);
 
   const handleInstall = async () => {
     await promptInstall();
@@ -147,13 +166,14 @@ export default function Install() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          {isInstalled ? (
+          {/* Estado: App instalado e rodando em standalone */}
+          {isInstalled && isStandalone ? (
             <div className="dossier-classified p-6 text-center border-green-600/30 bg-green-900/10">
               <CheckCircle2 className="w-12 h-12 text-green-500 mx-auto mb-4" />
               <div className="mb-4">
-                <h3 className="font-bold text-lg mb-1 text-[#F5F5F5]">App Instalado!</h3>
+                <h3 className="font-bold text-lg mb-1 text-[#F5F5F5]">Você está no App!</h3>
                 <p className="text-sm text-[#808080]">
-                  O Let's Roll já está na sua tela inicial
+                  O Let's Roll está rodando em modo app
                 </p>
               </div>
               <Button 
@@ -162,6 +182,52 @@ export default function Install() {
               >
                 Ir para o Dashboard
               </Button>
+            </div>
+          ) : isInstalled && !isStandalone ? (
+            /* Estado: App instalado mas acessando via navegador */
+            <div className="dossier-classified p-6 text-center border-green-600/30 bg-green-900/10">
+              <AnimatePresence>
+                {justInstalled && (
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="mb-4"
+                  >
+                    <PartyPopper className="w-12 h-12 text-yellow-500 mx-auto animate-bounce" />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+              
+              {!justInstalled && (
+                <CheckCircle2 className="w-12 h-12 text-green-500 mx-auto mb-4" />
+              )}
+              
+              <div className="mb-4">
+                <h3 className="font-bold text-lg mb-1 text-[#F5F5F5]">
+                  {justInstalled ? '🎉 App Instalado!' : 'App Instalado'}
+                </h3>
+                <p className="text-sm text-[#808080]">
+                  {justInstalled 
+                    ? 'Agora abra o app pela sua tela inicial!' 
+                    : "O Let's Roll está na sua tela inicial"
+                  }
+                </p>
+              </div>
+              
+              <div className="space-y-2">
+                <Button 
+                  onClick={() => navigate("/dashboard")} 
+                  variant="outline"
+                  className="w-full border-[#8B0000]/30 text-[#F5F5F5] hover:bg-[#8B0000]/10"
+                >
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  Continuar no Navegador
+                </Button>
+                
+                <p className="text-xs text-amber-500/80">
+                  💡 Para melhor experiência, abra o app pela tela inicial
+                </p>
+              </div>
             </div>
           ) : isInstallable ? (
             <div className="dossier-classified p-6 text-center relative overflow-hidden">
@@ -318,6 +384,8 @@ export default function Install() {
               <div className="grid grid-cols-2 gap-2 mb-3 text-[#808080]">
                 <div>Instalável: <span className={isInstallable ? 'text-green-500' : 'text-red-400'}>{isInstallable ? 'Sim' : 'Não'}</span></div>
                 <div>Instalado: <span className={isInstalled ? 'text-green-500' : 'text-[#808080]'}>{isInstalled ? 'Sim' : 'Não'}</span></div>
+                <div>Standalone: <span className={isStandalone ? 'text-green-500' : 'text-amber-400'}>{isStandalone ? 'Sim (app)' : 'Não (navegador)'}</span></div>
+                <div>Recém instalado: <span className={justInstalled ? 'text-green-500' : 'text-[#808080]'}>{justInstalled ? 'Sim' : 'Não'}</span></div>
                 <div>iOS: <span className={isIOS ? 'text-blue-400' : 'text-[#808080]'}>{isIOS ? 'Sim' : 'Não'}</span></div>
                 <div>Android: <span className={isAndroid ? 'text-green-400' : 'text-[#808080]'}>{isAndroid ? 'Sim' : 'Não'}</span></div>
                 <div className="col-span-2">Fallback: <span className={showBrowserInstructions ? 'text-amber-400' : 'text-[#808080]'}>{showBrowserInstructions ? 'Ativo' : 'Não'}</span></div>
@@ -348,6 +416,21 @@ export default function Install() {
                 </Button>
                 <p className="text-[10px] text-[#606060] mt-2 text-center">
                   Use se a instalação não funcionar. A página será recarregada.
+                </p>
+              </div>
+              
+              <div className="border-t border-[#8B0000]/20 pt-3 mt-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={resetInstallState}
+                  className="w-full text-xs border-[#606060]/30 text-[#808080] hover:bg-[#8B0000]/10 mb-2"
+                >
+                  <RotateCcw className="w-3 h-3 mr-1" />
+                  Resetar Estado de Instalação
+                </Button>
+                <p className="text-[10px] text-[#606060] text-center">
+                  Use para debug. Remove flag de instalação do localStorage.
                 </p>
               </div>
             </div>
