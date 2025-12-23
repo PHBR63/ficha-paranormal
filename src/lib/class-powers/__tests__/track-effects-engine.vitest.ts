@@ -77,7 +77,7 @@ describe('Motor de Trilhas - Criação de Sumário', () => {
 
 describe('Motor de Trilhas - Cálculo de Bônus', () => {
   it('calculateTrackBonuses deve retornar sumário vazio para trilha inexistente', () => {
-    const context: TrackCalculationContext = { nex: 50 };
+    const context = createContext();
     const result = calculateTrackBonuses('trilha-inexistente', context);
     
     expect(result.attackBonus).toBe(0);
@@ -92,8 +92,8 @@ describe('Motor de Trilhas - Cálculo de Bônus', () => {
     }
     
     const track = tracks[0];
-    const contextLow: TrackCalculationContext = { nex: 10 };
-    const contextHigh: TrackCalculationContext = { nex: 99 };
+    const contextLow = createContext({ nex: 10 });
+    const contextHigh = createContext({ nex: 99 });
     
     const resultLow = calculateTrackBonuses(track.id, contextLow);
     const resultHigh = calculateTrackBonuses(track.id, contextHigh);
@@ -110,7 +110,7 @@ describe('Motor de Trilhas - Cálculo de Bônus', () => {
     }
     
     const track = tracks[0];
-    const context: TrackCalculationContext = { nex: 50 };
+    const context = createContext();
     
     const result = calculateTrackBonuses(track.id, context);
     
@@ -328,7 +328,7 @@ describe('Motor de Trilhas - Mapeamento Legado', () => {
 
 describe('Motor de Trilhas - Breakdown Detalhado', () => {
   it('getDetailedTrackBreakdown deve retornar mensagem de erro para trilha inexistente', () => {
-    const result = getDetailedTrackBreakdown('trilha-inexistente', { nex: 50 });
+    const result = getDetailedTrackBreakdown('trilha-inexistente', createContext());
     expect(result).toContain('não encontrada');
   });
 
@@ -339,7 +339,7 @@ describe('Motor de Trilhas - Breakdown Detalhado', () => {
       return;
     }
     
-    const result = getDetailedTrackBreakdown(tracks[0].id, { nex: 75 });
+    const result = getDetailedTrackBreakdown(tracks[0].id, createContext({ nex: 75 }));
     expect(result).toContain('75');
     expect(result).toContain('NEX');
   });
@@ -352,7 +352,7 @@ describe('Motor de Trilhas - Breakdown Detalhado', () => {
     }
     
     const track = tracks[0];
-    const result = getDetailedTrackBreakdown(track.id, { nex: 50 });
+    const result = getDetailedTrackBreakdown(track.id, createContext());
     expect(result).toContain(track.name);
   });
 });
