@@ -16,6 +16,11 @@ export default defineConfig(({ mode }) => ({
     VitePWA({
       registerType: "autoUpdate",
       includeAssets: ["favicon.ico", "robots.txt"],
+      // Habilita PWA em modo desenvolvimento para debug
+      devOptions: {
+        enabled: true,
+        type: 'module',
+      },
       manifest: {
         name: "Let's Roll - VTT Ordem Paranormal",
         short_name: "Let's Roll",
