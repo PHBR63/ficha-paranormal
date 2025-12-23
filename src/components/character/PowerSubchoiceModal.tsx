@@ -5,6 +5,8 @@
  * - Expansão de Conhecimento: escolher perícias de Intelecto
  * - Aprender Ritual: escolher um ritual
  * - Resistir a Elemento: escolher um elemento
+ * 
+ * IDs centralizados em: src/lib/constants/game-ids.ts
  */
 
 import { useState, useMemo } from 'react';
@@ -23,19 +25,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Checkbox } from '@/components/ui/checkbox';
 import { Check, BookOpen, Droplet, Skull, Zap, Brain, AlertTriangle } from 'lucide-react';
 import { ParanormalPower, ParanormalElement, PowerChoiceType, ELEMENT_LABELS, ELEMENT_COLORS, ELEMENT_BG_COLORS } from '@/lib/paranormal-powers';
+import { SKILL_IDS, ELEMENT_IDS } from '@/lib/constants/game-ids';
 
-// Perícias baseadas em Intelecto
+// Perícias baseadas em Intelecto (usando IDs centralizados)
 const INTELLECT_SKILLS = [
-  { id: 'ciencias', name: 'Ciências', description: 'Conhecimento científico geral' },
-  { id: 'investigacao', name: 'Investigação', description: 'Encontrar pistas e analisar evidências' },
-  { id: 'medicina', name: 'Medicina', description: 'Tratamento e diagnóstico médico' },
-  { id: 'ocultismo', name: 'Ocultismo', description: 'Conhecimento sobre o paranormal' },
-  { id: 'profissao', name: 'Profissão', description: 'Habilidades profissionais específicas' },
-  { id: 'tatica', name: 'Tática', description: 'Estratégia e planejamento de combate' },
-  { id: 'tecnologia', name: 'Tecnologia', description: 'Uso e criação de dispositivos' },
+  { id: SKILL_IDS.CIENCIAS, name: 'Ciências', description: 'Conhecimento científico geral' },
+  { id: SKILL_IDS.INVESTIGACAO, name: 'Investigação', description: 'Encontrar pistas e analisar evidências' },
+  { id: SKILL_IDS.MEDICINA, name: 'Medicina', description: 'Tratamento e diagnóstico médico' },
+  { id: SKILL_IDS.OCULTISMO, name: 'Ocultismo', description: 'Conhecimento sobre o paranormal' },
+  { id: SKILL_IDS.PROFISSAO, name: 'Profissão', description: 'Habilidades profissionais específicas' },
+  { id: SKILL_IDS.TATICA, name: 'Tática', description: 'Estratégia e planejamento de combate' },
+  { id: SKILL_IDS.TECNOLOGIA, name: 'Tecnologia', description: 'Uso e criação de dispositivos' },
 ];
 
-// Elementos para resistência
+// Elementos para resistência (usando IDs centralizados, elementos em minúsculo para compatibilidade)
 const RESISTANCE_ELEMENTS: { element: ParanormalElement; icon: typeof Droplet }[] = [
   { element: 'sangue', icon: Droplet },
   { element: 'morte', icon: Skull },

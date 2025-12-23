@@ -2,6 +2,9 @@
  * MobileCharacterSheet - Versão compacta da ficha para dispositivos móveis
  * Usa abas deslizantes e layout otimizado para telas pequenas
  * Inclui sistema de auditoria automática integrado
+ * 
+ * IDs centralizados em: src/lib/constants/game-ids.ts
+ * NOTA: O mapeamento de perícias aceita nomes com acentos para compatibilidade
  */
 
 import { useState, useMemo, useCallback } from 'react';

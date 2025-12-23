@@ -77,9 +77,10 @@ import { NonOccultistRitualModal, RitualSource } from './NonOccultistRitualModal
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/components/ui/sonner';
 import confetti from 'canvas-confetti';
+import { VALID_NEX_VALUES, isValidNexValue } from '@/lib/constants/game-ids';
 
-// NEX válidos (incremento de 5%)
-const NEX_VALUES = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 99];
+// NEX válidos - usando valores centralizados de game-ids.ts
+const NEX_VALUES: number[] = [...VALID_NEX_VALUES];
 
 // Ícones por elemento para seleção de afinidade
 const AFFINITY_ICONS: Record<ParanormalElement, React.ComponentType<{ className?: string }>> = {

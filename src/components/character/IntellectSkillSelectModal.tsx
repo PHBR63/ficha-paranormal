@@ -1,6 +1,8 @@
 /**
  * Modal para selecionar perícias de Intelecto
  * Usado pelo poder paranormal "Expansão de Conhecimento"
+ * 
+ * IDs centralizados em: src/lib/constants/game-ids.ts
  */
 
 import { useState, useMemo } from 'react';
@@ -17,18 +19,19 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Brain, Check, AlertCircle } from 'lucide-react';
+import { INTELLECT_SKILL_IDS, SKILL_IDS } from '@/lib/constants/game-ids';
 
-// Perícias baseadas em Intelecto (oficial do livro)
+// Perícias baseadas em Intelecto (usando IDs centralizados)
 export const INTELLECT_SKILLS = [
-  { id: 'atualidades', name: 'Atualidades', description: 'Conhecimento geral sobre notícias, cultura pop e eventos atuais.' },
-  { id: 'ciencias', name: 'Ciências', description: 'Física, química, biologia, matemática e outras ciências exatas.' },
-  { id: 'investigacao', name: 'Investigação', description: 'Procurar pistas, pesquisar informações e resolver enigmas.' },
-  { id: 'medicina', name: 'Medicina', description: 'Tratar ferimentos, curar doenças e procedimentos médicos.' },
-  { id: 'ocultismo', name: 'Ocultismo', description: 'Conhecimento sobre o paranormal e criaturas do Outro Lado.' },
-  { id: 'profissao', name: 'Profissão', description: 'Conhecimento e habilidades de uma profissão específica.' },
-  { id: 'sobrevivencia', name: 'Sobrevivência', description: 'Orientar-se, rastrear, encontrar comida na natureza.' },
-  { id: 'tatica', name: 'Tática', description: 'Planejamento militar, estratégia e análise de combate.' },
-  { id: 'tecnologia', name: 'Tecnologia', description: 'Usar, consertar e hackear equipamentos eletrônicos.' },
+  { id: SKILL_IDS.ATUALIDADES, name: 'Atualidades', description: 'Conhecimento geral sobre notícias, cultura pop e eventos atuais.' },
+  { id: SKILL_IDS.CIENCIAS, name: 'Ciências', description: 'Física, química, biologia, matemática e outras ciências exatas.' },
+  { id: SKILL_IDS.INVESTIGACAO, name: 'Investigação', description: 'Procurar pistas, pesquisar informações e resolver enigmas.' },
+  { id: SKILL_IDS.MEDICINA, name: 'Medicina', description: 'Tratar ferimentos, curar doenças e procedimentos médicos.' },
+  { id: SKILL_IDS.OCULTISMO, name: 'Ocultismo', description: 'Conhecimento sobre o paranormal e criaturas do Outro Lado.' },
+  { id: SKILL_IDS.PROFISSAO, name: 'Profissão', description: 'Conhecimento e habilidades de uma profissão específica.' },
+  { id: SKILL_IDS.SOBREVIVENCIA, name: 'Sobrevivência', description: 'Orientar-se, rastrear, encontrar comida na natureza.' },
+  { id: SKILL_IDS.TATICA, name: 'Tática', description: 'Planejamento militar, estratégia e análise de combate.' },
+  { id: SKILL_IDS.TECNOLOGIA, name: 'Tecnologia', description: 'Usar, consertar e hackear equipamentos eletrônicos.' },
 ];
 
 interface IntellectSkillSelectModalProps {

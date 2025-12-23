@@ -7,6 +7,8 @@
  * Referências:
  * - Livro Base v1.3
  * - Suplemento Sobrevivendo ao Horror
+ * 
+ * IDs centralizados em: src/lib/constants/game-ids.ts
  */
 
 import { getMaxRitualCircle, getRitualCount, ALL_RITUALS } from './rituals/legacy-exports';
@@ -24,6 +26,7 @@ import {
   OCULTISTA_ABILITIES 
 } from './class-abilities';
 import { ORIGINS, CLASSES, CLASS_TRACKS } from './character-data';
+import { VALID_CORE_ORIGIN_IDS } from './constants/game-ids';
 
 // ============== INTERFACES ==============
 
@@ -376,15 +379,9 @@ const OFFICIAL_POWER_PREREQUISITES: Record<string, { element: string; count: num
 // ============== DADOS OFICIAIS - ORIGENS ==============
 
 /**
- * 26 origens oficiais do Livro Base v1.3
+ * 26 origens oficiais do Livro Base v1.3 (importadas de game-ids.ts)
  */
-const OFFICIAL_ORIGINS = [
-  'academico', 'agente-de-saude', 'amnesico', 'artista', 'atleta', 'chef',
-  'criminoso', 'cultista-arrependido', 'desgarrado', 'engenheiro', 'executivo',
-  'investigador', 'lutador', 'magnata', 'mercenario', 'militar', 'operario',
-  'policial', 'religioso', 'servidor-publico', 'ti', 'teorico-da-conspiracao',
-  'trabalhador-rural', 'trambiqueiro', 'universitario', 'vitima',
-];
+const OFFICIAL_ORIGINS = VALID_CORE_ORIGIN_IDS;
 
 /**
  * Origens que concedem perícias específicas

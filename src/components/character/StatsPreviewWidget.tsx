@@ -3,6 +3,8 @@
  * 
  * Exibe os stats derivados do personagem com breakdown detalhado
  * mostrando a origem de cada valor (base + atributo + NEX)
+ * 
+ * IDs centralizados em: src/lib/constants/game-ids.ts
  */
 
 import { motion, AnimatePresence } from 'framer-motion';
@@ -10,6 +12,7 @@ import { Heart, Zap, Brain, Shield, Footprints, ChevronDown, ChevronUp } from 'l
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import { CLASSES } from '@/lib/character-data';
+import { CORE_ORIGIN_IDS } from '@/lib/constants/game-ids';
 import {
   Tooltip,
   TooltipContent,
@@ -341,7 +344,7 @@ export function StatsPreviewWidget({
                 expanded={expanded}
                 breakdown={[
                   { label: 'Base', value: 9 },
-                  ...(originId === 'atleta' ? [{ label: 'Atleta', value: 3, prefix: '+' }] : []),
+                  ...(originId === CORE_ORIGIN_IDS.ATLETA ? [{ label: 'Atleta', value: 3, prefix: '+' }] : []),
                 ]}
               />
             </div>
