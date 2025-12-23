@@ -1,128 +1,56 @@
 /**
  * PWAUpdateBanner - Banner de notificação quando uma nova versão do app está disponível
  * Exibe alerta para o usuário atualizar o PWA para a versão mais recente
+ * Utiliza o hook usePWAUpdate para gerenciar o estado de atualização
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RefreshCw, X, Download, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { usePWAUpdate } from '@/hooks/usePWAUpdate';
 
 interface PWAUpdateBannerProps {
   /** Callback opcional após atualização */
   onUpdate?: () => void;
+  /** Intervalo de verificação automática em ms (default: 5 minutos) */
+  checkInterval?: number;
 }
 
-export function PWAUpdateBanner({ onUpdate }: PWAUpdateBannerProps) {
-  const [showUpdateBanner, setShowUpdateBanner] = useState(false);
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [registration, setRegistration] = useState<ServiceWorkerRegistration | null>(null);
-  const [dismissed, setDismissed] = useState(false);
+export function PWAUpdateBanner({ 
+  onUpdate, 
+  checkInterval = 5 * 60 * 1000 
+}: PWAUpdateBannerProps) {
+  const {
+    hasUpdate,
+    isUpdating,
+    isDismissed,
+    applyUpdate,
+    dismiss,
+    checkForUpdate,
+  } = usePWAUpdate();
 
-  // Detecta quando há uma atualização disponível do Service Worker
+  // Verifica periodicamente por atualizações
   useEffect(() => {
-    // Verifica se service worker é suportado
-    if (!('serviceWorker' in navigator)) return;
-
-    // Handler para quando detectar atualização
-    const handleControllerChange = () => {
-      // Ignora se o usuário dismissou o banner nesta sessão
-      if (dismissed) return;
-      setShowUpdateBanner(true);
-    };
-
-    // Registra listener para mudança de controller (novo SW disponível)
-    navigator.serviceWorker.addEventListener('controllerchange', handleControllerChange);
-
-    // Verifica se há uma atualização pendente
-    const checkForUpdate = async () => {
-      try {
-        const reg = await navigator.serviceWorker.getRegistration();
-        if (reg) {
-          setRegistration(reg);
-          
-          // Verifica se há um SW waiting (nova versão pronta)
-          if (reg.waiting) {
-            setShowUpdateBanner(true);
-          }
-
-          // Listener para quando um novo SW for instalado
-          reg.addEventListener('updatefound', () => {
-            const newWorker = reg.installing;
-            if (newWorker) {
-              newWorker.addEventListener('statechange', () => {
-                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                  // Novo SW instalado, pronto para ativar
-                  if (!dismissed) {
-                    setShowUpdateBanner(true);
-                  }
-                }
-              });
-            }
-          });
-
-          // Força uma verificação de atualização
-          reg.update().catch(console.error);
-        }
-      } catch (error) {
-        console.error('[PWAUpdate] Erro ao verificar atualização:', error);
-      }
-    };
-
-    checkForUpdate();
-
-    // Verifica periodicamente por atualizações (a cada 5 minutos)
     const intervalId = setInterval(() => {
-      navigator.serviceWorker.getRegistration().then(reg => {
-        if (reg) {
-          reg.update().catch(console.error);
-        }
-      });
-    }, 5 * 60 * 1000);
+      checkForUpdate();
+    }, checkInterval);
 
-    return () => {
-      navigator.serviceWorker.removeEventListener('controllerchange', handleControllerChange);
-      clearInterval(intervalId);
-    };
-  }, [dismissed]);
+    return () => clearInterval(intervalId);
+  }, [checkForUpdate, checkInterval]);
 
-  // Handler para aplicar a atualização
-  const handleUpdate = useCallback(async () => {
-    setIsUpdating(true);
+  // Handler para aplicar atualização
+  const handleUpdate = async () => {
+    onUpdate?.();
+    await applyUpdate();
+  };
 
-    try {
-      // Tenta ativar o novo Service Worker
-      if (registration?.waiting) {
-        // Envia mensagem para o SW skipWaiting
-        registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-      }
-
-      // Pequeno delay para garantir que o novo SW assuma
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      // Callback opcional
-      onUpdate?.();
-
-      // Recarrega a página para usar a nova versão
-      window.location.reload();
-    } catch (error) {
-      console.error('[PWAUpdate] Erro ao atualizar:', error);
-      setIsUpdating(false);
-      
-      // Em caso de erro, ainda tenta recarregar
-      window.location.reload();
-    }
-  }, [registration, onUpdate]);
-
-  // Handler para fechar o banner
-  const handleDismiss = useCallback(() => {
-    setShowUpdateBanner(false);
-    setDismissed(true);
-  }, []);
+  // Não mostra se foi dispensado ou não há atualização
+  const showBanner = hasUpdate && !isDismissed;
 
   return (
     <AnimatePresence>
-      {showUpdateBanner && (
+      {showBanner && (
         <motion.div
           initial={{ opacity: 0, y: -50, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -162,7 +90,7 @@ export function PWAUpdateBanner({ onUpdate }: PWAUpdateBannerProps) {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={handleDismiss}
+                    onClick={dismiss}
                     className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
                     disabled={isUpdating}
                   >
