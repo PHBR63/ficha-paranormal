@@ -23,15 +23,27 @@ import { useThemeColors } from "@/hooks/useThemeColors";
 
 export default function Install() {
   const navigate = useNavigate();
-  const { isInstallable, isInstalled, isIOS, isAndroid, promptInstall, debugInfo } = usePWAInstall();
+  const { 
+    isInstallable, 
+    isInstalled, 
+    isIOS, 
+    isAndroid, 
+    promptInstall, 
+    debugInfo,
+    showBrowserInstructions,
+    clearServiceWorkerCache 
+  } = usePWAInstall();
   const themeColors = useThemeColors();
   const [showDebug, setShowDebug] = useState(false);
+  const [isClearing, setIsClearing] = useState(false);
 
   const handleInstall = async () => {
-    const success = await promptInstall();
-    if (success) {
-      // Celebration feedback handled by the hook
-    }
+    await promptInstall();
+  };
+
+  const handleClearCache = async () => {
+    setIsClearing(true);
+    await clearServiceWorkerCache();
   };
 
   const features = [
@@ -178,6 +190,40 @@ export default function Install() {
                 </Button>
               </div>
             </div>
+          ) : showBrowserInstructions && isAndroid ? (
+            <div className="dossier-classified p-6">
+              <div className="flex items-center justify-center gap-2 mb-4">
+                <Smartphone className="w-5 h-5 text-[#808080]" />
+                <h3 className="font-bold text-lg text-center text-[#F5F5F5]">
+                  Instalar pelo menu do navegador
+                </h3>
+              </div>
+              
+              <p className="text-xs text-center text-amber-500/80 mb-4 px-4">
+                O prompt automático não apareceu. Use o menu do navegador para instalar:
+              </p>
+              
+              <div className="space-y-4">
+                {[
+                  { step: 1, title: "Toque no menu ⋮", subtitle: "No canto superior direito do Chrome", icon: null },
+                  { step: 2, title: 'Selecione "Instalar app"', subtitle: 'Ou "Adicionar à tela inicial"', icon: Download },
+                  { step: 3, title: "Confirme a instalação", subtitle: "O app será adicionado à sua tela inicial", icon: CheckCircle2 },
+                ].map((item) => (
+                  <div key={item.step} className="flex items-start gap-4">
+                    <div className="w-8 h-8 rounded-full bg-[#8B0000]/20 border border-[#8B0000]/40 flex items-center justify-center shrink-0 text-sm font-bold text-[#B22222]">
+                      {item.step}
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium text-sm mb-1 text-[#F5F5F5]">{item.title}</p>
+                      <div className="flex items-center gap-2 text-[#808080] text-xs">
+                        {item.icon && <item.icon className="w-4 w-4" />}
+                        <span>{item.subtitle}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           ) : isIOS ? (
             <div className="dossier-classified p-6">
               <div className="flex items-center justify-center gap-2 mb-4">
@@ -274,6 +320,7 @@ export default function Install() {
                 <div>Instalado: <span className={isInstalled ? 'text-green-500' : 'text-[#808080]'}>{isInstalled ? 'Sim' : 'Não'}</span></div>
                 <div>iOS: <span className={isIOS ? 'text-blue-400' : 'text-[#808080]'}>{isIOS ? 'Sim' : 'Não'}</span></div>
                 <div>Android: <span className={isAndroid ? 'text-green-400' : 'text-[#808080]'}>{isAndroid ? 'Sim' : 'Não'}</span></div>
+                <div className="col-span-2">Fallback: <span className={showBrowserInstructions ? 'text-amber-400' : 'text-[#808080]'}>{showBrowserInstructions ? 'Ativo' : 'Não'}</span></div>
               </div>
               
               <div className="border-t border-[#8B0000]/20 pt-2">
@@ -287,6 +334,21 @@ export default function Install() {
                     <p className="text-[#606060] text-[10px]">Nenhum log ainda...</p>
                   )}
                 </div>
+              </div>
+              
+              <div className="border-t border-[#8B0000]/20 pt-3 mt-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleClearCache}
+                  disabled={isClearing}
+                  className="w-full text-xs border-amber-600/30 text-amber-500 hover:bg-amber-600/10"
+                >
+                  {isClearing ? 'Limpando...' : '🗑️ Limpar Cache do Service Worker'}
+                </Button>
+                <p className="text-[10px] text-[#606060] mt-2 text-center">
+                  Use se a instalação não funcionar. A página será recarregada.
+                </p>
               </div>
             </div>
           )}
