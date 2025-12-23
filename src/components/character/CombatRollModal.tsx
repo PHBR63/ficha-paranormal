@@ -43,6 +43,8 @@ interface WeaponEntry {
   special?: string;
   notes?: string;
   ammoType?: string;
+  // Aniquilador: indica se esta arma é a favorita
+  isFavoriteWeapon?: boolean;
 }
 
 // Interface para bônus selecionável
@@ -108,12 +110,16 @@ interface CombatRollModalProps {
   
   // Dados de classe e poderes
   characterClass: string;
+  classTrack?: string; // Trilha do personagem (ex: 'aniquilador')
   abilities: string[];
   paranormalPowers: Array<{ id: string; name: string; element: string }>;
   hasAffinity: boolean;
   affinityElement?: string | null;
   sustainedRituals?: SustainedRitualInput[]; // Agora usa rituais sustentados
   nex: number;
+  
+  // Aniquilador: indica se a arma atual é a favorita
+  isFavoriteWeapon?: boolean;
   
   // NOVO: Bônus pré-calculados do sistema unificado de poderes de classe
   classPowerBonuses?: ClassPowerCombatBonuses;
@@ -182,12 +188,14 @@ export function CombatRollModal({
   maxPE,
   onPEChange,
   characterClass,
+  classTrack = '',
   abilities,
   paranormalPowers,
   hasAffinity,
   affinityElement,
   sustainedRituals = [],
   nex,
+  isFavoriteWeapon = false,
   classPowerBonuses, // Bônus pré-calculados do sistema de poderes
   unifiedEffects, // NOVO: Efeitos do SUE (origem, trilha, condições)
   advancedBonuses = {},
@@ -724,7 +732,14 @@ export function CombatRollModal({
     return sources;
   }, [weapon, attributes, classPowerBonuses, passiveBonuses, selectedBonuses, availableBonuses, manualDamageMod, weaponBuffBonuses, unifiedEffects]);
 
-  // Calcular margem de crítico efetiva (incluindo SUE e weapon buffs)
+  // === MÁQUINA DE MATAR (Aniquilador NEX 99%) ===
+  // Bônus automáticos quando atacando com arma favorita em NEX 99%
+  const maquinaDeMatarActive = useMemo(() => {
+    const isAniquilador = classTrack?.toLowerCase().includes('aniquilador');
+    return isAniquilador && nex >= 99 && isFavoriteWeapon;
+  }, [classTrack, nex, isFavoriteWeapon]);
+
+  // Calcular margem de crítico efetiva (incluindo SUE, weapon buffs e Máquina de Matar)
   const effectiveCritical = useMemo(() => {
     if (!weapon) return 20;
     let critical = parseInt(weapon.critical || '20');
@@ -747,8 +762,13 @@ export function CombatRollModal({
       if (b.criticalBonus) critical -= b.criticalBonus;
     });
     
+    // === MÁQUINA DE MATAR: +2 margem de ameaça ===
+    if (maquinaDeMatarActive) {
+      critical -= 2;
+    }
+    
     return Math.max(1, critical); // Mínimo de 1
-  }, [weapon, passiveBonuses, classPowerBonuses, weaponBuffBonuses, unifiedEffects]);
+  }, [weapon, passiveBonuses, classPowerBonuses, weaponBuffBonuses, unifiedEffects, maquinaDeMatarActive]);
 
   // Multiplicador de crítico da arma (incluindo SUE e weapon buffs)
   const criticalMultiplier = useMemo(() => {
@@ -913,6 +933,13 @@ export function CombatRollModal({
       }
     }
     
+    // === MÁQUINA DE MATAR: +1 dado do mesmo tipo da arma ===
+    let maquinaDeMatarDice = 0;
+    if (maquinaDeMatarActive) {
+      // Adiciona 1 dado do mesmo tipo da arma (multiplicado por crítico se aplicável)
+      maquinaDeMatarDice = isCritical ? 1 * criticalMultiplier : 1;
+    }
+    
     // Aplicar bônus passivos
     passiveBonuses.forEach(b => {
       if (typeof b.damageBonus === 'number') {
@@ -985,6 +1012,16 @@ export function CombatRollModal({
       sneakDice.push(Math.floor(Math.random() * 6) + 1);
     }
     
+    // Rolar dados do Máquina de Matar (mesmo tipo da arma)
+    const maquinaDeMatarDiceResults: number[] = [];
+    for (let i = 0; i < maquinaDeMatarDice; i++) {
+      if (useMaxDamage) {
+        maquinaDeMatarDiceResults.push(parsed.size);
+      } else {
+        maquinaDeMatarDiceResults.push(Math.floor(Math.random() * parsed.size) + 1);
+      }
+    }
+    
     // Rolar dados de WEAPON BUFFS SEPARADAMENTE (Amaldiçoar Arma - dano elemental)
     const weaponBuffDice: number[] = [];
     for (let i = 0; i < weaponBuffDiceCount; i++) {
@@ -996,8 +1033,8 @@ export function CombatRollModal({
     }
     
     // SEPARAR os dados do buff do resto dos dados extras
-    // Os dados extras agora são apenas: poderes + ataque furtivo (SEM weapon buffs)
-    const allExtraDice = [...extraDice, ...sneakDice];
+    // Os dados extras agora são: poderes + ataque furtivo + máquina de matar (SEM weapon buffs)
+    const allExtraDice = [...extraDice, ...sneakDice, ...maquinaDeMatarDiceResults];
     
     // Calcular totais SEPARADOS
     const weaponDiceTotal = mainDice.reduce((a, b) => a + b, 0);
