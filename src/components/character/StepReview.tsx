@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { motion } from 'framer-motion';
 import { RuleBookTip } from './RuleBookTip';
 import { getRulebookContent } from '@/lib/rulebook-content';
+import { ATTRIBUTE_ABBR, type AttributeKey } from '@/lib/constants/attributes';
 import type { CharacterFormData } from '@/pages/CharacterCreate';
 import type { RebuildResult } from '@/lib/character-builder-engine';
 
@@ -22,15 +23,6 @@ interface StepReviewProps {
   updateFormData?: (updates: Partial<CharacterFormData>) => void;
   onStepClick?: (step: number) => void;
 }
-
-// Mapeamento de atributos para labels
-const ATTRIBUTE_LABELS: Record<string, string> = {
-  agility: 'AGI',
-  strength: 'FOR',
-  intellect: 'INT',
-  presence: 'PRE',
-  vigor: 'VIG'
-};
 
 // Configuração visual para elementos de rituais
 const ELEMENT_CONFIG: Record<string, {
@@ -256,7 +248,7 @@ export function StepReview({
         </div>
         <div className="grid grid-cols-5 gap-2">
           {Object.entries(formData.attributes).map(([key, value]) => <div key={key} className="text-center p-2 bg-muted/50 rounded-sm">
-              <p className="text-xs text-muted-foreground">{ATTRIBUTE_LABELS[key]}</p>
+              <p className="text-xs text-muted-foreground">{ATTRIBUTE_ABBR[key as AttributeKey]}</p>
               <p className="font-display text-2xl">{value}</p>
             </div>)}
         </div>
