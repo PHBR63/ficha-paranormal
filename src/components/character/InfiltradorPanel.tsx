@@ -7,6 +7,8 @@
  * - NEX 40%: Gatuno (+5 Atletismo/Crime, esconder sem penalidade)
  * - NEX 65%: Assassinar (dobra dados do Ataque Furtivo)
  * - NEX 99%: Sombra Fugaz (ignora penalidade de -20 Furtividade)
+ * 
+ * Integrado com useActivatedEffects para comunicar efeitos ao SUE.
  */
 
 import { useState } from 'react';
@@ -16,6 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
+import { TRACK_EFFECT_IDS, type EffectDuration } from '@/hooks/useActivatedEffects';
 
 interface InfiltradorPanelProps {
   classTrack: string | null;
@@ -25,6 +28,10 @@ interface InfiltradorPanelProps {
   onPEChange: (delta: number) => void;
   usedAbilitiesThisRound?: string[];
   onAbilityUsed?: (abilityId: string) => void;
+  /** Callback para ativar efeito no SUE */
+  onActivateEffect?: (id: string, name: string, duration: EffectDuration) => void;
+  /** Verifica se um efeito está ativo */
+  isEffectActive?: (id: string) => boolean;
 }
 
 /**
@@ -52,7 +59,9 @@ export function InfiltradorPanel({
   agility,
   onPEChange,
   usedAbilitiesThisRound = [],
-  onAbilityUsed
+  onAbilityUsed,
+  onActivateEffect,
+  isEffectActive
 }: InfiltradorPanelProps) {
   const [assassinarActive, setAssassinarActive] = useState(false);
 
@@ -84,6 +93,9 @@ export function InfiltradorPanel({
     onPEChange(-1);
     onAbilityUsed?.('ataque-furtivo-trilha');
     
+    // Ativa efeito no SUE
+    onActivateEffect?.(TRACK_EFFECT_IDS.ATAQUE_FURTIVO, 'Ataque Furtivo', 'instant');
+    
     const diceBonus = getAtaqueFurtivoDice(nex);
     const doubledDice = assassinarActive ? ` (dobrado: ${diceBonus.replace('+', '+').replace('d6', 'd6 x2')})` : '';
     
@@ -109,6 +121,9 @@ export function InfiltradorPanel({
     onPEChange(-3);
     setAssassinarActive(true);
     
+    // Ativa efeito no SUE - dura até próximo ataque
+    onActivateEffect?.(TRACK_EFFECT_IDS.ASSASSINAR, 'Assassinar', 'next-attack');
+    
     toast.success('Assassinar ativado!', {
       description: `Próximo Ataque Furtivo terá dados dobrados. Alvo fica inconsciente/morrendo (Fort DT ${getAssassinarDT(agility)} evita).`
     });
@@ -124,6 +139,10 @@ export function InfiltradorPanel({
     }
 
     onPEChange(-3);
+    
+    // Ativa efeito no SUE - efeito instantâneo
+    onActivateEffect?.(TRACK_EFFECT_IDS.SOMBRA_FUGAZ, 'Sombra Fugaz', 'instant');
+    
     toast.success('Sombra Fugaz ativado!', {
       description: 'Ignora penalidade de -20 no teste de Furtividade após ação chamativa.'
     });

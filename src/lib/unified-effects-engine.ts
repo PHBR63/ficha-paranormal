@@ -110,6 +110,7 @@ export interface EffectMechanics {
   
   // === Efeitos Especiais (não numéricos) ===
   specialEffects?: string[];       // Lista de efeitos especiais textuais
+  conditionalNote?: string;        // Nota sobre condição de aplicação (ex: "Apenas armas longas")
   
   // === Proficiências ===
   grantsProficiency?: string[];    // Proficiências concedidas
@@ -120,6 +121,9 @@ export interface EffectMechanics {
   cannotMove?: boolean;            // Não pode se mover
   isHelpless?: boolean;            // Indefeso
   isUnconscious?: boolean;         // Inconsciente
+  
+  // === Flags de Crítico ===
+  maximumDamageOnCrit?: boolean;   // Crítico causa dano máximo (Atirar para Matar)
 }
 
 /**
