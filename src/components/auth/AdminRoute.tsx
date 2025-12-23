@@ -6,7 +6,8 @@ import { ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAdminCheck } from '@/hooks/useAdminCheck';
 import { useAuth } from '@/contexts/AuthContext';
-import { Loader2, ShieldX } from 'lucide-react';
+import { ShieldX } from 'lucide-react';
+import { Logo } from '@/components/ui/logo';
 
 interface AdminRouteProps {
   children: ReactNode;
@@ -21,7 +22,7 @@ export function AdminRoute({ children }: AdminRouteProps) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <Logo size="lg" animate glow />
           <p className="text-muted-foreground">Verificando permissões...</p>
         </div>
       </div>
