@@ -25,7 +25,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Checkbox } from '@/components/ui/checkbox';
 import { Check, BookOpen, Droplet, Skull, Zap, Brain, AlertTriangle } from 'lucide-react';
 import { ParanormalPower, ParanormalElement, PowerChoiceType, ELEMENT_LABELS, ELEMENT_COLORS, ELEMENT_BG_COLORS } from '@/lib/paranormal-powers';
-import { SKILL_IDS, ELEMENT_IDS } from '@/lib/constants/game-ids';
+import { SKILL_IDS, VALID_ELEMENT_IDS, isValidElementId } from '@/lib/constants/game-ids';
+import { getElementConfigSafe, getElementKeys, ParanormalElementType } from '@/lib/element-config';
 
 // Perícias baseadas em Intelecto (usando IDs centralizados)
 const INTELLECT_SKILLS = [
@@ -38,13 +39,10 @@ const INTELLECT_SKILLS = [
   { id: SKILL_IDS.TECNOLOGIA, name: 'Tecnologia', description: 'Uso e criação de dispositivos' },
 ];
 
-// Elementos para resistência (usando IDs centralizados, elementos em minúsculo para compatibilidade)
-const RESISTANCE_ELEMENTS: { element: ParanormalElement; icon: typeof Droplet }[] = [
-  { element: 'sangue', icon: Droplet },
-  { element: 'morte', icon: Skull },
-  { element: 'conhecimento', icon: BookOpen },
-  { element: 'energia', icon: Zap },
-];
+// Elementos para resistência (usa getElementKeys para obter elementos válidos)
+// Exclui 'medo' que não é resistível por este poder
+const RESISTANCE_ELEMENTS: ParanormalElement[] = getElementKeys()
+  .filter(el => el !== 'medo') as ParanormalElement[];
 
 interface PowerSubchoiceModalProps {
   open: boolean;
@@ -245,10 +243,12 @@ export function PowerSubchoiceModal({
           {/* Escolha de Elemento para Resistência */}
           {choiceType === 'element_resistance' && (
             <div className="grid grid-cols-2 gap-3 p-1">
-              {RESISTANCE_ELEMENTS.map(({ element, icon: Icon }) => {
+              {RESISTANCE_ELEMENTS.map((element) => {
                 const isSelected = selectedResistElement === element;
-                const colorClass = ELEMENT_COLORS[element];
-                const bgClass = ELEMENT_BG_COLORS[element];
+                const config = getElementConfigSafe(element);
+                const Icon = config?.icon || Droplet;
+                const colorClass = config?.text || ELEMENT_COLORS[element];
+                const bgClass = config?.bg || ELEMENT_BG_COLORS[element];
                 
                 return (
                   <Card
@@ -262,7 +262,7 @@ export function PowerSubchoiceModal({
                       <div className={`w-12 h-12 mx-auto rounded-full ${bgClass} flex items-center justify-center mb-2`}>
                         <Icon className={`h-6 w-6 ${colorClass}`} />
                       </div>
-                      <CardTitle className="text-sm">{ELEMENT_LABELS[element]}</CardTitle>
+                      <CardTitle className="text-sm">{config?.label || ELEMENT_LABELS[element]}</CardTitle>
                       {isSelected && (
                         <Badge className="mt-2 bg-primary">
                           <Check className="h-3 w-3 mr-1" />
