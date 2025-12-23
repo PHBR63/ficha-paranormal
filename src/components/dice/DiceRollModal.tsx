@@ -97,9 +97,9 @@ export function DiceRollModal({
   const [displayDice, setDisplayDice] = useState<number[]>([]);
   const [result, setResult] = useState<DiceRollResult | null>(null);
   
-  // Ref para controlar se já rolou nesta abertura
-  const hasRolledRef = useRef(false);
-  // Ref para o intervalo de animação
+  // Ref para controlar se já rolou nesta abertura (React 19: valor inicial obrigatório)
+  const hasRolledRef = useRef<boolean>(false);
+  // Ref para o intervalo de animação (React 19: valor inicial obrigatório)
   const animationRef = useRef<NodeJS.Timeout | null>(null);
 
   // Cores para cada tipo de bônus

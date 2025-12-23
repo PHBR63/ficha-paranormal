@@ -94,8 +94,8 @@ export function MobileDiceRollModal({
   const [displayDice, setDisplayDice] = useState<number[]>([]);
   const [result, setResult] = useState<DiceRollResult | null>(null);
   
-  // Refs
-  const hasRolledRef = useRef(false);
+  // Refs (React 19: valor inicial obrigatório)
+  const hasRolledRef = useRef<boolean>(false);
   const animationRef = useRef<NodeJS.Timeout | null>(null);
 
   // Cores para cada tipo de bônus
