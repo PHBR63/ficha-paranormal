@@ -58,3 +58,4 @@ export { MobileRitualCastHistory, type RitualCastRecord } from './MobileRitualCa
 export { MobileActiveEffectsPanel } from './MobileActiveEffectsPanel';
 export { MobileParanormalPowerSelectModal } from './MobileParanormalPowerSelectModal';
 export { MobileRitualEffectWizard, type MobileRitualEffectWizardProps } from './MobileRitualEffectWizard';
+export { MobileLeadershipPanel } from './MobileLeadershipPanel';
