@@ -134,10 +134,11 @@ export const originSchema = z.enum(validOrigins);
 // SCHEMAS DE TRILHAS
 // ============================================
 
+// IDs de trilhas sincronizados com CLASS_TRACKS em character-data.ts
 export const validTracks = {
-  combatente: ['aniquilador', 'comandante-de-campo', 'guerreiro', 'operacoes-especiais', 'tropa-de-choque'],
-  especialista: ['atiradordeelite', 'infiltrador', 'medico-de-campo', 'negociador', 'tecnico'],
-  ocultista: ['conduite', 'flagelador', 'graduado', 'intuitivo', 'lâmina-paranormal'],
+  combatente: ['aniquilador', 'comandante-campo', 'guerreiro', 'operacoes-especiais', 'tropa-choque'],
+  especialista: ['atirador-elite', 'infiltrador', 'medico-campo', 'negociador', 'tecnico'],
+  ocultista: ['condutor', 'flagelador', 'graduado', 'intuitivo', 'lamina-paranormal'],
 } as const;
 
 export function getTrackSchema(characterClass: typeof validClasses[number]) {
