@@ -81,6 +81,7 @@ import { normalizeWeaponTypeForDisplay } from '@/lib/weapon-type-inference';
 
 import { useWeaponBuffs } from '@/hooks/useWeaponBuffs';
 import { useUnifiedEffects } from '@/hooks/useUnifiedEffects';
+import { useRoundTracking } from '@/hooks/useRoundTracking';
 
 // Tipos
 interface MobileCharacterSheetProps {
@@ -220,6 +221,9 @@ export function MobileCharacterSheet({
       );
     }
   }, [attributeValidation.isValid, character]);
+
+  // Hook centralizado de tracking de uso por rodada (habilidades 1x/rodada)
+  const roundTracking = useRoundTracking();
 
   // Calcula limite de poderes paranormais
   const powerLimits = useMemo(() => 
@@ -773,6 +777,42 @@ export function MobileCharacterSheet({
               />
             )}
             
+            {/* Controle de Rodada Mobile - Exibido apenas se houver uso de habilidades ou rodada > 1 */}
+            {(roundTracking.usedCount > 0 || roundTracking.currentRound > 1) && (
+              <div className="bg-card/80 backdrop-blur-sm rounded-lg border border-border/50 p-3 mb-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-medium text-muted-foreground">Rodada</span>
+                    <span className="text-lg font-bold text-primary">{roundTracking.currentRound}</span>
+                    {roundTracking.usedCount > 0 && (
+                      <span className="text-xs text-muted-foreground">
+                        ({roundTracking.usedCount} habilidade{roundTracking.usedCount > 1 ? 's' : ''} usada{roundTracking.usedCount > 1 ? 's' : ''})
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={roundTracking.advanceRound}
+                      className="text-xs h-8"
+                    >
+                      <ChevronRight className="h-3 w-3 mr-1" />
+                      Próxima
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={roundTracking.resetCombat}
+                      className="text-xs h-8 text-muted-foreground"
+                    >
+                      Resetar
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+            
             {/* Painel de Liderança - Comandante de Campo */}
             <MobileLeadershipPanel
               classTrack={character.class_track}
@@ -780,6 +820,8 @@ export function MobileCharacterSheet({
               peCurrent={character.pe_current}
               intellect={character.intellect}
               onPEChange={handlePEChange}
+              usedAbilitiesThisRound={roundTracking.usedAbilitiesThisRound}
+              onAbilityUsed={roundTracking.markAbilityUsed}
             />
             
             {/* Painel Guerreiro - Revidar e Força Opressora */}
@@ -796,6 +838,8 @@ export function MobileCharacterSheet({
               nex={character.nex}
               peCurrent={character.pe_current}
               onPEChange={handlePEChange}
+              usedAbilitiesThisRound={roundTracking.usedAbilitiesThisRound}
+              onAbilityUsed={roundTracking.markAbilityUsed}
             />
             
             {/* Painel Tropa de Choque - Cai Dentro e Duro de Matar */}
