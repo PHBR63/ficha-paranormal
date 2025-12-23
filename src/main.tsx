@@ -2,12 +2,16 @@ import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
 
-// Remove o loader inicial quando o React montar
+// Remove o loader inicial com transição suave quando o React montar
 const initialLoader = document.getElementById("initial-loader");
 if (initialLoader) {
-  initialLoader.style.opacity = "0";
-  initialLoader.style.transition = "opacity 0.3s ease-out";
-  setTimeout(() => initialLoader.remove(), 300);
+  // Adiciona classe para trigger da animação CSS
+  initialLoader.classList.add("fade-out");
+  
+  // Remove o elemento após a transição completar
+  setTimeout(() => {
+    initialLoader.remove();
+  }, 500);
 }
 
 createRoot(document.getElementById("root")!).render(<App />);
