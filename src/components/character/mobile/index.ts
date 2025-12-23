@@ -48,3 +48,12 @@ export { MobileCombatDrawer } from './MobileCombatDrawer';
 
 // Componentes virtualizados (Performance)
 export { MobileVirtualizedPowersList, type PowerItem, type PowerItemType } from './MobileVirtualizedPowersList';
+
+// Fase de paridade desktop/mobile - Componentes novos
+export { MobileConditionManager, type ActiveCondition } from './MobileConditionManager';
+export { MobileSustainedRitualsPanel } from './MobileSustainedRitualsPanel';
+export { MobileConditionalBonusesPanel } from './MobileConditionalBonusesPanel';
+export { MobileAffinitySelectorCard } from './MobileAffinitySelectorCard';
+export { MobileRitualCastHistory, type RitualCastRecord } from './MobileRitualCastHistory';
+export { MobileActiveEffectsPanel } from './MobileActiveEffectsPanel';
+export { MobileParanormalPowerSelectModal } from './MobileParanormalPowerSelectModal';
