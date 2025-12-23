@@ -172,7 +172,8 @@ export function useCharacterAudit(
   }, [character?.id, character?.nex, character?.paranormal_powers?.length, autoRun]);
   
   // Auto-fix silencioso para problemas corrigíveis (com notificação discreta)
-  const hasNotifiedRef = useRef(false);
+  // React 19: valor inicial obrigatório
+  const hasNotifiedRef = useRef<boolean>(false);
   
   useEffect(() => {
     async function autoFixAllIssues() {

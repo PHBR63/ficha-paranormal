@@ -71,7 +71,7 @@ export function useBonusSync({
   enabled = true,
   isInCampaign,
 }: UseBonusSyncProps) {
-  // Ref para evitar atualizações desnecessárias
+  // Refs para evitar atualizações desnecessárias (React 19: valor inicial obrigatório)
   const lastSyncRef = useRef<string>('');
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
   const membershipRef = useRef<{ id: string; campaign_id: string } | null>(null);
