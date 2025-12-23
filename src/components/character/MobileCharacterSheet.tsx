@@ -51,6 +51,8 @@ import { PowerDetailModal, PowerDetailData, PowerType } from './PowerDetailModal
 import { ALL_RITUALS } from '@/lib/rituals/legacy-exports';
 import { ALL_CLASS_ABILITIES } from '@/lib/class-abilities';
 import { useDefenseBonuses } from '@/hooks/useDefenseBonuses';
+import { getSkillAttribute as getSkillAttr, type AttributeKey } from '@/lib/constants/game-ids';
+import { getElementConfig } from '@/lib/element-config';
 // Hook consolidado do SUE - fonte única de verdade para todos os bônus
 import { useBonusSummaryFromSUE } from '@/hooks/useBonusSummaryFromSUE';
 import { useSustainedRituals } from '@/hooks/useSustainedRituals';
@@ -194,26 +196,35 @@ function CollapsibleSection({
   );
 }
 
-// Helper: Determina o atributo de cada perícia
-function getSkillAttribute(skill: string): string {
-  const skillMap: Record<string, string> = {
-    // Agilidade
-    'acrobacia': 'AGI', 'furtividade': 'AGI', 'pilotagem': 'AGI',
-    'pontaria': 'AGI', 'reflexos': 'AGI',
-    // Força
-    'atletismo': 'FOR', 'luta': 'FOR',
-    // Intelecto
-    'atualidades': 'INT', 'ciências': 'INT', 'investigação': 'INT',
-    'medicina': 'INT', 'ocultismo': 'INT', 'profissão': 'INT',
-    'sobrevivência': 'INT', 'tática': 'INT', 'tecnologia': 'INT',
-    // Presença
-    'artes': 'PRE', 'diplomacia': 'PRE', 'enganação': 'PRE',
-    'intimidação': 'PRE', 'intuição': 'PRE', 'percepção': 'PRE',
-    'vontade': 'PRE',
-    // Vigor
-    'fortitude': 'VIG',
+// Mapeamento de AttributeKey para abreviação de atributo
+const ATTRIBUTE_ABBREV: Record<AttributeKey, string> = {
+  agility: 'AGI',
+  strength: 'FOR',
+  intellect: 'INT',
+  presence: 'PRE',
+  vigor: 'VIG',
+};
+
+// Helper: Determina o atributo de cada perícia (usando função centralizada)
+function getSkillAttributeAbbrev(skill: string): string {
+  // Normaliza a perícia removendo acentos para compatibilidade
+  const normalized = skill.toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+  
+  const attr = getSkillAttr(normalized);
+  if (attr) {
+    return ATTRIBUTE_ABBREV[attr];
+  }
+  
+  // Fallback para perícias com acentos (compatibilidade com dados antigos)
+  const legacyMap: Record<string, string> = {
+    'ciências': 'INT', 'investigação': 'INT', 'profissão': 'INT',
+    'sobrevivência': 'INT', 'tática': 'INT',
+    'enganação': 'PRE', 'intimidação': 'PRE', 'intuição': 'PRE',
+    'percepção': 'PRE',
   };
-  return skillMap[skill.toLowerCase()] || 'INT';
+  return legacyMap[skill.toLowerCase()] || 'INT';
 }
 
 // Helper: Retorna classe de cor para cada atributo
@@ -228,26 +239,19 @@ function getAttributeColor(attr: string): string {
   return colors[attr] || 'bg-muted text-muted-foreground';
 }
 
-// Helper: Retorna ícone emoji para cada elemento paranormal
+// Helper: Retorna ícone emoji para cada elemento paranormal (usando config centralizado)
 function getElementIcon(element: string): string {
-  const icons: Record<string, string> = {
-    'sangue': '🩸',
-    'morte': '💀',
-    'conhecimento': '📖',
-    'energia': '⚡',
-  };
-  return icons[element.toLowerCase()] || '✨';
+  const config = getElementConfig(element);
+  return config?.emoji || '✨';
 }
 
-// Helper: Retorna classes de cor para cada elemento
+// Helper: Retorna classes de cor para cada elemento (usando config centralizado)
 function getElementColor(element: string): string {
-  const colors: Record<string, string> = {
-    'sangue': 'bg-red-500/10 border-red-500/30',
-    'morte': 'bg-purple-500/10 border-purple-500/30',
-    'conhecimento': 'bg-blue-500/10 border-blue-500/30',
-    'energia': 'bg-yellow-500/10 border-yellow-500/30',
-  };
-  return colors[element.toLowerCase()] || 'bg-paranormal/10 border-paranormal/30';
+  const config = getElementConfig(element);
+  if (config) {
+    return `${config.bg} ${config.border}`;
+  }
+  return 'bg-paranormal/10 border-paranormal/30';
 }
 
 // Helper: Retorna ícone JSX para tipo de item
@@ -349,7 +353,7 @@ function SkillsTabContent({ character, onOpenDiceRoller }: SkillsTabContentProps
     if (activeFilter === 'trained') {
       entries = entries.filter(([_, bonus]) => bonus > 0);
     } else if (['AGI', 'FOR', 'INT', 'PRE', 'VIG'].includes(activeFilter)) {
-      entries = entries.filter(([skill]) => getSkillAttribute(skill) === activeFilter);
+      entries = entries.filter(([skill]) => getSkillAttributeAbbrev(skill) === activeFilter);
     }
 
     // Aplicar ordenação
@@ -360,8 +364,8 @@ function SkillsTabContent({ character, onOpenDiceRoller }: SkillsTabContentProps
         case 'alpha':
           return a[0].localeCompare(b[0]); // Alfabética
         case 'attribute':
-          const attrA = getSkillAttribute(a[0]);
-          const attrB = getSkillAttribute(b[0]);
+          const attrA = getSkillAttributeAbbrev(a[0]);
+          const attrB = getSkillAttributeAbbrev(b[0]);
           if (attrA !== attrB) return attrA.localeCompare(attrB);
           return b[1] - a[1]; // Dentro do mesmo atributo, ordena por bônus
         default:
@@ -468,7 +472,7 @@ function SkillsTabContent({ character, onOpenDiceRoller }: SkillsTabContentProps
         {filteredSkills.length > 0 ? (
           <div className="space-y-1">
             {filteredSkills.map(([skill, bonus]) => {
-              const skillAttr = getSkillAttribute(skill);
+              const skillAttr = getSkillAttributeAbbrev(skill);
               const attrColor = getAttributeColor(skillAttr);
               const isTrained = bonus > 0;
               
@@ -816,7 +820,7 @@ export function MobileCharacterSheet({
   // Handler para rolagem de perícia (abre modal de dados)
   const handleSkillRoll = useCallback((skillName: string) => {
     const skillBonus = character.skills?.[skillName.toLowerCase()] || 0;
-    const skillAttr = getSkillAttribute(skillName);
+    const skillAttr = getSkillAttributeAbbrev(skillName);
     const attrValue = {
       'AGI': character.agility,
       'FOR': character.strength,
