@@ -101,6 +101,7 @@ import { AtiradorDeElitePanel } from '@/components/character/AtiradorDeElitePane
 import { InfiltradorPanel } from '@/components/character/InfiltradorPanel';
 import { MedicoDeCampoPanel } from '@/components/character/MedicoDeCampoPanel';
 import { NegociadorPanel } from '@/components/character/NegociadorPanel';
+import { TecnicoPanel } from '@/components/character/TecnicoPanel';
 import { RoundControlPanel } from '@/components/character/RoundControlPanel';
 import { Logo } from '@/components/ui/logo';
 
@@ -2076,6 +2077,21 @@ export default function CharacterSheet() {
                   pe: newPE, 
                   san: sanCurrent 
                 })}
+              />
+              
+              <TecnicoPanel
+                classTrack={character.class_track}
+                nex={character.nex}
+                peCurrent={peCurrent}
+                onPEChange={(newPE) => handleCombatStatsChange({ 
+                  hp: hpCurrent, 
+                  pe: newPE, 
+                  san: sanCurrent 
+                })}
+                attributes={{
+                  strength: character.strength,
+                  intellect: character.intellect
+                }}
               />
 
               {/* Rituais e Histórico (acordeão com abas) */}

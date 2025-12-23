@@ -66,3 +66,4 @@ export { MobileAtiradorDeElitePanel } from './MobileAtiradorDeElitePanel';
 export { MobileInfiltradorPanel } from './MobileInfiltradorPanel';
 export { MobileMedicoDeCampoPanel } from './MobileMedicoDeCampoPanel';
 export { MobileNegociadorPanel } from './MobileNegociadorPanel';
+export { MobileTecnicoPanel } from './MobileTecnicoPanel';
