@@ -57,10 +57,7 @@ import { CLASSES, CLASS_TRACKS, getClassTracks } from '@/lib/character-data';
 import { checkExistingCharacterValidity } from '@/lib/character-validation';
 import { RulesValidationPanel } from '@/components/admin/RulesValidationPanel';
 import { ValidationHistoryDashboard } from '@/components/admin/ValidationHistoryDashboard';
-import { RitualSystemTests } from '@/components/admin/RitualSystemTests';
-import { PowerSystemTests } from '@/components/admin/PowerSystemTests';
 import { ClassPowerBonusTests } from '@/components/admin/ClassPowerBonusTests';
-import { SUETestPanel } from '@/components/admin/SUETestPanel';
 import { useValidationHistory } from '@/hooks/useValidationHistory';
 
 interface CharacterData {
@@ -279,7 +276,7 @@ export default function AdminDataIntegrity() {
 
       <main className="container mx-auto px-4 py-8">
         <Tabs defaultValue="integrity" className="space-y-6">
-          <TabsList className="grid w-full max-w-5xl grid-cols-6">
+          <TabsList className="grid w-full max-w-3xl grid-cols-4">
             <TabsTrigger value="integrity" className="flex items-center gap-2">
               <Database className="w-4 h-4" />
               <span className="hidden sm:inline">Integridade</span>
@@ -290,20 +287,10 @@ export default function AdminDataIntegrity() {
               <span className="hidden sm:inline">Regras</span>
               <span className="sm:hidden">Regras</span>
             </TabsTrigger>
-            <TabsTrigger value="rituals" className="flex items-center gap-2">
-              <Shield className="w-4 h-4" />
-              <span className="hidden sm:inline">Rituais</span>
-              <span className="sm:hidden">Rituais</span>
-            </TabsTrigger>
             <TabsTrigger value="powers" className="flex items-center gap-2">
               <Wrench className="w-4 h-4" />
               <span className="hidden sm:inline">Poderes</span>
               <span className="sm:hidden">Poderes</span>
-            </TabsTrigger>
-            <TabsTrigger value="sue" className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4" />
-              <span className="hidden sm:inline">SUE</span>
-              <span className="sm:hidden">SUE</span>
             </TabsTrigger>
             <TabsTrigger value="history" className="flex items-center gap-2">
               <BarChart3 className="w-4 h-4" />
@@ -520,20 +507,13 @@ export default function AdminDataIntegrity() {
             <RulesValidationPanel />
           </TabsContent>
 
-          {/* Aba de Testes de Rituais */}
-          <TabsContent value="rituals">
-            <RitualSystemTests />
-          </TabsContent>
-
           {/* Aba de Testes de Poderes de Classe */}
           <TabsContent value="powers" className="space-y-6">
-            <PowerSystemTests />
             <ClassPowerBonusTests />
-          </TabsContent>
-
-          {/* Aba de Testes do Sistema Unificado de Efeitos */}
-          <TabsContent value="sue">
-            <SUETestPanel />
+            <div className="p-4 bg-muted/50 rounded-lg text-sm text-muted-foreground">
+              <p>💡 Testes automatizados de Rituais, Poderes e SUE agora são executados via Vitest no terminal.</p>
+              <p className="mt-1">Execute <code className="bg-background px-1 py-0.5 rounded">npm test</code> para rodar todos os testes.</p>
+            </div>
           </TabsContent>
 
           {/* Aba de Histórico e Dashboard */}
