@@ -1,22 +1,32 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { CLASS_TRACKS, type ClassTrack, type TrackAbility } from '@/lib/character-data';
 import { cn } from '@/lib/utils';
 import { 
   Sword, Target, Shield, Skull, Building, 
   Crosshair, Ghost, Heart, MessagesSquare, Wrench,
   Flame, Droplets, GraduationCap, Brain, Zap,
-  Lock, Unlock, ChevronDown, ChevronUp, Sparkles
+  Lock, Unlock, ChevronDown, ChevronUp, Sparkles, AlertTriangle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { RuleBookTip } from './RuleBookTip';
 import { getRulebookContent } from '@/lib/rulebook-content';
+import { validTracks } from '@/lib/validation-schemas';
 import type { CharacterFormData } from '@/pages/CharacterCreate';
 
 interface StepTrackProps {
   formData: CharacterFormData;
   updateFormData: (updates: Partial<CharacterFormData>) => void;
+}
+
+/**
+ * Valida se uma trilha é válida para a classe selecionada
+ */
+function isValidTrackForClass(trackId: string, classId: string): boolean {
+  const classTracks = validTracks[classId as keyof typeof validTracks];
+  if (!classTracks) return false;
+  return (classTracks as readonly string[]).includes(trackId);
 }
 
 // Ícones das trilhas (incluindo novas trilhas do suplemento)
@@ -60,7 +70,19 @@ export function StepTrack({ formData, updateFormData }: StepTrackProps) {
     track => track.classId === formData.characterClass
   );
 
+  // Detecta se a trilha atual é inválida para a classe
+  const currentTrackInvalid = useMemo(() => {
+    if (!formData.classTrack || !formData.characterClass) return false;
+    return !isValidTrackForClass(formData.classTrack, formData.characterClass);
+  }, [formData.classTrack, formData.characterClass]);
+
   const handleSelectTrack = (trackId: string) => {
+    // Valida antes de atualizar
+    if (!formData.characterClass || !isValidTrackForClass(trackId, formData.characterClass)) {
+      console.warn(`Trilha inválida: ${trackId} para classe ${formData.characterClass}`);
+      return;
+    }
+    
     updateFormData({ 
       classTrack: trackId,
       trackAbilities: [] 
@@ -108,6 +130,29 @@ export function StepTrack({ formData, updateFormData }: StepTrackProps) {
             </Badge>
           </div>
         </div>
+
+        {/* Alerta de trilha inválida (dados legados) */}
+        <AnimatePresence>
+          {currentTrackInvalid && (
+            <motion.div 
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="ordo-panel p-4 bg-destructive/10 border-destructive/30"
+            >
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-destructive">Trilha inválida detectada</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    A trilha "<strong>{formData.classTrack}</strong>" não é válida para a classe {formData.characterClass}. 
+                    Por favor, selecione uma trilha válida abaixo.
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Painel educativo do livro de regras */}
         {rulebookContent && (
