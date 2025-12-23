@@ -1,6 +1,6 @@
 /**
  * AttributeGridNew - Grid de atributos estilo ficha de papel
- * Com d20 vermelho clicável para cada atributo
+ * Com d20 vermelho clicável para cada atributo e tooltips educativos
  * OTIMIZAÇÃO: Componente memoizado para evitar re-renders desnecessários
  * 
  * Usa constantes centralizadas de src/lib/constants/attributes.ts
@@ -14,6 +14,12 @@ import {
   ATTRIBUTE_COLORS,
   type AttributeKey 
 } from '@/lib/constants/attributes';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface AttributeGridNewProps {
   attributes: Record<string, number>;
@@ -42,54 +48,74 @@ export const AttributeGridNew = memo(function AttributeGridNew({
   onRoll, 
   className 
 }: AttributeGridNewProps) {
-  
 
   return (
-    <div className={cn("sheet-panel p-4", className)}>
-      <h3 className="font-display text-sm tracking-wider text-primary mb-4 uppercase">
-        Atributos
-      </h3>
-      
-      <div className="grid grid-cols-5 gap-3">
-        {ATTRIBUTE_ORDER.map((key) => {
-          const value = attributes[key] || 0;
-          const display = ATTRIBUTE_DISPLAY[key];
-          const color = ATTRIBUTE_COLORS[key];
-          
-          return (
-            <div
-              key={key}
-              className={cn(
-                "relative group cursor-pointer",
-                "flex flex-col items-center justify-center",
-                "p-3 rounded-lg",
-                "sheet-panel-inner",
-                "hover:border-primary/50 hover:scale-[1.03] active:scale-[0.97]",
-                "transition-all duration-200"
-              )}
-              onClick={() => onRoll?.(value, display.name)}
-            >
-              {/* D20 vermelho clicável */}
-              <div className="absolute -top-2 -right-2 text-destructive opacity-70 group-hover:opacity-100 group-hover:rotate-12 transition-all duration-200">
-                <D20Icon className="w-5 h-5" />
-              </div>
-              
-              {/* Valor do atributo */}
-              <span 
-                className="font-display text-3xl"
-                style={{ color }}
-              >
-                {value}
-              </span>
-              
-              {/* Nome do atributo - nome completo em português */}
-              <span className="text-[10px] text-muted-foreground uppercase tracking-wider mt-1">
-                {display.name}
-              </span>
-            </div>
-          );
-        })}
+    <TooltipProvider delayDuration={300}>
+      <div className={cn("sheet-panel p-4", className)}>
+        <h3 className="font-display text-sm tracking-wider text-primary mb-4 uppercase">
+          Atributos
+        </h3>
+        
+        <div className="grid grid-cols-5 gap-3">
+          {ATTRIBUTE_ORDER.map((key) => {
+            const value = attributes[key] || 0;
+            const display = ATTRIBUTE_DISPLAY[key];
+            const color = ATTRIBUTE_COLORS[key];
+            
+            return (
+              <Tooltip key={key}>
+                <TooltipTrigger asChild>
+                  <div
+                    className={cn(
+                      "relative group cursor-pointer",
+                      "flex flex-col items-center justify-center",
+                      "p-3 rounded-lg",
+                      "sheet-panel-inner",
+                      "hover:border-primary/50 hover:scale-[1.03] active:scale-[0.97]",
+                      "transition-all duration-200"
+                    )}
+                    onClick={() => onRoll?.(value, display.name)}
+                  >
+                    {/* D20 vermelho clicável */}
+                    <div className="absolute -top-2 -right-2 text-destructive opacity-70 group-hover:opacity-100 group-hover:rotate-12 transition-all duration-200">
+                      <D20Icon className="w-5 h-5" />
+                    </div>
+                    
+                    {/* Valor do atributo */}
+                    <span 
+                      className="font-display text-3xl"
+                      style={{ color }}
+                    >
+                      {value}
+                    </span>
+                    
+                    {/* Nome do atributo - nome completo em português */}
+                    <span className="text-[10px] text-muted-foreground uppercase tracking-wider mt-1">
+                      {display.name}
+                    </span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="max-w-xs">
+                  <div className="space-y-2">
+                    <p className="font-semibold" style={{ color }}>{display.name} ({display.abbr})</p>
+                    <p className="text-sm text-muted-foreground">{display.description}</p>
+                    <div className="flex flex-wrap gap-1 pt-1">
+                      {display.useCases.map((use) => (
+                        <span 
+                          key={use} 
+                          className="text-xs px-1.5 py-0.5 rounded bg-muted text-muted-foreground"
+                        >
+                          {use}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            );
+          })}
+        </div>
       </div>
-    </div>
+    </TooltipProvider>
   );
 });
