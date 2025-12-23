@@ -164,22 +164,21 @@ export const patentSchema = z.enum(validPatents);
 
 export const characterFormSchema = z.object({
   // Conceito
-  name: z.string().min(2).max(100),
-  playerName: z.string().max(100).optional(),
-  concept: z.string().max(200).optional(),
-  age: z.number().int().min(15).max(99).nullable(),
-  gender: z.string().max(50).optional(),
-  appearance: z.string().max(500).optional(),
-  personality: z.string().max(500).optional(),
-  background: z.string().max(2000).optional(),
+  name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres').max(100, 'Nome muito longo'),
+  playerName: z.string().max(100).optional().or(z.literal('')),
+  concept: z.string().max(200).optional().or(z.literal('')),
+  age: z.number().int().min(15).max(99).nullable().optional(),
+  gender: z.string().max(50).optional().or(z.literal('')),
+  appearance: z.string().max(500).optional().or(z.literal('')),
+  personality: z.string().max(500).optional().or(z.literal('')),
+  background: z.string().max(2000).optional().or(z.literal('')),
   photoUrl: z.string().url().nullable().optional(),
   
   // Mecânicas base
   nex: nexSchema,
-  patent: patentSchema,
   origin: originSchema,
   characterClass: classSchema,
-  classTrack: z.string().optional(),
+  classTrack: z.string().optional().nullable(),
   
   // Atributos
   attributes: attributesSchema,
@@ -189,6 +188,98 @@ export const characterFormSchema = z.object({
   classSkillChoices: z.record(z.string(), skillIdSchema),
   conflictResolutions: z.record(z.string(), skillIdSchema),
 });
+
+// ============================================
+// RESULTADO DE VALIDAÇÃO FINAL
+// ============================================
+
+export interface FinalValidationResult {
+  valid: boolean;
+  errors: {
+    field: string;
+    message: string;
+    step?: number;
+  }[];
+}
+
+/**
+ * Valida o formulário completo do personagem antes de salvar
+ * Retorna erros detalhados com referência ao step de correção
+ */
+export function validateCharacterForm(
+  formData: Record<string, unknown>,
+  options?: {
+    isOcultist?: boolean;
+    pendingChoicesCount?: number;
+    pendingConflicts?: string[];
+    attributePointsRemaining?: number;
+  }
+): FinalValidationResult {
+  const errors: FinalValidationResult['errors'] = [];
+  
+  // 1. Validar schema base Zod
+  const schemaResult = characterFormSchema.safeParse(formData);
+  
+  if (!schemaResult.success) {
+    for (const zodError of schemaResult.error.errors) {
+      const path = zodError.path.join('.');
+      
+      // Mapear campos para steps
+      let step: number | undefined;
+      if (['name', 'playerName', 'concept', 'age', 'gender', 'appearance', 'personality', 'background'].includes(path)) {
+        step = 0; // StepConcept
+      } else if (path === 'nex') {
+        step = 1; // StepNex
+      } else if (path.startsWith('attributes')) {
+        step = 2; // StepAttributes
+      } else if (path === 'origin') {
+        step = 3; // StepOrigin
+      } else if (path === 'characterClass') {
+        step = 4; // StepClass
+      } else if (path === 'classTrack') {
+        step = 5; // StepTrack
+      }
+      
+      errors.push({
+        field: path,
+        message: zodError.message,
+        step,
+      });
+    }
+  }
+  
+  // 2. Validar escolhas de perícias pendentes
+  if (options?.pendingChoicesCount && options.pendingChoicesCount > 0) {
+    errors.push({
+      field: 'classSkillChoices',
+      message: `${options.pendingChoicesCount} escolha(s) de perícias pendente(s)`,
+      step: options?.isOcultist ? 7 : 6, // StepSkills
+    });
+  }
+  
+  // 3. Validar conflitos de perícias
+  if (options?.pendingConflicts && options.pendingConflicts.length > 0) {
+    errors.push({
+      field: 'conflictResolutions',
+      message: `${options.pendingConflicts.length} conflito(s) de perícias não resolvido(s): ${options.pendingConflicts.join(', ')}`,
+      step: options?.isOcultist ? 7 : 6, // StepSkills
+    });
+  }
+  
+  // 4. Validar pontos de atributo restantes
+  if (options?.attributePointsRemaining && options.attributePointsRemaining > 0) {
+    errors.push({
+      field: 'attributes',
+      message: `${options.attributePointsRemaining} ponto(s) de atributo não distribuído(s)`,
+      step: 2, // StepAttributes
+    });
+  }
+  
+  return {
+    valid: errors.length === 0,
+    errors,
+  };
+}
 
 // ============================================
 // HELPERS DE VALIDAÇÃO

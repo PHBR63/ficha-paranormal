@@ -1,11 +1,13 @@
 // Componente de revisão final do personagem antes de salvar
 // Mostra todos os dados: conceito, atributos, origem, classe, trilha, rituais, perícias, etc.
-// Inclui painel educativo do livro de regras
+// Inclui painel educativo do livro de regras e validação final Zod
 
+import { useMemo } from 'react';
 import { ORIGINS, CLASSES, SKILLS, getPatentByNex, getTrackById } from '@/lib/character-data';
 import { CLASS_PROFICIENCIES, CLASS_INITIAL_ABILITIES, validateAttributes } from '@/lib/character-builder-engine';
 import { ALL_RITUALS } from '@/lib/rituals/legacy-exports';
-import { Shield, Footprints, Swords, Edit2, Route, Sparkles, Droplets, Skull, BookOpen, Zap, Ghost, AlertCircle } from 'lucide-react';
+import { validateCharacterForm, type FinalValidationResult } from '@/lib/validation-schemas';
+import { Shield, Footprints, Swords, Edit2, Route, Sparkles, Droplets, Skull, BookOpen, Zap, Ghost, AlertCircle, ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { motion } from 'framer-motion';
@@ -94,13 +96,46 @@ export function StepReview({
   });
 
   // Função para calcular step index baseado no id (considerando steps dinâmicos)
+  const isOcultist = formData.characterClass === 'Ocultista';
   const getStepIndex = (stepId: string): number => {
-    const isOcultist = formData.characterClass === 'Ocultista';
     const baseSteps = ['concept', 'nex', 'attributes', 'origin', 'class', 'track'];
     const afterTrack = isOcultist ? ['rituals', 'skills', 'abilities', 'review'] : ['skills', 'abilities', 'review'];
     const allSteps = [...baseSteps, ...afterTrack];
     return allSteps.indexOf(stepId);
   };
+
+  // VALIDAÇÃO FINAL ZOD: Executa validação completa do formulário
+  const finalValidation: FinalValidationResult = useMemo(() => {
+    const attrValidation = validateAttributes(formData.attributes, formData.nex);
+    
+    return validateCharacterForm(
+      {
+        name: formData.name,
+        playerName: formData.playerName,
+        concept: formData.concept,
+        age: formData.age,
+        gender: formData.gender,
+        appearance: formData.appearance,
+        personality: formData.personality,
+        background: formData.background,
+        photoUrl: formData.photoUrl,
+        nex: formData.nex,
+        origin: formData.origin?.toLowerCase(),
+        characterClass: formData.characterClass?.toLowerCase(),
+        classTrack: formData.classTrack,
+        attributes: formData.attributes,
+        freeSkills: formData.freeSkills || [],
+        classSkillChoices: formData.classSkillChoices || {},
+        conflictResolutions: formData.conflictResolutions || {},
+      },
+      {
+        isOcultist,
+        pendingChoicesCount: buildResult.pendingChoices?.length || 0,
+        pendingConflicts: buildResult.pendingConflicts,
+        attributePointsRemaining: attrValidation.remainingPoints,
+      }
+    );
+  }, [formData, buildResult.pendingChoices, buildResult.pendingConflicts, isOcultist]);
   // Conteúdo educativo do livro
   const rulebookContent = getRulebookContent('review');
 
