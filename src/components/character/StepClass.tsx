@@ -1,9 +1,12 @@
 /**
  * StepClass - Seleção de classe do personagem
  * Inclui classes base e a classe Sobrevivente do suplemento "Sobrevivendo ao Horror"
+ * 
+ * IDs de classes são gerenciados centralmente em game-ids.ts
  */
 
 import { CLASSES, calculateDerivedStats } from '@/lib/character-data';
+import { CLASS_IDS } from '@/lib/constants/game-ids';
 import { cn } from '@/lib/utils';
 import { Sword, Wrench, Sparkles, Shield, BookOpen, Heart, Zap, Brain, Footprints } from 'lucide-react';
 import { CLASS_PROFICIENCIES, CLASS_INITIAL_ABILITIES, getClassSkillRules } from '@/lib/character-builder-engine';
@@ -18,19 +21,19 @@ interface StepClassProps {
   updateFormData: (updates: Partial<CharacterFormData>) => void;
 }
 
-// Ícones das classes (incluindo Sobrevivente do suplemento)
+// Ícones das classes - usando IDs de CLASS_IDS (fonte da verdade)
 const CLASS_ICONS: Record<string, LucideIcon> = {
-  Combatente: Sword,
-  Especialista: Wrench,
-  Ocultista: Sparkles,
-  Sobrevivente: Footprints, // Nova classe do suplemento
+  [CLASS_IDS.COMBATENTE]: Sword,
+  [CLASS_IDS.ESPECIALISTA]: Wrench,
+  [CLASS_IDS.OCULTISTA]: Sparkles,
+  Sobrevivente: Footprints, // Nova classe do suplemento (quando implementada)
 };
 
-// Cores das classes (incluindo Sobrevivente)
+// Cores das classes - usando IDs de CLASS_IDS (fonte da verdade)
 const CLASS_COLORS: Record<string, { bg: string; border: string; text: string }> = {
-  Combatente: { bg: 'bg-destructive/10', border: 'border-destructive/30', text: 'text-destructive' },
-  Especialista: { bg: 'bg-secondary/10', border: 'border-secondary/30', text: 'text-secondary' },
-  Ocultista: { bg: 'bg-paranormal/10', border: 'border-paranormal/30', text: 'text-paranormal' },
+  [CLASS_IDS.COMBATENTE]: { bg: 'bg-destructive/10', border: 'border-destructive/30', text: 'text-destructive' },
+  [CLASS_IDS.ESPECIALISTA]: { bg: 'bg-secondary/10', border: 'border-secondary/30', text: 'text-secondary' },
+  [CLASS_IDS.OCULTISTA]: { bg: 'bg-paranormal/10', border: 'border-paranormal/30', text: 'text-paranormal' },
   Sobrevivente: { bg: 'bg-warning/10', border: 'border-warning/30', text: 'text-warning' }, // Cor única para Sobrevivente
 };
 

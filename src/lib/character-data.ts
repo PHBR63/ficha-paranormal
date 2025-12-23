@@ -1,5 +1,13 @@
-// Ordem Paranormal RPG v1.3 - Character Data (Atualizado com dados oficiais do livro)
-// Classes oficiais: Combatente, Especialista, Ocultista (15 trilhas no total)
+/**
+ * Ordem Paranormal RPG v1.3 - Character Data (Atualizado com dados oficiais do livro)
+ * Classes oficiais: Combatente, Especialista, Ocultista (15 trilhas no total)
+ * 
+ * NOTA: IDs canônicos de classes, trilhas, origens, etc. estão centralizados em:
+ * src/lib/constants/game-ids.ts (FONTE DA VERDADE)
+ * 
+ * Este arquivo contém os DADOS completos (descrições, mecânicas, etc.)
+ * enquanto game-ids.ts contém apenas os IDs para validação e consistência.
+ */
 
 import { SUPPLEMENT_ORIGINS } from './supplement-origins';
 import { SUPPLEMENT_TRACKS } from './supplement-classes';
