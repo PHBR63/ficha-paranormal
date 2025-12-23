@@ -61,6 +61,7 @@ import {
   MobileRitualCastHistory,
   MobileActiveEffectsPanel,
   MobileParanormalPowerSelectModal,
+  MobileLeadershipPanel,
   type WeaponEntry,
   type BonusSource,
   type ActiveCondition,
@@ -768,6 +769,15 @@ export function MobileCharacterSheet({
                 effectsResult={unifiedEffects}
               />
             )}
+            
+            {/* Painel de Liderança - Comandante de Campo */}
+            <MobileLeadershipPanel
+              classTrack={character.class_track}
+              nex={character.nex}
+              peCurrent={character.pe_current}
+              intellect={character.intellect}
+              onPEChange={handlePEChange}
+            />
           </>
         )}
 

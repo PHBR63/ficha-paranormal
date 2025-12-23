@@ -91,6 +91,7 @@ import { ClassPowerBonusesPanel } from '@/components/character/ClassPowerBonuses
 import { AutomationDebugWidget } from '@/components/character/AutomationDebugWidget';
 import { useDeveloperMode } from '@/components/ui/theme-selector';
 import { ActiveEffectsPanel } from '@/components/character/ActiveEffectsPanel';
+import { LeadershipAbilitiesPanel } from '@/components/character/LeadershipAbilitiesPanel';
 import { Logo } from '@/components/ui/logo';
 
 // Novos componentes do redesign 2.0 (estilo ficha de papel)
@@ -1940,6 +1941,19 @@ export default function CharacterSheet() {
                   onToggleBonus={handleToggleConditionalBonus}
                 />
               )}
+
+              {/* Painel de Liderança - Comandante de Campo */}
+              <LeadershipAbilitiesPanel
+                classTrack={character.class_track}
+                nex={character.nex}
+                peCurrent={peCurrent}
+                intellect={character.intellect}
+                onPEChange={(newPE) => handleCombatStatsChange({ 
+                  hp: hpCurrent, 
+                  pe: newPE, 
+                  san: sanCurrent 
+                })}
+              />
 
               {/* Rituais e Histórico (acordeão com abas) */}
               {character.rituals && character.rituals.length > 0 && (
