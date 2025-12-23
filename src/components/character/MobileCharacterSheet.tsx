@@ -12,12 +12,9 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  User, 
   Swords, 
   Package,
-  Sparkles,
   ChevronRight,
-  Scroll,
 } from 'lucide-react';
 import { MobileInventorySheet } from '@/components/inventory/MobileInventorySheet';
 import type { ExtendedInventoryItem } from '@/components/inventory/InventoryPanel';
@@ -26,9 +23,7 @@ import { cn } from '@/lib/utils';
 import { ORIGINS, getTrackById } from '@/lib/character-data';
 import { PowerDetailModal, PowerDetailData } from './PowerDetailModal';
 import { ALL_RITUALS } from '@/lib/rituals/legacy-exports';
-import { ALL_CLASS_ABILITIES } from '@/lib/class-abilities';
 import { useDefenseBonuses } from '@/hooks/useDefenseBonuses';
-import { getSkillAttribute as getSkillAttr, type AttributeKey } from '@/lib/constants/game-ids';
 // Hook consolidado do SUE - fonte única de verdade para todos os bônus
 import { useBonusSummaryFromSUE } from '@/hooks/useBonusSummaryFromSUE';
 import { useSustainedRituals } from '@/hooks/useSustainedRituals';
@@ -49,6 +44,7 @@ import { useAttributeValidation, logAttributeDiagnostics } from '@/hooks/useAttr
 import {
   MobileOverviewTab,
   MobileSkillsTab,
+  MobilePowersTab,
   MobileTabNavigation,
   MobileCollapsibleSection,
   MobileCombatPanel,
@@ -63,10 +59,7 @@ import {
 
 // Utilitários compartilhados
 import {
-  ATTRIBUTE_ABBREV,
   getSkillAttributeAbbrev,
-  getElementIcon,
-  getElementColor,
   getItemIcon,
 } from './mobile/utils';
 
@@ -310,13 +303,7 @@ export function MobileCharacterSheet({
     setPowerModalOpen(true);
   }, []);
 
-  // Buscar descrição de habilidade de classe pelo nome
-  const getAbilityDescription = useCallback((abilityName: string): string => {
-    const ability = ALL_CLASS_ABILITIES.find(a => a.name === abilityName);
-    return ability?.description || '';
-  }, []);
-
-  // Buscar dados completos do ritual pelo nome
+  // Buscar dados completos do ritual pelo nome (usado pelos modais)
   const getRitualData = useCallback((ritualName: string) => {
     return ALL_RITUALS.find(r => r.name === ritualName || r.id === ritualName);
   }, []);
@@ -563,304 +550,24 @@ export function MobileCharacterSheet({
           />
         )}
 
+        {/* Tab Powers - Componente extraído com virtualização */}
         {activeTab === 'powers' && (
-          <motion.div
+          <MobilePowersTab
             key="powers"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            className="space-y-3"
-          >
-            {/* Resumo de poderes */}
-            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-              {character.abilities.length > 0 && (
-                <div className="flex-shrink-0 px-3 py-1.5 bg-primary/10 rounded-full text-[10px] text-primary">
-                  {character.abilities.length} Habilidades
-                </div>
-              )}
-              {character.paranormal_powers && character.paranormal_powers.length > 0 && (
-                <div className="flex-shrink-0 px-3 py-1.5 bg-paranormal/10 rounded-full text-[10px] text-paranormal">
-                  {character.paranormal_powers.length} Paranormais
-                </div>
-              )}
-              {character.general_powers && character.general_powers.length > 0 && (
-                <div className="flex-shrink-0 px-3 py-1.5 bg-success/10 rounded-full text-[10px] text-success">
-                  {character.general_powers.length} Gerais
-                </div>
-              )}
-              {character.powers.length > 0 && (
-                <div className="flex-shrink-0 px-3 py-1.5 bg-secondary/10 rounded-full text-[10px] text-secondary">
-                  {character.powers.length} Origem
-                </div>
-              )}
-              {character.rituals.length > 0 && (
-                <div className="flex-shrink-0 px-3 py-1.5 bg-paranormal/10 rounded-full text-[10px] text-paranormal">
-                  {character.rituals.length} Rituais
-                </div>
-              )}
-            </div>
-
-            {/* Habilidades de Classe */}
-            {character.abilities.length > 0 && (
-              <MobileCollapsibleSection 
-                title="HABILIDADES DE CLASSE" 
-                icon={<Sparkles className="w-4 h-4 text-primary" />}
-                badge={character.abilities.length}
-                defaultOpen={true}
-              >
-                <div className="space-y-2">
-                  {character.abilities.map((ability, i) => {
-                    const description = getAbilityDescription(ability);
-                    return (
-                      <button
-                        key={i}
-                        onClick={() => handlePowerClick({
-                          type: 'ability',
-                          name: ability,
-                          description,
-                        })}
-                        className="w-full p-3 bg-primary/10 rounded-lg border border-primary/20 text-left active:bg-primary/20 transition-colors"
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="font-medium text-sm text-primary">{ability}</span>
-                          <ChevronRight className="w-4 h-4 text-primary/50 flex-shrink-0" />
-                        </div>
-                        {description && (
-                          <p className="text-[11px] text-muted-foreground mt-1 line-clamp-2">{description}</p>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </MobileCollapsibleSection>
-            )}
-
-            {/* Poderes Paranormais */}
-            {character.paranormal_powers && character.paranormal_powers.length > 0 && (
-              <MobileCollapsibleSection 
-                title="PODERES PARANORMAIS" 
-                icon={<Sparkles className="w-4 h-4 text-paranormal" />}
-                badge={character.paranormal_powers.length}
-              >
-                <div className="space-y-2">
-                  {/* Alerta de poderes excedentes */}
-                  <div className="flex items-center justify-between gap-2 mb-2">
-                    {hasExcessPowers ? (
-                      <div className="flex items-center gap-2 p-2 rounded-lg bg-destructive/10 border border-destructive/30 flex-1">
-                        <span className="text-destructive font-medium text-xs">
-                          ⚠️ {character.paranormal_powers.length}/{powerLimits.total} poderes
-                        </span>
-                        <Button 
-                          variant="destructive" 
-                          size="sm"
-                          className="h-7 text-xs ml-auto"
-                          onClick={() => setExcessPowersModalOpen(true)}
-                        >
-                          Remover
-                        </Button>
-                      </div>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">
-                        {character.paranormal_powers.length}/{powerLimits.total} poderes
-                      </span>
-                    )}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 text-xs"
-                      onClick={() => setRemovedPowersHistoryOpen(true)}
-                    >
-                      Histórico
-                    </Button>
-                  </div>
-
-                  {character.paranormal_powers.map((power, i) => (
-                    <button
-                      key={i}
-                      onClick={() => handlePowerClick({
-                        type: 'paranormal',
-                        name: power.name,
-                        description: power.description,
-                        element: power.element,
-                      })}
-                      className={cn(
-                        "w-full p-3 rounded-lg border text-left active:opacity-80 transition-colors",
-                        getElementColor(power.element)
-                      )}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="text-lg">{getElementIcon(power.element)}</span>
-                            <span className="font-medium text-sm">{power.name}</span>
-                          </div>
-                          <p className="text-[11px] text-muted-foreground mt-1 line-clamp-2">{power.description}</p>
-                        </div>
-                        <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0 ml-2" />
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </MobileCollapsibleSection>
-            )}
-
-            {/* Poderes Gerais */}
-            {character.general_powers && character.general_powers.length > 0 && (
-              <MobileCollapsibleSection 
-                title="PODERES GERAIS" 
-                icon={<Sparkles className="w-4 h-4 text-success" />}
-                badge={character.general_powers.length}
-              >
-                <div className="space-y-2">
-                  {character.general_powers.map((power, i) => (
-                    <button
-                      key={i}
-                      onClick={() => handlePowerClick({
-                        type: 'general',
-                        name: power.name,
-                        description: power.description,
-                        category: power.category,
-                      })}
-                      className="w-full p-3 bg-success/10 rounded-lg border border-success/20 text-left active:bg-success/20 transition-colors"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap mb-1">
-                            <span className="font-medium text-sm text-success">{power.name}</span>
-                            {power.category && (
-                              <span className="text-[9px] px-1.5 py-0.5 bg-success/30 text-success rounded capitalize">
-                                {power.category}
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-[11px] text-muted-foreground line-clamp-2">{power.description}</p>
-                        </div>
-                        <ChevronRight className="w-4 h-4 text-success/50 flex-shrink-0 ml-2" />
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </MobileCollapsibleSection>
-            )}
-
-            {/* Poderes de Origem */}
-            {character.powers.length > 0 && (
-              <MobileCollapsibleSection 
-                title="PODERES DE ORIGEM" 
-                icon={<User className="w-4 h-4 text-secondary" />}
-                badge={character.powers.length}
-              >
-                <div className="space-y-2">
-                  {character.powers.map((power, i) => (
-                    <button
-                      key={i}
-                      onClick={() => handlePowerClick({
-                        type: 'origin',
-                        name: power.name,
-                        description: power.description,
-                      })}
-                      className="w-full p-3 bg-secondary/10 rounded-lg border border-secondary/20 text-left active:bg-secondary/20 transition-colors"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1 min-w-0">
-                          <span className="font-medium text-sm">{power.name}</span>
-                          {power.description && (
-                            <p className="text-[11px] text-muted-foreground mt-1 line-clamp-2">{power.description}</p>
-                          )}
-                        </div>
-                        <ChevronRight className="w-4 h-4 text-secondary/50 flex-shrink-0 ml-2" />
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </MobileCollapsibleSection>
-            )}
-
-            {/* Rituais */}
-            {character.rituals.length > 0 && (
-              <MobileCollapsibleSection 
-                title="RITUAIS" 
-                icon={<Scroll className="w-4 h-4 text-paranormal" />}
-                badge={character.rituals.length}
-              >
-                <div className="space-y-2">
-                  {/* Alerta de rituais excedentes (apenas Ocultista) */}
-                  {ritualLimits && (
-                    <div className="flex items-center justify-between gap-2 mb-2">
-                      {hasExcessRituals ? (
-                        <div className="flex items-center gap-2 p-2 rounded-lg bg-destructive/10 border border-destructive/30 flex-1">
-                          <span className="text-destructive font-medium text-xs">
-                            ⚠️ {character.rituals.length}/{ritualLimits.count} rituais
-                          </span>
-                          <Button 
-                            variant="destructive" 
-                            size="sm"
-                            className="h-7 text-xs ml-auto"
-                            onClick={() => setExcessRitualsModalOpen(true)}
-                          >
-                            Remover
-                          </Button>
-                        </div>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">
-                          {character.rituals.length}/{ritualLimits.count} rituais
-                        </span>
-                      )}
-                    </div>
-                  )}
-                  {character.rituals.map((ritualId, i) => {
-                    const ritualData = getRitualData(ritualId);
-                    return (
-                      <button
-                        key={i}
-                        onClick={() => handlePowerClick({
-                          type: 'ritual',
-                          name: ritualData?.name || ritualId,
-                          description: ritualData?.description || '',
-                          circle: ritualData?.circle,
-                          element: ritualData?.element,
-                          execution: ritualData?.execution,
-                          range: ritualData?.range,
-                          target: ritualData?.target,
-                          duration: ritualData?.duration,
-                          resistance: ritualData?.resistance,
-                        })}
-                        className="w-full p-2.5 bg-paranormal/10 rounded-lg border border-paranormal/20 flex items-center gap-3 active:bg-paranormal/20 transition-colors text-left"
-                      >
-                        <div className="w-8 h-8 rounded-full bg-paranormal/20 flex items-center justify-center flex-shrink-0">
-                          {ritualData?.circle ? (
-                            <span className="text-sm font-display text-paranormal">{ritualData.circle}º</span>
-                          ) : (
-                            <Scroll className="w-4 h-4 text-paranormal" />
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <span className="text-sm text-paranormal font-medium">{ritualData?.name || ritualId}</span>
-                          {ritualData?.element && (
-                            <p className="text-[10px] text-muted-foreground capitalize">{ritualData.element}</p>
-                          )}
-                        </div>
-                        <ChevronRight className="w-4 h-4 text-paranormal/50 flex-shrink-0" />
-                      </button>
-                    );
-                  })}
-                </div>
-              </MobileCollapsibleSection>
-            )}
-
-            {/* Mensagem quando não há nenhum poder */}
-            {character.abilities.length === 0 && 
-             character.powers.length === 0 && 
-             character.rituals.length === 0 &&
-             (!character.paranormal_powers || character.paranormal_powers.length === 0) &&
-             (!character.general_powers || character.general_powers.length === 0) && (
-              <div className="ordo-panel p-3">
-                <p className="text-muted-foreground text-sm text-center py-4">
-                  Nenhum poder registrado.
-                </p>
-              </div>
-            )}
-          </motion.div>
+            abilities={character.abilities}
+            paranormalPowers={character.paranormal_powers}
+            generalPowers={character.general_powers}
+            originPowers={character.powers}
+            rituals={character.rituals}
+            powerLimits={powerLimits}
+            ritualLimits={ritualLimits}
+            hasExcessPowers={hasExcessPowers}
+            hasExcessRituals={hasExcessRituals}
+            onPowerClick={handlePowerClick}
+            onOpenExcessPowersModal={() => setExcessPowersModalOpen(true)}
+            onOpenExcessRitualsModal={() => setExcessRitualsModalOpen(true)}
+            onOpenRemovedPowersHistory={() => setRemovedPowersHistoryOpen(true)}
+          />
         )}
 
         {activeTab === 'inventory' && (
