@@ -105,3 +105,37 @@ export function isMeleeWeapon(item: WeaponLikeItem): boolean {
 export function isRangedWeapon(item: WeaponLikeItem): boolean {
   return inferWeaponType(item) === 'ranged';
 }
+
+/**
+ * Tipo de arma para exibição no UI (formato usado no MobileCombatPanel)
+ */
+export type WeaponDisplayType = 'Briga' | 'Arremesso' | 'Disparo' | 'Corpo a Corpo';
+
+/**
+ * Converte o tipo interno de arma para o tipo de exibição no UI
+ * 
+ * Mapeamento:
+ * - firearm → 'Disparo'
+ * - ranged → 'Arremesso'
+ * - melee → 'Corpo a Corpo'
+ */
+export function normalizeWeaponTypeForDisplay(item: WeaponLikeItem): WeaponDisplayType {
+  const internalType = inferWeaponType(item);
+  
+  switch (internalType) {
+    case 'firearm':
+      return 'Disparo';
+    case 'ranged':
+      return 'Arremesso';
+    case 'melee':
+    default:
+      return 'Corpo a Corpo';
+  }
+}
+
+/**
+ * Verifica se uma arma requer munição para uso
+ */
+export function requiresAmmo(item: WeaponLikeItem): boolean {
+  return isFirearm(item) || !!item.ammoType;
+}

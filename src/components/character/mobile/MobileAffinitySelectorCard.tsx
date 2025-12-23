@@ -24,8 +24,10 @@ import {
   Loader2, 
   Info,
   ChevronRight,
+  AlertCircle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { toast } from '@/hooks/use-toast';
 import {
   ParanormalElement,
   ELEMENT_LABELS,
@@ -74,8 +76,25 @@ export const MobileAffinitySelectorCard = memo(function MobileAffinitySelectorCa
     
     setSaving(true);
     try {
+      // Feedback háptico
       if ('vibrate' in navigator) navigator.vibrate(30);
+      
       await onSelectAffinity(selectedElement);
+      
+      // Toast de sucesso após confirmação
+      toast({
+        title: "Afinidade Confirmada!",
+        description: `Você agora possui afinidade com ${ELEMENT_LABELS[selectedElement]}. Seus poderes deste elemento estão aprimorados!`,
+      });
+    } catch (error) {
+      console.error('Erro ao selecionar afinidade:', error);
+      
+      // Toast de erro com detalhes
+      toast({
+        title: "Erro ao Confirmar Afinidade",
+        description: error instanceof Error ? error.message : "Não foi possível salvar sua escolha. Tente novamente.",
+        variant: "destructive",
+      });
     } finally {
       setSaving(false);
     }
