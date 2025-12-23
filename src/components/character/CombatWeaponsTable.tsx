@@ -41,6 +41,8 @@ export interface WeaponEntry {
   special?: string; // Propriedades especiais
   notes?: string;
   ammoType?: string; // Tipo de munição
+  // Aniquilador: indica se esta arma é a favorita
+  isFavoriteWeapon?: boolean;
 }
 
 // Interface de bônus de poderes de classe pré-calculados
@@ -73,6 +75,7 @@ interface CombatWeaponsTableProps {
   
   // Dados de classe e poderes
   characterClass?: string;
+  classTrack?: string; // Trilha do personagem (ex: 'aniquilador')
   abilities?: string[];
   paranormalPowers?: Array<{ id: string; name: string; element: string }>;
   hasAffinity?: boolean;
@@ -127,6 +130,7 @@ export function CombatWeaponsTable({
   maxPE,
   onPEChange,
   characterClass,
+  classTrack,
   abilities,
   paranormalPowers,
   hasAffinity,
@@ -353,6 +357,7 @@ export function CombatWeaponsTable({
           maxPE={maxPE}
           onPEChange={onPEChange}
           characterClass={characterClass || ''}
+          classTrack={classTrack || ''}
           abilities={abilities || []}
           paranormalPowers={paranormalPowers || []}
           hasAffinity={hasAffinity || false}
@@ -362,6 +367,7 @@ export function CombatWeaponsTable({
           classPowerBonuses={classPowerBonuses}
           unifiedEffects={unifiedEffects}
           weaponBuffs={weaponBuffs}
+          isFavoriteWeapon={selectedWeapon?.isFavoriteWeapon || false}
           onRollComplete={onRollComplete}
         />
       )}
