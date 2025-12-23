@@ -1,5 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 
+// Chave para persistência no localStorage
+const PWA_INSTALLED_KEY = 'pwa-installed';
+
 /**
  * Interface para o evento beforeinstallprompt do navegador
  * Este evento é disparado quando o PWA atende aos critérios de instalação
@@ -17,10 +20,12 @@ export function usePWAInstall() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstallable, setIsInstallable] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [isAndroid, setIsAndroid] = useState(false);
   const [debugInfo, setDebugInfo] = useState<string[]>([]);
   const [showBrowserInstructions, setShowBrowserInstructions] = useState(false);
+  const [justInstalled, setJustInstalled] = useState(false);
   const promptTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Função para adicionar logs de debug
@@ -83,10 +88,33 @@ export function usePWAInstall() {
     }
   }, [addDebugLog]);
 
+  // Função para marcar como instalado
+  const markAsInstalled = useCallback(() => {
+    try {
+      localStorage.setItem(PWA_INSTALLED_KEY, 'true');
+      addDebugLog('💾 Status de instalação salvo no localStorage');
+    } catch (e) {
+      addDebugLog('⚠️ Não foi possível salvar no localStorage');
+    }
+  }, [addDebugLog]);
+
+  // Função para verificar se foi instalado anteriormente
+  const checkPreviousInstallation = useCallback(() => {
+    try {
+      return localStorage.getItem(PWA_INSTALLED_KEY) === 'true';
+    } catch {
+      return false;
+    }
+  }, []);
+
   useEffect(() => {
-    // Detecta se está rodando como PWA instalado
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+    // Detecta se está rodando como PWA instalado (modo standalone)
+    const standaloneMode = window.matchMedia('(display-mode: standalone)').matches;
     const isInWebAppiOS = (window.navigator as any).standalone === true;
+    const isRunningStandalone = standaloneMode || isInWebAppiOS;
+    
+    // Verifica instalação anterior no localStorage
+    const wasInstalledBefore = checkPreviousInstallation();
     
     // Detecta plataforma
     const userAgent = navigator.userAgent.toLowerCase();
@@ -95,13 +123,22 @@ export function usePWAInstall() {
     const isChromium = /chrome|chromium|crios/.test(userAgent) && !/edg/.test(userAgent);
     const isSafari = /safari/.test(userAgent) && !/chrome/.test(userAgent);
     
-    setIsInstalled(isStandalone || isInWebAppiOS);
+    setIsStandalone(isRunningStandalone);
+    setIsInstalled(isRunningStandalone || wasInstalledBefore);
     setIsIOS(isIOSDevice);
     setIsAndroid(isAndroidDevice);
 
     addDebugLog(`Plataforma: ${isIOSDevice ? 'iOS' : isAndroidDevice ? 'Android' : 'Desktop'}`);
     addDebugLog(`Navegador: ${isChromium ? 'Chromium' : isSafari ? 'Safari' : 'Outro'}`);
-    addDebugLog(`Standalone: ${isStandalone || isInWebAppiOS ? 'Sim (instalado)' : 'Não'}`);
+    
+    if (isRunningStandalone) {
+      addDebugLog(`✅ Standalone: Sim (executando como app)`);
+    } else if (wasInstalledBefore) {
+      addDebugLog(`📱 Instalado anteriormente (abra pela tela inicial)`);
+    } else {
+      addDebugLog(`Standalone: Não`);
+    }
+    
     addDebugLog(`HTTPS: ${location.protocol === 'https:' ? 'Sim' : 'Não'}`);
 
     // Verifica o manifest
@@ -124,11 +161,13 @@ export function usePWAInstall() {
 
     // Handler para quando o app é instalado com sucesso
     const handleAppInstalled = () => {
-      addDebugLog('✅ App instalado com sucesso!');
+      addDebugLog('🎉 App instalado com sucesso!');
+      markAsInstalled();
       setIsInstalled(true);
       setIsInstallable(false);
       setDeferredPrompt(null);
       setShowBrowserInstructions(false);
+      setJustInstalled(true);
     };
 
     // Registra os listeners
@@ -156,7 +195,8 @@ export function usePWAInstall() {
     }
 
     // Timeout de fallback: se após 5s não receber beforeinstallprompt em Android/Chromium
-    if (isAndroidDevice && isChromium && !isStandalone && !isInWebAppiOS) {
+    // Mas só se não estiver instalado
+    if (isAndroidDevice && isChromium && !isRunningStandalone && !wasInstalledBefore) {
       promptTimeoutRef.current = setTimeout(() => {
         if (!deferredPrompt) {
           addDebugLog('⏱️ Timeout: beforeinstallprompt não disparou');
@@ -173,7 +213,7 @@ export function usePWAInstall() {
         clearTimeout(promptTimeoutRef.current);
       }
     };
-  }, [addDebugLog, checkManifest, deferredPrompt]);
+  }, [addDebugLog, checkManifest, checkPreviousInstallation, deferredPrompt, markAsInstalled]);
 
   // Função para disparar o prompt de instalação nativo
   const promptInstall = useCallback(async () => {
@@ -190,8 +230,10 @@ export function usePWAInstall() {
       addDebugLog(`Resultado: ${outcome}`);
       
       if (outcome === 'accepted') {
+        markAsInstalled();
         setIsInstalled(true);
         setIsInstallable(false);
+        setJustInstalled(true);
       }
       
       setDeferredPrompt(null);
@@ -201,16 +243,31 @@ export function usePWAInstall() {
       console.error('Erro ao instalar PWA:', error);
       return false;
     }
-  }, [deferredPrompt, addDebugLog]);
+  }, [deferredPrompt, addDebugLog, markAsInstalled]);
+
+  // Função para resetar o estado de instalação (útil para debug)
+  const resetInstallState = useCallback(() => {
+    try {
+      localStorage.removeItem(PWA_INSTALLED_KEY);
+      addDebugLog('🔄 Estado de instalação resetado');
+      setIsInstalled(false);
+      setJustInstalled(false);
+    } catch (e) {
+      addDebugLog('⚠️ Não foi possível resetar estado');
+    }
+  }, [addDebugLog]);
 
   return {
     isInstallable,
     isInstalled,
+    isStandalone,
     isIOS,
     isAndroid,
     promptInstall,
     debugInfo,
     showBrowserInstructions,
     clearServiceWorkerCache,
+    justInstalled,
+    resetInstallState,
   };
 }
