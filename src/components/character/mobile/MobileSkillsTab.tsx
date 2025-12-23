@@ -1,10 +1,12 @@
 /**
  * MobileSkillsTab - Tab de perícias extraída do MobileCharacterSheet
  * Inclui filtros, busca e ordenação otimizados para mobile
+ * Usa virtualização para performance em listas longas
  */
 
-import { useState, useMemo, memo, useCallback } from 'react';
+import { useState, useMemo, memo, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { 
   Search, 
   SortAsc, 
@@ -25,6 +27,9 @@ interface MobileSkillsTabProps {
   onSkillRoll: (skillName: string) => void;
 }
 
+// Altura fixa de cada item para virtualização (em pixels)
+const SKILL_ITEM_HEIGHT = 52;
+
 // Item de perícia memoizado
 const SkillItem = memo(function SkillItem({
   skill,
@@ -33,6 +38,7 @@ const SkillItem = memo(function SkillItem({
   attrColor,
   isTrained,
   onRoll,
+  style,
 }: {
   skill: string;
   bonus: number;
@@ -40,44 +46,47 @@ const SkillItem = memo(function SkillItem({
   attrColor: string;
   isTrained: boolean;
   onRoll: () => void;
+  style?: React.CSSProperties;
 }) {
   return (
-    <button
-      onClick={onRoll}
-      className={cn(
-        "w-full flex items-center justify-between p-2.5 rounded-lg transition-colors",
-        isTrained 
-          ? "bg-muted/40 active:bg-muted/60" 
-          : "bg-muted/20 active:bg-muted/40 opacity-70"
-      )}
-    >
-      <div className="flex items-center gap-2">
-        <span className={cn(
-          "w-6 h-6 rounded flex items-center justify-center text-[10px] font-bold",
-          attrColor
-        )}>
-          {skillAttr}
-        </span>
-        <span className={cn(
-          "text-sm capitalize",
-          !isTrained && "text-muted-foreground"
-        )}>
-          {skill.replace(/_/g, ' ')}
-        </span>
-        {isTrained && (
-          <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+    <div style={style} className="px-0.5 py-0.5">
+      <button
+        onClick={onRoll}
+        className={cn(
+          "w-full flex items-center justify-between p-2.5 rounded-lg transition-colors",
+          isTrained 
+            ? "bg-muted/40 active:bg-muted/60" 
+            : "bg-muted/20 active:bg-muted/40 opacity-70"
         )}
-      </div>
-      <div className="flex items-center gap-2">
-        <span className={cn(
-          "font-display text-lg",
-          isTrained ? "text-primary" : "text-muted-foreground"
-        )}>
-          {bonus >= 0 ? `+${bonus}` : bonus}
-        </span>
-        <Dices className="w-4 h-4 text-muted-foreground" />
-      </div>
-    </button>
+      >
+        <div className="flex items-center gap-2">
+          <span className={cn(
+            "w-6 h-6 rounded flex items-center justify-center text-[10px] font-bold",
+            attrColor
+          )}>
+            {skillAttr}
+          </span>
+          <span className={cn(
+            "text-sm capitalize",
+            !isTrained && "text-muted-foreground"
+          )}>
+            {skill.replace(/_/g, ' ')}
+          </span>
+          {isTrained && (
+            <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <span className={cn(
+            "font-display text-lg",
+            isTrained ? "text-primary" : "text-muted-foreground"
+          )}>
+            {bonus >= 0 ? `+${bonus}` : bonus}
+          </span>
+          <Dices className="w-4 h-4 text-muted-foreground" />
+        </div>
+      </button>
+    </div>
   );
 });
 
@@ -88,6 +97,9 @@ export const MobileSkillsTab = memo(function MobileSkillsTab({
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<SkillFilter>('all');
   const [sortBy, setSortBy] = useState<SkillSort>('bonus');
+  
+  // Ref para o container da lista virtualizada
+  const parentRef = useRef<HTMLDivElement>(null);
 
   // Lista completa de perícias com bônus padrão 0
   const allSkills: Record<string, number> = useMemo(() => ({
@@ -159,6 +171,14 @@ export const MobileSkillsTab = memo(function MobileSkillsTab({
 
     return entries;
   }, [allSkills, searchQuery, activeFilter, sortBy]);
+
+  // Configuração do virtualizador
+  const rowVirtualizer = useVirtualizer({
+    count: filteredSkills.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => SKILL_ITEM_HEIGHT,
+    overscan: 5, // Renderiza 5 itens extras acima/abaixo da viewport
+  });
 
   // Contadores
   const trainedCount = Object.values(allSkills).filter(v => v > 0).length;
@@ -258,27 +278,47 @@ export const MobileSkillsTab = memo(function MobileSkillsTab({
         </div>
       </div>
 
-      {/* Lista de perícias */}
+      {/* Lista de perícias virtualizada */}
       <div className="ordo-panel p-3">
         {filteredSkills.length > 0 ? (
-          <div className="space-y-1">
-            {filteredSkills.map(([skill, bonus]) => {
-              const skillAttr = getSkillAttributeAbbrev(skill);
-              const attrColor = getAttributeColor(skillAttr);
-              const isTrained = bonus > 0;
-              
-              return (
-                <SkillItem
-                  key={skill}
-                  skill={skill}
-                  bonus={bonus}
-                  skillAttr={skillAttr}
-                  attrColor={attrColor}
-                  isTrained={isTrained}
-                  onRoll={() => handleSkillClick(skill)}
-                />
-              );
-            })}
+          <div 
+            ref={parentRef}
+            className="h-[400px] overflow-auto scrollbar-hide"
+          >
+            <div
+              style={{
+                height: `${rowVirtualizer.getTotalSize()}px`,
+                width: '100%',
+                position: 'relative',
+              }}
+            >
+              {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                const [skill, bonus] = filteredSkills[virtualRow.index];
+                const skillAttr = getSkillAttributeAbbrev(skill);
+                const attrColor = getAttributeColor(skillAttr);
+                const isTrained = bonus > 0;
+                
+                return (
+                  <SkillItem
+                    key={skill}
+                    skill={skill}
+                    bonus={bonus}
+                    skillAttr={skillAttr}
+                    attrColor={attrColor}
+                    isTrained={isTrained}
+                    onRoll={() => handleSkillClick(skill)}
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                      height: `${virtualRow.size}px`,
+                      transform: `translateY(${virtualRow.start}px)`,
+                    }}
+                  />
+                );
+              })}
+            </div>
           </div>
         ) : (
           <div className="text-center py-6">
