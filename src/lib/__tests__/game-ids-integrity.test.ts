@@ -30,6 +30,7 @@ import {
   INTELLECT_SKILL_IDS,
   ELEMENT_IDS,
   VALID_ELEMENT_IDS,
+  // Funções de validação
   isValidClassId,
   isValidOriginId,
   isValidTrackId,
@@ -37,6 +38,14 @@ import {
   isValidSkillId,
   isValidTrackForClass,
   getTracksForClass,
+  // Novas funções de validação
+  isValidPatentId,
+  isValidElementId,
+  isValidElementIdIgnoreCase,
+  normalizeElementId,
+  getPatentIdByName,
+  isSkillOfAttribute,
+  getSkillAttribute,
 } from '../constants/game-ids';
 import { ORIGINS, CLASSES, CLASS_TRACKS, SKILLS } from '../character-data';
 
@@ -192,6 +201,97 @@ describe('game-ids.ts - Integridade de IDs', () => {
       expect(ELEMENT_IDS.ENERGIA).toBe('Energia');
       expect(ELEMENT_IDS.MEDO).toBe('Medo');
     });
+
+    it('isValidElementId deve validar corretamente', () => {
+      expect(isValidElementId('Sangue')).toBe(true);
+      expect(isValidElementId('Morte')).toBe(true);
+      expect(isValidElementId('Conhecimento')).toBe(true);
+      expect(isValidElementId('Energia')).toBe(true);
+      expect(isValidElementId('Medo')).toBe(true);
+      expect(isValidElementId('Invalido')).toBe(false);
+      expect(isValidElementId('sangue')).toBe(false); // Case-sensitive
+    });
+
+    it('isValidElementIdIgnoreCase deve validar case-insensitive', () => {
+      expect(isValidElementIdIgnoreCase('sangue')).toBe(true);
+      expect(isValidElementIdIgnoreCase('SANGUE')).toBe(true);
+      expect(isValidElementIdIgnoreCase('Sangue')).toBe(true);
+      expect(isValidElementIdIgnoreCase('SaNgUe')).toBe(true);
+      expect(isValidElementIdIgnoreCase('invalido')).toBe(false);
+    });
+
+    it('normalizeElementId deve normalizar corretamente', () => {
+      expect(normalizeElementId('sangue')).toBe('Sangue');
+      expect(normalizeElementId('MORTE')).toBe('Morte');
+      expect(normalizeElementId('Conhecimento')).toBe('Conhecimento');
+      expect(normalizeElementId('invalido')).toBeNull();
+    });
+  });
+
+  describe('Patentes - Funções de Validação', () => {
+    it('isValidPatentId deve validar corretamente', () => {
+      expect(isValidPatentId('Recruta')).toBe(true);
+      expect(isValidPatentId('Operador')).toBe(true);
+      expect(isValidPatentId('Agente Especial')).toBe(true);
+      expect(isValidPatentId('Oficial de Operações')).toBe(true);
+      expect(isValidPatentId('Agente de Elite')).toBe(true);
+      expect(isValidPatentId('Invalido')).toBe(false);
+      expect(isValidPatentId('recruta')).toBe(false); // Case-sensitive
+    });
+
+    it('getPatentIdByName deve buscar case-insensitive', () => {
+      expect(getPatentIdByName('recruta')).toBe('Recruta');
+      expect(getPatentIdByName('OPERADOR')).toBe('Operador');
+      expect(getPatentIdByName('agente especial')).toBe('Agente Especial');
+      expect(getPatentIdByName('invalido')).toBeNull();
+    });
+  });
+
+  describe('Perícias - Funções de Atributo', () => {
+    it('isSkillOfAttribute deve verificar corretamente', () => {
+      // Agilidade
+      expect(isSkillOfAttribute('acrobacia', 'agility')).toBe(true);
+      expect(isSkillOfAttribute('furtividade', 'agility')).toBe(true);
+      expect(isSkillOfAttribute('luta', 'agility')).toBe(false);
+      
+      // Força
+      expect(isSkillOfAttribute('atletismo', 'strength')).toBe(true);
+      expect(isSkillOfAttribute('luta', 'strength')).toBe(true);
+      expect(isSkillOfAttribute('acrobacia', 'strength')).toBe(false);
+      
+      // Intelecto
+      expect(isSkillOfAttribute('medicina', 'intellect')).toBe(true);
+      expect(isSkillOfAttribute('ocultismo', 'intellect')).toBe(true);
+      expect(isSkillOfAttribute('diplomacia', 'intellect')).toBe(false);
+      
+      // Presença
+      expect(isSkillOfAttribute('diplomacia', 'presence')).toBe(true);
+      expect(isSkillOfAttribute('intimidacao', 'presence')).toBe(true);
+      expect(isSkillOfAttribute('medicina', 'presence')).toBe(false);
+      
+      // Vigor
+      expect(isSkillOfAttribute('fortitude', 'vigor')).toBe(true);
+      expect(isSkillOfAttribute('atletismo', 'vigor')).toBe(false);
+    });
+
+    it('getSkillAttribute deve retornar atributo correto', () => {
+      expect(getSkillAttribute('acrobacia')).toBe('agility');
+      expect(getSkillAttribute('atletismo')).toBe('strength');
+      expect(getSkillAttribute('medicina')).toBe('intellect');
+      expect(getSkillAttribute('diplomacia')).toBe('presence');
+      expect(getSkillAttribute('fortitude')).toBe('vigor');
+      expect(getSkillAttribute('invalido')).toBeNull();
+    });
+
+    it('todas as perícias devem ter um atributo', () => {
+      VALID_SKILL_IDS.forEach(skillId => {
+        // Ignora 'iniciativa' que é especial
+        if (skillId !== 'iniciativa') {
+          const attr = getSkillAttribute(skillId);
+          expect(attr).not.toBeNull();
+        }
+      });
+    });
   });
 
   describe('SKILLS_BY_ATTRIBUTE', () => {
@@ -216,6 +316,18 @@ describe('game-ids.ts - Integridade de IDs', () => {
 
     it('Vigor deve ter fortitude', () => {
       expect(SKILLS_BY_ATTRIBUTE.vigor).toContain('fortitude');
+    });
+
+    it('soma de perícias por atributo deve corresponder ao total', () => {
+      const totalByAttribute = 
+        SKILLS_BY_ATTRIBUTE.agility.length +
+        SKILLS_BY_ATTRIBUTE.strength.length +
+        SKILLS_BY_ATTRIBUTE.intellect.length +
+        SKILLS_BY_ATTRIBUTE.presence.length +
+        SKILLS_BY_ATTRIBUTE.vigor.length;
+      
+      // Total menos 'iniciativa' que é especial
+      expect(totalByAttribute).toBe(VALID_SKILL_IDS.length - 1);
     });
   });
 });
