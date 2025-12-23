@@ -96,6 +96,7 @@ import { LeadershipAbilitiesPanel } from '@/components/character/LeadershipAbili
 import { GuerreiroAbilitiesPanel } from '@/components/character/GuerreiroAbilitiesPanel';
 import { OperacoesEspeciaisPanel } from '@/components/character/OperacoesEspeciaisPanel';
 import { TropaDeChoquePanel } from '@/components/character/TropaDeChoquePanel';
+import { AtiradorDeElitePanel } from '@/components/character/AtiradorDeElitePanel';
 import { RoundControlPanel } from '@/components/character/RoundControlPanel';
 import { Logo } from '@/components/ui/logo';
 
@@ -2007,6 +2008,19 @@ export default function CharacterSheet() {
                 vigor={character.vigor}
                 hpCurrent={hpCurrent}
                 hpMax={character.hp_max}
+                onPEChange={(newPE) => handleCombatStatsChange({ 
+                  hp: hpCurrent, 
+                  pe: newPE, 
+                  san: sanCurrent 
+                })}
+              />
+
+              {/* Painel Atirador de Elite */}
+              <AtiradorDeElitePanel
+                classTrack={character.class_track}
+                nex={character.nex}
+                peCurrent={peCurrent}
+                intellect={character.intellect}
                 onPEChange={(newPE) => handleCombatStatsChange({ 
                   hp: hpCurrent, 
                   pe: newPE, 
