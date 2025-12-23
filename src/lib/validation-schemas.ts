@@ -1,9 +1,20 @@
 /**
  * Schemas de validação Zod centralizados para criação de personagem
  * Garante consistência e segurança nos dados de entrada
+ * 
+ * NOTA: IDs de classes, trilhas, origens, etc. são importados de game-ids.ts
+ * para garantir consistência em todo o sistema.
  */
 
 import { z } from 'zod';
+import {
+  VALID_CLASS_IDS,
+  TRACKS_BY_CLASS,
+  ALL_ORIGIN_IDS,
+  VALID_NEX_VALUES,
+  VALID_SKILL_IDS as SKILL_IDS_FROM_CONSTANTS,
+  VALID_PATENT_IDS,
+} from './constants/game-ids';
 
 // ============================================
 // SCHEMAS DE CAMPOS DE TEXTO (StepConcept)
@@ -117,32 +128,36 @@ export const skillsSelectionSchema = z.object({
 // SCHEMAS DE CLASSE E ORIGEM
 // ============================================
 
-export const validClasses = ['combatente', 'especialista', 'ocultista'] as const;
-export const classSchema = z.enum(validClasses);
+// Classes usam formato com inicial maiúscula (ex: "Combatente")
+// mas validação aceita também minúsculas para flexibilidade
+export const validClasses = VALID_CLASS_IDS.map(c => c.toLowerCase()) as unknown as readonly ['combatente', 'especialista', 'ocultista'];
+export const classSchema = z.string().refine(
+  (val) => VALID_CLASS_IDS.includes(val as typeof VALID_CLASS_IDS[number]) || 
+           VALID_CLASS_IDS.map(c => c.toLowerCase()).includes(val.toLowerCase()),
+  { message: 'Classe inválida' }
+);
 
-export const validOrigins = [
-  'academico', 'agente-de-saude', 'amnésico', 'artista', 'atleta',
-  'chef', 'criminoso', 'culto-afro', 'desgarrado', 'diplomata',
-  'engenheiro', 'executivo', 'investigador', 'lutador', 'magnata',
-  'mercenario', 'militar', 'operario', 'politico', 'religioso',
-  'servidor-publico', 'teórico-da-conspiração', 'ti', 'trabalhador-rural',
-  'trambiqueiro', 'universitario', 'vitima',
-] as const;
-export const originSchema = z.enum(validOrigins);
+// Origens - importadas de game-ids.ts
+export const validOrigins = ALL_ORIGIN_IDS;
+export const originSchema = z.string().refine(
+  (val) => (ALL_ORIGIN_IDS as readonly string[]).includes(val),
+  { message: 'Origem inválida' }
+);
 
 // ============================================
 // SCHEMAS DE TRILHAS
 // ============================================
 
-// IDs de trilhas sincronizados com CLASS_TRACKS em character-data.ts
-export const validTracks = {
-  combatente: ['aniquilador', 'comandante-campo', 'guerreiro', 'operacoes-especiais', 'tropa-choque'],
-  especialista: ['atirador-elite', 'infiltrador', 'medico-campo', 'negociador', 'tecnico'],
-  ocultista: ['condutor', 'flagelador', 'graduado', 'intuitivo', 'lamina-paranormal'],
-} as const;
+// IDs de trilhas importados de game-ids.ts (fonte da verdade)
+export const validTracks = TRACKS_BY_CLASS;
 
-export function getTrackSchema(characterClass: typeof validClasses[number]) {
-  const tracks = validTracks[characterClass];
+export function getTrackSchema(characterClass: string) {
+  const normalizedClass = characterClass.toLowerCase() as keyof typeof TRACKS_BY_CLASS;
+  const tracks = TRACKS_BY_CLASS[normalizedClass];
+  if (!tracks) {
+    // Retorna schema que sempre falha se classe inválida
+    return z.string().refine(() => false, { message: 'Classe inválida para trilha' });
+  }
   return z.enum(tracks as unknown as [string, ...string[]]);
 }
 
@@ -150,14 +165,19 @@ export function getTrackSchema(characterClass: typeof validClasses[number]) {
 // SCHEMAS DE NEX E PATENTE
 // ============================================
 
-export const validNexValues = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 99] as const;
+// NEX - importado de game-ids.ts
+export const validNexValues = VALID_NEX_VALUES;
 export const nexSchema = z.number().refine(
-  (val) => validNexValues.includes(val as typeof validNexValues[number]),
+  (val) => (VALID_NEX_VALUES as readonly number[]).includes(val),
   { message: 'NEX deve ser um valor válido (5%, 10%, 15%, ..., 99%)' }
 );
 
-export const validPatents = ['recruta', 'operador', 'agente-especial', 'oficial-de-operacoes', 'agente-de-elite'] as const;
-export const patentSchema = z.enum(validPatents);
+// Patentes - normalizadas para comparação case-insensitive
+export const validPatents = VALID_PATENT_IDS;
+export const patentSchema = z.string().refine(
+  (val) => VALID_PATENT_IDS.some(p => p.toLowerCase() === val.toLowerCase()),
+  { message: 'Patente inválida' }
+);
 
 // ============================================
 // SCHEMA COMPLETO DO PERSONAGEM (para validação final)

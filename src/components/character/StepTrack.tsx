@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { RuleBookTip } from './RuleBookTip';
 import { getRulebookContent } from '@/lib/rulebook-content';
-import { validTracks } from '@/lib/validation-schemas';
+import { isValidTrackForClass } from '@/lib/constants/game-ids';
 import type { CharacterFormData } from '@/pages/CharacterCreate';
 
 interface StepTrackProps {
@@ -20,17 +20,8 @@ interface StepTrackProps {
   updateFormData: (updates: Partial<CharacterFormData>) => void;
 }
 
-/**
- * Valida se uma trilha é válida para a classe selecionada
- * Nota: classId pode vir com inicial maiúscula (ex: "Combatente"), 
- * então normalizamos para minúsculas para comparar com validTracks
- */
-function isValidTrackForClass(trackId: string, classId: string): boolean {
-  const normalizedClassId = classId.toLowerCase();
-  const classTracks = validTracks[normalizedClassId as keyof typeof validTracks];
-  if (!classTracks) return false;
-  return (classTracks as readonly string[]).includes(trackId);
-}
+// Nota: Usamos isValidTrackForClass de game-ids.ts (fonte da verdade)
+// Isso garante consistência entre UI, validação e dados
 
 // Ícones das trilhas (incluindo novas trilhas do suplemento)
 const TRACK_ICONS: Record<string, React.ReactNode> = {
