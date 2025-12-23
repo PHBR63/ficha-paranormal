@@ -8,6 +8,7 @@ import { ColorThemeProvider } from "@/contexts/ColorThemeContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { AdminRoute } from "@/components/auth/AdminRoute";
 import { InstallPromptBanner } from "@/components/pwa/InstallPromptBanner";
+import { PWAUpdateBanner } from "@/components/pwa/PWAUpdateBanner";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
 import Index from "./pages/Index";
@@ -33,6 +34,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <OfflineIndicator />
+        <PWAUpdateBanner />
         <BrowserRouter>
           <InstallPromptBanner />
           <AuthProvider>
