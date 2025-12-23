@@ -51,6 +51,9 @@ export default defineConfig(({ mode }) => ({
         // Always navigate to index.html - the app will handle offline detection
         navigateFallback: "/index.html",
         navigateFallbackDenylist: [/^\/api/, /^\/auth/],
+        // Força ativação imediata do novo Service Worker
+        skipWaiting: true,
+        clientsClaim: true,
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
@@ -75,6 +78,22 @@ export default defineConfig(({ mode }) => ({
                 maxEntries: 10,
                 maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
               },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
+          // Cache de API do Supabase com revalidação (stale-while-revalidate)
+          {
+            urlPattern: /^https:\/\/.*\.supabase\.co\/rest\/v1\/.*/i,
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "supabase-api-cache",
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 5, // 5 minutos
+              },
+              networkTimeoutSeconds: 10, // Fallback para cache após 10s
               cacheableResponse: {
                 statuses: [0, 200],
               },

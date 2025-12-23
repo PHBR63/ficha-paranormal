@@ -7,7 +7,7 @@
  * NOTA: O mapeamento de perícias aceita nomes com acentos para compatibilidade
  */
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   User, 
@@ -61,6 +61,7 @@ import { MobileAuditBanner } from './MobileAuditBanner';
 import { ExcessPowersRemovalModal } from './ExcessPowersRemovalModal';
 import { ExcessRitualsRemovalModal } from './ExcessRitualsRemovalModal';
 import { RemovedPowersHistory } from './RemovedPowersHistory';
+import { IncompleteDataBanner } from './IncompleteDataBanner';
 import { getOcultistRituals } from '@/lib/character-data';
 import { useCharacterAudit } from '@/hooks/useCharacterAudit';
 import { CharacterForAudit, getMaxParanormalPowers } from '@/lib/character-audit-engine';
@@ -69,6 +70,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { SavedParanormalPower } from '@/lib/paranormal-powers';
 import { ActiveAdvancedBonusesBar } from './ActiveAdvancedBonusesBar';
 import { ClassPowerBonusesPanel } from './ClassPowerBonusesPanel';
+import { useAttributeValidation, logAttributeDiagnostics } from '@/hooks/useAttributeValidation';
 // Componentes mobile de combate
 import {
   MobileCombatPanel,
@@ -583,6 +585,33 @@ export function MobileCharacterSheet({
   const trackData = character.class_track ? getTrackById(character.class_track) : null;
   const peLimit = getPELimitByNex(character.nex);
 
+  // Validação de atributos - detecta dados incompletos
+  const attributeValidation = useAttributeValidation({
+    agility: character.agility,
+    strength: character.strength,
+    intellect: character.intellect,
+    presence: character.presence,
+    vigor: character.vigor,
+  });
+
+  // Log de diagnóstico quando atributos estão inválidos (apenas em desenvolvimento)
+  useEffect(() => {
+    if (!attributeValidation.isValid) {
+      logAttributeDiagnostics(
+        character.id,
+        character.name,
+        {
+          agility: character.agility,
+          strength: character.strength,
+          intellect: character.intellect,
+          presence: character.presence,
+          vigor: character.vigor,
+        },
+        'MobileCharacterSheet'
+      );
+    }
+  }, [attributeValidation.isValid, character]);
+
   // Calcula limite de poderes paranormais
   const powerLimits = useMemo(() => 
     getMaxParanormalPowers(character.nex, character.origin), 
@@ -595,7 +624,7 @@ export function MobileCharacterSheet({
     if (character.class !== 'Ocultista') return null;
     return getOcultistRituals(character.nex);
   }, [character.class, character.nex]);
-  
+
   const hasExcessRituals = ritualLimits 
     ? character.rituals.length > ritualLimits.count 
     : false;
@@ -883,8 +912,24 @@ export function MobileCharacterSheet({
     }
   }, [character.id, character.pe_max, onRefetch]);
 
+  // Wrapper para onRefetch que retorna Promise<void>
+  const handleRefetchForBanner = useCallback(async () => {
+    if (onRefetch) {
+      await onRefetch();
+    }
+  }, [onRefetch]);
+
   return (
     <div className="pb-20">
+      {/* Banner de dados incompletos (atributos null/undefined) */}
+      {!attributeValidation.isValid && onRefetch && (
+        <IncompleteDataBanner
+          message={attributeValidation.errorMessage || 'Alguns dados do personagem estão faltando.'}
+          onRefetch={handleRefetchForBanner}
+          missingFields={attributeValidation.missingAttributes}
+        />
+      )}
+
       {/* Banner de Auditoria - sempre visível no topo */}
       <MobileAuditBanner
         auditResult={auditResult}
@@ -1119,19 +1164,22 @@ export function MobileCharacterSheet({
             >
               <div className="grid grid-cols-5 gap-2 text-center">
                 {[
-                  { label: 'AGI', value: character.agility, color: 'text-primary' },
-                  { label: 'FOR', value: character.strength, color: 'text-destructive' },
-                  { label: 'INT', value: character.intellect, color: 'text-secondary' },
-                  { label: 'PRE', value: character.presence, color: 'text-paranormal' },
-                  { label: 'VIG', value: character.vigor, color: 'text-accent' },
+                  { label: 'AGI', value: attributeValidation.normalized.agility, color: 'text-primary' },
+                  { label: 'FOR', value: attributeValidation.normalized.strength, color: 'text-destructive' },
+                  { label: 'INT', value: attributeValidation.normalized.intellect, color: 'text-secondary' },
+                  { label: 'PRE', value: attributeValidation.normalized.presence, color: 'text-paranormal' },
+                  { label: 'VIG', value: attributeValidation.normalized.vigor, color: 'text-accent' },
                 ].map(attr => (
                   <button 
                     key={attr.label} 
                     className="p-2 bg-muted/30 rounded hover:bg-muted/50 transition-colors"
                     onClick={onOpenDiceRoller}
+                    disabled={attr.value === null}
                   >
                     <p className="text-[10px] text-muted-foreground">{attr.label}</p>
-                    <p className={cn("font-display text-xl", attr.color)}>{attr.value}</p>
+                    <p className={cn("font-display text-xl", attr.value === null ? "text-muted-foreground" : attr.color)}>
+                      {attr.value !== null ? attr.value : '—'}
+                    </p>
                   </button>
                 ))}
               </div>
