@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
+import { usePWAUpdate } from "@/hooks/usePWAUpdate";
 import { Particles } from "@/components/ui/particles";
 import { FlickeringGrid } from "@/components/ui/flickering-grid";
 import { DecryptedText } from "@/components/ui/decrypted-text";
@@ -20,7 +21,9 @@ import {
   Bell,
   ExternalLink,
   RotateCcw,
-  PartyPopper
+  PartyPopper,
+  RefreshCw,
+  Loader2
 } from "lucide-react";
 import { useThemeColors } from "@/hooks/useThemeColors";
 import confetti from "canvas-confetti";
@@ -43,6 +46,24 @@ export default function Install() {
   const themeColors = useThemeColors();
   const [showDebug, setShowDebug] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
+  
+  // Hook de atualização do PWA
+  const {
+    hasUpdate,
+    isChecking: isCheckingUpdate,
+    isUpdating,
+    lastChecked,
+    error: updateError,
+    checkForUpdate,
+    applyUpdate,
+  } = usePWAUpdate();
+
+  // Verifica atualizações automaticamente quando o app já está instalado
+  useEffect(() => {
+    if (isInstalled) {
+      checkForUpdate();
+    }
+  }, [isInstalled, checkForUpdate]);
 
   // Dispara confetti quando o app é instalado
   useEffect(() => {
@@ -176,6 +197,66 @@ export default function Install() {
                   O Let's Roll está rodando em modo app
                 </p>
               </div>
+              
+              {/* Seção de Atualizações */}
+              <div className="mb-4 p-3 rounded-lg bg-background/50 border border-border/30">
+                {isCheckingUpdate ? (
+                  <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span className="text-sm">Verificando atualizações...</span>
+                  </div>
+                ) : hasUpdate ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-center gap-2 text-amber-500">
+                      <RefreshCw className="w-4 h-4" />
+                      <span className="text-sm font-medium">Atualização disponível!</span>
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={applyUpdate}
+                      disabled={isUpdating}
+                      className="w-full bg-amber-600 hover:bg-amber-500 text-white"
+                    >
+                      {isUpdating ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Atualizando...
+                        </>
+                      ) : (
+                        <>
+                          <Download className="w-4 h-4 mr-2" />
+                          Aplicar Atualização
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                ) : updateError ? (
+                  <div className="space-y-2">
+                    <p className="text-xs text-red-400">{updateError}</p>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => checkForUpdate()}
+                      className="text-xs"
+                    >
+                      <RefreshCw className="w-3 h-3 mr-1" />
+                      Tentar novamente
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center gap-2 text-green-500">
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span className="text-sm">Você está na versão mais recente</span>
+                  </div>
+                )}
+                
+                {lastChecked && !isCheckingUpdate && (
+                  <p className="text-[10px] text-muted-foreground mt-2">
+                    Última verificação: {lastChecked.toLocaleTimeString('pt-BR')}
+                  </p>
+                )}
+              </div>
+              
               <Button 
                 onClick={() => navigate("/dashboard")} 
                 className="w-full bg-[#8B0000] hover:bg-[#B22222] text-white border border-[#B22222]/30"
@@ -213,6 +294,78 @@ export default function Install() {
                   }
                 </p>
               </div>
+              
+              {/* Seção de Atualizações (quando não é recém instalado) */}
+              {!justInstalled && (
+                <div className="mb-4 p-3 rounded-lg bg-background/50 border border-border/30">
+                  {isCheckingUpdate ? (
+                    <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span className="text-sm">Verificando atualizações...</span>
+                    </div>
+                  ) : hasUpdate ? (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-center gap-2 text-amber-500">
+                        <RefreshCw className="w-4 h-4" />
+                        <span className="text-sm font-medium">Atualização disponível!</span>
+                      </div>
+                      <Button
+                        size="sm"
+                        onClick={applyUpdate}
+                        disabled={isUpdating}
+                        className="w-full bg-amber-600 hover:bg-amber-500 text-white"
+                      >
+                        {isUpdating ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Atualizando...
+                          </>
+                        ) : (
+                          <>
+                            <Download className="w-4 h-4 mr-2" />
+                            Aplicar Atualização
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  ) : updateError ? (
+                    <div className="space-y-2">
+                      <p className="text-xs text-red-400">{updateError}</p>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => checkForUpdate()}
+                        className="text-xs"
+                      >
+                        <RefreshCw className="w-3 h-3 mr-1" />
+                        Tentar novamente
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-center gap-2 text-green-500">
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span className="text-sm">Você está na versão mais recente</span>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => checkForUpdate()}
+                        className="text-xs text-muted-foreground"
+                      >
+                        <RefreshCw className="w-3 h-3 mr-1" />
+                        Verificar novamente
+                      </Button>
+                    </div>
+                  )}
+                  
+                  {lastChecked && !isCheckingUpdate && (
+                    <p className="text-[10px] text-muted-foreground mt-2">
+                      Última verificação: {lastChecked.toLocaleTimeString('pt-BR')}
+                    </p>
+                  )}
+                </div>
+              )}
               
               <div className="space-y-2">
                 <Button 
@@ -389,6 +542,37 @@ export default function Install() {
                 <div>iOS: <span className={isIOS ? 'text-blue-400' : 'text-[#808080]'}>{isIOS ? 'Sim' : 'Não'}</span></div>
                 <div>Android: <span className={isAndroid ? 'text-green-400' : 'text-[#808080]'}>{isAndroid ? 'Sim' : 'Não'}</span></div>
                 <div className="col-span-2">Fallback: <span className={showBrowserInstructions ? 'text-amber-400' : 'text-[#808080]'}>{showBrowserInstructions ? 'Ativo' : 'Não'}</span></div>
+              </div>
+              
+              {/* Seção de Atualizações no Debug */}
+              <div className="border-t border-[#8B0000]/20 pt-2 mb-3">
+                <p className="text-[#606060] mb-2">Status de Atualização:</p>
+                <div className="grid grid-cols-2 gap-2 text-[#808080]">
+                  <div>Verificando: <span className={isCheckingUpdate ? 'text-blue-400' : 'text-[#808080]'}>{isCheckingUpdate ? 'Sim' : 'Não'}</span></div>
+                  <div>Atualização: <span className={hasUpdate ? 'text-amber-400' : 'text-green-500'}>{hasUpdate ? 'Disponível' : 'Atualizado'}</span></div>
+                  <div>Aplicando: <span className={isUpdating ? 'text-blue-400' : 'text-[#808080]'}>{isUpdating ? 'Sim' : 'Não'}</span></div>
+                  <div>Erro: <span className={updateError ? 'text-red-400' : 'text-[#808080]'}>{updateError || 'Nenhum'}</span></div>
+                  <div className="col-span-2">Última verificação: <span className="text-[#808080]">{lastChecked ? lastChecked.toLocaleTimeString('pt-BR') : 'Nunca'}</span></div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => checkForUpdate()}
+                  disabled={isCheckingUpdate}
+                  className="w-full text-xs border-blue-600/30 text-blue-400 hover:bg-blue-600/10 mt-2"
+                >
+                  {isCheckingUpdate ? (
+                    <>
+                      <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                      Verificando...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="w-3 h-3 mr-1" />
+                      Verificar Atualizações
+                    </>
+                  )}
+                </Button>
               </div>
               
               <div className="border-t border-[#8B0000]/20 pt-2">
