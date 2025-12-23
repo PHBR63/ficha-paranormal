@@ -279,6 +279,63 @@ export const VALID_SKILL_IDS = Object.values(SKILL_IDS);
 export type SkillId = typeof SKILL_IDS[keyof typeof SKILL_IDS];
 
 // ============================================
+// PERÍCIAS POR ATRIBUTO
+// ============================================
+
+/**
+ * Mapeamento de perícias por atributo
+ */
+export const SKILLS_BY_ATTRIBUTE = {
+  agility: [
+    SKILL_IDS.ACROBACIA,
+    SKILL_IDS.CRIME,
+    SKILL_IDS.FURTIVIDADE,
+    SKILL_IDS.PILOTAGEM,
+    SKILL_IDS.PONTARIA,
+    SKILL_IDS.REFLEXOS,
+  ],
+  strength: [
+    SKILL_IDS.ATLETISMO,
+    SKILL_IDS.LUTA,
+  ],
+  intellect: [
+    SKILL_IDS.ATUALIDADES,
+    SKILL_IDS.CIENCIAS,
+    SKILL_IDS.INVESTIGACAO,
+    SKILL_IDS.MEDICINA,
+    SKILL_IDS.OCULTISMO,
+    SKILL_IDS.PROFISSAO,
+    SKILL_IDS.SOBREVIVENCIA,
+    SKILL_IDS.TATICA,
+    SKILL_IDS.TECNOLOGIA,
+  ],
+  presence: [
+    SKILL_IDS.ADESTRAMENTO,
+    SKILL_IDS.ARTES,
+    SKILL_IDS.DIPLOMACIA,
+    SKILL_IDS.ENGANACAO,
+    SKILL_IDS.INTIMIDACAO,
+    SKILL_IDS.INTUICAO,
+    SKILL_IDS.PERCEPCAO,
+    SKILL_IDS.RELIGIAO,
+    SKILL_IDS.VONTADE,
+  ],
+  vigor: [
+    SKILL_IDS.FORTITUDE,
+  ],
+} as const;
+
+/**
+ * Perícias de Intelecto (usadas em poderes paranormais como "Expansão de Conhecimento")
+ */
+export const INTELLECT_SKILL_IDS = SKILLS_BY_ATTRIBUTE.intellect;
+
+/**
+ * Tipo para atributos
+ */
+export type AttributeKey = keyof typeof SKILLS_BY_ATTRIBUTE;
+
+// ============================================
 // ELEMENTOS PARANORMAIS
 // ============================================
 

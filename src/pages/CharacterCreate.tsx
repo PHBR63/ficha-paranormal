@@ -38,6 +38,7 @@ import { rebuildCharacterSheet, buildStateToFormData, CLASS_PROFICIENCIES, getCl
 import { getCoreAbilities, getChoosableAbilities } from '@/lib/class-abilities';
 import { useCharacterAutoSave, loadCharacterDraft, clearCharacterDraft } from '@/hooks/useCharacterAutoSave';
 import { validateCharacter } from '@/lib/character-validation';
+import { CORE_ORIGIN_IDS } from '@/lib/constants/game-ids';
 import confetti from 'canvas-confetti';
 
 export type CharacterFormData = {
@@ -280,7 +281,7 @@ export default function CharacterCreate() {
   const previewStats = useMemo(() => {
     // DEF e MOV podem ser calculados desde os atributos
     const defense = calculateDefense(formData.attributes.agility);
-    const movement = formData.origin === 'atleta' ? 12 : 9;
+    const movement = formData.origin === CORE_ORIGIN_IDS.ATLETA ? 12 : 9;
     
     // PV, PE, SAN só podem ser calculados com classe
     if (!formData.characterClass) {

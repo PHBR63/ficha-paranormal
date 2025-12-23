@@ -104,19 +104,16 @@ export function createAttributesSchemaForNex(nex: number, maxPoints: number) {
 // SCHEMAS DE PERÍCIAS (StepSkills)
 // ============================================
 
-// IDs válidos de perícias do sistema
-export const VALID_SKILL_IDS = [
-  'acrobacia', 'adestramento', 'arte', 'atletismo', 'atualidades',
-  'ciencias', 'crime', 'diplomacia', 'enganacao', 'fortitude',
-  'furtividade', 'iniciativa', 'intimidacao', 'intuicao', 'investigacao',
-  'luta', 'medicina', 'ocultismo', 'percepcao', 'pilotagem',
-  'pontaria', 'profissao', 'reflexos', 'religiao', 'sobrevivencia',
-  'tatica', 'tecnologia', 'vontade',
-] as const;
+// IDs válidos de perícias (importados de game-ids.ts - fonte da verdade)
+export const VALID_SKILL_IDS = SKILL_IDS_FROM_CONSTANTS;
 
 export type ValidSkillId = typeof VALID_SKILL_IDS[number];
 
-export const skillIdSchema = z.enum(VALID_SKILL_IDS);
+// Schema usando os IDs importados
+export const skillIdSchema = z.string().refine(
+  (val) => (VALID_SKILL_IDS as readonly string[]).includes(val),
+  { message: 'ID de perícia inválido' }
+);
 
 export const skillsSelectionSchema = z.object({
   freeSkills: z.array(skillIdSchema).max(10, 'Máximo de 10 perícias livres'),

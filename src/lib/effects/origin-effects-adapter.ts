@@ -6,6 +6,8 @@
 // Converte poderes de origem para o formato UnifiedEffect
 // Inclui 26 origens do Livro Base + 22 origens de Suplementos
 //
+// IDs de origens centralizados em: src/lib/constants/game-ids.ts
+//
 
 import type { UnifiedEffect, EffectMechanics, AttributeType } from '../unified-effects-engine';
 

@@ -10,11 +10,14 @@
  * - Agente Especial (50 PP)
  * - Oficial de Operações (100 PP)
  * - Agente de Elite (200 PP)
+ * 
+ * IDs centralizados em: src/lib/constants/game-ids.ts
  */
 
 import { motion } from 'framer-motion';
 import { Shield, Star, Award, Crown, Gem, Check, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { PATENT_IDS, VALID_PATENT_IDS } from '@/lib/constants/game-ids';
 import {
   Tooltip,
   TooltipContent,

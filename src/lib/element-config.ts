@@ -1,6 +1,10 @@
 /**
  * Element Config - Configuração centralizada para elementos paranormais
  * Usado em rituais, poderes paranormais e outros sistemas
+ * 
+ * IDs de elementos são sincronizados com: src/lib/constants/game-ids.ts
+ * NOTA: Os elementos em game-ids.ts usam inicial maiúscula (Sangue, Morte, etc)
+ * enquanto aqui usamos minúsculas para compatibilidade com código existente.
  */
 
 import { 
@@ -11,9 +15,20 @@ import {
   Ghost,
   type LucideIcon 
 } from 'lucide-react';
+import { ELEMENT_IDS } from './constants/game-ids';
 
-// Tipos de elementos disponíveis
+// Tipos de elementos disponíveis (em minúsculo para compatibilidade)
+// Sincronizado com ELEMENT_IDS de game-ids.ts
 export type ParanormalElementType = 'sangue' | 'morte' | 'conhecimento' | 'energia' | 'medo';
+
+// Validação: garante que os elementos locais correspondem aos de game-ids.ts
+const _elementIdValidation: Record<ParanormalElementType, string> = {
+  sangue: ELEMENT_IDS.SANGUE,
+  morte: ELEMENT_IDS.MORTE,
+  conhecimento: ELEMENT_IDS.CONHECIMENTO,
+  energia: ELEMENT_IDS.ENERGIA,
+  medo: ELEMENT_IDS.MEDO,
+};
 
 // Interface para configuração visual de elementos
 export interface ElementConfig {
