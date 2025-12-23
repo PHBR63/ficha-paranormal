@@ -30,6 +30,7 @@ import { cn } from '@/lib/utils';
 import { MobileCollapsibleSection } from './MobileCollapsibleSection';
 import { MobileCombatPanel, type WeaponEntry } from './MobileCombatPanel';
 import { MobileRollHistory, useRollHistory, type RollHistoryEntry } from './MobileRollHistory';
+import { MobileConditionManager, type ActiveCondition } from './MobileConditionManager';
 import { ActiveAdvancedBonusesBar } from '../ActiveAdvancedBonusesBar';
 import { BonusSummaryCard } from '../BonusSummaryCard';
 import { ClassPowerBonusesPanel } from '../ClassPowerBonusesPanel';
@@ -57,8 +58,9 @@ interface MobileOverviewTabProps {
     intellect: number;
     presence: number;
     vigor: number;
-    conditions: string[];
   };
+  // Condições separadas do character para evitar conflito de tipos
+  conditions: ActiveCondition[];
   originName?: string;
   trackName?: string;
   bonusSummary: any; // Tipo completo do BonusSummary
@@ -85,10 +87,14 @@ interface MobileOverviewTabProps {
   onRollInitiative: () => void;
   onClearHistory: () => void;
   onRemoveRoll: (id: string) => void;
+  onConditionsChange: (conditions: ActiveCondition[]) => void;
+  onDamageFromCondition?: (damage: number, isVerdadeiro: boolean) => void;
+  onCharacterDeath?: () => void;
 }
 
 export const MobileOverviewTab = memo(function MobileOverviewTab({
   character,
+  conditions,
   originName,
   trackName,
   bonusSummary,
@@ -106,6 +112,9 @@ export const MobileOverviewTab = memo(function MobileOverviewTab({
   onRollInitiative,
   onClearHistory,
   onRemoveRoll,
+  onConditionsChange,
+  onDamageFromCondition,
+  onCharacterDeath,
 }: MobileOverviewTabProps) {
   const peLimit = getPELimitByNex(character.nex);
   
@@ -411,22 +420,14 @@ export const MobileOverviewTab = memo(function MobileOverviewTab({
         />
       )}
 
-      {/* Condições ativas */}
-      {character.conditions.length > 0 && (
-        <div className="ordo-panel p-3">
-          <p className="text-[10px] text-muted-foreground uppercase mb-2">CONDIÇÕES ATIVAS</p>
-          <div className="flex flex-wrap gap-1">
-            {character.conditions.map((condition, i) => (
-              <span 
-                key={i} 
-                className="px-2 py-0.5 text-[10px] bg-destructive/20 text-destructive rounded"
-              >
-                {condition}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Gerenciador de Condições Mobile */}
+      <MobileConditionManager
+        conditions={conditions}
+        onConditionsChange={onConditionsChange}
+        onDamageFromCondition={onDamageFromCondition}
+        onCharacterDeath={onCharacterDeath}
+        characterName={character.name}
+      />
     </motion.div>
   );
 });
