@@ -13,53 +13,12 @@ import {
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import { getSkillAttribute as getSkillAttr, type AttributeKey } from '@/lib/constants/game-ids';
-
-// Tipos de filtro e ordenação
-type SkillFilter = 'all' | 'trained' | 'AGI' | 'FOR' | 'INT' | 'PRE' | 'VIG';
-type SkillSort = 'bonus' | 'alpha' | 'attribute';
-
-// Mapeamento de atributo para abreviação
-const ATTRIBUTE_ABBREV: Record<AttributeKey, string> = {
-  agility: 'AGI',
-  strength: 'FOR',
-  intellect: 'INT',
-  presence: 'PRE',
-  vigor: 'VIG',
-};
-
-// Determina o atributo de cada perícia
-function getSkillAttributeAbbrev(skill: string): string {
-  const normalized = skill.toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '');
-  
-  const attr = getSkillAttr(normalized);
-  if (attr) {
-    return ATTRIBUTE_ABBREV[attr];
-  }
-  
-  // Fallback para perícias com acentos
-  const legacyMap: Record<string, string> = {
-    'ciências': 'INT', 'investigação': 'INT', 'profissão': 'INT',
-    'sobrevivência': 'INT', 'tática': 'INT',
-    'enganação': 'PRE', 'intimidação': 'PRE', 'intuição': 'PRE',
-    'percepção': 'PRE',
-  };
-  return legacyMap[skill.toLowerCase()] || 'INT';
-}
-
-// Cor para cada atributo
-function getAttributeColor(attr: string): string {
-  const colors: Record<string, string> = {
-    'AGI': 'bg-blue-500/20 text-blue-400',
-    'FOR': 'bg-orange-500/20 text-orange-400',
-    'INT': 'bg-purple-500/20 text-purple-400',
-    'PRE': 'bg-pink-500/20 text-pink-400',
-    'VIG': 'bg-green-500/20 text-green-400',
-  };
-  return colors[attr] || 'bg-muted text-muted-foreground';
-}
+import { 
+  getSkillAttributeAbbrev, 
+  getAttributeColor,
+  type SkillFilter,
+  type SkillSort,
+} from './utils';
 
 interface MobileSkillsTabProps {
   skills?: Record<string, number>;

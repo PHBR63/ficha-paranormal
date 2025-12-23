@@ -14,16 +14,28 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-// Tipos de tabs disponíveis
-export type MobileTab = 'overview' | 'skills' | 'powers' | 'combat' | 'inventory';
+// Tipos de tabs disponíveis (compatível com MobileCharacterSheet original)
+export type MobileTab = 'overview' | 'skills' | 'powers' | 'inventory';
+
+// Tipo estendido para incluir combat (uso futuro)
+export type ExtendedMobileTab = MobileTab | 'combat';
 
 interface TabConfig {
-  id: MobileTab;
+  id: ExtendedMobileTab;
   icon: React.ElementType;
   label: string;
 }
 
-const TABS: TabConfig[] = [
+// Configuração das 4 tabs principais (sem combat por padrão)
+const DEFAULT_TABS: TabConfig[] = [
+  { id: 'overview', icon: Home, label: 'Geral' },
+  { id: 'skills', icon: BookOpen, label: 'Perícias' },
+  { id: 'powers', icon: Sparkles, label: 'Poderes' },
+  { id: 'inventory', icon: Package, label: 'Itens' },
+];
+
+// Configuração estendida com combat (uso futuro)
+const EXTENDED_TABS: TabConfig[] = [
   { id: 'overview', icon: Home, label: 'Geral' },
   { id: 'skills', icon: BookOpen, label: 'Perícias' },
   { id: 'powers', icon: Sparkles, label: 'Poderes' },
@@ -36,8 +48,8 @@ interface MobileTabNavigationProps {
   onTabChange: (tab: MobileTab) => void;
   /** Badges para cada tab (ex: contagem de itens) */
   badges?: Partial<Record<MobileTab, number | string>>;
-  /** Tabs a ocultar */
-  hiddenTabs?: MobileTab[];
+  /** Usar tabs estendidas com combat */
+  showCombatTab?: boolean;
   className?: string;
 }
 
@@ -94,7 +106,7 @@ export const MobileTabNavigation = memo(function MobileTabNavigation({
   activeTab,
   onTabChange,
   badges = {},
-  hiddenTabs = [],
+  showCombatTab = false,
   className,
 }: MobileTabNavigationProps) {
   // Handler com feedback háptico
@@ -108,8 +120,8 @@ export const MobileTabNavigation = memo(function MobileTabNavigation({
     onTabChange(tabId);
   }, [activeTab, onTabChange]);
 
-  // Filtra tabs ocultas
-  const visibleTabs = TABS.filter(tab => !hiddenTabs.includes(tab.id));
+  // Seleciona tabs baseado na configuração
+  const visibleTabs = showCombatTab ? EXTENDED_TABS : DEFAULT_TABS;
 
   return (
     <div className={cn(
@@ -128,8 +140,8 @@ export const MobileTabNavigation = memo(function MobileTabNavigation({
             key={tab.id}
             tab={tab}
             isActive={activeTab === tab.id}
-            badge={badges[tab.id]}
-            onClick={() => handleTabChange(tab.id)}
+            badge={badges[tab.id as MobileTab]}
+            onClick={() => handleTabChange(tab.id as MobileTab)}
           />
         ))}
       </div>

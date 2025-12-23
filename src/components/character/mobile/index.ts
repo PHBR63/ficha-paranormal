@@ -3,6 +3,19 @@
  * Fase de otimização mobile - componentes extraídos e memoizados
  */
 
+// Utilitários compartilhados
+export {
+  ATTRIBUTE_ABBREV,
+  getSkillAttributeAbbrev,
+  getAttributeColor,
+  getElementIcon,
+  getElementColor,
+  getItemIcon,
+  getCategoryColor,
+  type SkillFilter,
+  type SkillSort,
+} from './utils';
+
 // Componentes de rolagem e combate
 export { MobileDiceRollModal } from './MobileDiceRollModal';
 export type { BonusSource } from './MobileDiceRollModal';
@@ -24,7 +37,7 @@ export {
 } from './MobileRollHistory';
 export type { RollHistoryEntry, RollType } from './MobileRollHistory';
 
-// Novos componentes de tabs e UX (Fase 1-2)
+// Componentes de tabs e UX (Fase 1-2)
 export { MobileOverviewTab } from './MobileOverviewTab';
 export { MobileSkillsTab } from './MobileSkillsTab';
 export { MobileCollapsibleSection } from './MobileCollapsibleSection';
