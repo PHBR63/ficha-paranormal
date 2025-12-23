@@ -1,9 +1,14 @@
-// Ordem Paranormal RPG v1.3 - Character Builder Engine
-// Motor de regras para criação de personagem 100% fiel às regras oficiais
+/**
+ * Ordem Paranormal RPG v1.3 - Character Builder Engine
+ * Motor de regras para criação de personagem 100% fiel às regras oficiais
+ * 
+ * IDs de classes são gerenciados centralmente em game-ids.ts
+ */
 
 import { ORIGINS, CLASSES, SKILLS, calculateDerivedStats, getPatentByNex, calculateDefense, getExtraAttributePoints } from './character-data';
+import { CLASS_IDS, isValidSkillId as isValidSkillIdFromConstants } from './constants/game-ids';
 
-// Set de IDs válidos de perícias para validação rápida
+// Set de IDs válidos de perícias para validação rápida (mantido para compatibilidade)
 const VALID_SKILL_IDS = new Set(SKILLS.map(s => s.id));
 
 /**
@@ -86,13 +91,14 @@ export interface RebuildResult {
 }
 
 // ============= CLASS SKILL RULES =============
+// Usa CLASS_IDS de game-ids.ts como chaves para garantir consistência
 
 export const CLASS_SKILL_RULES: Record<string, {
   mandatory: string[];
   choices: SkillChoice[];
   freeFormula: (intellect: number) => number;
 }> = {
-  'Combatente': {
+  [CLASS_IDS.COMBATENTE]: {
     mandatory: [],
     choices: [
       { id: 'combat', options: ['luta', 'pontaria'], pick: 1, label: 'Luta ou Pontaria' },
@@ -100,17 +106,17 @@ export const CLASS_SKILL_RULES: Record<string, {
     ],
     freeFormula: (int) => 1 + int,
   },
-  'Especialista': {
+  [CLASS_IDS.ESPECIALISTA]: {
     mandatory: [],
     choices: [],
     freeFormula: (int) => 7 + int,
   },
-  'Ocultista': {
+  [CLASS_IDS.OCULTISTA]: {
     mandatory: ['ocultismo', 'vontade'],
     choices: [],
     freeFormula: (int) => 3 + int,
   },
-  // Nova classe do suplemento "Sobrevivendo ao Horror"
+  // Nova classe do suplemento "Sobrevivendo ao Horror" (quando implementada)
   'Sobrevivente': {
     mandatory: ['sobrevivencia'],
     choices: [
@@ -122,29 +128,31 @@ export const CLASS_SKILL_RULES: Record<string, {
 };
 
 // ============= CLASS PROFICIENCIES =============
+// Usa CLASS_IDS de game-ids.ts como chaves
 
 export const CLASS_PROFICIENCIES: Record<string, string[]> = {
-  'Combatente': ['Armas simples', 'Armas táticas', 'Proteções leves'],
-  'Especialista': ['Armas simples', 'Proteções leves'],
-  'Ocultista': ['Armas simples'],
+  [CLASS_IDS.COMBATENTE]: ['Armas simples', 'Armas táticas', 'Proteções leves'],
+  [CLASS_IDS.ESPECIALISTA]: ['Armas simples', 'Proteções leves'],
+  [CLASS_IDS.OCULTISTA]: ['Armas simples'],
   'Sobrevivente': ['Armas simples', 'Armas improvisadas'], // Suplemento
 };
 
 // ============= CLASS INITIAL ABILITIES (NEX 5%) =============
+// Usa CLASS_IDS de game-ids.ts como chaves
 
-// Habilidades iniciais da classe - nome correto conforme livro de regras
 export const CLASS_INITIAL_ABILITIES: Record<string, string[]> = {
-  'Combatente': ['Ataque Especial (2 PE, +5 no ataque ou dano)'],
-  'Especialista': [
+  [CLASS_IDS.COMBATENTE]: ['Ataque Especial (2 PE, +5 no ataque ou dano)'],
+  [CLASS_IDS.ESPECIALISTA]: [
     'Eclético (2 PE para ser considerado treinado em qualquer perícia)',
     'Perito (2 PE para somar +1d6 em teste de 2 perícias escolhidas)'
   ],
-  'Ocultista': ['Escolhido pelo Outro Lado (pode lançar rituais)'],
+  [CLASS_IDS.OCULTISTA]: ['Escolhido pelo Outro Lado (pode lançar rituais)'],
   'Sobrevivente': [
     'Vontade de Viver (2 PE, ficar com 1 PV ao invés de 0, 1x/cena)',
     'Improviso (armas improvisadas causam 1d6 dano)'
   ],
 };
+
 
 // ============= SKILLS WITH TRAINING REQUIREMENT =============
 
