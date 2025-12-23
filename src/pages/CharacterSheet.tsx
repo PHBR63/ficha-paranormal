@@ -91,6 +91,7 @@ import { ClassPowerBonusesPanel } from '@/components/character/ClassPowerBonuses
 import { AutomationDebugWidget } from '@/components/character/AutomationDebugWidget';
 import { useDeveloperMode } from '@/components/ui/theme-selector';
 import { ActiveEffectsPanel } from '@/components/character/ActiveEffectsPanel';
+import { Logo } from '@/components/ui/logo';
 
 // Novos componentes do redesign 2.0 (estilo ficha de papel)
 import { CharacterSheetHeader } from '@/components/character/CharacterSheetHeader';
@@ -1566,7 +1567,10 @@ export default function CharacterSheet() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <div className="flex flex-col items-center gap-4">
+          <Logo size="lg" animate glow />
+          <p className="text-muted-foreground font-display tracking-wider text-sm">CARREGANDO DOSSIÊ...</p>
+        </div>
       </div>
     );
   }
