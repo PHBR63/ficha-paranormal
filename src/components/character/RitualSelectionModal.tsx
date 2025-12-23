@@ -43,6 +43,8 @@ import { unifiedToLegacy } from '@/lib/rituals/ritual-adapter';
 import type { UnifiedRitual } from '@/lib/rituals/types';
 // Tipo legado para compatibilidade
 import type { Ritual } from '@/lib/rituals/legacy-exports';
+// Configuração centralizada de elementos
+import { getElementConfigSafe, getElementKeys, ELEMENT_CONFIG, type ParanormalElementType } from '@/lib/element-config';
 
 // Tipo que suporta ambos os formatos
 type RitualInput = Ritual | UnifiedRitual;
@@ -56,54 +58,38 @@ interface RitualSelectionModalProps {
   onConfirm: (selectedRituals: string[]) => Promise<void>;
 }
 
-// Configuração visual para cada elemento (5 elementos oficiais)
-const ELEMENT_CONFIG = {
-  sangue: {
-    icon: Droplets,
-    label: 'Sangue',
-    color: 'from-red-500/20 to-red-900/20',
-    border: 'border-red-500/50',
-    text: 'text-red-400',
-    bg: 'bg-red-500/10',
-    badgeBg: 'bg-red-500/20 text-red-300',
-  },
-  morte: {
-    icon: Skull,
-    label: 'Morte',
-    color: 'from-purple-900/20 to-purple-950/20',
-    border: 'border-purple-500/50',
-    text: 'text-purple-400',
-    bg: 'bg-purple-500/10',
-    badgeBg: 'bg-purple-500/20 text-purple-300',
-  },
-  conhecimento: {
-    icon: BookOpen,
-    label: 'Conhecimento',
-    color: 'from-blue-500/20 to-blue-900/20',
-    border: 'border-blue-500/50',
-    text: 'text-blue-400',
-    bg: 'bg-blue-500/10',
-    badgeBg: 'bg-blue-500/20 text-blue-300',
-  },
-  energia: {
-    icon: Zap,
-    label: 'Energia',
-    color: 'from-yellow-500/20 to-amber-900/20',
-    border: 'border-yellow-500/50',
-    text: 'text-yellow-400',
-    bg: 'bg-yellow-500/10',
-    badgeBg: 'bg-yellow-500/20 text-yellow-300',
-  },
-  medo: {
-    icon: Ghost,
-    label: 'Medo',
-    color: 'from-emerald-500/20 to-emerald-900/20',
-    border: 'border-emerald-500/50',
-    text: 'text-emerald-400',
-    bg: 'bg-emerald-500/10',
-    badgeBg: 'bg-emerald-500/20 text-emerald-300',
-  },
+// Fallback para elemento desconhecido
+const FALLBACK_ELEMENT_CONFIG = {
+  icon: Ghost,
+  label: 'Desconhecido',
+  color: 'from-gray-500/20 to-gray-900/20',
+  border: 'border-gray-500/50',
+  text: 'text-gray-400',
+  bg: 'bg-gray-500/10',
+  badgeBg: 'bg-gray-500/20 text-gray-300',
 };
+
+// Obtém configuração de elemento usando sistema centralizado com fallback
+function getElementConfigLocal(element: string) {
+  const config = getElementConfigSafe(element);
+  
+  if (config) {
+    return {
+      icon: config.icon,
+      label: config.label,
+      color: config.color,
+      border: config.border,
+      text: config.text,
+      bg: config.bg,
+      badgeBg: config.badgeBg,
+    };
+  }
+  
+  return FALLBACK_ELEMENT_CONFIG;
+}
+
+// Lista de elementos válidos para os filtros (usa getElementKeys centralizado)
+const VALID_ELEMENTS = getElementKeys();
 
 // Card de ritual compacto para seleção
 // Suporta tanto Ritual legado quanto UnifiedRitual
@@ -121,7 +107,7 @@ function RitualCard({
   onToggle: () => void;
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const elementConfig = ELEMENT_CONFIG[ritual.element];
+  const elementConfig = getElementConfigLocal(ritual.element);
   const ElementIcon = elementConfig.icon;
   
   // Extrai resistance como string para exibição
@@ -455,7 +441,8 @@ export function RitualSelectionModal({
               );
             })}
             <div className="h-6 w-px bg-border mx-1" />
-            {Object.entries(ELEMENT_CONFIG).map(([elementId, config]) => {
+            {VALID_ELEMENTS.map((elementId) => {
+              const config = ELEMENT_CONFIG[elementId];
               const Icon = config.icon;
               const isActive = selectedElement === elementId;
               
