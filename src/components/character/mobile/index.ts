@@ -1,7 +1,9 @@
 /**
- * Barrel exports para componentes mobile de combate
+ * Barrel exports para componentes mobile de combate e ficha
+ * Fase de otimização mobile - componentes extraídos e memoizados
  */
 
+// Componentes de rolagem e combate
 export { MobileDiceRollModal } from './MobileDiceRollModal';
 export type { BonusSource } from './MobileDiceRollModal';
 
@@ -21,3 +23,11 @@ export {
   useRollHistory,
 } from './MobileRollHistory';
 export type { RollHistoryEntry, RollType } from './MobileRollHistory';
+
+// Novos componentes de tabs e UX (Fase 1-2)
+export { MobileOverviewTab } from './MobileOverviewTab';
+export { MobileSkillsTab } from './MobileSkillsTab';
+export { MobileCollapsibleSection } from './MobileCollapsibleSection';
+export { MobileTabNavigation, type MobileTab } from './MobileTabNavigation';
+export { MobileQuickActions } from './MobileQuickActions';
+export { MobileCombatDrawer } from './MobileCombatDrawer';
