@@ -9,43 +9,9 @@ import { motion } from 'framer-motion';
 import type { CharacterFormData } from '@/pages/CharacterCreate';
 import { RuleBookTip } from './RuleBookTip';
 import { getRulebookContent } from '@/lib/rulebook-content';
-import { z } from 'zod';
+import { conceptFieldsSchema, type ConceptFields } from '@/lib/validation-schemas';
 
-// Schema de validação Zod para campos de texto do conceito
-const conceptFieldsSchema = z.object({
-  name: z.string()
-    .min(2, 'Nome deve ter pelo menos 2 caracteres')
-    .max(100, 'Nome deve ter no máximo 100 caracteres')
-    .regex(/^[a-zA-ZÀ-ÿ\s'-]+$/, 'Nome deve conter apenas letras, espaços e hífens')
-    .optional()
-    .or(z.literal('')),
-  playerName: z.string()
-    .max(100, 'Nome do jogador deve ter no máximo 100 caracteres')
-    .optional()
-    .or(z.literal('')),
-  concept: z.string()
-    .max(200, 'Conceito deve ter no máximo 200 caracteres')
-    .optional()
-    .or(z.literal('')),
-  gender: z.string()
-    .max(50, 'Gênero deve ter no máximo 50 caracteres')
-    .optional()
-    .or(z.literal('')),
-  appearance: z.string()
-    .max(500, 'Aparência deve ter no máximo 500 caracteres')
-    .optional()
-    .or(z.literal('')),
-  personality: z.string()
-    .max(500, 'Personalidade deve ter no máximo 500 caracteres')
-    .optional()
-    .or(z.literal('')),
-  background: z.string()
-    .max(2000, 'Histórico deve ter no máximo 2000 caracteres')
-    .optional()
-    .or(z.literal('')),
-});
-
-type FieldErrors = Partial<Record<keyof z.infer<typeof conceptFieldsSchema>, string>>;
+type FieldErrors = Partial<Record<keyof ConceptFields, string>>;
 
 interface StepConceptProps {
   formData: CharacterFormData;
@@ -66,7 +32,7 @@ export function StepConcept({ formData, updateFormData }: StepConceptProps) {
 
   // Valida um campo específico e retorna o valor sanitizado
   const validateAndUpdate = useCallback((
-    field: keyof z.infer<typeof conceptFieldsSchema>,
+    field: keyof ConceptFields,
     value: string
   ) => {
     // Valida apenas o campo específico
