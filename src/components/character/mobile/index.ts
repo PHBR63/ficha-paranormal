@@ -57,3 +57,4 @@ export { MobileAffinitySelectorCard } from './MobileAffinitySelectorCard';
 export { MobileRitualCastHistory, type RitualCastRecord } from './MobileRitualCastHistory';
 export { MobileActiveEffectsPanel } from './MobileActiveEffectsPanel';
 export { MobileParanormalPowerSelectModal } from './MobileParanormalPowerSelectModal';
+export { MobileRitualEffectWizard, type MobileRitualEffectWizardProps } from './MobileRitualEffectWizard';
