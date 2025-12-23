@@ -48,6 +48,7 @@ import {
   getSkillAttribute,
 } from '../constants/game-ids';
 import { ORIGINS, CLASSES, CLASS_TRACKS, SKILLS } from '../character-data';
+import { SUPPLEMENT_ORIGINS } from '../supplement-origins';
 
 describe('game-ids.ts - Integridade de IDs', () => {
   
@@ -126,6 +127,79 @@ describe('game-ids.ts - Integridade de IDs', () => {
       expect(isValidOriginId('academico')).toBe(true);
       expect(isValidOriginId('atleta')).toBe(true);
       expect(isValidOriginId('invalido')).toBe(false);
+    });
+  });
+
+  describe('Origens de Suplementos - Sincronização', () => {
+    it('deve ter 18 origens de suplementos', () => {
+      expect(VALID_SUPPLEMENT_ORIGIN_IDS).toHaveLength(18);
+    });
+
+    it('SUPPLEMENT_ORIGIN_IDS deve ter mesma quantidade que SUPPLEMENT_ORIGINS', () => {
+      expect(VALID_SUPPLEMENT_ORIGIN_IDS.length).toBe(SUPPLEMENT_ORIGINS.length);
+    });
+
+    it('todos os IDs em game-ids.ts devem existir em supplement-origins.ts', () => {
+      const supplementOriginsIds = SUPPLEMENT_ORIGINS.map(o => o.id);
+      VALID_SUPPLEMENT_ORIGIN_IDS.forEach(originId => {
+        expect(supplementOriginsIds).toContain(originId);
+      });
+    });
+
+    it('todos os IDs em supplement-origins.ts devem existir em game-ids.ts', () => {
+      SUPPLEMENT_ORIGINS.forEach(origin => {
+        expect(VALID_SUPPLEMENT_ORIGIN_IDS).toContain(origin.id);
+      });
+    });
+
+    it('IDs específicos devem corresponder', () => {
+      // Expansões Oficiais
+      expect(SUPPLEMENT_ORIGIN_IDS.AMIGO_DOS_ANIMAIS).toBe('amigo-dos-animais');
+      expect(SUPPLEMENT_ORIGIN_IDS.ASTRONAUTA).toBe('astronauta');
+      expect(SUPPLEMENT_ORIGIN_IDS.CHEF_DO_OUTRO_LADO).toBe('chef-do-outro-lado');
+      
+      // Comunidade
+      expect(SUPPLEMENT_ORIGIN_IDS.COLEGIAL).toBe('colegial');
+      expect(SUPPLEMENT_ORIGIN_IDS.COSPLAYER).toBe('cosplayer');
+      expect(SUPPLEMENT_ORIGIN_IDS.DIPLOMATA).toBe('diplomata');
+      expect(SUPPLEMENT_ORIGIN_IDS.EXPLORADOR).toBe('explorador');
+      expect(SUPPLEMENT_ORIGIN_IDS.EXPERIMENTO).toBe('experimento');
+      expect(SUPPLEMENT_ORIGIN_IDS.FANATICO_POR_CRIATURAS).toBe('fanatico-por-criaturas');
+      expect(SUPPLEMENT_ORIGIN_IDS.FOTOGRAFO).toBe('fotografo');
+      expect(SUPPLEMENT_ORIGIN_IDS.INVENTOR_PARANORMAL).toBe('inventor-paranormal');
+      expect(SUPPLEMENT_ORIGIN_IDS.JOVEM_MISTICO).toBe('jovem-mistico');
+      expect(SUPPLEMENT_ORIGIN_IDS.LEGISTA_TURNO_NOITE).toBe('legista-turno-noite');
+      expect(SUPPLEMENT_ORIGIN_IDS.MOTORISTA).toBe('motorista');
+      expect(SUPPLEMENT_ORIGIN_IDS.NERD_ENTUSIASTA).toBe('nerd-entusiasta');
+      expect(SUPPLEMENT_ORIGIN_IDS.PSICOLOGO).toBe('psicologo');
+      expect(SUPPLEMENT_ORIGIN_IDS.PROFETIZADO).toBe('profetizado');
+      expect(SUPPLEMENT_ORIGIN_IDS.REPORTER_INVESTIGATIVO).toBe('reporter-investigativo');
+    });
+
+    it('ALL_ORIGIN_IDS deve conter origens base e suplementos', () => {
+      // Deve ter 26 base + 18 suplementos = 44 total
+      expect(ALL_ORIGIN_IDS.length).toBe(VALID_CORE_ORIGIN_IDS.length + VALID_SUPPLEMENT_ORIGIN_IDS.length);
+      expect(ALL_ORIGIN_IDS.length).toBe(44);
+    });
+
+    it('isValidOriginId deve validar origens de suplementos', () => {
+      // Testa algumas origens de suplementos
+      expect(isValidOriginId('amigo-dos-animais')).toBe(true);
+      expect(isValidOriginId('astronauta')).toBe(true);
+      expect(isValidOriginId('colegial')).toBe(true);
+      expect(isValidOriginId('inventor-paranormal')).toBe(true);
+      expect(isValidOriginId('profetizado')).toBe(true);
+      
+      // IDs inválidos
+      expect(isValidOriginId('origem-inventada')).toBe(false);
+      expect(isValidOriginId('ASTRONAUTA')).toBe(false); // Case-sensitive
+    });
+
+    it('cada origem de suplemento deve ter um source definido', () => {
+      SUPPLEMENT_ORIGINS.forEach(origin => {
+        expect(origin.source).toBeDefined();
+        expect(origin.source).not.toBe('');
+      });
     });
   });
 
