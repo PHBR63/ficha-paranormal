@@ -474,6 +474,6 @@ describe('validateAttributesForNex', () => {
     const wrongTotal = { agility: 1, strength: 1, intellect: 1, presence: 1, vigor: 1 };
     const result = validateAttributesForNex(wrongTotal, 5, 9);
     expect(result.valid).toBe(false);
-    expect(result.errors.some(e => e.includes('total'))).toBe(true);
+    expect(result.errors.some(e => e.toLowerCase().includes('total'))).toBe(true);
   });
 });

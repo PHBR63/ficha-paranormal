@@ -110,7 +110,7 @@ export const skillIdSchema = z.enum(VALID_SKILL_IDS);
 export const skillsSelectionSchema = z.object({
   freeSkills: z.array(skillIdSchema).max(10, 'Máximo de 10 perícias livres'),
   classSkillChoices: z.record(z.string(), skillIdSchema),
-  conflictResolutions: z.record(skillIdSchema, skillIdSchema),
+  conflictResolutions: z.record(z.string(), skillIdSchema),
 });
 
 // ============================================
