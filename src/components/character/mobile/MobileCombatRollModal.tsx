@@ -2,6 +2,10 @@
  * MobileCombatRollModal - Modal de combate completo para mobile
  * Interface step-by-step: Setup → Ataque → Dano
  * Usa Drawer para UX mobile otimizada
+ * 
+ * Inclui paridade com desktop:
+ * - Suporte à trilha Aniquilador (Técnica Secreta, Máquina de Matar)
+ * - Detecção de arma favorita
  */
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
@@ -19,6 +23,7 @@ import {
   Info,
   Flame,
   Check,
+  Crosshair,
 } from 'lucide-react';
 import { 
   Drawer, 
@@ -40,6 +45,7 @@ import { ComputedEffects } from '@/lib/unified-effects-engine';
 import { WeaponBuff } from '@/hooks/useWeaponBuffs';
 import { getElementConfig } from '@/lib/element-config';
 import { WeaponEntry } from './MobileCombatPanel';
+import { AniquiladorTechniqueModal, TechniqueEffects } from '@/components/character/AniquiladorTechniqueModal';
 
 // Interface para bônus selecionável
 interface CombatBonus {
@@ -71,6 +77,8 @@ interface MobileCombatRollModalProps {
   maxPE: number;
   onPEChange: (newPE: number) => void;
   characterClass: string;
+  /** Trilha de classe (ex: "aniquilador", "comandante de campo") */
+  classTrack?: string;
   abilities: string[];
   nex: number;
   unifiedEffects?: ComputedEffects;
@@ -126,6 +134,7 @@ export function MobileCombatRollModal({
   maxPE,
   onPEChange,
   characterClass,
+  classTrack,
   abilities,
   nex,
   unifiedEffects,
@@ -144,6 +153,22 @@ export function MobileCombatRollModal({
   } | null>(null);
   const [manualAttackMod, setManualAttackMod] = useState(0);
   const [isRolling, setIsRolling] = useState(false);
+  
+  // === ESTADOS DO ANIQUILADOR ===
+  const [showTechniqueModal, setShowTechniqueModal] = useState(false);
+  const [activeTechniqueEffects, setActiveTechniqueEffects] = useState<TechniqueEffects | null>(null);
+  
+  // Detecta se pode usar Técnica Secreta (Aniquilador NEX 40%+ com arma favorita)
+  const canUseTechniqueSecreta = useMemo(() => {
+    const isAniquilador = classTrack?.toLowerCase().includes('aniquilador');
+    return isAniquilador && nex >= 40 && weapon?.isFavoriteWeapon;
+  }, [classTrack, nex, weapon?.isFavoriteWeapon]);
+  
+  // Detecta Máquina de Matar (Aniquilador NEX 99%+ com arma favorita)
+  const maquinaDeMatarActive = useMemo(() => {
+    const isAniquilador = classTrack?.toLowerCase().includes('aniquilador');
+    return isAniquilador && nex >= 99 && weapon?.isFavoriteWeapon;
+  }, [classTrack, nex, weapon?.isFavoriteWeapon]);
 
   // Reset ao fechar
   const handleClose = useCallback(() => {
@@ -153,8 +178,18 @@ export function MobileCombatRollModal({
     setDamageResult(null);
     setManualAttackMod(0);
     setIsRolling(false);
+    setActiveTechniqueEffects(null);
     onClose();
   }, [onClose]);
+  
+  // Handler para confirmar técnicas do Aniquilador
+  const handleConfirmTechnique = useCallback((effects: TechniqueEffects) => {
+    setActiveTechniqueEffects(effects);
+    // Deduz PE
+    if (effects.peCost > 0) {
+      onPEChange(currentPE - effects.peCost);
+    }
+  }, [currentPE, onPEChange]);
 
   // Determinar atributo e perícia baseado no tipo de arma
   const attackAttribute = useMemo(() => {
@@ -263,7 +298,7 @@ export function MobileCombatRollModal({
     return total;
   }, [attackSkill.bonus, selectedBonuses, availableBonuses, manualAttackMod, weaponBuffs, unifiedEffects, weapon]);
 
-  // Margem de crítico
+  // Margem de crítico efetiva (inclui Máquina de Matar e Técnicas do Aniquilador)
   const criticalMargin = useMemo(() => {
     let margin = 20;
     
@@ -278,8 +313,36 @@ export function MobileCombatRollModal({
       if (b.criticalBonus) margin -= b.criticalBonus;
     });
     
+    // Máquina de Matar (NEX 99%) - reduz margem em 2
+    if (maquinaDeMatarActive) {
+      margin -= 2;
+    }
+    
+    // Técnica Letal do Aniquilador
+    if (activeTechniqueEffects?.criticalMarginBonus) {
+      margin -= activeTechniqueEffects.criticalMarginBonus;
+    }
+    
     return Math.max(1, margin);
-  }, [weapon, weaponBuffs]);
+  }, [weapon, weaponBuffs, maquinaDeMatarActive, activeTechniqueEffects]);
+  
+  // Multiplicador de crítico efetivo (inclui Destruidor)
+  const criticalMultiplier = useMemo(() => {
+    let multiplier = 2; // Padrão x2
+    
+    // Da arma
+    if (weapon?.criticalMultiplier) {
+      const match = weapon.criticalMultiplier.match(/x?(\d+)/i);
+      if (match) multiplier = parseInt(match[1]);
+    }
+    
+    // Técnica Destruidor do Aniquilador
+    if (activeTechniqueEffects?.criticalMultiplierBonus) {
+      multiplier += activeTechniqueEffects.criticalMultiplierBonus;
+    }
+    
+    return multiplier;
+  }, [weapon, activeTechniqueEffects]);
 
   // Rolar ataque
   const rollAttack = useCallback(() => {
@@ -328,12 +391,22 @@ export function MobileCombatRollModal({
       const isCritical = attackResult.isCritical;
       const parsed = parseDamageString(weapon.damage);
       
-      // Dados extras
+      // Dados extras de poderes selecionados
       let extraDice = 0;
       selectedBonuses.forEach(bonusId => {
         const bonus = availableBonuses.find(b => b.id === bonusId);
         if (bonus?.damageBonus === '1d') extraDice++;
       });
+      
+      // Máquina de Matar (NEX 99%) - adiciona 1 dado extra de dano
+      let maquinaDeMatarDice = 0;
+      if (maquinaDeMatarActive) {
+        maquinaDeMatarDice = 1;
+        // Se for crítico, multiplica pelo multiplicador
+        if (isCritical) {
+          maquinaDeMatarDice = criticalMultiplier;
+        }
+      }
       
       // Bônus de dano
       let damageBonus = parsed.bonus;
@@ -357,11 +430,11 @@ export function MobileCombatRollModal({
       });
       
       const result = rollDamage({
-        diceCount: parsed.count + extraDice,
+        diceCount: parsed.count + extraDice + maquinaDeMatarDice,
         diceType: parsed.size,
         bonusDamage: damageBonus,
         isCritical,
-        criticalMultiplier: 2,
+        criticalMultiplier: criticalMultiplier,
       });
       
       setDamageResult({
@@ -373,7 +446,7 @@ export function MobileCombatRollModal({
       setIsRolling(false);
       setPhase('damage');
     }, 500);
-  }, [weapon, attackResult, selectedBonuses, availableBonuses, attributes, unifiedEffects]);
+  }, [weapon, attackResult, selectedBonuses, availableBonuses, attributes, unifiedEffects, maquinaDeMatarActive, criticalMultiplier]);
 
   if (!weapon) return null;
 
@@ -550,6 +623,87 @@ export function MobileCombatRollModal({
                         </span>
                       </div>
                     </div>
+                  </div>
+                )}
+                
+                {/* === SEÇÃO ANIQUILADOR === */}
+                
+                {/* Indicador Máquina de Matar (NEX 99%) */}
+                {maquinaDeMatarActive && (
+                  <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-amber-400" />
+                      <span className="text-sm font-medium text-amber-400">Máquina de Matar</span>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground mt-1">
+                      Margem de crítico -2 e +1 dado de dano (automático)
+                    </p>
+                  </div>
+                )}
+                
+                {/* Botão Técnica Secreta (Aniquilador NEX 40%+) */}
+                {canUseTechniqueSecreta && (
+                  <div className="space-y-2">
+                    <Button
+                      variant={activeTechniqueEffects ? "default" : "outline"}
+                      onClick={() => setShowTechniqueModal(true)}
+                      className={cn(
+                        "w-full h-12",
+                        activeTechniqueEffects && "bg-amber-500 hover:bg-amber-600 text-white"
+                      )}
+                    >
+                      <Crosshair className="w-4 h-4 mr-2" />
+                      {activeTechniqueEffects 
+                        ? `Técnica Ativa (${activeTechniqueEffects.peCost} PE)` 
+                        : 'Usar Técnica Secreta'}
+                    </Button>
+                    
+                    {/* Efeitos ativos da técnica */}
+                    {activeTechniqueEffects && (
+                      <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 space-y-2">
+                        <div className="flex flex-wrap gap-1.5">
+                          {activeTechniqueEffects.additionalTargets > 0 && (
+                            <Badge variant="secondary" className="text-[10px] gap-1">
+                              <Target className="w-3 h-3" />
+                              +{activeTechniqueEffects.additionalTargets} alvo
+                            </Badge>
+                          )}
+                          {activeTechniqueEffects.criticalMultiplierBonus > 0 && (
+                            <Badge variant="secondary" className="text-[10px] gap-1">
+                              <Sword className="w-3 h-3" />
+                              +{activeTechniqueEffects.criticalMultiplierBonus} mult.
+                            </Badge>
+                          )}
+                          {activeTechniqueEffects.criticalMarginBonus > 0 && (
+                            <Badge variant="secondary" className="text-[10px] gap-1">
+                              <Crosshair className="w-3 h-3" />
+                              +{activeTechniqueEffects.criticalMarginBonus} margem
+                            </Badge>
+                          )}
+                          {activeTechniqueEffects.ignoreResistance > 0 && (
+                            <Badge variant="secondary" className="text-[10px] gap-1">
+                              <Shield className="w-3 h-3" />
+                              Ignora {activeTechniqueEffects.ignoreResistance} RD
+                            </Badge>
+                          )}
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            // Reembolsa PE
+                            if (activeTechniqueEffects?.peCost) {
+                              onPEChange(currentPE + activeTechniqueEffects.peCost);
+                            }
+                            setActiveTechniqueEffects(null);
+                          }}
+                          className="w-full h-8 text-xs text-muted-foreground"
+                        >
+                          <X className="w-3 h-3 mr-1" />
+                          Cancelar Técnica
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 )}
               </motion.div>
@@ -768,6 +922,16 @@ export function MobileCombatRollModal({
           </Button>
         </DrawerFooter>
       </DrawerContent>
+      
+      {/* Modal de Técnicas do Aniquilador */}
+      <AniquiladorTechniqueModal
+        open={showTechniqueModal}
+        onClose={() => setShowTechniqueModal(false)}
+        onConfirm={handleConfirmTechnique}
+        nex={nex}
+        currentPE={currentPE}
+        weaponName={weapon?.name || ''}
+      />
     </Drawer>
   );
 }
