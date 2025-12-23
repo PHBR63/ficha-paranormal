@@ -43,6 +43,16 @@ interface StepSkillsProps {
   buildResult: RebuildResult;
 }
 
+// Nomes completos dos atributos em português (conforme livro oficial)
+const ATTRIBUTE_NAMES: Record<string, string> = {
+  agility: 'Agilidade',
+  strength: 'Força',
+  intellect: 'Intelecto',
+  presence: 'Presença',
+  vigor: 'Vigor',
+};
+
+// Abreviações dos atributos
 const ATTRIBUTE_LABELS: Record<string, string> = {
   agility: 'AGI',
   strength: 'FOR',
@@ -282,7 +292,7 @@ export function StepSkills({ formData, updateFormData, buildResult }: StepSkills
                   >
                     <Check className="w-3 h-3" />
                     <span className="text-sm">{skill.name}</span>
-                    <span className="text-xs opacity-70">({ATTRIBUTE_LABELS[skill.attribute]})</span>
+                    <span className="text-xs opacity-70">({ATTRIBUTE_NAMES[skill.attribute]})</span>
                   </div>
                 );
               })}
@@ -329,7 +339,7 @@ export function StepSkills({ formData, updateFormData, buildResult }: StepSkills
                       <div className="flex items-center gap-2 px-3 py-2 bg-primary/20 text-primary rounded-sm">
                         <Check className="w-3 h-3" />
                         <span className="text-sm">{skill.name}</span>
-                        <span className="text-xs opacity-70">({ATTRIBUTE_LABELS[skill.attribute]})</span>
+                        <span className="text-xs opacity-70">({ATTRIBUTE_NAMES[skill.attribute]})</span>
                       </div>
                     )}
                   </div>
@@ -455,7 +465,7 @@ export function StepSkills({ formData, updateFormData, buildResult }: StepSkills
                       </button>
                     </TooltipTrigger>
                     <TooltipContent side="bottom" className="max-w-[200px]">
-                      <p className="font-semibold text-xs mb-1">Perícias de {label}:</p>
+                      <p className="font-semibold text-xs mb-1">Perícias de {ATTRIBUTE_NAMES[attr]}:</p>
                       <p className="text-xs text-muted-foreground">
                         {attrSkills.map(s => s.name).join(', ')}
                       </p>
@@ -522,7 +532,7 @@ export function StepSkills({ formData, updateFormData, buildResult }: StepSkills
                         {attrLabel}
                       </span>
                       <span className="font-display text-sm tracking-wider">
-                        {attr.charAt(0).toUpperCase() + attr.slice(1)}
+                        {ATTRIBUTE_NAMES[attr]}
                       </span>
                       <span className="text-xs text-muted-foreground">
                         ({trainedInAttr}/{skills.length} treinadas)
