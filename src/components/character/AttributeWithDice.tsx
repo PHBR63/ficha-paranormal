@@ -50,9 +50,9 @@ export function AttributeWithDice({
       whileTap={{ scale: 0.98 }}
       onClick={() => onRoll?.(value, fullName)}
     >
-      {/* Label */}
+      {/* Label - nome completo em português */}
       <p className="text-xs text-muted-foreground font-display tracking-wider mb-1">
-        {label}
+        {fullName}
       </p>
       
       {/* Value */}
