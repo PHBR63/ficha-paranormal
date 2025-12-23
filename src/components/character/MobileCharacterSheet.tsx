@@ -69,6 +69,7 @@ import {
   MobileInfiltradorPanel,
   MobileMedicoDeCampoPanel,
   MobileNegociadorPanel,
+  MobileTecnicoPanel,
   type WeaponEntry,
   type BonusSource,
   type ActiveCondition,
@@ -891,6 +892,18 @@ export function MobileCharacterSheet({
               nex={character.nex}
               peCurrent={character.pe_current}
               onPEChange={handlePEChange}
+            />
+            
+            {/* Painel Técnico */}
+            <MobileTecnicoPanel
+              classTrack={character.class_track}
+              nex={character.nex}
+              peCurrent={character.pe_current}
+              onPEChange={handlePEChange}
+              attributes={{
+                strength: character.strength,
+                intellect: character.intellect
+              }}
             />
           </>
         )}
