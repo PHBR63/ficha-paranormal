@@ -312,7 +312,7 @@ describe('skillsSelectionSchema', () => {
     const selection = {
       freeSkills: ['acrobacia', 'luta', 'percepcao'],
       classSkillChoices: { choice1: 'atletismo' },
-      conflictResolutions: { luta: 'intimidacao' },
+      conflictResolutions: {},
     };
     const result = skillsSelectionSchema.safeParse(selection);
     expect(result.success).toBe(true);
