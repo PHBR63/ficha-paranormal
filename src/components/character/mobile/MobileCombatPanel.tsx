@@ -23,12 +23,13 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { WeaponBuff, ELEMENT_BUFF_COLORS } from '@/hooks/useWeaponBuffs';
 import { getElementConfig } from '@/lib/element-config';
+import { type WeaponDisplayType } from '@/lib/weapon-type-inference';
 
-// Interface para arma
+// Interface para arma - usa WeaponDisplayType do módulo de inferência
 export interface WeaponEntry {
   id: string;
   name: string;
-  type: 'Briga' | 'Arremesso' | 'Disparo' | 'Corpo a Corpo';
+  type: WeaponDisplayType;
   damage: string;
   damageType?: string;
   ammoCurrent?: number;

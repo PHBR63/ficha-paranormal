@@ -72,6 +72,9 @@ import {
   getItemIcon,
 } from './mobile/utils';
 
+// Inferência de tipo de arma (corrige pistola como corpo a corpo)
+import { normalizeWeaponTypeForDisplay } from '@/lib/weapon-type-inference';
+
 import { useWeaponBuffs } from '@/hooks/useWeaponBuffs';
 import { useUnifiedEffects } from '@/hooks/useUnifiedEffects';
 
@@ -409,21 +412,32 @@ export function MobileCharacterSheet({
   });
 
   // Lista de armas equipadas para o painel de combate
+  // Usa normalizeWeaponTypeForDisplay para inferir corretamente o tipo de arma
   const equippedWeapons: WeaponEntry[] = useMemo(() => {
     return normalizedInventory
       .filter(item => item.itemType === 'weapon' && item.isEquipped)
       .map(item => {
         const weaponData = (item as any);
+        // Usa inferência inteligente para classificar a arma corretamente
+        const displayType = normalizeWeaponTypeForDisplay({
+          weaponType: weaponData.weaponType,
+          ammoType: weaponData.ammoType,
+          range: weaponData.range,
+          properties: weaponData.properties,
+          damageType: weaponData.damageType,
+        });
+        
         return {
           id: item.id,
           name: item.name,
-          type: weaponData.weaponType || 'corpo-a-corpo',
+          type: displayType,
           damage: weaponData.damage || '1d6',
           criticalRange: weaponData.criticalRange || 20,
           criticalMultiplier: weaponData.criticalMultiplier || 2,
           range: weaponData.range,
           ammo: weaponData.ammo,
           maxAmmo: weaponData.maxAmmo,
+          ammoType: weaponData.ammoType,
         };
       });
   }, [normalizedInventory]);
