@@ -60,6 +60,8 @@ const PASSIVE_ABILITIES = [
   },
 ] as const;
 
+type EffectDuration = 'instant' | 'next-turn' | 'round' | 'scene' | 'concentration';
+
 interface MobileTropaDeChoquePanelProps {
   classTrack: string | null;
   nex: number;
@@ -69,6 +71,8 @@ interface MobileTropaDeChoquePanelProps {
   hpMax: number;
   onPEChange: (newPE: number) => void;
   className?: string;
+  onActivateEffect?: (id: string, name: string, duration?: EffectDuration, metadata?: Record<string, unknown>) => void;
+  isEffectActive?: (id: string) => boolean;
 }
 
 export function MobileTropaDeChoquePanel({

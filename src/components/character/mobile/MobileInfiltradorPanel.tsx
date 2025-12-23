@@ -12,6 +12,8 @@ import { Badge } from '@/components/ui/badge';
 import { MobileCollapsibleSection } from './MobileCollapsibleSection';
 import { toast } from 'sonner';
 
+type EffectDuration = 'instant' | 'next-turn' | 'round' | 'scene' | 'concentration';
+
 interface MobileInfiltradorPanelProps {
   classTrack: string | null;
   nex: number;
@@ -20,6 +22,8 @@ interface MobileInfiltradorPanelProps {
   onPEChange: (delta: number) => void;
   usedAbilitiesThisRound?: string[];
   onAbilityUsed?: (abilityId: string) => void;
+  onActivateEffect?: (id: string, name: string, duration?: EffectDuration, metadata?: Record<string, unknown>) => void;
+  isEffectActive?: (id: string) => boolean;
 }
 
 /**

@@ -46,6 +46,8 @@ function getParamedicoDice(nex: number): { base: number; formula: string } {
   return { base: 2, formula: '2d10' };
 }
 
+type EffectDuration = 'instant' | 'next-turn' | 'round' | 'scene' | 'concentration';
+
 interface MobileMedicoDeCampoPanelProps {
   classTrack?: string | null;
   nex: number;
@@ -53,6 +55,8 @@ interface MobileMedicoDeCampoPanelProps {
   onPEChange: (delta: number) => void;
   reanimacaoUsedThisScene?: boolean;
   onReanimacaoUsed?: () => void;
+  onActivateEffect?: (id: string, name: string, duration?: EffectDuration, metadata?: Record<string, unknown>) => void;
+  isEffectActive?: (id: string) => boolean;
 }
 
 export function MobileMedicoDeCampoPanel({

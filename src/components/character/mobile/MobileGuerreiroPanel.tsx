@@ -83,12 +83,16 @@ const PASSIVE_INFO = [
   { name: 'Potência Máxima', minNex: 99, effect: '2x Ataque Especial corpo a corpo' },
 ];
 
+type EffectDuration = 'instant' | 'next-turn' | 'round' | 'scene' | 'concentration';
+
 interface MobileGuerreiroPanelProps {
   classTrack: string | null | undefined;
   nex: number;
   peCurrent: number;
   onPEChange: (newPE: number) => void;
   onRequestAttack?: () => void;
+  onActivateEffect?: (id: string, name: string, duration?: EffectDuration, metadata?: Record<string, unknown>) => void;
+  isEffectActive?: (id: string) => boolean;
 }
 
 export function MobileGuerreiroPanel({

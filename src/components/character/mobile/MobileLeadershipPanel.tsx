@@ -70,6 +70,8 @@ const COMANDANTE_ABILITIES: LeadershipAbility[] = [
   },
 ];
 
+type EffectDuration = 'instant' | 'next-turn' | 'round' | 'scene' | 'concentration';
+
 interface MobileLeadershipPanelProps {
   classTrack: string | null | undefined;
   nex: number;
@@ -78,6 +80,8 @@ interface MobileLeadershipPanelProps {
   onPEChange: (newPE: number) => void;
   usedAbilitiesThisRound?: string[];
   onAbilityUsed?: (abilityId: string) => void;
+  onActivateEffect?: (id: string, name: string, duration?: EffectDuration, metadata?: Record<string, unknown>) => void;
+  isEffectActive?: (id: string) => boolean;
 }
 
 export function MobileLeadershipPanel({
