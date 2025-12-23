@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/tooltip';
 import { RuleBookTip } from './RuleBookTip';
 import { getRulebookContent } from '@/lib/rulebook-content';
+import { validateAttributesForNex } from '@/lib/validation-schemas';
 
 interface StepAttributesProps {
   formData: CharacterFormData;

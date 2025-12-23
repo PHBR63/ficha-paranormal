@@ -7,6 +7,7 @@
  * - Perícias de escolha da classe
  * - Perícias livres (baseadas em INT + classe + NEX)
  * - RuleBookTip: Explicações do livro de regras
+ * - Validação Zod: Schemas centralizados
  */
 
 import { useState, useMemo } from 'react';
@@ -21,6 +22,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { SkillChoiceModal, ConflictResolutionModal } from './SkillChoiceModal';
 import { RuleBookTip } from './RuleBookTip';
 import { getRulebookContent } from '@/lib/rulebook-content';
+import { skillIdSchema, VALID_SKILL_IDS } from '@/lib/validation-schemas';
 import {
   Tooltip,
   TooltipContent,
