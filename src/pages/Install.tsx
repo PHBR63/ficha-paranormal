@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -22,8 +23,9 @@ import { useThemeColors } from "@/hooks/useThemeColors";
 
 export default function Install() {
   const navigate = useNavigate();
-  const { isInstallable, isInstalled, isIOS, promptInstall } = usePWAInstall();
+  const { isInstallable, isInstalled, isIOS, isAndroid, promptInstall, debugInfo } = usePWAInstall();
   const themeColors = useThemeColors();
+  const [showDebug, setShowDebug] = useState(false);
 
   const handleInstall = async () => {
     const success = await promptInstall();
@@ -178,9 +180,16 @@ export default function Install() {
             </div>
           ) : isIOS ? (
             <div className="dossier-classified p-6">
-              <h3 className="font-bold text-lg mb-4 text-center text-[#F5F5F5]">
-                Como instalar no iPhone/iPad
-              </h3>
+              <div className="flex items-center justify-center gap-2 mb-4">
+                <Smartphone className="w-5 h-5 text-[#808080]" />
+                <h3 className="font-bold text-lg text-center text-[#F5F5F5]">
+                  Como instalar no iPhone/iPad
+                </h3>
+              </div>
+              
+              <p className="text-xs text-center text-amber-500/80 mb-4 px-4">
+                ⚠️ Use o Safari para instalar. Outros navegadores não suportam PWA no iOS.
+              </p>
               
               <div className="space-y-4">
                 {[
@@ -205,15 +214,22 @@ export default function Install() {
             </div>
           ) : (
             <div className="dossier-classified p-6">
-              <h3 className="font-bold text-lg mb-4 text-center text-[#F5F5F5]">
-                Como instalar no Android
-              </h3>
+              <div className="flex items-center justify-center gap-2 mb-4">
+                <Smartphone className="w-5 h-5 text-[#808080]" />
+                <h3 className="font-bold text-lg text-center text-[#F5F5F5]">
+                  {isAndroid ? 'Como instalar no Android' : 'Como instalar'}
+                </h3>
+              </div>
+              
+              <p className="text-xs text-center text-amber-500/80 mb-4 px-4">
+                ⚠️ Use Chrome, Edge ou outro navegador baseado em Chromium para melhor experiência.
+              </p>
               
               <div className="space-y-4">
                 {[
-                  { step: 1, title: "Abra o menu do navegador", subtitle: "Toque nos 3 pontos no canto superior direito" },
-                  { step: 2, title: 'Selecione "Instalar app"', subtitle: 'Ou "Adicionar à tela inicial"' },
-                  { step: 3, title: "Confirme a instalação", subtitle: "O app será adicionado à sua tela inicial" },
+                  { step: 1, title: "Abra o menu do navegador", subtitle: "Toque nos 3 pontos no canto superior direito", icon: null },
+                  { step: 2, title: 'Selecione "Instalar app"', subtitle: 'Ou "Adicionar à tela inicial"', icon: Download },
+                  { step: 3, title: "Confirme a instalação", subtitle: "O app será adicionado à sua tela inicial", icon: CheckCircle2 },
                 ].map((item) => (
                   <div key={item.step} className="flex items-start gap-4">
                     <div className="w-8 h-8 rounded-full bg-[#8B0000]/20 border border-[#8B0000]/40 flex items-center justify-center shrink-0 text-sm font-bold text-[#B22222]">
@@ -221,7 +237,10 @@ export default function Install() {
                     </div>
                     <div className="flex-1">
                       <p className="font-medium text-sm mb-1 text-[#F5F5F5]">{item.title}</p>
-                      <p className="text-[#808080] text-xs">{item.subtitle}</p>
+                      <div className="flex items-center gap-2 text-[#808080] text-xs">
+                        {item.icon && <item.icon className="w-4 h-4" />}
+                        <span>{item.subtitle}</span>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -230,6 +249,45 @@ export default function Install() {
               <p className="text-xs text-[#606060] text-center mt-4 font-mono">
                 Se o prompt de instalação aparecer automaticamente, aceite para instalar mais rápido
               </p>
+            </div>
+          )}
+        </motion.div>
+
+        {/* Debug Panel - Hidden by default */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.35 }}
+          className="mt-6"
+        >
+          <button
+            onClick={() => setShowDebug(!showDebug)}
+            className="w-full text-xs text-[#606060] hover:text-[#808080] transition-colors py-2"
+          >
+            {showDebug ? '▼ Ocultar diagnóstico' : '► Mostrar diagnóstico PWA'}
+          </button>
+          
+          {showDebug && (
+            <div className="dossier-classified p-4 mt-2 font-mono text-xs">
+              <div className="grid grid-cols-2 gap-2 mb-3 text-[#808080]">
+                <div>Instalável: <span className={isInstallable ? 'text-green-500' : 'text-red-400'}>{isInstallable ? 'Sim' : 'Não'}</span></div>
+                <div>Instalado: <span className={isInstalled ? 'text-green-500' : 'text-[#808080]'}>{isInstalled ? 'Sim' : 'Não'}</span></div>
+                <div>iOS: <span className={isIOS ? 'text-blue-400' : 'text-[#808080]'}>{isIOS ? 'Sim' : 'Não'}</span></div>
+                <div>Android: <span className={isAndroid ? 'text-green-400' : 'text-[#808080]'}>{isAndroid ? 'Sim' : 'Não'}</span></div>
+              </div>
+              
+              <div className="border-t border-[#8B0000]/20 pt-2">
+                <p className="text-[#606060] mb-2">Logs de diagnóstico:</p>
+                <div className="space-y-1 max-h-40 overflow-y-auto">
+                  {debugInfo.length > 0 ? (
+                    debugInfo.map((log, i) => (
+                      <p key={i} className="text-[#808080] text-[10px] leading-tight">{log}</p>
+                    ))
+                  ) : (
+                    <p className="text-[#606060] text-[10px]">Nenhum log ainda...</p>
+                  )}
+                </div>
+              </div>
             </div>
           )}
         </motion.div>
