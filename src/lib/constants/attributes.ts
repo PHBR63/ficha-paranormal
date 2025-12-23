@@ -25,6 +25,14 @@ export interface AttributeDisplayData {
   borderColor: string;
   /** Cor do texto */
   textColor: string;
+  /** Classe combinada para cards */
+  cardClass: string;
+  /** Classe de ring para foco */
+  ringColor: string;
+  /** Descrição educativa do atributo conforme Ordem Paranormal RPG */
+  description: string;
+  /** Casos de uso típicos deste atributo */
+  useCases: string[];
 }
 
 // Ordem padrão de exibição dos atributos
@@ -117,6 +125,10 @@ export const ATTRIBUTE_DISPLAY: Record<AttributeKey, AttributeDisplayData> = {
     bgColor: 'bg-blue-500/20',
     borderColor: 'border-blue-400/50',
     textColor: 'text-blue-300',
+    cardClass: ATTRIBUTE_CARD_CLASSES.agility,
+    ringColor: ATTRIBUTE_RING_COLORS.agility,
+    description: 'Representa reflexos, coordenação motora e capacidade de reagir rapidamente.',
+    useCases: ['Defesa', 'Iniciativa', 'Acrobacia', 'Furtividade', 'Pontaria', 'Pilotagem', 'Reflexos'],
   },
   strength: {
     name: 'Força',
@@ -125,6 +137,10 @@ export const ATTRIBUTE_DISPLAY: Record<AttributeKey, AttributeDisplayData> = {
     bgColor: 'bg-red-500/20',
     borderColor: 'border-red-400/50',
     textColor: 'text-red-300',
+    cardClass: ATTRIBUTE_CARD_CLASSES.strength,
+    ringColor: ATTRIBUTE_RING_COLORS.strength,
+    description: 'Representa poder físico, capacidade de causar dano corpo a corpo e resistência muscular.',
+    useCases: ['Ataques corpo a corpo', 'Atletismo', 'Luta', 'Capacidade de carga'],
   },
   intellect: {
     name: 'Intelecto',
@@ -133,6 +149,10 @@ export const ATTRIBUTE_DISPLAY: Record<AttributeKey, AttributeDisplayData> = {
     bgColor: 'bg-yellow-500/20',
     borderColor: 'border-yellow-400/50',
     textColor: 'text-yellow-300',
+    cardClass: ATTRIBUTE_CARD_CLASSES.intellect,
+    ringColor: ATTRIBUTE_RING_COLORS.intellect,
+    description: 'Representa capacidade de raciocínio, memória, conhecimento técnico e análise lógica.',
+    useCases: ['Investigação', 'Medicina', 'Ciências', 'Tecnologia', 'Tática', 'Ocultismo'],
   },
   presence: {
     name: 'Presença',
@@ -141,6 +161,10 @@ export const ATTRIBUTE_DISPLAY: Record<AttributeKey, AttributeDisplayData> = {
     bgColor: 'bg-purple-500/20',
     borderColor: 'border-purple-400/50',
     textColor: 'text-purple-300',
+    cardClass: ATTRIBUTE_CARD_CLASSES.presence,
+    ringColor: ATTRIBUTE_RING_COLORS.presence,
+    description: 'Representa força de personalidade, carisma, liderança e capacidade de influenciar outros.',
+    useCases: ['Rituais', 'Diplomacia', 'Intimidação', 'Enganação', 'Intuição', 'Vontade'],
   },
   vigor: {
     name: 'Vigor',
@@ -149,6 +173,10 @@ export const ATTRIBUTE_DISPLAY: Record<AttributeKey, AttributeDisplayData> = {
     bgColor: 'bg-green-500/20',
     borderColor: 'border-green-400/50',
     textColor: 'text-green-300',
+    cardClass: ATTRIBUTE_CARD_CLASSES.vigor,
+    ringColor: ATTRIBUTE_RING_COLORS.vigor,
+    description: 'Representa resistência física, saúde, constituição e capacidade de suportar danos.',
+    useCases: ['Pontos de Vida', 'Fortitude', 'Resistência a venenos', 'Resistência a doenças'],
   },
 };
 
