@@ -21,6 +21,8 @@ import {
 import { toast } from 'sonner';
 import { MobileCollapsibleSection } from './MobileCollapsibleSection';
 
+type EffectDuration = 'instant' | 'next-turn' | 'round' | 'scene' | 'concentration';
+
 interface MobileNegociadorPanelProps {
   classTrack?: string | null;
   nex: number;
@@ -30,6 +32,8 @@ interface MobileNegociadorPanelProps {
   onEloquenciaToggle?: (active: boolean) => void;
   conhecoCaraUsedThisMission?: boolean;
   onConhecoCaraUsed?: () => void;
+  onActivateEffect?: (id: string, name: string, duration?: EffectDuration, metadata?: Record<string, unknown>) => void;
+  isEffectActive?: (id: string) => boolean;
 }
 
 export function MobileNegociadorPanel({

@@ -25,6 +25,8 @@ import {
 } from '@/components/ui/drawer';
 import { MobileCollapsibleSection } from './MobileCollapsibleSection';
 
+type EffectDuration = 'instant' | 'next-turn' | 'round' | 'scene' | 'concentration';
+
 interface MobileTecnicoPanelProps {
   classTrack: string | null;
   nex: number;
@@ -35,6 +37,8 @@ interface MobileTecnicoPanelProps {
     strength: number;
     intellect: number;
   };
+  onActivateEffect?: (id: string, name: string, duration?: EffectDuration, metadata?: Record<string, unknown>) => void;
+  isEffectActive?: (id: string) => boolean;
 }
 
 /**

@@ -78,12 +78,16 @@ const ATIRADOR_ABILITIES: AtiradorAbility[] = [
   },
 ];
 
+type EffectDuration = 'instant' | 'next-turn' | 'round' | 'scene' | 'concentration';
+
 interface MobileAtiradorDeElitePanelProps {
   classTrack?: string | null;
   nex: number;
   peCurrent: number;
   intellect: number;
   onPEChange: (newPE: number) => void;
+  onActivateEffect?: (id: string, name: string, duration?: EffectDuration, metadata?: Record<string, unknown>) => void;
+  isEffectActive?: (id: string) => boolean;
 }
 
 export function MobileAtiradorDeElitePanel({

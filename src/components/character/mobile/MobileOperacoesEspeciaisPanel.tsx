@@ -68,6 +68,8 @@ const PASSIVE_ABILITIES = [
   },
 ] as const;
 
+type EffectDuration = 'instant' | 'next-turn' | 'round' | 'scene' | 'concentration';
+
 interface MobileOperacoesEspeciaisPanelProps {
   classTrack: string | null;
   nex: number;
@@ -77,6 +79,8 @@ interface MobileOperacoesEspeciaisPanelProps {
   // Tracking centralizado
   usedAbilitiesThisRound?: string[];
   onAbilityUsed?: (abilityId: string) => void;
+  onActivateEffect?: (id: string, name: string, duration?: EffectDuration, metadata?: Record<string, unknown>) => void;
+  isEffectActive?: (id: string) => boolean;
 }
 
 export function MobileOperacoesEspeciaisPanel({
