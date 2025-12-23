@@ -93,9 +93,9 @@ export const AttributeGridNew = memo(function AttributeGridNew({
                 {value}
               </span>
               
-              {/* Nome do atributo */}
+              {/* Nome do atributo - nome completo em português */}
               <span className="text-[10px] text-muted-foreground uppercase tracking-wider mt-1">
-                {display.abbr}
+                {display.label}
               </span>
             </div>
           );
