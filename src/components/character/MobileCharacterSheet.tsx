@@ -65,6 +65,7 @@ import {
   MobileGuerreiroPanel,
   MobileOperacoesEspeciaisPanel,
   MobileTropaDeChoquePanel,
+  MobileAtiradorDeElitePanel,
   type WeaponEntry,
   type BonusSource,
   type ActiveCondition,
@@ -850,6 +851,15 @@ export function MobileCharacterSheet({
               vigor={character.vigor}
               hpCurrent={character.hp_current}
               hpMax={character.hp_max}
+              onPEChange={handlePEChange}
+            />
+            
+            {/* Painel Atirador de Elite */}
+            <MobileAtiradorDeElitePanel
+              classTrack={character.class_track}
+              nex={character.nex}
+              peCurrent={character.pe_current}
+              intellect={character.intellect}
               onPEChange={handlePEChange}
             />
           </>
