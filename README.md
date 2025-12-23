@@ -97,11 +97,122 @@ src/
 ├── contexts/            # Contextos React (Auth, Theme)
 ├── hooks/               # Hooks customizados
 ├── lib/
+│   ├── constants/       # Constantes centralizadas (game-ids.ts)
 │   ├── class-powers/    # Poderes de classe por trilha
 │   ├── rituals/         # Sistema de rituais
 │   └── effects/         # Motor de efeitos unificado
 ├── pages/               # Páginas da aplicação
 └── integrations/        # Integração com Supabase
+```
+
+## 🎯 Sistema Centralizado de IDs (`game-ids.ts`)
+
+O arquivo `src/lib/constants/game-ids.ts` é a **fonte única de verdade** para todos os IDs do sistema Ordem Paranormal RPG. Ele garante consistência e type safety em todo o projeto.
+
+### Constantes Disponíveis
+
+| Constante | Descrição | Exemplo |
+|-----------|-----------|---------|
+| `CLASS_IDS` | IDs das classes | `COMBATENTE`, `ESPECIALISTA`, `OCULTISTA` |
+| `COMBATENTE_TRACK_IDS` | Trilhas do Combatente | `ANIQUILADOR`, `COMANDANTE_DE_CAMPO`, etc. |
+| `ESPECIALISTA_TRACK_IDS` | Trilhas do Especialista | `ATIRADOR_DE_ELITE`, `INFILTRADOR`, etc. |
+| `OCULTISTA_TRACK_IDS` | Trilhas do Ocultista | `CONDUÍTE`, `FLAGELADOR`, etc. |
+| `CORE_ORIGIN_IDS` | Origens do livro base | `ACADEMICO`, `AGENTE_DE_SAUDE`, etc. |
+| `SUPPLEMENT_ORIGIN_IDS` | Origens de suplementos | `AMNÉSICO_ORIGEM_SUPLEMENTAR`, etc. |
+| `PATENT_IDS` | Patentes da Ordem | `RECRUTA`, `OPERADOR`, `AGENTE_ESPECIAL`, etc. |
+| `VALID_NEX_VALUES` | Valores válidos de NEX | `5, 10, 15, ..., 99` |
+| `SKILL_IDS` | IDs de todas as perícias | `ACROBACIA`, `ATLETISMO`, `CIENCIAS`, etc. |
+| `ELEMENT_IDS` | Elementos paranormais | `SANGUE`, `MORTE`, `CONHECIMENTO`, `ENERGIA`, `MEDO` |
+| `SKILLS_BY_ATTRIBUTE` | Perícias por atributo | `AGI: ['acrobacia', 'furtividade', ...]` |
+
+### Tipos TypeScript
+
+```typescript
+import type { 
+  ClassId,           // 'combatente' | 'especialista' | 'ocultista'
+  TrackId,           // União de todas as trilhas
+  OriginId,          // União de todas as origens
+  PatentId,          // 'recruta' | 'operador' | ...
+  NexValue,          // 5 | 10 | 15 | ... | 99
+  SkillId,           // União de todas as perícias
+  ElementId          // 'Sangue' | 'Morte' | 'Conhecimento' | 'Energia' | 'Medo'
+} from '@/lib/constants/game-ids';
+```
+
+### Funções de Validação
+
+```typescript
+import {
+  isValidClassId,         // Valida ID de classe
+  isValidTrackForClass,   // Valida trilha para uma classe específica
+  isValidOriginId,        // Valida ID de origem
+  isValidPatentId,        // Valida ID de patente
+  getPatentIdByName,      // Obtém ID da patente pelo nome
+  isValidNexValue,        // Valida valor de NEX
+  isValidSkillId,         // Valida ID de perícia
+  isValidElementId,       // Valida elemento paranormal
+  isValidElementIdIgnoreCase, // Validação case-insensitive
+  normalizeElementId,     // Normaliza ID do elemento
+  getTracksForClass,      // Lista trilhas de uma classe
+  isSkillOfAttribute,     // Verifica se perícia pertence a um atributo
+  getSkillAttribute       // Retorna o atributo de uma perícia
+} from '@/lib/constants/game-ids';
+```
+
+### Exemplos de Uso
+
+```typescript
+// Validar seleção de classe
+if (!isValidClassId(selectedClass)) {
+  console.warn('Classe inválida:', selectedClass);
+  return;
+}
+
+// Validar trilha para a classe
+if (!isValidTrackForClass(trackId, characterClass)) {
+  console.warn('Trilha inválida para esta classe');
+  return;
+}
+
+// Obter trilhas disponíveis para uma classe
+const availableTracks = getTracksForClass('combatente');
+
+// Validar NEX antes de salvar
+if (isValidNexValue(newNex)) {
+  updateCharacter({ nex: newNex as NexValue });
+}
+
+// Validar elemento (case-insensitive)
+if (isValidElementIdIgnoreCase(userInput)) {
+  const normalizedElement = normalizeElementId(userInput);
+}
+```
+
+### Componentes que Utilizam
+
+| Componente | Funções Utilizadas |
+|------------|-------------------|
+| `StepClass.tsx` | `isValidClassId`, `ClassId` |
+| `StepOrigin.tsx` | `isValidOriginId`, `OriginId`, `CORE_ORIGIN_IDS` |
+| `StepTrack.tsx` | `isValidTrackForClass` |
+| `NexSelector.tsx` | `isValidNexValue`, `NexValue`, `VALID_NEX_VALUES` |
+| `PatentSelector.tsx` | `isValidPatentId`, `getPatentIdByName`, `PatentId` |
+| `RitualSelectionModal.tsx` | `getElementConfigSafe`, `getElementKeys` |
+| `PowerSubchoiceModal.tsx` | `SKILL_IDS`, `isValidElementId` |
+
+### Testes de Integridade
+
+O arquivo `src/lib/__tests__/game-ids-integrity.test.ts` contém testes automatizados que validam:
+
+- Consistência entre `game-ids.ts` e `character-data.ts`
+- Todas as funções de validação
+- Mapeamento correto de perícias por atributo
+- Correspondência de trilhas por classe
+- Validação de elementos paranormais
+
+Execute os testes com:
+```bash
+npm test -- game-ids-integrity
 ```
 
 ## 📖 Sistema de Regras
