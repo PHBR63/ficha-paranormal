@@ -17,6 +17,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { 
   Zap, 
   Sparkles,
@@ -28,6 +30,7 @@ import {
   Flame,
   Check,
   X,
+  Wand2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Ritual } from '@/lib/rituals/legacy-exports';
@@ -94,6 +97,9 @@ export function MobileRitualCastModal({
   autoOpenWizard = true,
 }: MobileRitualCastModalProps) {
   const [selectedEnhancements, setSelectedEnhancements] = useState<string[]>([]);
+  
+  // Estado para controlar abertura automática do wizard
+  const [wizardEnabled, setWizardEnabled] = useState(autoOpenWizard);
   
   // Estado para o wizard de efeitos
   const [wizardOpen, setWizardOpen] = useState(false);
@@ -164,8 +170,8 @@ export function MobileRitualCastModal({
     // Chama o callback de confirmação
     onConfirm(ritual, totalCost, validSelectedEnhancements);
     
-    // Se autoOpenWizard está ativo e o ritual é do tipo Ritual (não UnifiedRitual), abre o wizard
-    if (autoOpenWizard && 'id' in ritual) {
+    // Se wizard está ativo e o ritual é do tipo Ritual (não UnifiedRitual), abre o wizard
+    if (wizardEnabled && 'id' in ritual) {
       setCastRitual(ritual as Ritual);
       setCastEnhancements(validSelectedEnhancements);
       setCastPeCost(totalCost);
@@ -180,7 +186,7 @@ export function MobileRitualCastModal({
       setSelectedEnhancements([]);
       onOpenChange(false);
     }
-  }, [canCast, ritual, elementConfig, totalCost, validSelectedEnhancements, autoOpenWizard, onConfirm, onOpenChange]);
+  }, [canCast, ritual, elementConfig, totalCost, validSelectedEnhancements, wizardEnabled, onConfirm, onOpenChange]);
 
   // Handler para fechar wizard e limpar estado
   const handleWizardComplete = useCallback(() => {
@@ -311,6 +317,22 @@ export function MobileRitualCastModal({
                 </div>
               </div>
             )}
+
+            {/* Toggle do wizard de efeitos */}
+            <div className="flex items-center justify-between p-2 rounded-lg bg-muted/30 border border-border">
+              <div className="flex items-center gap-2">
+                <Wand2 className="w-4 h-4 text-muted-foreground" />
+                <Label htmlFor="wizard-toggle" className="text-xs cursor-pointer">
+                  Processar efeitos
+                </Label>
+              </div>
+              <Switch
+                id="wizard-toggle"
+                checked={wizardEnabled}
+                onCheckedChange={setWizardEnabled}
+                className="scale-90"
+              />
+            </div>
 
             {/* Custo total */}
             <div className={cn(
