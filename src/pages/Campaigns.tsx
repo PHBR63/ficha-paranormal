@@ -17,9 +17,9 @@ import {
   Calendar, 
   ArrowLeft,
   Loader2,
-  LogIn,
-  Eye
+  LogIn
 } from 'lucide-react';
+import { Logo } from '@/components/ui/logo';
 import {
   Dialog,
   DialogContent,
@@ -225,10 +225,7 @@ export default function Campaigns() {
         <div className="absolute inset-0 landing-noise pointer-events-none" />
         
         <div className="relative flex flex-col items-center gap-4">
-          <div className="relative">
-            <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl animate-pulse" />
-            <Eye className="h-10 w-10 text-primary animate-pulse relative" />
-          </div>
+          <Logo size="lg" animate glow />
           <p className="text-muted-foreground font-mono tracking-wider text-sm">CARREGANDO CAMPANHAS...</p>
         </div>
       </div>
