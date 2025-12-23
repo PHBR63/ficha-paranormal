@@ -79,6 +79,7 @@ import { useAutoConditions, type ActiveCondition as AutoCondition } from '@/hook
 import { useRitualCombatBonuses } from '@/hooks/useRitualCombatBonuses';
 import { useSustainedRituals } from '@/hooks/useSustainedRituals';
 import { useEquipmentMigration } from '@/hooks/useEquipmentMigration';
+import { useRoundTracking } from '@/hooks/useRoundTracking';
 import { BonusSummaryCard } from '@/components/character/BonusSummaryCard';
 import { SustainedRitualsPanel } from '@/components/character/SustainedRitualsPanel';
 import { ConditionalBonusesPanel } from '@/components/character/ConditionalBonusesPanel';
@@ -95,6 +96,7 @@ import { LeadershipAbilitiesPanel } from '@/components/character/LeadershipAbili
 import { GuerreiroAbilitiesPanel } from '@/components/character/GuerreiroAbilitiesPanel';
 import { OperacoesEspeciaisPanel } from '@/components/character/OperacoesEspeciaisPanel';
 import { TropaDeChoquePanel } from '@/components/character/TropaDeChoquePanel';
+import { RoundControlPanel } from '@/components/character/RoundControlPanel';
 import { Logo } from '@/components/ui/logo';
 
 // Novos componentes do redesign 2.0 (estilo ficha de papel)
@@ -357,7 +359,10 @@ export default function CharacterSheet() {
   // Bônus de combate de rituais sustentados (ataque, dano, dados extras)
   const ritualCombatSummary = useRitualCombatBonuses(sustainedRituals);
   
-  const activeRitualsForDefense = useMemo(() => 
+  // Hook centralizado de tracking de uso por rodada (habilidades 1x/rodada)
+  const roundTracking = useRoundTracking();
+  
+  const activeRitualsForDefense = useMemo(() =>
     sustainedRituals.map(r => ({
       ritualId: r.ritualId,
       ritualName: r.ritualName,
@@ -1945,6 +1950,14 @@ export default function CharacterSheet() {
                 />
               )}
 
+              {/* Controle de Rodada - Tracking centralizado */}
+              <RoundControlPanel
+                currentRound={roundTracking.currentRound}
+                usedAbilitiesThisRound={roundTracking.usedAbilitiesThisRound}
+                onAdvanceRound={roundTracking.advanceRound}
+                onResetCombat={roundTracking.resetCombat}
+              />
+
               {/* Painel de Liderança - Comandante de Campo */}
               <LeadershipAbilitiesPanel
                 classTrack={character.class_track}
@@ -1956,6 +1969,8 @@ export default function CharacterSheet() {
                   pe: newPE, 
                   san: sanCurrent 
                 })}
+                usedAbilitiesThisRound={roundTracking.usedAbilitiesThisRound}
+                onAbilityUsed={roundTracking.markAbilityUsed}
               />
 
               {/* Painel de Guerreiro - Revidar e Força Opressora */}
@@ -1980,6 +1995,8 @@ export default function CharacterSheet() {
                   pe: newPE, 
                   san: sanCurrent 
                 })}
+                usedAbilitiesThisRound={roundTracking.usedAbilitiesThisRound}
+                onAbilityUsed={roundTracking.markAbilityUsed}
               />
 
               {/* Painel Tropa de Choque - Cai Dentro e Duro de Matar */}

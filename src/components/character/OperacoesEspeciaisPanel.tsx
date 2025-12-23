@@ -99,6 +99,9 @@ interface OperacoesEspeciaisPanelProps {
   peCurrent: number;
   onPEChange: (newPE: number) => void;
   className?: string;
+  // Tracking centralizado de uso por rodada
+  usedAbilitiesThisRound?: string[];
+  onAbilityUsed?: (abilityId: string) => void;
 }
 
 export function OperacoesEspeciaisPanel({
@@ -107,10 +110,21 @@ export function OperacoesEspeciaisPanel({
   peCurrent,
   onPEChange,
   className,
+  usedAbilitiesThisRound: externalUsedAbilities,
+  onAbilityUsed,
 }: OperacoesEspeciaisPanelProps) {
   const [isOpen, setIsOpen] = useState(true);
-  const [usedAbilitiesThisRound, setUsedAbilitiesThisRound] = useState<Set<string>>(new Set());
+  // Usa tracking externo se fornecido, senão usa estado local
+  const [localUsedAbilities, setLocalUsedAbilities] = useState<Set<string>>(new Set());
   const [showSurtoDialog, setShowSurtoDialog] = useState(false);
+  
+  // Determina qual fonte de tracking usar
+  const usedAbilitiesSet = useMemo(() => {
+    if (externalUsedAbilities) {
+      return new Set(externalUsedAbilities);
+    }
+    return localUsedAbilities;
+  }, [externalUsedAbilities, localUsedAbilities]);
 
   // Verifica se é trilha Operações Especiais
   const isOperacoesEspeciais = useMemo(() => {
@@ -131,10 +145,19 @@ export function OperacoesEspeciaisPanel({
     [nex]
   );
 
+  // Marca habilidade como usada (centralizado ou local)
+  const markAbilityAsUsed = useCallback((abilityId: string) => {
+    if (onAbilityUsed) {
+      onAbilityUsed(abilityId);
+    } else {
+      setLocalUsedAbilities(prev => new Set(prev).add(abilityId));
+    }
+  }, [onAbilityUsed]);
+
   // Handler para usar habilidade ativada
   const handleUseAbility = useCallback((abilityId: string, peCost: number, abilityName: string) => {
     // Verifica uso por rodada
-    if (usedAbilitiesThisRound.has(abilityId)) {
+    if (usedAbilitiesSet.has(abilityId)) {
       toast({
         title: "Limite por rodada",
         description: `${abilityName} já foi usada nesta rodada.`,
@@ -161,20 +184,20 @@ export function OperacoesEspeciaisPanel({
 
     // Deduz PE e marca como usada
     onPEChange(peCurrent - peCost);
-    setUsedAbilitiesThisRound(prev => new Set(prev).add(abilityId));
+    markAbilityAsUsed(abilityId);
 
     toast({
       title: `${abilityName} Ativada!`,
       description: `${peCost} PE consumidos. Você pode fazer um ataque adicional.`,
     });
-  }, [peCurrent, onPEChange, usedAbilitiesThisRound]);
+  }, [peCurrent, onPEChange, usedAbilitiesSet, markAbilityAsUsed]);
 
   // Handler para escolha do Surto de Adrenalina
   const handleSurtoChoice = useCallback((choice: 'standard' | 'movement') => {
     const ability = OPERACOES_ABILITIES.find(a => a.id === 'surto-de-adrenalina')!;
     
     onPEChange(peCurrent - ability.peCost);
-    setUsedAbilitiesThisRound(prev => new Set(prev).add('surto-de-adrenalina'));
+    markAbilityAsUsed('surto-de-adrenalina');
     setShowSurtoDialog(false);
 
     const choiceText = choice === 'standard' ? 'ação padrão' : 'ação de movimento';
@@ -182,12 +205,14 @@ export function OperacoesEspeciaisPanel({
       title: "Surto de Adrenalina!",
       description: `${ability.peCost} PE consumidos. Você ganha uma ${choiceText} adicional.`,
     });
-  }, [peCurrent, onPEChange]);
+  }, [peCurrent, onPEChange, markAbilityAsUsed]);
 
-  // Reset de usos por rodada (exposto para uso externo)
+  // Reset de usos por rodada (só usado se não tiver tracking externo)
   const resetRoundUsage = useCallback(() => {
-    setUsedAbilitiesThisRound(new Set());
-  }, []);
+    if (!externalUsedAbilities) {
+      setLocalUsedAbilities(new Set());
+    }
+  }, [externalUsedAbilities]);
 
   // Não renderiza se não for Operações Especiais ou não tiver habilidades
   if (!isOperacoesEspeciais || (unlockedActiveAbilities.length === 0 && unlockedPassiveAbilities.length === 0)) {
@@ -265,7 +290,7 @@ export function OperacoesEspeciaisPanel({
                   <p className="text-xs text-muted-foreground font-medium">Ativadas</p>
                   {unlockedActiveAbilities.map((ability) => {
                     const Icon = ability.icon;
-                    const isUsed = usedAbilitiesThisRound.has(ability.id);
+                    const isUsed = usedAbilitiesSet.has(ability.id);
                     const canAfford = peCurrent >= ability.peCost;
 
                     return (
@@ -333,7 +358,7 @@ export function OperacoesEspeciaisPanel({
               )}
 
               {/* Botão de Reset de Rodada */}
-              {usedAbilitiesThisRound.size > 0 && (
+              {usedAbilitiesSet.size > 0 && !externalUsedAbilities && (
                 <Button
                   variant="outline"
                   size="sm"
