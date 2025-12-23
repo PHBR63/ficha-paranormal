@@ -2,35 +2,24 @@
  * AttributeGridNew - Grid de atributos estilo ficha de papel
  * Com d20 vermelho clicável para cada atributo
  * OTIMIZAÇÃO: Componente memoizado para evitar re-renders desnecessários
+ * 
+ * Usa constantes centralizadas de src/lib/constants/attributes.ts
  */
 
 import { memo } from 'react';
-import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { 
+  ATTRIBUTE_ORDER, 
+  ATTRIBUTE_DISPLAY, 
+  ATTRIBUTE_COLORS,
+  type AttributeKey 
+} from '@/lib/constants/attributes';
 
 interface AttributeGridNewProps {
   attributes: Record<string, number>;
   onRoll?: (attributeValue: number, attributeName: string) => void;
   className?: string;
 }
-
-// Nomes dos atributos em português para a ficha
-const ATTRIBUTE_DISPLAY: Record<string, { label: string; abbr: string }> = {
-  agility: { label: 'Agilidade', abbr: 'AGI' },
-  strength: { label: 'Força', abbr: 'FOR' },
-  intellect: { label: 'Intelecto', abbr: 'INT' },
-  presence: { label: 'Presença', abbr: 'PRE' },
-  vigor: { label: 'Vigor', abbr: 'VIG' },
-};
-
-// Cores dos atributos
-const ATTRIBUTE_COLORS: Record<string, string> = {
-  agility: 'hsl(var(--attr-agility))',
-  strength: 'hsl(var(--attr-strength))',
-  intellect: 'hsl(var(--attr-intellect))',
-  presence: 'hsl(var(--attr-presence))',
-  vigor: 'hsl(var(--attr-vigor))',
-};
 
 // Componente do D20 vermelho
 function D20Icon({ className }: { className?: string }) {
@@ -53,7 +42,7 @@ export const AttributeGridNew = memo(function AttributeGridNew({
   onRoll, 
   className 
 }: AttributeGridNewProps) {
-  const order = ['agility', 'strength', 'intellect', 'presence', 'vigor'];
+  
 
   return (
     <div className={cn("sheet-panel p-4", className)}>
@@ -62,7 +51,7 @@ export const AttributeGridNew = memo(function AttributeGridNew({
       </h3>
       
       <div className="grid grid-cols-5 gap-3">
-        {order.map((key) => {
+        {ATTRIBUTE_ORDER.map((key) => {
           const value = attributes[key] || 0;
           const display = ATTRIBUTE_DISPLAY[key];
           const color = ATTRIBUTE_COLORS[key];
@@ -78,7 +67,7 @@ export const AttributeGridNew = memo(function AttributeGridNew({
                 "hover:border-primary/50 hover:scale-[1.03] active:scale-[0.97]",
                 "transition-all duration-200"
               )}
-              onClick={() => onRoll?.(value, display.label)}
+              onClick={() => onRoll?.(value, display.name)}
             >
               {/* D20 vermelho clicável */}
               <div className="absolute -top-2 -right-2 text-destructive opacity-70 group-hover:opacity-100 group-hover:rotate-12 transition-all duration-200">
@@ -95,7 +84,7 @@ export const AttributeGridNew = memo(function AttributeGridNew({
               
               {/* Nome do atributo - nome completo em português */}
               <span className="text-[10px] text-muted-foreground uppercase tracking-wider mt-1">
-                {display.label}
+                {display.name}
               </span>
             </div>
           );

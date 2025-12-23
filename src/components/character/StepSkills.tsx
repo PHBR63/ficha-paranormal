@@ -14,7 +14,7 @@ import { useState, useMemo } from 'react';
 import { SKILLS, getExtraSkillsByNex } from '@/lib/character-data';
 import { getClassSkillRules } from '@/lib/character-builder-engine';
 import { cn } from '@/lib/utils';
-import { AlertTriangle, Check, Lock, Search, ChevronDown, ChevronRight, TrendingUp, ChevronsUpDown } from 'lucide-react';
+import { AlertTriangle, Check, Lock, Search, ChevronDown, ChevronRight, ChevronsUpDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
@@ -23,6 +23,15 @@ import { SkillChoiceModal, ConflictResolutionModal } from './SkillChoiceModal';
 import { RuleBookTip } from './RuleBookTip';
 import { getRulebookContent } from '@/lib/rulebook-content';
 import { skillIdSchema, VALID_SKILL_IDS } from '@/lib/validation-schemas';
+import {
+  ATTRIBUTE_ORDER,
+  ATTRIBUTE_NAMES,
+  ATTRIBUTE_ABBR,
+  ATTRIBUTE_CARD_CLASSES,
+  ATTRIBUTE_TEXT_COLORS,
+  ATTRIBUTE_RING_COLORS,
+  type AttributeKey,
+} from '@/lib/constants/attributes';
 import {
   Tooltip,
   TooltipContent,
@@ -43,41 +52,8 @@ interface StepSkillsProps {
   buildResult: RebuildResult;
 }
 
-// Nomes completos dos atributos em português (conforme livro oficial)
-const ATTRIBUTE_NAMES: Record<string, string> = {
-  agility: 'Agilidade',
-  strength: 'Força',
-  intellect: 'Intelecto',
-  presence: 'Presença',
-  vigor: 'Vigor',
-};
-
-// Abreviações dos atributos
-const ATTRIBUTE_LABELS: Record<string, string> = {
-  agility: 'AGI',
-  strength: 'FOR',
-  intellect: 'INT',
-  presence: 'PRE',
-  vigor: 'VIG',
-};
-
-const ATTRIBUTE_COLORS: Record<string, string> = {
-  agility: 'bg-blue-500/20 border-blue-400/50',
-  strength: 'bg-red-500/20 border-red-400/50',
-  intellect: 'bg-yellow-500/20 border-yellow-400/50',
-  presence: 'bg-purple-500/20 border-purple-400/50',
-  vigor: 'bg-green-500/20 border-green-400/50',
-};
-
-const ATTRIBUTE_TEXT_COLORS: Record<string, string> = {
-  agility: 'text-blue-300',
-  strength: 'text-red-300',
-  intellect: 'text-yellow-300',
-  presence: 'text-purple-300',
-  vigor: 'text-green-300',
-};
-
-const ATTRIBUTE_ORDER = ['agility', 'strength', 'intellect', 'presence', 'vigor'];
+// Usa as constantes centralizadas - apenas ATTRIBUTE_ABBR para badges compactos
+// ATTRIBUTE_ORDER, ATTRIBUTE_NAMES, ATTRIBUTE_CARD_CLASSES, etc. vêm de @/lib/constants/attributes
 
 export function StepSkills({ formData, updateFormData, buildResult }: StepSkillsProps) {
   const [choiceModalOpen, setChoiceModalOpen] = useState(false);
@@ -425,8 +401,8 @@ export function StepSkills({ formData, updateFormData, buildResult }: StepSkills
             <div className="flex flex-wrap justify-center gap-3">
               {ATTRIBUTE_ORDER.map((attr) => {
                 const value = formData.attributes[attr as keyof typeof formData.attributes];
-                const label = ATTRIBUTE_LABELS[attr];
-                const colors = ATTRIBUTE_COLORS[attr];
+                const label = ATTRIBUTE_ABBR[attr];
+                const colors = ATTRIBUTE_CARD_CLASSES[attr];
                 const textColor = ATTRIBUTE_TEXT_COLORS[attr];
                 const attrSkills = skillsByAttribute[attr] || [];
                 const isHighlighted = expandedAttributes.length === 1 && expandedAttributes[0] === attr;
@@ -504,8 +480,8 @@ export function StepSkills({ formData, updateFormData, buildResult }: StepSkills
           {ATTRIBUTE_ORDER.map((attr) => {
             const skills = filteredSkillsByAttribute[attr];
             const isExpanded = expandedAttributes.includes(attr);
-            const attrLabel = ATTRIBUTE_LABELS[attr];
-            const attrColors = ATTRIBUTE_COLORS[attr];
+            const attrLabel = ATTRIBUTE_ABBR[attr];
+            const attrColors = ATTRIBUTE_CARD_CLASSES[attr];
             const trainedInAttr = skills.filter(s => 
               unavailableSkills.has(s.id) || formData.freeSkills.includes(s.id)
             ).length;

@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { SKILLS } from '@/lib/character-data';
 import { cn } from '@/lib/utils';
 import { Check, Search } from 'lucide-react';
+import { ATTRIBUTE_ABBR } from '@/lib/constants/attributes';
 
 interface AmnesicSkillModalProps {
   open: boolean;
@@ -19,14 +20,6 @@ interface AmnesicSkillModalProps {
   onConfirm: (skills: string[]) => void;
   currentSelection?: string[];
 }
-
-const ATTRIBUTE_LABELS: Record<string, string> = {
-  agility: 'AGI',
-  strength: 'FOR',
-  intellect: 'INT',
-  presence: 'PRE',
-  vigor: 'VIG',
-};
 
 export function AmnesicSkillModal({
   open,
@@ -102,7 +95,7 @@ export function AmnesicSkillModal({
                     <div className="flex items-center gap-2">
                       <span className="font-medium">{skill.name}</span>
                       <span className="text-xs px-1.5 py-0.5 bg-muted rounded">
-                        {ATTRIBUTE_LABELS[skill.attribute]}
+                        {ATTRIBUTE_ABBR[skill.attribute as keyof typeof ATTRIBUTE_ABBR]}
                       </span>
                       {skill.requiresTraining && (
                         <span className="text-xs text-warning">Requer treino</span>

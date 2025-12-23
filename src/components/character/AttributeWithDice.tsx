@@ -1,7 +1,18 @@
+/**
+ * AttributeWithDice - Componente de atributo com dado clicável
+ * Usa constantes centralizadas de src/lib/constants/attributes.ts
+ */
+
 import { motion } from 'framer-motion';
 import { Dices } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
+import { 
+  ATTRIBUTE_ORDER,
+  ATTRIBUTE_COLORS,
+  ATTRIBUTE_NAMES,
+  ABBR_TO_KEY,
+  type AttributeKey 
+} from '@/lib/constants/attributes';
 interface AttributeWithDiceProps {
   label: string;
   value: number;
@@ -9,31 +20,16 @@ interface AttributeWithDiceProps {
   className?: string;
 }
 
-// Cores dos atributos usando variáveis CSS do design system
-const ATTRIBUTE_COLORS: Record<string, string> = {
-  AGI: 'hsl(var(--attr-agility))',
-  FOR: 'hsl(var(--attr-strength))',
-  INT: 'hsl(var(--attr-intellect))',
-  PRE: 'hsl(var(--attr-presence))',
-  VIG: 'hsl(var(--attr-vigor))',
-};
-
-const ATTRIBUTE_FULL_NAMES: Record<string, string> = {
-  AGI: 'Agilidade',
-  FOR: 'Força',
-  INT: 'Intelecto',
-  PRE: 'Presença',
-  VIG: 'Vigor',
-};
-
 export function AttributeWithDice({ 
   label, 
   value, 
   onRoll,
   className 
 }: AttributeWithDiceProps) {
-  const color = ATTRIBUTE_COLORS[label] || 'hsl(var(--foreground))';
-  const fullName = ATTRIBUTE_FULL_NAMES[label] || label;
+  // Converte abreviação (AGI) para chave (agility) se necessário
+  const key = ABBR_TO_KEY[label] || label as AttributeKey;
+  const color = ATTRIBUTE_COLORS[key] || 'hsl(var(--foreground))';
+  const fullName = ATTRIBUTE_NAMES[key] || label;
   
   return (
     <motion.div
@@ -90,31 +86,31 @@ export function AttributeWithDice({
   );
 }
 
+// Mapeamento interno para compatibilidade com formato antigo
+const ABBR_ORDER = ['AGI', 'FOR', 'INT', 'PRE', 'VIG'] as const;
+const KEY_TO_ABBR: Record<string, string> = {
+  agility: 'AGI',
+  strength: 'FOR',
+  intellect: 'INT',
+  presence: 'PRE',
+  vigor: 'VIG',
+};
 interface AttributeGridProps {
   attributes: Record<string, number>;
   onRoll?: (attributeValue: number, attributeName: string) => void;
 }
 
 export function AttributeGrid({ attributes, onRoll }: AttributeGridProps) {
-  const order = ['AGI', 'FOR', 'INT', 'PRE', 'VIG'];
-  const attributeMap: Record<string, string> = {
-    agility: 'AGI',
-    strength: 'FOR',
-    intellect: 'INT',
-    presence: 'PRE',
-    vigor: 'VIG',
-  };
-  
   return (
     <div className="grid grid-cols-5 gap-3">
-      {order.map((label) => {
-        const key = Object.keys(attributeMap).find(k => attributeMap[k] === label);
-        const value = key ? attributes[key] || 0 : 0;
+      {ATTRIBUTE_ORDER.map((key) => {
+        const value = attributes[key] || 0;
+        const abbr = KEY_TO_ABBR[key];
         
         return (
           <AttributeWithDice
-            key={label}
-            label={label}
+            key={key}
+            label={abbr}
             value={value}
             onRoll={onRoll}
           />
