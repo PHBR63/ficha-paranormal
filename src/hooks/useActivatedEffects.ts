@@ -159,6 +159,10 @@ export function useActivatedEffects(): UseActivatedEffectsReturn {
 // IDs de efeitos de trilha conhecidos
 // ============================================
 export const TRACK_EFFECT_IDS = {
+  // ============================================
+  // ESPECIALISTA
+  // ============================================
+  
   // Atirador de Elite
   MIRA_DE_ELITE: 'track-mira-elite',
   DISPARO_LETAL: 'track-disparo-letal',
@@ -170,6 +174,58 @@ export const TRACK_EFFECT_IDS = {
   GATUNO: 'track-gatuno',
   ASSASSINAR: 'track-assassinar',
   SOMBRA_FUGAZ: 'track-sombra-fugaz',
+  
+  // Médico de Campo
+  PARAMEDICO: 'track-paramedico',
+  EQUIPE_TRAUMA: 'track-equipe-trauma',
+  RESGATE: 'track-resgate',
+  REANIMACAO: 'track-reanimacao',
+  
+  // Negociador
+  ELOQUENCIA: 'track-eloquencia',
+  DISCURSO_MOTIVADOR: 'track-discurso-motivador',
+  EU_CONHECO_UM_CARA: 'track-eu-conheco-um-cara',
+  TRUQUE_MESTRE: 'track-truque-mestre',
+  
+  // Técnico
+  INVENTARIO_OTIMIZADO: 'track-inventario-otimizado',
+  REMENDAO: 'track-remendao',
+  IMPROVISAR: 'track-improvisar',
+  PREPARADO_PARA_TUDO: 'track-preparado-para-tudo',
+  
+  // ============================================
+  // COMBATENTE
+  // ============================================
+  
+  // Aniquilador
+  A_FAVORITA: 'track-a-favorita',
+  TECNICA_SECRETA: 'track-tecnica-secreta',
+  TECNICA_SUBLIME: 'track-tecnica-sublime',
+  MAQUINA_DE_MATAR: 'track-maquina-matar',
+  
+  // Comandante de Campo
+  INSPIRAR_CONFIANCA: 'track-inspirar-confianca',
+  ESTRATEGISTA: 'track-estrategista',
+  BRECHA_NA_GUARDA: 'track-brecha-guarda',
+  OFICIAL_COMANDANTE: 'track-oficial-comandante',
+  
+  // Guerreiro
+  TECNICA_LETAL: 'track-tecnica-letal',
+  REVIDAR: 'track-revidar',
+  FORCA_OPRESSORA: 'track-forca-opressora',
+  POTENCIA_MAXIMA: 'track-potencia-maxima',
+  
+  // Operações Especiais
+  INICIATIVA_APRIMORADA: 'track-iniciativa-aprimorada',
+  ATAQUE_EXTRA: 'track-ataque-extra',
+  SURTO_ADRENALINA: 'track-surto-adrenalina',
+  SEMPRE_ALERTA: 'track-sempre-alerta',
+  
+  // Tropa de Choque
+  CASCA_GROSSA: 'track-casca-grossa',
+  CAI_DENTRO: 'track-cai-dentro',
+  DURO_DE_MATAR: 'track-duro-matar',
+  INQUEBRAVEL: 'track-inquebravel',
 } as const;
 
 export type TrackEffectId = typeof TRACK_EFFECT_IDS[keyof typeof TRACK_EFFECT_IDS];

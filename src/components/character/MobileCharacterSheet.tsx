@@ -87,6 +87,7 @@ import { normalizeWeaponTypeForDisplay } from '@/lib/weapon-type-inference';
 import { useWeaponBuffs } from '@/hooks/useWeaponBuffs';
 import { useUnifiedEffects } from '@/hooks/useUnifiedEffects';
 import { useRoundTracking } from '@/hooks/useRoundTracking';
+import { useActivatedEffects } from '@/hooks/useActivatedEffects';
 
 // Tipos
 interface MobileCharacterSheetProps {
@@ -229,6 +230,9 @@ export function MobileCharacterSheet({
 
   // Hook centralizado de tracking de uso por rodada (habilidades 1x/rodada)
   const roundTracking = useRoundTracking();
+  
+  // Hook de efeitos ativados para integração com SUE
+  const activatedEffects = useActivatedEffects();
 
   // Calcula limite de poderes paranormais
   const powerLimits = useMemo(() => 
@@ -827,6 +831,8 @@ export function MobileCharacterSheet({
               onPEChange={handlePEChange}
               usedAbilitiesThisRound={roundTracking.usedAbilitiesThisRound}
               onAbilityUsed={roundTracking.markAbilityUsed}
+              onActivateEffect={activatedEffects.activateEffect}
+              isEffectActive={activatedEffects.isEffectActive}
             />
             
             {/* Painel Guerreiro - Revidar e Força Opressora */}
@@ -835,6 +841,8 @@ export function MobileCharacterSheet({
               nex={character.nex}
               peCurrent={character.pe_current}
               onPEChange={handlePEChange}
+              onActivateEffect={activatedEffects.activateEffect}
+              isEffectActive={activatedEffects.isEffectActive}
             />
             
             {/* Painel Operações Especiais - Ataque Extra e Surto de Adrenalina */}
@@ -845,6 +853,8 @@ export function MobileCharacterSheet({
               onPEChange={handlePEChange}
               usedAbilitiesThisRound={roundTracking.usedAbilitiesThisRound}
               onAbilityUsed={roundTracking.markAbilityUsed}
+              onActivateEffect={activatedEffects.activateEffect}
+              isEffectActive={activatedEffects.isEffectActive}
             />
             
             {/* Painel Tropa de Choque - Cai Dentro e Duro de Matar */}
@@ -856,6 +866,8 @@ export function MobileCharacterSheet({
               hpCurrent={character.hp_current}
               hpMax={character.hp_max}
               onPEChange={handlePEChange}
+              onActivateEffect={activatedEffects.activateEffect}
+              isEffectActive={activatedEffects.isEffectActive}
             />
             
             {/* Painel Atirador de Elite */}
@@ -865,6 +877,8 @@ export function MobileCharacterSheet({
               peCurrent={character.pe_current}
               intellect={character.intellect}
               onPEChange={handlePEChange}
+              onActivateEffect={activatedEffects.activateEffect}
+              isEffectActive={activatedEffects.isEffectActive}
             />
 
             {/* Painel Infiltrador */}
@@ -876,6 +890,8 @@ export function MobileCharacterSheet({
               onPEChange={handlePEChange}
               usedAbilitiesThisRound={roundTracking.usedAbilitiesThisRound}
               onAbilityUsed={roundTracking.markAbilityUsed}
+              onActivateEffect={activatedEffects.activateEffect}
+              isEffectActive={activatedEffects.isEffectActive}
             />
 
             {/* Painel Médico de Campo */}
@@ -884,6 +900,8 @@ export function MobileCharacterSheet({
               nex={character.nex}
               peCurrent={character.pe_current}
               onPEChange={handlePEChange}
+              onActivateEffect={activatedEffects.activateEffect}
+              isEffectActive={activatedEffects.isEffectActive}
             />
 
             {/* Painel Negociador */}
@@ -892,6 +910,8 @@ export function MobileCharacterSheet({
               nex={character.nex}
               peCurrent={character.pe_current}
               onPEChange={handlePEChange}
+              onActivateEffect={activatedEffects.activateEffect}
+              isEffectActive={activatedEffects.isEffectActive}
             />
             
             {/* Painel Técnico */}
@@ -904,6 +924,8 @@ export function MobileCharacterSheet({
                 strength: character.strength,
                 intellect: character.intellect
               }}
+              onActivateEffect={activatedEffects.activateEffect}
+              isEffectActive={activatedEffects.isEffectActive}
             />
           </>
         )}

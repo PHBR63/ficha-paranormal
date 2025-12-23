@@ -1980,6 +1980,8 @@ export default function CharacterSheet() {
                 })}
                 usedAbilitiesThisRound={roundTracking.usedAbilitiesThisRound}
                 onAbilityUsed={roundTracking.markAbilityUsed}
+                onActivateEffect={activatedEffects.activateEffect}
+                isEffectActive={activatedEffects.isEffectActive}
               />
 
               {/* Painel de Guerreiro - Revidar e Força Opressora */}
@@ -1992,6 +1994,8 @@ export default function CharacterSheet() {
                   pe: newPE, 
                   san: sanCurrent 
                 })}
+                onActivateEffect={activatedEffects.activateEffect}
+                isEffectActive={activatedEffects.isEffectActive}
               />
 
               {/* Painel Operações Especiais - Ataque Extra e Surto de Adrenalina */}
@@ -2006,6 +2010,8 @@ export default function CharacterSheet() {
                 })}
                 usedAbilitiesThisRound={roundTracking.usedAbilitiesThisRound}
                 onAbilityUsed={roundTracking.markAbilityUsed}
+                onActivateEffect={activatedEffects.activateEffect}
+                isEffectActive={activatedEffects.isEffectActive}
               />
 
               {/* Painel Tropa de Choque - Cai Dentro e Duro de Matar */}
@@ -2021,6 +2027,8 @@ export default function CharacterSheet() {
                   pe: newPE, 
                   san: sanCurrent 
                 })}
+                onActivateEffect={activatedEffects.activateEffect}
+                isEffectActive={activatedEffects.isEffectActive}
               />
 
               {/* Painel Atirador de Elite */}
@@ -2065,6 +2073,8 @@ export default function CharacterSheet() {
                   pe: newPE, 
                   san: sanCurrent 
                 })}
+                onActivateEffect={activatedEffects.activateEffect}
+                isEffectActive={activatedEffects.isEffectActive}
               />
 
               {/* Painel Negociador */}
@@ -2077,6 +2087,8 @@ export default function CharacterSheet() {
                   pe: newPE, 
                   san: sanCurrent 
                 })}
+                onActivateEffect={activatedEffects.activateEffect}
+                isEffectActive={activatedEffects.isEffectActive}
               />
               
               <TecnicoPanel
@@ -2092,6 +2104,8 @@ export default function CharacterSheet() {
                   strength: character.strength,
                   intellect: character.intellect
                 }}
+                onActivateEffect={activatedEffects.activateEffect}
+                isEffectActive={activatedEffects.isEffectActive}
               />
 
               {/* Rituais e Histórico (acordeão com abas) */}

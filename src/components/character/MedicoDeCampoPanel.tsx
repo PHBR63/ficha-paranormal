@@ -54,6 +54,9 @@ function getParamedicoDice(nex: number): { base: number; dieType: string; formul
   return { base: 2, dieType: 'd10', formula: '2d10' };
 }
 
+import type { EffectDuration } from '@/hooks/useActivatedEffects';
+import { TRACK_EFFECT_IDS } from '@/hooks/useActivatedEffects';
+
 interface MedicoDeCampoPanelProps {
   classTrack?: string | null;
   nex: number;
@@ -65,6 +68,10 @@ interface MedicoDeCampoPanelProps {
   reanimacaoUsedThisScene?: boolean;
   /** Callback para marcar Reanimação como usada */
   onReanimacaoUsed?: () => void;
+  /** Callback para ativar efeito no SUE */
+  onActivateEffect?: (id: string, name: string, duration: EffectDuration, metadata?: Record<string, unknown>) => void;
+  /** Verifica se um efeito está ativo */
+  isEffectActive?: (id: string) => boolean;
 }
 
 export function MedicoDeCampoPanel({

@@ -28,6 +28,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import type { EffectDuration } from '@/hooks/useActivatedEffects';
+import { TRACK_EFFECT_IDS } from '@/hooks/useActivatedEffects';
 
 interface NegociadorPanelProps {
   classTrack?: string | null;
@@ -40,6 +42,10 @@ interface NegociadorPanelProps {
   /** Se "Eu Conheço um Cara" já foi usado nesta missão */
   conhecoCaraUsedThisMission?: boolean;
   onConhecoCaraUsed?: () => void;
+  /** Callback para ativar efeito no SUE */
+  onActivateEffect?: (id: string, name: string, duration: EffectDuration, metadata?: Record<string, unknown>) => void;
+  /** Verifica se um efeito está ativo */
+  isEffectActive?: (id: string) => boolean;
 }
 
 export function NegociadorPanel({
