@@ -64,6 +64,7 @@ import {
   MobileLeadershipPanel,
   MobileGuerreiroPanel,
   MobileOperacoesEspeciaisPanel,
+  MobileTropaDeChoquePanel,
   type WeaponEntry,
   type BonusSource,
   type ActiveCondition,
@@ -794,6 +795,17 @@ export function MobileCharacterSheet({
               classTrack={character.class_track}
               nex={character.nex}
               peCurrent={character.pe_current}
+              onPEChange={handlePEChange}
+            />
+            
+            {/* Painel Tropa de Choque - Cai Dentro e Duro de Matar */}
+            <MobileTropaDeChoquePanel
+              classTrack={character.class_track}
+              nex={character.nex}
+              peCurrent={character.pe_current}
+              vigor={character.vigor}
+              hpCurrent={character.hp_current}
+              hpMax={character.hp_max}
               onPEChange={handlePEChange}
             />
           </>

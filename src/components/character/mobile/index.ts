@@ -61,3 +61,4 @@ export { MobileRitualEffectWizard, type MobileRitualEffectWizardProps } from './
 export { MobileLeadershipPanel } from './MobileLeadershipPanel';
 export { MobileGuerreiroPanel } from './MobileGuerreiroPanel';
 export { MobileOperacoesEspeciaisPanel } from './MobileOperacoesEspeciaisPanel';
+export { MobileTropaDeChoquePanel } from './MobileTropaDeChoquePanel';
