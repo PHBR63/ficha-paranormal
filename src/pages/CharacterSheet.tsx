@@ -100,6 +100,7 @@ import { TropaDeChoquePanel } from '@/components/character/TropaDeChoquePanel';
 import { AtiradorDeElitePanel } from '@/components/character/AtiradorDeElitePanel';
 import { InfiltradorPanel } from '@/components/character/InfiltradorPanel';
 import { MedicoDeCampoPanel } from '@/components/character/MedicoDeCampoPanel';
+import { NegociadorPanel } from '@/components/character/NegociadorPanel';
 import { RoundControlPanel } from '@/components/character/RoundControlPanel';
 import { Logo } from '@/components/ui/logo';
 
@@ -2055,6 +2056,18 @@ export default function CharacterSheet() {
 
               {/* Painel Médico de Campo */}
               <MedicoDeCampoPanel
+                classTrack={character.class_track}
+                nex={character.nex}
+                peCurrent={peCurrent}
+                onPEChange={(newPE) => handleCombatStatsChange({ 
+                  hp: hpCurrent, 
+                  pe: newPE, 
+                  san: sanCurrent 
+                })}
+              />
+
+              {/* Painel Negociador */}
+              <NegociadorPanel
                 classTrack={character.class_track}
                 nex={character.nex}
                 peCurrent={peCurrent}
