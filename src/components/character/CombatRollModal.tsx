@@ -4,9 +4,9 @@
  * Detecta crítico dinamicamente baseado na arma e poderes ativos
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sword, Target, Zap, Sparkles, Flame, X, Dices, Shield, Skull, Info, Plus, Minus, RotateCcw, Clock, RefreshCw, Timer, Infinity, Droplets } from 'lucide-react';
+import { Sword, Target, Zap, Sparkles, Flame, X, Dices, Shield, Skull, Info, Plus, Minus, RotateCcw, Clock, RefreshCw, Timer, Infinity, Droplets, Crosshair } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -27,6 +27,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { AniquiladorTechniqueModal, TechniqueEffects } from './AniquiladorTechniqueModal';
 
 // Interface para arma (mesma do CombatWeaponsTable)
 interface WeaponEntry {
@@ -285,6 +286,16 @@ export function CombatRollModal({
   const [manualAttackMod, setManualAttackMod] = useState(0);
   const [manualDamageMod, setManualDamageMod] = useState(0);
   const [targetDefense, setTargetDefense] = useState<number | null>(null);
+  
+  // === ESTADO PARA TÉCNICAS DO ANIQUILADOR ===
+  const [showTechniqueModal, setShowTechniqueModal] = useState(false);
+  const [activeTechniqueEffects, setActiveTechniqueEffects] = useState<TechniqueEffects | null>(null);
+  
+  // Detecta se pode usar Técnica Secreta (Aniquilador NEX 40%+ com arma favorita)
+  const canUseTechniqueSecreta = useMemo(() => {
+    const isAniquilador = classTrack?.toLowerCase().includes('aniquilador');
+    return isAniquilador && nex >= 40 && isFavoriteWeapon;
+  }, [classTrack, nex, isFavoriteWeapon]);
 
   // Reset ao abrir/fechar
   const handleClose = () => {
@@ -296,8 +307,18 @@ export function CombatRollModal({
     setManualAttackMod(0);
     setManualDamageMod(0);
     setTargetDefense(null);
+    setActiveTechniqueEffects(null);
     onClose();
   };
+  
+  // Handler para confirmar técnicas do Aniquilador
+  const handleConfirmTechnique = useCallback((effects: TechniqueEffects) => {
+    setActiveTechniqueEffects(effects);
+    // Deduzir PE das técnicas
+    if (effects.peCost > 0) {
+      onPEChange(currentPE - effects.peCost);
+    }
+  }, [currentPE, onPEChange]);
 
   // Determinar atributo e perícia baseado no tipo de arma
   const attackAttribute = useMemo(() => {
@@ -739,7 +760,7 @@ export function CombatRollModal({
     return isAniquilador && nex >= 99 && isFavoriteWeapon;
   }, [classTrack, nex, isFavoriteWeapon]);
 
-  // Calcular margem de crítico efetiva (incluindo SUE, weapon buffs e Máquina de Matar)
+  // Calcular margem de crítico efetiva (incluindo SUE, weapon buffs, Máquina de Matar e Técnicas)
   const effectiveCritical = useMemo(() => {
     if (!weapon) return 20;
     let critical = parseInt(weapon.critical || '20');
@@ -767,10 +788,15 @@ export function CombatRollModal({
       critical -= 2;
     }
     
+    // === TÉCNICAS DO ANIQUILADOR: Letal (+2 ou +5 margem) ===
+    if (activeTechniqueEffects?.criticalMarginBonus) {
+      critical -= activeTechniqueEffects.criticalMarginBonus;
+    }
+    
     return Math.max(1, critical); // Mínimo de 1
-  }, [weapon, passiveBonuses, classPowerBonuses, weaponBuffBonuses, unifiedEffects, maquinaDeMatarActive]);
+  }, [weapon, passiveBonuses, classPowerBonuses, weaponBuffBonuses, unifiedEffects, maquinaDeMatarActive, activeTechniqueEffects]);
 
-  // Multiplicador de crítico da arma (incluindo SUE e weapon buffs)
+  // Multiplicador de crítico da arma (incluindo SUE, weapon buffs e Técnicas)
   const criticalMultiplier = useMemo(() => {
     let base = 2;
     if (weapon?.criticalMultiplier) {
@@ -788,8 +814,13 @@ export function CombatRollModal({
       base += weaponBuffBonuses.criticalMultiplierBonus;
     }
     
+    // === TÉCNICAS DO ANIQUILADOR: Destruidor (+1 multiplicador) ===
+    if (activeTechniqueEffects?.criticalMultiplierBonus) {
+      base += activeTechniqueEffects.criticalMultiplierBonus;
+    }
+    
     return base;
-  }, [weapon, weaponBuffBonuses, unifiedEffects]);
+  }, [weapon, weaponBuffBonuses, unifiedEffects, activeTechniqueEffects]);
 
   // Cores para cada tipo de bônus
   const bonusTypeColors: Record<BonusSourceDisplay['type'], string> = {
@@ -1491,6 +1522,83 @@ export function CombatRollModal({
                   </p>
                 </div>
 
+                {/* === BOTÃO DE TÉCNICA SECRETA (Aniquilador) === */}
+                {canUseTechniqueSecreta && (
+                  <div className="space-y-2">
+                    <Button
+                      variant={activeTechniqueEffects ? "default" : "outline"}
+                      className={cn(
+                        "w-full gap-2",
+                        activeTechniqueEffects && "bg-amber-600 hover:bg-amber-700 text-white"
+                      )}
+                      onClick={() => setShowTechniqueModal(true)}
+                    >
+                      <Crosshair className="w-4 h-4" />
+                      {activeTechniqueEffects 
+                        ? `Técnica Secreta Ativa (${activeTechniqueEffects.selectedTechniques.length} técnica${activeTechniqueEffects.selectedTechniques.length > 1 ? 's' : ''})`
+                        : 'Usar Técnica Secreta'
+                      }
+                    </Button>
+                    
+                    {/* Indicador de efeitos ativos */}
+                    {activeTechniqueEffects && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 space-y-2"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium text-amber-400">
+                            Técnicas Ativas
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 px-2 text-xs"
+                            onClick={() => {
+                              // Reembolsar PE ao cancelar
+                              if (activeTechniqueEffects.peCost > 0) {
+                                onPEChange(currentPE + activeTechniqueEffects.peCost);
+                              }
+                              setActiveTechniqueEffects(null);
+                            }}
+                          >
+                            <X className="w-3 h-3 mr-1" />
+                            Cancelar
+                          </Button>
+                        </div>
+                        
+                        <div className="flex flex-wrap gap-1.5">
+                          {activeTechniqueEffects.additionalTargets > 0 && (
+                            <Badge variant="secondary" className="gap-1 text-[10px]">
+                              <Target className="w-3 h-3" />
+                              +{activeTechniqueEffects.additionalTargets} alvo
+                            </Badge>
+                          )}
+                          {activeTechniqueEffects.criticalMultiplierBonus > 0 && (
+                            <Badge variant="secondary" className="gap-1 text-[10px]">
+                              <Sword className="w-3 h-3" />
+                              +{activeTechniqueEffects.criticalMultiplierBonus} mult.
+                            </Badge>
+                          )}
+                          {activeTechniqueEffects.criticalMarginBonus > 0 && (
+                            <Badge variant="secondary" className="gap-1 text-[10px]">
+                              <Crosshair className="w-3 h-3" />
+                              +{activeTechniqueEffects.criticalMarginBonus} margem
+                            </Badge>
+                          )}
+                          {activeTechniqueEffects.ignoreResistance > 0 && (
+                            <Badge variant="secondary" className="gap-1 text-[10px]">
+                              <Shield className="w-3 h-3" />
+                              Ignora {activeTechniqueEffects.ignoreResistance} RD
+                            </Badge>
+                          )}
+                        </div>
+                      </motion.div>
+                    )}
+                  </div>
+                )}
+
                 {/* Custo de PE */}
                 {totalPECost > 0 && (
                   <div className={cn(
@@ -1963,6 +2071,16 @@ export function CombatRollModal({
           </TooltipProvider>
         </div>
       </DialogContent>
+      
+      {/* Modal de Técnicas do Aniquilador */}
+      <AniquiladorTechniqueModal
+        open={showTechniqueModal}
+        onClose={() => setShowTechniqueModal(false)}
+        onConfirm={handleConfirmTechnique}
+        nex={nex}
+        currentPE={currentPE}
+        weaponName={weapon?.name || ''}
+      />
     </Dialog>
   );
 }
