@@ -1,9 +1,10 @@
 /**
  * MobileRitualCastModal - Modal de conjuração de rituais para mobile
  * Interface compacta com seleção de aprimoramentos como chips
+ * Integrado com MobileRitualEffectWizard para processar efeitos automaticamente
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { 
@@ -33,6 +34,9 @@ import { Ritual } from '@/lib/rituals/legacy-exports';
 import type { UnifiedRitual } from '@/lib/rituals/types';
 import { getElementConfig } from '@/lib/element-config';
 import { useRitualValidation, TurnPEState } from '@/hooks/useRitualValidation';
+import { MobileRitualEffectWizard } from './MobileRitualEffectWizard';
+import { ActiveCondition } from './MobileConditionManager';
+import type { AnyDamageType, SustainConfig } from '@/lib/rituals/legacy-exports';
 
 // Efeito de partículas do elemento
 function triggerElementParticles(elementHex: string, elementHexLight: string) {
@@ -58,6 +62,15 @@ interface MobileRitualCastModalProps {
   elementalAffinity?: string | null;
   turnPEState?: TurnPEState;
   onConfirm: (ritual: RitualInput, peCost: number, enhancements: string[]) => void;
+  // Callbacks para efeitos do wizard
+  targetAttributes?: { vigor: number; agility: number; presence: number };
+  onApplyDamage?: (damage: number, type: AnyDamageType, ignoresRD: boolean) => void;
+  onApplyHealing?: (amount: number, type: 'healing' | 'tempHP') => void;
+  onApplyConditions?: (conditions: ActiveCondition[]) => void;
+  onAddWeaponBuff?: (ritual: Ritual, enhancements: string[]) => void;
+  onActivateSustained?: (ritual: Ritual, enhancements: string[], sustain: SustainConfig) => void;
+  // Se true, abre o wizard automaticamente após conjurar
+  autoOpenWizard?: boolean;
 }
 
 export function MobileRitualCastModal({
@@ -71,8 +84,22 @@ export function MobileRitualCastModal({
   elementalAffinity,
   turnPEState,
   onConfirm,
+  // Props do wizard
+  targetAttributes,
+  onApplyDamage,
+  onApplyHealing,
+  onApplyConditions,
+  onAddWeaponBuff,
+  onActivateSustained,
+  autoOpenWizard = true,
 }: MobileRitualCastModalProps) {
   const [selectedEnhancements, setSelectedEnhancements] = useState<string[]>([]);
+  
+  // Estado para o wizard de efeitos
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const [castRitual, setCastRitual] = useState<Ritual | null>(null);
+  const [castEnhancements, setCastEnhancements] = useState<string[]>([]);
+  const [castPeCost, setCastPeCost] = useState(0);
 
   const {
     maxCircle,
@@ -127,21 +154,40 @@ export function MobileRitualCastModal({
     );
   };
 
-  const handleConfirm = () => {
-    if (canCast && elementConfig) {
+  const handleConfirm = useCallback(() => {
+    if (!canCast || !ritual) return;
+    
+    if (elementConfig) {
       triggerElementParticles(elementConfig.hex, elementConfig.hexLight);
+    }
+    
+    // Chama o callback de confirmação
+    onConfirm(ritual, totalCost, validSelectedEnhancements);
+    
+    // Se autoOpenWizard está ativo e o ritual é do tipo Ritual (não UnifiedRitual), abre o wizard
+    if (autoOpenWizard && 'id' in ritual) {
+      setCastRitual(ritual as Ritual);
+      setCastEnhancements(validSelectedEnhancements);
+      setCastPeCost(totalCost);
       
+      // Fecha o modal de cast e abre o wizard após um delay
       setTimeout(() => {
-        onConfirm(ritual, totalCost, validSelectedEnhancements);
         setSelectedEnhancements([]);
         onOpenChange(false);
-      }, 200);
-    } else if (canCast) {
-      onConfirm(ritual, totalCost, validSelectedEnhancements);
+        setWizardOpen(true);
+      }, 300);
+    } else {
       setSelectedEnhancements([]);
       onOpenChange(false);
     }
-  };
+  }, [canCast, ritual, elementConfig, totalCost, validSelectedEnhancements, autoOpenWizard, onConfirm, onOpenChange]);
+
+  // Handler para fechar wizard e limpar estado
+  const handleWizardComplete = useCallback(() => {
+    setCastRitual(null);
+    setCastEnhancements([]);
+    setCastPeCost(0);
+  }, []);
 
   const handleOpenChange = (isOpen: boolean) => {
     if (!isOpen) {
@@ -151,6 +197,7 @@ export function MobileRitualCastModal({
   };
 
   return (
+    <>
     <Drawer open={open} onOpenChange={handleOpenChange}>
       <DrawerContent className="max-h-[90vh]">
         <DrawerHeader className="pb-2">
@@ -332,5 +379,22 @@ export function MobileRitualCastModal({
         </DrawerFooter>
       </DrawerContent>
     </Drawer>
+
+    {/* Wizard de efeitos do ritual */}
+    <MobileRitualEffectWizard
+      open={wizardOpen}
+      onOpenChange={setWizardOpen}
+      ritual={castRitual}
+      enhancements={castEnhancements}
+      peCost={castPeCost}
+      targetAttributes={targetAttributes}
+      onApplyDamage={onApplyDamage}
+      onApplyHealing={onApplyHealing}
+      onApplyConditions={onApplyConditions}
+      onAddWeaponBuff={onAddWeaponBuff}
+      onActivateSustained={onActivateSustained}
+      onComplete={handleWizardComplete}
+    />
+  </>
   );
 }
