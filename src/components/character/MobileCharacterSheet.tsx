@@ -62,6 +62,7 @@ import {
   MobileActiveEffectsPanel,
   MobileParanormalPowerSelectModal,
   MobileLeadershipPanel,
+  MobileGuerreiroPanel,
   type WeaponEntry,
   type BonusSource,
   type ActiveCondition,
@@ -776,6 +777,14 @@ export function MobileCharacterSheet({
               nex={character.nex}
               peCurrent={character.pe_current}
               intellect={character.intellect}
+              onPEChange={handlePEChange}
+            />
+            
+            {/* Painel Guerreiro - Revidar e Força Opressora */}
+            <MobileGuerreiroPanel
+              classTrack={character.class_track}
+              nex={character.nex}
+              peCurrent={character.pe_current}
               onPEChange={handlePEChange}
             />
           </>
