@@ -68,6 +68,7 @@ import {
   MobileAtiradorDeElitePanel,
   MobileInfiltradorPanel,
   MobileMedicoDeCampoPanel,
+  MobileNegociadorPanel,
   type WeaponEntry,
   type BonusSource,
   type ActiveCondition,
@@ -878,6 +879,14 @@ export function MobileCharacterSheet({
 
             {/* Painel Médico de Campo */}
             <MobileMedicoDeCampoPanel
+              classTrack={character.class_track}
+              nex={character.nex}
+              peCurrent={character.pe_current}
+              onPEChange={handlePEChange}
+            />
+
+            {/* Painel Negociador */}
+            <MobileNegociadorPanel
               classTrack={character.class_track}
               nex={character.nex}
               peCurrent={character.pe_current}

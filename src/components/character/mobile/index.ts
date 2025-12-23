@@ -65,3 +65,4 @@ export { MobileTropaDeChoquePanel } from './MobileTropaDeChoquePanel';
 export { MobileAtiradorDeElitePanel } from './MobileAtiradorDeElitePanel';
 export { MobileInfiltradorPanel } from './MobileInfiltradorPanel';
 export { MobileMedicoDeCampoPanel } from './MobileMedicoDeCampoPanel';
+export { MobileNegociadorPanel } from './MobileNegociadorPanel';
