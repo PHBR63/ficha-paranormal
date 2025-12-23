@@ -37,7 +37,7 @@ import { useCharacterAudit } from '@/hooks/useCharacterAudit';
 import { CharacterForAudit, getMaxParanormalPowers } from '@/lib/character-audit-engine';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { SavedParanormalPower } from '@/lib/paranormal-powers';
+import { SavedParanormalPower, PARANORMAL_POWERS, ParanormalElement } from '@/lib/paranormal-powers';
 import { useAttributeValidation, logAttributeDiagnostics } from '@/hooks/useAttributeValidation';
 
 // Componentes mobile extraídos e memoizados
@@ -53,8 +53,17 @@ import {
   MobileRitualCastModal,
   MobileResistanceCheckModal,
   useRollHistory,
+  // Novos componentes de paridade desktop/mobile
+  MobileConditionManager,
+  MobileSustainedRitualsPanel,
+  MobileConditionalBonusesPanel,
+  MobileAffinitySelectorCard,
+  MobileRitualCastHistory,
+  MobileActiveEffectsPanel,
+  MobileParanormalPowerSelectModal,
   type WeaponEntry,
   type BonusSource,
+  type ActiveCondition,
 } from './mobile';
 
 // Utilitários compartilhados
@@ -101,6 +110,11 @@ interface MobileCharacterSheetProps {
     inventory?: Array<{ id?: string; name: string; category: string; slots: number; itemType?: string; isEquipped?: boolean; equipSlot?: string; armorType?: string }>;
     // Bônus condicionais ativos (persistidos no banco)
     active_conditional_bonuses?: string[];
+    // Campos de afinidade elemental
+    elemental_affinity?: string | null;
+    affinity_active?: boolean;
+    // Buffs ativos em armas
+    active_buffs?: Array<{ weaponId: string; buffType: string; turnsRemaining: number }>;
   };
   onOpenDiceRoller: () => void;
   onOpenRest: () => void;
@@ -112,6 +126,12 @@ interface MobileCharacterSheetProps {
   onToggleConditionalBonus?: (bonusId: string, active: boolean) => void;
   // Callback para atualizar dados após correções automáticas
   onRefetch?: () => Promise<void> | void;
+  // Callback para seleção de afinidade
+  onSelectAffinity?: (element: string) => Promise<void>;
+  // Callback para adicionar poderes paranormais (Transcender)
+  onAddParanormalPower?: (power: { id: string; name: string; element: string; description: string }) => Promise<void>;
+  // Campaign ID para sincronização de rituais
+  campaignId?: string | null;
 }
 
 // Tab de navegação mobile
@@ -126,6 +146,9 @@ export function MobileCharacterSheet({
   onEditStats,
   onToggleConditionalBonus,
   onRefetch,
+  onSelectAffinity,
+  onAddParanormalPower,
+  campaignId,
 }: MobileCharacterSheetProps) {
   const [activeTab, setActiveTab] = useState<MobileTab>('overview');
   const [powerModalOpen, setPowerModalOpen] = useState(false);
@@ -153,6 +176,10 @@ export function MobileCharacterSheet({
     dt: number;
     damageOnFail?: number;
   } | null>(null);
+  
+  // Estados dos novos componentes de paridade desktop/mobile
+  const [paranormalPowerModalOpen, setParanormalPowerModalOpen] = useState(false);
+  const [ritualHistoryOpen, setRitualHistoryOpen] = useState(false);
   
   // Hook de histórico de rolagens
   const { rolls: rollHistory, addRoll, removeRoll, clearHistory } = useRollHistory();
@@ -491,6 +518,98 @@ export function MobileCharacterSheet({
     setDiceModalOpen(true);
   }, [character.agility]);
 
+  // Handler para atualizar condições
+  const handleConditionsChange = useCallback(async (newConditions: string[]) => {
+    try {
+      await supabase
+        .from('characters')
+        .update({ conditions: newConditions })
+        .eq('id', character.id);
+      
+      if (onRefetch) {
+        await onRefetch();
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar condições:', error);
+    }
+  }, [character.id, onRefetch]);
+
+  // Handler para seleção de afinidade elemental
+  const handleAffinitySelect = useCallback(async (element: string) => {
+    if (onSelectAffinity) {
+      await onSelectAffinity(element);
+    } else {
+      try {
+        await supabase
+          .from('characters')
+          .update({ 
+            elemental_affinity: element,
+            affinity_active: false 
+          })
+          .eq('id', character.id);
+        
+        if (onRefetch) {
+          await onRefetch();
+        }
+      } catch (error) {
+        console.error('Erro ao selecionar afinidade:', error);
+      }
+    }
+  }, [character.id, onRefetch, onSelectAffinity]);
+
+  // Handler para adicionar poder paranormal (Transcender)
+  const handleAddParanormalPower = useCallback(async (power: { id: string; name: string; element: string; description: string }) => {
+    if (onAddParanormalPower) {
+      await onAddParanormalPower(power);
+    } else {
+      try {
+        const updatedPowers = [...(character.paranormal_powers || []), power];
+        await supabase
+          .from('characters')
+          .update({ paranormal_powers: updatedPowers })
+          .eq('id', character.id);
+        
+        if (onRefetch) {
+          await onRefetch();
+        }
+      } catch (error) {
+        console.error('Erro ao adicionar poder paranormal:', error);
+      }
+    }
+    setParanormalPowerModalOpen(false);
+  }, [character.id, character.paranormal_powers, onRefetch, onAddParanormalPower]);
+
+  // Handler interno para toggle de bônus condicional
+  const handleToggleConditionalBonus = useCallback(async (bonusId: string, active: boolean) => {
+    if (onToggleConditionalBonus) {
+      onToggleConditionalBonus(bonusId, active);
+    } else {
+      try {
+        const currentBonuses = character.active_conditional_bonuses || [];
+        const updatedBonuses = active
+          ? [...currentBonuses, bonusId]
+          : currentBonuses.filter(id => id !== bonusId);
+        
+        await supabase
+          .from('characters')
+          .update({ active_conditional_bonuses: updatedBonuses })
+          .eq('id', character.id);
+        
+        if (onRefetch) {
+          await onRefetch();
+        }
+      } catch (error) {
+        console.error('Erro ao toggle bônus condicional:', error);
+      }
+    }
+  }, [character.id, character.active_conditional_bonuses, onRefetch, onToggleConditionalBonus]);
+
+  // Verifica se pode transcender (tem slots disponíveis)
+  const canTranscend = useMemo(() => {
+    const currentCount = character.paranormal_powers?.length || 0;
+    return currentCount < powerLimits.total;
+  }, [character.paranormal_powers, powerLimits.total]);
+
   return (
     <div className="pb-20">
       {/* Banner de dados incompletos (atributos null/undefined) */}
@@ -518,27 +637,67 @@ export function MobileCharacterSheet({
       <AnimatePresence mode="wait">
         {/* Tab Overview - Componente extraído */}
         {activeTab === 'overview' && (
-          <MobileOverviewTab
-            key="overview"
-            character={character}
-            originName={originData?.name}
-            trackName={trackData?.name}
-            bonusSummary={bonusSummary}
-            totalDefense={totalDefense}
-            defenseBonuses={defenseBonuses}
-            equippedWeapons={equippedWeapons}
-            weaponBuffs={weaponBuffs}
-            rollHistory={rollHistory}
-            attributeValidation={attributeValidation}
-            onOpenDiceRoller={onOpenDiceRoller}
-            onOpenRest={onOpenRest}
-            onLevelUp={onLevelUp}
-            onEditStats={onEditStats}
-            onOpenCombat={handleOpenCombat}
-            onRollInitiative={handleRollInitiative}
-            onClearHistory={clearHistory}
-            onRemoveRoll={removeRoll}
-          />
+          <>
+            <MobileOverviewTab
+              key="overview"
+              character={character}
+              originName={originData?.name}
+              trackName={trackData?.name}
+              bonusSummary={bonusSummary}
+              totalDefense={totalDefense}
+              defenseBonuses={defenseBonuses}
+              equippedWeapons={equippedWeapons}
+              weaponBuffs={weaponBuffs}
+              rollHistory={rollHistory}
+              attributeValidation={attributeValidation}
+              onOpenDiceRoller={onOpenDiceRoller}
+              onOpenRest={onOpenRest}
+              onLevelUp={onLevelUp}
+              onEditStats={onEditStats}
+              onOpenCombat={handleOpenCombat}
+              onRollInitiative={handleRollInitiative}
+              onClearHistory={clearHistory}
+              onRemoveRoll={removeRoll}
+            />
+            
+            {/* Seletor de Afinidade Elemental (NEX 50+) */}
+            {character.nex >= 50 && !character.elemental_affinity && (
+              <MobileAffinitySelectorCard
+                nex={character.nex}
+                onSelectAffinity={handleAffinitySelect}
+              />
+            )}
+            
+            {/* Painel de Bônus Condicionais */}
+            {(bonusSummary.conditionalBonuses?.length ?? 0) > 0 && (
+              <MobileConditionalBonusesPanel
+                conditionalBonuses={bonusSummary.conditionalBonuses}
+                onToggleBonus={handleToggleConditionalBonus}
+              />
+            )}
+            
+            {/* Painel de Rituais Sustentados */}
+            {sustainedRituals.length > 0 && (
+              <MobileSustainedRitualsPanel
+                rituals={sustainedRituals}
+                onDeactivate={async (ritualId) => {
+                  // O hook useSustainedRituals já cuida da remoção
+                  if (onRefetch) await onRefetch();
+                }}
+                onClearAll={async () => {
+                  // Desativar todos os rituais sustentados
+                  if (onRefetch) await onRefetch();
+                }}
+              />
+            )}
+            
+            {/* Painel de Efeitos Ativos (SUE) */}
+            {unifiedEffects && (
+              <MobileActiveEffectsPanel
+                effectsResult={unifiedEffects}
+              />
+            )}
+          </>
         )}
 
         {/* Tab Skills - Componente extraído */}
@@ -894,6 +1053,33 @@ export function MobileCharacterSheet({
           }}
         />
       )}
+
+      {/* ========== MODAIS DE PARIDADE DESKTOP/MOBILE ========== */}
+      
+      {/* Modal de seleção de poder paranormal (Transcender) */}
+      <MobileParanormalPowerSelectModal
+        open={paranormalPowerModalOpen}
+        onOpenChange={setParanormalPowerModalOpen}
+        characterPowers={(character.paranormal_powers || []).map(p => {
+          // Busca os dados completos do poder no catálogo
+          const fullPower = PARANORMAL_POWERS.find(pp => pp.id === p.id);
+          return fullPower || {
+            id: p.id,
+            name: p.name,
+            element: p.element as ParanormalElement | 'generic',
+            description: p.description,
+            effect: { type: 'special' as const, description: p.description },
+          };
+        })}
+        elementalAffinity={character.elemental_affinity as ParanormalElement | null}
+        affinityActive={character.affinity_active}
+        onSelectPower={(power) => handleAddParanormalPower({
+          id: power.id,
+          name: power.name,
+          element: power.element,
+          description: power.description,
+        })}
+      />
     </div>
   );
 }
