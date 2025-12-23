@@ -15,7 +15,7 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.ico", "robots.txt"],
+      includeAssets: ["favicon.ico", "robots.txt", "apple-touch-icon.png", "apple-touch-icon-152x152.png"],
       // Habilita PWA em modo desenvolvimento para debug
       devOptions: {
         enabled: true,
@@ -31,6 +31,12 @@ export default defineConfig(({ mode }) => ({
         orientation: "portrait",
         scope: "/",
         start_url: "/",
+        // ID único para manter identidade do app
+        id: "/",
+        // Categorias para lojas de apps
+        categories: ["games", "entertainment"],
+        // Preferência de aplicativos relacionados
+        prefer_related_applications: false,
         icons: [
           {
             src: "/pwa-192x192.png",
@@ -39,8 +45,8 @@ export default defineConfig(({ mode }) => ({
             purpose: "any",
           },
           {
-            src: "/pwa-512x512.png",
-            sizes: "512x512",
+            src: "/pwa-384x384.png",
+            sizes: "384x384",
             type: "image/png",
             purpose: "any",
           },
@@ -48,8 +54,31 @@ export default defineConfig(({ mode }) => ({
             src: "/pwa-512x512.png",
             sizes: "512x512",
             type: "image/png",
+            purpose: "any",
+          },
+          {
+            src: "/pwa-maskable-512x512.png",
+            sizes: "512x512",
+            type: "image/png",
             purpose: "maskable",
           },
+        ],
+        // Screenshots para Rich Install UI no Android
+        screenshots: [
+          {
+            src: "/screenshot-mobile.png",
+            sizes: "640x1136",
+            type: "image/png",
+            form_factor: "narrow",
+            label: "Ficha de personagem no modo mobile"
+          },
+          {
+            src: "/screenshot-wide.png",
+            sizes: "1280x720",
+            type: "image/png",
+            form_factor: "wide",
+            label: "Dashboard principal do Let's Roll"
+          }
         ],
       },
       workbox: {
@@ -61,6 +90,10 @@ export default defineConfig(({ mode }) => ({
         // Força ativação imediata do novo Service Worker
         skipWaiting: true,
         clientsClaim: true,
+        // Limpa caches antigos automaticamente
+        cleanupOutdatedCaches: true,
+        // Preload de navegação para melhor performance
+        navigationPreload: true,
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
