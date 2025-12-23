@@ -17,7 +17,7 @@
 import { motion } from 'framer-motion';
 import { Shield, Star, Award, Crown, Gem, Check, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { PATENT_IDS, VALID_PATENT_IDS } from '@/lib/constants/game-ids';
+import { PATENT_IDS, VALID_PATENT_IDS, isValidPatentId, getPatentIdByName, type PatentId } from '@/lib/constants/game-ids';
 import {
   Tooltip,
   TooltipContent,
@@ -95,8 +95,25 @@ interface PatentSelectorProps {
 }
 
 export function PatentSelector({ value, onChange }: PatentSelectorProps) {
-  // Encontra a patente selecionada
+  // Encontra a patente selecionada, validando contra game-ids.ts
   const selectedPatent = PATENT_DATA.find(p => p.name === value) || PATENT_DATA[0];
+  
+  /**
+   * Seleciona uma patente validando contra game-ids.ts
+   * @param patentName - Nome da patente (usado para display)
+   */
+  const handleSelectPatent = (patentName: string) => {
+    // Busca o ID da patente pelo nome
+    const patentId = getPatentIdByName(patentName);
+    
+    // Valida se é uma patente válida antes de atualizar
+    if (!patentId || !isValidPatentId(patentId)) {
+      console.warn(`[PatentSelector] Tentativa de selecionar patente inválida: ${patentName}`);
+      return;
+    }
+    
+    onChange(patentName);
+  };
 
   return (
     <TooltipProvider>
@@ -131,7 +148,7 @@ export function PatentSelector({ value, onChange }: PatentSelectorProps) {
             return (
               <motion.button
                 key={patent.id}
-                onClick={() => onChange(patent.name)}
+                onClick={() => handleSelectPatent(patent.name)}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}

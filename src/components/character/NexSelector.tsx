@@ -10,7 +10,7 @@
 import { motion } from 'framer-motion';
 import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
-import { VALID_NEX_VALUES, isValidNexValue } from '@/lib/constants/game-ids';
+import { VALID_NEX_VALUES, isValidNexValue, type NexValue } from '@/lib/constants/game-ids';
 
 interface NexSelectorProps {
   value: number;
@@ -66,17 +66,24 @@ export function NexSelector({ value, onChange }: NexSelectorProps) {
         </div>
       </div>
 
-      {/* Quick Select Buttons */}
+      {/* Quick Select Buttons - valores validados contra game-ids.ts */}
       <div className="grid grid-cols-5 gap-2">
-        {[5, 20, 50, 75, 99].map((nex) => {
+        {([5, 20, 50, 75, 99] as const).map((nex) => {
           const isSelected = value === nex;
+          
+          // Valida se é um NEX válido antes de permitir seleção
+          const handleQuickSelect = () => {
+            if (isValidNexValue(nex)) {
+              onChange(nex as NexValue);
+            }
+          };
           
           return (
             <motion.button
               key={nex}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => onChange(nex)}
+              onClick={handleQuickSelect}
               className={cn(
                 "flex flex-col items-center gap-1 p-3 rounded-lg border transition-all",
                 isSelected
