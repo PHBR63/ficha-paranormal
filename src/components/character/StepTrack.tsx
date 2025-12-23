@@ -22,9 +22,12 @@ interface StepTrackProps {
 
 /**
  * Valida se uma trilha é válida para a classe selecionada
+ * Nota: classId pode vir com inicial maiúscula (ex: "Combatente"), 
+ * então normalizamos para minúsculas para comparar com validTracks
  */
 function isValidTrackForClass(trackId: string, classId: string): boolean {
-  const classTracks = validTracks[classId as keyof typeof validTracks];
+  const normalizedClassId = classId.toLowerCase();
+  const classTracks = validTracks[normalizedClassId as keyof typeof validTracks];
   if (!classTracks) return false;
   return (classTracks as readonly string[]).includes(trackId);
 }
@@ -48,7 +51,7 @@ const TRACK_ICONS: Record<string, React.ReactNode> = {
   'analista-cena': <Brain className="w-5 h-5" />, // Suplemento
   'perito-criminal': <Target className="w-5 h-5" />, // Suplemento
   // Ocultista
-  'conduite': <Zap className="w-5 h-5" />,
+  'condutor': <Zap className="w-5 h-5" />,
   'flagelador': <Droplets className="w-5 h-5" />,
   'graduado': <GraduationCap className="w-5 h-5" />,
   'intuitivo': <Brain className="w-5 h-5" />,
