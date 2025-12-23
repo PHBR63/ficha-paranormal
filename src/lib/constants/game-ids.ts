@@ -419,3 +419,68 @@ export function isValidNexValue(value: number): value is NexValue {
 export function isValidSkillId(id: string): id is SkillId {
   return (VALID_SKILL_IDS as readonly string[]).includes(id);
 }
+
+/**
+ * Verifica se um ID de patente é válido
+ */
+export function isValidPatentId(id: string): id is PatentId {
+  return (VALID_PATENT_IDS as readonly string[]).includes(id);
+}
+
+/**
+ * Verifica se um ID de elemento é válido
+ */
+export function isValidElementId(id: string): id is ElementId {
+  return (VALID_ELEMENT_IDS as readonly string[]).includes(id);
+}
+
+/**
+ * Verifica se um ID de elemento é válido (case-insensitive)
+ * Útil para comparar elementos que podem vir em minúsculas ou maiúsculas
+ */
+export function isValidElementIdIgnoreCase(id: string): boolean {
+  const normalized = id.charAt(0).toUpperCase() + id.slice(1).toLowerCase();
+  return (VALID_ELEMENT_IDS as readonly string[]).includes(normalized);
+}
+
+/**
+ * Normaliza um ID de elemento para o formato padrão (inicial maiúscula)
+ * @returns O ID normalizado ou null se inválido
+ */
+export function normalizeElementId(id: string): ElementId | null {
+  const normalized = id.charAt(0).toUpperCase() + id.slice(1).toLowerCase();
+  if ((VALID_ELEMENT_IDS as readonly string[]).includes(normalized)) {
+    return normalized as ElementId;
+  }
+  return null;
+}
+
+/**
+ * Obtém o ID da patente pelo nome (case-insensitive)
+ */
+export function getPatentIdByName(name: string): PatentId | null {
+  const found = VALID_PATENT_IDS.find(
+    p => p.toLowerCase() === name.toLowerCase()
+  );
+  return found || null;
+}
+
+/**
+ * Verifica se uma perícia pertence a um atributo específico
+ */
+export function isSkillOfAttribute(skillId: string, attribute: AttributeKey): boolean {
+  const skills = SKILLS_BY_ATTRIBUTE[attribute];
+  return (skills as readonly string[]).includes(skillId);
+}
+
+/**
+ * Obtém o atributo de uma perícia
+ */
+export function getSkillAttribute(skillId: string): AttributeKey | null {
+  for (const [attr, skills] of Object.entries(SKILLS_BY_ATTRIBUTE)) {
+    if ((skills as readonly string[]).includes(skillId)) {
+      return attr as AttributeKey;
+    }
+  }
+  return null;
+}
