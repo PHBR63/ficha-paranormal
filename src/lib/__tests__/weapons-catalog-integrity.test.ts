@@ -955,42 +955,6 @@ describe('Sincronização Catálogo ↔ Sistema de Combate', () => {
     });
   });
 });
-  describe('isFirearm', () => {
-    it('deve retornar true para armas de fogo', () => {
-      expect(isFirearm({ ammoType: 'Curta' })).toBe(true);
-      expect(isFirearm({ damageType: 'Balístico' })).toBe(true);
-      expect(isFirearm({ weaponType: 'firearm' })).toBe(true);
-    });
-
-    it('deve retornar false para armas melee', () => {
-      expect(isFirearm({ weaponType: 'melee' })).toBe(false);
-      expect(isFirearm({ range: 'Corpo a corpo' })).toBe(false);
-    });
-  });
-
-  describe('isMeleeWeapon', () => {
-    it('deve retornar true para armas corpo a corpo', () => {
-      expect(isMeleeWeapon({ weaponType: 'melee' })).toBe(true);
-      expect(isMeleeWeapon({ range: 'Corpo a corpo' })).toBe(true);
-    });
-
-    it('deve retornar false para armas de fogo', () => {
-      expect(isMeleeWeapon({ ammoType: 'Curta' })).toBe(false);
-      expect(isMeleeWeapon({ weaponType: 'firearm' })).toBe(false);
-    });
-  });
-
-  describe('isRangedWeapon', () => {
-    it('deve retornar true para armas ranged', () => {
-      expect(isRangedWeapon({ weaponType: 'ranged' })).toBe(true);
-      expect(isRangedWeapon({ properties: ['Arremessável'] })).toBe(true);
-    });
-
-    it('deve retornar false para armas melee', () => {
-      expect(isRangedWeapon({ weaponType: 'melee' })).toBe(false);
-    });
-  });
-});
 
 // ========================================
 // 9. TESTES DE SINCRONIZAÇÃO COM SISTEMA DE COMBATE

@@ -165,7 +165,7 @@ export const SKILLS_REQUIRING_TRAINING = [
 export const ORIGIN_TABLE: Array<{ min: number; max: number; originId: string }> = [
   { min: 2, max: 2, originId: 'academico' },
   { min: 3, max: 3, originId: 'agente-de-saude' },
-  { min: 4, max: 4, originId: 'amnésico' },
+  { min: 4, max: 4, originId: 'amnesico' },
   { min: 5, max: 5, originId: 'artista' },
   { min: 6, max: 6, originId: 'atleta' },
   { min: 7, max: 7, originId: 'chef' },
@@ -283,7 +283,7 @@ export function getOriginSkills(originId: string): string[] {
   if (!origin) return [];
   
   // Caso especial: Amnésico pode escolher 2 perícias
-  if (originId === 'amnésico') {
+  if (originId === 'amnesico') {
     return []; // Retorna vazio, usuário escolhe
   }
   

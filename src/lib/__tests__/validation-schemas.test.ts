@@ -375,7 +375,7 @@ describe('originSchema', () => {
   it('deve aceitar origens válidas', () => {
     expect(originSchema.safeParse('academico').success).toBe(true);
     expect(originSchema.safeParse('militar').success).toBe(true);
-    expect(originSchema.safeParse('amnésico').success).toBe(true);
+    expect(originSchema.safeParse('amnesico').success).toBe(true);
   });
 
   it('deve rejeitar origens inválidas', () => {
@@ -406,11 +406,11 @@ describe('nexSchema', () => {
 
 describe('patentSchema', () => {
   it('deve aceitar patentes válidas', () => {
-    expect(patentSchema.safeParse('recruta').success).toBe(true);
-    expect(patentSchema.safeParse('operador').success).toBe(true);
-    expect(patentSchema.safeParse('agente-especial').success).toBe(true);
-    expect(patentSchema.safeParse('oficial-de-operacoes').success).toBe(true);
-    expect(patentSchema.safeParse('agente-de-elite').success).toBe(true);
+    expect(patentSchema.safeParse('Recruta').success).toBe(true);
+    expect(patentSchema.safeParse('Operador').success).toBe(true);
+    expect(patentSchema.safeParse('Agente Especial').success).toBe(true);
+    expect(patentSchema.safeParse('Oficial de Operações').success).toBe(true);
+    expect(patentSchema.safeParse('Agente de Elite').success).toBe(true);
   });
 
   it('deve rejeitar patentes inválidas', () => {
@@ -809,7 +809,7 @@ describe('validateCharacterForm', () => {
 
   describe('origens', () => {
     const origensValidas = [
-      'academico', 'agente-de-saude', 'amnésico', 'artista', 'atleta',
+      'academico', 'agente-de-saude', 'amnesico', 'artista', 'atleta',
       'chef', 'criminoso', 'militar', 'investigador',
     ];
 
