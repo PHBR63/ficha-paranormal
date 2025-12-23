@@ -14,6 +14,11 @@ import type { UnifiedTrackAbility, TrackAbilityMechanics } from '../class-powers
 /**
  * Converte uma habilidade de trilha para EffectMechanics
  * Usa effects.base ao invés de mechanics conforme a interface UnifiedTrackAbility
+ * 
+ * Suporta:
+ * - Bônus de dano fixo e por atributo (ex: Mira de Elite usa Intelecto)
+ * - Ataque Furtivo escalonado por NEX
+ * - Bônus de crítico, iniciativa, perícias, etc.
  */
 function convertTrackAbilityToMechanics(
   ability: UnifiedTrackAbility,
@@ -25,10 +30,29 @@ function convertTrackAbilityToMechanics(
   
   if (!m) return mechanics;
   
-  // === Bônus de Dano ===
+  // === Bônus de Dano (com suporte a atributo) ===
   if (m.damageBonus) {
     const dmgBonus = m.damageBonus;
-    if (dmgBonus.value) {
+    
+    // Se o bônus usa um atributo, calcula o valor baseado no atributo
+    if (dmgBonus.attribute) {
+      const attrValue = attributes[dmgBonus.attribute as AttributeType] || 0;
+      
+      // Aplica condicionalmente baseado no tipo de arma
+      if (dmgBonus.conditions?.weaponType === 'firearm-long') {
+        // Mira de Elite: +INT em dano com armas de fogo longas
+        mechanics.rangedDamageBonus = attrValue;
+        mechanics.conditionalNote = 'Apenas armas de fogo com balas longas';
+      } else if (dmgBonus.conditions?.weaponType === 'melee') {
+        mechanics.meleeDamageBonus = attrValue;
+      } else if (dmgBonus.conditions?.weaponType === 'ranged') {
+        mechanics.rangedDamageBonus = attrValue;
+      } else {
+        mechanics.damageBonus = attrValue;
+      }
+    }
+    // Bônus fixo de dano
+    else if (dmgBonus.value) {
       if (dmgBonus.conditions?.weaponType === 'melee') {
         mechanics.meleeDamageBonus = dmgBonus.value;
       } else if (dmgBonus.conditions?.weaponType === 'ranged') {
@@ -37,8 +61,31 @@ function convertTrackAbilityToMechanics(
         mechanics.damageBonus = dmgBonus.value;
       }
     }
+    
+    // Dados extras de dano
     if (dmgBonus.extraDice) {
       mechanics.extraDamageDice = `${dmgBonus.extraDice.count}${dmgBonus.extraDice.dieType || 'd6'}`;
+    }
+  }
+  
+  // === Ataque Furtivo Escalonado (Infiltrador) ===
+  if (m.sneakAttack?.scaling) {
+    const scaling = m.sneakAttack.scaling;
+    
+    // Encontra o tier de NEX aplicável (maior NEX <= nex atual)
+    const applicableTiers = Object.keys(scaling)
+      .map(Number)
+      .filter(n => n <= nex)
+      .sort((a, b) => b - a);
+    
+    if (applicableTiers.length > 0) {
+      const tier = applicableTiers[0];
+      const diceData = scaling[tier];
+      
+      if (diceData) {
+        mechanics.extraDamageDice = `${diceData.dice}${diceData.dieType || 'd6'}`;
+        mechanics.conditionalNote = 'Ataque Furtivo: alvo desprevenido, flanqueado ou corpo a corpo com arma leve';
+      }
     }
   }
   
@@ -96,6 +143,13 @@ function convertTrackAbilityToMechanics(
     mechanics.specialEffects.push('Pode usar Ocultismo em ataques corpo a corpo');
   }
   
+  // === Dano Máximo em Crítico (Atirar para Matar) ===
+  if (m.maximumDamageOnCritical) {
+    if (!mechanics.specialEffects) mechanics.specialEffects = [];
+    mechanics.specialEffects.push('Crítico com arma de fogo causa dano máximo');
+    mechanics.maximumDamageOnCrit = true;
+  }
+  
   // === Redução de Dano ===
   if (m.damageReduction) {
     if (m.damageReduction.type === 'fixed' && m.damageReduction.fixedAmount) {
@@ -108,7 +162,7 @@ function convertTrackAbilityToMechanics(
     mechanics.attackBonus || mechanics.damageBonus || mechanics.defenseBonus ||
     mechanics.meleeDamageBonus || mechanics.rangedDamageBonus ||
     mechanics.criticalMarginBonus || mechanics.initiativeBonus ||
-    mechanics.hpBonus || mechanics.damageReduction;
+    mechanics.hpBonus || mechanics.damageReduction || mechanics.extraDamageDice;
     
   if (!hasNumericMechanics && ability.description) {
     if (!mechanics.specialEffects) mechanics.specialEffects = [];

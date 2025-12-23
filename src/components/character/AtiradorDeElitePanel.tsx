@@ -6,6 +6,8 @@
  * - NEX 40%: Disparo Letal (1 PE) - +2 margem de ameaça ao mirar
  * - NEX 65%: Disparo Impactante (2 PE) - Manobra ao invés de dano
  * - NEX 99%: Atirar para Matar (passiva) - Crítico = dano máximo
+ * 
+ * Integrado com useActivatedEffects para comunicar efeitos ao SUE.
  */
 
 import { useState, useMemo, useCallback } from 'react';
@@ -23,6 +25,7 @@ import {
   DrawerFooter,
   DrawerClose,
 } from '@/components/ui/drawer';
+import { TRACK_EFFECT_IDS, type EffectDuration } from '@/hooks/useActivatedEffects';
 
 // Tipos de manobras disponíveis para Disparo Impactante
 const MANOBRAS_IMPACTANTE = [
@@ -41,6 +44,8 @@ interface AtiradorAbility {
   isPassive: boolean;
   description: string;
   shortEffect: string;
+  effectId?: string; // ID do efeito para o SUE
+  effectDuration?: EffectDuration;
 }
 
 // Definição das habilidades do Atirador de Elite
@@ -53,6 +58,7 @@ const ATIRADOR_ABILITIES: AtiradorAbility[] = [
     isPassive: true,
     description: 'Proficiência com armas de fogo que usam balas longas e soma Intelecto em rolagens de dano com essas armas.',
     shortEffect: 'Proficiência balas longas + INT em dano',
+    effectId: TRACK_EFFECT_IDS.MIRA_DE_ELITE,
   },
   {
     id: 'disparo-letal',
@@ -62,6 +68,8 @@ const ATIRADOR_ABILITIES: AtiradorAbility[] = [
     isPassive: false,
     description: 'Quando faz a ação mirar, você pode gastar 1 PE para aumentar em +2 a margem de ameaça do próximo ataque que fizer até o final de seu próximo turno.',
     shortEffect: '+2 margem de ameaça (ao mirar)',
+    effectId: TRACK_EFFECT_IDS.DISPARO_LETAL,
+    effectDuration: 'next-attack',
   },
   {
     id: 'disparo-impactante',
@@ -71,6 +79,8 @@ const ATIRADOR_ABILITIES: AtiradorAbility[] = [
     isPassive: false,
     description: 'Quando ataca com uma arma de fogo, você pode gastar 2 PE e, em vez de causar dano, fazer uma manobra entre derrubar, desarmar, empurrar ou quebrar.',
     shortEffect: 'Manobra ao invés de dano',
+    effectId: TRACK_EFFECT_IDS.DISPARO_IMPACTANTE,
+    effectDuration: 'instant',
   },
   {
     id: 'atirar-para-matar',
@@ -80,6 +90,7 @@ const ATIRADOR_ABILITIES: AtiradorAbility[] = [
     isPassive: true,
     description: 'Quando faz um acerto crítico com uma arma de fogo, você causa dano máximo, sem precisar rolar dados.',
     shortEffect: 'Crítico = dano máximo',
+    effectId: TRACK_EFFECT_IDS.ATIRAR_PARA_MATAR,
   },
 ];
 
@@ -89,6 +100,10 @@ interface AtiradorDeElitePanelProps {
   peCurrent: number;
   intellect: number;
   onPEChange: (newPE: number) => void;
+  /** Callback para ativar efeito no SUE */
+  onActivateEffect?: (id: string, name: string, duration: EffectDuration) => void;
+  /** Verifica se um efeito está ativo */
+  isEffectActive?: (id: string) => boolean;
 }
 
 export function AtiradorDeElitePanel({
@@ -97,12 +112,14 @@ export function AtiradorDeElitePanel({
   peCurrent,
   intellect,
   onPEChange,
+  onActivateEffect,
+  isEffectActive,
 }: AtiradorDeElitePanelProps) {
   const [activatingAbility, setActivatingAbility] = useState<string | null>(null);
   const [showManeuverDrawer, setShowManeuverDrawer] = useState(false);
 
-  // Verifica se é Atirador de Elite
-  const isAtiradorElite = classTrack === 'Atirador de Elite';
+  // Verifica se é Atirador de Elite (suporta ambos os formatos de ID)
+  const isAtiradorElite = classTrack === 'Atirador de Elite' || classTrack === 'atirador-elite';
 
   // Filtra habilidades desbloqueadas pelo NEX
   const unlockedAbilities = useMemo(() => 
@@ -134,13 +151,18 @@ export function AtiradorDeElitePanel({
       // Deduz PE
       onPEChange(peCurrent - ability.peCost);
 
+      // Ativa efeito no SUE se callback disponível
+      if (onActivateEffect && ability.effectId && ability.effectDuration) {
+        onActivateEffect(ability.effectId, ability.name, ability.effectDuration);
+      }
+
       toast.success(`${ability.name} ativado!`, {
         description: ability.shortEffect,
       });
     } finally {
       setTimeout(() => setActivatingAbility(null), 300);
     }
-  }, [peCurrent, onPEChange]);
+  }, [peCurrent, onPEChange, onActivateEffect]);
 
   // Handler para escolher manobra do Disparo Impactante
   const handleManeuverChoice = useCallback((manobra: typeof MANOBRAS_IMPACTANTE[0]) => {

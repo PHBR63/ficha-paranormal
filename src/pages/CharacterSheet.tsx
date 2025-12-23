@@ -80,6 +80,7 @@ import { useRitualCombatBonuses } from '@/hooks/useRitualCombatBonuses';
 import { useSustainedRituals } from '@/hooks/useSustainedRituals';
 import { useEquipmentMigration } from '@/hooks/useEquipmentMigration';
 import { useRoundTracking } from '@/hooks/useRoundTracking';
+import { useActivatedEffects } from '@/hooks/useActivatedEffects';
 import { BonusSummaryCard } from '@/components/character/BonusSummaryCard';
 import { SustainedRitualsPanel } from '@/components/character/SustainedRitualsPanel';
 import { ConditionalBonusesPanel } from '@/components/character/ConditionalBonusesPanel';
@@ -363,6 +364,9 @@ export default function CharacterSheet() {
   
   // Hook centralizado de tracking de uso por rodada (habilidades 1x/rodada)
   const roundTracking = useRoundTracking();
+  
+  // Hook de efeitos ativados manualmente (integra com SUE)
+  const activatedEffects = useActivatedEffects();
   
   const activeRitualsForDefense = useMemo(() =>
     sustainedRituals.map(r => ({
@@ -2027,6 +2031,8 @@ export default function CharacterSheet() {
                   pe: newPE, 
                   san: sanCurrent 
                 })}
+                onActivateEffect={activatedEffects.activateEffect}
+                isEffectActive={activatedEffects.isEffectActive}
               />
 
               {/* Painel Infiltrador */}
@@ -2042,6 +2048,8 @@ export default function CharacterSheet() {
                 })}
                 usedAbilitiesThisRound={roundTracking.usedAbilitiesThisRound}
                 onAbilityUsed={roundTracking.markAbilityUsed}
+                onActivateEffect={activatedEffects.activateEffect}
+                isEffectActive={activatedEffects.isEffectActive}
               />
 
               {/* Rituais e Histórico (acordeão com abas) */}

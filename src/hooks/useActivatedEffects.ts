@@ -1,0 +1,175 @@
+/**
+ * useActivatedEffects - Hook para gerenciar efeitos ativados manualmente
+ * 
+ * Gerencia o estado de habilidades de trilha que precisam ser ativadas pelo jogador
+ * e integra com o Sistema Unificado de Efeitos (SUE).
+ * 
+ * Características:
+ * - Estado compartilhado de efeitos ativos
+ * - Integração com useRoundTracking para reset automático
+ * - Suporte a efeitos com duração (turnos, rodadas, cena)
+ * - Callbacks para notificar mudanças
+ */
+
+import { useState, useCallback, useMemo } from 'react';
+
+// Tipos de duração de efeitos ativados
+export type EffectDuration = 
+  | 'instant'       // Efeito imediato, não persiste
+  | 'next-attack'   // Até o próximo ataque
+  | 'next-turn'     // Até o início do próximo turno
+  | 'round'         // Até o final da rodada
+  | 'scene'         // Até o final da cena
+  | 'concentration'; // Enquanto concentrar
+
+export interface ActivatedEffect {
+  /** ID único do efeito (prefixado com 'track-', 'power-', etc.) */
+  id: string;
+  /** Nome do efeito para display */
+  name: string;
+  /** Quando o efeito foi ativado */
+  activatedAt: number;
+  /** Duração do efeito */
+  duration: EffectDuration;
+  /** Rodada em que foi ativado (para reset) */
+  activatedInRound?: number;
+  /** Dados extras específicos do efeito */
+  metadata?: Record<string, unknown>;
+}
+
+export interface UseActivatedEffectsReturn {
+  /** Lista de IDs de efeitos atualmente ativos */
+  activatedEffectIds: string[];
+  /** Lista completa de efeitos ativos com metadados */
+  activatedEffects: ActivatedEffect[];
+  /** Ativa um efeito */
+  activateEffect: (
+    id: string, 
+    name: string, 
+    duration?: EffectDuration,
+    metadata?: Record<string, unknown>
+  ) => void;
+  /** Desativa um efeito específico */
+  deactivateEffect: (id: string) => void;
+  /** Verifica se um efeito está ativo */
+  isEffectActive: (id: string) => boolean;
+  /** Limpa efeitos de 'next-attack' após um ataque */
+  consumeAttackEffects: () => void;
+  /** Limpa efeitos de 'next-turn' ao iniciar novo turno */
+  consumeTurnEffects: () => void;
+  /** Limpa efeitos de 'round' ao avançar rodada */
+  consumeRoundEffects: () => void;
+  /** Limpa todos os efeitos (fim de cena/combate) */
+  clearAllEffects: () => void;
+}
+
+/**
+ * Hook para gerenciar efeitos ativados manualmente
+ * 
+ * @example
+ * const { activatedEffectIds, activateEffect, isEffectActive } = useActivatedEffects();
+ * 
+ * // Ao ativar Disparo Letal
+ * activateEffect('track-disparo-letal', 'Disparo Letal', 'next-attack');
+ * 
+ * // Passar para o SUE
+ * const effects = useUnifiedEffects({
+ *   ...characterState,
+ *   activatedEffects: activatedEffectIds
+ * });
+ */
+export function useActivatedEffects(): UseActivatedEffectsReturn {
+  const [effects, setEffects] = useState<ActivatedEffect[]>([]);
+
+  // Lista de IDs para passar ao SUE
+  const activatedEffectIds = useMemo(
+    () => effects.map(e => e.id),
+    [effects]
+  );
+
+  // Ativa um novo efeito
+  const activateEffect = useCallback((
+    id: string,
+    name: string,
+    duration: EffectDuration = 'round',
+    metadata?: Record<string, unknown>
+  ) => {
+    setEffects(prev => {
+      // Remove efeito existente com mesmo ID (substitui)
+      const filtered = prev.filter(e => e.id !== id);
+      
+      return [...filtered, {
+        id,
+        name,
+        activatedAt: Date.now(),
+        duration,
+        metadata,
+      }];
+    });
+  }, []);
+
+  // Desativa um efeito específico
+  const deactivateEffect = useCallback((id: string) => {
+    setEffects(prev => prev.filter(e => e.id !== id));
+  }, []);
+
+  // Verifica se um efeito está ativo
+  const isEffectActive = useCallback((id: string) => {
+    return effects.some(e => e.id === id);
+  }, [effects]);
+
+  // Consome efeitos de 'next-attack' após atacar
+  const consumeAttackEffects = useCallback(() => {
+    setEffects(prev => prev.filter(e => e.duration !== 'next-attack'));
+  }, []);
+
+  // Consome efeitos de 'next-turn' ao iniciar novo turno
+  const consumeTurnEffects = useCallback(() => {
+    setEffects(prev => prev.filter(e => e.duration !== 'next-turn'));
+  }, []);
+
+  // Consome efeitos de 'round' ao avançar rodada
+  const consumeRoundEffects = useCallback(() => {
+    setEffects(prev => prev.filter(e => 
+      e.duration !== 'round' && 
+      e.duration !== 'next-turn' &&
+      e.duration !== 'next-attack'
+    ));
+  }, []);
+
+  // Limpa todos os efeitos
+  const clearAllEffects = useCallback(() => {
+    setEffects([]);
+  }, []);
+
+  return {
+    activatedEffectIds,
+    activatedEffects: effects,
+    activateEffect,
+    deactivateEffect,
+    isEffectActive,
+    consumeAttackEffects,
+    consumeTurnEffects,
+    consumeRoundEffects,
+    clearAllEffects,
+  };
+}
+
+// ============================================
+// IDs de efeitos de trilha conhecidos
+// ============================================
+export const TRACK_EFFECT_IDS = {
+  // Atirador de Elite
+  MIRA_DE_ELITE: 'track-mira-elite',
+  DISPARO_LETAL: 'track-disparo-letal',
+  DISPARO_IMPACTANTE: 'track-disparo-impactante',
+  ATIRAR_PARA_MATAR: 'track-atirar-matar',
+  
+  // Infiltrador
+  ATAQUE_FURTIVO: 'track-ataque-furtivo-trilha',
+  GATUNO: 'track-gatuno',
+  ASSASSINAR: 'track-assassinar',
+  SOMBRA_FUGAZ: 'track-sombra-fugaz',
+} as const;
+
+export type TrackEffectId = typeof TRACK_EFFECT_IDS[keyof typeof TRACK_EFFECT_IDS];
