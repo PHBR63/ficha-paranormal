@@ -1,6 +1,8 @@
 /**
  * Testes unitários para os schemas de validação Zod
  * Garante que as regras de validação funcionam corretamente
+ * 
+ * IDs de classes, trilhas, origens são importados de game-ids.ts (fonte da verdade)
  */
 
 import { describe, it, expect } from 'vitest';
@@ -20,6 +22,13 @@ import {
   validateCharacterForm,
   VALID_SKILL_IDS,
 } from '../validation-schemas';
+import {
+  COMBATENTE_TRACK_IDS,
+  ESPECIALISTA_TRACK_IDS,
+  OCULTISTA_TRACK_IDS,
+  CLASS_IDS,
+  CORE_ORIGIN_IDS,
+} from '../constants/game-ids';
 
 // ============================================
 // TESTES: conceptFieldsSchema
@@ -411,30 +420,38 @@ describe('patentSchema', () => {
 });
 
 // ============================================
-// TESTES: validTracks
+// TESTES: validTracks (usando IDs de game-ids.ts)
 // ============================================
 
 describe('validTracks', () => {
-  it('deve ter trilhas para combatente', () => {
-    expect(validTracks.combatente).toContain('aniquilador');
-    expect(validTracks.combatente).toContain('guerreiro');
-    expect(validTracks.combatente).toContain('tropa-de-choque');
+  it('deve ter trilhas corretas para combatente', () => {
+    expect(validTracks.combatente).toContain(COMBATENTE_TRACK_IDS.ANIQUILADOR);
+    expect(validTracks.combatente).toContain(COMBATENTE_TRACK_IDS.GUERREIRO);
+    expect(validTracks.combatente).toContain(COMBATENTE_TRACK_IDS.TROPA_CHOQUE);
+    expect(validTracks.combatente).toContain(COMBATENTE_TRACK_IDS.COMANDANTE_CAMPO);
+    expect(validTracks.combatente).toContain(COMBATENTE_TRACK_IDS.OPERACOES_ESPECIAIS);
   });
 
-  it('deve ter trilhas para especialista', () => {
-    expect(validTracks.especialista).toContain('infiltrador');
-    expect(validTracks.especialista).toContain('medico-de-campo');
-    expect(validTracks.especialista).toContain('tecnico');
+  it('deve ter trilhas corretas para especialista', () => {
+    expect(validTracks.especialista).toContain(ESPECIALISTA_TRACK_IDS.INFILTRADOR);
+    expect(validTracks.especialista).toContain(ESPECIALISTA_TRACK_IDS.MEDICO_CAMPO);
+    expect(validTracks.especialista).toContain(ESPECIALISTA_TRACK_IDS.TECNICO);
+    expect(validTracks.especialista).toContain(ESPECIALISTA_TRACK_IDS.ATIRADOR_ELITE);
+    expect(validTracks.especialista).toContain(ESPECIALISTA_TRACK_IDS.NEGOCIADOR);
   });
 
-  it('deve ter trilhas para ocultista', () => {
-    expect(validTracks.ocultista).toContain('conduite');
-    expect(validTracks.ocultista).toContain('flagelador');
-    expect(validTracks.ocultista).toContain('graduado');
+  it('deve ter trilhas corretas para ocultista', () => {
+    expect(validTracks.ocultista).toContain(OCULTISTA_TRACK_IDS.CONDUTOR);
+    expect(validTracks.ocultista).toContain(OCULTISTA_TRACK_IDS.FLAGELADOR);
+    expect(validTracks.ocultista).toContain(OCULTISTA_TRACK_IDS.GRADUADO);
+    expect(validTracks.ocultista).toContain(OCULTISTA_TRACK_IDS.INTUITIVO);
+    expect(validTracks.ocultista).toContain(OCULTISTA_TRACK_IDS.LAMINA_PARANORMAL);
   });
 
-  it('NÃO deve conter trilha inválida "condutor"', () => {
-    expect(validTracks.ocultista).not.toContain('condutor');
+  it('deve ter 5 trilhas para cada classe', () => {
+    expect(validTracks.combatente).toHaveLength(5);
+    expect(validTracks.especialista).toHaveLength(5);
+    expect(validTracks.ocultista).toHaveLength(5);
   });
 });
 
