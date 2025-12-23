@@ -760,16 +760,32 @@ export function CombatRollModal({
     return isAniquilador && nex >= 99 && isFavoriteWeapon;
   }, [classTrack, nex, isFavoriteWeapon]);
 
-  // Calcular margem de crítico efetiva (incluindo SUE, weapon buffs, Máquina de Matar e Técnicas)
+  // Calcular margem de crítico efetiva (incluindo SUE, weapon buffs, Máquina de Matar, Técnicas e Técnica Letal)
   const effectiveCritical = useMemo(() => {
     if (!weapon) return 20;
     let critical = parseInt(weapon.critical || '20');
+    const isMeleeAttack = weapon?.type === 'Corpo a Corpo' || weapon?.type === 'Briga';
+    
+    // === TÉCNICA LETAL (Guerreiro NEX 10%): +2 margem de ameaça corpo a corpo ===
+    // Aplicação explícita para garantir que funcione independente do SUE
+    const isGuerreiro = classTrack?.toLowerCase().includes('guerreiro');
+    if (isGuerreiro && nex >= 10 && isMeleeAttack) {
+      critical -= 2;
+    }
     
     // === BÔNUS DO SUE ===
-    if (unifiedEffects) {
+    // Só aplica se não for Guerreiro (para evitar duplicação, já que Técnica Letal é aplicada acima)
+    if (unifiedEffects && !isGuerreiro) {
       critical -= unifiedEffects.critical.marginBonus;
-    } else if (classPowerBonuses?.criticalMarginBonus) {
-      // Sistema legado - backup
+    } else if (unifiedEffects && isGuerreiro) {
+      // Para Guerreiro, aplica apenas bônus não relacionados à Técnica Letal
+      // (outros efeitos de margem de crítico que não sejam da trilha)
+      const nonTrackCriticalBonus = unifiedEffects.critical.breakdown?.filter(
+        b => !b.source.toLowerCase().includes('técnica letal')
+      ).reduce((sum, b) => sum + b.value, 0) || 0;
+      critical -= nonTrackCriticalBonus;
+    } else if (classPowerBonuses?.criticalMarginBonus && !isGuerreiro) {
+      // Sistema legado - backup (só se não for Guerreiro)
       critical -= classPowerBonuses.criticalMarginBonus;
     }
     
@@ -783,7 +799,7 @@ export function CombatRollModal({
       if (b.criticalBonus) critical -= b.criticalBonus;
     });
     
-    // === MÁQUINA DE MATAR: +2 margem de ameaça ===
+    // === MÁQUINA DE MATAR (Aniquilador NEX 99%): +2 margem de ameaça ===
     if (maquinaDeMatarActive) {
       critical -= 2;
     }
@@ -794,7 +810,7 @@ export function CombatRollModal({
     }
     
     return Math.max(1, critical); // Mínimo de 1
-  }, [weapon, passiveBonuses, classPowerBonuses, weaponBuffBonuses, unifiedEffects, maquinaDeMatarActive, activeTechniqueEffects]);
+  }, [weapon, passiveBonuses, classPowerBonuses, weaponBuffBonuses, unifiedEffects, maquinaDeMatarActive, activeTechniqueEffects, classTrack, nex]);
 
   // Multiplicador de crítico da arma (incluindo SUE, weapon buffs e Técnicas)
   const criticalMultiplier = useMemo(() => {

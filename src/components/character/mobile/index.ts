@@ -59,3 +59,4 @@ export { MobileActiveEffectsPanel } from './MobileActiveEffectsPanel';
 export { MobileParanormalPowerSelectModal } from './MobileParanormalPowerSelectModal';
 export { MobileRitualEffectWizard, type MobileRitualEffectWizardProps } from './MobileRitualEffectWizard';
 export { MobileLeadershipPanel } from './MobileLeadershipPanel';
+export { MobileGuerreiroPanel } from './MobileGuerreiroPanel';
