@@ -19,6 +19,12 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { 
   Zap, 
   Sparkles,
@@ -319,20 +325,33 @@ export function MobileRitualCastModal({
             )}
 
             {/* Toggle do wizard de efeitos */}
-            <div className="flex items-center justify-between p-2 rounded-lg bg-muted/30 border border-border">
-              <div className="flex items-center gap-2">
-                <Wand2 className="w-4 h-4 text-muted-foreground" />
-                <Label htmlFor="wizard-toggle" className="text-xs cursor-pointer">
-                  Processar efeitos
-                </Label>
+            <TooltipProvider>
+              <div className="flex items-center justify-between p-2 rounded-lg bg-muted/30 border border-border">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center gap-2 cursor-help">
+                      <Wand2 className="w-4 h-4 text-muted-foreground" />
+                      <Label htmlFor="wizard-toggle" className="text-xs cursor-pointer">
+                        Processar efeitos
+                      </Label>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-[200px] text-center">
+                    <p className="text-xs">
+                      {wizardEnabled 
+                        ? "Após conjurar, um assistente guiará você pelos efeitos: dano, cura, resistências, condições e buffs."
+                        : "Conjuração rápida: o ritual será lançado sem processar efeitos automaticamente."}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+                <Switch
+                  id="wizard-toggle"
+                  checked={wizardEnabled}
+                  onCheckedChange={setWizardEnabled}
+                  className="scale-90"
+                />
               </div>
-              <Switch
-                id="wizard-toggle"
-                checked={wizardEnabled}
-                onCheckedChange={setWizardEnabled}
-                className="scale-90"
-              />
-            </div>
+            </TooltipProvider>
 
             {/* Custo total */}
             <div className={cn(
