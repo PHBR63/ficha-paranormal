@@ -1,4 +1,5 @@
-import { Dices, User, Sparkles } from 'lucide-react';
+import { useState, useCallback } from 'react';
+import { Dices, User, Sparkles, AlertCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
@@ -8,6 +9,43 @@ import { motion } from 'framer-motion';
 import type { CharacterFormData } from '@/pages/CharacterCreate';
 import { RuleBookTip } from './RuleBookTip';
 import { getRulebookContent } from '@/lib/rulebook-content';
+import { z } from 'zod';
+
+// Schema de validação Zod para campos de texto do conceito
+const conceptFieldsSchema = z.object({
+  name: z.string()
+    .min(2, 'Nome deve ter pelo menos 2 caracteres')
+    .max(100, 'Nome deve ter no máximo 100 caracteres')
+    .regex(/^[a-zA-ZÀ-ÿ\s'-]+$/, 'Nome deve conter apenas letras, espaços e hífens')
+    .optional()
+    .or(z.literal('')),
+  playerName: z.string()
+    .max(100, 'Nome do jogador deve ter no máximo 100 caracteres')
+    .optional()
+    .or(z.literal('')),
+  concept: z.string()
+    .max(200, 'Conceito deve ter no máximo 200 caracteres')
+    .optional()
+    .or(z.literal('')),
+  gender: z.string()
+    .max(50, 'Gênero deve ter no máximo 50 caracteres')
+    .optional()
+    .or(z.literal('')),
+  appearance: z.string()
+    .max(500, 'Aparência deve ter no máximo 500 caracteres')
+    .optional()
+    .or(z.literal('')),
+  personality: z.string()
+    .max(500, 'Personalidade deve ter no máximo 500 caracteres')
+    .optional()
+    .or(z.literal('')),
+  background: z.string()
+    .max(2000, 'Histórico deve ter no máximo 2000 caracteres')
+    .optional()
+    .or(z.literal('')),
+});
+
+type FieldErrors = Partial<Record<keyof z.infer<typeof conceptFieldsSchema>, string>>;
 
 interface StepConceptProps {
   formData: CharacterFormData;
@@ -24,6 +62,32 @@ const CONCEPT_SUGGESTIONS = [
 ];
 
 export function StepConcept({ formData, updateFormData }: StepConceptProps) {
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+
+  // Valida um campo específico e retorna o valor sanitizado
+  const validateAndUpdate = useCallback((
+    field: keyof z.infer<typeof conceptFieldsSchema>,
+    value: string
+  ) => {
+    // Valida apenas o campo específico
+    const fieldSchema = conceptFieldsSchema.shape[field];
+    const result = fieldSchema.safeParse(value);
+    
+    if (!result.success) {
+      const errorMessage = result.error.errors[0]?.message || 'Campo inválido';
+      setFieldErrors(prev => ({ ...prev, [field]: errorMessage }));
+    } else {
+      setFieldErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
+    
+    // Atualiza o formData mesmo com erro (para permitir correção)
+    updateFormData({ [field]: value });
+  }, [updateFormData]);
+
   const handleRollAge = () => {
     const { result } = rollAge();
     updateFormData({ age: result });
@@ -38,7 +102,19 @@ export function StepConcept({ formData, updateFormData }: StepConceptProps) {
 
   const handleSuggestionClick = () => {
     const randomSuggestion = CONCEPT_SUGGESTIONS[Math.floor(Math.random() * CONCEPT_SUGGESTIONS.length)];
-    updateFormData({ concept: randomSuggestion });
+    validateAndUpdate('concept', randomSuggestion);
+  };
+
+  // Componente de erro inline
+  const FieldError = ({ field }: { field: keyof FieldErrors }) => {
+    const error = fieldErrors[field];
+    if (!error) return null;
+    return (
+      <p className="text-xs text-destructive mt-1 flex items-center gap-1">
+        <AlertCircle className="w-3 h-3" />
+        {error}
+      </p>
+    );
   };
 
   // Conteúdo educativo do livro
@@ -91,19 +167,23 @@ export function StepConcept({ formData, updateFormData }: StepConceptProps) {
               </label>
               <Input
                 value={formData.name}
-                onChange={(e) => updateFormData({ name: e.target.value })}
+                onChange={(e) => validateAndUpdate('name', e.target.value)}
                 placeholder="Ex: João Silva"
-                className="bg-card border-border"
+                className={`bg-card border-border ${fieldErrors.name ? 'border-destructive' : ''}`}
+                maxLength={100}
               />
+              <FieldError field="name" />
             </div>
             <div>
               <label className="block text-sm font-medium mb-2 text-foreground">Nome do Jogador</label>
               <Input
                 value={formData.playerName}
-                onChange={(e) => updateFormData({ playerName: e.target.value })}
+                onChange={(e) => validateAndUpdate('playerName', e.target.value)}
                 placeholder="Seu nome"
-                className="bg-card border-border"
+                className={`bg-card border-border ${fieldErrors.playerName ? 'border-destructive' : ''}`}
+                maxLength={100}
               />
+              <FieldError field="playerName" />
             </div>
           </div>
 
@@ -126,10 +206,12 @@ export function StepConcept({ formData, updateFormData }: StepConceptProps) {
             </div>
             <Input
               value={formData.concept || ''}
-              onChange={(e) => updateFormData({ concept: e.target.value })}
+              onChange={(e) => validateAndUpdate('concept', e.target.value)}
               placeholder='Ex: "Ex-policial assombrado pelo caso que não conseguiu resolver"'
-              className="bg-card border-border"
+              className={`bg-card border-border ${fieldErrors.concept ? 'border-destructive' : ''}`}
+              maxLength={200}
             />
+            <FieldError field="concept" />
           </div>
         </motion.div>
       </div>
@@ -172,10 +254,12 @@ export function StepConcept({ formData, updateFormData }: StepConceptProps) {
           <label className="block text-sm font-medium mb-2 text-foreground">Gênero</label>
           <Input
             value={formData.gender || ''}
-            onChange={(e) => updateFormData({ gender: e.target.value })}
+            onChange={(e) => validateAndUpdate('gender', e.target.value)}
             placeholder="Ex: Masculino, Feminino, Não-binário..."
-            className="bg-card border-border"
+            className={`bg-card border-border ${fieldErrors.gender ? 'border-destructive' : ''}`}
+            maxLength={50}
           />
+          <FieldError field="gender" />
         </div>
       </motion.div>
 
@@ -187,22 +271,30 @@ export function StepConcept({ formData, updateFormData }: StepConceptProps) {
         transition={{ delay: 0.4 }}
       >
         <div>
-          <label className="block text-sm font-medium mb-2 text-foreground">Aparência</label>
+          <label className="block text-sm font-medium mb-2 text-foreground">
+            Aparência <span className="text-muted-foreground text-xs">({(formData.appearance || '').length}/500)</span>
+          </label>
           <Textarea
             value={formData.appearance || ''}
-            onChange={(e) => updateFormData({ appearance: e.target.value })}
+            onChange={(e) => validateAndUpdate('appearance', e.target.value)}
             placeholder="Descreva a aparência física do seu personagem..."
-            className="bg-card border-border h-24 resize-none"
+            className={`bg-card border-border h-24 resize-none ${fieldErrors.appearance ? 'border-destructive' : ''}`}
+            maxLength={500}
           />
+          <FieldError field="appearance" />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-2 text-foreground">Personalidade</label>
+          <label className="block text-sm font-medium mb-2 text-foreground">
+            Personalidade <span className="text-muted-foreground text-xs">({(formData.personality || '').length}/500)</span>
+          </label>
           <Textarea
             value={formData.personality || ''}
-            onChange={(e) => updateFormData({ personality: e.target.value })}
+            onChange={(e) => validateAndUpdate('personality', e.target.value)}
             placeholder="Descreva os traços de personalidade..."
-            className="bg-card border-border h-24 resize-none"
+            className={`bg-card border-border h-24 resize-none ${fieldErrors.personality ? 'border-destructive' : ''}`}
+            maxLength={500}
           />
+          <FieldError field="personality" />
         </div>
       </motion.div>
 
@@ -213,14 +305,16 @@ export function StepConcept({ formData, updateFormData }: StepConceptProps) {
         transition={{ delay: 0.5 }}
       >
         <label className="block text-sm font-medium mb-2 text-foreground">
-          Histórico <span className="text-muted-foreground text-xs">(opcional)</span>
+          Histórico <span className="text-muted-foreground text-xs">(opcional - {(formData.background || '').length}/2000)</span>
         </label>
         <Textarea
           value={formData.background || ''}
-          onChange={(e) => updateFormData({ background: e.target.value })}
+          onChange={(e) => validateAndUpdate('background', e.target.value)}
           placeholder="Conte a história do seu personagem... Como ele descobriu o paranormal? O que o motivou a se juntar à Ordo Realitas?"
-          className="bg-card border-border h-32 resize-none"
+          className={`bg-card border-border h-32 resize-none ${fieldErrors.background ? 'border-destructive' : ''}`}
+          maxLength={2000}
         />
+        <FieldError field="background" />
       </motion.div>
 
       {/* Preview */}
