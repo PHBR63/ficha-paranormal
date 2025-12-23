@@ -427,6 +427,9 @@ export function MobileCharacterSheet({
           damageType: weaponData.damageType,
         });
         
+        // Detecta se a arma é a favorita do Aniquilador
+        const isFavoriteWeapon = !!(weaponData.favoriteAbilityId);
+        
         return {
           id: item.id,
           name: item.name,
@@ -438,6 +441,7 @@ export function MobileCharacterSheet({
           ammo: weaponData.ammo,
           maxAmmo: weaponData.maxAmmo,
           ammoType: weaponData.ammoType,
+          isFavoriteWeapon,
         };
       });
   }, [normalizedInventory]);
@@ -1058,6 +1062,7 @@ export function MobileCharacterSheet({
           maxPE={character.pe_max}
           onPEChange={handlePEChange}
           characterClass={character.class}
+          classTrack={character.class_track || undefined}
           abilities={character.abilities}
           nex={character.nex}
           unifiedEffects={unifiedEffects?.computed}

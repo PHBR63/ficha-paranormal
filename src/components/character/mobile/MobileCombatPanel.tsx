@@ -40,6 +40,8 @@ export interface WeaponEntry {
   special?: string;
   notes?: string;
   ammoType?: string;
+  /** Indica se esta arma é a favorita do Aniquilador (habilidade "A Favorita") */
+  isFavoriteWeapon?: boolean;
 }
 
 // Props do componente
