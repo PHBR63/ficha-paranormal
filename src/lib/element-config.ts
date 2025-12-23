@@ -15,7 +15,7 @@ import {
   Ghost,
   type LucideIcon 
 } from 'lucide-react';
-import { ELEMENT_IDS } from './constants/game-ids';
+import { ELEMENT_IDS, isValidElementIdIgnoreCase, normalizeElementId } from './constants/game-ids';
 
 // Tipos de elementos disponíveis (em minúsculo para compatibilidade)
 // Sincronizado com ELEMENT_IDS de game-ids.ts
@@ -115,6 +115,7 @@ export const ELEMENT_CONFIG: Record<ParanormalElementType, ElementConfig> = {
 };
 
 // Helper para obter configuração de elemento de forma segura
+// Usa isValidElementIdIgnoreCase internamente para compatibilidade
 export function getElementConfig(element: string | undefined): ElementConfig | null {
   if (!element) return null;
   const key = element.toLowerCase() as ParanormalElementType;
@@ -124,4 +125,31 @@ export function getElementConfig(element: string | undefined): ElementConfig | n
 // Helper para obter todas as chaves de elementos
 export function getElementKeys(): ParanormalElementType[] {
   return Object.keys(ELEMENT_CONFIG) as ParanormalElementType[];
+}
+
+/**
+ * Valida se um elemento é válido (case-insensitive)
+ * Wrapper sobre isValidElementIdIgnoreCase de game-ids.ts
+ */
+export function isValidElement(element: string): boolean {
+  return isValidElementIdIgnoreCase(element);
+}
+
+/**
+ * Obtém configuração de elemento com normalização automática
+ * Aceita elementos em qualquer case
+ */
+export function getElementConfigSafe(element: string | undefined): ElementConfig | null {
+  if (!element) return null;
+  
+  // Tenta normalizar usando game-ids.ts
+  const normalized = normalizeElementId(element);
+  if (normalized) {
+    const key = normalized.toLowerCase() as ParanormalElementType;
+    return ELEMENT_CONFIG[key] || null;
+  }
+  
+  // Fallback para busca direta
+  const key = element.toLowerCase() as ParanormalElementType;
+  return ELEMENT_CONFIG[key] || null;
 }
