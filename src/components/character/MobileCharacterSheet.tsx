@@ -66,6 +66,7 @@ import {
   MobileOperacoesEspeciaisPanel,
   MobileTropaDeChoquePanel,
   MobileAtiradorDeElitePanel,
+  MobileInfiltradorPanel,
   type WeaponEntry,
   type BonusSource,
   type ActiveCondition,
@@ -861,6 +862,17 @@ export function MobileCharacterSheet({
               peCurrent={character.pe_current}
               intellect={character.intellect}
               onPEChange={handlePEChange}
+            />
+
+            {/* Painel Infiltrador */}
+            <MobileInfiltradorPanel
+              classTrack={character.class_track}
+              nex={character.nex}
+              peCurrent={character.pe_current}
+              agility={character.agility}
+              onPEChange={handlePEChange}
+              usedAbilitiesThisRound={roundTracking.usedAbilitiesThisRound}
+              onAbilityUsed={roundTracking.markAbilityUsed}
             />
           </>
         )}
