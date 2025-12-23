@@ -8,7 +8,13 @@
 
 import { useState, useMemo } from 'react';
 import { ORIGINS, SKILLS } from '@/lib/character-data';
-import { CORE_ORIGIN_IDS, SUPPLEMENT_ORIGIN_IDS, VALID_SUPPLEMENT_ORIGIN_IDS } from '@/lib/constants/game-ids';
+import { 
+  CORE_ORIGIN_IDS, 
+  SUPPLEMENT_ORIGIN_IDS, 
+  VALID_SUPPLEMENT_ORIGIN_IDS,
+  isValidOriginId,
+  type OriginId
+} from '@/lib/constants/game-ids';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -147,14 +153,24 @@ export function StepOrigin({ formData, updateFormData }: StepOriginProps) {
     return result;
   }, [searchQuery, selectedCategory, showOnlySupplement]);
 
+  /**
+   * Seleciona uma origem validando contra game-ids.ts
+   * @param originId - ID da origem (deve ser um OriginId válido)
+   */
   const handleSelectOrigin = (originId: string) => {
-    const isAmnésico = originId === 'amnésico' || originId === 'amnesico';
-    const isCultistaArrependido = originId === 'cultista-arrependido';
+    // Valida se é uma origem válida antes de processar
+    if (!isValidOriginId(originId)) {
+      console.warn(`[StepOrigin] Tentativa de selecionar origem inválida: ${originId}`);
+      return;
+    }
+    
+    const isAmnésico = originId === CORE_ORIGIN_IDS.AMNESICO;
+    const isCultistaArrependido = originId === CORE_ORIGIN_IDS.CULTISTA_ARREPENDIDO;
     
     if (isAmnésico) {
       setShowAmnesicModal(true);
       updateFormData({ 
-        origin: originId,
+        origin: originId as OriginId,
         originSkills: formData.originSkills.length === 2 ? formData.originSkills : [],
         originParanormalPower: null,
       });
@@ -162,14 +178,14 @@ export function StepOrigin({ formData, updateFormData }: StepOriginProps) {
       const skills = getOriginSkills(originId);
       setShowParanormalModal(true);
       updateFormData({ 
-        origin: originId,
+        origin: originId as OriginId,
         originSkills: skills,
         originParanormalPower: formData.originParanormalPower,
       });
     } else {
       const skills = getOriginSkills(originId);
       updateFormData({ 
-        origin: originId,
+        origin: originId as OriginId,
         originSkills: skills,
         originParanormalPower: null,
       });
