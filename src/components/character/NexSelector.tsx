@@ -3,24 +3,31 @@
  * 
  * Componente focado APENAS no NEX, sem lógica de patente.
  * A patente agora é selecionada em um step separado (StepPatent).
+ * 
+ * IDs centralizados em: src/lib/constants/game-ids.ts
  */
 
 import { motion } from 'framer-motion';
 import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
+import { VALID_NEX_VALUES, isValidNexValue } from '@/lib/constants/game-ids';
 
 interface NexSelectorProps {
   value: number;
   onChange: (nex: number) => void;
 }
 
-// Valores de NEX disponíveis
-const NEX_VALUES = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 99];
+// Usa os valores de NEX centralizados do game-ids.ts (convertido para number[] para compatibilidade)
+const NEX_VALUES: number[] = [...VALID_NEX_VALUES];
 
 export function NexSelector({ value, onChange }: NexSelectorProps) {
   const handleSliderChange = (values: number[]) => {
     const index = values[0];
-    onChange(NEX_VALUES[index]);
+    const selectedNex = NEX_VALUES[index];
+    // Valida o NEX antes de chamar onChange
+    if (isValidNexValue(selectedNex)) {
+      onChange(selectedNex);
+    }
   };
   
   const currentIndex = NEX_VALUES.indexOf(value);
