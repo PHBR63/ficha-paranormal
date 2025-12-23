@@ -131,27 +131,36 @@ export const CORE_ORIGIN_IDS = {
 } as const;
 
 /**
- * IDs das origens de suplementos/expansões
+ * IDs das origens de suplementos/expansões (18 origens)
+ * Fontes: Arsenal Paranormal, Ateliê Secreto, A Passagem, 
+ * Arquivos Confidenciais, Grimório Paranormal, C.R.I.S., 
+ * Missões Ordem, Remate Paranormal, Toca dos Monstros, 
+ * Arquivo do Medo e Comunidade
+ * 
+ * Sincronizado com: src/lib/supplement-origins.ts
  */
 export const SUPPLEMENT_ORIGIN_IDS = {
-  AMIGO_DOS_ANIMAIS: 'amigo-dos-animais',
-  ASTRONAUTA: 'astronauta',
-  CHEF_DO_OUTRO_LADO: 'chef-do-outro-lado',
-  COLEGIAL: 'colegial',
-  COSPLAYER: 'cosplayer',
-  DIPLOMATA: 'diplomata',
-  EXPLORADOR: 'explorador',
-  EXPERIMENTO: 'experimento',
-  FANATICO_POR_CRIATURAS: 'fanatico-por-criaturas',
-  FOTOGRAFO: 'fotografo',
-  INVENTOR_PARANORMAL: 'inventor-paranormal',
-  JOVEM_MISTICO: 'jovem-mistico',
-  LEGISTA_TURNO_NOITE: 'legista-turno-noite',
-  MOTORISTA: 'motorista',
-  NERD_ENTUSIASTA: 'nerd-entusiasta',
-  PSICOLOGO: 'psicologo',
-  PROFETIZADO: 'profetizado',
-  REPORTER_INVESTIGATIVO: 'reporter-investigativo',
+  // Expansões Oficiais
+  AMIGO_DOS_ANIMAIS: 'amigo-dos-animais',       // Arsenal Paranormal
+  ASTRONAUTA: 'astronauta',                     // Expansão Oficial
+  CHEF_DO_OUTRO_LADO: 'chef-do-outro-lado',     // Ateliê Secreto
+  
+  // Comunidade e Outros Suplementos
+  COLEGIAL: 'colegial',                         // Comunidade
+  COSPLAYER: 'cosplayer',                       // Toca dos Monstros
+  DIPLOMATA: 'diplomata',                       // Comunidade
+  EXPLORADOR: 'explorador',                     // Arquivo do Medo
+  EXPERIMENTO: 'experimento',                   // Comunidade
+  FANATICO_POR_CRIATURAS: 'fanatico-por-criaturas', // Grimório Paranormal
+  FOTOGRAFO: 'fotografo',                       // Comunidade
+  INVENTOR_PARANORMAL: 'inventor-paranormal',   // C.R.I.S.
+  JOVEM_MISTICO: 'jovem-mistico',               // A Passagem
+  LEGISTA_TURNO_NOITE: 'legista-turno-noite',   // Arquivos Confidenciais
+  MOTORISTA: 'motorista',                       // Comunidade
+  NERD_ENTUSIASTA: 'nerd-entusiasta',           // Remate Paranormal
+  PSICOLOGO: 'psicologo',                       // Missões Ordem
+  PROFETIZADO: 'profetizado',                   // Comunidade
+  REPORTER_INVESTIGATIVO: 'reporter-investigativo', // Comunidade
 } as const;
 
 /**
