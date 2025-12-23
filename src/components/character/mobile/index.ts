@@ -40,6 +40,7 @@ export type { RollHistoryEntry, RollType } from './MobileRollHistory';
 // Componentes de tabs e UX (Fase 1-2)
 export { MobileOverviewTab } from './MobileOverviewTab';
 export { MobileSkillsTab } from './MobileSkillsTab';
+export { MobilePowersTab } from './MobilePowersTab';
 export { MobileCollapsibleSection } from './MobileCollapsibleSection';
 export { MobileTabNavigation, type MobileTab } from './MobileTabNavigation';
 export { MobileQuickActions } from './MobileQuickActions';
