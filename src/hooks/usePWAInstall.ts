@@ -196,9 +196,12 @@ export function usePWAInstall() {
 
     // Timeout de fallback: se após 5s não receber beforeinstallprompt em Android/Chromium
     // Mas só se não estiver instalado
+    // Usamos uma ref local para evitar problemas com o state deferredPrompt
+    const currentDeferredPrompt = deferredPrompt;
     if (isAndroidDevice && isChromium && !isRunningStandalone && !wasInstalledBefore) {
       promptTimeoutRef.current = setTimeout(() => {
-        if (!deferredPrompt) {
+        // Verifica via ref para evitar closure stale
+        if (!currentDeferredPrompt) {
           addDebugLog('⏱️ Timeout: beforeinstallprompt não disparou');
           addDebugLog('💡 Mostrando instruções do menu do navegador');
           setShowBrowserInstructions(true);
@@ -213,7 +216,9 @@ export function usePWAInstall() {
         clearTimeout(promptTimeoutRef.current);
       }
     };
-  }, [addDebugLog, checkManifest, checkPreviousInstallation, deferredPrompt, markAsInstalled]);
+    // Removemos deferredPrompt das dependências para evitar re-execuções desnecessárias
+    // O estado é gerenciado pelo handler handleBeforeInstall
+  }, [addDebugLog, checkManifest, checkPreviousInstallation, markAsInstalled]);
 
   // Função para disparar o prompt de instalação nativo
   const promptInstall = useCallback(async () => {
