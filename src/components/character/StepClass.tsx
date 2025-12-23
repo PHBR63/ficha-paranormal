@@ -6,7 +6,7 @@
  */
 
 import { CLASSES, calculateDerivedStats } from '@/lib/character-data';
-import { CLASS_IDS } from '@/lib/constants/game-ids';
+import { CLASS_IDS, isValidClassId, type ClassId } from '@/lib/constants/game-ids';
 import { cn } from '@/lib/utils';
 import { Sword, Wrench, Sparkles, Shield, BookOpen, Heart, Zap, Brain, Footprints } from 'lucide-react';
 import { CLASS_PROFICIENCIES, CLASS_INITIAL_ABILITIES, getClassSkillRules } from '@/lib/character-builder-engine';
@@ -48,9 +48,19 @@ export function StepClass({ formData, updateFormData }: StepClassProps) {
       )
     : null;
 
+  /**
+   * Seleciona uma classe validando contra game-ids.ts
+   * @param classId - ID da classe (deve ser um ClassId válido)
+   */
   const handleSelectClass = (classId: string) => {
+    // Valida se é uma classe válida antes de atualizar
+    if (!isValidClassId(classId)) {
+      console.warn(`[StepClass] Tentativa de selecionar classe inválida: ${classId}`);
+      return;
+    }
+    
     updateFormData({ 
-      characterClass: classId,
+      characterClass: classId as ClassId,
       classSkillChoices: {},
       freeSkills: [],
       classTrack: '',
