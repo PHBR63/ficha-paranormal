@@ -67,6 +67,7 @@ import {
   MobileTropaDeChoquePanel,
   MobileAtiradorDeElitePanel,
   MobileInfiltradorPanel,
+  MobileMedicoDeCampoPanel,
   type WeaponEntry,
   type BonusSource,
   type ActiveCondition,
@@ -873,6 +874,14 @@ export function MobileCharacterSheet({
               onPEChange={handlePEChange}
               usedAbilitiesThisRound={roundTracking.usedAbilitiesThisRound}
               onAbilityUsed={roundTracking.markAbilityUsed}
+            />
+
+            {/* Painel Médico de Campo */}
+            <MobileMedicoDeCampoPanel
+              classTrack={character.class_track}
+              nex={character.nex}
+              peCurrent={character.pe_current}
+              onPEChange={handlePEChange}
             />
           </>
         )}

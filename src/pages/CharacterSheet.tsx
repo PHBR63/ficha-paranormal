@@ -99,6 +99,7 @@ import { OperacoesEspeciaisPanel } from '@/components/character/OperacoesEspecia
 import { TropaDeChoquePanel } from '@/components/character/TropaDeChoquePanel';
 import { AtiradorDeElitePanel } from '@/components/character/AtiradorDeElitePanel';
 import { InfiltradorPanel } from '@/components/character/InfiltradorPanel';
+import { MedicoDeCampoPanel } from '@/components/character/MedicoDeCampoPanel';
 import { RoundControlPanel } from '@/components/character/RoundControlPanel';
 import { Logo } from '@/components/ui/logo';
 
@@ -2050,6 +2051,18 @@ export default function CharacterSheet() {
                 onAbilityUsed={roundTracking.markAbilityUsed}
                 onActivateEffect={activatedEffects.activateEffect}
                 isEffectActive={activatedEffects.isEffectActive}
+              />
+
+              {/* Painel Médico de Campo */}
+              <MedicoDeCampoPanel
+                classTrack={character.class_track}
+                nex={character.nex}
+                peCurrent={peCurrent}
+                onPEChange={(newPE) => handleCombatStatsChange({ 
+                  hp: hpCurrent, 
+                  pe: newPE, 
+                  san: sanCurrent 
+                })}
               />
 
               {/* Rituais e Histórico (acordeão com abas) */}

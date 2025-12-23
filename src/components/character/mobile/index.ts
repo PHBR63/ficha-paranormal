@@ -64,3 +64,4 @@ export { MobileOperacoesEspeciaisPanel } from './MobileOperacoesEspeciaisPanel';
 export { MobileTropaDeChoquePanel } from './MobileTropaDeChoquePanel';
 export { MobileAtiradorDeElitePanel } from './MobileAtiradorDeElitePanel';
 export { MobileInfiltradorPanel } from './MobileInfiltradorPanel';
+export { MobileMedicoDeCampoPanel } from './MobileMedicoDeCampoPanel';
