@@ -97,6 +97,7 @@ import { GuerreiroAbilitiesPanel } from '@/components/character/GuerreiroAbiliti
 import { OperacoesEspeciaisPanel } from '@/components/character/OperacoesEspeciaisPanel';
 import { TropaDeChoquePanel } from '@/components/character/TropaDeChoquePanel';
 import { AtiradorDeElitePanel } from '@/components/character/AtiradorDeElitePanel';
+import { InfiltradorPanel } from '@/components/character/InfiltradorPanel';
 import { RoundControlPanel } from '@/components/character/RoundControlPanel';
 import { Logo } from '@/components/ui/logo';
 
@@ -2026,6 +2027,21 @@ export default function CharacterSheet() {
                   pe: newPE, 
                   san: sanCurrent 
                 })}
+              />
+
+              {/* Painel Infiltrador */}
+              <InfiltradorPanel
+                classTrack={character.class_track}
+                nex={character.nex}
+                peCurrent={peCurrent}
+                agility={character.agility}
+                onPEChange={(delta) => handleCombatStatsChange({ 
+                  hp: hpCurrent, 
+                  pe: peCurrent + delta, 
+                  san: sanCurrent 
+                })}
+                usedAbilitiesThisRound={roundTracking.usedAbilitiesThisRound}
+                onAbilityUsed={roundTracking.markAbilityUsed}
               />
 
               {/* Rituais e Histórico (acordeão com abas) */}
