@@ -93,6 +93,7 @@ import { useDeveloperMode } from '@/components/ui/theme-selector';
 import { ActiveEffectsPanel } from '@/components/character/ActiveEffectsPanel';
 import { LeadershipAbilitiesPanel } from '@/components/character/LeadershipAbilitiesPanel';
 import { GuerreiroAbilitiesPanel } from '@/components/character/GuerreiroAbilitiesPanel';
+import { OperacoesEspeciaisPanel } from '@/components/character/OperacoesEspeciaisPanel';
 import { Logo } from '@/components/ui/logo';
 
 // Novos componentes do redesign 2.0 (estilo ficha de papel)
@@ -1958,6 +1959,18 @@ export default function CharacterSheet() {
 
               {/* Painel de Guerreiro - Revidar e Força Opressora */}
               <GuerreiroAbilitiesPanel
+                classTrack={character.class_track}
+                nex={character.nex}
+                peCurrent={peCurrent}
+                onPEChange={(newPE) => handleCombatStatsChange({ 
+                  hp: hpCurrent, 
+                  pe: newPE, 
+                  san: sanCurrent 
+                })}
+              />
+
+              {/* Painel Operações Especiais - Ataque Extra e Surto de Adrenalina */}
+              <OperacoesEspeciaisPanel
                 classTrack={character.class_track}
                 nex={character.nex}
                 peCurrent={peCurrent}

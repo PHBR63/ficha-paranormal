@@ -63,6 +63,7 @@ import {
   MobileParanormalPowerSelectModal,
   MobileLeadershipPanel,
   MobileGuerreiroPanel,
+  MobileOperacoesEspeciaisPanel,
   type WeaponEntry,
   type BonusSource,
   type ActiveCondition,
@@ -782,6 +783,14 @@ export function MobileCharacterSheet({
             
             {/* Painel Guerreiro - Revidar e Força Opressora */}
             <MobileGuerreiroPanel
+              classTrack={character.class_track}
+              nex={character.nex}
+              peCurrent={character.pe_current}
+              onPEChange={handlePEChange}
+            />
+            
+            {/* Painel Operações Especiais - Ataque Extra e Surto de Adrenalina */}
+            <MobileOperacoesEspeciaisPanel
               classTrack={character.class_track}
               nex={character.nex}
               peCurrent={character.pe_current}
