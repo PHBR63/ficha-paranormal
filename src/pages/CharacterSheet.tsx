@@ -102,6 +102,7 @@ import { InfiltradorPanel } from '@/components/character/InfiltradorPanel';
 import { MedicoDeCampoPanel } from '@/components/character/MedicoDeCampoPanel';
 import { NegociadorPanel } from '@/components/character/NegociadorPanel';
 import { TecnicoPanel } from '@/components/character/TecnicoPanel';
+import { AniquiladorPanel } from '@/components/character/AniquiladorPanel';
 import { RoundControlPanel } from '@/components/character/RoundControlPanel';
 import { Logo } from '@/components/ui/logo';
 
@@ -1980,6 +1981,20 @@ export default function CharacterSheet() {
                 })}
                 usedAbilitiesThisRound={roundTracking.usedAbilitiesThisRound}
                 onAbilityUsed={roundTracking.markAbilityUsed}
+                onActivateEffect={activatedEffects.activateEffect}
+                isEffectActive={activatedEffects.isEffectActive}
+              />
+
+              {/* Painel de Aniquilador - Técnicas Secretas */}
+              <AniquiladorPanel
+                classTrack={character.class_track}
+                nex={character.nex}
+                peCurrent={peCurrent}
+                onPEChange={(newPE) => handleCombatStatsChange({ 
+                  hp: hpCurrent, 
+                  pe: newPE, 
+                  san: sanCurrent 
+                })}
                 onActivateEffect={activatedEffects.activateEffect}
                 isEffectActive={activatedEffects.isEffectActive}
               />
