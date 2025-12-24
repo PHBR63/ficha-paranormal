@@ -71,6 +71,7 @@ import {
   MobileNegociadorPanel,
   MobileTecnicoPanel,
   MobileAniquiladorPanel,
+  MobileTrackPassiveEffectsWidget,
   type WeaponEntry,
   type BonusSource,
   type ActiveCondition,
@@ -937,6 +938,20 @@ export function MobileCharacterSheet({
               }}
               onActivateEffect={activatedEffects.activateEffect}
               isEffectActive={activatedEffects.isEffectActive}
+            />
+            
+            {/* Widget de Efeitos Passivos da Trilha */}
+            <MobileTrackPassiveEffectsWidget
+              classTrack={character.class_track}
+              nex={character.nex}
+              attributes={{
+                agility: character.agility,
+                strength: character.strength,
+                intellect: character.intellect,
+                presence: character.presence,
+                vigor: character.vigor,
+              }}
+              activatedEffects={activatedEffects.activatedEffectIds}
             />
           </>
         )}
