@@ -386,7 +386,116 @@ describe('Trilhas do Especialista - Bônus de Combate', () => {
       
       // Atirar para Matar: dano máximo em crítico
       expect(result.maximumDamageOnCrit).toBe(true);
-    });
+});
+
+// ============================================
+// TESTES: TRILHA FLAGELADOR (Ocultista)
+// ============================================
+describe('Trilha Flagelador - TRACK_EFFECT_MAPPINGS', () => {
+  it('deve ter flagelador registrado no mapeamento', () => {
+    expect(TRACK_EFFECT_MAPPINGS.flagelador).toBeDefined();
+    expect(TRACK_EFFECT_MAPPINGS.flagelador.trackId).toBe('flagelador');
+  });
+
+  it('deve ter 3 efeitos mapeados para flagelador', () => {
+    const effects = Object.keys(TRACK_EFFECT_MAPPINGS.flagelador.effects);
+    expect(effects).toHaveLength(3);
+    expect(effects).toContain('track-poder-do-flagelo');
+    expect(effects).toContain('track-abracar-a-dor');
+    expect(effects).toContain('track-absorver-angustia');
+  });
+
+  it('Poder do Flagelo: NEX 10, custo 0 PE (passivo)', () => {
+    const effect = TRACK_EFFECT_MAPPINGS.flagelador.effects['track-poder-do-flagelo'];
+    expect(effect.name).toBe('Poder do Flagelo');
+    expect(effect.minNex).toBe(10);
+    expect(effect.peCost).toBe(0);
+  });
+
+  it('Abraçar a Dor: NEX 40, custo 2 PE, reação', () => {
+    const effect = TRACK_EFFECT_MAPPINGS.flagelador.effects['track-abracar-a-dor'];
+    expect(effect.name).toBe('Abraçar a Dor');
+    expect(effect.minNex).toBe(40);
+    expect(effect.peCost).toBe(2);
+  });
+
+  it('Absorver Angústia: NEX 65, custo 0 PE (passivo com trigger)', () => {
+    const effect = TRACK_EFFECT_MAPPINGS.flagelador.effects['track-absorver-angustia'];
+    expect(effect.name).toBe('Absorver Angústia');
+    expect(effect.minNex).toBe(65);
+    expect(effect.peCost).toBe(0);
+  });
+});
+
+describe('Trilha Flagelador - Progressão por NEX', () => {
+  it('NEX 5%: nenhuma habilidade disponível', () => {
+    const effects = Object.entries(TRACK_EFFECT_MAPPINGS.flagelador.effects)
+      .filter(([_, e]) => e.minNex <= 5);
+    expect(effects).toHaveLength(0);
+  });
+
+  it('NEX 10%: apenas Poder do Flagelo', () => {
+    const effects = Object.entries(TRACK_EFFECT_MAPPINGS.flagelador.effects)
+      .filter(([_, e]) => e.minNex <= 10);
+    expect(effects).toHaveLength(1);
+    expect(effects[0][0]).toBe('track-poder-do-flagelo');
+  });
+
+  it('NEX 40%: Poder do Flagelo + Abraçar a Dor', () => {
+    const effects = Object.entries(TRACK_EFFECT_MAPPINGS.flagelador.effects)
+      .filter(([_, e]) => e.minNex <= 40);
+    expect(effects).toHaveLength(2);
+  });
+
+  it('NEX 65%: todas as 3 habilidades disponíveis', () => {
+    const effects = Object.entries(TRACK_EFFECT_MAPPINGS.flagelador.effects)
+      .filter(([_, e]) => e.minNex <= 65);
+    expect(effects).toHaveLength(3);
+  });
+});
+
+describe('Trilha Flagelador - Integração com getTrackBonusSummary', () => {
+  const baseAttrs = { agility: 2, strength: 1, intellect: 3, presence: 2, vigor: 2 };
+
+  it('deve retornar resumo vazio para NEX 5%', () => {
+    const summary = getTrackBonusSummary('flagelador', 5, baseAttrs);
+    expect(summary.specialAbilities).toHaveLength(0);
+  });
+
+  it('deve incluir Poder do Flagelo em NEX 10%', () => {
+    const summary = getTrackBonusSummary('flagelador', 10, baseAttrs);
+    expect(summary.specialAbilities.some(a => 
+      a.toLowerCase().includes('flagelo') || a.toLowerCase().includes('pv')
+    )).toBe(true);
+  });
+
+  it('deve incluir Abraçar a Dor em NEX 40%', () => {
+    const summary = getTrackBonusSummary('flagelador', 40, baseAttrs);
+    expect(summary.specialAbilities.some(a => 
+      a.toLowerCase().includes('dor') || a.toLowerCase().includes('redução')
+    )).toBe(true);
+  });
+});
+
+describe('Trilha Flagelador - Casos Extremos', () => {
+  const baseAttrs = { agility: 0, strength: 0, intellect: 0, presence: 0, vigor: 0 };
+
+  it('deve lidar com atributos zerados', () => {
+    const summary = getTrackBonusSummary('flagelador', 65, baseAttrs);
+    expect(summary).toBeDefined();
+  });
+
+  it('deve verificar que ratio de hpAsPE é 2:1 (2 PV = 1 PE)', () => {
+    const effect = TRACK_EFFECT_MAPPINGS.flagelador.effects['track-poder-do-flagelo'];
+    expect(effect.description).toContain('2 PV');
+    expect(effect.description).toContain('1 PE');
+  });
+
+  it('deve verificar que Abraçar a Dor reduz dano NÃO-paranormal (não paranormal)', () => {
+    const effect = TRACK_EFFECT_MAPPINGS.flagelador.effects['track-abracar-a-dor'];
+    expect(effect.description).toContain('não-paranormal');
+  });
+});
 
     it('NEX 99 melee NÃO deve ter dano máximo em crítico', () => {
       const result = getTrackCombatBonuses('atirador-elite', 99, defaultAttributes, 'melee');
