@@ -1,24 +1,137 @@
 // =====================================================
-// Adaptador de Efeitos de Trilha
+// Adaptador de Efeitos de Trilha - EXPANDIDO
 // Ordem Paranormal RPG v1.3
 // =====================================================
 //
-// Converte habilidades de trilha para o formato UnifiedEffect
-// Integra com o sistema existente em track-effects-engine.ts
+// Converte habilidades de todas as 10 trilhas (5 Combatente + 5 Especialista)
+// para o formato UnifiedEffect.
+//
+// TRILHAS COMBATENTE:
+// - Aniquilador: Especialização em arma favorita
+// - Comandante de Campo: Liderança tática
+// - Guerreiro: Combate corpo a corpo devastador
+// - Operações Especiais: Velocidade e ações adicionais
+// - Tropa de Choque: Resistência e proteção
+//
+// TRILHAS ESPECIALISTA:
+// - Atirador de Elite: Precisão com armas de fogo longas
+// - Infiltrador: Furtividade e ataques furtivos
+// - Médico de Campo: Cura e suporte
+// - Negociador: Manipulação social
+// - Técnico: Equipamentos e inventário
 //
 
 import type { UnifiedEffect, EffectMechanics, AttributeType } from '../unified-effects-engine';
 import { getTrackById, getUnlockedAbilities } from '../class-powers/track-registry';
 import type { UnifiedTrackAbility, TrackAbilityMechanics } from '../class-powers/track-types';
 
+// =============================================================================
+// CONSTANTES DE EFEITOS ATIVÁVEIS POR TRILHA
+// =============================================================================
+
+/**
+ * IDs dos efeitos ativáveis de cada trilha para integração com useActivatedEffects
+ * Formato: track-{ability-id}
+ */
+export const TRACK_EFFECT_MAPPINGS = {
+  // === COMBATENTE ===
+  aniquilador: {
+    trackId: 'aniquilador',
+    effects: {
+      'track-tecnica-amplo': { name: 'Técnica Amplo', minNex: 40, peCost: 2 },
+      'track-tecnica-destruidor': { name: 'Técnica Destruidor', minNex: 40, peCost: 2 },
+      'track-tecnica-letal': { name: 'Técnica Letal', minNex: 65, peCost: 2, stackable: true },
+      'track-tecnica-perfurante': { name: 'Técnica Perfurante', minNex: 65, peCost: 2 },
+    }
+  },
+  comandanteCampo: {
+    trackId: 'comandante-campo',
+    effects: {
+      'track-inspirar-confianca': { name: 'Inspirar Confiança', minNex: 10, peCost: 2 },
+      'track-estrategista': { name: 'Estrategista', minNex: 40, peCost: 1 },
+      'track-brecha-na-guarda': { name: 'Brecha na Guarda', minNex: 65, peCost: 2 },
+      'track-oficial-comandante': { name: 'Oficial Comandante', minNex: 99, peCost: 5 },
+    }
+  },
+  guerreiro: {
+    trackId: 'guerreiro',
+    effects: {
+      'track-revidar': { name: 'Revidar', minNex: 40, peCost: 2 },
+      'track-forca-opressora': { name: 'Força Opressora', minNex: 65, peCost: 1 },
+    }
+  },
+  operacoesEspeciais: {
+    trackId: 'operacoes-especiais',
+    effects: {
+      'track-ataque-extra': { name: 'Ataque Extra', minNex: 40, peCost: 2 },
+      'track-surto-de-adrenalina': { name: 'Surto de Adrenalina', minNex: 65, peCost: 5 },
+    }
+  },
+  tropaChoque: {
+    trackId: 'tropa-choque',
+    effects: {
+      'track-cai-dentro': { name: 'Cai Dentro', minNex: 40, peCost: 1 },
+      'track-duro-de-matar': { name: 'Duro de Matar', minNex: 65, peCost: 2 },
+    }
+  },
+  // === ESPECIALISTA ===
+  atiradorElite: {
+    trackId: 'atirador-elite',
+    effects: {
+      'track-disparo-letal': { name: 'Disparo Letal', minNex: 40, peCost: 1 },
+      'track-disparo-impactante': { name: 'Disparo Impactante', minNex: 65, peCost: 2 },
+    }
+  },
+  infiltrador: {
+    trackId: 'infiltrador',
+    effects: {
+      'track-ataque-furtivo-trilha': { name: 'Ataque Furtivo', minNex: 10, peCost: 1 },
+      'track-assassinar': { name: 'Assassinar', minNex: 65, peCost: 3 },
+      'track-sombra-fugaz': { name: 'Sombra Fugaz', minNex: 99, peCost: 3 },
+    }
+  },
+  medicoCampo: {
+    trackId: 'medico-campo',
+    effects: {
+      'track-paramedico': { name: 'Paramédico', minNex: 10, peCost: 2 },
+      'track-equipe-trauma': { name: 'Equipe de Trauma', minNex: 40, peCost: 2 },
+      'track-reanimacao': { name: 'Reanimação', minNex: 99, peCost: 10 },
+    }
+  },
+  negociador: {
+    trackId: 'negociador',
+    effects: {
+      'track-eloquencia': { name: 'Eloquência', minNex: 10, peCost: 1 },
+      'track-discurso-motivador': { name: 'Discurso Motivador', minNex: 40, peCost: 4 },
+      'track-truque-mestre': { name: 'Truque de Mestre', minNex: 99, peCost: 5 },
+    }
+  },
+  tecnico: {
+    trackId: 'tecnico',
+    effects: {
+      'track-remendo': { name: 'Remendo', minNex: 40, peCost: 1 },
+      'track-improvisar': { name: 'Improvisar', minNex: 65, peCost: 2 },
+      'track-preparado-para-tudo': { name: 'Preparado para Tudo', minNex: 99, peCost: 3 },
+    }
+  },
+} as const;
+
+// =============================================================================
+// CONVERSÃO DE MECÂNICAS
+// =============================================================================
+
 /**
  * Converte uma habilidade de trilha para EffectMechanics
  * Usa effects.base ao invés de mechanics conforme a interface UnifiedTrackAbility
  * 
- * Suporta:
- * - Bônus de dano fixo e por atributo (ex: Mira de Elite usa Intelecto)
+ * Suporta todas as 10 trilhas:
+ * - Bônus de dano fixo e por atributo
  * - Ataque Furtivo escalonado por NEX
- * - Bônus de crítico, iniciativa, perícias, etc.
+ * - Bônus de crítico, iniciativa, perícias
+ * - Redução de categoria
+ * - Ações extras
+ * - Resistência a dano
+ * - E muito mais...
  */
 function convertTrackAbilityToMechanics(
   ability: UnifiedTrackAbility,
@@ -30,7 +143,7 @@ function convertTrackAbilityToMechanics(
   
   if (!m) return mechanics;
   
-  // === Bônus de Dano (com suporte a atributo) ===
+  // === BÔNUS DE DANO (com suporte a atributo) ===
   if (m.damageBonus) {
     const dmgBonus = m.damageBonus;
     
@@ -62,13 +175,13 @@ function convertTrackAbilityToMechanics(
       }
     }
     
-    // Dados extras de dano
+    // Dados extras de dano (Máquina de Matar)
     if (dmgBonus.extraDice) {
       mechanics.extraDamageDice = `${dmgBonus.extraDice.count}${dmgBonus.extraDice.dieType || 'd6'}`;
     }
   }
   
-  // === Ataque Furtivo Escalonado (Infiltrador) ===
+  // === ATAQUE FURTIVO ESCALONADO (Infiltrador) ===
   if (m.sneakAttack?.scaling) {
     const scaling = m.sneakAttack.scaling;
     
@@ -89,38 +202,43 @@ function convertTrackAbilityToMechanics(
     }
   }
   
-  // === Bônus de Crítico ===
+  // === BÔNUS DE CRÍTICO ===
   if (m.criticalBonus) {
     if (m.criticalBonus.marginBonus) {
       mechanics.criticalMarginBonus = m.criticalBonus.marginBonus;
+      
+      // Se é específico para corpo a corpo (Técnica Letal)
+      if (m.criticalBonus.conditions?.weaponType === 'melee') {
+        mechanics.conditionalNote = 'Apenas ataques corpo a corpo';
+      }
     }
     if (m.criticalBonus.multiplierBonus) {
       mechanics.criticalMultiplierBonus = m.criticalBonus.multiplierBonus;
     }
   }
   
-  // === Iniciativa ===
+  // === INICIATIVA (Operações Especiais) ===
   if (m.initiativeBonus) {
     mechanics.initiativeBonus = m.initiativeBonus;
   }
   
-  // === PV adicional por NEX ===
+  // === PV ADICIONAL POR NEX (Tropa de Choque - Casca Grossa) ===
   if (m.hpPerNexPercent) {
     const bonus = m.hpPerNexPercent * Math.floor(nex / 5);
     mechanics.hpBonus = bonus;
   }
   
-  // === Resistência Paranormal ===
+  // === RESISTÊNCIA PARANORMAL ===
   if (m.paranormalResistance) {
     mechanics.paranormalDamageReduction = m.paranormalResistance;
   }
   
-  // === Resistência a Dano Mental ===
+  // === RESISTÊNCIA A DANO MENTAL ===
   if (m.mentalDamageResistance) {
     mechanics.damageResistance = { mental: m.mentalDamageResistance };
   }
   
-  // === Perícias ===
+  // === PERÍCIAS ===
   if (m.skillBonus) {
     mechanics.skillBonus = {};
     for (const skill of m.skillBonus.skills) {
@@ -128,43 +246,231 @@ function convertTrackAbilityToMechanics(
     }
   }
   
-  // === Proficiências ===
+  // === PROFICIÊNCIAS ===
   if (m.proficiencies) {
     mechanics.grantsProficiency = m.proficiencies;
   }
   
-  // === Flags especiais ===
+  // === FLAGS ESPECIAIS ===
+  
+  // Usar PV como PE (Flagelador)
   if (m.hpAsPE) {
     if (!mechanics.specialEffects) mechanics.specialEffects = [];
     mechanics.specialEffects.push('Pode usar PV como PE para rituais');
   }
+  
+  // Ocultismo como ataque (Lâmina Paranormal)
   if (m.occultismAsAttack) {
     if (!mechanics.specialEffects) mechanics.specialEffects = [];
     mechanics.specialEffects.push('Pode usar Ocultismo em ataques corpo a corpo');
   }
   
-  // === Dano Máximo em Crítico (Atirar para Matar) ===
+  // === DANO MÁXIMO EM CRÍTICO (Atirar para Matar) ===
   if (m.maximumDamageOnCritical) {
     if (!mechanics.specialEffects) mechanics.specialEffects = [];
     mechanics.specialEffects.push('Crítico com arma de fogo causa dano máximo');
     mechanics.maximumDamageOnCrit = true;
   }
   
-  // === Redução de Dano ===
+  // === REDUÇÃO DE DANO (Duro de Matar, Inquebrável) ===
   if (m.damageReduction) {
     if (m.damageReduction.type === 'fixed' && m.damageReduction.fixedAmount) {
       mechanics.damageReduction = m.damageReduction.fixedAmount;
+    } else if (m.damageReduction.type === 'half') {
+      if (!mechanics.specialEffects) mechanics.specialEffects = [];
+      const types = m.damageReduction.damageTypes.join(', ');
+      mechanics.specialEffects.push(`Reduz dano ${types} pela metade`);
     }
   }
   
-  // === Descrição como efeito especial se não há mecânicas numéricas ===
+  // === EFEITOS QUANDO MACHUCADO (Inquebrável) ===
+  if (m.whenWounded) {
+    mechanics.defenseBonus = m.whenWounded.defenseBonus;
+    mechanics.damageReduction = m.whenWounded.damageResistance;
+    mechanics.conditionalNote = 'Quando machucado';
+  }
+  
+  // === EFEITOS QUANDO MORRENDO (Inquebrável) ===
+  if (m.whenDying) {
+    if (!mechanics.specialEffects) mechanics.specialEffects = [];
+    if (m.whenDying.canAct) {
+      mechanics.specialEffects.push('Pode agir normalmente quando morrendo');
+    }
+    if (m.whenDying.notHelpless) {
+      mechanics.specialEffects.push('Não fica indefeso quando morrendo');
+    }
+  }
+  
+  // === AÇÕES EXTRAS (Operações Especiais, Guerreiro) ===
+  if (m.extraActions && m.extraActions.length > 0) {
+    if (!mechanics.specialEffects) mechanics.specialEffects = [];
+    
+    for (const action of m.extraActions) {
+      let desc = '';
+      
+      switch (action.type) {
+        case 'movement':
+          if (action.trigger === 'first-round') {
+            desc = 'Ação de movimento adicional na primeira rodada';
+          } else {
+            desc = 'Ação de movimento adicional';
+          }
+          break;
+        case 'standard':
+          if (action.trigger === 'combat-start') {
+            desc = 'Ação padrão adicional no início do combate';
+          } else {
+            desc = 'Ação padrão adicional';
+          }
+          break;
+        case 'standard-or-movement':
+          desc = 'Ação padrão ou de movimento adicional';
+          break;
+        case 'attack':
+          if (action.trigger === 'on-block') {
+            desc = 'Ataque corpo a corpo ao bloquear';
+          } else {
+            desc = 'Ataque adicional';
+          }
+          break;
+        case 'maneuver':
+          if (action.maneuverOptions) {
+            desc = `Manobra: ${action.maneuverOptions.join(' ou ')}`;
+          }
+          break;
+        default:
+          desc = `Ação adicional: ${action.type}`;
+      }
+      
+      if (desc) {
+        mechanics.specialEffects.push(desc);
+      }
+    }
+  }
+  
+  // === LIDERANÇA (Comandante de Campo) ===
+  if (m.leadership) {
+    if (!mechanics.specialEffects) mechanics.specialEffects = [];
+    
+    const range = m.leadership.range;
+    let maxAllies = '';
+    if (typeof m.leadership.maxAllies === 'number') {
+      maxAllies = ` (até ${m.leadership.maxAllies} aliados)`;
+    } else if (m.leadership.maxAllies === 'intellect') {
+      maxAllies = ` (até Intelecto aliados)`;
+    }
+    
+    const effects = Object.entries(m.leadership.allyEffects)
+      .filter(([_, value]) => value)
+      .map(([key]) => {
+        switch (key) {
+          case 'rerollTest': return 'rerolar teste';
+          case 'extraMovementAction': return 'ação de movimento extra';
+          case 'extraAttack': return 'ataque adicional';
+          case 'extraStandardAction': return 'ação padrão extra';
+          default: return key;
+        }
+      });
+    
+    if (effects.length > 0) {
+      mechanics.specialEffects.push(
+        `Aliados em alcance ${range}${maxAllies}: ${effects.join(', ')}`
+      );
+    }
+  }
+  
+  // === CURA (Médico de Campo) ===
+  if (m.healing) {
+    if (!mechanics.specialEffects) mechanics.specialEffects = [];
+    
+    const scalingDice = m.healing.scalingDice;
+    if (scalingDice) {
+      // Encontra o tier de NEX aplicável
+      const applicableTiers = Object.keys(scalingDice)
+        .map(Number)
+        .filter(n => n <= nex)
+        .sort((a, b) => b - a);
+      
+      if (applicableTiers.length > 0) {
+        const tier = applicableTiers[0];
+        const diceData = scalingDice[tier];
+        if (diceData) {
+          mechanics.specialEffects.push(
+            `Cura ${diceData.dice}${diceData.dieType} PV (${m.healing.peCost} PE)`
+          );
+        }
+      }
+    } else {
+      mechanics.specialEffects.push(`Cura ${m.healing.baseDice} PV`);
+    }
+  }
+  
+  // === REDUÇÃO DE CATEGORIA (Aniquilador, Técnico) ===
+  // Armazena como efeito especial pois não existe no EffectMechanics
+  if (m.categoryReduction) {
+    if (!mechanics.specialEffects) mechanics.specialEffects = [];
+    const amount = m.categoryReduction.amount;
+    const target = m.categoryReduction.targetType === 'specific-weapon' 
+      ? 'arma favorita' 
+      : 'equipamentos carregados';
+    mechanics.specialEffects.push(`Categoria -${amount} em ${target}`);
+  }
+  
+  // === TÉCNICAS DO ANIQUILADOR ===
+  if (m.techniqueEffects && m.techniqueEffects.length > 0) {
+    if (!mechanics.specialEffects) mechanics.specialEffects = [];
+    
+    const techniqueNames = m.techniqueEffects.map(t => t.name).join(', ');
+    mechanics.specialEffects.push(`Técnicas disponíveis: ${techniqueNames} (2 PE cada)`);
+  }
+  
+  // === MULTIPLICADOR DE ATAQUE ESPECIAL (Potência Máxima) ===
+  if (m.specialAttackMultiplier) {
+    if (!mechanics.specialEffects) mechanics.specialEffects = [];
+    mechanics.specialEffects.push(
+      `Ataque Especial corpo a corpo: bônus numéricos x${m.specialAttackMultiplier}`
+    );
+  }
+  
+  // === MULTIPLICADOR DE ATAQUE FURTIVO (Assassinar) ===
+  if (m.sneakAttackMultiplier) {
+    if (!mechanics.specialEffects) mechanics.specialEffects = [];
+    mechanics.specialEffects.push(
+      `Ataque Furtivo causa dano x${m.sneakAttackMultiplier}`
+    );
+  }
+  
+  // === BÔNUS DE DT DE RITUAL ===
+  // Armazena como efeito especial pois não existe no EffectMechanics
+  if (m.ritualDTBonus) {
+    if (!mechanics.specialEffects) mechanics.specialEffects = [];
+    mechanics.specialEffects.push(`+${m.ritualDTBonus} na DT dos seus rituais`);
+  }
+  
+  // === INVENTÁRIO OTIMIZADO (Técnico) ===
+  if (m.itemSpaceReduction) {
+    if (!mechanics.specialEffects) mechanics.specialEffects = [];
+    mechanics.specialEffects.push(
+      `Itens ocupam ${m.itemSpaceReduction} espaço a menos`
+    );
+  }
+  
+  if (m.carryCapacity?.addAttribute) {
+    if (!mechanics.specialEffects) mechanics.specialEffects = [];
+    const attrName = m.carryCapacity.addAttribute === 'intellect' ? 'Intelecto' : m.carryCapacity.addAttribute;
+    mechanics.specialEffects.push(
+      `Soma ${attrName} à capacidade de carga`
+    );
+  }
+  
+  // === DESCRIÇÃO COMO EFEITO ESPECIAL (fallback) ===
   const hasNumericMechanics = 
     mechanics.attackBonus || mechanics.damageBonus || mechanics.defenseBonus ||
     mechanics.meleeDamageBonus || mechanics.rangedDamageBonus ||
     mechanics.criticalMarginBonus || mechanics.initiativeBonus ||
     mechanics.hpBonus || mechanics.damageReduction || mechanics.extraDamageDice;
     
-  if (!hasNumericMechanics && ability.description) {
+  if (!hasNumericMechanics && !mechanics.specialEffects?.length && ability.description) {
     if (!mechanics.specialEffects) mechanics.specialEffects = [];
     mechanics.specialEffects.push(ability.description);
   }
@@ -187,6 +493,18 @@ function getAbilityPECost(m: TrackAbilityMechanics | undefined): number | undefi
   if (!m?.activation) return undefined;
   return m.activation.cost;
 }
+
+/**
+ * Obtém tipo de ação da habilidade
+ */
+function getAbilityActionType(m: TrackAbilityMechanics | undefined): string | undefined {
+  if (!m?.activation) return undefined;
+  return m.activation.action as string;
+}
+
+// =============================================================================
+// FUNÇÕES EXPORTADAS
+// =============================================================================
 
 /**
  * Converte habilidades de trilha de um personagem para UnifiedEffect[]
@@ -222,6 +540,7 @@ export function getTrackEffects(
     // Verifica se é uma habilidade que requer ativação
     const needsActivation = requiresActivation(ability.effects?.base);
     const costPE = getAbilityPECost(ability.effects?.base);
+    const actionType = getAbilityActionType(ability.effects?.base);
     
     const effect: UnifiedEffect = {
       id: `track-${ability.id}`,
@@ -238,6 +557,7 @@ export function getTrackEffects(
       conditions: needsActivation ? {
         requiresActivation: true,
         costPE,
+        costAction: actionType as 'free' | 'movement' | 'standard' | 'full' | 'reaction' | undefined,
       } : undefined,
       priority: ability.minNex, // Maior NEX = maior prioridade
     };
@@ -278,6 +598,67 @@ export function getTrackCombatEffects(
 }
 
 /**
+ * Obtém informações de um efeito ativável específico
+ */
+export function getActivatableEffectInfo(effectId: string): {
+  name: string;
+  minNex: number;
+  peCost: number;
+  trackId: string;
+  stackable?: boolean;
+} | null {
+  for (const trackData of Object.values(TRACK_EFFECT_MAPPINGS)) {
+    const effects = trackData.effects as Record<string, { name: string; minNex: number; peCost: number; stackable?: boolean }>;
+    const effectInfo = effects[effectId];
+    if (effectInfo) {
+      return {
+        name: effectInfo.name,
+        minNex: effectInfo.minNex,
+        peCost: effectInfo.peCost,
+        stackable: effectInfo.stackable,
+        trackId: trackData.trackId,
+      };
+    }
+  }
+  return null;
+}
+
+/**
+ * Verifica se um efeito está disponível para um NEX específico
+ */
+export function isEffectAvailableAtNex(effectId: string, nex: number): boolean {
+  const info = getActivatableEffectInfo(effectId);
+  return info ? nex >= info.minNex : false;
+}
+
+/**
+ * Lista todos os efeitos ativáveis de uma trilha
+ */
+export function getTrackActivatableEffects(trackId: string): Array<{
+  id: string;
+  name: string;
+  minNex: number;
+  peCost: number;
+}> {
+  // Normaliza o trackId para encontrar no mapping
+  const normalizedId = trackId.toLowerCase().replace(/-/g, '');
+  
+  for (const [key, trackData] of Object.entries(TRACK_EFFECT_MAPPINGS)) {
+    const mappingId = trackData.trackId.toLowerCase().replace(/-/g, '');
+    if (mappingId === normalizedId || key.toLowerCase() === normalizedId) {
+      return Object.entries(trackData.effects).map(([id, info]) => ({
+        id,
+        name: info.name,
+        minNex: info.minNex,
+        peCost: info.peCost,
+      }));
+    }
+  }
+  
+  return [];
+}
+
+/**
  * Lista todas as habilidades de trilha disponíveis
  * Útil para debug e documentação
  */
@@ -287,6 +668,8 @@ export function listAllTrackAbilities(trackId: string): Array<{
   minNex: number;
   hasMechanics: boolean;
   description: string;
+  kind: string;
+  peCost?: number;
 }> {
   const track = getTrackById(trackId);
   if (!track) return [];
@@ -297,6 +680,8 @@ export function listAllTrackAbilities(trackId: string): Array<{
     minNex: ability.minNex,
     hasMechanics: !!ability.effects?.base && Object.keys(ability.effects.base).length > 0,
     description: ability.description,
+    kind: ability.effects?.base?.kind || 'unknown',
+    peCost: ability.effects?.base?.activation?.cost,
   }));
 }
 
@@ -311,19 +696,29 @@ export function getTrackBonusSummary(
   trackName: string;
   totalAttack: number;
   totalDamage: number;
+  totalMeleeDamage: number;
+  totalRangedDamage: number;
   totalDefense: number;
   totalInitiative: number;
   totalCriticalMargin: number;
+  totalHP: number;
+  categoryReduction: number;
   specialAbilities: string[];
+  activatableAbilities: Array<{ name: string; peCost: number; description: string }>;
 } {
   const summary = {
     trackName: '',
     totalAttack: 0,
     totalDamage: 0,
+    totalMeleeDamage: 0,
+    totalRangedDamage: 0,
     totalDefense: 0,
     totalInitiative: 0,
     totalCriticalMargin: 0,
+    totalHP: 0,
+    categoryReduction: 0,
     specialAbilities: [] as string[],
+    activatableAbilities: [] as Array<{ name: string; peCost: number; description: string }>,
   };
   
   if (!trackId) return summary;
@@ -336,19 +731,115 @@ export function getTrackBonusSummary(
   const effects = getTrackEffects(trackId, nex, attributes);
   
   for (const effect of effects) {
-    if (!effect.isActive) continue;
     const m = effect.mechanics;
     
+    // Se requer ativação, adiciona à lista de ativáveis
+    if (effect.isToggleable && effect.conditions?.costPE) {
+      summary.activatableAbilities.push({
+        name: effect.name,
+        peCost: effect.conditions.costPE,
+        description: effect.description || '',
+      });
+    }
+    
+    // Só soma mecânicas de efeitos ativos
+    if (!effect.isActive) continue;
+    
     summary.totalAttack += (m.attackBonus || 0) + (m.meleeAttackBonus || 0) + (m.rangedAttackBonus || 0);
-    summary.totalDamage += (m.damageBonus || 0) + (m.meleeDamageBonus || 0) + (m.rangedDamageBonus || 0);
+    summary.totalDamage += m.damageBonus || 0;
+    summary.totalMeleeDamage += m.meleeDamageBonus || 0;
+    summary.totalRangedDamage += m.rangedDamageBonus || 0;
     summary.totalDefense += m.defenseBonus || 0;
     summary.totalInitiative += m.initiativeBonus || 0;
     summary.totalCriticalMargin += m.criticalMarginBonus || 0;
+    summary.totalHP += m.hpBonus || 0;
     
+    // Extrai redução de categoria dos efeitos especiais se existir
     if (m.specialEffects) {
+      for (const effect of m.specialEffects) {
+        const catMatch = effect.match(/Categoria -(\d+)/);
+        if (catMatch) {
+          summary.categoryReduction += parseInt(catMatch[1], 10);
+        }
+      }
       summary.specialAbilities.push(...m.specialEffects);
     }
   }
   
   return summary;
+}
+
+/**
+ * Obtém bônus de combate aplicáveis de uma trilha
+ * Usado pelo CombatRollModal para aplicar automaticamente
+ */
+export function getTrackCombatBonuses(
+  trackId: string | null | undefined,
+  nex: number,
+  attributes: Record<AttributeType, number>,
+  attackType: 'melee' | 'ranged',
+  activatedEffects: string[] = []
+): {
+  attackBonus: number;
+  damageBonus: number;
+  criticalMarginBonus: number;
+  criticalMultiplierBonus: number;
+  extraDamageDice: string[];
+  specialEffects: string[];
+  maximumDamageOnCrit: boolean;
+} {
+  const result = {
+    attackBonus: 0,
+    damageBonus: 0,
+    criticalMarginBonus: 0,
+    criticalMultiplierBonus: 0,
+    extraDamageDice: [] as string[],
+    specialEffects: [] as string[],
+    maximumDamageOnCrit: false,
+  };
+  
+  const effects = getTrackCombatEffects(trackId, nex, attributes, attackType, activatedEffects);
+  
+  for (const effect of effects) {
+    if (!effect.isActive) continue;
+    
+    const m = effect.mechanics;
+    
+    // Ataque
+    result.attackBonus += m.attackBonus || 0;
+    if (attackType === 'melee') {
+      result.attackBonus += m.meleeAttackBonus || 0;
+    } else {
+      result.attackBonus += m.rangedAttackBonus || 0;
+    }
+    
+    // Dano
+    result.damageBonus += m.damageBonus || 0;
+    if (attackType === 'melee') {
+      result.damageBonus += m.meleeDamageBonus || 0;
+    } else {
+      result.damageBonus += m.rangedDamageBonus || 0;
+    }
+    
+    // Crítico
+    result.criticalMarginBonus += m.criticalMarginBonus || 0;
+    result.criticalMultiplierBonus += m.criticalMultiplierBonus || 0;
+    
+    // Dados extras
+    if (m.extraDamageDice) {
+      result.extraDamageDice.push(m.extraDamageDice);
+    }
+    
+    // Efeitos especiais
+    if (m.specialEffects) {
+      result.specialEffects.push(...m.specialEffects);
+    }
+    
+    // Dano máximo em crítico
+    if (m.maximumDamageOnCrit) {
+      result.maximumDamageOnCrit = true;
+    }
+  }
+  
+  return result;
 }
