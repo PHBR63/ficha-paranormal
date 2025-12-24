@@ -308,8 +308,8 @@ export function MobileCharacterSheet({
 
   // Hook reativo de rituais sustentados (com realtime para defesa)
   const { rituals: sustainedRituals } = useSustainedRituals({
-    characterId: character.id,
-    enabled: true,
+    characterId: character?.id,
+    enabled: !!character,
   });
 
   // Converte rituais sustentados para formato de defesa
