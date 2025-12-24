@@ -114,6 +114,32 @@ export const TRACK_EFFECT_MAPPINGS = {
       'track-preparado-para-tudo': { name: 'Preparado para Tudo', minNex: 99, peCost: 3 },
     }
   },
+  // === OCULTISTA ===
+  conduite: {
+    trackId: 'conduite',
+    effects: {
+      'track-ampliar-ritual': { 
+        name: 'Ampliar Ritual', 
+        minNex: 10, 
+        peCost: 2,
+        description: 'Aumenta alcance em um passo OU dobra área de efeito'
+      },
+      'track-acelerar-ritual': { 
+        name: 'Acelerar Ritual', 
+        minNex: 40, 
+        peCost: 4,
+        perRound: true,
+        description: 'Conjura ritual como ação livre (1x por rodada)'
+      },
+      'track-anular-ritual': { 
+        name: 'Anular Ritual', 
+        minNex: 65, 
+        peCost: 0, // Custo variável (igual ao ritual alvo)
+        variableCost: true,
+        description: 'Teste oposto de Ocultismo para anular ritual'
+      },
+    }
+  },
 } as const;
 
 // =============================================================================
@@ -445,6 +471,93 @@ function convertTrackAbilityToMechanics(
   if (m.ritualDTBonus) {
     if (!mechanics.specialEffects) mechanics.specialEffects = [];
     mechanics.specialEffects.push(`+${m.ritualDTBonus} na DT dos seus rituais`);
+  }
+  
+  // === MODIFICADORES DE RITUAL (Conduíte) ===
+  if (m.ritualModifier) {
+    if (!mechanics.specialEffects) mechanics.specialEffects = [];
+    
+    const mod = m.ritualModifier;
+    let desc = '';
+    
+    switch (mod.type) {
+      case 'range':
+        desc = `+${mod.additionalPECost} PE: ${mod.effect}`;
+        break;
+      case 'speed':
+        desc = `+${mod.additionalPECost} PE: ${mod.effect}`;
+        break;
+      case 'counter':
+        desc = `Anular Ritual: ${mod.effect}`;
+        break;
+    }
+    
+    if (desc) mechanics.specialEffects.push(desc);
+  }
+  
+  // === CONTRA-MÁGICA (Anular Ritual - Conduíte) ===
+  if (m.counterSpell) {
+    if (!mechanics.specialEffects) mechanics.specialEffects = [];
+    mechanics.specialEffects.push(
+      `Contra-mágica: Gastar PE igual ao custo do ritual + teste oposto de ${m.counterSpell.testSkill === 'ocultismo' ? 'Ocultismo' : m.counterSpell.testSkill}`
+    );
+  }
+  
+  // === RITUAIS CONCEDIDOS (grantsRitual) ===
+  if (m.grantsRitual) {
+    if (!mechanics.specialEffects) mechanics.specialEffects = [];
+    // Formata o nome do ritual de forma legível
+    const ritualName = m.grantsRitual
+      .split('-')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+    mechanics.specialEffects.push(`Ritual concedido: ${ritualName}`);
+  }
+  
+  // === RECURSO: PV COMO PE (Flagelador) ===
+  if (m.hpAsPE) {
+    if (!mechanics.specialEffects) mechanics.specialEffects = [];
+    mechanics.specialEffects.push('Pode usar PV como PE para rituais (1 PV = 1 PE)');
+  }
+  
+  // === PE TEMPORÁRIO (Flagelador, Lâmina Paranormal) ===
+  if (m.temporaryPE) {
+    if (!mechanics.specialEffects) mechanics.specialEffects = [];
+    const tp = m.temporaryPE;
+    
+    if (tp.trigger === 'on-kill-with-ritual') {
+      mechanics.specialEffects.push(`Ao reduzir inimigo a 0 PV com ritual: +PE temporário igual ao círculo do ritual`);
+    } else if (tp.trigger === 'on-melee-hit') {
+      const max = tp.maxPerScene === 'pe-limit' ? 'limite de PE por turno' : tp.maxPerScene;
+      mechanics.specialEffects.push(`Ao acertar ataque corpo a corpo: +${tp.amount} PE temporário (máx: ${max} por cena)`);
+    }
+  }
+  
+  // === RITUAIS BÔNUS (Graduado - Saber Ampliado) ===
+  if (m.bonusRituals) {
+    if (!mechanics.specialEffects) mechanics.specialEffects = [];
+    mechanics.specialEffects.push(
+      `+${m.bonusRituals.perCircle} ritual extra por círculo (não conta no limite)`
+    );
+  }
+  
+  // === GRIMÓRIO (Graduado) ===
+  if (m.grimoire) {
+    if (!mechanics.specialEffects) mechanics.specialEffects = [];
+    const g = m.grimoire;
+    const maxRituals = g.maxRituals === 'intellect' ? 'Intelecto' : g.maxRituals;
+    mechanics.specialEffects.push(
+      `Grimório: até ${maxRituals} rituais de ${g.allowedCircles.join('º ou ')}º círculo`
+    );
+  }
+  
+  // === LIMITE DE PE AMPLIADO (Intuitivo - Presença Poderosa) ===
+  if (m.addAttributeToPELimit) {
+    if (!mechanics.specialEffects) mechanics.specialEffects = [];
+    const attrName = m.addAttributeToPELimit === 'presence' ? 'Presença' : m.addAttributeToPELimit;
+    mechanics.specialEffects.push(
+      `Soma limite de PE por turno à ${attrName} para calcular efeitos de rituais`
+    );
   }
   
   // === INVENTÁRIO OTIMIZADO (Técnico) ===
