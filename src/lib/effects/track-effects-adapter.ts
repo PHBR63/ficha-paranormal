@@ -174,6 +174,17 @@ export const TRACK_EFFECT_MAPPINGS = {
       // - Conhecendo o Medo (NEX 99%): Aprende ritual (passivo)
     }
   },
+  intuitivo: {
+    trackId: 'intuitivo',
+    effects: {
+      // Intuitivo foca em resistência mental e paranormal
+      // - Mente Sã (NEX 10%): Resistência paranormal +5 (passivo)
+      // - Presença Poderosa (NEX 40%): Adiciona Presença ao limite de PE por turno para rituais (passivo)
+      // - Inabalável (NEX 65%): Resistência a dano mental 10 + teste de Vontade (passivo)
+      // - Presença do Medo (NEX 99%): Aprende ritual (passivo)
+      // Nenhum efeito ativável com custo de PE - todas são passivas
+    }
+  },
 } as const;
 
 // =============================================================================

@@ -1430,3 +1430,199 @@ describe('Trilha Graduado (Ocultista) - SUE Integration', () => {
     });
   });
 });
+
+// =============================================================================
+// TESTES DA TRILHA INTUITIVO (Ocultista)
+// =============================================================================
+// Verifica a trilha focada em resistência mental e paranormal
+// Referência: Livro Base p.62 - Intuitivo
+
+describe('Trilha Intuitivo (Ocultista) - SUE Integration', () => {
+  const defaultAttributes: Record<AttributeType, number> = {
+    strength: 1,
+    agility: 2,
+    vigor: 2,
+    intellect: 3,
+    presence: 3,
+  };
+
+  describe('Mapeamento em TRACK_EFFECT_MAPPINGS', () => {
+    it('trilha Intuitivo deve estar mapeada', () => {
+      expect(TRACK_EFFECT_MAPPINGS.intuitivo).toBeDefined();
+      expect(TRACK_EFFECT_MAPPINGS.intuitivo.trackId).toBe('intuitivo');
+    });
+
+    it('Intuitivo não deve ter efeitos ativáveis (todas passivas)', () => {
+      const effects = TRACK_EFFECT_MAPPINGS.intuitivo.effects;
+      expect(Object.keys(effects).length).toBe(0);
+    });
+  });
+
+  describe('Progressão por NEX', () => {
+    it('NEX 10 deve ter Mente Sã', () => {
+      const effects = getTrackEffects('intuitivo', 10, defaultAttributes);
+      
+      expect(effects.some(e => e.name === 'Mente Sã')).toBe(true);
+    });
+
+    it('NEX 40 deve ter Presença Poderosa', () => {
+      const effects = getTrackEffects('intuitivo', 40, defaultAttributes);
+      
+      expect(effects.some(e => e.name === 'Presença Poderosa')).toBe(true);
+    });
+
+    it('NEX 65 deve ter Inabalável', () => {
+      const effects = getTrackEffects('intuitivo', 65, defaultAttributes);
+      
+      expect(effects.some(e => e.name === 'Inabalável')).toBe(true);
+    });
+
+    it('NEX 99 deve ter Presença do Medo', () => {
+      const effects = getTrackEffects('intuitivo', 99, defaultAttributes);
+      
+      expect(effects.some(e => e.name === 'Presença do Medo')).toBe(true);
+    });
+
+    it('NEX 10 deve ter 1 habilidade', () => {
+      const effects = getTrackEffects('intuitivo', 10, defaultAttributes);
+      expect(effects.length).toBe(1);
+    });
+
+    it('NEX 40 deve ter 2 habilidades', () => {
+      const effects = getTrackEffects('intuitivo', 40, defaultAttributes);
+      expect(effects.length).toBe(2);
+    });
+
+    it('NEX 65 deve ter 3 habilidades', () => {
+      const effects = getTrackEffects('intuitivo', 65, defaultAttributes);
+      expect(effects.length).toBe(3);
+    });
+
+    it('NEX 99 deve ter 4 habilidades', () => {
+      const effects = getTrackEffects('intuitivo', 99, defaultAttributes);
+      expect(effects.length).toBe(4);
+    });
+  });
+
+  describe('getTrackBonusSummary para Intuitivo', () => {
+    it('deve retornar nome correto da trilha', () => {
+      const summary = getTrackBonusSummary('intuitivo', 50, defaultAttributes);
+      
+      expect(summary.trackName).toBe('Intuitivo');
+    });
+
+    it('Intuitivo não deve ter bônus de combate numéricos', () => {
+      const summary = getTrackBonusSummary('intuitivo', 99, defaultAttributes);
+      
+      // Intuitivo é focado em resistência, não combate ofensivo
+      expect(summary.totalAttack).toBe(0);
+      expect(summary.totalDamage).toBe(0);
+    });
+
+    it('NEX 65 deve incluir Inabalável nas habilidades', () => {
+      const effects = getTrackEffects('intuitivo', 65, defaultAttributes);
+      
+      const inabalavel = effects.find(e => e.name === 'Inabalável');
+      expect(inabalavel).toBeDefined();
+      // Inabalável dá resistência a dano mental 10
+      expect(inabalavel?.description).toContain('mental');
+    });
+  });
+
+  describe('Mecânicas Específicas - Resistência Paranormal', () => {
+    it('Mente Sã deve estar disponível em NEX 10', () => {
+      const effects = getTrackEffects('intuitivo', 10, defaultAttributes);
+      const menteSa = effects.find(e => e.name === 'Mente Sã');
+      
+      expect(menteSa).toBeDefined();
+      // Mente Sã dá resistência paranormal +5
+      expect(menteSa?.description).toContain('paranormal');
+    });
+
+    it('Presença Poderosa deve estar disponível em NEX 40', () => {
+      const effects = getTrackEffects('intuitivo', 40, defaultAttributes);
+      const presencaPoderosa = effects.find(e => e.name === 'Presença Poderosa');
+      
+      expect(presencaPoderosa).toBeDefined();
+      // Presença Poderosa adiciona Presença ao limite de PE
+      expect(presencaPoderosa?.description).toBeDefined();
+    });
+
+    it('Inabalável deve estar disponível em NEX 65', () => {
+      const effects = getTrackEffects('intuitivo', 65, defaultAttributes);
+      const inabalavel = effects.find(e => e.name === 'Inabalável');
+      
+      expect(inabalavel).toBeDefined();
+      // Inabalável dá resistência a dano mental 10 + teste de Vontade
+      expect(inabalavel?.description).toContain('mental');
+    });
+
+    it('Presença do Medo deve estar disponível em NEX 99', () => {
+      const effects = getTrackEffects('intuitivo', 99, defaultAttributes);
+      const presencaDoMedo = effects.find(e => e.name === 'Presença do Medo');
+      
+      expect(presencaDoMedo).toBeDefined();
+      // Presença do Medo concede o ritual específico
+    });
+  });
+
+  describe('Integração com Sistema de Combate', () => {
+    it('getTrackCombatBonuses deve retornar zeros para Intuitivo', () => {
+      const bonuses = getTrackCombatBonuses('intuitivo', 99, defaultAttributes, 'melee');
+      
+      expect(bonuses.attackBonus).toBe(0);
+      expect(bonuses.damageBonus).toBe(0);
+      expect(bonuses.criticalMarginBonus).toBe(0);
+    });
+
+    it('Intuitivo não deve ter efeitos de combate direto', () => {
+      const bonuses = getTrackCombatBonuses('intuitivo', 99, defaultAttributes, 'ranged');
+      
+      expect(bonuses.attackBonus).toBe(0);
+      expect(bonuses.damageBonus).toBe(0);
+    });
+  });
+
+  describe('Casos de Borda', () => {
+    it('NEX 0 não deve ter nenhuma habilidade', () => {
+      const effects = getTrackEffects('intuitivo', 0, defaultAttributes);
+      
+      expect(effects.length).toBe(0);
+    });
+
+    it('NEX 5 não deve ter nenhuma habilidade (mínimo é 10)', () => {
+      const effects = getTrackEffects('intuitivo', 5, defaultAttributes);
+      
+      expect(effects.length).toBe(0);
+    });
+
+    it('atributos zerados não devem causar erro', () => {
+      const zeroAttributes: Record<AttributeType, number> = {
+        strength: 0,
+        agility: 0,
+        vigor: 0,
+        intellect: 0,
+        presence: 0,
+      };
+      
+      expect(() => getTrackEffects('intuitivo', 50, zeroAttributes)).not.toThrow();
+      expect(() => getTrackCombatBonuses('intuitivo', 50, zeroAttributes, 'melee')).not.toThrow();
+    });
+
+    it('Presença Poderosa com Presença 0 deve funcionar sem erro', () => {
+      const zeroPresAttributes: Record<AttributeType, number> = {
+        strength: 2,
+        agility: 2,
+        vigor: 2,
+        intellect: 3,
+        presence: 0,
+      };
+      
+      const effects = getTrackEffects('intuitivo', 40, zeroPresAttributes);
+      const presencaPoderosa = effects.find(e => e.name === 'Presença Poderosa');
+      
+      // Mesmo com Presença 0, a habilidade deve existir
+      expect(presencaPoderosa).toBeDefined();
+    });
+  });
+});
