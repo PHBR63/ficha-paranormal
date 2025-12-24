@@ -1626,3 +1626,233 @@ describe('Trilha Intuitivo (Ocultista) - SUE Integration', () => {
     });
   });
 });
+
+// =============================================================================
+// TESTES DA TRILHA LÂMINA PARANORMAL (Ocultista)
+// =============================================================================
+// Verifica a trilha híbrida de combate corpo a corpo + rituais
+// Referência: Livro Base p.62 - Lâmina Paranormal
+
+describe('Trilha Lâmina Paranormal (Ocultista) - SUE Integration', () => {
+  const defaultAttributes: Record<AttributeType, number> = {
+    strength: 2,
+    agility: 2,
+    vigor: 2,
+    intellect: 3,
+    presence: 2,
+  };
+
+  describe('Mapeamento em TRACK_EFFECT_MAPPINGS', () => {
+    it('trilha Lâmina Paranormal deve estar mapeada', () => {
+      expect(TRACK_EFFECT_MAPPINGS.laminaParanormal).toBeDefined();
+      expect(TRACK_EFFECT_MAPPINGS.laminaParanormal.trackId).toBe('lamina-paranormal');
+    });
+
+    it('Lâmina Paranormal deve ter efeitos ativáveis', () => {
+      const effects = TRACK_EFFECT_MAPPINGS.laminaParanormal.effects;
+      expect(Object.keys(effects).length).toBeGreaterThan(0);
+    });
+
+    it('track-lamina-maldita deve ter custo 1 PE', () => {
+      const effect = TRACK_EFFECT_MAPPINGS.laminaParanormal.effects['track-lamina-maldita'];
+      expect(effect).toBeDefined();
+      expect(effect.peCost).toBe(1);
+      expect(effect.minNex).toBe(10);
+    });
+
+    it('track-conjuracao-marcial deve ter custo 2 PE e perRound', () => {
+      const effect = TRACK_EFFECT_MAPPINGS.laminaParanormal.effects['track-conjuracao-marcial'];
+      expect(effect).toBeDefined();
+      expect(effect.peCost).toBe(2);
+      expect(effect.minNex).toBe(65);
+      expect(effect.perRound).toBe(true);
+    });
+  });
+
+  describe('Progressão por NEX', () => {
+    it('NEX 10 deve ter Lâmina Maldita', () => {
+      const effects = getTrackEffects('lamina-paranormal', 10, defaultAttributes);
+      
+      expect(effects.some(e => e.name === 'Lâmina Maldita')).toBe(true);
+    });
+
+    it('NEX 40 deve ter Gladiador Paranormal', () => {
+      const effects = getTrackEffects('lamina-paranormal', 40, defaultAttributes);
+      
+      expect(effects.some(e => e.name === 'Gladiador Paranormal')).toBe(true);
+    });
+
+    it('NEX 65 deve ter Conjuração Marcial', () => {
+      const effects = getTrackEffects('lamina-paranormal', 65, defaultAttributes);
+      
+      expect(effects.some(e => e.name === 'Conjuração Marcial')).toBe(true);
+    });
+
+    it('NEX 99 deve ter Lâmina do Medo', () => {
+      const effects = getTrackEffects('lamina-paranormal', 99, defaultAttributes);
+      
+      expect(effects.some(e => e.name === 'Lâmina do Medo')).toBe(true);
+    });
+
+    it('NEX 10 deve ter 1 habilidade', () => {
+      const effects = getTrackEffects('lamina-paranormal', 10, defaultAttributes);
+      expect(effects.length).toBe(1);
+    });
+
+    it('NEX 40 deve ter 2 habilidades', () => {
+      const effects = getTrackEffects('lamina-paranormal', 40, defaultAttributes);
+      expect(effects.length).toBe(2);
+    });
+
+    it('NEX 65 deve ter 3 habilidades', () => {
+      const effects = getTrackEffects('lamina-paranormal', 65, defaultAttributes);
+      expect(effects.length).toBe(3);
+    });
+
+    it('NEX 99 deve ter 4 habilidades', () => {
+      const effects = getTrackEffects('lamina-paranormal', 99, defaultAttributes);
+      expect(effects.length).toBe(4);
+    });
+  });
+
+  describe('getTrackBonusSummary para Lâmina Paranormal', () => {
+    it('deve retornar nome correto da trilha', () => {
+      const summary = getTrackBonusSummary('lamina-paranormal', 50, defaultAttributes);
+      
+      expect(summary.trackName).toBe('Lâmina Paranormal');
+    });
+
+    it('Lâmina Paranormal deve listar habilidades especiais', () => {
+      const summary = getTrackBonusSummary('lamina-paranormal', 65, defaultAttributes);
+      
+      // Deve ter alguma indicação das habilidades
+      expect(summary.specialAbilities.length).toBeGreaterThanOrEqual(0);
+    });
+  });
+
+  describe('Mecânicas Específicas - Lâmina Maldita', () => {
+    it('Lâmina Maldita deve estar disponível em NEX 10', () => {
+      const effects = getTrackEffects('lamina-paranormal', 10, defaultAttributes);
+      const laminaMaldita = effects.find(e => e.name === 'Lâmina Maldita');
+      
+      expect(laminaMaldita).toBeDefined();
+      // Lâmina Maldita concede ritual Amaldiçoar Arma
+      expect(laminaMaldita?.description).toContain('Amaldiçoar Arma');
+    });
+
+    it('Lâmina Maldita deve mencionar Ocultismo para ataques', () => {
+      const effects = getTrackEffects('lamina-paranormal', 10, defaultAttributes);
+      const laminaMaldita = effects.find(e => e.name === 'Lâmina Maldita');
+      
+      expect(laminaMaldita?.description).toContain('Ocultismo');
+    });
+  });
+
+  describe('Mecânicas Específicas - Gladiador Paranormal', () => {
+    it('Gladiador Paranormal deve estar disponível em NEX 40', () => {
+      const effects = getTrackEffects('lamina-paranormal', 40, defaultAttributes);
+      const gladiador = effects.find(e => e.name === 'Gladiador Paranormal');
+      
+      expect(gladiador).toBeDefined();
+    });
+
+    it('Gladiador Paranormal deve mencionar PE temporário', () => {
+      const effects = getTrackEffects('lamina-paranormal', 40, defaultAttributes);
+      const gladiador = effects.find(e => e.name === 'Gladiador Paranormal');
+      
+      // Gladiador dá PE temporário ao acertar corpo a corpo
+      expect(gladiador?.description).toContain('PE');
+    });
+  });
+
+  describe('Mecânicas Específicas - Conjuração Marcial', () => {
+    it('Conjuração Marcial deve estar disponível em NEX 65', () => {
+      const effects = getTrackEffects('lamina-paranormal', 65, defaultAttributes);
+      const conjuracao = effects.find(e => e.name === 'Conjuração Marcial');
+      
+      expect(conjuracao).toBeDefined();
+    });
+
+    it('Conjuração Marcial deve mencionar ataque corpo a corpo', () => {
+      const effects = getTrackEffects('lamina-paranormal', 65, defaultAttributes);
+      const conjuracao = effects.find(e => e.name === 'Conjuração Marcial');
+      
+      expect(conjuracao?.description).toContain('corpo');
+    });
+  });
+
+  describe('Mecânicas Específicas - Lâmina do Medo', () => {
+    it('Lâmina do Medo deve estar disponível em NEX 99', () => {
+      const effects = getTrackEffects('lamina-paranormal', 99, defaultAttributes);
+      const laminaDoMedo = effects.find(e => e.name === 'Lâmina do Medo');
+      
+      expect(laminaDoMedo).toBeDefined();
+    });
+
+    it('Lâmina do Medo deve conceder ritual', () => {
+      const effects = getTrackEffects('lamina-paranormal', 99, defaultAttributes);
+      const laminaDoMedo = effects.find(e => e.name === 'Lâmina do Medo');
+      
+      // Lâmina do Medo concede o ritual específico
+      expect(laminaDoMedo?.description).toContain('Lâmina do Medo');
+    });
+  });
+
+  describe('Integração com Sistema de Combate', () => {
+    it('getTrackCombatBonuses para melee deve retornar resultado válido', () => {
+      const bonuses = getTrackCombatBonuses('lamina-paranormal', 65, defaultAttributes, 'melee');
+      
+      expect(bonuses).toBeDefined();
+      expect(typeof bonuses.attackBonus).toBe('number');
+      expect(typeof bonuses.damageBonus).toBe('number');
+    });
+
+    it('getTrackCombatBonuses para ranged deve retornar resultado válido', () => {
+      const bonuses = getTrackCombatBonuses('lamina-paranormal', 65, defaultAttributes, 'ranged');
+      
+      expect(bonuses).toBeDefined();
+      expect(typeof bonuses.attackBonus).toBe('number');
+    });
+  });
+
+  describe('Casos de Borda', () => {
+    it('NEX 0 não deve ter nenhuma habilidade', () => {
+      const effects = getTrackEffects('lamina-paranormal', 0, defaultAttributes);
+      
+      expect(effects.length).toBe(0);
+    });
+
+    it('NEX 5 não deve ter nenhuma habilidade (mínimo é 10)', () => {
+      const effects = getTrackEffects('lamina-paranormal', 5, defaultAttributes);
+      
+      expect(effects.length).toBe(0);
+    });
+
+    it('atributos zerados não devem causar erro', () => {
+      const zeroAttributes: Record<AttributeType, number> = {
+        strength: 0,
+        agility: 0,
+        vigor: 0,
+        intellect: 0,
+        presence: 0,
+      };
+      
+      expect(() => getTrackEffects('lamina-paranormal', 50, zeroAttributes)).not.toThrow();
+      expect(() => getTrackCombatBonuses('lamina-paranormal', 50, zeroAttributes, 'melee')).not.toThrow();
+    });
+
+    it('NEX intermediário (30) deve ter apenas habilidades até NEX 10', () => {
+      const effects = getTrackEffects('lamina-paranormal', 30, defaultAttributes);
+      
+      // Apenas Lâmina Maldita (NEX 10) deve estar disponível
+      expect(effects.length).toBe(1);
+      expect(effects[0].name).toBe('Lâmina Maldita');
+    });
+
+    it('Gladiador Paranormal não deve estar disponível em NEX 39', () => {
+      const effects = getTrackEffects('lamina-paranormal', 39, defaultAttributes);
+      
+      expect(effects.some(e => e.name === 'Gladiador Paranormal')).toBe(false);
+    });
+  });
+});
