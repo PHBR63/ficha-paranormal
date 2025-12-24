@@ -233,8 +233,11 @@ export function MobileCharacterSheet({
   // Hook centralizado de tracking de uso por rodada (habilidades 1x/rodada)
   const roundTracking = useRoundTracking();
   
-  // Hook de efeitos ativados para integração com SUE
-  const activatedEffects = useActivatedEffects();
+  // Hook de efeitos ativados para integração com SUE - com persistência no banco
+  const activatedEffects = useActivatedEffects({
+    characterId: character.id,
+    enablePersistence: true
+  });
 
   // Calcula limite de poderes paranormais
   const powerLimits = useMemo(() => 
