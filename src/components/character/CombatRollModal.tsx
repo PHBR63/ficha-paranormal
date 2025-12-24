@@ -21,6 +21,8 @@ import { useRitualBonusesForCombat, useRitualCombatBonuses, SustainedRitualInput
 import { WeaponBuff, ELEMENT_BUFF_COLORS } from '@/hooks/useWeaponBuffs';
 import { formatDamageFormula as formatBuffDamage } from '@/lib/rituals/legacy-exports';
 import { formatDamageFormula } from '@/lib/rituals/legacy-exports';
+import { getTrackCombatBonuses } from '@/lib/effects/track-effects-adapter';
+import type { AttributeType } from '@/lib/unified-effects-engine';
 import {
   Tooltip,
   TooltipContent,
@@ -137,6 +139,9 @@ interface CombatRollModalProps {
   // Buffs de arma ativos (Amaldiçoar Arma, etc.)
   weaponBuffs?: WeaponBuff[];
   
+  // Efeitos de trilha ativados (para processar bônus automáticos)
+  activatedTrackEffects?: string[];
+  
   // Callback
   onRollComplete?: (result: DiceRollResult) => void;
 }
@@ -202,11 +207,39 @@ export function CombatRollModal({
   advancedBonuses = {},
   weaponBuffs = [], // Buffs de arma ativos
   activeConditions = [], // Condições ativas para exibição
+  activatedTrackEffects = [], // Efeitos de trilha ativados
   onRollComplete,
 }: CombatRollModalProps) {
   // Bônus de rituais sustentados processados automaticamente
   const ritualBonuses = useRitualBonusesForCombat(sustainedRituals);
   const ritualCombatSummary = useRitualCombatBonuses(sustainedRituals);
+  
+  // === PROCESSAR BÔNUS DA TRILHA (10 trilhas de Combatente/Especialista) ===
+  // Detecta tipo de ataque baseado na arma
+  const attackType: 'melee' | 'ranged' = useMemo(() => {
+    if (!weapon) return 'melee';
+    return weapon.type === 'Disparo' || weapon.type === 'Arremesso' ? 'ranged' : 'melee';
+  }, [weapon]);
+  
+  // Converte atributos para o formato esperado pelo adapter
+  const attributesForTrack: Record<AttributeType, number> = useMemo(() => ({
+    agility: attributes.agility,
+    strength: attributes.strength,
+    presence: attributes.presence,
+    intellect: attributes.intellect,
+    vigor: attributes.vigor,
+  }), [attributes]);
+  
+  // Obtém bônus de trilha consolidados
+  const trackCombatBonuses = useMemo(() => {
+    return getTrackCombatBonuses(
+      classTrack,
+      nex,
+      attributesForTrack,
+      attackType,
+      activatedTrackEffects
+    );
+  }, [classTrack, nex, attributesForTrack, attackType, activatedTrackEffects]);
   
   // === PROCESSAR WEAPON BUFFS (Amaldiçoar Arma, etc.) ===
   // REGRA OFICIAL: Rituais NÃO acumulam entre si - usa o MAIOR de cada tipo
@@ -479,7 +512,7 @@ export function CombatRollModal({
   // Verificar se pode pagar o PE
   const canAffordPE = currentPE >= totalPECost;
 
-  // Calcular bônus total de ataque (inclui bônus do SUE, weapon buffs e modificador manual)
+  // Calcular bônus total de ataque (inclui bônus do SUE, trilha, weapon buffs e modificador manual)
   const totalAttackBonus = useMemo(() => {
     let total = attackSkill.bonus;
     const isMeleeAttack = weapon?.type === 'Corpo a Corpo' || weapon?.type === 'Briga';
@@ -495,6 +528,12 @@ export function CombatRollModal({
       } else {
         total += unifiedEffects.attack.ranged;
       }
+    }
+    
+    // === BÔNUS DE TRILHA (via track-effects-adapter) ===
+    // Aplica bônus de ataque de habilidades de trilha ativas
+    if (trackCombatBonuses.attackBonus > 0) {
+      total += trackCombatBonuses.attackBonus;
     }
     
     // Adicionar bônus passivos de poderes de classe (sistema legado - backup)
@@ -522,7 +561,7 @@ export function CombatRollModal({
     total += manualAttackMod;
     
     return total;
-  }, [attackSkill.bonus, passiveBonuses, selectedBonuses, availableBonuses, classPowerBonuses, manualAttackMod, weaponBuffBonuses, unifiedEffects, weapon]);
+  }, [attackSkill.bonus, passiveBonuses, selectedBonuses, availableBonuses, classPowerBonuses, manualAttackMod, weaponBuffBonuses, unifiedEffects, weapon, trackCombatBonuses]);
 
   // === Detalhamento das fontes de bônus de ataque para exibição ===
   const attackBonusSources = useMemo(() => {
@@ -563,6 +602,16 @@ export function CombatRollModal({
           description: `Bônus específico para ataques ${isMeleeAttack ? 'corpo a corpo' : 'à distância'}`,
         });
       }
+    }
+    
+    // === BÔNUS DE TRILHA (via track-effects-adapter) ===
+    if (trackCombatBonuses.attackBonus > 0) {
+      sources.push({
+        label: 'Trilha',
+        value: trackCombatBonuses.attackBonus,
+        type: 'track',
+        description: 'Bônus de ataque de habilidades de trilha ativas',
+      });
     }
     
     // Bônus de poderes de classe (sistema legado - backup se SUE não estiver ativo)
@@ -626,7 +675,7 @@ export function CombatRollModal({
     }
     
     return sources;
-  }, [attackSkill, classPowerBonuses, passiveBonuses, selectedBonuses, availableBonuses, manualAttackMod, weaponBuffBonuses, unifiedEffects, weapon]);
+  }, [attackSkill, classPowerBonuses, passiveBonuses, selectedBonuses, availableBonuses, manualAttackMod, weaponBuffBonuses, unifiedEffects, weapon, trackCombatBonuses]);
 
   // === Detalhamento das fontes de bônus de dano para exibição ===
   const damageBonusSources = useMemo(() => {
@@ -675,6 +724,26 @@ export function CombatRollModal({
           description: 'Dados de dano extras de origem, trilha ou condições',
         });
       }
+    }
+    
+    // === BÔNUS DE TRILHA (via track-effects-adapter) ===
+    if (trackCombatBonuses.damageBonus > 0) {
+      sources.push({
+        label: 'Trilha (Dano)',
+        value: trackCombatBonuses.damageBonus,
+        type: 'track',
+        description: 'Bônus de dano de habilidades de trilha ativas',
+      });
+    }
+    
+    // Dados extras de trilha
+    if (trackCombatBonuses.extraDamageDice.length > 0) {
+      sources.push({
+        label: 'Trilha (Dados)',
+        value: trackCombatBonuses.extraDamageDice.join(' + '),
+        type: 'track',
+        description: 'Dados de dano extras de habilidades de trilha',
+      });
     }
     
     // Bônus de poderes de classe (sistema legado - backup)
@@ -751,7 +820,7 @@ export function CombatRollModal({
     }
     
     return sources;
-  }, [weapon, attributes, classPowerBonuses, passiveBonuses, selectedBonuses, availableBonuses, manualDamageMod, weaponBuffBonuses, unifiedEffects]);
+  }, [weapon, attributes, classPowerBonuses, passiveBonuses, selectedBonuses, availableBonuses, manualDamageMod, weaponBuffBonuses, unifiedEffects, trackCombatBonuses]);
 
   // === MÁQUINA DE MATAR (Aniquilador NEX 99%) ===
   // Bônus automáticos quando atacando com arma favorita em NEX 99%
@@ -809,10 +878,16 @@ export function CombatRollModal({
       critical -= activeTechniqueEffects.criticalMarginBonus;
     }
     
+    // === BÔNUS DE TRILHA (via track-effects-adapter) ===
+    // Aplica bônus de margem de crítico de habilidades de trilha ativas
+    if (trackCombatBonuses.criticalMarginBonus > 0) {
+      critical -= trackCombatBonuses.criticalMarginBonus;
+    }
+    
     return Math.max(1, critical); // Mínimo de 1
-  }, [weapon, passiveBonuses, classPowerBonuses, weaponBuffBonuses, unifiedEffects, maquinaDeMatarActive, activeTechniqueEffects, classTrack, nex]);
+  }, [weapon, passiveBonuses, classPowerBonuses, weaponBuffBonuses, unifiedEffects, maquinaDeMatarActive, activeTechniqueEffects, classTrack, nex, trackCombatBonuses]);
 
-  // Multiplicador de crítico da arma (incluindo SUE, weapon buffs e Técnicas)
+  // Multiplicador de crítico da arma (incluindo SUE, weapon buffs, trilha e Técnicas)
   const criticalMultiplier = useMemo(() => {
     let base = 2;
     if (weapon?.criticalMultiplier) {
@@ -823,6 +898,11 @@ export function CombatRollModal({
     // === BÔNUS DO SUE ===
     if (unifiedEffects) {
       base += unifiedEffects.critical.multiplierBonus;
+    }
+    
+    // === BÔNUS DE TRILHA (via track-effects-adapter) ===
+    if (trackCombatBonuses.criticalMultiplierBonus > 0) {
+      base += trackCombatBonuses.criticalMultiplierBonus;
     }
     
     // Aplicar bônus de multiplicador de weapon buffs
@@ -836,7 +916,7 @@ export function CombatRollModal({
     }
     
     return base;
-  }, [weapon, weaponBuffBonuses, unifiedEffects, activeTechniqueEffects]);
+  }, [weapon, weaponBuffBonuses, unifiedEffects, activeTechniqueEffects, trackCombatBonuses]);
 
   // Cores para cada tipo de bônus
   const bonusTypeColors: Record<BonusSourceDisplay['type'], string> = {
@@ -887,7 +967,9 @@ export function CombatRollModal({
     const isMelee = weapon.type === 'Corpo a Corpo' || weapon.type === 'Briga';
     
     // Aplicar Atirar para Matar: dano máximo em crítico com arma de fogo
-    const useMaxDamage = advancedBonuses.atirarParaMatar && isCritical && isFirearm;
+    // Também verifica maximumDamageOnCrit da trilha (ex: Atirador de Elite)
+    const useMaxDamage = (advancedBonuses.atirarParaMatar && isCritical && isFirearm) ||
+      (trackCombatBonuses.maximumDamageOnCrit && isCritical);
     
     // Calcular dados base (multiplicados se crítico)
     let diceCount = isCritical ? parsed.count * criticalMultiplier : parsed.count;
@@ -911,6 +993,12 @@ export function CombatRollModal({
       damageBonus += classPowerBonuses.damageBonus;
     }
     
+    // === BÔNUS DE TRILHA (via track-effects-adapter) ===
+    // Aplica bônus de dano de habilidades de trilha ativas
+    if (trackCombatBonuses.damageBonus > 0) {
+      damageBonus += trackCombatBonuses.damageBonus;
+    }
+    
     // Multiplicador para Potência Máxima (dobra bônus do Ataque Especial)
     const potenciaMaximaMultiplier = advancedBonuses.potenciaMaxima && isMelee ? 2 : 1;
     
@@ -931,6 +1019,18 @@ export function CombatRollModal({
     } else if (classPowerBonuses?.extraDamageDice && classPowerBonuses.extraDamageDice.length > 0) {
       // Sistema legado - backup
       classPowerBonuses.extraDamageDice.forEach(diceStr => {
+        const match = diceStr.match(/(\d*)d(\d+)/i);
+        if (match) {
+          const count = parseInt(match[1]) || 1;
+          extraDiceCount += isCritical ? count * criticalMultiplier : count;
+          if (match[2]) extraDiceSize = parseInt(match[2]);
+        }
+      });
+    }
+    
+    // === DADOS EXTRAS DA TRILHA (via track-effects-adapter) ===
+    if (trackCombatBonuses.extraDamageDice.length > 0) {
+      trackCombatBonuses.extraDamageDice.forEach(diceStr => {
         const match = diceStr.match(/(\d*)d(\d+)/i);
         if (match) {
           const count = parseInt(match[1]) || 1;
