@@ -1244,3 +1244,189 @@ describe('Trilhas do Ocultista - Conduíte', () => {
     });
   });
 });
+
+// =============================================================================
+// TESTES DA TRILHA GRADUADO (Ocultista)
+// =============================================================================
+// Verifica a trilha focada em conhecimento ritualístico e grimório
+
+describe('Trilha Graduado (Ocultista) - SUE Integration', () => {
+  const defaultAttributes: Record<AttributeType, number> = {
+    strength: 1,
+    agility: 2,
+    vigor: 2,
+    intellect: 3,
+    presence: 2,
+  };
+
+  describe('Mapeamento em TRACK_EFFECT_MAPPINGS', () => {
+    it('trilha Graduado deve estar mapeada', () => {
+      expect(TRACK_EFFECT_MAPPINGS.graduado).toBeDefined();
+      expect(TRACK_EFFECT_MAPPINGS.graduado.trackId).toBe('graduado');
+    });
+
+    it('Graduado não deve ter efeitos ativáveis (todas passivas)', () => {
+      const effects = TRACK_EFFECT_MAPPINGS.graduado.effects;
+      expect(Object.keys(effects).length).toBe(0);
+    });
+  });
+
+  describe('Progressão por NEX', () => {
+    it('NEX 10 deve ter Saber Ampliado', () => {
+      const effects = getTrackEffects('graduado', 10, defaultAttributes);
+      
+      expect(effects.some(e => e.name === 'Saber Ampliado')).toBe(true);
+    });
+
+    it('NEX 40 deve ter Grimório Ritualístico', () => {
+      const effects = getTrackEffects('graduado', 40, defaultAttributes);
+      
+      expect(effects.some(e => e.name === 'Grimório Ritualístico')).toBe(true);
+    });
+
+    it('NEX 65 deve ter Rituais Eficientes', () => {
+      const effects = getTrackEffects('graduado', 65, defaultAttributes);
+      
+      expect(effects.some(e => e.name === 'Rituais Eficientes')).toBe(true);
+    });
+
+    it('NEX 99 deve ter Conhecendo o Medo', () => {
+      const effects = getTrackEffects('graduado', 99, defaultAttributes);
+      
+      expect(effects.some(e => e.name === 'Conhecendo o Medo')).toBe(true);
+    });
+
+    it('NEX 10 deve ter 1 habilidade', () => {
+      const effects = getTrackEffects('graduado', 10, defaultAttributes);
+      expect(effects.length).toBe(1);
+    });
+
+    it('NEX 40 deve ter 2 habilidades', () => {
+      const effects = getTrackEffects('graduado', 40, defaultAttributes);
+      expect(effects.length).toBe(2);
+    });
+
+    it('NEX 65 deve ter 3 habilidades', () => {
+      const effects = getTrackEffects('graduado', 65, defaultAttributes);
+      expect(effects.length).toBe(3);
+    });
+
+    it('NEX 99 deve ter 4 habilidades', () => {
+      const effects = getTrackEffects('graduado', 99, defaultAttributes);
+      expect(effects.length).toBe(4);
+    });
+  });
+
+  describe('getTrackBonusSummary para Graduado', () => {
+    it('deve retornar nome correto da trilha', () => {
+      const summary = getTrackBonusSummary('graduado', 50, defaultAttributes);
+      
+      expect(summary.trackName).toBe('Graduado');
+    });
+
+    it('Graduado não deve ter bônus de combate numéricos', () => {
+      const summary = getTrackBonusSummary('graduado', 99, defaultAttributes);
+      
+      // Graduado é focado em rituais, não combate
+      expect(summary.totalAttack).toBe(0);
+      expect(summary.totalDamage).toBe(0);
+    });
+
+    it('NEX 65 deve incluir Rituais Eficientes nas habilidades', () => {
+      const effects = getTrackEffects('graduado', 65, defaultAttributes);
+      
+      const rituaisEficientes = effects.find(e => e.name === 'Rituais Eficientes');
+      expect(rituaisEficientes).toBeDefined();
+      // Rituais Eficientes dá +5 DT - verificamos que a habilidade existe
+      expect(rituaisEficientes?.description).toContain('DT');
+    });
+  });
+
+  describe('Mecânicas Específicas', () => {
+    it('Saber Ampliado deve estar disponível em NEX 10', () => {
+      const effects = getTrackEffects('graduado', 10, defaultAttributes);
+      const saberAmpliado = effects.find(e => e.name === 'Saber Ampliado');
+      
+      expect(saberAmpliado).toBeDefined();
+      // Saber Ampliado dá +1 ritual por círculo
+      expect(saberAmpliado?.description).toContain('ritual');
+    });
+
+    it('Grimório Ritualístico deve estar disponível em NEX 40', () => {
+      const effects = getTrackEffects('graduado', 40, defaultAttributes);
+      const grimorio = effects.find(e => e.name === 'Grimório Ritualístico');
+      
+      expect(grimorio).toBeDefined();
+      // Grimório usa Intelecto para rituais de 1º e 2º círculo
+      expect(grimorio?.description).toBeDefined();
+    });
+
+    it('Conhecendo o Medo deve estar disponível em NEX 99', () => {
+      const effects = getTrackEffects('graduado', 99, defaultAttributes);
+      const conhecendoMedo = effects.find(e => e.name === 'Conhecendo o Medo');
+      
+      expect(conhecendoMedo).toBeDefined();
+      // Conhecendo o Medo concede o ritual específico
+    });
+  });
+
+  describe('Integração com Sistema de Combate', () => {
+    it('getTrackCombatBonuses deve retornar zeros para Graduado', () => {
+      const bonuses = getTrackCombatBonuses('graduado', 99, defaultAttributes, 'melee');
+      
+      expect(bonuses.attackBonus).toBe(0);
+      expect(bonuses.damageBonus).toBe(0);
+      expect(bonuses.criticalMarginBonus).toBe(0);
+    });
+
+    it('Graduado não deve ter efeitos de combate direto', () => {
+      const bonuses = getTrackCombatBonuses('graduado', 99, defaultAttributes, 'ranged');
+      
+      expect(bonuses.attackBonus).toBe(0);
+      expect(bonuses.damageBonus).toBe(0);
+    });
+  });
+
+  describe('Casos de Borda', () => {
+    it('NEX 0 não deve ter nenhuma habilidade', () => {
+      const effects = getTrackEffects('graduado', 0, defaultAttributes);
+      
+      expect(effects.length).toBe(0);
+    });
+
+    it('NEX 5 não deve ter nenhuma habilidade (mínimo é 10)', () => {
+      const effects = getTrackEffects('graduado', 5, defaultAttributes);
+      
+      expect(effects.length).toBe(0);
+    });
+
+    it('atributos zerados não devem causar erro', () => {
+      const zeroAttributes: Record<AttributeType, number> = {
+        strength: 0,
+        agility: 0,
+        vigor: 0,
+        intellect: 0,
+        presence: 0,
+      };
+      
+      expect(() => getTrackEffects('graduado', 50, zeroAttributes)).not.toThrow();
+      expect(() => getTrackCombatBonuses('graduado', 50, zeroAttributes, 'melee')).not.toThrow();
+    });
+
+    it('Grimório com Intelecto 0 deve funcionar sem erro', () => {
+      const zeroIntAttributes: Record<AttributeType, number> = {
+        strength: 2,
+        agility: 2,
+        vigor: 2,
+        intellect: 0,
+        presence: 2,
+      };
+      
+      const effects = getTrackEffects('graduado', 40, zeroIntAttributes);
+      const grimorio = effects.find(e => e.name === 'Grimório Ritualístico');
+      
+      // Mesmo com INT 0, a habilidade deve existir
+      expect(grimorio).toBeDefined();
+    });
+  });
+});

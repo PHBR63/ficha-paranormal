@@ -163,6 +163,17 @@ export const TRACK_EFFECT_MAPPINGS = {
       },
     }
   },
+  graduado: {
+    trackId: 'graduado',
+    effects: {
+      // Graduado não tem efeitos ativáveis com custo de PE
+      // Todas as habilidades são passivas:
+      // - Saber Ampliado (NEX 10%): +1 ritual por círculo (passivo)
+      // - Grimório Ritualístico (NEX 40%): Intelecto rituais extras (passivo)
+      // - Rituais Eficientes (NEX 65%): +5 DT rituais (passivo)
+      // - Conhecendo o Medo (NEX 99%): Aprende ritual (passivo)
+    }
+  },
 } as const;
 
 // =============================================================================
