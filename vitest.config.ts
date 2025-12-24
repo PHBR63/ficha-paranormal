@@ -7,7 +7,7 @@ export default defineConfig({
     environment: 'node',
     
     // Padrões de arquivos de teste
-    include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+    include: ['src/**/*.{test,spec,vitest}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     
     // Excluir node_modules e dist
     exclude: ['node_modules', 'dist', '.git'],
