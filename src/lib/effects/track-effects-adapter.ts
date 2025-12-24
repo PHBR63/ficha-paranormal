@@ -140,6 +140,29 @@ export const TRACK_EFFECT_MAPPINGS = {
       },
     }
   },
+  flagelador: {
+    trackId: 'flagelador',
+    effects: {
+      'track-poder-do-flagelo': { 
+        name: 'Poder do Flagelo', 
+        minNex: 10, 
+        peCost: 0, // Passivo - gasta PV em vez de PE
+        description: 'Pode gastar 2 PV para cada 1 PE ao conjurar rituais'
+      },
+      'track-abracar-a-dor': { 
+        name: 'Abraçar a Dor', 
+        minNex: 40, 
+        peCost: 2,
+        description: 'Reação: reduz dano não-paranormal pela metade'
+      },
+      'track-absorver-angustia': { 
+        name: 'Absorver Angústia', 
+        minNex: 65, 
+        peCost: 0, // Passivo com trigger
+        description: 'Ao sofrer dano, ganha PE temporário igual a metade do dano'
+      },
+    }
+  },
 } as const;
 
 // =============================================================================
