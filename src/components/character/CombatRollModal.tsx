@@ -1371,6 +1371,158 @@ export function CombatRollModal({
             </motion.div>
           )}
 
+          {/* === INDICADORES VISUAIS DE BÔNUS DE TRILHA === */}
+          {classTrack && (trackCombatBonuses.attackBonus > 0 || 
+            trackCombatBonuses.damageBonus > 0 || 
+            trackCombatBonuses.criticalMarginBonus > 0 ||
+            trackCombatBonuses.criticalMultiplierBonus > 0 ||
+            trackCombatBonuses.specialEffects.length > 0 ||
+            maquinaDeMatarActive) && (
+            <motion.div
+              initial={{ opacity: 0, y: -5 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="rounded-lg bg-gradient-to-r from-orange-500/10 via-amber-500/5 to-orange-500/10 border border-orange-500/30 p-3 space-y-3"
+            >
+              {/* Header com nome da trilha */}
+              <div className="flex items-center gap-2">
+                <Sword className="w-4 h-4 text-orange-400" />
+                <span className="text-sm font-medium text-orange-400">
+                  Bônus de Trilha: {classTrack.charAt(0).toUpperCase() + classTrack.slice(1).replace(/([A-Z])/g, ' $1')}
+                </span>
+              </div>
+              
+              {/* Resumo numérico de bônus */}
+              <div className="flex flex-wrap gap-2">
+                {trackCombatBonuses.attackBonus > 0 && (
+                  <TooltipProvider delayDuration={200}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Badge variant="secondary" className="gap-1 text-xs bg-blue-500/20 text-blue-400 border-blue-500/30 cursor-help">
+                          <Target className="w-3 h-3" />
+                          +{trackCombatBonuses.attackBonus} Ataque
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" className="text-xs">
+                        Bônus de ataque da trilha {classTrack}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+                
+                {trackCombatBonuses.damageBonus > 0 && (
+                  <TooltipProvider delayDuration={200}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Badge variant="secondary" className="gap-1 text-xs bg-destructive/20 text-destructive border-destructive/30 cursor-help">
+                          <Flame className="w-3 h-3" />
+                          +{trackCombatBonuses.damageBonus} Dano
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" className="text-xs">
+                        Bônus de dano da trilha {classTrack}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+                
+                {trackCombatBonuses.criticalMarginBonus > 0 && (
+                  <TooltipProvider delayDuration={200}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Badge variant="secondary" className="gap-1 text-xs bg-amber-500/20 text-amber-400 border-amber-500/30 cursor-help">
+                          <Crosshair className="w-3 h-3" />
+                          -{trackCombatBonuses.criticalMarginBonus} Crítico
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" className="text-xs">
+                        Reduz margem de acerto crítico em {trackCombatBonuses.criticalMarginBonus}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+                
+                {trackCombatBonuses.criticalMultiplierBonus > 0 && (
+                  <TooltipProvider delayDuration={200}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Badge variant="secondary" className="gap-1 text-xs bg-purple-500/20 text-purple-400 border-purple-500/30 cursor-help">
+                          <Skull className="w-3 h-3" />
+                          x{criticalMultiplier} Multiplicador
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" className="text-xs">
+                        Multiplicador de dano crítico aumentado
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+                
+                {/* Indicador de dados extras de trilha */}
+                {trackCombatBonuses.extraDamageDice.length > 0 && (
+                  <TooltipProvider delayDuration={200}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Badge variant="secondary" className="gap-1 text-xs bg-green-500/20 text-green-400 border-green-500/30 cursor-help">
+                          <Dices className="w-3 h-3" />
+                          +{trackCombatBonuses.extraDamageDice.join(', ')}
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" className="text-xs">
+                        Dados extras de dano da trilha
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+              </div>
+              
+              {/* Efeitos especiais da trilha */}
+              {trackCombatBonuses.specialEffects.length > 0 && (
+                <div className="space-y-1.5">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                    <Sparkles className="w-3 h-3" />
+                    Efeitos Especiais Ativos
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {trackCombatBonuses.specialEffects.map((effect, idx) => (
+                      <TooltipProvider key={idx} delayDuration={200}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Badge 
+                              variant="outline" 
+                              className="text-[10px] gap-1 bg-orange-500/10 text-orange-300 border-orange-500/40 cursor-help"
+                            >
+                              <Zap className="w-3 h-3" />
+                              {effect.length > 25 ? effect.substring(0, 25) + '...' : effect}
+                            </Badge>
+                          </TooltipTrigger>
+                          <TooltipContent side="bottom" className="max-w-[200px] text-xs">
+                            {effect}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {/* Indicador Máquina de Matar (Aniquilador NEX 99%) */}
+              {maquinaDeMatarActive && (
+                <div className="p-2 rounded-md bg-amber-500/15 border border-amber-500/40 flex items-center gap-2">
+                  <Skull className="w-4 h-4 text-amber-400" />
+                  <div className="flex-1">
+                    <span className="text-sm font-medium text-amber-400">Máquina de Matar</span>
+                    <p className="text-[10px] text-muted-foreground">
+                      Crítico -2 e +1 dado de dano com arma favorita
+                    </p>
+                  </div>
+                  <Badge variant="outline" className="text-[10px] bg-amber-500/20 text-amber-400 border-amber-500/40">
+                    NEX 99%
+                  </Badge>
+                </div>
+              )}
+            </motion.div>
+          )}
+
           <Separator />
 
           {/* Fase: Setup - Seleção de bônus */}
