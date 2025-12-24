@@ -84,6 +84,14 @@ interface MobileLeadershipPanelProps {
   isEffectActive?: (id: string) => boolean;
 }
 
+// IDs de efeitos do Comandante de Campo
+const COMANDANTE_EFFECT_IDS = {
+  INSPIRAR_CONFIANCA: 'track-inspirar-confianca',
+  ESTRATEGISTA: 'track-estrategista',
+  BRECHA_NA_GUARDA: 'track-brecha-guarda',
+  OFICIAL_COMANDANTE: 'track-oficial-comandante',
+} as const;
+
 export function MobileLeadershipPanel({
   classTrack,
   nex,
@@ -92,6 +100,8 @@ export function MobileLeadershipPanel({
   onPEChange,
   usedAbilitiesThisRound = [],
   onAbilityUsed,
+  onActivateEffect,
+  isEffectActive,
 }: MobileLeadershipPanelProps) {
   const { toast } = useToast();
   const [activatingAbility, setActivatingAbility] = useState<string | null>(null);

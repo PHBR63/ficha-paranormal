@@ -83,6 +83,12 @@ interface MobileOperacoesEspeciaisPanelProps {
   isEffectActive?: (id: string) => boolean;
 }
 
+// IDs de efeitos de Operações Especiais
+const OPERACOES_EFFECT_IDS = {
+  ATAQUE_EXTRA: 'track-ataque-extra',
+  SURTO_ADRENALINA: 'track-surto-adrenalina',
+} as const;
+
 export function MobileOperacoesEspeciaisPanel({
   classTrack,
   nex,
@@ -91,6 +97,8 @@ export function MobileOperacoesEspeciaisPanel({
   className,
   usedAbilitiesThisRound: externalUsedAbilities,
   onAbilityUsed,
+  onActivateEffect,
+  isEffectActive,
 }: MobileOperacoesEspeciaisPanelProps) {
   const [localUsedAbilities, setLocalUsedAbilities] = useState<Set<string>>(new Set());
   const [showSurtoDrawer, setShowSurtoDrawer] = useState(false);
@@ -159,17 +167,25 @@ export function MobileOperacoesEspeciaisPanel({
     onPEChange(peCurrent - peCost);
     markAbilityAsUsed(abilityId);
 
+    // Registra no SUE
+    if (abilityId === 'ataque-extra') {
+      onActivateEffect?.(OPERACOES_EFFECT_IDS.ATAQUE_EXTRA, 'Ataque Extra', 'round');
+    }
+
     toast({
       title: `${abilityName}!`,
       description: `${peCost} PE gastos.`,
     });
-  }, [peCurrent, onPEChange, usedAbilitiesSet, markAbilityAsUsed]);
+  }, [peCurrent, onPEChange, usedAbilitiesSet, markAbilityAsUsed, onActivateEffect]);
 
   // Handler para escolha do Surto
   const handleSurtoChoice = useCallback((choice: 'standard' | 'movement') => {
     onPEChange(peCurrent - 5);
     markAbilityAsUsed('surto-de-adrenalina');
     setShowSurtoDrawer(false);
+
+    // Registra no SUE
+    onActivateEffect?.(OPERACOES_EFFECT_IDS.SURTO_ADRENALINA, 'Surto de Adrenalina', 'round', { choice });
 
     toast({
       title: "Surto de Adrenalina!",

@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { MobileCollapsibleSection } from './MobileCollapsibleSection';
 import { toast } from 'sonner';
 
-type EffectDuration = 'instant' | 'next-turn' | 'round' | 'scene' | 'concentration';
+type EffectDuration = 'instant' | 'next-turn' | 'next-attack' | 'round' | 'scene' | 'concentration';
 
 interface MobileInfiltradorPanelProps {
   classTrack: string | null;
@@ -25,6 +25,13 @@ interface MobileInfiltradorPanelProps {
   onActivateEffect?: (id: string, name: string, duration?: EffectDuration, metadata?: Record<string, unknown>) => void;
   isEffectActive?: (id: string) => boolean;
 }
+
+// IDs de efeitos do Infiltrador
+const INFILTRADOR_EFFECT_IDS = {
+  ATAQUE_FURTIVO: 'track-ataque-furtivo-trilha',
+  ASSASSINAR: 'track-assassinar',
+  SOMBRA_FUGAZ: 'track-sombra-fugaz',
+} as const;
 
 /**
  * Calcula os dados de dano extra do Ataque Furtivo baseado no NEX
@@ -50,7 +57,9 @@ export function MobileInfiltradorPanel({
   agility,
   onPEChange,
   usedAbilitiesThisRound = [],
-  onAbilityUsed
+  onAbilityUsed,
+  onActivateEffect,
+  isEffectActive,
 }: MobileInfiltradorPanelProps) {
   const [assassinarActive, setAssassinarActive] = useState(false);
 
@@ -82,7 +91,10 @@ export function MobileInfiltradorPanel({
     onPEChange(-1);
     onAbilityUsed?.('ataque-furtivo-trilha');
     
+    // Registra no SUE
     const diceBonus = getAtaqueFurtivoDice(nex);
+    onActivateEffect?.(INFILTRADOR_EFFECT_IDS.ATAQUE_FURTIVO, 'Ataque Furtivo', 'next-attack', { diceBonus, doubled: assassinarActive });
+    
     const doubledDice = assassinarActive ? ' (DOBRADO!)' : '';
     
     toast.success('Ataque Furtivo ativado!', {
@@ -106,6 +118,9 @@ export function MobileInfiltradorPanel({
     onPEChange(-3);
     setAssassinarActive(true);
     
+    // Registra no SUE
+    onActivateEffect?.(INFILTRADOR_EFFECT_IDS.ASSASSINAR, 'Assassinar', 'next-attack', { dt: getAssassinarDT(agility) });
+    
     toast.success('Assassinar ativado!', {
       description: `Dados do Ataque Furtivo dobrados. Alvo inconsciente/morrendo (Fort DT ${getAssassinarDT(agility)}).`
     });
@@ -121,6 +136,10 @@ export function MobileInfiltradorPanel({
     }
 
     onPEChange(-3);
+    
+    // Registra no SUE
+    onActivateEffect?.(INFILTRADOR_EFFECT_IDS.SOMBRA_FUGAZ, 'Sombra Fugaz', 'round');
+    
     toast.success('Sombra Fugaz ativado!', {
       description: 'Ignora penalidade de -20 no teste de Furtividade.'
     });

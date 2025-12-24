@@ -41,6 +41,13 @@ interface MobileTecnicoPanelProps {
   isEffectActive?: (id: string) => boolean;
 }
 
+// IDs de efeitos do Técnico
+const TECNICO_EFFECT_IDS = {
+  REMENDAO: 'track-remendao',
+  IMPROVISAR: 'track-improvisar',
+  PREPARADO_PARA_TUDO: 'track-preparado-para-tudo',
+} as const;
+
 /**
  * Painel mobile da trilha Técnico do Especialista
  */
@@ -49,7 +56,9 @@ export function MobileTecnicoPanel({
   nex, 
   peCurrent, 
   onPEChange,
-  attributes 
+  attributes,
+  onActivateEffect,
+  isEffectActive,
 }: MobileTecnicoPanelProps) {
   const [improvisarDrawerOpen, setImprovisarDrawerOpen] = useState(false);
   const [preparadoDrawerOpen, setPreparadoDrawerOpen] = useState(false);
@@ -83,6 +92,10 @@ export function MobileTecnicoPanel({
     }
 
     onPEChange(peCurrent - peCost);
+    
+    // Registra no SUE
+    onActivateEffect?.(TECNICO_EFFECT_IDS.REMENDAO, 'Remendão', 'scene');
+    
     toast.success('Remendão ativado!', {
       description: 'Remova a condição Quebrado de um equipamento adjacente até o final da cena.'
     });
@@ -100,6 +113,10 @@ export function MobileTecnicoPanel({
 
     onPEChange(peCurrent - peCost);
     setImprovisarDrawerOpen(false);
+    
+    // Registra no SUE
+    onActivateEffect?.(TECNICO_EFFECT_IDS.IMPROVISAR, 'Improvisar', 'scene', { categoria });
+    
     toast.success('Equipamento improvisado!', {
       description: `Item de categoria ${categoria} criado. Inútil ao final da cena.`
     });
@@ -117,6 +134,10 @@ export function MobileTecnicoPanel({
 
     onPEChange(peCurrent - peCost);
     setPreparadoDrawerOpen(false);
+    
+    // Registra no SUE
+    onActivateEffect?.(TECNICO_EFFECT_IDS.PREPARADO_PARA_TUDO, 'Preparado para Tudo', 'instant', { categoria });
+    
     toast.success('Preparado para Tudo!', {
       description: `Item de categoria ${categoria} encontrado! Gaste uma ação de movimento.`
     });

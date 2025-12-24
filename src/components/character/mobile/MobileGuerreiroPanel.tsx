@@ -95,12 +95,20 @@ interface MobileGuerreiroPanelProps {
   isEffectActive?: (id: string) => boolean;
 }
 
+// IDs de efeitos do Guerreiro
+const GUERREIRO_EFFECT_IDS = {
+  REVIDAR: 'track-revidar',
+  FORCA_OPRESSORA: 'track-forca-opressora',
+} as const;
+
 export function MobileGuerreiroPanel({
   classTrack,
   nex,
   peCurrent,
   onPEChange,
   onRequestAttack,
+  onActivateEffect,
+  isEffectActive,
 }: MobileGuerreiroPanelProps) {
   const { toast } = useToast();
   const [activatingAbility, setActivatingAbility] = useState<string | null>(null);
@@ -139,6 +147,9 @@ export function MobileGuerreiroPanel({
     const newPE = peCurrent - ability.peCost;
     onPEChange(newPE);
 
+    // Registra no SUE
+    onActivateEffect?.(GUERREIRO_EFFECT_IDS.REVIDAR, 'Revidar', 'instant');
+
     toast({
       title: `${ability.name} ativado!`,
       description: `${ability.shortEffect}. -${ability.peCost} PE`,
@@ -167,6 +178,9 @@ export function MobileGuerreiroPanel({
     const action = selectedManeuver === 'derrubar' 
       ? (withExtra ? 'Derrubar + Ataque' : 'Derrubar')
       : 'Empurrar';
+
+    // Registra no SUE
+    onActivateEffect?.(GUERREIRO_EFFECT_IDS.FORCA_OPRESSORA, 'Força Opressora', 'instant', { maneuver: selectedManeuver, withExtra });
 
     toast({
       title: `Força Opressora - ${action}`,

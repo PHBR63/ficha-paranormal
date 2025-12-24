@@ -75,6 +75,12 @@ interface MobileTropaDeChoquePanelProps {
   isEffectActive?: (id: string) => boolean;
 }
 
+// IDs de efeitos da Tropa de Choque
+const TROPA_EFFECT_IDS = {
+  CAI_DENTRO: 'track-cai-dentro',
+  DURO_DE_MATAR: 'track-duro-matar',
+} as const;
+
 export function MobileTropaDeChoquePanel({
   classTrack,
   nex,
@@ -84,6 +90,8 @@ export function MobileTropaDeChoquePanel({
   hpMax,
   onPEChange,
   className,
+  onActivateEffect,
+  isEffectActive,
 }: MobileTropaDeChoquePanelProps) {
   // Verifica se é trilha Tropa de Choque
   const isTropaDeChoque = useMemo(() => {
@@ -127,17 +135,19 @@ export function MobileTropaDeChoquePanel({
     onPEChange(peCurrent - peCost);
 
     if (abilityId === 'cai-dentro') {
+      onActivateEffect?.(TROPA_EFFECT_IDS.CAI_DENTRO, 'Cai Dentro', 'instant', { dt: vigorDT });
       toast({
         title: "Cai Dentro!",
         description: `DT ${vigorDT} (Vontade)`,
       });
     } else if (abilityId === 'duro-de-matar') {
+      onActivateEffect?.(TROPA_EFFECT_IDS.DURO_DE_MATAR, 'Duro de Matar', 'instant');
       toast({
         title: "Duro de Matar!",
         description: `Dano reduzido à metade.`,
       });
     }
-  }, [peCurrent, onPEChange, vigorDT]);
+  }, [peCurrent, onPEChange, vigorDT, onActivateEffect]);
 
   if (!isTropaDeChoque || (unlockedActiveAbilities.length === 0 && unlockedPassiveAbilities.length === 0)) {
     return null;
