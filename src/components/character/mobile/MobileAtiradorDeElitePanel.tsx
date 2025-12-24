@@ -78,7 +78,7 @@ const ATIRADOR_ABILITIES: AtiradorAbility[] = [
   },
 ];
 
-type EffectDuration = 'instant' | 'next-turn' | 'round' | 'scene' | 'concentration';
+type EffectDuration = 'instant' | 'next-turn' | 'next-attack' | 'round' | 'scene' | 'concentration';
 
 interface MobileAtiradorDeElitePanelProps {
   classTrack?: string | null;
@@ -90,12 +90,20 @@ interface MobileAtiradorDeElitePanelProps {
   isEffectActive?: (id: string) => boolean;
 }
 
+// IDs de efeitos do Atirador de Elite
+const ATIRADOR_EFFECT_IDS = {
+  DISPARO_LETAL: 'track-disparo-letal',
+  DISPARO_IMPACTANTE: 'track-disparo-impactante',
+} as const;
+
 export function MobileAtiradorDeElitePanel({
   classTrack,
   nex,
   peCurrent,
   intellect,
   onPEChange,
+  onActivateEffect,
+  isEffectActive,
 }: MobileAtiradorDeElitePanelProps) {
   const [activatingAbility, setActivatingAbility] = useState<string | null>(null);
   const [showManeuverDrawer, setShowManeuverDrawer] = useState(false);
@@ -127,6 +135,12 @@ export function MobileAtiradorDeElitePanel({
 
     try {
       onPEChange(peCurrent - ability.peCost);
+      
+      // Registra no SUE
+      if (ability.id === 'disparo-letal') {
+        onActivateEffect?.(ATIRADOR_EFFECT_IDS.DISPARO_LETAL, 'Disparo Letal', 'next-attack');
+      }
+
       toast.success(`${ability.name} ativado!`, {
         description: ability.shortEffect,
       });
@@ -146,9 +160,13 @@ export function MobileAtiradorDeElitePanel({
     }
 
     onPEChange(peCurrent - ability.peCost);
+    
+    // Registra no SUE
+    onActivateEffect?.(ATIRADOR_EFFECT_IDS.DISPARO_IMPACTANTE, 'Disparo Impactante', 'instant', { manobra: manobra.id });
+    
     toast.success(`Disparo Impactante: ${manobra.name}`);
     setShowManeuverDrawer(false);
-  }, [peCurrent, onPEChange]);
+  }, [peCurrent, onPEChange, onActivateEffect]);
 
   if (!isAtiradorElite || unlockedAbilities.length === 0) {
     return null;

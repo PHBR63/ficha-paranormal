@@ -59,6 +59,13 @@ interface MobileMedicoDeCampoPanelProps {
   isEffectActive?: (id: string) => boolean;
 }
 
+// IDs de efeitos do Médico de Campo
+const MEDICO_EFFECT_IDS = {
+  PARAMEDICO: 'track-paramedico',
+  EQUIPE_TRAUMA: 'track-equipe-trauma',
+  REANIMACAO: 'track-reanimacao',
+} as const;
+
 export function MobileMedicoDeCampoPanel({
   classTrack,
   nex,
@@ -66,6 +73,8 @@ export function MobileMedicoDeCampoPanel({
   onPEChange,
   reanimacaoUsedThisScene = false,
   onReanimacaoUsed,
+  onActivateEffect,
+  isEffectActive,
 }: MobileMedicoDeCampoPanelProps) {
   const [extraDice, setExtraDice] = useState(0);
   const [showParamedicoDrawer, setShowParamedicoDrawer] = useState(false);
@@ -97,9 +106,13 @@ export function MobileMedicoDeCampoPanel({
     }
     onPEChange(-paramedicoCost);
     const totalDice = healingDice.base + extraDice;
+    
+    // Registra no SUE
+    onActivateEffect?.(MEDICO_EFFECT_IDS.PARAMEDICO, 'Paramédico', 'instant', { dice: totalDice });
+    
     toast.success(`Paramédico: cure ${totalDice}d10 PV`);
     setShowParamedicoDrawer(false);
-  }, [peCurrent, paramedicoCost, extraDice, healingDice.base, onPEChange]);
+  }, [peCurrent, paramedicoCost, extraDice, healingDice.base, onPEChange, onActivateEffect]);
 
   const handleEquipeTrauma = useCallback(() => {
     if (peCurrent < 2) {
@@ -107,8 +120,12 @@ export function MobileMedicoDeCampoPanel({
       return;
     }
     onPEChange(-2);
+    
+    // Registra no SUE
+    onActivateEffect?.(MEDICO_EFFECT_IDS.EQUIPE_TRAUMA, 'Equipe de Trauma', 'instant');
+    
     toast.success('Equipe de Trauma: remova uma condição');
-  }, [peCurrent, onPEChange]);
+  }, [peCurrent, onPEChange, onActivateEffect]);
 
   const handleReanimacao = useCallback(() => {
     if (reanimacaoUsedThisScene) {
@@ -121,8 +138,12 @@ export function MobileMedicoDeCampoPanel({
     }
     onPEChange(-10);
     onReanimacaoUsed?.();
+    
+    // Registra no SUE
+    onActivateEffect?.(MEDICO_EFFECT_IDS.REANIMACAO, 'Reanimação', 'scene');
+    
     toast.success('Reanimação ativada!');
-  }, [peCurrent, reanimacaoUsedThisScene, onPEChange, onReanimacaoUsed]);
+  }, [peCurrent, reanimacaoUsedThisScene, onPEChange, onReanimacaoUsed, onActivateEffect]);
 
   if (!isMedicoCampo) return null;
 

@@ -36,6 +36,14 @@ interface MobileNegociadorPanelProps {
   isEffectActive?: (id: string) => boolean;
 }
 
+// IDs de efeitos do Negociador
+const NEGOCIADOR_EFFECT_IDS = {
+  ELOQUENCIA: 'track-eloquencia',
+  DISCURSO_MOTIVADOR: 'track-discurso-motivador',
+  EU_CONHECO_UM_CARA: 'track-eu-conheco-um-cara',
+  TRUQUE_MESTRE: 'track-truque-mestre',
+} as const;
+
 export function MobileNegociadorPanel({
   classTrack,
   nex,
@@ -45,6 +53,8 @@ export function MobileNegociadorPanel({
   onEloquenciaToggle,
   conhecoCaraUsedThisMission = false,
   onConhecoCaraUsed,
+  onActivateEffect,
+  isEffectActive,
 }: MobileNegociadorPanelProps) {
   const [isConcentrating, setIsConcentrating] = useState(eloquenciaActive);
   
@@ -72,8 +82,12 @@ export function MobileNegociadorPanel({
     onPEChange(-1);
     setIsConcentrating(true);
     onEloquenciaToggle?.(true);
+    
+    // Registra no SUE
+    onActivateEffect?.(NEGOCIADOR_EFFECT_IDS.ELOQUENCIA, 'Eloquência', 'concentration');
+    
     toast.success('Eloquência ativada!');
-  }, [peCurrent, isConcentrating, onPEChange, onEloquenciaToggle]);
+  }, [peCurrent, isConcentrating, onPEChange, onEloquenciaToggle, onActivateEffect]);
 
   const handleDiscursoMotivador = useCallback((enhanced: boolean) => {
     const cost = enhanced ? 8 : 4;
@@ -82,8 +96,12 @@ export function MobileNegociadorPanel({
       return;
     }
     onPEChange(-cost);
+    
+    // Registra no SUE
+    onActivateEffect?.(NEGOCIADOR_EFFECT_IDS.DISCURSO_MOTIVADOR, 'Discurso Motivador', 'scene', { enhanced, bonus: 2 });
+    
     toast.success(`Discurso Motivador: +2 perícias (${cost} PE)`);
-  }, [peCurrent, onPEChange]);
+  }, [peCurrent, onPEChange, onActivateEffect]);
 
   const handleConhecoCara = useCallback(() => {
     if (conhecoCaraUsedThisMission) {
@@ -91,8 +109,12 @@ export function MobileNegociadorPanel({
       return;
     }
     onConhecoCaraUsed?.();
+    
+    // Registra no SUE
+    onActivateEffect?.(NEGOCIADOR_EFFECT_IDS.EU_CONHECO_UM_CARA, 'Eu Conheço um Cara', 'scene');
+    
     toast.success('Eu Conheço um Cara ativado!');
-  }, [conhecoCaraUsedThisMission, onConhecoCaraUsed]);
+  }, [conhecoCaraUsedThisMission, onConhecoCaraUsed, onActivateEffect]);
 
   const handleTruqueMestre = useCallback(() => {
     if (peCurrent < 5) {
@@ -100,8 +122,12 @@ export function MobileNegociadorPanel({
       return;
     }
     onPEChange(-5);
+    
+    // Registra no SUE
+    onActivateEffect?.(NEGOCIADOR_EFFECT_IDS.TRUQUE_MESTRE, 'Truque de Mestre', 'scene');
+    
     toast.success('Truque de Mestre: copie uma habilidade!');
-  }, [peCurrent, onPEChange]);
+  }, [peCurrent, onPEChange, onActivateEffect]);
 
   if (!isNegociador) return null;
 
