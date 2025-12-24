@@ -44,10 +44,16 @@ Sistema completo de gerenciamento de fichas e campanhas para o RPG Ordem Paranor
 
 ### Recursos Avançados
 - **Auditoria de personagem** para validação de regras
-- **Sistema de bônus unificado** (SUE) para efeitos automáticos
+- **[Sistema Unificado de Efeitos (SUE)](docs/SISTEMA_UNIFICADO_EFEITOS.md)** para bônus automáticos de origens, trilhas, condições, rituais e poderes
 - **PWA** com suporte offline e notificações push
 - **Temas visuais** personalizáveis
 - **Importação/Exportação** de dados
+
+## 📚 Documentação Técnica
+
+| Documento | Descrição |
+|-----------|-----------|
+| [Sistema Unificado de Efeitos (SUE)](docs/SISTEMA_UNIFICADO_EFEITOS.md) | Motor central de cálculo de bônus e modificadores |
 
 ## 🛠️ Tecnologias
 
