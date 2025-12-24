@@ -185,6 +185,25 @@ export const TRACK_EFFECT_MAPPINGS = {
       // Nenhum efeito ativável com custo de PE - todas são passivas
     }
   },
+  // === OCULTISTA - LÂMINA PARANORMAL ===
+  laminaParanormal: {
+    trackId: 'lamina-paranormal',
+    effects: {
+      'track-lamina-maldita': {
+        name: 'Lâmina Maldita',
+        minNex: 10,
+        peCost: 1, // +1 PE para reduzir tempo de conjuração para movimento
+        description: 'Aprende Amaldiçoar Arma. +1 PE para conjurar como movimento. Usa Ocultismo para ataques.'
+      },
+      'track-conjuracao-marcial': {
+        name: 'Conjuração Marcial',
+        minNex: 65,
+        peCost: 2,
+        perRound: true,
+        description: 'Ao conjurar ritual com ação padrão, faz ataque corpo a corpo como ação livre'
+      },
+    }
+  },
 } as const;
 
 // =============================================================================
