@@ -370,8 +370,11 @@ export default function CharacterSheet() {
   // Hook centralizado de tracking de uso por rodada (habilidades 1x/rodada)
   const roundTracking = useRoundTracking();
   
-  // Hook de efeitos ativados manualmente (integra com SUE)
-  const activatedEffects = useActivatedEffects();
+  // Hook de efeitos ativados manualmente (integra com SUE) - com persistência no banco
+  const activatedEffects = useActivatedEffects({
+    characterId: character.id,
+    enablePersistence: true
+  });
   
   const activeRitualsForDefense = useMemo(() =>
     sustainedRituals.map(r => ({
