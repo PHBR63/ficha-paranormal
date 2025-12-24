@@ -6,12 +6,15 @@
  * 
  * Características:
  * - Estado compartilhado de efeitos ativos
+ * - Persistência no banco de dados (sincronização automática)
  * - Integração com useRoundTracking para reset automático
  * - Suporte a efeitos com duração (turnos, rodadas, cena)
  * - Callbacks para notificar mudanças
  */
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 // Tipos de duração de efeitos ativados
 export type EffectDuration = 
@@ -37,11 +40,22 @@ export interface ActivatedEffect {
   metadata?: Record<string, unknown>;
 }
 
+export interface UseActivatedEffectsOptions {
+  /** ID do personagem para persistência */
+  characterId?: string;
+  /** Se deve sincronizar com o banco automaticamente */
+  enablePersistence?: boolean;
+  /** Debounce em ms para salvar no banco (default: 500) */
+  saveDebounceMs?: number;
+}
+
 export interface UseActivatedEffectsReturn {
   /** Lista de IDs de efeitos atualmente ativos */
   activatedEffectIds: string[];
   /** Lista completa de efeitos ativos com metadados */
   activatedEffects: ActivatedEffect[];
+  /** Indica se está carregando do banco */
+  isLoading: boolean;
   /** Ativa um efeito */
   activateEffect: (
     id: string, 
@@ -61,13 +75,18 @@ export interface UseActivatedEffectsReturn {
   consumeRoundEffects: () => void;
   /** Limpa todos os efeitos (fim de cena/combate) */
   clearAllEffects: () => void;
+  /** Força salvamento imediato no banco */
+  forceSave: () => Promise<void>;
 }
 
 /**
- * Hook para gerenciar efeitos ativados manualmente
+ * Hook para gerenciar efeitos ativados manualmente com persistência
  * 
  * @example
- * const { activatedEffectIds, activateEffect, isEffectActive } = useActivatedEffects();
+ * const { activatedEffectIds, activateEffect, isEffectActive } = useActivatedEffects({
+ *   characterId: character.id,
+ *   enablePersistence: true
+ * });
  * 
  * // Ao ativar Disparo Letal
  * activateEffect('track-disparo-letal', 'Disparo Letal', 'next-attack');
@@ -78,14 +97,130 @@ export interface UseActivatedEffectsReturn {
  *   activatedEffects: activatedEffectIds
  * });
  */
-export function useActivatedEffects(): UseActivatedEffectsReturn {
+export function useActivatedEffects(
+  options: UseActivatedEffectsOptions = {}
+): UseActivatedEffectsReturn {
+  const { 
+    characterId, 
+    enablePersistence = true,
+    saveDebounceMs = 500 
+  } = options;
+  
+  const { toast } = useToast();
   const [effects, setEffects] = useState<ActivatedEffect[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastSavedRef = useRef<string>('[]');
+  const isInitializedRef = useRef(false);
 
   // Lista de IDs para passar ao SUE
   const activatedEffectIds = useMemo(
     () => effects.map(e => e.id),
     [effects]
   );
+
+  // Carrega efeitos do banco ao montar
+  useEffect(() => {
+    if (!characterId || !enablePersistence) {
+      isInitializedRef.current = true;
+      return;
+    }
+
+    const loadEffects = async () => {
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('characters')
+          .select('activated_effects')
+          .eq('id', characterId)
+          .single();
+
+        if (error) {
+          console.error('[useActivatedEffects] Erro ao carregar efeitos:', error);
+          return;
+        }
+
+        // Valida e parseia os efeitos salvos
+        const savedEffects = data?.activated_effects;
+        if (Array.isArray(savedEffects) && savedEffects.length > 0) {
+          // Cast e filtra efeitos expirados (next-attack e next-turn não devem persistir entre sessões)
+          const parsedEffects = savedEffects as unknown as ActivatedEffect[];
+          const validEffects = parsedEffects.filter((e) => 
+            e && typeof e === 'object' && 'duration' in e &&
+            (e.duration === 'scene' || e.duration === 'concentration')
+          );
+          setEffects(validEffects);
+          lastSavedRef.current = JSON.stringify(validEffects);
+        }
+      } catch (err) {
+        console.error('[useActivatedEffects] Erro inesperado:', err);
+      } finally {
+        setIsLoading(false);
+        isInitializedRef.current = true;
+      }
+    };
+
+    loadEffects();
+  }, [characterId, enablePersistence]);
+
+  // Salva efeitos no banco com debounce
+  const saveToDatabase = useCallback(async (effectsToSave: ActivatedEffect[]) => {
+    if (!characterId || !enablePersistence || !isInitializedRef.current) return;
+
+    // Evita salvar se não mudou
+    const serialized = JSON.stringify(effectsToSave);
+    if (serialized === lastSavedRef.current) return;
+
+    try {
+      // Cast para tipo compatível com Supabase Json
+      const { error } = await supabase
+        .from('characters')
+        .update({ activated_effects: JSON.parse(JSON.stringify(effectsToSave)) })
+        .eq('id', characterId);
+
+      if (error) {
+        console.error('[useActivatedEffects] Erro ao salvar efeitos:', error);
+        toast({
+          title: "Erro ao salvar efeitos",
+          description: "Seus efeitos ativados podem não persistir.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      lastSavedRef.current = serialized;
+    } catch (err) {
+      console.error('[useActivatedEffects] Erro inesperado ao salvar:', err);
+    }
+  }, [characterId, enablePersistence, toast]);
+
+  // Debounce para salvar
+  const scheduleSave = useCallback((newEffects: ActivatedEffect[]) => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    saveTimeoutRef.current = setTimeout(() => {
+      saveToDatabase(newEffects);
+    }, saveDebounceMs);
+  }, [saveToDatabase, saveDebounceMs]);
+
+  // Força salvamento imediato
+  const forceSave = useCallback(async () => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+      saveTimeoutRef.current = null;
+    }
+    await saveToDatabase(effects);
+  }, [effects, saveToDatabase]);
+
+  // Limpa timeout ao desmontar
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Ativa um novo efeito
   const activateEffect = useCallback((
@@ -98,20 +233,29 @@ export function useActivatedEffects(): UseActivatedEffectsReturn {
       // Remove efeito existente com mesmo ID (substitui)
       const filtered = prev.filter(e => e.id !== id);
       
-      return [...filtered, {
+      const newEffects = [...filtered, {
         id,
         name,
         activatedAt: Date.now(),
         duration,
         metadata,
       }];
+      
+      // Agenda salvamento
+      scheduleSave(newEffects);
+      
+      return newEffects;
     });
-  }, []);
+  }, [scheduleSave]);
 
   // Desativa um efeito específico
   const deactivateEffect = useCallback((id: string) => {
-    setEffects(prev => prev.filter(e => e.id !== id));
-  }, []);
+    setEffects(prev => {
+      const newEffects = prev.filter(e => e.id !== id);
+      scheduleSave(newEffects);
+      return newEffects;
+    });
+  }, [scheduleSave]);
 
   // Verifica se um efeito está ativo
   const isEffectActive = useCallback((id: string) => {
@@ -120,31 +264,45 @@ export function useActivatedEffects(): UseActivatedEffectsReturn {
 
   // Consome efeitos de 'next-attack' após atacar
   const consumeAttackEffects = useCallback(() => {
-    setEffects(prev => prev.filter(e => e.duration !== 'next-attack'));
-  }, []);
+    setEffects(prev => {
+      const newEffects = prev.filter(e => e.duration !== 'next-attack');
+      scheduleSave(newEffects);
+      return newEffects;
+    });
+  }, [scheduleSave]);
 
   // Consome efeitos de 'next-turn' ao iniciar novo turno
   const consumeTurnEffects = useCallback(() => {
-    setEffects(prev => prev.filter(e => e.duration !== 'next-turn'));
-  }, []);
+    setEffects(prev => {
+      const newEffects = prev.filter(e => e.duration !== 'next-turn');
+      scheduleSave(newEffects);
+      return newEffects;
+    });
+  }, [scheduleSave]);
 
   // Consome efeitos de 'round' ao avançar rodada
   const consumeRoundEffects = useCallback(() => {
-    setEffects(prev => prev.filter(e => 
-      e.duration !== 'round' && 
-      e.duration !== 'next-turn' &&
-      e.duration !== 'next-attack'
-    ));
-  }, []);
+    setEffects(prev => {
+      const newEffects = prev.filter(e => 
+        e.duration !== 'round' && 
+        e.duration !== 'next-turn' &&
+        e.duration !== 'next-attack'
+      );
+      scheduleSave(newEffects);
+      return newEffects;
+    });
+  }, [scheduleSave]);
 
   // Limpa todos os efeitos
   const clearAllEffects = useCallback(() => {
     setEffects([]);
-  }, []);
+    scheduleSave([]);
+  }, [scheduleSave]);
 
   return {
     activatedEffectIds,
     activatedEffects: effects,
+    isLoading,
     activateEffect,
     deactivateEffect,
     isEffectActive,
@@ -152,6 +310,7 @@ export function useActivatedEffects(): UseActivatedEffectsReturn {
     consumeTurnEffects,
     consumeRoundEffects,
     clearAllEffects,
+    forceSave,
   };
 }
 

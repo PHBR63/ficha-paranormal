@@ -609,6 +609,7 @@ export type Database = {
       characters: {
         Row: {
           abilities: Json
+          activated_effects: Json | null
           active_buffs: Json | null
           active_conditional_bonuses: string[] | null
           affinity_active: boolean | null
@@ -656,6 +657,7 @@ export type Database = {
         }
         Insert: {
           abilities?: Json
+          activated_effects?: Json | null
           active_buffs?: Json | null
           active_conditional_bonuses?: string[] | null
           affinity_active?: boolean | null
@@ -703,6 +705,7 @@ export type Database = {
         }
         Update: {
           abilities?: Json
+          activated_effects?: Json | null
           active_buffs?: Json | null
           active_conditional_bonuses?: string[] | null
           affinity_active?: boolean | null
