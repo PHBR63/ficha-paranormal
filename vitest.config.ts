@@ -3,8 +3,18 @@ import path from 'path';
 
 export default defineConfig({
   test: {
-    // Ambiente de teste
-    environment: 'node',
+    // Ambiente de teste - jsdom para testes de hooks React
+    environment: 'jsdom',
+    
+    // Configurações de ambiente jsdom
+    environmentOptions: {
+      jsdom: {
+        resources: 'usable',
+      },
+    },
+    
+    // Globals para React Testing Library
+    globals: true,
     
     // Padrões de arquivos de teste
     include: ['src/**/*.{test,spec,vitest}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
