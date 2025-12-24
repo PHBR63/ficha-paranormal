@@ -104,6 +104,7 @@ import { NegociadorPanel } from '@/components/character/NegociadorPanel';
 import { TecnicoPanel } from '@/components/character/TecnicoPanel';
 import { AniquiladorPanel } from '@/components/character/AniquiladorPanel';
 import { RoundControlPanel } from '@/components/character/RoundControlPanel';
+import { TrackPassiveEffectsWidget } from '@/components/character/TrackPassiveEffectsWidget';
 import { Logo } from '@/components/ui/logo';
 
 // Novos componentes do redesign 2.0 (estilo ficha de papel)
@@ -2121,6 +2122,20 @@ export default function CharacterSheet() {
                 }}
                 onActivateEffect={activatedEffects.activateEffect}
                 isEffectActive={activatedEffects.isEffectActive}
+              />
+
+              {/* Widget de Efeitos Passivos da Trilha */}
+              <TrackPassiveEffectsWidget
+                classTrack={character.class_track}
+                nex={character.nex}
+                attributes={{
+                  agility: character.agility,
+                  strength: character.strength,
+                  intellect: character.intellect,
+                  presence: character.presence,
+                  vigor: character.vigor,
+                }}
+                activatedEffects={activatedEffects.activatedEffectIds}
               />
 
               {/* Rituais e Histórico (acordeão com abas) */}
