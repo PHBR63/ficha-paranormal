@@ -235,8 +235,8 @@ export function MobileCharacterSheet({
   
   // Hook de efeitos ativados para integração com SUE - com persistência no banco
   const activatedEffects = useActivatedEffects({
-    characterId: character.id,
-    enablePersistence: true
+    characterId: character?.id,
+    enablePersistence: !!character
   });
 
   // Calcula limite de poderes paranormais

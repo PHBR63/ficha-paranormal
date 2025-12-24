@@ -372,8 +372,8 @@ export default function CharacterSheet() {
   
   // Hook de efeitos ativados manualmente (integra com SUE) - com persistência no banco
   const activatedEffects = useActivatedEffects({
-    characterId: character.id,
-    enablePersistence: true
+    characterId: character?.id,
+    enablePersistence: !!character
   });
   
   const activeRitualsForDefense = useMemo(() =>
