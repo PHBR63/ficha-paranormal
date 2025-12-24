@@ -70,6 +70,7 @@ import {
   MobileMedicoDeCampoPanel,
   MobileNegociadorPanel,
   MobileTecnicoPanel,
+  MobileAniquiladorPanel,
   type WeaponEntry,
   type BonusSource,
   type ActiveCondition,
@@ -831,6 +832,16 @@ export function MobileCharacterSheet({
               onPEChange={handlePEChange}
               usedAbilitiesThisRound={roundTracking.usedAbilitiesThisRound}
               onAbilityUsed={roundTracking.markAbilityUsed}
+              onActivateEffect={activatedEffects.activateEffect}
+              isEffectActive={activatedEffects.isEffectActive}
+            />
+            
+            {/* Painel Aniquilador - Técnicas Secretas */}
+            <MobileAniquiladorPanel
+              classTrack={character.class_track}
+              nex={character.nex}
+              peCurrent={character.pe_current}
+              onPEChange={handlePEChange}
               onActivateEffect={activatedEffects.activateEffect}
               isEffectActive={activatedEffects.isEffectActive}
             />
