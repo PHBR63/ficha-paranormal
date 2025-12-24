@@ -902,3 +902,236 @@ describe('getTrackEffects', () => {
     });
   });
 });
+
+// =====================================================
+// TRILHAS DO OCULTISTA - CONDUÍTE
+// =====================================================
+
+describe('Trilhas do Ocultista - Conduíte', () => {
+  describe('Mapeamento no TRACK_EFFECT_MAPPINGS', () => {
+    it('deve ter trilha Conduíte mapeada', () => {
+      expect(TRACK_EFFECT_MAPPINGS.conduite).toBeDefined();
+      expect(TRACK_EFFECT_MAPPINGS.conduite.trackId).toBe('conduite');
+    });
+
+    it('deve ter os 3 efeitos ativáveis do Conduíte', () => {
+      const effects = TRACK_EFFECT_MAPPINGS.conduite.effects;
+      
+      expect(effects['track-ampliar-ritual']).toBeDefined();
+      expect(effects['track-acelerar-ritual']).toBeDefined();
+      expect(effects['track-anular-ritual']).toBeDefined();
+    });
+
+    it('Ampliar Ritual deve ter custo 2 PE e minNex 10', () => {
+      const effect = TRACK_EFFECT_MAPPINGS.conduite.effects['track-ampliar-ritual'];
+      
+      expect(effect.name).toBe('Ampliar Ritual');
+      expect(effect.peCost).toBe(2);
+      expect(effect.minNex).toBe(10);
+    });
+
+    it('Acelerar Ritual deve ter custo 4 PE e minNex 40', () => {
+      const effect = TRACK_EFFECT_MAPPINGS.conduite.effects['track-acelerar-ritual'];
+      
+      expect(effect.name).toBe('Acelerar Ritual');
+      expect(effect.peCost).toBe(4);
+      expect(effect.minNex).toBe(40);
+    });
+
+    it('Anular Ritual deve ter custo variável (0) e minNex 65', () => {
+      const effect = TRACK_EFFECT_MAPPINGS.conduite.effects['track-anular-ritual'];
+      
+      expect(effect.name).toBe('Anular Ritual');
+      expect(effect.peCost).toBe(0); // Custo igual ao ritual alvo
+      expect(effect.minNex).toBe(65);
+    });
+  });
+
+  describe('Conversão de Mecânicas (convertTrackAbilityToMechanics)', () => {
+    it('NEX 10 deve ter efeito Ampliar Ritual nos efeitos especiais', () => {
+      const effects = getTrackEffects('conduite', 10, defaultAttributes);
+      
+      const ampliarEffect = effects.find(e => e.id === 'track-ampliar-ritual');
+      expect(ampliarEffect).toBeDefined();
+      expect(ampliarEffect?.mechanics.specialEffects?.some(
+        e => e.includes('Aumenta alcance') || e.includes('dobra área')
+      )).toBe(true);
+    });
+
+    it('NEX 40 deve ter efeito Acelerar Ritual nos efeitos especiais', () => {
+      const effects = getTrackEffects('conduite', 40, defaultAttributes);
+      
+      const acelerarEffect = effects.find(e => e.id === 'track-acelerar-ritual');
+      expect(acelerarEffect).toBeDefined();
+      expect(acelerarEffect?.mechanics.specialEffects?.some(
+        e => e.includes('ação livre') || e.includes('Conjura ritual')
+      )).toBe(true);
+    });
+
+    it('NEX 65 deve ter efeito Anular Ritual com contra-mágica', () => {
+      const effects = getTrackEffects('conduite', 65, defaultAttributes);
+      
+      const anularEffect = effects.find(e => e.id === 'track-anular-ritual');
+      expect(anularEffect).toBeDefined();
+      expect(anularEffect?.mechanics.specialEffects?.some(
+        e => e.includes('Anular Ritual') || e.includes('Contra-mágica') || e.includes('Ocultismo')
+      )).toBe(true);
+    });
+
+    it('NEX 99 deve ter ritual concedido Canalizar o Medo', () => {
+      const effects = getTrackEffects('conduite', 99, defaultAttributes);
+      
+      const canalizarEffect = effects.find(e => e.id === 'track-canalizar-o-medo');
+      expect(canalizarEffect).toBeDefined();
+      expect(canalizarEffect?.mechanics.specialEffects?.some(
+        e => e.includes('Ritual concedido') || e.includes('Canalizar')
+      )).toBe(true);
+    });
+  });
+
+  describe('Escalamento por NEX', () => {
+    it('NEX 10 deve ter apenas 1 habilidade (Ampliar Ritual)', () => {
+      const effects = getTrackEffects('conduite', 10, defaultAttributes);
+      
+      expect(effects.length).toBe(1);
+      expect(effects[0].name).toBe('Ampliar Ritual');
+    });
+
+    it('NEX 40 deve ter 2 habilidades', () => {
+      const effects = getTrackEffects('conduite', 40, defaultAttributes);
+      
+      expect(effects.length).toBe(2);
+      expect(effects.some(e => e.name === 'Ampliar Ritual')).toBe(true);
+      expect(effects.some(e => e.name === 'Acelerar Ritual')).toBe(true);
+    });
+
+    it('NEX 65 deve ter 3 habilidades', () => {
+      const effects = getTrackEffects('conduite', 65, defaultAttributes);
+      
+      expect(effects.length).toBe(3);
+    });
+
+    it('NEX 99 deve ter todas as 4 habilidades', () => {
+      const effects = getTrackEffects('conduite', 99, defaultAttributes);
+      
+      expect(effects.length).toBe(4);
+      expect(effects.some(e => e.name === 'Canalizar o Medo')).toBe(true);
+    });
+  });
+
+  describe('getTrackBonusSummary para Conduíte', () => {
+    it('deve retornar nome correto da trilha', () => {
+      const summary = getTrackBonusSummary('conduite', 50, defaultAttributes);
+      
+      expect(summary.trackName).toBe('Conduíte');
+    });
+
+    it('não deve ter bônus de combate numéricos (trilha focada em rituais)', () => {
+      const summary = getTrackBonusSummary('conduite', 99, defaultAttributes);
+      
+      expect(summary.totalAttack).toBe(0);
+      expect(summary.totalDamage).toBe(0);
+      expect(summary.totalMeleeDamage).toBe(0);
+      expect(summary.totalRangedDamage).toBe(0);
+      expect(summary.totalCriticalMargin).toBe(0);
+    });
+
+    it('deve ter habilidades especiais listadas', () => {
+      const summary = getTrackBonusSummary('conduite', 99, defaultAttributes);
+      
+      expect(summary.specialAbilities.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('getTrackCombatBonuses para Conduíte', () => {
+    it('melee: não deve ter bônus de combate', () => {
+      const result = getTrackCombatBonuses('conduite', 99, defaultAttributes, 'melee');
+      
+      expect(result.attackBonus).toBe(0);
+      expect(result.damageBonus).toBe(0);
+      expect(result.criticalMarginBonus).toBe(0);
+    });
+
+    it('ranged: não deve ter bônus de combate', () => {
+      const result = getTrackCombatBonuses('conduite', 99, defaultAttributes, 'ranged');
+      
+      expect(result.attackBonus).toBe(0);
+      expect(result.damageBonus).toBe(0);
+      expect(result.criticalMarginBonus).toBe(0);
+    });
+
+    it('deve ter efeitos especiais de modificadores de ritual', () => {
+      const result = getTrackCombatBonuses('conduite', 99, defaultAttributes, 'melee');
+      
+      // Conduíte tem efeitos especiais relacionados a rituais
+      expect(result.specialEffects.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('Integração com Sistema de Ativação', () => {
+    it('getActivatableEffectInfo deve retornar info para Ampliar Ritual', () => {
+      const { getActivatableEffectInfo } = require('../track-effects-adapter');
+      
+      const info = getActivatableEffectInfo('track-ampliar-ritual');
+      
+      expect(info).not.toBeNull();
+      expect(info?.name).toBe('Ampliar Ritual');
+      expect(info?.peCost).toBe(2);
+      expect(info?.trackId).toBe('conduite');
+    });
+
+    it('getTrackActivatableEffects deve listar todos os efeitos do Conduíte', () => {
+      const { getTrackActivatableEffects } = require('../track-effects-adapter');
+      
+      const effects = getTrackActivatableEffects('conduite');
+      
+      expect(effects.length).toBe(3);
+      expect(effects.some(e => e.name === 'Ampliar Ritual')).toBe(true);
+      expect(effects.some(e => e.name === 'Acelerar Ritual')).toBe(true);
+      expect(effects.some(e => e.name === 'Anular Ritual')).toBe(true);
+    });
+
+    it('isEffectAvailableAtNex deve funcionar corretamente para Conduíte', () => {
+      const { isEffectAvailableAtNex } = require('../track-effects-adapter');
+      
+      // Ampliar Ritual: NEX 10
+      expect(isEffectAvailableAtNex('track-ampliar-ritual', 5)).toBe(false);
+      expect(isEffectAvailableAtNex('track-ampliar-ritual', 10)).toBe(true);
+      
+      // Acelerar Ritual: NEX 40
+      expect(isEffectAvailableAtNex('track-acelerar-ritual', 30)).toBe(false);
+      expect(isEffectAvailableAtNex('track-acelerar-ritual', 40)).toBe(true);
+      
+      // Anular Ritual: NEX 65
+      expect(isEffectAvailableAtNex('track-anular-ritual', 60)).toBe(false);
+      expect(isEffectAvailableAtNex('track-anular-ritual', 65)).toBe(true);
+    });
+  });
+
+  describe('Casos de Borda', () => {
+    it('NEX 0 não deve ter nenhuma habilidade', () => {
+      const effects = getTrackEffects('conduite', 0, defaultAttributes);
+      
+      expect(effects.length).toBe(0);
+    });
+
+    it('NEX 5 não deve ter nenhuma habilidade (mínimo é 10)', () => {
+      const effects = getTrackEffects('conduite', 5, defaultAttributes);
+      
+      expect(effects.length).toBe(0);
+    });
+
+    it('atributos zerados não devem causar erro', () => {
+      const zeroAttributes: Record<AttributeType, number> = {
+        strength: 0,
+        agility: 0,
+        vigor: 0,
+        intellect: 0,
+        presence: 0,
+      };
+      
+      expect(() => getTrackEffects('conduite', 50, zeroAttributes)).not.toThrow();
+      expect(() => getTrackCombatBonuses('conduite', 50, zeroAttributes, 'melee')).not.toThrow();
+    });
+  });
+});
