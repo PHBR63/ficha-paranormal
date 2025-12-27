@@ -1,6 +1,6 @@
 /**
  * MobileResistanceCheckModal - Modal de teste de resistência para mobile
- * Interface compacta usando Drawer
+ * Interface compacta usando Drawer - PARIDADE COMPLETA COM DESKTOP
  */
 
 import { useState, useMemo } from 'react';
@@ -24,9 +24,11 @@ import {
   Brain,
   Wind,
   ChevronRight,
+  Sparkles,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ResistanceType, ResistanceEffect } from '@/lib/rituals/legacy-exports';
+import { getElementConfig } from '@/lib/element-config';
 
 // Ícones e cores para tipos de resistência
 const RESISTANCE_CONFIG: Record<ResistanceType, { 
@@ -38,6 +40,13 @@ const RESISTANCE_CONFIG: Record<ResistanceType, {
   'fortitude': { icon: Heart, color: 'text-health', label: 'Fortitude', attribute: 'VIG' },
   'reflexos': { icon: Wind, color: 'text-energy', label: 'Reflexos', attribute: 'AGI' },
   'vontade': { icon: Brain, color: 'text-sanity', label: 'Vontade', attribute: 'PRE' },
+};
+
+// Descrições dos efeitos de resistência
+const EFFECT_DESCRIPTIONS: Record<ResistanceEffect, string> = {
+  'anula': 'Sucesso anula completamente o efeito',
+  'parcial': 'Sucesso reduz dano à metade ou evita condição',
+  'reduz_metade': 'Sucesso reduz o dano à metade',
 };
 
 export interface ResistanceCheckResult {
@@ -63,6 +72,11 @@ interface MobileResistanceCheckModalProps {
     presence: number;
   };
   onResult: (result: ResistanceCheckResult, adjustedDamage?: number) => void;
+  // Props adicionais para paridade com desktop
+  ritualName?: string;
+  ritualElement?: string;
+  ritualCircle?: number;
+  appliesConditions?: boolean;
 }
 
 // Rolar pool de dados
@@ -86,6 +100,10 @@ export function MobileResistanceCheckModal({
   defaultDT = 15,
   targetAttributes,
   onResult,
+  ritualName,
+  ritualElement,
+  ritualCircle,
+  appliesConditions,
 }: MobileResistanceCheckModalProps) {
   const [customDT, setCustomDT] = useState<string>('');
   const [manualRoll, setManualRoll] = useState<string>('');
@@ -98,7 +116,13 @@ export function MobileResistanceCheckModal({
 
   const config = RESISTANCE_CONFIG[resistanceType];
   const ResistanceIcon = config.icon;
-  const dt = customDT ? parseInt(customDT) : defaultDT;
+  
+  // Calcula DT baseado no círculo do ritual (DT base + 5 por círculo acima do 1º)
+  const calculatedDT = defaultDT + ((ritualCircle || 1) - 1) * 5;
+  const dt = customDT ? parseInt(customDT) : calculatedDT;
+
+  // Configuração do elemento para gradient background
+  const elementConfig = ritualElement ? getElementConfig(ritualElement) : null;
 
   const targetAttribute = targetAttributes ? (
     resistanceType === 'fortitude' ? targetAttributes.vigor :
@@ -170,8 +194,18 @@ export function MobileResistanceCheckModal({
 
   return (
     <Drawer open={open} onOpenChange={handleClose}>
-      <DrawerContent className="max-h-[85vh]">
-        <DrawerHeader className="pb-2">
+      <DrawerContent className="max-h-[85vh] overflow-hidden">
+        {/* Gradient background baseado no elemento do ritual */}
+        {elementConfig && (
+          <div 
+            className="absolute inset-0 opacity-10 pointer-events-none"
+            style={{
+              background: `linear-gradient(135deg, ${elementConfig.color}40 0%, transparent 50%)`,
+            }}
+          />
+        )}
+        
+        <DrawerHeader className="pb-2 relative">
           <div className="flex items-center gap-3">
             <div className={cn(
               "w-10 h-10 rounded-lg flex items-center justify-center",
@@ -179,21 +213,49 @@ export function MobileResistanceCheckModal({
             )}>
               <ResistanceIcon className={cn("w-5 h-5", config.color)} />
             </div>
-            <div>
+            <div className="flex-1">
               <DrawerTitle className="font-display text-base">
                 Teste de {config.label}
               </DrawerTitle>
-              <Badge variant="outline" className="text-[10px] mt-0.5">
-                {config.attribute}
-              </Badge>
+              {ritualName && (
+                <p className="text-xs text-muted-foreground truncate max-w-[200px]">
+                  {ritualName}
+                </p>
+              )}
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <Badge variant="outline" className="text-[10px]">
+                  {config.attribute}
+                </Badge>
+                {ritualCircle && (
+                  <Badge variant="secondary" className="text-[10px]">
+                    {ritualCircle}º Círculo
+                  </Badge>
+                )}
+              </div>
             </div>
           </div>
         </DrawerHeader>
 
-        <div className="px-4 py-4 space-y-4">
+        <div className="px-4 py-4 space-y-4 relative">
+          {/* Descrição do efeito de resistência */}
+          <div className="p-2 rounded-lg bg-muted/30 border border-border/50">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Sparkles className="w-3 h-3" />
+              <span className="font-medium capitalize">{effect}:</span>
+              <span>{EFFECT_DESCRIPTIONS[effect]}</span>
+            </div>
+          </div>
+
           {/* DT */}
           <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border">
-            <span className="text-sm">Dificuldade (DT)</span>
+            <div>
+              <span className="text-sm">Dificuldade (DT)</span>
+              {ritualCircle && ritualCircle > 1 && (
+                <p className="text-[10px] text-muted-foreground">
+                  Base {defaultDT} + {(ritualCircle - 1) * 5} (círculo)
+                </p>
+              )}
+            </div>
             <Input
               type="number"
               value={customDT}
@@ -337,6 +399,20 @@ export function MobileResistanceCheckModal({
                         </Badge>
                       </div>
                     </div>
+                  )}
+
+                  {/* Indicador de condição evitada */}
+                  {testResult.passed && effect === 'parcial' && appliesConditions && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: 5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="mt-2 flex items-center justify-center gap-1.5"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-success" />
+                      <span className="text-xs font-medium text-success">
+                        Condição evitada!
+                      </span>
+                    </motion.div>
                   )}
                 </div>
               </motion.div>
