@@ -191,6 +191,11 @@ export function MobileCharacterSheet({
     type: 'fortitude' | 'reflexos' | 'vontade';
     dt: number;
     damageOnFail?: number;
+    effect?: 'anula' | 'parcial' | 'reduz_metade';
+    ritualName?: string;
+    ritualElement?: string;
+    ritualCircle?: number;
+    appliesConditions?: boolean;
   } | null>(null);
   
   // Estados dos novos componentes de paridade desktop/mobile
@@ -1324,7 +1329,7 @@ export function MobileCharacterSheet({
             if (!open) setResistanceConfig(null);
           }}
           resistanceType={resistanceConfig.type}
-          effect="reduz_metade"
+          effect={resistanceConfig.effect || 'reduz_metade'}
           damage={resistanceConfig.damageOnFail}
           defaultDT={resistanceConfig.dt}
           targetAttributes={{
@@ -1332,6 +1337,10 @@ export function MobileCharacterSheet({
             agility: character.agility,
             presence: character.presence,
           }}
+          ritualName={resistanceConfig.ritualName}
+          ritualElement={resistanceConfig.ritualElement}
+          ritualCircle={resistanceConfig.ritualCircle}
+          appliesConditions={resistanceConfig.appliesConditions}
           onResult={(result, adjustedDamage) => {
             console.log('Resultado do teste:', result, adjustedDamage);
           }}
