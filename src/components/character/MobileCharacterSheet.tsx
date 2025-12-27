@@ -1231,7 +1231,7 @@ export function MobileCharacterSheet({
         }}
       />
 
-      {/* Modal de combate completo (ataque + dano) */}
+      {/* Modal de combate completo (ataque + dano) - PARIDADE COMPLETA DESKTOP */}
       {selectedWeapon && (
         <MobileCombatRollModal
           open={combatModalOpen}
@@ -1257,6 +1257,28 @@ export function MobileCharacterSheet({
           nex={character.nex}
           unifiedEffects={unifiedEffects?.computed}
           weaponBuffs={weaponBuffs}
+          paranormalPowers={character.paranormal_powers?.map(p => ({ 
+            id: p.id, 
+            name: p.name, 
+            element: p.element 
+          }))}
+          hasAffinity={character.affinity_active || false}
+          affinityElement={character.elemental_affinity}
+          sustainedRituals={sustainedRituals.map(r => ({
+            ritualId: r.ritualId,
+            ritualName: r.ritualName,
+            element: r.element,
+            circle: r.circle,
+            selectedEnhancements: r.selectedEnhancements,
+          }))}
+          advancedBonuses={{
+            assassinar: character.active_conditional_bonuses?.includes('assassinar'),
+            potenciaMaxima: character.active_conditional_bonuses?.includes('potencia_maxima'),
+            atirarParaMatar: character.active_conditional_bonuses?.includes('atirar_para_matar'),
+            ataqueFurtivo: character.active_conditional_bonuses?.includes('ataque_furtivo'),
+          }}
+          isFavoriteWeapon={selectedWeapon?.id === (character as any).favorite_weapon_id}
+          activatedTrackEffects={activatedEffects.activatedEffectIds}
           onRollComplete={(result) => {
             addRoll({
               type: 'attack',
