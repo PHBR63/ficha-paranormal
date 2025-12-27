@@ -38,7 +38,7 @@ import {
   Clock,
   RefreshCw,
   Timer,
-  Infinity,
+  Infinity as InfinityIcon,
 } from 'lucide-react';
 import { 
   Drawer, 
@@ -1646,7 +1646,7 @@ export function MobileCombatRollModal({
         nex={nex}
         currentPE={currentPE}
         onConfirm={handleConfirmTechnique}
-        activeEffects={activeTechniqueEffects}
+        weaponName={weapon?.name || 'Arma'}
       />
     </Drawer>
   );
