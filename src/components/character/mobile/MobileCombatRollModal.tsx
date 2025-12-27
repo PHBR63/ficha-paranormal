@@ -3,12 +3,19 @@
  * Interface step-by-step: Setup → Ataque → Dano
  * Usa Drawer para UX mobile otimizada
  * 
- * Inclui paridade com desktop:
+ * PARIDADE COMPLETA COM DESKTOP:
  * - Suporte à trilha Aniquilador (Técnica Secreta, Máquina de Matar)
  * - Detecção de arma favorita
+ * - Modificador manual de dano (manualDamageMod)
+ * - Defesa do alvo (targetDefense) com comparação automática
+ * - Poderes paranormais (paranormalPowers)
+ * - Rituais sustentados (sustainedRituals)
+ * - Bônus condicionais avançados (advancedBonuses)
+ * - Dados separados de buffs de arma (buffDiceResult)
+ * - Breakdown detalhado de bônus com tooltips
  */
 
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Sword, 
@@ -25,6 +32,13 @@ import {
   Check,
   Crosshair,
   Skull,
+  Plus,
+  Minus,
+  Droplets,
+  Clock,
+  RefreshCw,
+  Timer,
+  Infinity,
 } from 'lucide-react';
 import { 
   Drawer, 
@@ -44,11 +58,13 @@ import confetti from 'canvas-confetti';
 import { rollSkillTest, rollDamage, DiceRollResult } from '@/lib/dice-roller';
 import { getSkillBonus } from '@/lib/character-data';
 import { ComputedEffects } from '@/lib/unified-effects-engine';
-import { WeaponBuff } from '@/hooks/useWeaponBuffs';
+import { WeaponBuff, ELEMENT_BUFF_COLORS } from '@/hooks/useWeaponBuffs';
 import { getElementConfig } from '@/lib/element-config';
 import { WeaponEntry } from './MobileCombatPanel';
 import { AniquiladorTechniqueModal, TechniqueEffects } from '@/components/character/AniquiladorTechniqueModal';
 import { getTrackCombatBonuses } from '@/lib/effects/track-effects-adapter';
+import { useRitualBonusesForCombat, useRitualCombatBonuses, SustainedRitualInput } from '@/hooks/useRitualCombatBonuses';
+import { formatDamageFormula as formatBuffDamage } from '@/lib/rituals/legacy-exports';
 
 // Interface para bônus selecionável
 interface CombatBonus {
@@ -61,9 +77,28 @@ interface CombatBonus {
   peCost?: number;
   description: string;
   isPassive?: boolean;
+  requiresAffinity?: boolean;
+  affinityElement?: string;
 }
 
-// Props do modal
+// Interface para bônus condicionais avançados (paridade desktop)
+interface AdvancedConditionalBonuses {
+  assassinar?: boolean;     // Dobra dados do Ataque Furtivo
+  potenciaMaxima?: boolean; // Dobra bônus do Ataque Especial corpo a corpo
+  atirarParaMatar?: boolean; // Dano máximo em crítico com arma de fogo
+  ataqueFurtivo?: boolean;  // Ataque Furtivo básico
+}
+
+// Interface para fonte de bônus detalhada (exibição)
+interface BonusSourceDisplay {
+  label: string;
+  value: number | string;
+  type: 'skill' | 'power' | 'ritual' | 'track' | 'attribute' | 'paranormal' | 'other';
+  description?: string;
+  sourceName?: string;
+}
+
+// Props do modal - PARIDADE COMPLETA COM DESKTOP
 interface MobileCombatRollModalProps {
   open: boolean;
   onClose: () => void;
@@ -80,13 +115,20 @@ interface MobileCombatRollModalProps {
   maxPE: number;
   onPEChange: (newPE: number) => void;
   characterClass: string;
-  /** Trilha de classe (ex: "aniquilador", "comandante de campo") */
   classTrack?: string;
   abilities: string[];
   nex: number;
   unifiedEffects?: ComputedEffects;
   weaponBuffs?: WeaponBuff[];
   onRollComplete?: (result: DiceRollResult) => void;
+  // NOVAS PROPS - Paridade com desktop
+  paranormalPowers?: Array<{ id: string; name: string; element: string }>;
+  hasAffinity?: boolean;
+  affinityElement?: string | null;
+  sustainedRituals?: SustainedRitualInput[];
+  advancedBonuses?: AdvancedConditionalBonuses;
+  isFavoriteWeapon?: boolean;
+  activatedTrackEffects?: string[];
 }
 
 // Fases do combate
@@ -127,6 +169,17 @@ function AnimatedDie({ value, delay = 0, isKept = false, isCritical = false }: {
   );
 }
 
+// Cores para cada tipo de bônus
+const bonusTypeColors: Record<BonusSourceDisplay['type'], string> = {
+  skill: 'bg-primary/20 text-primary',
+  power: 'bg-purple-500/20 text-purple-500',
+  ritual: 'bg-blue-500/20 text-blue-400',
+  track: 'bg-orange-500/20 text-orange-500',
+  attribute: 'bg-amber-500/20 text-amber-500',
+  paranormal: 'bg-fuchsia-500/20 text-fuchsia-500',
+  other: 'bg-secondary/50 text-secondary-foreground',
+};
+
 export function MobileCombatRollModal({
   open,
   onClose,
@@ -143,7 +196,19 @@ export function MobileCombatRollModal({
   unifiedEffects,
   weaponBuffs = [],
   onRollComplete,
+  // NOVAS PROPS - Paridade com desktop
+  paranormalPowers = [],
+  hasAffinity = false,
+  affinityElement = null,
+  sustainedRituals = [],
+  advancedBonuses = {},
+  isFavoriteWeapon,
+  activatedTrackEffects = [],
 }: MobileCombatRollModalProps) {
+  // Bônus de rituais sustentados processados automaticamente
+  const ritualBonuses = useRitualBonusesForCombat(sustainedRituals);
+  const ritualCombatSummary = useRitualCombatBonuses(sustainedRituals);
+  
   // Estados
   const [phase, setPhase] = useState<CombatPhase>('setup');
   const [selectedBonuses, setSelectedBonuses] = useState<string[]>([]);
@@ -153,25 +218,106 @@ export function MobileCombatRollModal({
     bonus: number;
     total: number;
     isCritical: boolean;
+    extraDice?: number[];
+    useMaxDamage?: boolean;
+    potenciaMaximaActive?: boolean;
+    assassinarActive?: boolean;
   } | null>(null);
   const [manualAttackMod, setManualAttackMod] = useState(0);
+  const [manualDamageMod, setManualDamageMod] = useState(0); // NOVO - paridade desktop
+  const [targetDefense, setTargetDefense] = useState<number | null>(null); // NOVO - paridade desktop
   const [isRolling, setIsRolling] = useState(false);
+  
+  // Estado separado para dados do buff (Amaldiçoar Arma, etc.) - NOVO
+  const [buffDiceResult, setBuffDiceResult] = useState<{
+    dice: number[];
+    formula: string;
+    element: string;
+    ritualName: string;
+    enhancement: string | null;
+    total: number;
+    criticalMultiplier?: number;
+    isCritical: boolean;
+  } | null>(null);
   
   // === ESTADOS DO ANIQUILADOR ===
   const [showTechniqueModal, setShowTechniqueModal] = useState(false);
   const [activeTechniqueEffects, setActiveTechniqueEffects] = useState<TechniqueEffects | null>(null);
   
+  // Detecta tipo de ataque baseado na arma
+  const attackType: 'melee' | 'ranged' = useMemo(() => {
+    if (!weapon) return 'melee';
+    return weapon.type === 'Disparo' || weapon.type === 'Arremesso' ? 'ranged' : 'melee';
+  }, [weapon]);
+  
+  // Detecta se a arma é favorita (via prop ou campo da arma)
+  const weaponIsFavorite = isFavoriteWeapon ?? weapon?.isFavoriteWeapon ?? false;
+  
   // Detecta se pode usar Técnica Secreta (Aniquilador NEX 40%+ com arma favorita)
   const canUseTechniqueSecreta = useMemo(() => {
     const isAniquilador = classTrack?.toLowerCase().includes('aniquilador');
-    return isAniquilador && nex >= 40 && weapon?.isFavoriteWeapon;
-  }, [classTrack, nex, weapon?.isFavoriteWeapon]);
+    return isAniquilador && nex >= 40 && weaponIsFavorite;
+  }, [classTrack, nex, weaponIsFavorite]);
   
   // Detecta Máquina de Matar (Aniquilador NEX 99%+ com arma favorita)
   const maquinaDeMatarActive = useMemo(() => {
     const isAniquilador = classTrack?.toLowerCase().includes('aniquilador');
-    return isAniquilador && nex >= 99 && weapon?.isFavoriteWeapon;
-  }, [classTrack, nex, weapon?.isFavoriteWeapon]);
+    return isAniquilador && nex >= 99 && weaponIsFavorite;
+  }, [classTrack, nex, weaponIsFavorite]);
+  
+  // Obtém bônus de trilha consolidados
+  const trackCombatBonuses = useMemo(() => {
+    return getTrackCombatBonuses(
+      classTrack || '',
+      nex,
+      attributes,
+      attackType,
+      activatedTrackEffects
+    );
+  }, [classTrack, nex, attributes, attackType, activatedTrackEffects]);
+  
+  // === PROCESSAR WEAPON BUFFS (Amaldiçoar Arma, etc.) ===
+  const weaponBuffBonuses = useMemo(() => {
+    if (weaponBuffs.length === 0) {
+      return {
+        attackBonus: 0,
+        criticalBonus: 0,
+        criticalMultiplierBonus: 0,
+        bonusDamage: null as { diceCount: number; diceType: number; damageType?: string } | null,
+        summary: [] as string[],
+      };
+    }
+    
+    const attackBonuses = weaponBuffs.map(b => b.attackBonus || 0);
+    const criticalBonuses = weaponBuffs.map(b => b.criticalBonus || 0);
+    const criticalMultiplierBonuses = weaponBuffs.map(b => b.criticalMultiplierBonus || 0);
+    
+    // Usa o MAIOR de cada tipo (rituais não acumulam)
+    const totalAttackBonus = attackBonuses.length > 0 ? Math.max(...attackBonuses) : 0;
+    const totalCriticalBonus = criticalBonuses.length > 0 ? Math.max(...criticalBonuses) : 0;
+    const totalCriticalMultiplierBonus = criticalMultiplierBonuses.length > 0 ? Math.max(...criticalMultiplierBonuses) : 0;
+    
+    const allBonusDamage = weaponBuffs
+      .filter(b => b.bonusDamage)
+      .map(b => ({ ...b.bonusDamage!, element: b.element }));
+    
+    const sortedDamage = allBonusDamage.sort((a, b) => {
+      const powerA = (a.diceCount || 1) * (a.diceType || 0);
+      const powerB = (b.diceCount || 1) * (b.diceType || 0);
+      return powerB - powerA;
+    });
+    
+    const bestDamage = sortedDamage.length > 0 ? sortedDamage[0] : null;
+    const summary = weaponBuffs.map(b => b.ritualName);
+    
+    return {
+      attackBonus: totalAttackBonus,
+      criticalBonus: totalCriticalBonus,
+      criticalMultiplierBonus: totalCriticalMultiplierBonus,
+      bonusDamage: bestDamage,
+      summary,
+    };
+  }, [weaponBuffs]);
 
   // Reset ao fechar
   const handleClose = useCallback(() => {
@@ -179,7 +325,10 @@ export function MobileCombatRollModal({
     setSelectedBonuses([]);
     setAttackResult(null);
     setDamageResult(null);
+    setBuffDiceResult(null);
     setManualAttackMod(0);
+    setManualDamageMod(0);
+    setTargetDefense(null);
     setIsRolling(false);
     setActiveTechniqueEffects(null);
     onClose();
@@ -188,7 +337,6 @@ export function MobileCombatRollModal({
   // Handler para confirmar técnicas do Aniquilador
   const handleConfirmTechnique = useCallback((effects: TechniqueEffects) => {
     setActiveTechniqueEffects(effects);
-    // Deduz PE
     if (effects.peCost > 0) {
       onPEChange(currentPE - effects.peCost);
     }
@@ -215,11 +363,12 @@ export function MobileCombatRollModal({
     };
   }, [weapon, skills]);
 
-  // Bônus disponíveis
+  // Bônus disponíveis - ATUALIZADO com poderes paranormais e rituais
   const availableBonuses = useMemo((): CombatBonus[] => {
     const bonuses: CombatBonus[] = [];
+    const isMelee = weapon?.type === 'Corpo a Corpo' || weapon?.type === 'Briga';
     
-    // Ataque Especial (Combatente)
+    // === BÔNUS DE CLASSE ===
     if (abilities.some(a => a.toLowerCase().includes('ataque especial'))) {
       bonuses.push({
         id: 'ataque-especial-ataque',
@@ -239,7 +388,6 @@ export function MobileCombatRollModal({
       });
     }
 
-    // Golpe Pesado
     if (abilities.some(a => a.toLowerCase().includes('golpe pesado'))) {
       bonuses.push({
         id: 'golpe-pesado',
@@ -250,9 +398,72 @@ export function MobileCombatRollModal({
         description: '+1 dado de dano por 1 PE',
       });
     }
+    
+    // Tiro Certeiro (Especialista)
+    if (abilities.some(a => a.toLowerCase().includes('tiro certeiro')) && 
+        (weapon?.type === 'Disparo' || weapon?.type === 'Arremesso')) {
+      bonuses.push({
+        id: 'tiro-certeiro',
+        name: `Tiro Certeiro (+${attributes.agility} dano)`,
+        source: 'class',
+        damageBonus: attributes.agility,
+        isPassive: true,
+        description: 'Soma Agilidade no dano de ataques à distância',
+      });
+    }
+    
+    // === PODERES PARANORMAIS ===
+    const hasGolpeDeSorte = paranormalPowers.some(p => p.id === 'golpe-de-sorte');
+    if (hasGolpeDeSorte) {
+      const critBonus = hasAffinity && affinityElement === 'energia' ? 2 : 1;
+      bonuses.push({
+        id: 'golpe-de-sorte',
+        name: `Golpe de Sorte (-${critBonus} crítico)`,
+        source: 'paranormal',
+        criticalBonus: critBonus,
+        isPassive: true,
+        description: `Reduz margem de crítico em ${critBonus}`,
+        requiresAffinity: critBonus === 2,
+        affinityElement: 'energia',
+      });
+    }
+    
+    const hasMaosFlamejantes = paranormalPowers.some(p => 
+      p.id === 'maos-flamejantes' || p.name.toLowerCase().includes('mãos flamejantes')
+    );
+    if (hasMaosFlamejantes && isMelee) {
+      const extraDamage = hasAffinity && affinityElement === 'energia' ? '2d6' : '1d6';
+      bonuses.push({
+        id: 'maos-flamejantes',
+        name: `Mãos Flamejantes (+${extraDamage} fogo)`,
+        source: 'paranormal',
+        damageBonus: extraDamage,
+        peCost: 1,
+        description: 'Adiciona dano de fogo ao ataque corpo a corpo',
+      });
+    }
+    
+    // === BÔNUS DE RITUAIS SUSTENTADOS ===
+    ritualBonuses.forEach(ritual => {
+      bonuses.push({
+        id: ritual.id,
+        name: ritual.name,
+        source: ritual.source,
+        attackBonus: ritual.attackBonus,
+        damageBonus: ritual.damageBonus,
+        isPassive: ritual.isPassive,
+        description: ritual.description,
+      });
+    });
 
     return bonuses;
-  }, [abilities]);
+  }, [abilities, paranormalPowers, hasAffinity, affinityElement, weapon, attributes, ritualBonuses]);
+
+  // Bônus passivos (sempre ativos)
+  const passiveBonuses = useMemo(() => 
+    availableBonuses.filter(b => b.isPassive),
+    [availableBonuses]
+  );
 
   // Toggle de bônus
   const toggleBonus = (bonusId: string) => {
@@ -273,7 +484,7 @@ export function MobileCombatRollModal({
 
   const canAffordPE = currentPE >= totalPECost;
 
-  // Bônus total de ataque
+  // Bônus total de ataque - ATUALIZADO com SUE, trilha, weapon buffs
   const totalAttackBonus = useMemo(() => {
     let total = attackSkill.bonus;
     const isMelee = weapon?.type === 'Corpo a Corpo' || weapon?.type === 'Briga';
@@ -284,8 +495,18 @@ export function MobileCombatRollModal({
       total += isMelee ? unifiedEffects.attack.melee : unifiedEffects.attack.ranged;
     }
     
+    // Bônus de trilha
+    if (trackCombatBonuses.attackBonus > 0) {
+      total += trackCombatBonuses.attackBonus;
+    }
+    
     // Bônus de weapon buffs
-    weaponBuffs.forEach(b => {
+    if (weaponBuffBonuses.attackBonus) {
+      total += weaponBuffBonuses.attackBonus;
+    }
+    
+    // Bônus passivos
+    passiveBonuses.forEach(b => {
       if (b.attackBonus) total += b.attackBonus;
     });
     
@@ -299,53 +520,135 @@ export function MobileCombatRollModal({
     total += manualAttackMod;
     
     return total;
-  }, [attackSkill.bonus, selectedBonuses, availableBonuses, manualAttackMod, weaponBuffs, unifiedEffects, weapon]);
+  }, [attackSkill.bonus, selectedBonuses, availableBonuses, manualAttackMod, weaponBuffBonuses, unifiedEffects, weapon, trackCombatBonuses, passiveBonuses]);
 
-  // Margem de crítico efetiva (inclui Máquina de Matar e Técnicas do Aniquilador)
+  // Detalhamento das fontes de bônus de ataque - NOVO
+  const attackBonusSources = useMemo(() => {
+    const sources: BonusSourceDisplay[] = [];
+    const isMelee = weapon?.type === 'Corpo a Corpo' || weapon?.type === 'Briga';
+    
+    if (attackSkill.bonus > 0) {
+      sources.push({ label: attackSkill.name, value: attackSkill.bonus, type: 'skill' });
+    }
+    
+    if (unifiedEffects) {
+      if (unifiedEffects.attack.general !== 0) {
+        unifiedEffects.attack.breakdown.forEach(entry => {
+          sources.push({ label: entry.source, value: entry.value, type: 'track' });
+        });
+      }
+      const specificBonus = isMelee ? unifiedEffects.attack.melee : unifiedEffects.attack.ranged;
+      if (specificBonus !== 0) {
+        sources.push({ 
+          label: isMelee ? 'Corpo a Corpo' : 'À Distância', 
+          value: specificBonus, 
+          type: 'track' 
+        });
+      }
+    }
+    
+    if (trackCombatBonuses.attackBonus > 0) {
+      sources.push({ label: 'Trilha', value: trackCombatBonuses.attackBonus, type: 'track' });
+    }
+    
+    if (weaponBuffBonuses.attackBonus > 0) {
+      sources.push({ label: 'Buff', value: weaponBuffBonuses.attackBonus, type: 'ritual' });
+    }
+    
+    passiveBonuses.forEach(b => {
+      if (b.attackBonus) sources.push({ label: b.name, value: b.attackBonus, type: 'ritual' });
+    });
+    
+    selectedBonuses.forEach(bonusId => {
+      const bonus = availableBonuses.find(b => b.id === bonusId);
+      if (bonus?.attackBonus) {
+        sources.push({ label: bonus.name, value: bonus.attackBonus, type: bonus.source === 'paranormal' ? 'paranormal' : 'power' });
+      }
+    });
+    
+    if (manualAttackMod !== 0) {
+      sources.push({ label: 'Mestre', value: manualAttackMod, type: 'other' });
+    }
+    
+    return sources;
+  }, [attackSkill, unifiedEffects, weapon, trackCombatBonuses, weaponBuffBonuses, passiveBonuses, selectedBonuses, availableBonuses, manualAttackMod]);
+
+  // Margem de crítico efetiva
   const criticalMargin = useMemo(() => {
     let margin = 20;
+    const isMelee = weapon?.type === 'Corpo a Corpo' || weapon?.type === 'Briga';
     
-    // Da arma
     if (weapon?.critical) {
       const match = weapon.critical.match(/(\d+)/);
       if (match) margin = Math.min(margin, parseInt(match[1]));
     }
     
-    // De weapon buffs
-    weaponBuffs.forEach(b => {
+    // Técnica Letal (Guerreiro)
+    const isGuerreiro = classTrack?.toLowerCase().includes('guerreiro');
+    if (isGuerreiro && nex >= 10 && isMelee) {
+      margin -= 2;
+    }
+    
+    // SUE
+    if (unifiedEffects && !isGuerreiro) {
+      margin -= unifiedEffects.critical.marginBonus;
+    }
+    
+    // Weapon buffs
+    if (weaponBuffBonuses.criticalBonus) {
+      margin -= weaponBuffBonuses.criticalBonus;
+    }
+    
+    // Bônus passivos
+    passiveBonuses.forEach(b => {
       if (b.criticalBonus) margin -= b.criticalBonus;
     });
     
-    // Máquina de Matar (NEX 99%) - reduz margem em 2
+    // Máquina de Matar
     if (maquinaDeMatarActive) {
       margin -= 2;
     }
     
-    // Técnica Letal do Aniquilador
+    // Técnicas do Aniquilador
     if (activeTechniqueEffects?.criticalMarginBonus) {
       margin -= activeTechniqueEffects.criticalMarginBonus;
     }
     
-    return Math.max(1, margin);
-  }, [weapon, weaponBuffs, maquinaDeMatarActive, activeTechniqueEffects]);
-  
-  // Multiplicador de crítico efetivo (inclui Destruidor)
-  const criticalMultiplier = useMemo(() => {
-    let multiplier = 2; // Padrão x2
+    // Trilha
+    if (trackCombatBonuses.criticalMarginBonus > 0) {
+      margin -= trackCombatBonuses.criticalMarginBonus;
+    }
     
-    // Da arma
+    return Math.max(1, margin);
+  }, [weapon, weaponBuffBonuses, unifiedEffects, maquinaDeMatarActive, activeTechniqueEffects, classTrack, nex, passiveBonuses, trackCombatBonuses]);
+  
+  // Multiplicador de crítico efetivo
+  const criticalMultiplier = useMemo(() => {
+    let multiplier = 2;
+    
     if (weapon?.criticalMultiplier) {
       const match = weapon.criticalMultiplier.match(/x?(\d+)/i);
       if (match) multiplier = parseInt(match[1]);
     }
     
-    // Técnica Destruidor do Aniquilador
+    if (unifiedEffects) {
+      multiplier += unifiedEffects.critical.multiplierBonus;
+    }
+    
+    if (trackCombatBonuses.criticalMultiplierBonus > 0) {
+      multiplier += trackCombatBonuses.criticalMultiplierBonus;
+    }
+    
+    if (weaponBuffBonuses.criticalMultiplierBonus) {
+      multiplier += weaponBuffBonuses.criticalMultiplierBonus;
+    }
+    
     if (activeTechniqueEffects?.criticalMultiplierBonus) {
       multiplier += activeTechniqueEffects.criticalMultiplierBonus;
     }
     
     return multiplier;
-  }, [weapon, activeTechniqueEffects]);
+  }, [weapon, weaponBuffBonuses, unifiedEffects, activeTechniqueEffects, trackCombatBonuses]);
 
   // Rolar ataque
   const rollAttack = useCallback(() => {
@@ -384,7 +687,7 @@ export function MobileCombatRollModal({
     }, 500);
   }, [weapon, attackAttribute, totalAttackBonus, criticalMargin, totalPECost, canAffordPE, currentPE, onPEChange, onRollComplete]);
 
-  // Rolar dano
+  // Rolar dano - ATUALIZADO com advancedBonuses e buffDiceResult
   const rollDamageAction = useCallback(() => {
     if (!weapon || !attackResult) return;
     
@@ -393,32 +696,18 @@ export function MobileCombatRollModal({
     setTimeout(() => {
       const isCritical = attackResult.isCritical;
       const parsed = parseDamageString(weapon.damage);
+      const isMelee = weapon.type === 'Corpo a Corpo' || weapon.type === 'Briga';
+      const isFirearm = weapon.type === 'Disparo';
       
-      // Dados extras de poderes selecionados
-      let extraDice = 0;
-      selectedBonuses.forEach(bonusId => {
-        const bonus = availableBonuses.find(b => b.id === bonusId);
-        if (bonus?.damageBonus === '1d') extraDice++;
-      });
+      // Atirar para Matar ou dano máximo da trilha
+      const useMaxDamage = (advancedBonuses.atirarParaMatar && isCritical && isFirearm) ||
+        (trackCombatBonuses.maximumDamageOnCrit && isCritical);
       
-      // Máquina de Matar (NEX 99%) - adiciona 1 dado extra de dano
-      let maquinaDeMatarDice = 0;
-      if (maquinaDeMatarActive) {
-        maquinaDeMatarDice = 1;
-        // Se for crítico, multiplica pelo multiplicador
-        if (isCritical) {
-          maquinaDeMatarDice = criticalMultiplier;
-        }
-      }
+      // Dados base
+      let diceCount = isCritical ? parsed.count * criticalMultiplier : parsed.count;
       
       // Bônus de dano
       let damageBonus = parsed.bonus;
-      const isMelee = weapon.type === 'Corpo a Corpo' || weapon.type === 'Briga';
-      
-      // Força em corpo a corpo
-      if (isMelee) {
-        damageBonus += attributes.strength;
-      }
       
       // SUE
       if (unifiedEffects) {
@@ -426,32 +715,203 @@ export function MobileCombatRollModal({
         damageBonus += isMelee ? unifiedEffects.damage.melee : unifiedEffects.damage.ranged;
       }
       
-      // Bônus selecionados numéricos
+      // Trilha
+      if (trackCombatBonuses.damageBonus > 0) {
+        damageBonus += trackCombatBonuses.damageBonus;
+      }
+      
+      // Potência Máxima
+      const potenciaMaximaMultiplier = advancedBonuses.potenciaMaxima && isMelee ? 2 : 1;
+      
+      // Dados extras
+      let extraDiceCount = 0;
+      let extraDiceSize = parsed.size;
+      
+      // SUE extra dice
+      if (unifiedEffects && unifiedEffects.damage.extraDice.length > 0) {
+        unifiedEffects.damage.extraDice.forEach(diceStr => {
+          const match = diceStr.match(/(\d*)d(\d+)/i);
+          if (match) {
+            const count = parseInt(match[1]) || 1;
+            extraDiceCount += isCritical ? count * criticalMultiplier : count;
+            if (match[2]) extraDiceSize = parseInt(match[2]);
+          }
+        });
+      }
+      
+      // Trilha extra dice
+      if (trackCombatBonuses.extraDamageDice.length > 0) {
+        trackCombatBonuses.extraDamageDice.forEach(diceStr => {
+          const match = diceStr.match(/(\d*)d(\d+)/i);
+          if (match) {
+            const count = parseInt(match[1]) || 1;
+            extraDiceCount += isCritical ? count * criticalMultiplier : count;
+            if (match[2]) extraDiceSize = parseInt(match[2]);
+          }
+        });
+      }
+      
+      // Weapon buff dice
+      let weaponBuffDiceCount = 0;
+      let weaponBuffDiceSize = 6;
+      let weaponBuffBaseDice = 0;
+      let weaponBuffEnhancement: string | null = null;
+      
+      if (weaponBuffBonuses.bonusDamage && weaponBuffs.length > 0) {
+        const buffDamage = weaponBuffBonuses.bonusDamage;
+        const activeBuff = weaponBuffs[0];
+        
+        if (activeBuff.enhancements?.includes('Verdadeiro')) {
+          weaponBuffEnhancement = 'Verdadeiro';
+        } else if (activeBuff.enhancements?.includes('Discente')) {
+          weaponBuffEnhancement = 'Discente';
+        }
+        
+        weaponBuffBaseDice = buffDamage.diceCount || 1;
+        weaponBuffDiceCount = isCritical ? weaponBuffBaseDice * criticalMultiplier : weaponBuffBaseDice;
+        weaponBuffDiceSize = buffDamage.diceType || 6;
+      }
+      
+      // Ataque Furtivo
+      let sneakAttackDice = 0;
+      if (advancedBonuses.ataqueFurtivo) {
+        if (nex >= 99) sneakAttackDice = 4;
+        else if (nex >= 65) sneakAttackDice = 3;
+        else if (nex >= 40) sneakAttackDice = 2;
+        else sneakAttackDice = 1;
+        
+        if (advancedBonuses.assassinar) {
+          sneakAttackDice *= 2;
+        }
+      }
+      
+      // Máquina de Matar
+      let maquinaDeMatarDice = 0;
+      if (maquinaDeMatarActive) {
+        maquinaDeMatarDice = isCritical ? criticalMultiplier : 1;
+      }
+      
+      // Bônus passivos
+      passiveBonuses.forEach(b => {
+        if (typeof b.damageBonus === 'number') {
+          damageBonus += b.damageBonus;
+        } else if (typeof b.damageBonus === 'string') {
+          const extraMatch = b.damageBonus.match(/(\d*)d(\d+)?/i);
+          if (extraMatch) {
+            const count = parseInt(extraMatch[1]) || 1;
+            extraDiceCount += isCritical ? count * criticalMultiplier : count;
+            if (extraMatch[2]) extraDiceSize = parseInt(extraMatch[2]);
+          }
+        }
+      });
+      
+      // Bônus selecionados
       selectedBonuses.forEach(bonusId => {
         const bonus = availableBonuses.find(b => b.id === bonusId);
-        if (typeof bonus?.damageBonus === 'number') damageBonus += bonus.damageBonus;
+        if (!bonus) return;
+        
+        if (typeof bonus.damageBonus === 'number') {
+          const multiplier = bonusId.includes('ataque-especial') ? potenciaMaximaMultiplier : 1;
+          damageBonus += bonus.damageBonus * multiplier;
+        } else if (typeof bonus.damageBonus === 'string') {
+          if (bonus.damageBonus === '1d') {
+            diceCount += isCritical ? criticalMultiplier : 1;
+          } else {
+            const extraMatch = bonus.damageBonus.match(/(\d*)d(\d+)/i);
+            if (extraMatch) {
+              const count = parseInt(extraMatch[1]) || 1;
+              extraDiceCount += isCritical ? count * criticalMultiplier : count;
+              extraDiceSize = parseInt(extraMatch[2]);
+            }
+          }
+        }
       });
       
-      const result = rollDamage({
-        diceCount: parsed.count + extraDice + maquinaDeMatarDice,
-        diceType: parsed.size,
-        bonusDamage: damageBonus,
-        isCritical,
-        criticalMultiplier: criticalMultiplier,
-      });
+      // Força em corpo a corpo
+      if (isMelee) {
+        damageBonus += attributes.strength;
+      }
+      
+      // Modificador manual de dano
+      damageBonus += manualDamageMod;
+
+      // Rolar dados principais
+      const mainDice: number[] = [];
+      for (let i = 0; i < diceCount; i++) {
+        mainDice.push(useMaxDamage ? parsed.size : Math.floor(Math.random() * parsed.size) + 1);
+      }
+      
+      // Rolar dados extras
+      const extraDice: number[] = [];
+      for (let i = 0; i < extraDiceCount; i++) {
+        extraDice.push(useMaxDamage ? extraDiceSize : Math.floor(Math.random() * extraDiceSize) + 1);
+      }
+      
+      // Rolar dados do Ataque Furtivo
+      const sneakDice: number[] = [];
+      for (let i = 0; i < sneakAttackDice; i++) {
+        sneakDice.push(Math.floor(Math.random() * 6) + 1);
+      }
+      
+      // Rolar dados do Máquina de Matar
+      const maquinaDeMatarDiceResults: number[] = [];
+      for (let i = 0; i < maquinaDeMatarDice; i++) {
+        maquinaDeMatarDiceResults.push(useMaxDamage ? parsed.size : Math.floor(Math.random() * parsed.size) + 1);
+      }
+      
+      // Rolar dados de weapon buffs separadamente
+      const weaponBuffDice: number[] = [];
+      for (let i = 0; i < weaponBuffDiceCount; i++) {
+        weaponBuffDice.push(useMaxDamage ? weaponBuffDiceSize : Math.floor(Math.random() * weaponBuffDiceSize) + 1);
+      }
+      
+      const allExtraDice = [...extraDice, ...sneakDice, ...maquinaDeMatarDiceResults];
+      
+      const weaponDiceTotal = mainDice.reduce((a, b) => a + b, 0);
+      const extraDiceTotal = allExtraDice.reduce((a, b) => a + b, 0);
+      const buffDiceTotal = weaponBuffDice.reduce((a, b) => a + b, 0);
+      
+      const total = weaponDiceTotal + extraDiceTotal + buffDiceTotal + damageBonus;
       
       setDamageResult({
-        dice: result.dice,
-        bonus: result.bonusDamage,
-        total: result.total,
+        dice: mainDice,
+        extraDice: allExtraDice.length > 0 ? allExtraDice : undefined,
+        bonus: damageBonus,
+        total: Math.max(1, total),
         isCritical,
+        useMaxDamage,
+        potenciaMaximaActive: advancedBonuses.potenciaMaxima && isMelee,
+        assassinarActive: advancedBonuses.assassinar,
       });
+      
+      // Armazenar buff dice separadamente
+      if (weaponBuffDice.length > 0 && weaponBuffs.length > 0) {
+        const activeBuff = weaponBuffs[0];
+        setBuffDiceResult({
+          dice: weaponBuffDice,
+          formula: `${weaponBuffBaseDice}d${weaponBuffDiceSize}`,
+          element: activeBuff.element,
+          ritualName: activeBuff.ritualName,
+          enhancement: weaponBuffEnhancement,
+          total: buffDiceTotal,
+          criticalMultiplier: isCritical ? criticalMultiplier : undefined,
+          isCritical,
+        });
+      } else {
+        setBuffDiceResult(null);
+      }
+      
       setIsRolling(false);
       setPhase('damage');
     }, 500);
-  }, [weapon, attackResult, selectedBonuses, availableBonuses, attributes, unifiedEffects, maquinaDeMatarActive, criticalMultiplier]);
+  }, [weapon, attackResult, selectedBonuses, availableBonuses, attributes, unifiedEffects, maquinaDeMatarActive, criticalMultiplier, advancedBonuses, trackCombatBonuses, weaponBuffBonuses, weaponBuffs, passiveBonuses, manualDamageMod, nex]);
 
   if (!weapon) return null;
+
+  // Verificar se acertou (se targetDefense foi definido)
+  const hitResult = attackResult && targetDefense 
+    ? attackResult.total >= targetDefense ? 'hit' : 'miss' 
+    : null;
 
   return (
     <Drawer open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
@@ -472,7 +932,7 @@ export function MobileCombatRollModal({
           
           {/* Progress steps */}
           <div className="flex items-center gap-1 mt-3">
-            {['setup', 'attack', 'damage'].map((step, i) => (
+            {['setup', 'attack', 'damage'].map((step) => (
               <div key={step} className="flex items-center flex-1">
                 <div className={cn(
                   "h-1 flex-1 rounded-full transition-colors",
@@ -503,15 +963,13 @@ export function MobileCombatRollModal({
                     <p className="text-[10px] text-muted-foreground uppercase mb-2">Buffs Ativos</p>
                     <div className="flex flex-wrap gap-1.5">
                       {weaponBuffs.map(buff => {
-                        const elementConfig = getElementConfig(buff.element);
+                        const elementColors = ELEMENT_BUFF_COLORS[buff.element] || { bg: 'bg-paranormal/20', text: 'text-paranormal' };
                         return (
                           <span
                             key={buff.id}
                             className={cn(
-                              "px-2 py-1 rounded text-[10px] font-medium",
-                              "flex items-center gap-1",
-                              elementConfig?.bg || "bg-primary/10",
-                              elementConfig?.text || "text-primary"
+                              "px-2 py-1 rounded text-[10px] font-medium flex items-center gap-1",
+                              elementColors.bg, elementColors.text
                             )}
                           >
                             <Flame className="w-3 h-3" />
@@ -524,145 +982,112 @@ export function MobileCombatRollModal({
                 )}
 
                 {/* Bônus de Trilha Ativos */}
-                {classTrack && (() => {
-                  const isMelee = weapon?.type === 'Corpo a Corpo' || weapon?.type === 'Briga';
-                  const attackType = isMelee ? 'melee' : 'ranged';
-                  const trackCombatBonuses = getTrackCombatBonuses(classTrack, nex, attributes, attackType);
-                  
-                  const hasTrackBonuses = 
-                    trackCombatBonuses.attackBonus > 0 ||
-                    trackCombatBonuses.damageBonus > 0 ||
-                    trackCombatBonuses.criticalMarginBonus > 0 ||
-                    trackCombatBonuses.criticalMultiplierBonus > 0 ||
-                    trackCombatBonuses.extraDamageDice.length > 0 ||
-                    trackCombatBonuses.specialEffects.length > 0 ||
-                    maquinaDeMatarActive;
+                {classTrack && (
+                  trackCombatBonuses.attackBonus > 0 ||
+                  trackCombatBonuses.damageBonus > 0 ||
+                  trackCombatBonuses.criticalMarginBonus > 0 ||
+                  trackCombatBonuses.criticalMultiplierBonus > 0 ||
+                  trackCombatBonuses.extraDamageDice.length > 0 ||
+                  trackCombatBonuses.specialEffects.length > 0 ||
+                  maquinaDeMatarActive
+                ) && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-3 rounded-lg bg-gradient-to-br from-amber-500/5 via-orange-500/5 to-red-500/5 border border-amber-500/20"
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <Sword className="w-4 h-4 text-amber-500" />
+                      <span className="text-xs font-medium text-amber-400 capitalize">
+                        Bônus: {classTrack}
+                      </span>
+                    </div>
 
-                  if (!hasTrackBonuses) return null;
+                    <div className="flex flex-wrap gap-1.5 mb-2">
+                      <TooltipProvider>
+                        {trackCombatBonuses.attackBonus > 0 && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Badge variant="outline" className="text-[10px] gap-1 bg-emerald-500/10 border-emerald-500/30 text-emerald-400">
+                                <Target className="w-3 h-3" />
+                                +{trackCombatBonuses.attackBonus} atk
+                              </Badge>
+                            </TooltipTrigger>
+                            <TooltipContent>Bônus de ataque da trilha</TooltipContent>
+                          </Tooltip>
+                        )}
 
-                  return (
-                    <motion.div
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="p-3 rounded-lg bg-gradient-to-br from-amber-500/5 via-orange-500/5 to-red-500/5 border border-amber-500/20"
-                    >
-                      <div className="flex items-center gap-2 mb-2">
-                        <Sword className="w-4 h-4 text-amber-500" />
-                        <span className="text-xs font-medium text-amber-400 capitalize">
-                          Bônus: {classTrack}
-                        </span>
-                      </div>
+                        {trackCombatBonuses.damageBonus > 0 && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Badge variant="outline" className="text-[10px] gap-1 bg-red-500/10 border-red-500/30 text-red-400">
+                                <Flame className="w-3 h-3" />
+                                +{trackCombatBonuses.damageBonus} dano
+                              </Badge>
+                            </TooltipTrigger>
+                            <TooltipContent>Bônus de dano da trilha</TooltipContent>
+                          </Tooltip>
+                        )}
 
-                      {/* Resumo de bônus numéricos */}
-                      <div className="flex flex-wrap gap-1.5 mb-2">
-                        <TooltipProvider>
-                          {trackCombatBonuses.attackBonus > 0 && (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Badge variant="outline" className="text-[10px] gap-1 bg-emerald-500/10 border-emerald-500/30 text-emerald-400">
-                                  <Target className="w-3 h-3" />
-                                  +{trackCombatBonuses.attackBonus} atk
-                                </Badge>
-                              </TooltipTrigger>
-                              <TooltipContent>Bônus de ataque da trilha</TooltipContent>
-                            </Tooltip>
-                          )}
+                        {trackCombatBonuses.criticalMarginBonus > 0 && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Badge variant="outline" className="text-[10px] gap-1 bg-amber-500/10 border-amber-500/30 text-amber-400">
+                                <Crosshair className="w-3 h-3" />
+                                -{trackCombatBonuses.criticalMarginBonus} crítico
+                              </Badge>
+                            </TooltipTrigger>
+                            <TooltipContent>Margem de crítico reduzida</TooltipContent>
+                          </Tooltip>
+                        )}
 
-                          {trackCombatBonuses.damageBonus > 0 && (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Badge variant="outline" className="text-[10px] gap-1 bg-red-500/10 border-red-500/30 text-red-400">
-                                  <Flame className="w-3 h-3" />
-                                  +{trackCombatBonuses.damageBonus} dano
-                                </Badge>
-                              </TooltipTrigger>
-                              <TooltipContent>Bônus de dano da trilha</TooltipContent>
-                            </Tooltip>
-                          )}
+                        {trackCombatBonuses.criticalMultiplierBonus > 0 && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Badge variant="outline" className="text-[10px] gap-1 bg-orange-500/10 border-orange-500/30 text-orange-400">
+                                <Skull className="w-3 h-3" />
+                                +{trackCombatBonuses.criticalMultiplierBonus} mult.
+                              </Badge>
+                            </TooltipTrigger>
+                            <TooltipContent>Multiplicador de crítico aumentado</TooltipContent>
+                          </Tooltip>
+                        )}
 
-                          {trackCombatBonuses.criticalMarginBonus > 0 && (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Badge variant="outline" className="text-[10px] gap-1 bg-amber-500/10 border-amber-500/30 text-amber-400">
-                                  <Crosshair className="w-3 h-3" />
-                                  -{trackCombatBonuses.criticalMarginBonus} crítico
-                                </Badge>
-                              </TooltipTrigger>
-                              <TooltipContent>Margem de crítico reduzida</TooltipContent>
-                            </Tooltip>
-                          )}
+                        {maquinaDeMatarActive && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Badge variant="outline" className="text-[10px] gap-1 bg-amber-500/20 border-amber-500/40 text-amber-300 animate-pulse">
+                                <Sparkles className="w-3 h-3" />
+                                Máquina de Matar
+                              </Badge>
+                            </TooltipTrigger>
+                            <TooltipContent>NEX 99%: -2 margem crítico, +1d dano</TooltipContent>
+                          </Tooltip>
+                        )}
+                      </TooltipProvider>
+                    </div>
 
-                          {trackCombatBonuses.criticalMultiplierBonus > 0 && (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Badge variant="outline" className="text-[10px] gap-1 bg-orange-500/10 border-orange-500/30 text-orange-400">
-                                  <Skull className="w-3 h-3" />
-                                  +{trackCombatBonuses.criticalMultiplierBonus} mult.
-                                </Badge>
-                              </TooltipTrigger>
-                              <TooltipContent>Multiplicador de crítico aumentado</TooltipContent>
-                            </Tooltip>
-                          )}
-
-                          {trackCombatBonuses.extraDamageDice.length > 0 && (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Badge variant="outline" className="text-[10px] gap-1 bg-purple-500/10 border-purple-500/30 text-purple-400">
-                                  <Dices className="w-3 h-3" />
-                                  +{trackCombatBonuses.extraDamageDice.join(', ')}
-                                </Badge>
-                              </TooltipTrigger>
-                              <TooltipContent>Dados extras de dano</TooltipContent>
-                            </Tooltip>
-                          )}
-
-                          {maquinaDeMatarActive && (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Badge variant="outline" className="text-[10px] gap-1 bg-amber-500/20 border-amber-500/40 text-amber-300 animate-pulse">
-                                  <Sparkles className="w-3 h-3" />
-                                  Máquina de Matar
-                                </Badge>
-                              </TooltipTrigger>
-                              <TooltipContent>NEX 99%: -2 margem crítico, +1d dano</TooltipContent>
-                            </Tooltip>
-                          )}
-                        </TooltipProvider>
-                      </div>
-
-                      {/* Efeitos especiais */}
-                      {trackCombatBonuses.specialEffects.length > 0 && (
-                        <div className="space-y-1 pt-2 border-t border-amber-500/10">
-                          <p className="text-[9px] text-muted-foreground uppercase">Efeitos</p>
-                          <div className="flex flex-wrap gap-1">
-                            <TooltipProvider>
-                              {trackCombatBonuses.specialEffects.map((effect, idx) => (
-                                <Tooltip key={idx}>
-                                  <TooltipTrigger asChild>
-                                    <Badge 
-                                      variant="secondary" 
-                                      className="text-[9px] gap-1 bg-amber-500/10 text-amber-300"
-                                    >
-                                      <Zap className="w-2.5 h-2.5" />
-                                      {effect}
-                                    </Badge>
-                                  </TooltipTrigger>
-                                  <TooltipContent>Efeito especial da trilha</TooltipContent>
-                                </Tooltip>
-                              ))}
-                            </TooltipProvider>
-                          </div>
+                    {trackCombatBonuses.specialEffects.length > 0 && (
+                      <div className="space-y-1 pt-2 border-t border-amber-500/10">
+                        <p className="text-[9px] text-muted-foreground uppercase">Efeitos</p>
+                        <div className="flex flex-wrap gap-1">
+                          {trackCombatBonuses.specialEffects.map((effect, idx) => (
+                            <Badge key={idx} variant="secondary" className="text-[9px] gap-1 bg-amber-500/10 text-amber-300">
+                              <Zap className="w-2.5 h-2.5" />
+                              {effect}
+                            </Badge>
+                          ))}
                         </div>
-                      )}
-                    </motion.div>
-                  );
-                })()}
+                      </div>
+                    )}
+                  </motion.div>
+                )}
 
                 {/* Bônus selecionáveis */}
-                {availableBonuses.length > 0 && (
+                {availableBonuses.filter(b => !b.isPassive).length > 0 && (
                   <div className="space-y-2">
                     <p className="text-[10px] text-muted-foreground uppercase">Poderes Ativáveis</p>
-                    {availableBonuses.map(bonus => (
+                    {availableBonuses.filter(b => !b.isPassive).map(bonus => (
                       <div
                         key={bonus.id}
                         onClick={() => toggleBonus(bonus.id)}
@@ -693,35 +1118,88 @@ export function MobileCombatRollModal({
                   </div>
                 )}
 
-                {/* Modificador manual */}
-                <div className="p-3 rounded-lg bg-card/50 border border-border">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Modificador do Mestre</span>
-                    <div className="flex items-center gap-2">
-                      <Button 
-                        variant="outline" 
-                        size="icon" 
-                        className="h-8 w-8"
-                        onClick={() => setManualAttackMod(m => m - 1)}
-                      >
-                        -
-                      </Button>
-                      <span className="w-8 text-center font-display">
-                        {manualAttackMod >= 0 ? `+${manualAttackMod}` : manualAttackMod}
-                      </span>
-                      <Button 
-                        variant="outline" 
-                        size="icon" 
-                        className="h-8 w-8"
-                        onClick={() => setManualAttackMod(m => m + 1)}
-                      >
-                        +
-                      </Button>
+                {/* Modificadores manuais do Mestre */}
+                <div className="space-y-3">
+                  <p className="text-[10px] text-muted-foreground uppercase">Modificadores do Mestre</p>
+                  
+                  {/* Modificador de Ataque */}
+                  <div className="p-3 rounded-lg bg-card/50 border border-border">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">Mod. Ataque</span>
+                      <div className="flex items-center gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="icon" 
+                          className="h-8 w-8"
+                          onClick={() => setManualAttackMod(m => m - 1)}
+                        >
+                          <Minus className="w-3 h-3" />
+                        </Button>
+                        <span className="w-8 text-center font-display">
+                          {manualAttackMod >= 0 ? `+${manualAttackMod}` : manualAttackMod}
+                        </span>
+                        <Button 
+                          variant="outline" 
+                          size="icon" 
+                          className="h-8 w-8"
+                          onClick={() => setManualAttackMod(m => m + 1)}
+                        >
+                          <Plus className="w-3 h-3" />
+                        </Button>
+                      </div>
                     </div>
+                  </div>
+                  
+                  {/* Modificador de Dano - NOVO */}
+                  <div className="p-3 rounded-lg bg-card/50 border border-border">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">Mod. Dano</span>
+                      <div className="flex items-center gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="icon" 
+                          className="h-8 w-8"
+                          onClick={() => setManualDamageMod(m => m - 1)}
+                        >
+                          <Minus className="w-3 h-3" />
+                        </Button>
+                        <span className="w-8 text-center font-display">
+                          {manualDamageMod >= 0 ? `+${manualDamageMod}` : manualDamageMod}
+                        </span>
+                        <Button 
+                          variant="outline" 
+                          size="icon" 
+                          className="h-8 w-8"
+                          onClick={() => setManualDamageMod(m => m + 1)}
+                        >
+                          <Plus className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Defesa do Alvo - NOVO */}
+                  <div className="p-3 rounded-lg bg-card/50 border border-border">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Shield className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-sm">Defesa do Alvo</span>
+                      </div>
+                      <Input
+                        type="number"
+                        value={targetDefense ?? ''}
+                        onChange={(e) => setTargetDefense(e.target.value ? parseInt(e.target.value) : null)}
+                        placeholder="--"
+                        className="w-16 h-8 text-center"
+                      />
+                    </div>
+                    <p className="text-[9px] text-muted-foreground mt-1">
+                      Opcional - para comparação automática
+                    </p>
                   </div>
                 </div>
 
-                {/* Resumo */}
+                {/* Resumo de ataque */}
                 <div className="p-3 rounded-lg bg-secondary/10 border border-secondary/30">
                   <div className="flex items-center justify-between text-sm">
                     <span>Bônus de Ataque Total</span>
@@ -729,13 +1207,35 @@ export function MobileCombatRollModal({
                       +{totalAttackBonus}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between text-xs text-muted-foreground mt-1">
+                  
+                  {/* Breakdown de bônus */}
+                  {attackBonusSources.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      <TooltipProvider>
+                        {attackBonusSources.map((src, idx) => (
+                          <Tooltip key={idx}>
+                            <TooltipTrigger asChild>
+                              <Badge 
+                                variant="secondary" 
+                                className={cn("text-[9px] gap-0.5", bonusTypeColors[src.type])}
+                              >
+                                {src.label}: {typeof src.value === 'number' && src.value >= 0 ? '+' : ''}{src.value}
+                              </Badge>
+                            </TooltipTrigger>
+                            <TooltipContent>{src.description || src.label}</TooltipContent>
+                          </Tooltip>
+                        ))}
+                      </TooltipProvider>
+                    </div>
+                  )}
+                  
+                  <div className="flex items-center justify-between text-xs text-muted-foreground mt-2">
                     <span>Pool de dados</span>
                     <span>{attackAttribute}d20</span>
                   </div>
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
                     <span>Margem de crítico</span>
-                    <span>{criticalMargin}+</span>
+                    <span>{criticalMargin}+ (x{criticalMultiplier})</span>
                   </div>
                 </div>
 
@@ -764,9 +1264,7 @@ export function MobileCombatRollModal({
                   </div>
                 )}
                 
-                {/* === SEÇÃO ANIQUILADOR === */}
-                
-                {/* Indicador Máquina de Matar (NEX 99%) */}
+                {/* Máquina de Matar indicador */}
                 {maquinaDeMatarActive && (
                   <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
                     <div className="flex items-center gap-2">
@@ -779,7 +1277,7 @@ export function MobileCombatRollModal({
                   </div>
                 )}
                 
-                {/* Botão Técnica Secreta (Aniquilador NEX 40%+) */}
+                {/* Botão Técnica Secreta (Aniquilador) */}
                 {canUseTechniqueSecreta && (
                   <div className="space-y-2">
                     <Button
@@ -796,7 +1294,6 @@ export function MobileCombatRollModal({
                         : 'Usar Técnica Secreta'}
                     </Button>
                     
-                    {/* Efeitos ativos da técnica */}
                     {activeTechniqueEffects && (
                       <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 space-y-2">
                         <div className="flex flex-wrap gap-1.5">
@@ -829,7 +1326,6 @@ export function MobileCombatRollModal({
                           variant="ghost"
                           size="sm"
                           onClick={() => {
-                            // Reembolsa PE
                             if (activeTechniqueEffects?.peCost) {
                               onPEChange(currentPE + activeTechniqueEffects.peCost);
                             }
@@ -857,7 +1353,7 @@ export function MobileCombatRollModal({
                 className="py-6 text-center space-y-4"
               >
                 {/* Dados */}
-                <div className="flex flex-wrap justify-center gap-2">
+                <div className="flex items-center justify-center gap-2">
                   {attackResult.dice.map((die, i) => (
                     <AnimatedDie
                       key={i}
@@ -869,46 +1365,57 @@ export function MobileCombatRollModal({
                   ))}
                 </div>
 
-                {/* Total */}
+                {/* Resultado */}
                 <motion.div
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   transition={{ delay: 0.3, type: 'spring' }}
+                  className="space-y-2"
                 >
-                  <div className={cn(
-                    "font-display text-5xl font-bold",
-                    attackResult.isCritical && "text-yellow-500"
+                  <p className="text-sm text-muted-foreground">
+                    {attackResult.keptDice} + {totalAttackBonus} =
+                  </p>
+                  <p className={cn(
+                    "text-5xl font-display font-bold",
+                    attackResult.isCritical && "text-amber-500"
                   )}>
                     {attackResult.total}
-                  </div>
+                  </p>
                   
-                  {attackResult.isCritical && (
+                  {/* Hit/Miss comparison - NOVO */}
+                  {hitResult && (
                     <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      className="flex items-center justify-center gap-2 mt-2"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.4 }}
+                      className={cn(
+                        "inline-flex items-center gap-2 px-4 py-2 rounded-full",
+                        hitResult === 'hit' 
+                          ? "bg-emerald-500/20 text-emerald-400" 
+                          : "bg-destructive/20 text-destructive"
+                      )}
                     >
-                      <Sparkles className="w-5 h-5 text-yellow-500" />
-                      <span className="font-display text-yellow-500">CRÍTICO!</span>
-                      <Sparkles className="w-5 h-5 text-yellow-500" />
+                      {hitResult === 'hit' ? (
+                        <>
+                          <Check className="w-4 h-4" />
+                          <span className="font-medium">Acertou! (Def {targetDefense})</span>
+                        </>
+                      ) : (
+                        <>
+                          <X className="w-4 h-4" />
+                          <span className="font-medium">Errou (Def {targetDefense})</span>
+                        </>
+                      )}
                     </motion.div>
                   )}
-                </motion.div>
-
-                {/* Breakdown */}
-                <div className="flex flex-wrap items-center justify-center gap-1.5 text-xs">
-                  <span className="px-2 py-1 rounded bg-secondary/50">
-                    d20: {attackResult.keptDice}
-                  </span>
-                  <span className="px-2 py-1 rounded bg-primary/20 text-primary">
-                    {attackSkill.name}: +{attackSkill.bonus}
-                  </span>
-                  {totalAttackBonus - attackSkill.bonus > 0 && (
-                    <span className="px-2 py-1 rounded bg-green-500/20 text-green-500">
-                      Outros: +{totalAttackBonus - attackSkill.bonus}
-                    </span>
+                  
+                  {attackResult.isCritical && (
+                    <Badge className="bg-amber-500/20 text-amber-500 text-sm px-4 py-1">
+                      <Sparkles className="w-4 h-4 mr-1" />
+                      CRÍTICO! (x{criticalMultiplier})
+                    </Badge>
                   )}
-                </div>
+                </motion.div>
               </motion.div>
             )}
 
@@ -922,153 +1429,224 @@ export function MobileCombatRollModal({
                 className="py-6 text-center space-y-4"
               >
                 {/* Dados de dano */}
-                <div className="flex flex-wrap justify-center gap-2">
-                  {damageResult.dice.map((die, i) => (
-                    <motion.div
-                      key={i}
-                      initial={{ scale: 0, y: -20 }}
-                      animate={{ scale: 1, y: 0 }}
-                      transition={{ delay: i * 0.1, type: 'spring' }}
-                      className={cn(
-                        "w-10 h-10 rounded-lg flex items-center justify-center font-bold text-lg",
-                        "bg-destructive/20 border-2 border-destructive text-destructive"
-                      )}
-                    >
-                      {die}
-                    </motion.div>
-                  ))}
-                  {damageResult.bonus > 0 && (
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ delay: damageResult.dice.length * 0.1 }}
-                      className="flex items-center gap-1"
-                    >
-                      <span className="text-muted-foreground">+</span>
-                      <div className="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-lg bg-muted border-2 border-border">
-                        {damageResult.bonus}
-                      </div>
-                    </motion.div>
-                  )}
+                <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground uppercase">Dados de Dano</p>
+                  <div className="flex flex-wrap items-center justify-center gap-2">
+                    {damageResult.dice.map((die, i) => (
+                      <motion.div
+                        key={`main-${i}`}
+                        initial={{ scale: 0, rotate: -180 }}
+                        animate={{ scale: 1, rotate: 0 }}
+                        transition={{ delay: i * 0.05, type: 'spring' }}
+                        className="w-9 h-9 rounded-lg bg-destructive/20 text-destructive flex items-center justify-center font-display font-bold"
+                      >
+                        {die}
+                      </motion.div>
+                    ))}
+                    {damageResult.extraDice?.map((die, i) => (
+                      <motion.div
+                        key={`extra-${i}`}
+                        initial={{ scale: 0, rotate: -180 }}
+                        animate={{ scale: 1, rotate: 0 }}
+                        transition={{ delay: (damageResult.dice.length + i) * 0.05, type: 'spring' }}
+                        className="w-9 h-9 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center font-display font-bold"
+                      >
+                        {die}
+                      </motion.div>
+                    ))}
+                  </div>
                 </div>
+                
+                {/* Dados do buff separados - NOVO */}
+                {buffDiceResult && (
+                  <div className="space-y-2">
+                    <p className="text-xs text-muted-foreground uppercase">
+                      {buffDiceResult.ritualName} ({buffDiceResult.element})
+                    </p>
+                    <div className="flex flex-wrap items-center justify-center gap-2">
+                {buffDiceResult.dice.map((die, i) => {
+                        const elementColors = ELEMENT_BUFF_COLORS[buffDiceResult.element] || { bg: 'bg-paranormal/20', text: 'text-paranormal' };
+                        return (
+                          <motion.div
+                            key={`buff-${i}`}
+                            initial={{ scale: 0, rotate: -180 as number }}
+                            animate={{ scale: 1, rotate: 0 as number }}
+                            transition={{ delay: i * 0.05, type: 'spring' }}
+                            className={cn(
+                              "w-9 h-9 rounded-lg flex items-center justify-center font-display font-bold",
+                              elementColors.bg, elementColors.text
+                            )}
+                          >
+                            {die}
+                          </motion.div>
+                        );
+                      })}
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">
+                      {buffDiceResult.formula} ({buffDiceResult.enhancement || 'Base'}) = {buffDiceResult.total}
+                    </p>
+                  </div>
+                )}
 
                 {/* Total de dano */}
                 <motion.div
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
-                  transition={{ delay: 0.4, type: 'spring' }}
+                  transition={{ delay: 0.3, type: 'spring' }}
+                  className="space-y-1"
                 >
-                  <div className="font-display text-5xl font-bold text-destructive">
+                  {damageResult.bonus !== 0 && (
+                    <p className="text-sm text-muted-foreground">
+                      + {damageResult.bonus} bônus
+                    </p>
+                  )}
+                  <p className={cn(
+                    "text-5xl font-display font-bold text-destructive",
+                    damageResult.isCritical && "animate-pulse"
+                  )}>
                     {damageResult.total}
-                  </div>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Dano {damageResult.isCritical ? 'Crítico' : 'Total'}
                   </p>
+                  <p className="text-sm text-muted-foreground">
+                    {weapon.damageType || 'Corte'}
+                  </p>
+                  
+                  {/* Indicadores especiais */}
+                  <div className="flex flex-wrap justify-center gap-2 mt-2">
+                    {damageResult.isCritical && (
+                      <Badge className="bg-amber-500/20 text-amber-500 text-xs">
+                        Crítico x{criticalMultiplier}
+                      </Badge>
+                    )}
+                    {damageResult.useMaxDamage && (
+                      <Badge className="bg-red-500/20 text-red-400 text-xs">
+                        Dano Máximo
+                      </Badge>
+                    )}
+                    {damageResult.potenciaMaximaActive && (
+                      <Badge className="bg-purple-500/20 text-purple-400 text-xs">
+                        Potência Máxima
+                      </Badge>
+                    )}
+                    {damageResult.assassinarActive && (
+                      <Badge className="bg-fuchsia-500/20 text-fuchsia-400 text-xs">
+                        Assassinar
+                      </Badge>
+                    )}
+                  </div>
                 </motion.div>
-
-                {/* Tipo de dano */}
-                {weapon.damageType && (
-                  <Badge variant="outline" className="text-xs">
-                    Dano de {weapon.damageType}
-                  </Badge>
-                )}
               </motion.div>
             )}
           </AnimatePresence>
         </ScrollArea>
 
         <DrawerFooter className="pt-2">
-          {/* Botões por fase */}
           {phase === 'setup' && (
             <Button
               onClick={rollAttack}
               disabled={!canAffordPE || isRolling}
-              className="w-full h-12 font-display"
+              className="w-full h-12 gap-2"
             >
               {isRolling ? (
-                <>
-                  <Dices className="w-5 h-5 mr-2 animate-spin" />
-                  ROLANDO...
-                </>
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 0.5, repeat: Infinity, ease: 'linear' }}
+                >
+                  <Dices className="w-5 h-5" />
+                </motion.div>
               ) : (
                 <>
-                  <Target className="w-5 h-5 mr-2" />
-                  ROLAR ATAQUE
+                  <Target className="w-5 h-5" />
+                  Rolar Ataque
                 </>
               )}
             </Button>
           )}
-
-          {phase === 'attack' && attackResult && (
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setPhase('setup')}
-                className="flex-1 h-12 font-display"
-              >
-                <RotateCcw className="w-4 h-4 mr-2" />
-                ROLAR DE NOVO
-              </Button>
-              <Button
-                onClick={rollDamageAction}
-                disabled={isRolling}
-                className="flex-1 h-12 font-display bg-destructive hover:bg-destructive/90"
-              >
-                {isRolling ? (
-                  <>
-                    <Dices className="w-5 h-5 mr-2 animate-spin" />
-                    ROLANDO...
-                  </>
-                ) : (
-                  <>
-                    <Sword className="w-5 h-5 mr-2" />
-                    ROLAR DANO
-                  </>
-                )}
-              </Button>
-            </div>
-          )}
-
-          {phase === 'damage' && (
+          
+          {phase === 'attack' && (
             <div className="flex gap-2">
               <Button
                 variant="outline"
                 onClick={() => {
                   setPhase('setup');
                   setAttackResult(null);
-                  setDamageResult(null);
                 }}
-                className="flex-1 h-12 font-display"
+                className="flex-1"
               >
                 <RotateCcw className="w-4 h-4 mr-2" />
-                NOVO ATAQUE
+                Novo Ataque
               </Button>
               <Button
-                onClick={handleClose}
-                className="flex-1 h-12 font-display"
+                onClick={rollDamageAction}
+                disabled={isRolling}
+                className="flex-1 gap-2"
               >
-                <Check className="w-5 h-5 mr-2" />
-                CONCLUIR
+                {isRolling ? (
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 0.5, repeat: Infinity, ease: 'linear' }}
+                  >
+                    <Dices className="w-5 h-5" />
+                  </motion.div>
+                ) : (
+                  <>
+                    <Flame className="w-5 h-5" />
+                    Rolar Dano
+                  </>
+                )}
               </Button>
             </div>
           )}
-
-          {/* Botão de fechar em todas as fases */}
-          <Button variant="ghost" onClick={handleClose} className="font-display">
-            <X className="w-4 h-4 mr-2" />
-            FECHAR
-          </Button>
+          
+          {phase === 'damage' && (
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={rollDamageAction}
+                className="flex-1"
+              >
+                <RotateCcw className="w-4 h-4 mr-2" />
+                Rolar Novamente
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setPhase('setup');
+                  setAttackResult(null);
+                  setDamageResult(null);
+                  setBuffDiceResult(null);
+                }}
+                className="flex-1"
+              >
+                <Sword className="w-4 h-4 mr-2" />
+                Novo Ataque
+              </Button>
+              <Button
+                onClick={handleClose}
+                className="flex-1"
+              >
+                <Check className="w-4 h-4 mr-2" />
+                Concluir
+              </Button>
+            </div>
+          )}
+          
+          {phase !== 'damage' && (
+            <Button variant="ghost" onClick={handleClose} className="w-full">
+              <X className="w-4 h-4 mr-2" />
+              Fechar
+            </Button>
+          )}
         </DrawerFooter>
       </DrawerContent>
-      
-      {/* Modal de Técnicas do Aniquilador */}
+
+      {/* Modal de técnicas do Aniquilador */}
       <AniquiladorTechniqueModal
         open={showTechniqueModal}
         onClose={() => setShowTechniqueModal(false)}
-        onConfirm={handleConfirmTechnique}
         nex={nex}
         currentPE={currentPE}
-        weaponName={weapon?.name || ''}
+        onConfirm={handleConfirmTechnique}
+        activeEffects={activeTechniqueEffects}
       />
     </Drawer>
   );
