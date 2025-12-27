@@ -299,11 +299,12 @@ export function MobileCharacterSheet({
   });
 
   // Calcular bônus de defesa de origem, habilidades de classe e poderes gerais
+  // Usa optional chaining para proteção durante carregamento
   const defenseBonuses = useDefenseBonuses({
-    origin: character.origin,
-    abilities: character.abilities,
-    generalPowers: character.general_powers || [],
-    inventory: character.inventory || [],
+    origin: character?.origin || '',
+    abilities: character?.abilities || [],
+    generalPowers: character?.general_powers || [],
+    inventory: character?.inventory || [],
   });
 
   // Hook reativo de rituais sustentados (com realtime para defesa)
@@ -323,27 +324,28 @@ export function MobileCharacterSheet({
   );
 
   // Hook SUE como fonte única de verdade para todos os bônus
+  // Usa optional chaining para proteção durante carregamento
   const bonusSummary = useBonusSummaryFromSUE({
-    origin: character.origin,
-    abilities: character.abilities,
-    generalPowers: character.general_powers || [],
-    paranormalPowers: character.paranormal_powers || [],
-    inventory: character.inventory || [],
-    nex: character.nex,
+    origin: character?.origin || '',
+    abilities: character?.abilities || [],
+    generalPowers: character?.general_powers || [],
+    paranormalPowers: character?.paranormal_powers || [],
+    inventory: character?.inventory || [],
+    nex: character?.nex || 5,
     elementalAffinity: null,
     affinityActive: false,
-    activeConditionalBonuses: character.active_conditional_bonuses || [],
+    activeConditionalBonuses: character?.active_conditional_bonuses || [],
     activeRituals: activeRitualsForDefense,
-    skills: character.skills || {},
-    intellect: character.intellect || 1,
-    vigor: character.vigor || 1,
-    strength: character.strength || 1,
-    agility: character.agility || 1,
-    presence: character.presence || 1,
-    classId: character.class,
-    classTrack: character.class_track,
-    classPowers: character.powers?.map(p => p.name) || [],
-    activeConditions: character.conditions || [],
+    skills: character?.skills || {},
+    intellect: character?.intellect || 1,
+    vigor: character?.vigor || 1,
+    strength: character?.strength || 1,
+    agility: character?.agility || 1,
+    presence: character?.presence || 1,
+    classId: character?.class,
+    classTrack: character?.class_track,
+    classPowers: character?.powers?.map(p => p.name) || [],
+    activeConditions: character?.conditions || [],
   });
 
   // Defesa total com TODOS os bônus (origem, habilidades, poderes, paranormais, rituais)
