@@ -34,8 +34,11 @@ import {
   ArrowUpRight,
   Maximize2,
   FastForward,
+  ShieldX,
 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { Ritual } from '@/lib/rituals/legacy-exports';
 import type { UnifiedRitual } from '@/lib/rituals/types';
@@ -97,6 +100,7 @@ const MODIFIER_ICONS: Record<string, React.ComponentType<{ className?: string }>
   area: Maximize2,
   action: FastForward,
   duration: Timer,
+  counter: ShieldX,
 };
 
 export function RitualCastModal({
@@ -117,6 +121,8 @@ export function RitualCastModal({
   const [selectedEnhancements, setSelectedEnhancements] = useState<string[]>([]);
   // Estado dos modificadores de trilha ativados
   const [activeModifiers, setActiveModifiers] = useState<string[]>([]);
+  // Estado para custo do ritual alvo (Anular Ritual)
+  const [counterRitualCost, setCounterRitualCost] = useState<number>(0);
 
   // Hook de validação de rituais
   const {
@@ -165,8 +171,24 @@ export function RitualCastModal({
     if (!ritualBonuses) return 0;
     return activeModifiers.reduce((total, modId) => {
       const mod = ritualBonuses.availableModifiers.find(m => m.id === modId);
-      return total + (mod?.peCost || 0);
+      if (!mod) return total;
+      
+      // Custo variável para Anular Ritual: usa o custo do ritual alvo
+      if (mod.variableCost && mod.type === 'counter') {
+        return total + counterRitualCost;
+      }
+      
+      return total + (mod.peCost || 0);
     }, 0);
+  }, [ritualBonuses, activeModifiers, counterRitualCost]);
+  
+  // Verifica se Anular Ritual está ativo
+  const isCounterActive = useMemo(() => {
+    if (!ritualBonuses) return false;
+    return activeModifiers.some(modId => {
+      const mod = ritualBonuses.availableModifiers.find(m => m.id === modId);
+      return mod?.type === 'counter' && mod?.variableCost;
+    });
   }, [ritualBonuses, activeModifiers]);
 
   // Calcula custo base (com redução do SUE)
@@ -249,6 +271,7 @@ export function RitualCastModal({
     if (!isOpen) {
       setSelectedEnhancements([]);
       setActiveModifiers([]);
+      setCounterRitualCost(0);
     }
     onOpenChange(isOpen);
   };
@@ -434,7 +457,112 @@ export function RitualCastModal({
                   {ritualBonuses.availableModifiers.map((mod) => {
                     const isActive = activeModifiers.includes(mod.id);
                     const ModIcon = MODIFIER_ICONS[mod.type] || Settings2;
+                    const isCounterMod = mod.type === 'counter' && mod.variableCost;
                     
+                    // Interface especial para Anular Ritual (counter com custo variável)
+                    if (isCounterMod) {
+                      return (
+                        <motion.div
+                          key={mod.id}
+                          initial={false}
+                          animate={{
+                            scale: isActive ? 1.02 : 1,
+                            borderColor: isActive 
+                              ? 'hsl(var(--destructive))' 
+                              : 'hsl(var(--border))',
+                          }}
+                          className={cn(
+                            "p-3 rounded-lg border transition-colors",
+                            isActive 
+                              ? "bg-destructive/5 border-destructive/50" 
+                              : "bg-card hover:bg-accent/5"
+                          )}
+                        >
+                          <div className="space-y-3">
+                            {/* Header do modificador */}
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <div className={cn(
+                                  "w-8 h-8 rounded-md flex items-center justify-center",
+                                  isActive ? "bg-destructive/20" : "bg-muted"
+                                )}>
+                                  <ModIcon className={cn(
+                                    "w-4 h-4",
+                                    isActive ? "text-destructive" : "text-muted-foreground"
+                                  )} />
+                                </div>
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <span className={cn(
+                                      "font-medium text-sm",
+                                      isActive && "text-destructive"
+                                    )}>
+                                      {mod.name}
+                                    </span>
+                                    {mod.actionType === 'reaction' && (
+                                      <Badge 
+                                        variant="outline" 
+                                        className="text-[10px] bg-yellow-500/10 text-yellow-600 border-yellow-500/30"
+                                      >
+                                        Reação
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <p className="text-xs text-muted-foreground">
+                                    {mod.effect}
+                                  </p>
+                                </div>
+                              </div>
+                              <Switch
+                                checked={isActive}
+                                onCheckedChange={() => toggleModifier(mod.id)}
+                              />
+                            </div>
+                            
+                            {/* Input de custo do ritual alvo */}
+                            {isActive && (
+                              <motion.div
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: 'auto' }}
+                                exit={{ opacity: 0, height: 0 }}
+                                className="space-y-2 pt-2 border-t border-border/50"
+                              >
+                                <Label htmlFor="counter-cost" className="text-xs text-muted-foreground">
+                                  Custo do ritual que está sendo anulado:
+                                </Label>
+                                <div className="flex items-center gap-2">
+                                  <Input
+                                    id="counter-cost"
+                                    type="number"
+                                    min={1}
+                                    max={99}
+                                    value={counterRitualCost || ''}
+                                    onChange={(e) => setCounterRitualCost(Math.max(0, parseInt(e.target.value) || 0))}
+                                    placeholder="PE"
+                                    className="w-24 h-9 text-center"
+                                  />
+                                  <span className="text-sm text-muted-foreground">PE</span>
+                                  <div className="flex-1 text-right">
+                                    <Badge 
+                                      variant="outline" 
+                                      className="bg-destructive/10 text-destructive border-destructive/30"
+                                    >
+                                      Custo: {counterRitualCost} PE
+                                    </Badge>
+                                  </div>
+                                </div>
+                                <p className="text-[10px] text-muted-foreground italic">
+                                  Você paga PE igual ao custo do ritual que está anulando.
+                                  Exige teste oposto de Ocultismo.
+                                </p>
+                              </motion.div>
+                            )}
+                          </div>
+                        </motion.div>
+                      );
+                    }
+                    
+                    // Interface padrão para outros modificadores
                     return (
                       <motion.div
                         key={mod.id}
