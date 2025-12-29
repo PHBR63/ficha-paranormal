@@ -530,33 +530,67 @@ function convertTrackAbilityToMechanics(
     );
   }
   
-  // === BÔNUS DE DT DE RITUAL ===
-  // Armazena como efeito especial pois não existe no EffectMechanics
+  // === BÔNUS DE DT DE RITUAL (Graduado - Rituais Eficientes) ===
+  // AGORA mapeado corretamente para ritualDTBonus do EffectMechanics
   if (m.ritualDTBonus) {
-    if (!mechanics.specialEffects) mechanics.specialEffects = [];
-    mechanics.specialEffects.push(`+${m.ritualDTBonus} na DT dos seus rituais`);
+    mechanics.ritualDTBonus = m.ritualDTBonus;
   }
   
-  // === MODIFICADORES DE RITUAL (Conduíte) ===
+  // === MODIFICADORES DE RITUAL (Conduíte - Ampliar/Acelerar Ritual) ===
+  // Convertidos para ritualModifiers do EffectMechanics para integração com SUE
   if (m.ritualModifier) {
-    if (!mechanics.specialEffects) mechanics.specialEffects = [];
+    if (!mechanics.ritualModifiers) mechanics.ritualModifiers = [];
     
     const mod = m.ritualModifier;
-    let desc = '';
+    
+    // Mapeia o tipo do modificador para o formato do SUE
+    let modifierType: 'range' | 'action' | 'area' | 'duration' = 'range';
+    let modifierId = '';
+    let modifierName = '';
     
     switch (mod.type) {
       case 'range':
-        desc = `+${mod.additionalPECost} PE: ${mod.effect}`;
+        modifierType = 'range';
+        modifierId = 'ampliar-ritual-alcance';
+        modifierName = 'Ampliar Ritual (Alcance)';
         break;
       case 'speed':
-        desc = `+${mod.additionalPECost} PE: ${mod.effect}`;
+        modifierType = 'action';
+        modifierId = 'acelerar-ritual';
+        modifierName = 'Acelerar Ritual';
         break;
       case 'counter':
-        desc = `Anular Ritual: ${mod.effect}`;
+        // Anular Ritual é uma reação especial, não um modificador
+        if (!mechanics.specialEffects) mechanics.specialEffects = [];
+        mechanics.specialEffects.push(`Anular Ritual: ${mod.effect}`);
         break;
     }
     
-    if (desc) mechanics.specialEffects.push(desc);
+    // Só adiciona se for um modificador válido (não counter)
+    if (mod.type !== 'counter') {
+      mechanics.ritualModifiers.push({
+        id: modifierId,
+        name: modifierName,
+        type: modifierType,
+        effect: mod.effect,
+        peCost: mod.additionalPECost,
+        perRound: mod.type === 'speed', // Acelerar Ritual é 1x por rodada
+        isActivatable: true, // Todos os modificadores requerem ativação manual
+      });
+    }
+    
+    // Também adiciona área para Ampliar Ritual (é alternativo ao alcance)
+    if (mod.type === 'range') {
+      mechanics.ritualModifiers.push({
+        id: 'ampliar-ritual-area',
+        name: 'Ampliar Ritual (Área)',
+        type: 'area',
+        effect: 'Dobra a área de efeito do ritual',
+        peCost: mod.additionalPECost,
+        perRound: false,
+        isActivatable: true,
+      });
+    }
   }
   
   // === CONTRA-MÁGICA (Anular Ritual - Conduíte) ===
