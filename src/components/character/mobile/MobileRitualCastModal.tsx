@@ -90,7 +90,7 @@ interface MobileRitualCastModalProps {
   nex?: number;
   elementalAffinity?: string | null;
   turnPEState?: TurnPEState;
-  onConfirm: (ritual: RitualInput, peCost: number, enhancements: string[], activeModifiers?: string[]) => void;
+  onConfirm: (ritual: RitualInput, peCost: number, enhancements: string[], activeModifiers?: string[], counterRitualCost?: number) => void;
   // Callbacks para efeitos do wizard
   targetAttributes?: { vigor: number; agility: number; presence: number };
   onApplyDamage?: (damage: number, type: AnyDamageType, ignoresRD: boolean) => void;
@@ -259,8 +259,8 @@ export function MobileRitualCastModal({
       triggerElementParticles(elementConfig.hex, elementConfig.hexLight);
     }
     
-    // Chama o callback de confirmação
-    onConfirm(ritual, totalCost, validSelectedEnhancements, activeModifiers);
+    // Chama o callback de confirmação (inclui counterRitualCost se Anular Ritual estiver ativo)
+    onConfirm(ritual, totalCost, validSelectedEnhancements, activeModifiers, isCounterActive ? counterRitualCost : undefined);
     
     // Se wizard está ativo e o ritual é do tipo Ritual (não UnifiedRitual), abre o wizard
     if (wizardEnabled && 'id' in ritual) {
@@ -280,7 +280,7 @@ export function MobileRitualCastModal({
       setActiveModifiers([]);
       onOpenChange(false);
     }
-  }, [canCast, ritual, elementConfig, totalCost, validSelectedEnhancements, activeModifiers, wizardEnabled, onConfirm, onOpenChange]);
+  }, [canCast, ritual, elementConfig, totalCost, validSelectedEnhancements, activeModifiers, isCounterActive, counterRitualCost, wizardEnabled, onConfirm, onOpenChange]);
 
   // Handler para fechar wizard e limpar estado
   const handleWizardComplete = useCallback(() => {
@@ -588,6 +588,34 @@ export function MobileRitualCastModal({
                                 </Badge>
                               </div>
                             </div>
+                            {/* Validação visual de PE para Anular Ritual */}
+                            {counterRitualCost > 0 && (
+                              <div className="mt-1.5 space-y-1">
+                                <div className="flex items-center justify-between text-[9px]">
+                                  <span className="text-muted-foreground">PE disponível</span>
+                                  <span className={cn(
+                                    peCurrent >= counterRitualCost ? "text-green-500" : "text-destructive"
+                                  )}>
+                                    {peCurrent} / {counterRitualCost}
+                                  </span>
+                                </div>
+                                <div className="h-1 rounded-full bg-muted overflow-hidden">
+                                  <motion.div
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${Math.min(100, (peCurrent / counterRitualCost) * 100)}%` }}
+                                    className={cn(
+                                      "h-full rounded-full",
+                                      peCurrent >= counterRitualCost ? "bg-green-500" : "bg-destructive"
+                                    )}
+                                  />
+                                </div>
+                                {peCurrent < counterRitualCost && (
+                                  <p className="text-[8px] text-destructive">
+                                    PE insuficiente
+                                  </p>
+                                )}
+                              </div>
+                            )}
                             <p className="text-[9px] text-muted-foreground italic">
                               Teste oposto de Ocultismo
                             </p>

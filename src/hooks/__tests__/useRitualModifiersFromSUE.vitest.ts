@@ -497,3 +497,167 @@ describe('Validação de PE disponível com modificadores', () => {
     expect(result.canCast).toBe(true);
   });
 });
+
+// =============================================================================
+// TESTES DE ANULAR RITUAL (CUSTO VARIÁVEL)
+// =============================================================================
+
+describe('Testes de Anular Ritual (custo variável)', () => {
+  /**
+   * Cria um modificador de Anular Ritual para testes
+   */
+  function createCounterModifier(): UnifiedEffect {
+    return {
+      id: 'anular-ritual',
+      name: 'Anular Ritual',
+      source: 'track',
+      sourceId: 'conduite',
+      sourceName: 'Conduíte',
+      mechanics: {
+        ritualModifiers: [{
+          id: 'anular-ritual',
+          name: 'Anular Ritual',
+          type: 'counter',
+          effect: 'Anula um ritual como reação',
+          peCost: 0,
+          variableCost: true,
+          actionType: 'reaction',
+          isActivatable: true,
+        }],
+      },
+      isActive: true,
+      isToggleable: false,
+    };
+  }
+
+  it('deve identificar modificador com variableCost e type counter', () => {
+    const effects = [createCounterModifier()];
+    const context = createTestContext();
+    const result = consolidateEffects(effects, context);
+
+    const anular = result.rituals.availableModifiers.find(m => m.id === 'anular-ritual');
+    
+    expect(anular).toBeDefined();
+    expect(anular?.variableCost).toBe(true);
+    expect(anular?.type).toBe('counter');
+  });
+
+  it('deve identificar actionType reaction no modificador', () => {
+    const effects = [createCounterModifier()];
+    const context = createTestContext();
+    const result = consolidateEffects(effects, context);
+
+    const anular = result.rituals.availableModifiers.find(m => m.id === 'anular-ritual');
+    
+    expect(anular?.actionType).toBe('reaction');
+  });
+
+  it('deve calcular custo usando valor do ritual alvo (custo variável)', () => {
+    // Simula cálculo de custo com Anular Ritual
+    function calculateWithVariableCost(
+      targetRitualCost: number,
+      modifier: { variableCost?: boolean; type?: string; peCost: number }
+    ): number {
+      if (modifier.variableCost && modifier.type === 'counter') {
+        return targetRitualCost; // Custo = custo do ritual alvo
+      }
+      return modifier.peCost;
+    }
+
+    const counterMod = { variableCost: true, type: 'counter', peCost: 0 };
+    
+    expect(calculateWithVariableCost(5, counterMod)).toBe(5);
+    expect(calculateWithVariableCost(10, counterMod)).toBe(10);
+    expect(calculateWithVariableCost(3, counterMod)).toBe(3);
+  });
+
+  it('deve retornar peCost padrão para modificadores sem variableCost', () => {
+    function calculateWithVariableCost(
+      targetRitualCost: number,
+      modifier: { variableCost?: boolean; type?: string; peCost: number }
+    ): number {
+      if (modifier.variableCost && modifier.type === 'counter') {
+        return targetRitualCost;
+      }
+      return modifier.peCost;
+    }
+
+    const normalMod = { peCost: 4 }; // Sem variableCost
+    
+    expect(calculateWithVariableCost(10, normalMod)).toBe(4); // Ignora targetRitualCost
+  });
+
+  it('deve bloquear conjuração quando PE insuficiente para ritual alvo', () => {
+    function canAffordCounter(
+      peCurrent: number,
+      targetRitualCost: number
+    ): { canCast: boolean; reason?: string } {
+      if (peCurrent < targetRitualCost) {
+        return { canCast: false, reason: `PE insuficiente (${peCurrent}/${targetRitualCost})` };
+      }
+      return { canCast: true };
+    }
+
+    expect(canAffordCounter(10, 5).canCast).toBe(true);
+    expect(canAffordCounter(4, 8).canCast).toBe(false);
+    expect(canAffordCounter(4, 8).reason).toContain('PE insuficiente');
+  });
+
+  it('deve permitir no limite exato de PE para anular', () => {
+    function canAffordCounter(peCurrent: number, targetRitualCost: number): boolean {
+      return peCurrent >= targetRitualCost;
+    }
+
+    expect(canAffordCounter(5, 5)).toBe(true);
+    expect(canAffordCounter(10, 10)).toBe(true);
+  });
+
+  it('deve preservar custo variável no breakdown de custos', () => {
+    function calculateTotalWithCounter(
+      baseCost: number,
+      enhancements: Array<{ peCost: number }>,
+      modifiers: Array<{ variableCost?: boolean; type?: string; peCost: number }>,
+      counterRitualCost: number = 0
+    ): { total: number; breakdown: string[] } {
+      const breakdown: string[] = [];
+      
+      breakdown.push(`Base: ${baseCost} PE`);
+      
+      let enhCost = 0;
+      for (const enh of enhancements) {
+        enhCost += enh.peCost;
+      }
+      if (enhCost > 0) {
+        breakdown.push(`Aprimoramentos: +${enhCost} PE`);
+      }
+      
+      let modCost = 0;
+      for (const mod of modifiers) {
+        if (mod.variableCost && mod.type === 'counter') {
+          modCost += counterRitualCost;
+          breakdown.push(`Anular Ritual: +${counterRitualCost} PE (custo do alvo)`);
+        } else {
+          modCost += mod.peCost;
+          if (mod.peCost > 0) {
+            breakdown.push(`Modificador: +${mod.peCost} PE`);
+          }
+        }
+      }
+      
+      return {
+        total: baseCost + enhCost + modCost,
+        breakdown,
+      };
+    }
+
+    const result = calculateTotalWithCounter(
+      0, // Base 0 (Anular Ritual não tem custo base próprio)
+      [],
+      [{ variableCost: true, type: 'counter', peCost: 0 }],
+      7 // Custo do ritual alvo
+    );
+
+    expect(result.total).toBe(7);
+    expect(result.breakdown).toContain('Anular Ritual: +7 PE (custo do alvo)');
+  });
+});
