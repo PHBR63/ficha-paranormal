@@ -3,7 +3,8 @@
  * Permite escolher aprimoramentos e mostra custo total em PE
  * Inclui validação de requisitos de círculo/afinidade e limite de PE por turno
  * 
- * ATUALIZADO: Suporta tanto o sistema unificado quanto o legado
+ * ATUALIZADO: Integrado ao Sistema Unificado de Efeitos (SUE)
+ * Exibe automaticamente bônus de DT, dano/cura e reduções de PE
  */
 
 import { useState, useMemo } from 'react';
@@ -27,12 +28,15 @@ import {
   Lock,
   Flame,
   Info,
+  TrendingUp,
+  Minus,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Ritual } from '@/lib/rituals/legacy-exports';
 import type { UnifiedRitual } from '@/lib/rituals/types';
 import { getElementConfig } from '@/lib/element-config';
 import { useRitualValidation, TurnPEState } from '@/hooks/useRitualValidation';
+import type { RitualBonuses } from '@/hooks/useRitualBonusesFromSUE';
 
 // Função para disparar efeito de partículas do elemento
 function triggerElementParticles(elementHex: string, elementHexLight: string) {
@@ -77,6 +81,9 @@ interface RitualCastModalProps {
   elementalAffinity?: string | null;
   turnPEState?: TurnPEState;
   onConfirm: (ritual: RitualInput, peCost: number, enhancements: string[]) => void;
+  // === Bônus do SUE ===
+  ritualBonuses?: RitualBonuses | null;
+  intellect?: number; // Para cálculo de Ritual Potente
 }
 
 export function RitualCastModal({
@@ -90,6 +97,8 @@ export function RitualCastModal({
   elementalAffinity,
   turnPEState,
   onConfirm,
+  ritualBonuses,
+  intellect = 0,
 }: RitualCastModalProps) {
   // Estado dos aprimoramentos selecionados
   const [selectedEnhancements, setSelectedEnhancements] = useState<string[]>([]);
@@ -118,8 +127,27 @@ export function RitualCastModal({
   // Multiplicador de custo para não-ocultistas
   const costMultiplier = isNonOccultist ? 2 : 1;
 
-  // Calcula custo base
-  const baseCost = ritual.cost * costMultiplier;
+  // === INTEGRAÇÃO SUE: Calcula reduções de PE ===
+  const sueReduction = useMemo(() => {
+    if (!ritualBonuses || !ritual) return 0;
+    return ritualBonuses.getPEReductionForRitual(ritual.element, ritual.range);
+  }, [ritualBonuses, ritual]);
+
+  // === INTEGRAÇÃO SUE: Calcula bônus de DT ===
+  const sueDTBonus = useMemo(() => {
+    if (!ritualBonuses || !ritual) return 0;
+    return ritualBonuses.getDTForRitual(ritual.element);
+  }, [ritualBonuses, ritual]);
+
+  // === INTEGRAÇÃO SUE: Calcula bônus de dano/cura ===
+  const sueDamageBonus = useMemo(() => {
+    if (!ritualBonuses) return 0;
+    return ritualBonuses.damageBonus + (ritualBonuses.damageAttributeBonus?.value || 0);
+  }, [ritualBonuses]);
+
+  // Calcula custo base (com redução do SUE)
+  const rawBaseCost = ritual.cost * costMultiplier;
+  const baseCost = Math.max(1, rawBaseCost - sueReduction);
 
   // Filtra apenas aprimoramentos válidos selecionados
   const validSelectedEnhancements = selectedEnhancements.filter(enhName => {
@@ -270,10 +298,103 @@ export function RitualCastModal({
               {ritual.description}
             </p>
 
+            {/* === BÔNUS DO SUE === */}
+            {ritualBonuses?.hasAnyBonus && (
+              <div className="space-y-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
+                <p className="text-xs font-medium text-primary uppercase tracking-wider flex items-center gap-1.5">
+                  <TrendingUp className="w-3 h-3" />
+                  Bônus Ativos
+                </p>
+                
+                {/* Bônus de DT */}
+                {sueDTBonus > 0 && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">Aumento de DT</span>
+                          <Badge variant="outline" className="bg-success/10 text-success border-success/30">
+                            +{sueDTBonus} DT
+                          </Badge>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="left" className="max-w-xs">
+                        <p className="font-medium mb-1">Fontes do bônus:</p>
+                        {ritualBonuses.dtBreakdown.map((b, i) => (
+                          <p key={i} className="text-xs text-muted-foreground">
+                            {b.source}: +{b.value}{b.element ? ` (${b.element})` : ''}
+                          </p>
+                        ))}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+
+                {/* Bônus de Dano/Cura */}
+                {sueDamageBonus > 0 && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">Dano/Cura</span>
+                          <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/30">
+                            +{sueDamageBonus}
+                          </Badge>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="left" className="max-w-xs">
+                        <p className="font-medium mb-1">Fontes do bônus:</p>
+                        {ritualBonuses.damageBreakdown.map((b, i) => (
+                          <p key={i} className="text-xs text-muted-foreground">
+                            {b.source}: +{b.value}
+                          </p>
+                        ))}
+                        {ritualBonuses.damageAttributeBonus && (
+                          <p className="text-xs text-primary mt-1">
+                            ({ritualBonuses.damageAttributeBonus.attribute.toUpperCase()} = {ritualBonuses.damageAttributeBonus.value})
+                          </p>
+                        )}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+
+                {/* Redução de PE */}
+                {sueReduction > 0 && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">Redução de PE</span>
+                          <Badge variant="outline" className="bg-pe/10 text-pe border-pe/30">
+                            <Minus className="w-3 h-3 mr-0.5" />
+                            {sueReduction} PE
+                          </Badge>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="left" className="max-w-xs">
+                        <p className="font-medium mb-1">Fontes da redução:</p>
+                        {ritualBonuses.peBreakdown.map((b, i) => (
+                          <p key={i} className="text-xs text-muted-foreground">
+                            {b.source}: -{b.value} PE{b.element ? ` (${b.element})` : ''}{b.range ? ` (${b.range})` : ''}
+                          </p>
+                        ))}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+              </div>
+            )}
+
             {/* Custo base */}
             <div className="flex items-center justify-between p-3 rounded-lg bg-card border border-border">
               <span className="text-sm font-medium">Custo Base</span>
               <div className="flex items-center gap-2">
+                {sueReduction > 0 && (
+                  <span className="text-xs text-muted-foreground line-through">
+                    {rawBaseCost} PE
+                  </span>
+                )}
                 <Badge className="bg-pe/20 text-pe border-pe/50">
                   {baseCost} PE
                 </Badge>
