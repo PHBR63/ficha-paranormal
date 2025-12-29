@@ -2,6 +2,8 @@
  * MobileRitualCastModal - Modal de conjuração de rituais para mobile
  * Interface compacta com seleção de aprimoramentos como chips
  * Integrado com MobileRitualEffectWizard para processar efeitos automaticamente
+ * 
+ * ATUALIZADO: Integrado ao Sistema Unificado de Efeitos (SUE)
  */
 
 import { useState, useMemo, useCallback } from 'react';
@@ -37,6 +39,8 @@ import {
   Check,
   X,
   Wand2,
+  TrendingUp,
+  Minus,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Ritual } from '@/lib/rituals/legacy-exports';
@@ -46,6 +50,7 @@ import { useRitualValidation, TurnPEState } from '@/hooks/useRitualValidation';
 import { MobileRitualEffectWizard } from './MobileRitualEffectWizard';
 import { ActiveCondition } from './MobileConditionManager';
 import type { AnyDamageType, SustainConfig } from '@/lib/rituals/legacy-exports';
+import type { RitualBonuses } from '@/hooks/useRitualBonusesFromSUE';
 
 // Efeito de partículas do elemento
 function triggerElementParticles(elementHex: string, elementHexLight: string) {
@@ -80,6 +85,9 @@ interface MobileRitualCastModalProps {
   onActivateSustained?: (ritual: Ritual, enhancements: string[], sustain: SustainConfig) => void;
   // Se true, abre o wizard automaticamente após conjurar
   autoOpenWizard?: boolean;
+  // === Bônus do SUE ===
+  ritualBonuses?: RitualBonuses | null;
+  intellect?: number;
 }
 
 export function MobileRitualCastModal({
@@ -101,6 +109,9 @@ export function MobileRitualCastModal({
   onAddWeaponBuff,
   onActivateSustained,
   autoOpenWizard = true,
+  // SUE props
+  ritualBonuses,
+  intellect = 0,
 }: MobileRitualCastModalProps) {
   const [selectedEnhancements, setSelectedEnhancements] = useState<string[]>([]);
   
@@ -130,7 +141,28 @@ export function MobileRitualCastModal({
   const elementConfig = getElementConfig(ritual.element);
   const ElementIcon = elementConfig?.icon || Sparkles;
   const costMultiplier = isNonOccultist ? 2 : 1;
-  const baseCost = ritual.cost * costMultiplier;
+  
+  // === INTEGRAÇÃO SUE: Calcula reduções de PE ===
+  const sueReduction = useMemo(() => {
+    if (!ritualBonuses || !ritual) return 0;
+    return ritualBonuses.getPEReductionForRitual(ritual.element, ritual.range);
+  }, [ritualBonuses, ritual]);
+
+  // === INTEGRAÇÃO SUE: Calcula bônus de DT ===
+  const sueDTBonus = useMemo(() => {
+    if (!ritualBonuses || !ritual) return 0;
+    return ritualBonuses.getDTForRitual(ritual.element);
+  }, [ritualBonuses, ritual]);
+
+  // === INTEGRAÇÃO SUE: Calcula bônus de dano/cura ===
+  const sueDamageBonus = useMemo(() => {
+    if (!ritualBonuses) return 0;
+    return ritualBonuses.damageBonus + (ritualBonuses.damageAttributeBonus?.value || 0);
+  }, [ritualBonuses]);
+
+  // Calcula custo base (com redução do SUE)
+  const rawBaseCost = ritual.cost * costMultiplier;
+  const baseCost = Math.max(1, rawBaseCost - sueReduction);
 
   const validSelectedEnhancements = selectedEnhancements.filter(enhName => {
     const enh = enhancementsWithValidation.find(e => e.name === enhName);
@@ -276,12 +308,43 @@ export function MobileRitualCastModal({
               {ritual.description}
             </p>
 
+            {/* === BÔNUS DO SUE (versão compacta mobile) === */}
+            {ritualBonuses?.hasAnyBonus && (
+              <div className="flex flex-wrap gap-2 p-2 rounded-lg bg-primary/5 border border-primary/20">
+                {sueDTBonus > 0 && (
+                  <Badge variant="outline" className="bg-success/10 text-success border-success/30 text-[10px]">
+                    <Target className="w-3 h-3 mr-1" />
+                    +{sueDTBonus} DT
+                  </Badge>
+                )}
+                {sueDamageBonus > 0 && (
+                  <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/30 text-[10px]">
+                    <TrendingUp className="w-3 h-3 mr-1" />
+                    +{sueDamageBonus} dano/cura
+                  </Badge>
+                )}
+                {sueReduction > 0 && (
+                  <Badge variant="outline" className="bg-pe/10 text-pe border-pe/30 text-[10px]">
+                    <Minus className="w-3 h-3 mr-1" />
+                    {sueReduction} PE
+                  </Badge>
+                )}
+              </div>
+            )}
+
             {/* Custo base */}
             <div className="flex items-center justify-between p-2 rounded-lg bg-card border border-border">
               <span className="text-sm">Custo Base</span>
-              <Badge className="bg-pe/20 text-pe border-pe/50">
-                {baseCost} PE
-              </Badge>
+              <div className="flex items-center gap-1.5">
+                {sueReduction > 0 && (
+                  <span className="text-[10px] text-muted-foreground line-through">
+                    {rawBaseCost} PE
+                  </span>
+                )}
+                <Badge className="bg-pe/20 text-pe border-pe/50">
+                  {baseCost} PE
+                </Badge>
+              </div>
             </div>
 
             {/* Aprimoramentos como chips */}
