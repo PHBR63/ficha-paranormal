@@ -45,7 +45,9 @@ import {
   ArrowUpRight,
   Maximize2,
   FastForward,
+  ShieldX,
 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 
 // Ícones para tipos de modificadores de trilha
 const MODIFIER_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -53,6 +55,7 @@ const MODIFIER_ICONS: Record<string, React.ComponentType<{ className?: string }>
   area: Maximize2,
   action: FastForward,
   duration: Timer,
+  counter: ShieldX,
 };
 import { cn } from '@/lib/utils';
 import { Ritual } from '@/lib/rituals/legacy-exports';
@@ -128,6 +131,8 @@ export function MobileRitualCastModal({
   const [selectedEnhancements, setSelectedEnhancements] = useState<string[]>([]);
   // Estado dos modificadores de trilha ativados
   const [activeModifiers, setActiveModifiers] = useState<string[]>([]);
+  // Estado para custo do ritual alvo (Anular Ritual)
+  const [counterRitualCost, setCounterRitualCost] = useState<number>(0);
   
   // Estado para controlar abertura automática do wizard
   const [wizardEnabled, setWizardEnabled] = useState(autoOpenWizard);
@@ -179,8 +184,24 @@ export function MobileRitualCastModal({
     if (!ritualBonuses) return 0;
     return activeModifiers.reduce((total, modId) => {
       const mod = ritualBonuses.availableModifiers.find(m => m.id === modId);
-      return total + (mod?.peCost || 0);
+      if (!mod) return total;
+      
+      // Custo variável para Anular Ritual: usa o custo do ritual alvo
+      if (mod.variableCost && mod.type === 'counter') {
+        return total + counterRitualCost;
+      }
+      
+      return total + (mod.peCost || 0);
     }, 0);
+  }, [ritualBonuses, activeModifiers, counterRitualCost]);
+  
+  // Verifica se Anular Ritual está ativo
+  const isCounterActive = useMemo(() => {
+    if (!ritualBonuses) return false;
+    return activeModifiers.some(modId => {
+      const mod = ritualBonuses.availableModifiers.find(m => m.id === modId);
+      return mod?.type === 'counter' && mod?.variableCost;
+    });
   }, [ritualBonuses, activeModifiers]);
 
   // Calcula custo base (com redução do SUE)
@@ -272,6 +293,7 @@ export function MobileRitualCastModal({
     if (!isOpen) {
       setSelectedEnhancements([]);
       setActiveModifiers([]);
+      setCounterRitualCost(0);
     }
     onOpenChange(isOpen);
   };
@@ -423,7 +445,7 @@ export function MobileRitualCastModal({
               </div>
             )}
 
-            {/* === MODIFICADORES DE TRILHA (Ampliar/Acelerar Ritual) - Mobile === */}
+            {/* === MODIFICADORES DE TRILHA (Ampliar/Acelerar/Anular Ritual) - Mobile === */}
             {ritualBonuses?.hasAnyModifier && (
               <div className="space-y-2 p-2.5 rounded-lg bg-accent/5 border border-accent/20">
                 <p className="text-[10px] text-accent-foreground uppercase tracking-wider flex items-center gap-1">
@@ -431,35 +453,149 @@ export function MobileRitualCastModal({
                   Modificadores de Trilha
                 </p>
                 
+                {/* Modificadores padrão como chips */}
                 <div className="flex flex-wrap gap-1.5">
-                  {ritualBonuses.availableModifiers.map((mod) => {
+                  {ritualBonuses.availableModifiers
+                    .filter(mod => !(mod.type === 'counter' && mod.variableCost))
+                    .map((mod) => {
+                      const isActive = activeModifiers.includes(mod.id);
+                      const ModIcon = MODIFIER_ICONS[mod.type] || Settings2;
+                      
+                      return (
+                        <motion.button
+                          key={mod.id}
+                          onClick={() => toggleModifier(mod.id)}
+                          whileTap={{ scale: 0.95 }}
+                          className={cn(
+                            "px-2.5 py-1.5 rounded-full text-xs font-medium transition-all",
+                            "flex items-center gap-1.5 border",
+                            isActive
+                              ? "bg-primary/20 border-primary text-primary"
+                              : "bg-card border-border hover:bg-accent/50"
+                          )}
+                        >
+                          <ModIcon className="w-3 h-3" />
+                          {mod.name}
+                          <span className="text-[10px] opacity-70">+{mod.peCost}</span>
+                          {mod.perRound && (
+                            <Clock className="w-2.5 h-2.5 text-yellow-500" />
+                          )}
+                          {isActive && <Check className="w-3 h-3" />}
+                        </motion.button>
+                      );
+                    })}
+                </div>
+                
+                {/* Interface especial para Anular Ritual */}
+                {ritualBonuses.availableModifiers
+                  .filter(mod => mod.type === 'counter' && mod.variableCost)
+                  .map((mod) => {
                     const isActive = activeModifiers.includes(mod.id);
                     const ModIcon = MODIFIER_ICONS[mod.type] || Settings2;
                     
                     return (
-                      <motion.button
+                      <motion.div
                         key={mod.id}
-                        onClick={() => toggleModifier(mod.id)}
-                        whileTap={{ scale: 0.95 }}
+                        initial={false}
+                        animate={{
+                          borderColor: isActive 
+                            ? 'hsl(var(--destructive))' 
+                            : 'hsl(var(--border))',
+                        }}
                         className={cn(
-                          "px-2.5 py-1.5 rounded-full text-xs font-medium transition-all",
-                          "flex items-center gap-1.5 border",
-                          isActive
-                            ? "bg-primary/20 border-primary text-primary"
-                            : "bg-card border-border hover:bg-accent/50"
+                          "p-2.5 rounded-lg border transition-colors mt-2",
+                          isActive 
+                            ? "bg-destructive/5 border-destructive/50" 
+                            : "bg-card"
                         )}
                       >
-                        <ModIcon className="w-3 h-3" />
-                        {mod.name}
-                        <span className="text-[10px] opacity-70">+{mod.peCost}</span>
-                        {mod.perRound && (
-                          <Clock className="w-2.5 h-2.5 text-yellow-500" />
+                        {/* Header com toggle */}
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 flex-1">
+                            <div className={cn(
+                              "w-7 h-7 rounded-md flex items-center justify-center",
+                              isActive ? "bg-destructive/20" : "bg-muted"
+                            )}>
+                              <ModIcon className={cn(
+                                "w-4 h-4",
+                                isActive ? "text-destructive" : "text-muted-foreground"
+                              )} />
+                            </div>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-1.5">
+                                <span className={cn(
+                                  "text-xs font-medium",
+                                  isActive && "text-destructive"
+                                )}>
+                                  {mod.name}
+                                </span>
+                                {mod.actionType === 'reaction' && (
+                                  <Badge 
+                                    variant="outline" 
+                                    className="text-[9px] py-0 h-4 bg-yellow-500/10 text-yellow-600 border-yellow-500/30"
+                                  >
+                                    Reação
+                                  </Badge>
+                                )}
+                              </div>
+                              <p className="text-[10px] text-muted-foreground">
+                                {mod.effect}
+                              </p>
+                            </div>
+                          </div>
+                          <motion.button
+                            onClick={() => toggleModifier(mod.id)}
+                            whileTap={{ scale: 0.9 }}
+                            className={cn(
+                              "w-8 h-8 rounded-full flex items-center justify-center border transition-colors",
+                              isActive 
+                                ? "bg-destructive text-destructive-foreground border-destructive" 
+                                : "bg-muted border-border"
+                            )}
+                          >
+                            {isActive ? <Check className="w-4 h-4" /> : <ShieldX className="w-4 h-4" />}
+                          </motion.button>
+                        </div>
+                        
+                        {/* Input de custo do ritual alvo */}
+                        {isActive && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            className="mt-2.5 pt-2.5 border-t border-border/50 space-y-2"
+                          >
+                            <p className="text-[10px] text-muted-foreground">
+                              Custo do ritual alvo:
+                            </p>
+                            <div className="flex items-center gap-2">
+                              <Input
+                                type="number"
+                                min={1}
+                                max={99}
+                                value={counterRitualCost || ''}
+                                onChange={(e) => setCounterRitualCost(Math.max(0, parseInt(e.target.value) || 0))}
+                                placeholder="PE"
+                                className="w-20 h-8 text-center text-sm"
+                              />
+                              <span className="text-xs text-muted-foreground">PE</span>
+                              <div className="flex-1 text-right">
+                                <Badge 
+                                  variant="outline" 
+                                  className="bg-destructive/10 text-destructive border-destructive/30 text-[10px]"
+                                >
+                                  = {counterRitualCost} PE
+                                </Badge>
+                              </div>
+                            </div>
+                            <p className="text-[9px] text-muted-foreground italic">
+                              Teste oposto de Ocultismo
+                            </p>
+                          </motion.div>
                         )}
-                        {isActive && <Check className="w-3 h-3" />}
-                      </motion.button>
+                      </motion.div>
                     );
                   })}
-                </div>
                 
                 {/* Custo adicional dos modificadores */}
                 {modifiersCost > 0 && (
