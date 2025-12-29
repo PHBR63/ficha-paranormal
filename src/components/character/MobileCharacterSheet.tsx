@@ -1972,21 +1972,38 @@ export function MobileCharacterSheet({
       {/* Modal de Progressão de NEX */}
       <NexProgressionModal
         open={nexModalOpen}
-        onOpenChange={setNexModalOpen}
-        currentNex={character.nex}
-        characterClass={character.class}
-        origin={character.origin}
-        vigor={character.vigor}
-        presence={character.presence}
-        abilities={character.abilities}
+        onClose={() => setNexModalOpen(false)}
+        character={{
+          id: character.id,
+          name: character.name,
+          class: character.class,
+          class_track: character.class_track || null,
+          nex: character.nex,
+          vigor: character.vigor,
+          presence: character.presence,
+          origin: character.origin,
+          hp_max: character.hp_max,
+          pe_max: character.pe_max,
+          san_max: character.san_max,
+          rituals: character.rituals || [],
+          abilities: character.abilities || [],
+          // Converte paranormal_powers para o tipo esperado pelo NexProgressionModal
+          // Usa unknown como intermediário para compatibilidade de tipos
+          paranormal_powers: (character.paranormal_powers?.map(p => 
+            getPowerById(p.id) || p
+          ).filter(Boolean)) as unknown as ParanormalPower[] | undefined,
+          elemental_affinity: character.elemental_affinity as ParanormalElement | null,
+          affinity_active: character.affinity_active,
+        }}
         onLevelUp={handleLevelUp}
       />
 
       {/* Modal de Edição do Personagem */}
       <CharacterEditModal
         open={editModalOpen}
-        onOpenChange={setEditModalOpen}
+        onClose={() => setEditModalOpen(false)}
         character={{
+          id: character.id,
           name: character.name,
           player_name: null,
           age: null,
@@ -1995,6 +2012,9 @@ export function MobileCharacterSheet({
           personality: null,
           background: null,
           notes: null,
+          class: character.class,
+          origin: character.origin,
+          nex: character.nex,
           agility: character.agility,
           strength: character.strength,
           intellect: character.intellect,
@@ -2003,6 +2023,7 @@ export function MobileCharacterSheet({
           skills: character.skills || {},
           defense: character.defense,
           photo_url: character.photo_url || null,
+          abilities: character.abilities || [],
         }}
         onSave={handleCharacterEdit}
       />
@@ -2011,13 +2032,25 @@ export function MobileCharacterSheet({
       <RestModal
         open={restModalOpen}
         onOpenChange={setRestModalOpen}
-        maxHP={character.hp_max}
-        maxPE={character.pe_max}
-        maxSAN={character.san_max}
-        currentHP={character.hp_current}
-        currentPE={character.pe_current}
-        currentSAN={character.san_current}
-        onRest={handleRest}
+        character={{
+          hp_current: character.hp_current,
+          hp_max: character.hp_max,
+          pe_current: character.pe_current,
+          pe_max: character.pe_max,
+          san_current: character.san_current,
+          san_max: character.san_max,
+          vigor: character.vigor,
+          presence: character.presence,
+          conditions: character.conditions || [],
+        }}
+        onRest={async (newStats) => {
+          // Adapta interface do RestModal para o handleCombatStatsChange
+          await handleCombatStatsChange({
+            hp: newStats.hp_current,
+            pe: newStats.pe_current,
+            san: newStats.san_current,
+          });
+        }}
       />
 
       {/* Painel de Histórico de Alterações */}
@@ -2029,10 +2062,10 @@ export function MobileCharacterSheet({
       {/* Modal de Seleção de Rituais (pós-progressão Ocultista) */}
       <RitualSelectionModal
         open={ritualModalOpen}
-        onOpenChange={setRitualModalOpen}
+        onClose={() => setRitualModalOpen(false)}
         maxCircle={pendingMaxCircle}
-        slots={pendingRitualSlots}
-        currentRituals={character.rituals}
+        newSlots={pendingRitualSlots}
+        currentRituals={character.rituals || []}
         onConfirm={handleRitualsConfirm}
       />
 
