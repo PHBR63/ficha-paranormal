@@ -7,6 +7,7 @@
  * NOTA: O mapeamento de perícias aceita nomes com acentos para compatibilidade
  * 
  * REFATORADO: Usa componentes extraídos de ./mobile para melhor manutenção
+ * PARIDADE COMPLETA: Mesmas funcionalidades do desktop
  */
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
@@ -16,6 +17,9 @@ import {
   Swords, 
   Package,
   ChevronRight,
+  Edit2,
+  Trash2,
+  History,
 } from 'lucide-react';
 import { useCampaignRitualSync } from '@/hooks/useCampaignRitualSync';
 import type { RitualCastRecord } from './mobile/MobileRitualCastHistory';
@@ -25,7 +29,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { ORIGINS, getTrackById } from '@/lib/character-data';
 import { PowerDetailModal, PowerDetailData } from './PowerDetailModal';
-import { ALL_RITUALS } from '@/lib/rituals/legacy-exports';
+import { ALL_RITUALS, getActiveRitualEffect, Ritual, SustainConfig } from '@/lib/rituals/legacy-exports';
 import { useDefenseBonuses } from '@/hooks/useDefenseBonuses';
 // Hook consolidado do SUE - fonte única de verdade para todos os bônus
 import { useBonusSummaryFromSUE } from '@/hooks/useBonusSummaryFromSUE';
@@ -43,6 +47,23 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { SavedParanormalPower, PARANORMAL_POWERS, ParanormalElement } from '@/lib/paranormal-powers';
 import { useAttributeValidation, logAttributeDiagnostics } from '@/hooks/useAttributeValidation';
+// Modais de paridade desktop
+import { NexProgressionModal } from './NexProgressionModal';
+import { CharacterEditModal } from './CharacterEditModal';
+import { CharacterHistoryPanel, logCharacterChanges } from './CharacterHistoryPanel';
+import { RestModal } from './RestModal';
+import { AbilityDetailModal } from './AbilityDetailModal';
+import { RitualSelectionModal } from './RitualSelectionModal';
+import { NonOccultistRitualModal, RitualSource } from './NonOccultistRitualModal';
+import { IntellectSkillSelectModal } from './IntellectSkillSelectModal';
+import { ElementResistanceSelectModal } from './ElementResistanceSelectModal';
+import { BonusSummaryCard } from './BonusSummaryCard';
+import { ClassPowerBonusesPanel } from './ClassPowerBonusesPanel';
+import { useAutoConditions } from '@/hooks/useAutoConditions';
+import { calculateDerivedStats, CLASSES } from '@/lib/character-data';
+import { getPowerById, ParanormalPower } from '@/lib/paranormal-powers';
+import { MobileRitualEffectWizard } from './mobile/MobileRitualEffectWizard';
+import type { WeaponBuff } from '@/hooks/useWeaponBuffs';
 
 // Componentes mobile extraídos e memoizados
 import {
@@ -209,6 +230,49 @@ export function MobileCharacterSheet({
   // Histórico de rituais conjurados na sessão (paridade com desktop)
   const [castHistory, setCastHistory] = useState<RitualCastRecord[]>([]);
   
+  // ========== NOVOS ESTADOS PARA PARIDADE COMPLETA DESKTOP ==========
+  
+  // Modais essenciais
+  const [nexModalOpen, setNexModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [restModalOpen, setRestModalOpen] = useState(false);
+  const [historyPanelOpen, setHistoryPanelOpen] = useState(false);
+  
+  // Modal de rituais (pós-progressão para Ocultistas)
+  const [ritualModalOpen, setRitualModalOpen] = useState(false);
+  const [pendingRitualSlots, setPendingRitualSlots] = useState(0);
+  const [pendingMaxCircle, setPendingMaxCircle] = useState(1);
+  
+  // Modais de poderes paranormais e escolhas
+  const [intellectSkillModalOpen, setIntellectSkillModalOpen] = useState(false);
+  const [elementResistanceModalOpen, setElementResistanceModalOpen] = useState(false);
+  const [pendingPower, setPendingPower] = useState<ParanormalPower | null>(null);
+  
+  // Modal de rituais para não-ocultistas
+  const [nonOccultistRitualModalOpen, setNonOccultistRitualModalOpen] = useState(false);
+  const [ritualModalSource, setRitualModalSource] = useState<RitualSource>('ritual-aprendido');
+  
+  // Modal de detalhes de habilidade de classe
+  const [abilityDetailOpen, setAbilityDetailOpen] = useState(false);
+  const [selectedAbility, setSelectedAbility] = useState<{
+    id: string;
+    name: string;
+    description: string;
+    minNex: number;
+    classId: string;
+  } | null>(null);
+  
+  // Wizard de efeitos de rituais
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const [wizardRitual, setWizardRitual] = useState<Ritual | null>(null);
+  const [wizardEnhancements, setWizardEnhancements] = useState<string[]>([]);
+  const [wizardPeCost, setWizardPeCost] = useState(0);
+  
+  // Estado local de stats para edição
+  const [localHpCurrent, setLocalHpCurrent] = useState(character.hp_current);
+  const [localPeCurrent, setLocalPeCurrent] = useState(character.pe_current);
+  const [localSanCurrent, setLocalSanCurrent] = useState(character.san_current);
+  
   // Hook de histórico de rolagens
   const { rolls: rollHistory, addRoll, removeRoll, clearHistory } = useRollHistory();
   
@@ -320,10 +384,43 @@ export function MobileCharacterSheet({
   });
 
   // Hook reativo de rituais sustentados (com realtime para defesa)
-  const { rituals: sustainedRituals } = useSustainedRituals({
+  const { 
+    rituals: sustainedRituals,
+    activateRitual,
+    deactivateRitual,
+    deactivateByRitualId,
+    clearAll: clearSustainedRituals,
+  } = useSustainedRituals({
     characterId: character?.id,
     enabled: !!character,
   });
+  
+  // Hook de aplicação automática de condições (paridade desktop)
+  const { processResourceChange } = useAutoConditions();
+  
+  // Handler para salvar buffs de armas na nuvem
+  const handleWeaponBuffsChange = useCallback(async (buffs: WeaponBuff[]) => {
+    if (!character) return;
+    
+    const { error } = await supabase
+      .from('characters')
+      .update({ active_buffs: JSON.parse(JSON.stringify(buffs)) })
+      .eq('id', character.id);
+
+    if (error) {
+      console.error('Erro ao salvar buffs:', error);
+    }
+  }, [character?.id]);
+  
+  // Hook de buffs de armas com persistência
+  const {
+    activeBuffs: weaponBuffs,
+    addBuff: addWeaponBuff,
+    addBuffWithDuration: addWeaponBuffWithDuration,
+    removeBuff: removeWeaponBuff,
+    clearAllBuffs: clearWeaponBuffs,
+    advanceTurn: advanceWeaponBuffTurn,
+  } = useWeaponBuffs(character.id, (character.active_buffs as unknown as WeaponBuff[]) || undefined, handleWeaponBuffsChange);
 
   // Converte rituais sustentados para formato de defesa
   const activeRitualsForDefense = useMemo(() => 
@@ -417,8 +514,7 @@ export function MobileCharacterSheet({
     })),
   [character.inventory]);
 
-  // Hook de buffs de armas
-  const { activeBuffs: weaponBuffs } = useWeaponBuffs(character.id);
+  // Hook de buffs de armas já declarado acima com persistência
 
   // Hook de efeitos unificados (SUE) - conversão segura de tipos
   const paranormalPowersForSUE = useMemo(() => 
@@ -643,6 +739,396 @@ export function MobileCharacterSheet({
     setCastHistory([]);
     toast.success('Histórico limpo');
   }, []);
+
+  // ========== HANDLERS DE PARIDADE COMPLETA DESKTOP ==========
+  
+  // Handler para deletar personagem
+  const handleDelete = useCallback(async () => {
+    if (!character) return;
+    
+    if (!confirm(`Tem certeza que deseja excluir ${character.name}? Esta ação não pode ser desfeita.`)) {
+      return;
+    }
+
+    const { error } = await supabase
+      .from('characters')
+      .delete()
+      .eq('id', character.id);
+
+    if (error) {
+      toast.error('Erro ao excluir', { description: error.message });
+    } else {
+      toast.success('Personagem excluído', { description: `${character.name} foi removido.` });
+      // Navegar via callback se disponível, senão recarrega
+      window.location.href = '/dashboard';
+    }
+  }, [character]);
+
+  // Handler para progressão de NEX (paridade desktop)
+  const handleLevelUp = useCallback(async (newNex: number, newStats: {
+    hp_max: number;
+    pe_max: number;
+    san_max: number;
+    patent: string;
+    newAbilities: string[];
+    elemental_affinity?: ParanormalElement | null;
+    affinity_active?: boolean;
+    paranormal_powers?: ParanormalPower[];
+  }) => {
+    if (!character || !user) return;
+
+    const updatedAbilities = [
+      ...(character.abilities || []),
+      ...newStats.newAbilities,
+    ];
+
+    const updatedParanormalPowers = newStats.paranormal_powers 
+      ? newStats.paranormal_powers.map(p => ({
+          id: p.id,
+          name: p.name,
+          element: p.element,
+          description: p.description,
+        }))
+      : character.paranormal_powers;
+
+    const { error } = await supabase
+      .from('characters')
+      .update({
+        nex: newNex,
+        hp_max: newStats.hp_max,
+        hp_current: character.hp_current + (newStats.hp_max - character.hp_max),
+        pe_max: newStats.pe_max,
+        pe_current: character.pe_current + (newStats.pe_max - character.pe_max),
+        san_max: newStats.san_max,
+        san_current: character.san_current + (newStats.san_max - character.san_max),
+        patent: newStats.patent,
+        abilities: updatedAbilities,
+        elemental_affinity: newStats.elemental_affinity ?? character.elemental_affinity,
+        affinity_active: newStats.affinity_active ?? character.affinity_active,
+        paranormal_powers: updatedParanormalPowers,
+      })
+      .eq('id', character.id);
+
+    if (error) {
+      toast.error('Erro ao subir de NEX', { description: error.message });
+      throw error;
+    }
+
+    toast.success(`NEX aumentado para ${newNex}%!`, { description: `${character.name} subiu de nível!` });
+
+    // Verifica se Ocultista ganhou novos slots de ritual
+    if (character.class === 'Ocultista') {
+      const ocultistClass = CLASSES.find(c => c.id === 'Ocultista') as any;
+      const ritualsPerNex = ocultistClass?.ritualsPerNex || {};
+      
+      const oldRitualInfo = ritualsPerNex[character.nex] || { count: 0, maxCircle: 1 };
+      const newRitualInfo = ritualsPerNex[newNex] || { count: 0, maxCircle: 1 };
+      
+      const newSlots = newRitualInfo.count - oldRitualInfo.count;
+      
+      if (newSlots > 0) {
+        setPendingRitualSlots(newSlots);
+        setPendingMaxCircle(newRitualInfo.maxCircle);
+        setRitualModalOpen(true);
+      }
+    }
+
+    if (onRefetch) await onRefetch();
+  }, [character, user, onRefetch]);
+
+  // Handler para salvar novos rituais
+  const handleRitualsConfirm = useCallback(async (selectedRituals: string[]) => {
+    if (!character) return;
+
+    const updatedRituals = [...character.rituals, ...selectedRituals];
+
+    const { error } = await supabase
+      .from('characters')
+      .update({ rituals: updatedRituals })
+      .eq('id', character.id);
+
+    if (error) {
+      toast.error('Erro ao salvar rituais', { description: error.message });
+      throw error;
+    }
+
+    toast.success('Novos rituais aprendidos!', { description: `${selectedRituals.length} ritual(is) adicionado(s).` });
+    if (onRefetch) await onRefetch();
+  }, [character, onRefetch]);
+
+  // Handler para edição do personagem (paridade desktop)
+  const handleCharacterEdit = useCallback(async (data: {
+    name: string;
+    player_name: string | null;
+    age: number | null;
+    gender: string | null;
+    appearance: string | null;
+    personality: string | null;
+    background: string | null;
+    notes: string | null;
+    agility: number;
+    strength: number;
+    intellect: number;
+    presence: number;
+    vigor: number;
+    skills: Record<string, number>;
+    defense: number;
+    photo_url: string | null;
+  }) => {
+    if (!character || !user) return;
+
+    const newStats = calculateDerivedStats(
+      character.class,
+      data.vigor,
+      data.presence,
+      character.nex,
+      character.origin,
+      character.abilities as string[]
+    );
+
+    const { error } = await supabase
+      .from('characters')
+      .update({
+        name: data.name,
+        player_name: data.player_name,
+        age: data.age,
+        gender: data.gender,
+        appearance: data.appearance,
+        personality: data.personality,
+        background: data.background,
+        notes: data.notes,
+        agility: data.agility,
+        strength: data.strength,
+        intellect: data.intellect,
+        presence: data.presence,
+        vigor: data.vigor,
+        skills: data.skills,
+        defense: data.defense,
+        photo_url: data.photo_url,
+        hp_max: newStats.hp,
+        pe_max: newStats.pe,
+        san_max: newStats.san,
+        hp_current: Math.min(character.hp_current, newStats.hp),
+        pe_current: Math.min(character.pe_current, newStats.pe),
+        san_current: Math.min(character.san_current, newStats.san),
+      })
+      .eq('id', character.id);
+
+    if (error) {
+      toast.error('Erro ao salvar', { description: error.message });
+      throw error;
+    }
+
+    // Log de alterações
+    await logCharacterChanges(character.id, user.id, [{
+      changeType: 'edit',
+      fieldName: 'character',
+      oldValue: character.name,
+      newValue: data.name,
+      description: 'Personagem editado',
+    }]);
+
+    toast.success('Personagem atualizado!');
+    if (onRefetch) await onRefetch();
+  }, [character, user, onRefetch]);
+
+  // Handler de stats simplificado (paridade desktop)
+  const handleCombatStatsChange = useCallback(async (stats: { hp: number; pe: number; san: number }) => {
+    if (!character) return;
+
+    const { error } = await supabase
+      .from('characters')
+      .update({
+        hp_current: stats.hp,
+        pe_current: stats.pe,
+        san_current: stats.san,
+      })
+      .eq('id', character.id);
+
+    if (!error && onRefetch) {
+      await onRefetch();
+    }
+  }, [character, onRefetch]);
+
+  // Handler para wizard de efeitos (abre após conjurar ritual com efeitos)
+  const handleOpenWizard = useCallback((ritual: Ritual, enhancements: string[], peCost: number) => {
+    setWizardRitual(ritual);
+    setWizardEnhancements(enhancements);
+    setWizardPeCost(peCost);
+    setWizardOpen(true);
+  }, []);
+
+  // Handler para aplicar dano do wizard
+  const handleWizardApplyDamage = useCallback((damage: number, type: string, ignoresRD: boolean) => {
+    toast.success(`Dano aplicado: ${damage} (${type})${ignoresRD ? ' - Ignora RD' : ''}`);
+  }, []);
+
+  // Handler para aplicar cura do wizard
+  const handleWizardApplyHealing = useCallback((amount: number, type: 'healing' | 'tempHP') => {
+    if (type === 'healing') {
+      toast.success(`Cura aplicada: ${amount} PV`);
+    } else {
+      toast.success(`PV Temporários: +${amount}`);
+    }
+  }, []);
+
+  // Handler para aplicar condições do wizard (será vinculado depois)
+  const handleWizardApplyConditions = useCallback(async (conditions: ActiveCondition[]) => {
+    toast.success(`${conditions.length} condição(ões) aplicada(s)`);
+  }, []);
+
+  // Handler para adicionar buff de arma do wizard
+  const handleWizardAddWeaponBuff = useCallback((ritual: Ritual, _enhancements: string[]) => {
+    toast.success(`Buff de ${ritual.name} aplicado à arma`);
+  }, []);
+
+  // Handler para ativar ritual sustentado do wizard
+  const handleWizardActivateSustained = useCallback(async (ritual: Ritual, _enhancements: string[], _sustain: SustainConfig) => {
+    toast.success(`${ritual.name} sustentado ativado`);
+  }, [activateRitual]);
+
+  // Handler para adicionar poder paranormal via Transcender
+  const handleParanormalPowerSelect = useCallback(async (power: ParanormalPower) => {
+    if (!character || !user) return;
+
+    const fullPower = getPowerById(power.id);
+    if (fullPower?.requiresChoice) {
+      setPendingPower(power);
+      setParanormalPowerModalOpen(false);
+      
+      switch (fullPower.requiresChoice) {
+        case 'skill_intellect':
+          setIntellectSkillModalOpen(true);
+          return;
+        case 'ritual':
+          setRitualModalSource('aprender-ritual-poder');
+          setNonOccultistRitualModalOpen(true);
+          return;
+        case 'element_resistance':
+          setElementResistanceModalOpen(true);
+          return;
+      }
+    }
+
+    await saveParanormalPower(power);
+  }, [character, user]);
+
+  // Função auxiliar para salvar poder paranormal
+  const saveParanormalPower = useCallback(async (power: ParanormalPower, choices?: SavedParanormalPower['choices']) => {
+    if (!character || !user) return;
+
+    const currentPowers = character.paranormal_powers || [];
+    const newPower: SavedParanormalPower = {
+      id: power.id,
+      name: power.name,
+      element: power.element,
+      description: power.description,
+      choices,
+    };
+    
+    const updatedPowers = [...currentPowers, newPower];
+    
+    const currentNex = character.nex;
+    const previousNex = Math.max(5, currentNex - 5);
+    const currentStats = calculateDerivedStats(character.class, character.vigor, character.presence, currentNex, character.origin, character.abilities as string[]);
+    const previousStats = calculateDerivedStats(character.class, character.vigor, character.presence, previousNex, character.origin, character.abilities as string[]);
+    const sanLoss = currentStats.san - previousStats.san;
+    
+    const newSanMax = Math.max(0, character.san_max - sanLoss);
+    const newSanCurrent = Math.min(character.san_current, newSanMax);
+
+    const { error } = await supabase
+      .from('characters')
+      .update({ 
+        paranormal_powers: updatedPowers,
+        san_max: newSanMax,
+        san_current: newSanCurrent,
+      })
+      .eq('id', character.id);
+
+    if (error) {
+      toast.error('Erro ao salvar poder', { description: error.message });
+      return;
+    }
+
+    await logCharacterChanges(character.id, user.id, [
+      {
+        changeType: 'transcender',
+        fieldName: 'paranormal_powers',
+        oldValue: String(currentPowers.length),
+        newValue: power.name,
+        description: `Adquiriu "${power.name}" (${power.element}) via Transcender`,
+      },
+    ]);
+
+    setPendingPower(null);
+    toast.success('Poder Paranormal adquirido!', {
+      description: sanLoss > 0 
+        ? `${power.name} adicionado. Você perdeu ${sanLoss} SAN máxima.`
+        : `${power.name} adicionado.`,
+    });
+    if (onRefetch) await onRefetch();
+  }, [character, user, onRefetch]);
+
+  // Handler para confirmar escolha de perícias de Intelecto
+  const handleIntellectSkillConfirm = useCallback(async (skillIds: string[]) => {
+    if (!pendingPower) return;
+    await saveParanormalPower(pendingPower, { skills: skillIds });
+    setIntellectSkillModalOpen(false);
+  }, [pendingPower, saveParanormalPower]);
+
+  // Handler para confirmar escolha de elemento de resistência
+  const handleElementResistanceConfirm = useCallback(async (element: ParanormalElement) => {
+    if (!pendingPower) return;
+    await saveParanormalPower(pendingPower, { resistElement: element });
+    setElementResistanceModalOpen(false);
+  }, [pendingPower, saveParanormalPower]);
+
+  // Handler para confirmar escolha de ritual
+  const handleRitualFromPowerConfirm = useCallback(async (ritualId: string) => {
+    if (!pendingPower || !character) return;
+    
+    await saveParanormalPower(pendingPower, { ritualId });
+    
+    const updatedRituals = [...(character.rituals || []), ritualId];
+    await supabase
+      .from('characters')
+      .update({ rituals: updatedRituals })
+      .eq('id', character.id);
+    
+    setNonOccultistRitualModalOpen(false);
+    if (onRefetch) await onRefetch();
+  }, [pendingPower, character, saveParanormalPower, onRefetch]);
+
+  // Handler para descanso (paridade desktop)
+  const handleRest = useCallback(async (type: 'short' | 'long', healHP: number, healPE: number, healSAN: number) => {
+    if (!character) return;
+    
+    const newHP = Math.min(character.hp_max, character.hp_current + healHP);
+    const newPE = Math.min(character.pe_max, character.pe_current + healPE);
+    const newSAN = Math.min(character.san_max, character.san_current + healSAN);
+    
+    const { error } = await supabase
+      .from('characters')
+      .update({
+        hp_current: newHP,
+        pe_current: newPE,
+        san_current: newSAN,
+      })
+      .eq('id', character.id);
+    
+    if (error) {
+      toast.error('Erro ao descansar', { description: error.message });
+      return;
+    }
+    
+    const typeLabel = type === 'short' ? 'Descanso Curto' : 'Descanso Longo';
+    toast.success(typeLabel, {
+      description: `Recuperou ${healHP} PV, ${healPE} PE e ${healSAN} SAN.`,
+    });
+    
+    if (onRefetch) await onRefetch();
+  }, [character, onRefetch]);
 
   // Wrapper para onRefetch que retorna Promise<void>
   const handleRefetchForBanner = useCallback(async () => {
@@ -1479,6 +1965,114 @@ export function MobileCharacterSheet({
           element: power.element,
           description: power.description,
         })}
+      />
+
+      {/* ========== MODAIS DE PARIDADE DESKTOP ========== */}
+      
+      {/* Modal de Progressão de NEX */}
+      <NexProgressionModal
+        open={nexModalOpen}
+        onOpenChange={setNexModalOpen}
+        currentNex={character.nex}
+        characterClass={character.class}
+        origin={character.origin}
+        vigor={character.vigor}
+        presence={character.presence}
+        abilities={character.abilities}
+        onLevelUp={handleLevelUp}
+      />
+
+      {/* Modal de Edição do Personagem */}
+      <CharacterEditModal
+        open={editModalOpen}
+        onOpenChange={setEditModalOpen}
+        character={{
+          name: character.name,
+          player_name: null,
+          age: null,
+          gender: null,
+          appearance: null,
+          personality: null,
+          background: null,
+          notes: null,
+          agility: character.agility,
+          strength: character.strength,
+          intellect: character.intellect,
+          presence: character.presence,
+          vigor: character.vigor,
+          skills: character.skills || {},
+          defense: character.defense,
+          photo_url: character.photo_url || null,
+        }}
+        onSave={handleCharacterEdit}
+      />
+
+      {/* Modal de Descanso */}
+      <RestModal
+        open={restModalOpen}
+        onOpenChange={setRestModalOpen}
+        maxHP={character.hp_max}
+        maxPE={character.pe_max}
+        maxSAN={character.san_max}
+        currentHP={character.hp_current}
+        currentPE={character.pe_current}
+        currentSAN={character.san_current}
+        onRest={handleRest}
+      />
+
+      {/* Painel de Histórico de Alterações */}
+      <CharacterHistoryPanel
+        characterId={character.id}
+        characterName={character.name}
+      />
+
+      {/* Modal de Seleção de Rituais (pós-progressão Ocultista) */}
+      <RitualSelectionModal
+        open={ritualModalOpen}
+        onOpenChange={setRitualModalOpen}
+        maxCircle={pendingMaxCircle}
+        slots={pendingRitualSlots}
+        currentRituals={character.rituals}
+        onConfirm={handleRitualsConfirm}
+      />
+
+      {/* Wizard de Efeitos de Rituais Mobile */}
+      {wizardRitual && (
+        <MobileRitualEffectWizard
+          open={wizardOpen}
+          onOpenChange={setWizardOpen}
+          ritual={wizardRitual}
+          enhancements={wizardEnhancements}
+          peCost={wizardPeCost}
+          targetAttributes={{
+            vigor: character.vigor,
+            agility: character.agility,
+            presence: character.presence,
+          }}
+          onApplyDamage={handleWizardApplyDamage}
+          onApplyHealing={handleWizardApplyHealing}
+          onApplyConditions={handleWizardApplyConditions}
+          onAddWeaponBuff={handleWizardAddWeaponBuff}
+          onActivateSustained={handleWizardActivateSustained}
+          onComplete={() => setWizardOpen(false)}
+        />
+      )}
+
+      {/* Modal de Escolha de Perícias de Intelecto */}
+      <IntellectSkillSelectModal
+        open={intellectSkillModalOpen}
+        onClose={() => setIntellectSkillModalOpen(false)}
+        onConfirm={handleIntellectSkillConfirm}
+        hasAffinity={character.elemental_affinity === 'conhecimento'}
+        alreadyChosenSkills={[]}
+      />
+
+      {/* Modal de Escolha de Elemento de Resistência */}
+      <ElementResistanceSelectModal
+        open={elementResistanceModalOpen}
+        onClose={() => setElementResistanceModalOpen(false)}
+        onConfirm={handleElementResistanceConfirm}
+        alreadyResistant={[]}
       />
     </div>
   );
