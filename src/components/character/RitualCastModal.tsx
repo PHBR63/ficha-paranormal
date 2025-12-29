@@ -30,7 +30,12 @@ import {
   Info,
   TrendingUp,
   Minus,
+  Settings2,
+  ArrowUpRight,
+  Maximize2,
+  FastForward,
 } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { Ritual } from '@/lib/rituals/legacy-exports';
 import type { UnifiedRitual } from '@/lib/rituals/types';
@@ -80,11 +85,19 @@ interface RitualCastModalProps {
   nex?: number;
   elementalAffinity?: string | null;
   turnPEState?: TurnPEState;
-  onConfirm: (ritual: RitualInput, peCost: number, enhancements: string[]) => void;
+  onConfirm: (ritual: RitualInput, peCost: number, enhancements: string[], activeModifiers?: string[]) => void;
   // === Bônus do SUE ===
   ritualBonuses?: RitualBonuses | null;
   intellect?: number; // Para cálculo de Ritual Potente
 }
+
+// Ícones para tipos de modificadores
+const MODIFIER_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+  range: ArrowUpRight,
+  area: Maximize2,
+  action: FastForward,
+  duration: Timer,
+};
 
 export function RitualCastModal({
   open,
@@ -102,6 +115,8 @@ export function RitualCastModal({
 }: RitualCastModalProps) {
   // Estado dos aprimoramentos selecionados
   const [selectedEnhancements, setSelectedEnhancements] = useState<string[]>([]);
+  // Estado dos modificadores de trilha ativados
+  const [activeModifiers, setActiveModifiers] = useState<string[]>([]);
 
   // Hook de validação de rituais
   const {
@@ -145,6 +160,15 @@ export function RitualCastModal({
     return ritualBonuses.damageBonus + (ritualBonuses.damageAttributeBonus?.value || 0);
   }, [ritualBonuses]);
 
+  // === INTEGRAÇÃO SUE: Custo adicional de modificadores ativos ===
+  const modifiersCost = useMemo(() => {
+    if (!ritualBonuses) return 0;
+    return activeModifiers.reduce((total, modId) => {
+      const mod = ritualBonuses.availableModifiers.find(m => m.id === modId);
+      return total + (mod?.peCost || 0);
+    }, 0);
+  }, [ritualBonuses, activeModifiers]);
+
   // Calcula custo base (com redução do SUE)
   const rawBaseCost = ritual.cost * costMultiplier;
   const baseCost = Math.max(1, rawBaseCost - sueReduction);
@@ -161,8 +185,8 @@ export function RitualCastModal({
     return total + (enh ? enh.cost * costMultiplier : 0);
   }, 0);
 
-  // Custo total
-  const totalCost = baseCost + enhancementsCost;
+  // Custo total (inclui modificadores de trilha)
+  const totalCost = baseCost + enhancementsCost + modifiersCost;
 
   // Validação de PE com limite por turno
   const peValidation = validatePECost(
@@ -189,6 +213,15 @@ export function RitualCastModal({
     );
   };
 
+  // Toggle de modificador de trilha
+  const toggleModifier = (modifierId: string) => {
+    setActiveModifiers(prev =>
+      prev.includes(modifierId)
+        ? prev.filter(id => id !== modifierId)
+        : [...prev, modifierId]
+    );
+  };
+
   // Handler de confirmação com efeito visual
   const handleConfirm = () => {
     if (canCast && elementConfig) {
@@ -197,14 +230,16 @@ export function RitualCastModal({
       
       // Pequeno delay para o efeito ser visível
       setTimeout(() => {
-        onConfirm(ritual, totalCost, validSelectedEnhancements);
+        onConfirm(ritual, totalCost, validSelectedEnhancements, activeModifiers);
         setSelectedEnhancements([]);
+        setActiveModifiers([]);
         onOpenChange(false);
       }, 300);
     } else if (canCast) {
       // Fallback sem efeito se não tiver config de elemento
-      onConfirm(ritual, totalCost, validSelectedEnhancements);
+      onConfirm(ritual, totalCost, validSelectedEnhancements, activeModifiers);
       setSelectedEnhancements([]);
+      setActiveModifiers([]);
       onOpenChange(false);
     }
   };
@@ -213,6 +248,7 @@ export function RitualCastModal({
   const handleOpenChange = (isOpen: boolean) => {
     if (!isOpen) {
       setSelectedEnhancements([]);
+      setActiveModifiers([]);
     }
     onOpenChange(isOpen);
   };
@@ -382,6 +418,101 @@ export function RitualCastModal({
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
+                )}
+              </div>
+            )}
+
+            {/* === MODIFICADORES DE TRILHA (Ampliar/Acelerar Ritual) === */}
+            {ritualBonuses?.hasAnyModifier && (
+              <div className="space-y-2 p-3 rounded-lg bg-accent/5 border border-accent/20">
+                <p className="text-xs font-medium text-accent-foreground uppercase tracking-wider flex items-center gap-1.5">
+                  <Settings2 className="w-3 h-3" />
+                  Modificadores de Trilha
+                </p>
+                
+                <div className="space-y-2">
+                  {ritualBonuses.availableModifiers.map((mod) => {
+                    const isActive = activeModifiers.includes(mod.id);
+                    const ModIcon = MODIFIER_ICONS[mod.type] || Settings2;
+                    
+                    return (
+                      <motion.div
+                        key={mod.id}
+                        initial={false}
+                        animate={{
+                          scale: isActive ? 1.02 : 1,
+                          borderColor: isActive 
+                            ? 'hsl(var(--primary))' 
+                            : 'hsl(var(--border))',
+                        }}
+                        className={cn(
+                          "p-2.5 rounded-lg border transition-colors",
+                          isActive 
+                            ? "bg-primary/5" 
+                            : "bg-card hover:bg-accent/5"
+                        )}
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <div className={cn(
+                              "w-7 h-7 rounded-md flex items-center justify-center shrink-0",
+                              isActive ? "bg-primary/20" : "bg-muted"
+                            )}>
+                              <ModIcon className={cn(
+                                "w-4 h-4",
+                                isActive ? "text-primary" : "text-muted-foreground"
+                              )} />
+                            </div>
+                            
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className={cn(
+                                  "font-medium text-sm truncate",
+                                  isActive && "text-primary"
+                                )}>
+                                  {mod.name}
+                                </span>
+                                <Badge 
+                                  variant="outline" 
+                                  className={cn(
+                                    "text-xs shrink-0",
+                                    isActive && "bg-pe/10 text-pe border-pe/30"
+                                  )}
+                                >
+                                  +{mod.peCost} PE
+                                </Badge>
+                              </div>
+                              <p className="text-xs text-muted-foreground truncate">
+                                {mod.effect}
+                              </p>
+                              {mod.perRound && (
+                                <p className="text-[10px] text-yellow-500/80 flex items-center gap-1 mt-0.5">
+                                  <Clock className="w-3 h-3" />
+                                  1× por rodada
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          
+                          <Switch
+                            checked={isActive}
+                            onCheckedChange={() => toggleModifier(mod.id)}
+                            className="shrink-0"
+                          />
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+                
+                {/* Custo adicional dos modificadores */}
+                {modifiersCost > 0 && (
+                  <div className="flex items-center justify-between pt-2 border-t border-border/50 text-sm">
+                    <span className="text-muted-foreground">Custo dos modificadores</span>
+                    <Badge variant="outline" className="bg-pe/10 text-pe border-pe/30">
+                      +{modifiersCost} PE
+                    </Badge>
+                  </div>
                 )}
               </div>
             )}
