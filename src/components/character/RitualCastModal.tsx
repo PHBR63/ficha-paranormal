@@ -88,7 +88,7 @@ interface RitualCastModalProps {
   nex?: number;
   elementalAffinity?: string | null;
   turnPEState?: TurnPEState;
-  onConfirm: (ritual: RitualInput, peCost: number, enhancements: string[], activeModifiers?: string[]) => void;
+  onConfirm: (ritual: RitualInput, peCost: number, enhancements: string[], activeModifiers?: string[], counterRitualCost?: number) => void;
   // === Bônus do SUE ===
   ritualBonuses?: RitualBonuses | null;
   intellect?: number; // Para cálculo de Ritual Potente
@@ -252,14 +252,14 @@ export function RitualCastModal({
       
       // Pequeno delay para o efeito ser visível
       setTimeout(() => {
-        onConfirm(ritual, totalCost, validSelectedEnhancements, activeModifiers);
+        onConfirm(ritual, totalCost, validSelectedEnhancements, activeModifiers, isCounterActive ? counterRitualCost : undefined);
         setSelectedEnhancements([]);
         setActiveModifiers([]);
         onOpenChange(false);
       }, 300);
     } else if (canCast) {
       // Fallback sem efeito se não tiver config de elemento
-      onConfirm(ritual, totalCost, validSelectedEnhancements, activeModifiers);
+      onConfirm(ritual, totalCost, validSelectedEnhancements, activeModifiers, isCounterActive ? counterRitualCost : undefined);
       setSelectedEnhancements([]);
       setActiveModifiers([]);
       onOpenChange(false);
@@ -551,7 +551,36 @@ export function RitualCastModal({
                                     </Badge>
                                   </div>
                                 </div>
-                                <p className="text-[10px] text-muted-foreground italic">
+                                {/* Validação visual de PE para Anular Ritual */}
+                                {counterRitualCost > 0 && (
+                                  <div className="mt-2 space-y-1">
+                                    <div className="flex items-center justify-between text-[10px]">
+                                      <span className="text-muted-foreground">PE disponível</span>
+                                      <span className={cn(
+                                        peCurrent >= counterRitualCost ? "text-green-500" : "text-destructive"
+                                      )}>
+                                        {peCurrent} / {counterRitualCost} PE
+                                      </span>
+                                    </div>
+                                    <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                                      <motion.div
+                                        initial={{ width: 0 }}
+                                        animate={{ width: `${Math.min(100, (peCurrent / counterRitualCost) * 100)}%` }}
+                                        className={cn(
+                                          "h-full rounded-full transition-colors",
+                                          peCurrent >= counterRitualCost ? "bg-green-500" : "bg-destructive"
+                                        )}
+                                      />
+                                    </div>
+                                    {peCurrent < counterRitualCost && (
+                                      <p className="text-[9px] text-destructive flex items-center gap-1">
+                                        <AlertTriangle className="w-3 h-3" />
+                                        PE insuficiente para anular este ritual
+                                      </p>
+                                    )}
+                                  </div>
+                                )}
+                                <p className="text-[10px] text-muted-foreground italic mt-1">
                                   Você paga PE igual ao custo do ritual que está anulando.
                                   Exige teste oposto de Ocultismo.
                                 </p>
