@@ -17,6 +17,7 @@ import {
   Moon,
   ArrowUp,
   Sparkles,
+  Edit2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AnimatedProgress } from '@/components/ui/animated-progress';
@@ -199,12 +200,24 @@ export const MobileOverviewTab = memo(function MobileOverviewTab({
             onClearHistory={onClearHistory}
             onRemoveRoll={onRemoveRoll}
           />
+          {/* Botão de Editar Perfil */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onEditStats}
+            className="text-xs"
+            title="Editar Personagem"
+          >
+            <Edit2 className="w-4 h-4" />
+          </Button>
+          {/* Botão de Level Up (apenas se não estiver no máximo) */}
           {character.nex < 99 && (
             <Button
               variant="outline"
               size="sm"
               onClick={onLevelUp}
               className="text-xs text-primary border-primary/50"
+              title="Subir de NEX"
             >
               <ArrowUp className="w-4 h-4" />
             </Button>
