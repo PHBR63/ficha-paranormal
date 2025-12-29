@@ -26,6 +26,7 @@ import { ALL_RITUALS } from '@/lib/rituals/legacy-exports';
 import { useDefenseBonuses } from '@/hooks/useDefenseBonuses';
 // Hook consolidado do SUE - fonte única de verdade para todos os bônus
 import { useBonusSummaryFromSUE } from '@/hooks/useBonusSummaryFromSUE';
+import { useRitualBonusesFromSUE } from '@/hooks/useRitualBonusesFromSUE';
 import { useSustainedRituals } from '@/hooks/useSustainedRituals';
 import { MobileAuditBanner } from './MobileAuditBanner';
 import { ExcessPowersRemovalModal } from './ExcessPowersRemovalModal';
@@ -438,6 +439,15 @@ export function MobileCharacterSheet({
     conditions: character.conditions || [],
     activeRituals: activeRitualsForSUE,
     paranormalPowers: paranormalPowersForSUE,
+  });
+  
+  // Hook de bônus de rituais derivado do SUE (DT, dano, redução de PE)
+  const ritualBonuses = useRitualBonusesFromSUE(unifiedEffects, {
+    intellect: character.intellect,
+    vigor: character.vigor,
+    strength: character.strength,
+    agility: character.agility,
+    presence: character.presence,
   });
 
   // Lista de armas equipadas para o painel de combate
@@ -1302,7 +1312,7 @@ export function MobileCharacterSheet({
         />
       )}
 
-      {/* Modal de conjuração de ritual */}
+      {/* Modal de conjuração de ritual com bônus SUE */}
       {selectedRitual && (
         <MobileRitualCastModal
           open={ritualCastModalOpen}
@@ -1317,6 +1327,8 @@ export function MobileCharacterSheet({
           onConfirm={async (_ritual, peCost, _enhancements) => {
             await handlePEChange(character.pe_current - peCost);
           }}
+          ritualBonuses={ritualBonuses}
+          intellect={character.intellect}
         />
       )}
 
