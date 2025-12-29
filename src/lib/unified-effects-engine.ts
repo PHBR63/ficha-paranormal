@@ -146,11 +146,13 @@ export interface EffectMechanics {
   ritualModifiers?: Array<{
     id: string;                    // ID do modificador
     name: string;                  // Nome para exibição
-    type: 'range' | 'action' | 'area' | 'duration'; // Tipo de modificação
+    type: 'range' | 'action' | 'area' | 'duration' | 'counter'; // Tipo de modificação
     effect: string;                // Descrição do efeito
-    peCost: number;                // Custo adicional em PE
+    peCost: number;                // Custo adicional em PE (0 para custo variável)
     perRound?: boolean;            // Se aplica por rodada
     isActivatable?: boolean;       // Se requer ativação manual
+    variableCost?: boolean;        // Se true, custo é igual ao ritual alvo (Anular Ritual)
+    actionType?: 'reaction';       // Tipo de ação necessária
   }>;
 }
 
@@ -379,11 +381,13 @@ export interface ComputedEffects {
     availableModifiers: Array<{
       id: string;
       name: string;
-      type: 'range' | 'action' | 'area' | 'duration';
+      type: 'range' | 'action' | 'area' | 'duration' | 'counter';
       effect: string;
       peCost: number;
       perRound?: boolean;
       isActivatable?: boolean;
+      variableCost?: boolean;
+      actionType?: 'reaction';
       source: string;
     }>;
     

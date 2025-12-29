@@ -544,7 +544,7 @@ function convertTrackAbilityToMechanics(
     const mod = m.ritualModifier;
     
     // Mapeia o tipo do modificador para o formato do SUE
-    let modifierType: 'range' | 'action' | 'area' | 'duration' = 'range';
+    let modifierType: 'range' | 'action' | 'area' | 'duration' | 'counter' = 'range';
     let modifierId = '';
     let modifierName = '';
     
@@ -560,24 +560,25 @@ function convertTrackAbilityToMechanics(
         modifierName = 'Acelerar Ritual';
         break;
       case 'counter':
-        // Anular Ritual é uma reação especial, não um modificador
-        if (!mechanics.specialEffects) mechanics.specialEffects = [];
-        mechanics.specialEffects.push(`Anular Ritual: ${mod.effect}`);
+        // Anular Ritual é uma reação com custo variável
+        modifierType = 'counter';
+        modifierId = 'anular-ritual';
+        modifierName = 'Anular Ritual';
         break;
     }
     
-    // Só adiciona se for um modificador válido (não counter)
-    if (mod.type !== 'counter') {
-      mechanics.ritualModifiers.push({
-        id: modifierId,
-        name: modifierName,
-        type: modifierType,
-        effect: mod.effect,
-        peCost: mod.additionalPECost,
-        perRound: mod.type === 'speed', // Acelerar Ritual é 1x por rodada
-        isActivatable: true, // Todos os modificadores requerem ativação manual
-      });
-    }
+    // Adiciona o modificador ao array
+    mechanics.ritualModifiers.push({
+      id: modifierId,
+      name: modifierName,
+      type: modifierType,
+      effect: mod.effect,
+      peCost: mod.additionalPECost,
+      perRound: mod.type === 'speed', // Acelerar Ritual é 1x por rodada
+      isActivatable: true, // Todos os modificadores requerem ativação manual
+      variableCost: mod.type === 'counter', // Anular Ritual tem custo variável
+      actionType: mod.type === 'counter' ? 'reaction' : undefined, // Anular é reação
+    });
     
     // Também adiciona área para Ampliar Ritual (é alternativo ao alcance)
     if (mod.type === 'range') {

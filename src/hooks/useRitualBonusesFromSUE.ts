@@ -22,11 +22,13 @@ import type { AttributeType } from '@/lib/unified-effects-engine';
 export interface RitualModifier {
   id: string;
   name: string;
-  type: 'range' | 'action' | 'area' | 'duration';
+  type: 'range' | 'action' | 'area' | 'duration' | 'counter';
   effect: string;
   peCost: number;
   perRound?: boolean;
   isActivatable?: boolean;
+  variableCost?: boolean;       // Custo igual ao ritual alvo (Anular Ritual)
+  actionType?: 'reaction';      // Tipo de ação necessária
   source: string;
   isActive: boolean;
   canActivate: boolean;
