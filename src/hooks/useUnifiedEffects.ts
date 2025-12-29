@@ -146,6 +146,7 @@ function groupEffectsBySource(effects: UnifiedEffect[]): UnifiedEffectsResult['b
     condition: effects.filter(e => e.source === 'condition'),
     ritual: effects.filter(e => e.source === 'ritual'),
     paranormal_power: effects.filter(e => e.source === 'paranormal_power'),
+    class_power: effects.filter(e => e.source === 'class_power'),
   };
 }
 
@@ -246,6 +247,15 @@ export function useUnifiedEffects(
       characterState.elementalAffinity ?? null,
       characterState.affinityActive ?? false
     );
+    
+    // Efeitos de poderes de classe
+    // Parâmetros: classPowers, nex, attributes, activatedEffects
+    const classPowerEffects = getClassPowerEffects(
+      characterState.classPowers ?? [],
+      characterState.nex,
+      characterState.attributes as Record<AttributeType, number>,
+      characterState.activatedEffectIds ?? []
+    );
 
     // ===== FASE 2: Combina todos os efeitos =====
     const allEffects: UnifiedEffect[] = [
@@ -255,6 +265,7 @@ export function useUnifiedEffects(
       ...conditionEffects,
       ...ritualEffects,
       ...paranormalPowerEffects,
+      ...classPowerEffects,
     ];
 
     // ===== FASE 3: Cria contexto de cálculo =====
