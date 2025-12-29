@@ -6,7 +6,8 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Sparkles, Zap, User, Scroll, BookOpen, Info } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Sparkles, Zap, User, Scroll, BookOpen, Info, Play } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // Tipos de poderes suportados
@@ -32,6 +33,8 @@ interface PowerDetailModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   power: PowerDetailData | null;
+  // Callback opcional para conjurar ritual
+  onCastRitual?: (ritualId: string) => void;
 }
 
 // Configurações visuais por tipo de poder
@@ -88,12 +91,20 @@ const elementConfig: Record<string, { icon: string; color: string; bgColor: stri
   medo: { icon: '👻', color: 'text-emerald-400', bgColor: 'bg-emerald-500/20' },
 };
 
-export function PowerDetailModal({ open, onOpenChange, power }: PowerDetailModalProps) {
+export function PowerDetailModal({ open, onOpenChange, power, onCastRitual }: PowerDetailModalProps) {
   if (!power) return null;
 
   const config = powerTypeConfig[power.type];
   const Icon = config.icon;
   const elementData = power.element ? elementConfig[power.element.toLowerCase()] : null;
+
+  // Handler para conjurar o ritual
+  const handleCast = () => {
+    if (power.type === 'ritual' && onCastRitual) {
+      onCastRitual(power.name);
+      onOpenChange(false);
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -206,6 +217,19 @@ export function PowerDetailModal({ open, onOpenChange, power }: PowerDetailModal
               <div className="text-center py-6 text-muted-foreground">
                 <Info className="w-8 h-8 mx-auto mb-2 opacity-30" />
                 <p className="text-sm">Sem descrição detalhada disponível.</p>
+              </div>
+            )}
+            
+            {/* Botão de conjurar para rituais */}
+            {power.type === 'ritual' && onCastRitual && (
+              <div className="pt-2 border-t border-border">
+                <Button 
+                  onClick={handleCast}
+                  className="w-full bg-paranormal hover:bg-paranormal/90 text-white"
+                >
+                  <Play className="w-4 h-4 mr-2" />
+                  Conjurar Ritual
+                </Button>
               </div>
             )}
           </div>

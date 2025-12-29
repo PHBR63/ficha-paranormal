@@ -10,6 +10,7 @@
  */
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
+import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Swords, 
@@ -548,8 +549,8 @@ export function MobileCharacterSheet({
     setDiceModalOpen(true);
   }, [character, unifiedEffects, bonusSummary]);
 
-  // Handler para abrir conjuração de ritual
-  const handleCastRitual = useCallback((ritualId: string) => {
+  // Handler para abrir modal de conjuração de ritual
+  const handleOpenRitualModal = useCallback((ritualId: string) => {
     const ritual = ALL_RITUALS.find(r => r.id === ritualId || r.name === ritualId);
     if (ritual) {
       setSelectedRitual(ritual);
@@ -572,6 +573,37 @@ export function MobileCharacterSheet({
       console.error('Erro ao atualizar PE:', error);
     }
   }, [character.id, character.pe_max, onRefetch]);
+
+  // Handler completo para conjuração de ritual (paridade com desktop)
+  const handleConfirmRitualCast = useCallback(async (
+    ritual: typeof ALL_RITUALS[0],
+    peCost: number,
+    enhancements: string[],
+    activeModifiers?: string[],
+    counterRitualCost?: number
+  ) => {
+    if (!character) return;
+    
+    const newPe = character.pe_current - peCost;
+    if (newPe < 0) return;
+    
+    await handlePEChange(newPe);
+    
+    // Toast de confirmação com detalhes
+    const enhText = enhancements.length > 0 
+      ? ` (${enhancements.join(', ')})` 
+      : '';
+    const modText = activeModifiers?.length 
+      ? ` • ${activeModifiers.length} modificador(es)` 
+      : '';
+    const counterText = counterRitualCost 
+      ? ` [Anular: +${counterRitualCost} PE]` 
+      : '';
+    
+    toast.success(`${ritual.name} conjurado!`, {
+      description: `${peCost} PE consumido${enhText}${modText}${counterText}. PE restante: ${newPe}`,
+    });
+  }, [character, handlePEChange]);
 
   // Wrapper para onRefetch que retorna Promise<void>
   const handleRefetchForBanner = useCallback(async () => {
@@ -1129,6 +1161,7 @@ export function MobileCharacterSheet({
         open={powerModalOpen}
         onOpenChange={setPowerModalOpen}
         power={selectedPower}
+        onCastRitual={handleOpenRitualModal}
       />
 
       {/* Modal de remoção de poderes excedentes */}
@@ -1328,7 +1361,7 @@ export function MobileCharacterSheet({
         />
       )}
 
-      {/* Modal de conjuração de ritual com bônus SUE */}
+      {/* Modal de conjuração de ritual com bônus SUE e paridade desktop */}
       {selectedRitual && (
         <MobileRitualCastModal
           open={ritualCastModalOpen}
@@ -1340,9 +1373,9 @@ export function MobileCharacterSheet({
           peCurrent={character.pe_current}
           peMax={character.pe_max}
           nex={character.nex}
-          onConfirm={async (_ritual, peCost, _enhancements) => {
-            await handlePEChange(character.pe_current - peCost);
-          }}
+          elementalAffinity={character.elemental_affinity}
+          isNonOccultist={character.class !== 'Ocultista'}
+          onConfirm={handleConfirmRitualCast}
           ritualBonuses={ritualBonuses}
           intellect={character.intellect}
         />
