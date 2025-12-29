@@ -139,15 +139,6 @@ export function RitualCastModal({
     return getAvailableEnhancements(ritual);
   }, [ritual, getAvailableEnhancements]);
 
-  if (!ritual) return null;
-
-  // Configuração visual do elemento
-  const elementConfig = getElementConfig(ritual.element);
-  const ElementIcon = elementConfig?.icon || Sparkles;
-
-  // Multiplicador de custo para não-ocultistas
-  const costMultiplier = isNonOccultist ? 2 : 1;
-
   // === INTEGRAÇÃO SUE: Calcula reduções de PE ===
   const sueReduction = useMemo(() => {
     if (!ritualBonuses || !ritual) return 0;
@@ -190,6 +181,16 @@ export function RitualCastModal({
       return mod?.type === 'counter' && mod?.variableCost;
     });
   }, [ritualBonuses, activeModifiers]);
+
+  // === EARLY RETURN após todos os hooks ===
+  if (!ritual) return null;
+
+  // Configuração visual do elemento
+  const elementConfig = getElementConfig(ritual.element);
+  const ElementIcon = elementConfig?.icon || Sparkles;
+
+  // Multiplicador de custo para não-ocultistas
+  const costMultiplier = isNonOccultist ? 2 : 1;
 
   // Calcula custo base (com redução do SUE)
   const rawBaseCost = ritual.cost * costMultiplier;
