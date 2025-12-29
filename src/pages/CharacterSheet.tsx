@@ -71,6 +71,7 @@ import { calculateDerivedStats } from '@/lib/character-data';
 import { AffinitySelectorCard } from '@/components/character/AffinitySelectorCard';
 // Hook consolidado do SUE - fonte única de verdade para todos os bônus
 import { useBonusSummaryFromSUE } from '@/hooks/useBonusSummaryFromSUE';
+import { useRitualBonusesFromSUE } from '@/hooks/useRitualBonusesFromSUE';
 import { useBonusSync } from '@/hooks/useBonusSync';
 import { useConditionalBonusesSync } from '@/hooks/useConditionalBonusesSync';
 import { useCampaignRitualSync } from '@/hooks/useCampaignRitualSync';
@@ -465,6 +466,15 @@ export default function CharacterSheet() {
   
   // Sistema Unificado de Efeitos já computado pelo useBonusSummaryFromSUE
   const unifiedEffects = bonusSummary.unifiedEffects;
+  
+  // Hook de bônus de rituais derivado do SUE (DT, dano, redução de PE)
+  const ritualBonuses = useRitualBonusesFromSUE(unifiedEffects, {
+    intellect: character?.intellect || 1,
+    vigor: character?.vigor || 1,
+    strength: character?.strength || 1,
+    agility: character?.agility || 1,
+    presence: character?.presence || 1,
+  });
 
   // Hook de aplicação automática de condições (HP=0 → Inconsciente, SAN=0 → Enlouquecendo)
   const { processResourceChange } = useAutoConditions();
@@ -2982,7 +2992,7 @@ export default function CharacterSheet() {
         }}
       />
 
-      {/* Modal de conjuração de ritual com validação de requisitos */}
+      {/* Modal de conjuração de ritual com validação de requisitos e bônus SUE */}
       <RitualCastModal
         open={castModalOpen}
         onOpenChange={setCastModalOpen}
@@ -2993,6 +3003,8 @@ export default function CharacterSheet() {
         nex={character.nex}
         elementalAffinity={character.elemental_affinity}
         onConfirm={handleCastRitual}
+        ritualBonuses={ritualBonuses}
+        intellect={character.intellect}
       />
 
       {/* Modal de dano/cura do ritual (Fase 3) */}
