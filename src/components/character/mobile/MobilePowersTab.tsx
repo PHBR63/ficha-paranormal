@@ -71,6 +71,8 @@ interface MobilePowersTabProps {
   onOpenExcessPowersModal: () => void;
   onOpenExcessRitualsModal: () => void;
   onOpenRemovedPowersHistory: () => void;
+  // Componente opcional de histórico de rituais (renderizado na seção de rituais)
+  ritualHistoryButton?: React.ReactNode;
 }
 
 // Item de poder paranormal virtualizado
@@ -412,6 +414,7 @@ export const MobilePowersTab = memo(function MobilePowersTab({
   onOpenExcessPowersModal,
   onOpenExcessRitualsModal,
   onOpenRemovedPowersHistory,
+  ritualHistoryButton,
 }: MobilePowersTabProps) {
   // Buscar descrição de habilidade de classe
   const getAbilityDescription = useCallback((abilityName: string): string => {
@@ -639,30 +642,34 @@ export const MobilePowersTab = memo(function MobilePowersTab({
           icon={<Scroll className="w-4 h-4 text-paranormal" />}
           badge={rituals.length}
         >
-          {/* Alerta de rituais excedentes (apenas Ocultista) */}
-          {ritualLimits && (
-            <div className="flex items-center justify-between gap-2 mb-2">
-              {hasExcessRituals ? (
-                <div className="flex items-center gap-2 p-2 rounded-lg bg-destructive/10 border border-destructive/30 flex-1">
-                  <span className="text-destructive font-medium text-xs">
-                    ⚠️ {rituals.length}/{ritualLimits.count} rituais
+          {/* Alerta de rituais excedentes (apenas Ocultista) + botão histórico */}
+          <div className="flex items-center justify-between gap-2 mb-2">
+            {ritualLimits && (
+              <>
+                {hasExcessRituals ? (
+                  <div className="flex items-center gap-2 p-2 rounded-lg bg-destructive/10 border border-destructive/30 flex-1">
+                    <span className="text-destructive font-medium text-xs">
+                      ⚠️ {rituals.length}/{ritualLimits.count} rituais
+                    </span>
+                    <Button 
+                      variant="destructive" 
+                      size="sm"
+                      className="h-7 text-xs ml-auto"
+                      onClick={onOpenExcessRitualsModal}
+                    >
+                      Remover
+                    </Button>
+                  </div>
+                ) : (
+                  <span className="text-xs text-muted-foreground">
+                    {rituals.length}/{ritualLimits.count} rituais
                   </span>
-                  <Button 
-                    variant="destructive" 
-                    size="sm"
-                    className="h-7 text-xs ml-auto"
-                    onClick={onOpenExcessRitualsModal}
-                  >
-                    Remover
-                  </Button>
-                </div>
-              ) : (
-                <span className="text-xs text-muted-foreground">
-                  {rituals.length}/{ritualLimits.count} rituais
-                </span>
-              )}
-            </div>
-          )}
+                )}
+              </>
+            )}
+            {/* Botão de histórico de conjurações */}
+            {ritualHistoryButton}
+          </div>
 
           <VirtualizedRitualsList
             ritualIds={rituals}

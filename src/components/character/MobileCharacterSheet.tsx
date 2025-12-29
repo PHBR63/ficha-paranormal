@@ -17,6 +17,8 @@ import {
   Package,
   ChevronRight,
 } from 'lucide-react';
+import { useCampaignRitualSync } from '@/hooks/useCampaignRitualSync';
+import type { RitualCastRecord } from './mobile/MobileRitualCastHistory';
 import { MobileInventorySheet } from '@/components/inventory/MobileInventorySheet';
 import type { ExtendedInventoryItem } from '@/components/inventory/InventoryPanel';
 import { Button } from '@/components/ui/button';
@@ -204,6 +206,9 @@ export function MobileCharacterSheet({
   const [paranormalPowerModalOpen, setParanormalPowerModalOpen] = useState(false);
   const [ritualHistoryOpen, setRitualHistoryOpen] = useState(false);
   
+  // Histórico de rituais conjurados na sessão (paridade com desktop)
+  const [castHistory, setCastHistory] = useState<RitualCastRecord[]>([]);
+  
   // Hook de histórico de rolagens
   const { rolls: rollHistory, addRoll, removeRoll, clearHistory } = useRollHistory();
   
@@ -353,6 +358,16 @@ export function MobileCharacterSheet({
     classTrack: character?.class_track,
     classPowers: character?.powers?.map(p => p.name) || [],
     activeConditions: character?.conditions || [],
+  });
+
+  // Sincroniza conjurações de rituais com a campanha em tempo real (paridade com desktop)
+  const { 
+    isInCampaign, 
+    syncRitualCast,
+  } = useCampaignRitualSync({
+    characterId: character?.id || '',
+    userId: user?.id || '',
+    enabled: !!character,
   });
 
   // Defesa total com TODOS os bônus (origem, habilidades, poderes, paranormais, rituais)
@@ -584,10 +599,28 @@ export function MobileCharacterSheet({
   ) => {
     if (!character) return;
     
-    const newPe = character.pe_current - peCost;
+    const peBeforeCast = character.pe_current;
+    const newPe = peBeforeCast - peCost;
     if (newPe < 0) return;
     
     await handlePEChange(newPe);
+    
+    // Registrar no histórico da sessão (paridade com desktop)
+    const castRecord: RitualCastRecord = {
+      id: `${ritual.id}-${Date.now()}`,
+      ritual,
+      peCost,
+      enhancements,
+      timestamp: new Date(),
+      peBeforeCast,
+      peAfterCast: newPe,
+    };
+    setCastHistory(prev => [castRecord, ...prev]);
+    
+    // Sincroniza com a campanha em tempo real (se estiver em uma)
+    if (isInCampaign) {
+      await syncRitualCast(ritual, peCost, enhancements, peBeforeCast, newPe);
+    }
     
     // Toast de confirmação com detalhes
     const enhText = enhancements.length > 0 
@@ -603,7 +636,13 @@ export function MobileCharacterSheet({
     toast.success(`${ritual.name} conjurado!`, {
       description: `${peCost} PE consumido${enhText}${modText}${counterText}. PE restante: ${newPe}`,
     });
-  }, [character, handlePEChange]);
+  }, [character, handlePEChange, isInCampaign, syncRitualCast]);
+
+  // Handler para limpar histórico de rituais
+  const handleClearCastHistory = useCallback(() => {
+    setCastHistory([]);
+    toast.success('Histórico limpo');
+  }, []);
 
   // Wrapper para onRefetch que retorna Promise<void>
   const handleRefetchForBanner = useCallback(async () => {
@@ -1050,6 +1089,13 @@ export function MobileCharacterSheet({
             onOpenExcessPowersModal={() => setExcessPowersModalOpen(true)}
             onOpenExcessRitualsModal={() => setExcessRitualsModalOpen(true)}
             onOpenRemovedPowersHistory={() => setRemovedPowersHistoryOpen(true)}
+            ritualHistoryButton={
+              <MobileRitualCastHistory
+                history={castHistory}
+                onClear={handleClearCastHistory}
+                characterName={character.name}
+              />
+            }
           />
         )}
 
