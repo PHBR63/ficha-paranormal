@@ -41,6 +41,10 @@ import {
 import {
   getParanormalPowerEffects,
 } from '@/lib/effects/paranormal-powers-effects-adapter';
+import {
+  getClassPowerEffects,
+  type ActiveClassPower,
+} from '@/lib/effects/class-power-effects-adapter';
 import type { SavedParanormalPower } from '@/lib/paranormal-powers';
 
 // =====================================================
@@ -68,6 +72,7 @@ export interface CharacterStateForEffects {
   conditions: string[]; // IDs das condições ativas
   activeRituals: SustainedRitualInput[]; // Rituais sustentados
   paranormalPowers?: SavedParanormalPower[]; // Poderes paranormais
+  classPowers?: ActiveClassPower[]; // Poderes de classe com escolhas
   
   // Afinidade elemental
   elementalAffinity?: string | null;
@@ -118,6 +123,7 @@ export interface UnifiedEffectsResult {
     condition: UnifiedEffect[];
     ritual: UnifiedEffect[];
     paranormal_power: UnifiedEffect[];
+    class_power: UnifiedEffect[];
   };
   
   // Helpers

@@ -124,6 +124,34 @@ export interface EffectMechanics {
   
   // === Flags de Crítico ===
   maximumDamageOnCrit?: boolean;   // Crítico causa dano máximo (Atirar para Matar)
+  
+  // =====================================================
+  // RITUAIS - Mecânicas específicas para poderes de classe
+  // =====================================================
+  
+  // === Bônus de DT de Rituais ===
+  ritualDTBonus?: number;          // Bônus na DT de todos os rituais
+  ritualDTBonusByElement?: Partial<Record<string, number>>; // +DT por elemento
+  
+  // === Bônus de Dano/Cura de Rituais ===
+  ritualDamageBonus?: number;      // Bônus fixo em dano/cura de rituais
+  ritualDamageAttributeBonus?: AttributeType; // Soma atributo no dano/cura de rituais
+  
+  // === Modificadores de PE de Rituais ===
+  ritualPEReduction?: number;      // Redução geral de PE em rituais
+  ritualPEReductionByElement?: Partial<Record<string, number>>; // Redução por elemento
+  ritualPEReductionByRange?: Partial<Record<string, number>>; // Redução por alcance (pessoal, etc)
+  
+  // === Modificadores de Ritual de Trilha ===
+  ritualModifiers?: Array<{
+    id: string;                    // ID do modificador
+    name: string;                  // Nome para exibição
+    type: 'range' | 'action' | 'area' | 'duration'; // Tipo de modificação
+    effect: string;                // Descrição do efeito
+    peCost: number;                // Custo adicional em PE
+    perRound?: boolean;            // Se aplica por rodada
+    isActivatable?: boolean;       // Se requer ativação manual
+  }>;
 }
 
 /**
@@ -329,6 +357,39 @@ export interface ComputedEffects {
     condition?: string;
     costPE?: number;
   }>;
+  
+  // =====================================================
+  // RITUAIS - Bônus consolidados para rituais
+  // =====================================================
+  rituals: {
+    // Bônus de DT
+    dtBonus: number;
+    dtBonusByElement: Record<string, number>;
+    
+    // Bônus de dano/cura
+    damageBonus: number;
+    damageAttributeBonus: AttributeType | null;
+    
+    // Reduções de PE
+    peReduction: number;
+    peReductionByElement: Record<string, number>;
+    peReductionByRange: Record<string, number>;
+    
+    // Modificadores de trilha disponíveis
+    availableModifiers: Array<{
+      id: string;
+      name: string;
+      type: 'range' | 'action' | 'area' | 'duration';
+      effect: string;
+      peCost: number;
+      perRound?: boolean;
+      isActivatable?: boolean;
+      source: string;
+    }>;
+    
+    // Breakdown para UI
+    breakdown: Array<{ source: string; effect: string }>;
+  };
 }
 
 /**
@@ -431,6 +492,18 @@ export function consolidateEffects(
       isUnconscious: false,
     },
     toggleableEffects: [],
+    // === RITUAIS ===
+    rituals: {
+      dtBonus: 0,
+      dtBonusByElement: {},
+      damageBonus: 0,
+      damageAttributeBonus: null,
+      peReduction: 0,
+      peReductionByElement: {},
+      peReductionByRange: {},
+      availableModifiers: [],
+      breakdown: [],
+    },
   };
   
   for (const effect of effects) {
@@ -641,6 +714,78 @@ export function consolidateEffects(
     if (m.cannotMove) result.flags.cannotMove = true;
     if (m.isHelpless) result.flags.isHelpless = true;
     if (m.isUnconscious) result.flags.isUnconscious = true;
+    
+    // =====================================================
+    // RITUAIS - Processa mecânicas específicas de rituais
+    // =====================================================
+    
+    // Bônus de DT geral
+    if (m.ritualDTBonus) {
+      result.rituals.dtBonus += m.ritualDTBonus;
+      result.rituals.breakdown.push({ source, effect: `+${m.ritualDTBonus} DT em rituais` });
+    }
+    
+    // Bônus de DT por elemento
+    if (m.ritualDTBonusByElement) {
+      for (const [element, bonus] of Object.entries(m.ritualDTBonusByElement)) {
+        result.rituals.dtBonusByElement[element] = 
+          (result.rituals.dtBonusByElement[element] || 0) + bonus!;
+        result.rituals.breakdown.push({ source, effect: `+${bonus} DT rituais de ${element}` });
+      }
+    }
+    
+    // Bônus de dano/cura fixo
+    if (m.ritualDamageBonus) {
+      result.rituals.damageBonus += m.ritualDamageBonus;
+      result.rituals.breakdown.push({ source, effect: `+${m.ritualDamageBonus} dano/cura rituais` });
+    }
+    
+    // Bônus de dano/cura baseado em atributo (último ganha)
+    if (m.ritualDamageAttributeBonus) {
+      result.rituals.damageAttributeBonus = m.ritualDamageAttributeBonus;
+      result.rituals.breakdown.push({ 
+        source, 
+        effect: `+${m.ritualDamageAttributeBonus.toUpperCase()} em dano/cura de rituais` 
+      });
+    }
+    
+    // Redução de PE geral
+    if (m.ritualPEReduction) {
+      result.rituals.peReduction += m.ritualPEReduction;
+      result.rituals.breakdown.push({ source, effect: `-${m.ritualPEReduction} PE em rituais` });
+    }
+    
+    // Redução de PE por elemento
+    if (m.ritualPEReductionByElement) {
+      for (const [element, reduction] of Object.entries(m.ritualPEReductionByElement)) {
+        result.rituals.peReductionByElement[element] = 
+          (result.rituals.peReductionByElement[element] || 0) + reduction!;
+        result.rituals.breakdown.push({ source, effect: `-${reduction} PE rituais de ${element}` });
+      }
+    }
+    
+    // Redução de PE por alcance
+    if (m.ritualPEReductionByRange) {
+      for (const [range, reduction] of Object.entries(m.ritualPEReductionByRange)) {
+        result.rituals.peReductionByRange[range] = 
+          (result.rituals.peReductionByRange[range] || 0) + reduction!;
+        result.rituals.breakdown.push({ source, effect: `-${reduction} PE rituais de alcance ${range}` });
+      }
+    }
+    
+    // Modificadores de trilha (Conduíte, etc.)
+    if (m.ritualModifiers) {
+      for (const mod of m.ritualModifiers) {
+        result.rituals.availableModifiers.push({
+          ...mod,
+          source,
+        });
+        result.rituals.breakdown.push({ 
+          source, 
+          effect: `${mod.name}: ${mod.effect} (+${mod.peCost} PE)` 
+        });
+      }
+    }
   }
   
   return result;

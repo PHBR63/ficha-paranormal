@@ -48,5 +48,16 @@ export {
   listAllParanormalPowerEffects,
 } from './paranormal-powers-effects-adapter';
 
+export {
+  getClassPowerEffects,
+  getPowersRequiringChoice,
+  getChoiceTypeForPower,
+  hasPowerEffects,
+  listAllClassPowerEffects,
+  getClassPowerEffectInfo,
+} from './class-power-effects-adapter';
+
+export type { ActiveClassPower } from './class-power-effects-adapter';
+
 // Re-exports de tipos
 export type { SustainedRitualInput } from './ritual-effects-adapter';
