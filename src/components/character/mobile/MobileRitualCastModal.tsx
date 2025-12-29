@@ -41,7 +41,19 @@ import {
   Wand2,
   TrendingUp,
   Minus,
+  Settings2,
+  ArrowUpRight,
+  Maximize2,
+  FastForward,
 } from 'lucide-react';
+
+// Ícones para tipos de modificadores de trilha
+const MODIFIER_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+  range: ArrowUpRight,
+  area: Maximize2,
+  action: FastForward,
+  duration: Timer,
+};
 import { cn } from '@/lib/utils';
 import { Ritual } from '@/lib/rituals/legacy-exports';
 import type { UnifiedRitual } from '@/lib/rituals/types';
@@ -75,7 +87,7 @@ interface MobileRitualCastModalProps {
   nex?: number;
   elementalAffinity?: string | null;
   turnPEState?: TurnPEState;
-  onConfirm: (ritual: RitualInput, peCost: number, enhancements: string[]) => void;
+  onConfirm: (ritual: RitualInput, peCost: number, enhancements: string[], activeModifiers?: string[]) => void;
   // Callbacks para efeitos do wizard
   targetAttributes?: { vigor: number; agility: number; presence: number };
   onApplyDamage?: (damage: number, type: AnyDamageType, ignoresRD: boolean) => void;
@@ -114,6 +126,8 @@ export function MobileRitualCastModal({
   intellect = 0,
 }: MobileRitualCastModalProps) {
   const [selectedEnhancements, setSelectedEnhancements] = useState<string[]>([]);
+  // Estado dos modificadores de trilha ativados
+  const [activeModifiers, setActiveModifiers] = useState<string[]>([]);
   
   // Estado para controlar abertura automática do wizard
   const [wizardEnabled, setWizardEnabled] = useState(autoOpenWizard);
@@ -160,6 +174,15 @@ export function MobileRitualCastModal({
     return ritualBonuses.damageBonus + (ritualBonuses.damageAttributeBonus?.value || 0);
   }, [ritualBonuses]);
 
+  // === INTEGRAÇÃO SUE: Custo adicional de modificadores ativos ===
+  const modifiersCost = useMemo(() => {
+    if (!ritualBonuses) return 0;
+    return activeModifiers.reduce((total, modId) => {
+      const mod = ritualBonuses.availableModifiers.find(m => m.id === modId);
+      return total + (mod?.peCost || 0);
+    }, 0);
+  }, [ritualBonuses, activeModifiers]);
+
   // Calcula custo base (com redução do SUE)
   const rawBaseCost = ritual.cost * costMultiplier;
   const baseCost = Math.max(1, rawBaseCost - sueReduction);
@@ -174,7 +197,8 @@ export function MobileRitualCastModal({
     return total + (enh ? enh.cost * costMultiplier : 0);
   }, 0);
 
-  const totalCost = baseCost + enhancementsCost;
+  // Custo total (inclui modificadores de trilha)
+  const totalCost = baseCost + enhancementsCost + modifiersCost;
 
   const peValidation = validatePECost(
     ritual.cost,
@@ -198,6 +222,15 @@ export function MobileRitualCastModal({
     );
   };
 
+  // Toggle de modificador de trilha
+  const toggleModifier = (modifierId: string) => {
+    setActiveModifiers(prev =>
+      prev.includes(modifierId)
+        ? prev.filter(id => id !== modifierId)
+        : [...prev, modifierId]
+    );
+  };
+
   const handleConfirm = useCallback(() => {
     if (!canCast || !ritual) return;
     
@@ -206,7 +239,7 @@ export function MobileRitualCastModal({
     }
     
     // Chama o callback de confirmação
-    onConfirm(ritual, totalCost, validSelectedEnhancements);
+    onConfirm(ritual, totalCost, validSelectedEnhancements, activeModifiers);
     
     // Se wizard está ativo e o ritual é do tipo Ritual (não UnifiedRitual), abre o wizard
     if (wizardEnabled && 'id' in ritual) {
@@ -217,14 +250,16 @@ export function MobileRitualCastModal({
       // Fecha o modal de cast e abre o wizard após um delay
       setTimeout(() => {
         setSelectedEnhancements([]);
+        setActiveModifiers([]);
         onOpenChange(false);
         setWizardOpen(true);
       }, 300);
     } else {
       setSelectedEnhancements([]);
+      setActiveModifiers([]);
       onOpenChange(false);
     }
-  }, [canCast, ritual, elementConfig, totalCost, validSelectedEnhancements, wizardEnabled, onConfirm, onOpenChange]);
+  }, [canCast, ritual, elementConfig, totalCost, validSelectedEnhancements, activeModifiers, wizardEnabled, onConfirm, onOpenChange]);
 
   // Handler para fechar wizard e limpar estado
   const handleWizardComplete = useCallback(() => {
@@ -236,6 +271,7 @@ export function MobileRitualCastModal({
   const handleOpenChange = (isOpen: boolean) => {
     if (!isOpen) {
       setSelectedEnhancements([]);
+      setActiveModifiers([]);
     }
     onOpenChange(isOpen);
   };
@@ -384,6 +420,56 @@ export function MobileRitualCastModal({
                     );
                   })}
                 </div>
+              </div>
+            )}
+
+            {/* === MODIFICADORES DE TRILHA (Ampliar/Acelerar Ritual) - Mobile === */}
+            {ritualBonuses?.hasAnyModifier && (
+              <div className="space-y-2 p-2.5 rounded-lg bg-accent/5 border border-accent/20">
+                <p className="text-[10px] text-accent-foreground uppercase tracking-wider flex items-center gap-1">
+                  <Settings2 className="w-3 h-3" />
+                  Modificadores de Trilha
+                </p>
+                
+                <div className="flex flex-wrap gap-1.5">
+                  {ritualBonuses.availableModifiers.map((mod) => {
+                    const isActive = activeModifiers.includes(mod.id);
+                    const ModIcon = MODIFIER_ICONS[mod.type] || Settings2;
+                    
+                    return (
+                      <motion.button
+                        key={mod.id}
+                        onClick={() => toggleModifier(mod.id)}
+                        whileTap={{ scale: 0.95 }}
+                        className={cn(
+                          "px-2.5 py-1.5 rounded-full text-xs font-medium transition-all",
+                          "flex items-center gap-1.5 border",
+                          isActive
+                            ? "bg-primary/20 border-primary text-primary"
+                            : "bg-card border-border hover:bg-accent/50"
+                        )}
+                      >
+                        <ModIcon className="w-3 h-3" />
+                        {mod.name}
+                        <span className="text-[10px] opacity-70">+{mod.peCost}</span>
+                        {mod.perRound && (
+                          <Clock className="w-2.5 h-2.5 text-yellow-500" />
+                        )}
+                        {isActive && <Check className="w-3 h-3" />}
+                      </motion.button>
+                    );
+                  })}
+                </div>
+                
+                {/* Custo adicional dos modificadores */}
+                {modifiersCost > 0 && (
+                  <div className="flex items-center justify-between pt-1.5 border-t border-border/50 text-xs">
+                    <span className="text-muted-foreground">Modificadores</span>
+                    <Badge variant="outline" className="bg-pe/10 text-pe border-pe/30 text-[10px]">
+                      +{modifiersCost} PE
+                    </Badge>
+                  </div>
+                )}
               </div>
             )}
 
