@@ -493,7 +493,7 @@ export function MobileCharacterSheet({
 
   // Handler para rolagem de perícia (abre modal de dados)
   const handleSkillRoll = useCallback((skillName: string) => {
-    const skillBonus = character.skills?.[skillName.toLowerCase()] || 0;
+    const trainingBonus = character.skills?.[skillName.toLowerCase()] || 0;
     const skillAttr = getSkillAttributeAbbrev(skillName);
     const attrValue = {
       'AGI': character.agility,
@@ -503,34 +503,50 @@ export function MobileCharacterSheet({
       'VIG': character.vigor,
     }[skillAttr] || 1;
     
-    // Busca bônus do SUE para esta perícia
-    const sueBonuses: BonusSource[] = [];
+    // Busca bônus de poderes de classe (Perito, Versatilidade, etc.)
+    const skillKey = skillName.toLowerCase().replace(/\s+/g, '-');
+    const classPowerBonus = bonusSummary?.skills?.[skillKey]?.total || 0;
+    
+    
+    // Busca bônus do SUE para esta perícia (efeitos ativos)
+    let sueSkillBonus = 0;
     if (unifiedEffects?.computed?.skills) {
       const skillsMap = unifiedEffects.computed.skills;
-      const skillKey = skillName.toLowerCase();
-      if (skillsMap[skillKey] && typeof skillsMap[skillKey] === 'number') {
-        const skillEffect = skillsMap[skillKey] as number;
-        if (skillEffect > 0) {
-          sueBonuses.push({ 
-            label: 'Efeitos Ativos', 
-            value: skillEffect,
-            type: 'other',
-          });
-        }
+      const normalizedKey = skillName.toLowerCase();
+      if (skillsMap[normalizedKey] && typeof skillsMap[normalizedKey] === 'number') {
+        sueSkillBonus = skillsMap[normalizedKey] as number;
       }
+    }
+    
+    // Total de bônus = treinamento + poderes de classe + SUE
+    const totalSkillBonus = trainingBonus + classPowerBonus + sueSkillBonus;
+    
+    // Constrói fontes de bônus para exibição detalhada
+    const bonusSources: BonusSource[] = [];
+    if (trainingBonus > 0) {
+      bonusSources.push({ label: 'Treinamento', value: trainingBonus, type: 'skill' as const });
+    }
+    if (classPowerBonus > 0) {
+      const powerSourceName = bonusSummary?.skills?.[skillKey]?.breakdown?.[0]?.source || 'Poder de Classe';
+      bonusSources.push({ 
+        label: 'Poder de Classe', 
+        value: classPowerBonus, 
+        type: 'power' as const,
+        sourceName: powerSourceName,
+      });
+    }
+    if (sueSkillBonus > 0) {
+      bonusSources.push({ label: 'Efeitos Ativos', value: sueSkillBonus, type: 'other' as const });
     }
     
     setDiceModalConfig({
       skillName,
       pool: attrValue,
-      bonus: skillBonus,
-      bonusSources: [
-        { label: 'Treinamento', value: skillBonus, type: 'skill' as const },
-        ...sueBonuses,
-      ].filter(b => b.value !== 0),
+      bonus: totalSkillBonus,
+      bonusSources: bonusSources.filter(b => b.value !== 0),
     });
     setDiceModalOpen(true);
-  }, [character, unifiedEffects]);
+  }, [character, unifiedEffects, bonusSummary]);
 
   // Handler para abrir conjuração de ritual
   const handleCastRitual = useCallback((ritualId: string) => {
