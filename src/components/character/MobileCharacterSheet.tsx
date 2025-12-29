@@ -1331,9 +1331,9 @@ export function MobileCharacterSheet({
               rollHistory={rollHistory}
               attributeValidation={attributeValidation}
               onOpenDiceRoller={onOpenDiceRoller}
-              onOpenRest={onOpenRest}
-              onLevelUp={onLevelUp}
-              onEditStats={onEditStats}
+              onOpenRest={() => setRestModalOpen(true)}
+              onLevelUp={() => setNexModalOpen(true)}
+              onEditStats={() => setEditModalOpen(true)}
               onOpenCombat={handleOpenCombat}
               onRollInitiative={handleRollInitiative}
               onClearHistory={clearHistory}
