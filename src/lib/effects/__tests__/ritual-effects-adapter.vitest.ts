@@ -14,6 +14,7 @@ import {
   getRitualEffects,
   calculateRitualBonusTotals,
   getRitualEffectsSummary,
+  getSustainableRituals,
   type SustainedRitualInput,
 } from '../ritual-effects-adapter';
 
@@ -342,5 +343,67 @@ describe('ritual-effects-adapter: Edge Cases', () => {
     const sustained = createTestSustainedRitual({ turnsActive: 999 });
     
     expect(() => getRitualEffects([sustained])).not.toThrow();
+  });
+});
+
+// =====================================================
+// FASE 8: getSustainableRituals
+// =====================================================
+
+describe('ritual-effects-adapter: getSustainableRituals', () => {
+  it('deve retornar array de rituais sustentáveis', () => {
+    const rituais = getSustainableRituals();
+    
+    expect(Array.isArray(rituais)).toBe(true);
+  });
+
+  it('rituais sustentáveis devem ter estrutura correta', () => {
+    const rituais = getSustainableRituals();
+    
+    if (rituais.length > 0) {
+      const ritual = rituais[0];
+      expect(ritual).toHaveProperty('id');
+      expect(ritual).toHaveProperty('name');
+      expect(ritual).toHaveProperty('circle');
+      expect(ritual).toHaveProperty('element');
+      expect(ritual).toHaveProperty('hasCombatEffects');
+      expect(ritual).toHaveProperty('description');
+      expect(ritual).toHaveProperty('cost');
+    }
+  });
+
+  it('círculos devem ser 1-4', () => {
+    const rituais = getSustainableRituals();
+    
+    for (const ritual of rituais) {
+      expect(ritual.circle).toBeGreaterThanOrEqual(1);
+      expect(ritual.circle).toBeLessThanOrEqual(4);
+    }
+  });
+
+  it('elementos devem ser válidos', () => {
+    const elementosValidos = ['sangue', 'morte', 'energia', 'conhecimento', 'medo'];
+    const rituais = getSustainableRituals();
+    
+    for (const ritual of rituais) {
+      expect(elementosValidos).toContain(ritual.element);
+    }
+  });
+
+  it('hasCombatEffects deve ser booleano', () => {
+    const rituais = getSustainableRituals();
+    
+    for (const ritual of rituais) {
+      expect(typeof ritual.hasCombatEffects).toBe('boolean');
+    }
+  });
+
+  it('custo deve ser número positivo', () => {
+    const rituais = getSustainableRituals();
+    
+    for (const ritual of rituais) {
+      expect(typeof ritual.cost).toBe('number');
+      expect(ritual.cost).toBeGreaterThanOrEqual(0);
+    }
   });
 });

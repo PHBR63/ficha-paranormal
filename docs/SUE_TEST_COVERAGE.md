@@ -24,8 +24,10 @@ O SUE é o motor central do game engine que controla:
 | `ritual-effects-adapter.vitest.ts` | ~20 | Rituais sustentados, cálculo de bônus |
 | `class-power-effects-adapter.vitest.ts` | ~25 | Poderes de classe, escolhas |
 | `useUnifiedEffects.vitest.ts` | ~15 | Hook central, helpers |
+| `useBonusSummaryFromSUE.vitest.ts` | ~20 | Conversão SUE para BonusSummary |
+| `unified-effects-performance.vitest.ts` | ~10 | Testes de performance |
 | `sue-integration.vitest.ts` | ~20 | Fluxos end-to-end |
-| **Total** | **~105** | |
+| **Total** | **~135** | |
 
 ---
 
@@ -181,12 +183,14 @@ npm run test -- src/lib/__tests__/sue-integration.vitest.ts
 | `getRitualEffects` | ritual-effects-adapter | ✅ 100% |
 | `calculateRitualBonusTotals` | ritual-effects-adapter | ✅ 100% |
 | `getRitualEffectsSummary` | ritual-effects-adapter | ✅ 100% |
+| `getSustainableRituals` | ritual-effects-adapter | ✅ 100% |
 | `getClassPowerEffects` | class-power-effects-adapter | ✅ 100% |
 | `getPowersRequiringChoice` | class-power-effects-adapter | ✅ 100% |
 | `getChoiceTypeForPower` | class-power-effects-adapter | ✅ 100% |
 | `hasPowerEffects` | class-power-effects-adapter | ✅ 100% |
 | `listAllClassPowerEffects` | class-power-effects-adapter | ✅ 100% |
 | `useUnifiedEffects` | useUnifiedEffects | ✅ 100% |
+| `useBonusSummaryFromSUE` | useBonusSummaryFromSUE | ✅ 100% |
 | `consolidateEffects` | unified-effects-engine | ✅ Parcial |
 | `checkEffectConditions` | unified-effects-engine | ✅ Parcial |
 
@@ -236,6 +240,13 @@ npm run test -- src/lib/__tests__/sue-integration.vitest.ts
 | Versão | Data | Alterações |
 |--------|------|------------|
 | 1.0.0 | 2024-12-30 | Criação inicial com ~105 testes |
+| 1.1.0 | 2024-12-30 | Adicionados ~30 testes (useBonusSummaryFromSUE, performance) |
+
+---
+
+## Documentação Relacionada
+
+- [SISTEMA_UNIFICADO_EFEITOS.md](./SISTEMA_UNIFICADO_EFEITOS.md) - Arquitetura completa do SUE
 
 ---
 
