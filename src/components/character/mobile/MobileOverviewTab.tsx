@@ -177,51 +177,86 @@ export const MobileOverviewTab = memo(function MobileOverviewTab({
 
         {/* Ações rápidas */}
         <div className="flex gap-2 mt-3 pt-3 border-t border-border">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onOpenDiceRoller}
-            className="flex-1 text-xs"
-          >
-            <Dices className="w-4 h-4 mr-1" />
-            Rolar
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onOpenRest}
-            className="flex-1 text-xs"
-          >
-            <Moon className="w-4 h-4 mr-1" />
-            Descanso
-          </Button>
-          <MobileRollHistory
-            rolls={rollHistory}
-            onClearHistory={onClearHistory}
-            onRemoveRoll={onRemoveRoll}
-          />
-          {/* Botão de Editar Perfil */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onEditStats}
-            className="text-xs"
-            title="Editar Personagem"
-          >
-            <Edit2 className="w-4 h-4" />
-          </Button>
-          {/* Botão de Level Up (apenas se não estiver no máximo) */}
-          {character.nex < 99 && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onLevelUp}
-              className="text-xs text-primary border-primary/50"
-              title="Subir de NEX"
-            >
-              <ArrowUp className="w-4 h-4" />
-            </Button>
-          )}
+          <TooltipProvider delayDuration={300}>
+            {/* Botão Rolar Dados */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onOpenDiceRoller}
+                  className="flex-1 text-xs"
+                >
+                  <Dices className="w-4 h-4 mr-1" />
+                  Rolar
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                <p>Abrir rolador de dados para testes e rolagens</p>
+              </TooltipContent>
+            </Tooltip>
+
+            {/* Botão Descanso */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onOpenRest}
+                  className="flex-1 text-xs"
+                >
+                  <Moon className="w-4 h-4 mr-1" />
+                  Descanso
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                <p>Descanso curto ou longo para recuperar PV, PE e SAN</p>
+              </TooltipContent>
+            </Tooltip>
+
+            {/* Histórico de Rolagens */}
+            <MobileRollHistory
+              rolls={rollHistory}
+              onClearHistory={onClearHistory}
+              onRemoveRoll={onRemoveRoll}
+            />
+
+            {/* Botão de Editar Perfil */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onEditStats}
+                  className="text-xs"
+                >
+                  <Edit2 className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                <p>Editar dados pessoais, atributos e perícias</p>
+              </TooltipContent>
+            </Tooltip>
+
+            {/* Botão de Level Up (apenas se não estiver no máximo) */}
+            {character.nex < 99 && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={onLevelUp}
+                    className="text-xs text-primary border-primary/50"
+                  >
+                    <ArrowUp className="w-4 h-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  <p>Subir de NEX e escolher novos poderes</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
+          </TooltipProvider>
         </div>
       </div>
 
