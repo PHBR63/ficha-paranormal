@@ -2,8 +2,8 @@
 
 ## Documentação Técnica - Ordem Paranormal RPG v1.3
 
-> **Última atualização:** 2025-12-24  
-> **Versão:** 1.1.0
+> **Última atualização:** 2024-12-30  
+> **Versão:** 1.2.0
 
 ---
 
@@ -629,6 +629,32 @@ npx vitest run src/hooks/__tests__/integration-track-sue-combat.vitest.ts
 
 ---
 
+## Funções Utilitárias do Ritual Adapter
+
+### `getSustainableRituals()`
+
+Retorna lista de todos os rituais que podem ser sustentados.
+
+```typescript
+import { getSustainableRituals } from '@/lib/effects/ritual-effects-adapter';
+
+const rituais = getSustainableRituals();
+// Retorna array com:
+// - id: string
+// - name: string
+// - circle: number
+// - element: string
+// - hasCombatEffects: boolean
+// - description: string
+// - cost: number
+```
+
+Critérios de filtragem:
+- `isSustainable: true` no ritual, OU
+- `duration: 'Sustentada'`
+
+---
+
 ## Manutenção
 
 > **IMPORTANTE:** Sempre que modificar o SUE, atualize esta documentação!
@@ -640,3 +666,10 @@ npx vitest run src/hooks/__tests__/integration-track-sue-combat.vitest.ts
 - [ ] Adicionar novos IDs de efeitos ao glossário
 - [ ] Atualizar changelog com versão e data
 - [ ] Verificar se testes cobrem novos cenários
+
+### Changelog
+
+| Versão | Data | Alterações |
+|--------|------|------------|
+| 1.2.0 | 2024-12-30 | Implementado getSustainableRituals(), paridade desktop/mobile, ~30 novos testes |
+| 1.1.0 | 2024-12-24 | Versão inicial documentada |

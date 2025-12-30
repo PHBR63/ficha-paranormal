@@ -8,6 +8,7 @@
 //
 
 import type { UnifiedEffect, EffectMechanics, DamageType } from '../unified-effects-engine';
+import { UNIFIED_RITUALS } from '../rituals/unified-rituals';
 import { getRitualById } from '../rituals/ritual-registry';
 import type { RitualMechanics, UnifiedRitual } from '../rituals/types';
 
@@ -252,6 +253,7 @@ export function calculateRitualBonusTotals(
 
 /**
  * Lista rituais que podem ser sustentados
+ * Consulta UNIFIED_RITUALS e filtra por isSustainable
  * Útil para UI de seleção
  */
 export function getSustainableRituals(): Array<{
@@ -260,10 +262,36 @@ export function getSustainableRituals(): Array<{
   circle: number;
   element: string;
   hasCombatEffects: boolean;
+  description: string;
+  cost: number;
 }> {
-  // Esta função seria expandida para listar todos os rituais sustentáveis
-  // Por enquanto retorna array vazio - seria populado do ritual-registry
-  return [];
+  // Filtra rituais com flag isSustainable ou duração "Sustentada"
+  const sustainableRituals = UNIFIED_RITUALS.filter(
+    ritual => ritual.isSustainable || ritual.duration === 'Sustentada'
+  );
+  
+  return sustainableRituals.map(ritual => {
+    // Verifica se tem efeitos de combate
+    const mechanics = ritual.effects?.base;
+    const hasCombatEffects = Boolean(
+      mechanics?.attackBonus ||
+      mechanics?.damageBonus ||
+      mechanics?.defenseBonus ||
+      mechanics?.weaponEffect ||
+      mechanics?.damage ||
+      mechanics?.damagePerTurn
+    );
+    
+    return {
+      id: ritual.id,
+      name: ritual.name,
+      circle: ritual.circle,
+      element: ritual.element,
+      hasCombatEffects,
+      description: ritual.description,
+      cost: ritual.cost,
+    };
+  });
 }
 
 /**

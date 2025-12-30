@@ -32,7 +32,7 @@ interface MobileActiveEffectsPanelProps {
   className?: string;
 }
 
-// Cores por fonte
+// Cores por fonte (paridade com ActiveEffectsPanel desktop)
 const SOURCE_COLORS: Record<string, { bg: string; text: string }> = {
   origin: { bg: 'bg-blue-500/10', text: 'text-blue-400' },
   track: { bg: 'bg-purple-500/10', text: 'text-purple-400' },
@@ -42,9 +42,11 @@ const SOURCE_COLORS: Record<string, { bg: string; text: string }> = {
   class_power: { bg: 'bg-green-500/10', text: 'text-green-400' },
   general_power: { bg: 'bg-orange-500/10', text: 'text-orange-400' },
   paranormal_power: { bg: 'bg-pink-500/10', text: 'text-pink-400' },
+  equipment: { bg: 'bg-slate-500/10', text: 'text-slate-400' },
+  skill_training: { bg: 'bg-cyan-500/10', text: 'text-cyan-400' },
 };
 
-// Ícones por fonte
+// Ícones por fonte (paridade com ActiveEffectsPanel desktop)
 const SOURCE_ICONS: Record<string, React.ElementType> = {
   origin: User,
   track: Target,
@@ -54,9 +56,11 @@ const SOURCE_ICONS: Record<string, React.ElementType> = {
   class_power: Sword,
   general_power: Zap,
   paranormal_power: Flame,
+  equipment: Shield,
+  skill_training: BookOpen,
 };
 
-// Labels
+// Labels (paridade com ActiveEffectsPanel desktop)
 const SOURCE_LABELS: Record<string, string> = {
   origin: 'Origem',
   track: 'Trilha',
@@ -66,6 +70,8 @@ const SOURCE_LABELS: Record<string, string> = {
   class_power: 'Poder',
   general_power: 'Geral',
   paranormal_power: 'Paranormal',
+  equipment: 'Equipamento',
+  skill_training: 'Treinamento',
 };
 
 // Card de efeito compacto
