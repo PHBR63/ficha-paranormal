@@ -1,7 +1,11 @@
 /**
  * AttackSystem - Sistema de ataques com rolagem automática
  * 
- * Funcionalidades:
+ * @deprecated Este componente foi substituído pelo CombatRollModal e CombatWeaponsTable
+ * que estão integrados ao SUE (Sistema Unificado de Efeitos).
+ * Mantido por compatibilidade legada, mas deve ser removido em versão futura.
+ * 
+ * Funcionalidades (LEGACY):
  * - Lista armas equipadas
  * - Rolagem de ataque (d20 + atributo + perícia)
  * - Rolagem de dano automática

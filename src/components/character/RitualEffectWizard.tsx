@@ -103,6 +103,9 @@ interface RitualEffectWizardProps {
   // Callback para ativar ritual sustentado
   onActivateSustained?: (ritual: Ritual, enhancements: string[], sustain: import('@/lib/rituals/legacy-exports').SustainConfig) => void;
   onComplete?: () => void;
+  // === Bônus do SUE (Sistema Unificado de Efeitos) ===
+  ritualDamageBonus?: number; // Bônus fixo de dano de rituais
+  damageAttributeBonus?: { attribute: string; value: number }; // Ritual Potente (INT no dano)
 }
 
 // ==================== HELPERS ====================
@@ -841,6 +844,9 @@ export function RitualEffectWizard({
   onAddWeaponBuff,
   onActivateSustained,
   onComplete,
+  // Bônus do SUE
+  ritualDamageBonus = 0,
+  damageAttributeBonus,
 }: RitualEffectWizardProps) {
   // Estado do wizard
   const [currentStep, setCurrentStep] = useState<WizardStep>('summary');
@@ -909,25 +915,31 @@ export function RitualEffectWizard({
     
     setIsRolling(true);
     
+    // Calcula bônus do SUE (ritualDamageBonus + atributo se Ritual Potente)
+    const sueBonus = ritualDamageBonus + (damageAttributeBonus?.value || 0);
+    
     setTimeout(() => {
       let dice: number[], diceType: number, bonus: number, damageType: AnyDamageType, ignoresRD: boolean;
       
       if (activeEffect.damage) {
         dice = rollDice(activeEffect.damage.diceCount, activeEffect.damage.diceType);
         diceType = activeEffect.damage.diceType;
-        bonus = activeEffect.damage.bonus || 0;
+        // Aplica bônus do ritual + bônus do SUE apenas para dano
+        bonus = (activeEffect.damage.bonus || 0) + sueBonus;
         damageType = activeEffect.damage.damageType;
         ignoresRD = activeEffect.damage.ignoresRD || false;
       } else if (activeEffect.healing) {
         dice = rollDice(activeEffect.healing.diceCount, activeEffect.healing.diceType);
         diceType = activeEffect.healing.diceType;
-        bonus = activeEffect.healing.bonus || 0;
+        // Aplica bônus do SUE também para cura (Ritual Potente)
+        bonus = (activeEffect.healing.bonus || 0) + sueBonus;
         damageType = 'verdadeiro'; // Cura não tem tipo
         ignoresRD = false;
       } else if (activeEffect.tempHP) {
         dice = rollDice(activeEffect.tempHP.diceCount, activeEffect.tempHP.diceType);
         diceType = activeEffect.tempHP.diceType;
-        bonus = activeEffect.tempHP.bonus || 0;
+        // Aplica bônus do SUE também para PV temporários
+        bonus = (activeEffect.tempHP.bonus || 0) + sueBonus;
         damageType = 'verdadeiro';
         ignoresRD = false;
       } else {
@@ -938,7 +950,7 @@ export function RitualEffectWizard({
       setDamageResult({ dice, diceType, bonus, total, damageType, ignoresRD });
       setIsRolling(false);
     }, 500);
-  }, [activeEffect]);
+  }, [activeEffect, ritualDamageBonus, damageAttributeBonus]);
 
   // Handler de resistência
   const handleResistanceResult = useCallback((passed: boolean, damage?: number) => {

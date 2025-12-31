@@ -441,8 +441,8 @@ export function MobileCharacterSheet({
     paranormalPowers: character?.paranormal_powers || [],
     inventory: character?.inventory || [],
     nex: character?.nex || 5,
-    elementalAffinity: null,
-    affinityActive: false,
+    elementalAffinity: character?.elemental_affinity,
+    affinityActive: character?.affinity_active ?? false,
     activeConditionalBonuses: character?.active_conditional_bonuses || [],
     activeRituals: activeRitualsForDefense,
     skills: character?.skills || {},
@@ -2077,6 +2077,9 @@ export function MobileCharacterSheet({
           ritual={wizardRitual}
           enhancements={wizardEnhancements}
           peCost={wizardPeCost}
+          // Bônus do SUE para dano de rituais
+          ritualDamageBonus={ritualBonuses.damageBonus}
+          damageAttributeBonus={ritualBonuses.damageAttributeBonus}
           targetAttributes={{
             vigor: character.vigor,
             agility: character.agility,

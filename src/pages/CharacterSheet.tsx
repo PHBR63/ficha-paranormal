@@ -3013,6 +3013,9 @@ export default function CharacterSheet() {
         onOpenChange={setDamageModalOpen}
         ritual={ritualForDamage}
         enhancements={ritualEnhancements}
+        // Bônus do SUE para dano de rituais
+        ritualDamageBonus={ritualBonuses.damageBonus}
+        damageAttributeBonus={ritualBonuses.damageAttributeBonus}
         onApplyDamage={(result) => {
           // Log do resultado de dano para o mestre/jogador
           toast({
@@ -3158,6 +3161,9 @@ export default function CharacterSheet() {
         ritual={wizardRitual}
         enhancements={wizardEnhancements}
         peCost={wizardPeCost}
+        // Bônus do SUE para dano de rituais
+        ritualDamageBonus={ritualBonuses.damageBonus}
+        damageAttributeBonus={ritualBonuses.damageAttributeBonus}
         targetAttributes={{
           vigor: character.vigor,
           agility: character.agility,

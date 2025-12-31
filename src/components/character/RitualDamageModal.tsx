@@ -125,6 +125,9 @@ interface RitualDamageModalProps {
   onRequestResistance?: (damage: number) => void; // Callback para solicitar teste de resistência
   onRequestConditions?: () => void; // Callback para abrir modal de condições (Fase 6)
   onClose?: () => void;
+  // === Bônus do SUE (Sistema Unificado de Efeitos) ===
+  ritualDamageBonus?: number; // Bônus fixo de dano de rituais
+  damageAttributeBonus?: { attribute: string; value: number }; // Ritual Potente (INT no dano)
 }
 
 export function RitualDamageModal({
@@ -137,6 +140,9 @@ export function RitualDamageModal({
   onRequestResistance,
   onRequestConditions,
   onClose,
+  // Bônus do SUE
+  ritualDamageBonus = 0,
+  damageAttributeBonus,
 }: RitualDamageModalProps) {
   // Estado do resultado da rolagem
   const [damageResult, setDamageResult] = useState<RitualDamageResult | null>(null);
@@ -164,19 +170,23 @@ export function RitualDamageModal({
 
     const { diceCount, diceType, bonus = 0, damageType, ignoresRD = false } = activeEffect.damage;
     
+    // Calcula bônus total do SUE (ritualDamageBonus + INT se Ritual Potente)
+    const sueBonus = ritualDamageBonus + (damageAttributeBonus?.value || 0);
+    const totalBonus = bonus + sueBonus;
+    
     // Animação de rolagem
     setTimeout(() => {
       const dice = rollDice(diceCount, diceType);
-      const total = dice.reduce((a, b) => a + b, 0) + bonus;
+      const total = dice.reduce((a, b) => a + b, 0) + totalBonus;
       
       setDamageResult({
         dice,
         diceType,
-        bonus,
+        bonus: totalBonus, // Inclui bônus do SUE no resultado
         total,
         damageType,
         ignoresRD,
-        formula: formatDamageFormula(activeEffect.damage!),
+        formula: `${diceCount}d${diceType}${totalBonus > 0 ? `+${totalBonus}` : totalBonus < 0 ? totalBonus : ''}`,
         ritualName: ritual.name,
         ritualId: ritual.id,
         enhancements,
