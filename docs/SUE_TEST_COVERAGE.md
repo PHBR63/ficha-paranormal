@@ -23,13 +23,17 @@ O SUE é o motor central do game engine que controla:
 | `condition-effects-adapter.vitest.ts` | ~25 | Condições, modificadores contextuais |
 | `ritual-effects-adapter.vitest.ts` | ~26 | Rituais sustentados, cálculo de bônus, getSustainableRituals |
 | `class-power-effects-adapter.vitest.ts` | ~25 | Poderes de classe, escolhas |
+| `origin-effects-adapter.vitest.ts` | ~40 | 8 origens base + suplementos, proficiências |
+| `track-effects-adapter.vitest.ts` | ~100 | 15 trilhas oficiais (5 Combatente + 5 Especialista + 5 Ocultista) |
+| `paranormal-powers-effects-adapter.vitest.ts` | ~35 | Poderes paranormais, afinidades |
 | `useUnifiedEffects.vitest.ts` | ~15 | Hook central, helpers |
 | `useBonusSummaryFromSUE.vitest.ts` | ~20 | Conversão SUE para BonusSummary |
+| `useRitualModifiersFromSUE.vitest.ts` | ~15 | Modificadores de ritual por trilha/poderes |
 | `unified-effects-performance.vitest.ts` | ~10 | Testes de performance |
 | `sue-integration.vitest.ts` | ~20 | Fluxos end-to-end básicos |
 | `sue-integration-e2e.vitest.ts` | ~25 | Fluxos E2E completos, progressão NEX |
 | `computed-effects-snapshot.vitest.ts` | ~10 | Snapshots de estrutura ComputedEffects |
-| **Total** | **~176** | |
+| **Total** | **~366** | |
 
 ---
 
@@ -104,7 +108,84 @@ O SUE é o motor central do game engine que controla:
 
 ---
 
-### 4. Hook useUnifiedEffects
+### 4. Adaptador de Origens (`origin-effects-adapter.ts`)
+
+#### Testes de Mapeamento
+- ✅ 8 origens base: Acadêmico, Agente de Saúde, Amnésico, Artista, Atleta, Chef, Combatente, Criminoso
+- ✅ Origens de suplemento: Militar, Operário, Religioso, Servidor Público, etc.
+- ✅ Todas as origens têm mecânicas e descrição definidas
+
+#### Testes de Mecânicas
+- ✅ Bônus de perícia por origem
+- ✅ Bônus de iniciativa (Atleta, Militar)
+- ✅ Bônus de Defesa
+- ✅ Bônus de dano
+- ✅ Bônus de PV
+
+#### Testes de Poderes Togglable
+- ✅ Poderes com custo de PE identificados corretamente
+- ✅ Poderes passivos não são togglable
+
+#### Testes de Proficiências
+- ✅ Origens que concedem proficiências em armas
+- ✅ Militar: armas de fogo leves
+
+#### Testes de Conversão
+- ✅ `getOriginEffects` retorna UnifiedEffect válidos
+- ✅ Efeitos dinâmicos baseados em atributos
+
+---
+
+### 5. Adaptador de Trilhas (`track-effects-adapter.ts`)
+
+#### Trilhas Combatente (~50 testes)
+- ✅ Aniquilador: técnicas (Amplo, Destruidor, Letal, Perfurante)
+- ✅ Comandante de Campo: inspiração, estratégia, brecha
+- ✅ Guerreiro: revidar, força opressora
+- ✅ Operações Especiais: ataque extra, surto de adrenalina
+- ✅ Tropa de Choque: cai dentro, duro de matar
+
+#### Trilhas Especialista (~30 testes)
+- ✅ Atirador de Elite: disparo letal, impactante
+- ✅ Infiltrador: ataque furtivo, assassinar
+- ✅ Médico de Campo: paramédico, equipe de trauma
+- ✅ Negociador: eloquência, discurso motivador
+- ✅ Técnico: remendo, improvisar
+
+#### Trilhas Ocultista (~60 testes)
+- ✅ Conduíte: ampliar ritual, acelerar ritual, anular ritual
+- ✅ Flagelador: poder do flagelo, abraçar a dor, absorver angústia
+- ✅ Graduado: saber ampliado, grimório ritualístico, rituais eficientes
+- ✅ Intuitivo: mente sã, presença poderosa, inabalável
+- ✅ Lâmina Paranormal: lâmina maldita, gladiador paranormal, conjuração marcial
+
+#### Testes de Integração
+- ✅ Escalamento por NEX (0%, 5%, 10%, 40%, 65%, 99%)
+- ✅ Bônus melee vs ranged
+- ✅ Efeitos ativáveis com custo de PE
+- ✅ `getTrackCombatBonuses` para todas as trilhas
+- ✅ `getTrackBonusSummary` para resumos
+
+---
+
+### 6. Adaptador de Poderes Paranormais (`paranormal-powers-effects-adapter.ts`)
+
+#### Testes de Mapeamento
+- ✅ Poderes de Sangue, Conhecimento, Energia, Morte, Medo
+- ✅ Poderes de afinidade específica
+
+#### Testes de Mecânicas
+- ✅ Bônus passivos vs ativáveis
+- ✅ Escalamento com atributos
+- ✅ Custo de PE por ativação
+
+#### Testes de Conversão
+- ✅ `getParanormalPowerEffects` retorna UnifiedEffect válidos
+- ✅ Integração com afinidade elemental do personagem
+
+---
+
+### 7. Hook useUnifiedEffects
 
 #### Testes de Estrutura
 - ✅ Retorno tem `allEffects`, `computed`, `bySource`, helpers
@@ -125,7 +206,7 @@ O SUE é o motor central do game engine que controla:
 
 ---
 
-### 5. Testes de Integração End-to-End
+### 8. Testes de Integração End-to-End
 
 #### Fluxo Combatente + Guerreiro
 - ✅ Bônus de poderes de combate corpo a corpo
@@ -146,7 +227,7 @@ O SUE é o motor central do game engine que controla:
 
 ---
 
-### 6. Testes E2E Avançados (`sue-integration-e2e.vitest.ts`)
+### 9. Testes E2E Avançados (`sue-integration-e2e.vitest.ts`)
 
 #### Fluxos Completos de Personagem
 - ✅ Combatente NEX 50% com Guerreiro completo
@@ -174,7 +255,7 @@ O SUE é o motor central do game engine que controla:
 
 ---
 
-### 7. Testes de Snapshot (`computed-effects-snapshot.vitest.ts`)
+### 10. Testes de Snapshot (`computed-effects-snapshot.vitest.ts`)
 
 #### Estrutura Base
 - ✅ Todas as propriedades principais existem
@@ -195,8 +276,8 @@ O SUE é o motor central do game engine que controla:
 ## Comandos para Execução
 
 ```bash
-# Rodar todos os testes do SUE
-npm run test -- --grep "SUE|unified-effects|effects-adapter|useUnifiedEffects"
+# Rodar todos os testes do SUE (~366 testes)
+npm run test -- --grep "SUE|unified-effects|effects-adapter|useUnifiedEffects|BonusSummary"
 
 # Rodar com cobertura
 npm run test:coverage -- --grep "effects"
@@ -210,11 +291,23 @@ npm run test -- src/lib/effects/__tests__/ritual-effects-adapter.vitest.ts
 # Rodar apenas testes de poderes de classe
 npm run test -- src/lib/effects/__tests__/class-power-effects-adapter.vitest.ts
 
+# Rodar apenas testes de origens
+npm run test -- src/lib/effects/__tests__/origin-effects-adapter.vitest.ts
+
+# Rodar apenas testes de trilhas (incluindo Ocultista)
+npm run test -- src/lib/effects/__tests__/track-effects-adapter.vitest.ts
+
+# Rodar apenas testes de poderes paranormais
+npm run test -- src/lib/effects/__tests__/paranormal-powers-effects-adapter.vitest.ts
+
 # Rodar apenas testes do hook
 npm run test -- src/hooks/__tests__/useUnifiedEffects.vitest.ts
 
-# Rodar testes de integração
-npm run test -- src/lib/__tests__/sue-integration.vitest.ts
+# Rodar testes de integração E2E
+npm run test -- src/lib/__tests__/sue-integration-e2e.vitest.ts
+
+# Rodar testes de snapshot
+npm run test -- src/lib/__tests__/computed-effects-snapshot.vitest.ts
 ```
 
 ---
@@ -237,9 +330,16 @@ npm run test -- src/lib/__tests__/sue-integration.vitest.ts
 | `getChoiceTypeForPower` | class-power-effects-adapter | ✅ 100% |
 | `hasPowerEffects` | class-power-effects-adapter | ✅ 100% |
 | `listAllClassPowerEffects` | class-power-effects-adapter | ✅ 100% |
+| `getOriginEffects` | origin-effects-adapter | ✅ 100% |
+| `listAllOriginEffects` | origin-effects-adapter | ✅ 100% |
+| `getTrackEffects` | track-effects-adapter | ✅ 100% |
+| `getTrackCombatBonuses` | track-effects-adapter | ✅ 100% |
+| `getTrackBonusSummary` | track-effects-adapter | ✅ 100% |
+| `getParanormalPowerEffects` | paranormal-powers-effects-adapter | ✅ 100% |
 | `useUnifiedEffects` | useUnifiedEffects | ✅ 100% |
 | `useBonusSummaryFromSUE` | useBonusSummaryFromSUE | ✅ 100% |
-| `consolidateEffects` | unified-effects-engine | ✅ Parcial |
+| `useRitualModifiersFromSUE` | useRitualModifiersFromSUE | ✅ 100% |
+| `consolidateEffects` | unified-effects-engine | ✅ 100% |
 | `checkEffectConditions` | unified-effects-engine | ✅ Parcial |
 
 ---
@@ -251,17 +351,19 @@ npm run test -- src/lib/__tests__/sue-integration.vitest.ts
 2. Modificadores contextuais (caído melee vs ranged)
 3. Poderes de Ocultista com rituais
 4. Consolidação de múltiplas fontes
+5. Todas as 15 trilhas oficiais
 
 ### Média Prioridade ✅
 1. Poderes de Combatente e Especialista
 2. Rituais sustentados
 3. Helpers do hook
 4. Edge cases com dados inválidos
+5. Efeitos de origem com atributos
 
-### Baixa Prioridade (Futuro)
+### Baixa Prioridade ✅
 1. Poderes Paranormais com afinidade
-2. Efeitos de origem
-3. Efeitos de trilha específicos
+2. Efeitos de origem togglable
+3. Efeitos de trilha específicos por elemento
 
 ---
 
@@ -281,6 +383,15 @@ npm run test -- src/lib/__tests__/sue-integration.vitest.ts
 1. Verificar `getRitualMechanics`
 2. Atualizar testes em `ritual-effects-adapter.vitest.ts`
 
+### Ao Adicionar Nova Trilha
+1. Adicionar em `TRACK_EFFECT_MAPPINGS` (track-effects-adapter.ts)
+2. Registrar em `track-registry.ts`
+3. Adicionar testes em `track-effects-adapter.vitest.ts`
+
+### Ao Adicionar Nova Origem
+1. Adicionar em `ORIGIN_POWER_EFFECTS` (origin-effects-adapter.ts)
+2. Adicionar testes em `origin-effects-adapter.vitest.ts`
+
 ---
 
 ## Histórico de Versões
@@ -290,6 +401,7 @@ npm run test -- src/lib/__tests__/sue-integration.vitest.ts
 | 1.0.0 | 2024-12-30 | Criação inicial com ~105 testes |
 | 1.1.0 | 2024-12-30 | Adicionados ~30 testes (useBonusSummaryFromSUE, performance) |
 | 1.2.0 | 2024-12-31 | Adicionados ~25 testes E2E, ~10 testes snapshot, getSustainableRituals |
+| 2.0.0 | 2024-12-31 | Documentação atualizada para refletir cobertura real (~366 testes) |
 
 ---
 
