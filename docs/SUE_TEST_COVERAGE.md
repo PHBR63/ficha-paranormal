@@ -21,13 +21,15 @@ O SUE é o motor central do game engine que controla:
 | Arquivo | Testes | Cobertura |
 |---------|--------|-----------|
 | `condition-effects-adapter.vitest.ts` | ~25 | Condições, modificadores contextuais |
-| `ritual-effects-adapter.vitest.ts` | ~20 | Rituais sustentados, cálculo de bônus |
+| `ritual-effects-adapter.vitest.ts` | ~26 | Rituais sustentados, cálculo de bônus, getSustainableRituals |
 | `class-power-effects-adapter.vitest.ts` | ~25 | Poderes de classe, escolhas |
 | `useUnifiedEffects.vitest.ts` | ~15 | Hook central, helpers |
 | `useBonusSummaryFromSUE.vitest.ts` | ~20 | Conversão SUE para BonusSummary |
 | `unified-effects-performance.vitest.ts` | ~10 | Testes de performance |
-| `sue-integration.vitest.ts` | ~20 | Fluxos end-to-end |
-| **Total** | **~135** | |
+| `sue-integration.vitest.ts` | ~20 | Fluxos end-to-end básicos |
+| `sue-integration-e2e.vitest.ts` | ~25 | Fluxos E2E completos, progressão NEX |
+| `computed-effects-snapshot.vitest.ts` | ~10 | Snapshots de estrutura ComputedEffects |
+| **Total** | **~176** | |
 
 ---
 
@@ -144,6 +146,52 @@ O SUE é o motor central do game engine que controla:
 
 ---
 
+### 6. Testes E2E Avançados (`sue-integration-e2e.vitest.ts`)
+
+#### Fluxos Completos de Personagem
+- ✅ Combatente NEX 50% com Guerreiro completo
+- ✅ Ocultista NEX 75% com Conduíte e rituais sustentados
+- ✅ Especialista com múltiplas especializações
+
+#### Progressão de NEX
+- ✅ Transição 5% → 99% com ganho de poderes
+- ✅ Validação de pré-requisitos por NEX
+- ✅ Cálculo de bônus incrementais
+
+#### Condições Automáticas
+- ✅ Aplicação de condições por rituais
+- ✅ Remoção ao fim de duração
+- ✅ Interação entre múltiplas condições
+
+#### Múltiplas Fontes Simultâneas
+- ✅ Consolidação de 5+ fontes diferentes
+- ✅ Regras de acúmulo (maior prevalece)
+- ✅ Breakdown correto por fonte
+
+#### Testes de Regressão
+- ✅ Casos críticos do sistema
+- ✅ Edge cases de dados inválidos
+
+---
+
+### 7. Testes de Snapshot (`computed-effects-snapshot.vitest.ts`)
+
+#### Estrutura Base
+- ✅ Todas as propriedades principais existem
+- ✅ Formato correto de attack, damage, defense, resistances
+- ✅ Formato correto de flags e rituals
+
+#### Tipos de Dados
+- ✅ Breakdowns são sempre arrays
+- ✅ Valores numéricos são numbers
+- ✅ Flags são booleans
+
+#### Regressão de Interface
+- ✅ Não adiciona propriedades inesperadas
+- ✅ Estrutura de attack/rituals não muda
+
+---
+
 ## Comandos para Execução
 
 ```bash
@@ -241,6 +289,7 @@ npm run test -- src/lib/__tests__/sue-integration.vitest.ts
 |--------|------|------------|
 | 1.0.0 | 2024-12-30 | Criação inicial com ~105 testes |
 | 1.1.0 | 2024-12-30 | Adicionados ~30 testes (useBonusSummaryFromSUE, performance) |
+| 1.2.0 | 2024-12-31 | Adicionados ~25 testes E2E, ~10 testes snapshot, getSustainableRituals |
 
 ---
 
