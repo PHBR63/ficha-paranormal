@@ -58,6 +58,7 @@ import { checkExistingCharacterValidity } from '@/lib/character-validation';
 import { RulesValidationPanel } from '@/components/admin/RulesValidationPanel';
 import { ValidationHistoryDashboard } from '@/components/admin/ValidationHistoryDashboard';
 import { ClassPowerBonusTests } from '@/components/admin/ClassPowerBonusTests';
+import { SUETestCoverageDashboard } from '@/components/admin/SUETestCoverageDashboard';
 import { useValidationHistory } from '@/hooks/useValidationHistory';
 
 interface CharacterData {
@@ -276,7 +277,7 @@ export default function AdminDataIntegrity() {
 
       <main className="container mx-auto px-4 py-8">
         <Tabs defaultValue="integrity" className="space-y-6">
-          <TabsList className="grid w-full max-w-3xl grid-cols-4">
+          <TabsList className="grid w-full max-w-4xl grid-cols-5">
             <TabsTrigger value="integrity" className="flex items-center gap-2">
               <Database className="w-4 h-4" />
               <span className="hidden sm:inline">Integridade</span>
@@ -291,6 +292,11 @@ export default function AdminDataIntegrity() {
               <Wrench className="w-4 h-4" />
               <span className="hidden sm:inline">Poderes</span>
               <span className="sm:hidden">Poderes</span>
+            </TabsTrigger>
+            <TabsTrigger value="sue" className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4" />
+              <span className="hidden sm:inline">SUE</span>
+              <span className="sm:hidden">SUE</span>
             </TabsTrigger>
             <TabsTrigger value="history" className="flex items-center gap-2">
               <BarChart3 className="w-4 h-4" />
@@ -514,6 +520,11 @@ export default function AdminDataIntegrity() {
               <p>💡 Testes automatizados de Rituais, Poderes e SUE agora são executados via Vitest no terminal.</p>
               <p className="mt-1">Execute <code className="bg-background px-1 py-0.5 rounded">npm test</code> para rodar todos os testes.</p>
             </div>
+          </TabsContent>
+
+          {/* Aba de Cobertura de Testes SUE */}
+          <TabsContent value="sue">
+            <SUETestCoverageDashboard />
           </TabsContent>
 
           {/* Aba de Histórico e Dashboard */}
