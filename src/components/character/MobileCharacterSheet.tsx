@@ -581,13 +581,18 @@ export function MobileCharacterSheet({
         // Detecta se a arma é a favorita do Aniquilador
         const isFavoriteWeapon = !!(weaponData.favoriteAbilityId);
         
+        // Normaliza criticalMultiplier para string (ex: 'x2', 'x3')
+        const normalizedCritMultiplier = typeof weaponData.criticalMultiplier === 'number'
+          ? `x${weaponData.criticalMultiplier}`
+          : weaponData.criticalMultiplier || 'x2';
+        
         return {
           id: item.id,
           name: item.name,
           type: displayType,
           damage: weaponData.damage || '1d6',
           criticalRange: weaponData.criticalRange || 20,
-          criticalMultiplier: weaponData.criticalMultiplier || 2,
+          criticalMultiplier: normalizedCritMultiplier,
           range: weaponData.range,
           ammo: weaponData.ammo,
           maxAmmo: weaponData.maxAmmo,

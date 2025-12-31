@@ -622,13 +622,20 @@ export function MobileCombatRollModal({
     return Math.max(1, margin);
   }, [weapon, weaponBuffBonuses, unifiedEffects, maquinaDeMatarActive, activeTechniqueEffects, classTrack, nex, passiveBonuses, trackCombatBonuses]);
   
-  // Multiplicador de crítico efetivo
+  // Multiplicador de crítico efetivo (conversão segura para string)
   const criticalMultiplier = useMemo(() => {
     let multiplier = 2;
     
-    if (weapon?.criticalMultiplier) {
-      const match = weapon.criticalMultiplier.match(/x?(\d+)/i);
-      if (match) multiplier = parseInt(match[1]);
+    if (weapon?.criticalMultiplier !== undefined) {
+      // Converte para string de forma segura (pode vir como número ou string)
+      const critValue = String(weapon.criticalMultiplier);
+      const match = critValue.match(/x?(\d+)/i);
+      if (match) {
+        multiplier = parseInt(match[1]);
+      } else if (!isNaN(Number(weapon.criticalMultiplier))) {
+        // Fallback: se for número direto (ex: 2, 3, 4)
+        multiplier = Number(weapon.criticalMultiplier);
+      }
     }
     
     if (unifiedEffects) {
