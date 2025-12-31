@@ -102,10 +102,20 @@ const ATTRIBUTE_LABELS: Record<AttributeType, string> = {
  * @param activatedModifiers - IDs de modificadores ativados manualmente
  * @returns Bônus de rituais consolidados
  */
+/**
+ * Hook que extrai bônus de rituais do Sistema Unificado de Efeitos
+ * 
+ * @param unifiedEffects - Resultado do useUnifiedEffects
+ * @param attributes - Atributos do personagem (para cálculo de bônus baseado em atributo)
+ * @param activatedModifiers - IDs de modificadores ativados manualmente
+ * @param currentPE - PE atual do personagem (para verificação de custo)
+ * @returns Bônus de rituais consolidados
+ */
 export function useRitualBonusesFromSUE(
   unifiedEffects: UnifiedEffectsResult | null,
   attributes: Record<AttributeType, number>,
-  activatedModifiers: string[] = []
+  activatedModifiers: string[] = [],
+  currentPE: number = Infinity
 ): RitualBonuses {
   return useMemo(() => {
     // Estado inicial vazio se não houver efeitos
@@ -200,10 +210,12 @@ export function useRitualBonusesFromSUE(
     }
     
     // === Processa Modificadores ===
+    // Verifica PE disponível para cada modificador
     const availableModifiers: RitualModifier[] = rituals.availableModifiers.map(mod => ({
       ...mod,
       isActive: activatedModifiers.includes(mod.id),
-      canActivate: true, // TODO: verificar PE disponível
+      // Verificação de PE: modificador pode ser ativado se PE atual >= custo
+      canActivate: currentPE >= mod.peCost,
     }));
     
     // === Helpers ===
@@ -275,7 +287,7 @@ export function useRitualBonusesFromSUE(
       hasAnyBonus,
       hasAnyModifier,
     };
-  }, [unifiedEffects, attributes, activatedModifiers]);
+  }, [unifiedEffects, attributes, activatedModifiers, currentPE]);
 }
 
 // =====================================================
