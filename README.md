@@ -3,7 +3,7 @@
 Sistema completo de gerenciamento de fichas e campanhas para o RPG Ordem Paranormal, desenvolvido com React, TypeScript e Supabase.
 
 ![Ordem Paranormal RPG](https://img.shields.io/badge/Ordem%20Paranormal-RPG-purple)
-![React](https://img.shields.io/badge/React-18.3-blue)
+![React](https://img.shields.io/badge/React-19.2-blue)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)
 ![Supabase](https://img.shields.io/badge/Supabase-Cloud-green)
 
@@ -54,10 +54,11 @@ Sistema completo de gerenciamento de fichas e campanhas para o RPG Ordem Paranor
 | Documento | Descrição |
 |-----------|-----------|
 | [Sistema Unificado de Efeitos (SUE)](docs/SISTEMA_UNIFICADO_EFEITOS.md) | Motor central de cálculo de bônus e modificadores |
+| [Cobertura de Testes do SUE](docs/SUE_TEST_COVERAGE.md) | Documentação de ~366 testes unitários e de integração |
 
 ## 🛠️ Tecnologias
 
-- **Frontend**: React 18, TypeScript, Vite
+- **Frontend**: React 19, TypeScript, Vite
 - **Estilização**: Tailwind CSS, shadcn/ui
 - **Animações**: Framer Motion
 - **Estado**: TanStack Query (React Query)
@@ -122,7 +123,7 @@ O arquivo `src/lib/constants/game-ids.ts` é a **fonte única de verdade** para 
 | `CLASS_IDS` | IDs das classes | `COMBATENTE`, `ESPECIALISTA`, `OCULTISTA` |
 | `COMBATENTE_TRACK_IDS` | Trilhas do Combatente | `ANIQUILADOR`, `COMANDANTE_DE_CAMPO`, etc. |
 | `ESPECIALISTA_TRACK_IDS` | Trilhas do Especialista | `ATIRADOR_DE_ELITE`, `INFILTRADOR`, etc. |
-| `OCULTISTA_TRACK_IDS` | Trilhas do Ocultista | `CONDUÍTE`, `FLAGELADOR`, etc. |
+| `OCULTISTA_TRACK_IDS` | Trilhas do Ocultista | `CONDUTOR`, `FLAGELADOR`, etc. |
 | `CORE_ORIGIN_IDS` | Origens do livro base | `ACADEMICO`, `AGENTE_DE_SAUDE`, etc. |
 | `SUPPLEMENT_ORIGIN_IDS` | Origens de suplementos | `AMNÉSICO_ORIGEM_SUPLEMENTAR`, etc. |
 | `PATENT_IDS` | Patentes da Ordem | `RECRUTA`, `OPERADOR`, `AGENTE_ESPECIAL`, etc. |
@@ -220,6 +221,26 @@ Execute os testes com:
 ```bash
 npm test -- game-ids-integrity
 ```
+
+## 🧪 Testes
+
+O projeto possui uma suíte abrangente de testes usando Vitest:
+
+```bash
+# Executar todos os testes
+npm run test
+
+# Executar testes em modo watch
+npm run test -- --watch
+
+# Executar testes do SUE (~366 testes)
+npm run test -- --grep "SUE|effects-adapter|BonusSummary"
+
+# Executar testes de integridade de IDs
+npm run test -- game-ids-integrity
+```
+
+Para mais detalhes sobre a cobertura de testes, consulte [SUE_TEST_COVERAGE.md](docs/SUE_TEST_COVERAGE.md).
 
 ## 📖 Sistema de Regras
 

@@ -2,8 +2,8 @@
 
 ## Documentação Técnica - Ordem Paranormal RPG v1.3
 
-> **Última atualização:** 2024-12-30  
-> **Versão:** 1.2.0
+> **Última atualização:** 2025-12-31  
+> **Versão:** 1.3.0
 
 ---
 
@@ -565,36 +565,32 @@ const totalDamageBonus = baseDamage + trackBonuses.damageBonus;
 
 ## Testes
 
-### Arquivos de Teste
+### Documentação de Testes
 
-| Arquivo | Cobertura |
-|---------|-----------|
-| `src/lib/__tests__/unified-effects-engine.vitest.ts` | Motor central |
-| `src/lib/class-powers/__tests__/track-effects-engine.vitest.ts` | Trilhas |
-| `src/hooks/__tests__/integration-track-sue-combat.vitest.ts` | Integração E2E |
-| `src/lib/__tests__/combat-integration.vitest.ts` | Combate |
+Para documentação completa de testes (~366 testes), consulte **[SUE_TEST_COVERAGE.md](./SUE_TEST_COVERAGE.md)**.
 
 ### Executar Testes
 
 ```bash
-# Todos os testes
-npx vitest run
+# Todos os testes do SUE (~366 testes)
+npm run test -- --grep "SUE|effects-adapter|BonusSummary"
 
-# Testes do SUE
-npx vitest run --grep "SUE|unified|track"
+# Testes de integração E2E
+npm run test -- src/lib/__tests__/sue-integration-e2e.vitest.ts
 
-# Testes de integração
-npx vitest run src/hooks/__tests__/integration-track-sue-combat.vitest.ts
+# Testes de adaptadores específicos
+npm run test -- src/lib/effects/__tests__/
 ```
 
 ### Cobertura de Cenários
 
-- ✅ Consolidação de múltiplas fontes
-- ✅ Stacking correto de bônus
-- ✅ Condições de ativação
-- ✅ Consumo de efeitos por duração
-- ✅ Persistência no banco
-- ✅ Integração com combate
+- ✅ ~366 testes cobrindo todos os adaptadores
+- ✅ 15 trilhas oficiais (Combatente + Especialista + Ocultista)
+- ✅ 8 origens base + suplementos
+- ✅ 30+ condições com mecânicas
+- ✅ Poderes paranormais e de classe
+- ✅ Rituais sustentados
+- ✅ Testes E2E de fluxos completos
 
 ---
 
@@ -610,22 +606,6 @@ npx vitest run src/hooks/__tests__/integration-track-sue-combat.vitest.ts
 | **Breakdown** | Lista detalhada de fontes de um bônus |
 | **Toggleable** | Efeito que pode ser ativado/desativado |
 | **NEX** | Nível de Experiência (5% a 99%) |
-
----
-
-## Changelog
-
-### v1.1.0 (2025-12-24)
-- ✅ Adicionada persistência de efeitos ativados no banco
-- ✅ Criados testes de integração E2E (Trilhas + SUE + Combate)
-- ✅ Suporte a durações: instant, next-attack, next-turn, round, scene, concentration
-- ✅ Integração com todas as 15 trilhas oficiais
-
-### v1.0.0 (2025-12-20)
-- ✅ Motor central de consolidação
-- ✅ Adaptadores para 5 fontes de efeitos
-- ✅ Hook `useUnifiedEffects`
-- ✅ Integração com `CombatRollModal`
 
 ---
 
@@ -667,9 +647,13 @@ Critérios de filtragem:
 - [ ] Atualizar changelog com versão e data
 - [ ] Verificar se testes cobrem novos cenários
 
-### Changelog
+---
+
+## Changelog
 
 | Versão | Data | Alterações |
 |--------|------|------------|
-| 1.2.0 | 2024-12-30 | Implementado getSustainableRituals(), paridade desktop/mobile, ~30 novos testes |
-| 1.1.0 | 2024-12-24 | Versão inicial documentada |
+| 1.3.0 | 2025-12-31 | Documentação consolidada, link para SUE_TEST_COVERAGE.md, atualização de versões |
+| 1.2.0 | 2025-12-30 | Implementado getSustainableRituals(), paridade desktop/mobile, ~30 novos testes |
+| 1.1.0 | 2025-12-24 | Persistência de efeitos, testes E2E, suporte a durações, 15 trilhas oficiais |
+| 1.0.0 | 2025-12-20 | Motor central, 5 adaptadores, hook useUnifiedEffects, integração com CombatRollModal |
