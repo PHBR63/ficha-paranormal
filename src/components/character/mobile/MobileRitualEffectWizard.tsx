@@ -325,7 +325,7 @@ const EffectChip = memo(function EffectChip({
   );
 });
 
-// Step: Dano/Cura (Mobile)
+// Step: Dano/Cura (Mobile) - Com exibição de bônus do SUE
 const DamageStep = memo(function DamageStep({ 
   effect, 
   ritual,
@@ -334,6 +334,8 @@ const DamageStep = memo(function DamageStep({
   isRolling,
   onNext,
   onReroll,
+  ritualDamageBonus = 0,
+  damageAttributeBonus,
 }: { 
   effect: RitualEffect;
   ritual: Ritual;
@@ -342,7 +344,10 @@ const DamageStep = memo(function DamageStep({
   isRolling: boolean;
   onNext: () => void;
   onReroll: () => void;
+  ritualDamageBonus?: number;
+  damageAttributeBonus?: { attribute: string; value: number };
 }) {
+  const totalSueBonus = ritualDamageBonus + (damageAttributeBonus?.value || 0);
   const hasDamage = !!effect.damage;
   const hasHealing = !!effect.healing;
   const hasTempHP = !!effect.tempHP;
@@ -435,6 +440,23 @@ const DamageStep = memo(function DamageStep({
           ) : null}
         </AnimatePresence>
       </div>
+
+      {/* Breakdown de bônus do SUE */}
+      {result && totalSueBonus > 0 && (
+        <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground mb-2">
+          <span>Inclui:</span>
+          {ritualDamageBonus > 0 && (
+            <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+              +{ritualDamageBonus} ritual
+            </Badge>
+          )}
+          {damageAttributeBonus && damageAttributeBonus.value > 0 && (
+            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-paranormal/20 text-paranormal">
+              +{damageAttributeBonus.value} {damageAttributeBonus.attribute}
+            </Badge>
+          )}
+        </div>
+      )}
 
       {result && (
         <div className="flex gap-2">
@@ -1052,6 +1074,8 @@ export const MobileRitualEffectWizard = memo(function MobileRitualEffectWizard({
                     }
                   }}
                   onReroll={handleDamageRoll}
+                  ritualDamageBonus={ritualDamageBonus}
+                  damageAttributeBonus={damageAttributeBonus}
                 />
               )}
 

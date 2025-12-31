@@ -735,7 +735,7 @@ export function MobileRitualCastModal({
       </DrawerContent>
     </Drawer>
 
-    {/* Wizard de efeitos do ritual */}
+    {/* Wizard de efeitos do ritual - Integrado ao SUE */}
     <MobileRitualEffectWizard
       open={wizardOpen}
       onOpenChange={setWizardOpen}
@@ -749,6 +749,12 @@ export function MobileRitualCastModal({
       onAddWeaponBuff={onAddWeaponBuff}
       onActivateSustained={onActivateSustained}
       onComplete={handleWizardComplete}
+      // Propagação dos bônus do SUE para o Wizard
+      ritualDamageBonus={ritualBonuses?.damageBonus || 0}
+      damageAttributeBonus={ritualBonuses?.damageAttributeBonus ? {
+        attribute: 'Intelecto',
+        value: intellect
+      } : undefined}
     />
   </>
   );

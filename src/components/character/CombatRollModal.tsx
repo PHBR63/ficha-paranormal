@@ -888,11 +888,17 @@ export function CombatRollModal({
   }, [weapon, passiveBonuses, classPowerBonuses, weaponBuffBonuses, unifiedEffects, maquinaDeMatarActive, activeTechniqueEffects, classTrack, nex, trackCombatBonuses]);
 
   // Multiplicador de crítico da arma (incluindo SUE, weapon buffs, trilha e Técnicas)
+  // Conversão segura para string - pode vir como número ou string
   const criticalMultiplier = useMemo(() => {
     let base = 2;
-    if (weapon?.criticalMultiplier) {
-      const match = weapon.criticalMultiplier.match(/x(\d+)/i);
-      base = match ? parseInt(match[1]) : 2;
+    if (weapon?.criticalMultiplier !== undefined) {
+      const critValue = String(weapon.criticalMultiplier);
+      const match = critValue.match(/x?(\d+)/i);
+      if (match) {
+        base = parseInt(match[1]);
+      } else if (!isNaN(Number(weapon.criticalMultiplier))) {
+        base = Number(weapon.criticalMultiplier);
+      }
     }
     
     // === BÔNUS DO SUE ===
