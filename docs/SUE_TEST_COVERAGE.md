@@ -153,7 +153,7 @@ O SUE é o motor central do game engine que controla:
 - ✅ Técnico: remendo, improvisar
 
 #### Trilhas Ocultista (~60 testes)
-- ✅ Conduíte: ampliar ritual, acelerar ritual, anular ritual
+- ✅ Condutor: ampliar ritual, acelerar ritual, anular ritual
 - ✅ Flagelador: poder do flagelo, abraçar a dor, absorver angústia
 - ✅ Graduado: saber ampliado, grimório ritualístico, rituais eficientes
 - ✅ Intuitivo: mente sã, presença poderosa, inabalável
@@ -398,10 +398,10 @@ npm run test -- src/lib/__tests__/computed-effects-snapshot.vitest.ts
 
 | Versão | Data | Alterações |
 |--------|------|------------|
-| 1.0.0 | 2024-12-30 | Criação inicial com ~105 testes |
-| 1.1.0 | 2024-12-30 | Adicionados ~30 testes (useBonusSummaryFromSUE, performance) |
-| 1.2.0 | 2024-12-31 | Adicionados ~25 testes E2E, ~10 testes snapshot, getSustainableRituals |
-| 2.0.0 | 2024-12-31 | Documentação atualizada para refletir cobertura real (~366 testes) |
+| 1.0.0 | 2025-12-30 | Criação inicial com ~105 testes |
+| 1.1.0 | 2025-12-30 | Adicionados ~30 testes (useBonusSummaryFromSUE, performance) |
+| 1.2.0 | 2025-12-31 | Adicionados ~25 testes E2E, ~10 testes snapshot, getSustainableRituals |
+| 2.0.0 | 2025-12-31 | Documentação atualizada para refletir cobertura real (~366 testes) |
 
 ---
 
