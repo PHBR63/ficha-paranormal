@@ -117,11 +117,12 @@ function needsWeaponMigration(item: InventoryItem): boolean {
   
   if (!isWeapon) return false;
   
-  // Precisa migração se faltar campos essenciais
+  // Precisa migração se faltar campos essenciais (incluindo weaponType)
   return item.damage === undefined || 
          item.damageType === undefined ||
          item.critical === undefined ||
-         item.criticalMultiplier === undefined;
+         item.criticalMultiplier === undefined ||
+         item.weaponType === undefined; // NOVO: verifica weaponType
 }
 
 function needsItemMigration(item: InventoryItem): boolean {

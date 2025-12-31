@@ -82,6 +82,7 @@ import { useSustainedRituals } from '@/hooks/useSustainedRituals';
 import { useEquipmentMigration } from '@/hooks/useEquipmentMigration';
 import { useRoundTracking } from '@/hooks/useRoundTracking';
 import { useActivatedEffects } from '@/hooks/useActivatedEffects';
+import { normalizeWeaponTypeForDisplay } from '@/lib/weapon-type-inference';
 import { BonusSummaryCard } from '@/components/character/BonusSummaryCard';
 import { SustainedRitualsPanel } from '@/components/character/SustainedRitualsPanel';
 import { ConditionalBonusesPanel } from '@/components/character/ConditionalBonusesPanel';
@@ -151,7 +152,9 @@ interface InventoryItemPersisted {
   range?: string;
   special?: string;
   ammoType?: string;
-  weaponType?: string;
+  weaponType?: 'melee' | 'ranged' | 'firearm' | 'thrown';
+  proficiency?: string;
+  properties?: string[];
   // Campos de armaduras
   rd?: number;
   defenseBonus?: number;
@@ -1658,19 +1661,31 @@ export default function CharacterSheet() {
   };
 
   // Preparar armas para tabela de combate usando dados reais do item
+  // Usa a função centralizada normalizeWeaponTypeForDisplay para consistência com mobile
   const equippedWeapons = character.inventory
     .filter(item => item.isEquipped && item.itemType === 'weapon')
     .map(item => ({
       id: item.id || crypto.randomUUID(),
       name: item.name,
-      // Determina tipo baseado no range - se tem range é disparo, senão corpo a corpo
-      type: (item.range && item.range !== 'Corpo a corpo' ? 'Disparo' : 'Corpo a Corpo') as 'Disparo' | 'Corpo a Corpo',
+      // Usa inferência centralizada (mesmo que o mobile) para consistência
+      type: normalizeWeaponTypeForDisplay({
+        weaponType: item.weaponType,
+        ammoType: item.ammoType,
+        range: item.range,
+        properties: item.properties,
+        damageType: item.damageType,
+        name: item.name, // Para heurística por nome
+      }),
       // Usa dados reais da arma se disponíveis
       damage: item.damage || '1d6',
       damageType: item.damageType,
       range: item.range,
       critical: item.critical ? `${item.critical}` : undefined,
-      criticalMultiplier: item.criticalMultiplier ? `x${item.criticalMultiplier}` : undefined,
+      criticalMultiplier: item.criticalMultiplier 
+        ? (typeof item.criticalMultiplier === 'number' 
+            ? `x${item.criticalMultiplier}` 
+            : item.criticalMultiplier)
+        : undefined,
       special: item.special,
       ammoType: item.ammoType,
     }));
