@@ -16,6 +16,7 @@ interface WeaponLikeItem {
   properties?: string[];
   damageType?: string;
   itemType?: string;
+  name?: string; // Para heurística de inferência por nome de armas conhecidas
 }
 
 /**
@@ -44,6 +45,37 @@ export function inferWeaponType(item: WeaponLikeItem): WeaponType {
   if (item.damageType?.toLowerCase().includes('balístico') || 
       item.damageType?.toLowerCase().includes('balistico')) {
     return 'firearm';
+  }
+
+  // HEURÍSTICA POR NOME: detecta armas conhecidas pelo nome
+  if (item.name) {
+    const nameLower = item.name.toLowerCase();
+    
+    // Armas de fogo conhecidas (fuzis, pistolas, etc.)
+    if (nameLower.includes('fuzil') ||
+        nameLower.includes('pistola') ||
+        nameLower.includes('revólver') || nameLower.includes('revolver') ||
+        nameLower.includes('submetralhadora') ||
+        nameLower.includes('espingarda') ||
+        nameLower.includes('metralhadora') ||
+        nameLower.includes('sniper') ||
+        nameLower.includes('carabina') ||
+        nameLower.includes('rifle') ||
+        nameLower.includes('bazuca') ||
+        nameLower.includes('lança-foguete') ||
+        nameLower.includes('lança-granadas') ||
+        nameLower.includes('shotgun')) {
+      return 'firearm';
+    }
+    
+    // Arcos, bestas = ranged
+    if (nameLower.includes('arco') ||
+        nameLower.includes('besta') ||
+        nameLower.includes('balestra') ||
+        nameLower.includes('funda') ||
+        nameLower.includes('zarabatana')) {
+      return 'ranged';
+    }
   }
 
   // Se tem propriedade que indica arma de fogo

@@ -148,7 +148,43 @@ interface MobileCharacterSheetProps {
     // Novos campos para exibição completa
     paranormal_powers?: Array<{ id: string; name: string; element: string; description: string }>;
     general_powers?: Array<{ id: string; name: string; description: string; category?: string }>;
-    inventory?: Array<{ id?: string; name: string; category: string; slots: number; itemType?: string; isEquipped?: boolean; equipSlot?: string; armorType?: string }>;
+    // Inventário com todos os campos de armas, armaduras e itens para inferência correta de tipo
+    inventory?: Array<{
+      id?: string;
+      name: string;
+      category: string;
+      slots: number;
+      quantity?: number;
+      itemType?: string;
+      isEquipped?: boolean;
+      equipSlot?: string;
+      description?: string;
+      // Campos de armas
+      damage?: string;
+      damageType?: string;
+      critical?: number;
+      criticalMultiplier?: number;
+      range?: string;
+      special?: string;
+      ammoType?: string;
+      weaponType?: string;
+      proficiency?: string;
+      properties?: string[];
+      // Campos de armaduras
+      armorType?: string;
+      defenseBonus?: number;
+      rd?: number;
+      agilityPenalty?: number;
+      speedPenalty?: number;
+      // Campos de consumíveis
+      effect?: string;
+      uses?: number;
+      maxUses?: number;
+      consumable?: boolean;
+      // Campos de redução de categoria
+      favoriteAbilityId?: string;
+      effectiveCategory?: string;
+    }>;
     // Bônus condicionais ativos (persistidos no banco)
     active_conditional_bonuses?: string[];
     // Campos de afinidade elemental
@@ -500,17 +536,43 @@ export function MobileCharacterSheet({
   }, [character.id, onRefetch]);
 
   // Normaliza o inventário para ExtendedInventoryItem[]
+  // IMPORTANTE: Propaga TODOS os campos de armas, armaduras e itens para inferência correta de tipo
   const normalizedInventory: ExtendedInventoryItem[] = useMemo(() => 
     (character.inventory || []).map(item => ({
       id: item.id || crypto.randomUUID(),
       name: item.name,
       category: item.category as '0' | 'I' | 'II' | 'III' | 'IV',
       slots: item.slots || 1,
-      quantity: 1,
+      quantity: item.quantity || 1,
       itemType: (item.itemType as 'weapon' | 'armor' | 'consumable' | 'misc') || 'misc',
       isEquipped: item.isEquipped,
       equipSlot: item.equipSlot as any,
+      description: item.description,
+      // ARMAS - Campos essenciais para inferência de tipo
+      damage: item.damage,
+      damageType: item.damageType,
+      critical: item.critical,
+      criticalMultiplier: item.criticalMultiplier,
+      range: item.range,
+      special: item.special,
+      ammoType: item.ammoType,
+      weaponType: item.weaponType,
+      proficiency: item.proficiency,
+      properties: item.properties,
+      // ARMADURAS
       armorType: item.armorType as any,
+      defenseBonus: item.defenseBonus,
+      rd: item.rd,
+      agilityPenalty: item.agilityPenalty,
+      speedPenalty: item.speedPenalty,
+      // CONSUMÍVEIS
+      effect: item.effect,
+      uses: item.uses,
+      maxUses: item.maxUses,
+      consumable: item.consumable,
+      // REDUÇÃO DE CATEGORIA
+      favoriteAbilityId: item.favoriteAbilityId,
+      effectiveCategory: item.effectiveCategory as any,
     })),
   [character.inventory]);
 
