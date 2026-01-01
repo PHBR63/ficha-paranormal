@@ -9,21 +9,23 @@
  * - Aplica custo de Sanidade atomicamente
  * - Rastreia escolhas e sub-escolhas obrigatórias
  * - Valida sub-escolhas antes de confirmar (skills, rituais, elementos)
+ * 
+ * ATUALIZADO: Refatorado para usar MobileModal reutilizável
  */
 
 import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog';
+  MobileModal,
+  MobileModalContent,
+  MobileModalHeader,
+  MobileModalBody,
+  MobileModalFooter,
+  MobileModalTitle,
+  MobileModalDescription,
+} from '@/components/ui/mobile-modal';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   ArrowUp,
@@ -519,48 +521,53 @@ export function NexProgressionModal({
     }
   };
 
+  // Modal de NEX máximo alcançado
   if (!nextNex) {
     return (
-      <Dialog open={open} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="font-display tracking-wider text-center">
+      <MobileModal open={open} onOpenChange={onClose}>
+        <MobileModalContent size="sm">
+          <MobileModalHeader>
+            <MobileModalTitle className="font-display tracking-wider text-center">
               NEX MÁXIMO ALCANÇADO
-            </DialogTitle>
-          </DialogHeader>
-          <div className="text-center py-8">
-            <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-primary/20 flex items-center justify-center">
-              <Sparkles className="w-10 h-10 text-primary" />
+            </MobileModalTitle>
+          </MobileModalHeader>
+          
+          <MobileModalBody useScrollArea={false}>
+            <div className="text-center py-8">
+              <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-primary/20 flex items-center justify-center">
+                <Sparkles className="w-10 h-10 text-primary" />
+              </div>
+              <p className="text-4xl font-display text-primary mb-2">{character.nex}%</p>
+              <p className="text-muted-foreground">
+                {character.name} alcançou o nível máximo de experiência!
+              </p>
             </div>
-            <p className="text-4xl font-display text-primary mb-2">{character.nex}%</p>
-            <p className="text-muted-foreground">
-              {character.name} alcançou o nível máximo de experiência!
-            </p>
-          </div>
-          <DialogFooter>
+          </MobileModalBody>
+          
+          <MobileModalFooter>
             <Button onClick={onClose} className="w-full">Fechar</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </MobileModalFooter>
+        </MobileModalContent>
+      </MobileModal>
     );
   }
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col">
-          <DialogHeader>
-            <DialogTitle className="font-display tracking-wider text-center flex items-center justify-center gap-2">
+      <MobileModal open={open} onOpenChange={onClose}>
+        <MobileModalContent size="lg">
+          <MobileModalHeader>
+            <MobileModalTitle className="font-display tracking-wider text-center flex items-center justify-center gap-2">
               <ArrowUp className="w-5 h-5 text-primary" />
               PROGRESSÃO DE NEX
-            </DialogTitle>
-            <DialogDescription className="text-center">
+            </MobileModalTitle>
+            <MobileModalDescription className="text-center">
               {character.name} está pronto para evoluir!
-            </DialogDescription>
-          </DialogHeader>
+            </MobileModalDescription>
+          </MobileModalHeader>
 
-          <ScrollArea className="flex-1 min-h-0 pr-4">
-            <div className="space-y-6 py-4">
+          <MobileModalBody>
+            <div className="space-y-6">
               {/* Comparação de NEX */}
               <div className="flex items-center justify-center gap-6">
                 <div className="text-center">
@@ -912,9 +919,9 @@ export function NexProgressionModal({
                 </motion.div>
               )}
             </div>
-          </ScrollArea>
+          </MobileModalBody>
 
-          <DialogFooter className="gap-2 shrink-0">
+          <MobileModalFooter>
             <Button variant="outline" onClick={onClose} disabled={saving}>
               Cancelar
             </Button>
@@ -930,9 +937,9 @@ export function NexProgressionModal({
               )}
               SUBIR PARA NEX {nextNex}%
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </MobileModalFooter>
+        </MobileModalContent>
+      </MobileModal>
 
       {/* Modal de Seleção de Poderes Paranormais */}
       <ParanormalPowerSelectModal

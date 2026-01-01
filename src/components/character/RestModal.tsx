@@ -5,10 +5,20 @@
  * Regras de Descanso:
  * - Descanso Curto (1h): Recupera 1d6 + VIG de PV, todo PE
  * - Descanso Longo (8h): Recupera todo PV, todo PE, 1d6 + PRE de SAN
+ * 
+ * ATUALIZADO: Refatorado para usar MobileModal reutilizável
  */
 
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import {
+  MobileModal,
+  MobileModalContent,
+  MobileModalHeader,
+  MobileModalBody,
+  MobileModalFooter,
+  MobileModalTitle,
+  MobileModalDescription,
+} from '@/components/ui/mobile-modal';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Moon, Sun, Heart, Sparkles, Brain, Dice1, AlertTriangle, Check } from 'lucide-react';
@@ -217,233 +227,237 @@ export function RestModal({ open, onOpenChange, character, onRest }: RestModalPr
   );
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md max-h-[85vh] flex flex-col gap-3">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+    <MobileModal open={open} onOpenChange={onOpenChange}>
+      <MobileModalContent size="sm">
+        <MobileModalHeader>
+          <MobileModalTitle className="flex items-center gap-2">
             <Moon className="h-5 w-5 text-primary" />
             Sistema de Descanso
-          </DialogTitle>
-          <DialogDescription>
+          </MobileModalTitle>
+          <MobileModalDescription>
             Escolha o tipo de descanso para recuperar seus recursos
-          </DialogDescription>
-        </DialogHeader>
+          </MobileModalDescription>
+        </MobileModalHeader>
 
-        {/* Aviso se tem condição bloqueante */}
-        {hasBlockingCondition && (
-          <div className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/30 rounded-lg">
-            <AlertTriangle className="h-4 w-4 text-destructive" />
-            <span className="text-sm text-destructive">
-              Você não pode descansar enquanto estiver Morrendo ou Inconsciente!
-            </span>
-          </div>
-        )}
-
-        {/* Status atual */}
-        <div className="grid grid-cols-3 gap-3 p-3 bg-muted/50 rounded-lg">
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground mb-1">
-              <Heart className="h-3 w-3" /> PV
-            </div>
-            <span className={`font-bold ${hpMissing > 0 ? 'text-destructive' : 'text-green-500'}`}>
-              {character.hp_current}/{character.hp_max}
-            </span>
-          </div>
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground mb-1">
-              <Sparkles className="h-3 w-3" /> PE
-            </div>
-            <span className={`font-bold ${peMissing > 0 ? 'text-primary' : 'text-green-500'}`}>
-              {character.pe_current}/{character.pe_max}
-            </span>
-          </div>
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground mb-1">
-              <Brain className="h-3 w-3" /> SAN
-            </div>
-            <span className={`font-bold ${sanMissing > 0 ? 'text-orange-500' : 'text-green-500'}`}>
-              {character.san_current}/{character.san_max}
-            </span>
-          </div>
-        </div>
-
-        {/* Resultado do descanso */}
-        <AnimatePresence mode="wait">
-          {restResult ? (
-            <motion.div
-              key="result"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="space-y-3 p-4 bg-primary/5 border border-primary/20 rounded-lg"
-            >
-              <div className="flex items-center gap-2 text-primary font-semibold">
-                <Check className="h-4 w-4" />
-                Descanso {restResult.type === 'short' ? 'Curto' : 'Longo'} Completo!
+        <MobileModalBody useScrollArea={false}>
+          <div className="space-y-3">
+            {/* Aviso se tem condição bloqueante */}
+            {hasBlockingCondition && (
+              <div className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/30 rounded-lg">
+                <AlertTriangle className="h-4 w-4 text-destructive" />
+                <span className="text-sm text-destructive">
+                  Você não pode descansar enquanto estiver Morrendo ou Inconsciente!
+                </span>
               </div>
+            )}
 
-              {/* Recuperações */}
-              <div className="space-y-2 text-sm">
-                {restResult.hp_recovered > 0 && (
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-1">
-                      <Heart className="h-3 w-3 text-destructive" />
-                      PV Recuperados:
-                    </span>
-                    <span className="font-bold text-green-500">
-                      +{restResult.hp_recovered}
-                      {restResult.dice_rolls.hp && (
-                        <span className="text-xs text-muted-foreground ml-1">
-                          (🎲{restResult.dice_rolls.hp.dice} + {restResult.dice_rolls.hp.modifier} VIG)
-                        </span>
-                      )}
-                    </span>
-                  </div>
-                )}
-                
-                {restResult.pe_recovered > 0 && (
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-1">
-                      <Sparkles className="h-3 w-3 text-primary" />
-                      PE Recuperados:
-                    </span>
-                    <span className="font-bold text-green-500">+{restResult.pe_recovered}</span>
-                  </div>
-                )}
-                
-                {restResult.san_recovered > 0 && (
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-1">
-                      <Brain className="h-3 w-3 text-orange-500" />
-                      SAN Recuperada:
-                    </span>
-                    <span className="font-bold text-green-500">
-                      +{restResult.san_recovered}
-                      {restResult.dice_rolls.san && (
-                        <span className="text-xs text-muted-foreground ml-1">
-                          (🎲{restResult.dice_rolls.san.dice} + {restResult.dice_rolls.san.modifier} PRE)
-                        </span>
-                      )}
-                    </span>
-                  </div>
-                )}
-
-                {restResult.conditions_removed.length > 0 && (
-                  <div className="pt-2 border-t border-border/50">
-                    <span className="text-xs text-muted-foreground">Condições removidas:</span>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {restResult.conditions_removed.map(condition => (
-                        <Badge key={condition} variant="secondary" className="text-xs line-through opacity-60">
-                          {condition}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
+            {/* Status atual */}
+            <div className="grid grid-cols-3 gap-3 p-3 bg-muted/50 rounded-lg">
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground mb-1">
+                  <Heart className="h-3 w-3" /> PV
+                </div>
+                <span className={`font-bold ${hpMissing > 0 ? 'text-destructive' : 'text-green-500'}`}>
+                  {character.hp_current}/{character.hp_max}
+                </span>
               </div>
-
-              <Button onClick={handleConfirmRest} className="w-full">
-                <Check className="h-4 w-4 mr-2" />
-                Confirmar Recuperação
-              </Button>
-            </motion.div>
-          ) : (
-            <motion.div
-              key="options"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="space-y-3"
-            >
-              {/* Descanso Curto */}
-              <button
-                onClick={handleShortRest}
-                disabled={isResting || hasBlockingCondition}
-                className="w-full p-4 text-left border border-border rounded-lg hover:border-primary/50 hover:bg-primary/5 transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
-              >
-                <div className="flex items-start gap-3">
-                  <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors">
-                    <Sun className="h-5 w-5 text-primary" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="font-semibold flex items-center gap-2">
-                      Descanso Curto
-                      <Badge variant="outline" className="text-xs">1 hora</Badge>
-                    </div>
-                    <ul className="text-sm text-muted-foreground mt-1 space-y-0.5">
-                      <li className="flex items-center gap-1">
-                        <Heart className="h-3 w-3" /> Recupera 1d6 + VIG ({character.vigor}) de PV
-                      </li>
-                      <li className="flex items-center gap-1">
-                        <Sparkles className="h-3 w-3" /> Recupera todo PE
-                      </li>
-                      {getRemovableConditions('short').length > 0 && (
-                        <li className="text-orange-500">
-                          Remove: {getRemovableConditions('short').join(', ')}
-                        </li>
-                      )}
-                    </ul>
-                  </div>
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground mb-1">
+                  <Sparkles className="h-3 w-3" /> PE
                 </div>
-              </button>
-
-              {/* Descanso Longo */}
-              <button
-                onClick={handleLongRest}
-                disabled={isResting || hasBlockingCondition}
-                className="w-full p-4 text-left border border-border rounded-lg hover:border-primary/50 hover:bg-primary/5 transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
-              >
-                <div className="flex items-start gap-3">
-                  <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors">
-                    <Moon className="h-5 w-5 text-primary" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="font-semibold flex items-center gap-2">
-                      Descanso Longo
-                      <Badge variant="outline" className="text-xs">8 horas</Badge>
-                    </div>
-                    <ul className="text-sm text-muted-foreground mt-1 space-y-0.5">
-                      <li className="flex items-center gap-1">
-                        <Heart className="h-3 w-3" /> Recupera todo PV
-                      </li>
-                      <li className="flex items-center gap-1">
-                        <Sparkles className="h-3 w-3" /> Recupera todo PE
-                      </li>
-                      <li className="flex items-center gap-1">
-                        <Brain className="h-3 w-3" /> Recupera 1d6 + PRE ({character.presence}) de SAN
-                      </li>
-                      {getRemovableConditions('long').length > 0 && (
-                        <li className="text-orange-500 text-xs">
-                          Remove maioria das condições
-                        </li>
-                      )}
-                    </ul>
-                  </div>
+                <span className={`font-bold ${peMissing > 0 ? 'text-primary' : 'text-green-500'}`}>
+                  {character.pe_current}/{character.pe_max}
+                </span>
+              </div>
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground mb-1">
+                  <Brain className="h-3 w-3" /> SAN
                 </div>
-              </button>
-            </motion.div>
-          )}
-        </AnimatePresence>
+                <span className={`font-bold ${sanMissing > 0 ? 'text-orange-500' : 'text-green-500'}`}>
+                  {character.san_current}/{character.san_max}
+                </span>
+              </div>
+            </div>
 
-        {/* Loading state */}
-        {isResting && (
-          <div className="flex items-center justify-center gap-2 py-4">
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-            >
-              <Dice1 className="h-5 w-5 text-primary" />
-            </motion.div>
-            <span className="text-sm text-muted-foreground">Rolando dados...</span>
+            {/* Resultado do descanso */}
+            <AnimatePresence mode="wait">
+              {restResult ? (
+                <motion.div
+                  key="result"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  className="space-y-3 p-4 bg-primary/5 border border-primary/20 rounded-lg"
+                >
+                  <div className="flex items-center gap-2 text-primary font-semibold">
+                    <Check className="h-4 w-4" />
+                    Descanso {restResult.type === 'short' ? 'Curto' : 'Longo'} Completo!
+                  </div>
+
+                  {/* Recuperações */}
+                  <div className="space-y-2 text-sm">
+                    {restResult.hp_recovered > 0 && (
+                      <div className="flex items-center justify-between">
+                        <span className="flex items-center gap-1">
+                          <Heart className="h-3 w-3 text-destructive" />
+                          PV Recuperados:
+                        </span>
+                        <span className="font-bold text-green-500">
+                          +{restResult.hp_recovered}
+                          {restResult.dice_rolls.hp && (
+                            <span className="text-xs text-muted-foreground ml-1">
+                              (🎲{restResult.dice_rolls.hp.dice} + {restResult.dice_rolls.hp.modifier} VIG)
+                            </span>
+                          )}
+                        </span>
+                      </div>
+                    )}
+                    
+                    {restResult.pe_recovered > 0 && (
+                      <div className="flex items-center justify-between">
+                        <span className="flex items-center gap-1">
+                          <Sparkles className="h-3 w-3 text-primary" />
+                          PE Recuperados:
+                        </span>
+                        <span className="font-bold text-green-500">+{restResult.pe_recovered}</span>
+                      </div>
+                    )}
+                    
+                    {restResult.san_recovered > 0 && (
+                      <div className="flex items-center justify-between">
+                        <span className="flex items-center gap-1">
+                          <Brain className="h-3 w-3 text-orange-500" />
+                          SAN Recuperada:
+                        </span>
+                        <span className="font-bold text-green-500">
+                          +{restResult.san_recovered}
+                          {restResult.dice_rolls.san && (
+                            <span className="text-xs text-muted-foreground ml-1">
+                              (🎲{restResult.dice_rolls.san.dice} + {restResult.dice_rolls.san.modifier} PRE)
+                            </span>
+                          )}
+                        </span>
+                      </div>
+                    )}
+
+                    {restResult.conditions_removed.length > 0 && (
+                      <div className="pt-2 border-t border-border/50">
+                        <span className="text-xs text-muted-foreground">Condições removidas:</span>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {restResult.conditions_removed.map(condition => (
+                            <Badge key={condition} variant="secondary" className="text-xs line-through opacity-60">
+                              {condition}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <Button onClick={handleConfirmRest} className="w-full">
+                    <Check className="h-4 w-4 mr-2" />
+                    Confirmar Recuperação
+                  </Button>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="options"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="space-y-3"
+                >
+                  {/* Descanso Curto */}
+                  <button
+                    onClick={handleShortRest}
+                    disabled={isResting || hasBlockingCondition}
+                    className="w-full p-4 text-left border border-border rounded-lg hover:border-primary/50 hover:bg-primary/5 transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors">
+                        <Sun className="h-5 w-5 text-primary" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-semibold flex items-center gap-2">
+                          Descanso Curto
+                          <Badge variant="outline" className="text-xs">1 hora</Badge>
+                        </div>
+                        <ul className="text-sm text-muted-foreground mt-1 space-y-0.5">
+                          <li className="flex items-center gap-1">
+                            <Heart className="h-3 w-3" /> Recupera 1d6 + VIG ({character.vigor}) de PV
+                          </li>
+                          <li className="flex items-center gap-1">
+                            <Sparkles className="h-3 w-3" /> Recupera todo PE
+                          </li>
+                          {getRemovableConditions('short').length > 0 && (
+                            <li className="text-orange-500">
+                              Remove: {getRemovableConditions('short').join(', ')}
+                            </li>
+                          )}
+                        </ul>
+                      </div>
+                    </div>
+                  </button>
+
+                  {/* Descanso Longo */}
+                  <button
+                    onClick={handleLongRest}
+                    disabled={isResting || hasBlockingCondition}
+                    className="w-full p-4 text-left border border-border rounded-lg hover:border-primary/50 hover:bg-primary/5 transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors">
+                        <Moon className="h-5 w-5 text-primary" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-semibold flex items-center gap-2">
+                          Descanso Longo
+                          <Badge variant="outline" className="text-xs">8 horas</Badge>
+                        </div>
+                        <ul className="text-sm text-muted-foreground mt-1 space-y-0.5">
+                          <li className="flex items-center gap-1">
+                            <Heart className="h-3 w-3" /> Recupera todo PV
+                          </li>
+                          <li className="flex items-center gap-1">
+                            <Sparkles className="h-3 w-3" /> Recupera todo PE
+                          </li>
+                          <li className="flex items-center gap-1">
+                            <Brain className="h-3 w-3" /> Recupera 1d6 + PRE ({character.presence}) de SAN
+                          </li>
+                          {getRemovableConditions('long').length > 0 && (
+                            <li className="text-orange-500 text-xs">
+                              Remove maioria das condições
+                            </li>
+                          )}
+                        </ul>
+                      </div>
+                    </div>
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Loading state */}
+            {isResting && (
+              <div className="flex items-center justify-center gap-2 py-4">
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                >
+                  <Dice1 className="h-5 w-5 text-primary" />
+                </motion.div>
+                <span className="text-sm text-muted-foreground">Rolando dados...</span>
+              </div>
+            )}
           </div>
-        )}
+        </MobileModalBody>
 
-        <DialogFooter>
+        <MobileModalFooter>
           <Button variant="outline" onClick={handleCancel}>
             Cancelar
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </MobileModalFooter>
+      </MobileModalContent>
+    </MobileModal>
   );
 }
