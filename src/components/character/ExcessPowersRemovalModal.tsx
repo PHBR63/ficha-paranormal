@@ -4,11 +4,18 @@
  */
 
 import { useState, useMemo } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import {
+  MobileModal,
+  MobileModalContent,
+  MobileModalHeader,
+  MobileModalBody,
+  MobileModalFooter,
+  MobileModalTitle,
+  MobileModalDescription,
+} from '@/components/ui/mobile-modal';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { AlertTriangle, Droplet, Skull, BookOpen, Zap, Star, Trash2, Check } from 'lucide-react';
 import { SavedParanormalPower, ParanormalElement, ELEMENT_LABELS, ELEMENT_COLORS } from '@/lib/paranormal-powers';
 import { toast } from '@/hooks/use-toast';
@@ -142,22 +149,22 @@ export function ExcessPowersRemovalModal({
   if (excessCount === 0) return null;
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-destructive">
+    <MobileModal open={open} onOpenChange={handleOpenChange}>
+      <MobileModalContent size="md">
+        <MobileModalHeader>
+          <MobileModalTitle className="flex items-center gap-2 text-destructive">
             <AlertTriangle className="w-5 h-5" />
             Remover Poderes Excedentes
-          </DialogTitle>
-          <DialogDescription>
+          </MobileModalTitle>
+          <MobileModalDescription>
             Você possui <span className="font-medium text-foreground">{powers.length}</span> poderes, 
             mas seu limite é <span className="font-medium text-foreground">{maxPowers}</span>.
             Selecione <span className="font-medium text-destructive">{excessCount}</span> poder(es) para remover.
-          </DialogDescription>
-        </DialogHeader>
+          </MobileModalDescription>
+        </MobileModalHeader>
 
-        {/* Contador de seleção */}
-        <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border">
+        {/* Contador de seleção - fixo fora do scroll */}
+        <div className="flex items-center justify-between p-3 mx-4 sm:mx-6 rounded-lg bg-muted/50 border">
           <span className="text-sm text-muted-foreground">Selecionados:</span>
           <Badge 
             variant={canConfirm ? 'default' : 'secondary'}
@@ -167,8 +174,7 @@ export function ExcessPowersRemovalModal({
           </Badge>
         </div>
 
-        {/* Lista de poderes para seleção */}
-        <ScrollArea className="max-h-[300px] pr-2">
+        <MobileModalBody maxHeight="300px">
           <div className="space-y-4">
             {Object.entries(powersByElement).map(([element, elementPowers]) => {
               const Icon = ELEMENT_ICONS[element as ParanormalElement | 'generic'];
@@ -223,9 +229,9 @@ export function ExcessPowersRemovalModal({
               );
             })}
           </div>
-        </ScrollArea>
+        </MobileModalBody>
 
-        <DialogFooter className="gap-2 sm:gap-0">
+        <MobileModalFooter>
           <Button 
             variant="outline" 
             onClick={() => handleOpenChange(false)}
@@ -247,8 +253,8 @@ export function ExcessPowersRemovalModal({
               </>
             )}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </MobileModalFooter>
+      </MobileModalContent>
+    </MobileModal>
   );
 }

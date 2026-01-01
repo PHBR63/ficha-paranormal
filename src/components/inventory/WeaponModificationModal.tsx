@@ -5,16 +5,17 @@
 
 import { useState, useMemo } from 'react';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog';
+  MobileModal,
+  MobileModalContent,
+  MobileModalHeader,
+  MobileModalBody,
+  MobileModalFooter,
+  MobileModalTitle,
+  MobileModalDescription,
+} from '@/components/ui/mobile-modal';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { 
   Target, Skull, EyeOff, AlertTriangle, Wrench,
@@ -119,27 +120,27 @@ export function WeaponModificationModal({
   const categoryChanged = modifiedStats.finalCategory !== weapon.category;
   
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-2xl bg-card border-border">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-foreground">
+    <MobileModal open={open} onOpenChange={handleOpenChange}>
+      <MobileModalContent size="lg" className="p-0">
+        <MobileModalHeader bordered className="p-4 sm:p-6">
+          <MobileModalTitle className="flex items-center gap-2 text-foreground">
             <Wrench className="h-5 w-5 text-primary" />
             Modificar: {weapon.name}
-          </DialogTitle>
-          <DialogDescription>
+          </MobileModalTitle>
+          <MobileModalDescription>
             Selecione as modificações para aplicar à arma (Tabela 3.5)
-          </DialogDescription>
-        </DialogHeader>
+          </MobileModalDescription>
+        </MobileModalHeader>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Lista de modificações */}
-          <div className="space-y-3">
-            <h4 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
-              <Sparkles className="h-4 w-4" />
-              Modificações Disponíveis
-            </h4>
-            
-            <ScrollArea className="h-[300px] pr-2">
+        <MobileModalBody>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Lista de modificações */}
+            <div className="space-y-3">
+              <h4 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                <Sparkles className="h-4 w-4" />
+                Modificações Disponíveis
+              </h4>
+              
               <div className="space-y-2">
                 {availableModifications.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-4">
@@ -156,124 +157,123 @@ export function WeaponModificationModal({
                   ))
                 )}
               </div>
-            </ScrollArea>
-          </div>
-          
-          {/* Preview das estatísticas */}
-          <div className="space-y-3">
-            <h4 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
-              <Shield className="h-4 w-4" />
-              Estatísticas Resultantes
-            </h4>
+            </div>
             
-            <div className="bg-muted/30 rounded-lg p-4 space-y-3">
-              {/* Categoria */}
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Categoria:</span>
-                <div className="flex items-center gap-2">
-                  <CategoryBadge category={weapon.category} />
-                  {categoryChanged && (
-                    <>
-                      <ArrowUp className="h-4 w-4 text-amber-500" />
-                      <CategoryBadge category={modifiedStats.finalCategory} />
-                    </>
-                  )}
+            {/* Preview das estatísticas */}
+            <div className="space-y-3">
+              <h4 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                <Shield className="h-4 w-4" />
+                Estatísticas Resultantes
+              </h4>
+              
+              <div className="bg-muted/30 rounded-lg p-4 space-y-3">
+                {/* Categoria */}
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Categoria:</span>
+                  <div className="flex items-center gap-2">
+                    <CategoryBadge category={weapon.category} />
+                    {categoryChanged && (
+                      <>
+                        <ArrowUp className="h-4 w-4 text-amber-500" />
+                        <CategoryBadge category={modifiedStats.finalCategory} />
+                      </>
+                    )}
+                  </div>
                 </div>
+                
+                <Separator />
+                
+                {/* Dano */}
+                <StatRow
+                  label="Dano"
+                  original={weapon.damage}
+                  modified={modifiedStats.damage}
+                  changed={weapon.damage !== modifiedStats.damage}
+                  icon={<Swords className="h-4 w-4" />}
+                />
+                
+                {/* Crítico */}
+                <StatRow
+                  label="Crítico"
+                  original={`${weapon.critical}`}
+                  modified={`${modifiedStats.criticalMargin}`}
+                  changed={weapon.critical !== modifiedStats.criticalMargin}
+                  icon={<Skull className="h-4 w-4" />}
+                />
+                
+                {/* Bônus de Ataque */}
+                {modifiedStats.attackBonus > 0 && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground flex items-center gap-2">
+                      <Target className="h-4 w-4" />
+                      Bônus de Ataque:
+                    </span>
+                    <span className="text-sm font-medium text-green-400">
+                      +{modifiedStats.attackBonus}
+                    </span>
+                  </div>
+                )}
+                
+                {/* Alcance */}
+                {weapon.range && (
+                  <StatRow
+                    label="Alcance"
+                    original={weapon.range}
+                    modified={modifiedStats.range || weapon.range}
+                    changed={weapon.range !== modifiedStats.range}
+                    icon={<Maximize2 className="h-4 w-4" />}
+                  />
+                )}
+                
+                {/* Propriedades adicionais */}
+                {modifiedStats.addedProperties.length > 0 && (
+                  <div className="space-y-1">
+                    <span className="text-sm text-muted-foreground flex items-center gap-2">
+                      <Wrench className="h-4 w-4" />
+                      Propriedades Adicionadas:
+                    </span>
+                    <div className="flex flex-wrap gap-1">
+                      {modifiedStats.addedProperties.map((prop, i) => (
+                        <Badge key={i} variant="secondary" className="text-xs">
+                          {prop}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Efeitos especiais */}
+                {modifiedStats.specialEffects.length > 0 && (
+                  <div className="space-y-1">
+                    <span className="text-sm text-muted-foreground flex items-center gap-2">
+                      <Sparkles className="h-4 w-4" />
+                      Efeitos Especiais:
+                    </span>
+                    <div className="space-y-1">
+                      {modifiedStats.specialEffects.map((effect, i) => (
+                        <p key={i} className="text-xs text-primary/80 bg-primary/10 rounded px-2 py-1">
+                          {effect}
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
               
-              <Separator />
-              
-              {/* Dano */}
-              <StatRow
-                label="Dano"
-                original={weapon.damage}
-                modified={modifiedStats.damage}
-                changed={weapon.damage !== modifiedStats.damage}
-                icon={<Swords className="h-4 w-4" />}
-              />
-              
-              {/* Crítico */}
-              <StatRow
-                label="Crítico"
-                original={`${weapon.critical}`}
-                modified={`${modifiedStats.criticalMargin}`}
-                changed={weapon.critical !== modifiedStats.criticalMargin}
-                icon={<Skull className="h-4 w-4" />}
-              />
-              
-              {/* Bônus de Ataque */}
-              {modifiedStats.attackBonus > 0 && (
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground flex items-center gap-2">
-                    <Target className="h-4 w-4" />
-                    Bônus de Ataque:
-                  </span>
-                  <span className="text-sm font-medium text-green-400">
-                    +{modifiedStats.attackBonus}
-                  </span>
-                </div>
-              )}
-              
-              {/* Alcance */}
-              {weapon.range && (
-                <StatRow
-                  label="Alcance"
-                  original={weapon.range}
-                  modified={modifiedStats.range || weapon.range}
-                  changed={weapon.range !== modifiedStats.range}
-                  icon={<Maximize2 className="h-4 w-4" />}
-                />
-              )}
-              
-              {/* Propriedades adicionais */}
-              {modifiedStats.addedProperties.length > 0 && (
-                <div className="space-y-1">
-                  <span className="text-sm text-muted-foreground flex items-center gap-2">
-                    <Wrench className="h-4 w-4" />
-                    Propriedades Adicionadas:
-                  </span>
-                  <div className="flex flex-wrap gap-1">
-                    {modifiedStats.addedProperties.map((prop, i) => (
-                      <Badge key={i} variant="secondary" className="text-xs">
-                        {prop}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-              
-              {/* Efeitos especiais */}
-              {modifiedStats.specialEffects.length > 0 && (
-                <div className="space-y-1">
-                  <span className="text-sm text-muted-foreground flex items-center gap-2">
-                    <Sparkles className="h-4 w-4" />
-                    Efeitos Especiais:
-                  </span>
-                  <div className="space-y-1">
-                    {modifiedStats.specialEffects.map((effect, i) => (
-                      <p key={i} className="text-xs text-primary/80 bg-primary/10 rounded px-2 py-1">
-                        {effect}
-                      </p>
-                    ))}
-                  </div>
+              {/* Aviso de aumento de categoria */}
+              {categoryChanged && (
+                <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3">
+                  <p className="text-xs text-amber-400">
+                    ⚠️ As modificações aumentarão a categoria da arma de {weapon.category} para {modifiedStats.finalCategory}.
+                    Verifique se sua patente permite equipar armas dessa categoria.
+                  </p>
                 </div>
               )}
             </div>
-            
-            {/* Aviso de aumento de categoria */}
-            {categoryChanged && (
-              <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3">
-                <p className="text-xs text-amber-400">
-                  ⚠️ As modificações aumentarão a categoria da arma de {weapon.category} para {modifiedStats.finalCategory}.
-                  Verifique se sua patente permite equipar armas dessa categoria.
-                </p>
-              </div>
-            )}
           </div>
-        </div>
+        </MobileModalBody>
         
-        {/* Botões de ação */}
-        <div className="flex justify-end gap-2 pt-4">
+        <MobileModalFooter bordered>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
@@ -283,9 +283,9 @@ export function WeaponModificationModal({
           >
             Aplicar Modificações
           </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+        </MobileModalFooter>
+      </MobileModalContent>
+    </MobileModal>
   );
 }
 

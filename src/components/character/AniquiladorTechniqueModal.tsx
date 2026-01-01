@@ -21,29 +21,21 @@ import {
   Shield, 
   Zap,
   Check,
-  X,
   Info,
   Sparkles,
 } from 'lucide-react';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog';
+  MobileModal,
+  MobileModalContent,
+  MobileModalHeader,
+  MobileModalBody,
+  MobileModalFooter,
+  MobileModalTitle,
+  MobileModalDescription,
+} from '@/components/ui/mobile-modal';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
 // Definição de uma técnica disponível
@@ -242,129 +234,131 @@ export function AniquiladorTechniqueModal({
   const isSelected = (techniqueId: string) => selectedTechniques.includes(techniqueId);
 
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+    <MobileModal open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
+      <MobileModalContent size="sm">
+        <MobileModalHeader>
+          <MobileModalTitle className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-amber-400" />
             Técnica Secreta
-          </DialogTitle>
-          <DialogDescription>
+          </MobileModalTitle>
+          <MobileModalDescription>
             Selecione as técnicas para usar com <span className="font-semibold text-foreground">{weaponName}</span>
-          </DialogDescription>
-        </DialogHeader>
+          </MobileModalDescription>
+        </MobileModalHeader>
 
-        <div className="space-y-4 py-4">
-          {/* Lista de técnicas */}
-          <div className="space-y-3">
-            {availableTechniques.map((tech) => {
-              const selected = isSelected(tech.id);
-              const isLetal = tech.id === 'letal';
-              
-              return (
-                <motion.div
-                  key={tech.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className={cn(
-                    "p-3 rounded-lg border transition-all cursor-pointer",
-                    selected 
-                      ? "border-primary bg-primary/10" 
-                      : "border-border hover:border-primary/50 hover:bg-muted/50"
-                  )}
-                  onClick={() => toggleTechnique(tech.id)}
-                >
-                  <div className="flex items-start gap-3">
-                    <div className={cn(
-                      "w-8 h-8 rounded-lg flex items-center justify-center",
-                      selected ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-                    )}>
-                      <TechniqueIcon techniqueId={tech.id} />
-                    </div>
-                    
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">{tech.name}</span>
-                        <Badge variant="outline" className="text-[10px]">
-                          NEX {tech.minNex}%+
-                        </Badge>
-                        {isLetal && selected && (
-                          <Badge 
-                            variant={letalCount === 2 ? "default" : "secondary"}
-                            className="text-[10px]"
-                          >
-                            {letalCount}x (+{letalCount === 2 ? 5 : 2} margem)
+        <MobileModalBody>
+          <div className="space-y-4">
+            {/* Lista de técnicas */}
+            <div className="space-y-3">
+              {availableTechniques.map((tech) => {
+                const selected = isSelected(tech.id);
+                const isLetal = tech.id === 'letal';
+                
+                return (
+                  <motion.div
+                    key={tech.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className={cn(
+                      "p-3 rounded-lg border transition-all cursor-pointer",
+                      selected 
+                        ? "border-primary bg-primary/10" 
+                        : "border-border hover:border-primary/50 hover:bg-muted/50"
+                    )}
+                    onClick={() => toggleTechnique(tech.id)}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className={cn(
+                        "w-8 h-8 rounded-lg flex items-center justify-center",
+                        selected ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                      )}>
+                        <TechniqueIcon techniqueId={tech.id} />
+                      </div>
+                      
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{tech.name}</span>
+                          <Badge variant="outline" className="text-[10px]">
+                            NEX {tech.minNex}%+
                           </Badge>
+                          {isLetal && selected && (
+                            <Badge 
+                              variant={letalCount === 2 ? "default" : "secondary"}
+                              className="text-[10px]"
+                            >
+                              {letalCount}x (+{letalCount === 2 ? 5 : 2} margem)
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {tech.description}
+                        </p>
+                        {tech.canSelectTwice && (
+                          <p className="text-[10px] text-amber-400/80 mt-1 flex items-center gap-1">
+                            <Info className="w-3 h-3" />
+                            {tech.doubleEffectDescription}
+                          </p>
                         )}
                       </div>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {tech.description}
-                      </p>
-                      {tech.canSelectTwice && (
-                        <p className="text-[10px] text-amber-400/80 mt-1 flex items-center gap-1">
-                          <Info className="w-3 h-3" />
-                          {tech.doubleEffectDescription}
-                        </p>
-                      )}
-                    </div>
 
-                    <div className={cn(
-                      "w-5 h-5 rounded border flex items-center justify-center",
-                      selected ? "bg-primary border-primary" : "border-muted-foreground/50"
-                    )}>
-                      {selected && <Check className="w-3 h-3 text-primary-foreground" />}
+                      <div className={cn(
+                        "w-5 h-5 rounded border flex items-center justify-center",
+                        selected ? "bg-primary border-primary" : "border-muted-foreground/50"
+                      )}>
+                        {selected && <Check className="w-3 h-3 text-primary-foreground" />}
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+
+            {/* Resumo dos efeitos */}
+            <AnimatePresence>
+              {selectedTechniques.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="overflow-hidden"
+                >
+                  <Separator className="my-4" />
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-medium">Efeitos Aplicados:</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {consolidatedEffects.additionalTargets > 0 && (
+                        <Badge variant="secondary" className="gap-1">
+                          <Target className="w-3 h-3" />
+                          +{consolidatedEffects.additionalTargets} alvo(s)
+                        </Badge>
+                      )}
+                      {consolidatedEffects.criticalMultiplierBonus > 0 && (
+                        <Badge variant="secondary" className="gap-1">
+                          <Sword className="w-3 h-3" />
+                          +{consolidatedEffects.criticalMultiplierBonus} mult. crítico
+                        </Badge>
+                      )}
+                      {consolidatedEffects.criticalMarginBonus > 0 && (
+                        <Badge variant="secondary" className="gap-1">
+                          <Crosshair className="w-3 h-3" />
+                          +{consolidatedEffects.criticalMarginBonus} margem
+                        </Badge>
+                      )}
+                      {consolidatedEffects.ignoreResistance > 0 && (
+                        <Badge variant="secondary" className="gap-1">
+                          <Shield className="w-3 h-3" />
+                          Ignora {consolidatedEffects.ignoreResistance} RD
+                        </Badge>
+                      )}
                     </div>
                   </div>
                 </motion.div>
-              );
-            })}
+              )}
+            </AnimatePresence>
           </div>
+        </MobileModalBody>
 
-          {/* Resumo dos efeitos */}
-          <AnimatePresence>
-            {selectedTechniques.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="overflow-hidden"
-              >
-                <Separator className="my-4" />
-                <div className="space-y-2">
-                  <h4 className="text-sm font-medium">Efeitos Aplicados:</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {consolidatedEffects.additionalTargets > 0 && (
-                      <Badge variant="secondary" className="gap-1">
-                        <Target className="w-3 h-3" />
-                        +{consolidatedEffects.additionalTargets} alvo(s)
-                      </Badge>
-                    )}
-                    {consolidatedEffects.criticalMultiplierBonus > 0 && (
-                      <Badge variant="secondary" className="gap-1">
-                        <Sword className="w-3 h-3" />
-                        +{consolidatedEffects.criticalMultiplierBonus} mult. crítico
-                      </Badge>
-                    )}
-                    {consolidatedEffects.criticalMarginBonus > 0 && (
-                      <Badge variant="secondary" className="gap-1">
-                        <Crosshair className="w-3 h-3" />
-                        +{consolidatedEffects.criticalMarginBonus} margem
-                      </Badge>
-                    )}
-                    {consolidatedEffects.ignoreResistance > 0 && (
-                      <Badge variant="secondary" className="gap-1">
-                        <Shield className="w-3 h-3" />
-                        Ignora {consolidatedEffects.ignoreResistance} RD
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
-        <DialogFooter className="flex-col sm:flex-row gap-2">
+        <MobileModalFooter>
           {/* Custo de PE */}
           <div className="flex items-center gap-2 mr-auto">
             <Zap className={cn(
@@ -391,9 +385,9 @@ export function AniquiladorTechniqueModal({
           >
             Confirmar Técnica
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </MobileModalFooter>
+      </MobileModalContent>
+    </MobileModal>
   );
 }
 

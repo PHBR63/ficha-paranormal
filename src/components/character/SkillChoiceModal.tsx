@@ -10,15 +10,15 @@
 
 import { useState } from 'react';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+  MobileModal,
+  MobileModalContent,
+  MobileModalHeader,
+  MobileModalBody,
+  MobileModalTitle,
+  MobileModalDescription,
+} from '@/components/ui/mobile-modal';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { SKILLS } from '@/lib/character-data';
 import { isValidSkillId } from '@/lib/character-builder-engine';
 import { cn } from '@/lib/utils';
@@ -91,103 +91,103 @@ export function SkillChoiceModal({
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="font-display tracking-wider">{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
-        </DialogHeader>
+    <MobileModal open={open} onOpenChange={handleClose}>
+      <MobileModalContent size="sm">
+        <MobileModalHeader>
+          <MobileModalTitle className="font-display tracking-wider">{title}</MobileModalTitle>
+          <MobileModalDescription>{description}</MobileModalDescription>
+        </MobileModalHeader>
 
-        {/* Aviso de conflito */}
-        {hasConflict && allowFreeChoice && (
-          <div className="flex items-start gap-2 p-3 rounded-lg bg-warning/10 border border-warning/30 text-warning">
-            <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-            <div className="text-sm">
-              <p className="font-medium">Conflito detectado!</p>
-              <p className="text-xs opacity-80">
-                {conflictOptions.length === 1 
-                  ? `A perícia "${SKILLS.find(s => s.id === conflictOptions[0])?.name}" já foi concedida pela sua origem.`
-                  : `Algumas perícias já foram concedidas pela sua origem.`
-                }
-                {' '}Você pode escolher a outra opção ou selecionar qualquer perícia livre.
-              </p>
+        <MobileModalBody useScrollArea={showFreeChoice}>
+          {/* Aviso de conflito */}
+          {hasConflict && allowFreeChoice && (
+            <div className="flex items-start gap-2 p-3 rounded-lg bg-warning/10 border border-warning/30 text-warning mb-4">
+              <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <div className="text-sm">
+                <p className="font-medium">Conflito detectado!</p>
+                <p className="text-xs opacity-80">
+                  {conflictOptions.length === 1 
+                    ? `A perícia "${SKILLS.find(s => s.id === conflictOptions[0])?.name}" já foi concedida pela sua origem.`
+                    : `Algumas perícias já foram concedidas pela sua origem.`
+                  }
+                  {' '}Você pode escolher a outra opção ou selecionar qualquer perícia livre.
+                </p>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {!showFreeChoice ? (
-          <div className="space-y-2 mt-4">
-            {/* Opções normais */}
-            {options.map((skillId) => {
-              const skill = SKILLS.find(s => s.id === skillId);
-              if (!skill) return null;
+          {!showFreeChoice ? (
+            <div className="space-y-2">
+              {/* Opções normais */}
+              {options.map((skillId) => {
+                const skill = SKILLS.find(s => s.id === skillId);
+                if (!skill) return null;
 
-              const isSelected = selectedSkill === skillId;
-              const isConflict = excludeSkills.includes(skillId);
+                const isSelected = selectedSkill === skillId;
+                const isConflict = excludeSkills.includes(skillId);
 
-              return (
-                <Button
-                  key={skillId}
-                  variant="outline"
-                  onClick={() => !isConflict && handleSelect(skillId)}
-                  disabled={isConflict}
-                  className={cn(
-                    'w-full justify-start h-auto py-3',
-                    isSelected && 'border-primary bg-primary/10',
-                    isConflict && 'opacity-60 cursor-not-allowed'
-                  )}
-                >
-                  <div className="text-left flex-1">
-                    <div className="flex items-center gap-2">
-                      <p className="font-medium">{skill.name}</p>
-                      {isConflict && (
-                        <Badge variant="outline" className="text-xs text-warning border-warning">
-                          Já treinada
-                        </Badge>
-                      )}
-                      {isSelected && (
-                        <Check className="w-4 h-4 text-primary" />
-                      )}
+                return (
+                  <Button
+                    key={skillId}
+                    variant="outline"
+                    onClick={() => !isConflict && handleSelect(skillId)}
+                    disabled={isConflict}
+                    className={cn(
+                      'w-full justify-start h-auto py-3',
+                      isSelected && 'border-primary bg-primary/10',
+                      isConflict && 'opacity-60 cursor-not-allowed'
+                    )}
+                  >
+                    <div className="text-left flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium">{skill.name}</p>
+                        {isConflict && (
+                          <Badge variant="outline" className="text-xs text-warning border-warning">
+                            Já treinada
+                          </Badge>
+                        )}
+                        {isSelected && (
+                          <Check className="w-4 h-4 text-primary" />
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground">{skill.description}</p>
                     </div>
-                    <p className="text-xs text-muted-foreground">{skill.description}</p>
+                  </Button>
+                );
+              })}
+
+              {/* Terceira opção: escolher outra perícia */}
+              {allowFreeChoice && hasConflict && (
+                <Button
+                  variant="outline"
+                  onClick={() => setShowFreeChoice(true)}
+                  className="w-full justify-start h-auto py-3 border-dashed border-primary/50 hover:border-primary"
+                >
+                  <div className="text-left flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-primary" />
+                    <div>
+                      <p className="font-medium text-primary">Escolher outra perícia</p>
+                      <p className="text-xs text-muted-foreground">
+                        Selecione qualquer perícia disponível como substituição
+                      </p>
+                    </div>
                   </div>
                 </Button>
-              );
-            })}
-
-            {/* Terceira opção: escolher outra perícia */}
-            {allowFreeChoice && hasConflict && (
-              <Button
-                variant="outline"
-                onClick={() => setShowFreeChoice(true)}
-                className="w-full justify-start h-auto py-3 border-dashed border-primary/50 hover:border-primary"
-              >
-                <div className="text-left flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-primary" />
-                  <div>
-                    <p className="font-medium text-primary">Escolher outra perícia</p>
-                    <p className="text-xs text-muted-foreground">
-                      Selecione qualquer perícia disponível como substituição
-                    </p>
-                  </div>
-                </div>
-              </Button>
-            )}
-          </div>
-        ) : (
-          /* Lista de todas as perícias disponíveis */
-          <div className="mt-4">
-            <div className="flex items-center justify-between mb-3">
-              <h4 className="text-sm font-medium">Escolha uma perícia:</h4>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => setShowFreeChoice(false)}
-              >
-                Voltar
-              </Button>
+              )}
             </div>
-            <ScrollArea className="h-[300px]">
+          ) : (
+            /* Lista de todas as perícias disponíveis */
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-sm font-medium">Escolha uma perícia:</h4>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setShowFreeChoice(false)}
+                >
+                  Voltar
+                </Button>
+              </div>
               <div className="grid grid-cols-2 gap-2">
                 {allAvailableSkills.map((skill) => (
                   <Button
@@ -205,11 +205,11 @@ export function SkillChoiceModal({
                   </Button>
                 ))}
               </div>
-            </ScrollArea>
-          </div>
-        )}
-      </DialogContent>
-    </Dialog>
+            </div>
+          )}
+        </MobileModalBody>
+      </MobileModalContent>
+    </MobileModal>
   );
 }
 
@@ -252,34 +252,36 @@ export function ConflictResolutionModal({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg max-h-[80vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="font-display tracking-wider text-warning">
+    <MobileModal open={open} onOpenChange={onOpenChange}>
+      <MobileModalContent size="md">
+        <MobileModalHeader>
+          <MobileModalTitle className="font-display tracking-wider text-warning">
             CONFLITO DE PERÍCIA
-          </DialogTitle>
-          <DialogDescription>
+          </MobileModalTitle>
+          <MobileModalDescription>
             A perícia <strong>{conflictSkill?.name}</strong> já foi concedida pela sua origem.
             Escolha outra perícia para substituí-la.
-          </DialogDescription>
-        </DialogHeader>
+          </MobileModalDescription>
+        </MobileModalHeader>
 
-        <div className="grid grid-cols-2 gap-2 mt-4">
-          {availableSkills.map((skill) => (
-            <Button
-              key={skill.id}
-              variant="outline"
-              onClick={() => handleSelect(skill.id)}
-              className="justify-start h-auto py-2 px-3"
-            >
-              <div className="text-left">
-                <p className="font-medium text-sm">{skill.name}</p>
-                <p className="text-xs text-muted-foreground truncate">{skill.attribute.toUpperCase()}</p>
-              </div>
-            </Button>
-          ))}
-        </div>
-      </DialogContent>
-    </Dialog>
+        <MobileModalBody>
+          <div className="grid grid-cols-2 gap-2">
+            {availableSkills.map((skill) => (
+              <Button
+                key={skill.id}
+                variant="outline"
+                onClick={() => handleSelect(skill.id)}
+                className="justify-start h-auto py-2 px-3"
+              >
+                <div className="text-left">
+                  <p className="font-medium text-sm">{skill.name}</p>
+                  <p className="text-xs text-muted-foreground truncate">{skill.attribute.toUpperCase()}</p>
+                </div>
+              </Button>
+            ))}
+          </div>
+        </MobileModalBody>
+      </MobileModalContent>
+    </MobileModal>
   );
 }
