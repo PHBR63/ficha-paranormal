@@ -4,12 +4,13 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
+  MobileModal,
+  MobileModalContent,
+  MobileModalHeader,
+  MobileModalBody,
+  MobileModalFooter,
+  MobileModalTitle,
+} from '@/components/ui/mobile-modal';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,7 +33,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ScrollArea } from '@/components/ui/scroll-area';
+// ScrollArea removido - MobileModalBody já inclui
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Select,
@@ -529,13 +530,13 @@ export function CharacterEditModal({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-3xl max-h-[85vh] sm:max-h-[90vh] flex flex-col gap-0 p-0">
-        <DialogHeader className="p-4 sm:p-6 pb-2 shrink-0 border-b border-border/50">
-          <DialogTitle className="font-display tracking-wider text-center">
+    <MobileModal open={open} onOpenChange={onClose}>
+      <MobileModalContent size="lg" className="p-0 gap-0">
+        <MobileModalHeader bordered className="p-4 sm:p-6 pb-2">
+          <MobileModalTitle className="font-display tracking-wider text-center">
             EDITAR PERSONAGEM
-          </DialogTitle>
-        </DialogHeader>
+          </MobileModalTitle>
+        </MobileModalHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 min-h-0 flex flex-col">
           <TabsList className="grid grid-cols-4 w-full shrink-0 mx-4 sm:mx-6 mt-3 sm:mt-4" style={{ width: 'calc(100% - 2rem)' }}>
@@ -557,7 +558,7 @@ export function CharacterEditModal({
             </TabsTrigger>
           </TabsList>
 
-          <ScrollArea className="flex-1 min-h-0 mt-3 sm:mt-4 overscroll-contain">
+          <MobileModalBody className="mt-3 sm:mt-4">
             <div className="px-4 sm:px-6 pb-4">
             {/* INFO TAB */}
             <TabsContent value="info" className="space-y-4 mt-0">
@@ -993,12 +994,12 @@ export function CharacterEditModal({
               </div>
             </TabsContent>
             </div>
-          </ScrollArea>
+          </MobileModalBody>
         </Tabs>
 
         {/* Resumo de erros */}
         {Object.keys(errors).length > 0 && (
-          <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-lg flex items-start gap-2">
+          <div className="mx-4 sm:mx-6 p-3 bg-destructive/10 border border-destructive/30 rounded-lg flex items-start gap-2">
             <AlertCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
             <div className="text-xs text-destructive">
               <p className="font-medium">Corrija os erros antes de salvar:</p>
@@ -1011,7 +1012,7 @@ export function CharacterEditModal({
           </div>
         )}
 
-        <DialogFooter className="gap-2 p-4 sm:p-6 shrink-0 border-t border-border/50">
+        <MobileModalFooter bordered className="gap-2 p-4 sm:p-6">
           {/* Botão de Reset */}
           {hasAnyChanges && (
             <Button 
@@ -1042,8 +1043,8 @@ export function CharacterEditModal({
             )}
             {hasSignificantChanges ? 'Revisar Mudanças' : 'Salvar Alterações'}
           </Button>
-        </DialogFooter>
-      </DialogContent>
+        </MobileModalFooter>
+      </MobileModalContent>
 
       {/* Dialog de confirmação para mudanças significativas */}
       <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
@@ -1142,7 +1143,7 @@ export function CharacterEditModal({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </Dialog>
+    </MobileModal>
   );
 }
 
