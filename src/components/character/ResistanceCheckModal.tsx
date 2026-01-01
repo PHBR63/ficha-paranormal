@@ -6,7 +6,15 @@
 
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import {
+  MobileModal,
+  MobileModalContent,
+  MobileModalHeader,
+  MobileModalBody,
+  MobileModalFooter,
+  MobileModalTitle,
+} from '@/components/ui/mobile-modal';
+import { DialogHeader } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -20,8 +28,6 @@ import {
   Heart,
   Brain,
   Wind,
-  AlertTriangle,
-  Minus,
   ChevronRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -215,15 +221,15 @@ export function ResistanceCheckModal({
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-sm">
+    <MobileModal open={open} onOpenChange={handleOpenChange}>
+      <MobileModalContent size="sm" className="overflow-visible">
         {/* Gradient background */}
         <div className={cn(
           "absolute inset-x-0 top-0 h-24 rounded-t-lg opacity-30",
           `bg-gradient-to-b ${elementConfig?.color || 'from-primary/20 to-transparent'}`
         )} />
 
-        <DialogHeader className="relative">
+        <MobileModalHeader className="relative">
           <div className="flex items-center gap-3">
             <motion.div
               initial={{ scale: 0 }}
@@ -238,195 +244,197 @@ export function ResistanceCheckModal({
             </motion.div>
 
             <div>
-              <DialogTitle className="font-display tracking-wider">
+              <MobileModalTitle className="font-display tracking-wider">
                 Teste de {resistance.type.charAt(0).toUpperCase() + resistance.type.slice(1)}
-              </DialogTitle>
+              </MobileModalTitle>
               <p className="text-sm text-muted-foreground">
                 {ritual.name}
               </p>
             </div>
           </div>
-        </DialogHeader>
+        </MobileModalHeader>
 
-        <div className="space-y-4 py-4">
-          {/* Info do teste */}
-          <div className="p-3 rounded-lg bg-muted/50 border border-border">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-muted-foreground">Dificuldade (DT)</span>
-              <div className="flex items-center gap-2">
-                <Input
-                  type="number"
-                  value={customDT}
-                  onChange={(e) => setCustomDT(e.target.value)}
-                  placeholder={String(dt)}
-                  className="w-16 h-8 text-center"
-                />
-                <Badge variant="outline" className={resistanceColor}>
-                  {attributeLabel}
-                </Badge>
+        <MobileModalBody useScrollArea={false}>
+          <div className="space-y-4">
+            {/* Info do teste */}
+            <div className="p-3 rounded-lg bg-muted/50 border border-border">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm text-muted-foreground">Dificuldade (DT)</span>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    value={customDT}
+                    onChange={(e) => setCustomDT(e.target.value)}
+                    placeholder={String(dt)}
+                    className="w-16 h-8 text-center"
+                  />
+                  <Badge variant="outline" className={resistanceColor}>
+                    {attributeLabel}
+                  </Badge>
+                </div>
               </div>
+              <p className="text-xs text-muted-foreground">
+                Efeito: <span className="capitalize">{resistance.effect.replace('_', ' ')}</span>
+                {resistance.effect === 'anula' && ' (sucesso anula completamente)'}
+                {resistance.effect === 'parcial' && ' (sucesso reduz dano à metade ou evita condição)'}
+                {resistance.effect === 'reduz_metade' && ' (sucesso reduz dano à metade)'}
+              </p>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Efeito: <span className="capitalize">{resistance.effect.replace('_', ' ')}</span>
-              {resistance.effect === 'anula' && ' (sucesso anula completamente)'}
-              {resistance.effect === 'parcial' && ' (sucesso reduz dano à metade ou evita condição)'}
-              {resistance.effect === 'reduz_metade' && ' (sucesso reduz dano à metade)'}
-            </p>
-          </div>
 
-          {/* Dano original (se houver) */}
-          {damage !== undefined && (
-            <div className="flex items-center justify-between p-2 rounded-lg bg-destructive/10 border border-destructive/30">
-              <span className="text-sm">Dano original</span>
-              <Badge variant="destructive">{damage}</Badge>
-            </div>
-          )}
-
-          {/* Área de rolagem */}
-          <div className="space-y-3">
-            {/* Rolagem automática (se tiver atributos do alvo) */}
-            {targetAttribute !== null && (
-              <Button
-                onClick={handleRoll}
-                disabled={isRolling}
-                className="w-full gap-2"
-                variant="outline"
-              >
-                <Dices className={cn("w-4 h-4", isRolling && "animate-spin")} />
-                Rolar {targetAttribute}d20 ({attributeLabel} {targetAttribute})
-              </Button>
+            {/* Dano original (se houver) */}
+            {damage !== undefined && (
+              <div className="flex items-center justify-between p-2 rounded-lg bg-destructive/10 border border-destructive/30">
+                <span className="text-sm">Dano original</span>
+                <Badge variant="destructive">{damage}</Badge>
+              </div>
             )}
 
-            {/* Rolagem manual */}
-            <div className="flex gap-2">
-              <div className="flex-1">
-                <Label className="text-xs text-muted-foreground">Resultado manual (1-20)</Label>
-                <Input
-                  type="number"
-                  min={1}
-                  max={20}
-                  value={manualRoll}
-                  onChange={(e) => setManualRoll(e.target.value)}
-                  placeholder="Resultado do d20"
-                  className="mt-1"
-                />
+            {/* Área de rolagem */}
+            <div className="space-y-3">
+              {/* Rolagem automática (se tiver atributos do alvo) */}
+              {targetAttribute !== null && (
+                <Button
+                  onClick={handleRoll}
+                  disabled={isRolling}
+                  className="w-full gap-2"
+                  variant="outline"
+                >
+                  <Dices className={cn("w-4 h-4", isRolling && "animate-spin")} />
+                  Rolar {targetAttribute}d20 ({attributeLabel} {targetAttribute})
+                </Button>
+              )}
+
+              {/* Rolagem manual */}
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <Label className="text-xs text-muted-foreground">Resultado manual (1-20)</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={20}
+                    value={manualRoll}
+                    onChange={(e) => setManualRoll(e.target.value)}
+                    placeholder="Resultado do d20"
+                    className="mt-1"
+                  />
+                </div>
+                <Button
+                  onClick={handleManualRoll}
+                  disabled={!manualRoll}
+                  variant="secondary"
+                  className="self-end"
+                >
+                  Usar
+                </Button>
               </div>
-              <Button
-                onClick={handleManualRoll}
-                disabled={!manualRoll}
-                variant="secondary"
-                className="self-end"
-              >
-                Usar
-              </Button>
             </div>
-          </div>
 
-          {/* Resultado da rolagem */}
-          <AnimatePresence mode="wait">
-            {isRolling ? (
-              <motion.div
-                key="rolling"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="text-center py-4"
-              >
-                <Dices className={cn("w-8 h-8 mx-auto animate-spin", resistanceColor)} />
-                <p className="text-sm text-muted-foreground mt-2">Rolando...</p>
-              </motion.div>
-            ) : rollResult && testResult ? (
-              <motion.div
-                key="result"
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                className="space-y-3"
-              >
-                {/* Dados rolados */}
-                <div className="flex items-center justify-center gap-2 flex-wrap">
-                  {rollResult.dice.map((die, i) => (
-                    <motion.div
-                      key={i}
-                      initial={{ y: -20, opacity: 0 }}
-                      animate={{ y: 0, opacity: 1 }}
-                      transition={{ delay: i * 0.1 }}
-                      className={cn(
-                        "w-10 h-10 rounded-lg flex items-center justify-center font-bold text-lg",
-                        "bg-card border-2",
-                        die === rollResult.best
-                          ? testResult.passed
-                            ? "border-success text-success"
-                            : "border-destructive text-destructive"
-                          : "border-border text-muted-foreground"
-                      )}
-                    >
-                      {die}
-                    </motion.div>
-                  ))}
-                </div>
-
-                {/* Resultado final */}
-                <div className={cn(
-                  "p-4 rounded-lg border-2 text-center",
-                  testResult.passed
-                    ? "bg-success/10 border-success/50"
-                    : "bg-destructive/10 border-destructive/50"
-                )}>
-                  <div className="flex items-center justify-center gap-2 mb-2">
-                    {testResult.passed ? (
-                      <Check className="w-6 h-6 text-success" />
-                    ) : (
-                      <X className="w-6 h-6 text-destructive" />
-                    )}
-                    <span className={cn(
-                      "text-2xl font-bold",
-                      testResult.passed ? "text-success" : "text-destructive"
-                    )}>
-                      {testResult.passed ? 'PASSOU!' : 'FALHOU!'}
-                    </span>
-                  </div>
-                  
-                  <div className="text-sm text-muted-foreground">
-                    {rollResult.total} vs DT {dt}
-                    <span className={cn(
-                      "ml-2",
-                      testResult.margin >= 0 ? "text-success" : "text-destructive"
-                    )}>
-                      ({testResult.margin >= 0 ? '+' : ''}{testResult.margin})
-                    </span>
+            {/* Resultado da rolagem */}
+            <AnimatePresence mode="wait">
+              {isRolling ? (
+                <motion.div
+                  key="rolling"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="text-center py-4"
+                >
+                  <Dices className={cn("w-8 h-8 mx-auto animate-spin", resistanceColor)} />
+                  <p className="text-sm text-muted-foreground mt-2">Rolando...</p>
+                </motion.div>
+              ) : rollResult && testResult ? (
+                <motion.div
+                  key="result"
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  className="space-y-3"
+                >
+                  {/* Dados rolados */}
+                  <div className="flex items-center justify-center gap-2 flex-wrap">
+                    {rollResult.dice.map((die, i) => (
+                      <motion.div
+                        key={i}
+                        initial={{ y: -20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ delay: i * 0.1 }}
+                        className={cn(
+                          "w-10 h-10 rounded-lg flex items-center justify-center font-bold text-lg",
+                          "bg-card border-2",
+                          die === rollResult.best
+                            ? testResult.passed
+                              ? "border-success text-success"
+                              : "border-destructive text-destructive"
+                            : "border-border text-muted-foreground"
+                        )}
+                      >
+                        {die}
+                      </motion.div>
+                    ))}
                   </div>
 
-                  {/* Dano ajustado */}
-                  {damage !== undefined && adjustedDamage !== undefined && (
-                    <div className="mt-3 pt-3 border-t border-border/50">
-                      <div className="flex items-center justify-center gap-2">
-                        <span className="text-sm text-muted-foreground">Dano:</span>
-                        <span className="text-sm line-through text-muted-foreground">{damage}</span>
-                        <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                        <Badge className={cn(
-                          adjustedDamage === 0 
-                            ? "bg-success/20 text-success" 
-                            : adjustedDamage < damage 
-                              ? "bg-warning/20 text-warning"
-                              : "bg-destructive/20 text-destructive"
-                        )}>
-                          {adjustedDamage}
-                        </Badge>
-                      </div>
-                      {testResult.passed && resistance.effect === 'parcial' && effect?.appliesConditions && (
-                        <p className="text-xs text-success mt-1">
-                          Condição evitada!
-                        </p>
+                  {/* Resultado final */}
+                  <div className={cn(
+                    "p-4 rounded-lg border-2 text-center",
+                    testResult.passed
+                      ? "bg-success/10 border-success/50"
+                      : "bg-destructive/10 border-destructive/50"
+                  )}>
+                    <div className="flex items-center justify-center gap-2 mb-2">
+                      {testResult.passed ? (
+                        <Check className="w-6 h-6 text-success" />
+                      ) : (
+                        <X className="w-6 h-6 text-destructive" />
                       )}
+                      <span className={cn(
+                        "text-2xl font-bold",
+                        testResult.passed ? "text-success" : "text-destructive"
+                      )}>
+                        {testResult.passed ? 'PASSOU!' : 'FALHOU!'}
+                      </span>
                     </div>
-                  )}
-                </div>
-              </motion.div>
-            ) : null}
-          </AnimatePresence>
-        </div>
+                    
+                    <div className="text-sm text-muted-foreground">
+                      {rollResult.total} vs DT {dt}
+                      <span className={cn(
+                        "ml-2",
+                        testResult.margin >= 0 ? "text-success" : "text-destructive"
+                      )}>
+                        ({testResult.margin >= 0 ? '+' : ''}{testResult.margin})
+                      </span>
+                    </div>
 
-        <DialogFooter className="gap-2">
+                    {/* Dano ajustado */}
+                    {damage !== undefined && adjustedDamage !== undefined && (
+                      <div className="mt-3 pt-3 border-t border-border/50">
+                        <div className="flex items-center justify-center gap-2">
+                          <span className="text-sm text-muted-foreground">Dano:</span>
+                          <span className="text-sm line-through text-muted-foreground">{damage}</span>
+                          <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                          <Badge className={cn(
+                            adjustedDamage === 0 
+                              ? "bg-success/20 text-success" 
+                              : adjustedDamage < damage 
+                                ? "bg-warning/20 text-warning"
+                                : "bg-destructive/20 text-destructive"
+                          )}>
+                            {adjustedDamage}
+                          </Badge>
+                        </div>
+                        {testResult.passed && resistance.effect === 'parcial' && effect?.appliesConditions && (
+                          <p className="text-xs text-success mt-1">
+                            Condição evitada!
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
+          </div>
+        </MobileModalBody>
+
+        <MobileModalFooter>
           <Button
             variant="outline"
             onClick={() => handleOpenChange(false)}
@@ -444,8 +452,8 @@ export function ResistanceCheckModal({
             <Check className="w-4 h-4" />
             Aplicar Resultado
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </MobileModalFooter>
+      </MobileModalContent>
+    </MobileModal>
   );
 }

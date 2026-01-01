@@ -3,17 +3,16 @@
  * Exibe informações completas de qualquer item do inventário
  */
 
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+  MobileModal,
+  MobileModalContent,
+  MobileModalBody,
+  MobileModalFooter,
+} from '@/components/ui/mobile-modal';
+import { DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import {
   Sword,
@@ -107,8 +106,8 @@ export function InventoryItemDetailModal({
   const hasModifications = extendedItem.appliedModifications && extendedItem.appliedModifications.length > 0;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-full max-w-[95vw] sm:max-w-md max-h-[85vh] flex flex-col p-0 gap-0 overflow-hidden [&>button]:top-3 [&>button]:right-3">
+    <MobileModal open={open} onOpenChange={onOpenChange}>
+      <MobileModalContent size="sm" className="p-0 gap-0 overflow-hidden">
         {/* Header com gradiente */}
         <div className={cn(
           "p-4 sm:p-6",
@@ -147,8 +146,8 @@ export function InventoryItemDetailModal({
         </div>
 
         {/* Conteúdo scrollável */}
-        <ScrollArea className="flex-1 min-h-0 overflow-auto">
-          <div className="px-4 sm:px-6 space-y-4 py-4">
+        <MobileModalBody>
+          <div className="space-y-4">
             {/* Info básica */}
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
               <span className="flex items-center gap-1">
@@ -333,11 +332,11 @@ export function InventoryItemDetailModal({
               </>
             )}
           </div>
-        </ScrollArea>
+        </MobileModalBody>
 
         {/* Botões de ação */}
-        <div className="p-4 sm:p-6 border-t border-border bg-card/50 flex-shrink-0">
-          <div className="flex gap-2">
+        <MobileModalFooter bordered>
+          <div className="flex gap-2 w-full">
             {/* Botão Equipar/Desequipar */}
             {(onEquip || onUnequip) && (
               <Button
@@ -389,8 +388,8 @@ export function InventoryItemDetailModal({
               Fechar
             </Button>
           </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+        </MobileModalFooter>
+      </MobileModalContent>
+    </MobileModal>
   );
 }

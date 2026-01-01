@@ -3,9 +3,14 @@
  * Usada na versão mobile para mostrar descrições completas
  */
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  MobileModal,
+  MobileModalContent,
+  MobileModalBody,
+  MobileModalFooter,
+} from '@/components/ui/mobile-modal';
+import { DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Sparkles, Zap, User, Scroll, BookOpen, Info, Play } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -107,9 +112,9 @@ export function PowerDetailModal({ open, onOpenChange, power, onCastRitual }: Po
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md max-h-[85vh] p-0 overflow-hidden">
-        {/* Header colorido */}
+    <MobileModal open={open} onOpenChange={onOpenChange}>
+      <MobileModalContent size="sm" className="p-0 overflow-hidden">
+        {/* Header colorido customizado */}
         <div className={cn(
           "p-4 border-b",
           config.bgColor,
@@ -173,8 +178,8 @@ export function PowerDetailModal({ open, onOpenChange, power, onCastRitual }: Po
         </div>
 
         {/* Conteúdo scrollável */}
-        <ScrollArea className="max-h-[60vh]">
-          <div className="p-4 space-y-4">
+        <MobileModalBody maxHeight="60vh">
+          <div className="space-y-4">
             {/* Descrição principal */}
             {power.description && (
               <div>
@@ -219,23 +224,23 @@ export function PowerDetailModal({ open, onOpenChange, power, onCastRitual }: Po
                 <p className="text-sm">Sem descrição detalhada disponível.</p>
               </div>
             )}
-            
-            {/* Botão de conjurar para rituais */}
-            {power.type === 'ritual' && onCastRitual && (
-              <div className="pt-2 border-t border-border">
-                <Button 
-                  onClick={handleCast}
-                  className="w-full bg-paranormal hover:bg-paranormal/90 text-white"
-                >
-                  <Play className="w-4 h-4 mr-2" />
-                  Conjurar Ritual
-                </Button>
-              </div>
-            )}
           </div>
-        </ScrollArea>
-      </DialogContent>
-    </Dialog>
+        </MobileModalBody>
+            
+        {/* Footer só aparece se for ritual com onCastRitual */}
+        {power.type === 'ritual' && onCastRitual && (
+          <MobileModalFooter bordered>
+            <Button 
+              onClick={handleCast}
+              className="w-full bg-paranormal hover:bg-paranormal/90 text-white"
+            >
+              <Play className="w-4 h-4 mr-2" />
+              Conjurar Ritual
+            </Button>
+          </MobileModalFooter>
+        )}
+      </MobileModalContent>
+    </MobileModal>
   );
 }
 

@@ -9,15 +9,15 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog';
+  MobileModal,
+  MobileModalContent,
+  MobileModalHeader,
+  MobileModalBody,
+  MobileModalTitle,
+  MobileModalDescription,
+} from '@/components/ui/mobile-modal';
 import {
   Tooltip,
   TooltipContent,
@@ -45,7 +45,6 @@ import {
   Recycle,
   ChevronDown,
   ChevronUp,
-  Info,
   X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -316,20 +315,20 @@ export function ItemCatalogModal({
   }, [patentLimits, categoryCounts]);
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[95vw] max-w-2xl h-[90vh] max-h-[90vh] flex flex-col p-4 sm:p-6">
-        <DialogHeader className="flex-shrink-0">
-          <DialogTitle className="flex items-center gap-2">
+    <MobileModal open={open} onOpenChange={onOpenChange}>
+      <MobileModalContent size="lg" className="h-[90vh] max-h-[90vh] flex flex-col p-0">
+        <MobileModalHeader bordered className="p-4 sm:p-6 shrink-0">
+          <MobileModalTitle className="flex items-center gap-2">
             <Package className="w-5 h-5 text-primary" />
             Catálogo de Itens Gerais
-          </DialogTitle>
-          <DialogDescription className="text-sm">
+          </MobileModalTitle>
+          <MobileModalDescription className="text-sm">
             Selecione itens para adicionar ao inventário
-          </DialogDescription>
-        </DialogHeader>
+          </MobileModalDescription>
+        </MobileModalHeader>
 
-        {/* Indicadores de categoria */}
-        <div className="flex items-center gap-2 flex-wrap pb-2 border-b border-border flex-shrink-0">
+        {/* Indicadores de categoria - fixos */}
+        <div className="flex items-center gap-2 flex-wrap px-4 sm:px-6 pb-2 border-b border-border shrink-0">
           {categoryStatus.map(({ category, limit, current, isLocked, isFull }) => (
             <TooltipProvider key={category}>
               <Tooltip>
@@ -363,9 +362,9 @@ export function ItemCatalogModal({
           ))}
         </div>
 
-        {/* Busca */}
-        <div className="relative flex-shrink-0">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        {/* Busca - fixa */}
+        <div className="relative px-4 sm:px-6 py-2 shrink-0">
+          <Search className="absolute left-7 sm:left-9 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             placeholder="Buscar item..."
             value={searchTerm}
@@ -376,7 +375,7 @@ export function ItemCatalogModal({
             <Button
               variant="ghost"
               size="icon"
-              className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+              className="absolute right-5 sm:right-7 top-1/2 -translate-y-1/2 h-7 w-7"
               onClick={() => setSearchTerm('')}
             >
               <X className="w-4 h-4" />
@@ -384,9 +383,9 @@ export function ItemCatalogModal({
           )}
         </div>
 
-        {/* Tabs de tipo */}
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as ItemType)} className="flex-1 flex flex-col min-h-0">
-          <TabsList className="grid grid-cols-5 w-full flex-shrink-0">
+        {/* Tabs de tipo com scroll interno */}
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as ItemType)} className="flex-1 flex flex-col min-h-0 px-4 sm:px-6 pb-4">
+          <TabsList className="grid grid-cols-5 w-full shrink-0">
             {(Object.keys(ITEM_TYPE_LABELS) as ItemType[]).map(type => {
               const Icon = TYPE_ICONS[type];
               return (
@@ -401,7 +400,7 @@ export function ItemCatalogModal({
             })}
           </TabsList>
 
-          <ScrollArea className="flex-1 min-h-0 mt-4 -mx-4 sm:-mx-6 px-4 sm:px-6">
+          <MobileModalBody className="mt-4">
             {(Object.keys(ITEM_TYPE_LABELS) as ItemType[]).map(type => (
               <TabsContent key={type} value={type} className="mt-0 space-y-2">
                 <AnimatePresence mode="popLayout">
@@ -426,9 +425,9 @@ export function ItemCatalogModal({
                 </AnimatePresence>
               </TabsContent>
             ))}
-          </ScrollArea>
+          </MobileModalBody>
         </Tabs>
-      </DialogContent>
-    </Dialog>
+      </MobileModalContent>
+    </MobileModal>
   );
 }

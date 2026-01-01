@@ -7,17 +7,17 @@
 
 import { useState, useMemo } from 'react';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog';
+  MobileModal,
+  MobileModalContent,
+  MobileModalHeader,
+  MobileModalBody,
+  MobileModalFooter,
+  MobileModalTitle,
+  MobileModalDescription,
+} from '@/components/ui/mobile-modal';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Brain, Check, AlertCircle } from 'lucide-react';
 import { INTELLECT_SKILL_IDS, SKILL_IDS } from '@/lib/constants/game-ids';
 
@@ -84,25 +84,25 @@ export function IntellectSkillSelectModal({
   };
   
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-lg max-h-[85vh] grid grid-rows-[auto_minmax(0,1fr)_auto] gap-4">
-        <DialogHeader>
-          <DialogTitle className="font-display text-lg tracking-wider flex items-center gap-2">
+    <MobileModal open={open} onOpenChange={handleClose}>
+      <MobileModalContent size="md">
+        <MobileModalHeader>
+          <MobileModalTitle className="font-display text-lg tracking-wider flex items-center gap-2">
             <Brain className="w-5 h-5 text-blue-500" />
             EXPANSÃO DE CONHECIMENTO
-          </DialogTitle>
-          <DialogDescription>
+          </MobileModalTitle>
+          <MobileModalDescription>
             Escolha {maxSelections} perícia{maxSelections > 1 ? 's' : ''} de Intelecto para receber +5.
             {hasAffinity && (
               <Badge variant="outline" className="ml-2 text-blue-500 border-blue-500/50">
                 Afinidade de Conhecimento
               </Badge>
             )}
-          </DialogDescription>
-        </DialogHeader>
+          </MobileModalDescription>
+        </MobileModalHeader>
         
-        <ScrollArea className="min-h-0 -mx-6 px-6 pr-4">
-          <div className="space-y-2 pb-4">
+        <MobileModalBody>
+          <div className="space-y-2">
             {availableSkills.map(skill => {
               const isSelected = selectedSkills.includes(skill.id);
               
@@ -146,25 +146,23 @@ export function IntellectSkillSelectModal({
               </div>
             )}
           </div>
-        </ScrollArea>
+        </MobileModalBody>
         
-        <DialogFooter className="flex-col sm:flex-row gap-2">
+        <MobileModalFooter>
           <div className="flex-1 text-sm text-muted-foreground">
             {selectedSkills.length}/{maxSelections} selecionada(s)
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={handleClose}>
-              Cancelar
-            </Button>
-            <Button 
-              onClick={handleConfirm}
-              disabled={selectedSkills.length === 0}
-            >
-              Confirmar
-            </Button>
-          </div>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          <Button variant="outline" onClick={handleClose}>
+            Cancelar
+          </Button>
+          <Button 
+            onClick={handleConfirm}
+            disabled={selectedSkills.length === 0}
+          >
+            Confirmar
+          </Button>
+        </MobileModalFooter>
+      </MobileModalContent>
+    </MobileModal>
   );
 }
