@@ -464,8 +464,8 @@ export function RitualSelectionModal({
             )}
           </div>
 
-          {/* Lista de rituais */}
-          <ScrollArea className="h-[350px] pr-4">
+          {/* Lista de rituais - altura responsiva */}
+          <ScrollArea className="h-[min(350px,calc(100vh-380px))] pr-4">
             <div className="space-y-4">
               {Object.entries(ritualsByCircle)
                 .sort(([a], [b]) => Number(a) - Number(b))

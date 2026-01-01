@@ -793,9 +793,9 @@ export function MobileInventorySheet({
             </div>
           </ScrollArea>
 
-          {/* Botões de adicionar (footer fixo) */}
+          {/* Botões de adicionar (footer fixo com safe area) */}
           {!readOnly && (
-            <div className="p-3 border-t border-border bg-card flex-shrink-0">
+            <div className="p-3 border-t border-border bg-card flex-shrink-0 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))]">
               <div className="flex gap-2">
                 {ADD_BUTTONS.map(({ type, label, icon: Icon, color }) => (
                   <Button

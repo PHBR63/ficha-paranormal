@@ -530,15 +530,15 @@ export function CharacterEditModal({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-3xl max-h-[90vh] flex flex-col">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-3xl max-h-[85vh] sm:max-h-[90vh] flex flex-col gap-0 p-0">
+        <DialogHeader className="p-4 sm:p-6 pb-2 shrink-0 border-b border-border/50">
           <DialogTitle className="font-display tracking-wider text-center">
             EDITAR PERSONAGEM
           </DialogTitle>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1">
-          <TabsList className="grid grid-cols-4 w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 min-h-0 flex flex-col">
+          <TabsList className="grid grid-cols-4 w-full shrink-0 mx-4 sm:mx-6 mt-3 sm:mt-4" style={{ width: 'calc(100% - 2rem)' }}>
             <TabsTrigger value="info" className="font-display text-xs">
               <User className="w-4 h-4 mr-1.5" />
               INFO
@@ -557,7 +557,8 @@ export function CharacterEditModal({
             </TabsTrigger>
           </TabsList>
 
-          <ScrollArea className="flex-1 min-h-0 mt-4 pr-4">
+          <ScrollArea className="flex-1 min-h-0 mt-3 sm:mt-4 overscroll-contain">
+            <div className="px-4 sm:px-6 pb-4">
             {/* INFO TAB */}
             <TabsContent value="info" className="space-y-4 mt-0">
               {/* Foto e nome */}
@@ -991,6 +992,7 @@ export function CharacterEditModal({
                 )}
               </div>
             </TabsContent>
+            </div>
           </ScrollArea>
         </Tabs>
 
@@ -1009,7 +1011,7 @@ export function CharacterEditModal({
           </div>
         )}
 
-        <DialogFooter className="gap-2 mt-4">
+        <DialogFooter className="gap-2 p-4 sm:p-6 shrink-0 border-t border-border/50">
           {/* Botão de Reset */}
           {hasAnyChanges && (
             <Button 

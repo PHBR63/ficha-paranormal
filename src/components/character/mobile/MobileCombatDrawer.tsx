@@ -267,8 +267,8 @@ export const MobileCombatDrawer = memo(function MobileCombatDrawer({
         </Button>
       </DrawerTrigger>
       
-      <DrawerContent className="max-h-[85vh]">
-        <DrawerHeader className="pb-2">
+      <DrawerContent className="max-h-[90vh] flex flex-col">
+        <DrawerHeader className="pb-2 shrink-0">
           <div className="flex items-center justify-between">
             <DrawerTitle className="font-display text-lg">
               Modo Combate
@@ -288,7 +288,7 @@ export const MobileCombatDrawer = memo(function MobileCombatDrawer({
           </div>
         </DrawerHeader>
         
-        <div className="px-4 pb-6 space-y-4 overflow-y-auto max-h-[60vh]">
+        <div className="px-4 pb-6 space-y-4 overflow-y-auto flex-1 min-h-0 overscroll-contain">
           {/* Seção de Resistências */}
           <div>
             <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">
