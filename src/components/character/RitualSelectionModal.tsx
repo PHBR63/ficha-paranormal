@@ -1,22 +1,22 @@
 // Modal de Seleção de Rituais para Progressão de NEX
 // Permite Ocultistas escolherem novos rituais ao ganhar slots
-// ATUALIZADO: Usa sistema unificado de rituais
+// ATUALIZADO: Usa sistema unificado de rituais e MobileModal
 
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog';
+  MobileModal,
+  MobileModalContent,
+  MobileModalHeader,
+  MobileModalBody,
+  MobileModalFooter,
+  MobileModalTitle,
+  MobileModalDescription,
+} from '@/components/ui/mobile-modal';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Collapsible,
   CollapsibleContent,
@@ -371,101 +371,101 @@ export function RitualSelectionModal({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh]">
-        <DialogHeader>
-          <DialogTitle className="font-display tracking-wider text-center flex items-center justify-center gap-2">
+    <MobileModal open={open} onOpenChange={onClose}>
+      <MobileModalContent size="lg">
+        <MobileModalHeader>
+          <MobileModalTitle className="font-display tracking-wider text-center flex items-center justify-center gap-2">
             <Sparkles className="w-5 h-5 text-paranormal" />
             ESCOLHER NOVOS RITUAIS
-          </DialogTitle>
-          <DialogDescription className="text-center">
+          </MobileModalTitle>
+          <MobileModalDescription className="text-center">
             Você ganhou {newSlots} novo{newSlots > 1 ? 's' : ''} slot{newSlots > 1 ? 's' : ''} de ritual!
-          </DialogDescription>
-        </DialogHeader>
+          </MobileModalDescription>
+        </MobileModalHeader>
 
-        <div className="space-y-4">
-          {/* Contador */}
-          <div className={`
-            p-3 rounded-lg border text-center
-            ${remainingSlots === 0 
-              ? 'bg-paranormal/10 border-paranormal/50' 
-              : 'bg-muted/50 border-border'
-            }
-          `}>
-            <div className="flex items-center justify-center gap-3">
-              <span className="text-2xl font-display text-paranormal">
-                {selectedRituals.length}
-              </span>
-              <span className="text-muted-foreground">/</span>
-              <span className="text-2xl font-display text-muted-foreground">
-                {newSlots}
-              </span>
-              <span className="text-muted-foreground ml-2">selecionados</span>
+        <MobileModalBody>
+          <div className="space-y-4">
+            {/* Contador */}
+            <div className={`
+              p-3 rounded-lg border text-center
+              ${remainingSlots === 0 
+                ? 'bg-paranormal/10 border-paranormal/50' 
+                : 'bg-muted/50 border-border'
+              }
+            `}>
+              <div className="flex items-center justify-center gap-3">
+                <span className="text-2xl font-display text-paranormal">
+                  {selectedRituals.length}
+                </span>
+                <span className="text-muted-foreground">/</span>
+                <span className="text-2xl font-display text-muted-foreground">
+                  {newSlots}
+                </span>
+                <span className="text-muted-foreground ml-2">selecionados</span>
+              </div>
+              {remainingSlots > 0 && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Escolha mais {remainingSlots} ritual{remainingSlots > 1 ? 'is' : ''}
+                </p>
+              )}
             </div>
-            {remainingSlots > 0 && (
-              <p className="text-xs text-muted-foreground mt-1">
-                Escolha mais {remainingSlots} ritual{remainingSlots > 1 ? 'is' : ''}
-              </p>
-            )}
-          </div>
 
-          {/* Busca */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar rituais..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
+            {/* Busca */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar rituais..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
 
-          {/* Filtros compactos */}
-          <div className="flex flex-wrap gap-2">
-            {[1, 2, 3, 4].map(circle => {
-              const isLocked = circle > maxCircle;
-              const isActive = selectedCircle === circle;
-              
-              return (
-                <Button
-                  key={circle}
-                  variant={isActive ? 'default' : 'outline'}
-                  size="sm"
-                  disabled={isLocked}
-                  onClick={() => setSelectedCircle(isActive ? null : circle)}
-                  className={isLocked ? 'opacity-50' : ''}
-                >
-                  {isLocked && <Lock className="w-3 h-3 mr-1" />}
-                  {circle}º
+            {/* Filtros compactos */}
+            <div className="flex flex-wrap gap-2">
+              {[1, 2, 3, 4].map(circle => {
+                const isLocked = circle > maxCircle;
+                const isActive = selectedCircle === circle;
+                
+                return (
+                  <Button
+                    key={circle}
+                    variant={isActive ? 'default' : 'outline'}
+                    size="sm"
+                    disabled={isLocked}
+                    onClick={() => setSelectedCircle(isActive ? null : circle)}
+                    className={isLocked ? 'opacity-50' : ''}
+                  >
+                    {isLocked && <Lock className="w-3 h-3 mr-1" />}
+                    {circle}º
+                  </Button>
+                );
+              })}
+              <div className="h-6 w-px bg-border mx-1" />
+              {VALID_ELEMENTS.map((elementId) => {
+                const config = ELEMENT_CONFIG[elementId];
+                const Icon = config.icon;
+                const isActive = selectedElement === elementId;
+                
+                return (
+                  <Button
+                    key={elementId}
+                    variant={isActive ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setSelectedElement(isActive ? null : elementId)}
+                  >
+                    <Icon className={`w-3 h-3 ${isActive ? '' : config.text}`} />
+                  </Button>
+                );
+              })}
+              {(searchTerm || selectedCircle || selectedElement) && (
+                <Button variant="ghost" size="sm" onClick={handleClearFilters}>
+                  Limpar
                 </Button>
-              );
-            })}
-            <div className="h-6 w-px bg-border mx-1" />
-            {VALID_ELEMENTS.map((elementId) => {
-              const config = ELEMENT_CONFIG[elementId];
-              const Icon = config.icon;
-              const isActive = selectedElement === elementId;
-              
-              return (
-                <Button
-                  key={elementId}
-                  variant={isActive ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setSelectedElement(isActive ? null : elementId)}
-                >
-                  <Icon className={`w-3 h-3 ${isActive ? '' : config.text}`} />
-                </Button>
-              );
-            })}
-            {(searchTerm || selectedCircle || selectedElement) && (
-              <Button variant="ghost" size="sm" onClick={handleClearFilters}>
-                Limpar
-              </Button>
-            )}
-          </div>
+              )}
+            </div>
 
-          {/* Lista de rituais - altura responsiva */}
-          <ScrollArea className="h-[min(350px,calc(100vh-380px))] pr-4">
+            {/* Lista de rituais */}
             <div className="space-y-4">
               {Object.entries(ritualsByCircle)
                 .sort(([a], [b]) => Number(a) - Number(b))
@@ -504,10 +504,10 @@ export function RitualSelectionModal({
                 </div>
               )}
             </div>
-          </ScrollArea>
-        </div>
+          </div>
+        </MobileModalBody>
 
-        <DialogFooter className="gap-2">
+        <MobileModalFooter>
           <Button variant="outline" onClick={onClose} disabled={saving}>
             Pular
           </Button>
@@ -523,8 +523,8 @@ export function RitualSelectionModal({
             )}
             Confirmar Rituais
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </MobileModalFooter>
+      </MobileModalContent>
+    </MobileModal>
   );
 }
