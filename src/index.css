@@ -987,3 +987,63 @@ html.dark[data-color-theme="amber"] .bg-landing-gradient-theme {
   border-color: hsl(var(--primary) / 0.6);
   box-shadow: 0 0 30px hsl(var(--primary) / 0.15);
 }
+
+/* ========================================
+ * UTILITÁRIOS DE SAFE AREA E TOUCH
+ * ======================================== */
+@layer utilities {
+  /* Safe area padding para dispositivos com notch/home indicator */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  
+  .pt-safe {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+  
+  .pl-safe {
+    padding-left: env(safe-area-inset-left, 0px);
+  }
+  
+  .pr-safe {
+    padding-right: env(safe-area-inset-right, 0px);
+  }
+  
+  /* Combinar com padding existente */
+  .pb-4-safe {
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  }
+  
+  .pb-6-safe {
+    padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+  }
+  
+  /* Touch manipulation para evitar delay de 300ms */
+  .touch-manipulation {
+    touch-action: manipulation;
+  }
+  
+  /* Previne scroll chaining */
+  .overscroll-contain {
+    overscroll-behavior: contain;
+  }
+  
+  /* Esconde scrollbar mantendo funcionalidade */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* Touch pan directions */
+  .touch-pan-x {
+    touch-action: pan-x;
+  }
+  
+  .touch-pan-y {
+    touch-action: pan-y;
+  }
+}

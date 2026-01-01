@@ -200,7 +200,8 @@ const VirtualizedParanormalList = memo(function VirtualizedParanormalList({
 
   // Usa altura dinâmica: mostra todos se poucos, virtualiza se muitos
   const needsVirtualization = powers.length > 5;
-  const maxHeight = needsVirtualization ? 320 : undefined;
+  // Altura responsiva: usa calc para adaptar ao viewport
+  const maxHeight = needsVirtualization ? 'min(320px, calc(100vh - 350px))' : undefined;
 
   if (!needsVirtualization) {
     return (
@@ -219,7 +220,7 @@ const VirtualizedParanormalList = memo(function VirtualizedParanormalList({
   return (
     <div 
       ref={parentRef}
-      className="overflow-auto scrollbar-hide"
+      className="overflow-auto scrollbar-hide overscroll-contain"
       style={{ maxHeight }}
     >
       <div
@@ -270,7 +271,7 @@ const VirtualizedGeneralList = memo(function VirtualizedGeneralList({
   });
 
   const needsVirtualization = powers.length > 5;
-  const maxHeight = needsVirtualization ? 320 : undefined;
+  const maxHeight = needsVirtualization ? 'min(320px, calc(100vh - 350px))' : undefined;
 
   if (!needsVirtualization) {
     return (

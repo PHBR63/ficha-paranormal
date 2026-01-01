@@ -914,7 +914,7 @@ export function NexProgressionModal({
             </div>
           </ScrollArea>
 
-          <DialogFooter className="gap-2">
+          <DialogFooter className="gap-2 shrink-0">
             <Button variant="outline" onClick={onClose} disabled={saving}>
               Cancelar
             </Button>

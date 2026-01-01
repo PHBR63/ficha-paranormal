@@ -715,7 +715,7 @@ export function MobileRitualCastModal({
           </div>
         </ScrollArea>
 
-        <DrawerFooter className="pt-2">
+        <DrawerFooter className="pt-2 shrink-0">
           <Button
             onClick={handleConfirm}
             disabled={!canCast}
