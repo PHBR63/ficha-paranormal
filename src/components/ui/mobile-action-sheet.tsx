@@ -168,16 +168,28 @@ export function MobileActionSheet({
   closeOnAction = true,
 }: MobileActionSheetProps) {
   
+  // Função para feedback háptico
+  const triggerHaptic = React.useCallback((intensity: 'light' | 'medium' | 'heavy' = 'light') => {
+    // Vibration API - suportada na maioria dos dispositivos móveis
+    if ('vibrate' in navigator) {
+      const duration = intensity === 'light' ? 10 : intensity === 'medium' ? 20 : 30;
+      navigator.vibrate(duration);
+    }
+  }, []);
+
   // Handler para ação
   const handleAction = React.useCallback((action: ActionSheetAction) => {
     if (action.disabled) return;
+    
+    // Feedback háptico ao selecionar ação
+    triggerHaptic(action.destructive ? 'medium' : 'light');
     
     action.onPress();
     
     if (closeOnAction) {
       onOpenChange(false);
     }
-  }, [closeOnAction, onOpenChange]);
+  }, [closeOnAction, onOpenChange, triggerHaptic]);
 
   // Handler para cancelar
   const handleCancel = React.useCallback(() => {
