@@ -1,9 +1,9 @@
 // =====================================================
-// Testes: categoryReduction, counterSpell e sneakAttack no SUE
+// Testes: categoryReduction, counterSpell, sneakAttack e healing no SUE
 // Ordem Paranormal RPG v1.3
 // =====================================================
 //
-// Verifica que as mecânicas categoryReduction, counterSpell e sneakAttack
+// Verifica que as mecânicas categoryReduction, counterSpell, sneakAttack e healing
 // são corretamente mapeadas e consolidadas pelo SUE.
 //
 
@@ -587,5 +587,174 @@ describe('Integração sneakAttack com outras mecânicas', () => {
     
     // ExtraDamageDice separado (de outra fonte)
     expect(result.damage.extraDice).toContain('2d6');
+  });
+});
+
+// =====================================================
+// Testes de healing
+// =====================================================
+
+describe('healing no SUE', () => {
+  /**
+   * Cria um efeito de teste com healing
+   */
+  function createHealingEffect(
+    id: string,
+    baseDice: number,
+    scaling?: Record<number, { dice: number; dieType: string }>,
+    overrides: Partial<UnifiedEffect> = {}
+  ): UnifiedEffect {
+    return {
+      id,
+      name: `Cura ${id}`,
+      source: 'track',
+      sourceId: id,
+      sourceName: `Médico de Campo: ${id}`,
+      mechanics: {
+        healing: {
+          baseDice,
+          dieType: 'd10',
+          scaling,
+          peCost: 2,
+          extraDicePECost: 1,
+          range: 'touch',
+          actionType: 'standard',
+        },
+      },
+      isActive: true,
+      isToggleable: false,
+      ...overrides,
+    };
+  }
+
+  it('deve consolidar cura básica (Paramédico)', () => {
+    const effects: UnifiedEffect[] = [
+      createHealingEffect('paramedico', 2, {
+        10: { dice: 2, dieType: 'd10' },
+        40: { dice: 3, dieType: 'd10' },
+        65: { dice: 4, dieType: 'd10' },
+        99: { dice: 5, dieType: 'd10' },
+      }),
+    ];
+    
+    const context = createTestContext({ nex: 50 });
+    const result = consolidateEffects(effects, context);
+    
+    expect(result.healing.available).toBe(true);
+    expect(result.healing.baseDice).toBe(3); // NEX 50 = 3d10
+    expect(result.healing.dieType).toBe('d10');
+    expect(result.healing.peCost).toBe(2);
+    expect(result.healing.extraDicePECost).toBe(1);
+    expect(result.healing.range).toBe('touch');
+  });
+  
+  it('deve escalar dados por NEX corretamente', () => {
+    const scaling = {
+      10: { dice: 2, dieType: 'd10' },
+      40: { dice: 3, dieType: 'd10' },
+      65: { dice: 4, dieType: 'd10' },
+      99: { dice: 5, dieType: 'd10' },
+    };
+    
+    // NEX 10%
+    let context = createTestContext({ nex: 10 });
+    let result = consolidateEffects([createHealingEffect('param', 2, scaling)], context);
+    expect(result.healing.baseDice).toBe(2);
+    
+    // NEX 40%
+    context = createTestContext({ nex: 40 });
+    result = consolidateEffects([createHealingEffect('param', 2, scaling)], context);
+    expect(result.healing.baseDice).toBe(3);
+    
+    // NEX 65%
+    context = createTestContext({ nex: 65 });
+    result = consolidateEffects([createHealingEffect('param', 2, scaling)], context);
+    expect(result.healing.baseDice).toBe(4);
+    
+    // NEX 99%
+    context = createTestContext({ nex: 99 });
+    result = consolidateEffects([createHealingEffect('param', 2, scaling)], context);
+    expect(result.healing.baseDice).toBe(5);
+  });
+  
+  it('deve registrar fontes corretamente', () => {
+    const effects: UnifiedEffect[] = [
+      createHealingEffect('paramedico', 2, {
+        10: { dice: 2, dieType: 'd10' },
+      }),
+    ];
+    
+    const context = createTestContext({ nex: 10 });
+    const result = consolidateEffects(effects, context);
+    
+    expect(result.healing.sources).toHaveLength(1);
+    expect(result.healing.sources[0].source).toBe('Médico de Campo: paramedico');
+    expect(result.healing.sources[0].dice).toBe(2);
+    expect(result.healing.sources[0].peCost).toBe(2);
+  });
+  
+  it('deve ignorar healing de efeitos inativos', () => {
+    const effects: UnifiedEffect[] = [
+      createHealingEffect('paramedico', 2, undefined, { isActive: false }),
+    ];
+    
+    const context = createTestContext();
+    const result = consolidateEffects(effects, context);
+    
+    expect(result.healing.available).toBe(false);
+    expect(result.healing.baseDice).toBe(0);
+  });
+  
+  it('deve retornar estrutura vazia quando não há healing', () => {
+    const effects: UnifiedEffect[] = [];
+    const context = createTestContext();
+    const result = consolidateEffects(effects, context);
+    
+    expect(result.healing.available).toBe(false);
+    expect(result.healing.baseDice).toBe(0);
+    expect(result.healing.sources).toEqual([]);
+  });
+});
+
+// =====================================================
+// Testes de Integração Completa (todas as mecânicas)
+// =====================================================
+
+describe('Integração healing com outras mecânicas', () => {
+  it('deve consolidar healing junto com bônus de defesa (Resgate)', () => {
+    const effects: UnifiedEffect[] = [
+      {
+        id: 'medico-completo',
+        name: 'Médico de Campo',
+        source: 'track',
+        sourceId: 'medico-campo',
+        sourceName: 'Médico de Campo',
+        mechanics: {
+          healing: {
+            baseDice: 3,
+            dieType: 'd10',
+            peCost: 2,
+            extraDicePECost: 1,
+            range: 'touch',
+            actionType: 'standard',
+          },
+          skillBonus: {
+            medicina: 5,
+          },
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+    ];
+    
+    const context = createTestContext({ nex: 50 });
+    const result = consolidateEffects(effects, context);
+    
+    // Verifica healing
+    expect(result.healing.available).toBe(true);
+    expect(result.healing.baseDice).toBe(3);
+    
+    // Verifica skill bonus
+    expect(result.skills['medicina']?.bonus).toBe(5);
   });
 });
