@@ -614,6 +614,205 @@ export const OCULTISTA_POWERS: UnifiedClassPower[] = [
     },
     tags: ['ritual', 'sustentação', 'avançado'],
   },
+  
+  // ==================== PODERES ADICIONAIS (Livro Base p.53-54) ====================
+  
+  {
+    id: 'conhecimento-arcano',
+    name: 'Conhecimento Arcano',
+    classId: 'Ocultista',
+    isCore: false,
+    minNex: 15,
+    description: 'Você recebe +2 rituais iniciais conhecidos e, sempre que ganha acesso a um novo círculo de rituais, aprende um ritual extra desse círculo.',
+    pageReference: 'Livro Base p.53',
+    effects: {
+      base: {
+        kind: 'passive',
+        extraRituals: 2,
+      },
+    },
+    tags: ['ritual', 'conhecimento'],
+  },
+  
+  {
+    id: 'prece',
+    name: 'Prece',
+    classId: 'Ocultista',
+    isCore: false,
+    minNex: 15,
+    description: 'Uma vez por dia, você pode gastar uma hora rezando e meditando para recuperar PE igual à sua Presença (mínimo 1).',
+    pageReference: 'Livro Base p.54',
+    effects: {
+      base: {
+        kind: 'activated',
+        activation: {
+          cost: 0,
+          action: 'complete',
+          perDay: true,
+        },
+        peRecovery: {
+          attribute: 'presence',
+          minimum: 1,
+        },
+      },
+    },
+    tags: ['recuperação', 'pe', 'diário'],
+  },
+  
+  {
+    id: 'surto-adrenalina',
+    name: 'Surto de Adrenalina',
+    classId: 'Ocultista',
+    isCore: false,
+    minNex: 15,
+    description: 'Uma vez por cena, você pode gastar 2 PE para realizar uma ação padrão adicional em seu turno.',
+    pageReference: 'Livro Base p.54',
+    effects: {
+      base: {
+        kind: 'activated',
+        activation: {
+          cost: 2,
+          action: 'free',
+          perScene: true,
+        },
+        extraActions: [{
+          actionType: 'standard',
+          cost: 2,
+          perScene: true,
+        }],
+      },
+    },
+    tags: ['ação-extra', 'combate'],
+  },
+  
+  {
+    id: 'foco-aprimorado',
+    name: 'Foco Aprimorado',
+    classId: 'Ocultista',
+    isCore: false,
+    minNex: 15,
+    description: 'Você pode usar Intelecto ou Presença em vez de Força para manobras de agarrar, e pode manter uma criatura agarrada usando apenas uma mão.',
+    pageReference: 'Livro Base p.53',
+    effects: {
+      base: {
+        kind: 'passive',
+        attributeSwap: {
+          skill: 'luta',
+          newAttribute: ['intellect', 'presence'],
+          forManeuver: 'grapple',
+        },
+      },
+    },
+    tags: ['combate', 'manobra'],
+  },
+  
+  {
+    id: 'armamento-paranormal',
+    name: 'Armamento Paranormal',
+    classId: 'Ocultista',
+    isCore: false,
+    minNex: 15,
+    description: 'Você recebe proficiência com armas simples e táticas de corpo a corpo e armas simples de disparo. Quando empunha uma dessas armas, pode gastar 1 PE para que ela cause dano paranormal até o final da cena.',
+    pageReference: 'Livro Base p.53',
+    effects: {
+      base: {
+        kind: 'activated',
+        proficiencies: {
+          weapons: ['simple-melee', 'tactical-melee', 'simple-ranged'],
+        },
+        activation: {
+          cost: 1,
+          action: 'free',
+        },
+        damageType: 'paranormal',
+      },
+    },
+    tags: ['proficiência', 'combate', 'paranormal'],
+  },
+  
+  {
+    id: 'poder-oculto',
+    name: 'Poder Oculto',
+    classId: 'Ocultista',
+    isCore: false,
+    minNex: 30,
+    description: 'Você recebe +1 em Presença, até um máximo de 5. Pré-requisito: NEX 30%.',
+    pageReference: 'Livro Base p.54',
+    prerequisites: {
+      minNex: 30,
+    },
+    effects: {
+      base: {
+        kind: 'passive',
+        attributeBonus: {
+          attribute: 'presence',
+          value: 1,
+          max: 5,
+        },
+      },
+    },
+    tags: ['atributo', 'passivo'],
+  },
+  
+  {
+    id: 'ritual-aprendido',
+    name: 'Ritual Aprendido',
+    classId: 'Ocultista',
+    isCore: false,
+    minNex: 15,
+    description: 'Você aprende um ritual de qualquer círculo que possa conjurar. Você pode escolher este poder várias vezes.',
+    pageReference: 'Livro Base p.54',
+    isRepeatable: true,
+    effects: {
+      base: {
+        kind: 'choice',
+        requiresChoice: {
+          type: 'ritual',
+          count: 1,
+        },
+      },
+    },
+    tags: ['ritual', 'conhecimento', 'repetível'],
+  },
+  
+  {
+    id: 'resistencia-paranormal',
+    name: 'Resistência Paranormal',
+    classId: 'Ocultista',
+    isCore: false,
+    minNex: 15,
+    description: 'Você recebe resistência a dano paranormal 5.',
+    pageReference: 'Livro Base p.54',
+    effects: {
+      base: {
+        kind: 'passive',
+        damageReduction: {
+          value: 5,
+          types: ['paranormal'],
+        },
+      },
+    },
+    tags: ['defesa', 'resistência', 'paranormal'],
+  },
+  
+  {
+    id: 'sangue-extradimensional',
+    name: 'Sangue Extradimensional',
+    classId: 'Ocultista',
+    isCore: false,
+    minNex: 15,
+    description: 'Você pode gastar PV no lugar de PE para lançar rituais (na proporção de 2 PV por PE). Caso sofra dano, você deve fazer um teste de Vontade (DT = 10 + dano sofrido) para não perder a concentração em rituais sustentados.',
+    pageReference: 'Livro Base p.54',
+    effects: {
+      base: {
+        kind: 'passive',
+        hpAsPE: {
+          ratio: 2, // 2 PV = 1 PE
+        },
+      },
+    },
+    tags: ['ritual', 'pv', 'pe'],
+  },
 ];
 
 /**
