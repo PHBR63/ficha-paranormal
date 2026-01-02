@@ -1,17 +1,18 @@
 /**
  * MobileResistanceCheckModal - Modal de teste de resistência para mobile
- * Interface compacta usando Drawer - PARIDADE COMPLETA COM DESKTOP
+ * Interface compacta usando MobileDrawer - PARIDADE COMPLETA COM DESKTOP
  */
 
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Drawer, 
-  DrawerContent, 
-  DrawerHeader, 
-  DrawerTitle, 
-  DrawerFooter 
-} from '@/components/ui/drawer';
+  MobileDrawer, 
+  MobileDrawerContent, 
+  MobileDrawerHeader, 
+  MobileDrawerTitle, 
+  MobileDrawerBody,
+  MobileDrawerFooter 
+} from '@/components/ui/mobile-drawer';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -193,19 +194,19 @@ export function MobileResistanceCheckModal({
   };
 
   return (
-    <Drawer open={open} onOpenChange={handleClose}>
-      <DrawerContent className="max-h-[85vh] overflow-hidden">
+    <MobileDrawer open={open} onOpenChange={handleClose}>
+      <MobileDrawerContent maxHeight="lg">
         {/* Gradient background baseado no elemento do ritual */}
         {elementConfig && (
           <div 
-            className="absolute inset-0 opacity-10 pointer-events-none"
+            className="absolute inset-0 opacity-10 pointer-events-none rounded-t-[10px]"
             style={{
               background: `linear-gradient(135deg, ${elementConfig.color}40 0%, transparent 50%)`,
             }}
           />
         )}
         
-        <DrawerHeader className="pb-2 relative">
+        <MobileDrawerHeader className="relative">
           <div className="flex items-center gap-3">
             <div className={cn(
               "w-10 h-10 rounded-lg flex items-center justify-center",
@@ -214,9 +215,9 @@ export function MobileResistanceCheckModal({
               <ResistanceIcon className={cn("w-5 h-5", config.color)} />
             </div>
             <div className="flex-1">
-              <DrawerTitle className="font-display text-base">
+              <MobileDrawerTitle className="font-display text-base">
                 Teste de {config.label}
-              </DrawerTitle>
+              </MobileDrawerTitle>
               {ritualName && (
                 <p className="text-xs text-muted-foreground truncate max-w-[200px]">
                   {ritualName}
@@ -234,9 +235,9 @@ export function MobileResistanceCheckModal({
               </div>
             </div>
           </div>
-        </DrawerHeader>
+        </MobileDrawerHeader>
 
-        <div className="px-4 py-4 space-y-4 relative">
+        <MobileDrawerBody useScrollArea={false} className="space-y-4 relative">
           {/* Descrição do efeito de resistência */}
           <div className="p-2 rounded-lg bg-muted/30 border border-border/50">
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -418,9 +419,9 @@ export function MobileResistanceCheckModal({
               </motion.div>
             ) : null}
           </AnimatePresence>
-        </div>
+        </MobileDrawerBody>
 
-        <DrawerFooter className="pt-2">
+        <MobileDrawerFooter>
           <Button
             onClick={handleConfirm}
             disabled={!testResult}
@@ -436,8 +437,8 @@ export function MobileResistanceCheckModal({
             <X className="w-4 h-4 mr-2" />
             CANCELAR
           </Button>
-        </DrawerFooter>
-      </DrawerContent>
-    </Drawer>
+        </MobileDrawerFooter>
+      </MobileDrawerContent>
+    </MobileDrawer>
   );
 }

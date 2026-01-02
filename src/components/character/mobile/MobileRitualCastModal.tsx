@@ -10,15 +10,15 @@ import { useState, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { 
-  Drawer, 
-  DrawerContent, 
-  DrawerHeader, 
-  DrawerTitle, 
-  DrawerFooter 
-} from '@/components/ui/drawer';
+  MobileDrawer, 
+  MobileDrawerContent, 
+  MobileDrawerHeader, 
+  MobileDrawerTitle, 
+  MobileDrawerBody,
+  MobileDrawerFooter 
+} from '@/components/ui/mobile-drawer';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import {
@@ -301,9 +301,9 @@ export function MobileRitualCastModal({
 
   return (
     <>
-    <Drawer open={open} onOpenChange={handleOpenChange}>
-      <DrawerContent className="max-h-[90vh]">
-        <DrawerHeader className="pb-2">
+    <MobileDrawer open={open} onOpenChange={handleOpenChange}>
+      <MobileDrawerContent maxHeight="xl">
+        <MobileDrawerHeader>
           <div className="flex items-center gap-3">
             <div className={cn(
               "w-10 h-10 rounded-lg flex items-center justify-center",
@@ -314,12 +314,12 @@ export function MobileRitualCastModal({
               <ElementIcon className={cn("w-5 h-5", elementConfig?.text || "text-muted-foreground")} />
             </div>
             <div className="flex-1">
-              <DrawerTitle className={cn(
+              <MobileDrawerTitle className={cn(
                 "font-display text-base",
                 elementConfig?.text || "text-foreground"
               )}>
                 {ritual.name}
-              </DrawerTitle>
+              </MobileDrawerTitle>
               <div className="flex items-center gap-2 mt-0.5">
                 <Badge variant="outline" className={cn("text-[10px]", elementConfig?.badgeBg)}>
                   {ritual.circle}º Círculo
@@ -330,10 +330,10 @@ export function MobileRitualCastModal({
               </div>
             </div>
           </div>
-        </DrawerHeader>
+        </MobileDrawerHeader>
 
-        <ScrollArea className="flex-1 px-4">
-          <div className="space-y-4 py-4">
+        <MobileDrawerBody>
+          <div className="space-y-4">
             {/* Info compacta */}
             <div className="grid grid-cols-2 gap-2 text-[10px] text-muted-foreground">
               <div className="flex items-center gap-1">
@@ -713,9 +713,9 @@ export function MobileRitualCastModal({
               )}
             </div>
           </div>
-        </ScrollArea>
+        </MobileDrawerBody>
 
-        <DrawerFooter className="pt-2 shrink-0">
+        <MobileDrawerFooter>
           <Button
             onClick={handleConfirm}
             disabled={!canCast}
@@ -731,9 +731,9 @@ export function MobileRitualCastModal({
             <X className="w-4 h-4 mr-2" />
             CANCELAR
           </Button>
-        </DrawerFooter>
-      </DrawerContent>
-    </Drawer>
+        </MobileDrawerFooter>
+      </MobileDrawerContent>
+    </MobileDrawer>
 
     {/* Wizard de efeitos do ritual - Integrado ao SUE */}
     <MobileRitualEffectWizard
