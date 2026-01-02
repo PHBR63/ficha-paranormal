@@ -302,6 +302,7 @@ export function useUnifiedEffects(
     };
   }, [
     characterState.origin,
+    characterState.classId,
     characterState.classTrack,
     characterState.nex,
     characterState.attributes,
@@ -311,10 +312,16 @@ export function useUnifiedEffects(
     characterState.affinityActive,
     characterState.currentHP,
     characterState.maxHP,
+    characterState.currentPE,
+    characterState.maxPE,
+    characterState.currentSAN,
+    characterState.maxSAN,
     characterState.paranormalPowers,
+    characterState.classPowers, // Fase 4: Adiciona classPowers como dependência
     characterState.activatedEffectIds,
     combatContext?.inCombat,
     combatContext?.isFirstRound,
+    combatContext?.currentRound,
     combatContext?.attackType,
     combatContext?.targetConditions,
     combatContext?.weaponType,
