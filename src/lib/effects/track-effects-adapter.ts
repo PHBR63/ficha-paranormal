@@ -471,28 +471,26 @@ function convertTrackAbilityToMechanics(
   
   // === CURA (Médico de Campo) ===
   if (m.healing) {
-    if (!mechanics.specialEffects) mechanics.specialEffects = [];
-    
     const scalingDice = m.healing.scalingDice;
-    if (scalingDice) {
-      // Encontra o tier de NEX aplicável
-      const applicableTiers = Object.keys(scalingDice)
-        .map(Number)
-        .filter(n => n <= nex)
-        .sort((a, b) => b - a);
-      
-      if (applicableTiers.length > 0) {
-        const tier = applicableTiers[0];
-        const diceData = scalingDice[tier];
-        if (diceData) {
-          mechanics.specialEffects.push(
-            `Cura ${diceData.dice}${diceData.dieType} PV (${m.healing.peCost} PE)`
-          );
-        }
-      }
-    } else {
-      mechanics.specialEffects.push(`Cura ${m.healing.baseDice} PV`);
+    
+    // Encontra dados base (NEX 10%)
+    let baseDice = 2; // Padrão do Paramédico
+    let dieType = 'd10';
+    
+    if (scalingDice && scalingDice[10]) {
+      baseDice = scalingDice[10].dice;
+      dieType = scalingDice[10].dieType;
     }
+    
+    mechanics.healing = {
+      baseDice,
+      dieType,
+      scaling: scalingDice,
+      peCost: m.healing.peCost,
+      extraDicePECost: m.healing.extraDicePECost,
+      range: m.healing.range,
+      actionType: 'standard', // Paramédico usa ação padrão
+    };
   }
   
   // === REDUÇÃO DE CATEGORIA (Aniquilador, Técnico) ===

@@ -156,6 +156,17 @@ export interface EffectMechanics {
     multiplier?: number;                     // Multiplicador (Assassinar)
   };
   
+  // === Cura (Médico de Campo) ===
+  healing?: {
+    baseDice: number;                        // Quantidade de dados base
+    dieType: string;                         // Tipo de dado (d10)
+    scaling?: Record<number, { dice: number; dieType: string }>; // Escala por NEX
+    peCost: number;                          // Custo base em PE
+    extraDicePECost?: number;                // Custo por dado extra (+1 PE por dado)
+    range: 'self' | 'touch' | 'short';       // Alcance
+    actionType?: 'standard' | 'movement' | 'complete'; // Tipo de ação
+  };
+  
   // =====================================================
   // RITUAIS - Mecânicas específicas para poderes de classe
   // =====================================================
@@ -432,6 +443,23 @@ export interface ComputedEffects {
     }>;
   };
   
+  // === Cura (Médico de Campo) ===
+  healing: {
+    available: boolean;                      // Se o personagem tem habilidade de cura
+    baseDice: number;                        // Dados base para o NEX atual
+    dieType: string;                         // Tipo de dado (d10)
+    peCost: number;                          // Custo base em PE
+    extraDicePECost: number;                 // Custo por dado adicional
+    range: 'self' | 'touch' | 'short';       // Alcance
+    actionType: 'standard' | 'movement' | 'complete'; // Tipo de ação
+    sources: Array<{
+      source: string;
+      dice: number;
+      dieType: string;
+      peCost: number;
+    }>;
+  };
+  
   // =====================================================
   // RITUAIS - Bônus consolidados para rituais
   // =====================================================
@@ -585,6 +613,17 @@ export function consolidateEffects(
       usesPerRound: 0,
       multiplier: 1,
       totalDice: 0,
+      sources: [],
+    },
+    // === CURA ===
+    healing: {
+      available: false,
+      baseDice: 0,
+      dieType: 'd10',
+      peCost: 0,
+      extraDicePECost: 0,
+      range: 'touch',
+      actionType: 'standard',
       sources: [],
     },
     // === RITUAIS ===
@@ -898,6 +937,62 @@ export function consolidateEffects(
       
       // Calcula total com multiplicador
       result.sneakAttack.totalDice = result.sneakAttack.baseDice * result.sneakAttack.multiplier;
+    }
+    
+    // === Cura (Médico de Campo) ===
+    if (m.healing) {
+      result.healing.available = true;
+      
+      // Calcula dados baseado no NEX do contexto
+      let dice = m.healing.baseDice;
+      const dieType = m.healing.dieType;
+      
+      // Aplica escalonamento por NEX se disponível
+      if (m.healing.scaling) {
+        const nexThresholds = Object.keys(m.healing.scaling)
+          .map(Number)
+          .sort((a, b) => b - a); // Ordem decrescente
+        
+        for (const threshold of nexThresholds) {
+          if (context.nex >= threshold) {
+            const scaling = m.healing.scaling[threshold];
+            dice = scaling.dice;
+            break;
+          }
+        }
+      }
+      
+      // Atualiza dados base (maior valor ganha)
+      if (dice > result.healing.baseDice) {
+        result.healing.baseDice = dice;
+        result.healing.dieType = dieType;
+      }
+      
+      // Custo em PE (primeiro a definir)
+      if (result.healing.peCost === 0) {
+        result.healing.peCost = m.healing.peCost;
+      }
+      
+      // Custo por dado extra
+      if (m.healing.extraDicePECost && result.healing.extraDicePECost === 0) {
+        result.healing.extraDicePECost = m.healing.extraDicePECost;
+      }
+      
+      // Range e action type (primeiro a definir)
+      if (m.healing.range) {
+        result.healing.range = m.healing.range;
+      }
+      if (m.healing.actionType) {
+        result.healing.actionType = m.healing.actionType;
+      }
+      
+      // Registra fonte
+      result.healing.sources.push({
+        source,
+        dice,
+        dieType,
+        peCost: m.healing.peCost,
+      });
     }
     
     // =====================================================

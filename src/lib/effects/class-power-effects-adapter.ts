@@ -333,6 +333,30 @@ function convertPowerMechanicsToEffects(
     };
   }
   
+  // === CURA ===
+  if (mechanics.healing) {
+    const scalingDice = mechanics.healing.scalingDice;
+    
+    // Encontra dados base (NEX 10%)
+    let baseDice = 2;
+    let dieType = 'd10';
+    
+    if (scalingDice && scalingDice[10]) {
+      baseDice = scalingDice[10].dice;
+      dieType = scalingDice[10].dieType;
+    }
+    
+    effects.healing = {
+      baseDice,
+      dieType,
+      scaling: scalingDice,
+      peCost: mechanics.healing.peCost,
+      extraDicePECost: mechanics.healing.extraDicePECost,
+      range: mechanics.healing.range,
+      actionType: 'standard',
+    };
+  }
+  
   // === PODER PASSIVO SEM MECÂNICAS ESPECÍFICAS ===
   if (Object.keys(effects).length === 0 && mechanics.kind === 'passive') {
     effects.specialEffects = [power.description.slice(0, 100) + '...'];
