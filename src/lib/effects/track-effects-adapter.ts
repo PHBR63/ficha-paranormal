@@ -606,6 +606,35 @@ function convertTrackAbilityToMechanics(
     );
   }
   
+  // === CÓPIA DE HABILIDADE (Negociador - Truque de Mestre) ===
+  if (m.copyAbility) {
+    // Converte source para formato do EffectMechanics
+    const sourceMap: Record<string, 'ally' | 'enemy' | 'any'> = {
+      'ally': 'ally',
+      'enemy': 'enemy',
+      'any': 'any',
+    };
+    
+    mechanics.copyAbility = {
+      source: sourceMap[m.copyAbility.source] || 'ally',
+      seenInScene: m.copyAbility.seenInScene,
+      ignorePrerequisites: m.copyAbility.ignorePrerequisites,
+      payOriginalCosts: m.copyAbility.payOriginalCosts,
+      peCost: 5, // Custo padrão do Truque de Mestre (oficial)
+      actionType: 'varies', // Depende da habilidade copiada
+    };
+    
+    // Também adiciona aos specialEffects para backward compatibility
+    if (!mechanics.specialEffects) mechanics.specialEffects = [];
+    
+    const sourceDesc = m.copyAbility.source === 'ally' ? 'de aliados' : 'de qualquer um';
+    const prereqNote = m.copyAbility.ignorePrerequisites ? ' (ignora pré-requisitos)' : '';
+    
+    mechanics.specialEffects.push(
+      `Copiar habilidade ${sourceDesc}${prereqNote}: 5 PE + custos originais (1x por cena)`
+    );
+  }
+  
   // === CURA (Médico de Campo) ===
   if (m.healing) {
     const scalingDice = m.healing.scalingDice;

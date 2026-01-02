@@ -1,11 +1,11 @@
 // =====================================================
 // Testes: categoryReduction, counterSpell, sneakAttack, healing,
-// leadership, allyBuff, socialEffect e contacts no SUE
+// leadership, allyBuff, socialEffect, contacts e copyAbility no SUE
 // Ordem Paranormal RPG v1.3
 // =====================================================
 //
 // Verifica que as mecânicas categoryReduction, counterSpell, sneakAttack, healing,
-// leadership, allyBuff, socialEffect e contacts são corretamente mapeadas e consolidadas pelo SUE.
+// leadership, allyBuff, socialEffect, contacts e copyAbility são corretamente mapeadas e consolidadas pelo SUE.
 //
 
 import { describe, it, expect } from 'vitest';
@@ -1775,5 +1775,378 @@ describe('Integração contacts com outras mecânicas', () => {
     // Verifica skill bonuses
     expect(result.skills['diplomacia']?.bonus).toBe(5);
     expect(result.skills['enganacao']?.bonus).toBe(5);
+  });
+});
+
+// =====================================================
+// Testes de copyAbility (Truque de Mestre)
+// =====================================================
+
+describe('consolidateEffects - copyAbility', () => {
+  /**
+   * Cria um efeito de teste com copyAbility
+   */
+  function createCopyAbilityEffect(
+    id: string,
+    source: 'ally' | 'enemy' | 'any' = 'ally',
+    ignorePrerequisites: boolean = true,
+    overrides: Partial<UnifiedEffect> = {}
+  ): UnifiedEffect {
+    return {
+      id,
+      name: `Cópia Habilidade ${id}`,
+      source: 'track',
+      sourceId: id,
+      sourceName: `Trilha: ${id}`,
+      mechanics: {
+        copyAbility: {
+          source,
+          seenInScene: true,
+          ignorePrerequisites,
+          payOriginalCosts: true,
+          peCost: 5,
+          actionType: 'varies',
+        },
+      },
+      isActive: true,
+      isToggleable: false,
+      ...overrides,
+    };
+  }
+
+  it('deve consolidar copyAbility básico corretamente', () => {
+    const effects: UnifiedEffect[] = [
+      createCopyAbilityEffect('truque-mestre'),
+    ];
+    
+    const context = createTestContext({ nex: 99 });
+    const result = consolidateEffects(effects, context);
+    
+    expect(result.copyAbility.available).toBe(true);
+    expect(result.copyAbility.abilities).toHaveLength(1);
+    expect(result.copyAbility.abilities[0].source).toBe('ally');
+    expect(result.copyAbility.abilities[0].seenInScene).toBe(true);
+    expect(result.copyAbility.abilities[0].ignorePrerequisites).toBe(true);
+    expect(result.copyAbility.abilities[0].payOriginalCosts).toBe(true);
+    expect(result.copyAbility.abilities[0].peCost).toBe(5);
+    expect(result.copyAbility.abilities[0].actionType).toBe('varies');
+  });
+
+  it('deve rastrear fonte corretamente', () => {
+    const effects: UnifiedEffect[] = [
+      createCopyAbilityEffect('truque-mestre'),
+    ];
+    
+    const context = createTestContext({ nex: 99 });
+    const result = consolidateEffects(effects, context);
+    
+    expect(result.copyAbility.abilities[0].sourceName).toBe('Trilha: truque-mestre');
+  });
+
+  it('deve consolidar canCopyFromEnemy quando source é enemy ou any', () => {
+    const effects: UnifiedEffect[] = [
+      createCopyAbilityEffect('copiar-enemy', 'enemy'),
+    ];
+    
+    const context = createTestContext({ nex: 99 });
+    const result = consolidateEffects(effects, context);
+    
+    expect(result.copyAbility.canCopyFromEnemy).toBe(true);
+  });
+
+  it('deve consolidar canCopyFromEnemy quando source é any', () => {
+    const effects: UnifiedEffect[] = [
+      createCopyAbilityEffect('copiar-any', 'any'),
+    ];
+    
+    const context = createTestContext({ nex: 99 });
+    const result = consolidateEffects(effects, context);
+    
+    expect(result.copyAbility.canCopyFromEnemy).toBe(true);
+  });
+
+  it('não deve marcar canCopyFromEnemy quando source é ally', () => {
+    const effects: UnifiedEffect[] = [
+      createCopyAbilityEffect('copiar-ally', 'ally'),
+    ];
+    
+    const context = createTestContext({ nex: 99 });
+    const result = consolidateEffects(effects, context);
+    
+    expect(result.copyAbility.canCopyFromEnemy).toBe(false);
+  });
+
+  it('deve consolidar ignoresPrerequisites corretamente', () => {
+    const effects: UnifiedEffect[] = [
+      createCopyAbilityEffect('truque-mestre', 'ally', true),
+    ];
+    
+    const context = createTestContext({ nex: 99 });
+    const result = consolidateEffects(effects, context);
+    
+    expect(result.copyAbility.ignoresPrerequisites).toBe(true);
+  });
+
+  it('não deve marcar ignoresPrerequisites quando false', () => {
+    const effects: UnifiedEffect[] = [
+      createCopyAbilityEffect('truque-limitado', 'ally', false),
+    ];
+    
+    const context = createTestContext({ nex: 99 });
+    const result = consolidateEffects(effects, context);
+    
+    expect(result.copyAbility.ignoresPrerequisites).toBe(false);
+  });
+
+  it('deve calcular minPECost corretamente', () => {
+    const effects: UnifiedEffect[] = [
+      {
+        id: 'copy-1',
+        name: 'Cópia Barata',
+        source: 'track',
+        sourceId: 'copy-1',
+        sourceName: 'Trilha: Cópia Barata',
+        mechanics: {
+          copyAbility: {
+            source: 'ally',
+            seenInScene: true,
+            ignorePrerequisites: true,
+            payOriginalCosts: true,
+            peCost: 3,
+            actionType: 'varies',
+          },
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+      {
+        id: 'copy-2',
+        name: 'Cópia Cara',
+        source: 'track',
+        sourceId: 'copy-2',
+        sourceName: 'Trilha: Cópia Cara',
+        mechanics: {
+          copyAbility: {
+            source: 'ally',
+            seenInScene: true,
+            ignorePrerequisites: true,
+            payOriginalCosts: true,
+            peCost: 8,
+            actionType: 'varies',
+          },
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+    ];
+    
+    const context = createTestContext({ nex: 99 });
+    const result = consolidateEffects(effects, context);
+    
+    expect(result.copyAbility.minPECost).toBe(3);
+    expect(result.copyAbility.abilities).toHaveLength(2);
+  });
+
+  it('deve ignorar copyAbility inativo', () => {
+    const effects: UnifiedEffect[] = [
+      createCopyAbilityEffect('truque-inativo', 'ally', true, { isActive: false }),
+    ];
+    
+    const context = createTestContext({ nex: 99 });
+    const result = consolidateEffects(effects, context);
+    
+    expect(result.copyAbility.available).toBe(false);
+    expect(result.copyAbility.abilities).toHaveLength(0);
+  });
+
+  it('deve suportar usesPerScene e excludedAbilities', () => {
+    const effects: UnifiedEffect[] = [
+      {
+        id: 'copy-limitado',
+        name: 'Cópia Limitada',
+        source: 'track',
+        sourceId: 'copy-limitado',
+        sourceName: 'Trilha: Cópia Limitada',
+        mechanics: {
+          copyAbility: {
+            source: 'ally',
+            seenInScene: true,
+            ignorePrerequisites: false,
+            payOriginalCosts: true,
+            peCost: 5,
+            actionType: 'standard',
+            usesPerScene: 2,
+            excludedAbilities: ['ritual', 'transcender'],
+          },
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+    ];
+    
+    const context = createTestContext({ nex: 99 });
+    const result = consolidateEffects(effects, context);
+    
+    expect(result.copyAbility.available).toBe(true);
+    expect(result.copyAbility.abilities[0].usesPerScene).toBe(2);
+    expect(result.copyAbility.abilities[0].excludedAbilities).toContain('ritual');
+    expect(result.copyAbility.abilities[0].excludedAbilities).toContain('transcender');
+  });
+});
+
+// =====================================================
+// Testes de Integração Completa (copyAbility + outras mecânicas)
+// =====================================================
+
+describe('Integração copyAbility com outras mecânicas do Negociador', () => {
+  it('deve consolidar copyAbility junto com socialEffect e contacts', () => {
+    const effects: UnifiedEffect[] = [
+      {
+        id: 'negociador-copy',
+        name: 'Truque de Mestre',
+        source: 'track',
+        sourceId: 'truque-mestre',
+        sourceName: 'Negociador: Truque de Mestre',
+        mechanics: {
+          copyAbility: {
+            source: 'ally',
+            seenInScene: true,
+            ignorePrerequisites: true,
+            payOriginalCosts: true,
+            peCost: 5,
+            actionType: 'varies',
+          },
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+      {
+        id: 'negociador-contacts',
+        name: 'Eu Conheço um Cara',
+        source: 'track',
+        sourceId: 'eu-conheco-um-cara',
+        sourceName: 'Negociador: Eu Conheço um Cara',
+        mechanics: {
+          contacts: {
+            usesPerMission: 1,
+            availableEffects: ['equipment-trade', 'information'],
+            gmDiscretion: true,
+            peCost: 0,
+            actionType: 'varies',
+          },
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+      {
+        id: 'negociador-social',
+        name: 'Eloquência',
+        source: 'track',
+        sourceId: 'eloquencia',
+        sourceName: 'Negociador: Eloquência',
+        mechanics: {
+          socialEffect: {
+            range: 'curto',
+            targetAll: true,
+            skillOptions: ['diplomacia', 'enganacao', 'intimidacao'],
+            resistanceSkill: 'vontade',
+            effect: 'fascinated',
+            duration: 'concentration',
+            peCost: 1,
+            actionType: 'standard',
+          },
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+    ];
+    
+    const context = createTestContext({ nex: 99 });
+    const result = consolidateEffects(effects, context);
+    
+    // Verifica copyAbility
+    expect(result.copyAbility.available).toBe(true);
+    expect(result.copyAbility.abilities).toHaveLength(1);
+    expect(result.copyAbility.abilities[0].source).toBe('ally');
+    expect(result.copyAbility.ignoresPrerequisites).toBe(true);
+    expect(result.copyAbility.minPECost).toBe(5);
+    
+    // Verifica contacts
+    expect(result.contacts.available).toBe(true);
+    expect(result.contacts.abilities).toHaveLength(1);
+    expect(result.contacts.allAvailableEffects).toContain('equipment-trade');
+    
+    // Verifica socialEffect
+    expect(result.socialEffect.available).toBe(true);
+    expect(result.socialEffect.abilities).toHaveLength(1);
+    expect(result.socialEffect.availableEffects).toContain('fascinated');
+  });
+
+  it('deve consolidar todas as 4 mecânicas do Negociador juntas', () => {
+    const effects: UnifiedEffect[] = [
+      {
+        id: 'negociador-completo',
+        name: 'Negociador Completo',
+        source: 'track',
+        sourceId: 'negociador',
+        sourceName: 'Negociador',
+        mechanics: {
+          copyAbility: {
+            source: 'ally',
+            seenInScene: true,
+            ignorePrerequisites: true,
+            payOriginalCosts: true,
+            peCost: 5,
+            actionType: 'varies',
+          },
+          contacts: {
+            usesPerMission: 1,
+            availableEffects: ['equipment-trade'],
+            gmDiscretion: true,
+            peCost: 0,
+            actionType: 'varies',
+          },
+          socialEffect: {
+            range: 'curto',
+            targetAll: true,
+            skillOptions: ['diplomacia'],
+            resistanceSkill: 'vontade',
+            effect: 'fascinated',
+            duration: 'concentration',
+            peCost: 1,
+            actionType: 'standard',
+          },
+          allyBuff: {
+            range: 'curto',
+            skillBonus: 2,
+            peCost: 8,
+            actionType: 'standard',
+            duration: 'scene',
+            includeSelf: true,
+          },
+          skillBonus: {
+            diplomacia: 5,
+          },
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+    ];
+    
+    const context = createTestContext({ nex: 99 });
+    const result = consolidateEffects(effects, context);
+    
+    // Todas as mecânicas devem estar disponíveis
+    expect(result.copyAbility.available).toBe(true);
+    expect(result.contacts.available).toBe(true);
+    expect(result.socialEffect.available).toBe(true);
+    expect(result.allyBuff.available).toBe(true);
+    expect(result.skills['diplomacia']?.bonus).toBe(5);
+    
+    // Verificações específicas
+    expect(result.copyAbility.ignoresPrerequisites).toBe(true);
+    expect(result.contacts.totalUsesPerMission).toBe(1);
+    expect(result.socialEffect.availableEffects).toContain('fascinated');
+    expect(result.allyBuff.maxSkillBonus).toBe(2);
   });
 });
