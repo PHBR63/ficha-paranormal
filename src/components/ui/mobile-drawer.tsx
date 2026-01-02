@@ -58,15 +58,21 @@ interface MobileDrawerContentProps
   showHandle?: boolean;
   /** Se deve mostrar o botão de fechar */
   showCloseButton?: boolean;
+  /** 
+   * Variante do drawer - 'default' para drawer principal, 'nested' para drawers aninhados.
+   * Drawers aninhados têm offset visual e animação diferenciada.
+   */
+  variant?: "default" | "nested";
 }
 
 /**
  * Container principal do drawer com responsividade mobile
+ * Suporta variante 'nested' para drawers aninhados com offset visual
  */
 const MobileDrawerContent = React.forwardRef<
   React.ElementRef<typeof DrawerPrimitive.Content>,
   MobileDrawerContentProps
->(({ className, children, maxHeight = "lg", showHandle = true, showCloseButton = false, ...props }, ref) => {
+>(({ className, children, maxHeight = "lg", showHandle = true, showCloseButton = false, variant = "default", ...props }, ref) => {
   // Mapeamento de alturas máximas
   const heightClasses = {
     sm: "max-h-[50vh]",
@@ -76,9 +82,16 @@ const MobileDrawerContent = React.forwardRef<
     full: "max-h-[100vh]",
   };
 
+  // Estilos específicos para drawer aninhado
+  const isNested = variant === "nested";
+
   return (
     <MobileDrawerPortal>
-      <MobileDrawerOverlay />
+      <MobileDrawerOverlay 
+        className={cn(
+          isNested && "bg-black/60" // Overlay mais leve para nested
+        )}
+      />
       <DrawerPrimitive.Content
         ref={ref}
         className={cn(
@@ -100,13 +113,32 @@ const MobileDrawerContent = React.forwardRef<
           // Touch para resposta instantânea
           "touch-manipulation",
           
+          // Estilos específicos para drawer aninhado
+          isNested && [
+            // Offset visual - drawer aninhado fica ligeiramente menor
+            "mx-2 inset-x-2",
+            // Borda mais pronunciada para destacar camada
+            "border-2 border-border/80",
+            // Sombra para dar profundidade
+            "shadow-2xl shadow-black/20",
+            // Altura máxima reduzida para mostrar drawer pai
+            "max-h-[80vh]",
+            // Z-index maior para ficar acima
+            "z-[60]",
+          ],
+          
           className
         )}
         {...props}
       >
         {/* Handle de arrastar */}
         {showHandle && (
-          <div className="mx-auto mt-4 h-1.5 w-[60px] shrink-0 rounded-full bg-muted" />
+          <div 
+            className={cn(
+              "mx-auto mt-4 h-1.5 shrink-0 rounded-full bg-muted",
+              isNested ? "w-[50px]" : "w-[60px]"
+            )} 
+          />
         )}
         
         {children}
