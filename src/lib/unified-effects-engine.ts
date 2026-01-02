@@ -236,6 +236,18 @@ export interface EffectMechanics {
     actionType: 'free' | 'standard' | 'varies';          // Tipo de ação
   };
   
+  // === Cópia de Habilidade (Negociador - Truque de Mestre) ===
+  copyAbility?: {
+    source: 'ally' | 'enemy' | 'any';                    // Fonte da habilidade copiada
+    seenInScene: boolean;                                // Se precisa ter visto a habilidade na cena
+    ignorePrerequisites: boolean;                        // Se ignora pré-requisitos da habilidade
+    payOriginalCosts: boolean;                           // Se paga os custos originais da habilidade
+    peCost: number;                                      // Custo adicional em PE para usar
+    actionType: 'free' | 'standard' | 'varies';          // Tipo de ação
+    usesPerScene?: number;                               // Usos por cena (se limitado)
+    excludedAbilities?: string[];                        // Habilidades que não podem ser copiadas
+  };
+  
   // =====================================================
   // RITUAIS - Mecânicas específicas para poderes de classe
   // =====================================================
@@ -625,6 +637,30 @@ export interface ComputedEffects {
     totalUsesPerMission: number;
   };
   
+  // === Cópia de Habilidade (Negociador - Truque de Mestre) ===
+  copyAbility: {
+    available: boolean;                                    // Se o personagem tem habilidade de cópia
+    abilities: Array<{
+      id: string;                                          // ID único da habilidade
+      name: string;                                        // Nome para exibição
+      source: 'ally' | 'enemy' | 'any';                    // Fonte da habilidade copiada
+      seenInScene: boolean;                                // Se precisa ter visto na cena
+      ignorePrerequisites: boolean;                        // Se ignora pré-requisitos
+      payOriginalCosts: boolean;                           // Se paga os custos originais
+      peCost: number;                                      // Custo adicional em PE
+      actionType: 'free' | 'standard' | 'varies';          // Tipo de ação
+      usesPerScene?: number;                               // Usos por cena
+      excludedAbilities?: string[];                        // Habilidades excluídas
+      sourceName: string;                                  // Fonte da habilidade (para UI)
+    }>;
+    // Indica se pode copiar habilidades de inimigos também
+    canCopyFromEnemy: boolean;
+    // Indica se ignora pré-requisitos (consolidado)
+    ignoresPrerequisites: boolean;
+    // Custo mínimo em PE (menor custo dentre as habilidades)
+    minPECost: number;
+  };
+  
   // =====================================================
   // RITUAIS - Bônus consolidados para rituais
   // =====================================================
@@ -823,6 +859,14 @@ export function consolidateEffects(
       abilities: [],
       allAvailableEffects: [],
       totalUsesPerMission: 0,
+    },
+    // === CÓPIA DE HABILIDADE (Negociador - Truque de Mestre) ===
+    copyAbility: {
+      available: false,
+      abilities: [],
+      canCopyFromEnemy: false,
+      ignoresPrerequisites: false,
+      minPECost: Infinity,
     },
     // === RITUAIS ===
     rituals: {
@@ -1362,6 +1406,40 @@ export function consolidateEffects(
       
       // Soma usos por missão
       result.contacts.totalUsesPerMission += m.contacts.usesPerMission;
+    }
+    
+    // === Cópia de Habilidade (Negociador - Truque de Mestre) ===
+    if (m.copyAbility) {
+      result.copyAbility.available = true;
+      
+      // Adiciona habilidade à lista
+      result.copyAbility.abilities.push({
+        id: effect.id,
+        name: effect.name,
+        source: m.copyAbility.source,
+        seenInScene: m.copyAbility.seenInScene,
+        ignorePrerequisites: m.copyAbility.ignorePrerequisites,
+        payOriginalCosts: m.copyAbility.payOriginalCosts,
+        peCost: m.copyAbility.peCost,
+        actionType: m.copyAbility.actionType,
+        usesPerScene: m.copyAbility.usesPerScene,
+        excludedAbilities: m.copyAbility.excludedAbilities,
+        sourceName: source,
+      });
+      
+      // Atualiza flags consolidadas
+      if (m.copyAbility.source === 'enemy' || m.copyAbility.source === 'any') {
+        result.copyAbility.canCopyFromEnemy = true;
+      }
+      
+      if (m.copyAbility.ignorePrerequisites) {
+        result.copyAbility.ignoresPrerequisites = true;
+      }
+      
+      // Atualiza custo mínimo em PE
+      if (m.copyAbility.peCost < result.copyAbility.minPECost) {
+        result.copyAbility.minPECost = m.copyAbility.peCost;
+      }
     }
     
     // =====================================================

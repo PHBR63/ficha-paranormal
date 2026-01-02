@@ -466,6 +466,25 @@ function convertPowerMechanicsToEffects(
     };
   }
   
+  // === CÓPIA DE HABILIDADE (Negociador - Truque de Mestre) ===
+  if (mechanics.copyAbility) {
+    // Converte source para formato do EffectMechanics
+    const sourceMap: Record<string, 'ally' | 'enemy' | 'any'> = {
+      'ally': 'ally',
+      'enemy': 'enemy',
+      'any': 'any',
+    };
+    
+    effects.copyAbility = {
+      source: sourceMap[mechanics.copyAbility.source] || 'ally',
+      seenInScene: mechanics.copyAbility.seenInScene,
+      ignorePrerequisites: mechanics.copyAbility.ignorePrerequisites,
+      payOriginalCosts: mechanics.copyAbility.payOriginalCosts,
+      peCost: 5, // Custo padrão do Truque de Mestre (oficial)
+      actionType: 'varies', // Depende da habilidade copiada
+    };
+  }
+  
   // === PODER PASSIVO SEM MECÂNICAS ESPECÍFICAS ===
   if (Object.keys(effects).length === 0 && mechanics.kind === 'passive') {
     effects.specialEffects = [power.description.slice(0, 100) + '...'];
