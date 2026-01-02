@@ -972,3 +972,259 @@ describe('Integração leadership com outras mecânicas', () => {
     expect(result.skills['diplomacia']?.bonus).toBe(5);
   });
 });
+
+// =====================================================
+// Testes de allyBuff (Negociador - Discurso Motivador)
+// =====================================================
+
+describe('allyBuff no SUE', () => {
+  /**
+   * Cria um efeito de teste com allyBuff
+   */
+  function createAllyBuffEffect(
+    id: string,
+    skillBonus: number,
+    scaling?: Record<number, { skillBonus?: number; peCost?: number }>,
+    overrides: Partial<UnifiedEffect> = {}
+  ): UnifiedEffect {
+    return {
+      id,
+      name: `Buff Aliados ${id}`,
+      source: 'track',
+      sourceId: id,
+      sourceName: `Negociador: ${id}`,
+      mechanics: {
+        allyBuff: {
+          range: 'curto',
+          skillBonus,
+          peCost: 4,
+          actionType: 'standard',
+          duration: 'scene',
+          includeSelf: true,
+          scaling,
+        },
+      },
+      isActive: true,
+      isToggleable: false,
+      ...overrides,
+    };
+  }
+
+  it('deve consolidar Discurso Motivador básico', () => {
+    const effects: UnifiedEffect[] = [
+      createAllyBuffEffect('discurso-motivador', 1),
+    ];
+    
+    const context = createTestContext({ nex: 40 });
+    const result = consolidateEffects(effects, context);
+    
+    expect(result.allyBuff.available).toBe(true);
+    expect(result.allyBuff.abilities).toHaveLength(1);
+    expect(result.allyBuff.abilities[0].skillBonus).toBe(1);
+    expect(result.allyBuff.abilities[0].range).toBe('curto');
+    expect(result.allyBuff.abilities[0].duration).toBe('scene');
+    expect(result.allyBuff.abilities[0].includeSelf).toBe(true);
+    expect(result.allyBuff.maxSkillBonus).toBe(1);
+    expect(result.allyBuff.affectsSelf).toBe(true);
+  });
+  
+  it('deve aplicar escalonamento por NEX', () => {
+    const scaling = {
+      65: { skillBonus: 2, peCost: 8 },
+    };
+    
+    // NEX 40% - bônus base
+    let context = createTestContext({ nex: 40 });
+    let result = consolidateEffects([createAllyBuffEffect('dm', 1, scaling)], context);
+    expect(result.allyBuff.abilities[0].skillBonus).toBe(1);
+    
+    // NEX 65% - upgrade
+    context = createTestContext({ nex: 65 });
+    result = consolidateEffects([createAllyBuffEffect('dm', 1, scaling)], context);
+    expect(result.allyBuff.abilities[0].skillBonus).toBe(2);
+    expect(result.allyBuff.abilities[0].peCost).toBe(8);
+    expect(result.allyBuff.maxSkillBonus).toBe(2);
+  });
+  
+  it('deve consolidar múltiplos buffs de aliados', () => {
+    const effects: UnifiedEffect[] = [
+      createAllyBuffEffect('discurso-motivador', 1),
+      createAllyBuffEffect('outro-buff', 2),
+    ];
+    
+    const context = createTestContext({ nex: 50 });
+    const result = consolidateEffects(effects, context);
+    
+    expect(result.allyBuff.available).toBe(true);
+    expect(result.allyBuff.abilities).toHaveLength(2);
+    expect(result.allyBuff.maxSkillBonus).toBe(2); // Maior valor
+  });
+  
+  it('deve ignorar allyBuff de efeitos inativos', () => {
+    const effects: UnifiedEffect[] = [
+      createAllyBuffEffect('discurso-motivador', 1),
+      createAllyBuffEffect('outro-buff', 2, undefined, { isActive: false }),
+    ];
+    
+    const context = createTestContext({ nex: 50 });
+    const result = consolidateEffects(effects, context);
+    
+    expect(result.allyBuff.abilities).toHaveLength(1);
+    expect(result.allyBuff.maxSkillBonus).toBe(1);
+  });
+  
+  it('deve registrar fontes corretamente', () => {
+    const effects: UnifiedEffect[] = [
+      createAllyBuffEffect('discurso-motivador', 1),
+    ];
+    
+    const context = createTestContext({ nex: 40 });
+    const result = consolidateEffects(effects, context);
+    
+    expect(result.allyBuff.abilities[0].source).toBe('Negociador: discurso-motivador');
+  });
+  
+  it('deve retornar estrutura vazia quando não há allyBuff', () => {
+    const effects: UnifiedEffect[] = [];
+    const context = createTestContext();
+    const result = consolidateEffects(effects, context);
+    
+    expect(result.allyBuff.available).toBe(false);
+    expect(result.allyBuff.abilities).toEqual([]);
+    expect(result.allyBuff.maxSkillBonus).toBe(0);
+    expect(result.allyBuff.affectsSelf).toBe(false);
+  });
+  
+  it('deve rastrear se afeta o próprio conjurador', () => {
+    // Buff que inclui self
+    let effects: UnifiedEffect[] = [
+      createAllyBuffEffect('com-self', 1),
+    ];
+    let result = consolidateEffects(effects, createTestContext());
+    expect(result.allyBuff.affectsSelf).toBe(true);
+    
+    // Buff que não inclui self
+    effects = [
+      {
+        id: 'sem-self',
+        name: 'Buff sem self',
+        source: 'track',
+        sourceId: 'sem-self',
+        sourceName: 'Negociador: sem-self',
+        mechanics: {
+          allyBuff: {
+            range: 'curto',
+            skillBonus: 1,
+            peCost: 4,
+            actionType: 'standard',
+            duration: 'scene',
+            includeSelf: false,
+          },
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+    ];
+    result = consolidateEffects(effects, createTestContext());
+    expect(result.allyBuff.affectsSelf).toBe(false);
+  });
+});
+
+// =====================================================
+// Testes de Integração Completa (allyBuff + outras mecânicas)
+// =====================================================
+
+describe('Integração allyBuff com outras mecânicas', () => {
+  it('deve consolidar allyBuff junto com bônus de perícia pessoal', () => {
+    const effects: UnifiedEffect[] = [
+      {
+        id: 'negociador-completo',
+        name: 'Negociador',
+        source: 'track',
+        sourceId: 'negociador',
+        sourceName: 'Negociador',
+        mechanics: {
+          allyBuff: {
+            range: 'curto',
+            skillBonus: 1,
+            peCost: 4,
+            actionType: 'standard',
+            duration: 'scene',
+            includeSelf: true,
+          },
+          skillBonus: {
+            diplomacia: 5,
+            enganacao: 5,
+          },
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+    ];
+    
+    const context = createTestContext({ nex: 40 });
+    const result = consolidateEffects(effects, context);
+    
+    // Verifica allyBuff
+    expect(result.allyBuff.available).toBe(true);
+    expect(result.allyBuff.maxSkillBonus).toBe(1);
+    
+    // Verifica skill bonuses pessoais
+    expect(result.skills['diplomacia']?.bonus).toBe(5);
+    expect(result.skills['enganacao']?.bonus).toBe(5);
+  });
+  
+  it('deve manter allyBuff separado de leadership', () => {
+    const effects: UnifiedEffect[] = [
+      {
+        id: 'negociador-buff',
+        name: 'Discurso Motivador',
+        source: 'track',
+        sourceId: 'discurso',
+        sourceName: 'Negociador: Discurso Motivador',
+        mechanics: {
+          allyBuff: {
+            range: 'curto',
+            skillBonus: 1,
+            peCost: 4,
+            actionType: 'standard',
+            duration: 'scene',
+            includeSelf: true,
+          },
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+      {
+        id: 'comandante-lead',
+        name: 'Inspirar Confiança',
+        source: 'track',
+        sourceId: 'inspirar',
+        sourceName: 'Comandante: Inspirar Confiança',
+        mechanics: {
+          leadership: {
+            range: 'medio',
+            maxAllies: 'intellect',
+            peCost: 2,
+            actionType: 'free',
+            allyEffects: { rerollTest: true },
+          },
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+    ];
+    
+    const context = createTestContext({ nex: 50 });
+    const result = consolidateEffects(effects, context);
+    
+    // allyBuff e leadership devem ser independentes
+    expect(result.allyBuff.available).toBe(true);
+    expect(result.allyBuff.abilities).toHaveLength(1);
+    expect(result.allyBuff.maxSkillBonus).toBe(1);
+    
+    expect(result.leadership.available).toBe(true);
+    expect(result.leadership.abilities).toHaveLength(1);
+    expect(result.leadership.availableEffects.rerollTest).toBe(true);
+  });
+});

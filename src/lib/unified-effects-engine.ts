@@ -197,6 +197,21 @@ export interface EffectMechanics {
     }>;
   };
   
+  // === Buff para Aliados (Negociador - Discurso Motivador) ===
+  allyBuff?: {
+    range: 'curto' | 'medio' | 'longo' | 'alcance-voz'; // Alcance do efeito
+    skillBonus: number;                                   // Bônus em testes de perícia
+    peCost: number;                                       // Custo em PE
+    actionType: 'free' | 'standard' | 'complete';         // Tipo de ação
+    duration: 'scene' | 'combat' | 'turns';               // Duração
+    turns?: number;                                        // Número de turnos (se duration = 'turns')
+    includeSelf: boolean;                                  // Se afeta o próprio conjurador
+    scaling?: Record<number, {                             // Progressão por NEX
+      skillBonus?: number;
+      peCost?: number;
+    }>;
+  };
+  
   // =====================================================
   // RITUAIS - Mecânicas específicas para poderes de classe
   // =====================================================
@@ -523,6 +538,27 @@ export interface ComputedEffects {
     };
   };
   
+  // === Buff para Aliados (Negociador - Discurso Motivador) ===
+  allyBuff: {
+    available: boolean;                                    // Se o personagem tem buff de aliados
+    abilities: Array<{
+      id: string;                                          // ID único da habilidade
+      name: string;                                        // Nome para exibição
+      range: 'curto' | 'medio' | 'longo' | 'alcance-voz';
+      skillBonus: number;                                  // Bônus em testes de perícia
+      peCost: number;                                      // Custo em PE
+      actionType: 'free' | 'standard' | 'complete';        // Tipo de ação
+      duration: 'scene' | 'combat' | 'turns';              // Duração
+      turns?: number;                                      // Número de turnos
+      includeSelf: boolean;                                // Se afeta o próprio
+      source: string;                                      // Fonte da habilidade
+    }>;
+    // Maior bônus de perícia disponível (consolidado)
+    maxSkillBonus: number;
+    // Indica se o buff afeta o próprio personagem
+    affectsSelf: boolean;
+  };
+  
   // =====================================================
   // RITUAIS - Bônus consolidados para rituais
   // =====================================================
@@ -701,6 +737,13 @@ export function consolidateEffects(
         tempHP: 0,
         bonusToNextTest: 0,
       },
+    },
+    // === BUFF DE ALIADOS (Negociador) ===
+    allyBuff: {
+      available: false,
+      abilities: [],
+      maxSkillBonus: 0,
+      affectsSelf: false,
     },
     // === RITUAIS ===
     rituals: {
@@ -1136,6 +1179,54 @@ export function consolidateEffects(
           result.leadership.availableEffects.bonusToNextTest,
           allyEffects.bonusToNextTest
         );
+      }
+    }
+    
+    // === Buff para Aliados (Negociador - Discurso Motivador) ===
+    if (m.allyBuff) {
+      result.allyBuff.available = true;
+      
+      // Calcula bônus de perícia baseado no NEX se houver scaling
+      let skillBonus = m.allyBuff.skillBonus;
+      let peCost = m.allyBuff.peCost;
+      
+      if (m.allyBuff.scaling) {
+        const nexThresholds = Object.keys(m.allyBuff.scaling)
+          .map(Number)
+          .sort((a, b) => b - a); // Ordem decrescente
+        
+        for (const threshold of nexThresholds) {
+          if (context.nex >= threshold) {
+            const scaling = m.allyBuff.scaling[threshold];
+            if (scaling.skillBonus !== undefined) skillBonus = scaling.skillBonus;
+            if (scaling.peCost !== undefined) peCost = scaling.peCost;
+            break;
+          }
+        }
+      }
+      
+      // Adiciona habilidade à lista
+      result.allyBuff.abilities.push({
+        id: effect.id,
+        name: effect.name,
+        range: m.allyBuff.range,
+        skillBonus,
+        peCost,
+        actionType: m.allyBuff.actionType,
+        duration: m.allyBuff.duration,
+        turns: m.allyBuff.turns,
+        includeSelf: m.allyBuff.includeSelf,
+        source,
+      });
+      
+      // Atualiza máximo bônus de perícia
+      if (skillBonus > result.allyBuff.maxSkillBonus) {
+        result.allyBuff.maxSkillBonus = skillBonus;
+      }
+      
+      // Atualiza se afeta o próprio
+      if (m.allyBuff.includeSelf) {
+        result.allyBuff.affectsSelf = true;
       }
     }
     

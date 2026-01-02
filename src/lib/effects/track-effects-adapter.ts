@@ -509,6 +509,43 @@ function convertTrackAbilityToMechanics(
     }
   }
   
+  // === BUFF PARA ALIADOS (Negociador - Discurso Motivador) ===
+  if (m.allyBuff) {
+    // Converte range para formato do EffectMechanics
+    const rangeMap: Record<string, 'curto' | 'medio' | 'longo' | 'alcance-voz'> = {
+      'short': 'curto',
+      'medium': 'medio',
+      'long': 'longo',
+    };
+    
+    // Converte duration para formato do EffectMechanics
+    const durationMap: Record<string, 'scene' | 'combat' | 'turns'> = {
+      'scene': 'scene',
+      'combat': 'combat',
+      'turns': 'turns',
+    };
+    
+    mechanics.allyBuff = {
+      range: rangeMap[m.allyBuff.range] || 'curto',
+      skillBonus: m.allyBuff.skillBonus,
+      peCost: 0, // Será definido pela ativação da habilidade
+      actionType: 'standard',
+      duration: durationMap[m.allyBuff.duration] || 'scene',
+      includeSelf: m.allyBuff.includeSelf,
+    };
+    
+    // Também adiciona aos specialEffects para backward compatibility
+    if (!mechanics.specialEffects) mechanics.specialEffects = [];
+    
+    const range = rangeMap[m.allyBuff.range] || m.allyBuff.range;
+    const duration = m.allyBuff.duration === 'scene' ? 'até o final da cena' : m.allyBuff.duration;
+    const selfNote = m.allyBuff.includeSelf ? ' (inclui você)' : '';
+    
+    mechanics.specialEffects.push(
+      `Aliados em alcance ${range}${selfNote}: +${m.allyBuff.skillBonus} em testes de perícia (${duration})`
+    );
+  }
+  
   // === CURA (Médico de Campo) ===
   if (m.healing) {
     const scalingDice = m.healing.scalingDice;

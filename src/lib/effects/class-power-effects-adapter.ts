@@ -399,6 +399,32 @@ function convertPowerMechanicsToEffects(
     };
   }
   
+  // === BUFF PARA ALIADOS (Negociador - Discurso Motivador) ===
+  if (mechanics.allyBuff) {
+    // Converte range para formato do EffectMechanics
+    const rangeMap: Record<string, 'curto' | 'medio' | 'longo' | 'alcance-voz'> = {
+      'short': 'curto',
+      'medium': 'medio',
+      'long': 'longo',
+    };
+    
+    // Converte duration para formato do EffectMechanics
+    const durationMap: Record<string, 'scene' | 'combat' | 'turns'> = {
+      'scene': 'scene',
+      'combat': 'combat',
+      'turns': 'turns',
+    };
+    
+    effects.allyBuff = {
+      range: rangeMap[mechanics.allyBuff.range] || 'curto',
+      skillBonus: mechanics.allyBuff.skillBonus,
+      peCost: 0, // Será definido pela ativação da habilidade
+      actionType: 'standard',
+      duration: durationMap[mechanics.allyBuff.duration] || 'scene',
+      includeSelf: mechanics.allyBuff.includeSelf,
+    };
+  }
+  
   // === PODER PASSIVO SEM MECÂNICAS ESPECÍFICAS ===
   if (Object.keys(effects).length === 0 && mechanics.kind === 'passive') {
     effects.specialEffects = [power.description.slice(0, 100) + '...'];
