@@ -298,6 +298,26 @@ function convertPowerMechanicsToEffects(
     }
   }
   
+  // === REDUÇÃO DE CATEGORIA ===
+  if (mechanics.categoryReduction) {
+    effects.categoryReduction = {
+      amount: mechanics.categoryReduction.amount,
+      targetType: mechanics.categoryReduction.targetType,
+      requiresChoice: mechanics.categoryReduction.requiresChoice,
+      choiceDescription: mechanics.categoryReduction.choiceDescription,
+      appliesToAllCarried: mechanics.categoryReduction.appliesToAllCarried,
+    };
+  }
+  
+  // === CONTRA-MÁGICA ===
+  if (mechanics.counterSpell) {
+    effects.counterSpell = {
+      costMatchesTarget: mechanics.counterSpell.costMatchesTarget,
+      testSkill: mechanics.counterSpell.testSkill as string,
+      testType: mechanics.counterSpell.testType as 'opposed' | 'fixed',
+    };
+  }
+  
   // === PODER PASSIVO SEM MECÂNICAS ESPECÍFICAS ===
   if (Object.keys(effects).length === 0 && mechanics.kind === 'passive') {
     effects.specialEffects = [power.description.slice(0, 100) + '...'];
