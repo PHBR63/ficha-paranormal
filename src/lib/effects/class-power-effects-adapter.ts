@@ -318,6 +318,21 @@ function convertPowerMechanicsToEffects(
     };
   }
   
+  // === ATAQUE FURTIVO ===
+  if (mechanics.sneakAttack) {
+    // Encontra os dados base para NEX 10%
+    const baseEntry = mechanics.sneakAttack.scaling[10] || mechanics.sneakAttack.scaling[5] || { dice: 1, dieType: 'd6' };
+    
+    effects.sneakAttack = {
+      baseDice: baseEntry.dice,
+      dieType: baseEntry.dieType,
+      scaling: mechanics.sneakAttack.scaling,
+      conditions: mechanics.sneakAttack.conditions || [],
+      peCost: mechanics.sneakAttack.peCost,
+      usesPerRound: mechanics.sneakAttack.usesPerRound,
+    };
+  }
+  
   // === PODER PASSIVO SEM MECÂNICAS ESPECÍFICAS ===
   if (Object.keys(effects).length === 0 && mechanics.kind === 'passive') {
     effects.specialEffects = [power.description.slice(0, 100) + '...'];
