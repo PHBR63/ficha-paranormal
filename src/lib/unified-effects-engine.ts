@@ -145,6 +145,17 @@ export interface EffectMechanics {
     testType: 'opposed' | 'fixed';           // Tipo de teste
   };
   
+  // === Ataque Furtivo (Infiltrador) ===
+  sneakAttack?: {
+    baseDice: number;                        // Quantidade de dados base
+    dieType: string;                         // Tipo de dado (d6)
+    scaling?: Record<number, { dice: number; dieType: string }>; // Escala por NEX
+    conditions: string[];                    // Condições requeridas (alvo desprevenido, etc)
+    peCost: number;                          // Custo em PE
+    usesPerRound: number;                    // Usos por rodada
+    multiplier?: number;                     // Multiplicador (Assassinar)
+  };
+  
   // =====================================================
   // RITUAIS - Mecânicas específicas para poderes de classe
   // =====================================================
@@ -403,6 +414,24 @@ export interface ComputedEffects {
     testType: 'opposed' | 'fixed';
   }>;
   
+  // === Ataque Furtivo ===
+  sneakAttack: {
+    available: boolean;                      // Se o personagem tem Ataque Furtivo
+    baseDice: number;                        // Dados base para o NEX atual
+    dieType: string;                         // Tipo de dado (d6)
+    conditions: string[];                    // Condições requeridas
+    peCost: number;                          // Custo em PE
+    usesPerRound: number;                    // Usos por rodada
+    multiplier: number;                      // Multiplicador (1 = normal, 2 = Assassinar)
+    totalDice: number;                       // Dados totais com multiplicador
+    sources: Array<{
+      source: string;
+      dice: number;
+      dieType: string;
+      multiplier?: number;
+    }>;
+  };
+  
   // =====================================================
   // RITUAIS - Bônus consolidados para rituais
   // =====================================================
@@ -546,6 +575,18 @@ export function consolidateEffects(
     },
     // === CONTRA-MÁGICA ===
     counterSpellAbilities: [],
+    // === ATAQUE FURTIVO ===
+    sneakAttack: {
+      available: false,
+      baseDice: 0,
+      dieType: 'd6',
+      conditions: [],
+      peCost: 0,
+      usesPerRound: 0,
+      multiplier: 1,
+      totalDice: 0,
+      sources: [],
+    },
     // === RITUAIS ===
     rituals: {
       dtBonus: 0,
@@ -793,6 +834,70 @@ export function consolidateEffects(
         testSkill: m.counterSpell.testSkill,
         testType: m.counterSpell.testType,
       });
+    }
+    
+    // === Ataque Furtivo ===
+    if (m.sneakAttack) {
+      result.sneakAttack.available = true;
+      
+      // Calcula dados baseado no NEX do contexto
+      let dice = m.sneakAttack.baseDice;
+      const dieType = m.sneakAttack.dieType;
+      
+      // Aplica escalonamento por NEX se disponível
+      if (m.sneakAttack.scaling) {
+        const nexThresholds = Object.keys(m.sneakAttack.scaling)
+          .map(Number)
+          .sort((a, b) => b - a); // Ordem decrescente
+        
+        for (const threshold of nexThresholds) {
+          if (context.nex >= threshold) {
+            const scaling = m.sneakAttack.scaling[threshold];
+            dice = scaling.dice;
+            break;
+          }
+        }
+      }
+      
+      // Aplica multiplicador (Assassinar)
+      const multiplier = m.sneakAttack.multiplier ?? 1;
+      if (multiplier > result.sneakAttack.multiplier) {
+        result.sneakAttack.multiplier = multiplier;
+      }
+      
+      // Atualiza dados base (maior valor ganha)
+      if (dice > result.sneakAttack.baseDice) {
+        result.sneakAttack.baseDice = dice;
+        result.sneakAttack.dieType = dieType;
+      }
+      
+      // Merge condições
+      if (m.sneakAttack.conditions) {
+        for (const cond of m.sneakAttack.conditions) {
+          if (!result.sneakAttack.conditions.includes(cond)) {
+            result.sneakAttack.conditions.push(cond);
+          }
+        }
+      }
+      
+      // Custo e usos (primeiro a definir)
+      if (result.sneakAttack.peCost === 0) {
+        result.sneakAttack.peCost = m.sneakAttack.peCost;
+      }
+      if (result.sneakAttack.usesPerRound === 0) {
+        result.sneakAttack.usesPerRound = m.sneakAttack.usesPerRound;
+      }
+      
+      // Registra fonte
+      result.sneakAttack.sources.push({
+        source,
+        dice,
+        dieType,
+        multiplier: m.sneakAttack.multiplier,
+      });
+      
+      // Calcula total com multiplicador
+      result.sneakAttack.totalDice = result.sneakAttack.baseDice * result.sneakAttack.multiplier;
     }
     
     // =====================================================

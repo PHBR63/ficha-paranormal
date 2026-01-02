@@ -523,12 +523,37 @@ function convertTrackAbilityToMechanics(
     );
   }
   
+  // === ATAQUE FURTIVO (Infiltrador) ===
+  if (m.sneakAttack) {
+    // Encontra os dados base para NEX 10%
+    const baseEntry = m.sneakAttack.scaling[10] || m.sneakAttack.scaling[5] || { dice: 1, dieType: 'd6' };
+    
+    mechanics.sneakAttack = {
+      baseDice: baseEntry.dice,
+      dieType: baseEntry.dieType,
+      scaling: m.sneakAttack.scaling,
+      conditions: m.sneakAttack.conditions || [],
+      peCost: m.sneakAttack.peCost,
+      usesPerRound: m.sneakAttack.usesPerRound,
+    };
+  }
+  
   // === MULTIPLICADOR DE ATAQUE FURTIVO (Assassinar) ===
   if (m.sneakAttackMultiplier) {
-    if (!mechanics.specialEffects) mechanics.specialEffects = [];
-    mechanics.specialEffects.push(
-      `Ataque Furtivo causa dano x${m.sneakAttackMultiplier}`
-    );
+    // Se já tem sneakAttack, adiciona multiplicador
+    if (mechanics.sneakAttack) {
+      mechanics.sneakAttack.multiplier = m.sneakAttackMultiplier;
+    } else {
+      // Cria sneakAttack com multiplicador (herdará dados da habilidade base)
+      mechanics.sneakAttack = {
+        baseDice: 0,
+        dieType: 'd6',
+        conditions: [],
+        peCost: 0,
+        usesPerRound: 0,
+        multiplier: m.sneakAttackMultiplier,
+      };
+    }
   }
   
   // === BÔNUS DE DT DE RITUAL (Graduado - Rituais Eficientes) ===
