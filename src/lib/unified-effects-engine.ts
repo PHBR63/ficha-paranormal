@@ -167,6 +167,36 @@ export interface EffectMechanics {
     actionType?: 'standard' | 'movement' | 'complete'; // Tipo de ação
   };
   
+  // === Liderança (Comandante de Campo) ===
+  leadership?: {
+    range: 'curto' | 'medio' | 'longo' | 'alcance-voz'; // Alcance do efeito
+    maxAllies: number | 'intellect' | 'presence';       // Máximo de aliados afetados
+    peCost: number;                                      // Custo em PE
+    actionType: 'free' | 'reaction' | 'standard';        // Tipo de ação
+    usesPerRound?: number;                               // Usos por rodada
+    usesPerScene?: number;                               // Usos por cena
+    allyEffects: {
+      rerollTest?: boolean;                              // Aliado pode rerolar um teste
+      extraMovementAction?: boolean;                     // Ação de movimento extra
+      extraAttack?: boolean;                             // Ataque adicional
+      extraStandardAction?: boolean;                     // Ação padrão extra
+      tempHP?: number;                                   // PV temporários
+      bonusToNextTest?: number;                          // Bônus no próximo teste
+    };
+    scaling?: Record<number, {                           // Progressão por NEX
+      maxAllies?: number | 'intellect' | 'presence';
+      peCost?: number;
+      allyEffects?: {
+        rerollTest?: boolean;
+        extraMovementAction?: boolean;
+        extraAttack?: boolean;
+        extraStandardAction?: boolean;
+        tempHP?: number;
+        bonusToNextTest?: number;
+      };
+    }>;
+  };
+  
   // =====================================================
   // RITUAIS - Mecânicas específicas para poderes de classe
   // =====================================================
@@ -460,6 +490,39 @@ export interface ComputedEffects {
     }>;
   };
   
+  // === Liderança (Comandante de Campo) ===
+  leadership: {
+    available: boolean;                      // Se o personagem tem habilidades de liderança
+    abilities: Array<{
+      id: string;                            // ID único da habilidade
+      name: string;                          // Nome para exibição
+      range: 'curto' | 'medio' | 'longo' | 'alcance-voz';
+      maxAllies: number | 'intellect' | 'presence';
+      peCost: number;
+      actionType: 'free' | 'reaction' | 'standard';
+      usesPerRound?: number;
+      usesPerScene?: number;
+      allyEffects: {
+        rerollTest?: boolean;
+        extraMovementAction?: boolean;
+        extraAttack?: boolean;
+        extraStandardAction?: boolean;
+        tempHP?: number;
+        bonusToNextTest?: number;
+      };
+      source: string;                        // Fonte da habilidade
+    }>;
+    // Resumo consolidado de todos os efeitos disponíveis
+    availableEffects: {
+      rerollTest: boolean;
+      extraMovementAction: boolean;
+      extraAttack: boolean;
+      extraStandardAction: boolean;
+      tempHP: number;
+      bonusToNextTest: number;
+    };
+  };
+  
   // =====================================================
   // RITUAIS - Bônus consolidados para rituais
   // =====================================================
@@ -625,6 +688,19 @@ export function consolidateEffects(
       range: 'touch',
       actionType: 'standard',
       sources: [],
+    },
+    // === LIDERANÇA ===
+    leadership: {
+      available: false,
+      abilities: [],
+      availableEffects: {
+        rerollTest: false,
+        extraMovementAction: false,
+        extraAttack: false,
+        extraStandardAction: false,
+        tempHP: 0,
+        bonusToNextTest: 0,
+      },
     },
     // === RITUAIS ===
     rituals: {
@@ -993,6 +1069,74 @@ export function consolidateEffects(
         dieType,
         peCost: m.healing.peCost,
       });
+    }
+    
+    // === Liderança (Comandante de Campo) ===
+    if (m.leadership) {
+      result.leadership.available = true;
+      
+      // Calcula maxAllies e allyEffects baseado no NEX se houver scaling
+      let maxAllies = m.leadership.maxAllies;
+      let allyEffects = { ...m.leadership.allyEffects };
+      let peCost = m.leadership.peCost;
+      
+      if (m.leadership.scaling) {
+        const nexThresholds = Object.keys(m.leadership.scaling)
+          .map(Number)
+          .sort((a, b) => b - a); // Ordem decrescente
+        
+        for (const threshold of nexThresholds) {
+          if (context.nex >= threshold) {
+            const scaling = m.leadership.scaling[threshold];
+            if (scaling.maxAllies !== undefined) maxAllies = scaling.maxAllies;
+            if (scaling.peCost !== undefined) peCost = scaling.peCost;
+            if (scaling.allyEffects) {
+              allyEffects = { ...allyEffects, ...scaling.allyEffects };
+            }
+            break;
+          }
+        }
+      }
+      
+      // Adiciona habilidade à lista
+      result.leadership.abilities.push({
+        id: effect.id,
+        name: effect.name,
+        range: m.leadership.range,
+        maxAllies,
+        peCost,
+        actionType: m.leadership.actionType,
+        usesPerRound: m.leadership.usesPerRound,
+        usesPerScene: m.leadership.usesPerScene,
+        allyEffects,
+        source,
+      });
+      
+      // Consolida efeitos disponíveis
+      if (allyEffects.rerollTest) {
+        result.leadership.availableEffects.rerollTest = true;
+      }
+      if (allyEffects.extraMovementAction) {
+        result.leadership.availableEffects.extraMovementAction = true;
+      }
+      if (allyEffects.extraAttack) {
+        result.leadership.availableEffects.extraAttack = true;
+      }
+      if (allyEffects.extraStandardAction) {
+        result.leadership.availableEffects.extraStandardAction = true;
+      }
+      if (allyEffects.tempHP) {
+        result.leadership.availableEffects.tempHP = Math.max(
+          result.leadership.availableEffects.tempHP,
+          allyEffects.tempHP
+        );
+      }
+      if (allyEffects.bonusToNextTest) {
+        result.leadership.availableEffects.bonusToNextTest = Math.max(
+          result.leadership.availableEffects.bonusToNextTest,
+          allyEffects.bonusToNextTest
+        );
+      }
     }
     
     // =====================================================
