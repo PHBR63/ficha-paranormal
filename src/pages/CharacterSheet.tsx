@@ -41,6 +41,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { MobileActionSheet, useActionSheet } from '@/components/ui/mobile-action-sheet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ORIGINS, CLASSES, getTrackById, getOcultistRituals } from '@/lib/character-data';
 import { ALL_RITUALS } from '@/lib/rituals/legacy-exports';
@@ -350,6 +351,9 @@ export default function CharacterSheet() {
   
   // Histórico de rituais conjurados na sessão
   const [castHistory, setCastHistory] = useState<RitualCastRecord[]>([]);
+  
+  // ActionSheet mobile para ações do personagem
+  const mobileActionsSheet = useActionSheet();
   
   // Modal de remoção de rituais excedentes
   const [excessRitualsModalOpen, setExcessRitualsModalOpen] = useState(false);
@@ -1779,42 +1783,55 @@ export default function CharacterSheet() {
               </Button>
             </div>
 
-            {/* Lado direito: Menu dropdown - Mobile */}
+            {/* Lado direito: Menu ActionSheet - Mobile */}
             <div className="flex sm:hidden items-center gap-1 flex-shrink-0">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="icon" className="h-8 w-8">
-                    <MoreVertical className="w-4 h-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48 bg-popover z-50">
-                  <DropdownMenuItem onClick={() => setEditModalOpen(true)}>
-                    <Edit2 className="w-4 h-4 mr-2" />
-                    Editar Personagem
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => {
-                    // Abre o histórico de rolagens
-                    const historyBtn = document.querySelector('[data-dice-history-trigger]') as HTMLButtonElement;
-                    historyBtn?.click();
-                  }}>
-                    <Dices className="w-4 h-4 mr-2" />
-                    Histórico de Dados
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => {
-                    // Abre o histórico do personagem
-                    const charHistoryBtn = document.querySelector('[data-character-history-trigger]') as HTMLButtonElement;
-                    charHistoryBtn?.click();
-                  }}>
-                    <History className="w-4 h-4 mr-2" />
-                    Histórico de Alterações
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleDelete} className="text-destructive focus:text-destructive">
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Excluir Personagem
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <Button 
+                variant="outline" 
+                size="icon" 
+                className="h-8 w-8"
+                onClick={mobileActionsSheet.open}
+              >
+                <MoreVertical className="w-4 h-4" />
+              </Button>
+              <MobileActionSheet
+                open={mobileActionsSheet.isOpen}
+                onOpenChange={mobileActionsSheet.setIsOpen}
+                title="Ações do Personagem"
+                description={character?.name}
+                actions={[
+                  {
+                    id: 'edit',
+                    label: 'Editar Personagem',
+                    icon: Edit2,
+                    onPress: () => setEditModalOpen(true),
+                  },
+                  {
+                    id: 'dice-history',
+                    label: 'Histórico de Dados',
+                    icon: Dices,
+                    onPress: () => {
+                      const historyBtn = document.querySelector('[data-dice-history-trigger]') as HTMLButtonElement;
+                      historyBtn?.click();
+                    },
+                  },
+                  {
+                    id: 'char-history',
+                    label: 'Histórico de Alterações',
+                    icon: History,
+                    onPress: () => {
+                      const charHistoryBtn = document.querySelector('[data-character-history-trigger]') as HTMLButtonElement;
+                      charHistoryBtn?.click();
+                    },
+                  },
+                  {
+                    id: 'delete',
+                    label: 'Excluir Personagem',
+                    icon: Trash2,
+                    destructive: true,
+                    onPress: handleDelete,
+                  },
+                ]}
+              />
               <ThemeSelector />
             </div>
           </div>

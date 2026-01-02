@@ -1,5 +1,6 @@
 /**
  * MobileInventoryCard - Card compacto com swipe gestures para inventário mobile
+ * Inclui MobileActionSheet como alternativa ao swipe para acessibilidade
  */
 
 import { useState } from 'react';
@@ -12,9 +13,12 @@ import {
   Wrench,
   ChevronLeft,
   ChevronRight,
+  MoreVertical,
+  Eye,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { MobileActionSheet, useActionSheet } from '@/components/ui/mobile-action-sheet';
 import type { ExtendedInventoryItem } from './InventoryPanel';
 import type { WeaponModification } from '@/lib/weapons-catalog';
 
@@ -59,12 +63,54 @@ export function MobileInventoryCard({
 }: MobileInventoryCardProps) {
   const [isDragging, setIsDragging] = useState(false);
   const x = useMotionValue(0);
+  const actionSheet = useActionSheet();
   
   const categoryConfig = CATEGORY_LABELS[item.category] || CATEGORY_LABELS['0'];
   const isConsumable = item.consumable && (item.uses ?? 0) > 0;
   const usesDisplay = item.consumable ? `${item.uses ?? 0}/${item.maxUses ?? item.uses ?? 0}` : null;
   const appliedMods = (item as any).appliedModifications as WeaponModification[] | undefined;
   const hasModifications = appliedMods && appliedMods.length > 0;
+
+  // Monta ações para o ActionSheet
+  const actions = [
+    ...(onViewDetails ? [{
+      id: 'view',
+      label: 'Ver Detalhes',
+      icon: Eye,
+      onPress: () => onViewDetails(item),
+    }] : []),
+    ...(onEquip && !item.isEquipped ? [{
+      id: 'equip',
+      label: 'Equipar',
+      icon: CircleCheck,
+      onPress: () => onEquip(item.id),
+    }] : []),
+    ...(onUnequip && item.isEquipped ? [{
+      id: 'unequip',
+      label: 'Desequipar',
+      icon: Circle,
+      onPress: () => onUnequip(item.id),
+    }] : []),
+    ...(onUse && isConsumable ? [{
+      id: 'use',
+      label: 'Usar',
+      icon: Zap,
+      onPress: () => onUse(item.id),
+    }] : []),
+    ...(onModify ? [{
+      id: 'modify',
+      label: 'Modificar',
+      icon: Wrench,
+      onPress: () => onModify(item),
+    }] : []),
+    ...(onRemove ? [{
+      id: 'remove',
+      label: 'Remover',
+      icon: Trash2,
+      destructive: true,
+      onPress: () => onRemove(item.id),
+    }] : []),
+  ];
 
   // Transforms para as ações de swipe
   const leftActionOpacity = useTransform(x, [-SWIPE_THRESHOLD, 0], [1, 0]);
@@ -256,6 +302,15 @@ export function MobileInventoryCard({
                 <Wrench className="w-4 h-4" />
               </button>
             )}
+            {/* Botão de menu alternativo ao swipe */}
+            {actions.length > 0 && (
+              <button
+                className="w-8 h-8 rounded-lg bg-muted/50 border border-border flex items-center justify-center text-muted-foreground active:bg-muted"
+                onClick={(e) => { e.stopPropagation(); actionSheet.open(); }}
+              >
+                <MoreVertical className="w-4 h-4" />
+              </button>
+            )}
           </div>
         </div>
 
@@ -271,6 +326,15 @@ export function MobileInventoryCard({
           </div>
         )}
       </motion.div>
+
+      {/* MobileActionSheet como alternativa ao swipe */}
+      <MobileActionSheet
+        open={actionSheet.isOpen}
+        onOpenChange={actionSheet.setIsOpen}
+        title={item.name}
+        description={`${categoryConfig.label} • ${item.slots * item.quantity} esp.`}
+        actions={actions}
+      />
     </div>
   );
 }
