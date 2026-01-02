@@ -1,7 +1,16 @@
+/**
+ * PlayersSidebar - Barra lateral de jogadores da campanha
+ * 
+ * Exibe lista de membros com avatares, status online e barra de PV
+ * Inclui MobileActionSheet para ações em cada membro
+ */
+
+import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Crown, User, Circle, X } from 'lucide-react';
+import { Crown, User, Circle, X, Eye, UserMinus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { MobileActionSheet } from '@/components/ui/mobile-action-sheet';
 import { cn } from '@/lib/utils';
 
 interface Member {
@@ -28,14 +37,62 @@ interface PlayersSidebarProps {
   masterId: string;
   isMaster: boolean;
   onRemoveMember?: (memberId: string) => void;
+  onViewCharacter?: (characterId: string) => void;
 }
 
 export function PlayersSidebar({ 
   members, 
   masterId, 
   isMaster, 
-  onRemoveMember 
+  onRemoveMember,
+  onViewCharacter,
 }: PlayersSidebarProps) {
+  // Estado do ActionSheet para membros
+  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+  const [actionSheetOpen, setActionSheetOpen] = useState(false);
+
+  // Handler para abrir ações do membro
+  const handleMemberClick = (member: Member) => {
+    const isMasterMember = member.role === 'master';
+    // Só abre o ActionSheet se houver ações disponíveis
+    if (member.characters?.id || (isMaster && !isMasterMember)) {
+      setSelectedMember(member);
+      setActionSheetOpen(true);
+    }
+  };
+
+  // Monta ações para o membro selecionado
+  const getMemberActions = () => {
+    if (!selectedMember) return [];
+    
+    const isMasterMember = selectedMember.role === 'master';
+    const actions = [];
+
+    // Ver personagem (se tiver personagem vinculado)
+    if (selectedMember.characters?.id && onViewCharacter) {
+      actions.push({
+        id: 'view-character',
+        label: 'Ver Personagem',
+        icon: Eye,
+        description: `${selectedMember.characters.name} • ${selectedMember.characters.class}`,
+        onPress: () => onViewCharacter(selectedMember.characters!.id),
+      });
+    }
+
+    // Remover da campanha (apenas mestre pode, e não pode remover a si mesmo)
+    if (isMaster && !isMasterMember && onRemoveMember) {
+      actions.push({
+        id: 'remove',
+        label: 'Remover da Campanha',
+        icon: UserMinus,
+        destructive: true,
+        onPress: () => onRemoveMember(selectedMember.id),
+      });
+    }
+
+    return actions;
+  };
+
   return (
     <aside className="w-72 border-l border-border bg-card/30 backdrop-blur-sm hidden lg:flex flex-col">
       <div className="p-4 border-b border-border">
@@ -50,6 +107,7 @@ export function PlayersSidebar({
           {members.map((member, index) => {
             const isMasterMember = member.role === 'master';
             const isOnline = true; // Could be connected to realtime presence
+            const hasActions = member.characters?.id || (isMaster && !isMasterMember);
             
             return (
               <motion.div
@@ -60,8 +118,10 @@ export function PlayersSidebar({
                 className={cn(
                   'group p-3 rounded-lg transition-all',
                   'bg-secondary/30 border border-border/50 hover:border-border',
-                  isMasterMember && 'border-primary/30 bg-primary/5'
+                  isMasterMember && 'border-primary/30 bg-primary/5',
+                  hasActions && 'cursor-pointer hover:bg-secondary/50'
                 )}
+                onClick={() => handleMemberClick(member)}
               >
                 <div className="flex items-center gap-3">
                   {/* Avatar */}
@@ -115,13 +175,16 @@ export function PlayersSidebar({
                     )}
                   </div>
                   
-                  {/* Remove button */}
+                  {/* Remove button (mantido para hover rápido no desktop) */}
                   {isMaster && !isMasterMember && onRemoveMember && (
                     <Button
                       variant="ghost"
                       size="icon"
                       className="w-7 h-7 opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={() => onRemoveMember(member.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onRemoveMember(member.id);
+                      }}
                     >
                       <X className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive" />
                     </Button>
@@ -150,6 +213,18 @@ export function PlayersSidebar({
           })}
         </div>
       </ScrollArea>
+
+      {/* MobileActionSheet para ações do membro */}
+      <MobileActionSheet
+        open={actionSheetOpen}
+        onOpenChange={setActionSheetOpen}
+        title={selectedMember?.profiles?.display_name || 'Jogador'}
+        description={selectedMember?.characters?.name 
+          ? `${selectedMember.characters.name} • NEX ${selectedMember.characters.nex}%`
+          : 'Sem personagem vinculado'
+        }
+        actions={getMemberActions()}
+      />
     </aside>
   );
 }

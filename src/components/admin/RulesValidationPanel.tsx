@@ -30,6 +30,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { MobileActionSheet, useActionSheet } from '@/components/ui/mobile-action-sheet';
+import { useIsMobile } from '@/hooks/use-mobile';
 import {
   CheckCircle2,
   XCircle,
@@ -313,6 +315,8 @@ export function RulesValidationPanel() {
   const [report, setReport] = useState<ValidationReport | null>(null);
   const [isRunning, setIsRunning] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
+  const isMobile = useIsMobile();
+  const exportSheet = useActionSheet();
 
   // Agrupa resultados por categoria
   const groupedResults = useMemo(() => {
@@ -453,24 +457,55 @@ export function RulesValidationPanel() {
           </div>
           <div className="flex items-center gap-2">
             {report && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <Download className="w-4 h-4 mr-2" />
-                    Exportar
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={handleExportJson}>
-                    <FileJson className="w-4 h-4 mr-2" />
-                    Exportar JSON
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleExportPdf}>
-                    <FileText className="w-4 h-4 mr-2" />
-                    Exportar PDF
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <>
+                {/* Desktop: DropdownMenu */}
+                {!isMobile ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        <Download className="w-4 h-4 mr-2" />
+                        Exportar
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={handleExportJson}>
+                        <FileJson className="w-4 h-4 mr-2" />
+                        Exportar JSON
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={handleExportPdf}>
+                        <FileText className="w-4 h-4 mr-2" />
+                        Exportar PDF
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : (
+                  <>
+                    <Button variant="outline" size="sm" onClick={exportSheet.open}>
+                      <Download className="w-4 h-4 mr-2" />
+                      Exportar
+                    </Button>
+                    <MobileActionSheet
+                      open={exportSheet.isOpen}
+                      onOpenChange={exportSheet.setIsOpen}
+                      title="Exportar Relatório"
+                      actions={[
+                        {
+                          id: 'json',
+                          label: 'Exportar JSON',
+                          icon: FileJson,
+                          onPress: handleExportJson,
+                        },
+                        {
+                          id: 'pdf',
+                          label: 'Exportar PDF',
+                          icon: FileText,
+                          onPress: handleExportPdf,
+                        },
+                      ]}
+                    />
+                  </>
+                )}
+              </>
             )}
             <Button 
               onClick={handleRunValidation} 

@@ -1,3 +1,10 @@
+/**
+ * ThemeSelector - Seletor de tema com suporte a MobileActionSheet
+ * 
+ * Usa MobileActionSheet no mobile para melhor UX nativa
+ * Mantém DropdownMenu no desktop para comportamento padrão
+ */
+
 import { Palette, HelpCircle, Bug, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -7,13 +14,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { MobileActionSheet, useActionSheet } from '@/components/ui/mobile-action-sheet';
 import { useColorTheme, ColorTheme } from '@/contexts/ColorThemeContext';
 import { cn } from '@/lib/utils';
 import { restoreHelpButton, isHelpButtonDismissed } from '@/components/character/CharacterSheetHelp';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const THEMES: { id: ColorTheme; name: string; color: string }[] = [
   { id: 'purple', name: 'Roxo Abissal', color: '#8B5CF6' },
@@ -26,6 +35,8 @@ const THEMES: { id: ColorTheme; name: string; color: string }[] = [
 export function ThemeSelector() {
   const { colorTheme, setColorTheme } = useColorTheme();
   const { user } = useAuth();
+  const isMobile = useIsMobile();
+  const actionSheet = useActionSheet();
   const currentTheme = THEMES.find(t => t.id === colorTheme);
   const [helpDismissed, setHelpDismissed] = useState(false);
   const [developerMode, setDeveloperMode] = useState(false);
@@ -61,11 +72,11 @@ export function ThemeSelector() {
   }, []);
 
   // Handler para restaurar o botão de ajuda
-  const handleRestoreHelp = () => {
+  const handleRestoreHelp = useCallback(() => {
     restoreHelpButton();
     setHelpDismissed(false);
     toast.success('Botão de ajuda restaurado!');
-  };
+  }, []);
 
   // Handler para toggle do modo desenvolvedor
   const handleToggleDeveloperMode = useCallback(async () => {
@@ -93,20 +104,84 @@ export function ThemeSelector() {
     setIsTogglingDev(false);
   }, [user, developerMode, isTogglingDev]);
 
+  // Ações para o MobileActionSheet agrupadas
+  const actionSheetGroups = useMemo(() => {
+    const themeActions = THEMES.map(theme => ({
+      id: theme.id as string,
+      label: theme.name,
+      description: colorTheme === theme.id ? '✓ Selecionado' : undefined,
+      onPress: () => setColorTheme(theme.id),
+    }));
+
+    const configActions: Array<{
+      id: string;
+      label: string;
+      icon?: typeof Bug;
+      description?: string;
+      disabled?: boolean;
+      onPress: () => void;
+    }> = [
+      {
+        id: 'dev-mode',
+        label: 'Modo Desenvolvedor',
+        icon: Bug,
+        description: developerMode ? 'Ativado' : 'Desativado',
+        disabled: isTogglingDev,
+        onPress: handleToggleDeveloperMode,
+      },
+    ];
+
+    // Adiciona opção de restaurar ajuda se estiver dispensado
+    if (helpDismissed) {
+      configActions.push({
+        id: 'restore-help',
+        label: 'Restaurar botão de ajuda',
+        icon: HelpCircle,
+        onPress: handleRestoreHelp,
+      });
+    }
+
+    return [
+      { title: 'Temas', actions: themeActions },
+      { title: 'Configurações', actions: configActions },
+    ];
+  }, [colorTheme, setColorTheme, developerMode, isTogglingDev, handleToggleDeveloperMode, helpDismissed, handleRestoreHelp]);
+
+  const triggerButton = (
+    <Button 
+      variant="ghost" 
+      size="icon"
+      className="text-muted-foreground hover:text-foreground"
+      onClick={isMobile ? actionSheet.open : undefined}
+    >
+      <div 
+        className="w-5 h-5 rounded-full border-2 border-current"
+        style={{ backgroundColor: currentTheme?.color }}
+      />
+      <span className="sr-only">Selecionar tema</span>
+    </Button>
+  );
+
+  // Mobile: usa MobileActionSheet
+  if (isMobile) {
+    return (
+      <>
+        {triggerButton}
+        <MobileActionSheet
+          open={actionSheet.isOpen}
+          onOpenChange={actionSheet.setIsOpen}
+          title="Configurações"
+          groups={actionSheetGroups}
+        />
+      </>
+    );
+  }
+
+  // Desktop: usa DropdownMenu
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button 
-          variant="ghost" 
-          size="icon"
-          className="text-muted-foreground hover:text-foreground"
-        >
-          <div 
-            className="w-5 h-5 rounded-full border-2 border-current"
-            style={{ backgroundColor: currentTheme?.color }}
-          />
-          <span className="sr-only">Selecionar tema</span>
-        </Button>
+        {triggerButton}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         {THEMES.map((theme) => (
