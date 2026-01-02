@@ -485,6 +485,81 @@ function convertPowerMechanicsToEffects(
     };
   }
   
+  // =====================================================
+  // TÉCNICO - Mecânicas de inventário e equipamento
+  // =====================================================
+  
+  // === CAPACIDADE DE CARGA ===
+  if (mechanics.carryCapacity) {
+    const attrMap: Record<string, 'strength' | 'agility' | 'vigor' | 'intellect' | 'presence'> = {
+      'strength': 'strength',
+      'agility': 'agility',
+      'vigor': 'vigor',
+      'intellect': 'intellect',
+      'presence': 'presence',
+    };
+    
+    effects.carryCapacity = {
+      addAttribute: attrMap[mechanics.carryCapacity.addAttribute as string] || 'intellect',
+    };
+  }
+  
+  // === REDUÇÃO DE ESPAÇO DE ITEM ===
+  if (mechanics.itemSpaceReduction) {
+    effects.itemSpaceReduction = mechanics.itemSpaceReduction;
+  }
+  
+  // === REPARAR EQUIPAMENTO ===
+  if (mechanics.repairEquipment) {
+    const rangeMap: Record<string, 'self' | 'touch' | 'short'> = {
+      'self': 'self',
+      'touch': 'touch',
+      'adjacent': 'touch',
+      'short': 'short',
+    };
+    
+    effects.repairEquipment = {
+      range: rangeMap[mechanics.repairEquipment.range as string] || 'touch',
+      removeCondition: mechanics.repairEquipment.removeCondition as string,
+      peCost: 1,
+      actionType: 'complete',
+    };
+  }
+  
+  // === CRIAR EQUIPAMENTO ===
+  if (mechanics.createEquipment) {
+    const typeMap: Record<string, 'general' | 'weapon' | 'armor' | 'any'> = {
+      'general': 'general',
+      'weapon': 'weapon',
+      'armor': 'armor',
+      'any': 'any',
+    };
+    
+    const durationMap: Record<string, 'scene' | 'combat' | 'permanent'> = {
+      'scene': 'scene',
+      'combat': 'combat',
+      'permanent': 'permanent',
+    };
+    
+    effects.createEquipment = {
+      type: typeMap[mechanics.createEquipment.type as string] || 'general',
+      duration: durationMap[mechanics.createEquipment.duration as string] || 'scene',
+      destroyedAfter: mechanics.createEquipment.destroyedAfter as boolean,
+      peCost: 2,
+      actionType: 'complete',
+    };
+  }
+  
+  // === RETIRAR ITEM RETROATIVAMENTE ===
+  if (mechanics.retrieveItem) {
+    effects.retrieveItem = {
+      excludeWeapons: mechanics.retrieveItem.excludeWeapons as boolean,
+      retroactive: mechanics.retrieveItem.retroactive as boolean,
+      peCostPerCategory: 3,
+      actionType: 'movement',
+    };
+  }
+  
   // === PODER PASSIVO SEM MECÂNICAS ESPECÍFICAS ===
   if (Object.keys(effects).length === 0 && mechanics.kind === 'passive') {
     effects.specialEffects = [power.description.slice(0, 100) + '...'];
