@@ -496,14 +496,15 @@ function convertTrackAbilityToMechanics(
   }
   
   // === REDUÇÃO DE CATEGORIA (Aniquilador, Técnico) ===
-  // Armazena como efeito especial pois não existe no EffectMechanics
+  // Agora mapeado diretamente para categoryReduction do EffectMechanics
   if (m.categoryReduction) {
-    if (!mechanics.specialEffects) mechanics.specialEffects = [];
-    const amount = m.categoryReduction.amount;
-    const target = m.categoryReduction.targetType === 'specific-weapon' 
-      ? 'arma favorita' 
-      : 'equipamentos carregados';
-    mechanics.specialEffects.push(`Categoria -${amount} em ${target}`);
+    mechanics.categoryReduction = {
+      amount: m.categoryReduction.amount,
+      targetType: m.categoryReduction.targetType,
+      requiresChoice: m.categoryReduction.requiresChoice,
+      choiceDescription: m.categoryReduction.choiceDescription,
+      appliesToAllCarried: m.categoryReduction.appliesToAllCarried,
+    };
   }
   
   // === TÉCNICAS DO ANIQUILADOR ===
@@ -595,11 +596,13 @@ function convertTrackAbilityToMechanics(
   }
   
   // === CONTRA-MÁGICA (Anular Ritual - Conduíte) ===
+  // Agora mapeado diretamente para counterSpell do EffectMechanics
   if (m.counterSpell) {
-    if (!mechanics.specialEffects) mechanics.specialEffects = [];
-    mechanics.specialEffects.push(
-      `Contra-mágica: Gastar PE igual ao custo do ritual + teste oposto de ${m.counterSpell.testSkill === 'ocultismo' ? 'Ocultismo' : m.counterSpell.testSkill}`
-    );
+    mechanics.counterSpell = {
+      costMatchesTarget: m.counterSpell.costMatchesTarget,
+      testSkill: m.counterSpell.testSkill,
+      testType: m.counterSpell.testType as 'opposed' | 'fixed',
+    };
   }
   
   // === RITUAIS CONCEDIDOS (grantsRitual) ===
@@ -966,14 +969,13 @@ export function getTrackBonusSummary(
     summary.totalCriticalMargin += m.criticalMarginBonus || 0;
     summary.totalHP += m.hpBonus || 0;
     
-    // Extrai redução de categoria dos efeitos especiais se existir
+    // Redução de categoria agora usa dados estruturados do EffectMechanics
+    if (m.categoryReduction) {
+      summary.categoryReduction += m.categoryReduction.amount;
+    }
+    
+    // Continua coletando efeitos especiais para exibição
     if (m.specialEffects) {
-      for (const effect of m.specialEffects) {
-        const catMatch = effect.match(/Categoria -(\d+)/);
-        if (catMatch) {
-          summary.categoryReduction += parseInt(catMatch[1], 10);
-        }
-      }
       summary.specialAbilities.push(...m.specialEffects);
     }
   }

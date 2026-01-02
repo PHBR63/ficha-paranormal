@@ -126,6 +126,26 @@ export interface EffectMechanics {
   maximumDamageOnCrit?: boolean;   // Crítico causa dano máximo (Atirar para Matar)
   
   // =====================================================
+  // EQUIPAMENTO E INVENTÁRIO
+  // =====================================================
+  
+  // === Redução de Categoria de Equipamento ===
+  categoryReduction?: {
+    amount: number;                          // Quantidade da redução (-1, -2)
+    targetType: 'specific-weapon' | 'any-weapon' | 'item'; // Tipo de alvo
+    requiresChoice?: boolean;                // Se requer escolha do jogador
+    choiceDescription?: string;              // Descrição da escolha
+    appliesToAllCarried?: boolean;           // Se aplica a todos itens carregados
+  };
+  
+  // === Contra-Mágica ===
+  counterSpell?: {
+    costMatchesTarget: boolean;              // PE = custo do ritual alvo
+    testSkill: string;                       // Perícia do teste (Ocultismo)
+    testType: 'opposed' | 'fixed';           // Tipo de teste
+  };
+  
+  // =====================================================
   // RITUAIS - Mecânicas específicas para poderes de classe
   // =====================================================
   
@@ -361,6 +381,29 @@ export interface ComputedEffects {
   }>;
   
   // =====================================================
+  // EQUIPAMENTO E INVENTÁRIO
+  // =====================================================
+  inventory: {
+    // Reduções de categoria de equipamento (Aniquilador, Técnico)
+    categoryReductions: Array<{
+      amount: number;
+      targetType: 'specific-weapon' | 'any-weapon' | 'item';
+      source: string;
+      requiresChoice?: boolean;
+      appliesToAllCarried?: boolean;
+    }>;
+    totalCategoryReduction: number;    // Soma de todas as reduções
+  };
+  
+  // === Habilidades de Contra-Mágica ===
+  counterSpellAbilities: Array<{
+    source: string;
+    costMatchesTarget: boolean;
+    testSkill: string;
+    testType: 'opposed' | 'fixed';
+  }>;
+  
+  // =====================================================
   // RITUAIS - Bônus consolidados para rituais
   // =====================================================
   rituals: {
@@ -496,6 +539,13 @@ export function consolidateEffects(
       isUnconscious: false,
     },
     toggleableEffects: [],
+    // === EQUIPAMENTO E INVENTÁRIO ===
+    inventory: {
+      categoryReductions: [],
+      totalCategoryReduction: 0,
+    },
+    // === CONTRA-MÁGICA ===
+    counterSpellAbilities: [],
     // === RITUAIS ===
     rituals: {
       dtBonus: 0,
@@ -718,6 +768,32 @@ export function consolidateEffects(
     if (m.cannotMove) result.flags.cannotMove = true;
     if (m.isHelpless) result.flags.isHelpless = true;
     if (m.isUnconscious) result.flags.isUnconscious = true;
+    
+    // =====================================================
+    // EQUIPAMENTO E INVENTÁRIO
+    // =====================================================
+    
+    // === Redução de Categoria ===
+    if (m.categoryReduction) {
+      result.inventory.categoryReductions.push({
+        amount: m.categoryReduction.amount,
+        targetType: m.categoryReduction.targetType,
+        source,
+        requiresChoice: m.categoryReduction.requiresChoice,
+        appliesToAllCarried: m.categoryReduction.appliesToAllCarried,
+      });
+      result.inventory.totalCategoryReduction += m.categoryReduction.amount;
+    }
+    
+    // === Contra-Mágica ===
+    if (m.counterSpell) {
+      result.counterSpellAbilities.push({
+        source,
+        costMatchesTarget: m.counterSpell.costMatchesTarget,
+        testSkill: m.counterSpell.testSkill,
+        testType: m.counterSpell.testType,
+      });
+    }
     
     // =====================================================
     // RITUAIS - Processa mecânicas específicas de rituais
