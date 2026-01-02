@@ -689,6 +689,258 @@ export const COMBATENTE_POWERS: UnifiedClassPower[] = [
     },
     tags: ['perícia', 'treinamento', 'repetível'],
   },
+  
+  // ==================== PODERES ADICIONAIS (Livro Base p.46-48) ====================
+  
+  {
+    id: 'avanco-tatico',
+    name: 'Avanço Tático',
+    classId: 'Combatente',
+    isCore: false,
+    minNex: 15,
+    description: 'Você pode gastar 1 PE quando fizer uma investida para ignorar a penalidade de –5 na Defesa e não ficar desprevenido.',
+    pageReference: 'Livro Base p.46',
+    effects: {
+      base: {
+        kind: 'activated',
+        activation: {
+          cost: 1,
+          action: 'free',
+        },
+        conditions: {
+          duringCharge: true,
+        },
+      },
+    },
+    tags: ['combate', 'investida', 'defesa'],
+  },
+  
+  {
+    id: 'combate-distancia',
+    name: 'Combate à Distância',
+    classId: 'Combatente',
+    isCore: false,
+    minNex: 15,
+    description: 'Você pode usar Agilidade em vez de Força em rolagens de dano de armas de ataque à distância.',
+    pageReference: 'Livro Base p.46',
+    effects: {
+      base: {
+        kind: 'passive',
+        damageBonus: {
+          attribute: 'agility',
+          conditions: {
+            weaponType: ['ranged', 'firearm'],
+          },
+        },
+      },
+    },
+    tags: ['combate', 'dano', 'ataque-à-distância', 'passivo'],
+  },
+  
+  {
+    id: 'forca-bruta',
+    name: 'Força Bruta',
+    classId: 'Combatente',
+    isCore: false,
+    minNex: 15,
+    description: 'Quando usa Ataque Especial para aumentar dano, você aumenta esse dano em +2 por PE gasto (extretamente, +6 em NEX 5%, +12 em NEX 25%, etc.). Pré-requisito: For 2.',
+    pageReference: 'Livro Base p.46',
+    prerequisites: {
+      attributes: { strength: 2 },
+    },
+    effects: {
+      base: {
+        kind: 'passive',
+        // Modifica o Ataque Especial - bônus +2/PE em vez de +5/2PE
+        damageBonus: {
+          value: 2, // Por PE gasto
+        },
+      },
+    },
+    tags: ['combate', 'dano', 'ataque-especial'],
+  },
+  
+  {
+    id: 'impeto',
+    name: 'Ímpeto',
+    classId: 'Combatente',
+    isCore: false,
+    minNex: 15,
+    description: 'Você pode gastar 1 PE para aumentar seu deslocamento em +3m por uma rodada.',
+    pageReference: 'Livro Base p.46',
+    effects: {
+      base: {
+        kind: 'activated',
+        activation: {
+          cost: 1,
+          action: 'free',
+        },
+        movementBonus: 3,
+      },
+    },
+    tags: ['movimento', 'mobilidade'],
+  },
+  
+  {
+    id: 'pancada-revigorante',
+    name: 'Pancada Revigorante',
+    classId: 'Combatente',
+    isCore: false,
+    minNex: 15,
+    description: 'Quando acerta um ataque corpo a corpo, você pode gastar 1 PE para receber PV temporários iguais a metade do dano causado, até seu próximo turno.',
+    pageReference: 'Livro Base p.46',
+    effects: {
+      base: {
+        kind: 'triggered',
+        activation: {
+          cost: 1,
+          action: 'free',
+        },
+        tempHP: {
+          value: 0, // Metade do dano causado
+          duration: 'untilNextTurn',
+        },
+        conditions: {
+          weaponType: 'melee',
+          onHit: true,
+        },
+      },
+    },
+    tags: ['combate', 'pv-temporário', 'corpo-a-corpo'],
+  },
+  
+  {
+    id: 'resistente',
+    name: 'Resistente',
+    classId: 'Combatente',
+    isCore: false,
+    minNex: 15,
+    description: 'Você recebe +2 PV para cada 5% de NEX e +2 em todos os testes de resistência.',
+    pageReference: 'Livro Base p.46',
+    effects: {
+      base: {
+        kind: 'passive',
+        hpBonus: {
+          perNex5: 2, // +2 PV por 5% de NEX
+        },
+        resistanceBonus: { value: 2, types: ['all'] },
+      },
+    },
+    tags: ['defesa', 'resistência', 'passivo'],
+  },
+  
+  {
+    id: 'saude-de-ferro',
+    name: 'Saúde de Ferro',
+    classId: 'Combatente',
+    isCore: false,
+    minNex: 15,
+    description: 'Você recebe +2 PE para cada 5% de NEX e, uma vez por cena, pode gastar uma ação livre para recuperar PV iguais à metade de seu Vigor (mínimo 1).',
+    pageReference: 'Livro Base p.47',
+    effects: {
+      base: {
+        kind: 'passive',
+        peBonus: {
+          perNex5: 2, // +2 PE por 5% de NEX
+        },
+      },
+    },
+    tags: ['recuperação', 'pe', 'passivo'],
+  },
+  
+  {
+    id: 'treinamento-defensivo',
+    name: 'Treinamento Defensivo',
+    classId: 'Combatente',
+    isCore: false,
+    minNex: 15,
+    description: 'Você recebe +2 em Defesa. Se usar uma proteção leve, recebe +1 adicional. Se usar uma proteção pesada, recebe +2 adicionais.',
+    pageReference: 'Livro Base p.47',
+    effects: {
+      base: {
+        kind: 'passive',
+        defenseBonus: { value: 2 },
+      },
+    },
+    tags: ['defesa', 'proteção', 'passivo'],
+  },
+  
+  {
+    id: 'valentao',
+    name: 'Valentão',
+    classId: 'Combatente',
+    isCore: false,
+    minNex: 15,
+    description: 'Você recebe +2 em testes de ataque e dano contra oponentes caídos, desprevenidos ou flanqueados.',
+    pageReference: 'Livro Base p.47',
+    effects: {
+      base: {
+        kind: 'passive',
+        attackBonus: {
+          value: 2,
+          conditions: {
+            targetConditions: ['prone', 'surprised', 'flanked'],
+          },
+        },
+        damageBonus: {
+          value: 2,
+          conditions: {
+            targetConditions: ['prone', 'surprised', 'flanked'],
+          },
+        },
+      },
+    },
+    tags: ['combate', 'situacional', 'passivo'],
+  },
+  
+  {
+    id: 'ataque-pesado',
+    name: 'Ataque Pesado',
+    classId: 'Combatente',
+    isCore: false,
+    minNex: 15,
+    description: 'Quando faz um ataque corpo a corpo com as duas mãos em uma arma, você causa +2 pontos de dano. Pré-requisito: For 3.',
+    pageReference: 'Livro Base p.46',
+    prerequisites: {
+      attributes: { strength: 3 },
+    },
+    effects: {
+      base: {
+        kind: 'passive',
+        damageBonus: {
+          value: 2,
+          conditions: {
+            weaponType: 'melee',
+            twoHanded: true,
+          },
+        },
+      },
+    },
+    tags: ['combate', 'dano', 'duas-mãos', 'passivo'],
+  },
+  
+  {
+    id: 'especialista-arma',
+    name: 'Especialista em Arma',
+    classId: 'Combatente',
+    isCore: false,
+    minNex: 15,
+    description: 'Escolha um grupo de armas (espadas, armas de fogo, etc.). Você recebe +2 em rolagens de ataque e dano com armas desse grupo. Você pode escolher este poder várias vezes para grupos diferentes.',
+    pageReference: 'Livro Base p.46',
+    isRepeatable: true,
+    effects: {
+      base: {
+        kind: 'choice',
+        requiresChoice: {
+          type: 'weaponGroup',
+          count: 1,
+        },
+        attackBonus: { value: 2 },
+        damageBonus: { value: 2 },
+      },
+    },
+    tags: ['combate', 'especialização', 'repetível'],
+  },
 ];
 
 /**

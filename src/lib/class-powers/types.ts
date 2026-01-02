@@ -44,13 +44,18 @@ export type ActionType =
  * Tipos de arma para condições de aplicação
  */
 export type WeaponCategory = 
-  | 'melee'        // Corpo a corpo
-  | 'ranged'       // Disparo (arcos, bestas)
-  | 'firearm'      // Armas de fogo
-  | 'tactical'     // Armas táticas
-  | 'heavy'        // Armas pesadas
-  | 'unarmed'      // Desarmado
-  | 'any';         // Qualquer arma
+  | 'melee'          // Corpo a corpo
+  | 'ranged'         // Disparo (arcos, bestas)
+  | 'firearm'        // Armas de fogo
+  | 'tactical'       // Armas táticas
+  | 'heavy'          // Armas pesadas
+  | 'unarmed'        // Desarmado
+  | 'light-melee'    // Corpo a corpo leve
+  | 'simple'         // Armas simples
+  | 'simple-melee'   // Simples corpo a corpo
+  | 'simple-ranged'  // Simples de disparo
+  | 'tactical-melee' // Táticas corpo a corpo
+  | 'any';           // Qualquer arma
 
 /**
  * Tipos de proteção
@@ -157,7 +162,8 @@ export interface DamageReductionConfig {
  * Bônus de defesa
  */
 export interface DefenseBonusConfig {
-  value: number | ScalingValue;
+  value?: number | ScalingValue;
+  attribute?: Attribute;  // Adiciona atributo à defesa (ex: Agilidade)
   conditions?: PowerConditions;
 }
 
@@ -166,7 +172,7 @@ export interface DefenseBonusConfig {
  */
 export interface ResistanceBonusConfig {
   value: number | ScalingValue;
-  types?: ('fortitude' | 'reflexos' | 'vontade' | 'all')[];
+  types?: ('fortitude' | 'reflexos' | 'vontade' | 'all' | 'poison' | 'fear' | 'paranormal')[];
   conditions?: PowerConditions;
 }
 
@@ -185,9 +191,11 @@ export interface SkillBonusConfig {
  * Mudança de atributo-base de perícia
  */
 export interface AttributeSwapConfig {
-  skills: Skill[];
-  newAttribute: Attribute;
+  skills?: Skill[];
+  skill?: Skill;
+  newAttribute: Attribute | Attribute[];
   cost?: number;  // Custo em PE
+  forManeuver?: string;  // Para manobras específicas (ex: 'grapple')
 }
 
 /**
@@ -268,11 +276,16 @@ export interface PowerConditions {
   weaponType?: WeaponCategory | WeaponCategory[];
   protectionType?: ProtectionCategory;
   targetState?: ('unaware' | 'flanked' | 'prone' | 'grappled')[];
+  targetConditions?: ('prone' | 'surprised' | 'flanked' | 'grappled' | 'unaware')[];
   onCritical?: boolean;
   onHit?: boolean;
   inCombat?: boolean;
   duringInvestigation?: boolean;
-  firstInScene?: boolean;  // Apenas primeira vez na cena
+  firstInScene?: boolean;      // Apenas primeira vez na cena
+  duringCharge?: boolean;      // Durante investida
+  twoHanded?: boolean;         // Usando arma com duas mãos
+  weaknessRevealed?: boolean;  // Fraqueza revelada por perícia
+  crowdPresent?: boolean;      // Multidão presente
 }
 
 // ================== MECÂNICAS DO PODER ==================
@@ -318,13 +331,47 @@ export interface PowerMechanics {
   
   // === ESCOLHAS DO JOGADOR ===
   requiresChoice?: {
-    type: 'element' | 'skill' | 'ritual' | 'power' | 'attribute';
+    type: 'element' | 'skill' | 'ritual' | 'power' | 'attribute' | 'weaponGroup';
     count?: number;
     options?: string[];
   };
   
   // === PODERES CONCEDIDOS ===
   grantsPower?: string;  // ID de outro poder concedido (Transcender)
+  
+  // === RECURSOS ADICIONAIS ===
+  movementBonus?: number;            // Bônus de deslocamento em metros
+  hpBonus?: { perNex5?: number };    // Bônus de PV (por 5% de NEX)
+  peBonus?: { perNex5?: number };    // Bônus de PE (por 5% de NEX)
+  extraRituals?: number;             // Rituais extras conhecidos
+  healingDice?: string;              // Dados de cura (ex: "1d6")
+  damageType?: string;               // Tipo de dano concedido (ex: "paranormal")
+  
+  // === PV TEMPORÁRIO ===
+  tempHP?: {
+    value: number;
+    duration: 'untilNextTurn' | 'scene' | 'rounds';
+    rounds?: number;
+  };
+  
+  // === BÔNUS DE ATRIBUTO ===
+  attributeBonus?: {
+    attribute: Attribute;
+    value: number;
+    max?: number;
+  };
+  
+  // === RECUPERAÇÃO DE PE ===
+  peRecovery?: {
+    attribute?: Attribute;
+    value?: number;
+    minimum?: number;
+  };
+  
+  // === PV COMO PE ===
+  hpAsPE?: {
+    ratio: number;  // Quantos PV por 1 PE (ex: 2)
+  };
 }
 
 /**
