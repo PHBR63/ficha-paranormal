@@ -1,11 +1,11 @@
 // =====================================================
 // Testes: categoryReduction, counterSpell, sneakAttack, healing,
-// leadership, allyBuff, socialEffect, contacts e copyAbility no SUE
+// leadership, allyBuff, socialEffect, contacts, copyAbility e technician no SUE
 // Ordem Paranormal RPG v1.3
 // =====================================================
 //
 // Verifica que as mecânicas categoryReduction, counterSpell, sneakAttack, healing,
-// leadership, allyBuff, socialEffect, contacts e copyAbility são corretamente mapeadas e consolidadas pelo SUE.
+// leadership, allyBuff, socialEffect, contacts, copyAbility e technician são corretamente mapeadas e consolidadas pelo SUE.
 //
 
 import { describe, it, expect } from 'vitest';
@@ -2148,5 +2148,388 @@ describe('Integração copyAbility com outras mecânicas do Negociador', () => {
     expect(result.contacts.totalUsesPerMission).toBe(1);
     expect(result.socialEffect.availableEffects).toContain('fascinated');
     expect(result.allyBuff.maxSkillBonus).toBe(2);
+  });
+});
+
+// =====================================================
+// Testes de technician (Técnico)
+// =====================================================
+
+describe('consolidateEffects - technician', () => {
+  it('deve consolidar carryCapacity corretamente', () => {
+    const effects: UnifiedEffect[] = [
+      {
+        id: 'inventario-otimizado',
+        name: 'Inventário Otimizado',
+        source: 'track',
+        sourceId: 'inventario-otimizado',
+        sourceName: 'Técnico: Inventário Otimizado',
+        mechanics: {
+          carryCapacity: {
+            addAttribute: 'intellect',
+          },
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+    ];
+    
+    const context = createTestContext({ nex: 10 });
+    const result = consolidateEffects(effects, context);
+    
+    expect(result.technician.available).toBe(true);
+    expect(result.technician.carryCapacity.additionalAttributes).toContain('intellect');
+    expect(result.technician.carryCapacity.sources).toHaveLength(1);
+    expect(result.technician.carryCapacity.sources[0].attribute).toBe('intellect');
+  });
+
+  it('deve consolidar itemSpaceReduction corretamente', () => {
+    const effects: UnifiedEffect[] = [
+      {
+        id: 'inventario-otimizado',
+        name: 'Inventário Otimizado',
+        source: 'track',
+        sourceId: 'inventario-otimizado',
+        sourceName: 'Técnico: Inventário Otimizado',
+        mechanics: {
+          itemSpaceReduction: 1,
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+    ];
+    
+    const context = createTestContext({ nex: 10 });
+    const result = consolidateEffects(effects, context);
+    
+    expect(result.technician.available).toBe(true);
+    expect(result.technician.itemSpaceReduction.total).toBe(1);
+    expect(result.technician.itemSpaceReduction.sources).toHaveLength(1);
+    expect(result.technician.itemSpaceReduction.sources[0].amount).toBe(1);
+  });
+
+  it('deve consolidar repairEquipment corretamente', () => {
+    const effects: UnifiedEffect[] = [
+      {
+        id: 'remendo',
+        name: 'Remendo',
+        source: 'track',
+        sourceId: 'remendo',
+        sourceName: 'Técnico: Remendo',
+        mechanics: {
+          repairEquipment: {
+            range: 'touch',
+            removeCondition: 'quebrado',
+            peCost: 1,
+            actionType: 'complete',
+          },
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+    ];
+    
+    const context = createTestContext({ nex: 40 });
+    const result = consolidateEffects(effects, context);
+    
+    expect(result.technician.available).toBe(true);
+    expect(result.technician.repairAbilities).toHaveLength(1);
+    expect(result.technician.repairAbilities[0].range).toBe('touch');
+    expect(result.technician.repairAbilities[0].removeCondition).toBe('quebrado');
+    expect(result.technician.repairAbilities[0].peCost).toBe(1);
+    expect(result.technician.repairAbilities[0].actionType).toBe('complete');
+  });
+
+  it('deve consolidar createEquipment corretamente', () => {
+    const effects: UnifiedEffect[] = [
+      {
+        id: 'improvisar',
+        name: 'Improvisar',
+        source: 'track',
+        sourceId: 'improvisar',
+        sourceName: 'Técnico: Improvisar',
+        mechanics: {
+          createEquipment: {
+            type: 'general',
+            duration: 'scene',
+            destroyedAfter: true,
+            peCost: 2,
+            actionType: 'complete',
+          },
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+    ];
+    
+    const context = createTestContext({ nex: 65 });
+    const result = consolidateEffects(effects, context);
+    
+    expect(result.technician.available).toBe(true);
+    expect(result.technician.createEquipmentAbilities).toHaveLength(1);
+    expect(result.technician.createEquipmentAbilities[0].type).toBe('general');
+    expect(result.technician.createEquipmentAbilities[0].duration).toBe('scene');
+    expect(result.technician.createEquipmentAbilities[0].destroyedAfter).toBe(true);
+    expect(result.technician.createEquipmentAbilities[0].peCost).toBe(2);
+  });
+
+  it('deve consolidar retrieveItem corretamente', () => {
+    const effects: UnifiedEffect[] = [
+      {
+        id: 'preparado-para-tudo',
+        name: 'Preparado para Tudo',
+        source: 'track',
+        sourceId: 'preparado-para-tudo',
+        sourceName: 'Técnico: Preparado para Tudo',
+        mechanics: {
+          retrieveItem: {
+            excludeWeapons: true,
+            retroactive: true,
+            peCostPerCategory: 3,
+            actionType: 'movement',
+          },
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+    ];
+    
+    const context = createTestContext({ nex: 99 });
+    const result = consolidateEffects(effects, context);
+    
+    expect(result.technician.available).toBe(true);
+    expect(result.technician.retrieveItemAbilities).toHaveLength(1);
+    expect(result.technician.retrieveItemAbilities[0].excludeWeapons).toBe(true);
+    expect(result.technician.retrieveItemAbilities[0].retroactive).toBe(true);
+    expect(result.technician.retrieveItemAbilities[0].peCostPerCategory).toBe(3);
+    expect(result.technician.retrieveItemAbilities[0].actionType).toBe('movement');
+  });
+
+  it('deve somar itemSpaceReduction de múltiplas fontes', () => {
+    const effects: UnifiedEffect[] = [
+      {
+        id: 'reducao-1',
+        name: 'Redução 1',
+        source: 'track',
+        sourceId: 'reducao-1',
+        sourceName: 'Fonte 1',
+        mechanics: {
+          itemSpaceReduction: 1,
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+      {
+        id: 'reducao-2',
+        name: 'Redução 2',
+        source: 'general_power',
+        sourceId: 'reducao-2',
+        sourceName: 'Fonte 2',
+        mechanics: {
+          itemSpaceReduction: 1,
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+    ];
+    
+    const context = createTestContext({ nex: 50 });
+    const result = consolidateEffects(effects, context);
+    
+    expect(result.technician.itemSpaceReduction.total).toBe(2);
+    expect(result.technician.itemSpaceReduction.sources).toHaveLength(2);
+  });
+
+  it('deve ignorar mecânicas do técnico inativas', () => {
+    const effects: UnifiedEffect[] = [
+      {
+        id: 'tecnico-inativo',
+        name: 'Técnico Inativo',
+        source: 'track',
+        sourceId: 'tecnico-inativo',
+        sourceName: 'Técnico',
+        mechanics: {
+          carryCapacity: {
+            addAttribute: 'intellect',
+          },
+          itemSpaceReduction: 1,
+        },
+        isActive: false,
+        isToggleable: false,
+      },
+    ];
+    
+    const context = createTestContext({ nex: 10 });
+    const result = consolidateEffects(effects, context);
+    
+    expect(result.technician.available).toBe(false);
+    expect(result.technician.carryCapacity.additionalAttributes).toHaveLength(0);
+    expect(result.technician.itemSpaceReduction.total).toBe(0);
+  });
+
+  it('deve rastrear fontes corretamente', () => {
+    const effects: UnifiedEffect[] = [
+      {
+        id: 'tecnico-completo',
+        name: 'Técnico Completo',
+        source: 'track',
+        sourceId: 'tecnico',
+        sourceName: 'Técnico: Completo',
+        mechanics: {
+          carryCapacity: {
+            addAttribute: 'intellect',
+          },
+          itemSpaceReduction: 1,
+          repairEquipment: {
+            range: 'touch',
+            removeCondition: 'quebrado',
+            peCost: 1,
+            actionType: 'complete',
+          },
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+    ];
+    
+    const context = createTestContext({ nex: 40 });
+    const result = consolidateEffects(effects, context);
+    
+    expect(result.technician.carryCapacity.sources[0].source).toBe('Técnico: Completo');
+    expect(result.technician.itemSpaceReduction.sources[0].source).toBe('Técnico: Completo');
+    expect(result.technician.repairAbilities[0].source).toBe('Técnico: Completo');
+  });
+});
+
+// =====================================================
+// Testes de Integração Completa (technician + outras mecânicas)
+// =====================================================
+
+describe('Integração technician com outras mecânicas', () => {
+  it('deve consolidar todas as 4 habilidades do Técnico juntas', () => {
+    const effects: UnifiedEffect[] = [
+      {
+        id: 'tecnico-inventario',
+        name: 'Inventário Otimizado',
+        source: 'track',
+        sourceId: 'inventario-otimizado',
+        sourceName: 'Técnico: Inventário Otimizado',
+        mechanics: {
+          carryCapacity: {
+            addAttribute: 'intellect',
+          },
+          itemSpaceReduction: 1,
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+      {
+        id: 'tecnico-remendo',
+        name: 'Remendo',
+        source: 'track',
+        sourceId: 'remendo',
+        sourceName: 'Técnico: Remendo',
+        mechanics: {
+          repairEquipment: {
+            range: 'touch',
+            removeCondition: 'quebrado',
+            peCost: 1,
+            actionType: 'complete',
+          },
+          categoryReduction: {
+            amount: 1,
+            targetType: 'any-weapon',
+            appliesToAllCarried: true,
+          },
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+      {
+        id: 'tecnico-improvisar',
+        name: 'Improvisar',
+        source: 'track',
+        sourceId: 'improvisar',
+        sourceName: 'Técnico: Improvisar',
+        mechanics: {
+          createEquipment: {
+            type: 'general',
+            duration: 'scene',
+            destroyedAfter: true,
+            peCost: 2,
+            actionType: 'complete',
+          },
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+      {
+        id: 'tecnico-preparado',
+        name: 'Preparado para Tudo',
+        source: 'track',
+        sourceId: 'preparado-para-tudo',
+        sourceName: 'Técnico: Preparado para Tudo',
+        mechanics: {
+          retrieveItem: {
+            excludeWeapons: true,
+            retroactive: true,
+            peCostPerCategory: 3,
+            actionType: 'movement',
+          },
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+    ];
+    
+    const context = createTestContext({ nex: 99 });
+    const result = consolidateEffects(effects, context);
+    
+    // Todas as mecânicas do técnico devem estar disponíveis
+    expect(result.technician.available).toBe(true);
+    expect(result.technician.carryCapacity.additionalAttributes).toContain('intellect');
+    expect(result.technician.itemSpaceReduction.total).toBe(1);
+    expect(result.technician.repairAbilities).toHaveLength(1);
+    expect(result.technician.createEquipmentAbilities).toHaveLength(1);
+    expect(result.technician.retrieveItemAbilities).toHaveLength(1);
+    
+    // categoryReduction também deve ser consolidado
+    expect(result.inventory.categoryReductions).toHaveLength(1);
+    expect(result.inventory.totalCategoryReduction).toBe(1);
+  });
+
+  it('deve consolidar technician com skillBonus', () => {
+    const effects: UnifiedEffect[] = [
+      {
+        id: 'tecnico-completo',
+        name: 'Técnico Completo',
+        source: 'track',
+        sourceId: 'tecnico',
+        sourceName: 'Técnico',
+        mechanics: {
+          carryCapacity: {
+            addAttribute: 'intellect',
+          },
+          itemSpaceReduction: 1,
+          skillBonus: {
+            oficio: 5,
+            investigacao: 3,
+          },
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+    ];
+    
+    const context = createTestContext({ nex: 50 });
+    const result = consolidateEffects(effects, context);
+    
+    // Verifica technician
+    expect(result.technician.available).toBe(true);
+    expect(result.technician.carryCapacity.additionalAttributes).toContain('intellect');
+    
+    // Verifica skill bonuses
+    expect(result.skills['oficio']?.bonus).toBe(5);
+    expect(result.skills['investigacao']?.bonus).toBe(3);
   });
 });

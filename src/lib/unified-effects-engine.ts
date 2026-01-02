@@ -249,6 +249,43 @@ export interface EffectMechanics {
   };
   
   // =====================================================
+  // TÉCNICO - Mecânicas de inventário e equipamento
+  // =====================================================
+  
+  // === Capacidade de Carga (Inventário Otimizado) ===
+  carryCapacity?: {
+    addAttribute: AttributeType;                         // Atributo adicional para calcular carga
+  };
+  
+  // === Redução de Espaço de Item (Inventário Otimizado) ===
+  itemSpaceReduction?: number;                           // Redução de espaços ocupados por itens
+  
+  // === Reparar Equipamento (Remendo) ===
+  repairEquipment?: {
+    range: 'self' | 'touch' | 'short';                   // Alcance do reparo
+    removeCondition: string;                             // Condição removida (quebrado)
+    peCost: number;                                      // Custo em PE
+    actionType: 'standard' | 'complete';                 // Tipo de ação
+  };
+  
+  // === Criar Equipamento (Improvisar) ===
+  createEquipment?: {
+    type: 'general' | 'weapon' | 'armor' | 'any';        // Tipo de equipamento
+    duration: 'scene' | 'combat' | 'permanent';          // Duração do item
+    destroyedAfter: boolean;                             // Se é destruído após uso
+    peCost: number;                                      // Custo em PE
+    actionType: 'standard' | 'complete';                 // Tipo de ação
+  };
+  
+  // === Retirar Item Retroativamente (Preparado para Tudo) ===
+  retrieveItem?: {
+    excludeWeapons: boolean;                             // Se exclui armas
+    retroactive: boolean;                                // Se é retroativo
+    peCostPerCategory: number;                           // Custo em PE por categoria
+    actionType: 'movement' | 'standard';                 // Tipo de ação
+  };
+  
+  // =====================================================
   // RITUAIS - Mecânicas específicas para poderes de classe
   // =====================================================
   
@@ -662,6 +699,59 @@ export interface ComputedEffects {
   };
   
   // =====================================================
+  // TÉCNICO - Bônus consolidados de inventário/equipamento
+  // =====================================================
+  technician: {
+    available: boolean;                                    // Se tem mecânicas de técnico
+    
+    // === Capacidade de Carga ===
+    carryCapacity: {
+      additionalAttributes: AttributeType[];               // Atributos adicionais para carga
+      sources: Array<{ source: string; attribute: AttributeType }>;
+    };
+    
+    // === Redução de Espaço ===
+    itemSpaceReduction: {
+      total: number;                                       // Total de redução de espaços
+      sources: Array<{ source: string; amount: number }>;
+    };
+    
+    // === Reparo de Equipamento ===
+    repairAbilities: Array<{
+      id: string;
+      name: string;
+      range: 'self' | 'touch' | 'short';
+      removeCondition: string;
+      peCost: number;
+      actionType: 'standard' | 'complete';
+      source: string;
+    }>;
+    
+    // === Criação de Equipamento ===
+    createEquipmentAbilities: Array<{
+      id: string;
+      name: string;
+      type: 'general' | 'weapon' | 'armor' | 'any';
+      duration: 'scene' | 'combat' | 'permanent';
+      destroyedAfter: boolean;
+      peCost: number;
+      actionType: 'standard' | 'complete';
+      source: string;
+    }>;
+    
+    // === Retirar Item Retroativamente ===
+    retrieveItemAbilities: Array<{
+      id: string;
+      name: string;
+      excludeWeapons: boolean;
+      retroactive: boolean;
+      peCostPerCategory: number;
+      actionType: 'movement' | 'standard';
+      source: string;
+    }>;
+  };
+  
+  // =====================================================
   // RITUAIS - Bônus consolidados para rituais
   // =====================================================
   rituals: {
@@ -867,6 +957,21 @@ export function consolidateEffects(
       canCopyFromEnemy: false,
       ignoresPrerequisites: false,
       minPECost: Infinity,
+    },
+    // === TÉCNICO ===
+    technician: {
+      available: false,
+      carryCapacity: {
+        additionalAttributes: [],
+        sources: [],
+      },
+      itemSpaceReduction: {
+        total: 0,
+        sources: [],
+      },
+      repairAbilities: [],
+      createEquipmentAbilities: [],
+      retrieveItemAbilities: [],
     },
     // === RITUAIS ===
     rituals: {
@@ -1440,6 +1545,82 @@ export function consolidateEffects(
       if (m.copyAbility.peCost < result.copyAbility.minPECost) {
         result.copyAbility.minPECost = m.copyAbility.peCost;
       }
+    }
+    
+    // =====================================================
+    // TÉCNICO - Processa mecânicas de inventário/equipamento
+    // =====================================================
+    
+    // === Capacidade de Carga (Inventário Otimizado) ===
+    if (m.carryCapacity) {
+      result.technician.available = true;
+      
+      // Adiciona atributo à lista se não existir
+      if (!result.technician.carryCapacity.additionalAttributes.includes(m.carryCapacity.addAttribute)) {
+        result.technician.carryCapacity.additionalAttributes.push(m.carryCapacity.addAttribute);
+      }
+      
+      result.technician.carryCapacity.sources.push({
+        source,
+        attribute: m.carryCapacity.addAttribute,
+      });
+    }
+    
+    // === Redução de Espaço de Item (Inventário Otimizado) ===
+    if (m.itemSpaceReduction) {
+      result.technician.available = true;
+      
+      result.technician.itemSpaceReduction.total += m.itemSpaceReduction;
+      result.technician.itemSpaceReduction.sources.push({
+        source,
+        amount: m.itemSpaceReduction,
+      });
+    }
+    
+    // === Reparar Equipamento (Remendo) ===
+    if (m.repairEquipment) {
+      result.technician.available = true;
+      
+      result.technician.repairAbilities.push({
+        id: effect.id,
+        name: effect.name,
+        range: m.repairEquipment.range,
+        removeCondition: m.repairEquipment.removeCondition,
+        peCost: m.repairEquipment.peCost,
+        actionType: m.repairEquipment.actionType,
+        source,
+      });
+    }
+    
+    // === Criar Equipamento (Improvisar) ===
+    if (m.createEquipment) {
+      result.technician.available = true;
+      
+      result.technician.createEquipmentAbilities.push({
+        id: effect.id,
+        name: effect.name,
+        type: m.createEquipment.type,
+        duration: m.createEquipment.duration,
+        destroyedAfter: m.createEquipment.destroyedAfter,
+        peCost: m.createEquipment.peCost,
+        actionType: m.createEquipment.actionType,
+        source,
+      });
+    }
+    
+    // === Retirar Item Retroativamente (Preparado para Tudo) ===
+    if (m.retrieveItem) {
+      result.technician.available = true;
+      
+      result.technician.retrieveItemAbilities.push({
+        id: effect.id,
+        name: effect.name,
+        excludeWeapons: m.retrieveItem.excludeWeapons,
+        retroactive: m.retrieveItem.retroactive,
+        peCostPerCategory: m.retrieveItem.peCostPerCategory,
+        actionType: m.retrieveItem.actionType,
+        source,
+      });
     }
     
     // =====================================================

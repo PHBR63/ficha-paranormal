@@ -635,6 +635,117 @@ function convertTrackAbilityToMechanics(
     );
   }
   
+  // =====================================================
+  // TÉCNICO - Mecânicas de inventário e equipamento
+  // =====================================================
+  
+  // === CAPACIDADE DE CARGA (Inventário Otimizado) ===
+  if (m.carryCapacity) {
+    // Converte atributo para formato do EffectMechanics
+    const attrMap: Record<string, 'strength' | 'agility' | 'vigor' | 'intellect' | 'presence'> = {
+      'strength': 'strength',
+      'agility': 'agility',
+      'vigor': 'vigor',
+      'intellect': 'intellect',
+      'presence': 'presence',
+    };
+    
+    mechanics.carryCapacity = {
+      addAttribute: attrMap[m.carryCapacity.addAttribute] || 'intellect',
+    };
+    
+    // Também adiciona aos specialEffects para backward compatibility
+    if (!mechanics.specialEffects) mechanics.specialEffects = [];
+    mechanics.specialEffects.push(
+      `+${m.carryCapacity.addAttribute.toUpperCase()} na capacidade de carga`
+    );
+  }
+  
+  // === REDUÇÃO DE ESPAÇO DE ITEM (Inventário Otimizado) ===
+  if (m.itemSpaceReduction) {
+    mechanics.itemSpaceReduction = m.itemSpaceReduction;
+    
+    // Também adiciona aos specialEffects para backward compatibility
+    if (!mechanics.specialEffects) mechanics.specialEffects = [];
+    mechanics.specialEffects.push(
+      `Itens ocupam ${m.itemSpaceReduction} espaço(s) a menos (mínimo 1)`
+    );
+  }
+  
+  // === REPARAR EQUIPAMENTO (Remendo) ===
+  if (m.repairEquipment) {
+    // Converte range para formato do EffectMechanics
+    const rangeMap: Record<string, 'self' | 'touch' | 'short'> = {
+      'self': 'self',
+      'touch': 'touch',
+      'adjacent': 'touch',
+      'short': 'short',
+    };
+    
+    mechanics.repairEquipment = {
+      range: rangeMap[m.repairEquipment.range] || 'touch',
+      removeCondition: m.repairEquipment.removeCondition,
+      peCost: 1, // Custo padrão do Remendo
+      actionType: 'complete',
+    };
+    
+    // Também adiciona aos specialEffects para backward compatibility
+    if (!mechanics.specialEffects) mechanics.specialEffects = [];
+    mechanics.specialEffects.push(
+      `Reparar equipamento: remove ${m.repairEquipment.removeCondition} (1 PE, ação completa)`
+    );
+  }
+  
+  // === CRIAR EQUIPAMENTO (Improvisar) ===
+  if (m.createEquipment) {
+    // Converte type para formato do EffectMechanics
+    const typeMap: Record<string, 'general' | 'weapon' | 'armor' | 'any'> = {
+      'general': 'general',
+      'weapon': 'weapon',
+      'armor': 'armor',
+      'any': 'any',
+    };
+    
+    // Converte duration para formato do EffectMechanics
+    const durationMap: Record<string, 'scene' | 'combat' | 'permanent'> = {
+      'scene': 'scene',
+      'combat': 'combat',
+      'permanent': 'permanent',
+    };
+    
+    mechanics.createEquipment = {
+      type: typeMap[m.createEquipment.type] || 'general',
+      duration: durationMap[m.createEquipment.duration] || 'scene',
+      destroyedAfter: m.createEquipment.destroyedAfter,
+      peCost: 2, // Custo padrão do Improvisar
+      actionType: 'complete',
+    };
+    
+    // Também adiciona aos specialEffects para backward compatibility
+    if (!mechanics.specialEffects) mechanics.specialEffects = [];
+    const destroyNote = m.createEquipment.destroyedAfter ? ' (destruído após)' : '';
+    mechanics.specialEffects.push(
+      `Improvisar equipamento ${m.createEquipment.type}: dura até fim da cena${destroyNote} (2 PE, ação completa)`
+    );
+  }
+  
+  // === RETIRAR ITEM RETROATIVAMENTE (Preparado para Tudo) ===
+  if (m.retrieveItem) {
+    mechanics.retrieveItem = {
+      excludeWeapons: m.retrieveItem.excludeWeapons,
+      retroactive: m.retrieveItem.retroactive,
+      peCostPerCategory: 3, // Custo padrão: 3 PE por categoria
+      actionType: 'movement',
+    };
+    
+    // Também adiciona aos specialEffects para backward compatibility
+    if (!mechanics.specialEffects) mechanics.specialEffects = [];
+    const excludeNote = m.retrieveItem.excludeWeapons ? ' (exceto armas)' : '';
+    mechanics.specialEffects.push(
+      `Retirar item retroativamente${excludeNote}: 3 PE por categoria (ação de movimento)`
+    );
+  }
+  
   // === CURA (Médico de Campo) ===
   if (m.healing) {
     const scalingDice = m.healing.scalingDice;
