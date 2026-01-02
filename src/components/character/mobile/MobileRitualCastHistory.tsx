@@ -6,15 +6,16 @@
 import { memo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from '@/components/ui/drawer';
+  MobileDrawer,
+  MobileDrawerContent,
+  MobileDrawerHeader,
+  MobileDrawerTitle,
+  MobileDrawerTrigger,
+  MobileDrawerBody,
+  MobileDrawerFooter
+} from '@/components/ui/mobile-drawer';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   History, 
   Sparkles, 
@@ -167,8 +168,8 @@ export const MobileRitualCastHistory = memo(function MobileRitualCastHistory({
   const totalPeSpent = history.reduce((sum, r) => sum + r.peCost, 0);
 
   return (
-    <Drawer open={isOpen} onOpenChange={setIsOpen}>
-      <DrawerTrigger asChild>
+    <MobileDrawer open={isOpen} onOpenChange={setIsOpen}>
+      <MobileDrawerTrigger asChild>
         <Button
           variant="outline"
           size="sm"
@@ -187,20 +188,20 @@ export const MobileRitualCastHistory = memo(function MobileRitualCastHistory({
             </Badge>
           )}
         </Button>
-      </DrawerTrigger>
+      </MobileDrawerTrigger>
 
-      <DrawerContent className="max-h-[85vh]">
-        <DrawerHeader className="pb-4 border-b border-border">
-          <DrawerTitle className="flex items-center gap-2 font-display tracking-wider">
+      <MobileDrawerContent maxHeight="lg">
+        <MobileDrawerHeader bordered>
+          <MobileDrawerTitle className="flex items-center gap-2 font-display tracking-wider">
             <Sparkles className="w-5 h-5 text-paranormal" />
             Rituais Conjurados
-          </DrawerTitle>
+          </MobileDrawerTitle>
           {characterName && (
             <p className="text-sm text-muted-foreground">
               Sessão de {characterName}
             </p>
           )}
-        </DrawerHeader>
+        </MobileDrawerHeader>
 
         {/* Estatísticas */}
         {history.length > 0 && (
@@ -217,7 +218,7 @@ export const MobileRitualCastHistory = memo(function MobileRitualCastHistory({
         )}
 
         {/* Lista */}
-        <ScrollArea className="flex-1 h-[calc(85vh-220px)] p-4">
+        <MobileDrawerBody>
           {history.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mb-4">
@@ -237,11 +238,11 @@ export const MobileRitualCastHistory = memo(function MobileRitualCastHistory({
               </div>
             </AnimatePresence>
           )}
-        </ScrollArea>
+        </MobileDrawerBody>
 
         {/* Ações */}
         {history.length > 0 && (
-          <div className="p-4 border-t border-border">
+          <MobileDrawerFooter bordered>
             <Button
               variant="outline"
               size="sm"
@@ -254,10 +255,10 @@ export const MobileRitualCastHistory = memo(function MobileRitualCastHistory({
               <Trash2 className="w-4 h-4 mr-2" />
               Limpar Histórico
             </Button>
-          </div>
+          </MobileDrawerFooter>
         )}
-      </DrawerContent>
-    </Drawer>
+      </MobileDrawerContent>
+    </MobileDrawer>
   );
 });
 

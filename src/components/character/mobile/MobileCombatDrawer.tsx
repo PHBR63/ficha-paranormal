@@ -23,12 +23,13 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from '@/components/ui/drawer';
+  MobileDrawer,
+  MobileDrawerContent,
+  MobileDrawerHeader,
+  MobileDrawerTitle,
+  MobileDrawerTrigger,
+  MobileDrawerBody,
+} from '@/components/ui/mobile-drawer';
 import { cn } from '@/lib/utils';
 import { WeaponBuff } from '@/hooks/useWeaponBuffs';
 import { getElementConfig } from '@/lib/element-config';
@@ -251,8 +252,8 @@ export const MobileCombatDrawer = memo(function MobileCombatDrawer({
   }, [onResistanceCheck]);
 
   return (
-    <Drawer open={open} onOpenChange={setOpen}>
-      <DrawerTrigger asChild>
+    <MobileDrawer open={open} onOpenChange={setOpen}>
+      <MobileDrawerTrigger asChild>
         <Button
           variant="outline"
           className={cn("gap-2 font-display", className)}
@@ -265,14 +266,14 @@ export const MobileCombatDrawer = memo(function MobileCombatDrawer({
             </Badge>
           )}
         </Button>
-      </DrawerTrigger>
+      </MobileDrawerTrigger>
       
-      <DrawerContent className="max-h-[90vh] flex flex-col">
-        <DrawerHeader className="pb-2 shrink-0">
+      <MobileDrawerContent maxHeight="xl">
+        <MobileDrawerHeader>
           <div className="flex items-center justify-between">
-            <DrawerTitle className="font-display text-lg">
+            <MobileDrawerTitle className="font-display text-lg">
               Modo Combate
-            </DrawerTitle>
+            </MobileDrawerTitle>
             <Button
               variant="outline"
               size="sm"
@@ -286,124 +287,126 @@ export const MobileCombatDrawer = memo(function MobileCombatDrawer({
               INICIATIVA
             </Button>
           </div>
-        </DrawerHeader>
+        </MobileDrawerHeader>
         
-        <div className="px-4 pb-6 space-y-4 overflow-y-auto flex-1 min-h-0 overscroll-contain">
-          {/* Seção de Resistências */}
-          <div>
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">
-              Testes de Resistência
-            </p>
-            <div className="grid grid-cols-3 gap-2">
-              <ResistanceCard
-                type="fortitude"
-                label="Fortitude"
-                icon={Shield}
-                pool={attributes.vigor}
-                bonus={resistances?.bonuses?.fortitude}
-                color="text-green-500"
-                onClick={() => handleResistance('fortitude')}
-              />
-              <ResistanceCard
-                type="reflexos"
-                label="Reflexos"
-                icon={Zap}
-                pool={attributes.agility}
-                bonus={resistances?.bonuses?.reflexos}
-                color="text-blue-500"
-                onClick={() => handleResistance('reflexos')}
-              />
-              <ResistanceCard
-                type="vontade"
-                label="Vontade"
-                icon={Brain}
-                pool={attributes.presence}
-                bonus={resistances?.bonuses?.vontade}
-                color="text-purple-500"
-                onClick={() => handleResistance('vontade')}
-              />
-            </div>
-          </div>
-          
-          {/* Buffs ativos globais */}
-          {weaponBuffs.length > 0 && (
-            <div className="p-3 rounded-lg bg-paranormal/10 border border-paranormal/20">
-              <p className="text-[10px] text-paranormal uppercase tracking-wider mb-2 flex items-center gap-1">
-                <Sparkles className="w-3 h-3" />
-                Buffs Ativos
+        <MobileDrawerBody useScrollArea={false}>
+          <div className="space-y-4">
+            {/* Seção de Resistências */}
+            <div>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">
+                Testes de Resistência
               </p>
-              <div className="flex flex-wrap gap-1.5">
-                {weaponBuffs.map(buff => {
-                  const config = getElementConfig(buff.element);
-                  return (
-                    <span
-                      key={buff.id}
-                      className={cn(
-                        "px-2 py-1 rounded-full text-[10px] font-medium flex items-center gap-1",
-                        config?.bg || "bg-primary/10",
-                        config?.text || "text-primary"
-                      )}
-                    >
-                      {buff.ritualName}
-                      {buff.attackBonus && <span>+{buff.attackBonus}</span>}
-                    </span>
-                  );
-                })}
+              <div className="grid grid-cols-3 gap-2">
+                <ResistanceCard
+                  type="fortitude"
+                  label="Fortitude"
+                  icon={Shield}
+                  pool={attributes.vigor}
+                  bonus={resistances?.bonuses?.fortitude}
+                  color="text-green-500"
+                  onClick={() => handleResistance('fortitude')}
+                />
+                <ResistanceCard
+                  type="reflexos"
+                  label="Reflexos"
+                  icon={Zap}
+                  pool={attributes.agility}
+                  bonus={resistances?.bonuses?.reflexos}
+                  color="text-blue-500"
+                  onClick={() => handleResistance('reflexos')}
+                />
+                <ResistanceCard
+                  type="vontade"
+                  label="Vontade"
+                  icon={Brain}
+                  pool={attributes.presence}
+                  bonus={resistances?.bonuses?.vontade}
+                  color="text-purple-500"
+                  onClick={() => handleResistance('vontade')}
+                />
               </div>
             </div>
-          )}
-          
-          {/* Lista de armas */}
-          {weapons.length > 0 ? (
-            <>
-              {meleeWeapons.length > 0 && (
-                <div>
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">
-                    Corpo a Corpo ({meleeWeapons.length})
-                  </p>
-                  <div className="space-y-2">
-                    {meleeWeapons.map(weapon => (
-                      <CompactWeaponCard
-                        key={weapon.id}
-                        weapon={weapon}
-                        buffs={weaponBuffs}
-                        onAttack={() => handleAttack(weapon)}
-                      />
-                    ))}
-                  </div>
+            
+            {/* Buffs ativos globais */}
+            {weaponBuffs.length > 0 && (
+              <div className="p-3 rounded-lg bg-paranormal/10 border border-paranormal/20">
+                <p className="text-[10px] text-paranormal uppercase tracking-wider mb-2 flex items-center gap-1">
+                  <Sparkles className="w-3 h-3" />
+                  Buffs Ativos
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {weaponBuffs.map(buff => {
+                    const config = getElementConfig(buff.element);
+                    return (
+                      <span
+                        key={buff.id}
+                        className={cn(
+                          "px-2 py-1 rounded-full text-[10px] font-medium flex items-center gap-1",
+                          config?.bg || "bg-primary/10",
+                          config?.text || "text-primary"
+                        )}
+                      >
+                        {buff.ritualName}
+                        {buff.attackBonus && <span>+{buff.attackBonus}</span>}
+                      </span>
+                    );
+                  })}
                 </div>
-              )}
-              
-              {rangedWeapons.length > 0 && (
-                <div>
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">
-                    À Distância ({rangedWeapons.length})
-                  </p>
-                  <div className="space-y-2">
-                    {rangedWeapons.map(weapon => (
-                      <CompactWeaponCard
-                        key={weapon.id}
-                        weapon={weapon}
-                        buffs={weaponBuffs}
-                        onAttack={() => handleAttack(weapon)}
-                      />
-                    ))}
+              </div>
+            )}
+            
+            {/* Lista de armas */}
+            {weapons.length > 0 ? (
+              <>
+                {meleeWeapons.length > 0 && (
+                  <div>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">
+                      Corpo a Corpo ({meleeWeapons.length})
+                    </p>
+                    <div className="space-y-2">
+                      {meleeWeapons.map(weapon => (
+                        <CompactWeaponCard
+                          key={weapon.id}
+                          weapon={weapon}
+                          buffs={weaponBuffs}
+                          onAttack={() => handleAttack(weapon)}
+                        />
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="text-center py-6">
-              <Sword className="w-10 h-10 mx-auto text-muted-foreground/40 mb-2" />
-              <p className="text-sm text-muted-foreground">Nenhuma arma equipada</p>
-              <p className="text-[10px] text-muted-foreground/70 mt-1">
-                Equipe armas no inventário
-              </p>
-            </div>
-          )}
-        </div>
-      </DrawerContent>
-    </Drawer>
+                )}
+                
+                {rangedWeapons.length > 0 && (
+                  <div>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">
+                      À Distância ({rangedWeapons.length})
+                    </p>
+                    <div className="space-y-2">
+                      {rangedWeapons.map(weapon => (
+                        <CompactWeaponCard
+                          key={weapon.id}
+                          weapon={weapon}
+                          buffs={weaponBuffs}
+                          onAttack={() => handleAttack(weapon)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="text-center py-6">
+                <Sword className="w-10 h-10 mx-auto text-muted-foreground/40 mb-2" />
+                <p className="text-sm text-muted-foreground">Nenhuma arma equipada</p>
+                <p className="text-[10px] text-muted-foreground/70 mt-1">
+                  Equipe armas no inventário
+                </p>
+              </div>
+            )}
+          </div>
+        </MobileDrawerBody>
+      </MobileDrawerContent>
+    </MobileDrawer>
   );
 });
 

@@ -18,12 +18,13 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerHeader,
-  DrawerTitle,
-} from '@/components/ui/drawer';
+  MobileDrawer,
+  MobileDrawerContent,
+  MobileDrawerDescription,
+  MobileDrawerHeader,
+  MobileDrawerTitle,
+  MobileDrawerBody,
+} from '@/components/ui/mobile-drawer';
 import { toast } from '@/hooks/use-toast';
 import { MobileCollapsibleSection } from './MobileCollapsibleSection';
 
@@ -289,43 +290,45 @@ export function MobileOperacoesEspeciaisPanel({
       </MobileCollapsibleSection>
 
       {/* Drawer para Surto de Adrenalina */}
-      <Drawer open={showSurtoDrawer} onOpenChange={setShowSurtoDrawer}>
-        <DrawerContent>
-          <DrawerHeader>
-            <DrawerTitle className="flex items-center gap-2 justify-center">
+      <MobileDrawer open={showSurtoDrawer} onOpenChange={setShowSurtoDrawer}>
+        <MobileDrawerContent maxHeight="sm">
+          <MobileDrawerHeader>
+            <MobileDrawerTitle className="flex items-center gap-2 justify-center">
               <Wind className="w-5 h-5 text-primary" />
               Surto de Adrenalina
-            </DrawerTitle>
-            <DrawerDescription className="text-center">
+            </MobileDrawerTitle>
+            <MobileDrawerDescription className="text-center">
               Escolha o tipo de ação adicional
-            </DrawerDescription>
-          </DrawerHeader>
+            </MobileDrawerDescription>
+          </MobileDrawerHeader>
           
-          <div className="grid grid-cols-2 gap-3 p-4">
-            <Button
-              variant="outline"
-              className="h-auto py-6 flex flex-col gap-2"
-              onClick={() => handleSurtoChoice('standard')}
-            >
-              <Hand className="w-8 h-8 text-primary" />
-              <span className="font-medium">Ação Padrão</span>
-            </Button>
+          <MobileDrawerBody useScrollArea={false}>
+            <div className="grid grid-cols-2 gap-3">
+              <Button
+                variant="outline"
+                className="h-auto py-6 flex flex-col gap-2"
+                onClick={() => handleSurtoChoice('standard')}
+              >
+                <Hand className="w-8 h-8 text-primary" />
+                <span className="font-medium">Ação Padrão</span>
+              </Button>
+              
+              <Button
+                variant="outline"
+                className="h-auto py-6 flex flex-col gap-2"
+                onClick={() => handleSurtoChoice('movement')}
+              >
+                <Footprints className="w-8 h-8 text-primary" />
+                <span className="font-medium">Movimento</span>
+              </Button>
+            </div>
             
-            <Button
-              variant="outline"
-              className="h-auto py-6 flex flex-col gap-2"
-              onClick={() => handleSurtoChoice('movement')}
-            >
-              <Footprints className="w-8 h-8 text-primary" />
-              <span className="font-medium">Movimento</span>
-            </Button>
-          </div>
-          
-          <p className="text-xs text-muted-foreground text-center pb-4">
-            Custo: 5 PE
-          </p>
-        </DrawerContent>
-      </Drawer>
+            <p className="text-xs text-muted-foreground text-center pt-4">
+              Custo: 5 PE
+            </p>
+          </MobileDrawerBody>
+        </MobileDrawerContent>
+      </MobileDrawer>
     </>
   );
 }

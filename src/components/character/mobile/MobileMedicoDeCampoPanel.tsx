@@ -25,14 +25,15 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerClose,
-} from '@/components/ui/drawer';
+  MobileDrawer,
+  MobileDrawerContent,
+  MobileDrawerHeader,
+  MobileDrawerTitle,
+  MobileDrawerDescription,
+  MobileDrawerBody,
+  MobileDrawerFooter,
+} from '@/components/ui/mobile-drawer';
+import { DrawerClose } from '@/components/ui/drawer';
 import { Label } from '@/components/ui/label';
 import { MobileCollapsibleSection } from './MobileCollapsibleSection';
 
@@ -244,55 +245,57 @@ export function MobileMedicoDeCampoPanel({
       </MobileCollapsibleSection>
 
       {/* Drawer do Paramédico */}
-      <Drawer open={showParamedicoDrawer} onOpenChange={setShowParamedicoDrawer}>
-        <DrawerContent>
-          <DrawerHeader>
-            <DrawerTitle className="flex items-center gap-2">
+      <MobileDrawer open={showParamedicoDrawer} onOpenChange={setShowParamedicoDrawer}>
+        <MobileDrawerContent maxHeight="md">
+          <MobileDrawerHeader>
+            <MobileDrawerTitle className="flex items-center gap-2">
               <Heart className="h-5 w-5 text-emerald-400" />
               Paramédico
-            </DrawerTitle>
-            <DrawerDescription>
+            </MobileDrawerTitle>
+            <MobileDrawerDescription>
               Cure {healingDice.formula} PV base. +1 PE por dado extra.
-            </DrawerDescription>
-          </DrawerHeader>
+            </MobileDrawerDescription>
+          </MobileDrawerHeader>
           
-          <div className="p-4 space-y-4">
-            <div className="space-y-2">
-              <Label className="text-sm">Dados extras (+1 PE cada)</Label>
-              <div className="flex items-center gap-3 justify-center">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setExtraDice(Math.max(0, extraDice - 1))}
-                  disabled={extraDice === 0}
-                >
-                  <Minus className="h-4 w-4" />
-                </Button>
-                <span className="text-2xl font-bold w-12 text-center">{extraDice}</span>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setExtraDice(extraDice + 1)}
-                  disabled={peCurrent < paramedicoCost + 1}
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
+          <MobileDrawerBody useScrollArea={false}>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label className="text-sm">Dados extras (+1 PE cada)</Label>
+                <div className="flex items-center gap-3 justify-center">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setExtraDice(Math.max(0, extraDice - 1))}
+                    disabled={extraDice === 0}
+                  >
+                    <Minus className="h-4 w-4" />
+                  </Button>
+                  <span className="text-2xl font-bold w-12 text-center">{extraDice}</span>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setExtraDice(extraDice + 1)}
+                    disabled={peCurrent < paramedicoCost + 1}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+
+              <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 space-y-1">
+                <div className="flex justify-between text-sm">
+                  <span>Cura:</span>
+                  <span className="font-bold text-emerald-400">{healingDice.base + extraDice}d10</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span>Custo:</span>
+                  <span className="font-bold">{paramedicoCost} PE</span>
+                </div>
               </div>
             </div>
+          </MobileDrawerBody>
 
-            <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 space-y-1">
-              <div className="flex justify-between text-sm">
-                <span>Cura:</span>
-                <span className="font-bold text-emerald-400">{healingDice.base + extraDice}d10</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span>Custo:</span>
-                <span className="font-bold">{paramedicoCost} PE</span>
-              </div>
-            </div>
-          </div>
-
-          <DrawerFooter>
+          <MobileDrawerFooter>
             <Button 
               onClick={handleUseParamedico}
               disabled={peCurrent < paramedicoCost}
@@ -303,9 +306,9 @@ export function MobileMedicoDeCampoPanel({
             <DrawerClose asChild>
               <Button variant="ghost">Cancelar</Button>
             </DrawerClose>
-          </DrawerFooter>
-        </DrawerContent>
-      </Drawer>
+          </MobileDrawerFooter>
+        </MobileDrawerContent>
+      </MobileDrawer>
     </>
   );
 }

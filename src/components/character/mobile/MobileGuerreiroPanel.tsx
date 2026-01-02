@@ -10,7 +10,7 @@ import { useState, useMemo, useCallback } from 'react';
 import { Sword, Shield, ArrowDownToLine, MoveHorizontal, Check, Loader2, Zap, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerFooter, DrawerDescription } from '@/components/ui/drawer';
+import { MobileDrawer, MobileDrawerContent, MobileDrawerHeader, MobileDrawerTitle, MobileDrawerFooter, MobileDrawerDescription, MobileDrawerBody } from '@/components/ui/mobile-drawer';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { MobileCollapsibleSection } from './MobileCollapsibleSection';
@@ -288,45 +288,47 @@ export function MobileGuerreiroPanel({
       </MobileCollapsibleSection>
 
       {/* Drawer para Força Opressora */}
-      <Drawer open={forcaOpressoraOpen} onOpenChange={setForcaOpressoraOpen}>
-        <DrawerContent>
-          <DrawerHeader>
-            <DrawerTitle className="flex items-center gap-2">
+      <MobileDrawer open={forcaOpressoraOpen} onOpenChange={setForcaOpressoraOpen}>
+        <MobileDrawerContent maxHeight="md">
+          <MobileDrawerHeader>
+            <MobileDrawerTitle className="flex items-center gap-2">
               <Sword className="w-5 h-5 text-orange-500" />
               Força Opressora
-            </DrawerTitle>
-            <DrawerDescription>Escolha a manobra</DrawerDescription>
-          </DrawerHeader>
+            </MobileDrawerTitle>
+            <MobileDrawerDescription>Escolha a manobra</MobileDrawerDescription>
+          </MobileDrawerHeader>
 
-          <div className="px-4 pb-4 space-y-3">
-            {GUERREIRO_ABILITIES.find(a => a.id === 'forca-opressora')?.options?.map((opt) => (
-              <button
-                key={opt.id}
-                onClick={() => setSelectedManeuver(opt.id as 'derrubar' | 'empurrar')}
-                className={cn(
-                  'w-full p-3 rounded-lg border-2 text-left transition-all',
-                  selectedManeuver === opt.id
-                    ? 'border-orange-500 bg-orange-500/10'
-                    : 'border-border'
-                )}
-              >
-                <div className="flex items-center gap-2 mb-1">
-                  {opt.icon}
-                  <span className="font-medium">{opt.name}</span>
+          <MobileDrawerBody useScrollArea={false}>
+            <div className="space-y-3">
+              {GUERREIRO_ABILITIES.find(a => a.id === 'forca-opressora')?.options?.map((opt) => (
+                <button
+                  key={opt.id}
+                  onClick={() => setSelectedManeuver(opt.id as 'derrubar' | 'empurrar')}
+                  className={cn(
+                    'w-full p-3 rounded-lg border-2 text-left transition-all',
+                    selectedManeuver === opt.id
+                      ? 'border-orange-500 bg-orange-500/10'
+                      : 'border-border'
+                  )}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    {opt.icon}
+                    <span className="font-medium">{opt.name}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">{opt.description}</p>
+                </button>
+              ))}
+
+              {selectedManeuver === 'derrubar' && (
+                <div className="p-2 rounded bg-orange-500/10 border border-orange-500/30 text-xs">
+                  <AlertTriangle className="w-3 h-3 text-orange-500 inline mr-1" />
+                  Se derrubar, +1 PE = ataque adicional
                 </div>
-                <p className="text-xs text-muted-foreground">{opt.description}</p>
-              </button>
-            ))}
+              )}
+            </div>
+          </MobileDrawerBody>
 
-            {selectedManeuver === 'derrubar' && (
-              <div className="p-2 rounded bg-orange-500/10 border border-orange-500/30 text-xs">
-                <AlertTriangle className="w-3 h-3 text-orange-500 inline mr-1" />
-                Se derrubar, +1 PE = ataque adicional
-              </div>
-            )}
-          </div>
-
-          <DrawerFooter>
+          <MobileDrawerFooter>
             {selectedManeuver === 'derrubar' ? (
               <div className="flex gap-2 w-full">
                 <Button
@@ -354,9 +356,9 @@ export function MobileGuerreiroPanel({
                 Empurrar (1 PE)
               </Button>
             )}
-          </DrawerFooter>
-        </DrawerContent>
-      </Drawer>
+          </MobileDrawerFooter>
+        </MobileDrawerContent>
+      </MobileDrawer>
     </>
   );
 }

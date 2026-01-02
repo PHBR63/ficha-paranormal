@@ -15,14 +15,15 @@ import { Crosshair, Target, Zap, Skull, CheckCircle2, Loader2 } from 'lucide-rea
 import { toast } from 'sonner';
 import { MobileCollapsibleSection } from './MobileCollapsibleSection';
 import {
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerClose,
-} from '@/components/ui/drawer';
+  MobileDrawer,
+  MobileDrawerContent,
+  MobileDrawerHeader,
+  MobileDrawerTitle,
+  MobileDrawerDescription,
+  MobileDrawerBody,
+  MobileDrawerFooter,
+} from '@/components/ui/mobile-drawer';
+import { DrawerClose } from '@/components/ui/drawer';
 
 // Tipos de manobras disponíveis para Disparo Impactante
 const MANOBRAS_IMPACTANTE = [
@@ -245,34 +246,36 @@ export function MobileAtiradorDeElitePanel({
       </MobileCollapsibleSection>
 
       {/* Drawer para escolha de manobra */}
-      <Drawer open={showManeuverDrawer} onOpenChange={setShowManeuverDrawer}>
-        <DrawerContent>
-          <DrawerHeader>
-            <DrawerTitle>Disparo Impactante</DrawerTitle>
-            <DrawerDescription>
+      <MobileDrawer open={showManeuverDrawer} onOpenChange={setShowManeuverDrawer}>
+        <MobileDrawerContent maxHeight="sm">
+          <MobileDrawerHeader>
+            <MobileDrawerTitle>Disparo Impactante</MobileDrawerTitle>
+            <MobileDrawerDescription>
               Escolha a manobra (2 PE)
-            </DrawerDescription>
-          </DrawerHeader>
-          <div className="p-4 grid grid-cols-2 gap-2">
-            {MANOBRAS_IMPACTANTE.map((manobra) => (
-              <Button
-                key={manobra.id}
-                variant="outline"
-                className="h-auto py-2.5 flex flex-col items-center gap-0.5"
-                onClick={() => handleManeuverChoice(manobra)}
-              >
-                <span className="font-medium text-sm">{manobra.name}</span>
-                <span className="text-[10px] text-muted-foreground">{manobra.description}</span>
-              </Button>
-            ))}
-          </div>
-          <DrawerFooter>
+            </MobileDrawerDescription>
+          </MobileDrawerHeader>
+          <MobileDrawerBody useScrollArea={false}>
+            <div className="grid grid-cols-2 gap-2">
+              {MANOBRAS_IMPACTANTE.map((manobra) => (
+                <Button
+                  key={manobra.id}
+                  variant="outline"
+                  className="h-auto py-2.5 flex flex-col items-center gap-0.5"
+                  onClick={() => handleManeuverChoice(manobra)}
+                >
+                  <span className="font-medium text-sm">{manobra.name}</span>
+                  <span className="text-[10px] text-muted-foreground">{manobra.description}</span>
+                </Button>
+              ))}
+            </div>
+          </MobileDrawerBody>
+          <MobileDrawerFooter>
             <DrawerClose asChild>
               <Button variant="ghost" size="sm">Cancelar</Button>
             </DrawerClose>
-          </DrawerFooter>
-        </DrawerContent>
-      </Drawer>
+          </MobileDrawerFooter>
+        </MobileDrawerContent>
+      </MobileDrawer>
     </>
   );
 }
