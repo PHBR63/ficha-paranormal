@@ -425,6 +425,36 @@ function convertPowerMechanicsToEffects(
     };
   }
   
+  // === EFEITO SOCIAL (Negociador - Eloquência) ===
+  if (mechanics.socialEffect) {
+    // Converte range para formato do EffectMechanics
+    const rangeMap: Record<string, 'curto' | 'medio' | 'longo' | 'alcance-voz'> = {
+      'short': 'curto',
+      'medium': 'medio',
+      'long': 'longo',
+    };
+    
+    // Converte duration para formato do EffectMechanics
+    const durationMap: Record<string, 'concentration' | 'scene' | 'turns'> = {
+      'concentration': 'concentration',
+      'scene': 'scene',
+      'turns': 'turns',
+    };
+    
+    effects.socialEffect = {
+      range: rangeMap[mechanics.socialEffect.range] || 'curto',
+      targetAll: mechanics.socialEffect.targetAll,
+      skillOptions: mechanics.socialEffect.skillOptions || [],
+      resistanceSkill: mechanics.socialEffect.resistanceSkill,
+      effect: mechanics.socialEffect.effect,
+      duration: durationMap[mechanics.socialEffect.duration] || 'concentration',
+      peCost: 0, // Será definido pela ativação da habilidade
+      actionType: 'standard',
+      immunityOnSuccess: mechanics.socialEffect.immunityOnSuccess,
+      resistanceBonusOnSuccess: 5, // +5 em resistência após sucesso (oficial)
+    };
+  }
+  
   // === PODER PASSIVO SEM MECÂNICAS ESPECÍFICAS ===
   if (Object.keys(effects).length === 0 && mechanics.kind === 'passive') {
     effects.specialEffects = [power.description.slice(0, 100) + '...'];

@@ -1,10 +1,11 @@
 // =====================================================
-// Testes: categoryReduction, counterSpell, sneakAttack e healing no SUE
+// Testes: categoryReduction, counterSpell, sneakAttack, healing,
+// leadership, allyBuff e socialEffect no SUE
 // Ordem Paranormal RPG v1.3
 // =====================================================
 //
-// Verifica que as mecânicas categoryReduction, counterSpell, sneakAttack e healing
-// são corretamente mapeadas e consolidadas pelo SUE.
+// Verifica que as mecânicas categoryReduction, counterSpell, sneakAttack, healing,
+// leadership, allyBuff e socialEffect são corretamente mapeadas e consolidadas pelo SUE.
 //
 
 import { describe, it, expect } from 'vitest';
@@ -1225,6 +1226,305 @@ describe('Integração allyBuff com outras mecânicas', () => {
     
     expect(result.leadership.available).toBe(true);
     expect(result.leadership.abilities).toHaveLength(1);
+    expect(result.leadership.availableEffects.rerollTest).toBe(true);
+  });
+});
+
+// =====================================================
+// Testes de socialEffect (Negociador - Eloquência)
+// =====================================================
+
+describe('socialEffect no SUE', () => {
+  /**
+   * Cria um efeito de teste com socialEffect
+   */
+  function createSocialEffectTest(
+    id: string,
+    effect: string,
+    overrides: Partial<UnifiedEffect> = {}
+  ): UnifiedEffect {
+    return {
+      id,
+      name: `Efeito Social ${id}`,
+      source: 'track',
+      sourceId: id,
+      sourceName: `Negociador: ${id}`,
+      mechanics: {
+        socialEffect: {
+          range: 'curto',
+          targetAll: true,
+          skillOptions: ['diplomacia', 'enganacao', 'intimidacao'],
+          resistanceSkill: 'vontade',
+          effect,
+          duration: 'concentration',
+          peCost: 1,
+          actionType: 'standard',
+          immunityOnSuccess: '1-day',
+          resistanceBonusOnSuccess: 5,
+        },
+      },
+      isActive: true,
+      isToggleable: false,
+      ...overrides,
+    };
+  }
+  
+  it('deve consolidar socialEffect básico', () => {
+    const effects: UnifiedEffect[] = [
+      createSocialEffectTest('eloquencia', 'fascinated'),
+    ];
+    
+    const context = createTestContext();
+    const result = consolidateEffects(effects, context);
+    
+    expect(result.socialEffect.available).toBe(true);
+    expect(result.socialEffect.abilities).toHaveLength(1);
+    expect(result.socialEffect.abilities[0].effect).toBe('fascinated');
+    expect(result.socialEffect.abilities[0].range).toBe('curto');
+    expect(result.socialEffect.abilities[0].targetAll).toBe(true);
+    expect(result.socialEffect.abilities[0].skillOptions).toContain('diplomacia');
+    expect(result.socialEffect.abilities[0].resistanceSkill).toBe('vontade');
+  });
+  
+  it('deve consolidar múltiplos socialEffects', () => {
+    const effects: UnifiedEffect[] = [
+      createSocialEffectTest('eloquencia', 'fascinated'),
+      createSocialEffectTest('intimidar', 'frightened'),
+    ];
+    
+    const context = createTestContext();
+    const result = consolidateEffects(effects, context);
+    
+    expect(result.socialEffect.available).toBe(true);
+    expect(result.socialEffect.abilities).toHaveLength(2);
+    expect(result.socialEffect.availableEffects).toContain('fascinated');
+    expect(result.socialEffect.availableEffects).toContain('frightened');
+  });
+  
+  it('não deve consolidar socialEffect inativo', () => {
+    const effects: UnifiedEffect[] = [
+      createSocialEffectTest('eloquencia', 'fascinated', { isActive: false }),
+    ];
+    
+    const context = createTestContext();
+    const result = consolidateEffects(effects, context);
+    
+    expect(result.socialEffect.available).toBe(false);
+    expect(result.socialEffect.abilities).toHaveLength(0);
+  });
+  
+  it('deve rastrear source do socialEffect', () => {
+    const effects: UnifiedEffect[] = [
+      createSocialEffectTest('eloquencia', 'fascinated'),
+    ];
+    
+    const context = createTestContext();
+    const result = consolidateEffects(effects, context);
+    
+    expect(result.socialEffect.abilities[0].source).toBe('Negociador: eloquencia');
+  });
+  
+  it('deve incluir immunityOnSuccess e resistanceBonusOnSuccess', () => {
+    const effects: UnifiedEffect[] = [
+      createSocialEffectTest('eloquencia', 'fascinated'),
+    ];
+    
+    const context = createTestContext();
+    const result = consolidateEffects(effects, context);
+    
+    expect(result.socialEffect.abilities[0].immunityOnSuccess).toBe('1-day');
+    expect(result.socialEffect.abilities[0].resistanceBonusOnSuccess).toBe(5);
+  });
+  
+  it('deve suportar duração em turnos', () => {
+    const effects: UnifiedEffect[] = [
+      {
+        id: 'efeito-turnos',
+        name: 'Efeito com Turnos',
+        source: 'track',
+        sourceId: 'efeito-turnos',
+        sourceName: 'Negociador: efeito-turnos',
+        mechanics: {
+          socialEffect: {
+            range: 'curto',
+            targetAll: false,
+            skillOptions: ['intimidacao'],
+            resistanceSkill: 'vontade',
+            effect: 'frightened',
+            duration: 'turns',
+            turns: 3,
+            peCost: 2,
+            actionType: 'standard',
+          },
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+    ];
+    
+    const context = createTestContext();
+    const result = consolidateEffects(effects, context);
+    
+    expect(result.socialEffect.abilities[0].duration).toBe('turns');
+    expect(result.socialEffect.abilities[0].turns).toBe(3);
+    expect(result.socialEffect.abilities[0].targetAll).toBe(false);
+  });
+});
+
+// =====================================================
+// Testes de Integração Completa (socialEffect + outras mecânicas)
+// =====================================================
+
+describe('Integração socialEffect com outras mecânicas', () => {
+  it('deve consolidar socialEffect junto com skillBonus', () => {
+    const effects: UnifiedEffect[] = [
+      {
+        id: 'negociador-completo',
+        name: 'Negociador',
+        source: 'track',
+        sourceId: 'negociador',
+        sourceName: 'Negociador',
+        mechanics: {
+          socialEffect: {
+            range: 'curto',
+            targetAll: true,
+            skillOptions: ['diplomacia', 'enganacao', 'intimidacao'],
+            resistanceSkill: 'vontade',
+            effect: 'fascinated',
+            duration: 'concentration',
+            peCost: 1,
+            actionType: 'standard',
+          },
+          skillBonus: {
+            diplomacia: 5,
+            enganacao: 5,
+          },
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+    ];
+    
+    const context = createTestContext({ nex: 40 });
+    const result = consolidateEffects(effects, context);
+    
+    // Verifica socialEffect
+    expect(result.socialEffect.available).toBe(true);
+    expect(result.socialEffect.abilities).toHaveLength(1);
+    
+    // Verifica skill bonuses pessoais
+    expect(result.skills['diplomacia']?.bonus).toBe(5);
+    expect(result.skills['enganacao']?.bonus).toBe(5);
+  });
+  
+  it('deve manter socialEffect separado de allyBuff', () => {
+    const effects: UnifiedEffect[] = [
+      {
+        id: 'negociador-social',
+        name: 'Eloquência',
+        source: 'track',
+        sourceId: 'eloquencia',
+        sourceName: 'Negociador: Eloquência',
+        mechanics: {
+          socialEffect: {
+            range: 'curto',
+            targetAll: true,
+            skillOptions: ['diplomacia', 'enganacao', 'intimidacao'],
+            resistanceSkill: 'vontade',
+            effect: 'fascinated',
+            duration: 'concentration',
+            peCost: 1,
+            actionType: 'standard',
+          },
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+      {
+        id: 'negociador-buff',
+        name: 'Discurso Motivador',
+        source: 'track',
+        sourceId: 'discurso',
+        sourceName: 'Negociador: Discurso Motivador',
+        mechanics: {
+          allyBuff: {
+            range: 'curto',
+            skillBonus: 1,
+            peCost: 4,
+            actionType: 'standard',
+            duration: 'scene',
+            includeSelf: true,
+          },
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+    ];
+    
+    const context = createTestContext({ nex: 50 });
+    const result = consolidateEffects(effects, context);
+    
+    // socialEffect e allyBuff devem ser independentes
+    expect(result.socialEffect.available).toBe(true);
+    expect(result.socialEffect.abilities).toHaveLength(1);
+    expect(result.socialEffect.abilities[0].effect).toBe('fascinated');
+    
+    expect(result.allyBuff.available).toBe(true);
+    expect(result.allyBuff.abilities).toHaveLength(1);
+    expect(result.allyBuff.maxSkillBonus).toBe(1);
+  });
+  
+  it('deve consolidar socialEffect junto com leadership', () => {
+    const effects: UnifiedEffect[] = [
+      {
+        id: 'negociador-social',
+        name: 'Eloquência',
+        source: 'track',
+        sourceId: 'eloquencia',
+        sourceName: 'Negociador: Eloquência',
+        mechanics: {
+          socialEffect: {
+            range: 'curto',
+            targetAll: true,
+            skillOptions: ['diplomacia'],
+            resistanceSkill: 'vontade',
+            effect: 'fascinated',
+            duration: 'concentration',
+            peCost: 1,
+            actionType: 'standard',
+          },
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+      {
+        id: 'comandante-lead',
+        name: 'Inspirar Confiança',
+        source: 'track',
+        sourceId: 'inspirar',
+        sourceName: 'Comandante: Inspirar Confiança',
+        mechanics: {
+          leadership: {
+            range: 'medio',
+            maxAllies: 'intellect',
+            peCost: 2,
+            actionType: 'free',
+            allyEffects: { rerollTest: true },
+          },
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+    ];
+    
+    const context = createTestContext({ nex: 50 });
+    const result = consolidateEffects(effects, context);
+    
+    // Verifica que ambos estão consolidados
+    expect(result.socialEffect.available).toBe(true);
+    expect(result.socialEffect.availableEffects).toContain('fascinated');
+    
+    expect(result.leadership.available).toBe(true);
     expect(result.leadership.availableEffects.rerollTest).toBe(true);
   });
 });
