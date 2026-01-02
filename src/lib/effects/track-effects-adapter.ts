@@ -546,6 +546,47 @@ function convertTrackAbilityToMechanics(
     );
   }
   
+  // === EFEITO SOCIAL (Negociador - Eloquência) ===
+  if (m.socialEffect) {
+    // Converte range para formato do EffectMechanics
+    const rangeMap: Record<string, 'curto' | 'medio' | 'longo' | 'alcance-voz'> = {
+      'short': 'curto',
+      'medium': 'medio',
+      'long': 'longo',
+    };
+    
+    // Converte duration para formato do EffectMechanics
+    const durationMap: Record<string, 'concentration' | 'scene' | 'turns'> = {
+      'concentration': 'concentration',
+      'scene': 'scene',
+      'turns': 'turns',
+    };
+    
+    mechanics.socialEffect = {
+      range: rangeMap[m.socialEffect.range] || 'curto',
+      targetAll: m.socialEffect.targetAll,
+      skillOptions: m.socialEffect.skillOptions || [],
+      resistanceSkill: m.socialEffect.resistanceSkill,
+      effect: m.socialEffect.effect,
+      duration: durationMap[m.socialEffect.duration] || 'concentration',
+      peCost: 0, // Será definido pela ativação da habilidade
+      actionType: 'standard',
+      immunityOnSuccess: m.socialEffect.immunityOnSuccess,
+      resistanceBonusOnSuccess: 5, // +5 em resistência após sucesso (oficial)
+    };
+    
+    // Também adiciona aos specialEffects para backward compatibility
+    if (!mechanics.specialEffects) mechanics.specialEffects = [];
+    
+    const range = rangeMap[m.socialEffect.range] || m.socialEffect.range;
+    const skills = m.socialEffect.skillOptions?.join(' / ') || 'perícia social';
+    const duration = m.socialEffect.duration === 'concentration' ? 'enquanto concentrar' : m.socialEffect.duration;
+    
+    mechanics.specialEffects.push(
+      `${skills} vs ${m.socialEffect.resistanceSkill} (alcance ${range}): aplica ${m.socialEffect.effect} (${duration})`
+    );
+  }
+  
   // === CURA (Médico de Campo) ===
   if (m.healing) {
     const scalingDice = m.healing.scalingDice;

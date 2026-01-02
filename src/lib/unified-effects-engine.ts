@@ -212,6 +212,21 @@ export interface EffectMechanics {
     }>;
   };
   
+  // === Efeito Social (Negociador - Eloquência) ===
+  socialEffect?: {
+    range: 'curto' | 'medio' | 'longo' | 'alcance-voz';  // Alcance do efeito
+    targetAll: boolean;                                   // Se afeta todos no alcance
+    skillOptions: string[];                               // Opções de perícia (diplomacia, enganacao, intimidacao)
+    resistanceSkill: string;                              // Perícia de resistência (vontade)
+    effect: string;                                       // Efeito aplicado (fascinado, etc)
+    duration: 'concentration' | 'scene' | 'turns';        // Duração do efeito
+    turns?: number;                                        // Número de turnos (se duration = 'turns')
+    peCost: number;                                        // Custo em PE
+    actionType: 'free' | 'standard' | 'complete';          // Tipo de ação
+    immunityOnSuccess?: string;                            // Imunidade se alvo passar no teste
+    resistanceBonusOnSuccess?: number;                     // Bônus na resistência após sucesso
+  };
+  
   // =====================================================
   // RITUAIS - Mecânicas específicas para poderes de classe
   // =====================================================
@@ -559,6 +574,29 @@ export interface ComputedEffects {
     affectsSelf: boolean;
   };
   
+  // === Efeito Social (Negociador - Eloquência) ===
+  socialEffect: {
+    available: boolean;                                    // Se o personagem tem efeitos sociais
+    abilities: Array<{
+      id: string;                                          // ID único da habilidade
+      name: string;                                        // Nome para exibição
+      range: 'curto' | 'medio' | 'longo' | 'alcance-voz';
+      targetAll: boolean;                                  // Se afeta todos no alcance
+      skillOptions: string[];                              // Opções de perícia
+      resistanceSkill: string;                             // Perícia de resistência
+      effect: string;                                      // Efeito aplicado
+      duration: 'concentration' | 'scene' | 'turns';       // Duração do efeito
+      turns?: number;                                      // Número de turnos
+      peCost: number;                                      // Custo em PE
+      actionType: 'free' | 'standard' | 'complete';        // Tipo de ação
+      immunityOnSuccess?: string;                          // Imunidade se alvo passar
+      resistanceBonusOnSuccess?: number;                   // Bônus na resistência após sucesso
+      source: string;                                      // Fonte da habilidade
+    }>;
+    // Lista de efeitos disponíveis consolidados
+    availableEffects: string[];
+  };
+  
   // =====================================================
   // RITUAIS - Bônus consolidados para rituais
   // =====================================================
@@ -744,6 +782,12 @@ export function consolidateEffects(
       abilities: [],
       maxSkillBonus: 0,
       affectsSelf: false,
+    },
+    // === EFEITO SOCIAL (Negociador - Eloquência) ===
+    socialEffect: {
+      available: false,
+      abilities: [],
+      availableEffects: [],
     },
     // === RITUAIS ===
     rituals: {
@@ -1227,6 +1271,34 @@ export function consolidateEffects(
       // Atualiza se afeta o próprio
       if (m.allyBuff.includeSelf) {
         result.allyBuff.affectsSelf = true;
+      }
+    }
+    
+    // === Efeito Social (Negociador - Eloquência) ===
+    if (m.socialEffect) {
+      result.socialEffect.available = true;
+      
+      // Adiciona habilidade à lista
+      result.socialEffect.abilities.push({
+        id: effect.id,
+        name: effect.name,
+        range: m.socialEffect.range,
+        targetAll: m.socialEffect.targetAll,
+        skillOptions: m.socialEffect.skillOptions,
+        resistanceSkill: m.socialEffect.resistanceSkill,
+        effect: m.socialEffect.effect,
+        duration: m.socialEffect.duration,
+        turns: m.socialEffect.turns,
+        peCost: m.socialEffect.peCost,
+        actionType: m.socialEffect.actionType,
+        immunityOnSuccess: m.socialEffect.immunityOnSuccess,
+        resistanceBonusOnSuccess: m.socialEffect.resistanceBonusOnSuccess,
+        source,
+      });
+      
+      // Adiciona efeito aos disponíveis se não existir
+      if (!result.socialEffect.availableEffects.includes(m.socialEffect.effect)) {
+        result.socialEffect.availableEffects.push(m.socialEffect.effect);
       }
     }
     
