@@ -41,17 +41,17 @@ import {
   Infinity as InfinityIcon,
 } from 'lucide-react';
 import { 
-  Drawer, 
-  DrawerContent, 
-  DrawerHeader, 
-  DrawerTitle, 
-  DrawerFooter 
-} from '@/components/ui/drawer';
+  MobileDrawer, 
+  MobileDrawerContent, 
+  MobileDrawerHeader, 
+  MobileDrawerTitle, 
+  MobileDrawerBody,
+  MobileDrawerFooter 
+} from '@/components/ui/mobile-drawer';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import confetti from 'canvas-confetti';
@@ -921,15 +921,15 @@ export function MobileCombatRollModal({
     : null;
 
   return (
-    <Drawer open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
-      <DrawerContent className="max-h-[90vh]">
-        <DrawerHeader className="pb-2">
+    <MobileDrawer open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
+      <MobileDrawerContent maxHeight="xl">
+        <MobileDrawerHeader>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
               <Sword className="w-5 h-5 text-primary" />
             </div>
             <div className="flex-1">
-              <DrawerTitle className="font-display text-base">{weapon.name}</DrawerTitle>
+              <MobileDrawerTitle className="font-display text-base">{weapon.name}</MobileDrawerTitle>
               <div className="flex items-center gap-2 mt-0.5">
                 <Badge variant="outline" className="text-[10px]">{weapon.type}</Badge>
                 <Badge variant="outline" className="text-[10px]">{weapon.damage}</Badge>
@@ -951,9 +951,9 @@ export function MobileCombatRollModal({
               </div>
             ))}
           </div>
-        </DrawerHeader>
+        </MobileDrawerHeader>
 
-        <ScrollArea className="flex-1 px-4">
+        <MobileDrawerBody>
           <AnimatePresence mode="wait">
             {/* FASE: Setup */}
             {phase === 'setup' && (
@@ -1544,9 +1544,9 @@ export function MobileCombatRollModal({
               </motion.div>
             )}
           </AnimatePresence>
-        </ScrollArea>
+        </MobileDrawerBody>
 
-        <DrawerFooter className="pt-2">
+        <MobileDrawerFooter>
           {phase === 'setup' && (
             <Button
               onClick={rollAttack}
@@ -1643,8 +1643,8 @@ export function MobileCombatRollModal({
               Fechar
             </Button>
           )}
-        </DrawerFooter>
-      </DrawerContent>
+        </MobileDrawerFooter>
+      </MobileDrawerContent>
 
       {/* Modal de técnicas do Aniquilador */}
       <AniquiladorTechniqueModal
@@ -1655,6 +1655,6 @@ export function MobileCombatRollModal({
         onConfirm={handleConfirmTechnique}
         weaponName={weapon?.name || 'Arma'}
       />
-    </Drawer>
+    </MobileDrawer>
   );
 }
