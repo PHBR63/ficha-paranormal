@@ -13,7 +13,7 @@ import { Crosshair, Target, Zap, Check, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerFooter, DrawerDescription } from '@/components/ui/drawer';
+import { MobileDrawer, MobileDrawerContent, MobileDrawerHeader, MobileDrawerTitle, MobileDrawerFooter, MobileDrawerDescription, MobileDrawerBody } from '@/components/ui/mobile-drawer';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { MobileCollapsibleSection } from './MobileCollapsibleSection';
@@ -232,64 +232,66 @@ export function MobileAniquiladorPanel({
       </MobileCollapsibleSection>
 
       {/* Drawer de seleção */}
-      <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
-        <DrawerContent>
-          <DrawerHeader>
-            <DrawerTitle className="flex items-center gap-2">
+      <MobileDrawer open={drawerOpen} onOpenChange={setDrawerOpen}>
+        <MobileDrawerContent maxHeight="lg">
+          <MobileDrawerHeader>
+            <MobileDrawerTitle className="flex items-center gap-2">
               <Crosshair className="w-5 h-5 text-red-500" />
               Técnicas do Aniquilador
-            </DrawerTitle>
-            <DrawerDescription>Selecione efeitos (2 PE cada)</DrawerDescription>
-          </DrawerHeader>
+            </MobileDrawerTitle>
+            <MobileDrawerDescription>Selecione efeitos (2 PE cada)</MobileDrawerDescription>
+          </MobileDrawerHeader>
 
-          <div className="px-4 pb-4 space-y-2 max-h-[50vh] overflow-y-auto">
-            {availableEffects.map((effect) => {
-              const count = selectedEffects[effect.id] || 0;
-              const isSelected = count > 0;
+          <MobileDrawerBody>
+            <div className="space-y-2">
+              {availableEffects.map((effect) => {
+                const count = selectedEffects[effect.id] || 0;
+                const isSelected = count > 0;
 
-              return (
-                <button
-                  key={effect.id}
-                  onClick={() => toggleEffect(effect.id)}
-                  className={cn(
-                    'w-full p-3 rounded-lg border-2 text-left transition-all',
-                    isSelected
-                      ? 'border-red-500 bg-red-500/10'
-                      : 'border-border'
-                  )}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Checkbox checked={isSelected} className="pointer-events-none" />
-                      <span className="font-medium text-sm">{effect.name}</span>
-                      {effect.stackable && count > 0 && (
-                        <Badge className="bg-red-600 text-[10px]">{count}x</Badge>
-                      )}
+                return (
+                  <button
+                    key={effect.id}
+                    onClick={() => toggleEffect(effect.id)}
+                    className={cn(
+                      'w-full p-3 rounded-lg border-2 text-left transition-all',
+                      isSelected
+                        ? 'border-red-500 bg-red-500/10'
+                        : 'border-border'
+                    )}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Checkbox checked={isSelected} className="pointer-events-none" />
+                        <span className="font-medium text-sm">{effect.name}</span>
+                        {effect.stackable && count > 0 && (
+                          <Badge className="bg-red-600 text-[10px]">{count}x</Badge>
+                        )}
+                      </div>
+                      <span className="text-xs text-paranormal">{effect.peCost * (count || 1)} PE</span>
                     </div>
-                    <span className="text-xs text-paranormal">{effect.peCost * (count || 1)} PE</span>
-                  </div>
-                  <p className="text-[10px] text-muted-foreground pl-6 mt-1">
-                    {effect.description}
-                  </p>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Custo total */}
-          <div className="px-4 py-2 border-t border-border/30">
-            <div className="flex items-center justify-between text-sm">
-              <span>Custo Total:</span>
-              <span className={cn(
-                'font-bold',
-                totalCost > peCurrent ? 'text-destructive' : 'text-paranormal'
-              )}>
-                {totalCost} PE <span className="text-muted-foreground font-normal">(tem {peCurrent})</span>
-              </span>
+                    <p className="text-[10px] text-muted-foreground pl-6 mt-1">
+                      {effect.description}
+                    </p>
+                  </button>
+                );
+              })}
             </div>
-          </div>
 
-          <DrawerFooter>
+            {/* Custo total */}
+            <div className="py-2 border-t border-border/30 mt-4">
+              <div className="flex items-center justify-between text-sm">
+                <span>Custo Total:</span>
+                <span className={cn(
+                  'font-bold',
+                  totalCost > peCurrent ? 'text-destructive' : 'text-paranormal'
+                )}>
+                  {totalCost} PE <span className="text-muted-foreground font-normal">(tem {peCurrent})</span>
+                </span>
+              </div>
+            </div>
+          </MobileDrawerBody>
+
+          <MobileDrawerFooter>
             <Button
               className="w-full bg-red-600 hover:bg-red-700"
               disabled={totalCost === 0 || totalCost > peCurrent || isActivating}
@@ -304,9 +306,9 @@ export function MobileAniquiladorPanel({
                 </>
               )}
             </Button>
-          </DrawerFooter>
-        </DrawerContent>
-      </Drawer>
+          </MobileDrawerFooter>
+        </MobileDrawerContent>
+      </MobileDrawer>
     </>
   );
 }

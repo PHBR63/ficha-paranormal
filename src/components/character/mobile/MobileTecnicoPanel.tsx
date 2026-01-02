@@ -17,12 +17,13 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from '@/components/ui/drawer';
+  MobileDrawer,
+  MobileDrawerContent,
+  MobileDrawerHeader,
+  MobileDrawerTitle,
+  MobileDrawerTrigger,
+  MobileDrawerBody,
+} from '@/components/ui/mobile-drawer';
 import { MobileCollapsibleSection } from './MobileCollapsibleSection';
 
 type EffectDuration = 'instant' | 'next-turn' | 'round' | 'scene' | 'concentration';
@@ -211,44 +212,46 @@ export function MobileTecnicoPanel({
               <p>Crie equipamento geral. 2 PE + 2 PE/categoria.</p>
             </div>
             <div className="pl-6">
-              <Drawer open={improvisarDrawerOpen} onOpenChange={setImprovisarDrawerOpen}>
-                <DrawerTrigger asChild>
+              <MobileDrawer open={improvisarDrawerOpen} onOpenChange={setImprovisarDrawerOpen}>
+                <MobileDrawerTrigger asChild>
                   <Button size="sm" variant="outline" className="h-8 w-full">
                     <Lightbulb className="w-3 h-3 mr-1" />
                     Improvisar Equipamento
                   </Button>
-                </DrawerTrigger>
-                <DrawerContent>
-                  <DrawerHeader>
-                    <DrawerTitle>Improvisar Equipamento</DrawerTitle>
-                  </DrawerHeader>
-                  <div className="p-4 space-y-3">
-                    <p className="text-sm text-muted-foreground">
-                      Escolha a categoria do equipamento:
-                    </p>
-                    <div className="grid grid-cols-2 gap-2">
-                      {[0, 1, 2, 3, 4].map((cat) => {
-                        const cost = 2 + (2 * cat);
-                        return (
-                          <Button
-                            key={cat}
-                            variant="outline"
-                            onClick={() => handleImprovisar(cat)}
-                            disabled={peCurrent < cost}
-                            className="h-14 flex-col"
-                          >
-                            <span className="font-medium">Categoria {cat}</span>
-                            <span className="text-xs text-muted-foreground">{cost} PE</span>
-                          </Button>
-                        );
-                      })}
+                </MobileDrawerTrigger>
+                <MobileDrawerContent maxHeight="md">
+                  <MobileDrawerHeader>
+                    <MobileDrawerTitle>Improvisar Equipamento</MobileDrawerTitle>
+                  </MobileDrawerHeader>
+                  <MobileDrawerBody useScrollArea={false}>
+                    <div className="space-y-3">
+                      <p className="text-sm text-muted-foreground">
+                        Escolha a categoria do equipamento:
+                      </p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {[0, 1, 2, 3, 4].map((cat) => {
+                          const cost = 2 + (2 * cat);
+                          return (
+                            <Button
+                              key={cat}
+                              variant="outline"
+                              onClick={() => handleImprovisar(cat)}
+                              disabled={peCurrent < cost}
+                              className="h-14 flex-col"
+                            >
+                              <span className="font-medium">Categoria {cat}</span>
+                              <span className="text-xs text-muted-foreground">{cost} PE</span>
+                            </Button>
+                          );
+                        })}
+                      </div>
+                      <p className="text-xs text-muted-foreground text-center italic">
+                        Inútil ao final da cena.
+                      </p>
                     </div>
-                    <p className="text-xs text-muted-foreground text-center italic">
-                      Inútil ao final da cena.
-                    </p>
-                  </div>
-                </DrawerContent>
-              </Drawer>
+                  </MobileDrawerBody>
+                </MobileDrawerContent>
+              </MobileDrawer>
             </div>
           </div>
         )}
@@ -266,44 +269,46 @@ export function MobileTecnicoPanel({
               <p>Encontre qualquer item! 3 PE/categoria.</p>
             </div>
             <div className="pl-6">
-              <Drawer open={preparadoDrawerOpen} onOpenChange={setPreparadoDrawerOpen}>
-                <DrawerTrigger asChild>
+              <MobileDrawer open={preparadoDrawerOpen} onOpenChange={setPreparadoDrawerOpen}>
+                <MobileDrawerTrigger asChild>
                   <Button size="sm" variant="outline" className="h-8 w-full">
                     <Backpack className="w-3 h-3 mr-1" />
                     Encontrar Item
                   </Button>
-                </DrawerTrigger>
-                <DrawerContent>
-                  <DrawerHeader>
-                    <DrawerTitle>Preparado para Tudo</DrawerTitle>
-                  </DrawerHeader>
-                  <div className="p-4 space-y-3">
-                    <p className="text-sm text-muted-foreground">
-                      Escolha a categoria do item:
-                    </p>
-                    <div className="grid grid-cols-2 gap-2">
-                      {[1, 2, 3, 4].map((cat) => {
-                        const cost = 3 * cat;
-                        return (
-                          <Button
-                            key={cat}
-                            variant="outline"
-                            onClick={() => handlePreparadoParaTudo(cat)}
-                            disabled={peCurrent < cost}
-                            className="h-14 flex-col"
-                          >
-                            <span className="font-medium">Categoria {cat}</span>
-                            <span className="text-xs text-muted-foreground">{cost} PE</span>
-                          </Button>
-                        );
-                      })}
+                </MobileDrawerTrigger>
+                <MobileDrawerContent maxHeight="md">
+                  <MobileDrawerHeader>
+                    <MobileDrawerTitle>Preparado para Tudo</MobileDrawerTitle>
+                  </MobileDrawerHeader>
+                  <MobileDrawerBody useScrollArea={false}>
+                    <div className="space-y-3">
+                      <p className="text-sm text-muted-foreground">
+                        Escolha a categoria do item:
+                      </p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {[1, 2, 3, 4].map((cat) => {
+                          const cost = 3 * cat;
+                          return (
+                            <Button
+                              key={cat}
+                              variant="outline"
+                              onClick={() => handlePreparadoParaTudo(cat)}
+                              disabled={peCurrent < cost}
+                              className="h-14 flex-col"
+                            >
+                              <span className="font-medium">Categoria {cat}</span>
+                              <span className="text-xs text-muted-foreground">{cost} PE</span>
+                            </Button>
+                          );
+                        })}
+                      </div>
+                      <p className="text-xs text-muted-foreground text-center italic">
+                        Exceto armas. Segue regras de inventário.
+                      </p>
                     </div>
-                    <p className="text-xs text-muted-foreground text-center italic">
-                      Exceto armas. Segue regras de inventário.
-                    </p>
-                  </div>
-                </DrawerContent>
-              </Drawer>
+                  </MobileDrawerBody>
+                </MobileDrawerContent>
+              </MobileDrawer>
             </div>
           </div>
         )}

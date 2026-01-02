@@ -6,15 +6,15 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Drawer, 
-  DrawerContent, 
-  DrawerHeader, 
-  DrawerTitle, 
-  DrawerTrigger 
-} from '@/components/ui/drawer';
+  MobileDrawer,
+  MobileDrawerContent,
+  MobileDrawerHeader,
+  MobileDrawerTitle,
+  MobileDrawerTrigger,
+  MobileDrawerBody 
+} from '@/components/ui/mobile-drawer';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   History, 
   Dices, 
@@ -286,8 +286,8 @@ export function MobileRollHistory({
   const recentRolls = rolls.slice(0, 3);
   
   return (
-    <Drawer open={isOpen} onOpenChange={setIsOpen}>
-      <DrawerTrigger asChild>
+    <MobileDrawer open={isOpen} onOpenChange={setIsOpen}>
+      <MobileDrawerTrigger asChild>
         <Button
           variant="outline"
           size="sm"
@@ -301,15 +301,15 @@ export function MobileRollHistory({
             </Badge>
           )}
         </Button>
-      </DrawerTrigger>
+      </MobileDrawerTrigger>
       
-      <DrawerContent className="max-h-[85vh]">
-        <DrawerHeader className="border-b border-border pb-3">
+      <MobileDrawerContent maxHeight="lg">
+        <MobileDrawerHeader bordered>
           <div className="flex items-center justify-between">
-            <DrawerTitle className="flex items-center gap-2">
+            <MobileDrawerTitle className="flex items-center gap-2">
               <History className="w-5 h-5 text-primary" />
               Histórico de Rolagens
-            </DrawerTitle>
+            </MobileDrawerTitle>
             
             {rolls.length > 0 && onClearHistory && (
               <Button
@@ -351,9 +351,9 @@ export function MobileRollHistory({
               );
             })}
           </div>
-        </DrawerHeader>
+        </MobileDrawerHeader>
         
-        <ScrollArea className="flex-1 p-4 max-h-[60vh]">
+        <MobileDrawerBody maxHeight="60vh">
           {filteredRolls.length === 0 ? (
             <div className="text-center py-12">
               <Dices className="w-12 h-12 mx-auto text-muted-foreground/50 mb-3" />
@@ -375,9 +375,9 @@ export function MobileRollHistory({
               </AnimatePresence>
             </div>
           )}
-        </ScrollArea>
-      </DrawerContent>
-    </Drawer>
+        </MobileDrawerBody>
+      </MobileDrawerContent>
+    </MobileDrawer>
   );
 }
 
