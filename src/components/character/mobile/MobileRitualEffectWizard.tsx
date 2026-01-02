@@ -7,11 +7,12 @@
 import { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-} from '@/components/ui/drawer';
+  MobileDrawer,
+  MobileDrawerContent,
+  MobileDrawerHeader,
+  MobileDrawerTitle,
+  MobileDrawerBody,
+} from '@/components/ui/mobile-drawer';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -1002,16 +1003,16 @@ export const MobileRitualEffectWizard = memo(function MobileRitualEffectWizard({
   const elementConfig = getElementConfig(ritual.element);
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="max-h-[85vh]">
+    <MobileDrawer open={open} onOpenChange={onOpenChange}>
+      <MobileDrawerContent maxHeight="lg">
         {/* Background gradient */}
         <div className={cn(
           "absolute inset-x-0 top-0 h-20 rounded-t-lg opacity-20 pointer-events-none",
           `bg-gradient-to-b ${elementConfig?.color || 'from-primary/20'} to-transparent`
         )} />
 
-        <DrawerHeader className="relative pb-2">
-          <DrawerTitle className="flex items-center justify-between gap-2">
+        <MobileDrawerHeader className="relative">
+          <MobileDrawerTitle className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <Sparkles className={cn("w-5 h-5", elementConfig?.text)} />
               <span>Efeitos do Ritual</span>
@@ -1024,8 +1025,8 @@ export const MobileRitualEffectWizard = memo(function MobileRitualEffectWizard({
             >
               <X className="w-4 h-4" />
             </Button>
-          </DrawerTitle>
-        </DrawerHeader>
+          </MobileDrawerTitle>
+        </MobileDrawerHeader>
 
         {/* Barra de progresso */}
         <div className="px-4 pb-2">
@@ -1033,7 +1034,7 @@ export const MobileRitualEffectWizard = memo(function MobileRitualEffectWizard({
         </div>
 
         {/* Conteúdo do step atual */}
-        <div className="px-4 pb-6 overflow-y-auto">
+        <MobileDrawerBody useScrollArea={false}>
           <AnimatePresence mode="wait">
             <motion.div
               key={currentStep}
@@ -1114,9 +1115,9 @@ export const MobileRitualEffectWizard = memo(function MobileRitualEffectWizard({
               )}
             </motion.div>
           </AnimatePresence>
-        </div>
-      </DrawerContent>
-    </Drawer>
+        </MobileDrawerBody>
+      </MobileDrawerContent>
+    </MobileDrawer>
   );
 });
 
