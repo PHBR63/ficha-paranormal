@@ -455,6 +455,17 @@ function convertPowerMechanicsToEffects(
     };
   }
   
+  // === REDE DE CONTATOS (Negociador - Eu Conheço um Cara) ===
+  if (mechanics.contacts) {
+    effects.contacts = {
+      usesPerMission: 1, // 1 vez por missão (oficial)
+      availableEffects: mechanics.contacts.effects || [],
+      gmDiscretion: mechanics.contacts.gmDiscretion ?? true,
+      peCost: 0, // Sem custo em PE
+      actionType: 'varies',
+    };
+  }
+  
   // === PODER PASSIVO SEM MECÂNICAS ESPECÍFICAS ===
   if (Object.keys(effects).length === 0 && mechanics.kind === 'passive') {
     effects.specialEffects = [power.description.slice(0, 100) + '...'];
