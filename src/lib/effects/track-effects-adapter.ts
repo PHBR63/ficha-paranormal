@@ -587,6 +587,25 @@ function convertTrackAbilityToMechanics(
     );
   }
   
+  // === REDE DE CONTATOS (Negociador - Eu Conheço um Cara) ===
+  if (m.contacts) {
+    mechanics.contacts = {
+      usesPerMission: 1, // 1 vez por missão (oficial)
+      availableEffects: m.contacts.effects || [],
+      gmDiscretion: m.contacts.gmDiscretion ?? true,
+      peCost: 0, // Sem custo em PE
+      actionType: 'varies',
+    };
+    
+    // Também adiciona aos specialEffects para backward compatibility
+    if (!mechanics.specialEffects) mechanics.specialEffects = [];
+    
+    const effects = m.contacts.effects?.join(', ') || 'favores';
+    mechanics.specialEffects.push(
+      `Rede de contatos: ${effects} (1x por missão, a critério do mestre)`
+    );
+  }
+  
   // === CURA (Médico de Campo) ===
   if (m.healing) {
     const scalingDice = m.healing.scalingDice;

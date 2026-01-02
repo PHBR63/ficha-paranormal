@@ -1,11 +1,11 @@
 // =====================================================
 // Testes: categoryReduction, counterSpell, sneakAttack, healing,
-// leadership, allyBuff e socialEffect no SUE
+// leadership, allyBuff, socialEffect e contacts no SUE
 // Ordem Paranormal RPG v1.3
 // =====================================================
 //
 // Verifica que as mecânicas categoryReduction, counterSpell, sneakAttack, healing,
-// leadership, allyBuff e socialEffect são corretamente mapeadas e consolidadas pelo SUE.
+// leadership, allyBuff, socialEffect e contacts são corretamente mapeadas e consolidadas pelo SUE.
 //
 
 import { describe, it, expect } from 'vitest';
@@ -1526,5 +1526,254 @@ describe('Integração socialEffect com outras mecânicas', () => {
     
     expect(result.leadership.available).toBe(true);
     expect(result.leadership.availableEffects.rerollTest).toBe(true);
+  });
+});
+
+// =====================================================
+// Testes de contacts (Negociador - Eu Conheço um Cara)
+// =====================================================
+
+describe('contacts no SUE', () => {
+  /**
+   * Cria um efeito de teste com contacts
+   */
+  function createContactsEffect(
+    id: string,
+    availableEffects: string[],
+    overrides: Partial<UnifiedEffect> = {}
+  ): UnifiedEffect {
+    return {
+      id,
+      name: `Contatos ${id}`,
+      source: 'track',
+      sourceId: id,
+      sourceName: `Negociador: ${id}`,
+      mechanics: {
+        contacts: {
+          usesPerMission: 1,
+          availableEffects,
+          gmDiscretion: true,
+          peCost: 0,
+          actionType: 'varies',
+        },
+      },
+      isActive: true,
+      isToggleable: false,
+      ...overrides,
+    };
+  }
+  
+  it('deve consolidar contacts básico', () => {
+    const effects: UnifiedEffect[] = [
+      createContactsEffect('eu-conheco-um-cara', ['equipment-trade', 'information', 'rescue', 'problem-solving']),
+    ];
+    
+    const context = createTestContext();
+    const result = consolidateEffects(effects, context);
+    
+    expect(result.contacts.available).toBe(true);
+    expect(result.contacts.abilities).toHaveLength(1);
+    expect(result.contacts.abilities[0].usesPerMission).toBe(1);
+    expect(result.contacts.abilities[0].gmDiscretion).toBe(true);
+    expect(result.contacts.abilities[0].availableEffects).toContain('equipment-trade');
+    expect(result.contacts.abilities[0].availableEffects).toContain('information');
+    expect(result.contacts.abilities[0].availableEffects).toContain('rescue');
+    expect(result.contacts.abilities[0].availableEffects).toContain('problem-solving');
+  });
+  
+  it('deve consolidar allAvailableEffects de múltiplos contacts', () => {
+    const effects: UnifiedEffect[] = [
+      createContactsEffect('contatos-1', ['equipment-trade', 'information']),
+      createContactsEffect('contatos-2', ['rescue', 'favors']),
+    ];
+    
+    const context = createTestContext();
+    const result = consolidateEffects(effects, context);
+    
+    expect(result.contacts.available).toBe(true);
+    expect(result.contacts.abilities).toHaveLength(2);
+    expect(result.contacts.allAvailableEffects).toContain('equipment-trade');
+    expect(result.contacts.allAvailableEffects).toContain('information');
+    expect(result.contacts.allAvailableEffects).toContain('rescue');
+    expect(result.contacts.allAvailableEffects).toContain('favors');
+  });
+  
+  it('deve somar totalUsesPerMission', () => {
+    const effects: UnifiedEffect[] = [
+      createContactsEffect('contatos-1', ['equipment-trade']),
+      createContactsEffect('contatos-2', ['information']),
+    ];
+    
+    const context = createTestContext();
+    const result = consolidateEffects(effects, context);
+    
+    expect(result.contacts.totalUsesPerMission).toBe(2);
+  });
+  
+  it('não deve consolidar contacts inativo', () => {
+    const effects: UnifiedEffect[] = [
+      createContactsEffect('eu-conheco-um-cara', ['equipment-trade'], { isActive: false }),
+    ];
+    
+    const context = createTestContext();
+    const result = consolidateEffects(effects, context);
+    
+    expect(result.contacts.available).toBe(false);
+    expect(result.contacts.abilities).toHaveLength(0);
+    expect(result.contacts.totalUsesPerMission).toBe(0);
+  });
+  
+  it('deve rastrear source do contacts', () => {
+    const effects: UnifiedEffect[] = [
+      createContactsEffect('eu-conheco-um-cara', ['equipment-trade']),
+    ];
+    
+    const context = createTestContext();
+    const result = consolidateEffects(effects, context);
+    
+    expect(result.contacts.abilities[0].source).toBe('Negociador: eu-conheco-um-cara');
+  });
+  
+  it('deve suportar peCost diferente de zero', () => {
+    const effects: UnifiedEffect[] = [
+      {
+        id: 'contatos-com-custo',
+        name: 'Contatos com Custo',
+        source: 'track',
+        sourceId: 'contatos-com-custo',
+        sourceName: 'Negociador: contatos-com-custo',
+        mechanics: {
+          contacts: {
+            usesPerMission: 2,
+            availableEffects: ['special-favor'],
+            gmDiscretion: false,
+            peCost: 3,
+            actionType: 'standard',
+          },
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+    ];
+    
+    const context = createTestContext();
+    const result = consolidateEffects(effects, context);
+    
+    expect(result.contacts.abilities[0].peCost).toBe(3);
+    expect(result.contacts.abilities[0].actionType).toBe('standard');
+    expect(result.contacts.abilities[0].gmDiscretion).toBe(false);
+    expect(result.contacts.totalUsesPerMission).toBe(2);
+  });
+});
+
+// =====================================================
+// Testes de Integração Completa (contacts + outras mecânicas)
+// =====================================================
+
+describe('Integração contacts com outras mecânicas', () => {
+  it('deve consolidar contacts junto com socialEffect', () => {
+    const effects: UnifiedEffect[] = [
+      {
+        id: 'negociador-contacts',
+        name: 'Eu Conheço um Cara',
+        source: 'track',
+        sourceId: 'eu-conheco-um-cara',
+        sourceName: 'Negociador: Eu Conheço um Cara',
+        mechanics: {
+          contacts: {
+            usesPerMission: 1,
+            availableEffects: ['equipment-trade', 'information'],
+            gmDiscretion: true,
+            peCost: 0,
+            actionType: 'varies',
+          },
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+      {
+        id: 'negociador-social',
+        name: 'Eloquência',
+        source: 'track',
+        sourceId: 'eloquencia',
+        sourceName: 'Negociador: Eloquência',
+        mechanics: {
+          socialEffect: {
+            range: 'curto',
+            targetAll: true,
+            skillOptions: ['diplomacia', 'enganacao', 'intimidacao'],
+            resistanceSkill: 'vontade',
+            effect: 'fascinated',
+            duration: 'concentration',
+            peCost: 1,
+            actionType: 'standard',
+          },
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+    ];
+    
+    const context = createTestContext({ nex: 65 });
+    const result = consolidateEffects(effects, context);
+    
+    // contacts e socialEffect devem ser independentes
+    expect(result.contacts.available).toBe(true);
+    expect(result.contacts.abilities).toHaveLength(1);
+    expect(result.contacts.allAvailableEffects).toContain('equipment-trade');
+    
+    expect(result.socialEffect.available).toBe(true);
+    expect(result.socialEffect.abilities).toHaveLength(1);
+    expect(result.socialEffect.availableEffects).toContain('fascinated');
+  });
+  
+  it('deve consolidar contacts com allyBuff e skillBonus', () => {
+    const effects: UnifiedEffect[] = [
+      {
+        id: 'negociador-completo',
+        name: 'Negociador Completo',
+        source: 'track',
+        sourceId: 'negociador',
+        sourceName: 'Negociador',
+        mechanics: {
+          contacts: {
+            usesPerMission: 1,
+            availableEffects: ['equipment-trade'],
+            gmDiscretion: true,
+            peCost: 0,
+            actionType: 'varies',
+          },
+          allyBuff: {
+            range: 'curto',
+            skillBonus: 1,
+            peCost: 4,
+            actionType: 'standard',
+            duration: 'scene',
+            includeSelf: true,
+          },
+          skillBonus: {
+            diplomacia: 5,
+            enganacao: 5,
+          },
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+    ];
+    
+    const context = createTestContext({ nex: 65 });
+    const result = consolidateEffects(effects, context);
+    
+    // Verifica contacts
+    expect(result.contacts.available).toBe(true);
+    expect(result.contacts.totalUsesPerMission).toBe(1);
+    
+    // Verifica allyBuff
+    expect(result.allyBuff.available).toBe(true);
+    expect(result.allyBuff.maxSkillBonus).toBe(1);
+    
+    // Verifica skill bonuses
+    expect(result.skills['diplomacia']?.bonus).toBe(5);
+    expect(result.skills['enganacao']?.bonus).toBe(5);
   });
 });

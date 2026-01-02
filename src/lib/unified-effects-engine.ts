@@ -227,6 +227,15 @@ export interface EffectMechanics {
     resistanceBonusOnSuccess?: number;                     // Bônus na resistência após sucesso
   };
   
+  // === Rede de Contatos (Negociador - Eu Conheço um Cara) ===
+  contacts?: {
+    usesPerMission: number;                              // Usos por missão (geralmente 1)
+    availableEffects: string[];                          // Efeitos disponíveis (equipment-trade, information, rescue, problem-solving)
+    gmDiscretion: boolean;                               // Se depende de decisão do mestre
+    peCost: number;                                      // Custo em PE (geralmente 0)
+    actionType: 'free' | 'standard' | 'varies';          // Tipo de ação
+  };
+  
   // =====================================================
   // RITUAIS - Mecânicas específicas para poderes de classe
   // =====================================================
@@ -597,6 +606,25 @@ export interface ComputedEffects {
     availableEffects: string[];
   };
   
+  // === Rede de Contatos (Negociador - Eu Conheço um Cara) ===
+  contacts: {
+    available: boolean;                                    // Se o personagem tem rede de contatos
+    abilities: Array<{
+      id: string;                                          // ID único da habilidade
+      name: string;                                        // Nome para exibição
+      usesPerMission: number;                              // Usos por missão
+      availableEffects: string[];                          // Efeitos disponíveis
+      gmDiscretion: boolean;                               // Se depende de decisão do mestre
+      peCost: number;                                      // Custo em PE
+      actionType: 'free' | 'standard' | 'varies';          // Tipo de ação
+      source: string;                                      // Fonte da habilidade
+    }>;
+    // Consolidação de todos os efeitos disponíveis
+    allAvailableEffects: string[];
+    // Total de usos por missão
+    totalUsesPerMission: number;
+  };
+  
   // =====================================================
   // RITUAIS - Bônus consolidados para rituais
   // =====================================================
@@ -788,6 +816,13 @@ export function consolidateEffects(
       available: false,
       abilities: [],
       availableEffects: [],
+    },
+    // === REDE DE CONTATOS (Negociador - Eu Conheço um Cara) ===
+    contacts: {
+      available: false,
+      abilities: [],
+      allAvailableEffects: [],
+      totalUsesPerMission: 0,
     },
     // === RITUAIS ===
     rituals: {
@@ -1300,6 +1335,33 @@ export function consolidateEffects(
       if (!result.socialEffect.availableEffects.includes(m.socialEffect.effect)) {
         result.socialEffect.availableEffects.push(m.socialEffect.effect);
       }
+    }
+    
+    // === Rede de Contatos (Negociador - Eu Conheço um Cara) ===
+    if (m.contacts) {
+      result.contacts.available = true;
+      
+      // Adiciona habilidade à lista
+      result.contacts.abilities.push({
+        id: effect.id,
+        name: effect.name,
+        usesPerMission: m.contacts.usesPerMission,
+        availableEffects: m.contacts.availableEffects,
+        gmDiscretion: m.contacts.gmDiscretion,
+        peCost: m.contacts.peCost,
+        actionType: m.contacts.actionType,
+        source,
+      });
+      
+      // Adiciona efeitos aos disponíveis
+      for (const eff of m.contacts.availableEffects) {
+        if (!result.contacts.allAvailableEffects.includes(eff)) {
+          result.contacts.allAvailableEffects.push(eff);
+        }
+      }
+      
+      // Soma usos por missão
+      result.contacts.totalUsesPerMission += m.contacts.usesPerMission;
     }
     
     // =====================================================
