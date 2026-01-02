@@ -15,6 +15,8 @@ import { OCULTISTA_POWERS } from './ocultista-powers';
 
 /**
  * Array com todos os poderes de todas as classes
+ * Nota: Poderes de trilha estão em track-combatente.ts, track-especialista.ts, track-ocultista.ts
+ * e são acessados via track-registry.ts
  */
 export const ALL_CLASS_POWERS: UnifiedClassPower[] = [
   ...COMBATENTE_POWERS,
