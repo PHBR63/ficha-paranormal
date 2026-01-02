@@ -372,6 +372,266 @@ export interface PowerMechanics {
   hpAsPE?: {
     ratio: number;  // Quantos PV por 1 PE (ex: 2)
   };
+  
+  // ==========================================
+  // MECÂNICAS DE TRILHA (track-specific)
+  // ==========================================
+  
+  // === REDUÇÃO DE CATEGORIA ===
+  categoryReduction?: {
+    amount: number;
+    targetType: 'specific-weapon' | 'any-weapon' | 'item';
+    requiresChoice?: boolean;
+    choiceDescription?: string;
+    appliesToAllCarried?: boolean;
+  };
+  
+  // === TÉCNICAS (Aniquilador) ===
+  techniqueEffects?: Array<{
+    id: string;
+    name: string;
+    description: string;
+    peCost: number;
+    effects: Record<string, number>;
+  }>;
+  
+  // === LIDERANÇA (Comandante de Campo) ===
+  leadership?: {
+    range: 'touch' | 'short' | 'medium' | 'long';
+    maxAllies?: number | 'intellect';
+    allyEffects: Record<string, boolean>;
+  };
+  
+  // === ATAQUE FURTIVO (Infiltrador) ===
+  sneakAttack?: {
+    scaling: Record<number, { dice: number; dieType: string }>;
+    conditions: string[];
+    peCost: number;
+    usesPerRound: number;
+  };
+  
+  // === CURA (Médico de Campo) ===
+  healing?: {
+    baseDice: string;
+    scalingDice?: Record<number, { dice: number; dieType: string }>;
+    peCost: number;
+    extraDicePECost?: number;
+    range: 'self' | 'touch' | 'short';
+  };
+  
+  // === MODIFICADOR DE RITUAL (Conduíte) ===
+  ritualModifier?: {
+    type: 'range' | 'area' | 'speed' | 'cost' | 'resistance' | 'counter';
+    additionalPECost: number;
+    effect: string;
+    specificRitual?: string;
+  };
+  
+  // === CONTRA-MÁGICA (Anular Ritual) ===
+  counterSpell?: {
+    costMatchesTarget: boolean;
+    testSkill: Skill;
+    testType: 'opposed' | 'fixed';
+  };
+  
+  // === RITUAL CONCEDIDO ===
+  grantsRitual?: string;
+  
+  // === PE TEMPORÁRIO ===
+  temporaryPE?: {
+    trigger: string;
+    amount: number | 'ritual-circle';
+    maxPerScene?: number | 'pe-limit';
+  };
+  
+  // === BÔNUS EM PERÍCIAS (múltiplas) ===
+  skillBonus?: {
+    skills: Skill[];
+    bonus: number;
+  };
+  
+  // === INICIATIVA ===
+  initiativeBonus?: number;
+  
+  // === PV POR NEX ===
+  hpPerNexPercent?: number;
+  
+  // === BLOQUEIO COM VIGOR ===
+  blockVigorBonus?: boolean;
+  
+  // === RESISTÊNCIA PARANORMAL ===
+  paranormalResistance?: number;
+  
+  // === BÔNUS DT RITUAL ===
+  ritualDTBonus?: number;
+  
+  // === PROVOCAR (Tropa de Choque) ===
+  taunt?: {
+    range: string;
+    resistanceTest: string;
+    dtAttribute: string;
+  };
+  
+  // === EFEITOS QUANDO MACHUCADO/MORRENDO ===
+  whenWounded?: {
+    defenseBonus: number;
+    damageResistance: number;
+  };
+  whenDying?: {
+    canAct: boolean;
+    notHelpless: boolean;
+  };
+  
+  // === DANO MÁXIMO EM CRÍTICO ===
+  maximumDamageOnCritical?: {
+    weaponType: string;
+  };
+  
+  // === FURTIVIDADE ===
+  stealthMovementPenalty?: boolean;
+  sneakAttackMultiplier?: number;
+  ignoreStealthPenalty?: boolean;
+  
+  // === CAPACIDADE DE CARGA ===
+  carryCapacity?: {
+    addAttribute: Attribute;
+  };
+  itemSpaceReduction?: number;
+  
+  // === REPARO ===
+  repairEquipment?: {
+    range: string;
+    removeCondition: string;
+  };
+  
+  // === REMOÇÃO DE CONDIÇÃO ===
+  removeCondition?: {
+    range: string;
+    excludedConditions: string[];
+  };
+  
+  // === RESSURREIÇÃO ===
+  resurrect?: {
+    excludedDeathTypes: string[];
+    sameSceneOnly: boolean;
+  };
+  
+  // === EFEITO SOCIAL ===
+  socialEffect?: {
+    range: string;
+    targetAll: boolean;
+    skillOptions: string[];
+    resistanceSkill: string;
+    effect: string;
+    duration: string;
+    immunityOnSuccess: string;
+  };
+  
+  // === BUFF DE ALIADOS ===
+  allyBuff?: {
+    range: string;
+    skillBonus: number;
+    duration: string;
+    includeSelf: boolean;
+  };
+  
+  // === CONTATOS ===
+  contacts?: {
+    effects: string[];
+    gmDiscretion: boolean;
+  };
+  
+  // === COPIAR HABILIDADE ===
+  copyAbility?: {
+    source: string;
+    seenInScene: boolean;
+    ignorePrerequisites: boolean;
+    payOriginalCosts: boolean;
+  };
+  
+  // === CRIAR EQUIPAMENTO ===
+  createEquipment?: {
+    type: string;
+    duration: string;
+    destroyedAfter: boolean;
+  };
+  
+  // === RETIRAR ITEM ===
+  retrieveItem?: {
+    excludeWeapons: boolean;
+    retroactive: boolean;
+  };
+  
+  // === MOVIMENTO LIVRE ===
+  freeMovementTo?: {
+    condition: string;
+    perRound: boolean;
+  };
+  
+  // === BÔNUS AO CURAR ===
+  onHeal?: {
+    targetDefenseBonus: number;
+    duration: string;
+  };
+  
+  // === CONTROLE DE ESTADO DO ALVO ===
+  targetStateControl?: {
+    options: string[];
+    resistanceTest: string;
+    dtAttribute: string;
+  };
+  
+  // === OCULTISMO COMO ATAQUE ===
+  occultismAsAttack?: boolean;
+  
+  // === MULTIPLICADOR DE ATAQUE ESPECIAL ===
+  specialAttackMultiplier?: number;
+  
+  // === RITUAIS BÔNUS (Graduado) ===
+  bonusRituals?: {
+    perCircle: number;
+    ignoresLimit: boolean;
+  };
+  
+  // === GRIMÓRIO (Graduado) ===
+  grimoire?: {
+    maxRituals: number | 'intellect';
+    allowedCircles: number[];
+    bonusPerNewCircle: number;
+    ignoresLimit: boolean;
+    castingAction: string;
+    requiresWielding: boolean;
+    inventorySlots: number;
+    recreationCost: string;
+  };
+  
+  // === RESISTÊNCIA A DANO MENTAL ===
+  mentalDamageResistance?: number;
+  
+  // === AÇÕES EXTRAS (Operações Especiais) ===
+  extraActionsTrack?: Array<{
+    type: string;
+    trigger: string;
+    weaponRestriction?: string;
+    maneuverOptions?: string[];
+    replaceDamage?: boolean;
+  }>;
+  
+  // === REDUÇÃO DE DANO PARANORMAL ===
+  paranormalDamageReduction?: {
+    testSkill: Skill;
+    onSuccess: 'negate' | 'half';
+    onFailure: 'half' | 'full';
+  };
+  
+  // === BÔNUS DE PODER DE RITUAL ===
+  ritualPowerBonus?: {
+    addPELimit: boolean;
+    affectsDT: boolean;
+  };
+  
+  // === PV RECUPERAÇÃO RESTRITA (Flagelador) ===
+  hpRecoveryRestriction?: 'rest-only' | 'magic-only';
 }
 
 /**

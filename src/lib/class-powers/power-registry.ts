@@ -4,24 +4,54 @@
  * 
  * Este arquivo serve como ponto central de acesso a todos os poderes
  * de classe, permitindo busca por ID, classe, NEX e outras propriedades.
+ * 
+ * Inclui tanto poderes de classe quanto poderes de trilha convertidos.
  */
 
 import { UnifiedClassPower, ClassId } from './types';
 import { COMBATENTE_POWERS } from './combatente-powers';
 import { ESPECIALISTA_POWERS } from './especialista-powers';
 import { OCULTISTA_POWERS } from './ocultista-powers';
+import { 
+  ALL_TRACK_POWERS,
+  COMBATENTE_TRACK_POWERS,
+  ESPECIALISTA_TRACK_POWERS,
+  OCULTISTA_TRACK_POWERS,
+  getTrackPowers,
+  getTracksForClass,
+  getInitialTrackPower,
+  getTrackPowerStats
+} from './track-powers';
+
+// Re-exporta funções de trilha para conveniência
+export { 
+  getTrackPowers, 
+  getTracksForClass, 
+  getInitialTrackPower, 
+  getTrackPowerStats,
+  ALL_TRACK_POWERS
+};
 
 // ================== REGISTRO CENTRAL ==================
 
 /**
- * Array com todos os poderes de todas as classes
- * Nota: Poderes de trilha estão em track-combatente.ts, track-especialista.ts, track-ocultista.ts
- * e são acessados via track-registry.ts
+ * Array com todos os poderes de classe (sem trilhas)
+ */
+export const CLASS_ONLY_POWERS: UnifiedClassPower[] = [
+  ...COMBATENTE_POWERS,
+  ...ESPECIALISTA_POWERS,
+  ...OCULTISTA_POWERS,
+];
+
+/**
+ * Array com todos os poderes de todas as classes, incluindo trilhas
+ * Total: ~90+ poderes de classe + 60 poderes de trilha
  */
 export const ALL_CLASS_POWERS: UnifiedClassPower[] = [
   ...COMBATENTE_POWERS,
   ...ESPECIALISTA_POWERS,
   ...OCULTISTA_POWERS,
+  ...ALL_TRACK_POWERS,
 ];
 
 /**
