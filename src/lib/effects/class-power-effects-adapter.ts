@@ -357,6 +357,48 @@ function convertPowerMechanicsToEffects(
     };
   }
   
+  // === LIDERANÇA ===
+  if (mechanics.leadership) {
+    // Converte range do formato PowerMechanics para EffectMechanics
+    const rangeMap: Record<string, 'curto' | 'medio' | 'longo' | 'alcance-voz'> = {
+      'touch': 'curto',
+      'short': 'curto',
+      'medium': 'medio',
+      'long': 'longo',
+    };
+    
+    // Converte maxAllies para o formato do EffectMechanics
+    let maxAlliesValue: number | 'intellect' | 'presence' = 1;
+    if (typeof mechanics.leadership.maxAllies === 'number') {
+      maxAlliesValue = mechanics.leadership.maxAllies;
+    } else if (mechanics.leadership.maxAllies === 'intellect') {
+      maxAlliesValue = 'intellect';
+    }
+    
+    // Converte allyEffects do formato Record<string, boolean> para o esperado
+    const allyEffects: {
+      rerollTest?: boolean;
+      extraMovementAction?: boolean;
+      extraAttack?: boolean;
+      extraStandardAction?: boolean;
+      tempHP?: number;
+      bonusToNextTest?: number;
+    } = {
+      rerollTest: mechanics.leadership.allyEffects.rerollTest ?? false,
+      extraMovementAction: mechanics.leadership.allyEffects.extraMovementAction ?? false,
+      extraAttack: mechanics.leadership.allyEffects.extraAttack ?? false,
+      extraStandardAction: mechanics.leadership.allyEffects.extraStandardAction ?? false,
+    };
+    
+    effects.leadership = {
+      range: rangeMap[mechanics.leadership.range] || 'medio',
+      maxAllies: maxAlliesValue,
+      peCost: 0, // PowerMechanics não define, usar custo da ativação
+      actionType: 'free',
+      allyEffects,
+    };
+  }
+  
   // === PODER PASSIVO SEM MECÂNICAS ESPECÍFICAS ===
   if (Object.keys(effects).length === 0 && mechanics.kind === 'passive') {
     effects.specialEffects = [power.description.slice(0, 100) + '...'];

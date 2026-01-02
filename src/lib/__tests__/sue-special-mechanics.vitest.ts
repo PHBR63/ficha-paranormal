@@ -758,3 +758,217 @@ describe('Integração healing com outras mecânicas', () => {
     expect(result.skills['medicina']?.bonus).toBe(5);
   });
 });
+
+// =====================================================
+// Testes de leadership
+// =====================================================
+
+describe('leadership no SUE', () => {
+  /**
+   * Cria um efeito de teste com leadership
+   */
+  function createLeadershipEffect(
+    id: string,
+    allyEffects: {
+      rerollTest?: boolean;
+      extraMovementAction?: boolean;
+      extraAttack?: boolean;
+      extraStandardAction?: boolean;
+      tempHP?: number;
+      bonusToNextTest?: number;
+    },
+    overrides: Partial<UnifiedEffect> = {}
+  ): UnifiedEffect {
+    return {
+      id,
+      name: `Liderança ${id}`,
+      source: 'track',
+      sourceId: id,
+      sourceName: `Comandante de Campo: ${id}`,
+      mechanics: {
+        leadership: {
+          range: 'medio',
+          maxAllies: 'intellect',
+          peCost: 2,
+          actionType: 'free',
+          allyEffects,
+        },
+      },
+      isActive: true,
+      isToggleable: false,
+      ...overrides,
+    };
+  }
+
+  it('deve consolidar liderança básica (Inspirar Confiança)', () => {
+    const effects: UnifiedEffect[] = [
+      createLeadershipEffect('inspirar-confianca', { rerollTest: true }),
+    ];
+    
+    const context = createTestContext({ nex: 10 });
+    const result = consolidateEffects(effects, context);
+    
+    expect(result.leadership.available).toBe(true);
+    expect(result.leadership.abilities).toHaveLength(1);
+    expect(result.leadership.abilities[0].allyEffects.rerollTest).toBe(true);
+    expect(result.leadership.abilities[0].range).toBe('medio');
+    expect(result.leadership.abilities[0].maxAllies).toBe('intellect');
+  });
+  
+  it('deve consolidar múltiplas habilidades de liderança', () => {
+    const effects: UnifiedEffect[] = [
+      createLeadershipEffect('inspirar-confianca', { rerollTest: true }),
+      createLeadershipEffect('estrategista', { extraMovementAction: true }),
+      createLeadershipEffect('brecha-na-guarda', { extraAttack: true }),
+      createLeadershipEffect('oficial-comandante', { extraStandardAction: true }),
+    ];
+    
+    const context = createTestContext({ nex: 99 });
+    const result = consolidateEffects(effects, context);
+    
+    expect(result.leadership.available).toBe(true);
+    expect(result.leadership.abilities).toHaveLength(4);
+    
+    // Verifica efeitos consolidados
+    expect(result.leadership.availableEffects.rerollTest).toBe(true);
+    expect(result.leadership.availableEffects.extraMovementAction).toBe(true);
+    expect(result.leadership.availableEffects.extraAttack).toBe(true);
+    expect(result.leadership.availableEffects.extraStandardAction).toBe(true);
+  });
+  
+  it('deve ignorar leadership de efeitos inativos', () => {
+    const effects: UnifiedEffect[] = [
+      createLeadershipEffect('inspirar-confianca', { rerollTest: true }),
+      createLeadershipEffect('estrategista', { extraMovementAction: true }, { isActive: false }),
+    ];
+    
+    const context = createTestContext({ nex: 40 });
+    const result = consolidateEffects(effects, context);
+    
+    expect(result.leadership.abilities).toHaveLength(1);
+    expect(result.leadership.availableEffects.rerollTest).toBe(true);
+    expect(result.leadership.availableEffects.extraMovementAction).toBe(false);
+  });
+  
+  it('deve registrar fontes corretamente', () => {
+    const effects: UnifiedEffect[] = [
+      createLeadershipEffect('inspirar-confianca', { rerollTest: true }),
+    ];
+    
+    const context = createTestContext({ nex: 10 });
+    const result = consolidateEffects(effects, context);
+    
+    expect(result.leadership.abilities[0].source).toBe('Comandante de Campo: inspirar-confianca');
+  });
+  
+  it('deve retornar estrutura vazia quando não há liderança', () => {
+    const effects: UnifiedEffect[] = [];
+    const context = createTestContext();
+    const result = consolidateEffects(effects, context);
+    
+    expect(result.leadership.available).toBe(false);
+    expect(result.leadership.abilities).toEqual([]);
+    expect(result.leadership.availableEffects.rerollTest).toBe(false);
+    expect(result.leadership.availableEffects.extraMovementAction).toBe(false);
+    expect(result.leadership.availableEffects.extraAttack).toBe(false);
+    expect(result.leadership.availableEffects.extraStandardAction).toBe(false);
+  });
+
+  it('deve aplicar escalonamento por NEX', () => {
+    const effects: UnifiedEffect[] = [
+      {
+        id: 'comandante-completo',
+        name: 'Comandante Completo',
+        source: 'track',
+        sourceId: 'comandante',
+        sourceName: 'Comandante de Campo',
+        mechanics: {
+          leadership: {
+            range: 'curto',
+            maxAllies: 1,
+            peCost: 2,
+            actionType: 'free',
+            allyEffects: { rerollTest: true },
+            scaling: {
+              40: { maxAllies: 2, allyEffects: { extraMovementAction: true } },
+              65: { maxAllies: 3, allyEffects: { extraAttack: true } },
+              99: { maxAllies: 'intellect', allyEffects: { extraStandardAction: true } },
+            },
+          },
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+    ];
+    
+    // NEX 10% - apenas efeitos base
+    let context = createTestContext({ nex: 10 });
+    let result = consolidateEffects(effects, context);
+    expect(result.leadership.abilities[0].maxAllies).toBe(1);
+    expect(result.leadership.abilities[0].allyEffects.rerollTest).toBe(true);
+    expect(result.leadership.abilities[0].allyEffects.extraMovementAction).toBeFalsy();
+    
+    // NEX 40% - primeiro upgrade
+    context = createTestContext({ nex: 40 });
+    result = consolidateEffects(effects, context);
+    expect(result.leadership.abilities[0].maxAllies).toBe(2);
+    expect(result.leadership.abilities[0].allyEffects.extraMovementAction).toBe(true);
+    
+    // NEX 65% - segundo upgrade
+    context = createTestContext({ nex: 65 });
+    result = consolidateEffects(effects, context);
+    expect(result.leadership.abilities[0].maxAllies).toBe(3);
+    expect(result.leadership.abilities[0].allyEffects.extraAttack).toBe(true);
+    
+    // NEX 99% - upgrade completo
+    context = createTestContext({ nex: 99 });
+    result = consolidateEffects(effects, context);
+    expect(result.leadership.abilities[0].maxAllies).toBe('intellect');
+    expect(result.leadership.abilities[0].allyEffects.extraStandardAction).toBe(true);
+  });
+});
+
+// =====================================================
+// Testes de Integração Completa (leadership + outras mecânicas)
+// =====================================================
+
+describe('Integração leadership com outras mecânicas', () => {
+  it('deve consolidar leadership junto com bônus de perícia', () => {
+    const effects: UnifiedEffect[] = [
+      {
+        id: 'comandante-completo',
+        name: 'Comandante de Campo',
+        source: 'track',
+        sourceId: 'comandante-campo',
+        sourceName: 'Comandante de Campo',
+        mechanics: {
+          leadership: {
+            range: 'medio',
+            maxAllies: 'intellect',
+            peCost: 2,
+            actionType: 'free',
+            allyEffects: { rerollTest: true, extraMovementAction: true },
+          },
+          skillBonus: {
+            tatica: 5,
+            diplomacia: 5,
+          },
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+    ];
+    
+    const context = createTestContext({ nex: 50 });
+    const result = consolidateEffects(effects, context);
+    
+    // Verifica leadership
+    expect(result.leadership.available).toBe(true);
+    expect(result.leadership.availableEffects.rerollTest).toBe(true);
+    expect(result.leadership.availableEffects.extraMovementAction).toBe(true);
+    
+    // Verifica skill bonuses
+    expect(result.skills['tatica']?.bonus).toBe(5);
+    expect(result.skills['diplomacia']?.bonus).toBe(5);
+  });
+});

@@ -440,14 +440,54 @@ function convertTrackAbilityToMechanics(
   
   // === LIDERANÇA (Comandante de Campo) ===
   if (m.leadership) {
+    // Converte range do formato track-types para EffectMechanics
+    const rangeMap: Record<string, 'curto' | 'medio' | 'longo' | 'alcance-voz'> = {
+      'touch': 'curto',
+      'short': 'curto',
+      'medium': 'medio',
+      'long': 'longo',
+    };
+    
+    // Converte maxAllies para o formato do EffectMechanics
+    let maxAlliesValue: number | 'intellect' | 'presence' = 1;
+    if (typeof m.leadership.maxAllies === 'number') {
+      maxAlliesValue = m.leadership.maxAllies;
+    } else if (m.leadership.maxAllies === 'intellect') {
+      maxAlliesValue = 'intellect';
+    }
+    
+    // Converte allyEffects do formato Record<string, boolean> para o esperado
+    const allyEffects: {
+      rerollTest?: boolean;
+      extraMovementAction?: boolean;
+      extraAttack?: boolean;
+      extraStandardAction?: boolean;
+      tempHP?: number;
+      bonusToNextTest?: number;
+    } = {
+      rerollTest: m.leadership.allyEffects.rerollTest ?? false,
+      extraMovementAction: m.leadership.allyEffects.extraMovementAction ?? false,
+      extraAttack: m.leadership.allyEffects.extraAttack ?? false,
+      extraStandardAction: m.leadership.allyEffects.extraStandardAction ?? false,
+    };
+    
+    mechanics.leadership = {
+      range: rangeMap[m.leadership.range] || 'medio',
+      maxAllies: maxAlliesValue,
+      peCost: 0, // TrackAbilityMechanics não define, usar custo da ativação
+      actionType: 'free',
+      allyEffects,
+    };
+    
+    // Também adiciona aos specialEffects para backward compatibility
     if (!mechanics.specialEffects) mechanics.specialEffects = [];
     
-    const range = m.leadership.range;
-    let maxAllies = '';
+    const range = rangeMap[m.leadership.range] || m.leadership.range;
+    let maxAlliesDesc = '';
     if (typeof m.leadership.maxAllies === 'number') {
-      maxAllies = ` (até ${m.leadership.maxAllies} aliados)`;
+      maxAlliesDesc = ` (até ${m.leadership.maxAllies} aliados)`;
     } else if (m.leadership.maxAllies === 'intellect') {
-      maxAllies = ` (até Intelecto aliados)`;
+      maxAlliesDesc = ` (até Intelecto aliados)`;
     }
     
     const effects = Object.entries(m.leadership.allyEffects)
@@ -464,7 +504,7 @@ function convertTrackAbilityToMechanics(
     
     if (effects.length > 0) {
       mechanics.specialEffects.push(
-        `Aliados em alcance ${range}${maxAllies}: ${effects.join(', ')}`
+        `Aliados em alcance ${range}${maxAlliesDesc}: ${effects.join(', ')}`
       );
     }
   }
