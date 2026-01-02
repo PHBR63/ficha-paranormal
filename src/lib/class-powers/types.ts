@@ -397,8 +397,11 @@ export interface UnifiedClassPower {
   /** Classe que possui este poder */
   classId: ClassId;
   
+  /** ID da trilha (se for poder de trilha) */
+  trackId?: string;
+  
   /** Se é habilidade core (automática) ou escolhível */
-  isCore: boolean;
+  isCore?: boolean;
   
   /** NEX mínimo para obter */
   minNex: number;
