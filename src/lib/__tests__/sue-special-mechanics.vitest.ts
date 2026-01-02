@@ -1,11 +1,13 @@
 // =====================================================
 // Testes: categoryReduction, counterSpell, sneakAttack, healing,
-// leadership, allyBuff, socialEffect, contacts, copyAbility e technician no SUE
+// leadership, allyBuff, socialEffect, contacts, copyAbility, technician
+// e combatAdvanced no SUE
 // Ordem Paranormal RPG v1.3
 // =====================================================
 //
 // Verifica que as mecânicas categoryReduction, counterSpell, sneakAttack, healing,
-// leadership, allyBuff, socialEffect, contacts, copyAbility e technician são corretamente mapeadas e consolidadas pelo SUE.
+// leadership, allyBuff, socialEffect, contacts, copyAbility, technician e combatAdvanced
+// são corretamente mapeadas e consolidadas pelo SUE.
 //
 
 import { describe, it, expect } from 'vitest';
@@ -2531,5 +2533,655 @@ describe('Integração technician com outras mecânicas', () => {
     // Verifica skill bonuses
     expect(result.skills['oficio']?.bonus).toBe(5);
     expect(result.skills['investigacao']?.bonus).toBe(3);
+  });
+});
+
+// =====================================================
+// Testes: combatAdvanced - Mecânicas de Combate Avançado
+// =====================================================
+
+describe('combatAdvanced - Multiplicador de Ataque Especial', () => {
+  it('deve consolidar specialAttackMultiplier básico (Potência Máxima)', () => {
+    const effects: UnifiedEffect[] = [
+      {
+        id: 'potencia-maxima',
+        name: 'Potência Máxima',
+        source: 'track',
+        sourceId: 'guerreiro',
+        sourceName: 'Guerreiro',
+        mechanics: {
+          specialAttackMultiplier: {
+            value: 2,
+            weaponRestriction: 'melee',
+          },
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+    ];
+    
+    const context = createTestContext({ nex: 99 });
+    const result = consolidateEffects(effects, context);
+    
+    expect(result.combatAdvanced.specialAttackMultiplier.value).toBe(2);
+    expect(result.combatAdvanced.specialAttackMultiplier.weaponRestriction).toBe('melee');
+    expect(result.combatAdvanced.specialAttackMultiplier.sources).toContain('Guerreiro');
+  });
+
+  it('deve usar maior multiplicador quando múltiplas fontes', () => {
+    const effects: UnifiedEffect[] = [
+      {
+        id: 'mult-1',
+        name: 'Multiplicador 1',
+        source: 'track',
+        sourceId: 'fonte1',
+        sourceName: 'Fonte 1',
+        mechanics: {
+          specialAttackMultiplier: { value: 1.5, weaponRestriction: 'any' },
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+      {
+        id: 'mult-2',
+        name: 'Multiplicador 2',
+        source: 'class_power',
+        sourceId: 'fonte2',
+        sourceName: 'Fonte 2',
+        mechanics: {
+          specialAttackMultiplier: { value: 2, weaponRestriction: 'melee' },
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+    ];
+    
+    const context = createTestContext();
+    const result = consolidateEffects(effects, context);
+    
+    expect(result.combatAdvanced.specialAttackMultiplier.value).toBe(2);
+    expect(result.combatAdvanced.specialAttackMultiplier.sources).toHaveLength(2);
+  });
+
+  it('não deve aplicar specialAttackMultiplier se efeito inativo', () => {
+    const effects: UnifiedEffect[] = [
+      {
+        id: 'potencia-inativa',
+        name: 'Potência Inativa',
+        source: 'track',
+        sourceId: 'guerreiro',
+        sourceName: 'Guerreiro',
+        mechanics: {
+          specialAttackMultiplier: { value: 2 },
+        },
+        isActive: false,
+        isToggleable: false,
+      },
+    ];
+    
+    const context = createTestContext();
+    const result = consolidateEffects(effects, context);
+    
+    expect(result.combatAdvanced.specialAttackMultiplier.value).toBe(1); // Valor default
+    expect(result.combatAdvanced.specialAttackMultiplier.sources).toHaveLength(0);
+  });
+});
+
+describe('combatAdvanced - Ações Extras de Trilha', () => {
+  it('deve consolidar extraActionsTrack (Ataque Extra)', () => {
+    const effects: UnifiedEffect[] = [
+      {
+        id: 'ataque-extra',
+        name: 'Ataque Extra',
+        source: 'track',
+        sourceId: 'operacoes-especiais',
+        sourceName: 'Operações Especiais',
+        mechanics: {
+          extraActionsTrack: {
+            type: 'attack',
+            trigger: 'on-attack',
+            peCost: 2,
+            actionType: 'free',
+            perRound: true,
+          },
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+    ];
+    
+    const context = createTestContext({ nex: 40 });
+    const result = consolidateEffects(effects, context);
+    
+    expect(result.combatAdvanced.extraActions).toHaveLength(1);
+    expect(result.combatAdvanced.extraActions[0].type).toBe('attack');
+    expect(result.combatAdvanced.extraActions[0].trigger).toBe('on-attack');
+    expect(result.combatAdvanced.extraActions[0].peCost).toBe(2);
+    expect(result.combatAdvanced.extraActions[0].perRound).toBe(true);
+  });
+
+  it('deve consolidar múltiplas extraActionsTrack', () => {
+    const effects: UnifiedEffect[] = [
+      {
+        id: 'iniciativa-aprimorada',
+        name: 'Iniciativa Aprimorada',
+        source: 'track',
+        sourceId: 'op-esp',
+        sourceName: 'Operações Especiais',
+        mechanics: {
+          extraActionsTrack: {
+            type: 'movement',
+            trigger: 'first-round',
+            peCost: 0,
+            actionType: 'free',
+          },
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+      {
+        id: 'revidar',
+        name: 'Revidar',
+        source: 'track',
+        sourceId: 'guerreiro',
+        sourceName: 'Guerreiro',
+        mechanics: {
+          extraActionsTrack: {
+            type: 'attack',
+            trigger: 'on-block',
+            peCost: 2,
+            actionType: 'reaction',
+            weaponRestriction: 'melee',
+          },
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+    ];
+    
+    const context = createTestContext({ nex: 40 });
+    const result = consolidateEffects(effects, context);
+    
+    expect(result.combatAdvanced.extraActions).toHaveLength(2);
+    expect(result.combatAdvanced.extraActions.find(a => a.trigger === 'first-round')).toBeDefined();
+    expect(result.combatAdvanced.extraActions.find(a => a.trigger === 'on-block')).toBeDefined();
+  });
+
+  it('deve consolidar manobras de Força Opressora', () => {
+    const effects: UnifiedEffect[] = [
+      {
+        id: 'forca-opressora',
+        name: 'Força Opressora',
+        source: 'track',
+        sourceId: 'guerreiro',
+        sourceName: 'Guerreiro',
+        mechanics: {
+          extraActionsTrack: {
+            type: 'maneuver',
+            trigger: 'on-melee-hit',
+            peCost: 1,
+            actionType: 'free',
+            maneuverOptions: ['derrubar', 'empurrar'],
+          },
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+    ];
+    
+    const context = createTestContext({ nex: 65 });
+    const result = consolidateEffects(effects, context);
+    
+    expect(result.combatAdvanced.extraActions).toHaveLength(1);
+    expect(result.combatAdvanced.extraActions[0].maneuverOptions).toEqual(['derrubar', 'empurrar']);
+  });
+});
+
+describe('combatAdvanced - Dano Máximo em Crítico', () => {
+  it('deve consolidar maximumDamageOnCritical (Atirar para Matar)', () => {
+    const effects: UnifiedEffect[] = [
+      {
+        id: 'atirar-matar',
+        name: 'Atirar para Matar',
+        source: 'track',
+        sourceId: 'atirador-elite',
+        sourceName: 'Atirador de Elite',
+        mechanics: {
+          maximumDamageOnCritical: {
+            weaponType: 'firearm',
+          },
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+    ];
+    
+    const context = createTestContext({ nex: 99 });
+    const result = consolidateEffects(effects, context);
+    
+    expect(result.combatAdvanced.maximumDamageOnCrit.enabled).toBe(true);
+    expect(result.combatAdvanced.maximumDamageOnCrit.weaponTypes).toContain('firearm');
+    expect(result.combatAdvanced.maximumDamageOnCrit.sources).toContain('Atirador de Elite');
+  });
+
+  it('deve consolidar múltiplos tipos de arma para dano máximo', () => {
+    const effects: UnifiedEffect[] = [
+      {
+        id: 'crit-firearm',
+        name: 'Crítico Arma de Fogo',
+        source: 'track',
+        sourceId: 'atirador',
+        sourceName: 'Atirador',
+        mechanics: {
+          maximumDamageOnCritical: { weaponType: 'firearm' },
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+      {
+        id: 'crit-melee',
+        name: 'Crítico Corpo a Corpo',
+        source: 'class_power',
+        sourceId: 'poder',
+        sourceName: 'Poder',
+        mechanics: {
+          maximumDamageOnCritical: { weaponType: 'melee' },
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+    ];
+    
+    const context = createTestContext();
+    const result = consolidateEffects(effects, context);
+    
+    expect(result.combatAdvanced.maximumDamageOnCrit.enabled).toBe(true);
+    expect(result.combatAdvanced.maximumDamageOnCrit.weaponTypes).toContain('firearm');
+    expect(result.combatAdvanced.maximumDamageOnCrit.weaponTypes).toContain('melee');
+    expect(result.combatAdvanced.maximumDamageOnCrit.sources).toHaveLength(2);
+  });
+});
+
+describe('combatAdvanced - Bônus de Bloqueio com Vigor', () => {
+  it('deve consolidar blockVigorBonus (Casca Grossa)', () => {
+    const effects: UnifiedEffect[] = [
+      {
+        id: 'casca-grossa',
+        name: 'Casca Grossa',
+        source: 'track',
+        sourceId: 'tropa-choque',
+        sourceName: 'Tropa de Choque',
+        mechanics: {
+          blockVigorBonus: true,
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+    ];
+    
+    const context = createTestContext();
+    const result = consolidateEffects(effects, context);
+    
+    expect(result.combatAdvanced.blockVigorBonus.enabled).toBe(true);
+    expect(result.combatAdvanced.blockVigorBonus.sources).toContain('Tropa de Choque');
+  });
+});
+
+describe('combatAdvanced - Ocultismo como Ataque', () => {
+  it('deve consolidar occultismAsAttack (Lâmina Paranormal)', () => {
+    const effects: UnifiedEffect[] = [
+      {
+        id: 'lamina-maldita',
+        name: 'Lâmina Maldita',
+        source: 'track',
+        sourceId: 'lamina-paranormal',
+        sourceName: 'Lâmina Paranormal',
+        mechanics: {
+          occultismAsAttack: true,
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+    ];
+    
+    const context = createTestContext();
+    const result = consolidateEffects(effects, context);
+    
+    expect(result.combatAdvanced.occultismAsAttack.enabled).toBe(true);
+    expect(result.combatAdvanced.occultismAsAttack.sources).toContain('Lâmina Paranormal');
+  });
+});
+
+describe('combatAdvanced - Provocar (Taunt)', () => {
+  it('deve consolidar taunt (Cai Dentro)', () => {
+    const effects: UnifiedEffect[] = [
+      {
+        id: 'cai-dentro',
+        name: 'Cai Dentro',
+        source: 'track',
+        sourceId: 'tropa-choque',
+        sourceName: 'Tropa de Choque',
+        mechanics: {
+          taunt: {
+            range: 'curto',
+            resistanceTest: 'vontade',
+            dtAttribute: 'vigor',
+            peCost: 1,
+            actionType: 'reaction',
+          },
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+    ];
+    
+    const context = createTestContext({ nex: 40 });
+    const result = consolidateEffects(effects, context);
+    
+    expect(result.combatAdvanced.taunt.available).toBe(true);
+    expect(result.combatAdvanced.taunt.abilities).toHaveLength(1);
+    expect(result.combatAdvanced.taunt.abilities[0].range).toBe('curto');
+    expect(result.combatAdvanced.taunt.abilities[0].resistanceTest).toBe('vontade');
+    expect(result.combatAdvanced.taunt.abilities[0].dtAttribute).toBe('vigor');
+    expect(result.combatAdvanced.taunt.abilities[0].peCost).toBe(1);
+  });
+});
+
+describe('combatAdvanced - Controle de Estado do Alvo', () => {
+  it('deve consolidar targetStateControl (Assassinar)', () => {
+    const effects: UnifiedEffect[] = [
+      {
+        id: 'assassinar',
+        name: 'Assassinar',
+        source: 'track',
+        sourceId: 'infiltrador',
+        sourceName: 'Infiltrador',
+        mechanics: {
+          targetStateControl: {
+            options: ['unconscious', 'dying'],
+            resistanceTest: 'fortitude',
+            dtAttribute: 'agility',
+          },
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+    ];
+    
+    const context = createTestContext({ nex: 65 });
+    const result = consolidateEffects(effects, context);
+    
+    expect(result.combatAdvanced.targetStateControl.available).toBe(true);
+    expect(result.combatAdvanced.targetStateControl.options).toContain('unconscious');
+    expect(result.combatAdvanced.targetStateControl.options).toContain('dying');
+    expect(result.combatAdvanced.targetStateControl.abilities).toHaveLength(1);
+    expect(result.combatAdvanced.targetStateControl.abilities[0].resistanceTest).toBe('fortitude');
+  });
+
+  it('deve consolidar opções de múltiplas fontes', () => {
+    const effects: UnifiedEffect[] = [
+      {
+        id: 'controle-1',
+        name: 'Controle 1',
+        source: 'track',
+        sourceId: 'fonte1',
+        sourceName: 'Fonte 1',
+        mechanics: {
+          targetStateControl: {
+            options: ['unconscious'],
+            resistanceTest: 'fortitude',
+            dtAttribute: 'agility',
+          },
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+      {
+        id: 'controle-2',
+        name: 'Controle 2',
+        source: 'class_power',
+        sourceId: 'fonte2',
+        sourceName: 'Fonte 2',
+        mechanics: {
+          targetStateControl: {
+            options: ['dying', 'stunned'],
+            resistanceTest: 'vontade',
+            dtAttribute: 'presence',
+          },
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+    ];
+    
+    const context = createTestContext();
+    const result = consolidateEffects(effects, context);
+    
+    expect(result.combatAdvanced.targetStateControl.options).toContain('unconscious');
+    expect(result.combatAdvanced.targetStateControl.options).toContain('dying');
+    expect(result.combatAdvanced.targetStateControl.options).toContain('stunned');
+    expect(result.combatAdvanced.targetStateControl.abilities).toHaveLength(2);
+  });
+});
+
+describe('combatAdvanced - Bônus quando Machucado', () => {
+  it('deve aplicar whenWounded quando PV abaixo do limiar', () => {
+    const effects: UnifiedEffect[] = [
+      {
+        id: 'inquebravel',
+        name: 'Inquebrável',
+        source: 'track',
+        sourceId: 'tropa-choque',
+        sourceName: 'Tropa de Choque',
+        mechanics: {
+          whenWounded: {
+            hpThreshold: 50,
+            defenseBonus: 5,
+            damageReduction: 5,
+          },
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+    ];
+    
+    // PV atual = 10, máximo = 30 = 33% (abaixo de 50%)
+    const context = createTestContext({ hpCurrent: 10, hpMax: 30 });
+    const result = consolidateEffects(effects, context);
+    
+    expect(result.combatAdvanced.conditionalBonuses.whenWounded.active).toBe(true);
+    expect(result.combatAdvanced.conditionalBonuses.whenWounded.defenseBonus).toBe(5);
+    expect(result.combatAdvanced.conditionalBonuses.whenWounded.damageReduction).toBe(5);
+    
+    // Deve aplicar bônus de defesa automaticamente
+    expect(result.defense.general).toBe(5);
+    expect(result.damageReduction.physical).toBe(5);
+  });
+
+  it('não deve aplicar whenWounded quando PV acima do limiar', () => {
+    const effects: UnifiedEffect[] = [
+      {
+        id: 'inquebravel',
+        name: 'Inquebrável',
+        source: 'track',
+        sourceId: 'tropa-choque',
+        sourceName: 'Tropa de Choque',
+        mechanics: {
+          whenWounded: {
+            hpThreshold: 50,
+            defenseBonus: 5,
+            damageReduction: 5,
+          },
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+    ];
+    
+    // PV atual = 20, máximo = 30 = 66% (acima de 50%)
+    const context = createTestContext({ hpCurrent: 20, hpMax: 30 });
+    const result = consolidateEffects(effects, context);
+    
+    expect(result.combatAdvanced.conditionalBonuses.whenWounded.active).toBe(false);
+    expect(result.defense.general).toBe(0);
+    expect(result.damageReduction.physical).toBe(0);
+  });
+
+  it('deve somar bônus de múltiplas fontes quando machucado', () => {
+    const effects: UnifiedEffect[] = [
+      {
+        id: 'wounded-1',
+        name: 'Wounded 1',
+        source: 'track',
+        sourceId: 'fonte1',
+        sourceName: 'Fonte 1',
+        mechanics: {
+          whenWounded: {
+            hpThreshold: 50,
+            defenseBonus: 3,
+          },
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+      {
+        id: 'wounded-2',
+        name: 'Wounded 2',
+        source: 'class_power',
+        sourceId: 'fonte2',
+        sourceName: 'Fonte 2',
+        mechanics: {
+          whenWounded: {
+            hpThreshold: 50,
+            defenseBonus: 2,
+            damageReduction: 3,
+          },
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+    ];
+    
+    const context = createTestContext({ hpCurrent: 10, hpMax: 30 });
+    const result = consolidateEffects(effects, context);
+    
+    expect(result.combatAdvanced.conditionalBonuses.whenWounded.defenseBonus).toBe(5);
+    expect(result.combatAdvanced.conditionalBonuses.whenWounded.damageReduction).toBe(3);
+    expect(result.defense.general).toBe(5);
+  });
+});
+
+describe('combatAdvanced - Bônus quando Morrendo', () => {
+  it('deve consolidar whenDying (Inquebrável)', () => {
+    const effects: UnifiedEffect[] = [
+      {
+        id: 'inquebravel-dying',
+        name: 'Inquebrável (Morrendo)',
+        source: 'track',
+        sourceId: 'tropa-choque',
+        sourceName: 'Tropa de Choque',
+        mechanics: {
+          whenDying: {
+            canAct: true,
+            notHelpless: true,
+          },
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+    ];
+    
+    const context = createTestContext({ nex: 99 });
+    const result = consolidateEffects(effects, context);
+    
+    expect(result.combatAdvanced.conditionalBonuses.whenDying.canAct).toBe(true);
+    expect(result.combatAdvanced.conditionalBonuses.whenDying.notHelpless).toBe(true);
+    expect(result.combatAdvanced.conditionalBonuses.whenDying.sources).toContain('Tropa de Choque');
+  });
+});
+
+describe('combatAdvanced - Integração com outras mecânicas', () => {
+  it('deve consolidar combatAdvanced junto com combat stats básicos', () => {
+    const effects: UnifiedEffect[] = [
+      {
+        id: 'guerreiro-completo',
+        name: 'Guerreiro Completo',
+        source: 'track',
+        sourceId: 'guerreiro',
+        sourceName: 'Guerreiro',
+        mechanics: {
+          specialAttackMultiplier: { value: 2, weaponRestriction: 'melee' },
+          criticalMarginBonus: 2,
+          meleeDamageBonus: 3,
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+    ];
+    
+    const context = createTestContext({ nex: 99 });
+    const result = consolidateEffects(effects, context);
+    
+    // Combate básico
+    expect(result.critical.marginBonus).toBe(2);
+    expect(result.damage.melee).toBe(3);
+    
+    // Combate avançado
+    expect(result.combatAdvanced.specialAttackMultiplier.value).toBe(2);
+  });
+
+  it('deve consolidar múltiplas mecânicas de combate avançado', () => {
+    const effects: UnifiedEffect[] = [
+      {
+        id: 'tropa-choque-completo',
+        name: 'Tropa de Choque Completo',
+        source: 'track',
+        sourceId: 'tropa-choque',
+        sourceName: 'Tropa de Choque',
+        mechanics: {
+          blockVigorBonus: true,
+          hpBonusPerNex: 1, // Casca Grossa
+          taunt: {
+            range: 'curto',
+            resistanceTest: 'vontade',
+            dtAttribute: 'vigor',
+            peCost: 1,
+            actionType: 'reaction',
+          },
+          whenWounded: {
+            hpThreshold: 50,
+            defenseBonus: 5,
+            damageReduction: 5,
+          },
+          whenDying: {
+            canAct: true,
+            notHelpless: true,
+          },
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+    ];
+    
+    // Machucado (30% HP)
+    const context = createTestContext({ nex: 99, hpCurrent: 10, hpMax: 30 });
+    const result = consolidateEffects(effects, context);
+    
+    // HP bonus per NEX (99/5 = 19)
+    expect(result.resources.hpBonus).toBe(19);
+    
+    // Block Vigor
+    expect(result.combatAdvanced.blockVigorBonus.enabled).toBe(true);
+    
+    // Taunt
+    expect(result.combatAdvanced.taunt.available).toBe(true);
+    
+    // When Wounded (ativo pois está machucado)
+    expect(result.combatAdvanced.conditionalBonuses.whenWounded.active).toBe(true);
+    expect(result.defense.general).toBe(5);
+    expect(result.damageReduction.physical).toBe(5);
+    
+    // When Dying
+    expect(result.combatAdvanced.conditionalBonuses.whenDying.canAct).toBe(true);
   });
 });

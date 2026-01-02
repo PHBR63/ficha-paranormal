@@ -351,15 +351,36 @@ function convertTrackAbilityToMechanics(
   
   // Ocultismo como ataque (Lâmina Paranormal)
   if (m.occultismAsAttack) {
+    // Mapeia diretamente para EffectMechanics.occultismAsAttack
+    mechanics.occultismAsAttack = true;
+    
+    // Também adiciona aos specialEffects para backward compatibility
     if (!mechanics.specialEffects) mechanics.specialEffects = [];
     mechanics.specialEffects.push('Pode usar Ocultismo em ataques corpo a corpo');
   }
   
   // === DANO MÁXIMO EM CRÍTICO (Atirar para Matar) ===
   if (m.maximumDamageOnCritical) {
+    // Mapeia diretamente para EffectMechanics.maximumDamageOnCritical
+    mechanics.maximumDamageOnCritical = {
+      weaponType: m.maximumDamageOnCritical.weaponType as 'firearm' | 'melee' | 'any',
+    };
+    
+    // Também adiciona aos specialEffects para backward compatibility
     if (!mechanics.specialEffects) mechanics.specialEffects = [];
     mechanics.specialEffects.push('Crítico com arma de fogo causa dano máximo');
     mechanics.maximumDamageOnCrit = true;
+  }
+  
+  // === MULTIPLICADOR DE ATAQUE ESPECIAL (Guerreiro - Potência Máxima) ===
+  if (m.specialAttackMultiplier) {
+    mechanics.specialAttackMultiplier = {
+      value: m.specialAttackMultiplier,
+      weaponRestriction: 'melee', // Potência Máxima é apenas corpo a corpo
+    };
+    
+    if (!mechanics.specialEffects) mechanics.specialEffects = [];
+    mechanics.specialEffects.push(`Ataque Especial: bônus numéricos x${m.specialAttackMultiplier} (corpo a corpo)`);
   }
   
   // === REDUÇÃO DE DANO (Duro de Matar, Inquebrável) ===
@@ -375,6 +396,14 @@ function convertTrackAbilityToMechanics(
   
   // === EFEITOS QUANDO MACHUCADO (Inquebrável) ===
   if (m.whenWounded) {
+    // Mapeia diretamente para EffectMechanics.whenWounded
+    mechanics.whenWounded = {
+      hpThreshold: 50, // Padrão: PV abaixo de 50%
+      defenseBonus: m.whenWounded.defenseBonus,
+      damageReduction: m.whenWounded.damageResistance,
+    };
+    
+    // Legacy mapping para backward compatibility
     mechanics.defenseBonus = m.whenWounded.defenseBonus;
     mechanics.damageReduction = m.whenWounded.damageResistance;
     mechanics.conditionalNote = 'Quando machucado';
@@ -382,6 +411,13 @@ function convertTrackAbilityToMechanics(
   
   // === EFEITOS QUANDO MORRENDO (Inquebrável) ===
   if (m.whenDying) {
+    // Mapeia diretamente para EffectMechanics.whenDying
+    mechanics.whenDying = {
+      canAct: m.whenDying.canAct ?? false,
+      notHelpless: m.whenDying.notHelpless ?? false,
+    };
+    
+    // Também adiciona aos specialEffects para backward compatibility
     if (!mechanics.specialEffects) mechanics.specialEffects = [];
     if (m.whenDying.canAct) {
       mechanics.specialEffects.push('Pode agir normalmente quando morrendo');
@@ -396,6 +432,21 @@ function convertTrackAbilityToMechanics(
     if (!mechanics.specialEffects) mechanics.specialEffects = [];
     
     for (const action of m.extraActions) {
+      // Mapeia para extraActionsTrack (apenas a primeira ação - o SUE consolida múltiplas)
+      // Esta é uma conversão simplificada; cada habilidade gera seu próprio efeito
+      mechanics.extraActionsTrack = {
+        type: action.type as 'attack' | 'movement' | 'standard' | 'standard-or-movement' | 'maneuver',
+        trigger: action.trigger as 'on-attack' | 'on-block' | 'on-melee-hit' | 'on-ritual-cast' | 'first-round' | 'combat-start' | 'on-demand',
+        peCost: 0, // Custo é definido no activation da habilidade
+        actionType: 'free',
+        weaponRestriction: action.weaponRestriction as 'melee' | 'ranged' | 'firearm' | 'any' | undefined,
+        maneuverOptions: action.maneuverOptions,
+        replaceDamage: action.replaceDamage,
+        perRound: false,
+        perScene: false,
+      };
+      
+      // Adiciona aos specialEffects para backward compatibility
       let desc = '';
       
       switch (action.type) {
@@ -436,6 +487,50 @@ function convertTrackAbilityToMechanics(
         mechanics.specialEffects.push(desc);
       }
     }
+  }
+  
+  // === PROVOCAR (Taunt - Cai Dentro) ===
+  if (m.taunt) {
+    const rangeMapTaunt: Record<string, 'curto' | 'medio' | 'longo'> = {
+      'touch': 'curto',
+      'short': 'curto',
+      'medium': 'medio',
+      'long': 'longo',
+      'curto': 'curto',
+      'medio': 'medio',
+      'longo': 'longo',
+    };
+    
+    mechanics.taunt = {
+      range: rangeMapTaunt[m.taunt.range] || 'curto',
+      resistanceTest: m.taunt.resistanceTest,
+      dtAttribute: m.taunt.dtAttribute as AttributeType,
+      peCost: 1, // Default: 1 PE (Cai Dentro)
+      actionType: 'reaction', // Default: reação
+    };
+    
+    if (!mechanics.specialEffects) mechanics.specialEffects = [];
+    mechanics.specialEffects.push(`Provocar: alvo deve atacar você (${m.taunt.resistanceTest})`);
+  }
+  
+  // === CONTROLE DE ESTADO DO ALVO (Assassinar) ===
+  if (m.targetStateControl) {
+    mechanics.targetStateControl = {
+      options: m.targetStateControl.options,
+      resistanceTest: m.targetStateControl.resistanceTest,
+      dtAttribute: m.targetStateControl.dtAttribute as AttributeType,
+    };
+    
+    if (!mechanics.specialEffects) mechanics.specialEffects = [];
+    mechanics.specialEffects.push(`Controle de estado: ${m.targetStateControl.options.join(' ou ')}`);
+  }
+  
+  // === BÔNUS DE BLOQUEIO COM VIGOR (Casca Grossa) ===
+  if (m.blockVigorBonus) {
+    mechanics.blockVigorBonus = true;
+    
+    if (!mechanics.specialEffects) mechanics.specialEffects = [];
+    mechanics.specialEffects.push('Soma Vigor na RD ao bloquear');
   }
   
   // === LIDERANÇA (Comandante de Campo) ===

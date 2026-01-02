@@ -126,6 +126,69 @@ export interface EffectMechanics {
   maximumDamageOnCrit?: boolean;   // Crítico causa dano máximo (Atirar para Matar)
   
   // =====================================================
+  // COMBATE AVANÇADO (Fase 1 SUE)
+  // =====================================================
+  
+  // === Multiplicador de Ataque Especial (Guerreiro - Potência Máxima) ===
+  specialAttackMultiplier?: {
+    value: number;                           // Multiplicador dos bônus (ex: 2 para dobrar)
+    weaponRestriction?: 'melee' | 'ranged' | 'any'; // Restrição de tipo de arma
+  };
+  
+  // === Ações Extras de Trilha (Operações Especiais, etc.) ===
+  extraActionsTrack?: {
+    type: 'attack' | 'movement' | 'standard' | 'standard-or-movement' | 'maneuver';
+    trigger: 'on-attack' | 'on-block' | 'on-melee-hit' | 'on-ritual-cast' | 'first-round' | 'combat-start' | 'on-demand';
+    peCost?: number;                         // Custo em PE
+    actionType?: 'free' | 'reaction';        // Tipo de ação para ativar
+    weaponRestriction?: 'melee' | 'ranged' | 'firearm' | 'any';
+    maneuverOptions?: string[];              // Opções de manobra (derrubar, empurrar, etc.)
+    replaceDamage?: boolean;                 // Se substitui o dano do ataque
+    perRound?: boolean;                      // Se é 1x por rodada
+    perScene?: boolean;                      // Se é 1x por cena
+  };
+  
+  // === Dano Máximo em Crítico (Atirador de Elite - Atirar para Matar) ===
+  maximumDamageOnCritical?: {
+    weaponType: 'firearm' | 'melee' | 'any'; // Tipo de arma que aplica
+  };
+  
+  // === Bônus de Bloqueio com Vigor (Tropa de Choque - Casca Grossa) ===
+  blockVigorBonus?: boolean;                 // Soma Vigor na RD ao bloquear
+  
+  // === Ocultismo como Ataque (Lâmina Paranormal) ===
+  occultismAsAttack?: boolean;               // Pode usar Ocultismo no lugar de Luta/Pontaria
+  
+  // === Provocar (Tropa de Choque - Cai Dentro) ===
+  taunt?: {
+    range: 'curto' | 'medio' | 'longo';      // Alcance da provocação
+    resistanceTest: string;                  // Teste de resistência (vontade)
+    dtAttribute: AttributeType;              // Atributo base da DT
+    peCost: number;                          // Custo em PE
+    actionType: 'reaction' | 'free' | 'standard'; // Tipo de ação
+  };
+  
+  // === Controle de Estado do Alvo (Infiltrador - Assassinar) ===
+  targetStateControl?: {
+    options: string[];                       // Opções de estado (unconscious, dying)
+    resistanceTest: string;                  // Teste de resistência (fortitude)
+    dtAttribute: AttributeType;              // Atributo base da DT
+  };
+  
+  // === Bônus quando Machucado (Tropa de Choque - Inquebrável) ===
+  whenWounded?: {
+    hpThreshold: number;                     // Limiar de PV (percentual, ex: 50)
+    defenseBonus?: number;                   // Bônus em Defesa
+    damageReduction?: number;                // RD adicional
+  };
+  
+  // === Bônus quando Morrendo (Tropa de Choque - Inquebrável) ===
+  whenDying?: {
+    canAct: boolean;                         // Pode agir enquanto morrendo
+    notHelpless: boolean;                    // Não fica indefeso
+  };
+  
+  // =====================================================
   // EQUIPAMENTO E INVENTÁRIO
   // =====================================================
   
@@ -521,6 +584,97 @@ export interface ComputedEffects {
   }>;
   
   // =====================================================
+  // COMBATE AVANÇADO (Fase 1 SUE)
+  // =====================================================
+  combatAdvanced: {
+    // === Multiplicador de Ataque Especial (Guerreiro - Potência Máxima) ===
+    specialAttackMultiplier: {
+      value: number;                         // Multiplicador (1 = normal, 2 = dobrado)
+      weaponRestriction: 'melee' | 'ranged' | 'any';
+      sources: string[];
+    };
+    
+    // === Ações Extras de Trilha ===
+    extraActions: Array<{
+      id: string;                            // ID único para rastrear uso
+      name: string;                          // Nome para exibição
+      type: 'attack' | 'movement' | 'standard' | 'standard-or-movement' | 'maneuver';
+      trigger: string;                       // Quando pode ser ativada
+      peCost: number;                        // Custo em PE
+      actionType: 'free' | 'reaction';       // Tipo de ação para ativar
+      weaponRestriction?: string;            // Restrição de arma
+      maneuverOptions?: string[];            // Opções de manobra
+      replaceDamage?: boolean;               // Se substitui dano
+      perRound?: boolean;                    // 1x por rodada
+      perScene?: boolean;                    // 1x por cena
+      source: string;                        // Fonte da habilidade
+    }>;
+    
+    // === Dano Máximo em Crítico ===
+    maximumDamageOnCrit: {
+      enabled: boolean;                      // Se está ativo
+      weaponTypes: string[];                 // Tipos de arma que aplicam
+      sources: string[];
+    };
+    
+    // === Bônus de Bloqueio com Vigor ===
+    blockVigorBonus: {
+      enabled: boolean;
+      sources: string[];
+    };
+    
+    // === Ocultismo como Ataque ===
+    occultismAsAttack: {
+      enabled: boolean;
+      sources: string[];
+    };
+    
+    // === Provocar (Taunt) ===
+    taunt: {
+      available: boolean;
+      abilities: Array<{
+        id: string;
+        name: string;
+        range: 'curto' | 'medio' | 'longo';
+        resistanceTest: string;
+        dtAttribute: AttributeType;
+        peCost: number;
+        actionType: 'reaction' | 'free' | 'standard';
+        source: string;
+      }>;
+    };
+    
+    // === Controle de Estado do Alvo ===
+    targetStateControl: {
+      available: boolean;
+      options: string[];                     // Opções consolidadas
+      abilities: Array<{
+        id: string;
+        name: string;
+        options: string[];
+        resistanceTest: string;
+        dtAttribute: AttributeType;
+        source: string;
+      }>;
+    };
+    
+    // === Bônus Condicionais por Estado ===
+    conditionalBonuses: {
+      whenWounded: {
+        active: boolean;                     // Se a condição está ativa
+        defenseBonus: number;
+        damageReduction: number;
+        sources: string[];
+      };
+      whenDying: {
+        canAct: boolean;
+        notHelpless: boolean;
+        sources: string[];
+      };
+    };
+  };
+  
+  // =====================================================
   // EQUIPAMENTO E INVENTÁRIO
   // =====================================================
   inventory: {
@@ -887,6 +1041,50 @@ export function consolidateEffects(
       isUnconscious: false,
     },
     toggleableEffects: [],
+    // === COMBATE AVANÇADO ===
+    combatAdvanced: {
+      specialAttackMultiplier: {
+        value: 1,
+        weaponRestriction: 'any',
+        sources: [],
+      },
+      extraActions: [],
+      maximumDamageOnCrit: {
+        enabled: false,
+        weaponTypes: [],
+        sources: [],
+      },
+      blockVigorBonus: {
+        enabled: false,
+        sources: [],
+      },
+      occultismAsAttack: {
+        enabled: false,
+        sources: [],
+      },
+      taunt: {
+        available: false,
+        abilities: [],
+      },
+      targetStateControl: {
+        available: false,
+        options: [],
+        abilities: [],
+      },
+      conditionalBonuses: {
+        whenWounded: {
+          active: false,
+          defenseBonus: 0,
+          damageReduction: 0,
+          sources: [],
+        },
+        whenDying: {
+          canAct: false,
+          notHelpless: false,
+          sources: [],
+        },
+      },
+    },
     // === EQUIPAMENTO E INVENTÁRIO ===
     inventory: {
       categoryReductions: [],
@@ -1195,6 +1393,133 @@ export function consolidateEffects(
     if (m.cannotMove) result.flags.cannotMove = true;
     if (m.isHelpless) result.flags.isHelpless = true;
     if (m.isUnconscious) result.flags.isUnconscious = true;
+    
+    // =====================================================
+    // COMBATE AVANÇADO (Fase 1 SUE)
+    // =====================================================
+    
+    // === Multiplicador de Ataque Especial (Guerreiro - Potência Máxima) ===
+    if (m.specialAttackMultiplier) {
+      // Maior multiplicador ganha
+      if (m.specialAttackMultiplier.value > result.combatAdvanced.specialAttackMultiplier.value) {
+        result.combatAdvanced.specialAttackMultiplier.value = m.specialAttackMultiplier.value;
+        result.combatAdvanced.specialAttackMultiplier.weaponRestriction = 
+          m.specialAttackMultiplier.weaponRestriction ?? 'any';
+      }
+      result.combatAdvanced.specialAttackMultiplier.sources.push(source);
+    }
+    
+    // === Ações Extras de Trilha ===
+    if (m.extraActionsTrack) {
+      result.combatAdvanced.extraActions.push({
+        id: effect.id,
+        name: effect.name,
+        type: m.extraActionsTrack.type,
+        trigger: m.extraActionsTrack.trigger,
+        peCost: m.extraActionsTrack.peCost ?? 0,
+        actionType: m.extraActionsTrack.actionType ?? 'free',
+        weaponRestriction: m.extraActionsTrack.weaponRestriction,
+        maneuverOptions: m.extraActionsTrack.maneuverOptions,
+        replaceDamage: m.extraActionsTrack.replaceDamage,
+        perRound: m.extraActionsTrack.perRound,
+        perScene: m.extraActionsTrack.perScene,
+        source,
+      });
+    }
+    
+    // === Dano Máximo em Crítico (Atirador de Elite) ===
+    if (m.maximumDamageOnCritical) {
+      result.combatAdvanced.maximumDamageOnCrit.enabled = true;
+      if (!result.combatAdvanced.maximumDamageOnCrit.weaponTypes.includes(m.maximumDamageOnCritical.weaponType)) {
+        result.combatAdvanced.maximumDamageOnCrit.weaponTypes.push(m.maximumDamageOnCritical.weaponType);
+      }
+      result.combatAdvanced.maximumDamageOnCrit.sources.push(source);
+    }
+    
+    // === Bônus de Bloqueio com Vigor ===
+    if (m.blockVigorBonus) {
+      result.combatAdvanced.blockVigorBonus.enabled = true;
+      result.combatAdvanced.blockVigorBonus.sources.push(source);
+    }
+    
+    // === Ocultismo como Ataque ===
+    if (m.occultismAsAttack) {
+      result.combatAdvanced.occultismAsAttack.enabled = true;
+      result.combatAdvanced.occultismAsAttack.sources.push(source);
+    }
+    
+    // === Provocar (Taunt) ===
+    if (m.taunt) {
+      result.combatAdvanced.taunt.available = true;
+      result.combatAdvanced.taunt.abilities.push({
+        id: effect.id,
+        name: effect.name,
+        range: m.taunt.range,
+        resistanceTest: m.taunt.resistanceTest,
+        dtAttribute: m.taunt.dtAttribute,
+        peCost: m.taunt.peCost,
+        actionType: m.taunt.actionType,
+        source,
+      });
+    }
+    
+    // === Controle de Estado do Alvo ===
+    if (m.targetStateControl) {
+      result.combatAdvanced.targetStateControl.available = true;
+      
+      // Adiciona opções à lista consolidada
+      for (const opt of m.targetStateControl.options) {
+        if (!result.combatAdvanced.targetStateControl.options.includes(opt)) {
+          result.combatAdvanced.targetStateControl.options.push(opt);
+        }
+      }
+      
+      result.combatAdvanced.targetStateControl.abilities.push({
+        id: effect.id,
+        name: effect.name,
+        options: m.targetStateControl.options,
+        resistanceTest: m.targetStateControl.resistanceTest,
+        dtAttribute: m.targetStateControl.dtAttribute,
+        source,
+      });
+    }
+    
+    // === Bônus quando Machucado ===
+    if (m.whenWounded) {
+      const hpPercent = (context.hpCurrent / context.hpMax) * 100;
+      const isWounded = hpPercent < m.whenWounded.hpThreshold;
+      
+      if (isWounded) {
+        result.combatAdvanced.conditionalBonuses.whenWounded.active = true;
+        result.combatAdvanced.conditionalBonuses.whenWounded.defenseBonus += m.whenWounded.defenseBonus ?? 0;
+        result.combatAdvanced.conditionalBonuses.whenWounded.damageReduction += m.whenWounded.damageReduction ?? 0;
+        
+        // Aplica bônus de defesa automaticamente
+        if (m.whenWounded.defenseBonus) {
+          result.defense.general += m.whenWounded.defenseBonus;
+          result.defense.breakdown.push({ source, value: m.whenWounded.defenseBonus, conditional: 'quando machucado' });
+        }
+        
+        // Aplica RD automaticamente
+        if (m.whenWounded.damageReduction) {
+          result.damageReduction.physical += m.whenWounded.damageReduction;
+          result.damageReduction.breakdown.push({ source, value: m.whenWounded.damageReduction });
+        }
+      }
+      
+      result.combatAdvanced.conditionalBonuses.whenWounded.sources.push(source);
+    }
+    
+    // === Bônus quando Morrendo ===
+    if (m.whenDying) {
+      if (m.whenDying.canAct) {
+        result.combatAdvanced.conditionalBonuses.whenDying.canAct = true;
+      }
+      if (m.whenDying.notHelpless) {
+        result.combatAdvanced.conditionalBonuses.whenDying.notHelpless = true;
+      }
+      result.combatAdvanced.conditionalBonuses.whenDying.sources.push(source);
+    }
     
     // =====================================================
     // EQUIPAMENTO E INVENTÁRIO
