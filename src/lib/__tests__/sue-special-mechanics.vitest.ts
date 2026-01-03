@@ -3185,3 +3185,436 @@ describe('combatAdvanced - Integração com outras mecânicas', () => {
     expect(result.combatAdvanced.conditionalBonuses.whenDying.canAct).toBe(true);
   });
 });
+
+// =====================================================
+// TESTES: FASE 3 - SUPORTE (Médico de Campo, Resgate)
+// =====================================================
+
+describe('SUE - Fase 3: Suporte', () => {
+  it('deve consolidar freeMovementTo corretamente', () => {
+    const effects: UnifiedEffect[] = [
+      {
+        id: 'resgate',
+        name: 'Resgate',
+        source: 'track',
+        sourceId: 'medico-campo',
+        sourceName: 'Trilha: Médico de Campo',
+        mechanics: {
+          freeMovementTo: {
+            condition: 'ally-at-0-hp',
+            perRound: true,
+          },
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+    ];
+    
+    const result = consolidateEffects(effects, createTestContext());
+    
+    expect(result.support.available).toBe(true);
+    expect(result.support.freeMovement.available).toBe(true);
+    expect(result.support.hasFreeMovementToAlly).toBe(true);
+    expect(result.support.freeMovement.abilities).toHaveLength(1);
+    expect(result.support.freeMovement.abilities[0].condition).toBe('ally-at-0-hp');
+  });
+  
+  it('deve consolidar onHeal corretamente', () => {
+    const effects: UnifiedEffect[] = [
+      {
+        id: 'resgate-bonus',
+        name: 'Resgate',
+        source: 'track',
+        sourceId: 'medico-campo',
+        sourceName: 'Trilha: Médico de Campo',
+        mechanics: {
+          onHeal: {
+            targetDefenseBonus: 5,
+            duration: 'next-attack',
+          },
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+    ];
+    
+    const result = consolidateEffects(effects, createTestContext());
+    
+    expect(result.support.available).toBe(true);
+    expect(result.support.onHealEffects).toHaveLength(1);
+    expect(result.support.onHealEffects[0].targetDefenseBonus).toBe(5);
+    expect(result.support.maxDefenseBonusOnHeal).toBe(5);
+  });
+  
+  it('deve consolidar removeCondition corretamente', () => {
+    const effects: UnifiedEffect[] = [
+      {
+        id: 'equipe-trauma',
+        name: 'Equipe de Trauma',
+        source: 'track',
+        sourceId: 'medico-campo',
+        sourceName: 'Trilha: Médico de Campo',
+        mechanics: {
+          removeCondition: {
+            range: 'touch',
+            excludedConditions: ['morto', 'morrendo'],
+            peCost: 2,
+            actionType: 'standard',
+          },
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+    ];
+    
+    const result = consolidateEffects(effects, createTestContext());
+    
+    expect(result.support.available).toBe(true);
+    expect(result.support.canRemoveConditions).toBe(true);
+    expect(result.support.removeConditionAbilities).toHaveLength(1);
+    expect(result.support.removeConditionAbilities[0].excludedConditions).toContain('morto');
+  });
+  
+  it('deve consolidar resurrect corretamente', () => {
+    const effects: UnifiedEffect[] = [
+      {
+        id: 'reanimacao',
+        name: 'Reanimação',
+        source: 'track',
+        sourceId: 'medico-campo',
+        sourceName: 'Trilha: Médico de Campo',
+        mechanics: {
+          resurrect: {
+            excludedDeathTypes: ['paranormal'],
+            sameSceneOnly: true,
+            usesPerScene: 1,
+            peCost: 10,
+            actionType: 'complete',
+            hpRestored: 'roll',
+          },
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+    ];
+    
+    const result = consolidateEffects(effects, createTestContext());
+    
+    expect(result.support.available).toBe(true);
+    expect(result.support.canResurrect).toBe(true);
+    expect(result.support.resurrectAbilities).toHaveLength(1);
+    expect(result.support.resurrectAbilities[0].peCost).toBe(10);
+  });
+});
+
+// =====================================================
+// TESTES: FASE 4 - INFILTRADOR AVANÇADO
+// =====================================================
+
+describe('SUE - Fase 4: Infiltrador Avançado', () => {
+  it('deve consolidar stealthMovementPenalty corretamente', () => {
+    const effects: UnifiedEffect[] = [
+      {
+        id: 'sombra-fugaz',
+        name: 'Sombra Fugaz',
+        source: 'track',
+        sourceId: 'infiltrador',
+        sourceName: 'Trilha: Infiltrador',
+        mechanics: {
+          stealthMovementPenalty: {
+            removes: true,
+          },
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+    ];
+    
+    const result = consolidateEffects(effects, createTestContext());
+    
+    expect(result.sneakAttack.stealthBonuses.removesMovementPenalty).toBe(true);
+    expect(result.sneakAttack.stealthBonuses.sources).toContain('Trilha: Infiltrador');
+  });
+  
+  it('deve consolidar sneakAttackMultiplier corretamente', () => {
+    const effects: UnifiedEffect[] = [
+      {
+        id: 'assassinar',
+        name: 'Assassinar',
+        source: 'track',
+        sourceId: 'infiltrador',
+        sourceName: 'Trilha: Infiltrador',
+        mechanics: {
+          sneakAttack: {
+            baseDice: 3,
+            dieType: 'd6',
+            conditions: ['alvo desprevenido'],
+            peCost: 1,
+            usesPerRound: 1,
+          },
+          sneakAttackMultiplier: 2,
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+    ];
+    
+    const result = consolidateEffects(effects, createTestContext());
+    
+    expect(result.sneakAttack.available).toBe(true);
+    expect(result.sneakAttack.multiplier).toBe(2);
+    expect(result.sneakAttack.totalDice).toBe(6); // 3 dados x2
+  });
+  
+  it('deve consolidar ignoreStealthPenalty corretamente', () => {
+    const effects: UnifiedEffect[] = [
+      {
+        id: 'gatuno',
+        name: 'Gatuno',
+        source: 'track',
+        sourceId: 'infiltrador',
+        sourceName: 'Trilha: Infiltrador',
+        mechanics: {
+          ignoreStealthPenalty: {
+            armorPenalty: true,
+            movementPenalty: false,
+            allPenalties: false,
+          },
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+    ];
+    
+    const result = consolidateEffects(effects, createTestContext());
+    
+    expect(result.sneakAttack.stealthBonuses.ignoresArmorPenalty).toBe(true);
+    expect(result.sneakAttack.stealthBonuses.ignoresAllPenalties).toBe(false);
+  });
+  
+  it('deve consolidar ignoreStealthPenalty.allPenalties corretamente', () => {
+    const effects: UnifiedEffect[] = [
+      {
+        id: 'mestre-sombras',
+        name: 'Mestre das Sombras',
+        source: 'track',
+        sourceId: 'infiltrador',
+        sourceName: 'Trilha: Infiltrador',
+        mechanics: {
+          ignoreStealthPenalty: {
+            allPenalties: true,
+            movementPenalty: false,
+            armorPenalty: false,
+          },
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+    ];
+    
+    const result = consolidateEffects(effects, createTestContext());
+    
+    expect(result.sneakAttack.stealthBonuses.ignoresAllPenalties).toBe(true);
+    expect(result.sneakAttack.stealthBonuses.removesMovementPenalty).toBe(true);
+    expect(result.sneakAttack.stealthBonuses.ignoresArmorPenalty).toBe(true);
+  });
+});
+
+// =====================================================
+// TESTES: FASE 5 - OCULTISTA AVANÇADO
+// =====================================================
+
+describe('SUE - Fase 5: Ocultista Avançado', () => {
+  it('deve consolidar bonusRituals corretamente', () => {
+    const effects: UnifiedEffect[] = [
+      {
+        id: 'saber-ampliado',
+        name: 'Saber Ampliado',
+        source: 'track',
+        sourceId: 'graduado',
+        sourceName: 'Trilha: Graduado',
+        mechanics: {
+          bonusRituals: {
+            perCircle: 1,
+            ignoresLimit: true,
+          },
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+    ];
+    
+    const result = consolidateEffects(effects, createTestContext());
+    
+    expect(result.occultist.available).toBe(true);
+    expect(result.occultist.bonusRituals.perCircle).toBe(1);
+    expect(result.occultist.bonusRituals.ignoresLimit).toBe(true);
+  });
+  
+  it('deve consolidar grimoire corretamente', () => {
+    const effects: UnifiedEffect[] = [
+      {
+        id: 'grimorio',
+        name: 'Grimório',
+        source: 'track',
+        sourceId: 'graduado',
+        sourceName: 'Trilha: Graduado',
+        mechanics: {
+          grimoire: {
+            maxRituals: 'intellect',
+            allowedCircles: [1, 2],
+            bonusPerNewCircle: 1,
+            castingAction: 'complete',
+            requiresWielding: true,
+            inventorySlots: 1,
+          },
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+    ];
+    
+    const result = consolidateEffects(effects, createTestContext());
+    
+    expect(result.occultist.available).toBe(true);
+    expect(result.occultist.grimoire.available).toBe(true);
+    expect(result.occultist.grimoire.maxRituals).toBe('intellect');
+    expect(result.occultist.grimoire.allowedCircles).toContain(1);
+    expect(result.occultist.grimoire.allowedCircles).toContain(2);
+  });
+  
+  it('deve consolidar ritualPowerBonus corretamente', () => {
+    const effects: UnifiedEffect[] = [
+      {
+        id: 'conduíte-aprimorado',
+        name: 'Conduíte Aprimorado',
+        source: 'track',
+        sourceId: 'conduíte',
+        sourceName: 'Trilha: Conduíte',
+        mechanics: {
+          ritualPowerBonus: {
+            addPELimit: true,
+            affectsDT: true,
+            affectsDamage: true,
+          },
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+    ];
+    
+    const result = consolidateEffects(effects, createTestContext());
+    
+    expect(result.occultist.available).toBe(true);
+    expect(result.occultist.ritualPowerBonus.addPELimit).toBe(true);
+    expect(result.occultist.ritualPowerBonus.affectsDT).toBe(true);
+    expect(result.occultist.ritualPowerBonus.affectsDamage).toBe(true);
+  });
+  
+  it('deve consolidar addAttributeToPELimit corretamente', () => {
+    const effects: UnifiedEffect[] = [
+      {
+        id: 'presenca-poderosa',
+        name: 'Presença Poderosa',
+        source: 'track',
+        sourceId: 'intuitivo',
+        sourceName: 'Trilha: Intuitivo',
+        mechanics: {
+          addAttributeToPELimit: 'presence',
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+    ];
+    
+    const result = consolidateEffects(effects, createTestContext());
+    
+    expect(result.occultist.available).toBe(true);
+    expect(result.occultist.additionalPELimitAttributes).toContain('presence');
+  });
+  
+  it('deve consolidar hpRecoveryRestriction corretamente', () => {
+    const effects: UnifiedEffect[] = [
+      {
+        id: 'flagelador-restricao',
+        name: 'Flagelação',
+        source: 'track',
+        sourceId: 'flagelador',
+        sourceName: 'Trilha: Flagelador',
+        mechanics: {
+          hpRecoveryRestriction: 'magic-only',
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+    ];
+    
+    const result = consolidateEffects(effects, createTestContext());
+    
+    expect(result.occultist.available).toBe(true);
+    expect(result.occultist.hpRecoveryRestriction).toBe('magic-only');
+  });
+  
+  it('deve consolidar paranormalDamageTest corretamente', () => {
+    const effects: UnifiedEffect[] = [
+      {
+        id: 'resistencia-paranormal',
+        name: 'Resistência Paranormal',
+        source: 'track',
+        sourceId: 'intuitivo',
+        sourceName: 'Trilha: Intuitivo',
+        mechanics: {
+          paranormalDamageTest: {
+            testSkill: 'vontade',
+            onSuccess: 'half',
+            onFailure: 'full',
+            dtType: 'ritual-dt',
+          },
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+    ];
+    
+    const result = consolidateEffects(effects, createTestContext());
+    
+    expect(result.occultist.available).toBe(true);
+    expect(result.occultist.paranormalDamageTest.available).toBe(true);
+    expect(result.occultist.paranormalDamageTest.abilities).toHaveLength(1);
+    expect(result.occultist.paranormalDamageTest.abilities[0].onSuccess).toBe('half');
+  });
+  
+  it('deve manter a restrição mais severa de hpRecoveryRestriction', () => {
+    const effects: UnifiedEffect[] = [
+      {
+        id: 'restricao-1',
+        name: 'Restrição 1',
+        source: 'track',
+        sourceId: 'flagelador',
+        sourceName: 'Trilha: Flagelador',
+        mechanics: {
+          hpRecoveryRestriction: 'rest-only',
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+      {
+        id: 'restricao-2',
+        name: 'Restrição 2',
+        source: 'track',
+        sourceId: 'flagelador-2',
+        sourceName: 'Trilha: Flagelador Avançado',
+        mechanics: {
+          hpRecoveryRestriction: 'magic-only',
+        },
+        isActive: true,
+        isToggleable: false,
+      },
+    ];
+    
+    const result = consolidateEffects(effects, createTestContext());
+    
+    // magic-only é mais severo que rest-only
+    expect(result.occultist.hpRecoveryRestriction).toBe('magic-only');
+  });
+});

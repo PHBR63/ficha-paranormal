@@ -488,9 +488,16 @@ export interface PowerMechanics {
   };
   
   // === FURTIVIDADE ===
-  stealthMovementPenalty?: boolean;
+  stealthMovementPenalty?: boolean | {
+    removes?: boolean;
+    reducesBy?: number;
+  };
   sneakAttackMultiplier?: number;
-  ignoreStealthPenalty?: boolean;
+  ignoreStealthPenalty?: boolean | {
+    movementPenalty?: boolean;
+    armorPenalty?: boolean;
+    allPenalties?: boolean;
+  };
   
   // === CAPACIDADE DE CARGA ===
   carryCapacity?: {

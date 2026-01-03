@@ -1032,6 +1032,13 @@ function convertTrackAbilityToMechanics(
   
   // === RITUAIS BÔNUS (Graduado - Saber Ampliado) ===
   if (m.bonusRituals) {
+    // Mapeia diretamente para EffectMechanics.bonusRituals
+    mechanics.bonusRituals = {
+      perCircle: m.bonusRituals.perCircle,
+      ignoresLimit: m.bonusRituals.ignoresLimit ?? true,
+      circleRestriction: m.bonusRituals.circleRestriction,
+    };
+    
     if (!mechanics.specialEffects) mechanics.specialEffects = [];
     mechanics.specialEffects.push(
       `+${m.bonusRituals.perCircle} ritual extra por círculo (não conta no limite)`
@@ -1040,21 +1047,237 @@ function convertTrackAbilityToMechanics(
   
   // === GRIMÓRIO (Graduado) ===
   if (m.grimoire) {
+    // Mapeia diretamente para EffectMechanics.grimoire
+    mechanics.grimoire = {
+      maxRituals: m.grimoire.maxRituals === 'intellect' ? 'intellect' : m.grimoire.maxRituals,
+      allowedCircles: m.grimoire.allowedCircles,
+      bonusPerNewCircle: m.grimoire.bonusPerNewCircle ?? 0,
+      castingAction: (m.grimoire.castingAction as 'standard' | 'complete' | 'extended') || 'complete',
+      requiresWielding: m.grimoire.requiresWielding ?? true,
+      inventorySlots: m.grimoire.inventorySlots ?? 1,
+    };
+    
     if (!mechanics.specialEffects) mechanics.specialEffects = [];
-    const g = m.grimoire;
-    const maxRituals = g.maxRituals === 'intellect' ? 'Intelecto' : g.maxRituals;
+    const maxRituals = m.grimoire.maxRituals === 'intellect' ? 'Intelecto' : m.grimoire.maxRituals;
     mechanics.specialEffects.push(
-      `Grimório: até ${maxRituals} rituais de ${g.allowedCircles.join('º ou ')}º círculo`
+      `Grimório: até ${maxRituals} rituais de ${m.grimoire.allowedCircles.join('º ou ')}º círculo`
     );
   }
   
   // === LIMITE DE PE AMPLIADO (Intuitivo - Presença Poderosa) ===
   if (m.addAttributeToPELimit) {
+    // Mapeia diretamente para EffectMechanics.addAttributeToPELimit
+    mechanics.addAttributeToPELimit = m.addAttributeToPELimit as AttributeType;
+    
     if (!mechanics.specialEffects) mechanics.specialEffects = [];
     const attrName = m.addAttributeToPELimit === 'presence' ? 'Presença' : m.addAttributeToPELimit;
     mechanics.specialEffects.push(
       `Soma limite de PE por turno à ${attrName} para calcular efeitos de rituais`
     );
+  }
+  
+  // === BÔNUS DE PODER DE RITUAL (Conduíte Aprimorado) ===
+  if (m.ritualPowerBonus) {
+    mechanics.ritualPowerBonus = {
+      addPELimit: m.ritualPowerBonus.addPELimit ?? false,
+      affectsDT: m.ritualPowerBonus.affectsDT ?? false,
+      affectsDamage: m.ritualPowerBonus.affectsDamage ?? false,
+    };
+    
+    if (!mechanics.specialEffects) mechanics.specialEffects = [];
+    const effects = [];
+    if (m.ritualPowerBonus.affectsDT) effects.push('DT');
+    if (m.ritualPowerBonus.affectsDamage) effects.push('dano/cura');
+    if (effects.length > 0) {
+      mechanics.specialEffects.push(
+        `Poder de ritual afeta ${effects.join(' e ')}`
+      );
+    }
+  }
+  
+  // === RESTRIÇÃO DE RECUPERAÇÃO DE PV (Flagelador) ===
+  if (m.hpRecoveryRestriction) {
+    mechanics.hpRecoveryRestriction = m.hpRecoveryRestriction as 'none' | 'rest-only' | 'magic-only';
+    
+    if (!mechanics.specialEffects) mechanics.specialEffects = [];
+    if (m.hpRecoveryRestriction === 'rest-only') {
+      mechanics.specialEffects.push('Só recupera PV com descanso (não cura não-mágica)');
+    } else if (m.hpRecoveryRestriction === 'magic-only') {
+      mechanics.specialEffects.push('Só recupera PV com rituais ou poderes paranormais');
+    }
+  }
+  
+  // === RD PARANORMAL COM TESTE (Resistência Paranormal) ===
+  if (m.paranormalDamageTest) {
+    mechanics.paranormalDamageTest = {
+      testSkill: m.paranormalDamageTest.testSkill || 'vontade',
+      onSuccess: m.paranormalDamageTest.onSuccess as 'negate' | 'half',
+      onFailure: m.paranormalDamageTest.onFailure as 'half' | 'full',
+      dtType: m.paranormalDamageTest.dtType as 'fixed' | 'ritual-dt' | 'caster-presence',
+      fixedDT: m.paranormalDamageTest.fixedDT,
+    };
+    
+    if (!mechanics.specialEffects) mechanics.specialEffects = [];
+    const successEffect = m.paranormalDamageTest.onSuccess === 'negate' ? 'nega' : 'reduz pela metade';
+    mechanics.specialEffects.push(
+      `Teste de ${m.paranormalDamageTest.testSkill} vs dano paranormal: ${successEffect} em sucesso`
+    );
+  }
+  
+  // =====================================================
+  // FASE 3: SUPORTE (Médico de Campo, Resgate)
+  // =====================================================
+  
+  // === MOVIMENTO LIVRE PARA ALIADO (Resgate) ===
+  if (m.freeMovementTo) {
+    mechanics.freeMovementTo = {
+      condition: m.freeMovementTo.condition as 'ally-at-0-hp' | 'ally-wounded' | 'any-ally',
+      perRound: m.freeMovementTo.perRound ?? true,
+    };
+    
+    if (!mechanics.specialEffects) mechanics.specialEffects = [];
+    const condDesc = m.freeMovementTo.condition === 'ally-at-0-hp' 
+      ? 'aliado com 0 PV' 
+      : m.freeMovementTo.condition === 'ally-wounded' 
+        ? 'aliado machucado' 
+        : 'qualquer aliado';
+    mechanics.specialEffects.push(
+      `Movimento livre até ${condDesc} (1x por rodada)`
+    );
+  }
+  
+  // === EFEITOS AO CURAR (Médico de Campo - Resgate) ===
+  if (m.onHeal) {
+    mechanics.onHeal = {
+      targetDefenseBonus: m.onHeal.targetDefenseBonus,
+      duration: m.onHeal.duration as 'next-attack' | 'end-of-round' | 'turns',
+      turns: m.onHeal.turns,
+    };
+    
+    if (!mechanics.specialEffects) mechanics.specialEffects = [];
+    if (m.onHeal.targetDefenseBonus) {
+      const durationDesc = m.onHeal.duration === 'next-attack' 
+        ? 'até o próximo ataque' 
+        : m.onHeal.duration === 'end-of-round' 
+          ? 'até o fim da rodada' 
+          : `por ${m.onHeal.turns} rodadas`;
+      mechanics.specialEffects.push(
+        `Ao curar: +${m.onHeal.targetDefenseBonus} Defesa para o alvo (${durationDesc})`
+      );
+    }
+  }
+  
+  // === REMOÇÃO DE CONDIÇÃO (Equipe de Trauma) ===
+  if (m.removeCondition) {
+    mechanics.removeCondition = {
+      range: m.removeCondition.range as 'self' | 'touch' | 'short',
+      excludedConditions: m.removeCondition.excludedConditions || [],
+      peCost: m.removeCondition.peCost ?? 2,
+      actionType: m.removeCondition.actionType as 'standard' | 'complete',
+    };
+    
+    if (!mechanics.specialEffects) mechanics.specialEffects = [];
+    const rangeDesc = m.removeCondition.range === 'touch' ? 'toque' : m.removeCondition.range;
+    const excluded = m.removeCondition.excludedConditions?.join(', ') || 'nenhuma';
+    mechanics.specialEffects.push(
+      `Remove condição negativa (${rangeDesc}, exceto: ${excluded})`
+    );
+  }
+  
+  // === RESSURREIÇÃO (Reanimação) ===
+  if (m.resurrect) {
+    mechanics.resurrect = {
+      excludedDeathTypes: m.resurrect.excludedDeathTypes || [],
+      sameSceneOnly: m.resurrect.sameSceneOnly ?? true,
+      usesPerScene: m.resurrect.usesPerScene ?? 1,
+      peCost: m.resurrect.peCost ?? 10,
+      actionType: m.resurrect.actionType as 'complete' | 'full-round',
+      hpRestored: m.resurrect.hpRestored as 'roll' | 'half' | 'full',
+    };
+    
+    if (!mechanics.specialEffects) mechanics.specialEffects = [];
+    const hpDesc = m.resurrect.hpRestored === 'roll' 
+      ? 'rolagem de cura' 
+      : m.resurrect.hpRestored === 'half' 
+        ? 'metade dos PV' 
+        : 'PV total';
+    const excluded = m.resurrect.excludedDeathTypes?.join(', ') || 'nenhuma';
+    mechanics.specialEffects.push(
+      `Reanimar aliado (${m.resurrect.peCost} PE, ${hpDesc}, exceto: ${excluded})`
+    );
+  }
+  
+  // =====================================================
+  // FASE 4: INFILTRADOR AVANÇADO
+  // =====================================================
+  
+  // === REMOVE/REDUZ PENALIDADE DE FURTIVIDADE AO MOVER ===
+  if (m.stealthMovementPenalty) {
+    // Lida com tipo union: boolean | { removes?: boolean; reducesBy?: number }
+    if (typeof m.stealthMovementPenalty === 'boolean') {
+      // Se é boolean true, significa que remove a penalidade
+      mechanics.stealthMovementPenalty = {
+        removes: true,
+      };
+      
+      if (!mechanics.specialEffects) mechanics.specialEffects = [];
+      mechanics.specialEffects.push('Ignora penalidade de furtividade ao mover');
+    } else {
+      // É um objeto com propriedades detalhadas
+      mechanics.stealthMovementPenalty = {
+        removes: m.stealthMovementPenalty.removes ?? false,
+        reducesBy: m.stealthMovementPenalty.reducesBy,
+      };
+      
+      if (!mechanics.specialEffects) mechanics.specialEffects = [];
+      if (m.stealthMovementPenalty.removes) {
+        mechanics.specialEffects.push('Ignora penalidade de furtividade ao mover');
+      } else if (m.stealthMovementPenalty.reducesBy) {
+        mechanics.specialEffects.push(
+          `Reduz penalidade de furtividade ao mover em ${m.stealthMovementPenalty.reducesBy}`
+        );
+      }
+    }
+  }
+  
+  // === IGNORA PENALIDADES DE FURTIVIDADE ===
+  if (m.ignoreStealthPenalty) {
+    // Lida com tipo union: boolean | { movementPenalty?: boolean; armorPenalty?: boolean; allPenalties?: boolean }
+    if (typeof m.ignoreStealthPenalty === 'boolean') {
+      // Se é boolean true, significa que ignora todas as penalidades
+      mechanics.ignoreStealthPenalty = {
+        movementPenalty: true,
+        armorPenalty: true,
+        allPenalties: true,
+      };
+      
+      if (!mechanics.specialEffects) mechanics.specialEffects = [];
+      mechanics.specialEffects.push('Ignora todas as penalidades de furtividade');
+    } else {
+      // É um objeto com propriedades detalhadas
+      mechanics.ignoreStealthPenalty = {
+        movementPenalty: m.ignoreStealthPenalty.movementPenalty ?? false,
+        armorPenalty: m.ignoreStealthPenalty.armorPenalty ?? false,
+        allPenalties: m.ignoreStealthPenalty.allPenalties ?? false,
+      };
+      
+      if (!mechanics.specialEffects) mechanics.specialEffects = [];
+      if (m.ignoreStealthPenalty.allPenalties) {
+        mechanics.specialEffects.push('Ignora todas as penalidades de furtividade');
+      } else {
+        const ignored = [];
+        if (m.ignoreStealthPenalty.movementPenalty) ignored.push('movimento');
+        if (m.ignoreStealthPenalty.armorPenalty) ignored.push('armadura');
+        if (ignored.length > 0) {
+          mechanics.specialEffects.push(`Ignora penalidade de furtividade: ${ignored.join(', ')}`);
+        }
+      }
+    }
+  }
+  
+  // === MULTIPLICADOR DE ATAQUE FURTIVO (já mapeado, mas agora também para EffectMechanics) ===
+  if (m.sneakAttackMultiplier && typeof m.sneakAttackMultiplier === 'number') {
+    mechanics.sneakAttackMultiplier = m.sneakAttackMultiplier;
   }
   
   // === INVENTÁRIO OTIMIZADO (Técnico) ===
