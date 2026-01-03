@@ -1,6 +1,6 @@
 # Arquitetura do Projeto - Ordem Paranormal RPG
 
-> **FASE 5 EM PROGRESSO** - Migrando trilhas para componentes responsivos unificados (5/15 concluídas - Combatente completo!).
+> **FASE 5 EM PROGRESSO** - Migrando trilhas para componentes responsivos unificados (15/15 concluídas - ✅ Combatente, ✅ Especialista, ✅ Ocultista).
 
 ## Visão Geral
 
