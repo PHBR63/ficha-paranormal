@@ -1,6 +1,6 @@
 # Arquitetura do Projeto - Ordem Paranormal RPG
 
-> **FASE 4 CONCLUÍDA** - Arquivos legados removidos. Todos os imports migrados para barrel exports.
+> **FASE 5 EM PROGRESSO** - Migrando trilhas para componentes responsivos unificados (1/15 concluídas).
 
 ## Visão Geral
 
@@ -367,7 +367,11 @@ O projeto é uma Progressive Web App com:
 3. [x] ~~Consolidar condições em pasta dedicada~~ ✅
 4. [x] ~~Criar componentes de trilha para Ocultista~~ ✅
 5. [x] ~~Remover arquivos legados em src/lib/~~ ✅ (FASE 4)
-6. [ ] Migrar trilhas para componentes responsivos unificados
+6. [~] Migrar trilhas para componentes responsivos unificados (1/15)
+   - [x] Aniquilador (Combatente) ✅
+   - [ ] Guerreiro, Comandante de Campo, Operações Especiais, Tropa de Choque (Combatente)
+   - [ ] Atirador de Elite, Infiltrador, Médico de Campo, Negociador, Técnico (Especialista)
+   - [ ] Conduíte, Flagelador, Graduado, Intuitivo, Lâmina Paranormal (Ocultista)
 7. [ ] Expandir testes de integração do SUE
 
 ---
