@@ -475,6 +475,23 @@ export interface EffectMechanics {
     dtType: 'fixed' | 'ritual-dt' | 'caster-presence';         // Tipo de DT
     fixedDT?: number;                                          // DT fixo (se dtType = 'fixed')
   };
+  
+  // =====================================================
+  // CONDIÇÕES COM PARÂMETROS DINÂMICOS
+  // =====================================================
+  
+  // === Dano ao Realizar Ação (Machucado) ===
+  damageOnAction?: number;                                       // Dano sofrido ao realizar ação
+  
+  // === Vulnerabilidade a Dano (Fragilizado) ===
+  damageVulnerability?: {
+    type: string;                                                // Tipo de dano (fogo, corte, etc)
+    multiplier: number;                                          // Multiplicador de dano (1.5 = +50%)
+  };
+  
+  // === Efeitos de Veneno (Envenenado) ===
+  poisonDamage?: string;                                         // Dado de dano do veneno (ex: "1d6")
+  poisonDT?: number;                                             // DT do teste de Fortitude
 }
 
 /**

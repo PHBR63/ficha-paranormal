@@ -7,7 +7,16 @@
 //
 
 import type { UnifiedEffect, EffectMechanics } from '../unified-effects-engine';
-import { CONDITIONS, CONTEXTUAL_DEFENSE_MODIFIERS, ATTACK_MODIFIERS, TEST_MODIFIERS, INITIATIVE_MODIFIERS } from '../conditions';
+import { CONDITIONS, CONTEXTUAL_DEFENSE_MODIFIERS, ATTACK_MODIFIERS, TEST_MODIFIERS, INITIATIVE_MODIFIERS, type ConditionParams } from '../conditions';
+
+/**
+ * Interface para condição ativa com parâmetros dinâmicos
+ * Permite passar informações específicas para condições como Machucado, Fragilizado, Envenenado
+ */
+export interface ActiveConditionWithParams {
+  id: string;
+  params?: ConditionParams;
+}
 
 /**
  * Mapeamento de condições para efeitos mecânicos
@@ -142,8 +151,9 @@ export const CONDITION_MECHANICS: Record<string, {
     mechanics: {
       allSkillsBonus: -2,
       attackBonus: -2,
-      specialEffects: ['–2 em todos os testes', 'Efeitos adicionais variam conforme veneno'],
+      specialEffects: ['–2 em todos os testes'],
     },
+    // Mecânicas dinâmicas adicionadas em getConditionEffects baseado em params.poisonDamage
   },
   
   esmorecido: {
@@ -171,8 +181,9 @@ export const CONDITION_MECHANICS: Record<string, {
   
   fragilizado: {
     mechanics: {
-      specialEffects: ['Vulnerável a um tipo de dano (+50% dano desse tipo)'],
+      // Mecânicas dinâmicas adicionadas em getConditionEffects baseado em params.damageType
     },
+    // Requer params.damageType para efeito completo
   },
   
   imobilizado: {
@@ -191,8 +202,9 @@ export const CONDITION_MECHANICS: Record<string, {
   
   machucado: {
     mechanics: {
-      specialEffects: ['Ao realizar ação: sofre dano igual ao máximo da arma que causou'],
+      // Mecânicas dinâmicas adicionadas em getConditionEffects baseado em params.weaponMaxDamage
     },
+    // Requer params.weaponMaxDamage para efeito completo
   },
   
   // === CONDIÇÕES MENTAIS ===
@@ -311,25 +323,29 @@ export const CONDITION_MECHANICS: Record<string, {
 
 /**
  * Converte condições ativas de um personagem para UnifiedEffect[]
+ * Suporta parâmetros dinâmicos para condições como Machucado, Fragilizado e Envenenado
  * 
- * @param activeConditions - Array de IDs de condições ativas
+ * @param activeConditions - Array de IDs ou objetos com parâmetros
  * @param attackContext - Contexto de ataque para efeitos condicionais
  * @returns Array de efeitos unificados
  */
 export function getConditionEffects(
-  activeConditions: string[],
+  activeConditions: (string | ActiveConditionWithParams)[],
   attackContext?: { type: 'melee' | 'ranged' }
 ): UnifiedEffect[] {
   const effects: UnifiedEffect[] = [];
   
-  for (const conditionId of activeConditions) {
+  for (const condition of activeConditions) {
+    // Normaliza para objeto com params
+    const conditionId = typeof condition === 'string' ? condition : condition.id;
+    const params = typeof condition === 'string' ? undefined : condition.params;
+    
     const conditionDef = CONDITIONS[conditionId];
     if (!conditionDef) continue;
     
     const mechanicsDef = CONDITION_MECHANICS[conditionId];
     if (!mechanicsDef) {
       // Condição existe mas não tem mecânicas mapeadas
-      // Cria efeito apenas com descrição
       effects.push({
         id: `condition-${conditionId}`,
         name: conditionDef.name,
@@ -347,7 +363,46 @@ export function getConditionEffects(
     }
     
     // Combina mecânicas base com contextuais
-    let mechanics = { ...mechanicsDef.mechanics };
+    let mechanics: EffectMechanics = { ...mechanicsDef.mechanics };
+    
+    // === PARÂMETROS DINÂMICOS ===
+    
+    // Machucado: dano igual ao máximo da arma
+    if (conditionId === 'machucado' && params?.weaponMaxDamage) {
+      const weaponRef = params.weaponName ? ` (${params.weaponName})` : '';
+      mechanics.specialEffects = [
+        `Ao realizar ação: sofre ${params.weaponMaxDamage} de dano${weaponRef}`,
+      ];
+      mechanics.damageOnAction = params.weaponMaxDamage;
+    } else if (conditionId === 'machucado') {
+      mechanics.specialEffects = ['Ao realizar ação: sofre dano igual ao máximo da arma (não configurado)'];
+    }
+    
+    // Fragilizado: vulnerável a tipo de dano específico
+    if (conditionId === 'fragilizado' && params?.damageType) {
+      mechanics.specialEffects = [
+        `Vulnerável a dano ${params.damageType} (+50% de dano)`,
+      ];
+      mechanics.damageVulnerability = {
+        type: params.damageType,
+        multiplier: 1.5,
+      };
+    } else if (conditionId === 'fragilizado') {
+      mechanics.specialEffects = ['Vulnerável a um tipo de dano (+50%) - tipo não especificado'];
+    }
+    
+    // Envenenado: efeitos do veneno
+    if (conditionId === 'envenenado' && params?.poisonDamage) {
+      const poisonRef = params.poisonName ? ` (${params.poisonName})` : '';
+      const dtRef = params.poisonDT ? ` DT ${params.poisonDT}` : '';
+      mechanics.specialEffects = [
+        '–2 em todos os testes',
+        `Dano de veneno: ${params.poisonDamage}${poisonRef}`,
+        ...(dtRef ? [`Fortitude${dtRef} para resistir`] : []),
+      ];
+      mechanics.poisonDamage = params.poisonDamage;
+      mechanics.poisonDT = params.poisonDT;
+    }
     
     // Aplica modificadores contextuais de defesa
     if (mechanicsDef.contextual && attackContext) {
