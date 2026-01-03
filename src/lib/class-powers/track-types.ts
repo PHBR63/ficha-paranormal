@@ -216,14 +216,21 @@ export interface TrackAbilityMechanics {
     weaponType: string;
   };
   
-  /** Remove penalidade de furtividade ao mover */
-  stealthMovementPenalty?: boolean;
+  /** Remove penalidade de furtividade ao mover (estrutura completa) */
+  stealthMovementPenalty?: boolean | {
+    removes?: boolean;
+    reducesBy?: number;
+  };
   
   /** Multiplicador de ataque furtivo (Assassinar) */
   sneakAttackMultiplier?: number;
   
-  /** Ignora penalidade de furtividade */
-  ignoreStealthPenalty?: boolean;
+  /** Ignora penalidade de furtividade (estrutura completa) */
+  ignoreStealthPenalty?: boolean | {
+    movementPenalty?: boolean;
+    armorPenalty?: boolean;
+    allPenalties?: boolean;
+  };
   
   /** Controle de estado do alvo */
   targetStateControl?: {
@@ -232,10 +239,12 @@ export interface TrackAbilityMechanics {
     dtAttribute: string;
   };
   
-  /** Remove condição (Médico de Campo) */
+  /** Remove condição (Médico de Campo) - estrutura completa */
   removeCondition?: {
     range: string;
     excludedConditions: string[];
+    peCost?: number;
+    actionType?: string;
   };
   
   /** Movimento livre para aliado (Resgate) */
@@ -244,16 +253,21 @@ export interface TrackAbilityMechanics {
     perRound: boolean;
   };
   
-  /** Bônus ao curar (Resgate) */
+  /** Bônus ao curar (Resgate) - estrutura completa */
   onHeal?: {
     targetDefenseBonus: number;
     duration: string;
+    turns?: number;
   };
   
-  /** Ressurreição (Reanimação) */
+  /** Ressurreição (Reanimação) - estrutura completa */
   resurrect?: {
     excludedDeathTypes: string[];
     sameSceneOnly: boolean;
+    usesPerScene?: number;
+    peCost?: number;
+    actionType?: string;
+    hpRestored?: string;
   };
   
   /** Efeito social (Negociador) */
@@ -326,10 +340,11 @@ export interface TrackAbilityMechanics {
   /** Restrição de recuperação de PV */
   hpRecoveryRestriction?: string;
   
-  /** Rituais bônus (Saber Ampliado) */
+  /** Rituais bônus (Saber Ampliado) - estrutura completa */
   bonusRituals?: {
     perCircle: number;
     ignoresLimit: boolean;
+    circleRestriction?: number[];
   };
   
   /** Grimório (Graduado) */
@@ -347,17 +362,27 @@ export interface TrackAbilityMechanics {
   /** Adiciona atributo ao limite de PE */
   addAttributeToPELimit?: Attribute;
   
-  /** Bônus de poder de ritual */
+  /** Bônus de poder de ritual - estrutura completa */
   ritualPowerBonus?: {
     addPELimit: boolean;
     affectsDT: boolean;
+    affectsDamage?: boolean;
   };
   
-  /** Redução de dano paranormal com teste */
+  /** Redução de dano paranormal com teste - estrutura completa */
   paranormalDamageReduction?: {
     testSkill: string;
     onSuccess: string;
     onFailure: string;
+  };
+  
+  /** RD Paranormal com Teste (estrutura completa para Fase 5) */
+  paranormalDamageTest?: {
+    testSkill: string;
+    onSuccess: string;
+    onFailure: string;
+    dtType: string;
+    fixedDT?: number;
   };
 }
 

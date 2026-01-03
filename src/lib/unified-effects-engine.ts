@@ -377,6 +377,104 @@ export interface EffectMechanics {
     variableCost?: boolean;        // Se true, custo é igual ao ritual alvo (Anular Ritual)
     actionType?: 'reaction';       // Tipo de ação necessária
   }>;
+  
+  // =====================================================
+  // FASE 3: SUPORTE (Médico de Campo, Resgate, etc.)
+  // =====================================================
+  
+  // === Movimento Livre para Aliado (Resgate) ===
+  freeMovementTo?: {
+    condition: 'ally-at-0-hp' | 'ally-wounded' | 'any-ally';  // Condição para movimento livre
+    perRound: boolean;                                         // Se é 1x por rodada
+  };
+  
+  // === Efeitos ao Curar (Médico de Campo) ===
+  onHeal?: {
+    targetDefenseBonus?: number;                               // Bônus de Defesa para o alvo
+    duration: 'next-attack' | 'end-of-round' | 'turns';        // Duração do bônus
+    turns?: number;                                             // Número de turnos (se duration = 'turns')
+  };
+  
+  // === Remoção de Condição (Equipe de Trauma) ===
+  removeCondition?: {
+    range: 'self' | 'touch' | 'short';                         // Alcance
+    excludedConditions: string[];                              // Condições que NÃO podem ser removidas
+    peCost: number;                                            // Custo em PE
+    actionType: 'standard' | 'complete';                       // Tipo de ação
+  };
+  
+  // === Ressurreição (Reanimação) ===
+  resurrect?: {
+    excludedDeathTypes: string[];                              // Tipos de morte excluídos (morte paranormal)
+    sameSceneOnly: boolean;                                    // Apenas na mesma cena
+    usesPerScene: number;                                      // Usos por cena
+    peCost: number;                                            // Custo em PE
+    actionType: 'complete' | 'full-round';                     // Tipo de ação
+    hpRestored: 'roll' | 'half' | 'full';                      // PV restaurados
+  };
+  
+  // =====================================================
+  // FASE 4: INFILTRADOR AVANÇADO
+  // =====================================================
+  
+  // === Remove Penalidade de Furtividade ao Mover (Sombra Fugaz) ===
+  stealthMovementPenalty?: {
+    removes: boolean;                                          // Remove completamente a penalidade
+    reducesBy?: number;                                        // Ou reduz por um valor
+  };
+  
+  // === Multiplicador de Ataque Furtivo (Assassinar) ===
+  sneakAttackMultiplier?: number;                              // Multiplicador dos dados (2 = dobra)
+  
+  // === Ignora Penalidades de Furtividade (Gatuno, Sombra Fugaz) ===
+  ignoreStealthPenalty?: {
+    movementPenalty: boolean;                                  // Penalidade de movimento
+    armorPenalty: boolean;                                     // Penalidade de armadura
+    allPenalties: boolean;                                     // Todas as penalidades
+  };
+  
+  // =====================================================
+  // FASE 5: OCULTISTA AVANÇADO
+  // =====================================================
+  
+  // === Rituais Bônus por Círculo (Saber Ampliado) ===
+  bonusRituals?: {
+    perCircle: number;                                         // Rituais extras por círculo
+    ignoresLimit: boolean;                                     // Ignora limite normal de rituais
+    circleRestriction?: number[];                              // Círculos específicos (vazio = todos)
+  };
+  
+  // === Grimório (Graduado) ===
+  grimoire?: {
+    maxRituals: number | 'intellect';                          // Máximo de rituais no grimório
+    allowedCircles: number[];                                  // Círculos permitidos
+    bonusPerNewCircle: number;                                 // Rituais extras ao desbloquear círculo
+    castingAction: 'standard' | 'complete' | 'extended';       // Tipo de ação para conjurar
+    requiresWielding: boolean;                                 // Precisa empunhar o grimório
+    inventorySlots: number;                                    // Espaços ocupados no inventário
+  };
+  
+  // === Bônus de Poder de Ritual (Conduíte Aprimorado) ===
+  ritualPowerBonus?: {
+    addPELimit: boolean;                                       // Adiciona limite de PE ao poder
+    affectsDT: boolean;                                        // Afeta DT do ritual
+    affectsDamage: boolean;                                    // Afeta dano do ritual
+  };
+  
+  // === Atributo Adicional ao Limite de PE (Expansão Paranormal) ===
+  addAttributeToPELimit?: AttributeType;                       // Atributo adicional para limite de PE
+  
+  // === Restrição de Recuperação de PV (Flagelador) ===
+  hpRecoveryRestriction?: 'none' | 'rest-only' | 'magic-only'; // Restrição de recuperação
+  
+  // === RD Paranormal com Teste (Resistência Paranormal) ===
+  paranormalDamageTest?: {
+    testSkill: string;                                         // Perícia do teste (Ocultismo, Vontade)
+    onSuccess: 'negate' | 'half';                              // Efeito em sucesso
+    onFailure: 'half' | 'full';                                // Efeito em falha
+    dtType: 'fixed' | 'ritual-dt' | 'caster-presence';         // Tipo de DT
+    fixedDT?: number;                                          // DT fixo (se dtType = 'fixed')
+  };
 }
 
 /**
@@ -713,6 +811,14 @@ export interface ComputedEffects {
       dieType: string;
       multiplier?: number;
     }>;
+    // === Fase 4: Bônus de Furtividade ===
+    stealthBonuses: {
+      removesMovementPenalty: boolean;       // Remove penalidade de movimento
+      reducesMovementPenaltyBy: number;      // Reduz penalidade de movimento
+      ignoresArmorPenalty: boolean;          // Ignora penalidade de armadura
+      ignoresAllPenalties: boolean;          // Ignora todas as penalidades
+      sources: string[];
+    };
   };
   
   // === Cura (Médico de Campo) ===
@@ -903,6 +1009,121 @@ export interface ComputedEffects {
       actionType: 'movement' | 'standard';
       source: string;
     }>;
+  };
+  
+  // =====================================================
+  // FASE 3: SUPORTE (Médico de Campo, Resgate)
+  // =====================================================
+  support: {
+    available: boolean;                                    // Se tem mecânicas de suporte
+    
+    // === Movimento Livre para Aliado (Resgate) ===
+    freeMovement: {
+      available: boolean;
+      abilities: Array<{
+        id: string;
+        name: string;
+        condition: 'ally-at-0-hp' | 'ally-wounded' | 'any-ally';
+        perRound: boolean;
+        source: string;
+      }>;
+    };
+    
+    // === Efeitos ao Curar ===
+    onHealEffects: Array<{
+      id: string;
+      name: string;
+      targetDefenseBonus: number;
+      duration: 'next-attack' | 'end-of-round' | 'turns';
+      turns?: number;
+      source: string;
+    }>;
+    
+    // === Remoção de Condição ===
+    removeConditionAbilities: Array<{
+      id: string;
+      name: string;
+      range: 'self' | 'touch' | 'short';
+      excludedConditions: string[];
+      peCost: number;
+      actionType: 'standard' | 'complete';
+      source: string;
+    }>;
+    
+    // === Ressurreição ===
+    resurrectAbilities: Array<{
+      id: string;
+      name: string;
+      excludedDeathTypes: string[];
+      sameSceneOnly: boolean;
+      usesPerScene: number;
+      peCost: number;
+      actionType: 'complete' | 'full-round';
+      hpRestored: 'roll' | 'half' | 'full';
+      source: string;
+    }>;
+    
+    // Consolidados
+    canRemoveConditions: boolean;
+    canResurrect: boolean;
+    hasFreeMovementToAlly: boolean;
+    maxDefenseBonusOnHeal: number;
+  };
+  
+  // =====================================================
+  // FASE 5: OCULTISTA AVANÇADO
+  // =====================================================
+  occultist: {
+    available: boolean;                                    // Se tem mecânicas de ocultista avançado
+    
+    // === Rituais Bônus (Saber Ampliado) ===
+    bonusRituals: {
+      perCircle: number;                                   // Rituais extras por círculo
+      ignoresLimit: boolean;                               // Ignora limite normal
+      circleRestrictions: number[];                        // Círculos específicos (vazio = todos)
+      sources: string[];
+    };
+    
+    // === Grimório (Graduado) ===
+    grimoire: {
+      available: boolean;
+      maxRituals: number | 'intellect';
+      allowedCircles: number[];
+      bonusPerNewCircle: number;
+      castingAction: 'standard' | 'complete' | 'extended';
+      requiresWielding: boolean;
+      inventorySlots: number;
+      source: string;
+    };
+    
+    // === Bônus de Poder de Ritual ===
+    ritualPowerBonus: {
+      addPELimit: boolean;
+      affectsDT: boolean;
+      affectsDamage: boolean;
+      sources: string[];
+    };
+    
+    // === Atributos Adicionais ao Limite de PE ===
+    additionalPELimitAttributes: AttributeType[];
+    
+    // === Restrição de Recuperação de PV ===
+    hpRecoveryRestriction: 'none' | 'rest-only' | 'magic-only';
+    
+    // === RD Paranormal com Teste ===
+    paranormalDamageTest: {
+      available: boolean;
+      abilities: Array<{
+        id: string;
+        name: string;
+        testSkill: string;
+        onSuccess: 'negate' | 'half';
+        onFailure: 'half' | 'full';
+        dtType: 'fixed' | 'ritual-dt' | 'caster-presence';
+        fixedDT?: number;
+        source: string;
+      }>;
+    };
   };
   
   // =====================================================
@@ -1103,6 +1324,13 @@ export function consolidateEffects(
       multiplier: 1,
       totalDice: 0,
       sources: [],
+      stealthBonuses: {
+        removesMovementPenalty: false,
+        reducesMovementPenaltyBy: 0,
+        ignoresArmorPenalty: false,
+        ignoresAllPenalties: false,
+        sources: [],
+      },
     },
     // === CURA ===
     healing: {
@@ -1170,6 +1398,53 @@ export function consolidateEffects(
       repairAbilities: [],
       createEquipmentAbilities: [],
       retrieveItemAbilities: [],
+    },
+    // === SUPORTE (Fase 3) ===
+    support: {
+      available: false,
+      freeMovement: {
+        available: false,
+        abilities: [],
+      },
+      onHealEffects: [],
+      removeConditionAbilities: [],
+      resurrectAbilities: [],
+      canRemoveConditions: false,
+      canResurrect: false,
+      hasFreeMovementToAlly: false,
+      maxDefenseBonusOnHeal: 0,
+    },
+    // === OCULTISTA AVANÇADO (Fase 5) ===
+    occultist: {
+      available: false,
+      bonusRituals: {
+        perCircle: 0,
+        ignoresLimit: false,
+        circleRestrictions: [],
+        sources: [],
+      },
+      grimoire: {
+        available: false,
+        maxRituals: 0,
+        allowedCircles: [],
+        bonusPerNewCircle: 0,
+        castingAction: 'complete',
+        requiresWielding: true,
+        inventorySlots: 1,
+        source: '',
+      },
+      ritualPowerBonus: {
+        addPELimit: false,
+        affectsDT: false,
+        affectsDamage: false,
+        sources: [],
+      },
+      additionalPELimitAttributes: [],
+      hpRecoveryRestriction: 'none',
+      paranormalDamageTest: {
+        available: false,
+        abilities: [],
+      },
     },
     // === RITUAIS ===
     rituals: {
@@ -2018,6 +2293,222 @@ export function consolidateEffects(
           effect: `${mod.name}: ${mod.effect} (+${mod.peCost} PE)` 
         });
       }
+    }
+    
+    // =====================================================
+    // FASE 3: SUPORTE - Mecânicas de Médico de Campo e Resgate
+    // =====================================================
+    
+    // === Movimento Livre para Aliado (Resgate) ===
+    if (m.freeMovementTo) {
+      result.support.available = true;
+      result.support.freeMovement.available = true;
+      result.support.hasFreeMovementToAlly = true;
+      
+      result.support.freeMovement.abilities.push({
+        id: effect.id,
+        name: effect.name,
+        condition: m.freeMovementTo.condition,
+        perRound: m.freeMovementTo.perRound,
+        source,
+      });
+    }
+    
+    // === Efeitos ao Curar ===
+    if (m.onHeal) {
+      result.support.available = true;
+      
+      const defenseBonus = m.onHeal.targetDefenseBonus ?? 0;
+      
+      result.support.onHealEffects.push({
+        id: effect.id,
+        name: effect.name,
+        targetDefenseBonus: defenseBonus,
+        duration: m.onHeal.duration,
+        turns: m.onHeal.turns,
+        source,
+      });
+      
+      // Atualiza máximo bônus de defesa ao curar
+      if (defenseBonus > result.support.maxDefenseBonusOnHeal) {
+        result.support.maxDefenseBonusOnHeal = defenseBonus;
+      }
+    }
+    
+    // === Remoção de Condição (Equipe de Trauma) ===
+    if (m.removeCondition) {
+      result.support.available = true;
+      result.support.canRemoveConditions = true;
+      
+      result.support.removeConditionAbilities.push({
+        id: effect.id,
+        name: effect.name,
+        range: m.removeCondition.range,
+        excludedConditions: m.removeCondition.excludedConditions,
+        peCost: m.removeCondition.peCost,
+        actionType: m.removeCondition.actionType,
+        source,
+      });
+    }
+    
+    // === Ressurreição (Reanimação) ===
+    if (m.resurrect) {
+      result.support.available = true;
+      result.support.canResurrect = true;
+      
+      result.support.resurrectAbilities.push({
+        id: effect.id,
+        name: effect.name,
+        excludedDeathTypes: m.resurrect.excludedDeathTypes,
+        sameSceneOnly: m.resurrect.sameSceneOnly,
+        usesPerScene: m.resurrect.usesPerScene,
+        peCost: m.resurrect.peCost,
+        actionType: m.resurrect.actionType,
+        hpRestored: m.resurrect.hpRestored,
+        source,
+      });
+    }
+    
+    // =====================================================
+    // FASE 4: INFILTRADOR AVANÇADO - Bônus de Furtividade
+    // =====================================================
+    
+    // === Remove/Reduz Penalidade de Furtividade ao Mover ===
+    if (m.stealthMovementPenalty) {
+      if (m.stealthMovementPenalty.removes) {
+        result.sneakAttack.stealthBonuses.removesMovementPenalty = true;
+      }
+      if (m.stealthMovementPenalty.reducesBy) {
+        result.sneakAttack.stealthBonuses.reducesMovementPenaltyBy = Math.max(
+          result.sneakAttack.stealthBonuses.reducesMovementPenaltyBy,
+          m.stealthMovementPenalty.reducesBy
+        );
+      }
+      result.sneakAttack.stealthBonuses.sources.push(source);
+    }
+    
+    // === Multiplicador de Ataque Furtivo (Assassinar) ===
+    if (m.sneakAttackMultiplier) {
+      // Maior multiplicador ganha
+      if (m.sneakAttackMultiplier > result.sneakAttack.multiplier) {
+        result.sneakAttack.multiplier = m.sneakAttackMultiplier;
+      }
+      // Recalcula total de dados
+      result.sneakAttack.totalDice = result.sneakAttack.baseDice * result.sneakAttack.multiplier;
+    }
+    
+    // === Ignora Penalidades de Furtividade ===
+    if (m.ignoreStealthPenalty) {
+      if (m.ignoreStealthPenalty.movementPenalty) {
+        result.sneakAttack.stealthBonuses.removesMovementPenalty = true;
+      }
+      if (m.ignoreStealthPenalty.armorPenalty) {
+        result.sneakAttack.stealthBonuses.ignoresArmorPenalty = true;
+      }
+      if (m.ignoreStealthPenalty.allPenalties) {
+        result.sneakAttack.stealthBonuses.ignoresAllPenalties = true;
+        result.sneakAttack.stealthBonuses.removesMovementPenalty = true;
+        result.sneakAttack.stealthBonuses.ignoresArmorPenalty = true;
+      }
+      result.sneakAttack.stealthBonuses.sources.push(source);
+    }
+    
+    // =====================================================
+    // FASE 5: OCULTISTA AVANÇADO - Mecânicas Paranormais
+    // =====================================================
+    
+    // === Rituais Bônus (Saber Ampliado) ===
+    if (m.bonusRituals) {
+      result.occultist.available = true;
+      
+      // Soma rituais por círculo
+      result.occultist.bonusRituals.perCircle += m.bonusRituals.perCircle;
+      
+      // Ignora limite se qualquer fonte ignorar
+      if (m.bonusRituals.ignoresLimit) {
+        result.occultist.bonusRituals.ignoresLimit = true;
+      }
+      
+      // Merge restrições de círculo
+      if (m.bonusRituals.circleRestriction) {
+        for (const circle of m.bonusRituals.circleRestriction) {
+          if (!result.occultist.bonusRituals.circleRestrictions.includes(circle)) {
+            result.occultist.bonusRituals.circleRestrictions.push(circle);
+          }
+        }
+      }
+      
+      result.occultist.bonusRituals.sources.push(source);
+    }
+    
+    // === Grimório (Graduado) ===
+    if (m.grimoire) {
+      result.occultist.available = true;
+      result.occultist.grimoire.available = true;
+      result.occultist.grimoire.maxRituals = m.grimoire.maxRituals;
+      result.occultist.grimoire.allowedCircles = m.grimoire.allowedCircles;
+      result.occultist.grimoire.bonusPerNewCircle = m.grimoire.bonusPerNewCircle;
+      result.occultist.grimoire.castingAction = m.grimoire.castingAction;
+      result.occultist.grimoire.requiresWielding = m.grimoire.requiresWielding;
+      result.occultist.grimoire.inventorySlots = m.grimoire.inventorySlots;
+      result.occultist.grimoire.source = source;
+    }
+    
+    // === Bônus de Poder de Ritual ===
+    if (m.ritualPowerBonus) {
+      result.occultist.available = true;
+      
+      if (m.ritualPowerBonus.addPELimit) {
+        result.occultist.ritualPowerBonus.addPELimit = true;
+      }
+      if (m.ritualPowerBonus.affectsDT) {
+        result.occultist.ritualPowerBonus.affectsDT = true;
+      }
+      if (m.ritualPowerBonus.affectsDamage) {
+        result.occultist.ritualPowerBonus.affectsDamage = true;
+      }
+      
+      result.occultist.ritualPowerBonus.sources.push(source);
+    }
+    
+    // === Atributo Adicional ao Limite de PE ===
+    if (m.addAttributeToPELimit) {
+      result.occultist.available = true;
+      
+      if (!result.occultist.additionalPELimitAttributes.includes(m.addAttributeToPELimit)) {
+        result.occultist.additionalPELimitAttributes.push(m.addAttributeToPELimit);
+      }
+    }
+    
+    // === Restrição de Recuperação de PV ===
+    if (m.hpRecoveryRestriction && m.hpRecoveryRestriction !== 'none') {
+      result.occultist.available = true;
+      
+      // Restrição mais severa ganha (magic-only > rest-only > none)
+      const severityOrder = { 'none': 0, 'rest-only': 1, 'magic-only': 2 };
+      const currentSeverity = severityOrder[result.occultist.hpRecoveryRestriction];
+      const newSeverity = severityOrder[m.hpRecoveryRestriction];
+      
+      if (newSeverity > currentSeverity) {
+        result.occultist.hpRecoveryRestriction = m.hpRecoveryRestriction;
+      }
+    }
+    
+    // === RD Paranormal com Teste ===
+    if (m.paranormalDamageTest) {
+      result.occultist.available = true;
+      result.occultist.paranormalDamageTest.available = true;
+      
+      result.occultist.paranormalDamageTest.abilities.push({
+        id: effect.id,
+        name: effect.name,
+        testSkill: m.paranormalDamageTest.testSkill,
+        onSuccess: m.paranormalDamageTest.onSuccess,
+        onFailure: m.paranormalDamageTest.onFailure,
+        dtType: m.paranormalDamageTest.dtType,
+        fixedDT: m.paranormalDamageTest.fixedDT,
+        source,
+      });
     }
   }
   
