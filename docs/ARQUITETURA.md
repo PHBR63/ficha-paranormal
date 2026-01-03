@@ -41,6 +41,9 @@ src/
 │   ├── conditions/      # Sistema de condições
 │   ├── constants/       # Constantes do sistema
 │   ├── effects/         # Adaptadores SUE
+│   ├── general-powers/  # Poderes gerais
+│   ├── origins/         # Origens de personagem
+│   ├── paranormal-powers/ # Poderes paranormais
 │   └── rituals/         # Sistema de rituais
 ├── pages/               # Páginas da aplicação
 └── docs/                # Documentação técnica
@@ -116,7 +119,97 @@ class-powers/
 └── track-ocultista.ts    # Trilhas do Ocultista
 ```
 
-### 5. Rituais (`src/lib/rituals/`)
+### 5. Condições (`src/lib/conditions/`)
+
+Sistema de condições do jogo com parâmetros e efeitos.
+
+**Estrutura:**
+```
+conditions/
+├── index.ts                # Barrel exports + Registry
+└── condition-definitions.ts # Definições de condições
+```
+
+**Principais exports:**
+```typescript
+import { 
+  CONDITIONS,
+  getConditionById,
+  conditionRequiresParams,
+  getConditionEffectWithParams,
+  getMachucadoDamage,
+  getFragilizadoMultiplier,
+  canSpendPEWithConditions,
+  getMaxActionsFromConditions
+} from '@/lib/conditions';
+```
+
+### 6. Origens (`src/lib/origins/`)
+
+Origens de personagem incluindo suplementos.
+
+**Estrutura:**
+```
+origins/
+├── index.ts              # Barrel exports + Registry
+└── supplement-origins.ts # Origens de suplementos
+```
+
+**Principais exports:**
+```typescript
+import { 
+  SUPPLEMENT_ORIGINS,
+  ORIGIN_REGISTRY,
+  getOriginById,
+  getAllOrigins
+} from '@/lib/origins';
+```
+
+### 7. Poderes Paranormais (`src/lib/paranormal-powers/`)
+
+Poderes por elemento do Outro Lado.
+
+**Estrutura:**
+```
+paranormal-powers/
+├── index.ts              # Barrel exports + Registry
+└── power-definitions.ts  # Definições por elemento
+```
+
+**Principais exports:**
+```typescript
+import { 
+  PARANORMAL_POWERS_BY_ELEMENT,
+  ELEMENT_LABELS,
+  ELEMENT_COLORS,
+  AFFINITY_DESCRIPTIONS,
+  getParanormalPowerById,
+  getAllParanormalPowers
+} from '@/lib/paranormal-powers';
+```
+
+### 8. Poderes Gerais (`src/lib/general-powers/`)
+
+Poderes gerais disponíveis para todas as classes.
+
+**Estrutura:**
+```
+general-powers/
+├── index.ts              # Barrel exports + Registry
+└── power-definitions.ts  # Definições de poderes
+```
+
+**Principais exports:**
+```typescript
+import { 
+  GENERAL_POWERS,
+  POWER_REGISTRY,
+  getPowerById,
+  getAllPowers
+} from '@/lib/general-powers';
+```
+
+### 9. Rituais (`src/lib/rituals/`)
 
 Sistema de rituais do 1º ao 4º círculo.
 
@@ -267,10 +360,12 @@ O projeto é uma Progressive Web App com:
 
 ## Próximos Passos de Arquitetura
 
-1. [ ] Migrar trilhas para componentes responsivos unificados
-2. [ ] Consolidar origens em pasta dedicada
-3. [ ] Mover poderes gerais e paranormais para pastas dedicadas
-4. [ ] Expandir testes de integração do SUE
+1. [x] ~~Consolidar origens em pasta dedicada~~ ✅
+2. [x] ~~Mover poderes gerais e paranormais para pastas dedicadas~~ ✅
+3. [x] ~~Consolidar condições em pasta dedicada~~ ✅
+4. [ ] Migrar trilhas para componentes responsivos unificados
+5. [ ] Expandir testes de integração do SUE
+6. [ ] Criar componentes de trilha para Ocultista
 
 ---
 
