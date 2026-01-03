@@ -81,6 +81,7 @@ const COMANDANTE_ABILITIES: LeadershipAbility[] = [
 ];
 
 import type { EffectDuration } from '@/hooks/useActivatedEffects';
+import type { ComputedEffects } from '@/hooks/useUnifiedEffects';
 
 interface LeadershipAbilitiesPanelProps {
   classTrack: string | null | undefined;
@@ -96,6 +97,8 @@ interface LeadershipAbilitiesPanelProps {
   onActivateEffect?: (id: string, name: string, duration: EffectDuration, metadata?: Record<string, unknown>) => void;
   /** Verifica se um efeito está ativo */
   isEffectActive?: (id: string) => boolean;
+  /** Dados consolidados do SUE */
+  computedEffects?: ComputedEffects;
 }
 
 export function LeadershipAbilitiesPanel({
@@ -107,11 +110,23 @@ export function LeadershipAbilitiesPanel({
   className,
   usedAbilitiesThisRound = [],
   onAbilityUsed,
+  computedEffects,
 }: LeadershipAbilitiesPanelProps) {
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(true);
   const [activatingAbility, setActivatingAbility] = useState<string | null>(null);
-
+  
+  // Usa dados do SUE para exibir habilidades de liderança consolidadas se disponível
+  const sueLeadershipData = useMemo(() => {
+    if (!computedEffects) return null;
+    
+    return {
+      // Habilidades de liderança disponíveis
+      leadershipAbilities: computedEffects.leadership?.abilities ?? [],
+      // Efeitos disponíveis (rerolar, ação extra, PV temp, etc.)
+      availableEffects: computedEffects.leadership?.availableEffects,
+    };
+  }, [computedEffects]);
   // Verifica se é trilha Comandante de Campo
   const isComandanteCampo = useMemo(() => {
     if (!classTrack) return false;

@@ -94,6 +94,7 @@ const PASSIVE_ABILITIES = [
 ] as const;
 
 import type { EffectDuration } from '@/hooks/useActivatedEffects';
+import type { ComputedEffects } from '@/hooks/useUnifiedEffects';
 
 interface OperacoesEspeciaisPanelProps {
   classTrack: string | null;
@@ -108,6 +109,8 @@ interface OperacoesEspeciaisPanelProps {
   onActivateEffect?: (id: string, name: string, duration: EffectDuration, metadata?: Record<string, unknown>) => void;
   /** Verifica se um efeito está ativo */
   isEffectActive?: (id: string) => boolean;
+  /** Dados consolidados do SUE */
+  computedEffects?: ComputedEffects;
 }
 
 export function OperacoesEspeciaisPanel({
@@ -118,8 +121,21 @@ export function OperacoesEspeciaisPanel({
   className,
   usedAbilitiesThisRound: externalUsedAbilities,
   onAbilityUsed,
+  computedEffects,
 }: OperacoesEspeciaisPanelProps) {
   const [isOpen, setIsOpen] = useState(true);
+  
+  // Usa dados do SUE para exibir bônus passivos se disponível
+  const suePassiveBonuses = useMemo(() => {
+    if (!computedEffects) return null;
+    
+    return {
+      // Iniciativa Aprimorada: +5 iniciativa
+      initiativeBonus: computedEffects.initiative.bonus,
+      // Ações extras disponíveis
+      extraActions: computedEffects.combatAdvanced.extraActions,
+    };
+  }, [computedEffects]);
   // Usa tracking externo se fornecido, senão usa estado local
   const [localUsedAbilities, setLocalUsedAbilities] = useState<Set<string>>(new Set());
   const [showSurtoDialog, setShowSurtoDialog] = useState(false);

@@ -94,6 +94,8 @@ const ATIRADOR_ABILITIES: AtiradorAbility[] = [
   },
 ];
 
+import type { ComputedEffects } from '@/hooks/useUnifiedEffects';
+
 interface AtiradorDeElitePanelProps {
   classTrack?: string | null;
   nex: number;
@@ -104,6 +106,8 @@ interface AtiradorDeElitePanelProps {
   onActivateEffect?: (id: string, name: string, duration: EffectDuration) => void;
   /** Verifica se um efeito está ativo */
   isEffectActive?: (id: string) => boolean;
+  /** Dados consolidados do SUE */
+  computedEffects?: ComputedEffects;
 }
 
 export function AtiradorDeElitePanel({
@@ -114,9 +118,24 @@ export function AtiradorDeElitePanel({
   onPEChange,
   onActivateEffect,
   isEffectActive,
+  computedEffects,
 }: AtiradorDeElitePanelProps) {
   const [activatingAbility, setActivatingAbility] = useState<string | null>(null);
   const [showManeuverDrawer, setShowManeuverDrawer] = useState(false);
+  
+  // Usa dados do SUE para exibir bônus consolidados se disponível
+  const sueShooterData = useMemo(() => {
+    if (!computedEffects) return null;
+    
+    return {
+      // Margem de ameaça com armas de fogo (Disparo Letal)
+      criticalMarginBonus: computedEffects.critical.marginBonus,
+      // Dano máximo em crítico (Atirar para Matar)
+      hasMaxDamageOnCrit: computedEffects.combatAdvanced.maximumDamageOnCrit.enabled,
+      // Bônus de dano com balas longas (Mira de Elite via INT)
+      damageBonus: computedEffects.damage.ranged,
+    };
+  }, [computedEffects]);
 
   // Verifica se é Atirador de Elite (suporta ambos os formatos de ID)
   const isAtiradorElite = classTrack === 'Atirador de Elite' || classTrack === 'atirador-elite';
