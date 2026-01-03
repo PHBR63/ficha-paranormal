@@ -678,3 +678,391 @@ const {
    // ou
    <MobileActionSheet groups={[...]} />
    ```
+
+---
+
+# MobileButtonGroup
+
+Componente reutilizável para padronizar layout de botões em componentes mobile.
+
+## Importação
+
+```tsx
+import { 
+  MobileButtonGroup,
+  MobileButton,
+  type MobileButtonConfig,
+  type MobileButtonGroupProps,
+} from "@/components/ui/mobile-button-group";
+```
+
+## Características
+
+- ✅ Padronização automática de alturas (h-12 primário, h-10 secundário, h-9 terciário)
+- ✅ Layout inteligente: 1-2 botões lado a lado, 3+ empilhados
+- ✅ Safe-area-inset para footers
+- ✅ Ícones com tamanhos padronizados (w-5 h-5 primário, w-4 h-4 secundário)
+- ✅ Touch-manipulation para resposta instantânea
+- ✅ Suporte a tipos mistos (primário + secundários)
+
+---
+
+## Props
+
+### `MobileButtonGroup`
+
+| Prop | Tipo | Default | Descrição |
+|------|------|---------|-----------|
+| `buttons` | `MobileButtonConfig[]` | - | Lista de configurações de botões |
+| `layout` | `"auto" \| "stacked" \| "row"` | `"auto"` | Layout forçado ou automático |
+| `gap` | `"sm" \| "md" \| "lg"` | `"md"` | Espaçamento entre botões |
+| `safeArea` | `boolean` | `false` | Aplica safe-area-inset-bottom |
+| `className` | `string` | - | Classes adicionais para o container |
+
+### `MobileButtonConfig`
+
+| Prop | Tipo | Default | Descrição |
+|------|------|---------|-----------|
+| `id` | `string` | - | Identificador único do botão |
+| `label` | `string` | - | Texto do botão |
+| `icon` | `ReactNode` | - | Ícone do botão (componente React) |
+| `onClick` | `() => void` | - | Callback de clique |
+| `variant` | `ButtonProps["variant"]` | `"default"` | Variante do botão |
+| `type` | `"primary" \| "secondary" \| "tertiary"` | `"secondary"` | Tipo do botão (define altura) |
+| `disabled` | `boolean` | `false` | Desabilitar botão |
+| `loading` | `boolean` | `false` | Estado de loading |
+| `className` | `string` | - | Classes adicionais |
+
+---
+
+## Padrões de Design
+
+### Alturas
+
+| Tipo | Classe | Uso |
+|------|--------|-----|
+| `primary` | `h-12` (48px) | Ações principais, CTAs |
+| `secondary` | `h-10` (40px) | Ações secundárias |
+| `tertiary` | `h-9` (36px) | Ações menores, inline |
+
+### Tamanhos de Ícone
+
+| Tipo | Classe |
+|------|--------|
+| `primary` | `w-5 h-5` (20px) |
+| `secondary` | `w-4 h-4` (16px) |
+| `tertiary` | `w-4 h-4` (16px) |
+
+### Layout Automático
+
+| Quantidade | Layout |
+|------------|--------|
+| 1 botão | `w-full` |
+| 2 botões | `flex-1` lado a lado |
+| 3+ botões | Empilhados verticalmente |
+
+---
+
+## Exemplos de Uso
+
+### 1. Dois Botões Lado a Lado
+
+```tsx
+<MobileButtonGroup
+  buttons={[
+    {
+      id: 'cancel',
+      label: 'Cancelar',
+      onClick: handleCancel,
+      variant: 'outline',
+      type: 'secondary',
+    },
+    {
+      id: 'confirm',
+      label: 'Confirmar',
+      onClick: handleConfirm,
+      type: 'primary',
+    },
+  ]}
+/>
+```
+
+### 2. Botão Único com Ícone
+
+```tsx
+import { Save } from 'lucide-react';
+
+<MobileButtonGroup
+  buttons={[
+    {
+      id: 'save',
+      label: 'Salvar Alterações',
+      icon: <Save className="w-5 h-5" />,
+      onClick: handleSave,
+      type: 'primary',
+    },
+  ]}
+/>
+```
+
+### 3. Três Botões Empilhados
+
+```tsx
+<MobileButtonGroup
+  buttons={[
+    { id: 'option1', label: 'Opção 1', onClick: handleOption1, type: 'secondary' },
+    { id: 'option2', label: 'Opção 2', onClick: handleOption2, type: 'secondary' },
+    { id: 'option3', label: 'Opção 3', onClick: handleOption3, type: 'secondary' },
+  ]}
+/>
+```
+
+### 4. Layout Misto (Primário + Secundários)
+
+Quando há botões primários e secundários, o componente renderiza automaticamente:
+- Botões primários em cima (w-full)
+- Botões secundários embaixo (lado a lado se ≤2, empilhados se ≥3)
+
+```tsx
+<MobileButtonGroup
+  buttons={[
+    {
+      id: 'main-action',
+      label: 'Executar Ação Principal',
+      icon: <Zap className="w-5 h-5" />,
+      onClick: handleMainAction,
+      type: 'primary',
+    },
+    {
+      id: 'alt1',
+      label: 'Alternativa 1',
+      onClick: handleAlt1,
+      variant: 'outline',
+      type: 'secondary',
+    },
+    {
+      id: 'alt2',
+      label: 'Alternativa 2',
+      onClick: handleAlt2,
+      variant: 'outline',
+      type: 'secondary',
+    },
+  ]}
+/>
+```
+
+### 5. Footer com Safe Area
+
+```tsx
+<MobileDrawerFooter bordered>
+  <MobileButtonGroup
+    safeArea
+    buttons={[
+      { id: 'cancel', label: 'Cancelar', onClick: onClose, variant: 'outline', type: 'secondary' },
+      { id: 'save', label: 'Salvar', onClick: onSave, type: 'primary' },
+    ]}
+  />
+</MobileDrawerFooter>
+```
+
+### 6. Layout Forçado
+
+```tsx
+// Força layout em linha mesmo com 3+ botões
+<MobileButtonGroup
+  layout="row"
+  gap="sm"
+  buttons={[
+    { id: 'a', label: 'A', onClick: () => {}, type: 'tertiary' },
+    { id: 'b', label: 'B', onClick: () => {}, type: 'tertiary' },
+    { id: 'c', label: 'C', onClick: () => {}, type: 'tertiary' },
+  ]}
+/>
+
+// Força layout empilhado mesmo com 2 botões
+<MobileButtonGroup
+  layout="stacked"
+  buttons={[
+    { id: 'primary', label: 'Ação Principal', onClick: () => {}, type: 'primary' },
+    { id: 'secondary', label: 'Ação Secundária', onClick: () => {}, variant: 'outline', type: 'secondary' },
+  ]}
+/>
+```
+
+### 7. Ação Destrutiva
+
+```tsx
+<MobileButtonGroup
+  buttons={[
+    {
+      id: 'cancel',
+      label: 'Cancelar',
+      onClick: handleCancel,
+      variant: 'outline',
+      type: 'secondary',
+    },
+    {
+      id: 'delete',
+      label: 'Excluir',
+      icon: <Trash2 className="w-5 h-5" />,
+      onClick: handleDelete,
+      variant: 'destructive',
+      type: 'primary',
+    },
+  ]}
+/>
+```
+
+---
+
+## Padrões de Uso
+
+### ✅ Boas Práticas
+
+1. **Use `type: 'primary'` para a ação principal**
+   ```tsx
+   buttons={[
+     { id: 'secondary', ..., type: 'secondary' },
+     { id: 'main', ..., type: 'primary' }, // destaque visual
+   ]}
+   ```
+
+2. **Use `safeArea` em footers de drawers/modais**
+   ```tsx
+   <MobileButtonGroup safeArea buttons={[...]} />
+   ```
+
+3. **Prefira IDs descritivos**
+   ```tsx
+   buttons={[
+     { id: 'cancel-ritual-cast', ... },
+     { id: 'confirm-ritual-cast', ... },
+   ]}
+   ```
+
+4. **Use variantes corretas para contexto**
+   - `default`: ação principal positiva
+   - `outline`: ações secundárias/cancelar
+   - `destructive`: ações destrutivas (deletar, etc.)
+   - `ghost`: ações sutis, inline
+
+5. **Mantenha máximo 2 botões lado a lado**
+   ```tsx
+   // ✅ Bom
+   buttons={[{ ... }, { ... }]} // 2 botões
+
+   // ⚠️ Layout automático empilha 3+
+   buttons={[{ ... }, { ... }, { ... }]} // empilhado
+   ```
+
+### ❌ Evite
+
+1. **Não use botões sem onClick**
+   ```tsx
+   // ❌ Errado
+   { id: 'broken', label: 'Clique', onClick: undefined }
+
+   // ✅ Correto
+   { id: 'working', label: 'Clique', onClick: () => handleClick() }
+   ```
+
+2. **Não misture tamanhos de ícone manualmente**
+   ```tsx
+   // ❌ Errado - ícone maior que o padrão
+   { icon: <Save className="w-8 h-8" />, type: 'secondary' }
+
+   // ✅ Correto - ícone proporcional ao tipo
+   { icon: <Save className="w-4 h-4" />, type: 'secondary' }
+   { icon: <Save className="w-5 h-5" />, type: 'primary' }
+   ```
+
+3. **Não force layout em linha com muitos botões**
+   ```tsx
+   // ❌ Ruim em telas pequenas
+   <MobileButtonGroup layout="row" buttons={[...5 botões]} />
+
+   // ✅ Deixe o layout automático decidir
+   <MobileButtonGroup buttons={[...5 botões]} />
+   ```
+
+---
+
+## Componentes que Utilizam MobileButtonGroup
+
+Os seguintes componentes já foram refatorados para usar `MobileButtonGroup`:
+
+- `MobileGuerreiroPanel` - Drawer Força Opressora
+- `MobileNegociadorPanel` - Drawer Discurso Motivador
+- `MobileRitualEffectWizard` - Footer do DamageStep
+- `MobileRitualCastHistory` - Footer com Limpar Histórico
+- `MobileInventorySheet` - Footer de adicionar itens e dialog de usar item
+
+---
+
+## Migração para MobileButtonGroup
+
+### Antes
+
+```tsx
+<MobileDrawerFooter bordered>
+  <div className="flex gap-2">
+    <Button 
+      variant="outline" 
+      className="flex-1 h-10"
+      onClick={handleCancel}
+    >
+      <X className="w-4 h-4 mr-1.5" />
+      <span className="text-sm">Cancelar</span>
+    </Button>
+    <Button 
+      className="flex-1 h-12"
+      onClick={handleConfirm}
+    >
+      <Check className="w-5 h-5 mr-1.5" />
+      Confirmar
+    </Button>
+  </div>
+</MobileDrawerFooter>
+```
+
+### Depois
+
+```tsx
+import { MobileButtonGroup } from "@/components/ui/mobile-button-group";
+
+<MobileDrawerFooter bordered>
+  <MobileButtonGroup
+    buttons={[
+      {
+        id: 'cancel',
+        label: 'Cancelar',
+        icon: <X className="w-4 h-4" />,
+        onClick: handleCancel,
+        variant: 'outline',
+        type: 'secondary',
+      },
+      {
+        id: 'confirm',
+        label: 'Confirmar',
+        icon: <Check className="w-5 h-5" />,
+        onClick: handleConfirm,
+        type: 'primary',
+      },
+    ]}
+  />
+</MobileDrawerFooter>
+```
+
+---
+
+## Checklist de Padronização
+
+Use este checklist ao refatorar componentes mobile:
+
+- [ ] Botões primários usam `type: 'primary'` (h-12)
+- [ ] Botões secundários usam `type: 'secondary'` (h-10)
+- [ ] Ícones seguem tamanho correto (w-5 h-5 ou w-4 h-4)
+- [ ] Máximo 2 botões lado a lado
+- [ ] 3+ botões são empilhados
+- [ ] Footers de drawer/modal usam `safeArea` quando necessário
+- [ ] Variantes corretas para contexto (outline, destructive, etc.)
