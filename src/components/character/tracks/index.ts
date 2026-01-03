@@ -6,7 +6,7 @@
  * Estrutura:
  * - combatente/: Trilhas do Combatente (5 trilhas)
  * - especialista/: Trilhas do Especialista (5 trilhas)
- * - ocultista/: Trilhas do Ocultista (5 trilhas - placeholder)
+ * - ocultista/: Trilhas do Ocultista (5 trilhas)
  * - shared/: Componentes compartilhados
  * 
  * @module tracks
@@ -24,7 +24,7 @@ export * from './shared';
 // FACTORY - Renderiza painel baseado no trackId
 // =====================================================
 
-import { COMBATENTE_TRACK_IDS, ESPECIALISTA_TRACK_IDS } from '@/lib/constants';
+import { COMBATENTE_TRACK_IDS, ESPECIALISTA_TRACK_IDS, OCULTISTA_TRACK_IDS } from '@/lib/constants';
 
 /**
  * Mapeamento de trackId para nome do componente
@@ -44,6 +44,13 @@ export const TRACK_COMPONENT_MAP = {
   [ESPECIALISTA_TRACK_IDS.MEDICO_CAMPO]: 'MedicoDeCampoPanel',
   [ESPECIALISTA_TRACK_IDS.NEGOCIADOR]: 'NegociadorPanel',
   [ESPECIALISTA_TRACK_IDS.TECNICO]: 'TecnicoPanel',
+  
+  // Ocultista
+  [OCULTISTA_TRACK_IDS.CONDUTOR]: 'ConduitePanel',
+  [OCULTISTA_TRACK_IDS.FLAGELADOR]: 'FlageladorPanel',
+  [OCULTISTA_TRACK_IDS.GRADUADO]: 'GraduadoPanel',
+  [OCULTISTA_TRACK_IDS.INTUITIVO]: 'IntuitivoPanel',
+  [OCULTISTA_TRACK_IDS.LAMINA_PARANORMAL]: 'LaminaParanormalPanel',
 } as const;
 
 /**
@@ -63,6 +70,13 @@ export const MOBILE_TRACK_COMPONENT_MAP = {
   [ESPECIALISTA_TRACK_IDS.MEDICO_CAMPO]: 'MobileMedicoDeCampoPanel',
   [ESPECIALISTA_TRACK_IDS.NEGOCIADOR]: 'MobileNegociadorPanel',
   [ESPECIALISTA_TRACK_IDS.TECNICO]: 'MobileTecnicoPanel',
+  
+  // Ocultista
+  [OCULTISTA_TRACK_IDS.CONDUTOR]: 'MobileConduitePanel',
+  [OCULTISTA_TRACK_IDS.FLAGELADOR]: 'MobileFlageladorPanel',
+  [OCULTISTA_TRACK_IDS.GRADUADO]: 'MobileGraduadoPanel',
+  [OCULTISTA_TRACK_IDS.INTUITIVO]: 'MobileIntuitivoPanel',
+  [OCULTISTA_TRACK_IDS.LAMINA_PARANORMAL]: 'MobileLaminaParanormalPanel',
 } as const;
 
 /**
