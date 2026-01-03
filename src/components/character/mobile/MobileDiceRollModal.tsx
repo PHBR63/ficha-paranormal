@@ -16,7 +16,7 @@ import {
   MobileDrawerBody,
   MobileDrawerFooter 
 } from '@/components/ui/mobile-drawer';
-import { Button } from '@/components/ui/button';
+import { MobileButtonGroup } from '@/components/ui/mobile-button-group';
 import {
   Tooltip,
   TooltipContent,
@@ -357,24 +357,27 @@ export function MobileDiceRollModal({
         </MobileDrawerBody>
 
         <MobileDrawerFooter>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={executeRoll}
-              disabled={isRolling}
-              className="flex-1 font-display h-10"
-            >
-              <RotateCcw className={cn('w-4 h-4 mr-1.5', isRolling && 'animate-spin')} />
-              <span className="text-sm">ROLAR NOVAMENTE</span>
-            </Button>
-            <Button
-              variant="ghost"
-              onClick={onClose}
-              className="font-display h-10 px-3"
-            >
-              <X className="w-4 h-4" />
-            </Button>
-          </div>
+          <MobileButtonGroup
+            buttons={[
+              {
+                id: 'reroll',
+                label: 'ROLAR NOVAMENTE',
+                icon: <RotateCcw className={cn(isRolling && 'animate-spin')} />,
+                onClick: executeRoll,
+                variant: 'outline',
+                type: 'secondary',
+                disabled: isRolling,
+              },
+              {
+                id: 'close',
+                label: '',
+                icon: <X />,
+                onClick: onClose,
+                variant: 'ghost',
+                type: 'secondary',
+              },
+            ]}
+          />
         </MobileDrawerFooter>
       </MobileDrawerContent>
     </MobileDrawer>

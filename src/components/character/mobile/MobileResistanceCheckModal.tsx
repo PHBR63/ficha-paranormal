@@ -14,6 +14,7 @@ import {
   MobileDrawerFooter 
 } from '@/components/ui/mobile-drawer';
 import { Button } from '@/components/ui/button';
+import { MobileButtonGroup } from '@/components/ui/mobile-button-group';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { 
@@ -422,21 +423,27 @@ export function MobileResistanceCheckModal({
         </MobileDrawerBody>
 
         <MobileDrawerFooter>
-          <Button
-            onClick={handleConfirm}
-            disabled={!testResult}
-            className={cn(
-              "w-full h-12 font-display gap-2",
-              testResult?.passed && "bg-success hover:bg-success/90"
-            )}
-          >
-            <Check className="w-5 h-5" />
-            APLICAR RESULTADO
-          </Button>
-          <Button variant="ghost" onClick={handleClose} className="font-display h-10">
-            <X className="w-4 h-4 mr-1.5" />
-            <span className="text-sm">CANCELAR</span>
-          </Button>
+          <MobileButtonGroup
+            buttons={[
+              {
+                id: 'apply',
+                label: 'APLICAR RESULTADO',
+                icon: <Check />,
+                onClick: handleConfirm,
+                type: 'primary',
+                disabled: !testResult,
+                className: testResult?.passed ? 'bg-success hover:bg-success/90' : undefined,
+              },
+              {
+                id: 'cancel',
+                label: 'CANCELAR',
+                icon: <X />,
+                onClick: handleClose,
+                variant: 'ghost',
+                type: 'secondary',
+              },
+            ]}
+          />
         </MobileDrawerFooter>
       </MobileDrawerContent>
     </MobileDrawer>

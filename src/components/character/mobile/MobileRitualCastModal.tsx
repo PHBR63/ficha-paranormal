@@ -17,7 +17,7 @@ import {
   MobileDrawerBody,
   MobileDrawerFooter 
 } from '@/components/ui/mobile-drawer';
-import { Button } from '@/components/ui/button';
+import { MobileButtonGroup } from '@/components/ui/mobile-button-group';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -716,21 +716,27 @@ export function MobileRitualCastModal({
         </MobileDrawerBody>
 
         <MobileDrawerFooter>
-          <Button
-            onClick={handleConfirm}
-            disabled={!canCast}
-            className={cn(
-              "w-full h-12 font-display gap-2",
-              canCast && elementConfig?.bg
-            )}
-          >
-            <Sparkles className="w-5 h-5" />
-            CONJURAR
-          </Button>
-          <Button variant="ghost" onClick={() => handleOpenChange(false)} className="font-display h-10">
-            <X className="w-4 h-4 mr-1.5" />
-            <span className="text-sm">CANCELAR</span>
-          </Button>
+          <MobileButtonGroup
+            buttons={[
+              {
+                id: 'cast',
+                label: 'CONJURAR',
+                icon: <Sparkles />,
+                onClick: handleConfirm,
+                type: 'primary',
+                disabled: !canCast,
+                className: canCast && elementConfig?.bg ? elementConfig.bg : undefined,
+              },
+              {
+                id: 'cancel',
+                label: 'CANCELAR',
+                icon: <X />,
+                onClick: () => handleOpenChange(false),
+                variant: 'ghost',
+                type: 'secondary',
+              },
+            ]}
+          />
         </MobileDrawerFooter>
       </MobileDrawerContent>
     </MobileDrawer>
