@@ -363,9 +363,9 @@ O projeto é uma Progressive Web App com:
 1. [x] ~~Consolidar origens em pasta dedicada~~ ✅
 2. [x] ~~Mover poderes gerais e paranormais para pastas dedicadas~~ ✅
 3. [x] ~~Consolidar condições em pasta dedicada~~ ✅
-4. [ ] Migrar trilhas para componentes responsivos unificados
-5. [ ] Expandir testes de integração do SUE
-6. [ ] Criar componentes de trilha para Ocultista
+4. [x] ~~Criar componentes de trilha para Ocultista~~ ✅
+5. [ ] Migrar trilhas para componentes responsivos unificados
+6. [ ] Expandir testes de integração do SUE
 
 ---
 
