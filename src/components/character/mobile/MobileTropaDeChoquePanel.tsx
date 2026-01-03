@@ -1,5 +1,7 @@
 /**
  * MobileTropaDeChoquePanel - Versão mobile do painel Tropa de Choque
+ * 
+ * REFATORADO PARA CONSUMIR DADOS DO SUE (Sistema Unificado de Efeitos)
  * Otimizado para telas pequenas
  */
 
@@ -10,13 +12,19 @@ import {
   ShieldAlert, 
   Heart, 
   Skull,
-  Zap
+  Zap,
+  AlertTriangle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
 import { MobileCollapsibleSection } from './MobileCollapsibleSection';
+import type { ComputedEffects } from '@/lib/unified-effects-engine';
+
+// =====================================================
+// Definições de habilidades
+// =====================================================
 
 // Habilidades ativadas (reações)
 const TROPA_ABILITIES = [
@@ -62,6 +70,10 @@ const PASSIVE_ABILITIES = [
 
 type EffectDuration = 'instant' | 'next-turn' | 'round' | 'scene' | 'concentration';
 
+// =====================================================
+// Props do Componente
+// =====================================================
+
 interface MobileTropaDeChoquePanelProps {
   classTrack: string | null;
   nex: number;
@@ -71,6 +83,8 @@ interface MobileTropaDeChoquePanelProps {
   hpMax: number;
   onPEChange: (newPE: number) => void;
   className?: string;
+  /** Dados consolidados do SUE (opcional - se fornecido, usa dados do SUE) */
+  computedEffects?: ComputedEffects;
   onActivateEffect?: (id: string, name: string, duration?: EffectDuration, metadata?: Record<string, unknown>) => void;
   isEffectActive?: (id: string) => boolean;
 }
@@ -81,6 +95,10 @@ const TROPA_EFFECT_IDS = {
   DURO_DE_MATAR: 'track-duro-matar',
 } as const;
 
+// =====================================================
+// Componente Principal
+// =====================================================
+
 export function MobileTropaDeChoquePanel({
   classTrack,
   nex,
@@ -90,10 +108,11 @@ export function MobileTropaDeChoquePanel({
   hpMax,
   onPEChange,
   className,
+  computedEffects,
   onActivateEffect,
   isEffectActive,
 }: MobileTropaDeChoquePanelProps) {
-  // Verifica se é trilha Tropa de Choque
+  // ===== VERIFICAÇÕES DE TRILHA =====
   const isTropaDeChoque = useMemo(() => {
     if (!classTrack) return false;
     const normalized = classTrack.toLowerCase().replace(/[^a-z]/g, '');
@@ -101,7 +120,16 @@ export function MobileTropaDeChoquePanel({
            classTrack === 'tropa-choque';
   }, [classTrack]);
 
-  // Filtra habilidades desbloqueadas
+  // ===== DADOS DO SUE (se disponível) =====
+  
+  // Bônus de Inquebrável do SUE
+  const sueWoundedBonuses = computedEffects?.combatAdvanced?.conditionalBonuses?.whenWounded;
+  const sueDyingBonuses = computedEffects?.combatAdvanced?.conditionalBonuses?.whenDying;
+  
+  // Taunt (Cai Dentro) do SUE
+  const sueTaunt = computedEffects?.combatAdvanced?.taunt;
+
+  // ===== HABILIDADES DESBLOQUEADAS =====
   const unlockedActiveAbilities = useMemo(() => 
     TROPA_ABILITIES.filter(a => nex >= a.minNex),
     [nex]
@@ -112,7 +140,9 @@ export function MobileTropaDeChoquePanel({
     [nex]
   );
 
-  // Calcula DT baseada em Vigor
+  // ===== CÁLCULOS DERIVADOS =====
+  
+  // DT baseada em Vigor
   const vigorDT = useMemo(() => 10 + vigor, [vigor]);
 
   // Verifica se está machucado
@@ -120,8 +150,26 @@ export function MobileTropaDeChoquePanel({
 
   // Calcula bônus de PV
   const cascaGrossaHP = useMemo(() => Math.floor(nex / 5), [nex]);
+  
+  // ===== BÔNUS CONDICIONAIS DO SUE =====
+  
+  // Bônus de defesa e RD quando machucado (do SUE ou fallback)
+  const woundedDefenseBonus = useMemo(() => {
+    if (sueWoundedBonuses && isWounded) {
+      return sueWoundedBonuses.defenseBonus ?? 0;
+    }
+    return (nex >= 99 && isWounded) ? 5 : 0;
+  }, [sueWoundedBonuses, isWounded, nex]);
 
-  // Handler para usar habilidade
+  const woundedDamageResistance = useMemo(() => {
+    if (sueWoundedBonuses && isWounded) {
+      return sueWoundedBonuses.damageReduction ?? 0;
+    }
+    return (nex >= 99 && isWounded) ? 5 : 0;
+  }, [sueWoundedBonuses, isWounded, nex]);
+
+  // ===== HANDLERS =====
+  
   const handleUseAbility = useCallback((abilityId: string, peCost: number, abilityName: string) => {
     if (peCurrent < peCost) {
       toast({
@@ -149,6 +197,8 @@ export function MobileTropaDeChoquePanel({
     }
   }, [peCurrent, onPEChange, vigorDT, onActivateEffect]);
 
+  // ===== RENDER CONDICIONAL =====
+  
   if (!isTropaDeChoque || (unlockedActiveAbilities.length === 0 && unlockedPassiveAbilities.length === 0)) {
     return null;
   }
@@ -162,6 +212,33 @@ export function MobileTropaDeChoquePanel({
       className={className}
     >
       <div className="space-y-3">
+        {/* Bônus ativos do SUE (quando machucado) */}
+        {(woundedDefenseBonus > 0 || woundedDamageResistance > 0) && (
+          <div className="p-2 rounded-md bg-destructive/10 border border-destructive/30 space-y-1">
+            <p className="text-[10px] font-medium text-destructive flex items-center gap-1">
+              <AlertTriangle className="w-3 h-3" />
+              Inquebrável Ativo
+            </p>
+            <div className="flex gap-1 flex-wrap">
+              {woundedDefenseBonus > 0 && (
+                <Badge variant="outline" className="text-[9px] border-destructive/30 text-destructive">
+                  +{woundedDefenseBonus} Def
+                </Badge>
+              )}
+              {woundedDamageResistance > 0 && (
+                <Badge variant="outline" className="text-[9px] border-destructive/30 text-destructive">
+                  RD {woundedDamageResistance}
+                </Badge>
+              )}
+              {sueDyingBonuses?.canAct && (
+                <Badge variant="outline" className="text-[9px] border-destructive/30 text-destructive">
+                  Age morrendo
+                </Badge>
+              )}
+            </div>
+          </div>
+        )}
+        
         {/* Passivos */}
         {unlockedPassiveAbilities.map((ability) => {
           const Icon = ability.icon;
