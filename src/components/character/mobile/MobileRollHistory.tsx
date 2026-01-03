@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/mobile-drawer';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { MobileButtonGroup } from '@/components/ui/mobile-button-group';
 import { 
   History, 
   Dices, 

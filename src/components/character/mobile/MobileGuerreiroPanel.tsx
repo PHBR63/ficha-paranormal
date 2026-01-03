@@ -11,6 +11,7 @@ import { Sword, Shield, ArrowDownToLine, MoveHorizontal, Check, Loader2, Zap, Al
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MobileDrawer, MobileDrawerContent, MobileDrawerHeader, MobileDrawerTitle, MobileDrawerFooter, MobileDrawerDescription, MobileDrawerBody } from '@/components/ui/mobile-drawer';
+import { MobileButtonGroup } from '@/components/ui/mobile-button-group';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { MobileCollapsibleSection } from './MobileCollapsibleSection';
@@ -332,31 +333,40 @@ export function MobileGuerreiroPanel({
 
           <MobileDrawerFooter>
             {selectedManeuver === 'derrubar' ? (
-              <div className="flex gap-2 w-full">
-                <Button
-                  variant="secondary"
-                  className="flex-1 h-10"
-                  disabled={peCurrent < 1}
-                  onClick={() => handleConfirmForcaOpressora(false)}
-                >
-                  <span className="text-sm">Derrubar (1 PE)</span>
-                </Button>
-                <Button
-                  className="flex-1 h-10 bg-orange-600"
-                  disabled={peCurrent < 2}
-                  onClick={() => handleConfirmForcaOpressora(true)}
-                >
-                  <span className="text-sm">+ Atacar (2 PE)</span>
-                </Button>
-              </div>
+              <MobileButtonGroup
+                buttons={[
+                  {
+                    id: 'knockdown',
+                    label: 'Derrubar (1 PE)',
+                    onClick: () => handleConfirmForcaOpressora(false),
+                    variant: 'secondary',
+                    type: 'secondary',
+                    disabled: peCurrent < 1,
+                  },
+                  {
+                    id: 'knockdown-attack',
+                    label: '+ Atacar (2 PE)',
+                    onClick: () => handleConfirmForcaOpressora(true),
+                    type: 'primary',
+                    disabled: peCurrent < 2,
+                    className: 'bg-orange-600 hover:bg-orange-700',
+                  },
+                ]}
+                layout="row"
+              />
             ) : (
-              <Button
-                className="w-full h-12 bg-orange-600"
-                disabled={!selectedManeuver || peCurrent < 1}
-                onClick={() => handleConfirmForcaOpressora(false)}
-              >
-                Empurrar (1 PE)
-              </Button>
+              <MobileButtonGroup
+                buttons={[
+                  {
+                    id: 'push',
+                    label: 'Empurrar (1 PE)',
+                    onClick: () => handleConfirmForcaOpressora(false),
+                    type: 'primary',
+                    disabled: !selectedManeuver || peCurrent < 1,
+                    className: 'bg-orange-600 hover:bg-orange-700',
+                  },
+                ]}
+              />
             )}
           </MobileDrawerFooter>
         </MobileDrawerContent>

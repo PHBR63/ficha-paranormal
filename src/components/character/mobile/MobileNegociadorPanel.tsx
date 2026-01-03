@@ -11,6 +11,7 @@
 import { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { MobileButtonGroup } from '@/components/ui/mobile-button-group';
 import { 
   MessageCircle, 
   Users, 
@@ -181,28 +182,28 @@ export function MobileNegociadorPanel({
             <p className="text-xs text-muted-foreground">
               +2 perícias para você e aliados
             </p>
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                variant={peCurrent >= 4 ? "default" : "outline"}
-                disabled={peCurrent < 4}
-                onClick={() => handleDiscursoMotivador(false)}
-                className="flex-1 h-8 text-xs"
-              >
-                4 PE
-              </Button>
-              {canUseEnhancedDiscurso && (
-                <Button
-                  size="sm"
-                  variant={peCurrent >= 8 ? "default" : "outline"}
-                  disabled={peCurrent < 8}
-                  onClick={() => handleDiscursoMotivador(true)}
-                  className="flex-1 h-8 text-xs"
-                >
-                  8 PE
-                </Button>
-              )}
-            </div>
+            <MobileButtonGroup
+              buttons={[
+                {
+                  id: 'discurso-4pe',
+                  label: '4 PE',
+                  onClick: () => handleDiscursoMotivador(false),
+                  variant: peCurrent >= 4 ? 'default' : 'outline',
+                  type: 'secondary',
+                  disabled: peCurrent < 4,
+                },
+                ...(canUseEnhancedDiscurso ? [{
+                  id: 'discurso-8pe',
+                  label: '8 PE',
+                  onClick: () => handleDiscursoMotivador(true),
+                  variant: (peCurrent >= 8 ? 'default' : 'outline') as 'default' | 'outline',
+                  type: 'secondary' as const,
+                  disabled: peCurrent < 8,
+                }] : []),
+              ]}
+              layout="row"
+              gap="sm"
+            />
           </div>
         )}
 
