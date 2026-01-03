@@ -1,6 +1,7 @@
 /**
  * TropaDeChoquePanel - Painel de habilidades da trilha Tropa de Choque
- * Exibe habilidades passivas/condicionais e ativadas com dedução automática de PE
+ * 
+ * REFATORADO PARA CONSUMIR DADOS DO SUE (Sistema Unificado de Efeitos)
  * 
  * Habilidades:
  * - Casca Grossa (NEX 10%): +1 PV por 5% NEX + Vigor em RD ao bloquear (passivo/condicional)
@@ -38,8 +39,14 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { toast } from '@/hooks/use-toast';
+import type { EffectDuration } from '@/hooks/useActivatedEffects';
+import type { ComputedEffects } from '@/lib/unified-effects-engine';
 
-// Definição das habilidades ativadas (reações) da trilha Tropa de Choque
+// =====================================================
+// Definições de habilidades (mantidas para referência de UI)
+// =====================================================
+
+// Habilidades ativadas (reações) da trilha Tropa de Choque
 const TROPA_ABILITIES = [
   {
     id: 'cai-dentro',
@@ -93,7 +100,9 @@ const PASSIVE_ABILITIES = [
   },
 ] as const;
 
-import type { EffectDuration } from '@/hooks/useActivatedEffects';
+// =====================================================
+// Props do Componente
+// =====================================================
 
 interface TropaDeChoquePanelProps {
   classTrack: string | null;
@@ -104,11 +113,17 @@ interface TropaDeChoquePanelProps {
   hpMax: number;
   onPEChange: (newPE: number) => void;
   className?: string;
+  /** Dados consolidados do SUE (opcional - se fornecido, usa dados do SUE) */
+  computedEffects?: ComputedEffects;
   /** Callback para ativar efeito no SUE */
   onActivateEffect?: (id: string, name: string, duration: EffectDuration, metadata?: Record<string, unknown>) => void;
   /** Verifica se um efeito está ativo */
   isEffectActive?: (id: string) => boolean;
 }
+
+// =====================================================
+// Componente Principal
+// =====================================================
 
 export function TropaDeChoquePanel({
   classTrack,
@@ -119,10 +134,11 @@ export function TropaDeChoquePanel({
   hpMax,
   onPEChange,
   className,
+  computedEffects,
 }: TropaDeChoquePanelProps) {
   const [isOpen, setIsOpen] = useState(true);
 
-  // Verifica se é trilha Tropa de Choque
+  // ===== VERIFICAÇÕES DE TRILHA =====
   const isTropaDeChoque = useMemo(() => {
     if (!classTrack) return false;
     const normalized = classTrack.toLowerCase().replace(/[^a-z]/g, '');
@@ -130,7 +146,16 @@ export function TropaDeChoquePanel({
            classTrack === 'tropa-choque';
   }, [classTrack]);
 
-  // Filtra habilidades desbloqueadas
+  // ===== DADOS DO SUE (se disponível) =====
+  
+  // Bônus de Inquebrável do SUE
+  const sueWoundedBonuses = computedEffects?.combatAdvanced?.conditionalBonuses?.whenWounded;
+  const sueDyingBonuses = computedEffects?.combatAdvanced?.conditionalBonuses?.whenDying;
+  
+  // Taunt (Cai Dentro) do SUE
+  const sueTaunt = computedEffects?.combatAdvanced?.taunt;
+  
+  // ===== HABILIDADES DESBLOQUEADAS =====
   const unlockedActiveAbilities = useMemo(() => 
     TROPA_ABILITIES.filter(a => nex >= a.minNex),
     [nex]
@@ -141,16 +166,46 @@ export function TropaDeChoquePanel({
     [nex]
   );
 
-  // Calcula DT baseada em Vigor (para Cai Dentro)
-  const vigorDT = useMemo(() => 10 + vigor, [vigor]);
+  // ===== CÁLCULOS DERIVADOS =====
+  
+  // DT baseada em Vigor (para Cai Dentro) - usa SUE se disponível
+  const vigorDT = useMemo(() => {
+    if (sueTaunt?.abilities?.[0]?.dtAttribute) {
+      // SUE não tem dtBase, usa 10 como base padrão
+      return 10 + vigor;
+    }
+    // Fallback para cálculo local
+    return 10 + vigor;
+  }, [vigor, sueTaunt]);
 
   // Verifica se está machucado (PV < 50%)
   const isWounded = useMemo(() => hpCurrent < (hpMax / 2), [hpCurrent, hpMax]);
 
   // Calcula bônus de PV da Casca Grossa
   const cascaGrossaHP = useMemo(() => Math.floor(nex / 5), [nex]);
+  
+  // ===== BÔNUS CONDICIONAIS DO SUE =====
+  
+  // Bônus de defesa e RD quando machucado (do SUE ou fallback)
+  const woundedDefenseBonus = useMemo(() => {
+    if (sueWoundedBonuses && isWounded) {
+      return sueWoundedBonuses.defenseBonus ?? 0;
+    }
+    // Fallback: +5 Defesa se tiver Inquebrável e estiver machucado
+    return (nex >= 99 && isWounded) ? 5 : 0;
+  }, [sueWoundedBonuses, isWounded, nex]);
 
-  // Handler para usar habilidade ativada
+  const woundedDamageResistance = useMemo(() => {
+    if (sueWoundedBonuses && isWounded) {
+      // Usa damageReduction em vez de damageResistance
+      return sueWoundedBonuses.damageReduction ?? 0;
+    }
+    // Fallback: RD 5 se tiver Inquebrável e estiver machucado
+    return (nex >= 99 && isWounded) ? 5 : 0;
+  }, [sueWoundedBonuses, isWounded, nex]);
+
+  // ===== HANDLERS =====
+  
   const handleUseAbility = useCallback((abilityId: string, peCost: number, abilityName: string) => {
     // Verifica PE
     if (peCurrent < peCost) {
@@ -180,7 +235,8 @@ export function TropaDeChoquePanel({
     }
   }, [peCurrent, onPEChange, vigorDT, nex]);
 
-  // Não renderiza se não for Tropa de Choque ou não tiver habilidades
+  // ===== RENDER CONDICIONAL =====
+  
   if (!isTropaDeChoque || (unlockedActiveAbilities.length === 0 && unlockedPassiveAbilities.length === 0)) {
     return null;
   }
@@ -197,6 +253,13 @@ export function TropaDeChoquePanel({
                 <Badge variant="outline" className="ml-1 text-[10px]">
                   {unlockedActiveAbilities.length + unlockedPassiveAbilities.length} habilidades
                 </Badge>
+                {/* Indicador de bônus ativos do SUE */}
+                {(woundedDefenseBonus > 0 || woundedDamageResistance > 0) && (
+                  <Badge variant="destructive" className="text-[10px]">
+                    <AlertTriangle className="w-3 h-3 mr-1" />
+                    Machucado
+                  </Badge>
+                )}
               </CardTitle>
               {isOpen ? (
                 <ChevronUp className="w-4 h-4 text-muted-foreground" />
@@ -209,6 +272,38 @@ export function TropaDeChoquePanel({
 
         <CollapsibleContent>
           <CardContent className="pt-0 space-y-3">
+            {/* Bônus ativos do SUE (quando machucado) */}
+            {(woundedDefenseBonus > 0 || woundedDamageResistance > 0) && (
+              <div className="p-2 rounded-md bg-destructive/10 border border-destructive/30 space-y-1">
+                <p className="text-xs font-medium text-destructive flex items-center gap-1">
+                  <AlertTriangle className="w-3 h-3" />
+                  Inquebrável Ativo (Machucado)
+                </p>
+                <div className="flex gap-2 flex-wrap">
+                  {woundedDefenseBonus > 0 && (
+                    <Badge variant="outline" className="text-[10px] border-destructive/30 text-destructive">
+                      +{woundedDefenseBonus} Defesa
+                    </Badge>
+                  )}
+                  {woundedDamageResistance > 0 && (
+                    <Badge variant="outline" className="text-[10px] border-destructive/30 text-destructive">
+                      RD {woundedDamageResistance}
+                    </Badge>
+                  )}
+                  {sueDyingBonuses?.canAct && (
+                    <Badge variant="outline" className="text-[10px] border-destructive/30 text-destructive">
+                      Pode agir morrendo
+                    </Badge>
+                  )}
+                </div>
+                {sueWoundedBonuses?.sources && sueWoundedBonuses.sources.length > 0 && (
+                  <p className="text-[10px] text-muted-foreground">
+                    Fonte: {sueWoundedBonuses.sources.join(', ')}
+                  </p>
+                )}
+              </div>
+            )}
+            
             {/* Habilidades Passivas/Condicionais */}
             {unlockedPassiveAbilities.length > 0 && (
               <div className="space-y-2">
@@ -311,10 +406,13 @@ export function TropaDeChoquePanel({
                         </div>
                         <p className="text-xs text-muted-foreground mt-0.5">{ability.shortEffect}</p>
                         
-                        {/* DT para Cai Dentro */}
+                        {/* DT para Cai Dentro - agora usa SUE quando disponível */}
                         {ability.usesVigorDT && (
                           <p className="text-[10px] text-primary mt-0.5">
                             DT: 10 + Vigor ({vigor}) = <span className="font-bold">{vigorDT}</span>
+                            {sueTaunt && (
+                              <span className="text-muted-foreground ml-1">(via SUE)</span>
+                            )}
                           </p>
                         )}
                         

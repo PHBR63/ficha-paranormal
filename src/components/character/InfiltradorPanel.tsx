@@ -1,6 +1,8 @@
 /**
  * InfiltradorPanel.tsx
  * 
+ * REFATORADO PARA CONSUMIR DADOS DO SUE (Sistema Unificado de Efeitos)
+ * 
  * Painel de habilidades da trilha Infiltrador do Especialista.
  * Habilidades oficiais conforme Ordem Paranormal RPG:
  * - NEX 10%: Ataque Furtivo (+1d6/+2d6/+3d6/+4d6 dano extra)
@@ -11,7 +13,7 @@
  * Integrado com useActivatedEffects para comunicar efeitos ao SUE.
  */
 
-import { useState } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Crosshair, Eye, Skull, Ghost, Zap, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,6 +21,11 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
 import { TRACK_EFFECT_IDS, type EffectDuration } from '@/hooks/useActivatedEffects';
+import type { ComputedEffects } from '@/lib/unified-effects-engine';
+
+// =====================================================
+// Props do Componente
+// =====================================================
 
 interface InfiltradorPanelProps {
   classTrack: string | null;
@@ -28,11 +35,17 @@ interface InfiltradorPanelProps {
   onPEChange: (delta: number) => void;
   usedAbilitiesThisRound?: string[];
   onAbilityUsed?: (abilityId: string) => void;
+  /** Dados consolidados do SUE (opcional - se fornecido, usa dados do SUE) */
+  computedEffects?: ComputedEffects;
   /** Callback para ativar efeito no SUE */
   onActivateEffect?: (id: string, name: string, duration: EffectDuration) => void;
   /** Verifica se um efeito está ativo */
   isEffectActive?: (id: string) => boolean;
 }
+
+// =====================================================
+// Funções Auxiliares
+// =====================================================
 
 /**
  * Calcula os dados de dano extra do Ataque Furtivo baseado no NEX
@@ -52,6 +65,10 @@ function getAssassinarDT(agility: number): number {
   return agility;
 }
 
+// =====================================================
+// Componente Principal
+// =====================================================
+
 export function InfiltradorPanel({
   classTrack,
   nex,
@@ -60,6 +77,7 @@ export function InfiltradorPanel({
   onPEChange,
   usedAbilitiesThisRound = [],
   onAbilityUsed,
+  computedEffects,
   onActivateEffect,
   isEffectActive
 }: InfiltradorPanelProps) {
@@ -68,7 +86,15 @@ export function InfiltradorPanel({
   // Só renderiza se for trilha infiltrador
   if (classTrack !== 'infiltrador') return null;
 
-  // Verificações de NEX para cada habilidade
+  // ===== DADOS DO SUE (se disponível) =====
+  
+  // Dados de Ataque Furtivo do SUE
+  const sueSneakAttack = computedEffects?.sneakAttack;
+  
+  // Bônus de furtividade do SUE
+  const sueStealthBonuses = sueSneakAttack?.stealthBonuses;
+  
+  // ===== HABILIDADES DESBLOQUEADAS =====
   const hasAtaqueFurtivo = nex >= 10;
   const hasGatuno = nex >= 40;
   const hasAssassinar = nex >= 65;
@@ -77,10 +103,43 @@ export function InfiltradorPanel({
   // Verificar se Ataque Furtivo já foi usado nesta rodada
   const ataqueFurtivoUsedThisRound = usedAbilitiesThisRound.includes('ataque-furtivo-trilha');
 
+  // ===== DADOS DERIVADOS DO SUE =====
+  
+  // Dados de dano do Ataque Furtivo - usa SUE se disponível
+  const sneakAttackDice = useMemo(() => {
+    if (sueSneakAttack) {
+      // Usa totalDice do SUE (já inclui progressão por NEX)
+      const diceCount = sueSneakAttack.totalDice ?? sueSneakAttack.baseDice ?? 1;
+      const dieType = sueSneakAttack.dieType ?? 'd6';
+      return `+${diceCount}${dieType}`;
+    }
+    return getAtaqueFurtivoDice(nex);
+  }, [sueSneakAttack, nex]);
+
+  // Multiplicador do Assassinar (dobra os dados)
+  const sneakAttackMultiplier = useMemo(() => {
+    if (sueSneakAttack?.multiplier) {
+      return sueSneakAttack.multiplier;
+    }
+    return assassinarActive ? 2 : 1;
+  }, [sueSneakAttack, assassinarActive]);
+
+  // Verifica se remove penalidade de movimento em furtividade
+  const removesStealthMovementPenalty = useMemo(() => {
+    return sueStealthBonuses?.removesMovementPenalty ?? (nex >= 40);
+  }, [sueStealthBonuses, nex]);
+
+  // Verifica se ignora penalidades de furtividade
+  const ignoresStealthPenalties = useMemo(() => {
+    return sueStealthBonuses?.ignoresAllPenalties ?? false;
+  }, [sueStealthBonuses]);
+
+  // ===== HANDLERS =====
+
   /**
    * Ativa o Ataque Furtivo (1 PE, 1x/rodada)
    */
-  const handleAtaqueFurtivo = () => {
+  const handleAtaqueFurtivo = useCallback(() => {
     if (peCurrent < 1) {
       toast.error('PE insuficiente', { description: 'Ataque Furtivo requer 1 PE.' });
       return;
@@ -96,23 +155,25 @@ export function InfiltradorPanel({
     // Ativa efeito no SUE
     onActivateEffect?.(TRACK_EFFECT_IDS.ATAQUE_FURTIVO, 'Ataque Furtivo', 'instant');
     
-    const diceBonus = getAtaqueFurtivoDice(nex);
-    const doubledDice = assassinarActive ? ` (dobrado: ${diceBonus.replace('+', '+').replace('d6', 'd6 x2')})` : '';
+    const diceBonus = sneakAttackDice;
+    const multiplierText = sneakAttackMultiplier > 1 
+      ? ` (x${sneakAttackMultiplier} = ${diceBonus.replace('+', '+')})`
+      : '';
     
     toast.success('Ataque Furtivo ativado!', {
-      description: `${diceBonus} dano extra${doubledDice}. Custo: 1 PE.`
+      description: `${diceBonus} dano extra${multiplierText}. Custo: 1 PE.${sueSneakAttack ? ' (via SUE)' : ''}`
     });
 
     // Se Assassinar estava ativo, desativa após o uso
     if (assassinarActive) {
       setAssassinarActive(false);
     }
-  };
+  }, [peCurrent, ataqueFurtivoUsedThisRound, onPEChange, onAbilityUsed, onActivateEffect, sneakAttackDice, sneakAttackMultiplier, assassinarActive, sueSneakAttack]);
 
   /**
    * Ativa Assassinar (3 PE + ação de movimento)
    */
-  const handleAssassinar = () => {
+  const handleAssassinar = useCallback(() => {
     if (peCurrent < 3) {
       toast.error('PE insuficiente', { description: 'Assassinar requer 3 PE.' });
       return;
@@ -127,12 +188,12 @@ export function InfiltradorPanel({
     toast.success('Assassinar ativado!', {
       description: `Próximo Ataque Furtivo terá dados dobrados. Alvo fica inconsciente/morrendo (Fort DT ${getAssassinarDT(agility)} evita).`
     });
-  };
+  }, [peCurrent, onPEChange, onActivateEffect, agility]);
 
   /**
    * Ativa Sombra Fugaz (3 PE)
    */
-  const handleSombraFugaz = () => {
+  const handleSombraFugaz = useCallback(() => {
     if (peCurrent < 3) {
       toast.error('PE insuficiente', { description: 'Sombra Fugaz requer 3 PE.' });
       return;
@@ -146,7 +207,7 @@ export function InfiltradorPanel({
     toast.success('Sombra Fugaz ativado!', {
       description: 'Ignora penalidade de -20 no teste de Furtividade após ação chamativa.'
     });
-  };
+  }, [peCurrent, onPEChange, onActivateEffect]);
 
   return (
     <Card className="border-purple-500/30 bg-purple-950/20">
@@ -157,9 +218,34 @@ export function InfiltradorPanel({
           <Badge variant="outline" className="ml-auto text-xs">
             NEX {nex}%
           </Badge>
+          {/* Indicador de dados do SUE */}
+          {sueSneakAttack && (
+            <Badge variant="secondary" className="text-[10px]">
+              SUE
+            </Badge>
+          )}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
+        {/* Indicador de bônus de furtividade do SUE */}
+        {sueStealthBonuses && (removesStealthMovementPenalty || ignoresStealthPenalties) && (
+          <div className="p-2 rounded-lg bg-purple-500/10 border border-purple-500/20 space-y-1">
+            <p className="text-xs font-medium text-purple-300">Bônus de Furtividade (SUE)</p>
+            <div className="flex gap-2 flex-wrap">
+              {removesStealthMovementPenalty && (
+                <Badge variant="outline" className="text-[10px] border-purple-500/30 text-purple-300">
+                  Sem penalidade de movimento
+                </Badge>
+              )}
+              {ignoresStealthPenalties && (
+                <Badge variant="outline" className="text-[10px] border-purple-500/30 text-purple-300">
+                  Ignora todas as penalidades
+                </Badge>
+              )}
+            </div>
+          </div>
+        )}
+        
         {/* NEX 10% - Ataque Furtivo */}
         {hasAtaqueFurtivo && (
           <div className="flex items-center justify-between gap-2 p-2 rounded-lg bg-purple-900/30 border border-purple-500/20">
@@ -174,14 +260,16 @@ export function InfiltradorPanel({
                         <Info className="h-3 w-3 text-muted-foreground" />
                       </TooltipTrigger>
                       <TooltipContent className="max-w-xs">
-                        <p>1x/rodada. Contra alvo desprevenido (corpo a corpo, curto ou flanqueando), causa {getAtaqueFurtivoDice(nex)} dano extra.</p>
+                        <p>1x/rodada. Contra alvo desprevenido (corpo a corpo, curto ou flanqueando), causa {sneakAttackDice} dano extra.</p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {getAtaqueFurtivoDice(nex)} dano • 1 PE • 1x/rodada
-                  {assassinarActive && <span className="text-red-400 ml-1">(dados dobrados!)</span>}
+                  {sneakAttackDice} dano • 1 PE • 1x/rodada
+                  {(assassinarActive || sneakAttackMultiplier > 1) && (
+                    <span className="text-red-400 ml-1">(x{sneakAttackMultiplier} dados!)</span>
+                  )}
                 </p>
               </div>
             </div>
@@ -209,6 +297,9 @@ export function InfiltradorPanel({
               </div>
               <p className="text-xs text-muted-foreground">
                 +5 Atletismo e Crime. Esconder sem penalidade de movimento.
+                {removesStealthMovementPenalty && sueSneakAttack && (
+                  <span className="text-purple-400 ml-1">(via SUE)</span>
+                )}
               </p>
             </div>
           </div>
@@ -271,6 +362,9 @@ export function InfiltradorPanel({
                 </div>
                 <p className="text-xs text-muted-foreground">
                   3 PE • Ignora -20 Furtividade
+                  {ignoresStealthPenalties && (
+                    <span className="text-purple-400 ml-1">(via SUE)</span>
+                  )}
                 </p>
               </div>
             </div>

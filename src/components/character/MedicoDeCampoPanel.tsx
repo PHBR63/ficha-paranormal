@@ -1,6 +1,8 @@
 /**
  * MedicoDeCampoPanel - Painel de habilidades da trilha Médico de Campo (Especialista)
  * 
+ * REFATORADO PARA CONSUMIR DADOS DO SUE (Sistema Unificado de Efeitos)
+ * 
  * Requisito Especial: Treinado em Medicina + kit de medicina
  * 
  * Habilidades:
@@ -43,6 +45,13 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import type { EffectDuration } from '@/hooks/useActivatedEffects';
+import { TRACK_EFFECT_IDS } from '@/hooks/useActivatedEffects';
+import type { ComputedEffects } from '@/lib/unified-effects-engine';
+
+// =====================================================
+// Funções Auxiliares
+// =====================================================
 
 /**
  * Calcula os dados de cura do Paramédico baseado no NEX
@@ -54,14 +63,17 @@ function getParamedicoDice(nex: number): { base: number; dieType: string; formul
   return { base: 2, dieType: 'd10', formula: '2d10' };
 }
 
-import type { EffectDuration } from '@/hooks/useActivatedEffects';
-import { TRACK_EFFECT_IDS } from '@/hooks/useActivatedEffects';
+// =====================================================
+// Props do Componente
+// =====================================================
 
 interface MedicoDeCampoPanelProps {
   classTrack?: string | null;
   nex: number;
   peCurrent: number;
   onPEChange: (newPE: number) => void;
+  /** Dados consolidados do SUE (opcional - se fornecido, usa dados do SUE) */
+  computedEffects?: ComputedEffects;
   /** Callback opcional para aplicar cura a um personagem */
   onHeal?: (amount: number, targetName?: string) => void;
   /** Se a habilidade Reanimação já foi usada nesta cena */
@@ -74,14 +86,20 @@ interface MedicoDeCampoPanelProps {
   isEffectActive?: (id: string) => boolean;
 }
 
+// =====================================================
+// Componente Principal
+// =====================================================
+
 export function MedicoDeCampoPanel({
   classTrack,
   nex,
   peCurrent,
   onPEChange,
+  computedEffects,
   onHeal,
   reanimacaoUsedThisScene = false,
   onReanimacaoUsed,
+  onActivateEffect,
 }: MedicoDeCampoPanelProps) {
   const [extraDice, setExtraDice] = useState(0);
   const [showParamedicoDrawer, setShowParamedicoDrawer] = useState(false);
@@ -89,8 +107,27 @@ export function MedicoDeCampoPanel({
   // Verifica se é Médico de Campo (suporta ambos os formatos)
   const isMedicoCampo = classTrack === 'Médico de Campo' || classTrack === 'medico-campo';
   
-  // Dados de cura base
-  const healingDice = useMemo(() => getParamedicoDice(nex), [nex]);
+  // ===== DADOS DO SUE (se disponível) =====
+  
+  // Dados de cura do SUE
+  const sueHealing = computedEffects?.healing;
+  
+  // Dados de suporte do SUE
+  const sueSupport = computedEffects?.support;
+  
+  // ===== DADOS DERIVADOS =====
+  
+  // Dados de cura base - usa SUE se disponível
+  const healingDice = useMemo(() => {
+    if (sueHealing?.baseDice && sueHealing?.dieType) {
+      return {
+        base: sueHealing.baseDice,
+        dieType: sueHealing.dieType,
+        formula: `${sueHealing.baseDice}${sueHealing.dieType}`
+      };
+    }
+    return getParamedicoDice(nex);
+  }, [sueHealing, nex]);
   
   // Custo total do Paramédico (2 PE base + 1 PE por dado extra)
   const paramedicoCost = 2 + extraDice;
@@ -100,6 +137,30 @@ export function MedicoDeCampoPanel({
   const hasEquipeTrauma = nex >= 40;
   const hasResgate = nex >= 65;
   const hasReanimacao = nex >= 99;
+
+  // ===== DADOS DE SUPORTE DO SUE =====
+  
+  // Movimento livre para aliado (Resgate)
+  const freeMovementAbility = useMemo(() => {
+    return sueSupport?.freeMovement ?? null;
+  }, [sueSupport]);
+
+  // Bônus ao curar (Resgate)
+  const onHealEffects = useMemo(() => {
+    return sueSupport?.onHealEffects ?? [];
+  }, [sueSupport]);
+
+  // Habilidade de remover condições (Equipe de Trauma)
+  const removeConditionAbilities = useMemo(() => {
+    return sueSupport?.removeConditionAbilities ?? [];
+  }, [sueSupport]);
+
+  // Habilidade de ressurreição (Reanimação)
+  const resurrectAbilities = useMemo(() => {
+    return sueSupport?.resurrectAbilities ?? [];
+  }, [sueSupport]);
+
+  // ===== HANDLERS =====
 
   /**
    * Abre drawer para configurar Paramédico
@@ -125,12 +186,16 @@ export function MedicoDeCampoPanel({
     const totalDice = healingDice.base + extraDice;
     const formula = `${totalDice}d10`;
     
+    // Verifica se há bônus de defesa ao curar (Resgate)
+    const defenseBonus = onHealEffects.length > 0 ? onHealEffects[0].targetDefenseBonus : 0;
+    const defenseBonusText = defenseBonus > 0 ? ` Você e o aliado recebem +${defenseBonus} Defesa.` : '';
+    
     toast.success('Paramédico ativado!', {
-      description: `Cure ${formula} PV de você ou aliado adjacente. Custo: ${paramedicoCost} PE.`
+      description: `Cure ${formula} PV de você ou aliado adjacente.${defenseBonusText} Custo: ${paramedicoCost} PE.${sueHealing ? ' (via SUE)' : ''}`
     });
     
     setShowParamedicoDrawer(false);
-  }, [peCurrent, paramedicoCost, extraDice, healingDice.base, onPEChange]);
+  }, [peCurrent, paramedicoCost, extraDice, healingDice.base, onPEChange, onHealEffects, sueHealing]);
 
   /**
    * Usa Equipe de Trauma (2 PE)
@@ -142,10 +207,16 @@ export function MedicoDeCampoPanel({
     }
 
     onPEChange(peCurrent - 2);
+    
+    // Verifica condições excluídas do SUE
+    const excludedConditions = removeConditionAbilities.length > 0 
+      ? removeConditionAbilities[0].excludedConditions 
+      : ['morrendo'];
+    
     toast.success('Equipe de Trauma ativado!', {
-      description: 'Remove uma condição negativa (exceto morrendo) de aliado adjacente.'
+      description: `Remove uma condição negativa (exceto ${excludedConditions.join(', ')}) de aliado adjacente.${sueSupport ? ' (via SUE)' : ''}`
     });
-  }, [peCurrent, onPEChange]);
+  }, [peCurrent, onPEChange, removeConditionAbilities, sueSupport]);
 
   /**
    * Usa Reanimação (10 PE, 1x/cena)
@@ -166,10 +237,15 @@ export function MedicoDeCampoPanel({
     onPEChange(peCurrent - 10);
     onReanimacaoUsed?.();
     
+    // Verifica tipos de morte excluídos do SUE
+    const excludedDeathTypes = resurrectAbilities.length > 0 
+      ? resurrectAbilities[0].excludedDeathTypes 
+      : ['dano massivo'];
+    
     toast.success('Reanimação ativada!', {
-      description: 'Traz de volta à vida um personagem que morreu nesta cena (exceto morte por dano massivo).'
+      description: `Traz de volta à vida um personagem que morreu nesta cena (exceto morte por ${excludedDeathTypes.join(', ')}).${sueSupport ? ' (via SUE)' : ''}`
     });
-  }, [peCurrent, reanimacaoUsedThisScene, onPEChange, onReanimacaoUsed]);
+  }, [peCurrent, reanimacaoUsedThisScene, onPEChange, onReanimacaoUsed, resurrectAbilities, sueSupport]);
 
   // Não renderiza se não for Médico de Campo
   if (!isMedicoCampo) return null;
@@ -193,9 +269,34 @@ export function MedicoDeCampoPanel({
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
+            {/* Indicador de dados do SUE */}
+            {(sueHealing || sueSupport) && (
+              <Badge variant="secondary" className="text-[10px] ml-auto">
+                SUE
+              </Badge>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
+          
+          {/* Indicador de bônus de suporte do SUE */}
+          {sueSupport && (freeMovementAbility || onHealEffects.length > 0) && (
+            <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 space-y-1">
+              <p className="text-xs font-medium text-emerald-300">Bônus de Suporte (SUE)</p>
+              <div className="flex gap-2 flex-wrap">
+                {freeMovementAbility && (
+                  <Badge variant="outline" className="text-[10px] border-emerald-500/30 text-emerald-300">
+                    Movimento livre para aliado
+                  </Badge>
+                )}
+                {onHealEffects.length > 0 && onHealEffects[0].targetDefenseBonus > 0 && (
+                  <Badge variant="outline" className="text-[10px] border-emerald-500/30 text-emerald-300">
+                    +{onHealEffects[0].targetDefenseBonus} Defesa ao curar
+                  </Badge>
+                )}
+              </div>
+            </div>
+          )}
           
           {/* NEX 10% - Paramédico */}
           {hasParamedico && (
@@ -221,6 +322,9 @@ export function MedicoDeCampoPanel({
               </div>
               <p className="text-xs text-muted-foreground">
                 Cura {healingDice.formula} PV (ação padrão). +1 PE por dado extra.
+                {sueHealing && (
+                  <span className="text-emerald-400 ml-1">(via SUE)</span>
+                )}
               </p>
             </div>
           )}
@@ -249,6 +353,9 @@ export function MedicoDeCampoPanel({
               </div>
               <p className="text-xs text-muted-foreground">
                 Remove condição negativa (exceto morrendo) de aliado adjacente.
+                {removeConditionAbilities.length > 0 && (
+                  <span className="text-emerald-400 ml-1">(via SUE)</span>
+                )}
               </p>
             </div>
           )}
@@ -270,7 +377,10 @@ export function MedicoDeCampoPanel({
               <div className="flex items-center gap-2 mt-1 p-2 rounded bg-emerald-500/10 border border-emerald-500/20">
                 <CheckCircle2 className="h-3 w-3 text-emerald-400" />
                 <span className="text-xs text-emerald-300">
-                  +5 Defesa ao curar (você e aliado)
+                  +{onHealEffects.length > 0 ? onHealEffects[0].targetDefenseBonus : 5} Defesa ao curar (você e aliado)
+                  {onHealEffects.length > 0 && (
+                    <span className="text-muted-foreground ml-1">(via SUE)</span>
+                  )}
                 </span>
               </div>
             </div>
@@ -302,6 +412,9 @@ export function MedicoDeCampoPanel({
               <p className="text-xs text-muted-foreground">
                 Ação completa. Traz de volta à vida um personagem que morreu nesta cena 
                 (exceto morte por dano massivo).
+                {resurrectAbilities.length > 0 && (
+                  <span className="text-emerald-400 ml-1">(via SUE)</span>
+                )}
               </p>
             </div>
           )}
@@ -315,6 +428,9 @@ export function MedicoDeCampoPanel({
             <DrawerTitle className="flex items-center gap-2">
               <Heart className="h-5 w-5 text-emerald-400" />
               Paramédico
+              {sueHealing && (
+                <Badge variant="secondary" className="text-[10px]">SUE</Badge>
+              )}
             </DrawerTitle>
             <DrawerDescription>
               Cure {healingDice.formula} PV base. Adicione dados extras gastando +1 PE cada.
@@ -364,6 +480,15 @@ export function MedicoDeCampoPanel({
                 <span>PE disponível:</span>
                 <span>{peCurrent} PE</span>
               </div>
+              {/* Mostra bônus de defesa se Resgate estiver desbloqueado */}
+              {hasResgate && onHealEffects.length > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span>Bônus de Resgate:</span>
+                  <span className="font-bold text-emerald-400">
+                    +{onHealEffects[0].targetDefenseBonus} Defesa
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 
