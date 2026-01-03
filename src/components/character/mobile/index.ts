@@ -70,3 +70,10 @@ export { MobileTecnicoPanel } from './MobileTecnicoPanel';
 export { MobileAniquiladorPanel } from './MobileAniquiladorPanel';
 export { MobileTrackPassiveEffectsWidget } from './MobileTrackPassiveEffectsWidget';
 export { MobileSUEDebugPanel } from './MobileSUEDebugPanel';
+
+// Trilhas do Ocultista
+export { MobileConduitePanel } from './MobileConduitePanel';
+export { MobileFlageladorPanel } from './MobileFlageladorPanel';
+export { MobileGraduadoPanel } from './MobileGraduadoPanel';
+export { MobileIntuitivoPanel } from './MobileIntuitivoPanel';
+export { MobileLaminaParanormalPanel } from './MobileLaminaParanormalPanel';

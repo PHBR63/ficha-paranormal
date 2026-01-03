@@ -2,30 +2,25 @@
  * Trilhas do Ocultista - Ordem Paranormal RPG
  * 
  * Painéis para as 5 trilhas do Ocultista:
- * - Condutor
+ * - Conduíte
  * - Flagelador
  * - Graduado
  * - Intuitivo
  * - Lâmina Paranormal
  * 
- * NOTA: Trilhas do Ocultista ainda não implementadas como componentes.
- * Este módulo serve como placeholder para futura implementação.
- * 
  * @module tracks/ocultista
  */
 
-// TODO: Implementar painéis das trilhas do Ocultista
-// export { default as CondutorPanel } from '../../CondutorPanel';
-// export { default as FlageladorPanel } from '../../FlageladorPanel';
-// export { default as GraduadoPanel } from '../../GraduadoPanel';
-// export { default as IntuitivoPanel } from '../../IntuitivoPanel';
-// export { default as LaminaParanormalPanel } from '../../LaminaParanormalPanel';
+// Desktop panels
+export { ConduitePanel } from '@/components/character/ConduitePanel';
+export { FlageladorPanel } from '@/components/character/FlageladorPanel';
+export { GraduadoPanel } from '@/components/character/GraduadoPanel';
+export { IntuitivoPanel } from '@/components/character/IntuitivoPanel';
+export { LaminaParanormalPanel } from '@/components/character/LaminaParanormalPanel';
 
-// Placeholder export para evitar erro de módulo vazio
-export const OCULTISTA_TRACKS_PLACEHOLDER = {
-  condutor: 'Condutor - A implementar',
-  flagelador: 'Flagelador - A implementar',
-  graduado: 'Graduado - A implementar',
-  intuitivo: 'Intuitivo - A implementar',
-  laminaParanormal: 'Lâmina Paranormal - A implementar',
-} as const;
+// Mobile panels
+export { MobileConduitePanel } from '@/components/character/mobile/MobileConduitePanel';
+export { MobileFlageladorPanel } from '@/components/character/mobile/MobileFlageladorPanel';
+export { MobileGraduadoPanel } from '@/components/character/mobile/MobileGraduadoPanel';
+export { MobileIntuitivoPanel } from '@/components/character/mobile/MobileIntuitivoPanel';
+export { MobileLaminaParanormalPanel } from '@/components/character/mobile/MobileLaminaParanormalPanel';
