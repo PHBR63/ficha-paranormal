@@ -93,6 +93,8 @@ interface MobileGuerreiroPanelProps {
   onRequestAttack?: () => void;
   onActivateEffect?: (id: string, name: string, duration?: EffectDuration, metadata?: Record<string, unknown>) => void;
   isEffectActive?: (id: string) => boolean;
+  /** Dados consolidados do SUE (opcional - se fornecido, usa dados do SUE) */
+  computedEffects?: import('@/lib/unified-effects-engine').ComputedEffects;
 }
 
 // IDs de efeitos do Guerreiro
