@@ -30,6 +30,7 @@ import {
 } from '@/components/ui/tooltip';
 import type { EffectDuration } from '@/hooks/useActivatedEffects';
 import { TRACK_EFFECT_IDS } from '@/hooks/useActivatedEffects';
+import type { ComputedEffects } from '@/hooks/useUnifiedEffects';
 
 interface NegociadorPanelProps {
   classTrack?: string | null;
@@ -46,6 +47,8 @@ interface NegociadorPanelProps {
   onActivateEffect?: (id: string, name: string, duration: EffectDuration, metadata?: Record<string, unknown>) => void;
   /** Verifica se um efeito está ativo */
   isEffectActive?: (id: string) => boolean;
+  /** Dados consolidados do SUE */
+  computedEffects?: ComputedEffects;
 }
 
 export function NegociadorPanel({
@@ -57,8 +60,25 @@ export function NegociadorPanel({
   onEloquenciaToggle,
   conhecoCaraUsedThisMission = false,
   onConhecoCaraUsed,
+  computedEffects,
 }: NegociadorPanelProps) {
   const [isConcentrating, setIsConcentrating] = useState(eloquenciaActive);
+  
+  // Usa dados do SUE para exibir habilidades consolidadas se disponível
+  const sueAbilities = useMemo(() => {
+    if (!computedEffects) return null;
+    
+    return {
+      // Buff de aliados (Discurso Motivador)
+      allyBuff: computedEffects.allyBuff,
+      // Efeito social (Eloquência)
+      socialEffect: computedEffects.socialEffect,
+      // Rede de contatos (Eu Conheço um Cara)
+      contacts: computedEffects.contacts,
+      // Cópia de habilidade (Truque de Mestre)
+      copyAbility: computedEffects.copyAbility,
+    };
+  }, [computedEffects]);
   
   // Verifica se é Negociador (suporta ambos os formatos)
   const isNegociador = classTrack === 'Negociador' || classTrack === 'negociador';

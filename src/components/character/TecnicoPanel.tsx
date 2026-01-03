@@ -3,7 +3,7 @@
  * Habilidades: Inventário Otimizado, Remendão, Improvisar, Preparado para Tudo
  */
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -34,6 +34,7 @@ import {
 
 import type { EffectDuration } from '@/hooks/useActivatedEffects';
 import { TRACK_EFFECT_IDS } from '@/hooks/useActivatedEffects';
+import type { ComputedEffects } from '@/hooks/useUnifiedEffects';
 
 interface TecnicoPanelProps {
   classTrack: string | null;
@@ -49,6 +50,8 @@ interface TecnicoPanelProps {
   onActivateEffect?: (id: string, name: string, duration: EffectDuration, metadata?: Record<string, unknown>) => void;
   /** Verifica se um efeito está ativo */
   isEffectActive?: (id: string) => boolean;
+  /** Dados consolidados do SUE */
+  computedEffects?: ComputedEffects;
 }
 
 /**
@@ -60,10 +63,25 @@ export function TecnicoPanel({
   nex, 
   peCurrent, 
   onPEChange,
-  attributes 
+  attributes,
+  computedEffects,
 }: TecnicoPanelProps) {
   const [improvisarDrawerOpen, setImprovisarDrawerOpen] = useState(false);
   const [preparadoDrawerOpen, setPreparadoDrawerOpen] = useState(false);
+  
+  // Usa dados do SUE para exibir bônus consolidados se disponível
+  const sueTechnicianData = useMemo(() => {
+    if (!computedEffects) return null;
+    
+    return {
+      // Capacidade de carga do Técnico
+      carryCapacity: computedEffects.technician?.carryCapacity,
+      // Redução de espaço de itens
+      itemSpaceReduction: computedEffects.technician?.itemSpaceReduction?.total ?? 0,
+      // Redução de categoria de inventário
+      categoryReduction: computedEffects.inventory?.totalCategoryReduction ?? 0,
+    };
+  }, [computedEffects]);
   
   // Verifica se é a trilha correta
   if (classTrack !== 'tecnico') return null;

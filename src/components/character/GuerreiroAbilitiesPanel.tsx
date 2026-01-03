@@ -103,6 +103,7 @@ const PASSIVE_INFO = {
 };
 
 import type { EffectDuration } from '@/hooks/useActivatedEffects';
+import type { ComputedEffects } from '@/hooks/useUnifiedEffects';
 
 interface GuerreiroAbilitiesPanelProps {
   classTrack: string | null | undefined;
@@ -116,6 +117,8 @@ interface GuerreiroAbilitiesPanelProps {
   onActivateEffect?: (id: string, name: string, duration: EffectDuration, metadata?: Record<string, unknown>) => void;
   /** Verifica se um efeito está ativo */
   isEffectActive?: (id: string) => boolean;
+  /** Dados consolidados do SUE para exibição de bônus passivos */
+  computedEffects?: ComputedEffects;
 }
 
 export function GuerreiroAbilitiesPanel({
@@ -125,8 +128,22 @@ export function GuerreiroAbilitiesPanel({
   onPEChange,
   className,
   onRequestAttack,
+  computedEffects,
 }: GuerreiroAbilitiesPanelProps) {
   const { toast } = useToast();
+  
+  // Usa dados do SUE para exibir bônus passivos se disponível
+  const suePassiveBonuses = useMemo(() => {
+    if (!computedEffects) return null;
+    
+    return {
+      // Técnica Letal: +2 margem crítico corpo a corpo
+      criticalMarginBonus: computedEffects.critical.marginBonus,
+      // Potência Máxima: 2x multiplicador ataque especial
+      specialAttackMultiplier: computedEffects.combatAdvanced.specialAttackMultiplier.value,
+      hasMaxDamageOnCrit: computedEffects.combatAdvanced.maximumDamageOnCrit.enabled,
+    };
+  }, [computedEffects]);
   const [isOpen, setIsOpen] = useState(true);
   const [activatingAbility, setActivatingAbility] = useState<string | null>(null);
   
