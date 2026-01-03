@@ -1551,7 +1551,7 @@ export function MobileCombatRollModal({
             <Button
               onClick={rollAttack}
               disabled={!canAffordPE || isRolling}
-              className="w-full h-12 gap-2"
+              className="w-full h-12 gap-2 font-medium"
             >
               {isRolling ? (
                 <motion.div
@@ -1577,70 +1577,76 @@ export function MobileCombatRollModal({
                   setPhase('setup');
                   setAttackResult(null);
                 }}
-                className="flex-1"
+                className="flex-1 h-10"
               >
-                <RotateCcw className="w-4 h-4 mr-2" />
-                Novo Ataque
+                <RotateCcw className="w-4 h-4 mr-1.5" />
+                <span className="text-sm">Novo Ataque</span>
               </Button>
               <Button
                 onClick={rollDamageAction}
                 disabled={isRolling}
-                className="flex-1 gap-2"
+                className="flex-1 h-10 gap-2"
               >
                 {isRolling ? (
                   <motion.div
                     animate={{ rotate: 360 }}
                     transition={{ duration: 0.5, repeat: Infinity, ease: 'linear' }}
                   >
-                    <Dices className="w-5 h-5" />
+                    <Dices className="w-4 h-4" />
                   </motion.div>
                 ) : (
                   <>
-                    <Flame className="w-5 h-5" />
-                    Rolar Dano
+                    <Flame className="w-4 h-4" />
+                    <span className="text-sm">Rolar Dano</span>
                   </>
                 )}
               </Button>
             </div>
           )}
           
+          {/* Fase damage: layout empilhado para evitar botões cortados */}
           {phase === 'damage' && (
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={rollDamageAction}
-                className="flex-1"
-              >
-                <RotateCcw className="w-4 h-4 mr-2" />
-                Rolar Novamente
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setPhase('setup');
-                  setAttackResult(null);
-                  setDamageResult(null);
-                  setBuffDiceResult(null);
-                }}
-                className="flex-1"
-              >
-                <Sword className="w-4 h-4 mr-2" />
-                Novo Ataque
-              </Button>
+            <div className="flex flex-col gap-2">
+              {/* Ação principal - destaque */}
               <Button
                 onClick={handleClose}
-                className="flex-1"
+                className="w-full h-12 font-medium gap-2"
               >
-                <Check className="w-4 h-4 mr-2" />
-                Concluir
+                <Check className="w-5 h-5" />
+                Concluir Ataque
               </Button>
+              
+              {/* Ações secundárias - lado a lado */}
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={rollDamageAction}
+                  className="flex-1 h-10"
+                >
+                  <RotateCcw className="w-4 h-4 mr-1.5" />
+                  <span className="text-sm">Rolar Dano</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setPhase('setup');
+                    setAttackResult(null);
+                    setDamageResult(null);
+                    setBuffDiceResult(null);
+                  }}
+                  className="flex-1 h-10"
+                >
+                  <Sword className="w-4 h-4 mr-1.5" />
+                  <span className="text-sm">Novo Ataque</span>
+                </Button>
+              </div>
             </div>
           )}
           
           {phase !== 'damage' && (
-            <Button variant="ghost" onClick={handleClose} className="w-full">
-              <X className="w-4 h-4 mr-2" />
-              Fechar
+            <Button variant="ghost" onClick={handleClose} className="w-full h-10 mt-1">
+              <X className="w-4 h-4 mr-1.5" />
+              <span className="text-sm">Fechar</span>
             </Button>
           )}
         </MobileDrawerFooter>
