@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
+import { MobileButtonGroup } from '@/components/ui/mobile-button-group';
 import {
   Dices,
   Skull,
@@ -460,16 +461,26 @@ const DamageStep = memo(function DamageStep({
       )}
 
       {result && (
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={onReroll} className="flex-1 gap-1.5" size="sm">
-            <RefreshCw className="w-4 h-4" />
-            Rolar
-          </Button>
-          <Button onClick={onNext} className="flex-1 gap-1.5" size="sm">
-            Continuar
-            <ChevronRight className="w-4 h-4" />
-          </Button>
-        </div>
+        <MobileButtonGroup
+          buttons={[
+            {
+              id: 'reroll',
+              label: 'Rolar',
+              icon: <RefreshCw className="w-4 h-4" />,
+              onClick: onReroll,
+              variant: 'outline',
+              type: 'secondary',
+            },
+            {
+              id: 'continue',
+              label: 'Continuar',
+              icon: <ChevronRight className="w-4 h-4" />,
+              onClick: onNext,
+              type: 'secondary',
+            },
+          ]}
+          layout="row"
+        />
       )}
     </div>
   );

@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/mobile-drawer';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { MobileButtonGroup } from '@/components/ui/mobile-button-group';
 import { 
   History, 
   Sparkles, 
@@ -243,18 +244,22 @@ export const MobileRitualCastHistory = memo(function MobileRitualCastHistory({
         {/* Ações */}
         {history.length > 0 && (
           <MobileDrawerFooter bordered>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                if ('vibrate' in navigator) navigator.vibrate(30);
-                onClear();
-              }}
-              className="w-full text-destructive hover:text-destructive hover:bg-destructive/10"
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
-              Limpar Histórico
-            </Button>
+            <MobileButtonGroup
+              buttons={[
+                {
+                  id: 'clear-history',
+                  label: 'Limpar Histórico',
+                  icon: <Trash2 className="w-4 h-4" />,
+                  onClick: () => {
+                    if ('vibrate' in navigator) navigator.vibrate(30);
+                    onClear();
+                  },
+                  variant: 'outline',
+                  type: 'secondary',
+                  className: 'text-destructive hover:text-destructive hover:bg-destructive/10',
+                },
+              ]}
+            />
           </MobileDrawerFooter>
         )}
       </MobileDrawerContent>
