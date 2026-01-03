@@ -69,3 +69,4 @@ export { MobileNegociadorPanel } from './MobileNegociadorPanel';
 export { MobileTecnicoPanel } from './MobileTecnicoPanel';
 export { MobileAniquiladorPanel } from './MobileAniquiladorPanel';
 export { MobileTrackPassiveEffectsWidget } from './MobileTrackPassiveEffectsWidget';
+export { MobileSUEDebugPanel } from './MobileSUEDebugPanel';

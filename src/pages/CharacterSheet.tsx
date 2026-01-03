@@ -2029,6 +2029,7 @@ export default function CharacterSheet() {
                 onAbilityUsed={roundTracking.markAbilityUsed}
                 onActivateEffect={activatedEffects.activateEffect}
                 isEffectActive={activatedEffects.isEffectActive}
+                computedEffects={unifiedEffects.computed}
               />
 
               {/* Painel de Aniquilador - Técnicas Secretas */}
@@ -2043,6 +2044,7 @@ export default function CharacterSheet() {
                 })}
                 onActivateEffect={activatedEffects.activateEffect}
                 isEffectActive={activatedEffects.isEffectActive}
+                computedEffects={unifiedEffects.computed}
               />
 
               {/* Painel de Guerreiro - Revidar e Força Opressora */}
@@ -2057,6 +2059,7 @@ export default function CharacterSheet() {
                 })}
                 onActivateEffect={activatedEffects.activateEffect}
                 isEffectActive={activatedEffects.isEffectActive}
+                computedEffects={unifiedEffects.computed}
               />
 
               {/* Painel Operações Especiais - Ataque Extra e Surto de Adrenalina */}
@@ -2073,6 +2076,7 @@ export default function CharacterSheet() {
                 onAbilityUsed={roundTracking.markAbilityUsed}
                 onActivateEffect={activatedEffects.activateEffect}
                 isEffectActive={activatedEffects.isEffectActive}
+                computedEffects={unifiedEffects.computed}
               />
 
               {/* Painel Tropa de Choque - Cai Dentro e Duro de Matar */}
@@ -2090,6 +2094,7 @@ export default function CharacterSheet() {
                 })}
                 onActivateEffect={activatedEffects.activateEffect}
                 isEffectActive={activatedEffects.isEffectActive}
+                computedEffects={unifiedEffects.computed}
               />
 
               {/* Painel Atirador de Elite */}
@@ -2105,6 +2110,7 @@ export default function CharacterSheet() {
                 })}
                 onActivateEffect={activatedEffects.activateEffect}
                 isEffectActive={activatedEffects.isEffectActive}
+                computedEffects={unifiedEffects.computed}
               />
 
               {/* Painel Infiltrador */}
@@ -2122,6 +2128,7 @@ export default function CharacterSheet() {
                 onAbilityUsed={roundTracking.markAbilityUsed}
                 onActivateEffect={activatedEffects.activateEffect}
                 isEffectActive={activatedEffects.isEffectActive}
+                computedEffects={unifiedEffects.computed}
               />
 
               {/* Painel Médico de Campo */}
@@ -2136,6 +2143,7 @@ export default function CharacterSheet() {
                 })}
                 onActivateEffect={activatedEffects.activateEffect}
                 isEffectActive={activatedEffects.isEffectActive}
+                computedEffects={unifiedEffects.computed}
               />
 
               {/* Painel Negociador */}
@@ -2150,6 +2158,7 @@ export default function CharacterSheet() {
                 })}
                 onActivateEffect={activatedEffects.activateEffect}
                 isEffectActive={activatedEffects.isEffectActive}
+                computedEffects={unifiedEffects.computed}
               />
               
               <TecnicoPanel
@@ -2167,6 +2176,7 @@ export default function CharacterSheet() {
                 }}
                 onActivateEffect={activatedEffects.activateEffect}
                 isEffectActive={activatedEffects.isEffectActive}
+                computedEffects={unifiedEffects.computed}
               />
 
               {/* Widget de Efeitos Passivos da Trilha */}

@@ -98,6 +98,8 @@ interface AniquiladorPanelProps {
   onActivateEffect?: (id: string, name: string, duration: EffectDuration, metadata?: Record<string, unknown>) => void;
   /** Verifica se um efeito está ativo */
   isEffectActive?: (id: string) => boolean;
+  /** Dados consolidados do SUE (opcional - se fornecido, usa dados do SUE) */
+  computedEffects?: import('@/lib/unified-effects-engine').ComputedEffects;
 }
 
 export function AniquiladorPanel({

@@ -97,6 +97,7 @@ import {
   MobileTecnicoPanel,
   MobileAniquiladorPanel,
   MobileTrackPassiveEffectsWidget,
+  MobileSUEDebugPanel,
   type WeaponEntry,
   type BonusSource,
   type ActiveCondition,
@@ -1505,6 +1506,7 @@ export function MobileCharacterSheet({
               onPEChange={handlePEChange}
               onActivateEffect={activatedEffects.activateEffect}
               isEffectActive={activatedEffects.isEffectActive}
+              computedEffects={unifiedEffects.computed}
             />
             
             {/* Painel Guerreiro - Revidar e Força Opressora */}
@@ -1515,6 +1517,7 @@ export function MobileCharacterSheet({
               onPEChange={handlePEChange}
               onActivateEffect={activatedEffects.activateEffect}
               isEffectActive={activatedEffects.isEffectActive}
+              computedEffects={unifiedEffects.computed}
             />
             
             {/* Painel Operações Especiais - Ataque Extra e Surto de Adrenalina */}
@@ -1527,6 +1530,7 @@ export function MobileCharacterSheet({
               onAbilityUsed={roundTracking.markAbilityUsed}
               onActivateEffect={activatedEffects.activateEffect}
               isEffectActive={activatedEffects.isEffectActive}
+              computedEffects={unifiedEffects.computed}
             />
             
             {/* Painel Tropa de Choque - Cai Dentro e Duro de Matar */}
@@ -1540,6 +1544,7 @@ export function MobileCharacterSheet({
               onPEChange={handlePEChange}
               onActivateEffect={activatedEffects.activateEffect}
               isEffectActive={activatedEffects.isEffectActive}
+              computedEffects={unifiedEffects.computed}
             />
             
             {/* Painel Atirador de Elite */}
@@ -1551,6 +1556,7 @@ export function MobileCharacterSheet({
               onPEChange={handlePEChange}
               onActivateEffect={activatedEffects.activateEffect}
               isEffectActive={activatedEffects.isEffectActive}
+              computedEffects={unifiedEffects.computed}
             />
 
             {/* Painel Infiltrador */}
@@ -1564,6 +1570,7 @@ export function MobileCharacterSheet({
               onAbilityUsed={roundTracking.markAbilityUsed}
               onActivateEffect={activatedEffects.activateEffect}
               isEffectActive={activatedEffects.isEffectActive}
+              computedEffects={unifiedEffects.computed}
             />
 
             {/* Painel Médico de Campo */}
@@ -1574,6 +1581,7 @@ export function MobileCharacterSheet({
               onPEChange={handlePEChange}
               onActivateEffect={activatedEffects.activateEffect}
               isEffectActive={activatedEffects.isEffectActive}
+              computedEffects={unifiedEffects.computed}
             />
 
             {/* Painel Negociador */}
@@ -1584,6 +1592,7 @@ export function MobileCharacterSheet({
               onPEChange={handlePEChange}
               onActivateEffect={activatedEffects.activateEffect}
               isEffectActive={activatedEffects.isEffectActive}
+              computedEffects={unifiedEffects.computed}
             />
             
             {/* Painel Técnico */}
@@ -1598,6 +1607,7 @@ export function MobileCharacterSheet({
               }}
               onActivateEffect={activatedEffects.activateEffect}
               isEffectActive={activatedEffects.isEffectActive}
+              computedEffects={unifiedEffects.computed}
             />
             
             {/* Widget de Efeitos Passivos da Trilha */}
@@ -1745,6 +1755,12 @@ export function MobileCharacterSheet({
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Painel de Debug do SUE (modo desenvolvedor) */}
+      <MobileSUEDebugPanel 
+        effectsResult={unifiedEffects} 
+        characterName={character.name}
+      />
 
       {/* Barra de navegação fixa no bottom - Componente extraído */}
       <MobileTabNavigation
