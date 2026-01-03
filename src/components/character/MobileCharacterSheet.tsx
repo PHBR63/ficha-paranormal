@@ -492,6 +492,11 @@ export function MobileCharacterSheet({
     classTrack: character?.class_track,
     classPowers: character?.powers?.map(p => p.name) || [],
     activeConditions: character?.conditions || [],
+    // Novos campos para bônus condicionais do SUE
+    hpCurrent: localHpCurrent,
+    hpMax: character?.hp_max || 0,
+    peCurrent: localPeCurrent,
+    peMax: character?.pe_max || 0,
   });
 
   // Sincroniza conjurações de rituais com a campanha em tempo real (paridade com desktop)

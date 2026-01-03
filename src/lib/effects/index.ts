@@ -59,5 +59,17 @@ export {
 
 export type { ActiveClassPower } from './class-power-effects-adapter';
 
+// Adaptador de bônus condicionais
+export {
+  getConditionalBonusEffects,
+  getConditionalBonusById,
+  checkBonusRequirements,
+  getAvailableConditionalBonuses,
+  formatBonusEffects,
+  CONDITIONAL_BONUS_CATALOG,
+} from './conditional-bonus-effects-adapter';
+
+export type { ConditionalBonusDefinition } from './conditional-bonus-effects-adapter';
+
 // Re-exports de tipos
 export type { SustainedRitualInput } from './ritual-effects-adapter';
