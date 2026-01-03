@@ -1,6 +1,8 @@
 /**
  * Barrel exports para componentes mobile de combate e ficha
- * Fase de otimização mobile - componentes extraídos e memoizados
+ * 
+ * FASE 5: Trilhas refatoradas para usar componentes unificados responsivos
+ * Os painéis de trilha agora vêm de @/components/character/tracks com detecção automática mobile
  */
 
 // Utilitários compartilhados
@@ -49,7 +51,7 @@ export { MobileCombatDrawer } from './MobileCombatDrawer';
 // Componentes virtualizados (Performance)
 export { MobileVirtualizedPowersList, type PowerItem, type PowerItemType } from './MobileVirtualizedPowersList';
 
-// Fase de paridade desktop/mobile - Componentes novos
+// Fase de paridade desktop/mobile - Componentes de UI (não trilhas)
 export { MobileConditionManager, type ActiveCondition } from './MobileConditionManager';
 export { MobileSustainedRitualsPanel } from './MobileSustainedRitualsPanel';
 export { MobileConditionalBonusesPanel } from './MobileConditionalBonusesPanel';
@@ -58,22 +60,37 @@ export { MobileRitualCastHistory, type RitualCastRecord } from './MobileRitualCa
 export { MobileActiveEffectsPanel } from './MobileActiveEffectsPanel';
 export { MobileParanormalPowerSelectModal } from './MobileParanormalPowerSelectModal';
 export { MobileRitualEffectWizard, type MobileRitualEffectWizardProps } from './MobileRitualEffectWizard';
-export { MobileLeadershipPanel } from './MobileLeadershipPanel';
-export { MobileGuerreiroPanel } from './MobileGuerreiroPanel';
-export { MobileOperacoesEspeciaisPanel } from './MobileOperacoesEspeciaisPanel';
-export { MobileTropaDeChoquePanel } from './MobileTropaDeChoquePanel';
-export { MobileAtiradorDeElitePanel } from './MobileAtiradorDeElitePanel';
-export { MobileInfiltradorPanel } from './MobileInfiltradorPanel';
-export { MobileMedicoDeCampoPanel } from './MobileMedicoDeCampoPanel';
-export { MobileNegociadorPanel } from './MobileNegociadorPanel';
-export { MobileTecnicoPanel } from './MobileTecnicoPanel';
-export { MobileAniquiladorPanel } from './MobileAniquiladorPanel';
 export { MobileTrackPassiveEffectsWidget } from './MobileTrackPassiveEffectsWidget';
 export { MobileSUEDebugPanel } from './MobileSUEDebugPanel';
 
-// Trilhas do Ocultista
-export { MobileConduitePanel } from './MobileConduitePanel';
-export { MobileFlageladorPanel } from './MobileFlageladorPanel';
-export { MobileGraduadoPanel } from './MobileGraduadoPanel';
-export { MobileIntuitivoPanel } from './MobileIntuitivoPanel';
-export { MobileLaminaParanormalPanel } from './MobileLaminaParanormalPanel';
+// ============================================================================
+// TRILHAS - Re-exports dos componentes unificados responsivos (FASE 5)
+// Os painéis agora detectam automaticamente mobile via useIsMobile()
+// ============================================================================
+
+// Combatente
+export { 
+  ComandanteCampoPanel as MobileLeadershipPanel,
+  GuerreiroPanel as MobileGuerreiroPanel,
+  OperacoesEspeciaisPanel as MobileOperacoesEspeciaisPanel,
+  TropaDeChoquePanel as MobileTropaDeChoquePanel,
+  AniquiladorPanel as MobileAniquiladorPanel,
+} from '@/components/character/tracks/combatente';
+
+// Especialista
+export {
+  AtiradorDeElitePanel as MobileAtiradorDeElitePanel,
+  InfiltradorPanel as MobileInfiltradorPanel,
+  MedicoDeCampoPanel as MobileMedicoDeCampoPanel,
+  NegociadorPanel as MobileNegociadorPanel,
+  TecnicoPanel as MobileTecnicoPanel,
+} from '@/components/character/tracks/especialista';
+
+// Ocultista
+export {
+  ConduitePanel as MobileConduitePanel,
+  FlageladorPanel as MobileFlageladorPanel,
+  GraduadoPanel as MobileGraduadoPanel,
+  IntuitivoPanel as MobileIntuitivoPanel,
+  LaminaParanormalPanel as MobileLaminaParanormalPanel,
+} from '@/components/character/tracks/ocultista';
