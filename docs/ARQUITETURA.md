@@ -1,6 +1,6 @@
 # Arquitetura do Projeto - Ordem Paranormal RPG
 
-> **FASE 5 CONCLUÍDA** ✅ - Todas as 15 trilhas migradas para componentes responsivos unificados (Combatente, Especialista, Ocultista). CharacterSheet e MobileCharacterSheet atualizados.
+> **FASES 5 e 6 CONCLUÍDAS** ✅ - Todas as 15 trilhas migradas para componentes responsivos unificados. Arquivos legados desktop/mobile removidos.
 
 ## Visão Geral
 
@@ -267,19 +267,35 @@ export * from './armor-catalog';
 // ...
 ```
 
-### Componentes Mobile
+### Componentes de Trilha (Responsivos Unificados)
 
-Componentes mobile ficam em subpastas `mobile/`:
+Todas as 15 trilhas usam componentes responsivos que funcionam em desktop e mobile:
 
 ```
-character/
-├── SkillsGrid.tsx           # Desktop
-├── mobile/
-│   ├── MobileSkillsTab.tsx  # Mobile
-│   └── index.ts             # Exports
+components/character/tracks/
+├── combatente/              # 5 trilhas
+│   ├── AniquiladorPanel.tsx
+│   ├── GuerreiroAbilitiesPanel.tsx
+│   ├── LeadershipAbilitiesPanel.tsx  # Comandante de Campo
+│   ├── OperacoesEspeciaisPanel.tsx
+│   └── TropaDeChoquePanel.tsx
+├── especialista/            # 5 trilhas
+│   ├── AtiradorDeElitePanel.tsx
+│   ├── InfiltradorPanel.tsx
+│   ├── MedicoDeCampoPanel.tsx
+│   ├── NegociadorPanel.tsx
+│   └── TecnicoPanel.tsx
+├── ocultista/               # 5 trilhas
+│   ├── ConduitePanel.tsx
+│   ├── FlageladorPanel.tsx
+│   ├── GraduadoPanel.tsx
+│   ├── IntuitivoPanel.tsx
+│   └── LaminaParanormalPanel.tsx
+└── shared/                  # Componentes compartilhados
+    └── UnifiedAbilityItem.tsx
 ```
 
-**Documentação mobile:** [MOBILE_DRAWER.md](./MOBILE_DRAWER.md)
+Os painéis detectam automaticamente o contexto (mobile/desktop) via `useIsMobile()` e ajustam layout e interações.
 
 ---
 
@@ -360,24 +376,61 @@ O projeto é uma Progressive Web App com:
 
 ---
 
-## Próximos Passos de Arquitetura
+## Status das Fases de Arquitetura
 
-1. [x] ~~Consolidar origens em pasta dedicada~~ ✅
-2. [x] ~~Mover poderes gerais e paranormais para pastas dedicadas~~ ✅
-3. [x] ~~Consolidar condições em pasta dedicada~~ ✅
-4. [x] ~~Criar componentes de trilha para Ocultista~~ ✅
-5. [x] ~~Remover arquivos legados em src/lib/~~ ✅ (FASE 4)
-6. [~] Migrar trilhas para componentes responsivos unificados (1/15)
-   - [x] Aniquilador (Combatente) ✅
-   - [ ] Guerreiro, Comandante de Campo, Operações Especiais, Tropa de Choque (Combatente)
-   - [ ] Atirador de Elite, Infiltrador, Médico de Campo, Negociador, Técnico (Especialista)
-   - [ ] Conduíte, Flagelador, Graduado, Intuitivo, Lâmina Paranormal (Ocultista)
-7. [ ] Expandir testes de integração do SUE
+### ✅ Fases Concluídas
+
+| Fase | Descrição | Status |
+|------|-----------|--------|
+| 1 | Consolidar origens em pasta dedicada | ✅ 100% |
+| 2 | Mover poderes gerais e paranormais para pastas dedicadas | ✅ 100% |
+| 4 | Criar componentes de trilha para Ocultista | ✅ 100% |
+| 4b | Remover arquivos legados em src/lib/ | ✅ 100% |
+| 5 | Migrar trilhas para componentes responsivos unificados | ✅ 15/15 |
+| 6 | Remover arquivos legados desktop/mobile | ✅ 100% |
+
+### 🔄 Fases Pendentes
+
+| Fase | Descrição | Status | Detalhe |
+|------|-----------|--------|---------|
+| 3 | Organizar hooks por domínio | ~70% | ~30 hooks ainda na raiz de `src/hooks/` |
+| 7 | Expandir testes de integração do SUE | 0% | Não iniciado |
+
+#### FASE 3 - Hooks Pendentes de Migração
+
+Os seguintes hooks ainda estão na raiz e devem ser movidos para subpastas:
+
+**Para `sue/`:**
+- `useUnifiedEffects.ts`, `useBonusSummaryFromSUE.ts`, `useRitualBonusesFromSUE.ts`
+- `useParanormalEffects.ts`, `useActivatedEffects.ts`, `useClassPowerBonuses.ts`
+- `useDefenseBonuses.ts`, `useArmorCalculation.ts`
+
+**Para `character/`:**
+- `useCharacterAudit.ts`, `useCharacterAutoSave.ts`, `useCharacterBonusSummary.ts`
+- `useCharacterCategoryReductions.ts`, `useAttributeValidation.ts`
+
+**Para `combat/`:**
+- `useRoundTracking.ts`, `useWeaponBuffs.ts`, `useRitualCombatBonuses.ts`
+- `useAutoConditions.ts`, `useRitualModeConditions.ts`
+
+**Para `campaign/`:**
+- `useCampaignRitualSync.ts`, `useBonusSync.ts`, `useConditionalBonusesSync.ts`
+
+**Para `inventory/`:**
+- `useEquipmentMigration.ts`, `useEquipmentValidation.ts`
+
+**Para `validation/`:**
+- `useRitualValidation.ts`, `useValidationHistory.ts`
+
+**Para `platform/`:**
+- `usePWAInstall.ts`, `usePWAUpdate.ts`, `usePushNotifications.ts`, `useOnlineStatus.ts`
+
+**Para `ui/`:**
+- `useThemeColors.ts`, `useTempPE.ts`, `useSustainedRituals.ts`
 
 ---
 
 ## Referências
 
-- [MOBILE_DRAWER.md](./MOBILE_DRAWER.md) - Componentes mobile
 - [SISTEMA_UNIFICADO_EFEITOS.md](./SISTEMA_UNIFICADO_EFEITOS.md) - Motor SUE
 - [SUE_TEST_COVERAGE.md](./SUE_TEST_COVERAGE.md) - Cobertura de testes
