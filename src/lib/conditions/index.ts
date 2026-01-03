@@ -22,7 +22,7 @@ export {
   TEST_MODIFIERS,
   CONDITION_CATEGORIES,
   
-  // Funções
+  // Funções básicas
   getConditionById,
   getAllConditions,
   getConditionsByCategory,
@@ -36,6 +36,16 @@ export {
   canPerformActions,
   isIncapacitated,
   getStackingDefenseModifier,
+  
+  // Funções de parâmetros
+  conditionRequiresParams,
+  getConditionEffectWithParams,
+  getMachucadoDamage,
+  getFragilizadoMultiplier,
+  
+  // Funções de restrição
+  canSpendPEWithConditions,
+  getMaxActionsFromConditions,
 } from './condition-definitions';
 
 // ==================== REGISTRY DE CONDIÇÕES ====================
