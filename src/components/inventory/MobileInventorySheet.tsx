@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { MobileButtonGroup } from '@/components/ui/mobile-button-group';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Progress } from '@/components/ui/progress';
@@ -796,19 +797,18 @@ export function MobileInventorySheet({
           {/* Botões de adicionar (footer fixo com safe area) */}
           {!readOnly && (
             <div className="p-3 border-t border-border bg-card flex-shrink-0 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))]">
-              <div className="flex gap-2">
-                {ADD_BUTTONS.map(({ type, label, icon: Icon, color }) => (
-                  <Button
-                    key={type}
-                    variant="outline"
-                    className="flex-1 h-11"
-                    onClick={() => setActiveCatalog(type)}
-                  >
-                    <Icon className={cn("w-4 h-4 mr-2", color)} />
-                    <span className="text-xs">{label}</span>
-                  </Button>
-                ))}
-              </div>
+              <MobileButtonGroup
+                buttons={ADD_BUTTONS.map(({ type, label, icon: Icon, color }) => ({
+                  id: type,
+                  label,
+                  icon: <Icon className={cn("w-4 h-4", color)} />,
+                  onClick: () => setActiveCatalog(type),
+                  variant: 'outline' as const,
+                  type: 'secondary' as const,
+                }))}
+                layout="row"
+                gap="sm"
+              />
             </div>
           )}
         </SheetContent>
@@ -861,12 +861,24 @@ export function MobileInventorySheet({
             </div>
           )}
           <DialogFooter className="gap-2">
-            <Button variant="outline" className="h-10" onClick={() => setUseItemConfirmOpen(false)}>
-              <span className="text-sm">Cancelar</span>
-            </Button>
-            <Button className="h-10" onClick={handleConfirmUseItem}>
-              <span className="text-sm">Usar</span>
-            </Button>
+            <MobileButtonGroup
+              buttons={[
+                {
+                  id: 'cancel',
+                  label: 'Cancelar',
+                  onClick: () => setUseItemConfirmOpen(false),
+                  variant: 'outline',
+                  type: 'secondary',
+                },
+                {
+                  id: 'use',
+                  label: 'Usar',
+                  onClick: handleConfirmUseItem,
+                  type: 'primary',
+                },
+              ]}
+              layout="row"
+            />
           </DialogFooter>
         </DialogContent>
       </Dialog>
