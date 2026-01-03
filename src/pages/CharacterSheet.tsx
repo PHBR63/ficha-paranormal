@@ -98,16 +98,27 @@ import { ClassPowerBonusesPanel } from '@/components/character/ClassPowerBonuses
 import { AutomationDebugWidget } from '@/components/character/AutomationDebugWidget';
 import { useDeveloperMode } from '@/components/ui/theme-selector';
 import { ActiveEffectsPanel } from '@/components/character/ActiveEffectsPanel';
-import { LeadershipAbilitiesPanel } from '@/components/character/LeadershipAbilitiesPanel';
-import { GuerreiroAbilitiesPanel } from '@/components/character/GuerreiroAbilitiesPanel';
-import { OperacoesEspeciaisPanel } from '@/components/character/OperacoesEspeciaisPanel';
-import { TropaDeChoquePanel } from '@/components/character/TropaDeChoquePanel';
-import { AtiradorDeElitePanel } from '@/components/character/AtiradorDeElitePanel';
-import { InfiltradorPanel } from '@/components/character/InfiltradorPanel';
-import { MedicoDeCampoPanel } from '@/components/character/MedicoDeCampoPanel';
-import { NegociadorPanel } from '@/components/character/NegociadorPanel';
-import { TecnicoPanel } from '@/components/character/TecnicoPanel';
-import { AniquiladorPanel } from '@/components/character/AniquiladorPanel';
+// Trilhas unificadas responsivas (FASE 5 - todas as 15 trilhas)
+import {
+  // Combatente
+  ComandanteCampoPanel as LeadershipAbilitiesPanel,
+  GuerreiroPanel as GuerreiroAbilitiesPanel,
+  OperacoesEspeciaisPanel,
+  TropaDeChoquePanel,
+  AniquiladorPanel,
+  // Especialista
+  AtiradorDeElitePanel,
+  InfiltradorPanel,
+  MedicoDeCampoPanel,
+  NegociadorPanel,
+  TecnicoPanel,
+  // Ocultista
+  ConduitePanel,
+  FlageladorPanel,
+  GraduadoPanel,
+  IntuitivoPanel,
+  LaminaParanormalPanel,
+} from '@/components/character/tracks';
 import { RoundControlPanel } from '@/components/character/RoundControlPanel';
 import { TrackPassiveEffectsWidget } from '@/components/character/TrackPassiveEffectsWidget';
 import { Logo } from '@/components/ui/logo';
@@ -2016,7 +2027,11 @@ export default function CharacterSheet() {
                 onResetCombat={roundTracking.resetCombat}
               />
 
-              {/* Painel de Liderança - Comandante de Campo */}
+              {/* ====================================================== */}
+              {/* PAINÉIS DE TRILHA - Combatente */}
+              {/* ====================================================== */}
+              
+              {/* Comandante de Campo */}
               <LeadershipAbilitiesPanel
                 classTrack={character.class_track}
                 nex={character.nex}
@@ -2031,10 +2046,9 @@ export default function CharacterSheet() {
                 onAbilityUsed={roundTracking.markAbilityUsed}
                 onActivateEffect={activatedEffects.activateEffect}
                 isEffectActive={activatedEffects.isEffectActive}
-                computedEffects={unifiedEffects.computed}
               />
 
-              {/* Painel de Aniquilador - Técnicas Secretas */}
+              {/* Aniquilador */}
               <AniquiladorPanel
                 classTrack={character.class_track}
                 nex={character.nex}
@@ -2046,10 +2060,9 @@ export default function CharacterSheet() {
                 })}
                 onActivateEffect={activatedEffects.activateEffect}
                 isEffectActive={activatedEffects.isEffectActive}
-                computedEffects={unifiedEffects.computed}
               />
 
-              {/* Painel de Guerreiro - Revidar e Força Opressora */}
+              {/* Guerreiro */}
               <GuerreiroAbilitiesPanel
                 classTrack={character.class_track}
                 nex={character.nex}
@@ -2061,10 +2074,9 @@ export default function CharacterSheet() {
                 })}
                 onActivateEffect={activatedEffects.activateEffect}
                 isEffectActive={activatedEffects.isEffectActive}
-                computedEffects={unifiedEffects.computed}
               />
 
-              {/* Painel Operações Especiais - Ataque Extra e Surto de Adrenalina */}
+              {/* Operações Especiais */}
               <OperacoesEspeciaisPanel
                 classTrack={character.class_track}
                 nex={character.nex}
@@ -2078,10 +2090,9 @@ export default function CharacterSheet() {
                 onAbilityUsed={roundTracking.markAbilityUsed}
                 onActivateEffect={activatedEffects.activateEffect}
                 isEffectActive={activatedEffects.isEffectActive}
-                computedEffects={unifiedEffects.computed}
               />
 
-              {/* Painel Tropa de Choque - Cai Dentro e Duro de Matar */}
+              {/* Tropa de Choque */}
               <TropaDeChoquePanel
                 classTrack={character.class_track}
                 nex={character.nex}
@@ -2096,10 +2107,13 @@ export default function CharacterSheet() {
                 })}
                 onActivateEffect={activatedEffects.activateEffect}
                 isEffectActive={activatedEffects.isEffectActive}
-                computedEffects={unifiedEffects.computed}
               />
 
-              {/* Painel Atirador de Elite */}
+              {/* ====================================================== */}
+              {/* PAINÉIS DE TRILHA - Especialista */}
+              {/* ====================================================== */}
+
+              {/* Atirador de Elite */}
               <AtiradorDeElitePanel
                 classTrack={character.class_track}
                 nex={character.nex}
@@ -2112,10 +2126,9 @@ export default function CharacterSheet() {
                 })}
                 onActivateEffect={activatedEffects.activateEffect}
                 isEffectActive={activatedEffects.isEffectActive}
-                computedEffects={unifiedEffects.computed}
               />
 
-              {/* Painel Infiltrador */}
+              {/* Infiltrador */}
               <InfiltradorPanel
                 classTrack={character.class_track}
                 nex={character.nex}
@@ -2130,10 +2143,9 @@ export default function CharacterSheet() {
                 onAbilityUsed={roundTracking.markAbilityUsed}
                 onActivateEffect={activatedEffects.activateEffect}
                 isEffectActive={activatedEffects.isEffectActive}
-                computedEffects={unifiedEffects.computed}
               />
 
-              {/* Painel Médico de Campo */}
+              {/* Médico de Campo */}
               <MedicoDeCampoPanel
                 classTrack={character.class_track}
                 nex={character.nex}
@@ -2145,10 +2157,9 @@ export default function CharacterSheet() {
                 })}
                 onActivateEffect={activatedEffects.activateEffect}
                 isEffectActive={activatedEffects.isEffectActive}
-                computedEffects={unifiedEffects.computed}
               />
 
-              {/* Painel Negociador */}
+              {/* Negociador */}
               <NegociadorPanel
                 classTrack={character.class_track}
                 nex={character.nex}
@@ -2160,9 +2171,9 @@ export default function CharacterSheet() {
                 })}
                 onActivateEffect={activatedEffects.activateEffect}
                 isEffectActive={activatedEffects.isEffectActive}
-                computedEffects={unifiedEffects.computed}
               />
-              
+
+              {/* Técnico */}
               <TecnicoPanel
                 classTrack={character.class_track}
                 nex={character.nex}
@@ -2178,7 +2189,66 @@ export default function CharacterSheet() {
                 }}
                 onActivateEffect={activatedEffects.activateEffect}
                 isEffectActive={activatedEffects.isEffectActive}
-                computedEffects={unifiedEffects.computed}
+              />
+
+              {/* ====================================================== */}
+              {/* PAINÉIS DE TRILHA - Ocultista */}
+              {/* ====================================================== */}
+
+              {/* Conduíte */}
+              <ConduitePanel
+                classTrack={character.class_track}
+                nex={character.nex}
+                peCurrent={peCurrent}
+                onPEChange={(newPE) => handleCombatStatsChange({ 
+                  hp: hpCurrent, 
+                  pe: newPE, 
+                  san: sanCurrent 
+                })}
+                onActivateEffect={activatedEffects.activateEffect}
+                isEffectActive={activatedEffects.isEffectActive}
+              />
+
+              {/* Flagelador */}
+              <FlageladorPanel
+                classTrack={character.class_track}
+                nex={character.nex}
+                peCurrent={peCurrent}
+                onPEChange={(newPE) => handleCombatStatsChange({ 
+                  hp: hpCurrent, 
+                  pe: newPE, 
+                  san: sanCurrent 
+                })}
+                onActivateEffect={activatedEffects.activateEffect}
+                isEffectActive={activatedEffects.isEffectActive}
+              />
+
+              {/* Graduado */}
+              <GraduadoPanel
+                classTrack={character.class_track}
+                nex={character.nex}
+                intellect={character.intellect}
+              />
+
+              {/* Intuitivo */}
+              <IntuitivoPanel
+                classTrack={character.class_track}
+                nex={character.nex}
+                presence={character.presence}
+              />
+
+              {/* Lâmina Paranormal */}
+              <LaminaParanormalPanel
+                classTrack={character.class_track}
+                nex={character.nex}
+                peCurrent={peCurrent}
+                onPEChange={(newPE) => handleCombatStatsChange({ 
+                  hp: hpCurrent, 
+                  pe: newPE, 
+                  san: sanCurrent 
+                })}
+                onActivateEffect={activatedEffects.activateEffect}
+                isEffectActive={activatedEffects.isEffectActive}
               />
 
               {/* Widget de Efeitos Passivos da Trilha */}

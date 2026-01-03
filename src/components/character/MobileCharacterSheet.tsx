@@ -82,7 +82,7 @@ import {
   MobileRitualCastModal,
   MobileResistanceCheckModal,
   useRollHistory,
-  // Novos componentes de paridade desktop/mobile
+  // Componentes de paridade desktop/mobile
   MobileConditionManager,
   MobileSustainedRitualsPanel,
   MobileConditionalBonusesPanel,
@@ -90,18 +90,27 @@ import {
   MobileRitualCastHistory,
   MobileActiveEffectsPanel,
   MobileParanormalPowerSelectModal,
+  MobileTrackPassiveEffectsWidget,
+  MobileSUEDebugPanel,
+  // Trilhas do Combatente (unificadas)
   MobileLeadershipPanel,
   MobileGuerreiroPanel,
   MobileOperacoesEspeciaisPanel,
   MobileTropaDeChoquePanel,
+  MobileAniquiladorPanel,
+  // Trilhas do Especialista (unificadas)
   MobileAtiradorDeElitePanel,
   MobileInfiltradorPanel,
   MobileMedicoDeCampoPanel,
   MobileNegociadorPanel,
   MobileTecnicoPanel,
-  MobileAniquiladorPanel,
-  MobileTrackPassiveEffectsWidget,
-  MobileSUEDebugPanel,
+  // Trilhas do Ocultista (unificadas)
+  MobileConduitePanel,
+  MobileFlageladorPanel,
+  MobileGraduadoPanel,
+  MobileIntuitivoPanel,
+  MobileLaminaParanormalPanel,
+  // Tipos
   type WeaponEntry,
   type BonusSource,
   type ActiveCondition,
@@ -1491,7 +1500,11 @@ export function MobileCharacterSheet({
               </div>
             )}
             
-            {/* Painel de Liderança - Comandante de Campo */}
+            {/* ====================================================== */}
+            {/* PAINÉIS DE TRILHA - Combatente */}
+            {/* ====================================================== */}
+
+            {/* Comandante de Campo */}
             <MobileLeadershipPanel
               classTrack={character.class_track}
               nex={character.nex}
@@ -1504,7 +1517,7 @@ export function MobileCharacterSheet({
               isEffectActive={activatedEffects.isEffectActive}
             />
             
-            {/* Painel Aniquilador - Técnicas Secretas */}
+            {/* Aniquilador */}
             <MobileAniquiladorPanel
               classTrack={character.class_track}
               nex={character.nex}
@@ -1512,10 +1525,9 @@ export function MobileCharacterSheet({
               onPEChange={handlePEChange}
               onActivateEffect={activatedEffects.activateEffect}
               isEffectActive={activatedEffects.isEffectActive}
-              computedEffects={unifiedEffects.computed}
             />
             
-            {/* Painel Guerreiro - Revidar e Força Opressora */}
+            {/* Guerreiro */}
             <MobileGuerreiroPanel
               classTrack={character.class_track}
               nex={character.nex}
@@ -1523,10 +1535,9 @@ export function MobileCharacterSheet({
               onPEChange={handlePEChange}
               onActivateEffect={activatedEffects.activateEffect}
               isEffectActive={activatedEffects.isEffectActive}
-              computedEffects={unifiedEffects.computed}
             />
             
-            {/* Painel Operações Especiais - Ataque Extra e Surto de Adrenalina */}
+            {/* Operações Especiais */}
             <MobileOperacoesEspeciaisPanel
               classTrack={character.class_track}
               nex={character.nex}
@@ -1536,10 +1547,9 @@ export function MobileCharacterSheet({
               onAbilityUsed={roundTracking.markAbilityUsed}
               onActivateEffect={activatedEffects.activateEffect}
               isEffectActive={activatedEffects.isEffectActive}
-              computedEffects={unifiedEffects.computed}
             />
             
-            {/* Painel Tropa de Choque - Cai Dentro e Duro de Matar */}
+            {/* Tropa de Choque */}
             <MobileTropaDeChoquePanel
               classTrack={character.class_track}
               nex={character.nex}
@@ -1550,10 +1560,13 @@ export function MobileCharacterSheet({
               onPEChange={handlePEChange}
               onActivateEffect={activatedEffects.activateEffect}
               isEffectActive={activatedEffects.isEffectActive}
-              computedEffects={unifiedEffects.computed}
             />
+
+            {/* ====================================================== */}
+            {/* PAINÉIS DE TRILHA - Especialista */}
+            {/* ====================================================== */}
             
-            {/* Painel Atirador de Elite */}
+            {/* Atirador de Elite */}
             <MobileAtiradorDeElitePanel
               classTrack={character.class_track}
               nex={character.nex}
@@ -1562,10 +1575,9 @@ export function MobileCharacterSheet({
               onPEChange={handlePEChange}
               onActivateEffect={activatedEffects.activateEffect}
               isEffectActive={activatedEffects.isEffectActive}
-              computedEffects={unifiedEffects.computed}
             />
 
-            {/* Painel Infiltrador */}
+            {/* Infiltrador */}
             <MobileInfiltradorPanel
               classTrack={character.class_track}
               nex={character.nex}
@@ -1576,10 +1588,9 @@ export function MobileCharacterSheet({
               onAbilityUsed={roundTracking.markAbilityUsed}
               onActivateEffect={activatedEffects.activateEffect}
               isEffectActive={activatedEffects.isEffectActive}
-              computedEffects={unifiedEffects.computed}
             />
 
-            {/* Painel Médico de Campo */}
+            {/* Médico de Campo */}
             <MobileMedicoDeCampoPanel
               classTrack={character.class_track}
               nex={character.nex}
@@ -1587,10 +1598,9 @@ export function MobileCharacterSheet({
               onPEChange={handlePEChange}
               onActivateEffect={activatedEffects.activateEffect}
               isEffectActive={activatedEffects.isEffectActive}
-              computedEffects={unifiedEffects.computed}
             />
 
-            {/* Painel Negociador */}
+            {/* Negociador */}
             <MobileNegociadorPanel
               classTrack={character.class_track}
               nex={character.nex}
@@ -1598,10 +1608,9 @@ export function MobileCharacterSheet({
               onPEChange={handlePEChange}
               onActivateEffect={activatedEffects.activateEffect}
               isEffectActive={activatedEffects.isEffectActive}
-              computedEffects={unifiedEffects.computed}
             />
             
-            {/* Painel Técnico */}
+            {/* Técnico */}
             <MobileTecnicoPanel
               classTrack={character.class_track}
               nex={character.nex}
@@ -1613,7 +1622,54 @@ export function MobileCharacterSheet({
               }}
               onActivateEffect={activatedEffects.activateEffect}
               isEffectActive={activatedEffects.isEffectActive}
-              computedEffects={unifiedEffects.computed}
+            />
+
+            {/* ====================================================== */}
+            {/* PAINÉIS DE TRILHA - Ocultista */}
+            {/* ====================================================== */}
+
+            {/* Conduíte */}
+            <MobileConduitePanel
+              classTrack={character.class_track}
+              nex={character.nex}
+              peCurrent={character.pe_current}
+              onPEChange={handlePEChange}
+              onActivateEffect={activatedEffects.activateEffect}
+              isEffectActive={activatedEffects.isEffectActive}
+            />
+
+            {/* Flagelador */}
+            <MobileFlageladorPanel
+              classTrack={character.class_track}
+              nex={character.nex}
+              peCurrent={character.pe_current}
+              onPEChange={handlePEChange}
+              onActivateEffect={activatedEffects.activateEffect}
+              isEffectActive={activatedEffects.isEffectActive}
+            />
+
+            {/* Graduado */}
+            <MobileGraduadoPanel
+              classTrack={character.class_track}
+              nex={character.nex}
+              intellect={character.intellect}
+            />
+
+            {/* Intuitivo */}
+            <MobileIntuitivoPanel
+              classTrack={character.class_track}
+              nex={character.nex}
+              presence={character.presence}
+            />
+
+            {/* Lâmina Paranormal */}
+            <MobileLaminaParanormalPanel
+              classTrack={character.class_track}
+              nex={character.nex}
+              peCurrent={character.pe_current}
+              onPEChange={handlePEChange}
+              onActivateEffect={activatedEffects.activateEffect}
+              isEffectActive={activatedEffects.isEffectActive}
             />
             
             {/* Widget de Efeitos Passivos da Trilha */}
