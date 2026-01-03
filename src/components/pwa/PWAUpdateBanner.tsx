@@ -8,7 +8,7 @@ import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RefreshCw, X, Download, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { usePWAUpdate } from '@/hooks/usePWAUpdate';
+import { usePWAUpdate } from '@/hooks';
 
 interface PWAUpdateBannerProps {
   /** Callback opcional após atualização */

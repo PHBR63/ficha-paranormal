@@ -22,7 +22,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/hooks';
 
 const THEMES: { id: ColorTheme; name: string; color: string }[] = [
   { id: 'purple', name: 'Roxo Abissal', color: '#8B5CF6' },

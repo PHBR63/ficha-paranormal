@@ -10,11 +10,9 @@ import { DecryptedText } from '@/components/ui/decrypted-text';
 import { BlurText } from '@/components/ui/blur-text';
 import { Plus, LogOut, User, FileText, Users, Settings, Loader2, AlertTriangle, Skull, Shield, Smartphone } from 'lucide-react';
 import { LogoBox } from '@/components/ui/logo';
-import { useToast } from '@/hooks/use-toast';
+import { useToast, useAdminCheck, useThemeColors } from '@/hooks';
 import { CharacterCard } from '@/components/cards/CharacterCard';
-import { useAdminCheck } from '@/hooks/useAdminCheck';
 import { ParanormalElementIcon } from '@/components/ui/paranormal-element-icon';
-import { useThemeColors } from '@/hooks/useThemeColors';
 
 interface Character {
   id: string;

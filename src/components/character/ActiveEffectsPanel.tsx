@@ -42,11 +42,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import { 
-  UnifiedEffectsResult,
-  UnifiedEffect,
-  ComputedEffects 
-} from '@/hooks/useUnifiedEffects';
+import type { UnifiedEffectsResult, UnifiedEffect, ComputedEffects } from '@/hooks';
 
 // =====================================================
 // Props

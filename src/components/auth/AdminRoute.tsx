@@ -4,7 +4,7 @@
  */
 import { ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
-import { useAdminCheck } from '@/hooks/useAdminCheck';
+import { useAdminCheck } from '@/hooks';
 import { useAuth } from '@/contexts/AuthContext';
 import { ShieldX } from 'lucide-react';
 import { Logo } from '@/components/ui/logo';

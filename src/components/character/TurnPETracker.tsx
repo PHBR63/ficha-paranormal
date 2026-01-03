@@ -8,11 +8,7 @@ import { Zap, RotateCcw, AlertTriangle, Flame, Swords, Sparkles } from 'lucide-r
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { getPELimitByNex } from '@/lib/dice-roller';
-import { 
-  useTempPE, 
-  calculateAbsorverAngustiaPE, 
-  calculateGladiadorParanormalPE 
-} from '@/hooks/useTempPE';
+import { useTempPE, calculateAbsorverAngustiaPE, calculateGladiadorParanormalPE } from '@/hooks';
 import {
   Tooltip,
   TooltipContent,

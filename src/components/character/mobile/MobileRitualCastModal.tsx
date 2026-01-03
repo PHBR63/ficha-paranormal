@@ -61,11 +61,10 @@ import { cn } from '@/lib/utils';
 import { Ritual } from '@/lib/rituals/legacy-exports';
 import type { UnifiedRitual } from '@/lib/rituals/types';
 import { getElementConfig } from '@/lib/element-config';
-import { useRitualValidation, TurnPEState } from '@/hooks/useRitualValidation';
+import { useRitualValidation, TurnPEState, type RitualBonuses } from '@/hooks';
 import { MobileRitualEffectWizard } from './MobileRitualEffectWizard';
 import { ActiveCondition } from './MobileConditionManager';
 import type { AnyDamageType, SustainConfig } from '@/lib/rituals/legacy-exports';
-import type { RitualBonuses } from '@/hooks/useRitualBonusesFromSUE';
 
 // Efeito de partículas do elemento
 function triggerElementParticles(elementHex: string, elementHexLight: string) {

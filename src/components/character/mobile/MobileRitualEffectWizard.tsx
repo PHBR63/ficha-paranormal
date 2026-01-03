@@ -53,7 +53,7 @@ import {
 } from '@/lib/rituals/legacy-exports';
 import { CONDITIONS } from '@/lib/conditions';
 import { ActiveCondition } from './MobileConditionManager';
-import { WeaponBuff } from '@/hooks/useWeaponBuffs';
+import { WeaponBuff } from '@/hooks';
 
 // ==================== TIPOS ====================
 

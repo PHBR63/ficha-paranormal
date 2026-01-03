@@ -24,8 +24,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast';
-import type { EffectDuration } from '@/hooks/useActivatedEffects';
+import { useToast, type EffectDuration } from '@/hooks';
 
 // Efeitos da Técnica Secreta/Sublime
 interface TechniqueEffect {

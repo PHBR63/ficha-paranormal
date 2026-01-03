@@ -102,8 +102,7 @@ const PASSIVE_INFO = {
   },
 };
 
-import type { EffectDuration } from '@/hooks/useActivatedEffects';
-import type { ComputedEffects } from '@/hooks/useUnifiedEffects';
+import type { EffectDuration, ComputedEffects } from '@/hooks';
 
 interface GuerreiroAbilitiesPanelProps {
   classTrack: string | null | undefined;

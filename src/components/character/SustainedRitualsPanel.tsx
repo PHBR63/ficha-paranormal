@@ -42,7 +42,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { SustainedRitual } from '@/hooks/useSustainedRituals';
+import { SustainedRitual } from '@/hooks';
 import { getElementConfig } from '@/lib/element-config';
 
 // Ícones por elemento

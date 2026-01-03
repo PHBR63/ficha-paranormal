@@ -1,4 +1,4 @@
-import { useOnlineStatus } from '@/hooks/useOnlineStatus';
+import { useOnlineStatus } from '@/hooks';
 import { WifiOff, RefreshCw, Skull } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';

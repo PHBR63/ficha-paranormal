@@ -43,8 +43,7 @@ import { cn } from '@/lib/utils';
 import { Ritual } from '@/lib/rituals/legacy-exports';
 import type { UnifiedRitual } from '@/lib/rituals/types';
 import { getElementConfig } from '@/lib/element-config';
-import { useRitualValidation, TurnPEState } from '@/hooks/useRitualValidation';
-import type { RitualBonuses } from '@/hooks/useRitualBonusesFromSUE';
+import { useRitualValidation, TurnPEState, type RitualBonuses } from '@/hooks';
 
 // Função para disparar efeito de partículas do elemento
 function triggerElementParticles(elementHex: string, elementHexLight: string) {

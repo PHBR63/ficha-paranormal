@@ -14,7 +14,7 @@
 
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from './use-toast';
 
 // Tipos de duração de efeitos ativados
 export type EffectDuration = 

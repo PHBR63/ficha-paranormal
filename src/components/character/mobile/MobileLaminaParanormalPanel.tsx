@@ -6,7 +6,7 @@ import { useState, useMemo, useCallback } from 'react';
 import { Sword, Zap, Swords, Check, Loader2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks';
 import { MobileCollapsibleSection } from './MobileCollapsibleSection';
 
 const PASSIVE_INFO = [

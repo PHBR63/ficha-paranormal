@@ -9,12 +9,10 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
+import { useToast, useIsMobile, useThemeColors } from '@/hooks';
 import { ThemeSelector } from '@/components/ui/theme-selector';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { Particles } from '@/components/ui/particles';
 import { FlickeringGrid } from '@/components/ui/flickering-grid';
-import { useThemeColors } from '@/hooks/useThemeColors';
 import {
   ArrowLeft, 
   Loader2, 
@@ -71,18 +69,22 @@ import { LearnedRitual } from '@/components/character/GeneralPowersPanel';
 import { calculateDerivedStats } from '@/lib/character-data';
 import { AffinitySelectorCard } from '@/components/character/AffinitySelectorCard';
 // Hook consolidado do SUE - fonte única de verdade para todos os bônus
-import { useBonusSummaryFromSUE } from '@/hooks/useBonusSummaryFromSUE';
-import { useRitualBonusesFromSUE } from '@/hooks/useRitualBonusesFromSUE';
-import { useBonusSync } from '@/hooks/useBonusSync';
-import { useConditionalBonusesSync } from '@/hooks/useConditionalBonusesSync';
-import { useCampaignRitualSync } from '@/hooks/useCampaignRitualSync';
-import { useWeaponBuffs } from '@/hooks/useWeaponBuffs';
-import { useAutoConditions, type ActiveCondition as AutoCondition } from '@/hooks/useAutoConditions';
-import { useRitualCombatBonuses } from '@/hooks/useRitualCombatBonuses';
-import { useSustainedRituals } from '@/hooks/useSustainedRituals';
-import { useEquipmentMigration } from '@/hooks/useEquipmentMigration';
-import { useRoundTracking } from '@/hooks/useRoundTracking';
-import { useActivatedEffects } from '@/hooks/useActivatedEffects';
+import { 
+  useBonusSummaryFromSUE, 
+  useRitualBonusesFromSUE, 
+  useBonusSync, 
+  useConditionalBonusesSync, 
+  useCampaignRitualSync, 
+  useWeaponBuffs, 
+  useAutoConditions, 
+  useRitualCombatBonuses, 
+  useSustainedRituals, 
+  useEquipmentMigration, 
+  useRoundTracking, 
+  useActivatedEffects,
+  useCharacterAudit,
+  type ActiveCondition as AutoCondition,
+} from '@/hooks';
 import { normalizeWeaponTypeForDisplay } from '@/lib/weapon-type-inference';
 import { BonusSummaryCard } from '@/components/character/BonusSummaryCard';
 import { SustainedRitualsPanel } from '@/components/character/SustainedRitualsPanel';
@@ -90,7 +92,7 @@ import { ConditionalBonusesPanel } from '@/components/character/ConditionalBonus
 import { TrackCombatBonusesBar } from '@/components/character/TrackCombatBonusesBar';
 import { ActiveAdvancedBonusesBar, useActiveAdvancedBonuses } from '@/components/character/ActiveAdvancedBonusesBar';
 import { CharacterAuditBanner } from '@/components/character/CharacterAuditBanner';
-import { useCharacterAudit } from '@/hooks/useCharacterAudit';
+// useCharacterAudit já importado acima via @/hooks
 import { CharacterForAudit, canAddParanormalPower } from '@/lib/character-audit-engine';
 import { ClassPowerBonusesPanel } from '@/components/character/ClassPowerBonusesPanel';
 import { AutomationDebugWidget } from '@/components/character/AutomationDebugWidget';

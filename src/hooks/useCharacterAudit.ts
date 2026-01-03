@@ -13,7 +13,7 @@ import {
   AuditIssue,
   CharacterForAudit 
 } from '@/lib/character-audit-engine';
-import { toast } from '@/hooks/use-toast';
+import { toast } from './use-toast';
 
 interface UseCharacterAuditOptions {
   // Se true, executa auditoria automaticamente ao carregar
