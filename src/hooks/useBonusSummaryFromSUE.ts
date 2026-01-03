@@ -151,6 +151,10 @@ export function useBonusSummaryFromSUE({
     maxHP: hpMax,
     currentPE: peCurrent,
     maxPE: peMax,
+    // Novos campos para bônus condicionais
+    generalPowers: generalPowers.map(p => p.id),
+    abilities,
+    activeConditionalBonuses,
     activatedEffectIds: activeConditionalBonuses,
   }), [
     origin, classTrack, classId, nex,
@@ -158,7 +162,7 @@ export function useBonusSummaryFromSUE({
     activeConditions, activeRituals,
     hpCurrent, hpMax, peCurrent, peMax,
     elementalAffinity, affinityActive,
-    activeConditionalBonuses
+    generalPowers, abilities, activeConditionalBonuses
   ]);
   
   // Obtém efeitos unificados do SUE

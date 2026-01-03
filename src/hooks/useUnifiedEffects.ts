@@ -45,6 +45,9 @@ import {
   getClassPowerEffects,
   type ActiveClassPower,
 } from '@/lib/effects/class-power-effects-adapter';
+import {
+  getConditionalBonusEffects,
+} from '@/lib/effects/conditional-bonus-effects-adapter';
 import type { SavedParanormalPower } from '@/lib/paranormal-powers';
 
 // =====================================================
@@ -73,6 +76,9 @@ export interface CharacterStateForEffects {
   activeRituals: SustainedRitualInput[]; // Rituais sustentados
   paranormalPowers?: SavedParanormalPower[]; // Poderes paranormais
   classPowers?: ActiveClassPower[]; // Poderes de classe com escolhas
+  generalPowers?: string[]; // IDs de poderes gerais (para bônus condicionais)
+  abilities?: string[]; // Nomes de habilidades (para bônus condicionais)
+  activeConditionalBonuses?: string[]; // IDs de bônus condicionais ativos
   
   // Afinidade elemental
   elementalAffinity?: string | null;
@@ -124,6 +130,7 @@ export interface UnifiedEffectsResult {
     ritual: UnifiedEffect[];
     paranormal_power: UnifiedEffect[];
     class_power: UnifiedEffect[];
+    conditional_bonus: UnifiedEffect[];
   };
   
   // Helpers
@@ -147,6 +154,7 @@ function groupEffectsBySource(effects: UnifiedEffect[]): UnifiedEffectsResult['b
     ritual: effects.filter(e => e.source === 'ritual'),
     paranormal_power: effects.filter(e => e.source === 'paranormal_power'),
     class_power: effects.filter(e => e.source === 'class_power'),
+    conditional_bonus: effects.filter(e => e.id.startsWith('conditional-')),
   };
 }
 
@@ -257,6 +265,20 @@ export function useUnifiedEffects(
       characterState.activatedEffectIds ?? []
     );
 
+    // Efeitos de bônus condicionais (ativados pelo usuário)
+    // Parâmetros: activeIds, context, intellect, vigor
+    const conditionalBonusEffects = getConditionalBonusEffects(
+      characterState.activeConditionalBonuses ?? [],
+      {
+        generalPowers: characterState.generalPowers ?? [],
+        abilities: characterState.abilities ?? [],
+        classTrack: characterState.classTrack,
+        nex: characterState.nex,
+      },
+      characterState.attributes.intellect,
+      characterState.attributes.vigor
+    );
+
     // ===== FASE 2: Combina todos os efeitos =====
     const allEffects: UnifiedEffect[] = [
       ...originEffects,
@@ -266,6 +288,7 @@ export function useUnifiedEffects(
       ...ritualEffects,
       ...paranormalPowerEffects,
       ...classPowerEffects,
+      ...conditionalBonusEffects,
     ];
 
     // ===== FASE 3: Cria contexto de cálculo =====
@@ -317,7 +340,10 @@ export function useUnifiedEffects(
     characterState.currentSAN,
     characterState.maxSAN,
     characterState.paranormalPowers,
-    characterState.classPowers, // Fase 4: Adiciona classPowers como dependência
+    characterState.classPowers,
+    characterState.generalPowers,
+    characterState.abilities,
+    characterState.activeConditionalBonuses,
     characterState.activatedEffectIds,
     combatContext?.inCombat,
     combatContext?.isFirstRound,
