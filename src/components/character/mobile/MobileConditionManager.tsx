@@ -13,6 +13,7 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
+import { MobileButtonGroup } from '@/components/ui/mobile-button-group';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -382,14 +383,25 @@ function AddConditionSheet({
               </div>
             )}
 
-            <div className="flex gap-2 pt-4">
-              <Button variant="outline" className="flex-1 h-10" onClick={() => setSelectedCondition(null)}>
-                <span className="text-sm">Voltar</span>
-              </Button>
-              <Button className="flex-1 h-10" onClick={handleAdd}>
-                <Plus className="w-4 h-4 mr-1.5" />
-                <span className="text-sm">Adicionar</span>
-              </Button>
+            <div className="pt-4">
+              <MobileButtonGroup
+                buttons={[
+                  {
+                    id: 'back',
+                    label: 'Voltar',
+                    onClick: () => setSelectedCondition(null),
+                    variant: 'outline',
+                    type: 'secondary',
+                  },
+                  {
+                    id: 'add',
+                    label: 'Adicionar',
+                    icon: <Plus />,
+                    onClick: handleAdd,
+                    type: 'secondary',
+                  },
+                ]}
+              />
             </div>
           </div>
         ) : (
