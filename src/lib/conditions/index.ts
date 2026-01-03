@@ -13,6 +13,7 @@ export {
   type ConditionParams,
   type Condition,
   type ContextualModifier,
+  type DamageType,
   
   // Constantes
   CONDITIONS,
@@ -21,6 +22,7 @@ export {
   INITIATIVE_MODIFIERS,
   TEST_MODIFIERS,
   CONDITION_CATEGORIES,
+  DAMAGE_TYPES,
   
   // Funções básicas
   getConditionById,

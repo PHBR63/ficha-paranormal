@@ -6,9 +6,7 @@
 
 import { useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { ALL_ARMORS, CatalogArmor } from '@/lib/armor-catalog';
-import { ALL_WEAPONS, CatalogWeapon } from '@/lib/weapons-catalog';
-import { ALL_ITEMS, CatalogItem } from '@/lib/items-catalog';
+import { ALL_ARMORS, ALL_WEAPONS, ALL_ITEMS, type CatalogArmor, type CatalogWeapon, type CatalogItem } from '@/lib/catalogs';
 
 // Interface genérica para item de inventário
 interface InventoryItem {

@@ -20,7 +20,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { MobileActionSheet, useActionSheet } from '@/components/ui/mobile-action-sheet';
 import type { ExtendedInventoryItem } from './InventoryPanel';
-import type { WeaponModification } from '@/lib/weapons-catalog';
+import type { WeaponModification } from '@/lib/catalogs';
 
 const CATEGORY_LABELS: Record<string, { label: string; color: string }> = {
   '0': { label: 'Sem Cat.', color: 'bg-muted text-muted-foreground' },

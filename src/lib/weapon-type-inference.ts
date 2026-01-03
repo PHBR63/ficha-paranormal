@@ -5,7 +5,7 @@
  * quando o campo weaponType não está definido.
  */
 
-import type { CatalogWeapon } from './weapons-catalog';
+import type { CatalogWeapon } from './catalogs';
 
 export type WeaponType = CatalogWeapon['type'];
 

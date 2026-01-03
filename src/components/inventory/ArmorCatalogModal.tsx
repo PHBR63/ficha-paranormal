@@ -33,13 +33,13 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import { 
-  CatalogArmor, 
+  type CatalogArmor, 
   BASE_ARMORS,
   MODIFIED_ARMORS,
   ALL_ARMORS,
   getArmorTypeName,
   formatPenalties
-} from '@/lib/armor-catalog';
+} from '@/lib/catalogs';
 import { getPatentLimits, countItemsByCategory } from '@/lib/inventory-system';
 import { cn } from '@/lib/utils';
 

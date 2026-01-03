@@ -18,7 +18,7 @@ import {
   TACTICAL_RANGED_WEAPONS,
   TACTICAL_FIREARMS,
   HEAVY_WEAPONS,
-  EXPLOSIVES,
+  WEAPON_EXPLOSIVES as EXPLOSIVES,
   SPECIAL_WEAPONS,
   // Listas agregadas
   MELEE_WEAPONS,
@@ -43,7 +43,7 @@ import {
   // Tipos
   type CatalogWeapon,
   type WeaponModification,
-} from '../weapons-catalog';
+} from '../catalogs';
 import {
   inferWeaponType,
   isFirearm,
