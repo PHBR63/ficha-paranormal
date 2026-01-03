@@ -48,7 +48,7 @@ import {
   getSkillAttribute,
 } from '../constants/game-ids';
 import { ORIGINS, CLASSES, CLASS_TRACKS, SKILLS } from '../character-data';
-import { SUPPLEMENT_ORIGINS } from '../supplement-origins';
+import { SUPPLEMENT_ORIGINS } from '../origins';
 
 describe('game-ids.ts - Integridade de IDs', () => {
   

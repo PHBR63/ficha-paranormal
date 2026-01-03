@@ -23,14 +23,14 @@ import {
   Swords, ArrowUp, Shield, Sparkles
 } from 'lucide-react';
 import {
-  CatalogWeapon,
-  WeaponModification,
-  WeaponModificationData,
+  type CatalogWeapon,
+  type WeaponModification,
+  type WeaponModificationData,
   getAvailableModifications,
   calculateModifiedWeaponStats,
   getWeaponModificationById,
   MODIFICATION_LABELS,
-} from '@/lib/weapons-catalog';
+} from '@/lib/catalogs';
 
 // Mapa de ícones para modificações
 const MODIFICATION_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {

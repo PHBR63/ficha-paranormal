@@ -27,9 +27,20 @@ export {
   // Modificações
   MELEE_WEAPON_MODIFICATIONS,
   FIREARM_MODIFICATIONS,
+  ALL_WEAPON_MODIFICATIONS,
   MODIFICATION_LABELS,
   
-  // Catálogos de armas
+  // Catálogos de armas por tipo
+  SIMPLE_MELEE_WEAPONS,
+  SIMPLE_RANGED_WEAPONS,
+  SIMPLE_FIREARMS,
+  TACTICAL_MELEE_WEAPONS,
+  TACTICAL_RANGED_WEAPONS,
+  TACTICAL_FIREARMS,
+  HEAVY_WEAPONS,
+  EXPLOSIVES as WEAPON_EXPLOSIVES,
+  
+  // Catálogos agregados
   MELEE_WEAPONS,
   RANGED_WEAPONS,
   FIREARMS,
@@ -38,11 +49,14 @@ export {
   ALL_WEAPONS,
   
   // Labels e helpers
+  WEAPON_CATEGORIES,
   PROFICIENCY_LABELS,
+  AMMO_LABELS,
   
   // Funções utilitárias
   getWeaponById,
   getWeaponsByCategory,
+  getWeaponsByType,
   getWeaponsByProficiency,
   getWeaponModificationById,
   canApplyModification,

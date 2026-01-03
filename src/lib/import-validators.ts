@@ -4,16 +4,13 @@
  * Atualizado para usar o sistema unificado de rituais
  */
 
-import type { CatalogWeapon, ALL_WEAPONS } from './weapons-catalog';
-import type { CatalogArmor, ALL_ARMORS } from './armor-catalog';
-import type { CatalogItem, ALL_ITEMS } from './items-catalog';
+import type { CatalogWeapon, CatalogArmor, CatalogItem } from './catalogs';
+import { ALL_WEAPONS, ALL_ARMORS, ALL_ITEMS } from './catalogs';
 import type { UnifiedRitual, RitualElement, RitualCircle, ExecutionType, RangeType, DurationType, RitualKind } from './rituals/types';
 import { getAllRituals } from './rituals/ritual-registry';
 
 // Re-export dos catálogos para uso na verificação de duplicatas
-export { ALL_WEAPONS } from './weapons-catalog';
-export { ALL_ARMORS } from './armor-catalog';
-export { ALL_ITEMS } from './items-catalog';
+export { ALL_WEAPONS, ALL_ARMORS, ALL_ITEMS } from './catalogs';
 
 // Export de rituais unificados para verificação de duplicatas
 export const ALL_RITUALS = getAllRituals();

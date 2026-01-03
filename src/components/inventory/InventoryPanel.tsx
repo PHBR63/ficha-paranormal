@@ -88,15 +88,13 @@ import { WeaponCatalogModal } from './WeaponCatalogModal';
 import { ArmorCatalogModal } from './ArmorCatalogModal';
 import { ItemCatalogModal } from './ItemCatalogModal';
 import { WeaponModificationModal } from './WeaponModificationModal';
-import type { CatalogWeapon, WeaponModification } from '@/lib/weapons-catalog';
+import type { CatalogWeapon, WeaponModification, CatalogArmor, CatalogItem } from '@/lib/catalogs';
 import { 
   calculateModifiedWeaponStats, 
   getModifiedCategory, 
   MODIFICATION_LABELS,
   getWeaponModificationById,
-} from '@/lib/weapons-catalog';
-import type { CatalogArmor } from '@/lib/armor-catalog';
-import type { CatalogItem } from '@/lib/items-catalog';
+} from '@/lib/catalogs';
 import { ProtectionWidget } from './ProtectionWidget';
 import { InventoryItemDetailModal } from './InventoryItemDetailModal';
 import { validateArmorItem, validateWeaponItem, validateGeneralItem } from '@/hooks/useEquipmentMigration';

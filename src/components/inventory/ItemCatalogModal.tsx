@@ -59,8 +59,8 @@ import {
   type ItemType,
   ITEM_TYPE_LABELS,
   ELEMENT_COLORS,
-  type ParanormalElement,
-} from '@/lib/items-catalog';
+  type ItemParanormalElement as ParanormalElement,
+} from '@/lib/catalogs';
 import type { PatentLimits } from '@/lib/inventory-system';
 
 // Props do componente

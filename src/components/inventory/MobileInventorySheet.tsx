@@ -64,9 +64,7 @@ import {
 } from '@/lib/inventory-system';
 import { getAppropriateSlot, EquipmentSlotType } from './EquipmentSlots';
 import type { ExtendedInventoryItem, CharacterDataForInventory } from './InventoryPanel';
-import type { CatalogWeapon } from '@/lib/weapons-catalog';
-import type { CatalogArmor } from '@/lib/armor-catalog';
-import type { CatalogItem } from '@/lib/items-catalog';
+import type { CatalogWeapon, CatalogArmor, CatalogItem } from '@/lib/catalogs';
 import { validateArmorItem, validateWeaponItem, validateGeneralItem } from '@/hooks/useEquipmentMigration';
 
 // Props do componente

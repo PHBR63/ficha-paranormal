@@ -1,6 +1,6 @@
 # Arquitetura do Projeto - Ordem Paranormal RPG
 
-> **FASE 3 CONCLUÍDA** - Todos os 34 hooks migrados para subpastas por domínio com barrel exports atualizados.
+> **FASE 4 CONCLUÍDA** - Arquivos legados removidos. Todos os imports migrados para barrel exports.
 
 ## Visão Geral
 
@@ -366,8 +366,9 @@ O projeto é uma Progressive Web App com:
 2. [x] ~~Mover poderes gerais e paranormais para pastas dedicadas~~ ✅
 3. [x] ~~Consolidar condições em pasta dedicada~~ ✅
 4. [x] ~~Criar componentes de trilha para Ocultista~~ ✅
-5. [ ] Migrar trilhas para componentes responsivos unificados
-6. [ ] Expandir testes de integração do SUE
+5. [x] ~~Remover arquivos legados em src/lib/~~ ✅ (FASE 4)
+6. [ ] Migrar trilhas para componentes responsivos unificados
+7. [ ] Expandir testes de integração do SUE
 
 ---
 

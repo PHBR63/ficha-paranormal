@@ -34,7 +34,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { ExtendedInventoryItem, ItemType } from './InventoryPanel';
-import { MODIFICATION_LABELS, type WeaponModification } from '@/lib/weapons-catalog';
+import { MODIFICATION_LABELS, type WeaponModification } from '@/lib/catalogs';
 
 interface InventoryItemDetailModalProps {
   item: ExtendedInventoryItem | null;

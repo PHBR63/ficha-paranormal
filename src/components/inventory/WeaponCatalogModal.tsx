@@ -55,7 +55,7 @@ import {
   SPECIAL_WEAPONS,
   type CatalogWeapon,
   PROFICIENCY_LABELS,
-} from '@/lib/weapons-catalog';
+} from '@/lib/catalogs';
 import type { PatentLimits } from '@/lib/inventory-system';
 
 interface WeaponCatalogModalProps {

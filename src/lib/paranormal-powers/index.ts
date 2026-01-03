@@ -17,7 +17,13 @@ export {
   type ParanormalPower,
   type SavedParanormalPower,
   
-  // Constantes
+  // Constantes de elementos (UI)
+  ELEMENT_LABELS,
+  ELEMENT_COLORS,
+  ELEMENT_BG_COLORS,
+  AFFINITY_DESCRIPTIONS,
+  
+  // Catálogo de poderes
   PARANORMAL_POWERS,
   
   // Funções

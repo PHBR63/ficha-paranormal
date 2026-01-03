@@ -9,7 +9,7 @@
  * enquanto game-ids.ts contém apenas os IDs para validação e consistência.
  */
 
-import { SUPPLEMENT_ORIGINS } from './supplement-origins';
+import { SUPPLEMENT_ORIGINS } from './origins';
 import { SUPPLEMENT_TRACKS } from './supplement-classes';
 
 // ==================== ORIGENS PRINCIPAIS (26 origens do livro base) ====================
