@@ -433,9 +433,9 @@ export function MobileResistanceCheckModal({
             <Check className="w-5 h-5" />
             APLICAR RESULTADO
           </Button>
-          <Button variant="ghost" onClick={handleClose} className="font-display">
-            <X className="w-4 h-4 mr-2" />
-            CANCELAR
+          <Button variant="ghost" onClick={handleClose} className="font-display h-10">
+            <X className="w-4 h-4 mr-1.5" />
+            <span className="text-sm">CANCELAR</span>
           </Button>
         </MobileDrawerFooter>
       </MobileDrawerContent>

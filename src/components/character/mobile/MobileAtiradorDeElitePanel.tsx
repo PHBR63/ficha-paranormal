@@ -273,7 +273,9 @@ export function MobileAtiradorDeElitePanel({
           </MobileDrawerBody>
           <MobileDrawerFooter>
             <DrawerClose asChild>
-              <Button variant="ghost" size="sm">Cancelar</Button>
+              <Button variant="ghost" className="w-full h-10">
+                <span className="text-sm">Cancelar</span>
+              </Button>
             </DrawerClose>
           </MobileDrawerFooter>
         </MobileDrawerContent>
