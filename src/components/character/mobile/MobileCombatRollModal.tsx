@@ -49,6 +49,7 @@ import {
   MobileDrawerFooter 
 } from '@/components/ui/mobile-drawer';
 import { Button } from '@/components/ui/button';
+import { MobileButtonGroup } from '@/components/ui/mobile-button-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -1548,106 +1549,123 @@ export function MobileCombatRollModal({
 
         <MobileDrawerFooter>
           {phase === 'setup' && (
-            <Button
-              onClick={rollAttack}
-              disabled={!canAffordPE || isRolling}
-              className="w-full h-12 gap-2 font-medium"
-            >
-              {isRolling ? (
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 0.5, repeat: Infinity, ease: 'linear' }}
-                >
-                  <Dices className="w-5 h-5" />
-                </motion.div>
-              ) : (
-                <>
-                  <Target className="w-5 h-5" />
-                  Rolar Ataque
-                </>
-              )}
-            </Button>
+            <>
+              <MobileButtonGroup
+                buttons={[
+                  {
+                    id: 'roll-attack',
+                    label: isRolling ? '' : 'Rolar Ataque',
+                    icon: isRolling ? (
+                      <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 0.5, repeat: Infinity, ease: 'linear' }}
+                      >
+                        <Dices className="w-5 h-5" />
+                      </motion.div>
+                    ) : <Target className="w-5 h-5" />,
+                    onClick: rollAttack,
+                    type: 'primary',
+                    disabled: !canAffordPE || isRolling,
+                  }
+                ]}
+              />
+              <MobileButtonGroup
+                buttons={[
+                  {
+                    id: 'close-setup',
+                    label: 'Fechar',
+                    icon: <X className="w-4 h-4" />,
+                    onClick: handleClose,
+                    variant: 'ghost',
+                    type: 'secondary',
+                  }
+                ]}
+                className="mt-1"
+              />
+            </>
           )}
           
           {phase === 'attack' && (
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setPhase('setup');
-                  setAttackResult(null);
-                }}
-                className="flex-1 h-10"
-              >
-                <RotateCcw className="w-4 h-4 mr-1.5" />
-                <span className="text-sm">Novo Ataque</span>
-              </Button>
-              <Button
-                onClick={rollDamageAction}
-                disabled={isRolling}
-                className="flex-1 h-10 gap-2"
-              >
-                {isRolling ? (
-                  <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 0.5, repeat: Infinity, ease: 'linear' }}
-                  >
-                    <Dices className="w-4 h-4" />
-                  </motion.div>
-                ) : (
-                  <>
-                    <Flame className="w-4 h-4" />
-                    <span className="text-sm">Rolar Dano</span>
-                  </>
-                )}
-              </Button>
-            </div>
+            <>
+              <MobileButtonGroup
+                buttons={[
+                  {
+                    id: 'new-attack',
+                    label: 'Novo Ataque',
+                    icon: <RotateCcw className="w-4 h-4" />,
+                    onClick: () => {
+                      setPhase('setup');
+                      setAttackResult(null);
+                    },
+                    variant: 'outline',
+                    type: 'secondary',
+                  },
+                  {
+                    id: 'roll-damage',
+                    label: isRolling ? '' : 'Rolar Dano',
+                    icon: isRolling ? (
+                      <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 0.5, repeat: Infinity, ease: 'linear' }}
+                      >
+                        <Dices className="w-4 h-4" />
+                      </motion.div>
+                    ) : <Flame className="w-4 h-4" />,
+                    onClick: rollDamageAction,
+                    type: 'secondary',
+                    disabled: isRolling,
+                  }
+                ]}
+              />
+              <MobileButtonGroup
+                buttons={[
+                  {
+                    id: 'close-attack',
+                    label: 'Fechar',
+                    icon: <X className="w-4 h-4" />,
+                    onClick: handleClose,
+                    variant: 'ghost',
+                    type: 'secondary',
+                  }
+                ]}
+                className="mt-1"
+              />
+            </>
           )}
           
-          {/* Fase damage: layout empilhado para evitar botões cortados */}
           {phase === 'damage' && (
-            <div className="flex flex-col gap-2">
-              {/* Ação principal - destaque */}
-              <Button
-                onClick={handleClose}
-                className="w-full h-12 font-medium gap-2"
-              >
-                <Check className="w-5 h-5" />
-                Concluir Ataque
-              </Button>
-              
-              {/* Ações secundárias - lado a lado */}
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  onClick={rollDamageAction}
-                  className="flex-1 h-10"
-                >
-                  <RotateCcw className="w-4 h-4 mr-1.5" />
-                  <span className="text-sm">Rolar Dano</span>
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => {
+            <MobileButtonGroup
+              buttons={[
+                {
+                  id: 'conclude-attack',
+                  label: 'Concluir Ataque',
+                  icon: <Check className="w-5 h-5" />,
+                  onClick: handleClose,
+                  type: 'primary',
+                },
+                {
+                  id: 'reroll-damage',
+                  label: 'Rolar Dano',
+                  icon: <RotateCcw className="w-4 h-4" />,
+                  onClick: rollDamageAction,
+                  variant: 'outline',
+                  type: 'secondary',
+                },
+                {
+                  id: 'new-attack-from-damage',
+                  label: 'Novo Ataque',
+                  icon: <Sword className="w-4 h-4" />,
+                  onClick: () => {
                     setPhase('setup');
                     setAttackResult(null);
                     setDamageResult(null);
                     setBuffDiceResult(null);
-                  }}
-                  className="flex-1 h-10"
-                >
-                  <Sword className="w-4 h-4 mr-1.5" />
-                  <span className="text-sm">Novo Ataque</span>
-                </Button>
-              </div>
-            </div>
-          )}
-          
-          {phase !== 'damage' && (
-            <Button variant="ghost" onClick={handleClose} className="w-full h-10 mt-1">
-              <X className="w-4 h-4 mr-1.5" />
-              <span className="text-sm">Fechar</span>
-            </Button>
+                  },
+                  variant: 'outline',
+                  type: 'secondary',
+                }
+              ]}
+            />
           )}
         </MobileDrawerFooter>
       </MobileDrawerContent>
