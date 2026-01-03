@@ -59,12 +59,11 @@ import confetti from 'canvas-confetti';
 import { rollSkillTest, rollDamage, DiceRollResult } from '@/lib/dice-roller';
 import { getSkillBonus } from '@/lib/character-data';
 import { ComputedEffects } from '@/lib/unified-effects-engine';
-import { WeaponBuff, ELEMENT_BUFF_COLORS } from '@/hooks/useWeaponBuffs';
+import { WeaponBuff, ELEMENT_BUFF_COLORS, useRitualBonusesForCombat, useRitualCombatBonuses, SustainedRitualInput } from '@/hooks';
 import { getElementConfig } from '@/lib/element-config';
 import { WeaponEntry } from './MobileCombatPanel';
 import { AniquiladorTechniqueModal, TechniqueEffects } from '@/components/character/AniquiladorTechniqueModal';
 import { getTrackCombatBonuses } from '@/lib/effects/track-effects-adapter';
-import { useRitualBonusesForCombat, useRitualCombatBonuses, SustainedRitualInput } from '@/hooks/useRitualCombatBonuses';
 import { formatDamageFormula as formatBuffDamage } from '@/lib/rituals/legacy-exports';
 
 // Interface para bônus selecionável

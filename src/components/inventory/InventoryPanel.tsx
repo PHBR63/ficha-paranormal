@@ -10,7 +10,7 @@
  */
 
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/hooks';
 import { MobileInventoryCard } from './MobileInventoryCard';
 import { 
   Package, 
@@ -42,7 +42,7 @@ import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks';
 import {
   Dialog,
   DialogContent,

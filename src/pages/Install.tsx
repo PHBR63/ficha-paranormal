@@ -2,8 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { usePWAInstall } from "@/hooks/usePWAInstall";
-import { usePWAUpdate } from "@/hooks/usePWAUpdate";
+import { usePWAInstall, usePWAUpdate, useThemeColors } from "@/hooks";
 import { Particles } from "@/components/ui/particles";
 import { FlickeringGrid } from "@/components/ui/flickering-grid";
 import { DecryptedText } from "@/components/ui/decrypted-text";
@@ -25,7 +24,7 @@ import {
   RefreshCw,
   Loader2
 } from "lucide-react";
-import { useThemeColors } from "@/hooks/useThemeColors";
+// useThemeColors já importado acima
 import confetti from "canvas-confetti";
 
 export default function Install() {

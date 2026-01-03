@@ -28,9 +28,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import type { EffectDuration } from '@/hooks/useActivatedEffects';
-import { TRACK_EFFECT_IDS } from '@/hooks/useActivatedEffects';
-import type { ComputedEffects } from '@/hooks/useUnifiedEffects';
+import { type EffectDuration, TRACK_EFFECT_IDS, type ComputedEffects } from '@/hooks';
 
 interface NegociadorPanelProps {
   classTrack?: string | null;

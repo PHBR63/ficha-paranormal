@@ -80,8 +80,7 @@ const COMANDANTE_ABILITIES: LeadershipAbility[] = [
   },
 ];
 
-import type { EffectDuration } from '@/hooks/useActivatedEffects';
-import type { ComputedEffects } from '@/hooks/useUnifiedEffects';
+import type { EffectDuration, ComputedEffects } from '@/hooks';
 
 interface LeadershipAbilitiesPanelProps {
   classTrack: string | null | undefined;

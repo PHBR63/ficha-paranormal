@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { SessionCard } from './SessionCard';
-import { sendPushNotification } from '@/hooks/usePushNotifications';
+import { sendPushNotification } from '@/hooks';
 import {
   Dialog,
   DialogContent,

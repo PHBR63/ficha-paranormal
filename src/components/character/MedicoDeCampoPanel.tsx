@@ -45,8 +45,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import type { EffectDuration } from '@/hooks/useActivatedEffects';
-import { TRACK_EFFECT_IDS } from '@/hooks/useActivatedEffects';
+import { type EffectDuration, TRACK_EFFECT_IDS } from '@/hooks';
 import type { ComputedEffects } from '@/lib/unified-effects-engine';
 
 // =====================================================

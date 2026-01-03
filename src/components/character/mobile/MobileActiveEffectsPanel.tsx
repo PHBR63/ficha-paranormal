@@ -22,10 +22,7 @@ import {
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { 
-  UnifiedEffectsResult,
-  UnifiedEffect,
-} from '@/hooks/useUnifiedEffects';
+import type { UnifiedEffectsResult, UnifiedEffect } from '@/hooks';
 
 interface MobileActiveEffectsPanelProps {
   effectsResult: UnifiedEffectsResult;

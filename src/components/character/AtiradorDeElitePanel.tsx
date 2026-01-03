@@ -25,7 +25,7 @@ import {
   DrawerFooter,
   DrawerClose,
 } from '@/components/ui/drawer';
-import { TRACK_EFFECT_IDS, type EffectDuration } from '@/hooks/useActivatedEffects';
+import { TRACK_EFFECT_IDS, type EffectDuration } from '@/hooks';
 
 // Tipos de manobras disponíveis para Disparo Impactante
 const MANOBRAS_IMPACTANTE = [
@@ -94,7 +94,7 @@ const ATIRADOR_ABILITIES: AtiradorAbility[] = [
   },
 ];
 
-import type { ComputedEffects } from '@/hooks/useUnifiedEffects';
+import type { ComputedEffects } from '@/hooks';
 
 interface AtiradorDeElitePanelProps {
   classTrack?: string | null;

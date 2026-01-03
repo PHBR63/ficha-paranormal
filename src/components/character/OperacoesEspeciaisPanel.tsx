@@ -93,8 +93,7 @@ const PASSIVE_ABILITIES = [
   },
 ] as const;
 
-import type { EffectDuration } from '@/hooks/useActivatedEffects';
-import type { ComputedEffects } from '@/hooks/useUnifiedEffects';
+import type { EffectDuration, ComputedEffects } from '@/hooks';
 
 interface OperacoesEspeciaisPanelProps {
   classTrack: string | null;

@@ -4,14 +4,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
+import { useToast, useThemeColors } from '@/hooks';
 import { Particles } from '@/components/ui/particles';
 import { FlickeringGrid } from '@/components/ui/flickering-grid';
 import { DecryptedText } from '@/components/ui/decrypted-text';
 import { Loader2, ArrowLeft, EyeOff, Eye as EyeIcon } from 'lucide-react';
 import { Logo } from '@/components/ui/logo';
 import { z } from 'zod';
-import { useThemeColors } from '@/hooks/useThemeColors';
+// useThemeColors já importado acima
 
 const authSchema = z.object({
   email: z.string().email('Email inválido'),

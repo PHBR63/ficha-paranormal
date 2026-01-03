@@ -59,11 +59,7 @@ import {
 } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import type {
-  UnifiedEffectsResult,
-  UnifiedEffect,
-  ComputedEffects,
-} from '@/hooks/useUnifiedEffects';
+import type { UnifiedEffectsResult, UnifiedEffect, ComputedEffects } from '@/hooks';
 
 // =====================================================
 // Tipos e Interfaces

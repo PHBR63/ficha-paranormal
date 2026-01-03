@@ -2,7 +2,7 @@ import { Bell, BellOff, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { usePushNotifications } from '@/hooks/usePushNotifications';
+import { usePushNotifications } from '@/hooks';
 
 interface PushNotificationToggleProps {
   variant?: 'button' | 'switch';

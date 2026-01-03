@@ -39,7 +39,7 @@ import {
   Clock,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useValidationHistory, type ValidationHistoryEntry } from '@/hooks/useValidationHistory';
+import { useValidationHistory, type ValidationHistoryEntry } from '@/hooks';
 
 // Cores para os gráficos
 const COLORS = {

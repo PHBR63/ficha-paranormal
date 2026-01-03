@@ -3,12 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
+import { useToast, useThemeColors } from '@/hooks';
 import { ArrowLeft, ArrowRight, Check, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Particles } from '@/components/ui/particles';
 import { FlickeringGrid } from '@/components/ui/flickering-grid';
-import { useThemeColors } from '@/hooks/useThemeColors';
+// useThemeColors já importado acima
 import { StepConcept } from '@/components/character/StepConcept';
 import { StepNex } from '@/components/character/StepNex';
 import { StepPatent } from '@/components/character/StepPatent';
@@ -36,7 +36,7 @@ import {
 } from '@/lib/character-data';
 import { rebuildCharacterSheet, buildStateToFormData, CLASS_PROFICIENCIES, getClassSkillRules, validateAttributes } from '@/lib/character-builder-engine';
 import { getCoreAbilities, getChoosableAbilities } from '@/lib/class-abilities';
-import { useCharacterAutoSave, loadCharacterDraft, clearCharacterDraft } from '@/hooks/useCharacterAutoSave';
+import { useCharacterAutoSave, loadCharacterDraft, clearCharacterDraft } from '@/hooks';
 import { validateCharacter } from '@/lib/character-validation';
 import { CORE_ORIGIN_IDS } from '@/lib/constants/game-ids';
 import confetti from 'canvas-confetti';

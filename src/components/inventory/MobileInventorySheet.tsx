@@ -44,7 +44,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks';
 import { MobileInventoryCard } from './MobileInventoryCard';
 import { WeaponCatalogModal } from './WeaponCatalogModal';
 import { ArmorCatalogModal } from './ArmorCatalogModal';

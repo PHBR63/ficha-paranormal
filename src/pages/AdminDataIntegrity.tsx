@@ -59,7 +59,7 @@ import { RulesValidationPanel } from '@/components/admin/RulesValidationPanel';
 import { ValidationHistoryDashboard } from '@/components/admin/ValidationHistoryDashboard';
 import { ClassPowerBonusTests } from '@/components/admin/ClassPowerBonusTests';
 import { SUETestCoverageDashboard } from '@/components/admin/SUETestCoverageDashboard';
-import { useValidationHistory } from '@/hooks/useValidationHistory';
+import { useValidationHistory } from '@/hooks';
 
 interface CharacterData {
   id: string;

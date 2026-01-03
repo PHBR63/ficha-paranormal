@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { Camera, X, Loader2, Upload, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks';
 
 interface ImageUploaderProps {
   value?: string | null;

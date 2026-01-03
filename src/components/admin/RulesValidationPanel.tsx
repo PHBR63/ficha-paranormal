@@ -31,7 +31,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { MobileActionSheet, useActionSheet } from '@/components/ui/mobile-action-sheet';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/hooks';
 import {
   CheckCircle2,
   XCircle,

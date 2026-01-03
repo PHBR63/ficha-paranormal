@@ -1,5 +1,7 @@
 # Arquitetura do Projeto - Ordem Paranormal RPG
 
+> **FASE 3 CONCLUÍDA** - Todos os 34 hooks migrados para subpastas por domínio com barrel exports atualizados.
+
 ## Visão Geral
 
 Este projeto implementa uma aplicação web para gerenciamento de fichas e campanhas do sistema de RPG **Ordem Paranormal**. A arquitetura é baseada em React + Vite + TypeScript com Tailwind CSS, utilizando Supabase como backend.

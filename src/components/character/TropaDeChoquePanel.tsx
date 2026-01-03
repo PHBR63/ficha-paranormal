@@ -38,8 +38,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { toast } from '@/hooks/use-toast';
-import type { EffectDuration } from '@/hooks/useActivatedEffects';
+import { toast, type EffectDuration } from '@/hooks';
 import type { ComputedEffects } from '@/lib/unified-effects-engine';
 
 // =====================================================

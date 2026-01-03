@@ -30,23 +30,27 @@ import { cn } from '@/lib/utils';
 import { ORIGINS, getTrackById } from '@/lib/character-data';
 import { PowerDetailModal, PowerDetailData } from './PowerDetailModal';
 import { ALL_RITUALS, getActiveRitualEffect, Ritual, SustainConfig } from '@/lib/rituals/legacy-exports';
-import { useDefenseBonuses } from '@/hooks/useDefenseBonuses';
-// Hook consolidado do SUE - fonte única de verdade para todos os bônus
-import { useBonusSummaryFromSUE } from '@/hooks/useBonusSummaryFromSUE';
-import { useRitualBonusesFromSUE } from '@/hooks/useRitualBonusesFromSUE';
-import { useSustainedRituals } from '@/hooks/useSustainedRituals';
+import { 
+  useDefenseBonuses, 
+  useBonusSummaryFromSUE, 
+  useRitualBonusesFromSUE, 
+  useSustainedRituals,
+  useCharacterAudit,
+  useAttributeValidation,
+} from '@/hooks';
+import { logAttributeDiagnostics } from '@/hooks/character';
 import { MobileAuditBanner } from './MobileAuditBanner';
 import { ExcessPowersRemovalModal } from './ExcessPowersRemovalModal';
 import { ExcessRitualsRemovalModal } from './ExcessRitualsRemovalModal';
 import { RemovedPowersHistory } from './RemovedPowersHistory';
 import { IncompleteDataBanner } from './IncompleteDataBanner';
 import { getOcultistRituals } from '@/lib/character-data';
-import { useCharacterAudit } from '@/hooks/useCharacterAudit';
+// useCharacterAudit já importado acima
 import { CharacterForAudit, getMaxParanormalPowers } from '@/lib/character-audit-engine';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { SavedParanormalPower, PARANORMAL_POWERS, ParanormalElement } from '@/lib/paranormal-powers';
-import { useAttributeValidation, logAttributeDiagnostics } from '@/hooks/useAttributeValidation';
+// useAttributeValidation já importado acima
 // Modais de paridade desktop
 import { NexProgressionModal } from './NexProgressionModal';
 import { CharacterEditModal } from './CharacterEditModal';
@@ -112,10 +116,7 @@ import {
 // Inferência de tipo de arma (corrige pistola como corpo a corpo)
 import { normalizeWeaponTypeForDisplay } from '@/lib/weapon-type-inference';
 
-import { useWeaponBuffs } from '@/hooks/useWeaponBuffs';
-import { useUnifiedEffects } from '@/hooks/useUnifiedEffects';
-import { useRoundTracking } from '@/hooks/useRoundTracking';
-import { useActivatedEffects } from '@/hooks/useActivatedEffects';
+import { useWeaponBuffs, useUnifiedEffects, useRoundTracking, useActivatedEffects } from '@/hooks';
 
 // Tipos
 interface MobileCharacterSheetProps {

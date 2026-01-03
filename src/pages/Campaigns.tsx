@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/hooks/use-toast';
+import { useToast, useThemeColors } from '@/hooks';
 import { Particles } from '@/components/ui/particles';
 import { FlickeringGrid } from '@/components/ui/flickering-grid';
 import { DecryptedText } from '@/components/ui/decrypted-text';
@@ -31,7 +31,7 @@ import {
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { PushNotificationToggle } from '@/components/pwa/PushNotificationToggle';
-import { useThemeColors } from '@/hooks/useThemeColors';
+// useThemeColors já importado acima
 
 interface Campaign {
   id: string;
