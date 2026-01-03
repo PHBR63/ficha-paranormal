@@ -1,7 +1,7 @@
 /**
  * Trilhas do Ocultista - Ordem Paranormal RPG
  * 
- * Painéis para as 5 trilhas do Ocultista:
+ * Painéis unificados responsivos para as 5 trilhas do Ocultista:
  * - Conduíte
  * - Flagelador
  * - Graduado
@@ -11,16 +11,30 @@
  * @module tracks/ocultista
  */
 
-// Desktop panels
-export { ConduitePanel } from '@/components/character/ConduitePanel';
-export { FlageladorPanel } from '@/components/character/FlageladorPanel';
-export { GraduadoPanel } from '@/components/character/GraduadoPanel';
-export { IntuitivoPanel } from '@/components/character/IntuitivoPanel';
-export { LaminaParanormalPanel } from '@/components/character/LaminaParanormalPanel';
+// Hooks de lógica
+export { useConduiteTrack, CONDUITE_EFFECT_IDS, CONDUITE_ABILITIES, CONDUITE_PASSIVES } from './useConduiteTrack';
+export { useFlageladorTrack, FLAGELADOR_EFFECT_IDS, FLAGELADOR_ABILITIES, FLAGELADOR_PASSIVES } from './useFlageladorTrack';
+export { useGraduadoTrack, GRADUADO_ABILITIES } from './useGraduadoTrack';
+export { useIntuitivoTrack, INTUITIVO_ABILITIES } from './useIntuitivoTrack';
+export { useLaminaParanormalTrack, LAMINA_EFFECT_IDS, LAMINA_ABILITIES, LAMINA_PASSIVES } from './useLaminaParanormalTrack';
 
-// Mobile panels
-export { MobileConduitePanel } from '@/components/character/mobile/MobileConduitePanel';
-export { MobileFlageladorPanel } from '@/components/character/mobile/MobileFlageladorPanel';
-export { MobileGraduadoPanel } from '@/components/character/mobile/MobileGraduadoPanel';
-export { MobileIntuitivoPanel } from '@/components/character/mobile/MobileIntuitivoPanel';
-export { MobileLaminaParanormalPanel } from '@/components/character/mobile/MobileLaminaParanormalPanel';
+// Tipos
+export type { ConduiteAbility, ConduitePassive, UseConduiteTrackProps } from './useConduiteTrack';
+export type { FlageladorAbility, FlageladorPassive, UseFlageladorTrackProps } from './useFlageladorTrack';
+export type { GraduadoAbility, UseGraduadoTrackProps } from './useGraduadoTrack';
+export type { IntuitivoAbility, UseIntuitivoTrackProps } from './useIntuitivoTrack';
+export type { LaminaAbility, LaminaPassive, UseLaminaParanormalTrackProps } from './useLaminaParanormalTrack';
+
+// Painéis unificados responsivos
+export { ConduitePanel } from './ConduitePanel';
+export { FlageladorPanel } from './FlageladorPanel';
+export { GraduadoPanel } from './GraduadoPanel';
+export { IntuitivoPanel } from './IntuitivoPanel';
+export { LaminaParanormalPanel } from './LaminaParanormalPanel';
+
+// Re-exports legados para compatibilidade (apontam para os novos componentes unificados)
+export { ConduitePanel as MobileConduitePanel } from './ConduitePanel';
+export { FlageladorPanel as MobileFlageladorPanel } from './FlageladorPanel';
+export { GraduadoPanel as MobileGraduadoPanel } from './GraduadoPanel';
+export { IntuitivoPanel as MobileIntuitivoPanel } from './IntuitivoPanel';
+export { LaminaParanormalPanel as MobileLaminaParanormalPanel } from './LaminaParanormalPanel';
