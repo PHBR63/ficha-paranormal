@@ -651,3 +651,75 @@ export function getStackingDefenseModifier(conditions: string[]): number {
   
   return total;
 }
+
+// ==================== FUNÇÕES DE PARÂMETROS ====================
+
+/**
+ * Verifica se uma condição requer parâmetros adicionais
+ * Livro Base v1.3 - Condições com efeitos variáveis
+ */
+export function conditionRequiresParams(id: string): boolean {
+  return ['fragilizado', 'machucado', 'envenenado'].includes(id);
+}
+
+/**
+ * Retorna o efeito formatado de uma condição com parâmetros
+ * Usado para exibir descrições dinâmicas na UI
+ */
+export function getConditionEffectWithParams(id: string, params?: ConditionParams): string {
+  const condition = CONDITIONS[id];
+  if (!condition) return '';
+  if (!params) return condition.effect;
+
+  switch (id) {
+    case 'fragilizado':
+      return params.damageType 
+        ? `Vulnerável a dano ${params.damageType.charAt(0).toUpperCase() + params.damageType.slice(1)} (+50% de dano).`
+        : condition.effect;
+    case 'machucado':
+      const weapon = params.weaponName ? ` (${params.weaponName})` : '';
+      return `Ao realizar qualquer ação, sofre ${params.weaponMaxDamage ?? 0} de dano${weapon}.`;
+    case 'envenenado':
+      const poison = params.poisonName ? ` (${params.poisonName})` : '';
+      const dt = params.poisonDT ? ` DT ${params.poisonDT}` : '';
+      return `–2 em todos os testes. Dano de veneno: ${params.poisonDamage ?? '1d6'}${poison}${dt}.`;
+    default:
+      return condition.effect;
+  }
+}
+
+/**
+ * Retorna o dano da condição Machucado
+ * Livro Base v1.3 - Dano igual ao máximo da arma que causou
+ */
+export function getMachucadoDamage(params?: ConditionParams): number {
+  return params?.weaponMaxDamage ?? 0;
+}
+
+/**
+ * Retorna o multiplicador de dano para Fragilizado
+ * Livro Base v1.3 - Sofre +50% de dano do tipo específico
+ */
+export function getFragilizadoMultiplier(damageType?: string, params?: ConditionParams): number {
+  if (!damageType || !params?.damageType) return 1.0;
+  return damageType.toLowerCase() === params.damageType.toLowerCase() ? 1.5 : 1.0;
+}
+
+// ==================== FUNÇÕES DE RESTRIÇÃO ====================
+
+/**
+ * Verifica se o personagem pode gastar PE com as condições atuais
+ * Livro Base v1.3 - Frustrado impede gasto de PE
+ */
+export function canSpendPEWithConditions(conditions: string[]): boolean {
+  return !conditions.includes('frustrado');
+}
+
+/**
+ * Retorna o número máximo de ações por turno considerando condições
+ * Livro Base v1.3 - Enjoado e Lento limitam a 1 ação
+ */
+export function getMaxActionsFromConditions(conditions: string[]): number {
+  if (conditions.some(c => ['enjoado', 'lento'].includes(c))) return 1;
+  return 2;
+}
