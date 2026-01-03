@@ -295,7 +295,7 @@ export function MobileAniquiladorPanel({
 
           <MobileDrawerFooter>
             <Button
-              className="w-full bg-red-600 hover:bg-red-700"
+              className="w-full h-12 bg-red-600 hover:bg-red-700"
               disabled={totalCost === 0 || totalCost > peCurrent || isActivating}
               onClick={handleConfirm}
             >
@@ -303,8 +303,8 @@ export function MobileAniquiladorPanel({
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
                 <>
-                  <Target className="w-4 h-4 mr-1" />
-                  Ativar ({totalCost} PE)
+                  <Target className="w-4 h-4 mr-1.5" />
+                  <span>Ativar ({totalCost} PE)</span>
                 </>
               )}
             </Button>

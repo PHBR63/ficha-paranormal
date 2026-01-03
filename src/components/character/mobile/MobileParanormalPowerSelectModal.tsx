@@ -336,8 +336,8 @@ export const MobileParanormalPowerSelectModal = memo(function MobileParanormalPo
         </ScrollArea>
 
         <div className="pt-4 border-t">
-          <Button variant="outline" className="w-full" onClick={() => onOpenChange(false)}>
-            Cancelar
+          <Button variant="outline" className="w-full h-10" onClick={() => onOpenChange(false)}>
+            <span className="text-sm">Cancelar</span>
           </Button>
         </div>
       </SheetContent>

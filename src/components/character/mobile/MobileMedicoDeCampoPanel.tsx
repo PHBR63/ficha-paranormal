@@ -301,12 +301,14 @@ export function MobileMedicoDeCampoPanel({
             <Button 
               onClick={handleUseParamedico}
               disabled={peCurrent < paramedicoCost}
-              className="bg-emerald-600 hover:bg-emerald-700"
+              className="w-full h-12 bg-emerald-600 hover:bg-emerald-700"
             >
               Curar {healingDice.base + extraDice}d10 PV
             </Button>
             <DrawerClose asChild>
-              <Button variant="ghost">Cancelar</Button>
+              <Button variant="ghost" className="w-full h-10">
+                <span className="text-sm">Cancelar</span>
+              </Button>
             </DrawerClose>
           </MobileDrawerFooter>
         </MobileDrawerContent>

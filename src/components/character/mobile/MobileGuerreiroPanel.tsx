@@ -335,23 +335,23 @@ export function MobileGuerreiroPanel({
               <div className="flex gap-2 w-full">
                 <Button
                   variant="secondary"
-                  className="flex-1"
+                  className="flex-1 h-10"
                   disabled={peCurrent < 1}
                   onClick={() => handleConfirmForcaOpressora(false)}
                 >
-                  Derrubar (1 PE)
+                  <span className="text-sm">Derrubar (1 PE)</span>
                 </Button>
                 <Button
-                  className="flex-1 bg-orange-600"
+                  className="flex-1 h-10 bg-orange-600"
                   disabled={peCurrent < 2}
                   onClick={() => handleConfirmForcaOpressora(true)}
                 >
-                  + Atacar (2 PE)
+                  <span className="text-sm">+ Atacar (2 PE)</span>
                 </Button>
               </div>
             ) : (
               <Button
-                className="w-full bg-orange-600"
+                className="w-full h-12 bg-orange-600"
                 disabled={!selectedManeuver || peCurrent < 1}
                 onClick={() => handleConfirmForcaOpressora(false)}
               >

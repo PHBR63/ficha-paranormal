@@ -259,18 +259,18 @@ export const MobileAffinitySelectorCard = memo(function MobileAffinitySelectorCa
               </ScrollArea>
 
               <div className="pt-4 flex gap-2">
-                <Button variant="outline" className="flex-1" onClick={() => setDetailElement(null)}>
-                  Fechar
+                <Button variant="outline" className="flex-1 h-10" onClick={() => setDetailElement(null)}>
+                  <span className="text-sm">Fechar</span>
                 </Button>
                 <Button
-                  className="flex-1 bg-paranormal hover:bg-paranormal/90"
+                  className="flex-1 h-10 bg-paranormal hover:bg-paranormal/90"
                   onClick={() => {
                     setSelectedElement(detailElement);
                     setDetailElement(null);
                   }}
                 >
-                  <Check className="w-4 h-4 mr-1" />
-                  Escolher
+                  <Check className="w-4 h-4 mr-1.5" />
+                  <span className="text-sm">Escolher</span>
                 </Button>
               </div>
             </>

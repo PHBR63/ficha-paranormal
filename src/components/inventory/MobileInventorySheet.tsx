@@ -861,11 +861,11 @@ export function MobileInventorySheet({
             </div>
           )}
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setUseItemConfirmOpen(false)}>
-              Cancelar
+            <Button variant="outline" className="h-10" onClick={() => setUseItemConfirmOpen(false)}>
+              <span className="text-sm">Cancelar</span>
             </Button>
-            <Button onClick={handleConfirmUseItem}>
-              Usar
+            <Button className="h-10" onClick={handleConfirmUseItem}>
+              <span className="text-sm">Usar</span>
             </Button>
           </DialogFooter>
         </DialogContent>

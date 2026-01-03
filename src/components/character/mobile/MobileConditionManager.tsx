@@ -383,12 +383,12 @@ function AddConditionSheet({
             )}
 
             <div className="flex gap-2 pt-4">
-              <Button variant="outline" className="flex-1" onClick={() => setSelectedCondition(null)}>
-                Voltar
+              <Button variant="outline" className="flex-1 h-10" onClick={() => setSelectedCondition(null)}>
+                <span className="text-sm">Voltar</span>
               </Button>
-              <Button className="flex-1" onClick={handleAdd}>
-                <Plus className="w-4 h-4 mr-2" />
-                Adicionar
+              <Button className="flex-1 h-10" onClick={handleAdd}>
+                <Plus className="w-4 h-4 mr-1.5" />
+                <span className="text-sm">Adicionar</span>
               </Button>
             </div>
           </div>
