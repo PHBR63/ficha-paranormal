@@ -9,9 +9,10 @@
  * - Sistema de modificações para armas
  */
 
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useIsMobile } from '@/hooks';
 import { MobileInventoryCard } from './MobileInventoryCard';
+import { VirtualizedInventoryList, VIRTUALIZATION_THRESHOLD } from './VirtualizedInventoryList';
 import { 
   Package, 
   Weight, 
@@ -1286,38 +1287,80 @@ export function InventoryPanel({
                   )}
                 </div>
               </CollapsibleTrigger>
-              <CollapsibleContent className="space-y-1 mt-1">
-                {items.map((item) => (
-                  isMobile ? (
-                    <MobileInventoryCard
-                      key={item.id}
-                      item={item}
-                      onRemove={!readOnly ? handleRemoveItem : undefined}
-                      onEquip={!readOnly && canEquipItem(item) ? handleEquipItem : undefined}
-                      onUnequip={!readOnly && item.isEquipped ? handleUnequipItem : undefined}
-                      onUse={!readOnly && canUseItem(item) ? handleRequestUseItem : undefined}
-                      onModify={!readOnly && item.itemType === 'weapon' ? handleOpenWeaponMod : undefined}
-                      onViewDetails={(item) => {
-                        setSelectedItem(item);
-                        setItemDetailOpen(true);
-                      }}
-                    />
-                  ) : (
-                    <InventoryItemRow
-                      key={item.id}
-                      item={item}
-                      onRemove={!readOnly ? handleRemoveItem : undefined}
-                      onEquip={!readOnly && canEquipItem(item) ? handleEquipItem : undefined}
-                      onUnequip={!readOnly && item.isEquipped ? handleUnequipItem : undefined}
-                      onUse={!readOnly && canUseItem(item) ? handleRequestUseItem : undefined}
-                      onModify={!readOnly && item.itemType === 'weapon' ? handleOpenWeaponMod : undefined}
-                      onViewDetails={(item) => {
-                        setSelectedItem(item);
-                        setItemDetailOpen(true);
-                      }}
-                    />
-                  )
-                ))}
+              <CollapsibleContent className="mt-1">
+                {/* Usa virtualização para listas grandes (>10 itens) */}
+                {items.length > VIRTUALIZATION_THRESHOLD ? (
+                  <VirtualizedInventoryList
+                    items={items}
+                    isMobile={isMobile}
+                    maxHeight={400}
+                    renderItem={(item) => (
+                      isMobile ? (
+                        <MobileInventoryCard
+                          key={item.id}
+                          item={item}
+                          onRemove={!readOnly ? handleRemoveItem : undefined}
+                          onEquip={!readOnly && canEquipItem(item) ? handleEquipItem : undefined}
+                          onUnequip={!readOnly && item.isEquipped ? handleUnequipItem : undefined}
+                          onUse={!readOnly && canUseItem(item) ? handleRequestUseItem : undefined}
+                          onModify={!readOnly && item.itemType === 'weapon' ? handleOpenWeaponMod : undefined}
+                          onViewDetails={(itemToView) => {
+                            setSelectedItem(itemToView);
+                            setItemDetailOpen(true);
+                          }}
+                        />
+                      ) : (
+                        <InventoryItemRow
+                          key={item.id}
+                          item={item}
+                          onRemove={!readOnly ? handleRemoveItem : undefined}
+                          onEquip={!readOnly && canEquipItem(item) ? handleEquipItem : undefined}
+                          onUnequip={!readOnly && item.isEquipped ? handleUnequipItem : undefined}
+                          onUse={!readOnly && canUseItem(item) ? handleRequestUseItem : undefined}
+                          onModify={!readOnly && item.itemType === 'weapon' ? handleOpenWeaponMod : undefined}
+                          onViewDetails={(itemToView) => {
+                            setSelectedItem(itemToView);
+                            setItemDetailOpen(true);
+                          }}
+                        />
+                      )
+                    )}
+                  />
+                ) : (
+                  <div className="space-y-1 ml-2 sm:ml-4">
+                    {items.map((item) => (
+                      isMobile ? (
+                        <MobileInventoryCard
+                          key={item.id}
+                          item={item}
+                          onRemove={!readOnly ? handleRemoveItem : undefined}
+                          onEquip={!readOnly && canEquipItem(item) ? handleEquipItem : undefined}
+                          onUnequip={!readOnly && item.isEquipped ? handleUnequipItem : undefined}
+                          onUse={!readOnly && canUseItem(item) ? handleRequestUseItem : undefined}
+                          onModify={!readOnly && item.itemType === 'weapon' ? handleOpenWeaponMod : undefined}
+                          onViewDetails={(itemToView) => {
+                            setSelectedItem(itemToView);
+                            setItemDetailOpen(true);
+                          }}
+                        />
+                      ) : (
+                        <InventoryItemRow
+                          key={item.id}
+                          item={item}
+                          onRemove={!readOnly ? handleRemoveItem : undefined}
+                          onEquip={!readOnly && canEquipItem(item) ? handleEquipItem : undefined}
+                          onUnequip={!readOnly && item.isEquipped ? handleUnequipItem : undefined}
+                          onUse={!readOnly && canUseItem(item) ? handleRequestUseItem : undefined}
+                          onModify={!readOnly && item.itemType === 'weapon' ? handleOpenWeaponMod : undefined}
+                          onViewDetails={(itemToView) => {
+                            setSelectedItem(itemToView);
+                            setItemDetailOpen(true);
+                          }}
+                        />
+                      )
+                    ))}
+                  </div>
+                )}
               </CollapsibleContent>
             </Collapsible>
           );
