@@ -24,8 +24,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { toast } from '@/hooks/use-toast';
 import { AuditIssue, AuditResult } from '@/lib/character-audit-engine';
 import { cn } from '@/lib/utils';
+import confetti from 'canvas-confetti';
 
 interface MobileAuditBannerProps {
   auditResult: AuditResult | null;
@@ -169,6 +171,32 @@ export function MobileAuditBanner({
       type: result.success ? 'success' : 'error',
       text: result.message,
     });
+    
+    // Feedback visual de sucesso com confetti e toast
+    if (result.success) {
+      // Dispara confetti celebratório (menor no mobile)
+      confetti({
+        particleCount: 50,
+        spread: 45,
+        origin: { y: 0.4 },
+        colors: ['#22c55e', '#10b981', '#34d399', '#6ee7b7'],
+      });
+      
+      // Toast de sucesso
+      toast({
+        title: '✅ Correção aplicada!',
+        description: result.message,
+        duration: 3000,
+      });
+    } else {
+      // Toast de erro
+      toast({
+        title: '❌ Erro na correção',
+        description: result.message,
+        variant: 'destructive',
+        duration: 4000,
+      });
+    }
     
     // Limpa mensagem após 4 segundos
     setTimeout(() => setFixMessage(null), 4000);

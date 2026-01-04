@@ -27,7 +27,9 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { toast } from '@/hooks/use-toast';
 import { AuditIssue, AuditResult } from '@/lib/character-audit-engine';
+import confetti from 'canvas-confetti';
 
 interface CharacterAuditBannerProps {
   auditResult: AuditResult | null;
@@ -177,6 +179,32 @@ export function CharacterAuditBanner({
       type: result.success ? 'success' : 'error',
       text: result.message,
     });
+    
+    // Feedback visual de sucesso com confetti e toast
+    if (result.success) {
+      // Dispara confetti celebratório
+      confetti({
+        particleCount: 80,
+        spread: 60,
+        origin: { y: 0.3 },
+        colors: ['#22c55e', '#10b981', '#34d399', '#6ee7b7'],
+      });
+      
+      // Toast de sucesso
+      toast({
+        title: '✅ Correção aplicada!',
+        description: result.message,
+        duration: 4000,
+      });
+    } else {
+      // Toast de erro
+      toast({
+        title: '❌ Erro na correção',
+        description: result.message,
+        variant: 'destructive',
+        duration: 5000,
+      });
+    }
     
     // Limpa mensagem após 5 segundos
     setTimeout(() => setFixMessage(null), 5000);
