@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { CharacterFormData } from '@/pages/CharacterCreate';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
@@ -34,6 +34,7 @@ import {
 import { RuleBookTip } from './RuleBookTip';
 import { getRulebookContent } from '@/lib/rulebook-content';
 import { AbilityDetailModal } from './AbilityDetailModal';
+import { VersatilitySection, VersatilityChoice, isVersatilityChoiceComplete } from './VersatilitySection';
 
 // ==================== MARCOS DE PROGRESSÃO OFICIAIS (Tabelas 1.3, 1.4, 1.5) ====================
 // Mapeamento de habilidades que evoluem com NEX conforme livro oficial
@@ -103,15 +104,28 @@ const CLASS_COLORS: Record<string, string> = {
 };
 
 export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) {
-  const { characterClass, nex, abilities } = formData;
+  const { characterClass, nex, abilities, classTrack } = formData;
   
   // Estado para o modal de detalhes
   const [selectedAbilityForDetail, setSelectedAbilityForDetail] = useState<ClassAbility | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   
+  // Estado para Versatilidade (NEX >= 50%)
+  const [versatilityChoice, setVersatilityChoice] = useState<VersatilityChoice | null>(
+    (formData as any).versatilityChoice || null
+  );
+  
+  // Verifica se personagem está em NEX 50%+ (precisa fazer escolha de Versatilidade)
+  const showVersatility = nex >= 50 && classTrack;
+  
+  // Calcula se a escolha de poder de classe adicional via Versatilidade foi feita
+  const extraPowerFromVersatility = versatilityChoice?.type === 'class_power' ? 1 : 0;
+  
   const coreAbilities = characterClass ? getCoreAbilities(characterClass, nex) : [];
   const choosableAbilities = characterClass ? getChoosableAbilities(characterClass, nex) : [];
-  const maxChoices = getAbilityChoiceCount(nex);
+  const baseMaxChoices = getAbilityChoiceCount(nex);
+  // Se escolheu poder de classe via Versatilidade, ganha +1 escolha
+  const maxChoices = baseMaxChoices + extraPowerFromVersatility;
   const selectedChoices = abilities.filter(a => 
     choosableAbilities.some(ca => ca.id === a)
   );
@@ -139,6 +153,19 @@ export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) 
       });
     }
   };
+  
+  // Handler para escolha de Versatilidade
+  const handleVersatilityChange = useCallback((choice: VersatilityChoice) => {
+    setVersatilityChoice(choice);
+    // Atualiza o formData com a escolha (para persistir no draft e validação)
+    updateFormData({
+      versatilityChoice: choice,
+      // Se escolheu habilidade de trilha diferente, adiciona ao trackAbilities
+      secondaryTrackAbility: choice.type === 'track_ability' && choice.abilityName 
+        ? choice.abilityName 
+        : null,
+    } as any);
+  }, [updateFormData]);
 
   if (!characterClass) {
     return (
@@ -177,6 +204,17 @@ export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) 
         {/* Painel educativo do livro de regras */}
         {rulebookContent && (
           <RuleBookTip section={rulebookContent} defaultExpanded={false} />
+        )}
+
+        {/* Seção de Versatilidade (NEX 50%+) */}
+        {showVersatility && classTrack && (
+          <VersatilitySection
+            classId={characterClass}
+            currentTrackId={classTrack}
+            onSelect={handleVersatilityChange}
+            selected={versatilityChoice}
+            compact
+          />
         )}
 
         {/* Choice Counter com validação visual */}

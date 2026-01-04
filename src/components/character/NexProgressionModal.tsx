@@ -77,6 +77,7 @@ import { ParanormalPowerSelectModal } from './ParanormalPowerSelectModal';
 import { PowerSubchoiceModal } from './PowerSubchoiceModal';
 import { NonOccultistRitualModal, RitualSource } from './NonOccultistRitualModal';
 import { AttributeIncreaseSection, isAttributeIncreaseNex } from './AttributeIncreaseSection';
+import { VersatilitySection, isVersatilityChoiceComplete, VersatilityChoice } from './VersatilitySection';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/components/ui/sonner';
 import confetti from 'canvas-confetti';
@@ -137,6 +138,7 @@ interface NexProgressionModalProps {
     affinity_active?: boolean;
     paranormal_powers?: ParanormalPower[];
     attributeIncrease?: string; // Atributo aumentado (agility, strength, etc)
+    versatilityChoice?: VersatilityChoice; // Escolha da Versatilidade (NEX 50%)
   }) => Promise<void>;
 }
 
@@ -185,6 +187,9 @@ export function NexProgressionModal({
   // Estado para seleção de aumento de atributo
   const [selectedAttributeIncrease, setSelectedAttributeIncrease] = useState<string | null>(null);
   
+  // Estado para seleção de Versatilidade (NEX 50%)
+  const [versatilityChoice, setVersatilityChoice] = useState<VersatilityChoice | null>(null);
+  
   // Verificar se está subindo para NEX 50% (escolhe afinidade)
   const currentNexIndex = NEX_VALUES.indexOf(character.nex);
   const nextNex = currentNexIndex < NEX_VALUES.length - 1 ? NEX_VALUES[currentNexIndex + 1] : null;
@@ -192,6 +197,9 @@ export function NexProgressionModal({
   
   // Verificar se este NEX oferece aumento de atributo (20%, 50%, 80%, 95%)
   const showAttributeIncrease = nextNex ? isAttributeIncreaseNex(nextNex) : false;
+  
+  // Verificar se este NEX oferece Versatilidade (chegando no NEX 50%)
+  const showVersatility = nextNex === 50;
   
   // Verificar elegibilidade de Transcender quando modal abre
   // API corrigida: funciona para TODAS as classes, deriva marcos da tabela oficial
@@ -423,6 +431,13 @@ export function NexProgressionModal({
       return;
     }
     
+    // Validação: se é NEX 50%, precisa fazer escolha de Versatilidade
+    if (showVersatility && !isVersatilityChoiceComplete(versatilityChoice)) {
+      toast.error('Escolha obrigatória', {
+        description: 'Você precisa fazer a escolha da Versatilidade.',
+      });
+      return;
+    }
     // Validação: atributo selecionado não pode estar no limite
     if (showAttributeIncrease && selectedAttributeIncrease) {
       const attrValue = character[selectedAttributeIncrease as keyof typeof character] as number;
@@ -503,7 +518,12 @@ export function NexProgressionModal({
       }
       
       // Calcula novas habilidades (adiciona as da trilha)
-      const newAbilities = newTrackAbilities.map(a => a.name);
+      let newAbilities = [...newTrackAbilities.map(a => a.name)];
+      
+      // Se escolheu habilidade de trilha diferente via Versatilidade, adiciona
+      if (showVersatility && versatilityChoice?.type === 'track_ability' && versatilityChoice.abilityName) {
+        newAbilities.push(versatilityChoice.abilityName);
+      }
       
       // Determina afinidade e se está ativa
       let newAffinity = character.elemental_affinity || null;
@@ -534,6 +554,7 @@ export function NexProgressionModal({
         affinity_active: newAffinityActive,
         paranormal_powers: pendingPowers,
         attributeIncrease: showAttributeIncrease ? selectedAttributeIncrease || undefined : undefined,
+        versatilityChoice: showVersatility ? versatilityChoice || undefined : undefined,
       });
 
       // Efeito de celebração
@@ -712,6 +733,16 @@ export function NexProgressionModal({
                     </p>
                   )}
                 </motion.div>
+              )}
+
+              {/* Seção de Versatilidade (NEX 50%) */}
+              {showVersatility && character.class_track && (
+                <VersatilitySection
+                  classId={character.class}
+                  currentTrackId={character.class_track}
+                  onSelect={setVersatilityChoice}
+                  selected={versatilityChoice}
+                />
               )}
 
               {/* Stats Changes */}
