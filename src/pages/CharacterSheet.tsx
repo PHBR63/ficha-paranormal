@@ -4,7 +4,7 @@
  * Com bordas roxas, acordeões colapsáveis e visual temático
  */
 
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo, lazy, Suspense } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -55,9 +55,10 @@ import { DiceRollResult } from '@/lib/dice-roller';
 import { InventoryPanel } from '@/components/inventory/InventoryPanel';
 import { DataErrorBoundary } from '@/components/DataErrorBoundary';
 import { InventoryItem } from '@/lib/inventory-system';
-import { NexProgressionModal } from '@/components/character/NexProgressionModal';
-import { RitualSelectionModal } from '@/components/character/RitualSelectionModal';
-import { CharacterEditModal } from '@/components/character/CharacterEditModal';
+// Lazy loading para modais pesados (otimização de performance)
+const NexProgressionModal = lazy(() => import('@/components/character/NexProgressionModal').then(m => ({ default: m.NexProgressionModal })));
+const RitualSelectionModal = lazy(() => import('@/components/character/RitualSelectionModal').then(m => ({ default: m.RitualSelectionModal })));
+const CharacterEditModal = lazy(() => import('@/components/character/CharacterEditModal').then(m => ({ default: m.CharacterEditModal })));
 import { CharacterHistoryPanel, logCharacterChanges } from '@/components/character/CharacterHistoryPanel';
 import { ParanormalPowerSelectModal } from '@/components/character/ParanormalPowerSelectModal';
 import { IntellectSkillSelectModal } from '@/components/character/IntellectSkillSelectModal';
@@ -2910,55 +2911,61 @@ export default function CharacterSheet() {
         nex={character.nex} 
       />
 
-      {/* Modais */}
-      <NexProgressionModal
-        open={nexModalOpen}
-        onClose={() => setNexModalOpen(false)}
-        character={{
-          id: character.id,
-          name: character.name,
-          class: character.class,
-          class_track: character.class_track,
-          nex: character.nex,
-          vigor: character.vigor,
-          presence: character.presence,
-          origin: character.origin,
-          hp_max: character.hp_max,
-          pe_max: character.pe_max,
-          san_max: character.san_max,
-          rituals: character.rituals,
-          abilities: character.abilities,
-          paranormal_powers: character.paranormal_powers?.map(p => {
-            const fullPower = PARANORMAL_POWERS.find(fp => fp.id === p.id);
-            return fullPower || {
-              id: p.id,
-              name: p.name,
-              element: p.element as ParanormalElement | 'generic',
-              description: p.description,
-              effect: { type: 'special' as const, description: p.description },
-            };
-          }),
-          elemental_affinity: character.elemental_affinity as ParanormalElement | null,
-          affinity_active: character.affinity_active,
-        }}
-        onLevelUp={handleLevelUp}
-      />
+      {/* Modais com Lazy Loading (carregados sob demanda) */}
+      <Suspense fallback={null}>
+        <NexProgressionModal
+          open={nexModalOpen}
+          onClose={() => setNexModalOpen(false)}
+          character={{
+            id: character.id,
+            name: character.name,
+            class: character.class,
+            class_track: character.class_track,
+            nex: character.nex,
+            vigor: character.vigor,
+            presence: character.presence,
+            origin: character.origin,
+            hp_max: character.hp_max,
+            pe_max: character.pe_max,
+            san_max: character.san_max,
+            rituals: character.rituals,
+            abilities: character.abilities,
+            paranormal_powers: character.paranormal_powers?.map(p => {
+              const fullPower = PARANORMAL_POWERS.find(fp => fp.id === p.id);
+              return fullPower || {
+                id: p.id,
+                name: p.name,
+                element: p.element as ParanormalElement | 'generic',
+                description: p.description,
+                effect: { type: 'special' as const, description: p.description },
+              };
+            }),
+            elemental_affinity: character.elemental_affinity as ParanormalElement | null,
+            affinity_active: character.affinity_active,
+          }}
+          onLevelUp={handleLevelUp}
+        />
+      </Suspense>
       
-      <RitualSelectionModal
-        open={ritualModalOpen}
-        onClose={() => setRitualModalOpen(false)}
-        currentRituals={character.rituals}
-        maxCircle={pendingMaxCircle}
-        newSlots={pendingRitualSlots}
-        onConfirm={handleRitualsConfirm}
-      />
+      <Suspense fallback={null}>
+        <RitualSelectionModal
+          open={ritualModalOpen}
+          onClose={() => setRitualModalOpen(false)}
+          currentRituals={character.rituals}
+          maxCircle={pendingMaxCircle}
+          newSlots={pendingRitualSlots}
+          onConfirm={handleRitualsConfirm}
+        />
+      </Suspense>
       
-      <CharacterEditModal
-        open={editModalOpen}
-        onClose={() => setEditModalOpen(false)}
-        character={character}
-        onSave={handleCharacterEdit}
-      />
+      <Suspense fallback={null}>
+        <CharacterEditModal
+          open={editModalOpen}
+          onClose={() => setEditModalOpen(false)}
+          character={character}
+          onSave={handleCharacterEdit}
+        />
+      </Suspense>
       
       <RestModal
         open={restModalOpen}
