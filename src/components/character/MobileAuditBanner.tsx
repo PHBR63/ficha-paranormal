@@ -16,7 +16,8 @@ import {
   X,
   RefreshCw,
   Shield,
-  Sparkles
+  Sparkles,
+  Trash2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -39,6 +40,8 @@ interface MobileAuditBannerProps {
   onAutoFix: () => Promise<{ success: boolean; message: string }>;
   onDismiss: (issueId: string) => void;
   onRerunAudit: () => void;
+  /** Callback para ações manuais de correção (ex: abrir modal de remoção de poderes) */
+  onManualFix?: (issueCategory: string) => void;
 }
 
 // Configuração por severidade - cores e ícones
@@ -84,6 +87,7 @@ export function MobileAuditBanner({
   onAutoFix,
   onDismiss,
   onRerunAudit,
+  onManualFix,
 }: MobileAuditBannerProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [fixMessage, setFixMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -293,6 +297,22 @@ export function MobileAuditBanner({
                             Esperado: <strong className="text-success">{String(issue.expectedValue)}</strong>
                           </span>
                         </div>
+                        
+                        {/* Sugestão de correção e botão de ação manual para transcender */}
+                        {issue.fixAction && (
+                          <p className="text-[10px] text-muted-foreground mt-1.5 italic">
+                            💡 {issue.fixAction}
+                          </p>
+                        )}
+                        {!issue.autoFixable && issue.category === 'transcender' && onManualFix && (
+                          <button
+                            onClick={() => onManualFix(issue.category)}
+                            className="mt-2 w-full flex items-center justify-center gap-1 px-2 py-1.5 text-[10px] font-medium text-destructive-foreground bg-destructive rounded-md hover:bg-destructive/90 transition-colors"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                            Remover Poderes
+                          </button>
+                        )}
                       </div>
                     );
                   })}

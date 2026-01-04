@@ -18,7 +18,8 @@ import {
   X,
   RefreshCw,
   Shield,
-  Sparkles
+  Sparkles,
+  Trash2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -42,6 +43,8 @@ interface CharacterAuditBannerProps {
   onAutoFix: () => Promise<{ success: boolean; message: string }>;
   onDismiss: (issueId: string) => void;
   onRerunAudit: () => void;
+  /** Callback para ações manuais de correção (ex: abrir modal de remoção de poderes) */
+  onManualFix?: (issueCategory: string) => void;
   className?: string;
 }
 
@@ -94,6 +97,7 @@ export function CharacterAuditBanner({
   onAutoFix,
   onDismiss,
   onRerunAudit,
+  onManualFix,
   className = '',
 }: CharacterAuditBannerProps) {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -313,6 +317,18 @@ export function CharacterAuditBanner({
                             <p className="text-xs text-muted-foreground mt-2 italic">
                               💡 {issue.fixAction}
                             </p>
+                          )}
+                          {/* Botão de ação manual para problemas não auto-corrigíveis da categoria transcender */}
+                          {!issue.autoFixable && issue.category === 'transcender' && onManualFix && (
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => onManualFix(issue.category)}
+                              className="mt-2 h-7 text-xs gap-1"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                              Remover Poderes
+                            </Button>
                           )}
                         </CardContent>
                       </Card>

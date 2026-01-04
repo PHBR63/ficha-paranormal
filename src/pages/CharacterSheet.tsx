@@ -147,6 +147,8 @@ import { DiceRollModal, BonusSource } from '@/components/dice/DiceRollModal';
 import { DiceRollHistoryDrawer, DiceRollHistoryCompact } from '@/components/dice/DiceRollHistory';
 import { AbilityDetailModal } from '@/components/character/AbilityDetailModal';
 import { ExcessRitualsRemovalModal } from '@/components/character/ExcessRitualsRemovalModal';
+import { ExcessPowersRemovalModal } from '@/components/character/ExcessPowersRemovalModal';
+import { getMaxParanormalPowers } from '@/lib/character-audit-engine';
 
 // Interface estendida para itens do inventário com todos os campos persistidos
 interface InventoryItemPersisted {
@@ -371,6 +373,9 @@ export default function CharacterSheet() {
   
   // Modal de remoção de rituais excedentes
   const [excessRitualsModalOpen, setExcessRitualsModalOpen] = useState(false);
+  
+  // Modal de remoção de poderes paranormais excedentes
+  const [excessPowersModalOpen, setExcessPowersModalOpen] = useState(false);
 
   // Hook CONSOLIDADO de todos os bônus do personagem (inclui defenseBonuses e paranormalEffects)
   // OTIMIZAÇÃO: Evita chamadas duplicadas de hooks
@@ -1918,6 +1923,12 @@ export default function CharacterSheet() {
                 onAutoFix={applyAutoFixes}
                 onDismiss={dismissIssue}
                 onRerunAudit={runAudit}
+                onManualFix={(category) => {
+                  // Abre o modal correspondente baseado na categoria do problema
+                  if (category === 'transcender') {
+                    setExcessPowersModalOpen(true);
+                  }
+                }}
                 className="mb-4"
               />
             )}
@@ -3397,6 +3408,50 @@ export default function CharacterSheet() {
           }}
         />
       )}
+      
+      {/* Modal de remoção de poderes paranormais excedentes */}
+      <ExcessPowersRemovalModal
+        open={excessPowersModalOpen}
+        onOpenChange={setExcessPowersModalOpen}
+        powers={(character.paranormal_powers || []) as SavedParanormalPower[]}
+        maxPowers={getMaxParanormalPowers(character.nex, character.origin).total}
+        characterId={character.id}
+        onRemovePowers={async (powerIds, powersToArchive) => {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) return;
+
+          // Salva poderes no histórico antes de remover
+          for (const power of powersToArchive) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            await (supabase.from('character_removed_powers') as any).insert({
+              character_id: character.id,
+              user_id: user.id,
+              power_id: power.id,
+              power_name: power.name,
+              power_element: power.element || null,
+              power_description: power.description || null,
+              power_data: power,
+              removal_reason: 'excess_limit',
+            });
+          }
+
+          // Remove os poderes selecionados
+          const updatedPowers = character.paranormal_powers?.filter(
+            p => !powerIds.includes(p.id)
+          ) || [];
+          
+          const { error } = await supabase
+            .from('characters')
+            .update({ paranormal_powers: updatedPowers })
+            .eq('id', character.id);
+
+          if (error) {
+            throw error;
+          }
+
+          await refetchCharacter();
+        }}
+      />
 
       {/* Widget de Debug de Automações - apenas para modo desenvolvedor */}
       {developerMode && (

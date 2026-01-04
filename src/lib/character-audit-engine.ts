@@ -368,7 +368,7 @@ export async function auditTranscenderSlots(character: CharacterForAudit): Promi
       currentValue: powersTotal,
       expectedValue: maxLegitPowers,
       autoFixable: false,
-      fixAction: 'Revisar manualmente quais poderes são legítimos e remover os excedentes',
+      fixAction: 'Clique em "Remover Poderes" para escolher quais poderes excedentes deseja remover',
     });
   }
   

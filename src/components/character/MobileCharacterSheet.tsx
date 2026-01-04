@@ -1393,6 +1393,12 @@ export function MobileCharacterSheet({
         onAutoFix={applyAutoFixes}
         onDismiss={dismissIssue}
         onRerunAudit={runAudit}
+        onManualFix={(category) => {
+          // Abre o modal correspondente baseado na categoria do problema
+          if (category === 'transcender') {
+            setExcessPowersModalOpen(true);
+          }
+        }}
       />
       
       {/* Conteúdo baseado na tab ativa */}
