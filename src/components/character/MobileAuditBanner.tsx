@@ -304,13 +304,13 @@ export function MobileAuditBanner({
                             💡 {issue.fixAction}
                           </p>
                         )}
-                        {!issue.autoFixable && issue.category === 'transcender' && onManualFix && (
+                        {!issue.autoFixable && (issue.category === 'transcender' || issue.category === 'rituals') && onManualFix && (
                           <button
                             onClick={() => onManualFix(issue.category)}
                             className="mt-2 w-full flex items-center justify-center gap-1 px-2 py-1.5 text-[10px] font-medium text-destructive-foreground bg-destructive rounded-md hover:bg-destructive/90 transition-colors"
                           >
                             <Trash2 className="w-3 h-3" />
-                            Remover Poderes
+                            {issue.category === 'transcender' ? 'Remover Poderes' : 'Remover Rituais'}
                           </button>
                         )}
                       </div>

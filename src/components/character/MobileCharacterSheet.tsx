@@ -1397,6 +1397,8 @@ export function MobileCharacterSheet({
           // Abre o modal correspondente baseado na categoria do problema
           if (category === 'transcender') {
             setExcessPowersModalOpen(true);
+          } else if (category === 'rituals') {
+            setExcessRitualsModalOpen(true);
           }
         }}
       />
