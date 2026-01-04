@@ -19,7 +19,8 @@ import {
   RefreshCw,
   Shield,
   Sparkles,
-  Trash2
+  Trash2,
+  BookOpen
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -80,6 +81,7 @@ const SEVERITY_CONFIG = {
 const CATEGORY_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   sanity: Shield,
   transcender: Sparkles,
+  rituals: BookOpen,
   hp: AlertCircle,
   pe: AlertCircle,
   defense: Shield,
@@ -326,7 +328,11 @@ export function CharacterAuditBanner({
                               onClick={() => onManualFix(issue.category)}
                               className="mt-2 h-7 text-xs gap-1"
                             >
-                              <Trash2 className="w-3 h-3" />
+                              {issue.category === 'rituals' ? (
+                                <BookOpen className="w-3 h-3" />
+                              ) : (
+                                <Trash2 className="w-3 h-3" />
+                              )}
                               {issue.category === 'transcender' ? 'Remover Poderes' : 'Remover Rituais'}
                             </Button>
                           )}
