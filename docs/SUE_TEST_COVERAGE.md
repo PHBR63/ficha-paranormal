@@ -33,7 +33,20 @@ O SUE é o motor central do game engine que controla:
 | `sue-integration.vitest.ts` | ~20 | Fluxos end-to-end básicos |
 | `sue-integration-e2e.vitest.ts` | ~25 | Fluxos E2E completos, progressão NEX |
 | `computed-effects-snapshot.vitest.ts` | ~10 | Snapshots de estrutura ComputedEffects |
-| **Total** | **~366** | |
+| **Subtotal Base** | **~366** | |
+
+### Arquivos FASE 7 - Testes de Integração Avançados
+
+| Arquivo | Testes | Cobertura |
+|---------|--------|-----------|
+| `sue-stacking-integration.vitest.ts` | ~25 | Regras de acúmulo multi-fonte (equipamento + ritual + condição) |
+| `sue-conditions-integration.vitest.ts` | ~25 | checkEffectConditions completo, condições automáticas |
+| `sue-paranormal-integration.vitest.ts` | ~20 | Poderes paranormais, afinidade ativa, escalamento NEX |
+| `sue-combat-scenarios.vitest.ts` | ~22 | Cenários de combate real (Combatente, Especialista, Ocultista) |
+| `sue-edge-cases.vitest.ts` | ~28 | Edge cases, performance, regressão |
+| **Subtotal FASE 7** | **~120** | |
+
+| **TOTAL GERAL** | **~486** | |
 
 ---
 
@@ -276,8 +289,11 @@ O SUE é o motor central do game engine que controla:
 ## Comandos para Execução
 
 ```bash
-# Rodar todos os testes do SUE (~366 testes)
+# Rodar todos os testes do SUE (~486 testes)
 npm run test -- --grep "SUE|unified-effects|effects-adapter|useUnifiedEffects|BonusSummary"
+
+# Rodar testes da FASE 7 (~120 testes)
+npm test -- sue-
 
 # Rodar com cobertura
 npm run test:coverage -- --grep "effects"
@@ -308,6 +324,13 @@ npm run test -- src/lib/__tests__/sue-integration-e2e.vitest.ts
 
 # Rodar testes de snapshot
 npm run test -- src/lib/__tests__/computed-effects-snapshot.vitest.ts
+
+# Rodar testes FASE 7 individualmente
+npm run test -- src/lib/__tests__/sue-stacking-integration.vitest.ts
+npm run test -- src/lib/__tests__/sue-conditions-integration.vitest.ts
+npm run test -- src/lib/__tests__/sue-paranormal-integration.vitest.ts
+npm run test -- src/lib/__tests__/sue-combat-scenarios.vitest.ts
+npm run test -- src/lib/__tests__/sue-edge-cases.vitest.ts
 ```
 
 ---
@@ -340,7 +363,7 @@ npm run test -- src/lib/__tests__/computed-effects-snapshot.vitest.ts
 | `useBonusSummaryFromSUE` | useBonusSummaryFromSUE | ✅ 100% |
 | `useRitualModifiersFromSUE` | useRitualModifiersFromSUE | ✅ 100% |
 | `consolidateEffects` | unified-effects-engine | ✅ 100% |
-| `checkEffectConditions` | unified-effects-engine | ✅ Parcial |
+| `checkEffectConditions` | unified-effects-engine | ✅ 100% |
 
 ---
 
@@ -402,6 +425,7 @@ npm run test -- src/lib/__tests__/computed-effects-snapshot.vitest.ts
 | 1.1.0 | 2025-12-30 | Adicionados ~30 testes (useBonusSummaryFromSUE, performance) |
 | 1.2.0 | 2025-12-31 | Adicionados ~25 testes E2E, ~10 testes snapshot, getSustainableRituals |
 | 2.0.0 | 2025-12-31 | Documentação atualizada para refletir cobertura real (~366 testes) |
+| 3.0.0 | 2026-01-04 | **FASE 7**: +120 testes de integração avançados (stacking, conditions, paranormal, combat, edge cases). Total: ~486 testes |
 
 ---
 
