@@ -163,6 +163,13 @@ export function MobileAuditBanner({
   const highestSeverity = counts.errors > 0 ? 'error' : counts.warnings > 0 ? 'warning' : 'info';
   const config = SEVERITY_CONFIG[highestSeverity];
   
+  // Função para vibrar o dispositivo (se suportado)
+  const triggerHapticFeedback = (pattern: number | number[]) => {
+    if ('vibrate' in navigator) {
+      navigator.vibrate(pattern);
+    }
+  };
+
   // Handler de correção automática
   const handleAutoFix = async () => {
     setFixMessage(null);
@@ -172,8 +179,11 @@ export function MobileAuditBanner({
       text: result.message,
     });
     
-    // Feedback visual de sucesso com confetti e toast
+    // Feedback visual de sucesso com confetti, toast e vibração
     if (result.success) {
+      // Vibração de sucesso: dois pulsos curtos
+      triggerHapticFeedback([50, 50, 50]);
+      
       // Dispara confetti celebratório (menor no mobile)
       confetti({
         particleCount: 50,
@@ -189,6 +199,9 @@ export function MobileAuditBanner({
         duration: 3000,
       });
     } else {
+      // Vibração de erro: pulso longo
+      triggerHapticFeedback(200);
+      
       // Toast de erro
       toast({
         title: '❌ Erro na correção',
