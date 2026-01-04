@@ -55,7 +55,7 @@ const TRACK_ICONS: Record<string, React.ReactNode> = {
   'sortudo': <Sparkles className="w-5 h-5" />,
 };
 
-const NEX_MILESTONES = [5, 25, 50, 75, 99];
+const NEX_MILESTONES = [10, 40, 65, 99];
 
 export function StepTrack({ formData, updateFormData }: StepTrackProps) {
   const [expandedTrack, setExpandedTrack] = useState<string | null>(null);
@@ -115,7 +115,7 @@ export function StepTrack({ formData, updateFormData }: StepTrackProps) {
           <h2 className="font-display text-2xl tracking-wider mb-2">TRILHA DE CLASSE</h2>
           <p className="text-muted-foreground text-sm">
             Escolha uma especialização para seu {formData.characterClass}. 
-            A primeira habilidade é desbloqueada no <span className="text-primary font-semibold">NEX 5%</span>.
+            A primeira habilidade é desbloqueada no <span className="text-primary font-semibold">NEX 10%</span>.
           </p>
           <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 bg-muted/50 rounded-sm text-xs">
             <span className="text-muted-foreground">Seu NEX atual:</span>
