@@ -426,6 +426,21 @@ export function CombatRollModal({
       });
     }
 
+    // Combater com Duas Armas (Combatente) - Penalidade de -2 no ataque
+    if (abilities.some(a => 
+      a.toLowerCase().includes('combater com duas armas') || 
+      a.toLowerCase().includes('combater duas armas')
+    )) {
+      bonuses.push({
+        id: 'combater-duas-armas',
+        name: 'Combater com Duas Armas (-2 ataque)',
+        source: 'class',
+        attackBonus: -2,
+        peCost: 0,
+        description: 'Dois ataques com duas armas. Penalidade de -2 em todos os testes de ataque até o próximo turno.',
+      });
+    }
+
     // Tiro Certeiro (Especialista)
     if (abilities.some(a => a.toLowerCase().includes('tiro certeiro')) && 
         (weapon?.type === 'Disparo' || weapon?.type === 'Arremesso')) {

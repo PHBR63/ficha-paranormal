@@ -112,13 +112,13 @@ export const COMBATENTE_DETAILS: Record<string, AbilityDetails> = {
     examples: [
       'Empunhe duas pistolas e faça dois ataques por turno',
       'Use uma espada e uma adaga para dois ataques corpo a corpo',
-      'Aceite -5 em todos os ataques para dobrar seu potencial ofensivo'
+      'Aceite -2 em todos os ataques para dobrar seu potencial ofensivo'
     ],
     synergies: [
       { abilityId: 'ataque-especial', abilityName: 'Ataque Especial', description: 'Aplique bônus em ambos os ataques para maximizar dano' },
       { abilityId: 'artista-marcial', abilityName: 'Artista Marcial', description: 'Punhos contam como armas leves' }
     ],
-    tips: 'A penalidade de -5 é significativa. Combine com bônus de ataque para compensar. Melhor contra inimigos com Defesa baixa.'
+    tips: 'A penalidade de -2 é moderada. Compensa quando você tem bônus de ataque extras. Ideal contra inimigos com Defesa baixa.'
   },
   
   'combate-defensivo': {
