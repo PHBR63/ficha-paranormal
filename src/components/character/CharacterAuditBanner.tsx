@@ -325,11 +325,11 @@ export function CharacterAuditBanner({
                     const iconColor = categoryColors?.color || severityConfig.color;
                     const categoryTooltip = CATEGORY_DESCRIPTIONS[issue.category] || issue.category;
                     
-                    return (
-                      <Card 
-                        key={issue.id} 
-                        className={`${cardBg} ${cardBorder}`}
-                      >
+                      return (
+                        <Card 
+                          key={issue.id} 
+                          className={`${cardBg} ${cardBorder} transition-all duration-200 hover:scale-[1.01] hover:shadow-md hover:border-opacity-60`}
+                        >
                         <CardHeader className="p-3 pb-2">
                           <div className="flex items-start justify-between gap-2">
                             <div className="flex items-center gap-2">
