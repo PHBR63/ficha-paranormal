@@ -294,7 +294,7 @@ export const COMBATENTE_POWERS: UnifiedClassPower[] = [
     classId: 'Combatente',
     isCore: false,
     minNex: 15,
-    description: 'Se estiver empunhando duas armas (e pelo menos uma for leve) e fizer uma ação agredir, você pode fazer dois ataques, um com cada arma. Se fizer isso, sofre –5 em todos os testes de ataque até seu próximo turno. Pré-requisitos: Agi 3, treinado em Luta ou Pontaria.',
+    description: 'Se estiver empunhando duas armas (e pelo menos uma for leve) e fizer a ação agredir, você pode fazer dois ataques, um com cada arma. Se fizer isso, sofre –2 em todos os testes de ataque até o seu próximo turno. Pré-requisitos: Agi 3, treinado em Luta ou Pontaria.',
     pageReference: 'Livro Base p.46',
     prerequisites: {
       attributes: { agility: 3 },
@@ -307,7 +307,7 @@ export const COMBATENTE_POWERS: UnifiedClassPower[] = [
           cost: 0,
           action: 'standard',
         },
-        attackBonus: { value: -5 }, // Penalidade
+        attackBonus: { value: -2 }, // Penalidade oficial do livro
       },
     },
     tags: ['combate', 'múltiplos-ataques'],
