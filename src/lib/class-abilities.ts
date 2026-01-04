@@ -171,7 +171,7 @@ export const COMBATENTE_ABILITIES: ClassAbility[] = [
   { 
     id: 'presteza-atletica', 
     name: 'Presteza Atlética', 
-    description: 'Quando faz um teste de facilitar a investigação, você pode gastar 1 PE para usar Força ou Agilidade no lugar do atributo-base da perícia. Se passar no teste, o próximo aliado que usar seu bônus também recebe +5 no teste.', 
+    description: 'Quando fizer um teste para facilitar uma investigação, você pode gastar 1 PE para usar Força ou Agilidade no lugar do atributo-base da perícia. Se passar no teste, o próximo aliado que usar esse bônus também recebe +1d20 no teste.', 
     minNex: 15, 
     classId: 'Combatente' 
   },
