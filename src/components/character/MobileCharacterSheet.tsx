@@ -37,8 +37,8 @@ import {
   useSustainedRituals,
   useCharacterAudit,
   useAttributeValidation,
+  logAttributeDiagnostics,
 } from '@/hooks';
-import { logAttributeDiagnostics } from '@/hooks/character';
 import { MobileAuditBanner } from './MobileAuditBanner';
 import { ExcessPowersRemovalModal } from './ExcessPowersRemovalModal';
 import { ExcessRitualsRemovalModal } from './ExcessRitualsRemovalModal';
