@@ -414,17 +414,7 @@ export function CombatRollModal({
     // === BÔNUS DE CLASSE ===
     // (Ataque Especial removido - agora usa SpecialAttackSelector com distribuição flexível)
 
-    // Golpe Pesado (Combatente - Trilha Operações Especiais ou poder)
-    if (abilities.some(a => a.toLowerCase().includes('golpe pesado'))) {
-      bonuses.push({
-        id: 'golpe-pesado',
-        name: 'Golpe Pesado (+1 dado)',
-        source: 'class',
-        damageBonus: '1d', // Adiciona 1 dado extra
-        peCost: 1,
-        description: 'Gasta 1 PE para +1 dado de dano',
-      });
-    }
+    // Golpe Pesado é PASSIVO - aplicado automaticamente no rollDamage (não precisa de toggle)
 
     // Combater com Duas Armas (Combatente) - Penalidade de -2 no ataque
     if (abilities.some(a => 
@@ -860,6 +850,17 @@ export function CombatRollModal({
       });
     }
     
+    // === GOLPE PESADO (passivo, corpo a corpo) ===
+    const hasGolpePesado = abilities.some(a => a.toLowerCase().includes('golpe pesado'));
+    if (hasGolpePesado && isMelee) {
+      sources.push({
+        label: 'Golpe Pesado',
+        value: `+1d${weapon?.damage ? parseDamageString(weapon.damage).size : '?'}`,
+        type: 'power',
+        description: 'Passivo: +1 dado do mesmo tipo da arma corpo a corpo',
+      });
+    }
+    
     // Bônus passivos de rituais sustentados manuais
     passiveBonuses.forEach(b => {
       if (b.damageBonus) {
@@ -925,7 +926,7 @@ export function CombatRollModal({
     }
     
     return sources;
-  }, [weapon, attributes, classPowerBonuses, passiveBonuses, selectedBonuses, availableBonuses, manualDamageMod, weaponBuffBonuses, unifiedEffects, trackCombatBonuses, specialAttackConfig.enabled, specialAttackResult]);
+  }, [weapon, attributes, classPowerBonuses, passiveBonuses, selectedBonuses, availableBonuses, manualDamageMod, weaponBuffBonuses, unifiedEffects, trackCombatBonuses, specialAttackConfig.enabled, specialAttackResult, abilities]);
 
   // === MÁQUINA DE MATAR (Aniquilador NEX 99%) ===
   // Bônus automáticos quando atacando com arma favorita em NEX 99%
@@ -1205,6 +1206,14 @@ export function CombatRollModal({
       maquinaDeMatarDice = isCritical ? 1 * criticalMultiplier : 1;
     }
     
+    // === GOLPE PESADO: +1 dado do mesmo tipo da arma (PASSIVO, corpo a corpo apenas) ===
+    const hasGolpePesado = abilities.some(a => a.toLowerCase().includes('golpe pesado'));
+    let golpePesadoDice = 0;
+    if (hasGolpePesado && isMelee) {
+      // +1 dado do mesmo tipo da arma automaticamente
+      golpePesadoDice = isCritical ? 1 * criticalMultiplier : 1;
+    }
+
     // Aplicar bônus passivos
     passiveBonuses.forEach(b => {
       if (typeof b.damageBonus === 'number') {
@@ -1287,6 +1296,16 @@ export function CombatRollModal({
       }
     }
     
+    // Rolar dados do Golpe Pesado (mesmo tipo da arma, PASSIVO)
+    const golpePesadoDiceResults: number[] = [];
+    for (let i = 0; i < golpePesadoDice; i++) {
+      if (useMaxDamage) {
+        golpePesadoDiceResults.push(parsed.size);
+      } else {
+        golpePesadoDiceResults.push(Math.floor(Math.random() * parsed.size) + 1);
+      }
+    }
+    
     // Rolar dados de WEAPON BUFFS SEPARADAMENTE (Amaldiçoar Arma - dano elemental)
     const weaponBuffDice: number[] = [];
     for (let i = 0; i < weaponBuffDiceCount; i++) {
@@ -1298,8 +1317,8 @@ export function CombatRollModal({
     }
     
     // SEPARAR os dados do buff do resto dos dados extras
-    // Os dados extras agora são: poderes + ataque furtivo + máquina de matar (SEM weapon buffs)
-    const allExtraDice = [...extraDice, ...sneakDice, ...maquinaDeMatarDiceResults];
+    // Os dados extras agora são: poderes + ataque furtivo + máquina de matar + golpe pesado (SEM weapon buffs)
+    const allExtraDice = [...extraDice, ...sneakDice, ...maquinaDeMatarDiceResults, ...golpePesadoDiceResults];
     
     // Calcular totais SEPARADOS
     const weaponDiceTotal = mainDice.reduce((a, b) => a + b, 0);

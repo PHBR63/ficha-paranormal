@@ -400,16 +400,7 @@ export function MobileCombatRollModal({
     // === BÔNUS DE CLASSE ===
     // (Ataque Especial removido - agora usa SpecialAttackSelector com distribuição flexível)
 
-    if (abilities.some(a => a.toLowerCase().includes('golpe pesado'))) {
-      bonuses.push({
-        id: 'golpe-pesado',
-        name: 'Golpe Pesado (+1 dado)',
-        source: 'class',
-        damageBonus: '1d',
-        peCost: 1,
-        description: '+1 dado de dano por 1 PE',
-      });
-    }
+    // Golpe Pesado é PASSIVO - aplicado automaticamente no rollDamage (não precisa de toggle)
 
     // Combater com Duas Armas (Combatente) - Penalidade de -2 no ataque
     if (abilities.some(a => 
@@ -879,6 +870,13 @@ export function MobileCombatRollModal({
         maquinaDeMatarDice = isCritical ? criticalMultiplier : 1;
       }
       
+      // === GOLPE PESADO: +1 dado do mesmo tipo da arma (PASSIVO, corpo a corpo apenas) ===
+      const hasGolpePesado = abilities.some(a => a.toLowerCase().includes('golpe pesado'));
+      let golpePesadoDice = 0;
+      if (hasGolpePesado && isMelee) {
+        golpePesadoDice = isCritical ? criticalMultiplier : 1;
+      }
+
       // Bônus passivos
       passiveBonuses.forEach(b => {
         if (typeof b.damageBonus === 'number') {
@@ -947,13 +945,19 @@ export function MobileCombatRollModal({
         maquinaDeMatarDiceResults.push(useMaxDamage ? parsed.size : Math.floor(Math.random() * parsed.size) + 1);
       }
       
+      // Rolar dados do Golpe Pesado (PASSIVO, mesmo tipo da arma)
+      const golpePesadoDiceResults: number[] = [];
+      for (let i = 0; i < golpePesadoDice; i++) {
+        golpePesadoDiceResults.push(useMaxDamage ? parsed.size : Math.floor(Math.random() * parsed.size) + 1);
+      }
+      
       // Rolar dados de weapon buffs separadamente
       const weaponBuffDice: number[] = [];
       for (let i = 0; i < weaponBuffDiceCount; i++) {
         weaponBuffDice.push(useMaxDamage ? weaponBuffDiceSize : Math.floor(Math.random() * weaponBuffDiceSize) + 1);
       }
       
-      const allExtraDice = [...extraDice, ...sneakDice, ...maquinaDeMatarDiceResults];
+      const allExtraDice = [...extraDice, ...sneakDice, ...maquinaDeMatarDiceResults, ...golpePesadoDiceResults];
       
       const weaponDiceTotal = mainDice.reduce((a, b) => a + b, 0);
       const extraDiceTotal = allExtraDice.reduce((a, b) => a + b, 0);
