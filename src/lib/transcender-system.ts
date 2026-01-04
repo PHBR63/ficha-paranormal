@@ -59,12 +59,13 @@ export interface ChoiceOpportunity {
 // Interface para validação de sub-escolhas
 export interface SubchoiceValidation {
   requiresChoice: boolean;
-  choiceType?: PowerChoiceType;
+  choiceType?: PowerChoiceType | 'attribute';
   isComplete: boolean;
   chosenValues?: {
     skills?: string[];
     ritualId?: string;
     resistElement?: ParanormalElement;
+    attribute?: string; // Atributo escolhido para aumento
   };
 }
 
@@ -497,6 +498,7 @@ export function validatePowerSubchoice(
     skills?: string[];
     ritualId?: string;
     resistElement?: ParanormalElement;
+    attribute?: string;
   }
 ): SubchoiceValidation {
   if (!power.requiresChoice) {
@@ -535,6 +537,32 @@ export function validatePowerSubchoice(
     default:
       return { requiresChoice: false, isComplete: true };
   }
+}
+
+/**
+ * Valida escolha de aumento de atributo
+ * @param attribute - Chave do atributo escolhido
+ * @param currentValue - Valor atual do atributo
+ * @returns Validação da escolha
+ */
+export function validateAttributeIncrease(
+  attribute: string | null | undefined,
+  currentValue: number
+): { isValid: boolean; reason?: string } {
+  if (!attribute) {
+    return { isValid: false, reason: 'Nenhum atributo selecionado.' };
+  }
+  
+  const validAttributes = ['agility', 'strength', 'intellect', 'presence', 'vigor'];
+  if (!validAttributes.includes(attribute)) {
+    return { isValid: false, reason: 'Atributo inválido.' };
+  }
+  
+  if (currentValue >= 5) {
+    return { isValid: false, reason: 'Atributo já está no limite máximo (5).' };
+  }
+  
+  return { isValid: true };
 }
 
 /**

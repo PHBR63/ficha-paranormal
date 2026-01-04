@@ -1016,6 +1016,7 @@ export default function CharacterSheet() {
     elemental_affinity?: ParanormalElement | null;
     affinity_active?: boolean;
     paranormal_powers?: ParanormalPower[];
+    attributeIncrease?: string;
   }) => {
     if (!character) return;
 
@@ -1034,22 +1035,50 @@ export default function CharacterSheet() {
         }))
       : character.paranormal_powers;
 
+    // Prepara dados base de atualização
+    const updateData: Record<string, any> = {
+      nex: newNex,
+      hp_max: newStats.hp_max,
+      hp_current: hpCurrent + (newStats.hp_max - character.hp_max),
+      pe_max: newStats.pe_max,
+      pe_current: peCurrent + (newStats.pe_max - character.pe_max),
+      san_max: newStats.san_max,
+      san_current: sanCurrent + (newStats.san_max - character.san_max),
+      patent: newStats.patent,
+      abilities: updatedAbilities,
+      elemental_affinity: newStats.elemental_affinity ?? character.elemental_affinity,
+      affinity_active: newStats.affinity_active ?? character.affinity_active,
+      paranormal_powers: updatedParanormalPowers,
+    };
+
+    // Se há aumento de atributo, aplica
+    if (newStats.attributeIncrease) {
+      const attr = newStats.attributeIncrease as keyof typeof character;
+      const currentValue = character[attr] as number;
+      if (currentValue < 5) {
+        updateData[attr] = currentValue + 1;
+        
+        // Recalcular HP se for Vigor
+        if (attr === 'vigor') {
+          const newVigor = currentValue + 1;
+          // HP aumenta em +1 por ponto de Vigor por incremento de NEX (simplificado para +1 HP)
+          updateData.hp_max = updateData.hp_max + 1;
+          updateData.hp_current = updateData.hp_current + 1;
+        }
+        
+        // Recalcular PE se for Presença
+        if (attr === 'presence') {
+          const newPresence = currentValue + 1;
+          // PE aumenta em +1 por ponto de Presença por incremento de NEX (simplificado para +1 PE)
+          updateData.pe_max = updateData.pe_max + 1;
+          updateData.pe_current = updateData.pe_current + 1;
+        }
+      }
+    }
+
     const { error } = await supabase
       .from('characters')
-      .update({
-        nex: newNex,
-        hp_max: newStats.hp_max,
-        hp_current: hpCurrent + (newStats.hp_max - character.hp_max),
-        pe_max: newStats.pe_max,
-        pe_current: peCurrent + (newStats.pe_max - character.pe_max),
-        san_max: newStats.san_max,
-        san_current: sanCurrent + (newStats.san_max - character.san_max),
-        patent: newStats.patent,
-        abilities: updatedAbilities,
-        elemental_affinity: newStats.elemental_affinity ?? character.elemental_affinity,
-        affinity_active: newStats.affinity_active ?? character.affinity_active,
-        paranormal_powers: updatedParanormalPowers,
-      })
+      .update(updateData)
       .eq('id', character.id);
 
     if (error) {
@@ -1061,16 +1090,16 @@ export default function CharacterSheet() {
       throw error;
     }
 
-    const newHpCurrent = hpCurrent + (newStats.hp_max - character.hp_max);
-    const newPeCurrent = peCurrent + (newStats.pe_max - character.pe_max);
-    const newSanCurrent = sanCurrent + (newStats.san_max - character.san_max);
+    const newHpCurrent = updateData.hp_current;
+    const newPeCurrent = updateData.pe_current;
+    const newSanCurrent = updateData.san_current;
 
     setCharacter(prev => prev ? {
       ...prev,
       nex: newNex,
-      hp_max: newStats.hp_max,
+      hp_max: updateData.hp_max,
       hp_current: newHpCurrent,
-      pe_max: newStats.pe_max,
+      pe_max: updateData.pe_max,
       pe_current: newPeCurrent,
       san_max: newStats.san_max,
       san_current: newSanCurrent,
@@ -1079,6 +1108,8 @@ export default function CharacterSheet() {
       elemental_affinity: newStats.elemental_affinity ?? prev.elemental_affinity,
       affinity_active: newStats.affinity_active ?? prev.affinity_active,
       paranormal_powers: updatedParanormalPowers,
+      // Atualiza atributo se aumentado
+      ...(newStats.attributeIncrease ? { [newStats.attributeIncrease]: (prev[newStats.attributeIncrease as keyof typeof prev] as number) + 1 } : {}),
     } : null);
 
     setHpCurrent(newHpCurrent);
@@ -2937,6 +2968,9 @@ export default function CharacterSheet() {
             nex: character.nex,
             vigor: character.vigor,
             presence: character.presence,
+            agility: character.agility,
+            strength: character.strength,
+            intellect: character.intellect,
             origin: character.origin,
             hp_max: character.hp_max,
             pe_max: character.pe_max,

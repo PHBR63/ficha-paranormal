@@ -857,6 +857,7 @@ export function MobileCharacterSheet({
     elemental_affinity?: ParanormalElement | null;
     affinity_active?: boolean;
     paranormal_powers?: ParanormalPower[];
+    attributeIncrease?: string;
   }) => {
     if (!character || !user) return;
 
@@ -874,22 +875,46 @@ export function MobileCharacterSheet({
         }))
       : character.paranormal_powers;
 
+    // Prepara dados base de atualização
+    const updateData: Record<string, any> = {
+      nex: newNex,
+      hp_max: newStats.hp_max,
+      hp_current: character.hp_current + (newStats.hp_max - character.hp_max),
+      pe_max: newStats.pe_max,
+      pe_current: character.pe_current + (newStats.pe_max - character.pe_max),
+      san_max: newStats.san_max,
+      san_current: character.san_current + (newStats.san_max - character.san_max),
+      patent: newStats.patent,
+      abilities: updatedAbilities,
+      elemental_affinity: newStats.elemental_affinity ?? character.elemental_affinity,
+      affinity_active: newStats.affinity_active ?? character.affinity_active,
+      paranormal_powers: updatedParanormalPowers,
+    };
+
+    // Se há aumento de atributo, aplica
+    if (newStats.attributeIncrease) {
+      const attr = newStats.attributeIncrease as keyof typeof character;
+      const currentValue = character[attr] as number;
+      if (currentValue < 5) {
+        updateData[attr] = currentValue + 1;
+        
+        // Recalcular HP se for Vigor
+        if (attr === 'vigor') {
+          updateData.hp_max = updateData.hp_max + 1;
+          updateData.hp_current = updateData.hp_current + 1;
+        }
+        
+        // Recalcular PE se for Presença
+        if (attr === 'presence') {
+          updateData.pe_max = updateData.pe_max + 1;
+          updateData.pe_current = updateData.pe_current + 1;
+        }
+      }
+    }
+
     const { error } = await supabase
       .from('characters')
-      .update({
-        nex: newNex,
-        hp_max: newStats.hp_max,
-        hp_current: character.hp_current + (newStats.hp_max - character.hp_max),
-        pe_max: newStats.pe_max,
-        pe_current: character.pe_current + (newStats.pe_max - character.pe_max),
-        san_max: newStats.san_max,
-        san_current: character.san_current + (newStats.san_max - character.san_max),
-        patent: newStats.patent,
-        abilities: updatedAbilities,
-        elemental_affinity: newStats.elemental_affinity ?? character.elemental_affinity,
-        affinity_active: newStats.affinity_active ?? character.affinity_active,
-        paranormal_powers: updatedParanormalPowers,
-      })
+      .update(updateData)
       .eq('id', character.id);
 
     if (error) {
@@ -2134,6 +2159,9 @@ export function MobileCharacterSheet({
           nex: character.nex,
           vigor: character.vigor,
           presence: character.presence,
+          agility: character.agility,
+          strength: character.strength,
+          intellect: character.intellect,
           origin: character.origin,
           hp_max: character.hp_max,
           pe_max: character.pe_max,
