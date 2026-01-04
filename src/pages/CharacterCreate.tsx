@@ -90,6 +90,16 @@ export type CharacterFormData = {
   
   // Poder paranormal da origem (Cultista Arrependido)
   originParanormalPower: string | null;
+  
+  // Versatilidade (NEX 50%+)
+  versatilityChoice?: {
+    type: 'class_power' | 'track_ability';
+    trackId?: string;
+    trackName?: string;
+    abilityId?: string;
+    abilityName?: string;
+  } | null;
+  secondaryTrackAbility?: string | null;
 };
 
 // Base steps - rituais será inserido dinamicamente para Ocultistas
@@ -141,6 +151,8 @@ const initialFormData: CharacterFormData = {
   trackAbilities: [],
   rituals: [],
   originParanormalPower: null,
+  versatilityChoice: null,
+  secondaryTrackAbility: null,
 };
 
 export default function CharacterCreate() {
@@ -491,7 +503,11 @@ export default function CharacterCreate() {
           .filter(id => choosableAbilities.some(a => a.id === id))
           .map(id => choosableAbilities.find(a => a.id === id)?.name || id),
         // Inclui habilidades da trilha desbloqueadas pelo NEX atual
-        ...formData.trackAbilities
+        ...formData.trackAbilities,
+        // Inclui habilidade de trilha secundária via Versatilidade (NEX 50%+)
+        ...(formData.versatilityChoice?.type === 'track_ability' && formData.secondaryTrackAbility
+          ? [formData.secondaryTrackAbility]
+          : []),
       ];
 
       // Monta array de poderes paranormais (Cultista Arrependido)

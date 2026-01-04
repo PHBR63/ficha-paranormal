@@ -858,6 +858,7 @@ export function MobileCharacterSheet({
     affinity_active?: boolean;
     paranormal_powers?: ParanormalPower[];
     attributeIncrease?: string;
+    versatilityChoice?: { type: string; trackId?: string; trackName?: string; abilityId?: string; abilityName?: string };
   }) => {
     if (!character || !user) return;
 
@@ -910,6 +911,12 @@ export function MobileCharacterSheet({
           updateData.pe_current = updateData.pe_current + 1;
         }
       }
+    }
+    
+    // Se há escolha de Versatilidade e escolheu trilha diferente,
+    // a habilidade já foi adicionada no newAbilities pelo NexProgressionModal
+    if (newStats.versatilityChoice?.type === 'track_ability' && newStats.versatilityChoice.trackId) {
+      console.log(`[Versatilidade] ${character.name} adquiriu habilidade "${newStats.versatilityChoice.abilityName}" da trilha "${newStats.versatilityChoice.trackName}"`);
     }
 
     const { error } = await supabase
