@@ -98,7 +98,23 @@ function SurtoChoiceButtons({
 // Componente Principal
 // =====================================================
 
-export function OperacoesEspeciaisPanel(props: OperacoesEspeciaisPanelProps) {
+import React from 'react';
+
+/**
+ * Comparação customizada para evitar re-renders desnecessários.
+ * Ignora peCurrent pois mudanças de PE não afetam a estrutura do painel.
+ */
+function arePropsEqual(prev: OperacoesEspeciaisPanelProps, next: OperacoesEspeciaisPanelProps): boolean {
+  return (
+    prev.classTrack === next.classTrack &&
+    prev.nex === next.nex &&
+    prev.className === next.className &&
+    prev.onPEChange === next.onPEChange &&
+    prev.onActivateEffect === next.onActivateEffect
+  );
+}
+
+function OperacoesEspeciaisPanelComponent(props: OperacoesEspeciaisPanelProps) {
   const isMobile = useIsMobile();
   const { className, peCurrent } = props;
 
@@ -336,3 +352,6 @@ export function OperacoesEspeciaisPanel(props: OperacoesEspeciaisPanelProps) {
     </>
   );
 }
+
+/** Componente exportado com memoização para otimização de performance */
+export const OperacoesEspeciaisPanel = React.memo(OperacoesEspeciaisPanelComponent, arePropsEqual);

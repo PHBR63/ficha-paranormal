@@ -58,7 +58,22 @@ export interface MedicoDeCampoPanelProps extends UseMedicoDeCampoTrackProps {}
 // Componente Principal
 // =====================================================
 
-export function MedicoDeCampoPanel(props: MedicoDeCampoPanelProps) {
+import React from 'react';
+
+/**
+ * Comparação customizada para evitar re-renders desnecessários.
+ * Ignora peCurrent pois mudanças de PE não afetam a estrutura do painel.
+ */
+function arePropsEqual(prev: MedicoDeCampoPanelProps, next: MedicoDeCampoPanelProps): boolean {
+  return (
+    prev.classTrack === next.classTrack &&
+    prev.nex === next.nex &&
+    prev.reanimacaoUsedThisScene === next.reanimacaoUsedThisScene &&
+    prev.onPEChange === next.onPEChange
+  );
+}
+
+function MedicoDeCampoPanelComponent(props: MedicoDeCampoPanelProps) {
   const isMobile = useIsMobile();
   const track = useMedicoDeCampoTrack(props);
 
@@ -333,3 +348,6 @@ export function MedicoDeCampoPanel(props: MedicoDeCampoPanelProps) {
     </>
   );
 }
+
+/** Componente exportado com memoização para otimização de performance */
+export const MedicoDeCampoPanel = React.memo(MedicoDeCampoPanelComponent, arePropsEqual);

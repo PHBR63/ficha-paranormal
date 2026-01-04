@@ -48,7 +48,23 @@ export interface AtiradorDeElitePanelProps extends UseAtiradorDeEliteTrackProps 
 // Componente Principal
 // =====================================================
 
-export function AtiradorDeElitePanel(props: AtiradorDeElitePanelProps) {
+import React from 'react';
+
+/**
+ * Comparação customizada para evitar re-renders desnecessários.
+ * Ignora peCurrent pois mudanças de PE não afetam a estrutura do painel.
+ */
+function arePropsEqual(prev: AtiradorDeElitePanelProps, next: AtiradorDeElitePanelProps): boolean {
+  return (
+    prev.classTrack === next.classTrack &&
+    prev.nex === next.nex &&
+    prev.intellect === next.intellect &&
+    prev.onPEChange === next.onPEChange &&
+    prev.onActivateEffect === next.onActivateEffect
+  );
+}
+
+function AtiradorDeElitePanelComponent(props: AtiradorDeElitePanelProps) {
   const isMobile = useIsMobile();
   const track = useAtiradorDeEliteTrack(props);
 
@@ -216,3 +232,6 @@ export function AtiradorDeElitePanel(props: AtiradorDeElitePanelProps) {
     </>
   );
 }
+
+/** Componente exportado com memoização para otimização de performance */
+export const AtiradorDeElitePanel = React.memo(AtiradorDeElitePanelComponent, arePropsEqual);

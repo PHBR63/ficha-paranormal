@@ -52,7 +52,21 @@ export interface TecnicoPanelProps extends UseTecnicoTrackProps {}
 // Componente Principal
 // =====================================================
 
-export function TecnicoPanel(props: TecnicoPanelProps) {
+import React from 'react';
+
+/**
+ * Comparação customizada para evitar re-renders desnecessários.
+ * Ignora peCurrent pois mudanças de PE não afetam a estrutura do painel.
+ */
+function arePropsEqual(prev: TecnicoPanelProps, next: TecnicoPanelProps): boolean {
+  return (
+    prev.classTrack === next.classTrack &&
+    prev.nex === next.nex &&
+    prev.onPEChange === next.onPEChange
+  );
+}
+
+function TecnicoPanelComponent(props: TecnicoPanelProps) {
   const isMobile = useIsMobile();
   const track = useTecnicoTrack(props);
 
@@ -360,5 +374,8 @@ export function TecnicoPanel(props: TecnicoPanelProps) {
     </Card>
   );
 }
+
+/** Componente exportado com memoização para otimização de performance */
+export const TecnicoPanel = React.memo(TecnicoPanelComponent, arePropsEqual);
 
 export default TecnicoPanel;

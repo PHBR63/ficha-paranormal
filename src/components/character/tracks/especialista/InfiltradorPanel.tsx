@@ -29,7 +29,23 @@ export interface InfiltradorPanelProps extends UseInfiltradorTrackProps {}
 // Componente Principal
 // =====================================================
 
-export function InfiltradorPanel(props: InfiltradorPanelProps) {
+import React from 'react';
+
+/**
+ * Comparação customizada para evitar re-renders desnecessários.
+ * Ignora peCurrent pois mudanças de PE não afetam a estrutura do painel.
+ */
+function arePropsEqual(prev: InfiltradorPanelProps, next: InfiltradorPanelProps): boolean {
+  return (
+    prev.classTrack === next.classTrack &&
+    prev.nex === next.nex &&
+    prev.agility === next.agility &&
+    prev.onPEChange === next.onPEChange &&
+    prev.onActivateEffect === next.onActivateEffect
+  );
+}
+
+function InfiltradorPanelComponent(props: InfiltradorPanelProps) {
   const isMobile = useIsMobile();
   const track = useInfiltradorTrack(props);
 
@@ -235,3 +251,6 @@ export function InfiltradorPanel(props: InfiltradorPanelProps) {
     </Card>
   );
 }
+
+/** Componente exportado com memoização para otimização de performance */
+export const InfiltradorPanel = React.memo(InfiltradorPanelComponent, arePropsEqual);

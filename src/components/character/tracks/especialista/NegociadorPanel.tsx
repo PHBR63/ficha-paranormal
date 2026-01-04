@@ -37,7 +37,21 @@ export interface NegociadorPanelProps extends UseNegociadorTrackProps {}
 // Componente Principal
 // =====================================================
 
-export function NegociadorPanel(props: NegociadorPanelProps) {
+import React from 'react';
+
+/**
+ * Comparação customizada para evitar re-renders desnecessários.
+ * Ignora peCurrent pois mudanças de PE não afetam a estrutura do painel.
+ */
+function arePropsEqual(prev: NegociadorPanelProps, next: NegociadorPanelProps): boolean {
+  return (
+    prev.classTrack === next.classTrack &&
+    prev.nex === next.nex &&
+    prev.onPEChange === next.onPEChange
+  );
+}
+
+function NegociadorPanelComponent(props: NegociadorPanelProps) {
   const isMobile = useIsMobile();
   const track = useNegociadorTrack(props);
 
@@ -275,3 +289,6 @@ export function NegociadorPanel(props: NegociadorPanelProps) {
     </Card>
   );
 }
+
+/** Componente exportado com memoização para otimização de performance */
+export const NegociadorPanel = React.memo(NegociadorPanelComponent, arePropsEqual);

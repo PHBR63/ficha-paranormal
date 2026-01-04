@@ -216,7 +216,22 @@ function MobileAbilityCard({
 // Componente Principal
 // =====================================================
 
-export function ComandanteCampoPanel(props: ComandanteCampoPanelProps) {
+import React from 'react';
+
+/**
+ * Comparação customizada para evitar re-renders desnecessários.
+ * Ignora peCurrent pois mudanças de PE não afetam a estrutura do painel.
+ */
+function arePropsEqual(prev: ComandanteCampoPanelProps, next: ComandanteCampoPanelProps): boolean {
+  return (
+    prev.classTrack === next.classTrack &&
+    prev.nex === next.nex &&
+    prev.className === next.className &&
+    prev.onPEChange === next.onPEChange
+  );
+}
+
+function ComandanteCampoPanelComponent(props: ComandanteCampoPanelProps) {
   const isMobile = useIsMobile();
   const { className } = props;
 
@@ -309,3 +324,6 @@ export function ComandanteCampoPanel(props: ComandanteCampoPanelProps) {
     </Card>
   );
 }
+
+/** Componente exportado com memoização para otimização de performance */
+export const ComandanteCampoPanel = React.memo(ComandanteCampoPanelComponent, arePropsEqual);

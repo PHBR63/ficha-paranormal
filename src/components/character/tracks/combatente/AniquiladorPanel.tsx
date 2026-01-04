@@ -197,7 +197,24 @@ function CostSummary({
 
 // ==================== COMPONENTE PRINCIPAL ====================
 
-export function AniquiladorPanel({
+import React from 'react';
+
+/**
+ * Comparação customizada para evitar re-renders desnecessários.
+ * Ignora peCurrent pois mudanças de PE não afetam a estrutura do painel.
+ */
+function arePropsEqual(prev: AniquiladorPanelProps, next: AniquiladorPanelProps): boolean {
+  return (
+    prev.classTrack === next.classTrack &&
+    prev.nex === next.nex &&
+    prev.className === next.className &&
+    prev.onPEChange === next.onPEChange &&
+    prev.onActivateEffect === next.onActivateEffect &&
+    prev.isEffectActive === next.isEffectActive
+  );
+}
+
+function AniquiladorPanelComponent({
   classTrack,
   nex,
   peCurrent,
@@ -517,3 +534,6 @@ export function AniquiladorPanel({
     </>
   );
 }
+
+/** Componente exportado com memoização para otimização de performance */
+export const AniquiladorPanel = React.memo(AniquiladorPanelComponent, arePropsEqual);
