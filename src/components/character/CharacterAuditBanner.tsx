@@ -124,6 +124,19 @@ const CATEGORY_COLORS: Record<string, { color: string; bgColor: string; borderCo
   },
 };
 
+// Descrições explicativas por categoria para tooltips
+const CATEGORY_DESCRIPTIONS: Record<string, string> = {
+  sanity: 'Sanidade - Problemas relacionados aos pontos de sanidade do personagem',
+  transcender: 'Poderes Paranormais - Problemas com poderes de Transcender ou afinidades elementais',
+  rituals: 'Rituais - Problemas relacionados à quantidade ou requisitos de rituais',
+  hp: 'Pontos de Vida - Problemas com cálculo ou valores de PV',
+  pe: 'Pontos de Esforço - Problemas com cálculo ou valores de PE',
+  defense: 'Defesa - Problemas com o cálculo de defesa do personagem',
+  skills: 'Perícias - Problemas com distribuição ou valores de perícias',
+  powers: 'Poderes Gerais - Problemas com poderes de classe ou origem',
+  records: 'Registros - Inconsistências nos registros do personagem',
+};
+
 export function CharacterAuditBanner({
   auditResult,
   visibleIssues,
@@ -310,6 +323,7 @@ export function CharacterAuditBanner({
                     const cardBg = categoryColors?.bgColor || severityConfig.bgColor;
                     const cardBorder = categoryColors?.borderColor || severityConfig.borderColor;
                     const iconColor = categoryColors?.color || severityConfig.color;
+                    const categoryTooltip = CATEGORY_DESCRIPTIONS[issue.category] || issue.category;
                     
                     return (
                       <Card 
@@ -319,7 +333,18 @@ export function CharacterAuditBanner({
                         <CardHeader className="p-3 pb-2">
                           <div className="flex items-start justify-between gap-2">
                             <div className="flex items-center gap-2">
-                              <CategoryIcon className={`w-4 h-4 ${iconColor}`} />
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="cursor-help">
+                                      <CategoryIcon className={`w-4 h-4 ${iconColor}`} />
+                                    </span>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top" className="max-w-xs">
+                                    <p className="text-xs">{categoryTooltip}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
                               <CardTitle className="text-sm font-medium">
                                 {issue.title}
                               </CardTitle>
