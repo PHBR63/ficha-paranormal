@@ -23,6 +23,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { AuditIssue, AuditResult } from '@/lib/character-audit-engine';
 import { cn } from '@/lib/utils';
 
@@ -112,6 +113,19 @@ const CATEGORY_COLORS: Record<string, { color: string; bgColor: string; borderCo
     bgColor: 'bg-amber-500/10',
     borderColor: 'border-amber-500/30',
   },
+};
+
+// Descrições explicativas por categoria para tooltips
+const CATEGORY_DESCRIPTIONS: Record<string, string> = {
+  sanity: 'Sanidade - Problemas relacionados aos pontos de sanidade do personagem',
+  transcender: 'Poderes Paranormais - Problemas com poderes de Transcender ou afinidades elementais',
+  rituals: 'Rituais - Problemas relacionados à quantidade ou requisitos de rituais',
+  hp: 'Pontos de Vida - Problemas com cálculo ou valores de PV',
+  pe: 'Pontos de Esforço - Problemas com cálculo ou valores de PE',
+  defense: 'Defesa - Problemas com o cálculo de defesa do personagem',
+  skills: 'Perícias - Problemas com distribuição ou valores de perícias',
+  powers: 'Poderes Gerais - Problemas com poderes de classe ou origem',
+  records: 'Registros - Inconsistências nos registros do personagem',
 };
 
 export function MobileAuditBanner({
@@ -293,6 +307,7 @@ export function MobileAuditBanner({
                     const cardBg = categoryColors?.bgColor || severityConfig.bgColor;
                     const cardBorder = categoryColors?.borderColor || severityConfig.borderColor;
                     const iconColor = categoryColors?.color || severityConfig.color;
+                    const categoryTooltip = CATEGORY_DESCRIPTIONS[issue.category] || issue.category;
                     
                     return (
                       <div 
@@ -306,7 +321,18 @@ export function MobileAuditBanner({
                         {/* Header do problema */}
                         <div className="flex items-start justify-between gap-2 mb-1">
                           <div className="flex items-center gap-1.5 flex-1 min-w-0">
-                            <CategoryIcon className={cn("w-3 h-3 flex-shrink-0", iconColor)} />
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="cursor-help flex-shrink-0">
+                                    <CategoryIcon className={cn("w-3 h-3", iconColor)} />
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="max-w-xs">
+                                  <p className="text-xs">{categoryTooltip}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
                             <span className="text-xs font-medium truncate">
                               {issue.title}
                             </span>
