@@ -13,7 +13,7 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
-import { calculateDerivedStats, CLASSES, ORIGINS } from './character-data';
+import { calculateDerivedStats, CLASSES, ORIGINS, getOcultistRituals } from './character-data';
 import { getPowerChoiceMilestones, getCharacterPowerChoices } from './transcender-system';
 
 // Helpers para buscar origem e classe por ID
@@ -40,7 +40,8 @@ export type AuditCategory =
   | 'defense'          // Problemas com Defesa
   | 'skills'           // Problemas com perícias
   | 'powers'           // Problemas com poderes
-  | 'records';         // Inconsistências em registros
+  | 'records'          // Inconsistências em registros
+  | 'rituals';         // Problemas com rituais (Ocultista)
 
 // Um problema encontrado na auditoria
 export interface AuditIssue {
@@ -95,6 +96,7 @@ export interface CharacterForAudit {
   paranormal_powers?: Array<{ id: string; name: string; [key: string]: any }>;
   skills?: Record<string, number>;
   abilities?: string[];
+  rituals?: string[];  // IDs dos rituais (usado para auditoria de Ocultista)
 }
 
 // ==================== FUNÇÕES DE AUDITORIA ====================
@@ -125,6 +127,10 @@ export async function auditCharacter(character: CharacterForAudit): Promise<Audi
   // 5. Auditar bônus de poderes em perícias
   const skillsAudit = auditSkillBonuses(character);
   issues.push(...skillsAudit.issues);
+  
+  // 6. Auditar rituais excedentes (Ocultista)
+  const ritualsAudit = auditRitualsCount(character);
+  issues.push(...ritualsAudit.issues);
   
   // Separar problemas por tipo
   const autoFixableIssues = issues.filter(i => i.autoFixable);
@@ -485,6 +491,46 @@ export function auditSkillBonuses(character: CharacterForAudit): { issues: Audit
         });
       }
     }
+  }
+  
+  return { issues };
+}
+
+/**
+ * Audita quantidade de rituais do Ocultista
+ * Verifica se o personagem excede o limite permitido pelo NEX
+ */
+export function auditRitualsCount(character: CharacterForAudit): { issues: AuditIssue[] } {
+  const issues: AuditIssue[] = [];
+  
+  // Só Ocultistas têm limite de rituais
+  if (character.class !== 'Ocultista') {
+    return { issues };
+  }
+  
+  const rituals = character.rituals || [];
+  const limits = getOcultistRituals(character.nex);
+  
+  if (!limits) {
+    return { issues };
+  }
+  
+  const maxRituals = limits.count;
+  const currentCount = rituals.length;
+  const excessRituals = currentCount - maxRituals;
+  
+  if (excessRituals > 0) {
+    issues.push({
+      id: `excess_rituals_${character.id}`,
+      category: 'rituals',
+      severity: 'error',
+      title: 'Rituais Excedentes',
+      description: `O personagem tem ${currentCount} rituais, mas deveria ter no máximo ${maxRituals} (limite para NEX ${character.nex}%). Excesso de ${excessRituals} ritual(is).`,
+      currentValue: currentCount,
+      expectedValue: maxRituals,
+      autoFixable: false,
+      fixAction: 'Clique em "Remover Rituais" para escolher quais rituais excedentes deseja remover',
+    });
   }
   
   return { issues };

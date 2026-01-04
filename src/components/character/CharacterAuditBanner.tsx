@@ -318,8 +318,8 @@ export function CharacterAuditBanner({
                               💡 {issue.fixAction}
                             </p>
                           )}
-                          {/* Botão de ação manual para problemas não auto-corrigíveis da categoria transcender */}
-                          {!issue.autoFixable && issue.category === 'transcender' && onManualFix && (
+                          {/* Botão de ação manual para problemas não auto-corrigíveis */}
+                          {!issue.autoFixable && (issue.category === 'transcender' || issue.category === 'rituals') && onManualFix && (
                             <Button
                               size="sm"
                               variant="destructive"
@@ -327,7 +327,7 @@ export function CharacterAuditBanner({
                               className="mt-2 h-7 text-xs gap-1"
                             >
                               <Trash2 className="w-3 h-3" />
-                              Remover Poderes
+                              {issue.category === 'transcender' ? 'Remover Poderes' : 'Remover Rituais'}
                             </Button>
                           )}
                         </CardContent>
