@@ -90,6 +90,40 @@ const CATEGORY_ICONS: Record<string, React.ComponentType<{ className?: string }>
   records: AlertTriangle,
 };
 
+// Cores específicas por categoria (sobrescrevem as cores de severidade para diferenciação visual)
+const CATEGORY_COLORS: Record<string, { color: string; bgColor: string; borderColor: string }> = {
+  transcender: {
+    color: 'text-paranormal',
+    bgColor: 'bg-paranormal/10',
+    borderColor: 'border-paranormal/30',
+  },
+  rituals: {
+    color: 'text-purple-400',
+    bgColor: 'bg-purple-500/10',
+    borderColor: 'border-purple-500/30',
+  },
+  sanity: {
+    color: 'text-blue-400',
+    bgColor: 'bg-blue-500/10',
+    borderColor: 'border-blue-500/30',
+  },
+  hp: {
+    color: 'text-red-400',
+    bgColor: 'bg-red-500/10',
+    borderColor: 'border-red-500/30',
+  },
+  pe: {
+    color: 'text-cyan-400',
+    bgColor: 'bg-cyan-500/10',
+    borderColor: 'border-cyan-500/30',
+  },
+  defense: {
+    color: 'text-amber-400',
+    bgColor: 'bg-amber-500/10',
+    borderColor: 'border-amber-500/30',
+  },
+};
+
 export function CharacterAuditBanner({
   auditResult,
   visibleIssues,
@@ -271,16 +305,21 @@ export function CharacterAuditBanner({
                   {visibleIssues.map((issue) => {
                     const severityConfig = SEVERITY_CONFIG[issue.severity];
                     const CategoryIcon = CATEGORY_ICONS[issue.category] || AlertCircle;
+                    // Usa cores da categoria se disponível, senão usa severidade
+                    const categoryColors = CATEGORY_COLORS[issue.category];
+                    const cardBg = categoryColors?.bgColor || severityConfig.bgColor;
+                    const cardBorder = categoryColors?.borderColor || severityConfig.borderColor;
+                    const iconColor = categoryColors?.color || severityConfig.color;
                     
                     return (
                       <Card 
                         key={issue.id} 
-                        className={`${severityConfig.bgColor} ${severityConfig.borderColor}`}
+                        className={`${cardBg} ${cardBorder}`}
                       >
                         <CardHeader className="p-3 pb-2">
                           <div className="flex items-start justify-between gap-2">
                             <div className="flex items-center gap-2">
-                              <CategoryIcon className={`w-4 h-4 ${severityConfig.color}`} />
+                              <CategoryIcon className={`w-4 h-4 ${iconColor}`} />
                               <CardTitle className="text-sm font-medium">
                                 {issue.title}
                               </CardTitle>
