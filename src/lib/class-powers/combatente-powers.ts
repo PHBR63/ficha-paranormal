@@ -319,7 +319,7 @@ export const COMBATENTE_POWERS: UnifiedClassPower[] = [
     classId: 'Combatente',
     isCore: false,
     minNex: 15,
-    description: 'Quando usa a ação agredir, você pode combater defensivamente. Se fizer isso, até seu próximo turno, sofre –5 em todos os testes de ataque, mas recebe +5 na Defesa. Pré-requisito: Int 2.',
+    description: 'Quando usa a ação agredir, você pode combater defensivamente. Se fizer isso, até seu próximo turno, sofre –2 em todos os testes de ataque, mas recebe +5 na Defesa. Pré-requisito: Int 2.',
     pageReference: 'Livro Base p.46',
     prerequisites: {
       attributes: { intellect: 2 },
@@ -331,7 +331,7 @@ export const COMBATENTE_POWERS: UnifiedClassPower[] = [
           cost: 0,
           action: 'none',
         },
-        attackBonus: { value: -5 },
+        attackBonus: { value: -2 }, // Penalidade oficial do livro
         defenseBonus: { value: 5 },
         conditions: {
           inCombat: true,
@@ -347,7 +347,7 @@ export const COMBATENTE_POWERS: UnifiedClassPower[] = [
     classId: 'Combatente',
     isCore: false,
     minNex: 15,
-    description: 'Quando usa a manobra quebrar ou ataca um objeto, você pode gastar 1 PE para causar dois dados de dano extra do mesmo tipo de sua arma. Pré-requisitos: For 2, treinado em Luta.',
+    description: 'Quando usa a manobra quebrar ou ataca um objeto, você pode gastar 1 PE para causar o dobro de dano, do mesmo tipo de dano da sua arma. Pré-requisitos: For 2, treinado em Luta.',
     pageReference: 'Livro Base p.46',
     prerequisites: {
       attributes: { strength: 2 },
@@ -361,7 +361,7 @@ export const COMBATENTE_POWERS: UnifiedClassPower[] = [
           action: 'free',
         },
         damageBonus: {
-          extraDice: '+2d',
+          extraDice: 'x2', // Dobra o dano total (Manobra Quebrar ou atacar objeto)
         },
       },
     },

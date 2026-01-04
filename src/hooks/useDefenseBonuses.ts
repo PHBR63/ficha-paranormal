@@ -261,7 +261,7 @@ export function useDefenseBonuses({
     
     // === HABILIDADES ATIVAS (togglável) ===
     
-    // Combate Defensivo: +5 Defesa, -5 ataque (quando ativado manualmente)
+    // Combate Defensivo: +5 Defesa, -2 ataque (quando ativado manualmente)
     const hasCombateDefensivo = normalizedAbilities.some(a => 
       a.includes('combate defensivo') || a === 'combate-defensivo'
     ) || abilities.some(a => 
@@ -274,7 +274,7 @@ export function useDefenseBonuses({
         source: 'Combate Defensivo',
         type: 'ability',
         bonus: 5,
-        conditional: '-5 ataque até próximo turno',
+        conditional: '-2 ataque até próximo turno',
         active: isActive,
       });
     }

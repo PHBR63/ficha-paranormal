@@ -792,8 +792,8 @@ const LEGACY_POWER_CONFIGS: Record<string, {
   },
   'golpe-demolidor': {
     name: 'Golpe Demolidor',
-    description: '+4 no dano corpo a corpo',
-    getEffects: () => ({ meleeDamageBonus: 4 }),
+    description: 'Dobra o dano ao quebrar objetos (1 PE)',
+    getEffects: () => ({}), // Efeito narrativo: dobro do dano em manobra Quebrar ou atacar objeto
   },
   'mira-firme': {
     name: 'Mira Firme',
