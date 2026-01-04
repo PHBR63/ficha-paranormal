@@ -13,7 +13,7 @@
  * @module tracks/ocultista/GraduadoPanel
  */
 
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { BookOpen, Check, ChevronDown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,6 +25,13 @@ import {
   useGraduadoTrack, 
   type UseGraduadoTrackProps,
 } from './useGraduadoTrack';
+
+// Comparação customizada para evitar re-renders desnecessários
+function arePropsEqual(prev: GraduadoPanelProps, next: GraduadoPanelProps): boolean {
+  return prev.nex === next.nex 
+    && prev.classTrack === next.classTrack
+    && prev.className === next.className;
+}
 
 // =====================================================
 // PROPS DO COMPONENTE
@@ -38,7 +45,8 @@ export interface GraduadoPanelProps extends UseGraduadoTrackProps {
 // COMPONENTE PRINCIPAL
 // =====================================================
 
-export function GraduadoPanel(props: GraduadoPanelProps) {
+// Componente interno para ser memoizado
+function GraduadoPanelComponent(props: GraduadoPanelProps) {
   const { className } = props;
   const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(true);
@@ -170,3 +178,7 @@ export function GraduadoPanel(props: GraduadoPanelProps) {
     </Card>
   );
 }
+
+// OTIMIZAÇÃO: React.memo com comparação customizada para evitar re-renders
+// quando apenas HP/PE/SAN mudam (não afetam este painel)
+export const GraduadoPanel = memo(GraduadoPanelComponent, arePropsEqual);

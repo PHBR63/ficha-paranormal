@@ -13,7 +13,7 @@
  * @module tracks/ocultista/FlageladorPanel
  */
 
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { Flame, Zap, Heart, ShieldHalf, Check, Loader2, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -28,6 +28,11 @@ import {
 } from './useFlageladorTrack';
 import type { EffectDuration } from '@/hooks/useActivatedEffects';
 
+// Comparação customizada para evitar re-renders desnecessários
+function arePropsEqual(prev: FlageladorPanelProps, next: FlageladorPanelProps): boolean {
+  return prev.nex === next.nex && prev.classTrack === next.classTrack && prev.peCurrent === next.peCurrent;
+}
+
 // =====================================================
 // PROPS DO COMPONENTE
 // =====================================================
@@ -41,7 +46,7 @@ export interface FlageladorPanelProps extends UseFlageladorTrackProps {
 // COMPONENTE PRINCIPAL
 // =====================================================
 
-export function FlageladorPanel(props: FlageladorPanelProps) {
+function FlageladorPanelComponent(props: FlageladorPanelProps) {
   const { className, peCurrent } = props;
   const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(true);
@@ -247,3 +252,6 @@ export function FlageladorPanel(props: FlageladorPanelProps) {
     </Card>
   );
 }
+
+// OTIMIZAÇÃO: React.memo com comparação customizada para evitar re-renders
+export const FlageladorPanel = memo(FlageladorPanelComponent, arePropsEqual);

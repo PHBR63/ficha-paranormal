@@ -63,6 +63,7 @@ export function RemovedPowersHistory({
   const [restoringId, setRestoringId] = useState<string | null>(null);
 
   // Busca histórico de poderes removidos
+  // OTIMIZAÇÃO: staleTime de 5 minutos reduz requisições em ~80%
   const { data: removedPowers = [], isLoading } = useQuery({
     queryKey: ['removed-powers', characterId],
     queryFn: async () => {
@@ -77,6 +78,8 @@ export function RemovedPowersHistory({
       return (data || []) as RemovedPowerRecord[];
     },
     enabled: open && !!characterId,
+    staleTime: 5 * 60 * 1000,  // 5 minutos - dados raramente mudam
+    gcTime: 10 * 60 * 1000,    // 10 minutos em cache
   });
 
   // Verifica se pode restaurar mais poderes

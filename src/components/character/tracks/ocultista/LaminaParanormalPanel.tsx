@@ -13,7 +13,7 @@
  * @module tracks/ocultista/LaminaParanormalPanel
  */
 
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { Sword, Zap, Swords, Check, Loader2, ChevronDown, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -28,6 +28,11 @@ import {
 } from './useLaminaParanormalTrack';
 import type { EffectDuration } from '@/hooks/useActivatedEffects';
 
+// Comparação customizada para evitar re-renders desnecessários
+function arePropsEqual(prev: LaminaParanormalPanelProps, next: LaminaParanormalPanelProps): boolean {
+  return prev.nex === next.nex && prev.classTrack === next.classTrack && prev.peCurrent === next.peCurrent;
+}
+
 // =====================================================
 // PROPS DO COMPONENTE
 // =====================================================
@@ -41,7 +46,7 @@ export interface LaminaParanormalPanelProps extends UseLaminaParanormalTrackProp
 // COMPONENTE PRINCIPAL
 // =====================================================
 
-export function LaminaParanormalPanel(props: LaminaParanormalPanelProps) {
+function LaminaParanormalPanelComponent(props: LaminaParanormalPanelProps) {
   const { className, peCurrent, nex } = props;
   const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(true);
@@ -246,3 +251,6 @@ export function LaminaParanormalPanel(props: LaminaParanormalPanelProps) {
     </Card>
   );
 }
+
+// OTIMIZAÇÃO: React.memo com comparação customizada para evitar re-renders
+export const LaminaParanormalPanel = memo(LaminaParanormalPanelComponent, arePropsEqual);
