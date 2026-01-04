@@ -787,8 +787,10 @@ const LEGACY_POWER_CONFIGS: Record<string, {
   },
   'golpe-pesado': {
     name: 'Golpe Pesado',
-    description: '+2 no dano corpo a corpo',
-    getEffects: () => ({ meleeDamageBonus: 2 }),
+    description: '+1 dado de dano corpo a corpo (passivo)',
+    getEffects: () => ({ 
+      meleeDamageBonus: 0, // Efeito é +1 dado, aplicado automaticamente nos modais de combate
+    }),
   },
   'golpe-demolidor': {
     name: 'Golpe Demolidor',
