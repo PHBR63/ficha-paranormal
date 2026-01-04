@@ -42,6 +42,8 @@ export interface WeaponEntry {
   ammoType?: string;
   /** Indica se esta arma é a favorita do Aniquilador (habilidade "A Favorita") */
   isFavoriteWeapon?: boolean;
+  /** Categoria da arma para proficiência (0=Simples, I=Tática, II=Pesada) */
+  category?: '0' | 'I' | 'II';
 }
 
 // Props do componente

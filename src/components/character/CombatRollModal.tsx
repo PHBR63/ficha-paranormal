@@ -6,7 +6,7 @@
 
 import { useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sword, Target, Zap, Sparkles, Flame, X, Dices, Shield, Skull, Info, Plus, Minus, RotateCcw, Clock, RefreshCw, Timer, Infinity, Droplets, Crosshair } from 'lucide-react';
+import { Sword, Target, Zap, Sparkles, Flame, X, Dices, Shield, Skull, Info, Plus, Minus, RotateCcw, Clock, RefreshCw, Timer, Infinity, Droplets, Crosshair, AlertCircle } from 'lucide-react';
 import { SpecialAttackSelector, useSpecialAttackState } from './SpecialAttackSelector';
 import {
   getSpecialAttackOptions,
@@ -37,6 +37,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { AniquiladorTechniqueModal, TechniqueEffects } from './AniquiladorTechniqueModal';
+import { checkWeaponProficiency, type ProficiencyCheckResult } from '@/lib/proficiency-utils';
 
 // Interface para arma (mesma do CombatWeaponsTable)
 interface WeaponEntry {
@@ -55,6 +56,8 @@ interface WeaponEntry {
   ammoType?: string;
   // Aniquilador: indica se esta arma é a favorita
   isFavoriteWeapon?: boolean;
+  // Categoria da arma para proficiência (0=Simples, I=Tática, II=Pesada)
+  category?: '0' | 'I' | 'II';
 }
 
 // Interface para bônus selecionável
@@ -527,6 +530,21 @@ export function CombatRollModal({
   // Verificar se pode pagar o PE
   const canAffordPE = currentPE >= totalPECost;
 
+  // === VERIFICAÇÃO DE PROFICIÊNCIA COM ARMA ===
+  // Regra oficial: -5 no ataque se não tiver proficiência adequada
+  const proficiencyCheck = useMemo((): ProficiencyCheckResult => {
+    if (!weapon) return { hasProficiency: true, penalty: 0 };
+    
+    // Coleta proficiências do personagem (do SUE ou padrão da classe)
+    const characterProficiencies: string[] = unifiedEffects?.proficiencies || [];
+    
+    return checkWeaponProficiency(
+      weapon.category,
+      characterProficiencies,
+      characterClass
+    );
+  }, [weapon, unifiedEffects, characterClass]);
+
   // Calcular bônus total de ataque (inclui bônus do SUE, trilha, weapon buffs e modificador manual)
   const totalAttackBonus = useMemo(() => {
     let total = attackSkill.bonus;
@@ -580,8 +598,14 @@ export function CombatRollModal({
     // Adicionar modificador manual do mestre
     total += manualAttackMod;
     
+    // === PENALIDADE DE PROFICIÊNCIA ===
+    // Regra oficial: -5 no ataque se não tiver proficiência adequada
+    if (!proficiencyCheck.hasProficiency) {
+      total += proficiencyCheck.penalty; // -5
+    }
+    
     return total;
-  }, [attackSkill.bonus, passiveBonuses, selectedBonuses, availableBonuses, classPowerBonuses, manualAttackMod, weaponBuffBonuses, unifiedEffects, weapon, trackCombatBonuses, specialAttackConfig.enabled, specialAttackResult.attackBonus]);
+  }, [attackSkill.bonus, passiveBonuses, selectedBonuses, availableBonuses, classPowerBonuses, manualAttackMod, weaponBuffBonuses, unifiedEffects, weapon, trackCombatBonuses, specialAttackConfig.enabled, specialAttackResult.attackBonus, proficiencyCheck]);
 
   // === Detalhamento das fontes de bônus de ataque para exibição ===
   const attackBonusSources = useMemo(() => {
@@ -705,8 +729,18 @@ export function CombatRollModal({
       });
     }
     
+    // === PENALIDADE DE PROFICIÊNCIA ===
+    if (!proficiencyCheck.hasProficiency) {
+      sources.push({
+        label: `Sem ${proficiencyCheck.missingProficiency}`,
+        value: proficiencyCheck.penalty,
+        type: 'other',
+        description: `Penalidade por usar arma sem proficiência em ${proficiencyCheck.missingProficiency}`,
+      });
+    }
+    
     return sources;
-  }, [attackSkill, classPowerBonuses, passiveBonuses, selectedBonuses, availableBonuses, manualAttackMod, weaponBuffBonuses, unifiedEffects, weapon, trackCombatBonuses, specialAttackConfig.enabled, specialAttackResult]);
+  }, [attackSkill, classPowerBonuses, passiveBonuses, selectedBonuses, availableBonuses, manualAttackMod, weaponBuffBonuses, unifiedEffects, weapon, trackCombatBonuses, specialAttackConfig.enabled, specialAttackResult, proficiencyCheck]);
 
   // === Detalhamento das fontes de bônus de dano para exibição ===
   const damageBonusSources = useMemo(() => {

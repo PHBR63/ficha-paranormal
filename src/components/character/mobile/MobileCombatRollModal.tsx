@@ -39,6 +39,7 @@ import {
   RefreshCw,
   Timer,
   Infinity as InfinityIcon,
+  AlertCircle,
 } from 'lucide-react';
 import { 
   MobileDrawer, 
@@ -73,6 +74,7 @@ import {
   hasForcaBrutaAbility,
   isMeleeWeapon,
 } from '@/lib/class-powers/special-attack-utils';
+import { checkWeaponProficiency, type ProficiencyCheckResult } from '@/lib/proficiency-utils';
 
 // Interface para bônus selecionável
 interface CombatBonus {
@@ -498,6 +500,21 @@ export function MobileCombatRollModal({
 
   const canAffordPE = currentPE >= totalPECost;
 
+  // === VERIFICAÇÃO DE PROFICIÊNCIA COM ARMA ===
+  // Regra oficial: -5 no ataque se não tiver proficiência adequada
+  const proficiencyCheck = useMemo((): ProficiencyCheckResult => {
+    if (!weapon) return { hasProficiency: true, penalty: 0 };
+    
+    // Coleta proficiências do personagem (do SUE ou padrão da classe)
+    const characterProficiencies: string[] = unifiedEffects?.proficiencies || [];
+    
+    return checkWeaponProficiency(
+      weapon.category,
+      characterProficiencies,
+      characterClass
+    );
+  }, [weapon, unifiedEffects, characterClass]);
+
   // Bônus total de ataque - ATUALIZADO com SUE, trilha, weapon buffs
   const totalAttackBonus = useMemo(() => {
     let total = attackSkill.bonus;
@@ -538,8 +555,14 @@ export function MobileCombatRollModal({
     // Modificador manual
     total += manualAttackMod;
     
+    // === PENALIDADE DE PROFICIÊNCIA ===
+    // Regra oficial: -5 no ataque se não tiver proficiência adequada
+    if (!proficiencyCheck.hasProficiency) {
+      total += proficiencyCheck.penalty; // -5
+    }
+    
     return total;
-  }, [attackSkill.bonus, selectedBonuses, availableBonuses, manualAttackMod, weaponBuffBonuses, unifiedEffects, weapon, trackCombatBonuses, passiveBonuses, specialAttackConfig.enabled, specialAttackResult.attackBonus]);
+  }, [attackSkill.bonus, selectedBonuses, availableBonuses, manualAttackMod, weaponBuffBonuses, unifiedEffects, weapon, trackCombatBonuses, passiveBonuses, specialAttackConfig.enabled, specialAttackResult.attackBonus, proficiencyCheck]);
 
   // Detalhamento das fontes de bônus de ataque - NOVO
   const attackBonusSources = useMemo(() => {
@@ -589,8 +612,18 @@ export function MobileCombatRollModal({
       sources.push({ label: 'Mestre', value: manualAttackMod, type: 'other' });
     }
     
+    // === PENALIDADE DE PROFICIÊNCIA ===
+    if (!proficiencyCheck.hasProficiency) {
+      sources.push({
+        label: `Sem ${proficiencyCheck.missingProficiency}`,
+        value: proficiencyCheck.penalty,
+        type: 'other',
+        description: `Penalidade por usar arma sem proficiência`,
+      });
+    }
+    
     return sources;
-  }, [attackSkill, unifiedEffects, weapon, trackCombatBonuses, weaponBuffBonuses, passiveBonuses, selectedBonuses, availableBonuses, manualAttackMod]);
+  }, [attackSkill, unifiedEffects, weapon, trackCombatBonuses, weaponBuffBonuses, passiveBonuses, selectedBonuses, availableBonuses, manualAttackMod, proficiencyCheck]);
 
   // Margem de crítico efetiva
   const criticalMargin = useMemo(() => {
