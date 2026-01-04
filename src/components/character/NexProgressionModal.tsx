@@ -76,10 +76,12 @@ import { validateBeforeSave, getMaxParanormalPowers } from '@/lib/character-audi
 import { ParanormalPowerSelectModal } from './ParanormalPowerSelectModal';
 import { PowerSubchoiceModal } from './PowerSubchoiceModal';
 import { NonOccultistRitualModal, RitualSource } from './NonOccultistRitualModal';
+import { AttributeIncreaseSection, isAttributeIncreaseNex } from './AttributeIncreaseSection';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/components/ui/sonner';
 import confetti from 'canvas-confetti';
 import { VALID_NEX_VALUES, isValidNexValue } from '@/lib/constants/game-ids';
+import { AttributeKey } from '@/lib/constants/attributes';
 
 // NEX válidos - usando valores centralizados de game-ids.ts
 const NEX_VALUES: number[] = [...VALID_NEX_VALUES];
@@ -112,6 +114,9 @@ interface NexProgressionModalProps {
     nex: number;
     vigor: number;
     presence: number;
+    agility: number;
+    strength: number;
+    intellect: number;
     origin: string;
     hp_max: number;
     pe_max: number;
@@ -131,6 +136,7 @@ interface NexProgressionModalProps {
     elemental_affinity?: ParanormalElement | null;
     affinity_active?: boolean;
     paranormal_powers?: ParanormalPower[];
+    attributeIncrease?: string; // Atributo aumentado (agility, strength, etc)
   }) => Promise<void>;
 }
 
@@ -176,10 +182,16 @@ export function NexProgressionModal({
   const [pendingRituals, setPendingRituals] = useState<string[]>([]);
   const [ritualForSubchoice, setRitualForSubchoice] = useState<string | null>(null);
   
+  // Estado para seleção de aumento de atributo
+  const [selectedAttributeIncrease, setSelectedAttributeIncrease] = useState<string | null>(null);
+  
   // Verificar se está subindo para NEX 50% (escolhe afinidade)
   const currentNexIndex = NEX_VALUES.indexOf(character.nex);
   const nextNex = currentNexIndex < NEX_VALUES.length - 1 ? NEX_VALUES[currentNexIndex + 1] : null;
   const isReachingNex50 = nextNex === 50 && !character.elemental_affinity;
+  
+  // Verificar se este NEX oferece aumento de atributo (20%, 50%, 80%, 95%)
+  const showAttributeIncrease = nextNex ? isAttributeIncreaseNex(nextNex) : false;
   
   // Verificar elegibilidade de Transcender quando modal abre
   // API corrigida: funciona para TODAS as classes, deriva marcos da tabela oficial
@@ -403,6 +415,25 @@ export function NexProgressionModal({
       return;
     }
     
+    // Validação: se é NEX de aumento de atributo, precisa escolher
+    if (showAttributeIncrease && !selectedAttributeIncrease) {
+      toast.error('Escolha obrigatória', {
+        description: 'Você precisa escolher um atributo para aumentar.',
+      });
+      return;
+    }
+    
+    // Validação: atributo selecionado não pode estar no limite
+    if (showAttributeIncrease && selectedAttributeIncrease) {
+      const attrValue = character[selectedAttributeIncrease as keyof typeof character] as number;
+      if (attrValue >= 5) {
+        toast.error('Atributo no limite', {
+          description: 'O atributo selecionado já está no valor máximo (5).',
+        });
+        return;
+      }
+    }
+    
     // === VALIDAÇÃO PREVENTIVA ===
     // Verifica limite de poderes paranormais antes de permitir progressão
     const powerLimits = getMaxParanormalPowers(nextNex, character.origin);
@@ -502,6 +533,7 @@ export function NexProgressionModal({
         elemental_affinity: newAffinity,
         affinity_active: newAffinityActive,
         paranormal_powers: pendingPowers,
+        attributeIncrease: showAttributeIncrease ? selectedAttributeIncrease || undefined : undefined,
       });
 
       // Efeito de celebração
@@ -739,6 +771,22 @@ export function NexProgressionModal({
                     </div>
                   </div>
                 </div>
+              )}
+
+              {/* Seção de Aumento de Atributo (NEX 20%, 50%, 80%, 95%) */}
+              {showAttributeIncrease && nextNex && (
+                <AttributeIncreaseSection
+                  currentAttributes={{
+                    agility: character.agility,
+                    strength: character.strength,
+                    intellect: character.intellect,
+                    presence: character.presence,
+                    vigor: character.vigor,
+                  }}
+                  selectedAttribute={selectedAttributeIncrease as AttributeKey | null}
+                  onSelect={(attr) => setSelectedAttributeIncrease(attr)}
+                  targetNex={nextNex}
+                />
               )}
 
               {/* Seção de Transcender */}
