@@ -340,7 +340,10 @@ export function CharacterAuditBanner({
                                       <CategoryIcon className={`w-4 h-4 ${iconColor}`} />
                                     </span>
                                   </TooltipTrigger>
-                                  <TooltipContent side="top" className="max-w-xs">
+                                  <TooltipContent 
+                                    side="top" 
+                                    className="max-w-xs animate-in fade-in-0 zoom-in-95 duration-200"
+                                  >
                                     <p className="text-xs">{categoryTooltip}</p>
                                   </TooltipContent>
                                 </Tooltip>
