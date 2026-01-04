@@ -7,6 +7,14 @@
 import { useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sword, Target, Zap, Sparkles, Flame, X, Dices, Shield, Skull, Info, Plus, Minus, RotateCcw, Clock, RefreshCw, Timer, Infinity, Droplets, Crosshair } from 'lucide-react';
+import { SpecialAttackSelector, useSpecialAttackState } from './SpecialAttackSelector';
+import {
+  getSpecialAttackOptions,
+  calculateSpecialAttackFinal,
+  hasSpecialAttack,
+  hasForcaBrutaAbility,
+  isMeleeWeapon,
+} from '@/lib/class-powers/special-attack-utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -323,11 +331,29 @@ export function CombatRollModal({
   const [showTechniqueModal, setShowTechniqueModal] = useState(false);
   const [activeTechniqueEffects, setActiveTechniqueEffects] = useState<TechniqueEffects | null>(null);
   
+  // === ESTADO PARA ATAQUE ESPECIAL (Combatente) ===
+  const { config: specialAttackConfig, setConfig: setSpecialAttackConfig, reset: resetSpecialAttack } = useSpecialAttackState();
+  
   // Detecta se pode usar Técnica Secreta (Aniquilador NEX 40%+ com arma favorita)
   const canUseTechniqueSecreta = useMemo(() => {
     const isAniquilador = classTrack?.toLowerCase().includes('aniquilador');
     return isAniquilador && nex >= 40 && isFavoriteWeapon;
   }, [classTrack, nex, isFavoriteWeapon]);
+  
+  // Detecta poderes relacionados ao Ataque Especial
+  const hasForcaBruta = useMemo(() => hasForcaBrutaAbility(abilities), [abilities]);
+  const isMeleeForSpecialAttack = useMemo(() => isMeleeWeapon(weapon?.type), [weapon?.type]);
+  
+  // Calcula bônus do Ataque Especial
+  const specialAttackResult = useMemo(() => {
+    return calculateSpecialAttackFinal(
+      nex,
+      specialAttackConfig,
+      hasForcaBruta,
+      advancedBonuses.potenciaMaxima || false,
+      isMeleeForSpecialAttack
+    );
+  }, [nex, specialAttackConfig, hasForcaBruta, advancedBonuses.potenciaMaxima, isMeleeForSpecialAttack]);
 
   // Reset ao abrir/fechar
   const handleClose = () => {
@@ -340,6 +366,7 @@ export function CombatRollModal({
     setManualDamageMod(0);
     setTargetDefense(null);
     setActiveTechniqueEffects(null);
+    resetSpecialAttack();
     onClose();
   };
   
@@ -377,30 +404,12 @@ export function CombatRollModal({
   }, [weapon, skills]);
 
   // Calcular bônus disponíveis baseado nas habilidades do personagem
+  // NOTA: Ataque Especial agora é gerenciado pelo SpecialAttackSelector (distribuição flexível)
   const availableBonuses = useMemo((): CombatBonus[] => {
     const bonuses: CombatBonus[] = [];
 
     // === BÔNUS DE CLASSE ===
-    
-    // Ataque Especial (Combatente)
-    if (abilities.some(a => a.toLowerCase().includes('ataque especial'))) {
-      bonuses.push({
-        id: 'ataque-especial-ataque',
-        name: 'Ataque Especial (+5 ataque)',
-        source: 'class',
-        attackBonus: 5,
-        peCost: 2,
-        description: 'Gasta 2 PE para +5 no teste de ataque',
-      });
-      bonuses.push({
-        id: 'ataque-especial-dano',
-        name: 'Ataque Especial (+5 dano)',
-        source: 'class',
-        damageBonus: 5,
-        peCost: 2,
-        description: 'Gasta 2 PE para +5 no dano',
-      });
-    }
+    // (Ataque Especial removido - agora usa SpecialAttackSelector com distribuição flexível)
 
     // Golpe Pesado (Combatente - Trilha Operações Especiais ou poder)
     if (abilities.some(a => a.toLowerCase().includes('golpe pesado'))) {
@@ -500,13 +509,20 @@ export function CombatRollModal({
     );
   };
 
-  // Calcular custo total de PE
+  // Calcular custo total de PE (incluindo Ataque Especial)
   const totalPECost = useMemo(() => {
-    return selectedBonuses.reduce((total, bonusId) => {
+    let total = selectedBonuses.reduce((sum, bonusId) => {
       const bonus = availableBonuses.find(b => b.id === bonusId);
-      return total + (bonus?.peCost || 0);
+      return sum + (bonus?.peCost || 0);
     }, 0);
-  }, [selectedBonuses, availableBonuses]);
+    
+    // Adicionar custo do Ataque Especial se ativo
+    if (specialAttackConfig.enabled) {
+      total += specialAttackResult.peCost;
+    }
+    
+    return total;
+  }, [selectedBonuses, availableBonuses, specialAttackConfig.enabled, specialAttackResult.peCost]);
 
   // Verificar se pode pagar o PE
   const canAffordPE = currentPE >= totalPECost;
@@ -556,11 +572,16 @@ export function CombatRollModal({
       if (bonus?.attackBonus) total += bonus.attackBonus;
     });
     
+    // === BÔNUS DO ATAQUE ESPECIAL (distribuição flexível) ===
+    if (specialAttackConfig.enabled && specialAttackResult.attackBonus > 0) {
+      total += specialAttackResult.attackBonus;
+    }
+    
     // Adicionar modificador manual do mestre
     total += manualAttackMod;
     
     return total;
-  }, [attackSkill.bonus, passiveBonuses, selectedBonuses, availableBonuses, classPowerBonuses, manualAttackMod, weaponBuffBonuses, unifiedEffects, weapon, trackCombatBonuses]);
+  }, [attackSkill.bonus, passiveBonuses, selectedBonuses, availableBonuses, classPowerBonuses, manualAttackMod, weaponBuffBonuses, unifiedEffects, weapon, trackCombatBonuses, specialAttackConfig.enabled, specialAttackResult.attackBonus]);
 
   // === Detalhamento das fontes de bônus de ataque para exibição ===
   const attackBonusSources = useMemo(() => {
@@ -663,6 +684,17 @@ export function CombatRollModal({
       }
     });
     
+    // === BÔNUS DO ATAQUE ESPECIAL (distribuição flexível) ===
+    if (specialAttackConfig.enabled && specialAttackResult.attackBonus > 0) {
+      sources.push({
+        label: 'Ataque Especial',
+        value: specialAttackResult.attackBonus,
+        type: 'power',
+        description: specialAttackResult.breakdown.filter(b => b.includes('ataque')).join('; ') || 
+          `+${specialAttackResult.attackBonus} no ataque`,
+      });
+    }
+    
     // Modificador manual do mestre
     if (manualAttackMod !== 0) {
       sources.push({
@@ -674,7 +706,7 @@ export function CombatRollModal({
     }
     
     return sources;
-  }, [attackSkill, classPowerBonuses, passiveBonuses, selectedBonuses, availableBonuses, manualAttackMod, weaponBuffBonuses, unifiedEffects, weapon, trackCombatBonuses]);
+  }, [attackSkill, classPowerBonuses, passiveBonuses, selectedBonuses, availableBonuses, manualAttackMod, weaponBuffBonuses, unifiedEffects, weapon, trackCombatBonuses, specialAttackConfig.enabled, specialAttackResult]);
 
   // === Detalhamento das fontes de bônus de dano para exibição ===
   const damageBonusSources = useMemo(() => {
@@ -808,6 +840,17 @@ export function CombatRollModal({
       }
     });
     
+    // === BÔNUS DO ATAQUE ESPECIAL (distribuição flexível) ===
+    if (specialAttackConfig.enabled && specialAttackResult.damageBonus > 0) {
+      sources.push({
+        label: 'Ataque Especial',
+        value: specialAttackResult.damageBonus,
+        type: 'power',
+        description: specialAttackResult.breakdown.filter(b => b.includes('dano')).join('; ') || 
+          `+${specialAttackResult.damageBonus} no dano`,
+      });
+    }
+    
     // Modificador manual de dano do mestre
     if (manualDamageMod !== 0) {
       sources.push({
@@ -819,7 +862,7 @@ export function CombatRollModal({
     }
     
     return sources;
-  }, [weapon, attributes, classPowerBonuses, passiveBonuses, selectedBonuses, availableBonuses, manualDamageMod, weaponBuffBonuses, unifiedEffects, trackCombatBonuses]);
+  }, [weapon, attributes, classPowerBonuses, passiveBonuses, selectedBonuses, availableBonuses, manualDamageMod, weaponBuffBonuses, unifiedEffects, trackCombatBonuses, specialAttackConfig.enabled, specialAttackResult]);
 
   // === MÁQUINA DE MATAR (Aniquilador NEX 99%) ===
   // Bônus automáticos quando atacando com arma favorita em NEX 99%
@@ -1004,8 +1047,15 @@ export function CombatRollModal({
       damageBonus += trackCombatBonuses.damageBonus;
     }
     
+    // === BÔNUS DO ATAQUE ESPECIAL (distribuição flexível) ===
+    // O bônus já está calculado com Força Bruta e Potência Máxima aplicados
+    if (specialAttackConfig.enabled && specialAttackResult.damageBonus > 0) {
+      damageBonus += specialAttackResult.damageBonus;
+    }
+    
     // Multiplicador para Potência Máxima (dobra bônus do Ataque Especial)
-    const potenciaMaximaMultiplier = advancedBonuses.potenciaMaxima && isMelee ? 2 : 1;
+    // NOTA: Já aplicado dentro do specialAttackResult, mantido apenas para outros poderes
+    const potenciaMaximaMultiplier = 1; // Desativado aqui, processado em specialAttackResult
     
     // Dados extras (de poderes como Golpe Pesado, origens, trilhas)
     let extraDiceCount = 0;
@@ -1617,6 +1667,20 @@ export function CombatRollModal({
                       ))}
                     </div>
                   </div>
+                )}
+
+                {/* === ATAQUE ESPECIAL (Combatente) com distribuição flexível === */}
+                {hasSpecialAttack(abilities) && (
+                  <SpecialAttackSelector
+                    nex={nex}
+                    abilities={abilities}
+                    weaponType={weapon.type}
+                    hasPotenciaMaxima={advancedBonuses.potenciaMaxima}
+                    currentPE={currentPE}
+                    config={specialAttackConfig}
+                    onConfigChange={setSpecialAttackConfig}
+                    variant="default"
+                  />
                 )}
 
                 {/* Bônus passivos */}

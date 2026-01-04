@@ -65,6 +65,14 @@ import { WeaponEntry } from './MobileCombatPanel';
 import { AniquiladorTechniqueModal, TechniqueEffects } from '@/components/character/AniquiladorTechniqueModal';
 import { getTrackCombatBonuses } from '@/lib/effects/track-effects-adapter';
 import { formatDamageFormula as formatBuffDamage } from '@/lib/rituals/legacy-exports';
+import { SpecialAttackSelector, useSpecialAttackState } from '@/components/character/SpecialAttackSelector';
+import {
+  getSpecialAttackOptions,
+  calculateSpecialAttackFinal,
+  hasSpecialAttack,
+  hasForcaBrutaAbility,
+  isMeleeWeapon,
+} from '@/lib/class-powers/special-attack-utils';
 
 // Interface para bônus selecionável
 interface CombatBonus {
@@ -244,6 +252,9 @@ export function MobileCombatRollModal({
   const [showTechniqueModal, setShowTechniqueModal] = useState(false);
   const [activeTechniqueEffects, setActiveTechniqueEffects] = useState<TechniqueEffects | null>(null);
   
+  // === ESTADO PARA ATAQUE ESPECIAL (Combatente) ===
+  const { config: specialAttackConfig, setConfig: setSpecialAttackConfig, reset: resetSpecialAttack } = useSpecialAttackState();
+  
   // Detecta tipo de ataque baseado na arma
   const attackType: 'melee' | 'ranged' = useMemo(() => {
     if (!weapon) return 'melee';
@@ -264,6 +275,21 @@ export function MobileCombatRollModal({
     const isAniquilador = classTrack?.toLowerCase().includes('aniquilador');
     return isAniquilador && nex >= 99 && weaponIsFavorite;
   }, [classTrack, nex, weaponIsFavorite]);
+  
+  // Detecta poderes relacionados ao Ataque Especial
+  const hasForcaBruta = useMemo(() => hasForcaBrutaAbility(abilities), [abilities]);
+  const isMeleeForSpecialAttack = useMemo(() => isMeleeWeapon(weapon?.type), [weapon?.type]);
+  
+  // Calcula bônus do Ataque Especial
+  const specialAttackResult = useMemo(() => {
+    return calculateSpecialAttackFinal(
+      nex,
+      specialAttackConfig,
+      hasForcaBruta,
+      advancedBonuses.potenciaMaxima || false,
+      isMeleeForSpecialAttack
+    );
+  }, [nex, specialAttackConfig, hasForcaBruta, advancedBonuses.potenciaMaxima, isMeleeForSpecialAttack]);
   
   // Obtém bônus de trilha consolidados
   const trackCombatBonuses = useMemo(() => {
@@ -331,8 +357,9 @@ export function MobileCombatRollModal({
     setTargetDefense(null);
     setIsRolling(false);
     setActiveTechniqueEffects(null);
+    resetSpecialAttack();
     onClose();
-  }, [onClose]);
+  }, [onClose, resetSpecialAttack]);
   
   // Handler para confirmar técnicas do Aniquilador
   const handleConfirmTechnique = useCallback((effects: TechniqueEffects) => {
@@ -369,24 +396,7 @@ export function MobileCombatRollModal({
     const isMelee = weapon?.type === 'Corpo a Corpo' || weapon?.type === 'Briga';
     
     // === BÔNUS DE CLASSE ===
-    if (abilities.some(a => a.toLowerCase().includes('ataque especial'))) {
-      bonuses.push({
-        id: 'ataque-especial-ataque',
-        name: 'Ataque Especial (+5 atk)',
-        source: 'class',
-        attackBonus: 5,
-        peCost: 2,
-        description: '+5 no ataque por 2 PE',
-      });
-      bonuses.push({
-        id: 'ataque-especial-dano',
-        name: 'Ataque Especial (+5 dano)',
-        source: 'class',
-        damageBonus: 5,
-        peCost: 2,
-        description: '+5 no dano por 2 PE',
-      });
-    }
+    // (Ataque Especial removido - agora usa SpecialAttackSelector com distribuição flexível)
 
     if (abilities.some(a => a.toLowerCase().includes('golpe pesado'))) {
       bonuses.push({
@@ -474,13 +484,17 @@ export function MobileCombatRollModal({
     );
   };
 
-  // Custo total de PE
+  // Custo total de PE (incluindo Ataque Especial)
   const totalPECost = useMemo(() => {
-    return selectedBonuses.reduce((total, bonusId) => {
+    let total = selectedBonuses.reduce((sum, bonusId) => {
       const bonus = availableBonuses.find(b => b.id === bonusId);
-      return total + (bonus?.peCost || 0);
+      return sum + (bonus?.peCost || 0);
     }, 0);
-  }, [selectedBonuses, availableBonuses]);
+    if (specialAttackConfig.enabled) {
+      total += specialAttackResult.peCost;
+    }
+    return total;
+  }, [selectedBonuses, availableBonuses, specialAttackConfig.enabled, specialAttackResult.peCost]);
 
   const canAffordPE = currentPE >= totalPECost;
 
@@ -516,11 +530,16 @@ export function MobileCombatRollModal({
       if (bonus?.attackBonus) total += bonus.attackBonus;
     });
     
+    // === BÔNUS DO ATAQUE ESPECIAL (distribuição flexível) ===
+    if (specialAttackConfig.enabled && specialAttackResult.attackBonus > 0) {
+      total += specialAttackResult.attackBonus;
+    }
+    
     // Modificador manual
     total += manualAttackMod;
     
     return total;
-  }, [attackSkill.bonus, selectedBonuses, availableBonuses, manualAttackMod, weaponBuffBonuses, unifiedEffects, weapon, trackCombatBonuses, passiveBonuses]);
+  }, [attackSkill.bonus, selectedBonuses, availableBonuses, manualAttackMod, weaponBuffBonuses, unifiedEffects, weapon, trackCombatBonuses, passiveBonuses, specialAttackConfig.enabled, specialAttackResult.attackBonus]);
 
   // Detalhamento das fontes de bônus de ataque - NOVO
   const attackBonusSources = useMemo(() => {
@@ -1088,6 +1107,20 @@ export function MobileCombatRollModal({
                       </div>
                     )}
                   </motion.div>
+                )}
+
+                {/* === ATAQUE ESPECIAL (Combatente) com distribuição flexível === */}
+                {hasSpecialAttack(abilities) && (
+                  <SpecialAttackSelector
+                    nex={nex}
+                    abilities={abilities}
+                    weaponType={weapon.type}
+                    hasPotenciaMaxima={advancedBonuses.potenciaMaxima}
+                    currentPE={currentPE}
+                    config={specialAttackConfig}
+                    onConfigChange={setSpecialAttackConfig}
+                    variant="compact"
+                  />
                 )}
 
                 {/* Bônus selecionáveis */}
