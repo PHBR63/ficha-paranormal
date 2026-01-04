@@ -48,6 +48,8 @@ export interface WeaponEntry {
   criticalMultiplier?: string;
   special?: string;
   notes?: string;
+  // Categoria da arma para proficiência (0=Simples, I=Tática, II=Pesada)
+  category?: '0' | 'I' | 'II';
 }
 
 // Interface para resistências
