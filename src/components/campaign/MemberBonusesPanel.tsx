@@ -2,9 +2,11 @@
  * MemberBonusesPanel - Painel para o mestre visualizar os bônus ativos dos jogadores
  * 
  * Mostra em tempo real os modificadores de cada personagem na campanha
+ * OTIMIZAÇÃO: Usa React Query com staleTime para reduzir requisições
  */
 
 import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Shield,
@@ -295,13 +297,12 @@ function MemberBonusCard({ member }: { member: MemberWithBonuses }) {
 }
 
 export function MemberBonusesPanel({ campaignId, className }: MemberBonusesPanelProps) {
-  const [members, setMembers] = useState<MemberWithBonuses[]>([]);
-  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Busca membros com bônus
-  const fetchMembers = async () => {
-    try {
+  // OTIMIZAÇÃO: Migrado para useQuery com staleTime de 3 minutos
+  const { data: members = [], isLoading: loading, refetch } = useQuery({
+    queryKey: ['campaign-members-bonuses', campaignId],
+    queryFn: async () => {
       const { data, error } = await supabase
         .from('campaign_members')
         .select(`
@@ -327,27 +328,17 @@ export function MemberBonusesPanel({ campaignId, className }: MemberBonusesPanel
       if (error) throw error;
 
       // Formata dados
-      const formatted = (data || []).map(m => ({
+      return (data || []).map(m => ({
         ...m,
         character: m.characters as any,
         profile: m.profiles as any,
       }));
+    },
+    staleTime: 3 * 60 * 1000,  // 3 minutos
+    gcTime: 5 * 60 * 1000,     // 5 minutos em cache
+  });
 
-      setMembers(formatted);
-    } catch (err) {
-      console.error('[MemberBonusesPanel] Erro ao buscar membros:', err);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
-
-  // Busca inicial
-  useEffect(() => {
-    fetchMembers();
-  }, [campaignId]);
-
-  // Escuta atualizações em tempo real
+  // Escuta atualizações em tempo real (invalidation)
   useEffect(() => {
     const channel = supabase
       .channel(`campaign-bonuses-${campaignId}`)
@@ -359,16 +350,9 @@ export function MemberBonusesPanel({ campaignId, className }: MemberBonusesPanel
           table: 'campaign_members',
           filter: `campaign_id=eq.${campaignId}`,
         },
-        (payload) => {
-          console.log('[MemberBonusesPanel] Bônus atualizado:', payload);
-          // Atualiza membro específico
-          setMembers(prev => 
-            prev.map(m => 
-              m.id === payload.new.id 
-                ? { ...m, active_bonuses: payload.new.active_bonuses, bonuses_updated_at: payload.new.bonuses_updated_at }
-                : m
-            )
-          );
+        () => {
+          // Invalida cache para refetch automático
+          refetch();
         }
       )
       .subscribe();
@@ -376,17 +360,19 @@ export function MemberBonusesPanel({ campaignId, className }: MemberBonusesPanel
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [campaignId]);
+  }, [campaignId, refetch]);
 
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     setRefreshing(true);
-    fetchMembers();
+    await refetch();
+    setRefreshing(false);
   };
 
   // Conta membros com bônus ativos
-  const membersWithBonuses = members.filter(m => 
-    m.active_bonuses?.activeSources?.length > 0
-  );
+  const membersWithBonuses = members.filter(m => {
+    const bonuses = m.active_bonuses as any;
+    return bonuses?.activeSources?.length > 0;
+  });
 
   if (loading) {
     return (

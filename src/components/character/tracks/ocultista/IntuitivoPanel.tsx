@@ -13,7 +13,7 @@
  * @module tracks/ocultista/IntuitivoPanel
  */
 
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { Brain, Check, ChevronDown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,6 +25,11 @@ import {
   useIntuitivoTrack, 
   type UseIntuitivoTrackProps,
 } from './useIntuitivoTrack';
+
+// Comparação customizada para evitar re-renders desnecessários
+function arePropsEqual(prev: IntutivoPanelProps, next: IntutivoPanelProps): boolean {
+  return prev.nex === next.nex && prev.classTrack === next.classTrack;
+}
 
 // =====================================================
 // PROPS DO COMPONENTE
@@ -38,7 +43,7 @@ export interface IntutivoPanelProps extends UseIntuitivoTrackProps {
 // COMPONENTE PRINCIPAL
 // =====================================================
 
-export function IntuitivoPanel(props: IntutivoPanelProps) {
+function IntutivoPanelComponent(props: IntutivoPanelProps) {
   const { className, nex } = props;
   const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(true);
@@ -196,3 +201,6 @@ export function IntuitivoPanel(props: IntutivoPanelProps) {
     </Card>
   );
 }
+
+// OTIMIZAÇÃO: React.memo com comparação customizada para evitar re-renders
+export const IntuitivoPanel = memo(IntutivoPanelComponent, arePropsEqual);

@@ -13,7 +13,7 @@
  * @module tracks/ocultista/ConduitePanel
  */
 
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { Waves, Zap, Timer, ShieldX, Check, Loader2, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -29,6 +29,11 @@ import {
 } from './useConduiteTrack';
 import type { EffectDuration } from '@/hooks/useActivatedEffects';
 
+// Comparação customizada para evitar re-renders desnecessários
+function arePropsEqual(prev: ConduitePanelProps, next: ConduitePanelProps): boolean {
+  return prev.nex === next.nex && prev.classTrack === next.classTrack && prev.peCurrent === next.peCurrent;
+}
+
 // =====================================================
 // PROPS DO COMPONENTE
 // =====================================================
@@ -42,7 +47,7 @@ export interface ConduitePanelProps extends UseConduiteTrackProps {
 // COMPONENTE PRINCIPAL
 // =====================================================
 
-export function ConduitePanel(props: ConduitePanelProps) {
+function ConduitePanelComponent(props: ConduitePanelProps) {
   const { className } = props;
   const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(true);
@@ -256,3 +261,6 @@ export function ConduitePanel(props: ConduitePanelProps) {
     </Card>
   );
 }
+
+// OTIMIZAÇÃO: React.memo com comparação customizada para evitar re-renders
+export const ConduitePanel = memo(ConduitePanelComponent, arePropsEqual);
