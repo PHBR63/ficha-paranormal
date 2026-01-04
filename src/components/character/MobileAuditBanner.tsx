@@ -313,7 +313,7 @@ export function MobileAuditBanner({
                       <div 
                         key={issue.id} 
                         className={cn(
-                          "p-2 rounded-lg border",
+                          "p-2 rounded-lg border transition-all duration-200 active:scale-[0.98]",
                           cardBg,
                           cardBorder
                         )}
