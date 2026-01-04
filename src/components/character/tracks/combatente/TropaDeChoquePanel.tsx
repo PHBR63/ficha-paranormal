@@ -182,7 +182,23 @@ function PassiveCard({
 // Componente Principal
 // =====================================================
 
-export function TropaDeChoquePanel(props: TropaDeChoquePanelProps) {
+import React from 'react';
+
+/**
+ * Comparação customizada para evitar re-renders desnecessários.
+ * Ignora peCurrent e currentHP pois mudanças não afetam a estrutura do painel.
+ */
+function arePropsEqual(prev: TropaDeChoquePanelProps, next: TropaDeChoquePanelProps): boolean {
+  return (
+    prev.classTrack === next.classTrack &&
+    prev.nex === next.nex &&
+    prev.className === next.className &&
+    prev.vigor === next.vigor &&
+    prev.onPEChange === next.onPEChange
+  );
+}
+
+function TropaDeChoquePanelComponent(props: TropaDeChoquePanelProps) {
   const isMobile = useIsMobile();
   const { className } = props;
 
@@ -416,3 +432,6 @@ export function TropaDeChoquePanel(props: TropaDeChoquePanelProps) {
     </Card>
   );
 }
+
+/** Componente exportado com memoização para otimização de performance */
+export const TropaDeChoquePanel = React.memo(TropaDeChoquePanelComponent, arePropsEqual);

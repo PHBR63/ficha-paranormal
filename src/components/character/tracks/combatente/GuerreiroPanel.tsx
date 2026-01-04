@@ -101,7 +101,23 @@ function ManeuverOptions({
 // Componente Principal
 // =====================================================
 
-export function GuerreiroPanel(props: GuerreiroPanelProps) {
+import React from 'react';
+
+/**
+ * Comparação customizada para evitar re-renders desnecessários.
+ * Ignora peCurrent pois mudanças de PE não afetam a estrutura do painel.
+ */
+function arePropsEqual(prev: GuerreiroPanelProps, next: GuerreiroPanelProps): boolean {
+  return (
+    prev.classTrack === next.classTrack &&
+    prev.nex === next.nex &&
+    prev.className === next.className &&
+    prev.onPEChange === next.onPEChange &&
+    prev.onActivateEffect === next.onActivateEffect
+  );
+}
+
+function GuerreiroPanelComponent(props: GuerreiroPanelProps) {
   const isMobile = useIsMobile();
   const { className, peCurrent } = props;
 
@@ -429,3 +445,6 @@ export function GuerreiroPanel(props: GuerreiroPanelProps) {
     </>
   );
 }
+
+/** Componente exportado com memoização para otimização de performance */
+export const GuerreiroPanel = React.memo(GuerreiroPanelComponent, arePropsEqual);
