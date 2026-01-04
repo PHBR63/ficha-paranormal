@@ -114,7 +114,7 @@ export const CONDITIONAL_BONUS_CATALOG: ConditionalBonusDefinition[] = [
     source: 'ability',
     condition: 'Ação agredir (até próximo turno)',
     mechanics: {
-      attackBonus: -5,
+      attackBonus: -2, // Penalidade oficial do livro
       defenseBonus: 5,
     },
     requirements: { ability: 'combate defensivo' },

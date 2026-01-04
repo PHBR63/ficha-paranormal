@@ -425,6 +425,20 @@ export function MobileCombatRollModal({
         description: 'Dois ataques com duas armas. Penalidade de -2 em todos os testes de ataque.',
       });
     }
+
+    // Combate Defensivo (Combatente) - Penalidade de -2 no ataque, +5 Defesa
+    if (abilities.some(a => 
+      a.toLowerCase().includes('combate defensivo')
+    )) {
+      bonuses.push({
+        id: 'combate-defensivo',
+        name: 'Combate Defensivo (-2 ataque, +5 Def)',
+        source: 'class',
+        attackBonus: -2,
+        peCost: 0,
+        description: 'Sofre -2 em ataques, mas recebe +5 na Defesa até o próximo turno.',
+      });
+    }
     
     // Tiro Certeiro (Especialista)
     if (abilities.some(a => a.toLowerCase().includes('tiro certeiro')) && 

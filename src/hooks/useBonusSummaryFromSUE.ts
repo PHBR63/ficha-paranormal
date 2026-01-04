@@ -371,12 +371,12 @@ export function useBonusSummaryFromSUE({
         name: 'Combate Defensivo',
         condition: 'Ação agredir (até próximo turno)',
         active: isActive,
-        effects: ['+5 Defesa', '-5 ataque'],
+        effects: ['+5 Defesa', '-2 ataque'],
         source: 'ability',
       });
       if (isActive) {
-        combat.attack.total -= 5;
-        combat.attack.breakdown.push(convertToBreakdown('Combate Defensivo', -5, 'ability', 'modo defensivo ativo'));
+        combat.attack.total -= 2;
+        combat.attack.breakdown.push(convertToBreakdown('Combate Defensivo', -2, 'ability', 'modo defensivo ativo'));
       }
     }
     

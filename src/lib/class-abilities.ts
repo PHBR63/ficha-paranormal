@@ -143,14 +143,14 @@ export const COMBATENTE_ABILITIES: ClassAbility[] = [
   { 
     id: 'combate-defensivo', 
     name: 'Combate Defensivo', 
-    description: 'Quando usa a ação agredir, você pode combater defensivamente. Se fizer isso, até seu próximo turno, sofre –5 em todos os testes de ataque, mas recebe +5 na Defesa. Pré-requisito: Int 2.', 
+    description: 'Quando usa a ação agredir, você pode combater defensivamente. Se fizer isso, até seu próximo turno, sofre –2 em todos os testes de ataque, mas recebe +5 na Defesa. Pré-requisito: Int 2.', 
     minNex: 15, 
     classId: 'Combatente' 
   },
   { 
     id: 'golpe-demolidor', 
     name: 'Golpe Demolidor', 
-    description: 'Quando usa a manobra quebrar ou ataca um objeto, você pode gastar 1 PE para causar dois dados de dano extra do mesmo tipo de sua arma. Pré-requisitos: For 2, treinado em Luta.', 
+    description: 'Quando usa a manobra quebrar ou ataca um objeto, você pode gastar 1 PE para causar o dobro de dano, do mesmo tipo de dano da sua arma. Pré-requisitos: For 2, treinado em Luta.', 
     minNex: 15, 
     classId: 'Combatente' 
   },
