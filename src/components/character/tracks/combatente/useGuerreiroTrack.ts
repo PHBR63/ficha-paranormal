@@ -66,8 +66,8 @@ export const GUERREIRO_ABILITIES: GuerreiroAbility[] = [
     minNex: 40,
     peCost: 2,
     actionType: 'reaction',
-    trigger: 'Após bloquear um ataque corpo a corpo',
-    description: 'Quando você bloqueia um ataque corpo a corpo, pode gastar uma reação e 2 PE para fazer um ataque corpo a corpo contra o inimigo que o atacou.',
+    trigger: 'Após bloquear um ataque',
+    description: 'Sempre que bloquear um ataque, você pode gastar 1 reação e 2 PE para fazer um ataque corpo a corpo no inimigo que o atacou.',
     shortEffect: 'Contra-ataque após bloquear',
   },
   {
