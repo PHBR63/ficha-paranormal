@@ -1069,6 +1069,12 @@ export function InventoryPanel({
           }}
           currentModifications={(weaponToModify as any).appliedModifications || []}
           onApplyModifications={handleApplyWeaponModifications}
+          isFavorite={!!weaponToModify.favoriteAbilityId}
+          favoriteReduction={
+            weaponToModify.favoriteAbilityId 
+              ? getCategoryReductionAbility(weaponToModify.favoriteAbilityId)?.reductionAmount 
+              : undefined
+          }
         />
       )}
       <Dialog open={useItemConfirmOpen} onOpenChange={setUseItemConfirmOpen}>

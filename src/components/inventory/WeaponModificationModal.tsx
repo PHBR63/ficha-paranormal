@@ -20,7 +20,7 @@ import { Separator } from '@/components/ui/separator';
 import { 
   Target, Skull, EyeOff, AlertTriangle, Wrench,
   Maximize2, CircleDot, Crosshair, Focus,
-  Swords, ArrowUp, Shield, Sparkles
+  Swords, ArrowUp, ArrowDown, Shield, Sparkles, Star, Check
 } from 'lucide-react';
 import {
   type CatalogWeapon,
@@ -51,6 +51,10 @@ interface WeaponModificationModalProps {
   weapon: CatalogWeapon;
   currentModifications: WeaponModification[];
   onApplyModifications: (modifications: WeaponModification[]) => void;
+  /** Redução de categoria por habilidade de favorita (1, 2 ou 3) */
+  favoriteReduction?: number;
+  /** Se a arma está marcada como favorita */
+  isFavorite?: boolean;
 }
 
 // Componente para badge de categoria
@@ -77,21 +81,64 @@ export function WeaponModificationModal({
   weapon,
   currentModifications,
   onApplyModifications,
+  favoriteReduction,
+  isFavorite,
 }: WeaponModificationModalProps) {
   // Estado local para modificações selecionadas
   const [selectedMods, setSelectedMods] = useState<WeaponModification[]>(currentModifications);
   
-  // Modificações disponíveis para esta arma
-  const availableModifications = useMemo(() => 
-    getAvailableModifications(weapon),
-    [weapon]
+  // Modificações já aplicadas (para exibir com indicador visual)
+  const alreadyAppliedMods = useMemo(() => new Set(currentModifications), [currentModifications]);
+  
+  // Modificações disponíveis para esta arma (excluindo as já aplicadas - novas para adicionar)
+  const newAvailableModifications = useMemo(() => 
+    getAvailableModifications(weapon, currentModifications),
+    [weapon, currentModifications]
   );
+  
+  // Todas as modificações para exibir: já aplicadas + novas disponíveis
+  const displayModifications = useMemo(() => {
+    const applied = currentModifications
+      .map(id => getWeaponModificationById(id))
+      .filter(Boolean) as WeaponModificationData[];
+    
+    // Junta aplicadas + novas disponíveis, sem duplicatas
+    const allMods = [...applied];
+    newAvailableModifications.forEach(mod => {
+      if (!allMods.some(m => m.id === mod.id)) {
+        allMods.push(mod);
+      }
+    });
+    
+    return allMods;
+  }, [newAvailableModifications, currentModifications]);
   
   // Estatísticas calculadas com modificações selecionadas
   const modifiedStats = useMemo(() => 
     calculateModifiedWeaponStats(weapon, selectedMods),
     [weapon, selectedMods]
   );
+  
+  // Ordem de categorias para cálculo
+  const CATEGORY_ORDER = ['0', 'I', 'II', 'III', 'IV'] as const;
+  
+  // Calcular categoria efetiva final (modificações + favorita)
+  const effectiveFinalCategory = useMemo(() => {
+    // Primeiro aplica aumentos de modificações
+    const modifiedCategory = modifiedStats.finalCategory;
+    
+    // Se não tem redução de favorita, retorna categoria modificada
+    if (!favoriteReduction || !isFavorite) {
+      return modifiedCategory;
+    }
+    
+    // Aplica redução de favorita sobre categoria modificada
+    const currentIndex = CATEGORY_ORDER.indexOf(modifiedCategory as typeof CATEGORY_ORDER[number]);
+    if (currentIndex === -1) return modifiedCategory;
+    
+    const newIndex = Math.max(0, currentIndex - favoriteReduction);
+    return CATEGORY_ORDER[newIndex] as CatalogWeapon['category'];
+  }, [modifiedStats.finalCategory, favoriteReduction, isFavorite]);
   
   // Toggle de modificação
   const toggleModification = (modId: WeaponModification) => {
@@ -142,16 +189,17 @@ export function WeaponModificationModal({
               </h4>
               
               <div className="space-y-2">
-                {availableModifications.length === 0 ? (
+                {displayModifications.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-4">
                     Esta arma não pode ser modificada.
                   </p>
                 ) : (
-                  availableModifications.map((mod) => (
+                  displayModifications.map((mod) => (
                     <ModificationCard
                       key={mod.id}
                       modification={mod}
                       isSelected={selectedMods.includes(mod.id)}
+                      isApplied={alreadyAppliedMods.has(mod.id)}
                       onToggle={() => toggleModification(mod.id)}
                     />
                   ))
@@ -170,12 +218,26 @@ export function WeaponModificationModal({
                 {/* Categoria */}
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">Categoria:</span>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap justify-end">
+                    {/* Categoria base */}
                     <CategoryBadge category={weapon.category} />
+                    
+                    {/* Após modificações (se houver aumento) */}
                     {categoryChanged && (
                       <>
                         <ArrowUp className="h-4 w-4 text-amber-500" />
                         <CategoryBadge category={modifiedStats.finalCategory} />
+                      </>
+                    )}
+                    
+                    {/* Categoria efetiva final (com favorita) */}
+                    {isFavorite && favoriteReduction && effectiveFinalCategory !== modifiedStats.finalCategory && (
+                      <>
+                        <ArrowDown className="h-4 w-4 text-yellow-500" />
+                        <div className="relative">
+                          <CategoryBadge category={effectiveFinalCategory} />
+                          <Star className="absolute -top-1 -right-1 w-3 h-3 fill-yellow-400 text-yellow-400" />
+                        </div>
                       </>
                     )}
                   </div>
@@ -265,7 +327,18 @@ export function WeaponModificationModal({
                 <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3">
                   <p className="text-xs text-amber-400">
                     ⚠️ As modificações aumentarão a categoria da arma de {weapon.category} para {modifiedStats.finalCategory}.
-                    Verifique se sua patente permite equipar armas dessa categoria.
+                    {isFavorite && favoriteReduction 
+                      ? ` Com sua arma favorita, a categoria efetiva será ${effectiveFinalCategory}.`
+                      : ' Verifique se sua patente permite equipar armas dessa categoria.'}
+                  </p>
+                </div>
+              )}
+              
+              {/* Aviso explicativo de arma favorita */}
+              {isFavorite && favoriteReduction && (
+                <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3">
+                  <p className="text-xs text-yellow-400">
+                    ⭐ Arma Favorita: A redução de -{favoriteReduction} categoria é aplicada sobre o resultado final (base + modificações).
                   </p>
                 </div>
               )}
@@ -293,10 +366,13 @@ export function WeaponModificationModal({
 function ModificationCard({
   modification,
   isSelected,
+  isApplied,
   onToggle,
 }: {
   modification: WeaponModificationData;
   isSelected: boolean;
+  /** Indica se a modificação já estava aplicada antes de abrir o modal */
+  isApplied: boolean;
   onToggle: () => void;
 }) {
   const labelData = MODIFICATION_LABELS[modification.id];
@@ -306,9 +382,11 @@ function ModificationCard({
     <div 
       className={`
         p-3 rounded-lg border cursor-pointer transition-all
-        ${isSelected 
-          ? 'bg-primary/10 border-primary/50' 
-          : 'bg-muted/20 border-border hover:border-primary/30'
+        ${isApplied && isSelected
+          ? 'bg-green-500/10 border-green-500/50' 
+          : isSelected 
+            ? 'bg-primary/10 border-primary/50' 
+            : 'bg-muted/20 border-border hover:border-primary/30'
         }
       `}
       onClick={onToggle}
@@ -321,12 +399,18 @@ function ModificationCard({
         />
         
         <div className="flex-1 space-y-1">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             {IconComponent && <IconComponent className={`h-4 w-4 ${labelData?.color || ''}`} />}
             <span className="font-medium text-sm">{modification.name}</span>
             {modification.categoryIncrease > 0 && (
               <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-400 border-amber-500/30">
                 +{modification.categoryIncrease} Cat
+              </Badge>
+            )}
+            {isApplied && isSelected && (
+              <Badge variant="secondary" className="text-xs bg-green-500/20 text-green-400 border-green-500/30">
+                <Check className="w-3 h-3 mr-1" />
+                Aplicada
               </Badge>
             )}
           </div>
