@@ -24,6 +24,9 @@ export type ActionType = 'reaction' | 'standard';
 /** Alcance das habilidades */
 export type RangeType = 'short' | 'medium';
 
+/** Tipos de máximo de aliados afetados */
+export type MaxAlliesType = number | 'intellect' | 'all-visible';
+
 /** Definição de habilidade de liderança */
 export interface LeadershipAbility {
   id: string;
@@ -34,7 +37,7 @@ export interface LeadershipAbility {
   range: RangeType;
   description: string;
   shortEffect: string;
-  maxAllies?: number | 'intellect';
+  maxAllies?: MaxAlliesType;
   perRound?: boolean;
   costPerTarget?: boolean;
 }
@@ -48,15 +51,16 @@ export const COMANDANTE_EFFECT_IDS = {
 } as const;
 
 /** Habilidades do Comandante de Campo */
-export const COMANDANTE_ABILITIES: LeadershipAbility[] = [
+/** Habilidades base do Comandante de Campo (alcances atualizados dinamicamente) */
+export const COMANDANTE_ABILITIES_BASE: LeadershipAbility[] = [
   {
     id: 'inspirar-confianca',
     name: 'Inspirar Confiança',
     minNex: 10,
     peCost: 2,
     actionType: 'reaction',
-    range: 'short',
-    description: 'Quando um aliado em alcance curto faz um teste e erra, você pode gastar uma reação e 2 PE para fazer o aliado repetir o teste.',
+    range: 'short', // Atualizado para 'medium' a partir de NEX 65%
+    description: 'Sua liderança inspira seus aliados. Você pode gastar uma reação e 2 PE para fazer um aliado em alcance curto rolar novamente um teste recém realizado.',
     shortEffect: 'Aliado rerola teste',
     maxAllies: 1,
   },
@@ -64,13 +68,13 @@ export const COMANDANTE_ABILITIES: LeadershipAbility[] = [
     id: 'estrategista',
     name: 'Estrategista',
     minNex: 40,
-    peCost: 1,
+    peCost: 1, // 1 PE TOTAL, não por aliado
     actionType: 'standard',
-    range: 'short',
-    description: 'Você pode gastar uma ação padrão e 1 PE por aliado em alcance curto (máximo igual ao seu Intelecto) para fazer esses aliados moverem-se 1 quadrado (1,5m).',
-    shortEffect: '+1 movimento para aliados',
+    range: 'short', // Atualizado para 'medium' a partir de NEX 65%
+    description: 'Você pode direcionar aliados em alcance curto. Gaste uma ação padrão e 1 PE para direcionar aliados (máximo igual ao seu Intelecto). No próximo turno dos aliados afetados, eles ganham uma ação de movimento adicional.',
+    shortEffect: '+1 ação de movimento',
     maxAllies: 'intellect',
-    costPerTarget: true,
+    costPerTarget: false, // 1 PE total
   },
   {
     id: 'brecha-na-guarda',
@@ -78,9 +82,9 @@ export const COMANDANTE_ABILITIES: LeadershipAbility[] = [
     minNex: 65,
     peCost: 2,
     actionType: 'reaction',
-    range: 'medium',
-    description: 'Quando você acerta um ataque contra um inimigo, pode gastar uma reação e 2 PE para fazer um aliado em alcance médio realizar um ataque contra o mesmo inimigo.',
-    shortEffect: 'Aliado faz ataque extra',
+    range: 'short', // Alcance do inimigo em relação a você
+    description: 'Uma vez por rodada, quando um aliado causar dano em um inimigo que esteja em seu alcance curto, você pode gastar uma reação e 2 PE para que você ou outro aliado em alcance curto faça um ataque adicional contra o mesmo inimigo.',
+    shortEffect: 'Ataque extra (você ou aliado)',
     maxAllies: 1,
     perRound: true,
   },
@@ -91,8 +95,9 @@ export const COMANDANTE_ABILITIES: LeadershipAbility[] = [
     peCost: 5,
     actionType: 'standard',
     range: 'medium',
-    description: 'Você pode gastar uma ação padrão e 5 PE para fazer um aliado em alcance médio realizar uma ação padrão.',
-    shortEffect: '+1 ação padrão para aliado',
+    description: 'Você pode gastar uma ação padrão e 5 PE para que cada aliado que você possa ver em alcance médio receba uma ação padrão adicional no próximo turno dele.',
+    shortEffect: '+1 ação padrão (todos visíveis)',
+    maxAllies: 'all-visible',
   },
 ];
 
@@ -139,11 +144,28 @@ export function useComandanteCampoTrack({
     return trackNorm.includes('comandante') || trackNorm === 'comandante-campo';
   }, [classTrack]);
 
-  // Habilidades desbloqueadas
+  // Verifica se tem upgrade de alcance (NEX >= 65, conforme Brecha na Guarda)
+  const hasRangeUpgrade = nex >= 65;
+
+  // Habilidades desbloqueadas com alcance dinâmico
   const unlockedAbilities = useMemo(() => {
     if (!isComandanteCampo) return [];
-    return COMANDANTE_ABILITIES.filter(a => nex >= a.minNex);
-  }, [isComandanteCampo, nex]);
+    
+    return COMANDANTE_ABILITIES_BASE
+      .filter(a => nex >= a.minNex)
+      .map(ability => {
+        // Atualiza alcance de Inspirar Confiança e Estrategista se NEX >= 65
+        if (hasRangeUpgrade && (ability.id === 'inspirar-confianca' || ability.id === 'estrategista')) {
+          return {
+            ...ability,
+            range: 'medium' as RangeType,
+            // Atualiza descrição para refletir novo alcance
+            description: ability.description.replace('alcance curto', 'alcance médio'),
+          };
+        }
+        return ability;
+      });
+  }, [isComandanteCampo, nex, hasRangeUpgrade]);
 
   // Máximo de aliados para Estrategista
   const maxAlliesForEstrategista = Math.max(1, intellect);
@@ -201,8 +223,9 @@ export function useComandanteCampoTrack({
   const canAfford = useCallback((peCost: number) => peCurrent >= peCost, [peCurrent]);
 
   // Calcula número de aliados baseado em tipo
-  const getMaxAllies = useCallback((maxAllies: number | 'intellect' | undefined) => {
+  const getMaxAllies = useCallback((maxAllies: MaxAlliesType | undefined): number => {
     if (maxAllies === 'intellect') return maxAlliesForEstrategista;
+    if (maxAllies === 'all-visible') return Infinity; // Todos visíveis
     return maxAllies ?? 1;
   }, [maxAlliesForEstrategista]);
 

@@ -188,15 +188,15 @@ export const COMBATENTE_TRACKS: UnifiedTrack[] = [
         name: 'Estrategista',
         trackId: 'comandante-campo',
         minNex: 40,
-        description: 'Você pode direcionar aliados em alcance curto. Gaste uma ação padrão e 1 PE por aliado que quiser direcionar (limitado pelo seu Intelecto). No próximo turno dos aliados afetados, eles ganham uma ação de movimento adicional.',
+        description: 'Você pode direcionar aliados em alcance curto. Gaste uma ação padrão e 1 PE para direcionar aliados (máximo igual ao seu Intelecto). No próximo turno dos aliados afetados, eles ganham uma ação de movimento adicional.',
         pageReference: 'Livro Base p.47',
         effects: {
           base: {
             kind: 'activated',
             activation: {
-              cost: 1, // Por aliado
+              cost: 1, // 1 PE total
               action: 'standard',
-              costPerTarget: true
+              costPerTarget: false // Corrigido: 1 PE total, não por aliado
             },
             leadership: {
               range: 'short',
