@@ -202,11 +202,10 @@ export function VersatilitySection({
         <AnimatePresence>
           {showTracks && (
             <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
+              initial={{ opacity: 0, height: 0, overflow: 'hidden' }}
+              animate={{ opacity: 1, height: 'auto', overflow: 'visible' }}
+              exit={{ opacity: 0, height: 0, overflow: 'hidden' }}
               transition={{ duration: 0.2 }}
-              className="overflow-hidden"
             >
               <div className="pt-2 border-t border-border">
                 <div className="flex items-center gap-2 mb-3">
@@ -216,8 +215,12 @@ export function VersatilitySection({
                   </span>
                 </div>
                 
-                <ScrollArea className={compact ? "max-h-[200px]" : "max-h-[300px]"}>
-                  <div className="space-y-2 pr-4">
+                <ScrollArea className={cn(
+                  compact 
+                    ? tracksWithAbilities.length > 2 ? "h-[200px]" : "max-h-[200px]"
+                    : tracksWithAbilities.length > 3 ? "h-[300px]" : "max-h-[300px]"
+                )}>
+                  <div className="space-y-2 pr-3">
                     {tracksWithAbilities.map(({ track, firstAbility }) => {
                       const isSelected = selected?.trackId === track.id;
                       
