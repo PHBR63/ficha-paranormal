@@ -53,7 +53,7 @@ export const OPERACOES_ABILITIES: OperacoesAbility[] = [
     name: 'Ataque Extra',
     minNex: 40,
     peCost: 2,
-    description: 'Você pode gastar 2 PE para fazer um ataque adicional quando usa a ação agredir. Você pode usar esta habilidade uma vez por rodada.',
+    description: 'Uma vez por rodada, quando faz um ataque, você pode gastar 2 PE para fazer um ataque adicional.',
     shortEffect: '+1 ataque',
     perRound: true,
   },
@@ -82,7 +82,7 @@ export const PASSIVE_ABILITIES: PassiveAbility[] = [
     id: 'sempre-alerta',
     name: 'Sempre Alerta',
     minNex: 99,
-    description: 'No início de cada combate, você pode realizar uma ação padrão antes de todos os outros personagens.',
+    description: 'Você recebe 1 ação padrão adicional no início de cada cena de combate.',
     effect: '+1 ação padrão (início combate)',
   },
 ];
