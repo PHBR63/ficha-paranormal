@@ -15,12 +15,14 @@ import {
   ChevronRight,
   MoreVertical,
   Eye,
+  Star,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { MobileActionSheet, useActionSheet } from '@/components/ui/mobile-action-sheet';
 import type { ExtendedInventoryItem } from './InventoryPanel';
 import type { WeaponModification } from '@/lib/catalogs';
+import type { CategoryReductionConfig } from '@/lib/category-reduction';
 
 const CATEGORY_LABELS: Record<string, { label: string; color: string }> = {
   '0': { label: 'Sem Cat.', color: 'bg-muted text-muted-foreground' },
@@ -50,6 +52,8 @@ interface MobileInventoryCardProps {
   onUse?: (id: string) => void;
   onModify?: (item: ExtendedInventoryItem) => void;
   onViewDetails?: (item: ExtendedInventoryItem) => void;
+  onToggleFavorite?: (item: ExtendedInventoryItem) => void;
+  availableAbilities?: CategoryReductionConfig[];
 }
 
 export function MobileInventoryCard({ 
@@ -59,7 +63,9 @@ export function MobileInventoryCard({
   onUnequip, 
   onUse, 
   onModify, 
-  onViewDetails 
+  onViewDetails,
+  onToggleFavorite,
+  availableAbilities,
 }: MobileInventoryCardProps) {
   const [isDragging, setIsDragging] = useState(false);
   const x = useMotionValue(0);
@@ -78,6 +84,13 @@ export function MobileInventoryCard({
       label: 'Ver Detalhes',
       icon: Eye,
       onPress: () => onViewDetails(item),
+    }] : []),
+    ...(onToggleFavorite && item.itemType === 'weapon' && availableAbilities?.length ? [{
+      id: 'favorite',
+      label: item.favoriteAbilityId ? 'Remover Favorita' : 'Marcar Favorita',
+      icon: Star,
+      description: availableAbilities[0]?.description,
+      onPress: () => onToggleFavorite(item),
     }] : []),
     ...(onEquip && !item.isEquipped ? [{
       id: 'equip',

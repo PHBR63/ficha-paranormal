@@ -11,6 +11,7 @@
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useIsMobile } from '@/hooks';
+import { useCharacterCategoryReductions, type ExtendedInventoryItemWithReduction } from '@/hooks/useCharacterCategoryReductions';
 import { MobileInventoryCard } from './MobileInventoryCard';
 import { VirtualizedInventoryList, VIRTUALIZATION_THRESHOLD } from './VirtualizedInventoryList';
 import { 
@@ -277,6 +278,35 @@ export function InventoryPanel({
     intellect: characterData?.intellect,
     hasInventarioOtimizado: hasInvOtimizado,
   }), [characterData?.intellect, hasInvOtimizado]);
+
+  // Hook de redução de categoria (A Favorita, Ferramenta Favorita, etc.)
+  const categoryReductionData = useMemo(() => ({
+    origin: characterData?.origin || '',
+    classId: characterData?.classId || '',
+    classTrack: characterData?.classTrack,
+    nex: characterData?.nex || 0,
+    abilities: characterData?.abilities || [],
+    powers: characterData?.powers || [],
+    generalPowers: characterData?.generalPowers || [],
+  }), [characterData]);
+
+  const {
+    availableAbilities: categoryAbilities,
+    toggleFavorite,
+    inventoryWithEffectiveCategories,
+  } = useCharacterCategoryReductions({
+    characterData: categoryReductionData,
+    inventory: inventory as ExtendedInventoryItemWithReduction[],
+    onInventoryChange: onInventoryChange as ((inv: ExtendedInventoryItemWithReduction[]) => void) | undefined,
+  });
+
+  // Handler para toggle de favorita
+  const handleToggleFavorite = useCallback((item: ExtendedInventoryItem) => {
+    if (categoryAbilities.length === 0) return;
+    // Usa a primeira habilidade disponível ou remove se já está marcada
+    const abilityId = item.favoriteAbilityId || categoryAbilities[0].abilityId;
+    toggleFavorite(item.id, abilityId);
+  }, [categoryAbilities, toggleFavorite]);
 
   // Calcular status de carga (com suporte a Inventário Otimizado)
   const loadStatus = useMemo(() => getLoadStatus(inventory, strength, carryOptions), [inventory, strength, carryOptions]);
@@ -1130,6 +1160,11 @@ export function InventoryPanel({
         onUnequip={!readOnly ? handleUnequipItem : undefined}
         onUse={!readOnly ? handleRequestUseItem : undefined}
         onRemove={!readOnly ? handleRemoveItem : undefined}
+        onToggleFavorite={!readOnly && categoryAbilities.length > 0 ? (id) => {
+          const item = inventory.find(i => i.id === id);
+          if (item) handleToggleFavorite(item);
+        } : undefined}
+        canBeFavorite={!readOnly && categoryAbilities.length > 0 && selectedItem?.itemType === 'weapon'}
       />
 
       {showEquipment && (
@@ -1304,6 +1339,8 @@ export function InventoryPanel({
                           onUnequip={!readOnly && item.isEquipped ? handleUnequipItem : undefined}
                           onUse={!readOnly && canUseItem(item) ? handleRequestUseItem : undefined}
                           onModify={!readOnly && item.itemType === 'weapon' ? handleOpenWeaponMod : undefined}
+                          onToggleFavorite={!readOnly && categoryAbilities.length > 0 && item.itemType === 'weapon' ? handleToggleFavorite : undefined}
+                          availableAbilities={categoryAbilities}
                           onViewDetails={(itemToView) => {
                             setSelectedItem(itemToView);
                             setItemDetailOpen(true);
@@ -1318,6 +1355,8 @@ export function InventoryPanel({
                           onUnequip={!readOnly && item.isEquipped ? handleUnequipItem : undefined}
                           onUse={!readOnly && canUseItem(item) ? handleRequestUseItem : undefined}
                           onModify={!readOnly && item.itemType === 'weapon' ? handleOpenWeaponMod : undefined}
+                          onToggleFavorite={!readOnly && categoryAbilities.length > 0 && item.itemType === 'weapon' ? handleToggleFavorite : undefined}
+                          availableAbilities={categoryAbilities}
                           onViewDetails={(itemToView) => {
                             setSelectedItem(itemToView);
                             setItemDetailOpen(true);
@@ -1338,6 +1377,8 @@ export function InventoryPanel({
                           onUnequip={!readOnly && item.isEquipped ? handleUnequipItem : undefined}
                           onUse={!readOnly && canUseItem(item) ? handleRequestUseItem : undefined}
                           onModify={!readOnly && item.itemType === 'weapon' ? handleOpenWeaponMod : undefined}
+                          onToggleFavorite={!readOnly && categoryAbilities.length > 0 && item.itemType === 'weapon' ? handleToggleFavorite : undefined}
+                          availableAbilities={categoryAbilities}
                           onViewDetails={(itemToView) => {
                             setSelectedItem(itemToView);
                             setItemDetailOpen(true);
@@ -1352,6 +1393,8 @@ export function InventoryPanel({
                           onUnequip={!readOnly && item.isEquipped ? handleUnequipItem : undefined}
                           onUse={!readOnly && canUseItem(item) ? handleRequestUseItem : undefined}
                           onModify={!readOnly && item.itemType === 'weapon' ? handleOpenWeaponMod : undefined}
+                          onToggleFavorite={!readOnly && categoryAbilities.length > 0 && item.itemType === 'weapon' ? handleToggleFavorite : undefined}
+                          availableAbilities={categoryAbilities}
                           onViewDetails={(itemToView) => {
                             setSelectedItem(itemToView);
                             setItemDetailOpen(true);
@@ -1485,6 +1528,41 @@ function InventoryItemRow({ item, onRemove, onEquip, onUnequip, onUse, onModify,
           </div>
         </div>
         <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap sm:flex-nowrap justify-end sm:justify-start">
+          {/* Botão Marcar Favorita (para armas do Aniquilador e similares) */}
+          {onToggleFavorite && availableAbilities && availableAbilities.length > 0 && item.itemType === 'weapon' && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={cn(
+                    "h-8 sm:h-7 px-2 text-xs touch-manipulation",
+                    item.favoriteAbilityId 
+                      ? "bg-yellow-500/10 border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/20" 
+                      : "bg-muted/50 border-border hover:bg-yellow-500/10 hover:text-yellow-400"
+                  )}
+                  onClick={(e) => { 
+                    e.stopPropagation(); 
+                    onToggleFavorite(item); 
+                  }}
+                >
+                  <Star className={cn(
+                    "w-3.5 h-3.5 sm:w-3 sm:h-3 mr-1",
+                    item.favoriteAbilityId && "fill-yellow-400"
+                  )} />
+                  {item.favoriteAbilityId ? 'Favorita' : 'Marcar'}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent className="bg-popover border-border max-w-xs hidden sm:block">
+                <p className="text-xs font-medium mb-1">
+                  {item.favoriteAbilityId ? 'Remover status de Favorita' : 'Marcar como Arma Favorita'}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {availableAbilities[0]?.description}
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          )}
           {/* Botão Modificar (para armas) */}
           {onModify && (
             <Tooltip>

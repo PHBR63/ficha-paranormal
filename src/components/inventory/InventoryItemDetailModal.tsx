@@ -31,6 +31,7 @@ import {
   Wrench,
   AlertTriangle,
   Recycle,
+  Star,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { ExtendedInventoryItem, ItemType } from './InventoryPanel';
@@ -44,6 +45,8 @@ interface InventoryItemDetailModalProps {
   onUnequip?: (id: string) => void;
   onUse?: (id: string) => void;
   onRemove?: (id: string) => void;
+  onToggleFavorite?: (id: string) => void;
+  canBeFavorite?: boolean;
 }
 
 // Configuração de ícones e cores por tipo
@@ -72,6 +75,8 @@ export function InventoryItemDetailModal({
   onUnequip,
   onUse,
   onRemove,
+  onToggleFavorite,
+  canBeFavorite,
 }: InventoryItemDetailModalProps) {
   if (!item) return null;
 
@@ -336,7 +341,25 @@ export function InventoryItemDetailModal({
 
         {/* Botões de ação */}
         <MobileModalFooter bordered>
-          <div className="flex gap-2 w-full">
+          <div className="flex gap-2 w-full flex-wrap">
+            {/* Botão Marcar/Desmarcar Favorita */}
+            {canBeFavorite && onToggleFavorite && (
+              <Button
+                variant={item.favoriteAbilityId ? "default" : "outline"}
+                className={cn(
+                  "flex-1",
+                  item.favoriteAbilityId && "bg-yellow-500/20 text-yellow-400 border-yellow-500/50 hover:bg-yellow-500/30"
+                )}
+                onClick={() => {
+                  onToggleFavorite(item.id);
+                  onOpenChange(false);
+                }}
+              >
+                <Star className={cn("w-4 h-4 mr-2", item.favoriteAbilityId && "fill-yellow-400")} />
+                {item.favoriteAbilityId ? 'Arma Favorita' : 'Marcar Favorita'}
+              </Button>
+            )}
+
             {/* Botão Equipar/Desequipar */}
             {(onEquip || onUnequip) && (
               <Button
