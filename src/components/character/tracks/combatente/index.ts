@@ -41,7 +41,8 @@ export {
   useComandanteCampoTrack,
   type UseComandanteCampoTrackProps,
   type LeadershipAbility,
-  COMANDANTE_ABILITIES,
+  type MaxAlliesType,
+  COMANDANTE_ABILITIES_BASE,
   COMANDANTE_EFFECT_IDS,
 } from './useComandanteCampoTrack';
 

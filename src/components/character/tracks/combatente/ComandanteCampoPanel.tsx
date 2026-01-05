@@ -97,7 +97,9 @@ function AbilityCard({
               <span>•</span>
               <span className="flex items-center gap-1">
                 <Users className="w-3 h-3" />
-                máx {maxAllies} aliado{maxAllies > 1 ? 's' : ''}
+                {ability.maxAllies === 'all-visible' 
+                  ? 'todos visíveis' 
+                  : `máx ${maxAllies} aliado${maxAllies > 1 ? 's' : ''}`}
               </span>
             </>
           )}
@@ -186,7 +188,7 @@ function MobileAbilityCard({
               <span>•</span>
               <span className="flex items-center gap-0.5">
                 <Users className="w-2.5 h-2.5" />
-                {maxAllies}
+                {ability.maxAllies === 'all-visible' ? '∞' : maxAllies}
               </span>
             </>
           )}
