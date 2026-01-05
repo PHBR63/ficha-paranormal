@@ -66,6 +66,7 @@ import { getAppropriateSlot, EquipmentSlotType } from './EquipmentSlots';
 import type { ExtendedInventoryItem, CharacterDataForInventory } from './InventoryPanel';
 import type { CatalogWeapon, CatalogArmor, CatalogItem } from '@/lib/catalogs';
 import { validateArmorItem, validateWeaponItem, validateGeneralItem } from '@/hooks/useEquipmentMigration';
+import { useCharacterCategoryReductions, type ExtendedInventoryItemWithReduction } from '@/hooks/useCharacterCategoryReductions';
 
 // Props do componente
 interface MobileInventorySheetProps {
@@ -171,17 +172,38 @@ export function MobileInventorySheet({
     hasInventarioOtimizado: hasInvOtimizado,
   }), [intellect, characterData?.intellect, hasInvOtimizado]);
 
+  // Hook de redução de categoria (A Favorita, Ferramenta Favorita, etc.)
+  const categoryReductionData = useMemo(() => ({
+    origin: characterData?.origin || '',
+    classId: characterData?.classId || '',
+    classTrack: characterData?.classTrack,
+    nex: characterData?.nex || 0,
+    abilities: characterData?.abilities || [],
+    powers: characterData?.powers || [],
+    generalPowers: characterData?.generalPowers || [],
+  }), [characterData]);
+
+  const {
+    inventoryWithEffectiveCategories,
+  } = useCharacterCategoryReductions({
+    characterData: categoryReductionData,
+    inventory: inventory as ExtendedInventoryItemWithReduction[],
+    onInventoryChange: onInventoryChange as ((inv: ExtendedInventoryItemWithReduction[]) => void) | undefined,
+  });
+
   // Cálculos de inventário (com suporte a Inventário Otimizado)
   const currentLoad = useMemo(() => calculateCurrentLoad(inventory, hasInvOtimizado), [inventory, hasInvOtimizado]);
   const maxCapacity = useMemo(() => calculateCarryCapacity(strength, carryOptions), [strength, carryOptions]);
   const isOverloaded = currentLoad > maxCapacity;
   const patentLimits = useMemo(() => getPatentLimits(patent), [patent]);
+  
+  // Contagem usa inventário com categorias efetivas
   const categoryCounts = useMemo(() => ({
-    I: countItemsByCategory(inventory, 'I'),
-    II: countItemsByCategory(inventory, 'II'),
-    III: countItemsByCategory(inventory, 'III'),
-    IV: countItemsByCategory(inventory, 'IV'),
-  }), [inventory]);
+    I: countItemsByCategory(inventoryWithEffectiveCategories, 'I'),
+    II: countItemsByCategory(inventoryWithEffectiveCategories, 'II'),
+    III: countItemsByCategory(inventoryWithEffectiveCategories, 'III'),
+    IV: countItemsByCategory(inventoryWithEffectiveCategories, 'IV'),
+  }), [inventoryWithEffectiveCategories]);
 
   // Itens equipados mapeados por slot
   const equippedItems = useMemo(() => {
@@ -217,9 +239,9 @@ export function MobileInventorySheet({
     );
   }, [equippedItems.primary_weapon]);
 
-  // Filtrar itens por busca, categoria e tipo
+  // Filtrar itens por busca, categoria e tipo (usa inventário com categorias efetivas)
   const filteredItems = useMemo(() => {
-    return inventory.filter(item => {
+    return (inventoryWithEffectiveCategories as ExtendedInventoryItem[]).filter(item => {
       // Filtro de busca
       if (searchTerm) {
         const term = searchTerm.toLowerCase();
@@ -228,9 +250,12 @@ export function MobileInventorySheet({
         if (!matchesSearch) return false;
       }
       
-      // Filtro de categoria
-      if (categoryFilter !== 'all' && item.category !== categoryFilter) {
-        return false;
+      // Filtro de categoria (usa categoria efetiva se disponível)
+      if (categoryFilter !== 'all') {
+        const effectiveCategory = item.effectiveCategory || item.category;
+        if (effectiveCategory !== categoryFilter) {
+          return false;
+        }
       }
       
       // Filtro de tipo
@@ -247,7 +272,7 @@ export function MobileInventorySheet({
       
       return true;
     });
-  }, [inventory, searchTerm, categoryFilter, typeFilter]);
+  }, [inventoryWithEffectiveCategories, searchTerm, categoryFilter, typeFilter]);
 
   // Ordenar itens filtrados
   const sortedItems = useMemo(() => {

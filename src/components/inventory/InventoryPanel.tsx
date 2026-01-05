@@ -326,7 +326,9 @@ export function InventoryPanel({
     // Lista de slots válidos para validação
     const validSlots: EquipmentSlotType[] = ['primary_weapon', 'secondary_weapon', 'armor', 'shield', 'accessory_1', 'accessory_2'];
 
-    inventory.forEach(item => {
+    // Usar inventário com categorias efetivas para exibição correta
+    inventoryWithEffectiveCategories.forEach(rawItem => {
+      const item = rawItem as ExtendedInventoryItem;
       if (item.isEquipped && item.equipSlot) {
         // Migrar itens do slot 'head' antigo - ignorar
         if ((item.equipSlot as string) === 'head') {
@@ -340,7 +342,7 @@ export function InventoryPanel({
     });
 
     return slots;
-  }, [inventory]);
+  }, [inventoryWithEffectiveCategories]);
 
   // Verificar se a arma principal é de duas mãos
   const isPrimaryTwoHanded = useMemo(() => {
@@ -371,8 +373,9 @@ export function InventoryPanel({
     // Lista de tipos válidos para validação
     const validTypes: ItemType[] = ['weapon', 'armor', 'consumable', 'ritual', 'valuable', 'misc'];
 
-    inventory.forEach(item => {
-      const rawType = item.itemType || 'misc';
+    // Usar inventário com categorias efetivas para exibição correta
+    inventoryWithEffectiveCategories.forEach(item => {
+      const rawType = (item as ExtendedInventoryItem).itemType || 'misc';
       
       // Log de diagnóstico para tipos desconhecidos (ajuda a detectar dados incorretos)
       if (!validTypes.includes(rawType as ItemType)) {
@@ -385,19 +388,19 @@ export function InventoryPanel({
       
       // Valida se o tipo existe no grupo, senão usa 'misc' como fallback
       const type = validTypes.includes(rawType as ItemType) ? (rawType as ItemType) : 'misc';
-      groups[type].push(item);
+      groups[type].push(item as ExtendedInventoryItem);
     });
 
     return groups;
-  }, [inventory]);
+  }, [inventoryWithEffectiveCategories]);
 
-  // Contagem por categoria de patente
+  // Contagem por categoria de patente (usa categoria efetiva para exibição correta)
   const categoryCounts = useMemo(() => ({
-    I: countItemsByCategory(inventory, 'I'),
-    II: countItemsByCategory(inventory, 'II'),
-    III: countItemsByCategory(inventory, 'III'),
-    IV: countItemsByCategory(inventory, 'IV'),
-  }), [inventory]);
+    I: countItemsByCategory(inventoryWithEffectiveCategories, 'I'),
+    II: countItemsByCategory(inventoryWithEffectiveCategories, 'II'),
+    III: countItemsByCategory(inventoryWithEffectiveCategories, 'III'),
+    IV: countItemsByCategory(inventoryWithEffectiveCategories, 'IV'),
+  }), [inventoryWithEffectiveCategories]);
 
   const toggleCategory = (type: ItemType) => {
     const newExpanded = new Set(expandedCategories);
@@ -791,12 +794,22 @@ export function InventoryPanel({
     // Atualizar item no inventário
     const updatedInventory = inventory.map(item => {
       if (item.id === weaponToModify.id) {
+        // Recalcular categoria efetiva se item é favorita
+        let effectiveCategory: ExtendedInventoryItem['category'] = inventoryCategory;
+        if (item.favoriteAbilityId) {
+          const ability = getCategoryReductionAbility(item.favoriteAbilityId);
+          if (ability) {
+            effectiveCategory = getEffectiveCategory(inventoryCategory, ability.reductionAmount);
+          }
+        }
+        
         return {
           ...item,
           name: hasModifications 
             ? `${baseWeapon.name} (Mod.)` 
             : baseWeapon.name,
           category: inventoryCategory,
+          effectiveCategory, // Categoria efetiva recalculada
           appliedModifications: modifications,
           // Preservar dados base para recálculo futuro
           baseCategory: baseWeapon.category,
