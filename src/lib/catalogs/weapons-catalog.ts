@@ -976,9 +976,15 @@ export function canApplyModification(weapon: CatalogWeapon, modId: WeaponModific
   return mod.applicableTo.includes(weapon.type);
 }
 
-// Obter modificações disponíveis para uma arma
-export function getAvailableModifications(weapon: CatalogWeapon): WeaponModificationData[] {
-  return ALL_WEAPON_MODIFICATIONS.filter(mod => canApplyModification(weapon, mod.id));
+// Obter modificações disponíveis para uma arma (excluindo já aplicadas se especificado)
+export function getAvailableModifications(
+  weapon: CatalogWeapon, 
+  excludeApplied: WeaponModification[] = []
+): WeaponModificationData[] {
+  return ALL_WEAPON_MODIFICATIONS.filter(mod => 
+    canApplyModification(weapon, mod.id) && 
+    !excludeApplied.includes(mod.id)
+  );
 }
 
 // Calcular nova categoria após modificações
