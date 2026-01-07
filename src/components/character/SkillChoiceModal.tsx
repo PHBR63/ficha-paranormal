@@ -29,6 +29,8 @@ import {
   ATTRIBUTE_ABBR, 
   ATTRIBUTE_BG_COLORS, 
   ATTRIBUTE_TEXT_COLORS,
+  ATTRIBUTE_NAMES,
+  ATTRIBUTE_ORDER,
   type AttributeKey 
 } from '@/lib/constants/attributes';
 import { AlertTriangle, Sparkles, Check, Search, GraduationCap } from 'lucide-react';
@@ -91,6 +93,26 @@ export function SkillChoiceModal({
       ATTRIBUTE_ABBR[skill.attribute as AttributeKey]?.toLowerCase().includes(query)
     );
   }, [allAvailableSkills, searchQuery]);
+
+  // Agrupar perícias por atributo
+  const groupedSkills = useMemo(() => {
+    const groups: Record<AttributeKey, typeof filteredSkills> = {
+      agility: [],
+      strength: [],
+      intellect: [],
+      presence: [],
+      vigor: [],
+    };
+    
+    filteredSkills.forEach(skill => {
+      const attr = skill.attribute as AttributeKey;
+      if (groups[attr]) {
+        groups[attr].push(skill);
+      }
+    });
+    
+    return groups;
+  }, [filteredSkills]);
 
   // Valida e seleciona a perícia
   const handleSelect = (skillId: string) => {
@@ -252,48 +274,68 @@ export function SkillChoiceModal({
                 />
               </div>
 
-              {/* Lista de perícias */}
-              <div className="space-y-2">
+              {/* Lista de perícias agrupadas por atributo */}
+              <div className="space-y-4">
                 {filteredSkills.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-4">
                     Nenhuma perícia encontrada
                   </p>
                 ) : (
-                  filteredSkills.map((skill) => (
-                    <button
-                      key={skill.id}
-                      onClick={() => handleSelect(skill.id)}
-                      className={cn(
-                        "w-full p-3 text-left rounded-lg border border-border",
-                        "hover:border-primary/50 hover:bg-primary/5 transition-all",
-                        "focus:outline-none focus:ring-2 focus:ring-primary/50"
-                      )}
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-medium text-sm">{skill.name}</span>
-                            <span className={cn(
-                              "text-xs px-1.5 py-0.5 rounded font-medium",
-                              getAttrBgColor(skill.attribute),
-                              getAttrTextColor(skill.attribute)
-                            )}>
-                              {getAttrAbbr(skill.attribute)}
-                            </span>
-                            {skill.requiresTraining && (
-                              <span className="flex items-center gap-1 text-xs text-warning">
-                                <GraduationCap className="w-3 h-3" />
-                                Treino
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                            {skill.description}
-                          </p>
+                  ATTRIBUTE_ORDER.map((attrKey) => {
+                    const skills = groupedSkills[attrKey];
+                    if (skills.length === 0) return null;
+                    
+                    return (
+                      <div key={attrKey} className="space-y-2">
+                        {/* Header do grupo */}
+                        <div className={cn(
+                          "flex items-center gap-2 px-2 py-1 rounded",
+                          getAttrBgColor(attrKey)
+                        )}>
+                          <span className={cn(
+                            "text-xs font-bold px-1.5 py-0.5 rounded",
+                            getAttrBgColor(attrKey),
+                            getAttrTextColor(attrKey)
+                          )}>
+                            {getAttrAbbr(attrKey)}
+                          </span>
+                          <span className="text-sm font-medium">
+                            {ATTRIBUTE_NAMES[attrKey]}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            ({skills.length})
+                          </span>
+                        </div>
+                        
+                        {/* Perícias do grupo */}
+                        <div className="space-y-1.5 pl-2">
+                          {skills.map((skill) => (
+                            <button
+                              key={skill.id}
+                              onClick={() => handleSelect(skill.id)}
+                              className={cn(
+                                "w-full p-2.5 text-left rounded-lg border border-border",
+                                "hover:border-primary/50 hover:bg-primary/5 transition-all",
+                                "focus:outline-none focus:ring-2 focus:ring-primary/50"
+                              )}
+                            >
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium text-sm flex-1">{skill.name}</span>
+                                {skill.requiresTraining && (
+                                  <span className="flex items-center gap-1 text-xs text-warning">
+                                    <GraduationCap className="w-3 h-3" />
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
+                                {skill.description}
+                              </p>
+                            </button>
+                          ))}
                         </div>
                       </div>
-                    </button>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </div>
@@ -340,6 +382,26 @@ export function ConflictResolutionModal({
       ATTRIBUTE_ABBR[skill.attribute as AttributeKey]?.toLowerCase().includes(query)
     );
   }, [availableSkills, searchQuery]);
+
+  // Agrupar perícias por atributo
+  const groupedSkills = useMemo(() => {
+    const groups: Record<AttributeKey, typeof filteredSkills> = {
+      agility: [],
+      strength: [],
+      intellect: [],
+      presence: [],
+      vigor: [],
+    };
+    
+    filteredSkills.forEach(skill => {
+      const attr = skill.attribute as AttributeKey;
+      if (groups[attr]) {
+        groups[attr].push(skill);
+      }
+    });
+    
+    return groups;
+  }, [filteredSkills]);
 
   // Função para obter a abreviação do atributo em português
   const getAttrAbbr = (attribute: string) => {
@@ -404,48 +466,68 @@ export function ConflictResolutionModal({
               />
             </div>
 
-            {/* Lista de perícias */}
-            <div className="space-y-2">
+            {/* Lista de perícias agrupadas por atributo */}
+            <div className="space-y-4">
               {filteredSkills.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-4">
                   Nenhuma perícia encontrada
                 </p>
               ) : (
-                filteredSkills.map((skill) => (
-                  <button
-                    key={skill.id}
-                    onClick={() => handleSelect(skill.id)}
-                    className={cn(
-                      "w-full p-3 text-left rounded-lg border border-border",
-                      "hover:border-warning/50 hover:bg-warning/5 transition-all",
-                      "focus:outline-none focus:ring-2 focus:ring-warning/50"
-                    )}
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-medium text-sm">{skill.name}</span>
-                          <span className={cn(
-                            "text-xs px-1.5 py-0.5 rounded font-medium",
-                            getAttrBgColor(skill.attribute),
-                            getAttrTextColor(skill.attribute)
-                          )}>
-                            {getAttrAbbr(skill.attribute)}
-                          </span>
-                          {skill.requiresTraining && (
-                            <span className="flex items-center gap-1 text-xs text-warning">
-                              <GraduationCap className="w-3 h-3" />
-                              Treino
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                          {skill.description}
-                        </p>
+                ATTRIBUTE_ORDER.map((attrKey) => {
+                  const skills = groupedSkills[attrKey];
+                  if (skills.length === 0) return null;
+                  
+                  return (
+                    <div key={attrKey} className="space-y-2">
+                      {/* Header do grupo */}
+                      <div className={cn(
+                        "flex items-center gap-2 px-2 py-1 rounded",
+                        getAttrBgColor(attrKey)
+                      )}>
+                        <span className={cn(
+                          "text-xs font-bold px-1.5 py-0.5 rounded",
+                          getAttrBgColor(attrKey),
+                          getAttrTextColor(attrKey)
+                        )}>
+                          {getAttrAbbr(attrKey)}
+                        </span>
+                        <span className="text-sm font-medium">
+                          {ATTRIBUTE_NAMES[attrKey]}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          ({skills.length})
+                        </span>
+                      </div>
+                      
+                      {/* Perícias do grupo */}
+                      <div className="space-y-1.5 pl-2">
+                        {skills.map((skill) => (
+                          <button
+                            key={skill.id}
+                            onClick={() => handleSelect(skill.id)}
+                            className={cn(
+                              "w-full p-2.5 text-left rounded-lg border border-border",
+                              "hover:border-warning/50 hover:bg-warning/5 transition-all",
+                              "focus:outline-none focus:ring-2 focus:ring-warning/50"
+                            )}
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-sm flex-1">{skill.name}</span>
+                              {skill.requiresTraining && (
+                                <span className="flex items-center gap-1 text-xs text-warning">
+                                  <GraduationCap className="w-3 h-3" />
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
+                              {skill.description}
+                            </p>
+                          </button>
+                        ))}
                       </div>
                     </div>
-                  </button>
-                ))
+                  );
+                })
               )}
             </div>
           </div>
