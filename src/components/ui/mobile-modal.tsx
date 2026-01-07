@@ -173,7 +173,9 @@ const MobileModalBody = React.forwardRef<HTMLDivElement, MobileModalBodyProps>(
             "flex-1 min-h-0", // Ocupa espaço restante
             "overscroll-contain"
           )}
-          style={maxHeight ? { maxHeight } : undefined}
+          style={{ 
+            maxHeight: maxHeight || 'calc(85vh - 140px)' // 85vh do modal - espaço para header/footer
+          }}
         >
           {content}
         </ScrollArea>
