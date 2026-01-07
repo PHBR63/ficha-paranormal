@@ -55,6 +55,7 @@ interface ParanormalPowersPanelProps {
   nex: number;
   transcenderTotal?: number;
   transcenderUsed?: number;
+  totalSlotsUsed?: number; // Total de slots usados (Transcender + Poder de Classe)
   originId?: string; // Origem do personagem para calcular poderes de origem
   characterId?: string; // ID do personagem para histórico
   onRemovePowers?: (powerIds: string[], powersToArchive: SavedParanormalPower[]) => Promise<void>; // Callback para remover poderes
@@ -67,6 +68,7 @@ export function ParanormalPowersPanel({
   nex,
   transcenderTotal = 0,
   transcenderUsed = 0,
+  totalSlotsUsed = 0,
   originId,
   characterId,
   onRemovePowers,
@@ -158,71 +160,100 @@ export function ParanormalPowersPanel({
         </div>
       )}
       
-      {/* Contador de Transcender com Tooltip */}
+      {/* Indicador visual de slots de NEX: Transcender vs Poder de Classe */}
       {transcenderTotal > 0 && (
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className={`
-                flex items-center justify-between p-3 rounded-lg border cursor-help
-                ${transcenderRemaining > 0 
-                  ? 'bg-paranormal/10 border-paranormal/30' 
-                  : 'bg-muted/50 border-muted'
-                }
-              `}>
-                <div className="flex items-center gap-2">
-                  <Sparkles className={`w-4 h-4 ${transcenderRemaining > 0 ? 'text-paranormal' : 'text-muted-foreground'}`} />
-                  <span className="text-sm font-medium">Slots de Transcender</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  {/* Indicador visual de slots com NEX */}
-                  <div className="flex gap-1.5">
-                    {Array.from({ length: transcenderTotal }).map((_, i) => {
-                      const milestoneNex = TRANSCENDER_MILESTONES[i];
-                      const isUsed = i < transcenderUsed;
-                      return (
-                        <TooltipProvider key={i}>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div
-                                className={`
-                                  w-6 h-6 rounded flex items-center justify-center text-[10px] font-medium
-                                  transition-colors cursor-help
-                                  ${isUsed 
-                                    ? 'bg-paranormal text-paranormal-foreground shadow-sm shadow-paranormal/50' 
-                                    : 'bg-muted-foreground/20 text-muted-foreground border border-muted-foreground/20'
-                                  }
-                                `}
-                              >
-                                {milestoneNex}
-                              </div>
-                            </TooltipTrigger>
-                            <TooltipContent side="bottom" className="text-xs">
-                              NEX {milestoneNex}% — {isUsed ? 'Usado' : 'Disponível'}
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      );
-                    })}
+              <div className="p-3 rounded-lg border bg-muted/30 border-border cursor-help space-y-3">
+                {/* Título */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-paranormal" />
+                    <span className="text-sm font-medium">Slots de NEX</span>
                   </div>
-                  <Badge 
-                    variant={transcenderRemaining > 0 ? 'default' : 'secondary'}
-                    className={transcenderRemaining > 0 ? 'bg-paranormal hover:bg-paranormal/90' : ''}
-                  >
-                    {transcenderUsed}/{transcenderTotal}
+                  <Badge variant="outline" className="text-xs">
+                    {totalSlotsUsed}/{transcenderTotal} usados
                   </Badge>
+                </div>
+                
+                {/* Indicadores visuais por slot */}
+                <div className="flex gap-1.5 flex-wrap">
+                  {Array.from({ length: transcenderTotal }).map((_, i) => {
+                    const milestoneNex = TRANSCENDER_MILESTONES[i];
+                    // Determina o tipo de uso do slot
+                    const isTranscender = i < transcenderUsed;
+                    const isClassPower = i >= transcenderUsed && i < totalSlotsUsed;
+                    const isAvailable = i >= totalSlotsUsed;
+                    
+                    // Estilo baseado no tipo
+                    let slotClass = '';
+                    let slotLabel = '';
+                    if (isTranscender) {
+                      slotClass = 'bg-paranormal text-paranormal-foreground shadow-sm shadow-paranormal/50';
+                      slotLabel = 'Transcender';
+                    } else if (isClassPower) {
+                      slotClass = 'bg-primary text-primary-foreground shadow-sm shadow-primary/50';
+                      slotLabel = 'Poder de Classe';
+                    } else {
+                      slotClass = 'bg-muted-foreground/20 text-muted-foreground border border-muted-foreground/20';
+                      slotLabel = 'Disponível';
+                    }
+                    
+                    return (
+                      <TooltipProvider key={i}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div
+                              className={`
+                                w-8 h-8 rounded flex items-center justify-center text-[11px] font-semibold
+                                transition-colors cursor-help
+                                ${slotClass}
+                              `}
+                            >
+                              {milestoneNex}
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent side="bottom" className="text-xs">
+                            <p className="font-medium">NEX {milestoneNex}%</p>
+                            <p className={`
+                              ${isTranscender ? 'text-paranormal' : ''}
+                              ${isClassPower ? 'text-primary' : ''}
+                              ${isAvailable ? 'text-muted-foreground' : ''}
+                            `}>
+                              {slotLabel}
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    );
+                  })}
+                </div>
+                
+                {/* Legenda */}
+                <div className="flex items-center gap-4 text-[10px] border-t border-border pt-2 mt-2">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-3 h-3 rounded bg-paranormal" />
+                    <span className="text-muted-foreground">Transcender ({transcenderUsed})</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-3 h-3 rounded bg-primary" />
+                    <span className="text-muted-foreground">Poder de Classe ({totalSlotsUsed - transcenderUsed})</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-3 h-3 rounded bg-muted-foreground/20 border border-muted-foreground/20" />
+                    <span className="text-muted-foreground">Disponível ({transcenderTotal - totalSlotsUsed})</span>
+                  </div>
                 </div>
               </div>
             </TooltipTrigger>
             <TooltipContent side="bottom" className="max-w-xs">
-              <p className="font-medium mb-1">Transcender</p>
+              <p className="font-medium mb-1">Slots de NEX</p>
               <p className="text-xs text-muted-foreground">
-                Transcender permite trocar uma escolha de poder de classe por um Poder Paranormal.
-                O custo é não receber o aumento de Sanidade daquele NEX.
+                A cada NEX de escolha (25%, 50%, 75%, 99%), você escolhe entre um Poder de Classe ou Transcender para um Poder Paranormal.
               </p>
-              <p className="text-xs mt-1">
-                <span className="text-paranormal font-medium">{transcenderUsed}</span> usado{transcenderUsed !== 1 ? 's' : ''} · 
-                <span className="text-muted-foreground"> {transcenderRemaining}</span> disponível{transcenderRemaining !== 1 ? 'is' : ''}
+              <p className="text-xs mt-1 text-destructive/80">
+                Transcender: Não recebe o aumento de Sanidade daquele NEX.
               </p>
             </TooltipContent>
           </Tooltip>

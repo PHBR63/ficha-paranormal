@@ -2870,7 +2870,8 @@ export default function CharacterSheet() {
                         affinityActive={character.affinity_active}
                         nex={character.nex}
                         transcenderTotal={transcenderCount}
-                        transcenderUsed={transcenderUsed}
+                        transcenderUsed={transcenderUsedFromDB}
+                        totalSlotsUsed={totalSlotsUsedFromDB}
                         originId={character.origin}
                         onRemovePowers={async (powerIds) => {
                           // Remove os poderes selecionados
