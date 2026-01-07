@@ -97,6 +97,7 @@ import { CharacterAuditBanner } from '@/components/character/CharacterAuditBanne
 import { CharacterForAudit, canAddParanormalPower } from '@/lib/character-audit-engine';
 import { ClassPowerBonusesPanel } from '@/components/character/ClassPowerBonusesPanel';
 import { AutomationDebugWidget } from '@/components/character/AutomationDebugWidget';
+import { VersatilityAbilityCard } from '@/components/character/VersatilityAbilityCard';
 import { useDeveloperMode } from '@/components/ui/theme-selector';
 import { ActiveEffectsPanel } from '@/components/character/ActiveEffectsPanel';
 // Trilhas unificadas responsivas (FASE 5 - todas as 15 trilhas)
@@ -2339,6 +2340,14 @@ export default function CharacterSheet() {
                 }}
                 activatedEffects={activatedEffects.activatedEffectIds}
               />
+              
+              {/* Habilidade de Versatilidade (NEX 50%) */}
+              {character.versatility_track && (
+                <VersatilityAbilityCard
+                  versatilityTrack={character.versatility_track}
+                  classId={character.class}
+                />
+              )}
 
               {/* Rituais e Histórico (acordeão com abas) */}
               {character.rituals && character.rituals.length > 0 && (
