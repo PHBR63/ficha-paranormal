@@ -242,6 +242,13 @@ interface Character {
   active_buffs?: import('@/hooks/useWeaponBuffs').WeaponBuff[];
   // Bônus condicionais ativados manualmente
   active_conditional_bonuses?: string[];
+  // Trilha de Versatilidade (NEX 50%)
+  versatility_track?: {
+    trackId: string;
+    trackName: string;
+    abilityId: string;
+    abilityName: string;
+  } | null;
 }
 
 // Helper para converter condições persistidas para ActiveCondition
@@ -484,6 +491,7 @@ export default function CharacterSheet() {
     peCurrent,
     peMax: character?.pe_max || 0,
     activeConditions: activeConditionsForSUE,
+    versatilityTrack: character?.versatility_track || undefined,
   });
 
   // Extrai hooks internos do bonusSummary para evitar chamadas duplicadas
@@ -1078,11 +1086,14 @@ export default function CharacterSheet() {
     }
     
     // Se há escolha de Versatilidade e escolheu trilha diferente, 
-    // a habilidade já foi adicionada no newAbilities pelo NexProgressionModal
-    // Aqui podemos registrar a trilha secundária se necessário
+    // salva a trilha secundária para aplicação de efeitos pelo SUE
     if (newStats.versatilityChoice?.type === 'track_ability' && newStats.versatilityChoice.trackId) {
-      // Opcional: registrar trilha secundária para referência futura
-      // updateData.secondary_track = newStats.versatilityChoice.trackId;
+      updateData.versatility_track = {
+        trackId: newStats.versatilityChoice.trackId,
+        trackName: newStats.versatilityChoice.trackName,
+        abilityId: newStats.versatilityChoice.abilityId,
+        abilityName: newStats.versatilityChoice.abilityName
+      };
       console.log(`[Versatilidade] ${character.name} adquiriu habilidade "${newStats.versatilityChoice.abilityName}" da trilha "${newStats.versatilityChoice.trackName}"`);
     }
 
@@ -1118,6 +1129,15 @@ export default function CharacterSheet() {
       elemental_affinity: newStats.elemental_affinity ?? prev.elemental_affinity,
       affinity_active: newStats.affinity_active ?? prev.affinity_active,
       paranormal_powers: updatedParanormalPowers,
+      // Atualiza trilha de Versatilidade se escolheu
+      ...(newStats.versatilityChoice?.type === 'track_ability' && newStats.versatilityChoice.trackId ? {
+        versatility_track: {
+          trackId: newStats.versatilityChoice.trackId,
+          trackName: newStats.versatilityChoice.trackName!,
+          abilityId: newStats.versatilityChoice.abilityId!,
+          abilityName: newStats.versatilityChoice.abilityName!,
+        }
+      } : {}),
       // Atualiza atributo se aumentado
       ...(newStats.attributeIncrease ? { [newStats.attributeIncrease]: (prev[newStats.attributeIncrease as keyof typeof prev] as number) + 1 } : {}),
     } : null);

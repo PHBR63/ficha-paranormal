@@ -30,6 +30,7 @@ import {
 import {
   getTrackEffects,
   getTrackCombatEffects,
+  getVersatilityTrackEffects,
 } from '@/lib/effects/track-effects-adapter';
 import {
   getConditionEffects,
@@ -53,6 +54,14 @@ import type { SavedParanormalPower } from '@/lib/paranormal-powers';
 // =====================================================
 // Tipos de Entrada do Hook
 // =====================================================
+
+/** Informações da trilha de Versatilidade (NEX 50%) */
+export interface VersatilityTrackInfo {
+  trackId: string;
+  trackName: string;
+  abilityId: string;
+  abilityName: string;
+}
 
 /** Estado do personagem necessário para calcular efeitos */
 export interface CharacterStateForEffects {
@@ -79,6 +88,9 @@ export interface CharacterStateForEffects {
   generalPowers?: string[]; // IDs de poderes gerais (para bônus condicionais)
   abilities?: string[]; // Nomes de habilidades (para bônus condicionais)
   activeConditionalBonuses?: string[]; // IDs de bônus condicionais ativos
+  
+  // Trilha secundária de Versatilidade (NEX 50%)
+  versatilityTrack?: VersatilityTrackInfo | null;
   
   // Afinidade elemental
   elementalAffinity?: string | null;
@@ -240,6 +252,16 @@ export function useUnifiedEffects(
         )
       : [];
     
+    // Efeitos da trilha de Versatilidade (apenas a habilidade NEX 10% da trilha escolhida)
+    const versatilityEffects = characterState.versatilityTrack?.trackId
+      ? getVersatilityTrackEffects(
+          characterState.versatilityTrack.trackId,
+          characterState.versatilityTrack.abilityId,
+          characterState.attributes as Record<AttributeType, number>,
+          characterState.activatedEffectIds ?? []
+        )
+      : [];
+    
     // Efeitos de condições
     const conditionEffects = collectConditionEffects(characterState.conditions);
     
@@ -284,6 +306,7 @@ export function useUnifiedEffects(
       ...originEffects,
       ...trackEffects,
       ...trackCombatEffects,
+      ...versatilityEffects,
       ...conditionEffects,
       ...ritualEffects,
       ...paranormalPowerEffects,
@@ -336,6 +359,7 @@ export function useUnifiedEffects(
     characterState.activeRituals,
     characterState.elementalAffinity,
     characterState.affinityActive,
+    characterState.versatilityTrack,
     // HP/PE/SAN removidos - não afetam bônus mecânicos, apenas contexto
     characterState.paranormalPowers,
     characterState.classPowers,

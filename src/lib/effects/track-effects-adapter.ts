@@ -1675,3 +1675,73 @@ export function getTrackCombatBonuses(
   
   return result;
 }
+
+// =============================================================================
+// VERSATILIDADE - TRILHA SECUNDÁRIA
+// =============================================================================
+
+/**
+ * Obtém efeitos da habilidade de Versatilidade (trilha secundária)
+ * 
+ * No NEX 50%, o jogador pode escolher o primeiro poder de outra trilha.
+ * Esta função retorna apenas os efeitos da habilidade NEX 10% da trilha escolhida.
+ * 
+ * @param trackId - ID da trilha secundária escolhida via Versatilidade
+ * @param abilityId - ID da habilidade específica (sempre a de NEX 10%)
+ * @param attributes - Atributos do personagem
+ * @param activatedEffects - IDs de efeitos ativados manualmente
+ * @returns Array de efeitos unificados da habilidade de Versatilidade
+ */
+export function getVersatilityTrackEffects(
+  trackId: string,
+  abilityId: string,
+  attributes: Record<AttributeType, number>,
+  activatedEffects: string[] = []
+): UnifiedEffect[] {
+  const effects: UnifiedEffect[] = [];
+  
+  if (!trackId || !abilityId) return effects;
+  
+  const track = getTrackById(trackId);
+  if (!track) return effects;
+  
+  // Encontra a habilidade específica (deve ser a de NEX 10%)
+  const ability = track.abilities.find(a => a.id === abilityId);
+  if (!ability) return effects;
+  
+  // Usa NEX 50 para cálculos, mas a habilidade é sempre a de NEX 10%
+  const mechanics = convertTrackAbilityToMechanics(ability, attributes, 50);
+  
+  // Verifica se a habilidade tem mecânicas relevantes
+  const hasMechanics = Object.keys(mechanics).length > 0;
+  if (!hasMechanics) return effects;
+  
+  // Verifica se é uma habilidade que requer ativação
+  const needsActivation = requiresActivation(ability.effects?.base);
+  const costPE = getAbilityPECost(ability.effects?.base);
+  const actionType = getAbilityActionType(ability.effects?.base);
+  
+  const effect: UnifiedEffect = {
+    id: `versatility-${ability.id}`,
+    name: ability.name,
+    description: ability.description,
+    source: 'track', // Usa source track para consolidação
+    sourceId: ability.id,
+    sourceName: `Versatilidade (${track.name}): ${ability.name}`,
+    mechanics,
+    isActive: needsActivation 
+      ? activatedEffects.includes(`versatility-${ability.id}`)
+      : true,
+    isToggleable: needsActivation,
+    conditions: needsActivation ? {
+      requiresActivation: true,
+      costPE,
+      costAction: actionType as 'free' | 'movement' | 'standard' | 'full' | 'reaction' | undefined,
+    } : undefined,
+    priority: 50, // NEX 50% = prioridade 50
+  };
+  
+  effects.push(effect);
+  
+  return effects;
+}

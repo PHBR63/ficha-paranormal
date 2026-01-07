@@ -56,6 +56,14 @@ export interface UseBonusSummaryFromSUEProps {
   classTrack?: string | null;
   classPowers?: (string | ActiveClassPower)[];
   
+  // Trilha de Versatilidade (NEX 50%)
+  versatilityTrack?: {
+    trackId: string;
+    trackName: string;
+    abilityId: string;
+    abilityName: string;
+  } | null;
+  
   // Equipamento
   equippedWeaponType?: WeaponCategory;
   equippedProtectionType?: ProtectionCategory;
@@ -122,6 +130,7 @@ export function useBonusSummaryFromSUE({
   peCurrent = 0,
   peMax = 0,
   activeConditions = [],
+  versatilityTrack,
 }: UseBonusSummaryFromSUEProps): BonusSummary & { unifiedEffects: ReturnType<typeof useUnifiedEffects> } {
   
   // Monta o estado do personagem para o SUE
@@ -156,13 +165,16 @@ export function useBonusSummaryFromSUE({
     abilities,
     activeConditionalBonuses,
     activatedEffectIds: activeConditionalBonuses,
+    // Trilha de Versatilidade (NEX 50%)
+    versatilityTrack: versatilityTrack || undefined,
   }), [
     origin, classTrack, classId, nex,
     strength, agility, vigor, intellect, presence,
     activeConditions, activeRituals,
     hpCurrent, hpMax, peCurrent, peMax,
     elementalAffinity, affinityActive,
-    generalPowers, abilities, activeConditionalBonuses
+    generalPowers, abilities, activeConditionalBonuses,
+    versatilityTrack,
   ]);
   
   // Obtém efeitos unificados do SUE
