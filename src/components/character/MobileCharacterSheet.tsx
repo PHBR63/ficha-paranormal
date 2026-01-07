@@ -124,6 +124,7 @@ import {
 
 // Inferência de tipo de arma (corrige pistola como corpo a corpo)
 import { normalizeWeaponTypeForDisplay } from '@/lib/weapon-type-inference';
+import { VersatilityAbilityCard } from './VersatilityAbilityCard';
 
 import { useWeaponBuffs, useUnifiedEffects, useRoundTracking, useActivatedEffects } from '@/hooks';
 
@@ -203,6 +204,13 @@ interface MobileCharacterSheetProps {
     affinity_active?: boolean;
     // Buffs ativos em armas
     active_buffs?: Array<{ weaponId: string; buffType: string; turnsRemaining: number }>;
+    // Trilha de Versatilidade (NEX 50%)
+    versatility_track?: {
+      trackId: string;
+      trackName: string;
+      abilityId: string;
+      abilityName: string;
+    } | null;
   };
   onOpenDiceRoller: () => void;
   onOpenRest: () => void;
@@ -1725,6 +1733,15 @@ export function MobileCharacterSheet({
               }}
               activatedEffects={activatedEffects.activatedEffectIds}
             />
+            
+            {/* Habilidade de Versatilidade (NEX 50%) */}
+            {character.versatility_track && (
+              <VersatilityAbilityCard
+                versatilityTrack={character.versatility_track}
+                classId={character.class}
+                compact
+              />
+            )}
           </>
         )}
 
