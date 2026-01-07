@@ -554,6 +554,64 @@ export const MobilePowersTab = memo(function MobilePowersTab({
           icon={<Sparkles className="w-4 h-4 text-paranormal" />}
           badge={paranormalPowers.length}
         >
+          {/* Indicador visual de slots de NEX: Transcender vs Poder de Classe */}
+          <div className="p-2.5 rounded-lg border bg-muted/30 border-border mb-3 space-y-2">
+            {/* Indicadores visuais por slot */}
+            <div className="flex gap-1 flex-wrap justify-center">
+              {Array.from({ length: powerLimits.fromTranscender }).map((_, i) => {
+                const milestones = [25, 50, 75, 99];
+                const milestoneNex = milestones[i] || 0;
+                // Determina o tipo de uso do slot
+                const isTranscender = i < transcenderUsed;
+                const isClassPower = i >= transcenderUsed && i < totalSlotsUsed;
+                const isAvailable = i >= totalSlotsUsed;
+                
+                // Estilo baseado no tipo
+                let slotClass = '';
+                let slotIcon = '';
+                if (isTranscender) {
+                  slotClass = 'bg-paranormal text-paranormal-foreground';
+                  slotIcon = '✨';
+                } else if (isClassPower) {
+                  slotClass = 'bg-primary text-primary-foreground';
+                  slotIcon = '⚔️';
+                } else {
+                  slotClass = 'bg-muted-foreground/20 text-muted-foreground border border-muted-foreground/30';
+                  slotIcon = '';
+                }
+                
+                return (
+                  <div
+                    key={i}
+                    className={`
+                      w-10 h-10 rounded-lg flex flex-col items-center justify-center text-[10px] font-semibold
+                      ${slotClass}
+                    `}
+                  >
+                    <span>{milestoneNex}%</span>
+                    {slotIcon && <span className="text-[8px]">{slotIcon}</span>}
+                  </div>
+                );
+              })}
+            </div>
+            
+            {/* Legenda compacta */}
+            <div className="flex items-center justify-center gap-3 text-[9px]">
+              <div className="flex items-center gap-1">
+                <div className="w-2.5 h-2.5 rounded bg-paranormal" />
+                <span className="text-muted-foreground">Transcender ({transcenderUsed})</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-2.5 h-2.5 rounded bg-primary" />
+                <span className="text-muted-foreground">Classe ({totalSlotsUsed - transcenderUsed})</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-2.5 h-2.5 rounded bg-muted-foreground/20 border border-muted-foreground/30" />
+                <span className="text-muted-foreground">Livre ({powerLimits.fromTranscender - totalSlotsUsed})</span>
+              </div>
+            </div>
+          </div>
+          
           {/* Alerta de poderes excedentes */}
           <div className="flex items-center justify-between gap-2 mb-2">
             {hasExcessPowers ? (
