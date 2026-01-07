@@ -98,7 +98,7 @@ export function SkillChoiceModal({
           <MobileModalDescription>{description}</MobileModalDescription>
         </MobileModalHeader>
 
-        <MobileModalBody useScrollArea={showFreeChoice}>
+        <MobileModalBody useScrollArea={true} maxHeight="60vh">
           {/* Aviso de conflito */}
           {hasConflict && allowFreeChoice && (
             <div className="flex items-start gap-2 p-3 rounded-lg bg-warning/10 border border-warning/30 text-warning mb-4">
@@ -264,7 +264,7 @@ export function ConflictResolutionModal({
           </MobileModalDescription>
         </MobileModalHeader>
 
-        <MobileModalBody>
+        <MobileModalBody useScrollArea={true} maxHeight="60vh">
           <div className="grid grid-cols-2 gap-2">
             {availableSkills.map((skill) => (
               <Button
