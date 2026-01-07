@@ -1765,6 +1765,83 @@ export function CombatRollModal({
                   />
                 )}
 
+                {/* === TÉCNICA SECRETA (Aniquilador NEX 40%+) === */}
+                {canUseTechniqueSecreta && (
+                  <div className="space-y-2">
+                    <Button
+                      variant={activeTechniqueEffects ? "default" : "outline"}
+                      className={cn(
+                        "w-full gap-2",
+                        activeTechniqueEffects && "bg-amber-600 hover:bg-amber-700 text-white"
+                      )}
+                      onClick={() => setShowTechniqueModal(true)}
+                    >
+                      <Crosshair className="w-4 h-4" />
+                      {activeTechniqueEffects 
+                        ? `Técnica Secreta Ativa (${activeTechniqueEffects.selectedTechniques.length} técnica${activeTechniqueEffects.selectedTechniques.length > 1 ? 's' : ''})`
+                        : 'Usar Técnica Secreta'
+                      }
+                    </Button>
+                    
+                    {/* Indicador de efeitos ativos */}
+                    {activeTechniqueEffects && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 space-y-2"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium text-amber-400">
+                            Técnicas Ativas
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 px-2 text-xs"
+                            onClick={() => {
+                              // Reembolsar PE ao cancelar
+                              if (activeTechniqueEffects.peCost > 0) {
+                                onPEChange(currentPE + activeTechniqueEffects.peCost);
+                              }
+                              setActiveTechniqueEffects(null);
+                            }}
+                          >
+                            <X className="w-3 h-3 mr-1" />
+                            Cancelar
+                          </Button>
+                        </div>
+                        
+                        <div className="flex flex-wrap gap-1.5">
+                          {activeTechniqueEffects.additionalTargets > 0 && (
+                            <Badge variant="secondary" className="gap-1 text-[10px]">
+                              <Target className="w-3 h-3" />
+                              +{activeTechniqueEffects.additionalTargets} alvo
+                            </Badge>
+                          )}
+                          {activeTechniqueEffects.criticalMultiplierBonus > 0 && (
+                            <Badge variant="secondary" className="gap-1 text-[10px]">
+                              <Sword className="w-3 h-3" />
+                              +{activeTechniqueEffects.criticalMultiplierBonus} mult.
+                            </Badge>
+                          )}
+                          {activeTechniqueEffects.criticalMarginBonus > 0 && (
+                            <Badge variant="secondary" className="gap-1 text-[10px]">
+                              <Crosshair className="w-3 h-3" />
+                              +{activeTechniqueEffects.criticalMarginBonus} margem
+                            </Badge>
+                          )}
+                          {activeTechniqueEffects.ignoreResistance > 0 && (
+                            <Badge variant="secondary" className="gap-1 text-[10px]">
+                              <Shield className="w-3 h-3" />
+                              Ignora {activeTechniqueEffects.ignoreResistance} RD
+                            </Badge>
+                          )}
+                        </div>
+                      </motion.div>
+                    )}
+                  </div>
+                )}
+
                 {/* Bônus passivos */}
                 {passiveBonuses.length > 0 && (
                   <div className="space-y-2">
@@ -1940,83 +2017,6 @@ export function CombatRollModal({
                     Use para bônus/penalidades situacionais (cobertura, flanquear, terreno, etc.)
                   </p>
                 </div>
-
-                {/* === BOTÃO DE TÉCNICA SECRETA (Aniquilador) === */}
-                {canUseTechniqueSecreta && (
-                  <div className="space-y-2">
-                    <Button
-                      variant={activeTechniqueEffects ? "default" : "outline"}
-                      className={cn(
-                        "w-full gap-2",
-                        activeTechniqueEffects && "bg-amber-600 hover:bg-amber-700 text-white"
-                      )}
-                      onClick={() => setShowTechniqueModal(true)}
-                    >
-                      <Crosshair className="w-4 h-4" />
-                      {activeTechniqueEffects 
-                        ? `Técnica Secreta Ativa (${activeTechniqueEffects.selectedTechniques.length} técnica${activeTechniqueEffects.selectedTechniques.length > 1 ? 's' : ''})`
-                        : 'Usar Técnica Secreta'
-                      }
-                    </Button>
-                    
-                    {/* Indicador de efeitos ativos */}
-                    {activeTechniqueEffects && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 space-y-2"
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium text-amber-400">
-                            Técnicas Ativas
-                          </span>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 px-2 text-xs"
-                            onClick={() => {
-                              // Reembolsar PE ao cancelar
-                              if (activeTechniqueEffects.peCost > 0) {
-                                onPEChange(currentPE + activeTechniqueEffects.peCost);
-                              }
-                              setActiveTechniqueEffects(null);
-                            }}
-                          >
-                            <X className="w-3 h-3 mr-1" />
-                            Cancelar
-                          </Button>
-                        </div>
-                        
-                        <div className="flex flex-wrap gap-1.5">
-                          {activeTechniqueEffects.additionalTargets > 0 && (
-                            <Badge variant="secondary" className="gap-1 text-[10px]">
-                              <Target className="w-3 h-3" />
-                              +{activeTechniqueEffects.additionalTargets} alvo
-                            </Badge>
-                          )}
-                          {activeTechniqueEffects.criticalMultiplierBonus > 0 && (
-                            <Badge variant="secondary" className="gap-1 text-[10px]">
-                              <Sword className="w-3 h-3" />
-                              +{activeTechniqueEffects.criticalMultiplierBonus} mult.
-                            </Badge>
-                          )}
-                          {activeTechniqueEffects.criticalMarginBonus > 0 && (
-                            <Badge variant="secondary" className="gap-1 text-[10px]">
-                              <Crosshair className="w-3 h-3" />
-                              +{activeTechniqueEffects.criticalMarginBonus} margem
-                            </Badge>
-                          )}
-                          {activeTechniqueEffects.ignoreResistance > 0 && (
-                            <Badge variant="secondary" className="gap-1 text-[10px]">
-                              <Shield className="w-3 h-3" />
-                              Ignora {activeTechniqueEffects.ignoreResistance} RD
-                            </Badge>
-                          )}
-                        </div>
-                      </motion.div>
-                    )}
-                  </div>
-                )}
 
                 {/* Custo de PE */}
                 {totalPECost > 0 && (
