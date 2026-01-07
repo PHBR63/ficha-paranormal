@@ -701,3 +701,150 @@ export async function syncLegacyPowers(
   
   return { synced, alreadySynced, errors };
 }
+
+/**
+ * Sincronização retroativa COMPLETA de todos os slots de escolha de poder
+ * 
+ * Esta função verifica todos os marcos de NEX que o personagem passou e garante
+ * que cada um tenha um registro na tabela character_power_choices.
+ * 
+ * - Se o personagem tem um poder paranormal para aquele slot → cria como 'transcender_legacy'
+ * - Se o personagem não usou Transcender naquele slot → cria como 'class_power'
+ * 
+ * @param characterId - ID do personagem
+ * @param userId - ID do usuário dono do personagem
+ * @param currentNex - NEX atual do personagem
+ * @param existingPowers - Lista de poderes paranormais do personagem (para saber quais slots foram Transcender)
+ * @returns Resultado da sincronização com contadores
+ */
+export async function syncAllPowerChoiceRecords(
+  characterId: string,
+  userId: string,
+  currentNex: number,
+  existingPowers: Array<{ id: string; name: string }> = []
+): Promise<{
+  created: number;
+  transcenderSynced: number;
+  classPowerSynced: number;
+  alreadySynced: number;
+  errors: string[];
+}> {
+  const errors: string[] = [];
+  let transcenderSynced = 0;
+  let classPowerSynced = 0;
+  let alreadySynced = 0;
+  
+  // Obter todos os marcos de escolha de poder até o NEX atual
+  const milestones = getPowerChoiceMilestones().filter(m => m <= currentNex);
+  
+  if (milestones.length === 0) {
+    return { created: 0, transcenderSynced: 0, classPowerSynced: 0, alreadySynced: 0, errors: [] };
+  }
+  
+  // Buscar registros existentes
+  const existingChoices = await getCharacterPowerChoices(characterId);
+  const resolvedChoicesByNex = new Map<number, typeof existingChoices[0]>();
+  
+  for (const choice of existingChoices) {
+    if (choice.status === 'resolved' && 
+        ['transcender', 'transcender_legacy', 'class_power'].includes(choice.choice_type)) {
+      resolvedChoicesByNex.set(choice.nex, choice);
+    }
+  }
+  
+  // Verificar quantos poderes paranormais precisam ser sincronizados
+  // (poderes que existem no personagem mas não têm registro)
+  const registeredPowerIds = new Set<string>();
+  for (const choice of existingChoices) {
+    if (choice.status === 'resolved' && 
+        (choice.choice_type === 'transcender' || choice.choice_type === 'transcender_legacy')) {
+      const powerId = (choice.resolution as any)?.powerId;
+      if (powerId) registeredPowerIds.add(powerId);
+    }
+  }
+  
+  const unregisteredPowers = existingPowers.filter(p => !registeredPowerIds.has(p.id));
+  
+  // Para cada marco, verificar se precisa criar registro
+  for (const nex of milestones) {
+    // Se já tem registro para este NEX, pular
+    if (resolvedChoicesByNex.has(nex)) {
+      alreadySynced++;
+      continue;
+    }
+    
+    // Decidir se foi Transcender ou Poder de Classe
+    // Se ainda temos poderes paranormais não registrados, assume que foi Transcender
+    const powerForThisSlot = unregisteredPowers.shift();
+    
+    if (powerForThisSlot) {
+      // Criar registro de Transcender legado
+      const sanityCost = calculateTranscenderSanityCost('Ocultista', nex - 5, nex);
+      
+      const resolution = {
+        picked: 'transcender',
+        powerId: powerForThisSlot.id,
+        powerName: powerForThisSlot.name,
+        syncedFromLegacy: true,
+        syncedAt: new Date().toISOString(),
+      };
+      
+      const { error } = await supabase
+        .from('character_power_choices')
+        .insert({
+          character_id: characterId,
+          user_id: userId,
+          nex,
+          choice_type: 'transcender_legacy',
+          status: 'resolved',
+          resolution,
+          sanity_delta: -sanityCost,
+          resolved_at: new Date().toISOString(),
+        });
+      
+      if (error) {
+        console.error(`Erro ao sincronizar transcender NEX ${nex}:`, error);
+        errors.push(`NEX ${nex}: ${error.message}`);
+        // Devolver o poder para tentar novamente depois
+        unregisteredPowers.unshift(powerForThisSlot);
+      } else {
+        transcenderSynced++;
+      }
+    } else {
+      // Não tem mais poderes paranormais para registrar, então foi Poder de Classe
+      const resolution = {
+        picked: 'class_power',
+        syncedFromLegacy: true,
+        syncedAt: new Date().toISOString(),
+      };
+      
+      const { error } = await supabase
+        .from('character_power_choices')
+        .insert({
+          character_id: characterId,
+          user_id: userId,
+          nex,
+          choice_type: 'class_power',
+          status: 'resolved',
+          resolution,
+          sanity_delta: 0,
+          resolved_at: new Date().toISOString(),
+        });
+      
+      if (error) {
+        console.error(`Erro ao sincronizar class_power NEX ${nex}:`, error);
+        errors.push(`NEX ${nex}: ${error.message}`);
+      } else {
+        classPowerSynced++;
+      }
+    }
+  }
+  
+  return {
+    created: transcenderSynced + classPowerSynced,
+    transcenderSynced,
+    classPowerSynced,
+    alreadySynced,
+    errors,
+  };
+}

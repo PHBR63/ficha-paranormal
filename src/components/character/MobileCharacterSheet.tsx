@@ -370,6 +370,9 @@ export function MobileCharacterSheet({
     enablePersistence: !!character
   });
 
+  // Hook de autenticação para obter userId (precisa ser antes dos useEffects que dependem dele)
+  const { user } = useAuth();
+
   // Calcula limite de poderes paranormais
   const powerLimits = useMemo(() => 
     getMaxParanormalPowers(character.nex, character.origin), 
@@ -381,24 +384,73 @@ export function MobileCharacterSheet({
   // Distingue entre: slots usados para Transcender e slots usados para Poderes de Classe
   const [transcenderUsedFromDB, setTranscenderUsedFromDB] = useState(0);
   const [totalSlotsUsedFromDB, setTotalSlotsUsedFromDB] = useState(0);
+  const [syncingPowerChoices, setSyncingPowerChoices] = useState(false);
   
-  // Busca registros de escolhas de poder no banco (Transcender, class_power, transcender_legacy)
+  // Busca registros de escolhas de poder no banco e sincroniza retroativamente se necessário
   useEffect(() => {
-    if (!character?.id) return;
+    if (!character?.id || !user?.id) return;
     
-    const fetchPowerChoices = async () => {
+    const fetchAndSyncPowerChoices = async () => {
+      // Primeiro, buscar registros existentes
       const { data, error } = await supabase
         .from('character_power_choices')
-        .select('id, choice_type')
+        .select('id, choice_type, nex')
         .eq('character_id', character.id)
         .in('choice_type', ['transcender', 'transcender_legacy', 'class_power'])
         .eq('status', 'resolved');
       
-      if (!error && data) {
-        // Total de slots de NEX usados (qualquer tipo)
-        setTotalSlotsUsedFromDB(data.length);
+      if (error) {
+        console.error('Erro ao buscar power choices:', error);
+        return;
+      }
+      
+      // Calcular quantos marcos de NEX o personagem deveria ter
+      const milestones = [15, 30, 45, 60, 75, 90].filter(m => m <= character.nex);
+      const existingRecordsCount = data?.length || 0;
+      
+      // Se há menos registros do que marcos, precisamos sincronizar
+      if (existingRecordsCount < milestones.length && !syncingPowerChoices) {
+        setSyncingPowerChoices(true);
+        console.log(`[PowerChoices] Sincronizando: ${existingRecordsCount} registros, ${milestones.length} marcos esperados`);
         
-        // Apenas slots usados para Transcender (poderes paranormais)
+        try {
+          // Importar dinamicamente para evitar ciclos
+          const { syncAllPowerChoiceRecords } = await import('@/lib/transcender-system');
+          
+          const result = await syncAllPowerChoiceRecords(
+            character.id,
+            user.id,
+            character.nex,
+            (character.paranormal_powers || []).map(p => ({ id: p.id, name: p.name }))
+          );
+          
+          console.log('[PowerChoices] Sincronização concluída:', result);
+          
+          if (result.created > 0) {
+            // Re-buscar os dados após sincronização
+            const { data: newData } = await supabase
+              .from('character_power_choices')
+              .select('id, choice_type')
+              .eq('character_id', character.id)
+              .in('choice_type', ['transcender', 'transcender_legacy', 'class_power'])
+              .eq('status', 'resolved');
+            
+            if (newData) {
+              setTotalSlotsUsedFromDB(newData.length);
+              const transcenderOnly = newData.filter(c => 
+                c.choice_type === 'transcender' || c.choice_type === 'transcender_legacy'
+              ).length;
+              setTranscenderUsedFromDB(transcenderOnly);
+            }
+          }
+        } catch (syncError) {
+          console.error('Erro na sincronização:', syncError);
+        } finally {
+          setSyncingPowerChoices(false);
+        }
+      } else if (data) {
+        // Já tem registros suficientes, apenas atualizar estado
+        setTotalSlotsUsedFromDB(data.length);
         const transcenderOnly = data.filter(c => 
           c.choice_type === 'transcender' || c.choice_type === 'transcender_legacy'
         ).length;
@@ -406,8 +458,8 @@ export function MobileCharacterSheet({
       }
     };
     
-    fetchPowerChoices();
-  }, [character?.id]);
+    fetchAndSyncPowerChoices();
+  }, [character?.id, character?.nex, user?.id]);
 
   // Calcula limite de rituais para Ocultistas
   const ritualLimits = useMemo(() => {
@@ -442,8 +494,7 @@ export function MobileCharacterSheet({
     inventory: character.inventory || [],
   }), [character]);
 
-  // Hook de autenticação para obter userId
-  const { user } = useAuth();
+  // useAuth já foi chamado acima para sincronização de power choices
 
   // Hook de auditoria automática com callback para atualizar UI
   const {
