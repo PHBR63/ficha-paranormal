@@ -63,10 +63,14 @@ interface MobilePowersTabProps {
   generalPowers?: GeneralPower[];
   originPowers: OriginPower[];
   rituals: string[];
-  powerLimits: { total: number };
+  powerLimits: { total: number; fromTranscender: number; fromOrigin: number };
   ritualLimits: { count: number } | null;
   hasExcessPowers: boolean;
   hasExcessRituals: boolean;
+  // Contagem de slots de Transcender usados (poderes paranormais escolhidos via Transcender)
+  transcenderUsed?: number;
+  // Total de slots de NEX usados (Transcender + Poder de Classe)
+  totalSlotsUsed?: number;
   onPowerClick: (power: PowerDetailData) => void;
   onOpenExcessPowersModal: () => void;
   onOpenExcessRitualsModal: () => void;
@@ -411,6 +415,8 @@ export const MobilePowersTab = memo(function MobilePowersTab({
   ritualLimits,
   hasExcessPowers,
   hasExcessRituals,
+  transcenderUsed = 0,
+  totalSlotsUsed = 0,
   onPowerClick,
   onOpenExcessPowersModal,
   onOpenExcessRitualsModal,

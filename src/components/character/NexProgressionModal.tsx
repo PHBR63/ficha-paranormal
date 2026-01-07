@@ -70,8 +70,10 @@ import {
   resolveTranscenderChoice,
   validatePowerSubchoice,
   getTranscenderStatus,
+  isValidPowerChoiceNex,
   ChoiceOpportunity,
 } from '@/lib/transcender-system';
+import { supabase } from '@/integrations/supabase/client';
 import { validateBeforeSave, getMaxParanormalPowers } from '@/lib/character-audit-engine';
 import { ParanormalPowerSelectModal } from './ParanormalPowerSelectModal';
 import { PowerSubchoiceModal } from './PowerSubchoiceModal';
@@ -517,6 +519,26 @@ export function NexProgressionModal({
         }
       }
       
+      // Se NÃO usou Transcender mas está em NEX de escolha de poder, registra como class_power
+      // Isso garante que o slot seja marcado como usado para poder de classe
+      if (!usedTranscender && isValidPowerChoiceNex(nextNex) && user) {
+        try {
+          await supabase.from('character_power_choices').insert({
+            character_id: character.id,
+            user_id: user.id,
+            nex: nextNex,
+            choice_type: 'class_power',
+            status: 'resolved',
+            resolution: { picked: 'class_power' },
+            sanity_delta: 0,
+            resolved_at: new Date().toISOString(),
+          });
+        } catch (error) {
+          console.error('Erro ao registrar escolha de poder de classe:', error);
+          // Não bloqueia a progressão se falhar
+        }
+      }
+
       // Calcula novas habilidades (adiciona as da trilha)
       let newAbilities = [...newTrackAbilities.map(a => a.name)];
       
