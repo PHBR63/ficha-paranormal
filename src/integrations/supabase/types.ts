@@ -653,6 +653,7 @@ export type Database = {
           strength: number
           updated_at: string
           user_id: string
+          versatility_track: Json | null
           vigor: number
         }
         Insert: {
@@ -701,6 +702,7 @@ export type Database = {
           strength?: number
           updated_at?: string
           user_id: string
+          versatility_track?: Json | null
           vigor?: number
         }
         Update: {
@@ -749,6 +751,7 @@ export type Database = {
           strength?: number
           updated_at?: string
           user_id?: string
+          versatility_track?: Json | null
           vigor?: number
         }
         Relationships: []

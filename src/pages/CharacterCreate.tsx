@@ -550,6 +550,15 @@ export default function CharacterCreate() {
         class_track: formData.classTrack || null,
         rituals: formData.rituals || [],
         paranormal_powers: paranormalPowers,
+        // Trilha de Versatilidade (NEX 50%+)
+        versatility_track: formData.versatilityChoice?.type === 'track_ability' && formData.versatilityChoice.trackId
+          ? {
+              trackId: formData.versatilityChoice.trackId,
+              trackName: formData.versatilityChoice.trackName,
+              abilityId: formData.versatilityChoice.abilityId,
+              abilityName: formData.versatilityChoice.abilityName,
+            }
+          : null,
       });
 
       if (error) throw error;
