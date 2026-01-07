@@ -1348,36 +1348,45 @@ export default function CharacterSheet() {
     return milestones.filter(m => m <= character.nex).length;
   }, [character?.nex]);
   
-  // Estado para armazenar contagem real de Transcender usado (da tabela character_power_choices)
+  // Estado para armazenar contagem de slots de NEX usados (tabela character_power_choices)
+  // Distingue entre: slots usados para Transcender (poderes paranormais) e slots usados para Poderes de Classe
   const [transcenderUsedFromDB, setTranscenderUsedFromDB] = useState(0);
+  const [totalSlotsUsedFromDB, setTotalSlotsUsedFromDB] = useState(0);
   
-  // Busca registros reais de Transcender no banco
+  // Busca registros de escolhas de poder no banco (Transcender, class_power, transcender_legacy)
   useEffect(() => {
     if (!character?.id) return;
     
-    const fetchTranscenderCount = async () => {
+    const fetchPowerChoices = async () => {
       const { data, error } = await supabase
         .from('character_power_choices')
-        .select('id')
+        .select('id, choice_type')
         .eq('character_id', character.id)
-        .eq('choice_type', 'transcender')
+        .in('choice_type', ['transcender', 'transcender_legacy', 'class_power'])
         .eq('status', 'resolved');
       
       if (!error && data) {
-        setTranscenderUsedFromDB(data.length);
+        // Total de slots de NEX usados (qualquer tipo)
+        setTotalSlotsUsedFromDB(data.length);
+        
+        // Apenas slots usados para Transcender (poderes paranormais)
+        const transcenderOnly = data.filter(c => 
+          c.choice_type === 'transcender' || c.choice_type === 'transcender_legacy'
+        ).length;
+        setTranscenderUsedFromDB(transcenderOnly);
       }
     };
     
-    fetchTranscenderCount();
+    fetchPowerChoices();
   }, [character?.id]);
   
-  // Usa a contagem do banco, não a contagem de paranormal_powers
+  // Usa a contagem do banco para Transcender
   const transcenderUsed = transcenderUsedFromDB;
   
-  // Calcula usos restantes de Transcender
-  const transcenderRemaining = transcenderCount - transcenderUsed;
+  // Calcula usos restantes de Transcender (slots de NEX - slots já usados para qualquer escolha)
+  const transcenderRemaining = transcenderCount - totalSlotsUsedFromDB;
   
-  // Verifica se o personagem pode usar Transcender (tem usos disponíveis)
+  // Verifica se o personagem pode usar Transcender (tem slots disponíveis E não usou todos)
   const hasTranscender = transcenderRemaining > 0;
 
   // === SISTEMA DE AUDITORIA AUTOMÁTICA ===

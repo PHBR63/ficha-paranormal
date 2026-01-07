@@ -376,6 +376,38 @@ export function MobileCharacterSheet({
     [character.nex, character.origin]
   );
   const hasExcessPowers = (character.paranormal_powers?.length || 0) > powerLimits.total;
+  
+  // Estado para armazenar contagem de slots de NEX usados (tabela character_power_choices)
+  // Distingue entre: slots usados para Transcender e slots usados para Poderes de Classe
+  const [transcenderUsedFromDB, setTranscenderUsedFromDB] = useState(0);
+  const [totalSlotsUsedFromDB, setTotalSlotsUsedFromDB] = useState(0);
+  
+  // Busca registros de escolhas de poder no banco (Transcender, class_power, transcender_legacy)
+  useEffect(() => {
+    if (!character?.id) return;
+    
+    const fetchPowerChoices = async () => {
+      const { data, error } = await supabase
+        .from('character_power_choices')
+        .select('id, choice_type')
+        .eq('character_id', character.id)
+        .in('choice_type', ['transcender', 'transcender_legacy', 'class_power'])
+        .eq('status', 'resolved');
+      
+      if (!error && data) {
+        // Total de slots de NEX usados (qualquer tipo)
+        setTotalSlotsUsedFromDB(data.length);
+        
+        // Apenas slots usados para Transcender (poderes paranormais)
+        const transcenderOnly = data.filter(c => 
+          c.choice_type === 'transcender' || c.choice_type === 'transcender_legacy'
+        ).length;
+        setTranscenderUsedFromDB(transcenderOnly);
+      }
+    };
+    
+    fetchPowerChoices();
+  }, [character?.id]);
 
   // Calcula limite de rituais para Ocultistas
   const ritualLimits = useMemo(() => {
@@ -1406,11 +1438,12 @@ export function MobileCharacterSheet({
     }
   }, [character.id, character.active_conditional_bonuses, onRefetch, onToggleConditionalBonus]);
 
-  // Verifica se pode transcender (tem slots disponíveis)
+  // Verifica se pode transcender (tem slots de NEX disponíveis E não usou todos)
+  // Usa a contagem de slots total do banco (transcender + class_power)
   const canTranscend = useMemo(() => {
-    const currentCount = character.paranormal_powers?.length || 0;
-    return currentCount < powerLimits.total;
-  }, [character.paranormal_powers, powerLimits.total]);
+    const availableSlots = powerLimits.fromTranscender - totalSlotsUsedFromDB;
+    return availableSlots > 0;
+  }, [powerLimits.fromTranscender, totalSlotsUsedFromDB]);
 
   return (
     <div className="pb-20">
@@ -1767,6 +1800,8 @@ export function MobileCharacterSheet({
             ritualLimits={ritualLimits}
             hasExcessPowers={hasExcessPowers}
             hasExcessRituals={hasExcessRituals}
+            transcenderUsed={transcenderUsedFromDB}
+            totalSlotsUsed={totalSlotsUsedFromDB}
             onPowerClick={handlePowerClick}
             onOpenExcessPowersModal={() => setExcessPowersModalOpen(true)}
             onOpenExcessRitualsModal={() => setExcessRitualsModalOpen(true)}
