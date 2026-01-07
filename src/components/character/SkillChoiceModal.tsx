@@ -6,9 +6,11 @@
  * - Terceira opção "escolher outra perícia" quando há conflito com origem (Combatente)
  * - Resolução de conflitos de perícias
  * - Validação de perícias válidas do sistema
+ * - Busca de perícias
+ * - Cores por atributo em português
  */
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   MobileModal,
   MobileModalContent,
@@ -19,10 +21,17 @@ import {
 } from '@/components/ui/mobile-modal';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { SKILLS } from '@/lib/character-data';
 import { isValidSkillId } from '@/lib/character-builder-engine';
 import { cn } from '@/lib/utils';
-import { AlertTriangle, Sparkles, Check } from 'lucide-react';
+import { 
+  ATTRIBUTE_ABBR, 
+  ATTRIBUTE_BG_COLORS, 
+  ATTRIBUTE_TEXT_COLORS,
+  type AttributeKey 
+} from '@/lib/constants/attributes';
+import { AlertTriangle, Sparkles, Check, Search, GraduationCap } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
 interface SkillChoiceModalProps {
@@ -53,6 +62,7 @@ export function SkillChoiceModal({
   alreadyTrainedSkills = [],
 }: SkillChoiceModalProps) {
   const [showFreeChoice, setShowFreeChoice] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   
   // Opções disponíveis (não excluídas)
   const availableOptions = options.filter(opt => !excludeSkills.includes(opt));
@@ -64,9 +74,23 @@ export function SkillChoiceModal({
   const hasConflict = conflictOptions.length > 0;
   
   // Todas as perícias disponíveis para escolha livre
-  const allAvailableSkills = SKILLS.filter(
-    s => !alreadyTrainedSkills.includes(s.id) && !options.includes(s.id)
+  const allAvailableSkills = useMemo(() => 
+    SKILLS.filter(
+      s => !alreadyTrainedSkills.includes(s.id) && !options.includes(s.id)
+    ),
+    [alreadyTrainedSkills, options]
   );
+
+  // Perícias filtradas pela busca
+  const filteredSkills = useMemo(() => {
+    if (!searchQuery.trim()) return allAvailableSkills;
+    const query = searchQuery.toLowerCase();
+    return allAvailableSkills.filter(skill =>
+      skill.name.toLowerCase().includes(query) ||
+      skill.description.toLowerCase().includes(query) ||
+      ATTRIBUTE_ABBR[skill.attribute as AttributeKey]?.toLowerCase().includes(query)
+    );
+  }, [allAvailableSkills, searchQuery]);
 
   // Valida e seleciona a perícia
   const handleSelect = (skillId: string) => {
@@ -82,17 +106,34 @@ export function SkillChoiceModal({
     
     onSelect(skillId);
     setShowFreeChoice(false);
+    setSearchQuery('');
     onOpenChange(false);
   };
 
   const handleClose = () => {
     setShowFreeChoice(false);
+    setSearchQuery('');
     onOpenChange(false);
+  };
+
+  // Função para obter a abreviação do atributo em português
+  const getAttrAbbr = (attribute: string) => {
+    return ATTRIBUTE_ABBR[attribute as AttributeKey] || attribute.substring(0, 3).toUpperCase();
+  };
+
+  // Função para obter a cor de fundo do atributo
+  const getAttrBgColor = (attribute: string) => {
+    return ATTRIBUTE_BG_COLORS[attribute as AttributeKey] || 'bg-muted';
+  };
+
+  // Função para obter a cor de texto do atributo
+  const getAttrTextColor = (attribute: string) => {
+    return ATTRIBUTE_TEXT_COLORS[attribute as AttributeKey] || 'text-muted-foreground';
   };
 
   return (
     <MobileModal open={open} onOpenChange={handleClose}>
-      <MobileModalContent size="sm">
+      <MobileModalContent size="md">
         <MobileModalHeader>
           <MobileModalTitle className="font-display tracking-wider">{title}</MobileModalTitle>
           <MobileModalDescription>{description}</MobileModalDescription>
@@ -141,6 +182,13 @@ export function SkillChoiceModal({
                     <div className="text-left flex-1">
                       <div className="flex items-center gap-2">
                         <p className="font-medium">{skill.name}</p>
+                        <span className={cn(
+                          "text-xs px-1.5 py-0.5 rounded font-medium",
+                          getAttrBgColor(skill.attribute),
+                          getAttrTextColor(skill.attribute)
+                        )}>
+                          {getAttrAbbr(skill.attribute)}
+                        </span>
                         {isConflict && (
                           <Badge variant="outline" className="text-xs text-warning border-warning">
                             Já treinada
@@ -150,7 +198,7 @@ export function SkillChoiceModal({
                           <Check className="w-4 h-4 text-primary" />
                         )}
                       </div>
-                      <p className="text-xs text-muted-foreground">{skill.description}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{skill.description}</p>
                     </div>
                   </Button>
                 );
@@ -177,33 +225,76 @@ export function SkillChoiceModal({
             </div>
           ) : (
             /* Lista de todas as perícias disponíveis */
-            <div>
-              <div className="flex items-center justify-between mb-3">
+            <div className="space-y-3">
+              {/* Header com botão voltar */}
+              <div className="flex items-center justify-between">
                 <h4 className="text-sm font-medium">Escolha uma perícia:</h4>
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  onClick={() => setShowFreeChoice(false)}
+                  onClick={() => {
+                    setShowFreeChoice(false);
+                    setSearchQuery('');
+                  }}
                 >
                   Voltar
                 </Button>
               </div>
-              <div className="grid grid-cols-2 gap-2">
-                {allAvailableSkills.map((skill) => (
-                  <Button
-                    key={skill.id}
-                    variant="outline"
-                    onClick={() => handleSelect(skill.id)}
-                    className="justify-start h-auto py-2 px-3"
-                  >
-                    <div className="text-left">
-                      <p className="font-medium text-sm">{skill.name}</p>
-                      <p className="text-xs text-muted-foreground truncate">
-                        {skill.attribute.toUpperCase()}
-                      </p>
-                    </div>
-                  </Button>
-                ))}
+
+              {/* Campo de busca */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar perícia..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 h-9"
+                />
+              </div>
+
+              {/* Lista de perícias */}
+              <div className="space-y-2">
+                {filteredSkills.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    Nenhuma perícia encontrada
+                  </p>
+                ) : (
+                  filteredSkills.map((skill) => (
+                    <button
+                      key={skill.id}
+                      onClick={() => handleSelect(skill.id)}
+                      className={cn(
+                        "w-full p-3 text-left rounded-lg border border-border",
+                        "hover:border-primary/50 hover:bg-primary/5 transition-all",
+                        "focus:outline-none focus:ring-2 focus:ring-primary/50"
+                      )}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-medium text-sm">{skill.name}</span>
+                            <span className={cn(
+                              "text-xs px-1.5 py-0.5 rounded font-medium",
+                              getAttrBgColor(skill.attribute),
+                              getAttrTextColor(skill.attribute)
+                            )}>
+                              {getAttrAbbr(skill.attribute)}
+                            </span>
+                            {skill.requiresTraining && (
+                              <span className="flex items-center gap-1 text-xs text-warning">
+                                <GraduationCap className="w-3 h-3" />
+                                Treino
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                            {skill.description}
+                          </p>
+                        </div>
+                      </div>
+                    </button>
+                  ))
+                )}
               </div>
             </div>
           )}
@@ -228,12 +319,42 @@ export function ConflictResolutionModal({
   alreadyTrainedSkills,
   onSelect,
 }: ConflictResolutionModalProps) {
+  const [searchQuery, setSearchQuery] = useState('');
   const conflictSkill = SKILLS.find(s => s.id === conflictSkillId);
   
   // Todas as perícias exceto as já treinadas
-  const availableSkills = SKILLS.filter(
-    s => !alreadyTrainedSkills.includes(s.id) && s.id !== conflictSkillId
+  const availableSkills = useMemo(() => 
+    SKILLS.filter(
+      s => !alreadyTrainedSkills.includes(s.id) && s.id !== conflictSkillId
+    ),
+    [alreadyTrainedSkills, conflictSkillId]
   );
+
+  // Perícias filtradas pela busca
+  const filteredSkills = useMemo(() => {
+    if (!searchQuery.trim()) return availableSkills;
+    const query = searchQuery.toLowerCase();
+    return availableSkills.filter(skill =>
+      skill.name.toLowerCase().includes(query) ||
+      skill.description.toLowerCase().includes(query) ||
+      ATTRIBUTE_ABBR[skill.attribute as AttributeKey]?.toLowerCase().includes(query)
+    );
+  }, [availableSkills, searchQuery]);
+
+  // Função para obter a abreviação do atributo em português
+  const getAttrAbbr = (attribute: string) => {
+    return ATTRIBUTE_ABBR[attribute as AttributeKey] || attribute.substring(0, 3).toUpperCase();
+  };
+
+  // Função para obter a cor de fundo do atributo
+  const getAttrBgColor = (attribute: string) => {
+    return ATTRIBUTE_BG_COLORS[attribute as AttributeKey] || 'bg-muted';
+  };
+
+  // Função para obter a cor de texto do atributo
+  const getAttrTextColor = (attribute: string) => {
+    return ATTRIBUTE_TEXT_COLORS[attribute as AttributeKey] || 'text-muted-foreground';
+  };
 
   // Valida e seleciona a perícia de substituição
   const handleSelect = (skillId: string) => {
@@ -248,11 +369,17 @@ export function ConflictResolutionModal({
     }
     
     onSelect(skillId);
+    setSearchQuery('');
+    onOpenChange(false);
+  };
+
+  const handleClose = () => {
+    setSearchQuery('');
     onOpenChange(false);
   };
 
   return (
-    <MobileModal open={open} onOpenChange={onOpenChange}>
+    <MobileModal open={open} onOpenChange={handleClose}>
       <MobileModalContent size="md">
         <MobileModalHeader>
           <MobileModalTitle className="font-display tracking-wider text-warning">
@@ -265,20 +392,62 @@ export function ConflictResolutionModal({
         </MobileModalHeader>
 
         <MobileModalBody useScrollArea={true} maxHeight="60vh">
-          <div className="grid grid-cols-2 gap-2">
-            {availableSkills.map((skill) => (
-              <Button
-                key={skill.id}
-                variant="outline"
-                onClick={() => handleSelect(skill.id)}
-                className="justify-start h-auto py-2 px-3"
-              >
-                <div className="text-left">
-                  <p className="font-medium text-sm">{skill.name}</p>
-                  <p className="text-xs text-muted-foreground truncate">{skill.attribute.toUpperCase()}</p>
-                </div>
-              </Button>
-            ))}
+          <div className="space-y-3">
+            {/* Campo de busca */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar perícia..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 h-9"
+              />
+            </div>
+
+            {/* Lista de perícias */}
+            <div className="space-y-2">
+              {filteredSkills.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  Nenhuma perícia encontrada
+                </p>
+              ) : (
+                filteredSkills.map((skill) => (
+                  <button
+                    key={skill.id}
+                    onClick={() => handleSelect(skill.id)}
+                    className={cn(
+                      "w-full p-3 text-left rounded-lg border border-border",
+                      "hover:border-warning/50 hover:bg-warning/5 transition-all",
+                      "focus:outline-none focus:ring-2 focus:ring-warning/50"
+                    )}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-medium text-sm">{skill.name}</span>
+                          <span className={cn(
+                            "text-xs px-1.5 py-0.5 rounded font-medium",
+                            getAttrBgColor(skill.attribute),
+                            getAttrTextColor(skill.attribute)
+                          )}>
+                            {getAttrAbbr(skill.attribute)}
+                          </span>
+                          {skill.requiresTraining && (
+                            <span className="flex items-center gap-1 text-xs text-warning">
+                              <GraduationCap className="w-3 h-3" />
+                              Treino
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                          {skill.description}
+                        </p>
+                      </div>
+                    </div>
+                  </button>
+                ))
+              )}
+            </div>
           </div>
         </MobileModalBody>
       </MobileModalContent>
