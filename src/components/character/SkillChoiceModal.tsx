@@ -161,7 +161,7 @@ export function SkillChoiceModal({
           <MobileModalDescription>{description}</MobileModalDescription>
         </MobileModalHeader>
 
-        <MobileModalBody useScrollArea={true} maxHeight="60vh">
+        <MobileModalBody useScrollArea={true}>
           {/* Aviso de conflito */}
           {hasConflict && allowFreeChoice && (
             <div className="flex items-start gap-2 p-3 rounded-lg bg-warning/10 border border-warning/30 text-warning mb-4">
@@ -453,7 +453,7 @@ export function ConflictResolutionModal({
           </MobileModalDescription>
         </MobileModalHeader>
 
-        <MobileModalBody useScrollArea={true} maxHeight="60vh">
+        <MobileModalBody useScrollArea={true}>
           <div className="space-y-3">
             {/* Campo de busca */}
             <div className="relative">
