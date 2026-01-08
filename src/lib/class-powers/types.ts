@@ -44,18 +44,20 @@ export type ActionType =
  * Tipos de arma para condições de aplicação
  */
 export type WeaponCategory = 
-  | 'melee'          // Corpo a corpo
-  | 'ranged'         // Disparo (arcos, bestas)
-  | 'firearm'        // Armas de fogo
-  | 'tactical'       // Armas táticas
-  | 'heavy'          // Armas pesadas
-  | 'unarmed'        // Desarmado
-  | 'light-melee'    // Corpo a corpo leve
-  | 'simple'         // Armas simples
-  | 'simple-melee'   // Simples corpo a corpo
-  | 'simple-ranged'  // Simples de disparo
-  | 'tactical-melee' // Táticas corpo a corpo
-  | 'any';           // Qualquer arma
+  | 'melee'                      // Corpo a corpo
+  | 'ranged'                     // Disparo (arcos, bestas)
+  | 'ranged-nonfirearm'          // Disparo SEM armas de fogo (Ninja Urbano)
+  | 'firearm'                    // Armas de fogo
+  | 'tactical'                   // Armas táticas
+  | 'tactical-ranged-nonfirearm' // Táticas de disparo SEM fogo (Ninja Urbano)
+  | 'heavy'                      // Armas pesadas
+  | 'unarmed'                    // Desarmado
+  | 'light-melee'                // Corpo a corpo leve
+  | 'simple'                     // Armas simples
+  | 'simple-melee'               // Simples corpo a corpo
+  | 'simple-ranged'              // Simples de disparo
+  | 'tactical-melee'             // Táticas corpo a corpo
+  | 'any';                       // Qualquer arma
 
 /**
  * Tipos de proteção
@@ -207,6 +209,20 @@ export interface SkillTrainingConfig {
   restrictions?: Skill[];  // Perícias específicas permitidas
 }
 
+// ================== DADOS EXTRAS ==================
+
+/**
+ * Configuração para poderes que concedem dados extras (ex: +1d20)
+ * Usado por: Na Trilha Certa, Primeira Impressão
+ */
+export interface ExtraDiceConfig {
+  die: string;            // Tipo do dado (ex: 'd20', 'd6')
+  count: number;          // Quantidade de dados
+  cumulative?: boolean;   // Se os bônus são cumulativos (Na Trilha Certa)
+  skills?: Skill[];       // Perícias afetadas (Primeira Impressão)
+  conditions?: PowerConditions; // Condições para aplicar
+}
+
 // ================== PROFICIÊNCIAS ==================
 
 /**
@@ -281,11 +297,12 @@ export interface PowerConditions {
   onHit?: boolean;
   inCombat?: boolean;
   duringInvestigation?: boolean;
-  firstInScene?: boolean;      // Apenas primeira vez na cena
-  duringCharge?: boolean;      // Durante investida
-  twoHanded?: boolean;         // Usando arma com duas mãos
-  weaknessRevealed?: boolean;  // Fraqueza revelada por perícia
-  crowdPresent?: boolean;      // Multidão presente
+  firstInScene?: boolean;           // Apenas primeira vez na cena
+  duringCharge?: boolean;           // Durante investida
+  twoHanded?: boolean;              // Usando arma com duas mãos
+  weaknessRevealed?: boolean;       // Fraqueza revelada por perícia
+  crowdPresent?: boolean;           // Multidão presente
+  onSuccessfulClueSearch?: boolean; // Após sucesso em procurar pistas (Na Trilha Certa)
 }
 
 // ================== MECÂNICAS DO PODER ==================
@@ -338,6 +355,10 @@ export interface PowerMechanics {
   
   // === PODERES CONCEDIDOS ===
   grantsPower?: string;  // ID de outro poder concedido (Transcender)
+  noSanityGain?: boolean; // Não ganha Sanidade neste aumento de NEX (Transcender)
+  
+  // === DADOS EXTRAS (poderes que concedem +Xd20 ou similar) ===
+  extraDice?: ExtraDiceConfig;
   
   // === RECURSOS ADICIONAIS ===
   movementBonus?: number;            // Bônus de deslocamento em metros
