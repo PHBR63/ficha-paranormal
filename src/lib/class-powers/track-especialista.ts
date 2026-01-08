@@ -53,7 +53,7 @@ export const ESPECIALISTA_TRACKS: UnifiedTrack[] = [
         name: 'Disparo Letal',
         trackId: 'atirador-elite',
         minNex: 40,
-        description: 'Quando faz a ação mirar, você pode gastar 1 PE para aumentar em +2 a margem de ameaça do próximo ataque que fizer até o final do seu próximo turno.',
+        description: 'Uma vez por rodada, quando faz a ação Mirar, você pode gastar 1 PE para aumentar em +2 a margem de ameaça do próximo ataque que fizer até o final de seu próximo turno.',
         pageReference: 'Livro Base p.54',
         effects: {
           base: {
@@ -61,15 +61,16 @@ export const ESPECIALISTA_TRACKS: UnifiedTrack[] = [
             activation: {
               cost: 1,
               action: 'free', // Parte da ação mirar
-              trigger: 'on-aim'
+              trigger: 'on-aim',
+              perRound: true, // Uma vez por rodada
             },
             criticalBonus: {
               marginBonus: 2,
-              duration: 'next-attack'
+              duration: 'next-turn', // Até o final do próximo turno
             }
           }
         },
-        tags: ['ativado', 'crítico', 'mirar']
+        tags: ['ativado', 'crítico', 'mirar', 'uma-vez-por-rodada']
       },
       {
         id: 'disparo-impactante',

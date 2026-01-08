@@ -35,6 +35,7 @@ export interface AtiradorAbility {
   minNex: number;
   peCost: number;
   isPassive: boolean;
+  perRound?: boolean; // Se true, só pode ser usada 1x por rodada
   description: string;
   shortEffect: string;
   effectId?: string;
@@ -59,10 +60,11 @@ export const ATIRADOR_ABILITIES: AtiradorAbility[] = [
     minNex: 40,
     peCost: 1,
     isPassive: false,
-    description: 'Quando faz a ação mirar, você pode gastar 1 PE para aumentar em +2 a margem de ameaça do próximo ataque até o final de seu próximo turno.',
-    shortEffect: '+2 margem de ameaça (ao mirar)',
+    perRound: true, // Uma vez por rodada
+    description: 'Uma vez por rodada, quando faz a ação Mirar, você pode gastar 1 PE para aumentar em +2 a margem de ameaça do próximo ataque até o final de seu próximo turno.',
+    shortEffect: '+2 margem de ameaça (1x/rodada)',
     effectId: TRACK_EFFECT_IDS.DISPARO_LETAL,
-    effectDuration: 'next-attack',
+    effectDuration: 'next-turn', // Até o final do próximo turno
   },
   {
     id: 'disparo-impactante',
@@ -100,6 +102,9 @@ export interface UseAtiradorDeEliteTrackProps {
   onActivateEffect?: (id: string, name: string, duration: EffectDuration, metadata?: Record<string, unknown>) => void;
   isEffectActive?: (id: string) => boolean;
   computedEffects?: ComputedEffects;
+  // Tracking de uso por rodada (opcional - usa estado local se não fornecido)
+  isAbilityUsedThisRound?: (abilityId: string) => boolean;
+  markAbilityUsedThisRound?: (abilityId: string) => void;
 }
 
 // =====================================================
@@ -115,9 +120,14 @@ export function useAtiradorDeEliteTrack({
   onActivateEffect,
   isEffectActive,
   computedEffects,
+  isAbilityUsedThisRound,
+  markAbilityUsedThisRound,
 }: UseAtiradorDeEliteTrackProps) {
   const [activatingAbility, setActivatingAbility] = useState<string | null>(null);
   const [showManeuverDrawer, setShowManeuverDrawer] = useState(false);
+  
+  // Estado local para tracking de rodada (fallback quando não há tracking externo)
+  const [localUsedAbilities, setLocalUsedAbilities] = useState<Set<string>>(new Set());
 
   // Verifica se é Atirador de Elite (suporta múltiplos formatos de ID)
   const isAtiradorElite = useMemo(() => 
@@ -141,9 +151,39 @@ export function useAtiradorDeEliteTrack({
     };
   }, [computedEffects]);
 
+  // Verifica se habilidade já foi usada nesta rodada
+  const isUsedThisRound = useCallback((abilityId: string): boolean => {
+    if (isAbilityUsedThisRound) return isAbilityUsedThisRound(abilityId);
+    return localUsedAbilities.has(abilityId);
+  }, [isAbilityUsedThisRound, localUsedAbilities]);
+
+  // Marca habilidade como usada nesta rodada
+  const markUsedThisRound = useCallback((abilityId: string): void => {
+    if (markAbilityUsedThisRound) {
+      markAbilityUsedThisRound(abilityId);
+    } else {
+      setLocalUsedAbilities(prev => new Set(prev).add(abilityId));
+    }
+  }, [markAbilityUsedThisRound]);
+
+  // Reset do tracking local (para nova rodada)
+  const resetRoundUsage = useCallback((): void => {
+    if (!isAbilityUsedThisRound) {
+      setLocalUsedAbilities(new Set());
+    }
+  }, [isAbilityUsedThisRound]);
+
   // Handler para usar habilidade ativa
   const handleUseAbility = useCallback(async (ability: AtiradorAbility) => {
     if (ability.isPassive) return;
+    
+    // Verificação de uso por rodada (para habilidades com perRound: true)
+    if (ability.perRound && isUsedThisRound(ability.id)) {
+      toast.error(`${ability.name} já usado nesta rodada`, {
+        description: 'Esta habilidade só pode ser usada uma vez por rodada.',
+      });
+      return;
+    }
     
     if (peCurrent < ability.peCost) {
       toast.error(`PE insuficiente para ${ability.name}`, {
@@ -163,6 +203,11 @@ export function useAtiradorDeEliteTrack({
     try {
       onPEChange(peCurrent - ability.peCost);
 
+      // Marca como usado se for habilidade por rodada
+      if (ability.perRound) {
+        markUsedThisRound(ability.id);
+      }
+
       if (onActivateEffect && ability.effectId && ability.effectDuration) {
         onActivateEffect(ability.effectId, ability.name, ability.effectDuration);
       }
@@ -173,7 +218,7 @@ export function useAtiradorDeEliteTrack({
     } finally {
       setTimeout(() => setActivatingAbility(null), 300);
     }
-  }, [peCurrent, onPEChange, onActivateEffect]);
+  }, [peCurrent, onPEChange, onActivateEffect, isUsedThisRound, markUsedThisRound]);
 
   // Handler para escolher manobra do Disparo Impactante
   const handleManeuverChoice = useCallback((manobra: ManeuverType) => {
@@ -216,7 +261,17 @@ export function useAtiradorDeEliteTrack({
     handleUseAbility,
     handleManeuverChoice,
     
+    // Tracking de rodada
+    isUsedThisRound,
+    resetRoundUsage,
+    hasLocalTracking: !isAbilityUsedThisRound, // True se usa estado local
+    
     // Helpers
     canAffordAbility: (ability: AtiradorAbility) => peCurrent >= ability.peCost,
+    canUseAbility: (ability: AtiradorAbility) => {
+      if (ability.isPassive) return false;
+      if (ability.perRound && isUsedThisRound(ability.id)) return false;
+      return peCurrent >= ability.peCost;
+    },
   };
 }
