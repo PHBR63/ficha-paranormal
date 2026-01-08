@@ -22,6 +22,8 @@ export const PER_ROUND_ABILITIES = {
   // Operações Especiais
   ATAQUE_EXTRA: 'ataque-extra',
   SURTO_DE_ADRENALINA: 'surto-de-adrenalina',
+  // Atirador de Elite
+  DISPARO_LETAL: 'disparo-letal',
 } as const;
 
 export type PerRoundAbilityId = typeof PER_ROUND_ABILITIES[keyof typeof PER_ROUND_ABILITIES];
