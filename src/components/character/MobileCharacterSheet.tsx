@@ -2278,6 +2278,7 @@ export function MobileCharacterSheet({
           san_max: character.san_max,
           rituals: character.rituals || [],
           abilities: character.abilities || [],
+          skills: character.skills || {},
           // Converte paranormal_powers para o tipo esperado pelo NexProgressionModal
           // Usa unknown como intermediário para compatibilidade de tipos
           paranormal_powers: (character.paranormal_powers?.map(p => 

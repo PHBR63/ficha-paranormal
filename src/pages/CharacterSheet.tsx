@@ -1027,6 +1027,7 @@ export default function CharacterSheet() {
     paranormal_powers?: ParanormalPower[];
     attributeIncrease?: string;
     versatilityChoice?: { type: string; trackId?: string; trackName?: string; abilityId?: string; abilityName?: string };
+    skillUpgrades?: string[]; // Perícias selecionadas para Grau de Treinamento
   }) => {
     if (!character) return;
 
@@ -1096,6 +1097,17 @@ export default function CharacterSheet() {
         abilityName: newStats.versatilityChoice.abilityName
       };
       console.log(`[Versatilidade] ${character.name} adquiriu habilidade "${newStats.versatilityChoice.abilityName}" da trilha "${newStats.versatilityChoice.trackName}"`);
+    }
+    
+    // Se há escolha de Grau de Treinamento, aplica upgrades de perícias
+    if (newStats.skillUpgrades && newStats.skillUpgrades.length > 0) {
+      const updatedSkills = { ...character.skills };
+      for (const skillId of newStats.skillUpgrades) {
+        const currentLevel = updatedSkills[skillId] || 0;
+        updatedSkills[skillId] = Math.min(currentLevel + 1, 3);
+      }
+      updateData.skills = updatedSkills;
+      console.log(`[Grau de Treinamento] ${character.name} aprimorou ${newStats.skillUpgrades.length} perícias no NEX ${newNex}%`);
     }
 
     const { error } = await supabase
@@ -3076,6 +3088,7 @@ export default function CharacterSheet() {
             san_max: character.san_max,
             rituals: character.rituals,
             abilities: character.abilities,
+            skills: character.skills,
             paranormal_powers: character.paranormal_powers?.map(p => {
               const fullPower = PARANORMAL_POWERS.find(fp => fp.id === p.id);
               return fullPower || {
