@@ -132,7 +132,8 @@ export const ESPECIALISTA_POWERS: UnifiedClassPower[] = [
       base: {
         kind: 'choice',
         skillTraining: {
-          count: 5, // +Int calculado em runtime
+          count: 5,
+          dynamicCount: true,     // Quantidade = 5 + Intelecto
           targetLevel: 'veteran',
         },
       },
@@ -223,7 +224,9 @@ export const ESPECIALISTA_POWERS: UnifiedClassPower[] = [
         kind: 'choice',
         skillTraining: {
           count: 5,
-          targetLevel: 'veteran',
+          dynamicCount: true,        // Quantidade = 5 + Intelecto
+          targetLevel: 'expert',     // Permite até expert
+          allowMultipleLevels: true, // Pode escolher treinado→veterano OU veterano→expert
         },
       },
     },

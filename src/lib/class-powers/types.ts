@@ -204,9 +204,11 @@ export interface AttributeSwapConfig {
  * Treinamento em perícias concedido
  */
 export interface SkillTrainingConfig {
-  count: number;           // Quantas perícias
-  targetLevel: TrainingLevel;  // Nível de treinamento concedido
-  restrictions?: Skill[];  // Perícias específicas permitidas
+  count: number;              // Quantidade base de perícias
+  dynamicCount?: boolean;     // Se true, quantidade = count + Intelecto
+  targetLevel: TrainingLevel; // Nível máximo de treinamento permitido
+  allowMultipleLevels?: boolean; // Se true, permite escolher entre níveis (veterano OU expert)
+  restrictions?: Skill[];     // Perícias específicas permitidas
 }
 
 // ================== DADOS EXTRAS ==================
