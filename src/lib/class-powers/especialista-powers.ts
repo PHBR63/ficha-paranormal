@@ -422,7 +422,8 @@ export const ESPECIALISTA_POWERS: UnifiedClassPower[] = [
     classId: 'Especialista',
     isCore: false,
     minNex: 15,
-    description: 'Você pode gastar 1 PE para ignorar penalidades em deslocamento por terreno difícil e se posicionar até o final do turno. Pré-requisito: treinado em Atletismo.',
+    // Corrigido: texto oficial usa "por escalar" e não "se posicionar"
+    description: 'Você pode gastar 1 PE para ignorar a penalidade em deslocamento por terreno difícil e por escalar até o final do turno. Pré-requisito: treinado em Atletismo.',
     pageReference: 'Livro Base p.50',
     prerequisites: {
       skills: [{ skill: 'atletismo', level: 'trained' }],
@@ -445,25 +446,29 @@ export const ESPECIALISTA_POWERS: UnifiedClassPower[] = [
     classId: 'Especialista',
     isCore: false,
     minNex: 15,
-    description: 'Sempre que tiver sucesso em um teste para procurar pistas, você pode gastar 1 PE para receber +5 no próximo teste. Os custos e os bônus são cumulativos.',
+    // CRÍTICO: Corrigido de +5 para +1d20 conforme texto oficial
+    // Os custos e bônus são cumulativos (1 PE = +1d20, 2 PE = +2d20, etc.)
+    description: 'Sempre que tiver sucesso em um teste para procurar pistas, você pode gastar 1 PE para receber +1d20 no próximo teste. Os custos e os bônus são cumulativos: se passar num segundo teste, pode pagar 2 PE para receber um total de +2d20 no próximo teste, e assim por diante.',
     pageReference: 'Livro Base p.50',
     effects: {
       base: {
         kind: 'triggered',
         activation: {
-          cost: 1,
+          cost: 1, // Custo base, aumenta cumulativamente
           action: 'free',
         },
-        skillBonuses: [{
-          skill: 'investigacao',
-          value: 5,
-        }],
+        // Dados extras ao invés de bônus fixo
+        extraDice: {
+          die: 'd20',
+          count: 1,
+          cumulative: true, // Cada uso adicional na cena soma +1d20 e +1 PE
+        },
         conditions: {
-          duringInvestigation: true,
+          onSuccessfulClueSearch: true, // Requer sucesso em procurar pistas
         },
       },
     },
-    tags: ['investigação', 'cumulativo'],
+    tags: ['investigação', 'cumulativo', 'dados-extras'],
   },
   
   {
@@ -493,23 +498,26 @@ export const ESPECIALISTA_POWERS: UnifiedClassPower[] = [
     classId: 'Especialista',
     isCore: false,
     minNex: 15,
-    description: 'Você recebe proficiência com armas táticas de ataque corpo a corpo e de disparo e recebe +2 em rolagens de dano com essas armas.',
+    // Corrigido: texto oficial EXCLUI armas de fogo da proficiência e do bônus de dano
+    description: 'Você recebe proficiência com armas táticas de ataque corpo a corpo e de disparo (exceto de fogo) e +2 em rolagens de dano com armas de corpo a corpo e de disparo.',
     pageReference: 'Livro Base p.50',
     effects: {
       base: {
         kind: 'passive',
+        // Proficiência em táticas corpo a corpo e disparo SEM armas de fogo
         proficiencies: {
-          weapons: ['tactical'],
+          weapons: ['tactical-melee', 'tactical-ranged-nonfirearm'],
         },
         damageBonus: {
           value: 2,
           conditions: {
-            weaponType: 'tactical',
+            // Bônus apenas para corpo a corpo e disparo (exclui armas de fogo)
+            weaponType: ['melee', 'ranged-nonfirearm'],
           },
         },
       },
     },
-    tags: ['proficiência', 'dano', 'tático'],
+    tags: ['proficiência', 'dano', 'tático', 'corpo-a-corpo', 'disparo'],
   },
   
   {
@@ -563,20 +571,22 @@ export const ESPECIALISTA_POWERS: UnifiedClassPower[] = [
     classId: 'Especialista',
     isCore: false,
     minNex: 15,
-    description: 'Você recebe +5 no primeiro teste de Diplomacia, Enganação, Intimidação ou Intuição que fizer em uma cena.',
+    // CRÍTICO: Corrigido de +5 para +1d20 conforme texto oficial
+    description: 'Você recebe +1d20 no primeiro teste de Diplomacia, Enganação, Intimidação ou Intuição que fizer em uma cena.',
     pageReference: 'Livro Base p.51',
     effects: {
       base: {
         kind: 'passive',
-        skillBonuses: [
-          { skill: 'diplomacia', value: 5, conditions: { firstInScene: true } },
-          { skill: 'enganacao', value: 5, conditions: { firstInScene: true } },
-          { skill: 'intimidacao', value: 5, conditions: { firstInScene: true } },
-          { skill: 'intuicao', value: 5, conditions: { firstInScene: true } },
-        ],
+        // Dado extra ao invés de bônus fixo
+        extraDice: {
+          die: 'd20',
+          count: 1,
+          skills: ['diplomacia', 'enganacao', 'intimidacao', 'intuicao'],
+          conditions: { firstInScene: true },
+        },
       },
     },
-    tags: ['social', 'primeiro-contato'],
+    tags: ['social', 'primeiro-contato', 'dados-extras'],
   },
   
   {
@@ -585,7 +595,8 @@ export const ESPECIALISTA_POWERS: UnifiedClassPower[] = [
     classId: 'Especialista',
     isCore: false,
     minNex: 15,
-    description: 'Escolha um poder paranormal (veja p. 114). Você recebe o poder escolhido, mas não ganha Sanidade nem aumento de NEX. Você pode escolher este poder várias vezes.',
+    // Corrigido: texto oficial diz "não ganha Sanidade neste aumento de NEX" (sem menção a NEX)
+    description: 'Escolha um poder paranormal (veja a página 114). Você recebe o poder escolhido, mas não ganha Sanidade neste aumento de NEX. Você pode escolher este poder várias vezes.',
     pageReference: 'Livro Base p.51',
     isRepeatable: true,
     effects: {
@@ -596,6 +607,8 @@ export const ESPECIALISTA_POWERS: UnifiedClassPower[] = [
           type: 'power',
           count: 1,
         },
+        // Penalidade: não ganha Sanidade neste aumento de NEX
+        noSanityGain: true,
       },
     },
     tags: ['paranormal', 'transcendência', 'repetível'],
