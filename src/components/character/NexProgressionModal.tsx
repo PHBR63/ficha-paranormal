@@ -80,6 +80,7 @@ import { PowerSubchoiceModal } from './PowerSubchoiceModal';
 import { NonOccultistRitualModal, RitualSource } from './NonOccultistRitualModal';
 import { AttributeIncreaseSection, isAttributeIncreaseNex } from './AttributeIncreaseSection';
 import { VersatilitySection, isVersatilityChoiceComplete, VersatilityChoice } from './VersatilitySection';
+import { TrainingGradeSection, isTrainingGradeComplete } from './TrainingGradeSection';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/components/ui/sonner';
 import confetti from 'canvas-confetti';
@@ -126,6 +127,7 @@ interface NexProgressionModalProps {
     san_max: number;
     rituals: string[];
     abilities: string[];
+    skills: Record<string, number>; // Mapa de perícias para Grau de Treinamento
     paranormal_powers?: ParanormalPower[];
     elemental_affinity?: ParanormalElement | null;
     affinity_active?: boolean;
@@ -141,6 +143,7 @@ interface NexProgressionModalProps {
     paranormal_powers?: ParanormalPower[];
     attributeIncrease?: string; // Atributo aumentado (agility, strength, etc)
     versatilityChoice?: VersatilityChoice; // Escolha da Versatilidade (NEX 50%)
+    skillUpgrades?: string[]; // Perícias atualizadas pelo Grau de Treinamento (NEX 35%, 70%)
   }) => Promise<void>;
 }
 
@@ -192,6 +195,9 @@ export function NexProgressionModal({
   // Estado para seleção de Versatilidade (NEX 50%)
   const [versatilityChoice, setVersatilityChoice] = useState<VersatilityChoice | null>(null);
   
+  // Estado para seleção de Grau de Treinamento (NEX 35%, 70% - Especialista)
+  const [selectedTrainingSkills, setSelectedTrainingSkills] = useState<string[]>([]);
+  
   // Verificar se está subindo para NEX 50% (escolhe afinidade)
   const currentNexIndex = NEX_VALUES.indexOf(character.nex);
   const nextNex = currentNexIndex < NEX_VALUES.length - 1 ? NEX_VALUES[currentNexIndex + 1] : null;
@@ -202,6 +208,9 @@ export function NexProgressionModal({
   
   // Verificar se este NEX oferece Versatilidade (chegando no NEX 50%)
   const showVersatility = nextNex === 50;
+  
+  // Verificar se este NEX oferece Grau de Treinamento (NEX 35%, 70% - Especialista apenas)
+  const showTrainingGrade = character.class === 'Especialista' && (nextNex === 35 || nextNex === 70);
   
   // Verificar elegibilidade de Transcender quando modal abre
   // API corrigida: funciona para TODAS as classes, deriva marcos da tabela oficial
@@ -440,6 +449,15 @@ export function NexProgressionModal({
       });
       return;
     }
+    
+    // Validação: se é NEX de Grau de Treinamento (Especialista), precisa completar seleção
+    if (showTrainingGrade && !isTrainingGradeComplete(selectedTrainingSkills, character.intellect)) {
+      const required = 5 + character.intellect;
+      toast.error('Escolha obrigatória', {
+        description: `Você precisa selecionar ${required} perícias para o Grau de Treinamento.`,
+      });
+      return;
+    }
     // Validação: atributo selecionado não pode estar no limite
     if (showAttributeIncrease && selectedAttributeIncrease) {
       const attrValue = character[selectedAttributeIncrease as keyof typeof character] as number;
@@ -577,6 +595,7 @@ export function NexProgressionModal({
         paranormal_powers: pendingPowers,
         attributeIncrease: showAttributeIncrease ? selectedAttributeIncrease || undefined : undefined,
         versatilityChoice: showVersatility ? versatilityChoice || undefined : undefined,
+        skillUpgrades: showTrainingGrade && selectedTrainingSkills.length > 0 ? selectedTrainingSkills : undefined,
       });
 
       // Efeito de celebração
@@ -764,6 +783,17 @@ export function NexProgressionModal({
                   currentTrackId={character.class_track}
                   onSelect={setVersatilityChoice}
                   selected={versatilityChoice}
+                />
+              )}
+              
+              {/* Seção de Grau de Treinamento (NEX 35%, 70% - Especialista) */}
+              {showTrainingGrade && nextNex && (
+                <TrainingGradeSection
+                  characterIntellect={character.intellect}
+                  currentNex={nextNex as 35 | 70}
+                  skills={character.skills}
+                  selectedSkills={selectedTrainingSkills}
+                  onSelect={setSelectedTrainingSkills}
                 />
               )}
 
