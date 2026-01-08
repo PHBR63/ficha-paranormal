@@ -49,6 +49,9 @@ export interface TrackAbilityMechanics {
   /** Tipo da habilidade */
   kind: TrackAbilityKind;
   
+  /** Duração do efeito */
+  duration?: 'instant' | 'next-attack' | 'next-turn' | 'scene' | 'sustained';
+  
   /** Configuração de ativação */
   activation?: {
     cost: number;
@@ -60,6 +63,7 @@ export interface TrackAbilityMechanics {
     costPerTarget?: boolean;
     costPerCategory?: boolean;
     trigger?: string;
+    range?: 'touch' | 'short' | 'medium' | 'long';  // Alcance da habilidade
   };
   
   /** Bônus de dano */
@@ -110,6 +114,7 @@ export interface TrackAbilityMechanics {
   sneakAttack?: {
     scaling: Record<number, { dice: number; dieType: string }>;
     conditions: string[];
+    rangeRestriction?: ('melee' | 'short' | 'medium' | 'long')[];  // Alcances válidos para Ataque Furtivo
     peCost: number;
     usesPerRound: number;
   };
@@ -230,6 +235,8 @@ export interface TrackAbilityMechanics {
     movementPenalty?: boolean;
     armorPenalty?: boolean;
     allPenalties?: boolean;
+    type?: 'fixed-penalty' | 'dice-penalty';  // Tipo de penalidade ignorada
+    value?: number;  // Valor da penalidade (ex: 3 para -3d20)
   };
   
   /** Controle de estado do alvo */
