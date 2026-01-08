@@ -126,7 +126,7 @@ export const ESPECIALISTA_TRACKS: UnifiedTrack[] = [
     id: 'infiltrador',
     name: 'Infiltrador',
     classId: 'Especialista',
-    description: 'Você é um perito em infiltração e sabe neutralizar alvos desprevenidos sem causar alarde. Combinando talento acrobático, destreza manual e conhecimento técnico, você é capaz de superar qualquer barreira de defesa.',
+    description: 'Você é um perito em infiltração e sabe neutralizar alvos desprevenidos sem causar alarde. Combinando talento acrobático, destreza manual e conhecimento técnico, você é capaz de superar qualquer barreira de defesa, mesmo quando a missão parece impossível.',
     pageReference: 'Livro Base p.54',
     abilities: [
       {
@@ -134,7 +134,7 @@ export const ESPECIALISTA_TRACKS: UnifiedTrack[] = [
         name: 'Ataque Furtivo',
         trackId: 'infiltrador',
         minNex: 10,
-        description: 'Você sabe atingir os pontos vitais de um inimigo distraído. Uma vez por rodada, quando atinge um alvo desprevenido, flanqueado ou que você esteja atacando corpo a corpo com uma arma leve, pode gastar 1 PE para causar +1d6 de dano do mesmo tipo da arma. O dano adicional aumenta para +2d6 em NEX 40%, +3d6 em NEX 65% e +4d6 em NEX 99%.',
+        description: 'Você sabe atingir os pontos vitais de um inimigo distraído. Uma vez por rodada, quando atinge um alvo desprevenido com um ataque corpo a corpo ou em alcance curto, ou um alvo que você esteja flanqueando, você pode gastar 1 PE para causar +1d6 pontos de dano do mesmo tipo da arma. O dano adicional aumenta para +2d6 em NEX 40%, +3d6 em NEX 65% e +4d6 em NEX 99%.',
         pageReference: 'Livro Base p.54',
         isInitial: true,
         effects: {
@@ -153,20 +153,23 @@ export const ESPECIALISTA_TRACKS: UnifiedTrack[] = [
                 65: { dice: 3, dieType: 'd6' },
                 99: { dice: 4, dieType: 'd6' }
               },
-              conditions: ['target-unaware', 'target-flanked', 'melee-light-weapon'],
+              // Condições: alvo desprevenido OU flanqueado
+              conditions: ['target-unaware', 'target-flanked'],
+              // Restrição de alcance: corpo a corpo OU curto
+              rangeRestriction: ['melee', 'short'],
               peCost: 1,
               usesPerRound: 1
             }
           }
         },
-        tags: ['ativado', 'dano-extra', 'furtividade', 'escalonamento']
+        tags: ['ativado', 'dano-extra', 'furtividade', 'escalonamento', 'uma-vez-por-rodada']
       },
       {
         id: 'gatuno',
         name: 'Gatuno',
         trackId: 'infiltrador',
         minNex: 40,
-        description: 'Você recebe +5 em Atletismo e Crime e pode percorrer seu deslocamento normal ao se esconder, sem penalidade (veja Furtividade).',
+        description: 'Você recebe +5 em Atletismo e Crime e pode percorrer seu deslocamento normal quando se esconder sem penalidade (veja a perícia Furtividade).',
         pageReference: 'Livro Base p.54',
         effects: {
           base: {
@@ -186,15 +189,17 @@ export const ESPECIALISTA_TRACKS: UnifiedTrack[] = [
         name: 'Assassinar',
         trackId: 'infiltrador',
         minNex: 65,
-        description: 'Você pode gastar uma ação de movimento e 3 PE para analisar um alvo em alcance curto. Até o final do seu próximo turno, seu próximo Ataque Furtivo causa dano dobrado e você soma seus dados de dano extras dessa habilidade duas vezes. Além disso, se o alvo ficar inconsciente ou morrendo, você escolhe se ele fica inconsciente ou morrendo (Fortitude DT Agi evita).',
+        description: 'Você pode gastar uma ação de movimento e 3 PE para analisar um alvo em alcance curto. Até o final do seu próximo turno, seu primeiro Ataque Furtivo que causar dano a ele tem seus dados de dano extras dessa habilidade dobrados. Além disso, se sofrer dano de seu ataque, o alvo fica inconsciente ou morrendo, à sua escolha (Fortitude — DT Agi evita).',
         pageReference: 'Livro Base p.54',
         effects: {
           base: {
             kind: 'activated',
             activation: {
               cost: 3,
-              action: 'movement'
+              action: 'movement',
+              range: 'short'  // Alcance curto para analisar o alvo
             },
+            duration: 'next-turn',  // Até o final do próximo turno
             // Dobra dados do Ataque Furtivo
             sneakAttackMultiplier: 2,
             // Controle de estado do alvo
@@ -212,7 +217,7 @@ export const ESPECIALISTA_TRACKS: UnifiedTrack[] = [
         name: 'Sombra Fugaz',
         trackId: 'infiltrador',
         minNex: 99,
-        description: 'Quando faz um teste de Furtividade após atacar ou realizar outra ação chamativa, você pode gastar 3 PE para não sofrer penalidade no teste.',
+        description: 'Quando faz um teste de Furtividade após atacar ou fazer outra ação chamativa, você pode gastar 3 PE para não sofrer a penalidade de –3d20 no teste.',
         pageReference: 'Livro Base p.54',
         effects: {
           base: {
@@ -221,8 +226,11 @@ export const ESPECIALISTA_TRACKS: UnifiedTrack[] = [
               cost: 3,
               action: 'free'
             },
-            // Remove penalidade de furtividade após ação chamativa
-            ignoreStealthPenalty: true
+            // Remove penalidade de -3d20 em Furtividade após ação chamativa (v1.3)
+            ignoreStealthPenalty: {
+              type: 'dice-penalty',
+              value: 3  // -3d20
+            }
           }
         },
         tags: ['ativado', 'furtividade', 'assassinato']

@@ -2,10 +2,10 @@
  * useInfiltradorTrack - Hook de lógica para a trilha Infiltrador
  * 
  * Encapsula toda a lógica de habilidades da trilha:
- * - NEX 10%: Ataque Furtivo (+1d6/+2d6/+3d6/+4d6 dano extra)
- * - NEX 40%: Gatuno (+5 Atletismo/Crime, esconder sem penalidade)
- * - NEX 65%: Assassinar (dobra dados do Ataque Furtivo)
- * - NEX 99%: Sombra Fugaz (ignora penalidade de -20 Furtividade)
+ * - NEX 10%: Ataque Furtivo (+1d6/+2d6/+3d6/+4d6 dano extra, corpo a corpo ou alcance curto)
+ * - NEX 40%: Gatuno (+5 Atletismo/Crime, esconder sem penalidade de movimento)
+ * - NEX 65%: Assassinar (dobra dados do Ataque Furtivo, até final do próximo turno)
+ * - NEX 99%: Sombra Fugaz (ignora penalidade de -3d20 Furtividade após ação chamativa)
  * 
  * @module tracks/especialista/useInfiltradorTrack
  */
@@ -149,10 +149,10 @@ export function useInfiltradorTrack({
 
     onPEChange(-3);
     setAssassinarActive(true);
-    onActivateEffect?.(TRACK_EFFECT_IDS.ASSASSINAR, 'Assassinar', 'next-attack');
+    onActivateEffect?.(TRACK_EFFECT_IDS.ASSASSINAR, 'Assassinar', 'next-turn');
     
     toast.success('Assassinar ativado!', {
-      description: `Próximo Ataque Furtivo terá dados dobrados. Alvo fica inconsciente/morrendo (Fort DT ${assassinarDT} evita).`
+      description: `Até o final do próximo turno: primeiro Ataque Furtivo terá dados dobrados. Alvo fica inconsciente/morrendo (Fort DT ${assassinarDT} evita).`
     });
   }, [peCurrent, onPEChange, onActivateEffect, assassinarDT]);
 
@@ -169,7 +169,7 @@ export function useInfiltradorTrack({
     onActivateEffect?.(TRACK_EFFECT_IDS.SOMBRA_FUGAZ, 'Sombra Fugaz', 'instant');
     
     toast.success('Sombra Fugaz ativado!', {
-      description: 'Ignora penalidade de -20 no teste de Furtividade após ação chamativa.'
+      description: 'Ignora penalidade de –3d20 no teste de Furtividade após ação chamativa.'
     });
   }, [peCurrent, onPEChange, onActivateEffect]);
 
