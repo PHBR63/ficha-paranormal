@@ -140,12 +140,6 @@ function TecnicoPanelComponent(props: TecnicoPanelProps) {
                 Capacidade{isMobile ? '' : ' atual'}: {track.carryCapacity} espaços
               </p>
             )}
-            <p className="italic">
-              {isMobile 
-                ? 'Equipamentos gerais: categoria -1.'
-                : 'Qualquer equipamento geral tem sua categoria reduzida em 1 para você.'
-              }
-            </p>
           </div>
         </div>
       )}
@@ -166,7 +160,7 @@ function TecnicoPanelComponent(props: TecnicoPanelProps) {
                     <Info className="w-3 h-3 text-muted-foreground cursor-help" />
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs">
-                    <p>Gaste uma ação completa e 1 PE para remover a condição Quebrado de um equipamento adjacente até o final da cena.</p>
+                    <p>Gaste 1 ação completa e 1 PE para remover a condição Quebrado de um equipamento adjacente até o final da cena. Além disso, qualquer equipamento geral tem sua categoria reduzida em I para você.</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -269,8 +263,8 @@ function TecnicoPanelComponent(props: TecnicoPanelProps) {
             {!isMobile && <Badge variant="secondary" className="text-[10px]">NEX 99%</Badge>}
           </div>
           <div className={`${isMobile ? 'text-xs' : 'text-xs'} text-muted-foreground pl-6 mb-2`}>
-            <p>{isMobile ? 'Encontre qualquer item! 3 PE/categoria.' : 'Você sempre tem o que precisa para qualquer situação!'}</p>
-            {!isMobile && <p className="italic">Custo: Ação de movimento + 3 PE por categoria do item.</p>}
+            <p>{isMobile ? 'Encontre qualquer item! 2 PE/categoria.' : 'Você sempre tem o que precisa para qualquer situação!'}</p>
+            {!isMobile && <p className="italic">Custo: Ação de movimento + 2 PE por categoria do item.</p>}
           </div>
           <div className="pl-6">
             {isMobile ? (

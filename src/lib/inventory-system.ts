@@ -17,8 +17,7 @@ export interface CharacterInventoryData {
  * Verifica se o personagem possui a habilidade Inventário Otimizado (Técnico)
  * 
  * Regra oficial: Técnico (Especialista) NEX 10%
- * "Você soma seu Intelecto à Força para calcular sua capacidade de carga.
- *  Além disso, itens ocupam 1 espaço a menos (mas nunca reduzido a 0)."
+ * "Você soma seu Intelecto à sua Força para calcular sua capacidade de carga."
  * 
  * @param characterData - Dados do personagem
  */

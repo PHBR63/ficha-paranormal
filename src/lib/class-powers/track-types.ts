@@ -60,6 +60,7 @@ export interface TrackAbilityMechanics {
     perScene?: boolean;
     perMission?: boolean;
     additionalCostPerEffect?: number;
+    additionalCostPerCategory?: number;  // Custo adicional por categoria do item
     costPerTarget?: boolean;
     costPerCategory?: boolean;
     trigger?: string;
@@ -88,7 +89,7 @@ export interface TrackAbilityMechanics {
   /** Redução de categoria */
   categoryReduction?: {
     amount: number;
-    targetType: 'specific-weapon' | 'any-weapon' | 'item';
+    targetType: 'specific-weapon' | 'any-weapon' | 'item' | 'general-equipment';
     requiresChoice?: boolean;
     choiceDescription?: string;
     appliesToAllCarried?: boolean;
@@ -331,10 +332,11 @@ export interface TrackAbilityMechanics {
   /** Redução de espaço de item */
   itemSpaceReduction?: number;
   
-  /** Reparar equipamento (Remendo) */
+  /** Reparar equipamento (Remendão) */
   repairEquipment?: {
     range: string;
     removeCondition: string;
+    duration?: string;  // Duração do reparo (ex: 'scene')
   };
   
   /** Criar equipamento (Improvisar) */
@@ -342,12 +344,14 @@ export interface TrackAbilityMechanics {
     type: string;
     duration: string;
     destroyedAfter: boolean;
+    followsInventoryRules?: boolean;  // Se segue regras de inventário
   };
   
   /** Retirar item retroativamente (Preparado para Tudo) */
   retrieveItem?: {
     excludeWeapons: boolean;
     retroactive: boolean;
+    followsInventoryRules?: boolean;  // Se segue regras de inventário
   };
   
   /** Contra-mágica (Anular Ritual) */

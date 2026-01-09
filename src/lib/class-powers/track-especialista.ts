@@ -510,7 +510,7 @@ export const ESPECIALISTA_TRACKS: UnifiedTrack[] = [
     id: 'tecnico',
     name: 'Técnico',
     classId: 'Especialista',
-    description: 'Sua principal habilidade é a manutenção, reparo e improvisação de equipamentos, garantindo que o grupo esteja sempre preparado.',
+    description: 'Sua principal habilidade é a manutenção e reparo do valioso equipamento que seu time carrega em missão. Seu conhecimento técnico também permite que você improvise ferramentas com o que tiver à disposição e sabote os itens usados por seus inimigos.',
     pageReference: 'Livro Base p.54',
     abilities: [
       {
@@ -518,7 +518,7 @@ export const ESPECIALISTA_TRACKS: UnifiedTrack[] = [
         name: 'Inventário Otimizado',
         trackId: 'tecnico',
         minNex: 10,
-        description: 'Você soma seu Intelecto à Força para calcular sua capacidade de carga. Além disso, itens ocupam 1 espaço a menos (mas nunca reduzido a 0).',
+        description: 'Você soma seu Intelecto à sua Força para calcular sua capacidade de carga.',
         pageReference: 'Livro Base p.54',
         isInitial: true,
         effects: {
@@ -526,18 +526,18 @@ export const ESPECIALISTA_TRACKS: UnifiedTrack[] = [
             kind: 'passive',
             carryCapacity: {
               addAttribute: 'intellect'
-            },
-            itemSpaceReduction: 1
+            }
+            // REMOVIDO: itemSpaceReduction (não existe no texto oficial)
           }
         },
         tags: ['passivo', 'inventário', 'capacidade']
       },
       {
-        id: 'remendo',
-        name: 'Remendo',
+        id: 'remendao',
+        name: 'Remendão',
         trackId: 'tecnico',
         minNex: 40,
-        description: 'Você pode gastar uma ação completa e 1 PE para remover a condição quebrado de um equipamento adjacente. Além disso, qualquer equipamento que você carregue tem sua categoria reduzida em 1 (mas nunca reduzida a 0).',
+        description: 'Você pode gastar 1 ação completa e 1 PE para remover a condição quebrado de um equipamento adjacente até o final da cena. Além disso, qualquer equipamento geral tem sua categoria reduzida em I para você.',
         pageReference: 'Livro Base p.54',
         effects: {
           base: {
@@ -548,11 +548,12 @@ export const ESPECIALISTA_TRACKS: UnifiedTrack[] = [
             },
             repairEquipment: {
               range: 'touch',
-              removeCondition: 'quebrado'
+              removeCondition: 'quebrado',
+              duration: 'scene'
             },
             categoryReduction: {
               amount: 1,
-              targetType: 'any-weapon',
+              targetType: 'general-equipment',
               appliesToAllCarried: true
             }
           }
@@ -564,19 +565,22 @@ export const ESPECIALISTA_TRACKS: UnifiedTrack[] = [
         name: 'Improvisar',
         trackId: 'tecnico',
         minNex: 65,
-        description: 'Você pode improvisar equipamentos com materiais ao redor. Escolha um equipamento geral e gaste uma ação completa e 2 PE. Esse item funciona normalmente até o final da cena, mas é inutilizado ao término.',
+        description: 'Você pode improvisar equipamentos com materiais ao seu redor. Escolha um equipamento geral e gaste 1 ação completa e 2 PE, mais 2 PE por categoria do item escolhido. Você cria uma versão funcional do equipamento, que segue as regras de espaço e categoria como normal. Ao final da cena, seu equipamento improvisado se torna inútil.',
         pageReference: 'Livro Base p.54',
         effects: {
           base: {
             kind: 'activated',
             activation: {
               cost: 2,
-              action: 'complete'
+              action: 'complete',
+              costPerCategory: true,
+              additionalCostPerCategory: 2
             },
             createEquipment: {
               type: 'general',
               duration: 'scene',
-              destroyedAfter: true
+              destroyedAfter: true,
+              followsInventoryRules: true
             }
           }
         },
@@ -587,19 +591,20 @@ export const ESPECIALISTA_TRACKS: UnifiedTrack[] = [
         name: 'Preparado para Tudo',
         trackId: 'tecnico',
         minNex: 99,
-        description: 'Sempre que precisar de um item qualquer (exceto armas), você pode gastar uma ação de movimento e 3 PE por categoria para declarar que ele estava guardado em sua mochila. Depois disso, o item segue normalmente as regras de inventário.',
+        description: 'Você sempre tem o que precisa para qualquer situação. Sempre que precisar de um item qualquer (exceto armas), você pode gastar 1 ação de movimento e 2 PE por categoria do item para "lembrar" que colocou ele no fundo da bolsa. Depois de encontrado, o item segue normalmente as regras de inventário.',
         pageReference: 'Livro Base p.54',
         effects: {
           base: {
             kind: 'activated',
             activation: {
-              cost: 3, // Por categoria
+              cost: 2, // CORRIGIDO: 2 PE por categoria (não 3)
               action: 'movement',
               costPerCategory: true
             },
             retrieveItem: {
               excludeWeapons: true,
-              retroactive: true
+              retroactive: true,
+              followsInventoryRules: true
             }
           }
         },
