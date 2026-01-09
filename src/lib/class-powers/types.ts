@@ -554,13 +554,18 @@ export interface PowerMechanics {
     resistanceSkill: string;
     effect: string;
     duration: string;
+    concentrationAction?: 'free' | 'movement' | 'standard' | 'complete';  // Ação para manter concentração
+    hostileBonus?: number;           // Bônus de resistência para alvos hostis/em combate
+    hostileRetestPerRound?: boolean; // Novo teste por rodada para hostis
     immunityOnSuccess: string;
   };
   
   // === BUFF DE ALIADOS ===
   allyBuff?: {
     range: string;
-    skillBonus: number;
+    skillBonus?: number;        // Bônus numérico fixo (legado)
+    skillDiceBonus?: number;    // Bônus em dados (+Xd20)
+    bonusType?: 'flat' | 'dice';  // Tipo de bônus
     duration: string;
     includeSelf: boolean;
   };

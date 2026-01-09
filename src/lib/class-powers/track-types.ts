@@ -285,7 +285,7 @@ export interface TrackAbilityMechanics {
     hpRestored?: string;
   };
   
-  /** Efeito social (Negociador) */
+  /** Efeito social (Negociador - Eloquência) */
   socialEffect?: {
     range: string;
     targetAll: boolean;
@@ -293,13 +293,18 @@ export interface TrackAbilityMechanics {
     resistanceSkill: string;
     effect: string;
     duration: string;
+    concentrationAction?: 'free' | 'movement' | 'standard' | 'complete';  // Ação para manter concentração
+    hostileBonus?: number;           // Bônus de resistência para alvos hostis/em combate
+    hostileRetestPerRound?: boolean; // Novo teste por rodada para hostis
     immunityOnSuccess: string;
   };
   
   /** Buff para aliados (Discurso Motivador) */
   allyBuff?: {
     range: string;
-    skillBonus: number;
+    skillBonus?: number;       // Bônus numérico fixo (legado)
+    skillDiceBonus?: number;   // Bônus em dados (+Xd20)
+    bonusType?: 'flat' | 'dice';  // Tipo de bônus
     duration: string;
     includeSelf: boolean;
   };
