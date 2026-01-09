@@ -338,6 +338,7 @@ export const TRACK_EFFECT_IDS = {
   PARAMEDICO: 'track-paramedico',
   EQUIPE_TRAUMA: 'track-equipe-trauma',
   RESGATE: 'track-resgate',
+  RESGATE_DEFENSE: 'track-resgate-defense',  // Bônus de defesa ao curar (v1.3)
   REANIMACAO: 'track-reanimacao',
   
   // Negociador

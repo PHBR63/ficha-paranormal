@@ -594,12 +594,15 @@ export interface PowerMechanics {
   
   // === MOVIMENTO LIVRE ===
   freeMovementTo?: {
-    condition: string;
+    condition?: string;               // Condição única (legado v1.0)
+    conditions?: string[];            // Múltiplas condições v1.3 (machucado OU morrendo)
+    range?: 'touch' | 'short' | 'medium' | 'long';  // Alcance para ativar
     perRound: boolean;
   };
   
   // === BÔNUS AO CURAR ===
   onHeal?: {
+    selfDefenseBonus?: number;        // Bônus para o curador (Resgate v1.3)
     targetDefenseBonus: number;
     duration: string;
   };

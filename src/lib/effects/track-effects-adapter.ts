@@ -1130,19 +1130,27 @@ function convertTrackAbilityToMechanics(
   
   // === MOVIMENTO LIVRE PARA ALIADO (Resgate) ===
   if (m.freeMovementTo) {
+    // Suporta tanto formato v1.0 (condition singular) quanto v1.3 (conditions array)
+    const conditions = m.freeMovementTo.conditions ?? 
+      (m.freeMovementTo.condition ? [m.freeMovementTo.condition] : ['ally-dying']);
+    
     mechanics.freeMovementTo = {
-      condition: m.freeMovementTo.condition as 'ally-at-0-hp' | 'ally-wounded' | 'any-ally',
+      conditions,
+      range: m.freeMovementTo.range,
       perRound: m.freeMovementTo.perRound ?? true,
     };
     
     if (!mechanics.specialEffects) mechanics.specialEffects = [];
-    const condDesc = m.freeMovementTo.condition === 'ally-at-0-hp' 
-      ? 'aliado com 0 PV' 
-      : m.freeMovementTo.condition === 'ally-wounded' 
-        ? 'aliado machucado' 
-        : 'qualquer aliado';
+    const condDescMap: Record<string, string> = {
+      'ally-dying': 'aliado morrendo',
+      'ally-wounded': 'aliado machucado',
+      'ally-at-0-hp': 'aliado com 0 PV',
+      'any-ally': 'qualquer aliado'
+    };
+    const condDescs = conditions.map(c => condDescMap[c] || c).join(' ou ');
+    const rangeDesc = m.freeMovementTo.range === 'short' ? ' em alcance curto' : '';
     mechanics.specialEffects.push(
-      `Movimento livre até ${condDesc} (1x por rodada)`
+      `Movimento livre até ${condDescs}${rangeDesc} (1x por rodada)`
     );
   }
   

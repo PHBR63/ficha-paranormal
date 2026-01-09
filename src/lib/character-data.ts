@@ -561,12 +561,12 @@ export const CLASS_TRACKS: ClassTrack[] = [
     id: 'medico-campo',
     name: 'Médico de Campo',
     classId: 'Especialista',
-    description: 'Você é treinado em técnicas de primeiros socorros e tratamento de emergência, capaz de manter um grupo de agentes vivo mesmo nas piores condições.',
+    description: 'Você é treinado em técnicas de primeiros socorros e tratamento de emergência, o que torna você um membro valioso para qualquer grupo de agentes. Ao contrário dos profissionais de saúde convencionais, você está acostumado com o campo de batalha e sabe tomar decisões rápidas no meio do caos.',
     abilities: [
-      { id: 'paramedico', name: 'Paramédico', description: 'Você pode usar uma ação padrão e 2 PE para curar 2d10 pontos de vida de você ou de um aliado adjacente. A cura aumenta em +1d10 em NEX 40%, +1d10 em NEX 65% e +1d10 em NEX 99%. Você pode gastar +1 PE por dado adicional.', minNex: 10, isInitial: true },
-      { id: 'equipe-trauma', name: 'Equipe de Trauma', description: 'Você pode usar uma ação padrão e 2 PE para remover uma condição negativa (exceto morrendo) de um aliado adjacente.', minNex: 40 },
-      { id: 'resgate', name: 'Resgate', description: 'Uma vez por rodada, se estiver adjacente a um aliado morrendo, você pode se aproximar dele como ação livre (desde que seja possível pelo deslocamento). Além disso, sempre que curar PV ou remover condições de um aliado, ele recebe +5 na Defesa até o início do seu próximo turno.', minNex: 65 },
-      { id: 'reanimacao', name: 'Reanimação', description: 'Uma vez por cena, você pode gastar uma ação completa e 10 PE para trazer de volta à vida um personagem que tenha morrido na mesma cena (exceto morte por dano massivo).', minNex: 99 },
+      { id: 'paramedico', name: 'Paramédico', description: 'Você pode usar 1 ação padrão e 2 PE para curar 2d10 pontos de vida de si mesmo ou de um aliado adjacente. Você pode curar +1d10 PV respectivamente em NEX 40%, 65% e 99%, gastando +1 PE por dado adicional de cura.', minNex: 10, isInitial: true },
+      { id: 'equipe-trauma', name: 'Equipe de Trauma', description: 'Você pode usar 1 ação padrão e 2 PE para remover uma condição negativa (exceto morrendo) de um aliado adjacente.', minNex: 40 },
+      { id: 'resgate', name: 'Resgate', description: 'Uma vez por rodada, se estiver em alcance curto de um aliado machucado ou morrendo, você pode se aproximar do aliado com 1 ação livre (desde que seja capaz de fazê-lo usando seu deslocamento normal). Além disso, sempre que curar PV ou remover condições do aliado, você e o aliado recebem +5 na Defesa até o início do seu próximo turno. Por fim, para você, o total de espaços ocupados por carregar um personagem é reduzido pela metade.', minNex: 65 },
+      { id: 'reanimacao', name: 'Reanimação', description: 'Uma vez por cena, você pode gastar 1 ação completa e 10 PE para trazer de volta à vida um personagem que tenha morrido na mesma cena (exceto morte por dano massivo).', minNex: 99 },
     ],
   },
   {

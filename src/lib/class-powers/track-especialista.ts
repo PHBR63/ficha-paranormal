@@ -242,20 +242,25 @@ export const ESPECIALISTA_TRACKS: UnifiedTrack[] = [
   // ==========================================================================
   // MÉDICO DE CAMPO
   // Cura e suporte médico
+  // Requisito Especial: Treinado em Medicina + kit de medicina
   // ==========================================================================
   {
     id: 'medico-campo',
     name: 'Médico de Campo',
     classId: 'Especialista',
-    description: 'Você é treinado em técnicas de primeiros socorros e tratamento de emergência, capaz de manter um grupo de agentes vivo mesmo nas piores condições.',
+    description: 'Você é treinado em técnicas de primeiros socorros e tratamento de emergência, o que torna você um membro valioso para qualquer grupo de agentes. Ao contrário dos profissionais de saúde convencionais, você está acostumado com o campo de batalha e sabe tomar decisões rápidas no meio do caos.',
     pageReference: 'Livro Base p.54',
+    requirements: {
+      trainedSkills: ['Medicina'],
+      items: ['kit de medicina']
+    },
     abilities: [
       {
         id: 'paramedico',
         name: 'Paramédico',
         trackId: 'medico-campo',
         minNex: 10,
-        description: 'Você pode usar uma ação padrão e 2 PE para curar 2d10 pontos de vida de você ou de um aliado adjacente. A cura aumenta em +1d10 em NEX 40%, +1d10 em NEX 65% e +1d10 em NEX 99%. Você pode gastar +1 PE por dado adicional.',
+        description: 'Você pode usar 1 ação padrão e 2 PE para curar 2d10 pontos de vida de si mesmo ou de um aliado adjacente. Você pode curar +1d10 PV respectivamente em NEX 40%, 65% e 99%, gastando +1 PE por dado adicional de cura.',
         pageReference: 'Livro Base p.54',
         isInitial: true,
         effects: {
@@ -308,24 +313,30 @@ export const ESPECIALISTA_TRACKS: UnifiedTrack[] = [
         name: 'Resgate',
         trackId: 'medico-campo',
         minNex: 65,
-        description: 'Uma vez por rodada, se estiver adjacente a um aliado morrendo, você pode se aproximar dele como ação livre (desde que seja possível pelo deslocamento). Além disso, sempre que curar PV ou remover condições de um aliado, ele recebe +5 na Defesa até o início do seu próximo turno.',
+        description: 'Uma vez por rodada, se estiver em alcance curto de um aliado machucado ou morrendo, você pode se aproximar do aliado com 1 ação livre (desde que seja capaz de fazê-lo usando seu deslocamento normal). Além disso, sempre que curar PV ou remover condições do aliado, você e o aliado recebem +5 na Defesa até o início do seu próximo turno. Por fim, para você, o total de espaços ocupados por carregar um personagem é reduzido pela metade.',
         pageReference: 'Livro Base p.54',
         effects: {
           base: {
             kind: 'passive',
-            // Movimento livre para aliado morrendo
+            // Movimento livre para aliado machucado OU morrendo em alcance curto
             freeMovementTo: {
-              condition: 'ally-dying',
+              conditions: ['ally-wounded', 'ally-dying'],
+              range: 'short',
               perRound: true
             },
-            // Bônus de Defesa ao curar
+            // Bônus de Defesa ao curar (para ambos: curador e alvo)
             onHeal: {
+              selfDefenseBonus: 5,
               targetDefenseBonus: 5,
               duration: 'start-of-next-turn'
+            },
+            // Redução de espaço ao carregar personagem
+            carryingCapacity: {
+              carryPersonReduction: 0.5
             }
           }
         },
-        tags: ['passivo', 'movimento', 'cura', 'defesa']
+        tags: ['passivo', 'movimento', 'cura', 'defesa', 'utilidade']
       },
       {
         id: 'reanimacao',

@@ -384,14 +384,17 @@ export interface EffectMechanics {
   
   // === Movimento Livre para Aliado (Resgate) ===
   freeMovementTo?: {
-    condition: 'ally-at-0-hp' | 'ally-wounded' | 'any-ally';  // Condição para movimento livre
-    perRound: boolean;                                         // Se é 1x por rodada
+    condition?: 'ally-at-0-hp' | 'ally-wounded' | 'any-ally';  // Legado v1.0
+    conditions?: string[];                                      // v1.3: múltiplas condições
+    range?: 'touch' | 'short' | 'medium' | 'long';             // Alcance para ativar
+    perRound: boolean;                                          // Se é 1x por rodada
   };
   
   // === Efeitos ao Curar (Médico de Campo) ===
   onHeal?: {
-    targetDefenseBonus?: number;                               // Bônus de Defesa para o alvo
-    duration: 'next-attack' | 'end-of-round' | 'turns';        // Duração do bônus
+    selfDefenseBonus?: number;                                  // Bônus para o curador (v1.3)
+    targetDefenseBonus?: number;                                // Bônus de Defesa para o alvo
+    duration: 'next-attack' | 'end-of-round' | 'turns';         // Duração do bônus
     turns?: number;                                             // Número de turnos (se duration = 'turns')
   };
   

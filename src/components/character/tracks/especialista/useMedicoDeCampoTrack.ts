@@ -6,7 +6,8 @@
  * Encapsula toda a lógica de habilidades da trilha:
  * - NEX 10%: Paramédico - Cura 2d10 PV (escala com NEX), +1 PE por dado extra
  * - NEX 40%: Equipe de Trauma - Remove condição negativa (exceto morrendo)
- * - NEX 65%: Resgate - Movimento livre para aliado machucado, +5 Defesa ao curar
+ * - NEX 65%: Resgate - Movimento livre em alcance curto para aliado machucado/morrendo, 
+ *            +5 Defesa para AMBOS (curador e alvo) ao curar, metade dos espaços ao carregar
  * - NEX 99%: Reanimação - Traz aliado de volta à vida (1x/cena)
  * 
  * @module tracks/especialista/useMedicoDeCampoTrack
@@ -98,8 +99,9 @@ export function useMedicoDeCampoTrack({
   const removeConditionAbilities = sueSupport?.removeConditionAbilities ?? [];
   const resurrectAbilities = sueSupport?.resurrectAbilities ?? [];
 
-  // Bônus de defesa ao curar (Resgate)
-  const defenseBonus = onHealEffects.length > 0 ? onHealEffects[0].targetDefenseBonus : 5;
+  // Bônus de defesa ao curar (Resgate) - aplica-se a ambos: curador e alvo
+  const selfDefenseBonus = onHealEffects.length > 0 ? (onHealEffects[0] as unknown as { selfDefenseBonus?: number }).selfDefenseBonus ?? 5 : 5;
+  const targetDefenseBonus = onHealEffects.length > 0 ? onHealEffects[0].targetDefenseBonus : 5;
 
   /**
    * Abre drawer para configurar Paramédico
@@ -124,16 +126,28 @@ export function useMedicoDeCampoTrack({
     
     const totalDice = healingDice.base + extraDice;
     const formula = `${totalDice}d10`;
-    const defenseBonusText = defenseBonus > 0 && hasResgate ? ` Você e o aliado recebem +${defenseBonus} Defesa.` : '';
+    const defenseBonusText = hasResgate 
+      ? ` Você e o aliado recebem +${targetDefenseBonus} Defesa até o início do seu próximo turno.` 
+      : '';
     
     onActivateEffect?.(TRACK_EFFECT_IDS.PARAMEDICO ?? 'track-paramedico', 'Paramédico', 'instant', { dice: totalDice });
     
+    // Ativar efeito de defesa do Resgate se desbloqueado
+    if (hasResgate) {
+      onActivateEffect?.(
+        TRACK_EFFECT_IDS.RESGATE_DEFENSE ?? 'track-resgate-defense', 
+        'Resgate (Defesa)', 
+        'next-turn',  // Até o início do próximo turno
+        { selfBonus: selfDefenseBonus, targetBonus: targetDefenseBonus }
+      );
+    }
+    
     toast.success('Paramédico ativado!', {
-      description: `Cure ${formula} PV de você ou aliado adjacente.${defenseBonusText} Custo: ${paramedicoCost} PE.`
+      description: `Cure ${formula} PV de si mesmo ou aliado adjacente.${defenseBonusText} Custo: ${paramedicoCost} PE.`
     });
     
     setShowParamedicoDrawer(false);
-  }, [peCurrent, paramedicoCost, extraDice, healingDice.base, onPEChange, defenseBonus, hasResgate, onActivateEffect]);
+  }, [peCurrent, paramedicoCost, extraDice, healingDice.base, onPEChange, selfDefenseBonus, targetDefenseBonus, hasResgate, onActivateEffect]);
 
   /**
    * Usa Equipe de Trauma (2 PE)
@@ -152,10 +166,24 @@ export function useMedicoDeCampoTrack({
     
     onActivateEffect?.(TRACK_EFFECT_IDS.EQUIPE_TRAUMA ?? 'track-equipe-trauma', 'Equipe de Trauma', 'instant');
     
+    // Ativar efeito de defesa do Resgate se desbloqueado
+    if (hasResgate) {
+      onActivateEffect?.(
+        TRACK_EFFECT_IDS.RESGATE_DEFENSE ?? 'track-resgate-defense', 
+        'Resgate (Defesa)', 
+        'next-turn',  // Até o início do próximo turno
+        { selfBonus: selfDefenseBonus, targetBonus: targetDefenseBonus }
+      );
+    }
+    
+    const defenseBonusText = hasResgate 
+      ? ` Você e o aliado recebem +${targetDefenseBonus} Defesa até o início do seu próximo turno.` 
+      : '';
+    
     toast.success('Equipe de Trauma ativado!', {
-      description: `Remove uma condição negativa (exceto ${excludedConditions.join(', ')}) de aliado adjacente.`
+      description: `Remove uma condição negativa (exceto ${excludedConditions.join(', ')}) de aliado adjacente.${defenseBonusText}`
     });
-  }, [peCurrent, onPEChange, removeConditionAbilities, onActivateEffect]);
+  }, [peCurrent, onPEChange, removeConditionAbilities, onActivateEffect, hasResgate, selfDefenseBonus, targetDefenseBonus]);
 
   /**
    * Usa Reanimação (10 PE, 1x/cena)
@@ -204,7 +232,8 @@ export function useMedicoDeCampoTrack({
     // Dados derivados
     healingDice,
     paramedicoCost,
-    defenseBonus,
+    selfDefenseBonus,
+    targetDefenseBonus,
     
     // Dados do SUE
     sueHealing,
