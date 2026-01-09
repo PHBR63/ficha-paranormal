@@ -2,10 +2,10 @@
  * useTecnicoTrack - Hook de lógica para a trilha Técnico
  * 
  * Encapsula toda a lógica de habilidades da trilha:
- * - NEX 10%: Inventário Otimizado (passiva) - FOR + INT para carga, -1 categoria itens gerais
- * - NEX 40%: Remendão (1 PE) - Remove condição Quebrado
+ * - NEX 10%: Inventário Otimizado (passiva) - FOR + INT para carga
+ * - NEX 40%: Remendão (1 PE) - Remove condição Quebrado até fim da cena; redução de categoria em equipamentos gerais
  * - NEX 65%: Improvisar (2 PE + 2 PE/cat) - Cria equipamento geral
- * - NEX 99%: Preparado para Tudo (3 PE/cat) - Encontra qualquer item
+ * - NEX 99%: Preparado para Tudo (2 PE/cat) - Encontra qualquer item (exceto armas)
  * 
  * @module tracks/especialista/useTecnicoTrack
  */
@@ -126,10 +126,10 @@ export function useTecnicoTrack({
   }, [peCurrent, onPEChange, onActivateEffect]);
 
   /**
-   * Handler para Preparado para Tudo (3 PE por categoria)
+   * Handler para Preparado para Tudo (2 PE por categoria)
    */
   const handlePreparadoParaTudo = useCallback((categoria: number) => {
-    const peCost = 3 * categoria;
+    const peCost = 2 * categoria; // CORRIGIDO: 2 PE por categoria (não 3)
     if (peCurrent < peCost) {
       toast.error('PE insuficiente', {
         description: `Você precisa de ${peCost} PE para lembrar de um item de categoria ${categoria}.`
@@ -143,7 +143,7 @@ export function useTecnicoTrack({
     onActivateEffect?.(TRACK_EFFECT_IDS.PREPARADO_PARA_TUDO ?? 'track-preparado-para-tudo', 'Preparado para Tudo', 'instant', { categoria });
     
     toast.success('Preparado para Tudo!', {
-      description: `Você lembrou que colocou um item de categoria ${categoria} no fundo da bolsa! Gaste uma ação de movimento para encontrá-lo.`
+      description: `Você lembrou que colocou um item de categoria ${categoria} no fundo da bolsa! Gaste uma ação de movimento para encontrá-lo. O item segue as regras de inventário.`
     });
   }, [peCurrent, onPEChange, onActivateEffect]);
 
@@ -153,9 +153,9 @@ export function useTecnicoTrack({
   const getImprovisarCost = useCallback((categoria: number) => 2 + (2 * categoria), []);
 
   /**
-   * Calcula custo de Preparado para Tudo por categoria
+   * Calcula custo de Preparado para Tudo por categoria (2 PE por categoria)
    */
-  const getPreparadoCost = useCallback((categoria: number) => 3 * categoria, []);
+  const getPreparadoCost = useCallback((categoria: number) => 2 * categoria, []);
 
   return {
     // Estado

@@ -403,7 +403,7 @@ export interface PowerMechanics {
   // === REDUÇÃO DE CATEGORIA ===
   categoryReduction?: {
     amount: number;
-    targetType: 'specific-weapon' | 'any-weapon' | 'item';
+    targetType: 'specific-weapon' | 'any-weapon' | 'item' | 'general-equipment';
     requiresChoice?: boolean;
     choiceDescription?: string;
     appliesToAllCarried?: boolean;

@@ -195,7 +195,7 @@ export interface EffectMechanics {
   // === Redução de Categoria de Equipamento ===
   categoryReduction?: {
     amount: number;                          // Quantidade da redução (-1, -2)
-    targetType: 'specific-weapon' | 'any-weapon' | 'item'; // Tipo de alvo
+    targetType: 'specific-weapon' | 'any-weapon' | 'item' | 'general-equipment'; // Tipo de alvo
     requiresChoice?: boolean;                // Se requer escolha do jogador
     choiceDescription?: string;              // Descrição da escolha
     appliesToAllCarried?: boolean;           // Se aplica a todos itens carregados
@@ -799,7 +799,7 @@ export interface ComputedEffects {
     // Reduções de categoria de equipamento (Aniquilador, Técnico)
     categoryReductions: Array<{
       amount: number;
-      targetType: 'specific-weapon' | 'any-weapon' | 'item';
+      targetType: 'specific-weapon' | 'any-weapon' | 'item' | 'general-equipment';
       source: string;
       requiresChoice?: boolean;
       appliesToAllCarried?: boolean;

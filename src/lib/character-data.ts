@@ -585,12 +585,12 @@ export const CLASS_TRACKS: ClassTrack[] = [
     id: 'tecnico',
     name: 'Técnico',
     classId: 'Especialista',
-    description: 'Sua principal habilidade é a manutenção, reparo e improvisação de equipamentos, garantindo que o grupo esteja sempre preparado.',
+    description: 'Sua principal habilidade é a manutenção e reparo do valioso equipamento que seu time carrega em missão. Seu conhecimento técnico também permite que você improvise ferramentas com o que tiver à disposição e sabote os itens usados por seus inimigos.',
     abilities: [
-      { id: 'inventario-otimizado', name: 'Inventário Otimizado', description: 'Você soma seu Intelecto à Força para calcular sua capacidade de carga. Além disso, itens ocupam 1 espaço a menos (mas nunca reduzido a 0).', minNex: 10, isInitial: true },
-      { id: 'remendo', name: 'Remendo', description: 'Você pode gastar uma ação completa e 1 PE para remover a condição quebrado de um equipamento adjacente. Além disso, qualquer equipamento que você carregue tem sua categoria reduzida em 1 (mas nunca reduzida a 0).', minNex: 40 },
-      { id: 'improvisar', name: 'Improvisar', description: 'Você pode improvisar equipamentos com materiais ao redor. Escolha um equipamento geral e gaste uma ação completa e 2 PE. Esse item funciona normalmente até o final da cena, mas é inutilizado ao término.', minNex: 65 },
-      { id: 'preparado-para-tudo', name: 'Preparado para Tudo', description: 'Sempre que precisar de um item qualquer (exceto armas), você pode gastar uma ação de movimento e 3 PE por categoria para declarar que ele estava guardado em sua mochila. Depois disso, o item segue normalmente as regras de inventário.', minNex: 99 },
+      { id: 'inventario-otimizado', name: 'Inventário Otimizado', description: 'Você soma seu Intelecto à sua Força para calcular sua capacidade de carga.', minNex: 10, isInitial: true },
+      { id: 'remendao', name: 'Remendão', description: 'Você pode gastar 1 ação completa e 1 PE para remover a condição quebrado de um equipamento adjacente até o final da cena. Além disso, qualquer equipamento geral tem sua categoria reduzida em I para você.', minNex: 40 },
+      { id: 'improvisar', name: 'Improvisar', description: 'Você pode improvisar equipamentos com materiais ao seu redor. Escolha um equipamento geral e gaste 1 ação completa e 2 PE, mais 2 PE por categoria do item escolhido. Você cria uma versão funcional do equipamento, que segue as regras de espaço e categoria como normal. Ao final da cena, seu equipamento improvisado se torna inútil.', minNex: 65 },
+      { id: 'preparado-para-tudo', name: 'Preparado para Tudo', description: 'Você sempre tem o que precisa para qualquer situação. Sempre que precisar de um item qualquer (exceto armas), você pode gastar 1 ação de movimento e 2 PE por categoria do item para "lembrar" que colocou ele no fundo da bolsa. Depois de encontrado, o item segue normalmente as regras de inventário.', minNex: 99 },
     ],
   },
 
