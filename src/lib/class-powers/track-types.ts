@@ -256,15 +256,23 @@ export interface TrackAbilityMechanics {
   
   /** Movimento livre para aliado (Resgate) */
   freeMovementTo?: {
-    condition: string;
+    condition?: string;
+    conditions?: string[];  // Múltiplas condições (machucado OU morrendo)
+    range?: 'touch' | 'short' | 'medium' | 'long';  // Alcance para ativar
     perRound: boolean;
   };
   
   /** Bônus ao curar (Resgate) - estrutura completa */
   onHeal?: {
+    selfDefenseBonus?: number;  // Bônus para o curador
     targetDefenseBonus: number;
     duration: string;
     turns?: number;
+  };
+  
+  /** Capacidade de carregar personagem (Resgate) */
+  carryingCapacity?: {
+    carryPersonReduction?: number;  // Fator de redução (0.5 = metade)
   };
   
   /** Ressurreição (Reanimação) - estrutura completa */
@@ -435,6 +443,10 @@ export interface UnifiedTrack {
   classId: ClassId;
   description: string;
   pageReference?: string;
+  requirements?: {
+    trainedSkills?: string[];
+    items?: string[];
+  };
   abilities: UnifiedTrackAbility[];
   isSuplement?: boolean;
   supplementName?: string;

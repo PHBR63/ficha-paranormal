@@ -90,7 +90,7 @@ function MedicoDeCampoPanelComponent(props: MedicoDeCampoPanelProps) {
           <p className="text-xs font-medium text-emerald-300">Bônus de Suporte (SUE)</p>
           <div className="flex gap-2 flex-wrap">
             <Badge variant="outline" className="text-[10px] border-emerald-500/30 text-emerald-300">
-              +{track.defenseBonus} Defesa ao curar
+              +{track.targetDefenseBonus} Defesa ao curar
             </Badge>
           </div>
         </div>
@@ -163,7 +163,7 @@ function MedicoDeCampoPanelComponent(props: MedicoDeCampoPanelProps) {
             <div className="flex items-center gap-2 mt-1 p-2 rounded bg-emerald-500/10 border border-emerald-500/20">
               <CheckCircle2 className="h-3 w-3 text-emerald-400" />
               <span className="text-xs text-emerald-300">
-                +{track.defenseBonus} Defesa ao curar (você e aliado)
+                +{track.targetDefenseBonus} Defesa ao curar (você e aliado)
               </span>
             </div>
           )}
