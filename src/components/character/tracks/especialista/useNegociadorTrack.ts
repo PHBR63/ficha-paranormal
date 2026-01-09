@@ -2,8 +2,8 @@
  * useNegociadorTrack - Hook de lógica para a trilha Negociador
  * 
  * Encapsula toda a lógica de habilidades da trilha:
- * - NEX 10%: Eloquência - Fascina alvos em alcance curto (1 PE, concentração)
- * - NEX 40%: Discurso Motivador - +2 em testes de perícia (4 PE / 8 PE em NEX 65%)
+ * - NEX 10%: Eloquência - Fascina alvos em alcance curto (1 PE por alvo, ação completa, concentração)
+ * - NEX 40%: Discurso Motivador - +1d20 em testes de perícia (4 PE) / +2d20 (8 PE em NEX 65%)
  * - NEX 65%: Eu Conheço um Cara - Ativa rede de contatos (1x/missão)
  * - NEX 99%: Truque de Mestre - Copia habilidade de aliado (5 PE)
  * 
@@ -77,9 +77,11 @@ export function useNegociadorTrack({
   const canUseEnhancedDiscurso = nex >= 65;
 
   /**
-   * Ativa/Desativa Eloquência (1 PE para ativar, concentração)
+   * Ativa/Desativa Eloquência (1 PE por alvo, ação completa, concentração)
+   * @param targetCount - Número de alvos afetados (custo = 1 PE × targetCount)
    */
-  const handleEloquencia = useCallback(() => {
+  const handleEloquencia = useCallback((targetCount: number = 1) => {
+    // Se já está concentrando, encerra
     if (isConcentrating) {
       setIsConcentrating(false);
       onEloquenciaToggle?.(false);
@@ -89,27 +91,39 @@ export function useNegociadorTrack({
       return;
     }
     
-    if (peCurrent < 1) {
-      toast.error('PE insuficiente', { description: 'Eloquência requer 1 PE.' });
+    // Custo = 1 PE por alvo
+    const totalCost = targetCount;
+    
+    if (peCurrent < totalCost) {
+      toast.error('PE insuficiente', { 
+        description: `Eloquência requer ${totalCost} PE (1 PE por alvo).` 
+      });
       return;
     }
 
-    onPEChange(peCurrent - 1);
+    onPEChange(peCurrent - totalCost);
     setIsConcentrating(true);
     onEloquenciaToggle?.(true);
     
-    onActivateEffect?.(TRACK_EFFECT_IDS.ELOQUENCIA ?? 'track-eloquencia', 'Eloquência', 'concentration');
+    onActivateEffect?.(
+      TRACK_EFFECT_IDS.ELOQUENCIA ?? 'track-eloquencia', 
+      'Eloquência', 
+      'concentration',
+      { targetCount, concentrationAction: 'standard' }
+    );
     
     toast.success('Eloquência ativada!', {
-      description: 'Faça teste de Diplomacia/Enganação/Intimidação vs Vontade dos alvos. Alvos fascinados enquanto você se concentrar.'
+      description: `${targetCount} alvo(s) afetado(s). Teste Diplomacia/Enganação/Intimidação vs Vontade. Concentre-se (1 ação padrão/rodada). Hostis: +5 resistência e novo teste/rodada.`
     });
   }, [peCurrent, isConcentrating, onPEChange, onEloquenciaToggle, onActivateEffect]);
 
   /**
-   * Usa Discurso Motivador (4 PE ou 8 PE)
+   * Usa Discurso Motivador (4 PE para +1d20, ou 8 PE para +2d20 em NEX 65%+)
+   * @param enhanced - Se true, usa versão aprimorada (8 PE, +2d20)
    */
   const handleDiscursoMotivador = useCallback((enhanced: boolean) => {
     const cost = enhanced ? discursoMotivadorEnhancedCost : discursoMotivadorCost;
+    const diceBonus = enhanced ? 2 : 1;
     
     if (peCurrent < cost) {
       toast.error('PE insuficiente', { description: `Discurso Motivador requer ${cost} PE.` });
@@ -118,10 +132,15 @@ export function useNegociadorTrack({
 
     onPEChange(peCurrent - cost);
     
-    onActivateEffect?.(TRACK_EFFECT_IDS.DISCURSO_MOTIVADOR ?? 'track-discurso-motivador', 'Discurso Motivador', 'scene', { enhanced, bonus: 2 });
+    onActivateEffect?.(
+      TRACK_EFFECT_IDS.DISCURSO_MOTIVADOR ?? 'track-discurso-motivador', 
+      'Discurso Motivador', 
+      'scene', 
+      { enhanced, diceBonus, bonusType: 'dice' }
+    );
     
     toast.success('Discurso Motivador!', {
-      description: `Você e aliados em alcance curto ganham +2 em testes de perícia até o fim da cena.`
+      description: `Você e aliados em alcance curto ganham +${diceBonus}d20 em testes de perícia até o fim da cena.`
     });
   }, [peCurrent, onPEChange, onActivateEffect]);
 

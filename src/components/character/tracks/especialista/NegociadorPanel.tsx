@@ -83,7 +83,7 @@ function NegociadorPanelComponent(props: NegociadorPanelProps) {
                   size="sm"
                   variant={track.isConcentrating ? "secondary" : track.canAffordEloquencia ? "default" : "outline"}
                   disabled={!track.isConcentrating && !track.canAffordEloquencia}
-                  onClick={track.handleEloquencia}
+                  onClick={() => track.handleEloquencia(1)}
                   className="h-7 text-xs"
                 >
                   {track.isConcentrating ? 'Encerrar' : 'Usar'}
@@ -107,7 +107,7 @@ function NegociadorPanelComponent(props: NegociadorPanelProps) {
                 size="sm"
                 variant={track.isConcentrating ? "secondary" : track.canAffordEloquencia ? "default" : "outline"}
                 disabled={!track.isConcentrating && !track.canAffordEloquencia}
-                onClick={track.handleEloquencia}
+                onClick={() => track.handleEloquencia(1)}
                 className="shrink-0"
               >
                 {track.isConcentrating ? 'Parar' : 'Usar'}

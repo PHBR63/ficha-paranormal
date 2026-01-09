@@ -373,7 +373,7 @@ export const ESPECIALISTA_TRACKS: UnifiedTrack[] = [
     id: 'negociador',
     name: 'Negociador',
     classId: 'Especialista',
-    description: 'Você é um diplomata habilidoso, capaz de influenciar aliados e adversários com palavras afiadas, usando empatia, persuasão e manipulação.',
+    description: 'Você é um diplomata habilidoso e consegue influenciar outras pessoas, seja por lábia ou intimidação. Sua capacidade de avaliar situações com rapidez e eficiência pode tirar o grupo de apuros que nem a mais poderosa das armas poderia resolver.',
     pageReference: 'Livro Base p.54',
     abilities: [
       {
@@ -381,7 +381,7 @@ export const ESPECIALISTA_TRACKS: UnifiedTrack[] = [
         name: 'Eloquência',
         trackId: 'negociador',
         minNex: 10,
-        description: 'Você pode gastar 1 PE para afetar todas as pessoas em alcance curto com sua fala. Faça um teste de Diplomacia, Enganação ou Intimidação contra a Vontade dos alvos. Se vencer, os alvos ficam fascinados enquanto você se concentrar. Se atacar alguém, a fascinação acaba. Um alvo bem-sucedido recebe +5 em resistência e tem direito a novo teste por rodada. Uma pessoa que passe no teste fica imune a este efeito por 1 dia.',
+        description: 'Você pode usar 1 ação completa e 1 PE por alvo em alcance curto para afetar outras pessoas com sua fala. Faça um teste de Diplomacia, Enganação ou Intimidação contra a Vontade dos alvos. Se você vencer, os alvos ficam fascinados enquanto você se concentrar (1 ação padrão por rodada). Um alvo hostil ou que esteja envolvido em combate recebe +5 em seu teste de resistência e tem direito a um novo teste por rodada, sempre que você se concentrar. Uma pessoa que passar no teste fica imune a este efeito por 1 dia.',
         pageReference: 'Livro Base p.54',
         isInitial: true,
         effects: {
@@ -389,7 +389,8 @@ export const ESPECIALISTA_TRACKS: UnifiedTrack[] = [
             kind: 'activated',
             activation: {
               cost: 1,
-              action: 'standard'
+              costPerTarget: true,  // 1 PE por alvo
+              action: 'complete'    // Ação completa, não padrão
             },
             socialEffect: {
               range: 'short',
@@ -398,18 +399,21 @@ export const ESPECIALISTA_TRACKS: UnifiedTrack[] = [
               resistanceSkill: 'vontade',
               effect: 'fascinated',
               duration: 'concentration',
+              concentrationAction: 'standard',  // 1 ação padrão por rodada
+              hostileBonus: 5,                  // +5 para hostil/em combate
+              hostileRetestPerRound: true,      // Novo teste por rodada
               immunityOnSuccess: '1-day'
             }
           }
         },
-        tags: ['ativado', 'social', 'fascinação', 'área']
+        tags: ['ativado', 'social', 'fascinação', 'área', 'concentração']
       },
       {
         id: 'discurso-motivador',
         name: 'Discurso Motivador',
         trackId: 'negociador',
         minNex: 40,
-        description: 'Você pode gastar uma ação padrão e 4 PE para inspirar seus aliados. Você e todos os aliados em alcance curto ganham +1 em testes de perícia até o final da cena. Em NEX 65%, pode gastar 8 PE para conceder +2 em vez disso.',
+        description: 'Você pode gastar 1 ação padrão e 4 PE para inspirar seus aliados com suas palavras. Você e todos os seus aliados em alcance curto ganham +1d20 em testes de perícia até o fim da cena. A partir de NEX 65%, você pode gastar 8 PE para fornecer um bônus total de +2d20.',
         pageReference: 'Livro Base p.54',
         effects: {
           base: {
@@ -420,7 +424,9 @@ export const ESPECIALISTA_TRACKS: UnifiedTrack[] = [
             },
             allyBuff: {
               range: 'short',
-              skillBonus: 1,
+              skillBonus: 0,          // Legado (não usado quando bonusType é 'dice')
+              skillDiceBonus: 1,      // +1d20
+              bonusType: 'dice',      // Tipo de bônus é dado
               duration: 'scene',
               includeSelf: true
             }
@@ -434,7 +440,9 @@ export const ESPECIALISTA_TRACKS: UnifiedTrack[] = [
               },
               allyBuff: {
                 range: 'short',
-                skillBonus: 2,
+                skillBonus: 0,         // Legado
+                skillDiceBonus: 2,     // +2d20
+                bonusType: 'dice',
                 duration: 'scene',
                 includeSelf: true
               }
