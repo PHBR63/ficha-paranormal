@@ -30,6 +30,7 @@ import {
   CalendarDays,
   Map,
   Music,
+  FileText,
 } from 'lucide-react';
 import {
   Dialog,
@@ -55,6 +56,9 @@ import { MemberBonusesPanel } from '@/components/campaign/MemberBonusesPanel';
 import { MasterSheetViewer } from '@/components/campaign/master/MasterSheetViewer';
 import { TacticalBoard } from '@/components/campaign/tactical/TacticalBoard';
 import { AudioMasterPanel, AudioPlayerBar } from '@/components/campaign/audio';
+import { WhisperDialog } from '@/components/campaign/chat';
+import { PlayerHandoutsViewer } from '@/components/campaign/handouts';
+import { HandoutsManager } from '@/components/campaign/master/HandoutsManager';
 
 interface Campaign {
   id: string;
@@ -736,6 +740,10 @@ export default function CampaignView() {
                   <Scroll className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
                   <span className="hidden sm:inline">NOTAS</span>
                 </TabsTrigger>
+                <TabsTrigger value="handouts" className="font-display tracking-wider text-xs sm:text-sm px-2 sm:px-3">
+                  <FileText className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">HANDOUTS</span>
+                </TabsTrigger>
                 <TabsTrigger value="sessions" className="font-display tracking-wider text-xs sm:text-sm px-2 sm:px-3">
                   <CalendarDays className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
                   <span className="hidden sm:inline">SESSÕES</span>
@@ -827,6 +835,14 @@ export default function CampaignView() {
                   >
                     <Dices className="w-4 h-4" />
                   </Button>
+                  
+                  {/* Botão de Sussurros */}
+                  <WhisperDialog 
+                    campaignId={id || ''} 
+                    members={members}
+                    currentCharacterId={currentMember?.character_id}
+                  />
+                  
                   <Input
                     value={messageInput}
                     onChange={(e) => setMessageInput(e.target.value)}
@@ -888,6 +904,19 @@ export default function CampaignView() {
               </div>
             </TabsContent>
 
+            {/* Aba de Handouts para jogadores */}
+            <TabsContent value="handouts" className="flex-1 p-4 m-0 overflow-auto">
+              <div className="max-w-4xl mx-auto">
+                <div className="flex items-center gap-2 mb-6">
+                  <FileText className="w-5 h-5 text-primary" />
+                  <h3 className="font-display text-lg tracking-wider text-primary">
+                    DOCUMENTOS & PISTAS
+                  </h3>
+                </div>
+                <PlayerHandoutsViewer campaignId={id || ''} />
+              </div>
+            </TabsContent>
+
             <TabsContent value="sessions" className="flex-1 p-4 m-0 overflow-auto">
               <div className="max-w-3xl mx-auto">
                 <SessionManager
@@ -905,6 +934,7 @@ export default function CampaignView() {
                 <Tabs defaultValue="sheets" className="space-y-4">
                   <TabsList className="bg-card border border-border">
                     <TabsTrigger value="sheets" className="font-display text-xs">FICHAS</TabsTrigger>
+                    <TabsTrigger value="handouts" className="font-display text-xs">HANDOUTS</TabsTrigger>
                     <TabsTrigger value="audio" className="font-display text-xs">ÁUDIO</TabsTrigger>
                     <TabsTrigger value="controls" className="font-display text-xs">CONTROLES</TabsTrigger>
                     <TabsTrigger value="bonuses" className="font-display text-xs">BÔNUS</TabsTrigger>
@@ -917,6 +947,13 @@ export default function CampaignView() {
                       members={members}
                       onMemberUpdate={fetchCampaignData}
                     />
+                  </TabsContent>
+                  
+                  {/* Aba de Handouts do Mestre */}
+                  <TabsContent value="handouts" className="mt-4">
+                    <div className="ordo-panel p-6">
+                      <HandoutsManager campaignId={id || ''} members={members} />
+                    </div>
                   </TabsContent>
                   
                   {/* Aba de Áudio - Nova */}
