@@ -29,6 +29,7 @@ import {
   Users,
   CalendarDays,
   Map,
+  Music,
 } from 'lucide-react';
 import {
   Dialog,
@@ -53,6 +54,7 @@ import { NotesPanel } from '@/components/campaign/NotesPanel';
 import { MemberBonusesPanel } from '@/components/campaign/MemberBonusesPanel';
 import { MasterSheetViewer } from '@/components/campaign/master/MasterSheetViewer';
 import { TacticalBoard } from '@/components/campaign/tactical/TacticalBoard';
+import { AudioMasterPanel, AudioPlayerBar } from '@/components/campaign/audio';
 
 interface Campaign {
   id: string;
@@ -903,6 +905,7 @@ export default function CampaignView() {
                 <Tabs defaultValue="sheets" className="space-y-4">
                   <TabsList className="bg-card border border-border">
                     <TabsTrigger value="sheets" className="font-display text-xs">FICHAS</TabsTrigger>
+                    <TabsTrigger value="audio" className="font-display text-xs">ÁUDIO</TabsTrigger>
                     <TabsTrigger value="controls" className="font-display text-xs">CONTROLES</TabsTrigger>
                     <TabsTrigger value="bonuses" className="font-display text-xs">BÔNUS</TabsTrigger>
                   </TabsList>
@@ -914,6 +917,11 @@ export default function CampaignView() {
                       members={members}
                       onMemberUpdate={fetchCampaignData}
                     />
+                  </TabsContent>
+                  
+                  {/* Aba de Áudio - Nova */}
+                  <TabsContent value="audio" className="mt-4">
+                    <AudioMasterPanel campaignId={id || ''} isMaster={isMaster} />
                   </TabsContent>
                   
                   {/* Aba de Controles */}
