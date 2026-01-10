@@ -40,6 +40,9 @@ import {
 import { ActiveRitualsPanel } from "./ActiveRitualsPanel";
 import { HookExecutionLog } from "./HookExecutionLog";
 import { CombatStatsPanel } from "./CombatStatsPanel";
+import { TacticalPauseModal } from "./TacticalPauseModal";
+import { TurnActionsPanel } from "./TurnActionsPanel";
+import { PreparedActionsList, type PreparedAction } from "./PreparedActionBadge";
 import {
   Swords,
   Play,
@@ -54,6 +57,7 @@ import {
   ChevronRight,
   RotateCcw,
   Sparkles,
+  Clock,
 } from "lucide-react";
 import confetti from "canvas-confetti";
 
@@ -77,6 +81,11 @@ export function CombatTracker({
   const [newCombatantName, setNewCombatantName] = useState("");
   const [newCombatantAgility, setNewCombatantAgility] = useState(1);
   const [hookLogKey, setHookLogKey] = useState(0); // Force re-render of hook log
+  
+  // Novos estados para combate avançado
+  const [tacticalPauseOpen, setTacticalPauseOpen] = useState(false);
+  const [preparedActions, setPreparedActions] = useState<PreparedAction[]>([]);
+  const [delayedCombatants, setDelayedCombatants] = useState<string[]>([]);
 
   const updateState = useCallback((newState: CombatState) => {
     setCombatState(newState);
@@ -232,6 +241,142 @@ export function CombatTracker({
     });
   }, [combatState, updateState]);
 
+  const currentCombatant = combatState.combatants[combatState.currentTurnIndex];
+
+  // Adiar turno (Delay)
+  const handleDelayTurn = useCallback(() => {
+    const current = combatState.combatants[combatState.currentTurnIndex];
+    if (!current) return;
+    
+    setDelayedCombatants(prev => [...prev, current.id]);
+    
+    const newState = nextTurn(combatState);
+    updateState({
+      ...newState,
+      log: [
+        ...newState.log,
+        {
+          timestamp: new Date(),
+          type: 'system' as const,
+          message: `⏳ ${current.name} adiou seu turno`,
+        },
+      ],
+    });
+  }, [combatState, updateState]);
+
+  // Preparar ação
+  const handlePrepareAction = useCallback((trigger: string, action: string) => {
+    const current = combatState.combatants[combatState.currentTurnIndex];
+    if (!current) return;
+    
+    const preparedAction: PreparedAction = {
+      id: crypto.randomUUID(),
+      combatantId: current.id,
+      combatantName: current.name,
+      trigger,
+      action,
+      round: combatState.round,
+      isActive: true,
+    };
+    
+    setPreparedActions(prev => [...prev, preparedAction]);
+    
+    const updatedCombatants = combatState.combatants.map(c => 
+      c.id === current.id 
+        ? { ...c, turnState: { ...c.turnState, hasActed: true } }
+        : c
+    );
+    
+    updateState({
+      ...combatState,
+      combatants: updatedCombatants,
+      log: [
+        ...combatState.log,
+        {
+          timestamp: new Date(),
+          type: 'system' as const,
+          message: `🎯 ${current.name} preparou uma ação: "${trigger}"`,
+        },
+      ],
+    });
+  }, [combatState, updateState]);
+
+  // Ativar ação preparada
+  const handleTriggerPreparedAction = useCallback((actionId: string) => {
+    const action = preparedActions.find(a => a.id === actionId);
+    if (!action) return;
+    
+    setPreparedActions(prev => prev.filter(a => a.id !== actionId));
+    
+    const updatedCombatants = combatState.combatants.map(c => 
+      c.id === action.combatantId 
+        ? { ...c, turnState: { ...c.turnState, hasReacted: true } }
+        : c
+    );
+    
+    updateState({
+      ...combatState,
+      combatants: updatedCombatants,
+      log: [
+        ...combatState.log,
+        {
+          timestamp: new Date(),
+          type: 'system' as const,
+          message: `⚡ ${action.combatantName} ativou ação preparada: ${action.action}`,
+        },
+      ],
+    });
+  }, [combatState, preparedActions, updateState]);
+
+  // Cancelar ação preparada
+  const handleCancelPreparedAction = useCallback((actionId: string) => {
+    setPreparedActions(prev => prev.filter(a => a.id !== actionId));
+  }, []);
+
+  // Marcar ação como usada
+  const handleMarkAction = useCallback((combatantId: string, action: 'standard' | 'move' | 'reaction') => {
+    const updatedCombatants = combatState.combatants.map(c => {
+      if (c.id !== combatantId) return c;
+      
+      const newTurnState = { ...c.turnState };
+      switch (action) {
+        case 'standard':
+          newTurnState.hasActed = !newTurnState.hasActed;
+          break;
+        case 'move':
+          newTurnState.hasMoved = !newTurnState.hasMoved;
+          break;
+        case 'reaction':
+          newTurnState.hasReacted = !newTurnState.hasReacted;
+          break;
+      }
+      
+      return { ...c, turnState: newTurnState };
+    });
+    
+    updateState({ ...combatState, combatants: updatedCombatants });
+  }, [combatState, updateState]);
+
+  // Resetar ações
+  const handleResetActions = useCallback((combatantId: string) => {
+    const updatedCombatants = combatState.combatants.map(c => 
+      c.id === combatantId 
+        ? { ...c, turnState: { ...c.turnState, hasActed: false, hasMoved: false, hasReacted: false } }
+        : c
+    );
+    updateState({ ...combatState, combatants: updatedCombatants });
+  }, [combatState, updateState]);
+
+  // Ação completa
+  const handleFullAction = useCallback((combatantId: string) => {
+    const updatedCombatants = combatState.combatants.map(c => 
+      c.id === combatantId 
+        ? { ...c, turnState: { ...c.turnState, hasActed: true, hasMoved: true } }
+        : c
+    );
+    updateState({ ...combatState, combatants: updatedCombatants });
+  }, [combatState, updateState]);
+
   const updateCombatantHP = useCallback((
     id: string, 
     delta: number, 
@@ -312,7 +457,7 @@ export function CombatTracker({
     updateCombatantHP(id, -damage, 'balístico', weaponName || 'projétil');
   }, [updateCombatantHP]);
 
-  const currentCombatant = combatState.combatants[combatState.currentTurnIndex];
+  // currentCombatant já declarado acima
 
   return (
     <div className="space-y-6">
