@@ -46,6 +46,7 @@ import { rollSkillTest } from '@/lib/dice-roller';
 import { CharacterSelectDialog } from '@/components/campaign/CharacterSelectDialog';
 import { MemberConditionsPanel } from '@/components/campaign/MemberConditionsPanel';
 import { CombatTracker } from '@/components/combat/CombatTracker';
+import { IntegratedCombatBoard } from '@/components/combat/IntegratedCombatBoard';
 import { DiceRoller3D } from '@/components/dice/DiceRoller3D';
 import { PlayersSidebar } from '@/components/campaign/PlayersSidebar';
 import { CampaignStatusGrid } from '@/components/campaign/CampaignStatusGrid';
@@ -55,10 +56,12 @@ import { NotesPanel } from '@/components/campaign/NotesPanel';
 import { MemberBonusesPanel } from '@/components/campaign/MemberBonusesPanel';
 import { MasterSheetViewer } from '@/components/campaign/master/MasterSheetViewer';
 import { TacticalBoard } from '@/components/campaign/tactical/TacticalBoard';
+import { useTacticalBoard } from '@/hooks/campaign/useTacticalBoard';
 import { AudioMasterPanel, AudioPlayerBar } from '@/components/campaign/audio';
 import { WhisperDialog, ChatMessage, IntegratedDiceRoller, SessionActivityLog, parseDiceCommand } from '@/components/campaign/chat';
 import { PlayerHandoutsViewer } from '@/components/campaign/handouts';
 import { HandoutsManager } from '@/components/campaign/master/HandoutsManager';
+import { type CombatState, createCombatState } from '@/lib/game-engine';
 
 interface Campaign {
   id: string;
@@ -149,9 +152,18 @@ export default function CampaignView() {
   const [characterSelectOpen, setCharacterSelectOpen] = useState(false);
   const [endSessionDialogOpen, setEndSessionDialogOpen] = useState(false);
   const [endingSession, setEndingSession] = useState(false);
+  
+  // Estado de combate compartilhado entre CombatTracker e IntegratedCombatBoard
+  const [sharedCombatState, setSharedCombatState] = useState<CombatState>(() => createCombatState());
 
   const isMaster = campaign?.master_id === user?.id;
   const currentMember = members.find(m => m.user_id === user?.id);
+  
+  // Hook do tabuleiro tático elevado para compartilhamento com combate
+  const board = useTacticalBoard({
+    campaignId: id || '',
+    isMaster: isMaster,
+  });
 
   // Busca dados ao montar e subscribe para updates
   useEffect(() => {
@@ -861,10 +873,22 @@ export default function CampaignView() {
             </TabsContent>
 
             <TabsContent value="combat" className="flex-1 p-4 m-0 overflow-auto">
-              <CombatTracker
-                campaignId={id}
-                isMaster={isMaster}
-              />
+              <div className="space-y-6">
+                {/* CombatTracker principal */}
+                <CombatTracker
+                  campaignId={id}
+                  isMaster={isMaster}
+                  onCombatUpdate={setSharedCombatState}
+                />
+                
+                {/* Integração com tabuleiro tático */}
+                <IntegratedCombatBoard
+                  board={board}
+                  combatState={sharedCombatState}
+                  isMaster={isMaster}
+                  movementPerRound={9}
+                />
+              </div>
             </TabsContent>
 
             <TabsContent value="tactical" className="flex-1 p-4 m-0 overflow-auto">
@@ -872,6 +896,7 @@ export default function CampaignView() {
                 campaignId={id || ''}
                 isMaster={isMaster}
                 members={members}
+                externalBoard={board}
               />
             </TabsContent>
 
