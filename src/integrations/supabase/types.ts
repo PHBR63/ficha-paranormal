@@ -47,6 +47,59 @@ export type Database = {
         }
         Relationships: []
       }
+      campaign_handouts: {
+        Row: {
+          campaign_id: string
+          content: string | null
+          created_at: string
+          created_by: string
+          handout_type: string
+          id: string
+          image_url: string | null
+          revealed_at: string | null
+          shared_with: string[] | null
+          title: string
+          updated_at: string
+          visibility: string
+        }
+        Insert: {
+          campaign_id: string
+          content?: string | null
+          created_at?: string
+          created_by: string
+          handout_type?: string
+          id?: string
+          image_url?: string | null
+          revealed_at?: string | null
+          shared_with?: string[] | null
+          title: string
+          updated_at?: string
+          visibility?: string
+        }
+        Update: {
+          campaign_id?: string
+          content?: string | null
+          created_at?: string
+          created_by?: string
+          handout_type?: string
+          id?: string
+          image_url?: string | null
+          revealed_at?: string | null
+          shared_with?: string[] | null
+          title?: string
+          updated_at?: string
+          visibility?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_handouts_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaign_invites: {
         Row: {
           campaign_id: string
@@ -307,6 +360,60 @@ export type Database = {
           },
           {
             foreignKeyName: "campaign_ritual_casts_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaign_scene_notes: {
+        Row: {
+          campaign_id: string
+          content: string | null
+          created_at: string
+          created_by: string
+          id: string
+          is_private: boolean
+          note_type: string
+          session_id: string | null
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          campaign_id: string
+          content?: string | null
+          created_at?: string
+          created_by: string
+          id?: string
+          is_private?: boolean
+          note_type?: string
+          session_id?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          campaign_id?: string
+          content?: string | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          is_private?: boolean
+          note_type?: string
+          session_id?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_scene_notes_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_scene_notes_session_id_fkey"
             columns: ["session_id"]
             isOneToOne: false
             referencedRelation: "campaign_sessions"
