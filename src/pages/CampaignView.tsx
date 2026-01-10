@@ -50,6 +50,7 @@ import { SessionManager } from '@/components/campaign/SessionManager';
 import { ActiveSessionBanner } from '@/components/campaign/ActiveSessionBanner';
 import { NotesPanel } from '@/components/campaign/NotesPanel';
 import { MemberBonusesPanel } from '@/components/campaign/MemberBonusesPanel';
+import { MasterSheetViewer } from '@/components/campaign/master/MasterSheetViewer';
 
 interface Campaign {
   id: string;
@@ -885,64 +886,86 @@ export default function CampaignView() {
 
             {isMaster && (
               <TabsContent value="master" className="flex-1 p-4 m-0 overflow-auto">
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {/* Controle de Sessão */}
-                  <div className="ordo-panel p-6">
-                    <h3 className="font-display text-lg tracking-wider mb-4 text-primary">
-                      CONTROLE DE SESSÃO
-                    </h3>
-                    <div className="space-y-4">
-                      <div>
-                        <label className="text-sm text-muted-foreground">Sessão Atual</label>
-                        <p className="font-display text-4xl">{campaign.current_session}</p>
+                <Tabs defaultValue="sheets" className="space-y-4">
+                  <TabsList className="bg-card border border-border">
+                    <TabsTrigger value="sheets" className="font-display text-xs">FICHAS</TabsTrigger>
+                    <TabsTrigger value="controls" className="font-display text-xs">CONTROLES</TabsTrigger>
+                    <TabsTrigger value="bonuses" className="font-display text-xs">BÔNUS</TabsTrigger>
+                  </TabsList>
+                  
+                  {/* Aba de Fichas - Nova */}
+                  <TabsContent value="sheets" className="mt-4">
+                    <MasterSheetViewer
+                      campaignId={id || ''}
+                      members={members}
+                      onMemberUpdate={fetchCampaignData}
+                    />
+                  </TabsContent>
+                  
+                  {/* Aba de Controles */}
+                  <TabsContent value="controls" className="mt-4">
+                    <div className="grid md:grid-cols-2 gap-4">
+                      {/* Controle de Sessão */}
+                      <div className="ordo-panel p-6">
+                        <h3 className="font-display text-lg tracking-wider mb-4 text-primary">
+                          CONTROLE DE SESSÃO
+                        </h3>
+                        <div className="space-y-4">
+                          <div>
+                            <label className="text-sm text-muted-foreground">Sessão Atual</label>
+                            <p className="font-display text-4xl">{campaign.current_session}</p>
+                          </div>
+                          <Button className="w-full font-display">
+                            INICIAR NOVA SESSÃO
+                          </Button>
+                        </div>
                       </div>
-                      <Button className="w-full font-display">
-                        INICIAR NOVA SESSÃO
-                      </Button>
-                    </div>
-                  </div>
 
-                  {/* Ações Rápidas */}
-                  <div className="ordo-panel p-6">
-                    <h3 className="font-display text-lg tracking-wider mb-4 text-primary">
-                      AÇÕES RÁPIDAS
-                    </h3>
-                    <div className="space-y-2">
-                      <Button 
-                        variant="outline" 
-                        className="w-full justify-start"
-                        onClick={() => {
-                          sendMessage('system', '⚔️ O Mestre iniciou uma cena de combate!');
-                        }}
-                      >
-                        Iniciar Combate
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        className="w-full justify-start"
-                        onClick={() => {
-                          sendMessage('system', '🔍 O Mestre pediu testes de Percepção.');
-                        }}
-                      >
-                        Pedir Teste de Percepção
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        className="w-full justify-start"
-                        onClick={() => {
-                          sendMessage('system', '🧠 O Mestre pediu testes de Vontade.');
-                        }}
-                      >
-                        Pedir Teste de Vontade
-                      </Button>
+                      {/* Ações Rápidas */}
+                      <div className="ordo-panel p-6">
+                        <h3 className="font-display text-lg tracking-wider mb-4 text-primary">
+                          AÇÕES RÁPIDAS
+                        </h3>
+                        <div className="space-y-2">
+                          <Button 
+                            variant="outline" 
+                            className="w-full justify-start"
+                            onClick={() => {
+                              sendMessage('system', '⚔️ O Mestre iniciou uma cena de combate!');
+                            }}
+                          >
+                            Iniciar Combate
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            className="w-full justify-start"
+                            onClick={() => {
+                              sendMessage('system', '🔍 O Mestre pediu testes de Percepção.');
+                            }}
+                          >
+                            Pedir Teste de Percepção
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            className="w-full justify-start"
+                            onClick={() => {
+                              sendMessage('system', '🧠 O Mestre pediu testes de Vontade.');
+                            }}
+                          >
+                            Pedir Teste de Vontade
+                          </Button>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-
-                  {/* Painel de Bônus dos Jogadores */}
-                  <div className="ordo-panel p-6 md:col-span-2 lg:col-span-1">
-                    <MemberBonusesPanel campaignId={id || ''} />
-                  </div>
-                </div>
+                  </TabsContent>
+                  
+                  {/* Aba de Bônus */}
+                  <TabsContent value="bonuses" className="mt-4">
+                    <div className="ordo-panel p-6">
+                      <MemberBonusesPanel campaignId={id || ''} />
+                    </div>
+                  </TabsContent>
+                </Tabs>
               </TabsContent>
             )}
           </Tabs>
