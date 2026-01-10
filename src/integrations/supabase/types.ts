@@ -141,6 +141,68 @@ export type Database = {
           },
         ]
       }
+      campaign_maps: {
+        Row: {
+          campaign_id: string
+          created_at: string
+          created_by: string
+          fog_of_war: Json | null
+          grid_color: string | null
+          grid_size: number
+          grid_type: string
+          grid_visible: boolean | null
+          height_cells: number | null
+          id: string
+          image_url: string
+          is_active: boolean
+          name: string
+          updated_at: string
+          width_cells: number | null
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string
+          created_by: string
+          fog_of_war?: Json | null
+          grid_color?: string | null
+          grid_size?: number
+          grid_type?: string
+          grid_visible?: boolean | null
+          height_cells?: number | null
+          id?: string
+          image_url: string
+          is_active?: boolean
+          name: string
+          updated_at?: string
+          width_cells?: number | null
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string
+          created_by?: string
+          fog_of_war?: Json | null
+          grid_color?: string | null
+          grid_size?: number
+          grid_type?: string
+          grid_visible?: boolean | null
+          height_cells?: number | null
+          id?: string
+          image_url?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+          width_cells?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_maps_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaign_members: {
         Row: {
           active_bonuses: Json | null
@@ -862,6 +924,90 @@ export type Database = {
           vigor?: number
         }
         Relationships: []
+      }
+      map_tokens: {
+        Row: {
+          character_id: string | null
+          conditions: Json | null
+          created_at: string
+          created_by: string
+          id: string
+          image_url: string | null
+          layer: string
+          light_color: string | null
+          light_radius: number | null
+          locked: boolean | null
+          map_id: string
+          name: string
+          notes: string | null
+          rotation: number | null
+          size: number
+          token_type: string
+          updated_at: string
+          visible_to: string[] | null
+          x: number
+          y: number
+        }
+        Insert: {
+          character_id?: string | null
+          conditions?: Json | null
+          created_at?: string
+          created_by: string
+          id?: string
+          image_url?: string | null
+          layer?: string
+          light_color?: string | null
+          light_radius?: number | null
+          locked?: boolean | null
+          map_id: string
+          name: string
+          notes?: string | null
+          rotation?: number | null
+          size?: number
+          token_type?: string
+          updated_at?: string
+          visible_to?: string[] | null
+          x?: number
+          y?: number
+        }
+        Update: {
+          character_id?: string | null
+          conditions?: Json | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          image_url?: string | null
+          layer?: string
+          light_color?: string | null
+          light_radius?: number | null
+          locked?: boolean | null
+          map_id?: string
+          name?: string
+          notes?: string | null
+          rotation?: number | null
+          size?: number
+          token_type?: string
+          updated_at?: string
+          visible_to?: string[] | null
+          x?: number
+          y?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "map_tokens_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: false
+            referencedRelation: "characters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "map_tokens_map_id_fkey"
+            columns: ["map_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_maps"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {

@@ -28,6 +28,7 @@ import {
   Swords,
   Users,
   CalendarDays,
+  Map,
 } from 'lucide-react';
 import {
   Dialog,
@@ -51,6 +52,7 @@ import { ActiveSessionBanner } from '@/components/campaign/ActiveSessionBanner';
 import { NotesPanel } from '@/components/campaign/NotesPanel';
 import { MemberBonusesPanel } from '@/components/campaign/MemberBonusesPanel';
 import { MasterSheetViewer } from '@/components/campaign/master/MasterSheetViewer';
+import { TacticalBoard } from '@/components/campaign/tactical/TacticalBoard';
 
 interface Campaign {
   id: string;
@@ -720,6 +722,10 @@ export default function CampaignView() {
                   <Swords className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
                   <span className="hidden sm:inline">COMBATE</span>
                 </TabsTrigger>
+                <TabsTrigger value="tactical" className="font-display tracking-wider text-xs sm:text-sm px-2 sm:px-3">
+                  <Map className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">TABULEIRO</span>
+                </TabsTrigger>
                 <TabsTrigger value="conditions" className="font-display tracking-wider text-xs sm:text-sm px-2 sm:px-3">
                   <Activity className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
                   <span className="hidden sm:inline">CONDIÇÕES</span>
@@ -847,6 +853,14 @@ export default function CampaignView() {
               <CombatTracker
                 campaignId={id}
                 isMaster={isMaster}
+              />
+            </TabsContent>
+
+            <TabsContent value="tactical" className="flex-1 p-4 m-0 overflow-auto">
+              <TacticalBoard
+                campaignId={id || ''}
+                isMaster={isMaster}
+                members={members}
               />
             </TabsContent>
 
