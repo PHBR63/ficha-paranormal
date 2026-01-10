@@ -1,0 +1,918 @@
+/**
+ * TacticalBoard - Tabuleiro tático interativo para combate
+ * 
+ * Canvas 2D com suporte a:
+ * - Mapas com grid (quadrado/hex)
+ * - Tokens arrastáveis
+ * - Régua de distância
+ * - Fog of War (mestre)
+ * - Ping e marcadores
+ * - Zoom e pan
+ */
+
+import { useRef, useEffect, useState, useCallback, MouseEvent as ReactMouseEvent } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useTacticalBoard, MapToken, TacticalMap } from '@/hooks/campaign/useTacticalBoard';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { cn } from '@/lib/utils';
+import {
+  MousePointer2,
+  Move,
+  Ruler,
+  Cloud,
+  Target,
+  Pencil,
+  ZoomIn,
+  ZoomOut,
+  Maximize,
+  Plus,
+  Trash2,
+  Map,
+  Users,
+  Skull,
+  Box,
+  Flag,
+  Loader2,
+  Upload,
+  Eye,
+  EyeOff,
+  Lock,
+  Unlock,
+  RotateCw,
+} from 'lucide-react';
+
+interface TacticalBoardProps {
+  campaignId: string;
+  isMaster: boolean;
+  members?: Array<{
+    character_id: string | null;
+    characters?: {
+      id: string;
+      name: string;
+      photo_url: string | null;
+    } | null;
+  }>;
+}
+
+// Ícones por tipo de token
+const TOKEN_ICONS: Record<string, typeof Users> = {
+  pc: Users,
+  npc: Users,
+  creature: Skull,
+  object: Box,
+  marker: Flag,
+};
+
+export function TacticalBoard({ campaignId, isMaster, members = [] }: TacticalBoardProps) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  
+  const board = useTacticalBoard({ campaignId, isMaster });
+  
+  // Estados locais
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragToken, setDragToken] = useState<MapToken | null>(null);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [isPanning, setIsPanning] = useState(false);
+  const [panStart, setPanStart] = useState({ x: 0, y: 0 });
+  const [showMapDialog, setShowMapDialog] = useState(false);
+  const [showTokenDialog, setShowTokenDialog] = useState(false);
+  const [newMapUrl, setNewMapUrl] = useState('');
+  const [newMapName, setNewMapName] = useState('');
+  const [newTokenName, setNewTokenName] = useState('');
+  const [newTokenType, setNewTokenType] = useState<'pc' | 'npc' | 'creature' | 'object' | 'marker'>('npc');
+  const [selectedCharacterId, setSelectedCharacterId] = useState<string | null>(null);
+  const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 });
+
+  // =====================================================
+  // RENDERING DO CANVAS
+  // =====================================================
+
+  const drawCanvas = useCallback(() => {
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext('2d');
+    if (!canvas || !ctx || !board.activeMap) return;
+
+    // Limpa canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Aplica transformações de zoom/pan
+    ctx.save();
+    ctx.translate(board.panOffset.x, board.panOffset.y);
+    ctx.scale(board.zoom, board.zoom);
+
+    const map = board.activeMap;
+    const gridSize = map.grid_size;
+
+    // Desenha grid
+    if (map.grid_visible) {
+      ctx.strokeStyle = map.grid_color;
+      ctx.lineWidth = 1;
+      
+      const cols = map.width_cells || Math.ceil(canvas.width / gridSize);
+      const rows = map.height_cells || Math.ceil(canvas.height / gridSize);
+      
+      for (let x = 0; x <= cols; x++) {
+        ctx.beginPath();
+        ctx.moveTo(x * gridSize, 0);
+        ctx.lineTo(x * gridSize, rows * gridSize);
+        ctx.stroke();
+      }
+      
+      for (let y = 0; y <= rows; y++) {
+        ctx.beginPath();
+        ctx.moveTo(0, y * gridSize);
+        ctx.lineTo(cols * gridSize, y * gridSize);
+        ctx.stroke();
+      }
+    }
+
+    // Desenha Fog of War (células reveladas são claras, resto é escuro)
+    if (isMaster && map.fog_of_war.length > 0) {
+      ctx.fillStyle = 'rgba(0, 200, 100, 0.1)';
+      map.fog_of_war.forEach(cell => {
+        ctx.fillRect(cell.x * gridSize, cell.y * gridSize, gridSize, gridSize);
+      });
+    }
+
+    // Desenha tokens
+    board.tokens.forEach(token => {
+      const x = token.x * gridSize;
+      const y = token.y * gridSize;
+      const size = token.size * gridSize;
+      
+      // Cor base por tipo
+      const colors: Record<string, string> = {
+        pc: '#3b82f6',
+        npc: '#22c55e',
+        creature: '#ef4444',
+        object: '#a855f7',
+        marker: '#f59e0b',
+      };
+      
+      // Círculo do token
+      ctx.beginPath();
+      ctx.arc(x + size / 2, y + size / 2, size / 2 - 2, 0, Math.PI * 2);
+      ctx.fillStyle = colors[token.token_type] || '#666';
+      ctx.fill();
+      
+      // Borda
+      ctx.strokeStyle = token.id === board.selectedTokenId ? '#fff' : 'rgba(0,0,0,0.5)';
+      ctx.lineWidth = token.id === board.selectedTokenId ? 3 : 2;
+      ctx.stroke();
+      
+      // Ícone de locked
+      if (token.locked && isMaster) {
+        ctx.fillStyle = '#fff';
+        ctx.font = '12px sans-serif';
+        ctx.fillText('🔒', x + 2, y + 14);
+      }
+      
+      // Condições
+      if (token.conditions.length > 0) {
+        ctx.fillStyle = '#f59e0b';
+        ctx.beginPath();
+        ctx.arc(x + size - 6, y + 6, 6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#000';
+        ctx.font = 'bold 10px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(token.conditions.length.toString(), x + size - 6, y + 10);
+      }
+      
+      // Raio de luz
+      if (token.light_radius > 0) {
+        const lightSize = token.light_radius * gridSize;
+        const gradient = ctx.createRadialGradient(
+          x + size / 2, y + size / 2, size / 2,
+          x + size / 2, y + size / 2, lightSize
+        );
+        gradient.addColorStop(0, token.light_color + '40');
+        gradient.addColorStop(1, 'transparent');
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(x + size / 2, y + size / 2, lightSize, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      
+      // Nome do token
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 11px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.shadowColor = '#000';
+      ctx.shadowBlur = 3;
+      ctx.fillText(token.name.substring(0, 8), x + size / 2, y + size + 12);
+      ctx.shadowBlur = 0;
+    });
+
+    // Desenha régua de medição
+    if (board.measureStart && board.measureEnd) {
+      const start = board.cellToPixel(board.measureStart.x, board.measureStart.y);
+      const end = board.cellToPixel(board.measureEnd.x, board.measureEnd.y);
+      
+      ctx.strokeStyle = '#f59e0b';
+      ctx.lineWidth = 3;
+      ctx.setLineDash([5, 5]);
+      ctx.beginPath();
+      ctx.moveTo(start.x + gridSize / 2, start.y + gridSize / 2);
+      ctx.lineTo(end.x + gridSize / 2, end.y + gridSize / 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      
+      // Distância
+      const distance = board.calculateDistance(
+        board.measureStart.x, board.measureStart.y,
+        board.measureEnd.x, board.measureEnd.y
+      );
+      
+      const midX = (start.x + end.x) / 2 + gridSize / 2;
+      const midY = (start.y + end.y) / 2 + gridSize / 2;
+      
+      ctx.fillStyle = '#000';
+      ctx.fillRect(midX - 25, midY - 12, 50, 20);
+      ctx.fillStyle = '#f59e0b';
+      ctx.font = 'bold 12px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(`${distance}m`, midX, midY + 4);
+    }
+
+    // Desenha pings
+    board.pings.forEach(ping => {
+      const pos = board.cellToPixel(ping.x, ping.y);
+      const age = Date.now() - ping.createdAt;
+      const scale = 1 + Math.sin(age / 100) * 0.2;
+      const opacity = Math.max(0, 1 - age / 3000);
+      
+      ctx.save();
+      ctx.globalAlpha = opacity;
+      ctx.translate(pos.x + gridSize / 2, pos.y + gridSize / 2);
+      ctx.scale(scale, scale);
+      
+      ctx.beginPath();
+      ctx.arc(0, 0, 15, 0, Math.PI * 2);
+      ctx.strokeStyle = ping.color;
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      
+      ctx.beginPath();
+      ctx.arc(0, 0, 5, 0, Math.PI * 2);
+      ctx.fillStyle = ping.color;
+      ctx.fill();
+      
+      ctx.restore();
+    });
+
+    ctx.restore();
+  }, [board, isMaster]);
+
+  // Re-render quando dados mudam
+  useEffect(() => {
+    drawCanvas();
+  }, [drawCanvas, board.tokens, board.activeMap, board.zoom, board.panOffset, board.pings, board.measureStart, board.measureEnd, board.selectedTokenId]);
+
+  // Ajusta tamanho do canvas
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    
+    const updateSize = () => {
+      setCanvasSize({
+        width: container.clientWidth,
+        height: container.clientHeight,
+      });
+    };
+    
+    updateSize();
+    window.addEventListener('resize', updateSize);
+    return () => window.removeEventListener('resize', updateSize);
+  }, []);
+
+  // =====================================================
+  // EVENT HANDLERS
+  // =====================================================
+
+  const getCanvasCoords = (e: ReactMouseEvent): { x: number; y: number } => {
+    const canvas = canvasRef.current;
+    if (!canvas) return { x: 0, y: 0 };
+    
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: (e.clientX - rect.left - board.panOffset.x) / board.zoom,
+      y: (e.clientY - rect.top - board.panOffset.y) / board.zoom,
+    };
+  };
+
+  const handleMouseDown = (e: ReactMouseEvent) => {
+    const coords = getCanvasCoords(e);
+    const cell = board.pixelToCell(coords.x, coords.y);
+    
+    // Middle click ou Ctrl+click para pan
+    if (e.button === 1 || (e.button === 0 && e.ctrlKey)) {
+      setIsPanning(true);
+      setPanStart({ x: e.clientX - board.panOffset.x, y: e.clientY - board.panOffset.y });
+      return;
+    }
+    
+    // Ferramenta ativa
+    switch (board.activeTool) {
+      case 'select':
+      case 'move':
+        // Verifica se clicou em um token
+        const clickedToken = board.tokens.find(t => {
+          const tokenCell = { x: t.x, y: t.y };
+          return cell.x >= tokenCell.x && cell.x < tokenCell.x + t.size &&
+                 cell.y >= tokenCell.y && cell.y < tokenCell.y + t.size;
+        });
+        
+        if (clickedToken) {
+          board.selectToken(clickedToken.id);
+          
+          // Inicia drag se não estiver locked (ou se for mestre)
+          if (!clickedToken.locked || isMaster) {
+            setIsDragging(true);
+            setDragToken(clickedToken);
+            setDragOffset({
+              x: coords.x - clickedToken.x * (board.activeMap?.grid_size || 40),
+              y: coords.y - clickedToken.y * (board.activeMap?.grid_size || 40),
+            });
+          }
+        } else {
+          board.selectToken(null);
+        }
+        break;
+        
+      case 'measure':
+        board.startMeasure(cell.x, cell.y);
+        break;
+        
+      case 'ping':
+        board.sendPing(cell.x, cell.y, '#ff0000');
+        break;
+        
+      case 'fog':
+        if (isMaster) {
+          // Toggle fog na célula
+          const isRevealed = board.activeMap?.fog_of_war.some(
+            f => f.x === cell.x && f.y === cell.y
+          );
+          if (isRevealed) {
+            board.hideFog([cell]);
+          } else {
+            board.revealFog([cell]);
+          }
+        }
+        break;
+    }
+  };
+
+  const handleMouseMove = (e: ReactMouseEvent) => {
+    if (isPanning) {
+      board.setPanOffset({
+        x: e.clientX - panStart.x,
+        y: e.clientY - panStart.y,
+      });
+      return;
+    }
+    
+    if (isDragging && dragToken) {
+      const coords = getCanvasCoords(e);
+      const gridSize = board.activeMap?.grid_size || 40;
+      const newX = Math.round((coords.x - dragOffset.x) / gridSize);
+      const newY = Math.round((coords.y - dragOffset.y) / gridSize);
+      
+      // Atualização visual imediata
+      setDragToken(prev => prev ? { ...prev, x: newX, y: newY } : null);
+    }
+    
+    if (board.activeTool === 'measure' && board.measureStart) {
+      const coords = getCanvasCoords(e);
+      const cell = board.pixelToCell(coords.x, coords.y);
+      board.endMeasure(cell.x, cell.y);
+    }
+  };
+
+  const handleMouseUp = async () => {
+    if (isPanning) {
+      setIsPanning(false);
+      return;
+    }
+    
+    if (isDragging && dragToken) {
+      await board.moveToken(dragToken.id, dragToken.x, dragToken.y);
+      setIsDragging(false);
+      setDragToken(null);
+    }
+    
+    if (board.activeTool === 'measure') {
+      // Mantém a medição visível
+    }
+  };
+
+  const handleWheel = (e: React.WheelEvent) => {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? -0.1 : 0.1;
+    const newZoom = Math.max(0.25, Math.min(3, board.zoom + delta));
+    board.setZoom(newZoom);
+  };
+
+  // =====================================================
+  // AÇÕES DA TOOLBAR
+  // =====================================================
+
+  const handleCreateMap = async () => {
+    if (!newMapUrl || !newMapName) return;
+    
+    await board.createMap({
+      name: newMapName,
+      image_url: newMapUrl,
+      grid_size: 40,
+    });
+    
+    setShowMapDialog(false);
+    setNewMapUrl('');
+    setNewMapName('');
+  };
+
+  const handleCreateToken = async () => {
+    if (!newTokenName) return;
+    
+    // Posição no centro do viewport
+    const centerX = Math.floor((canvasSize.width / 2 - board.panOffset.x) / board.zoom / (board.activeMap?.grid_size || 40));
+    const centerY = Math.floor((canvasSize.height / 2 - board.panOffset.y) / board.zoom / (board.activeMap?.grid_size || 40));
+    
+    const member = members.find(m => m.character_id === selectedCharacterId);
+    
+    await board.createToken({
+      name: newTokenName,
+      token_type: newTokenType,
+      character_id: selectedCharacterId,
+      x: centerX,
+      y: centerY,
+      image_url: member?.characters?.photo_url || undefined,
+    });
+    
+    setShowTokenDialog(false);
+    setNewTokenName('');
+    setNewTokenType('npc');
+    setSelectedCharacterId(null);
+  };
+
+  // =====================================================
+  // RENDER
+  // =====================================================
+
+  if (board.isLoading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // Se não há mapa ativo
+  if (!board.activeMap) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center py-12 ordo-panel">
+          <Map className="w-16 h-16 mx-auto mb-4 text-muted-foreground/50" />
+          <h3 className="font-display text-xl tracking-wider mb-2">TABULEIRO TÁTICO</h3>
+          <p className="text-muted-foreground mb-6">
+            {isMaster 
+              ? 'Crie um mapa para começar a usar o tabuleiro tático.'
+              : 'O mestre ainda não ativou nenhum mapa.'}
+          </p>
+          
+          {isMaster && (
+            <Button onClick={() => setShowMapDialog(true)}>
+              <Plus className="w-4 h-4 mr-2" />
+              Criar Mapa
+            </Button>
+          )}
+        </div>
+        
+        {/* Lista de mapas existentes (mestre) */}
+        {isMaster && board.maps.length > 0 && (
+          <div className="ordo-panel p-4">
+            <h4 className="font-display text-sm tracking-wider text-primary mb-3">MAPAS DISPONÍVEIS</h4>
+            <div className="space-y-2">
+              {board.maps.map(map => (
+                <div 
+                  key={map.id}
+                  className="flex items-center justify-between p-3 bg-muted/30 rounded-lg"
+                >
+                  <div className="flex items-center gap-3">
+                    <Map className="w-5 h-5 text-muted-foreground" />
+                    <div>
+                      <p className="font-medium text-sm">{map.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Grid: {map.grid_size}px • {map.grid_type}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => board.setActiveMap(map.id)}
+                    >
+                      Ativar
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => board.deleteMap(map.id)}
+                    >
+                      <Trash2 className="w-4 h-4 text-destructive" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        
+        {/* Dialog criar mapa */}
+        <Dialog open={showMapDialog} onOpenChange={setShowMapDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Criar Novo Mapa</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div>
+                <label className="text-sm font-medium">Nome do Mapa</label>
+                <Input
+                  value={newMapName}
+                  onChange={(e) => setNewMapName(e.target.value)}
+                  placeholder="Ex: Sala do Ritual"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">URL da Imagem</label>
+                <Input
+                  value={newMapUrl}
+                  onChange={(e) => setNewMapUrl(e.target.value)}
+                  placeholder="https://..."
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Cole a URL de uma imagem de mapa
+                </p>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowMapDialog(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleCreateMap} disabled={!newMapName || !newMapUrl}>
+                Criar Mapa
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Toolbar */}
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div className="flex items-center gap-2">
+          {/* Seletor de mapa */}
+          {isMaster && (
+            <Select value={board.activeMap.id} onValueChange={board.setActiveMap}>
+              <SelectTrigger className="w-40">
+                <Map className="w-4 h-4 mr-2" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {board.maps.map(map => (
+                  <SelectItem key={map.id} value={map.id}>
+                    {map.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          
+          {/* Ferramentas */}
+          <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-1">
+            {[
+              { id: 'select', icon: MousePointer2, label: 'Selecionar' },
+              { id: 'move', icon: Move, label: 'Mover' },
+              { id: 'measure', icon: Ruler, label: 'Medir' },
+              { id: 'ping', icon: Target, label: 'Ping' },
+              ...(isMaster ? [{ id: 'fog', icon: Cloud, label: 'Fog of War' }] : []),
+            ].map(tool => (
+              <Button
+                key={tool.id}
+                variant={board.activeTool === tool.id ? 'secondary' : 'ghost'}
+                size="icon"
+                className="w-8 h-8"
+                onClick={() => {
+                  board.setActiveTool(tool.id as any);
+                  if (tool.id !== 'measure') board.clearMeasure();
+                }}
+                title={tool.label}
+              >
+                <tool.icon className="w-4 h-4" />
+              </Button>
+            ))}
+          </div>
+          
+          {/* Zoom */}
+          <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="w-8 h-8"
+              onClick={() => board.setZoom(Math.max(0.25, board.zoom - 0.25))}
+            >
+              <ZoomOut className="w-4 h-4" />
+            </Button>
+            <span className="text-xs font-medium w-12 text-center">
+              {Math.round(board.zoom * 100)}%
+            </span>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="w-8 h-8"
+              onClick={() => board.setZoom(Math.min(3, board.zoom + 0.25))}
+            >
+              <ZoomIn className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="w-8 h-8"
+              onClick={board.fitToScreen}
+              title="Ajustar à tela"
+            >
+              <Maximize className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+        
+        {/* Ações do mestre */}
+        {isMaster && (
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowTokenDialog(true)}
+            >
+              <Plus className="w-4 h-4 mr-1" />
+              Token
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowMapDialog(true)}
+            >
+              <Plus className="w-4 h-4 mr-1" />
+              Mapa
+            </Button>
+          </div>
+        )}
+      </div>
+      
+      {/* Canvas */}
+      <div 
+        ref={containerRef}
+        className="relative ordo-panel overflow-hidden"
+        style={{ height: '500px' }}
+      >
+        {/* Imagem de fundo do mapa */}
+        {board.activeMap.image_url && (
+          <img
+            src={board.activeMap.image_url}
+            alt={board.activeMap.name}
+            className="absolute inset-0 w-full h-full object-contain opacity-80"
+            style={{
+              transform: `translate(${board.panOffset.x}px, ${board.panOffset.y}px) scale(${board.zoom})`,
+              transformOrigin: '0 0',
+            }}
+          />
+        )}
+        
+        {/* Canvas para grid e tokens */}
+        <canvas
+          ref={canvasRef}
+          width={canvasSize.width}
+          height={canvasSize.height}
+          className="absolute inset-0 cursor-crosshair"
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
+          onWheel={handleWheel}
+          onContextMenu={(e) => e.preventDefault()}
+        />
+        
+        {/* Info do token selecionado */}
+        <AnimatePresence>
+          {board.selectedTokenId && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              className="absolute bottom-4 left-4 right-4 bg-card/95 border border-border rounded-lg p-3"
+            >
+              {(() => {
+                const token = board.tokens.find(t => t.id === board.selectedTokenId);
+                if (!token) return null;
+                const TokenIcon = TOKEN_ICONS[token.token_type] || Users;
+                
+                return (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
+                        {token.image_url ? (
+                          <img src={token.image_url} alt="" className="w-full h-full object-cover rounded-lg" />
+                        ) : (
+                          <TokenIcon className="w-5 h-5 text-muted-foreground" />
+                        )}
+                      </div>
+                      <div>
+                        <p className="font-medium">{token.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {token.token_type} • Posição: ({token.x}, {token.y})
+                        </p>
+                      </div>
+                      {token.conditions.length > 0 && (
+                        <div className="flex gap-1">
+                          {token.conditions.map((cond, i) => (
+                            <Badge key={i} variant="secondary" className="text-xs">{cond}</Badge>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    
+                    {isMaster && (
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => board.updateToken(token.id, { locked: !token.locked })}
+                          title={token.locked ? 'Desbloquear' : 'Bloquear'}
+                        >
+                          {token.locked ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => board.updateToken(token.id, { 
+                            layer: token.layer === 'hidden' ? 'token' : 'hidden' 
+                          })}
+                          title={token.layer === 'hidden' ? 'Mostrar' : 'Esconder'}
+                        >
+                          {token.layer === 'hidden' ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => board.deleteToken(token.id)}
+                        >
+                          <Trash2 className="w-4 h-4 text-destructive" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+            </motion.div>
+          )}
+        </AnimatePresence>
+        
+        {/* Instruções da ferramenta */}
+        <div className="absolute top-2 left-2 bg-card/80 rounded px-2 py-1">
+          <p className="text-xs text-muted-foreground">
+            {board.activeTool === 'select' && 'Clique para selecionar tokens'}
+            {board.activeTool === 'move' && 'Arraste tokens para mover'}
+            {board.activeTool === 'measure' && 'Clique e arraste para medir distância'}
+            {board.activeTool === 'ping' && 'Clique para enviar ping'}
+            {board.activeTool === 'fog' && 'Clique para revelar/esconder células'}
+            {' • Ctrl+Arraste para pan • Scroll para zoom'}
+          </p>
+        </div>
+      </div>
+      
+      {/* Dialog criar token */}
+      <Dialog open={showTokenDialog} onOpenChange={setShowTokenDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Adicionar Token</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <label className="text-sm font-medium">Nome</label>
+              <Input
+                value={newTokenName}
+                onChange={(e) => setNewTokenName(e.target.value)}
+                placeholder="Nome do token"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Tipo</label>
+              <Select value={newTokenType} onValueChange={(v: any) => setNewTokenType(v)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pc">Jogador (PC)</SelectItem>
+                  <SelectItem value="npc">NPC</SelectItem>
+                  <SelectItem value="creature">Criatura</SelectItem>
+                  <SelectItem value="object">Objeto</SelectItem>
+                  <SelectItem value="marker">Marcador</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {/* Vincular a personagem (para PCs) */}
+            {newTokenType === 'pc' && members.length > 0 && (
+              <div>
+                <label className="text-sm font-medium">Vincular a Personagem</label>
+                <Select value={selectedCharacterId || ''} onValueChange={setSelectedCharacterId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecionar..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {members.filter(m => m.characters).map(m => (
+                      <SelectItem key={m.character_id} value={m.character_id || ''}>
+                        {m.characters?.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowTokenDialog(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleCreateToken} disabled={!newTokenName}>
+              Adicionar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Dialog criar mapa */}
+      <Dialog open={showMapDialog} onOpenChange={setShowMapDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Criar Novo Mapa</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <label className="text-sm font-medium">Nome do Mapa</label>
+              <Input
+                value={newMapName}
+                onChange={(e) => setNewMapName(e.target.value)}
+                placeholder="Ex: Sala do Ritual"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">URL da Imagem</label>
+              <Input
+                value={newMapUrl}
+                onChange={(e) => setNewMapUrl(e.target.value)}
+                placeholder="https://..."
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowMapDialog(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleCreateMap} disabled={!newMapName || !newMapUrl}>
+              Criar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
