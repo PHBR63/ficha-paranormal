@@ -56,7 +56,7 @@ import { MemberBonusesPanel } from '@/components/campaign/MemberBonusesPanel';
 import { MasterSheetViewer } from '@/components/campaign/master/MasterSheetViewer';
 import { TacticalBoard } from '@/components/campaign/tactical/TacticalBoard';
 import { AudioMasterPanel, AudioPlayerBar } from '@/components/campaign/audio';
-import { WhisperDialog } from '@/components/campaign/chat';
+import { WhisperDialog, ChatMessage, IntegratedDiceRoller, SessionActivityLog, parseDiceCommand } from '@/components/campaign/chat';
 import { PlayerHandoutsViewer } from '@/components/campaign/handouts';
 import { HandoutsManager } from '@/components/campaign/master/HandoutsManager';
 
@@ -399,6 +399,18 @@ export default function CampaignView() {
   const sendMessage = async (type: string = 'chat', content: string = messageInput, metadata: any = {}) => {
     if (!user || !id || (!content.trim() && type === 'chat')) return;
 
+    // Verifica se é comando de dados
+    const diceCommand = parseDiceCommand(content);
+    if (diceCommand.isCommand && type === 'chat') {
+      handleDiceRoll(content, type, {
+        dice: [],
+        keptDice: 0,
+        isCritical: false,
+        ...metadata
+      });
+      return;
+    }
+
     setSending(true);
     try {
       const currentMember = members.find(m => m.user_id === user.id);
@@ -427,20 +439,36 @@ export default function CampaignView() {
     }
   };
 
-  const rollDice = (diceCount: number, description: string) => {
-    const result = rollSkillTest({
-      attributeValue: diceCount,
-      skillBonus: 0,
-      label: description,
-    });
-
-    const content = `🎲 ${description}: [${result.dice.join(', ')}] → **${result.keptDice}**${result.isCritical ? ' ★ CRÍTICO!' : ''}`;
+  // Handler para rolagens do IntegratedDiceRoller
+  const handleDiceRoll = async (content: string, type: string, metadata: any) => {
+    if (!user || !id) return;
     
-    sendMessage('dice_roll', content, {
-      dice: result.dice,
-      keptDice: result.keptDice,
-      isCritical: result.isCritical,
-    });
+    setSending(true);
+    try {
+      const currentMember = members.find(m => m.user_id === user.id);
+
+      const { error } = await supabase
+        .from('campaign_messages')
+        .insert({
+          campaign_id: id,
+          user_id: user.id,
+          character_id: currentMember?.character_id || null,
+          message_type: type,
+          content,
+          metadata,
+        });
+
+      if (error) throw error;
+      setMessageInput('');
+    } catch (error: any) {
+      toast({
+        title: 'Erro ao enviar rolagem',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setSending(false);
+    }
   };
 
   const generateInviteCode = async () => {
@@ -776,49 +804,14 @@ export default function CampaignView() {
               {/* Messages */}
               <ScrollArea className="flex-1 p-4">
                 <div className="space-y-3 max-w-3xl mx-auto">
-                  {messages.map((msg) => {
-                    const isOwn = msg.user_id === user?.id;
-                    const isMasterMsg = msg.user_id === campaign.master_id;
-                    const isDiceRoll = msg.message_type === 'dice_roll';
-                    const isSystem = msg.message_type === 'system';
-
-                    return (
-                      <div
-                        key={msg.id}
-                        className={cn(
-                          'max-w-[80%] rounded-lg p-3 animate-fade-in',
-                          isSystem && 'mx-auto text-center bg-muted/30 text-muted-foreground text-sm',
-                          isDiceRoll && 'bg-accent/10 border border-accent/20',
-                          !isSystem && !isDiceRoll && (
-                            isOwn 
-                              ? 'ml-auto bg-primary/10 border border-primary/20' 
-                              : 'bg-card border border-border'
-                          )
-                        )}
-                      >
-                        {!isSystem && (
-                          <div className="flex items-center gap-2 mb-1">
-                            {isMasterMsg && <Crown className="w-3 h-3 text-primary" />}
-                            <span className="text-xs font-medium text-muted-foreground">
-                              {msg.characters?.name || msg.profiles?.display_name || 'Anônimo'}
-                            </span>
-                            <span className="text-xs text-foreground/50">
-                              {new Date(msg.created_at).toLocaleTimeString('pt-BR', { 
-                                hour: '2-digit', 
-                                minute: '2-digit' 
-                              })}
-                            </span>
-                          </div>
-                        )}
-                        <p className={cn(
-                          'text-sm',
-                          isDiceRoll && 'font-display'
-                        )}>
-                          {msg.content}
-                        </p>
-                      </div>
-                    );
-                  })}
+                  {messages.map((msg) => (
+                    <ChatMessage
+                      key={msg.id}
+                      message={msg}
+                      currentUserId={user?.id || ''}
+                      masterId={campaign.master_id}
+                    />
+                  ))}
                   <div ref={messagesEndRef} />
                 </div>
               </ScrollArea>
@@ -826,15 +819,15 @@ export default function CampaignView() {
               {/* Input - Responsivo */}
               <div className="p-2 sm:p-4 border-t border-border bg-card/50 max-w-3xl mx-auto w-full">
                 <div className="flex items-center gap-1.5 sm:gap-2">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => rollDice(1, 'Teste rápido')}
-                    title="Rolar 1d20"
-                    className="w-9 h-9 sm:w-10 sm:h-10 flex-shrink-0"
-                  >
-                    <Dices className="w-4 h-4" />
-                  </Button>
+                  {/* Rolador de Dados Integrado */}
+                  <IntegratedDiceRoller
+                    onRoll={handleDiceRoll}
+                    characterName={currentMember?.characters?.name}
+                    disabled={sending}
+                  />
+                  
+                  {/* Log de Atividades */}
+                  <SessionActivityLog messages={messages} />
                   
                   {/* Botão de Sussurros */}
                   <WhisperDialog 
