@@ -47,6 +47,107 @@ export type Database = {
         }
         Relationships: []
       }
+      campaign_audio: {
+        Row: {
+          audio_type: string
+          audio_url: string
+          campaign_id: string
+          created_at: string
+          created_by: string
+          duration_seconds: number | null
+          id: string
+          is_looping: boolean | null
+          name: string
+          tags: string[] | null
+          updated_at: string
+          volume: number | null
+        }
+        Insert: {
+          audio_type?: string
+          audio_url: string
+          campaign_id: string
+          created_at?: string
+          created_by: string
+          duration_seconds?: number | null
+          id?: string
+          is_looping?: boolean | null
+          name: string
+          tags?: string[] | null
+          updated_at?: string
+          volume?: number | null
+        }
+        Update: {
+          audio_type?: string
+          audio_url?: string
+          campaign_id?: string
+          created_at?: string
+          created_by?: string
+          duration_seconds?: number | null
+          id?: string
+          is_looping?: boolean | null
+          name?: string
+          tags?: string[] | null
+          updated_at?: string
+          volume?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_audio_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaign_audio_state: {
+        Row: {
+          campaign_id: string
+          current_scene_id: string | null
+          id: string
+          is_muted: boolean | null
+          master_volume: number | null
+          playing_tracks: Json | null
+          updated_at: string
+          updated_by: string
+        }
+        Insert: {
+          campaign_id: string
+          current_scene_id?: string | null
+          id?: string
+          is_muted?: boolean | null
+          master_volume?: number | null
+          playing_tracks?: Json | null
+          updated_at?: string
+          updated_by: string
+        }
+        Update: {
+          campaign_id?: string
+          current_scene_id?: string | null
+          id?: string
+          is_muted?: boolean | null
+          master_volume?: number | null
+          playing_tracks?: Json | null
+          updated_at?: string
+          updated_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_audio_state_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: true
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_audio_state_current_scene_id_fkey"
+            columns: ["current_scene_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_sound_scenes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaign_handouts: {
         Row: {
           campaign_id: string
@@ -526,6 +627,53 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "campaign_sessions_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaign_sound_scenes: {
+        Row: {
+          campaign_id: string
+          created_at: string
+          created_by: string
+          description: string | null
+          icon: string | null
+          id: string
+          master_volume: number | null
+          name: string
+          tracks: Json
+          updated_at: string
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string
+          created_by: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          master_volume?: number | null
+          name: string
+          tracks?: Json
+          updated_at?: string
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          master_volume?: number | null
+          name?: string
+          tracks?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_sound_scenes_campaign_id_fkey"
             columns: ["campaign_id"]
             isOneToOne: false
             referencedRelation: "campaigns"
