@@ -74,6 +74,8 @@ interface TacticalBoardProps {
       photo_url: string | null;
     } | null;
   }>;
+  // Board externo opcional para compartilhamento com combate
+  externalBoard?: ReturnType<typeof useTacticalBoard>;
 }
 
 // Ícones por tipo de token
@@ -85,11 +87,13 @@ const TOKEN_ICONS: Record<string, typeof Users> = {
   marker: Flag,
 };
 
-export function TacticalBoard({ campaignId, isMaster, members = [] }: TacticalBoardProps) {
+export function TacticalBoard({ campaignId, isMaster, members = [], externalBoard }: TacticalBoardProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   
-  const board = useTacticalBoard({ campaignId, isMaster });
+  // Usa board externo se fornecido, senão cria um novo
+  const internalBoard = useTacticalBoard({ campaignId, isMaster });
+  const board = externalBoard || internalBoard;
   
   // Estados locais
   const [isDragging, setIsDragging] = useState(false);
