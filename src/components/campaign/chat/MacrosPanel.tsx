@@ -87,13 +87,18 @@ const TYPE_NAMES: Record<MacroType, string> = {
 };
 
 interface MacrosPanelProps {
-  characterId: string;
-  onRoll: (formula: string, label: string, type: string) => void;
+  characterId?: string;
+  campaignId?: string;
+  onRoll?: (formula: string, label: string, type: string) => void;
   className?: string;
 }
 
-export function MacrosPanel({ characterId, onRoll, className }: MacrosPanelProps) {
+export function MacrosPanel({ characterId, campaignId, onRoll, className }: MacrosPanelProps) {
   const { toast } = useToast();
+  
+  // Usa characterId se fornecido, senão usa campaignId como fallback para localStorage key
+  const macroKey = characterId || campaignId || 'global';
+  
   const {
     macros,
     isLoading,
@@ -104,7 +109,7 @@ export function MacrosPanel({ characterId, onRoll, className }: MacrosPanelProps
     exportMacros,
     importMacros,
     resetToDefaults,
-  } = useMacros({ characterId });
+  } = useMacros({ characterId: macroKey });
 
   // Estados locais
   const [searchQuery, setSearchQuery] = useState('');
@@ -139,11 +144,15 @@ export function MacrosPanel({ characterId, onRoll, className }: MacrosPanelProps
   const handleRoll = (macro: RollMacro) => {
     const formula = `${macro.diceCount}d${macro.diceType}${macro.bonus > 0 ? `+${macro.bonus}` : macro.bonus < 0 ? macro.bonus : ''}`;
     const label = macro.label || macro.name;
-    onRoll(formula, label, macro.type);
+    
+    // Chama onRoll se disponível, senão apenas mostra o toast
+    if (onRoll) {
+      onRoll(formula, label, macro.type);
+    }
     
     toast({
       title: `🎲 ${macro.name}`,
-      description: `Rolando ${formula}...`,
+      description: onRoll ? `Rolando ${formula}...` : `Fórmula: ${formula}`,
       duration: 2000,
     });
   };

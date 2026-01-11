@@ -61,12 +61,11 @@ import { MasterSheetViewer } from '@/components/campaign/master/MasterSheetViewe
 import { TacticalBoard } from '@/components/campaign/tactical/TacticalBoard';
 import { useTacticalBoard } from '@/hooks/campaign/useTacticalBoard';
 import { useCampaignPresence } from '@/hooks/campaign/useCampaignPresence';
-import { AudioMasterPanel, AudioPlayerBar } from '@/components/campaign/audio';
-import { WhisperDialog, ChatMessage, IntegratedDiceRoller, SessionActivityLog, parseDiceCommand } from '@/components/campaign/chat';
+import { AudioMasterPanel, AudioPlayerBar, SoundSceneManager } from '@/components/campaign/audio';
+import { WhisperDialog, ChatMessage, IntegratedDiceRoller, SessionActivityLog, parseDiceCommand, MacrosPanel } from '@/components/campaign/chat';
 import { PlayerHandoutsViewer } from '@/components/campaign/handouts';
 import { HandoutsManager } from '@/components/campaign/master/HandoutsManager';
 import { SessionDiary, CampaignTimeline, SessionExporter } from '@/components/campaign/diary';
-import { MacrosPanel } from '@/components/campaign/chat';
 import { NPCManager } from '@/components/campaign/master';
 import { type CombatState, createCombatState } from '@/lib/game-engine';
 
@@ -1078,6 +1077,7 @@ export default function CampaignView() {
                   <TabsList className="bg-card border border-border flex-wrap h-auto py-1">
                     <TabsTrigger value="sheets" className="font-display text-xs">FICHAS</TabsTrigger>
                     <TabsTrigger value="npcs" className="font-display text-xs">NPCs</TabsTrigger>
+                    <TabsTrigger value="macros" className="font-display text-xs">MACROS</TabsTrigger>
                     <TabsTrigger value="handouts" className="font-display text-xs">HANDOUTS</TabsTrigger>
                     <TabsTrigger value="audio" className="font-display text-xs">ÁUDIO</TabsTrigger>
                     <TabsTrigger value="controls" className="font-display text-xs">CONTROLES</TabsTrigger>
@@ -1098,6 +1098,13 @@ export default function CampaignView() {
                     <NPCManager campaignId={id || ''} />
                   </TabsContent>
                   
+                  {/* Aba de Macros de Rolagem */}
+                  <TabsContent value="macros" className="mt-4">
+                    <div className="ordo-panel p-6">
+                      <MacrosPanel campaignId={id || ''} />
+                    </div>
+                  </TabsContent>
+                  
                   {/* Aba de Handouts do Mestre */}
                   <TabsContent value="handouts" className="mt-4">
                     <div className="ordo-panel p-6">
@@ -1105,9 +1112,10 @@ export default function CampaignView() {
                     </div>
                   </TabsContent>
                   
-                  {/* Aba de Áudio - Nova */}
-                  <TabsContent value="audio" className="mt-4">
+                  {/* Aba de Áudio - Com Cenas de Som */}
+                  <TabsContent value="audio" className="mt-4 space-y-6">
                     <AudioMasterPanel campaignId={id || ''} isMaster={isMaster} />
+                    <SoundSceneManager campaignId={id || ''} isMaster={isMaster} />
                   </TabsContent>
                   
                   {/* Aba de Controles */}
