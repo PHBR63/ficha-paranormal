@@ -124,7 +124,7 @@ function ActivityEntry({ entry }: { entry: ActivityEntry }) {
                     ? entry.metadata.isCritical
                       ? 'bg-primary text-primary-foreground'
                       : 'bg-accent text-accent-foreground'
-                    : 'bg-muted text-muted-foreground'
+                    : 'bg-slate-700/60 text-slate-300'
                 )}
               >
                 {die}

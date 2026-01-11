@@ -119,7 +119,7 @@ const DiceRollDisplay = ({ metadata }: { metadata: any }) => {
                 ? isCritical
                   ? 'bg-primary text-primary-foreground border-primary'
                   : 'bg-accent text-accent-foreground border-accent'
-                : 'bg-muted text-muted-foreground border-border'
+                : 'bg-slate-700/60 text-slate-300 border-slate-600'
             )}
           >
             {die}
