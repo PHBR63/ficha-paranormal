@@ -671,29 +671,41 @@ export default function CampaignView() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Header - Responsivo */}
-      <header className="border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-10">
-        <div className="container mx-auto px-3 sm:px-4 py-2 sm:py-3">
-          <div className="flex items-center justify-between gap-2">
-            {/* Lado esquerdo - Info da campanha */}
-            <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+      {/* Header - Expandido */}
+      <header className="border-b border-border bg-card/80 backdrop-blur-md sticky top-0 z-20">
+        <div className="px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between py-3 sm:py-4 gap-3">
+            {/* Lado esquerdo - Info */}
+            <div className="flex items-center gap-3 sm:gap-6 min-w-0 flex-1">
               <Link to="/campaigns">
-                <Button variant="ghost" size="sm" className="text-muted-foreground px-2 sm:px-3">
-                  <ArrowLeft className="w-4 h-4" />
-                  <span className="hidden sm:inline ml-2">Campanhas</span>
+                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground hover:bg-primary/10 px-3">
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  <span className="hidden sm:inline font-display text-xs tracking-wider">CAMPANHAS</span>
                 </Button>
               </Link>
-              <div className="h-6 w-px bg-border hidden sm:block" />
-              <div className="min-w-0">
-                <div className="flex items-center gap-1 sm:gap-2">
-                  {isMaster && <Crown className="w-3 h-3 sm:w-4 sm:h-4 text-primary flex-shrink-0" />}
-                  <h1 className="font-display text-base sm:text-xl tracking-wider truncate max-w-[120px] sm:max-w-none">
+              <div className="h-8 w-px bg-border/50 hidden sm:block" />
+              
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-3">
+                  {isMaster && (
+                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-primary/15 border border-primary/30">
+                      <Crown className="w-4 h-4 text-primary" />
+                      <span className="text-[10px] font-display tracking-wider text-primary hidden sm:inline">MESTRE</span>
+                    </div>
+                  )}
+                  <h1 className="font-display text-lg sm:text-2xl tracking-wider truncate">
                     {campaign.name}
                   </h1>
                 </div>
-                <p className="text-[10px] sm:text-xs text-muted-foreground">
-                  Sessão {campaign.current_session} • {members.length} <span className="hidden sm:inline">membros</span>
-                </p>
+                <div className="flex items-center gap-4 mt-1">
+                  <p className="text-xs sm:text-sm text-muted-foreground flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                    Sessão {campaign.current_session}
+                  </p>
+                  <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">
+                    {members.length} agente{members.length !== 1 ? 's' : ''} conectados
+                  </p>
+                </div>
               </div>
             </div>
             
@@ -792,67 +804,73 @@ export default function CampaignView() {
         />
       )}
 
-      {/* Main content */}
-      <div className="flex-1 flex">
+      {/* Main content - Expandido */}
+      <div className="flex-1 flex overflow-hidden">
         {/* Main area */}
         <main className="flex-1 flex flex-col min-w-0">
           <Tabs defaultValue="chat" className="flex-1 flex flex-col">
-            <div className="border-b border-border bg-card/30 overflow-x-auto">
-              <TabsList className="bg-transparent px-2 sm:px-4 min-w-max">
-                <TabsTrigger value="status" className="font-display tracking-wider text-xs sm:text-sm px-2 sm:px-3">
-                  <Users className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+            {/* Tabs melhoradas */}
+            <div className="border-b border-border bg-card/50 backdrop-blur-sm overflow-x-auto">
+              <TabsList className="bg-transparent px-4 sm:px-6 lg:px-8 min-w-max h-12 sm:h-14">
+                <TabsTrigger value="status" className="font-display tracking-wider text-xs sm:text-sm px-3 sm:px-5 h-10 sm:h-12 data-[state=active]:bg-primary/15 data-[state=active]:text-primary transition-all">
+                  <Users className="w-4 h-4 sm:w-5 sm:h-5 sm:mr-2" />
                   <span className="hidden sm:inline">AGENTES</span>
                 </TabsTrigger>
-                <TabsTrigger value="chat" className="font-display tracking-wider text-xs sm:text-sm px-2 sm:px-3">
-                  <MessageSquare className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+                <TabsTrigger value="chat" className="font-display tracking-wider text-xs sm:text-sm px-3 sm:px-5 h-10 sm:h-12 data-[state=active]:bg-primary/15 data-[state=active]:text-primary transition-all">
+                  <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5 sm:mr-2" />
                   <span className="hidden sm:inline">CHAT</span>
                 </TabsTrigger>
-                <TabsTrigger value="combat" className="font-display tracking-wider text-xs sm:text-sm px-2 sm:px-3">
-                  <Swords className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+                <TabsTrigger value="combat" className="font-display tracking-wider text-xs sm:text-sm px-3 sm:px-5 h-10 sm:h-12 data-[state=active]:bg-primary/15 data-[state=active]:text-primary transition-all">
+                  <Swords className="w-4 h-4 sm:w-5 sm:h-5 sm:mr-2" />
                   <span className="hidden sm:inline">COMBATE</span>
                 </TabsTrigger>
-                <TabsTrigger value="tactical" className="font-display tracking-wider text-xs sm:text-sm px-2 sm:px-3">
-                  <Map className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+                <TabsTrigger value="tactical" className="font-display tracking-wider text-xs sm:text-sm px-3 sm:px-5 h-10 sm:h-12 data-[state=active]:bg-primary/15 data-[state=active]:text-primary transition-all">
+                  <Map className="w-4 h-4 sm:w-5 sm:h-5 sm:mr-2" />
                   <span className="hidden sm:inline">TABULEIRO</span>
                 </TabsTrigger>
-                <TabsTrigger value="conditions" className="font-display tracking-wider text-xs sm:text-sm px-2 sm:px-3">
-                  <Activity className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+                <TabsTrigger value="conditions" className="font-display tracking-wider text-xs sm:text-sm px-3 sm:px-5 h-10 sm:h-12 data-[state=active]:bg-primary/15 data-[state=active]:text-primary transition-all">
+                  <Activity className="w-4 h-4 sm:w-5 sm:h-5 sm:mr-2" />
                   <span className="hidden sm:inline">CONDIÇÕES</span>
                 </TabsTrigger>
-                <TabsTrigger value="notes" className="font-display tracking-wider text-xs sm:text-sm px-2 sm:px-3">
-                  <Scroll className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+                <TabsTrigger value="notes" className="font-display tracking-wider text-xs sm:text-sm px-3 sm:px-5 h-10 sm:h-12 data-[state=active]:bg-primary/15 data-[state=active]:text-primary transition-all">
+                  <Scroll className="w-4 h-4 sm:w-5 sm:h-5 sm:mr-2" />
                   <span className="hidden sm:inline">NOTAS</span>
                 </TabsTrigger>
-                <TabsTrigger value="handouts" className="font-display tracking-wider text-xs sm:text-sm px-2 sm:px-3">
-                  <FileText className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+                <TabsTrigger value="handouts" className="font-display tracking-wider text-xs sm:text-sm px-3 sm:px-5 h-10 sm:h-12 data-[state=active]:bg-primary/15 data-[state=active]:text-primary transition-all">
+                  <FileText className="w-4 h-4 sm:w-5 sm:h-5 sm:mr-2" />
                   <span className="hidden sm:inline">HANDOUTS</span>
                 </TabsTrigger>
-                <TabsTrigger value="sessions" className="font-display tracking-wider text-xs sm:text-sm px-2 sm:px-3">
-                  <CalendarDays className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+                <TabsTrigger value="sessions" className="font-display tracking-wider text-xs sm:text-sm px-3 sm:px-5 h-10 sm:h-12 data-[state=active]:bg-primary/15 data-[state=active]:text-primary transition-all">
+                  <CalendarDays className="w-4 h-4 sm:w-5 sm:h-5 sm:mr-2" />
                   <span className="hidden sm:inline">SESSÕES</span>
                 </TabsTrigger>
-                <TabsTrigger value="diary" className="font-display tracking-wider text-xs sm:text-sm px-2 sm:px-3">
-                  <BookOpen className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+                <TabsTrigger value="diary" className="font-display tracking-wider text-xs sm:text-sm px-3 sm:px-5 h-10 sm:h-12 data-[state=active]:bg-primary/15 data-[state=active]:text-primary transition-all">
+                  <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 sm:mr-2" />
                   <span className="hidden sm:inline">DIÁRIO</span>
                 </TabsTrigger>
                 {isMaster && (
-                  <TabsTrigger value="master" className="font-display tracking-wider text-xs sm:text-sm px-2 sm:px-3 text-primary">
-                    <Crown className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+                  <TabsTrigger value="master" className="font-display tracking-wider text-xs sm:text-sm px-3 sm:px-5 h-10 sm:h-12 data-[state=active]:bg-primary/20 text-primary transition-all">
+                    <Crown className="w-4 h-4 sm:w-5 sm:h-5 sm:mr-2" />
                     <span className="hidden sm:inline">MESTRE</span>
                   </TabsTrigger>
                 )}
               </TabsList>
             </div>
 
-            {/* Status Grid Tab - New */}
-            <TabsContent value="status" className="flex-1 p-4 m-0 overflow-auto">
-              <div className="max-w-5xl mx-auto">
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center gap-2">
-                    <Users className="w-5 h-5 text-primary" />
-                    <h3 className="font-display text-lg tracking-wider text-primary">
-                      STATUS DOS AGENTES
-                    </h3>
+            {/* Status Grid Tab - Expandido */}
+            <TabsContent value="status" className="flex-1 p-6 sm:p-8 m-0 overflow-auto">
+              <div className="max-w-6xl mx-auto">
+                <div className="flex items-center justify-between mb-8">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center">
+                      <Users className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="font-display text-xl tracking-wider text-foreground">
+                        STATUS DOS AGENTES
+                      </h3>
+                      <p className="text-sm text-muted-foreground">{members.length} membros na campanha</p>
+                    </div>
                   </div>
                 </div>
                 <CampaignStatusGrid members={members} isMaster={isMaster} />
@@ -860,9 +878,9 @@ export default function CampaignView() {
             </TabsContent>
 
             <TabsContent value="chat" className="flex-1 flex flex-col m-0 min-h-0">
-              {/* Messages */}
-              <ScrollArea className="flex-1 p-4">
-                <div className="space-y-3 max-w-3xl mx-auto">
+              {/* Messages - Área expandida */}
+              <ScrollArea className="flex-1 p-4 sm:p-6">
+                <div className="space-y-4 max-w-4xl mx-auto">
                   {messages.map((msg) => (
                     <ChatMessage
                       key={msg.id}
@@ -875,52 +893,54 @@ export default function CampaignView() {
                 </div>
               </ScrollArea>
 
-              {/* Input - Responsivo */}
-              <div className="p-2 sm:p-4 border-t border-border bg-card/50 max-w-3xl mx-auto w-full">
-                <div className="flex items-center gap-1.5 sm:gap-2">
-                  {/* Rolador de Dados Integrado */}
-                  <IntegratedDiceRoller
-                    onRoll={handleDiceRoll}
-                    characterName={currentMember?.characters?.name}
-                    disabled={sending}
-                  />
-                  
-                  {/* Log de Atividades */}
-                  <SessionActivityLog messages={messages} />
-                  
-                  {/* Botão de Sussurros */}
-                  <WhisperDialog 
-                    campaignId={id || ''} 
-                    members={members}
-                    currentCharacterId={currentMember?.character_id}
-                  />
-                  
-                  <Input
-                    value={messageInput}
-                    onChange={(e) => setMessageInput(e.target.value)}
-                    placeholder="Mensagem..."
-                    onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
-                    disabled={sending}
-                    className="text-sm sm:text-base"
-                  />
-                  <Button
-                    onClick={() => sendMessage()}
-                    disabled={sending || !messageInput.trim()}
-                    size="icon"
-                    className="w-9 h-9 sm:w-10 sm:h-10 flex-shrink-0"
-                  >
-                    {sending ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Send className="w-4 h-4" />
-                    )}
-                  </Button>
+              {/* Input - Expandido e mais visível */}
+              <div className="p-4 sm:p-6 border-t border-border bg-card/80 backdrop-blur-sm">
+                <div className="max-w-4xl mx-auto">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    {/* Rolador de Dados Integrado */}
+                    <IntegratedDiceRoller
+                      onRoll={handleDiceRoll}
+                      characterName={currentMember?.characters?.name}
+                      disabled={sending}
+                    />
+                    
+                    {/* Log de Atividades */}
+                    <SessionActivityLog messages={messages} />
+                    
+                    {/* Botão de Sussurros */}
+                    <WhisperDialog 
+                      campaignId={id || ''} 
+                      members={members}
+                      currentCharacterId={currentMember?.character_id}
+                    />
+                    
+                    <Input
+                      value={messageInput}
+                      onChange={(e) => setMessageInput(e.target.value)}
+                      placeholder="Digite sua mensagem..."
+                      onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
+                      disabled={sending}
+                      className="text-sm sm:text-base h-11 sm:h-12"
+                    />
+                    <Button
+                      onClick={() => sendMessage()}
+                      disabled={sending || !messageInput.trim()}
+                      size="lg"
+                      className="h-11 sm:h-12 px-4 sm:px-6"
+                    >
+                      {sending ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                      ) : (
+                        <Send className="w-5 h-5" />
+                      )}
+                    </Button>
+                  </div>
                 </div>
               </div>
             </TabsContent>
 
-            <TabsContent value="combat" className="flex-1 p-4 m-0 overflow-auto">
-              <div className="space-y-6">
+            <TabsContent value="combat" className="flex-1 p-6 sm:p-8 m-0 overflow-auto">
+              <div className="space-y-8 max-w-7xl mx-auto">
                 {/* CombatTracker principal */}
                 <CombatTracker
                   campaignId={id}
@@ -938,7 +958,7 @@ export default function CampaignView() {
               </div>
             </TabsContent>
 
-            <TabsContent value="tactical" className="flex-1 p-4 m-0 overflow-auto">
+            <TabsContent value="tactical" className="flex-1 p-4 sm:p-6 m-0 overflow-auto">
               <TacticalBoard
                 campaignId={id || ''}
                 isMaster={isMaster}
@@ -947,13 +967,18 @@ export default function CampaignView() {
               />
             </TabsContent>
 
-            <TabsContent value="conditions" className="flex-1 p-4 m-0 overflow-auto">
-              <div className="max-w-2xl mx-auto">
-                <div className="flex items-center gap-2 mb-6">
-                  <Activity className="w-5 h-5 text-primary" />
-                  <h3 className="font-display text-lg tracking-wider text-primary">
-                    STATUS DOS AGENTES
-                  </h3>
+            <TabsContent value="conditions" className="flex-1 p-6 sm:p-8 m-0 overflow-auto">
+              <div className="max-w-3xl mx-auto">
+                <div className="flex items-center gap-3 mb-8">
+                  <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center">
+                    <Activity className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-display text-xl tracking-wider text-foreground">
+                      STATUS DOS AGENTES
+                    </h3>
+                    <p className="text-sm text-muted-foreground">Condições e efeitos ativos</p>
+                  </div>
                 </div>
                 <MemberConditionsPanel
                   members={members}
@@ -963,27 +988,34 @@ export default function CampaignView() {
               </div>
             </TabsContent>
 
-            <TabsContent value="notes" className="flex-1 p-4 m-0 overflow-auto">
-              <div className="ordo-panel p-6 h-full">
-                <NotesPanel campaignId={id || ''} isMaster={isMaster} />
+            <TabsContent value="notes" className="flex-1 p-6 sm:p-8 m-0 overflow-auto">
+              <div className="max-w-4xl mx-auto">
+                <div className="ordo-panel p-6 sm:p-8 h-full">
+                  <NotesPanel campaignId={id || ''} isMaster={isMaster} />
+                </div>
               </div>
             </TabsContent>
 
-            {/* Aba de Handouts para jogadores */}
-            <TabsContent value="handouts" className="flex-1 p-4 m-0 overflow-auto">
-              <div className="max-w-4xl mx-auto">
-                <div className="flex items-center gap-2 mb-6">
-                  <FileText className="w-5 h-5 text-primary" />
-                  <h3 className="font-display text-lg tracking-wider text-primary">
-                    DOCUMENTOS & PISTAS
-                  </h3>
+            {/* Aba de Handouts para jogadores - Expandida */}
+            <TabsContent value="handouts" className="flex-1 p-6 sm:p-8 m-0 overflow-auto">
+              <div className="max-w-5xl mx-auto">
+                <div className="flex items-center gap-3 mb-8">
+                  <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center">
+                    <FileText className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-display text-xl tracking-wider text-foreground">
+                      DOCUMENTOS & PISTAS
+                    </h3>
+                    <p className="text-sm text-muted-foreground">Materiais compartilhados pelo mestre</p>
+                  </div>
                 </div>
                 <PlayerHandoutsViewer campaignId={id || ''} />
               </div>
             </TabsContent>
 
-            <TabsContent value="sessions" className="flex-1 p-4 m-0 overflow-auto">
-              <div className="max-w-3xl mx-auto">
+            <TabsContent value="sessions" className="flex-1 p-6 sm:p-8 m-0 overflow-auto">
+              <div className="max-w-4xl mx-auto">
                 <SessionManager
                   campaignId={id || ''}
                   campaignName={campaign?.name}
@@ -994,9 +1026,9 @@ export default function CampaignView() {
               </div>
             </TabsContent>
 
-            {/* Diário da Campanha */}
-            <TabsContent value="diary" className="flex-1 p-4 m-0 overflow-auto">
-              <div className="max-w-4xl mx-auto">
+            {/* Diário da Campanha - Expandido */}
+            <TabsContent value="diary" className="flex-1 p-6 sm:p-8 m-0 overflow-auto">
+              <div className="max-w-5xl mx-auto">
                 <SessionDiary
                   campaignId={id || ''}
                   isMaster={isMaster}

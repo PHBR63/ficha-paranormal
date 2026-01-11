@@ -326,107 +326,125 @@ export default function Campaigns() {
         </div>
       </header>
 
-      <main className="relative z-10 container mx-auto px-3 sm:px-4 py-4 sm:py-8">
+      <main className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
         {campaigns.length === 0 ? (
-          <div className="text-center py-10 sm:py-16 relative">
-            <div className="dossier-classified p-8 sm:p-12 max-w-md mx-auto relative overflow-hidden">
+          <div className="text-center py-12 sm:py-20 relative">
+            <div className="dossier-classified p-10 sm:p-16 max-w-lg mx-auto relative overflow-hidden">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(139,0,0,0.1)_0%,_transparent_70%)]" />
               
               <div className="relative z-10">
-                <div className="w-20 h-20 sm:w-24 sm:h-24 mx-auto mb-4 sm:mb-6 rounded-full bg-[#8B0000]/10 border border-[#8B0000]/30 flex items-center justify-center">
-                  <Users className="w-10 h-10 sm:w-12 sm:h-12 text-[#808080]" />
+                <div className="w-24 h-24 sm:w-32 sm:h-32 mx-auto mb-6 sm:mb-8 rounded-full bg-[#8B0000]/10 border-2 border-[#8B0000]/30 flex items-center justify-center">
+                  <Users className="w-12 h-12 sm:w-16 sm:h-16 text-[#808080]" />
                 </div>
-                <h2 className="font-display text-xl sm:text-2xl tracking-wider text-[#F5F5F5] mb-2">
+                <h2 className="font-display text-2xl sm:text-3xl tracking-wider text-[#F5F5F5] mb-3">
                   <DecryptedText text="NENHUMA CAMPANHA" speed={30} />
                 </h2>
-                <p className="text-sm sm:text-base text-[#808080] mb-4 sm:mb-6 max-w-sm mx-auto">
+                <p className="text-sm sm:text-base text-[#808080] mb-6 sm:mb-8 max-w-sm mx-auto leading-relaxed">
                   Você ainda não participa de nenhuma campanha. Crie uma nova ou entre com um código de convite.
                 </p>
-                <div className="flex flex-col sm:flex-row justify-center gap-2 sm:gap-4">
-                  <Button onClick={() => setJoinDialogOpen(true)} className="w-full sm:w-auto bg-[#1A1214] border border-[#8B0000]/30 hover:bg-[#8B0000]/20 text-[#C0C0C0]">
-                    <LogIn className="w-4 h-4 mr-2" />
+                <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
+                  <Button onClick={() => setJoinDialogOpen(true)} size="lg" className="w-full sm:w-auto bg-[#1A1214] border border-[#8B0000]/30 hover:bg-[#8B0000]/20 text-[#C0C0C0]">
+                    <LogIn className="w-5 h-5 mr-2" />
                     Entrar com Código
                   </Button>
-                  <Button onClick={() => setCreateDialogOpen(true)} className="w-full sm:w-auto bg-[#8B0000] hover:bg-[#B22222] text-white border border-[#B22222]/30">
-                    <Plus className="w-4 h-4 mr-2" />
+                  <Button onClick={() => setCreateDialogOpen(true)} size="lg" className="w-full sm:w-auto bg-[#8B0000] hover:bg-[#B22222] text-white border border-[#B22222]/30">
+                    <Plus className="w-5 h-5 mr-2" />
                     Criar Campanha
                   </Button>
                 </div>
               </div>
               
-              <div className="absolute -bottom-2 -right-2 text-[#8B0000]/10 font-display text-5xl tracking-widest rotate-[-15deg] select-none">
+              <div className="absolute -bottom-4 -right-4 text-[#8B0000]/10 font-display text-6xl tracking-widest rotate-[-15deg] select-none">
                 VAZIO
               </div>
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
             {campaigns.map((campaign, index) => {
               const isMaster = campaign.master_id === user?.id;
               
               return (
-                <Link key={campaign.id} to={`/campaigns/${campaign.id}`} className="group">
+                <Link key={campaign.id} to={`/campaigns/${campaign.id}`} className="group block">
                   <div className={cn(
-                    'dossier-classified p-4 sm:p-6 h-full transition-all duration-300',
-                    'hover:border-[#8B0000]/60 hover:shadow-[0_0_25px_rgba(139,0,0,0.2)]',
+                    'dossier-classified p-6 sm:p-8 h-full transition-all duration-300 min-h-[200px] sm:min-h-[240px]',
+                    'hover:border-[#8B0000]/60 hover:shadow-[0_0_40px_rgba(139,0,0,0.25)] hover:scale-[1.02]',
                     isMaster && 'border-[#8B0000]/40'
                   )}>
                     {/* Classified tag */}
-                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <span className="text-[#8B0000]/30 text-[8px] font-mono uppercase tracking-wider rotate-12 inline-block">
+                    <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <span className="text-[#8B0000]/40 text-[10px] font-mono uppercase tracking-wider rotate-12 inline-block">
                         Liberado
                       </span>
                     </div>
                     
-                    <div className="flex items-start justify-between mb-3 sm:mb-4">
+                    {/* Header com Status */}
+                    <div className="flex items-start justify-between mb-4 sm:mb-6">
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
+                        <div className="flex items-center gap-3 mb-2">
                           {isMaster && (
-                            <Crown className="w-3 h-3 sm:w-4 sm:h-4 text-[#B22222] flex-shrink-0" />
+                            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#8B0000]/20 border border-[#8B0000]/30">
+                              <Crown className="w-4 h-4 text-[#B22222]" />
+                              <span className="text-[10px] sm:text-xs font-display tracking-wider text-[#B22222]">MESTRE</span>
+                            </div>
                           )}
                           <span className={cn(
-                            'text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded font-mono tracking-wider flex-shrink-0',
+                            'text-xs px-3 py-1 rounded-full font-mono tracking-wider',
                             campaign.status === 'active' 
-                              ? 'bg-green-900/30 text-green-400 border border-green-600/30' 
+                              ? 'bg-green-900/40 text-green-400 border border-green-600/40' 
                               : 'bg-[#1A1214] text-[#808080] border border-[#8B0000]/20'
                           )}>
-                            {campaign.status === 'active' ? 'ATIVA' : 
-                             campaign.status === 'paused' ? 'PAUSADA' : 
-                             campaign.status === 'completed' ? 'CONCLUÍDA' : 'ARQUIVADA'}
+                            {campaign.status === 'active' ? '● ATIVA' : 
+                             campaign.status === 'paused' ? '◐ PAUSADA' : 
+                             campaign.status === 'completed' ? '◉ CONCLUÍDA' : '○ ARQUIVADA'}
                           </span>
                         </div>
-                        <h3 className="font-display text-lg sm:text-xl tracking-wider text-[#F5F5F5] group-hover:text-[#B22222] transition-colors truncate">
+                        <h3 className="font-display text-xl sm:text-2xl lg:text-3xl tracking-wider text-[#F5F5F5] group-hover:text-[#B22222] transition-colors line-clamp-1">
                           {campaign.name}
                         </h3>
                       </div>
                     </div>
 
+                    {/* Descrição expandida */}
                     {campaign.description && (
-                      <p className="text-xs sm:text-sm text-[#808080] mb-3 sm:mb-4 line-clamp-2">
+                      <p className="text-sm sm:text-base text-[#808080] mb-6 line-clamp-3 leading-relaxed">
                         {campaign.description}
                       </p>
                     )}
 
-                    <div className="flex items-center justify-between text-xs sm:text-sm text-[#606060]">
-                      <div className="flex items-center gap-3 sm:gap-4">
-                        <div className="flex items-center gap-1">
-                          <Users className="w-3 h-3 sm:w-4 sm:h-4" />
-                          <span>{campaign.member_count}</span>
+                    {/* Stats footer - maior e mais detalhado */}
+                    <div className="flex items-center justify-between pt-4 border-t border-[#8B0000]/20">
+                      <div className="flex items-center gap-6">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-lg bg-[#8B0000]/10 flex items-center justify-center">
+                            <Users className="w-4 h-4 text-[#B22222]" />
+                          </div>
+                          <div>
+                            <p className="text-xs text-[#606060] uppercase tracking-wider">Agentes</p>
+                            <p className="font-display text-lg text-[#C0C0C0]">{campaign.member_count}</p>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-1">
-                          <Calendar className="w-3 h-3 sm:w-4 sm:h-4" />
-                          <span>S{campaign.current_session}</span>
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-lg bg-[#8B0000]/10 flex items-center justify-center">
+                            <Calendar className="w-4 h-4 text-[#B22222]" />
+                          </div>
+                          <div>
+                            <p className="text-xs text-[#606060] uppercase tracking-wider">Sessão</p>
+                            <p className="font-display text-lg text-[#C0C0C0]">{campaign.current_session}</p>
+                          </div>
                         </div>
                       </div>
-                      {isMaster && (
-                        <span className="text-[#B22222] font-display text-[10px] sm:text-xs tracking-wider">
-                          MESTRE
-                        </span>
-                      )}
+                      
+                      {/* Arrow indicator */}
+                      <div className="w-10 h-10 rounded-full bg-[#8B0000]/10 flex items-center justify-center group-hover:bg-[#8B0000]/30 transition-colors">
+                        <svg className="w-5 h-5 text-[#808080] group-hover:text-[#F5F5F5] transition-colors transform group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </div>
                     </div>
                     
                     {/* Bottom accent line */}
-                    <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#8B0000]/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[#8B0000]/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                   </div>
                 </Link>
               );
