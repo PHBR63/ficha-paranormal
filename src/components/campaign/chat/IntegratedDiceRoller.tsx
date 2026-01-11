@@ -162,7 +162,7 @@ export function IntegratedDiceRoller({ onRoll, characterName, disabled }: Integr
       </PopoverTrigger>
       
       <PopoverContent 
-        className="w-80 p-0" 
+        className="w-96 p-0" 
         align="start"
         sideOffset={8}
       >
@@ -189,16 +189,17 @@ export function IntegratedDiceRoller({ onRoll, characterName, disabled }: Integr
         {/* Quick Rolls */}
         <div className="p-3 border-b border-border">
           <Label className="text-xs text-muted-foreground mb-2 block">Rolagem Rápida</Label>
-          <div className="grid grid-cols-4 gap-1.5">
+          <div className="grid grid-cols-2 gap-2">
             {ROLL_PRESETS.map((preset) => (
               <Button
                 key={preset.id}
                 variant="outline"
                 size="sm"
                 onClick={() => handleQuickRoll(preset)}
-                className="text-xs h-8"
+                className="text-xs h-9 justify-start px-3"
               >
-                {preset.label}
+                <Dices className="w-3.5 h-3.5 mr-2 flex-shrink-0" />
+                <span className="truncate">{preset.label}</span>
               </Button>
             ))}
           </div>
