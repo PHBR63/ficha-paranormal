@@ -505,9 +505,9 @@ describe('Cenário de Campanha: Rituais em Grupo', () => {
 
       // Todos recebem bônus do ritual
       expect(result.defense.general).toBe(2);
-      expect(result.resistances.fortitude.bonus).toBe(1);
-      expect(result.resistances.reflexos.bonus).toBe(1);
-      expect(result.resistances.vontade.bonus).toBe(1);
+      expect(result.resistances.fortitude).toBe(1);
+      expect(result.resistances.reflexos).toBe(1);
+      expect(result.resistances.vontade).toBe(1);
     });
   });
 
