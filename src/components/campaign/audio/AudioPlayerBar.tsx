@@ -64,15 +64,18 @@ export function AudioPlayerBar({ campaignId }: AudioPlayerBarProps) {
               )}
             </Button>
             
-            <div className="w-16">
+            <div className="flex items-center gap-2 w-24">
               <Slider
                 value={[audioState?.master_volume ?? 1]}
                 min={0}
                 max={1}
-                step={0.1}
+                step={0.05}
                 onValueChange={([v]) => setMasterVolume(v)}
-                className="cursor-pointer"
+                className="cursor-pointer flex-1"
               />
+              <span className="text-xs text-muted-foreground w-7 text-right">
+                {Math.round((audioState?.master_volume ?? 1) * 100)}%
+              </span>
             </div>
           </div>
         </div>
