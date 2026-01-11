@@ -533,7 +533,8 @@ export default function CharacterCreate() {
         ...formData.powers
       ];
 
-      const allSkills = buildStateToFormData(buildState);
+      // Passa as escolhas de Treinamento em Perícia para aplicar níveis superiores
+      const allSkills = buildStateToFormData(buildState, formData.skillTrainingChoices);
       const proficiencies = CLASS_PROFICIENCIES[formData.characterClass] || [];
       
       // Combine core abilities with user-selected abilities and track abilities

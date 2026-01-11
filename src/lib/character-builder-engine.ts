@@ -493,15 +493,43 @@ export function rebuildCharacterSheet(state: CharacterBuildState): RebuildResult
 }
 
 /**
- * Converte o estado de build para o formato do FormData original
+ * Interface para escolhas de treinamento em perícia
+ * Usada pelo poder "Treinamento em Perícia"
  */
-export function buildStateToFormData(state: CharacterBuildState): Record<string, number> {
+export interface SkillTrainingChoice {
+  skillId: string;
+  fromLevel: number;
+  toLevel: number;
+}
+
+/**
+ * Converte o estado de build para o formato do FormData original
+ * Aceita opcionalmente as escolhas de Treinamento em Perícia para aplicar níveis superiores
+ * @param state - Estado do build do personagem
+ * @param skillTrainingChoices - Mapa de escolhas de treinamento (powerId-index -> escolhas)
+ */
+export function buildStateToFormData(
+  state: CharacterBuildState,
+  skillTrainingChoices?: Record<string, SkillTrainingChoice[]>
+): Record<string, number> {
   const skills: Record<string, number> = {};
   
-  // Marcar todas as perícias treinadas como nível 1
+  // Marcar todas as perícias treinadas como nível 1 (Treinado)
   const result = rebuildCharacterSheet(state);
   for (const skillId of result.allTrainedSkills) {
     skills[skillId] = 1;
+  }
+  
+  // Aplicar níveis superiores das escolhas de Treinamento em Perícia
+  if (skillTrainingChoices) {
+    Object.values(skillTrainingChoices).forEach(choices => {
+      choices.forEach(choice => {
+        // Apenas aplicar se o nível de destino for maior que o atual
+        if (choice.toLevel > (skills[choice.skillId] || 0)) {
+          skills[choice.skillId] = choice.toLevel;
+        }
+      });
+    });
   }
   
   return skills;

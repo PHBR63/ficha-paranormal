@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { TRAINING_BONUS_MAP, TRAINING_LABELS } from '@/lib/character-data';
 import { 
   getSkillAttributeAbbrev, 
   getAttributeColor,
@@ -30,33 +31,42 @@ interface MobileSkillsTabProps {
 // Altura fixa de cada item para virtualização (em pixels)
 const SKILL_ITEM_HEIGHT = 52;
 
-// Item de perícia memoizado
+// Item de perícia memoizado - agora com suporte a níveis de treinamento
 const SkillItem = memo(function SkillItem({
   skill,
+  trainingLevel, // 0=Destreinado, 1=Treinado, 2=Veterano, 3=Expert
   bonus,
   skillAttr,
   attrColor,
-  isTrained,
   onRoll,
   style,
 }: {
   skill: string;
+  trainingLevel: number;
   bonus: number;
   skillAttr: string;
   attrColor: string;
-  isTrained: boolean;
   onRoll: () => void;
   style?: React.CSSProperties;
 }) {
+  const isTrained = trainingLevel > 0;
+  const isVeteran = trainingLevel === 2;
+  const isExpert = trainingLevel === 3;
+  const trainingLabel = TRAINING_LABELS[trainingLevel] || 'Destreinado';
+  
   return (
     <div style={style} className="px-0.5 py-0.5">
       <button
         onClick={onRoll}
         className={cn(
           "w-full flex items-center justify-between p-2.5 rounded-lg transition-colors",
-          isTrained 
-            ? "bg-muted/40 active:bg-muted/60" 
-            : "bg-muted/20 active:bg-muted/40 opacity-70"
+          isExpert
+            ? "bg-amber-500/20 active:bg-amber-500/30"
+            : isVeteran
+              ? "bg-purple-500/20 active:bg-purple-500/30"
+              : isTrained 
+                ? "bg-muted/40 active:bg-muted/60" 
+                : "bg-muted/20 active:bg-muted/40 opacity-70"
         )}
       >
         <div className="flex items-center gap-2">
@@ -73,13 +83,26 @@ const SkillItem = memo(function SkillItem({
             {skill.replace(/_/g, ' ')}
           </span>
           {isTrained && (
-            <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+            <span className={cn(
+              "text-[9px] px-1.5 py-0.5 rounded font-medium",
+              isExpert
+                ? "bg-amber-500/30 text-amber-400"
+                : isVeteran
+                  ? "bg-purple-500/30 text-purple-400"
+                  : "bg-primary/20 text-primary"
+            )}>
+              {trainingLabel}
+            </span>
           )}
         </div>
         <div className="flex items-center gap-2">
           <span className={cn(
             "font-display text-lg",
-            isTrained ? "text-primary" : "text-muted-foreground"
+            isExpert
+              ? "text-amber-400"
+              : isVeteran
+                ? "text-purple-400"
+                : isTrained ? "text-primary" : "text-muted-foreground"
           )}>
             {bonus >= 0 ? `+${bonus}` : bonus}
           </span>
@@ -293,19 +316,20 @@ export const MobileSkillsTab = memo(function MobileSkillsTab({
               }}
             >
               {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-                const [skill, bonus] = filteredSkills[virtualRow.index];
+                const [skill, trainingLevel] = filteredSkills[virtualRow.index];
                 const skillAttr = getSkillAttributeAbbrev(skill);
                 const attrColor = getAttributeColor(skillAttr);
-                const isTrained = bonus > 0;
+                // Converter nível de treinamento para bônus
+                const bonus = TRAINING_BONUS_MAP[trainingLevel] || 0;
                 
                 return (
                   <SkillItem
                     key={skill}
                     skill={skill}
+                    trainingLevel={trainingLevel}
                     bonus={bonus}
                     skillAttr={skillAttr}
                     attrColor={attrColor}
-                    isTrained={isTrained}
                     onRoll={() => handleSkillClick(skill)}
                     style={{
                       position: 'absolute',
