@@ -183,6 +183,22 @@ function SkillsByAttributeComponent({
         </Button>
       </div>
 
+      {/* Legenda de origens */}
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-muted-foreground px-1">
+        <span className="flex items-center gap-1">
+          <span>📜</span> Origem
+        </span>
+        <span className="flex items-center gap-1">
+          <span>⚔️</span> Classe
+        </span>
+        <span className="flex items-center gap-1">
+          <span>📚</span> Livre
+        </span>
+        <span className="flex items-center gap-1">
+          <span>✨</span> Poder
+        </span>
+      </div>
+
       {/* Grupos por atributo */}
       <div className="space-y-2">
         {Object.entries(skillsByAttr).map(([attr, attrSkills]) => {
