@@ -6,3 +6,4 @@ export { WhisperDialog } from './WhisperDialog';
 export { ChatMessage } from './ChatMessage';
 export { IntegratedDiceRoller, parseDiceCommand } from './IntegratedDiceRoller';
 export { SessionActivityLog } from './SessionActivityLog';
+export { MacrosPanel } from './MacrosPanel';

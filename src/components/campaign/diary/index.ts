@@ -7,3 +7,5 @@
 
 export { SessionDiary } from './SessionDiary';
 export { SessionDiaryEntry } from './SessionDiaryEntry';
+export { CampaignTimeline } from './CampaignTimeline';
+export { SessionExporter } from './SessionExporter';
