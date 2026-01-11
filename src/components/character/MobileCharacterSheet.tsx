@@ -211,6 +211,8 @@ interface MobileCharacterSheetProps {
       abilityId: string;
       abilityName: string;
     } | null;
+    // Escolhas de Treinamento em Perícia (poder geral)
+    skill_training_choices?: Record<string, Array<{ skillId: string; fromLevel: number; toLevel: number }>>;
   };
   onOpenDiceRoller: () => void;
   onOpenRest: () => void;

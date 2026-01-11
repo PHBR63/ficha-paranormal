@@ -602,6 +602,8 @@ export default function CharacterCreate() {
               abilityName: formData.versatilityChoice.abilityName,
             }
           : null,
+        // Escolhas de Treinamento em Perícia (poder geral)
+        skill_training_choices: formData.skillTrainingChoices || {},
       }).select('id').single();
 
       if (error) throw error;

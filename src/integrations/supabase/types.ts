@@ -1215,6 +1215,7 @@ export type Database = {
           rituals: Json
           san_current: number
           san_max: number
+          skill_training_choices: Json | null
           skills: Json
           strength: number
           updated_at: string
@@ -1264,6 +1265,7 @@ export type Database = {
           rituals?: Json
           san_current?: number
           san_max?: number
+          skill_training_choices?: Json | null
           skills?: Json
           strength?: number
           updated_at?: string
@@ -1313,6 +1315,7 @@ export type Database = {
           rituals?: Json
           san_current?: number
           san_max?: number
+          skill_training_choices?: Json | null
           skills?: Json
           strength?: number
           updated_at?: string
