@@ -457,6 +457,89 @@ export type Database = {
           },
         ]
       }
+      campaign_npcs: {
+        Row: {
+          abilities: Json | null
+          attacks: Json | null
+          attributes: Json | null
+          campaign_id: string
+          category: string
+          created_at: string
+          created_by: string
+          defense: number
+          description: string | null
+          hp_current: number
+          hp_max: number
+          id: string
+          image_url: string | null
+          immunities: Json | null
+          is_active: boolean | null
+          movement: number | null
+          name: string
+          notes: string | null
+          pe_current: number | null
+          pe_max: number | null
+          resistances: Json | null
+          updated_at: string
+        }
+        Insert: {
+          abilities?: Json | null
+          attacks?: Json | null
+          attributes?: Json | null
+          campaign_id: string
+          category?: string
+          created_at?: string
+          created_by: string
+          defense?: number
+          description?: string | null
+          hp_current?: number
+          hp_max?: number
+          id?: string
+          image_url?: string | null
+          immunities?: Json | null
+          is_active?: boolean | null
+          movement?: number | null
+          name: string
+          notes?: string | null
+          pe_current?: number | null
+          pe_max?: number | null
+          resistances?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          abilities?: Json | null
+          attacks?: Json | null
+          attributes?: Json | null
+          campaign_id?: string
+          category?: string
+          created_at?: string
+          created_by?: string
+          defense?: number
+          description?: string | null
+          hp_current?: number
+          hp_max?: number
+          id?: string
+          image_url?: string | null
+          immunities?: Json | null
+          is_active?: boolean | null
+          movement?: number | null
+          name?: string
+          notes?: string | null
+          pe_current?: number | null
+          pe_max?: number | null
+          resistances?: Json | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_npcs_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaign_ritual_casts: {
         Row: {
           campaign_id: string
@@ -677,6 +760,66 @@ export type Database = {
             columns: ["campaign_id"]
             isOneToOne: false
             referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaign_timeline_events: {
+        Row: {
+          campaign_id: string
+          created_at: string
+          created_by: string
+          description: string | null
+          event_date: string
+          event_type: string
+          id: string
+          importance: number
+          metadata: Json | null
+          session_id: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string
+          created_by: string
+          description?: string | null
+          event_date?: string
+          event_type?: string
+          id?: string
+          importance?: number
+          metadata?: Json | null
+          session_id?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          event_date?: string
+          event_type?: string
+          id?: string
+          importance?: number
+          metadata?: Json | null
+          session_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_timeline_events_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_timeline_events_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_sessions"
             referencedColumns: ["id"]
           },
         ]
