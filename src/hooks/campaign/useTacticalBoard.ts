@@ -66,6 +66,13 @@ export interface UseTacticalBoardProps {
   isMaster: boolean;
 }
 
+// Célula destacada para visualização de movimento
+export interface HighlightedCell {
+  x: number;
+  y: number;
+  type: 'reachable' | 'unreachable' | 'target' | 'path';
+}
+
 // Retorno do hook
 export interface TacticalBoardReturn {
   // Estado
@@ -75,6 +82,7 @@ export interface TacticalBoardReturn {
   selectedTokenId: string | null;
   isLoading: boolean;
   pings: BoardPing[];
+  highlightedCells: HighlightedCell[];
   
   // Configurações do viewport
   zoom: number;
@@ -115,6 +123,10 @@ export interface TacticalBoardReturn {
   revealFog: (cells: { x: number; y: number }[]) => Promise<boolean>;
   hideFog: (cells: { x: number; y: number }[]) => Promise<boolean>;
   
+  // Highlight de células (movimento, alcance, etc.)
+  setHighlightedCells: (cells: HighlightedCell[]) => void;
+  clearHighlightedCells: () => void;
+  
   // Utilidades
   pixelToCell: (px: number, py: number) => { x: number; y: number };
   cellToPixel: (cx: number, cy: number) => { x: number; y: number };
@@ -143,6 +155,9 @@ export function useTacticalBoard({
   const [activeTool, setActiveTool] = useState<'select' | 'move' | 'measure' | 'fog' | 'ping' | 'draw'>('select');
   const [measureStart, setMeasureStart] = useState<{ x: number; y: number } | null>(null);
   const [measureEnd, setMeasureEnd] = useState<{ x: number; y: number } | null>(null);
+  
+  // Células destacadas (movimento, alcance)
+  const [highlightedCells, setHighlightedCellsState] = useState<HighlightedCell[]>([]);
   
   // Ref para cleanup de pings
   const pingTimeoutRef = useRef<NodeJS.Timeout[]>([]);
@@ -602,6 +617,7 @@ export function useTacticalBoard({
     activeTool,
     measureStart,
     measureEnd,
+    highlightedCells,
     loadMaps,
     createMap,
     updateMap,
@@ -622,6 +638,8 @@ export function useTacticalBoard({
     sendPing,
     revealFog,
     hideFog,
+    setHighlightedCells: setHighlightedCellsState,
+    clearHighlightedCells: () => setHighlightedCellsState([]),
     pixelToCell,
     cellToPixel,
     calculateDistance,

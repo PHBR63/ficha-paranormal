@@ -161,6 +161,35 @@ export function TacticalBoard({ campaignId, isMaster, members = [], externalBoar
       });
     }
 
+    // Desenha células destacadas (movimento, alcance)
+    if (board.highlightedCells.length > 0) {
+      board.highlightedCells.forEach(cell => {
+        // Cores por tipo de highlight
+        let fillColor = 'rgba(34, 197, 94, 0.25)'; // Verde para alcançável
+        let borderColor = 'rgba(34, 197, 94, 0.6)';
+        
+        if (cell.type === 'unreachable') {
+          fillColor = 'rgba(239, 68, 68, 0.15)'; // Vermelho translúcido
+          borderColor = 'rgba(239, 68, 68, 0.4)';
+        } else if (cell.type === 'target') {
+          fillColor = 'rgba(251, 191, 36, 0.3)'; // Amarelo para alvo
+          borderColor = 'rgba(251, 191, 36, 0.7)';
+        } else if (cell.type === 'path') {
+          fillColor = 'rgba(59, 130, 246, 0.3)'; // Azul para caminho
+          borderColor = 'rgba(59, 130, 246, 0.7)';
+        }
+        
+        // Preenche a célula
+        ctx.fillStyle = fillColor;
+        ctx.fillRect(cell.x * gridSize + 1, cell.y * gridSize + 1, gridSize - 2, gridSize - 2);
+        
+        // Borda da célula
+        ctx.strokeStyle = borderColor;
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(cell.x * gridSize + 1, cell.y * gridSize + 1, gridSize - 2, gridSize - 2);
+      });
+    }
+
     // Desenha tokens
     board.tokens.forEach(token => {
       const x = token.x * gridSize;
@@ -294,7 +323,7 @@ export function TacticalBoard({ campaignId, isMaster, members = [], externalBoar
   // Re-render quando dados mudam
   useEffect(() => {
     drawCanvas();
-  }, [drawCanvas, board.tokens, board.activeMap, board.zoom, board.panOffset, board.pings, board.measureStart, board.measureEnd, board.selectedTokenId]);
+  }, [drawCanvas, board.tokens, board.activeMap, board.zoom, board.panOffset, board.pings, board.measureStart, board.measureEnd, board.selectedTokenId, board.highlightedCells]);
 
   // Ajusta tamanho do canvas
   useEffect(() => {
