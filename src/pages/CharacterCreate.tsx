@@ -1,10 +1,10 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { useToast, useThemeColors } from '@/hooks';
-import { ArrowLeft, ArrowRight, Check, Loader2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Loader2, Users } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Particles } from '@/components/ui/particles';
 import { FlickeringGrid } from '@/components/ui/flickering-grid';
@@ -159,6 +159,11 @@ export default function CharacterCreate() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+  
+  // Parâmetro de campanha (para vincular personagem automaticamente)
+  const campaignId = searchParams.get('campaign');
+  const [campaignName, setCampaignName] = useState<string | null>(null);
   
   const [currentStep, setCurrentStep] = useState(0);
   const [saving, setSaving] = useState(false);
@@ -166,6 +171,20 @@ export default function CharacterCreate() {
   const [showRestoreDialog, setShowRestoreDialog] = useState(false);
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [draftData, setDraftData] = useState<ReturnType<typeof loadCharacterDraft>>(null);
+
+  // Busca nome da campanha se houver campaignId
+  useEffect(() => {
+    if (campaignId) {
+      supabase
+        .from('campaigns')
+        .select('name')
+        .eq('id', campaignId)
+        .single()
+        .then(({ data }) => {
+          if (data) setCampaignName(data.name);
+        });
+    }
+  }, [campaignId]);
 
   // Auto-save hook
   useCharacterAutoSave(formData, currentStep, formData.name.length > 0);
@@ -515,7 +534,7 @@ export default function CharacterCreate() {
         ? [{ id: formData.originParanormalPower, source: 'origin' }] 
         : [];
 
-      const { error } = await supabase.from('characters').insert({
+      const { data: insertedCharacter, error } = await supabase.from('characters').insert({
         user_id: user.id,
         name: formData.name,
         player_name: formData.playerName || null,
@@ -559,9 +578,35 @@ export default function CharacterCreate() {
               abilityName: formData.versatilityChoice.abilityName,
             }
           : null,
-      });
+      }).select('id').single();
 
       if (error) throw error;
+
+      // Se há campaignId, vincula o personagem automaticamente à campanha
+      if (campaignId && insertedCharacter) {
+        const { data: memberData, error: memberError } = await supabase
+          .from('campaign_members')
+          .select('id')
+          .eq('campaign_id', campaignId)
+          .eq('user_id', user.id)
+          .single();
+        
+        if (memberData && !memberError) {
+          const { error: updateError } = await supabase
+            .from('campaign_members')
+            .update({ character_id: insertedCharacter.id })
+            .eq('id', memberData.id);
+          
+          if (updateError) {
+            console.error('Erro ao vincular personagem à campanha:', updateError);
+            // Não é crítico, apenas avisa
+            toast({
+              title: 'Aviso',
+              description: 'Personagem criado, mas não foi possível vincular à campanha automaticamente.',
+            });
+          }
+        }
+      }
 
       // Clear draft after successful save
       clearCharacterDraft();
@@ -576,10 +621,13 @@ export default function CharacterCreate() {
 
       toast({
         title: 'Agente registrado!',
-        description: `${formData.name} foi adicionado ao sistema da Ordo Realitas.`,
+        description: campaignId 
+          ? `${formData.name} foi adicionado e vinculado à campanha.`
+          : `${formData.name} foi adicionado ao sistema da Ordo Realitas.`,
       });
 
-      navigate('/dashboard');
+      // Redireciona para campanha ou dashboard
+      navigate(campaignId ? `/campaigns/${campaignId}` : '/dashboard');
     } catch (error: any) {
       toast({
         title: 'Erro ao salvar',
@@ -704,6 +752,29 @@ export default function CharacterCreate() {
       </header>
 
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 max-w-4xl relative z-10">
+        {/* Banner indicando criação para campanha */}
+        {campaignId && campaignName && (
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-primary/10 border border-primary/30 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6"
+          >
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-primary/20 flex items-center justify-center">
+                <Users className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm sm:text-base font-medium">
+                  Criando agente para: <span className="text-primary font-display">{campaignName}</span>
+                </p>
+                <p className="text-xs sm:text-sm text-muted-foreground">
+                  Após finalizar, seu personagem será automaticamente vinculado à campanha.
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
         {/* Stepper */}
         <div className="mb-4 sm:mb-8">
           <CharacterCreationStepper
