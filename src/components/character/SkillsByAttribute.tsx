@@ -8,7 +8,7 @@ import { motion } from 'framer-motion';
 import { Filter } from 'lucide-react';
 import { ChevronDown, Search, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { SKILLS } from '@/lib/character-data';
+import { SKILLS, TRAINING_BONUS_MAP, TRAINING_LABELS } from '@/lib/character-data';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -237,15 +237,23 @@ function SkillsByAttributeComponent({
               <CollapsibleContent>
                 <div className="pl-4 pt-2 space-y-1">
                   {attrSkills.map((skill) => {
-                    const isTrained = skills[skill.id] > 0;
-                    // Bônus de treinamento base
-                    const trainingBonus = isTrained ? 5 : 0;
+                    // Nível de treinamento: 0=Destreinado, 1=Treinado, 2=Veterano, 3=Expert
+                    const trainingLevel = skills[skill.id] || 0;
+                    const isTrained = trainingLevel > 0;
+                    // Bônus de treinamento baseado no nível real (0, 5, 10, 15)
+                    const trainingBonus = TRAINING_BONUS_MAP[trainingLevel] || 0;
+                    // Label do nível de treinamento
+                    const trainingLabel = TRAINING_LABELS[trainingLevel] || 'Destreinado';
                     // Bônus de poderes de classe (Perito, Versatilidade, etc.)
                     const classPowerBonus = skillBonuses[skill.id]?.total || 0;
                     // Total exibido = treinamento + poderes de classe
                     const displayBonus = trainingBonus + classPowerBonus;
                     // Total para rolagem inclui atributo
                     const rollTotal = attrValue + displayBonus;
+                    
+                    // Cores especiais para níveis superiores
+                    const isVeteran = trainingLevel === 2;
+                    const isExpert = trainingLevel === 3;
                     
                     return (
                       <div
@@ -254,11 +262,15 @@ function SkillsByAttributeComponent({
                           "group flex items-center justify-between",
                           "p-2 rounded-lg cursor-pointer",
                           "transition-all duration-200",
-                          isTrained 
-                            ? "bg-secondary/30 hover:bg-secondary/50" 
-                            : classPowerBonus > 0
-                              ? "bg-primary/10 hover:bg-primary/20"
-                              : "hover:bg-muted/30"
+                          isExpert
+                            ? "bg-amber-500/20 hover:bg-amber-500/30"
+                            : isVeteran
+                              ? "bg-purple-500/20 hover:bg-purple-500/30"
+                              : isTrained 
+                                ? "bg-secondary/30 hover:bg-secondary/50" 
+                                : classPowerBonus > 0
+                                  ? "bg-primary/10 hover:bg-primary/20"
+                                  : "hover:bg-muted/30"
                         )}
                         onClick={() => onRoll?.(rollTotal, skill.name, attrValue, classPowerBonus)}
                       >
@@ -271,10 +283,17 @@ function SkillsByAttributeComponent({
                           </span>
                           {isTrained && (
                             <span 
-                              className="text-[10px] px-1.5 py-0.5 rounded"
-                              style={{ backgroundColor: `${color}20`, color }}
+                              className={cn(
+                                "text-[10px] px-1.5 py-0.5 rounded font-medium",
+                                isExpert 
+                                  ? "bg-amber-500/30 text-amber-400"
+                                  : isVeteran
+                                    ? "bg-purple-500/30 text-purple-400"
+                                    : ""
+                              )}
+                              style={!isExpert && !isVeteran ? { backgroundColor: `${color}20`, color } : undefined}
                             >
-                              Treinado
+                              {trainingLabel}
                             </span>
                           )}
                           {/* Indicador de bônus de poder de classe */}
@@ -289,9 +308,13 @@ function SkillsByAttributeComponent({
                           <span 
                             className={cn(
                               "font-display text-lg",
-                              (isTrained || classPowerBonus > 0) ? "" : "text-muted-foreground"
+                              isExpert
+                                ? "text-amber-400"
+                                : isVeteran
+                                  ? "text-purple-400"
+                                  : (isTrained || classPowerBonus > 0) ? "" : "text-muted-foreground"
                             )}
-                            style={(isTrained || classPowerBonus > 0) ? { color } : undefined}
+                            style={!isExpert && !isVeteran && (isTrained || classPowerBonus > 0) ? { color } : undefined}
                           >
                             +{displayBonus}
                           </span>
