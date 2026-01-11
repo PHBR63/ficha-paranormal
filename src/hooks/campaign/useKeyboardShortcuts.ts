@@ -212,6 +212,3 @@ export function createCombatShortcuts({
     },
   ];
 }
-
-// Exporta utilitários
-export { formatShortcutLabel };
