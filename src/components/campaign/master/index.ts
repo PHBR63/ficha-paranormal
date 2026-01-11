@@ -5,3 +5,5 @@
  */
 
 export { MasterSheetViewer } from './MasterSheetViewer';
+export { NPCManager, type CampaignNPC } from './NPCManager';
+export { NPCCard } from './NPCCard';
