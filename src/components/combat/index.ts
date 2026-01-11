@@ -17,3 +17,6 @@ export { MacroBar, MacroBarInline } from './MacroBar';
 
 // Fase 7.6 - CombatTracker Mobile
 export { MobileCombatTracker } from './MobileCombatTracker';
+
+// Fase 9 - Buffs de arma por turno
+export { CombatWeaponBuffsPanel } from './CombatWeaponBuffsPanel';

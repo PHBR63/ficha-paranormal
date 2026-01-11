@@ -15,3 +15,4 @@ export * from '../useTempPE';
 export * from '../useDefenseBonuses';
 export * from './useCombatConditions';
 export * from './useCombatNotifications';
+export * from './useCombatWeaponBuffs';
