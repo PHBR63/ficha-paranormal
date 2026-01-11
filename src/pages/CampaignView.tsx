@@ -31,6 +31,7 @@ import {
   Map,
   Music,
   FileText,
+  BookOpen,
 } from 'lucide-react';
 import {
   Dialog,
@@ -61,6 +62,7 @@ import { AudioMasterPanel, AudioPlayerBar } from '@/components/campaign/audio';
 import { WhisperDialog, ChatMessage, IntegratedDiceRoller, SessionActivityLog, parseDiceCommand } from '@/components/campaign/chat';
 import { PlayerHandoutsViewer } from '@/components/campaign/handouts';
 import { HandoutsManager } from '@/components/campaign/master/HandoutsManager';
+import { SessionDiary } from '@/components/campaign/diary';
 import { type CombatState, createCombatState } from '@/lib/game-engine';
 
 interface Campaign {
@@ -829,6 +831,10 @@ export default function CampaignView() {
                   <CalendarDays className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
                   <span className="hidden sm:inline">SESSÕES</span>
                 </TabsTrigger>
+                <TabsTrigger value="diary" className="font-display tracking-wider text-xs sm:text-sm px-2 sm:px-3">
+                  <BookOpen className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">DIÁRIO</span>
+                </TabsTrigger>
                 {isMaster && (
                   <TabsTrigger value="master" className="font-display tracking-wider text-xs sm:text-sm px-2 sm:px-3 text-primary">
                     <Crown className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
@@ -984,6 +990,16 @@ export default function CampaignView() {
                   currentSession={campaign?.current_session || 0}
                   isMaster={isMaster}
                   onSessionUpdate={fetchActiveSession}
+                />
+              </div>
+            </TabsContent>
+
+            {/* Diário da Campanha */}
+            <TabsContent value="diary" className="flex-1 p-4 m-0 overflow-auto">
+              <div className="max-w-4xl mx-auto">
+                <SessionDiary
+                  campaignId={id || ''}
+                  isMaster={isMaster}
                 />
               </div>
             </TabsContent>
