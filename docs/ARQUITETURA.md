@@ -427,23 +427,32 @@ Notificar jogadores sobre:
 **Arquivos relacionados:** `src/hooks/platform/usePushNotifications.ts`
 
 ### Combat 7.6 - Otimização Mobile do CombatTracker
-**Status:** ⏳ Pendente
+**Status:** ✅ 100% Concluído
 
-- Gestos touch otimizados
-- Layout compacto para telas pequenas
-- Performance melhorada em dispositivos móveis
+- ✅ Gestos touch otimizados
+- ✅ Layout compacto para telas pequenas
+- ✅ Performance melhorada em dispositivos móveis
+
+**Arquivos criados:**
+- `src/components/combat/MobileCombatTracker.tsx`
 
 ### Rituals 9 - Sistema de Buffs por Turno
-**Status:** ⏳ Parcial
+**Status:** ✅ 100% Concluído
 
 Automação completa de buffs de arma que expiram por turno:
-- Integração com RitualEffectWizard
-- Decrementação automática no fim do turno
-- Sincronização com combatentes vinculados
+- ✅ Integração com RitualEffectWizard
+- ✅ Decrementação automática no fim do turno
+- ✅ Sincronização com combatentes vinculados
+- ✅ Hook de gerenciamento de buffs no combate
+- ✅ Painel visual de buffs no CombatTracker
+- ✅ Notificações de expiração
 
 **Arquivos relacionados:** 
+- `src/hooks/combat/useCombatWeaponBuffs.ts` - Hook de sincronização
+- `src/components/combat/CombatWeaponBuffsPanel.tsx` - Painel UI
 - `src/components/character/RitualEffectWizard.tsx`
 - `src/components/character/WeaponBuffTurnTracker.tsx`
+- `src/hooks/useWeaponBuffs.ts` - Hook base de buffs
 
 ### Arquitetura 7 - Expandir Testes de Integração do SUE
 **Status:** ⏳ Pendente
