@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MagicCard } from "@/components/ui/magic-card";
 import { AnimatedProgress } from "@/components/ui/animated-progress";
-import { ConditionList } from "@/components/ui/condition-badge";
 import { 
   type CombatState, 
   type CombatantState,
@@ -43,6 +42,10 @@ import { CombatStatsPanel } from "./CombatStatsPanel";
 import { TacticalPauseModal } from "./TacticalPauseModal";
 import { TurnActionsPanel } from "./TurnActionsPanel";
 import { PreparedActionsList, type PreparedAction } from "./PreparedActionBadge";
+import { ConditionBadges } from "@/components/character/conditions/ConditionBadges";
+import { QuickAddConditionButton } from "@/components/character/conditions/ConditionManager";
+import { useCombatConditions, type LocalCombatCondition } from "@/hooks/combat/useCombatConditions";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Swords,
   Play,
@@ -58,6 +61,7 @@ import {
   RotateCcw,
   Sparkles,
   Clock,
+  AlertTriangle,
 } from "lucide-react";
 import confetti from "canvas-confetti";
 
@@ -74,6 +78,7 @@ export function CombatTracker({
   onCombatUpdate,
   isMaster = true,
 }: CombatTrackerProps) {
+  const { user } = useAuth();
   const [combatState, setCombatState] = useState<CombatState>(() => {
     const state = createCombatState();
     return state;
@@ -86,6 +91,16 @@ export function CombatTracker({
   const [tacticalPauseOpen, setTacticalPauseOpen] = useState(false);
   const [preparedActions, setPreparedActions] = useState<PreparedAction[]>([]);
   const [delayedCombatants, setDelayedCombatants] = useState<string[]>([]);
+  
+  // Estado de condições locais por combatente (para NPCs sem personagem vinculado)
+  const [combatantConditions, setCombatantConditions] = useState<Record<string, LocalCombatCondition[]>>({});
+  
+  // Hook de gerenciamento de condições
+  const conditionsHook = useCombatConditions({
+    campaignId,
+    userId: user?.id,
+    enabled: !!user?.id,
+  });
 
   const updateState = useCallback((newState: CombatState) => {
     setCombatState(newState);
@@ -165,7 +180,7 @@ export function CombatTracker({
     });
   }, [combatState, updateState]);
 
-  const handleNextTurn = useCallback(() => {
+  const handleNextTurn = useCallback(async () => {
     const newState = nextTurn(combatState);
     const currentCombatant = newState.combatants[newState.currentTurnIndex];
     
@@ -197,17 +212,39 @@ export function CombatTracker({
       sustainMessages.push(...sustainResult.results.map(r => r.message));
     }
     
+    // Processa condições no início do turno (sistema novo)
+    const localConditions = combatantConditions[currentCombatant.id] || [];
+    const conditionEffects = conditionsHook.processConditionEffects(currentCombatant, localConditions);
+    const decrementResult = await conditionsHook.decrementOnTurnStart(currentCombatant, localConditions);
+    
+    // Remove condições expiradas do estado local
+    if (decrementResult.expiredConditions.length > 0) {
+      setCombatantConditions(prev => ({
+        ...prev,
+        [currentCombatant.id]: (prev[currentCombatant.id] || []).filter(
+          c => !decrementResult.expiredConditions.includes(c.id)
+        ).map(c => {
+          // Decrementa duração das condições que decrementam no início do turno
+          if (c.decrementsAt === 'start_of_turn' && c.durationType === 'rounds' && c.durationRemaining !== null) {
+            return { ...c, durationRemaining: c.durationRemaining - 1 };
+          }
+          return c;
+        }),
+      }));
+    }
+    
     // Coleta mensagens dos hooks
     const hookMessages = turnStartHooks.map(h => 
       `⚡ ${h.ritualName}: ${h.modifications?.message || h.effect}`
     );
     
     // Atualiza combatente com dano de condições e custo de sustentação
+    const totalConditionDamage = turnResult.damage + conditionEffects.damage;
     const updatedCombatants = newState.combatants.map((c, i) => {
       if (i !== newState.currentTurnIndex) return c;
       return {
         ...c,
-        hp: Math.max(0, c.hp - turnResult.damage),
+        hp: Math.max(0, c.hp - totalConditionDamage),
         pe: Math.max(0, c.pe - sustainPECost),
         conditions: c.conditions.filter(cond => !turnResult.removedConditions.includes(cond)),
         dyingCounter: turnResult.dyingCounterReduced && c.dyingCounter !== undefined 
@@ -219,6 +256,8 @@ export function CombatTracker({
     // Monta log
     const allMessages = [
       ...turnResult.messages,
+      ...conditionEffects.messages,
+      ...decrementResult.messages,
       ...hookMessages,
       ...sustainMessages,
     ];
@@ -239,7 +278,7 @@ export function CombatTracker({
         })),
       ],
     });
-  }, [combatState, updateState]);
+  }, [combatState, updateState, combatantConditions, conditionsHook]);
 
   const currentCombatant = combatState.combatants[combatState.currentTurnIndex];
 
@@ -681,10 +720,90 @@ export function CombatTracker({
                     )}
                   </div>
 
-                  {/* Conditions */}
-                  {combatant.conditions.length > 0 && (
+                  {/* Condições do sistema novo + condições legadas */}
+                  {((combatantConditions[combatant.id] || []).length > 0 || combatant.conditions.length > 0) && (
+                    <div className="mt-3 pt-3 border-t border-border flex items-center justify-between flex-wrap gap-2">
+                      {/* Condições do novo sistema */}
+                      {(combatantConditions[combatant.id] || []).length > 0 && (
+                        <ConditionBadges
+                          conditions={(combatantConditions[combatant.id] || []).map(c => ({
+                            id: c.id,
+                            character_id: combatant.id,
+                            user_id: user?.id || '',
+                            condition_id: c.conditionId,
+                            condition_name: c.conditionName,
+                            condition_type: 'condition' as const,
+                            description: c.description || null,
+                            mechanical_effect: c.mechanicalEffect || null,
+                            duration_type: c.durationType,
+                            duration_total: c.durationRemaining,
+                            duration_remaining: c.durationRemaining,
+                            decrements_at: c.decrementsAt,
+                            stacks: c.stacks,
+                            max_stacks: null,
+                            source_name: c.sourceName || null,
+                            source_type: null,
+                            icon: c.icon || null,
+                            color: c.color || null,
+                            can_be_removed: true,
+                            created_at: new Date().toISOString(),
+                            updated_at: new Date().toISOString(),
+                            campaign_id: campaignId || null,
+                            session_id: null,
+                            applied_at_round: null,
+                            applied_at_turn: null,
+                          }))}
+                          onRemove={isMaster ? async (conditionId) => {
+                            setCombatantConditions(prev => ({
+                              ...prev,
+                              [combatant.id]: (prev[combatant.id] || []).filter(c => c.id !== conditionId),
+                            }));
+                            return true;
+                          } : undefined}
+                          compact
+                          maxVisible={4}
+                        />
+                      )}
+                      
+                      {/* Condições legadas (strings) - exibe como badges simples */}
+                      {combatant.conditions.length > 0 && (combatantConditions[combatant.id] || []).length === 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {combatant.conditions.map((cond, i) => (
+                            <span key={i} className="text-xs px-2 py-0.5 rounded bg-destructive/20 text-destructive">
+                              {cond}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      
+                      {/* Botão de adicionar condição (apenas para mestres) */}
+                      {isMaster && (
+                        <QuickAddConditionButton
+                          onAdd={async (data) => {
+                            const newCondition = await conditionsHook.applyCondition(combatant.id, data);
+                            setCombatantConditions(prev => ({
+                              ...prev,
+                              [combatant.id]: [...(prev[combatant.id] || []), newCondition],
+                            }));
+                          }}
+                          className="ml-auto"
+                        />
+                      )}
+                    </div>
+                  )}
+                  
+                  {/* Botão para adicionar condição quando não há nenhuma */}
+                  {(combatantConditions[combatant.id] || []).length === 0 && combatant.conditions.length === 0 && isMaster && (
                     <div className="mt-3 pt-3 border-t border-border">
-                      <ConditionList conditions={combatant.conditions} size="sm" />
+                      <QuickAddConditionButton
+                        onAdd={async (data) => {
+                          const newCondition = await conditionsHook.applyCondition(combatant.id, data);
+                          setCombatantConditions(prev => ({
+                            ...prev,
+                            [combatant.id]: [...(prev[combatant.id] || []), newCondition],
+                          }));
+                        }}
+                      />
                     </div>
                   )}
 
