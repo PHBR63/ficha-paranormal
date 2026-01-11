@@ -83,7 +83,7 @@ const parseContent = (content: string): React.ReactNode => {
     // Italic
     if (part.startsWith('*') && part.endsWith('*')) {
       return (
-        <em key={index} className="italic text-muted-foreground">
+        <em key={index} className="italic text-slate-300">
           {part.slice(1, -1)}
         </em>
       );
@@ -91,7 +91,7 @@ const parseContent = (content: string): React.ReactNode => {
     // Dados [1, 15, 8]
     if (part.startsWith('[') && part.endsWith(']')) {
       return (
-        <span key={index} className="font-mono text-accent bg-accent/10 px-1 rounded">
+        <span key={index} className="font-mono text-white bg-accent/20 px-1 rounded">
           {part}
         </span>
       );
@@ -133,7 +133,7 @@ const DiceRollDisplay = ({ metadata }: { metadata: any }) => {
       )}
 
       {/* Resultado */}
-      <span className="text-muted-foreground">=</span>
+      <span className="text-slate-400">=</span>
       <span className={cn(
         'font-display text-lg font-bold',
         isCritical ? 'text-primary' : 'text-foreground'
@@ -170,12 +170,12 @@ const RitualEventDisplay = ({ metadata }: { metadata: any }) => {
       <span className={cn('font-medium', elementColors[element] || 'text-purple-400')}>
         {element} {circle}º Círculo
       </span>
-      <span className="text-muted-foreground">•</span>
+      <span className="text-slate-400">•</span>
       <span className="text-accent">{peCost} PE</span>
       {enhancements?.length > 0 && (
         <>
-          <span className="text-muted-foreground">•</span>
-          <span className="text-muted-foreground">{enhancements.length} aprimoramentos</span>
+          <span className="text-slate-400">•</span>
+          <span className="text-slate-300">{enhancements.length} aprimoramentos</span>
         </>
       )}
     </div>
@@ -197,11 +197,11 @@ const DamageEventDisplay = ({ metadata, isHeal }: { metadata: any; isHeal?: bool
         {isHeal ? '+' : '-'}{amount}
       </span>
       {damageType && (
-        <span className="text-muted-foreground capitalize">{damageType}</span>
+        <span className="text-slate-300 capitalize">{damageType}</span>
       )}
       {targetName && (
         <>
-          <span className="text-muted-foreground">→</span>
+          <span className="text-slate-400">→</span>
           <span className="text-foreground">{targetName}</span>
         </>
       )}
@@ -287,7 +287,7 @@ export function ChatMessage({ message, currentUserId, masterId, className }: Cha
       <p className={cn(
         'text-sm',
         messageType === 'dice_roll' && 'font-medium',
-        isEvent && 'text-muted-foreground'
+        isEvent && 'text-slate-300'
       )}>
         {parseContent(message.content)}
       </p>

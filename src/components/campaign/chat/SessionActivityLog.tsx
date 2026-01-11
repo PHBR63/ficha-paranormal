@@ -102,13 +102,13 @@ function ActivityEntry({ entry }: { entry: ActivityEntry }) {
           <span className="text-xs font-medium text-foreground truncate">
             {entry.characterName}
           </span>
-          <span className="text-[10px] text-muted-foreground">
+          <span className="text-[10px] text-slate-400">
             {formatDistanceToNow(entry.timestamp, { addSuffix: true, locale: ptBR })}
           </span>
         </div>
 
         {/* Conteúdo resumido */}
-        <p className="text-xs text-muted-foreground line-clamp-1">
+        <p className="text-xs text-slate-300 line-clamp-1">
           {entry.content.replace(/\*\*/g, '').replace(/🎲\s*/g, '')}
         </p>
 
@@ -130,9 +130,9 @@ function ActivityEntry({ entry }: { entry: ActivityEntry }) {
                 {die}
               </span>
             ))}
-            <span className="text-[10px] text-muted-foreground mx-1">→</span>
+            <span className="text-[10px] text-white mx-1">→</span>
             <span className={cn(
-              'text-xs font-bold',
+              'text-xs font-bold text-white',
               entry.metadata.isCritical && 'text-primary'
             )}>
               {entry.metadata.total || entry.metadata.keptDice}
