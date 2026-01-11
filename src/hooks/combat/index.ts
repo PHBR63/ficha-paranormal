@@ -2,7 +2,7 @@
  * Hooks de Combate
  * 
  * Hooks responsáveis pelo gerenciamento de combate, rodadas,
- * buffs de armas, rituais sustentados e condições.
+ * buffs de armas, rituais sustentados, condições e timer de turno.
  * 
  * @module hooks/combat
  */
@@ -16,3 +16,4 @@ export * from '../useDefenseBonuses';
 export * from './useCombatConditions';
 export * from './useCombatNotifications';
 export * from './useCombatWeaponBuffs';
+export * from './useTurnTimer';

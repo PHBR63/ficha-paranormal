@@ -45,10 +45,13 @@ import { PreparedActionsList, type PreparedAction } from "./PreparedActionBadge"
 import { ConditionBadges } from "@/components/character/conditions/ConditionBadges";
 import { QuickAddConditionButton } from "@/components/character/conditions/ConditionManager";
 import { CombatWeaponBuffsPanel } from "./CombatWeaponBuffsPanel";
+import { TurnTimer, TurnTimerInline } from "./TurnTimer";
 import { useCombatConditions, type LocalCombatCondition } from "@/hooks/combat/useCombatConditions";
 import { useCombatWeaponBuffs } from "@/hooks/combat/useCombatWeaponBuffs";
+import { useTurnTimer } from "@/hooks/combat/useTurnTimer";
 import { useWeaponBuffs, type WeaponBuff } from "@/hooks/useWeaponBuffs";
 import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "@/hooks/use-toast";
 import {
   Swords,
   Play,
@@ -65,6 +68,7 @@ import {
   Sparkles,
   Clock,
   AlertTriangle,
+  Timer,
 } from "lucide-react";
 import confetti from "canvas-confetti";
 
@@ -143,6 +147,33 @@ export function CombatTracker({
           ...prev,
           log: [...prev.log, ...newLogEntries],
         }));
+      }
+    }, []),
+  });
+
+  // Combatente atual (para uso nos hooks abaixo)
+  const currentCombatant = combatState.combatants[combatState.currentTurnIndex];
+
+  // Hook do timer de turno (Combat 8)
+  const turnTimer = useTurnTimer({
+    isActive: combatState.isActive,
+    currentTurnIndex: combatState.currentTurnIndex,
+    currentCombatantId: currentCombatant?.id,
+    currentCombatantName: currentCombatant?.name,
+    currentRound: combatState.round,
+    onTimerExpire: undefined, // Será tratado separadamente para evitar dependências circulares
+    onAlert: useCallback((secondsRemaining: number, combatantName: string) => {
+      if (secondsRemaining === 15) {
+        toast({
+          title: "⏳ 15 segundos restantes",
+          description: `Turno de ${combatantName}`,
+        });
+      } else if (secondsRemaining === 5) {
+        toast({
+          title: "⚠️ 5 segundos!",
+          description: `${combatantName} precisa agir rapidamente!`,
+          variant: "destructive",
+        });
       }
     }, []),
   });
@@ -342,8 +373,6 @@ export function CombatTracker({
       ],
     });
   }, [combatState, updateState, combatantConditions, conditionsHook]);
-
-  const currentCombatant = combatState.combatants[combatState.currentTurnIndex];
 
   // Adiar turno (Delay)
   const handleDelayTurn = useCallback(() => {
