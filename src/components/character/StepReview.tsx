@@ -3,7 +3,7 @@
 // Inclui painel educativo do livro de regras e validação final Zod
 
 import { useMemo } from 'react';
-import { ORIGINS, CLASSES, SKILLS, getPatentByNex, getTrackById } from '@/lib/character-data';
+import { ORIGINS, CLASSES, SKILLS, getPatentByNex, getTrackById, TRAINING_LABELS } from '@/lib/character-data';
 import { CLASS_PROFICIENCIES, CLASS_INITIAL_ABILITIES, validateAttributes } from '@/lib/character-builder-engine';
 import { ALL_RITUALS } from '@/lib/rituals/legacy-exports';
 import { validateCharacterForm, type FinalValidationResult } from '@/lib/validation-schemas';
@@ -86,6 +86,28 @@ export function StepReview({
     const skill = SKILLS.find(s => s.id === id);
     return skill?.name || id;
   });
+
+  // Coletar todas as perícias treinadas via poder "Treinamento em Perícia"
+  const skillTrainingFromPowers = useMemo(() => {
+    const choices = formData.skillTrainingChoices || {};
+    const result: Array<{ skillName: string; fromLevel: number; toLevel: number; instanceKey: string }> = [];
+    
+    Object.entries(choices).forEach(([instanceKey, skillChoices]) => {
+      skillChoices.forEach(choice => {
+        const skill = SKILLS.find(s => s.id === choice.skillId);
+        if (skill) {
+          result.push({
+            skillName: skill.name,
+            fromLevel: choice.fromLevel,
+            toLevel: choice.toLevel,
+            instanceKey
+          });
+        }
+      });
+    });
+    
+    return result;
+  }, [formData.skillTrainingChoices]);
 
   // Função para calcular step index baseado no id (considerando steps dinâmicos)
   const isOcultist = formData.characterClass === 'Ocultista';
@@ -281,6 +303,60 @@ export function StepReview({
               </span>)}
           </div> : <p className="text-sm text-muted-foreground">Nenhuma perícia treinada.</p>}
       </div>
+
+      {/* Perícias Treinadas via Poder "Treinamento em Perícia" */}
+      {skillTrainingFromPowers.length > 0 && (
+        <div className="ordo-panel p-4 group border-purple-500/30 bg-gradient-to-br from-purple-500/5 to-transparent">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-purple-400" />
+              <h4 className="font-display text-lg tracking-wider text-purple-400">
+                TREINAMENTO EM PERÍCIA
+              </h4>
+            </div>
+            <EditButton stepId="abilities" />
+          </div>
+          <p className="text-xs text-muted-foreground mb-3">
+            Perícias aprimoradas via poder de classe
+          </p>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {skillTrainingFromPowers.map((training, idx) => {
+              const fromLabel = TRAINING_LABELS[training.fromLevel];
+              const toLabel = TRAINING_LABELS[training.toLevel];
+              const isExpert = training.toLevel === 3;
+              const isVeteran = training.toLevel === 2;
+              
+              return (
+                <div 
+                  key={`${training.instanceKey}-${training.skillName}-${idx}`}
+                  className={`flex items-center justify-between p-2 rounded-md ${
+                    isExpert 
+                      ? 'bg-amber-500/20 border border-amber-500/30' 
+                      : isVeteran 
+                        ? 'bg-purple-500/20 border border-purple-500/30'
+                        : 'bg-primary/10 border border-primary/20'
+                  }`}
+                >
+                  <span className={`font-medium text-sm ${
+                    isExpert ? 'text-amber-400' : isVeteran ? 'text-purple-400' : 'text-primary'
+                  }`}>
+                    {training.skillName}
+                  </span>
+                  <div className="flex items-center gap-1 text-xs">
+                    <span className="text-muted-foreground">{fromLabel}</span>
+                    <span className="text-muted-foreground">→</span>
+                    <span className={`font-bold ${
+                      isExpert ? 'text-amber-400' : isVeteran ? 'text-purple-400' : 'text-primary'
+                    }`}>
+                      {toLabel}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Habilidades de Classe */}
       {classAbilities.length > 0 && <div className="ordo-panel p-4 group">
