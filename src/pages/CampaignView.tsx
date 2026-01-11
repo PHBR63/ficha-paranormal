@@ -32,6 +32,8 @@ import {
   Music,
   FileText,
   BookOpen,
+  Skull,
+  Clock,
 } from 'lucide-react';
 import {
   Dialog,
@@ -63,7 +65,9 @@ import { AudioMasterPanel, AudioPlayerBar } from '@/components/campaign/audio';
 import { WhisperDialog, ChatMessage, IntegratedDiceRoller, SessionActivityLog, parseDiceCommand } from '@/components/campaign/chat';
 import { PlayerHandoutsViewer } from '@/components/campaign/handouts';
 import { HandoutsManager } from '@/components/campaign/master/HandoutsManager';
-import { SessionDiary } from '@/components/campaign/diary';
+import { SessionDiary, CampaignTimeline, SessionExporter } from '@/components/campaign/diary';
+import { MacrosPanel } from '@/components/campaign/chat';
+import { NPCManager } from '@/components/campaign/master';
 import { type CombatState, createCombatState } from '@/lib/game-engine';
 
 interface Campaign {
@@ -1036,21 +1040,44 @@ export default function CampaignView() {
               </div>
             </TabsContent>
 
-            {/* Diário da Campanha - Expandido */}
+            {/* Diário da Campanha - Expandido com subabas */}
             <TabsContent value="diary" className="flex-1 p-6 sm:p-8 m-0 overflow-auto">
               <div className="max-w-5xl mx-auto">
-                <SessionDiary
-                  campaignId={id || ''}
-                  isMaster={isMaster}
-                />
+                <Tabs defaultValue="diary" className="space-y-4">
+                  <TabsList className="bg-card border border-border">
+                    <TabsTrigger value="diary" className="font-display text-xs">
+                      <BookOpen className="w-4 h-4 mr-1.5" />
+                      DIÁRIO
+                    </TabsTrigger>
+                    <TabsTrigger value="timeline" className="font-display text-xs">
+                      <Clock className="w-4 h-4 mr-1.5" />
+                      LINHA DO TEMPO
+                    </TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="diary" className="mt-4">
+                    <SessionDiary
+                      campaignId={id || ''}
+                      isMaster={isMaster}
+                    />
+                  </TabsContent>
+                  
+                  <TabsContent value="timeline" className="mt-4">
+                    <CampaignTimeline
+                      campaignId={id || ''}
+                      isMaster={isMaster}
+                    />
+                  </TabsContent>
+                </Tabs>
               </div>
             </TabsContent>
 
             {isMaster && (
               <TabsContent value="master" className="flex-1 p-4 m-0 overflow-auto">
                 <Tabs defaultValue="sheets" className="space-y-4">
-                  <TabsList className="bg-card border border-border">
+                  <TabsList className="bg-card border border-border flex-wrap h-auto py-1">
                     <TabsTrigger value="sheets" className="font-display text-xs">FICHAS</TabsTrigger>
+                    <TabsTrigger value="npcs" className="font-display text-xs">NPCs</TabsTrigger>
                     <TabsTrigger value="handouts" className="font-display text-xs">HANDOUTS</TabsTrigger>
                     <TabsTrigger value="audio" className="font-display text-xs">ÁUDIO</TabsTrigger>
                     <TabsTrigger value="controls" className="font-display text-xs">CONTROLES</TabsTrigger>
@@ -1064,6 +1091,11 @@ export default function CampaignView() {
                       members={members}
                       onMemberUpdate={fetchCampaignData}
                     />
+                  </TabsContent>
+                  
+                  {/* Aba de NPCs/Bestiário */}
+                  <TabsContent value="npcs" className="mt-4">
+                    <NPCManager campaignId={id || ''} />
                   </TabsContent>
                   
                   {/* Aba de Handouts do Mestre */}
