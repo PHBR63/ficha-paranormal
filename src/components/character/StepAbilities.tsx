@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
 import { 
   Tooltip,
   TooltipContent,
@@ -21,7 +22,11 @@ import {
   Lock,
   CheckCircle2,
   Eye,
-  TrendingUp
+  TrendingUp,
+  Plus,
+  Minus,
+  AlertTriangle,
+  Repeat
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { 
@@ -35,6 +40,7 @@ import { RuleBookTip } from './RuleBookTip';
 import { getRulebookContent } from '@/lib/rulebook-content';
 import { AbilityDetailModal } from './AbilityDetailModal';
 import { VersatilitySection, VersatilityChoice, isVersatilityChoiceComplete } from './VersatilitySection';
+import { calculateDerivedStats } from '@/lib/character-data';
 
 // ==================== MARCOS DE PROGRESSÃO OFICIAIS (Tabelas 1.3, 1.4, 1.5) ====================
 // Mapeamento de habilidades que evoluem com NEX conforme livro oficial
@@ -126,13 +132,40 @@ export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) 
   const baseMaxChoices = getAbilityChoiceCount(nex);
   // Se escolheu poder de classe via Versatilidade, ganha +1 escolha
   const maxChoices = baseMaxChoices + extraPowerFromVersatility;
-  const selectedChoices = abilities.filter(a => 
+  
+  // Contar TODAS as ocorrências de abilities no array (incluindo repetições)
+  const totalAbilitiesSelected = abilities.filter(a => 
     choosableAbilities.some(ca => ca.id === a)
-  );
-  const remainingChoices = maxChoices - selectedChoices.length;
+  ).length;
+  const remainingChoices = maxChoices - totalAbilitiesSelected;
+  
+  // Para poderes únicos selecionados (para mostrar na UI)
+  const uniqueSelectedIds = [...new Set(abilities.filter(a => 
+    choosableAbilities.some(ca => ca.id === a)
+  ))];
   
   const ClassIcon = CLASS_ICONS[characterClass] || Star;
   const classColor = CLASS_COLORS[characterClass] || '';
+  
+  // Função auxiliar para contar ocorrências de um poder no array
+  const getAbilityCount = useCallback((abilityId: string) => {
+    return abilities.filter(a => a === abilityId).length;
+  }, [abilities]);
+  
+  // Calcular custo de sanidade do Transcender (perda do ganho de SAN)
+  const sanityGainPerNex = useMemo(() => {
+    if (!characterClass) return 0;
+    // Calcular ganho de SAN entre NEX 10% e 15% (representa ganho por marco de 5%)
+    const stats5 = calculateDerivedStats(characterClass, 1, 1, 5);
+    const stats10 = calculateDerivedStats(characterClass, 1, 1, 10);
+    return stats10.san - stats5.san;
+  }, [characterClass]);
+  
+  // Contar quantas vezes Transcender foi escolhido
+  const transcenderCount = useMemo(() => {
+    const transcenderIds = ['transcender', 'transcender-esp', 'transcender-ocultista'];
+    return abilities.filter(a => transcenderIds.includes(a)).length;
+  }, [abilities]);
   
   // Abre o modal com os detalhes da habilidade
   const openAbilityDetail = (ability: ClassAbility) => {
@@ -140,19 +173,45 @@ export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) 
     setIsDetailModalOpen(true);
   };
 
-  const handleToggleAbility = (abilityId: string) => {
-    const isSelected = abilities.includes(abilityId);
-    
-    if (isSelected) {
-      updateFormData({
-        abilities: abilities.filter(a => a !== abilityId)
-      });
-    } else if (remainingChoices > 0) {
+  // Handler para adicionar uma instância de um poder (usado para poderes repetíveis)
+  const handleAddAbility = useCallback((abilityId: string) => {
+    if (remainingChoices > 0) {
       updateFormData({
         abilities: [...abilities, abilityId]
       });
     }
-  };
+  }, [abilities, remainingChoices, updateFormData]);
+  
+  // Handler para remover UMA instância de um poder (usado para poderes repetíveis)
+  const handleRemoveOneInstance = useCallback((abilityId: string) => {
+    const index = abilities.lastIndexOf(abilityId);
+    if (index !== -1) {
+      const newAbilities = [...abilities];
+      newAbilities.splice(index, 1);
+      updateFormData({ abilities: newAbilities });
+    }
+  }, [abilities, updateFormData]);
+
+  // Handler antigo para poderes não-repetíveis (toggle simples)
+  const handleToggleAbility = useCallback((abilityId: string) => {
+    const ability = choosableAbilities.find(a => a.id === abilityId);
+    const isRepeatable = ability?.isRepeatable ?? false;
+    const count = getAbilityCount(abilityId);
+    
+    if (isRepeatable) {
+      // Para repetíveis, adiciona nova instância se houver espaço
+      if (remainingChoices > 0) {
+        handleAddAbility(abilityId);
+      }
+    } else {
+      // Para não-repetíveis, faz toggle normal
+      if (count > 0) {
+        handleRemoveOneInstance(abilityId);
+      } else if (remainingChoices > 0) {
+        handleAddAbility(abilityId);
+      }
+    }
+  }, [choosableAbilities, getAbilityCount, remainingChoices, handleAddAbility, handleRemoveOneInstance]);
   
   // Handler para escolha de Versatilidade
   const handleVersatilityChange = useCallback((choice: VersatilityChoice) => {
@@ -233,7 +292,7 @@ export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) 
             </div>
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">
-                {selectedChoices.length} / {maxChoices} escolhidos
+                {totalAbilitiesSelected} / {maxChoices} escolhidos
               </span>
               <Badge variant={remainingChoices > 0 ? "secondary" : "default"}>
                 {remainingChoices > 0 ? `${remainingChoices} restante${remainingChoices > 1 ? 's' : ''}` : 'Completo'}
@@ -249,7 +308,7 @@ export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) 
               const isCurrent = nex === nexMarker;
               // Contar quantos poderes deveria ter até este NEX
               const powersAtThisNex = [15, 30, 45, 60, 75, 90].filter(n => n <= nexMarker).length;
-              const hasPowerAtThisNex = powersAtThisNex <= selectedChoices.length;
+              const hasPowerAtThisNex = powersAtThisNex <= totalAbilitiesSelected;
               
               return (
                 <Badge
@@ -403,8 +462,13 @@ export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) 
               <div className="space-y-3">
                 <AnimatePresence>
                   {choosableAbilities.map((ability, index) => {
-                    const isSelected = abilities.includes(ability.id);
+                    const count = getAbilityCount(ability.id);
+                    const isSelected = count > 0;
+                    const isRepeatable = ability.isRepeatable ?? false;
                     const isDisabled = !isSelected && remainingChoices === 0;
+                    
+                    // Verificar se é Transcender para mostrar aviso de SAN
+                    const isTranscender = ability.id.includes('transcender');
                     
                     return (
                       <motion.div
@@ -417,18 +481,56 @@ export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) 
                           isSelected 
                             ? cn("bg-gradient-to-r", classColor)
                             : "bg-card/50 hover:bg-card/80",
-                          isDisabled && "opacity-50"
+                          isDisabled && !isRepeatable && "opacity-50"
                         )}
                       >
                         <div className="flex items-start gap-3">
-                          {/* Checkbox clicável separadamente */}
-                          <Checkbox
-                            checked={isSelected}
-                            disabled={isDisabled}
-                            className="mt-0.5 cursor-pointer"
-                            onClick={(e) => e.stopPropagation()}
-                            onCheckedChange={() => !isDisabled && handleToggleAbility(ability.id)}
-                          />
+                          {/* Controle de seleção - diferente para repetíveis */}
+                          {isRepeatable ? (
+                            <div className="flex items-center gap-1 mt-0.5">
+                              <Button
+                                type="button"
+                                size="icon"
+                                variant="ghost"
+                                className="h-6 w-6"
+                                disabled={count === 0}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleRemoveOneInstance(ability.id);
+                                }}
+                              >
+                                <Minus className="w-3 h-3" />
+                              </Button>
+                              <span className={cn(
+                                "w-6 text-center text-sm font-bold",
+                                count > 0 ? "text-primary" : "text-muted-foreground"
+                              )}>
+                                {count}
+                              </span>
+                              <Button
+                                type="button"
+                                size="icon"
+                                variant="ghost"
+                                className="h-6 w-6"
+                                disabled={remainingChoices === 0}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleAddAbility(ability.id);
+                                }}
+                              >
+                                <Plus className="w-3 h-3" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <Checkbox
+                              checked={isSelected}
+                              disabled={isDisabled}
+                              className="mt-0.5 cursor-pointer"
+                              onClick={(e) => e.stopPropagation()}
+                              onCheckedChange={() => !isDisabled && handleToggleAbility(ability.id)}
+                            />
+                          )}
+                          
                           {/* Área clicável para abrir modal */}
                           <div 
                             className="flex-1 cursor-pointer hover:opacity-80 transition-opacity"
@@ -440,12 +542,29 @@ export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) 
                                 <Badge variant="outline" className="text-xs">
                                   NEX {ability.minNex}%
                                 </Badge>
+                                {/* Badge de repetível */}
+                                {isRepeatable && (
+                                  <Badge variant="secondary" className="text-xs gap-1">
+                                    <Repeat className="w-3 h-3" />
+                                    Repetível
+                                  </Badge>
+                                )}
                               </div>
                               <Eye className="w-4 h-4 text-muted-foreground hover:text-primary transition-colors flex-shrink-0" />
                             </div>
                             <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
                               {ability.description}
                             </p>
+                            
+                            {/* Aviso de custo de SAN para Transcender */}
+                            {isTranscender && (
+                              <div className="mt-2 p-2 bg-warning/10 border border-warning/30 rounded flex items-center gap-2">
+                                <AlertTriangle className="w-3 h-3 text-warning flex-shrink-0" />
+                                <span className="text-xs text-warning">
+                                  Custo: -{sanityGainPerNex} SAN máxima por escolha
+                                </span>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </motion.div>
@@ -466,7 +585,7 @@ export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) 
         </div>
 
         {/* Summary */}
-        {(coreAbilities.length > 0 || selectedChoices.length > 0) && (
+        {(coreAbilities.length > 0 || totalAbilitiesSelected > 0) && (
           <>
             <Separator />
             <div className="p-4 rounded-lg bg-muted/30 border border-border">
@@ -479,15 +598,32 @@ export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) 
                     {ability.name}
                   </Badge>
                 ))}
-                {selectedChoices.map(abilityId => {
+                {/* Agrupar poderes escolhidos por ID e mostrar contador para repetíveis */}
+                {uniqueSelectedIds.map(abilityId => {
                   const ability = choosableAbilities.find(a => a.id === abilityId);
+                  const count = getAbilityCount(abilityId);
                   return ability ? (
-                    <Badge key={ability.id} variant="secondary">
+                    <Badge key={ability.id} variant="secondary" className="gap-1">
                       {ability.name}
+                      {count > 1 && (
+                        <span className="ml-1 px-1.5 py-0.5 rounded-full bg-background/50 text-xs font-bold">
+                          ×{count}
+                        </span>
+                      )}
                     </Badge>
                   ) : null;
                 })}
               </div>
+              
+              {/* Aviso de perda de Sanidade por Transcender */}
+              {transcenderCount > 0 && (
+                <div className="mt-3 p-2 rounded bg-warning/10 border border-warning/30 flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-warning flex-shrink-0" />
+                  <span className="text-xs text-warning">
+                    Transcender ×{transcenderCount}: -{transcenderCount * sanityGainPerNex} SAN máxima
+                  </span>
+                </div>
+              )}
             </div>
           </>
         )}
@@ -501,10 +637,10 @@ export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) 
             setSelectedAbilityForDetail(null);
           }}
           nex={nex}
-          isSelected={selectedAbilityForDetail ? abilities.includes(selectedAbilityForDetail.id) : false}
+          isSelected={selectedAbilityForDetail ? getAbilityCount(selectedAbilityForDetail.id) > 0 : false}
           isCore={selectedAbilityForDetail ? coreAbilities.some(ca => ca.id === selectedAbilityForDetail.id) : false}
           onToggle={selectedAbilityForDetail ? () => handleToggleAbility(selectedAbilityForDetail.id) : undefined}
-          canSelect={remainingChoices > 0 || (selectedAbilityForDetail ? abilities.includes(selectedAbilityForDetail.id) : false)}
+          canSelect={remainingChoices > 0 || (selectedAbilityForDetail ? getAbilityCount(selectedAbilityForDetail.id) > 0 : false)}
         />
       </div>
     </TooltipProvider>

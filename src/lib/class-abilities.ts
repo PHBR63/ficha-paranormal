@@ -13,6 +13,7 @@ export interface ClassAbility {
   minNex: number;
   classId: string;
   isCore?: boolean; // Habilidade fundamental da classe, não escolhida
+  isRepeatable?: boolean; // Poder que pode ser escolhido múltiplas vezes (ex: Transcender, Treinamento em Perícia)
 }
 
 // ==================== HABILIDADES DO COMBATENTE ====================
@@ -236,14 +237,16 @@ export const COMBATENTE_ABILITIES: ClassAbility[] = [
     name: 'Transcender', 
     description: 'Escolha um poder paranormal (veja a página 114). Você recebe o poder escolhido, mas não ganha Sanidade neste aumento de NEX. Você pode escolher este poder várias vezes.', 
     minNex: 15, 
-    classId: 'Combatente' 
+    classId: 'Combatente',
+    isRepeatable: true 
   },
   { 
     id: 'treinamento-pericia', 
     name: 'Treinamento em Perícia', 
     description: 'Escolha duas perícias. Você se torna treinado nessas perícias. A partir de NEX 35%, você pode escolher perícias nas quais já é treinado para se tornar veterano. A partir de NEX 70%, pode escolher perícias nas quais já é veterano para se tornar expert. Você pode escolher este poder várias vezes.', 
     minNex: 15, 
-    classId: 'Combatente' 
+    classId: 'Combatente',
+    isRepeatable: true 
   },
 ];
 
@@ -458,14 +461,16 @@ export const ESPECIALISTA_ABILITIES: ClassAbility[] = [
     name: 'Transcender', 
     description: 'Escolha um poder paranormal (veja p. 114). Você recebe o poder escolhido, mas não ganha Sanidade nem aumento de NEX. Você pode escolher este poder várias vezes.', 
     minNex: 15, 
-    classId: 'Especialista' 
+    classId: 'Especialista',
+    isRepeatable: true 
   },
   { 
     id: 'treinamento-pericia-esp', 
     name: 'Treinamento em Perícia', 
     description: 'Escolha duas perícias. Em NEX 35%, pode escolher perícias treinadas para se tornarem veteranas. Em NEX 70%, pode escolher perícias veteranas para se tornarem expert. Você pode escolher este poder várias vezes.', 
     minNex: 15, 
-    classId: 'Especialista' 
+    classId: 'Especialista',
+    isRepeatable: true 
   },
 ];
 
@@ -684,14 +689,16 @@ export const OCULTISTA_ABILITIES: ClassAbility[] = [
     name: 'Transcender', 
     description: 'Escolha um poder paranormal. Você recebe o poder escolhido, mas não ganha Sanidade neste aumento de NEX. Você pode escolher este poder várias vezes.', 
     minNex: 15, 
-    classId: 'Ocultista' 
+    classId: 'Ocultista',
+    isRepeatable: true 
   },
   { 
     id: 'treinamento-em-pericia-ocultista', 
     name: 'Treinamento em Perícia', 
     description: 'Escolha duas perícias. Você recebe treinamento nessas perícias. A partir de NEX 35%, você pode escolher perícias nas quais já é treinado para se tornar veterano. A partir de NEX 70%, você pode escolher perícias nas quais já é veterano para se tornar expert. Você pode escolher este poder várias vezes.', 
     minNex: 15, 
-    classId: 'Ocultista' 
+    classId: 'Ocultista',
+    isRepeatable: true 
   },
   
   // Poderes com pré-requisitos de NEX mais alto
