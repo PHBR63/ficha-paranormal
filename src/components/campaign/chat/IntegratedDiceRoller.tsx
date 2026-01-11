@@ -3,7 +3,7 @@
  * Suporta comandos de texto e interface visual
  */
 import { useState, useCallback } from 'react';
-import { Dices, ChevronDown, ChevronUp, Minus, Plus, Sparkles, Target } from 'lucide-react';
+import { Dices, ChevronDown, ChevronUp, Minus, Plus, Sparkles, Target, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -21,10 +21,14 @@ interface IntegratedDiceRollerProps {
 
 // Tipos de rolagem pré-definidos
 const ROLL_PRESETS = [
-  { id: 'quick', label: 'Teste Rápido', dice: 1, bonus: 0 },
-  { id: 'd20', label: '1d20', dice: 1, bonus: 0 },
-  { id: '2d20', label: '2d20 (maior)', dice: 2, bonus: 0 },
-  { id: '3d20', label: '3d20 (maior)', dice: 3, bonus: 0 },
+  { id: 'quick', label: 'Teste Rápido', dice: 1, bonus: 0, category: 'geral' },
+  { id: 'd20', label: '1d20', dice: 1, bonus: 0, category: 'geral' },
+  { id: '2d20', label: '2d20 (maior)', dice: 2, bonus: 0, category: 'geral' },
+  { id: '3d20', label: '3d20 (maior)', dice: 3, bonus: 0, category: 'geral' },
+  // Testes de Resistência (usam atributo base)
+  { id: 'fortitude', label: 'Fortitude (VIG)', dice: 1, bonus: 0, category: 'resistencia' },
+  { id: 'reflexos', label: 'Reflexos (AGI)', dice: 1, bonus: 0, category: 'resistencia' },
+  { id: 'vontade', label: 'Vontade (PRE)', dice: 1, bonus: 0, category: 'resistencia' },
 ];
 
 // Parser de comandos de dados no chat
@@ -186,11 +190,11 @@ export function IntegratedDiceRoller({ onRoll, characterName, disabled }: Integr
           </Button>
         </div>
 
-        {/* Quick Rolls */}
+        {/* Quick Rolls - Geral */}
         <div className="p-3 border-b border-border">
           <Label className="text-xs text-muted-foreground mb-2 block">Rolagem Rápida</Label>
           <div className="grid grid-cols-2 gap-2">
-            {ROLL_PRESETS.map((preset) => (
+            {ROLL_PRESETS.filter(p => p.category === 'geral').map((preset) => (
               <Button
                 key={preset.id}
                 variant="outline"
@@ -200,6 +204,25 @@ export function IntegratedDiceRoller({ onRoll, characterName, disabled }: Integr
               >
                 <Dices className="w-3.5 h-3.5 mr-2 flex-shrink-0" />
                 <span className="truncate">{preset.label}</span>
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        {/* Quick Rolls - Resistências */}
+        <div className="p-3 border-b border-border">
+          <Label className="text-xs text-muted-foreground mb-2 block">Testes de Resistência</Label>
+          <div className="grid grid-cols-3 gap-2">
+            {ROLL_PRESETS.filter(p => p.category === 'resistencia').map((preset) => (
+              <Button
+                key={preset.id}
+                variant="outline"
+                size="sm"
+                onClick={() => handleQuickRoll(preset)}
+                className="text-xs h-9 justify-center px-2"
+              >
+                <Shield className="w-3.5 h-3.5 mr-1.5 flex-shrink-0" />
+                <span className="truncate">{preset.label.split(' ')[0]}</span>
               </Button>
             ))}
           </div>

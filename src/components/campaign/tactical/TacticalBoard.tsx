@@ -78,6 +78,12 @@ interface TacticalBoardProps {
   }>;
   // Board externo opcional para compartilhamento com combate
   externalBoard?: ReturnType<typeof useTacticalBoard>;
+  // Props de integração com combate (Fase 7.2)
+  combatMode?: boolean;
+  currentTurnCombatantId?: string;
+  movementRemaining?: number; // Movimento restante em metros
+  onMovementPreview?: (fromCell: { x: number; y: number }, toCell: { x: number; y: number }, distance: number, isValid: boolean) => void;
+  onMovementConfirm?: (tokenId: string, toX: number, toY: number, distance: number) => Promise<boolean>;
 }
 
 // Ícones por tipo de token
@@ -89,7 +95,17 @@ const TOKEN_ICONS: Record<string, typeof Users> = {
   marker: Flag,
 };
 
-export function TacticalBoard({ campaignId, isMaster, members = [], externalBoard }: TacticalBoardProps) {
+export function TacticalBoard({ 
+  campaignId, 
+  isMaster, 
+  members = [], 
+  externalBoard,
+  combatMode = false,
+  currentTurnCombatantId,
+  movementRemaining = 9,
+  onMovementPreview,
+  onMovementConfirm,
+}: TacticalBoardProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   
@@ -100,6 +116,7 @@ export function TacticalBoard({ campaignId, isMaster, members = [], externalBoar
   // Estados locais
   const [isDragging, setIsDragging] = useState(false);
   const [dragToken, setDragToken] = useState<MapToken | null>(null);
+  const [dragStartCell, setDragStartCell] = useState<{ x: number; y: number } | null>(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
@@ -115,6 +132,13 @@ export function TacticalBoard({ campaignId, isMaster, members = [], externalBoar
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [backgroundImage, setBackgroundImage] = useState<HTMLImageElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Estados para preview de movimento (Fase 7.2)
+  const [movementPreview, setMovementPreview] = useState<{
+    distance: number;
+    isValid: boolean;
+    targetCell: { x: number; y: number };
+  } | null>(null);
 
   // =====================================================
   // CARREGAR IMAGEM DE FUNDO
@@ -324,6 +348,62 @@ export function TacticalBoard({ campaignId, isMaster, members = [], externalBoar
       ctx.fillText(`${distance}m`, midX, midY + 4);
     }
 
+    // Desenha preview de movimento (Fase 7.2 - Arrastar com validação)
+    if (isDragging && dragToken && dragStartCell && combatMode) {
+      const startPos = board.cellToPixel(dragStartCell.x, dragStartCell.y);
+      const endPos = board.cellToPixel(dragToken.x, dragToken.y);
+      
+      const startCenterX = startPos.x + gridSize / 2;
+      const startCenterY = startPos.y + gridSize / 2;
+      const endCenterX = endPos.x + gridSize / 2;
+      const endCenterY = endPos.y + gridSize / 2;
+      
+      // Calcula distância
+      const distance = board.calculateDistance(
+        dragStartCell.x, dragStartCell.y, 
+        dragToken.x, dragToken.y
+      );
+      const isValid = distance <= movementRemaining;
+      
+      // Linha de trajetória
+      ctx.beginPath();
+      ctx.moveTo(startCenterX, startCenterY);
+      ctx.lineTo(endCenterX, endCenterY);
+      ctx.strokeStyle = isValid ? 'rgba(34, 197, 94, 0.8)' : 'rgba(239, 68, 68, 0.8)';
+      ctx.lineWidth = 3;
+      ctx.setLineDash([8, 4]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      
+      // Círculo no destino
+      ctx.beginPath();
+      ctx.arc(endCenterX, endCenterY, gridSize / 2 - 4, 0, Math.PI * 2);
+      ctx.strokeStyle = isValid ? 'rgba(34, 197, 94, 0.9)' : 'rgba(239, 68, 68, 0.9)';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      
+      // Badge de distância
+      if (distance > 0) {
+        const midX = (startCenterX + endCenterX) / 2;
+        const midY = (startCenterY + endCenterY) / 2;
+        
+        // Background do badge
+        const badgeWidth = 60;
+        const badgeHeight = 24;
+        ctx.fillStyle = isValid ? 'rgba(34, 197, 94, 0.95)' : 'rgba(239, 68, 68, 0.95)';
+        ctx.beginPath();
+        ctx.roundRect(midX - badgeWidth / 2, midY - badgeHeight / 2, badgeWidth, badgeHeight, 6);
+        ctx.fill();
+        
+        // Texto
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 12px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(`${distance.toFixed(1)}m`, midX, midY);
+      }
+    }
+
     // Desenha pings
     board.pings.forEach(ping => {
       const pos = board.cellToPixel(ping.x, ping.y);
@@ -351,12 +431,12 @@ export function TacticalBoard({ campaignId, isMaster, members = [], externalBoar
     });
 
     ctx.restore();
-  }, [board, isMaster, backgroundImage]);
+  }, [board, isMaster, backgroundImage, isDragging, dragToken, dragStartCell, combatMode, movementRemaining]);
 
   // Re-render quando dados mudam
   useEffect(() => {
     drawCanvas();
-  }, [drawCanvas, board.tokens, board.activeMap, board.zoom, board.panOffset, board.pings, board.measureStart, board.measureEnd, board.selectedTokenId, board.highlightedCells, backgroundImage]);
+  }, [drawCanvas, board.tokens, board.activeMap, board.zoom, board.panOffset, board.pings, board.measureStart, board.measureEnd, board.selectedTokenId, board.highlightedCells, backgroundImage, isDragging, dragToken, movementPreview]);
 
   // Ajusta tamanho do canvas
   useEffect(() => {
@@ -419,6 +499,7 @@ export function TacticalBoard({ campaignId, isMaster, members = [], externalBoar
           if (!clickedToken.locked || isMaster) {
             setIsDragging(true);
             setDragToken(clickedToken);
+            setDragStartCell({ x: clickedToken.x, y: clickedToken.y }); // Salva posição inicial
             setDragOffset({
               x: coords.x - clickedToken.x * (board.activeMap?.grid_size || 40),
               y: coords.y - clickedToken.y * (board.activeMap?.grid_size || 40),
@@ -470,6 +551,14 @@ export function TacticalBoard({ campaignId, isMaster, members = [], externalBoar
       
       // Atualização visual imediata
       setDragToken(prev => prev ? { ...prev, x: newX, y: newY } : null);
+      
+      // Callback de preview para modo combate (Fase 7.2)
+      if (combatMode && dragStartCell && onMovementPreview) {
+        const distance = board.calculateDistance(dragStartCell.x, dragStartCell.y, newX, newY);
+        const isValid = distance <= movementRemaining;
+        onMovementPreview(dragStartCell, { x: newX, y: newY }, distance, isValid);
+        setMovementPreview({ distance, isValid, targetCell: { x: newX, y: newY } });
+      }
     }
     
     if (board.activeTool === 'measure' && board.measureStart) {
@@ -486,9 +575,34 @@ export function TacticalBoard({ campaignId, isMaster, members = [], externalBoar
     }
     
     if (isDragging && dragToken) {
-      await board.moveToken(dragToken.id, dragToken.x, dragToken.y);
+      // Modo combate: usa callback de confirmação com validação (Fase 7.2)
+      if (combatMode && dragStartCell && onMovementConfirm) {
+        const distance = board.calculateDistance(
+          dragStartCell.x, dragStartCell.y, 
+          dragToken.x, dragToken.y
+        );
+        const isValid = distance <= movementRemaining;
+        
+        if (isValid) {
+          // Confirma movimento via callback
+          const success = await onMovementConfirm(dragToken.id, dragToken.x, dragToken.y, distance);
+          if (!success) {
+            // Se falhou, reverte para posição original
+            setDragToken(prev => prev ? { ...prev, x: dragStartCell.x, y: dragStartCell.y } : null);
+          }
+        } else {
+          // Movimento inválido - reverte para posição original
+          setDragToken(prev => prev ? { ...prev, x: dragStartCell.x, y: dragStartCell.y } : null);
+        }
+      } else {
+        // Modo normal: move diretamente
+        await board.moveToken(dragToken.id, dragToken.x, dragToken.y);
+      }
+      
       setIsDragging(false);
       setDragToken(null);
+      setDragStartCell(null);
+      setMovementPreview(null);
     }
     
     if (board.activeTool === 'measure') {
