@@ -25,7 +25,9 @@ import {
   Loader2,
   Scroll,
   Users,
+  Download,
 } from 'lucide-react';
+import { SessionExporter } from './SessionExporter';
 import { cn } from '@/lib/utils';
 
 // Tipos
@@ -59,6 +61,7 @@ interface SessionNote {
 interface SessionDiaryEntryProps {
   session: CampaignSession;
   sessionNotes: SessionNote[];
+  campaignName?: string;
   isMaster: boolean;
   isExpanded?: boolean;
   onToggle?: () => void;
@@ -68,6 +71,7 @@ interface SessionDiaryEntryProps {
 export function SessionDiaryEntry({
   session,
   sessionNotes,
+  campaignName = 'Campanha',
   isMaster,
   isExpanded = false,
   onToggle,
@@ -76,6 +80,7 @@ export function SessionDiaryEntry({
   const [editing, setEditing] = useState(false);
   const [summary, setSummary] = useState(session.summary || '');
   const [saving, setSaving] = useState(false);
+  const [exporterOpen, setExporterOpen] = useState(false);
 
   // Formata duração da sessão
   const formatDuration = () => {
@@ -204,19 +209,36 @@ export function SessionDiaryEntry({
                   </h5>
                 </div>
                 
-                {isMaster && !editing && session.status === 'completed' && (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setEditing(true);
-                    }}
-                  >
-                    <Edit3 className="w-4 h-4 mr-1" />
-                    Editar
-                  </Button>
-                )}
+                <div className="flex items-center gap-2">
+                  {/* Botão de Exportar */}
+                  {session.status === 'completed' && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setExporterOpen(true);
+                      }}
+                    >
+                      <Download className="w-4 h-4 mr-1" />
+                      Exportar
+                    </Button>
+                  )}
+                  
+                  {isMaster && !editing && session.status === 'completed' && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditing(true);
+                      }}
+                    >
+                      <Edit3 className="w-4 h-4 mr-1" />
+                      Editar
+                    </Button>
+                  )}
+                </div>
               </div>
 
               {editing ? (
@@ -299,6 +321,14 @@ export function SessionDiaryEntry({
           </div>
         </CollapsibleContent>
       </div>
+
+      {/* SessionExporter Dialog */}
+      <SessionExporter
+        open={exporterOpen}
+        onOpenChange={setExporterOpen}
+        session={session}
+        campaignName={campaignName}
+      />
     </Collapsible>
   );
 }
