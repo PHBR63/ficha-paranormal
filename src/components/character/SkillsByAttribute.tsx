@@ -183,20 +183,48 @@ function SkillsByAttributeComponent({
         </Button>
       </div>
 
-      {/* Legenda de origens */}
+      {/* Legenda de origens com tooltips */}
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-muted-foreground px-1">
-        <span className="flex items-center gap-1">
-          <span>📜</span> Origem
-        </span>
-        <span className="flex items-center gap-1">
-          <span>⚔️</span> Classe
-        </span>
-        <span className="flex items-center gap-1">
-          <span>📚</span> Livre
-        </span>
-        <span className="flex items-center gap-1">
-          <span>✨</span> Poder
-        </span>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="flex items-center gap-1 cursor-help hover:text-foreground transition-colors">
+              <span>📜</span> Origem
+            </span>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="max-w-[200px]">
+            <p className="text-xs">Perícia concedida pela origem do personagem durante a criação.</p>
+          </TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="flex items-center gap-1 cursor-help hover:text-foreground transition-colors">
+              <span>⚔️</span> Classe
+            </span>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="max-w-[200px]">
+            <p className="text-xs">Perícia obrigatória ou escolhida como parte da classe do personagem.</p>
+          </TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="flex items-center gap-1 cursor-help hover:text-foreground transition-colors">
+              <span>📚</span> Livre
+            </span>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="max-w-[200px]">
+            <p className="text-xs">Perícia adquirida com pontos de perícia livres disponíveis na criação ou progressão.</p>
+          </TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="flex items-center gap-1 cursor-help hover:text-foreground transition-colors">
+              <span>✨</span> Poder
+            </span>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="max-w-[200px]">
+            <p className="text-xs">Perícia concedida pelo poder "Treinamento em Perícia" ou similar.</p>
+          </TooltipContent>
+        </Tooltip>
       </div>
 
       {/* Grupos por atributo */}
