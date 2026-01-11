@@ -1,11 +1,12 @@
 /**
  * SkillsByAttribute - Perícias organizadas por atributo base
  * Com d20 vermelho para rolar cada perícia
+ * Inclui tooltips mostrando a origem do treinamento
  */
 
 import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Filter } from 'lucide-react';
+import { Filter, Info } from 'lucide-react';
 import { ChevronDown, Search, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SKILLS, TRAINING_BONUS_MAP, TRAINING_LABELS } from '@/lib/character-data';
@@ -16,6 +17,13 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { type SkillOriginInfo, getSkillOriginStyle } from '@/lib/skill-origins';
 
 // Interface para bônus de perícia consolidados (do sistema unificado)
 interface SkillBonusEntry {
@@ -30,6 +38,8 @@ interface SkillsByAttributeProps {
   className?: string;
   // Bônus consolidados de poderes de classe (Perito, Versatilidade, etc.)
   skillBonuses?: Record<string, SkillBonusEntry>;
+  // Origens das perícias (calculadas pelo CharacterSheet)
+  skillOrigins?: Record<string, SkillOriginInfo>;
 }
 
 // Nomes dos atributos
@@ -82,6 +92,7 @@ function SkillsByAttributeComponent({
   onRoll,
   className,
   skillBonuses = {},
+  skillOrigins = {},
 }: SkillsByAttributeProps) {
   // Estado de pesquisa e filtro
   const [searchQuery, setSearchQuery] = useState('');
@@ -236,6 +247,7 @@ function SkillsByAttributeComponent({
               
               <CollapsibleContent>
                 <div className="pl-4 pt-2 space-y-1">
+                <TooltipProvider delayDuration={300}>
                   {attrSkills.map((skill) => {
                     // Nível de treinamento: 0=Destreinado, 1=Treinado, 2=Veterano, 3=Expert
                     const trainingLevel = skills[skill.id] || 0;
@@ -255,78 +267,130 @@ function SkillsByAttributeComponent({
                     const isVeteran = trainingLevel === 2;
                     const isExpert = trainingLevel === 3;
                     
+                    // Origem da perícia para tooltip
+                    const origin = skillOrigins[skill.id];
+                    const originStyle = origin ? getSkillOriginStyle(origin.type) : null;
+                    
+                    // Texto do tooltip
+                    const getTooltipText = () => {
+                      if (!origin) {
+                        return isTrained ? 'Origem: Desconhecida' : 'Perícia não treinada';
+                      }
+                      
+                      const sourceLabels: Record<string, string> = {
+                        origin: 'Origem',
+                        class_mandatory: 'Classe (obrigatória)',
+                        class_choice: 'Classe (escolha)',
+                        free: 'Perícia Livre',
+                        power_training: 'Poder',
+                        unknown: 'Desconhecida',
+                      };
+                      
+                      let text = `${sourceLabels[origin.type]}: ${origin.source}`;
+                      if (origin.upgradedBy) {
+                        text += `\nAprimorada por: ${origin.upgradedBy}`;
+                      }
+                      return text;
+                    };
+                    
                     return (
-                      <div
-                        key={skill.id}
-                        className={cn(
-                          "group flex items-center justify-between",
-                          "p-2 rounded-lg cursor-pointer",
-                          "transition-all duration-200",
-                          isExpert
-                            ? "bg-amber-500/20 hover:bg-amber-500/30"
-                            : isVeteran
-                              ? "bg-purple-500/20 hover:bg-purple-500/30"
-                              : isTrained 
-                                ? "bg-secondary/30 hover:bg-secondary/50" 
-                                : classPowerBonus > 0
-                                  ? "bg-primary/10 hover:bg-primary/20"
-                                  : "hover:bg-muted/30"
-                        )}
-                        onClick={() => onRoll?.(rollTotal, skill.name, attrValue, classPowerBonus)}
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className={cn(
-                            "text-sm",
-                            (isTrained || classPowerBonus > 0) ? "font-medium" : "text-muted-foreground"
-                          )}>
-                            {skill.name}
-                          </span>
-                          {isTrained && (
-                            <span 
-                              className={cn(
-                                "text-[10px] px-1.5 py-0.5 rounded font-medium",
-                                isExpert 
-                                  ? "bg-amber-500/30 text-amber-400"
-                                  : isVeteran
-                                    ? "bg-purple-500/30 text-purple-400"
-                                    : ""
-                              )}
-                              style={!isExpert && !isVeteran ? { backgroundColor: `${color}20`, color } : undefined}
-                            >
-                              {trainingLabel}
-                            </span>
-                          )}
-                          {/* Indicador de bônus de poder de classe */}
-                          {classPowerBonus > 0 && (
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/20 text-primary">
-                              +{classPowerBonus} poder
-                            </span>
-                          )}
-                        </div>
-                        
-                        <div className="flex items-center gap-2">
-                          <span 
+                      <Tooltip key={skill.id}>
+                        <TooltipTrigger asChild>
+                          <div
                             className={cn(
-                              "font-display text-lg",
+                              "group flex items-center justify-between",
+                              "p-2 rounded-lg cursor-pointer",
+                              "transition-all duration-200",
                               isExpert
-                                ? "text-amber-400"
+                                ? "bg-amber-500/20 hover:bg-amber-500/30"
                                 : isVeteran
-                                  ? "text-purple-400"
-                                  : (isTrained || classPowerBonus > 0) ? "" : "text-muted-foreground"
+                                  ? "bg-purple-500/20 hover:bg-purple-500/30"
+                                  : isTrained 
+                                    ? "bg-secondary/30 hover:bg-secondary/50" 
+                                    : classPowerBonus > 0
+                                      ? "bg-primary/10 hover:bg-primary/20"
+                                      : "hover:bg-muted/30"
                             )}
-                            style={!isExpert && !isVeteran && (isTrained || classPowerBonus > 0) ? { color } : undefined}
+                            onClick={() => onRoll?.(rollTotal, skill.name, attrValue, classPowerBonus)}
                           >
-                            +{displayBonus}
-                          </span>
-                          
-                          {/* D20 vermelho no hover */}
-                          <div className="opacity-0 group-hover:opacity-100 group-hover:rotate-12 transition-all duration-200">
-                            <D20Icon className="w-4 h-4 text-destructive" />
+                            <div className="flex items-center gap-2">
+                              {/* Ícone de origem (apenas se treinada) */}
+                              {isTrained && originStyle && (
+                                <span className="text-xs" title={origin?.source}>
+                                  {originStyle.icon}
+                                </span>
+                              )}
+                              <span className={cn(
+                                "text-sm",
+                                (isTrained || classPowerBonus > 0) ? "font-medium" : "text-muted-foreground"
+                              )}>
+                                {skill.name}
+                              </span>
+                              {isTrained && (
+                                <span 
+                                  className={cn(
+                                    "text-[10px] px-1.5 py-0.5 rounded font-medium",
+                                    isExpert 
+                                      ? "bg-amber-500/30 text-amber-400"
+                                      : isVeteran
+                                        ? "bg-purple-500/30 text-purple-400"
+                                        : ""
+                                  )}
+                                  style={!isExpert && !isVeteran ? { backgroundColor: `${color}20`, color } : undefined}
+                                >
+                                  {trainingLabel}
+                                </span>
+                              )}
+                              {/* Indicador de bônus de poder de classe */}
+                              {classPowerBonus > 0 && (
+                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/20 text-primary">
+                                  +{classPowerBonus} poder
+                                </span>
+                              )}
+                            </div>
+                            
+                            <div className="flex items-center gap-2">
+                              <span 
+                                className={cn(
+                                  "font-display text-lg",
+                                  isExpert
+                                    ? "text-amber-400"
+                                    : isVeteran
+                                      ? "text-purple-400"
+                                      : (isTrained || classPowerBonus > 0) ? "" : "text-muted-foreground"
+                                )}
+                                style={!isExpert && !isVeteran && (isTrained || classPowerBonus > 0) ? { color } : undefined}
+                              >
+                                +{displayBonus}
+                              </span>
+                              
+                              {/* D20 vermelho no hover */}
+                              <div className="opacity-0 group-hover:opacity-100 group-hover:rotate-12 transition-all duration-200">
+                                <D20Icon className="w-4 h-4 text-destructive" />
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="left" className="max-w-[200px]">
+                          <div className="space-y-1">
+                            <p className="font-medium">{skill.name}</p>
+                            <p className="text-xs text-muted-foreground whitespace-pre-line">
+                              {getTooltipText()}
+                            </p>
+                            {isTrained && (
+                              <p className="text-xs">
+                                Bônus: <span className="font-medium text-primary">+{trainingBonus}</span>
+                                {classPowerBonus > 0 && (
+                                  <span className="text-green-400"> (+{classPowerBonus} poder)</span>
+                                )}
+                              </p>
+                            )}
+                          </div>
+                        </TooltipContent>
+                      </Tooltip>
                     );
                   })}
+                </TooltipProvider>
                 </div>
               </CollapsibleContent>
             </Collapsible>
