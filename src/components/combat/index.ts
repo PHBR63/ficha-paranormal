@@ -14,3 +14,6 @@ export { OpportunityAttackAlert, OpportunityAttackBadge } from './OpportunityAtt
 // Fase 7.4 - Sistema de Macros
 export { MacroEditor, type RollMacro, type MacroType } from './MacroEditor';
 export { MacroBar, MacroBarInline } from './MacroBar';
+
+// Fase 7.6 - CombatTracker Mobile
+export { MobileCombatTracker } from './MobileCombatTracker';

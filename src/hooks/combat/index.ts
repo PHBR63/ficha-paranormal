@@ -14,3 +14,4 @@ export * from '../useRitualCombatBonuses';
 export * from '../useTempPE';
 export * from '../useDefenseBonuses';
 export * from './useCombatConditions';
+export * from './useCombatNotifications';

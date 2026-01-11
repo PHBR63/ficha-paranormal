@@ -205,9 +205,20 @@ export function usePushNotifications() {
   };
 }
 
+// Tipos de notificação suportados
+export type PushNotificationType = 
+  | 'session_scheduled' 
+  | 'session_reminder' 
+  | 'session_started'
+  // Combat 7.5 - Tipos de combate
+  | 'combat_turn_start'
+  | 'combat_opportunity_attack'
+  | 'combat_low_hp_warning'
+  | 'combat_condition_applied';
+
 // Helper function to send push notification via edge function
 export async function sendPushNotification(params: {
-  type: 'session_scheduled' | 'session_reminder' | 'session_started';
+  type: PushNotificationType;
   campaignId: string;
   sessionId?: string;
   title: string;
@@ -225,4 +236,84 @@ export async function sendPushNotification(params: {
     console.error('Error sending push notification:', error);
     throw error;
   }
+}
+
+// =====================================================
+// Combat 7.5 - Helpers específicos para notificações de combate
+// =====================================================
+
+/**
+ * Notifica um jogador que é seu turno
+ */
+export async function notifyTurnStart(params: {
+  campaignId: string;
+  playerId: string;
+  characterName: string;
+  round: number;
+}) {
+  return sendPushNotification({
+    type: 'combat_turn_start',
+    campaignId: params.campaignId,
+    title: '⚔️ Seu Turno!',
+    body: `${params.characterName}, é sua vez de agir! (Rodada ${params.round})`,
+    userIds: [params.playerId],
+  });
+}
+
+/**
+ * Notifica jogador sobre ataque de oportunidade disponível
+ */
+export async function notifyOpportunityAttack(params: {
+  campaignId: string;
+  attackerId: string;
+  attackerName: string;
+  targetName: string;
+}) {
+  return sendPushNotification({
+    type: 'combat_opportunity_attack',
+    campaignId: params.campaignId,
+    title: '🎯 Ataque de Oportunidade!',
+    body: `${params.attackerName} pode atacar ${params.targetName}!`,
+    userIds: [params.attackerId],
+  });
+}
+
+/**
+ * Avisa jogador que seu HP está baixo
+ */
+export async function notifyLowHP(params: {
+  campaignId: string;
+  playerId: string;
+  characterName: string;
+  currentHP: number;
+  maxHP: number;
+}) {
+  const percentage = Math.round((params.currentHP / params.maxHP) * 100);
+  return sendPushNotification({
+    type: 'combat_low_hp_warning',
+    campaignId: params.campaignId,
+    title: '❤️ HP Crítico!',
+    body: `${params.characterName} está com ${params.currentHP} PV (${percentage}%)!`,
+    userIds: [params.playerId],
+  });
+}
+
+/**
+ * Notifica jogador sobre condição aplicada
+ */
+export async function notifyConditionApplied(params: {
+  campaignId: string;
+  playerId: string;
+  characterName: string;
+  conditionName: string;
+  duration?: number;
+}) {
+  const durationText = params.duration ? ` por ${params.duration} rodada(s)` : '';
+  return sendPushNotification({
+    type: 'combat_condition_applied',
+    campaignId: params.campaignId,
+    title: '⚡ Nova Condição!',
+    body: `${params.characterName} recebeu ${params.conditionName}${durationText}`,
+    userIds: [params.playerId],
+  });
 }

@@ -394,10 +394,8 @@ O projeto é uma Progressive Web App com:
 
 | Fase | Descrição | Status |
 |------|-----------|--------|
-| Combat 7.1 | Tabuleiro tático (highlight de movimento, trajetórias) | ✅ 100% |
-| Combat 7.2 | Confirmação de deslocamento e validação de movimento | ✅ 100% |
-| Combat 7.3 | Ataques de oportunidade (detecção de saída de área de ameaça) | ✅ 100% |
-| Combat 7.4 | Sistema de macros (atalhos de rolagem personalizados) | ✅ 100% |
+| Combat 7.5 | Push Notifications para combate (turno, oportunidades, HP baixo) | ✅ 100% |
+| Combat 7.6 | CombatTracker Mobile otimizado (gestos, layout compacto) | ✅ 100% |
 
 ### ✅ Fases de Testes SUE - Concluídas
 
