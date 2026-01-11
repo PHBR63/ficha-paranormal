@@ -4,3 +4,4 @@
 
 export { AudioMasterPanel } from './AudioMasterPanel';
 export { AudioPlayerBar } from './AudioPlayerBar';
+export { SoundSceneManager } from './SoundSceneManager';
