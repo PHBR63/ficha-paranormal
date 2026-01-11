@@ -58,13 +58,14 @@ interface SessionNote {
 
 interface SessionDiaryProps {
   campaignId: string;
+  campaignName?: string;
   isMaster: boolean;
 }
 
 type SortOrder = 'newest' | 'oldest';
 type FilterStatus = 'all' | 'completed' | 'scheduled';
 
-export function SessionDiary({ campaignId, isMaster }: SessionDiaryProps) {
+export function SessionDiary({ campaignId, campaignName = 'Campanha', isMaster }: SessionDiaryProps) {
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -371,6 +372,7 @@ export function SessionDiary({ campaignId, isMaster }: SessionDiaryProps) {
                     key={session.id}
                     session={session}
                     sessionNotes={notesBySession[session.id] || []}
+                    campaignName={campaignName}
                     isMaster={isMaster}
                     isExpanded={expandedSession === session.id}
                     onToggle={() => toggleSession(session.id)}

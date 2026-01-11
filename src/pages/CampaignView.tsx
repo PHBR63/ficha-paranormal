@@ -1057,6 +1057,7 @@ export default function CampaignView() {
                   <TabsContent value="diary" className="mt-4">
                     <SessionDiary
                       campaignId={id || ''}
+                      campaignName={campaign?.name}
                       isMaster={isMaster}
                     />
                   </TabsContent>
