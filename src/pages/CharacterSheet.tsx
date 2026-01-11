@@ -68,6 +68,7 @@ import { RestModal } from '@/components/character/RestModal';
 import { NonOccultistRitualModal, RitualSource } from '@/components/character/NonOccultistRitualModal';
 import { LearnedRitual } from '@/components/character/GeneralPowersPanel';
 import { calculateDerivedStats, countTranscender } from '@/lib/character-data';
+import { calculateSkillOrigins } from '@/lib/skill-origins';
 import { AffinitySelectorCard } from '@/components/character/AffinitySelectorCard';
 // Hook consolidado do SUE - fonte única de verdade para todos os bônus
 import { 
@@ -1826,6 +1827,16 @@ export default function CharacterSheet() {
     vigor: character.vigor,
   };
 
+  // Calcular origens das perícias para tooltips
+  const skillOrigins = useMemo(() => {
+    return calculateSkillOrigins(
+      character.skills,
+      character.origin,
+      character.class,
+      character.skill_training_choices
+    );
+  }, [character.skills, character.origin, character.class, character.skill_training_choices]);
+
   // Preparar armas para tabela de combate usando dados reais do item
   // Usa a função centralizada normalizeWeaponTypeForDisplay para consistência com mobile
   const equippedWeapons = character.inventory
@@ -2763,6 +2774,7 @@ export default function CharacterSheet() {
                   attributes={attributes}
                   onRoll={handleSkillRoll}
                   skillBonuses={bonusSummary.skills}
+                  skillOrigins={skillOrigins}
                 />
               </SheetAccordionSection>
 
