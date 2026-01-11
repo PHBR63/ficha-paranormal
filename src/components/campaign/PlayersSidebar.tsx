@@ -47,6 +47,9 @@ interface PlayersSidebarProps {
   isMaster: boolean;
   onRemoveMember?: (memberId: string) => void;
   onViewCharacter?: (characterId: string) => void;
+  // Funções de presença em tempo real
+  getUserStatus?: (userId: string) => 'online' | 'away' | 'offline';
+  isConnected?: boolean;
 }
 
 // Configuração de cores por classe
@@ -78,6 +81,8 @@ export function PlayersSidebar({
   isMaster, 
   onRemoveMember,
   onViewCharacter,
+  getUserStatus,
+  isConnected = false,
 }: PlayersSidebarProps) {
   // Estado do ActionSheet para membros
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
@@ -125,6 +130,11 @@ export function PlayersSidebar({
     return actions;
   };
 
+  // Conta usuários online
+  const onlineCount = getUserStatus 
+    ? members.filter(m => getUserStatus(m.user_id) !== 'offline').length 
+    : members.length;
+
   return (
     <aside className="w-80 xl:w-96 border-l border-border bg-gradient-to-b from-card/50 to-card/30 backdrop-blur-sm hidden lg:flex flex-col">
       {/* Header expandido */}
@@ -133,14 +143,33 @@ export function PlayersSidebar({
           <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
             <User className="w-5 h-5 text-primary" />
           </div>
-          <div>
+          <div className="flex-1">
             <h3 className="font-display text-sm tracking-wider text-foreground">
               AGENTES DA OPERAÇÃO
             </h3>
-            <p className="text-xs text-muted-foreground">
-              {members.length} membro{members.length !== 1 ? 's' : ''} ativo{members.length !== 1 ? 's' : ''}
-            </p>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span>{members.length} membro{members.length !== 1 ? 's' : ''}</span>
+              {getUserStatus && (
+                <>
+                  <span>•</span>
+                  <span className="flex items-center gap-1">
+                    <span className={cn(
+                      'w-2 h-2 rounded-full',
+                      isConnected ? 'bg-emerald-500 animate-pulse' : 'bg-muted-foreground'
+                    )} />
+                    {onlineCount} online
+                  </span>
+                </>
+              )}
+            </div>
           </div>
+          {/* Indicador de conexão */}
+          {getUserStatus && (
+            <div className={cn(
+              'w-2 h-2 rounded-full',
+              isConnected ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'
+            )} title={isConnected ? 'Conectado' : 'Reconectando...'} />
+          )}
         </div>
       </div>
       
@@ -148,7 +177,10 @@ export function PlayersSidebar({
         <div className="p-4 space-y-3">
           {members.map((member, index) => {
             const isMasterMember = member.role === 'master';
-            const isOnline = true; // Could be connected to realtime presence
+            // Usa getUserStatus se disponível, senão assume offline
+            const userStatus = getUserStatus ? getUserStatus(member.user_id) : 'offline';
+            const isOnline = userStatus === 'online';
+            const isAway = userStatus === 'away';
             const hasActions = member.characters?.id || (isMaster && !isMasterMember);
             const char = member.characters;
             const classColor = char ? CLASS_COLORS[char.class] || 'from-muted/20 to-muted/10 border-muted/30' : '';
@@ -205,11 +237,20 @@ export function PlayersSidebar({
                           <User className="w-6 h-6 text-muted-foreground" />
                         )}
                       </div>
-                      {/* Indicador online */}
-                      <div className={cn(
-                        'absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-card',
-                        isOnline ? 'bg-emerald-500' : 'bg-muted-foreground'
-                      )} />
+                      {/* Indicador de presença */}
+                      <div 
+                        className={cn(
+                          'absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-card transition-colors',
+                          isOnline && 'bg-emerald-500',
+                          isAway && 'bg-amber-500',
+                          !isOnline && !isAway && 'bg-muted-foreground/50'
+                        )}
+                        title={isOnline ? 'Online' : isAway ? 'Ausente' : 'Offline'}
+                      >
+                        {isOnline && (
+                          <span className="absolute inset-0 rounded-full bg-emerald-500 animate-ping opacity-30" />
+                        )}
+                      </div>
                     </div>
                     
                     {/* Informações do jogador/personagem */}

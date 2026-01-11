@@ -58,6 +58,7 @@ import { MemberBonusesPanel } from '@/components/campaign/MemberBonusesPanel';
 import { MasterSheetViewer } from '@/components/campaign/master/MasterSheetViewer';
 import { TacticalBoard } from '@/components/campaign/tactical/TacticalBoard';
 import { useTacticalBoard } from '@/hooks/campaign/useTacticalBoard';
+import { useCampaignPresence } from '@/hooks/campaign/useCampaignPresence';
 import { AudioMasterPanel, AudioPlayerBar } from '@/components/campaign/audio';
 import { WhisperDialog, ChatMessage, IntegratedDiceRoller, SessionActivityLog, parseDiceCommand } from '@/components/campaign/chat';
 import { PlayerHandoutsViewer } from '@/components/campaign/handouts';
@@ -165,6 +166,15 @@ export default function CampaignView() {
   const board = useTacticalBoard({
     campaignId: id || '',
     isMaster: isMaster,
+  });
+
+  // Hook de presença em tempo real para rastrear jogadores online
+  const presence = useCampaignPresence({
+    campaignId: id || '',
+    userId: user?.id || '',
+    userName: currentMember?.profiles?.display_name || undefined,
+    userAvatar: currentMember?.profiles?.avatar_url || undefined,
+    enabled: !!id && !!user,
   });
 
   // Busca dados ao montar e subscribe para updates
@@ -1143,6 +1153,8 @@ export default function CampaignView() {
           masterId={campaign.master_id}
           isMaster={isMaster}
           onRemoveMember={removeMember}
+          getUserStatus={presence.getUserStatus}
+          isConnected={presence.isConnected}
         />
       </div>
 
