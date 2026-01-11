@@ -452,6 +452,29 @@ Testes expandidos para cenários avançados:
 
 **Total de testes SUE:** ~560 testes
 
+### Campaign 10 - Sistema de Diário de Sessão
+**Status:** ✅ 100% Concluído
+
+Sistema completo de diário cronológico da campanha:
+- ✅ Visualização cronológica de todas as sessões (timeline)
+- ✅ Resumos editáveis por sessão (apenas mestre)
+- ✅ Notas compartilhadas vinculadas às sessões
+- ✅ Filtros por status (todas, concluídas, agendadas)
+- ✅ Busca por título e conteúdo
+- ✅ Ordenação ascendente/descendente
+- ✅ Estatísticas (sessões jogadas, duração média)
+- ✅ Visualização em lista compacta alternativa
+- ✅ Sincronização realtime
+
+**Arquivos criados:**
+- `src/components/campaign/diary/SessionDiary.tsx` - Componente principal
+- `src/components/campaign/diary/SessionDiaryEntry.tsx` - Entrada individual
+- `src/components/campaign/diary/index.ts` - Exportações
+
+**Integração:**
+- Nova aba "DIÁRIO" na CampaignView
+- Utiliza tabelas existentes: `campaign_sessions`, `campaign_notes`
+
 ---
 
 ## Referências
