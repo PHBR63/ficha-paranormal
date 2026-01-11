@@ -250,6 +250,8 @@ interface Character {
     abilityId: string;
     abilityName: string;
   } | null;
+  // Escolhas de Treinamento em Perícia (poder geral)
+  skill_training_choices?: Record<string, Array<{ skillId: string; fromLevel: number; toLevel: number }>>;
 }
 
 // Helper para converter condições persistidas para ActiveCondition
@@ -650,6 +652,8 @@ export default function CharacterSheet() {
         affinity_active: data.affinity_active || false,
         // Carrega buffs ativos da nuvem
         active_buffs: Array.isArray(data.active_buffs) ? data.active_buffs : [],
+        // Carrega escolhas de Treinamento em Perícia
+        skill_training_choices: (data as any).skill_training_choices || {},
       };
       setCharacter(charData as unknown as Character);
       setHpCurrent(data.hp_current);
@@ -691,6 +695,8 @@ export default function CharacterSheet() {
         elemental_affinity: data.elemental_affinity || null,
         affinity_active: data.affinity_active || false,
         active_buffs: Array.isArray(data.active_buffs) ? data.active_buffs : [],
+        // Carrega escolhas de Treinamento em Perícia
+        skill_training_choices: (data as any).skill_training_choices || {},
       };
       
       setCharacter(charData as unknown as Character);
@@ -2031,6 +2037,8 @@ export default function CharacterSheet() {
               inventory: character.inventory,
               // Bônus condicionais ativos (persistidos)
               active_conditional_bonuses: character.active_conditional_bonuses,
+              // Escolhas de Treinamento em Perícia
+              skill_training_choices: character.skill_training_choices,
             }}
             onOpenDiceRoller={() => {
               setRollLabel('Teste Geral');
