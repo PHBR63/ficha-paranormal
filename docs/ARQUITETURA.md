@@ -436,13 +436,21 @@ Automação completa de buffs de arma que expiram por turno:
 - `src/components/character/WeaponBuffTurnTracker.tsx`
 - `src/hooks/useWeaponBuffs.ts` - Hook base de buffs
 
-### Arquitetura 7 - Expandir Testes de Integração do SUE
-**Status:** ⏳ Pendente
+### Arquitetura 7 - Testes de Integração Avançados do SUE
+**Status:** ✅ 100% Concluído
 
-Adicionar testes para:
-- Cenários de campanha completos
-- Interação entre múltiplos personagens
-- Edge cases de sincronização realtime
+Testes expandidos para cenários avançados:
+- ✅ Cenários de campanha completos (grupo, combate em equipe, exploração)
+- ✅ Interação entre múltiplos personagens (buffs, sinergias, conflitos)
+- ✅ Edge cases de sincronização realtime (mestre/jogadores)
+- ✅ Performance com múltiplos cálculos simultâneos
+
+**Arquivos criados:**
+- `src/lib/__tests__/sue-campaign-scenarios.vitest.ts` - ~30 testes
+- `src/lib/__tests__/sue-multi-character.vitest.ts` - ~25 testes
+- `src/lib/__tests__/sue-realtime-sync.vitest.ts` - ~20 testes
+
+**Total de testes SUE:** ~560 testes
 
 ---
 
