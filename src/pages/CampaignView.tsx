@@ -819,8 +819,8 @@ export default function CampaignView() {
         {/* Main area */}
         <main className="flex-1 flex flex-col min-w-0">
           <Tabs defaultValue="chat" className="flex-1 flex flex-col">
-            {/* Tabs melhoradas */}
-            <div className="border-b border-border bg-card/50 backdrop-blur-sm overflow-x-auto">
+            {/* Tabs melhoradas - STICKY */}
+            <div className="sticky top-0 z-20 border-b border-border bg-card/95 backdrop-blur-md overflow-x-auto shadow-sm">
               <TabsList className="bg-transparent px-4 sm:px-6 lg:px-8 min-w-max h-12 sm:h-14">
                 <TabsTrigger value="status" className="font-display tracking-wider text-xs sm:text-sm px-3 sm:px-5 h-10 sm:h-12 data-[state=active]:bg-primary/15 data-[state=active]:text-primary transition-all">
                   <Users className="w-4 h-4 sm:w-5 sm:h-5 sm:mr-2" />
