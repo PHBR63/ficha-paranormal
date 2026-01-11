@@ -308,6 +308,14 @@ export default function CharacterCreate() {
   const ritualsPerNex = (ocultistClass as any)?.ritualsPerNex || {};
   const requiredRituals = ritualsPerNex[formData.nex]?.count || 0;
 
+  // IDs de poderes Transcender para contagem
+  const TRANSCENDER_IDS = ['transcender', 'transcender-esp', 'transcender-ocultista'];
+  
+  // Calcula quantas vezes Transcender foi escolhido
+  const transcenderCount = useMemo(() => {
+    return formData.abilities.filter(a => TRANSCENDER_IDS.includes(a)).length;
+  }, [formData.abilities]);
+
   // Derived stats for preview - se monta progressivamente durante a criação
   const previewStats = useMemo(() => {
     // DEF e MOV podem ser calculados desde os atributos
@@ -325,14 +333,15 @@ export default function CharacterCreate() {
       formData.attributes.presence,
       formData.nex,
       formData.origin,
-      formData.abilities
+      formData.abilities,
+      transcenderCount // Passa a contagem de Transcender para aplicar penalidade de SAN
     );
     return {
       ...stats,
       defense,
       movement,
     };
-  }, [formData.characterClass, formData.attributes, formData.nex, formData.origin, formData.abilities]);
+  }, [formData.characterClass, formData.attributes, formData.nex, formData.origin, formData.abilities, transcenderCount]);
 
   // Calcula completed steps baseado no step ID ao invés de índice fixo
   const completedSteps = useMemo(() => {
@@ -493,12 +502,17 @@ export default function CharacterCreate() {
         }
       }
 
+      // Calcular contagem de Transcender para aplicar penalidade de SAN
+      const transcenderCountForSave = formData.abilities.filter(a => TRANSCENDER_IDS.includes(a)).length;
+      
       const derivedStats = calculateDerivedStats(
         formData.characterClass,
         formData.attributes.vigor,
         formData.attributes.presence,
         formData.nex,
-        formData.origin
+        formData.origin,
+        formData.abilities,
+        transcenderCountForSave // Penalidade de SAN por Transcender
       );
 
       const originData = ORIGINS.find(o => o.id === formData.origin);
