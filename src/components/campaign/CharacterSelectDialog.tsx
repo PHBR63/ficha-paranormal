@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Input } from '@/components/ui/input';
 import {
   Dialog,
   DialogContent,
@@ -16,16 +17,18 @@ import {
   User, 
   Shield, 
   Skull, 
-  Brain, 
   Crosshair,
   Heart,
   Zap,
+  Brain,
   Check,
   Plus,
-  AlertTriangle
+  AlertTriangle,
+  Copy
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useCharacterClone } from '@/hooks/useCharacterClone';
 
 // Interface base do personagem
 interface Character {
@@ -73,15 +76,24 @@ export function CharacterSelectDialog({
   onCharacterSelect,
 }: CharacterSelectDialogProps) {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const { cloneCharacter, isCloning } = useCharacterClone();
+  
   const [characters, setCharacters] = useState<CharacterWithUsage[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(currentCharacterId);
   const [saving, setSaving] = useState(false);
+  
+  // Estado para clonagem
+  const [cloningCharacter, setCloningCharacter] = useState<CharacterWithUsage | null>(null);
+  const [cloneName, setCloneName] = useState('');
 
   useEffect(() => {
     if (open && user) {
       fetchCharacters();
       setSelectedId(currentCharacterId);
+      setCloningCharacter(null);
+      setCloneName('');
     }
   }, [open, user, currentCharacterId]);
 
@@ -169,6 +181,121 @@ export function CharacterSelectDialog({
     setSelectedId(isSelected ? null : char.id);
   };
 
+  // Inicia o processo de clonagem
+  const handleStartClone = (char: CharacterWithUsage, e: React.MouseEvent) => {
+    e.stopPropagation(); // Não seleciona o personagem
+    setCloningCharacter(char);
+    setCloneName(`${char.name} (Cópia)`);
+  };
+
+  // Executa a clonagem
+  const handleConfirmClone = async () => {
+    if (!cloningCharacter) return;
+    
+    const result = await cloneCharacter(
+      cloningCharacter.id,
+      cloneName,
+      campaignId
+    );
+
+    if (result.success && result.characterId) {
+      // Atualiza a lista e seleciona o novo personagem
+      await fetchCharacters();
+      setSelectedId(result.characterId);
+      setCloningCharacter(null);
+      setCloneName('');
+    }
+  };
+
+  // Cancela a clonagem
+  const handleCancelClone = () => {
+    setCloningCharacter(null);
+    setCloneName('');
+  };
+
+  // Se está no modo de clonagem, mostra interface específica
+  if (cloningCharacter) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="bg-card border-border max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-display text-xl tracking-wider flex items-center gap-2">
+              <Copy className="w-5 h-5 text-primary" />
+              CLONAR PERSONAGEM
+            </DialogTitle>
+            <DialogDescription>
+              Criar uma cópia de <strong>{cloningCharacter.name}</strong> para usar nesta campanha.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-4 space-y-4">
+            {/* Info do personagem original */}
+            <div className="p-3 rounded-lg bg-muted/30 border border-border">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
+                  {(() => {
+                    const ClassIcon = CLASS_ICONS[cloningCharacter.class] || Shield;
+                    return <ClassIcon className="w-5 h-5 text-primary" />;
+                  })()}
+                </div>
+                <div>
+                  <p className="font-medium">{cloningCharacter.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {cloningCharacter.class} • {cloningCharacter.origin} • NEX {cloningCharacter.nex}%
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Nome do clone */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Nome do novo personagem</label>
+              <Input
+                value={cloneName}
+                onChange={(e) => setCloneName(e.target.value)}
+                placeholder="Digite o nome..."
+                className="bg-background"
+              />
+            </div>
+
+            {/* Aviso sobre o que é copiado */}
+            <div className="text-xs text-muted-foreground p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+              <p className="font-medium text-amber-500 mb-1">O que será copiado:</p>
+              <ul className="list-disc list-inside space-y-0.5">
+                <li>Atributos, perícias e poderes</li>
+                <li>Classe, origem e trilha</li>
+                <li>Rituais e habilidades paranormais</li>
+                <li>Aparência e personalidade</li>
+              </ul>
+              <p className="mt-2 text-amber-500/80">
+                <strong>Nota:</strong> PV, PE e SAN começam no máximo. Inventário e condições são resetados.
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={handleCancelClone}
+              disabled={isCloning}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleConfirmClone}
+              disabled={isCloning || !cloneName.trim()}
+              className="font-display tracking-wider"
+            >
+              {isCloning && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              <Copy className="w-4 h-4 mr-2" />
+              CLONAR E USAR
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="bg-card border-border max-w-2xl">
@@ -225,11 +352,22 @@ export function CharacterSelectDialog({
                             : !isUsedElsewhere && 'border-border bg-muted/30'
                         )}
                       >
-                        {/* Badge de "Em uso" */}
+                        {/* Badge de "Em uso" OU botão de clonar */}
                         {isUsedElsewhere && (
-                          <div className="absolute top-2 right-2 flex items-center gap-1 px-2 py-1 bg-amber-500/20 border border-amber-500/30 rounded text-xs text-amber-500">
-                            <AlertTriangle className="w-3 h-3" />
-                            Em uso
+                          <div className="absolute top-2 right-2 flex items-center gap-2">
+                            {/* Botão de clonar para personagens em uso */}
+                            <button
+                              onClick={(e) => handleStartClone(char, e)}
+                              className="flex items-center gap-1 px-2 py-1 bg-primary/20 border border-primary/30 rounded text-xs text-primary hover:bg-primary/30 transition-colors"
+                              title="Clonar para esta campanha"
+                            >
+                              <Copy className="w-3 h-3" />
+                              Clonar
+                            </button>
+                            <div className="flex items-center gap-1 px-2 py-1 bg-amber-500/20 border border-amber-500/30 rounded text-xs text-amber-500">
+                              <AlertTriangle className="w-3 h-3" />
+                              Em uso
+                            </div>
                           </div>
                         )}
 
@@ -270,7 +408,7 @@ export function CharacterSelectDialog({
                               {isUsedElsewhere && (
                                 <p className="text-xs text-amber-500 mt-2 flex items-center gap-1">
                                   <AlertTriangle className="w-3 h-3" />
-                                  Já está na campanha "{char.usedInCampaign!.name}"
+                                  Já está em "{char.usedInCampaign!.name}" - use "Clonar" para criar cópia
                                 </p>
                               )}
                             </div>
