@@ -411,15 +411,56 @@ export default function CampaignView() {
   const sendMessage = async (type: string = 'chat', content: string = messageInput, metadata: any = {}) => {
     if (!user || !id || (!content.trim() && type === 'chat')) return;
 
-    // Verifica se é comando de dados
+    // Verifica se é comando de dados e executa a rolagem real
     const diceCommand = parseDiceCommand(content);
     if (diceCommand.isCommand && type === 'chat') {
-      handleDiceRoll(content, type, {
-        dice: [],
-        keptDice: 0,
-        isCritical: false,
-        ...metadata
-      });
+      // Importar dinamicamente para evitar dependência circular
+      const { rollSkillTest, rollDamage } = await import('@/lib/dice-roller');
+      
+      let rollContent: string;
+      let rollMetadata: any;
+      
+      if (diceCommand.damageType) {
+        // Rolagem de dano (ex: /r 2d6+3)
+        const { count, sides, bonus } = diceCommand.damageType;
+        const result = rollDamage({
+          diceCount: count,
+          diceType: sides,
+          bonusDamage: bonus,
+        });
+        
+        const bonusText = bonus > 0 ? `+${bonus}` : '';
+        rollContent = `🎲 ${diceCommand.label}: ${count}d${sides}${bonusText} [${result.dice.join(', ')}] → **${result.total}**`;
+        rollMetadata = {
+          dice: result.dice,
+          total: result.total,
+          bonusDamage: result.bonusDamage,
+          damageType: diceCommand.label,
+          isDamage: true,
+        };
+      } else {
+        // Rolagem de teste (ex: /r 2d20+5 ou /r 3)
+        const result = rollSkillTest({
+          attributeValue: diceCommand.diceCount || 1,
+          skillBonus: diceCommand.bonus || 0,
+          label: diceCommand.label || 'Teste',
+        });
+        
+        const bonusText = result.skillBonus > 0 ? ` +${result.skillBonus}` : '';
+        const critText = result.isCritical ? ' ★ CRÍTICO!' : '';
+        rollContent = `🎲 ${result.label}: [${result.dice.join(', ')}]${bonusText} → **${result.total}**${critText}`;
+        rollMetadata = {
+          dice: result.dice,
+          keptDice: result.keptDice,
+          skillBonus: result.skillBonus,
+          total: result.total,
+          isCritical: result.isCritical,
+          isDisadvantage: result.isDisadvantage,
+          label: result.label,
+        };
+      }
+      
+      handleDiceRoll(rollContent, 'dice_roll', rollMetadata);
       return;
     }
 
