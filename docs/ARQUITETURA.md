@@ -378,55 +378,82 @@ O projeto é uma Progressive Web App com:
 
 ## Status das Fases de Arquitetura
 
-### ✅ Fases Concluídas
+### ✅ Fases de Arquitetura - Concluídas
 
 | Fase | Descrição | Status |
 |------|-----------|--------|
-| 1 | Consolidar origens em pasta dedicada | ✅ 100% |
-| 2 | Mover poderes gerais e paranormais para pastas dedicadas | ✅ 100% |
-| 4 | Criar componentes de trilha para Ocultista | ✅ 100% |
-| 4b | Remover arquivos legados em src/lib/ | ✅ 100% |
-| 5 | Migrar trilhas para componentes responsivos unificados | ✅ 15/15 |
-| 6 | Remover arquivos legados desktop/mobile | ✅ 100% |
+| Arq 1 | Consolidar origens em pasta dedicada | ✅ 100% |
+| Arq 2 | Mover poderes gerais e paranormais para pastas dedicadas | ✅ 100% |
+| Arq 3 | Organizar hooks por domínio | ✅ 100% |
+| Arq 4 | Criar componentes de trilha para Ocultista | ✅ 100% |
+| Arq 4b | Remover arquivos legados em src/lib/ | ✅ 100% |
+| Arq 5 | Migrar trilhas para componentes responsivos unificados | ✅ 15/15 |
+| Arq 6 | Remover arquivos legados desktop/mobile | ✅ 100% |
 
-### 🔄 Fases Pendentes
+### ✅ Fases de Combate - Concluídas
 
-| Fase | Descrição | Status | Detalhe |
-|------|-----------|--------|---------|
-| 3 | Organizar hooks por domínio | ~70% | ~30 hooks ainda na raiz de `src/hooks/` |
-| 7 | Expandir testes de integração do SUE | 0% | Não iniciado |
+| Fase | Descrição | Status |
+|------|-----------|--------|
+| Combat 7.1 | Tabuleiro tático (highlight de movimento, trajetórias) | ✅ 100% |
+| Combat 7.2 | Confirmação de deslocamento e validação de movimento | ✅ 100% |
+| Combat 7.3 | Ataques de oportunidade (detecção de saída de área de ameaça) | ✅ 100% |
+| Combat 7.4 | Sistema de macros (atalhos de rolagem personalizados) | ✅ 100% |
 
-#### FASE 3 - Hooks Pendentes de Migração
+### ✅ Fases de Testes SUE - Concluídas
 
-Os seguintes hooks ainda estão na raiz e devem ser movidos para subpastas:
+| Fase | Descrição | Status |
+|------|-----------|--------|
+| Testes 1-6 | Testes unitários e de integração básicos | ✅ ~366 testes |
+| Testes 7 | Testes de integração avançados (stacking, conditions, paranormal, combat, edge cases) | ✅ +120 testes |
+| **Total** | | **~486 testes** |
 
-**Para `sue/`:**
-- `useUnifiedEffects.ts`, `useBonusSummaryFromSUE.ts`, `useRitualBonusesFromSUE.ts`
-- `useParanormalEffects.ts`, `useActivatedEffects.ts`, `useClassPowerBonuses.ts`
-- `useDefenseBonuses.ts`, `useArmorCalculation.ts`
+### ✅ Fases de Condições - Concluídas
 
-**Para `character/`:**
-- `useCharacterAudit.ts`, `useCharacterAutoSave.ts`, `useCharacterBonusSummary.ts`
-- `useCharacterCategoryReductions.ts`, `useAttributeValidation.ts`
+| Fase | Descrição | Status |
+|------|-----------|--------|
+| Cond 8 | Sistema de condições com duração em rodadas | ✅ 100% |
+| Cond 8b | Sincronização realtime mestre/jogadores | ✅ 100% |
 
-**Para `combat/`:**
-- `useRoundTracking.ts`, `useWeaponBuffs.ts`, `useRitualCombatBonuses.ts`
-- `useAutoConditions.ts`, `useRitualModeConditions.ts`
+---
 
-**Para `campaign/`:**
-- `useCampaignRitualSync.ts`, `useBonusSync.ts`, `useConditionalBonusesSync.ts`
+## 🔄 Fases Pendentes
 
-**Para `inventory/`:**
-- `useEquipmentMigration.ts`, `useEquipmentValidation.ts`
+### Combat 7.5 - Push Notifications
+**Status:** ⏳ Pendente
 
-**Para `validation/`:**
-- `useRitualValidation.ts`, `useValidationHistory.ts`
+Notificar jogadores sobre:
+- Início do turno
+- Eventos de combate importantes
+- Ataques de oportunidade
 
-**Para `platform/`:**
-- `usePWAInstall.ts`, `usePWAUpdate.ts`, `usePushNotifications.ts`, `useOnlineStatus.ts`
+**Arquivos relacionados:** `src/hooks/platform/usePushNotifications.ts`
 
-**Para `ui/`:**
-- `useThemeColors.ts`, `useTempPE.ts`, `useSustainedRituals.ts`
+### Combat 7.6 - Otimização Mobile do CombatTracker
+**Status:** ⏳ Pendente
+
+- Gestos touch otimizados
+- Layout compacto para telas pequenas
+- Performance melhorada em dispositivos móveis
+
+### Rituals 9 - Sistema de Buffs por Turno
+**Status:** ⏳ Parcial
+
+Automação completa de buffs de arma que expiram por turno:
+- Integração com RitualEffectWizard
+- Decrementação automática no fim do turno
+- Sincronização com combatentes vinculados
+
+**Arquivos relacionados:** 
+- `src/components/character/RitualEffectWizard.tsx`
+- `src/components/character/WeaponBuffTurnTracker.tsx`
+
+### Arquitetura 7 - Expandir Testes de Integração do SUE
+**Status:** ⏳ Pendente
+
+Adicionar testes para:
+- Cenários de campanha completos
+- Interação entre múltiplos personagens
+- Edge cases de sincronização realtime
 
 ---
 
