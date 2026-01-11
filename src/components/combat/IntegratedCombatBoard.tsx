@@ -6,7 +6,7 @@
 
 "use client";
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -22,7 +22,7 @@ import { CombatBoardLinker } from './CombatBoardLinker';
 import { MovementIndicator } from './MovementIndicator';
 import { RangeCalculator } from './RangeCalculator';
 import { useCombatBoardSync, type CombatBoardSyncReturn } from '@/hooks/campaign/useCombatBoardSync';
-import type { TacticalBoardReturn, MapToken } from '@/hooks/campaign/useTacticalBoard';
+import type { TacticalBoardReturn, MapToken, HighlightedCell } from '@/hooks/campaign/useTacticalBoard';
 import type { CombatantState, CombatState } from '@/lib/game-engine';
 import {
   Link,
@@ -58,6 +58,7 @@ export function IntegratedCombatBoard({
   const [linkerOpen, setLinkerOpen] = useState(false);
   const [panelOpen, setPanelOpen] = useState(true);
   const [activeTab, setActiveTab] = useState<'movement' | 'range'>('movement');
+  const [showMovementHighlight, setShowMovementHighlight] = useState(true);
 
   // Combatente atual
   const currentCombatant = combatState.combatants[combatState.currentTurnIndex];
@@ -120,6 +121,41 @@ export function IntegratedCombatBoard({
   const handleHighlightTurn = useCallback(() => {
     sync.highlightCurrentTurn();
   }, [sync]);
+
+  // Sincronizar highlight de movimento com o tabuleiro
+  useEffect(() => {
+    if (!board || !combatState.isActive || !currentCombatant || !showMovementHighlight) {
+      // Limpa highlight se combate não ativo ou toggle desligado
+      board?.clearHighlightedCells();
+      return;
+    }
+
+    // Calcula células alcançáveis para o combatente atual
+    const reachableCells = sync.highlightMovementRange(currentCombatant.id);
+    
+    if (reachableCells.length > 0) {
+      // Converte para formato de HighlightedCell
+      const highlighted: HighlightedCell[] = reachableCells.map(cell => ({
+        x: cell.x,
+        y: cell.y,
+        type: 'reachable' as const,
+      }));
+      
+      board.setHighlightedCells(highlighted);
+    } else {
+      board.clearHighlightedCells();
+    }
+
+    // Cleanup quando desmontar ou mudar turno
+    return () => {
+      board?.clearHighlightedCells();
+    };
+  }, [board, combatState.isActive, currentCombatant?.id, sync, showMovementHighlight, sync.movementRemaining]);
+
+  // Toggle para mostrar/ocultar highlight
+  const handleToggleHighlight = useCallback(() => {
+    setShowMovementHighlight(prev => !prev);
+  }, []);
 
   // Se não houver board, mostra aviso
   if (!board) {
@@ -197,6 +233,17 @@ export function IntegratedCombatBoard({
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Toggle para highlight de movimento */}
+            <Button
+              variant={showMovementHighlight ? "default" : "ghost"}
+              size="sm"
+              onClick={handleToggleHighlight}
+              className="gap-1"
+              title={showMovementHighlight ? "Ocultar alcance de movimento" : "Mostrar alcance de movimento"}
+            >
+              <Footprints className="w-4 h-4" />
+              <span className="hidden sm:inline">Alcance</span>
+            </Button>
             <Button
               variant="ghost"
               size="sm"
@@ -204,7 +251,7 @@ export function IntegratedCombatBoard({
               className="gap-1"
             >
               <Eye className="w-4 h-4" />
-              Mostrar
+              <span className="hidden sm:inline">Mostrar</span>
             </Button>
             <Button
               variant="ghost"
@@ -213,7 +260,7 @@ export function IntegratedCombatBoard({
               className="gap-1"
             >
               <Link className="w-4 h-4" />
-              Vincular
+              <span className="hidden sm:inline">Vincular</span>
             </Button>
             <CollapsibleTrigger asChild>
               <Button variant="ghost" size="sm">
