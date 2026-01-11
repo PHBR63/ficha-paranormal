@@ -43,6 +43,10 @@ export interface CombatantState {
   turnState: TurnState;
   isNPC?: boolean;
   dyingCounter?: number; // 3 = acabou de entrar em morrendo, 0 = morte
+  /** ID do personagem vinculado (para sync de condições em tempo real) */
+  characterId?: string;
+  /** ID do usuário dono do personagem (para RLS) */
+  userId?: string;
 }
 
 export interface CombatState {

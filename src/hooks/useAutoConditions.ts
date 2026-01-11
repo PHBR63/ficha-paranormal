@@ -13,9 +13,11 @@ import {
 import { toast } from 'sonner';
 
 /**
- * Interface para condição ativa (compatível com ConditionManager)
+ * Interface simplificada para condição ativa (compatível com ConditionManager legado)
+ * 
+ * @deprecated Use ActiveCondition de @/hooks/character/useConditions para novas implementações
  */
-export interface ActiveCondition {
+export interface SimpleActiveCondition {
   id: string;
   name: string;
   turnsRemaining: number | null;
@@ -27,7 +29,7 @@ export interface ActiveCondition {
  * Interface para resultado do processamento de condições
  */
 export interface ConditionProcessResult {
-  newConditions: ActiveCondition[];
+  newConditions: SimpleActiveCondition[];
   messages: string[];
   isDead: boolean;
 }
@@ -44,7 +46,7 @@ export function useAutoConditions() {
     hpMax: number,
     san: number,
     sanMax: number,
-    currentConditions: ActiveCondition[]
+    currentConditions: SimpleActiveCondition[]
   ): ConditionProcessResult => {
     // Extrai IDs das condições atuais
     const conditionIds = currentConditions.map(c => c.id);
@@ -65,7 +67,7 @@ export function useAutoConditions() {
     for (const conditionId of result.conditionsToAdd) {
       // Verifica se já não existe
       if (!newConditions.some(c => c.id === conditionId)) {
-        const newCondition: ActiveCondition = {
+        const newCondition: SimpleActiveCondition = {
           id: conditionId,
           name: getConditionName(conditionId),
           turnsRemaining: null,
@@ -106,7 +108,7 @@ export function useAutoConditions() {
    * Processa início de turno para personagem com condição Morrendo
    */
   const processDyingTurn = useCallback((
-    currentConditions: ActiveCondition[]
+    currentConditions: SimpleActiveCondition[]
   ): ConditionProcessResult => {
     const morrendoCondition = currentConditions.find(c => c.id === 'morrendo');
     
@@ -151,7 +153,7 @@ export function useAutoConditions() {
    * Processa dano adicional enquanto morrendo
    */
   const processDamageWhileDying = useCallback((
-    currentConditions: ActiveCondition[],
+    currentConditions: SimpleActiveCondition[],
     damageReceived: number
   ): ConditionProcessResult => {
     const morrendoCondition = currentConditions.find(c => c.id === 'morrendo');
@@ -199,8 +201,8 @@ export function useAutoConditions() {
    * Estabiliza personagem morrendo (teste de Medicina bem sucedido)
    */
   const stabilizeCharacter = useCallback((
-    currentConditions: ActiveCondition[]
-  ): { newConditions: ActiveCondition[]; newHP: number; message: string } => {
+    currentConditions: SimpleActiveCondition[]
+  ): { newConditions: SimpleActiveCondition[]; newHP: number; message: string } => {
     const result = stabilizeDyingCharacter();
     
     // Remove morrendo, mantém inconsciente

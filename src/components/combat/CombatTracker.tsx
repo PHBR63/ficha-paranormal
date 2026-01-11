@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { motion, AnimatePresence, Reorder } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -95,12 +95,38 @@ export function CombatTracker({
   // Estado de condições locais por combatente (para NPCs sem personagem vinculado)
   const [combatantConditions, setCombatantConditions] = useState<Record<string, LocalCombatCondition[]>>({});
   
-  // Hook de gerenciamento de condições
+  // Extrai IDs de personagens vinculados para sync em tempo real
+  const linkedCharacterIds = useMemo(() => {
+    return combatState.combatants
+      .filter(c => c.characterId)
+      .map(c => c.characterId as string);
+  }, [combatState.combatants]);
+  
+  // Hook de gerenciamento de condições com realtime sync
   const conditionsHook = useCombatConditions({
     campaignId,
     userId: user?.id,
     enabled: !!user?.id,
+    characterIds: linkedCharacterIds,
   });
+
+  // Sincroniza condições do BD com estado local quando mudam via realtime
+  useEffect(() => {
+    if (Object.keys(conditionsHook.syncedConditions).length === 0) return;
+    
+    // Atualiza condições locais para combatentes com characterId
+    setCombatantConditions(prev => {
+      const updated = { ...prev };
+      
+      for (const combatant of combatState.combatants) {
+        if (combatant.characterId && conditionsHook.syncedConditions[combatant.characterId]) {
+          updated[combatant.id] = conditionsHook.syncedConditions[combatant.characterId];
+        }
+      }
+      
+      return updated;
+    });
+  }, [conditionsHook.syncedConditions, combatState.combatants]);
 
   const updateState = useCallback((newState: CombatState) => {
     setCombatState(newState);
