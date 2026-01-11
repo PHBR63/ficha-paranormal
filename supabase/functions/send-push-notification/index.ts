@@ -10,10 +10,10 @@ const corsHeaders = {
  * Edge Function: send-push-notification
  * 
  * Envia notificações push para membros de uma campanha de forma segura.
- * Usa função SECURITY DEFINER para acessar subscrições sem expor dados.
+ * Requer autenticação JWT e valida que o usuário é mestre da campanha.
  * 
  * Parâmetros esperados no body:
- * - type: 'session_scheduled' | 'session_reminder' | 'session_started'
+ * - type: 'session_scheduled' | 'session_reminder' | 'session_started' | combat types
  * - campaignId: UUID da campanha (obrigatório para validação)
  * - sessionId?: UUID da sessão (opcional)
  * - title: Título da notificação
@@ -31,10 +31,49 @@ serve(async (req) => {
     // Variáveis de ambiente obrigatórias
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
 
-    if (!supabaseUrl || !supabaseServiceKey) {
+    if (!supabaseUrl || !supabaseServiceKey || !supabaseAnonKey) {
       throw new Error('Missing required environment variables');
     }
+
+    // ============================================
+    // CORREÇÃO DE SEGURANÇA: Validar autenticação
+    // ============================================
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized - Missing or invalid authorization header' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Criar cliente com o token do usuário para validar autenticação
+    const userClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+
+    // Validar o token JWT
+    const token = authHeader.replace('Bearer ', '');
+    const { data: claimsData, error: claimsError } = await userClient.auth.getClaims(token);
+    
+    if (claimsError || !claimsData?.claims) {
+      console.error('[push-notification] Auth error:', claimsError);
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized - Invalid token' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const userId = claimsData.claims.sub;
+    if (!userId) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized - User ID not found in token' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log(`[push-notification] Authenticated user: ${userId}`);
 
     // Cliente Supabase com service role para operações administrativas
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
@@ -45,7 +84,7 @@ serve(async (req) => {
     // Validação de campos obrigatórios
     if (!campaignId) {
       return new Response(
-        JSON.stringify({ error: 'campaignId is required for security validation' }),
+        JSON.stringify({ error: 'campaignId is required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -54,6 +93,31 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ error: 'title and body are required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // ============================================
+    // CORREÇÃO DE SEGURANÇA: Validar que o usuário é mestre da campanha
+    // ============================================
+    const { data: isMaster, error: masterCheckError } = await supabase
+      .rpc('is_campaign_master', {
+        _user_id: userId,
+        _campaign_id: campaignId
+      });
+
+    if (masterCheckError) {
+      console.error('[push-notification] Error checking master status:', masterCheckError);
+      return new Response(
+        JSON.stringify({ error: 'Failed to verify campaign access' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!isMaster) {
+      console.warn(`[push-notification] User ${userId} is not master of campaign ${campaignId}`);
+      return new Response(
+        JSON.stringify({ error: 'Forbidden - Only campaign master can send notifications' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -76,10 +140,9 @@ serve(async (req) => {
       );
     }
 
-    console.log(`[push-notification] type=${type}, campaignId=${campaignId}`);
+    console.log(`[push-notification] type=${type}, campaignId=${campaignId}, masterUser=${userId}`);
 
-    // Usar função SECURITY DEFINER para buscar subscrições de forma segura
-    // Isso garante que apenas membros da campanha recebam notificações
+    // Buscar subscrições dos membros da campanha
     const { data: subscriptions, error: subError } = await supabase
       .rpc('get_push_subscriptions_for_campaign', {
         _campaign_id: campaignId,
@@ -176,7 +239,7 @@ serve(async (req) => {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     console.error('[push-notification] Error:', error);
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ error: 'Internal server error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
