@@ -46,7 +46,7 @@ interface ChatMessageProps {
 const getMessageIcon = (type: string) => {
   switch (type) {
     case 'dice_roll':
-      return <Dices className="w-3.5 h-3.5 text-accent" />;
+      return <Dices className="w-3.5 h-3.5 text-amber-400" />;
     case 'event_ritual':
       return <Sparkles className="w-3.5 h-3.5 text-purple-400" />;
     case 'event_damage':
@@ -60,7 +60,7 @@ const getMessageIcon = (type: string) => {
     case 'event_defense':
       return <Shield className="w-3.5 h-3.5 text-blue-400" />;
     case 'system':
-      return <Zap className="w-3.5 h-3.5 text-muted-foreground" />;
+      return <Zap className="w-3.5 h-3.5 text-slate-400" />;
     default:
       return null;
   }
