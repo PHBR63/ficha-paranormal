@@ -57,7 +57,19 @@ serve(async (req) => {
       );
     }
 
-    if (!type || !['session_scheduled', 'session_reminder', 'session_started'].includes(type)) {
+    // Tipos de notificação suportados
+    const validTypes = [
+      'session_scheduled', 
+      'session_reminder', 
+      'session_started',
+      // Combat 7.5 - Novos tipos de notificação de combate
+      'combat_turn_start',
+      'combat_opportunity_attack',
+      'combat_low_hp_warning',
+      'combat_condition_applied',
+    ];
+    
+    if (!type || !validTypes.includes(type)) {
       return new Response(
         JSON.stringify({ error: 'Invalid notification type' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
