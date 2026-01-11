@@ -6,11 +6,10 @@
  * Inclui MobileActionSheet para ações em cada membro
  */
 
-import { useState } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Crown, User, Circle, X, Eye, UserMinus, Shield, Zap, Brain, ChevronRight } from 'lucide-react';
+import { Crown, User, X, Eye, UserMinus, Shield, Zap, Brain, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { MobileActionSheet } from '@/components/ui/mobile-action-sheet';
 import { cn } from '@/lib/utils';
 
@@ -173,7 +172,8 @@ export function PlayersSidebar({
         </div>
       </div>
       
-      <ScrollArea className="flex-1">
+      {/* Usando div com overflow nativo para evitar bug do ScrollArea com React 19 */}
+      <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
         <div className="p-4 space-y-3">
           {members.map((member, index) => {
             const isMasterMember = member.role === 'master';
@@ -388,7 +388,7 @@ export function PlayersSidebar({
             );
           })}
         </div>
-      </ScrollArea>
+      </div>
 
       {/* MobileActionSheet para ações do membro */}
       <MobileActionSheet
