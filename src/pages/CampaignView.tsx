@@ -190,8 +190,26 @@ export default function CampaignView() {
     }
   }, [id, user]);
 
+  // Ref para controlar se é o carregamento inicial
+  const isInitialLoadRef = useRef(true);
+  const prevMessagesLengthRef = useRef(0);
+
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // Só faz scroll automático se:
+    // 1. Não é o carregamento inicial
+    // 2. Uma nova mensagem foi adicionada (não remoção/edição)
+    if (isInitialLoadRef.current) {
+      isInitialLoadRef.current = false;
+      prevMessagesLengthRef.current = messages.length;
+      return;
+    }
+
+    // Só faz scroll se houver mais mensagens do que antes
+    if (messages.length > prevMessagesLengthRef.current) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+    
+    prevMessagesLengthRef.current = messages.length;
   }, [messages]);
 
   const fetchCampaignData = async () => {
