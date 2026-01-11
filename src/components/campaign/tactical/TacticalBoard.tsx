@@ -61,6 +61,8 @@ import {
   Lock,
   Unlock,
   RotateCw,
+  Image,
+  X,
 } from 'lucide-react';
 
 interface TacticalBoardProps {
@@ -103,12 +105,33 @@ export function TacticalBoard({ campaignId, isMaster, members = [], externalBoar
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
   const [showMapDialog, setShowMapDialog] = useState(false);
   const [showTokenDialog, setShowTokenDialog] = useState(false);
+  const [showImageDialog, setShowImageDialog] = useState(false);
   const [newMapUrl, setNewMapUrl] = useState('');
   const [newMapName, setNewMapName] = useState('');
   const [newTokenName, setNewTokenName] = useState('');
   const [newTokenType, setNewTokenType] = useState<'pc' | 'npc' | 'creature' | 'object' | 'marker'>('npc');
   const [selectedCharacterId, setSelectedCharacterId] = useState<string | null>(null);
   const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 });
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [backgroundImage, setBackgroundImage] = useState<HTMLImageElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // =====================================================
+  // CARREGAR IMAGEM DE FUNDO
+  // =====================================================
+
+  useEffect(() => {
+    if (!board.activeMap?.image_url) {
+      setBackgroundImage(null);
+      return;
+    }
+
+    const img = new window.Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => setBackgroundImage(img);
+    img.onerror = () => setBackgroundImage(null);
+    img.src = board.activeMap.image_url;
+  }, [board.activeMap?.image_url]);
 
   // =====================================================
   // RENDERING DO CANVAS
@@ -129,14 +152,24 @@ export function TacticalBoard({ campaignId, isMaster, members = [], externalBoar
 
     const map = board.activeMap;
     const gridSize = map.grid_size;
+    const cols = map.width_cells || Math.ceil(canvas.width / board.zoom / gridSize);
+    const rows = map.height_cells || Math.ceil(canvas.height / board.zoom / gridSize);
+    const mapWidth = cols * gridSize;
+    const mapHeight = rows * gridSize;
 
-    // Desenha grid
+    // Desenha imagem de fundo (cobre todo o canvas do mapa)
+    if (backgroundImage) {
+      ctx.drawImage(backgroundImage, 0, 0, mapWidth, mapHeight);
+    } else {
+      // Fundo escuro padrão quando não há imagem
+      ctx.fillStyle = 'rgba(20, 20, 30, 0.8)';
+      ctx.fillRect(0, 0, mapWidth, mapHeight);
+    }
+
+    // Desenha grid sobre a imagem
     if (map.grid_visible) {
       ctx.strokeStyle = map.grid_color;
       ctx.lineWidth = 1;
-      
-      const cols = map.width_cells || Math.ceil(canvas.width / gridSize);
-      const rows = map.height_cells || Math.ceil(canvas.height / gridSize);
       
       for (let x = 0; x <= cols; x++) {
         ctx.beginPath();
@@ -318,12 +351,12 @@ export function TacticalBoard({ campaignId, isMaster, members = [], externalBoar
     });
 
     ctx.restore();
-  }, [board, isMaster]);
+  }, [board, isMaster, backgroundImage]);
 
   // Re-render quando dados mudam
   useEffect(() => {
     drawCanvas();
-  }, [drawCanvas, board.tokens, board.activeMap, board.zoom, board.panOffset, board.pings, board.measureStart, board.measureEnd, board.selectedTokenId, board.highlightedCells]);
+  }, [drawCanvas, board.tokens, board.activeMap, board.zoom, board.panOffset, board.pings, board.measureStart, board.measureEnd, board.selectedTokenId, board.highlightedCells, backgroundImage]);
 
   // Ajusta tamanho do canvas
   useEffect(() => {
@@ -710,6 +743,45 @@ export function TacticalBoard({ campaignId, isMaster, members = [], externalBoar
         {/* Ações do mestre */}
         {isMaster && (
           <div className="flex items-center gap-2">
+            {/* Botão para upload de imagem de fundo */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploadingImage}
+              title="Adicionar imagem de fundo"
+            >
+              {isUploadingImage ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Image className="w-4 h-4" />
+              )}
+            </Button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (!file || !board.activeMap) return;
+                
+                setIsUploadingImage(true);
+                await board.uploadMapImage(board.activeMap.id, file);
+                setIsUploadingImage(false);
+                e.target.value = '';
+              }}
+            />
+            {board.activeMap.image_url && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => board.activeMap && board.removeMapImage(board.activeMap.id)}
+                title="Remover imagem de fundo"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            )}
             <Button
               variant="outline"
               size="sm"
@@ -736,20 +808,7 @@ export function TacticalBoard({ campaignId, isMaster, members = [], externalBoar
         className="relative ordo-panel overflow-hidden"
         style={{ height: '500px' }}
       >
-        {/* Imagem de fundo do mapa */}
-        {board.activeMap.image_url && (
-          <img
-            src={board.activeMap.image_url}
-            alt={board.activeMap.name}
-            className="absolute inset-0 w-full h-full object-contain opacity-80"
-            style={{
-              transform: `translate(${board.panOffset.x}px, ${board.panOffset.y}px) scale(${board.zoom})`,
-              transformOrigin: '0 0',
-            }}
-          />
-        )}
-        
-        {/* Canvas para grid e tokens */}
+        {/* Canvas para grid, imagem de fundo e tokens */}
         <canvas
           ref={canvasRef}
           width={canvasSize.width}

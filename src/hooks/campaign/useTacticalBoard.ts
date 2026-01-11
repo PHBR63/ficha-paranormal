@@ -99,6 +99,8 @@ export interface TacticalBoardReturn {
   updateMap: (mapId: string, data: Partial<TacticalMap>) => Promise<boolean>;
   deleteMap: (mapId: string) => Promise<boolean>;
   setActiveMap: (mapId: string) => Promise<boolean>;
+  uploadMapImage: (mapId: string, file: File) => Promise<string | null>;
+  removeMapImage: (mapId: string) => Promise<boolean>;
   
   // Ações de token
   createToken: (data: Partial<MapToken>) => Promise<MapToken | null>;
@@ -403,6 +405,83 @@ export function useTacticalBoard({
   }, [campaignId, isMaster, maps, loadTokens, toast]);
 
   // =====================================================
+  // UPLOAD DE IMAGEM DO MAPA
+  // =====================================================
+
+  const uploadMapImage = useCallback(async (mapId: string, file: File): Promise<string | null> => {
+    if (!isMaster) return null;
+    
+    try {
+      const fileExt = file.name.split('.').pop()?.toLowerCase() || 'png';
+      const filePath = `${campaignId}/${mapId}.${fileExt}`;
+      
+      // Remove arquivo antigo se existir
+      await supabase.storage
+        .from('campaign-maps')
+        .remove([filePath]);
+      
+      // Upload do novo arquivo
+      const { error: uploadError } = await supabase.storage
+        .from('campaign-maps')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true,
+        });
+      
+      if (uploadError) throw uploadError;
+      
+      // Obtém URL pública
+      const { data: { publicUrl } } = supabase.storage
+        .from('campaign-maps')
+        .getPublicUrl(filePath);
+      
+      // Atualiza o mapa com a nova URL
+      const success = await updateMap(mapId, { image_url: publicUrl });
+      if (!success) throw new Error('Falha ao atualizar mapa');
+      
+      toast({ title: 'Imagem carregada', description: 'O fundo do mapa foi atualizado.' });
+      return publicUrl;
+    } catch (error: any) {
+      toast({
+        title: 'Erro ao carregar imagem',
+        description: error.message,
+        variant: 'destructive',
+      });
+      return null;
+    }
+  }, [campaignId, isMaster, updateMap, toast]);
+
+  const removeMapImage = useCallback(async (mapId: string): Promise<boolean> => {
+    if (!isMaster) return false;
+    
+    try {
+      const map = maps.find(m => m.id === mapId);
+      if (map?.image_url) {
+        // Extrai o path do arquivo da URL
+        const urlParts = map.image_url.split('/campaign-maps/');
+        if (urlParts.length > 1) {
+          const filePath = urlParts[1];
+          await supabase.storage.from('campaign-maps').remove([filePath]);
+        }
+      }
+      
+      // Limpa a URL no banco
+      const success = await updateMap(mapId, { image_url: '' });
+      if (success) {
+        toast({ title: 'Imagem removida' });
+      }
+      return success;
+    } catch (error: any) {
+      toast({
+        title: 'Erro ao remover imagem',
+        description: error.message,
+        variant: 'destructive',
+      });
+      return false;
+    }
+  }, [isMaster, maps, updateMap, toast]);
+
+  // =====================================================
   // AÇÕES DE TOKEN
   // =====================================================
 
@@ -623,6 +702,8 @@ export function useTacticalBoard({
     updateMap,
     deleteMap,
     setActiveMap,
+    uploadMapImage,
+    removeMapImage,
     createToken,
     updateToken,
     moveToken,
