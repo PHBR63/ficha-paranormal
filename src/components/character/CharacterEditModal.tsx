@@ -58,7 +58,7 @@ import {
   RotateCcw,
   HelpCircle,
 } from 'lucide-react';
-import { ORIGINS, SKILLS, CLASSES, calculateDerivedStats } from '@/lib/character-data';
+import { ORIGINS, SKILLS, CLASSES, calculateDerivedStats, countTranscender } from '@/lib/character-data';
 import { ImageUploader } from '@/components/ui/image-uploader';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -211,25 +211,29 @@ export function CharacterEditModal({
 
   // Stats originais do personagem
   const originalStats = useMemo(() => {
+    const transcender = countTranscender(character.abilities as string[]);
     return calculateDerivedStats(
       character.class,
       character.vigor,
       character.presence,
       character.nex,
       character.origin,
-      character.abilities as string[]
+      character.abilities as string[],
+      transcender
     );
   }, [character]);
 
   // Calcula stats derivados para preview
   const derivedStats = useMemo(() => {
+    const transcender = countTranscender(character.abilities as string[]);
     return calculateDerivedStats(
       character.class,
       vigor,
       presence,
       character.nex,
       character.origin,
-      character.abilities as string[]
+      character.abilities as string[],
+      transcender
     );
   }, [character.class, vigor, presence, character.nex, character.origin, character.abilities]);
 

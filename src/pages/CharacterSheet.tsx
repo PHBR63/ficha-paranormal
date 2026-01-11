@@ -67,7 +67,7 @@ import { ConditionManager, type ActiveCondition } from '@/components/character/C
 import { RestModal } from '@/components/character/RestModal';
 import { NonOccultistRitualModal, RitualSource } from '@/components/character/NonOccultistRitualModal';
 import { LearnedRitual } from '@/components/character/GeneralPowersPanel';
-import { calculateDerivedStats } from '@/lib/character-data';
+import { calculateDerivedStats, countTranscender } from '@/lib/character-data';
 import { AffinitySelectorCard } from '@/components/character/AffinitySelectorCard';
 // Hook consolidado do SUE - fonte única de verdade para todos os bônus
 import { 
@@ -1255,11 +1255,13 @@ export default function CharacterSheet() {
     
     const updatedPowers = [...currentPowers, newPower];
     
-    // Calcula a sanidade que seria ganha no NEX atual
+    // Calcula a sanidade que seria ganha no NEX atual (para aplicar penalidade de Transcender)
     const currentNex = character.nex;
     const previousNex = Math.max(5, currentNex - 5);
-    const currentStats = calculateDerivedStats(character.class, character.vigor, character.presence, currentNex, character.origin, character.abilities as string[]);
-    const previousStats = calculateDerivedStats(character.class, character.vigor, character.presence, previousNex, character.origin, character.abilities as string[]);
+    // Transcender adiciona +1 ao contador existente de Transcender do personagem
+    const existingTranscenderCount = countTranscender(character.abilities as string[]);
+    const currentStats = calculateDerivedStats(character.class, character.vigor, character.presence, currentNex, character.origin, character.abilities as string[], existingTranscenderCount);
+    const previousStats = calculateDerivedStats(character.class, character.vigor, character.presence, previousNex, character.origin, character.abilities as string[], existingTranscenderCount);
     const sanLoss = currentStats.san - previousStats.san;
     
     // Nova sanidade máxima e atual (reduz pelo custo do Transcender)
@@ -1535,13 +1537,15 @@ export default function CharacterSheet() {
   }) => {
     if (!character || !user) return;
 
+    const transcender = countTranscender(character.abilities as string[]);
     const newStats = calculateDerivedStats(
       character.class,
       data.vigor,
       data.presence,
       character.nex,
       character.origin,
-      character.abilities as string[]
+      character.abilities as string[],
+      transcender
     );
 
     // Registra alterações

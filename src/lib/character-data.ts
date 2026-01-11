@@ -840,13 +840,26 @@ export const PARANORMAL_ELEMENTS = [
  * 
  * @param abilities - Lista de habilidades (incluindo de trilha) para aplicar bônus de PV/SAN
  */
+/**
+ * Calcula os stats derivados (PV, PE, SAN) baseado na classe, atributos e NEX.
+ * 
+ * @param characterClass - ID da classe do personagem
+ * @param vigor - Valor do atributo Vigor
+ * @param presence - Valor do atributo Presença
+ * @param nex - Nível de Exposição (%)
+ * @param originId - ID da origem (opcional)
+ * @param abilities - Array de habilidades/poderes (opcional)
+ * @param transcenderCount - Quantas vezes o personagem escolheu Transcender (opcional)
+ * @returns Objeto com hp, pe e san calculados
+ */
 export function calculateDerivedStats(
   characterClass: string,
   vigor: number,
   presence: number,
   nex: number,
   originId?: string,
-  abilities?: string[]
+  abilities?: string[],
+  transcenderCount: number = 0
 ): { hp: number; pe: number; san: number } {
   const classData = CLASSES.find(c => c.id === characterClass);
   if (!classData) {
@@ -864,6 +877,14 @@ export function calculateDerivedStats(
 
   // SAN = Base + (Multiplicador * ProgressãoSAN)
   let san = classData.sanBase + Math.max(0, nexMultiplier) * classData.sanPerNex;
+
+  // === PENALIDADE DE TRANSCENDER ===
+  // Cada vez que o personagem escolhe Transcender, ele perde o ganho de SAN daquele NEX
+  // A penalidade é igual a sanPerNex por cada Transcender escolhido
+  if (transcenderCount > 0) {
+    const sanPenalty = transcenderCount * classData.sanPerNex;
+    san -= sanPenalty;
+  }
 
   // Aplicar modificador de origem (Cultista Arrependido, etc.)
   if (originId) {
@@ -902,6 +923,31 @@ export function calculateDerivedStats(
   }
 
   return { hp, pe, san: Math.max(0, san) };
+}
+
+/**
+ * IDs conhecidos de poderes Transcender (todas as classes)
+ * Usado para calcular a penalidade de sanidade.
+ */
+export const TRANSCENDER_POWER_IDS = ['transcender', 'transcender-esp', 'transcender-ocultista'];
+
+/**
+ * Calcula quantas vezes o personagem escolheu Transcender
+ * a partir do array de abilities (IDs ou nomes).
+ * 
+ * @param abilities - Array de IDs ou nomes de abilities
+ * @returns Número de vezes que Transcender foi escolhido
+ */
+export function countTranscender(abilities?: string[] | unknown[]): number {
+  if (!abilities || !Array.isArray(abilities)) return 0;
+  
+  return abilities.filter(a => {
+    if (typeof a !== 'string') return false;
+    const normalized = a.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    // Verifica por ID ou por nome
+    return TRANSCENDER_POWER_IDS.includes(a) || 
+           normalized.includes('transcender');
+  }).length;
 }
 
 /**

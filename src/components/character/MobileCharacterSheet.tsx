@@ -64,7 +64,7 @@ import { ElementResistanceSelectModal } from './ElementResistanceSelectModal';
 import { BonusSummaryCard } from './BonusSummaryCard';
 import { ClassPowerBonusesPanel } from './ClassPowerBonusesPanel';
 import { useAutoConditions } from '@/hooks/useAutoConditions';
-import { calculateDerivedStats, CLASSES } from '@/lib/character-data';
+import { calculateDerivedStats, countTranscender, CLASSES } from '@/lib/character-data';
 import { getPowerById, ParanormalPower } from '@/lib/paranormal-powers';
 import { MobileRitualEffectWizard } from './mobile/MobileRitualEffectWizard';
 import type { WeaponBuff } from '@/hooks/useWeaponBuffs';
@@ -1083,13 +1083,15 @@ export function MobileCharacterSheet({
   }) => {
     if (!character || !user) return;
 
+    const transcender = countTranscender(character.abilities as string[]);
     const newStats = calculateDerivedStats(
       character.class,
       data.vigor,
       data.presence,
       character.nex,
       character.origin,
-      character.abilities as string[]
+      character.abilities as string[],
+      transcender
     );
 
     const { error } = await supabase
@@ -1236,8 +1238,10 @@ export function MobileCharacterSheet({
     
     const currentNex = character.nex;
     const previousNex = Math.max(5, currentNex - 5);
-    const currentStats = calculateDerivedStats(character.class, character.vigor, character.presence, currentNex, character.origin, character.abilities as string[]);
-    const previousStats = calculateDerivedStats(character.class, character.vigor, character.presence, previousNex, character.origin, character.abilities as string[]);
+    // Transcender adiciona +1 ao contador existente de Transcender do personagem
+    const existingTranscenderCount = countTranscender(character.abilities as string[]);
+    const currentStats = calculateDerivedStats(character.class, character.vigor, character.presence, currentNex, character.origin, character.abilities as string[], existingTranscenderCount);
+    const previousStats = calculateDerivedStats(character.class, character.vigor, character.presence, previousNex, character.origin, character.abilities as string[], existingTranscenderCount);
     const sanLoss = currentStats.san - previousStats.san;
     
     const newSanMax = Math.max(0, character.san_max - sanLoss);

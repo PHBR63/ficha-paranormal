@@ -13,7 +13,7 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
-import { calculateDerivedStats, CLASSES, ORIGINS, getOcultistRituals } from './character-data';
+import { calculateDerivedStats, countTranscender, CLASSES, ORIGINS, getOcultistRituals } from './character-data';
 import { getPowerChoiceMilestones, getCharacterPowerChoices } from './transcender-system';
 
 // Helpers para buscar origem e classe por ID
@@ -164,14 +164,16 @@ export function auditStatsCalculation(character: CharacterForAudit): {
 } {
   const issues: AuditIssue[] = [];
   
-  // Calcula valores esperados usando a função oficial
+  // Calcula valores esperados usando a função oficial (incluindo penalidade de Transcender)
+  const transcender = countTranscender(character.abilities);
   const expected = calculateDerivedStats(
     character.class,
     character.vigor,
     character.presence,
     character.nex,
     character.origin,
-    character.abilities
+    character.abilities,
+    transcender
   );
   
   const actual = {
@@ -692,6 +694,7 @@ export function validateBeforeSave(data: {
   }
   
   // Validar se stats fazem sentido com os atributos
+  // Nota: Não temos acesso a abilities neste contexto, então não aplicamos penalidade de Transcender
   if (data.class && data.vigor !== undefined && data.presence !== undefined && data.nex) {
     const expected = calculateDerivedStats(
       data.class,
