@@ -26,7 +26,9 @@ import {
   Plus,
   Minus,
   AlertTriangle,
-  Repeat
+  Repeat,
+  GraduationCap,
+  Settings2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { 
@@ -40,7 +42,9 @@ import { RuleBookTip } from './RuleBookTip';
 import { getRulebookContent } from '@/lib/rulebook-content';
 import { AbilityDetailModal } from './AbilityDetailModal';
 import { VersatilitySection, VersatilityChoice, isVersatilityChoiceComplete } from './VersatilitySection';
-import { calculateDerivedStats } from '@/lib/character-data';
+import { SkillTrainingSelectModal, SkillTrainingResult, SkillTrainingChoice } from './SkillTrainingSelectModal';
+import { calculateDerivedStats, SKILLS } from '@/lib/character-data';
+import { rebuildCharacterSheet } from '@/lib/character-builder-engine';
 
 // ==================== MARCOS DE PROGRESSÃO OFICIAIS (Tabelas 1.3, 1.4, 1.5) ====================
 // Mapeamento de habilidades que evoluem com NEX conforme livro oficial
@@ -110,16 +114,26 @@ const CLASS_COLORS: Record<string, string> = {
 };
 
 export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) {
-  const { characterClass, nex, abilities, classTrack } = formData;
+  const { characterClass, nex, abilities, classTrack, skillTrainingChoices = {} } = formData;
   
   // Estado para o modal de detalhes
   const [selectedAbilityForDetail, setSelectedAbilityForDetail] = useState<ClassAbility | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   
+  // Estado para o modal de Treinamento em Perícia
+  const [skillTrainingModalOpen, setSkillTrainingModalOpen] = useState(false);
+  const [pendingSkillTraining, setPendingSkillTraining] = useState<{
+    powerId: string;
+    instanceIndex: number;
+  } | null>(null);
+  
   // Estado para Versatilidade (NEX >= 50%)
   const [versatilityChoice, setVersatilityChoice] = useState<VersatilityChoice | null>(
     (formData as any).versatilityChoice || null
   );
+  
+  // IDs de poderes de Treinamento em Perícia (todas as classes)
+  const SKILL_TRAINING_IDS = ['treinamento-pericia-comb', 'treinamento-pericia-esp', 'treinamento-pericia-ocult'];
   
   // Verifica se personagem está em NEX 50%+ (precisa fazer escolha de Versatilidade)
   const showVersatility = nex >= 50 && classTrack;
@@ -152,6 +166,54 @@ export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) 
     return abilities.filter(a => a === abilityId).length;
   }, [abilities]);
   
+  // Calcular níveis de perícias atuais para o modal de Treinamento
+  const currentSkillLevels = useMemo(() => {
+    // Rebuild para obter as perícias atuais
+    const buildState = {
+      name: formData.name || '',
+      playerName: formData.playerName || '',
+      concept: formData.concept || '',
+      age: formData.age,
+      gender: formData.gender || '',
+      appearance: formData.appearance || '',
+      personality: formData.personality || '',
+      origin: formData.origin,
+      characterClass: formData.characterClass,
+      nex: formData.nex,
+      patent: formData.patent || 'Recruta',
+      attributes: formData.attributes,
+      originSkills: formData.originSkills,
+      classSkillChoices: formData.classSkillChoices,
+      freeSkills: formData.freeSkills,
+      conflictResolutions: formData.conflictResolutions,
+      powers: formData.powers,
+      background: formData.background || '',
+    };
+    
+    const result = rebuildCharacterSheet(buildState);
+    const levels: Record<string, number> = {};
+    
+    // Todas as perícias treinadas começam no nível 1 (Treinado)
+    result.allTrainedSkills.forEach(skillId => {
+      levels[skillId] = 1;
+    });
+    
+    // Aplicar upgrades de escolhas anteriores de Treinamento em Perícia
+    Object.values(skillTrainingChoices).forEach(choices => {
+      choices.forEach(choice => {
+        if (choice.toLevel > (levels[choice.skillId] || 0)) {
+          levels[choice.skillId] = choice.toLevel;
+        }
+      });
+    });
+    
+    return levels;
+  }, [formData.name, formData.playerName, formData.concept, formData.age, formData.gender,
+      formData.appearance, formData.personality, formData.origin, formData.characterClass, 
+      formData.nex, formData.patent, formData.attributes, formData.originSkills,
+      formData.classSkillChoices, formData.freeSkills, formData.conflictResolutions, 
+      formData.powers, formData.background, skillTrainingChoices]);
+  
   // Calcular custo de sanidade do Transcender (perda do ganho de SAN)
   const sanityGainPerNex = useMemo(() => {
     if (!characterClass) return 0;
@@ -173,24 +235,117 @@ export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) 
     setIsDetailModalOpen(true);
   };
 
+  // Verifica se um poder é Treinamento em Perícia
+  const isSkillTrainingPower = useCallback((abilityId: string) => {
+    return SKILL_TRAINING_IDS.includes(abilityId);
+  }, []);
+  
+  // Gera a chave para armazenar escolhas de Treinamento em Perícia
+  const getSkillTrainingKey = useCallback((powerId: string, instanceIndex: number) => {
+    return `${powerId}-${instanceIndex}`;
+  }, []);
+  
+  // Obtém as escolhas de uma instância específica de Treinamento em Perícia
+  const getSkillTrainingForInstance = useCallback((powerId: string, instanceIndex: number) => {
+    const key = getSkillTrainingKey(powerId, instanceIndex);
+    return skillTrainingChoices[key] || [];
+  }, [skillTrainingChoices, getSkillTrainingKey]);
+  
+  // Handler para adicionar uma instância de Treinamento em Perícia (abre modal)
+  const handleAddSkillTraining = useCallback((abilityId: string) => {
+    if (remainingChoices <= 0) return;
+    
+    // Calcular qual será o índice desta nova instância
+    const currentCount = getAbilityCount(abilityId);
+    const newInstanceIndex = currentCount;
+    
+    // Abrir modal para escolher as perícias
+    setPendingSkillTraining({
+      powerId: abilityId,
+      instanceIndex: newInstanceIndex,
+    });
+    setSkillTrainingModalOpen(true);
+  }, [remainingChoices, getAbilityCount]);
+  
+  // Handler para confirmar escolhas de Treinamento em Perícia
+  const handleSkillTrainingConfirm = useCallback((result: SkillTrainingResult) => {
+    const key = getSkillTrainingKey(result.powerId, result.instanceIndex);
+    
+    // Adicionar o poder ao array de abilities
+    const newAbilities = [...abilities, result.powerId];
+    
+    // Salvar as escolhas de perícias
+    const newSkillTrainingChoices = {
+      ...skillTrainingChoices,
+      [key]: result.choices,
+    };
+    
+    updateFormData({
+      abilities: newAbilities,
+      skillTrainingChoices: newSkillTrainingChoices,
+    } as any);
+    
+    // Fechar modal
+    setSkillTrainingModalOpen(false);
+    setPendingSkillTraining(null);
+  }, [abilities, skillTrainingChoices, getSkillTrainingKey, updateFormData]);
+  
+  // Handler para remover instância de Treinamento em Perícia
+  const handleRemoveSkillTraining = useCallback((abilityId: string) => {
+    const count = getAbilityCount(abilityId);
+    if (count === 0) return;
+    
+    // Remove a última instância
+    const lastInstanceIndex = count - 1;
+    const key = getSkillTrainingKey(abilityId, lastInstanceIndex);
+    
+    // Remover do array de abilities
+    const index = abilities.lastIndexOf(abilityId);
+    if (index !== -1) {
+      const newAbilities = [...abilities];
+      newAbilities.splice(index, 1);
+      
+      // Remover as escolhas de perícias desta instância
+      const newSkillTrainingChoices = { ...skillTrainingChoices };
+      delete newSkillTrainingChoices[key];
+      
+      updateFormData({
+        abilities: newAbilities,
+        skillTrainingChoices: newSkillTrainingChoices,
+      } as any);
+    }
+  }, [abilities, skillTrainingChoices, getAbilityCount, getSkillTrainingKey, updateFormData]);
+
   // Handler para adicionar uma instância de um poder (usado para poderes repetíveis)
   const handleAddAbility = useCallback((abilityId: string) => {
+    // Se for Treinamento em Perícia, abre o modal
+    if (isSkillTrainingPower(abilityId)) {
+      handleAddSkillTraining(abilityId);
+      return;
+    }
+    
     if (remainingChoices > 0) {
       updateFormData({
         abilities: [...abilities, abilityId]
       });
     }
-  }, [abilities, remainingChoices, updateFormData]);
+  }, [abilities, remainingChoices, updateFormData, isSkillTrainingPower, handleAddSkillTraining]);
   
   // Handler para remover UMA instância de um poder (usado para poderes repetíveis)
   const handleRemoveOneInstance = useCallback((abilityId: string) => {
+    // Se for Treinamento em Perícia, usa handler específico
+    if (isSkillTrainingPower(abilityId)) {
+      handleRemoveSkillTraining(abilityId);
+      return;
+    }
+    
     const index = abilities.lastIndexOf(abilityId);
     if (index !== -1) {
       const newAbilities = [...abilities];
       newAbilities.splice(index, 1);
       updateFormData({ abilities: newAbilities });
     }
-  }, [abilities, updateFormData]);
+  }, [abilities, updateFormData, isSkillTrainingPower, handleRemoveSkillTraining]);
 
   // Handler antigo para poderes não-repetíveis (toggle simples)
   const handleToggleAbility = useCallback((abilityId: string) => {
@@ -642,6 +797,26 @@ export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) 
           onToggle={selectedAbilityForDetail ? () => handleToggleAbility(selectedAbilityForDetail.id) : undefined}
           canSelect={remainingChoices > 0 || (selectedAbilityForDetail ? getAbilityCount(selectedAbilityForDetail.id) > 0 : false)}
         />
+        
+        {/* Modal de seleção de perícias para Treinamento em Perícia */}
+        {pendingSkillTraining && (
+          <SkillTrainingSelectModal
+            isOpen={skillTrainingModalOpen}
+            onClose={() => {
+              setSkillTrainingModalOpen(false);
+              setPendingSkillTraining(null);
+            }}
+            onConfirm={handleSkillTrainingConfirm}
+            powerId={pendingSkillTraining.powerId}
+            instanceIndex={pendingSkillTraining.instanceIndex}
+            nex={nex}
+            currentSkills={currentSkillLevels}
+            existingChoices={getSkillTrainingForInstance(
+              pendingSkillTraining.powerId, 
+              pendingSkillTraining.instanceIndex
+            ) as SkillTrainingChoice[]}
+          />
+        )}
       </div>
     </TooltipProvider>
   );

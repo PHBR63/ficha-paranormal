@@ -91,6 +91,14 @@ export type CharacterFormData = {
   // Poder paranormal da origem (Cultista Arrependido)
   originParanormalPower: string | null;
   
+  // Escolhas de perícias do poder "Treinamento em Perícia"
+  // Mapa de "powerId-instanceIndex" para array de escolhas
+  skillTrainingChoices: Record<string, Array<{
+    skillId: string;
+    fromLevel: number;
+    toLevel: number;
+  }>>;
+  
   // Versatilidade (NEX 50%+)
   versatilityChoice?: {
     type: 'class_power' | 'track_ability';
@@ -151,6 +159,7 @@ const initialFormData: CharacterFormData = {
   trackAbilities: [],
   rituals: [],
   originParanormalPower: null,
+  skillTrainingChoices: {},
   versatilityChoice: null,
   secondaryTrackAbility: null,
 };
