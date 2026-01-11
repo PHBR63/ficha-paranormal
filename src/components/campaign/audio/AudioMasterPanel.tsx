@@ -192,15 +192,18 @@ export function AudioMasterPanel({ campaignId, isMaster }: AudioMasterPanelProps
             )}
           </Button>
           
-          <div className="w-20">
+          <div className="flex items-center gap-2 w-28">
             <Slider
               value={[audioState?.master_volume ?? 1]}
               min={0}
               max={1}
-              step={0.1}
+              step={0.05}
               onValueChange={([v]) => setMasterVolume(v)}
-              className="cursor-pointer"
+              className="cursor-pointer flex-1"
             />
+            <span className="text-xs text-muted-foreground w-8 text-right">
+              {Math.round((audioState?.master_volume ?? 1) * 100)}%
+            </span>
           </div>
           
           {audioState?.playing_tracks.length > 0 && (
