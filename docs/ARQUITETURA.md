@@ -416,26 +416,6 @@ O projeto é uma Progressive Web App com:
 
 ## 🔄 Fases Pendentes
 
-### Combat 7.5 - Push Notifications
-**Status:** ⏳ Pendente
-
-Notificar jogadores sobre:
-- Início do turno
-- Eventos de combate importantes
-- Ataques de oportunidade
-
-**Arquivos relacionados:** `src/hooks/platform/usePushNotifications.ts`
-
-### Combat 7.6 - Otimização Mobile do CombatTracker
-**Status:** ✅ 100% Concluído
-
-- ✅ Gestos touch otimizados
-- ✅ Layout compacto para telas pequenas
-- ✅ Performance melhorada em dispositivos móveis
-
-**Arquivos criados:**
-- `src/components/combat/MobileCombatTracker.tsx`
-
 ### Rituals 9 - Sistema de Buffs por Turno
 **Status:** ✅ 100% Concluído
 
