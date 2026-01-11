@@ -720,6 +720,112 @@ export type Database = {
         }
         Relationships: []
       }
+      character_active_conditions: {
+        Row: {
+          applied_at_round: number | null
+          applied_at_turn: number | null
+          campaign_id: string | null
+          can_be_removed: boolean | null
+          character_id: string
+          color: string | null
+          condition_id: string
+          condition_name: string
+          condition_type: string
+          created_at: string
+          decrements_at: string | null
+          description: string | null
+          duration_remaining: number | null
+          duration_total: number | null
+          duration_type: string
+          icon: string | null
+          id: string
+          max_stacks: number | null
+          mechanical_effect: string | null
+          session_id: string | null
+          source_name: string | null
+          source_type: string | null
+          stacks: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          applied_at_round?: number | null
+          applied_at_turn?: number | null
+          campaign_id?: string | null
+          can_be_removed?: boolean | null
+          character_id: string
+          color?: string | null
+          condition_id: string
+          condition_name: string
+          condition_type?: string
+          created_at?: string
+          decrements_at?: string | null
+          description?: string | null
+          duration_remaining?: number | null
+          duration_total?: number | null
+          duration_type?: string
+          icon?: string | null
+          id?: string
+          max_stacks?: number | null
+          mechanical_effect?: string | null
+          session_id?: string | null
+          source_name?: string | null
+          source_type?: string | null
+          stacks?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          applied_at_round?: number | null
+          applied_at_turn?: number | null
+          campaign_id?: string | null
+          can_be_removed?: boolean | null
+          character_id?: string
+          color?: string | null
+          condition_id?: string
+          condition_name?: string
+          condition_type?: string
+          created_at?: string
+          decrements_at?: string | null
+          description?: string | null
+          duration_remaining?: number | null
+          duration_total?: number | null
+          duration_type?: string
+          icon?: string | null
+          id?: string
+          max_stacks?: number | null
+          mechanical_effect?: string | null
+          session_id?: string | null
+          source_name?: string | null
+          source_type?: string | null
+          stacks?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "character_active_conditions_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "character_active_conditions_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: false
+            referencedRelation: "characters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "character_active_conditions_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       character_change_history: {
         Row: {
           change_type: string
