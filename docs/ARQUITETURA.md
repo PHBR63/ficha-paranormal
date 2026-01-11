@@ -446,10 +446,12 @@ Automação completa de buffs de arma que expiram por turno:
 - ✅ Hook de gerenciamento de buffs no combate
 - ✅ Painel visual de buffs no CombatTracker
 - ✅ Notificações de expiração
+- ✅ **Integração completa no CombatTracker** (exibe automaticamente durante combate)
 
 **Arquivos relacionados:** 
 - `src/hooks/combat/useCombatWeaponBuffs.ts` - Hook de sincronização
 - `src/components/combat/CombatWeaponBuffsPanel.tsx` - Painel UI
+- `src/components/combat/CombatTracker.tsx` - Integração do painel
 - `src/components/character/RitualEffectWizard.tsx`
 - `src/components/character/WeaponBuffTurnTracker.tsx`
 - `src/hooks/useWeaponBuffs.ts` - Hook base de buffs

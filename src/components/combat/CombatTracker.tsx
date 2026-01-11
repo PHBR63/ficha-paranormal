@@ -44,7 +44,10 @@ import { TurnActionsPanel } from "./TurnActionsPanel";
 import { PreparedActionsList, type PreparedAction } from "./PreparedActionBadge";
 import { ConditionBadges } from "@/components/character/conditions/ConditionBadges";
 import { QuickAddConditionButton } from "@/components/character/conditions/ConditionManager";
+import { CombatWeaponBuffsPanel } from "./CombatWeaponBuffsPanel";
 import { useCombatConditions, type LocalCombatCondition } from "@/hooks/combat/useCombatConditions";
+import { useCombatWeaponBuffs } from "@/hooks/combat/useCombatWeaponBuffs";
+import { useWeaponBuffs, type WeaponBuff } from "@/hooks/useWeaponBuffs";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   Swords,
@@ -65,11 +68,21 @@ import {
 } from "lucide-react";
 import confetti from "canvas-confetti";
 
+// Interface para props com buffs de personagem
+interface CharacterBuffsData {
+  buffs: WeaponBuff[];
+  advanceTurn: () => { expired: WeaponBuff[]; remaining: WeaponBuff[] };
+  setBuffTurns: (buffId: string, turns: number) => void;
+  removeBuff: (buffId: string) => void;
+}
+
 interface CombatTrackerProps {
   campaignId?: string;
   initialCombatants?: Partial<CombatantState>[];
   onCombatUpdate?: (state: CombatState) => void;
   isMaster?: boolean;
+  /** Mapa de characterId -> dados de buffs para integração com weapon buffs */
+  characterBuffsMap?: Map<string, CharacterBuffsData>;
 }
 
 export function CombatTracker({
@@ -77,6 +90,7 @@ export function CombatTracker({
   initialCombatants = [],
   onCombatUpdate,
   isMaster = true,
+  characterBuffsMap = new Map(),
 }: CombatTrackerProps) {
   const { user } = useAuth();
   const [combatState, setCombatState] = useState<CombatState>(() => {
@@ -108,6 +122,29 @@ export function CombatTracker({
     userId: user?.id,
     enabled: !!user?.id,
     characterIds: linkedCharacterIds,
+  });
+  
+  // Hook de sincronização de buffs de arma com combate
+  const weaponBuffsHook = useCombatWeaponBuffs({
+    combatants: combatState.combatants,
+    currentRound: combatState.round,
+    isActive: combatState.isActive,
+    characterBuffsMap,
+    onBuffsExpired: useCallback((results) => {
+      // Adiciona mensagens ao log de combate
+      const newLogEntries = results.flatMap(r => r.messages.map(msg => ({
+        timestamp: new Date(),
+        type: 'condition' as const,
+        message: msg,
+      })));
+      
+      if (newLogEntries.length > 0) {
+        setCombatState(prev => ({
+          ...prev,
+          log: [...prev.log, ...newLogEntries],
+        }));
+      }
+    }, []),
   });
 
   // Sincroniza condições do BD com estado local quando mudam via realtime
@@ -872,6 +909,33 @@ export function CombatTracker({
               ],
             });
           }}
+        />
+      )}
+
+      {/* Painel de Buffs de Arma - exibe buffs ativos durante o combate */}
+      {combatState.isActive && weaponBuffsHook.totalActiveBuffs > 0 && (
+        <CombatWeaponBuffsPanel
+          combatantBuffs={weaponBuffsHook.combatantBuffs}
+          hasTurnBasedBuffs={weaponBuffsHook.hasTurnBasedBuffsInCombat}
+          totalBuffs={weaponBuffsHook.totalActiveBuffs}
+          currentCombatantId={currentCombatant?.id}
+          onAdvanceTurn={isMaster ? weaponBuffsHook.advanceAllBuffTurns : undefined}
+          onRemoveBuff={isMaster ? (characterId, buffId) => {
+            const charData = characterBuffsMap.get(characterId);
+            if (charData) {
+              charData.removeBuff(buffId);
+            }
+          } : undefined}
+          onAdjustTurns={isMaster ? (characterId, buffId, delta) => {
+            const charData = characterBuffsMap.get(characterId);
+            if (charData) {
+              const buff = charData.buffs.find(b => b.id === buffId);
+              if (buff && buff.turnsRemaining !== undefined) {
+                charData.setBuffTurns(buffId, Math.max(0, buff.turnsRemaining + delta));
+              }
+            }
+          } : undefined}
+          className="mt-4"
         />
       )}
 
