@@ -639,6 +639,84 @@ export function CombatTracker({
         </div>
       </div>
 
+      {/* Turn Timer - Exibe durante combate ativo */}
+      {combatState.isActive && currentCombatant && (
+        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between p-4 bg-secondary/20 rounded-lg border border-border">
+          {/* Timer Compacto para mobile, completo para desktop */}
+          <div className="hidden md:block w-full max-w-xs">
+            <TurnTimer
+              timerState={turnTimer.timerState}
+              config={turnTimer.config}
+              formattedTime={turnTimer.formattedTime}
+              isWarning={turnTimer.isWarning}
+              isCritical={turnTimer.isCritical}
+              combatantName={currentCombatant.name}
+              onStart={turnTimer.startTimer}
+              onStop={turnTimer.stopTimer}
+              onTogglePause={turnTimer.togglePause}
+              onReset={turnTimer.resetTimer}
+              onAddTime={turnTimer.addTime}
+              onConfigChange={turnTimer.updateConfig}
+            />
+          </div>
+          
+          {/* Versão compacta para mobile */}
+          <div className="md:hidden flex items-center gap-3 w-full">
+            <div className="flex items-center gap-2 flex-1">
+              <Timer className={cn(
+                "w-5 h-5",
+                turnTimer.isCritical ? "text-destructive animate-pulse" :
+                turnTimer.isWarning ? "text-amber-500" :
+                turnTimer.timerState.isRunning ? "text-emerald-500" :
+                "text-muted-foreground"
+              )} />
+              <span className={cn(
+                "font-mono text-xl font-bold",
+                turnTimer.isCritical ? "text-destructive" :
+                turnTimer.isWarning ? "text-amber-500" :
+                turnTimer.timerState.isRunning ? "text-emerald-500" :
+                "text-muted-foreground"
+              )}>
+                {turnTimer.formattedTime}
+              </span>
+              <span className="text-sm text-muted-foreground truncate">
+                {currentCombatant.name}
+              </span>
+            </div>
+            
+            <div className="flex gap-1">
+              {!turnTimer.timerState.isRunning ? (
+                <Button size="sm" variant="outline" onClick={turnTimer.startTimer} className="gap-1">
+                  <Play className="w-3.5 h-3.5" />
+                  Iniciar
+                </Button>
+              ) : (
+                <>
+                  <Button size="icon" variant="ghost" onClick={turnTimer.togglePause} className="h-8 w-8">
+                    {turnTimer.timerState.isPaused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
+                  </Button>
+                  <Button size="icon" variant="ghost" onClick={() => turnTimer.addTime(30)} className="h-8 w-8">
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                  <Button size="icon" variant="ghost" onClick={turnTimer.resetTimer} className="h-8 w-8">
+                    <RotateCcw className="w-4 h-4" />
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
+          
+          {/* Info do turno atual para desktop */}
+          <div className="hidden md:flex flex-col items-end gap-1">
+            <span className="text-xs text-muted-foreground">Turno Atual</span>
+            <span className="font-display text-lg">{currentCombatant.name}</span>
+            <span className="text-xs text-muted-foreground">
+              Rodada {combatState.round}
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Add combatant form (only when not in combat) */}
       {!combatState.isActive && isMaster && (
         <div className="flex gap-3 p-4 bg-secondary/30 rounded-lg border border-border">
