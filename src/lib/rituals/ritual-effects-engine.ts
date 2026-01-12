@@ -24,7 +24,21 @@ import type {
   DamageReductionConfig,
   SkillBonusConfig,
   SustainConfig,
+  RitualDamage,
+  RitualHealing,
 } from './types';
+
+// ========================================
+// TYPE GUARDS
+// ========================================
+
+function isRitualDamage(value: unknown): value is RitualDamage {
+  return typeof value === 'object' && value !== null && 'diceCount' in value && 'diceType' in value;
+}
+
+function isRitualHealing(value: unknown): value is RitualHealing {
+  return typeof value === 'object' && value !== null && 'diceCount' in value && 'diceType' in value;
+}
 
 // ========================================
 // TIPOS DE RESULTADO
@@ -210,8 +224,8 @@ export function applyRitual(
   }
 
   const level = getEffectiveLevel(selectedEnhancements);
-  const mechanics = getRitualEffect(ritualId, level);
-  const peCost = calculateRitualCost(ritualId, selectedEnhancements, options?.isNonOccultist);
+  const mechanics = getRitualEffect(ritualId, selectedEnhancements);
+  const peCost = calculateRitualCost(ritual, selectedEnhancements, options?.isNonOccultist);
 
   if (!mechanics) {
     return {
@@ -264,7 +278,8 @@ export function applyRitual(
   // Processa redução de dano
   if (mechanics.damageReduction) {
     effects.damageReduction = mechanics.damageReduction;
-    messages.push(`RD ${mechanics.damageReduction.amount} contra ${mechanics.damageReduction.types.join(', ')}`);
+    const types = mechanics.damageReduction.types?.join(', ') || 'todos';
+    messages.push(`RD ${mechanics.damageReduction.amount} contra ${types}`);
   }
 
   // Processa bônus de perícias
@@ -293,50 +308,53 @@ export function applyRitual(
     }
   }
 
-  // Processa dano
-  if (mechanics.damage) {
+  // Processa dano (com type guard)
+  if (mechanics.damage && isRitualDamage(mechanics.damage)) {
+    const dmg = mechanics.damage;
     effects.damage = {
-      diceCount: mechanics.damage.diceCount,
-      diceType: mechanics.damage.diceType,
-      bonus: mechanics.damage.bonus,
-      damageType: mechanics.damage.damageType,
+      diceCount: dmg.diceCount,
+      diceType: dmg.diceType,
+      bonus: dmg.bonus,
+      damageType: dmg.damageType || 'não especificado',
     };
     
     if (options?.rollDice) {
-      effects.damage.rolled = rollDice(
-        mechanics.damage.diceCount,
-        mechanics.damage.diceType,
-        mechanics.damage.bonus || 0
-      );
-      messages.push(`Causa ${effects.damage.rolled} de dano de ${mechanics.damage.damageType}`);
+      effects.damage.rolled = rollDice(dmg.diceCount, dmg.diceType, dmg.bonus || 0);
+      messages.push(`Causa ${effects.damage.rolled} de dano de ${dmg.damageType || 'não especificado'}`);
     } else {
-      messages.push(`Causa ${mechanics.damage.diceCount}d${mechanics.damage.diceType}${mechanics.damage.bonus ? `+${mechanics.damage.bonus}` : ''} de dano de ${mechanics.damage.damageType}`);
+      messages.push(`Causa ${dmg.diceCount}d${dmg.diceType}${dmg.bonus ? `+${dmg.bonus}` : ''} de dano de ${dmg.damageType || 'não especificado'}`);
     }
+  } else if (typeof mechanics.damage === 'string') {
+    // Dano em formato string (ex: "2d6+3")
+    messages.push(`Causa ${mechanics.damage} de dano`);
   }
 
-  // Processa cura
-  if (mechanics.healing) {
+  // Processa cura (com type guard)
+  if (mechanics.healing && isRitualHealing(mechanics.healing)) {
+    const heal = mechanics.healing;
     effects.healing = {
-      diceCount: mechanics.healing.diceCount,
-      diceType: mechanics.healing.diceType,
-      bonus: mechanics.healing.bonus,
+      diceCount: heal.diceCount,
+      diceType: heal.diceType,
+      bonus: heal.bonus,
     };
     
     if (options?.rollDice) {
-      effects.healing.rolled = rollDice(
-        mechanics.healing.diceCount,
-        mechanics.healing.diceType,
-        mechanics.healing.bonus || 0
-      );
+      effects.healing.rolled = rollDice(heal.diceCount, heal.diceType, heal.bonus || 0);
       messages.push(`Cura ${effects.healing.rolled} PV`);
     } else {
-      messages.push(`Cura ${mechanics.healing.diceCount}d${mechanics.healing.diceType}${mechanics.healing.bonus ? `+${mechanics.healing.bonus}` : ''} PV`);
+      messages.push(`Cura ${heal.diceCount}d${heal.diceType}${heal.bonus ? `+${heal.bonus}` : ''} PV`);
     }
+  } else if (typeof mechanics.healing === 'string') {
+    messages.push(`Cura ${mechanics.healing} PV`);
   }
 
   // Processa condições
   if (mechanics.conditions && mechanics.conditions.length > 0) {
-    effects.conditions = mechanics.conditions;
+    effects.conditions = mechanics.conditions.map(c => ({
+      id: c.id,
+      name: c.id, // Usa ID como nome por padrão
+      duration: c.duration,
+    }));
     const conditionNames = mechanics.conditions.map(c => c.id).join(', ');
     messages.push(`Aplica condição: ${conditionNames}`);
   }
@@ -393,7 +411,7 @@ export function calculateActiveRitualBonuses(
 
   for (const ritual of sustainedRituals) {
     const level = getEffectiveLevel(ritual.selectedEnhancements);
-    const mechanics = getRitualEffect(ritual.ritualId, level);
+    const mechanics = getRitualEffect(ritual.ritualId, ritual.selectedEnhancements);
     if (!mechanics) continue;
 
     // Attack bonus - usa o maior
@@ -498,17 +516,18 @@ export function processRitualHooks(
   trigger: string,
   context?: Record<string, unknown>
 ): Array<{ ritualName: string; hookEffect: string }> {
-  const triggeredHooks: Array<{ ritualName: string; hookEffect: string }> = [];
+  const triggeredEffects: Array<{ ritualName: string; hookEffect: string }> = [];
 
   for (const ritual of sustainedRituals) {
-    const level = getEffectiveLevel(ritual.selectedEnhancements);
-    const mechanics = getRitualEffect(ritual.ritualId, level);
+    const ritualData = getRitualById(ritual.ritualId);
+    if (!ritualData) continue;
+
+    const mechanics = getRitualEffect(ritual.ritualId, ritual.selectedEnhancements);
     if (!mechanics?.hooks) continue;
 
     for (const hook of mechanics.hooks) {
       if (hook.trigger === trigger) {
-        // TODO: Avaliar condição do hook se existir
-        triggeredHooks.push({
+        triggeredEffects.push({
           ritualName: ritual.ritualName,
           hookEffect: hook.effect,
         });
@@ -516,7 +535,7 @@ export function processRitualHooks(
     }
   }
 
-  return triggeredHooks;
+  return triggeredEffects;
 }
 
 /**
@@ -524,17 +543,13 @@ export function processRitualHooks(
  */
 export function canSustainRitual(ritualId: string): boolean {
   const ritual = getRitualById(ritualId);
-  return ritual?.isSustainable === true || ritual?.duration?.toLowerCase().includes('sustentada') === true;
+  return ritual?.isSustainable ?? false;
 }
 
 /**
- * Retorna o resumo do efeito de um ritual para exibição
+ * Retorna o sumário do efeito de um ritual
  */
-export function getRitualEffectSummary(
-  ritualId: string,
-  selectedEnhancements: string[] = []
-): string {
-  const level = getEffectiveLevel(selectedEnhancements);
-  const mechanics = getRitualEffect(ritualId, level);
-  return mechanics?.summary || 'Efeito não definido';
+export function getRitualEffectSummary(ritualId: string, selectedEnhancements: string[] = []): string {
+  const mechanics = getRitualEffect(ritualId, selectedEnhancements);
+  return mechanics?.summary || 'Efeito não especificado';
 }

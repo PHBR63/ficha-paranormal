@@ -4,7 +4,7 @@
  */
 
 import { UNIFIED_RITUALS } from './unified-rituals';
-import type { UnifiedRitual, RitualEnhancement } from './types';
+import type { UnifiedRitual, RitualEnhancement, RitualMechanics } from './types';
 
 // Mapa para busca rápida
 const RITUAL_BY_ID = new Map<string, UnifiedRitual>(
@@ -48,31 +48,6 @@ export function getRitualsByMaxCircle(maxCircle: number): UnifiedRitual[] {
 }
 
 /**
- * Retorna o efeito atual de um ritual baseado nos aprimoramentos
- * Aceita tanto o ritual quanto o ID do ritual
- */
-export function getRitualEffect(
-  ritualOrId: UnifiedRitual | string, 
-  selectedEnhancements: string[] = []
-) {
-  const ritual = typeof ritualOrId === 'string' 
-    ? getRitualById(ritualOrId) 
-    : ritualOrId;
-  
-  if (!ritual) return undefined;
-  
-  const level = getEffectiveLevel(selectedEnhancements);
-  
-  if (level === 'verdadeiro' && ritual.effects.verdadeiro) {
-    return { ...ritual.effects.base, ...ritual.effects.verdadeiro };
-  }
-  if (level === 'discente' && ritual.effects.discente) {
-    return { ...ritual.effects.base, ...ritual.effects.discente };
-  }
-  return ritual.effects.base;
-}
-
-/**
  * Determina o nível efetivo do ritual (Base, Discente, Verdadeiro)
  * baseado nos aprimoramentos selecionados
  */
@@ -87,23 +62,64 @@ export function getEffectiveLevel(selectedEnhancements: string[] = []): 'base' |
 }
 
 /**
+ * Retorna o efeito atual de um ritual baseado nos aprimoramentos ou nível
+ * Aceita tanto o ritual/ID quanto selectedEnhancements ou level direto
+ */
+export function getRitualEffect(
+  ritualOrId: UnifiedRitual | string, 
+  selectedEnhancementsOrLevel: string[] | 'base' | 'discente' | 'verdadeiro' = []
+): RitualMechanics | undefined {
+  const ritual = typeof ritualOrId === 'string' 
+    ? getRitualById(ritualOrId) 
+    : ritualOrId;
+  
+  if (!ritual) return undefined;
+  
+  // Determina o nível
+  const level = typeof selectedEnhancementsOrLevel === 'string'
+    ? selectedEnhancementsOrLevel
+    : getEffectiveLevel(selectedEnhancementsOrLevel);
+  
+  if (level === 'verdadeiro' && ritual.effects.verdadeiro) {
+    return { ...ritual.effects.base, ...ritual.effects.verdadeiro };
+  }
+  if (level === 'discente' && ritual.effects.discente) {
+    return { ...ritual.effects.base, ...ritual.effects.discente };
+  }
+  return ritual.effects.base;
+}
+
+/**
  * Calcula o custo total de PE do ritual
+ * Aceita ritualId (string), ritual (UnifiedRitual), ou apenas os parâmetros básicos
  */
 export function calculateRitualCost(
-  ritual: UnifiedRitual,
-  selectedEnhancements: string[] = []
+  ritualOrId: UnifiedRitual | string,
+  selectedEnhancements: string[] = [],
+  isNonOccultist: boolean = false
 ): number {
+  const ritual = typeof ritualOrId === 'string' 
+    ? getRitualById(ritualOrId) 
+    : ritualOrId;
+  
+  if (!ritual) return 0;
+  
   let totalCost = ritual.cost;
 
-  if (!ritual.enhancements) return totalCost;
-
-  for (const enhancementName of selectedEnhancements) {
-    const enhancement = ritual.enhancements.find(
-      e => e.name.toLowerCase() === enhancementName.toLowerCase()
-    );
-    if (enhancement) {
-      totalCost += enhancement.cost;
+  if (ritual.enhancements) {
+    for (const enhancementName of selectedEnhancements) {
+      const enhancement = ritual.enhancements.find(
+        e => e.name.toLowerCase() === enhancementName.toLowerCase()
+      );
+      if (enhancement) {
+        totalCost += enhancement.cost;
+      }
     }
+  }
+
+  // Dobra o custo para não-ocultistas
+  if (isNonOccultist) {
+    totalCost *= 2;
   }
 
   return totalCost;
@@ -113,10 +129,19 @@ export function calculateRitualCost(
  * Verifica se o personagem pode conjurar o ritual
  */
 export function canCastRitual(
-  ritual: UnifiedRitual,
+  ritualOrId: UnifiedRitual | string,
   characterCircle: number,
-  currentPE: number
+  currentPE: number,
+  elementalAffinity?: string
 ): { canCast: boolean; reason?: string } {
+  const ritual = typeof ritualOrId === 'string' 
+    ? getRitualById(ritualOrId) 
+    : ritualOrId;
+  
+  if (!ritual) {
+    return { canCast: false, reason: 'Ritual não encontrado' };
+  }
+  
   if (ritual.circle > characterCircle) {
     return { canCast: false, reason: `Requer círculo ${ritual.circle}` };
   }
@@ -130,16 +155,41 @@ export function canCastRitual(
  * Verifica se o personagem pode usar um aprimoramento
  */
 export function canUseEnhancement(
-  enhancement: RitualEnhancement,
+  ritualOrId: UnifiedRitual | string,
+  enhancementName: string,
   characterCircle: number,
-  hasAffinity: boolean = false
+  elementalAffinity?: string
 ): { canUse: boolean; reason?: string } {
+  const ritual = typeof ritualOrId === 'string' 
+    ? getRitualById(ritualOrId) 
+    : ritualOrId;
+  
+  if (!ritual) {
+    return { canUse: false, reason: 'Ritual não encontrado' };
+  }
+  
+  const enhancement = ritual.enhancements?.find(
+    e => e.name.toLowerCase() === enhancementName.toLowerCase()
+  );
+  
+  if (!enhancement) {
+    return { canUse: true }; // Se não existe, permite (fallback)
+  }
+  
   if (enhancement.circleReq && enhancement.circleReq > characterCircle) {
     return { canUse: false, reason: `Requer círculo ${enhancement.circleReq}` };
   }
-  if (enhancement.affinityReq && !hasAffinity) {
-    return { canUse: false, reason: 'Requer afinidade elemental' };
+  
+  if (enhancement.affinityReq) {
+    if (!elementalAffinity) {
+      return { canUse: false, reason: 'Requer afinidade elemental' };
+    }
+    // Verifica se a afinidade corresponde ao elemento do ritual
+    if (elementalAffinity.toLowerCase() !== ritual.element.toLowerCase()) {
+      return { canUse: false, reason: `Requer afinidade com ${ritual.element}` };
+    }
   }
+  
   return { canUse: true };
 }
 

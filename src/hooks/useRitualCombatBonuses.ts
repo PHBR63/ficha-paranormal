@@ -132,7 +132,7 @@ function extractBonusFromMechanics(
   // Extrai damageReduction
   if (mechanics.damageReduction) {
     bonus.damageReduction = {
-      types: mechanics.damageReduction.types,
+      types: mechanics.damageReduction.types || [],
       amount: mechanics.damageReduction.amount,
     };
   }
@@ -162,7 +162,7 @@ export function useRitualCombatBonuses(
       const level = getEffectiveLevel(ritual.selectedEnhancements || []);
       
       // Primeiro tenta o sistema unificado
-      const mechanics = getRitualEffect(ritual.ritualId, level);
+      const mechanics = getRitualEffect(ritual.ritualId, ritual.selectedEnhancements || []);
       
       if (mechanics) {
         const bonus = extractBonusFromMechanics(

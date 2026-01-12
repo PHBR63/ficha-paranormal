@@ -45,13 +45,13 @@ export interface Ritual {
   name: string;
   circle: number;
   element: RitualElement;
-  execution: string;
-  range: string;
+  execution?: string;
+  range?: string;
   target?: string;
   area?: string;
-  duration: string;
+  duration?: string;
   resistance?: string;
-  description: string;
+  description?: string;
   cost: number;
   enhancements?: RitualEnhancement[];
 }
@@ -501,5 +501,9 @@ export function getRitualActionRestrictions(ritualId: string): ActionRestriction
   const effects = RITUAL_EFFECTS[ritualId];
   if (!effects) return [];
   
-  return effects.base.actionRestrictions || [];
+  return [
+    ...(effects.base.actionRestrictions || []),
+    ...(effects.discente?.actionRestrictions || []),
+    ...(effects.verdadeiro?.actionRestrictions || []),
+  ];
 }

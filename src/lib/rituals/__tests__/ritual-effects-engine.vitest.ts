@@ -157,7 +157,7 @@ describe('Motor de Efeitos - Cálculo de Custo de PE', () => {
       return;
     }
     
-    const cost = calculateRitualCost('arma-atroz', []);
+    const cost = calculateRitualCost(ritual, []);
     expect(cost).toBe(ritual.cost);
   });
 
@@ -171,7 +171,7 @@ describe('Motor de Efeitos - Cálculo de Custo de PE', () => {
     const allEnhancementsCost = ritual.enhancements.reduce((sum, e) => sum + e.cost, 0);
     const enhancementNames = ritual.enhancements.map(e => e.name);
     
-    const cost = calculateRitualCost('arma-atroz', enhancementNames);
+    const cost = calculateRitualCost(ritual, enhancementNames);
     expect(cost).toBe(ritual.cost + allEnhancementsCost);
   });
 
@@ -182,8 +182,8 @@ describe('Motor de Efeitos - Cálculo de Custo de PE', () => {
       return;
     }
     
-    const normalCost = calculateRitualCost('arma-atroz', [], false);
-    const nonOccultistCost = calculateRitualCost('arma-atroz', [], true);
+    const normalCost = calculateRitualCost(ritual, []);
+    const nonOccultistCost = calculateRitualCost(ritual, [], true);
     
     expect(nonOccultistCost).toBe(normalCost * 2);
   });
@@ -278,12 +278,12 @@ describe('Motor de Efeitos - Validação de Conjuração', () => {
     }
     
     // Personagem de círculo 1 tentando conjurar ritual de círculo superior
-    const resultLowCircle = canCastRitual(ritual.id, 1, 100, 'sangue');
+    const resultLowCircle = canCastRitual(ritual, 1, 100);
     expect(resultLowCircle.canCast).toBe(false);
     expect(resultLowCircle.reason).toContain('círculo');
     
     // Personagem de círculo suficiente
-    const resultHighCircle = canCastRitual(ritual.id, ritual.circle, 100, 'sangue');
+    const resultHighCircle = canCastRitual(ritual, ritual.circle, 100);
     expect(resultHighCircle.canCast).toBe(true);
   });
 
@@ -295,12 +295,12 @@ describe('Motor de Efeitos - Validação de Conjuração', () => {
     }
     
     // PE insuficiente
-    const resultLowPE = canCastRitual(ritual.id, 4, 0, 'sangue');
+    const resultLowPE = canCastRitual(ritual, 4, 0);
     expect(resultLowPE.canCast).toBe(false);
     expect(resultLowPE.reason).toContain('PE');
     
     // PE suficiente
-    const resultHighPE = canCastRitual(ritual.id, 4, 100, 'sangue');
+    const resultHighPE = canCastRitual(ritual, 4, 100);
     expect(resultHighPE.canCast).toBe(true);
   });
 
@@ -330,18 +330,18 @@ describe('Motor de Efeitos - Validação de Aprimoramentos', () => {
     }
     
     // Círculo insuficiente
-    const resultLow = canUseEnhancement(ritual.id, 'Discente', discente.circleReq - 1, 'sangue');
+    const resultLow = canUseEnhancement(ritual, 'Discente', discente.circleReq - 1);
     expect(resultLow.canUse).toBe(false);
     
     // Círculo suficiente
-    const resultHigh = canUseEnhancement(ritual.id, 'Discente', discente.circleReq, 'sangue');
+    const resultHigh = canUseEnhancement(ritual, 'Discente', discente.circleReq);
     expect(resultHigh.canUse).toBe(true);
   });
 
-  it('canUseEnhancement deve retornar erro para aprimoramento inexistente', () => {
-    const result = canUseEnhancement('arma-atroz', 'Discente', 4, 'sangue');
-    // Pode retornar true se existe, ou false se não
-    expect(typeof result.canUse).toBe('boolean');
+  it('canUseEnhancement deve retornar true para aprimoramento inexistente', () => {
+    const result = canUseEnhancement('arma-atroz', 'AprimoramentoInexistente', 4);
+    // Retorna true como fallback se não encontrar
+    expect(result.canUse).toBe(true);
   });
 });
 
