@@ -1767,6 +1767,17 @@ export default function CharacterSheet() {
     ? character.rituals.length > ritualLimits.count 
     : false;
 
+  // Calcular origens das perícias para tooltips (ANTES do early return para evitar erro de hooks)
+  const skillOrigins = useMemo(() => {
+    if (!character) return {};
+    return calculateSkillOrigins(
+      character.skills,
+      character.origin,
+      character.class,
+      character.skill_training_choices
+    );
+  }, [character?.skills, character?.origin, character?.class, character?.skill_training_choices]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -1826,16 +1837,6 @@ export default function CharacterSheet() {
     presence: character.presence,
     vigor: character.vigor,
   };
-
-  // Calcular origens das perícias para tooltips
-  const skillOrigins = useMemo(() => {
-    return calculateSkillOrigins(
-      character.skills,
-      character.origin,
-      character.class,
-      character.skill_training_choices
-    );
-  }, [character.skills, character.origin, character.class, character.skill_training_choices]);
 
   // Preparar armas para tabela de combate usando dados reais do item
   // Usa a função centralizada normalizeWeaponTypeForDisplay para consistência com mobile
