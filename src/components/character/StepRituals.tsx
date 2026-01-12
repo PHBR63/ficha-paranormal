@@ -106,7 +106,9 @@ function RitualCard({
   onToggle: () => void;
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const elementConfig = ELEMENT_CONFIG[ritual.element];
+  // Normaliza o elemento para lowercase para garantir compatibilidade
+  const elementKey = (ritual.element?.toLowerCase() || 'conhecimento') as keyof typeof ELEMENT_CONFIG;
+  const elementConfig = ELEMENT_CONFIG[elementKey] || ELEMENT_CONFIG.conhecimento;
   const ElementIcon = elementConfig.icon;
 
   return (
