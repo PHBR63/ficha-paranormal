@@ -92,7 +92,7 @@ export const BLOOD_THIRD_CIRCLE: UnifiedRitual[] = [
     effects: {
       base: {
         kind: 'buff',
-        senseEffect: { type: 'detect', targets: ['cheiros'], information: 'faro' },
+        senseEffect: { type: 'detect', targets: 'cheiros', information: 'faro' },
         skillBonus: { skills: ['Atletismo'], bonus: 5, context: 'em perseguição' },
         summary: 'Faro. +5 Atletismo em perseguição. Fome/Sede ao fim.',
       },
@@ -417,7 +417,7 @@ export const KNOWLEDGE_THIRD_CIRCLE: UnifiedRitual[] = [
     effects: {
       base: {
         kind: 'sense',
-        senseEffect: { type: 'scry', targets: ['pensamentos'], information: 'sim/não' },
+        senseEffect: { type: 'scry', targets: 'pensamentos', information: 'sim/não' },
         resistance: { type: 'vontade', effect: 'parcial' },
         sustain: { concentration: true },
         summary: 'Lê pensamentos. Pergunta sim/não se falhar em Vontade.',

@@ -299,7 +299,7 @@ export const KNOWLEDGE_SECOND_CIRCLE: UnifiedRitual[] = [
     effects: {
       base: {
         kind: 'sense',
-        senseEffect: { type: 'detect', range: 18, targets: ['perigos', 'armadilhas'], information: 'direção e distância' },
+        senseEffect: { type: 'detect', range: 18, targets: 'perigos e armadilhas', information: 'direção e distância' },
         summary: 'Sente perigos em 18m. Pode identificar direção/distância.',
       },
       discente: {
