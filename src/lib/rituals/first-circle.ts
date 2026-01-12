@@ -429,28 +429,28 @@ export const ENERGY_FIRST_CIRCLE: UnifiedRitual[] = [
     range: 'Pessoal',
     target: 'Você',
     duration: 'Cena',
-    description: 'Você emite luz, iluminando a área ao redor. Luz transportada nunca fica invisível. Qualquer parte de um item carregado que se estenda além de seu alcance corpo a corpo natural se torna visível.',
+    description: 'Você emite luz, iluminando a área ao redor. Luz transportada nunca fica invisível (mesmo que sua fonte esteja). Qualquer parte de um item carregado que se estenda além de seu alcance corpo a corpo natural se torna visível.',
     cost: 1,
     effects: {
       base: {
         kind: 'utility',
-        summary: 'Emite luz, ilumina área ao redor.',
+        summary: 'Emite luz, ilumina área ao redor. Luz transportada nunca fica invisível.',
       },
       discente: {
         kind: 'buff',
         areaEffect: { shape: 'esfera', radius: 3 },
         sustain: { action: 'free' },
-        summary: 'Sustentada. Esfera de invisibilidade 3m (você e aliados).',
+        summary: 'Duração sustentada. Gera esfera de invisibilidade 3m (você e aliados dentro).',
       },
       verdadeiro: {
         kind: 'buff',
         sustain: { action: 'free' },
-        summary: 'Toque, 1 ser, sustentada. Ataque não dissipa a invisibilidade.',
+        summary: 'Execução padrão, alcance toque, 1 ser, sustentada. Ataque não dissipa a invisibilidade.',
       },
     },
     enhancements: [
-      { name: 'Discente', cost: 3, description: 'Duração sustentada. Esfera de invisibilidade 3m (você e aliados).', circleReq: 3 },
-      { name: 'Verdadeiro', cost: 7, description: 'Ação padrão, toque, 1 ser, sustentada. Ataque não dissipa.', circleReq: 4, affinityReq: true },
+      { name: 'Discente', cost: 3, description: 'Muda a duração para sustentada. Em vez do normal, gera esfera de invisibilidade 3m (você e aliados dentro se tornam invisíveis).', circleReq: 3 },
+      { name: 'Verdadeiro', cost: 7, description: 'Muda execução para padrão, alcance para toque, alvo para 1 ser, duração para sustentada. Ataque não dissipa a invisibilidade.', circleReq: 4, affinityReq: true },
     ],
   },
   {
