@@ -637,13 +637,35 @@ export default function CharacterCreate() {
       // Clear draft after successful save
       clearCharacterDraft();
 
-      // Celebration effect
+      // Celebration effect - cores temáticas por classe
+      const classColors: Record<string, string[]> = {
+        Combatente: ['#ef4444', '#f97316', '#fbbf24', '#dc2626'],
+        Especialista: ['#3b82f6', '#06b6d4', '#0ea5e9', '#2563eb'],
+        Ocultista: ['#a855f7', '#ec4899', '#8b5cf6', '#d946ef'],
+      };
+      const celebrationColors = classColors[formData.characterClass] || ['#a855f7', '#ec4899', '#6366f1'];
+      
+      // Múltiplas explosões de confetti
       confetti({
         particleCount: 100,
         spread: 70,
         origin: { y: 0.6 },
-        colors: ['#a855f7', '#ec4899', '#6366f1'],
+        colors: celebrationColors,
       });
+      setTimeout(() => {
+        confetti({
+          particleCount: 50,
+          spread: 100,
+          origin: { y: 0.5, x: 0.3 },
+          colors: celebrationColors,
+        });
+        confetti({
+          particleCount: 50,
+          spread: 100,
+          origin: { y: 0.5, x: 0.7 },
+          colors: celebrationColors,
+        });
+      }, 200);
 
       toast({
         title: 'Agente registrado!',
@@ -809,6 +831,7 @@ export default function CharacterCreate() {
             completedSteps={completedSteps}
             onStepClick={handleStepClick}
             canNavigate={canNavigateToStep}
+            characterClass={formData.characterClass}
           />
         </div>
 
