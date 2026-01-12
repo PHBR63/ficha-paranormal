@@ -1,197 +1,85 @@
 /**
- * Registro Unificado de Rituais (Adaptador para Testes)
+ * Registro Unificado de Rituais
  * Ordem Paranormal RPG v1.3
+ * 
+ * Este arquivo combina todos os rituais de todos os círculos
+ * para uso no sistema de fichas e campanhas.
  */
 
 import type { UnifiedRitual } from './types';
 
+// Importar rituais de 1º Círculo
+import { FIRST_CIRCLE_RITUALS } from './first-circle';
+
+// Importar rituais de 2º Círculo
+import {
+  BLOOD_SECOND_CIRCLE,
+  KNOWLEDGE_SECOND_CIRCLE,
+  ENERGY_SECOND_CIRCLE,
+  FEAR_SECOND_CIRCLE,
+  DEATH_SECOND_CIRCLE,
+} from './second-circle';
+
+// Importar rituais de 3º Círculo
+import {
+  BLOOD_THIRD_CIRCLE,
+  DEATH_THIRD_CIRCLE,
+  KNOWLEDGE_THIRD_CIRCLE,
+  ENERGY_THIRD_CIRCLE,
+  FEAR_THIRD_CIRCLE,
+} from './third-circle';
+
+// Importar rituais de 4º Círculo
+import {
+  BLOOD_FOURTH_CIRCLE,
+  DEATH_FOURTH_CIRCLE,
+  KNOWLEDGE_FOURTH_CIRCLE,
+  ENERGY_FOURTH_CIRCLE,
+  FEAR_FOURTH_CIRCLE,
+} from './fourth-circle';
+
+// =====================================================
+// RITUAIS UNIFICADOS - TODOS OS CÍRCULOS
+// =====================================================
+
 export const UNIFIED_RITUALS: UnifiedRitual[] = [
-    // =====================================================
-    // 1º CÍRCULO
-    // =====================================================
-    {
-        id: 'amaldicoar-arma',
-        name: 'Amaldiçoar Arma',
-        element: 'Sangue',
-        circle: 1,
-        cost: 1,
-        range: 'toque',
-        execution: 'padrao',
-        duration: 'cena',
-        isWeaponBuff: true,
-        description: 'Sua arma causa +1d6 de dano do elemento escolhido.',
-        enhancements: [
-            {
-                name: 'Discente',
-                cost: 2,
-                description: 'Muda para +2d6 de dano.',
-                circleReq: 2
-            },
-            {
-                name: 'Verdadeiro',
-                cost: 5,
-                description: 'Muda para +4d6 de dano e ignora resistências.',
-                circleReq: 3
-            }
-        ],
-        effects: {
-            base: {
-                kind: 'buff',
-                summary: 'Arma causa +1d6 de dano',
-                weaponEffect: {
-                    damageBonus: '1d6',
-                    special: 'Dano elemental'
-                }
-            },
-            discente: {
-                kind: 'buff',
-                summary: 'Arma causa +2d6 de dano',
-                weaponEffect: {
-                    damageBonus: '2d6',
-                    special: 'Dano elemental'
-                }
-            },
-            verdadeiro: {
-                kind: 'buff',
-                summary: 'Arma causa +4d6 de dano',
-                weaponEffect: {
-                    damageBonus: '4d6',
-                    special: 'Dano elemental (ignora resistência)'
-                }
-            }
-        }
-    },
-    {
-        id: 'armadura-arcana',
-        name: 'Armadura Arcana',
-        element: 'Energia',
-        circle: 1,
-        cost: 1,
-        range: 'pessoal',
-        execution: 'reacao',
-        duration: 'cena',
-        isSustainable: false,
-        description: 'Aumenta sua Defesa em +5.',
-        enhancements: [
-            {
-                name: 'Discente',
-                cost: 2,
-                description: 'Aumenta o bônus para +10.',
-                circleReq: 2
-            },
-            {
-                name: 'Verdadeiro',
-                cost: 5,
-                description: 'Aumenta o bônus para +15 e fornece RD 5.',
-                circleReq: 3
-            }
-        ],
-        effects: {
-            base: {
-                kind: 'buff',
-                defenseBonus: 5,
-                summary: '+5 Defesa'
-            },
-            discente: {
-                kind: 'buff',
-                defenseBonus: 10,
-                summary: '+10 Defesa'
-            },
-            verdadeiro: {
-                kind: 'buff',
-                defenseBonus: 15,
-                damageReduction: { amount: 5 },
-                summary: '+15 Defesa e RD 5'
-            }
-        }
-    },
-    {
-        id: 'decadencia',
-        name: 'Decadência',
-        element: 'Morte',
-        circle: 1,
-        cost: 1,
-        range: 'toque',
-        execution: 'padrao',
-        duration: 'instantanea',
-        description: 'Causa 2d8+2 pontos de dano de Morte.',
-        enhancements: [
-            {
-                name: 'Discente',
-                cost: 2,
-                description: 'Dano aumenta para 4d8+4 e duração muda para sustentada.',
-                circleReq: 2
-            }
-        ],
-        effects: {
-            base: {
-                kind: 'damage',
-                damage: { diceCount: 2, diceType: 8, bonus: 2, damageType: 'morte' },
-                summary: '2d8+2 dano de Morte'
-            },
-            discente: {
-                kind: 'damage',
-                damage: { diceCount: 4, diceType: 8, bonus: 4, damageType: 'morte' },
-                summary: 'Dano contínuo'
-            }
-        }
-    },
-    // Ritual de teste para testes
-    {
-        id: 'arma-atroz',
-        name: 'Arma Atroz',
-        element: 'sangue',
-        circle: 1,
-        cost: 1,
-        range: 'Toque',
-        execution: 'Padrão',
-        duration: 'Cena',
-        isWeaponBuff: true,
-        description: 'Uma arma empunhada fica coberta por uma energia sombria que causa ferimentos terríveis.',
-        enhancements: [
-            {
-                name: 'Discente',
-                cost: 2,
-                description: 'Aumenta o dano adicional para +2d6.',
-                circleReq: 2
-            },
-            {
-                name: 'Verdadeiro',
-                cost: 5,
-                description: 'Aumenta o dano adicional para +4d6.',
-                circleReq: 3
-            }
-        ],
-        effects: {
-            base: {
-                kind: 'buff',
-                weaponEffect: {
-                    damageBonus: '1d6',
-                    damageType: 'morte'
-                },
-                summary: 'Arma causa +1d6 de dano de morte'
-            },
-            discente: {
-                kind: 'buff',
-                weaponEffect: {
-                    damageBonus: '2d6',
-                    damageType: 'morte'
-                },
-                summary: 'Arma causa +2d6 de dano de morte'
-            },
-            verdadeiro: {
-                kind: 'buff',
-                weaponEffect: {
-                    damageBonus: '4d6',
-                    damageType: 'morte'
-                },
-                summary: 'Arma causa +4d6 de dano de morte'
-            }
-        }
-    }
+  // 1º Círculo (29 rituais)
+  ...FIRST_CIRCLE_RITUALS,
+  
+  // 2º Círculo
+  ...BLOOD_SECOND_CIRCLE,
+  ...KNOWLEDGE_SECOND_CIRCLE,
+  ...ENERGY_SECOND_CIRCLE,
+  ...FEAR_SECOND_CIRCLE,
+  ...DEATH_SECOND_CIRCLE,
+  
+  // 3º Círculo
+  ...BLOOD_THIRD_CIRCLE,
+  ...DEATH_THIRD_CIRCLE,
+  ...KNOWLEDGE_THIRD_CIRCLE,
+  ...ENERGY_THIRD_CIRCLE,
+  ...FEAR_THIRD_CIRCLE,
+  
+  // 4º Círculo
+  ...BLOOD_FOURTH_CIRCLE,
+  ...DEATH_FOURTH_CIRCLE,
+  ...KNOWLEDGE_FOURTH_CIRCLE,
+  ...ENERGY_FOURTH_CIRCLE,
+  ...FEAR_FOURTH_CIRCLE,
 ];
 
-// Mapa para busca rápida por ID (exportado para testes)
+// Mapa para busca rápida por ID (exportado para testes e consultas)
 export const RITUAL_BY_ID = new Map<string, UnifiedRitual>(
-    UNIFIED_RITUALS.map(r => [r.id, r])
+  UNIFIED_RITUALS.map(r => [r.id, r])
 );
+
+// Estatísticas para debug
+export const RITUAL_STATS = {
+  total: UNIFIED_RITUALS.length,
+  byCircle: {
+    1: FIRST_CIRCLE_RITUALS.length,
+    2: BLOOD_SECOND_CIRCLE.length + KNOWLEDGE_SECOND_CIRCLE.length + ENERGY_SECOND_CIRCLE.length + FEAR_SECOND_CIRCLE.length + DEATH_SECOND_CIRCLE.length,
+    3: BLOOD_THIRD_CIRCLE.length + DEATH_THIRD_CIRCLE.length + KNOWLEDGE_THIRD_CIRCLE.length + ENERGY_THIRD_CIRCLE.length + FEAR_THIRD_CIRCLE.length,
+    4: BLOOD_FOURTH_CIRCLE.length + DEATH_FOURTH_CIRCLE.length + KNOWLEDGE_FOURTH_CIRCLE.length + ENERGY_FOURTH_CIRCLE.length + FEAR_FOURTH_CIRCLE.length,
+  },
+};
