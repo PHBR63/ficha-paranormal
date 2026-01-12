@@ -1,10 +1,14 @@
-// Componente stepper visual para criação de personagem
-// Suporta steps dinâmicos (ex: Rituais apenas para Ocultistas)
+/**
+ * CharacterCreationStepper - Stepper visual gamificado para criação de personagem
+ * 
+ * Suporta steps dinâmicos (ex: Rituais apenas para Ocultistas).
+ * Inclui efeitos visuais de progresso, carimbo de verificação e tema por classe.
+ */
 
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Check, User, Dices, MapPin, Sword, BookOpen, FileCheck, 
-  BarChart3, Route, Sparkles, Crosshair 
+  BarChart3, Route, Sparkles, Crosshair, Medal, Stamp
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -18,6 +22,7 @@ import {
 const STEP_ICON_MAP: Record<string, React.ElementType> = {
   concept: User,
   nex: BarChart3,
+  patent: Medal,
   attributes: Dices,
   origin: MapPin,
   class: Sword,
@@ -26,6 +31,13 @@ const STEP_ICON_MAP: Record<string, React.ElementType> = {
   skills: BookOpen,
   abilities: Crosshair,
   review: FileCheck,
+};
+
+// Cores temáticas por classe para gradiente
+const CLASS_GRADIENT_COLORS: Record<string, { from: string; to: string; glow: string }> = {
+  Combatente: { from: '#ef4444', to: '#f97316', glow: 'rgba(239, 68, 68, 0.3)' },
+  Especialista: { from: '#3b82f6', to: '#06b6d4', glow: 'rgba(59, 130, 246, 0.3)' },
+  Ocultista: { from: '#a855f7', to: '#ec4899', glow: 'rgba(168, 85, 247, 0.3)' },
 };
 
 interface StepDefinition {
@@ -39,6 +51,8 @@ interface CharacterCreationStepperProps {
   completedSteps: number[];
   onStepClick?: (step: number) => void;
   canNavigate?: (step: number) => boolean;
+  /** Classe do personagem para tema de cores */
+  characterClass?: string;
 }
 
 export function CharacterCreationStepper({
@@ -47,12 +61,80 @@ export function CharacterCreationStepper({
   completedSteps,
   onStepClick,
   canNavigate,
+  characterClass,
 }: CharacterCreationStepperProps) {
+  // Calcular progresso
+  const progress = (completedSteps.length / steps.length) * 100;
+  const classColors = characterClass ? CLASS_GRADIENT_COLORS[characterClass] : null;
+
   return (
     <TooltipProvider>
-      <div className="w-full">
+      <div className="w-full space-y-4">
+        {/* Badge de progresso do dossiê */}
+        <motion.div 
+          className="flex items-center justify-center gap-3"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <div className={cn(
+            'px-4 py-2 rounded-lg border',
+            'bg-card/80 backdrop-blur-sm',
+            'flex items-center gap-3',
+            progress >= 100 && 'border-primary/50 bg-primary/5'
+          )}>
+            {/* Ícone de dossiê/stamp */}
+            <div className="relative">
+              {progress >= 100 ? (
+                <motion.div
+                  initial={{ scale: 0, rotate: -30 }}
+                  animate={{ scale: 1, rotate: 0 }}
+                  transition={{ type: 'spring', stiffness: 500, damping: 20 }}
+                >
+                  <Stamp className="w-5 h-5 text-primary" />
+                </motion.div>
+              ) : (
+                <FileCheck className="w-5 h-5 text-muted-foreground" />
+              )}
+            </div>
+
+            {/* Texto de progresso */}
+            <div className="flex items-center gap-2">
+              <span className="font-display text-xs tracking-wider text-muted-foreground">
+                DOSSIÊ
+              </span>
+              <motion.span
+                key={completedSteps.length}
+                className={cn(
+                  'font-display text-sm',
+                  progress >= 100 ? 'text-primary' : 'text-foreground'
+                )}
+                initial={{ scale: 1.3 }}
+                animate={{ scale: 1 }}
+                transition={{ type: 'spring', stiffness: 500 }}
+              >
+                {completedSteps.length}/{steps.length}
+              </motion.span>
+            </div>
+
+            {/* Mini barra de progresso */}
+            <div className="w-20 h-1.5 bg-muted/30 rounded-full overflow-hidden">
+              <motion.div
+                className="h-full rounded-full"
+                style={{
+                  background: classColors 
+                    ? `linear-gradient(90deg, ${classColors.from}, ${classColors.to})`
+                    : 'hsl(var(--primary))',
+                }}
+                initial={{ width: 0 }}
+                animate={{ width: `${progress}%` }}
+                transition={{ duration: 0.5, ease: 'easeOut' }}
+              />
+            </div>
+          </div>
+        </motion.div>
+
         {/* Desktop view */}
-        <div className="hidden md:flex justify-between items-center mb-4">
+        <div className="hidden md:flex justify-between items-center">
           {steps.map((step, index) => {
             const Icon = STEP_ICON_MAP[step.id] || BookOpen;
             const isCompleted = completedSteps.includes(index);
@@ -81,42 +163,90 @@ export function CharacterCreationStepper({
                       whileHover={canClick ? { scale: 1.05 } : undefined}
                       whileTap={canClick ? { scale: 0.95 } : undefined}
                     >
-                      {isCompleted ? (
-                        <motion.div
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          transition={{ type: 'spring', stiffness: 500, damping: 25 }}
-                        >
-                          <Check className="w-5 h-5" />
-                        </motion.div>
-                      ) : (
-                        <Icon className="w-5 h-5" />
-                      )}
+                      <AnimatePresence mode="wait">
+                        {isCompleted ? (
+                          <motion.div
+                            key="check"
+                            initial={{ scale: 0, rotate: -180 }}
+                            animate={{ scale: 1, rotate: 0 }}
+                            exit={{ scale: 0 }}
+                            transition={{ type: 'spring', stiffness: 500, damping: 25 }}
+                          >
+                            <Check className="w-5 h-5" />
+                          </motion.div>
+                        ) : (
+                          <motion.div
+                            key="icon"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                          >
+                            <Icon className="w-5 h-5" />
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                       
+                      {/* Pulso animado no step atual */}
                       {isCurrent && (
                         <motion.div
                           className="absolute inset-0 rounded-lg border-2 border-primary"
-                          animate={{ opacity: [0.5, 1, 0.5] }}
+                          animate={{ 
+                            opacity: [0.3, 1, 0.3],
+                            scale: [1, 1.05, 1],
+                          }}
                           transition={{ duration: 2, repeat: Infinity }}
                         />
                       )}
+
+                      {/* Efeito de stamp quando completa */}
+                      {isCompleted && (
+                        <motion.div
+                          className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary flex items-center justify-center shadow-lg"
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          transition={{ delay: 0.2, type: 'spring', stiffness: 500 }}
+                        >
+                          <Check className="w-2.5 h-2.5 text-primary-foreground" />
+                        </motion.div>
+                      )}
                     </motion.button>
                   </TooltipTrigger>
-                  <TooltipContent side="bottom">
+                  <TooltipContent side="bottom" className="bg-card border">
                     <p className="font-display tracking-wider">{step.title}</p>
-                    {isCompleted && <p className="text-xs text-muted-foreground">Concluído</p>}
-                    {isCurrent && <p className="text-xs text-primary">Atual</p>}
+                    {isCompleted && (
+                      <p className="text-xs text-primary flex items-center gap-1">
+                        <Check className="w-3 h-3" /> Concluído
+                      </p>
+                    )}
+                    {isCurrent && !isCompleted && (
+                      <p className="text-xs text-muted-foreground">Etapa atual</p>
+                    )}
                   </TooltipContent>
                 </Tooltip>
 
+                {/* Linha de conexão com gradiente */}
                 {index < steps.length - 1 && (
-                  <div className="flex-1 h-1 mx-3 rounded-full overflow-hidden bg-muted/30">
+                  <div className="flex-1 h-1 mx-3 rounded-full overflow-hidden bg-muted/30 relative">
                     <motion.div
-                      className="h-full bg-primary"
+                      className="h-full rounded-full"
+                      style={{
+                        background: classColors && isCompleted
+                          ? `linear-gradient(90deg, ${classColors.from}, ${classColors.to})`
+                          : 'hsl(var(--primary))',
+                      }}
                       initial={{ width: '0%' }}
                       animate={{ width: isCompleted ? '100%' : '0%' }}
                       transition={{ duration: 0.5, delay: 0.1 }}
                     />
+                    {/* Shimmer effect na linha */}
+                    {isCompleted && (
+                      <motion.div
+                        className="absolute inset-y-0 w-8 bg-gradient-to-r from-transparent via-white/30 to-transparent"
+                        initial={{ x: '-100%' }}
+                        animate={{ x: '400%' }}
+                        transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 2 }}
+                      />
+                    )}
                   </div>
                 )}
               </div>
@@ -124,43 +254,56 @@ export function CharacterCreationStepper({
           })}
         </div>
 
-        {/* Mobile view */}
+        {/* Mobile view - melhorado */}
         <div className="md:hidden">
-          <div className="flex justify-center gap-2 mb-4 flex-wrap">
+          <div className="flex justify-center gap-1.5 mb-3 flex-wrap">
             {steps.map((step, index) => {
               const isCompleted = completedSteps.includes(index);
               const isCurrent = index === currentStep;
 
               return (
-                <motion.div
+                <motion.button
                   key={step.id}
+                  onClick={() => canNavigate?.(index) && onStepClick?.(index)}
                   className={cn(
-                    'w-2 h-2 rounded-full transition-all',
-                    isCompleted && 'bg-primary',
-                    isCurrent && !isCompleted && 'bg-primary/50 w-6',
-                    !isCurrent && !isCompleted && 'bg-muted'
+                    'relative rounded-full transition-all',
+                    isCompleted && 'bg-primary w-2.5 h-2.5',
+                    isCurrent && !isCompleted && 'bg-primary/50 w-6 h-2.5',
+                    !isCurrent && !isCompleted && 'bg-muted w-2 h-2'
                   )}
-                  animate={isCurrent ? { scale: [1, 1.2, 1] } : undefined}
-                  transition={{ duration: 1, repeat: Infinity }}
+                  animate={isCurrent ? { 
+                    scale: [1, 1.2, 1],
+                    opacity: [0.7, 1, 0.7],
+                  } : undefined}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                  whileTap={{ scale: 0.9 }}
                 />
               );
             })}
           </div>
         </div>
 
-        {/* Step title */}
+        {/* Step title com animação */}
         <div className="text-center">
-          <motion.p
-            key={currentStep}
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="font-display text-lg tracking-wider text-primary"
-          >
-            {steps[currentStep]?.title.toUpperCase()}
-          </motion.p>
-          <p className="text-sm text-muted-foreground">
-            Passo {currentStep + 1} de {steps.length}
-          </p>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentStep}
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              transition={{ duration: 0.2 }}
+            >
+              <p className={cn(
+                'font-display text-lg tracking-wider',
+                classColors ? 'text-primary' : 'text-primary'
+              )}>
+                {steps[currentStep]?.title.toUpperCase()}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Passo {currentStep + 1} de {steps.length}
+              </p>
+            </motion.div>
+          </AnimatePresence>
         </div>
       </div>
     </TooltipProvider>
