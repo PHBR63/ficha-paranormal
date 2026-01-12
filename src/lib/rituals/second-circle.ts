@@ -1,221 +1,12 @@
 /**
- * Ordem Paranormal RPG - Rituais de 2º Círculo (Unificados)
- * Migrados para o novo sistema unificado
+ * Ordem Paranormal RPG - Rituais de 2º Círculo (Oficiais)
+ * Baseado no Livro Base v1.3
  */
 
 import type { UnifiedRitual } from './types';
 
 // ========================================
-// 2º CÍRCULO - SANGUE
-// ========================================
-
-export const BLOOD_SECOND_CIRCLE: UnifiedRitual[] = [
-  {
-    id: 'aprimorar-fisico',
-    name: 'Aprimorar Físico',
-    circle: 2,
-    element: 'sangue',
-    execution: 'Padrão',
-    range: 'Toque',
-    target: '1 ser',
-    duration: 'Cena',
-    description: 'Recebe +1 em Agilidade ou Força.',
-    cost: 2,
-    effects: {
-      base: {
-        kind: 'buff',
-        summary: '+1 em Agilidade ou Força (escolha ao conjurar).',
-      },
-      discente: {
-        kind: 'buff',
-        summary: '+2 em Agilidade ou Força.',
-      },
-      verdadeiro: {
-        kind: 'buff',
-        summary: '+3 em Agilidade ou Força.',
-      },
-    },
-    enhancements: [
-      { name: 'Discente', cost: 3, description: 'Muda bônus para +2.', circleReq: 3 },
-      { name: 'Verdadeiro', cost: 7, description: 'Muda bônus para +3.', circleReq: 4, affinityReq: true },
-    ],
-  },
-  {
-    id: 'descarnar',
-    name: 'Descarnar',
-    circle: 2,
-    element: 'sangue',
-    execution: 'Padrão',
-    range: 'Toque',
-    target: '1 ser',
-    duration: 'Instantânea',
-    description: 'Causa 6d8 dano (corte/Sangue) e hemorragia. Hemorragia causa 2d8/rodada (Fortitude evita).',
-    cost: 2,
-    resistance: { type: 'fortitude', effect: 'parcial' },
-    effects: {
-      base: {
-        kind: 'damage',
-        damage: { diceCount: 6, diceType: 8, damageType: 'sangue' },
-        conditions: [{ id: 'sangrando', duration: 'sustentado' }],
-        resistance: { type: 'fortitude', effect: 'parcial' },
-        summary: '6d8 dano de Sangue + hemorragia (2d8/rodada).',
-      },
-      discente: {
-        kind: 'damage',
-        damage: { diceCount: 10, diceType: 8, damageType: 'sangue' },
-        summary: '10d8 dano, hemorragia 4d8/rodada.',
-      },
-      verdadeiro: {
-        kind: 'buff',
-        weaponEffect: { damageBonus: '4d8', damageType: 'sangue' },
-        sustain: { action: 'free' },
-        summary: 'Sustentado. Ataques causam +4d8 Sangue e hemorragia.',
-      },
-    },
-    enhancements: [
-      { name: 'Discente', cost: 3, description: 'Dano 10d8, hemorragia 4d8.', circleReq: 3 },
-      { name: 'Verdadeiro', cost: 7, description: 'Alvo você, duração sustentada. Seus ataques causam +4d8 Sangue e hemorragia.', circleReq: 3, affinityReq: true },
-    ],
-  },
-  {
-    id: 'flagelo-de-sangue',
-    name: 'Flagelo de Sangue',
-    circle: 2,
-    element: 'sangue',
-    execution: 'Padrão',
-    range: 'Toque',
-    target: '1 pessoa',
-    duration: 'Cena',
-    description: 'Grava marca e dá ordem. Desobediência causa 10d6 dano Sangue e enjoado.',
-    cost: 2,
-    resistance: { type: 'fortitude', effect: 'parcial' },
-    effects: {
-      base: {
-        kind: 'control',
-        mentalControl: { type: 'suggestion', canForceHarm: false, canForceSuicide: false },
-        damage: { diceCount: 10, diceType: 6, damageType: 'sangue' },
-        resistance: { type: 'fortitude', effect: 'parcial' },
-        summary: 'Marca que causa 10d6 e enjoado se desobedecer ordem.',
-      },
-      discente: {
-        kind: 'control',
-        summary: 'Pode afetar 1 ser (exceto criaturas de Sangue).',
-      },
-      verdadeiro: {
-        kind: 'control',
-        summary: 'Duração de 1 dia.',
-      },
-    },
-    enhancements: [
-      { name: 'Discente', cost: 3, description: 'Muda alvo para "1 ser (exceto Sangue)".', circleReq: 3 },
-      { name: 'Verdadeiro', cost: 7, description: 'Duração 1 dia.', circleReq: 4, affinityReq: true },
-    ],
-  },
-  {
-    id: 'hemofagia',
-    name: 'Hemofagia',
-    circle: 2,
-    element: 'sangue',
-    execution: 'Padrão',
-    range: 'Toque',
-    target: '1 ser',
-    duration: 'Instantânea',
-    description: 'Causa 6d6 dano Sangue, recupera metade em PV.',
-    cost: 2,
-    resistance: { type: 'fortitude', effect: 'reduz_metade' },
-    effects: {
-      base: {
-        kind: 'damage',
-        damage: { diceCount: 6, diceType: 6, damageType: 'sangue' },
-        healing: { diceCount: 3, diceType: 6 },
-        resistance: { type: 'fortitude', effect: 'reduz_metade' },
-        summary: '6d6 dano de Sangue, cura metade do dano causado.',
-      },
-      discente: {
-        kind: 'damage',
-        summary: 'Sem resistência. Pode combinar com ataque corpo a corpo.',
-      },
-      verdadeiro: {
-        kind: 'buff',
-        sustain: { action: 'standard' },
-        summary: 'Sustentado. Ação padrão para tocar e causar 4d6 (cura metade).',
-      },
-    },
-    enhancements: [
-      { name: 'Discente', cost: 3, description: 'Resistência nenhuma. Faz ataque corpo a corpo junto.', circleReq: 3 },
-      { name: 'Verdadeiro', cost: 7, description: 'Pessoal, sustentada. Ação padrão para tocar e causar 4d6 (recupera metade).', circleReq: 4 },
-    ],
-  },
-  {
-    id: 'sede-de-adrenalina',
-    name: 'Sede de Adrenalina',
-    circle: 2,
-    element: 'sangue',
-    execution: 'Reação',
-    range: 'Pessoal',
-    target: 'Você',
-    duration: 'Instantânea',
-    description: 'Repete teste de Acrobacia/Atletismo falho OU reduz dano de queda em 4d6.',
-    cost: 2,
-    hasHooks: true,
-    effects: {
-      base: {
-        kind: 'interceptor',
-        hooks: [
-          { trigger: 'onRoll', effect: 'Repete teste de Acrobacia/Atletismo falho' },
-          { trigger: 'onFallDamage', effect: 'Reduz dano de queda em 4d6' },
-        ],
-        summary: 'Repete teste falho OU reduz dano de queda em 4d6.',
-      },
-      discente: {
-        kind: 'interceptor',
-        summary: 'Reduz dano de queda em 8d6.',
-      },
-      verdadeiro: {
-        kind: 'interceptor',
-        summary: 'Reduz dano de queda em 12d6.',
-      },
-    },
-    enhancements: [
-      { name: 'Discente', cost: 3, description: 'Reduz queda em 8d6.', circleReq: 3 },
-      { name: 'Verdadeiro', cost: 7, description: 'Reduz queda em 12d6.', circleReq: 4, affinityReq: true },
-    ],
-  },
-  {
-    id: 'transfusao-vital',
-    name: 'Transfusão Vital',
-    circle: 2,
-    element: 'sangue',
-    execution: 'Padrão',
-    range: 'Toque',
-    target: '1 ser',
-    duration: 'Instantânea',
-    description: 'Transfere até 30 PV seus para o alvo.',
-    cost: 2,
-    effects: {
-      base: {
-        kind: 'healing',
-        healing: { diceCount: 0, diceType: 6, bonus: 30 },
-        summary: 'Transfere até 30 PV seus para o alvo.',
-      },
-      discente: {
-        kind: 'healing',
-        summary: 'Transfere até 50 PV.',
-      },
-      verdadeiro: {
-        kind: 'healing',
-        summary: 'Transfere até 100 PV.',
-      },
-    },
-    enhancements: [
-      { name: 'Discente', cost: 3, description: 'Transfere até 50 PV.', circleReq: 3 },
-      { name: 'Verdadeiro', cost: 7, description: 'Transfere até 100 PV.', circleReq: 4 },
-    ],
-  },
-];
-
-// ========================================
-// 2º CÍRCULO - CONHECIMENTO
+// 2º CÍRCULO - CONHECIMENTO (5 rituais)
 // ========================================
 
 export const KNOWLEDGE_SECOND_CIRCLE: UnifiedRitual[] = [
@@ -228,7 +19,7 @@ export const KNOWLEDGE_SECOND_CIRCLE: UnifiedRitual[] = [
     range: 'Toque',
     target: '1 ser',
     duration: 'Cena',
-    description: 'Recebe +1 em Intelecto ou Presença.',
+    description: 'O alvo tem sua mente energizada por fagulhos do Conhecimento. Ele recebe +1 em Intelecto ou Presença, à escolha dele.',
     cost: 2,
     effects: {
       base: {
@@ -250,42 +41,6 @@ export const KNOWLEDGE_SECOND_CIRCLE: UnifiedRitual[] = [
     ],
   },
   {
-    id: 'aurora-da-verdade',
-    name: 'Aurora da Verdade',
-    circle: 2,
-    element: 'conhecimento',
-    execution: 'Padrão',
-    range: 'Curto',
-    area: 'Esfera com 3m de raio',
-    duration: 'Sustentada',
-    description: 'Luz dourada obriga seres na área a falar a verdade. Seres escondidos/invisíveis são revelados.',
-    cost: 2,
-    resistance: { type: 'vontade', effect: 'parcial' },
-    isSustainable: true,
-    effects: {
-      base: {
-        kind: 'control',
-        areaEffect: { shape: 'esfera', radius: 3 },
-        resistance: { type: 'vontade', effect: 'parcial' },
-        sustain: { concentration: true },
-        summary: 'Área de 3m onde seres devem falar a verdade. Revela invisíveis.',
-      },
-      discente: {
-        kind: 'control',
-        areaEffect: { shape: 'esfera', radius: 9 },
-        summary: 'Alcance longo, área de 9m. Conjurador não é afetado.',
-      },
-      verdadeiro: {
-        kind: 'control',
-        summary: 'Alcance extremo, área 9m, duração cena (não sustentada).',
-      },
-    },
-    enhancements: [
-      { name: 'Discente', cost: 3, description: 'Muda alcance para longo, área para 9m de raio, e conjurador não é afetado.', circleReq: 3 },
-      { name: 'Verdadeiro', cost: 7, description: 'Muda alcance para extremo, área 9m, duração cena.', circleReq: 4, affinityReq: true },
-    ],
-  },
-  {
     id: 'deteccao-de-ameacas',
     name: 'Detecção de Ameaças',
     circle: 2,
@@ -294,7 +49,7 @@ export const KNOWLEDGE_SECOND_CIRCLE: UnifiedRitual[] = [
     range: 'Pessoal',
     area: 'Esfera de 18m de raio',
     duration: 'Cena',
-    description: 'Sente perigo na área. Pode gastar movimento para Percepção (DT 20) e saber direção/distância.',
+    description: 'Você recebe uma percepção aguçada sobre perigos à sua volta. Quando um ser hostil ou armadilha entra na área do efeito, você tem uma sensação de perigo e pode gastar uma ação de movimento para fazer um teste de Percepção (DT 20). Se passar, sabe a direção e distância do perigo.',
     cost: 2,
     effects: {
       base: {
@@ -325,7 +80,7 @@ export const KNOWLEDGE_SECOND_CIRCLE: UnifiedRitual[] = [
     range: 'Pessoal',
     target: 'Você',
     duration: 'Cena',
-    description: 'Invisível (+15 Furtividade). Ataque ou ação hostil encerra.',
+    description: 'Você fica invisível, incluindo seu equipamento, recebendo camuflagem total e +15 em testes de Furtividade. O efeito termina se você faz um ataque ou usa uma habilidade hostil.',
     cost: 2,
     effects: {
       base: {
@@ -359,26 +114,29 @@ export const KNOWLEDGE_SECOND_CIRCLE: UnifiedRitual[] = [
     range: 'Médio',
     target: '1 ser ou 2 pessoas voluntárias',
     duration: 'Instantânea',
-    description: 'Dano: 6d6 Conhecimento e atordoado (Vontade metade e não atordoa). Ligação Telepática: elo mental entre duas pessoas.',
+    description: 'Rajada Mental: 6d6 dano de Conhecimento e atordoado (Vontade metade e não atordoa). Ligação Telepática: elo mental entre duas pessoas por 1 dia.',
     cost: 2,
     resistance: { type: 'vontade', effect: 'parcial' },
+    hasModes: true,
     effects: {
       base: {
         kind: 'damage',
         damage: { diceCount: 6, diceType: 6, damageType: 'conhecimento' },
         conditions: [{ id: 'atordoado', duration: 1 }],
-        resistance: { type: 'vontade', effect: 'parcial' },
-        summary: '6d6 dano Conhecimento + atordoado. OU cria elo telepático entre 2 pessoas.',
+        modes: [
+          { name: 'Rajada Mental', description: '6d6 dano Conhecimento + atordoado' },
+          { name: 'Ligação Telepática', description: 'Elo mental entre 2 pessoas por 1 dia' },
+        ],
+        summary: 'Rajada: 6d6 dano Conhecimento + atordoado. OU Ligação telepática.',
       },
       discente: {
         kind: 'damage',
         damage: { diceCount: 10, diceType: 6, damageType: 'conhecimento' },
-        summary: '10d6 dano. Elo telepático permite ver pelos sentidos do alvo.',
+        summary: 'Rajada 10d6. Ligação permite ver pelos sentidos do alvo.',
       },
       verdadeiro: {
         kind: 'damage',
-        damage: { diceCount: 10, diceType: 6, damageType: 'conhecimento' },
-        summary: '10d6 em seres escolhidos. Elo telepático com até 5 pessoas.',
+        summary: 'Rajada 10d6 em seres escolhidos. Ligação até 5 pessoas.',
       },
     },
     enhancements: [
@@ -395,7 +153,7 @@ export const KNOWLEDGE_SECOND_CIRCLE: UnifiedRitual[] = [
     range: 'Pessoal',
     area: 'Círculo com 90m de raio',
     duration: 'Cena',
-    description: 'Encontra direção/distância de pessoa ou objeto.',
+    description: 'Encontra direção/distância de pessoa ou objeto. Pode pensar em termos gerais ou específicos.',
     cost: 2,
     effects: {
       base: {
@@ -405,7 +163,7 @@ export const KNOWLEDGE_SECOND_CIRCLE: UnifiedRitual[] = [
       },
       discente: {
         kind: 'sense',
-        summary: 'Encontra caminho/rota em um lugar. Duração 1 hora.',
+        summary: 'Toque, 1 pessoa, 1 hora. Encontra caminho/rota em lugar.',
       },
       verdadeiro: {
         kind: 'sense',
@@ -421,7 +179,7 @@ export const KNOWLEDGE_SECOND_CIRCLE: UnifiedRitual[] = [
 ];
 
 // ========================================
-// 2º CÍRCULO - ENERGIA
+// 2º CÍRCULO - ENERGIA (5 rituais)
 // ========================================
 
 export const ENERGY_SECOND_CIRCLE: UnifiedRitual[] = [
@@ -434,7 +192,7 @@ export const ENERGY_SECOND_CIRCLE: UnifiedRitual[] = [
     range: 'Curto',
     target: 'Veja texto',
     duration: 'Cena',
-    description: 'Efeitos de fogo: Chamejar (+1d6 dano fogo em arma); Esquentar (objeto causa 1d6 dano/rodada); Extinguir (apaga chama, cria fumaça); Modelar (move chama, causa 3d6 dano ao atravessar ser).',
+    description: 'Manipula calor e fogo. Chamejar: +1d6 dano fogo em arma. Esquentar: objeto causa 1d6 dano/rodada. Extinguir: apaga chama, cria fumaça. Modelar: move chama, causa 3d6 ao atravessar.',
     cost: 2,
     hasModes: true,
     effects: {
@@ -451,7 +209,7 @@ export const ENERGY_SECOND_CIRCLE: UnifiedRitual[] = [
       discente: {
         kind: 'damage',
         damage: { diceCount: 4, diceType: 6, damageType: 'energia' },
-        sustain: { action: 'standard' },
+        sustain: { action: 'movement' },
         summary: 'Sustentada. Pode projetar labareda (4d6 dano Energia).',
       },
       verdadeiro: {
@@ -474,14 +232,13 @@ export const ENERGY_SECOND_CIRCLE: UnifiedRitual[] = [
     range: 'Médio',
     target: '1 ser',
     duration: 'Cena',
-    description: 'Três laços prendem o alvo (agarrado). Pode tentar quebrar (Atletismo) ou destruir laços (Def 10, 10 PV, RD 5).',
+    description: 'Três laços de Energia surgem e prendem o alvo (agarrado). Pode tentar quebrar com Atletismo ou destruir: cada laço tem Def 10, 10 PV, RD 5.',
     cost: 2,
     resistance: { type: 'reflexos', effect: 'anula' },
     effects: {
       base: {
         kind: 'control',
         conditions: [{ id: 'agarrado', duration: 'cena' }],
-        resistance: { type: 'reflexos', effect: 'anula' },
         summary: '3 laços prendem o alvo (agarrado). Laços: Def 10, 10 PV, RD 5.',
       },
       discente: {
@@ -508,7 +265,7 @@ export const ENERGY_SECOND_CIRCLE: UnifiedRitual[] = [
     range: 'Médio',
     area: 'Esfera com 6m de raio',
     duration: 'Sustentada',
-    description: 'Deixa seres surdos e impede conjuração de rituais na área.',
+    description: 'Cria área de dissonância sonora. Seres dentro ficam surdos e não podem conjurar rituais.',
     cost: 2,
     isSustainable: true,
     effects: {
@@ -516,7 +273,6 @@ export const ENERGY_SECOND_CIRCLE: UnifiedRitual[] = [
         kind: 'debuff',
         conditions: [{ id: 'surdo', duration: 'sustentado' }],
         areaEffect: { shape: 'esfera', radius: 6 },
-        sustain: { concentration: true },
         summary: 'Seres na área ficam surdos. Impede conjuração de rituais.',
       },
       discente: {
@@ -542,7 +298,7 @@ export const ENERGY_SECOND_CIRCLE: UnifiedRitual[] = [
     range: 'Médio',
     area: 'Varia',
     duration: 'Sustentada',
-    description: 'Ascender: levita alvo (vulnável). Sopro: empurra (cone 4,5m). Vento: cria/aumenta vento forte.',
+    description: 'Ascender: levita alvo Médio (vulnerável). Sopro: empurra em cone 4,5m. Vento: cria/aumenta vento forte.',
     cost: 2,
     isSustainable: true,
     hasModes: true,
@@ -550,11 +306,10 @@ export const ENERGY_SECOND_CIRCLE: UnifiedRitual[] = [
       base: {
         kind: 'control',
         modes: [
-          { name: 'Ascender', description: 'Levita alvo (fica vulnerável)' },
-          { name: 'Sopro', description: 'Empurra em cone de 4,5m' },
-          { name: 'Vento', description: 'Cria ou aumenta vento forte' },
+          { name: 'Ascender', description: 'Levita alvo Médio (fica vulnerável). Sobe/desce 6m/rodada.' },
+          { name: 'Sopro', description: 'Empurra alvos Médios ou menores em cone de 4,5m.' },
+          { name: 'Vento', description: 'Cria ou aumenta efeito de vento em um passo.' },
         ],
-        sustain: { action: 'free' },
         summary: 'Controla ar/vento com vários efeitos.',
       },
       discente: {
@@ -580,16 +335,12 @@ export const ENERGY_SECOND_CIRCLE: UnifiedRitual[] = [
     range: 'Pessoal',
     target: 'Você',
     duration: 'Cena',
-    description: 'Recebe 30 PV temporários contra dano físico. Ou reação para RD 15 contra um ataque.',
+    description: 'Cria película de Energia que absorve energia cinética. Recebe 30 PV temporários contra dano físico. Alternativamente, conjura como reação para resistência 15 contra um dano.',
     cost: 2,
-    hasHooks: true,
     effects: {
       base: {
         kind: 'buff',
         tempHP: { diceCount: 0, diceType: 6, bonus: 30 },
-        hooks: [
-          { trigger: 'onPreDamage', effect: 'RD 15 contra um ataque (reação)' },
-        ],
         summary: '30 PV temporários contra dano físico OU RD 15 como reação.',
       },
       discente: {
@@ -599,51 +350,18 @@ export const ENERGY_SECOND_CIRCLE: UnifiedRitual[] = [
       },
       verdadeiro: {
         kind: 'buff',
-        summary: 'Esfera imóvel em alvo Enorme ou menor. Bloqueia tudo.',
+        summary: 'Alcance curto, 1 ser ou objeto Enorme. Esfera imóvel que bloqueia tudo.',
       },
     },
     enhancements: [
       { name: 'Discente', cost: 3, description: '60 PV temporários, RD 30.', circleReq: 3 },
-      { name: 'Verdadeiro', cost: 7, description: 'Esfera imóvel em alvo Enorme ou menor. Bloqueia tudo.', circleReq: 4 },
-    ],
-  },
-  {
-    id: 'tremeluzir',
-    name: 'Tremeluzir',
-    circle: 2,
-    element: 'energia',
-    execution: 'Padrão',
-    range: 'Pessoal',
-    target: 'Você',
-    duration: 'Sustentada',
-    description: 'Atravessa objetos sólidos (ação movimento, 25% falha). Sofre 1d4 dano Energia/rodada.',
-    cost: 2,
-    isSustainable: true,
-    effects: {
-      base: {
-        kind: 'transformation',
-        damagePerTurn: { diceCount: 1, diceType: 4, damageType: 'energia' },
-        sustain: { action: 'free' },
-        summary: 'Atravessa objetos sólidos (25% falha). 1d4 dano/rodada.',
-      },
-      discente: {
-        kind: 'transformation',
-        summary: 'Pode afetar 1 ser com toque.',
-      },
-      verdadeiro: {
-        kind: 'transformation',
-        summary: 'Afeta até 5 seres em alcance curto.',
-      },
-    },
-    enhancements: [
-      { name: 'Discente', cost: 3, description: 'Toque, 1 ser.', circleReq: 3 },
-      { name: 'Verdadeiro', cost: 7, description: 'Curto, até 5 seres.', circleReq: 4, affinityReq: true },
+      { name: 'Verdadeiro', cost: 7, description: 'Alcance curto, esfera imóvel que bloqueia tudo.', circleReq: 4 },
     ],
   },
 ];
 
 // ========================================
-// 2º CÍRCULO - MEDO
+// 2º CÍRCULO - MEDO (2 rituais)
 // ========================================
 
 export const FEAR_SECOND_CIRCLE: UnifiedRitual[] = [
@@ -690,259 +408,144 @@ export const FEAR_SECOND_CIRCLE: UnifiedRitual[] = [
     range: 'Curto',
     area: 'Nuvem de 6m de raio',
     duration: 'Cena',
-    description: 'Aumenta custo (+2 PE/círculo) e tempo de execução de rituais na área. Anula Cinerária.',
+    description: 'Rituais conjurados dentro da área têm seu custo aumentado em +2 PE por círculo e sua execução aumentada em um passo. Anula os efeitos de Cinerária.',
     cost: 2,
     effects: {
       base: {
         kind: 'debuff',
         areaEffect: { shape: 'esfera', radius: 6 },
-        summary: 'Rituais na área custam +2 PE por círculo. Anula Cinerária.',
+        summary: 'Rituais na área custam +2 PE por círculo, execução +1 passo. Anula Cinerária.',
       },
       discente: {
         kind: 'debuff',
-        summary: 'Reduz DT de rituais na área em -5.',
-      },
-    },
-    enhancements: [
-      { name: 'Discente', cost: 2, description: 'Reduz DT de rituais na área em -5.', circleReq: 3 },
-    ],
-  },
-  {
-    id: 'absorcao-de-medo',
-    name: 'Absorção de Medo',
-    circle: 2,
-    element: 'medo',
-    execution: 'Reação',
-    range: 'Pessoal',
-    target: 'Você',
-    duration: 'Instantânea',
-    description: 'Quando um ritual hostil o atinge, você absorve parte de sua energia. Recupera PE igual ao círculo do ritual.',
-    cost: 0,
-    hasHooks: true,
-    effects: {
-      base: {
-        kind: 'interceptor',
-        hooks: [
-          { trigger: 'onPostDamage', effect: 'Recupera PE igual ao círculo do ritual que o atingiu' },
-        ],
-        summary: 'Reação: recupera PE igual ao círculo do ritual hostil que o atingiu.',
-      },
-      discente: {
-        kind: 'interceptor',
-        summary: 'Recupera PE x2 do círculo do ritual.',
+        summary: 'Além do normal, DT de rituais na área diminui em -5.',
       },
       verdadeiro: {
-        kind: 'interceptor',
-        summary: 'Além de recuperar PE, causa dano igual ao custo do ritual no conjurador.',
+        kind: 'debuff',
+        summary: 'Como discente, e dano de rituais na névoa é sempre mínimo.',
       },
     },
     enhancements: [
-      { name: 'Discente', cost: 3, description: 'Recupera PE igual ao dobro do círculo.', circleReq: 3 },
-      { name: 'Verdadeiro', cost: 6, description: 'Causa dano igual ao custo do ritual no conjurador.', circleReq: 4, affinityReq: true },
-    ],
-  },
-  {
-    id: 'barreira-de-medo',
-    name: 'Barreira de Medo',
-    circle: 2,
-    element: 'medo',
-    execution: 'Padrão',
-    range: 'Curto',
-    area: 'Parede de 6m de comprimento e 3m de altura',
-    duration: 'Cena',
-    description: 'Você cria uma barreira de puro Medo. Seres que atravessam ficam amedrontados se falharem na Vontade.',
-    cost: 2,
-    resistance: { type: 'vontade', effect: 'anula' },
-    effects: {
-      base: {
-        kind: 'control',
-        conditions: [{ id: 'amedrontado', duration: 'cena' }],
-        areaEffect: { shape: 'linha', length: 6 },
-        resistance: { type: 'vontade', effect: 'anula' },
-        summary: 'Parede de 6m. Atravessar causa amedrontado (Vontade anula).',
-      },
-      discente: {
-        kind: 'control',
-        conditions: [{ id: 'apavorado', duration: 'cena' }],
-        summary: 'Causa apavorado ao atravessar.',
-      },
-      verdadeiro: {
-        kind: 'control',
-        summary: 'Parede de 12m. Causa 4d6 de dano de Medo ao atravessar.',
-      },
-    },
-    enhancements: [
-      { name: 'Discente', cost: 3, description: 'Causa apavorado ao invés de amedrontado.', circleReq: 3 },
-      { name: 'Verdadeiro', cost: 6, description: 'Parede de 12m. Causa 4d6 dano de Medo.', circleReq: 4, affinityReq: true },
+      { name: 'Discente', cost: 2, description: 'Além do normal, DT de rituais na área diminui em -5.', circleReq: 3 },
+      { name: 'Verdadeiro', cost: 5, description: 'Como discente, e dano de rituais na névoa é sempre mínimo.', circleReq: 3 },
     ],
   },
 ];
 
 // ========================================
-// 2º CÍRCULO - MORTE
+// 2º CÍRCULO - MORTE (5 rituais)
 // ========================================
 
 export const DEATH_SECOND_CIRCLE: UnifiedRitual[] = [
-  {
-    id: 'amputar',
-    name: 'Amputar',
-    circle: 2,
-    element: 'morte',
-    execution: 'Padrão',
-    range: 'Toque',
-    target: '1 ser',
-    duration: 'Instantânea',
-    description: 'Causa 6d6 dano de Morte e amputa membro se o alvo falhar na Fortitude. Pode curar amputação própria gastando metade do PE máximo.',
-    cost: 2,
-    resistance: { type: 'fortitude', effect: 'parcial' },
-    effects: {
-      base: {
-        kind: 'damage',
-        damage: { diceCount: 6, diceType: 6, damageType: 'morte' },
-        resistance: { type: 'fortitude', effect: 'parcial' },
-        summary: '6d6 dano Morte. Amputa membro se falhar. Ou cura amputação própria (custa metade PE máx).',
-      },
-      discente: {
-        kind: 'damage',
-        summary: 'Pode amputar cabeça. Cura não gera PE máximo.',
-      },
-      verdadeiro: {
-        kind: 'damage',
-        damage: { diceCount: 12, diceType: 6, damageType: 'morte' },
-        summary: '12d6 dano, amputação em alcance curto.',
-      },
-    },
-    enhancements: [
-      { name: 'Discente', cost: 3, description: 'Pode amputar cabeça. Curar amputação não custa PE máximo.', circleReq: 3, affinityReq: true },
-      { name: 'Verdadeiro', cost: 7, description: 'Alcance curto, 12d6 dano.', circleReq: 4, affinityReq: true },
-    ],
-  },
-  {
-    id: 'armamento-extradimensional',
-    name: 'Armamento Extradimensional',
-    circle: 2,
-    element: 'morte',
-    execution: 'Livre',
-    range: 'Pessoal',
-    target: 'Você',
-    duration: 'Permanente',
-    description: 'Abre lacuna até 30cm de raio para guardar armas/equipamentos. Conjura novamente para acessar.',
-    cost: 1,
-    effects: {
-      base: {
-        kind: 'utility',
-        summary: 'Bolso dimensional de até 30cm de raio para armas/equipamentos.',
-      },
-      discente: {
-        kind: 'utility',
-        summary: 'Bolso de até 1m de raio.',
-      },
-    },
-    enhancements: [
-      { name: 'Discente', cost: 3, description: 'Bolso de até 1m de raio.', circleReq: 3 },
-    ],
-  },
-  {
-    id: 'banimento',
-    name: 'Banimento',
-    circle: 2,
-    element: 'morte',
-    execution: 'Padrão',
-    range: 'Curto',
-    target: '1 criatura paranormal',
-    duration: 'Especial',
-    description: 'Expulsa criatura paranormal para o Outro Lado se falhar na Vontade. Demora mais rodadas quanto mais forte a criatura.',
-    cost: 2,
-    resistance: { type: 'vontade', effect: 'anula' },
-    effects: {
-      base: {
-        kind: 'utility',
-        resistance: { type: 'vontade', effect: 'anula' },
-        summary: 'Expulsa criatura paranormal para o Outro Lado.',
-      },
-      discente: {
-        kind: 'utility',
-        summary: 'Afeta até 3 criaturas. +5 na DT.',
-      },
-      verdadeiro: {
-        kind: 'utility',
-        summary: 'Banimento instantâneo. +10 na DT.',
-      },
-    },
-    enhancements: [
-      { name: 'Discente', cost: 4, description: 'Até 3 criaturas, +5 DT.', circleReq: 3 },
-      { name: 'Verdadeiro', cost: 8, description: 'Banimento instantâneo, +10 DT.', circleReq: 4, affinityReq: true },
-    ],
-  },
   {
     id: 'desacelerar-impacto',
     name: 'Desacelerar Impacto',
     circle: 2,
     element: 'morte',
     execution: 'Reação',
-    range: 'Pessoal',
-    target: 'Você',
-    duration: 'Instantânea',
-    description: 'Reduz em 5d10 dano de queda ou projétil.',
+    range: 'Curto',
+    target: '1 ser ou objetos somando até 10 espaços',
+    duration: 'Especial',
+    description: 'O alvo cai lentamente (18m/rodada) sem causar dano. Se o alvo for um projétil, causa metade do dano normal.',
     cost: 2,
-    hasHooks: true,
     effects: {
       base: {
         kind: 'interceptor',
-        hooks: [
-          { trigger: 'onFallDamage', effect: 'Reduz 5d10 de dano de queda' },
-          { trigger: 'onProjectileHit', effect: 'Reduz 5d10 de dano de projétil' },
-        ],
-        summary: 'Reduz em 5d10 dano de queda ou projétil (reação).',
-      },
-      discente: {
-        kind: 'interceptor',
-        summary: 'Reduz 10d10 de dano.',
+        summary: 'Alvo cai lentamente (18m/rodada) sem dano. Projéteis causam metade do dano.',
       },
       verdadeiro: {
         kind: 'interceptor',
-        summary: 'Nega dano de queda completamente.',
+        summary: 'Aumenta para seres/objetos somando até 100 espaços.',
       },
     },
     enhancements: [
-      { name: 'Discente', cost: 4, description: 'Reduz 10d10 de dano.', circleReq: 3 },
-      { name: 'Verdadeiro', cost: 8, description: 'Nega todo dano de queda.', circleReq: 4, affinityReq: true },
+      { name: 'Verdadeiro', cost: 3, description: 'Aumenta para seres/objetos somando até 100 espaços.', circleReq: 3 },
     ],
   },
   {
-    id: 'paralisia',
-    name: 'Paralisia',
+    id: 'eco-espiral',
+    name: 'Eco Espiral',
     circle: 2,
     element: 'morte',
     execution: 'Padrão',
     range: 'Curto',
     target: '1 ser',
-    duration: 'Cena',
-    description: 'Alvo fica paralisado se falhar na Fortitude. No turno, pode repetir resistência.',
+    duration: '2 rodadas',
+    description: 'Manifesta cópia do alvo feita de cinzas. No 1º turno concentra, no 2º descarrega: alvo sofre dano de Morte igual ao dano que sofreu na rodada de concentração.',
     cost: 2,
-    resistance: { type: 'fortitude', effect: 'anula' },
+    resistance: { type: 'fortitude', effect: 'reduz_metade' },
     effects: {
       base: {
-        kind: 'debuff',
-        conditions: [{ id: 'paralisado', duration: 'sustentado' }],
-        resistance: { type: 'fortitude', effect: 'anula' },
-        sustain: { concentration: true },
-        summary: 'Alvo fica paralisado. Pode repetir resistência a cada turno.',
+        kind: 'damage',
+        summary: 'Concentra 1 rodada, descarrega na 2ª. Dano = dano sofrido pelo alvo na rodada de concentração.',
       },
       discente: {
-        kind: 'debuff',
-        conditions: [{ id: 'paralisado', duration: 'cena' }],
-        summary: 'Não precisa sustentar. Duração cena.',
+        kind: 'damage',
+        summary: 'Alvo até 5 seres.',
       },
       verdadeiro: {
-        kind: 'debuff',
-        summary: 'Até 5 seres.',
+        kind: 'damage',
+        summary: 'Duração 3 rodadas. Pode concentrar nas duas primeiras e descarregar na terceira.',
       },
     },
     enhancements: [
-      { name: 'Discente', cost: 4, description: 'Duração cena, sem sustentar.', circleReq: 3 },
-      { name: 'Verdadeiro', cost: 8, description: 'Até 5 seres.', circleReq: 4, affinityReq: true },
+      { name: 'Discente', cost: 3, description: 'Muda alvo para até 5 seres.', circleReq: 3 },
+      { name: 'Verdadeiro', cost: 7, description: 'Duração 3 rodadas.', circleReq: 4, affinityReq: true },
     ],
+  },
+  {
+    id: 'miasma-entropico',
+    name: 'Miasma Entrópico',
+    circle: 2,
+    element: 'morte',
+    execution: 'Padrão',
+    range: 'Médio',
+    area: 'Nuvem com 6m de raio',
+    duration: 'Instantânea',
+    description: 'Cria explosão de emanações tóxicas. Seres na área sofrem 4d8 pontos de dano químico e ficam enjoados por 1 rodada. Se passarem na resistência, sofrem metade do dano e não ficam enjoados.',
+    cost: 2,
+    resistance: { type: 'fortitude', effect: 'parcial' },
+    effects: {
+      base: {
+        kind: 'damage',
+        damage: { diceCount: 4, diceType: 8, damageType: 'químico' },
+        conditions: [{ id: 'enjoado', duration: 1 }],
+        areaEffect: { shape: 'esfera', radius: 6 },
+        summary: '4d8 dano químico + enjoado por 1 rodada.',
+      },
+      discente: {
+        kind: 'damage',
+        damage: { diceCount: 6, diceType: 8, damageType: 'morte' },
+        summary: '6d8 dano de Morte.',
+      },
+      verdadeiro: {
+        kind: 'damage',
+        summary: 'Como discente, mas duração 3 rodadas. Dano repetido no início de cada turno.',
+      },
+    },
+    enhancements: [
+      { name: 'Discente', cost: 3, description: 'Muda dano para 6d8 de Morte.', circleReq: 3 },
+      { name: 'Verdadeiro', cost: 7, description: 'Como discente, duração 3 rodadas. Dano repetido.', circleReq: 3 },
+    ],
+  },
+  {
+    id: 'paradoxo',
+    name: 'Paradoxo',
+    circle: 2,
+    element: 'morte',
+    execution: 'Padrão',
+    range: 'Médio',
+    target: '1 ser ou objeto, ou esfera com 3m de raio',
+    duration: 'Instantânea',
+    description: 'Dissipa rituais ativos. Faça um teste de Ocultismo; anula rituais com DT igual ou menor que o resultado. Pode tornar item amaldiçoado mundano por 1 dia.',
+    cost: 2,
+    effects: {
+      base: {
+        kind: 'utility',
+        summary: 'Dissipa rituais ativos (teste de Ocultismo). Torna item amaldiçoado mundano por 1 dia.',
+      },
+    },
+    enhancements: [],
   },
   {
     id: 'velocidade-mortal',
@@ -950,30 +553,200 @@ export const DEATH_SECOND_CIRCLE: UnifiedRitual[] = [
     circle: 2,
     element: 'morte',
     execution: 'Padrão',
+    range: 'Curto',
+    target: '1 ser',
+    duration: 'Sustentada',
+    description: 'Você distorce a passagem do tempo ao redor do alvo, tornando-o extremamente veloz. O alvo pode realizar uma ação de movimento adicional por turno.',
+    cost: 2,
+    isSustainable: true,
+    effects: {
+      base: {
+        kind: 'buff',
+        summary: '+1 ação de movimento adicional por turno.',
+      },
+      discente: {
+        kind: 'buff',
+        summary: 'Em vez de movimento, +1 ação padrão adicional por turno.',
+      },
+      verdadeiro: {
+        kind: 'buff',
+        summary: 'Muda alvo para alvos escolhidos.',
+      },
+    },
+    enhancements: [
+      { name: 'Discente', cost: 3, description: 'Em vez de movimento, +1 ação padrão adicional.', circleReq: 3 },
+      { name: 'Verdadeiro', cost: 7, description: 'Muda alvo para alvos escolhidos.', circleReq: 4, affinityReq: true },
+    ],
+  },
+];
+
+// ========================================
+// 2º CÍRCULO - SANGUE (5 rituais)
+// ========================================
+
+export const BLOOD_SECOND_CIRCLE: UnifiedRitual[] = [
+  {
+    id: 'aprimorar-fisico',
+    name: 'Aprimorar Físico',
+    circle: 2,
+    element: 'sangue',
+    execution: 'Padrão',
     range: 'Toque',
     target: '1 ser',
     duration: 'Cena',
-    description: 'Acelera o tempo. +3m de deslocamento, +1 em Defesa e Reflexos, +1 ação padrão.',
+    description: 'O alvo tem seus músculos tonificados e seus ligamentos reforçados, recebendo +1 em Agilidade ou Força, à escolha dele.',
     cost: 2,
     effects: {
       base: {
         kind: 'buff',
-        defenseBonus: 1,
-        summary: '+3m deslocamento, +1 Defesa/Reflexos, +1 ação padrão por turno.',
+        summary: '+1 em Agilidade ou Força (escolha ao conjurar).',
       },
       discente: {
         kind: 'buff',
-        defenseBonus: 3,
-        summary: '+9m, +3 Defesa/Reflexos, +2 ações padrão.',
+        summary: '+2 em Agilidade ou Força.',
       },
       verdadeiro: {
         kind: 'buff',
-        summary: '+15m, +5 Defesa/Reflexos, +3 ações padrão.',
+        summary: '+3 em Agilidade ou Força.',
       },
     },
     enhancements: [
-      { name: 'Discente', cost: 4, description: '+9m, +3 em Defesa/Reflexos, +2 ações padrão.', circleReq: 3 },
-      { name: 'Verdadeiro', cost: 8, description: '+15m, +5 em Defesa/Reflexos, +3 ações padrão.', circleReq: 4, affinityReq: true },
+      { name: 'Discente', cost: 3, description: 'Muda bônus para +2.', circleReq: 3 },
+      { name: 'Verdadeiro', cost: 7, description: 'Muda bônus para +3.', circleReq: 4, affinityReq: true },
+    ],
+  },
+  {
+    id: 'descarnar',
+    name: 'Descarnar',
+    circle: 2,
+    element: 'sangue',
+    execution: 'Padrão',
+    range: 'Toque',
+    target: '1 ser',
+    duration: 'Instantânea',
+    description: 'Lacerações se manifestam na pele e órgãos do alvo, que sofre 6d8 pontos de dano (metade corte, metade Sangue) e fica com hemorragia severa (2d8/turno, Fortitude para estancar).',
+    cost: 2,
+    resistance: { type: 'fortitude', effect: 'parcial' },
+    effects: {
+      base: {
+        kind: 'damage',
+        damage: { diceCount: 6, diceType: 8, damageType: 'sangue' },
+        conditions: [{ id: 'sangrando', duration: 'sustentado' }],
+        summary: '6d8 dano (corte/Sangue) + hemorragia (2d8/rodada).',
+      },
+      discente: {
+        kind: 'damage',
+        damage: { diceCount: 10, diceType: 8, damageType: 'sangue' },
+        summary: '10d8 dano, hemorragia 4d8/rodada.',
+      },
+      verdadeiro: {
+        kind: 'buff',
+        weaponEffect: { damageBonus: '4d8', damageType: 'sangue' },
+        sustain: { action: 'free' },
+        summary: 'Sustentado. Ataques causam +4d8 Sangue e hemorragia.',
+      },
+    },
+    enhancements: [
+      { name: 'Discente', cost: 3, description: 'Dano 10d8, hemorragia 4d8.', circleReq: 3 },
+      { name: 'Verdadeiro', cost: 7, description: 'Alvo você, duração sustentada. Seus ataques causam +4d8 Sangue e hemorragia.', circleReq: 3, affinityReq: true },
+    ],
+  },
+  {
+    id: 'flagelo-de-sangue',
+    name: 'Flagelo de Sangue',
+    circle: 2,
+    element: 'sangue',
+    execution: 'Padrão',
+    range: 'Toque',
+    target: '1 pessoa',
+    duration: 'Cena',
+    description: 'Você toca uma pessoa, gravando uma marca escarificada no corpo dela enquanto profere uma ordem. A cada rodada que o alvo desobedecer, a marca causa 10d6 dano de Sangue e deixa o alvo enjoado.',
+    cost: 2,
+    resistance: { type: 'fortitude', effect: 'parcial' },
+    effects: {
+      base: {
+        kind: 'control',
+        mentalControl: { type: 'suggestion', canForceHarm: false, canForceSuicide: false },
+        damage: { diceCount: 10, diceType: 6, damageType: 'sangue' },
+        summary: 'Marca que causa 10d6 e enjoado se desobedecer ordem.',
+      },
+      discente: {
+        kind: 'control',
+        summary: 'Alvo 1 ser (exceto criaturas de Sangue).',
+      },
+      verdadeiro: {
+        kind: 'control',
+        summary: 'Duração de 1 dia.',
+      },
+    },
+    enhancements: [
+      { name: 'Discente', cost: 3, description: 'Muda alvo para 1 ser (exceto Sangue).', circleReq: 3 },
+      { name: 'Verdadeiro', cost: 7, description: 'Duração 1 dia.', circleReq: 4, affinityReq: true },
+    ],
+  },
+  {
+    id: 'hemofagia',
+    name: 'Hemofagia',
+    circle: 2,
+    element: 'sangue',
+    execution: 'Padrão',
+    range: 'Toque',
+    target: '1 ser',
+    duration: 'Instantânea',
+    description: 'Você arranca o sangue do corpo do alvo através da pele dele, causando 6d6 pontos de dano de Sangue. Você então absorve esse sangue, recuperando pontos de vida iguais à metade do dano causado.',
+    cost: 2,
+    resistance: { type: 'fortitude', effect: 'reduz_metade' },
+    effects: {
+      base: {
+        kind: 'damage',
+        damage: { diceCount: 6, diceType: 6, damageType: 'sangue' },
+        healing: { diceCount: 3, diceType: 6 },
+        summary: '6d6 dano de Sangue, cura metade do dano causado.',
+      },
+      discente: {
+        kind: 'damage',
+        summary: 'Sem resistência. Pode combinar com ataque corpo a corpo.',
+      },
+      verdadeiro: {
+        kind: 'buff',
+        sustain: { action: 'standard' },
+        summary: 'Sustentado. Ação padrão para tocar e causar 4d6 (cura metade).',
+      },
+    },
+    enhancements: [
+      { name: 'Discente', cost: 3, description: 'Resistência nenhuma. Faz ataque corpo a corpo junto.', circleReq: 3 },
+      { name: 'Verdadeiro', cost: 7, description: 'Pessoal, sustentada. Ação padrão para tocar e causar 4d6 (recupera metade).', circleReq: 4 },
+    ],
+  },
+  {
+    id: 'transfusao-vital',
+    name: 'Transfusão Vital',
+    circle: 2,
+    element: 'sangue',
+    execution: 'Padrão',
+    range: 'Toque',
+    target: '1 ser',
+    duration: 'Instantânea',
+    description: 'Você toca outro ser e transfere sua própria energia vital para ele, podendo perder até 30 pontos de vida para que o alvo recupere a mesma quantidade em PV. Você não pode ficar com menos de 1 PV.',
+    cost: 2,
+    effects: {
+      base: {
+        kind: 'healing',
+        healing: { diceCount: 0, diceType: 6, bonus: 30 },
+        summary: 'Transfere até 30 PV seus para o alvo.',
+      },
+      discente: {
+        kind: 'healing',
+        summary: 'Transfere até 50 PV.',
+      },
+      verdadeiro: {
+        kind: 'healing',
+        summary: 'Transfere até 100 PV.',
+      },
+    },
+    enhancements: [
+      { name: 'Discente', cost: 3, description: 'Transfere até 50 PV.', circleReq: 3 },
+      { name: 'Verdadeiro', cost: 7, description: 'Transfere até 100 PV.', circleReq: 4 },
     ],
   },
 ];
