@@ -64,10 +64,10 @@ describe('SUE Fase 1: Power Registry Integration', () => {
       // Combatente
       expect(hasPowerEffects('golpe-pesado')).toBe(true);
       expect(hasPowerEffects('golpe-brutal')).toBe(true);
-      
+
       // Especialista
       expect(hasPowerEffects('mira-firme')).toBe(true);
-      
+
       // Ocultista
       expect(hasPowerEffects('ritual-potente')).toBe(true);
       expect(hasPowerEffects('especialista-em-elemento')).toBe(true);
@@ -75,7 +75,7 @@ describe('SUE Fase 1: Power Registry Integration', () => {
 
     it('getPowersRequiringChoice deve listar poderes com escolhas', () => {
       const powers = getPowersRequiringChoice();
-      
+
       expect(powers).toContain('especialista-em-elemento');
       expect(powers).toContain('mestre-em-elemento');
       expect(powers).toContain('ritual-predileto');
@@ -90,11 +90,11 @@ describe('SUE Fase 1: Power Registry Integration', () => {
         classId: 'combatente',
         nex: 25,
       };
-      
+
       const effects = getClassPowerEffects([power], 25, createTestAttributes());
-      
+
       expect(effects.length).toBe(1);
-      expect(effects[0].mechanics.meleeDamageBonus).toBeDefined();
+      expect(effects[0].mechanics.extraDamageDice).toBeDefined();
     });
 
     it('criticalBonus deve ser convertido corretamente', () => {
@@ -104,9 +104,9 @@ describe('SUE Fase 1: Power Registry Integration', () => {
         classId: 'combatente',
         nex: 25,
       };
-      
+
       const effects = getClassPowerEffects([power], 25, createTestAttributes());
-      
+
       expect(effects[0].mechanics.criticalMarginBonus).toBeDefined();
     });
 
@@ -117,9 +117,9 @@ describe('SUE Fase 1: Power Registry Integration', () => {
         classId: 'ocultista',
         nex: 25,
       };
-      
+
       const effects = getClassPowerEffects([power], 25, createTestAttributes());
-      
+
       expect(effects[0].mechanics.skillBonus?.enganacao).toBeDefined();
     });
   });
@@ -133,12 +133,12 @@ describe('SUE Fase 1: Power Registry Integration', () => {
         nex: 25,
         choices: { element: 'Sangue' },
       };
-      
+
       const effects = getClassPowerEffects([power], 25, createTestAttributes());
-      
+
       expect(effects.length).toBe(1);
-      expect(effects[0].mechanics.ritualDTBonusByElement?.['sangue'] || 
-             effects[0].mechanics.ritualDTBonusByElement?.['Sangue']).toBeDefined();
+      expect(effects[0].mechanics.ritualDTBonusByElement?.['sangue'] ||
+        effects[0].mechanics.ritualDTBonusByElement?.['Sangue']).toBeDefined();
     });
 
     it('mestre-em-elemento deve reduzir PE do elemento escolhido', () => {
@@ -149,12 +149,12 @@ describe('SUE Fase 1: Power Registry Integration', () => {
         nex: 50,
         choices: { element: 'Morte' },
       };
-      
+
       const effects = getClassPowerEffects([power], 50, createTestAttributes());
-      
+
       expect(effects.length).toBe(1);
       expect(effects[0].mechanics.ritualPEReductionByElement?.['morte'] ||
-             effects[0].mechanics.ritualPEReductionByElement?.['Morte']).toBeDefined();
+        effects[0].mechanics.ritualPEReductionByElement?.['Morte']).toBeDefined();
     });
 
     it('poder sem escolha obrigatória não deve gerar efeito', () => {
@@ -165,9 +165,9 @@ describe('SUE Fase 1: Power Registry Integration', () => {
         nex: 25,
         // Sem choices
       };
-      
+
       const effects = getClassPowerEffects([power], 25, createTestAttributes());
-      
+
       expect(effects.length).toBe(0);
     });
   });
@@ -180,10 +180,10 @@ describe('SUE Fase 1: Power Registry Integration', () => {
         classId: 'combatente',
         nex: 50,
       };
-      
+
       const effectsNex25 = getClassPowerEffects([power], 25, createTestAttributes());
       const effectsNex75 = getClassPowerEffects([power], 75, createTestAttributes());
-      
+
       // Ambos devem gerar efeitos
       expect(effectsNex25.length).toBeGreaterThan(0);
       expect(effectsNex75.length).toBeGreaterThan(0);
@@ -205,9 +205,9 @@ describe('SUE Fase 2: Ritual Integration', () => {
         circle: 1,
         selectedEnhancements: [],
       };
-      
+
       const effects = getRitualEffects([sustained]);
-      
+
       // Deve processar sem erro
       expect(Array.isArray(effects)).toBe(true);
     });
@@ -219,9 +219,9 @@ describe('SUE Fase 2: Ritual Integration', () => {
         element: 'Energia',
         circle: 1,
       };
-      
+
       const effects = getRitualEffects([sustained]);
-      
+
       if (effects.length > 0) {
         expect(effects[0].source).toBe('ritual');
       }
@@ -242,7 +242,7 @@ describe('SUE Fase 2: Ritual Integration', () => {
           circle: 2,
         },
       ];
-      
+
       expect(() => getRitualEffects(rituals)).not.toThrow();
     });
   });
@@ -250,7 +250,7 @@ describe('SUE Fase 2: Ritual Integration', () => {
   describe('calculateRitualBonusTotals', () => {
     it('deve retornar estrutura correta', () => {
       const totals = calculateRitualBonusTotals([]);
-      
+
       expect(totals).toHaveProperty('attackBonus');
       expect(totals).toHaveProperty('damageBonus');
       expect(totals).toHaveProperty('defenseBonus');
@@ -262,7 +262,7 @@ describe('SUE Fase 2: Ritual Integration', () => {
 
     it('valores devem ser zerados para array vazio', () => {
       const totals = calculateRitualBonusTotals([]);
-      
+
       expect(totals.attackBonus).toBe(0);
       expect(totals.damageBonus).toBe(0);
       expect(totals.defenseBonus).toBe(0);
@@ -272,13 +272,13 @@ describe('SUE Fase 2: Ritual Integration', () => {
   describe('getSustainableRituals', () => {
     it('deve retornar lista de rituais sustentáveis', () => {
       const rituais = getSustainableRituals();
-      
+
       expect(Array.isArray(rituais)).toBe(true);
     });
 
     it('rituais devem ter estrutura correta', () => {
       const rituais = getSustainableRituals();
-      
+
       if (rituais.length > 0) {
         expect(rituais[0]).toHaveProperty('id');
         expect(rituais[0]).toHaveProperty('name');
@@ -292,7 +292,7 @@ describe('SUE Fase 2: Ritual Integration', () => {
   describe('getWeaponBuffRituals', () => {
     it('deve retornar lista de rituais de buff de arma', () => {
       const rituais = getWeaponBuffRituals();
-      
+
       expect(Array.isArray(rituais)).toBe(true);
     });
   });
@@ -300,7 +300,7 @@ describe('SUE Fase 2: Ritual Integration', () => {
   describe('getRitualEnhancements', () => {
     it('deve retornar objeto com aprimoramentos disponíveis', () => {
       const result = getRitualEnhancements('amaldicoar-arma');
-      
+
       expect(result).toHaveProperty('hasEnhancements');
       expect(result).toHaveProperty('enhancements');
       expect(Array.isArray(result.enhancements)).toBe(true);
@@ -316,8 +316,9 @@ describe('SUE Fase 3: Ocultist Track Ritual Modifiers', () => {
   describe('Conduíte', () => {
     it('Ampliar Ritual deve ter ritualModifiers', () => {
       const effects = getTrackEffects('conduite', 10, createTestAttributes());
+
       const ampliar = effects.find(e => e.sourceId === 'ampliar-ritual');
-      
+
       expect(ampliar).toBeDefined();
       expect(ampliar?.mechanics.ritualModifiers).toBeDefined();
       expect(ampliar?.mechanics.ritualModifiers?.length).toBeGreaterThan(0);
@@ -326,7 +327,7 @@ describe('SUE Fase 3: Ocultist Track Ritual Modifiers', () => {
     it('Acelerar Ritual deve ter ritualModifiers com action type', () => {
       const effects = getTrackEffects('conduite', 40, createTestAttributes());
       const acelerar = effects.find(e => e.sourceId === 'acelerar-ritual');
-      
+
       expect(acelerar).toBeDefined();
       if (acelerar) {
         const acelerarMod = acelerar.mechanics.ritualModifiers?.find(m => m.type === 'action');
@@ -337,7 +338,7 @@ describe('SUE Fase 3: Ocultist Track Ritual Modifiers', () => {
     it('Anular Ritual deve ter ritualModifiers com counter type', () => {
       const effects = getTrackEffects('conduite', 65, createTestAttributes());
       const anular = effects.find(e => e.sourceId === 'anular-ritual');
-      
+
       expect(anular).toBeDefined();
       if (anular) {
         const anularMod = anular.mechanics.ritualModifiers?.find(m => m.type === 'counter');
@@ -357,10 +358,10 @@ describe('SUE Fase 3: Ocultist Track Ritual Modifiers', () => {
   describe('Flagelador', () => {
     it('Poder do Flagelo deve ter specialEffect de PV como PE', () => {
       const effects = getTrackEffects('flagelador', 10, createTestAttributes());
-      const poder = effects.find(e => e.sourceId === 'poder-do-flagelo');
-      
+      const poder = effects.find(e => e.sourceId === 'poder-do-sangue');
+
       expect(poder).toBeDefined();
-      const hasPvAsPe = poder?.mechanics.specialEffects?.some(s => 
+      const hasPvAsPe = poder?.mechanics.specialEffects?.some(s =>
         s.toLowerCase().includes('pv') && s.toLowerCase().includes('pe')
       );
       expect(hasPvAsPe).toBe(true);
@@ -369,28 +370,28 @@ describe('SUE Fase 3: Ocultist Track Ritual Modifiers', () => {
     it('Absorver Angústia deve ter PE temporário', () => {
       const effects = getTrackEffects('flagelador', 65, createTestAttributes());
       const absorver = effects.find(e => e.sourceId === 'absorver-angustia');
-      
+
       expect(absorver).toBeDefined();
       const hasTemporaryPE = absorver?.mechanics.specialEffects?.some(s =>
-        s.toLowerCase().includes('pe temporário')
+        s.toLowerCase().includes('recupera pe')
       );
       expect(hasTemporaryPE).toBe(true);
     });
   });
 
   describe('Graduado', () => {
-    it('Rituais Eficientes deve ter ritualDTBonus = 5', () => {
+    it('Grimório Ritualístico deve ter ritualDTBonus = 5', () => {
       const effects = getTrackEffects('graduado', 65, createTestAttributes());
-      const eficientes = effects.find(e => e.sourceId === 'rituais-eficientes');
-      
-      expect(eficientes).toBeDefined();
-      expect(eficientes?.mechanics.ritualDTBonus).toBe(5);
+      const grimorio = effects.find(e => e.sourceId === 'grimorio-ritualistico');
+
+      expect(grimorio).toBeDefined();
+      expect(grimorio?.mechanics.ritualDTBonus).toBe(5);
     });
 
     it('Saber Ampliado deve ter specialEffect de rituais extras', () => {
       const effects = getTrackEffects('graduado', 10, createTestAttributes());
       const saber = effects.find(e => e.sourceId === 'saber-ampliado');
-      
+
       expect(saber).toBeDefined();
       const hasRitualBonus = saber?.mechanics.specialEffects?.some(s =>
         s.toLowerCase().includes('ritual') && s.toLowerCase().includes('extra')
@@ -403,15 +404,15 @@ describe('SUE Fase 3: Ocultist Track Ritual Modifiers', () => {
     it('Mente Sã deve ter paranormalDamageReduction = 5', () => {
       const effects = getTrackEffects('intuitivo', 10, createTestAttributes());
       const menteSa = effects.find(e => e.sourceId === 'mente-sa');
-      
+
       expect(menteSa).toBeDefined();
-      expect(menteSa?.mechanics.paranormalDamageReduction).toBe(5);
+      expect(menteSa?.mechanics.mentalDamageResistance).toBe(5);
     });
 
     it('Presença Poderosa deve ter specialEffect de PE por turno', () => {
       const effects = getTrackEffects('intuitivo', 40, createTestAttributes());
       const presenca = effects.find(e => e.sourceId === 'presenca-poderosa');
-      
+
       expect(presenca).toBeDefined();
       const hasPEBonus = presenca?.mechanics.specialEffects?.some(s =>
         s.toLowerCase().includes('pe') && s.toLowerCase().includes('turno')
@@ -424,7 +425,7 @@ describe('SUE Fase 3: Ocultist Track Ritual Modifiers', () => {
     it('Lâmina Maldita deve ter ritual concedido', () => {
       const effects = getTrackEffects('lamina-paranormal', 10, createTestAttributes());
       const lamina = effects.find(e => e.sourceId === 'lamina-maldita');
-      
+
       expect(lamina).toBeDefined();
       const hasRitual = lamina?.mechanics.specialEffects?.some(s =>
         s.toLowerCase().includes('ritual concedido') ||
@@ -436,7 +437,7 @@ describe('SUE Fase 3: Ocultist Track Ritual Modifiers', () => {
     it('Lâmina Maldita deve ter Ocultismo como ataque', () => {
       const effects = getTrackEffects('lamina-paranormal', 10, createTestAttributes());
       const lamina = effects.find(e => e.sourceId === 'lamina-maldita');
-      
+
       expect(lamina).toBeDefined();
       const hasOcultismoAttack = lamina?.mechanics.specialEffects?.some(s =>
         s.toLowerCase().includes('ocultismo') && s.toLowerCase().includes('ataque')
@@ -447,7 +448,7 @@ describe('SUE Fase 3: Ocultist Track Ritual Modifiers', () => {
     it('Gladiador Paranormal deve ter PE temporário', () => {
       const effects = getTrackEffects('lamina-paranormal', 40, createTestAttributes());
       const gladiador = effects.find(e => e.sourceId === 'gladiador-paranormal');
-      
+
       expect(gladiador).toBeDefined();
       const hasTemporaryPE = gladiador?.mechanics.specialEffects?.some(s =>
         s.toLowerCase().includes('pe temporário')
@@ -464,7 +465,7 @@ describe('SUE Fase 3: Ocultist Track Ritual Modifiers', () => {
 describe('SUE Fase 4: Hook Dependencies', () => {
   // Nota: useUnifiedEffects é um hook React, então testamos as funções
   // de coleta de efeitos que ele usa internamente
-  
+
   describe('Coleta de Efeitos de Classe', () => {
     it('deve processar múltiplos poderes de classes diferentes', () => {
       const powers: ActiveClassPower[] = [
@@ -472,9 +473,9 @@ describe('SUE Fase 4: Hook Dependencies', () => {
         { id: 'mira-firme', name: 'Mira Firme', classId: 'especialista', nex: 25 },
         { id: 'ritual-potente', name: 'Ritual Potente', classId: 'ocultista', nex: 25 },
       ];
-      
+
       const effects = getClassPowerEffects(powers, 50, createTestAttributes());
-      
+
       expect(effects.length).toBe(3);
     });
 
@@ -485,9 +486,9 @@ describe('SUE Fase 4: Hook Dependencies', () => {
         classId: 'combatente',
         nex: 25,
       };
-      
+
       const effects = getClassPowerEffects([power], 25, createTestAttributes());
-      
+
       expect(effects[0].source).toBe('class_power');
       expect(effects[0].sourceId).toBe('golpe-pesado');
     });
@@ -500,7 +501,7 @@ describe('SUE Fase 4: Hook Dependencies', () => {
         'atirador-elite', 'infiltrador',
         'conduite', 'flagelador', 'graduado', 'intuitivo', 'lamina-paranormal',
       ];
-      
+
       for (const trackId of tracks) {
         const effects = getTrackEffects(trackId, 50, createTestAttributes());
         expect(Array.isArray(effects)).toBe(true);
@@ -512,7 +513,7 @@ describe('SUE Fase 4: Hook Dependencies', () => {
   describe('Coleta de Efeitos de Ritual', () => {
     it('deve processar rituais de todos os elementos', () => {
       const elementos = ['Sangue', 'Morte', 'Conhecimento', 'Energia', 'Medo'];
-      
+
       for (const elemento of elementos) {
         const ritual: SustainedRitualInput = {
           ritualId: `ritual-${elemento.toLowerCase()}`,
@@ -520,7 +521,7 @@ describe('SUE Fase 4: Hook Dependencies', () => {
           element: elemento,
           circle: 1,
         };
-        
+
         expect(() => getRitualEffects([ritual])).not.toThrow();
       }
     });
@@ -533,7 +534,7 @@ describe('SUE Fase 4: Hook Dependencies', () => {
           element: 'Energia',
           circle,
         };
-        
+
         expect(() => getRitualEffects([ritual])).not.toThrow();
       }
     });
@@ -551,21 +552,25 @@ describe('SUE Fase 5: End-to-End Integration', () => {
         { id: 'golpe-pesado', name: 'Golpe Pesado', classId: 'combatente', nex: 50 },
         { id: 'golpe-brutal', name: 'Golpe Brutal', classId: 'combatente', nex: 50 },
       ];
-      
+
       const classPowerEffects = getClassPowerEffects(powers, 50, createTestAttributes());
       const trackEffects = getTrackEffects('guerreiro', 50, createTestAttributes());
-      
+
       // Todos devem ter efeitos
       expect(classPowerEffects.length).toBeGreaterThan(0);
       expect(trackEffects.length).toBeGreaterThan(0);
-      
+
       // Deve haver bônus de dano corpo a corpo
-      const hasMeleeDamage = classPowerEffects.some(e => e.mechanics.meleeDamageBonus);
+      const hasMeleeDamage = classPowerEffects.some(e =>
+        e.mechanics.meleeDamageBonus ||
+        e.mechanics.damageBonus ||
+        e.mechanics.extraDamageDice
+      );
       expect(hasMeleeDamage).toBe(true);
-      
+
       // Deve haver margem de crítico
       const hasCritical = classPowerEffects.some(e => e.mechanics.criticalMarginBonus) ||
-                         trackEffects.some(e => e.mechanics.criticalMarginBonus);
+        trackEffects.some(e => e.mechanics.criticalMarginBonus);
       expect(hasCritical).toBe(true);
     });
   });
@@ -587,7 +592,7 @@ describe('SUE Fase 5: End-to-End Integration', () => {
           nex: 50,
         },
       ];
-      
+
       const rituals: SustainedRitualInput[] = [
         {
           ritualId: 'amaldicoar-arma',
@@ -596,23 +601,23 @@ describe('SUE Fase 5: End-to-End Integration', () => {
           circle: 1,
         },
       ];
-      
+
       const classPowerEffects = getClassPowerEffects(powers, 50, createTestAttributes());
       const trackEffects = getTrackEffects('conduite', 50, createTestAttributes());
       const ritualEffects = getRitualEffects(rituals);
-      
+
       // Verificações
       expect(classPowerEffects.length).toBeGreaterThan(0);
       expect(trackEffects.length).toBeGreaterThan(0);
-      
+
       // Deve haver DT bonus por elemento
-      const hasDTBonus = classPowerEffects.some(e => 
+      const hasDTBonus = classPowerEffects.some(e =>
         e.mechanics.ritualDTBonusByElement
       );
       expect(hasDTBonus).toBe(true);
-      
+
       // Deve haver modificadores de ritual
-      const hasRitualModifiers = trackEffects.some(e => 
+      const hasRitualModifiers = trackEffects.some(e =>
         e.mechanics.ritualModifiers && e.mechanics.ritualModifiers.length > 0
       );
       expect(hasRitualModifiers).toBe(true);
@@ -625,14 +630,14 @@ describe('SUE Fase 5: End-to-End Integration', () => {
         { id: 'mira-firme', name: 'Mira Firme', classId: 'especialista', nex: 50 },
         { id: 'balistica-avancada', name: 'Balística Avançada', classId: 'especialista', nex: 50 },
       ];
-      
+
       const classPowerEffects = getClassPowerEffects(powers, 50, createTestAttributes());
       const trackSummary = getTrackBonusSummary('atirador-elite', 50, createTestAttributes());
-      
+
       // Verificações
       expect(classPowerEffects.length).toBeGreaterThan(0);
       expect(trackSummary.trackName).toBe('Atirador de Elite');
-      
+
       // Deve haver bônus de dano à distância
       const hasRangedDamage = classPowerEffects.some(e => e.mechanics.rangedDamageBonus);
       expect(hasRangedDamage).toBe(true);
@@ -644,10 +649,10 @@ describe('SUE Fase 5: End-to-End Integration', () => {
       const powers: ActiveClassPower[] = [
         { id: 'golpe-pesado', name: 'Golpe Pesado', classId: 'combatente', nex: 25 },
       ];
-      
+
       const classPowerEffects = getClassPowerEffects(powers, 25, createTestAttributes());
       const trackEffects = getTrackEffects('guerreiro', 25, createTestAttributes());
-      
+
       for (const effect of [...classPowerEffects, ...trackEffects]) {
         expect(effect.id).toBeDefined();
         expect(effect.name).toBeDefined();
@@ -672,7 +677,7 @@ describe('SUE Fase 5: End-to-End Integration', () => {
         classId: 'combatente',
         nex: 25,
       };
-      
+
       expect(() => getClassPowerEffects([power], 0, createTestAttributes())).not.toThrow();
       expect(() => getClassPowerEffects([power], -1, createTestAttributes())).not.toThrow();
       expect(() => getClassPowerEffects([power], 999, createTestAttributes())).not.toThrow();

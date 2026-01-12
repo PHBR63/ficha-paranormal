@@ -11,7 +11,7 @@
 /**
  * Tipo de fonte do efeito - de onde ele vem
  */
-export type EffectSource = 
+export type EffectSource =
   | 'origin'           // Origem do personagem
   | 'class_ability'    // Habilidade de classe
   | 'class_power'      // Poder de classe
@@ -31,7 +31,7 @@ export type AttackType = 'melee' | 'ranged' | 'any';
 /**
  * Tipo de dano
  */
-export type DamageType = 
+export type DamageType =
   | 'balistico' | 'corte' | 'impacto' | 'perfuracao'  // Físico
   | 'fogo' | 'frio' | 'eletricidade' | 'quimico'       // Elemental
   | 'mental' | 'sangue' | 'morte' | 'conhecimento' | 'energia' | 'medo'; // Paranormal
@@ -54,87 +54,89 @@ export interface EffectMechanics {
   attackBonus?: number;           // Bônus em testes de ataque
   meleeAttackBonus?: number;      // Bônus apenas em corpo a corpo
   rangedAttackBonus?: number;     // Bônus apenas em distância
-  
+
   // === Combate - Dano ===
   damageBonus?: number;           // Bônus em rolagens de dano
   meleeDamageBonus?: number;      // Bônus dano corpo a corpo
   rangedDamageBonus?: number;     // Bônus dano distância
   extraDamageDice?: string;       // Dados extras de dano (ex: "1d6")
   criticalDamageBonus?: number;   // Bônus dano crítico
-  
+
   // === Combate - Crítico ===
   criticalMarginBonus?: number;   // Aumento na margem de ameaça
   criticalMultiplierBonus?: number; // Aumento no multiplicador crítico
-  
+
   // === Combate - Defesa ===
   defenseBonus?: number;          // Bônus em Defesa
   defenseBonusMelee?: number;     // Bônus Defesa vs corpo a corpo
   defenseBonusRanged?: number;    // Bônus Defesa vs distância
-  
+
   // === Resistências ===
   fortitudeBonus?: number;
   reflexosBonus?: number;
   vontadeBonus?: number;
   allResistancesBonus?: number;   // Bônus em todas as resistências
-  
+
   // === Redução de Dano ===
   damageReduction?: number;        // RD física geral
   damageReductionByType?: Partial<Record<DamageType, number>>; // RD por tipo
   paranormalDamageReduction?: number; // RD contra dano paranormal
-  
+  mentalDamageResistance?: number; // Resistência a dano mental
+
   // === Resistência a Dano (percentual) ===
   damageResistance?: Partial<Record<DamageType, number>>; // Ex: { mental: 5 } = resistência 5 mental
-  
+
   // === Perícias ===
   skillBonus?: Partial<Record<string, number>>; // Bônus por perícia
   allSkillsBonus?: number;         // Bônus em todas as perícias
   attributeSkillsBonus?: Partial<Record<AttributeType, number>>; // Bônus em perícias de atributo
-  
+
   // === Recursos ===
   hpBonus?: number;                // Bônus em PV máximo
   hpBonusPerNex?: number;          // Bônus PV por 5% NEX
   peBonus?: number;                // Bônus em PE máximo
   peBonusPerNex?: number;          // Bônus PE por 5% NEX
+  peModifiers?: Array<{ value: number; targets: string[] }>; // Modificadores de custo de PE
   sanityBonus?: number;            // Bônus em Sanidade máxima
   tempHP?: number;                 // PV temporários
-  
+
   // === Movimento ===
   movementBonus?: number;          // Bônus em deslocamento (metros)
   movementMultiplier?: number;     // Multiplicador de deslocamento
-  
+
   // === Iniciativa ===
   initiativeBonus?: number;
-  
+
   // === Ações ===
   extraAction?: 'movement' | 'standard' | 'free' | 'full'; // Ação extra
-  
+
   // === Efeitos Especiais (não numéricos) ===
   specialEffects?: string[];       // Lista de efeitos especiais textuais
   conditionalNote?: string;        // Nota sobre condição de aplicação (ex: "Apenas armas longas")
-  
+
   // === Proficiências ===
   grantsProficiency?: string[];    // Proficiências concedidas
-  
+
   // === Flags de Comportamento ===
   cannotAct?: boolean;             // Não pode agir
   cannotReact?: boolean;           // Não pode usar reações
   cannotMove?: boolean;            // Não pode se mover
   isHelpless?: boolean;            // Indefeso
   isUnconscious?: boolean;         // Inconsciente
-  
+
   // === Flags de Crítico ===
   maximumDamageOnCrit?: boolean;   // Crítico causa dano máximo (Atirar para Matar)
-  
+
   // =====================================================
   // COMBATE AVANÇADO (Fase 1 SUE)
   // =====================================================
-  
+
   // === Multiplicador de Ataque Especial (Guerreiro - Potência Máxima) ===
   specialAttackMultiplier?: {
     value: number;                           // Multiplicador dos bônus (ex: 2 para dobrar)
     weaponRestriction?: 'melee' | 'ranged' | 'any'; // Restrição de tipo de arma
   };
-  
+
   // === Ações Extras de Trilha (Operações Especiais, etc.) ===
   extraActionsTrack?: {
     type: 'attack' | 'movement' | 'standard' | 'standard-or-movement' | 'maneuver';
@@ -147,18 +149,18 @@ export interface EffectMechanics {
     perRound?: boolean;                      // Se é 1x por rodada
     perScene?: boolean;                      // Se é 1x por cena
   };
-  
+
   // === Dano Máximo em Crítico (Atirador de Elite - Atirar para Matar) ===
   maximumDamageOnCritical?: {
     weaponType: 'firearm' | 'melee' | 'any'; // Tipo de arma que aplica
   };
-  
+
   // === Bônus de Bloqueio com Vigor (Tropa de Choque - Casca Grossa) ===
   blockVigorBonus?: boolean;                 // Soma Vigor na RD ao bloquear
-  
+
   // === Ocultismo como Ataque (Lâmina Paranormal) ===
   occultismAsAttack?: boolean;               // Pode usar Ocultismo no lugar de Luta/Pontaria
-  
+
   // === Provocar (Tropa de Choque - Cai Dentro) ===
   taunt?: {
     range: 'curto' | 'medio' | 'longo';      // Alcance da provocação
@@ -167,31 +169,31 @@ export interface EffectMechanics {
     peCost: number;                          // Custo em PE
     actionType: 'reaction' | 'free' | 'standard'; // Tipo de ação
   };
-  
+
   // === Controle de Estado do Alvo (Infiltrador - Assassinar) ===
   targetStateControl?: {
     options: string[];                       // Opções de estado (unconscious, dying)
     resistanceTest: string;                  // Teste de resistência (fortitude)
     dtAttribute: AttributeType;              // Atributo base da DT
   };
-  
+
   // === Bônus quando Machucado (Tropa de Choque - Inquebrável) ===
   whenWounded?: {
     hpThreshold: number;                     // Limiar de PV (percentual, ex: 50)
     defenseBonus?: number;                   // Bônus em Defesa
     damageReduction?: number;                // RD adicional
   };
-  
+
   // === Bônus quando Morrendo (Tropa de Choque - Inquebrável) ===
   whenDying?: {
     canAct: boolean;                         // Pode agir enquanto morrendo
     notHelpless: boolean;                    // Não fica indefeso
   };
-  
+
   // =====================================================
   // EQUIPAMENTO E INVENTÁRIO
   // =====================================================
-  
+
   // === Redução de Categoria de Equipamento ===
   categoryReduction?: {
     amount: number;                          // Quantidade da redução (-1, -2)
@@ -200,14 +202,14 @@ export interface EffectMechanics {
     choiceDescription?: string;              // Descrição da escolha
     appliesToAllCarried?: boolean;           // Se aplica a todos itens carregados
   };
-  
+
   // === Contra-Mágica ===
   counterSpell?: {
     costMatchesTarget: boolean;              // PE = custo do ritual alvo
     testSkill: string;                       // Perícia do teste (Ocultismo)
     testType: 'opposed' | 'fixed';           // Tipo de teste
   };
-  
+
   // === Ataque Furtivo (Infiltrador) ===
   sneakAttack?: {
     baseDice: number;                        // Quantidade de dados base
@@ -218,7 +220,7 @@ export interface EffectMechanics {
     usesPerRound: number;                    // Usos por rodada
     multiplier?: number;                     // Multiplicador (Assassinar)
   };
-  
+
   // === Cura (Médico de Campo) ===
   healing?: {
     baseDice: number;                        // Quantidade de dados base
@@ -229,7 +231,7 @@ export interface EffectMechanics {
     range: 'self' | 'touch' | 'short';       // Alcance
     actionType?: 'standard' | 'movement' | 'complete'; // Tipo de ação
   };
-  
+
   // === Liderança (Comandante de Campo) ===
   leadership?: {
     range: 'curto' | 'medio' | 'longo' | 'alcance-voz'; // Alcance do efeito
@@ -259,7 +261,7 @@ export interface EffectMechanics {
       };
     }>;
   };
-  
+
   // === Buff para Aliados (Negociador - Discurso Motivador) ===
   allyBuff?: {
     range: 'curto' | 'medio' | 'longo' | 'alcance-voz'; // Alcance do efeito
@@ -274,7 +276,7 @@ export interface EffectMechanics {
       peCost?: number;
     }>;
   };
-  
+
   // === Efeito Social (Negociador - Eloquência) ===
   socialEffect?: {
     range: 'curto' | 'medio' | 'longo' | 'alcance-voz';  // Alcance do efeito
@@ -289,7 +291,7 @@ export interface EffectMechanics {
     immunityOnSuccess?: string;                            // Imunidade se alvo passar no teste
     resistanceBonusOnSuccess?: number;                     // Bônus na resistência após sucesso
   };
-  
+
   // === Rede de Contatos (Negociador - Eu Conheço um Cara) ===
   contacts?: {
     usesPerMission: number;                              // Usos por missão (geralmente 1)
@@ -298,7 +300,7 @@ export interface EffectMechanics {
     peCost: number;                                      // Custo em PE (geralmente 0)
     actionType: 'free' | 'standard' | 'varies';          // Tipo de ação
   };
-  
+
   // === Cópia de Habilidade (Negociador - Truque de Mestre) ===
   copyAbility?: {
     source: 'ally' | 'enemy' | 'any';                    // Fonte da habilidade copiada
@@ -310,19 +312,19 @@ export interface EffectMechanics {
     usesPerScene?: number;                               // Usos por cena (se limitado)
     excludedAbilities?: string[];                        // Habilidades que não podem ser copiadas
   };
-  
+
   // =====================================================
   // TÉCNICO - Mecânicas de inventário e equipamento
   // =====================================================
-  
+
   // === Capacidade de Carga (Inventário Otimizado) ===
   carryCapacity?: {
     addAttribute: AttributeType;                         // Atributo adicional para calcular carga
   };
-  
+
   // === Redução de Espaço de Item (Inventário Otimizado) ===
   itemSpaceReduction?: number;                           // Redução de espaços ocupados por itens
-  
+
   // === Reparar Equipamento (Remendo) ===
   repairEquipment?: {
     range: 'self' | 'touch' | 'short';                   // Alcance do reparo
@@ -330,7 +332,7 @@ export interface EffectMechanics {
     peCost: number;                                      // Custo em PE
     actionType: 'standard' | 'complete';                 // Tipo de ação
   };
-  
+
   // === Criar Equipamento (Improvisar) ===
   createEquipment?: {
     type: 'general' | 'weapon' | 'armor' | 'any';        // Tipo de equipamento
@@ -339,7 +341,7 @@ export interface EffectMechanics {
     peCost: number;                                      // Custo em PE
     actionType: 'standard' | 'complete';                 // Tipo de ação
   };
-  
+
   // === Retirar Item Retroativamente (Preparado para Tudo) ===
   retrieveItem?: {
     excludeWeapons: boolean;                             // Se exclui armas
@@ -347,24 +349,24 @@ export interface EffectMechanics {
     peCostPerCategory: number;                           // Custo em PE por categoria
     actionType: 'movement' | 'standard';                 // Tipo de ação
   };
-  
+
   // =====================================================
   // RITUAIS - Mecânicas específicas para poderes de classe
   // =====================================================
-  
+
   // === Bônus de DT de Rituais ===
   ritualDTBonus?: number;          // Bônus na DT de todos os rituais
   ritualDTBonusByElement?: Partial<Record<string, number>>; // +DT por elemento
-  
+
   // === Bônus de Dano/Cura de Rituais ===
   ritualDamageBonus?: number;      // Bônus fixo em dano/cura de rituais
   ritualDamageAttributeBonus?: AttributeType; // Soma atributo no dano/cura de rituais
-  
+
   // === Modificadores de PE de Rituais ===
   ritualPEReduction?: number;      // Redução geral de PE em rituais
   ritualPEReductionByElement?: Partial<Record<string, number>>; // Redução por elemento
   ritualPEReductionByRange?: Partial<Record<string, number>>; // Redução por alcance (pessoal, etc)
-  
+
   // === Modificadores de Ritual de Trilha ===
   ritualModifiers?: Array<{
     id: string;                    // ID do modificador
@@ -377,11 +379,11 @@ export interface EffectMechanics {
     variableCost?: boolean;        // Se true, custo é igual ao ritual alvo (Anular Ritual)
     actionType?: 'reaction';       // Tipo de ação necessária
   }>;
-  
+
   // =====================================================
   // FASE 3: SUPORTE (Médico de Campo, Resgate, etc.)
   // =====================================================
-  
+
   // === Movimento Livre para Aliado (Resgate) ===
   freeMovementTo?: {
     condition?: 'ally-at-0-hp' | 'ally-wounded' | 'any-ally';  // Legado v1.0
@@ -389,7 +391,7 @@ export interface EffectMechanics {
     range?: 'touch' | 'short' | 'medium' | 'long';             // Alcance para ativar
     perRound: boolean;                                          // Se é 1x por rodada
   };
-  
+
   // === Efeitos ao Curar (Médico de Campo) ===
   onHeal?: {
     selfDefenseBonus?: number;                                  // Bônus para o curador (v1.3)
@@ -397,7 +399,7 @@ export interface EffectMechanics {
     duration: 'next-attack' | 'end-of-round' | 'turns';         // Duração do bônus
     turns?: number;                                             // Número de turnos (se duration = 'turns')
   };
-  
+
   // === Remoção de Condição (Equipe de Trauma) ===
   removeCondition?: {
     range: 'self' | 'touch' | 'short';                         // Alcance
@@ -405,7 +407,7 @@ export interface EffectMechanics {
     peCost: number;                                            // Custo em PE
     actionType: 'standard' | 'complete';                       // Tipo de ação
   };
-  
+
   // === Ressurreição (Reanimação) ===
   resurrect?: {
     excludedDeathTypes: string[];                              // Tipos de morte excluídos (morte paranormal)
@@ -415,38 +417,38 @@ export interface EffectMechanics {
     actionType: 'complete' | 'full-round';                     // Tipo de ação
     hpRestored: 'roll' | 'half' | 'full';                      // PV restaurados
   };
-  
+
   // =====================================================
   // FASE 4: INFILTRADOR AVANÇADO
   // =====================================================
-  
+
   // === Remove Penalidade de Furtividade ao Mover (Sombra Fugaz) ===
   stealthMovementPenalty?: {
     removes: boolean;                                          // Remove completamente a penalidade
     reducesBy?: number;                                        // Ou reduz por um valor
   };
-  
+
   // === Multiplicador de Ataque Furtivo (Assassinar) ===
   sneakAttackMultiplier?: number;                              // Multiplicador dos dados (2 = dobra)
-  
+
   // === Ignora Penalidades de Furtividade (Gatuno, Sombra Fugaz) ===
   ignoreStealthPenalty?: {
     movementPenalty: boolean;                                  // Penalidade de movimento
     armorPenalty: boolean;                                     // Penalidade de armadura
     allPenalties: boolean;                                     // Todas as penalidades
   };
-  
+
   // =====================================================
   // FASE 5: OCULTISTA AVANÇADO
   // =====================================================
-  
+
   // === Rituais Bônus por Círculo (Saber Ampliado) ===
   bonusRituals?: {
     perCircle: number;                                         // Rituais extras por círculo
     ignoresLimit: boolean;                                     // Ignora limite normal de rituais
     circleRestriction?: number[];                              // Círculos específicos (vazio = todos)
   };
-  
+
   // === Grimório (Graduado) ===
   grimoire?: {
     maxRituals: number | 'intellect';                          // Máximo de rituais no grimório
@@ -456,20 +458,20 @@ export interface EffectMechanics {
     requiresWielding: boolean;                                 // Precisa empunhar o grimório
     inventorySlots: number;                                    // Espaços ocupados no inventário
   };
-  
+
   // === Bônus de Poder de Ritual (Conduíte Aprimorado) ===
   ritualPowerBonus?: {
     addPELimit: boolean;                                       // Adiciona limite de PE ao poder
     affectsDT: boolean;                                        // Afeta DT do ritual
     affectsDamage: boolean;                                    // Afeta dano do ritual
   };
-  
+
   // === Atributo Adicional ao Limite de PE (Expansão Paranormal) ===
   addAttributeToPELimit?: AttributeType;                       // Atributo adicional para limite de PE
-  
+
   // === Restrição de Recuperação de PV (Flagelador) ===
   hpRecoveryRestriction?: 'none' | 'rest-only' | 'magic-only'; // Restrição de recuperação
-  
+
   // === RD Paranormal com Teste (Resistência Paranormal) ===
   paranormalDamageTest?: {
     testSkill: string;                                         // Perícia do teste (Ocultismo, Vontade)
@@ -478,20 +480,20 @@ export interface EffectMechanics {
     dtType: 'fixed' | 'ritual-dt' | 'caster-presence';         // Tipo de DT
     fixedDT?: number;                                          // DT fixo (se dtType = 'fixed')
   };
-  
+
   // =====================================================
   // CONDIÇÕES COM PARÂMETROS DINÂMICOS
   // =====================================================
-  
+
   // === Dano ao Realizar Ação (Machucado) ===
   damageOnAction?: number;                                       // Dano sofrido ao realizar ação
-  
+
   // === Vulnerabilidade a Dano (Fragilizado) ===
   damageVulnerability?: {
     type: string;                                                // Tipo de dano (fogo, corte, etc)
     multiplier: number;                                          // Multiplicador de dano (1.5 = +50%)
   };
-  
+
   // === Efeitos de Veneno (Envenenado) ===
   poisonDamage?: string;                                         // Dado de dano do veneno (ex: "1d6")
   poisonDT?: number;                                             // DT do teste de Fortitude
@@ -507,26 +509,26 @@ export interface EffectConditions {
   targetConditions?: string[];     // Condições que o alvo deve ter
   weaponType?: string[];           // Tipos de arma requeridos
   weaponCategory?: 'simple' | 'tactical' | 'heavy' | 'improvised'; // Categoria de arma
-  
+
   // === Condições do Personagem ===
   characterConditions?: string[];  // Condições que o personagem deve ter
   hpPercentBelow?: number;         // PV abaixo de X% (ex: 50 para <50%)
   hpPercentAbove?: number;         // PV acima de X%
-  
+
   // === Condições de Equipamento ===
   requiresShield?: boolean;
   requiresArmor?: boolean;
   requiresNoArmor?: boolean;
-  
+
   // === Condições de Contexto ===
   inCombat?: boolean;
   firstRoundOnly?: boolean;        // Apenas na primeira rodada
-  
+
   // === Condições de Ativação Manual ===
   requiresActivation?: boolean;    // Precisa ser ativado manualmente
   costPE?: number;                 // Custo em PE para ativar
   costAction?: 'free' | 'movement' | 'standard' | 'full' | 'reaction'; // Custo de ação
-  
+
   // === Condições de Atributo ===
   minAttribute?: Partial<Record<AttributeType, number>>; // Atributo mínimo
 }
@@ -551,11 +553,11 @@ export interface UnifiedEffect {
   source: EffectSource;            // Tipo de fonte
   sourceId: string;                // ID da fonte (ex: id da origem)
   sourceName: string;              // Nome da fonte para display
-  
+
   mechanics: EffectMechanics;      // Efeitos mecânicos
   conditions?: EffectConditions;   // Condições de aplicação
   duration?: EffectDuration;       // Duração
-  
+
   // Metadata
   isActive: boolean;               // Se está ativo agora
   isToggleable: boolean;           // Se pode ser ativado/desativado
@@ -569,30 +571,30 @@ export interface UnifiedEffect {
 export interface EffectCalculationContext {
   // Atributos
   attributes: Record<AttributeType, number>;
-  
+
   // Estado atual
   nex: number;
   hpCurrent: number;
   hpMax: number;
   peCurrent: number;
   peMax: number;
-  
+
   // Situação de combate
   inCombat: boolean;
   isFirstRound: boolean;
   currentRound: number;
-  
+
   // Equipamento
   equippedWeaponType?: string;
   equippedArmorType?: string;
   hasShield: boolean;
-  
+
   // Condições ativas
   activeConditions: string[];
-  
+
   // Efeitos condicionais ativados manualmente
   activatedEffects: string[];
-  
+
   // Contexto de ataque (se aplicável)
   attackContext?: {
     type: AttackType;
@@ -630,7 +632,7 @@ export interface ComputedEffects {
     vsRanged: number;
     breakdown: Array<{ source: string; value: number; conditional?: string }>;
   };
-  
+
   // === Resistências ===
   resistances: {
     fortitude: number;
@@ -638,7 +640,7 @@ export interface ComputedEffects {
     vontade: number;
     breakdown: Array<{ source: string; value: number; resistance: ResistanceType }>;
   };
-  
+
   // === Redução de Dano ===
   damageReduction: {
     physical: number;
@@ -646,13 +648,13 @@ export interface ComputedEffects {
     byType: Partial<Record<DamageType, number>>;
     breakdown: Array<{ source: string; value: number; type?: DamageType }>;
   };
-  
+
   // === Resistência a Dano ===
   damageResistance: Partial<Record<DamageType, number>>;
-  
+
   // === Perícias ===
   skills: Record<string, { bonus: number; sources: string[] }>;
-  
+
   // === Recursos ===
   resources: {
     hpBonus: number;
@@ -661,26 +663,26 @@ export interface ComputedEffects {
     tempHP: number;
     breakdown: Array<{ source: string; value: number; resource: 'hp' | 'pe' | 'sanity' | 'tempHP' }>;
   };
-  
+
   // === Movimento ===
   movement: {
     bonus: number;
     multiplier: number;
     breakdown: Array<{ source: string; value: number }>;
   };
-  
+
   // === Iniciativa ===
   initiative: {
     bonus: number;
     breakdown: Array<{ source: string; value: number }>;
   };
-  
+
   // === Efeitos Especiais ===
   specialEffects: Array<{ source: string; effect: string }>;
-  
+
   // === Proficiências ===
   proficiencies: string[];
-  
+
   // === Flags ===
   flags: {
     cannotAct: boolean;
@@ -689,7 +691,7 @@ export interface ComputedEffects {
     isHelpless: boolean;
     isUnconscious: boolean;
   };
-  
+
   // === Efeitos Toggleáveis ===
   toggleableEffects: Array<{
     id: string;
@@ -700,7 +702,7 @@ export interface ComputedEffects {
     condition?: string;
     costPE?: number;
   }>;
-  
+
   // =====================================================
   // COMBATE AVANÇADO (Fase 1 SUE)
   // =====================================================
@@ -711,7 +713,7 @@ export interface ComputedEffects {
       weaponRestriction: 'melee' | 'ranged' | 'any';
       sources: string[];
     };
-    
+
     // === Ações Extras de Trilha ===
     extraActions: Array<{
       id: string;                            // ID único para rastrear uso
@@ -727,26 +729,26 @@ export interface ComputedEffects {
       perScene?: boolean;                    // 1x por cena
       source: string;                        // Fonte da habilidade
     }>;
-    
+
     // === Dano Máximo em Crítico ===
     maximumDamageOnCrit: {
       enabled: boolean;                      // Se está ativo
       weaponTypes: string[];                 // Tipos de arma que aplicam
       sources: string[];
     };
-    
+
     // === Bônus de Bloqueio com Vigor ===
     blockVigorBonus: {
       enabled: boolean;
       sources: string[];
     };
-    
+
     // === Ocultismo como Ataque ===
     occultismAsAttack: {
       enabled: boolean;
       sources: string[];
     };
-    
+
     // === Provocar (Taunt) ===
     taunt: {
       available: boolean;
@@ -761,7 +763,7 @@ export interface ComputedEffects {
         source: string;
       }>;
     };
-    
+
     // === Controle de Estado do Alvo ===
     targetStateControl: {
       available: boolean;
@@ -775,7 +777,7 @@ export interface ComputedEffects {
         source: string;
       }>;
     };
-    
+
     // === Bônus Condicionais por Estado ===
     conditionalBonuses: {
       whenWounded: {
@@ -791,7 +793,7 @@ export interface ComputedEffects {
       };
     };
   };
-  
+
   // =====================================================
   // EQUIPAMENTO E INVENTÁRIO
   // =====================================================
@@ -806,7 +808,7 @@ export interface ComputedEffects {
     }>;
     totalCategoryReduction: number;    // Soma de todas as reduções
   };
-  
+
   // === Habilidades de Contra-Mágica ===
   counterSpellAbilities: Array<{
     source: string;
@@ -814,7 +816,7 @@ export interface ComputedEffects {
     testSkill: string;
     testType: 'opposed' | 'fixed';
   }>;
-  
+
   // === Ataque Furtivo ===
   sneakAttack: {
     available: boolean;                      // Se o personagem tem Ataque Furtivo
@@ -840,7 +842,7 @@ export interface ComputedEffects {
       sources: string[];
     };
   };
-  
+
   // === Cura (Médico de Campo) ===
   healing: {
     available: boolean;                      // Se o personagem tem habilidade de cura
@@ -857,7 +859,7 @@ export interface ComputedEffects {
       peCost: number;
     }>;
   };
-  
+
   // === Liderança (Comandante de Campo) ===
   leadership: {
     available: boolean;                      // Se o personagem tem habilidades de liderança
@@ -890,7 +892,7 @@ export interface ComputedEffects {
       bonusToNextTest: number;
     };
   };
-  
+
   // === Buff para Aliados (Negociador - Discurso Motivador) ===
   allyBuff: {
     available: boolean;                                    // Se o personagem tem buff de aliados
@@ -911,7 +913,7 @@ export interface ComputedEffects {
     // Indica se o buff afeta o próprio personagem
     affectsSelf: boolean;
   };
-  
+
   // === Efeito Social (Negociador - Eloquência) ===
   socialEffect: {
     available: boolean;                                    // Se o personagem tem efeitos sociais
@@ -934,7 +936,7 @@ export interface ComputedEffects {
     // Lista de efeitos disponíveis consolidados
     availableEffects: string[];
   };
-  
+
   // === Rede de Contatos (Negociador - Eu Conheço um Cara) ===
   contacts: {
     available: boolean;                                    // Se o personagem tem rede de contatos
@@ -953,7 +955,7 @@ export interface ComputedEffects {
     // Total de usos por missão
     totalUsesPerMission: number;
   };
-  
+
   // === Cópia de Habilidade (Negociador - Truque de Mestre) ===
   copyAbility: {
     available: boolean;                                    // Se o personagem tem habilidade de cópia
@@ -977,25 +979,25 @@ export interface ComputedEffects {
     // Custo mínimo em PE (menor custo dentre as habilidades)
     minPECost: number;
   };
-  
+
   // =====================================================
   // TÉCNICO - Bônus consolidados de inventário/equipamento
   // =====================================================
   technician: {
     available: boolean;                                    // Se tem mecânicas de técnico
-    
+
     // === Capacidade de Carga ===
     carryCapacity: {
       additionalAttributes: AttributeType[];               // Atributos adicionais para carga
       sources: Array<{ source: string; attribute: AttributeType }>;
     };
-    
+
     // === Redução de Espaço ===
     itemSpaceReduction: {
       total: number;                                       // Total de redução de espaços
       sources: Array<{ source: string; amount: number }>;
     };
-    
+
     // === Reparo de Equipamento ===
     repairAbilities: Array<{
       id: string;
@@ -1006,7 +1008,7 @@ export interface ComputedEffects {
       actionType: 'standard' | 'complete';
       source: string;
     }>;
-    
+
     // === Criação de Equipamento ===
     createEquipmentAbilities: Array<{
       id: string;
@@ -1018,7 +1020,7 @@ export interface ComputedEffects {
       actionType: 'standard' | 'complete';
       source: string;
     }>;
-    
+
     // === Retirar Item Retroativamente ===
     retrieveItemAbilities: Array<{
       id: string;
@@ -1030,13 +1032,13 @@ export interface ComputedEffects {
       source: string;
     }>;
   };
-  
+
   // =====================================================
   // FASE 3: SUPORTE (Médico de Campo, Resgate)
   // =====================================================
   support: {
     available: boolean;                                    // Se tem mecânicas de suporte
-    
+
     // === Movimento Livre para Aliado (Resgate) ===
     freeMovement: {
       available: boolean;
@@ -1048,7 +1050,7 @@ export interface ComputedEffects {
         source: string;
       }>;
     };
-    
+
     // === Efeitos ao Curar ===
     onHealEffects: Array<{
       id: string;
@@ -1058,7 +1060,7 @@ export interface ComputedEffects {
       turns?: number;
       source: string;
     }>;
-    
+
     // === Remoção de Condição ===
     removeConditionAbilities: Array<{
       id: string;
@@ -1069,7 +1071,7 @@ export interface ComputedEffects {
       actionType: 'standard' | 'complete';
       source: string;
     }>;
-    
+
     // === Ressurreição ===
     resurrectAbilities: Array<{
       id: string;
@@ -1082,20 +1084,20 @@ export interface ComputedEffects {
       hpRestored: 'roll' | 'half' | 'full';
       source: string;
     }>;
-    
+
     // Consolidados
     canRemoveConditions: boolean;
     canResurrect: boolean;
     hasFreeMovementToAlly: boolean;
     maxDefenseBonusOnHeal: number;
   };
-  
+
   // =====================================================
   // FASE 5: OCULTISTA AVANÇADO
   // =====================================================
   occultist: {
     available: boolean;                                    // Se tem mecânicas de ocultista avançado
-    
+
     // === Rituais Bônus (Saber Ampliado) ===
     bonusRituals: {
       perCircle: number;                                   // Rituais extras por círculo
@@ -1103,7 +1105,7 @@ export interface ComputedEffects {
       circleRestrictions: number[];                        // Círculos específicos (vazio = todos)
       sources: string[];
     };
-    
+
     // === Grimório (Graduado) ===
     grimoire: {
       available: boolean;
@@ -1115,7 +1117,7 @@ export interface ComputedEffects {
       inventorySlots: number;
       source: string;
     };
-    
+
     // === Bônus de Poder de Ritual ===
     ritualPowerBonus: {
       addPELimit: boolean;
@@ -1123,13 +1125,13 @@ export interface ComputedEffects {
       affectsDamage: boolean;
       sources: string[];
     };
-    
+
     // === Atributos Adicionais ao Limite de PE ===
     additionalPELimitAttributes: AttributeType[];
-    
+
     // === Restrição de Recuperação de PV ===
     hpRecoveryRestriction: 'none' | 'rest-only' | 'magic-only';
-    
+
     // === RD Paranormal com Teste ===
     paranormalDamageTest: {
       available: boolean;
@@ -1145,7 +1147,7 @@ export interface ComputedEffects {
       }>;
     };
   };
-  
+
   // =====================================================
   // RITUAIS - Bônus consolidados para rituais
   // =====================================================
@@ -1153,16 +1155,16 @@ export interface ComputedEffects {
     // Bônus de DT
     dtBonus: number;
     dtBonusByElement: Record<string, number>;
-    
+
     // Bônus de dano/cura
     damageBonus: number;
     damageAttributeBonus: AttributeType | null;
-    
+
     // Reduções de PE
     peReduction: number;
     peReductionByElement: Record<string, number>;
     peReductionByRange: Record<string, number>;
-    
+
     // Modificadores de trilha disponíveis
     availableModifiers: Array<{
       id: string;
@@ -1176,7 +1178,7 @@ export interface ComputedEffects {
       actionType?: 'reaction';
       source: string;
     }>;
-    
+
     // Breakdown para UI
     breakdown: Array<{ source: string; effect: string }>;
   };
@@ -1191,22 +1193,22 @@ export function checkEffectConditions(
 ): boolean {
   const conditions = effect.conditions;
   if (!conditions) return true;
-  
+
   // Verifica tipo de ataque
   if (conditions.attackType && context.attackContext) {
     if (conditions.attackType !== 'any' && conditions.attackType !== context.attackContext.type) {
       return false;
     }
   }
-  
+
   // Verifica condições do alvo
-  if (conditions.targetConditions && context.attackContext) {
-    const hasAllConditions = conditions.targetConditions.every(
+  if (conditions.targetConditions && conditions.targetConditions.length > 0 && context.attackContext) {
+    const hasAnyCondition = conditions.targetConditions.some(
       c => context.attackContext!.targetConditions.includes(c)
     );
-    if (!hasAllConditions) return false;
+    if (!hasAnyCondition) return false;
   }
-  
+
   // Verifica HP
   if (conditions.hpPercentBelow !== undefined) {
     const hpPercent = (context.hpCurrent / context.hpMax) * 100;
@@ -1216,7 +1218,7 @@ export function checkEffectConditions(
     const hpPercent = (context.hpCurrent / context.hpMax) * 100;
     if (hpPercent <= conditions.hpPercentAbove) return false;
   }
-  
+
   // Verifica condições do personagem
   if (conditions.characterConditions) {
     const hasAllConditions = conditions.characterConditions.every(
@@ -1224,32 +1226,32 @@ export function checkEffectConditions(
     );
     if (!hasAllConditions) return false;
   }
-  
+
   // Verifica escudo
   if (conditions.requiresShield && !context.hasShield) return false;
-  
+
   // Verifica armadura
   if (conditions.requiresArmor && !context.equippedArmorType) return false;
   if (conditions.requiresNoArmor && context.equippedArmorType) return false;
-  
+
   // Verifica combate
   if (conditions.inCombat !== undefined && conditions.inCombat !== context.inCombat) return false;
-  
+
   // Verifica primeira rodada
   if (conditions.firstRoundOnly && !context.isFirstRound) return false;
-  
+
   // Verifica ativação manual
   if (conditions.requiresActivation && !context.activatedEffects.includes(effect.id)) {
     return false;
   }
-  
+
   // Verifica atributos mínimos
   if (conditions.minAttribute) {
     for (const [attr, minValue] of Object.entries(conditions.minAttribute)) {
       if (context.attributes[attr as AttributeType] < minValue!) return false;
     }
   }
-  
+
   return true;
 }
 
@@ -1479,7 +1481,7 @@ export function consolidateEffects(
       breakdown: [],
     },
   };
-  
+
   for (const effect of effects) {
     // Registra efeitos toggleáveis
     if (effect.isToggleable) {
@@ -1493,15 +1495,15 @@ export function consolidateEffects(
         costPE: effect.conditions?.costPE,
       });
     }
-    
+
     // Verifica condições
     if (!checkEffectConditions(effect, context) || !effect.isActive) {
       continue;
     }
-    
+
     const m = effect.mechanics;
     const source = effect.sourceName;
-    
+
     // === Ataque ===
     if (m.attackBonus) {
       result.attack.general += m.attackBonus;
@@ -1515,7 +1517,7 @@ export function consolidateEffects(
       result.attack.ranged += m.rangedAttackBonus;
       result.attack.breakdown.push({ source, value: m.rangedAttackBonus, conditional: 'distância' });
     }
-    
+
     // === Dano ===
     if (m.damageBonus) {
       result.damage.general += m.damageBonus;
@@ -1533,7 +1535,7 @@ export function consolidateEffects(
       result.damage.extraDice.push(m.extraDamageDice);
       result.damage.breakdown.push({ source, value: m.extraDamageDice });
     }
-    
+
     // === Crítico ===
     if (m.criticalMarginBonus) {
       result.critical.marginBonus += m.criticalMarginBonus;
@@ -1543,7 +1545,7 @@ export function consolidateEffects(
       result.critical.multiplierBonus += m.criticalMultiplierBonus;
       result.critical.breakdown.push({ source, value: m.criticalMultiplierBonus, type: 'multiplier' });
     }
-    
+
     // === Defesa ===
     if (m.defenseBonus) {
       result.defense.general += m.defenseBonus;
@@ -1557,7 +1559,7 @@ export function consolidateEffects(
       result.defense.vsRanged += m.defenseBonusRanged;
       result.defense.breakdown.push({ source, value: m.defenseBonusRanged, conditional: 'vs distância' });
     }
-    
+
     // === Resistências ===
     if (m.fortitudeBonus) {
       result.resistances.fortitude += m.fortitudeBonus;
@@ -1579,7 +1581,7 @@ export function consolidateEffects(
       result.resistances.breakdown.push({ source, value: m.allResistancesBonus, resistance: 'reflexos' });
       result.resistances.breakdown.push({ source, value: m.allResistancesBonus, resistance: 'vontade' });
     }
-    
+
     // === Redução de Dano ===
     if (m.damageReduction) {
       result.damageReduction.physical += m.damageReduction;
@@ -1596,7 +1598,7 @@ export function consolidateEffects(
         result.damageReduction.breakdown.push({ source, value: value!, type: t });
       }
     }
-    
+
     // === Resistência a Dano ===
     if (m.damageResistance) {
       for (const [type, value] of Object.entries(m.damageResistance)) {
@@ -1604,7 +1606,7 @@ export function consolidateEffects(
         result.damageResistance[t] = Math.max(result.damageResistance[t] || 0, value!);
       }
     }
-    
+
     // === Perícias ===
     if (m.skillBonus) {
       for (const [skill, bonus] of Object.entries(m.skillBonus)) {
@@ -1617,12 +1619,12 @@ export function consolidateEffects(
     }
     if (m.allSkillsBonus) {
       // Aplicado globalmente - cada componente deve usar
-      result.skills['_all'] = { 
-        bonus: (result.skills['_all']?.bonus || 0) + m.allSkillsBonus, 
-        sources: [...(result.skills['_all']?.sources || []), source] 
+      result.skills['_all'] = {
+        bonus: (result.skills['_all']?.bonus || 0) + m.allSkillsBonus,
+        sources: [...(result.skills['_all']?.sources || []), source]
       };
     }
-    
+
     // === Recursos ===
     if (m.hpBonus) {
       result.resources.hpBonus += m.hpBonus;
@@ -1650,7 +1652,7 @@ export function consolidateEffects(
       result.resources.tempHP = Math.max(result.resources.tempHP, m.tempHP);
       result.resources.breakdown.push({ source, value: m.tempHP, resource: 'tempHP' });
     }
-    
+
     // === Movimento ===
     if (m.movementBonus) {
       result.movement.bonus += m.movementBonus;
@@ -1659,20 +1661,20 @@ export function consolidateEffects(
     if (m.movementMultiplier) {
       result.movement.multiplier *= m.movementMultiplier;
     }
-    
+
     // === Iniciativa ===
     if (m.initiativeBonus) {
       result.initiative.bonus += m.initiativeBonus;
       result.initiative.breakdown.push({ source, value: m.initiativeBonus });
     }
-    
+
     // === Efeitos Especiais ===
     if (m.specialEffects) {
       for (const eff of m.specialEffects) {
         result.specialEffects.push({ source, effect: eff });
       }
     }
-    
+
     // === Proficiências ===
     if (m.grantsProficiency) {
       for (const prof of m.grantsProficiency) {
@@ -1681,29 +1683,29 @@ export function consolidateEffects(
         }
       }
     }
-    
+
     // === Flags ===
     if (m.cannotAct) result.flags.cannotAct = true;
     if (m.cannotReact) result.flags.cannotReact = true;
     if (m.cannotMove) result.flags.cannotMove = true;
     if (m.isHelpless) result.flags.isHelpless = true;
     if (m.isUnconscious) result.flags.isUnconscious = true;
-    
+
     // =====================================================
     // COMBATE AVANÇADO (Fase 1 SUE)
     // =====================================================
-    
+
     // === Multiplicador de Ataque Especial (Guerreiro - Potência Máxima) ===
     if (m.specialAttackMultiplier) {
       // Maior multiplicador ganha
       if (m.specialAttackMultiplier.value > result.combatAdvanced.specialAttackMultiplier.value) {
         result.combatAdvanced.specialAttackMultiplier.value = m.specialAttackMultiplier.value;
-        result.combatAdvanced.specialAttackMultiplier.weaponRestriction = 
+        result.combatAdvanced.specialAttackMultiplier.weaponRestriction =
           m.specialAttackMultiplier.weaponRestriction ?? 'any';
       }
       result.combatAdvanced.specialAttackMultiplier.sources.push(source);
     }
-    
+
     // === Ações Extras de Trilha ===
     if (m.extraActionsTrack) {
       result.combatAdvanced.extraActions.push({
@@ -1721,7 +1723,7 @@ export function consolidateEffects(
         source,
       });
     }
-    
+
     // === Dano Máximo em Crítico (Atirador de Elite) ===
     if (m.maximumDamageOnCritical) {
       result.combatAdvanced.maximumDamageOnCrit.enabled = true;
@@ -1730,19 +1732,19 @@ export function consolidateEffects(
       }
       result.combatAdvanced.maximumDamageOnCrit.sources.push(source);
     }
-    
+
     // === Bônus de Bloqueio com Vigor ===
     if (m.blockVigorBonus) {
       result.combatAdvanced.blockVigorBonus.enabled = true;
       result.combatAdvanced.blockVigorBonus.sources.push(source);
     }
-    
+
     // === Ocultismo como Ataque ===
     if (m.occultismAsAttack) {
       result.combatAdvanced.occultismAsAttack.enabled = true;
       result.combatAdvanced.occultismAsAttack.sources.push(source);
     }
-    
+
     // === Provocar (Taunt) ===
     if (m.taunt) {
       result.combatAdvanced.taunt.available = true;
@@ -1757,18 +1759,18 @@ export function consolidateEffects(
         source,
       });
     }
-    
+
     // === Controle de Estado do Alvo ===
     if (m.targetStateControl) {
       result.combatAdvanced.targetStateControl.available = true;
-      
+
       // Adiciona opções à lista consolidada
       for (const opt of m.targetStateControl.options) {
         if (!result.combatAdvanced.targetStateControl.options.includes(opt)) {
           result.combatAdvanced.targetStateControl.options.push(opt);
         }
       }
-      
+
       result.combatAdvanced.targetStateControl.abilities.push({
         id: effect.id,
         name: effect.name,
@@ -1778,33 +1780,33 @@ export function consolidateEffects(
         source,
       });
     }
-    
+
     // === Bônus quando Machucado ===
     if (m.whenWounded) {
       const hpPercent = (context.hpCurrent / context.hpMax) * 100;
       const isWounded = hpPercent < m.whenWounded.hpThreshold;
-      
+
       if (isWounded) {
         result.combatAdvanced.conditionalBonuses.whenWounded.active = true;
         result.combatAdvanced.conditionalBonuses.whenWounded.defenseBonus += m.whenWounded.defenseBonus ?? 0;
         result.combatAdvanced.conditionalBonuses.whenWounded.damageReduction += m.whenWounded.damageReduction ?? 0;
-        
+
         // Aplica bônus de defesa automaticamente
         if (m.whenWounded.defenseBonus) {
           result.defense.general += m.whenWounded.defenseBonus;
           result.defense.breakdown.push({ source, value: m.whenWounded.defenseBonus, conditional: 'quando machucado' });
         }
-        
+
         // Aplica RD automaticamente
         if (m.whenWounded.damageReduction) {
           result.damageReduction.physical += m.whenWounded.damageReduction;
           result.damageReduction.breakdown.push({ source, value: m.whenWounded.damageReduction });
         }
       }
-      
+
       result.combatAdvanced.conditionalBonuses.whenWounded.sources.push(source);
     }
-    
+
     // === Bônus quando Morrendo ===
     if (m.whenDying) {
       if (m.whenDying.canAct) {
@@ -1815,11 +1817,11 @@ export function consolidateEffects(
       }
       result.combatAdvanced.conditionalBonuses.whenDying.sources.push(source);
     }
-    
+
     // =====================================================
     // EQUIPAMENTO E INVENTÁRIO
     // =====================================================
-    
+
     // === Redução de Categoria ===
     if (m.categoryReduction) {
       result.inventory.categoryReductions.push({
@@ -1831,7 +1833,7 @@ export function consolidateEffects(
       });
       result.inventory.totalCategoryReduction += m.categoryReduction.amount;
     }
-    
+
     // === Contra-Mágica ===
     if (m.counterSpell) {
       result.counterSpellAbilities.push({
@@ -1841,21 +1843,21 @@ export function consolidateEffects(
         testType: m.counterSpell.testType,
       });
     }
-    
+
     // === Ataque Furtivo ===
     if (m.sneakAttack) {
       result.sneakAttack.available = true;
-      
+
       // Calcula dados baseado no NEX do contexto
       let dice = m.sneakAttack.baseDice;
       const dieType = m.sneakAttack.dieType;
-      
+
       // Aplica escalonamento por NEX se disponível
       if (m.sneakAttack.scaling) {
         const nexThresholds = Object.keys(m.sneakAttack.scaling)
           .map(Number)
           .sort((a, b) => b - a); // Ordem decrescente
-        
+
         for (const threshold of nexThresholds) {
           if (context.nex >= threshold) {
             const scaling = m.sneakAttack.scaling[threshold];
@@ -1864,19 +1866,19 @@ export function consolidateEffects(
           }
         }
       }
-      
+
       // Aplica multiplicador (Assassinar)
       const multiplier = m.sneakAttack.multiplier ?? 1;
       if (multiplier > result.sneakAttack.multiplier) {
         result.sneakAttack.multiplier = multiplier;
       }
-      
+
       // Atualiza dados base (maior valor ganha)
       if (dice > result.sneakAttack.baseDice) {
         result.sneakAttack.baseDice = dice;
         result.sneakAttack.dieType = dieType;
       }
-      
+
       // Merge condições
       if (m.sneakAttack.conditions) {
         for (const cond of m.sneakAttack.conditions) {
@@ -1885,7 +1887,7 @@ export function consolidateEffects(
           }
         }
       }
-      
+
       // Custo e usos (primeiro a definir)
       if (result.sneakAttack.peCost === 0) {
         result.sneakAttack.peCost = m.sneakAttack.peCost;
@@ -1893,7 +1895,7 @@ export function consolidateEffects(
       if (result.sneakAttack.usesPerRound === 0) {
         result.sneakAttack.usesPerRound = m.sneakAttack.usesPerRound;
       }
-      
+
       // Registra fonte
       result.sneakAttack.sources.push({
         source,
@@ -1901,25 +1903,25 @@ export function consolidateEffects(
         dieType,
         multiplier: m.sneakAttack.multiplier,
       });
-      
+
       // Calcula total com multiplicador
       result.sneakAttack.totalDice = result.sneakAttack.baseDice * result.sneakAttack.multiplier;
     }
-    
+
     // === Cura (Médico de Campo) ===
     if (m.healing) {
       result.healing.available = true;
-      
+
       // Calcula dados baseado no NEX do contexto
       let dice = m.healing.baseDice;
       const dieType = m.healing.dieType;
-      
+
       // Aplica escalonamento por NEX se disponível
       if (m.healing.scaling) {
         const nexThresholds = Object.keys(m.healing.scaling)
           .map(Number)
           .sort((a, b) => b - a); // Ordem decrescente
-        
+
         for (const threshold of nexThresholds) {
           if (context.nex >= threshold) {
             const scaling = m.healing.scaling[threshold];
@@ -1928,23 +1930,23 @@ export function consolidateEffects(
           }
         }
       }
-      
+
       // Atualiza dados base (maior valor ganha)
       if (dice > result.healing.baseDice) {
         result.healing.baseDice = dice;
         result.healing.dieType = dieType;
       }
-      
+
       // Custo em PE (primeiro a definir)
       if (result.healing.peCost === 0) {
         result.healing.peCost = m.healing.peCost;
       }
-      
+
       // Custo por dado extra
       if (m.healing.extraDicePECost && result.healing.extraDicePECost === 0) {
         result.healing.extraDicePECost = m.healing.extraDicePECost;
       }
-      
+
       // Range e action type (primeiro a definir)
       if (m.healing.range) {
         result.healing.range = m.healing.range;
@@ -1952,7 +1954,7 @@ export function consolidateEffects(
       if (m.healing.actionType) {
         result.healing.actionType = m.healing.actionType;
       }
-      
+
       // Registra fonte
       result.healing.sources.push({
         source,
@@ -1961,21 +1963,21 @@ export function consolidateEffects(
         peCost: m.healing.peCost,
       });
     }
-    
+
     // === Liderança (Comandante de Campo) ===
     if (m.leadership) {
       result.leadership.available = true;
-      
+
       // Calcula maxAllies e allyEffects baseado no NEX se houver scaling
       let maxAllies = m.leadership.maxAllies;
       let allyEffects = { ...m.leadership.allyEffects };
       let peCost = m.leadership.peCost;
-      
+
       if (m.leadership.scaling) {
         const nexThresholds = Object.keys(m.leadership.scaling)
           .map(Number)
           .sort((a, b) => b - a); // Ordem decrescente
-        
+
         for (const threshold of nexThresholds) {
           if (context.nex >= threshold) {
             const scaling = m.leadership.scaling[threshold];
@@ -1988,7 +1990,7 @@ export function consolidateEffects(
           }
         }
       }
-      
+
       // Adiciona habilidade à lista
       result.leadership.abilities.push({
         id: effect.id,
@@ -2002,7 +2004,7 @@ export function consolidateEffects(
         allyEffects,
         source,
       });
-      
+
       // Consolida efeitos disponíveis
       if (allyEffects.rerollTest) {
         result.leadership.availableEffects.rerollTest = true;
@@ -2029,20 +2031,20 @@ export function consolidateEffects(
         );
       }
     }
-    
+
     // === Buff para Aliados (Negociador - Discurso Motivador) ===
     if (m.allyBuff) {
       result.allyBuff.available = true;
-      
+
       // Calcula bônus de perícia baseado no NEX se houver scaling
       let skillBonus = m.allyBuff.skillBonus;
       let peCost = m.allyBuff.peCost;
-      
+
       if (m.allyBuff.scaling) {
         const nexThresholds = Object.keys(m.allyBuff.scaling)
           .map(Number)
           .sort((a, b) => b - a); // Ordem decrescente
-        
+
         for (const threshold of nexThresholds) {
           if (context.nex >= threshold) {
             const scaling = m.allyBuff.scaling[threshold];
@@ -2052,7 +2054,7 @@ export function consolidateEffects(
           }
         }
       }
-      
+
       // Adiciona habilidade à lista
       result.allyBuff.abilities.push({
         id: effect.id,
@@ -2066,22 +2068,22 @@ export function consolidateEffects(
         includeSelf: m.allyBuff.includeSelf,
         source,
       });
-      
+
       // Atualiza máximo bônus de perícia
       if (skillBonus > result.allyBuff.maxSkillBonus) {
         result.allyBuff.maxSkillBonus = skillBonus;
       }
-      
+
       // Atualiza se afeta o próprio
       if (m.allyBuff.includeSelf) {
         result.allyBuff.affectsSelf = true;
       }
     }
-    
+
     // === Efeito Social (Negociador - Eloquência) ===
     if (m.socialEffect) {
       result.socialEffect.available = true;
-      
+
       // Adiciona habilidade à lista
       result.socialEffect.abilities.push({
         id: effect.id,
@@ -2099,17 +2101,17 @@ export function consolidateEffects(
         resistanceBonusOnSuccess: m.socialEffect.resistanceBonusOnSuccess,
         source,
       });
-      
+
       // Adiciona efeito aos disponíveis se não existir
       if (!result.socialEffect.availableEffects.includes(m.socialEffect.effect)) {
         result.socialEffect.availableEffects.push(m.socialEffect.effect);
       }
     }
-    
+
     // === Rede de Contatos (Negociador - Eu Conheço um Cara) ===
     if (m.contacts) {
       result.contacts.available = true;
-      
+
       // Adiciona habilidade à lista
       result.contacts.abilities.push({
         id: effect.id,
@@ -2121,22 +2123,22 @@ export function consolidateEffects(
         actionType: m.contacts.actionType,
         source,
       });
-      
+
       // Adiciona efeitos aos disponíveis
       for (const eff of m.contacts.availableEffects) {
         if (!result.contacts.allAvailableEffects.includes(eff)) {
           result.contacts.allAvailableEffects.push(eff);
         }
       }
-      
+
       // Soma usos por missão
       result.contacts.totalUsesPerMission += m.contacts.usesPerMission;
     }
-    
+
     // === Cópia de Habilidade (Negociador - Truque de Mestre) ===
     if (m.copyAbility) {
       result.copyAbility.available = true;
-      
+
       // Adiciona habilidade à lista
       result.copyAbility.abilities.push({
         id: effect.id,
@@ -2151,56 +2153,56 @@ export function consolidateEffects(
         excludedAbilities: m.copyAbility.excludedAbilities,
         sourceName: source,
       });
-      
+
       // Atualiza flags consolidadas
       if (m.copyAbility.source === 'enemy' || m.copyAbility.source === 'any') {
         result.copyAbility.canCopyFromEnemy = true;
       }
-      
+
       if (m.copyAbility.ignorePrerequisites) {
         result.copyAbility.ignoresPrerequisites = true;
       }
-      
+
       // Atualiza custo mínimo em PE
       if (m.copyAbility.peCost < result.copyAbility.minPECost) {
         result.copyAbility.minPECost = m.copyAbility.peCost;
       }
     }
-    
+
     // =====================================================
     // TÉCNICO - Processa mecânicas de inventário/equipamento
     // =====================================================
-    
+
     // === Capacidade de Carga (Inventário Otimizado) ===
     if (m.carryCapacity) {
       result.technician.available = true;
-      
+
       // Adiciona atributo à lista se não existir
       if (!result.technician.carryCapacity.additionalAttributes.includes(m.carryCapacity.addAttribute)) {
         result.technician.carryCapacity.additionalAttributes.push(m.carryCapacity.addAttribute);
       }
-      
+
       result.technician.carryCapacity.sources.push({
         source,
         attribute: m.carryCapacity.addAttribute,
       });
     }
-    
+
     // === Redução de Espaço de Item (Inventário Otimizado) ===
     if (m.itemSpaceReduction) {
       result.technician.available = true;
-      
+
       result.technician.itemSpaceReduction.total += m.itemSpaceReduction;
       result.technician.itemSpaceReduction.sources.push({
         source,
         amount: m.itemSpaceReduction,
       });
     }
-    
+
     // === Reparar Equipamento (Remendo) ===
     if (m.repairEquipment) {
       result.technician.available = true;
-      
+
       result.technician.repairAbilities.push({
         id: effect.id,
         name: effect.name,
@@ -2211,11 +2213,11 @@ export function consolidateEffects(
         source,
       });
     }
-    
+
     // === Criar Equipamento (Improvisar) ===
     if (m.createEquipment) {
       result.technician.available = true;
-      
+
       result.technician.createEquipmentAbilities.push({
         id: effect.id,
         name: effect.name,
@@ -2227,11 +2229,11 @@ export function consolidateEffects(
         source,
       });
     }
-    
+
     // === Retirar Item Retroativamente (Preparado para Tudo) ===
     if (m.retrieveItem) {
       result.technician.available = true;
-      
+
       result.technician.retrieveItemAbilities.push({
         id: effect.id,
         name: effect.name,
@@ -2242,65 +2244,65 @@ export function consolidateEffects(
         source,
       });
     }
-    
+
     // =====================================================
     // RITUAIS - Processa mecânicas específicas de rituais
     // =====================================================
-    
+
     // Bônus de DT geral
     if (m.ritualDTBonus) {
       result.rituals.dtBonus += m.ritualDTBonus;
       result.rituals.breakdown.push({ source, effect: `+${m.ritualDTBonus} DT em rituais` });
     }
-    
+
     // Bônus de DT por elemento
     if (m.ritualDTBonusByElement) {
       for (const [element, bonus] of Object.entries(m.ritualDTBonusByElement)) {
-        result.rituals.dtBonusByElement[element] = 
+        result.rituals.dtBonusByElement[element] =
           (result.rituals.dtBonusByElement[element] || 0) + bonus!;
         result.rituals.breakdown.push({ source, effect: `+${bonus} DT rituais de ${element}` });
       }
     }
-    
+
     // Bônus de dano/cura fixo
     if (m.ritualDamageBonus) {
       result.rituals.damageBonus += m.ritualDamageBonus;
       result.rituals.breakdown.push({ source, effect: `+${m.ritualDamageBonus} dano/cura rituais` });
     }
-    
+
     // Bônus de dano/cura baseado em atributo (último ganha)
     if (m.ritualDamageAttributeBonus) {
       result.rituals.damageAttributeBonus = m.ritualDamageAttributeBonus;
-      result.rituals.breakdown.push({ 
-        source, 
-        effect: `+${m.ritualDamageAttributeBonus.toUpperCase()} em dano/cura de rituais` 
+      result.rituals.breakdown.push({
+        source,
+        effect: `+${m.ritualDamageAttributeBonus.toUpperCase()} em dano/cura de rituais`
       });
     }
-    
+
     // Redução de PE geral
     if (m.ritualPEReduction) {
       result.rituals.peReduction += m.ritualPEReduction;
       result.rituals.breakdown.push({ source, effect: `-${m.ritualPEReduction} PE em rituais` });
     }
-    
+
     // Redução de PE por elemento
     if (m.ritualPEReductionByElement) {
       for (const [element, reduction] of Object.entries(m.ritualPEReductionByElement)) {
-        result.rituals.peReductionByElement[element] = 
+        result.rituals.peReductionByElement[element] =
           (result.rituals.peReductionByElement[element] || 0) + reduction!;
         result.rituals.breakdown.push({ source, effect: `-${reduction} PE rituais de ${element}` });
       }
     }
-    
+
     // Redução de PE por alcance
     if (m.ritualPEReductionByRange) {
       for (const [range, reduction] of Object.entries(m.ritualPEReductionByRange)) {
-        result.rituals.peReductionByRange[range] = 
+        result.rituals.peReductionByRange[range] =
           (result.rituals.peReductionByRange[range] || 0) + reduction!;
         result.rituals.breakdown.push({ source, effect: `-${reduction} PE rituais de alcance ${range}` });
       }
     }
-    
+
     // Modificadores de trilha (Conduíte, etc.)
     if (m.ritualModifiers) {
       for (const mod of m.ritualModifiers) {
@@ -2308,23 +2310,23 @@ export function consolidateEffects(
           ...mod,
           source,
         });
-        result.rituals.breakdown.push({ 
-          source, 
-          effect: `${mod.name}: ${mod.effect} (+${mod.peCost} PE)` 
+        result.rituals.breakdown.push({
+          source,
+          effect: `${mod.name}: ${mod.effect} (+${mod.peCost} PE)`
         });
       }
     }
-    
+
     // =====================================================
     // FASE 3: SUPORTE - Mecânicas de Médico de Campo e Resgate
     // =====================================================
-    
+
     // === Movimento Livre para Aliado (Resgate) ===
     if (m.freeMovementTo) {
       result.support.available = true;
       result.support.freeMovement.available = true;
       result.support.hasFreeMovementToAlly = true;
-      
+
       result.support.freeMovement.abilities.push({
         id: effect.id,
         name: effect.name,
@@ -2333,13 +2335,13 @@ export function consolidateEffects(
         source,
       });
     }
-    
+
     // === Efeitos ao Curar ===
     if (m.onHeal) {
       result.support.available = true;
-      
+
       const defenseBonus = m.onHeal.targetDefenseBonus ?? 0;
-      
+
       result.support.onHealEffects.push({
         id: effect.id,
         name: effect.name,
@@ -2348,18 +2350,18 @@ export function consolidateEffects(
         turns: m.onHeal.turns,
         source,
       });
-      
+
       // Atualiza máximo bônus de defesa ao curar
       if (defenseBonus > result.support.maxDefenseBonusOnHeal) {
         result.support.maxDefenseBonusOnHeal = defenseBonus;
       }
     }
-    
+
     // === Remoção de Condição (Equipe de Trauma) ===
     if (m.removeCondition) {
       result.support.available = true;
       result.support.canRemoveConditions = true;
-      
+
       result.support.removeConditionAbilities.push({
         id: effect.id,
         name: effect.name,
@@ -2370,12 +2372,12 @@ export function consolidateEffects(
         source,
       });
     }
-    
+
     // === Ressurreição (Reanimação) ===
     if (m.resurrect) {
       result.support.available = true;
       result.support.canResurrect = true;
-      
+
       result.support.resurrectAbilities.push({
         id: effect.id,
         name: effect.name,
@@ -2388,11 +2390,11 @@ export function consolidateEffects(
         source,
       });
     }
-    
+
     // =====================================================
     // FASE 4: INFILTRADOR AVANÇADO - Bônus de Furtividade
     // =====================================================
-    
+
     // === Remove/Reduz Penalidade de Furtividade ao Mover ===
     if (m.stealthMovementPenalty) {
       if (m.stealthMovementPenalty.removes) {
@@ -2406,7 +2408,7 @@ export function consolidateEffects(
       }
       result.sneakAttack.stealthBonuses.sources.push(source);
     }
-    
+
     // === Multiplicador de Ataque Furtivo (Assassinar) ===
     if (m.sneakAttackMultiplier) {
       // Maior multiplicador ganha
@@ -2416,7 +2418,7 @@ export function consolidateEffects(
       // Recalcula total de dados
       result.sneakAttack.totalDice = result.sneakAttack.baseDice * result.sneakAttack.multiplier;
     }
-    
+
     // === Ignora Penalidades de Furtividade ===
     if (m.ignoreStealthPenalty) {
       if (m.ignoreStealthPenalty.movementPenalty) {
@@ -2432,23 +2434,23 @@ export function consolidateEffects(
       }
       result.sneakAttack.stealthBonuses.sources.push(source);
     }
-    
+
     // =====================================================
     // FASE 5: OCULTISTA AVANÇADO - Mecânicas Paranormais
     // =====================================================
-    
+
     // === Rituais Bônus (Saber Ampliado) ===
     if (m.bonusRituals) {
       result.occultist.available = true;
-      
+
       // Soma rituais por círculo
       result.occultist.bonusRituals.perCircle += m.bonusRituals.perCircle;
-      
+
       // Ignora limite se qualquer fonte ignorar
       if (m.bonusRituals.ignoresLimit) {
         result.occultist.bonusRituals.ignoresLimit = true;
       }
-      
+
       // Merge restrições de círculo
       if (m.bonusRituals.circleRestriction) {
         for (const circle of m.bonusRituals.circleRestriction) {
@@ -2457,10 +2459,10 @@ export function consolidateEffects(
           }
         }
       }
-      
+
       result.occultist.bonusRituals.sources.push(source);
     }
-    
+
     // === Grimório (Graduado) ===
     if (m.grimoire) {
       result.occultist.available = true;
@@ -2473,11 +2475,11 @@ export function consolidateEffects(
       result.occultist.grimoire.inventorySlots = m.grimoire.inventorySlots;
       result.occultist.grimoire.source = source;
     }
-    
+
     // === Bônus de Poder de Ritual ===
     if (m.ritualPowerBonus) {
       result.occultist.available = true;
-      
+
       if (m.ritualPowerBonus.addPELimit) {
         result.occultist.ritualPowerBonus.addPELimit = true;
       }
@@ -2487,38 +2489,38 @@ export function consolidateEffects(
       if (m.ritualPowerBonus.affectsDamage) {
         result.occultist.ritualPowerBonus.affectsDamage = true;
       }
-      
+
       result.occultist.ritualPowerBonus.sources.push(source);
     }
-    
+
     // === Atributo Adicional ao Limite de PE ===
     if (m.addAttributeToPELimit) {
       result.occultist.available = true;
-      
+
       if (!result.occultist.additionalPELimitAttributes.includes(m.addAttributeToPELimit)) {
         result.occultist.additionalPELimitAttributes.push(m.addAttributeToPELimit);
       }
     }
-    
+
     // === Restrição de Recuperação de PV ===
     if (m.hpRecoveryRestriction && m.hpRecoveryRestriction !== 'none') {
       result.occultist.available = true;
-      
+
       // Restrição mais severa ganha (magic-only > rest-only > none)
       const severityOrder = { 'none': 0, 'rest-only': 1, 'magic-only': 2 };
       const currentSeverity = severityOrder[result.occultist.hpRecoveryRestriction];
       const newSeverity = severityOrder[m.hpRecoveryRestriction];
-      
+
       if (newSeverity > currentSeverity) {
         result.occultist.hpRecoveryRestriction = m.hpRecoveryRestriction;
       }
     }
-    
+
     // === RD Paranormal com Teste ===
     if (m.paranormalDamageTest) {
       result.occultist.available = true;
       result.occultist.paranormalDamageTest.available = true;
-      
+
       result.occultist.paranormalDamageTest.abilities.push({
         id: effect.id,
         name: effect.name,
@@ -2531,7 +2533,7 @@ export function consolidateEffects(
       });
     }
   }
-  
+
   return result;
 }
 

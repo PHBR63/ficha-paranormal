@@ -10,8 +10,8 @@
  */
 
 import { useMemo, useCallback, useState } from 'react';
-import { useToast } from '@/hooks/use-toast';
-import type { EffectDuration } from '@/hooks/useActivatedEffects';
+import { useToast } from '../../../../hooks/use-toast';
+import type { EffectDuration } from '../../../../hooks/useActivatedEffects';
 
 // =====================================================
 // TIPOS E CONSTANTES
@@ -144,7 +144,7 @@ export function useConduiteTrack({
 
     // Verifica PE suficiente
     if (peCurrent < ability.peCost) {
-      toast({ title: 'PE insuficiente', variant: 'destructive' });
+      toast({ title: 'PE insuficiente', description: 'Você não tem PE suficiente.' });
       return;
     }
 
@@ -157,12 +157,12 @@ export function useConduiteTrack({
     onPEChange(newPE);
 
     // Ativa efeito no SUE
-    const effectId = ability.id === 'ampliar-ritual' 
-      ? CONDUITE_EFFECT_IDS.AMPLIAR 
+    const effectId = ability.id === 'ampliar-ritual'
+      ? CONDUITE_EFFECT_IDS.AMPLIAR
       : ability.id === 'acelerar-ritual'
-      ? CONDUITE_EFFECT_IDS.ACELERAR
-      : CONDUITE_EFFECT_IDS.ANULAR;
-    
+        ? CONDUITE_EFFECT_IDS.ACELERAR
+        : CONDUITE_EFFECT_IDS.ANULAR;
+
     onActivateEffect?.(effectId, ability.name, 'instant');
 
     // Notifica sucesso
@@ -178,11 +178,11 @@ export function useConduiteTrack({
     // Estado
     isConduite,
     activatingAbility,
-    
+
     // Dados
     unlockedAbilities,
     unlockedPassives,
-    
+
     // Ações
     canAffordAbility,
     handleUseAbility,

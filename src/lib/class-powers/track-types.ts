@@ -7,8 +7,8 @@
  * @module track-types
  */
 
-import type { 
-  ClassId, 
+import type {
+  ClassId,
   ActionType,
   Attribute,
   Skill,
@@ -27,7 +27,7 @@ export type TrackAbilityNex = 10 | 40 | 65 | 99;
 /**
  * Tipo de efeito especial da habilidade de trilha
  */
-export type TrackAbilityKind = 
+export type TrackAbilityKind =
   | 'passive'
   | 'activated'
   | 'reaction'
@@ -48,10 +48,10 @@ export type TrackAbilityKind =
 export interface TrackAbilityMechanics {
   /** Tipo da habilidade */
   kind: TrackAbilityKind;
-  
+
   /** Duração do efeito */
   duration?: 'instant' | 'next-attack' | 'next-turn' | 'scene' | 'sustained';
-  
+
   /** Configuração de ativação */
   activation?: {
     cost: number;
@@ -66,7 +66,7 @@ export interface TrackAbilityMechanics {
     trigger?: string;
     range?: 'touch' | 'short' | 'medium' | 'long';  // Alcance da habilidade
   };
-  
+
   /** Bônus de dano */
   damageBonus?: {
     value?: number;
@@ -74,7 +74,7 @@ export interface TrackAbilityMechanics {
     extraDice?: { type: 'weapon' | 'fixed'; count: number; dieType?: string };
     conditions?: { weaponType?: string };
   };
-  
+
   /** Bônus de crítico */
   criticalBonus?: {
     marginBonus?: number;
@@ -82,10 +82,10 @@ export interface TrackAbilityMechanics {
     conditions?: { weaponType?: string };
     duration?: string;
   };
-  
+
   /** Proficiências concedidas */
   proficiencies?: string[];
-  
+
   /** Redução de categoria */
   categoryReduction?: {
     amount: number;
@@ -94,7 +94,7 @@ export interface TrackAbilityMechanics {
     choiceDescription?: string;
     appliesToAllCarried?: boolean;
   };
-  
+
   /** Efeitos de técnica (Aniquilador) */
   techniqueEffects?: Array<{
     id: string;
@@ -103,14 +103,14 @@ export interface TrackAbilityMechanics {
     peCost: number;
     effects: Record<string, number>;
   }>;
-  
+
   /** Configuração de liderança */
   leadership?: {
     range: 'touch' | 'short' | 'medium' | 'long';
     maxAllies?: number | 'intellect';
     allyEffects: Record<string, boolean>;
   };
-  
+
   /** Ataque furtivo */
   sneakAttack?: {
     scaling: Record<number, { dice: number; dieType: string }>;
@@ -119,7 +119,7 @@ export interface TrackAbilityMechanics {
     peCost: number;
     usesPerRound: number;
   };
-  
+
   /** Cura */
   healing?: {
     baseDice: string;
@@ -128,7 +128,7 @@ export interface TrackAbilityMechanics {
     extraDicePECost?: number;
     range: 'self' | 'touch' | 'short';
   };
-  
+
   /** Modificador de ritual */
   ritualModifier?: {
     type: 'range' | 'area' | 'speed' | 'cost' | 'resistance' | 'counter';
@@ -136,47 +136,47 @@ export interface TrackAbilityMechanics {
     effect: string;
     specificRitual?: string;
   };
-  
+
   /** PE temporário */
   temporaryPE?: {
     trigger: string;
     amount: number | 'ritual-circle';
     maxPerScene?: number | 'pe-limit';
   };
-  
+
   /** Ritual concedido */
   grantsRitual?: string;
-  
+
   /** Bônus em perícias */
   skillBonus?: {
     skills: Skill[];
     bonus: number;
   };
-  
+
   /** Bônus em Iniciativa */
   initiativeBonus?: number;
-  
+
   /** PV adicional por % de NEX */
   hpPerNexPercent?: number;
-  
+
   /** Bônus de Vigor no bloqueio */
   blockVigorBonus?: boolean;
-  
+
   /** Resistência paranormal */
   paranormalResistance?: number;
-  
+
   /** Resistência a dano mental */
   mentalDamageResistance?: number;
-  
+
   /** Bônus na DT dos rituais */
   ritualDTBonus?: number;
-  
+
   /** Permite usar PV como PE */
   hpAsPE?: boolean;
-  
+
   /** Permite usar Ocultismo como ataque */
   occultismAsAttack?: boolean;
-  
+
   /** Ações extras */
   extraActions?: Array<{
     type: string;
@@ -185,52 +185,67 @@ export interface TrackAbilityMechanics {
     maneuverOptions?: string[];
     replaceDamage?: boolean;
   }>;
-  
+
   /** Redução de dano */
   damageReduction?: {
     type: 'half' | 'fixed';
     damageTypes: string[];
     fixedAmount?: number;
   };
-  
+
+  /** Modificadores de PE genéricos */
+  peModifiers?: Array<{
+    value: number;
+    targets: string[];
+  }>;
+
   // ===== PROPRIEDADES ESPECÍFICAS DE TRILHAS =====
-  
+
   /** Multiplicador de Ataque Especial (Guerreiro) */
   specialAttackMultiplier?: number;
-  
+
   /** Provocar inimigo (Tropa de Choque) */
   taunt?: {
     range: string;
     resistanceTest: string;
     dtAttribute: string;
   };
-  
+
   /** Efeitos quando machucado (Tropa de Choque) */
   whenWounded?: {
     defenseBonus: number;
     damageResistance: number;
   };
-  
+
   /** Efeitos quando morrendo (Tropa de Choque) */
   whenDying?: {
     canAct: boolean;
     notHelpless: boolean;
   };
-  
+
+  // === MECÂNICAS DE OCULTISTA ===
+
+  /** Conjuração rápida de ritual (Conduíte) */
+  ritualQuickCast?: boolean;
+
+  /** Upgrade de Ampliar Ritual (Conduíte) */
+  ampliarRitualUpgrade?: boolean;
+
+
   /** Dano máximo em crítico (Atirador de Elite) */
   maximumDamageOnCritical?: {
     weaponType: string;
   };
-  
+
   /** Remove penalidade de furtividade ao mover (estrutura completa) */
   stealthMovementPenalty?: boolean | {
     removes?: boolean;
     reducesBy?: number;
   };
-  
+
   /** Multiplicador de ataque furtivo (Assassinar) */
   sneakAttackMultiplier?: number;
-  
+
   /** Ignora penalidade de furtividade (estrutura completa) */
   ignoreStealthPenalty?: boolean | {
     movementPenalty?: boolean;
@@ -239,14 +254,14 @@ export interface TrackAbilityMechanics {
     type?: 'fixed-penalty' | 'dice-penalty';  // Tipo de penalidade ignorada
     value?: number;  // Valor da penalidade (ex: 3 para -3d20)
   };
-  
+
   /** Controle de estado do alvo */
   targetStateControl?: {
     options: string[];
     resistanceTest: string;
     dtAttribute: string;
   };
-  
+
   /** Remove condição (Médico de Campo) - estrutura completa */
   removeCondition?: {
     range: string;
@@ -254,7 +269,7 @@ export interface TrackAbilityMechanics {
     peCost?: number;
     actionType?: string;
   };
-  
+
   /** Movimento livre para aliado (Resgate) */
   freeMovementTo?: {
     condition?: string;
@@ -262,7 +277,7 @@ export interface TrackAbilityMechanics {
     range?: 'touch' | 'short' | 'medium' | 'long';  // Alcance para ativar
     perRound: boolean;
   };
-  
+
   /** Bônus ao curar (Resgate) - estrutura completa */
   onHeal?: {
     selfDefenseBonus?: number;  // Bônus para o curador
@@ -270,12 +285,12 @@ export interface TrackAbilityMechanics {
     duration: string;
     turns?: number;
   };
-  
+
   /** Capacidade de carregar personagem (Resgate) */
   carryingCapacity?: {
     carryPersonReduction?: number;  // Fator de redução (0.5 = metade)
   };
-  
+
   /** Ressurreição (Reanimação) - estrutura completa */
   resurrect?: {
     excludedDeathTypes: string[];
@@ -285,7 +300,7 @@ export interface TrackAbilityMechanics {
     actionType?: string;
     hpRestored?: string;
   };
-  
+
   /** Efeito social (Negociador - Eloquência) */
   socialEffect?: {
     range: string;
@@ -299,7 +314,7 @@ export interface TrackAbilityMechanics {
     hostileRetestPerRound?: boolean; // Novo teste por rodada para hostis
     immunityOnSuccess: string;
   };
-  
+
   /** Buff para aliados (Discurso Motivador) */
   allyBuff?: {
     range: string;
@@ -309,13 +324,13 @@ export interface TrackAbilityMechanics {
     duration: string;
     includeSelf: boolean;
   };
-  
+
   /** Rede de contatos (Eu Conheço um Cara) */
   contacts?: {
     effects: string[];
     gmDiscretion: boolean;
   };
-  
+
   /** Copiar habilidade (Truque de Mestre) */
   copyAbility?: {
     source: string;
@@ -323,22 +338,22 @@ export interface TrackAbilityMechanics {
     ignorePrerequisites: boolean;
     payOriginalCosts: boolean;
   };
-  
+
   /** Capacidade de carga (Técnico) */
   carryCapacity?: {
     addAttribute: Attribute;
   };
-  
+
   /** Redução de espaço de item */
   itemSpaceReduction?: number;
-  
+
   /** Reparar equipamento (Remendão) */
   repairEquipment?: {
     range: string;
     removeCondition: string;
     duration?: string;  // Duração do reparo (ex: 'scene')
   };
-  
+
   /** Criar equipamento (Improvisar) */
   createEquipment?: {
     type: string;
@@ -346,31 +361,31 @@ export interface TrackAbilityMechanics {
     destroyedAfter: boolean;
     followsInventoryRules?: boolean;  // Se segue regras de inventário
   };
-  
+
   /** Retirar item retroativamente (Preparado para Tudo) */
   retrieveItem?: {
     excludeWeapons: boolean;
     retroactive: boolean;
     followsInventoryRules?: boolean;  // Se segue regras de inventário
   };
-  
+
   /** Contra-mágica (Anular Ritual) */
   counterSpell?: {
     costMatchesTarget: boolean;
     testSkill: string;
     testType: string;
   };
-  
+
   /** Restrição de recuperação de PV */
   hpRecoveryRestriction?: string;
-  
+
   /** Rituais bônus (Saber Ampliado) - estrutura completa */
   bonusRituals?: {
     perCircle: number;
     ignoresLimit: boolean;
     circleRestriction?: number[];
   };
-  
+
   /** Grimório (Graduado) */
   grimoire?: {
     maxRituals: number | 'intellect';
@@ -381,25 +396,26 @@ export interface TrackAbilityMechanics {
     requiresWielding: boolean;
     inventorySlots: number;
     recreationCost: string;
+    anyRitual?: boolean;
   };
-  
+
   /** Adiciona atributo ao limite de PE */
   addAttributeToPELimit?: Attribute;
-  
+
   /** Bônus de poder de ritual - estrutura completa */
   ritualPowerBonus?: {
     addPELimit: boolean;
     affectsDT: boolean;
     affectsDamage?: boolean;
   };
-  
+
   /** Redução de dano paranormal com teste - estrutura completa */
   paranormalDamageReduction?: {
     testSkill: string;
     onSuccess: string;
     onFailure: string;
   };
-  
+
   /** RD Paranormal com Teste (estrutura completa para Fase 5) */
   paranormalDamageTest?: {
     testSkill: string;

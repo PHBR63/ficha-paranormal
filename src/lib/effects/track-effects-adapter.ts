@@ -118,22 +118,22 @@ export const TRACK_EFFECT_MAPPINGS = {
   conduite: {
     trackId: 'conduite',
     effects: {
-      'track-ampliar-ritual': { 
-        name: 'Ampliar Ritual', 
-        minNex: 10, 
+      'track-ampliar-ritual': {
+        name: 'Ampliar Ritual',
+        minNex: 10,
         peCost: 2,
         description: 'Aumenta alcance em um passo OU dobra área de efeito'
       },
-      'track-acelerar-ritual': { 
-        name: 'Acelerar Ritual', 
-        minNex: 40, 
+      'track-acelerar-ritual': {
+        name: 'Acelerar Ritual',
+        minNex: 40,
         peCost: 4,
         perRound: true,
         description: 'Conjura ritual como ação livre (1x por rodada)'
       },
-      'track-anular-ritual': { 
-        name: 'Anular Ritual', 
-        minNex: 65, 
+      'track-anular-ritual': {
+        name: 'Anular Ritual',
+        minNex: 65,
         peCost: 0, // Custo variável (igual ao ritual alvo)
         variableCost: true,
         description: 'Teste oposto de Ocultismo para anular ritual'
@@ -143,21 +143,21 @@ export const TRACK_EFFECT_MAPPINGS = {
   flagelador: {
     trackId: 'flagelador',
     effects: {
-      'track-poder-do-flagelo': { 
-        name: 'Poder do Flagelo', 
-        minNex: 10, 
+      'track-poder-do-flagelo': {
+        name: 'Poder do Flagelo',
+        minNex: 10,
         peCost: 0, // Passivo - gasta PV em vez de PE
         description: 'Pode gastar 2 PV para cada 1 PE ao conjurar rituais'
       },
-      'track-abracar-a-dor': { 
-        name: 'Abraçar a Dor', 
-        minNex: 40, 
+      'track-abracar-a-dor': {
+        name: 'Abraçar a Dor',
+        minNex: 40,
         peCost: 2,
         description: 'Reação: reduz dano não-paranormal pela metade'
       },
-      'track-absorver-angustia': { 
-        name: 'Absorver Angústia', 
-        minNex: 65, 
+      'track-absorver-angustia': {
+        name: 'Absorver Angústia',
+        minNex: 65,
         peCost: 0, // Passivo com trigger
         description: 'Ao sofrer dano, ganha PE temporário igual a metade do dano'
       },
@@ -230,17 +230,17 @@ function convertTrackAbilityToMechanics(
 ): EffectMechanics {
   const mechanics: EffectMechanics = {};
   const m = ability.effects?.base;
-  
+
   if (!m) return mechanics;
-  
+
   // === BÔNUS DE DANO (com suporte a atributo) ===
   if (m.damageBonus) {
     const dmgBonus = m.damageBonus;
-    
+
     // Se o bônus usa um atributo, calcula o valor baseado no atributo
     if (dmgBonus.attribute) {
       const attrValue = attributes[dmgBonus.attribute as AttributeType] || 0;
-      
+
       // Aplica condicionalmente baseado no tipo de arma
       if (dmgBonus.conditions?.weaponType === 'firearm-long') {
         // Mira de Elite: +INT em dano com armas de fogo longas
@@ -264,39 +264,39 @@ function convertTrackAbilityToMechanics(
         mechanics.damageBonus = dmgBonus.value;
       }
     }
-    
+
     // Dados extras de dano (Máquina de Matar)
     if (dmgBonus.extraDice) {
       mechanics.extraDamageDice = `${dmgBonus.extraDice.count}${dmgBonus.extraDice.dieType || 'd6'}`;
     }
   }
-  
+
   // === ATAQUE FURTIVO ESCALONADO (Infiltrador) ===
   if (m.sneakAttack?.scaling) {
     const scaling = m.sneakAttack.scaling;
-    
+
     // Encontra o tier de NEX aplicável (maior NEX <= nex atual)
     const applicableTiers = Object.keys(scaling)
       .map(Number)
       .filter(n => n <= nex)
       .sort((a, b) => b - a);
-    
+
     if (applicableTiers.length > 0) {
       const tier = applicableTiers[0];
       const diceData = scaling[tier];
-      
+
       if (diceData) {
         mechanics.extraDamageDice = `${diceData.dice}${diceData.dieType || 'd6'}`;
         mechanics.conditionalNote = 'Ataque Furtivo: alvo desprevenido, flanqueado ou corpo a corpo com arma leve';
       }
     }
   }
-  
+
   // === BÔNUS DE CRÍTICO ===
   if (m.criticalBonus) {
     if (m.criticalBonus.marginBonus) {
       mechanics.criticalMarginBonus = m.criticalBonus.marginBonus;
-      
+
       // Se é específico para corpo a corpo (Técnica Letal)
       if (m.criticalBonus.conditions?.weaponType === 'melee') {
         mechanics.conditionalNote = 'Apenas ataques corpo a corpo';
@@ -306,28 +306,28 @@ function convertTrackAbilityToMechanics(
       mechanics.criticalMultiplierBonus = m.criticalBonus.multiplierBonus;
     }
   }
-  
+
   // === INICIATIVA (Operações Especiais) ===
   if (m.initiativeBonus) {
     mechanics.initiativeBonus = m.initiativeBonus;
   }
-  
+
   // === PV ADICIONAL POR NEX (Tropa de Choque - Casca Grossa) ===
   if (m.hpPerNexPercent) {
     const bonus = m.hpPerNexPercent * Math.floor(nex / 5);
     mechanics.hpBonus = bonus;
   }
-  
+
   // === RESISTÊNCIA PARANORMAL ===
   if (m.paranormalResistance) {
     mechanics.paranormalDamageReduction = m.paranormalResistance;
   }
-  
+
   // === RESISTÊNCIA A DANO MENTAL ===
   if (m.mentalDamageResistance) {
     mechanics.damageResistance = { mental: m.mentalDamageResistance };
   }
-  
+
   // === PERÍCIAS ===
   if (m.skillBonus) {
     mechanics.skillBonus = {};
@@ -335,54 +335,54 @@ function convertTrackAbilityToMechanics(
       mechanics.skillBonus[skill] = m.skillBonus.bonus;
     }
   }
-  
+
   // === PROFICIÊNCIAS ===
   if (m.proficiencies) {
     mechanics.grantsProficiency = m.proficiencies;
   }
-  
+
   // === FLAGS ESPECIAIS ===
-  
+
   // Usar PV como PE (Flagelador)
   if (m.hpAsPE) {
     if (!mechanics.specialEffects) mechanics.specialEffects = [];
     mechanics.specialEffects.push('Pode usar PV como PE para rituais');
   }
-  
+
   // Ocultismo como ataque (Lâmina Paranormal)
   if (m.occultismAsAttack) {
     // Mapeia diretamente para EffectMechanics.occultismAsAttack
     mechanics.occultismAsAttack = true;
-    
+
     // Também adiciona aos specialEffects para backward compatibility
     if (!mechanics.specialEffects) mechanics.specialEffects = [];
     mechanics.specialEffects.push('Pode usar Ocultismo em ataques corpo a corpo');
   }
-  
+
   // === DANO MÁXIMO EM CRÍTICO (Atirar para Matar) ===
   if (m.maximumDamageOnCritical) {
     // Mapeia diretamente para EffectMechanics.maximumDamageOnCritical
     mechanics.maximumDamageOnCritical = {
       weaponType: m.maximumDamageOnCritical.weaponType as 'firearm' | 'melee' | 'any',
     };
-    
+
     // Também adiciona aos specialEffects para backward compatibility
     if (!mechanics.specialEffects) mechanics.specialEffects = [];
     mechanics.specialEffects.push('Crítico com arma de fogo causa dano máximo');
     mechanics.maximumDamageOnCrit = true;
   }
-  
+
   // === MULTIPLICADOR DE ATAQUE ESPECIAL (Guerreiro - Potência Máxima) ===
   if (m.specialAttackMultiplier) {
     mechanics.specialAttackMultiplier = {
       value: m.specialAttackMultiplier,
       weaponRestriction: 'melee', // Potência Máxima é apenas corpo a corpo
     };
-    
+
     if (!mechanics.specialEffects) mechanics.specialEffects = [];
     mechanics.specialEffects.push(`Ataque Especial: bônus numéricos x${m.specialAttackMultiplier} (corpo a corpo)`);
   }
-  
+
   // === REDUÇÃO DE DANO (Duro de Matar, Inquebrável) ===
   if (m.damageReduction) {
     if (m.damageReduction.type === 'fixed' && m.damageReduction.fixedAmount) {
@@ -393,7 +393,7 @@ function convertTrackAbilityToMechanics(
       mechanics.specialEffects.push(`Reduz dano ${types} pela metade`);
     }
   }
-  
+
   // === EFEITOS QUANDO MACHUCADO (Inquebrável) ===
   if (m.whenWounded) {
     // Mapeia diretamente para EffectMechanics.whenWounded
@@ -402,13 +402,13 @@ function convertTrackAbilityToMechanics(
       defenseBonus: m.whenWounded.defenseBonus,
       damageReduction: m.whenWounded.damageResistance,
     };
-    
+
     // Legacy mapping para backward compatibility
     mechanics.defenseBonus = m.whenWounded.defenseBonus;
     mechanics.damageReduction = m.whenWounded.damageResistance;
     mechanics.conditionalNote = 'Quando machucado';
   }
-  
+
   // === EFEITOS QUANDO MORRENDO (Inquebrável) ===
   if (m.whenDying) {
     // Mapeia diretamente para EffectMechanics.whenDying
@@ -416,7 +416,7 @@ function convertTrackAbilityToMechanics(
       canAct: m.whenDying.canAct ?? false,
       notHelpless: m.whenDying.notHelpless ?? false,
     };
-    
+
     // Também adiciona aos specialEffects para backward compatibility
     if (!mechanics.specialEffects) mechanics.specialEffects = [];
     if (m.whenDying.canAct) {
@@ -426,11 +426,11 @@ function convertTrackAbilityToMechanics(
       mechanics.specialEffects.push('Não fica indefeso quando morrendo');
     }
   }
-  
+
   // === AÇÕES EXTRAS (Operações Especiais, Guerreiro) ===
   if (m.extraActions && m.extraActions.length > 0) {
     if (!mechanics.specialEffects) mechanics.specialEffects = [];
-    
+
     for (const action of m.extraActions) {
       // Mapeia para extraActionsTrack (apenas a primeira ação - o SUE consolida múltiplas)
       // Esta é uma conversão simplificada; cada habilidade gera seu próprio efeito
@@ -445,10 +445,10 @@ function convertTrackAbilityToMechanics(
         perRound: false,
         perScene: false,
       };
-      
+
       // Adiciona aos specialEffects para backward compatibility
       let desc = '';
-      
+
       switch (action.type) {
         case 'movement':
           if (action.trigger === 'first-round') {
@@ -482,13 +482,13 @@ function convertTrackAbilityToMechanics(
         default:
           desc = `Ação adicional: ${action.type}`;
       }
-      
+
       if (desc) {
         mechanics.specialEffects.push(desc);
       }
     }
   }
-  
+
   // === PROVOCAR (Taunt - Cai Dentro) ===
   if (m.taunt) {
     const rangeMapTaunt: Record<string, 'curto' | 'medio' | 'longo'> = {
@@ -500,7 +500,7 @@ function convertTrackAbilityToMechanics(
       'medio': 'medio',
       'longo': 'longo',
     };
-    
+
     mechanics.taunt = {
       range: rangeMapTaunt[m.taunt.range] || 'curto',
       resistanceTest: m.taunt.resistanceTest,
@@ -508,11 +508,11 @@ function convertTrackAbilityToMechanics(
       peCost: 1, // Default: 1 PE (Cai Dentro)
       actionType: 'reaction', // Default: reação
     };
-    
+
     if (!mechanics.specialEffects) mechanics.specialEffects = [];
     mechanics.specialEffects.push(`Provocar: alvo deve atacar você (${m.taunt.resistanceTest})`);
   }
-  
+
   // === CONTROLE DE ESTADO DO ALVO (Assassinar) ===
   if (m.targetStateControl) {
     mechanics.targetStateControl = {
@@ -520,19 +520,19 @@ function convertTrackAbilityToMechanics(
       resistanceTest: m.targetStateControl.resistanceTest,
       dtAttribute: m.targetStateControl.dtAttribute as AttributeType,
     };
-    
+
     if (!mechanics.specialEffects) mechanics.specialEffects = [];
     mechanics.specialEffects.push(`Controle de estado: ${m.targetStateControl.options.join(' ou ')}`);
   }
-  
+
   // === BÔNUS DE BLOQUEIO COM VIGOR (Casca Grossa) ===
   if (m.blockVigorBonus) {
     mechanics.blockVigorBonus = true;
-    
+
     if (!mechanics.specialEffects) mechanics.specialEffects = [];
     mechanics.specialEffects.push('Soma Vigor na RD ao bloquear');
   }
-  
+
   // === LIDERANÇA (Comandante de Campo) ===
   if (m.leadership) {
     // Converte range do formato track-types para EffectMechanics
@@ -542,7 +542,7 @@ function convertTrackAbilityToMechanics(
       'medium': 'medio',
       'long': 'longo',
     };
-    
+
     // Converte maxAllies para o formato do EffectMechanics
     let maxAlliesValue: number | 'intellect' | 'presence' = 1;
     if (typeof m.leadership.maxAllies === 'number') {
@@ -550,7 +550,7 @@ function convertTrackAbilityToMechanics(
     } else if (m.leadership.maxAllies === 'intellect') {
       maxAlliesValue = 'intellect';
     }
-    
+
     // Converte allyEffects do formato Record<string, boolean> para o esperado
     const allyEffects: {
       rerollTest?: boolean;
@@ -565,7 +565,7 @@ function convertTrackAbilityToMechanics(
       extraAttack: m.leadership.allyEffects.extraAttack ?? false,
       extraStandardAction: m.leadership.allyEffects.extraStandardAction ?? false,
     };
-    
+
     mechanics.leadership = {
       range: rangeMap[m.leadership.range] || 'medio',
       maxAllies: maxAlliesValue,
@@ -573,10 +573,10 @@ function convertTrackAbilityToMechanics(
       actionType: 'free',
       allyEffects,
     };
-    
+
     // Também adiciona aos specialEffects para backward compatibility
     if (!mechanics.specialEffects) mechanics.specialEffects = [];
-    
+
     const range = rangeMap[m.leadership.range] || m.leadership.range;
     let maxAlliesDesc = '';
     if (typeof m.leadership.maxAllies === 'number') {
@@ -584,7 +584,7 @@ function convertTrackAbilityToMechanics(
     } else if (m.leadership.maxAllies === 'intellect') {
       maxAlliesDesc = ` (até Intelecto aliados)`;
     }
-    
+
     const effects = Object.entries(m.leadership.allyEffects)
       .filter(([_, value]) => value)
       .map(([key]) => {
@@ -596,14 +596,14 @@ function convertTrackAbilityToMechanics(
           default: return key;
         }
       });
-    
+
     if (effects.length > 0) {
       mechanics.specialEffects.push(
         `Aliados em alcance ${range}${maxAlliesDesc}: ${effects.join(', ')}`
       );
     }
   }
-  
+
   // === BUFF PARA ALIADOS (Negociador - Discurso Motivador) ===
   if (m.allyBuff) {
     // Converte range para formato do EffectMechanics
@@ -612,35 +612,35 @@ function convertTrackAbilityToMechanics(
       'medium': 'medio',
       'long': 'longo',
     };
-    
+
     // Converte duration para formato do EffectMechanics
     const durationMap: Record<string, 'scene' | 'combat' | 'turns'> = {
       'scene': 'scene',
       'combat': 'combat',
       'turns': 'turns',
     };
-    
+
     mechanics.allyBuff = {
       range: rangeMap[m.allyBuff.range] || 'curto',
-      skillBonus: m.allyBuff.skillBonus,
+      skillBonus: m.allyBuff.skillBonus || 0,
       peCost: 0, // Será definido pela ativação da habilidade
       actionType: 'standard',
       duration: durationMap[m.allyBuff.duration] || 'scene',
       includeSelf: m.allyBuff.includeSelf,
     };
-    
+
     // Também adiciona aos specialEffects para backward compatibility
     if (!mechanics.specialEffects) mechanics.specialEffects = [];
-    
+
     const range = rangeMap[m.allyBuff.range] || m.allyBuff.range;
     const duration = m.allyBuff.duration === 'scene' ? 'até o final da cena' : m.allyBuff.duration;
     const selfNote = m.allyBuff.includeSelf ? ' (inclui você)' : '';
-    
+
     mechanics.specialEffects.push(
       `Aliados em alcance ${range}${selfNote}: +${m.allyBuff.skillBonus} em testes de perícia (${duration})`
     );
   }
-  
+
   // === EFEITO SOCIAL (Negociador - Eloquência) ===
   if (m.socialEffect) {
     // Converte range para formato do EffectMechanics
@@ -649,14 +649,14 @@ function convertTrackAbilityToMechanics(
       'medium': 'medio',
       'long': 'longo',
     };
-    
+
     // Converte duration para formato do EffectMechanics
     const durationMap: Record<string, 'concentration' | 'scene' | 'turns'> = {
       'concentration': 'concentration',
       'scene': 'scene',
       'turns': 'turns',
     };
-    
+
     mechanics.socialEffect = {
       range: rangeMap[m.socialEffect.range] || 'curto',
       targetAll: m.socialEffect.targetAll,
@@ -669,19 +669,19 @@ function convertTrackAbilityToMechanics(
       immunityOnSuccess: m.socialEffect.immunityOnSuccess,
       resistanceBonusOnSuccess: 5, // +5 em resistência após sucesso (oficial)
     };
-    
+
     // Também adiciona aos specialEffects para backward compatibility
     if (!mechanics.specialEffects) mechanics.specialEffects = [];
-    
+
     const range = rangeMap[m.socialEffect.range] || m.socialEffect.range;
     const skills = m.socialEffect.skillOptions?.join(' / ') || 'perícia social';
     const duration = m.socialEffect.duration === 'concentration' ? 'enquanto concentrar' : m.socialEffect.duration;
-    
+
     mechanics.specialEffects.push(
       `${skills} vs ${m.socialEffect.resistanceSkill} (alcance ${range}): aplica ${m.socialEffect.effect} (${duration})`
     );
   }
-  
+
   // === REDE DE CONTATOS (Negociador - Eu Conheço um Cara) ===
   if (m.contacts) {
     mechanics.contacts = {
@@ -691,16 +691,16 @@ function convertTrackAbilityToMechanics(
       peCost: 0, // Sem custo em PE
       actionType: 'varies',
     };
-    
+
     // Também adiciona aos specialEffects para backward compatibility
     if (!mechanics.specialEffects) mechanics.specialEffects = [];
-    
+
     const effects = m.contacts.effects?.join(', ') || 'favores';
     mechanics.specialEffects.push(
       `Rede de contatos: ${effects} (1x por missão, a critério do mestre)`
     );
   }
-  
+
   // === CÓPIA DE HABILIDADE (Negociador - Truque de Mestre) ===
   if (m.copyAbility) {
     // Converte source para formato do EffectMechanics
@@ -709,7 +709,7 @@ function convertTrackAbilityToMechanics(
       'enemy': 'enemy',
       'any': 'any',
     };
-    
+
     mechanics.copyAbility = {
       source: sourceMap[m.copyAbility.source] || 'ally',
       seenInScene: m.copyAbility.seenInScene,
@@ -718,22 +718,22 @@ function convertTrackAbilityToMechanics(
       peCost: 5, // Custo padrão do Truque de Mestre (oficial)
       actionType: 'varies', // Depende da habilidade copiada
     };
-    
+
     // Também adiciona aos specialEffects para backward compatibility
     if (!mechanics.specialEffects) mechanics.specialEffects = [];
-    
+
     const sourceDesc = m.copyAbility.source === 'ally' ? 'de aliados' : 'de qualquer um';
     const prereqNote = m.copyAbility.ignorePrerequisites ? ' (ignora pré-requisitos)' : '';
-    
+
     mechanics.specialEffects.push(
       `Copiar habilidade ${sourceDesc}${prereqNote}: 5 PE + custos originais (1x por cena)`
     );
   }
-  
+
   // =====================================================
   // TÉCNICO - Mecânicas de inventário e equipamento
   // =====================================================
-  
+
   // === CAPACIDADE DE CARGA (Inventário Otimizado) ===
   if (m.carryCapacity) {
     // Converte atributo para formato do EffectMechanics
@@ -744,29 +744,29 @@ function convertTrackAbilityToMechanics(
       'intellect': 'intellect',
       'presence': 'presence',
     };
-    
+
     mechanics.carryCapacity = {
       addAttribute: attrMap[m.carryCapacity.addAttribute] || 'intellect',
     };
-    
+
     // Também adiciona aos specialEffects para backward compatibility
     if (!mechanics.specialEffects) mechanics.specialEffects = [];
     mechanics.specialEffects.push(
       `+${m.carryCapacity.addAttribute.toUpperCase()} na capacidade de carga`
     );
   }
-  
+
   // === REDUÇÃO DE ESPAÇO DE ITEM (Inventário Otimizado) ===
   if (m.itemSpaceReduction) {
     mechanics.itemSpaceReduction = m.itemSpaceReduction;
-    
+
     // Também adiciona aos specialEffects para backward compatibility
     if (!mechanics.specialEffects) mechanics.specialEffects = [];
     mechanics.specialEffects.push(
       `Itens ocupam ${m.itemSpaceReduction} espaço(s) a menos (mínimo 1)`
     );
   }
-  
+
   // === REPARAR EQUIPAMENTO (Remendo) ===
   if (m.repairEquipment) {
     // Converte range para formato do EffectMechanics
@@ -776,21 +776,21 @@ function convertTrackAbilityToMechanics(
       'adjacent': 'touch',
       'short': 'short',
     };
-    
+
     mechanics.repairEquipment = {
       range: rangeMap[m.repairEquipment.range] || 'touch',
       removeCondition: m.repairEquipment.removeCondition,
       peCost: 1, // Custo padrão do Remendo
       actionType: 'complete',
     };
-    
+
     // Também adiciona aos specialEffects para backward compatibility
     if (!mechanics.specialEffects) mechanics.specialEffects = [];
     mechanics.specialEffects.push(
       `Reparar equipamento: remove ${m.repairEquipment.removeCondition} (1 PE, ação completa)`
     );
   }
-  
+
   // === CRIAR EQUIPAMENTO (Improvisar) ===
   if (m.createEquipment) {
     // Converte type para formato do EffectMechanics
@@ -800,14 +800,14 @@ function convertTrackAbilityToMechanics(
       'armor': 'armor',
       'any': 'any',
     };
-    
+
     // Converte duration para formato do EffectMechanics
     const durationMap: Record<string, 'scene' | 'combat' | 'permanent'> = {
       'scene': 'scene',
       'combat': 'combat',
       'permanent': 'permanent',
     };
-    
+
     mechanics.createEquipment = {
       type: typeMap[m.createEquipment.type] || 'general',
       duration: durationMap[m.createEquipment.duration] || 'scene',
@@ -815,7 +815,7 @@ function convertTrackAbilityToMechanics(
       peCost: 2, // Custo padrão do Improvisar
       actionType: 'complete',
     };
-    
+
     // Também adiciona aos specialEffects para backward compatibility
     if (!mechanics.specialEffects) mechanics.specialEffects = [];
     const destroyNote = m.createEquipment.destroyedAfter ? ' (destruído após)' : '';
@@ -823,7 +823,7 @@ function convertTrackAbilityToMechanics(
       `Improvisar equipamento ${m.createEquipment.type}: dura até fim da cena${destroyNote} (2 PE, ação completa)`
     );
   }
-  
+
   // === RETIRAR ITEM RETROATIVAMENTE (Preparado para Tudo) ===
   if (m.retrieveItem) {
     mechanics.retrieveItem = {
@@ -832,7 +832,7 @@ function convertTrackAbilityToMechanics(
       peCostPerCategory: 3, // Custo padrão: 3 PE por categoria
       actionType: 'movement',
     };
-    
+
     // Também adiciona aos specialEffects para backward compatibility
     if (!mechanics.specialEffects) mechanics.specialEffects = [];
     const excludeNote = m.retrieveItem.excludeWeapons ? ' (exceto armas)' : '';
@@ -840,20 +840,20 @@ function convertTrackAbilityToMechanics(
       `Retirar item retroativamente${excludeNote}: 3 PE por categoria (ação de movimento)`
     );
   }
-  
+
   // === CURA (Médico de Campo) ===
   if (m.healing) {
     const scalingDice = m.healing.scalingDice;
-    
+
     // Encontra dados base (NEX 10%)
     let baseDice = 2; // Padrão do Paramédico
     let dieType = 'd10';
-    
+
     if (scalingDice && scalingDice[10]) {
       baseDice = scalingDice[10].dice;
       dieType = scalingDice[10].dieType;
     }
-    
+
     mechanics.healing = {
       baseDice,
       dieType,
@@ -864,7 +864,7 @@ function convertTrackAbilityToMechanics(
       actionType: 'standard', // Paramédico usa ação padrão
     };
   }
-  
+
   // === REDUÇÃO DE CATEGORIA (Aniquilador, Técnico) ===
   // Agora mapeado diretamente para categoryReduction do EffectMechanics
   if (m.categoryReduction) {
@@ -876,15 +876,15 @@ function convertTrackAbilityToMechanics(
       appliesToAllCarried: m.categoryReduction.appliesToAllCarried,
     };
   }
-  
+
   // === TÉCNICAS DO ANIQUILADOR ===
   if (m.techniqueEffects && m.techniqueEffects.length > 0) {
     if (!mechanics.specialEffects) mechanics.specialEffects = [];
-    
+
     const techniqueNames = m.techniqueEffects.map(t => t.name).join(', ');
     mechanics.specialEffects.push(`Técnicas disponíveis: ${techniqueNames} (2 PE cada)`);
   }
-  
+
   // === MULTIPLICADOR DE ATAQUE ESPECIAL (Potência Máxima) ===
   if (m.specialAttackMultiplier) {
     if (!mechanics.specialEffects) mechanics.specialEffects = [];
@@ -892,12 +892,12 @@ function convertTrackAbilityToMechanics(
       `Ataque Especial corpo a corpo: bônus numéricos x${m.specialAttackMultiplier}`
     );
   }
-  
+
   // === ATAQUE FURTIVO (Infiltrador) ===
   if (m.sneakAttack) {
     // Encontra os dados base para NEX 10%
     const baseEntry = m.sneakAttack.scaling[10] || m.sneakAttack.scaling[5] || { dice: 1, dieType: 'd6' };
-    
+
     mechanics.sneakAttack = {
       baseDice: baseEntry.dice,
       dieType: baseEntry.dieType,
@@ -907,7 +907,7 @@ function convertTrackAbilityToMechanics(
       usesPerRound: m.sneakAttack.usesPerRound,
     };
   }
-  
+
   // === MULTIPLICADOR DE ATAQUE FURTIVO (Assassinar) ===
   if (m.sneakAttackMultiplier) {
     // Se já tem sneakAttack, adiciona multiplicador
@@ -925,25 +925,25 @@ function convertTrackAbilityToMechanics(
       };
     }
   }
-  
+
   // === BÔNUS DE DT DE RITUAL (Graduado - Rituais Eficientes) ===
   // AGORA mapeado corretamente para ritualDTBonus do EffectMechanics
   if (m.ritualDTBonus) {
     mechanics.ritualDTBonus = m.ritualDTBonus;
   }
-  
+
   // === MODIFICADORES DE RITUAL (Conduíte - Ampliar/Acelerar Ritual) ===
   // Convertidos para ritualModifiers do EffectMechanics para integração com SUE
   if (m.ritualModifier) {
     if (!mechanics.ritualModifiers) mechanics.ritualModifiers = [];
-    
+
     const mod = m.ritualModifier;
-    
+
     // Mapeia o tipo do modificador para o formato do SUE
     let modifierType: 'range' | 'action' | 'area' | 'duration' | 'counter' = 'range';
     let modifierId = '';
     let modifierName = '';
-    
+
     switch (mod.type) {
       case 'range':
         modifierType = 'range';
@@ -962,7 +962,7 @@ function convertTrackAbilityToMechanics(
         modifierName = 'Anular Ritual';
         break;
     }
-    
+
     // Adiciona o modificador ao array
     mechanics.ritualModifiers.push({
       id: modifierId,
@@ -975,7 +975,7 @@ function convertTrackAbilityToMechanics(
       variableCost: mod.type === 'counter', // Anular Ritual tem custo variável
       actionType: mod.type === 'counter' ? 'reaction' : undefined, // Anular é reação
     });
-    
+
     // Também adiciona área para Ampliar Ritual (é alternativo ao alcance)
     if (mod.type === 'range') {
       mechanics.ritualModifiers.push({
@@ -989,7 +989,7 @@ function convertTrackAbilityToMechanics(
       });
     }
   }
-  
+
   // === CONTRA-MÁGICA (Anular Ritual - Conduíte) ===
   // Agora mapeado diretamente para counterSpell do EffectMechanics
   if (m.counterSpell) {
@@ -999,7 +999,7 @@ function convertTrackAbilityToMechanics(
       testType: m.counterSpell.testType as 'opposed' | 'fixed',
     };
   }
-  
+
   // === RITUAIS CONCEDIDOS (grantsRitual) ===
   if (m.grantsRitual) {
     if (!mechanics.specialEffects) mechanics.specialEffects = [];
@@ -1010,26 +1010,29 @@ function convertTrackAbilityToMechanics(
       .join(' ');
     mechanics.specialEffects.push(`Ritual concedido: ${ritualName}`);
   }
-  
+
   // === RECURSO: PV COMO PE (Flagelador) ===
   if (m.hpAsPE) {
     if (!mechanics.specialEffects) mechanics.specialEffects = [];
     mechanics.specialEffects.push('Pode usar PV como PE para rituais (1 PV = 1 PE)');
   }
-  
+
   // === PE TEMPORÁRIO (Flagelador, Lâmina Paranormal) ===
   if (m.temporaryPE) {
     if (!mechanics.specialEffects) mechanics.specialEffects = [];
     const tp = m.temporaryPE;
-    
+
     if (tp.trigger === 'on-kill-with-ritual') {
       mechanics.specialEffects.push(`Ao reduzir inimigo a 0 PV com ritual: +PE temporário igual ao círculo do ritual`);
     } else if (tp.trigger === 'on-melee-hit') {
       const max = tp.maxPerScene === 'pe-limit' ? 'limite de PE por turno' : tp.maxPerScene;
       mechanics.specialEffects.push(`Ao acertar ataque corpo a corpo: +${tp.amount} PE temporário (máx: ${max} por cena)`);
+    } else if (tp.trigger === 'on-damage') {
+      const max = tp.maxPerScene === 'pe-limit' ? 'limite de PE por turno' : tp.maxPerScene;
+      mechanics.specialEffects.push(`Ao sofrer dano: recupera PE (metade do dano)`);
     }
   }
-  
+
   // === RITUAIS BÔNUS (Graduado - Saber Ampliado) ===
   if (m.bonusRituals) {
     // Mapeia diretamente para EffectMechanics.bonusRituals
@@ -1038,13 +1041,13 @@ function convertTrackAbilityToMechanics(
       ignoresLimit: m.bonusRituals.ignoresLimit ?? true,
       circleRestriction: m.bonusRituals.circleRestriction,
     };
-    
+
     if (!mechanics.specialEffects) mechanics.specialEffects = [];
     mechanics.specialEffects.push(
       `+${m.bonusRituals.perCircle} ritual extra por círculo (não conta no limite)`
     );
   }
-  
+
   // === GRIMÓRIO (Graduado) ===
   if (m.grimoire) {
     // Mapeia diretamente para EffectMechanics.grimoire
@@ -1056,26 +1059,26 @@ function convertTrackAbilityToMechanics(
       requiresWielding: m.grimoire.requiresWielding ?? true,
       inventorySlots: m.grimoire.inventorySlots ?? 1,
     };
-    
+
     if (!mechanics.specialEffects) mechanics.specialEffects = [];
     const maxRituals = m.grimoire.maxRituals === 'intellect' ? 'Intelecto' : m.grimoire.maxRituals;
     mechanics.specialEffects.push(
       `Grimório: até ${maxRituals} rituais de ${m.grimoire.allowedCircles.join('º ou ')}º círculo`
     );
   }
-  
+
   // === LIMITE DE PE AMPLIADO (Intuitivo - Presença Poderosa) ===
   if (m.addAttributeToPELimit) {
     // Mapeia diretamente para EffectMechanics.addAttributeToPELimit
     mechanics.addAttributeToPELimit = m.addAttributeToPELimit as AttributeType;
-    
+
     if (!mechanics.specialEffects) mechanics.specialEffects = [];
     const attrName = m.addAttributeToPELimit === 'presence' ? 'Presença' : m.addAttributeToPELimit;
     mechanics.specialEffects.push(
       `Soma limite de PE por turno à ${attrName} para calcular efeitos de rituais`
     );
   }
-  
+
   // === BÔNUS DE PODER DE RITUAL (Conduíte Aprimorado) ===
   if (m.ritualPowerBonus) {
     mechanics.ritualPowerBonus = {
@@ -1083,7 +1086,7 @@ function convertTrackAbilityToMechanics(
       affectsDT: m.ritualPowerBonus.affectsDT ?? false,
       affectsDamage: m.ritualPowerBonus.affectsDamage ?? false,
     };
-    
+
     if (!mechanics.specialEffects) mechanics.specialEffects = [];
     const effects = [];
     if (m.ritualPowerBonus.affectsDT) effects.push('DT');
@@ -1094,11 +1097,11 @@ function convertTrackAbilityToMechanics(
       );
     }
   }
-  
+
   // === RESTRIÇÃO DE RECUPERAÇÃO DE PV (Flagelador) ===
   if (m.hpRecoveryRestriction) {
     mechanics.hpRecoveryRestriction = m.hpRecoveryRestriction as 'none' | 'rest-only' | 'magic-only';
-    
+
     if (!mechanics.specialEffects) mechanics.specialEffects = [];
     if (m.hpRecoveryRestriction === 'rest-only') {
       mechanics.specialEffects.push('Só recupera PV com descanso (não cura não-mágica)');
@@ -1106,7 +1109,7 @@ function convertTrackAbilityToMechanics(
       mechanics.specialEffects.push('Só recupera PV com rituais ou poderes paranormais');
     }
   }
-  
+
   // === RD PARANORMAL COM TESTE (Resistência Paranormal) ===
   if (m.paranormalDamageTest) {
     mechanics.paranormalDamageTest = {
@@ -1116,30 +1119,45 @@ function convertTrackAbilityToMechanics(
       dtType: m.paranormalDamageTest.dtType as 'fixed' | 'ritual-dt' | 'caster-presence',
       fixedDT: m.paranormalDamageTest.fixedDT,
     };
-    
+
     if (!mechanics.specialEffects) mechanics.specialEffects = [];
     const successEffect = m.paranormalDamageTest.onSuccess === 'negate' ? 'nega' : 'reduz pela metade';
     mechanics.specialEffects.push(
       `Teste de ${m.paranormalDamageTest.testSkill} vs dano paranormal: ${successEffect} em sucesso`
     );
   }
-  
+
+  // === REDUÇÃO DE DANO MENTAL (Mente Sã) ===
+  if (m.mentalDamageResistance) {
+    mechanics.mentalDamageResistance = m.mentalDamageResistance;
+  }
+
+  // === RD PARANORMAL (Resistência Paranormal) ===
+  if (m.paranormalResistance) {
+    mechanics.paranormalDamageReduction = m.paranormalResistance;
+  }
+
+  // === MODIFICADORES DE PE (Rituais Eficientes) ===
+  if (m.peModifiers) {
+    mechanics.peModifiers = m.peModifiers;
+  }
+
   // =====================================================
   // FASE 3: SUPORTE (Médico de Campo, Resgate)
   // =====================================================
-  
+
   // === MOVIMENTO LIVRE PARA ALIADO (Resgate) ===
   if (m.freeMovementTo) {
     // Suporta tanto formato v1.0 (condition singular) quanto v1.3 (conditions array)
-    const conditions = m.freeMovementTo.conditions ?? 
+    const conditions = m.freeMovementTo.conditions ??
       (m.freeMovementTo.condition ? [m.freeMovementTo.condition] : ['ally-dying']);
-    
+
     mechanics.freeMovementTo = {
       conditions,
       range: m.freeMovementTo.range,
       perRound: m.freeMovementTo.perRound ?? true,
     };
-    
+
     if (!mechanics.specialEffects) mechanics.specialEffects = [];
     const condDescMap: Record<string, string> = {
       'ally-dying': 'aliado morrendo',
@@ -1153,7 +1171,7 @@ function convertTrackAbilityToMechanics(
       `Movimento livre até ${condDescs}${rangeDesc} (1x por rodada)`
     );
   }
-  
+
   // === EFEITOS AO CURAR (Médico de Campo - Resgate) ===
   if (m.onHeal) {
     mechanics.onHeal = {
@@ -1161,20 +1179,20 @@ function convertTrackAbilityToMechanics(
       duration: m.onHeal.duration as 'next-attack' | 'end-of-round' | 'turns',
       turns: m.onHeal.turns,
     };
-    
+
     if (!mechanics.specialEffects) mechanics.specialEffects = [];
     if (m.onHeal.targetDefenseBonus) {
-      const durationDesc = m.onHeal.duration === 'next-attack' 
-        ? 'até o próximo ataque' 
-        : m.onHeal.duration === 'end-of-round' 
-          ? 'até o fim da rodada' 
+      const durationDesc = m.onHeal.duration === 'next-attack'
+        ? 'até o próximo ataque'
+        : m.onHeal.duration === 'end-of-round'
+          ? 'até o fim da rodada'
           : `por ${m.onHeal.turns} rodadas`;
       mechanics.specialEffects.push(
         `Ao curar: +${m.onHeal.targetDefenseBonus} Defesa para o alvo (${durationDesc})`
       );
     }
   }
-  
+
   // === REMOÇÃO DE CONDIÇÃO (Equipe de Trauma) ===
   if (m.removeCondition) {
     mechanics.removeCondition = {
@@ -1183,7 +1201,7 @@ function convertTrackAbilityToMechanics(
       peCost: m.removeCondition.peCost ?? 2,
       actionType: m.removeCondition.actionType as 'standard' | 'complete',
     };
-    
+
     if (!mechanics.specialEffects) mechanics.specialEffects = [];
     const rangeDesc = m.removeCondition.range === 'touch' ? 'toque' : m.removeCondition.range;
     const excluded = m.removeCondition.excludedConditions?.join(', ') || 'nenhuma';
@@ -1191,7 +1209,7 @@ function convertTrackAbilityToMechanics(
       `Remove condição negativa (${rangeDesc}, exceto: ${excluded})`
     );
   }
-  
+
   // === RESSURREIÇÃO (Reanimação) ===
   if (m.resurrect) {
     mechanics.resurrect = {
@@ -1202,23 +1220,23 @@ function convertTrackAbilityToMechanics(
       actionType: m.resurrect.actionType as 'complete' | 'full-round',
       hpRestored: m.resurrect.hpRestored as 'roll' | 'half' | 'full',
     };
-    
+
     if (!mechanics.specialEffects) mechanics.specialEffects = [];
-    const hpDesc = m.resurrect.hpRestored === 'roll' 
-      ? 'rolagem de cura' 
-      : m.resurrect.hpRestored === 'half' 
-        ? 'metade dos PV' 
+    const hpDesc = m.resurrect.hpRestored === 'roll'
+      ? 'rolagem de cura'
+      : m.resurrect.hpRestored === 'half'
+        ? 'metade dos PV'
         : 'PV total';
     const excluded = m.resurrect.excludedDeathTypes?.join(', ') || 'nenhuma';
     mechanics.specialEffects.push(
       `Reanimar aliado (${m.resurrect.peCost} PE, ${hpDesc}, exceto: ${excluded})`
     );
   }
-  
+
   // =====================================================
   // FASE 4: INFILTRADOR AVANÇADO
   // =====================================================
-  
+
   // === REMOVE/REDUZ PENALIDADE DE FURTIVIDADE AO MOVER ===
   if (m.stealthMovementPenalty) {
     // Lida com tipo union: boolean | { removes?: boolean; reducesBy?: number }
@@ -1227,7 +1245,7 @@ function convertTrackAbilityToMechanics(
       mechanics.stealthMovementPenalty = {
         removes: true,
       };
-      
+
       if (!mechanics.specialEffects) mechanics.specialEffects = [];
       mechanics.specialEffects.push('Ignora penalidade de furtividade ao mover');
     } else {
@@ -1236,7 +1254,7 @@ function convertTrackAbilityToMechanics(
         removes: m.stealthMovementPenalty.removes ?? false,
         reducesBy: m.stealthMovementPenalty.reducesBy,
       };
-      
+
       if (!mechanics.specialEffects) mechanics.specialEffects = [];
       if (m.stealthMovementPenalty.removes) {
         mechanics.specialEffects.push('Ignora penalidade de furtividade ao mover');
@@ -1247,7 +1265,7 @@ function convertTrackAbilityToMechanics(
       }
     }
   }
-  
+
   // === IGNORA PENALIDADES DE FURTIVIDADE ===
   if (m.ignoreStealthPenalty) {
     // Lida com tipo union: boolean | { movementPenalty?: boolean; armorPenalty?: boolean; allPenalties?: boolean }
@@ -1258,7 +1276,7 @@ function convertTrackAbilityToMechanics(
         armorPenalty: true,
         allPenalties: true,
       };
-      
+
       if (!mechanics.specialEffects) mechanics.specialEffects = [];
       mechanics.specialEffects.push('Ignora todas as penalidades de furtividade');
     } else {
@@ -1268,7 +1286,7 @@ function convertTrackAbilityToMechanics(
         armorPenalty: m.ignoreStealthPenalty.armorPenalty ?? false,
         allPenalties: m.ignoreStealthPenalty.allPenalties ?? false,
       };
-      
+
       if (!mechanics.specialEffects) mechanics.specialEffects = [];
       if (m.ignoreStealthPenalty.allPenalties) {
         mechanics.specialEffects.push('Ignora todas as penalidades de furtividade');
@@ -1282,12 +1300,12 @@ function convertTrackAbilityToMechanics(
       }
     }
   }
-  
+
   // === MULTIPLICADOR DE ATAQUE FURTIVO (já mapeado, mas agora também para EffectMechanics) ===
   if (m.sneakAttackMultiplier && typeof m.sneakAttackMultiplier === 'number') {
     mechanics.sneakAttackMultiplier = m.sneakAttackMultiplier;
   }
-  
+
   // === INVENTÁRIO OTIMIZADO (Técnico) ===
   if (m.itemSpaceReduction) {
     if (!mechanics.specialEffects) mechanics.specialEffects = [];
@@ -1295,7 +1313,7 @@ function convertTrackAbilityToMechanics(
       `Itens ocupam ${m.itemSpaceReduction} espaço a menos`
     );
   }
-  
+
   if (m.carryCapacity?.addAttribute) {
     if (!mechanics.specialEffects) mechanics.specialEffects = [];
     const attrName = m.carryCapacity.addAttribute === 'intellect' ? 'Intelecto' : m.carryCapacity.addAttribute;
@@ -1303,19 +1321,19 @@ function convertTrackAbilityToMechanics(
       `Soma ${attrName} à capacidade de carga`
     );
   }
-  
+
   // === DESCRIÇÃO COMO EFEITO ESPECIAL (fallback) ===
-  const hasNumericMechanics = 
+  const hasNumericMechanics =
     mechanics.attackBonus || mechanics.damageBonus || mechanics.defenseBonus ||
     mechanics.meleeDamageBonus || mechanics.rangedDamageBonus ||
     mechanics.criticalMarginBonus || mechanics.initiativeBonus ||
     mechanics.hpBonus || mechanics.damageReduction || mechanics.extraDamageDice;
-    
+
   if (!hasNumericMechanics && !mechanics.specialEffects?.length && ability.description) {
     if (!mechanics.specialEffects) mechanics.specialEffects = [];
     mechanics.specialEffects.push(ability.description);
   }
-  
+
   return mechanics;
 }
 
@@ -1363,26 +1381,26 @@ export function getTrackEffects(
   activatedEffects: string[] = []
 ): UnifiedEffect[] {
   const effects: UnifiedEffect[] = [];
-  
+
   if (!trackId) return effects;
-  
+
   const track = getTrackById(trackId);
   if (!track) return effects;
-  
+
   const unlockedAbilities = getUnlockedAbilities(trackId, nex);
-  
+
   for (const ability of unlockedAbilities) {
     const mechanics = convertTrackAbilityToMechanics(ability, attributes, nex);
-    
+
     // Verifica se a habilidade tem mecânicas relevantes
     const hasMechanics = Object.keys(mechanics).length > 0;
     if (!hasMechanics) continue;
-    
+
     // Verifica se é uma habilidade que requer ativação
     const needsActivation = requiresActivation(ability.effects?.base);
     const costPE = getAbilityPECost(ability.effects?.base);
     const actionType = getAbilityActionType(ability.effects?.base);
-    
+
     const effect: UnifiedEffect = {
       id: `track-${ability.id}`,
       name: ability.name,
@@ -1391,7 +1409,7 @@ export function getTrackEffects(
       sourceId: ability.id,
       sourceName: `Trilha ${track.name}: ${ability.name}`,
       mechanics,
-      isActive: needsActivation 
+      isActive: needsActivation
         ? activatedEffects.includes(`track-${ability.id}`)
         : true,
       isToggleable: needsActivation,
@@ -1402,10 +1420,10 @@ export function getTrackEffects(
       } : undefined,
       priority: ability.minNex, // Maior NEX = maior prioridade
     };
-    
+
     effects.push(effect);
   }
-  
+
   return effects;
 }
 
@@ -1421,19 +1439,19 @@ export function getTrackCombatEffects(
   activatedEffects: string[] = []
 ): UnifiedEffect[] {
   const allEffects = getTrackEffects(trackId, nex, attributes, activatedEffects);
-  
+
   // Filtra efeitos que não se aplicam ao contexto
   return allEffects.filter(effect => {
     // Se não tem condição de contexto, sempre se aplica
     if (!effect.conditions) return true;
-    
+
     // Verifica se o tipo de ataque corresponde
     if (effect.conditions.attackType) {
       if (effect.conditions.attackType !== 'any' && effect.conditions.attackType !== attackType) {
         return false;
       }
     }
-    
+
     return true;
   });
 }
@@ -1483,7 +1501,7 @@ export function getTrackActivatableEffects(trackId: string): Array<{
 }> {
   // Normaliza o trackId para encontrar no mapping
   const normalizedId = trackId.toLowerCase().replace(/-/g, '');
-  
+
   for (const [key, trackData] of Object.entries(TRACK_EFFECT_MAPPINGS)) {
     const mappingId = trackData.trackId.toLowerCase().replace(/-/g, '');
     if (mappingId === normalizedId || key.toLowerCase() === normalizedId) {
@@ -1495,7 +1513,7 @@ export function getTrackActivatableEffects(trackId: string): Array<{
       }));
     }
   }
-  
+
   return [];
 }
 
@@ -1514,7 +1532,7 @@ export function listAllTrackAbilities(trackId: string): Array<{
 }> {
   const track = getTrackById(trackId);
   if (!track) return [];
-  
+
   return track.abilities.map(ability => ({
     id: ability.id,
     name: ability.name,
@@ -1561,19 +1579,19 @@ export function getTrackBonusSummary(
     specialAbilities: [] as string[],
     activatableAbilities: [] as Array<{ name: string; peCost: number; description: string }>,
   };
-  
+
   if (!trackId) return summary;
-  
+
   const track = getTrackById(trackId);
   if (!track) return summary;
-  
+
   summary.trackName = track.name;
-  
+
   const effects = getTrackEffects(trackId, nex, attributes);
-  
+
   for (const effect of effects) {
     const m = effect.mechanics;
-    
+
     // Se requer ativação, adiciona à lista de ativáveis
     if (effect.isToggleable && effect.conditions?.costPE) {
       summary.activatableAbilities.push({
@@ -1582,10 +1600,10 @@ export function getTrackBonusSummary(
         description: effect.description || '',
       });
     }
-    
+
     // Só soma mecânicas de efeitos ativos
     if (!effect.isActive) continue;
-    
+
     summary.totalAttack += (m.attackBonus || 0) + (m.meleeAttackBonus || 0) + (m.rangedAttackBonus || 0);
     summary.totalDamage += m.damageBonus || 0;
     summary.totalMeleeDamage += m.meleeDamageBonus || 0;
@@ -1594,18 +1612,18 @@ export function getTrackBonusSummary(
     summary.totalInitiative += m.initiativeBonus || 0;
     summary.totalCriticalMargin += m.criticalMarginBonus || 0;
     summary.totalHP += m.hpBonus || 0;
-    
+
     // Redução de categoria agora usa dados estruturados do EffectMechanics
     if (m.categoryReduction) {
       summary.categoryReduction += m.categoryReduction.amount;
     }
-    
+
     // Continua coletando efeitos especiais para exibição
     if (m.specialEffects) {
       summary.specialAbilities.push(...m.specialEffects);
     }
   }
-  
+
   return summary;
 }
 
@@ -1637,14 +1655,14 @@ export function getTrackCombatBonuses(
     specialEffects: [] as string[],
     maximumDamageOnCrit: false,
   };
-  
+
   const effects = getTrackCombatEffects(trackId, nex, attributes, attackType, activatedEffects);
-  
+
   for (const effect of effects) {
     if (!effect.isActive) continue;
-    
+
     const m = effect.mechanics;
-    
+
     // Ataque
     result.attackBonus += m.attackBonus || 0;
     if (attackType === 'melee') {
@@ -1652,7 +1670,7 @@ export function getTrackCombatBonuses(
     } else {
       result.attackBonus += m.rangedAttackBonus || 0;
     }
-    
+
     // Dano
     result.damageBonus += m.damageBonus || 0;
     if (attackType === 'melee') {
@@ -1660,27 +1678,27 @@ export function getTrackCombatBonuses(
     } else {
       result.damageBonus += m.rangedDamageBonus || 0;
     }
-    
+
     // Crítico
     result.criticalMarginBonus += m.criticalMarginBonus || 0;
     result.criticalMultiplierBonus += m.criticalMultiplierBonus || 0;
-    
+
     // Dados extras
     if (m.extraDamageDice) {
       result.extraDamageDice.push(m.extraDamageDice);
     }
-    
+
     // Efeitos especiais
     if (m.specialEffects) {
       result.specialEffects.push(...m.specialEffects);
     }
-    
+
     // Dano máximo em crítico
     if (m.maximumDamageOnCrit) {
       result.maximumDamageOnCrit = true;
     }
   }
-  
+
   return result;
 }
 
@@ -1707,28 +1725,28 @@ export function getVersatilityTrackEffects(
   activatedEffects: string[] = []
 ): UnifiedEffect[] {
   const effects: UnifiedEffect[] = [];
-  
+
   if (!trackId || !abilityId) return effects;
-  
+
   const track = getTrackById(trackId);
   if (!track) return effects;
-  
+
   // Encontra a habilidade específica (deve ser a de NEX 10%)
   const ability = track.abilities.find(a => a.id === abilityId);
   if (!ability) return effects;
-  
+
   // Usa NEX 50 para cálculos, mas a habilidade é sempre a de NEX 10%
   const mechanics = convertTrackAbilityToMechanics(ability, attributes, 50);
-  
+
   // Verifica se a habilidade tem mecânicas relevantes
   const hasMechanics = Object.keys(mechanics).length > 0;
   if (!hasMechanics) return effects;
-  
+
   // Verifica se é uma habilidade que requer ativação
   const needsActivation = requiresActivation(ability.effects?.base);
   const costPE = getAbilityPECost(ability.effects?.base);
   const actionType = getAbilityActionType(ability.effects?.base);
-  
+
   const effect: UnifiedEffect = {
     id: `versatility-${ability.id}`,
     name: ability.name,
@@ -1737,7 +1755,7 @@ export function getVersatilityTrackEffects(
     sourceId: ability.id,
     sourceName: `Versatilidade (${track.name}): ${ability.name}`,
     mechanics,
-    isActive: needsActivation 
+    isActive: needsActivation
       ? activatedEffects.includes(`versatility-${ability.id}`)
       : true,
     isToggleable: needsActivation,
@@ -1748,8 +1766,8 @@ export function getVersatilityTrackEffects(
     } : undefined,
     priority: 50, // NEX 50% = prioridade 50
   };
-  
+
   effects.push(effect);
-  
+
   return effects;
 }
