@@ -563,7 +563,9 @@ export function StepRituals({ formData, updateFormData }: StepRitualsProps) {
             {selectedRituals.map(ritualId => {
               const ritual = ALL_RITUALS.find(r => r.id === ritualId);
               if (!ritual) return null;
-              const config = ELEMENT_CONFIG[ritual.element];
+              // Normaliza o elemento para lowercase para garantir compatibilidade
+              const elementKey = (ritual.element?.toLowerCase() || 'conhecimento') as keyof typeof ELEMENT_CONFIG;
+              const config = ELEMENT_CONFIG[elementKey] || ELEMENT_CONFIG.conhecimento;
               const Icon = config.icon;
               
               return (
