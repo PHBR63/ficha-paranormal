@@ -79,8 +79,7 @@ function fromDB(row: SustainedRitualRow): SustainedRitual {
   const effect = getActiveRitualEffectUnified(row.ritual_id, row.selected_enhancements || []);
   
   // Também obtém as mecânicas do sistema unificado diretamente
-  const level = getEffectiveLevel(row.selected_enhancements || []);
-  const mechanics = getRitualEffect(row.ritual_id, level);
+  const mechanics = getRitualEffect(row.ritual_id, row.selected_enhancements || []);
   
   const sustainConfig = (typeof row.sustain_config === 'object' && row.sustain_config !== null)
     ? row.sustain_config as unknown as SustainConfig

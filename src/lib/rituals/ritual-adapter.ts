@@ -6,9 +6,25 @@
  * manter compatibilidade durante a migração gradual.
  */
 
-import type { UnifiedRitual, RitualMechanics } from './types';
+import type { UnifiedRitual, RitualMechanics, RitualDamage, RitualHealing, RitualResistance } from './types';
 import type { Ritual as LegacyRitual, RitualEnhancement as LegacyEnhancement, RitualEffect as LegacyRitualEffect } from './legacy-exports';
 import { getRitualById, getEffectiveLevel, getRitualEffect } from './ritual-registry';
+
+// ========================================
+// TYPE GUARDS para tipos union
+// ========================================
+
+function isRitualDamage(value: unknown): value is RitualDamage {
+  return typeof value === 'object' && value !== null && 'diceCount' in value && 'diceType' in value;
+}
+
+function isRitualHealing(value: unknown): value is RitualHealing {
+  return typeof value === 'object' && value !== null && 'diceCount' in value && 'diceType' in value;
+}
+
+function isRitualResistance(value: unknown): value is RitualResistance {
+  return typeof value === 'object' && value !== null && 'type' in value;
+}
 
 // ========================================
 // CONVERSÃO: UnifiedRitual -> Ritual (legado)
@@ -19,19 +35,27 @@ import { getRitualById, getEffectiveLevel, getRitualEffect } from './ritual-regi
  * Útil para componentes que ainda usam o tipo antigo
  */
 export function unifiedToLegacy(unified: UnifiedRitual): LegacyRitual {
+  // Processa resistance - pode ser string ou objeto
+  let resistanceStr: string | undefined;
+  if (unified.resistance) {
+    if (isRitualResistance(unified.resistance)) {
+      resistanceStr = `${unified.resistance.type.charAt(0).toUpperCase()}${unified.resistance.type.slice(1)}`;
+    } else if (typeof unified.resistance === 'string') {
+      resistanceStr = unified.resistance;
+    }
+  }
+
   return {
     id: unified.id,
     name: unified.name,
     circle: unified.circle,
-    element: unified.element,
+    element: unified.element as any,
     execution: unified.execution,
     range: unified.range,
     target: unified.target,
     area: unified.area,
     duration: unified.duration,
-    resistance: unified.resistance?.type 
-      ? `${unified.resistance.type.charAt(0).toUpperCase()}${unified.resistance.type.slice(1)}` 
-      : undefined,
+    resistance: resistanceStr,
     description: unified.description,
     cost: unified.cost,
     enhancements: unified.enhancements?.map(enh => ({
@@ -64,23 +88,28 @@ export function mechanicsToLegacyEffect(mechanics: RitualMechanics): LegacyRitua
     kind: mechanics.kind,
   };
 
-  // Dano
+  // Dano - pode ser string ou objeto
   if (mechanics.damage) {
-    effect.damage = {
-      diceCount: mechanics.damage.diceCount,
-      diceType: mechanics.damage.diceType,
-      bonus: mechanics.damage.bonus,
-      damageType: mechanics.damage.damageType as any,
-    };
+    if (isRitualDamage(mechanics.damage)) {
+      effect.damage = {
+        diceCount: mechanics.damage.diceCount,
+        diceType: mechanics.damage.diceType,
+        bonus: mechanics.damage.bonus,
+        damageType: mechanics.damage.damageType as any,
+      };
+    }
+    // Se for string, não convertermos (formato legado não suporta string direta)
   }
 
-  // Cura
+  // Cura - pode ser string ou objeto
   if (mechanics.healing) {
-    effect.healing = {
-      diceCount: mechanics.healing.diceCount,
-      diceType: mechanics.healing.diceType,
-      bonus: mechanics.healing.bonus,
-    };
+    if (isRitualHealing(mechanics.healing)) {
+      effect.healing = {
+        diceCount: mechanics.healing.diceCount,
+        diceType: mechanics.healing.diceType,
+        bonus: mechanics.healing.bonus,
+      };
+    }
   }
 
   // PV temporários
@@ -133,13 +162,13 @@ export function mechanicsToLegacyEffect(mechanics: RitualMechanics): LegacyRitua
   // Redução de dano
   if (mechanics.damageReduction) {
     effect.damageReduction = {
-      types: mechanics.damageReduction.types as any[],
+      types: mechanics.damageReduction.types as any[] || [],
       amount: mechanics.damageReduction.amount,
     };
   }
 
   // Resistência
-  if (mechanics.resistance) {
+  if (mechanics.resistance && isRitualResistance(mechanics.resistance)) {
     effect.resistance = {
       type: mechanics.resistance.type,
       effect: mechanics.resistance.effect,
@@ -148,7 +177,11 @@ export function mechanicsToLegacyEffect(mechanics: RitualMechanics): LegacyRitua
 
   // Área
   if (mechanics.areaEffect) {
-    effect.areaEffect = mechanics.areaEffect;
+    effect.areaEffect = {
+      shape: mechanics.areaEffect.shape as any,
+      radius: mechanics.areaEffect.radius,
+      length: mechanics.areaEffect.length,
+    };
   }
 
   // Condições
@@ -163,7 +196,7 @@ export function mechanicsToLegacyEffect(mechanics: RitualMechanics): LegacyRitua
   // Sustentação
   if (mechanics.sustain) {
     effect.sustain = {
-      action: mechanics.sustain.action,
+      action: mechanics.sustain.action as any,
       concentration: mechanics.sustain.concentration,
       costPerTurn: mechanics.sustain.costPerTurn,
       maxDuration: mechanics.sustain.maxDuration,
