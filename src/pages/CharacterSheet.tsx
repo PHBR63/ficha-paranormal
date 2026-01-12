@@ -1778,6 +1778,9 @@ export default function CharacterSheet() {
     );
   }, [character?.skills, character?.origin, character?.class, character?.skill_training_choices]);
 
+  // Theme colors para efeitos dinâmicos (ANTES do early return para evitar erro de hooks)
+  const themeColors = useThemeColors();
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -1871,8 +1874,6 @@ export default function CharacterSheet() {
   // Obter dados da origem
   const originData = ORIGINS.find(o => o.id === character.origin);
   
-  // Theme colors for dynamic effects
-  const themeColors = useThemeColors();
 
   return (
     <div className={cn("min-h-screen bg-background sheet-background relative overflow-hidden", isSanLow && "animate-flicker")}>
