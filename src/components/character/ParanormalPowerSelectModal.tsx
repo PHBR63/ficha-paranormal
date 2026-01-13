@@ -8,16 +8,17 @@
 
 import { useState, useMemo } from 'react';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+  MobileModal,
+  MobileModalContent,
+  MobileModalHeader,
+  MobileModalBody,
+  MobileModalFooter,
+  MobileModalTitle,
+  MobileModalDescription,
+} from '@/components/ui/mobile-modal';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Check, Lock, Sparkles, Droplet, Skull, BookOpen, Zap, Star } from 'lucide-react';
 import {
@@ -204,14 +205,14 @@ export function ParanormalPowerSelectModal({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+    <MobileModal open={open} onOpenChange={onOpenChange}>
+      <MobileModalContent size="lg">
+        <MobileModalHeader>
+          <MobileModalTitle className="flex items-center gap-2 font-display tracking-wider">
             <Sparkles className="h-5 w-5 text-primary" />
-            Escolher Poder Paranormal
-          </DialogTitle>
-          <DialogDescription>
+            ESCOLHER PODER PARANORMAL
+          </MobileModalTitle>
+          <MobileModalDescription>
             Selecione um poder paranormal através da habilidade Transcender.
             {elementalAffinity && (
               <span className="block mt-1">
@@ -221,11 +222,11 @@ export function ParanormalPowerSelectModal({
                 </Badge>
               </span>
             )}
-          </DialogDescription>
-        </DialogHeader>
+          </MobileModalDescription>
+        </MobileModalHeader>
 
         {/* Resumo de poderes por elemento */}
-        <div className="flex flex-wrap gap-2 py-2">
+        <div className="flex flex-wrap gap-2 px-4 sm:px-6 py-2">
           {powersByElement.map(({ element, count }) => {
             const ElementIcon = ELEMENT_ICONS[element];
             const isAffinity = element === elementalAffinity;
@@ -243,44 +244,46 @@ export function ParanormalPowerSelectModal({
         </div>
 
         {/* Tabs de filtro por elemento */}
-        <Tabs value={selectedTab} onValueChange={(v) => setSelectedTab(v as typeof selectedTab)}>
-          <TabsList className="grid grid-cols-6 w-full">
-            <TabsTrigger value="all">Todos</TabsTrigger>
-            <TabsTrigger value="sangue" className="flex items-center gap-1">
-              <Droplet className="h-3 w-3" />
-              <span className="hidden sm:inline">Sangue</span>
-            </TabsTrigger>
-            <TabsTrigger value="morte" className="flex items-center gap-1">
-              <Skull className="h-3 w-3" />
-              <span className="hidden sm:inline">Morte</span>
-            </TabsTrigger>
-            <TabsTrigger value="conhecimento" className="flex items-center gap-1">
-              <BookOpen className="h-3 w-3" />
-              <span className="hidden sm:inline">Conhecimento</span>
-            </TabsTrigger>
-            <TabsTrigger value="energia" className="flex items-center gap-1">
-              <Zap className="h-3 w-3" />
-              <span className="hidden sm:inline">Energia</span>
-            </TabsTrigger>
-            <TabsTrigger value="generic" className="flex items-center gap-1">
-              <Star className="h-3 w-3" />
-              <span className="hidden sm:inline">Genérico</span>
-            </TabsTrigger>
-          </TabsList>
+        <div className="px-4 sm:px-6">
+          <Tabs value={selectedTab} onValueChange={(v) => setSelectedTab(v as typeof selectedTab)}>
+            <TabsList className="grid grid-cols-6 w-full">
+              <TabsTrigger value="all">Todos</TabsTrigger>
+              <TabsTrigger value="sangue" className="flex items-center gap-1">
+                <Droplet className="h-3 w-3" />
+                <span className="hidden sm:inline">Sangue</span>
+              </TabsTrigger>
+              <TabsTrigger value="morte" className="flex items-center gap-1">
+                <Skull className="h-3 w-3" />
+                <span className="hidden sm:inline">Morte</span>
+              </TabsTrigger>
+              <TabsTrigger value="conhecimento" className="flex items-center gap-1">
+                <BookOpen className="h-3 w-3" />
+                <span className="hidden sm:inline">Conhecimento</span>
+              </TabsTrigger>
+              <TabsTrigger value="energia" className="flex items-center gap-1">
+                <Zap className="h-3 w-3" />
+                <span className="hidden sm:inline">Energia</span>
+              </TabsTrigger>
+              <TabsTrigger value="generic" className="flex items-center gap-1">
+                <Star className="h-3 w-3" />
+                <span className="hidden sm:inline">Genérico</span>
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
 
-          <ScrollArea className="h-[50vh] mt-4 pr-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {filteredPowers.map(renderPowerCard)}
-            </div>
-          </ScrollArea>
-        </Tabs>
+        <MobileModalBody useScrollArea={true} maxHeight="50vh">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {filteredPowers.map(renderPowerCard)}
+          </div>
+        </MobileModalBody>
 
-        <div className="flex justify-end gap-2 pt-4 border-t">
+        <MobileModalFooter bordered>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+        </MobileModalFooter>
+      </MobileModalContent>
+    </MobileModal>
   );
 }
