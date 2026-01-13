@@ -26,6 +26,7 @@ import { RestoreDraftDialog } from '@/components/character/RestoreDraftDialog';
 import { ExitConfirmDialog } from '@/components/character/ExitConfirmDialog';
 import { CreationHelpButton } from '@/components/character/CreationHelpModal';
 import { TemplateGalleryModal } from '@/components/templates/TemplateGalleryModal';
+import { TemplateApplyWizard } from '@/components/templates/TemplateApplyWizard';
 import { 
   ORIGINS, 
   CLASSES, 
@@ -182,6 +183,8 @@ export default function CharacterCreate() {
   const [showRestoreDialog, setShowRestoreDialog] = useState(false);
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [showTemplateGallery, setShowTemplateGallery] = useState(false);
+  const [showTemplateWizard, setShowTemplateWizard] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<CharacterTemplate | TemplateWithAuthor | null>(null);
   const [draftData, setDraftData] = useState<ReturnType<typeof loadCharacterDraft>>(null);
 
   // Busca nome da campanha se houver campaignId
@@ -235,8 +238,36 @@ export default function CharacterCreate() {
   }, []);
 
   /**
-   * Aplica um template selecionado ao formulário
-   * Preenche automaticamente origem, classe, trilha, atributos, perícias e habilidades
+   * Quando um template é selecionado na galeria, abre o wizard
+   */
+  const handleTemplateSelect = useCallback((template: CharacterTemplate | TemplateWithAuthor) => {
+    setSelectedTemplate(template);
+    setShowTemplateGallery(false);
+    setShowTemplateWizard(true);
+  }, []);
+
+  /**
+   * Aplica o template com os valores ajustados pelo wizard
+   */
+  const handleApplyWizardTemplate = useCallback((adjustedData: Partial<CharacterFormData>) => {
+    setFormData(prev => ({ ...prev, ...adjustedData }));
+    setShowTemplateWizard(false);
+    setSelectedTemplate(null);
+    
+    // Ir para o step de revisão para o usuário verificar
+    const reviewStepIndex = STEPS.findIndex(s => s.id === 'review');
+    if (reviewStepIndex !== -1) {
+      setCurrentStep(reviewStepIndex);
+    }
+    
+    toast({
+      title: 'Template Aplicado!',
+      description: 'Revise suas escolhas e finalize a criação do agente.',
+    });
+  }, [toast]);
+
+  /**
+   * Aplica um template diretamente (sem wizard) - mantido para compatibilidade
    */
   const handleApplyTemplate = useCallback((template: CharacterTemplate | TemplateWithAuthor) => {
     const data = template.template_data;
@@ -286,6 +317,7 @@ export default function CharacterCreate() {
       description: `"${template.name}" foi aplicado. Revise e ajuste conforme necessário.`,
     });
   }, [formData.name, toast]);
+
 
   // Efeito para reset automático quando o NEX mudar
   useEffect(() => {
@@ -1042,7 +1074,19 @@ export default function CharacterCreate() {
       <TemplateGalleryModal
         open={showTemplateGallery}
         onOpenChange={setShowTemplateGallery}
-        onApply={handleApplyTemplate}
+        onApply={handleTemplateSelect}
+      />
+
+      {/* Wizard de Aplicação de Template */}
+      <TemplateApplyWizard
+        template={selectedTemplate}
+        isOpen={showTemplateWizard}
+        nex={formData.nex}
+        onClose={() => {
+          setShowTemplateWizard(false);
+          setSelectedTemplate(null);
+        }}
+        onApply={handleApplyWizardTemplate}
       />
 
       {/* Botão flutuante de ajuda - abre modal com glossário e fórmulas */}
