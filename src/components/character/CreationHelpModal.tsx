@@ -52,7 +52,7 @@ export function CreationHelpModal({ trigger }: CreationHelpModalProps) {
         )}
       </DialogTrigger>
 
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden">
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 font-display tracking-wider">
             <BookOpen className="w-5 h-5 text-primary" />
@@ -60,7 +60,7 @@ export function CreationHelpModal({ trigger }: CreationHelpModalProps) {
           </DialogTitle>
         </DialogHeader>
 
-        <Tabs defaultValue="glossary" className="flex-1">
+        <Tabs defaultValue="glossary" className="flex-1 flex flex-col min-h-0 overflow-hidden">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="glossary" className="gap-2">
               <BookOpen className="w-4 h-4" />
@@ -73,8 +73,8 @@ export function CreationHelpModal({ trigger }: CreationHelpModalProps) {
           </TabsList>
 
           {/* Tab: Glossário */}
-          <TabsContent value="glossary" className="mt-4">
-            <div className="space-y-4">
+          <TabsContent value="glossary" className="mt-4 flex-1 min-h-0 overflow-hidden">
+            <div className="flex flex-col h-full space-y-4">
               {/* Busca */}
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -96,8 +96,8 @@ export function CreationHelpModal({ trigger }: CreationHelpModalProps) {
                 )}
               </div>
 
-              {/* Lista de termos */}
-              <ScrollArea className="h-[400px] pr-4">
+              {/* Lista de termos - área de scroll flexível */}
+              <ScrollArea className="flex-1 min-h-0 max-h-[50vh] pr-4">
                 <div className="space-y-3">
                   {filteredGlossary.map(([term, definition], index) => (
                     <motion.div
@@ -127,8 +127,8 @@ export function CreationHelpModal({ trigger }: CreationHelpModalProps) {
           </TabsContent>
 
           {/* Tab: Fórmulas */}
-          <TabsContent value="formulas" className="mt-4">
-            <ScrollArea className="h-[450px] pr-4">
+          <TabsContent value="formulas" className="mt-4 flex-1 min-h-0 overflow-hidden">
+            <ScrollArea className="h-full max-h-[55vh] pr-4">
               <div className="space-y-2">
                 {QUICK_FORMULAS.map((formula, index) => (
                   <motion.div

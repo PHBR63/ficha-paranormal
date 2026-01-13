@@ -1364,7 +1364,7 @@ export function CombatRollModal({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md bg-card border-primary/30">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto bg-card border-primary/30">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 font-display text-primary">
             {weapon.type === 'Disparo' ? (

@@ -11,16 +11,16 @@
 
 import { useState, useMemo } from 'react';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+  MobileModal,
+  MobileModalContent,
+  MobileModalHeader,
+  MobileModalBody,
+  MobileModalFooter,
+  MobileModalTitle,
+  MobileModalDescription,
+} from '@/components/ui/mobile-modal';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Check, BookOpen, Droplet, Skull, Zap, Brain, AlertTriangle } from 'lucide-react';
@@ -161,20 +161,20 @@ export function PowerSubchoiceModal({
   };
   
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+    <MobileModal open={open} onOpenChange={onClose}>
+      <MobileModalContent size="md">
+        <MobileModalHeader>
+          <MobileModalTitle className="flex items-center gap-2 font-display tracking-wider">
             <Brain className="h-5 w-5 text-primary" />
             {modalInfo.title}
-          </DialogTitle>
-          <DialogDescription>
+          </MobileModalTitle>
+          <MobileModalDescription>
             <span className="font-medium text-foreground">{power.name}</span>
             <span className="block mt-1">{modalInfo.description}</span>
-          </DialogDescription>
-        </DialogHeader>
+          </MobileModalDescription>
+        </MobileModalHeader>
         
-        <ScrollArea className="max-h-[50vh]">
+        <MobileModalBody useScrollArea={true} maxHeight="55vh">
           {/* Escolha de Perícias de Intelecto */}
           {choiceType === 'skill_intellect' && (
             <div className="space-y-2 p-1">
@@ -275,17 +275,17 @@ export function PowerSubchoiceModal({
               })}
             </div>
           )}
-        </ScrollArea>
+        </MobileModalBody>
         
         {/* Aviso se não está válido */}
         {!isValid && (
-          <div className="flex items-center gap-2 p-3 bg-warning/10 border border-warning/30 rounded-lg text-sm">
+          <div className="flex items-center gap-2 p-3 mx-4 sm:mx-6 bg-warning/10 border border-warning/30 rounded-lg text-sm">
             <AlertTriangle className="h-4 w-4 text-warning shrink-0" />
             <span className="text-warning">Você precisa fazer uma escolha para continuar.</span>
           </div>
         )}
         
-        <DialogFooter className="gap-2">
+        <MobileModalFooter bordered>
           <Button variant="outline" onClick={onClose}>
             Cancelar
           </Button>
@@ -293,8 +293,8 @@ export function PowerSubchoiceModal({
             <Check className="h-4 w-4 mr-2" />
             Confirmar
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </MobileModalFooter>
+      </MobileModalContent>
+    </MobileModal>
   );
 }

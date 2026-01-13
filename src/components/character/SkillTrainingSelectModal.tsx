@@ -10,17 +10,17 @@
 
 import { useState, useMemo, useCallback } from 'react';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+  MobileModal,
+  MobileModalContent,
+  MobileModalHeader,
+  MobileModalBody,
+  MobileModalFooter,
+  MobileModalTitle,
+  MobileModalDescription,
+} from '@/components/ui/mobile-modal';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import {
   Select,
@@ -184,20 +184,20 @@ export function SkillTrainingSelectModal({
   }, [existingChoices, onClose]);
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && handleCancel()}>
-      <DialogContent className="max-w-lg max-h-[85vh] overflow-hidden flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+    <MobileModal open={isOpen} onOpenChange={(open) => !open && handleCancel()}>
+      <MobileModalContent size="md">
+        <MobileModalHeader>
+          <MobileModalTitle className="flex items-center gap-2 font-display tracking-wider">
             <GraduationCap className="w-5 h-5 text-primary" />
-            Treinamento em Perícia
-          </DialogTitle>
-          <DialogDescription className="text-sm">
+            TREINAMENTO EM PERÍCIA
+          </MobileModalTitle>
+          <MobileModalDescription>
             {nexDescription}
-          </DialogDescription>
-        </DialogHeader>
+          </MobileModalDescription>
+        </MobileModalHeader>
         
         {/* Contador de seleção */}
-        <div className="flex items-center justify-between px-4 py-2 bg-muted/50 rounded-lg">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-2 bg-muted/50 rounded-lg mx-4 sm:mx-6">
           <span className="text-sm text-muted-foreground">Perícias selecionadas</span>
           <Badge 
             variant={isValid ? 'default' : 'outline'}
@@ -209,8 +209,8 @@ export function SkillTrainingSelectModal({
           </Badge>
         </div>
         
-        {/* Lista de perícias */}
-        <div className="flex-1 overflow-y-auto min-h-0 py-2 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
+        {/* Lista de perícias com scroll */}
+        <MobileModalBody useScrollArea={true} maxHeight="55vh">
           <div className="space-y-1">
             {availableSkills.map(skill => {
               const isSelected = selectedSkillIds.includes(skill.id);
@@ -312,13 +312,11 @@ export function SkillTrainingSelectModal({
               </div>
             )}
           </div>
-        </div>
-        
-        <Separator />
+        </MobileModalBody>
         
         {/* Resumo das escolhas */}
         {choices.length > 0 && (
-          <div className="px-2 py-3 bg-muted/30 rounded-lg">
+          <div className="px-4 sm:px-6 py-3 bg-muted/30 rounded-lg mx-4 sm:mx-6">
             <p className="text-xs text-muted-foreground mb-2">Resumo:</p>
             <div className="space-y-1">
               {choices.map((choice, idx) => {
@@ -337,7 +335,7 @@ export function SkillTrainingSelectModal({
           </div>
         )}
         
-        <DialogFooter>
+        <MobileModalFooter bordered>
           <Button variant="outline" onClick={handleCancel}>
             Cancelar
           </Button>
@@ -349,9 +347,9 @@ export function SkillTrainingSelectModal({
             <Check className="w-4 h-4" />
             Confirmar
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </MobileModalFooter>
+      </MobileModalContent>
+    </MobileModal>
   );
 }
 
