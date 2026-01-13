@@ -54,42 +54,57 @@ const ELEMENT_CONFIG = {
     text: 'text-red-400',
     bg: 'bg-red-500/10',
     badgeBg: 'bg-red-500/20 text-red-300',
+    // Efeito de pulso vermelho
+    animationClass: 'animate-pulse-blood',
+    glowColor: 'rgba(239, 68, 68, 0.4)',
   },
   morte: {
     icon: Skull,
     label: 'Morte',
-    color: 'from-purple-900/20 to-purple-950/20',
-    border: 'border-purple-500/50',
-    text: 'text-purple-400',
-    bg: 'bg-purple-500/10',
-    badgeBg: 'bg-purple-500/20 text-purple-300',
+    color: 'from-gray-600/20 to-gray-800/20',
+    border: 'border-gray-500/50',
+    text: 'text-gray-400',
+    bg: 'bg-gray-500/10',
+    badgeBg: 'bg-gray-500/20 text-gray-300',
+    // Efeito de névoa cinza
+    animationClass: 'animate-mist-death',
+    glowColor: 'rgba(156, 163, 175, 0.3)',
   },
   conhecimento: {
     icon: BookOpen,
     label: 'Conhecimento',
-    color: 'from-blue-500/20 to-blue-900/20',
-    border: 'border-blue-500/50',
-    text: 'text-blue-400',
-    bg: 'bg-blue-500/10',
-    badgeBg: 'bg-blue-500/20 text-blue-300',
-  },
-  energia: {
-    icon: Zap,
-    label: 'Energia',
-    color: 'from-yellow-500/20 to-amber-900/20',
+    color: 'from-yellow-500/20 to-amber-700/20',
     border: 'border-yellow-500/50',
     text: 'text-yellow-400',
     bg: 'bg-yellow-500/10',
     badgeBg: 'bg-yellow-500/20 text-yellow-300',
+    // Efeito de brilho amarelo
+    animationClass: 'animate-glow-knowledge',
+    glowColor: 'rgba(234, 179, 8, 0.4)',
+  },
+  energia: {
+    icon: Zap,
+    label: 'Energia',
+    color: 'from-purple-500/20 to-violet-900/20',
+    border: 'border-purple-500/50',
+    text: 'text-purple-400',
+    bg: 'bg-purple-500/10',
+    badgeBg: 'bg-purple-500/20 text-purple-300',
+    // Efeito hack/glitch roxo
+    animationClass: 'animate-hack-energy',
+    glowColor: 'rgba(168, 85, 247, 0.4)',
   },
   medo: {
     icon: Ghost,
     label: 'Medo',
-    color: 'from-emerald-500/20 to-emerald-900/20',
-    border: 'border-emerald-500/50',
+    color: 'from-emerald-500/10 to-emerald-900/10',
+    border: 'border-emerald-500/30',
     text: 'text-emerald-400',
-    bg: 'bg-emerald-500/10',
+    bg: 'bg-emerald-500/5',
     badgeBg: 'bg-emerald-500/20 text-emerald-300',
+    // Efeito glassmorphism
+    animationClass: 'animate-glass-fear',
+    glowColor: 'rgba(16, 185, 129, 0.2)',
   },
 };
 
@@ -111,21 +126,182 @@ function RitualCard({
   const elementConfig = ELEMENT_CONFIG[elementKey] || ELEMENT_CONFIG.conhecimento;
   const ElementIcon = elementConfig.icon;
 
+  // Efeitos de animação baseados no elemento
+  const getElementAnimation = () => {
+    if (!isSelected) return {};
+    
+    switch (elementKey) {
+      case 'sangue':
+        return {
+          boxShadow: [
+            `0 0 0px ${elementConfig.glowColor}`,
+            `0 0 20px ${elementConfig.glowColor}`,
+            `0 0 10px ${elementConfig.glowColor}`,
+          ],
+        };
+      case 'morte':
+        return {
+          opacity: [1, 0.85, 1],
+          filter: ['blur(0px)', 'blur(0.5px)', 'blur(0px)'],
+        };
+      case 'conhecimento':
+        return {
+          boxShadow: [
+            `0 0 5px ${elementConfig.glowColor}`,
+            `0 0 25px ${elementConfig.glowColor}`,
+            `0 0 5px ${elementConfig.glowColor}`,
+          ],
+        };
+      case 'energia':
+        return {
+          x: [0, -1, 1, -1, 0],
+          boxShadow: [
+            `0 0 10px ${elementConfig.glowColor}`,
+            `0 0 20px ${elementConfig.glowColor}`,
+            `0 0 10px ${elementConfig.glowColor}`,
+          ],
+        };
+      case 'medo':
+        return {
+          backdropFilter: ['blur(0px)', 'blur(2px)', 'blur(0px)'],
+        };
+      default:
+        return {};
+    }
+  };
+
   return (
     <motion.div
       layout
       initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
+      animate={{ 
+        opacity: 1, 
+        scale: 1,
+        ...getElementAnimation(),
+      }}
       exit={{ opacity: 0, scale: 0.95 }}
+      transition={{
+        duration: isSelected ? 2 : 0.2,
+        repeat: isSelected ? Infinity : 0,
+        repeatType: "reverse",
+      }}
+      whileHover={{ 
+        scale: 1.02,
+        boxShadow: `0 0 15px ${elementConfig.glowColor}`,
+      }}
       className={`
-        relative rounded-lg border transition-all duration-200
+        relative rounded-lg border transition-all duration-200 overflow-hidden
         ${isSelected 
           ? `bg-gradient-to-br ${elementConfig.color} ${elementConfig.border} ring-1 ring-primary/30` 
           : 'bg-card/50 border-border hover:border-muted-foreground/50'
         }
         ${isDisabled && !isSelected ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+        ${elementKey === 'medo' && isSelected ? 'backdrop-blur-sm bg-opacity-80' : ''}
       `}
     >
+      {/* Efeito de fundo especial por elemento quando selecionado */}
+      <AnimatePresence>
+        {isSelected && (
+          <>
+            {/* Sangue: partículas de gotas */}
+            {elementKey === 'sangue' && (
+              <motion.div
+                className="absolute inset-0 pointer-events-none overflow-hidden"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+              >
+                {[...Array(3)].map((_, i) => (
+                  <motion.div
+                    key={i}
+                    className="absolute w-1 h-1 rounded-full bg-red-500/60"
+                    style={{ left: `${20 + i * 30}%`, top: '-5%' }}
+                    animate={{
+                      y: ['0%', '120%'],
+                      opacity: [0, 1, 0],
+                    }}
+                    transition={{
+                      duration: 2,
+                      delay: i * 0.5,
+                      repeat: Infinity,
+                    }}
+                  />
+                ))}
+              </motion.div>
+            )}
+            
+            {/* Morte: névoa cinza */}
+            {elementKey === 'morte' && (
+              <motion.div
+                className="absolute inset-0 pointer-events-none"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: [0.2, 0.4, 0.2] }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 3, repeat: Infinity }}
+                style={{
+                  background: 'linear-gradient(180deg, transparent 0%, rgba(156, 163, 175, 0.15) 50%, transparent 100%)',
+                }}
+              />
+            )}
+            
+            {/* Conhecimento: brilho pulsante */}
+            {elementKey === 'conhecimento' && (
+              <motion.div
+                className="absolute inset-0 pointer-events-none"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: [0, 0.3, 0] }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+                style={{
+                  background: 'radial-gradient(circle at center, rgba(234, 179, 8, 0.2) 0%, transparent 70%)',
+                }}
+              />
+            )}
+            
+            {/* Energia: linhas de "hack" */}
+            {elementKey === 'energia' && (
+              <motion.div
+                className="absolute inset-0 pointer-events-none overflow-hidden"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+              >
+                {[...Array(2)].map((_, i) => (
+                  <motion.div
+                    key={i}
+                    className="absolute h-px w-full bg-gradient-to-r from-transparent via-purple-500/50 to-transparent"
+                    style={{ top: `${30 + i * 40}%` }}
+                    animate={{
+                      x: ['-100%', '100%'],
+                      opacity: [0, 1, 0],
+                    }}
+                    transition={{
+                      duration: 1.5,
+                      delay: i * 0.3,
+                      repeat: Infinity,
+                    }}
+                  />
+                ))}
+              </motion.div>
+            )}
+            
+            {/* Medo: efeito glassmorphism */}
+            {elementKey === 'medo' && (
+              <motion.div
+                className="absolute inset-0 pointer-events-none"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: [0.1, 0.25, 0.1] }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 2.5, repeat: Infinity }}
+                style={{
+                  background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, transparent 50%, rgba(16, 185, 129, 0.1) 100%)',
+                  backdropFilter: 'blur(1px)',
+                }}
+              />
+            )}
+          </>
+        )}
+      </AnimatePresence>
       <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
         {/* Header do ritual */}
         <div

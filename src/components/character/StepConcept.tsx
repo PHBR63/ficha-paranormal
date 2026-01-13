@@ -1,11 +1,11 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { Dices, User, Sparkles, AlertCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { ImageUploader } from '@/components/ui/image-uploader';
 import { rollAge } from '@/lib/character-builder-engine';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import type { CharacterFormData } from '@/pages/CharacterCreate';
 import { RuleBookTip } from './RuleBookTip';
 import { getRulebookContent } from '@/lib/rulebook-content';
@@ -131,13 +131,57 @@ export function StepConcept({ formData, updateFormData }: StepConceptProps) {
               <label className="block text-sm font-medium mb-2 text-foreground">
                 Nome do Personagem <span className="text-destructive">*</span>
               </label>
-              <Input
-                value={formData.name}
-                onChange={(e) => validateAndUpdate('name', e.target.value)}
-                placeholder="Ex: João Silva"
-                className={`bg-card border-border ${fieldErrors.name ? 'border-destructive' : ''}`}
-                maxLength={100}
-              />
+              <div className="relative">
+                <Input
+                  value={formData.name}
+                  onChange={(e) => validateAndUpdate('name', e.target.value)}
+                  placeholder="Ex: João Silva"
+                  className={`bg-card border-border ${fieldErrors.name ? 'border-destructive' : ''}`}
+                  maxLength={100}
+                />
+                {/* Efeito de cursor piscante quando vazio */}
+                <AnimatePresence>
+                  {!formData.name && (
+                    <motion.span
+                      className="absolute left-3 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-primary pointer-events-none"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: [0, 1, 1, 0] }}
+                      exit={{ opacity: 0 }}
+                      transition={{ 
+                        duration: 1,
+                        repeat: Infinity,
+                        times: [0, 0.1, 0.9, 1]
+                      }}
+                    />
+                  )}
+                </AnimatePresence>
+              </div>
+              {/* Preview com efeito typewriter */}
+              <AnimatePresence mode="wait">
+                {formData.name && (
+                  <motion.div
+                    key={formData.name}
+                    initial={{ opacity: 0, y: -5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    className="mt-1.5 overflow-hidden"
+                  >
+                    <motion.p 
+                      className="text-xs text-primary font-mono"
+                      initial={{ width: 0 }}
+                      animate={{ width: "100%" }}
+                      transition={{ duration: 0.3, ease: "easeOut" }}
+                      style={{ 
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        borderRight: "2px solid hsl(var(--primary))"
+                      }}
+                    >
+                      Agente: {formData.name}
+                    </motion.p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
               <FieldError field="name" />
             </div>
             <div>
