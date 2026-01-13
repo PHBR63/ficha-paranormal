@@ -106,40 +106,86 @@ export function StepClass({ formData, updateFormData }: StepClassProps) {
               key={cls.id}
               onClick={() => handleSelectClass(cls.id)}
               initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
+              animate={{ 
+                opacity: 1, 
+                y: 0,
+                boxShadow: isSelected 
+                  ? '0 0 30px hsl(var(--primary) / 0.3), inset 0 0 20px hsl(var(--primary) / 0.05)'
+                  : '0 0 0px transparent'
+              }}
               transition={{ delay: index * 0.1 }}
-              whileHover={{ scale: 1.02 }}
+              whileHover={{ 
+                scale: 1.03,
+                boxShadow: '0 0 25px hsl(var(--primary) / 0.2)'
+              }}
               whileTap={{ scale: 0.98 }}
               className={cn(
-                'ordo-panel p-5 text-left transition-all flex flex-col group',
+                'ordo-panel p-5 text-left transition-all flex flex-col group relative overflow-hidden',
                 'hover:shadow-lg',
                 isSelected && [
                   'border-2',
                   colors.border,
                   colors.bg,
-                  'shadow-[0_0_30px_hsl(var(--primary)/0.2)]'
                 ]
               )}
             >
-              <div className="flex items-center gap-3 mb-3">
+              {/* Glow animado de fundo quando selecionado */}
+              {isSelected && (
+                <motion.div
+                  className="absolute inset-0 pointer-events-none"
+                  initial={{ opacity: 0 }}
+                  animate={{ 
+                    opacity: [0.3, 0.5, 0.3],
+                  }}
+                  transition={{ 
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: "easeInOut"
+                  }}
+                  style={{
+                    background: `radial-gradient(circle at center, hsl(var(--primary) / 0.15) 0%, transparent 70%)`
+                  }}
+                />
+              )}
+              
+              <div className="flex items-center gap-3 mb-3 relative z-10">
                 <motion.div 
                   className={cn(
                     'w-12 h-12 rounded-sm flex items-center justify-center transition-all',
                     colors.bg,
                     colors.text,
-                    isSelected && 'scale-110'
                   )}
-                  animate={isSelected ? { rotate: [0, -5, 5, 0] } : {}}
+                  animate={isSelected ? { 
+                    scale: [1, 1.15, 1.1],
+                    rotate: [0, -8, 8, 0],
+                  } : { scale: 1 }}
+                  transition={{ 
+                    duration: 0.6,
+                    scale: { type: "spring", stiffness: 300 }
+                  }}
+                  whileHover={{ rotate: [0, -5, 5, 0] }}
+                >
+                  <motion.div
+                    animate={isSelected ? {
+                      filter: ['drop-shadow(0 0 0px currentColor)', 'drop-shadow(0 0 8px currentColor)', 'drop-shadow(0 0 4px currentColor)']
+                    } : {}}
+                    transition={{ duration: 1, repeat: Infinity }}
+                  >
+                    <Icon className="w-6 h-6" />
+                  </motion.div>
+                </motion.div>
+                <motion.h3 
+                  className={cn(
+                    'font-display text-xl tracking-wider transition-colors',
+                    isSelected && colors.text
+                  )}
+                  animate={isSelected ? { 
+                    textShadow: ['0 0 0px transparent', '0 0 10px hsl(var(--primary) / 0.5)', '0 0 5px hsl(var(--primary) / 0.3)']
+                  } : {}}
                   transition={{ duration: 0.5 }}
                 >
-                  <Icon className="w-6 h-6" />
-                </motion.div>
-                <h3 className={cn(
-                  'font-display text-xl tracking-wider transition-colors',
-                  isSelected && colors.text
-                )}>
                   {cls.name}
-                </h3>
+                </motion.h3>
               </div>
 
               <p className="text-xs text-muted-foreground mb-4 flex-1">

@@ -342,17 +342,52 @@ export function StepOrigin({ formData, updateFormData }: StepOriginProps) {
               return (
                 <motion.div
                   key={origin.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: Math.min(index * 0.02, 0.5) }}
+                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                  animate={{ 
+                    opacity: 1, 
+                    y: 0, 
+                    scale: 1,
+                    boxShadow: isSelected 
+                      ? '0 0 25px hsl(var(--primary) / 0.3)'
+                      : '0 0 0px transparent'
+                  }}
+                  transition={{ 
+                    delay: Math.min(index * 0.02, 0.5),
+                    type: "spring",
+                    stiffness: 300,
+                    damping: 20
+                  }}
+                  whileHover={{ 
+                    scale: 1.02,
+                    y: -2,
+                    transition: { duration: 0.2 }
+                  }}
                   className={cn(
-                    'ordo-panel p-3 transition-all group cursor-pointer relative',
+                    'ordo-panel p-3 transition-all group cursor-pointer relative overflow-hidden',
                     'hover:border-primary/50 hover:bg-primary/5',
-                    isSelected && 'border-primary bg-primary/10 shadow-[0_0_20px_hsl(var(--primary)/0.2)]',
+                    isSelected && 'border-primary bg-primary/10',
                     isFromSupplement && !isSelected && 'border-warning/20'
                   )}
                   onClick={() => handleSelectOrigin(origin.id)}
                 >
+                  {/* Efeito de revelação quando selecionado */}
+                  <AnimatePresence>
+                    {isSelected && (
+                      <motion.div
+                        className="absolute inset-0 pointer-events-none"
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ 
+                          opacity: [0, 0.6, 0.3],
+                          scale: [0.8, 1.2, 1]
+                        }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.5 }}
+                        style={{
+                          background: 'radial-gradient(circle at center, hsl(var(--primary) / 0.2) 0%, transparent 70%)'
+                        }}
+                      />
+                    )}
+                  </AnimatePresence>
                   {/* Badges no canto superior direito */}
                   <div className="absolute top-2 right-2 flex gap-1">
                     {isFromSupplement && (
@@ -437,16 +472,34 @@ export function StepOrigin({ formData, updateFormData }: StepOriginProps) {
                     <ChevronRight className="w-3 h-3" />
                   </Button>
 
-                  {/* Indicador de selecionado */}
-                  {isSelected && (
-                    <motion.div 
-                      className="absolute bottom-2 right-2"
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                    >
-                      <Check className="w-5 h-5 text-primary" />
-                    </motion.div>
-                  )}
+                  {/* Indicador de selecionado com animação de revelação */}
+                  <AnimatePresence>
+                    {isSelected && (
+                      <motion.div 
+                        className="absolute bottom-2 right-2"
+                        initial={{ scale: 0, rotate: -180 }}
+                        animate={{ 
+                          scale: [0, 1.3, 1],
+                          rotate: 0,
+                        }}
+                        exit={{ scale: 0, rotate: 180 }}
+                        transition={{ 
+                          type: "spring",
+                          stiffness: 400,
+                          damping: 15
+                        }}
+                      >
+                        <motion.div
+                          animate={{ 
+                            filter: ['drop-shadow(0 0 0px hsl(var(--primary)))', 'drop-shadow(0 0 8px hsl(var(--primary)))', 'drop-shadow(0 0 4px hsl(var(--primary)))']
+                          }}
+                          transition={{ duration: 1.5, repeat: Infinity }}
+                        >
+                          <Check className="w-5 h-5 text-primary" />
+                        </motion.div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </motion.div>
               );
             })}
