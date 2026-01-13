@@ -25,6 +25,7 @@ import { StatsPreviewWidget } from '@/components/character/StatsPreviewWidget';
 import { RestoreDraftDialog } from '@/components/character/RestoreDraftDialog';
 import { ExitConfirmDialog } from '@/components/character/ExitConfirmDialog';
 import { CreationHelpButton } from '@/components/character/CreationHelpModal';
+import { TemplateGalleryModal } from '@/components/templates/TemplateGalleryModal';
 import { 
   ORIGINS, 
   CLASSES, 
@@ -40,6 +41,7 @@ import { useCharacterAutoSave, loadCharacterDraft, clearCharacterDraft } from '@
 import { validateCharacter } from '@/lib/character-validation';
 import { CORE_ORIGIN_IDS } from '@/lib/constants/game-ids';
 import confetti from 'canvas-confetti';
+import type { CharacterTemplate, TemplateWithAuthor } from '@/types/templates';
 
 export type CharacterFormData = {
   // Conceito
@@ -179,6 +181,7 @@ export default function CharacterCreate() {
   const [formData, setFormData] = useState<CharacterFormData>(initialFormData);
   const [showRestoreDialog, setShowRestoreDialog] = useState(false);
   const [showExitDialog, setShowExitDialog] = useState(false);
+  const [showTemplateGallery, setShowTemplateGallery] = useState(false);
   const [draftData, setDraftData] = useState<ReturnType<typeof loadCharacterDraft>>(null);
 
   // Busca nome da campanha se houver campaignId
@@ -230,6 +233,59 @@ export default function CharacterCreate() {
   const updateFormData = useCallback((updates: Partial<CharacterFormData>) => {
     setFormData(prev => ({ ...prev, ...updates }));
   }, []);
+
+  /**
+   * Aplica um template selecionado ao formulário
+   * Preenche automaticamente origem, classe, trilha, atributos, perícias e habilidades
+   */
+  const handleApplyTemplate = useCallback((template: CharacterTemplate | TemplateWithAuthor) => {
+    const data = template.template_data;
+    
+    // Mapear dados do template para o formulário
+    const updates: Partial<CharacterFormData> = {
+      // Core
+      origin: data.origin,
+      characterClass: data.classId,
+      classTrack: data.classTrack || '',
+      
+      // Atributos
+      attributes: {
+        agility: data.attributes.agility,
+        strength: data.attributes.strength,
+        intellect: data.attributes.intellect,
+        presence: data.attributes.presence,
+        vigor: data.attributes.vigor,
+      },
+      
+      // Perícias
+      freeSkills: data.trainedSkills,
+      
+      // Habilidades de classe
+      abilities: data.classPowers.map(p => p.powerId),
+      
+      // Rituais iniciais (para Ocultistas)
+      rituals: data.initialRituals || [],
+      
+      // Aparência sugerida (se houver)
+      ...(data.appearance?.suggested_name && !formData.name ? { name: data.appearance.suggested_name } : {}),
+      ...(data.appearance?.suggested_concept ? { concept: data.appearance.suggested_concept } : {}),
+      ...(data.appearance?.suggested_background ? { background: data.appearance.suggested_background } : {}),
+    };
+    
+    setFormData(prev => ({ ...prev, ...updates }));
+    setShowTemplateGallery(false);
+    
+    // Ir para o step de revisão para o usuário verificar/ajustar
+    const reviewStepIndex = STEPS.findIndex(s => s.id === 'review');
+    if (reviewStepIndex !== -1) {
+      setCurrentStep(reviewStepIndex);
+    }
+    
+    toast({
+      title: 'Template Aplicado!',
+      description: `"${template.name}" foi aplicado. Revise e ajuste conforme necessário.`,
+    });
+  }, [formData.name, toast]);
 
   // Efeito para reset automático quando o NEX mudar
   useEffect(() => {
@@ -730,7 +786,7 @@ export default function CharacterCreate() {
     const content = (() => {
       switch (currentStepId) {
         case 'concept':
-          return <StepConcept formData={formData} updateFormData={updateFormData} />;
+          return <StepConcept formData={formData} updateFormData={updateFormData} onOpenTemplateGallery={() => setShowTemplateGallery(true)} />;
         case 'nex':
           return <StepNex formData={formData} updateFormData={updateFormData} />;
         case 'patent':
@@ -980,6 +1036,13 @@ export default function CharacterCreate() {
         open={showExitDialog}
         onConfirm={handleExitConfirm}
         onCancel={() => setShowExitDialog(false)}
+      />
+
+      {/* Modal da Galeria de Templates */}
+      <TemplateGalleryModal
+        open={showTemplateGallery}
+        onOpenChange={setShowTemplateGallery}
+        onApply={handleApplyTemplate}
       />
 
       {/* Botão flutuante de ajuda - abre modal com glossário e fórmulas */}

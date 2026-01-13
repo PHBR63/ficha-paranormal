@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { Dices, User, Sparkles, AlertCircle } from 'lucide-react';
+import { Dices, User, Sparkles, AlertCircle, Package } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,8 @@ type FieldErrors = Partial<Record<keyof ConceptFields, string>>;
 interface StepConceptProps {
   formData: CharacterFormData;
   updateFormData: (updates: Partial<CharacterFormData>) => void;
+  /** Callback para abrir a galeria de templates */
+  onOpenTemplateGallery?: () => void;
 }
 
 const CONCEPT_SUGGESTIONS = [
@@ -27,7 +29,7 @@ const CONCEPT_SUGGESTIONS = [
   'Hacker que descobriu segredos que não deveria',
 ];
 
-export function StepConcept({ formData, updateFormData }: StepConceptProps) {
+export function StepConcept({ formData, updateFormData, onOpenTemplateGallery }: StepConceptProps) {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
   // Valida um campo específico e retorna o valor sanitizado
@@ -94,6 +96,28 @@ export function StepConcept({ formData, updateFormData }: StepConceptProps) {
           Comece definindo quem é seu personagem. O nome e o conceito guiarão suas escolhas.
         </p>
       </div>
+
+      {/* Botão de Templates - Atalho para criação rápida */}
+      {onOpenTemplateGallery && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex justify-center mb-4"
+        >
+          <Button
+            variant="outline"
+            size="lg"
+            onClick={onOpenTemplateGallery}
+            className="border-primary/30 hover:border-primary/60 hover:bg-primary/5 gap-3 px-6 py-3"
+          >
+            <Package className="w-5 h-5 text-primary" />
+            <div className="text-left">
+              <span className="font-display tracking-wider block">USAR TEMPLATE</span>
+              <span className="text-xs text-muted-foreground font-normal">Crie rapidamente com um modelo pronto</span>
+            </div>
+          </Button>
+        </motion.div>
+      )}
 
       {/* Painel educativo do livro de regras */}
       {rulebookContent && (
