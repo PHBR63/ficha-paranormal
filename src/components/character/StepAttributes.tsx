@@ -405,6 +405,7 @@ export function StepAttributes({ formData, updateFormData }: StepAttributesProps
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.1 }}
+                whileHover={{ scale: 1.01, x: 4 }}
                 className={cn(
                   'ordo-panel p-4 flex items-center justify-between transition-all',
                   isZero && 'border-paranormal/50 bg-paranormal/5',
@@ -473,12 +474,22 @@ export function StepAttributes({ formData, updateFormData }: StepAttributesProps
                     <Minus className="w-4 h-4" />
                   </Button>
 
-                  <div className="w-12 text-center relative">
+                  <div className="w-14 text-center relative">
                     <motion.span 
                       key={value}
-                      initial={{ scale: 1.3 }}
-                      animate={{ scale: 1 }}
-                      className="font-display text-3xl"
+                      initial={{ scale: 1.5, opacity: 0.5 }}
+                      animate={{ 
+                        scale: [1.5, 0.95, 1],
+                        opacity: 1,
+                        textShadow: isZero 
+                          ? ['0 0 20px hsl(var(--paranormal))', '0 0 8px hsl(var(--paranormal))', '0 0 12px hsl(var(--paranormal))']
+                          : [`0 0 20px hsl(var(${attr.colorVar}))`, `0 0 0px hsl(var(${attr.colorVar}))`, `0 0 8px hsl(var(${attr.colorVar}))`]
+                      }}
+                      transition={{ 
+                        duration: 0.4,
+                        scale: { type: "spring", stiffness: 400, damping: 15 }
+                      }}
+                      className="font-display text-3xl font-bold"
                       style={{ 
                         color: exceedsLimit 
                           ? 'hsl(var(--destructive))' 
@@ -490,9 +501,13 @@ export function StepAttributes({ formData, updateFormData }: StepAttributesProps
                       {value}
                     </motion.span>
                     {exceedsLimit && (
-                      <span className="absolute -top-1 -right-1 text-[10px] bg-destructive text-destructive-foreground px-1 rounded">
+                      <motion.span 
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="absolute -top-1 -right-1 text-[10px] bg-destructive text-destructive-foreground px-1 rounded"
+                      >
                         -{value - maxAttribute}
-                      </span>
+                      </motion.span>
                     )}
                   </div>
 
