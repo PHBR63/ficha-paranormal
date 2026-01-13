@@ -674,8 +674,8 @@ export default function CharacterCreate() {
           : `${formData.name} foi adicionado ao sistema da Ordo Realitas.`,
       });
 
-      // Redireciona para campanha ou dashboard
-      navigate(campaignId ? `/campaigns/${campaignId}` : '/dashboard');
+      // Redireciona para a ficha do personagem criado
+      navigate(`/character/${insertedCharacter.id}`);
     } catch (error: any) {
       toast({
         title: 'Erro ao salvar',
@@ -687,11 +687,41 @@ export default function CharacterCreate() {
     }
   };
 
+  // Direção da transição baseada no step anterior
+  const [transitionDirection, setTransitionDirection] = useState<'forward' | 'backward'>('forward');
+  const previousStepRef = useRef(currentStep);
+
+  // Atualiza direção da transição quando o step muda
+  useEffect(() => {
+    if (currentStep > previousStepRef.current) {
+      setTransitionDirection('forward');
+    } else if (currentStep < previousStepRef.current) {
+      setTransitionDirection('backward');
+    }
+    previousStepRef.current = currentStep;
+  }, [currentStep]);
+
   const renderStep = () => {
+    // Variantes de animação com direção dinâmica e efeitos suaves
     const stepVariants = {
-      enter: { opacity: 0, x: 20 },
-      center: { opacity: 1, x: 0 },
-      exit: { opacity: 0, x: -20 },
+      enter: (direction: 'forward' | 'backward') => ({
+        opacity: 0,
+        x: direction === 'forward' ? 60 : -60,
+        scale: 0.98,
+        filter: 'blur(4px)',
+      }),
+      center: {
+        opacity: 1,
+        x: 0,
+        scale: 1,
+        filter: 'blur(0px)',
+      },
+      exit: (direction: 'forward' | 'backward') => ({
+        opacity: 0,
+        x: direction === 'forward' ? -60 : 60,
+        scale: 0.98,
+        filter: 'blur(4px)',
+      }),
     };
 
     // Usar step.id para renderizar o componente correto
@@ -727,14 +757,20 @@ export default function CharacterCreate() {
     })();
 
     return (
-      <AnimatePresence mode="wait">
+      <AnimatePresence mode="wait" custom={transitionDirection}>
         <motion.div
           key={currentStep}
+          custom={transitionDirection}
           variants={stepVariants}
           initial="enter"
           animate="center"
           exit="exit"
-          transition={{ duration: 0.3 }}
+          transition={{
+            duration: 0.4,
+            ease: [0.25, 0.46, 0.45, 0.94],
+            opacity: { duration: 0.3 },
+            filter: { duration: 0.25 },
+          }}
         >
           {content}
         </motion.div>
