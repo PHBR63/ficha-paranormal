@@ -6,6 +6,7 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
+import type { Json } from '@/integrations/supabase/types';
 import type {
   CharacterTemplate,
   TemplateRating,
@@ -259,14 +260,14 @@ export const templateService = {
       is_official: false,
       tags: dto.tags,
       difficulty_level: dto.difficulty_level || null,
-      template_data: dto.template_data as unknown,
+      template_data: dto.template_data as unknown as Json,
       min_nex: dto.min_nex || 5,
       max_nex: dto.max_nex || 99,
     };
     
     const { data, error } = await supabase
       .from('character_templates')
-      .insert(insertData)
+      .insert([insertData])
       .select()
       .single();
 
