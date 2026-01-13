@@ -1172,6 +1172,66 @@ export type Database = {
           },
         ]
       }
+      character_templates: {
+        Row: {
+          author_id: string
+          created_at: string
+          deleted_at: string | null
+          description: string | null
+          difficulty_level: string | null
+          id: string
+          is_official: boolean
+          is_public: boolean
+          max_nex: number
+          min_nex: number
+          name: string
+          rating: number | null
+          rating_count: number
+          tags: string[] | null
+          template_data: Json
+          updated_at: string
+          usage_count: number
+        }
+        Insert: {
+          author_id: string
+          created_at?: string
+          deleted_at?: string | null
+          description?: string | null
+          difficulty_level?: string | null
+          id?: string
+          is_official?: boolean
+          is_public?: boolean
+          max_nex?: number
+          min_nex?: number
+          name: string
+          rating?: number | null
+          rating_count?: number
+          tags?: string[] | null
+          template_data: Json
+          updated_at?: string
+          usage_count?: number
+        }
+        Update: {
+          author_id?: string
+          created_at?: string
+          deleted_at?: string | null
+          description?: string | null
+          difficulty_level?: string | null
+          id?: string
+          is_official?: boolean
+          is_public?: boolean
+          max_nex?: number
+          min_nex?: number
+          name?: string
+          rating?: number | null
+          rating_count?: number
+          tags?: string[] | null
+          template_data?: Json
+          updated_at?: string
+          usage_count?: number
+        }
+        Relationships: []
+      }
       characters: {
         Row: {
           abilities: Json
@@ -1471,6 +1531,80 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      template_applications: {
+        Row: {
+          applied_at: string
+          character_id: string | null
+          id: string
+          template_id: string
+          user_id: string
+        }
+        Insert: {
+          applied_at?: string
+          character_id?: string | null
+          id?: string
+          template_id: string
+          user_id: string
+        }
+        Update: {
+          applied_at?: string
+          character_id?: string | null
+          id?: string
+          template_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "template_applications_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: false
+            referencedRelation: "characters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "template_applications_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "character_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      template_ratings: {
+        Row: {
+          comment: string | null
+          created_at: string
+          id: string
+          rating: number
+          template_id: string
+          user_id: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          rating: number
+          template_id: string
+          user_id: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          rating?: number
+          template_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "template_ratings_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "character_templates"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
