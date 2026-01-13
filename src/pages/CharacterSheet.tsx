@@ -151,6 +151,7 @@ import { AbilityDetailModal } from '@/components/character/AbilityDetailModal';
 import { ExcessRitualsRemovalModal } from '@/components/character/ExcessRitualsRemovalModal';
 import { ExcessPowersRemovalModal } from '@/components/character/ExcessPowersRemovalModal';
 import { getMaxParanormalPowers } from '@/lib/character-audit-engine';
+import { TemplateSaveModal } from '@/components/templates/TemplateSaveModal';
 
 // Interface estendida para itens do inventário com todos os campos persistidos
 interface InventoryItemPersisted {
@@ -378,6 +379,9 @@ export default function CharacterSheet() {
   
   // Histórico de rituais conjurados na sessão
   const [castHistory, setCastHistory] = useState<RitualCastRecord[]>([]);
+  
+  // Modal de salvar como template
+  const [templateSaveModalOpen, setTemplateSaveModalOpen] = useState(false);
   
   // ActionSheet mobile para ações do personagem
   const mobileActionsSheet = useActionSheet();
@@ -1942,6 +1946,15 @@ export default function CharacterSheet() {
               <Button 
                 variant="outline" 
                 size="sm"
+                onClick={() => setTemplateSaveModalOpen(true)}
+                className="font-display"
+              >
+                <Package className="w-4 h-4 mr-2" />
+                TEMPLATE
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
                 onClick={() => setEditModalOpen(true)}
                 className="font-display"
               >
@@ -1979,6 +1992,12 @@ export default function CharacterSheet() {
                     label: 'Editar Personagem',
                     icon: Edit2,
                     onPress: () => setEditModalOpen(true),
+                  },
+                  {
+                    id: 'save-template',
+                    label: 'Salvar como Template',
+                    icon: Package,
+                    onPress: () => setTemplateSaveModalOpen(true),
                   },
                   {
                     id: 'dice-history',
@@ -3646,6 +3665,34 @@ export default function CharacterSheet() {
           elementalAffinity={character.elemental_affinity || undefined}
           characterDefense={character.defense}
           characterAgility={character.agility}
+        />
+      )}
+
+      {/* Modal de Salvar como Template */}
+      {character && (
+        <TemplateSaveModal
+          open={templateSaveModalOpen}
+          onOpenChange={setTemplateSaveModalOpen}
+          character={{
+            id: character.id,
+            name: character.name,
+            origin: character.origin,
+            class: character.class,
+            class_track: character.class_track,
+            elemental_affinity: character.elemental_affinity,
+            nex: character.nex,
+            agility: character.agility,
+            strength: character.strength,
+            intellect: character.intellect,
+            vigor: character.vigor,
+            presence: character.presence,
+            skills: character.skills,
+            abilities: (character.abilities || []).map((a: any) => typeof a === 'string' ? { id: a, name: a } : { id: a.id || a.name, name: a.name }),
+            general_powers: (character.general_powers || []).map((p: any) => typeof p === 'string' ? { id: p, name: p } : { id: p.id || p.name, name: p.name }),
+            paranormal_powers: (character.paranormal_powers || []).map((p: any) => typeof p === 'string' ? { id: p, name: p, element: '' } : { id: p.id || p.name, name: p.name, element: p.element || '' }),
+            rituals: character.rituals,
+            inventory: character.inventory,
+          }}
         />
       )}
     </div>
