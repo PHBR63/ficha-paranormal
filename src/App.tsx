@@ -29,6 +29,7 @@ const CampaignView = lazy(() => import("./pages/CampaignView"));
 const AdminImport = lazy(() => import("./pages/AdminImport"));
 const AdminUsers = lazy(() => import("./pages/AdminUsers"));
 const AdminDataIntegrity = lazy(() => import("./pages/AdminDataIntegrity"));
+const MyTemplates = lazy(() => import("./pages/MyTemplates"));
 const Install = lazy(() => import("./pages/Install"));
 
 const queryClient = new QueryClient();
@@ -93,6 +94,11 @@ const App = () => (
                   <Route path="/campaigns/:id" element={
                     <ProtectedRoute>
                       <CampaignView />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/my-templates" element={
+                    <ProtectedRoute>
+                      <MyTemplates />
                     </ProtectedRoute>
                   } />
                   <Route path="/admin/import" element={

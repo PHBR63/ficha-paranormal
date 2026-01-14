@@ -10,5 +10,6 @@ export { TemplateGalleryModal } from './TemplateGalleryModal';
 export { TemplateApplyWizard } from './TemplateApplyWizard';
 export { TemplatePreviewModal } from './TemplatePreviewModal';
 export { TemplateSaveModal } from './TemplateSaveModal';
+export { TemplateEditModal } from './TemplateEditModal';
 export { TemplateRatingStars, InteractiveRating } from './TemplateRatingStars';
 export { TemplateFilters } from './TemplateFilters';
