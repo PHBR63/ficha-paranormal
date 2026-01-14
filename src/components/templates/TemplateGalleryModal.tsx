@@ -26,7 +26,7 @@ export function TemplateGalleryModal({
 }: TemplateGalleryModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl h-[85vh] flex flex-col p-0 gap-0 overflow-hidden">
+      <DialogContent className="max-w-5xl h-[90vh] flex flex-col p-0 gap-0 overflow-hidden">
         <DialogHeader className="px-6 py-4 border-b border-border shrink-0">
           <DialogTitle className="flex items-center gap-3 font-display text-xl tracking-wider">
             <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
