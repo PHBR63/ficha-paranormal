@@ -37,17 +37,23 @@ TabsTrigger.displayName = TabsPrimitive.Trigger.displayName;
 
 const TabsContent = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof TabsPrimitive.Content>
->(({ className, ...props }, ref) => (
-  <TabsPrimitive.Content
-    ref={ref}
-    className={cn(
-      "mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-      className,
-    )}
-    {...props}
-  />
-));
+  React.ComponentPropsWithoutRef<typeof TabsPrimitive.Content> & { unmountOnHide?: boolean }
+>(({ className, unmountOnHide = false, ...props }, ref) => {
+  // Quando unmountOnHide é true, o conteúdo não será renderizado quando inativo
+  // Por padrão, Radix mantém elementos hidden no DOM; forceMount controla isso
+  return (
+    <TabsPrimitive.Content
+      ref={ref}
+      forceMount={unmountOnHide ? undefined : true}
+      className={cn(
+        "mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+        "data-[state=inactive]:hidden",
+        className,
+      )}
+      {...props}
+    />
+  );
+});
 TabsContent.displayName = TabsPrimitive.Content.displayName;
 
 export { Tabs, TabsList, TabsTrigger, TabsContent };
