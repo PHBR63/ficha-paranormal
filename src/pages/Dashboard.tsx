@@ -8,7 +8,7 @@ import { Particles } from '@/components/ui/particles';
 import { FlickeringGrid } from '@/components/ui/flickering-grid';
 import { DecryptedText } from '@/components/ui/decrypted-text';
 import { BlurText } from '@/components/ui/blur-text';
-import { Plus, LogOut, User, FileText, Users, Settings, Loader2, AlertTriangle, Skull, Shield, Smartphone } from 'lucide-react';
+import { Plus, LogOut, User, FileText, Users, Settings, Loader2, AlertTriangle, Skull, Shield, Smartphone, Package } from 'lucide-react';
 import { LogoBox } from '@/components/ui/logo';
 import { useToast, useAdminCheck, useThemeColors } from '@/hooks';
 import { CharacterCard } from '@/components/cards/CharacterCard';
@@ -205,6 +205,13 @@ export default function Dashboard() {
                   </Button>
                 </Link>
               )}
+              <Link to="/my-templates" className="flex-1 sm:flex-none">
+                <Button className="w-full sm:w-auto font-display tracking-wider text-xs sm:text-sm bg-[#1A1214] border border-[#8B0000]/30 hover:bg-[#8B0000]/20 hover:border-[#8B0000]/50 text-[#C0C0C0]">
+                  <Package className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">Templates</span>
+                  <span className="sm:hidden">Tpl</span>
+                </Button>
+              </Link>
               <Link to="/campaigns" className="flex-1 sm:flex-none">
                 <Button className="w-full sm:w-auto font-display tracking-wider text-xs sm:text-sm bg-[#1A1214] border border-[#8B0000]/30 hover:bg-[#8B0000]/20 hover:border-[#8B0000]/50 text-[#C0C0C0]">
                   <Users className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
