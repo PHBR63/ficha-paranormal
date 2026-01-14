@@ -1,21 +1,36 @@
 /**
  * Card de Template
- * Exibe informações resumidas de um template de personagem
+ * Exibe informações detalhadas de um template de personagem
  * 
  * @module components/templates/TemplateCard
  */
 
 import { memo } from 'react';
 import { motion } from 'framer-motion';
-import { Eye, Zap, Users, Crown, Swords, Brain, Skull, Shield } from 'lucide-react';
+import { 
+  Eye, Zap, Users, Crown, Swords, Brain, Skull, Shield,
+  BookOpen, Sparkles, Backpack
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { TemplateRatingStars } from './TemplateRatingStars';
 import type { CharacterTemplate, TemplateWithAuthor } from '@/types/templates';
 import { DIFFICULTY_LABELS, DIFFICULTY_COLORS } from '@/types/templates';
+import {
+  getOriginDisplayName,
+  getClassDisplayName,
+  getTrackDisplayName,
+  getSkillDisplayName,
+  getAttributeAbbreviation,
+  getAttributeHighlightClass,
+  getElementDisplayName,
+  getElementColorClass,
+  formatSkillsList,
+} from '@/lib/template-display-helpers';
 
 interface TemplateCardProps {
   /** Dados do template */
@@ -46,6 +61,9 @@ const CLASS_COLORS: Record<string, string> = {
   ocultista: 'text-purple-500 bg-purple-500/10 border-purple-500/30',
 };
 
+// Ordem dos atributos para exibição
+const ATTRIBUTE_ORDER = ['strength', 'agility', 'vigor', 'intellect', 'presence'] as const;
+
 export const TemplateCard = memo(function TemplateCard({
   template,
   onView,
@@ -61,6 +79,26 @@ export const TemplateCard = memo(function TemplateCard({
 
   // Autor (se disponível)
   const author = 'author' in template ? template.author : null;
+
+  // Extrair atributos do template
+  const attributes = data.attributes || {};
+
+  // Extrair perícias treinadas
+  const trainedSkills = data.trainedSkills || [];
+  const { visible: visibleSkills, remaining: remainingSkills } = formatSkillsList(trainedSkills, 5);
+
+  // Extrair poderes de classe
+  const classPowers = data.classPowers || [];
+
+  // Afinidade elemental (para Ocultistas)
+  const elementalAffinity = data.elementalAffinity;
+
+  // Rituais iniciais (para Ocultistas)
+  const rituals = data.initialRituals || [];
+
+  // Equipamentos sugeridos
+  const equipment = data.equipment;
+  const hasEquipment = equipment && (equipment.weapons?.length || equipment.armor || equipment.items?.length);
 
   return (
     <motion.div
@@ -102,20 +140,20 @@ export const TemplateCard = memo(function TemplateCard({
           <div className="flex items-start gap-3 mb-3">
             {/* Ícone da classe */}
             <div className={cn(
-              'p-2 rounded-lg border',
+              'p-2 rounded-lg border shrink-0',
               classColor
             )}>
               <ClassIcon className="w-5 h-5" />
             </div>
 
             {/* Nome e classe/trilha */}
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0 pr-16">
               <h3 className="font-semibold text-foreground truncate group-hover:text-primary transition-colors">
                 {template.name}
               </h3>
               <p className="text-sm text-muted-foreground truncate">
-                {data.classId}
-                {data.classTrack && ` • ${data.classTrack}`}
+                {getClassDisplayName(data.classId || '')}
+                {data.classTrack && ` • ${getTrackDisplayName(data.classTrack)}`}
               </p>
             </div>
           </div>
@@ -126,6 +164,127 @@ export const TemplateCard = memo(function TemplateCard({
               {template.description}
             </p>
           )}
+
+          {/* Seção de Atributos */}
+          <div className="mb-3">
+            <div className="grid grid-cols-5 gap-1">
+              {ATTRIBUTE_ORDER.map(attr => {
+                const value = attributes[attr] || 1;
+                return (
+                  <Tooltip key={attr}>
+                    <TooltipTrigger asChild>
+                      <div
+                        className={cn(
+                          'flex flex-col items-center py-1.5 px-1 rounded border text-center',
+                          getAttributeHighlightClass(attr, value, 3)
+                        )}
+                      >
+                        <span className="text-[10px] font-medium opacity-80">
+                          {getAttributeAbbreviation(attr)}
+                        </span>
+                        <span className="text-sm font-bold">
+                          {value}
+                        </span>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      {attr === 'strength' && 'Força'}
+                      {attr === 'agility' && 'Agilidade'}
+                      {attr === 'vigor' && 'Vigor'}
+                      {attr === 'intellect' && 'Intelecto'}
+                      {attr === 'presence' && 'Presença'}
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Perícias Treinadas */}
+          {visibleSkills.length > 0 && variant !== 'compact' && (
+            <div className="mb-3">
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <BookOpen className="w-3.5 h-3.5 text-muted-foreground" />
+                <span className="text-xs font-medium text-muted-foreground">Perícias</span>
+              </div>
+              <p className="text-xs text-foreground/80 leading-relaxed">
+                {visibleSkills.join(', ')}
+                {remainingSkills > 0 && (
+                  <span className="text-muted-foreground"> +{remainingSkills}</span>
+                )}
+              </p>
+            </div>
+          )}
+
+          {/* Poderes de Classe e Afinidade */}
+          {(classPowers.length > 0 || elementalAffinity) && variant !== 'compact' && (
+            <div className="mb-3">
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-muted-foreground" />
+                <span className="text-xs font-medium text-muted-foreground">Poderes</span>
+              </div>
+              
+              {/* Afinidade Elemental */}
+              {elementalAffinity && (
+                <div className="flex items-center gap-1 mb-1">
+                  <span className="text-xs text-muted-foreground">Afinidade:</span>
+                  <span className={cn('text-xs font-medium', getElementColorClass(elementalAffinity))}>
+                    {getElementDisplayName(elementalAffinity)}
+                  </span>
+                </div>
+              )}
+              
+              {/* Poderes de Classe */}
+              {classPowers.length > 0 && (
+                <p className="text-xs text-foreground/80 leading-relaxed">
+                  {classPowers.slice(0, 3).map(p => p.powerId).join(', ')}
+                  {classPowers.length > 3 && (
+                    <span className="text-muted-foreground"> +{classPowers.length - 3}</span>
+                  )}
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Rituais (para Ocultistas) */}
+          {rituals.length > 0 && classId === 'ocultista' && variant !== 'compact' && (
+            <div className="mb-3">
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <Skull className="w-3.5 h-3.5 text-purple-400" />
+                <span className="text-xs font-medium text-muted-foreground">Rituais</span>
+              </div>
+              <p className="text-xs text-foreground/80 leading-relaxed">
+                {rituals.slice(0, 3).join(', ')}
+                {rituals.length > 3 && (
+                  <span className="text-muted-foreground"> +{rituals.length - 3}</span>
+                )}
+              </p>
+            </div>
+          )}
+
+          {/* Equipamento Sugerido */}
+          {hasEquipment && variant !== 'compact' && (
+            <div className="mb-3">
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <Backpack className="w-3.5 h-3.5 text-muted-foreground" />
+                <span className="text-xs font-medium text-muted-foreground">Equipamento</span>
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {equipment?.weapons?.slice(0, 2).map((w, i) => (
+                  <Badge key={i} variant="outline" className="text-[10px] py-0">
+                    🗡️ {w.id}
+                  </Badge>
+                ))}
+                {equipment?.armor && (
+                  <Badge variant="outline" className="text-[10px] py-0">
+                    🛡️ {equipment.armor}
+                  </Badge>
+                )}
+              </div>
+            </div>
+          )}
+
+          <Separator className="my-3" />
 
           {/* Badges de info */}
           <div className="flex flex-wrap gap-1.5 mb-3">
@@ -147,7 +306,7 @@ export const TemplateCard = memo(function TemplateCard({
             {/* Origem */}
             {data.origin && (
               <Badge variant="outline" className="text-xs">
-                {data.origin}
+                {getOriginDisplayName(data.origin)}
               </Badge>
             )}
           </div>
