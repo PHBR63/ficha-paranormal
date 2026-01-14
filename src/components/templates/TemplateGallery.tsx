@@ -178,7 +178,7 @@ export function TemplateGallery({
         </TabsList>
 
         {/* Tab: Oficiais */}
-        <TabsContent value="official" className="flex-1 mt-0 min-h-0 overflow-y-auto px-1 pt-0 border-0 outline-none ring-0">
+        <TabsContent value="official" unmountOnHide className="flex-1 mt-0 min-h-0 overflow-y-auto px-1 pt-0 border-0 outline-none ring-0">
           <div className="pr-3 pb-8">
             {renderTemplateGrid(
               officialQuery.data || [],
@@ -189,7 +189,7 @@ export function TemplateGallery({
         </TabsContent>
 
         {/* Tab: Comunidade */}
-        <TabsContent value="community" className="flex-1 mt-0 flex flex-col min-h-0 overflow-hidden pt-0 border-0 outline-none ring-0">
+        <TabsContent value="community" unmountOnHide className="flex-1 mt-0 flex flex-col min-h-0 overflow-hidden pt-0 border-0 outline-none ring-0">
           {/* Filtros */}
           <TemplateFilters
             filters={filters}
@@ -238,7 +238,7 @@ export function TemplateGallery({
 
         {/* Tab: Meus Templates */}
         {user && (
-          <TabsContent value="my" className="flex-1 mt-0 min-h-0 overflow-y-auto px-1 pt-0 border-0 outline-none ring-0">
+          <TabsContent value="my" unmountOnHide className="flex-1 mt-0 min-h-0 overflow-y-auto px-1 pt-0 border-0 outline-none ring-0">
             <div className="pr-3 pb-8">
               {/* Botão de refresh */}
               <div className="flex justify-end mb-4">
