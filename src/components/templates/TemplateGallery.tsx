@@ -10,7 +10,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2, Package, Crown, User, Search, RefreshCw } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
+
 import { cn } from '@/lib/utils';
 import { TemplateCard } from './TemplateCard';
 import { TemplateFilters } from './TemplateFilters';
@@ -147,14 +147,14 @@ export function TemplateGallery({
   };
 
   return (
-    <div className={cn('flex flex-col h-full min-h-0', className)}>
+    <div className={cn('flex flex-col h-full min-h-0 overflow-hidden', className)}>
       <Tabs 
         value={activeTab} 
         onValueChange={(v) => setActiveTab(v as TabValue)}
-        className="flex flex-col h-full min-h-0"
+        className="flex flex-col flex-1 min-h-0"
       >
         {/* Tabs Header */}
-        <TabsList className="w-full justify-start mb-4">
+        <TabsList className="w-full justify-start mb-4 shrink-0">
           <TabsTrigger value="official" className="gap-2">
             <Crown className="w-4 h-4" />
             Oficiais
@@ -178,32 +178,30 @@ export function TemplateGallery({
         </TabsList>
 
         {/* Tab: Oficiais */}
-        <TabsContent value="official" className="flex-1 mt-0 min-h-0">
-          <ScrollArea className="h-full">
-            <div className="pr-4 pb-6">
-              {renderTemplateGrid(
-                officialQuery.data || [],
-                officialQuery.isLoading,
-                officialQuery.error as Error | null
-              )}
-            </div>
-          </ScrollArea>
+        <TabsContent value="official" className="flex-1 mt-0 min-h-0 overflow-y-auto px-1">
+          <div className="pr-3 pb-8">
+            {renderTemplateGrid(
+              officialQuery.data || [],
+              officialQuery.isLoading,
+              officialQuery.error as Error | null
+            )}
+          </div>
         </TabsContent>
 
         {/* Tab: Comunidade */}
-        <TabsContent value="community" className="flex-1 mt-0 flex flex-col min-h-0">
+        <TabsContent value="community" className="flex-1 mt-0 flex flex-col min-h-0 overflow-hidden">
           {/* Filtros */}
           <TemplateFilters
             filters={filters}
             onFilterChange={updateFilter}
             onClearFilters={clearFilters}
             hasActiveFilters={hasActiveFilters}
-            className="mb-4 shrink-0"
+            className="mb-4 shrink-0 px-1"
           />
 
           {/* Lista */}
-          <ScrollArea className="flex-1 min-h-0">
-            <div className="pr-4">
+          <div className="flex-1 min-h-0 overflow-y-auto px-1">
+            <div className="pr-3 pb-8">
               {renderTemplateGrid(
                 communityQuery.data?.templates || [],
                 communityQuery.isLoading,
@@ -235,37 +233,35 @@ export function TemplateGallery({
                 </div>
               )}
             </div>
-          </ScrollArea>
+          </div>
         </TabsContent>
 
         {/* Tab: Meus Templates */}
         {user && (
-          <TabsContent value="my" className="flex-1 mt-0 min-h-0">
-            <ScrollArea className="h-full">
-              <div className="pr-4 pb-6">
-                {/* Botão de refresh */}
-                <div className="flex justify-end mb-4">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => myTemplatesQuery.refetch()}
-                    disabled={myTemplatesQuery.isFetching}
-                  >
-                    <RefreshCw className={cn(
-                      'w-4 h-4 mr-1',
-                      myTemplatesQuery.isFetching && 'animate-spin'
-                    )} />
-                    Atualizar
-                  </Button>
-                </div>
-
-                {renderTemplateGrid(
-                  myTemplatesQuery.data || [],
-                  myTemplatesQuery.isLoading,
-                  myTemplatesQuery.error as Error | null
-                )}
+          <TabsContent value="my" className="flex-1 mt-0 min-h-0 overflow-y-auto px-1">
+            <div className="pr-3 pb-8">
+              {/* Botão de refresh */}
+              <div className="flex justify-end mb-4">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => myTemplatesQuery.refetch()}
+                  disabled={myTemplatesQuery.isFetching}
+                >
+                  <RefreshCw className={cn(
+                    'w-4 h-4 mr-1',
+                    myTemplatesQuery.isFetching && 'animate-spin'
+                  )} />
+                  Atualizar
+                </Button>
               </div>
-            </ScrollArea>
+
+              {renderTemplateGrid(
+                myTemplatesQuery.data || [],
+                myTemplatesQuery.isLoading,
+                myTemplatesQuery.error as Error | null
+              )}
+            </div>
           </TabsContent>
         )}
       </Tabs>
