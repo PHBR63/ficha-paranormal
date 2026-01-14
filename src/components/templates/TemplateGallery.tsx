@@ -147,11 +147,11 @@ export function TemplateGallery({
   };
 
   return (
-    <div className={cn('flex flex-col h-full min-h-0 overflow-hidden', className)}>
+    <div className={cn('flex flex-col h-full', className)}>
       <Tabs 
         value={activeTab} 
         onValueChange={(v) => setActiveTab(v as TabValue)}
-        className="flex flex-col flex-1 min-h-0"
+        className="flex flex-col h-full"
       >
         {/* Tabs Header */}
         <TabsList className="w-full justify-start mb-4 shrink-0">
