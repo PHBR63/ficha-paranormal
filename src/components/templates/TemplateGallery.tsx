@@ -147,11 +147,11 @@ export function TemplateGallery({
   };
 
   return (
-    <div className={cn('flex flex-col h-full', className)}>
+    <div className={cn('flex flex-col h-full min-h-0', className)}>
       <Tabs 
         value={activeTab} 
         onValueChange={(v) => setActiveTab(v as TabValue)}
-        className="flex flex-col h-full"
+        className="flex flex-col h-full min-h-0"
       >
         {/* Tabs Header */}
         <TabsList className="w-full justify-start mb-4">
@@ -178,9 +178,9 @@ export function TemplateGallery({
         </TabsList>
 
         {/* Tab: Oficiais */}
-        <TabsContent value="official" className="flex-1 mt-0">
-          <ScrollArea className="h-[calc(100%-1rem)]">
-            <div className="pr-4">
+        <TabsContent value="official" className="flex-1 mt-0 min-h-0">
+          <ScrollArea className="h-full">
+            <div className="pr-4 pb-6">
               {renderTemplateGrid(
                 officialQuery.data || [],
                 officialQuery.isLoading,
@@ -191,18 +191,18 @@ export function TemplateGallery({
         </TabsContent>
 
         {/* Tab: Comunidade */}
-        <TabsContent value="community" className="flex-1 mt-0 flex flex-col">
+        <TabsContent value="community" className="flex-1 mt-0 flex flex-col min-h-0">
           {/* Filtros */}
           <TemplateFilters
             filters={filters}
             onFilterChange={updateFilter}
             onClearFilters={clearFilters}
             hasActiveFilters={hasActiveFilters}
-            className="mb-4"
+            className="mb-4 shrink-0"
           />
 
           {/* Lista */}
-          <ScrollArea className="flex-1">
+          <ScrollArea className="flex-1 min-h-0">
             <div className="pr-4">
               {renderTemplateGrid(
                 communityQuery.data?.templates || [],
@@ -240,9 +240,9 @@ export function TemplateGallery({
 
         {/* Tab: Meus Templates */}
         {user && (
-          <TabsContent value="my" className="flex-1 mt-0">
-            <ScrollArea className="h-[calc(100%-1rem)]">
-              <div className="pr-4">
+          <TabsContent value="my" className="flex-1 mt-0 min-h-0">
+            <ScrollArea className="h-full">
+              <div className="pr-4 pb-6">
                 {/* Botão de refresh */}
                 <div className="flex justify-end mb-4">
                   <Button
