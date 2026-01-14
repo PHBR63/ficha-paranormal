@@ -79,8 +79,9 @@ export function TemplatePreviewModal({
 }: TemplatePreviewModalProps) {
   const { user } = useAuth();
 
-  // Hook de rating (só se tiver template)
-  const ratingHook = template ? useRateTemplate(template.id) : null;
+  // Hook de rating - sempre chamado (regra dos hooks)
+  const templateId = template?.id || '';
+  const ratingHook = useRateTemplate(templateId);
 
   // Dados do template
   const data = template?.template_data;
@@ -105,7 +106,7 @@ export function TemplatePreviewModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-2xl max-h-[90vh] p-0 overflow-hidden">
+      <DialogContent className="max-w-3xl h-[85vh] flex flex-col p-0 gap-0 overflow-hidden">
         <DialogHeader className="p-6 pb-0">
           <div className="flex items-start justify-between">
             <div className="flex items-start gap-4">
@@ -189,8 +190,8 @@ export function TemplatePreviewModal({
         <Separator className="my-4" />
 
         {/* Conteúdo com tabs */}
-        <Tabs defaultValue="overview" className="flex-1">
-          <TabsList className="mx-6">
+        <Tabs defaultValue="overview" className="flex-1 flex flex-col min-h-0">
+          <TabsList className="mx-6 shrink-0">
             <TabsTrigger value="overview">Visão Geral</TabsTrigger>
             <TabsTrigger value="powers">Poderes</TabsTrigger>
             {data.progression && data.progression.length > 0 && (
@@ -201,7 +202,7 @@ export function TemplatePreviewModal({
             )}
           </TabsList>
 
-          <ScrollArea className="h-[40vh] px-6">
+          <ScrollArea className="flex-1 min-h-0 px-6 pb-4">
             {/* Tab: Visão Geral */}
             <TabsContent value="overview" className="mt-4 space-y-6">
               {/* Descrição */}
@@ -402,7 +403,7 @@ export function TemplatePreviewModal({
             )}
 
             {/* Tab: Avaliar */}
-            {canRate && ratingHook && (
+            {canRate && (
               <TabsContent value="rate" className="mt-4">
                 <div className="flex flex-col items-center py-8">
                   <h4 className="text-lg font-medium mb-6">
@@ -431,7 +432,7 @@ export function TemplatePreviewModal({
         </Tabs>
 
         {/* Ações */}
-        <div className="p-6 pt-4 border-t flex justify-end gap-3">
+        <div className="p-6 pt-4 border-t shrink-0 flex justify-end gap-3">
           <Button variant="outline" onClick={onClose}>
             Cancelar
           </Button>
