@@ -102,6 +102,19 @@ export type CharacterFormData = {
     toLevel: number;
   }>>;
   
+  // Escolhas do poder "Transcender" (poder paranormal escolhido)
+  // Mapa de "powerId-instanceIndex" para o poder paranormal selecionado
+  transcenderChoices: Record<string, {
+    powerId: string;
+    powerName: string;
+    powerElement: string;
+    subchoices?: {
+      skills?: string[];
+      ritualId?: string;
+      resistElement?: string;
+    };
+  }>;
+  
   // Versatilidade (NEX 50%+)
   versatilityChoice?: {
     type: 'class_power' | 'track_ability';
@@ -163,6 +176,7 @@ const initialFormData: CharacterFormData = {
   rituals: [],
   originParanormalPower: null,
   skillTrainingChoices: {},
+  transcenderChoices: {},
   versatilityChoice: null,
   secondaryTrackAbility: null,
 };
@@ -522,12 +536,16 @@ export default function CharacterCreate() {
 
   const handleNext = useCallback(() => {
     if (currentStep < STEPS.length - 1) {
+      // Define direção ANTES de mudar o step para evitar flash de tela em branco
+      setTransitionDirection('forward');
       setCurrentStep(prev => prev + 1);
     }
   }, [currentStep, STEPS.length]);
 
   const handleBack = useCallback(() => {
     if (currentStep > 0) {
+      // Define direção ANTES de mudar o step para evitar flash de tela em branco
+      setTransitionDirection('backward');
       setCurrentStep(prev => prev - 1);
     }
   }, [currentStep]);
@@ -779,13 +797,8 @@ export default function CharacterCreate() {
   const [transitionDirection, setTransitionDirection] = useState<'forward' | 'backward'>('forward');
   const previousStepRef = useRef(currentStep);
 
-  // Atualiza direção da transição quando o step muda
+  // Atualiza ref do step anterior (direção agora é definida nos handlers)
   useEffect(() => {
-    if (currentStep > previousStepRef.current) {
-      setTransitionDirection('forward');
-    } else if (currentStep < previousStepRef.current) {
-      setTransitionDirection('backward');
-    }
     previousStepRef.current = currentStep;
   }, [currentStep]);
 
