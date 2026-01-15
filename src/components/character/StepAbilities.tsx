@@ -43,8 +43,16 @@ import { getRulebookContent } from '@/lib/rulebook-content';
 import { AbilityDetailModal } from './AbilityDetailModal';
 import { VersatilitySection, VersatilityChoice, isVersatilityChoiceComplete } from './VersatilitySection';
 import { SkillTrainingSelectModal, SkillTrainingResult, SkillTrainingChoice } from './SkillTrainingSelectModal';
+import { ParanormalPowerSelectModal } from './ParanormalPowerSelectModal';
+import { PowerSubchoiceModal } from './PowerSubchoiceModal';
 import { calculateDerivedStats, SKILLS } from '@/lib/character-data';
 import { rebuildCharacterSheet } from '@/lib/character-builder-engine';
+import { 
+  type ParanormalPower, 
+  type ParanormalElement,
+  getPowerById,
+  PARANORMAL_POWERS 
+} from '@/lib/paranormal-powers';
 
 // ==================== MARCOS DE PROGRESSÃO OFICIAIS (Tabelas 1.3, 1.4, 1.5) ====================
 // Mapeamento de habilidades que evoluem com NEX conforme livro oficial
@@ -114,7 +122,7 @@ const CLASS_COLORS: Record<string, string> = {
 };
 
 export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) {
-  const { characterClass, nex, abilities, classTrack, skillTrainingChoices = {} } = formData;
+  const { characterClass, nex, abilities, classTrack, skillTrainingChoices = {}, transcenderChoices = {} } = formData;
   
   // Estado para o modal de detalhes
   const [selectedAbilityForDetail, setSelectedAbilityForDetail] = useState<ClassAbility | null>(null);
@@ -127,6 +135,17 @@ export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) 
     instanceIndex: number;
   } | null>(null);
   
+  // Estado para o modal de Transcender (escolha de poder paranormal)
+  const [transcenderModalOpen, setTranscenderModalOpen] = useState(false);
+  const [pendingTranscender, setPendingTranscender] = useState<{
+    powerId: string;
+    instanceIndex: number;
+  } | null>(null);
+  
+  // Estado para o modal de sub-escolhas do poder paranormal
+  const [subchoiceModalOpen, setSubchoiceModalOpen] = useState(false);
+  const [pendingPowerForSubchoice, setPendingPowerForSubchoice] = useState<ParanormalPower | null>(null);
+  
   // Estado para Versatilidade (NEX >= 50%)
   const [versatilityChoice, setVersatilityChoice] = useState<VersatilityChoice | null>(
     (formData as any).versatilityChoice || null
@@ -134,6 +153,9 @@ export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) 
   
   // IDs de poderes de Treinamento em Perícia (todas as classes)
   const SKILL_TRAINING_IDS = ['treinamento-pericia-comb', 'treinamento-pericia-esp', 'treinamento-pericia-ocult'];
+  
+  // IDs de poderes Transcender (todas as classes)
+  const TRANSCENDER_IDS = ['transcender', 'transcender-esp', 'transcender-ocultista'];
   
   // Verifica se personagem está em NEX 50%+ (precisa fazer escolha de Versatilidade)
   const showVersatility = nex >= 50 && classTrack;
@@ -238,7 +260,12 @@ export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) 
   // Verifica se um poder é Treinamento em Perícia
   const isSkillTrainingPower = useCallback((abilityId: string) => {
     return SKILL_TRAINING_IDS.includes(abilityId);
-  }, []);
+  }, [SKILL_TRAINING_IDS]);
+  
+  // Verifica se um poder é Transcender
+  const isTranscenderPower = useCallback((abilityId: string) => {
+    return TRANSCENDER_IDS.includes(abilityId);
+  }, [TRANSCENDER_IDS]);
   
   // Gera a chave para armazenar escolhas de Treinamento em Perícia
   const getSkillTrainingKey = useCallback((powerId: string, instanceIndex: number) => {
@@ -316,6 +343,117 @@ export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) 
     }
   }, [abilities, skillTrainingChoices, getAbilityCount, getSkillTrainingKey, updateFormData]);
 
+  // Handler para adicionar uma instância de Transcender (abre modal de poder paranormal)
+  const handleAddTranscender = useCallback((abilityId: string) => {
+    if (remainingChoices <= 0) return;
+    
+    // Calcular qual será o índice desta nova instância
+    const currentCount = getAbilityCount(abilityId);
+    const newInstanceIndex = currentCount;
+    
+    // Abrir modal para escolher o poder paranormal
+    setPendingTranscender({
+      powerId: abilityId,
+      instanceIndex: newInstanceIndex,
+    });
+    setTranscenderModalOpen(true);
+  }, [remainingChoices, getAbilityCount]);
+  
+  // Obtém os poderes paranormais já escolhidos via Transcender (para validação de pré-requisitos)
+  const characterParanormalPowers = useMemo(() => {
+    const powers: ParanormalPower[] = [];
+    Object.values(transcenderChoices).forEach(choice => {
+      const power = getPowerById(choice.powerId);
+      if (power) {
+        powers.push(power);
+      }
+    });
+    return powers;
+  }, [transcenderChoices]);
+  
+  // Gera a chave para armazenar escolhas de Transcender
+  const getTranscenderKey = useCallback((powerId: string, instanceIndex: number) => {
+    return `${powerId}-${instanceIndex}`;
+  }, []);
+  
+  // Handler para quando um poder paranormal é selecionado no modal de Transcender
+  const handleTranscenderPowerSelect = useCallback((power: ParanormalPower) => {
+    // Se o poder requer escolha adicional (perícias, ritual, elemento), abre o modal de sub-escolhas
+    if (power.requiresChoice) {
+      setPendingPowerForSubchoice(power);
+      setTranscenderModalOpen(false);
+      setSubchoiceModalOpen(true);
+    } else {
+      // Poder não requer escolha adicional, confirma diretamente
+      confirmTranscenderChoice(power, undefined);
+    }
+  }, []);
+  
+  // Confirma a escolha de Transcender (com ou sem sub-escolhas)
+  const confirmTranscenderChoice = useCallback((power: ParanormalPower, subchoices?: { skills?: string[]; ritualId?: string; resistElement?: string }) => {
+    if (!pendingTranscender) return;
+    
+    const key = getTranscenderKey(pendingTranscender.powerId, pendingTranscender.instanceIndex);
+    
+    // Adicionar o poder Transcender ao array de abilities
+    const newAbilities = [...abilities, pendingTranscender.powerId];
+    
+    // Salvar a escolha do poder paranormal
+    const newTranscenderChoices = {
+      ...transcenderChoices,
+      [key]: {
+        powerId: power.id,
+        powerName: power.name,
+        powerElement: power.element,
+        subchoices,
+      },
+    };
+    
+    updateFormData({
+      abilities: newAbilities,
+      transcenderChoices: newTranscenderChoices,
+    } as any);
+    
+    // Fechar modais
+    setTranscenderModalOpen(false);
+    setSubchoiceModalOpen(false);
+    setPendingTranscender(null);
+    setPendingPowerForSubchoice(null);
+  }, [abilities, transcenderChoices, pendingTranscender, getTranscenderKey, updateFormData]);
+  
+  // Handler para confirmar sub-escolhas do poder paranormal
+  const handleSubchoiceConfirm = useCallback((subchoices: { skills?: string[]; ritualId?: string; resistElement?: string }) => {
+    if (pendingPowerForSubchoice) {
+      confirmTranscenderChoice(pendingPowerForSubchoice, subchoices);
+    }
+  }, [pendingPowerForSubchoice, confirmTranscenderChoice]);
+  
+  // Handler para remover instância de Transcender
+  const handleRemoveTranscender = useCallback((abilityId: string) => {
+    const count = getAbilityCount(abilityId);
+    if (count === 0) return;
+    
+    // Remove a última instância
+    const lastInstanceIndex = count - 1;
+    const key = getTranscenderKey(abilityId, lastInstanceIndex);
+    
+    // Remover do array de abilities
+    const index = abilities.lastIndexOf(abilityId);
+    if (index !== -1) {
+      const newAbilities = [...abilities];
+      newAbilities.splice(index, 1);
+      
+      // Remover a escolha de poder paranormal desta instância
+      const newTranscenderChoices = { ...transcenderChoices };
+      delete newTranscenderChoices[key];
+      
+      updateFormData({
+        abilities: newAbilities,
+        transcenderChoices: newTranscenderChoices,
+      } as any);
+    }
+  }, [abilities, transcenderChoices, getAbilityCount, getTranscenderKey, updateFormData]);
+
   // Handler para adicionar uma instância de um poder (usado para poderes repetíveis)
   const handleAddAbility = useCallback((abilityId: string) => {
     // Se for Treinamento em Perícia, abre o modal
@@ -324,12 +462,18 @@ export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) 
       return;
     }
     
+    // Se for Transcender, abre o modal de poder paranormal
+    if (isTranscenderPower(abilityId)) {
+      handleAddTranscender(abilityId);
+      return;
+    }
+    
     if (remainingChoices > 0) {
       updateFormData({
         abilities: [...abilities, abilityId]
       });
     }
-  }, [abilities, remainingChoices, updateFormData, isSkillTrainingPower, handleAddSkillTraining]);
+  }, [abilities, remainingChoices, updateFormData, isSkillTrainingPower, handleAddSkillTraining, isTranscenderPower, handleAddTranscender]);
   
   // Handler para remover UMA instância de um poder (usado para poderes repetíveis)
   const handleRemoveOneInstance = useCallback((abilityId: string) => {
@@ -339,13 +483,19 @@ export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) 
       return;
     }
     
+    // Se for Transcender, usa handler específico
+    if (isTranscenderPower(abilityId)) {
+      handleRemoveTranscender(abilityId);
+      return;
+    }
+    
     const index = abilities.lastIndexOf(abilityId);
     if (index !== -1) {
       const newAbilities = [...abilities];
       newAbilities.splice(index, 1);
       updateFormData({ abilities: newAbilities });
     }
-  }, [abilities, updateFormData, isSkillTrainingPower, handleRemoveSkillTraining]);
+  }, [abilities, updateFormData, isSkillTrainingPower, handleRemoveSkillTraining, isTranscenderPower, handleRemoveTranscender]);
 
   // Handler antigo para poderes não-repetíveis (toggle simples)
   const handleToggleAbility = useCallback((abilityId: string) => {
@@ -815,6 +965,39 @@ export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) 
               pendingSkillTraining.powerId, 
               pendingSkillTraining.instanceIndex
             ) as SkillTrainingChoice[]}
+          />
+        )}
+        
+        {/* Modal de seleção de poder paranormal para Transcender */}
+        <ParanormalPowerSelectModal
+          open={transcenderModalOpen}
+          onOpenChange={(open) => {
+            setTranscenderModalOpen(open);
+            if (!open) {
+              setPendingTranscender(null);
+            }
+          }}
+          onSelectPower={handleTranscenderPowerSelect}
+          characterPowers={characterParanormalPowers}
+          elementalAffinity={null}
+          affinityActive={false}
+        />
+        
+        {/* Modal de sub-escolhas para poderes paranormais que requerem escolha adicional */}
+        {pendingPowerForSubchoice && (
+          <PowerSubchoiceModal
+            open={subchoiceModalOpen}
+            onClose={() => {
+              setSubchoiceModalOpen(false);
+              setPendingPowerForSubchoice(null);
+              // Reabre o modal de Transcender se o usuário cancelar
+              if (pendingTranscender) {
+                setTranscenderModalOpen(true);
+              }
+            }}
+            onConfirm={handleSubchoiceConfirm}
+            power={pendingPowerForSubchoice}
+            hasAffinity={false}
           />
         )}
       </div>
