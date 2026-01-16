@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useEffect } from "react";
 import { motion, useSpring, useTransform } from "framer-motion";
 import { cn } from "@/lib/utils";
 
@@ -68,10 +69,15 @@ export function AnimatedProgress({
   const percentage = Math.min(100, Math.max(0, (value / max) * 100));
   const styles = variantStyles[variant];
   
-  // Animated width
+  // Animated width com atualização reativa
   const springConfig = { stiffness: 100, damping: 15 };
   const animatedWidth = useSpring(percentage, springConfig);
   const width = useTransform(animatedWidth, (v) => `${v}%`);
+
+  // Atualizar o spring quando o percentage mudar (correção do bug de animação)
+  useEffect(() => {
+    animatedWidth.set(percentage);
+  }, [percentage, animatedWidth]);
 
   // Low value warning
   const isLow = percentage <= 25;
