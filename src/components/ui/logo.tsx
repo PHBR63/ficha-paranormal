@@ -4,7 +4,7 @@
  */
 
 import { cn } from '@/lib/utils';
-import logoSrc from '@/assets/logo.png';
+import logoSrc from '@/assets/logo.svg';
 
 // Tamanhos pré-definidos do logo (em pixels)
 const SIZE_MAP = {
