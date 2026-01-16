@@ -28,7 +28,8 @@ import {
   AlertTriangle,
   Repeat,
   GraduationCap,
-  Settings2
+  Settings2,
+  Ban
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { 
@@ -53,6 +54,13 @@ import {
   getPowerById,
   PARANORMAL_POWERS 
 } from '@/lib/paranormal-powers';
+import {
+  checkPowerPrerequisites,
+  formatPrerequisitesText,
+  hasPowerPrerequisites,
+  type CharacterDataForPrerequisites,
+  type PrerequisiteCheckResult,
+} from '@/lib/class-abilities-prerequisites';
 
 // ==================== MARCOS DE PROGRESSÃO OFICIAIS (Tabelas 1.3, 1.4, 1.5) ====================
 // Mapeamento de habilidades que evoluem com NEX conforme livro oficial
@@ -250,6 +258,82 @@ export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) 
     const transcenderIds = ['transcender', 'transcender-esp', 'transcender-ocultista'];
     return abilities.filter(a => transcenderIds.includes(a)).length;
   }, [abilities]);
+  
+  // ==================== VALIDAÇÃO DE PRÉ-REQUISITOS ====================
+  
+  // Dados do personagem para verificação de pré-requisitos
+  const characterDataForPrereqs: CharacterDataForPrerequisites = useMemo(() => {
+    // Rebuild para obter perícias treinadas
+    const buildState = {
+      name: formData.name || '',
+      playerName: formData.playerName || '',
+      concept: formData.concept || '',
+      age: formData.age,
+      gender: formData.gender || '',
+      appearance: formData.appearance || '',
+      personality: formData.personality || '',
+      origin: formData.origin,
+      characterClass: formData.characterClass,
+      nex: formData.nex,
+      patent: formData.patent || 'Recruta',
+      attributes: formData.attributes,
+      originSkills: formData.originSkills,
+      classSkillChoices: formData.classSkillChoices,
+      freeSkills: formData.freeSkills,
+      conflictResolutions: formData.conflictResolutions,
+      powers: formData.powers,
+      background: formData.background || '',
+    };
+    
+    const result = rebuildCharacterSheet(buildState);
+    
+    return {
+      nex: formData.nex,
+      attributes: {
+        strength: formData.attributes.strength,
+        agility: formData.attributes.agility,
+        vigor: formData.attributes.vigor,
+        intellect: formData.attributes.intellect,
+        presence: formData.attributes.presence,
+      },
+      trainedSkills: result.allTrainedSkills,
+      skillLevels: currentSkillLevels,
+      powers: abilities,
+      proficiencies: result.proficiencies,
+    };
+  }, [
+    formData.name, formData.playerName, formData.concept, formData.age, formData.gender,
+    formData.appearance, formData.personality, formData.origin, formData.characterClass,
+    formData.nex, formData.patent, formData.attributes, formData.originSkills,
+    formData.classSkillChoices, formData.freeSkills, formData.conflictResolutions,
+    formData.powers, formData.background, abilities, currentSkillLevels
+  ]);
+  
+  // Cache de verificação de pré-requisitos para cada poder
+  const prerequisiteResults = useMemo(() => {
+    const results: Record<string, PrerequisiteCheckResult> = {};
+    
+    for (const ability of choosableAbilities) {
+      if (hasPowerPrerequisites(ability.id)) {
+        results[ability.id] = checkPowerPrerequisites(ability.id, characterDataForPrereqs);
+      }
+    }
+    
+    return results;
+  }, [choosableAbilities, characterDataForPrereqs]);
+  
+  // Função para verificar se um poder pode ser selecionado (atende pré-requisitos)
+  const canSelectPower = useCallback((abilityId: string): boolean => {
+    const result = prerequisiteResults[abilityId];
+    // Se não há pré-requisitos ou atende todos, pode selecionar
+    return !result || result.meets;
+  }, [prerequisiteResults]);
+  
+  // Função para obter mensagem de pré-requisitos faltantes
+  const getMissingPrerequisites = useCallback((abilityId: string): string[] => {
+    const result = prerequisiteResults[abilityId];
+    return result?.missing || [];
+  }, [prerequisiteResults]);
   
   // Abre o modal com os detalhes da habilidade
   const openAbilityDetail = (ability: ClassAbility) => {
@@ -770,7 +854,17 @@ export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) 
                     const count = getAbilityCount(ability.id);
                     const isSelected = count > 0;
                     const isRepeatable = ability.isRepeatable ?? false;
-                    const isDisabled = !isSelected && remainingChoices === 0;
+                    
+                    // Verificar pré-requisitos
+                    const meetsPrereqs = canSelectPower(ability.id);
+                    const missingPrereqs = getMissingPrerequisites(ability.id);
+                    const hasPrereqs = hasPowerPrerequisites(ability.id);
+                    const prereqText = formatPrerequisitesText(ability.id);
+                    
+                    // Desabilitado se não atende pré-requisitos OU se não tem escolhas restantes
+                    const isDisabledByPrereqs = !meetsPrereqs && !isSelected;
+                    const isDisabledByChoices = !isSelected && remainingChoices === 0;
+                    const isDisabled = isDisabledByPrereqs || isDisabledByChoices;
                     
                     // Verificar se é Transcender para mostrar aviso de SAN
                     const isTranscender = ability.id.includes('transcender');
@@ -785,8 +879,10 @@ export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) 
                           "p-4 rounded-lg border transition-all",
                           isSelected 
                             ? cn("bg-gradient-to-r", classColor)
-                            : "bg-card/50 hover:bg-card/80",
-                          isDisabled && !isRepeatable && "opacity-50"
+                            : isDisabledByPrereqs
+                              ? "bg-destructive/5 border-destructive/20 opacity-60"
+                              : "bg-card/50 hover:bg-card/80",
+                          isDisabledByChoices && !isDisabledByPrereqs && !isRepeatable && "opacity-50"
                         )}
                       >
                         <div className="flex items-start gap-3">
@@ -817,7 +913,7 @@ export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) 
                                 size="icon"
                                 variant="ghost"
                                 className="h-6 w-6"
-                                disabled={remainingChoices === 0}
+                                disabled={isDisabled}
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleAddAbility(ability.id);
@@ -826,6 +922,28 @@ export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) 
                                 <Plus className="w-3 h-3" />
                               </Button>
                             </div>
+                          ) : isDisabledByPrereqs ? (
+                            // Ícone de bloqueio para pré-requisitos não atendidos
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="mt-0.5 p-1">
+                                  <Ban className="w-4 h-4 text-destructive" />
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent side="right" className="max-w-xs">
+                                <div className="space-y-1">
+                                  <p className="font-medium text-destructive">Pré-requisitos não atendidos:</p>
+                                  <ul className="text-xs space-y-0.5">
+                                    {missingPrereqs.map((prereq, i) => (
+                                      <li key={i} className="flex items-center gap-1">
+                                        <span className="text-destructive">✗</span>
+                                        {prereq}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              </TooltipContent>
+                            </Tooltip>
                           ) : (
                             <Checkbox
                               checked={isSelected}
@@ -843,7 +961,12 @@ export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) 
                           >
                             <div className="flex items-center justify-between gap-2">
                               <div className="flex items-center gap-2 flex-wrap">
-                                <h4 className="font-medium text-foreground">{ability.name}</h4>
+                                <h4 className={cn(
+                                  "font-medium",
+                                  isDisabledByPrereqs ? "text-muted-foreground" : "text-foreground"
+                                )}>
+                                  {ability.name}
+                                </h4>
                                 <Badge variant="outline" className="text-xs">
                                   NEX {ability.minNex}%
                                 </Badge>
@@ -854,15 +977,59 @@ export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) 
                                     Repetível
                                   </Badge>
                                 )}
+                                {/* Badge de pré-requisitos */}
+                                {hasPrereqs && (
+                                  <Badge 
+                                    variant={meetsPrereqs ? "outline" : "destructive"}
+                                    className={cn(
+                                      "text-xs gap-1",
+                                      meetsPrereqs && "border-success/50 text-success"
+                                    )}
+                                  >
+                                    {meetsPrereqs ? (
+                                      <>
+                                        <CheckCircle2 className="w-3 h-3" />
+                                        Pré-requisitos
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Lock className="w-3 h-3" />
+                                        Requisitos
+                                      </>
+                                    )}
+                                  </Badge>
+                                )}
                               </div>
                               <Eye className="w-4 h-4 text-muted-foreground hover:text-primary transition-colors flex-shrink-0" />
                             </div>
-                            <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                            <p className={cn(
+                              "text-sm mt-1 line-clamp-2",
+                              isDisabledByPrereqs ? "text-muted-foreground/70" : "text-muted-foreground"
+                            )}>
                               {ability.description}
                             </p>
                             
+                            {/* Mostrar pré-requisitos faltantes */}
+                            {isDisabledByPrereqs && missingPrereqs.length > 0 && (
+                              <div className="mt-2 p-2 bg-destructive/10 border border-destructive/30 rounded">
+                                <div className="flex items-start gap-2">
+                                  <Lock className="w-3 h-3 text-destructive flex-shrink-0 mt-0.5" />
+                                  <div className="space-y-1">
+                                    <span className="text-xs font-medium text-destructive">
+                                      Faltam:
+                                    </span>
+                                    <ul className="text-xs text-destructive/80 space-y-0.5">
+                                      {missingPrereqs.map((prereq, i) => (
+                                        <li key={i}>• {prereq}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                            
                             {/* Aviso de custo de SAN para Transcender */}
-                            {isTranscender && (
+                            {isTranscender && !isDisabledByPrereqs && (
                               <div className="mt-2 p-2 bg-warning/10 border border-warning/30 rounded flex items-center gap-2">
                                 <AlertTriangle className="w-3 h-3 text-warning flex-shrink-0" />
                                 <span className="text-xs text-warning">
