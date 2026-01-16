@@ -5,11 +5,13 @@
  * 
  * REFATORADO: Removida animação infinita problemática
  * Usa animação simples de fade/scale sem loops
+ * 
+ * FASE 2: Integrado com PowerActivationPanel para poderes ativáveis
  */
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Dices, X, RotateCcw, Sparkles, Info } from 'lucide-react';
+import { Dices, X, RotateCcw, Sparkles, Info, Zap } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import {
@@ -21,6 +23,12 @@ import {
 import { cn } from '@/lib/utils';
 import confetti from 'canvas-confetti';
 import { DiceRollResult, rollSkillTest } from '@/lib/dice-roller';
+import { 
+  PowerActivationPanel, 
+  usePowerActivation, 
+  type ActivatablePower 
+} from './PowerActivationPanel';
+import { calculatePowerActivationEffects } from '@/lib/class-powers/activatable-powers-bridge';
 
 // Interface para detalhamento de bônus por origem
 export interface BonusSource {
@@ -41,6 +49,12 @@ interface DiceRollModalProps {
   resistanceBonus?: number; // Bônus de resistência (Fortitude, Reflexos, Vontade)
   bonusSources?: BonusSource[]; // Detalhamento dos bônus aplicados
   onRollComplete?: (result: DiceRollResult) => void;
+  // Novas props para ativação de poderes
+  activatablePowers?: ActivatablePower[];
+  peCurrent?: number;
+  nex?: number;
+  intellect?: number;
+  onPEChange?: (newPE: number) => void;
 }
 
 // Componente de dado individual - animação simples sem loop
@@ -91,11 +105,27 @@ export function DiceRollModal({
   resistanceBonus = 0,
   bonusSources = [],
   onRollComplete,
+  // Novas props para ativação de poderes
+  activatablePowers = [],
+  peCurrent = 0,
+  nex = 5,
+  intellect = 1,
+  onPEChange,
 }: DiceRollModalProps) {
   // Estados
   const [phase, setPhase] = useState<'idle' | 'rolling' | 'done'>('idle');
   const [displayDice, setDisplayDice] = useState<number[]>([]);
   const [result, setResult] = useState<DiceRollResult | null>(null);
+  const [isPowerPanelExpanded, setIsPowerPanelExpanded] = useState(true);
+  
+  // Hook para gerenciar ativação de poderes
+  const {
+    activationStates,
+    togglePower,
+    resetActivations,
+    getActivePowers,
+    getTotalPECost,
+  } = usePowerActivation(activatablePowers);
   
   // Ref para controlar se já rolou nesta abertura (React 19: valor inicial obrigatório)
   const hasRolledRef = useRef<boolean>(false);
@@ -113,11 +143,33 @@ export function DiceRollModal({
     other: 'bg-secondary/50 text-secondary-foreground',
   };
 
-  // Calcula quantidade de dados
-  const diceCount = attributeValue <= 0 ? 2 : attributeValue;
+  // Calcula bônus adicionais dos poderes ativados
+  const activatedPowerEffects = useMemo(() => {
+    const activePowers = getActivePowers();
+    let extraBonus = 0;
+    let extraDice: string[] = [];
+    let attributeSwap: string | undefined;
+    let notes: string[] = [];
+    
+    for (const ap of activePowers) {
+      const effects = calculatePowerActivationEffects(ap.powerId, nex, intellect);
+      extraBonus += effects.skillBonusChange;
+      if (effects.extraDice) extraDice.push(effects.extraDice);
+      if (effects.attributeSwap) attributeSwap = effects.attributeSwap;
+      if (effects.specialNote) notes.push(effects.specialNote);
+    }
+    
+    return { extraBonus, extraDice, attributeSwap, notes };
+  }, [getActivePowers, nex, intellect]);
+
+  // Calcula quantidade de dados (considera troca de atributo)
+  const effectiveAttribute = activatedPowerEffects.attributeSwap === 'intellect' 
+    ? intellect 
+    : attributeValue;
+  const diceCount = effectiveAttribute <= 0 ? 2 : effectiveAttribute;
 
   // Função para executar a rolagem
-  const executeRoll = () => {
+  const executeRoll = useCallback(() => {
     // Limpa qualquer animação anterior
     if (animationRef.current) {
       clearInterval(animationRef.current);
@@ -130,9 +182,19 @@ export function DiceRollModal({
     let frameCount = 0;
     const maxFrames = 12;
     
+    // Calcula bônus final incluindo poderes ativados
+    const powerBonus = activatedPowerEffects.extraBonus;
+    const totalBonus = skillBonus + resistanceBonus + powerBonus;
+    
+    // Calcula atributo efetivo (considera troca)
+    const finalAttribute = activatedPowerEffects.attributeSwap === 'intellect' 
+      ? intellect 
+      : attributeValue;
+    const finalDiceCount = finalAttribute <= 0 ? 2 : finalAttribute;
+    
     // Animação de números aleatórios
     animationRef.current = setInterval(() => {
-      const randomValues = Array.from({ length: diceCount }, () => 
+      const randomValues = Array.from({ length: finalDiceCount }, () => 
         Math.floor(Math.random() * 20) + 1
       );
       setDisplayDice(randomValues);
@@ -146,10 +208,9 @@ export function DiceRollModal({
           animationRef.current = null;
         }
         
-        // Executa a rolagem real - inclui bônus de resistência no skillBonus total
-        const totalBonus = skillBonus + resistanceBonus;
+        // Executa a rolagem real
         const rollResult = rollSkillTest({
-          attributeValue,
+          attributeValue: finalAttribute,
           skillBonus: totalBonus,
           label,
         });
@@ -157,6 +218,12 @@ export function DiceRollModal({
         setDisplayDice(rollResult.dice);
         setResult(rollResult);
         setPhase('done');
+        
+        // Desconta PE dos poderes ativados
+        const peCost = getTotalPECost();
+        if (peCost > 0 && onPEChange) {
+          onPEChange(Math.max(0, peCurrent - peCost));
+        }
         
         // Confetti em crítico
         if (rollResult.isCritical) {
@@ -172,7 +239,18 @@ export function DiceRollModal({
         onRollComplete?.(rollResult);
       }
     }, 100);
-  };
+  }, [
+    skillBonus, 
+    resistanceBonus, 
+    attributeValue, 
+    intellect,
+    label, 
+    onRollComplete, 
+    activatedPowerEffects, 
+    getTotalPECost, 
+    onPEChange, 
+    peCurrent
+  ]);
 
   // Efeito para auto-rolar quando abre
   useEffect(() => {
@@ -199,8 +277,10 @@ export function DiceRollModal({
       setDisplayDice([]);
       setResult(null);
       hasRolledRef.current = false;
+      // Reset ativações de poderes
+      resetActivations();
     }
-  }, [open]);
+  }, [open, resetActivations]);
 
   // Cleanup no unmount
   useEffect(() => {
