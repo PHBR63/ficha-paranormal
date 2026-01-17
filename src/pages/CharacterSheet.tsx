@@ -255,6 +255,8 @@ interface Character {
   } | null;
   // Escolhas de Treinamento em Perícia (poder geral)
   skill_training_choices?: Record<string, Array<{ skillId: string; fromLevel: number; toLevel: number }>>;
+  // Sub-escolhas de poderes de classe (Especialista em Arma, Perito, etc.)
+  class_power_choices?: Record<string, { powerId: string; choiceType: string; chosenValues: string[] }>;
 }
 
 // Helper para converter condições persistidas para ActiveCondition
@@ -1054,6 +1056,7 @@ export default function CharacterSheet() {
     attributeIncrease?: string;
     versatilityChoice?: { type: string; trackId?: string; trackName?: string; abilityId?: string; abilityName?: string };
     skillUpgrades?: string[]; // Perícias selecionadas para Grau de Treinamento
+    classPowerChoices?: Record<string, { powerId: string; choiceType: string; chosenValues: string[] }>; // Sub-escolhas de poderes de classe
   }) => {
     if (!character) return;
 
@@ -1135,6 +1138,16 @@ export default function CharacterSheet() {
       updateData.skills = updatedSkills;
       console.log(`[Grau de Treinamento] ${character.name} aprimorou ${newStats.skillUpgrades.length} perícias no NEX ${newNex}%`);
     }
+    
+    // Se há sub-escolhas de poderes de classe, merge com existentes
+    if (newStats.classPowerChoices && Object.keys(newStats.classPowerChoices).length > 0) {
+      const existingChoices = character.class_power_choices || {};
+      updateData.class_power_choices = {
+        ...existingChoices,
+        ...newStats.classPowerChoices,
+      };
+      console.log(`[Sub-escolhas] ${character.name} registrou ${Object.keys(newStats.classPowerChoices).length} sub-escolha(s) de poder de classe`);
+    }
 
     const { error } = await supabase
       .from('characters')
@@ -1179,6 +1192,13 @@ export default function CharacterSheet() {
       } : {}),
       // Atualiza atributo se aumentado
       ...(newStats.attributeIncrease ? { [newStats.attributeIncrease]: (prev[newStats.attributeIncrease as keyof typeof prev] as number) + 1 } : {}),
+      // Atualiza sub-escolhas de poderes de classe
+      ...(newStats.classPowerChoices && Object.keys(newStats.classPowerChoices).length > 0 ? {
+        class_power_choices: {
+          ...(prev.class_power_choices || {}),
+          ...newStats.classPowerChoices,
+        }
+      } : {}),
     } : null);
 
     setHpCurrent(newHpCurrent);
@@ -2835,13 +2855,22 @@ export default function CharacterSheet() {
                           a => a.name === abilityName && a.classId === character.class
                         );
                         const isAbilityActive = (character.active_conditional_bonuses || []).includes(abilityData?.id || '');
+                        
+                        // Verifica se há sub-escolha para este poder (Especialista em Arma, Perito, etc.)
+                        const powerSubchoice = abilityData?.id ? character.class_power_choices?.[abilityData.id] : undefined;
+                        const subchoiceText = powerSubchoice?.chosenValues?.join(', ');
+                        
                         return (
                           <SheetAccordionItem
                             key={i}
                             title={abilityName}
-                            description={abilityData?.description}
-                            badge="Classe"
-                            badgeVariant="default"
+                            description={
+                              subchoiceText 
+                                ? `${abilityData?.description || ''}\n\n📌 Escolha: ${subchoiceText}`
+                                : abilityData?.description
+                            }
+                            badge={subchoiceText ? subchoiceText : "Classe"}
+                            badgeVariant={subchoiceText ? "secondary" : "default"}
                             isActive={isAbilityActive}
                             onClick={() => {
                               if (abilityData) {

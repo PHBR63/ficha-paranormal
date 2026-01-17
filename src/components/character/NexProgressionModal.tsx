@@ -489,8 +489,7 @@ export function NexProgressionModal({
       });
       return;
     }
-      return;
-    }
+    
     // Validação: atributo selecionado não pode estar no limite
     if (showAttributeIncrease && selectedAttributeIncrease) {
       const attrValue = character[selectedAttributeIncrease as keyof typeof character] as number;
