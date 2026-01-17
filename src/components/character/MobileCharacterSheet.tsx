@@ -471,7 +471,20 @@ export function MobileCharacterSheet({
     return getOcultistRituals(character.nex);
   }, [character.class, character.nex]);
 
-  const hasExcessRituals = ritualLimits 
+  // Extrai grupos de armas escolhidos em Especialista em Arma para indicadores visuais
+  const especialistaArmaGroups = useMemo(() => {
+    const choices = character.class_power_choices;
+    if (!choices) return [];
+    
+    // Encontrar a escolha de especialista-arma
+    const especialistaChoice = Object.values(choices).find(
+      (choice) => choice.powerId === 'especialista-arma'
+    );
+    
+    return especialistaChoice?.chosenValues || [];
+  }, [character.class_power_choices]);
+
+  const hasExcessRituals = ritualLimits
     ? character.rituals.length > ritualLimits.count 
     : false;
 
@@ -1564,6 +1577,7 @@ export function MobileCharacterSheet({
               onConditionsChange={handleConditionsChange}
               onDamageFromCondition={handleConditionDamage}
               onCharacterDeath={handleCharacterDeath}
+              especialistaArmaGroups={especialistaArmaGroups}
             />
             
             {/* Seletor de Afinidade Elemental (NEX 50+) */}
