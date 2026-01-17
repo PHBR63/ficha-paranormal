@@ -55,6 +55,7 @@ import { DiceRollResult } from '@/lib/dice-roller';
 import { InventoryPanel } from '@/components/inventory/InventoryPanel';
 import { DataErrorBoundary } from '@/components/DataErrorBoundary';
 import { InventoryItem } from '@/lib/inventory-system';
+import { EspecialistaArmaIndicator } from '@/components/character/EspecialistaArmaIndicator';
 // Lazy loading para modais pesados (otimização de performance)
 const NexProgressionModal = lazy(() => import('@/components/character/NexProgressionModal').then(m => ({ default: m.NexProgressionModal })));
 const RitualSelectionModal = lazy(() => import('@/components/character/RitualSelectionModal').then(m => ({ default: m.RitualSelectionModal })));
@@ -2873,25 +2874,45 @@ export default function CharacterSheet() {
                         const powerSubchoice = abilityData?.id ? character.class_power_choices?.[abilityData.id] : undefined;
                         const subchoiceText = powerSubchoice?.chosenValues?.join(', ');
                         
+                        // Verifica se é Especialista em Arma para mostrar indicador especial
+                        const isEspecialistaArma = abilityData?.id === 'especialista-arma' || 
+                          powerSubchoice?.powerId === 'especialista-arma';
+                        
                         return (
-                          <SheetAccordionItem
-                            key={i}
-                            title={abilityName}
-                            description={
-                              subchoiceText 
-                                ? `${abilityData?.description || ''}\n\n📌 Escolha: ${subchoiceText}`
-                                : abilityData?.description
-                            }
-                            badge={subchoiceText ? subchoiceText : "Classe"}
-                            badgeVariant={subchoiceText ? "secondary" : "default"}
-                            isActive={isAbilityActive}
-                            onClick={() => {
-                              if (abilityData) {
-                                setSelectedAbility(abilityData);
-                                setAbilityDetailOpen(true);
+                          <div key={i} className="space-y-2">
+                            <SheetAccordionItem
+                              title={abilityName}
+                              description={
+                                subchoiceText && !isEspecialistaArma
+                                  ? `${abilityData?.description || ''}\n\n📌 Escolha: ${subchoiceText}`
+                                  : abilityData?.description
                               }
-                            }}
-                          />
+                              badge={
+                                isEspecialistaArma 
+                                  ? undefined // Usa indicador especial abaixo
+                                  : subchoiceText ? subchoiceText : "Classe"
+                              }
+                              badgeVariant={subchoiceText ? "secondary" : "default"}
+                              isActive={isAbilityActive}
+                              onClick={() => {
+                                if (abilityData) {
+                                  setSelectedAbility(abilityData);
+                                  setAbilityDetailOpen(true);
+                                }
+                              }}
+                            />
+                            
+                            {/* Indicador especial de Especialista em Arma */}
+                            {isEspecialistaArma && powerSubchoice?.chosenValues && powerSubchoice.chosenValues.length > 0 && (
+                              <EspecialistaArmaIndicator
+                                chosenGroups={powerSubchoice.chosenValues}
+                                equippedWeaponId={equippedWeaponInfo.id}
+                                equippedWeaponName={equippedWeaponInfo.name}
+                                compact={false}
+                                className="ml-2"
+                              />
+                            )}
+                          </div>
                         );
                       })}
                     </div>
