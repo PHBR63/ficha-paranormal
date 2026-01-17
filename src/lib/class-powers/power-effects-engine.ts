@@ -169,6 +169,11 @@ export function createEmptyBonusSummary(): PowerBonusSummary {
       vontade: 0,
       all: 0,
     },
+    damageReduction: {
+      physical: 0,
+      paranormal: 0,
+      conditional: 0,
+    },
     skills: {},
     proficiencies: {
       weapons: [],
@@ -308,6 +313,26 @@ export function applyMechanics(
         } else if (type === 'vontade') {
           summary.resistance.vontade += bonus;
         }
+      }
+    }
+  }
+  
+  // === REDUÇÃO DE DANO (Tanque de Guerra, etc.) ===
+  if (mechanics.damageReduction) {
+    const reduction = resolveScalingValue(mechanics.damageReduction.value, nex);
+    const conditions = mechanics.damageReduction.conditions;
+    const types = mechanics.damageReduction.types || [];
+    
+    if (checkConditions(conditions, context)) {
+      // Se tem condições (ex: proteção pesada), é condicional
+      if (conditions && Object.keys(conditions).length > 0) {
+        summary.damageReduction.conditional += reduction;
+      } else if (types.includes('paranormal')) {
+        // Redução específica contra dano paranormal
+        summary.damageReduction.paranormal += reduction;
+      } else {
+        // Redução física geral
+        summary.damageReduction.physical += reduction;
       }
     }
   }

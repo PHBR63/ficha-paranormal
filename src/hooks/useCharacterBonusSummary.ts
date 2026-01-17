@@ -276,11 +276,21 @@ export function useCharacterBonusSummary({
     const damageReduction: DamageReduction = {
       physical: { 
         total: classPowerBonuses.totals.damageResistance, 
-        breakdown: [] 
+        breakdown: classPowerBonuses.totals.damageResistance > 0 ? [{
+          source: 'Poderes de Classe',
+          value: classPowerBonuses.totals.damageResistance,
+          type: 'ability' as const,
+          active: true,
+        }] : []
       },
       paranormal: { 
         total: classPowerBonuses.totals.paranormalResistance, 
-        breakdown: [] 
+        breakdown: classPowerBonuses.totals.paranormalResistance > 0 ? [{
+          source: 'Poderes de Classe',
+          value: classPowerBonuses.totals.paranormalResistance,
+          type: 'ability' as const,
+          active: true,
+        }] : []
       },
     };
 

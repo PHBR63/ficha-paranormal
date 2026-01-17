@@ -768,6 +768,12 @@ export interface PowerBonusSummary {
     vontade: number;
     all: number;
   };
+  /** Redução de dano (Tanque de Guerra, etc.) */
+  damageReduction: {
+    physical: number;      // RD física geral
+    paranormal: number;    // RD paranormal
+    conditional: number;   // RD condicional (proteção pesada, etc.)
+  };
   skills: Record<string, number>;
   proficiencies: {
     weapons: WeaponCategory[];
