@@ -1,7 +1,7 @@
 /**
  * Bridge entre o sistema de poderes de classe e o sistema de ativação
  * 
- * Conecta os poderes definidos em especialista-powers.ts com o
+ * Conecta os poderes de Especialista e Combatente com o
  * PowerActivationPanel usado no DiceRollModal.
  * 
  * @module activatable-powers-bridge
@@ -9,6 +9,7 @@
 
 import type { ActivatablePower } from '@/components/dice/PowerActivationPanel';
 import { ESPECIALISTA_POWERS } from './especialista-powers';
+import { COMBATENTE_POWERS } from './combatente-powers';
 import { getPeritoExtraDice, getEcleticoLevel } from '@/components/dice/PowerActivationPanel';
 import { resolveScalingValue } from './power-effects-engine';
 
@@ -26,6 +27,8 @@ interface CharacterPowerContext {
   trainedSkills?: string[];
   // Perícias escolhidas para Perito
   peritoSkills?: string[];
+  // Classe do personagem
+  characterClass?: string;
 }
 
 // ========================================
@@ -44,10 +47,22 @@ const LEGACY_ABILITY_TO_POWER_ID: Record<string, string> = {
   'eclético': 'ecletico',
   'ecletico': 'ecletico',
   'perito': 'perito',
-  // Também pode vir como habilidade de classe
   'ninja urbano': 'ninja-urbano',
   'balística avançada': 'balistica-avancada',
   'balistica avancada': 'balistica-avancada',
+  // Combatente
+  'ataque especial': 'ataque-especial',
+  'incansável': 'incansavel',
+  'incansavel': 'incansavel',
+  'sentido tático': 'sentido-tatico',
+  'sentido tatico': 'sentido-tatico',
+  'avanço tático': 'avanco-tatico',
+  'avanco tatico': 'avanco-tatico',
+  'ímpeto': 'impeto',
+  'impeto': 'impeto',
+  'tiro de cobertura': 'tiro-de-cobertura',
+  'pancada revigorante': 'pancada-revigorante',
+  'ataque de oportunidade': 'ataque-de-oportunidade',
 };
 
 /**
@@ -65,7 +80,7 @@ function normalizeString(str: string): string {
 /**
  * Verifica se o personagem possui um poder/habilidade
  */
-function hasPowerOrAbility(
+export function hasPowerOrAbility(
   powers: Array<{ id?: string; name: string }> | string[],
   abilities: string[],
   targetId: string,
@@ -93,6 +108,21 @@ function hasPowerOrAbility(
 }
 
 // ========================================
+// HELPERS DO COMBATENTE
+// ========================================
+
+/**
+ * Calcula o tier de Ataque Especial baseado no NEX
+ * Retorna o custo de PE e o bônus concedido
+ */
+export function getAtaqueEspecialTier(nex: number): { cost: number; bonus: number } {
+  if (nex >= 85) return { cost: 5, bonus: 20 };
+  if (nex >= 55) return { cost: 4, bonus: 15 };
+  if (nex >= 25) return { cost: 3, bonus: 10 };
+  return { cost: 2, bonus: 5 };
+}
+
+// ========================================
 // FUNÇÕES PRINCIPAIS
 // ========================================
 
@@ -103,8 +133,10 @@ function hasPowerOrAbility(
 export function getActivatablePowersForCharacter(
   context: CharacterPowerContext
 ): ActivatablePower[] {
-  const { powers, abilities, nex, peritoSkills } = context;
+  const { powers, abilities, nex, peritoSkills, characterClass } = context;
   const activatable: ActivatablePower[] = [];
+  
+  // ==================== ESPECIALISTA ====================
   
   // Conhecimento Aplicado
   if (hasPowerOrAbility(powers, abilities, 'conhecimento-aplicado', 'Conhecimento Aplicado')) {
@@ -183,9 +215,125 @@ export function getActivatablePowersForCharacter(
       icon: 'sparkles',
       effectType: 'extra_dice',
       extraDice: peritoData.dice,
-      // Se tiver perícias escolhidas, usa elas; senão, aplica a todas exceto Luta/Pontaria
       applicableSkills: peritoSkills && peritoSkills.length > 0 ? peritoSkills : undefined,
       excludedSkills: ['luta', 'pontaria'],
+    });
+  }
+  
+  // ==================== COMBATENTE ====================
+  
+  // Ataque Especial (habilidade core do Combatente)
+  if (hasPowerOrAbility(powers, abilities, 'ataque-especial', 'Ataque Especial') ||
+      characterClass === 'Combatente') {
+    const tier = getAtaqueEspecialTier(nex);
+    
+    activatable.push({
+      id: 'ataque-especial',
+      name: 'Ataque Especial',
+      description: `Gaste ${tier.cost} PE para +${tier.bonus} em ataque OU dano (ou divida entre ambos).`,
+      peCost: tier.cost,
+      effect: `+${tier.bonus} ataque/dano`,
+      icon: 'sword',
+      effectType: 'combat_bonus',
+      applicableSkills: ['luta', 'pontaria'],
+    });
+  }
+  
+  // Incansável
+  if (hasPowerOrAbility(powers, abilities, 'incansavel', 'Incansável')) {
+    activatable.push({
+      id: 'incansavel',
+      name: 'Incansável',
+      description: 'Ação de investigação adicional usando For ou Agi. +5 no teste.',
+      peCost: 2,
+      effect: '+5 (1x/cena)',
+      icon: 'search',
+      effectType: 'skill_bonus',
+      skillBonus: 5,
+      // Perícias de investigação física
+      applicableSkills: ['atletismo', 'acrobacia', 'furtividade', 'percepcao', 'sobrevivencia'],
+    });
+  }
+  
+  // Sentido Tático
+  if (hasPowerOrAbility(powers, abilities, 'sentido-tatico', 'Sentido Tático')) {
+    activatable.push({
+      id: 'sentido-tatico',
+      name: 'Sentido Tático',
+      description: 'Analisa o ambiente. +INT em Defesa e resistências até fim da cena.',
+      peCost: 2,
+      effect: '+INT Defesa/Resist',
+      icon: 'eye',
+      effectType: 'defense_bonus',
+      applicableSkills: ['percepcao', 'tatica'],
+    });
+  }
+  
+  // Avanço Tático
+  if (hasPowerOrAbility(powers, abilities, 'avanco-tatico', 'Avanço Tático')) {
+    activatable.push({
+      id: 'avanco-tatico',
+      name: 'Avanço Tático',
+      description: 'Ignora a penalidade de -5 na Defesa ao fazer investida.',
+      peCost: 1,
+      effect: 'Investida segura',
+      icon: 'move',
+      effectType: 'defense_bonus',
+    });
+  }
+  
+  // Ímpeto
+  if (hasPowerOrAbility(powers, abilities, 'impeto', 'Ímpeto')) {
+    activatable.push({
+      id: 'impeto',
+      name: 'Ímpeto',
+      description: 'Aumenta seu deslocamento em +3m por uma rodada.',
+      peCost: 1,
+      effect: '+3m movimento',
+      icon: 'zap',
+      effectType: 'movement_bonus',
+    });
+  }
+  
+  // Tiro de Cobertura
+  if (hasPowerOrAbility(powers, abilities, 'tiro-de-cobertura', 'Tiro de Cobertura')) {
+    activatable.push({
+      id: 'tiro-de-cobertura',
+      name: 'Tiro de Cobertura',
+      description: 'Força alvo a se proteger. Teste de Pontaria vs Vontade. Efeito de medo.',
+      peCost: 1,
+      effect: 'Supressão',
+      icon: 'target',
+      effectType: 'control',
+      applicableSkills: ['pontaria'],
+    });
+  }
+  
+  // Pancada Revigorante
+  if (hasPowerOrAbility(powers, abilities, 'pancada-revigorante', 'Pancada Revigorante')) {
+    activatable.push({
+      id: 'pancada-revigorante',
+      name: 'Pancada Revigorante',
+      description: 'Ao acertar corpo a corpo, recebe PV temporários = metade do dano.',
+      peCost: 1,
+      effect: 'PV temporário',
+      icon: 'heart',
+      effectType: 'healing',
+      applicableSkills: ['luta'],
+    });
+  }
+  
+  // Ataque de Oportunidade
+  if (hasPowerOrAbility(powers, abilities, 'ataque-de-oportunidade', 'Ataque de Oportunidade')) {
+    activatable.push({
+      id: 'ataque-de-oportunidade',
+      name: 'Ataque de Oportunidade',
+      description: 'Ataque corpo a corpo quando inimigo sai de adjacência.',
+      peCost: 1,
+      effect: 'Reação',
+      icon: 'sword',
+      effectType: 'reaction',
+      applicableSkills: ['luta'],
     });
   }
   
@@ -205,6 +353,10 @@ export function calculatePowerActivationEffects(
   extraDice?: string;
   isActionFree?: boolean;
   specialNote?: string;
+  attackBonus?: number;
+  damageBonus?: number;
+  defenseBonus?: number;
+  movementBonus?: number;
 } {
   switch (powerId) {
     case 'conhecimento-aplicado':
@@ -244,6 +396,62 @@ export function calculatePowerActivationEffects(
         specialNote: `Dados extras: ${data.dice}`,
       };
     }
+    
+    // Combatente
+    case 'ataque-especial': {
+      const tier = getAtaqueEspecialTier(nex);
+      return {
+        skillBonusChange: 0,
+        attackBonus: tier.bonus,
+        damageBonus: tier.bonus,
+        specialNote: `+${tier.bonus} para dividir entre ataque e dano`,
+      };
+    }
+    
+    case 'incansavel':
+      return {
+        skillBonusChange: 5,
+        specialNote: 'Ação de investigação com For ou Agi',
+      };
+    
+    case 'sentido-tatico':
+      return {
+        skillBonusChange: 0,
+        defenseBonus: intellect,
+        specialNote: `+${intellect} em Defesa e resistências (Int) até fim da cena`,
+      };
+    
+    case 'avanco-tatico':
+      return {
+        skillBonusChange: 0,
+        defenseBonus: 5, // Anula a penalidade de -5
+        specialNote: 'Ignora penalidade de investida',
+      };
+    
+    case 'impeto':
+      return {
+        skillBonusChange: 0,
+        movementBonus: 3,
+        specialNote: '+3m de deslocamento por 1 rodada',
+      };
+    
+    case 'tiro-de-cobertura':
+      return {
+        skillBonusChange: 0,
+        specialNote: 'Pontaria vs Vontade do alvo',
+      };
+    
+    case 'pancada-revigorante':
+      return {
+        skillBonusChange: 0,
+        specialNote: 'PV temporários = metade do dano causado',
+      };
+    
+    case 'ataque-de-oportunidade':
+      return {
+        skillBonusChange: 0,
+        specialNote: 'Reação quando inimigo sai de adjacência',
+      };
       
     default:
       return { skillBonusChange: 0 };
@@ -257,7 +465,13 @@ export function checkActivatablePowerPrerequisites(
   powerId: string,
   context: CharacterPowerContext
 ): { canUse: boolean; reason?: string } {
-  const power = ESPECIALISTA_POWERS.find(p => p.id === powerId);
+  // Primeiro tenta achar em Especialista
+  let power = ESPECIALISTA_POWERS.find(p => p.id === powerId);
+  
+  // Se não achou, tenta em Combatente
+  if (!power) {
+    power = COMBATENTE_POWERS.find(p => p.id === powerId);
+  }
   
   if (!power) {
     return { canUse: false, reason: 'Poder não encontrado' };
@@ -276,7 +490,7 @@ export function checkActivatablePowerPrerequisites(
     }
   }
   
-  // Verifica atributos (ex: Conhecimento Aplicado requer INT 2)
+  // Verifica atributos
   if (power.prerequisites?.attributes) {
     const reqIntellect = power.prerequisites.attributes.intellect;
     if (typeof reqIntellect === 'number' && context.intellect < reqIntellect) {
