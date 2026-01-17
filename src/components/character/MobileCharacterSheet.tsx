@@ -777,6 +777,7 @@ export function MobileCharacterSheet({
           name: item.name,
           type: displayType,
           damage: weaponData.damage || '1d6',
+          damageType: weaponData.damageType, // Tipo de dano (Balístico, Corte, etc.)
           criticalRange: weaponData.criticalRange || 20,
           criticalMultiplier: normalizedCritMultiplier,
           range: weaponData.range,
