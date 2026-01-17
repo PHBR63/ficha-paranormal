@@ -97,8 +97,31 @@ export interface SkillUpgrade {
   toLevel: SkillTrainingLevel;
 }
 
+/** Classes válidas para Grau de Treinamento */
+type ValidClass = 'Combatente' | 'Especialista' | 'Ocultista';
+
+/** Quantidade base por classe (+ Intelecto) */
+const CLASS_BASE_COUNT: Record<ValidClass, number> = {
+  Combatente: 2,
+  Especialista: 5,
+  Ocultista: 3,
+};
+
+/**
+ * Calcula a quantidade de perícias para Grau de Treinamento
+ * @param characterClass - Classe do personagem
+ * @param intellect - Valor de Intelecto
+ * @returns Quantidade de perícias que podem ser escolhidas
+ */
+export function getTrainingGradeSkillCount(characterClass: string, intellect: number): number {
+  const baseCount = CLASS_BASE_COUNT[characterClass as ValidClass] || 2;
+  return baseCount + intellect;
+}
+
 interface TrainingGradeSectionProps {
-  /** Intelecto do personagem (determina quantidade de escolhas) */
+  /** Classe do personagem (determina quantidade base de escolhas) */
+  characterClass: string;
+  /** Intelecto do personagem (determina quantidade adicional de escolhas) */
   characterIntellect: number;
   /** NEX atual que o personagem está alcançando (35 ou 70) */
   currentNex: 35 | 70;
@@ -115,6 +138,7 @@ interface TrainingGradeSectionProps {
 // ========== COMPONENTE ==========
 
 export function TrainingGradeSection({
+  characterClass,
   characterIntellect,
   currentNex,
   skills,
@@ -122,8 +146,9 @@ export function TrainingGradeSection({
   onSelect,
   compact = false,
 }: TrainingGradeSectionProps) {
-  // Calcula quantidade de perícias que podem ser escolhidas: 5 + Int
-  const maxChoices = 5 + characterIntellect;
+  // Calcula quantidade de perícias que podem ser escolhidas baseado na classe
+  const maxChoices = getTrainingGradeSkillCount(characterClass, characterIntellect);
+  const baseCount = CLASS_BASE_COUNT[characterClass as ValidClass] || 2;
   
   // Filtra perícias elegíveis baseado no NEX
   const eligibleSkills = useMemo(() => {
@@ -204,7 +229,7 @@ export function TrainingGradeSection({
         </div>
         <CardDescription className="text-sm">
           Escolha <span className="font-semibold text-primary">{maxChoices}</span> perícias 
-          (5 + Intelecto {characterIntellect}) para aumentar o grau de treinamento.
+          ({baseCount} + Intelecto {characterIntellect}) para aumentar o grau de treinamento.
         </CardDescription>
       </CardHeader>
       
@@ -376,12 +401,16 @@ export function TrainingGradeSection({
 
 /**
  * Verifica se a escolha de Grau de Treinamento está completa
+ * @param selectedSkills - Perícias selecionadas
+ * @param characterClass - Classe do personagem
+ * @param intellect - Valor de Intelecto
  */
 export function isTrainingGradeComplete(
   selectedSkills: string[],
+  characterClass: string,
   intellect: number
 ): boolean {
-  const required = 5 + intellect;
+  const required = getTrainingGradeSkillCount(characterClass, intellect);
   return selectedSkills.length === required;
 }
 
