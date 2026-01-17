@@ -13,6 +13,8 @@ import { useParanormalEffects, ParanormalEffects } from './useParanormalEffects'
 import { useClassPowerBonuses, ClassPowerBonusResult } from './useClassPowerBonuses';
 import type { ComputedEffects } from '@/lib/unified-effects-engine';
 import type { ActiveClassPower, WeaponCategory, ProtectionCategory } from '@/lib/class-powers/types';
+import { getWeaponGroupName } from '@/lib/constants/weapon-groups';
+import type { ClassPowerSubchoice } from './useCharacterBonusSummary';
 
 // Re-exporta tipos para compatibilidade com código existente
 export type { BonusBreakdown, ConditionalBonus, CombatBonuses, DamageReduction, EffectResistances, SkillBonuses, BonusSummary } from './useCharacterBonusSummary';
@@ -79,6 +81,9 @@ export interface UseBonusSummaryFromSUEProps {
   
   // Condições ativas
   activeConditions?: string[];
+  
+  // Sub-escolhas de poderes de classe (Especialista em Arma, Perito, etc.)
+  classPowerChoices?: Record<string, ClassPowerSubchoice>;
 }
 
 /**
@@ -131,6 +136,7 @@ export function useBonusSummaryFromSUE({
   peMax = 0,
   activeConditions = [],
   versatilityTrack,
+  classPowerChoices = {},
 }: UseBonusSummaryFromSUEProps): BonusSummary & { unifiedEffects: ReturnType<typeof useUnifiedEffects> } {
   
   // Monta o estado do personagem para o SUE
@@ -372,6 +378,44 @@ export function useBonusSummaryFromSUE({
         combat.damage.total += 2;
         combat.attack.breakdown.push(convertToBreakdown('Fanático', 2, 'general_power', 'com menos de 50% PV'));
         combat.damage.breakdown.push(convertToBreakdown('Fanático', 2, 'general_power', 'com menos de 50% PV'));
+      }
+    }
+    
+    // === ESPECIALISTA EM ARMA (Poder de Classe do Combatente) ===
+    // Regra oficial: +2 ataque e +2 dano com armas do grupo escolhido
+    // Poder repetível: pode ter múltiplos grupos escolhidos
+    const especialistaArmaChoices = Object.entries(classPowerChoices)
+      .filter(([_, choice]) => choice.powerId === 'especialista-arma' && choice.choiceType === 'weaponGroup');
+    
+    if (especialistaArmaChoices.length > 0) {
+      // Agrupa todas as escolhas de Especialista em Arma
+      const allWeaponGroups: string[] = [];
+      for (const [_, choice] of especialistaArmaChoices) {
+        allWeaponGroups.push(...choice.chosenValues);
+      }
+      
+      // Cria bônus condicional para cada grupo de armas
+      for (const weaponGroupId of allWeaponGroups) {
+        const groupName = getWeaponGroupName(weaponGroupId);
+        const bonusId = `especialista-arma-${weaponGroupId}`;
+        const isActive = isConditionalActive(bonusId);
+        
+        conditionalBonuses.push({
+          id: bonusId,
+          name: `Especialista em Arma (${groupName})`,
+          condition: `Com arma do grupo ${groupName}`,
+          active: isActive,
+          effects: ['+2 ataque', '+2 dano'],
+          source: 'ability',
+        });
+        
+        // Aplica bônus quando ativo
+        if (isActive) {
+          combat.attack.total += 2;
+          combat.damage.total += 2;
+          combat.attack.breakdown.push(convertToBreakdown(`Especialista em Arma (${groupName})`, 2, 'ability', `com ${groupName}`));
+          combat.damage.breakdown.push(convertToBreakdown(`Especialista em Arma (${groupName})`, 2, 'ability', `com ${groupName}`));
+        }
       }
     }
     
