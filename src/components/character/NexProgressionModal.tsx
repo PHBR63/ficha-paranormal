@@ -783,6 +783,20 @@ export function NexProgressionModal({
                   currentTrackId={character.class_track}
                   onSelect={setVersatilityChoice}
                   selected={versatilityChoice}
+                  characterData={{
+                    nex: nextNex || character.nex,
+                    attributes: {
+                      strength: character.strength,
+                      agility: character.agility,
+                      vigor: character.vigor,
+                      intellect: character.intellect,
+                      presence: character.presence,
+                    },
+                    trainedSkills: Object.keys(character.skills).filter(s => character.skills[s] >= 1),
+                    skillLevels: character.skills,
+                    powers: character.abilities || [],
+                    proficiencies: [], // TODO: Adicionar se necessário
+                  }}
                 />
               )}
               
