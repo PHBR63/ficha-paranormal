@@ -206,8 +206,9 @@ export function useClassPowerBonuses(config: ClassPowerBonusConfig): ClassPowerB
       initiative: trackBonuses.initiativeBonus,
       criticalMargin: trackBonuses.criticalMarginBonus,
       bonusHP: trackBonuses.bonusHP,
-      damageResistance: trackBonuses.damageResistance,
-      paranormalResistance: trackBonuses.paranormalResistance,
+      // Agora inclui RD dos poderes de classe (Tanque de Guerra, etc.)
+      damageResistance: trackBonuses.damageResistance + powerBonuses.damageReduction.physical + powerBonuses.damageReduction.conditional,
+      paranormalResistance: trackBonuses.paranormalResistance + powerBonuses.damageReduction.paranormal,
       categoryReduction: trackBonuses.categoryReduction,
     };
     
