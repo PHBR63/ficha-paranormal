@@ -80,6 +80,8 @@ interface MobileOverviewTabProps {
       vigor: number | null;
     };
   };
+  /** Grupos de armas escolhidos em Especialista em Arma */
+  especialistaArmaGroups?: string[];
   onOpenDiceRoller: () => void;
   onOpenRest: () => void;
   onLevelUp: () => void;
@@ -105,6 +107,7 @@ export const MobileOverviewTab = memo(function MobileOverviewTab({
   weaponBuffs,
   rollHistory,
   attributeValidation,
+  especialistaArmaGroups = [],
   onOpenDiceRoller,
   onOpenRest,
   onLevelUp,
@@ -465,6 +468,7 @@ export const MobileOverviewTab = memo(function MobileOverviewTab({
           agility={character.agility}
           onWeaponClick={onOpenCombat}
           onRollInitiative={onRollInitiative}
+          especialistaArmaGroups={especialistaArmaGroups}
         />
       )}
 
