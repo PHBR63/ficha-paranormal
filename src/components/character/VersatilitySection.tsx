@@ -8,6 +8,9 @@
  * Este componente é reutilizado tanto na criação (StepAbilities)
  * quanto na progressão (NexProgressionModal).
  * 
+ * ATUALIZADO: Agora valida pré-requisitos de poderes de trilha alternativa
+ * e mostra indicadores visuais para poderes bloqueados.
+ * 
  * @module VersatilitySection
  */
 
@@ -18,6 +21,7 @@ import { Badge } from '@/components/ui/badge';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   Sword,
   Brain,
@@ -27,9 +31,12 @@ import {
   ChevronRight,
   CheckCircle2,
   Info,
+  Lock,
+  AlertTriangle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getAvailableTracks, getInitialAbility } from '@/lib/class-powers/track-registry';
+import { checkPowerPrerequisites, formatPrerequisitesText, CharacterDataForPrerequisites } from '@/lib/class-abilities-prerequisites';
 import type { UnifiedTrack, UnifiedTrackAbility } from '@/lib/class-powers/track-types';
 import type { ClassId } from '@/lib/class-powers/types';
 
@@ -54,6 +61,8 @@ interface VersatilitySectionProps {
   selected: VersatilityChoice | null;
   /** Se está em contexto de criação (mais compacto) ou progressão */
   compact?: boolean;
+  /** Dados do personagem para validar pré-requisitos (opcional) */
+  characterData?: CharacterDataForPrerequisites;
 }
 
 // ========== CONSTANTES ==========
@@ -78,6 +87,7 @@ export function VersatilitySection({
   onSelect,
   selected,
   compact = false,
+  characterData,
 }: VersatilitySectionProps) {
   // Estado para controlar se mostra lista de trilhas
   const [showTracks, setShowTracks] = useState(selected?.type === 'track_ability');
@@ -87,13 +97,29 @@ export function VersatilitySection({
     return getAvailableTracks(classId as ClassId, currentTrackId);
   }, [classId, currentTrackId]);
   
-  // Mapeia trilhas com suas primeiras habilidades
+  // Mapeia trilhas com suas primeiras habilidades e valida pré-requisitos
   const tracksWithAbilities = useMemo(() => {
-    return availableTracks.map(track => ({
-      track,
-      firstAbility: getInitialAbility(track.id),
-    })).filter(item => item.firstAbility !== undefined);
-  }, [availableTracks]);
+    return availableTracks.map(track => {
+      const firstAbility = getInitialAbility(track.id);
+      
+      // Verifica pré-requisitos se characterData foi fornecido
+      let prerequisiteCheck = { meets: true, missing: [] as string[], details: [] as any[] };
+      let prerequisiteText: string | null = null;
+      
+      if (firstAbility && characterData) {
+        prerequisiteCheck = checkPowerPrerequisites(firstAbility.id, characterData);
+        prerequisiteText = formatPrerequisitesText(firstAbility.id);
+      }
+      
+      return {
+        track,
+        firstAbility,
+        meetsPrerequisites: prerequisiteCheck.meets,
+        missingPrerequisites: prerequisiteCheck.missing,
+        prerequisiteText,
+      };
+    }).filter(item => item.firstAbility !== undefined);
+  }, [availableTracks, characterData]);
   
   const ClassIcon = CLASS_ICONS[classId] || Sword;
   const classColor = CLASS_COLORS[classId] || CLASS_COLORS['Combatente'];
@@ -112,8 +138,13 @@ export function VersatilitySection({
     }
   };
   
-  // Handler para selecionar trilha específica
-  const handleTrackSelect = (track: UnifiedTrack, ability: UnifiedTrackAbility) => {
+  // Handler para selecionar trilha específica (bloqueia se não atende pré-requisitos)
+  const handleTrackSelect = (track: UnifiedTrack, ability: UnifiedTrackAbility, meetsPrereqs: boolean) => {
+    // Bloqueia seleção se não atende pré-requisitos
+    if (!meetsPrereqs && characterData) {
+      return;
+    }
+    
     onSelect({
       type: 'track_ability',
       trackId: track.id,
@@ -220,62 +251,122 @@ export function VersatilitySection({
                     ? tracksWithAbilities.length > 2 ? "h-[200px]" : "max-h-[200px]"
                     : tracksWithAbilities.length > 3 ? "h-[300px]" : "max-h-[300px]"
                 )}>
+                <TooltipProvider>
                   <div className="space-y-2 pr-3">
-                    {tracksWithAbilities.map(({ track, firstAbility }) => {
+                    {tracksWithAbilities.map(({ track, firstAbility, meetsPrerequisites, missingPrerequisites, prerequisiteText }) => {
                       const isSelected = selected?.trackId === track.id;
+                      const isBlocked = !meetsPrerequisites && characterData;
                       
-                      return (
+                      const trackCard = (
                         <motion.div
                           key={track.id}
                           initial={{ opacity: 0, x: -10 }}
                           animate={{ opacity: 1, x: 0 }}
                           className={cn(
-                            "p-3 rounded-lg border cursor-pointer transition-all",
-                            isSelected
-                              ? cn("bg-gradient-to-r", classColor, "ring-2 ring-primary")
-                              : "hover:bg-muted/50 border-border"
+                            "p-3 rounded-lg border transition-all",
+                            isBlocked
+                              ? "opacity-60 cursor-not-allowed border-destructive/30 bg-destructive/5"
+                              : isSelected
+                                ? cn("bg-gradient-to-r cursor-pointer", classColor, "ring-2 ring-primary")
+                                : "hover:bg-muted/50 border-border cursor-pointer"
                           )}
-                          onClick={() => handleTrackSelect(track, firstAbility!)}
+                          onClick={() => handleTrackSelect(track, firstAbility!, meetsPrerequisites)}
                         >
                           <div className="flex items-start gap-3">
                             <div className={cn(
                               "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0",
-                              isSelected ? "bg-primary text-primary-foreground" : "bg-muted"
+                              isBlocked
+                                ? "bg-destructive/20 text-destructive"
+                                : isSelected 
+                                  ? "bg-primary text-primary-foreground" 
+                                  : "bg-muted"
                             )}>
-                              <ClassIcon className="w-4 h-4" />
+                              {isBlocked ? (
+                                <Lock className="w-4 h-4" />
+                              ) : (
+                                <ClassIcon className="w-4 h-4" />
+                              )}
                             </div>
                             
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <h4 className="font-medium text-foreground">{track.name}</h4>
-                                {isSelected && (
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <h4 className={cn(
+                                  "font-medium",
+                                  isBlocked ? "text-muted-foreground" : "text-foreground"
+                                )}>
+                                  {track.name}
+                                </h4>
+                                {isBlocked && (
+                                  <Badge variant="destructive" className="text-xs">
+                                    <Lock className="w-3 h-3 mr-1" />
+                                    Bloqueado
+                                  </Badge>
+                                )}
+                                {isSelected && !isBlocked && (
                                   <CheckCircle2 className="w-4 h-4 text-primary" />
                                 )}
                               </div>
                               
                               {/* Preview da primeira habilidade */}
-                              <div className="mt-2 p-2 rounded bg-background/50 border border-border/50">
-                                <div className="flex items-center gap-2 text-xs">
+                              <div className={cn(
+                                "mt-2 p-2 rounded border",
+                                isBlocked
+                                  ? "bg-destructive/5 border-destructive/20"
+                                  : "bg-background/50 border-border/50"
+                              )}>
+                                <div className="flex items-center gap-2 text-xs flex-wrap">
                                   <Badge variant="outline" className="text-xs">NEX 10%</Badge>
-                                  <span className="font-medium text-primary">
+                                  <span className={cn(
+                                    "font-medium",
+                                    isBlocked ? "text-muted-foreground" : "text-primary"
+                                  )}>
                                     {firstAbility?.name}
                                   </span>
                                 </div>
                                 <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
                                   {firstAbility?.description}
                                 </p>
+                                
+                                {/* Mostra pré-requisitos não atendidos */}
+                                {isBlocked && missingPrerequisites.length > 0 && (
+                                  <div className="mt-2 flex items-start gap-1.5 text-xs text-destructive">
+                                    <AlertTriangle className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                                    <span>Falta: {missingPrerequisites.join(', ')}</span>
+                                  </div>
+                                )}
                               </div>
                             </div>
                             
                             <ChevronRight className={cn(
                               "w-5 h-5 flex-shrink-0 transition-transform",
-                              isSelected ? "text-primary rotate-90" : "text-muted-foreground"
+                              isBlocked
+                                ? "text-muted-foreground/50"
+                                : isSelected 
+                                  ? "text-primary rotate-90" 
+                                  : "text-muted-foreground"
                             )} />
                           </div>
                         </motion.div>
                       );
+                      
+                      // Envolve em Tooltip se bloqueado
+                      if (isBlocked && prerequisiteText) {
+                        return (
+                          <Tooltip key={track.id}>
+                            <TooltipTrigger asChild>
+                              {trackCard}
+                            </TooltipTrigger>
+                            <TooltipContent side="left" className="max-w-xs">
+                              <p className="text-sm">{prerequisiteText}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        );
+                      }
+                      
+                      return trackCard;
                     })}
                   </div>
+                </TooltipProvider>
                 </ScrollArea>
               </div>
             </motion.div>
