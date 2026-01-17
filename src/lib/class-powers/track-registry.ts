@@ -121,7 +121,10 @@ export function getTracksByClass(classId?: ClassId | string): UnifiedTrack[] {
     } as unknown as UnifiedTrack[];
   }
   
-  switch (classId) {
+  // Normaliza para minúsculas para garantir compatibilidade com ambos os formatos
+  const normalizedId = classId.toLowerCase();
+  
+  switch (normalizedId) {
     case 'combatente': return COMBATENTE_TRACKS;
     case 'especialista': return ESPECIALISTA_TRACKS;
     case 'ocultista': return OCULTISTA_TRACKS;
