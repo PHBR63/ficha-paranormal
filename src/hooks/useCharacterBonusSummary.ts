@@ -15,6 +15,7 @@ import { useDefenseBonuses, DefenseBonusBreakdown, ResistanceBonusBreakdown, Act
 import { useParanormalEffects, ParanormalEffects } from './useParanormalEffects';
 import { useClassPowerBonuses } from './useClassPowerBonuses';
 import type { ActiveClassPower, WeaponCategory, ProtectionCategory } from '@/lib/class-powers/types';
+import { getWeaponGroupName } from '@/lib/constants/weapon-groups';
 
 // Interface para breakdown genérico de bônus
 export interface BonusBreakdown {
@@ -160,6 +161,13 @@ export interface BonusSummary {
   classPowerBonuses?: import('./useClassPowerBonuses').ClassPowerBonusResult;
 }
 
+// Interface para sub-escolhas de poderes de classe (Especialista em Arma, Perito, etc.)
+export interface ClassPowerSubchoice {
+  powerId: string;
+  choiceType: string; // 'weaponGroup', 'skill', 'proficiency'
+  chosenValues: string[]; // IDs dos valores escolhidos
+}
+
 // Props do hook
 interface UseCharacterBonusSummaryProps {
   origin: string;
@@ -185,6 +193,8 @@ interface UseCharacterBonusSummaryProps {
   equippedWeaponType?: WeaponCategory; // Tipo de arma equipada
   equippedProtectionType?: ProtectionCategory; // Tipo de proteção
   inCombat?: boolean; // Se está em combate
+  // Sub-escolhas de poderes de classe (Especialista em Arma, Perito, etc.)
+  classPowerChoices?: Record<string, ClassPowerSubchoice>;
 }
 
 /**
@@ -214,6 +224,8 @@ export function useCharacterBonusSummary({
   equippedWeaponType,
   equippedProtectionType,
   inCombat = false,
+  // Sub-escolhas de poderes de classe
+  classPowerChoices = {},
 }: UseCharacterBonusSummaryProps): BonusSummary {
   // Usa hooks existentes
   const defenseBonuses = useDefenseBonuses({ 
@@ -476,6 +488,64 @@ export function useCharacterBonusSummary({
       if (isActive) {
         combat.attack.total += 2;
         combat.damage.total += 2;
+      }
+    }
+
+    // === ESPECIALISTA EM ARMA (Poder de Classe do Combatente) ===
+    // Regra oficial: +2 ataque e +2 dano com armas do grupo escolhido
+    // Poder repetível: pode ter múltiplos grupos escolhidos
+    const especialistaArmaChoices = Object.entries(classPowerChoices)
+      .filter(([_, choice]) => choice.powerId === 'especialista-arma' && choice.choiceType === 'weaponGroup');
+    
+    if (especialistaArmaChoices.length > 0) {
+      // Agrupa todas as escolhas de Especialista em Arma
+      const allWeaponGroups: string[] = [];
+      for (const [_, choice] of especialistaArmaChoices) {
+        allWeaponGroups.push(...choice.chosenValues);
+      }
+      
+      // Cria bônus condicional para cada grupo de armas
+      for (const weaponGroupId of allWeaponGroups) {
+        const groupName = getWeaponGroupName(weaponGroupId);
+        const bonusId = `especialista-arma-${weaponGroupId}`;
+        const isActive = isConditionalActive(bonusId);
+        
+        conditionalBonuses.push({
+          id: bonusId,
+          name: `Especialista em Arma (${groupName})`,
+          condition: `Com arma do grupo ${groupName}`,
+          active: isActive,
+          effects: ['+2 ataque', '+2 dano'],
+          source: 'ability',
+        });
+        
+        // Adiciona breakdown de ataque
+        combat.attack.breakdown.push({
+          source: `Especialista em Arma (${groupName})`,
+          value: 2,
+          type: 'ability',
+          conditional: `com ${groupName}`,
+          active: isActive,
+          toggleable: true,
+          toggleId: bonusId,
+        });
+        
+        // Adiciona breakdown de dano
+        combat.damage.breakdown.push({
+          source: `Especialista em Arma (${groupName})`,
+          value: 2,
+          type: 'ability',
+          conditional: `com ${groupName}`,
+          active: isActive,
+          toggleable: true,
+          toggleId: bonusId,
+        });
+        
+        // Aplica bônus quando ativo
+        if (isActive) {
+          combat.attack.total += 2;
+          combat.damage.total += 2;
+        }
       }
     }
 

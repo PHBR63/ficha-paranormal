@@ -503,6 +503,7 @@ export default function CharacterSheet() {
     peMax: character?.pe_max || 0,
     activeConditions: activeConditionsForSUE,
     versatilityTrack: character?.versatility_track || undefined,
+    classPowerChoices: character?.class_power_choices || {},
   });
 
   // Extrai hooks internos do bonusSummary para evitar chamadas duplicadas
