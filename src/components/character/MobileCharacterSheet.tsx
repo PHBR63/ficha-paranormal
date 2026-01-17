@@ -1366,15 +1366,25 @@ export function MobileCharacterSheet({
   }, [onRefetch]);
 
   // Handler para rolar iniciativa (usado pelo MobileOverviewTab)
+  // Aplica bônus de trilha (ex: Operações Especiais +5 Iniciativa Aprimorada)
   const handleRollInitiative = useCallback(() => {
+    const initiativeBonus = bonusSummary.combat.initiative.total;
+    const bonusSources: BonusSource[] = bonusSummary.combat.initiative.breakdown
+      .filter(b => b.active)
+      .map(b => ({ 
+        label: b.source, 
+        value: typeof b.value === 'number' ? b.value : 0,
+        type: 'other' as const 
+      }));
+    
     setDiceModalConfig({
       skillName: 'Iniciativa',
       pool: character.agility,
-      bonus: 0,
-      bonusSources: [],
+      bonus: initiativeBonus,
+      bonusSources,
     });
     setDiceModalOpen(true);
-  }, [character.agility]);
+  }, [character.agility, bonusSummary.combat.initiative]);
 
   // Handler para atualizar condições (converte ActiveCondition[] para formato do banco)
   const handleConditionsChange = useCallback(async (newConditions: ActiveCondition[]) => {
