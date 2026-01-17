@@ -13,7 +13,7 @@ import { useParanormalEffects, ParanormalEffects } from './useParanormalEffects'
 import { useClassPowerBonuses, ClassPowerBonusResult } from './useClassPowerBonuses';
 import type { ComputedEffects } from '@/lib/unified-effects-engine';
 import type { ActiveClassPower, WeaponCategory, ProtectionCategory } from '@/lib/class-powers/types';
-import { getWeaponGroupName } from '@/lib/constants/weapon-groups';
+import { getWeaponGroupName, getWeaponGroupForWeapon } from '@/lib/constants/weapon-groups';
 import type { ClassPowerSubchoice } from './useCharacterBonusSummary';
 
 // Re-exporta tipos para compatibilidade com código existente
@@ -69,6 +69,9 @@ export interface UseBonusSummaryFromSUEProps {
   // Equipamento
   equippedWeaponType?: WeaponCategory;
   equippedProtectionType?: ProtectionCategory;
+  // ID e nome da arma equipada (para detecção automática de Especialista em Arma)
+  equippedWeaponId?: string;
+  equippedWeaponName?: string;
   
   // Estado de combate
   inCombat?: boolean;
@@ -129,6 +132,8 @@ export function useBonusSummaryFromSUE({
   classPowers = [],
   equippedWeaponType,
   equippedProtectionType,
+  equippedWeaponId,
+  equippedWeaponName,
   inCombat = false,
   hpCurrent = 0,
   hpMax = 0,
@@ -384,6 +389,7 @@ export function useBonusSummaryFromSUE({
     // === ESPECIALISTA EM ARMA (Poder de Classe do Combatente) ===
     // Regra oficial: +2 ataque e +2 dano com armas do grupo escolhido
     // Poder repetível: pode ter múltiplos grupos escolhidos
+    // DETECÇÃO AUTOMÁTICA: verifica se a arma equipada pertence a um grupo escolhido
     const especialistaArmaChoices = Object.entries(classPowerChoices)
       .filter(([_, choice]) => choice.powerId === 'especialista-arma' && choice.choiceType === 'weaponGroup');
     
@@ -394,22 +400,33 @@ export function useBonusSummaryFromSUE({
         allWeaponGroups.push(...choice.chosenValues);
       }
       
+      // Detecta grupo da arma equipada (por ID ou nome)
+      const equippedWeaponGroup = getWeaponGroupForWeapon(equippedWeaponId || '') 
+        || getWeaponGroupForWeapon(equippedWeaponName || '');
+      
       // Cria bônus condicional para cada grupo de armas
       for (const weaponGroupId of allWeaponGroups) {
         const groupName = getWeaponGroupName(weaponGroupId);
         const bonusId = `especialista-arma-${weaponGroupId}`;
-        const isActive = isConditionalActive(bonusId);
+        
+        // Detecção automática: ativa se a arma equipada pertence a este grupo
+        const isAutoActive = equippedWeaponGroup === weaponGroupId;
+        // Permite override manual via active_conditional_bonuses
+        const isManuallyActive = isConditionalActive(bonusId);
+        const isActive = isAutoActive || isManuallyActive;
         
         conditionalBonuses.push({
           id: bonusId,
           name: `Especialista em Arma (${groupName})`,
-          condition: `Com arma do grupo ${groupName}`,
+          condition: isAutoActive 
+            ? `✓ Arma equipada: ${equippedWeaponName || equippedWeaponId}` 
+            : `Com arma do grupo ${groupName}`,
           active: isActive,
           effects: ['+2 ataque', '+2 dano'],
           source: 'ability',
         });
         
-        // Aplica bônus quando ativo
+        // Aplica bônus quando ativo (automático ou manual)
         if (isActive) {
           combat.attack.total += 2;
           combat.damage.total += 2;
