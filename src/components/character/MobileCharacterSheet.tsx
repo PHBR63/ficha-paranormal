@@ -27,7 +27,7 @@ import { MobileInventorySheet } from '@/components/inventory/MobileInventoryShee
 import type { ExtendedInventoryItem } from '@/components/inventory/InventoryPanel';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { ORIGINS, getTrackById } from '@/lib/character-data';
+import { ORIGINS, getTrackById, getSkillBonus, getTrainingLabel } from '@/lib/character-data';
 import { PowerDetailModal, PowerDetailData } from './PowerDetailModal';
 import { ALL_RITUALS, getActiveRitualEffect, Ritual, SustainConfig } from '@/lib/rituals/legacy-exports';
 import { 
@@ -1366,25 +1366,50 @@ export function MobileCharacterSheet({
   }, [onRefetch]);
 
   // Handler para rolar iniciativa (usado pelo MobileOverviewTab)
-  // Aplica bônus de trilha (ex: Operações Especiais +5 Iniciativa Aprimorada)
+  // Aplica bônus de trilha (ex: Operações Especiais +5 Iniciativa Aprimorada) e treinamento
   const handleRollInitiative = useCallback(() => {
-    const initiativeBonus = bonusSummary.combat.initiative.total;
-    const bonusSources: BonusSource[] = bonusSummary.combat.initiative.breakdown
-      .filter(b => b.active)
-      .map(b => ({ 
-        label: b.source, 
-        value: typeof b.value === 'number' ? b.value : 0,
-        type: 'other' as const 
-      }));
+    const bonusSources: BonusSource[] = [];
+    
+    // 1. Treinamento em Iniciativa (Treinado +5, Veterano +10, Expert +15)
+    const initiativeTraining = character.skills?.['iniciativa'] || character.skills?.['Iniciativa'] || 0;
+    if (initiativeTraining > 0) {
+      const trainingBonus = getSkillBonus(initiativeTraining);
+      bonusSources.push({
+        label: `Treinamento`,
+        value: trainingBonus,
+        type: 'skill',
+        sourceName: `Iniciativa (${getTrainingLabel(initiativeTraining)})`,
+        description: `Bônus por ser ${getTrainingLabel(initiativeTraining)} em Iniciativa`,
+      });
+    }
+    
+    // 2. Bônus de trilha e outros (ex: Operações Especiais +5)
+    bonusSummary.combat.initiative.breakdown
+      .filter(b => b.active && typeof b.value === 'number' && b.value !== 0)
+      .forEach(b => {
+        // Detecta se é bônus de trilha pelo nome da fonte
+        const isTrackBonus = b.source.toLowerCase().includes('trilha') || 
+                            b.source.toLowerCase().includes('iniciativa aprimorada') ||
+                            b.source.toLowerCase().includes('operações');
+        bonusSources.push({
+          label: b.source,
+          value: b.value as number,
+          type: isTrackBonus ? 'track' : 'other',
+          sourceName: b.source,
+        });
+      });
+    
+    // Total = treinamento + bônus de trilha
+    const totalBonus = bonusSources.reduce((sum, s) => sum + s.value, 0);
     
     setDiceModalConfig({
       skillName: 'Iniciativa',
       pool: character.agility,
-      bonus: initiativeBonus,
+      bonus: totalBonus,
       bonusSources,
     });
     setDiceModalOpen(true);
-  }, [character.agility, bonusSummary.combat.initiative]);
+  }, [character.agility, character.skills, bonusSummary.combat.initiative]);
 
   // Handler para atualizar condições (converte ActiveCondition[] para formato do banco)
   const handleConditionsChange = useCallback(async (newConditions: ActiveCondition[]) => {
