@@ -115,6 +115,15 @@ export type CharacterFormData = {
     };
   }>;
   
+  // Escolhas de sub-poderes de classe (Especialista em Arma, etc.)
+  // Mapa de "powerId-instanceIndex" para a escolha feita
+  classPowerChoices: Record<string, {
+    powerId: string;
+    choiceType: 'weaponGroup' | 'skill' | 'attribute' | 'power';
+    chosenValues: string[];
+    instanceIndex?: number;
+  }>;
+  
   // Versatilidade (NEX 50%+)
   versatilityChoice?: {
     type: 'class_power' | 'track_ability';
@@ -177,6 +186,7 @@ const initialFormData: CharacterFormData = {
   originParanormalPower: null,
   skillTrainingChoices: {},
   transcenderChoices: {},
+  classPowerChoices: {},
   versatilityChoice: null,
   secondaryTrackAbility: null,
 };
