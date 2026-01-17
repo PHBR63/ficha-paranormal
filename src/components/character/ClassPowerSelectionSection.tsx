@@ -1,0 +1,390 @@
+/**
+ * Seção de Seleção de Poderes de Classe na Progressão de NEX
+ * 
+ * Permite ao jogador escolher poderes de classe disponíveis durante
+ * a progressão de NEX, com validação de pré-requisitos em tempo real.
+ * 
+ * @module ClassPowerSelectionSection
+ */
+
+import { useState, useMemo, useCallback } from 'react';
+import { motion } from 'framer-motion';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Sword, Lock, Check, AlertCircle, Plus, Info, ChevronDown, ChevronUp } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
+import { getChoosableAbilities, getAbilityChoiceCount, ClassAbility } from '@/lib/class-abilities';
+import { 
+  checkPowerPrerequisites, 
+  hasPowerPrerequisites, 
+  CharacterDataForPrerequisites,
+  formatPrerequisitesText,
+  getUnifiedPower 
+} from '@/lib/class-abilities-prerequisites';
+import { ClassPowerSubchoiceModal, ClassPowerSubchoice } from './ClassPowerSubchoiceModal';
+import { UnifiedClassPower } from '@/lib/class-powers/types';
+
+// ================== TIPOS ==================
+
+interface ClassPowerSelectionSectionProps {
+  /** ID da classe do personagem */
+  classId: string;
+  /** NEX atual do personagem */
+  currentNex: number;
+  /** NEX para o qual está subindo */
+  targetNex: number;
+  /** Dados do personagem para validação de pré-requisitos */
+  characterData: CharacterDataForPrerequisites;
+  /** Poderes já possuídos pelo personagem */
+  existingAbilities: string[];
+  /** Poderes selecionados nesta progressão */
+  selectedPowers: string[];
+  /** Callback quando poderes são atualizados */
+  onPowersChange: (powers: string[]) => void;
+  /** Sub-escolhas de poderes (para poderes como Especialista em Arma) */
+  classPowerChoices: Record<string, ClassPowerSubchoice>;
+  /** Callback quando sub-escolhas são atualizadas */
+  onClassPowerChoicesChange: (choices: Record<string, ClassPowerSubchoice>) => void;
+  /** Se Transcender foi usado (bloqueia seleção de poderes de classe) */
+  usedTranscender?: boolean;
+}
+
+// ================== FUNÇÕES AUXILIARES ==================
+
+/**
+ * Calcula quantas escolhas de poder o personagem ganha neste NEX
+ */
+function getPowerChoicesThisNex(currentNex: number, targetNex: number): number {
+  const currentChoices = getAbilityChoiceCount(currentNex);
+  const targetChoices = getAbilityChoiceCount(targetNex);
+  return targetChoices - currentChoices;
+}
+
+/**
+ * Verifica se um poder é repetível (pode ser escolhido múltiplas vezes)
+ */
+function isRepeatablePower(powerId: string): boolean {
+  const repeatablePowers = [
+    'treinamento-pericia',
+    'treinamento-pericia-comb',
+    'treinamento-pericia-esp',
+    'treinamento-pericia-ocult',
+  ];
+  return repeatablePowers.includes(powerId);
+}
+
+/**
+ * Verifica se um poder requer sub-escolha
+ */
+function isPowerWithSubchoice(powerId: string): boolean {
+  const power = getUnifiedPower(powerId);
+  return !!(power?.effects?.base?.requiresChoice);
+}
+
+// ================== COMPONENTE PRINCIPAL ==================
+
+export function ClassPowerSelectionSection({
+  classId,
+  currentNex,
+  targetNex,
+  characterData,
+  existingAbilities,
+  selectedPowers,
+  onPowersChange,
+  classPowerChoices,
+  onClassPowerChoicesChange,
+  usedTranscender = false,
+}: ClassPowerSelectionSectionProps) {
+  const [isExpanded, setIsExpanded] = useState(true);
+  const [subchoiceModalOpen, setSubchoiceModalOpen] = useState(false);
+  const [pendingPower, setPendingPower] = useState<UnifiedClassPower | null>(null);
+
+  // Calcula quantas escolhas de poder este NEX oferece
+  const powerChoicesCount = useMemo(() => {
+    return getPowerChoicesThisNex(currentNex, targetNex);
+  }, [currentNex, targetNex]);
+
+  // Poderes de classe disponíveis para escolha
+  const availablePowers = useMemo(() => {
+    return getChoosableAbilities(classId, targetNex);
+  }, [classId, targetNex]);
+
+  // Dados do personagem incluindo poderes selecionados (para validação dinâmica)
+  const dynamicCharacterData: CharacterDataForPrerequisites = useMemo(() => ({
+    ...characterData,
+    powers: [...characterData.powers, ...selectedPowers],
+  }), [characterData, selectedPowers]);
+
+  // Cache de resultados de pré-requisitos
+  const prerequisiteResults = useMemo(() => {
+    const results: Record<string, { meets: boolean; missing: string[] }> = {};
+    for (const power of availablePowers) {
+      if (hasPowerPrerequisites(power.id)) {
+        results[power.id] = checkPowerPrerequisites(power.id, dynamicCharacterData);
+      }
+    }
+    return results;
+  }, [availablePowers, dynamicCharacterData]);
+
+  // Handler para toggle de poder
+  const handleTogglePower = useCallback((power: ClassAbility) => {
+    const isCurrentlySelected = selectedPowers.includes(power.id);
+    
+    if (isCurrentlySelected) {
+      // Remove poder
+      onPowersChange(selectedPowers.filter(p => p !== power.id));
+      
+      // Remove sub-escolhas associadas
+      if (classPowerChoices[power.id]) {
+        const newChoices = { ...classPowerChoices };
+        delete newChoices[power.id];
+        onClassPowerChoicesChange(newChoices);
+      }
+      return;
+    }
+
+    // Verifica limite
+    if (selectedPowers.length >= powerChoicesCount) {
+      return; // Limite atingido
+    }
+
+    // Verifica pré-requisitos
+    const prereqResult = prerequisiteResults[power.id];
+    if (prereqResult && !prereqResult.meets) {
+      return; // Não atende pré-requisitos
+    }
+
+    // Verifica se já possui (para não-repetíveis)
+    if (!isRepeatablePower(power.id) && existingAbilities.includes(power.id)) {
+      return; // Já possui
+    }
+
+    // Verifica se precisa de sub-escolha
+    const unifiedPower = getUnifiedPower(power.id);
+    if (unifiedPower && isPowerWithSubchoice(power.id)) {
+      setPendingPower(unifiedPower);
+      setSubchoiceModalOpen(true);
+      return;
+    }
+
+    // Adiciona poder diretamente
+    onPowersChange([...selectedPowers, power.id]);
+  }, [selectedPowers, powerChoicesCount, prerequisiteResults, existingAbilities, classPowerChoices, onPowersChange, onClassPowerChoicesChange]);
+
+  // Handler para confirmar sub-escolha
+  const handleSubchoiceConfirm = useCallback((choice: ClassPowerSubchoice) => {
+    if (!pendingPower) return;
+
+    // Adiciona poder
+    onPowersChange([...selectedPowers, pendingPower.id]);
+
+    // Salva sub-escolha
+    onClassPowerChoicesChange({
+      ...classPowerChoices,
+      [pendingPower.id]: choice,
+    });
+
+    // Limpa estado
+    setPendingPower(null);
+    setSubchoiceModalOpen(false);
+  }, [pendingPower, selectedPowers, classPowerChoices, onPowersChange, onClassPowerChoicesChange]);
+
+  // Se não há escolhas de poder neste NEX, não renderiza
+  if (powerChoicesCount <= 0) {
+    return null;
+  }
+
+  // Se Transcender foi usado, mostra aviso
+  if (usedTranscender) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="p-4 bg-muted/30 border border-border rounded-lg"
+      >
+        <div className="flex items-center gap-2">
+          <Info className="w-4 h-4 text-muted-foreground" />
+          <span className="text-sm text-muted-foreground">
+            Você usou Transcender - a escolha de poder de classe foi trocada por um Poder Paranormal.
+          </span>
+        </div>
+      </motion.div>
+    );
+  }
+
+  return (
+    <>
+      <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-3"
+        >
+          {/* Header colapsível */}
+          <CollapsibleTrigger className="w-full">
+            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors">
+              <div className="flex items-center gap-2">
+                <Sword className="w-4 h-4 text-primary" />
+                <h4 className="font-display text-sm tracking-wider">
+                  PODERES DE CLASSE
+                </h4>
+                <Badge variant="outline" className="ml-2">
+                  {selectedPowers.length}/{powerChoicesCount}
+                </Badge>
+              </div>
+              {isExpanded ? (
+                <ChevronUp className="w-4 h-4 text-muted-foreground" />
+              ) : (
+                <ChevronDown className="w-4 h-4 text-muted-foreground" />
+              )}
+            </div>
+          </CollapsibleTrigger>
+
+          <CollapsibleContent>
+            {/* Aviso se não selecionou todos */}
+            {selectedPowers.length < powerChoicesCount && (
+              <div className="flex items-center gap-2 p-2 bg-warning/10 border border-warning/30 rounded text-xs text-warning">
+                <AlertCircle className="w-3 h-3" />
+                Selecione {powerChoicesCount - selectedPowers.length} poder(es) de classe
+              </div>
+            )}
+
+            {/* Lista de poderes */}
+            <ScrollArea className="h-[250px] pr-2">
+              <div className="space-y-2">
+                {availablePowers.map((power) => {
+                  const prereqResult = prerequisiteResults[power.id];
+                  const isBlocked = prereqResult && !prereqResult.meets;
+                  const isSelected = selectedPowers.includes(power.id);
+                  const alreadyHas = !isRepeatablePower(power.id) && existingAbilities.includes(power.id);
+                  const hasSubchoice = isPowerWithSubchoice(power.id);
+                  const prereqText = formatPrerequisitesText(power.id);
+
+                  return (
+                    <Card 
+                      key={power.id}
+                      className={cn(
+                        "cursor-pointer transition-all duration-200",
+                        isBlocked && "opacity-50 cursor-not-allowed",
+                        alreadyHas && "opacity-40 cursor-default",
+                        isSelected && "ring-2 ring-primary border-primary bg-primary/5",
+                        !isBlocked && !alreadyHas && !isSelected && "hover:border-primary/50 hover:bg-muted/50"
+                      )}
+                      onClick={() => !alreadyHas && handleTogglePower(power)}
+                    >
+                      <CardHeader className="p-3 pb-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <CardTitle className="text-sm">{power.name}</CardTitle>
+                            {hasSubchoice && (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger>
+                                    <Badge variant="secondary" className="text-xs">
+                                      <Plus className="w-3 h-3 mr-1" />
+                                      Escolha
+                                    </Badge>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Este poder requer uma escolha adicional</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            {isBlocked && <Lock className="w-4 h-4 text-destructive" />}
+                            {alreadyHas && <Check className="w-4 h-4 text-muted-foreground" />}
+                            {isSelected && <Check className="w-4 h-4 text-primary" />}
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="p-3 pt-0">
+                        <CardDescription className="text-xs line-clamp-2">
+                          {power.description}
+                        </CardDescription>
+                        
+                        {/* Mostrar pré-requisitos se existirem */}
+                        {prereqText && (
+                          <p className={cn(
+                            "text-xs mt-2 italic",
+                            isBlocked ? "text-destructive" : "text-muted-foreground"
+                          )}>
+                            {prereqText}
+                          </p>
+                        )}
+                        
+                        {/* Mostrar o que falta se bloqueado */}
+                        {isBlocked && prereqResult && (
+                          <p className="text-xs text-destructive mt-1 font-medium">
+                            ⚠️ Faltam: {prereqResult.missing.join(', ')}
+                          </p>
+                        )}
+                        
+                        {/* Indicador de já possui */}
+                        {alreadyHas && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            ✓ Você já possui este poder
+                          </p>
+                        )}
+
+                        {/* Sub-escolha feita */}
+                        {isSelected && classPowerChoices[power.id] && (
+                          <div className="mt-2 p-2 bg-primary/10 rounded text-xs">
+                            <span className="font-medium">Escolha: </span>
+                            {classPowerChoices[power.id].chosenValues.join(', ')}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            </ScrollArea>
+          </CollapsibleContent>
+        </motion.div>
+      </Collapsible>
+
+      {/* Modal de sub-escolha */}
+      {pendingPower && (
+        <ClassPowerSubchoiceModal
+          open={subchoiceModalOpen}
+          onClose={() => {
+            setPendingPower(null);
+            setSubchoiceModalOpen(false);
+          }}
+          power={pendingPower}
+          onConfirm={handleSubchoiceConfirm}
+          existingWeaponGroups={Object.values(classPowerChoices)
+            .filter(c => c.choiceType === 'weaponGroup')
+            .flatMap(c => c.chosenValues)
+          }
+          existingSkillChoices={Object.values(classPowerChoices)
+            .filter(c => c.choiceType === 'skill')
+            .flatMap(c => c.chosenValues)
+          }
+        />
+      )}
+    </>
+  );
+}
+
+// ================== VALIDAÇÃO ==================
+
+/**
+ * Verifica se a seleção de poderes de classe está completa
+ */
+export function isClassPowerSelectionComplete(
+  selectedPowers: string[],
+  currentNex: number,
+  targetNex: number,
+  usedTranscender: boolean
+): boolean {
+  if (usedTranscender) return true; // Transcender substitui a escolha
+  
+  const requiredCount = getPowerChoicesThisNex(currentNex, targetNex);
+  return selectedPowers.length >= requiredCount;
+}

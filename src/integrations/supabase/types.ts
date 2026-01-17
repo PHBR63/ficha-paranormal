@@ -1244,6 +1244,7 @@ export type Database = {
           appearance: string | null
           background: string | null
           class: string
+          class_power_choices: Json | null
           class_track: string | null
           concept: string | null
           conditions: Json
@@ -1294,6 +1295,7 @@ export type Database = {
           appearance?: string | null
           background?: string | null
           class: string
+          class_power_choices?: Json | null
           class_track?: string | null
           concept?: string | null
           conditions?: Json
@@ -1344,6 +1346,7 @@ export type Database = {
           appearance?: string | null
           background?: string | null
           class?: string
+          class_power_choices?: Json | null
           class_track?: string | null
           concept?: string | null
           conditions?: Json
