@@ -3233,6 +3233,11 @@ export default function CharacterSheet() {
         resistanceBonus={rollResistanceBonus}
         bonusSources={rollBonusSources}
         onRollComplete={handleRollComplete}
+        activatablePowers={activatablePowersForCharacter}
+        peCurrent={peCurrent}
+        nex={character.nex}
+        intellect={character.intellect}
+        onPEChange={(newPE) => handleCombatStatsChange({ hp: hpCurrent, pe: newPE, san: sanCurrent })}
       />
 
       {/* Modal de seleção de poderes paranormais */}

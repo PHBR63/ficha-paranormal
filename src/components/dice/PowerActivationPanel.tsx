@@ -13,7 +13,7 @@
 
 import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Zap, Brain, Hand, BookOpen, Sparkles, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { Zap, Brain, Hand, BookOpen, Sparkles, AlertCircle, ChevronDown, ChevronUp, Sword, Search, Eye, Move, Target, Shield as ShieldIcon, Heart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
@@ -34,6 +34,28 @@ import {
 // ========================================
 
 /**
+ * Tipos de ícone disponíveis para poderes ativáveis
+ */
+export type PowerIconType = 'brain' | 'hand' | 'book' | 'zap' | 'sparkles' | 'sword' | 'search' | 'eye' | 'move' | 'target' | 'heart' | 'shield';
+
+/**
+ * Tipos de efeito de poderes ativáveis
+ */
+export type PowerEffectType = 
+  | 'attribute_swap' 
+  | 'free_action' 
+  | 'knowledge_check' 
+  | 'skill_trained' 
+  | 'extra_dice'
+  | 'combat_bonus'      // Bônus de ataque/dano (Ataque Especial)
+  | 'skill_bonus'       // Bônus em teste de perícia (Incansável)
+  | 'defense_bonus'     // Bônus de defesa (Sentido Tático, Avanço Tático)
+  | 'movement_bonus'    // Bônus de movimento (Ímpeto)
+  | 'control'           // Efeito de controle (Tiro de Cobertura)
+  | 'healing'           // Cura/PV temporário (Pancada Revigorante)
+  | 'reaction';         // Reação (Ataque de Oportunidade)
+
+/**
  * Poder ativável durante um teste
  */
 export interface ActivatablePower {
@@ -42,13 +64,19 @@ export interface ActivatablePower {
   description: string;
   peCost: number;
   effect: string;
-  icon: 'brain' | 'hand' | 'book' | 'zap' | 'sparkles';
+  icon: PowerIconType;
   // Tipo de efeito
-  effectType: 'attribute_swap' | 'free_action' | 'knowledge_check' | 'skill_trained' | 'extra_dice';
+  effectType: PowerEffectType;
   // Para troca de atributo
   newAttribute?: 'intellect' | 'agility' | 'strength' | 'presence' | 'vigor';
   // Para dados extras
   extraDice?: string; // ex: "1d6"
+  // Para bônus de perícia
+  skillBonus?: number;
+  // Para bônus de ataque
+  attackBonus?: number;
+  // Para bônus de dano
+  damageBonus?: number;
   // Perícias aplicáveis (vazio = todas exceto Luta/Pontaria)
   applicableSkills?: string[];
   // Perícias excluídas
@@ -90,12 +118,19 @@ interface PowerActivationPanelProps {
 // ÍCONES
 // ========================================
 
-const POWER_ICONS = {
+const POWER_ICONS: Record<PowerIconType, React.ComponentType<{ className?: string }>> = {
   brain: Brain,
   hand: Hand,
   book: BookOpen,
   zap: Zap,
   sparkles: Sparkles,
+  sword: Sword,
+  search: Search,
+  eye: Eye,
+  move: Move,
+  target: Target,
+  heart: Heart,
+  shield: ShieldIcon,
 };
 
 // ========================================
