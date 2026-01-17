@@ -80,7 +80,7 @@ import { PowerSubchoiceModal } from './PowerSubchoiceModal';
 import { NonOccultistRitualModal, RitualSource } from './NonOccultistRitualModal';
 import { AttributeIncreaseSection, isAttributeIncreaseNex } from './AttributeIncreaseSection';
 import { VersatilitySection, isVersatilityChoiceComplete, VersatilityChoice } from './VersatilitySection';
-import { TrainingGradeSection, isTrainingGradeComplete } from './TrainingGradeSection';
+import { TrainingGradeSection, isTrainingGradeComplete, getTrainingGradeSkillCount } from './TrainingGradeSection';
 import { ClassPowerSelectionSection, isClassPowerSelectionComplete } from './ClassPowerSelectionSection';
 import { ClassPowerSubchoice } from './ClassPowerSubchoiceModal';
 import { useAuth } from '@/contexts/AuthContext';
@@ -216,8 +216,8 @@ export function NexProgressionModal({
   // Verificar se este NEX oferece Versatilidade (chegando no NEX 50%)
   const showVersatility = nextNex === 50;
   
-  // Verificar se este NEX oferece Grau de Treinamento (NEX 35%, 70% - Especialista apenas)
-  const showTrainingGrade = character.class === 'Especialista' && (nextNex === 35 || nextNex === 70);
+  // Verificar se este NEX oferece Grau de Treinamento (NEX 35%, 70% - TODAS as classes)
+  const showTrainingGrade = (nextNex === 35 || nextNex === 70);
   
   // Dados do personagem para validação de pré-requisitos de poderes de classe
   const characterDataForPrerequisites = useMemo(() => ({
@@ -473,9 +473,9 @@ export function NexProgressionModal({
       return;
     }
     
-    // Validação: se é NEX de Grau de Treinamento (Especialista), precisa completar seleção
-    if (showTrainingGrade && !isTrainingGradeComplete(selectedTrainingSkills, character.intellect)) {
-      const required = 5 + character.intellect;
+    // Validação: se é NEX de Grau de Treinamento (todas as classes), precisa completar seleção
+    if (showTrainingGrade && !isTrainingGradeComplete(selectedTrainingSkills, character.class, character.intellect)) {
+      const required = getTrainingGradeSkillCount(character.class, character.intellect);
       toast.error('Escolha obrigatória', {
         description: `Você precisa selecionar ${required} perícias para o Grau de Treinamento.`,
       });
@@ -838,9 +838,10 @@ export function NexProgressionModal({
                 />
               )}
               
-              {/* Seção de Grau de Treinamento (NEX 35%, 70% - Especialista) */}
+              {/* Seção de Grau de Treinamento (NEX 35%, 70% - Todas as classes) */}
               {showTrainingGrade && nextNex && (
                 <TrainingGradeSection
+                  characterClass={character.class}
                   characterIntellect={character.intellect}
                   currentNex={nextNex as 35 | 70}
                   skills={character.skills}
