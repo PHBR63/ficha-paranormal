@@ -46,21 +46,24 @@ import { VersatilitySection, VersatilityChoice, isVersatilityChoiceComplete } fr
 import { SkillTrainingSelectModal, SkillTrainingResult, SkillTrainingChoice } from './SkillTrainingSelectModal';
 import { ParanormalPowerSelectModal } from './ParanormalPowerSelectModal';
 import { PowerSubchoiceModal } from './PowerSubchoiceModal';
+import { ClassPowerSubchoiceModal, ClassPowerSubchoice } from './ClassPowerSubchoiceModal';
 import { calculateDerivedStats, SKILLS } from '@/lib/character-data';
 import { rebuildCharacterSheet } from '@/lib/character-builder-engine';
 import { 
   type ParanormalPower, 
   type ParanormalElement,
-  getPowerById,
+  getPowerById as getParanormalPowerById,
   PARANORMAL_POWERS 
 } from '@/lib/paranormal-powers';
 import {
   checkPowerPrerequisites,
   formatPrerequisitesText,
   hasPowerPrerequisites,
+  getUnifiedPower,
   type CharacterDataForPrerequisites,
   type PrerequisiteCheckResult,
 } from '@/lib/class-abilities-prerequisites';
+import type { UnifiedClassPower } from '@/lib/class-powers/types';
 
 // ==================== MARCOS DE PROGRESSÃO OFICIAIS (Tabelas 1.3, 1.4, 1.5) ====================
 // Mapeamento de habilidades que evoluem com NEX conforme livro oficial
@@ -153,6 +156,14 @@ export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) 
   // Estado para o modal de sub-escolhas do poder paranormal
   const [subchoiceModalOpen, setSubchoiceModalOpen] = useState(false);
   const [pendingPowerForSubchoice, setPendingPowerForSubchoice] = useState<ParanormalPower | null>(null);
+  
+  // Estado para o modal de sub-escolhas de poderes de CLASSE (Especialista em Arma, etc.)
+  const [classPowerSubchoiceModalOpen, setClassPowerSubchoiceModalOpen] = useState(false);
+  const [pendingClassPowerForSubchoice, setPendingClassPowerForSubchoice] = useState<UnifiedClassPower | null>(null);
+  const [pendingClassPowerInstance, setPendingClassPowerInstance] = useState<number>(0);
+  
+  // Escolhas de sub-poderes de classe já feitas (para evitar duplicação)
+  const classPowerChoices = useMemo(() => (formData as any).classPowerChoices || {}, [formData]);
   
   // Estado para Versatilidade (NEX >= 50%)
   const [versatilityChoice, setVersatilityChoice] = useState<VersatilityChoice | null>(
@@ -447,7 +458,7 @@ export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) 
   const characterParanormalPowers = useMemo(() => {
     const powers: ParanormalPower[] = [];
     Object.values(transcenderChoices).forEach(choice => {
-      const power = getPowerById(choice.powerId);
+      const power = getParanormalPowerById(choice.powerId);
       if (power) {
         powers.push(power);
       }
@@ -538,6 +549,59 @@ export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) 
     }
   }, [abilities, transcenderChoices, getAbilityCount, getTranscenderKey, updateFormData]);
 
+  // Verifica se um poder de classe requer sub-escolha (Especialista em Arma, etc.)
+  const isClassPowerWithChoice = useCallback((abilityId: string): boolean => {
+    const unifiedPower = getUnifiedPower(abilityId);
+    return !!(unifiedPower?.effects?.base?.requiresChoice);
+  }, []);
+  
+  // Buscar grupos de armas já escolhidos (para Especialista em Arma)
+  const existingWeaponGroups = useMemo(() => {
+    const groups: string[] = [];
+    Object.values(classPowerChoices).forEach((choice: any) => {
+      if (choice?.choiceType === 'weaponGroup') {
+        groups.push(...(choice.chosenValues || []));
+      }
+    });
+    return groups;
+  }, [classPowerChoices]);
+  
+  // Handler para adicionar poder que requer sub-escolha
+  const handleAddClassPowerWithChoice = useCallback((abilityId: string) => {
+    if (remainingChoices <= 0) return;
+    
+    const unifiedPower = getUnifiedPower(abilityId);
+    if (!unifiedPower) return;
+    
+    const currentCount = getAbilityCount(abilityId);
+    
+    setPendingClassPowerForSubchoice(unifiedPower);
+    setPendingClassPowerInstance(currentCount);
+    setClassPowerSubchoiceModalOpen(true);
+  }, [remainingChoices, getAbilityCount]);
+  
+  // Handler para confirmar sub-escolha de poder de classe
+  const handleClassPowerSubchoiceConfirm = useCallback((choice: ClassPowerSubchoice) => {
+    if (!pendingClassPowerForSubchoice) return;
+    
+    const powerId = pendingClassPowerForSubchoice.id;
+    const choiceKey = `${powerId}-${pendingClassPowerInstance}`;
+    
+    // Salvar a escolha e adicionar o poder
+    updateFormData({
+      abilities: [...abilities, powerId],
+      classPowerChoices: {
+        ...classPowerChoices,
+        [choiceKey]: choice,
+      },
+    } as any);
+    
+    // Fechar modal
+    setClassPowerSubchoiceModalOpen(false);
+    setPendingClassPowerForSubchoice(null);
+    setPendingClassPowerInstance(0);
+  }, [abilities, classPowerChoices, pendingClassPowerForSubchoice, pendingClassPowerInstance, updateFormData]);
+
   // Handler para adicionar uma instância de um poder (usado para poderes repetíveis)
   const handleAddAbility = useCallback((abilityId: string) => {
     // Se for Treinamento em Perícia, abre o modal
@@ -552,12 +616,18 @@ export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) 
       return;
     }
     
+    // Se for poder de classe que requer sub-escolha (Especialista em Arma, etc.)
+    if (isClassPowerWithChoice(abilityId)) {
+      handleAddClassPowerWithChoice(abilityId);
+      return;
+    }
+    
     if (remainingChoices > 0) {
       updateFormData({
         abilities: [...abilities, abilityId]
       });
     }
-  }, [abilities, remainingChoices, updateFormData, isSkillTrainingPower, handleAddSkillTraining, isTranscenderPower, handleAddTranscender]);
+  }, [abilities, remainingChoices, updateFormData, isSkillTrainingPower, handleAddSkillTraining, isTranscenderPower, handleAddTranscender, isClassPowerWithChoice, handleAddClassPowerWithChoice]);
   
   // Handler para remover UMA instância de um poder (usado para poderes repetíveis)
   const handleRemoveOneInstance = useCallback((abilityId: string) => {
@@ -573,13 +643,29 @@ export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) 
       return;
     }
     
+    // Encontrar a última ocorrência do poder
     const index = abilities.lastIndexOf(abilityId);
     if (index !== -1) {
       const newAbilities = [...abilities];
       newAbilities.splice(index, 1);
-      updateFormData({ abilities: newAbilities });
+      
+      // Se for poder com sub-escolha, remover também a escolha correspondente
+      if (isClassPowerWithChoice(abilityId)) {
+        // Encontrar a última instância (maior índice)
+        const currentCount = getAbilityCount(abilityId);
+        const choiceKey = `${abilityId}-${currentCount - 1}`;
+        const newClassPowerChoices = { ...classPowerChoices };
+        delete newClassPowerChoices[choiceKey];
+        
+        updateFormData({
+          abilities: newAbilities,
+          classPowerChoices: newClassPowerChoices,
+        } as any);
+      } else {
+        updateFormData({ abilities: newAbilities });
+      }
     }
-  }, [abilities, updateFormData, isSkillTrainingPower, handleRemoveSkillTraining, isTranscenderPower, handleRemoveTranscender]);
+  }, [abilities, updateFormData, isSkillTrainingPower, handleRemoveSkillTraining, isTranscenderPower, handleRemoveTranscender, isClassPowerWithChoice, getAbilityCount, classPowerChoices]);
 
   // Handler antigo para poderes não-repetíveis (toggle simples)
   const handleToggleAbility = useCallback((abilityId: string) => {
@@ -1165,6 +1251,22 @@ export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) 
             onConfirm={handleSubchoiceConfirm}
             power={pendingPowerForSubchoice}
             hasAffinity={false}
+          />
+        )}
+        
+        {/* Modal de sub-escolhas para poderes de CLASSE (Especialista em Arma, etc.) */}
+        {pendingClassPowerForSubchoice && (
+          <ClassPowerSubchoiceModal
+            open={classPowerSubchoiceModalOpen}
+            onClose={() => {
+              setClassPowerSubchoiceModalOpen(false);
+              setPendingClassPowerForSubchoice(null);
+              setPendingClassPowerInstance(0);
+            }}
+            power={pendingClassPowerForSubchoice}
+            onConfirm={handleClassPowerSubchoiceConfirm}
+            instanceIndex={pendingClassPowerInstance}
+            existingWeaponGroups={existingWeaponGroups}
           />
         )}
       </div>
