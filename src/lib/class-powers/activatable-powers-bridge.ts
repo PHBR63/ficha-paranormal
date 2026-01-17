@@ -263,10 +263,14 @@ export function checkActivatablePowerPrerequisites(
     return { canUse: false, reason: 'Poder não encontrado' };
   }
   
-  // Verifica PE - resolve o custo corretamente usando a função importada
+  // Verifica PE - resolve o custo corretamente
   const activation = power.effects?.base?.activation;
   if (activation?.cost !== undefined) {
-    const peCost = resolveScalingValue(activation.cost, context.nex);
+    const rawCost = activation.cost;
+    const peCost: number = typeof rawCost === 'number' 
+      ? rawCost 
+      : resolveScalingValue(rawCost, context.nex);
+    
     if (context.peCurrent < peCost) {
       return { canUse: false, reason: 'PE insuficiente' };
     }
