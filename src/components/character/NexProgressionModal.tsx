@@ -81,6 +81,8 @@ import { NonOccultistRitualModal, RitualSource } from './NonOccultistRitualModal
 import { AttributeIncreaseSection, isAttributeIncreaseNex } from './AttributeIncreaseSection';
 import { VersatilitySection, isVersatilityChoiceComplete, VersatilityChoice } from './VersatilitySection';
 import { TrainingGradeSection, isTrainingGradeComplete } from './TrainingGradeSection';
+import { ClassPowerSelectionSection, isClassPowerSelectionComplete } from './ClassPowerSelectionSection';
+import { ClassPowerSubchoice } from './ClassPowerSubchoiceModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/components/ui/sonner';
 import confetti from 'canvas-confetti';
@@ -144,6 +146,7 @@ interface NexProgressionModalProps {
     attributeIncrease?: string; // Atributo aumentado (agility, strength, etc)
     versatilityChoice?: VersatilityChoice; // Escolha da Versatilidade (NEX 50%)
     skillUpgrades?: string[]; // Perícias atualizadas pelo Grau de Treinamento (NEX 35%, 70%)
+    classPowerChoices?: Record<string, ClassPowerSubchoice>; // Sub-escolhas de poderes de classe
   }) => Promise<void>;
 }
 
@@ -198,6 +201,10 @@ export function NexProgressionModal({
   // Estado para seleção de Grau de Treinamento (NEX 35%, 70% - Especialista)
   const [selectedTrainingSkills, setSelectedTrainingSkills] = useState<string[]>([]);
   
+  // Estado para seleção de Poderes de Classe
+  const [selectedClassPowers, setSelectedClassPowers] = useState<string[]>([]);
+  const [classPowerChoices, setClassPowerChoices] = useState<Record<string, ClassPowerSubchoice>>({});
+  
   // Verificar se está subindo para NEX 50% (escolhe afinidade)
   const currentNexIndex = NEX_VALUES.indexOf(character.nex);
   const nextNex = currentNexIndex < NEX_VALUES.length - 1 ? NEX_VALUES[currentNexIndex + 1] : null;
@@ -211,6 +218,22 @@ export function NexProgressionModal({
   
   // Verificar se este NEX oferece Grau de Treinamento (NEX 35%, 70% - Especialista apenas)
   const showTrainingGrade = character.class === 'Especialista' && (nextNex === 35 || nextNex === 70);
+  
+  // Dados do personagem para validação de pré-requisitos de poderes de classe
+  const characterDataForPrerequisites = useMemo(() => ({
+    nex: nextNex || character.nex,
+    attributes: {
+      strength: character.strength,
+      agility: character.agility,
+      vigor: character.vigor,
+      intellect: character.intellect,
+      presence: character.presence,
+    },
+    trainedSkills: Object.keys(character.skills).filter(s => character.skills[s] >= 1),
+    skillLevels: character.skills,
+    powers: character.abilities || [],
+    proficiencies: [],
+  }), [character, nextNex]);
   
   // Verificar elegibilidade de Transcender quando modal abre
   // API corrigida: funciona para TODAS as classes, deriva marcos da tabela oficial
@@ -458,6 +481,16 @@ export function NexProgressionModal({
       });
       return;
     }
+    
+    // Validação: se há escolhas de poder de classe disponíveis, precisa completar (exceto se usou Transcender)
+    if (!usedTranscender && !isClassPowerSelectionComplete(selectedClassPowers, character.nex, nextNex, usedTranscender)) {
+      toast.error('Escolha obrigatória', {
+        description: 'Você precisa selecionar os poderes de classe disponíveis.',
+      });
+      return;
+    }
+      return;
+    }
     // Validação: atributo selecionado não pode estar no limite
     if (showAttributeIncrease && selectedAttributeIncrease) {
       const attrValue = character[selectedAttributeIncrease as keyof typeof character] as number;
@@ -560,6 +593,11 @@ export function NexProgressionModal({
       // Calcula novas habilidades (adiciona as da trilha)
       let newAbilities = [...newTrackAbilities.map(a => a.name)];
       
+      // Adiciona poderes de classe selecionados
+      if (selectedClassPowers.length > 0) {
+        newAbilities.push(...selectedClassPowers);
+      }
+      
       // Se escolheu habilidade de trilha diferente via Versatilidade, adiciona
       if (showVersatility && versatilityChoice?.type === 'track_ability' && versatilityChoice.abilityName) {
         newAbilities.push(versatilityChoice.abilityName);
@@ -596,6 +634,7 @@ export function NexProgressionModal({
         attributeIncrease: showAttributeIncrease ? selectedAttributeIncrease || undefined : undefined,
         versatilityChoice: showVersatility ? versatilityChoice || undefined : undefined,
         skillUpgrades: showTrainingGrade && selectedTrainingSkills.length > 0 ? selectedTrainingSkills : undefined,
+        classPowerChoices: Object.keys(classPowerChoices).length > 0 ? classPowerChoices : undefined,
       });
 
       // Efeito de celebração
@@ -808,6 +847,22 @@ export function NexProgressionModal({
                   skills={character.skills}
                   selectedSkills={selectedTrainingSkills}
                   onSelect={setSelectedTrainingSkills}
+                />
+              )}
+
+              {/* Seção de Poderes de Classe */}
+              {nextNex && !usedTranscender && (
+                <ClassPowerSelectionSection
+                  classId={character.class}
+                  currentNex={character.nex}
+                  targetNex={nextNex}
+                  characterData={characterDataForPrerequisites}
+                  existingAbilities={character.abilities || []}
+                  selectedPowers={selectedClassPowers}
+                  onPowersChange={setSelectedClassPowers}
+                  classPowerChoices={classPowerChoices}
+                  onClassPowerChoicesChange={setClassPowerChoices}
+                  usedTranscender={usedTranscender}
                 />
               )}
 
