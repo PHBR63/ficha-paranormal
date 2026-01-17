@@ -17,13 +17,16 @@ import {
   ChevronDown,
   ChevronUp,
   Flame,
+  Award,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { WeaponBuff, ELEMENT_BUFF_COLORS } from '@/hooks/useWeaponBuffs';
 import { getElementConfig } from '@/lib/element-config';
 import { type WeaponDisplayType } from '@/lib/weapon-type-inference';
+import { getWeaponGroupForWeapon, getWeaponGroupName } from '@/lib/constants/weapon-groups';
 
 // Interface para arma - usa WeaponDisplayType do módulo de inferência
 export interface WeaponEntry {
@@ -53,6 +56,8 @@ interface MobileCombatPanelProps {
   agility: number;
   onWeaponClick: (weapon: WeaponEntry) => void;
   onRollInitiative?: () => void;
+  /** Grupos de armas escolhidos em Especialista em Arma */
+  especialistaArmaGroups?: string[];
 }
 
 // Ícone por tipo de arma
@@ -73,11 +78,13 @@ function WeaponTypeIcon({ type }: { type: string }) {
 function WeaponCard({ 
   weapon, 
   buffs,
-  onClick 
+  onClick,
+  especialistaArmaGroups = [],
 }: { 
   weapon: WeaponEntry; 
   buffs: WeaponBuff[];
   onClick: () => void;
+  especialistaArmaGroups?: string[];
 }) {
   const [expanded, setExpanded] = useState(false);
   
@@ -87,6 +94,13 @@ function WeaponCard({
   
   // Todos os buffs se aplicam a todas as armas (Amaldiçoar Arma afeta arma tocada)
   const activeBuffs = buffs;
+  
+  // Verifica se esta arma tem bônus de Especialista em Arma
+  const weaponGroup = useMemo(() => {
+    return getWeaponGroupForWeapon(weapon.id || weapon.name);
+  }, [weapon.id, weapon.name]);
+  
+  const hasEspecialistaBonus = weaponGroup && especialistaArmaGroups.includes(weaponGroup);
 
   return (
     <motion.div
@@ -115,8 +129,27 @@ function WeaponCard({
           </div>
         </div>
         
-        {/* Stats compactos */}
+        {/* Stats compactos + indicador Especialista */}
         <div className="flex items-center gap-2 flex-shrink-0">
+          {/* Indicador compacto de Especialista em Arma */}
+          {hasEspecialistaBonus && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-500 border border-amber-500/30">
+                    <Award className="w-3 h-3" />
+                    <span className="text-[9px] font-bold">+2</span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="left" className="max-w-[200px]">
+                  <p className="text-xs font-medium">Especialista em Arma</p>
+                  <p className="text-[10px] text-muted-foreground">
+                    +2 no ataque e dano ({getWeaponGroupName(weaponGroup!)})
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
           <Badge variant="outline" className="text-[10px] px-1.5">
             {weapon.damage}
           </Badge>
@@ -220,6 +253,7 @@ export function MobileCombatPanel({
   agility,
   onWeaponClick,
   onRollInitiative,
+  especialistaArmaGroups = [],
 }: MobileCombatPanelProps) {
   // Separa armas por tipo
   const meleeWeapons = weapons.filter(w => w.type !== 'Disparo' && w.type !== 'Arremesso');
@@ -304,6 +338,7 @@ export function MobileCombatPanel({
               weapon={weapon}
               buffs={weaponBuffs}
               onClick={() => onWeaponClick(weapon)}
+              especialistaArmaGroups={especialistaArmaGroups}
             />
           ))}
         </div>
@@ -321,6 +356,7 @@ export function MobileCombatPanel({
               weapon={weapon}
               buffs={weaponBuffs}
               onClick={() => onWeaponClick(weapon)}
+              especialistaArmaGroups={especialistaArmaGroups}
             />
           ))}
         </div>

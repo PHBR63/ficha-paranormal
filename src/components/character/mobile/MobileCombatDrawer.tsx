@@ -19,9 +19,11 @@ import {
   Sparkles,
   Clock,
   RefreshCw,
+  Award,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   MobileDrawer,
   MobileDrawerContent,
@@ -33,6 +35,7 @@ import {
 import { cn } from '@/lib/utils';
 import { WeaponBuff } from '@/hooks/useWeaponBuffs';
 import { getElementConfig } from '@/lib/element-config';
+import { getWeaponGroupForWeapon, getWeaponGroupName } from '@/lib/constants/weapon-groups';
 
 // Interface para arma (reutilizada do MobileCombatPanel)
 export interface WeaponEntry {
@@ -78,6 +81,8 @@ interface MobileCombatDrawerProps {
   onRollInitiative: () => void;
   onResistanceCheck: (type: 'fortitude' | 'reflexos' | 'vontade') => void;
   className?: string;
+  /** Grupos de armas escolhidos em Especialista em Arma */
+  especialistaArmaGroups?: string[];
 }
 
 // Ícone por tipo de arma
@@ -99,13 +104,22 @@ const CompactWeaponCard = memo(function CompactWeaponCard({
   weapon,
   buffs,
   onAttack,
+  especialistaArmaGroups = [],
 }: {
   weapon: WeaponEntry;
   buffs: WeaponBuff[];
   onAttack: () => void;
+  especialistaArmaGroups?: string[];
 }) {
   const hasAmmo = weapon.ammoCurrent !== undefined && weapon.ammoMax !== undefined;
   const isOutOfAmmo = hasAmmo && weapon.ammoCurrent === 0;
+  
+  // Verifica se esta arma tem bônus de Especialista em Arma
+  const weaponGroup = useMemo(() => {
+    return getWeaponGroupForWeapon(weapon.id || weapon.name);
+  }, [weapon.id, weapon.name]);
+  
+  const hasEspecialistaBonus = weaponGroup && especialistaArmaGroups.includes(weaponGroup);
 
   return (
     <motion.div
@@ -139,6 +153,26 @@ const CompactWeaponCard = memo(function CompactWeaponCard({
             </div>
           </div>
         </div>
+        
+        {/* Indicador compacto de Especialista em Arma */}
+        {hasEspecialistaBonus && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-500 border border-amber-500/30 flex-shrink-0">
+                  <Award className="w-3 h-3" />
+                  <span className="text-[9px] font-bold">+2</span>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="left" className="max-w-[200px]">
+                <p className="text-xs font-medium">Especialista em Arma</p>
+                <p className="text-[10px] text-muted-foreground">
+                  +2 no ataque e dano ({getWeaponGroupName(weaponGroup!)})
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
         
         {/* Buffs ativos (indicador compacto) */}
         {buffs.length > 0 && (
@@ -227,6 +261,7 @@ export const MobileCombatDrawer = memo(function MobileCombatDrawer({
   onRollInitiative,
   onResistanceCheck,
   className,
+  especialistaArmaGroups = [],
 }: MobileCombatDrawerProps) {
   const [open, setOpen] = useState(false);
   
@@ -372,6 +407,7 @@ export const MobileCombatDrawer = memo(function MobileCombatDrawer({
                           weapon={weapon}
                           buffs={weaponBuffs}
                           onAttack={() => handleAttack(weapon)}
+                          especialistaArmaGroups={especialistaArmaGroups}
                         />
                       ))}
                     </div>
@@ -390,6 +426,7 @@ export const MobileCombatDrawer = memo(function MobileCombatDrawer({
                           weapon={weapon}
                           buffs={weaponBuffs}
                           onAttack={() => handleAttack(weapon)}
+                          especialistaArmaGroups={especialistaArmaGroups}
                         />
                       ))}
                     </div>
