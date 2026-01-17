@@ -18,6 +18,8 @@ import { MobileCollapsibleSection } from './MobileCollapsibleSection';
 import { getElementIcon, getElementColor } from './utils';
 import { ALL_CLASS_ABILITIES } from '@/lib/class-abilities';
 import { ALL_RITUALS } from '@/lib/rituals/legacy-exports';
+import { EspecialistaArmaIndicator } from '@/components/character/EspecialistaArmaIndicator';
+import { PeritoIndicator } from '@/components/character/PeritoIndicator';
 
 // Altura estimada por tipo de item
 const POWER_ITEM_HEIGHT = 76;
@@ -57,8 +59,20 @@ interface PowerDetailData {
   resistance?: string;
 }
 
+// Interface para sub-escolhas de poderes de classe
+interface ClassPowerSubchoice {
+  powerId: string;
+  choiceType: string;
+  chosenValues: string[];
+}
+
 interface MobilePowersTabProps {
   abilities: string[];
+  characterClass?: string; // Classe do personagem para buscar dados da habilidade
+  nex?: number; // NEX do personagem para escalonamento de Perito
+  classPowerChoices?: Record<string, ClassPowerSubchoice>; // Sub-escolhas de poderes
+  equippedWeaponId?: string; // ID da arma equipada
+  equippedWeaponName?: string; // Nome da arma equipada
   paranormalPowers?: ParanormalPower[];
   generalPowers?: GeneralPower[];
   originPowers: OriginPower[];
@@ -407,6 +421,11 @@ const VirtualizedRitualsList = memo(function VirtualizedRitualsList({
 
 export const MobilePowersTab = memo(function MobilePowersTab({
   abilities,
+  characterClass,
+  nex = 5,
+  classPowerChoices = {},
+  equippedWeaponId,
+  equippedWeaponName,
   paranormalPowers = [],
   generalPowers = [],
   originPowers,
@@ -423,11 +442,18 @@ export const MobilePowersTab = memo(function MobilePowersTab({
   onOpenRemovedPowersHistory,
   ritualHistoryButton,
 }: MobilePowersTabProps) {
-  // Buscar descrição de habilidade de classe
+  // Buscar descrição de habilidade de classe e dados completos
   const getAbilityDescription = useCallback((abilityName: string): string => {
     const ability = ALL_CLASS_ABILITIES.find(a => a.name === abilityName);
     return ability?.description || '';
   }, []);
+  
+  // Buscar dados completos da habilidade (para identificar ID e verificar sub-escolhas)
+  const getAbilityData = useCallback((abilityName: string) => {
+    return ALL_CLASS_ABILITIES.find(
+      a => a.name === abilityName && (!characterClass || a.classId === characterClass)
+    );
+  }, [characterClass]);
 
   // Buscar dados do ritual
   const getRitualData = useCallback((ritualName: string) => {
@@ -520,27 +546,60 @@ export const MobilePowersTab = memo(function MobilePowersTab({
           <div className="space-y-2">
             {abilities.map((ability, i) => {
               const description = getAbilityDescription(ability);
+              const abilityData = getAbilityData(ability);
+              
+              // Verifica se há sub-escolha para este poder
+              const powerSubchoice = abilityData?.id ? classPowerChoices[abilityData.id] : undefined;
+              
+              // Verifica se é Especialista em Arma ou Perito para mostrar indicador especial
+              const isEspecialistaArma = abilityData?.id === 'especialista-arma' || 
+                powerSubchoice?.powerId === 'especialista-arma';
+              const isPerito = abilityData?.id === 'perito' || 
+                powerSubchoice?.powerId === 'perito';
+              
               return (
-                <button
-                  key={i}
-                  onClick={() => {
-                    if ('vibrate' in navigator) navigator.vibrate(10);
-                    onPowerClick({
-                      type: 'ability',
-                      name: ability,
-                      description,
-                    });
-                  }}
-                  className="w-full p-3 bg-primary/10 rounded-lg border border-primary/20 text-left active:bg-primary/20 transition-colors"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-sm text-primary">{ability}</span>
-                    <ChevronRight className="w-4 h-4 text-primary/50 flex-shrink-0" />
-                  </div>
-                  {description && (
-                    <p className="text-[11px] text-muted-foreground mt-1 line-clamp-2">{description}</p>
+                <div key={i} className="space-y-2">
+                  <button
+                    onClick={() => {
+                      if ('vibrate' in navigator) navigator.vibrate(10);
+                      onPowerClick({
+                        type: 'ability',
+                        name: ability,
+                        description,
+                      });
+                    }}
+                    className="w-full p-3 bg-primary/10 rounded-lg border border-primary/20 text-left active:bg-primary/20 transition-colors"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-sm text-primary">{ability}</span>
+                      <ChevronRight className="w-4 h-4 text-primary/50 flex-shrink-0" />
+                    </div>
+                    {description && (
+                      <p className="text-[11px] text-muted-foreground mt-1 line-clamp-2">{description}</p>
+                    )}
+                  </button>
+                  
+                  {/* Indicador especial de Especialista em Arma */}
+                  {isEspecialistaArma && powerSubchoice?.chosenValues && powerSubchoice.chosenValues.length > 0 && (
+                    <EspecialistaArmaIndicator
+                      chosenGroups={powerSubchoice.chosenValues}
+                      equippedWeaponId={equippedWeaponId}
+                      equippedWeaponName={equippedWeaponName}
+                      compact={false}
+                      className="ml-2"
+                    />
                   )}
-                </button>
+                  
+                  {/* Indicador especial de Perito */}
+                  {isPerito && powerSubchoice?.chosenValues && powerSubchoice.chosenValues.length > 0 && (
+                    <PeritoIndicator
+                      chosenSkills={powerSubchoice.chosenValues}
+                      nex={nex}
+                      compact={false}
+                      className="ml-2"
+                    />
+                  )}
+                </div>
               );
             })}
           </div>
