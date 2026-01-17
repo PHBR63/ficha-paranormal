@@ -272,8 +272,8 @@ export function ParanormalPowerSelectModal({
           </Tabs>
         </div>
 
-        <MobileModalBody useScrollArea={true} maxHeight="50vh">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <MobileModalBody useScrollArea={true} maxHeight="calc(85vh - 280px)">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 min-h-0">
             {filteredPowers.map(renderPowerCard)}
           </div>
         </MobileModalBody>
