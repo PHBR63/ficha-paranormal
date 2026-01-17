@@ -98,6 +98,7 @@ import { CharacterAuditBanner } from '@/components/character/CharacterAuditBanne
 import { CharacterForAudit, canAddParanormalPower } from '@/lib/character-audit-engine';
 import { ClassPowerBonusesPanel } from '@/components/character/ClassPowerBonusesPanel';
 import { AutomationDebugWidget } from '@/components/character/AutomationDebugWidget';
+import { getActivatablePowersForCharacter } from '@/lib/class-powers/activatable-powers-bridge';
 import { VersatilityAbilityCard } from '@/components/character/VersatilityAbilityCard';
 import { useDeveloperMode } from '@/components/ui/theme-selector';
 import { ActiveEffectsPanel } from '@/components/character/ActiveEffectsPanel';
@@ -505,6 +506,20 @@ export default function CharacterSheet() {
   // Extrai hooks internos do bonusSummary para evitar chamadas duplicadas
   const defenseBonuses = bonusSummary.defenseBonuses;
   const paranormalEffects = bonusSummary.paranormalEffects;
+  
+  // Poderes ativáveis para DiceRollModal (Especialista e Combatente)
+  const activatablePowersForCharacter = useMemo(() => {
+    if (!character) return [];
+    return getActivatablePowersForCharacter({
+      powers: character.powers || [],
+      abilities: character.abilities || [],
+      nex: character.nex || 5,
+      peCurrent,
+      intellect: character.intellect || 1,
+      trainedSkills: Object.keys(character.skills || {}).filter(s => (character.skills?.[s] || 0) >= 1),
+      characterClass: character.class,
+    });
+  }, [character, peCurrent]);
   
   // Sistema Unificado de Efeitos já computado pelo useBonusSummaryFromSUE
   const unifiedEffects = bonusSummary.unifiedEffects;
