@@ -56,6 +56,7 @@ import { InventoryPanel } from '@/components/inventory/InventoryPanel';
 import { DataErrorBoundary } from '@/components/DataErrorBoundary';
 import { InventoryItem } from '@/lib/inventory-system';
 import { EspecialistaArmaIndicator } from '@/components/character/EspecialistaArmaIndicator';
+import { PeritoIndicator } from '@/components/character/PeritoIndicator';
 // Lazy loading para modais pesados (otimização de performance)
 const NexProgressionModal = lazy(() => import('@/components/character/NexProgressionModal').then(m => ({ default: m.NexProgressionModal })));
 const RitualSelectionModal = lazy(() => import('@/components/character/RitualSelectionModal').then(m => ({ default: m.RitualSelectionModal })));
@@ -2878,17 +2879,24 @@ export default function CharacterSheet() {
                         const isEspecialistaArma = abilityData?.id === 'especialista-arma' || 
                           powerSubchoice?.powerId === 'especialista-arma';
                         
+                        // Verifica se é Perito para mostrar indicador especial
+                        const isPerito = abilityData?.id === 'perito' || 
+                          powerSubchoice?.powerId === 'perito';
+                        
+                        // Determina se deve ocultar o texto padrão de sub-escolha
+                        const hasCustomIndicator = isEspecialistaArma || isPerito;
+                        
                         return (
                           <div key={i} className="space-y-2">
                             <SheetAccordionItem
                               title={abilityName}
                               description={
-                                subchoiceText && !isEspecialistaArma
+                                subchoiceText && !hasCustomIndicator
                                   ? `${abilityData?.description || ''}\n\n📌 Escolha: ${subchoiceText}`
                                   : abilityData?.description
                               }
                               badge={
-                                isEspecialistaArma 
+                                hasCustomIndicator 
                                   ? undefined // Usa indicador especial abaixo
                                   : subchoiceText ? subchoiceText : "Classe"
                               }
@@ -2908,6 +2916,16 @@ export default function CharacterSheet() {
                                 chosenGroups={powerSubchoice.chosenValues}
                                 equippedWeaponId={equippedWeaponInfo.id}
                                 equippedWeaponName={equippedWeaponInfo.name}
+                                compact={false}
+                                className="ml-2"
+                              />
+                            )}
+                            
+                            {/* Indicador especial de Perito */}
+                            {isPerito && powerSubchoice?.chosenValues && powerSubchoice.chosenValues.length > 0 && (
+                              <PeritoIndicator
+                                chosenSkills={powerSubchoice.chosenValues}
+                                nex={character.nex}
                                 compact={false}
                                 className="ml-2"
                               />
