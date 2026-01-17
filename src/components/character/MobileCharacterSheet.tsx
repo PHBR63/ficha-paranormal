@@ -213,6 +213,8 @@ interface MobileCharacterSheetProps {
     } | null;
     // Escolhas de Treinamento em Perícia (poder geral)
     skill_training_choices?: Record<string, Array<{ skillId: string; fromLevel: number; toLevel: number }>>;
+    // Sub-escolhas de poderes de classe (Especialista em Arma, Perito, etc.)
+    class_power_choices?: Record<string, { powerId: string; choiceType: string; chosenValues: string[] }>;
   };
   onOpenDiceRoller: () => void;
   onOpenRest: () => void;
@@ -1849,6 +1851,11 @@ export function MobileCharacterSheet({
           <MobilePowersTab
             key="powers"
             abilities={character.abilities}
+            characterClass={character.class}
+            nex={character.nex}
+            classPowerChoices={character.class_power_choices || {}}
+            equippedWeaponId={equippedWeapons[0]?.id}
+            equippedWeaponName={equippedWeapons[0]?.name}
             paranormalPowers={character.paranormal_powers}
             generalPowers={character.general_powers}
             originPowers={character.powers}
