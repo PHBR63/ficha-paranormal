@@ -143,42 +143,43 @@ MobileModalHeader.displayName = "MobileModalHeader";
 
 /**
  * Área de conteúdo scrollável do modal
+ * 
+ * IMPORTANTE: Para garantir scroll correto em mobile:
+ * - O container usa height definida (não apenas maxHeight)
+ * - O viewport interno do ScrollArea ocupa 100% da altura
+ * - O conteúdo tem min-h-0 para permitir encolhimento
  */
 interface MobileModalBodyProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Se deve usar ScrollArea do Radix (recomendado para listas longas) */
   useScrollArea?: boolean;
-  /** Altura máxima customizada */
+  /** Altura máxima customizada (ex: "50vh", "400px") */
   maxHeight?: string;
 }
 
 const MobileModalBody = React.forwardRef<HTMLDivElement, MobileModalBodyProps>(
   ({ className, children, useScrollArea = true, maxHeight, ...props }, ref) => {
-    const content = (
-      <div
-        className={cn(
-          "p-4 sm:p-6 pt-3 sm:pt-4",
-          className
-        )}
-        {...props}
-      >
-        {children}
-      </div>
-    );
+    // Calcula a altura efetiva - usa o valor passado ou um padrão robusto
+    const effectiveHeight = maxHeight || 'calc(85vh - 180px)';
 
     if (useScrollArea) {
       return (
-        <ScrollArea
+        <div
           ref={ref}
-          className={cn(
-            "flex-1 min-h-0", // Ocupa espaço restante
-            "overscroll-contain"
-          )}
-          style={{ 
-            maxHeight: maxHeight || 'calc(85vh - 140px)' // 85vh do modal - espaço para header/footer
-          }}
+          className="flex-1 min-h-0 overflow-hidden"
+          style={{ height: effectiveHeight, maxHeight: effectiveHeight }}
         >
-          {content}
-        </ScrollArea>
+          <ScrollArea className="h-full w-full">
+            <div
+              className={cn(
+                "p-4 sm:p-6 pt-3 sm:pt-4 pr-2 sm:pr-4", // pr menor para scrollbar
+                className
+              )}
+              {...props}
+            >
+              {children}
+            </div>
+          </ScrollArea>
+        </div>
       );
     }
 
@@ -188,11 +189,13 @@ const MobileModalBody = React.forwardRef<HTMLDivElement, MobileModalBodyProps>(
         className={cn(
           "flex-1 min-h-0",
           "overflow-y-auto overscroll-contain",
-          "scrollbar-hide"
+          "p-4 sm:p-6 pt-3 sm:pt-4",
+          className
         )}
-        style={maxHeight ? { maxHeight } : undefined}
+        style={{ height: effectiveHeight, maxHeight: effectiveHeight }}
+        {...props}
       >
-        {content}
+        {children}
       </div>
     );
   }

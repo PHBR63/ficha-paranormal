@@ -480,9 +480,35 @@ export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) 
       setSubchoiceModalOpen(true);
     } else {
       // Poder não requer escolha adicional, confirma diretamente
-      confirmTranscenderChoice(power, undefined);
+      // Chama confirmTranscenderChoice inline para evitar problemas de referência stale
+      if (!pendingTranscender) return;
+      
+      const key = getTranscenderKey(pendingTranscender.powerId, pendingTranscender.instanceIndex);
+      
+      // Adicionar o poder Transcender ao array de abilities
+      const newAbilities = [...abilities, pendingTranscender.powerId];
+      
+      // Salvar a escolha do poder paranormal
+      const newTranscenderChoices = {
+        ...transcenderChoices,
+        [key]: {
+          powerId: power.id,
+          powerName: power.name,
+          powerElement: power.element,
+          subchoices: undefined,
+        },
+      };
+      
+      updateFormData({
+        abilities: newAbilities,
+        transcenderChoices: newTranscenderChoices,
+      } as any);
+      
+      // Fechar modais
+      setTranscenderModalOpen(false);
+      setPendingTranscender(null);
     }
-  }, []);
+  }, [pendingTranscender, abilities, transcenderChoices, getTranscenderKey, updateFormData]);
   
   // Confirma a escolha de Transcender (com ou sem sub-escolhas)
   const confirmTranscenderChoice = useCallback((power: ParanormalPower, subchoices?: { skills?: string[]; ritualId?: string; resistElement?: string }) => {
@@ -1218,6 +1244,17 @@ export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) 
               pendingSkillTraining.powerId, 
               pendingSkillTraining.instanceIndex
             ) as SkillTrainingChoice[]}
+            alreadyTrainedByPower={
+              // Coleta todas as perícias já escolhidas em instâncias ANTERIORES deste poder
+              Object.entries(skillTrainingChoices)
+                .filter(([key]) => {
+                  // Filtra apenas instâncias do mesmo powerId, mas com índice menor
+                  const [powerId, indexStr] = key.split('-');
+                  const index = parseInt(indexStr, 10);
+                  return powerId === pendingSkillTraining.powerId && index < pendingSkillTraining.instanceIndex;
+                })
+                .flatMap(([, choices]) => (choices as SkillTrainingChoice[]).map(c => c.skillId))
+            }
           />
         )}
         
