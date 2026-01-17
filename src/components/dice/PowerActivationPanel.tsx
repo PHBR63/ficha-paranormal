@@ -13,7 +13,7 @@
 
 import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Zap, Brain, Hand, BookOpen, Sparkles, AlertCircle, ChevronDown, ChevronUp, Sword, Search, Eye, Move, Target, Shield as ShieldIcon, Heart } from 'lucide-react';
+import { Zap, Brain, Hand, BookOpen, Sparkles, AlertCircle, ChevronDown, ChevronUp, Sword, Search, Eye, Move, Target, Shield as ShieldIcon, Heart, Crosshair, Hammer, ShieldCheck, Swords, HandMetal } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
@@ -36,7 +36,11 @@ import {
 /**
  * Tipos de ícone disponíveis para poderes ativáveis
  */
-export type PowerIconType = 'brain' | 'hand' | 'book' | 'zap' | 'sparkles' | 'sword' | 'search' | 'eye' | 'move' | 'target' | 'heart' | 'shield';
+export type PowerIconType = 
+  | 'brain' | 'hand' | 'book' | 'zap' | 'sparkles' 
+  | 'sword' | 'search' | 'eye' | 'move' | 'target' 
+  | 'heart' | 'shield' | 'crosshair' | 'hammer' 
+  | 'shield-check' | 'swords' | 'hand-metal' | 'anvil';
 
 /**
  * Tipos de efeito de poderes ativáveis
@@ -47,13 +51,19 @@ export type PowerEffectType =
   | 'knowledge_check' 
   | 'skill_trained' 
   | 'extra_dice'
-  | 'combat_bonus'      // Bônus de ataque/dano (Ataque Especial)
-  | 'skill_bonus'       // Bônus em teste de perícia (Incansável)
-  | 'defense_bonus'     // Bônus de defesa (Sentido Tático, Avanço Tático)
-  | 'movement_bonus'    // Bônus de movimento (Ímpeto)
-  | 'control'           // Efeito de controle (Tiro de Cobertura)
-  | 'healing'           // Cura/PV temporário (Pancada Revigorante)
-  | 'reaction';         // Reação (Ataque de Oportunidade)
+  | 'combat_bonus'        // Bônus de ataque/dano (Ataque Especial)
+  | 'skill_bonus'         // Bônus em teste de perícia (Incansável)
+  | 'defense_bonus'       // Bônus de defesa (Sentido Tático, Avanço Tático)
+  | 'defense_tradeoff'    // Troca ataque por defesa (Combate Defensivo)
+  | 'movement_bonus'      // Bônus de movimento (Ímpeto)
+  | 'control'             // Efeito de controle (Tiro de Cobertura)
+  | 'healing'             // Cura/PV temporário (Pancada Revigorante)
+  | 'reaction'            // Reação (Ataque de Oportunidade)
+  | 'extra_attack'        // Ataque extra (Combater com Duas Armas)
+  | 'damage_bonus'        // Bônus de dano passivo (Golpe Pesado, Artista Marcial)
+  | 'damage_multiplier'   // Multiplicador de dano (Golpe Demolidor)
+  | 'triggered_attack'    // Ataque ao acertar (Segurar o Gatilho)
+  | 'passive_reminder';   // Lembrete de bônus passivo (Reflexos Defensivos)
 
 /**
  * Poder ativável durante um teste
@@ -131,6 +141,12 @@ const POWER_ICONS: Record<PowerIconType, React.ComponentType<{ className?: strin
   target: Target,
   heart: Heart,
   shield: ShieldIcon,
+  crosshair: Crosshair,
+  hammer: Hammer,
+  'shield-check': ShieldCheck,
+  swords: Swords,
+  'hand-metal': HandMetal,
+  anvil: Hammer, // Lucide não tem anvil, usamos Hammer como fallback
 };
 
 // ========================================

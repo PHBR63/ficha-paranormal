@@ -63,6 +63,15 @@ const LEGACY_ABILITY_TO_POWER_ID: Record<string, string> = {
   'tiro de cobertura': 'tiro-de-cobertura',
   'pancada revigorante': 'pancada-revigorante',
   'ataque de oportunidade': 'ataque-de-oportunidade',
+  // Novos poderes de Combatente (Fase 5B)
+  'combate defensivo': 'combate-defensivo',
+  'combater com duas armas': 'combater-duas-armas',
+  'golpe pesado': 'golpe-pesado',
+  'golpe demolidor': 'golpe-demolidor',
+  'segurar o gatilho': 'segurar-gatilho',
+  'segurar gatilho': 'segurar-gatilho',
+  'artista marcial': 'artista-marcial',
+  'reflexos defensivos': 'reflexos-defensivos',
 };
 
 /**
@@ -337,6 +346,107 @@ export function getActivatablePowersForCharacter(
     });
   }
   
+  // Combate Defensivo
+  if (hasPowerOrAbility(powers, abilities, 'combate-defensivo', 'Combate Defensivo')) {
+    activatable.push({
+      id: 'combate-defensivo',
+      name: 'Combate Defensivo',
+      description: 'Sofre -2 em ataques, mas recebe +5 em Defesa até seu próximo turno.',
+      peCost: 0,
+      effect: '-2 ataque / +5 Defesa',
+      icon: 'shield',
+      effectType: 'defense_tradeoff',
+      applicableSkills: ['luta', 'pontaria'],
+    });
+  }
+  
+  // Combater com Duas Armas
+  if (hasPowerOrAbility(powers, abilities, 'combater-duas-armas', 'Combater com Duas Armas')) {
+    activatable.push({
+      id: 'combater-duas-armas',
+      name: 'Combater com Duas Armas',
+      description: 'Dois ataques (um com cada arma), -2 em todos os ataques até próximo turno.',
+      peCost: 0,
+      effect: '2 ataques (-2 cada)',
+      icon: 'swords',
+      effectType: 'extra_attack',
+      applicableSkills: ['luta', 'pontaria'],
+    });
+  }
+  
+  // Golpe Pesado (passivo, mas importante destacar)
+  if (hasPowerOrAbility(powers, abilities, 'golpe-pesado', 'Golpe Pesado')) {
+    activatable.push({
+      id: 'golpe-pesado',
+      name: 'Golpe Pesado',
+      description: 'Dano de arma corpo a corpo aumenta em +1 dado do mesmo tipo.',
+      peCost: 0,
+      effect: '+1 dado de dano',
+      icon: 'anvil',
+      effectType: 'damage_bonus',
+      applicableSkills: ['luta'],
+    });
+  }
+  
+  // Golpe Demolidor
+  if (hasPowerOrAbility(powers, abilities, 'golpe-demolidor', 'Golpe Demolidor')) {
+    activatable.push({
+      id: 'golpe-demolidor',
+      name: 'Golpe Demolidor',
+      description: 'Dobra o dano ao usar manobra quebrar ou atacar um objeto.',
+      peCost: 1,
+      effect: 'Dano x2 (objetos)',
+      icon: 'hammer',
+      effectType: 'damage_multiplier',
+      applicableSkills: ['luta'],
+    });
+  }
+  
+  // Segurar o Gatilho
+  if (hasPowerOrAbility(powers, abilities, 'segurar-gatilho', 'Segurar o Gatilho')) {
+    activatable.push({
+      id: 'segurar-gatilho',
+      name: 'Segurar o Gatilho',
+      description: 'Ao acertar, pode pagar 2 PE para atacar novamente. Pode repetir se acertar.',
+      peCost: 2,
+      effect: 'Ataque extra (2 PE)',
+      icon: 'crosshair',
+      effectType: 'triggered_attack',
+      applicableSkills: ['pontaria'],
+    });
+  }
+  
+  // Artista Marcial (informativo para dano desarmado)
+  if (hasPowerOrAbility(powers, abilities, 'artista-marcial', 'Artista Marcial')) {
+    let damageDice = '1d6';
+    if (nex >= 70) damageDice = '1d10';
+    else if (nex >= 35) damageDice = '1d8';
+    
+    activatable.push({
+      id: 'artista-marcial',
+      name: 'Artista Marcial',
+      description: `Ataques desarmados causam ${damageDice} de dano e são Ágeis.`,
+      peCost: 0,
+      effect: `${damageDice} (Ágil)`,
+      icon: 'hand-metal',
+      effectType: 'damage_bonus',
+      applicableSkills: ['luta'],
+    });
+  }
+  
+  // Reflexos Defensivos (passivo, mas útil lembrar)
+  if (hasPowerOrAbility(powers, abilities, 'reflexos-defensivos', 'Reflexos Defensivos')) {
+    activatable.push({
+      id: 'reflexos-defensivos',
+      name: 'Reflexos Defensivos',
+      description: '+2 permanente em Defesa e testes de resistência.',
+      peCost: 0,
+      effect: '+2 Def/Resist',
+      icon: 'shield-check',
+      effectType: 'passive_reminder',
+    });
+  }
+  
   return activatable;
 }
 
@@ -451,6 +561,56 @@ export function calculatePowerActivationEffects(
       return {
         skillBonusChange: 0,
         specialNote: 'Reação quando inimigo sai de adjacência',
+      };
+    
+    case 'combate-defensivo':
+      return {
+        skillBonusChange: 0,
+        attackBonus: -2,
+        defenseBonus: 5,
+        specialNote: '-2 em ataques, +5 em Defesa até próximo turno',
+      };
+    
+    case 'combater-duas-armas':
+      return {
+        skillBonusChange: 0,
+        attackBonus: -2,
+        specialNote: 'Dois ataques com -2 cada (arma leve)',
+      };
+    
+    case 'golpe-pesado':
+      return {
+        skillBonusChange: 0,
+        specialNote: '+1 dado de dano (corpo a corpo)',
+      };
+    
+    case 'golpe-demolidor':
+      return {
+        skillBonusChange: 0,
+        specialNote: 'Dobra dano vs objetos/manobra quebrar',
+      };
+    
+    case 'segurar-gatilho':
+      return {
+        skillBonusChange: 0,
+        specialNote: 'Ataque extra ao acertar (2 PE cada)',
+      };
+    
+    case 'artista-marcial': {
+      let dice = '1d6';
+      if (nex >= 70) dice = '1d10';
+      else if (nex >= 35) dice = '1d8';
+      return {
+        skillBonusChange: 0,
+        specialNote: `Desarmado: ${dice} dano (Ágil)`,
+      };
+    }
+    
+    case 'reflexos-defensivos':
+      return {
+        skillBonusChange: 0,
+        defenseBonus: 2,
+        specialNote: '+2 Defesa e resistências (passivo)',
       };
       
     default:
