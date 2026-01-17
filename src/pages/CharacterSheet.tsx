@@ -431,11 +431,12 @@ export default function CharacterSheet() {
   );
   
   // Detecta tipo de arma e proteção equipada para o sistema de bônus de classe
-  const equippedWeaponType = useMemo(() => {
+  const equippedWeaponInfo = useMemo(() => {
     const equippedWeapon = (character?.inventory || []).find(
       item => item.isEquipped && item.itemType === 'weapon'
     );
-    if (!equippedWeapon?.weaponType) return undefined;
+    if (!equippedWeapon) return { type: undefined, id: undefined, name: undefined };
+    
     // Mapeia tipos de arma para categorias do sistema (WeaponCategory)
     const weaponTypeMap: Record<string, 'melee' | 'ranged' | 'firearm' | 'tactical' | 'heavy' | 'unarmed' | 'any'> = {
       'melee': 'melee',
@@ -449,8 +450,17 @@ export default function CharacterSheet() {
       'arremesso': 'ranged',
       'arma-de-fogo': 'firearm',
     };
-    return weaponTypeMap[equippedWeapon.weaponType.toLowerCase()] || 'any';
+    
+    return {
+      type: equippedWeapon.weaponType 
+        ? weaponTypeMap[equippedWeapon.weaponType.toLowerCase()] || 'any'
+        : undefined,
+      id: equippedWeapon.id,
+      name: equippedWeapon.name,
+    };
   }, [character?.inventory]);
+  
+  const equippedWeaponType = equippedWeaponInfo.type;
 
   const equippedProtectionType = useMemo(() => {
     const equippedArmor = (character?.inventory || []).find(
@@ -496,6 +506,8 @@ export default function CharacterSheet() {
     classPowers: character?.powers?.map(p => p.name) || [],
     equippedWeaponType,
     equippedProtectionType,
+    equippedWeaponId: equippedWeaponInfo.id,
+    equippedWeaponName: equippedWeaponInfo.name,
     inCombat: false,
     hpCurrent,
     hpMax: character?.hp_max || 0,
