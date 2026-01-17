@@ -10,6 +10,7 @@
 import type { ActivatablePower } from '@/components/dice/PowerActivationPanel';
 import { ESPECIALISTA_POWERS } from './especialista-powers';
 import { getPeritoExtraDice, getEcleticoLevel } from '@/components/dice/PowerActivationPanel';
+import { resolveScalingValue } from './power-effects-engine';
 
 // ========================================
 // TIPOS
@@ -262,11 +263,13 @@ export function checkActivatablePowerPrerequisites(
     return { canUse: false, reason: 'Poder não encontrado' };
   }
   
-  // Verifica PE
-  const activationCost = power.effects.base.activation?.cost;
-  const peCost = typeof activationCost === 'number' ? activationCost : 0;
-  if (context.peCurrent < peCost) {
-    return { canUse: false, reason: 'PE insuficiente' };
+  // Verifica PE - resolve o custo corretamente usando a função importada
+  const activation = power.effects?.base?.activation;
+  if (activation?.cost !== undefined) {
+    const peCost = resolveScalingValue(activation.cost, context.nex);
+    if (context.peCurrent < peCost) {
+      return { canUse: false, reason: 'PE insuficiente' };
+    }
   }
   
   // Verifica atributos (ex: Conhecimento Aplicado requer INT 2)

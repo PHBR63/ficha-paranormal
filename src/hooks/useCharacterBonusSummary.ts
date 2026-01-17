@@ -966,26 +966,56 @@ export function useCharacterBonusSummary({
       });
     }
 
-    // Balística Avançada: +2 dano armas de fogo
-    if (hasAbility('balística avançada') || hasAbility('balistica avancada')) {
+    // =====================================================
+    // BÔNUS PASSIVOS DO ESPECIALISTA (via Sistema Unificado)
+    // =====================================================
+    // Estes bônus agora são calculados pelo power-effects-engine
+    // através do hook useClassPowerBonuses.
+    // Os valores são automaticamente incluídos nos totais iniciais
+    // de combat.damage e skills.
+    
+    // Adiciona breakdown visual para Balística Avançada (se ativo via sistema unificado)
+    if (classPowerBonuses.totals.damage.firearm > 0) {
       combat.damage.breakdown.push({
         source: 'Balística Avançada',
-        value: 2,
+        value: classPowerBonuses.totals.damage.firearm,
         type: 'ability',
         conditional: 'armas de fogo',
         active: true,
       });
     }
 
-    // Ninja Urbano: +2 dano armas táticas corpo a corpo/disparo
-    if (hasAbility('ninja urbano')) {
-      combat.damage.breakdown.push({
-        source: 'Ninja Urbano',
-        value: 2,
-        type: 'ability',
-        conditional: 'armas táticas',
-        active: true,
-      });
+    // Adiciona breakdown visual para Ninja Urbano (se ativo via sistema unificado)
+    if (classPowerBonuses.totals.damage.melee > 0 || classPowerBonuses.totals.damage.ranged > 0) {
+      const ninjaBonus = classPowerBonuses.totals.damage.melee || classPowerBonuses.totals.damage.ranged;
+      if (classPowerBonuses.hasPower('ninja-urbano')) {
+        combat.damage.breakdown.push({
+          source: 'Ninja Urbano',
+          value: ninjaBonus,
+          type: 'ability',
+          conditional: 'armas táticas (exceto armas de fogo)',
+          active: true,
+        });
+      }
+    }
+    
+    // Adiciona breakdown visual para Hacker (se ativo via sistema unificado)
+    if (classPowerBonuses.skillBonuses['tecnologia'] && classPowerBonuses.skillBonuses['tecnologia'] > 0) {
+      if (!skills['tecnologia']) {
+        skills['tecnologia'] = { total: 0, breakdown: [] };
+      }
+      // Verifica se já não foi adicionado pelo sistema unificado
+      const alreadyAdded = skills['tecnologia'].breakdown.some(b => b.source === 'Hacker');
+      if (!alreadyAdded && classPowerBonuses.hasPower('hacker')) {
+        skills['tecnologia'].breakdown.push({
+          source: 'Hacker',
+          value: classPowerBonuses.skillBonuses['tecnologia'],
+          type: 'ability',
+          conditional: 'invadir sistemas',
+          active: true,
+        });
+        skills['tecnologia'].total += classPowerBonuses.skillBonuses['tecnologia'];
+      }
     }
 
     // === EFEITOS PARANORMAIS ===

@@ -343,6 +343,35 @@ export function DiceRollModal({
             )}
           </div>
 
+          {/* Painel de ativação de poderes - só aparece se há poderes disponíveis */}
+          {activatablePowers.length > 0 && peCurrent > 0 && (
+            <div className="border-t border-border pt-4">
+              <button
+                onClick={() => setIsPowerPanelExpanded(!isPowerPanelExpanded)}
+                className="w-full flex items-center justify-between text-sm font-medium text-muted-foreground hover:text-foreground transition-colors mb-2"
+              >
+                <span className="flex items-center gap-2">
+                  <Zap className="w-4 h-4 text-yellow-500" />
+                  Poderes Ativáveis ({activatablePowers.length})
+                </span>
+                <span className="text-xs">
+                  PE: {peCurrent} | Custo: {getTotalPECost()}
+                </span>
+              </button>
+              
+              {isPowerPanelExpanded && (
+                <PowerActivationPanel
+                  availablePowers={activatablePowers}
+                  activationStates={activationStates}
+                  onPowerToggle={togglePower}
+                  peCurrent={peCurrent}
+                  isExpanded={isPowerPanelExpanded}
+                  onExpandToggle={() => setIsPowerPanelExpanded(!isPowerPanelExpanded)}
+                />
+              )}
+            </div>
+          )}
+
           {/* Resultado */}
           <AnimatePresence mode="wait">
             {result && phase === 'done' && (

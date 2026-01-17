@@ -243,7 +243,8 @@ export function applyMechanics(
           for (const type of types) {
             if (type === 'melee' || type === 'unarmed') {
               summary.damage.melee += value;
-            } else if (type === 'ranged') {
+            } else if (type === 'ranged' || type === 'ranged-nonfirearm') {
+              // ranged-nonfirearm: armas de disparo que NÃO são de fogo (arcos, bestas, etc.)
               summary.damage.ranged += value;
             } else if (type === 'firearm' || type === 'tactical' || type === 'heavy') {
               summary.damage.firearm += value;
