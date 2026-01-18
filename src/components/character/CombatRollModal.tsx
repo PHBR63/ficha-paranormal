@@ -342,6 +342,14 @@ export function CombatRollModal({
   // === ESTADO PARA ATAQUE ESPECIAL (Combatente) ===
   const { config: specialAttackConfig, setConfig: setSpecialAttackConfig, reset: resetSpecialAttack } = useSpecialAttackState();
   
+  // === ESTADO PARA ATAQUE FURTIVO (Infiltrador) ===
+  const { config: sneakAttackConfig, setConfig: setSneakAttackConfig, reset: resetSneakAttack } = useSneakAttackState();
+  
+  // Verifica se é Infiltrador
+  const isInfiltrador = useMemo(() => 
+    classTrack?.toLowerCase().includes('infiltrador'),
+  [classTrack]);
+  
   // Detecta se pode usar Técnica Secreta (Aniquilador NEX 40%+ com arma favorita)
   const canUseTechniqueSecreta = useMemo(() => {
     const isAniquilador = classTrack?.toLowerCase().includes('aniquilador');
@@ -375,6 +383,7 @@ export function CombatRollModal({
     setTargetDefense(null);
     setActiveTechniqueEffects(null);
     resetSpecialAttack();
+    resetSneakAttack();
     onClose();
   };
   
@@ -1190,9 +1199,18 @@ export function CombatRollModal({
     }
     
     // Dados extras do Ataque Furtivo (com possível dobro do Assassinar)
+    // NOVO: Usa o SneakAttackSelector para Infiltradores
     let sneakAttackDice = 0;
-    if (advancedBonuses.ataqueFurtivo) {
-      // Calcula dados do Ataque Furtivo baseado no NEX
+    if (isInfiltrador && sneakAttackConfig.enabled) {
+      // Usa o selector para calcular dados
+      const sneakResult = calculateSneakAttackResult(
+        nex, 
+        sneakAttackConfig, 
+        advancedBonuses.assassinar || false
+      );
+      sneakAttackDice = sneakResult.finalDice;
+    } else if (advancedBonuses.ataqueFurtivo) {
+      // Fallback para lógica legada (não-Infiltrador ou sistema antigo)
       if (nex >= 99) sneakAttackDice = 4;
       else if (nex >= 65) sneakAttackDice = 3;
       else if (nex >= 40) sneakAttackDice = 2;
@@ -1766,6 +1784,18 @@ export function CombatRollModal({
                     currentPE={currentPE}
                     config={specialAttackConfig}
                     onConfigChange={setSpecialAttackConfig}
+                    variant="default"
+                  />
+                )}
+                
+                {/* === ATAQUE FURTIVO (Infiltrador) com seleção de PE extra === */}
+                {isInfiltrador && (
+                  <SneakAttackSelector
+                    nex={nex}
+                    currentPE={currentPE}
+                    assassinarActive={advancedBonuses.assassinar || false}
+                    config={sneakAttackConfig}
+                    onConfigChange={setSneakAttackConfig}
                     variant="default"
                   />
                 )}
