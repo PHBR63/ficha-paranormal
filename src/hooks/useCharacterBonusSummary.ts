@@ -21,13 +21,14 @@ import { getWeaponGroupName, getWeaponGroupForWeapon } from '@/lib/constants/wea
 export interface BonusBreakdown {
   source: string;        // Nome da fonte
   value: number | string; // Valor do bônus (número ou dado)
-  type: 'origin' | 'ability' | 'general_power' | 'paranormal' | 'equipment' | 'ritual' | 'skill_training';
+  type: 'origin' | 'ability' | 'general_power' | 'paranormal' | 'equipment' | 'ritual' | 'skill_training' | 'track_effect';
   conditional?: string;  // Condição se houver
   active: boolean;       // Se está ativo
   toggleable?: boolean;  // Se pode ser ativado/desativado manualmente
   toggleId?: string;     // ID único para toggle
   excluded?: boolean;    // Se foi excluído por regra de não acúmulo
   excludedReason?: string; // Motivo da exclusão
+  duration?: string;     // Duração do efeito (ex: "next-turn")
 }
 
 // Interface para bônus condicional toggleável
