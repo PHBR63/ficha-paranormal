@@ -13,6 +13,9 @@
 import { useState, useMemo, useCallback } from 'react';
 import { toast } from 'sonner';
 import { TRACK_EFFECT_IDS, type EffectDuration, type ComputedEffects } from '@/hooks';
+import type { CatalogItem } from '@/lib/catalogs';
+import type { InventoryItem } from '@/lib/inventory-system';
+import { categoryToNumber, calculateImprovisarCost } from './ImprovisarItemSelector';
 
 // =====================================================
 // Props do Hook
@@ -27,6 +30,8 @@ export interface UseTecnicoTrackProps {
     strength: number;
     intellect: number;
   };
+  /** Inventário do personagem (para Remendão) */
+  inventory?: InventoryItem[];
   onActivateEffect?: (id: string, name: string, duration: EffectDuration, metadata?: Record<string, unknown>) => void;
   isEffectActive?: (id: string) => boolean;
   computedEffects?: ComputedEffects;
@@ -42,10 +47,12 @@ export function useTecnicoTrack({
   peCurrent,
   onPEChange,
   attributes,
+  inventory = [],
   onActivateEffect,
   isEffectActive,
   computedEffects,
 }: UseTecnicoTrackProps) {
+  const [remendaoDrawerOpen, setRemendaoDrawerOpen] = useState(false);
   const [improvisarDrawerOpen, setImprovisarDrawerOpen] = useState(false);
   const [preparadoDrawerOpen, setPreparadoDrawerOpen] = useState(false);
 
@@ -84,9 +91,9 @@ export function useTecnicoTrack({
   }, [attributes, sueTechnicianData]);
 
   /**
-   * Handler para Remendão (1 PE)
+   * Handler para Remendão (1 PE) - com seleção de item
    */
-  const handleRemendao = useCallback(() => {
+  const handleRemendao = useCallback((item: InventoryItem) => {
     if (peCurrent < 1) {
       toast.error('PE insuficiente', {
         description: 'Você precisa de 1 PE para usar Remendão.'
@@ -95,33 +102,41 @@ export function useTecnicoTrack({
     }
 
     onPEChange(peCurrent - 1);
+    setRemendaoDrawerOpen(false);
     
-    onActivateEffect?.(TRACK_EFFECT_IDS.REMENDAO ?? 'track-remendao', 'Remendão', 'scene');
+    onActivateEffect?.(TRACK_EFFECT_IDS.REMENDAO ?? 'track-remendao', 'Remendão', 'scene', { 
+      itemId: item.id,
+      itemName: item.name 
+    });
     
     toast.success('Remendão ativado!', {
-      description: 'Gaste uma ação completa para remover a condição Quebrado de um equipamento adjacente até o final da cena.'
+      description: `"${item.name}" teve a condição Quebrado removida até o final da cena.`
     });
   }, [peCurrent, onPEChange, onActivateEffect]);
 
   /**
-   * Handler para Improvisar (2 PE base + 2 PE por categoria)
+   * Handler para Improvisar com item específico do catálogo
    */
-  const handleImprovisar = useCallback((categoria: number) => {
-    const peCost = 2 + (2 * categoria);
-    if (peCurrent < peCost) {
+  const handleImprovisar = useCallback((item: CatalogItem, cost: number) => {
+    if (peCurrent < cost) {
       toast.error('PE insuficiente', {
-        description: `Você precisa de ${peCost} PE para improvisar um item de categoria ${categoria}.`
+        description: `Você precisa de ${cost} PE para improvisar "${item.name}".`
       });
       return;
     }
 
-    onPEChange(peCurrent - peCost);
+    onPEChange(peCurrent - cost);
     setImprovisarDrawerOpen(false);
     
-    onActivateEffect?.(TRACK_EFFECT_IDS.IMPROVISAR ?? 'track-improvisar', 'Improvisar', 'scene', { categoria });
+    onActivateEffect?.(TRACK_EFFECT_IDS.IMPROVISAR ?? 'track-improvisar', 'Improvisar', 'scene', { 
+      itemId: item.id,
+      itemName: item.name,
+      categoria: item.category,
+      cost 
+    });
     
     toast.success('Equipamento improvisado!', {
-      description: `Você criou uma versão funcional de um equipamento geral de categoria ${categoria}. O item será inútil ao final da cena.`
+      description: `Você criou "${item.name}" (Cat. ${item.category}). O item será inútil ao final da cena.`
     });
   }, [peCurrent, onPEChange, onActivateEffect]);
 
@@ -148,9 +163,9 @@ export function useTecnicoTrack({
   }, [peCurrent, onPEChange, onActivateEffect]);
 
   /**
-   * Calcula custo de improvisar por categoria
+   * Calcula custo de improvisar por item
    */
-  const getImprovisarCost = useCallback((categoria: number) => 2 + (2 * categoria), []);
+  const getImprovisarCostForItem = useCallback((item: CatalogItem) => calculateImprovisarCost(item), []);
 
   /**
    * Calcula custo de Preparado para Tudo por categoria (2 PE por categoria)
@@ -160,6 +175,8 @@ export function useTecnicoTrack({
   return {
     // Estado
     isTecnico,
+    remendaoDrawerOpen,
+    setRemendaoDrawerOpen,
     improvisarDrawerOpen,
     setImprovisarDrawerOpen,
     preparadoDrawerOpen,
@@ -174,6 +191,7 @@ export function useTecnicoTrack({
     
     // Dados derivados
     carryCapacity,
+    inventory,
     
     // Dados do SUE
     sueTechnicianData,
@@ -185,10 +203,11 @@ export function useTecnicoTrack({
     handlePreparadoParaTudo,
     
     // Helpers
-    getImprovisarCost,
+    getImprovisarCostForItem,
     getPreparadoCost,
     canAffordRemendao: peCurrent >= 1,
-    canAffordImprovisar: (categoria: number) => peCurrent >= getImprovisarCost(categoria),
+    canAffordImprovisar: (item: CatalogItem) => peCurrent >= calculateImprovisarCost(item),
     canAffordPreparado: (categoria: number) => peCurrent >= getPreparadoCost(categoria),
+    peCurrent,
   };
 }

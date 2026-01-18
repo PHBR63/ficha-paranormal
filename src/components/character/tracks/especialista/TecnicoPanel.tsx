@@ -41,6 +41,8 @@ import {
   useTecnicoTrack,
   type UseTecnicoTrackProps 
 } from './useTecnicoTrack';
+import { ImprovisarItemSelector } from './ImprovisarItemSelector';
+import { RemendaoItemSelector } from './RemendaoItemSelector';
 
 // =====================================================
 // Props do Componente
@@ -73,28 +75,8 @@ function TecnicoPanelComponent(props: TecnicoPanelProps) {
   // Verifica se é a trilha correta
   if (!track.isTecnico) return null;
 
-  // ===== COMPONENTE GRID DE CATEGORIAS =====
+  // ===== COMPONENTE GRID DE CATEGORIAS (para Preparado para Tudo) =====
   
-  const ImprovisarCategoryGrid = () => (
-    <div className="grid grid-cols-2 gap-2">
-      {[0, 1, 2, 3, 4].map((cat) => {
-        const cost = track.getImprovisarCost(cat);
-        return (
-          <Button
-            key={cat}
-            variant="outline"
-            onClick={() => track.handleImprovisar(cat)}
-            disabled={!track.canAffordImprovisar(cat)}
-            className={`${isMobile ? 'h-14' : 'h-12'} flex-col`}
-          >
-            <span className="font-medium">Categoria {cat}</span>
-            <span className="text-xs text-muted-foreground">{cost} PE</span>
-          </Button>
-        );
-      })}
-    </div>
-  );
-
   const PreparadoCategoryGrid = () => (
     <div className="grid grid-cols-2 gap-2">
       {[1, 2, 3, 4].map((cat) => {
@@ -170,16 +152,61 @@ function TecnicoPanelComponent(props: TecnicoPanelProps) {
             <p>{isMobile ? 'Remove condição Quebrado até o final da cena.' : ''}</p>
           </div>
           <div className="pl-6">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={track.handleRemendao}
-              disabled={!track.canAffordRemendao}
-              className={`h-8 ${isMobile ? 'w-full' : ''}`}
-            >
-              <Hammer className="w-3 h-3 mr-1" />
-              Remendar (1 PE)
-            </Button>
+            {isMobile ? (
+              <MobileDrawer open={track.remendaoDrawerOpen} onOpenChange={track.setRemendaoDrawerOpen}>
+                <MobileDrawerTrigger asChild>
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    disabled={!track.canAffordRemendao}
+                    className="h-8 w-full"
+                  >
+                    <Hammer className="w-3 h-3 mr-1" />
+                    Remendar (1 PE)
+                  </Button>
+                </MobileDrawerTrigger>
+                <MobileDrawerContent maxHeight="lg">
+                  <MobileDrawerHeader>
+                    <MobileDrawerTitle>Remendão</MobileDrawerTitle>
+                  </MobileDrawerHeader>
+                  <MobileDrawerBody useScrollArea={false}>
+                    <RemendaoItemSelector
+                      inventory={track.inventory}
+                      peCurrent={track.peCurrent}
+                      onSelectItem={track.handleRemendao}
+                      isMobile={true}
+                    />
+                  </MobileDrawerBody>
+                </MobileDrawerContent>
+              </MobileDrawer>
+            ) : (
+              <Drawer open={track.remendaoDrawerOpen} onOpenChange={track.setRemendaoDrawerOpen}>
+                <DrawerTrigger asChild>
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    disabled={!track.canAffordRemendao}
+                    className="h-8"
+                  >
+                    <Hammer className="w-3 h-3 mr-1" />
+                    Remendar (1 PE)
+                  </Button>
+                </DrawerTrigger>
+                <DrawerContent>
+                  <DrawerHeader>
+                    <DrawerTitle>Remendão</DrawerTitle>
+                  </DrawerHeader>
+                  <div className="p-4">
+                    <RemendaoItemSelector
+                      inventory={track.inventory}
+                      peCurrent={track.peCurrent}
+                      onSelectItem={track.handleRemendao}
+                      isMobile={false}
+                    />
+                  </div>
+                </DrawerContent>
+              </Drawer>
+            )}
           </div>
         </div>
       )}
@@ -207,20 +234,16 @@ function TecnicoPanelComponent(props: TecnicoPanelProps) {
                     Improvisar Equipamento
                   </Button>
                 </MobileDrawerTrigger>
-                <MobileDrawerContent maxHeight="md">
+                <MobileDrawerContent maxHeight="lg">
                   <MobileDrawerHeader>
                     <MobileDrawerTitle>Improvisar Equipamento</MobileDrawerTitle>
                   </MobileDrawerHeader>
                   <MobileDrawerBody useScrollArea={false}>
-                    <div className="space-y-3">
-                      <p className="text-sm text-muted-foreground">
-                        Escolha a categoria do equipamento:
-                      </p>
-                      <ImprovisarCategoryGrid />
-                      <p className="text-xs text-muted-foreground text-center italic">
-                        Inútil ao final da cena.
-                      </p>
-                    </div>
+                    <ImprovisarItemSelector
+                      peCurrent={track.peCurrent}
+                      onSelectItem={track.handleImprovisar}
+                      isMobile={true}
+                    />
                   </MobileDrawerBody>
                 </MobileDrawerContent>
               </MobileDrawer>
@@ -236,14 +259,12 @@ function TecnicoPanelComponent(props: TecnicoPanelProps) {
                   <DrawerHeader>
                     <DrawerTitle>Improvisar Equipamento</DrawerTitle>
                   </DrawerHeader>
-                  <div className="p-4 space-y-3">
-                    <p className="text-sm text-muted-foreground">
-                      Escolha a categoria do equipamento geral que deseja improvisar:
-                    </p>
-                    <ImprovisarCategoryGrid />
-                    <p className="text-xs text-muted-foreground text-center italic">
-                      O equipamento improvisado se torna inútil ao final da cena.
-                    </p>
+                  <div className="p-4">
+                    <ImprovisarItemSelector
+                      peCurrent={track.peCurrent}
+                      onSelectItem={track.handleImprovisar}
+                      isMobile={false}
+                    />
                   </div>
                 </DrawerContent>
               </Drawer>
