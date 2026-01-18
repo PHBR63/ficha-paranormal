@@ -322,6 +322,7 @@ export default function CharacterSheet() {
   const [rollAttribute, setRollAttribute] = useState(0);
   const [rollSkillBonus, setRollSkillBonus] = useState(0);
   const [rollResistanceBonus, setRollResistanceBonus] = useState(0);
+  const [rollExtraDice, setRollExtraDice] = useState(0);  // Dados extras (Discurso Motivador)
   const [rollBonusSources, setRollBonusSources] = useState<BonusSource[]>([]);
   
   // Histórico de rolagens
@@ -540,6 +541,19 @@ export default function CharacterSheet() {
   
   // Sistema Unificado de Efeitos já computado pelo useBonusSummaryFromSUE
   const unifiedEffects = bonusSummary.unifiedEffects;
+  
+  // Extrai bônus de dados extras ativos (Discurso Motivador +1d20 ou +2d20)
+  const globalDiceBonus = useMemo(() => {
+    // Verifica se Discurso Motivador está ativo nos efeitos ativados
+    const discursoEffect = activatedEffects.activatedEffects.find(
+      e => e.id === 'track-discurso-motivador'
+    );
+    if (discursoEffect) {
+      // Extrai o diceBonus do metadata (1 ou 2 dados extras)
+      return (discursoEffect.metadata?.diceBonus as number) ?? 1;
+    }
+    return 0;
+  }, [activatedEffects.activatedEffects]);
   
   // Hook de bônus de rituais derivado do SUE (DT, dano, redução de PE)
   const ritualBonuses = useRitualBonusesFromSUE(unifiedEffects, {
@@ -789,13 +803,14 @@ export default function CharacterSheet() {
     setDiceModalOpen(true);
   }, [defenseBonuses.resistances]);
 
-  // Handler para rolar perícia (inclui bônus de poderes de classe e resistências)
-  const handleSkillRoll = useCallback((total: number, skillName: string, attributeValue: number, classPowerBonus?: number) => {
+  // Handler para rolar perícia (inclui bônus de poderes de classe, resistências e dados extras)
+  const handleSkillRoll = useCallback((total: number, skillName: string, attributeValue: number, classPowerBonus?: number, extraDice?: number) => {
     // O total já inclui atributo + treinamento + bônus de poderes de classe
     const skillBonus = total - attributeValue;
     setRollLabel(skillName);
     setRollAttribute(attributeValue);
     setRollSkillBonus(skillBonus);
+    setRollExtraDice(extraDice || 0);  // Dados extras de Discurso Motivador
     
     // Constrói as fontes de bônus para exibição detalhada
     const sources: BonusSource[] = [];
@@ -825,6 +840,17 @@ export default function CharacterSheet() {
         type: 'power',
         sourceName: powerSourceName,
         description: `Bônus concedido por ${powerSourceName}`,
+      });
+    }
+    
+    // Dados extras (Discurso Motivador)
+    if (extraDice && extraDice > 0) {
+      sources.push({
+        label: 'Discurso Motivador',
+        value: extraDice,
+        type: 'power',
+        sourceName: 'Negociador',
+        description: `+${extraDice}d20 no pool de dados (até fim da cena)`,
       });
     }
     
@@ -867,7 +893,7 @@ export default function CharacterSheet() {
     setRollResistanceBonus(resistBonus);
     setRollBonusSources(sources);
     setDiceModalOpen(true);
-  }, [defenseBonuses.resistances]);
+  }, [defenseBonuses.resistances, bonusSummary.skills]);
 
   // Handler para mudança de stats com aplicação automática de condições
   const handleCombatStatsChange = async (stats: { hp: number; pe: number; san: number }) => {
@@ -2846,6 +2872,7 @@ export default function CharacterSheet() {
                   onRoll={handleSkillRoll}
                   skillBonuses={bonusSummary.skills}
                   skillOrigins={skillOrigins}
+                  globalDiceBonus={globalDiceBonus}
                 />
               </SheetAccordionSection>
 
@@ -3327,6 +3354,7 @@ export default function CharacterSheet() {
         attributeValue={rollAttribute}
         skillBonus={rollSkillBonus}
         resistanceBonus={rollResistanceBonus}
+        extraDice={rollExtraDice}
         bonusSources={rollBonusSources}
         onRollComplete={handleRollComplete}
         activatablePowers={activatablePowersForCharacter}
