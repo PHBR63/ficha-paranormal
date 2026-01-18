@@ -149,21 +149,22 @@ export function StepClass({ formData, updateFormData }: StepClassProps) {
               )}
               
               <div className="flex items-center gap-3 mb-3 relative z-10">
-                <motion.div 
+              <motion.div 
                   className={cn(
                     'w-12 h-12 rounded-sm flex items-center justify-center transition-all',
                     colors.bg,
                     colors.text,
                   )}
                   animate={isSelected ? { 
-                    scale: [1, 1.15, 1.1],
-                    rotate: [0, -8, 8, 0],
+                    scale: 1.1,
+                    rotate: 0,
                   } : { scale: 1 }}
                   transition={{ 
-                    duration: 0.6,
-                    scale: { type: "spring", stiffness: 300 }
+                    duration: 0.4,
+                    type: "spring",
+                    stiffness: 300
                   }}
-                  whileHover={{ rotate: [0, -5, 5, 0] }}
+                  whileHover={{ scale: 1.05 }}
                 >
                   <motion.div
                     animate={isSelected ? {

@@ -479,7 +479,7 @@ export function StepOrigin({ formData, updateFormData }: StepOriginProps) {
                         className="absolute bottom-2 right-2"
                         initial={{ scale: 0, rotate: -180 }}
                         animate={{ 
-                          scale: [0, 1.3, 1],
+                          scale: 1,
                           rotate: 0,
                         }}
                         exit={{ scale: 0, rotate: 180 }}

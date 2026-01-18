@@ -353,24 +353,26 @@ export function TranscenderHistoryPanel({
               <AlertTriangle className="w-5 h-5 text-warning" />
               Reverter Transcender?
             </AlertDialogTitle>
-            <AlertDialogDescription className="space-y-2">
-              <p>
-                Você está prestes a reverter a escolha de <strong>{confirmRevert?.powerName}</strong> 
-                {' '}feita no NEX {confirmRevert?.nex}%.
-              </p>
-              <div className="p-3 bg-muted rounded-lg space-y-1 text-sm">
-                <p className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-destructive" />
-                  <span>O poder será removido da sua ficha</span>
-                </p>
-                <p className="flex items-center gap-2">
-                  <Brain className="w-4 h-4 text-success" />
-                  <span>+{confirmRevert?.sanityCost} SAN será restaurado</span>
-                </p>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2 text-sm text-muted-foreground">
+                <span className="block">
+                  Você está prestes a reverter a escolha de <strong>{confirmRevert?.powerName}</strong> 
+                  {' '}feita no NEX {confirmRevert?.nex}%.
+                </span>
+                <div className="p-3 bg-muted rounded-lg space-y-1 text-sm">
+                  <span className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-destructive" />
+                    <span>O poder será removido da sua ficha</span>
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <Brain className="w-4 h-4 text-success" />
+                    <span>+{confirmRevert?.sanityCost} SAN será restaurado</span>
+                  </span>
+                </div>
+                <span className="block text-warning text-sm">
+                  Esta ação não pode ser desfeita.
+                </span>
               </div>
-              <p className="text-warning text-sm">
-                Esta ação não pode ser desfeita.
-              </p>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
