@@ -75,6 +75,11 @@ import {
   isMeleeWeapon,
 } from '@/lib/class-powers/special-attack-utils';
 import { checkWeaponProficiency, type ProficiencyCheckResult } from '@/lib/proficiency-utils';
+import { 
+  SneakAttackSelector, 
+  useSneakAttackState,
+  calculateSneakAttackResult,
+} from '@/components/character/SneakAttackSelector';
 
 // Interface para bônus selecionável
 interface CombatBonus {
@@ -257,6 +262,12 @@ export function MobileCombatRollModal({
   // === ESTADO PARA ATAQUE ESPECIAL (Combatente) ===
   const { config: specialAttackConfig, setConfig: setSpecialAttackConfig, reset: resetSpecialAttack } = useSpecialAttackState();
   
+  // === ESTADO PARA ATAQUE FURTIVO (Infiltrador) ===
+  const { config: sneakAttackConfig, setConfig: setSneakAttackConfig, reset: resetSneakAttack } = useSneakAttackState();
+  
+  // Verifica se é Infiltrador
+  const isInfiltrador = classTrack === 'infiltrador';
+  
   // Detecta tipo de ataque baseado na arma
   const attackType: 'melee' | 'ranged' = useMemo(() => {
     if (!weapon) return 'melee';
@@ -360,8 +371,9 @@ export function MobileCombatRollModal({
     setIsRolling(false);
     setActiveTechniqueEffects(null);
     resetSpecialAttack();
+    resetSneakAttack();
     onClose();
-  }, [onClose, resetSpecialAttack]);
+  }, [onClose, resetSpecialAttack, resetSneakAttack]);
   
   // Handler para confirmar técnicas do Aniquilador
   const handleConfirmTechnique = useCallback((effects: TechniqueEffects) => {
@@ -851,9 +863,13 @@ export function MobileCombatRollModal({
         weaponBuffDiceSize = buffDamage.diceType || 6;
       }
       
-      // Ataque Furtivo
+      // Ataque Furtivo - agora usa SneakAttackSelector
       let sneakAttackDice = 0;
-      if (advancedBonuses.ataqueFurtivo) {
+      if (sneakAttackConfig.enabled && isInfiltrador && nex >= 10) {
+        const sneakResult = calculateSneakAttackResult(nex, sneakAttackConfig, advancedBonuses.assassinar || false);
+        sneakAttackDice = sneakResult.finalDice;
+      } else if (advancedBonuses.ataqueFurtivo) {
+        // Fallback para sistema legado
         if (nex >= 99) sneakAttackDice = 4;
         else if (nex >= 65) sneakAttackDice = 3;
         else if (nex >= 40) sneakAttackDice = 2;
