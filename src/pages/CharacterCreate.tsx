@@ -281,6 +281,8 @@ export default function CharacterCreate() {
     // Ir para o step de revisão para o usuário verificar
     const reviewStepIndex = STEPS.findIndex(s => s.id === 'review');
     if (reviewStepIndex !== -1) {
+      // Define direção ANTES de mudar o step para animação correta
+      setTransitionDirection('forward');
       setCurrentStep(reviewStepIndex);
     }
     
@@ -333,6 +335,8 @@ export default function CharacterCreate() {
     // Ir para o step de revisão para o usuário verificar/ajustar
     const reviewStepIndex = STEPS.findIndex(s => s.id === 'review');
     if (reviewStepIndex !== -1) {
+      // Define direção ANTES de mudar o step para animação correta
+      setTransitionDirection('forward');
       setCurrentStep(reviewStepIndex);
     }
     
@@ -540,9 +544,11 @@ export default function CharacterCreate() {
 
   const handleStepClick = useCallback((step: number) => {
     if (canNavigateToStep(step)) {
+      // Define direção ANTES de mudar o step para animação correta
+      setTransitionDirection(step > currentStep ? 'forward' : 'backward');
       setCurrentStep(step);
     }
-  }, [canNavigateToStep]);
+  }, [canNavigateToStep, currentStep]);
 
   const handleNext = useCallback(() => {
     if (currentStep < STEPS.length - 1) {
