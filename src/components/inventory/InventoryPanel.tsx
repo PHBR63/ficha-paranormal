@@ -39,6 +39,7 @@ import {
   Wrench,
   Star,
   Clock,
+  Trash,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -403,6 +404,11 @@ export function InventoryPanel({
     IV: countItemsByCategory(inventoryWithEffectiveCategories, 'IV'),
   }), [inventoryWithEffectiveCategories]);
 
+  // Contagem de itens temporários para exibir botão de limpeza
+  const temporaryItemsCount = useMemo(() => {
+    return inventory.filter(item => item.isTemporary).length;
+  }, [inventory]);
+
   const toggleCategory = (type: ItemType) => {
     const newExpanded = new Set(expandedCategories);
     if (newExpanded.has(type)) {
@@ -415,6 +421,22 @@ export function InventoryPanel({
 
   // Toast para notificações
   const { toast } = useToast();
+
+  // Handler para remover todos os itens temporários (fim da cena)
+  const handleClearTemporaryItems = useCallback(() => {
+    if (!onInventoryChange) return;
+    
+    const temporaryItems = inventory.filter(item => item.isTemporary);
+    if (temporaryItems.length === 0) return;
+
+    const newInventory = inventory.filter(item => !item.isTemporary);
+    onInventoryChange(newInventory);
+    
+    toast({
+      title: 'Itens temporários removidos',
+      description: `${temporaryItems.length} item(ns) temporário(s) removido(s) do inventário.`,
+    });
+  }, [inventory, onInventoryChange, toast]);
 
   // Verifica se pode adicionar item da categoria selecionada
   const canAddSelectedCategory = useMemo(() => {
@@ -856,7 +878,7 @@ export function InventoryPanel({
           INVENTÁRIO
         </h3>
         {!readOnly && (
-          <div className="grid grid-cols-4 sm:flex gap-1.5 sm:gap-2">
+          <div className="flex flex-wrap gap-1.5 sm:gap-2">
             {/* Botão Catálogo de Armas */}
             <Button 
               size="sm" 
@@ -1027,6 +1049,34 @@ export function InventoryPanel({
               </div>
             </DialogContent>
           </Dialog>
+          
+          {/* Botão Limpar Itens Temporários - apenas exibe quando há itens temporários */}
+          {temporaryItemsCount > 0 && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="font-display text-[10px] sm:text-xs h-8 px-2 sm:px-3 touch-manipulation border-amber-500/30 text-amber-400 hover:bg-amber-500/10"
+                    onClick={handleClearTemporaryItems}
+                  >
+                    <Clock className="w-3.5 h-3.5 sm:w-3 sm:h-3 sm:mr-1" />
+                    <span className="hidden sm:inline">LIMPAR TEMP</span>
+                    <Badge 
+                      variant="outline" 
+                      className="ml-1 text-[9px] px-1 py-0 bg-amber-500/20 text-amber-400 border-amber-500/30"
+                    >
+                      {temporaryItemsCount}
+                    </Badge>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  <p>Remover {temporaryItemsCount} item(ns) temporário(s) (fim da cena)</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
           </div>
         )}
       </div>
