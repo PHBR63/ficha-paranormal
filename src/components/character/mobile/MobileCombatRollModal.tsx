@@ -519,6 +519,11 @@ export function MobileCombatRollModal({
   };
 
   // Custo total de PE (incluindo Ataque Especial)
+  // Calcula o resultado do Ataque Furtivo para obter o custo de PE
+  const sneakAttackResult = useMemo(() => 
+    calculateSneakAttackResult(nex, sneakAttackConfig, advancedBonuses.assassinar || false),
+  [nex, sneakAttackConfig, advancedBonuses.assassinar]);
+  
   const totalPECost = useMemo(() => {
     let total = selectedBonuses.reduce((sum, bonusId) => {
       const bonus = availableBonuses.find(b => b.id === bonusId);
@@ -527,8 +532,12 @@ export function MobileCombatRollModal({
     if (specialAttackConfig.enabled) {
       total += specialAttackResult.peCost;
     }
+    // Adicionar custo do Ataque Furtivo se ativo (Infiltrador)
+    if (isInfiltrador && sneakAttackConfig.enabled) {
+      total += sneakAttackResult.peCost;
+    }
     return total;
-  }, [selectedBonuses, availableBonuses, specialAttackConfig.enabled, specialAttackResult.peCost]);
+  }, [selectedBonuses, availableBonuses, specialAttackConfig.enabled, specialAttackResult.peCost, isInfiltrador, sneakAttackConfig.enabled, sneakAttackResult.peCost]);
 
   const canAffordPE = currentPE >= totalPECost;
 
