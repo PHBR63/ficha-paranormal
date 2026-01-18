@@ -7,25 +7,37 @@
  * - NEX 65%: Assassinar (dobra dados do Ataque Furtivo, até final do próximo turno)
  * - NEX 99%: Sombra Fugaz (ignora penalidade de -3d20 Furtividade após ação chamativa)
  * 
+ * ATUALIZAÇÃO: Ataque Furtivo agora suporta PE extra para dados adicionais
+ * - Custo base: 1 PE
+ * - Pode gastar PE adicional para +1d6 cada (até limite por rodada)
+ * 
  * @module tracks/especialista/useInfiltradorTrack
  */
 
 import { useState, useMemo, useCallback } from 'react';
 import { toast } from 'sonner';
 import { TRACK_EFFECT_IDS, type EffectDuration, type ComputedEffects } from '@/hooks';
+import { getPELimitByNex } from '@/lib/dice-roller';
 
 // =====================================================
 // Funções Auxiliares
 // =====================================================
 
 /**
- * Calcula os dados de dano extra do Ataque Furtivo baseado no NEX
+ * Calcula a quantidade de dados base do Ataque Furtivo baseado no NEX
+ */
+export function getAtaqueFurtivoBaseDice(nex: number): number {
+  if (nex >= 99) return 4;
+  if (nex >= 65) return 3;
+  if (nex >= 40) return 2;
+  return 1;
+}
+
+/**
+ * Retorna string formatada dos dados de dano do Ataque Furtivo
  */
 export function getAtaqueFurtivoDice(nex: number): string {
-  if (nex >= 99) return '+4d6';
-  if (nex >= 65) return '+3d6';
-  if (nex >= 40) return '+2d6';
-  return '+1d6';
+  return `+${getAtaqueFurtivoBaseDice(nex)}d6`;
 }
 
 /**
@@ -50,6 +62,10 @@ export interface UseInfiltradorTrackProps {
   onActivateEffect?: (id: string, name: string, duration: EffectDuration, metadata?: Record<string, unknown>) => void;
   isEffectActive?: (id: string) => boolean;
   computedEffects?: ComputedEffects;
+  /** Callback para alternar bônus condicional (Assassinar) */
+  onToggleConditionalBonus?: (bonusId: string) => void;
+  /** Lista de bônus condicionais ativos */
+  activeConditionalBonuses?: string[];
 }
 
 // =====================================================
@@ -67,8 +83,14 @@ export function useInfiltradorTrack({
   onActivateEffect,
   isEffectActive,
   computedEffects,
+  onToggleConditionalBonus,
+  activeConditionalBonuses = [],
 }: UseInfiltradorTrackProps) {
-  const [assassinarActive, setAssassinarActive] = useState(false);
+  // Estado local para Assassinar (fallback se não tiver sincronização externa)
+  const [localAssassinarActive, setLocalAssassinarActive] = useState(false);
+  
+  // Assassinar pode vir de bônus condicionais externos OU estado local
+  const assassinarActive = activeConditionalBonuses.includes('assassinar') || localAssassinarActive;
 
   // Verifica se é Infiltrador
   const isInfiltrador = classTrack === 'infiltrador';
@@ -81,8 +103,15 @@ export function useInfiltradorTrack({
 
   // Verifica se Ataque Furtivo já foi usado nesta rodada
   const ataqueFurtivoUsedThisRound = usedAbilitiesThisRound.includes('ataque-furtivo-trilha');
+  
+  // Limite de PE por rodada
+  const peLimit = useMemo(() => getPELimitByNex(nex), [nex]);
+  const maxExtraPE = Math.max(0, peLimit - 1); // -1 porque 1 PE é o custo base
 
-  // Dados de dano do Ataque Furtivo
+  // Dados base de dano do Ataque Furtivo
+  const sneakAttackBaseDice = useMemo(() => getAtaqueFurtivoBaseDice(nex), [nex]);
+  
+  // Dados de dano do Ataque Furtivo (string formatada)
   const sneakAttackDice = useMemo(() => {
     const sueSneakAttack = computedEffects?.sneakAttack;
     if (sueSneakAttack) {
@@ -111,32 +140,71 @@ export function useInfiltradorTrack({
   const ignoresStealthPenalties = sueStealthBonuses?.ignoresAllPenalties ?? false;
 
   /**
-   * Ativa o Ataque Furtivo (1 PE, 1x/rodada)
+   * Ativa o Ataque Furtivo com PE extra opcional
+   * @param extraPE - PE adicional a gastar para dados extras (0 = só custo base)
    */
-  const handleAtaqueFurtivo = useCallback(() => {
-    if (peCurrent < 1) {
-      toast.error('PE insuficiente', { description: 'Ataque Furtivo requer 1 PE.' });
+  const handleAtaqueFurtivo = useCallback((extraPE: number = 0) => {
+    const totalCost = 1 + extraPE;
+    
+    // Validar PE suficiente
+    if (peCurrent < totalCost) {
+      toast.error('PE insuficiente', { 
+        description: `Ataque Furtivo requer ${totalCost} PE (1 base + ${extraPE} extra).` 
+      });
       return;
     }
+    
+    // Validar limite por rodada
+    if (extraPE > maxExtraPE) {
+      toast.warning('Limite excedido', { 
+        description: `Máximo de ${maxExtraPE} PE extra por rodada (limite: ${peLimit} PE/rodada).` 
+      });
+      return;
+    }
+    
+    // Validar uso por rodada
     if (ataqueFurtivoUsedThisRound) {
-      toast.warning('Já usado nesta rodada', { description: 'Ataque Furtivo só pode ser usado 1x/rodada.' });
+      toast.warning('Já usado nesta rodada', { 
+        description: 'Ataque Furtivo só pode ser usado 1x/rodada.' 
+      });
       return;
     }
 
-    onPEChange(-1);
+    // Deduzir PE
+    onPEChange(-totalCost);
     onAbilityUsed?.('ataque-furtivo-trilha');
     onActivateEffect?.(TRACK_EFFECT_IDS.ATAQUE_FURTIVO, 'Ataque Furtivo', 'instant');
     
-    const doubledDice = (assassinarActive || sneakAttackMultiplier > 1) ? ' (DOBRADO!)' : '';
+    // Calcular dados finais
+    const baseDice = sneakAttackBaseDice;
+    const totalDice = baseDice + extraPE;
+    const finalDice = assassinarActive ? totalDice * 2 : totalDice;
+    const doubledText = assassinarActive ? ' (DOBRADO!)' : '';
     
     toast.success('Ataque Furtivo ativado!', {
-      description: `${sneakAttackDice} dano extra${doubledDice}. Custo: 1 PE.`
+      description: `+${finalDice}d6 dano extra${doubledText}. Custo: ${totalCost} PE.`
     });
 
+    // Consumir Assassinar após uso
     if (assassinarActive) {
-      setAssassinarActive(false);
+      if (onToggleConditionalBonus) {
+        onToggleConditionalBonus('assassinar');
+      } else {
+        setLocalAssassinarActive(false);
+      }
     }
-  }, [peCurrent, ataqueFurtivoUsedThisRound, onPEChange, onAbilityUsed, onActivateEffect, sneakAttackDice, sneakAttackMultiplier, assassinarActive]);
+  }, [
+    peCurrent, 
+    maxExtraPE, 
+    peLimit,
+    ataqueFurtivoUsedThisRound, 
+    onPEChange, 
+    onAbilityUsed, 
+    onActivateEffect, 
+    sneakAttackBaseDice, 
+    assassinarActive,
+    onToggleConditionalBonus
+  ]);
 
   /**
    * Ativa Assassinar (3 PE + ação de movimento)
@@ -148,13 +216,32 @@ export function useInfiltradorTrack({
     }
 
     onPEChange(-3);
-    setAssassinarActive(true);
+    
+    // Ativar via bônus condicional (sincronizado) ou estado local
+    if (onToggleConditionalBonus) {
+      onToggleConditionalBonus('assassinar');
+    } else {
+      setLocalAssassinarActive(true);
+    }
+    
     onActivateEffect?.(TRACK_EFFECT_IDS.ASSASSINAR, 'Assassinar', 'next-turn');
     
     toast.success('Assassinar ativado!', {
       description: `Até o final do próximo turno: primeiro Ataque Furtivo terá dados dobrados. Alvo fica inconsciente/morrendo (Fort DT ${assassinarDT} evita).`
     });
-  }, [peCurrent, onPEChange, onActivateEffect, assassinarDT]);
+  }, [peCurrent, onPEChange, onActivateEffect, assassinarDT, onToggleConditionalBonus]);
+  
+  /**
+   * Cancela Assassinar (sem devolver PE)
+   */
+  const handleCancelAssassinar = useCallback(() => {
+    if (onToggleConditionalBonus) {
+      onToggleConditionalBonus('assassinar');
+    } else {
+      setLocalAssassinarActive(false);
+    }
+    toast.info('Assassinar cancelado');
+  }, [onToggleConditionalBonus]);
 
   /**
    * Ativa Sombra Fugaz (3 PE)
@@ -186,11 +273,16 @@ export function useInfiltradorTrack({
     hasSombraFugaz,
     
     // Dados derivados
+    sneakAttackBaseDice,
     sneakAttackDice,
     sneakAttackMultiplier,
     assassinarDT,
     removesStealthMovementPenalty,
     ignoresStealthPenalties,
+    
+    // Limites de PE
+    peLimit,
+    maxExtraPE,
     
     // Dados do SUE
     sueStealthBonuses,
@@ -199,6 +291,7 @@ export function useInfiltradorTrack({
     // Handlers
     handleAtaqueFurtivo,
     handleAssassinar,
+    handleCancelAssassinar,
     handleSombraFugaz,
     
     // Helpers

@@ -15,6 +15,11 @@ import {
   hasForcaBrutaAbility,
   isMeleeWeapon,
 } from '@/lib/class-powers/special-attack-utils';
+import { 
+  SneakAttackSelector, 
+  useSneakAttackState,
+  calculateSneakAttackResult,
+} from '@/components/character/SneakAttackSelector';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
