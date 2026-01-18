@@ -37,16 +37,18 @@ export function RestoreDraftDialog({
           <AlertDialogTitle className="font-display tracking-wider">
             Rascunho Encontrado
           </AlertDialogTitle>
-          <AlertDialogDescription className="space-y-2">
-            <p>
-              Encontramos um rascunho de criação de personagem salvo {timeAgo}.
-            </p>
-            {characterName && (
-              <p className="text-foreground font-medium">
-                Personagem: {characterName}
-              </p>
-            )}
-            <p>Deseja continuar de onde parou?</p>
+          <AlertDialogDescription asChild>
+            <div className="space-y-2 text-sm text-muted-foreground">
+              <span className="block">
+                Encontramos um rascunho de criação de personagem salvo {timeAgo}.
+              </span>
+              {characterName && (
+                <span className="block text-foreground font-medium">
+                  Personagem: {characterName}
+                </span>
+              )}
+              <span className="block">Deseja continuar de onde parou?</span>
+            </div>
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

@@ -479,14 +479,14 @@ export function StepAttributes({ formData, updateFormData }: StepAttributesProps
                       key={value}
                       initial={{ scale: 1.5, opacity: 0.5 }}
                       animate={{ 
-                        scale: [1.5, 0.95, 1],
+                        scale: 1,
                         opacity: 1,
                         textShadow: isZero 
-                          ? ['0 0 20px hsl(var(--paranormal))', '0 0 8px hsl(var(--paranormal))', '0 0 12px hsl(var(--paranormal))']
-                          : [`0 0 20px hsl(var(${attr.colorVar}))`, `0 0 0px hsl(var(${attr.colorVar}))`, `0 0 8px hsl(var(${attr.colorVar}))`]
+                          ? '0 0 12px hsl(var(--paranormal))'
+                          : `0 0 8px hsl(var(${attr.colorVar}))`
                       }}
                       transition={{ 
-                        duration: 0.4,
+                        duration: 0.3,
                         scale: { type: "spring", stiffness: 400, damping: 15 }
                       }}
                       className="font-display text-3xl font-bold"
