@@ -6,6 +6,7 @@ export interface DiceRollResult {
   keptDice: number;
   skillBonus: number;
   otherBonuses: number;
+  extraDice: number;           // Dados extras adicionados ao pool (ex: Discurso Motivador)
   total: number;
   isDisadvantage: boolean;
   isCritical: boolean;
@@ -19,6 +20,7 @@ export interface SkillTestParams {
   attributeValue: number;
   skillBonus: number;
   otherBonuses?: number;
+  extraDice?: number;           // Dados extras ao pool (ex: Discurso Motivador +1d20)
   label?: string;
   criticalThreshold?: number;
 }
@@ -75,6 +77,7 @@ export function rollSkillTest(params: SkillTestParams): DiceRollResult {
     attributeValue, 
     skillBonus, 
     otherBonuses = 0, 
+    extraDice = 0,  // Dados extras (Discurso Motivador, etc.)
     label,
     criticalThreshold = 20 
   } = params;
@@ -85,12 +88,14 @@ export function rollSkillTest(params: SkillTestParams): DiceRollResult {
 
   if (attributeValue <= 0) {
     // Regra do Zero: rola 2d20 e pega o MENOR
+    // IMPORTANTE: Dados extras são IGNORADOS na Regra do Zero (conforme regras oficiais)
     dice = [rollD20(), rollD20()];
     keptDice = Math.min(...dice);
     isDisadvantage = true;
   } else {
-    // Pool normal: rola N d20 e pega o MAIOR
-    dice = Array.from({ length: attributeValue }, () => rollD20());
+    // Pool normal: rola (atributo + dados extras) d20 e pega o MAIOR
+    const totalDice = attributeValue + extraDice;
+    dice = Array.from({ length: totalDice }, () => rollD20());
     keptDice = Math.max(...dice);
   }
 
@@ -102,6 +107,7 @@ export function rollSkillTest(params: SkillTestParams): DiceRollResult {
     keptDice,
     skillBonus,
     otherBonuses,
+    extraDice: attributeValue <= 0 ? 0 : extraDice, // Registra 0 se ignorado pela Regra do Zero
     total,
     isDisadvantage,
     isCritical,

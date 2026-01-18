@@ -47,6 +47,7 @@ interface DiceRollModalProps {
   attributeValue: number;
   skillBonus?: number;
   resistanceBonus?: number; // Bônus de resistência (Fortitude, Reflexos, Vontade)
+  extraDice?: number;      // Dados extras no pool (Discurso Motivador +1d20 ou +2d20)
   bonusSources?: BonusSource[]; // Detalhamento dos bônus aplicados
   onRollComplete?: (result: DiceRollResult) => void;
   // Novas props para ativação de poderes
@@ -103,6 +104,7 @@ export function DiceRollModal({
   attributeValue,
   skillBonus = 0,
   resistanceBonus = 0,
+  extraDice = 0,
   bonusSources = [],
   onRollComplete,
   // Novas props para ativação de poderes
@@ -212,6 +214,7 @@ export function DiceRollModal({
         const rollResult = rollSkillTest({
           attributeValue: finalAttribute,
           skillBonus: totalBonus,
+          extraDice,  // Passa dados extras do Discurso Motivador
           label,
         });
         

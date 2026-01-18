@@ -34,12 +34,14 @@ interface SkillBonusEntry {
 interface SkillsByAttributeProps {
   skills: Record<string, number>;
   attributes: Record<string, number>;
-  onRoll?: (total: number, skillName: string, attributeValue: number, classPowerBonus?: number) => void;
+  onRoll?: (total: number, skillName: string, attributeValue: number, classPowerBonus?: number, extraDice?: number) => void;
   className?: string;
   // Bônus consolidados de poderes de classe (Perito, Versatilidade, etc.)
   skillBonuses?: Record<string, SkillBonusEntry>;
   // Origens das perícias (calculadas pelo CharacterSheet)
   skillOrigins?: Record<string, SkillOriginInfo>;
+  // Dados extras no pool (ex: Discurso Motivador +1d20 ou +2d20)
+  globalDiceBonus?: number;
 }
 
 // Nomes dos atributos
@@ -93,6 +95,7 @@ function SkillsByAttributeComponent({
   className,
   skillBonuses = {},
   skillOrigins = {},
+  globalDiceBonus = 0,
 }: SkillsByAttributeProps) {
   // Estado de pesquisa e filtro
   const [searchQuery, setSearchQuery] = useState('');
@@ -355,7 +358,7 @@ function SkillsByAttributeComponent({
                                       ? "bg-primary/10 hover:bg-primary/20"
                                       : "hover:bg-muted/30"
                             )}
-                            onClick={() => onRoll?.(rollTotal, skill.name, attrValue, classPowerBonus)}
+                            onClick={() => onRoll?.(rollTotal, skill.name, attrValue, classPowerBonus, globalDiceBonus)}
                           >
                             <div className="flex items-center gap-2">
                               {/* Ícone de origem (apenas se treinada) */}
@@ -389,6 +392,12 @@ function SkillsByAttributeComponent({
                               {classPowerBonus > 0 && (
                                 <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/20 text-primary">
                                   +{classPowerBonus} poder
+                                </span>
+                              )}
+                              {/* Indicador de dados extras ativos (Discurso Motivador) */}
+                              {globalDiceBonus > 0 && (
+                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400 animate-pulse font-medium">
+                                  +{globalDiceBonus}d20
                                 </span>
                               )}
                             </div>
