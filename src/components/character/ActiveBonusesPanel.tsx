@@ -7,7 +7,7 @@
 import { motion } from 'framer-motion';
 import { 
   Shield, Swords, Heart, Zap, Brain, Star, Sparkles, 
-  Target, Crosshair, Activity, Flame, ToggleLeft, ToggleRight
+  Target, Crosshair, Activity, Flame, ToggleLeft, ToggleRight, Stethoscope
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { 
@@ -31,6 +31,7 @@ const BONUS_TYPE_CONFIG = {
   equipment: { icon: Shield, color: 'text-slate-500', bg: 'bg-slate-500/10', label: 'Equipamento' },
   ritual: { icon: Sparkles, color: 'text-pink-500', bg: 'bg-pink-500/10', label: 'Ritual' },
   skill_training: { icon: Activity, color: 'text-cyan-500', bg: 'bg-cyan-500/10', label: 'Treinamento' },
+  track_effect: { icon: Stethoscope, color: 'text-emerald-400', bg: 'bg-emerald-400/10', label: 'Efeito de Trilha' },
 };
 
 // Tipo de categoria de filtro

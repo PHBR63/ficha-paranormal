@@ -23,12 +23,38 @@ import { TRACK_EFFECT_IDS, type EffectDuration, type ComputedEffects } from '@/h
 
 /**
  * Calcula os dados de cura do Paramédico baseado no NEX
+ * 
+ * REGRA OFICIAL (Livro Base v1.3):
+ * - Base: 2d10 (fixo em todos os NEX)
+ * - Dados extras permitidos escalam com NEX:
+ *   - NEX 10-35%: 0 extras (máx 2d10, custo 2 PE)
+ *   - NEX 40-60%: 1 extra (máx 3d10, custo 3 PE)
+ *   - NEX 65-95%: 2 extras (máx 4d10, custo 4 PE)
+ *   - NEX 99%: 3 extras (máx 5d10, custo 5 PE)
  */
-export function getParamedicoDice(nex: number): { base: number; dieType: string; formula: string } {
-  if (nex >= 99) return { base: 5, dieType: 'd10', formula: '5d10' };
-  if (nex >= 65) return { base: 4, dieType: 'd10', formula: '4d10' };
-  if (nex >= 40) return { base: 3, dieType: 'd10', formula: '3d10' };
-  return { base: 2, dieType: 'd10', formula: '2d10' };
+export function getParamedicoDice(nex: number): { 
+  base: number; 
+  dieType: string; 
+  formula: string;
+  maxExtraDice: number; // Limite de dados extras permitidos pelo NEX
+} {
+  // Base é SEMPRE 2d10 conforme regras oficiais
+  const base = 2;
+  const dieType = 'd10';
+  
+  // Dados extras permitidos escalam com NEX
+  let maxExtraDice = 0;
+  if (nex >= 99) maxExtraDice = 3;      // máx 5d10, 5 PE
+  else if (nex >= 65) maxExtraDice = 2; // máx 4d10, 4 PE
+  else if (nex >= 40) maxExtraDice = 1; // máx 3d10, 3 PE
+  // NEX 10-35%: 0 extras               // máx 2d10, 2 PE
+  
+  return { 
+    base, 
+    dieType, 
+    formula: `${base}${dieType}`,
+    maxExtraDice,
+  };
 }
 
 // =====================================================
@@ -72,17 +98,24 @@ export function useMedicoDeCampoTrack({
   const sueHealing = computedEffects?.healing;
   const sueSupport = computedEffects?.support;
 
-  // Dados de cura base - usa SUE se disponível
+  // Dados de cura base - usa SUE se disponível, mas SEMPRE respeita maxExtraDice
   const healingDice = useMemo(() => {
+    const baseDice = getParamedicoDice(nex);
+    
+    // SUE pode sobrescrever valores base, mas maxExtraDice vem do NEX
     if (sueHealing?.baseDice && sueHealing?.dieType) {
       return {
         base: sueHealing.baseDice,
         dieType: sueHealing.dieType,
-        formula: `${sueHealing.baseDice}${sueHealing.dieType}`
+        formula: `${sueHealing.baseDice}${sueHealing.dieType}`,
+        maxExtraDice: baseDice.maxExtraDice, // Sempre usa o limite do NEX
       };
     }
-    return getParamedicoDice(nex);
+    return baseDice;
   }, [sueHealing, nex]);
+
+  // Limite máximo de dados extras baseado no NEX
+  const maxExtraDice = healingDice.maxExtraDice ?? 0;
 
   // Custo total do Paramédico (2 PE base + 1 PE por dado extra)
   const paramedicoCost = 2 + extraDice;
@@ -234,6 +267,7 @@ export function useMedicoDeCampoTrack({
     paramedicoCost,
     selfDefenseBonus,
     targetDefenseBonus,
+    maxExtraDice, // Limite de dados extras pelo NEX
     
     // Dados do SUE
     sueHealing,
@@ -250,5 +284,6 @@ export function useMedicoDeCampoTrack({
     canAffordParamedico: peCurrent >= paramedicoCost,
     canAffordEquipeTrauma: peCurrent >= 2,
     canAffordReanimacao: peCurrent >= 10 && !reanimacaoUsedThisScene,
+    canAddExtraDice: extraDice < maxExtraDice && peCurrent >= paramedicoCost + 1,
   };
 }

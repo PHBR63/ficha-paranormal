@@ -201,7 +201,9 @@ function MedicoDeCampoPanelComponent(props: MedicoDeCampoPanelProps) {
   const ParamedicoDrawerContent = () => (
     <div className="space-y-4">
       <div className="space-y-2">
-        <Label className="text-sm">Dados extras de cura (+1 PE cada)</Label>
+        <Label className="text-sm">
+          Dados extras de cura (+1 PE cada) — máx {track.maxExtraDice}
+        </Label>
         <div className="flex items-center gap-3 justify-center">
           <Button
             variant="outline"
@@ -215,12 +217,17 @@ function MedicoDeCampoPanelComponent(props: MedicoDeCampoPanelProps) {
           <Button
             variant="outline"
             size="icon"
-            onClick={() => track.setExtraDice(track.extraDice + 1)}
-            disabled={props.peCurrent < track.paramedicoCost + 1}
+            onClick={() => track.setExtraDice(Math.min(track.extraDice + 1, track.maxExtraDice))}
+            disabled={!track.canAddExtraDice}
           >
             <Plus className="h-4 w-4" />
           </Button>
         </div>
+        {track.maxExtraDice === 0 && (
+          <p className="text-xs text-muted-foreground text-center">
+            NEX 40%+ para desbloquear dados extras
+          </p>
+        )}
       </div>
 
       <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 space-y-1">
@@ -231,6 +238,10 @@ function MedicoDeCampoPanelComponent(props: MedicoDeCampoPanelProps) {
         <div className="flex justify-between text-sm">
           <span>Custo:</span>
           <span className="font-bold">{track.paramedicoCost} PE</span>
+        </div>
+        <div className="flex justify-between text-xs text-muted-foreground">
+          <span>Máximo no NEX atual:</span>
+          <span>{track.healingDice.base + track.maxExtraDice}d10 ({2 + track.maxExtraDice} PE)</span>
         </div>
       </div>
     </div>

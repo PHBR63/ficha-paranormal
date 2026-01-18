@@ -17,12 +17,13 @@ import { getSkillBonus, getTrainingLabel } from '@/lib/character-data';
 // Interface para breakdown de bônus de defesa
 export interface DefenseBonusBreakdown {
   source: string;        // Nome da fonte (ex: "Patrulha", "Reflexos Defensivos")
-  type: 'origin' | 'ability' | 'general_power' | 'paranormal' | 'ritual' | 'skill_training';
+  type: 'origin' | 'ability' | 'general_power' | 'paranormal' | 'ritual' | 'skill_training' | 'track_effect';
   bonus: number;         // Valor do bônus
   conditional?: string;  // Condição se houver (ex: "com proteção pesada")
   active: boolean;       // Se o bônus está ativo
   excluded?: boolean;    // Se foi excluído por regra de não acúmulo
   excludedReason?: string; // Motivo da exclusão (ex: "Não acumula com Ritual X")
+  duration?: string;     // Duração do efeito (ex: "next-turn")
 }
 
 // Interface para bônus de resistências
@@ -70,6 +71,14 @@ export interface ActiveRitualForDefense {
   enhancements: string[];
 }
 
+// Interface para efeito ativado (do SUE)
+export interface ActivatedEffectForDefense {
+  id: string;
+  name: string;
+  duration?: string;
+  metadata?: Record<string, unknown>;
+}
+
 // Props do hook
 interface UseDefenseBonusesProps {
   origin: string;                    // ID da origem do personagem
@@ -82,6 +91,7 @@ interface UseDefenseBonusesProps {
   }>;
   inventory?: InventoryItemWithArmor[]; // Inventário para verificar armaduras equipadas
   activeRituals?: ActiveRitualForDefense[]; // Rituais ativos com defenseModifier
+  activatedEffects?: ActivatedEffectForDefense[]; // Efeitos ativados manualmente (ex: Resgate)
   skills?: Record<string, number>;   // Perícias com nível de treinamento (0-3)
   activeConditionalBonuses?: string[]; // IDs dos bônus condicionais ativos
   intellect?: number;                // Intelecto do personagem (para Sentido Tático)
@@ -96,6 +106,7 @@ export function useDefenseBonuses({
   generalPowers = [],
   inventory = [],
   activeRituals = [],
+  activatedEffects = [],
   skills = {},
   activeConditionalBonuses = [],
   intellect = 1,
@@ -259,6 +270,24 @@ export function useDefenseBonuses({
       });
     }
     
+    // 9. EFEITOS ATIVADOS DO SUE: Processa efeitos temporários manuais
+    // Resgate (Médico de Campo NEX 65%) - +5 Defesa ao curar aliado
+    const resgateEffect = activatedEffects.find(e => 
+      e.id === 'track-resgate-defense' || 
+      e.id === 'resgate-defense'
+    );
+    
+    if (resgateEffect) {
+      const selfBonus = (resgateEffect.metadata?.selfBonus as number) ?? 5;
+      breakdown.push({
+        source: 'Resgate (Cura)',
+        type: 'track_effect',
+        bonus: selfBonus,
+        active: true,
+        duration: 'next-turn',
+      });
+    }
+    
     // === HABILIDADES ATIVAS (togglável) ===
     
     // Combate Defensivo: +5 Defesa, -2 ataque (quando ativado manualmente)
@@ -389,7 +418,7 @@ export function useDefenseBonuses({
         breakdown: resistanceBreakdown,
       }
     };
-  }, [origin, abilities, generalPowers, inventory, activeRituals, skills, activeConditionalBonuses, intellect]);
+  }, [origin, abilities, generalPowers, inventory, activeRituals, activatedEffects, skills, activeConditionalBonuses, intellect]);
 }
 
 /**
