@@ -2145,6 +2145,17 @@ export function MobileCharacterSheet({
         strength={character.strength}
         patent={character.patent}
         onInventoryChange={handleInventoryChange}
+        intellect={character.intellect}
+        characterData={{
+          origin: character.origin,
+          classId: character.class,
+          classTrack: character.class_track || undefined,
+          nex: character.nex,
+          abilities: character.abilities,
+          powers: character.powers?.map(p => p.name) || [],
+          generalPowers: character.general_powers,
+          intellect: character.intellect,
+        }}
       />
 
       {/* ========== MODAIS DE COMBATE MOBILE ========== */}

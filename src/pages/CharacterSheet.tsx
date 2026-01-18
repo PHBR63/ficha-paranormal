@@ -2682,6 +2682,7 @@ export default function CharacterSheet() {
                       abilities: character.abilities,
                       powers: character.powers?.map(p => p.name) || [],
                       generalPowers: character.general_powers,
+                      intellect: character.intellect,
                     }}
                     onInventoryChange={async (newInventory) => {
                       // Persiste TODOS os campos importantes do item
