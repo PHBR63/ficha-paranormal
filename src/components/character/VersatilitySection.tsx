@@ -33,7 +33,10 @@ import {
   Info,
   Lock,
   AlertTriangle,
+  Search,
+  X,
 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { getAvailableTracks, getInitialAbility } from '@/lib/class-powers/track-registry';
 import { checkPowerPrerequisites, formatPrerequisitesText, CharacterDataForPrerequisites } from '@/lib/class-abilities-prerequisites';
@@ -91,6 +94,8 @@ export function VersatilitySection({
 }: VersatilitySectionProps) {
   // Estado para controlar se mostra lista de trilhas
   const [showTracks, setShowTracks] = useState(selected?.type === 'track_ability');
+  // Estado para filtro de busca
+  const [searchTerm, setSearchTerm] = useState('');
   
   // Obtém trilhas alternativas (exclui a atual)
   const availableTracks = useMemo(() => {
@@ -120,6 +125,18 @@ export function VersatilitySection({
       };
     }).filter(item => item.firstAbility !== undefined);
   }, [availableTracks, characterData]);
+  
+  // Filtra trilhas pelo termo de busca
+  const filteredTracks = useMemo(() => {
+    if (!searchTerm.trim()) return tracksWithAbilities;
+    
+    const term = searchTerm.toLowerCase();
+    return tracksWithAbilities.filter(({ track, firstAbility }) => 
+      track.name.toLowerCase().includes(term) ||
+      firstAbility?.name.toLowerCase().includes(term) ||
+      firstAbility?.description.toLowerCase().includes(term)
+    );
+  }, [tracksWithAbilities, searchTerm]);
   
   const ClassIcon = CLASS_ICONS[classId] || Sword;
   const classColor = CLASS_COLORS[classId] || CLASS_COLORS['Combatente'];
@@ -246,14 +263,42 @@ export function VersatilitySection({
                   </span>
                 </div>
                 
+                {/* Campo de busca */}
+                {tracksWithAbilities.length > 3 && (
+                  <div className="relative mb-3">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      type="text"
+                      placeholder="Buscar trilha ou habilidade..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-9 pr-8 h-9 text-sm"
+                    />
+                    {searchTerm && (
+                      <button
+                        type="button"
+                        onClick={() => setSearchTerm('')}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                )}
+                
                 <ScrollArea className={cn(
                   compact 
-                    ? tracksWithAbilities.length > 2 ? "h-[200px]" : "max-h-[200px]"
-                    : tracksWithAbilities.length > 3 ? "h-[300px]" : "max-h-[300px]"
+                    ? filteredTracks.length > 2 ? "h-[200px]" : "max-h-[200px]"
+                    : filteredTracks.length > 3 ? "h-[300px]" : "max-h-[300px]"
                 )}>
                 <TooltipProvider>
                   <div className="space-y-2 pr-3">
-                    {tracksWithAbilities.map(({ track, firstAbility, meetsPrerequisites, missingPrerequisites, prerequisiteText }) => {
+                    {filteredTracks.length === 0 ? (
+                      <div className="text-center py-6 text-muted-foreground">
+                        <Search className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                        <p className="text-sm">Nenhuma trilha encontrada para "{searchTerm}"</p>
+                      </div>
+                    ) : filteredTracks.map(({ track, firstAbility, meetsPrerequisites, missingPrerequisites, prerequisiteText }) => {
                       const isSelected = selected?.trackId === track.id;
                       const isBlocked = !meetsPrerequisites && characterData;
                       
