@@ -32,6 +32,8 @@ export interface UseTecnicoTrackProps {
   };
   /** Inventário do personagem (para Remendão) */
   inventory?: InventoryItem[];
+  /** Callback para adicionar item temporário ao inventário */
+  onAddTemporaryItem?: (item: InventoryItem) => void;
   onActivateEffect?: (id: string, name: string, duration: EffectDuration, metadata?: Record<string, unknown>) => void;
   isEffectActive?: (id: string) => boolean;
   computedEffects?: ComputedEffects;
@@ -48,6 +50,7 @@ export function useTecnicoTrack({
   onPEChange,
   attributes,
   inventory = [],
+  onAddTemporaryItem,
   onActivateEffect,
   isEffectActive,
   computedEffects,
@@ -116,6 +119,7 @@ export function useTecnicoTrack({
 
   /**
    * Handler para Improvisar com item específico do catálogo
+   * Adiciona o item como temporário ao inventário
    */
   const handleImprovisar = useCallback((item: CatalogItem, cost: number) => {
     if (peCurrent < cost) {
@@ -128,17 +132,36 @@ export function useTecnicoTrack({
     onPEChange(peCurrent - cost);
     setImprovisarDrawerOpen(false);
     
+    // Cria o item temporário no inventário
+    const temporaryItem: InventoryItem = {
+      id: crypto.randomUUID(),
+      name: `${item.name} (Improvisado)`,
+      category: item.category as InventoryItem['category'],
+      slots: typeof item.spaces === 'number' ? item.spaces : 1,
+      quantity: 1,
+      description: item.description,
+      consumable: item.consumable,
+      uses: item.uses,
+      maxUses: item.uses,
+      effect: item.effect,
+      isTemporary: true,
+      temporarySource: 'Improvisar (Técnico NEX 65%)',
+    };
+    
+    // Adiciona ao inventário se callback disponível
+    onAddTemporaryItem?.(temporaryItem);
+    
     onActivateEffect?.(TRACK_EFFECT_IDS.IMPROVISAR ?? 'track-improvisar', 'Improvisar', 'scene', { 
-      itemId: item.id,
+      itemId: temporaryItem.id,
       itemName: item.name,
       categoria: item.category,
       cost 
     });
     
     toast.success('Equipamento improvisado!', {
-      description: `Você criou "${item.name}" (Cat. ${item.category}). O item será inútil ao final da cena.`
+      description: `"${item.name}" foi adicionado ao inventário. O item será inútil ao final da cena.`
     });
-  }, [peCurrent, onPEChange, onActivateEffect]);
+  }, [peCurrent, onPEChange, onAddTemporaryItem, onActivateEffect]);
 
   /**
    * Handler para Preparado para Tudo (2 PE por categoria)

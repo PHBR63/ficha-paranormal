@@ -61,6 +61,9 @@ export interface InventoryItem {
   // Campos para redução de categoria
   favoriteAbilityId?: string;  // ID da habilidade que reduz a categoria
   effectiveCategory?: 'I' | 'II' | 'III' | 'IV' | '0';  // Categoria efetiva após redução
+  // Campos para itens temporários/improvisados
+  isTemporary?: boolean;  // Se é um item temporário (até fim da cena)
+  temporarySource?: string;  // Origem do item temporário (ex: "Improvisar", "Preparado para Tudo")
 }
 
 export interface PatentLimits {

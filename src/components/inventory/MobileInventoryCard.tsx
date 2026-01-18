@@ -16,6 +16,7 @@ import {
   MoreVertical,
   Eye,
   Star,
+  Clock,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -76,6 +77,7 @@ export function MobileInventoryCard({
   const usesDisplay = item.consumable ? `${item.uses ?? 0}/${item.maxUses ?? item.uses ?? 0}` : null;
   const appliedMods = (item as any).appliedModifications as WeaponModification[] | undefined;
   const hasModifications = appliedMods && appliedMods.length > 0;
+  const isTemporary = (item as any).isTemporary === true;
 
   // Monta ações para o ActionSheet
   const actions = [
@@ -287,6 +289,16 @@ export function MobileInventoryCard({
               {item.isEquipped && (
                 <Badge className="text-[9px] px-1.5 py-0 bg-primary/20 text-primary border-0">
                   EQUIPADO
+                </Badge>
+              )}
+              {isTemporary && (
+                <Badge 
+                  variant="outline" 
+                  className="text-[9px] px-1.5 py-0 bg-amber-500/10 text-amber-400 border-amber-500/30"
+                  title={(item as any).temporarySource || 'Item temporário'}
+                >
+                  <Clock className="w-2.5 h-2.5 mr-0.5" />
+                  TEMP
                 </Badge>
               )}
             </div>

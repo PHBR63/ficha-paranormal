@@ -192,6 +192,9 @@ interface InventoryItemPersisted {
   // Campos de redução de categoria (A Favorita, Ferramenta Favorita, etc.)
   favoriteAbilityId?: string;
   effectiveCategory?: string;
+  // Campos para itens temporários/improvisados
+  isTemporary?: boolean;
+  temporarySource?: string;
 }
 
 // Interface para condição persistida (objeto completo com dyingCounter para Morrendo)
@@ -2454,6 +2457,39 @@ export default function CharacterSheet() {
                   strength: character.strength,
                   intellect: character.intellect
                 }}
+                inventory={character.inventory as any[]}
+                onAddTemporaryItem={async (newItem) => {
+                  // Adiciona item temporário ao inventário e persiste
+                  const currentInventory = (character.inventory || []) as InventoryItemPersisted[];
+                  const itemToPersist: InventoryItemPersisted = {
+                    id: newItem.id,
+                    name: newItem.name,
+                    category: newItem.category,
+                    slots: newItem.slots,
+                    quantity: newItem.quantity,
+                    itemType: 'misc',
+                    description: newItem.description,
+                    effect: newItem.effect,
+                    uses: newItem.uses,
+                    maxUses: newItem.maxUses,
+                    consumable: newItem.consumable,
+                    isTemporary: newItem.isTemporary,
+                    temporarySource: newItem.temporarySource,
+                  };
+                  const updatedInventory = [...currentInventory, itemToPersist];
+                  
+                  const { error } = await supabase
+                    .from('characters')
+                    .update({ inventory: JSON.parse(JSON.stringify(updatedInventory)) })
+                    .eq('id', character.id);
+
+                  if (!error) {
+                    setCharacter(prev => prev ? {
+                      ...prev,
+                      inventory: updatedInventory,
+                    } : null);
+                  }
+                }}
                 onActivateEffect={activatedEffects.activateEffect}
                 isEffectActive={activatedEffects.isEffectActive}
               />
@@ -2719,6 +2755,9 @@ export default function CharacterSheet() {
                         // Campos de redução de categoria
                         favoriteAbilityId: (item as any).favoriteAbilityId,
                         effectiveCategory: (item as any).effectiveCategory,
+                        // Campos de itens temporários
+                        isTemporary: (item as any).isTemporary,
+                        temporarySource: (item as any).temporarySource,
                       }));
                       
                       const { error } = await supabase

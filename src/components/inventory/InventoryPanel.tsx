@@ -38,6 +38,7 @@ import {
   Zap,
   Wrench,
   Star,
+  Clock,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -1466,6 +1467,9 @@ function InventoryItemRow({ item, onRemove, onEquip, onUnequip, onUse, onModify,
   const reductionAbility = item.favoriteAbilityId 
     ? getCategoryReductionAbility(item.favoriteAbilityId) 
     : undefined;
+  // Verificar se é item temporário
+  const isTemporary = (item as any).isTemporary === true;
+  const temporarySource = (item as any).temporarySource as string | undefined;
 
   return (
     <TooltipProvider>
@@ -1536,6 +1540,16 @@ function InventoryItemRow({ item, onRemove, onEquip, onUnequip, onUse, onModify,
               {item.isEquipped && (
                 <Badge className="text-[10px] bg-primary/20 text-primary border-0 flex-shrink-0">
                   EQUIPADO
+                </Badge>
+              )}
+              {isTemporary && (
+                <Badge 
+                  variant="outline" 
+                  className="text-[10px] bg-amber-500/10 text-amber-400 border-amber-500/30 flex-shrink-0"
+                  title={temporarySource || 'Item temporário até fim da cena'}
+                >
+                  <Clock className="w-2.5 h-2.5 mr-0.5" />
+                  TEMP
                 </Badge>
               )}
             </div>

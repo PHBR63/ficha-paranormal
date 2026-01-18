@@ -1810,6 +1810,33 @@ export function MobileCharacterSheet({
                 strength: character.strength,
                 intellect: character.intellect
               }}
+              inventory={normalizedInventory as any[]}
+              onAddTemporaryItem={async (newItem) => {
+                // Adiciona item temporário ao inventário
+                const currentInventory = character.inventory || [];
+                const updatedInventory = [...currentInventory, {
+                  id: newItem.id,
+                  name: newItem.name,
+                  category: newItem.category,
+                  slots: newItem.slots,
+                  quantity: newItem.quantity,
+                  itemType: 'misc',
+                  description: newItem.description,
+                  effect: newItem.effect,
+                  uses: newItem.uses,
+                  maxUses: newItem.maxUses,
+                  consumable: newItem.consumable,
+                  isTemporary: newItem.isTemporary,
+                  temporarySource: newItem.temporarySource,
+                }];
+                
+                await supabase
+                  .from('characters')
+                  .update({ inventory: updatedInventory as unknown as import('@/integrations/supabase/types').Json })
+                  .eq('id', character.id);
+                
+                if (onRefetch) await onRefetch();
+              }}
               onActivateEffect={activatedEffects.activateEffect}
               isEffectActive={activatedEffects.isEffectActive}
             />
