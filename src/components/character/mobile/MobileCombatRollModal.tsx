@@ -80,6 +80,11 @@ import {
   useSneakAttackState,
   calculateSneakAttackResult,
 } from '@/components/character/SneakAttackSelector';
+import {
+  DisparoLetalSelector,
+  useDisparoLetalState,
+  calculateDisparoLetalResult,
+} from '@/components/character/DisparoLetalSelector';
 
 // Interface para bônus selecionável
 interface CombatBonus {
@@ -265,8 +270,16 @@ export function MobileCombatRollModal({
   // === ESTADO PARA ATAQUE FURTIVO (Infiltrador) ===
   const { config: sneakAttackConfig, setConfig: setSneakAttackConfig, reset: resetSneakAttack } = useSneakAttackState();
   
+  // === ESTADO PARA DISPARO LETAL (Atirador de Elite) ===
+  const { config: disparoLetalConfig, setConfig: setDisparoLetalConfig, resetDisparoLetal } = useDisparoLetalState();
+  
   // Verifica se é Infiltrador
   const isInfiltrador = classTrack === 'infiltrador';
+  
+  // Verifica se é Atirador de Elite
+  const isAtiradorElite = useMemo(() => 
+    classTrack?.toLowerCase().includes('atirador') && classTrack?.toLowerCase().includes('elite'),
+  [classTrack]);
   
   // Detecta tipo de ataque baseado na arma
   const attackType: 'melee' | 'ranged' = useMemo(() => {
@@ -372,8 +385,9 @@ export function MobileCombatRollModal({
     setActiveTechniqueEffects(null);
     resetSpecialAttack();
     resetSneakAttack();
+    resetDisparoLetal();
     onClose();
-  }, [onClose, resetSpecialAttack, resetSneakAttack]);
+  }, [onClose, resetSpecialAttack, resetSneakAttack, resetDisparoLetal]);
   
   // Handler para confirmar técnicas do Aniquilador
   const handleConfirmTechnique = useCallback((effects: TechniqueEffects) => {
@@ -524,6 +538,11 @@ export function MobileCombatRollModal({
     calculateSneakAttackResult(nex, sneakAttackConfig, advancedBonuses.assassinar || false),
   [nex, sneakAttackConfig, advancedBonuses.assassinar]);
   
+  // Calcula o resultado do Disparo Letal para obter o custo de PE
+  const disparoLetalResult = useMemo(() => 
+    calculateDisparoLetalResult(nex, disparoLetalConfig),
+  [nex, disparoLetalConfig]);
+  
   const totalPECost = useMemo(() => {
     let total = selectedBonuses.reduce((sum, bonusId) => {
       const bonus = availableBonuses.find(b => b.id === bonusId);
@@ -536,8 +555,12 @@ export function MobileCombatRollModal({
     if (isInfiltrador && sneakAttackConfig.enabled) {
       total += sneakAttackResult.peCost;
     }
+    // Adicionar custo do Disparo Letal se ativo (Atirador de Elite)
+    if (isAtiradorElite && disparoLetalConfig.enabled) {
+      total += disparoLetalResult.peCost;
+    }
     return total;
-  }, [selectedBonuses, availableBonuses, specialAttackConfig.enabled, specialAttackResult.peCost, isInfiltrador, sneakAttackConfig.enabled, sneakAttackResult.peCost]);
+  }, [selectedBonuses, availableBonuses, specialAttackConfig.enabled, specialAttackResult.peCost, isInfiltrador, sneakAttackConfig.enabled, sneakAttackResult.peCost, isAtiradorElite, disparoLetalConfig.enabled, disparoLetalResult.peCost]);
 
   const canAffordPE = currentPE >= totalPECost;
 
@@ -712,8 +735,14 @@ export function MobileCombatRollModal({
       margin -= trackCombatBonuses.criticalMarginBonus;
     }
     
+    // === DISPARO LETAL (Atirador de Elite NEX 40%): +2 margem de ameaça ===
+    // Aplicação direta quando ativado no seletor de combate
+    if (isAtiradorElite && disparoLetalConfig.enabled) {
+      margin -= disparoLetalResult.criticalMarginBonus;
+    }
+    
     return Math.max(1, margin);
-  }, [weapon, weaponBuffBonuses, unifiedEffects, maquinaDeMatarActive, activeTechniqueEffects, classTrack, nex, passiveBonuses, trackCombatBonuses]);
+  }, [weapon, weaponBuffBonuses, unifiedEffects, maquinaDeMatarActive, activeTechniqueEffects, classTrack, nex, passiveBonuses, trackCombatBonuses, isAtiradorElite, disparoLetalConfig.enabled, disparoLetalResult.criticalMarginBonus]);
   
   // Multiplicador de crítico efetivo (conversão segura para string)
   const criticalMultiplier = useMemo(() => {
@@ -1210,6 +1239,17 @@ export function MobileCombatRollModal({
                     currentPE={currentPE}
                     config={specialAttackConfig}
                     onConfigChange={setSpecialAttackConfig}
+                    variant="compact"
+                  />
+                )}
+                
+                {/* === DISPARO LETAL (Atirador de Elite NEX 40%+) === */}
+                {isAtiradorElite && nex >= 40 && (
+                  <DisparoLetalSelector
+                    nex={nex}
+                    currentPE={currentPE}
+                    config={disparoLetalConfig}
+                    onConfigChange={setDisparoLetalConfig}
                     variant="compact"
                   />
                 )}
