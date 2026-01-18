@@ -8,7 +8,7 @@
  * - Detalhes de itens
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import {
   Package,
   Sword,
@@ -22,6 +22,7 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
+  Clock,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -204,6 +205,27 @@ export function MobileInventorySheet({
     III: countItemsByCategory(inventoryWithEffectiveCategories, 'III'),
     IV: countItemsByCategory(inventoryWithEffectiveCategories, 'IV'),
   }), [inventoryWithEffectiveCategories]);
+
+  // Contagem de itens temporários
+  const temporaryItemsCount = useMemo(() => {
+    return inventory.filter(item => item.isTemporary).length;
+  }, [inventory]);
+
+  // Handler para remover todos os itens temporários (fim da cena)
+  const handleClearTemporaryItems = useCallback(() => {
+    if (!onInventoryChange) return;
+    
+    const temporaryItems = inventory.filter(item => item.isTemporary);
+    if (temporaryItems.length === 0) return;
+
+    const newInventory = inventory.filter(item => !item.isTemporary);
+    onInventoryChange(newInventory);
+    
+    toast({
+      title: 'Itens temporários removidos',
+      description: `${temporaryItems.length} item(ns) temporário(s) removido(s) do inventário.`,
+    });
+  }, [inventory, onInventoryChange, toast]);
 
   // Itens equipados mapeados por slot
   const equippedItems = useMemo(() => {
@@ -610,8 +632,8 @@ export function MobileInventorySheet({
               )}
             </div>
 
-            {/* Indicadores de categoria */}
-            <div className="flex gap-1.5 flex-wrap">
+            {/* Indicadores de categoria + Botão limpar temporários */}
+            <div className="flex gap-1.5 flex-wrap items-center">
               {(['I', 'II', 'III', 'IV'] as const).map(cat => {
                 const limit = patentLimits[cat];
                 const current = categoryCounts[cat];
@@ -633,6 +655,17 @@ export function MobileInventorySheet({
                   </Badge>
                 );
               })}
+              
+              {/* Botão limpar itens temporários */}
+              {!readOnly && temporaryItemsCount > 0 && (
+                <button
+                  onClick={handleClearTemporaryItems}
+                  className="flex items-center gap-1 px-2 py-1 rounded text-[10px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/30 hover:bg-amber-500/20 transition-colors ml-auto"
+                >
+                  <Clock className="w-3 h-3" />
+                  Limpar Temp ({temporaryItemsCount})
+                </button>
+              )}
             </div>
           </div>
 
