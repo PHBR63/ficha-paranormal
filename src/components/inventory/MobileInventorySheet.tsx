@@ -154,6 +154,8 @@ export function MobileInventorySheet({
   const [itemToUse, setItemToUse] = useState<ExtendedInventoryItem | null>(null);
   const [itemDetailOpen, setItemDetailOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<ExtendedInventoryItem | null>(null);
+  // Estado para confirmação de limpeza de itens temporários
+  const [clearTempConfirmOpen, setClearTempConfirmOpen] = useState(false);
 
   const { toast } = useToast();
 
@@ -211,21 +213,33 @@ export function MobileInventorySheet({
     return inventory.filter(item => item.isTemporary).length;
   }, [inventory]);
 
-  // Handler para remover todos os itens temporários (fim da cena)
-  const handleClearTemporaryItems = useCallback(() => {
+  // Lista de itens temporários (para exibir no dialog de confirmação)
+  const temporaryItems = useMemo(() => {
+    return inventory.filter(item => item.isTemporary);
+  }, [inventory]);
+
+  // Handler para abrir confirmação de limpeza
+  const handleRequestClearTemporaryItems = useCallback(() => {
+    if (temporaryItems.length === 0) return;
+    setClearTempConfirmOpen(true);
+  }, [temporaryItems.length]);
+
+  // Handler para confirmar remoção de todos os itens temporários (fim da cena)
+  const handleConfirmClearTemporaryItems = useCallback(() => {
     if (!onInventoryChange) return;
     
-    const temporaryItems = inventory.filter(item => item.isTemporary);
-    if (temporaryItems.length === 0) return;
+    const count = temporaryItems.length;
+    if (count === 0) return;
 
     const newInventory = inventory.filter(item => !item.isTemporary);
     onInventoryChange(newInventory);
     
+    setClearTempConfirmOpen(false);
     toast({
       title: 'Itens temporários removidos',
-      description: `${temporaryItems.length} item(ns) temporário(s) removido(s) do inventário.`,
+      description: `${count} item(ns) temporário(s) removido(s) do inventário.`,
     });
-  }, [inventory, onInventoryChange, toast]);
+  }, [inventory, temporaryItems.length, onInventoryChange, toast]);
 
   // Itens equipados mapeados por slot
   const equippedItems = useMemo(() => {
@@ -659,7 +673,7 @@ export function MobileInventorySheet({
               {/* Botão limpar itens temporários */}
               {!readOnly && temporaryItemsCount > 0 && (
                 <button
-                  onClick={handleClearTemporaryItems}
+                  onClick={handleRequestClearTemporaryItems}
                   className="flex items-center gap-1 px-2 py-1 rounded text-[10px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/30 hover:bg-amber-500/20 transition-colors ml-auto"
                 >
                   <Clock className="w-3 h-3" />
@@ -931,6 +945,71 @@ export function MobileInventorySheet({
                   label: 'Usar',
                   onClick: handleConfirmUseItem,
                   type: 'primary',
+                },
+              ]}
+              layout="row"
+            />
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Confirmação - Limpar Itens Temporários */}
+      <Dialog open={clearTempConfirmOpen} onOpenChange={setClearTempConfirmOpen}>
+        <DialogContent className="w-[90vw] max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Clock className="w-5 h-5 text-amber-400" />
+              Limpar Itens Temporários
+            </DialogTitle>
+            <DialogDescription>
+              Confirme a remoção dos itens temporários abaixo.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-3">
+            {/* Lista de itens temporários */}
+            <div className="max-h-[150px] overflow-y-auto space-y-2">
+              {temporaryItems.map(item => (
+                <div 
+                  key={item.id}
+                  className="flex items-center gap-2 p-2 bg-muted/30 rounded-lg border border-border/50"
+                >
+                  <Clock className="w-4 h-4 text-amber-400 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{item.name}</p>
+                    <p className="text-[9px] text-muted-foreground truncate">
+                      {item.temporarySource || 'Item temporário'}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Aviso */}
+            <div className="flex items-center gap-2 p-2 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+              <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0" />
+              <span className="text-[11px] text-amber-400">
+                {temporaryItems.length} item(ns) será(ão) removido(s).
+              </span>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <MobileButtonGroup
+              buttons={[
+                {
+                  id: 'cancel',
+                  label: 'Cancelar',
+                  onClick: () => setClearTempConfirmOpen(false),
+                  variant: 'outline',
+                  type: 'secondary',
+                },
+                {
+                  id: 'confirm',
+                  label: 'Remover',
+                  onClick: handleConfirmClearTemporaryItems,
+                  type: 'primary',
+                  className: 'bg-amber-600 hover:bg-amber-700',
                 },
               ]}
               layout="row"

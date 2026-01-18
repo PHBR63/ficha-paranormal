@@ -217,6 +217,8 @@ export function InventoryPanel({
   // Estado para modal de detalhes do item
   const [itemDetailOpen, setItemDetailOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<ExtendedInventoryItem | null>(null);
+  // Estado para confirmação de limpeza de itens temporários
+  const [clearTempConfirmOpen, setClearTempConfirmOpen] = useState(false);
   const [newItem, setNewItem] = useState<Partial<ExtendedInventoryItem>>({
     name: '',
     category: '0',
@@ -422,21 +424,33 @@ export function InventoryPanel({
   // Toast para notificações
   const { toast } = useToast();
 
-  // Handler para remover todos os itens temporários (fim da cena)
-  const handleClearTemporaryItems = useCallback(() => {
+  // Lista de itens temporários (para exibir no dialog de confirmação)
+  const temporaryItems = useMemo(() => {
+    return inventory.filter(item => item.isTemporary);
+  }, [inventory]);
+
+  // Handler para abrir confirmação de limpeza
+  const handleRequestClearTemporaryItems = useCallback(() => {
+    if (temporaryItems.length === 0) return;
+    setClearTempConfirmOpen(true);
+  }, [temporaryItems.length]);
+
+  // Handler para confirmar remoção de todos os itens temporários (fim da cena)
+  const handleConfirmClearTemporaryItems = useCallback(() => {
     if (!onInventoryChange) return;
     
-    const temporaryItems = inventory.filter(item => item.isTemporary);
-    if (temporaryItems.length === 0) return;
+    const count = temporaryItems.length;
+    if (count === 0) return;
 
     const newInventory = inventory.filter(item => !item.isTemporary);
     onInventoryChange(newInventory);
     
+    setClearTempConfirmOpen(false);
     toast({
       title: 'Itens temporários removidos',
-      description: `${temporaryItems.length} item(ns) temporário(s) removido(s) do inventário.`,
+      description: `${count} item(ns) temporário(s) removido(s) do inventário.`,
     });
-  }, [inventory, onInventoryChange, toast]);
+  }, [inventory, temporaryItems.length, onInventoryChange, toast]);
 
   // Verifica se pode adicionar item da categoria selecionada
   const canAddSelectedCategory = useMemo(() => {
@@ -1059,7 +1073,7 @@ export function InventoryPanel({
                     size="sm" 
                     variant="outline" 
                     className="font-display text-[10px] sm:text-xs h-8 px-2 sm:px-3 touch-manipulation border-amber-500/30 text-amber-400 hover:bg-amber-500/10"
-                    onClick={handleClearTemporaryItems}
+                    onClick={handleRequestClearTemporaryItems}
                   >
                     <Clock className="w-3.5 h-3.5 sm:w-3 sm:h-3 sm:mr-1" />
                     <span className="hidden sm:inline">LIMPAR TEMP</span>
@@ -1218,6 +1232,75 @@ export function InventoryPanel({
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Confirmação - Limpar Itens Temporários */}
+      <Dialog open={clearTempConfirmOpen} onOpenChange={setClearTempConfirmOpen}>
+        <DialogContent className="sm:max-w-md bg-popover">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 font-display">
+              <Clock className="w-5 h-5 text-amber-400" />
+              Limpar Itens Temporários
+            </DialogTitle>
+            <DialogDescription>
+              Confirme a remoção dos itens temporários abaixo. Esta ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-2">
+            {/* Lista de itens temporários */}
+            <div className="max-h-[200px] overflow-y-auto space-y-2">
+              {temporaryItems.map(item => (
+                <div 
+                  key={item.id}
+                  className="flex items-center gap-3 p-2 bg-muted/30 rounded-lg border border-border/50"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center">
+                    <Clock className="w-4 h-4 text-amber-400" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{item.name}</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {item.temporarySource || 'Item temporário'}
+                    </p>
+                  </div>
+                  <Badge 
+                    variant="outline" 
+                    className="text-[9px] px-1.5 bg-amber-500/10 text-amber-400 border-amber-500/30"
+                  >
+                    {item.category !== '0' ? `Cat. ${item.category}` : 'Sem Cat.'}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+
+            {/* Aviso */}
+            <div className="flex items-center gap-2 p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+              <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0" />
+              <span className="text-xs text-amber-400">
+                {temporaryItems.length} item(ns) será(ão) removido(s) do inventário.
+              </span>
+            </div>
+
+            {/* Botões */}
+            <div className="flex gap-3 pt-2">
+              <Button 
+                variant="outline" 
+                className="flex-1"
+                onClick={() => setClearTempConfirmOpen(false)}
+              >
+                Cancelar
+              </Button>
+              <Button 
+                className="flex-1 bg-amber-600 hover:bg-amber-700 text-white"
+                onClick={handleConfirmClearTemporaryItems}
+              >
+                <Trash className="w-4 h-4 mr-2" />
+                Confirmar Remoção
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 
