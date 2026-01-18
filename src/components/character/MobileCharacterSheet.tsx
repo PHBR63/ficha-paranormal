@@ -61,6 +61,7 @@ import { RitualSelectionModal } from './RitualSelectionModal';
 import { NonOccultistRitualModal, RitualSource } from './NonOccultistRitualModal';
 import { IntellectSkillSelectModal } from './IntellectSkillSelectModal';
 import { ElementResistanceSelectModal } from './ElementResistanceSelectModal';
+import { TrainingGradeSelectModal, type TrainingGradeResult, type SkillUpgradeChoice, applyTrainingGradeUpgrades } from './TrainingGradeSelectModal';
 import { BonusSummaryCard } from './BonusSummaryCard';
 import { ClassPowerBonusesPanel } from './ClassPowerBonusesPanel';
 import { useAutoConditions } from '@/hooks/useAutoConditions';
@@ -215,6 +216,11 @@ interface MobileCharacterSheetProps {
     skill_training_choices?: Record<string, Array<{ skillId: string; fromLevel: number; toLevel: number }>>;
     // Sub-escolhas de poderes de classe (Especialista em Arma, Perito, etc.)
     class_power_choices?: Record<string, { powerId: string; choiceType: string; chosenValues: string[] }>;
+    // Escolhas de Grau de Treinamento (NEX 35% e 70%)
+    training_grade_choices?: {
+      nex35?: Array<{ skillId: string; fromLevel: number; toLevel: number }>;
+      nex70?: Array<{ skillId: string; fromLevel: number; toLevel: number }>;
+    };
   };
   onOpenDiceRoller: () => void;
   onOpenRest: () => void;
@@ -306,6 +312,10 @@ export function MobileCharacterSheet({
   const [intellectSkillModalOpen, setIntellectSkillModalOpen] = useState(false);
   const [elementResistanceModalOpen, setElementResistanceModalOpen] = useState(false);
   const [pendingPower, setPendingPower] = useState<ParanormalPower | null>(null);
+  
+  // Modal de Grau de Treinamento (NEX 35% e 70%)
+  const [trainingGradeModalOpen, setTrainingGradeModalOpen] = useState(false);
+  const [trainingGradeNex, setTrainingGradeNex] = useState<35 | 70>(35);
   
   // Modal de rituais para não-ocultistas
   const [nonOccultistRitualModalOpen, setNonOccultistRitualModalOpen] = useState(false);
@@ -1312,6 +1322,53 @@ export function MobileCharacterSheet({
     setElementResistanceModalOpen(false);
   }, [pendingPower, saveParanormalPower]);
 
+  // Handler para abrir modal de Grau de Treinamento
+  const handleOpenTrainingGradeModal = useCallback((nex: 35 | 70) => {
+    setTrainingGradeNex(nex);
+    setTrainingGradeModalOpen(true);
+  }, []);
+
+  // Handler para confirmar escolhas de Grau de Treinamento
+  const handleTrainingGradeConfirm = useCallback(async (result: TrainingGradeResult) => {
+    if (!character) return;
+    
+    // Busca escolhas existentes
+    const existingChoices = character.training_grade_choices || {};
+    
+    // Atualiza as escolhas para o NEX específico
+    const updatedChoices = {
+      ...existingChoices,
+      [result.nex === 35 ? 'nex35' : 'nex70']: result.choices,
+    };
+    
+    // Aplica os upgrades às perícias
+    const updatedSkills = applyTrainingGradeUpgrades(
+      character.skills || {},
+      result.choices
+    );
+    
+    // Salva no banco
+    const { error } = await supabase
+      .from('characters')
+      .update({
+        training_grade_choices: updatedChoices,
+        skills: updatedSkills,
+      })
+      .eq('id', character.id);
+    
+    if (error) {
+      toast.error('Erro ao salvar', { description: error.message });
+      return;
+    }
+    
+    toast.success('Grau de Treinamento configurado!', {
+      description: `${result.choices.length} perícias aprimoradas no NEX ${result.nex}%.`,
+    });
+    
+    setTrainingGradeModalOpen(false);
+    if (onRefetch) await onRefetch();
+  }, [character, onRefetch]);
+
   // Handler para confirmar escolha de ritual
   const handleRitualFromPowerConfirm = useCallback(async (ritualId: string) => {
     if (!pendingPower || !character) return;
@@ -1930,6 +1987,7 @@ export function MobileCharacterSheet({
             abilities={character.abilities}
             characterClass={character.class}
             nex={character.nex}
+            intellect={character.intellect}
             classPowerChoices={character.class_power_choices || {}}
             equippedWeaponId={equippedWeapons[0]?.id}
             equippedWeaponName={equippedWeapons[0]?.name}
@@ -1943,10 +2001,12 @@ export function MobileCharacterSheet({
             hasExcessRituals={hasExcessRituals}
             transcenderUsed={transcenderUsedFromDB}
             totalSlotsUsed={totalSlotsUsedFromDB}
+            trainingGradeChoices={character.training_grade_choices}
             onPowerClick={handlePowerClick}
             onOpenExcessPowersModal={() => setExcessPowersModalOpen(true)}
             onOpenExcessRitualsModal={() => setExcessRitualsModalOpen(true)}
             onOpenRemovedPowersHistory={() => setRemovedPowersHistoryOpen(true)}
+            onConfigureTrainingGrade={handleOpenTrainingGradeModal}
             ritualHistoryButton={
               <MobileRitualCastHistory
                 history={castHistory}
@@ -2502,6 +2562,22 @@ export function MobileCharacterSheet({
         onClose={() => setElementResistanceModalOpen(false)}
         onConfirm={handleElementResistanceConfirm}
         alreadyResistant={[]}
+      />
+
+      {/* Modal de Grau de Treinamento */}
+      <TrainingGradeSelectModal
+        isOpen={trainingGradeModalOpen}
+        onClose={() => setTrainingGradeModalOpen(false)}
+        onConfirm={handleTrainingGradeConfirm}
+        nex={trainingGradeNex}
+        characterClass={character.class}
+        intellect={character.intellect}
+        currentSkills={character.skills || {}}
+        existingChoices={
+          (trainingGradeNex === 35
+            ? character.training_grade_choices?.nex35 || []
+            : character.training_grade_choices?.nex70 || []) as SkillUpgradeChoice[]
+        }
       />
     </div>
   );
