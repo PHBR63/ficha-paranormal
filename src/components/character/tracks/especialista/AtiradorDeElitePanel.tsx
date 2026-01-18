@@ -10,7 +10,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Crosshair, Target, Zap, Skull, CheckCircle2, Loader2 } from 'lucide-react';
+import { Crosshair, Target, Zap, Skull, CheckCircle2, Loader2, Clock } from 'lucide-react';
+import { TRACK_EFFECT_IDS } from '@/hooks';
 import { DrawerClose } from '@/components/ui/drawer';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { MobileCollapsibleSection } from '../../mobile/MobileCollapsibleSection';
@@ -80,22 +81,35 @@ function AtiradorDeElitePanelComponent(props: AtiradorDeElitePanelProps) {
       {track.unlockedAbilities.map((ability) => {
         const isActivating = track.activatingAbility === ability.id;
         const canAfford = track.canAffordAbility(ability);
+        
+        // Verifica se Disparo Letal está ativo via sistema de efeitos
+        const isDisparoLetalActive = ability.id === 'disparo-letal' && 
+          props.isEffectActive?.(TRACK_EFFECT_IDS.DISPARO_LETAL);
 
         return (
           <div 
             key={ability.id}
-            className={`${isMobile ? 'p-2.5' : 'p-3'} rounded-lg bg-background/50 border border-border/50 space-y-2`}
+            className={`${isMobile ? 'p-2.5' : 'p-3'} rounded-lg bg-background/50 border ${
+              isDisparoLetalActive ? 'border-red-500/50 bg-red-500/10' : 'border-border/50'
+            } space-y-2`}
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 {ability.id === 'mira-de-elite' && <Target className={`${isMobile ? 'h-3.5 w-3.5' : 'h-4 w-4'} text-amber-400`} />}
-                {ability.id === 'disparo-letal' && <Zap className={`${isMobile ? 'h-3.5 w-3.5' : 'h-4 w-4'} text-red-400`} />}
+                {ability.id === 'disparo-letal' && <Zap className={`${isMobile ? 'h-3.5 w-3.5' : 'h-4 w-4'} ${isDisparoLetalActive ? 'text-red-400 animate-pulse' : 'text-red-400'}`} />}
                 {ability.id === 'disparo-impactante' && <Target className={`${isMobile ? 'h-3.5 w-3.5' : 'h-4 w-4'} text-orange-400`} />}
                 {ability.id === 'atirar-para-matar' && <Skull className={`${isMobile ? 'h-3.5 w-3.5' : 'h-4 w-4'} text-red-500`} />}
                 <span className={`font-medium ${isMobile ? 'text-xs' : 'text-sm'}`}>{ability.name}</span>
                 {!isMobile && (
                   <Badge variant="outline" className="text-[10px]">
                     NEX {ability.minNex}%
+                  </Badge>
+                )}
+                {/* Badge ATIVO para Disparo Letal */}
+                {isDisparoLetalActive && (
+                  <Badge className="bg-red-500/20 text-red-300 border-red-500/30 text-[9px] h-5 animate-pulse">
+                    <Clock className="h-2.5 w-2.5 mr-1" />
+                    ATIVO
                   </Badge>
                 )}
               </div>
@@ -109,19 +123,26 @@ function AtiradorDeElitePanelComponent(props: AtiradorDeElitePanelProps) {
                   <Badge variant="outline" className={`${isMobile ? 'text-[9px] h-5' : 'text-[10px]'}`}>
                     {ability.peCost} PE
                   </Badge>
-                  <Button
-                    size="sm"
-                    variant={canAfford ? "default" : "outline"}
-                    disabled={!canAfford || isActivating}
-                    onClick={() => track.handleUseAbility(ability)}
-                    className={isMobile ? "h-6 text-[10px] px-2" : "h-7 text-xs"}
-                  >
-                    {isActivating ? (
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                    ) : (
-                      'Usar'
-                    )}
-                  </Button>
+                  {/* Botão muda para "Ativo" quando Disparo Letal está ativo */}
+                  {isDisparoLetalActive ? (
+                    <Badge className="bg-red-500 text-white text-[10px] h-7 px-2">
+                      +2 Crítico
+                    </Badge>
+                  ) : (
+                    <Button
+                      size="sm"
+                      variant={canAfford ? "default" : "outline"}
+                      disabled={!canAfford || isActivating}
+                      onClick={() => track.handleUseAbility(ability)}
+                      className={isMobile ? "h-6 text-[10px] px-2" : "h-7 text-xs"}
+                    >
+                      {isActivating ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        'Usar'
+                      )}
+                    </Button>
+                  )}
                 </div>
               )}
             </div>
@@ -129,6 +150,16 @@ function AtiradorDeElitePanelComponent(props: AtiradorDeElitePanelProps) {
             <p className={`${isMobile ? 'text-[10px]' : 'text-xs'} text-muted-foreground`}>
               {ability.shortEffect}
             </p>
+
+            {/* Info extra para Disparo Letal ativo */}
+            {isDisparoLetalActive && (
+              <div className={`flex items-center gap-2 ${isMobile ? 'mt-1.5 p-1.5' : 'mt-1 p-2'} rounded bg-red-500/10 border border-red-500/20`}>
+                <Zap className="h-3 w-3 text-red-400" />
+                <span className={`${isMobile ? 'text-[10px]' : 'text-xs'} text-red-300`}>
+                  Margem de ameaça +2 até o final do próximo turno
+                </span>
+              </div>
+            )}
 
             {/* Info extra para Mira de Elite */}
             {ability.id === 'mira-de-elite' && (
