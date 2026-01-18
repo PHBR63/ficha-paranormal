@@ -20,6 +20,7 @@ import { ALL_CLASS_ABILITIES } from '@/lib/class-abilities';
 import { ALL_RITUALS } from '@/lib/rituals/legacy-exports';
 import { EspecialistaArmaIndicator } from '@/components/character/EspecialistaArmaIndicator';
 import { PeritoIndicator } from '@/components/character/PeritoIndicator';
+import { TrainingGradeIndicator, type SkillUpgradeChoice } from '@/components/character/TrainingGradeIndicator';
 
 // Altura estimada por tipo de item
 const POWER_ITEM_HEIGHT = 76;
@@ -66,10 +67,17 @@ interface ClassPowerSubchoice {
   chosenValues: string[];
 }
 
+// Interface para escolhas de Grau de Treinamento por NEX
+interface TrainingGradeChoices {
+  nex35?: SkillUpgradeChoice[];
+  nex70?: SkillUpgradeChoice[];
+}
+
 interface MobilePowersTabProps {
   abilities: string[];
   characterClass?: string; // Classe do personagem para buscar dados da habilidade
   nex?: number; // NEX do personagem para escalonamento de Perito
+  intellect?: number; // Intelecto do personagem para cálculo de Grau de Treinamento
   classPowerChoices?: Record<string, ClassPowerSubchoice>; // Sub-escolhas de poderes
   equippedWeaponId?: string; // ID da arma equipada
   equippedWeaponName?: string; // Nome da arma equipada
@@ -85,10 +93,14 @@ interface MobilePowersTabProps {
   transcenderUsed?: number;
   // Total de slots de NEX usados (Transcender + Poder de Classe)
   totalSlotsUsed?: number;
+  // Escolhas de Grau de Treinamento (NEX 35% e 70%)
+  trainingGradeChoices?: TrainingGradeChoices;
   onPowerClick: (power: PowerDetailData) => void;
   onOpenExcessPowersModal: () => void;
   onOpenExcessRitualsModal: () => void;
   onOpenRemovedPowersHistory: () => void;
+  // Handler para abrir modal de configuração de Grau de Treinamento
+  onConfigureTrainingGrade?: (nex: 35 | 70) => void;
   // Componente opcional de histórico de rituais (renderizado na seção de rituais)
   ritualHistoryButton?: React.ReactNode;
 }
@@ -423,6 +435,7 @@ export const MobilePowersTab = memo(function MobilePowersTab({
   abilities,
   characterClass,
   nex = 5,
+  intellect = 1,
   classPowerChoices = {},
   equippedWeaponId,
   equippedWeaponName,
@@ -436,10 +449,12 @@ export const MobilePowersTab = memo(function MobilePowersTab({
   hasExcessRituals,
   transcenderUsed = 0,
   totalSlotsUsed = 0,
+  trainingGradeChoices = {},
   onPowerClick,
   onOpenExcessPowersModal,
   onOpenExcessRitualsModal,
   onOpenRemovedPowersHistory,
+  onConfigureTrainingGrade,
   ritualHistoryButton,
 }: MobilePowersTabProps) {
   // Buscar descrição de habilidade de classe e dados completos
@@ -557,6 +572,37 @@ export const MobilePowersTab = memo(function MobilePowersTab({
               const isPerito = abilityData?.id === 'perito' || 
                 powerSubchoice?.powerId === 'perito';
               
+              // Verifica se é Grau de Treinamento (NEX 35% ou 70%)
+              const isGrauTreinamento = abilityData?.id?.includes('grau-treinamento') ||
+                ability.toLowerCase().includes('grau de treinamento');
+              
+              // Detecta o NEX do Grau de Treinamento pelo ID ou contagem
+              let grauTreinamentoNex: 35 | 70 | null = null;
+              if (isGrauTreinamento) {
+                if (abilityData?.id?.includes('35')) {
+                  grauTreinamentoNex = 35;
+                } else if (abilityData?.id?.includes('70')) {
+                  grauTreinamentoNex = 70;
+                } else {
+                  // Fallback: conta quantas instâncias anteriores existem
+                  const previousGrauCount = abilities
+                    .slice(0, i)
+                    .filter(a => a.toLowerCase().includes('grau de treinamento')).length;
+                  grauTreinamentoNex = previousGrauCount === 0 ? 35 : 70;
+                }
+              }
+              
+              // Calcula quantidade esperada de escolhas para Grau de Treinamento
+              const getExpectedTrainingCount = () => {
+                const classBaseCount: Record<string, number> = {
+                  'Combatente': 2,
+                  'Especialista': 5,
+                  'Ocultista': 3,
+                };
+                const base = classBaseCount[characterClass || ''] || 2;
+                return Math.max(1, base + intellect);
+              };
+              
               return (
                 <div key={i} className="space-y-2">
                   <button
@@ -597,6 +643,22 @@ export const MobilePowersTab = memo(function MobilePowersTab({
                       nex={nex}
                       compact={false}
                       className="ml-2"
+                    />
+                  )}
+                  
+                  {/* Indicador especial de Grau de Treinamento */}
+                  {isGrauTreinamento && grauTreinamentoNex && (
+                    <TrainingGradeIndicator
+                      nex={grauTreinamentoNex}
+                      choices={
+                        grauTreinamentoNex === 35
+                          ? trainingGradeChoices.nex35 || []
+                          : trainingGradeChoices.nex70 || []
+                      }
+                      expectedCount={getExpectedTrainingCount()}
+                      compact={false}
+                      className="ml-2"
+                      onConfigure={onConfigureTrainingGrade ? () => onConfigureTrainingGrade(grauTreinamentoNex!) : undefined}
                     />
                   )}
                 </div>
