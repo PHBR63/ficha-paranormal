@@ -60,6 +60,7 @@ export default function Dashboard() {
         ...c,
         conditions: Array.isArray(c.conditions) ? c.conditions as string[] : []
       }));
+      console.log('[Dashboard] Loaded characters:', chars.length, chars);
       setCharacters(chars);
       setLoading(false);
     }
@@ -288,6 +289,7 @@ export default function Dashboard() {
             <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#8B0000]/40 to-transparent" />
           </div>
 
+          {(() => { console.log('[Dashboard] Render - loading:', loading, 'characters.length:', characters.length); return null; })()}
           {loading ? (
             <div className="flex flex-col items-center justify-center py-16">
               <div className="relative">
