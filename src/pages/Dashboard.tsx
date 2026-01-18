@@ -60,7 +60,6 @@ export default function Dashboard() {
         ...c,
         conditions: Array.isArray(c.conditions) ? c.conditions as string[] : []
       }));
-      console.log('[Dashboard] Loaded characters:', chars.length, chars);
       setCharacters(chars);
       setLoading(false);
     }
@@ -192,9 +191,9 @@ export default function Dashboard() {
                   />
                 </span>
               </h2>
-              <p className="text-sm text-[#808080] mt-1 hidden sm:block">
+              <span className="text-sm text-[#808080] mt-1 hidden sm:block">
                 <BlurText text="Gerencie seus agentes e missões na Ordo Realitas." delay={0.3} />
-              </p>
+              </span>
             </div>
             <div className="flex gap-2 sm:gap-3">
               {isAdmin && (
@@ -289,7 +288,6 @@ export default function Dashboard() {
             <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#8B0000]/40 to-transparent" />
           </div>
 
-          {(() => { console.log('[Dashboard] Render - loading:', loading, 'characters.length:', characters.length); return null; })()}
           {loading ? (
             <div className="flex flex-col items-center justify-center py-16">
               <div className="relative">

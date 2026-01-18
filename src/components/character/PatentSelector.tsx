@@ -193,19 +193,21 @@ export function PatentSelector({ value, onChange }: PatentSelectorProps) {
                   {patent.name}
                 </span>
 
-                {/* Tooltip com detalhes */}
+                {/* Tooltip com detalhes - usando div ao invés de button para evitar nesting inválido */}
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <button
-                      type="button"
+                    <div
+                      role="button"
+                      tabIndex={0}
                       className={cn(
-                        "absolute bottom-2 right-2 p-1 rounded-full",
+                        "absolute bottom-2 right-2 p-1 rounded-full cursor-pointer",
                         isSelected ? "text-white/70 hover:text-white" : "text-muted-foreground hover:text-foreground"
                       )}
                       onClick={(e) => e.stopPropagation()}
+                      onKeyDown={(e) => e.key === 'Enter' && e.stopPropagation()}
                     >
                       <Info className="w-4 h-4" />
-                    </button>
+                    </div>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" className="max-w-xs">
                     <div className="space-y-2">
