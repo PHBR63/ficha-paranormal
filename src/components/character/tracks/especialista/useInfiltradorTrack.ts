@@ -1,15 +1,18 @@
 /**
  * useInfiltradorTrack - Hook de lógica para a trilha Infiltrador
  * 
- * Encapsula toda a lógica de habilidades da trilha:
- * - NEX 10%: Ataque Furtivo (+1d6/+2d6/+3d6/+4d6 dano extra, corpo a corpo ou alcance curto)
+ * Encapsula toda a lógica de habilidades da trilha conforme Livro Base v1.3:
+ * - NEX 10%: Ataque Furtivo (1 PE para +Xd6 dano extra baseado no NEX)
+ *   - NEX 10%: +1d6
+ *   - NEX 40%: +2d6  
+ *   - NEX 65%: +3d6
+ *   - NEX 99%: +4d6
  * - NEX 40%: Gatuno (+5 Atletismo/Crime, esconder sem penalidade de movimento)
- * - NEX 65%: Assassinar (dobra dados do Ataque Furtivo, até final do próximo turno)
- * - NEX 99%: Sombra Fugaz (ignora penalidade de -3d20 Furtividade após ação chamativa)
+ * - NEX 65%: Assassinar (3 PE, dobra dados do Ataque Furtivo até final do próximo turno)
+ * - NEX 99%: Sombra Fugaz (3 PE, ignora penalidade de -3d20 Furtividade após ação chamativa)
  * 
- * ATUALIZAÇÃO: Ataque Furtivo agora suporta PE extra para dados adicionais
- * - Custo base: 1 PE
- * - Pode gastar PE adicional para +1d6 cada (até limite por rodada)
+ * NOTA: O custo do Ataque Furtivo é FIXO em 1 PE. 
+ * Os dados são determinados automaticamente pelo NEX, sem opção de PE extra.
  * 
  * @module tracks/especialista/useInfiltradorTrack
  */
@@ -17,14 +20,21 @@
 import { useState, useMemo, useCallback } from 'react';
 import { toast } from 'sonner';
 import { TRACK_EFFECT_IDS, type EffectDuration, type ComputedEffects } from '@/hooks';
-import { getPELimitByNex } from '@/lib/dice-roller';
+
+// =====================================================
+// Constantes
+// =====================================================
+
+/** Custo fixo de PE do Ataque Furtivo (regra oficial) */
+export const SNEAK_ATTACK_PE_COST = 1;
 
 // =====================================================
 // Funções Auxiliares
 // =====================================================
 
 /**
- * Calcula a quantidade de dados base do Ataque Furtivo baseado no NEX
+ * Calcula a quantidade de dados do Ataque Furtivo baseado no NEX
+ * Conforme tabela oficial do Livro Base v1.3
  */
 export function getAtaqueFurtivoBaseDice(nex: number): number {
   if (nex >= 99) return 4;
@@ -103,12 +113,8 @@ export function useInfiltradorTrack({
 
   // Verifica se Ataque Furtivo já foi usado nesta rodada
   const ataqueFurtivoUsedThisRound = usedAbilitiesThisRound.includes('ataque-furtivo-trilha');
-  
-  // Limite de PE por rodada
-  const peLimit = useMemo(() => getPELimitByNex(nex), [nex]);
-  const maxExtraPE = Math.max(0, peLimit - 1); // -1 porque 1 PE é o custo base
 
-  // Dados base de dano do Ataque Furtivo
+  // Dados de dano do Ataque Furtivo (determinados pelo NEX)
   const sneakAttackBaseDice = useMemo(() => getAtaqueFurtivoBaseDice(nex), [nex]);
   
   // Dados de dano do Ataque Furtivo (string formatada)
@@ -140,29 +146,19 @@ export function useInfiltradorTrack({
   const ignoresStealthPenalties = sueStealthBonuses?.ignoresAllPenalties ?? false;
 
   /**
-   * Ativa o Ataque Furtivo com PE extra opcional
-   * @param extraPE - PE adicional a gastar para dados extras (0 = só custo base)
+   * Ativa o Ataque Furtivo (custo fixo 1 PE)
+   * Dados determinados automaticamente pelo NEX
    */
-  const handleAtaqueFurtivo = useCallback((extraPE: number = 0) => {
-    const totalCost = 1 + extraPE;
-    
-    // Validar PE suficiente
-    if (peCurrent < totalCost) {
+  const handleAtaqueFurtivo = useCallback(() => {
+    // Validar PE suficiente (sempre 1 PE)
+    if (peCurrent < SNEAK_ATTACK_PE_COST) {
       toast.error('PE insuficiente', { 
-        description: `Ataque Furtivo requer ${totalCost} PE (1 base + ${extraPE} extra).` 
+        description: 'Ataque Furtivo requer 1 PE.' 
       });
       return;
     }
     
-    // Validar limite por rodada
-    if (extraPE > maxExtraPE) {
-      toast.warning('Limite excedido', { 
-        description: `Máximo de ${maxExtraPE} PE extra por rodada (limite: ${peLimit} PE/rodada).` 
-      });
-      return;
-    }
-    
-    // Validar uso por rodada
+    // Validar uso por rodada (1x/rodada)
     if (ataqueFurtivoUsedThisRound) {
       toast.warning('Já usado nesta rodada', { 
         description: 'Ataque Furtivo só pode ser usado 1x/rodada.' 
@@ -170,19 +166,17 @@ export function useInfiltradorTrack({
       return;
     }
 
-    // Deduzir PE
-    onPEChange(-totalCost);
+    // Deduzir PE (sempre 1)
+    onPEChange(-SNEAK_ATTACK_PE_COST);
     onAbilityUsed?.('ataque-furtivo-trilha');
     onActivateEffect?.(TRACK_EFFECT_IDS.ATAQUE_FURTIVO, 'Ataque Furtivo', 'instant');
     
-    // Calcular dados finais
-    const baseDice = sneakAttackBaseDice;
-    const totalDice = baseDice + extraPE;
-    const finalDice = assassinarActive ? totalDice * 2 : totalDice;
+    // Calcular dados finais (baseado no NEX, dobrado se Assassinar ativo)
+    const finalDice = assassinarActive ? sneakAttackBaseDice * 2 : sneakAttackBaseDice;
     const doubledText = assassinarActive ? ' (DOBRADO!)' : '';
     
     toast.success('Ataque Furtivo ativado!', {
-      description: `+${finalDice}d6 dano extra${doubledText}. Custo: ${totalCost} PE.`
+      description: `+${finalDice}d6 dano extra${doubledText}. Custo: 1 PE.`
     });
 
     // Consumir Assassinar após uso
@@ -195,8 +189,6 @@ export function useInfiltradorTrack({
     }
   }, [
     peCurrent, 
-    maxExtraPE, 
-    peLimit,
     ataqueFurtivoUsedThisRound, 
     onPEChange, 
     onAbilityUsed, 
@@ -280,10 +272,6 @@ export function useInfiltradorTrack({
     removesStealthMovementPenalty,
     ignoresStealthPenalties,
     
-    // Limites de PE
-    peLimit,
-    maxExtraPE,
-    
     // Dados do SUE
     sueStealthBonuses,
     hasSueData: !!computedEffects?.sneakAttack,
@@ -295,7 +283,7 @@ export function useInfiltradorTrack({
     handleSombraFugaz,
     
     // Helpers
-    canAffordAtaqueFurtivo: peCurrent >= 1 && !ataqueFurtivoUsedThisRound,
+    canAffordAtaqueFurtivo: peCurrent >= SNEAK_ATTACK_PE_COST && !ataqueFurtivoUsedThisRound,
     canAffordAssassinar: peCurrent >= 3 && !assassinarActive,
     canAffordSombraFugaz: peCurrent >= 3,
   };

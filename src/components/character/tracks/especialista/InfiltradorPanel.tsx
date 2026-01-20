@@ -108,7 +108,7 @@ function InfiltradorPanelComponent(props: InfiltradorPanelProps) {
             size="sm"
             variant={track.ataqueFurtivoUsedThisRound ? "outline" : "default"}
             disabled={!track.canAffordAtaqueFurtivo}
-            onClick={() => track.handleAtaqueFurtivo(0)}
+            onClick={() => track.handleAtaqueFurtivo()}
             className={isMobile ? "h-7 px-2 text-xs" : "shrink-0"}
           >
             <Zap className="h-3 w-3 mr-1" />
