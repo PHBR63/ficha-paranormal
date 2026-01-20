@@ -35,7 +35,7 @@ import { cn } from '@/lib/utils';
 import { rollSkillTest, rollDamage, DiceRollResult } from '@/lib/dice-roller';
 import { ComputedEffects } from '@/lib/unified-effects-engine';
 import { getSkillBonus } from '@/lib/character-data';
-import { useRitualBonusesForCombat, useRitualCombatBonuses, SustainedRitualInput, WeaponBuff, ELEMENT_BUFF_COLORS } from '@/hooks';
+import { useRitualBonusesForCombat, useRitualCombatBonuses, SustainedRitualInput, WeaponBuff, ELEMENT_BUFF_COLORS, useCombatFeedback } from '@/hooks';
 import { formatDamageFormula as formatBuffDamage } from '@/lib/rituals/legacy-exports';
 import { formatDamageFormula } from '@/lib/rituals/legacy-exports';
 import { getTrackCombatBonuses } from '@/lib/effects/track-effects-adapter';
@@ -1103,11 +1103,17 @@ export function CombatRollModal({
     other: 'bg-secondary/50 text-secondary-foreground',
   };
 
+  // === FEEDBACK SONORO E HÁPTICO ===
+  const combatFeedback = useCombatFeedback();
+
   // === HANDLERS DE ROLAGEM ===
 
   // Rolar ataque
   const handleRollAttack = () => {
     if (!weapon || !canAffordPE) return;
+
+    // Feedback de rolagem
+    combatFeedback.triggerRoll();
 
     // Deduzir PE
     if (totalPECost > 0) {
@@ -1122,6 +1128,26 @@ export function CombatRollModal({
       label: `Ataque: ${weapon.name}`,
       criticalThreshold: effectiveCritical,
     });
+
+    // Feedback baseado no resultado
+    // Fumble = todos os d20 rolaram 1 (falha crítica)
+    const isFumble = result.dice.every(d => d === 1);
+    
+    if (isFumble) {
+      combatFeedback.triggerFumble();
+    } else if (result.isCritical) {
+      combatFeedback.triggerCritical();
+    } else if (targetDefense !== null) {
+      // Se defesa foi informada, verifica acerto/erro
+      if (result.total >= targetDefense) {
+        combatFeedback.triggerHit();
+      } else {
+        combatFeedback.triggerMiss();
+      }
+    } else {
+      // Sem defesa, feedback neutro de rolagem completa
+      combatFeedback.triggerHit();
+    }
 
     setAttackResult(result);
     setPhase('attack');

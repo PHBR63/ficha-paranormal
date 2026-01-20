@@ -60,7 +60,7 @@ import confetti from 'canvas-confetti';
 import { rollSkillTest, rollDamage, DiceRollResult } from '@/lib/dice-roller';
 import { getSkillBonus } from '@/lib/character-data';
 import { ComputedEffects } from '@/lib/unified-effects-engine';
-import { WeaponBuff, ELEMENT_BUFF_COLORS, useRitualBonusesForCombat, useRitualCombatBonuses, SustainedRitualInput } from '@/hooks';
+import { WeaponBuff, ELEMENT_BUFF_COLORS, useRitualBonusesForCombat, useRitualCombatBonuses, SustainedRitualInput, useCombatFeedback } from '@/hooks';
 import { getElementConfig } from '@/lib/element-config';
 import { WeaponEntry } from './MobileCombatPanel';
 import { AniquiladorTechniqueModal, TechniqueEffects } from '@/components/character/AniquiladorTechniqueModal';
@@ -779,11 +779,15 @@ export function MobileCombatRollModal({
     return multiplier;
   }, [weapon, weaponBuffBonuses, unifiedEffects, activeTechniqueEffects, trackCombatBonuses]);
 
+  // === FEEDBACK SONORO E HÁPTICO ===
+  const combatFeedback = useCombatFeedback();
+
   // Rolar ataque
   const rollAttack = useCallback(() => {
     if (!weapon) return;
     
     setIsRolling(true);
+    combatFeedback.triggerRoll();
     
     setTimeout(() => {
       const result = rollSkillTest({
@@ -797,14 +801,28 @@ export function MobileCombatRollModal({
       setIsRolling(false);
       setPhase('attack');
       
-      // Confetti em crítico
-      if (result.isCritical) {
+      // Feedback baseado no resultado
+      const isFumble = result.dice.every(d => d === 1);
+      
+      if (isFumble) {
+        combatFeedback.triggerFumble();
+      } else if (result.isCritical) {
+        // Confetti + som de crítico
         confetti({
           particleCount: 100,
           spread: 70,
           origin: { y: 0.6 },
           colors: ['#ffd700', '#ff6b6b', '#4ecdc4'],
         });
+        combatFeedback.triggerCritical();
+      } else if (targetDefense !== null) {
+        if (result.total >= targetDefense) {
+          combatFeedback.triggerHit();
+        } else {
+          combatFeedback.triggerMiss();
+        }
+      } else {
+        combatFeedback.triggerHit();
       }
       
       // Paga PE
@@ -814,7 +832,7 @@ export function MobileCombatRollModal({
       
       onRollComplete?.(result);
     }, 500);
-  }, [weapon, attackAttribute, totalAttackBonus, criticalMargin, totalPECost, canAffordPE, currentPE, onPEChange, onRollComplete]);
+  }, [weapon, attackAttribute, totalAttackBonus, criticalMargin, totalPECost, canAffordPE, currentPE, onPEChange, onRollComplete, targetDefense, combatFeedback]);
 
   // Rolar dano - ATUALIZADO com advancedBonuses e buffDiceResult
   const rollDamageAction = useCallback(() => {

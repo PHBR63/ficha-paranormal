@@ -30,3 +30,4 @@ export * from './platform';
 // Hooks que não se encaixam em categorias específicas
 export * from './useAdminCheck';
 export * from './useDebouncedSave';
+export * from './useCombatFeedback';
