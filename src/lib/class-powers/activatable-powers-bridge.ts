@@ -29,6 +29,10 @@ interface CharacterPowerContext {
   peritoSkills?: string[];
   // Classe do personagem
   characterClass?: string;
+  // Origem do personagem (para poderes de origem ativáveis como "Saber é Poder")
+  origin?: string;
+  // Atributo sendo testado (para filtrar poderes aplicáveis por atributo)
+  testedAttribute?: 'strength' | 'agility' | 'vigor' | 'intellect' | 'presence';
 }
 
 // ========================================
@@ -142,8 +146,28 @@ export function getAtaqueEspecialTier(nex: number): { cost: number; bonus: numbe
 export function getActivatablePowersForCharacter(
   context: CharacterPowerContext
 ): ActivatablePower[] {
-  const { powers, abilities, nex, peritoSkills, characterClass } = context;
+  const { powers, abilities, nex, peritoSkills, characterClass, origin, testedAttribute } = context;
   const activatable: ActivatablePower[] = [];
+  
+  // ==================== ORIGENS ====================
+  
+  // Saber é Poder (Acadêmico) - só aparece em testes de Intelecto
+  const normalizedOrigin = origin?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim() || '';
+  const isAcademico = normalizedOrigin === 'academico' || normalizedOrigin === 'acadêmico';
+  const isIntellectTest = testedAttribute === 'intellect';
+  
+  if (isAcademico && isIntellectTest) {
+    activatable.push({
+      id: 'saber-e-poder',
+      name: 'Saber é Poder',
+      description: 'Quando faz um teste usando Intelecto, você pode gastar 2 PE para receber +5 nesse teste.',
+      peCost: 2,
+      effect: '+5 no teste',
+      icon: 'book', // Usa 'book' que mapeia para BookOpen no painel
+      effectType: 'skill_bonus',
+      skillBonus: 5,
+    });
+  }
   
   // ==================== ESPECIALISTA ====================
   
@@ -611,6 +635,15 @@ export function calculatePowerActivationEffects(
         skillBonusChange: 0,
         defenseBonus: 2,
         specialNote: '+2 Defesa e resistências (passivo)',
+      };
+    
+    // ==================== ORIGENS ====================
+    
+    case 'saber-e-poder':
+      // Acadêmico: +5 em testes de Intelecto por 2 PE
+      return {
+        skillBonusChange: 5,
+        specialNote: '+5 no teste de Intelecto (Saber é Poder)',
       };
       
     default:
