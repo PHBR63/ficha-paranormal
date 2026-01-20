@@ -56,6 +56,8 @@ interface DiceRollModalProps {
   nex?: number;
   intellect?: number;
   onPEChange?: (newPE: number) => void;
+  // Perícia sendo testada (ID para filtrar poderes aplicáveis como Perito)
+  currentSkill?: string;
 }
 
 // Componente de dado individual - animação simples sem loop
@@ -113,6 +115,7 @@ export function DiceRollModal({
   nex = 5,
   intellect = 1,
   onPEChange,
+  currentSkill,
 }: DiceRollModalProps) {
   // Estados
   const [phase, setPhase] = useState<'idle' | 'rolling' | 'done'>('idle');
@@ -368,6 +371,7 @@ export function DiceRollModal({
                   activationStates={activationStates}
                   onPowerToggle={togglePower}
                   peCurrent={peCurrent}
+                  currentSkill={currentSkill || label}
                   isExpanded={isPowerPanelExpanded}
                   onExpandToggle={() => setIsPowerPanelExpanded(!isPowerPanelExpanded)}
                 />

@@ -818,6 +818,15 @@ export function MobileCharacterSheet({
   }, []);
 
   // Memo de poderes ativáveis para rolagens (paridade com desktop)
+  // Extrai perícias escolhidas para Perito de class_power_choices
+  const peritoSkillsForActivation = useMemo(() => {
+    if (!character?.class_power_choices) return [];
+    const peritoChoice = Object.values(character.class_power_choices).find(
+      (choice) => choice.powerId === 'perito'
+    );
+    return peritoChoice?.chosenValues || [];
+  }, [character?.class_power_choices]);
+
   const activatablePowersForCharacter = useMemo(() => {
     if (!character) return [];
     return getActivatablePowersForCharacter({
@@ -829,11 +838,13 @@ export function MobileCharacterSheet({
       trainedSkills: Object.keys(character.skills || {}).filter(
         s => (character.skills?.[s] || 0) >= 1
       ),
+      peritoSkills: peritoSkillsForActivation, // Perícias escolhidas para Perito
       characterClass: character.class,
+      classTrack: character.class_track, // Trilha para poderes como Ataque Extra
       origin: character.origin,
       testedAttribute: rollTestedAttribute,
     });
-  }, [character, localPeCurrent, rollTestedAttribute]);
+  }, [character, localPeCurrent, rollTestedAttribute, peritoSkillsForActivation]);
 
   // Handler para rolagem de perícia (abre modal de dados)
   const handleSkillRoll = useCallback((skillName: string) => {

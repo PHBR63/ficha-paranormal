@@ -531,6 +531,15 @@ export default function CharacterSheet() {
   
   // Poderes ativáveis para DiceRollModal (Especialista, Combatente e Origens)
   // Recalculado dinamicamente quando o atributo testado muda (ex: Saber é Poder só aparece em testes de INT)
+  // Extrai perícias escolhidas para Perito de class_power_choices
+  const peritoSkillsForActivation = useMemo(() => {
+    if (!character?.class_power_choices) return [];
+    const peritoChoice = Object.values(character.class_power_choices).find(
+      (choice) => choice.powerId === 'perito'
+    );
+    return peritoChoice?.chosenValues || [];
+  }, [character?.class_power_choices]);
+  
   const activatablePowersForCharacter = useMemo(() => {
     if (!character) return [];
     return getActivatablePowersForCharacter({
@@ -540,11 +549,13 @@ export default function CharacterSheet() {
       peCurrent,
       intellect: character.intellect || 1,
       trainedSkills: Object.keys(character.skills || {}).filter(s => (character.skills?.[s] || 0) >= 1),
+      peritoSkills: peritoSkillsForActivation, // Perícias escolhidas para Perito
       characterClass: character.class,
+      classTrack: character.class_track, // Trilha para poderes como Ataque Extra
       origin: character.origin, // Para poderes de origem como "Saber é Poder" (Acadêmico)
       testedAttribute: rollTestedAttribute, // Atributo sendo testado (filtra poderes aplicáveis)
     });
-  }, [character, peCurrent, rollTestedAttribute]);
+  }, [character, peCurrent, rollTestedAttribute, peritoSkillsForActivation]);
   
   // Sistema Unificado de Efeitos já computado pelo useBonusSummaryFromSUE
   const unifiedEffects = bonusSummary.unifiedEffects;

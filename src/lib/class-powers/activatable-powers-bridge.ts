@@ -217,24 +217,52 @@ export function getActivatablePowersForCharacter(
   }
   
   // Eclético (habilidade core do Especialista em NEX 5%)
+  // Com Engenhosidade, oferece múltiplos níveis para escolha
   if (hasPowerOrAbility(powers, abilities, 'ecletico', 'Eclético')) {
-    const ecleticoLevel = getEcleticoLevel(nex);
-    const totalCost = ecleticoLevel.baseCost + ecleticoLevel.extraCost;
+    const hasEngenhosidade = hasPowerOrAbility(powers, abilities, 'engenhosidade', 'Engenhosidade');
     
-    let effectText = '+5 (treinado)';
-    if (nex >= 75) effectText = '+15 (expert)';
-    else if (nex >= 40) effectText = '+10 (veterano)';
-    
+    // Nível Treinado (sempre disponível)
     activatable.push({
-      id: 'ecletico',
-      name: 'Eclético',
-      description: `Recebe os benefícios de ser ${ecleticoLevel.level} na perícia.`,
-      peCost: totalCost,
-      effect: effectText,
+      id: 'ecletico-treinado',
+      name: hasEngenhosidade ? 'Eclético (Treinado)' : 'Eclético',
+      description: 'Recebe os benefícios de ser treinado (+5) na perícia.',
+      peCost: 2,
+      effect: '+5 (treinado)',
       icon: 'zap',
       effectType: 'skill_trained',
+      skillBonus: 5,
       excludedSkills: ['luta', 'pontaria'],
     });
+    
+    // Nível Veterano (requer Engenhosidade + NEX 40%)
+    if (hasEngenhosidade && nex >= 40) {
+      activatable.push({
+        id: 'ecletico-veterano',
+        name: 'Eclético (Veterano)',
+        description: 'Recebe os benefícios de ser veterano (+10) na perícia.',
+        peCost: 4, // 2 base + 2 adicional
+        effect: '+10 (veterano)',
+        icon: 'zap',
+        effectType: 'skill_trained',
+        skillBonus: 10,
+        excludedSkills: ['luta', 'pontaria'],
+      });
+    }
+    
+    // Nível Expert (requer Engenhosidade + NEX 75%)
+    if (hasEngenhosidade && nex >= 75) {
+      activatable.push({
+        id: 'ecletico-expert',
+        name: 'Eclético (Expert)',
+        description: 'Recebe os benefícios de ser expert (+15) na perícia.',
+        peCost: 6, // 2 base + 4 adicional
+        effect: '+15 (expert)',
+        icon: 'zap',
+        effectType: 'skill_trained',
+        skillBonus: 15,
+        excludedSkills: ['luta', 'pontaria'],
+      });
+    }
   }
   
   // Perito (habilidade core do Especialista em NEX 5%)
@@ -535,14 +563,24 @@ export function calculatePowerActivationEffects(
         specialNote: 'DT 20 para obter informação extra',
       };
       
-    case 'ecletico': {
-      const level = getEcleticoLevel(nex);
-      const bonus = level.level === 'expert' ? 15 : level.level === 'veteran' ? 10 : 5;
+    case 'ecletico':
+    case 'ecletico-treinado':
       return {
-        skillBonusChange: bonus,
-        specialNote: `Benefícios de ${level.level}`,
+        skillBonusChange: 5,
+        specialNote: 'Benefícios de treinado (+5)',
       };
-    }
+      
+    case 'ecletico-veterano':
+      return {
+        skillBonusChange: 10,
+        specialNote: 'Benefícios de veterano (+10)',
+      };
+      
+    case 'ecletico-expert':
+      return {
+        skillBonusChange: 15,
+        specialNote: 'Benefícios de expert (+15)',
+      };
       
     case 'perito': {
       const data = getPeritoExtraDice(nex);
