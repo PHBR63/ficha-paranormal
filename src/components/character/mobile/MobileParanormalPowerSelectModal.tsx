@@ -67,6 +67,7 @@ const PowerCard = memo(function PowerCard({
   isAffinityElement,
   affinityActive,
   chosenPowerIds,
+  unavailableReason,
   onSelect,
 }: {
   power: ParanormalPower;
@@ -75,6 +76,7 @@ const PowerCard = memo(function PowerCard({
   isAffinityElement: boolean;
   affinityActive: boolean;
   chosenPowerIds: string[];
+  unavailableReason: string | null;
   onSelect: () => void;
 }) {
   const ElementIcon = ELEMENT_ICONS[power.element];
@@ -94,9 +96,10 @@ const PowerCard = memo(function PowerCard({
       className={cn(
         "w-full p-3 rounded-lg border text-left transition-all active:scale-[0.98]",
         available ? "hover:border-primary" : "opacity-50 cursor-not-allowed",
-        alreadyHas && "border-primary/50 bg-primary/5",
+        alreadyHas && !available ? "border-destructive/30 bg-destructive/5" : alreadyHas && "border-primary/50 bg-primary/5",
         isAffinityElement && affinityActive && "ring-1 ring-paranormal/30"
       )}
+      title={unavailableReason || undefined}
     >
       <div className="flex items-start gap-3">
         {/* Ícone */}
@@ -111,7 +114,13 @@ const PowerCard = memo(function PowerCard({
             <Badge variant="outline" className={cn("text-[9px] px-1", elementColor)}>
               {ELEMENT_LABELS[power.element]}
             </Badge>
-            {alreadyHas && (
+            {alreadyHas && !available && (
+              <Badge variant="destructive" className="text-[9px] gap-0.5">
+                <Lock className="h-2.5 w-2.5" />
+                Bloqueado
+              </Badge>
+            )}
+            {alreadyHas && available && (
               <Badge variant="secondary" className="text-[9px] gap-0.5">
                 <Check className="h-2.5 w-2.5" />
                 Possui
@@ -148,16 +157,23 @@ const PowerCard = memo(function PowerCard({
         </div>
         
         {/* Indicadores */}
-        <div className="flex items-center gap-1 shrink-0">
-          {!available && !alreadyHas && (
-            <Lock className="h-4 w-4 text-muted-foreground" />
+        <div className="flex flex-col items-end gap-1 shrink-0">
+          {unavailableReason && (
+            <span className="text-[9px] text-destructive max-w-[100px] text-right leading-tight">
+              {unavailableReason}
+            </span>
           )}
-          {isAffinityElement && affinityActive && (
-            <Sparkles className="h-4 w-4 text-paranormal" />
-          )}
-          {available && (
-            <ChevronRight className="h-4 w-4 text-muted-foreground" />
-          )}
+          <div className="flex items-center gap-1">
+            {!available && (
+              <Lock className="h-4 w-4 text-destructive" />
+            )}
+            {isAffinityElement && affinityActive && (
+              <Sparkles className="h-4 w-4 text-paranormal" />
+            )}
+            {available && (
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            )}
+          </div>
         </div>
       </div>
     </button>
@@ -186,6 +202,7 @@ export const MobileParanormalPowerSelectModal = memo(function MobileParanormalPo
   const isPowerAvailable = useCallback((power: ParanormalPower): boolean => {
     const alreadyHas = chosenPowerIds.includes(power.id);
     if (alreadyHas) {
+      // Pode escolher novamente apenas se tiver afinidade ativa E for do elemento de afinidade
       if (affinityActive && power.element === elementalAffinity) {
         const timesPicked = characterPowers.filter(p => p.id === power.id).length;
         if (timesPicked >= 2) return false;
@@ -194,6 +211,26 @@ export const MobileParanormalPowerSelectModal = memo(function MobileParanormalPo
       }
     }
     return canChoosePower(power, chosenPowerIds);
+  }, [chosenPowerIds, characterPowers, affinityActive, elementalAffinity]);
+
+  // Retorna motivo pelo qual o poder não está disponível
+  const getUnavailableReason = useCallback((power: ParanormalPower): string | null => {
+    const alreadyHas = chosenPowerIds.includes(power.id);
+    if (alreadyHas) {
+      const timesPicked = characterPowers.filter(p => p.id === power.id).length;
+      if (affinityActive && power.element === elementalAffinity) {
+        if (timesPicked >= 2) return 'Máximo de 2 cópias (com afinidade)';
+      } else {
+        return 'Você já possui este poder';
+      }
+    }
+    if (power.prerequisite?.element && power.prerequisite?.count) {
+      const currentCount = getElementPowerCount(power.prerequisite.element, chosenPowerIds);
+      if (currentCount < power.prerequisite.count) {
+        return `Requer ${power.prerequisite.count} de ${ELEMENT_LABELS[power.prerequisite.element]}`;
+      }
+    }
+    return null;
   }, [chosenPowerIds, characterPowers, affinityActive, elementalAffinity]);
 
   // Filtra poderes
@@ -319,18 +356,22 @@ export const MobileParanormalPowerSelectModal = memo(function MobileParanormalPo
                 <p>Nenhum poder encontrado</p>
               </div>
             ) : (
-              filteredPowers.map(power => (
-                <PowerCard
-                  key={power.id}
-                  power={power}
-                  available={isPowerAvailable(power)}
-                  alreadyHas={chosenPowerIds.includes(power.id)}
-                  isAffinityElement={power.element === elementalAffinity}
-                  affinityActive={affinityActive}
-                  chosenPowerIds={chosenPowerIds}
-                  onSelect={() => handleSelect(power)}
-                />
-              ))
+              filteredPowers.map(power => {
+                const available = isPowerAvailable(power);
+                return (
+                  <PowerCard
+                    key={power.id}
+                    power={power}
+                    available={available}
+                    alreadyHas={chosenPowerIds.includes(power.id)}
+                    isAffinityElement={power.element === elementalAffinity}
+                    affinityActive={affinityActive}
+                    chosenPowerIds={chosenPowerIds}
+                    unavailableReason={!available ? getUnavailableReason(power) : null}
+                    onSelect={() => handleSelect(power)}
+                  />
+                );
+              })
             )}
           </div>
         </ScrollArea>
