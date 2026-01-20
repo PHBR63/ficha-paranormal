@@ -488,6 +488,13 @@ export function MobileDiceRollModal({
                         </TooltipProvider>
                       );
                     })}
+                    
+                    {/* Indicador de PE consumido */}
+                    {getTotalPECost() > 0 && (
+                      <span className="px-2 py-1 rounded font-medium flex items-center gap-1 bg-destructive/20 text-destructive">
+                        -{getTotalPECost()} PE
+                      </span>
+                    )}
                   </div>
 
                   {/* Total grande */}
