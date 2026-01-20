@@ -162,6 +162,12 @@ interface CombatRollModalProps {
   // Efeitos de trilha ativados (para processar bônus automáticos)
   activatedTrackEffects?: string[];
   
+  // === ORIGENS ===
+  // ID da origem do personagem (ex: 'militar', 'operario')
+  characterOrigin?: string;
+  // Arma vinculada pela origem (Operário - Ferramenta de Trabalho)
+  originBoundWeaponId?: string;
+  
   // Callback
   onRollComplete?: (result: DiceRollResult) => void;
 }
@@ -228,6 +234,8 @@ export function CombatRollModal({
   weaponBuffs = [], // Buffs de arma ativos
   activeConditions = [], // Condições ativas para exibição
   activatedTrackEffects = [], // Efeitos de trilha ativados
+  characterOrigin, // ID da origem do personagem
+  originBoundWeaponId, // Arma vinculada pela origem (Operário)
   onRollComplete,
 }: CombatRollModalProps) {
   // Bônus de rituais sustentados processados automaticamente
