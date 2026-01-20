@@ -4,6 +4,9 @@
  * Permite ao jogador escolher poderes de classe disponíveis durante
  * a progressão de NEX, com validação de pré-requisitos em tempo real.
  * 
+ * Inclui tratamento especial para Transcender: abre ParanormalPowerSelectModal
+ * ao invés de ClassPowerSubchoiceModal quando requiresChoice.type === 'power'.
+ * 
  * @module ClassPowerSelectionSection
  */
 
@@ -12,7 +15,7 @@ import { motion } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Sword, Lock, Check, AlertCircle, Plus, Info, ChevronDown, ChevronUp } from 'lucide-react';
+import { Sword, Lock, Check, AlertCircle, Plus, Info, ChevronDown, ChevronUp, Sparkles } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
@@ -25,7 +28,14 @@ import {
   getUnifiedPower 
 } from '@/lib/class-abilities-prerequisites';
 import { ClassPowerSubchoiceModal, ClassPowerSubchoice } from './ClassPowerSubchoiceModal';
+import { ParanormalPowerSelectModal } from './ParanormalPowerSelectModal';
 import { UnifiedClassPower } from '@/lib/class-powers/types';
+import { 
+  ParanormalPower, 
+  ParanormalElement,
+  getPowerById,
+  ELEMENT_LABELS 
+} from '@/lib/paranormal-powers';
 
 // ================== TIPOS ==================
 
@@ -50,6 +60,14 @@ interface ClassPowerSelectionSectionProps {
   onClassPowerChoicesChange: (choices: Record<string, ClassPowerSubchoice>) => void;
   /** Se Transcender foi usado (bloqueia seleção de poderes de classe) */
   usedTranscender?: boolean;
+  /** Poderes paranormais já possuídos pelo personagem (para Transcender) */
+  characterParanormalPowers?: ParanormalPower[];
+  /** Afinidade elemental do personagem */
+  elementalAffinity?: ParanormalElement | null;
+  /** Se a afinidade está ativa */
+  affinityActive?: boolean;
+  /** Callback quando Transcender é usado (para bloquear ganho de Sanidade) */
+  onTranscenderUsed?: () => void;
 }
 
 // ================== FUNÇÕES AUXILIARES ==================
@@ -97,10 +115,16 @@ export function ClassPowerSelectionSection({
   classPowerChoices,
   onClassPowerChoicesChange,
   usedTranscender = false,
+  characterParanormalPowers = [],
+  elementalAffinity,
+  affinityActive = false,
+  onTranscenderUsed,
 }: ClassPowerSelectionSectionProps) {
   const [isExpanded, setIsExpanded] = useState(true);
   const [subchoiceModalOpen, setSubchoiceModalOpen] = useState(false);
   const [pendingPower, setPendingPower] = useState<UnifiedClassPower | null>(null);
+  // Estado para modal de seleção de poder paranormal (Transcender)
+  const [paranormalSelectOpen, setParanormalSelectOpen] = useState(false);
 
   // Calcula quantas escolhas de poder este NEX oferece
   const powerChoicesCount = useMemo(() => {
@@ -165,6 +189,16 @@ export function ClassPowerSelectionSection({
     // Verifica se precisa de sub-escolha
     const unifiedPower = getUnifiedPower(power.id);
     if (unifiedPower && isPowerWithSubchoice(power.id)) {
+      const choiceType = unifiedPower.effects?.base?.requiresChoice?.type;
+      
+      // TRANSCENDER: Escolha de tipo 'power' abre ParanormalPowerSelectModal
+      if (choiceType === 'power') {
+        setPendingPower(unifiedPower);
+        setParanormalSelectOpen(true);
+        return;
+      }
+      
+      // Outros tipos de escolha - abre modal normal
       setPendingPower(unifiedPower);
       setSubchoiceModalOpen(true);
       return;
@@ -174,7 +208,7 @@ export function ClassPowerSelectionSection({
     onPowersChange([...selectedPowers, power.id]);
   }, [selectedPowers, powerChoicesCount, prerequisiteResults, existingAbilities, classPowerChoices, onPowersChange, onClassPowerChoicesChange]);
 
-  // Handler para confirmar sub-escolha
+  // Handler para confirmar sub-escolha normal
   const handleSubchoiceConfirm = useCallback((choice: ClassPowerSubchoice) => {
     if (!pendingPower) return;
 
@@ -191,6 +225,41 @@ export function ClassPowerSelectionSection({
     setPendingPower(null);
     setSubchoiceModalOpen(false);
   }, [pendingPower, selectedPowers, classPowerChoices, onPowersChange, onClassPowerChoicesChange]);
+
+  // Handler para seleção de poder paranormal (Transcender)
+  const handleParanormalPowerSelect = useCallback((paranormalPower: ParanormalPower) => {
+    if (!pendingPower) return;
+    
+    // Adiciona Transcender aos poderes selecionados
+    onPowersChange([...selectedPowers, pendingPower.id]);
+    
+    // Salva o poder paranormal escolhido como sub-escolha
+    onClassPowerChoicesChange({
+      ...classPowerChoices,
+      [pendingPower.id]: {
+        powerId: pendingPower.id,
+        choiceType: 'power',
+        chosenValues: [paranormalPower.id],
+      },
+    });
+    
+    // Sinaliza que Transcender foi usado (para bloquear ganho de Sanidade)
+    onTranscenderUsed?.();
+    
+    // Fecha modal e limpa estado
+    setParanormalSelectOpen(false);
+    setPendingPower(null);
+  }, [pendingPower, selectedPowers, classPowerChoices, onPowersChange, onClassPowerChoicesChange, onTranscenderUsed]);
+
+  // Helper para obter nome do poder paranormal a partir do ID
+  const getParanormalPowerName = useCallback((powerId: string): string => {
+    const power = getPowerById(powerId);
+    if (!power) return powerId;
+    const elementLabel = power.element !== 'generic' 
+      ? ` (${ELEMENT_LABELS[power.element]})`
+      : '';
+    return `${power.name}${elementLabel}`;
+  }, []);
 
   // Se não há escolhas de poder neste NEX, não renderiza
   if (powerChoicesCount <= 0) {
@@ -335,7 +404,14 @@ export function ClassPowerSelectionSection({
                         {isSelected && classPowerChoices[power.id] && (
                           <div className="mt-2 p-2 bg-primary/10 rounded text-xs">
                             <span className="font-medium">Escolha: </span>
-                            {classPowerChoices[power.id].chosenValues.join(', ')}
+                            {classPowerChoices[power.id].choiceType === 'power' ? (
+                              <span className="inline-flex items-center gap-1">
+                                <Sparkles className="w-3 h-3 text-paranormal" />
+                                {getParanormalPowerName(classPowerChoices[power.id].chosenValues[0])}
+                              </span>
+                            ) : (
+                              classPowerChoices[power.id].chosenValues.join(', ')
+                            )}
                           </div>
                         )}
                       </CardContent>
@@ -348,7 +424,7 @@ export function ClassPowerSelectionSection({
         </motion.div>
       </Collapsible>
 
-      {/* Modal de sub-escolha */}
+      {/* Modal de sub-escolha normal (grupo de armas, perícias, atributos) */}
       {pendingPower && (
         <ClassPowerSubchoiceModal
           open={subchoiceModalOpen}
@@ -368,6 +444,19 @@ export function ClassPowerSelectionSection({
           }
         />
       )}
+
+      {/* Modal de seleção de Poder Paranormal (Transcender) */}
+      <ParanormalPowerSelectModal
+        open={paranormalSelectOpen}
+        onOpenChange={(open) => {
+          setParanormalSelectOpen(open);
+          if (!open) setPendingPower(null);
+        }}
+        onSelectPower={handleParanormalPowerSelect}
+        characterPowers={characterParanormalPowers}
+        elementalAffinity={elementalAffinity || undefined}
+        affinityActive={affinityActive}
+      />
     </>
   );
 }
