@@ -117,6 +117,22 @@ export interface EffectMechanics {
   // === Proficiências ===
   grantsProficiency?: string[];    // Proficiências concedidas
 
+  // =====================================================
+  // EFEITOS DE ORIGEM (Fase de Correção)
+  // =====================================================
+
+  // === Bônus de Cura (Agente de Saúde - Técnica Medicinal) ===
+  healingBonus?: 'intellect' | 'presence' | 'vigor' | number; // Atributo ou valor fixo adicionado à cura
+
+  // === Bônus em Testes de Atributo (Acadêmico - Saber é Poder) ===
+  attributeTestBonus?: {
+    attribute: AttributeType;      // Atributo que recebe o bônus
+    bonus: number;                 // Valor do bônus
+  };
+
+  // === Requer Arma Escolhida (Operário - Ferramenta de Trabalho) ===
+  requiresChosenWeapon?: boolean;  // Se true, bônus só aplicam com arma vinculada
+
   // === Flags de Comportamento ===
   cannotAct?: boolean;             // Não pode agir
   cannotReact?: boolean;           // Não pode usar reações
