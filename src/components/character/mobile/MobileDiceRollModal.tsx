@@ -52,6 +52,7 @@ interface MobileDiceRollModalProps {
   attributeValue: number;
   skillBonus?: number;
   resistanceBonus?: number;
+  extraDice?: number;      // Dados extras no pool (Discurso Motivador +1d20 ou +2d20)
   bonusSources?: BonusSource[];
   onRollComplete?: (result: DiceRollResult) => void;
   // Novas props para ativação de poderes (paridade desktop)
@@ -103,6 +104,7 @@ export function MobileDiceRollModal({
   attributeValue,
   skillBonus = 0,
   resistanceBonus = 0,
+  extraDice = 0,       // Dados extras no pool (Discurso Motivador +1d20 ou +2d20)
   bonusSources = [],
   onRollComplete,
   // Novas props para ativação de poderes
@@ -200,6 +202,7 @@ export function MobileDiceRollModal({
         const rollResult = rollSkillTest({
           attributeValue,
           skillBonus: totalBonus,
+          extraDice,  // Passa dados extras do Discurso Motivador
           label,
         });
         
@@ -226,7 +229,7 @@ export function MobileDiceRollModal({
         onRollComplete?.(rollResult);
       }
     }, 80);
-  }, [attributeValue, skillBonus, resistanceBonus, activatedPowerEffects.extraBonus, label, diceCount, onRollComplete, getTotalPECost, onPEChange, peCurrent]);
+  }, [attributeValue, skillBonus, resistanceBonus, extraDice, activatedPowerEffects.extraBonus, label, diceCount, onRollComplete, getTotalPECost, onPEChange, peCurrent]);
 
   // Auto-rolar ao abrir
   useEffect(() => {

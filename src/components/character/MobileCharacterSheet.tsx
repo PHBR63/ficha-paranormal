@@ -396,7 +396,16 @@ export function MobileCharacterSheet({
     enablePersistence: !!character
   });
 
-  // Hook de autenticação para obter userId (precisa ser antes dos useEffects que dependem dele)
+  // Bônus de dados extras (Discurso Motivador: +1d20 ou +2d20)
+  const globalDiceBonus = useMemo(() => {
+    const discursoEffect = activatedEffects.activatedEffects.find(
+      e => e.id === 'track-discurso-motivador'
+    );
+    if (discursoEffect) {
+      return (discursoEffect.metadata?.diceBonus as number) ?? 1;
+    }
+    return 0;
+  }, [activatedEffects.activatedEffects]);
   const { user } = useAuth();
 
   // Calcula limite de poderes paranormais
@@ -2332,12 +2341,14 @@ export function MobileCharacterSheet({
         label={diceModalConfig?.skillName || 'Rolagem'}
         attributeValue={diceModalConfig?.pool || 1}
         skillBonus={diceModalConfig?.bonus}
+        extraDice={globalDiceBonus}
         bonusSources={diceModalConfig?.bonusSources}
         // Props para ativação de poderes (paridade desktop)
         activatablePowers={activatablePowersForCharacter}
         peCurrent={localPeCurrent}
         nex={character.nex}
         intellect={character.intellect}
+        currentSkill={rollTestedAttribute}
         onPEChange={(newPE) => handleCombatStatsChange({ 
           hp: localHpCurrent, 
           pe: newPE, 
