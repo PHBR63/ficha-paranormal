@@ -30,6 +30,8 @@ export interface UseNegociadorTrackProps {
   onActivateEffect?: (id: string, name: string, duration: EffectDuration, metadata?: Record<string, unknown>) => void;
   isEffectActive?: (id: string) => boolean;
   computedEffects?: ComputedEffects;
+  /** Callback para rastrear PE gasto na rodada */
+  onTrackPESpent?: (abilityName: string, cost: number) => void;
 }
 
 // =====================================================
@@ -48,6 +50,7 @@ export function useNegociadorTrack({
   onActivateEffect,
   isEffectActive,
   computedEffects,
+  onTrackPESpent,
 }: UseNegociadorTrackProps) {
   const [isConcentrating, setIsConcentrating] = useState(eloquenciaActive);
 
@@ -102,6 +105,7 @@ export function useNegociadorTrack({
     }
 
     onPEChange(peCurrent - totalCost);
+    onTrackPESpent?.('Eloquência', totalCost);
     setIsConcentrating(true);
     onEloquenciaToggle?.(true);
     
@@ -115,7 +119,7 @@ export function useNegociadorTrack({
     toast.success('Eloquência ativada!', {
       description: `${targetCount} alvo(s) afetado(s). Teste Diplomacia/Enganação/Intimidação vs Vontade. Concentre-se (1 ação padrão/rodada). Hostis: +5 resistência e novo teste/rodada.`
     });
-  }, [peCurrent, isConcentrating, onPEChange, onEloquenciaToggle, onActivateEffect]);
+  }, [peCurrent, isConcentrating, onPEChange, onEloquenciaToggle, onActivateEffect, onTrackPESpent]);
 
   /**
    * Usa Discurso Motivador (4 PE para +1d20, ou 8 PE para +2d20 em NEX 65%+)
@@ -131,6 +135,7 @@ export function useNegociadorTrack({
     }
 
     onPEChange(peCurrent - cost);
+    onTrackPESpent?.('Discurso Motivador', cost);
     
     onActivateEffect?.(
       TRACK_EFFECT_IDS.DISCURSO_MOTIVADOR ?? 'track-discurso-motivador', 
@@ -142,7 +147,7 @@ export function useNegociadorTrack({
     toast.success('Discurso Motivador!', {
       description: `Você e aliados em alcance curto ganham +${diceBonus}d20 em testes de perícia até o fim da cena.`
     });
-  }, [peCurrent, onPEChange, onActivateEffect]);
+  }, [peCurrent, onPEChange, onActivateEffect, onTrackPESpent]);
 
   /**
    * Usa "Eu Conheço um Cara" (1x/missão)
@@ -174,13 +179,14 @@ export function useNegociadorTrack({
     }
 
     onPEChange(peCurrent - 5);
+    onTrackPESpent?.('Truque de Mestre', 5);
     
     onActivateEffect?.(TRACK_EFFECT_IDS.TRUQUE_MESTRE ?? 'track-truque-mestre', 'Truque de Mestre', 'scene');
     
     toast.success('Truque de Mestre!', {
       description: 'Simule o efeito de qualquer habilidade que um aliado tenha usado nesta cena. Você ignora pré-requisitos mas paga todos os custos.'
     });
-  }, [peCurrent, onPEChange, onActivateEffect]);
+  }, [peCurrent, onPEChange, onActivateEffect, onTrackPESpent]);
 
   return {
     // Estado

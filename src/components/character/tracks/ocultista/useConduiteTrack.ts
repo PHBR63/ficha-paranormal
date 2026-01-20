@@ -92,6 +92,8 @@ export interface UseConduiteTrackProps {
   peCurrent: number;
   onPEChange: (newPE: number) => void;
   onActivateEffect?: (id: string, name: string, duration: EffectDuration, metadata?: Record<string, unknown>) => void;
+  /** Callback para rastrear PE gasto na rodada */
+  onTrackPESpent?: (abilityName: string, cost: number) => void;
 }
 
 // =====================================================
@@ -104,6 +106,7 @@ export function useConduiteTrack({
   peCurrent,
   onPEChange,
   onActivateEffect,
+  onTrackPESpent,
 }: UseConduiteTrackProps) {
   const { toast } = useToast();
   const [activatingAbility, setActivatingAbility] = useState<string | null>(null);
@@ -155,6 +158,7 @@ export function useConduiteTrack({
     // Deduz PE
     const newPE = peCurrent - ability.peCost;
     onPEChange(newPE);
+    onTrackPESpent?.(ability.name, ability.peCost);
 
     // Ativa efeito no SUE
     const effectId = ability.id === 'ampliar-ritual'
@@ -172,7 +176,7 @@ export function useConduiteTrack({
     });
 
     setActivatingAbility(null);
-  }, [peCurrent, onPEChange, toast, onActivateEffect]);
+  }, [peCurrent, onPEChange, toast, onActivateEffect, onTrackPESpent]);
 
   return {
     // Estado

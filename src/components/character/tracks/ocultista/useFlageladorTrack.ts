@@ -72,6 +72,8 @@ export interface UseFlageladorTrackProps {
   peCurrent: number;
   onPEChange: (newPE: number) => void;
   onActivateEffect?: (id: string, name: string, duration: EffectDuration, metadata?: Record<string, unknown>) => void;
+  /** Callback para rastrear PE gasto na rodada */
+  onTrackPESpent?: (abilityName: string, cost: number) => void;
 }
 
 // =====================================================
@@ -84,6 +86,7 @@ export function useFlageladorTrack({
   peCurrent,
   onPEChange,
   onActivateEffect,
+  onTrackPESpent,
 }: UseFlageladorTrackProps) {
   const { toast } = useToast();
   const [isActivating, setIsActivating] = useState(false);
@@ -127,6 +130,7 @@ export function useFlageladorTrack({
 
     const newPE = peCurrent - 2;
     onPEChange(newPE);
+    onTrackPESpent?.('Abraçar a Dor', 2);
 
     onActivateEffect?.(FLAGELADOR_EFFECT_IDS.ABRACAR_DOR, 'Abraçar a Dor', 'instant');
 
@@ -136,7 +140,7 @@ export function useFlageladorTrack({
     });
 
     setIsActivating(false);
-  }, [peCurrent, onPEChange, toast, onActivateEffect]);
+  }, [peCurrent, onPEChange, toast, onActivateEffect, onTrackPESpent]);
 
   return {
     // Estado
