@@ -60,6 +60,11 @@ import { AbilityDetailModal } from './AbilityDetailModal';
 import { RitualSelectionModal } from './RitualSelectionModal';
 import { NonOccultistRitualModal, RitualSource } from './NonOccultistRitualModal';
 import { IntellectSkillSelectModal } from './IntellectSkillSelectModal';
+import { 
+  OriginWeaponBindingModal, 
+  originRequiresWeaponBinding,
+  type BindableWeapon,
+} from './OriginWeaponBindingModal';
 import { ElementResistanceSelectModal } from './ElementResistanceSelectModal';
 import { TrainingGradeSelectModal, type TrainingGradeResult, type SkillUpgradeChoice, applyTrainingGradeUpgrades } from './TrainingGradeSelectModal';
 import { BonusSummaryCard } from './BonusSummaryCard';
@@ -335,6 +340,9 @@ export function MobileCharacterSheet({
   const [wizardOpen, setWizardOpen] = useState(false);
   const [wizardRitual, setWizardRitual] = useState<Ritual | null>(null);
   const [wizardEnhancements, setWizardEnhancements] = useState<string[]>([]);
+  
+  // Modal de seleção de arma para origens (Operário - Ferramenta de Trabalho)
+  const [originWeaponModalOpen, setOriginWeaponModalOpen] = useState(false);
   const [wizardPeCost, setWizardPeCost] = useState(0);
   
   // Estado local de stats para edição
@@ -2578,6 +2586,48 @@ export function MobileCharacterSheet({
             ? character.training_grade_choices?.nex35 || []
             : character.training_grade_choices?.nex70 || []) as SkillUpgradeChoice[]
         }
+      />
+
+      {/* Modal de Seleção de Arma para Origens (Operário - Ferramenta de Trabalho) */}
+      <OriginWeaponBindingModal
+        open={originWeaponModalOpen}
+        onClose={() => setOriginWeaponModalOpen(false)}
+        originId={character.origin?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-') || ''}
+        weapons={normalizedInventory
+          .filter(item => item.itemType === 'weapon')
+          .map(item => ({
+            id: item.id || '',
+            name: item.name,
+            category: (item as any).category || '0',
+            damage: (item as any).damage || '1d6',
+            damageType: (item as any).damageType,
+            type: (item as any).weaponType,
+            isEquipped: item.isEquipped,
+          })) as BindableWeapon[]}
+        currentBoundWeaponId={normalizedInventory.find(i => 
+          i.favoriteAbilityId === 'ferramenta-de-trabalho'
+        )?.id}
+        onSelectWeapon={async (weaponId: string) => {
+          // Remove binding anterior
+          const updatedInventory = normalizedInventory.map(item => ({
+            ...item,
+            favoriteAbilityId: item.favoriteAbilityId === 'ferramenta-de-trabalho' 
+              ? undefined 
+              : item.favoriteAbilityId,
+          }));
+          
+          // Aplica novo binding
+          const targetIndex = updatedInventory.findIndex(i => i.id === weaponId);
+          if (targetIndex >= 0) {
+            updatedInventory[targetIndex] = {
+              ...updatedInventory[targetIndex],
+              favoriteAbilityId: 'ferramenta-de-trabalho',
+            };
+          }
+          
+          await handleInventoryChange(updatedInventory);
+          toast.success('Ferramenta de Trabalho selecionada!');
+        }}
       />
     </div>
   );

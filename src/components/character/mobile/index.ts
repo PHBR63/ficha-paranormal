@@ -53,6 +53,7 @@ export { MobileVirtualizedPowersList, type PowerItem, type PowerItemType } from 
 
 // Fase de paridade desktop/mobile - Componentes de UI (não trilhas)
 export { MobileConditionManager, type ActiveCondition } from './MobileConditionManager';
+export { MobileOriginCard } from './MobileOriginCard';
 export { MobileSustainedRitualsPanel } from './MobileSustainedRitualsPanel';
 export { MobileConditionalBonusesPanel } from './MobileConditionalBonusesPanel';
 export { MobileAffinitySelectorCard } from './MobileAffinitySelectorCard';
