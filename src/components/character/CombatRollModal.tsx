@@ -2244,18 +2244,50 @@ export function CombatRollModal({
 
                 <Separator />
 
-                {/* Botão de rolar dano */}
-                <Button
-                  className={cn(
-                    "w-full font-display",
-                    attackResult.isCritical && "bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700"
-                  )}
-                  size="lg"
-                  onClick={handleRollDamage}
-                >
-                  <Skull className="w-5 h-5 mr-2" />
-                  ROLAR DANO {attackResult.isCritical && `(${weapon.criticalMultiplier || 'x2'})`}
-                </Button>
+                {/* Botão de rolar dano - apenas se acertou ou crítico */}
+                {(() => {
+                  // Determina se pode rolar dano: crítico sempre acerta, sem defesa informada permite, ou acertou normalmente
+                  const canRollDamage = attackResult.isCritical || 
+                    targetDefense === null || 
+                    attackResult.total >= targetDefense;
+                  
+                  if (canRollDamage) {
+                    return (
+                      <Button
+                        className={cn(
+                          "w-full font-display",
+                          attackResult.isCritical && "bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700"
+                        )}
+                        size="lg"
+                        onClick={handleRollDamage}
+                      >
+                        <Skull className="w-5 h-5 mr-2" />
+                        ROLAR DANO {attackResult.isCritical && `(${weapon.criticalMultiplier || 'x2'})`}
+                      </Button>
+                    );
+                  } else {
+                    return (
+                      <div className="space-y-3">
+                        <div className="p-3 rounded-lg bg-muted/50 text-center border border-muted">
+                          <p className="text-sm text-muted-foreground">
+                            O ataque errou. Nenhum dano a ser rolado.
+                          </p>
+                        </div>
+                        <Button
+                          variant="outline"
+                          className="w-full"
+                          onClick={() => {
+                            setPhase('setup');
+                            setAttackResult(null);
+                          }}
+                        >
+                          <RotateCcw className="w-4 h-4 mr-2" />
+                          Tentar Novo Ataque
+                        </Button>
+                      </div>
+                    );
+                  }
+                })()}
               </motion.div>
             )}
 
