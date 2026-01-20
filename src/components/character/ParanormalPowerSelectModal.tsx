@@ -20,7 +20,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, Lock, Sparkles, Droplet, Skull, BookOpen, Zap, Star } from 'lucide-react';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
+import { Check, Lock, Sparkles, Droplet, Skull, BookOpen, Zap, Star, AlertCircle, Info } from 'lucide-react';
 import {
   ParanormalPower,
   ParanormalElement,
@@ -83,24 +84,47 @@ export function ParanormalPowerSelectModal({
     return canChoosePower(power, chosenPowerIds);
   };
 
-  // Retorna motivo pelo qual o poder não está disponível
-  const getUnavailableReason = (power: ParanormalPower): string | null => {
+  // Retorna informações detalhadas sobre o bloqueio do poder
+  const getBlockInfo = (power: ParanormalPower): { reason: string; howToUnlock: string; icon: 'duplicate' | 'prerequisite' | 'maxCopies' } | null => {
     const alreadyHas = chosenPowerIds.includes(power.id);
     if (alreadyHas) {
       const timesPicked = characterPowers.filter(p => p.id === power.id).length;
       if (affinityActive && power.element === elementalAffinity) {
-        if (timesPicked >= 2) return 'Máximo de 2 cópias (com afinidade)';
+        if (timesPicked >= 2) {
+          return {
+            reason: 'Você já possui 2 cópias deste poder (máximo permitido com afinidade).',
+            howToUnlock: 'Não é possível adquirir mais cópias. Escolha outro poder paranormal.',
+            icon: 'maxCopies',
+          };
+        }
       } else {
-        return 'Você já possui este poder';
+        return {
+          reason: 'Você já possui este poder paranormal.',
+          howToUnlock: elementalAffinity === power.element 
+            ? 'Ative sua afinidade elemental para poder escolhê-lo novamente (máx. 2 cópias).'
+            : 'Cada poder só pode ser escolhido uma vez, exceto com afinidade ativa no elemento correspondente.',
+          icon: 'duplicate',
+        };
       }
     }
     if (power.prerequisite?.element && power.prerequisite?.count) {
       const currentCount = getElementPowerCount(power.prerequisite.element, chosenPowerIds);
       if (currentCount < power.prerequisite.count) {
-        return `Requer ${power.prerequisite.count} poderes de ${ELEMENT_LABELS[power.prerequisite.element]} (você tem ${currentCount})`;
+        const remaining = power.prerequisite.count - currentCount;
+        return {
+          reason: `Requer ${power.prerequisite.count} poderes de ${ELEMENT_LABELS[power.prerequisite.element]}. Você tem ${currentCount}.`,
+          howToUnlock: `Escolha mais ${remaining} poder${remaining > 1 ? 'es' : ''} de ${ELEMENT_LABELS[power.prerequisite.element]} para desbloquear.`,
+          icon: 'prerequisite',
+        };
       }
     }
     return null;
+  };
+
+  // Versão curta para compatibilidade
+  const getUnavailableReason = (power: ParanormalPower): string | null => {
+    const info = getBlockInfo(power);
+    return info ? info.reason : null;
   };
 
   // Filtra poderes pela aba selecionada
@@ -125,12 +149,69 @@ export function ParanormalPowerSelectModal({
   }, [chosenPowerIds]);
 
   // Renderiza um card de poder
+  // Renderiza o indicador de bloqueio com HoverCard
+  const renderBlockIndicator = (power: ParanormalPower) => {
+    const blockInfo = getBlockInfo(power);
+    if (!blockInfo) return null;
+
+    return (
+      <HoverCard openDelay={200} closeDelay={100}>
+        <HoverCardTrigger asChild>
+          <button 
+            type="button"
+            className="flex items-center gap-1 cursor-help"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Lock className="h-4 w-4 text-destructive" />
+            <Info className="h-3 w-3 text-muted-foreground" />
+          </button>
+        </HoverCardTrigger>
+        <HoverCardContent 
+          className="w-80 z-[200]" 
+          side="top" 
+          align="end"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="space-y-3">
+            {/* Cabeçalho com ícone de alerta */}
+            <div className="flex items-start gap-2">
+              <AlertCircle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold text-sm text-destructive">Poder Bloqueado</p>
+                <p className="text-sm text-foreground">{blockInfo.reason}</p>
+              </div>
+            </div>
+            
+            {/* Como desbloquear */}
+            <div className="p-2 rounded-md bg-muted/50 border border-border">
+              <p className="text-xs font-medium text-muted-foreground mb-1 flex items-center gap-1">
+                <Sparkles className="h-3 w-3" />
+                Como desbloquear:
+              </p>
+              <p className="text-sm text-foreground">{blockInfo.howToUnlock}</p>
+            </div>
+
+            {/* Dica adicional baseada no tipo de bloqueio */}
+            {blockInfo.icon === 'prerequisite' && power.prerequisite?.element && (
+              <div className="text-xs text-muted-foreground flex items-center gap-1">
+                {(() => {
+                  const PrereqIcon = ELEMENT_ICONS[power.prerequisite.element];
+                  return <PrereqIcon className={`h-3 w-3 ${ELEMENT_COLORS[power.prerequisite.element]}`} />;
+                })()}
+                Poderes de {ELEMENT_LABELS[power.prerequisite.element]} disponíveis na aba correspondente.
+              </div>
+            )}
+          </div>
+        </HoverCardContent>
+      </HoverCard>
+    );
+  };
+
   const renderPowerCard = (power: ParanormalPower) => {
     const available = isPowerAvailable(power);
     const alreadyHas = chosenPowerIds.includes(power.id);
     const isAffinityElement = power.element === elementalAffinity;
     const showAffinityEffect = affinityActive && isAffinityElement && power.affinityEffect;
-    const unavailableReason = !available ? getUnavailableReason(power) : null;
     
     const ElementIcon = ELEMENT_ICONS[power.element];
     const elementColor = ELEMENT_COLORS[power.element];
@@ -146,7 +227,6 @@ export function ParanormalPowerSelectModal({
           ${isAffinityElement && affinityActive ? 'ring-2 ring-primary/30' : ''}
         `}
         onClick={() => available && onSelectPower(power)}
-        title={unavailableReason || undefined}
       >
         <CardHeader className="pb-2">
           <div className="flex items-start justify-between gap-2">
@@ -164,10 +244,8 @@ export function ParanormalPowerSelectModal({
                   Possui
                 </Badge>
               )}
-              {!available && (
-                <Lock className="h-4 w-4 text-destructive" />
-              )}
-              {isAffinityElement && affinityActive && (
+              {!available && renderBlockIndicator(power)}
+              {isAffinityElement && affinityActive && available && (
                 <Sparkles className="h-4 w-4 text-primary" />
               )}
             </div>
