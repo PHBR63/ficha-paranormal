@@ -1750,49 +1750,96 @@ export function MobileCombatRollModal({
           
           {phase === 'attack' && (
             <>
-              <MobileButtonGroup
-                buttons={[
-                  {
-                    id: 'new-attack',
-                    label: 'Novo Ataque',
-                    icon: <RotateCcw className="w-4 h-4" />,
-                    onClick: () => {
-                      setPhase('setup');
-                      setAttackResult(null);
-                    },
-                    variant: 'outline',
-                    type: 'secondary',
-                  },
-                  {
-                    id: 'roll-damage',
-                    label: isRolling ? '' : 'Rolar Dano',
-                    icon: isRolling ? (
-                      <motion.div
-                        animate={{ rotate: 360 }}
-                        transition={{ duration: 0.5, repeat: Infinity, ease: 'linear' }}
-                      >
-                        <Dices className="w-4 h-4" />
-                      </motion.div>
-                    ) : <Flame className="w-4 h-4" />,
-                    onClick: rollDamageAction,
-                    type: 'secondary',
-                    disabled: isRolling,
-                  }
-                ]}
-              />
-              <MobileButtonGroup
-                buttons={[
-                  {
-                    id: 'close-attack',
-                    label: 'Fechar',
-                    icon: <X className="w-4 h-4" />,
-                    onClick: handleClose,
-                    variant: 'ghost',
-                    type: 'secondary',
-                  }
-                ]}
-                className="mt-1"
-              />
+              {/* Determina se pode rolar dano: crítico sempre acerta, sem defesa permite, ou acertou normalmente */}
+              {(() => {
+                const canRollDamage = attackResult?.isCritical || 
+                  targetDefense === null || 
+                  (attackResult && attackResult.total >= targetDefense);
+                
+                if (canRollDamage) {
+                  return (
+                    <>
+                      <MobileButtonGroup
+                        buttons={[
+                          {
+                            id: 'new-attack',
+                            label: 'Novo Ataque',
+                            icon: <RotateCcw className="w-4 h-4" />,
+                            onClick: () => {
+                              setPhase('setup');
+                              setAttackResult(null);
+                            },
+                            variant: 'outline',
+                            type: 'secondary',
+                          },
+                          {
+                            id: 'roll-damage',
+                            label: isRolling ? '' : 'Rolar Dano',
+                            icon: isRolling ? (
+                              <motion.div
+                                animate={{ rotate: 360 }}
+                                transition={{ duration: 0.5, repeat: Infinity, ease: 'linear' }}
+                              >
+                                <Dices className="w-4 h-4" />
+                              </motion.div>
+                            ) : <Flame className="w-4 h-4" />,
+                            onClick: rollDamageAction,
+                            type: 'secondary',
+                            disabled: isRolling,
+                          }
+                        ]}
+                      />
+                      <MobileButtonGroup
+                        buttons={[
+                          {
+                            id: 'close-attack',
+                            label: 'Fechar',
+                            icon: <X className="w-4 h-4" />,
+                            onClick: handleClose,
+                            variant: 'ghost',
+                            type: 'secondary',
+                          }
+                        ]}
+                        className="mt-1"
+                      />
+                    </>
+                  );
+                } else {
+                  return (
+                    <>
+                      {/* Mensagem de erro quando ataque erra */}
+                      <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/30 text-center mb-2">
+                        <p className="text-sm text-destructive font-medium">Ataque errou</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Nenhum dano a ser rolado
+                        </p>
+                      </div>
+                      <MobileButtonGroup
+                        buttons={[
+                          {
+                            id: 'new-attack-miss',
+                            label: 'Tentar Novo Ataque',
+                            icon: <RotateCcw className="w-4 h-4" />,
+                            onClick: () => {
+                              setPhase('setup');
+                              setAttackResult(null);
+                            },
+                            type: 'primary',
+                          },
+                          {
+                            id: 'close-attack-miss',
+                            label: 'Fechar',
+                            icon: <X className="w-4 h-4" />,
+                            onClick: handleClose,
+                            variant: 'ghost',
+                            type: 'secondary',
+                          }
+                        ]}
+                      />
+                    </>
+                  );
+                }
+              })()}
             </>
           )}
           
