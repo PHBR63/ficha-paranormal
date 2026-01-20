@@ -35,6 +35,7 @@ import { MobileConditionManager, type ActiveCondition } from './MobileConditionM
 import { ActiveAdvancedBonusesBar } from '../ActiveAdvancedBonusesBar';
 import { BonusSummaryCard } from '../BonusSummaryCard';
 import { ClassPowerBonusesPanel } from '../ClassPowerBonusesPanel';
+import { RoundControlPanel } from '../RoundControlPanel';
 import { getPELimitByNex } from '@/lib/dice-roller';
 
 interface MobileOverviewTabProps {
@@ -82,6 +83,15 @@ interface MobileOverviewTabProps {
   };
   /** Grupos de armas escolhidos em Especialista em Arma */
   especialistaArmaGroups?: string[];
+  /** Round tracking props */
+  roundTracking?: {
+    currentRound: number;
+    usedAbilitiesThisRound: string[];
+    peSpentThisRound: number;
+    peSpentBreakdown: Array<{ abilityName: string; cost: number }>;
+    advanceRound: () => void;
+    resetCombat: () => void;
+  };
   onOpenDiceRoller: () => void;
   onOpenRest: () => void;
   onLevelUp: () => void;
@@ -119,6 +129,7 @@ export const MobileOverviewTab = memo(function MobileOverviewTab({
   onConditionsChange,
   onDamageFromCondition,
   onCharacterDeath,
+  roundTracking,
 }: MobileOverviewTabProps) {
   const peLimit = getPELimitByNex(character.nex);
   
@@ -135,6 +146,18 @@ export const MobileOverviewTab = memo(function MobileOverviewTab({
       exit={{ opacity: 0, x: 20 }}
       className="space-y-3 mt-3"
     >
+      {/* Controle de Rodada - compacto para mobile */}
+      {roundTracking && (
+        <RoundControlPanel
+          currentRound={roundTracking.currentRound}
+          usedAbilitiesThisRound={roundTracking.usedAbilitiesThisRound}
+          peSpentThisRound={roundTracking.peSpentThisRound}
+          peSpentBreakdown={roundTracking.peSpentBreakdown}
+          onAdvanceRound={roundTracking.advanceRound}
+          onResetCombat={roundTracking.resetCombat}
+          compact
+        />
+      )}
       {/* Header compacto com foto e stats principais */}
       <div className="ordo-panel p-3">
         <div className="flex gap-3">

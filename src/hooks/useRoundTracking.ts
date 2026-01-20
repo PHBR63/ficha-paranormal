@@ -33,6 +33,10 @@ export interface RoundTrackingState {
   currentRound: number;
   /** Set de IDs de habilidades já usadas nesta rodada */
   usedAbilities: Set<string>;
+  /** PE gasto nesta rodada */
+  peSpentThisRound: number;
+  /** Histórico de gastos de PE nesta rodada (nome da habilidade → custo) */
+  peSpentBreakdown: Array<{ abilityName: string; cost: number }>;
 }
 
 export interface UseRoundTrackingReturn {
@@ -50,6 +54,12 @@ export interface UseRoundTrackingReturn {
   resetCombat: () => void;
   /** Número de habilidades usadas nesta rodada */
   usedCount: number;
+  /** PE total gasto nesta rodada */
+  peSpentThisRound: number;
+  /** Breakdown de PE gasto por habilidade */
+  peSpentBreakdown: Array<{ abilityName: string; cost: number }>;
+  /** Registra gasto de PE nesta rodada */
+  trackPESpent: (abilityName: string, cost: number) => void;
 }
 
 /**
@@ -60,6 +70,8 @@ export function useRoundTracking(): UseRoundTrackingReturn {
   const [state, setState] = useState<RoundTrackingState>({
     currentRound: 1,
     usedAbilities: new Set(),
+    peSpentThisRound: 0,
+    peSpentBreakdown: [],
   });
 
   // Verifica se uma habilidade já foi usada
@@ -75,11 +87,23 @@ export function useRoundTracking(): UseRoundTrackingReturn {
     }));
   }, []);
 
+  // Registra gasto de PE nesta rodada
+  const trackPESpent = useCallback((abilityName: string, cost: number): void => {
+    if (cost <= 0) return;
+    setState(prev => ({
+      ...prev,
+      peSpentThisRound: prev.peSpentThisRound + cost,
+      peSpentBreakdown: [...prev.peSpentBreakdown, { abilityName, cost }],
+    }));
+  }, []);
+
   // Avança para a próxima rodada e reseta o tracking
   const advanceRound = useCallback((): void => {
     setState(prev => ({
       currentRound: prev.currentRound + 1,
       usedAbilities: new Set(),
+      peSpentThisRound: 0,
+      peSpentBreakdown: [],
     }));
   }, []);
 
@@ -88,6 +112,8 @@ export function useRoundTracking(): UseRoundTrackingReturn {
     setState({
       currentRound: 1,
       usedAbilities: new Set(),
+      peSpentThisRound: 0,
+      peSpentBreakdown: [],
     });
   }, []);
 
@@ -105,6 +131,9 @@ export function useRoundTracking(): UseRoundTrackingReturn {
     advanceRound,
     resetCombat,
     usedCount: state.usedAbilities.size,
+    peSpentThisRound: state.peSpentThisRound,
+    peSpentBreakdown: state.peSpentBreakdown,
+    trackPESpent,
   };
 }
 
