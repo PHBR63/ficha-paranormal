@@ -70,20 +70,37 @@ export function ParanormalPowerSelectModal({
 
   // Verifica se um poder pode ser escolhido (pré-requisitos atendidos e não duplicado)
   const isPowerAvailable = (power: ParanormalPower): boolean => {
-    // Não pode escolher o mesmo poder duas vezes (exceto se tiver afinidade e for do elemento)
     const alreadyHas = chosenPowerIds.includes(power.id);
     if (alreadyHas) {
-      // Pode escolher novamente apenas se tiver afinidade ativa e for do elemento de afinidade
+      // Pode escolher novamente apenas se tiver afinidade ativa E for do elemento de afinidade
       if (affinityActive && power.element === elementalAffinity) {
-        // Verifica se já não escolheu duas vezes
         const timesPicked = characterPowers.filter(p => p.id === power.id).length;
         if (timesPicked >= 2) return false;
       } else {
         return false;
       }
     }
-    
     return canChoosePower(power, chosenPowerIds);
+  };
+
+  // Retorna motivo pelo qual o poder não está disponível
+  const getUnavailableReason = (power: ParanormalPower): string | null => {
+    const alreadyHas = chosenPowerIds.includes(power.id);
+    if (alreadyHas) {
+      const timesPicked = characterPowers.filter(p => p.id === power.id).length;
+      if (affinityActive && power.element === elementalAffinity) {
+        if (timesPicked >= 2) return 'Máximo de 2 cópias (com afinidade)';
+      } else {
+        return 'Você já possui este poder';
+      }
+    }
+    if (power.prerequisite?.element && power.prerequisite?.count) {
+      const currentCount = getElementPowerCount(power.prerequisite.element, chosenPowerIds);
+      if (currentCount < power.prerequisite.count) {
+        return `Requer ${power.prerequisite.count} poderes de ${ELEMENT_LABELS[power.prerequisite.element]} (você tem ${currentCount})`;
+      }
+    }
+    return null;
   };
 
   // Filtra poderes pela aba selecionada
@@ -113,6 +130,7 @@ export function ParanormalPowerSelectModal({
     const alreadyHas = chosenPowerIds.includes(power.id);
     const isAffinityElement = power.element === elementalAffinity;
     const showAffinityEffect = affinityActive && isAffinityElement && power.affinityEffect;
+    const unavailableReason = !available ? getUnavailableReason(power) : null;
     
     const ElementIcon = ELEMENT_ICONS[power.element];
     const elementColor = ELEMENT_COLORS[power.element];
@@ -124,10 +142,11 @@ export function ParanormalPowerSelectModal({
         className={`
           relative cursor-pointer transition-all duration-200
           ${available ? 'hover:border-primary hover:shadow-md' : 'opacity-50 cursor-not-allowed'}
-          ${alreadyHas ? 'border-primary/50 bg-primary/5' : ''}
+          ${alreadyHas && !available ? 'border-destructive/30 bg-destructive/5' : alreadyHas ? 'border-primary/50 bg-primary/5' : ''}
           ${isAffinityElement && affinityActive ? 'ring-2 ring-primary/30' : ''}
         `}
         onClick={() => available && onSelectPower(power)}
+        title={unavailableReason || undefined}
       >
         <CardHeader className="pb-2">
           <div className="flex items-start justify-between gap-2">
@@ -145,8 +164,8 @@ export function ParanormalPowerSelectModal({
                   Possui
                 </Badge>
               )}
-              {!available && !alreadyHas && (
-                <Lock className="h-4 w-4 text-muted-foreground" />
+              {!available && (
+                <Lock className="h-4 w-4 text-destructive" />
               )}
               {isAffinityElement && affinityActive && (
                 <Sparkles className="h-4 w-4 text-primary" />
