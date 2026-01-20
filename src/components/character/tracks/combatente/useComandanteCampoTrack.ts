@@ -115,6 +115,8 @@ export interface UseComandanteCampoTrackProps {
   onAbilityUsed?: (abilityId: string) => void;
   onActivateEffect?: (id: string, name: string, duration: EffectDuration, metadata?: Record<string, unknown>) => void;
   isEffectActive?: (id: string) => boolean;
+  /** Callback para registrar PE gasto na rodada */
+  onTrackPESpent?: (abilityName: string, cost: number) => void;
 }
 
 // =====================================================
@@ -130,6 +132,7 @@ export function useComandanteCampoTrack({
   usedAbilitiesThisRound = [],
   onAbilityUsed,
   onActivateEffect,
+  onTrackPESpent,
 }: UseComandanteCampoTrackProps) {
   const { toast } = useToast();
 
@@ -203,6 +206,7 @@ export function useComandanteCampoTrack({
 
     const newPE = peCurrent - ability.peCost;
     onPEChange(newPE);
+    onTrackPESpent?.(ability.name, ability.peCost);
     onAbilityUsed?.(ability.id);
 
     // Registra no SUE
@@ -217,7 +221,7 @@ export function useComandanteCampoTrack({
     });
 
     setActivatingAbility(null);
-  }, [peCurrent, onPEChange, onAbilityUsed, isAbilityUsedThisRound, toast, onActivateEffect]);
+  }, [peCurrent, onPEChange, onAbilityUsed, isAbilityUsedThisRound, toast, onActivateEffect, onTrackPESpent]);
 
   // Verifica se pode custear
   const canAfford = useCallback((peCost: number) => peCurrent >= peCost, [peCurrent]);

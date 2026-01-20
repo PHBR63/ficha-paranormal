@@ -2342,6 +2342,7 @@ export default function CharacterSheet() {
                 onAbilityUsed={roundTracking.markAbilityUsed}
                 onActivateEffect={activatedEffects.activateEffect}
                 isEffectActive={activatedEffects.isEffectActive}
+                onTrackPESpent={roundTracking.trackPESpent}
               />
 
               {/* Aniquilador */}
@@ -2370,6 +2371,7 @@ export default function CharacterSheet() {
                 })}
                 onActivateEffect={activatedEffects.activateEffect}
                 isEffectActive={activatedEffects.isEffectActive}
+                onTrackPESpent={roundTracking.trackPESpent}
               />
 
               {/* Operações Especiais */}
@@ -2386,6 +2388,7 @@ export default function CharacterSheet() {
                 onAbilityUsed={roundTracking.markAbilityUsed}
                 onActivateEffect={activatedEffects.activateEffect}
                 isEffectActive={activatedEffects.isEffectActive}
+                onTrackPESpent={roundTracking.trackPESpent}
               />
 
               {/* Tropa de Choque */}
@@ -2403,6 +2406,7 @@ export default function CharacterSheet() {
                 })}
                 onActivateEffect={activatedEffects.activateEffect}
                 isEffectActive={activatedEffects.isEffectActive}
+                onTrackPESpent={roundTracking.trackPESpent}
               />
 
               {/* ====================================================== */}

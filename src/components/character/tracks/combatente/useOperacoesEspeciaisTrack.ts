@@ -101,6 +101,8 @@ export interface UseOperacoesEspeciaisTrackProps {
   onActivateEffect?: (id: string, name: string, duration: EffectDuration, metadata?: Record<string, unknown>) => void;
   isEffectActive?: (id: string) => boolean;
   computedEffects?: ComputedEffects;
+  /** Callback para registrar PE gasto na rodada */
+  onTrackPESpent?: (abilityName: string, cost: number) => void;
 }
 
 // =====================================================
@@ -115,6 +117,7 @@ export function useOperacoesEspeciaisTrack({
   usedAbilitiesThisRound: externalUsedAbilities,
   onAbilityUsed,
   onActivateEffect,
+  onTrackPESpent,
 }: UseOperacoesEspeciaisTrackProps) {
   const { toast } = useToast();
 
@@ -194,6 +197,7 @@ export function useOperacoesEspeciaisTrack({
 
     // Executa direto
     onPEChange(peCurrent - ability.peCost);
+    onTrackPESpent?.(ability.name, ability.peCost);
     markAbilityAsUsed(ability.id);
 
     // Registra no SUE
@@ -205,13 +209,14 @@ export function useOperacoesEspeciaisTrack({
       title: `${ability.name}!`,
       description: `${ability.shortEffect}. -${ability.peCost} PE`,
     });
-  }, [peCurrent, onPEChange, markAbilityAsUsed, isAbilityUsed, toast, onActivateEffect]);
+  }, [peCurrent, onPEChange, markAbilityAsUsed, isAbilityUsed, toast, onActivateEffect, onTrackPESpent]);
 
   // Handler para escolha do Surto
   const handleSurtoChoice = useCallback((choice: SurtoChoice) => {
     const ability = OPERACOES_ABILITIES.find(a => a.id === 'surto-de-adrenalina')!;
 
     onPEChange(peCurrent - ability.peCost);
+    onTrackPESpent?.(ability.name, ability.peCost);
     markAbilityAsUsed(ability.id);
     setShowSurtoModal(false);
 

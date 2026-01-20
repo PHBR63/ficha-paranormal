@@ -1858,6 +1858,7 @@ export function MobileCharacterSheet({
               onAbilityUsed={roundTracking.markAbilityUsed}
               onActivateEffect={activatedEffects.activateEffect}
               isEffectActive={activatedEffects.isEffectActive}
+              onTrackPESpent={roundTracking.trackPESpent}
             />
             
             {/* Tropa de Choque */}
@@ -1871,6 +1872,7 @@ export function MobileCharacterSheet({
               onPEChange={handlePEChange}
               onActivateEffect={activatedEffects.activateEffect}
               isEffectActive={activatedEffects.isEffectActive}
+              onTrackPESpent={roundTracking.trackPESpent}
             />
 
             {/* ====================================================== */}
