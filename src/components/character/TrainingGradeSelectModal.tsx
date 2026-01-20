@@ -309,15 +309,23 @@ export function TrainingGradeSelectModal({
 
             {/* Mensagem quando não há perícias elegíveis */}
             {availableSkills.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
-                <Ban className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">Nenhuma perícia elegível encontrada.</p>
-                <p className="text-xs mt-1">
-                  {nex === 35 
-                    ? "Você precisa ter perícias Treinadas para usar este recurso."
-                    : "Você precisa ter perícias Treinadas ou Veteranas para usar este recurso."
-                  }
-                </p>
+              <div className="text-center py-8 text-muted-foreground space-y-3">
+                <Ban className="w-10 h-10 mx-auto opacity-50" />
+                <div>
+                  <p className="text-sm font-medium">Nenhuma perícia elegível encontrada.</p>
+                  <p className="text-xs mt-2 px-4">
+                    {nex === 35 
+                      ? "Você precisa ter pelo menos uma perícia no nível TREINADO para poder aumentá-la para VETERANO."
+                      : "Você precisa ter perícias no nível TREINADO (→ Veterano) ou VETERANO (→ Expert) para usar este recurso."
+                    }
+                  </p>
+                </div>
+                <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg mx-4">
+                  <p className="text-xs text-amber-400">
+                    💡 <strong>Dica:</strong> Primeiro, adquira perícias Treinadas através da sua origem, 
+                    classe ou do poder "Treinamento em Perícia".
+                  </p>
+                </div>
               </div>
             )}
           </div>

@@ -306,7 +306,7 @@ export const MobileSkillsTab = memo(function MobileSkillsTab({
         {filteredSkills.length > 0 ? (
           <div 
             ref={parentRef}
-            className="h-[400px] overflow-auto scrollbar-hide overscroll-contain"
+            className="h-[calc(100vh-380px)] min-h-[300px] max-h-[500px] overflow-auto overscroll-contain touch-pan-y"
           >
             <div
               style={{

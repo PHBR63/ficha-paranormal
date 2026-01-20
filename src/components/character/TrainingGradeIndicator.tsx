@@ -202,21 +202,21 @@ export const TrainingGradeIndicator = memo(function TrainingGradeIndicator({
         </div>
       )}
       
-      {/* Botão de configuração */}
+      {/* Botão de configuração - sempre visível e destacado quando não configurado */}
       {onConfigure && (
         <Button
-          variant="outline"
+          variant={isComplete ? "outline" : "default"}
           size="sm"
           onClick={onConfigure}
           className={cn(
-            "w-full text-xs h-8",
+            "w-full text-sm h-10 font-medium",
             isComplete
               ? "border-green-500/30 text-green-400 hover:bg-green-500/10"
-              : "border-amber-500/30 text-amber-400 hover:bg-amber-500/10"
+              : "bg-amber-500 hover:bg-amber-600 text-black animate-pulse"
           )}
         >
-          <Settings className="w-3 h-3 mr-1.5" />
-          {isConfigured ? 'Editar Seleção' : 'Configurar Perícias'}
+          <Settings className="w-4 h-4 mr-2" />
+          {isConfigured ? 'Editar Seleção' : '⚠️ CONFIGURAR PERÍCIAS'}
         </Button>
       )}
     </motion.div>
