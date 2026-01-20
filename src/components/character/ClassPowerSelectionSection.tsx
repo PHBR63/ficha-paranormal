@@ -126,6 +126,22 @@ export function ClassPowerSelectionSection({
   const [pendingPower, setPendingPower] = useState<UnifiedClassPower | null>(null);
   // Estado para modal de seleção de poder paranormal (Transcender)
   const [paranormalSelectOpen, setParanormalSelectOpen] = useState(false);
+  // Estado para rastrear quais descrições estão expandidas
+  const [expandedDescriptions, setExpandedDescriptions] = useState<Set<string>>(new Set());
+
+  // Toggle de expansão de descrição (não dispara seleção do card)
+  const toggleDescription = useCallback((powerId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setExpandedDescriptions(prev => {
+      const next = new Set(prev);
+      if (next.has(powerId)) {
+        next.delete(powerId);
+      } else {
+        next.add(powerId);
+      }
+      return next;
+    });
+  }, []);
 
   // Calcula quantas escolhas de poder este NEX oferece
   const powerChoicesCount = useMemo(() => {
@@ -323,7 +339,7 @@ export function ClassPowerSelectionSection({
             )}
 
             {/* Lista de poderes */}
-            <ScrollArea className="h-[250px] pr-2">
+            <ScrollArea className="h-[350px] pr-2">
               <div className="space-y-2">
                 {availablePowers.map((power) => {
                   const prereqResult = prerequisiteResults[power.id];
@@ -392,9 +408,38 @@ export function ClassPowerSelectionSection({
                         </div>
                       </CardHeader>
                       <CardContent className="p-3 pt-0">
-                        <CardDescription className="text-xs line-clamp-2">
-                          {power.description}
-                        </CardDescription>
+                        {/* Descrição com expansão */}
+                        <div className="relative">
+                          <CardDescription 
+                            className={cn(
+                              "text-xs transition-all duration-200",
+                              !expandedDescriptions.has(power.id) && "line-clamp-2"
+                            )}
+                          >
+                            {power.description}
+                          </CardDescription>
+                          
+                          {/* Botão Ver mais/menos - só aparece se descrição for longa */}
+                          {power.description.length > 100 && (
+                            <button
+                              type="button"
+                              onClick={(e) => toggleDescription(power.id, e)}
+                              className="text-xs text-primary hover:text-primary/80 mt-1.5 font-medium flex items-center gap-1 transition-colors"
+                            >
+                              {expandedDescriptions.has(power.id) ? (
+                                <>
+                                  <ChevronUp className="w-3 h-3" />
+                                  Ver menos
+                                </>
+                              ) : (
+                                <>
+                                  <ChevronDown className="w-3 h-3" />
+                                  Ver mais
+                                </>
+                              )}
+                            </button>
+                          )}
+                        </div>
                         
                         {/* Mostrar pré-requisitos se existirem */}
                         {prereqText && (
