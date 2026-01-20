@@ -2317,6 +2317,8 @@ export default function CharacterSheet() {
               <RoundControlPanel
                 currentRound={roundTracking.currentRound}
                 usedAbilitiesThisRound={roundTracking.usedAbilitiesThisRound}
+                peSpentThisRound={roundTracking.peSpentThisRound}
+                peSpentBreakdown={roundTracking.peSpentBreakdown}
                 onAdvanceRound={roundTracking.advanceRound}
                 onResetCombat={roundTracking.resetCombat}
               />

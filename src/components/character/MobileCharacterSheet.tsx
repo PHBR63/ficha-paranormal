@@ -1727,6 +1727,14 @@ export function MobileCharacterSheet({
               onDamageFromCondition={handleConditionDamage}
               onCharacterDeath={handleCharacterDeath}
               especialistaArmaGroups={especialistaArmaGroups}
+              roundTracking={{
+                currentRound: roundTracking.currentRound,
+                usedAbilitiesThisRound: roundTracking.usedAbilitiesThisRound,
+                peSpentThisRound: roundTracking.peSpentThisRound,
+                peSpentBreakdown: roundTracking.peSpentBreakdown,
+                advanceRound: roundTracking.advanceRound,
+                resetCombat: roundTracking.resetCombat,
+              }}
             />
             
             {/* Seletor de Afinidade Elemental (NEX 50+) */}
