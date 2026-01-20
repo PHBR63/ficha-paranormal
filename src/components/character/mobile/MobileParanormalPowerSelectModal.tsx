@@ -26,6 +26,8 @@ import {
   Search,
   ChevronRight,
   Brain,
+  AlertCircle,
+  Info,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -59,6 +61,13 @@ interface MobileParanormalPowerSelectModalProps {
   sanCost?: number;
 }
 
+// Informações de bloqueio para tooltip
+interface BlockInfo {
+  reason: string;
+  howToUnlock: string;
+  icon: 'duplicate' | 'prerequisite' | 'maxCopies';
+}
+
 // Card de poder
 const PowerCard = memo(function PowerCard({
   power,
@@ -67,7 +76,7 @@ const PowerCard = memo(function PowerCard({
   isAffinityElement,
   affinityActive,
   chosenPowerIds,
-  unavailableReason,
+  blockInfo,
   onSelect,
 }: {
   power: ParanormalPower;
@@ -76,7 +85,7 @@ const PowerCard = memo(function PowerCard({
   isAffinityElement: boolean;
   affinityActive: boolean;
   chosenPowerIds: string[];
-  unavailableReason: string | null;
+  blockInfo: BlockInfo | null;
   onSelect: () => void;
 }) {
   const ElementIcon = ELEMENT_ICONS[power.element];
@@ -97,9 +106,7 @@ const PowerCard = memo(function PowerCard({
         "w-full p-3 rounded-lg border text-left transition-all active:scale-[0.98]",
         available ? "hover:border-primary" : "opacity-50 cursor-not-allowed",
         alreadyHas && !available ? "border-destructive/30 bg-destructive/5" : alreadyHas && "border-primary/50 bg-primary/5",
-        isAffinityElement && affinityActive && "ring-1 ring-paranormal/30"
       )}
-      title={unavailableReason || undefined}
     >
       <div className="flex items-start gap-3">
         {/* Ícone */}
@@ -156,17 +163,31 @@ const PowerCard = memo(function PowerCard({
           )}
         </div>
         
-        {/* Indicadores */}
-        <div className="flex flex-col items-end gap-1 shrink-0">
-          {unavailableReason && (
-            <span className="text-[9px] text-destructive max-w-[100px] text-right leading-tight">
-              {unavailableReason}
-            </span>
+        {/* Indicadores com tooltip de bloqueio */}
+        <div className="flex flex-col items-end gap-1 shrink-0 relative">
+          {/* Badge de bloqueio com detalhes */}
+          {blockInfo && (
+            <div className="flex flex-col items-end gap-1">
+              <div className="flex items-center gap-0.5 text-[9px] text-destructive px-1.5 py-0.5 rounded bg-destructive/10 border border-destructive/20">
+                <Lock className="h-3 w-3" />
+                <Info className="h-2.5 w-2.5" />
+              </div>
+              <div className="max-w-[120px] text-right">
+                <p className="text-[9px] text-destructive leading-tight font-medium">
+                  {blockInfo.reason.length > 40 
+                    ? blockInfo.reason.slice(0, 37) + '...' 
+                    : blockInfo.reason}
+                </p>
+                <p className="text-[8px] text-muted-foreground leading-tight mt-0.5">
+                  {blockInfo.howToUnlock.length > 50 
+                    ? blockInfo.howToUnlock.slice(0, 47) + '...' 
+                    : blockInfo.howToUnlock}
+                </p>
+              </div>
+            </div>
           )}
+          
           <div className="flex items-center gap-1">
-            {!available && (
-              <Lock className="h-4 w-4 text-destructive" />
-            )}
             {isAffinityElement && affinityActive && (
               <Sparkles className="h-4 w-4 text-paranormal" />
             )}
@@ -213,21 +234,38 @@ export const MobileParanormalPowerSelectModal = memo(function MobileParanormalPo
     return canChoosePower(power, chosenPowerIds);
   }, [chosenPowerIds, characterPowers, affinityActive, elementalAffinity]);
 
-  // Retorna motivo pelo qual o poder não está disponível
-  const getUnavailableReason = useCallback((power: ParanormalPower): string | null => {
+  // Retorna informações detalhadas sobre o bloqueio
+  const getBlockInfo = useCallback((power: ParanormalPower): BlockInfo | null => {
     const alreadyHas = chosenPowerIds.includes(power.id);
     if (alreadyHas) {
       const timesPicked = characterPowers.filter(p => p.id === power.id).length;
       if (affinityActive && power.element === elementalAffinity) {
-        if (timesPicked >= 2) return 'Máximo de 2 cópias (com afinidade)';
+        if (timesPicked >= 2) {
+          return {
+            reason: 'Máximo de 2 cópias atingido.',
+            howToUnlock: 'Escolha outro poder.',
+            icon: 'maxCopies',
+          };
+        }
       } else {
-        return 'Você já possui este poder';
+        return {
+          reason: 'Você já possui este poder.',
+          howToUnlock: elementalAffinity === power.element 
+            ? 'Ative afinidade para escolher novamente.'
+            : 'Só pode escolher uma vez.',
+          icon: 'duplicate',
+        };
       }
     }
     if (power.prerequisite?.element && power.prerequisite?.count) {
       const currentCount = getElementPowerCount(power.prerequisite.element, chosenPowerIds);
       if (currentCount < power.prerequisite.count) {
-        return `Requer ${power.prerequisite.count} de ${ELEMENT_LABELS[power.prerequisite.element]}`;
+        const remaining = power.prerequisite.count - currentCount;
+        return {
+          reason: `Requer ${power.prerequisite.count} de ${ELEMENT_LABELS[power.prerequisite.element]}.`,
+          howToUnlock: `Falta${remaining > 1 ? 'm' : ''} ${remaining} poder${remaining > 1 ? 'es' : ''}.`,
+          icon: 'prerequisite',
+        };
       }
     }
     return null;
@@ -367,7 +405,7 @@ export const MobileParanormalPowerSelectModal = memo(function MobileParanormalPo
                     isAffinityElement={power.element === elementalAffinity}
                     affinityActive={affinityActive}
                     chosenPowerIds={chosenPowerIds}
-                    unavailableReason={!available ? getUnavailableReason(power) : null}
+                    blockInfo={!available ? getBlockInfo(power) : null}
                     onSelect={() => handleSelect(power)}
                   />
                 );
