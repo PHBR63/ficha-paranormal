@@ -1465,39 +1465,44 @@ export function MobileCharacterSheet({
   // Handler para rolar iniciativa (usado pelo MobileOverviewTab)
   // Aplica bônus de trilha (ex: Operações Especiais +5 Iniciativa Aprimorada) e treinamento
   const handleRollInitiative = useCallback(() => {
-    const bonusSources: BonusSource[] = [];
-    
-    // 1. Treinamento em Iniciativa (Treinado +5, Veterano +10, Expert +15)
-    const initiativeTraining = character.skills?.['iniciativa'] || character.skills?.['Iniciativa'] || 0;
-    if (initiativeTraining > 0) {
-      const trainingBonus = getSkillBonus(initiativeTraining);
-      bonusSources.push({
-        label: `Treinamento`,
-        value: trainingBonus,
-        type: 'skill',
-        sourceName: `Iniciativa (${getTrainingLabel(initiativeTraining)})`,
-        description: `Bônus por ser ${getTrainingLabel(initiativeTraining)} em Iniciativa`,
-      });
-    }
-    
-    // 2. Bônus de trilha e outros (ex: Operações Especiais +5)
-    bonusSummary.combat.initiative.breakdown
+    // Usa diretamente o breakdown do SUE que já tem todas as fontes consolidadas
+    // (origem, trilha, treinamento, poderes, condições, etc.)
+    const bonusSources: BonusSource[] = bonusSummary.combat.initiative.breakdown
       .filter(b => b.active && typeof b.value === 'number' && b.value !== 0)
-      .forEach(b => {
-        // Detecta se é bônus de trilha pelo nome da fonte
-        const isTrackBonus = b.source.toLowerCase().includes('trilha') || 
-                            b.source.toLowerCase().includes('iniciativa aprimorada') ||
-                            b.source.toLowerCase().includes('operações');
-        bonusSources.push({
+      .map(b => {
+        // Determina o tipo baseado no type do breakdown do SUE
+        let sourceType: BonusSource['type'] = 'other';
+        const lowerSource = b.source.toLowerCase();
+        
+        // Mapeia os tipos do SUE para os tipos do BonusSource para exibição
+        if (b.type === 'ability' || b.type === 'track_effect' || 
+            lowerSource.includes('trilha') || lowerSource.includes('operações') || 
+            lowerSource.includes('iniciativa aprimorada')) {
+          sourceType = 'track';
+        } else if (b.type === 'origin' || lowerSource.includes('origem') || 
+                   lowerSource.includes('posição de combate') || lowerSource.includes('mercenário')) {
+          sourceType = 'origin';
+        } else if (b.type === 'skill_training' || lowerSource.includes('treinamento') || 
+                   lowerSource.includes('treinado') || lowerSource.includes('veterano') || 
+                   lowerSource.includes('expert')) {
+          sourceType = 'skill';
+        } else if (b.type === 'general_power' || lowerSource.includes('poder')) {
+          sourceType = 'power';
+        } else if (b.type === 'ritual' || lowerSource.includes('ritual')) {
+          sourceType = 'other';
+        }
+        
+        return {
           label: b.source,
           value: b.value as number,
-          type: isTrackBonus ? 'track' : 'other',
+          type: sourceType,
           sourceName: b.source,
-        });
+          description: b.conditional, // Usa conditional como descrição se houver
+        };
       });
     
-    // Total = treinamento + bônus de trilha
-    const totalBonus = bonusSources.reduce((sum, s) => sum + s.value, 0);
+    // Usa o total já calculado pelo SUE (não precisa somar manualmente)
+    const totalBonus = bonusSummary.combat.initiative.total;
     
     setDiceModalConfig({
       skillName: 'Iniciativa',
@@ -1506,7 +1511,7 @@ export function MobileCharacterSheet({
       bonusSources,
     });
     setDiceModalOpen(true);
-  }, [character.agility, character.skills, bonusSummary.combat.initiative]);
+  }, [character.agility, bonusSummary.combat.initiative]);
 
   // Handler para atualizar condições (converte ActiveCondition[] para formato do banco)
   const handleConditionsChange = useCallback(async (newConditions: ActiveCondition[]) => {
