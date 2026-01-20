@@ -16,6 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Sword, Lock, Check, AlertCircle, Plus, Info, ChevronDown, ChevronUp, Sparkles } from 'lucide-react';
+import { toast } from 'sonner';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
@@ -336,13 +337,32 @@ export function ClassPowerSelectionSection({
                     <Card 
                       key={power.id}
                       className={cn(
-                        "cursor-pointer transition-all duration-200",
+                        "transition-all duration-200",
+                        // Bloqueado por pré-requisitos - não clicável
                         isBlocked && "opacity-50 cursor-not-allowed",
+                        // Já possui (não repetível) - não clicável
                         alreadyHas && "opacity-40 cursor-default",
+                        // Selecionado - visual destacado
                         isSelected && "ring-2 ring-primary border-primary bg-primary/5",
-                        !isBlocked && !alreadyHas && !isSelected && "hover:border-primary/50 hover:bg-muted/50"
+                        // Pode selecionar - cursor pointer e hover
+                        !isBlocked && !alreadyHas && !isSelected && "cursor-pointer hover:border-primary/50 hover:bg-muted/50"
                       )}
-                      onClick={() => !alreadyHas && handleTogglePower(power)}
+                      onClick={() => {
+                        // Já possui - ignora silenciosamente
+                        if (alreadyHas) return;
+                        
+                        // Bloqueado por pré-requisitos - mostra toast explicativo
+                        if (isBlocked && prereqResult) {
+                          toast.error("Pré-requisitos não atendidos", {
+                            description: prereqResult.missing.length 
+                              ? `Faltam: ${prereqResult.missing.join(', ')}`
+                              : 'Verifique os requisitos deste poder',
+                          });
+                          return;
+                        }
+                        
+                        handleTogglePower(power);
+                      }}
                     >
                       <CardHeader className="p-3 pb-2">
                         <div className="flex items-center justify-between">
