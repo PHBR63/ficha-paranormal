@@ -349,9 +349,9 @@ export function ClassPowerSelectionSection({
                   const hasSubchoice = isPowerWithSubchoice(power.id);
                   const prereqText = formatPrerequisitesText(power.id);
 
-                  return (
+                  // Conteúdo do card
+                  const cardElement = (
                     <Card 
-                      key={power.id}
                       className={cn(
                         "transition-all duration-200",
                         // Bloqueado por pré-requisitos - não clicável
@@ -482,6 +482,41 @@ export function ClassPowerSelectionSection({
                       </CardContent>
                     </Card>
                   );
+
+                  // Se bloqueado, envolver em tooltip com detalhes dos pré-requisitos
+                  if (isBlocked && prereqResult) {
+                    return (
+                      <TooltipProvider key={power.id}>
+                        <Tooltip delayDuration={300}>
+                          <TooltipTrigger asChild>
+                            <div>{cardElement}</div>
+                          </TooltipTrigger>
+                          <TooltipContent 
+                            side="right" 
+                            className="max-w-[280px] p-3 bg-destructive/10 border-destructive/30"
+                          >
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2 text-destructive font-medium">
+                                <Lock className="w-4 h-4" />
+                                <span>Pré-requisitos não atendidos</span>
+                              </div>
+                              <div className="text-xs space-y-1">
+                                <p className="text-muted-foreground">Para desbloquear este poder, você precisa de:</p>
+                                <ul className="list-disc list-inside space-y-0.5">
+                                  {prereqResult.missing.map((req, idx) => (
+                                    <li key={idx} className="text-destructive">{req}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            </div>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    );
+                  }
+
+                  // Card normal sem tooltip
+                  return <div key={power.id}>{cardElement}</div>;
                 })}
               </div>
             </ScrollArea>
