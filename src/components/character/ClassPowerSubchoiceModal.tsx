@@ -169,6 +169,28 @@ export function ClassPowerSubchoiceModal({
         return renderSkills();
       case 'attribute':
         return renderAttributes();
+      case 'power':
+        // Transcender é tratado por ParanormalPowerSelectModal em ClassPowerSelectionSection
+        // Se chegou aqui, há um erro de fluxo - mostra mensagem informativa
+        return (
+          <div className="text-center py-8 text-muted-foreground space-y-3">
+            <div className="w-12 h-12 mx-auto rounded-full bg-paranormal/10 flex items-center justify-center">
+              <Target className="w-6 h-6 text-paranormal" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-foreground">Transcender</p>
+              <p className="text-xs mt-1">
+                Este poder concede um Poder Paranormal.
+              </p>
+            </div>
+            <div className="p-3 bg-warning/10 border border-warning/20 rounded-lg mx-4">
+              <p className="text-xs text-warning">
+                ⚠️ Se você está vendo esta mensagem, houve um erro no fluxo.
+                Por favor, feche este modal e tente novamente.
+              </p>
+            </div>
+          </div>
+        );
       default:
         return (
           <p className="text-muted-foreground text-center py-4">
