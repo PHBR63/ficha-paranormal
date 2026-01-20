@@ -71,6 +71,8 @@ export interface UseMedicoDeCampoTrackProps {
   onActivateEffect?: (id: string, name: string, duration: EffectDuration, metadata?: Record<string, unknown>) => void;
   isEffectActive?: (id: string) => boolean;
   computedEffects?: ComputedEffects;
+  /** Callback para rastrear PE gasto na rodada */
+  onTrackPESpent?: (abilityName: string, cost: number) => void;
 }
 
 // =====================================================
@@ -87,6 +89,7 @@ export function useMedicoDeCampoTrack({
   onActivateEffect,
   isEffectActive,
   computedEffects,
+  onTrackPESpent,
 }: UseMedicoDeCampoTrackProps) {
   const [extraDice, setExtraDice] = useState(0);
   const [showParamedicoDrawer, setShowParamedicoDrawer] = useState(false);
@@ -156,6 +159,7 @@ export function useMedicoDeCampoTrack({
     }
 
     onPEChange(peCurrent - paramedicoCost);
+    onTrackPESpent?.('Paramédico', paramedicoCost);
     
     const totalDice = healingDice.base + extraDice;
     const formula = `${totalDice}d10`;
@@ -180,7 +184,7 @@ export function useMedicoDeCampoTrack({
     });
     
     setShowParamedicoDrawer(false);
-  }, [peCurrent, paramedicoCost, extraDice, healingDice.base, onPEChange, selfDefenseBonus, targetDefenseBonus, hasResgate, onActivateEffect]);
+  }, [peCurrent, paramedicoCost, extraDice, healingDice.base, onPEChange, selfDefenseBonus, targetDefenseBonus, hasResgate, onActivateEffect, onTrackPESpent]);
 
   /**
    * Usa Equipe de Trauma (2 PE)
@@ -192,6 +196,7 @@ export function useMedicoDeCampoTrack({
     }
 
     onPEChange(peCurrent - 2);
+    onTrackPESpent?.('Equipe de Trauma', 2);
     
     const excludedConditions = removeConditionAbilities.length > 0 
       ? removeConditionAbilities[0].excludedConditions 
@@ -216,7 +221,7 @@ export function useMedicoDeCampoTrack({
     toast.success('Equipe de Trauma ativado!', {
       description: `Remove uma condição negativa (exceto ${excludedConditions.join(', ')}) de aliado adjacente.${defenseBonusText}`
     });
-  }, [peCurrent, onPEChange, removeConditionAbilities, onActivateEffect, hasResgate, selfDefenseBonus, targetDefenseBonus]);
+  }, [peCurrent, onPEChange, removeConditionAbilities, onActivateEffect, hasResgate, selfDefenseBonus, targetDefenseBonus, onTrackPESpent]);
 
   /**
    * Usa Reanimação (10 PE, 1x/cena)
@@ -235,6 +240,7 @@ export function useMedicoDeCampoTrack({
     }
 
     onPEChange(peCurrent - 10);
+    onTrackPESpent?.('Reanimação', 10);
     onReanimacaoUsed?.();
     
     const excludedDeathTypes = resurrectAbilities.length > 0 
@@ -246,7 +252,7 @@ export function useMedicoDeCampoTrack({
     toast.success('Reanimação ativada!', {
       description: `Traz de volta à vida um personagem que morreu nesta cena (exceto morte por ${excludedDeathTypes.join(', ')}).`
     });
-  }, [peCurrent, reanimacaoUsedThisScene, onPEChange, onReanimacaoUsed, resurrectAbilities, onActivateEffect]);
+  }, [peCurrent, reanimacaoUsedThisScene, onPEChange, onReanimacaoUsed, resurrectAbilities, onActivateEffect, onTrackPESpent]);
 
   return {
     // Estado

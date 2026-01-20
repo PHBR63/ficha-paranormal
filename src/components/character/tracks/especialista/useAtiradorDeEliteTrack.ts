@@ -105,6 +105,8 @@ export interface UseAtiradorDeEliteTrackProps {
   // Tracking de uso por rodada (opcional - usa estado local se não fornecido)
   isAbilityUsedThisRound?: (abilityId: string) => boolean;
   markAbilityUsedThisRound?: (abilityId: string) => void;
+  /** Callback para rastrear PE gasto na rodada */
+  onTrackPESpent?: (abilityName: string, cost: number) => void;
 }
 
 // =====================================================
@@ -122,6 +124,7 @@ export function useAtiradorDeEliteTrack({
   computedEffects,
   isAbilityUsedThisRound,
   markAbilityUsedThisRound,
+  onTrackPESpent,
 }: UseAtiradorDeEliteTrackProps) {
   const [activatingAbility, setActivatingAbility] = useState<string | null>(null);
   const [showManeuverDrawer, setShowManeuverDrawer] = useState(false);
@@ -202,6 +205,7 @@ export function useAtiradorDeEliteTrack({
 
     try {
       onPEChange(peCurrent - ability.peCost);
+      onTrackPESpent?.(ability.name, ability.peCost);
 
       // Marca como usado se for habilidade por rodada
       if (ability.perRound) {
@@ -218,7 +222,7 @@ export function useAtiradorDeEliteTrack({
     } finally {
       setTimeout(() => setActivatingAbility(null), 300);
     }
-  }, [peCurrent, onPEChange, onActivateEffect, isUsedThisRound, markUsedThisRound]);
+  }, [peCurrent, onPEChange, onActivateEffect, isUsedThisRound, markUsedThisRound, onTrackPESpent]);
 
   // Handler para escolher manobra do Disparo Impactante
   const handleManeuverChoice = useCallback((manobra: ManeuverType) => {
@@ -233,6 +237,7 @@ export function useAtiradorDeEliteTrack({
     }
 
     onPEChange(peCurrent - ability.peCost);
+    onTrackPESpent?.(ability.name, ability.peCost);
 
     if (onActivateEffect && ability.effectId) {
       onActivateEffect(ability.effectId, `Disparo Impactante: ${manobra.name}`, 'instant', { manobra: manobra.id });
@@ -243,7 +248,7 @@ export function useAtiradorDeEliteTrack({
     });
 
     setShowManeuverDrawer(false);
-  }, [peCurrent, onPEChange, onActivateEffect]);
+  }, [peCurrent, onPEChange, onActivateEffect, onTrackPESpent]);
 
   return {
     // Estado

@@ -85,6 +85,8 @@ export interface UseLaminaParanormalTrackProps {
   onPEChange: (newPE: number) => void;
   onRequestAttack?: () => void;
   onActivateEffect?: (id: string, name: string, duration: EffectDuration, metadata?: Record<string, unknown>) => void;
+  /** Callback para rastrear PE gasto na rodada */
+  onTrackPESpent?: (abilityName: string, cost: number) => void;
 }
 
 // =====================================================
@@ -98,6 +100,7 @@ export function useLaminaParanormalTrack({
   onPEChange,
   onRequestAttack,
   onActivateEffect,
+  onTrackPESpent,
 }: UseLaminaParanormalTrackProps) {
   const { toast } = useToast();
   const [isActivating, setIsActivating] = useState(false);
@@ -142,6 +145,7 @@ export function useLaminaParanormalTrack({
 
     const newPE = peCurrent - 2;
     onPEChange(newPE);
+    onTrackPESpent?.('Conjuração Marcial', 2);
 
     onActivateEffect?.(LAMINA_EFFECT_IDS.CONJURACAO_MARCIAL, 'Conjuração Marcial', 'instant');
 
@@ -152,7 +156,7 @@ export function useLaminaParanormalTrack({
 
     setIsActivating(false);
     onRequestAttack?.();
-  }, [peCurrent, onPEChange, toast, onActivateEffect, onRequestAttack]);
+  }, [peCurrent, onPEChange, toast, onActivateEffect, onRequestAttack, onTrackPESpent]);
 
   return {
     // Estado

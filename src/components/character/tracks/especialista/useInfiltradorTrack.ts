@@ -76,6 +76,8 @@ export interface UseInfiltradorTrackProps {
   onToggleConditionalBonus?: (bonusId: string) => void;
   /** Lista de bônus condicionais ativos */
   activeConditionalBonuses?: string[];
+  /** Callback para rastrear PE gasto na rodada */
+  onTrackPESpent?: (abilityName: string, cost: number) => void;
 }
 
 // =====================================================
@@ -95,6 +97,7 @@ export function useInfiltradorTrack({
   computedEffects,
   onToggleConditionalBonus,
   activeConditionalBonuses = [],
+  onTrackPESpent,
 }: UseInfiltradorTrackProps) {
   // Estado local para Assassinar (fallback se não tiver sincronização externa)
   const [localAssassinarActive, setLocalAssassinarActive] = useState(false);
@@ -168,6 +171,7 @@ export function useInfiltradorTrack({
 
     // Deduzir PE (sempre 1)
     onPEChange(-SNEAK_ATTACK_PE_COST);
+    onTrackPESpent?.('Ataque Furtivo', SNEAK_ATTACK_PE_COST);
     onAbilityUsed?.('ataque-furtivo-trilha');
     onActivateEffect?.(TRACK_EFFECT_IDS.ATAQUE_FURTIVO, 'Ataque Furtivo', 'instant');
     
@@ -195,7 +199,8 @@ export function useInfiltradorTrack({
     onActivateEffect, 
     sneakAttackBaseDice, 
     assassinarActive,
-    onToggleConditionalBonus
+    onToggleConditionalBonus,
+    onTrackPESpent
   ]);
 
   /**
@@ -208,6 +213,7 @@ export function useInfiltradorTrack({
     }
 
     onPEChange(-3);
+    onTrackPESpent?.('Assassinar', 3);
     
     // Ativar via bônus condicional (sincronizado) ou estado local
     if (onToggleConditionalBonus) {
@@ -221,7 +227,7 @@ export function useInfiltradorTrack({
     toast.success('Assassinar ativado!', {
       description: `Até o final do próximo turno: primeiro Ataque Furtivo terá dados dobrados. Alvo fica inconsciente/morrendo (Fort DT ${assassinarDT} evita).`
     });
-  }, [peCurrent, onPEChange, onActivateEffect, assassinarDT, onToggleConditionalBonus]);
+  }, [peCurrent, onPEChange, onActivateEffect, assassinarDT, onToggleConditionalBonus, onTrackPESpent]);
   
   /**
    * Cancela Assassinar (sem devolver PE)
@@ -245,12 +251,13 @@ export function useInfiltradorTrack({
     }
 
     onPEChange(-3);
+    onTrackPESpent?.('Sombra Fugaz', 3);
     onActivateEffect?.(TRACK_EFFECT_IDS.SOMBRA_FUGAZ, 'Sombra Fugaz', 'instant');
     
     toast.success('Sombra Fugaz ativado!', {
       description: 'Ignora penalidade de –3d20 no teste de Furtividade após ação chamativa.'
     });
-  }, [peCurrent, onPEChange, onActivateEffect]);
+  }, [peCurrent, onPEChange, onActivateEffect, onTrackPESpent]);
 
   return {
     // Estado

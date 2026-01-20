@@ -37,6 +37,8 @@ export interface UseTecnicoTrackProps {
   onActivateEffect?: (id: string, name: string, duration: EffectDuration, metadata?: Record<string, unknown>) => void;
   isEffectActive?: (id: string) => boolean;
   computedEffects?: ComputedEffects;
+  /** Callback para rastrear PE gasto na rodada */
+  onTrackPESpent?: (abilityName: string, cost: number) => void;
 }
 
 // =====================================================
@@ -54,6 +56,7 @@ export function useTecnicoTrack({
   onActivateEffect,
   isEffectActive,
   computedEffects,
+  onTrackPESpent,
 }: UseTecnicoTrackProps) {
   const [remendaoDrawerOpen, setRemendaoDrawerOpen] = useState(false);
   const [improvisarDrawerOpen, setImprovisarDrawerOpen] = useState(false);
@@ -105,6 +108,7 @@ export function useTecnicoTrack({
     }
 
     onPEChange(peCurrent - 1);
+    onTrackPESpent?.('Remendão', 1);
     setRemendaoDrawerOpen(false);
     
     onActivateEffect?.(TRACK_EFFECT_IDS.REMENDAO ?? 'track-remendao', 'Remendão', 'scene', { 
@@ -115,7 +119,7 @@ export function useTecnicoTrack({
     toast.success('Remendão ativado!', {
       description: `"${item.name}" teve a condição Quebrado removida até o final da cena.`
     });
-  }, [peCurrent, onPEChange, onActivateEffect]);
+  }, [peCurrent, onPEChange, onActivateEffect, onTrackPESpent]);
 
   /**
    * Handler para Improvisar com item específico do catálogo
@@ -130,6 +134,7 @@ export function useTecnicoTrack({
     }
 
     onPEChange(peCurrent - cost);
+    onTrackPESpent?.('Improvisar', cost);
     setImprovisarDrawerOpen(false);
     
     // Cria o item temporário no inventário
@@ -161,7 +166,7 @@ export function useTecnicoTrack({
     toast.success('Equipamento improvisado!', {
       description: `"${item.name}" foi adicionado ao inventário. O item será inútil ao final da cena.`
     });
-  }, [peCurrent, onPEChange, onAddTemporaryItem, onActivateEffect]);
+  }, [peCurrent, onPEChange, onAddTemporaryItem, onActivateEffect, onTrackPESpent]);
 
   /**
    * Handler para Preparado para Tudo (2 PE por categoria)
@@ -176,6 +181,7 @@ export function useTecnicoTrack({
     }
 
     onPEChange(peCurrent - peCost);
+    onTrackPESpent?.('Preparado para Tudo', peCost);
     setPreparadoDrawerOpen(false);
     
     onActivateEffect?.(TRACK_EFFECT_IDS.PREPARADO_PARA_TUDO ?? 'track-preparado-para-tudo', 'Preparado para Tudo', 'instant', { categoria });
@@ -183,7 +189,7 @@ export function useTecnicoTrack({
     toast.success('Preparado para Tudo!', {
       description: `Você lembrou que colocou um item de categoria ${categoria} no fundo da bolsa! Gaste uma ação de movimento para encontrá-lo. O item segue as regras de inventário.`
     });
-  }, [peCurrent, onPEChange, onActivateEffect]);
+  }, [peCurrent, onPEChange, onActivateEffect, onTrackPESpent]);
 
   /**
    * Calcula custo de improvisar por item
