@@ -28,9 +28,16 @@ export const ORIGIN_POWER_EFFECTS: Record<string, {
   // =====================================================
   
   // === Acadêmico - Saber é Poder ===
+  // REGRA OFICIAL (Livro Base v1.3): "Quando faz um teste usando Intelecto, você pode gastar 2 PE 
+  // para receber +5 nesse teste."
   'saber-e-poder': {
     mechanics: {
-      specialEffects: ['Testes de INT: +5 por 2 PE'],
+      // Bônus aplicado via toggle no momento do teste de INT
+      attributeTestBonus: {
+        attribute: 'intellect',
+        bonus: 5,
+      },
+      specialEffects: ['Testes de INT: +5 por 2 PE (ativável)'],
     },
     description: 'Quando faz um teste usando Intelecto, você pode gastar 2 PE para receber +5 nesse teste.',
     isToggleable: true,
@@ -38,9 +45,13 @@ export const ORIGIN_POWER_EFFECTS: Record<string, {
   },
   
   // === Agente de Saúde - Técnica Medicinal ===
+  // REGRA OFICIAL (Livro Base v1.3): "Sempre que cura um personagem, você adiciona seu Intelecto 
+  // no total de PV curados."
   'tecnica-medicinal': {
     mechanics: {
-      specialEffects: ['Cura: +INT PV curados'],
+      // Bônus de cura baseado no Intelecto - aplicado automaticamente em TODAS as curas
+      healingBonus: 'intellect', // Flag: indica que INT é somado ao total de cura
+      specialEffects: ['Cura: +INT PV curados (passivo)'],
     },
     description: 'Sempre que cura um personagem, você adiciona seu Intelecto no total de PV curados.',
   },
@@ -159,21 +170,29 @@ export const ORIGIN_POWER_EFFECTS: Record<string, {
   },
   
   // === Militar - Para Bellum ===
+  // REGRA OFICIAL (Livro Base v1.3): "+2 em rolagens de dano com armas de fogo"
   'para-bellum': {
     mechanics: {
-      grantsProficiency: ['Armas táticas'],
-      specialEffects: ['Proficiência com armas táticas'],
+      rangedDamageBonus: 2, // +2 dano com armas de fogo (tipo Disparo)
+      conditionalNote: 'Apenas com armas de fogo (tipo Disparo)',
     },
-    description: 'Você recebe proficiência com armas táticas.',
+    description: 'Você recebe +2 em rolagens de dano com armas de fogo.',
   },
   
   // === Operário - Ferramenta de Trabalho ===
+  // REGRA OFICIAL (Livro Base v1.3): "Escolha uma arma simples ou tática que poderia ser usada como ferramenta
+  // em sua profissão. Você sabe usar a arma escolhida e recebe +1 em testes de ataque, rolagens de dano
+  // e margem de ameaça com ela."
   'ferramenta-de-trabalho': {
     mechanics: {
-      grantsProficiency: ['Armas pesadas'],
-      specialEffects: ['Proficiência com armas pesadas'],
+      // Bônus aplicados APENAS quando usando a arma vinculada (gerenciado pelo sistema de seleção)
+      attackBonus: 1,           // +1 ataque
+      damageBonus: 1,           // +1 dano
+      criticalMarginBonus: 1,   // +1 margem de ameaça (reduz margem crítica em 1)
+      requiresChosenWeapon: true, // Flag: indica que precisa de arma escolhida para aplicar bônus
+      conditionalNote: 'Apenas com a arma escolhida (simples ou tática)',
     },
-    description: 'Você recebe proficiência com armas pesadas.',
+    description: 'Escolha uma arma simples ou tática. Você recebe +1 em testes de ataque, rolagens de dano e margem de ameaça com ela.',
   },
   
   // === Policial - Patrulha ===
@@ -514,7 +533,8 @@ export const ORIGIN_POWER_EFFECTS: Record<string, {
   // === Médico (Agente de Saúde alternativo) - Técnica Medicinal ===
   'medico': {
     mechanics: {
-      specialEffects: ['Cura: +INT PV curados'],
+      healingBonus: 'intellect', // Flag: indica que INT é somado ao total de cura
+      specialEffects: ['Cura: +INT PV curados (passivo)'],
     },
     description: 'Sempre que cura um personagem, você adiciona seu Intelecto no total de PV curados.',
   },
