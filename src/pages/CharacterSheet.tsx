@@ -327,6 +327,7 @@ export default function CharacterSheet() {
   const [rollResistanceBonus, setRollResistanceBonus] = useState(0);
   const [rollExtraDice, setRollExtraDice] = useState(0);  // Dados extras (Discurso Motivador)
   const [rollBonusSources, setRollBonusSources] = useState<BonusSource[]>([]);
+  const [rollTestedAttribute, setRollTestedAttribute] = useState<'strength' | 'agility' | 'vigor' | 'intellect' | 'presence' | undefined>(undefined);
   
   // Histórico de rolagens
   const [rollHistory, setRollHistory] = useState<DiceRollResult[]>([]);
@@ -528,7 +529,8 @@ export default function CharacterSheet() {
   const defenseBonuses = bonusSummary.defenseBonuses;
   const paranormalEffects = bonusSummary.paranormalEffects;
   
-  // Poderes ativáveis para DiceRollModal (Especialista e Combatente)
+  // Poderes ativáveis para DiceRollModal (Especialista, Combatente e Origens)
+  // Recalculado dinamicamente quando o atributo testado muda (ex: Saber é Poder só aparece em testes de INT)
   const activatablePowersForCharacter = useMemo(() => {
     if (!character) return [];
     return getActivatablePowersForCharacter({
@@ -539,8 +541,10 @@ export default function CharacterSheet() {
       intellect: character.intellect || 1,
       trainedSkills: Object.keys(character.skills || {}).filter(s => (character.skills?.[s] || 0) >= 1),
       characterClass: character.class,
+      origin: character.origin, // Para poderes de origem como "Saber é Poder" (Acadêmico)
+      testedAttribute: rollTestedAttribute, // Atributo sendo testado (filtra poderes aplicáveis)
     });
-  }, [character, peCurrent]);
+  }, [character, peCurrent, rollTestedAttribute]);
   
   // Sistema Unificado de Efeitos já computado pelo useBonusSummaryFromSUE
   const unifiedEffects = bonusSummary.unifiedEffects;
@@ -768,8 +772,17 @@ export default function CharacterSheet() {
     setRollAttribute(attributeValue);
     setRollSkillBonus(0);
     
-    // Detecta se é um teste de resistência e aplica bônus
-    const labelLower = attributeName.toLowerCase();
+    // Detecta o atributo sendo testado para filtrar poderes ativáveis (ex: Saber é Poder só aparece em INT)
+    const labelLower = attributeName.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    let testedAttr: 'strength' | 'agility' | 'vigor' | 'intellect' | 'presence' | undefined;
+    if (labelLower.includes('forca') || labelLower.includes('strength')) testedAttr = 'strength';
+    else if (labelLower.includes('agilidade') || labelLower.includes('agility')) testedAttr = 'agility';
+    else if (labelLower.includes('vigor')) testedAttr = 'vigor';
+    else if (labelLower.includes('intelecto') || labelLower.includes('intellect')) testedAttr = 'intellect';
+    else if (labelLower.includes('presenca') || labelLower.includes('presence')) testedAttr = 'presence';
+    setRollTestedAttribute(testedAttr);
+    
+    // Detecta se é um teste de resistência e aplica bônus (reutiliza labelLower)
     let resistBonus = 0;
     let resistType: 'fortitude' | 'reflexos' | 'vontade' | null = null;
     
