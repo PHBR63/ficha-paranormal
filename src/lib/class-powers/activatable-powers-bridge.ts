@@ -29,6 +29,8 @@ interface CharacterPowerContext {
   peritoSkills?: string[];
   // Classe do personagem
   characterClass?: string;
+  // Trilha do personagem (para poderes de trilha ativáveis)
+  classTrack?: string;
   // Origem do personagem (para poderes de origem ativáveis como "Saber é Poder")
   origin?: string;
   // Atributo sendo testado (para filtrar poderes aplicáveis por atributo)
@@ -146,7 +148,7 @@ export function getAtaqueEspecialTier(nex: number): { cost: number; bonus: numbe
 export function getActivatablePowersForCharacter(
   context: CharacterPowerContext
 ): ActivatablePower[] {
-  const { powers, abilities, nex, peritoSkills, characterClass, origin, testedAttribute } = context;
+  const { powers, abilities, nex, peritoSkills, characterClass, classTrack, origin, testedAttribute } = context;
   const activatable: ActivatablePower[] = [];
   
   // ==================== ORIGENS ====================
@@ -468,6 +470,26 @@ export function getActivatablePowersForCharacter(
       effect: '+2 Def/Resist',
       icon: 'shield-check',
       effectType: 'passive_reminder',
+    });
+  }
+  
+  // ==================== TRILHAS - OPERAÇÕES ESPECIAIS ====================
+  
+  // Ataque Extra (Operações Especiais - NEX 40%)
+  const isOperacoesEspeciais = classTrack?.toLowerCase().includes('operações especiais') || 
+                               classTrack?.toLowerCase().includes('operacoes especiais') ||
+                               classTrack?.toLowerCase().includes('operacoes-especiais');
+  
+  if (isOperacoesEspeciais && nex >= 40) {
+    activatable.push({
+      id: 'ataque-extra',
+      name: 'Ataque Extra',
+      description: 'Uma vez por rodada, quando faz um ataque, você pode gastar 2 PE para fazer um ataque adicional.',
+      peCost: 2,
+      effect: '+1 ataque (1x/rodada)',
+      icon: 'swords',
+      effectType: 'triggered_attack',
+      applicableSkills: ['luta', 'pontaria'],
     });
   }
   
