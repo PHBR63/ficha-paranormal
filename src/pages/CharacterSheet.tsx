@@ -2426,6 +2426,7 @@ export default function CharacterSheet() {
                 })}
                 onActivateEffect={activatedEffects.activateEffect}
                 isEffectActive={activatedEffects.isEffectActive}
+                onTrackPESpent={roundTracking.trackPESpent}
               />
 
               {/* Infiltrador */}
@@ -2443,6 +2444,7 @@ export default function CharacterSheet() {
                 onAbilityUsed={roundTracking.markAbilityUsed}
                 onActivateEffect={activatedEffects.activateEffect}
                 isEffectActive={activatedEffects.isEffectActive}
+                onTrackPESpent={roundTracking.trackPESpent}
               />
 
               {/* Médico de Campo */}
@@ -2457,6 +2459,7 @@ export default function CharacterSheet() {
                 })}
                 onActivateEffect={activatedEffects.activateEffect}
                 isEffectActive={activatedEffects.isEffectActive}
+                onTrackPESpent={roundTracking.trackPESpent}
               />
 
               {/* Negociador */}
@@ -2471,6 +2474,7 @@ export default function CharacterSheet() {
                 })}
                 onActivateEffect={activatedEffects.activateEffect}
                 isEffectActive={activatedEffects.isEffectActive}
+                onTrackPESpent={roundTracking.trackPESpent}
               />
 
               {/* Técnico */}
@@ -2522,6 +2526,7 @@ export default function CharacterSheet() {
                 }}
                 onActivateEffect={activatedEffects.activateEffect}
                 isEffectActive={activatedEffects.isEffectActive}
+                onTrackPESpent={roundTracking.trackPESpent}
               />
 
               {/* ====================================================== */}
@@ -2540,6 +2545,7 @@ export default function CharacterSheet() {
                 })}
                 onActivateEffect={activatedEffects.activateEffect}
                 isEffectActive={activatedEffects.isEffectActive}
+                onTrackPESpent={roundTracking.trackPESpent}
               />
 
               {/* Flagelador */}
@@ -2554,6 +2560,7 @@ export default function CharacterSheet() {
                 })}
                 onActivateEffect={activatedEffects.activateEffect}
                 isEffectActive={activatedEffects.isEffectActive}
+                onTrackPESpent={roundTracking.trackPESpent}
               />
 
               {/* Graduado */}
@@ -2582,6 +2589,7 @@ export default function CharacterSheet() {
                 })}
                 onActivateEffect={activatedEffects.activateEffect}
                 isEffectActive={activatedEffects.isEffectActive}
+                onTrackPESpent={roundTracking.trackPESpent}
               />
 
               {/* Widget de Efeitos Passivos da Trilha */}
