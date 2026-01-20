@@ -60,6 +60,8 @@ interface MobileDiceRollModalProps {
   nex?: number;
   intellect?: number;
   onPEChange?: (newPE: number) => void;
+  // Perícia sendo testada (ID para filtrar poderes aplicáveis como Perito)
+  currentSkill?: string;
 }
 
 // Componente de dado individual
@@ -109,6 +111,7 @@ export function MobileDiceRollModal({
   nex = 5,
   intellect = 1,
   onPEChange,
+  currentSkill,
 }: MobileDiceRollModalProps) {
   // Estados
   const [phase, setPhase] = useState<'idle' | 'rolling' | 'done'>('idle');
