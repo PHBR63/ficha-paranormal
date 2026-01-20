@@ -1888,6 +1888,7 @@ export function MobileCharacterSheet({
               onPEChange={handlePEChange}
               onActivateEffect={activatedEffects.activateEffect}
               isEffectActive={activatedEffects.isEffectActive}
+              onTrackPESpent={roundTracking.trackPESpent}
             />
 
             {/* Infiltrador */}
@@ -1901,6 +1902,7 @@ export function MobileCharacterSheet({
               onAbilityUsed={roundTracking.markAbilityUsed}
               onActivateEffect={activatedEffects.activateEffect}
               isEffectActive={activatedEffects.isEffectActive}
+              onTrackPESpent={roundTracking.trackPESpent}
             />
 
             {/* Médico de Campo */}
@@ -1911,6 +1913,7 @@ export function MobileCharacterSheet({
               onPEChange={handlePEChange}
               onActivateEffect={activatedEffects.activateEffect}
               isEffectActive={activatedEffects.isEffectActive}
+              onTrackPESpent={roundTracking.trackPESpent}
             />
 
             {/* Negociador */}
@@ -1921,6 +1924,7 @@ export function MobileCharacterSheet({
               onPEChange={handlePEChange}
               onActivateEffect={activatedEffects.activateEffect}
               isEffectActive={activatedEffects.isEffectActive}
+              onTrackPESpent={roundTracking.trackPESpent}
             />
             
             {/* Técnico */}
@@ -1962,6 +1966,7 @@ export function MobileCharacterSheet({
               }}
               onActivateEffect={activatedEffects.activateEffect}
               isEffectActive={activatedEffects.isEffectActive}
+              onTrackPESpent={roundTracking.trackPESpent}
             />
 
             {/* ====================================================== */}
@@ -1976,6 +1981,7 @@ export function MobileCharacterSheet({
               onPEChange={handlePEChange}
               onActivateEffect={activatedEffects.activateEffect}
               isEffectActive={activatedEffects.isEffectActive}
+              onTrackPESpent={roundTracking.trackPESpent}
             />
 
             {/* Flagelador */}
@@ -1986,6 +1992,7 @@ export function MobileCharacterSheet({
               onPEChange={handlePEChange}
               onActivateEffect={activatedEffects.activateEffect}
               isEffectActive={activatedEffects.isEffectActive}
+              onTrackPESpent={roundTracking.trackPESpent}
             />
 
             {/* Graduado */}
@@ -2010,6 +2017,7 @@ export function MobileCharacterSheet({
               onPEChange={handlePEChange}
               onActivateEffect={activatedEffects.activateEffect}
               isEffectActive={activatedEffects.isEffectActive}
+              onTrackPESpent={roundTracking.trackPESpent}
             />
             
             {/* Widget de Efeitos Passivos da Trilha */}
