@@ -459,6 +459,35 @@ export function MobileDiceRollModal({
                         )}
                       </>
                     )}
+                    
+                    {/* Badges de poderes ativados - indicador visual no breakdown */}
+                    {getActivePowers().map((activePower) => {
+                      // Buscar dados completos do poder na lista de poderes ativáveis
+                      const powerData = activatablePowers.find(p => p.id === activePower.powerId);
+                      if (!powerData) return null;
+                      
+                      const effects = calculatePowerActivationEffects(activePower.powerId, nex, intellect);
+                      if (effects.skillBonusChange === 0) return null;
+                      
+                      return (
+                        <TooltipProvider key={activePower.powerId} delayDuration={300}>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="px-2 py-1 rounded font-medium flex items-center gap-1 bg-accent/20 text-accent-foreground">
+                                <Zap className="w-3 h-3 text-accent" />
+                                +{effects.skillBonusChange} {powerData.name}
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="max-w-[200px] text-xs">
+                              <p className="font-medium">{powerData.name}</p>
+                              <p className="text-muted-foreground mt-0.5">
+                                {powerData.description || `Bônus de +${effects.skillBonusChange} ativado por ${powerData.peCost || 0} PE`}
+                              </p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      );
+                    })}
                   </div>
 
                   {/* Total grande */}
