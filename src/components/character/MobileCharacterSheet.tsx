@@ -74,6 +74,7 @@ import { calculateDerivedStats, countTranscender, CLASSES } from '@/lib/characte
 import { getPowerById, ParanormalPower } from '@/lib/paranormal-powers';
 import { MobileRitualEffectWizard } from './mobile/MobileRitualEffectWizard';
 import type { WeaponBuff } from '@/hooks/useWeaponBuffs';
+import { getActivatablePowersForCharacter } from '@/lib/class-powers/activatable-powers-bridge';
 
 // Componentes mobile extraídos e memoizados
 import {
@@ -344,6 +345,9 @@ export function MobileCharacterSheet({
   // Modal de seleção de arma para origens (Operário - Ferramenta de Trabalho)
   const [originWeaponModalOpen, setOriginWeaponModalOpen] = useState(false);
   const [wizardPeCost, setWizardPeCost] = useState(0);
+  
+  // Estado para rastrear qual atributo está sendo testado (paridade com desktop - ativação de poderes)
+  const [rollTestedAttribute, setRollTestedAttribute] = useState<'agility' | 'intellect' | 'strength' | 'presence' | 'vigor' | undefined>(undefined);
   
   // Estado local de stats para edição
   const [localHpCurrent, setLocalHpCurrent] = useState(character.hp_current);
@@ -813,6 +817,24 @@ export function MobileCharacterSheet({
     setCombatModalOpen(true);
   }, []);
 
+  // Memo de poderes ativáveis para rolagens (paridade com desktop)
+  const activatablePowersForCharacter = useMemo(() => {
+    if (!character) return [];
+    return getActivatablePowersForCharacter({
+      powers: character.powers || [],
+      abilities: character.abilities || [],
+      nex: character.nex || 5,
+      peCurrent: localPeCurrent,
+      intellect: character.intellect || 1,
+      trainedSkills: Object.keys(character.skills || {}).filter(
+        s => (character.skills?.[s] || 0) >= 1
+      ),
+      characterClass: character.class,
+      origin: character.origin,
+      testedAttribute: rollTestedAttribute,
+    });
+  }, [character, localPeCurrent, rollTestedAttribute]);
+
   // Handler para rolagem de perícia (abre modal de dados)
   const handleSkillRoll = useCallback((skillName: string) => {
     const trainingBonus = character.skills?.[skillName.toLowerCase()] || 0;
@@ -824,6 +846,16 @@ export function MobileCharacterSheet({
       'PRE': character.presence,
       'VIG': character.vigor,
     }[skillAttr] || 1;
+    
+    // Detectar atributo sendo testado para filtrar poderes ativáveis (paridade desktop)
+    const attrMap: Record<string, 'agility' | 'intellect' | 'strength' | 'presence' | 'vigor'> = {
+      'INT': 'intellect',
+      'AGI': 'agility',
+      'FOR': 'strength',
+      'PRE': 'presence',
+      'VIG': 'vigor',
+    };
+    setRollTestedAttribute(attrMap[skillAttr]);
     
     // Busca bônus de poderes de classe (Perito, Versatilidade, etc.)
     const skillKey = skillName.toLowerCase().replace(/\s+/g, '-');
@@ -2261,11 +2293,22 @@ export function MobileCharacterSheet({
         onClose={() => {
           setDiceModalOpen(false);
           setDiceModalConfig(null);
+          setRollTestedAttribute(undefined);
         }}
         label={diceModalConfig?.skillName || 'Rolagem'}
         attributeValue={diceModalConfig?.pool || 1}
         skillBonus={diceModalConfig?.bonus}
         bonusSources={diceModalConfig?.bonusSources}
+        // Props para ativação de poderes (paridade desktop)
+        activatablePowers={activatablePowersForCharacter}
+        peCurrent={localPeCurrent}
+        nex={character.nex}
+        intellect={character.intellect}
+        onPEChange={(newPE) => handleCombatStatsChange({ 
+          hp: localHpCurrent, 
+          pe: newPE, 
+          san: localSanCurrent 
+        })}
         onRollComplete={(result) => {
           const isInitiative = diceModalConfig?.skillName === 'Iniciativa';
           addRoll({
