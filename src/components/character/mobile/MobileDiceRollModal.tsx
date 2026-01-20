@@ -2,11 +2,13 @@
  * MobileDiceRollModal - Modal de rolagem de dados otimizado para mobile
  * Usa Drawer (vaul) para melhor UX em telas pequenas
  * Rola automaticamente ao abrir e exibe resultado com animação
+ * 
+ * PARIDADE DESKTOP: Suporta ativação de poderes (Saber é Poder, etc.)
  */
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Dices, RotateCcw, X, Sparkles, Info } from 'lucide-react';
+import { Dices, RotateCcw, X, Sparkles, Info, Zap, ChevronDown, ChevronUp } from 'lucide-react';
 import { 
   MobileDrawer,
   MobileDrawerContent,
@@ -23,9 +25,15 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import confetti from 'canvas-confetti';
 import { DiceRollResult, rollSkillTest } from '@/lib/dice-roller';
+import { 
+  usePowerActivation, 
+  type ActivatablePower 
+} from '@/components/dice/PowerActivationPanel';
+import { calculatePowerActivationEffects } from '@/lib/class-powers/activatable-powers-bridge';
 
 // Interface para detalhamento de bônus por origem
 export interface BonusSource {
@@ -36,7 +44,7 @@ export interface BonusSource {
   sourceName?: string;
 }
 
-// Props do modal mobile
+// Props do modal mobile (com paridade desktop para ativação de poderes)
 interface MobileDiceRollModalProps {
   open: boolean;
   onClose: () => void;
@@ -46,6 +54,12 @@ interface MobileDiceRollModalProps {
   resistanceBonus?: number;
   bonusSources?: BonusSource[];
   onRollComplete?: (result: DiceRollResult) => void;
+  // Novas props para ativação de poderes (paridade desktop)
+  activatablePowers?: ActivatablePower[];
+  peCurrent?: number;
+  nex?: number;
+  intellect?: number;
+  onPEChange?: (newPE: number) => void;
 }
 
 // Componente de dado individual
@@ -89,15 +103,50 @@ export function MobileDiceRollModal({
   resistanceBonus = 0,
   bonusSources = [],
   onRollComplete,
+  // Novas props para ativação de poderes
+  activatablePowers = [],
+  peCurrent = 0,
+  nex = 5,
+  intellect = 1,
+  onPEChange,
 }: MobileDiceRollModalProps) {
   // Estados
   const [phase, setPhase] = useState<'idle' | 'rolling' | 'done'>('idle');
   const [displayDice, setDisplayDice] = useState<number[]>([]);
   const [result, setResult] = useState<DiceRollResult | null>(null);
+  const [isPowerPanelExpanded, setIsPowerPanelExpanded] = useState(true);
   
   // Refs (React 19: valor inicial obrigatório)
   const hasRolledRef = useRef<boolean>(false);
   const animationRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Hook para gerenciar ativação de poderes (paridade desktop)
+  const {
+    activationStates,
+    togglePower,
+    resetActivations,
+    getActivePowers,
+    getTotalPECost,
+  } = usePowerActivation(activatablePowers);
+
+  // Calcular efeitos dos poderes ativados
+  const activatedPowerEffects = useMemo(() => {
+    const activePowers = getActivePowers();
+    let extraBonus = 0;
+    const extraDice: string[] = [];
+    let attributeSwap: string | undefined;
+    const notes: string[] = [];
+    
+    for (const ap of activePowers) {
+      const effects = calculatePowerActivationEffects(ap.powerId, nex, intellect);
+      extraBonus += effects.skillBonusChange;
+      if (effects.extraDice) extraDice.push(effects.extraDice);
+      if (effects.attributeSwap) attributeSwap = effects.attributeSwap;
+      if (effects.specialNote) notes.push(effects.specialNote);
+    }
+    
+    return { extraBonus, extraDice, attributeSwap, notes };
+  }, [getActivePowers, nex, intellect]);
 
   // Cores para cada tipo de bônus
   const bonusTypeColors: Record<BonusSource['type'], string> = {
@@ -142,8 +191,9 @@ export function MobileDiceRollModal({
           animationRef.current = null;
         }
         
-        // Rolagem real
-        const totalBonus = skillBonus + resistanceBonus;
+        // Rolagem real com bônus de poderes ativados
+        const powerBonus = activatedPowerEffects.extraBonus;
+        const totalBonus = skillBonus + resistanceBonus + powerBonus;
         const rollResult = rollSkillTest({
           attributeValue,
           skillBonus: totalBonus,
@@ -153,6 +203,12 @@ export function MobileDiceRollModal({
         setDisplayDice(rollResult.dice);
         setResult(rollResult);
         setPhase('done');
+        
+        // Descontar PE dos poderes ativados
+        const peCost = getTotalPECost();
+        if (peCost > 0 && onPEChange) {
+          onPEChange(Math.max(0, peCurrent - peCost));
+        }
         
         // Confetti em crítico
         if (rollResult.isCritical) {
@@ -167,7 +223,7 @@ export function MobileDiceRollModal({
         onRollComplete?.(rollResult);
       }
     }, 80);
-  }, [attributeValue, skillBonus, resistanceBonus, label, diceCount, onRollComplete]);
+  }, [attributeValue, skillBonus, resistanceBonus, activatedPowerEffects.extraBonus, label, diceCount, onRollComplete, getTotalPECost, onPEChange, peCurrent]);
 
   // Auto-rolar ao abrir
   useEffect(() => {
@@ -189,8 +245,9 @@ export function MobileDiceRollModal({
       setDisplayDice([]);
       setResult(null);
       hasRolledRef.current = false;
+      resetActivations(); // Reset ativação de poderes
     }
-  }, [open]);
+  }, [open, resetActivations]);
 
   // Cleanup
   useEffect(() => {
@@ -250,6 +307,101 @@ export function MobileDiceRollModal({
                 </div>
               )}
             </div>
+
+            {/* Painel de ativação de poderes - mobile-friendly */}
+            {activatablePowers.length > 0 && peCurrent > 0 && (
+              <div className="border-t border-border pt-3 mt-3">
+                <button
+                  onClick={() => setIsPowerPanelExpanded(!isPowerPanelExpanded)}
+                  className="w-full flex items-center justify-between text-xs font-medium text-muted-foreground hover:text-foreground transition-colors mb-2"
+                >
+                  <span className="flex items-center gap-1.5">
+                    <Zap className="w-3.5 h-3.5 text-yellow-500" />
+                    Poderes Ativáveis ({activatablePowers.length})
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <span className="text-[10px]">
+                      PE: {peCurrent} | Custo: {getTotalPECost()}
+                    </span>
+                    {isPowerPanelExpanded ? (
+                      <ChevronUp className="w-3.5 h-3.5" />
+                    ) : (
+                      <ChevronDown className="w-3.5 h-3.5" />
+                    )}
+                  </span>
+                </button>
+                
+                <AnimatePresence>
+                  {isPowerPanelExpanded && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="space-y-2">
+                        {activatablePowers.map((power) => {
+                          const isActive = activationStates.find(s => s.powerId === power.id)?.isActive || false;
+                          const canAfford = peCurrent >= (power.peCost || 0);
+                          
+                          return (
+                            <div
+                              key={power.id}
+                              className={cn(
+                                'flex items-center justify-between p-2 rounded-lg border transition-colors',
+                                isActive 
+                                  ? 'bg-accent/20 border-accent' 
+                                  : 'bg-muted/30 border-border',
+                                !canAfford && !isActive && 'opacity-50'
+                              )}
+                            >
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-xs font-medium truncate">
+                                    {power.name}
+                                  </span>
+                                  {power.peCost && power.peCost > 0 && (
+                                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/20 text-primary shrink-0">
+                                      {power.peCost} PE
+                                    </span>
+                                  )}
+                                </div>
+                                {power.description && (
+                                  <p className="text-[10px] text-muted-foreground truncate mt-0.5">
+                                    {power.description}
+                                  </p>
+                                )}
+                              </div>
+                              <Switch
+                                checked={isActive}
+                                onCheckedChange={(checked) => {
+                                  if (canAfford || isActive) {
+                                    togglePower(power.id, checked);
+                                  }
+                                }}
+                                disabled={!canAfford && !isActive}
+                                className="ml-2 shrink-0 scale-90"
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
+                      
+                      {/* Indicador de bônus ativo */}
+                      {activatedPowerEffects.extraBonus > 0 && (
+                        <div className="mt-2 p-2 rounded bg-accent/10 border border-accent/30">
+                          <div className="flex items-center gap-1.5 text-xs text-accent">
+                            <Sparkles className="w-3 h-3" />
+                            <span>Bônus ativado: +{activatedPowerEffects.extraBonus}</span>
+                          </div>
+                        </div>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
 
             {/* Resultado */}
             <AnimatePresence mode="wait">
