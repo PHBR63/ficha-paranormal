@@ -129,6 +129,8 @@ export interface UseGuerreiroTrackProps {
   onActivateEffect?: (id: string, name: string, duration: EffectDuration, metadata?: Record<string, unknown>) => void;
   isEffectActive?: (id: string) => boolean;
   computedEffects?: ComputedEffects;
+  /** Callback para registrar PE gasto na rodada */
+  onTrackPESpent?: (abilityName: string, cost: number) => void;
 }
 
 // =====================================================
@@ -143,6 +145,7 @@ export function useGuerreiroTrack({
   onRequestAttack,
   onActivateEffect,
   computedEffects,
+  onTrackPESpent,
 }: UseGuerreiroTrackProps) {
   const { toast } = useToast();
 
@@ -200,6 +203,7 @@ export function useGuerreiroTrack({
 
     const newPE = peCurrent - ability.peCost;
     onPEChange(newPE);
+    onTrackPESpent?.(ability.name, ability.peCost);
 
     // Registra no SUE
     onActivateEffect?.(GUERREIRO_EFFECT_IDS.REVIDAR, 'Revidar', 'instant');
@@ -211,7 +215,7 @@ export function useGuerreiroTrack({
 
     setActivatingAbility(null);
     onRequestAttack?.();
-  }, [peCurrent, onPEChange, toast, onRequestAttack, onActivateEffect]);
+  }, [peCurrent, onPEChange, toast, onRequestAttack, onActivateEffect, onTrackPESpent]);
 
   // Handler para abrir modal de Força Opressora
   const handleOpenForcaOpressora = useCallback(() => {
@@ -254,6 +258,7 @@ export function useGuerreiroTrack({
 
     const newPE = peCurrent - totalCost;
     onPEChange(newPE);
+    onTrackPESpent?.(ability.name, totalCost);
 
     const maneuverName = selectedManeuver === 'derrubar' ? 'Derrubar' : 'Empurrar';
     const extraInfo = selectedManeuver === 'empurrar'

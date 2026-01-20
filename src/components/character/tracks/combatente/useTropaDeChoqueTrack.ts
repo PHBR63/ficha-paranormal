@@ -110,6 +110,8 @@ export interface UseTropaDeChoqueTrackProps {
   onActivateEffect?: (id: string, name: string, duration: EffectDuration, metadata?: Record<string, unknown>) => void;
   isEffectActive?: (id: string) => boolean;
   computedEffects?: ComputedEffects;
+  /** Callback para registrar PE gasto na rodada */
+  onTrackPESpent?: (abilityName: string, cost: number) => void;
 }
 
 // =====================================================
@@ -126,6 +128,7 @@ export function useTropaDeChoqueTrack({
   onPEChange,
   onActivateEffect,
   computedEffects,
+  onTrackPESpent,
 }: UseTropaDeChoqueTrackProps) {
   const { toast } = useToast();
 
@@ -190,7 +193,7 @@ export function useTropaDeChoqueTrack({
     }
 
     onPEChange(peCurrent - ability.peCost);
-
+    onTrackPESpent?.(ability.name, ability.peCost);
     // Mensagem e registro no SUE específicos por habilidade
     if (ability.id === 'cai-dentro') {
       onActivateEffect?.(TROPA_EFFECT_IDS.CAI_DENTRO, 'Cai Dentro', 'instant', { dt: vigorDT });
