@@ -859,7 +859,7 @@ export interface ComputedEffects {
     };
   };
 
-  // === Cura (Médico de Campo) ===
+  // === Cura (Médico de Campo + Origens) ===
   healing: {
     available: boolean;                      // Se o personagem tem habilidade de cura
     baseDice: number;                        // Dados base para o NEX atual
@@ -868,6 +868,9 @@ export interface ComputedEffects {
     extraDicePECost: number;                 // Custo por dado adicional
     range: 'self' | 'touch' | 'short';       // Alcance
     actionType: 'standard' | 'movement' | 'complete'; // Tipo de ação
+    // Bônus de cura de origens (ex: Agente de Saúde - Técnica Medicinal)
+    bonusFromOrigin: number;                 // Valor numérico a adicionar em TODAS as curas
+    bonusFromOriginSource: string | null;    // Fonte do bônus (ex: "Origem: Agente de Saúde")
     sources: Array<{
       source: string;
       dice: number;
@@ -1379,6 +1382,8 @@ export function consolidateEffects(
       extraDicePECost: 0,
       range: 'touch',
       actionType: 'standard',
+      bonusFromOrigin: 0,
+      bonusFromOriginSource: null,
       sources: [],
     },
     // === LIDERANÇA ===
@@ -1978,6 +1983,28 @@ export function consolidateEffects(
         dieType,
         peCost: m.healing.peCost,
       });
+    }
+
+    // === Bônus de Cura de Origens (Agente de Saúde - Técnica Medicinal) ===
+    // Processa healingBonus que pode ser um atributo ('intellect') ou valor fixo
+    if (m.healingBonus) {
+      let bonusValue = 0;
+      
+      if (typeof m.healingBonus === 'number') {
+        bonusValue = m.healingBonus;
+      } else if (m.healingBonus === 'intellect') {
+        bonusValue = context.attributes.intellect;
+      } else if (m.healingBonus === 'presence') {
+        bonusValue = context.attributes.presence;
+      } else if (m.healingBonus === 'vigor') {
+        bonusValue = context.attributes.vigor;
+      }
+      
+      // Adiciona ao bônus de cura (maior bônus vence para evitar stacking)
+      if (bonusValue > result.healing.bonusFromOrigin) {
+        result.healing.bonusFromOrigin = bonusValue;
+        result.healing.bonusFromOriginSource = source;
+      }
     }
 
     // === Liderança (Comandante de Campo) ===
