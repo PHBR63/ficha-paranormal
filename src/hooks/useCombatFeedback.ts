@@ -6,13 +6,14 @@
 import { useCallback, useRef, useMemo } from 'react';
 
 // Tipos de feedback disponíveis
-export type CombatFeedbackType = 'hit' | 'miss' | 'critical' | 'fumble' | 'damage' | 'roll';
+export type CombatFeedbackType = 'hit' | 'miss' | 'critical' | 'criticalMiss' | 'fumble' | 'damage' | 'roll';
 
 // Configuração de vibração por tipo (padrões em ms)
 const VIBRATION_PATTERNS: Record<CombatFeedbackType, number | number[]> = {
   hit: [50, 30, 50],           // Dois pulsos curtos - acertou!
   miss: [100],                  // Um pulso longo - errou
   critical: [30, 20, 30, 20, 80], // Padrão crescente - CRÍTICO!
+  criticalMiss: [50, 30, 50, 50, 150], // Subida seguida de queda - crítico que erra
   fumble: [200, 50, 200],       // Pulso duplo forte - falha crítica
   damage: [40, 20, 40],         // Similar ao hit, para dano
   roll: [15],                   // Pulso mínimo - rolagem de dados
@@ -25,10 +26,12 @@ const SOUND_CONFIG: Record<CombatFeedbackType, {
   type: OscillatorType;
   volume: number;
   ramp?: boolean;
+  rampDown?: boolean; // Novo: rampa descendente para criticalMiss
 }> = {
   hit: { frequency: 880, duration: 100, type: 'sine', volume: 0.3 },       // A5 - som agudo positivo
   miss: { frequency: 220, duration: 200, type: 'triangle', volume: 0.2 }, // A3 - som grave negativo
   critical: { frequency: 1320, duration: 150, type: 'sine', volume: 0.4, ramp: true }, // E6 - som muito agudo
+  criticalMiss: { frequency: 880, duration: 250, type: 'sine', volume: 0.35, rampDown: true }, // Som que sobe e desce - expectativa frustrada
   fumble: { frequency: 110, duration: 300, type: 'sawtooth', volume: 0.25 }, // A2 - som muito grave
   damage: { frequency: 660, duration: 80, type: 'sine', volume: 0.25 },   // E5 - som médio
   roll: { frequency: 440, duration: 50, type: 'sine', volume: 0.15 },     // A4 - som curto neutro
@@ -52,6 +55,8 @@ interface CombatFeedbackResult {
   triggerMiss: () => void;
   /** Dispara feedback de crítico */
   triggerCritical: () => void;
+  /** Dispara feedback de crítico que erra (regra personalizada) */
+  triggerCriticalMiss: () => void;
   /** Dispara feedback de falha crítica */
   triggerFumble: () => void;
   /** Dispara feedback de dano */
@@ -119,9 +124,16 @@ export function useCombatFeedback(options: UseCombatFeedbackOptions = {}): Comba
       gainNode.gain.setValueAtTime(effectiveVolume, now);
       
       if (config.ramp) {
-        // Efeito de "subida" para crítico
+        // Efeito de "subida" para crítico - expectativa de sucesso
         oscillator.frequency.setValueAtTime(config.frequency * 0.5, now);
         oscillator.frequency.exponentialRampToValueAtTime(config.frequency * 1.5, now + config.duration / 1000);
+      } else if ((config as any).rampDown) {
+        // Efeito de "subida e queda" para crítico que erra - expectativa frustrada
+        const midpoint = now + (config.duration / 2000);
+        const endTime = now + config.duration / 1000;
+        oscillator.frequency.setValueAtTime(config.frequency * 0.8, now);
+        oscillator.frequency.exponentialRampToValueAtTime(config.frequency * 1.3, midpoint);
+        oscillator.frequency.exponentialRampToValueAtTime(config.frequency * 0.3, endTime);
       }
       
       // Fade out suave no final
@@ -185,6 +197,7 @@ export function useCombatFeedback(options: UseCombatFeedbackOptions = {}): Comba
     triggerHit: () => trigger('hit'),
     triggerMiss: () => trigger('miss'),
     triggerCritical: () => trigger('critical'),
+    triggerCriticalMiss: () => trigger('criticalMiss'),
     triggerFumble: () => trigger('fumble'),
     triggerDamage: () => trigger('damage'),
     triggerRoll: () => trigger('roll'),

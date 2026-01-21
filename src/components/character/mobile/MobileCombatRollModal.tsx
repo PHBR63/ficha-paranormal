@@ -804,10 +804,23 @@ export function MobileCombatRollModal({
       // Feedback baseado no resultado
       const isFumble = result.dice.every(d => d === 1);
       
+      // Verifica se acertou (regra personalizada: crítico NÃO é acerto automático)
+      const didHit = targetDefense !== null ? result.total >= targetDefense : true;
+      
       if (isFumble) {
         combatFeedback.triggerFumble();
-      } else if (result.isCritical) {
-        // Confetti + som de crítico
+      } else if (result.isCritical && !didHit) {
+        // REGRA PERSONALIZADA: Crítico que não acerta - som único de expectativa frustrada
+        // Confetti âmbar (não verde) para indicar crítico mas erro
+        confetti({
+          particleCount: 50,
+          spread: 40,
+          origin: { y: 0.6 },
+          colors: ['#f59e0b', '#d97706', '#92400e'], // Cores âmbar/laranja
+        });
+        combatFeedback.triggerCriticalMiss();
+      } else if (result.isCritical && didHit) {
+        // Crítico que acerta - confetti dourado normal
         confetti({
           particleCount: 100,
           spread: 70,
@@ -816,7 +829,7 @@ export function MobileCombatRollModal({
         });
         combatFeedback.triggerCritical();
       } else if (targetDefense !== null) {
-        if (result.total >= targetDefense) {
+        if (didHit) {
           combatFeedback.triggerHit();
         } else {
           combatFeedback.triggerMiss();
