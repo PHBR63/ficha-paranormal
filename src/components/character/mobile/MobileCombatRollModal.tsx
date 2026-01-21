@@ -1571,34 +1571,49 @@ export function MobileCombatRollModal({
                     {attackResult.total}
                   </p>
                   
-                  {/* Hit/Miss comparison - NOVO */}
+                  {/* Hit/Miss comparison com feedback especial para crítico que erra */}
                   {hitResult && (
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.4 }}
                       className={cn(
-                        "inline-flex items-center gap-2 px-4 py-2 rounded-full",
+                        "inline-flex flex-col items-center gap-1 px-4 py-2 rounded-full",
                         hitResult === 'hit' 
                           ? "bg-emerald-500/20 text-emerald-400" 
-                          : "bg-destructive/20 text-destructive"
+                          : attackResult.isCritical
+                            ? "bg-amber-500/20 text-amber-500"
+                            : "bg-destructive/20 text-destructive"
                       )}
                     >
-                      {hitResult === 'hit' ? (
-                        <>
-                          <Check className="w-4 h-4" />
-                          <span className="font-medium">Acertou! (Def {targetDefense})</span>
-                        </>
-                      ) : (
-                        <>
-                          <X className="w-4 h-4" />
-                          <span className="font-medium">Errou (Def {targetDefense})</span>
-                        </>
+                      <div className="flex items-center gap-2">
+                        {hitResult === 'hit' ? (
+                          <>
+                            <Check className="w-4 h-4" />
+                            <span className="font-medium">Acertou! (Def {targetDefense})</span>
+                          </>
+                        ) : attackResult.isCritical ? (
+                          <>
+                            <Sparkles className="w-4 h-4" />
+                            <span className="font-medium">CRÍTICO, mas Errou</span>
+                          </>
+                        ) : (
+                          <>
+                            <X className="w-4 h-4" />
+                            <span className="font-medium">Errou (Def {targetDefense})</span>
+                          </>
+                        )}
+                      </div>
+                      {attackResult.isCritical && hitResult === 'miss' && (
+                        <span className="text-[10px] opacity-70">
+                          Crítico só dobra dano se acertar
+                        </span>
                       )}
                     </motion.div>
                   )}
                   
-                  {attackResult.isCritical && (
+                  {/* Badge de crítico quando acerta */}
+                  {attackResult.isCritical && hitResult === 'hit' && (
                     <Badge className="bg-amber-500/20 text-amber-500 text-sm px-4 py-1">
                       <Sparkles className="w-4 h-4 mr-1" />
                       CRÍTICO! (x{criticalMultiplier})

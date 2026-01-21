@@ -2241,7 +2241,9 @@ export function CombatRollModal({
                         "p-3 rounded-lg border-2 text-center",
                         attackResult.total >= targetDefense
                           ? "bg-green-500/10 border-green-500/50 text-green-500"
-                          : "bg-destructive/10 border-destructive/50 text-destructive"
+                          : attackResult.isCritical
+                            ? "bg-amber-500/10 border-amber-500/50 text-amber-500"
+                            : "bg-destructive/10 border-destructive/50 text-destructive"
                       )}
                     >
                       <div className="flex items-center justify-center gap-2">
@@ -2249,6 +2251,11 @@ export function CombatRollModal({
                           <>
                             <Target className="w-5 h-5" />
                             <span className="font-display font-bold text-lg">ACERTOU!</span>
+                          </>
+                        ) : attackResult.isCritical ? (
+                          <>
+                            <Sparkles className="w-5 h-5" />
+                            <span className="font-display font-bold text-lg">CRÍTICO, mas ERROU</span>
                           </>
                         ) : (
                           <>
@@ -2264,6 +2271,11 @@ export function CombatRollModal({
                           : ` (faltou ${targetDefense - attackResult.total})`
                         }
                       </p>
+                      {attackResult.isCritical && attackResult.total < targetDefense && (
+                        <p className="text-[10px] opacity-60 mt-1">
+                          Crítico só dobra dano se acertar
+                        </p>
+                      )}
                     </motion.div>
                   )}
                 </div>
