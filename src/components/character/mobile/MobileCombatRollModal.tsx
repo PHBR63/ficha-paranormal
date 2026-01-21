@@ -689,6 +689,203 @@ export function MobileCombatRollModal({
     return sources;
   }, [attackSkill, unifiedEffects, weapon, trackCombatBonuses, weaponBuffBonuses, passiveBonuses, selectedBonuses, availableBonuses, manualAttackMod, proficiencyCheck]);
 
+  // === DETALHAMENTO DAS FONTES DE BÔNUS DE DANO ===
+  // Fornece transparência completa sobre cada fonte que contribui para o dano
+  const damageBonusSources = useMemo(() => {
+    const sources: BonusSourceDisplay[] = [];
+    const isMelee = weapon?.type === 'Corpo a Corpo' || weapon?.type === 'Briga';
+    
+    // === FORÇA (corpo a corpo) ===
+    if (isMelee && attributes.strength !== 0) {
+      sources.push({
+        label: 'Força',
+        value: attributes.strength,
+        type: 'attribute',
+        description: 'Modificador de Força adicionado ao dano corpo a corpo',
+      });
+    }
+    
+    // === BÔNUS DO SUE (origem, trilha, condições) ===
+    if (unifiedEffects) {
+      // Breakdown detalhado do dano geral
+      if (unifiedEffects.damage.breakdown && unifiedEffects.damage.breakdown.length > 0) {
+        unifiedEffects.damage.breakdown.forEach(entry => {
+          sources.push({
+            label: entry.source,
+            value: entry.value,
+            type: 'track',
+            description: entry.conditional || `Bônus de ${entry.source}`,
+          });
+        });
+      } else if (unifiedEffects.damage.general !== 0) {
+        // Fallback se não houver breakdown detalhado
+        sources.push({
+          label: 'Efeitos',
+          value: unifiedEffects.damage.general,
+          type: 'track',
+        });
+      }
+      
+      // Bônus específico melee/ranged
+      const specificDamage = isMelee ? unifiedEffects.damage.melee : unifiedEffects.damage.ranged;
+      if (specificDamage !== 0) {
+        sources.push({
+          label: isMelee ? 'Corpo a Corpo' : 'À Distância',
+          value: specificDamage,
+          type: 'track',
+        });
+      }
+      
+      // Dados extras do SUE (exibe como string)
+      if (unifiedEffects.damage.extraDice.length > 0) {
+        unifiedEffects.damage.extraDice.forEach(dice => {
+          sources.push({
+            label: 'Dados Extras',
+            value: `+${dice}`,
+            type: 'track',
+          });
+        });
+      }
+    }
+    
+    // === BÔNUS DE TRILHA ===
+    if (trackCombatBonuses.damageBonus > 0) {
+      sources.push({
+        label: 'Trilha',
+        value: trackCombatBonuses.damageBonus,
+        type: 'track',
+        description: `Bônus de dano da trilha ${classTrack}`,
+      });
+    }
+    
+    // Dados extras de trilha
+    if (trackCombatBonuses.extraDamageDice.length > 0) {
+      trackCombatBonuses.extraDamageDice.forEach(dice => {
+        sources.push({
+          label: 'Trilha',
+          value: `+${dice}`,
+          type: 'track',
+        });
+      });
+    }
+    
+    // === GOLPE PESADO (passivo, corpo a corpo) ===
+    const hasGolpePesado = abilities.some(a => a.toLowerCase().includes('golpe pesado'));
+    if (hasGolpePesado && isMelee && weapon?.damage) {
+      const parsed = parseDamageString(weapon.damage);
+      sources.push({
+        label: 'Golpe Pesado',
+        value: `+1d${parsed.size}`,
+        type: 'power',
+        description: 'Adiciona um dado extra do tipo da arma ao dano corpo a corpo',
+      });
+    }
+    
+    // === MÁQUINA DE MATAR (Aniquilador NEX 99%+) ===
+    if (maquinaDeMatarActive && weapon?.damage) {
+      const parsed = parseDamageString(weapon.damage);
+      sources.push({
+        label: 'Máquina de Matar',
+        value: `+1d${parsed.size}`,
+        type: 'power',
+        description: 'Aniquilador NEX 99%: +1 dado de dano com arma favorita',
+      });
+    }
+    
+    // === BÔNUS PASSIVOS (rituais sustentados, poderes) ===
+    passiveBonuses.forEach(b => {
+      if (b.damageBonus) {
+        sources.push({
+          label: b.name,
+          value: typeof b.damageBonus === 'number' ? b.damageBonus : `+${b.damageBonus}`,
+          type: b.source === 'paranormal' ? 'paranormal' : 'ritual',
+          description: b.description,
+        });
+      }
+    });
+    
+    // === WEAPON BUFFS (Amaldiçoar Arma, etc.) ===
+    if (weaponBuffBonuses.bonusDamage) {
+      const damageStr = `${weaponBuffBonuses.bonusDamage.diceCount}d${weaponBuffBonuses.bonusDamage.diceType}`;
+      sources.push({
+        label: 'Buff de Arma',
+        value: `+${damageStr}`,
+        type: 'ritual',
+        sourceName: weaponBuffBonuses.summary.join(', '),
+        description: weaponBuffBonuses.summary.length > 0 ? weaponBuffBonuses.summary[0] : undefined,
+      });
+    }
+    
+    // === BÔNUS SELECIONADOS (rituais ativos, poderes paranormais escolhidos) ===
+    selectedBonuses.forEach(bonusId => {
+      const bonus = availableBonuses.find(b => b.id === bonusId);
+      if (bonus?.damageBonus) {
+        sources.push({
+          label: bonus.name.split('(')[0].trim(), // Remove parênteses para label mais limpa
+          value: typeof bonus.damageBonus === 'number' ? bonus.damageBonus : `+${bonus.damageBonus}`,
+          type: bonus.source === 'paranormal' ? 'paranormal' : 'power',
+          description: bonus.description,
+        });
+      }
+    });
+    
+    // === ATAQUE ESPECIAL (Combatente) ===
+    if (specialAttackConfig.enabled && specialAttackResult.damageBonus > 0) {
+      const potenciaMaximaMultiplier = advancedBonuses.potenciaMaxima && isMelee ? 2 : 1;
+      const finalDamageBonus = specialAttackResult.damageBonus * potenciaMaximaMultiplier;
+      sources.push({
+        label: advancedBonuses.potenciaMaxima ? 'Ataque Especial (Potência Máx.)' : 'Ataque Especial',
+        value: finalDamageBonus,
+        type: 'power',
+        description: advancedBonuses.potenciaMaxima 
+          ? `Bônus de dano do Ataque Especial dobrado por Potência Máxima` 
+          : `Bônus de dano do Ataque Especial`,
+      });
+    }
+    
+    // === ATAQUE FURTIVO (Infiltrador) ===
+    if (sneakAttackConfig.enabled && isInfiltrador && nex >= 10) {
+      const result = calculateSneakAttackResult(nex, sneakAttackConfig, advancedBonuses.assassinar || false);
+      if (result.finalDice > 0) {
+        sources.push({
+          label: advancedBonuses.assassinar ? 'Ataque Furtivo (Assassinar)' : 'Ataque Furtivo',
+          value: `+${result.finalDice}d6`,
+          type: 'power',
+          description: advancedBonuses.assassinar 
+            ? 'Dados de Ataque Furtivo dobrados por Assassinar' 
+            : 'Dados extras de dano por atacar alvo despreparado',
+        });
+      }
+    }
+    
+    // === TÉCNICA SECRETA (Aniquilador) - Letal adiciona dados extras ===
+    if (activeTechniqueEffects?.letalCount && activeTechniqueEffects.letalCount > 0 && weapon?.damage) {
+      const parsed = parseDamageString(weapon.damage);
+      sources.push({
+        label: 'Letal (Técnica)',
+        value: `+${activeTechniqueEffects.letalCount}d${parsed.size}`,
+        type: 'power',
+        description: 'Dados extras de dano da Técnica Secreta/Sublime do Aniquilador',
+      });
+    }
+    
+    // === MODIFICADOR MANUAL DO MESTRE ===
+    if (manualDamageMod !== 0) {
+      sources.push({
+        label: 'Mestre',
+        value: manualDamageMod,
+        type: 'other',
+        description: 'Modificador situacional aplicado pelo mestre',
+      });
+    }
+    
+    return sources;
+  }, [weapon, attributes, unifiedEffects, trackCombatBonuses, abilities, 
+      passiveBonuses, weaponBuffBonuses, selectedBonuses, availableBonuses,
+      specialAttackConfig.enabled, specialAttackResult, manualDamageMod,
+      maquinaDeMatarActive, sneakAttackConfig, isInfiltrador, nex, 
+      advancedBonuses, activeTechniqueEffects, classTrack]);
+
   // Margem de crítico efetiva
   const criticalMargin = useMemo(() => {
     let margin = 20;
@@ -1712,10 +1909,30 @@ export function MobileCombatRollModal({
                   transition={{ delay: 0.3, type: 'spring' }}
                   className="space-y-1"
                 >
-                  {damageResult.bonus !== 0 && (
-                    <p className="text-sm text-muted-foreground">
-                      + {damageResult.bonus} bônus
-                    </p>
+                  {/* Detalhamento das fontes de bônus de dano */}
+                  {damageBonusSources.length > 0 && (
+                    <div className="flex flex-wrap items-center justify-center gap-1.5 mb-2 max-w-full">
+                      {damageBonusSources.map((source, idx) => (
+                        <TooltipProvider key={idx}>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className={cn(
+                                'px-2 py-0.5 rounded text-xs font-medium cursor-help',
+                                bonusTypeColors[source.type]
+                              )}>
+                                {source.label}: {typeof source.value === 'number' ? (source.value >= 0 ? `+${source.value}` : source.value) : source.value}
+                              </span>
+                            </TooltipTrigger>
+                            {(source.description || source.sourceName) && (
+                              <TooltipContent side="top" className="max-w-[200px] text-xs">
+                                {source.sourceName && <p className="font-semibold">{source.sourceName}</p>}
+                                {source.description && <p>{source.description}</p>}
+                              </TooltipContent>
+                            )}
+                          </Tooltip>
+                        </TooltipProvider>
+                      ))}
+                    </div>
                   )}
                   <p className={cn(
                     "text-5xl font-display font-bold text-destructive",
