@@ -134,8 +134,10 @@ export function rollAttack(params: AttackParams): DiceRollResult & {
     label: params.label,
   });
 
+  // REGRA PERSONALIZADA: Crítico NÃO é acerto automático
+  // O ataque só acerta se o total >= Defesa, mesmo em crítico
   const hit = params.targetDefense 
-    ? result.total >= params.targetDefense || result.isCritical
+    ? result.total >= params.targetDefense
     : true;
 
   return {
