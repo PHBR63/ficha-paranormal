@@ -246,8 +246,8 @@ export function TrainingGradeSelectModal({
           </Badge>
         </div>
 
-        <MobileModalBody useScrollArea={true} maxHeight="calc(85vh - 320px)">
-          <div className="space-y-1">
+        <MobileModalBody useScrollArea={true} maxHeight="50vh">
+          <div className="space-y-1 overflow-y-auto touch-pan-y">
             {availableSkills.map(skill => {
               const isSelected = selectedSkillIds.includes(skill.id);
               const canSelect = isSelected || choices.length < maxChoices;
