@@ -82,6 +82,8 @@ export default defineConfig(({ mode }) => ({
         ],
       },
       workbox: {
+        // Importa script de push notifications no Service Worker
+        importScripts: ['sw-push.js'],
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff,woff2}"],
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024, // 4MB limit
         // Always navigate to index.html - the app will handle offline detection
