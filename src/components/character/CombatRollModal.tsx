@@ -1133,13 +1133,19 @@ export function CombatRollModal({
     // Fumble = todos os d20 rolaram 1 (falha crítica)
     const isFumble = result.dice.every(d => d === 1);
     
+    // Verifica se acertou (regra personalizada: crítico NÃO é acerto automático)
+    const didHit = targetDefense !== null ? result.total >= targetDefense : true;
+    
     if (isFumble) {
       combatFeedback.triggerFumble();
-    } else if (result.isCritical) {
+    } else if (result.isCritical && !didHit) {
+      // REGRA PERSONALIZADA: Crítico que não acerta - som único de expectativa frustrada
+      combatFeedback.triggerCriticalMiss();
+    } else if (result.isCritical && didHit) {
       combatFeedback.triggerCritical();
     } else if (targetDefense !== null) {
       // Se defesa foi informada, verifica acerto/erro
-      if (result.total >= targetDefense) {
+      if (didHit) {
         combatFeedback.triggerHit();
       } else {
         combatFeedback.triggerMiss();
