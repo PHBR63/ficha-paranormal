@@ -2270,11 +2270,11 @@ export function CombatRollModal({
 
                 <Separator />
 
-                {/* Botão de rolar dano - apenas se acertou ou crítico */}
+                {/* Botão de rolar dano - apenas se acertou */}
                 {(() => {
-                  // Determina se pode rolar dano: crítico sempre acerta, sem defesa informada permite, ou acertou normalmente
-                  const canRollDamage = attackResult.isCritical || 
-                    targetDefense === null || 
+                  // REGRA PERSONALIZADA: Crítico NÃO é acerto automático
+                  // Pode rolar dano apenas se: sem defesa informada OU total >= defesa
+                  const canRollDamage = targetDefense === null || 
                     attackResult.total >= targetDefense;
                   
                   if (canRollDamage) {

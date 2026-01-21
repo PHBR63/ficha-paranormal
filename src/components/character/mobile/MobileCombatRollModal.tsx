@@ -1768,10 +1768,10 @@ export function MobileCombatRollModal({
           
           {phase === 'attack' && (
             <>
-              {/* Determina se pode rolar dano: crítico sempre acerta, sem defesa permite, ou acertou normalmente */}
+              {/* REGRA PERSONALIZADA: Crítico NÃO é acerto automático */}
               {(() => {
-                const canRollDamage = attackResult?.isCritical || 
-                  targetDefense === null || 
+                // Pode rolar dano apenas se: sem defesa informada OU total >= defesa
+                const canRollDamage = targetDefense === null || 
                   (attackResult && attackResult.total >= targetDefense);
                 
                 if (canRollDamage) {
