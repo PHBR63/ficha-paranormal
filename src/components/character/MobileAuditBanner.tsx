@@ -423,7 +423,12 @@ export function MobileAuditBanner({
                             💡 {issue.fixAction}
                           </p>
                         )}
-                        {!issue.autoFixable && (issue.category === 'transcender' || issue.category === 'rituals' || issue.category === 'skill_training') && onManualFix && (
+                        {/* Botão de ação manual - para skill_training, só mostra se for training_grade */}
+                        {!issue.autoFixable && (
+                          issue.category === 'transcender' || 
+                          issue.category === 'rituals' || 
+                          (issue.category === 'skill_training' && issue.id.includes('training_grade'))
+                        ) && onManualFix && (
                           <button
                             onClick={() => onManualFix(issue.category, issue.id)}
                             className={cn(
