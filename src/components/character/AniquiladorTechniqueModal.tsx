@@ -246,7 +246,7 @@ export function AniquiladorTechniqueModal({
           </MobileModalDescription>
         </MobileModalHeader>
 
-        <MobileModalBody>
+        <MobileModalBody useScrollArea={true}>
           <div className="space-y-4">
             {/* Lista de técnicas */}
             <div className="space-y-3">

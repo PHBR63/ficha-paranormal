@@ -174,7 +174,7 @@ export function ExcessPowersRemovalModal({
           </Badge>
         </div>
 
-        <MobileModalBody maxHeight="300px">
+        <MobileModalBody useScrollArea={true}>
           <div className="space-y-4">
             {Object.entries(powersByElement).map(([element, elementPowers]) => {
               const Icon = ELEMENT_ICONS[element as ParanormalElement | 'generic'];

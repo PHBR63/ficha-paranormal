@@ -19,7 +19,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { CustomScroll } from '@/components/ui/custom-scroll';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Tooltip,
@@ -358,76 +358,80 @@ export function ArmorCatalogModal({
             </TabsTrigger>
           </TabsList>
 
-          <ScrollArea className="flex-1 min-h-0 mt-4 -mx-4 sm:-mx-6 px-4 sm:px-6">
-            <TabsContent value="leve" className="mt-0 space-y-2">
-              <AnimatePresence mode="popLayout">
-                {filteredLight.length > 0 ? (
-                  filteredLight.map(armor => {
-                    const status = canAddCategory(armor.category);
-                    return (
-                      <ArmorCard
-                        key={armor.id}
-                        armor={armor}
-                        onSelect={() => onSelectArmor(armor)}
-                        canAdd={status.allowed}
-                        reason={status.reason}
-                      />
-                    );
-                  })
-                ) : (
-                  <p className="text-center text-muted-foreground py-8">
-                    Nenhuma proteção leve encontrada
-                  </p>
-                )}
-              </AnimatePresence>
-            </TabsContent>
+          <div className="flex-1 min-h-0 mt-4 -mx-4 sm:-mx-6">
+            <CustomScroll maxHeight="calc(70vh - 220px)" className="px-4 sm:px-6">
+              <div className="pr-2">
+                <TabsContent value="leve" className="mt-0 space-y-2">
+                  <AnimatePresence mode="popLayout">
+                    {filteredLight.length > 0 ? (
+                      filteredLight.map(armor => {
+                        const status = canAddCategory(armor.category);
+                        return (
+                          <ArmorCard
+                            key={armor.id}
+                            armor={armor}
+                            onSelect={() => onSelectArmor(armor)}
+                            canAdd={status.allowed}
+                            reason={status.reason}
+                          />
+                        );
+                      })
+                    ) : (
+                      <p className="text-center text-muted-foreground py-8">
+                        Nenhuma proteção leve encontrada
+                      </p>
+                    )}
+                  </AnimatePresence>
+                </TabsContent>
 
-            <TabsContent value="pesada" className="mt-0 space-y-2">
-              <AnimatePresence mode="popLayout">
-                {filteredHeavy.length > 0 ? (
-                  filteredHeavy.map(armor => {
-                    const status = canAddCategory(armor.category);
-                    return (
-                      <ArmorCard
-                        key={armor.id}
-                        armor={armor}
-                        onSelect={() => onSelectArmor(armor)}
-                        canAdd={status.allowed}
-                        reason={status.reason}
-                      />
-                    );
-                  })
-                ) : (
-                  <p className="text-center text-muted-foreground py-8">
-                    Nenhuma proteção pesada encontrada
-                  </p>
-                )}
-              </AnimatePresence>
-            </TabsContent>
+                <TabsContent value="pesada" className="mt-0 space-y-2">
+                  <AnimatePresence mode="popLayout">
+                    {filteredHeavy.length > 0 ? (
+                      filteredHeavy.map(armor => {
+                        const status = canAddCategory(armor.category);
+                        return (
+                          <ArmorCard
+                            key={armor.id}
+                            armor={armor}
+                            onSelect={() => onSelectArmor(armor)}
+                            canAdd={status.allowed}
+                            reason={status.reason}
+                          />
+                        );
+                      })
+                    ) : (
+                      <p className="text-center text-muted-foreground py-8">
+                        Nenhuma proteção pesada encontrada
+                      </p>
+                    )}
+                  </AnimatePresence>
+                </TabsContent>
 
-            <TabsContent value="escudo" className="mt-0 space-y-2">
-              <AnimatePresence mode="popLayout">
-                {filteredShields.length > 0 ? (
-                  filteredShields.map(armor => {
-                    const status = canAddCategory(armor.category);
-                    return (
-                      <ArmorCard
-                        key={armor.id}
-                        armor={armor}
-                        onSelect={() => onSelectArmor(armor)}
-                        canAdd={status.allowed}
-                        reason={status.reason}
-                      />
-                    );
-                  })
-                ) : (
-                  <p className="text-center text-muted-foreground py-8">
-                    Nenhum escudo encontrado
-                  </p>
-                )}
-              </AnimatePresence>
-            </TabsContent>
-          </ScrollArea>
+                <TabsContent value="escudo" className="mt-0 space-y-2">
+                  <AnimatePresence mode="popLayout">
+                    {filteredShields.length > 0 ? (
+                      filteredShields.map(armor => {
+                        const status = canAddCategory(armor.category);
+                        return (
+                          <ArmorCard
+                            key={armor.id}
+                            armor={armor}
+                            onSelect={() => onSelectArmor(armor)}
+                            canAdd={status.allowed}
+                            reason={status.reason}
+                          />
+                        );
+                      })
+                    ) : (
+                      <p className="text-center text-muted-foreground py-8">
+                        Nenhum escudo encontrado
+                      </p>
+                    )}
+                  </AnimatePresence>
+                </TabsContent>
+              </div>
+            </CustomScroll>
+          </div>
         </Tabs>
       </DialogContent>
     </Dialog>
