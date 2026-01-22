@@ -9,7 +9,7 @@ import {
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { CustomScroll } from "@/components/ui/custom-scroll";
 
 /**
  * MobileModal - Componente de modal otimizado para dispositivos móveis
@@ -168,17 +168,18 @@ const MobileModalBody = React.forwardRef<HTMLDivElement, MobileModalBodyProps>(
           className="flex-1 min-h-0 overflow-hidden"
           style={{ height: effectiveHeight, maxHeight: effectiveHeight }}
         >
-          <ScrollArea className="h-full w-full">
-            <div
-              className={cn(
-                "p-4 sm:p-6 pt-3 sm:pt-4 pr-2 sm:pr-4", // pr menor para scrollbar
-                className
-              )}
-              {...props}
-            >
+          <CustomScroll 
+            maxHeight="100%" 
+            className="h-full w-full"
+            contentClassName={cn(
+              "p-4 sm:p-6 pt-3 sm:pt-4 pr-2 sm:pr-4", // pr menor para scrollbar
+              className
+            )}
+          >
+            <div {...props}>
               {children}
             </div>
-          </ScrollArea>
+          </CustomScroll>
         </div>
       );
     }
