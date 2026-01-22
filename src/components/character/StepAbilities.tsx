@@ -694,10 +694,25 @@ export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) 
   }, [abilities, updateFormData, isSkillTrainingPower, handleRemoveSkillTraining, isTranscenderPower, handleRemoveTranscender, isClassPowerWithChoice, getAbilityCount, classPowerChoices]);
 
   // Handler antigo para poderes não-repetíveis (toggle simples)
+  // IMPORTANTE: Valida pré-requisitos antes de permitir adição
   const handleToggleAbility = useCallback((abilityId: string) => {
     const ability = choosableAbilities.find(a => a.id === abilityId);
     const isRepeatable = ability?.isRepeatable ?? false;
     const count = getAbilityCount(abilityId);
+    
+    // Se estiver removendo, permite sempre
+    if (count > 0 && !isRepeatable) {
+      handleRemoveOneInstance(abilityId);
+      return;
+    }
+    
+    // Para adição, verificar pré-requisitos primeiro
+    if (!canSelectPower(abilityId)) {
+      const missing = getMissingPrerequisites(abilityId);
+      // Bloqueia e informa o usuário
+      console.warn(`[StepAbilities] Bloqueado: ${ability?.name || abilityId} - Faltam: ${missing.join(', ')}`);
+      return;
+    }
     
     if (isRepeatable) {
       // Para repetíveis, adiciona nova instância se houver espaço
@@ -705,14 +720,12 @@ export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) 
         handleAddAbility(abilityId);
       }
     } else {
-      // Para não-repetíveis, faz toggle normal
-      if (count > 0) {
-        handleRemoveOneInstance(abilityId);
-      } else if (remainingChoices > 0) {
+      // Para não-repetíveis, adiciona se houver espaço
+      if (remainingChoices > 0) {
         handleAddAbility(abilityId);
       }
     }
-  }, [choosableAbilities, getAbilityCount, remainingChoices, handleAddAbility, handleRemoveOneInstance]);
+  }, [choosableAbilities, getAbilityCount, remainingChoices, handleAddAbility, handleRemoveOneInstance, canSelectPower, getMissingPrerequisites]);
   
   // Handler para escolha de Versatilidade
   const handleVersatilityChange = useCallback((choice: VersatilityChoice) => {
@@ -1213,6 +1226,7 @@ export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) 
         )}
         
         {/* Modal de detalhes da habilidade */}
+        {/* IMPORTANTE: canSelect considera pré-requisitos para bloquear seleção */}
         <AbilityDetailModal
           ability={selectedAbilityForDetail}
           isOpen={isDetailModalOpen}
@@ -1224,7 +1238,13 @@ export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) 
           isSelected={selectedAbilityForDetail ? getAbilityCount(selectedAbilityForDetail.id) > 0 : false}
           isCore={selectedAbilityForDetail ? coreAbilities.some(ca => ca.id === selectedAbilityForDetail.id) : false}
           onToggle={selectedAbilityForDetail ? () => handleToggleAbility(selectedAbilityForDetail.id) : undefined}
-          canSelect={remainingChoices > 0 || (selectedAbilityForDetail ? getAbilityCount(selectedAbilityForDetail.id) > 0 : false)}
+          canSelect={
+            // Já selecionado = pode desmarcar
+            (selectedAbilityForDetail ? getAbilityCount(selectedAbilityForDetail.id) > 0 : false) ||
+            // Ou: há escolhas E cumpre pré-requisitos
+            (remainingChoices > 0 && (selectedAbilityForDetail ? canSelectPower(selectedAbilityForDetail.id) : false))
+          }
+          missingPrerequisites={selectedAbilityForDetail ? getMissingPrerequisites(selectedAbilityForDetail.id) : []}
         />
         
         {/* Modal de seleção de perícias para Treinamento em Perícia */}

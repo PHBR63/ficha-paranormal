@@ -50,6 +50,8 @@ interface AbilityDetailModalProps {
   isCore?: boolean;
   onToggle?: () => void;
   canSelect?: boolean;
+  /** Lista de pré-requisitos não atendidos (para exibir no modal) */
+  missingPrerequisites?: string[];
 }
 
 export function AbilityDetailModal({
@@ -60,7 +62,8 @@ export function AbilityDetailModal({
   isSelected = false,
   isCore = false,
   onToggle,
-  canSelect = true
+  canSelect = true,
+  missingPrerequisites = []
 }: AbilityDetailModalProps) {
   if (!ability) return null;
 
@@ -423,6 +426,13 @@ export function AbilityDetailModal({
                 <Zap className="w-4 h-4" />
                 {isSelected ? (
                   <span className="text-primary font-medium">Habilidade selecionada</span>
+                ) : missingPrerequisites.length > 0 ? (
+                  <div className="flex flex-col">
+                    <span className="text-destructive font-medium">Pré-requisitos não atendidos</span>
+                    <span className="text-xs text-destructive/80">
+                      Faltam: {missingPrerequisites.join(', ')}
+                    </span>
+                  </div>
                 ) : canSelect ? (
                   <span>Clique para selecionar esta habilidade</span>
                 ) : (
