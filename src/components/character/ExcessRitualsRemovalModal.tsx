@@ -201,7 +201,7 @@ export function ExcessRitualsRemovalModal({
           </Badge>
         </div>
 
-        <MobileModalBody maxHeight="300px">
+        <MobileModalBody useScrollArea={true}>
           <div className="space-y-4">
             {Object.entries(ritualsByElement).map(([element, elementRituals]) => {
               const Icon = ELEMENT_ICONS[element as RitualElement] || Scroll;

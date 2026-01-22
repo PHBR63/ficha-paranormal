@@ -14,7 +14,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { CustomScroll } from '@/components/ui/custom-scroll';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Dialog,
@@ -257,53 +257,57 @@ export function WeaponCatalogModal({
             </TabsList>
           </div>
 
-          <ScrollArea className="flex-1 min-h-0 -mx-4 sm:-mx-6 px-4 sm:px-6">
-            <TabsContent value="melee" className="mt-2">
-              <WeaponList 
-                weapons={weaponsByTab.melee}
-                canAddCategory={canAddCategory}
-                isCategoryLocked={isCategoryLocked}
-                onSelect={setSelectedWeapon}
-                onAdd={handleAddWeapon}
-              />
-            </TabsContent>
-            <TabsContent value="ranged" className="mt-2">
-              <WeaponList 
-                weapons={weaponsByTab.ranged}
-                canAddCategory={canAddCategory}
-                isCategoryLocked={isCategoryLocked}
-                onSelect={setSelectedWeapon}
-                onAdd={handleAddWeapon}
-              />
-            </TabsContent>
-            <TabsContent value="firearm" className="mt-2">
-              <WeaponList 
-                weapons={weaponsByTab.firearm}
-                canAddCategory={canAddCategory}
-                isCategoryLocked={isCategoryLocked}
-                onSelect={setSelectedWeapon}
-                onAdd={handleAddWeapon}
-              />
-            </TabsContent>
-            <TabsContent value="thrown" className="mt-2">
-              <WeaponList 
-                weapons={weaponsByTab.thrown}
-                canAddCategory={canAddCategory}
-                isCategoryLocked={isCategoryLocked}
-                onSelect={setSelectedWeapon}
-                onAdd={handleAddWeapon}
-              />
-            </TabsContent>
-            <TabsContent value="special" className="mt-2">
-              <WeaponList 
-                weapons={weaponsByTab.special}
-                canAddCategory={canAddCategory}
-                isCategoryLocked={isCategoryLocked}
-                onSelect={setSelectedWeapon}
-                onAdd={handleAddWeapon}
-              />
-            </TabsContent>
-          </ScrollArea>
+          <div className="flex-1 min-h-0 -mx-4 sm:-mx-6">
+            <CustomScroll maxHeight="calc(70vh - 200px)" className="px-4 sm:px-6">
+              <div className="pr-2">
+                <TabsContent value="melee" className="mt-2">
+                  <WeaponList 
+                    weapons={weaponsByTab.melee}
+                    canAddCategory={canAddCategory}
+                    isCategoryLocked={isCategoryLocked}
+                    onSelect={setSelectedWeapon}
+                    onAdd={handleAddWeapon}
+                  />
+                </TabsContent>
+                <TabsContent value="ranged" className="mt-2">
+                  <WeaponList 
+                    weapons={weaponsByTab.ranged}
+                    canAddCategory={canAddCategory}
+                    isCategoryLocked={isCategoryLocked}
+                    onSelect={setSelectedWeapon}
+                    onAdd={handleAddWeapon}
+                  />
+                </TabsContent>
+                <TabsContent value="firearm" className="mt-2">
+                  <WeaponList 
+                    weapons={weaponsByTab.firearm}
+                    canAddCategory={canAddCategory}
+                    isCategoryLocked={isCategoryLocked}
+                    onSelect={setSelectedWeapon}
+                    onAdd={handleAddWeapon}
+                  />
+                </TabsContent>
+                <TabsContent value="thrown" className="mt-2">
+                  <WeaponList 
+                    weapons={weaponsByTab.thrown}
+                    canAddCategory={canAddCategory}
+                    isCategoryLocked={isCategoryLocked}
+                    onSelect={setSelectedWeapon}
+                    onAdd={handleAddWeapon}
+                  />
+                </TabsContent>
+                <TabsContent value="special" className="mt-2">
+                  <WeaponList 
+                    weapons={weaponsByTab.special}
+                    canAddCategory={canAddCategory}
+                    isCategoryLocked={isCategoryLocked}
+                    onSelect={setSelectedWeapon}
+                    onAdd={handleAddWeapon}
+                  />
+                </TabsContent>
+              </div>
+            </CustomScroll>
+          </div>
         </Tabs>
 
         {/* Modal de detalhes da arma */}
@@ -464,7 +468,7 @@ function WeaponDetailModal({ weapon, onClose, canAdd, isLocked, onAdd }: WeaponD
           </DialogTitle>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 min-h-0 -mx-4 px-4 sm:-mx-6 sm:px-6 overflow-y-auto">
+        <CustomScroll maxHeight="calc(60vh - 150px)" className="flex-1 min-h-0 -mx-4 px-4 sm:-mx-6 sm:px-6">
           <div className="space-y-4 pb-2">
             {/* Badges */}
             <div className="flex flex-wrap gap-2">
@@ -534,7 +538,7 @@ function WeaponDetailModal({ weapon, onClose, canAdd, isLocked, onAdd }: WeaponD
               </div>
             )}
           </div>
-        </ScrollArea>
+        </CustomScroll>
 
         {/* Botões */}
         <div className="flex gap-2 flex-shrink-0 pt-2">
