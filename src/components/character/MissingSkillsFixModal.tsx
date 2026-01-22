@@ -147,19 +147,19 @@ export function MissingSkillsFixModal({
           </MobileModalDescription>
         </MobileModalHeader>
         
-        {/* Contador de progresso */}
-        <div className="flex items-center justify-between px-4 sm:px-6 py-2 bg-muted/50 rounded-lg mx-4 sm:mx-6">
-          <span className="text-sm text-muted-foreground">Perícias a adicionar</span>
-          <Badge 
-            variant={isValid ? 'default' : 'outline'} 
-            className={cn(isValid && 'bg-success/20 text-success border-success/30')}
-          >
-            {selectedNewSkills.length}/{missingCount}
-          </Badge>
-        </div>
-        
-        <MobileModalBody useScrollArea={true} maxHeight="calc(60vh - 100px)">
+        <MobileModalBody useScrollArea={true} maxHeight="calc(60vh - 120px)">
           <div className="space-y-4">
+            {/* Contador de progresso - DENTRO do scroll */}
+            <div className="flex items-center justify-between py-2 px-3 bg-muted/50 rounded-lg sticky top-0 z-10">
+              <span className="text-sm text-muted-foreground">Perícias a adicionar</span>
+              <Badge 
+                variant={isValid ? 'default' : 'outline'} 
+                className={cn(isValid && 'bg-success/20 text-success border-success/30')}
+              >
+                {selectedNewSkills.length}/{missingCount}
+              </Badge>
+            </div>
+            
             {/* Seção de perícias travadas (já treinadas) */}
             {lockedSkills.length > 0 && (
               <div className="space-y-2">
