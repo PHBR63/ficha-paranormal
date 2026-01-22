@@ -598,7 +598,8 @@ export function auditSkillTraining(character: CharacterForAudit): {
   const expertCount = skillCounts[3];
   
   // ========== 1. Validar Níveis Veterano (NEX 35%) ==========
-  const grade35Choices = trainingGradeChoices['35'] || [];
+  // IMPORTANTE: As chaves no banco são 'nex35' e 'nex70', não '35' e '70'
+  const grade35Choices = trainingGradeChoices['nex35'] || trainingGradeChoices['35'] || [];
   const grade35SkillIds = new Set(grade35Choices.map(c => c.skillId));
   
   // Verificar se há perícias em Veterano sem registro (NEX 35%)
@@ -639,7 +640,8 @@ export function auditSkillTraining(character: CharacterForAudit): {
   }
   
   // ========== 2. Validar Níveis Expert (NEX 70%) ==========
-  const grade70Choices = trainingGradeChoices['70'] || [];
+  // IMPORTANTE: As chaves no banco são 'nex35' e 'nex70', não '35' e '70'
+  const grade70Choices = trainingGradeChoices['nex70'] || trainingGradeChoices['70'] || [];
   const grade70SkillIds = new Set(grade70Choices.map(c => c.skillId));
   
   let validExpert = 0;
