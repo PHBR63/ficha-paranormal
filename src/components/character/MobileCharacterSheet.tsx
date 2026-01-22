@@ -1696,12 +1696,19 @@ export function MobileCharacterSheet({
         onAutoFix={applyAutoFixes}
         onDismiss={dismissIssue}
         onRerunAudit={runAudit}
-        onManualFix={(category) => {
+        onManualFix={(category: string, issueId?: string) => {
           // Abre o modal correspondente baseado na categoria do problema
           if (category === 'transcender') {
             setExcessPowersModalOpen(true);
           } else if (category === 'rituals') {
             setExcessRitualsModalOpen(true);
+          } else if (category === 'skill_training' && issueId) {
+            // Extrai o NEX do ID do problema (pending_training_grade_35_* ou pending_training_grade_70_*)
+            if (issueId.includes('training_grade_35')) {
+              handleOpenTrainingGradeModal(35);
+            } else if (issueId.includes('training_grade_70')) {
+              handleOpenTrainingGradeModal(70);
+            }
           }
         }}
       />
