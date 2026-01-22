@@ -145,7 +145,7 @@ export function AbilityDetailModal({
                     
                     {/* Badge de evolução */}
                     {hasEvolution && (
-                      <Badge className="bg-amber-500/20 text-amber-600 text-xs">
+                      <Badge className="bg-warning/20 text-warning text-xs">
                         <TrendingUp className="w-3 h-3 mr-1" />
                         Evolui com NEX
                       </Badge>
@@ -347,8 +347,8 @@ export function AbilityDetailModal({
             {/* Tab: Progressão */}
             {hasEvolution && evolutionData && (
               <TabsContent value="evolution" className="mt-0 space-y-4">
-                <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4 text-amber-500" />
+              <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4 text-warning" />
                   Progressão por NEX
                 </h4>
                 
@@ -396,7 +396,7 @@ export function AbilityDetailModal({
                                 NEX {nexMarker}%
                               </Badge>
                               {isCurrent && (
-                                <Badge className="bg-amber-500/20 text-amber-600 text-xs animate-pulse">
+                                <Badge className="bg-warning/20 text-warning text-xs animate-pulse">
                                   ★ Nível Atual
                                 </Badge>
                               )}
