@@ -1279,6 +1279,7 @@ export type Database = {
           skill_training_choices: Json | null
           skills: Json
           strength: number
+          training_grade_choices: Json | null
           updated_at: string
           user_id: string
           versatility_track: Json | null
@@ -1330,6 +1331,7 @@ export type Database = {
           skill_training_choices?: Json | null
           skills?: Json
           strength?: number
+          training_grade_choices?: Json | null
           updated_at?: string
           user_id: string
           versatility_track?: Json | null
@@ -1381,6 +1383,7 @@ export type Database = {
           skill_training_choices?: Json | null
           skills?: Json
           strength?: number
+          training_grade_choices?: Json | null
           updated_at?: string
           user_id?: string
           versatility_track?: Json | null
