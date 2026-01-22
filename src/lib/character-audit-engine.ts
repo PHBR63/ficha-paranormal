@@ -39,6 +39,7 @@ export type AuditCategory =
   | 'pe'               // Problemas com PE
   | 'defense'          // Problemas com Defesa
   | 'skills'           // Problemas com perícias
+  | 'skill_training'   // Problemas com treinamento de perícias (níveis, quantidade)
   | 'powers'           // Problemas com poderes
   | 'records'          // Inconsistências em registros
   | 'rituals';         // Problemas com rituais (Ocultista)
@@ -80,6 +81,20 @@ export interface AuditResult {
 }
 
 // Dados do personagem necessários para auditoria
+// Interface para escolhas de treinamento em perícia (poder "Treinamento em Perícia")
+export interface SkillTrainingChoiceAudit {
+  skillId: string;
+  fromLevel: number;
+  toLevel: number;
+}
+
+// Interface para escolhas de Grau de Treinamento (NEX 35% e 70%)
+export interface TrainingGradeChoicesAudit {
+  35?: Array<{ skillId: string; fromLevel: number; toLevel: number }>;
+  70?: Array<{ skillId: string; fromLevel: number; toLevel: number }>;
+}
+
+// Dados do personagem necessários para auditoria
 export interface CharacterForAudit {
   id: string;
   name: string;
@@ -89,6 +104,7 @@ export interface CharacterForAudit {
   vigor: number;
   presence: number;
   agility: number;
+  intellect: number;           // Necessário para calcular perícias livres
   hp_max: number;
   pe_max: number;
   san_max: number;
@@ -97,6 +113,9 @@ export interface CharacterForAudit {
   skills?: Record<string, number>;
   abilities?: string[];
   rituals?: string[];  // IDs dos rituais (usado para auditoria de Ocultista)
+  class_track?: string;  // Trilha do personagem (para validar pré-requisitos)
+  skill_training_choices?: Record<string, SkillTrainingChoiceAudit[]>;  // Escolhas do poder "Treinamento em Perícia"
+  training_grade_choices?: TrainingGradeChoicesAudit;  // Escolhas de Grau de Treinamento
 }
 
 // ==================== FUNÇÕES DE AUDITORIA ====================
@@ -131,6 +150,10 @@ export async function auditCharacter(character: CharacterForAudit): Promise<Audi
   // 6. Auditar rituais excedentes (Ocultista)
   const ritualsAudit = auditRitualsCount(character);
   issues.push(...ritualsAudit.issues);
+  
+  // 7. Auditar treinamento de perícias (níveis, quantidade, grau de treinamento)
+  const skillTrainingAudit = auditSkillTraining(character);
+  issues.push(...skillTrainingAudit.issues);
   
   // Separar problemas por tipo
   const autoFixableIssues = issues.filter(i => i.autoFixable);
@@ -498,6 +521,291 @@ export function auditSkillBonuses(character: CharacterForAudit): { issues: Audit
   return { issues };
 }
 
+// ==================== AUDITORIA DE TREINAMENTO DE PERÍCIAS ====================
+
+/**
+ * Quantidade base de perícias livres por classe
+ * Combatente: 1 + INT
+ * Especialista: 7 + INT
+ * Ocultista: 3 + INT
+ */
+const CLASS_FREE_SKILLS_FORMULA: Record<string, (intellect: number) => number> = {
+  'Combatente': (int) => 1 + int,
+  'Especialista': (int) => 7 + int,
+  'Ocultista': (int) => 3 + int,
+};
+
+/**
+ * Perícias obrigatórias por classe
+ */
+const CLASS_MANDATORY_SKILLS: Record<string, string[]> = {
+  'Combatente': [], // Escolha entre Luta/Pontaria e Fortitude/Reflexos (não são obrigatórias fixas)
+  'Especialista': [],
+  'Ocultista': ['ocultismo', 'vontade'],
+};
+
+/**
+ * Pré-requisitos de trilha (perícias que devem estar treinadas)
+ */
+const TRACK_SKILL_PREREQUISITES: Record<string, string[]> = {
+  'medico-campo': ['medicina'],
+  'medico-de-campo': ['medicina'],
+};
+
+/**
+ * Conta instâncias do poder "Treinamento em Perícia"
+ */
+function countSkillTrainingPowers(abilities: string[] = []): number {
+  return abilities.filter(a => 
+    a.toLowerCase().includes('treinamento em perícia') ||
+    a.toLowerCase().includes('treinamento em pericia')
+  ).length;
+}
+
+/**
+ * Audita treinamento de perícias
+ * Verifica quantidade, níveis, e conformidade com classe/origem/trilha
+ */
+export function auditSkillTraining(character: CharacterForAudit): {
+  issues: AuditIssue[];
+  summary: {
+    totalTrained: number;
+    expectedTrained: number;
+    veteranCount: number;
+    expertCount: number;
+    validVeteran: number;
+    validExpert: number;
+    pendingGradeChoices: ('35' | '70')[];
+  };
+} {
+  const issues: AuditIssue[] = [];
+  const skills = character.skills || {};
+  const nex = character.nex;
+  const intellect = character.intellect || 0;
+  const characterClass = character.class;
+  const classTrack = character.class_track;
+  const trainingGradeChoices = character.training_grade_choices || {};
+  
+  // Contar perícias por nível
+  const skillCounts = { 0: 0, 1: 0, 2: 0, 3: 0 };
+  for (const level of Object.values(skills)) {
+    const clampedLevel = Math.min(3, Math.max(0, level)) as 0 | 1 | 2 | 3;
+    skillCounts[clampedLevel]++;
+  }
+  
+  const totalTrained = skillCounts[1] + skillCounts[2] + skillCounts[3];
+  const veteranCount = skillCounts[2] + skillCounts[3]; // Veterano ou superior
+  const expertCount = skillCounts[3];
+  
+  // ========== 1. Validar Níveis Veterano (NEX 35%) ==========
+  const grade35Choices = trainingGradeChoices['35'] || [];
+  const grade35SkillIds = new Set(grade35Choices.map(c => c.skillId));
+  
+  // Verificar se há perícias em Veterano sem registro (NEX 35%)
+  let validVeteran = 0;
+  for (const [skillId, level] of Object.entries(skills)) {
+    if (level >= 2) {
+      // Nível Veterano ou superior
+      if (nex < 35) {
+        // Erro: NEX insuficiente para Veterano
+        issues.push({
+          id: `invalid_veteran_nex_${skillId}`,
+          category: 'skill_training',
+          severity: 'error',
+          title: 'Nível Veterano Inválido',
+          description: `A perícia "${skillId}" está em nível Veterano, mas o personagem tem NEX ${nex}%. É necessário NEX 35%+ para perícias Veterano.`,
+          currentValue: level,
+          expectedValue: 1,
+          autoFixable: true,
+          fixAction: `Rebaixar ${skillId} para Treinado (nível 1)`,
+        });
+      } else if (level === 2 && !grade35SkillIds.has(skillId)) {
+        // Aviso: sem registro no Grau de Treinamento
+        issues.push({
+          id: `unregistered_veteran_${skillId}`,
+          category: 'skill_training',
+          severity: 'warning',
+          title: 'Veterano Sem Registro',
+          description: `A perícia "${skillId}" está em nível Veterano, mas não há registro no Grau de Treinamento (NEX 35%). Isso pode indicar uma inconsistência.`,
+          currentValue: 'Veterano',
+          expectedValue: 'Registro em training_grade_choices',
+          autoFixable: false,
+          fixAction: 'Verificar se a perícia foi escolhida corretamente no Grau de Treinamento',
+        });
+      } else {
+        validVeteran++;
+      }
+    }
+  }
+  
+  // ========== 2. Validar Níveis Expert (NEX 70%) ==========
+  const grade70Choices = trainingGradeChoices['70'] || [];
+  const grade70SkillIds = new Set(grade70Choices.map(c => c.skillId));
+  
+  let validExpert = 0;
+  for (const [skillId, level] of Object.entries(skills)) {
+    if (level >= 3) {
+      // Nível Expert
+      if (nex < 70) {
+        // Erro: NEX insuficiente para Expert
+        issues.push({
+          id: `invalid_expert_nex_${skillId}`,
+          category: 'skill_training',
+          severity: 'error',
+          title: 'Nível Expert Inválido',
+          description: `A perícia "${skillId}" está em nível Expert, mas o personagem tem NEX ${nex}%. É necessário NEX 70%+ para perícias Expert.`,
+          currentValue: level,
+          expectedValue: 2,
+          autoFixable: true,
+          fixAction: `Rebaixar ${skillId} para Veterano (nível 2)`,
+        });
+      } else if (!grade70SkillIds.has(skillId)) {
+        // Aviso: sem registro no Grau de Treinamento
+        issues.push({
+          id: `unregistered_expert_${skillId}`,
+          category: 'skill_training',
+          severity: 'warning',
+          title: 'Expert Sem Registro',
+          description: `A perícia "${skillId}" está em nível Expert, mas não há registro no Grau de Treinamento (NEX 70%). Isso pode indicar uma inconsistência.`,
+          currentValue: 'Expert',
+          expectedValue: 'Registro em training_grade_choices',
+          autoFixable: false,
+          fixAction: 'Verificar se a perícia foi escolhida corretamente no Grau de Treinamento',
+        });
+      } else {
+        validExpert++;
+      }
+    }
+  }
+  
+  // ========== 3. Verificar Grau de Treinamento Pendente ==========
+  const pendingGradeChoices: ('35' | '70')[] = [];
+  
+  // Grau de Treinamento disponível em NEX 35%
+  if (nex >= 35 && grade35Choices.length === 0) {
+    const freeSkillFormula = CLASS_FREE_SKILLS_FORMULA[characterClass];
+    const expectedCount = freeSkillFormula ? Math.max(0, freeSkillFormula(intellect) - 2) + 2 : 2;
+    
+    issues.push({
+      id: `pending_training_grade_35_${character.id}`,
+      category: 'skill_training',
+      severity: 'warning',
+      title: 'Grau de Treinamento Pendente (NEX 35%)',
+      description: `O personagem atingiu NEX 35%, mas não configurou o Grau de Treinamento. Escolha ${expectedCount} perícia(s) para subir de Treinado para Veterano.`,
+      currentValue: 0,
+      expectedValue: expectedCount,
+      autoFixable: false,
+      fixAction: 'Clique para configurar o Grau de Treinamento',
+    });
+    pendingGradeChoices.push('35');
+  }
+  
+  // Grau de Treinamento disponível em NEX 70%
+  if (nex >= 70 && grade70Choices.length === 0) {
+    const freeSkillFormula = CLASS_FREE_SKILLS_FORMULA[characterClass];
+    const expectedCount = freeSkillFormula ? Math.max(0, freeSkillFormula(intellect) - 2) + 2 : 2;
+    
+    issues.push({
+      id: `pending_training_grade_70_${character.id}`,
+      category: 'skill_training',
+      severity: 'warning',
+      title: 'Grau de Treinamento Pendente (NEX 70%)',
+      description: `O personagem atingiu NEX 70%, mas não configurou o Grau de Treinamento. Escolha ${expectedCount} perícia(s) para subir de Veterano para Expert (ou Treinado para Veterano).`,
+      currentValue: 0,
+      expectedValue: expectedCount,
+      autoFixable: false,
+      fixAction: 'Clique para configurar o Grau de Treinamento',
+    });
+    pendingGradeChoices.push('70');
+  }
+  
+  // ========== 4. Validar Perícias Obrigatórias da Classe ==========
+  const mandatorySkills = CLASS_MANDATORY_SKILLS[characterClass] || [];
+  for (const skillId of mandatorySkills) {
+    const skillLevel = skills[skillId] || 0;
+    if (skillLevel < 1) {
+      issues.push({
+        id: `missing_mandatory_skill_${skillId}`,
+        category: 'skill_training',
+        severity: 'error',
+        title: 'Perícia Obrigatória Faltando',
+        description: `A classe ${characterClass} requer a perícia "${skillId}" treinada, mas ela está destreinada (nível 0).`,
+        currentValue: skillLevel,
+        expectedValue: '≥1 (treinado)',
+        autoFixable: false,
+        fixAction: 'Treinar a perícia obrigatória',
+      });
+    }
+  }
+  
+  // ========== 5. Validar Pré-requisitos de Trilha ==========
+  if (classTrack) {
+    const trackPrereqs = TRACK_SKILL_PREREQUISITES[classTrack.toLowerCase()] || [];
+    for (const skillId of trackPrereqs) {
+      const skillLevel = skills[skillId] || 0;
+      if (skillLevel < 1) {
+        issues.push({
+          id: `missing_track_prereq_${skillId}`,
+          category: 'skill_training',
+          severity: 'error',
+          title: 'Pré-requisito de Trilha',
+          description: `A trilha "${classTrack}" requer a perícia "${skillId}" treinada, mas ela está destreinada (nível 0).`,
+          currentValue: skillLevel,
+          expectedValue: '≥1 (treinado)',
+          autoFixable: false,
+          fixAction: `Treinar ${skillId} para usar esta trilha`,
+        });
+      }
+    }
+  }
+  
+  // ========== 6. Calcular Perícias Esperadas ==========
+  // Origem: 2 perícias (exceto Amnésico que é variável)
+  // Classe: depende da fórmula
+  const origin = getOriginById(character.origin);
+  const originSkillCount = origin?.id === 'amnesico' ? 2 : (origin?.skills?.length || 2);
+  
+  const freeSkillFormula = CLASS_FREE_SKILLS_FORMULA[characterClass];
+  const classSkillsBase = freeSkillFormula ? freeSkillFormula(intellect) : 0;
+  
+  // Perícias adicionais do poder "Treinamento em Perícia" (2 por instância)
+  const skillTrainingPowers = countSkillTrainingPowers(character.abilities);
+  const additionalSkills = skillTrainingPowers * 2;
+  
+  // Total esperado (considerando sobreposição entre origem e classe)
+  // Nota: Não subtraímos sobreposição porque o sistema de criação já lida com conflitos
+  const expectedTrained = originSkillCount + classSkillsBase + additionalSkills;
+  
+  // Verificar discrepância significativa (apenas se houver MENOS perícias que o esperado)
+  // Ter mais é permitido (via poderes ou outros bônus)
+  if (totalTrained < expectedTrained - 2) {
+    issues.push({
+      id: `low_trained_skills_${character.id}`,
+      category: 'skill_training',
+      severity: 'info',
+      title: 'Perícias Treinadas Abaixo do Esperado',
+      description: `O personagem tem ${totalTrained} perícias treinadas, mas esperava-se pelo menos ${expectedTrained} (${originSkillCount} origem + ${classSkillsBase} classe${additionalSkills > 0 ? ` + ${additionalSkills} de poderes` : ''}). Verifique se todas as perícias foram escolhidas.`,
+      currentValue: totalTrained,
+      expectedValue: expectedTrained,
+      autoFixable: false,
+      fixAction: 'Verificar seleção de perícias na criação do personagem',
+    });
+  }
+  
+  return {
+    issues,
+    summary: {
+      totalTrained,
+      expectedTrained,
+      veteranCount,
+      expertCount,
+      validVeteran,
+      validExpert,
+      pendingGradeChoices,
+    },
+  };
+}
+
 /**
  * Audita quantidade de rituais do Ocultista
  * Verifica se o personagem excede o limite permitido pelo NEX
@@ -552,6 +860,7 @@ export async function autoFixCharacterIssues(
     paranormal_powers?: Array<{ id: string; name: string }>;
     nex?: number;
     origin?: string;
+    skills?: Record<string, number>;  // Perícias atuais para correção de níveis
   }
 ): Promise<{
   success: boolean;
@@ -570,7 +879,10 @@ export async function autoFixCharacterIssues(
   }
   
   // Preparar updates para stats
-  const updates: Record<string, number> = {};
+  const updates: Record<string, number | Record<string, number>> = {};
+  
+  // Coletar correções de perícias separadamente
+  const skillFixes: Array<{ skillId: string; newLevel: number }> = [];
   
   for (const issue of fixableIssues) {
     switch (issue.category) {
@@ -623,7 +935,27 @@ export async function autoFixCharacterIssues(
           }
         }
         break;
+        
+      case 'skill_training':
+        // Rebaixar níveis de perícia inválidos
+        if (issue.id.startsWith('invalid_veteran_nex_') || issue.id.startsWith('invalid_expert_nex_')) {
+          // Extrair skillId do ID do problema (ex: invalid_veteran_nex_medicina)
+          const skillId = issue.id.replace('invalid_veteran_nex_', '').replace('invalid_expert_nex_', '');
+          const newLevel = issue.expectedValue as number;
+          skillFixes.push({ skillId, newLevel });
+          appliedFixes.push(`${skillId} rebaixado para nível ${newLevel}`);
+        }
+        break;
     }
+  }
+  
+  // Aplicar correções de perícias se houver
+  if (skillFixes.length > 0 && characterData?.skills) {
+    const updatedSkills = { ...characterData.skills };
+    for (const fix of skillFixes) {
+      updatedSkills[fix.skillId] = fix.newLevel;
+    }
+    updates.skills = updatedSkills;
   }
   
   // Aplicar updates no banco (stats)

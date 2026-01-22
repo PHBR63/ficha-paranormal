@@ -18,7 +18,8 @@ import {
   Shield,
   Sparkles,
   Trash2,
-  BookOpen
+  BookOpen,
+  GraduationCap
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -79,6 +80,7 @@ const CATEGORY_ICONS: Record<string, React.ComponentType<{ className?: string }>
   pe: AlertCircle,
   defense: Shield,
   skills: Info,
+  skill_training: GraduationCap,
   powers: Sparkles,
   records: AlertTriangle,
 };
@@ -115,6 +117,11 @@ const CATEGORY_COLORS: Record<string, { color: string; bgColor: string; borderCo
     bgColor: 'bg-amber-500/10',
     borderColor: 'border-amber-500/30',
   },
+  skill_training: {
+    color: 'text-pe',
+    bgColor: 'bg-pe/10',
+    borderColor: 'border-pe/30',
+  },
 };
 
 // Descrições explicativas por categoria para tooltips
@@ -126,6 +133,7 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
   pe: 'Pontos de Esforço - Problemas com cálculo ou valores de PE',
   defense: 'Defesa - Problemas com o cálculo de defesa do personagem',
   skills: 'Perícias - Problemas com distribuição ou valores de perícias',
+  skill_training: 'Treinamento de Perícias - Problemas com níveis (Veterano/Expert) ou quantidade de perícias treinadas',
   powers: 'Poderes Gerais - Problemas com poderes de classe ou origem',
   records: 'Registros - Inconsistências nos registros do personagem',
 };
