@@ -53,12 +53,12 @@ const LEVEL_LABELS: Record<TrainingLevel, string> = {
   3: 'Expert',
 };
 
-/** Cores para níveis de treinamento */
+/** Cores para níveis de treinamento - usando tokens semânticos */
 const LEVEL_COLORS: Record<TrainingLevel, string> = {
   0: 'bg-muted text-muted-foreground',
-  1: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-  2: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
-  3: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
+  1: 'bg-pe/20 text-pe border-pe/30',
+  2: 'bg-warning/20 text-warning border-warning/30',
+  3: 'bg-paranormal/20 text-paranormal border-paranormal/30',
 };
 
 /** Interface para upgrade de perícia */
@@ -234,7 +234,7 @@ export function TrainingGradeSelectModal({
               <Badge variant="secondary" className="text-xs">NEX {nex}%</Badge>
               <Badge 
                 variant={isValid ? 'default' : 'outline'} 
-                className={cn(isValid && 'bg-green-500/20 text-green-400 border-green-500/30')}
+                className={cn(isValid && 'bg-success/20 text-success border-success/30')}
               >
                 {choices.length}/{maxChoices}
               </Badge>
@@ -243,7 +243,7 @@ export function TrainingGradeSelectModal({
           <MobileModalDescription className="mt-2">{description}</MobileModalDescription>
         </MobileModalHeader>
 
-        <MobileModalBody useScrollArea={true} maxHeight="calc(70vh - 160px)">
+        <MobileModalBody useScrollArea={true} maxHeight="calc(60vh - 100px)">
           <div className="space-y-3">
             {/* Lista de perícias */}
             <div className="space-y-1">
@@ -295,10 +295,10 @@ export function TrainingGradeSelectModal({
                         
                         {/* Ícones indicativos */}
                         {skill.nextLevel === 2 && (
-                          <Award className="w-3.5 h-3.5 text-amber-400 ml-1" />
+                          <Award className="w-3.5 h-3.5 text-warning ml-1" />
                         )}
                         {skill.nextLevel === 3 && (
-                          <Star className="w-3.5 h-3.5 text-purple-400 ml-1" />
+                          <Star className="w-3.5 h-3.5 text-paranormal ml-1" />
                         )}
                       </div>
                     </div>
@@ -319,8 +319,8 @@ export function TrainingGradeSelectModal({
                       }
                     </p>
                   </div>
-                  <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg mx-4">
-                    <p className="text-xs text-amber-400">
+                  <div className="p-3 bg-warning/10 border border-warning/20 rounded-lg mx-4">
+                    <p className="text-xs text-warning">
                       💡 <strong>Dica:</strong> Primeiro, adquira perícias Treinadas através da sua origem, 
                       classe ou do poder "Treinamento em Perícia".
                     </p>
@@ -342,7 +342,7 @@ export function TrainingGradeSelectModal({
                         variant="secondary"
                         className={cn(
                           "text-xs cursor-pointer hover:bg-destructive/20",
-                          choice.toLevel === 3 && "bg-purple-500/20 text-purple-400"
+                          choice.toLevel === 3 && "bg-paranormal/20 text-paranormal"
                         )}
                         onClick={() => toggleSkill(choice.skillId, choice.fromLevel, choice.toLevel)}
                       >
@@ -357,7 +357,7 @@ export function TrainingGradeSelectModal({
 
             {/* Aviso de seleção incompleta - DENTRO do scroll */}
             {!isValid && choices.length > 0 && (
-              <div className="flex items-center gap-2 text-sm text-amber-400">
+              <div className="flex items-center gap-2 text-sm text-warning">
                 <Info className="w-4 h-4 flex-shrink-0" />
                 <span>Selecione {maxChoices - choices.length} perícia{maxChoices - choices.length !== 1 ? 's' : ''} para continuar.</span>
               </div>
