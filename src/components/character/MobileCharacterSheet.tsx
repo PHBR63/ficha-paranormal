@@ -1923,6 +1923,9 @@ export function MobileCharacterSheet({
               onActivateEffect={activatedEffects.activateEffect}
               isEffectActive={activatedEffects.isEffectActive}
               onTrackPESpent={roundTracking.trackPESpent}
+              pvCurrent={character.hp_current}
+              pvMax={character.hp_max}
+              onHPChange={(newHP) => handleCombatStatsChange?.({ hp: newHP, pe: character.pe_current, san: character.san_current })}
             />
 
             {/* Negociador */}

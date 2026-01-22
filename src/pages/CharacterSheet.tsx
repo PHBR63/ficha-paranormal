@@ -2460,6 +2460,13 @@ export default function CharacterSheet() {
                 onActivateEffect={activatedEffects.activateEffect}
                 isEffectActive={activatedEffects.isEffectActive}
                 onTrackPESpent={roundTracking.trackPESpent}
+                pvCurrent={hpCurrent}
+                pvMax={character.hp_max}
+                onHPChange={(newHP) => handleCombatStatsChange({ 
+                  hp: newHP, 
+                  pe: peCurrent, 
+                  san: sanCurrent 
+                })}
               />
 
               {/* Negociador */}
