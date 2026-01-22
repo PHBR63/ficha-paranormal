@@ -158,49 +158,42 @@ export function MissingSkillsFixModal({
           </Badge>
         </div>
         
-        {/*
-          Scroll padrão do sistema:
-          - Sempre presente em modais (regra do projeto)
-          - Usa altura padrão robusta definida no MobileModalBody
-          - Evita cálculos que possam quebrar em telas baixas (ex.: landscape)
+        {/* Seção de perícias travadas (já treinadas) - FORA do scroll para não ocupar espaço */}
+        {lockedSkills.length > 0 && (
+          <div className="space-y-2 px-4 sm:px-6 pt-2">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Lock className="w-3 h-3" />
+              <span>Perícias já treinadas ({lockedSkills.length})</span>
+            </div>
+            <div className="grid grid-cols-2 gap-1.5">
+              {lockedSkills.map(skill => {
+                const level = currentSkills[skill.id] || 1;
+                return (
+                  <div
+                    key={skill.id}
+                    className="flex items-center gap-2 p-2 rounded-md bg-muted/30 border border-border/50 opacity-70"
+                  >
+                    <Lock className="w-3 h-3 text-muted-foreground shrink-0" />
+                    <span className="text-xs font-medium truncate flex-1">{skill.name}</span>
+                    <Badge 
+                      variant="outline" 
+                      className={cn('text-[9px] px-1 py-0 shrink-0', LEVEL_COLORS[level])}
+                    >
+                      {LEVEL_LABELS[level]}
+                    </Badge>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+        
+        {/* 
+          Scroll padrão do sistema - contém APENAS a lista selecionável
+          maxHeight reduzido para caber em telas menores quando há muitas perícias travadas
         */}
-        <MobileModalBody useScrollArea={true}>
-          <div className="space-y-4">
-            {/* Seção de perícias travadas (já treinadas) */}
-            {lockedSkills.length > 0 && (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <Lock className="w-3 h-3" />
-                  <span>Perícias já treinadas ({lockedSkills.length})</span>
-                </div>
-                <div className="grid grid-cols-2 gap-1.5">
-                  {lockedSkills.map(skill => {
-                    const level = currentSkills[skill.id] || 1;
-                    return (
-                      <div
-                        key={skill.id}
-                        className="flex items-center gap-2 p-2 rounded-md bg-muted/30 border border-border/50 opacity-70"
-                      >
-                        <Lock className="w-3 h-3 text-muted-foreground shrink-0" />
-                        <span className="text-xs font-medium truncate flex-1">{skill.name}</span>
-                        <Badge 
-                          variant="outline" 
-                          className={cn('text-[9px] px-1 py-0 shrink-0', LEVEL_COLORS[level])}
-                        >
-                          {LEVEL_LABELS[level]}
-                        </Badge>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-            
-            {/* Separador */}
-            {lockedSkills.length > 0 && availableSkills.length > 0 && (
-              <div className="border-t border-border my-3" />
-            )}
-            
+        <MobileModalBody useScrollArea={true} maxHeight="calc(50vh - 80px)">
+          <div className="space-y-2">
             {/* Seção de perícias disponíveis para seleção */}
             {availableSkills.length > 0 && (
               <div className="space-y-2">
