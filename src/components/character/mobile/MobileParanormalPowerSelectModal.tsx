@@ -385,9 +385,9 @@ export const MobileParanormalPowerSelectModal = memo(function MobileParanormalPo
           })}
         </div>
 
-        {/* Lista de poderes */}
-        <ScrollArea className="h-[calc(90vh-280px)]">
-          <div className="space-y-2 pr-4">
+        {/* Lista de poderes - altura otimizada para mobile/PWA */}
+        <ScrollArea className="flex-1 min-h-0" style={{ height: 'calc(90vh - 320px)', maxHeight: 'calc(90vh - 320px)' }}>
+          <div className="space-y-2 pr-4 pb-2">
             {filteredPowers.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <Search className="w-8 h-8 mx-auto mb-2 opacity-50" />
