@@ -65,6 +65,7 @@ import { CharacterHistoryPanel, logCharacterChanges } from '@/components/charact
 import { ParanormalPowerSelectModal } from '@/components/character/ParanormalPowerSelectModal';
 import { IntellectSkillSelectModal } from '@/components/character/IntellectSkillSelectModal';
 import { ElementResistanceSelectModal } from '@/components/character/ElementResistanceSelectModal';
+import { TrainingGradeSelectModal, type TrainingGradeResult, type SkillUpgradeChoice, applyTrainingGradeUpgrades } from '@/components/character/TrainingGradeSelectModal';
 import { ConditionManager, type ActiveCondition } from '@/components/character/ConditionManager';
 import { RestModal } from '@/components/character/RestModal';
 import { NonOccultistRitualModal, RitualSource } from '@/components/character/NonOccultistRitualModal';
@@ -401,6 +402,10 @@ export default function CharacterSheet() {
   
   // Modal de remoção de poderes paranormais excedentes
   const [excessPowersModalOpen, setExcessPowersModalOpen] = useState(false);
+  
+  // Modal de Grau de Treinamento (NEX 35% e 70%)
+  const [trainingGradeModalOpen, setTrainingGradeModalOpen] = useState(false);
+  const [trainingGradeNex, setTrainingGradeNex] = useState<35 | 70>(35);
 
   // Hook CONSOLIDADO de todos os bônus do personagem (inclui defenseBonuses e paranormalEffects)
   // OTIMIZAÇÃO: Evita chamadas duplicadas de hooks
@@ -1613,6 +1618,59 @@ export default function CharacterSheet() {
     onFixComplete: refetchCharacter,
   });
   
+  // === HANDLERS PARA GRAU DE TREINAMENTO ===
+  // Handler para abrir modal de Grau de Treinamento
+  const handleOpenTrainingGradeModal = useCallback((nex: 35 | 70) => {
+    setTrainingGradeNex(nex);
+    setTrainingGradeModalOpen(true);
+  }, []);
+
+  // Handler para confirmar escolhas de Grau de Treinamento
+  const handleTrainingGradeConfirm = useCallback(async (result: TrainingGradeResult) => {
+    if (!character) return;
+    
+    // Busca escolhas existentes - cast para tipo correto
+    const existingChoices = (character as unknown as Record<string, unknown>).training_grade_choices as Record<string, unknown> || {};
+    
+    // Atualiza as escolhas para o NEX específico
+    const updatedChoices = {
+      ...existingChoices,
+      [result.nex === 35 ? 'nex35' : 'nex70']: result.choices,
+    };
+    
+    // Aplica os upgrades às perícias
+    const updatedSkills = applyTrainingGradeUpgrades(
+      character.skills || {},
+      result.choices
+    );
+    
+    // Salva no banco - cast para Json para compatibilidade com Supabase
+    const { error } = await supabase
+      .from('characters')
+      .update({
+        training_grade_choices: JSON.parse(JSON.stringify(updatedChoices)),
+        skills: updatedSkills,
+      })
+      .eq('id', character.id);
+    
+    if (error) {
+      toast({
+        title: 'Erro ao salvar',
+        description: error.message,
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    toast({
+      title: 'Grau de Treinamento configurado!',
+      description: `${result.choices.length} perícias aprimoradas no NEX ${result.nex}%.`,
+    });
+    
+    setTrainingGradeModalOpen(false);
+    refetchCharacter();
+  }, [character, refetchCharacter, toast]);
+
   // Handler para abrir modal de poderes paranormais com validação de limite
   const handleOpenParanormalPowerModal = useCallback(() => {
     if (!character) return;
@@ -2210,12 +2268,19 @@ export default function CharacterSheet() {
                 onAutoFix={applyAutoFixes}
                 onDismiss={dismissIssue}
                 onRerunAudit={runAudit}
-                onManualFix={(category) => {
+                onManualFix={(category, issueId) => {
                   // Abre o modal correspondente baseado na categoria do problema
                   if (category === 'transcender') {
                     setExcessPowersModalOpen(true);
                   } else if (category === 'rituals') {
                     setExcessRitualsModalOpen(true);
+                  } else if (category === 'skill_training' && issueId) {
+                    // Extrai o NEX do ID do problema (pending_training_grade_35_* ou pending_training_grade_70_*)
+                    if (issueId.includes('training_grade_35')) {
+                      handleOpenTrainingGradeModal(35);
+                    } else if (issueId.includes('training_grade_70')) {
+                      handleOpenTrainingGradeModal(70);
+                    }
                   }
                 }}
                 className="mb-4"
@@ -3914,6 +3979,24 @@ export default function CharacterSheet() {
             rituals: character.rituals,
             inventory: character.inventory,
           }}
+        />
+      )}
+
+      {/* Modal de Grau de Treinamento (NEX 35% e 70%) */}
+      {character && (
+        <TrainingGradeSelectModal
+          isOpen={trainingGradeModalOpen}
+          onClose={() => setTrainingGradeModalOpen(false)}
+          onConfirm={handleTrainingGradeConfirm}
+          nex={trainingGradeNex}
+          characterClass={character.class}
+          intellect={character.intellect}
+          currentSkills={character.skills || {}}
+          existingChoices={
+            (trainingGradeNex === 35
+              ? ((character as unknown as Record<string, unknown>).training_grade_choices as Record<string, unknown>)?.nex35 || []
+              : ((character as unknown as Record<string, unknown>).training_grade_choices as Record<string, unknown>)?.nex70 || []) as SkillUpgradeChoice[]
+          }
         />
       )}
     </div>

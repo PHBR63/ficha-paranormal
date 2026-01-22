@@ -48,7 +48,7 @@ interface CharacterAuditBannerProps {
   onDismiss: (issueId: string) => void;
   onRerunAudit: () => void;
   /** Callback para ações manuais de correção (ex: abrir modal de remoção de poderes) */
-  onManualFix?: (issueCategory: string) => void;
+  onManualFix?: (issueCategory: string, issueId?: string) => void;
   className?: string;
 }
 
@@ -424,19 +424,23 @@ export function CharacterAuditBanner({
                             </p>
                           )}
                           {/* Botão de ação manual para problemas não auto-corrigíveis */}
-                          {!issue.autoFixable && (issue.category === 'transcender' || issue.category === 'rituals') && onManualFix && (
+                          {!issue.autoFixable && (issue.category === 'transcender' || issue.category === 'rituals' || issue.category === 'skill_training') && onManualFix && (
                             <Button
                               size="sm"
-                              variant="destructive"
-                              onClick={() => onManualFix(issue.category)}
+                              variant={issue.category === 'skill_training' ? 'default' : 'destructive'}
+                              onClick={() => onManualFix(issue.category, issue.id)}
                               className="mt-2 h-7 text-xs gap-1"
                             >
                               {issue.category === 'rituals' ? (
                                 <BookOpen className="w-3 h-3" />
+                              ) : issue.category === 'skill_training' ? (
+                                <GraduationCap className="w-3 h-3" />
                               ) : (
                                 <Trash2 className="w-3 h-3" />
                               )}
-                              {issue.category === 'transcender' ? 'Remover Poderes' : 'Remover Rituais'}
+                              {issue.category === 'transcender' ? 'Remover Poderes' : 
+                               issue.category === 'rituals' ? 'Remover Rituais' : 
+                               'Configurar Perícias'}
                             </Button>
                           )}
                         </CardContent>

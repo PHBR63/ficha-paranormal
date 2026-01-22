@@ -46,7 +46,7 @@ interface MobileAuditBannerProps {
   onDismiss: (issueId: string) => void;
   onRerunAudit: () => void;
   /** Callback para ações manuais de correção (ex: abrir modal de remoção de poderes) */
-  onManualFix?: (issueCategory: string) => void;
+  onManualFix?: (issueCategory: string, issueId?: string) => void;
 }
 
 // Configuração por severidade - cores e ícones
@@ -423,17 +423,26 @@ export function MobileAuditBanner({
                             💡 {issue.fixAction}
                           </p>
                         )}
-                        {!issue.autoFixable && (issue.category === 'transcender' || issue.category === 'rituals') && onManualFix && (
+                        {!issue.autoFixable && (issue.category === 'transcender' || issue.category === 'rituals' || issue.category === 'skill_training') && onManualFix && (
                           <button
-                            onClick={() => onManualFix(issue.category)}
-                            className="mt-2 w-full flex items-center justify-center gap-1 px-2 py-1.5 text-[10px] font-medium text-destructive-foreground bg-destructive rounded-md hover:bg-destructive/90 transition-colors"
+                            onClick={() => onManualFix(issue.category, issue.id)}
+                            className={cn(
+                              "mt-2 w-full flex items-center justify-center gap-1 px-2 py-1.5 text-[10px] font-medium rounded-md transition-colors",
+                              issue.category === 'skill_training' 
+                                ? "text-primary-foreground bg-primary hover:bg-primary/90"
+                                : "text-destructive-foreground bg-destructive hover:bg-destructive/90"
+                            )}
                           >
                             {issue.category === 'rituals' ? (
                               <BookOpen className="w-3 h-3" />
+                            ) : issue.category === 'skill_training' ? (
+                              <GraduationCap className="w-3 h-3" />
                             ) : (
                               <Trash2 className="w-3 h-3" />
                             )}
-                            {issue.category === 'transcender' ? 'Remover Poderes' : 'Remover Rituais'}
+                            {issue.category === 'transcender' ? 'Remover Poderes' : 
+                             issue.category === 'rituals' ? 'Remover Rituais' : 
+                             'Configurar Perícias'}
                           </button>
                         )}
                       </div>
