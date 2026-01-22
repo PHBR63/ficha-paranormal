@@ -73,6 +73,12 @@ export interface UseMedicoDeCampoTrackProps {
   computedEffects?: ComputedEffects;
   /** Callback para rastrear PE gasto na rodada */
   onTrackPESpent?: (abilityName: string, cost: number) => void;
+  /** HP atual do personagem (para aplicar cura) */
+  pvCurrent?: number;
+  /** HP máximo do personagem */
+  pvMax?: number;
+  /** Callback para atualizar HP */
+  onHPChange?: (newHP: number) => void;
 }
 
 // =====================================================
@@ -90,9 +96,14 @@ export function useMedicoDeCampoTrack({
   isEffectActive,
   computedEffects,
   onTrackPESpent,
+  pvCurrent = 0,
+  pvMax = 0,
+  onHPChange,
 }: UseMedicoDeCampoTrackProps) {
   const [extraDice, setExtraDice] = useState(0);
   const [showParamedicoDrawer, setShowParamedicoDrawer] = useState(false);
+  const [showHealingRollModal, setShowHealingRollModal] = useState(false);
+  const [pendingHealConfig, setPendingHealConfig] = useState<{ totalDice: number; cost: number } | null>(null);
 
   // Verifica se é Médico de Campo (suporta múltiplos formatos)
   const isMedicoCampo = classTrack === 'Médico de Campo' || classTrack === 'medico-campo';
@@ -139,6 +150,14 @@ export function useMedicoDeCampoTrack({
   const selfDefenseBonus = onHealEffects.length > 0 ? (onHealEffects[0] as unknown as { selfDefenseBonus?: number }).selfDefenseBonus ?? 5 : 5;
   const targetDefenseBonus = onHealEffects.length > 0 ? onHealEffects[0].targetDefenseBonus : 5;
 
+  // Bônus de cura da origem (ex: Agente de Saúde - Técnica Medicinal adiciona INT)
+  const healingBonusFromOrigin = useMemo(() => {
+    return {
+      value: sueHealing?.bonusFromOrigin ?? 0,
+      source: sueHealing?.bonusFromOriginSource ?? null,
+    };
+  }, [sueHealing]);
+
   /**
    * Abre drawer para configurar Paramédico
    */
@@ -148,7 +167,7 @@ export function useMedicoDeCampoTrack({
   }, []);
 
   /**
-   * Executa a cura do Paramédico
+   * Executa a cura do Paramédico - abre o modal de rolagem
    */
   const handleUseParamedico = useCallback(() => {
     if (peCurrent < paramedicoCost) {
@@ -158,15 +177,13 @@ export function useMedicoDeCampoTrack({
       return;
     }
 
+    // Deduz PE
     onPEChange(peCurrent - paramedicoCost);
     onTrackPESpent?.('Paramédico', paramedicoCost);
     
     const totalDice = healingDice.base + extraDice;
-    const formula = `${totalDice}d10`;
-    const defenseBonusText = hasResgate 
-      ? ` Você e o aliado recebem +${targetDefenseBonus} Defesa até o início do seu próximo turno.` 
-      : '';
     
+    // Ativar efeito do Paramédico
     onActivateEffect?.(TRACK_EFFECT_IDS.PARAMEDICO ?? 'track-paramedico', 'Paramédico', 'instant', { dice: totalDice });
     
     // Ativar efeito de defesa do Resgate se desbloqueado
@@ -174,17 +191,38 @@ export function useMedicoDeCampoTrack({
       onActivateEffect?.(
         TRACK_EFFECT_IDS.RESGATE_DEFENSE ?? 'track-resgate-defense', 
         'Resgate (Defesa)', 
-        'next-turn',  // Até o início do próximo turno
+        'next-turn',
         { selfBonus: selfDefenseBonus, targetBonus: targetDefenseBonus }
       );
     }
     
-    toast.success('Paramédico ativado!', {
-      description: `Cure ${formula} PV de si mesmo ou aliado adjacente.${defenseBonusText} Custo: ${paramedicoCost} PE.`
-    });
-    
+    // Armazenar configuração e abrir modal de rolagem
+    setPendingHealConfig({ totalDice, cost: paramedicoCost });
     setShowParamedicoDrawer(false);
+    setShowHealingRollModal(true);
   }, [peCurrent, paramedicoCost, extraDice, healingDice.base, onPEChange, selfDefenseBonus, targetDefenseBonus, hasResgate, onActivateEffect, onTrackPESpent]);
+
+  /**
+   * Aplica a cura no personagem após rolagem
+   */
+  const handleApplyHealing = useCallback((amount: number, target: 'self' | string) => {
+    if (target === 'self' && onHPChange) {
+      const newHp = Math.min(pvCurrent + amount, pvMax);
+      onHPChange(newHp);
+      
+      const defenseBonusText = hasResgate 
+        ? ` Você e o aliado recebem +${targetDefenseBonus} Defesa.` 
+        : '';
+      
+      toast.success(`Curou ${amount} PV!`, {
+        description: `HP: ${pvCurrent} → ${newHp}/${pvMax}.${defenseBonusText}`,
+      });
+    }
+    // target === string -> modo campanha futuro (curar aliado por ID)
+    
+    setShowHealingRollModal(false);
+    setPendingHealConfig(null);
+  }, [pvCurrent, pvMax, onHPChange, hasResgate, targetDefenseBonus]);
 
   /**
    * Usa Equipe de Trauma (2 PE)
@@ -261,6 +299,9 @@ export function useMedicoDeCampoTrack({
     setExtraDice,
     showParamedicoDrawer,
     setShowParamedicoDrawer,
+    showHealingRollModal,
+    setShowHealingRollModal,
+    pendingHealConfig,
     
     // Habilidades desbloqueadas
     hasParamedico,
@@ -274,6 +315,7 @@ export function useMedicoDeCampoTrack({
     selfDefenseBonus,
     targetDefenseBonus,
     maxExtraDice, // Limite de dados extras pelo NEX
+    healingBonusFromOrigin, // Bônus de origem (INT de Agente de Saúde)
     
     // Dados do SUE
     sueHealing,
@@ -285,6 +327,11 @@ export function useMedicoDeCampoTrack({
     handleUseParamedico,
     handleEquipeTrauma,
     handleReanimacao,
+    handleApplyHealing,
+    
+    // Props de HP para o modal
+    pvCurrent,
+    pvMax,
     
     // Helpers
     canAffordParamedico: peCurrent >= paramedicoCost,

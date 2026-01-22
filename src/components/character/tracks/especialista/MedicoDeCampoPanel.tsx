@@ -47,6 +47,7 @@ import {
   useMedicoDeCampoTrack,
   type UseMedicoDeCampoTrackProps 
 } from './useMedicoDeCampoTrack';
+import { HealingRollModal } from '../../HealingRollModal';
 
 // =====================================================
 // Props do Componente
@@ -290,6 +291,20 @@ function MedicoDeCampoPanelComponent(props: MedicoDeCampoPanelProps) {
             </MobileDrawerFooter>
           </MobileDrawerContent>
         </MobileDrawer>
+
+        {/* Modal de Rolagem de Cura (Mobile) */}
+        <HealingRollModal
+          open={track.showHealingRollModal}
+          onOpenChange={track.setShowHealingRollModal}
+          diceCount={track.pendingHealConfig?.totalDice ?? track.healingDice.base}
+          dieType={10}
+          bonusFromOrigin={track.healingBonusFromOrigin.value}
+          bonusFromOriginSource={track.healingBonusFromOrigin.source}
+          abilityName="Paramédico"
+          onApplyHealing={track.handleApplyHealing}
+          currentHp={track.pvCurrent}
+          maxHp={track.pvMax}
+        />
       </>
     );
   }
@@ -356,6 +371,20 @@ function MedicoDeCampoPanelComponent(props: MedicoDeCampoPanelProps) {
           </DrawerFooter>
         </DrawerContent>
       </Drawer>
+
+      {/* Modal de Rolagem de Cura */}
+      <HealingRollModal
+        open={track.showHealingRollModal}
+        onOpenChange={track.setShowHealingRollModal}
+        diceCount={track.pendingHealConfig?.totalDice ?? track.healingDice.base}
+        dieType={10}
+        bonusFromOrigin={track.healingBonusFromOrigin.value}
+        bonusFromOriginSource={track.healingBonusFromOrigin.source}
+        abilityName="Paramédico"
+        onApplyHealing={track.handleApplyHealing}
+        currentHp={track.pvCurrent}
+        maxHp={track.pvMax}
+      />
     </>
   );
 }
