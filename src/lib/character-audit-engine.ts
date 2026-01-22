@@ -738,7 +738,29 @@ export function auditSkillTraining(character: CharacterForAudit): {
     }
   }
   
-  // ========== 5. Validar Pré-requisitos de Trilha ==========
+  // ========== 5. Validar Perícias Concedidas pela Origem ==========
+  // Cada origem (exceto Amnésico) concede 2 perícias que devem estar treinadas
+  const originData = getOriginById(character.origin);
+  if (originData && !originData.isAmnesic && originData.skills && originData.skills.length > 0) {
+    for (const skillId of originData.skills) {
+      const skillLevel = skills[skillId] || 0;
+      if (skillLevel < 1) {
+        issues.push({
+          id: `missing_origin_skill_${skillId}`,
+          category: 'skill_training',
+          severity: 'error',
+          title: 'Perícia da Origem Faltando',
+          description: `A origem "${originData.name}" concede a perícia "${skillId}" treinada, mas ela está destreinada (nível 0).`,
+          currentValue: skillLevel,
+          expectedValue: '≥1 (treinado)',
+          autoFixable: false,
+          fixAction: `Treinar ${skillId} (concedida pela origem ${originData.name})`,
+        });
+      }
+    }
+  }
+  
+  // ========== 6. Validar Pré-requisitos de Trilha ==========
   if (classTrack) {
     const trackPrereqs = TRACK_SKILL_PREREQUISITES[classTrack.toLowerCase()] || [];
     for (const skillId of trackPrereqs) {
