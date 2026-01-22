@@ -24,7 +24,7 @@ import {
   MobileModalTitle,
   MobileModalDescription,
 } from '@/components/ui/mobile-modal';
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { CustomScroll } from '@/components/ui/custom-scroll';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -243,10 +243,10 @@ export function TrainingGradeSelectModal({
           <MobileModalDescription className="mt-2">{description}</MobileModalDescription>
         </MobileModalHeader>
 
-        {/* Área de scroll com scrollbar visível */}
+        {/* Área de scroll com scrollbar visível usando CustomScroll */}
         <div className="flex-1 min-h-0 px-4 sm:px-6">
-          <ScrollArea className="h-[calc(60vh-100px)] w-full rounded-md">
-            <div className="space-y-3 pr-4 pb-2">
+          <CustomScroll maxHeight="calc(60vh - 100px)" className="w-full rounded-md">
+            <div className="space-y-3 pr-3 pb-2">
               {/* Lista de perícias */}
               <div className="space-y-1">
                 {availableSkills.map(skill => {
@@ -365,8 +365,7 @@ export function TrainingGradeSelectModal({
                 </div>
               )}
             </div>
-            <ScrollBar className="w-2.5 bg-muted/50 hover:bg-muted transition-colors" />
-          </ScrollArea>
+          </CustomScroll>
         </div>
 
         <MobileModalFooter bordered>

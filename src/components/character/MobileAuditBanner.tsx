@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { CustomScroll } from '@/components/ui/custom-scroll';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from '@/hooks/use-toast';
 import { AuditIssue, AuditResult } from '@/lib/character-audit-engine';
@@ -345,9 +345,9 @@ export function MobileAuditBanner({
                 )}
               </div>
               
-              {/* Lista de problemas */}
-              <ScrollArea className="max-h-48">
-                <div className="space-y-1.5">
+              {/* Lista de problemas com scroll visível */}
+              <CustomScroll maxHeight="calc(55vh - 140px)" className="pr-1">
+                <div className="space-y-1.5 pr-2">
                   {visibleIssues.map((issue) => {
                     const severityConfig = SEVERITY_CONFIG[issue.severity];
                     const CategoryIcon = CATEGORY_ICONS[issue.category] || AlertCircle;
@@ -449,7 +449,7 @@ export function MobileAuditBanner({
                     );
                   })}
                 </div>
-              </ScrollArea>
+              </CustomScroll>
               
               {/* Resumo de Transcender compacto */}
               {auditResult?.transcender && auditResult.transcender.powersTotal > 0 && (
