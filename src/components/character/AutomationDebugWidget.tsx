@@ -27,6 +27,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
+import { CustomScroll } from '@/components/ui/custom-scroll';
 import type { DefenseBonuses as DefenseBonusesType } from '@/hooks/useDefenseBonuses';
 import type { SustainedRitual } from '@/hooks/useSustainedRituals';
 import type { WeaponBuff } from '@/hooks/useWeaponBuffs';
@@ -148,8 +149,9 @@ export function AutomationDebugWidget({
         </div>
       </div>
 
-      {/* Conteúdo */}
-      <div className="overflow-y-auto max-h-[calc(70vh-48px)] p-2 space-y-2">
+      {/* Conteúdo com scroll visível */}
+      <CustomScroll maxHeight="calc(70vh - 56px)" className="p-2">
+        <div className="space-y-2 pr-1">
         
         {/* Auditoria */}
         <AutomationSection
@@ -456,7 +458,8 @@ export function AutomationDebugWidget({
             </div>
           </AutomationSection>
         )}
-      </div>
+        </div>
+      </CustomScroll>
     </div>
   );
 }
