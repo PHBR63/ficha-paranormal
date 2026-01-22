@@ -161,7 +161,7 @@ const MobileModalBody = React.forwardRef<HTMLDivElement, MobileModalBodyProps>(
     // Calcula a altura efetiva - usa o valor passado ou um padrão robusto.
     // IMPORTANTE: usamos apenas maxHeight (e NÃO height fixa) para evitar cenários
     // onde `calc(...)` possa resultar em altura muito pequena/negativa em viewports
-    // com pouca altura (ex.: mobile em landscape), o que “mata” o scroll.
+    // com pouca altura (ex.: mobile em landscape), o que "mata" o scroll.
     const effectiveMaxHeight = maxHeight || 'calc(85vh - 180px)';
 
     if (useScrollArea) {
@@ -171,8 +171,12 @@ const MobileModalBody = React.forwardRef<HTMLDivElement, MobileModalBodyProps>(
           className="flex-1 min-h-0 overflow-hidden"
           style={{ maxHeight: effectiveMaxHeight }}
         >
+          {/* 
+            CustomScroll precisa de maxHeight explícito (não 100%) para funcionar.
+            Usamos o mesmo valor do container para garantir scroll visível.
+          */}
           <CustomScroll 
-            maxHeight="100%" 
+            maxHeight={effectiveMaxHeight}
             className="h-full w-full"
             contentClassName={cn(
               "p-4 sm:p-6 pt-3 sm:pt-4 pr-2 sm:pr-4", // pr menor para scrollbar
