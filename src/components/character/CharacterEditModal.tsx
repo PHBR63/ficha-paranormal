@@ -1,7 +1,7 @@
 // Modal de Edição Completa do Personagem
 // Permite alterar atributos, perícias e características
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   MobileModal,
@@ -148,6 +148,8 @@ interface CharacterEditModalProps {
     abilities?: string[];
   };
   onSave: (data: CharacterEditData) => Promise<void>;
+  /** Aba inicial ao abrir o modal (info, attributes, skills, notes) */
+  initialTab?: string;
 }
 
 export function CharacterEditModal({
@@ -155,10 +157,18 @@ export function CharacterEditModal({
   onClose,
   character,
   onSave,
+  initialTab = 'info',
 }: CharacterEditModalProps) {
   // Estados de edição
   const [saving, setSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState('info');
+  const [activeTab, setActiveTab] = useState(initialTab);
+  
+  // Sincroniza activeTab com initialTab quando o modal abre
+  useEffect(() => {
+    if (open) {
+      setActiveTab(initialTab);
+    }
+  }, [open, initialTab]);
 
   // Dados do formulário
   const [name, setName] = useState(character.name);

@@ -424,15 +424,19 @@ export function CharacterAuditBanner({
                             </p>
                           )}
                           {/* Botão de ação manual para problemas não auto-corrigíveis */}
-                          {/* Para skill_training, só mostra se for training_grade (35 ou 70) */}
+                          {/* Para skill_training: training_grade abre modal de grau, low_trained_skills abre editor */}
                           {!issue.autoFixable && (
                             issue.category === 'transcender' || 
                             issue.category === 'rituals' || 
-                            (issue.category === 'skill_training' && issue.id.includes('training_grade'))
+                            (issue.category === 'skill_training' && (
+                              issue.id.includes('training_grade') || 
+                              issue.id.includes('low_trained_skills')
+                            ))
                           ) && onManualFix && (
                             <Button
                               size="sm"
-                              variant={issue.category === 'skill_training' ? 'default' : 'destructive'}
+                              variant={issue.id.includes('low_trained_skills') ? 'outline' : 
+                                       issue.category === 'skill_training' ? 'default' : 'destructive'}
                               onClick={() => onManualFix(issue.category, issue.id)}
                               className="mt-2 h-7 text-xs gap-1"
                             >
@@ -445,6 +449,7 @@ export function CharacterAuditBanner({
                               )}
                               {issue.category === 'transcender' ? 'Remover Poderes' : 
                                issue.category === 'rituals' ? 'Remover Rituais' : 
+                               issue.id.includes('low_trained_skills') ? 'Editar Perícias' :
                                'Configurar Perícias'}
                             </Button>
                           )}
