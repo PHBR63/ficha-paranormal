@@ -339,6 +339,7 @@ export default function CharacterSheet() {
   const [pendingRitualSlots, setPendingRitualSlots] = useState(0);
   const [pendingMaxCircle, setPendingMaxCircle] = useState(1);
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editModalInitialTab, setEditModalInitialTab] = useState('info');
   const [restModalOpen, setRestModalOpen] = useState(false);
   const [paranormalPowerModalOpen, setParanormalPowerModalOpen] = useState(false);
   
@@ -2275,11 +2276,16 @@ export default function CharacterSheet() {
                   } else if (category === 'rituals') {
                     setExcessRitualsModalOpen(true);
                   } else if (category === 'skill_training' && issueId) {
-                    // Extrai o NEX do ID do problema (pending_training_grade_35_* ou pending_training_grade_70_*)
+                    // Grau de Treinamento (NEX 35% ou 70%)
                     if (issueId.includes('training_grade_35')) {
                       handleOpenTrainingGradeModal(35);
                     } else if (issueId.includes('training_grade_70')) {
                       handleOpenTrainingGradeModal(70);
+                    } 
+                    // Perícias abaixo do esperado - abre editor na aba de skills
+                    else if (issueId.includes('low_trained_skills')) {
+                      setEditModalInitialTab('skills');
+                      setEditModalOpen(true);
                     }
                   }
                 }}
@@ -3445,9 +3451,14 @@ export default function CharacterSheet() {
       <Suspense fallback={null}>
         <CharacterEditModal
           open={editModalOpen}
-          onClose={() => setEditModalOpen(false)}
+          onClose={() => {
+            setEditModalOpen(false);
+            // Reset para aba padrão ao fechar
+            setEditModalInitialTab('info');
+          }}
           character={character}
           onSave={handleCharacterEdit}
+          initialTab={editModalInitialTab}
         />
       </Suspense>
       

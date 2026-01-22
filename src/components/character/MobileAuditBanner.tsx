@@ -423,19 +423,24 @@ export function MobileAuditBanner({
                             💡 {issue.fixAction}
                           </p>
                         )}
-                        {/* Botão de ação manual - para skill_training, só mostra se for training_grade */}
+                        {/* Botão de ação manual - para skill_training: training_grade ou low_trained_skills */}
                         {!issue.autoFixable && (
                           issue.category === 'transcender' || 
                           issue.category === 'rituals' || 
-                          (issue.category === 'skill_training' && issue.id.includes('training_grade'))
+                          (issue.category === 'skill_training' && (
+                            issue.id.includes('training_grade') || 
+                            issue.id.includes('low_trained_skills')
+                          ))
                         ) && onManualFix && (
                           <button
                             onClick={() => onManualFix(issue.category, issue.id)}
                             className={cn(
                               "mt-2 w-full flex items-center justify-center gap-1 px-2 py-1.5 text-[10px] font-medium rounded-md transition-colors",
-                              issue.category === 'skill_training' 
-                                ? "text-primary-foreground bg-primary hover:bg-primary/90"
-                                : "text-destructive-foreground bg-destructive hover:bg-destructive/90"
+                              issue.id.includes('low_trained_skills')
+                                ? "text-foreground bg-muted border border-border hover:bg-muted/80"
+                                : issue.category === 'skill_training' 
+                                  ? "text-primary-foreground bg-primary hover:bg-primary/90"
+                                  : "text-destructive-foreground bg-destructive hover:bg-destructive/90"
                             )}
                           >
                             {issue.category === 'rituals' ? (
@@ -447,6 +452,7 @@ export function MobileAuditBanner({
                             )}
                             {issue.category === 'transcender' ? 'Remover Poderes' : 
                              issue.category === 'rituals' ? 'Remover Rituais' : 
+                             issue.id.includes('low_trained_skills') ? 'Editar Perícias' :
                              'Configurar Perícias'}
                           </button>
                         )}

@@ -306,6 +306,7 @@ export function MobileCharacterSheet({
   // Modais essenciais
   const [nexModalOpen, setNexModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editModalInitialTab, setEditModalInitialTab] = useState('info');
   const [restModalOpen, setRestModalOpen] = useState(false);
   const [historyPanelOpen, setHistoryPanelOpen] = useState(false);
   
@@ -1703,11 +1704,16 @@ export function MobileCharacterSheet({
           } else if (category === 'rituals') {
             setExcessRitualsModalOpen(true);
           } else if (category === 'skill_training' && issueId) {
-            // Extrai o NEX do ID do problema (pending_training_grade_35_* ou pending_training_grade_70_*)
+            // Grau de Treinamento (NEX 35% ou 70%)
             if (issueId.includes('training_grade_35')) {
               handleOpenTrainingGradeModal(35);
             } else if (issueId.includes('training_grade_70')) {
               handleOpenTrainingGradeModal(70);
+            }
+            // Perícias abaixo do esperado - abre editor na aba de skills
+            else if (issueId.includes('low_trained_skills')) {
+              setEditModalInitialTab('skills');
+              setEditModalOpen(true);
             }
           }
         }}
@@ -2560,7 +2566,11 @@ export function MobileCharacterSheet({
       {/* Modal de Edição do Personagem */}
       <CharacterEditModal
         open={editModalOpen}
-        onClose={() => setEditModalOpen(false)}
+        onClose={() => {
+          setEditModalOpen(false);
+          // Reset para aba padrão ao fechar
+          setEditModalInitialTab('info');
+        }}
         character={{
           id: character.id,
           name: character.name,
@@ -2585,6 +2595,7 @@ export function MobileCharacterSheet({
           abilities: character.abilities || [],
         }}
         onSave={handleCharacterEdit}
+        initialTab={editModalInitialTab}
       />
 
       {/* Modal de Descanso */}
