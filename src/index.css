@@ -1047,3 +1047,43 @@ html.dark[data-color-theme="amber"] .bg-landing-gradient-theme {
     touch-action: pan-y;
   }
 }
+
+/* ========================================
+ * SIMPLEBAR CUSTOMIZATION
+ * Scrollbar visível e consistente em todas as modais
+ * ======================================== */
+.simplebar-scrollbar::before {
+  background-color: hsl(var(--border));
+  opacity: 0.5;
+  border-radius: 4px;
+}
+
+.simplebar-scrollbar.simplebar-visible::before {
+  opacity: 0.8;
+}
+
+.simplebar-track.simplebar-vertical {
+  width: 8px;
+  right: 2px;
+}
+
+.simplebar-track.simplebar-horizontal {
+  height: 8px;
+  bottom: 2px;
+}
+
+/* Hover states */
+.simplebar-scrollbar:hover::before,
+.simplebar-track:hover .simplebar-scrollbar::before {
+  opacity: 1;
+  background-color: hsl(var(--muted-foreground) / 0.5);
+}
+
+/* Custom scroll container styling */
+.custom-scroll {
+  overscroll-behavior: contain;
+}
+
+.custom-scroll .simplebar-content-wrapper {
+  outline: none;
+}
