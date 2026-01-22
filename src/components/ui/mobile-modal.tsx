@@ -158,15 +158,18 @@ interface MobileModalBodyProps extends React.HTMLAttributes<HTMLDivElement> {
 
 const MobileModalBody = React.forwardRef<HTMLDivElement, MobileModalBodyProps>(
   ({ className, children, useScrollArea = true, maxHeight, ...props }, ref) => {
-    // Calcula a altura efetiva - usa o valor passado ou um padrão robusto
-    const effectiveHeight = maxHeight || 'calc(85vh - 180px)';
+    // Calcula a altura efetiva - usa o valor passado ou um padrão robusto.
+    // IMPORTANTE: usamos apenas maxHeight (e NÃO height fixa) para evitar cenários
+    // onde `calc(...)` possa resultar em altura muito pequena/negativa em viewports
+    // com pouca altura (ex.: mobile em landscape), o que “mata” o scroll.
+    const effectiveMaxHeight = maxHeight || 'calc(85vh - 180px)';
 
     if (useScrollArea) {
       return (
         <div
           ref={ref}
           className="flex-1 min-h-0 overflow-hidden"
-          style={{ height: effectiveHeight, maxHeight: effectiveHeight }}
+          style={{ maxHeight: effectiveMaxHeight }}
         >
           <CustomScroll 
             maxHeight="100%" 
@@ -193,7 +196,7 @@ const MobileModalBody = React.forwardRef<HTMLDivElement, MobileModalBodyProps>(
           "p-4 sm:p-6 pt-3 sm:pt-4",
           className
         )}
-        style={{ height: effectiveHeight, maxHeight: effectiveHeight }}
+        style={{ maxHeight: effectiveMaxHeight }}
         {...props}
       >
         {children}

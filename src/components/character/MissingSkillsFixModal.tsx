@@ -158,7 +158,13 @@ export function MissingSkillsFixModal({
           </Badge>
         </div>
         
-        <MobileModalBody useScrollArea={true} maxHeight="calc(55vh - 100px)">
+        {/*
+          Scroll padrão do sistema:
+          - Sempre presente em modais (regra do projeto)
+          - Usa altura padrão robusta definida no MobileModalBody
+          - Evita cálculos que possam quebrar em telas baixas (ex.: landscape)
+        */}
+        <MobileModalBody useScrollArea={true}>
           <div className="space-y-4">
             {/* Seção de perícias travadas (já treinadas) */}
             {lockedSkills.length > 0 && (
