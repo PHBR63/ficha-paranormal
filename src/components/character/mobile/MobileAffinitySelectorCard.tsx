@@ -13,7 +13,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { CustomScroll } from '@/components/ui/custom-scroll';
 import { 
   Sparkles, 
   Droplet, 
@@ -216,7 +216,7 @@ export const MobileAffinitySelectorCard = memo(function MobileAffinitySelectorCa
                 </SheetTitle>
               </SheetHeader>
 
-              <ScrollArea className="h-[calc(75vh-180px)]">
+              <CustomScroll maxHeight="calc(75vh - 180px)">
                 <div className="space-y-4 pr-4">
                   {/* Descrição */}
                   <div className="p-3 rounded-lg bg-paranormal/10 border border-paranormal/30">
@@ -256,7 +256,7 @@ export const MobileAffinitySelectorCard = memo(function MobileAffinitySelectorCa
                     </div>
                   </div>
                 </div>
-              </ScrollArea>
+              </CustomScroll>
 
               <div className="pt-4 flex gap-2">
                 <Button variant="outline" className="flex-1 h-10" onClick={() => setDetailElement(null)}>

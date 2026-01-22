@@ -19,7 +19,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { CustomScroll } from '@/components/ui/custom-scroll';
 import { 
   Search, 
   Sparkles, 
@@ -429,7 +429,7 @@ export function NonOccultistRitualModal({
 
         {/* Lista de rituais com scroll funcional */}
         <div className="flex-1 min-h-0 overflow-hidden">
-          <ScrollArea className="h-full max-h-[calc(85vh-360px)]">
+          <CustomScroll maxHeight="calc(85vh - 360px)">
             <div className="space-y-4 pr-4">
             {Object.entries(ritualsByCircle)
               .sort(([a], [b]) => Number(a) - Number(b))
@@ -460,7 +460,7 @@ export function NonOccultistRitualModal({
               </div>
             )}
             </div>
-          </ScrollArea>
+          </CustomScroll>
         </div>
 
         <DialogFooter className="gap-2">
