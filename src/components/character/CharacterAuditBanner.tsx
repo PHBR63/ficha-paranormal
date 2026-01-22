@@ -424,7 +424,12 @@ export function CharacterAuditBanner({
                             </p>
                           )}
                           {/* Botão de ação manual para problemas não auto-corrigíveis */}
-                          {!issue.autoFixable && (issue.category === 'transcender' || issue.category === 'rituals' || issue.category === 'skill_training') && onManualFix && (
+                          {/* Para skill_training, só mostra se for training_grade (35 ou 70) */}
+                          {!issue.autoFixable && (
+                            issue.category === 'transcender' || 
+                            issue.category === 'rituals' || 
+                            (issue.category === 'skill_training' && issue.id.includes('training_grade'))
+                          ) && onManualFix && (
                             <Button
                               size="sm"
                               variant={issue.category === 'skill_training' ? 'default' : 'destructive'}
