@@ -1571,6 +1571,8 @@ export default function CharacterSheet() {
   // Prepara dados do personagem para auditoria
   const characterForAudit: CharacterForAudit | null = useMemo(() => {
     if (!character) return null;
+    // Cast para unknown primeiro para acessar campos opcionais
+    const charAny = character as unknown as Record<string, unknown>;
     return {
       id: character.id,
       name: character.name,
@@ -1580,6 +1582,7 @@ export default function CharacterSheet() {
       vigor: character.vigor,
       presence: character.presence,
       agility: character.agility,
+      intellect: character.intellect,
       hp_max: character.hp_max,
       pe_max: character.pe_max,
       san_max: character.san_max,
@@ -1587,6 +1590,10 @@ export default function CharacterSheet() {
       paranormal_powers: character.paranormal_powers,
       skills: character.skills,
       abilities: character.abilities,
+      class_track: character.class_track || undefined,
+      // Campos opcionais que podem não existir no tipo base
+      skill_training_choices: charAny.skill_training_choices as CharacterForAudit['skill_training_choices'] || undefined,
+      training_grade_choices: charAny.training_grade_choices as CharacterForAudit['training_grade_choices'] || undefined,
     };
   }, [character]);
 
