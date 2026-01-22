@@ -752,8 +752,8 @@ export function auditSkillTraining(character: CharacterForAudit): {
           title: 'Perícia da Origem Faltando',
           description: `A origem "${originData.name}" concede a perícia "${skillId}" treinada, mas ela está destreinada (nível 0).`,
           currentValue: skillLevel,
-          expectedValue: '≥1 (treinado)',
-          autoFixable: false,
+          expectedValue: 1, // Nível 1 = Treinado
+          autoFixable: true, // Pode ser corrigido automaticamente
           fixAction: `Treinar ${skillId} (concedida pela origem ${originData.name})`,
         });
       }
@@ -959,13 +959,20 @@ export async function autoFixCharacterIssues(
         break;
         
       case 'skill_training':
-        // Rebaixar níveis de perícia inválidos
+        // Rebaixar níveis de perícia inválidos (Veterano/Expert sem NEX suficiente)
         if (issue.id.startsWith('invalid_veteran_nex_') || issue.id.startsWith('invalid_expert_nex_')) {
           // Extrair skillId do ID do problema (ex: invalid_veteran_nex_medicina)
           const skillId = issue.id.replace('invalid_veteran_nex_', '').replace('invalid_expert_nex_', '');
           const newLevel = issue.expectedValue as number;
           skillFixes.push({ skillId, newLevel });
           appliedFixes.push(`${skillId} rebaixado para nível ${newLevel}`);
+        }
+        // Treinar perícias da origem que estão faltando
+        else if (issue.id.startsWith('missing_origin_skill_')) {
+          const skillId = issue.id.replace('missing_origin_skill_', '');
+          const newLevel = issue.expectedValue as number; // 1 = Treinado
+          skillFixes.push({ skillId, newLevel });
+          appliedFixes.push(`${skillId} treinada (perícia da origem)`);
         }
         break;
     }
