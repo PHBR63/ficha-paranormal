@@ -225,145 +225,145 @@ export function TrainingGradeSelectModal({
     <MobileModal open={isOpen} onOpenChange={(open) => !open && handleCancel()}>
       <MobileModalContent size="md">
         <MobileModalHeader>
-          <MobileModalTitle className="flex items-center gap-2 font-display tracking-wider">
-            <GraduationCap className="w-5 h-5 text-primary" />
-            GRAU DE TREINAMENTO
-          </MobileModalTitle>
-          <MobileModalDescription>{description}</MobileModalDescription>
+          <div className="flex items-center justify-between">
+            <MobileModalTitle className="flex items-center gap-2 font-display tracking-wider">
+              <GraduationCap className="w-5 h-5 text-primary" />
+              GRAU DE TREINAMENTO
+            </MobileModalTitle>
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" className="text-xs">NEX {nex}%</Badge>
+              <Badge 
+                variant={isValid ? 'default' : 'outline'} 
+                className={cn(isValid && 'bg-green-500/20 text-green-400 border-green-500/30')}
+              >
+                {choices.length}/{maxChoices}
+              </Badge>
+            </div>
+          </div>
+          <MobileModalDescription className="mt-2">{description}</MobileModalDescription>
         </MobileModalHeader>
 
-        {/* Contador de seleções */}
-        <div className="flex items-center justify-between px-4 sm:px-6 py-2 bg-muted/50 rounded-lg mx-4 sm:mx-6">
-          <div className="flex items-center gap-2">
-            <Badge variant="secondary" className="text-xs">NEX {nex}%</Badge>
-            <span className="text-sm text-muted-foreground">Perícias selecionadas</span>
-          </div>
-          <Badge 
-            variant={isValid ? 'default' : 'outline'} 
-            className={cn(isValid && 'bg-green-500/20 text-green-400 border-green-500/30')}
-          >
-            {choices.length}/{maxChoices}
-          </Badge>
-        </div>
+        <MobileModalBody useScrollArea={true} maxHeight="calc(70vh - 160px)">
+          <div className="space-y-3">
+            {/* Lista de perícias */}
+            <div className="space-y-1">
+              {availableSkills.map(skill => {
+                const isSelected = selectedSkillIds.includes(skill.id);
+                const canSelect = isSelected || choices.length < maxChoices;
 
-        <MobileModalBody useScrollArea={true} maxHeight="50vh">
-          <div className="space-y-1 overflow-y-auto touch-pan-y">
-            {availableSkills.map(skill => {
-              const isSelected = selectedSkillIds.includes(skill.id);
-              const canSelect = isSelected || choices.length < maxChoices;
-
-              return (
-                <div
-                  key={skill.id}
-                  className={cn(
-                    'flex items-center gap-3 p-3 rounded-lg border transition-all cursor-pointer',
-                    isSelected 
-                      ? 'bg-primary/10 border-primary/30' 
-                      : canSelect 
-                        ? 'bg-card hover:bg-muted/50 border-border' 
-                        : 'bg-muted/30 border-border/50 opacity-50 cursor-not-allowed'
-                  )}
-                  onClick={() => canSelect && toggleSkill(skill.id, skill.currentLevel, skill.nextLevel)}
-                >
-                  <Checkbox 
-                    checked={isSelected} 
-                    disabled={!canSelect} 
-                    className="pointer-events-none" 
-                  />
-                  
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-sm">{skill.name}</span>
-                    </div>
+                return (
+                  <div
+                    key={skill.id}
+                    className={cn(
+                      'flex items-center gap-3 p-3 rounded-lg border transition-all cursor-pointer',
+                      isSelected 
+                        ? 'bg-primary/10 border-primary/30' 
+                        : canSelect 
+                          ? 'bg-card hover:bg-muted/50 border-border' 
+                          : 'bg-muted/30 border-border/50 opacity-50 cursor-not-allowed'
+                    )}
+                    onClick={() => canSelect && toggleSkill(skill.id, skill.currentLevel, skill.nextLevel)}
+                  >
+                    <Checkbox 
+                      checked={isSelected} 
+                      disabled={!canSelect} 
+                      className="pointer-events-none" 
+                    />
                     
-                    {/* Indicador de progressão */}
-                    <div className="flex items-center gap-1 mt-1">
-                      <Badge 
-                        variant="outline" 
-                        className={cn('text-[10px] px-1.5', LEVEL_COLORS[skill.currentLevel])}
-                      >
-                        {LEVEL_LABELS[skill.currentLevel]}
-                      </Badge>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-sm">{skill.name}</span>
+                      </div>
                       
-                      <ArrowUp className="w-3 h-3 text-primary" />
-                      
-                      <Badge 
-                        variant="outline" 
-                        className={cn('text-[10px] px-1.5', LEVEL_COLORS[skill.nextLevel])}
-                      >
-                        {LEVEL_LABELS[skill.nextLevel]}
-                      </Badge>
-                      
-                      {/* Ícones indicativos */}
-                      {skill.nextLevel === 2 && (
-                        <Award className="w-3.5 h-3.5 text-amber-400 ml-1" />
-                      )}
-                      {skill.nextLevel === 3 && (
-                        <Star className="w-3.5 h-3.5 text-purple-400 ml-1" />
-                      )}
+                      {/* Indicador de progressão */}
+                      <div className="flex items-center gap-1 mt-1">
+                        <Badge 
+                          variant="outline" 
+                          className={cn('text-[10px] px-1.5', LEVEL_COLORS[skill.currentLevel])}
+                        >
+                          {LEVEL_LABELS[skill.currentLevel]}
+                        </Badge>
+                        
+                        <ArrowUp className="w-3 h-3 text-primary" />
+                        
+                        <Badge 
+                          variant="outline" 
+                          className={cn('text-[10px] px-1.5', LEVEL_COLORS[skill.nextLevel])}
+                        >
+                          {LEVEL_LABELS[skill.nextLevel]}
+                        </Badge>
+                        
+                        {/* Ícones indicativos */}
+                        {skill.nextLevel === 2 && (
+                          <Award className="w-3.5 h-3.5 text-amber-400 ml-1" />
+                        )}
+                        {skill.nextLevel === 3 && (
+                          <Star className="w-3.5 h-3.5 text-purple-400 ml-1" />
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
 
-            {/* Mensagem quando não há perícias elegíveis */}
-            {availableSkills.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground space-y-3">
-                <Ban className="w-10 h-10 mx-auto opacity-50" />
-                <div>
-                  <p className="text-sm font-medium">Nenhuma perícia elegível encontrada.</p>
-                  <p className="text-xs mt-2 px-4">
-                    {nex === 35 
-                      ? "Você precisa ter pelo menos uma perícia no nível TREINADO para poder aumentá-la para VETERANO."
-                      : "Você precisa ter perícias no nível TREINADO (→ Veterano) ou VETERANO (→ Expert) para usar este recurso."
-                    }
-                  </p>
+              {/* Mensagem quando não há perícias elegíveis */}
+              {availableSkills.length === 0 && (
+                <div className="text-center py-8 text-muted-foreground space-y-3">
+                  <Ban className="w-10 h-10 mx-auto opacity-50" />
+                  <div>
+                    <p className="text-sm font-medium">Nenhuma perícia elegível encontrada.</p>
+                    <p className="text-xs mt-2 px-4">
+                      {nex === 35 
+                        ? "Você precisa ter pelo menos uma perícia no nível TREINADO para poder aumentá-la para VETERANO."
+                        : "Você precisa ter perícias no nível TREINADO (→ Veterano) ou VETERANO (→ Expert) para usar este recurso."
+                      }
+                    </p>
+                  </div>
+                  <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg mx-4">
+                    <p className="text-xs text-amber-400">
+                      💡 <strong>Dica:</strong> Primeiro, adquira perícias Treinadas através da sua origem, 
+                      classe ou do poder "Treinamento em Perícia".
+                    </p>
+                  </div>
                 </div>
-                <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg mx-4">
-                  <p className="text-xs text-amber-400">
-                    💡 <strong>Dica:</strong> Primeiro, adquira perícias Treinadas através da sua origem, 
-                    classe ou do poder "Treinamento em Perícia".
-                  </p>
+              )}
+            </div>
+
+            {/* Resumo das seleções - DENTRO do scroll */}
+            {choices.length > 0 && (
+              <div className="p-3 bg-muted/30 rounded-lg">
+                <p className="text-xs text-muted-foreground mb-2">Resumo:</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {choices.map((choice, idx) => {
+                    const skill = availableSkills.find(s => s.id === choice.skillId);
+                    return (
+                      <Badge 
+                        key={idx}
+                        variant="secondary"
+                        className={cn(
+                          "text-xs cursor-pointer hover:bg-destructive/20",
+                          choice.toLevel === 3 && "bg-purple-500/20 text-purple-400"
+                        )}
+                        onClick={() => toggleSkill(choice.skillId, choice.fromLevel, choice.toLevel)}
+                      >
+                        {skill?.name || choice.skillId} → {LEVEL_LABELS[choice.toLevel]}
+                        <span className="ml-1 opacity-50">×</span>
+                      </Badge>
+                    );
+                  })}
                 </div>
+              </div>
+            )}
+
+            {/* Aviso de seleção incompleta - DENTRO do scroll */}
+            {!isValid && choices.length > 0 && (
+              <div className="flex items-center gap-2 text-sm text-amber-400">
+                <Info className="w-4 h-4 flex-shrink-0" />
+                <span>Selecione {maxChoices - choices.length} perícia{maxChoices - choices.length !== 1 ? 's' : ''} para continuar.</span>
               </div>
             )}
           </div>
         </MobileModalBody>
-
-        {/* Resumo das seleções */}
-        {choices.length > 0 && (
-          <div className="px-4 sm:px-6 py-3 bg-muted/30 rounded-lg mx-4 sm:mx-6">
-            <p className="text-xs text-muted-foreground mb-2">Resumo:</p>
-            <div className="flex flex-wrap gap-1.5">
-              {choices.map((choice, idx) => {
-                const skill = availableSkills.find(s => s.id === choice.skillId);
-                return (
-                  <Badge 
-                    key={idx}
-                    variant="secondary"
-                    className={cn(
-                      "text-xs cursor-pointer hover:bg-destructive/20",
-                      choice.toLevel === 3 && "bg-purple-500/20 text-purple-400"
-                    )}
-                    onClick={() => toggleSkill(choice.skillId, choice.fromLevel, choice.toLevel)}
-                  >
-                    {skill?.name || choice.skillId} → {LEVEL_LABELS[choice.toLevel]}
-                    <span className="ml-1 opacity-50">×</span>
-                  </Badge>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Aviso de seleção incompleta */}
-        {!isValid && choices.length > 0 && (
-          <div className="flex items-center gap-2 text-sm text-amber-400 px-4 sm:px-6">
-            <Info className="w-4 h-4 flex-shrink-0" />
-            <span>Selecione {maxChoices - choices.length} perícia{maxChoices - choices.length !== 1 ? 's' : ''} para continuar.</span>
-          </div>
-        )}
 
         <MobileModalFooter bordered>
           <Button variant="outline" onClick={handleCancel}>
