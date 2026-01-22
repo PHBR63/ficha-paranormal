@@ -773,9 +773,9 @@ export function auditSkillTraining(character: CharacterForAudit): {
           title: 'Pré-requisito de Trilha',
           description: `A trilha "${classTrack}" requer a perícia "${skillId}" treinada, mas ela está destreinada (nível 0).`,
           currentValue: skillLevel,
-          expectedValue: '≥1 (treinado)',
-          autoFixable: false,
-          fixAction: `Treinar ${skillId} para usar esta trilha`,
+          expectedValue: 1, // Nível 1 = Treinado
+          autoFixable: true, // Pode ser corrigido automaticamente
+          fixAction: `Treinar ${skillId} (pré-requisito da trilha ${classTrack})`,
         });
       }
     }
@@ -973,6 +973,13 @@ export async function autoFixCharacterIssues(
           const newLevel = issue.expectedValue as number; // 1 = Treinado
           skillFixes.push({ skillId, newLevel });
           appliedFixes.push(`${skillId} treinada (perícia da origem)`);
+        }
+        // Treinar perícias pré-requisito de trilha que estão faltando
+        else if (issue.id.startsWith('missing_track_prereq_')) {
+          const skillId = issue.id.replace('missing_track_prereq_', '');
+          const newLevel = issue.expectedValue as number; // 1 = Treinado
+          skillFixes.push({ skillId, newLevel });
+          appliedFixes.push(`${skillId} treinada (pré-requisito de trilha)`);
         }
         break;
     }
