@@ -17,7 +17,7 @@ import { MobileButtonGroup } from '@/components/ui/mobile-button-group';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { CustomScroll } from '@/components/ui/custom-scroll';
 import {
   Select,
   SelectContent,
@@ -406,7 +406,7 @@ function AddConditionSheet({
           </div>
         ) : (
           // Lista de condições
-          <ScrollArea className="h-[calc(85vh-180px)]">
+          <CustomScroll maxHeight="calc(85vh - 180px)">
             <div className="space-y-4 pr-4">
               {Object.entries(groupedConditions).map(([category, conditions]) => (
                 <div key={category}>
@@ -439,7 +439,7 @@ function AddConditionSheet({
                 </div>
               )}
             </div>
-          </ScrollArea>
+          </CustomScroll>
         )}
       </SheetContent>
     </Sheet>

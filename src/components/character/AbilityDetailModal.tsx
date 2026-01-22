@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { CustomScroll } from "@/components/ui/custom-scroll";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion, AnimatePresence } from "framer-motion";
@@ -182,7 +182,7 @@ export function AbilityDetailModal({
             </TabsList>
           </div>
 
-          <ScrollArea className="flex-1 min-h-0 px-6 py-4">
+          <CustomScroll className="flex-1 min-h-0 px-6 py-4" maxHeight="50vh">
             {/* Tab: Descrição */}
             <TabsContent value="description" className="mt-0 space-y-4">
               {/* Descrição completa */}
@@ -415,7 +415,7 @@ export function AbilityDetailModal({
                 </div>
               </TabsContent>
             )}
-          </ScrollArea>
+          </CustomScroll>
         </Tabs>
 
         {/* Rodapé com ação de seleção (apenas para habilidades opcionais) */}

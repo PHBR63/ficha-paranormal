@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { CustomScroll } from '@/components/ui/custom-scroll';
 import { 
   History, 
   Sparkles, 
@@ -224,7 +224,7 @@ export function RitualCastHistory({ history, onClear, characterName }: RitualCas
         )}
 
         {/* Lista de conjurações */}
-        <ScrollArea className="flex-1 h-[calc(100vh-280px)] py-4">
+        <CustomScroll maxHeight="calc(100vh - 280px)" className="flex-1 py-4">
           {history.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mb-4">
@@ -244,7 +244,7 @@ export function RitualCastHistory({ history, onClear, characterName }: RitualCas
               </div>
             </AnimatePresence>
           )}
-        </ScrollArea>
+        </CustomScroll>
 
         {/* Ações do footer */}
         {history.length > 0 && (

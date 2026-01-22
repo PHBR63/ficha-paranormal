@@ -13,7 +13,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { CustomScroll } from '@/components/ui/custom-scroll';
 import { 
   Check, 
   Lock, 
@@ -386,7 +386,10 @@ export const MobileParanormalPowerSelectModal = memo(function MobileParanormalPo
         </div>
 
         {/* Lista de poderes - altura otimizada para mobile/PWA */}
-        <ScrollArea className="flex-1 min-h-0" style={{ height: 'calc(90vh - 320px)', maxHeight: 'calc(90vh - 320px)' }}>
+        <CustomScroll 
+          className="flex-1 min-h-0" 
+          maxHeight="calc(90vh - 320px)"
+        >
           <div className="space-y-2 pr-4 pb-2">
             {filteredPowers.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
@@ -412,7 +415,7 @@ export const MobileParanormalPowerSelectModal = memo(function MobileParanormalPo
               })
             )}
           </div>
-        </ScrollArea>
+        </CustomScroll>
 
         <div className="pt-4 border-t">
           <Button variant="outline" className="w-full h-10" onClick={() => onOpenChange(false)}>
