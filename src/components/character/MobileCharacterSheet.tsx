@@ -58,6 +58,7 @@ import { CharacterHistoryPanel, logCharacterChanges } from './CharacterHistoryPa
 import { RestModal } from './RestModal';
 import { AbilityDetailModal } from './AbilityDetailModal';
 import { RitualSelectionModal } from './RitualSelectionModal';
+import { MissingSkillsFixModal } from './MissingSkillsFixModal';
 import { NonOccultistRitualModal, RitualSource } from './NonOccultistRitualModal';
 import { IntellectSkillSelectModal } from './IntellectSkillSelectModal';
 import { 
@@ -309,6 +310,9 @@ export function MobileCharacterSheet({
   const [editModalInitialTab, setEditModalInitialTab] = useState('info');
   const [restModalOpen, setRestModalOpen] = useState(false);
   const [historyPanelOpen, setHistoryPanelOpen] = useState(false);
+  
+  // Modal de correção de perícias faltantes (auditoria)
+  const [missingSkillsModalOpen, setMissingSkillsModalOpen] = useState(false);
   
   // Modal de rituais (pós-progressão para Ocultistas)
   const [ritualModalOpen, setRitualModalOpen] = useState(false);
@@ -1429,6 +1433,37 @@ export function MobileCharacterSheet({
     setTrainingGradeModalOpen(false);
     if (onRefetch) await onRefetch();
   }, [character, onRefetch]);
+  
+  // Handler para confirmar correção de perícias faltantes (auditoria)
+  const handleMissingSkillsConfirm = useCallback(async (newSkillIds: string[]) => {
+    if (!character) return;
+    
+    // Cria novo objeto de skills com as novas perícias treinadas
+    const updatedSkills = { ...(character.skills || {}) };
+    newSkillIds.forEach(skillId => {
+      updatedSkills[skillId] = 1; // Nível 1 = Treinado
+    });
+    
+    // Salva no banco
+    const { error } = await supabase
+      .from('characters')
+      .update({
+        skills: updatedSkills,
+      })
+      .eq('id', character.id);
+    
+    if (error) {
+      toast.error('Erro ao salvar', { description: error.message });
+      return;
+    }
+    
+    toast.success('Perícias adicionadas!', {
+      description: `${newSkillIds.length} nova(s) perícia(s) treinada(s).`,
+    });
+    
+    setMissingSkillsModalOpen(false);
+    if (onRefetch) await onRefetch();
+  }, [character, onRefetch]);
 
   // Handler para confirmar escolha de ritual
   const handleRitualFromPowerConfirm = useCallback(async (ritualId: string) => {
@@ -1710,10 +1745,9 @@ export function MobileCharacterSheet({
             } else if (issueId.includes('training_grade_70')) {
               handleOpenTrainingGradeModal(70);
             }
-            // Perícias abaixo do esperado - abre editor na aba de skills
+            // Perícias abaixo do esperado - abre modal específico de correção
             else if (issueId.includes('low_trained_skills')) {
-              setEditModalInitialTab('skills');
-              setEditModalOpen(true);
+              setMissingSkillsModalOpen(true);
             }
           }
         }}
@@ -2738,6 +2772,25 @@ export function MobileCharacterSheet({
           toast.success('Ferramenta de Trabalho selecionada!');
         }}
       />
+
+      {/* Modal de Correção de Perícias Faltantes */}
+      {missingSkillsModalOpen && auditResult && (() => {
+        // Extrai valores da issue específica low_trained_skills
+        const lowSkillsIssue = auditResult.issues.find(i => i.id.includes('low_trained_skills'));
+        const currentTrained = typeof lowSkillsIssue?.currentValue === 'number' ? lowSkillsIssue.currentValue : 0;
+        const expectedTrained = typeof lowSkillsIssue?.expectedValue === 'number' ? lowSkillsIssue.expectedValue : 0;
+        
+        return (
+          <MissingSkillsFixModal
+            isOpen={missingSkillsModalOpen}
+            onClose={() => setMissingSkillsModalOpen(false)}
+            onConfirm={handleMissingSkillsConfirm}
+            currentSkills={character.skills || {}}
+            currentTrainedCount={currentTrained}
+            expectedTrainedCount={expectedTrained}
+          />
+        );
+      })()}
     </div>
   );
 }

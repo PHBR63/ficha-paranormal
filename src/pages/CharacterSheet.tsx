@@ -66,6 +66,7 @@ import { ParanormalPowerSelectModal } from '@/components/character/ParanormalPow
 import { IntellectSkillSelectModal } from '@/components/character/IntellectSkillSelectModal';
 import { ElementResistanceSelectModal } from '@/components/character/ElementResistanceSelectModal';
 import { TrainingGradeSelectModal, type TrainingGradeResult, type SkillUpgradeChoice, applyTrainingGradeUpgrades } from '@/components/character/TrainingGradeSelectModal';
+import { MissingSkillsFixModal } from '@/components/character/MissingSkillsFixModal';
 import { ConditionManager, type ActiveCondition } from '@/components/character/ConditionManager';
 import { RestModal } from '@/components/character/RestModal';
 import { NonOccultistRitualModal, RitualSource } from '@/components/character/NonOccultistRitualModal';
@@ -342,6 +343,9 @@ export default function CharacterSheet() {
   const [editModalInitialTab, setEditModalInitialTab] = useState('info');
   const [restModalOpen, setRestModalOpen] = useState(false);
   const [paranormalPowerModalOpen, setParanormalPowerModalOpen] = useState(false);
+  
+  // Modal de correção de perícias faltantes (auditoria)
+  const [missingSkillsModalOpen, setMissingSkillsModalOpen] = useState(false);
   
   // Modais de escolha para poderes paranormais
   const [intellectSkillModalOpen, setIntellectSkillModalOpen] = useState(false);
@@ -1671,6 +1675,42 @@ export default function CharacterSheet() {
     setTrainingGradeModalOpen(false);
     refetchCharacter();
   }, [character, refetchCharacter, toast]);
+  
+  // Handler para confirmar correção de perícias faltantes (auditoria)
+  const handleMissingSkillsConfirm = useCallback(async (newSkillIds: string[]) => {
+    if (!character) return;
+    
+    // Cria novo objeto de skills com as novas perícias treinadas
+    const updatedSkills = { ...(character.skills || {}) };
+    newSkillIds.forEach(skillId => {
+      updatedSkills[skillId] = 1; // Nível 1 = Treinado
+    });
+    
+    // Salva no banco
+    const { error } = await supabase
+      .from('characters')
+      .update({
+        skills: updatedSkills,
+      })
+      .eq('id', character.id);
+    
+    if (error) {
+      toast({
+        title: 'Erro ao salvar',
+        description: error.message,
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    toast({
+      title: 'Perícias adicionadas!',
+      description: `${newSkillIds.length} nova(s) perícia(s) treinada(s).`,
+    });
+    
+    setMissingSkillsModalOpen(false);
+    refetchCharacter();
+  }, [character, refetchCharacter, toast]);
 
   // Handler para abrir modal de poderes paranormais com validação de limite
   const handleOpenParanormalPowerModal = useCallback(() => {
@@ -2282,10 +2322,9 @@ export default function CharacterSheet() {
                     } else if (issueId.includes('training_grade_70')) {
                       handleOpenTrainingGradeModal(70);
                     } 
-                    // Perícias abaixo do esperado - abre editor na aba de skills
+                    // Perícias abaixo do esperado - abre modal específico de correção
                     else if (issueId.includes('low_trained_skills')) {
-                      setEditModalInitialTab('skills');
-                      setEditModalOpen(true);
+                      setMissingSkillsModalOpen(true);
                     }
                   }
                 }}
@@ -4010,6 +4049,25 @@ export default function CharacterSheet() {
           }
         />
       )}
+      
+      {/* Modal de Correção de Perícias Faltantes */}
+      {character && missingSkillsModalOpen && auditResult && (() => {
+        // Extrai valores da issue específica low_trained_skills
+        const lowSkillsIssue = auditResult.issues.find(i => i.id.includes('low_trained_skills'));
+        const currentTrained = typeof lowSkillsIssue?.currentValue === 'number' ? lowSkillsIssue.currentValue : 0;
+        const expectedTrained = typeof lowSkillsIssue?.expectedValue === 'number' ? lowSkillsIssue.expectedValue : 0;
+        
+        return (
+          <MissingSkillsFixModal
+            isOpen={missingSkillsModalOpen}
+            onClose={() => setMissingSkillsModalOpen(false)}
+            onConfirm={handleMissingSkillsConfirm}
+            currentSkills={character.skills || {}}
+            currentTrainedCount={currentTrained}
+            expectedTrainedCount={expectedTrained}
+          />
+        );
+      })()}
     </div>
   );
 }
