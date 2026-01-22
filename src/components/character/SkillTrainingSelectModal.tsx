@@ -73,12 +73,12 @@ const LEVEL_LABELS: Record<TrainingLevel, string> = {
   3: 'Expert',
 };
 
-// Cores para níveis
+// Cores para níveis - usando tokens semânticos do design system
 const LEVEL_COLORS: Record<TrainingLevel, string> = {
   0: 'bg-muted text-muted-foreground',
-  1: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-  2: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
-  3: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
+  1: 'bg-pe/20 text-pe border-pe/30',
+  2: 'bg-warning/20 text-warning border-warning/30',
+  3: 'bg-paranormal/20 text-paranormal border-paranormal/30',
 };
 
 export function SkillTrainingSelectModal({
@@ -151,74 +151,79 @@ export function SkillTrainingSelectModal({
         
         <div className="flex items-center justify-between px-4 sm:px-6 py-2 bg-muted/50 rounded-lg mx-4 sm:mx-6">
           <span className="text-sm text-muted-foreground">Perícias selecionadas</span>
-          <Badge variant={isValid ? 'default' : 'outline'} className={cn(isValid && 'bg-green-500/20 text-green-400 border-green-500/30')}>
+          <Badge variant={isValid ? 'default' : 'outline'} className={cn(isValid && 'bg-success/20 text-success border-success/30')}>
             {choices.length}/2
           </Badge>
         </div>
         
-        <MobileModalBody useScrollArea={true} maxHeight="55vh">
-          <div className="space-y-1">
-            {availableSkills.map(skill => {
-              const isSelected = selectedSkillIds.includes(skill.id);
-              const canSelect = isSelected || choices.length < 2;
-              
-              return (
-                <div
-                  key={skill.id}
-                  className={cn(
-                    'flex items-center gap-3 p-3 rounded-lg border transition-all cursor-pointer',
-                    isSelected ? 'bg-primary/10 border-primary/30' : canSelect ? 'bg-card hover:bg-muted/50 border-border' : 'bg-muted/30 border-border/50 opacity-50 cursor-not-allowed'
-                  )}
-                  onClick={() => canSelect && toggleSkill(skill.id)}
-                >
-                  <Checkbox checked={isSelected} disabled={!canSelect} className="pointer-events-none" />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-sm">{skill.name}</span>
-                      {skill.requiresTraining && <Badge variant="outline" className="text-[10px] px-1 py-0">Req. Treino</Badge>}
-                    </div>
-                    <div className="flex items-center gap-1 mt-1">
-                      <Badge variant="outline" className={cn('text-[10px] px-1.5', LEVEL_COLORS[0])}>{LEVEL_LABELS[0]}</Badge>
-                      {isSelected && (
-                        <>
-                          <ChevronRight className="w-3 h-3 text-muted-foreground" />
-                          <Badge variant="outline" className={cn('text-[10px] px-1.5', LEVEL_COLORS[1])}>{LEVEL_LABELS[1]}</Badge>
-                          <TrendingUp className="w-3 h-3 text-green-500 ml-1" />
-                        </>
-                      )}
+        {/* Body com scroll - resumo dentro do body para não ocupar espaço fixo */}
+        <MobileModalBody useScrollArea={true} maxHeight="calc(60vh - 80px)">
+          <div className="space-y-3">
+            {/* Lista de perícias */}
+            <div className="space-y-1">
+              {availableSkills.map(skill => {
+                const isSelected = selectedSkillIds.includes(skill.id);
+                const canSelect = isSelected || choices.length < 2;
+                
+                return (
+                  <div
+                    key={skill.id}
+                    className={cn(
+                      'flex items-center gap-3 p-3 rounded-lg border transition-all cursor-pointer',
+                      isSelected ? 'bg-primary/10 border-primary/30' : canSelect ? 'bg-card hover:bg-muted/50 border-border' : 'bg-muted/30 border-border/50 opacity-50 cursor-not-allowed'
+                    )}
+                    onClick={() => canSelect && toggleSkill(skill.id)}
+                  >
+                    <Checkbox checked={isSelected} disabled={!canSelect} className="pointer-events-none" />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-sm">{skill.name}</span>
+                        {skill.requiresTraining && <Badge variant="outline" className="text-[10px] px-1 py-0">Req. Treino</Badge>}
+                      </div>
+                      <div className="flex items-center gap-1 mt-1">
+                        <Badge variant="outline" className={cn('text-[10px] px-1.5', LEVEL_COLORS[0])}>{LEVEL_LABELS[0]}</Badge>
+                        {isSelected && (
+                          <>
+                            <ChevronRight className="w-3 h-3 text-muted-foreground" />
+                            <Badge variant="outline" className={cn('text-[10px] px-1.5', LEVEL_COLORS[1])}>{LEVEL_LABELS[1]}</Badge>
+                            <TrendingUp className="w-3 h-3 text-success ml-1" />
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
+                );
+              })}
+              
+              {availableSkills.length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Ban className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">Nenhuma perícia disponível para treinamento.</p>
+                  <p className="text-xs mt-1">Todas as perícias já estão treinadas ou foram escolhidas anteriormente.</p>
                 </div>
-              );
-            })}
+              )}
+            </div>
             
-            {availableSkills.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
-                <Ban className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">Nenhuma perícia disponível para treinamento.</p>
-                <p className="text-xs mt-1">Todas as perícias já estão treinadas ou foram escolhidas anteriormente.</p>
+            {/* Resumo das escolhas - dentro do body para não ocupar espaço fixo */}
+            {choices.length > 0 && (
+              <div className="p-3 bg-muted/30 rounded-lg">
+                <p className="text-xs text-muted-foreground mb-2">Resumo:</p>
+                <div className="space-y-1">
+                  {choices.map((choice, idx) => {
+                    const skill = SKILLS.find(s => s.id === choice.skillId);
+                    return (
+                      <div key={idx} className="flex items-center gap-2 text-sm">
+                        <Star className="w-3 h-3 text-primary" />
+                        <span className="font-medium">{skill?.name}</span>
+                        <span className="text-muted-foreground">→ {LEVEL_LABELS[1]}</span>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             )}
           </div>
         </MobileModalBody>
-        
-        {choices.length > 0 && (
-          <div className="px-4 sm:px-6 py-3 bg-muted/30 rounded-lg mx-4 sm:mx-6">
-            <p className="text-xs text-muted-foreground mb-2">Resumo:</p>
-            <div className="space-y-1">
-              {choices.map((choice, idx) => {
-                const skill = SKILLS.find(s => s.id === choice.skillId);
-                return (
-                  <div key={idx} className="flex items-center gap-2 text-sm">
-                    <Star className="w-3 h-3 text-primary" />
-                    <span className="font-medium">{skill?.name}</span>
-                    <span className="text-muted-foreground">→ {LEVEL_LABELS[1]}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
         
         <MobileModalFooter bordered>
           <Button variant="outline" onClick={handleCancel}>Cancelar</Button>
