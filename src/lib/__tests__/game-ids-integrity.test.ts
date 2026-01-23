@@ -600,3 +600,8 @@ describe('game-ids.ts - Integridade de IDs', () => {
     });
   });
 });
+
+// ============================================
+// Testes de Migração de Chaves Legadas
+// (Testados em character-audit-engine.test.ts)
+// ============================================

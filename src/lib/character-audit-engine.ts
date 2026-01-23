@@ -90,7 +90,12 @@ export interface SkillTrainingChoiceAudit {
 }
 
 // Interface para escolhas de Grau de Treinamento (NEX 35% e 70%)
+// Suporta tanto chaves novas (nex35, nex70) quanto legadas (35, 70)
 export interface TrainingGradeChoicesAudit {
+  // Chaves atuais (padrão)
+  nex35?: Array<{ skillId: string; fromLevel: number; toLevel: number }>;
+  nex70?: Array<{ skillId: string; fromLevel: number; toLevel: number }>;
+  // Chaves legadas (compatibilidade)
   35?: Array<{ skillId: string; fromLevel: number; toLevel: number }>;
   70?: Array<{ skillId: string; fromLevel: number; toLevel: number }>;
 }
@@ -1260,4 +1265,141 @@ export async function syncTranscenderRecords(
     console.error('[syncTranscenderRecords] Erro geral:', err);
     return { created: 0, errors: [err instanceof Error ? err.message : 'Erro desconhecido'] };
   }
+}
+
+// ==================== MIGRAÇÃO DE CHAVES LEGADAS ====================
+
+/**
+ * Detecta se training_grade_choices usa chaves legadas ('35'/'70')
+ * @returns true se há chaves legadas que precisam migração
+ */
+export function hasLegacyTrainingGradeKeys(
+  trainingGradeChoices: TrainingGradeChoicesAudit | undefined | null
+): boolean {
+  if (!trainingGradeChoices) return false;
+  
+  const hasLegacy35 = LEGACY_TRAINING_GRADE_KEYS.NEX_35 in trainingGradeChoices;
+  const hasLegacy70 = LEGACY_TRAINING_GRADE_KEYS.NEX_70 in trainingGradeChoices;
+  const hasNew35 = TRAINING_GRADE_KEYS.NEX_35 in trainingGradeChoices;
+  const hasNew70 = TRAINING_GRADE_KEYS.NEX_70 in trainingGradeChoices;
+  
+  // Retorna true se tem chave legada SEM a correspondente nova
+  return (hasLegacy35 && !hasNew35) || (hasLegacy70 && !hasNew70);
+}
+
+/**
+ * Migra chaves legadas ('35'/'70') para o formato atual ('nex35'/'nex70')
+ * Retorna o objeto migrado (não modifica o original)
+ */
+export function migrateTrainingGradeKeys(
+  trainingGradeChoices: TrainingGradeChoicesAudit | undefined | null
+): TrainingGradeChoicesAudit {
+  if (!trainingGradeChoices) return {};
+  
+  const migrated: TrainingGradeChoicesAudit = {};
+  
+  // Migrar NEX 35
+  if (trainingGradeChoices[TRAINING_GRADE_KEYS.NEX_35]) {
+    migrated[TRAINING_GRADE_KEYS.NEX_35] = trainingGradeChoices[TRAINING_GRADE_KEYS.NEX_35];
+  } else if (trainingGradeChoices[LEGACY_TRAINING_GRADE_KEYS.NEX_35]) {
+    migrated[TRAINING_GRADE_KEYS.NEX_35] = trainingGradeChoices[LEGACY_TRAINING_GRADE_KEYS.NEX_35];
+    console.log('[migrateTrainingGradeKeys] Migrado: 35 → nex35');
+  }
+  
+  // Migrar NEX 70
+  if (trainingGradeChoices[TRAINING_GRADE_KEYS.NEX_70]) {
+    migrated[TRAINING_GRADE_KEYS.NEX_70] = trainingGradeChoices[TRAINING_GRADE_KEYS.NEX_70];
+  } else if (trainingGradeChoices[LEGACY_TRAINING_GRADE_KEYS.NEX_70]) {
+    migrated[TRAINING_GRADE_KEYS.NEX_70] = trainingGradeChoices[LEGACY_TRAINING_GRADE_KEYS.NEX_70];
+    console.log('[migrateTrainingGradeKeys] Migrado: 70 → nex70');
+  }
+  
+  return migrated;
+}
+
+/**
+ * Migra chaves legadas de training_grade_choices no banco de dados
+ * @returns Resultado da migração
+ */
+export async function migrateLegacyTrainingGradeKeys(
+  characterId: string,
+  userId: string,
+  trainingGradeChoices: TrainingGradeChoicesAudit
+): Promise<{
+  success: boolean;
+  migrated: boolean;
+  error?: string;
+}> {
+  try {
+    // Verifica se precisa migrar
+    if (!hasLegacyTrainingGradeKeys(trainingGradeChoices)) {
+      return { success: true, migrated: false };
+    }
+    
+    // Gera o objeto migrado
+    const migratedChoices = migrateTrainingGradeKeys(trainingGradeChoices);
+    
+    // Persiste no banco (cast explícito para compatibilidade com tipos Supabase)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await supabase
+      .from('characters')
+      .update({
+        training_grade_choices: migratedChoices as any,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', characterId)
+      .eq('user_id', userId);
+    
+    if (error) {
+      console.error('[migrateLegacyTrainingGradeKeys] Erro ao persistir:', error);
+      return { success: false, migrated: false, error: error.message };
+    }
+    
+    console.log(`[migrateLegacyTrainingGradeKeys] Migração concluída para personagem ${characterId}`);
+    return { success: true, migrated: true };
+  } catch (err) {
+    console.error('[migrateLegacyTrainingGradeKeys] Erro geral:', err);
+    return { 
+      success: false, 
+      migrated: false, 
+      error: err instanceof Error ? err.message : 'Erro desconhecido' 
+    };
+  }
+}
+
+/**
+ * Executa migração automática de chaves legadas durante auditoria
+ * Deve ser chamado no início da auditoria para garantir consistência
+ */
+export async function autoMigrateLegacyKeys(
+  characterId: string,
+  userId: string,
+  trainingGradeChoices: TrainingGradeChoicesAudit | undefined | null
+): Promise<{
+  migrated: boolean;
+  newChoices: TrainingGradeChoicesAudit;
+}> {
+  if (!trainingGradeChoices || !hasLegacyTrainingGradeKeys(trainingGradeChoices)) {
+    return { 
+      migrated: false, 
+      newChoices: trainingGradeChoices || {} 
+    };
+  }
+  
+  console.log(`[autoMigrateLegacyKeys] Detectadas chaves legadas para personagem ${characterId}`);
+  
+  const result = await migrateLegacyTrainingGradeKeys(characterId, userId, trainingGradeChoices);
+  
+  if (result.success && result.migrated) {
+    return { 
+      migrated: true, 
+      newChoices: migrateTrainingGradeKeys(trainingGradeChoices) 
+    };
+  }
+  
+  // Em caso de erro, retorna os dados originais (fallback continua funcionando)
+  return { 
+    migrated: false, 
+    newChoices: trainingGradeChoices 
+  };
 }
