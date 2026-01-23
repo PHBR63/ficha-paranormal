@@ -74,6 +74,7 @@ import { ClassPowerBonusesPanel } from './ClassPowerBonusesPanel';
 import { useAutoConditions } from '@/hooks/useAutoConditions';
 import { calculateDerivedStats, countTranscender, CLASSES } from '@/lib/character-data';
 import { getPowerById, ParanormalPower } from '@/lib/paranormal-powers';
+import { hasUsedTranscenderPostNex50, hasParanormalPowersFromTranscender } from '@/lib/transcender-system';
 import { MobileRitualEffectWizard } from './mobile/MobileRitualEffectWizard';
 import type { WeaponBuff } from '@/hooks/useWeaponBuffs';
 import { getActivatablePowersForCharacter } from '@/lib/class-powers/activatable-powers-bridge';
@@ -329,6 +330,10 @@ export function MobileCharacterSheet({
   const [trainingGradeModalOpen, setTrainingGradeModalOpen] = useState(false);
   const [trainingGradeNex, setTrainingGradeNex] = useState<35 | 70>(35);
   
+  // Estado para verificar se personagem já usou Transcender em NEX >= 50
+  // (necessário para determinar se deve exibir seletor de afinidade elemental)
+  const [hasTranscendedPost50, setHasTranscendedPost50] = useState(false);
+  
   // Modal de rituais para não-ocultistas
   const [nonOccultistRitualModalOpen, setNonOccultistRitualModalOpen] = useState(false);
   const [ritualModalSource, setRitualModalSource] = useState<RitualSource>('ritual-aprendido');
@@ -502,7 +507,30 @@ export function MobileCharacterSheet({
     fetchAndSyncPowerChoices();
   }, [character?.id, character?.nex, user?.id]);
 
-  // Calcula limite de rituais para Ocultistas
+  // Verifica se personagem já usou Transcender em NEX >= 50
+  // Isso determina se o seletor de afinidade elemental deve aparecer
+  useEffect(() => {
+    const checkTranscenderPost50 = async () => {
+      // Só precisa verificar se NEX >= 50 e ainda não tem afinidade
+      if (character.nex < 50 || character.elemental_affinity) {
+        setHasTranscendedPost50(false);
+        return;
+      }
+      
+      // Verificação rápida: se já tem poderes paranormais, provavelmente usou Transcender
+      const hasParanormal = hasParanormalPowersFromTranscender(character.paranormal_powers);
+      if (hasParanormal) {
+        setHasTranscendedPost50(true);
+        return;
+      }
+      
+      // Verificação detalhada: consulta registros de power_choices no banco
+      const result = await hasUsedTranscenderPostNex50(character.id);
+      setHasTranscendedPost50(result);
+    };
+    
+    checkTranscenderPost50();
+  }, [character.id, character.nex, character.elemental_affinity, character.paranormal_powers]);
   const ritualLimits = useMemo(() => {
     if (character.class !== 'Ocultista') return null;
     return getOcultistRituals(character.nex);
@@ -1645,7 +1673,7 @@ export function MobileCharacterSheet({
           .from('characters')
           .update({ 
             elemental_affinity: element,
-            affinity_active: false 
+            affinity_active: true  // Consistente com desktop: ativa afinidade ao selecionar
           })
           .eq('id', character.id);
         
@@ -1794,8 +1822,8 @@ export function MobileCharacterSheet({
               }}
             />
             
-            {/* Seletor de Afinidade Elemental (NEX 50+) */}
-            {character.nex >= 50 && !character.elemental_affinity && (
+            {/* Seletor de Afinidade Elemental - só aparece após usar Transcender em NEX 50+ */}
+            {character.nex >= 50 && !character.elemental_affinity && hasTranscendedPost50 && (
               <MobileAffinitySelectorCard
                 nex={character.nex}
                 onSelectAffinity={handleAffinitySelect}

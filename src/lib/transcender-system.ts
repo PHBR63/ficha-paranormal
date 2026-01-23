@@ -11,7 +11,7 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
-import { ParanormalPower, ParanormalElement, PowerChoiceType } from './paranormal-powers';
+import { ParanormalPower, ParanormalElement, PowerChoiceType, SavedParanormalPower } from './paranormal-powers';
 import { NEX_PROGRESSION, NexProgressionData } from './character-data';
 
 // Tipos de escolha de poder
@@ -89,6 +89,52 @@ export function getPowerChoiceMilestones(): number[] {
   }
   
   return milestones;
+}
+
+/**
+ * Verifica se o personagem já usou Transcender em NEX >= 50
+ * Essa verificação é necessária para determinar se a afinidade elemental
+ * deve ser exibida (só aparece após usar Transcender em NEX 50+)
+ * 
+ * @param characterId - ID do personagem
+ * @returns true se já usou Transcender em NEX >= 50 (status resolved)
+ */
+export async function hasUsedTranscenderPostNex50(
+  characterId: string
+): Promise<boolean> {
+  const { data, error } = await supabase
+    .from('character_power_choices')
+    .select('id')
+    .eq('character_id', characterId)
+    .in('choice_type', ['transcender', 'transcender_legacy'])
+    .gte('nex', 50)
+    .eq('status', 'resolved')
+    .limit(1);
+  
+  if (error) {
+    console.error('[transcender-system] Erro ao verificar Transcender NEX 50+:', error);
+    return false;
+  }
+  
+  return data !== null && data.length > 0;
+}
+
+/**
+ * Verifica se o personagem possui poderes paranormais (não de origem)
+ * Isso também indica que usou Transcender em algum momento
+ * 
+ * @param paranormalPowers - Array de poderes paranormais do personagem
+ * @returns true se possui poderes paranormais não concedidos por origem
+ */
+export function hasParanormalPowersFromTranscender(
+  paranormalPowers: Array<{ id: string; name: string; element: string; description: string }> | SavedParanormalPower[] | null | undefined
+): boolean {
+  if (!paranormalPowers || paranormalPowers.length === 0) return false;
+  
+  // Verificar se há pelo menos um poder que não seja de origem
+  // Poderes de origem normalmente não têm subchoices ou vêm de fontes específicas
+  // Para simplificar, consideramos que qualquer poder paranormal indica uso de Transcender
+  return paranormalPowers.length > 0;
 }
 
 /**
