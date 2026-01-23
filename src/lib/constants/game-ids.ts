@@ -252,6 +252,33 @@ export const LEGACY_TRAINING_GRADE_KEYS = {
  */
 export type TrainingGradeKey = typeof TRAINING_GRADE_KEYS[keyof typeof TRAINING_GRADE_KEYS];
 
+/**
+ * Retorna a chave de Grau de Treinamento baseada no NEX atual
+ * @param nex - Valor de NEX do personagem (5-99)
+ * @returns A chave correspondente ('nex35' ou 'nex70') ou null se NEX não atingiu nenhum marco
+ * 
+ * @example
+ * getTrainingGradeKey(35) // 'nex35'
+ * getTrainingGradeKey(70) // 'nex70'
+ * getTrainingGradeKey(50) // 'nex35' (já passou do marco 35, ainda não chegou no 70)
+ * getTrainingGradeKey(20) // null (ainda não atingiu nenhum marco)
+ */
+export function getTrainingGradeKey(nex: number): TrainingGradeKey | null {
+  if (nex >= 70) return TRAINING_GRADE_KEYS.NEX_70;
+  if (nex >= 35) return TRAINING_GRADE_KEYS.NEX_35;
+  return null;
+}
+
+/**
+ * Retorna a chave de Grau de Treinamento exata para um marco específico
+ * Útil quando você sabe exatamente qual marco está processando
+ * @param nexMilestone - Marco de NEX (35 ou 70)
+ * @returns A chave correspondente ou null se não for um marco válido
+ */
+export function getTrainingGradeKeyForMilestone(nexMilestone: 35 | 70): TrainingGradeKey {
+  return nexMilestone === 35 ? TRAINING_GRADE_KEYS.NEX_35 : TRAINING_GRADE_KEYS.NEX_70;
+}
+
 // ============================================
 // PERÍCIAS (SKILLS)
 // ============================================
