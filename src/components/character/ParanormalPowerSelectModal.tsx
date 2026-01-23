@@ -7,6 +7,7 @@
  */
 
 import { useState, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   MobileModal,
   MobileModalContent,
@@ -50,6 +51,8 @@ interface ParanormalPowerSelectModalProps {
   characterPowers: ParanormalPower[];
   elementalAffinity?: ParanormalElement | null;
   affinityActive?: boolean;
+  /** Indica se está vindo do step de afinidade (para animação de entrada) */
+  isFromAffinityStep?: boolean;
 }
 
 export function ParanormalPowerSelectModal({
@@ -59,6 +62,7 @@ export function ParanormalPowerSelectModal({
   characterPowers,
   elementalAffinity,
   affinityActive = false,
+  isFromAffinityStep = false,
 }: ParanormalPowerSelectModalProps) {
   // Aba selecionada (elemento)
   const [selectedTab, setSelectedTab] = useState<ParanormalElement | 'generic' | 'all'>('all');
@@ -304,6 +308,15 @@ export function ParanormalPowerSelectModal({
   return (
     <MobileModal open={open} onOpenChange={onOpenChange}>
       <MobileModalContent size="lg">
+        <motion.div
+          initial={isFromAffinityStep ? { opacity: 0, scale: 1.02, y: -10 } : { opacity: 1, scale: 1, y: 0 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ 
+            duration: 0.35, 
+            ease: [0.4, 0, 0.2, 1],
+            delay: isFromAffinityStep ? 0.1 : 0,
+          }}
+        >
         <MobileModalHeader>
           <MobileModalTitle className="flex items-center gap-2 font-display tracking-wider">
             <Sparkles className="h-5 w-5 text-primary" />
@@ -312,18 +325,29 @@ export function ParanormalPowerSelectModal({
           <MobileModalDescription>
             Selecione um poder paranormal através da habilidade Transcender.
             {elementalAffinity && (
-              <span className="block mt-1">
-                <Badge variant="secondary" className="text-xs">
+              <motion.span 
+                className="block mt-1"
+                initial={isFromAffinityStep ? { opacity: 0, x: -10 } : { opacity: 1, x: 0 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: isFromAffinityStep ? 0.2 : 0, duration: 0.3 }}
+              >
+                <Badge variant="secondary" className="text-xs bg-paranormal/20 border-paranormal/30">
+                  <Sparkles className="h-3 w-3 mr-1 text-paranormal" />
                   Afinidade: {ELEMENT_LABELS[elementalAffinity]}
                   {affinityActive ? ' (Ativa)' : ' (Inativa)'}
                 </Badge>
-              </span>
+              </motion.span>
             )}
           </MobileModalDescription>
         </MobileModalHeader>
 
         {/* Resumo de poderes por elemento */}
-        <div className="flex flex-wrap gap-2 px-4 sm:px-6 py-2">
+        <motion.div 
+          className="flex flex-wrap gap-2 px-4 sm:px-6 py-2"
+          initial={isFromAffinityStep ? { opacity: 0 } : { opacity: 1 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: isFromAffinityStep ? 0.15 : 0, duration: 0.25 }}
+        >
           {powersByElement.map(({ element, count }) => {
             const ElementIcon = ELEMENT_ICONS[element];
             const isAffinity = element === elementalAffinity;
@@ -331,14 +355,14 @@ export function ParanormalPowerSelectModal({
               <Badge
                 key={element}
                 variant={isAffinity ? 'default' : 'outline'}
-                className="flex items-center gap-1"
+                className={`flex items-center gap-1 ${isAffinity ? 'ring-2 ring-paranormal/30' : ''}`}
               >
                 <ElementIcon className="h-3 w-3" />
                 {ELEMENT_LABELS[element]}: {count}
               </Badge>
             );
           })}
-        </div>
+        </motion.div>
 
         {/* Tabs de filtro por elemento */}
         <div className="px-4 sm:px-6">
@@ -370,9 +394,14 @@ export function ParanormalPowerSelectModal({
         </div>
 
         <MobileModalBody useScrollArea={true} maxHeight="calc(85vh - 280px)">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 min-h-0">
+          <motion.div 
+            className="grid grid-cols-1 md:grid-cols-2 gap-4 min-h-0"
+            initial={isFromAffinityStep ? { opacity: 0, y: 10 } : { opacity: 1, y: 0 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: isFromAffinityStep ? 0.25 : 0, duration: 0.3 }}
+          >
             {filteredPowers.map(renderPowerCard)}
-          </div>
+          </motion.div>
         </MobileModalBody>
 
         <MobileModalFooter bordered>
@@ -380,6 +409,7 @@ export function ParanormalPowerSelectModal({
             Cancelar
           </Button>
         </MobileModalFooter>
+        </motion.div>
       </MobileModalContent>
     </MobileModal>
   );

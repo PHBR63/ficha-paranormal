@@ -82,6 +82,8 @@ interface TranscenderAffinityStepProps {
   onSelectAffinity: (element: ParanormalElement) => void;
   onSkip?: () => void;
   targetNex: number;
+  /** Indica se está em transição para o próximo modal */
+  isTransitioning?: boolean;
 }
 
 export const TranscenderAffinityStep = memo(function TranscenderAffinityStep({
@@ -90,6 +92,7 @@ export const TranscenderAffinityStep = memo(function TranscenderAffinityStep({
   onSelectAffinity,
   onSkip,
   targetNex,
+  isTransitioning = false,
 }: TranscenderAffinityStepProps) {
   const [selectedElement, setSelectedElement] = useState<ParanormalElement | null>(null);
   const [showDetails, setShowDetails] = useState<ParanormalElement | null>(null);
@@ -106,6 +109,14 @@ export const TranscenderAffinityStep = memo(function TranscenderAffinityStep({
   return (
     <MobileModal open={open} onOpenChange={onOpenChange}>
       <MobileModalContent className="max-w-lg">
+        <motion.div
+          initial={{ opacity: 1, scale: 1 }}
+          animate={{ 
+            opacity: isTransitioning ? 0 : 1, 
+            scale: isTransitioning ? 0.95 : 1,
+          }}
+          transition={{ duration: 0.2, ease: 'easeOut' }}
+        >
         <MobileModalHeader>
           <MobileModalTitle className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-paranormal" />
@@ -244,6 +255,7 @@ export const TranscenderAffinityStep = memo(function TranscenderAffinityStep({
             Confirmar Afinidade
           </Button>
         </MobileModalFooter>
+        </motion.div>
       </MobileModalContent>
     </MobileModal>
   );
