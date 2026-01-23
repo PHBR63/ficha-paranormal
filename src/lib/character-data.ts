@@ -928,8 +928,9 @@ export function calculateDerivedStats(
 /**
  * IDs conhecidos de poderes Transcender (todas as classes)
  * Usado para calcular a penalidade de sanidade.
+ * IMPORTANTE: manter alinhado com IDs do sistema unificado (class-powers)
  */
-export const TRANSCENDER_POWER_IDS = ['transcender', 'transcender-esp', 'transcender-ocultista'];
+export const TRANSCENDER_POWER_IDS = ['transcender-comb', 'transcender-esp', 'transcender-ocultista'];
 
 /**
  * Calcula quantas vezes o personagem escolheu Transcender
