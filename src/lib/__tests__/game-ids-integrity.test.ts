@@ -49,6 +49,9 @@ import {
   getPatentIdByName,
   isSkillOfAttribute,
   getSkillAttribute,
+  // Funções de Grau de Treinamento
+  getTrainingGradeKey,
+  getTrainingGradeKeyForMilestone,
 } from '../constants/game-ids';
 import { ORIGINS, CLASSES, CLASS_TRACKS, SKILLS } from '../character-data';
 import { SUPPLEMENT_ORIGINS } from '../origins';
@@ -517,6 +520,83 @@ describe('game-ids.ts - Integridade de IDs', () => {
       // Confirma que não usa chaves legadas
       expect(newData['35']).toBeUndefined();
       expect(newData['70']).toBeUndefined();
+    });
+  });
+
+  // ============================================
+  // getTrainingGradeKey - Função Helper
+  // ============================================
+
+  describe('getTrainingGradeKey', () => {
+    it('deve retornar null para NEX abaixo de 35', () => {
+      expect(getTrainingGradeKey(5)).toBeNull();
+      expect(getTrainingGradeKey(10)).toBeNull();
+      expect(getTrainingGradeKey(20)).toBeNull();
+      expect(getTrainingGradeKey(30)).toBeNull();
+      expect(getTrainingGradeKey(34)).toBeNull();
+    });
+
+    it('deve retornar "nex35" para NEX 35', () => {
+      expect(getTrainingGradeKey(35)).toBe('nex35');
+      expect(getTrainingGradeKey(35)).toBe(TRAINING_GRADE_KEYS.NEX_35);
+    });
+
+    it('deve retornar "nex35" para NEX entre 35 e 69', () => {
+      expect(getTrainingGradeKey(40)).toBe('nex35');
+      expect(getTrainingGradeKey(50)).toBe('nex35');
+      expect(getTrainingGradeKey(65)).toBe('nex35');
+      expect(getTrainingGradeKey(69)).toBe('nex35');
+    });
+
+    it('deve retornar "nex70" para NEX 70', () => {
+      expect(getTrainingGradeKey(70)).toBe('nex70');
+      expect(getTrainingGradeKey(70)).toBe(TRAINING_GRADE_KEYS.NEX_70);
+    });
+
+    it('deve retornar "nex70" para NEX acima de 70', () => {
+      expect(getTrainingGradeKey(75)).toBe('nex70');
+      expect(getTrainingGradeKey(85)).toBe('nex70');
+      expect(getTrainingGradeKey(95)).toBe('nex70');
+      expect(getTrainingGradeKey(99)).toBe('nex70');
+    });
+
+    it('deve funcionar com todos os valores de NEX válidos', () => {
+      VALID_NEX_VALUES.forEach(nex => {
+        const result = getTrainingGradeKey(nex);
+        if (nex < 35) {
+          expect(result).toBeNull();
+        } else if (nex < 70) {
+          expect(result).toBe('nex35');
+        } else {
+          expect(result).toBe('nex70');
+        }
+      });
+    });
+  });
+
+  describe('getTrainingGradeKeyForMilestone', () => {
+    it('deve retornar "nex35" para milestone 35', () => {
+      expect(getTrainingGradeKeyForMilestone(35)).toBe('nex35');
+      expect(getTrainingGradeKeyForMilestone(35)).toBe(TRAINING_GRADE_KEYS.NEX_35);
+    });
+
+    it('deve retornar "nex70" para milestone 70', () => {
+      expect(getTrainingGradeKeyForMilestone(70)).toBe('nex70');
+      expect(getTrainingGradeKeyForMilestone(70)).toBe(TRAINING_GRADE_KEYS.NEX_70);
+    });
+
+    it('deve ser usável em lógica de handler', () => {
+      // Simula uso típico em handler
+      const handleUpgrade = (milestone: 35 | 70) => {
+        const key = getTrainingGradeKeyForMilestone(milestone);
+        return { [key]: [{ skillId: 'teste' }] };
+      };
+
+      const result35 = handleUpgrade(35);
+      const result70 = handleUpgrade(70);
+
+      expect(result35).toHaveProperty('nex35');
+      expect(result70).toHaveProperty('nex70');
     });
   });
 });

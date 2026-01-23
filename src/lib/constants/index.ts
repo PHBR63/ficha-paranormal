@@ -103,4 +103,6 @@ export {
   getPatentIdByName,
   isSkillOfAttribute,
   getSkillAttribute,
+  getTrainingGradeKey,
+  getTrainingGradeKeyForMilestone,
 } from './game-ids';
