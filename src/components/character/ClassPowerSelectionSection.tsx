@@ -20,6 +20,7 @@ import { toast } from 'sonner';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import { ALL_SKILL_TRAINING_IDS } from '@/lib/constants/game-ids';
 import { getChoosableAbilities, getAbilityChoiceCount, ClassAbility } from '@/lib/class-abilities';
 import { 
   checkPowerPrerequisites, 
@@ -89,13 +90,8 @@ function getPowerChoicesThisNex(currentNex: number, targetNex: number): number {
  * Verifica se um poder é repetível (pode ser escolhido múltiplas vezes)
  */
 function isRepeatablePower(powerId: string): boolean {
-  const repeatablePowers = [
-    'treinamento-pericia',
-    'treinamento-pericia-comb',
-    'treinamento-pericia-esp',
-    'treinamento-pericia-ocult',
-  ];
-  return repeatablePowers.includes(powerId);
+  // IDs centralizados em game-ids.ts (ALL_SKILL_TRAINING_IDS)
+  return (ALL_SKILL_TRAINING_IDS as readonly string[]).includes(powerId);
 }
 
 /**

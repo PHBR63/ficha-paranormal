@@ -40,7 +40,7 @@ import { rebuildCharacterSheet, buildStateToFormData, CLASS_PROFICIENCIES, getCl
 import { getCoreAbilities, getChoosableAbilities } from '@/lib/class-abilities';
 import { useCharacterAutoSave, loadCharacterDraft, clearCharacterDraft } from '@/hooks';
 import { validateCharacter } from '@/lib/character-validation';
-import { CORE_ORIGIN_IDS } from '@/lib/constants/game-ids';
+import { CORE_ORIGIN_IDS, ALL_TRANSCENDER_IDS } from '@/lib/constants/game-ids';
 import confetti from 'canvas-confetti';
 import type { CharacterTemplate, TemplateWithAuthor } from '@/types/templates';
 
@@ -433,12 +433,11 @@ export default function CharacterCreate() {
   const ritualsPerNex = (ocultistClass as any)?.ritualsPerNex || {};
   const requiredRituals = ritualsPerNex[formData.nex]?.count || 0;
 
-  // IDs de poderes Transcender para contagem
-  const TRANSCENDER_IDS = ['transcender', 'transcender-esp', 'transcender-ocultista'];
-  
-  // Calcula quantas vezes Transcender foi escolhido
+  // Calcula quantas vezes Transcender foi escolhido (IDs centralizados em game-ids.ts)
   const transcenderCount = useMemo(() => {
-    return formData.abilities.filter(a => TRANSCENDER_IDS.includes(a)).length;
+    return formData.abilities.filter(a => 
+      (ALL_TRANSCENDER_IDS as readonly string[]).includes(a)
+    ).length;
   }, [formData.abilities]);
 
   // Derived stats for preview - se monta progressivamente durante a criação
@@ -633,8 +632,10 @@ export default function CharacterCreate() {
         }
       }
 
-      // Calcular contagem de Transcender para aplicar penalidade de SAN
-      const transcenderCountForSave = formData.abilities.filter(a => TRANSCENDER_IDS.includes(a)).length;
+      // Calcular contagem de Transcender para aplicar penalidade de SAN (IDs centralizados)
+      const transcenderCountForSave = formData.abilities.filter(a => 
+        (ALL_TRANSCENDER_IDS as readonly string[]).includes(a)
+      ).length;
       
       const derivedStats = calculateDerivedStats(
         formData.characterClass,

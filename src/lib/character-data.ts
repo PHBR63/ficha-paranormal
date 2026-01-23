@@ -925,16 +925,14 @@ export function calculateDerivedStats(
   return { hp, pe, san: Math.max(0, san) };
 }
 
-/**
- * IDs conhecidos de poderes Transcender (todas as classes)
- * Usado para calcular a penalidade de sanidade.
- * IMPORTANTE: manter alinhado com IDs do sistema unificado (class-powers)
- */
-export const TRANSCENDER_POWER_IDS = ['transcender-comb', 'transcender-esp', 'transcender-ocultista'];
+// Importar IDs centralizados de poderes especiais
+import { ALL_TRANSCENDER_IDS } from '@/lib/constants/game-ids';
 
 /**
  * Calcula quantas vezes o personagem escolheu Transcender
  * a partir do array de abilities (IDs ou nomes).
+ * 
+ * NOTA: IDs de Transcender centralizados em game-ids.ts (ALL_TRANSCENDER_IDS)
  * 
  * @param abilities - Array de IDs ou nomes de abilities
  * @returns Número de vezes que Transcender foi escolhido
@@ -945,8 +943,8 @@ export function countTranscender(abilities?: string[] | unknown[]): number {
   return abilities.filter(a => {
     if (typeof a !== 'string') return false;
     const normalized = a.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    // Verifica por ID ou por nome
-    return TRANSCENDER_POWER_IDS.includes(a) || 
+    // Verifica por ID (centralizado) ou por nome
+    return (ALL_TRANSCENDER_IDS as readonly string[]).includes(a) || 
            normalized.includes('transcender');
   }).length;
 }

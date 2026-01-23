@@ -421,6 +421,76 @@ export const VALID_ELEMENT_IDS = Object.values(ELEMENT_IDS);
 export type ElementId = typeof ELEMENT_IDS[keyof typeof ELEMENT_IDS];
 
 // ============================================
+// PODERES ESPECIAIS (SPECIAL POWERS)
+// ============================================
+
+/**
+ * IDs de poderes Transcender (por classe)
+ * Usados para: detecção de fluxo Transcender, cálculo de penalidade de sanidade
+ */
+export const TRANSCENDER_POWER_IDS = {
+  COMBATENTE: 'transcender-comb',
+  ESPECIALISTA: 'transcender-esp',
+  OCULTISTA: 'transcender-ocultista',
+} as const;
+
+/**
+ * Array de todos os IDs de Transcender válidos
+ */
+export const ALL_TRANSCENDER_IDS = Object.values(TRANSCENDER_POWER_IDS);
+
+/**
+ * Tipo para IDs de Transcender
+ */
+export type TranscenderId = typeof ALL_TRANSCENDER_IDS[number];
+
+/**
+ * IDs de poderes Treinamento em Perícia (por classe)
+ * Usados para: detecção de poderes repetíveis, fluxo de sub-escolha de perícia
+ */
+export const SKILL_TRAINING_POWER_IDS = {
+  COMBATENTE: 'treinamento-pericia-comb',
+  ESPECIALISTA: 'treinamento-pericia-esp',
+  OCULTISTA: 'treinamento-pericia-ocult',
+  /** ID legado - usar apenas para mapeamento de compatibilidade */
+  LEGACY: 'treinamento-pericia',
+} as const;
+
+/**
+ * Array de todos os IDs de Treinamento em Perícia válidos (inclui legado)
+ */
+export const ALL_SKILL_TRAINING_IDS = [
+  SKILL_TRAINING_POWER_IDS.COMBATENTE,
+  SKILL_TRAINING_POWER_IDS.ESPECIALISTA,
+  SKILL_TRAINING_POWER_IDS.OCULTISTA,
+  SKILL_TRAINING_POWER_IDS.LEGACY,
+] as const;
+
+/**
+ * Tipo para IDs de Treinamento em Perícia
+ */
+export type SkillTrainingId = typeof ALL_SKILL_TRAINING_IDS[number];
+
+/**
+ * IDs de poderes Versatilidade (por classe)
+ * Usados para: fluxo de escolha de poder adicional no NEX 50%+
+ */
+export const VERSATILITY_POWER_IDS = {
+  COMBATENTE: 'versatilidade-comb',
+  ESPECIALISTA: 'versatilidade-esp',
+} as const;
+
+/**
+ * Array de todos os IDs de Versatilidade válidos
+ */
+export const ALL_VERSATILITY_IDS = Object.values(VERSATILITY_POWER_IDS);
+
+/**
+ * Tipo para IDs de Versatilidade
+ */
+export type VersatilityId = typeof ALL_VERSATILITY_IDS[number];
+
+// ============================================
 // FUNÇÕES UTILITÁRIAS
 // ============================================
 
