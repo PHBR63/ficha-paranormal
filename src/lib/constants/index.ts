@@ -86,6 +86,17 @@ export {
   VALID_ELEMENT_IDS,
   type ElementId,
   
+  // Poderes Especiais
+  TRANSCENDER_POWER_IDS,
+  ALL_TRANSCENDER_IDS,
+  type TranscenderId,
+  SKILL_TRAINING_POWER_IDS,
+  ALL_SKILL_TRAINING_IDS,
+  type SkillTrainingId,
+  VERSATILITY_POWER_IDS,
+  ALL_VERSATILITY_IDS,
+  type VersatilityId,
+  
   // Funções de validação
   isValidClassId,
   isValidTrackId,

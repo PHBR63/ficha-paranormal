@@ -33,6 +33,10 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { 
+  ALL_TRANSCENDER_IDS, 
+  ALL_SKILL_TRAINING_IDS 
+} from '@/lib/constants/game-ids';
+import { 
   getAvailableAbilities, 
   getCoreAbilities, 
   getChoosableAbilities,
@@ -169,16 +173,6 @@ export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) 
   const [versatilityChoice, setVersatilityChoice] = useState<VersatilityChoice | null>(
     (formData as any).versatilityChoice || null
   );
-  
-  // IDs de poderes de Treinamento em Perícia (todas as classes)
-  const SKILL_TRAINING_IDS = ['treinamento-pericia-comb', 'treinamento-pericia-esp', 'treinamento-pericia-ocult'];
-  
-  // IDs de poderes Transcender (todas as classes)
-  // IMPORTANTE: manter alinhado com os IDs reais do sistema unificado (class-powers)
-  // - Combatente: transcender-comb
-  // - Especialista: transcender-esp
-  // - Ocultista: transcender-ocultista
-  const TRANSCENDER_IDS = ['transcender-comb', 'transcender-esp', 'transcender-ocultista'];
   
   // Verifica se personagem está em NEX 50%+ (precisa fazer escolha de Versatilidade)
   const showVersatility = nex >= 50 && classTrack;
@@ -356,15 +350,15 @@ export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) 
     setIsDetailModalOpen(true);
   };
 
-  // Verifica se um poder é Treinamento em Perícia
+  // Verifica se um poder é Treinamento em Perícia (IDs centralizados)
   const isSkillTrainingPower = useCallback((abilityId: string) => {
-    return SKILL_TRAINING_IDS.includes(abilityId);
-  }, [SKILL_TRAINING_IDS]);
+    return (ALL_SKILL_TRAINING_IDS as readonly string[]).includes(abilityId);
+  }, []);
   
-  // Verifica se um poder é Transcender
+  // Verifica se um poder é Transcender (IDs centralizados)
   const isTranscenderPower = useCallback((abilityId: string) => {
-    return TRANSCENDER_IDS.includes(abilityId);
-  }, [TRANSCENDER_IDS]);
+    return (ALL_TRANSCENDER_IDS as readonly string[]).includes(abilityId);
+  }, []);
   
   // Gera a chave para armazenar escolhas de Treinamento em Perícia
   const getSkillTrainingKey = useCallback((powerId: string, instanceIndex: number) => {
