@@ -606,13 +606,19 @@ export function NexProgressionModal({
       let newAffinity = character.elemental_affinity || null;
       let newAffinityActive = character.affinity_active || false;
       
-      if (isReachingNex50 && selectedAffinity) {
+      // Se está atingindo NEX 50 E selecionou afinidade (via card antigo)
+      // OU se selecionou afinidade via fluxo de Transcender (NEX >= 50)
+      if (selectedAffinity && !newAffinity) {
         newAffinity = selectedAffinity;
+        // Se já está em NEX 50+ ou vai atingir, ativa a afinidade imediatamente
+        if (nextNex && nextNex >= 50) {
+          newAffinityActive = true;
+        }
       }
       
       // Se já tem afinidade e está subindo de NEX (primeira vez após escolher),
       // ativa a afinidade
-      if (newAffinity && !newAffinityActive && nextNex > 50) {
+      if (newAffinity && !newAffinityActive && nextNex && nextNex > 50) {
         newAffinityActive = true;
       }
       
@@ -863,6 +869,17 @@ export function NexProgressionModal({
                   classPowerChoices={classPowerChoices}
                   onClassPowerChoicesChange={setClassPowerChoices}
                   usedTranscender={usedTranscender}
+                  characterParanormalPowers={pendingPowers}
+                  elementalAffinity={character.elemental_affinity as ParanormalElement | null}
+                  affinityActive={character.affinity_active || false}
+                  onTranscenderUsed={() => setUsedTranscender(true)}
+                  onPendingAffinityChange={(affinity) => {
+                    // Quando afinidade é selecionada no fluxo de Transcender,
+                    // atualiza o estado local para ser salvo na confirmação
+                    if (affinity) {
+                      setSelectedAffinity(affinity);
+                    }
+                  }}
                 />
               )}
 

@@ -30,6 +30,7 @@ import {
 } from '@/lib/class-abilities-prerequisites';
 import { ClassPowerSubchoiceModal, ClassPowerSubchoice } from './ClassPowerSubchoiceModal';
 import { ParanormalPowerSelectModal } from './ParanormalPowerSelectModal';
+import { TranscenderAffinityStep } from './TranscenderAffinityStep';
 import { UnifiedClassPower } from '@/lib/class-powers/types';
 import { 
   ParanormalPower, 
@@ -69,6 +70,8 @@ interface ClassPowerSelectionSectionProps {
   affinityActive?: boolean;
   /** Callback quando Transcender é usado (para bloquear ganho de Sanidade) */
   onTranscenderUsed?: () => void;
+  /** Callback quando afinidade elemental é selecionada durante o fluxo de Transcender */
+  onPendingAffinityChange?: (affinity: ParanormalElement | null) => void;
 }
 
 // ================== FUNÇÕES AUXILIARES ==================
@@ -120,12 +123,17 @@ export function ClassPowerSelectionSection({
   elementalAffinity,
   affinityActive = false,
   onTranscenderUsed,
+  onPendingAffinityChange,
 }: ClassPowerSelectionSectionProps) {
   const [isExpanded, setIsExpanded] = useState(true);
   const [subchoiceModalOpen, setSubchoiceModalOpen] = useState(false);
   const [pendingPower, setPendingPower] = useState<UnifiedClassPower | null>(null);
   // Estado para modal de seleção de poder paranormal (Transcender)
   const [paranormalSelectOpen, setParanormalSelectOpen] = useState(false);
+  // Estado para modal de seleção de afinidade elemental (Transcender NEX 50+)
+  const [affinityStepOpen, setAffinityStepOpen] = useState(false);
+  // Afinidade selecionada durante o fluxo de Transcender (antes de salvar)
+  const [pendingAffinity, setPendingAffinity] = useState<ParanormalElement | null>(null);
   // Estado para rastrear quais descrições estão expandidas
   const [expandedDescriptions, setExpandedDescriptions] = useState<Set<string>>(new Set());
 
@@ -209,9 +217,20 @@ export function ClassPowerSelectionSection({
       const choiceType = unifiedPower.effects?.base?.requiresChoice?.type;
       
       // TRANSCENDER: Escolha de tipo 'power' abre ParanormalPowerSelectModal
+      // Se NEX >= 50 e sem afinidade elemental, abre primeiro o step de afinidade
       if (choiceType === 'power') {
         setPendingPower(unifiedPower);
-        setParanormalSelectOpen(true);
+        
+        // Verifica se precisa escolher afinidade elemental primeiro
+        const needsAffinityFirst = targetNex >= 50 && !elementalAffinity && !pendingAffinity;
+        
+        if (needsAffinityFirst) {
+          // Abre step de seleção de afinidade antes do modal de poderes
+          setAffinityStepOpen(true);
+        } else {
+          // Abre diretamente o modal de poderes paranormais
+          setParanormalSelectOpen(true);
+        }
         return;
       }
       
@@ -244,6 +263,7 @@ export function ClassPowerSelectionSection({
   }, [pendingPower, selectedPowers, classPowerChoices, onPowersChange, onClassPowerChoicesChange]);
 
   // Handler para seleção de poder paranormal (Transcender)
+  // Inclui lógica para salvar a afinidade pendente junto com a escolha
   const handleParanormalPowerSelect = useCallback((paranormalPower: ParanormalPower) => {
     if (!pendingPower) return;
     
@@ -251,13 +271,21 @@ export function ClassPowerSelectionSection({
     onPowersChange([...selectedPowers, pendingPower.id]);
     
     // Salva o poder paranormal escolhido como sub-escolha
+    // Se há afinidade pendente, inclui na escolha para ser salva posteriormente
+    const choiceData: ClassPowerSubchoice = {
+      powerId: pendingPower.id,
+      choiceType: 'power',
+      chosenValues: [paranormalPower.id],
+    };
+    
+    // Adiciona a afinidade pendente aos metadados da escolha
+    if (pendingAffinity) {
+      (choiceData as ClassPowerSubchoice & { pendingAffinity?: ParanormalElement }).pendingAffinity = pendingAffinity;
+    }
+    
     onClassPowerChoicesChange({
       ...classPowerChoices,
-      [pendingPower.id]: {
-        powerId: pendingPower.id,
-        choiceType: 'power',
-        chosenValues: [paranormalPower.id],
-      },
+      [pendingPower.id]: choiceData,
     });
     
     // Sinaliza que Transcender foi usado (para bloquear ganho de Sanidade)
@@ -266,7 +294,19 @@ export function ClassPowerSelectionSection({
     // Fecha modal e limpa estado
     setParanormalSelectOpen(false);
     setPendingPower(null);
-  }, [pendingPower, selectedPowers, classPowerChoices, onPowersChange, onClassPowerChoicesChange, onTranscenderUsed]);
+    // Não limpa pendingAffinity aqui - será usado no NexProgressionModal para salvar
+  }, [pendingPower, pendingAffinity, selectedPowers, classPowerChoices, onPowersChange, onClassPowerChoicesChange, onTranscenderUsed]);
+
+  // Handler para seleção de afinidade elemental no step de Transcender
+  const handleAffinitySelect = useCallback((element: ParanormalElement) => {
+    // Salva a afinidade pendente e notifica o componente pai
+    setPendingAffinity(element);
+    onPendingAffinityChange?.(element);
+    
+    // Fecha step de afinidade e abre modal de poderes paranormais
+    setAffinityStepOpen(false);
+    setParanormalSelectOpen(true);
+  }, [onPendingAffinityChange]);
 
   // Helper para obter nome do poder paranormal a partir do ID
   const getParanormalPowerName = useCallback((powerId: string): string => {
@@ -545,17 +585,33 @@ export function ClassPowerSelectionSection({
         />
       )}
 
+      {/* Step de seleção de Afinidade Elemental (Transcender NEX 50+) */}
+      <TranscenderAffinityStep
+        open={affinityStepOpen}
+        onOpenChange={(open) => {
+          setAffinityStepOpen(open);
+          if (!open) setPendingPower(null);
+        }}
+        onSelectAffinity={handleAffinitySelect}
+        targetNex={targetNex}
+      />
+
       {/* Modal de seleção de Poder Paranormal (Transcender) */}
       <ParanormalPowerSelectModal
         open={paranormalSelectOpen}
         onOpenChange={(open) => {
           setParanormalSelectOpen(open);
-          if (!open) setPendingPower(null);
+          if (!open) {
+            setPendingPower(null);
+            setPendingAffinity(null); // Limpa afinidade pendente se cancelar
+          }
         }}
         onSelectPower={handleParanormalPowerSelect}
         characterPowers={characterParanormalPowers}
-        elementalAffinity={elementalAffinity || undefined}
-        affinityActive={affinityActive}
+        // Usa afinidade pendente se disponível, senão usa a existente
+        elementalAffinity={pendingAffinity || elementalAffinity || undefined}
+        // Afinidade está ativa se já existia ou se foi selecionada agora
+        affinityActive={affinityActive || !!pendingAffinity}
       />
     </>
   );
