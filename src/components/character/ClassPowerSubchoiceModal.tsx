@@ -418,16 +418,30 @@ export function ClassPowerSubchoiceModal({
               </Badge>
             )}
             <span className="block mt-1">{modalInfo.description}</span>
-            {choiceCount > 1 && (
-              <span className="block mt-1 text-xs">
-                Selecionados: {selectedValues.length}/{choiceCount}
-              </span>
-            )}
           </MobileModalDescription>
         </MobileModalHeader>
+
+        {/* Contador fixo (fora do scroll) para evitar “comer” a área útil no mobile */}
+        {choiceCount > 1 && (
+          <div className="flex items-center justify-between px-4 sm:px-6 py-2 bg-muted/50 rounded-lg mx-4 sm:mx-6">
+            <span className="text-sm text-muted-foreground">Selecionados</span>
+            <Badge
+              variant={isValid ? 'default' : 'outline'}
+              className={isValid ? 'bg-success/20 text-success border-success/30' : undefined}
+            >
+              {selectedValues.length}/{choiceCount}
+            </Badge>
+          </div>
+        )}
         
-        <MobileModalBody useScrollArea={true} maxHeight="55vh">
-          {renderOptions()}
+        {/*
+          IMPORTANTE (padrão do projeto): evitar maxHeight em %/vh puro.
+          Em alguns viewports mobile isso impede o SimpleBar de calcular overflow.
+        */}
+        <MobileModalBody useScrollArea={true} maxHeight="calc(85vh - 240px)">
+          <div className="min-h-0">
+            {renderOptions()}
+          </div>
         </MobileModalBody>
         
         {/* Aviso se não está válido */}
