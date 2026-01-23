@@ -48,6 +48,7 @@ import { getOcultistRituals } from '@/lib/character-data';
 // useCharacterAudit já importado acima
 import { CharacterForAudit, getMaxParanormalPowers } from '@/lib/character-audit-engine';
 import { useAuth } from '@/contexts/AuthContext';
+import { TRAINING_GRADE_KEYS } from '@/lib/constants/game-ids';
 import { supabase } from '@/integrations/supabase/client';
 import { SavedParanormalPower, PARANORMAL_POWERS, ParanormalElement } from '@/lib/paranormal-powers';
 // useAttributeValidation já importado acima
@@ -1400,10 +1401,10 @@ export function MobileCharacterSheet({
     // Busca escolhas existentes
     const existingChoices = character.training_grade_choices || {};
     
-    // Atualiza as escolhas para o NEX específico
+    // Atualiza as escolhas para o NEX específico usando constantes centralizadas
     const updatedChoices = {
       ...existingChoices,
-      [result.nex === 35 ? 'nex35' : 'nex70']: result.choices,
+      [result.nex === 35 ? TRAINING_GRADE_KEYS.NEX_35 : TRAINING_GRADE_KEYS.NEX_70]: result.choices,
     };
     
     // Aplica os upgrades às perícias

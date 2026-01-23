@@ -21,6 +21,7 @@ import { ALL_RITUALS } from '@/lib/rituals/legacy-exports';
 import { EspecialistaArmaIndicator } from '@/components/character/EspecialistaArmaIndicator';
 import { PeritoIndicator } from '@/components/character/PeritoIndicator';
 import { TrainingGradeIndicator, type SkillUpgradeChoice } from '@/components/character/TrainingGradeIndicator';
+import { TRAINING_GRADE_KEYS } from '@/lib/constants/game-ids';
 
 // Altura estimada por tipo de item
 const POWER_ITEM_HEIGHT = 76;
@@ -652,8 +653,8 @@ export const MobilePowersTab = memo(function MobilePowersTab({
                       nex={grauTreinamentoNex}
                       choices={
                         grauTreinamentoNex === 35
-                          ? trainingGradeChoices.nex35 || []
-                          : trainingGradeChoices.nex70 || []
+                          ? trainingGradeChoices[TRAINING_GRADE_KEYS.NEX_35] || []
+                          : trainingGradeChoices[TRAINING_GRADE_KEYS.NEX_70] || []
                       }
                       expectedCount={getExpectedTrainingCount()}
                       compact={false}

@@ -48,6 +48,7 @@ import { PARANORMAL_POWERS, ParanormalPower, ParanormalElement, SavedParanormalP
 // syncLegacyPowers removido - a sincronização automática foi desativada para evitar
 // criar registros incorretos para Ocultistas que ganham poderes pela classe
 import { GENERAL_POWERS, getGeneralPowerById } from '@/lib/general-powers';
+import { TRAINING_GRADE_KEYS } from '@/lib/constants/game-ids';
 import { ParanormalPowersPanel } from '@/components/character/ParanormalPowersPanel';
 import { TranscenderHistoryPanel } from '@/components/character/TranscenderHistoryPanel';
 import { cn } from '@/lib/utils';
@@ -1637,10 +1638,10 @@ export default function CharacterSheet() {
     // Busca escolhas existentes - cast para tipo correto
     const existingChoices = (character as unknown as Record<string, unknown>).training_grade_choices as Record<string, unknown> || {};
     
-    // Atualiza as escolhas para o NEX específico
+    // Atualiza as escolhas para o NEX específico usando constantes centralizadas
     const updatedChoices = {
       ...existingChoices,
-      [result.nex === 35 ? 'nex35' : 'nex70']: result.choices,
+      [result.nex === 35 ? TRAINING_GRADE_KEYS.NEX_35 : TRAINING_GRADE_KEYS.NEX_70]: result.choices,
     };
     
     // Aplica os upgrades às perícias
