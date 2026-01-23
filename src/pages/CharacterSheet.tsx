@@ -75,6 +75,7 @@ import { LearnedRitual } from '@/components/character/GeneralPowersPanel';
 import { calculateDerivedStats, countTranscender } from '@/lib/character-data';
 import { calculateSkillOrigins } from '@/lib/skill-origins';
 import { AffinitySelectorCard } from '@/components/character/AffinitySelectorCard';
+import { hasUsedTranscenderPostNex50, hasParanormalPowersFromTranscender } from '@/lib/transcender-system';
 // Hook consolidado do SUE - fonte única de verdade para todos os bônus
 import { 
   useBonusSummaryFromSUE, 
@@ -412,6 +413,10 @@ export default function CharacterSheet() {
   // Modal de Grau de Treinamento (NEX 35% e 70%)
   const [trainingGradeModalOpen, setTrainingGradeModalOpen] = useState(false);
   const [trainingGradeNex, setTrainingGradeNex] = useState<35 | 70>(35);
+  
+  // Estado para verificar se personagem já usou Transcender em NEX >= 50
+  // (necessário para determinar se deve exibir seletor de afinidade elemental)
+  const [hasTranscendedPost50, setHasTranscendedPost50] = useState(false);
 
   // Hook CONSOLIDADO de todos os bônus do personagem (inclui defenseBonuses e paranormalEffects)
   // OTIMIZAÇÃO: Evita chamadas duplicadas de hooks
@@ -665,6 +670,31 @@ export default function CharacterSheet() {
   const handleClearHistory = useCallback(() => {
     setRollHistory([]);
   }, []);
+
+  // Verifica se personagem já usou Transcender em NEX >= 50
+  // Isso determina se o seletor de afinidade elemental deve aparecer
+  useEffect(() => {
+    const checkTranscenderPost50 = async () => {
+      // Só precisa verificar se NEX >= 50 e ainda não tem afinidade
+      if (!character || character.nex < 50 || character.elemental_affinity) {
+        setHasTranscendedPost50(false);
+        return;
+      }
+      
+      // Verificação rápida: se já tem poderes paranormais, provavelmente usou Transcender
+      const hasParanormal = hasParanormalPowersFromTranscender(character.paranormal_powers);
+      if (hasParanormal) {
+        setHasTranscendedPost50(true);
+        return;
+      }
+      
+      // Verificação detalhada: consulta registros de power_choices no banco
+      const result = await hasUsedTranscenderPostNex50(character.id);
+      setHasTranscendedPost50(result);
+    };
+    
+    checkTranscenderPost50();
+  }, [character?.id, character?.nex, character?.elemental_affinity, character?.paranormal_powers]);
 
   // Fetch character data
   useEffect(() => {
@@ -2012,8 +2042,9 @@ export default function CharacterSheet() {
   const sanPercentage = (sanCurrent / character.san_max) * 100;
   const isSanLow = sanPercentage < 30;
   
-  // Verificar se precisa escolher afinidade elemental (NEX >= 50 e sem afinidade)
-  const needsAffinitySelection = character.nex >= 50 && !character.elemental_affinity;
+  // Verificar se precisa escolher afinidade elemental
+  // Só aparece se: NEX >= 50 + sem afinidade + já usou Transcender após NEX 50
+  const needsAffinitySelection = character.nex >= 50 && !character.elemental_affinity && hasTranscendedPost50;
 
   // Handler para salvar afinidade elemental
   const handleSelectAffinity = async (element: ParanormalElement) => {
