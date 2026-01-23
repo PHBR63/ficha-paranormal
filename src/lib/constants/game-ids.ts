@@ -431,7 +431,7 @@ export type ElementId = typeof ELEMENT_IDS[keyof typeof ELEMENT_IDS];
 export const TRANSCENDER_POWER_IDS = {
   COMBATENTE: 'transcender-comb',
   ESPECIALISTA: 'transcender-esp',
-  OCULTISTA: 'transcender-ocultista',
+  OCULTISTA: 'transcender-ocult',  // Corrigido: era 'transcender-ocultista'
 } as const;
 
 /**
