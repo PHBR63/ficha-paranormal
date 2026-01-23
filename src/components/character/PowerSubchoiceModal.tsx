@@ -174,7 +174,8 @@ export function PowerSubchoiceModal({
           </MobileModalDescription>
         </MobileModalHeader>
         
-        <MobileModalBody useScrollArea={true} maxHeight="55vh">
+        {/* Padrão do projeto: calc() ao invés de vh puro para garantir scroll no mobile */}
+        <MobileModalBody useScrollArea={true} maxHeight="calc(85vh - 200px)">
           {/* Escolha de Perícias de Intelecto */}
           {choiceType === 'skill_intellect' && (
             <div className="space-y-2 p-1">

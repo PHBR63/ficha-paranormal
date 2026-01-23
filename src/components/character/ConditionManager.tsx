@@ -574,8 +574,8 @@ export function ConditionManager({
                   />
                 </div>
 
-                {/* Lista de condições por categoria */}
-                <CustomScroll className="flex-1 min-h-0 -mx-6 px-6" maxHeight="50vh">
+                {/* Lista de condições por categoria - Padrão do projeto: calc() ao invés de vh puro */}
+                <CustomScroll className="flex-1 min-h-0 -mx-6 px-6" maxHeight="calc(85vh - 280px)">
                   <div className="space-y-3 pb-4">
                     {Object.entries(groupedConditions).map(([category, categoryConditions]) => (
                       <div key={category} className="space-y-1">

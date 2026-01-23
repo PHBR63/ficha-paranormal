@@ -354,7 +354,8 @@ export function MobileRollHistory({
           </div>
         </MobileDrawerHeader>
         
-        <MobileDrawerBody maxHeight="60vh">
+        {/* Padrão do projeto: calc() ao invés de vh puro para garantir scroll no mobile */}
+        <MobileDrawerBody maxHeight="calc(85vh - 180px)">
           {filteredRolls.length === 0 ? (
             <div className="text-center py-12">
               <Dices className="w-12 h-12 mx-auto text-muted-foreground/50 mb-3" />
