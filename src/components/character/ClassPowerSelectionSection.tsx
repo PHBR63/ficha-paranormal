@@ -136,6 +136,8 @@ export function ClassPowerSelectionSection({
   const [pendingAffinity, setPendingAffinity] = useState<ParanormalElement | null>(null);
   // Estado para rastrear quais descrições estão expandidas
   const [expandedDescriptions, setExpandedDescriptions] = useState<Set<string>>(new Set());
+  // Estado de transição entre afinidade e poderes paranormais
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   // Toggle de expansão de descrição (não dispara seleção do card)
   const toggleDescription = useCallback((powerId: string, e: React.MouseEvent) => {
@@ -298,14 +300,22 @@ export function ClassPowerSelectionSection({
   }, [pendingPower, pendingAffinity, selectedPowers, classPowerChoices, onPowersChange, onClassPowerChoicesChange, onTranscenderUsed]);
 
   // Handler para seleção de afinidade elemental no step de Transcender
+  // Inclui transição animada entre os modais
   const handleAffinitySelect = useCallback((element: ParanormalElement) => {
     // Salva a afinidade pendente e notifica o componente pai
     setPendingAffinity(element);
     onPendingAffinityChange?.(element);
     
-    // Fecha step de afinidade e abre modal de poderes paranormais
+    // Inicia transição animada entre os modais
+    setIsTransitioning(true);
     setAffinityStepOpen(false);
-    setParanormalSelectOpen(true);
+    
+    // Aguarda a animação de saída antes de abrir o próximo modal
+    setTimeout(() => {
+      setParanormalSelectOpen(true);
+      // Finaliza transição após a animação de entrada
+      setTimeout(() => setIsTransitioning(false), 300);
+    }, 250);
   }, [onPendingAffinityChange]);
 
   // Helper para obter nome do poder paranormal a partir do ID
@@ -590,10 +600,11 @@ export function ClassPowerSelectionSection({
         open={affinityStepOpen}
         onOpenChange={(open) => {
           setAffinityStepOpen(open);
-          if (!open) setPendingPower(null);
+          if (!open && !isTransitioning) setPendingPower(null);
         }}
         onSelectAffinity={handleAffinitySelect}
         targetNex={targetNex}
+        isTransitioning={isTransitioning}
       />
 
       {/* Modal de seleção de Poder Paranormal (Transcender) */}
@@ -612,6 +623,8 @@ export function ClassPowerSelectionSection({
         elementalAffinity={pendingAffinity || elementalAffinity || undefined}
         // Afinidade está ativa se já existia ou se foi selecionada agora
         affinityActive={affinityActive || !!pendingAffinity}
+        // Indica se está em transição do step de afinidade
+        isFromAffinityStep={isTransitioning}
       />
     </>
   );
