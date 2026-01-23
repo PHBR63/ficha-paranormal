@@ -30,6 +30,9 @@ import {
   INTELLECT_SKILL_IDS,
   ELEMENT_IDS,
   VALID_ELEMENT_IDS,
+  // Constantes de Grau de Treinamento
+  TRAINING_GRADE_KEYS,
+  LEGACY_TRAINING_GRADE_KEYS,
   // Funções de validação
   isValidClassId,
   isValidOriginId,
@@ -402,6 +405,118 @@ describe('game-ids.ts - Integridade de IDs', () => {
       
       // Total menos 'iniciativa' que é especial
       expect(totalByAttribute).toBe(VALID_SKILL_IDS.length - 1);
+    });
+  });
+
+  // ============================================
+  // TRAINING_GRADE_KEYS - Chaves de Grau de Treinamento
+  // ============================================
+  
+  describe('TRAINING_GRADE_KEYS', () => {
+    it('deve ter exatamente 2 chaves (NEX_35 e NEX_70)', () => {
+      expect(Object.keys(TRAINING_GRADE_KEYS)).toHaveLength(2);
+      expect(TRAINING_GRADE_KEYS.NEX_35).toBeDefined();
+      expect(TRAINING_GRADE_KEYS.NEX_70).toBeDefined();
+    });
+
+    it('NEX_35 deve ser "nex35" (formato oficial do banco)', () => {
+      expect(TRAINING_GRADE_KEYS.NEX_35).toBe('nex35');
+    });
+
+    it('NEX_70 deve ser "nex70" (formato oficial do banco)', () => {
+      expect(TRAINING_GRADE_KEYS.NEX_70).toBe('nex70');
+    });
+
+    it('chaves devem seguir padrão kebab-case sem underscores', () => {
+      expect(TRAINING_GRADE_KEYS.NEX_35).not.toContain('_');
+      expect(TRAINING_GRADE_KEYS.NEX_70).not.toContain('_');
+    });
+
+    it('chaves devem ser strings não vazias', () => {
+      expect(TRAINING_GRADE_KEYS.NEX_35.length).toBeGreaterThan(0);
+      expect(TRAINING_GRADE_KEYS.NEX_70.length).toBeGreaterThan(0);
+    });
+
+    it('valores devem corresponder aos NEX válidos para Grau de Treinamento', () => {
+      // NEX 35% e 70% são os únicos que concedem Grau de Treinamento
+      expect(VALID_NEX_VALUES).toContain(35);
+      expect(VALID_NEX_VALUES).toContain(70);
+    });
+  });
+
+  describe('LEGACY_TRAINING_GRADE_KEYS', () => {
+    it('deve ter exatamente 2 chaves legadas (NEX_35 e NEX_70)', () => {
+      expect(Object.keys(LEGACY_TRAINING_GRADE_KEYS)).toHaveLength(2);
+      expect(LEGACY_TRAINING_GRADE_KEYS.NEX_35).toBeDefined();
+      expect(LEGACY_TRAINING_GRADE_KEYS.NEX_70).toBeDefined();
+    });
+
+    it('chaves legadas devem ser strings numéricas', () => {
+      expect(LEGACY_TRAINING_GRADE_KEYS.NEX_35).toBe('35');
+      expect(LEGACY_TRAINING_GRADE_KEYS.NEX_70).toBe('70');
+    });
+
+    it('chaves legadas devem ser diferentes das chaves atuais', () => {
+      expect(LEGACY_TRAINING_GRADE_KEYS.NEX_35).not.toBe(TRAINING_GRADE_KEYS.NEX_35);
+      expect(LEGACY_TRAINING_GRADE_KEYS.NEX_70).not.toBe(TRAINING_GRADE_KEYS.NEX_70);
+    });
+  });
+
+  describe('Consistência entre TRAINING_GRADE_KEYS e estrutura do banco', () => {
+    it('formato JSON esperado deve usar chaves nex35 e nex70', () => {
+      // Simula estrutura esperada no banco
+      const expectedDbStructure = {
+        [TRAINING_GRADE_KEYS.NEX_35]: [],
+        [TRAINING_GRADE_KEYS.NEX_70]: [],
+      };
+      
+      expect(Object.keys(expectedDbStructure)).toContain('nex35');
+      expect(Object.keys(expectedDbStructure)).toContain('nex70');
+    });
+
+    it('deve ser possível usar chaves como propriedades computadas', () => {
+      const choices: Record<string, unknown[]> = {};
+      
+      // Testa atribuição dinâmica (como usado nos handlers)
+      choices[TRAINING_GRADE_KEYS.NEX_35] = [{ skillId: 'teste', fromLevel: 1, toLevel: 2 }];
+      choices[TRAINING_GRADE_KEYS.NEX_70] = [{ skillId: 'teste2', fromLevel: 2, toLevel: 3 }];
+      
+      expect(choices.nex35).toHaveLength(1);
+      expect(choices.nex70).toHaveLength(1);
+    });
+
+    it('fallback para chaves legadas deve funcionar', () => {
+      // Simula dados legados (antes da padronização)
+      const legacyData: Record<string, unknown[]> = {
+        '35': [{ skillId: 'atletismo' }],
+        '70': [{ skillId: 'fortitude' }],
+      };
+      
+      // Lógica de fallback usada no character-audit-engine.ts
+      const grade35 = legacyData[TRAINING_GRADE_KEYS.NEX_35] || legacyData[LEGACY_TRAINING_GRADE_KEYS.NEX_35] || [];
+      const grade70 = legacyData[TRAINING_GRADE_KEYS.NEX_70] || legacyData[LEGACY_TRAINING_GRADE_KEYS.NEX_70] || [];
+      
+      expect(grade35).toHaveLength(1);
+      expect(grade70).toHaveLength(1);
+    });
+
+    it('novos dados devem usar apenas chaves atuais (não legadas)', () => {
+      // Simula dados novos (após padronização)
+      const newData: Record<string, unknown[]> = {
+        nex35: [{ skillId: 'atletismo' }],
+        nex70: [{ skillId: 'fortitude' }],
+      };
+      
+      // Lógica de fallback - deve encontrar na primeira tentativa
+      const grade35 = newData[TRAINING_GRADE_KEYS.NEX_35] || newData[LEGACY_TRAINING_GRADE_KEYS.NEX_35] || [];
+      const grade70 = newData[TRAINING_GRADE_KEYS.NEX_70] || newData[LEGACY_TRAINING_GRADE_KEYS.NEX_70] || [];
+      
+      expect(grade35).toHaveLength(1);
+      expect(grade70).toHaveLength(1);
+      
+      // Confirma que não usa chaves legadas
+      expect(newData['35']).toBeUndefined();
+      expect(newData['70']).toBeUndefined();
     });
   });
 });
