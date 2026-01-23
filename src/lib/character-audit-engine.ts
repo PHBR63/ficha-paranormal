@@ -15,6 +15,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { calculateDerivedStats, countTranscender, CLASSES, ORIGINS, getOcultistRituals } from './character-data';
 import { getPowerChoiceMilestones, getCharacterPowerChoices } from './transcender-system';
+import { TRAINING_GRADE_KEYS, LEGACY_TRAINING_GRADE_KEYS } from './constants/game-ids';
 
 // Helpers para buscar origem e classe por ID
 function getOriginById(id: string) {
@@ -598,8 +599,8 @@ export function auditSkillTraining(character: CharacterForAudit): {
   const expertCount = skillCounts[3];
   
   // ========== 1. Validar Níveis Veterano (NEX 35%) ==========
-  // IMPORTANTE: As chaves no banco são 'nex35' e 'nex70', não '35' e '70'
-  const grade35Choices = trainingGradeChoices['nex35'] || trainingGradeChoices['35'] || [];
+  // Usa constantes centralizadas de game-ids.ts com fallback para chaves legadas
+  const grade35Choices = trainingGradeChoices[TRAINING_GRADE_KEYS.NEX_35] || trainingGradeChoices[LEGACY_TRAINING_GRADE_KEYS.NEX_35] || [];
   const grade35SkillIds = new Set(grade35Choices.map(c => c.skillId));
   
   // Verificar se há perícias em Veterano sem registro (NEX 35%)
@@ -640,8 +641,8 @@ export function auditSkillTraining(character: CharacterForAudit): {
   }
   
   // ========== 2. Validar Níveis Expert (NEX 70%) ==========
-  // IMPORTANTE: As chaves no banco são 'nex35' e 'nex70', não '35' e '70'
-  const grade70Choices = trainingGradeChoices['nex70'] || trainingGradeChoices['70'] || [];
+  // Usa constantes centralizadas de game-ids.ts com fallback para chaves legadas
+  const grade70Choices = trainingGradeChoices[TRAINING_GRADE_KEYS.NEX_70] || trainingGradeChoices[LEGACY_TRAINING_GRADE_KEYS.NEX_70] || [];
   const grade70SkillIds = new Set(grade70Choices.map(c => c.skillId));
   
   let validExpert = 0;

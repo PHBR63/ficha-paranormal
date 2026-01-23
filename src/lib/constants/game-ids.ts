@@ -228,6 +228,30 @@ export const VALID_NEX_VALUES = [
  */
 export type NexValue = typeof VALID_NEX_VALUES[number];
 
+/**
+ * Chaves para armazenamento de escolhas de Grau de Treinamento
+ * Usadas em: training_grade_choices no banco de dados
+ * Formato JSON: { "nex35": [...], "nex70": [...] }
+ */
+export const TRAINING_GRADE_KEYS = {
+  NEX_35: 'nex35',
+  NEX_70: 'nex70',
+} as const;
+
+/**
+ * Chaves legadas para compatibilidade retroativa
+ * @deprecated Use TRAINING_GRADE_KEYS
+ */
+export const LEGACY_TRAINING_GRADE_KEYS = {
+  NEX_35: '35',
+  NEX_70: '70',
+} as const;
+
+/**
+ * Tipo para chaves de Grau de Treinamento
+ */
+export type TrainingGradeKey = typeof TRAINING_GRADE_KEYS[keyof typeof TRAINING_GRADE_KEYS];
+
 // ============================================
 // PERÍCIAS (SKILLS)
 // ============================================
