@@ -174,7 +174,11 @@ export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) 
   const SKILL_TRAINING_IDS = ['treinamento-pericia-comb', 'treinamento-pericia-esp', 'treinamento-pericia-ocult'];
   
   // IDs de poderes Transcender (todas as classes)
-  const TRANSCENDER_IDS = ['transcender', 'transcender-esp', 'transcender-ocultista'];
+  // IMPORTANTE: manter alinhado com os IDs reais do sistema unificado (class-powers)
+  // - Combatente: transcender-comb
+  // - Especialista: transcender-esp
+  // - Ocultista: transcender-ocultista
+  const TRANSCENDER_IDS = ['transcender-comb', 'transcender-esp', 'transcender-ocultista'];
   
   // Verifica se personagem está em NEX 50%+ (precisa fazer escolha de Versatilidade)
   const showVersatility = nex >= 50 && classTrack;
