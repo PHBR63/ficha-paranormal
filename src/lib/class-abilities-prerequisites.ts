@@ -55,9 +55,11 @@ const LEGACY_TO_UNIFIED_ID_MAP: Record<string, string> = {
   'tanque-de-guerra': 'tanque-de-guerra',
   'tiro-certeiro': 'tiro-certeiro',
   'tiro-de-cobertura': 'tiro-de-cobertura',
-  'transcender': 'transcender',
-  'treinamento-pericia': 'treinamento-pericia',
-  'treinamento-pericia-comb': 'treinamento-pericia',
+  // Transcender do Combatente usa ID 'transcender-comb' no sistema unificado
+  'transcender': 'transcender-comb',
+  'transcender-comb': 'transcender-comb',
+  'treinamento-pericia': 'treinamento-pericia-comb',
+  'treinamento-pericia-comb': 'treinamento-pericia-comb',
   
   // Ocultista
   'afinidade-elemental': 'afinidade-elemental',
