@@ -177,8 +177,8 @@ export function PowerDetailModal({ open, onOpenChange, power, onCastRitual }: Po
           </DialogHeader>
         </div>
 
-        {/* Conteúdo scrollável */}
-        <MobileModalBody maxHeight="60vh">
+        {/* Conteúdo scrollável - Padrão do projeto: calc() ao invés de vh puro */}
+        <MobileModalBody maxHeight="calc(85vh - 200px)">
           <div className="space-y-4">
             {/* Descrição principal */}
             {power.description && (

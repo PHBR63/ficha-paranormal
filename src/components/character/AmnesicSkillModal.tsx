@@ -74,7 +74,8 @@ export function AmnesicSkillModal({
           />
         </div>
 
-        <MobileModalBody useScrollArea={true} maxHeight="60vh">
+        {/* Padrão do projeto: calc() ao invés de vh puro para garantir scroll no mobile */}
+        <MobileModalBody useScrollArea={true} maxHeight="calc(85vh - 220px)">
           <div className="space-y-2">
             {filteredSkills.map((skill) => {
               const isSelected = selectedSkills.includes(skill.id);

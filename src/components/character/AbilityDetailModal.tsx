@@ -182,7 +182,8 @@ export function AbilityDetailModal({
             </TabsList>
           </div>
 
-          <CustomScroll className="flex-1 min-h-0 px-6 py-4" maxHeight="50vh">
+          {/* Padrão do projeto: calc() ao invés de vh puro para garantir scroll no mobile */}
+          <CustomScroll className="flex-1 min-h-0 px-6 py-4" maxHeight="calc(85vh - 280px)">
             {/* Tab: Descrição */}
             <TabsContent value="description" className="mt-0 space-y-4">
               {/* Descrição completa */}
