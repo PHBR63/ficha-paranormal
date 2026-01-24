@@ -2942,6 +2942,7 @@ export default function CharacterSheet() {
                       generalPowers: character.general_powers,
                       intellect: character.intellect,
                     }}
+                    sueCategoryReductions={bonusSummary?.categoryReductions}
                     onInventoryChange={async (newInventory) => {
                       // Persiste TODOS os campos importantes do item
                       const updatedInventory: InventoryItemPersisted[] = newInventory.map(item => ({

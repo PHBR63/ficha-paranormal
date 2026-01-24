@@ -159,6 +159,14 @@ export interface BonusSummary {
   // Bônus de movimento (Ligeireza, condições, etc.)
   movementBonus?: number;
   movementBreakdown?: Array<{ source: string; value: number }>;
+  // Reduções de categoria de equipamento (A Favorita, Técnica Secreta, etc.)
+  categoryReductions?: Array<{
+    amount: number;
+    targetType: 'specific-weapon' | 'any-weapon' | 'item' | 'general-equipment';
+    source: string;
+    requiresChoice?: boolean;
+    appliesToAllCarried?: boolean;
+  }>;
   // Hooks internos expostos para evitar chamadas duplicadas
   defenseBonuses: import('./useDefenseBonuses').DefenseBonuses;
   // Novo: Bônus do sistema unificado de poderes de classe (Fase 5)

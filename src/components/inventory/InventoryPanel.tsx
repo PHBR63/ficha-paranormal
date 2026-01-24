@@ -184,6 +184,18 @@ export interface CharacterDataForInventory {
   intellect?: number;
 }
 
+/**
+ * Tipo de dados de redução de categoria vindos do SUE
+ * Compatível com BonusSummary.categoryReductions
+ */
+export interface SUECategoryReductionData {
+  amount: number;
+  targetType: 'specific-weapon' | 'any-weapon' | 'item' | 'general-equipment';
+  source: string;
+  requiresChoice?: boolean;
+  appliesToAllCarried?: boolean;
+}
+
 interface InventoryPanelProps {
   inventory: ExtendedInventoryItem[];
   strength: number;
@@ -193,6 +205,8 @@ interface InventoryPanelProps {
   showEquipment?: boolean;
   /** Dados do personagem para detecção automática de habilidades de redução de categoria */
   characterData?: CharacterDataForInventory;
+  /** Reduções de categoria vindas do SUE (fonte preferencial) */
+  sueCategoryReductions?: SUECategoryReductionData[];
 }
 
 export function InventoryPanel({
@@ -203,6 +217,7 @@ export function InventoryPanel({
   readOnly = false,
   showEquipment = true,
   characterData,
+  sueCategoryReductions,
 }: InventoryPanelProps) {
   const [expandedCategories, setExpandedCategories] = useState<Set<ItemType>>(new Set(['weapon', 'armor', 'consumable']));
   const [addDialogOpen, setAddDialogOpen] = useState(false);
@@ -302,6 +317,8 @@ export function InventoryPanel({
     characterData: categoryReductionData,
     inventory: inventory as ExtendedInventoryItemWithReduction[],
     onInventoryChange: onInventoryChange as ((inv: ExtendedInventoryItemWithReduction[]) => void) | undefined,
+    // Passa dados do SUE quando disponíveis (fonte preferencial)
+    sueCategoryReductions,
   });
 
   // Handler para toggle de favorita

@@ -590,6 +590,8 @@ export function useBonusSummaryFromSUE({
       // Bônus de movimento (Ligeireza, condições, etc.)
       movementBonus: computed.movement.bonus,
       movementBreakdown: computed.movement.breakdown,
+      // Reduções de categoria de equipamento (A Favorita, Técnica Secreta, etc.)
+      categoryReductions: computed.inventory.categoryReductions,
       defenseBonuses,
       classPowerBonuses,
     };
