@@ -40,7 +40,9 @@ import { BonusSummaryCard } from '../BonusSummaryCard';
 import { ClassPowerBonusesPanel } from '../ClassPowerBonusesPanel';
 import { RoundControlPanel } from '../RoundControlPanel';
 import { MobileClassPowersPanel } from './MobileClassPowersPanel';
+import { MobileParanormalPowersActivationPanel } from './MobileParanormalPowersActivationPanel';
 import { getPELimitByNex } from '@/lib/dice-roller';
+import type { SavedParanormalPower, ParanormalElement } from '@/lib/paranormal-powers';
 
 interface MobileOverviewTabProps {
   character: {
@@ -109,6 +111,14 @@ interface MobileOverviewTabProps {
   classPowers?: unknown[];
   /** Habilidades (para painel de poderes ativáveis) */
   abilities?: Record<string, unknown>;
+  /** Poderes paranormais do personagem */
+  paranormalPowers?: SavedParanormalPower[] | null;
+  /** Elemento de afinidade */
+  elementalAffinity?: ParanormalElement | string | null;
+  /** Se a afinidade está ativa (NEX >= 50%) */
+  affinityActive?: boolean;
+  /** Callback para alterar HP */
+  onHPChange?: (newHP: number) => void;
   onOpenDiceRoller: () => void;
   onOpenRest: () => void;
   onLevelUp: () => void;
@@ -144,6 +154,10 @@ export const MobileOverviewTab = memo(function MobileOverviewTab({
   especialistaArmaGroups = [],
   classPowers = [],
   abilities = {},
+  paranormalPowers,
+  elementalAffinity,
+  affinityActive = false,
+  onHPChange,
   onOpenDiceRoller,
   onOpenRest,
   onLevelUp,
@@ -650,6 +664,21 @@ export const MobileOverviewTab = memo(function MobileOverviewTab({
         abilities={abilities}
         nex={character.nex}
         peCurrent={character.pe_current}
+        onPEChange={onPEChange}
+        onTrackPESpent={roundTracking?.trackPESpent}
+        onToggleConditionalBonus={onToggleConditionalBonus}
+        activeConditionalBonuses={activeConditionalBonuses}
+      />
+
+      {/* Painel de Poderes Paranormais Ativáveis (Surto Temporal, Manipular Entropia, etc.) */}
+      <MobileParanormalPowersActivationPanel
+        paranormalPowers={paranormalPowers}
+        nex={character.nex}
+        elementalAffinity={elementalAffinity as ParanormalElement | null}
+        affinityActive={affinityActive}
+        hpCurrent={character.hp_current}
+        peCurrent={character.pe_current}
+        onHPChange={onHPChange || (() => {})}
         onPEChange={onPEChange}
         onTrackPESpent={roundTracking?.trackPESpent}
         onToggleConditionalBonus={onToggleConditionalBonus}

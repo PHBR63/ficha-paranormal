@@ -1871,6 +1871,18 @@ export function MobileCharacterSheet({
               }}
               classPowers={character.powers as unknown[] || []}
               abilities={(Array.isArray(character.abilities) ? {} : character.abilities) as Record<string, unknown> || {}}
+              paranormalPowers={character.paranormal_powers as SavedParanormalPower[] || []}
+              elementalAffinity={character.elemental_affinity as ParanormalElement || null}
+              affinityActive={character.affinity_active || false}
+              onHPChange={async (newHP) => {
+                if (handleCombatStatsChange) {
+                  await handleCombatStatsChange({ 
+                    hp: newHP, 
+                    pe: character.pe_current, 
+                    san: character.san_current 
+                  });
+                }
+              }}
               onPEChange={handlePEChange}
               onToggleConditionalBonus={handleToggleConditionalBonus}
               activeConditionalBonuses={character.active_conditional_bonuses || []}
