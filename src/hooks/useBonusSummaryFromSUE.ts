@@ -587,6 +587,9 @@ export function useBonusSummaryFromSUE({
       conditionalBonuses,
       hpBonus: computed.resources.hpBonus + paranormalEffects.hpBonus + classPowerBonuses.totals.bonusHP,
       peBonus: computed.resources.peBonus + paranormalEffects.peBonus,
+      // Bônus de movimento (Ligeireza, condições, etc.)
+      movementBonus: computed.movement.bonus,
+      movementBreakdown: computed.movement.breakdown,
       defenseBonuses,
       classPowerBonuses,
     };

@@ -2392,7 +2392,7 @@ export default function CharacterSheet() {
                 sanCurrent={sanCurrent}
                 sanMax={character.san_max}
                 defense={character.defense}
-                movement={character.movement || 9}
+                movement={(character.movement || 9) + (bonusSummary?.movementBonus || 0)}
                 hpBonus={paranormalEffects.hpBonus}
                 peBonus={paranormalEffects.peBonus}
                 defenseBonus={totalDefenseBonus}
