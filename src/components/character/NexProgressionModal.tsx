@@ -62,6 +62,7 @@ import {
   ELEMENT_COLORS,
   ELEMENT_BG_COLORS,
   AFFINITY_DESCRIPTIONS,
+  getPowerById,
 } from '@/lib/paranormal-powers';
 import {
   canUseTranscender,
@@ -627,6 +628,32 @@ export function NexProgressionModal({
         ? character.san_max  // Mantém a sanidade atual
         : nextStats.san;     // Recebe a sanidade normal do novo NEX
       
+      // ================== CONSOLIDAÇÃO DE PODERES PARANORMAIS ==================
+      // Extrai poderes paranormais das sub-escolhas de Transcender (via ClassPowerSelectionSection)
+      // e mescla com pendingPowers (via fluxo direto) para garantir que todos sejam salvos
+      let consolidatedParanormalPowers = [...pendingPowers];
+      
+      // Verifica se há sub-escolhas de poder de classe que contêm poderes paranormais (Transcender)
+      Object.values(classPowerChoices).forEach(choice => {
+        // Sub-escolhas de Transcender têm choiceType: 'power' e chosenValues contém IDs de poderes paranormais
+        if (choice.choiceType === 'power' && choice.chosenValues && choice.chosenValues.length > 0) {
+          choice.chosenValues.forEach(paranormalPowerId => {
+            // Verifica se o poder já não está na lista consolidada
+            const alreadyExists = consolidatedParanormalPowers.some(p => p.id === paranormalPowerId);
+            if (!alreadyExists) {
+              // Busca o poder paranormal completo pelo ID
+              const fullPower = getPowerById(paranormalPowerId);
+              if (fullPower) {
+                consolidatedParanormalPowers.push(fullPower);
+                console.log(`[Transcender] Poder paranormal extraído de sub-escolha: ${fullPower.name}`);
+              } else {
+                console.warn(`[Transcender] Poder paranormal não encontrado: ${paranormalPowerId}`);
+              }
+            }
+          });
+        }
+      });
+      
       await onLevelUp(nextNex, {
         hp_max: nextStats.hp,
         pe_max: nextStats.pe,
@@ -635,7 +662,7 @@ export function NexProgressionModal({
         newAbilities,
         elemental_affinity: newAffinity,
         affinity_active: newAffinityActive,
-        paranormal_powers: pendingPowers,
+        paranormal_powers: consolidatedParanormalPowers,
         attributeIncrease: showAttributeIncrease ? selectedAttributeIncrease || undefined : undefined,
         versatilityChoice: showVersatility ? versatilityChoice || undefined : undefined,
         skillUpgrades: showTrainingGrade && selectedTrainingSkills.length > 0 ? selectedTrainingSkills : undefined,
