@@ -1247,6 +1247,10 @@ export function CombatRollModal({
         damageBonus += unifiedEffects.damage.melee;
       } else {
         damageBonus += unifiedEffects.damage.ranged;
+        // Bônus específico de armas de fogo (Balística Avançada)
+        if (isFirearm && unifiedEffects.damage.firearm) {
+          damageBonus += unifiedEffects.damage.firearm;
+        }
       }
     } else if (classPowerBonuses?.damageBonus) {
       // Sistema legado - backup

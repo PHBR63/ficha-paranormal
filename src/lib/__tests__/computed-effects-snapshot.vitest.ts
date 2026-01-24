@@ -93,6 +93,7 @@ describe('ComputedEffects - Snapshot de Estrutura', () => {
         general: 0,
         melee: 0,
         ranged: 0,
+        firearm: 0,
         extraDice: [],
         breakdown: []
       });

@@ -151,7 +151,11 @@ function convertPowerMechanicsToEffects(
         
       if (weaponTypes.includes('melee') || weaponTypes.includes('unarmed')) {
         effects.meleeDamageBonus = (effects.meleeDamageBonus || 0) + damageValue;
-      } else if (weaponTypes.includes('ranged') || weaponTypes.includes('firearm')) {
+      } else if (weaponTypes.includes('firearm')) {
+        // Armas de fogo usam bônus específico (Balística Avançada)
+        effects.firearmDamageBonus = (effects.firearmDamageBonus || 0) + damageValue;
+      } else if (weaponTypes.includes('ranged')) {
+        // Armas de arremesso/distância genérica
         effects.rangedDamageBonus = (effects.rangedDamageBonus || 0) + damageValue;
       } else if (damageValue > 0) {
         effects.damageBonus = damageValue;
