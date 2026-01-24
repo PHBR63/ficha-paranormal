@@ -116,6 +116,7 @@ interface CharacterSheetHeaderProps {
   // Dados de proteção de armaduras
   armorRD?: number;
   armorPenalty?: number;
+  armorSpeedPenalty?: number; // Penalidade de deslocamento da armadura
   equippedArmors?: Array<{ name: string; rd: number }>;
   // Indicador de bônus ativos
   activeBonusCount?: number;
@@ -159,6 +160,7 @@ export const CharacterSheetHeader = memo(function CharacterSheetHeader({
   ritualWeaponEffects = [],
   armorRD = 0,
   armorPenalty = 0,
+  armorSpeedPenalty = 0,
   equippedArmors = [],
   activeBonusCount = 0,
   activeBonusSources = [],
@@ -1088,6 +1090,12 @@ export const CharacterSheetHeader = memo(function CharacterSheetHeader({
                         <span className="font-medium">+{entry.value}m</span>
                       </p>
                     ))}
+                    {armorSpeedPenalty > 0 && (
+                      <p className="flex justify-between text-destructive">
+                        <span>Armadura</span>
+                        <span className="font-medium">-{armorSpeedPenalty}m</span>
+                      </p>
+                    )}
                   </div>
                 </div>
               </TooltipContent>

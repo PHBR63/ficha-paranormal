@@ -68,6 +68,7 @@ interface MobileOverviewTabProps {
   trackName?: string;
   bonusSummary: any; // Tipo completo do BonusSummary
   totalDefense: number;
+  armorSpeedPenalty?: number; // Penalidade de deslocamento da armadura
   defenseBonuses: any;
   equippedWeapons: WeaponEntry[];
   weaponBuffs: any[];
@@ -123,6 +124,7 @@ export const MobileOverviewTab = memo(function MobileOverviewTab({
   trackName,
   bonusSummary,
   totalDefense,
+  armorSpeedPenalty = 0,
   defenseBonuses,
   equippedWeapons,
   weaponBuffs,
@@ -421,6 +423,12 @@ export const MobileOverviewTab = memo(function MobileOverviewTab({
                         <span className="font-medium">+{entry.value}m</span>
                       </p>
                     ))}
+                    {armorSpeedPenalty && armorSpeedPenalty > 0 && (
+                      <p className="flex justify-between text-destructive">
+                        <span>Armadura</span>
+                        <span className="font-medium">-{armorSpeedPenalty}m</span>
+                      </p>
+                    )}
                   </div>
                 </div>
               </TooltipContent>

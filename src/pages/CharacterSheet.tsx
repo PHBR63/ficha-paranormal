@@ -2402,6 +2402,7 @@ export default function CharacterSheet() {
                 ritualWeaponEffects={ritualCombatSummary.weaponEffects}
                 armorRD={armorStats.totalRD}
                 armorPenalty={armorStats.totalAgilityPenalty}
+                armorSpeedPenalty={armorStats.totalSpeedPenalty}
                 equippedArmors={armorStats.equippedArmors}
                 activeBonusCount={activeBonusCount}
                 activeBonusSources={activeBonusSources}
