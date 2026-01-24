@@ -564,6 +564,11 @@ function convertPowerMechanicsToEffects(
     };
   }
   
+  // === BÔNUS DE MOVIMENTO (Ligeireza) ===
+  if (mechanics.movementBonus) {
+    effects.movementBonus = mechanics.movementBonus;
+  }
+  
   // === PODER PASSIVO SEM MECÂNICAS ESPECÍFICAS ===
   if (Object.keys(effects).length === 0 && mechanics.kind === 'passive') {
     effects.specialEffects = [power.description.slice(0, 100) + '...'];

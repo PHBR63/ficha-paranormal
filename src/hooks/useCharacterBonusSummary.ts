@@ -156,6 +156,9 @@ export interface BonusSummary {
   // Stats calculados
   hpBonus: number;
   peBonus: number;
+  // Bônus de movimento (Ligeireza, condições, etc.)
+  movementBonus?: number;
+  movementBreakdown?: Array<{ source: string; value: number }>;
   // Hooks internos expostos para evitar chamadas duplicadas
   defenseBonuses: import('./useDefenseBonuses').DefenseBonuses;
   // Novo: Bônus do sistema unificado de poderes de classe (Fase 5)
