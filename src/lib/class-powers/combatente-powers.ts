@@ -331,8 +331,8 @@ export const COMBATENTE_POWERS: UnifiedClassPower[] = [
           cost: 0,
           action: 'none',
         },
-        attackBonus: { value: -2 }, // Penalidade oficial do livro
-        defenseBonus: { value: 5 },
+        attackBonus: { value: -2 }, // Penalidade oficial: -2
+        defenseBonus: { value: 5 }, // Bônus oficial: +5
         conditions: {
           inCombat: true,
         },
