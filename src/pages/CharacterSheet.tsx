@@ -55,7 +55,7 @@ import { cn } from '@/lib/utils';
 import { DiceRollResult } from '@/lib/dice-roller';
 import { InventoryPanel } from '@/components/inventory/InventoryPanel';
 import { DataErrorBoundary } from '@/components/DataErrorBoundary';
-import { InventoryItem } from '@/lib/inventory-system';
+import { InventoryItem, hasInventarioOtimizado, calculateCarryCapacity } from '@/lib/inventory-system';
 import { EspecialistaArmaIndicator } from '@/components/character/EspecialistaArmaIndicator';
 import { PeritoIndicator } from '@/components/character/PeritoIndicator';
 // Lazy loading para modais pesados (otimização de performance)
@@ -1954,17 +1954,46 @@ export default function CharacterSheet() {
   }, [character?.inventory]);
 
   // Calcula status de carga do inventário para o header
+  // Detecta automaticamente Inventário Otimizado (Técnico NEX 10%+)
   const inventoryLoadStatus = useMemo(() => {
     if (!character) return undefined;
-    const currentLoad = (character.inventory || []).reduce((sum, item) => sum + (item.slots || 1) * (item.quantity || 1), 0);
-    const maxCapacity = Math.max(2, character.strength * 5);
+    
+    // Extrai nomes das habilidades (pode ser array de strings ou objetos)
+    const abilityNames = Array.isArray(character.abilities) 
+      ? character.abilities.map((a: unknown) => typeof a === 'string' ? a : (a as { name?: string })?.name || '') 
+      : [];
+    
+    // Verifica se personagem possui Inventário Otimizado
+    const hasInvOtimizado = hasInventarioOtimizado({
+      classTrack: character.class_track,
+      abilities: abilityNames,
+      nex: character.nex,
+    });
+    
+    // Calcula carga atual (com redução de espaços se aplicável)
+    const inventory = character.inventory || [];
+    const currentLoad = inventory.reduce((sum, item) => {
+      const baseSlots = item.slots || 1;
+      // Inventário Otimizado: -1 espaço por item (mínimo 1)
+      const effectiveSlots = hasInvOtimizado ? Math.max(1, baseSlots - 1) : baseSlots;
+      return sum + (effectiveSlots * (item.quantity || 1));
+    }, 0);
+    
+    // Calcula capacidade máxima (FOR * 5 ou (FOR + INT) * 5 com Inventário Otimizado)
+    const maxCapacity = calculateCarryCapacity(character.strength, {
+      hasInventarioOtimizado: hasInvOtimizado,
+      intellect: character.intellect,
+    });
+    
     return {
       currentLoad,
       maxCapacity,
       isOverloaded: currentLoad > maxCapacity,
-      hasInventarioOtimizado: false, // TODO: Detectar via abilities
+      hasInventarioOtimizado: hasInvOtimizado,
+      // Dados extras para tooltip
+      intellect: hasInvOtimizado ? character.intellect : undefined,
     };
-  }, [character?.inventory, character?.strength]);
+  }, [character?.inventory, character?.strength, character?.intellect, character?.class_track, character?.abilities, character?.nex]);
 
   // Bônus total de defesa combinando todas as fontes (defenseBonuses já está definido acima)
   // Inclui: poderes paranormais + bônus de origem/habilidades + bônus de armadura + bônus de escudo

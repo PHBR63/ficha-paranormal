@@ -25,6 +25,7 @@ import { useCampaignRitualSync } from '@/hooks/useCampaignRitualSync';
 import type { RitualCastRecord } from './mobile/MobileRitualCastHistory';
 import { MobileInventorySheet } from '@/components/inventory/MobileInventorySheet';
 import type { ExtendedInventoryItem } from '@/components/inventory/InventoryPanel';
+import { hasInventarioOtimizado, calculateCarryCapacity } from '@/lib/inventory-system';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { ORIGINS, getTrackById, getSkillBonus, getTrainingLabel } from '@/lib/character-data';
@@ -702,17 +703,43 @@ export function MobileCharacterSheet({
     return equippedArmors.reduce((sum, armor) => sum + (armor.speedPenalty || 0), 0);
   }, [character.inventory]);
 
-  // Calcula status de carga do inventário para exibição na overview
+  // Detecta automaticamente Inventário Otimizado (Técnico NEX 10%+) e calcula carga
   const inventoryLoadStatus = useMemo(() => {
-    const currentLoad = (character.inventory || []).reduce((sum, item) => sum + (item.slots || 1) * (item.quantity || 1), 0);
-    const maxCapacity = Math.max(2, character.strength * 5);
+    // Extrai nomes das habilidades (pode ser array de strings ou objetos)
+    const abilityNames = Array.isArray(character.abilities) 
+      ? character.abilities.map((a: unknown) => typeof a === 'string' ? a : (a as { name?: string })?.name || '') 
+      : [];
+    
+    // Verifica se personagem possui Inventário Otimizado
+    const hasInvOtimizado = hasInventarioOtimizado({
+      classTrack: character.class_track,
+      abilities: abilityNames,
+      nex: character.nex,
+    });
+    
+    // Calcula carga atual (com redução de espaços se aplicável)
+    const inventory = character.inventory || [];
+    const currentLoad = inventory.reduce((sum, item) => {
+      const baseSlots = item.slots || 1;
+      // Inventário Otimizado: -1 espaço por item (mínimo 1)
+      const effectiveSlots = hasInvOtimizado ? Math.max(1, baseSlots - 1) : baseSlots;
+      return sum + (effectiveSlots * (item.quantity || 1));
+    }, 0);
+    
+    // Calcula capacidade máxima (FOR * 5 ou (FOR + INT) * 5 com Inventário Otimizado)
+    const maxCapacity = calculateCarryCapacity(character.strength, {
+      hasInventarioOtimizado: hasInvOtimizado,
+      intellect: character.intellect,
+    });
+    
     return {
       currentLoad,
       maxCapacity,
       isOverloaded: currentLoad > maxCapacity,
-      hasInventarioOtimizado: false,
+      hasInventarioOtimizado: hasInvOtimizado,
+      intellect: hasInvOtimizado ? character.intellect : undefined,
     };
-  }, [character.inventory, character.strength]);
+  }, [character.inventory, character.strength, character.intellect, character.class_track, character.abilities, character.nex]);
 
   // Handler para abrir modal de detalhes do poder
   const handlePowerClick = useCallback((power: PowerDetailData) => {
