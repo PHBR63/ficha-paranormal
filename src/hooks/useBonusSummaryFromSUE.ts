@@ -72,6 +72,10 @@ export interface UseBonusSummaryFromSUEProps {
   // ID e nome da arma equipada (para detecção automática de Especialista em Arma)
   equippedWeaponId?: string;
   equippedWeaponName?: string;
+  // Arma leve equipada (para Aparas Precisas)
+  isLightMeleeEquipped?: boolean;
+  // Defesa base da armadura (para limite de Aparas Precisas)
+  armorBaseDefense?: number;
   
   // Estado de combate
   inCombat?: boolean;
@@ -134,6 +138,8 @@ export function useBonusSummaryFromSUE({
   equippedProtectionType,
   equippedWeaponId,
   equippedWeaponName,
+  isLightMeleeEquipped = false,
+  armorBaseDefense,
   inCombat = false,
   hpCurrent = 0,
   hpMax = 0,
@@ -191,16 +197,26 @@ export function useBonusSummaryFromSUE({
   // Obtém efeitos unificados do SUE
   const unifiedEffects = useUnifiedEffects(characterState);
   
+  // Monta lista de poderes de classe para useDefenseBonuses (Aparas Precisas)
+  const classPowersForDefense = useMemo(() => 
+    classPowers.map(p => typeof p === 'string' ? { name: p } : { id: (p as any).id, name: (p as any).name || '' }),
+    [classPowers]
+  );
+  
   // Mantém hooks legados para dados ainda não migrados para o SUE
   const defenseBonuses = useDefenseBonuses({ 
     origin, 
     abilities, 
     generalPowers, 
+    classPowers: classPowersForDefense,
     inventory, 
     activeRituals, 
     skills, 
     activeConditionalBonuses,
     intellect,
+    agility,
+    isLightMeleeEquipped,
+    armorBaseDefense,
   });
   
   const paranormalEffects = useParanormalEffects({ 

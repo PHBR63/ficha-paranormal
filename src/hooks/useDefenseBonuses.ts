@@ -89,12 +89,20 @@ interface UseDefenseBonusesProps {
     description?: string;
     category?: string;
   }>;
+  classPowers?: Array<{              // Lista de poderes de classe (para Aparas Precisas)
+    id?: string;
+    name: string;
+    description?: string;
+  }>;
   inventory?: InventoryItemWithArmor[]; // Inventário para verificar armaduras equipadas
   activeRituals?: ActiveRitualForDefense[]; // Rituais ativos com defenseModifier
   activatedEffects?: ActivatedEffectForDefense[]; // Efeitos ativados manualmente (ex: Resgate)
   skills?: Record<string, number>;   // Perícias com nível de treinamento (0-3)
   activeConditionalBonuses?: string[]; // IDs dos bônus condicionais ativos
   intellect?: number;                // Intelecto do personagem (para Sentido Tático)
+  agility?: number;                  // Agilidade do personagem (para Aparas Precisas)
+  isLightMeleeEquipped?: boolean;    // Se arma leve corpo a corpo está equipada (para Aparas Precisas)
+  armorBaseDefense?: number;         // Defesa base da armadura (para limite de Aparas Precisas)
 }
 
 /**
@@ -104,12 +112,16 @@ export function useDefenseBonuses({
   origin,
   abilities,
   generalPowers = [],
+  classPowers = [],
   inventory = [],
   activeRituals = [],
   activatedEffects = [],
   skills = {},
   activeConditionalBonuses = [],
   intellect = 1,
+  agility = 1,
+  isLightMeleeEquipped = false,
+  armorBaseDefense,
 }: UseDefenseBonusesProps): DefenseBonuses {
   return useMemo(() => {
     const breakdown: DefenseBonusBreakdown[] = [];
@@ -354,6 +366,36 @@ export function useDefenseBonuses({
       });
     }
     
+    // 10. PODER DE CLASSE: Aparas Precisas (+AGI em Defesa com arma leve corpo a corpo)
+    // Livro Base p.50: "Quando está empunhando uma arma leve corpo a corpo, você soma 
+    // sua Agilidade na Defesa (limitado pela Defesa base da proteção que estiver usando)"
+    const hasAparasPrecisas = classPowers.some(p => 
+      p.id === 'aparas-precisas' || 
+      p.name.toLowerCase().includes('aparas precisas')
+    );
+    
+    if (hasAparasPrecisas) {
+      // Só aplica se tem arma leve corpo a corpo equipada
+      const isConditionMet = isLightMeleeEquipped;
+      
+      // Calcula bônus limitado pela defesa base da armadura (se houver)
+      // Se não houver armadura, aplica agilidade completa
+      let aparasBonus = agility;
+      if (armorBaseDefense !== undefined && armorBaseDefense > 0) {
+        aparasBonus = Math.min(agility, armorBaseDefense);
+      }
+      
+      breakdown.push({
+        source: 'Aparas Precisas',
+        type: 'ability',
+        bonus: isConditionMet ? aparasBonus : agility,
+        conditional: isLightMeleeEquipped 
+          ? (armorBaseDefense !== undefined ? `Limitado pela armadura (${armorBaseDefense})` : undefined)
+          : 'requer arma leve corpo a corpo',
+        active: isConditionMet,
+      });
+    }
+    
     // Calcula o bônus total de defesa aplicando regras de acúmulo
     // Livro Base v1.3: Rituais não acumulam entre si (usa o maior)
     const activeBreakdown = breakdown.filter(b => b.active);
@@ -418,7 +460,7 @@ export function useDefenseBonuses({
         breakdown: resistanceBreakdown,
       }
     };
-  }, [origin, abilities, generalPowers, inventory, activeRituals, activatedEffects, skills, activeConditionalBonuses, intellect]);
+  }, [origin, abilities, generalPowers, classPowers, inventory, activeRituals, activatedEffects, skills, activeConditionalBonuses, intellect, agility, isLightMeleeEquipped, armorBaseDefense]);
 }
 
 /**
