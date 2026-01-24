@@ -457,18 +457,27 @@ export function CombatRollModal({
     // Golpe Pesado é PASSIVO - aplicado automaticamente no rollDamage (não precisa de toggle)
 
     // Combater com Duas Armas (Combatente) - Penalidade de -2 no ataque
+    // IMPORTANTE: Se ativo via activeConditionalBonuses, é aplicado automaticamente
+    // Se NÃO ativo, aparece como opção selecionável
+    const isCombaterDuasArmasActive = activeConditionalBonuses.includes('combater-duas-armas');
     if (abilities.some(a => 
       a.toLowerCase().includes('combater com duas armas') || 
       a.toLowerCase().includes('combater duas armas')
     )) {
-      bonuses.push({
-        id: 'combater-duas-armas',
-        name: 'Combater com Duas Armas (-2 ataque)',
-        source: 'class',
-        attackBonus: -2,
-        peCost: 0,
-        description: 'Dois ataques com duas armas. Penalidade de -2 em todos os testes de ataque até o próximo turno.',
-      });
+      if (isCombaterDuasArmasActive) {
+        // Já ativado pelo painel - será aplicado automaticamente abaixo
+        // Não adiciona aos bônus selecionáveis
+      } else {
+        // Ainda não ativado - mostra como opção selecionável
+        bonuses.push({
+          id: 'combater-duas-armas',
+          name: 'Combater com Duas Armas (-2 ataque)',
+          source: 'class',
+          attackBonus: -2,
+          peCost: 0,
+          description: 'Dois ataques com duas armas. Penalidade de -2 em todos os testes de ataque até o próximo turno.',
+        });
+      }
     }
 
     // Combate Defensivo (Combatente) - Penalidade de -2 no ataque, +5 Defesa
@@ -691,6 +700,11 @@ export function CombatRollModal({
       total -= 2; // Penalidade oficial: -2 ataque
     }
     
+    // === PENALIDADE DE COMBATER COM DUAS ARMAS (se ativo via painel) ===
+    if (activeConditionalBonuses.includes('combater-duas-armas')) {
+      total -= 2; // Penalidade oficial: -2 ataque (p.46)
+    }
+    
     // === PENALIDADE DE PROFICIÊNCIA ===
     // Regra oficial: -5 no ataque se não tiver proficiência adequada
     if (!proficiencyCheck.hasProficiency) {
@@ -840,6 +854,17 @@ export function CombatRollModal({
         type: 'power',
         sourceName: 'Combate Defensivo',
         description: 'Penalidade de -2 no ataque em troca de +5 na Defesa (ativo)',
+      });
+    }
+    
+    // === PENALIDADE DE COMBATER COM DUAS ARMAS (se ativo via painel) ===
+    if (activeConditionalBonuses.includes('combater-duas-armas')) {
+      sources.push({
+        label: 'Combater c/ Duas Armas',
+        value: -2,
+        type: 'power',
+        sourceName: 'Combater com Duas Armas',
+        description: 'Penalidade de -2 no ataque para fazer dois ataques (ativo)',
       });
     }
     

@@ -207,6 +207,18 @@ export const ACTIVATABLE_COMBATENTE_POWERS: ActivatableClassPower[] = [
     pageRef: 'Livro Base p.46',
     conditionalBonusId: 'combate-defensivo', // Ativa bônus de -2 ataque, +5 Defesa
   },
+  {
+    id: 'combater-duas-armas',
+    name: 'Combater com Duas Armas',
+    shortEffect: '-2 ataque, dois ataques (até próximo turno)',
+    description: 'Se estiver empunhando duas armas (pelo menos uma leve) e fizer a ação agredir, pode fazer dois ataques. Sofre -2 em todos os testes de ataque até o próximo turno.',
+    basePECost: 0,
+    limit: 'perRound',
+    minNex: 15,
+    icon: 'swords',
+    pageRef: 'Livro Base p.46',
+    conditionalBonusId: 'combater-duas-armas', // Ativa penalidade de -2 ataque
+  },
 ];
 
 // =====================================================

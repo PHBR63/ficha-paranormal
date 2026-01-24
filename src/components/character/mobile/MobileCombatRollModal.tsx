@@ -149,6 +149,8 @@ interface MobileCombatRollModalProps {
   advancedBonuses?: AdvancedConditionalBonuses;
   isFavoriteWeapon?: boolean;
   activatedTrackEffects?: string[];
+  // NOVO: Bônus condicionais ativos (Combate Defensivo, Combater com Duas Armas, etc.)
+  activeConditionalBonuses?: string[];
 }
 
 // Fases do combate
@@ -224,6 +226,7 @@ export function MobileCombatRollModal({
   advancedBonuses = {},
   isFavoriteWeapon,
   activatedTrackEffects = [],
+  activeConditionalBonuses = [], // NOVO: Bônus condicionais ativos
 }: MobileCombatRollModalProps) {
   // Bônus de rituais sustentados processados automaticamente
   const ritualBonuses = useRitualBonusesForCombat(sustainedRituals);
@@ -429,32 +432,50 @@ export function MobileCombatRollModal({
     // Golpe Pesado é PASSIVO - aplicado automaticamente no rollDamage (não precisa de toggle)
 
     // Combater com Duas Armas (Combatente) - Penalidade de -2 no ataque
+    // IMPORTANTE: Se ativo via activeConditionalBonuses, é aplicado automaticamente
+    // Se NÃO ativo, aparece como opção selecionável
+    const isCombaterDuasArmasActive = activeConditionalBonuses.includes('combater-duas-armas');
     if (abilities.some(a => 
       a.toLowerCase().includes('combater com duas armas') || 
       a.toLowerCase().includes('combater duas armas')
     )) {
-      bonuses.push({
-        id: 'combater-duas-armas',
-        name: 'Combater com Duas Armas (-2 ataque)',
-        source: 'class',
-        attackBonus: -2,
-        peCost: 0,
-        description: 'Dois ataques com duas armas. Penalidade de -2 em todos os testes de ataque.',
-      });
+      if (isCombaterDuasArmasActive) {
+        // Já ativado pelo painel - será aplicado automaticamente abaixo
+        // Não adiciona aos bônus selecionáveis
+      } else {
+        // Ainda não ativado - mostra como opção selecionável
+        bonuses.push({
+          id: 'combater-duas-armas',
+          name: 'Combater com Duas Armas (-2 ataque)',
+          source: 'class',
+          attackBonus: -2,
+          peCost: 0,
+          description: 'Dois ataques com duas armas. Penalidade de -2 em todos os testes de ataque.',
+        });
+      }
     }
 
     // Combate Defensivo (Combatente) - Penalidade de -2 no ataque, +5 Defesa
+    // IMPORTANTE: Se ativo via activeConditionalBonuses, é aplicado automaticamente
+    // Se NÃO ativo, aparece como opção selecionável
+    const isCombateDefensivoActive = activeConditionalBonuses.includes('combate-defensivo');
     if (abilities.some(a => 
       a.toLowerCase().includes('combate defensivo')
     )) {
-      bonuses.push({
-        id: 'combate-defensivo',
-        name: 'Combate Defensivo (-2 ataque, +5 Def)',
-        source: 'class',
-        attackBonus: -2,
-        peCost: 0,
-        description: 'Sofre -2 em ataques, mas recebe +5 na Defesa até o próximo turno.',
-      });
+      if (isCombateDefensivoActive) {
+        // Já ativado pelo painel - será aplicado automaticamente abaixo
+        // Não adiciona aos bônus selecionáveis
+      } else {
+        // Ainda não ativado - mostra como opção selecionável
+        bonuses.push({
+          id: 'combate-defensivo',
+          name: 'Combate Defensivo (-2 ataque, +5 Def)',
+          source: 'class',
+          attackBonus: -2,
+          peCost: 0,
+          description: 'Sofre -2 em ataques, mas recebe +5 na Defesa até o próximo turno.',
+        });
+      }
     }
     
     // Tiro Certeiro (Especialista)
@@ -625,8 +646,18 @@ export function MobileCombatRollModal({
       total += proficiencyCheck.penalty; // -5
     }
     
+    // === PENALIDADE DE COMBATE DEFENSIVO (se ativo via painel) ===
+    if (activeConditionalBonuses.includes('combate-defensivo')) {
+      total -= 2; // Penalidade oficial: -2 ataque
+    }
+    
+    // === PENALIDADE DE COMBATER COM DUAS ARMAS (se ativo via painel) ===
+    if (activeConditionalBonuses.includes('combater-duas-armas')) {
+      total -= 2; // Penalidade oficial: -2 ataque (p.46)
+    }
+    
     return total;
-  }, [attackSkill.bonus, selectedBonuses, availableBonuses, manualAttackMod, weaponBuffBonuses, unifiedEffects, weapon, trackCombatBonuses, passiveBonuses, specialAttackConfig.enabled, specialAttackResult.attackBonus, proficiencyCheck]);
+  }, [attackSkill.bonus, selectedBonuses, availableBonuses, manualAttackMod, weaponBuffBonuses, unifiedEffects, weapon, trackCombatBonuses, passiveBonuses, specialAttackConfig.enabled, specialAttackResult.attackBonus, proficiencyCheck, activeConditionalBonuses]);
 
   // Detalhamento das fontes de bônus de ataque - NOVO
   const attackBonusSources = useMemo(() => {
@@ -686,8 +717,30 @@ export function MobileCombatRollModal({
       });
     }
     
+    // === PENALIDADE DE COMBATE DEFENSIVO (se ativo via painel) ===
+    if (activeConditionalBonuses.includes('combate-defensivo')) {
+      sources.push({
+        label: 'Combate Defensivo',
+        value: -2,
+        type: 'power',
+        sourceName: 'Combate Defensivo',
+        description: 'Penalidade de -2 no ataque em troca de +5 na Defesa (ativo)',
+      });
+    }
+    
+    // === PENALIDADE DE COMBATER COM DUAS ARMAS (se ativo via painel) ===
+    if (activeConditionalBonuses.includes('combater-duas-armas')) {
+      sources.push({
+        label: 'Duas Armas',
+        value: -2,
+        type: 'power',
+        sourceName: 'Combater com Duas Armas',
+        description: 'Penalidade de -2 no ataque para fazer dois ataques (ativo)',
+      });
+    }
+    
     return sources;
-  }, [attackSkill, unifiedEffects, weapon, trackCombatBonuses, weaponBuffBonuses, passiveBonuses, selectedBonuses, availableBonuses, manualAttackMod, proficiencyCheck]);
+  }, [attackSkill, unifiedEffects, weapon, trackCombatBonuses, weaponBuffBonuses, passiveBonuses, selectedBonuses, availableBonuses, manualAttackMod, proficiencyCheck, activeConditionalBonuses]);
 
   // === DETALHAMENTO DAS FONTES DE BÔNUS DE DANO ===
   // Fornece transparência completa sobre cada fonte que contribui para o dano
