@@ -398,10 +398,34 @@ export const MobileOverviewTab = memo(function MobileOverviewTab({
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
-          <div className="flex items-center gap-1">
-            <Footprints className="w-3 h-3 text-muted-foreground" />
-            <span>{character.movement}m</span>
-          </div>
+          {/* Deslocamento com tooltip de breakdown */}
+          <TooltipProvider delayDuration={200}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center gap-1 cursor-help">
+                  <Footprints className="w-3 h-3 text-muted-foreground" />
+                  <span>{(character.movement || 9) + (bonusSummary?.movementBonus || 0)}m</span>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="max-w-xs">
+                <div className="space-y-1.5 text-xs">
+                  <p className="font-medium">Deslocamento: {(character.movement || 9) + (bonusSummary?.movementBonus || 0)}m</p>
+                  <div className="space-y-0.5">
+                    <p className="text-muted-foreground flex justify-between">
+                      <span>Base</span>
+                      <span>9m</span>
+                    </p>
+                    {bonusSummary?.movementBreakdown?.map((entry: { source: string; value: number }, idx: number) => (
+                      <p key={idx} className="flex justify-between text-primary">
+                        <span>{entry.source}</span>
+                        <span className="font-medium">+{entry.value}m</span>
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
           <div className="flex items-center gap-1">
             <Zap className="w-3 h-3 text-pe" />
             <span>{peLimit} PE/turno</span>
