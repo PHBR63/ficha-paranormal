@@ -64,6 +64,7 @@ export { MobileRitualEffectWizard, type MobileRitualEffectWizardProps } from './
 export { MobileTrackPassiveEffectsWidget } from './MobileTrackPassiveEffectsWidget';
 export { MobileSUEDebugPanel } from './MobileSUEDebugPanel';
 export { MobileClassPowersPanel } from './MobileClassPowersPanel';
+export { MobileParanormalPowersActivationPanel } from './MobileParanormalPowersActivationPanel';
 
 // ============================================================================
 // TRILHAS - Re-exports dos componentes unificados responsivos (FASE 5)
