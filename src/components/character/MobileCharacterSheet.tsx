@@ -1819,7 +1819,11 @@ export function MobileCharacterSheet({
                 peSpentBreakdown: roundTracking.peSpentBreakdown,
                 advanceRound: roundTracking.advanceRound,
                 resetCombat: roundTracking.resetCombat,
+                trackPESpent: roundTracking.trackPESpent,
               }}
+              classPowers={character.powers as unknown[] || []}
+              abilities={(Array.isArray(character.abilities) ? {} : character.abilities) as Record<string, unknown> || {}}
+              onPEChange={handlePEChange}
             />
             
             {/* Seletor de Afinidade Elemental - só aparece após usar Transcender em NEX 50+ */}

@@ -36,6 +36,7 @@ import { ActiveAdvancedBonusesBar } from '../ActiveAdvancedBonusesBar';
 import { BonusSummaryCard } from '../BonusSummaryCard';
 import { ClassPowerBonusesPanel } from '../ClassPowerBonusesPanel';
 import { RoundControlPanel } from '../RoundControlPanel';
+import { MobileClassPowersPanel } from './MobileClassPowersPanel';
 import { getPELimitByNex } from '@/lib/dice-roller';
 
 interface MobileOverviewTabProps {
@@ -91,7 +92,12 @@ interface MobileOverviewTabProps {
     peSpentBreakdown: Array<{ abilityName: string; cost: number }>;
     advanceRound: () => void;
     resetCombat: () => void;
+    trackPESpent: (abilityName: string, cost: number) => void;
   };
+  /** Poderes de classe (para painel de poderes ativáveis) */
+  classPowers?: unknown[];
+  /** Habilidades (para painel de poderes ativáveis) */
+  abilities?: Record<string, unknown>;
   onOpenDiceRoller: () => void;
   onOpenRest: () => void;
   onLevelUp: () => void;
@@ -103,6 +109,7 @@ interface MobileOverviewTabProps {
   onConditionsChange: (conditions: ActiveCondition[]) => void;
   onDamageFromCondition?: (damage: number, isVerdadeiro: boolean) => void;
   onCharacterDeath?: () => void;
+  onPEChange: (newPE: number) => void;
 }
 
 export const MobileOverviewTab = memo(function MobileOverviewTab({
@@ -118,6 +125,8 @@ export const MobileOverviewTab = memo(function MobileOverviewTab({
   rollHistory,
   attributeValidation,
   especialistaArmaGroups = [],
+  classPowers = [],
+  abilities = {},
   onOpenDiceRoller,
   onOpenRest,
   onLevelUp,
@@ -129,6 +138,7 @@ export const MobileOverviewTab = memo(function MobileOverviewTab({
   onConditionsChange,
   onDamageFromCondition,
   onCharacterDeath,
+  onPEChange,
   roundTracking,
 }: MobileOverviewTabProps) {
   const peLimit = getPELimitByNex(character.nex);
@@ -482,6 +492,16 @@ export const MobileOverviewTab = memo(function MobileOverviewTab({
       {bonusSummary.classPowerBonuses && (
         <ClassPowerBonusesPanel bonuses={bonusSummary.classPowerBonuses} compact />
       )}
+
+      {/* Painel de Poderes de Classe Ativáveis (Incansável, Segurar o Gatilho, etc.) */}
+      <MobileClassPowersPanel
+        classPowers={classPowers}
+        abilities={abilities}
+        nex={character.nex}
+        peCurrent={character.pe_current}
+        onPEChange={onPEChange}
+        onTrackPESpent={roundTracking?.trackPESpent}
+      />
 
       {/* Painel de Combate Mobile */}
       {equippedWeapons.length > 0 && (
