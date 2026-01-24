@@ -2505,6 +2505,7 @@ export function MobileCharacterSheet({
           }}
           isFavoriteWeapon={selectedWeapon?.id === (character as any).favorite_weapon_id}
           activatedTrackEffects={activatedEffects.activatedEffectIds}
+          activeConditionalBonuses={character.active_conditional_bonuses || []}
           onRollComplete={(result) => {
             addRoll({
               type: 'attack',

@@ -120,6 +120,17 @@ export const CONDITIONAL_BONUS_CATALOG: ConditionalBonusDefinition[] = [
     requirements: { ability: 'combate defensivo' },
   },
   {
+    id: 'combater-duas-armas',
+    name: 'Combater com Duas Armas',
+    source: 'ability',
+    condition: 'Ação agredir com duas armas (até próximo turno)',
+    mechanics: {
+      attackBonus: -2, // Penalidade oficial do livro (p.46)
+      specialEffects: ['Permite dois ataques (um com cada arma)'],
+    },
+    requirements: { ability: 'combater com duas armas' },
+  },
+  {
     id: 'sentido-tatico',
     name: 'Sentido Tático',
     source: 'ability',
