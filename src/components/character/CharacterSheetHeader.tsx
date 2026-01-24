@@ -1142,14 +1142,24 @@ export const CharacterSheetHeader = memo(function CharacterSheetHeader({
                       />
                     </div>
                     <div className="space-y-0.5 pt-1 border-t border-border/50">
-                      <p className="text-muted-foreground flex justify-between">
-                        <span>Capacidade (FOR × 5)</span>
-                        <span>{loadStatus.maxCapacity}</span>
-                      </p>
-                      {loadStatus.hasInventarioOtimizado && (
-                        <p className="text-primary flex justify-between">
-                          <span>Inventário Otimizado</span>
-                          <span>+INT × 5</span>
+                      {loadStatus.hasInventarioOtimizado ? (
+                        <>
+                          <p className="text-primary flex justify-between">
+                            <span>Inventário Otimizado</span>
+                            <span className="text-muted-foreground">(FOR + INT) × 5</span>
+                          </p>
+                          <p className="text-muted-foreground flex justify-between">
+                            <span>Capacidade total</span>
+                            <span className="text-foreground">{loadStatus.maxCapacity}</span>
+                          </p>
+                          <p className="text-xs text-muted-foreground/70 italic">
+                            -1 espaço por item (mín. 1)
+                          </p>
+                        </>
+                      ) : (
+                        <p className="text-muted-foreground flex justify-between">
+                          <span>Capacidade (FOR × 5)</span>
+                          <span>{loadStatus.maxCapacity}</span>
                         </p>
                       )}
                     </div>
