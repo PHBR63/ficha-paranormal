@@ -695,6 +695,13 @@ export function MobileCharacterSheet({
   // Defesa total com TODOS os bônus (origem, habilidades, poderes, paranormais, rituais)
   const totalDefense = character.defense + bonusSummary.defense.total;
 
+  // Calcula penalidade de deslocamento de armaduras equipadas (paridade com desktop)
+  const armorSpeedPenalty = useMemo(() => {
+    const equippedArmors = (character.inventory || [])
+      .filter(item => item.isEquipped && item.itemType === 'armor' && item.armorType !== 'escudo');
+    return equippedArmors.reduce((sum, armor) => sum + (armor.speedPenalty || 0), 0);
+  }, [character.inventory]);
+
   // Handler para abrir modal de detalhes do poder
   const handlePowerClick = useCallback((power: PowerDetailData) => {
     setSelectedPower(power);
@@ -1795,6 +1802,7 @@ export function MobileCharacterSheet({
               trackName={trackData?.name}
               bonusSummary={bonusSummary}
               totalDefense={totalDefense}
+              armorSpeedPenalty={armorSpeedPenalty}
               defenseBonuses={defenseBonuses}
               equippedWeapons={equippedWeapons}
               weaponBuffs={weaponBuffs}
