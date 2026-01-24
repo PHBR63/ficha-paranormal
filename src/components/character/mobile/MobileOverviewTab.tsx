@@ -411,18 +411,44 @@ export const MobileOverviewTab = memo(function MobileOverviewTab({
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
-          {/* Deslocamento com tooltip de breakdown */}
+          {/* Deslocamento com tooltip de breakdown e indicador de sobrecarga */}
           <TooltipProvider delayDuration={200}>
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className="flex items-center gap-1 cursor-help">
-                  <Footprints className="w-3 h-3 text-muted-foreground" />
-                  <span>{(character.movement || 9) + (bonusSummary?.movementBonus || 0)}m</span>
+                <div className={cn(
+                  "flex items-center gap-1 cursor-help",
+                  loadStatus?.isOverloaded && "text-destructive"
+                )}>
+                  <Footprints className={cn(
+                    "w-3 h-3",
+                    loadStatus?.isOverloaded ? "text-destructive" : "text-muted-foreground"
+                  )} />
+                  <span className={cn(loadStatus?.isOverloaded && "font-medium")}>
+                    {(() => {
+                      const baseMovement = (character.movement || 9) + (bonusSummary?.movementBonus || 0);
+                      return loadStatus?.isOverloaded ? Math.max(0, baseMovement - 3) : baseMovement;
+                    })()}m
+                  </span>
+                  {/* Indicador visual de penalidade por sobrecarga */}
+                  {loadStatus?.isOverloaded && (
+                    <span className="text-[9px] text-destructive flex items-center gap-0.5">
+                      <AlertTriangle className="w-2.5 h-2.5" />
+                      -3
+                    </span>
+                  )}
                 </div>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="max-w-xs">
                 <div className="space-y-1.5 text-xs">
-                  <p className="font-medium">Deslocamento: {(character.movement || 9) + (bonusSummary?.movementBonus || 0)}m</p>
+                  <p className="font-medium flex justify-between">
+                    <span>Deslocamento</span>
+                    <span className={cn(loadStatus?.isOverloaded && "text-destructive")}>
+                      {(() => {
+                        const baseMovement = (character.movement || 9) + (bonusSummary?.movementBonus || 0);
+                        return loadStatus?.isOverloaded ? Math.max(0, baseMovement - 3) : baseMovement;
+                      })()}m
+                    </span>
+                  </p>
                   <div className="space-y-0.5">
                     <p className="text-muted-foreground flex justify-between">
                       <span>Base</span>
@@ -438,6 +464,15 @@ export const MobileOverviewTab = memo(function MobileOverviewTab({
                       <p className="flex justify-between text-destructive">
                         <span>Armadura</span>
                         <span className="font-medium">-{armorSpeedPenalty}m</span>
+                      </p>
+                    )}
+                    {loadStatus?.isOverloaded && (
+                      <p className="flex justify-between text-destructive font-medium">
+                        <span className="flex items-center gap-1">
+                          <AlertTriangle className="w-3 h-3" />
+                          Sobrecarga
+                        </span>
+                        <span>-3m</span>
                       </p>
                     )}
                   </div>
