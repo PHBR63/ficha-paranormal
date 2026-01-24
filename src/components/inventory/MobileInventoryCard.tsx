@@ -72,11 +72,17 @@ export function MobileInventoryCard({
   const x = useMotionValue(0);
   const actionSheet = useActionSheet();
   
-  const categoryConfig = CATEGORY_LABELS[item.category] || CATEGORY_LABELS['0'];
+  // Categoria efetiva (após redução se aplicável)
+  const displayCategory = (item as any).effectiveCategory || item.category;
+  const hasReduction = (item as any).effectiveCategory && (item as any).effectiveCategory !== item.category;
+  const categoryConfig = CATEGORY_LABELS[displayCategory] || CATEGORY_LABELS['0'];
+  const originalCategoryConfig = CATEGORY_LABELS[item.category] || CATEGORY_LABELS['0'];
+  
   const isConsumable = item.consumable && (item.uses ?? 0) > 0;
   const usesDisplay = item.consumable ? `${item.uses ?? 0}/${item.maxUses ?? item.uses ?? 0}` : null;
   const appliedMods = (item as any).appliedModifications as WeaponModification[] | undefined;
   const hasModifications = appliedMods && appliedMods.length > 0;
+  const isFavorite = !!(item as any).favoriteAbilityId;
   const isTemporary = (item as any).isTemporary === true;
 
   // Monta ações para o ActionSheet
@@ -263,13 +269,42 @@ export function MobileInventoryCard({
             </div>
             
             {/* Segunda linha: badges */}
-            <div className="flex items-center gap-1.5 mt-1">
-              <Badge 
-                variant="outline" 
-                className={cn("text-[9px] px-1.5 py-0 border", categoryConfig.color)}
-              >
-                {categoryConfig.label}
-              </Badge>
+            <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+              {/* Indicador Arma Favorita com redução de categoria */}
+              {isFavorite && (
+                <Badge 
+                  variant="outline" 
+                  className="text-[9px] px-1.5 py-0 bg-yellow-500/15 text-yellow-400 border-yellow-500/40"
+                >
+                  <Star className="w-2.5 h-2.5 mr-0.5 fill-yellow-400" />
+                  FAVORITA
+                </Badge>
+              )}
+              {/* Categoria com indicador de redução */}
+              {hasReduction ? (
+                <div className="flex items-center gap-0.5">
+                  <Badge 
+                    variant="outline" 
+                    className={cn("text-[9px] px-1 py-0 border line-through opacity-60", originalCategoryConfig.color)}
+                  >
+                    {originalCategoryConfig.label}
+                  </Badge>
+                  <span className="text-[8px] text-yellow-400">→</span>
+                  <Badge 
+                    variant="outline" 
+                    className={cn("text-[9px] px-1.5 py-0 border", categoryConfig.color)}
+                  >
+                    {categoryConfig.label}
+                  </Badge>
+                </div>
+              ) : (
+                <Badge 
+                  variant="outline" 
+                  className={cn("text-[9px] px-1.5 py-0 border", categoryConfig.color)}
+                >
+                  {categoryConfig.label}
+                </Badge>
+              )}
               <span className="text-[9px] text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded">
                 {item.slots * item.quantity} esp.
               </span>

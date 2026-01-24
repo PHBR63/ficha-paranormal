@@ -1687,6 +1687,60 @@ function InventoryItemRow({ item, onRemove, onEquip, onUnequip, onUse, onModify,
                   {usesDisplay}
                 </Badge>
               )}
+              {/* Badge FAVORITA para armas com redução de categoria */}
+              {item.favoriteAbilityId && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Badge 
+                      variant="outline" 
+                      className="text-[10px] bg-yellow-500/15 text-yellow-400 border-yellow-500/40 flex-shrink-0"
+                    >
+                      <Star className="w-2.5 h-2.5 mr-0.5 fill-yellow-400" />
+                      FAVORITA
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent className="bg-popover border-border max-w-xs hidden sm:block">
+                    <p className="text-xs font-medium text-yellow-400 mb-1">
+                      {reductionAbility?.description || 'Arma Favorita'}
+                    </p>
+                    {hasReduction && (
+                      <p className="text-xs text-muted-foreground">
+                        Categoria: {item.category} → {displayCategory}
+                      </p>
+                    )}
+                  </TooltipContent>
+                </Tooltip>
+              )}
+              {/* Indicador visual de redução de categoria */}
+              {hasReduction && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center gap-0.5 flex-shrink-0">
+                      <Badge 
+                        variant="outline" 
+                        className="text-[9px] px-1 py-0 line-through opacity-60"
+                      >
+                        {item.category}
+                      </Badge>
+                      <span className="text-[9px] text-yellow-400">→</span>
+                      <Badge 
+                        variant="outline" 
+                        className={cn(
+                          "text-[10px] px-1.5 py-0",
+                          CATEGORY_LABELS[displayCategory]?.color || 'bg-muted text-muted-foreground'
+                        )}
+                      >
+                        {displayCategory}
+                      </Badge>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent className="bg-popover border-border hidden sm:block">
+                    <p className="text-xs">
+                      Categoria reduzida por <span className="text-yellow-400">{reductionAbility?.description || 'habilidade'}</span>
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
               {item.isEquipped && (
                 <Badge className="text-[10px] bg-primary/20 text-primary border-0 flex-shrink-0">
                   EQUIPADO
