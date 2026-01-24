@@ -85,6 +85,7 @@ export function ClassPowersActivationPanel(props: ClassPowersActivationPanelProp
     resetScene,
     totalPowers,
     usedCount,
+    isBonusActive,
   } = useActivatableClassPowers(props);
 
   // Não renderiza se não houver poderes
@@ -128,6 +129,7 @@ export function ClassPowersActivationPanel(props: ClassPowersActivationPanelProp
                     usageState={usageStates[power.id]}
                     currentCost={getCurrentCost(power.id)}
                     canAfford={canAfford(power.id)}
+                    isBonusActive={isBonusActive(power.id)}
                     onUse={() => usePower(power.id)}
                   />
                 ))}
@@ -203,10 +205,11 @@ interface PowerCardProps {
   usageState?: { usageCount: number; isUsed: boolean };
   currentCost: number;
   canAfford: boolean;
+  isBonusActive: boolean;
   onUse: () => void;
 }
 
-function PowerCard({ power, usageState, currentCost, canAfford, onUse }: PowerCardProps) {
+function PowerCard({ power, usageState, currentCost, canAfford, isBonusActive, onUse }: PowerCardProps) {
   const state = usageState || { usageCount: 0, isUsed: false };
   const isUsed = power.limit !== 'none' && state.isUsed;
 
@@ -255,6 +258,13 @@ function PowerCard({ power, usageState, currentCost, canAfford, onUse }: PowerCa
               <Badge variant="secondary" className="text-[9px]">
                 {LIMIT_LABELS[power.limit]}
               </Badge>
+
+              {/* Indicador de bônus ativo */}
+              {power.conditionalBonusId && isBonusActive && (
+                <Badge variant="default" className="text-[9px] bg-green-600 hover:bg-green-700">
+                  ATIVO
+                </Badge>
+              )}
 
               {/* Contador de uso (para escalonamento) */}
               {power.scalingCost && state.usageCount > 0 && (

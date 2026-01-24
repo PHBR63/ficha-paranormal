@@ -110,6 +110,10 @@ interface MobileOverviewTabProps {
   onDamageFromCondition?: (damage: number, isVerdadeiro: boolean) => void;
   onCharacterDeath?: () => void;
   onPEChange: (newPE: number) => void;
+  /** Callback para ativar/desativar bônus condicionais */
+  onToggleConditionalBonus?: (bonusId: string, active: boolean) => void;
+  /** Lista de bônus condicionais ativos */
+  activeConditionalBonuses?: string[];
 }
 
 export const MobileOverviewTab = memo(function MobileOverviewTab({
@@ -139,6 +143,8 @@ export const MobileOverviewTab = memo(function MobileOverviewTab({
   onDamageFromCondition,
   onCharacterDeath,
   onPEChange,
+  onToggleConditionalBonus,
+  activeConditionalBonuses = [],
   roundTracking,
 }: MobileOverviewTabProps) {
   const peLimit = getPELimitByNex(character.nex);
@@ -501,6 +507,8 @@ export const MobileOverviewTab = memo(function MobileOverviewTab({
         peCurrent={character.pe_current}
         onPEChange={onPEChange}
         onTrackPESpent={roundTracking?.trackPESpent}
+        onToggleConditionalBonus={onToggleConditionalBonus}
+        activeConditionalBonuses={activeConditionalBonuses}
       />
 
       {/* Painel de Combate Mobile */}

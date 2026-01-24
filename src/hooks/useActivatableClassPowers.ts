@@ -47,6 +47,8 @@ export interface ActivatableClassPower {
   icon: 'search' | 'crosshair' | 'shield' | 'swords' | 'zap';
   /** Página de referência */
   pageRef: string;
+  /** ID do bônus condicional a ser ativado (se aplicável) */
+  conditionalBonusId?: string;
 }
 
 /** Estado de uso de um poder */
@@ -71,6 +73,10 @@ export interface UseActivatableClassPowersProps {
   onPEChange: (newPE: number) => void;
   /** Callback para registrar PE gasto na rodada */
   onTrackPESpent?: (abilityName: string, cost: number) => void;
+  /** Callback para ativar/desativar bônus condicionais */
+  onToggleConditionalBonus?: (bonusId: string, active: boolean) => void;
+  /** Lista de bônus condicionais ativos (para indicador visual) */
+  activeConditionalBonuses?: string[];
 }
 
 /** Retorno do hook */
@@ -95,6 +101,8 @@ export interface UseActivatableClassPowersReturn {
   totalPowers: number;
   /** Quantos poderes foram usados */
   usedCount: number;
+  /** Verifica se o bônus condicional de um poder está ativo */
+  isBonusActive: (powerId: string) => boolean;
 }
 
 // =====================================================
@@ -172,6 +180,7 @@ export const ACTIVATABLE_COMBATENTE_POWERS: ActivatableClassPower[] = [
     minNex: 15,
     icon: 'shield',
     pageRef: 'Livro Base p.47',
+    conditionalBonusId: 'sentido-tatico', // Ativa bônus de +INT Defesa/Resistências
   },
   {
     id: 'tiro-de-cobertura',
@@ -196,6 +205,7 @@ export const ACTIVATABLE_COMBATENTE_POWERS: ActivatableClassPower[] = [
     minNex: 15,
     icon: 'shield',
     pageRef: 'Livro Base p.46',
+    conditionalBonusId: 'combate-defensivo', // Ativa bônus de -2 ataque, +5 Defesa
   },
 ];
 
@@ -251,7 +261,16 @@ function hasPower(
 export function useActivatableClassPowers(
   props: UseActivatableClassPowersProps
 ): UseActivatableClassPowersReturn {
-  const { classPowers, abilities, nex, peCurrent, onPEChange, onTrackPESpent } = props;
+  const { 
+    classPowers, 
+    abilities, 
+    nex, 
+    peCurrent, 
+    onPEChange, 
+    onTrackPESpent,
+    onToggleConditionalBonus,
+    activeConditionalBonuses = [],
+  } = props;
 
   // Estado de uso de cada poder
   const [usageStates, setUsageStates] = useState<Record<string, PowerUsageState>>({});
@@ -320,6 +339,11 @@ export function useActivatableClassPowers(
       onTrackPESpent?.(power.name, cost);
     }
 
+    // Ativa bônus condicional se definido
+    if (power.conditionalBonusId && onToggleConditionalBonus) {
+      onToggleConditionalBonus(power.conditionalBonusId, true);
+    }
+
     // Atualiza estado de uso
     setUsageStates((prev) => ({
       ...prev,
@@ -334,10 +358,17 @@ export function useActivatableClassPowers(
     });
 
     return true;
-  }, [canAfford, getCurrentCost, usageStates, peCurrent, onPEChange, onTrackPESpent]);
+  }, [canAfford, getCurrentCost, usageStates, peCurrent, onPEChange, onTrackPESpent, onToggleConditionalBonus]);
 
   // Reset por turno (limpa Segurar o Gatilho)
   const resetTurn = useCallback(() => {
+    // Desativa bônus condicionais de poderes perTurn
+    ACTIVATABLE_COMBATENTE_POWERS.forEach((power) => {
+      if (power.limit === 'perTurn' && power.conditionalBonusId && onToggleConditionalBonus) {
+        onToggleConditionalBonus(power.conditionalBonusId, false);
+      }
+    });
+
     setUsageStates((prev) => {
       const next = { ...prev };
       Object.keys(next).forEach((id) => {
@@ -348,10 +379,18 @@ export function useActivatableClassPowers(
       });
       return next;
     });
-  }, []);
+  }, [onToggleConditionalBonus]);
 
   // Reset por rodada
   const resetRound = useCallback(() => {
+    // Desativa bônus condicionais de poderes perRound e perTurn
+    ACTIVATABLE_COMBATENTE_POWERS.forEach((power) => {
+      if ((power.limit === 'perRound' || power.limit === 'perTurn') && 
+          power.conditionalBonusId && onToggleConditionalBonus) {
+        onToggleConditionalBonus(power.conditionalBonusId, false);
+      }
+    });
+
     setUsageStates((prev) => {
       const next = { ...prev };
       Object.keys(next).forEach((id) => {
@@ -362,12 +401,26 @@ export function useActivatableClassPowers(
       });
       return next;
     });
-  }, []);
+  }, [onToggleConditionalBonus]);
 
   // Reset por cena
   const resetScene = useCallback(() => {
+    // Desativa TODOS os bônus condicionais de poderes ativáveis
+    ACTIVATABLE_COMBATENTE_POWERS.forEach((power) => {
+      if (power.conditionalBonusId && onToggleConditionalBonus) {
+        onToggleConditionalBonus(power.conditionalBonusId, false);
+      }
+    });
+
     setUsageStates({});
-  }, []);
+  }, [onToggleConditionalBonus]);
+
+  // Verifica se um bônus condicional de poder está ativo
+  const isBonusActive = useCallback((powerId: string): boolean => {
+    const power = ACTIVATABLE_COMBATENTE_POWERS.find((p) => p.id === powerId);
+    if (!power?.conditionalBonusId) return false;
+    return activeConditionalBonuses.includes(power.conditionalBonusId);
+  }, [activeConditionalBonuses]);
 
   // Contadores
   const usedCount = useMemo(() => {
@@ -385,5 +438,6 @@ export function useActivatableClassPowers(
     resetScene,
     totalPowers: availablePowers.length,
     usedCount,
+    isBonusActive,
   };
 }
