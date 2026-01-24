@@ -103,6 +103,7 @@ import { CharacterAuditBanner } from '@/components/character/CharacterAuditBanne
 // useCharacterAudit já importado acima via @/hooks
 import { CharacterForAudit, canAddParanormalPower } from '@/lib/character-audit-engine';
 import { ClassPowerBonusesPanel } from '@/components/character/ClassPowerBonusesPanel';
+import { ClassPowersActivationPanel } from '@/components/character/ClassPowersActivationPanel';
 import { AutomationDebugWidget } from '@/components/character/AutomationDebugWidget';
 import { getActivatablePowersForCharacter } from '@/lib/class-powers/activatable-powers-bridge';
 import { VersatilityAbilityCard } from '@/components/character/VersatilityAbilityCard';
@@ -2470,6 +2471,18 @@ export default function CharacterSheet() {
                 peSpentBreakdown={roundTracking.peSpentBreakdown}
                 onAdvanceRound={roundTracking.advanceRound}
                 onResetCombat={roundTracking.resetCombat}
+              />
+
+              {/* Painel de Poderes de Classe Ativáveis (Incansável, Segurar o Gatilho, etc.) */}
+              <ClassPowersActivationPanel
+                classPowers={character.powers as unknown[] || []}
+                abilities={(Array.isArray(character.abilities) ? {} : character.abilities) as Record<string, unknown> || {}}
+                nex={character.nex}
+                peCurrent={peCurrent}
+                onPEChange={async (newPE) => {
+                  await handleCombatStatsChange({ hp: hpCurrent, pe: newPE, san: sanCurrent });
+                }}
+                onTrackPESpent={roundTracking.trackPESpent}
               />
 
               {/* ====================================================== */}

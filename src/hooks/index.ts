@@ -31,3 +31,5 @@ export * from './platform';
 export * from './useAdminCheck';
 export * from './useDebouncedSave';
 export * from './useCombatFeedback';
+export * from './useRoundTracking';
+export * from './useActivatableClassPowers';
