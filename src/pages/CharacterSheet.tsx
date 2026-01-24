@@ -104,6 +104,7 @@ import { CharacterAuditBanner } from '@/components/character/CharacterAuditBanne
 import { CharacterForAudit, canAddParanormalPower } from '@/lib/character-audit-engine';
 import { ClassPowerBonusesPanel } from '@/components/character/ClassPowerBonusesPanel';
 import { ClassPowersActivationPanel } from '@/components/character/ClassPowersActivationPanel';
+import { ParanormalPowersActivationPanel } from '@/components/character/ParanormalPowersActivationPanel';
 import { AutomationDebugWidget } from '@/components/character/AutomationDebugWidget';
 import { getActivatablePowersForCharacter } from '@/lib/class-powers/activatable-powers-bridge';
 import { VersatilityAbilityCard } from '@/components/character/VersatilityAbilityCard';
@@ -2536,6 +2537,25 @@ export default function CharacterSheet() {
                 abilities={(Array.isArray(character.abilities) ? {} : character.abilities) as Record<string, unknown> || {}}
                 nex={character.nex}
                 peCurrent={peCurrent}
+                onPEChange={async (newPE) => {
+                  await handleCombatStatsChange({ hp: hpCurrent, pe: newPE, san: sanCurrent });
+                }}
+                onTrackPESpent={roundTracking.trackPESpent}
+                onToggleConditionalBonus={handleToggleConditionalBonus}
+                activeConditionalBonuses={character.active_conditional_bonuses || []}
+              />
+
+              {/* Painel de Poderes Paranormais Ativáveis (Surto Temporal, Manipular Entropia, etc.) */}
+              <ParanormalPowersActivationPanel
+                paranormalPowers={character.paranormal_powers as SavedParanormalPower[] || []}
+                nex={character.nex}
+                elementalAffinity={character.elemental_affinity as ParanormalElement || null}
+                affinityActive={character.affinity_active || false}
+                hpCurrent={hpCurrent}
+                peCurrent={peCurrent}
+                onHPChange={async (newHP) => {
+                  await handleCombatStatsChange({ hp: newHP, pe: peCurrent, san: sanCurrent });
+                }}
                 onPEChange={async (newPE) => {
                   await handleCombatStatsChange({ hp: hpCurrent, pe: newPE, san: sanCurrent });
                 }}
