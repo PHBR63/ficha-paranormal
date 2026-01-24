@@ -1,10 +1,16 @@
 /**
  * Hook para gerenciar reduções de categoria baseadas nas habilidades do personagem
  * 
- * Detecta automaticamente:
+ * Detecta automaticamente (via SUE quando disponível, ou fallback legado):
  * - A Favorita / Técnica Secreta / Máquina de Matar (Aniquilador)
  * - Ferramenta Favorita (Engenheiro)
  * - Mochila de Utilidades (Especialista)
+ * - Remendo (Técnico)
+ * 
+ * INTEGRAÇÃO COM SUE:
+ * Quando `sueCategoryReductions` é fornecido, o hook usa os dados do SUE como
+ * fonte de verdade para as habilidades disponíveis, mantendo compatibilidade
+ * com o sistema de marcação de itens favoritos no inventário.
  */
 
 import { useMemo, useCallback } from 'react';
@@ -15,6 +21,7 @@ import {
   removeFavoriteAbility,
   getEffectiveCategory,
   getCategoryReductionAbility,
+  CATEGORY_REDUCTION_ABILITIES,
   type CategoryReductionConfig,
   type CharacterCategoryReductionData,
 } from '@/lib/category-reduction';
@@ -26,10 +33,24 @@ export interface ExtendedInventoryItemWithReduction extends InventoryItem {
   effectiveCategory?: InventoryItem['category'];
 }
 
+/**
+ * Tipo de dados de redução de categoria vindos do SUE
+ * Compatível com ComputedEffects.inventory.categoryReductions
+ */
+export interface SUECategoryReduction {
+  amount: number;
+  targetType: 'specific-weapon' | 'any-weapon' | 'item' | 'general-equipment';
+  source: string;
+  requiresChoice?: boolean;
+  appliesToAllCarried?: boolean;
+}
+
 interface UseCharacterCategoryReductionsProps {
   characterData: CharacterCategoryReductionData;
   inventory: ExtendedInventoryItemWithReduction[];
   onInventoryChange?: (newInventory: ExtendedInventoryItemWithReduction[]) => void;
+  /** Dados de redução de categoria vindos do SUE (fonte preferencial) */
+  sueCategoryReductions?: SUECategoryReduction[];
 }
 
 interface UseCharacterCategoryReductionsReturn {
@@ -59,19 +80,96 @@ interface UseCharacterCategoryReductionsReturn {
 }
 
 /**
+ * Converte dados do SUE para CategoryReductionConfig
+ * Mapeia o source do SUE para encontrar a configuração correspondente
+ */
+function mapSUEToConfig(sueReduction: SUECategoryReduction): CategoryReductionConfig | null {
+  // Tenta encontrar configuração pelo nome da fonte
+  const sourceLower = sueReduction.source.toLowerCase();
+  
+  // Mapeamento de sources do SUE para abilityIds do sistema de redução
+  const sourceToAbilityMap: Record<string, string> = {
+    'aniquilador': sueReduction.amount >= 3 ? 'maquina-de-matar' : 
+                   sueReduction.amount >= 2 ? 'tecnica-secreta' : 'a-favorita',
+    'a favorita': 'a-favorita',
+    'técnica secreta': 'tecnica-secreta',
+    'máquina de matar': 'maquina-de-matar',
+    'engenheiro': 'ferramenta-favorita',
+    'ferramenta favorita': 'ferramenta-favorita',
+    'mochila': 'mochila-utilidades',
+    'técnico': 'remendo-tecnico',
+    'remendo': 'remendo-tecnico',
+  };
+  
+  // Encontra o abilityId correspondente
+  let abilityId: string | undefined;
+  for (const [key, id] of Object.entries(sourceToAbilityMap)) {
+    if (sourceLower.includes(key)) {
+      abilityId = id;
+      break;
+    }
+  }
+  
+  if (abilityId) {
+    return getCategoryReductionAbility(abilityId) || null;
+  }
+  
+  // Se não encontrou, cria uma configuração dinâmica baseada nos dados do SUE
+  return {
+    abilityId: `sue-${sueReduction.source.replace(/\s+/g, '-').toLowerCase()}`,
+    abilityName: sueReduction.source.split(':').pop()?.trim() || sueReduction.source,
+    sourceName: sueReduction.source,
+    targetType: sueReduction.targetType === 'specific-weapon' || sueReduction.targetType === 'any-weapon' 
+      ? 'weapon' 
+      : sueReduction.targetType === 'general-equipment' 
+        ? 'any' 
+        : 'item',
+    reductionAmount: sueReduction.amount,
+    maxItems: sueReduction.appliesToAllCarried ? 999 : 1,
+    requiresChoice: sueReduction.requiresChoice,
+    description: `Reduz categoria em ${sueReduction.amount} (via ${sueReduction.source})`,
+  };
+}
+
+/**
  * Hook principal para gerenciamento de reduções de categoria
  */
 export function useCharacterCategoryReductions({
   characterData,
   inventory,
   onInventoryChange,
+  sueCategoryReductions,
 }: UseCharacterCategoryReductionsProps): UseCharacterCategoryReductionsReturn {
   
-  // Detecta automaticamente as habilidades disponíveis baseado nos dados do personagem
+  // Detecta habilidades disponíveis - preferência para dados do SUE
   const availableAbilities = useMemo(() => {
+    // Se temos dados do SUE, usa como fonte de verdade
+    if (sueCategoryReductions && sueCategoryReductions.length > 0) {
+      const abilities: CategoryReductionConfig[] = [];
+      const seen = new Set<string>();
+      
+      for (const sueReduction of sueCategoryReductions) {
+        const config = mapSUEToConfig(sueReduction);
+        if (config && !seen.has(config.abilityId)) {
+          seen.add(config.abilityId);
+          abilities.push(config);
+        }
+      }
+      
+      return abilities;
+    }
+    
+    // Fallback: detecção legada baseada nos dados do personagem
     return getCharacterCategoryReductionAbilities(characterData);
-  }, [characterData.origin, characterData.classTrack, characterData.nex, 
-      characterData.abilities, characterData.powers, characterData.generalPowers]);
+  }, [
+    sueCategoryReductions,
+    characterData.origin, 
+    characterData.classTrack, 
+    characterData.nex, 
+    characterData.abilities, 
+    characterData.powers, 
+    characterData.generalPowers
+  ]);
 
   // Verifica se uma habilidade específica está disponível
   const hasAbility = useCallback((abilityId: string): boolean => {
