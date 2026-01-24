@@ -321,8 +321,11 @@ export function useActivatableClassPowers(
 
     const state = usageStates[powerId] || { usageCount: 0, isUsed: false };
 
-    // Verifica limite de uso
-    if (power.limit !== 'none' && state.isUsed) return false;
+    // Poderes com scalingCost podem ser usados várias vezes no período
+    // Só os poderes sem scalingCost respeitam isUsed como bloqueio absoluto
+    if (power.limit !== 'none' && state.isUsed && !power.scalingCost) {
+      return false;
+    }
 
     // Verifica PE
     const cost = getCurrentCost(powerId);
@@ -357,11 +360,13 @@ export function useActivatableClassPowers(
     }
 
     // Atualiza estado de uso
+    // Para poderes com scalingCost: NÃO marca isUsed (permite repetição)
+    // Para poderes sem scalingCost: marca isUsed se tiver limite
     setUsageStates((prev) => ({
       ...prev,
       [powerId]: {
         usageCount: state.usageCount + 1,
-        isUsed: power.limit !== 'none', // Marca como usado se tiver limite
+        isUsed: power.limit !== 'none' && !power.scalingCost,
       },
     }));
 
