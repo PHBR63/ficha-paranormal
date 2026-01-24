@@ -91,6 +91,9 @@ interface CombatWeaponsTableProps {
   // NOVO: Efeitos consolidados do Sistema Unificado de Efeitos (SUE)
   unifiedEffects?: ComputedEffects;
   
+  // NOVO: Bônus condicionais ativos (Combate Defensivo, Sentido Tático, etc.)
+  activeConditionalBonuses?: string[];
+  
   // Callback para histórico
   onRollComplete?: (result: DiceRollResult) => void;
   
@@ -143,6 +146,8 @@ export function CombatWeaponsTable({
   classPowerBonuses,
   // NOVO: Efeitos consolidados do SUE
   unifiedEffects,
+  // NOVO: Bônus condicionais ativos
+  activeConditionalBonuses = [],
   onRollComplete,
   onRollAttack, // Fallback antigo
   // Fase 5: Props de buffs de arma
@@ -370,6 +375,7 @@ export function CombatWeaponsTable({
           unifiedEffects={unifiedEffects}
           weaponBuffs={weaponBuffs}
           isFavoriteWeapon={selectedWeapon?.isFavoriteWeapon || false}
+          activeConditionalBonuses={activeConditionalBonuses}
           onRollComplete={onRollComplete}
         />
       )}
