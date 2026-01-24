@@ -1019,12 +1019,12 @@ describe('getTrackEffects', () => {
 describe('Trilhas do Ocultista - Conduíte', () => {
   describe('Mapeamento no TRACK_EFFECT_MAPPINGS', () => {
     it('deve ter trilha Conduíte mapeada', () => {
-      expect(TRACK_EFFECT_MAPPINGS.conduite).toBeDefined();
-      expect(TRACK_EFFECT_MAPPINGS.conduite.trackId).toBe('conduite');
+      expect(TRACK_EFFECT_MAPPINGS.condutor).toBeDefined();
+      expect(TRACK_EFFECT_MAPPINGS.condutor.trackId).toBe('condutor');
     });
 
     it('deve ter os 3 efeitos ativáveis do Conduíte', () => {
-      const effects = TRACK_EFFECT_MAPPINGS.conduite.effects;
+      const effects = TRACK_EFFECT_MAPPINGS.condutor.effects;
       
       expect(effects['track-ampliar-ritual']).toBeDefined();
       expect(effects['track-acelerar-ritual']).toBeDefined();
@@ -1032,7 +1032,7 @@ describe('Trilhas do Ocultista - Conduíte', () => {
     });
 
     it('Ampliar Ritual deve ter custo 2 PE e minNex 10', () => {
-      const effect = TRACK_EFFECT_MAPPINGS.conduite.effects['track-ampliar-ritual'];
+      const effect = TRACK_EFFECT_MAPPINGS.condutor.effects['track-ampliar-ritual'];
       
       expect(effect.name).toBe('Ampliar Ritual');
       expect(effect.peCost).toBe(2);
@@ -1040,7 +1040,7 @@ describe('Trilhas do Ocultista - Conduíte', () => {
     });
 
     it('Acelerar Ritual deve ter custo 4 PE e minNex 40', () => {
-      const effect = TRACK_EFFECT_MAPPINGS.conduite.effects['track-acelerar-ritual'];
+      const effect = TRACK_EFFECT_MAPPINGS.condutor.effects['track-acelerar-ritual'];
       
       expect(effect.name).toBe('Acelerar Ritual');
       expect(effect.peCost).toBe(4);
@@ -1048,7 +1048,7 @@ describe('Trilhas do Ocultista - Conduíte', () => {
     });
 
     it('Anular Ritual deve ter custo variável (0) e minNex 65', () => {
-      const effect = TRACK_EFFECT_MAPPINGS.conduite.effects['track-anular-ritual'];
+      const effect = TRACK_EFFECT_MAPPINGS.condutor.effects['track-anular-ritual'];
       
       expect(effect.name).toBe('Anular Ritual');
       expect(effect.peCost).toBe(0); // Custo igual ao ritual alvo
@@ -1058,7 +1058,7 @@ describe('Trilhas do Ocultista - Conduíte', () => {
 
   describe('Conversão de Mecânicas (convertTrackAbilityToMechanics)', () => {
     it('NEX 10 deve ter efeito Ampliar Ritual nos efeitos especiais', () => {
-      const effects = getTrackEffects('conduite', 10, defaultAttributes);
+      const effects = getTrackEffects('condutor', 10, defaultAttributes);
       
       const ampliarEffect = effects.find(e => e.id === 'track-ampliar-ritual');
       expect(ampliarEffect).toBeDefined();
@@ -1068,7 +1068,7 @@ describe('Trilhas do Ocultista - Conduíte', () => {
     });
 
     it('NEX 40 deve ter efeito Acelerar Ritual nos efeitos especiais', () => {
-      const effects = getTrackEffects('conduite', 40, defaultAttributes);
+      const effects = getTrackEffects('condutor', 40, defaultAttributes);
       
       const acelerarEffect = effects.find(e => e.id === 'track-acelerar-ritual');
       expect(acelerarEffect).toBeDefined();
@@ -1078,7 +1078,7 @@ describe('Trilhas do Ocultista - Conduíte', () => {
     });
 
     it('NEX 65 deve ter efeito Anular Ritual com contra-mágica', () => {
-      const effects = getTrackEffects('conduite', 65, defaultAttributes);
+      const effects = getTrackEffects('condutor', 65, defaultAttributes);
       
       const anularEffect = effects.find(e => e.id === 'track-anular-ritual');
       expect(anularEffect).toBeDefined();
@@ -1088,7 +1088,7 @@ describe('Trilhas do Ocultista - Conduíte', () => {
     });
 
     it('NEX 99 deve ter ritual concedido Canalizar o Medo', () => {
-      const effects = getTrackEffects('conduite', 99, defaultAttributes);
+      const effects = getTrackEffects('condutor', 99, defaultAttributes);
       
       const canalizarEffect = effects.find(e => e.id === 'track-canalizar-o-medo');
       expect(canalizarEffect).toBeDefined();
@@ -1100,14 +1100,14 @@ describe('Trilhas do Ocultista - Conduíte', () => {
 
   describe('Escalamento por NEX', () => {
     it('NEX 10 deve ter apenas 1 habilidade (Ampliar Ritual)', () => {
-      const effects = getTrackEffects('conduite', 10, defaultAttributes);
+      const effects = getTrackEffects('condutor', 10, defaultAttributes);
       
       expect(effects.length).toBe(1);
       expect(effects[0].name).toBe('Ampliar Ritual');
     });
 
     it('NEX 40 deve ter 2 habilidades', () => {
-      const effects = getTrackEffects('conduite', 40, defaultAttributes);
+      const effects = getTrackEffects('condutor', 40, defaultAttributes);
       
       expect(effects.length).toBe(2);
       expect(effects.some(e => e.name === 'Ampliar Ritual')).toBe(true);
@@ -1115,13 +1115,13 @@ describe('Trilhas do Ocultista - Conduíte', () => {
     });
 
     it('NEX 65 deve ter 3 habilidades', () => {
-      const effects = getTrackEffects('conduite', 65, defaultAttributes);
+      const effects = getTrackEffects('condutor', 65, defaultAttributes);
       
       expect(effects.length).toBe(3);
     });
 
     it('NEX 99 deve ter todas as 4 habilidades', () => {
-      const effects = getTrackEffects('conduite', 99, defaultAttributes);
+      const effects = getTrackEffects('condutor', 99, defaultAttributes);
       
       expect(effects.length).toBe(4);
       expect(effects.some(e => e.name === 'Canalizar o Medo')).toBe(true);
@@ -1130,13 +1130,13 @@ describe('Trilhas do Ocultista - Conduíte', () => {
 
   describe('getTrackBonusSummary para Conduíte', () => {
     it('deve retornar nome correto da trilha', () => {
-      const summary = getTrackBonusSummary('conduite', 50, defaultAttributes);
+      const summary = getTrackBonusSummary('condutor', 50, defaultAttributes);
       
       expect(summary.trackName).toBe('Conduíte');
     });
 
     it('não deve ter bônus de combate numéricos (trilha focada em rituais)', () => {
-      const summary = getTrackBonusSummary('conduite', 99, defaultAttributes);
+      const summary = getTrackBonusSummary('condutor', 99, defaultAttributes);
       
       expect(summary.totalAttack).toBe(0);
       expect(summary.totalDamage).toBe(0);
@@ -1146,7 +1146,7 @@ describe('Trilhas do Ocultista - Conduíte', () => {
     });
 
     it('deve ter habilidades especiais listadas', () => {
-      const summary = getTrackBonusSummary('conduite', 99, defaultAttributes);
+      const summary = getTrackBonusSummary('condutor', 99, defaultAttributes);
       
       expect(summary.specialAbilities.length).toBeGreaterThan(0);
     });

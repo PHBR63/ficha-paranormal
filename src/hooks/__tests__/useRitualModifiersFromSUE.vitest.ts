@@ -64,7 +64,7 @@ function createRitualModifierEffect(
     id,
     name,
     source: 'track',
-    sourceId: 'conduite',
+    sourceId: 'condutor',
     sourceName: 'Conduíte',
     mechanics: {
       ritualModifiers: modifiers.map(m => ({
@@ -85,7 +85,7 @@ describe('Extração de modificadores de ritual da trilha Conduíte', () => {
   const attributes = { strength: 2, agility: 2, vigor: 2, intellect: 3, presence: 2 };
 
   it('deve extrair Ampliar Ritual a partir de NEX 10%', () => {
-    const effects = getTrackEffects('conduite', 10, attributes);
+    const effects = getTrackEffects('condutor', 10, attributes);
     
     // Procura efeito com ritualModifiers
     const hasAmpliar = effects.some(e => 
@@ -96,7 +96,7 @@ describe('Extração de modificadores de ritual da trilha Conduíte', () => {
   });
 
   it('deve extrair Acelerar Ritual a partir de NEX 40%', () => {
-    const effects = getTrackEffects('conduite', 40, attributes);
+    const effects = getTrackEffects('condutor', 40, attributes);
     
     const hasAcelerar = effects.some(e => 
       e.mechanics.ritualModifiers?.some(m => m.id === 'acelerar-ritual')
@@ -106,7 +106,7 @@ describe('Extração de modificadores de ritual da trilha Conduíte', () => {
   });
 
   it('não deve ter Acelerar Ritual abaixo de NEX 40%', () => {
-    const effects = getTrackEffects('conduite', 35, attributes);
+    const effects = getTrackEffects('condutor', 35, attributes);
     
     const hasAcelerar = effects.some(e => 
       e.mechanics.ritualModifiers?.some(m => m.id === 'acelerar-ritual')
@@ -116,7 +116,7 @@ describe('Extração de modificadores de ritual da trilha Conduíte', () => {
   });
 
   it('deve incluir custos de PE corretos para modificadores', () => {
-    const effects = getTrackEffects('conduite', 50, attributes);
+    const effects = getTrackEffects('condutor', 50, attributes);
     
     let ampliarCost = 0;
     let acelerarCost = 0;
@@ -401,7 +401,7 @@ describe('Integração completa: Trilha Conduíte + Cálculo de PE', () => {
   const attributes = { strength: 2, agility: 2, vigor: 2, intellect: 3, presence: 2 };
 
   it('deve obter modificadores corretos de Conduíte NEX 50%', () => {
-    const effects = getTrackEffects('conduite', 50, attributes);
+    const effects = getTrackEffects('condutor', 50, attributes);
     const context = createTestContext({ nex: 50 });
     const result = consolidateEffects(effects, context);
 
@@ -414,7 +414,7 @@ describe('Integração completa: Trilha Conduíte + Cálculo de PE', () => {
   });
 
   it('deve calcular custo usando modificadores consolidados do SUE', () => {
-    const effects = getTrackEffects('conduite', 50, attributes);
+    const effects = getTrackEffects('condutor', 50, attributes);
     const context = createTestContext({ nex: 50 });
     const result = consolidateEffects(effects, context);
 
@@ -434,7 +434,7 @@ describe('Integração completa: Trilha Conduíte + Cálculo de PE', () => {
   });
 
   it('deve respeitar limite de uso por rodada do Acelerar Ritual', () => {
-    const effects = getTrackEffects('conduite', 50, attributes);
+    const effects = getTrackEffects('condutor', 50, attributes);
     const context = createTestContext({ nex: 50 });
     const result = consolidateEffects(effects, context);
 
@@ -511,7 +511,7 @@ describe('Testes de Anular Ritual (custo variável)', () => {
       id: 'anular-ritual',
       name: 'Anular Ritual',
       source: 'track',
-      sourceId: 'conduite',
+      sourceId: 'condutor',
       sourceName: 'Conduíte',
       mechanics: {
         ritualModifiers: [{

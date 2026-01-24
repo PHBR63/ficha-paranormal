@@ -466,7 +466,7 @@ describe('Realtime Sync: Cenário de Sessão Real', () => {
     jogadores.forEach((playerId, i) => {
       initialState.set(playerId, createSyncedState(`char-${i}`, {
         name: `Personagem de ${playerId}`,
-        track: ['guerreiro', 'atirador-de-elite', 'conduite', 'medico-de-campo'][i],
+        track: ['guerreiro', 'atirador-de-elite', 'condutor', 'medico-de-campo'][i],
       }));
     });
 

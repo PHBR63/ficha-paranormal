@@ -115,8 +115,8 @@ export const TRACK_EFFECT_MAPPINGS = {
     }
   },
   // === OCULTISTA ===
-  conduite: {
-    trackId: 'conduite',
+  condutor: {
+    trackId: 'condutor',
     effects: {
       'track-ampliar-ritual': {
         name: 'Ampliar Ritual',

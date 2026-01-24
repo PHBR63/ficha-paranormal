@@ -145,7 +145,7 @@ describe('Cenário de Campanha: Grupo de Investigação', () => {
       name: 'Marcos Vidente',
       class: 'ocultista',
       origin: 'vidente',
-      track: 'conduite',
+      track: 'condutor',
       nex: 50,
       attributes: { strength: 1, agility: 2, vigor: 1, intellect: 3, presence: 3 },
       paranormalPowers: [

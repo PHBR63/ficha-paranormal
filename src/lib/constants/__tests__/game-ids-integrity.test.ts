@@ -256,9 +256,8 @@ describe('Consistência Global - Power Registry', () => {
     }
   });
   
-  // NOTA: Há uma divergência conhecida entre 'condutor' (game-ids.ts) e 'conduite' (power-registry)
-  // Este teste é temporariamente desativado até que a padronização seja concluída
-  it.skip('poderes com trackId devem ter trackId válido', () => {
+  // PADRONIZADO: Todos os IDs agora usam 'condutor' conforme game-ids.ts
+  it('poderes com trackId devem ter trackId válido', () => {
     for (const power of ALL_CLASS_POWERS) {
       if (power.trackId) {
         expect(ALL_TRACK_IDS).toContain(power.trackId);
@@ -266,8 +265,8 @@ describe('Consistência Global - Power Registry', () => {
     }
   });
   
-  // NOTA: Divergência condutor/conduite impede este teste
-  it.skip('poderes de trilha devem ter trackId definido', () => {
+  // PADRONIZADO: Todas as trilhas devem ter poderes cadastrados
+  it('poderes de trilha devem ter trackId definido', () => {
     const trackPowers = ALL_CLASS_POWERS.filter(p => p.trackId);
     
     for (const trackId of ALL_TRACK_IDS) {
@@ -299,9 +298,8 @@ describe('Cobertura de Poderes por Classe', () => {
     expect(trackPowers.length).toBeGreaterThan(0);
   });
   
-  // NOTA: Este teste é desativado temporariamente devido à divergência condutor/conduite
-  // que faz com que a trilha 'condutor' apareça com 0 poderes (estão cadastrados como 'conduite')
-  it.skip('todas as trilhas devem ter ao menos 4 poderes', () => {
+  // PADRONIZADO: Agora todas as trilhas têm ao menos 4 poderes
+  it('todas as trilhas devem ter ao menos 4 poderes', () => {
     for (const trackId of ALL_TRACK_IDS) {
       const powers = ALL_CLASS_POWERS.filter(p => p.trackId === trackId);
       

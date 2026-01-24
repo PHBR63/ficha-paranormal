@@ -107,7 +107,7 @@ const TEST_SCENARIOS: TestScenario[] = [
     config: {
       nex: 65,
       classId: 'ocultista',
-      classTrack: 'conduite',
+      classTrack: 'condutor',
       attributes: { strength: 1, agility: 1, vigor: 2, intellect: 3, presence: 3 },
       classPowers: [],
       inCombat: false,

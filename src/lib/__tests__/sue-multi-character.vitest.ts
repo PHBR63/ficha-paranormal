@@ -174,7 +174,7 @@ describe('Multi-Personagem: Efeitos de Área', () => {
       {
         id: 'char-3',
         name: 'Não Afetado',
-        track: 'conduite',
+        track: 'condutor',
         nex: 50,
         attributes: { strength: 1, agility: 2, vigor: 1, intellect: 3, presence: 3 },
         conditions: [], // Resistiu ao medo

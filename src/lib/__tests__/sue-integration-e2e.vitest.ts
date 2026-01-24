@@ -169,7 +169,7 @@ describe('E2E: Fluxo Completo de Ocultista', () => {
     const originEffects = getOriginEffects('vidente', 'Vidente', attributes.intellect, []);
 
     // 2. Trilha: Conduíte NEX 50%
-    const trackEffects = getTrackEffects('conduite', 50, attributes);
+    const trackEffects = getTrackEffects('condutor', 50, attributes);
 
     // 3. Poderes Paranormais
     const paranormalPowers: SavedParanormalPower[] = [
@@ -195,7 +195,7 @@ describe('E2E: Fluxo Completo de Ocultista', () => {
   });
 
   it('deve calcular bônus de rituais corretamente', () => {
-    const trackEffects = getTrackEffects('conduite', 50, attributes);
+    const trackEffects = getTrackEffects('condutor', 50, attributes);
 
     const context = createContext({ attributes, nex: 50 });
     const result = consolidateEffects(trackEffects, context);
@@ -218,12 +218,12 @@ describe('E2E: Progressão de NEX', () => {
 
   it('deve atualizar efeitos ao progredir de NEX 45% para 50%', () => {
     // NEX 45%: ainda não tem Acelerar Ritual
-    const effectsNex45 = getTrackEffects('conduite', 45, attributes);
+    const effectsNex45 = getTrackEffects('condutor', 45, attributes);
     const contextNex45 = createContext({ attributes, nex: 45 });
     const resultNex45 = consolidateEffects(effectsNex45, contextNex45);
 
     // NEX 50%: tem Acelerar Ritual (NEX 40%)
-    const effectsNex50 = getTrackEffects('conduite', 50, attributes);
+    const effectsNex50 = getTrackEffects('condutor', 50, attributes);
     const contextNex50 = createContext({ attributes, nex: 50 });
     const resultNex50 = consolidateEffects(effectsNex50, contextNex50);
 
