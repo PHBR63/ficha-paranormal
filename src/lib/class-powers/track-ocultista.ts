@@ -21,7 +21,7 @@ export const OCULTISTA_TRACKS: UnifiedTrack[] = [
     // CONDUITE
     // ==========================================================================
     {
-        id: 'conduite',
+        id: 'condutor',
         name: 'Conduíte',
         classId: 'Ocultista',
         description: 'Você funciona como um canal direto para o Outro Lado.',
@@ -30,7 +30,7 @@ export const OCULTISTA_TRACKS: UnifiedTrack[] = [
             {
                 id: 'ampliar-ritual',
                 name: 'Ampliar Ritual',
-                trackId: 'conduite',
+                trackId: 'condutor',
                 minNex: 10,
                 description: 'Você pode gastar 2 PE para aumentar o alcance de um ritual em um passo (curto para médio, médio para longo, longo para extremo) ou dobrar sua área de efeito.',
                 pageReference: 'Livro Base p.55',
@@ -54,7 +54,7 @@ export const OCULTISTA_TRACKS: UnifiedTrack[] = [
             {
                 id: 'acelerar-ritual',
                 name: 'Acelerar Ritual',
-                trackId: 'conduite',
+                trackId: 'condutor',
                 minNex: 40,
                 description: 'Uma vez por rodada, você pode lançar um ritual com tempo de execução de ação padrão como ação livre gastando +4 PE.',
                 pageReference: 'Livro Base p.55',
@@ -78,7 +78,7 @@ export const OCULTISTA_TRACKS: UnifiedTrack[] = [
             {
                 id: 'anular-ritual',
                 name: 'Anular Ritual',
-                trackId: 'conduite',
+                trackId: 'condutor',
                 minNex: 65,
                 description: 'Você pode gastar uma reação e PE para tentar anular um ritual conjurado por outro ser.',
                 pageReference: 'Livro Base p.55',
@@ -104,9 +104,9 @@ export const OCULTISTA_TRACKS: UnifiedTrack[] = [
                 tags: ['reação', 'anular']
             },
             {
-                id: 'conduite-maximo',
+                id: 'condutor-maximo',
                 name: 'Conduíte Máximo',
-                trackId: 'conduite',
+                trackId: 'condutor',
                 minNex: 99,
                 description: 'Quando usa Ampliar Ritual, você não gasta PE e pode aplicar os dois benefícios.',
                 pageReference: 'Livro Base p.55',

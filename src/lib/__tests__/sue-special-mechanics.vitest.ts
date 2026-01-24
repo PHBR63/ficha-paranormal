@@ -226,7 +226,7 @@ describe('categoryReduction no SUE', () => {
 describe('counterSpell no SUE', () => {
   it('deve consolidar uma habilidade de contra-mágica', () => {
     const effects: UnifiedEffect[] = [
-      createCounterSpellEffect('conduite-65', 'ocultismo', 'opposed'),
+      createCounterSpellEffect('condutor-65', 'ocultismo', 'opposed'),
     ];
     
     const context = createTestContext();
@@ -234,7 +234,7 @@ describe('counterSpell no SUE', () => {
     
     expect(result.counterSpellAbilities).toHaveLength(1);
     expect(result.counterSpellAbilities[0]).toEqual({
-      source: 'Trilha: conduite-65',
+      source: 'Trilha: condutor-65',
       costMatchesTarget: true,
       testSkill: 'ocultismo',
       testType: 'opposed',
@@ -243,7 +243,7 @@ describe('counterSpell no SUE', () => {
   
   it('deve consolidar múltiplas habilidades de contra-mágica', () => {
     const effects: UnifiedEffect[] = [
-      createCounterSpellEffect('conduite-65', 'ocultismo', 'opposed'),
+      createCounterSpellEffect('condutor-65', 'ocultismo', 'opposed'),
       createCounterSpellEffect('outro-99', 'vontade', 'fixed'),
     ];
     
@@ -255,7 +255,7 @@ describe('counterSpell no SUE', () => {
   
   it('deve ignorar contra-mágica de efeitos inativos', () => {
     const effects: UnifiedEffect[] = [
-      createCounterSpellEffect('conduite-65', 'ocultismo', 'opposed'),
+      createCounterSpellEffect('condutor-65', 'ocultismo', 'opposed'),
       createCounterSpellEffect('outro-99', 'vontade', 'fixed', { isActive: false }),
     ];
     
@@ -272,7 +272,7 @@ describe('counterSpell no SUE', () => {
         id: 'anular-ritual',
         name: 'Anular Ritual',
         source: 'track',
-        sourceId: 'conduite-anular',
+        sourceId: 'condutor-anular',
         sourceName: 'Conduíte: Anular Ritual',
         mechanics: {
           counterSpell: {
@@ -338,10 +338,10 @@ describe('Integração de mecânicas no SUE', () => {
   it('deve consolidar counterSpell junto com ritualModifiers', () => {
     const effects: UnifiedEffect[] = [
       {
-        id: 'conduite-completo',
+        id: 'condutor-completo',
         name: 'Conduíte',
         source: 'track',
-        sourceId: 'conduite',
+        sourceId: 'condutor',
         sourceName: 'Conduíte',
         mechanics: {
           counterSpell: {

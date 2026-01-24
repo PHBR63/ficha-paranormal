@@ -315,7 +315,7 @@ describe('SUE Fase 2: Ritual Integration', () => {
 describe('SUE Fase 3: Ocultist Track Ritual Modifiers', () => {
   describe('Conduíte', () => {
     it('Ampliar Ritual deve ter ritualModifiers', () => {
-      const effects = getTrackEffects('conduite', 10, createTestAttributes());
+      const effects = getTrackEffects('condutor', 10, createTestAttributes());
 
       const ampliar = effects.find(e => e.sourceId === 'ampliar-ritual');
 
@@ -325,7 +325,7 @@ describe('SUE Fase 3: Ocultist Track Ritual Modifiers', () => {
     });
 
     it('Acelerar Ritual deve ter ritualModifiers com action type', () => {
-      const effects = getTrackEffects('conduite', 40, createTestAttributes());
+      const effects = getTrackEffects('condutor', 40, createTestAttributes());
       const acelerar = effects.find(e => e.sourceId === 'acelerar-ritual');
 
       expect(acelerar).toBeDefined();
@@ -336,7 +336,7 @@ describe('SUE Fase 3: Ocultist Track Ritual Modifiers', () => {
     });
 
     it('Anular Ritual deve ter ritualModifiers com counter type', () => {
-      const effects = getTrackEffects('conduite', 65, createTestAttributes());
+      const effects = getTrackEffects('condutor', 65, createTestAttributes());
       const anular = effects.find(e => e.sourceId === 'anular-ritual');
 
       expect(anular).toBeDefined();
@@ -348,10 +348,10 @@ describe('SUE Fase 3: Ocultist Track Ritual Modifiers', () => {
     });
 
     it('TRACK_EFFECT_MAPPINGS deve ter conduíte registrado', () => {
-      expect(TRACK_EFFECT_MAPPINGS.conduite).toBeDefined();
-      expect(TRACK_EFFECT_MAPPINGS.conduite.effects['track-ampliar-ritual']).toBeDefined();
-      expect(TRACK_EFFECT_MAPPINGS.conduite.effects['track-acelerar-ritual']).toBeDefined();
-      expect(TRACK_EFFECT_MAPPINGS.conduite.effects['track-anular-ritual']).toBeDefined();
+      expect(TRACK_EFFECT_MAPPINGS.condutor).toBeDefined();
+      expect(TRACK_EFFECT_MAPPINGS.condutor.effects['track-ampliar-ritual']).toBeDefined();
+      expect(TRACK_EFFECT_MAPPINGS.condutor.effects['track-acelerar-ritual']).toBeDefined();
+      expect(TRACK_EFFECT_MAPPINGS.condutor.effects['track-anular-ritual']).toBeDefined();
     });
   });
 

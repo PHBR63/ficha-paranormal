@@ -269,8 +269,8 @@ describe('SUE Performance - Cenários Realistas', () => {
       // Origem Acadêmico
       createTestEffect('origin-academico', { skillBonus: { 'investigacao': 5 } }, 'origin'),
       // Trilha Conduíte
-      createTestEffect('track-conduite-1', {}, 'track'),
-      createTestEffect('track-conduite-2', {}, 'track'),
+      createTestEffect('track-condutor-1', {}, 'track'),
+      createTestEffect('track-condutor-2', {}, 'track'),
       // Poderes de Classe (rituais)
       createTestEffect('especialista-energia', {}, 'class_power'),
       createTestEffect('mestre-energia', {}, 'class_power'),

@@ -556,7 +556,7 @@ describe('validateCharacterForm', () => {
       const ocultista = {
         ...validCharacterData,
         characterClass: 'ocultista',
-        classTrack: 'conduite',
+        classTrack: 'condutor',
         attributes: {
           agility: 1,
           strength: 1,
