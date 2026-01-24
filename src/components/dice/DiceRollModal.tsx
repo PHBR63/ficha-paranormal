@@ -60,6 +60,9 @@ interface DiceRollModalProps {
   onPEChange?: (newPE: number) => void;
   // Perícia sendo testada (ID para filtrar poderes aplicáveis como Perito)
   currentSkill?: string;
+  // Conhecimento Aplicado: se ativo, próximo teste usa Intelecto (exceto Luta/Pontaria)
+  conhecimentoAplicadoAtivo?: boolean;
+  onConhecimentoAplicadoUsed?: () => void;
 }
 
 // Componente de dado individual - animação simples sem loop
@@ -120,6 +123,9 @@ export function DiceRollModal({
   agility = 1,    // Valor padrão para Agilidade
   onPEChange,
   currentSkill,
+  // Conhecimento Aplicado
+  conhecimentoAplicadoAtivo = false,
+  onConhecimentoAplicadoUsed,
 }: DiceRollModalProps) {
   // Estados
   const [phase, setPhase] = useState<'idle' | 'rolling' | 'done'>('idle');
@@ -171,14 +177,29 @@ export function DiceRollModal({
     return { extraBonus, extraDice, attributeSwap, notes };
   }, [getActivePowers, nex, intellect]);
 
-  // Calcula quantidade de dados (considera troca de atributo)
+  // Verifica se deve usar Conhecimento Aplicado (ativo externamente, exclui Luta/Pontaria)
+  const shouldUseConhecimentoAplicado = useMemo(() => {
+    if (!conhecimentoAplicadoAtivo) return false;
+    
+    // Verifica se é Luta ou Pontaria pelo label (que pode ser o nome da perícia)
+    const labelLower = label.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const excludedSkills = ['luta', 'pontaria', 'fighting', 'aim', 'shooting'];
+    
+    return !excludedSkills.some(skill => labelLower.includes(skill));
+  }, [conhecimentoAplicadoAtivo, label]);
+
+  // Calcula quantidade de dados (considera troca de atributo OU Conhecimento Aplicado externo)
   const effectiveAttribute = useMemo(() => {
+    // Prioridade 1: Conhecimento Aplicado ativo externamente
+    if (shouldUseConhecimentoAplicado) return intellect;
+    
+    // Prioridade 2: Troca de atributo por poder ativado no modal
     const swap = activatedPowerEffects.attributeSwap;
     if (swap === 'intellect') return intellect;
     if (swap === 'strength') return strength;
     if (swap === 'agility') return agility;
     return attributeValue;
-  }, [activatedPowerEffects.attributeSwap, intellect, strength, agility, attributeValue]);
+  }, [shouldUseConhecimentoAplicado, activatedPowerEffects.attributeSwap, intellect, strength, agility, attributeValue]);
   
   const diceCount = effectiveAttribute <= 0 ? 2 : effectiveAttribute;
 
@@ -200,12 +221,18 @@ export function DiceRollModal({
     const powerBonus = activatedPowerEffects.extraBonus;
     const totalBonus = skillBonus + resistanceBonus + powerBonus;
     
-    // Calcula atributo efetivo (considera troca para qualquer atributo)
-    const swap = activatedPowerEffects.attributeSwap;
+    // Calcula atributo efetivo (Conhecimento Aplicado OU troca por poder ativado)
     let finalAttribute = attributeValue;
-    if (swap === 'intellect') finalAttribute = intellect;
-    else if (swap === 'strength') finalAttribute = strength;
-    else if (swap === 'agility') finalAttribute = agility;
+    const usedConhecimentoAplicado = shouldUseConhecimentoAplicado;
+    
+    if (usedConhecimentoAplicado) {
+      finalAttribute = intellect;
+    } else {
+      const swap = activatedPowerEffects.attributeSwap;
+      if (swap === 'intellect') finalAttribute = intellect;
+      else if (swap === 'strength') finalAttribute = strength;
+      else if (swap === 'agility') finalAttribute = agility;
+    }
     
     const finalDiceCount = finalAttribute <= 0 ? 2 : finalAttribute;
     
@@ -255,6 +282,11 @@ export function DiceRollModal({
         
         // Callback
         onRollComplete?.(rollResult);
+        
+        // Consome Conhecimento Aplicado se foi usado
+        if (usedConhecimentoAplicado && onConhecimentoAplicadoUsed) {
+          onConhecimentoAplicadoUsed();
+        }
       }
     }, 100);
   }, [
@@ -262,12 +294,16 @@ export function DiceRollModal({
     resistanceBonus, 
     attributeValue, 
     intellect,
+    strength,
+    agility,
     label, 
     onRollComplete, 
     activatedPowerEffects, 
     getTotalPECost, 
     onPEChange, 
-    peCurrent
+    peCurrent,
+    shouldUseConhecimentoAplicado,
+    onConhecimentoAplicadoUsed,
   ]);
 
   // Efeito para auto-rolar quando abre
