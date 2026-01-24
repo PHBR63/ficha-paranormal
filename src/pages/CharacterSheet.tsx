@@ -2483,6 +2483,8 @@ export default function CharacterSheet() {
                   await handleCombatStatsChange({ hp: hpCurrent, pe: newPE, san: sanCurrent });
                 }}
                 onTrackPESpent={roundTracking.trackPESpent}
+                onToggleConditionalBonus={handleToggleConditionalBonus}
+                activeConditionalBonuses={character.active_conditional_bonuses || []}
               />
 
               {/* ====================================================== */}

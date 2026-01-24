@@ -76,6 +76,7 @@ export function MobileClassPowersPanel(props: MobileClassPowersPanelProps) {
     resetScene,
     totalPowers,
     usedCount,
+    isBonusActive,
   } = useActivatableClassPowers(props);
 
   // Não renderiza se não houver poderes
@@ -100,6 +101,7 @@ export function MobileClassPowersPanel(props: MobileClassPowersPanelProps) {
               usageState={usageStates[power.id]}
               currentCost={getCurrentCost(power.id)}
               canAfford={canAfford(power.id)}
+              isBonusActive={isBonusActive(power.id)}
               onUse={() => usePower(power.id)}
             />
           ))}
@@ -149,10 +151,11 @@ interface MobilePowerCardProps {
   usageState?: { usageCount: number; isUsed: boolean };
   currentCost: number;
   canAfford: boolean;
+  isBonusActive: boolean;
   onUse: () => void;
 }
 
-function MobilePowerCard({ power, usageState, currentCost, canAfford, onUse }: MobilePowerCardProps) {
+function MobilePowerCard({ power, usageState, currentCost, canAfford, isBonusActive, onUse }: MobilePowerCardProps) {
   const state = usageState || { usageCount: 0, isUsed: false };
   const isUsed = power.limit !== 'none' && state.isUsed;
   const notAffordable = !canAfford && !isUsed;
@@ -198,6 +201,13 @@ function MobilePowerCard({ power, usageState, currentCost, canAfford, onUse }: M
           <Badge variant="secondary" className="text-[9px]">
             {LIMIT_LABELS[power.limit]}
           </Badge>
+
+          {/* Indicador de bônus ativo */}
+          {power.conditionalBonusId && isBonusActive && (
+            <Badge variant="default" className="text-[9px] bg-green-600">
+              ATIVO
+            </Badge>
+          )}
         </div>
 
         <p className="text-[10px] text-muted-foreground line-clamp-1">{power.shortEffect}</p>

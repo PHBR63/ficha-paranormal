@@ -1824,6 +1824,8 @@ export function MobileCharacterSheet({
               classPowers={character.powers as unknown[] || []}
               abilities={(Array.isArray(character.abilities) ? {} : character.abilities) as Record<string, unknown> || {}}
               onPEChange={handlePEChange}
+              onToggleConditionalBonus={handleToggleConditionalBonus}
+              activeConditionalBonuses={character.active_conditional_bonuses || []}
             />
             
             {/* Seletor de Afinidade Elemental - só aparece após usar Transcender em NEX 50+ */}
