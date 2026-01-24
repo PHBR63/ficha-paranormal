@@ -2433,6 +2433,8 @@ export function MobileCharacterSheet({
         peCurrent={localPeCurrent}
         nex={character.nex}
         intellect={character.intellect}
+        strength={character.strength}
+        agility={character.agility}
         currentSkill={rollTestedAttribute}
         onPEChange={(newPE) => handleCombatStatsChange({ 
           hp: localHpCurrent, 

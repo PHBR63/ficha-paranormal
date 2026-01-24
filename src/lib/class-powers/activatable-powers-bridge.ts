@@ -302,19 +302,65 @@ export function getActivatablePowersForCharacter(
     });
   }
   
-  // Incansável
+  // Incansável (duas opções: Força ou Agilidade)
+  // Permite usar For ou Agi como atributo-base e dá +5 no teste (1x/cena)
   if (hasPowerOrAbility(powers, abilities, 'incansavel', 'Incansável')) {
+    // Opção 1: Usar Força
     activatable.push({
-      id: 'incansavel',
-      name: 'Incansável',
-      description: 'Ação de investigação adicional usando For ou Agi. +5 no teste.',
+      id: 'incansavel-forca',
+      name: 'Incansável (Força)',
+      description: 'Usa Força como atributo-base. +5 no teste de investigação. 1x/cena.',
       peCost: 2,
-      effect: '+5 (1x/cena)',
+      effect: '+5, usar FOR',
       icon: 'search',
-      effectType: 'skill_bonus',
+      effectType: 'attribute_swap',
+      newAttribute: 'strength',
       skillBonus: 5,
-      // Perícias de investigação física
       applicableSkills: ['atletismo', 'acrobacia', 'furtividade', 'percepcao', 'sobrevivencia'],
+    });
+    
+    // Opção 2: Usar Agilidade
+    activatable.push({
+      id: 'incansavel-agilidade',
+      name: 'Incansável (Agilidade)',
+      description: 'Usa Agilidade como atributo-base. +5 no teste de investigação. 1x/cena.',
+      peCost: 2,
+      effect: '+5, usar AGI',
+      icon: 'search',
+      effectType: 'attribute_swap',
+      newAttribute: 'agility',
+      skillBonus: 5,
+      applicableSkills: ['atletismo', 'acrobacia', 'furtividade', 'percepcao', 'sobrevivencia'],
+    });
+  }
+  
+  // Presteza Atlética (duas opções: Força ou Agilidade)
+  // Permite usar For ou Agi ao facilitar investigação; aliado ganha +1d20
+  if (hasPowerOrAbility(powers, abilities, 'presteza-atletica', 'Presteza Atlética')) {
+    // Opção 1: Usar Força
+    activatable.push({
+      id: 'presteza-atletica-forca',
+      name: 'Presteza Atlética (Força)',
+      description: 'Usa Força ao facilitar investigação. Se passar, aliado ganha +1d20.',
+      peCost: 1,
+      effect: 'FOR + aliado +1d20',
+      icon: 'search',
+      effectType: 'attribute_swap',
+      newAttribute: 'strength',
+      applicableSkills: ['atletismo', 'acrobacia', 'furtividade', 'percepcao', 'sobrevivencia', 'investigacao'],
+    });
+    
+    // Opção 2: Usar Agilidade
+    activatable.push({
+      id: 'presteza-atletica-agilidade',
+      name: 'Presteza Atlética (Agilidade)',
+      description: 'Usa Agilidade ao facilitar investigação. Se passar, aliado ganha +1d20.',
+      peCost: 1,
+      effect: 'AGI + aliado +1d20',
+      icon: 'search',
+      effectType: 'attribute_swap',
+      newAttribute: 'agility',
+      applicableSkills: ['atletismo', 'acrobacia', 'furtividade', 'percepcao', 'sobrevivencia', 'investigacao'],
     });
   }
   
@@ -603,9 +649,32 @@ export function calculatePowerActivationEffects(
     }
     
     case 'incansavel':
+    case 'incansavel-forca':
       return {
         skillBonusChange: 5,
-        specialNote: 'Ação de investigação com For ou Agi',
+        attributeSwap: 'strength',
+        specialNote: 'Usa Força como atributo-base. +5 no teste. 1x/cena.',
+      };
+      
+    case 'incansavel-agilidade':
+      return {
+        skillBonusChange: 5,
+        attributeSwap: 'agility',
+        specialNote: 'Usa Agilidade como atributo-base. +5 no teste. 1x/cena.',
+      };
+    
+    case 'presteza-atletica-forca':
+      return {
+        skillBonusChange: 0,
+        attributeSwap: 'strength',
+        specialNote: 'Usa Força. Se passar, próximo aliado ganha +1d20.',
+      };
+    
+    case 'presteza-atletica-agilidade':
+      return {
+        skillBonusChange: 0,
+        attributeSwap: 'agility',
+        specialNote: 'Usa Agilidade. Se passar, próximo aliado ganha +1d20.',
       };
     
     case 'sentido-tatico':

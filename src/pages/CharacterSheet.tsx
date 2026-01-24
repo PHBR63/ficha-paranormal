@@ -3616,6 +3616,9 @@ export default function CharacterSheet() {
         peCurrent={peCurrent}
         nex={character.nex}
         intellect={character.intellect}
+        strength={character.strength}
+        agility={character.agility}
+        currentSkill={rollTestedAttribute}
         onPEChange={(newPE) => handleCombatStatsChange({ hp: hpCurrent, pe: newPE, san: sanCurrent })}
       />
 

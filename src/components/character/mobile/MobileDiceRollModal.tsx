@@ -60,6 +60,8 @@ interface MobileDiceRollModalProps {
   peCurrent?: number;
   nex?: number;
   intellect?: number;
+  strength?: number;   // Força para Incansável/Presteza Atlética
+  agility?: number;    // Agilidade para Incansável/Presteza Atlética
   onPEChange?: (newPE: number) => void;
   // Perícia sendo testada (ID para filtrar poderes aplicáveis como Perito)
   currentSkill?: string;
@@ -112,6 +114,8 @@ export function MobileDiceRollModal({
   peCurrent = 0,
   nex = 5,
   intellect = 1,
+  strength = 1,   // Valor padrão para Força
+  agility = 1,    // Valor padrão para Agilidade
   onPEChange,
   currentSkill,
 }: MobileDiceRollModalProps) {
@@ -164,8 +168,16 @@ export function MobileDiceRollModal({
     other: 'bg-secondary/50 text-secondary-foreground',
   };
 
-  // Calcula quantidade de dados
-  const diceCount = attributeValue <= 0 ? 2 : attributeValue;
+  // Calcula quantidade de dados (considera troca de atributo)
+  const effectiveAttribute = useMemo(() => {
+    const swap = activatedPowerEffects.attributeSwap;
+    if (swap === 'intellect') return intellect;
+    if (swap === 'strength') return strength;
+    if (swap === 'agility') return agility;
+    return attributeValue;
+  }, [activatedPowerEffects.attributeSwap, intellect, strength, agility, attributeValue]);
+  
+  const diceCount = effectiveAttribute <= 0 ? 2 : effectiveAttribute;
 
   // Função para executar a rolagem
   const executeRoll = useCallback(() => {
@@ -196,11 +208,19 @@ export function MobileDiceRollModal({
           animationRef.current = null;
         }
         
-        // Rolagem real com bônus de poderes ativados
+        // Rolagem real com bônus de poderes ativados e troca de atributo
         const powerBonus = activatedPowerEffects.extraBonus;
         const totalBonus = skillBonus + resistanceBonus + powerBonus;
+        
+        // Calcula atributo efetivo (considera troca para qualquer atributo)
+        const swap = activatedPowerEffects.attributeSwap;
+        let finalAttribute = attributeValue;
+        if (swap === 'intellect') finalAttribute = intellect;
+        else if (swap === 'strength') finalAttribute = strength;
+        else if (swap === 'agility') finalAttribute = agility;
+        
         const rollResult = rollSkillTest({
-          attributeValue,
+          attributeValue: finalAttribute,
           skillBonus: totalBonus,
           extraDice,  // Passa dados extras do Discurso Motivador
           label,
