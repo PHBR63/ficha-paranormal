@@ -180,7 +180,7 @@ export const ACTIVATABLE_COMBATENTE_POWERS: ActivatableClassPower[] = [
     minNex: 15,
     icon: 'shield',
     pageRef: 'Livro Base p.47',
-    conditionalBonusId: 'sentido-tatico', // Ativa bônus de +INT Defesa/Resistências
+    conditionalBonusId: 'sentido-tatico',
   },
   {
     id: 'tiro-de-cobertura',
@@ -205,7 +205,7 @@ export const ACTIVATABLE_COMBATENTE_POWERS: ActivatableClassPower[] = [
     minNex: 15,
     icon: 'shield',
     pageRef: 'Livro Base p.46',
-    conditionalBonusId: 'combate-defensivo', // Ativa bônus de -2 ataque, +5 Defesa
+    conditionalBonusId: 'combate-defensivo',
   },
   {
     id: 'combater-duas-armas',
@@ -217,8 +217,55 @@ export const ACTIVATABLE_COMBATENTE_POWERS: ActivatableClassPower[] = [
     minNex: 15,
     icon: 'swords',
     pageRef: 'Livro Base p.46',
-    conditionalBonusId: 'combater-duas-armas', // Ativa penalidade de -2 ataque
+    conditionalBonusId: 'combater-duas-armas',
   },
+];
+
+// =====================================================
+// Catálogo de Poderes Ativáveis do Especialista
+// =====================================================
+
+export const ACTIVATABLE_ESPECIALISTA_POWERS: ActivatableClassPower[] = [
+  {
+    id: 'conhecimento-aplicado',
+    name: 'Conhecimento Aplicado',
+    shortEffect: 'Próximo teste de perícia usa Intelecto',
+    description: 'Quando faz um teste de perícia (exceto Luta e Pontaria), você pode gastar 2 PE para mudar o atributo-base da perícia para Intelecto.',
+    basePECost: 2,
+    limit: 'none', // Pode usar várias vezes (cada uso afeta apenas o próximo teste)
+    minNex: 15,
+    icon: 'zap',
+    pageRef: 'Livro Base p.50',
+    conditionalBonusId: 'conhecimento-aplicado-ativo', // Marca estado "ativo para próximo teste"
+  },
+  {
+    id: 'nerd',
+    name: 'Nerd',
+    shortEffect: 'Teste de Atualidades (DT 20) para info extra',
+    description: 'Uma vez por cena, pode gastar 2 PE para fazer um teste de Atualidades (DT 20). Se passar: pista extra, fraqueza do inimigo ou informação relevante.',
+    basePECost: 2,
+    limit: 'perScene',
+    minNex: 15,
+    icon: 'search',
+    pageRef: 'Livro Base p.50',
+  },
+  {
+    id: 'maos-rapidas',
+    name: 'Mãos Rápidas',
+    shortEffect: 'Teste de Crime como ação livre',
+    description: 'Ao fazer um teste de Crime, você pode pagar 1 PE para fazê-lo como uma ação livre.',
+    basePECost: 1,
+    limit: 'none',
+    minNex: 15,
+    icon: 'zap',
+    pageRef: 'Livro Base p.50',
+  },
+];
+
+// Array combinado para o hook poder usar todos os poderes
+export const ALL_ACTIVATABLE_POWERS: ActivatableClassPower[] = [
+  ...ACTIVATABLE_COMBATENTE_POWERS,
+  ...ACTIVATABLE_ESPECIALISTA_POWERS,
 ];
 
 // =====================================================
@@ -287,9 +334,9 @@ export function useActivatableClassPowers(
   // Estado de uso de cada poder
   const [usageStates, setUsageStates] = useState<Record<string, PowerUsageState>>({});
 
-  // Filtra poderes disponíveis para o personagem
+  // Filtra poderes disponíveis para o personagem (Combatente + Especialista)
   const availablePowers = useMemo(() => {
-    return ACTIVATABLE_COMBATENTE_POWERS.filter((power) => {
+    return ALL_ACTIVATABLE_POWERS.filter((power) => {
       // Verifica NEX mínimo
       if (nex < power.minNex) return false;
       // Verifica se possui o poder
@@ -299,7 +346,7 @@ export function useActivatableClassPowers(
 
   // Calcula o custo atual de um poder
   const getCurrentCost = useCallback((powerId: string): number => {
-    const power = ACTIVATABLE_COMBATENTE_POWERS.find((p) => p.id === powerId);
+    const power = ALL_ACTIVATABLE_POWERS.find((p) => p.id === powerId);
     if (!power) return 0;
 
     const state = usageStates[powerId] || { usageCount: 0, isUsed: false };
@@ -316,7 +363,7 @@ export function useActivatableClassPowers(
 
   // Verifica se pode pagar
   const canAfford = useCallback((powerId: string): boolean => {
-    const power = ACTIVATABLE_COMBATENTE_POWERS.find((p) => p.id === powerId);
+    const power = ALL_ACTIVATABLE_POWERS.find((p) => p.id === powerId);
     if (!power) return false;
 
     const state = usageStates[powerId] || { usageCount: 0, isUsed: false };
@@ -334,7 +381,7 @@ export function useActivatableClassPowers(
 
   // Usa um poder
   const usePower = useCallback((powerId: string): boolean => {
-    const power = ACTIVATABLE_COMBATENTE_POWERS.find((p) => p.id === powerId);
+    const power = ALL_ACTIVATABLE_POWERS.find((p) => p.id === powerId);
     if (!power) {
       toast.error('Poder não encontrado');
       return false;
@@ -370,9 +417,16 @@ export function useActivatableClassPowers(
       },
     }));
 
-    toast.success(`${power.name} ativado!`, {
-      description: cost > 0 ? `${cost} PE gastos` : 'Sem custo de PE',
-    });
+    // Mensagem específica para Conhecimento Aplicado
+    if (powerId === 'conhecimento-aplicado') {
+      toast.success(`${power.name} ativado!`, {
+        description: `${cost} PE gastos. O PRÓXIMO teste de perícia usará Intelecto.`,
+      });
+    } else {
+      toast.success(`${power.name} ativado!`, {
+        description: cost > 0 ? `${cost} PE gastos` : 'Sem custo de PE',
+      });
+    }
 
     return true;
   }, [canAfford, getCurrentCost, usageStates, peCurrent, onPEChange, onTrackPESpent, onToggleConditionalBonus]);
@@ -380,7 +434,7 @@ export function useActivatableClassPowers(
   // Reset por turno (limpa Segurar o Gatilho)
   const resetTurn = useCallback(() => {
     // Desativa bônus condicionais de poderes perTurn
-    ACTIVATABLE_COMBATENTE_POWERS.forEach((power) => {
+    ALL_ACTIVATABLE_POWERS.forEach((power) => {
       if (power.limit === 'perTurn' && power.conditionalBonusId && onToggleConditionalBonus) {
         onToggleConditionalBonus(power.conditionalBonusId, false);
       }
@@ -389,7 +443,7 @@ export function useActivatableClassPowers(
     setUsageStates((prev) => {
       const next = { ...prev };
       Object.keys(next).forEach((id) => {
-        const power = ACTIVATABLE_COMBATENTE_POWERS.find((p) => p.id === id);
+        const power = ALL_ACTIVATABLE_POWERS.find((p) => p.id === id);
         if (power?.limit === 'perTurn') {
           next[id] = { usageCount: 0, isUsed: false };
         }
@@ -401,7 +455,7 @@ export function useActivatableClassPowers(
   // Reset por rodada
   const resetRound = useCallback(() => {
     // Desativa bônus condicionais de poderes perRound e perTurn
-    ACTIVATABLE_COMBATENTE_POWERS.forEach((power) => {
+    ALL_ACTIVATABLE_POWERS.forEach((power) => {
       if ((power.limit === 'perRound' || power.limit === 'perTurn') && 
           power.conditionalBonusId && onToggleConditionalBonus) {
         onToggleConditionalBonus(power.conditionalBonusId, false);
@@ -411,7 +465,7 @@ export function useActivatableClassPowers(
     setUsageStates((prev) => {
       const next = { ...prev };
       Object.keys(next).forEach((id) => {
-        const power = ACTIVATABLE_COMBATENTE_POWERS.find((p) => p.id === id);
+        const power = ALL_ACTIVATABLE_POWERS.find((p) => p.id === id);
         if (power?.limit === 'perRound' || power?.limit === 'perTurn') {
           next[id] = { usageCount: 0, isUsed: false };
         }
@@ -423,7 +477,7 @@ export function useActivatableClassPowers(
   // Reset por cena
   const resetScene = useCallback(() => {
     // Desativa TODOS os bônus condicionais de poderes ativáveis
-    ACTIVATABLE_COMBATENTE_POWERS.forEach((power) => {
+    ALL_ACTIVATABLE_POWERS.forEach((power) => {
       if (power.conditionalBonusId && onToggleConditionalBonus) {
         onToggleConditionalBonus(power.conditionalBonusId, false);
       }
@@ -434,7 +488,7 @@ export function useActivatableClassPowers(
 
   // Verifica se um bônus condicional de poder está ativo
   const isBonusActive = useCallback((powerId: string): boolean => {
-    const power = ACTIVATABLE_COMBATENTE_POWERS.find((p) => p.id === powerId);
+    const power = ALL_ACTIVATABLE_POWERS.find((p) => p.id === powerId);
     if (!power?.conditionalBonusId) return false;
     return activeConditionalBonuses.includes(power.conditionalBonusId);
   }, [activeConditionalBonuses]);
