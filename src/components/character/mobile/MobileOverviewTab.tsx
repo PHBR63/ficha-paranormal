@@ -18,8 +18,11 @@ import {
   ArrowUp,
   Sparkles,
   Edit2,
+  Weight,
+  AlertTriangle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
 import { AnimatedProgress } from '@/components/ui/animated-progress';
 import {
   Tooltip,
@@ -69,6 +72,13 @@ interface MobileOverviewTabProps {
   bonusSummary: any; // Tipo completo do BonusSummary
   totalDefense: number;
   armorSpeedPenalty?: number; // Penalidade de deslocamento da armadura
+  /** Status de carga do inventário */
+  loadStatus?: {
+    currentLoad: number;
+    maxCapacity: number;
+    isOverloaded: boolean;
+    hasInventarioOtimizado?: boolean;
+  };
   defenseBonuses: any;
   equippedWeapons: WeaponEntry[];
   weaponBuffs: any[];
@@ -125,6 +135,7 @@ export const MobileOverviewTab = memo(function MobileOverviewTab({
   bonusSummary,
   totalDefense,
   armorSpeedPenalty = 0,
+  loadStatus,
   defenseBonuses,
   equippedWeapons,
   weaponBuffs,
@@ -438,6 +449,63 @@ export const MobileOverviewTab = memo(function MobileOverviewTab({
             <Zap className="w-3 h-3 text-pe" />
             <span>{peLimit} PE/turno</span>
           </div>
+          {/* Indicador de Carga do Inventário */}
+          {loadStatus && (
+            <TooltipProvider delayDuration={200}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className={cn(
+                    "flex items-center gap-1 cursor-help",
+                    loadStatus.isOverloaded && "text-destructive"
+                  )}>
+                    <Weight className="w-3 h-3" />
+                    <span className={cn(
+                      loadStatus.isOverloaded && "font-medium"
+                    )}>
+                      {loadStatus.currentLoad}/{loadStatus.maxCapacity}
+                    </span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="max-w-xs">
+                  <div className="space-y-2 text-xs">
+                    <p className="font-medium flex justify-between">
+                      <span>Carga</span>
+                      <span className={cn(
+                        loadStatus.isOverloaded && "text-destructive"
+                      )}>
+                        {loadStatus.currentLoad}/{loadStatus.maxCapacity} espaços
+                      </span>
+                    </p>
+                    <Progress 
+                      value={Math.min((loadStatus.currentLoad / loadStatus.maxCapacity) * 100, 100)} 
+                      className={cn(
+                        "h-1.5",
+                        loadStatus.isOverloaded && "bg-destructive/20"
+                      )}
+                    />
+                    <div className="space-y-0.5 pt-1 border-t border-border/50">
+                      <p className="text-muted-foreground flex justify-between">
+                        <span>Capacidade (FOR × 5)</span>
+                        <span>{loadStatus.maxCapacity}</span>
+                      </p>
+                      {loadStatus.hasInventarioOtimizado && (
+                        <p className="text-primary flex justify-between">
+                          <span>Inventário Otimizado</span>
+                          <span>+INT × 5</span>
+                        </p>
+                      )}
+                    </div>
+                    {loadStatus.isOverloaded && (
+                      <div className="flex items-center gap-1.5 text-destructive pt-1 border-t border-destructive/30">
+                        <AlertTriangle className="w-3 h-3" />
+                        <span>Sobrecarregado! -5 FOR/AGI/VIG, -3m deslocamento</span>
+                      </div>
+                    )}
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
         </div>
       </div>
 

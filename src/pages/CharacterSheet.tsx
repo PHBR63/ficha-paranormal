@@ -1953,6 +1953,19 @@ export default function CharacterSheet() {
     };
   }, [character?.inventory]);
 
+  // Calcula status de carga do inventário para o header
+  const inventoryLoadStatus = useMemo(() => {
+    if (!character) return undefined;
+    const currentLoad = (character.inventory || []).reduce((sum, item) => sum + (item.slots || 1) * (item.quantity || 1), 0);
+    const maxCapacity = Math.max(2, character.strength * 5);
+    return {
+      currentLoad,
+      maxCapacity,
+      isOverloaded: currentLoad > maxCapacity,
+      hasInventarioOtimizado: false, // TODO: Detectar via abilities
+    };
+  }, [character?.inventory, character?.strength]);
+
   // Bônus total de defesa combinando todas as fontes (defenseBonuses já está definido acima)
   // Inclui: poderes paranormais + bônus de origem/habilidades + bônus de armadura + bônus de escudo
   const totalDefenseBonus = paranormalEffects.defenseBonus + defenseBonuses.totalBonus + armorStats.armorDefenseBonus + armorStats.shieldDefenseBonus;
@@ -2404,6 +2417,7 @@ export default function CharacterSheet() {
                 armorPenalty={armorStats.totalAgilityPenalty}
                 armorSpeedPenalty={armorStats.totalSpeedPenalty}
                 equippedArmors={armorStats.equippedArmors}
+                loadStatus={inventoryLoadStatus}
                 activeBonusCount={activeBonusCount}
                 activeBonusSources={activeBonusSources}
                 bonusSummary={bonusSummary}

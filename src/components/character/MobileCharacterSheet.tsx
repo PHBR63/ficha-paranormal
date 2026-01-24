@@ -702,6 +702,18 @@ export function MobileCharacterSheet({
     return equippedArmors.reduce((sum, armor) => sum + (armor.speedPenalty || 0), 0);
   }, [character.inventory]);
 
+  // Calcula status de carga do inventário para exibição na overview
+  const inventoryLoadStatus = useMemo(() => {
+    const currentLoad = (character.inventory || []).reduce((sum, item) => sum + (item.slots || 1) * (item.quantity || 1), 0);
+    const maxCapacity = Math.max(2, character.strength * 5);
+    return {
+      currentLoad,
+      maxCapacity,
+      isOverloaded: currentLoad > maxCapacity,
+      hasInventarioOtimizado: false,
+    };
+  }, [character.inventory, character.strength]);
+
   // Handler para abrir modal de detalhes do poder
   const handlePowerClick = useCallback((power: PowerDetailData) => {
     setSelectedPower(power);
@@ -1803,6 +1815,7 @@ export function MobileCharacterSheet({
               bonusSummary={bonusSummary}
               totalDefense={totalDefense}
               armorSpeedPenalty={armorSpeedPenalty}
+              loadStatus={inventoryLoadStatus}
               defenseBonuses={defenseBonuses}
               equippedWeapons={equippedWeapons}
               weaponBuffs={weaponBuffs}

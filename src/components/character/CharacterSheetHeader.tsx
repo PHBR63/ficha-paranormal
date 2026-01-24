@@ -6,7 +6,7 @@
 
 import { useState, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, Heart, Zap, Star, Edit2, Check, X, Award, Crown, Gem, Sparkles, Droplet, Skull, BookOpen, Sword, Dices } from 'lucide-react';
+import { Shield, Heart, Zap, Star, Edit2, Check, X, Award, Crown, Gem, Sparkles, Droplet, Skull, BookOpen, Sword, Dices, Weight, AlertTriangle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -118,6 +118,13 @@ interface CharacterSheetHeaderProps {
   armorPenalty?: number;
   armorSpeedPenalty?: number; // Penalidade de deslocamento da armadura
   equippedArmors?: Array<{ name: string; rd: number }>;
+  /** Status de carga do inventário */
+  loadStatus?: {
+    currentLoad: number;
+    maxCapacity: number;
+    isOverloaded: boolean;
+    hasInventarioOtimizado?: boolean;
+  };
   // Indicador de bônus ativos
   activeBonusCount?: number;
   activeBonusSources?: string[];
@@ -162,6 +169,7 @@ export const CharacterSheetHeader = memo(function CharacterSheetHeader({
   armorPenalty = 0,
   armorSpeedPenalty = 0,
   equippedArmors = [],
+  loadStatus,
   activeBonusCount = 0,
   activeBonusSources = [],
   bonusSummary,
@@ -1101,6 +1109,61 @@ export const CharacterSheetHeader = memo(function CharacterSheetHeader({
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
+          {/* Indicador de Carga do Inventário */}
+          {loadStatus && (
+            <TooltipProvider delayDuration={200}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className={cn(
+                    "flex items-baseline gap-1 whitespace-nowrap cursor-help",
+                    loadStatus.isOverloaded && "text-destructive"
+                  )}>
+                    <Weight className={cn("w-4 h-4", loadStatus.isOverloaded ? "text-destructive" : "text-muted-foreground")} />
+                    <span className={cn("font-display text-lg", loadStatus.isOverloaded && "font-bold")}>
+                      {loadStatus.currentLoad}/{loadStatus.maxCapacity}
+                    </span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="max-w-xs">
+                  <div className="space-y-2 text-xs">
+                    <p className="font-medium flex justify-between gap-4">
+                      <span>Carga do Inventário</span>
+                      <span className={cn(loadStatus.isOverloaded && "text-destructive")}>
+                        {loadStatus.currentLoad}/{loadStatus.maxCapacity} espaços
+                      </span>
+                    </p>
+                    <div className="w-full bg-muted rounded-full h-1.5 overflow-hidden">
+                      <div 
+                        className={cn(
+                          "h-full rounded-full transition-all",
+                          loadStatus.isOverloaded ? "bg-destructive" : "bg-primary"
+                        )}
+                        style={{ width: `${Math.min((loadStatus.currentLoad / loadStatus.maxCapacity) * 100, 100)}%` }}
+                      />
+                    </div>
+                    <div className="space-y-0.5 pt-1 border-t border-border/50">
+                      <p className="text-muted-foreground flex justify-between">
+                        <span>Capacidade (FOR × 5)</span>
+                        <span>{loadStatus.maxCapacity}</span>
+                      </p>
+                      {loadStatus.hasInventarioOtimizado && (
+                        <p className="text-primary flex justify-between">
+                          <span>Inventário Otimizado</span>
+                          <span>+INT × 5</span>
+                        </p>
+                      )}
+                    </div>
+                    {loadStatus.isOverloaded && (
+                      <div className="flex items-center gap-1.5 text-destructive pt-1 border-t border-destructive/30">
+                        <AlertTriangle className="w-3 h-3" />
+                        <span>Sobrecarregado! -5 FOR/AGI/VIG, -3m deslocamento</span>
+                      </div>
+                    )}
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
         </div>
       </div>
 
