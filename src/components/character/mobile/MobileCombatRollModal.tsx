@@ -1122,7 +1122,15 @@ export function MobileCombatRollModal({
       // SUE
       if (unifiedEffects) {
         damageBonus += unifiedEffects.damage.general;
-        damageBonus += isMelee ? unifiedEffects.damage.melee : unifiedEffects.damage.ranged;
+        if (isMelee) {
+          damageBonus += unifiedEffects.damage.melee;
+        } else {
+          damageBonus += unifiedEffects.damage.ranged;
+          // Bônus específico de armas de fogo (Balística Avançada)
+          if (isFirearm && unifiedEffects.damage.firearm) {
+            damageBonus += unifiedEffects.damage.firearm;
+          }
+        }
       }
       
       // Trilha

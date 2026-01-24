@@ -59,6 +59,7 @@ export interface EffectMechanics {
   damageBonus?: number;           // Bônus em rolagens de dano
   meleeDamageBonus?: number;      // Bônus dano corpo a corpo
   rangedDamageBonus?: number;     // Bônus dano distância
+  firearmDamageBonus?: number;    // Bônus dano armas de fogo (Balística Avançada)
   extraDamageDice?: string;       // Dados extras de dano (ex: "1d6")
   criticalDamageBonus?: number;   // Bônus dano crítico
 
@@ -634,6 +635,7 @@ export interface ComputedEffects {
     general: number;
     melee: number;
     ranged: number;
+    firearm: number;              // Bônus específico para armas de fogo (Balística Avançada)
     extraDice: string[];
     breakdown: Array<{ source: string; value: number | string; conditional?: string }>;
   };
@@ -1283,7 +1285,7 @@ export function consolidateEffects(
 ): ComputedEffects {
   const result: ComputedEffects = {
     attack: { general: 0, melee: 0, ranged: 0, breakdown: [] },
-    damage: { general: 0, melee: 0, ranged: 0, extraDice: [], breakdown: [] },
+    damage: { general: 0, melee: 0, ranged: 0, firearm: 0, extraDice: [], breakdown: [] },
     critical: { marginBonus: 0, multiplierBonus: 0, breakdown: [] },
     defense: { general: 0, vsMelee: 0, vsRanged: 0, breakdown: [] },
     resistances: { fortitude: 0, reflexos: 0, vontade: 0, breakdown: [] },
@@ -1551,6 +1553,10 @@ export function consolidateEffects(
     if (m.rangedDamageBonus) {
       result.damage.ranged += m.rangedDamageBonus;
       result.damage.breakdown.push({ source, value: m.rangedDamageBonus, conditional: 'distância' });
+    }
+    if (m.firearmDamageBonus) {
+      result.damage.firearm += m.firearmDamageBonus;
+      result.damage.breakdown.push({ source, value: m.firearmDamageBonus, conditional: 'armas de fogo' });
     }
     if (m.extraDamageDice) {
       result.damage.extraDice.push(m.extraDamageDice);
