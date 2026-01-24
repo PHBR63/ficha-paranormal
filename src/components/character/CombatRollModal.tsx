@@ -156,6 +156,9 @@ interface CombatRollModalProps {
   // Condições ativas do personagem (para exibir penalidades de condição)
   activeConditions?: string[];
   
+  // NOVO: Bônus condicionais ativos (Combate Defensivo, Sentido Tático, etc.)
+  activeConditionalBonuses?: string[];
+  
   // Buffs de arma ativos (Amaldiçoar Arma, etc.)
   weaponBuffs?: WeaponBuff[];
   
@@ -233,6 +236,7 @@ export function CombatRollModal({
   advancedBonuses = {},
   weaponBuffs = [], // Buffs de arma ativos
   activeConditions = [], // Condições ativas para exibição
+  activeConditionalBonuses = [], // Bônus condicionais ativos (Combate Defensivo, etc.)
   activatedTrackEffects = [], // Efeitos de trilha ativados
   characterOrigin, // ID da origem do personagem
   originBoundWeaponId, // Arma vinculada pela origem (Operário)
@@ -468,17 +472,26 @@ export function CombatRollModal({
     }
 
     // Combate Defensivo (Combatente) - Penalidade de -2 no ataque, +5 Defesa
+    // IMPORTANTE: Se ativo via activeConditionalBonuses, é aplicado automaticamente (não selecionável)
+    // Se NÃO ativo, aparece como opção selecionável
+    const isCombateDefensivoActive = activeConditionalBonuses.includes('combate-defensivo');
     if (abilities.some(a => 
       a.toLowerCase().includes('combate defensivo')
     )) {
-      bonuses.push({
-        id: 'combate-defensivo',
-        name: 'Combate Defensivo (-2 ataque, +5 Def)',
-        source: 'class',
-        attackBonus: -2,
-        peCost: 0,
-        description: 'Sofre -2 em ataques, mas recebe +5 na Defesa até o próximo turno.',
-      });
+      if (isCombateDefensivoActive) {
+        // Já ativado pelo painel - será aplicado automaticamente abaixo
+        // Não adiciona aos bônus selecionáveis
+      } else {
+        // Ainda não ativado - mostra como opção selecionável
+        bonuses.push({
+          id: 'combate-defensivo',
+          name: 'Combate Defensivo (-2 ataque, +5 Def)',
+          source: 'class',
+          attackBonus: -2,
+          peCost: 0,
+          description: 'Sofre -2 em ataques, mas recebe +5 na Defesa até o próximo turno.',
+        });
+      }
     }
 
     // Tiro Certeiro (Especialista)
@@ -673,6 +686,11 @@ export function CombatRollModal({
     // Adicionar modificador manual do mestre
     total += manualAttackMod;
     
+    // === PENALIDADE DE COMBATE DEFENSIVO (se ativo via painel) ===
+    if (activeConditionalBonuses.includes('combate-defensivo')) {
+      total -= 2; // Penalidade oficial: -2 ataque
+    }
+    
     // === PENALIDADE DE PROFICIÊNCIA ===
     // Regra oficial: -5 no ataque se não tiver proficiência adequada
     if (!proficiencyCheck.hasProficiency) {
@@ -680,7 +698,7 @@ export function CombatRollModal({
     }
     
     return total;
-  }, [attackSkill.bonus, passiveBonuses, selectedBonuses, availableBonuses, classPowerBonuses, manualAttackMod, weaponBuffBonuses, unifiedEffects, weapon, trackCombatBonuses, specialAttackConfig.enabled, specialAttackResult.attackBonus, proficiencyCheck]);
+  }, [attackSkill.bonus, passiveBonuses, selectedBonuses, availableBonuses, classPowerBonuses, manualAttackMod, weaponBuffBonuses, unifiedEffects, weapon, trackCombatBonuses, specialAttackConfig.enabled, specialAttackResult.attackBonus, proficiencyCheck, activeConditionalBonuses]);
 
   // === Detalhamento das fontes de bônus de ataque para exibição ===
   const attackBonusSources = useMemo(() => {
@@ -814,8 +832,19 @@ export function CombatRollModal({
       });
     }
     
+    // === PENALIDADE DE COMBATE DEFENSIVO (se ativo via painel) ===
+    if (activeConditionalBonuses.includes('combate-defensivo')) {
+      sources.push({
+        label: 'Combate Defensivo',
+        value: -2,
+        type: 'power',
+        sourceName: 'Combate Defensivo',
+        description: 'Penalidade de -2 no ataque em troca de +5 na Defesa (ativo)',
+      });
+    }
+    
     return sources;
-  }, [attackSkill, classPowerBonuses, passiveBonuses, selectedBonuses, availableBonuses, manualAttackMod, weaponBuffBonuses, unifiedEffects, weapon, trackCombatBonuses, specialAttackConfig.enabled, specialAttackResult, proficiencyCheck]);
+  }, [attackSkill, classPowerBonuses, passiveBonuses, selectedBonuses, availableBonuses, manualAttackMod, weaponBuffBonuses, unifiedEffects, weapon, trackCombatBonuses, specialAttackConfig.enabled, specialAttackResult, proficiencyCheck, activeConditionalBonuses]);
 
   // === Detalhamento das fontes de bônus de dano para exibição ===
   const damageBonusSources = useMemo(() => {
