@@ -810,8 +810,7 @@ const LEGACY_POWER_CONFIGS: Record<string, {
     name: 'Balística Avançada',
     description: '+2 no dano com armas de fogo',
     getEffects: () => ({
-      rangedDamageBonus: 2,
-      conditionalNote: 'Apenas armas de fogo',
+      firearmDamageBonus: 2, // Corrigido: usa firearm ao invés de ranged genérico
     }),
   },
 };
