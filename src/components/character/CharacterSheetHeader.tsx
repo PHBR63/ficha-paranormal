@@ -1075,18 +1075,49 @@ export const CharacterSheetHeader = memo(function CharacterSheetHeader({
               </Tooltip>
             </TooltipProvider>
           )}
-          {/* Deslocamento com tooltip de breakdown */}
+          {/* Deslocamento com tooltip de breakdown e indicador de sobrecarga */}
           <TooltipProvider delayDuration={200}>
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className="flex items-baseline gap-1 whitespace-nowrap cursor-help">
-                  <span className="text-muted-foreground">DESL</span>
-                  <span className="font-display text-lg">{movement}m</span>
+                <div className={cn(
+                  "flex items-baseline gap-1 whitespace-nowrap cursor-help",
+                  loadStatus?.isOverloaded && "text-destructive"
+                )}>
+                  <span className={cn(
+                    loadStatus?.isOverloaded ? "text-destructive" : "text-muted-foreground"
+                  )}>DESL</span>
+                  <motion.span 
+                    key={`${movement}-${loadStatus?.isOverloaded}`}
+                    initial={{ scale: 1.1 }}
+                    animate={{ scale: 1 }}
+                    className={cn(
+                      "font-display text-lg",
+                      loadStatus?.isOverloaded && "font-bold"
+                    )}
+                  >
+                    {loadStatus?.isOverloaded ? Math.max(0, movement - 3) : movement}m
+                  </motion.span>
+                  {/* Indicador visual de penalidade por sobrecarga */}
+                  {loadStatus?.isOverloaded && (
+                    <motion.span
+                      initial={{ opacity: 0, x: -5 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      className="text-[10px] text-destructive font-medium flex items-center gap-0.5"
+                    >
+                      <AlertTriangle className="w-3 h-3" />
+                      (-3)
+                    </motion.span>
+                  )}
                 </div>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="max-w-xs">
                 <div className="space-y-1.5 text-xs">
-                  <p className="font-medium">Deslocamento: {movement}m</p>
+                  <p className="font-medium flex justify-between">
+                    <span>Deslocamento</span>
+                    <span className={cn(loadStatus?.isOverloaded && "text-destructive")}>
+                      {loadStatus?.isOverloaded ? Math.max(0, movement - 3) : movement}m
+                    </span>
+                  </p>
                   <div className="space-y-0.5">
                     <p className="text-muted-foreground flex justify-between">
                       <span>Base</span>
@@ -1102,6 +1133,15 @@ export const CharacterSheetHeader = memo(function CharacterSheetHeader({
                       <p className="flex justify-between text-destructive">
                         <span>Armadura</span>
                         <span className="font-medium">-{armorSpeedPenalty}m</span>
+                      </p>
+                    )}
+                    {loadStatus?.isOverloaded && (
+                      <p className="flex justify-between text-destructive font-medium">
+                        <span className="flex items-center gap-1">
+                          <AlertTriangle className="w-3 h-3" />
+                          Sobrecarga
+                        </span>
+                        <span>-3m</span>
                       </p>
                     )}
                   </div>
