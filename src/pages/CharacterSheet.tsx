@@ -459,7 +459,7 @@ export default function CharacterSheet() {
     const equippedWeapon = (character?.inventory || []).find(
       item => item.isEquipped && item.itemType === 'weapon'
     );
-    if (!equippedWeapon) return { type: undefined, id: undefined, name: undefined };
+    if (!equippedWeapon) return { type: undefined, id: undefined, name: undefined, isLightMelee: false };
     
     // Mapeia tipos de arma para categorias do sistema (WeaponCategory)
     const weaponTypeMap: Record<string, 'melee' | 'ranged' | 'firearm' | 'tactical' | 'heavy' | 'unarmed' | 'any'> = {
@@ -475,12 +475,24 @@ export default function CharacterSheet() {
       'arma-de-fogo': 'firearm',
     };
     
+    const weaponType = equippedWeapon.weaponType 
+      ? weaponTypeMap[equippedWeapon.weaponType.toLowerCase()] || 'any'
+      : undefined;
+    
+    // Detecta se é arma leve corpo a corpo (melee + propriedade Ágil)
+    // Armas leves são usadas para Aparas Precisas (+AGI em DEF)
+    const weaponProperties = (equippedWeapon as any).properties || [];
+    const hasAgileProperty = Array.isArray(weaponProperties) && 
+      weaponProperties.some((p: string) => 
+        p.toLowerCase().includes('ágil') || p.toLowerCase().includes('agil') || p.toLowerCase() === 'light'
+      );
+    const isLightMelee = weaponType === 'melee' && hasAgileProperty;
+    
     return {
-      type: equippedWeapon.weaponType 
-        ? weaponTypeMap[equippedWeapon.weaponType.toLowerCase()] || 'any'
-        : undefined,
+      type: weaponType,
       id: equippedWeapon.id,
       name: equippedWeapon.name,
+      isLightMelee,
     };
   }, [character?.inventory]);
   
@@ -532,6 +544,7 @@ export default function CharacterSheet() {
     equippedProtectionType,
     equippedWeaponId: equippedWeaponInfo.id,
     equippedWeaponName: equippedWeaponInfo.name,
+    isLightMeleeEquipped: equippedWeaponInfo.isLightMelee,
     inCombat: false,
     hpCurrent,
     hpMax: character?.hp_max || 0,
