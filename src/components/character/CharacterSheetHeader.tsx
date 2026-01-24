@@ -99,7 +99,8 @@ interface CharacterSheetHeaderProps {
   sanMax: number;
   defense: number;
   movement: number;
-  // Bônus de poderes paranormais
+  // Breakdown de movimento (para tooltip)
+  movementBreakdown?: Array<{ source: string; value: number }>;
   hpBonus?: number;
   peBonus?: number;
   defenseBonus?: number;
@@ -1064,10 +1065,34 @@ export const CharacterSheetHeader = memo(function CharacterSheetHeader({
               </Tooltip>
             </TooltipProvider>
           )}
-          <div className="flex items-baseline gap-1 whitespace-nowrap">
-            <span className="text-muted-foreground">DESL</span>
-            <span className="font-display text-lg">{movement}m</span>
-          </div>
+          {/* Deslocamento com tooltip de breakdown */}
+          <TooltipProvider delayDuration={200}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-baseline gap-1 whitespace-nowrap cursor-help">
+                  <span className="text-muted-foreground">DESL</span>
+                  <span className="font-display text-lg">{movement}m</span>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="max-w-xs">
+                <div className="space-y-1.5 text-xs">
+                  <p className="font-medium">Deslocamento: {movement}m</p>
+                  <div className="space-y-0.5">
+                    <p className="text-muted-foreground flex justify-between">
+                      <span>Base</span>
+                      <span>9m</span>
+                    </p>
+                    {bonusSummary?.movementBreakdown?.map((entry, idx) => (
+                      <p key={idx} className="flex justify-between text-primary">
+                        <span>{entry.source}</span>
+                        <span className="font-medium">+{entry.value}m</span>
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </div>
 
