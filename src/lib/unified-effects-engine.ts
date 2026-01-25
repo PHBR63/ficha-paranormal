@@ -94,11 +94,14 @@ export interface EffectMechanics {
 
   // === Recursos ===
   hpBonus?: number;                // Bônus em PV máximo
-  hpBonusPerNex?: number;          // Bônus PV por 5% NEX
+  hpBonusPerNex?: number;          // Bônus PV por 5% NEX (Desgarrado: Calejado)
   peBonus?: number;                // Bônus em PE máximo
   peBonusPerNex?: number;          // Bônus PE por 5% NEX
+  peBonusOddNex?: number;          // Bônus PE adicional a cada NEX ímpar (Universitário: Dedicação)
+  peLimitBonus?: number;           // Aumento no limite de PE por turno (Universitário: Dedicação)
   peModifiers?: Array<{ value: number; targets: string[] }>; // Modificadores de custo de PE
   sanityBonus?: number;            // Bônus em Sanidade máxima
+  sanityBonusPerNex?: number;      // Bônus SAN por 5% NEX (Vítima: Cicatrizes Psicológicas)
   tempHP?: number;                 // PV temporários
 
   // === Movimento ===
@@ -677,9 +680,10 @@ export interface ComputedEffects {
   resources: {
     hpBonus: number;
     peBonus: number;
+    peLimitBonus: number;        // Bônus no limite de PE por turno (Universitário: Dedicação)
     sanityBonus: number;
     tempHP: number;
-    breakdown: Array<{ source: string; value: number; resource: 'hp' | 'pe' | 'sanity' | 'tempHP' }>;
+    breakdown: Array<{ source: string; value: number; resource: 'hp' | 'pe' | 'peLimit' | 'sanity' | 'tempHP' }>;
   };
 
   // === Movimento ===
@@ -1292,7 +1296,7 @@ export function consolidateEffects(
     damageReduction: { physical: 0, paranormal: 0, byType: {}, breakdown: [] },
     damageResistance: {},
     skills: {},
-    resources: { hpBonus: 0, peBonus: 0, sanityBonus: 0, tempHP: 0, breakdown: [] },
+    resources: { hpBonus: 0, peBonus: 0, peLimitBonus: 0, sanityBonus: 0, tempHP: 0, breakdown: [] },
     movement: { bonus: 0, multiplier: 1, breakdown: [] },
     initiative: { bonus: 0, breakdown: [] },
     specialEffects: [],
@@ -1671,10 +1675,34 @@ export function consolidateEffects(
       result.resources.peBonus += bonus;
       result.resources.breakdown.push({ source, value: bonus, resource: 'pe' });
     }
+    
+    // === Bônus PE em NEX ímpar (Universitário: Dedicação) ===
+    if (m.peBonusOddNex) {
+      // NEX ímpares: 15%, 25%, 35%, 45%, 55%, 65%, 75%, 85%, 95%
+      const oddNexCount = Math.floor(context.nex / 10);
+      const bonus = m.peBonusOddNex * oddNexCount;
+      result.resources.peBonus += bonus;
+      result.resources.breakdown.push({ source, value: bonus, resource: 'pe' });
+    }
+    
+    // === Limite de PE por turno (Universitário: Dedicação) ===
+    if (m.peLimitBonus) {
+      result.resources.peLimitBonus = (result.resources.peLimitBonus || 0) + m.peLimitBonus;
+      result.resources.breakdown.push({ source, value: m.peLimitBonus, resource: 'peLimit' });
+    }
+    
     if (m.sanityBonus) {
       result.resources.sanityBonus += m.sanityBonus;
       result.resources.breakdown.push({ source, value: m.sanityBonus, resource: 'sanity' });
     }
+    
+    // === Bônus SAN por NEX (Vítima: Cicatrizes Psicológicas) ===
+    if (m.sanityBonusPerNex) {
+      const bonus = m.sanityBonusPerNex * Math.floor(context.nex / 5);
+      result.resources.sanityBonus += bonus;
+      result.resources.breakdown.push({ source, value: bonus, resource: 'sanity' });
+    }
+    
     if (m.tempHP) {
       result.resources.tempHP = Math.max(result.resources.tempHP, m.tempHP);
       result.resources.breakdown.push({ source, value: m.tempHP, resource: 'tempHP' });

@@ -266,21 +266,28 @@ export const ORIGIN_POWER_EFFECTS: Record<string, {
     isToggleable: true,
   },
   
-  // === Universitário - Aprendizagem Aplicada ===
-  'aprendizagem-aplicada': {
+  // === Universitário - Dedicação ===
+  // REGRA OFICIAL (Livro Base v1.3): "Você recebe +1 PE, e mais 1 PE adicional a cada NEX ímpar 
+  // (15%, 25%...). Além disso, seu limite de PE por turno aumenta em 1 (em NEX 5% seu limite é 2, 
+  // em NEX 10% é 3 e assim por diante; isso não afeta a DT de seus efeitos)."
+  'dedicacao': {
     mechanics: {
-      specialEffects: ['Treinado em Ciências vale como treinado em todas perícias de INT'],
+      peBonus: 1,             // +1 PE base
+      peBonusOddNex: 1,       // +1 PE adicional a cada NEX ímpar (15%, 25%, 35%...)
+      peLimitBonus: 1,        // Limite de PE por turno +1 (passivo)
+      specialEffects: ['+1 PE base', '+1 PE por NEX ímpar (15%, 25%...)', 'Limite PE/turno +1'],
     },
-    description: 'Ser treinado em Ciências conta como treinado em qualquer perícia de Intelecto.',
+    description: 'Você recebe +1 PE, e mais 1 PE adicional a cada NEX ímpar (15%, 25%...). Além disso, seu limite de PE por turno aumenta em 1.',
   },
   
-  // === Vítima - Cicatrizes ===
-  'cicatrizes': {
+  // === Vítima - Cicatrizes Psicológicas ===
+  // REGRA OFICIAL (Livro Base v1.3): "Você recebe +1 de Sanidade para cada 5% de NEX."
+  'cicatrizes-psicologicas': {
     mechanics: {
-      specialEffects: ['1x/cena: substitui teste de atributo por teste de Vontade'],
+      sanityBonusPerNex: 1,   // +1 SAN para cada 5% de NEX (passivo, automático)
+      specialEffects: ['+1 SAN para cada 5% de NEX'],
     },
-    description: 'Uma vez por cena, você pode substituir um teste de atributo por teste de Vontade.',
-    isToggleable: true,
+    description: 'Você recebe +1 de Sanidade para cada 5% de NEX.',
   },
 
   // =====================================================
@@ -570,8 +577,8 @@ const ORIGIN_NAME_TO_POWER_ID: Record<string, string> = {
   'teorico-da-conspiracao': 'eu-ja-sabia',
   'trabalhador-rural': 'desbravador',
   'trambiqueiro': 'impostor',
-  'universitario': 'aprendizagem-aplicada',
-  'vitima': 'cicatrizes',
+  'universitario': 'dedicacao',
+  'vitima': 'cicatrizes-psicologicas',
   
   // === SUPLEMENTOS (22 origens) ===
   'amigo-dos-animais': 'companheiro-animal',
@@ -690,6 +697,7 @@ export function getOriginEffects(
  */
 function getPowerNameFromId(powerId: string): string {
   const names: Record<string, string> = {
+    // === LIVRO BASE (26 origens) ===
     'saber-e-poder': 'Saber é Poder',
     'tecnica-medicinal': 'Técnica Medicinal',
     'vislumbres-do-passado': 'Vislumbres do Passado',
@@ -714,8 +722,28 @@ function getPowerNameFromId(powerId: string): string {
     'eu-ja-sabia': 'Eu Já Sabia',
     'desbravador': 'Desbravador',
     'impostor': 'Impostor',
-    'aprendizagem-aplicada': 'Aprendizagem Aplicada',
-    'cicatrizes': 'Cicatrizes',
+    'dedicacao': 'Dedicação',
+    'cicatrizes-psicologicas': 'Cicatrizes Psicológicas',
+    
+    // === SUPLEMENTOS ===
+    'companheiro-animal': 'Companheiro Animal',
+    'acostumado-ao-extremo': 'Acostumado ao Extremo',
+    'fome-do-outro-lado': 'Fome do Outro Lado',
+    'poder-da-amizade': 'Poder da Amizade',
+    'nao-e-fantasia-e-cosplay': 'Não é Fantasia, é Cosplay!',
+    'conexoes': 'Conexões',
+    'manual-do-sobrevivente': 'Manual do Sobrevivente',
+    'mutacao': 'Mutação',
+    'conhecimento-oculto': 'Conhecimento Oculto',
+    'atraves-da-lente': 'Através da Lente',
+    'invencao-paranormal': 'Invenção Paranormal',
+    'a-culpa-e-das-estrelas': 'A Culpa é das Estrelas',
+    'luto-habitual': 'Luto Habitual',
+    'maos-no-volante': 'Mãos no Volante',
+    'o-inteligentao': 'O Inteligentão',
+    'terapia': 'Terapia',
+    'luta-ou-fuga': 'Luta ou Fuga',
+    'encontrar-a-verdade': 'Encontrar a Verdade',
   };
   return names[powerId] || powerId;
 }
