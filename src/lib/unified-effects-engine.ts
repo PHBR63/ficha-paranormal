@@ -1281,12 +1281,49 @@ export function checkEffectConditions(
 }
 
 /**
+ * Ordem fixa de aplicação de efeitos (SUE Hardening)
+ * Garante processamento determinístico
+ */
+const EFFECT_SOURCE_PRIORITY: Record<EffectSource, number> = {
+  skill_training: 1,
+  origin: 2,
+  class_ability: 3,
+  class_power: 4,
+  track: 5,
+  general_power: 6,
+  paranormal_power: 7,
+  equipment: 8,
+  ritual: 9,
+  condition: 10,
+};
+
+/**
+ * Ordena efeitos pela ordem fixa de aplicação (SUE Hardening)
+ */
+function orderEffectsByPriority(effects: UnifiedEffect[]): UnifiedEffect[] {
+  return [...effects].sort((a, b) => {
+    const priorityDiff = (EFFECT_SOURCE_PRIORITY[a.source] ?? 99) - (EFFECT_SOURCE_PRIORITY[b.source] ?? 99);
+    if (priorityDiff !== 0) return priorityDiff;
+    // Mesmo fonte: ordena por ID para determinismo
+    return a.id.localeCompare(b.id);
+  });
+}
+
+/**
  * Consolida uma lista de efeitos em um resultado computado
+ * 
+ * INTEGRAÇÃO SUE HARDENING:
+ * - Aplica ordem fixa de 10 passos para processamento determinístico
+ * - Usa regras de stacking explícitas para bônus numéricos
+ * - Mantém breakdown completo para transparência
  */
 export function consolidateEffects(
   effects: UnifiedEffect[],
   context: EffectCalculationContext
 ): ComputedEffects {
+  // === SUE HARDENING: Ordena efeitos pela ordem fixa de aplicação ===
+  const orderedEffects = orderEffectsByPriority(effects);
+  
   const result: ComputedEffects = {
     attack: { general: 0, melee: 0, ranged: 0, breakdown: [] },
     damage: { general: 0, melee: 0, ranged: 0, firearm: 0, extraDice: [], breakdown: [] },
@@ -1509,7 +1546,8 @@ export function consolidateEffects(
     },
   };
 
-  for (const effect of effects) {
+  // === SUE HARDENING: Itera sobre efeitos na ordem fixa ===
+  for (const effect of orderedEffects) {
     // Registra efeitos toggleáveis
     if (effect.isToggleable) {
       result.toggleableEffects.push({
