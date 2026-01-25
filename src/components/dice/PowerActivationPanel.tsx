@@ -13,7 +13,7 @@
 
 import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Zap, Brain, Hand, BookOpen, Sparkles, AlertCircle, ChevronDown, ChevronUp, Sword, Search, Eye, Move, Target, Shield as ShieldIcon, Heart, Crosshair, Hammer, ShieldCheck, Swords, HandMetal, TreeDeciduous } from 'lucide-react';
+import { Zap, Brain, Hand, BookOpen, Sparkles, AlertCircle, ChevronDown, ChevronUp, Sword, Search, Eye, Move, Target, Shield as ShieldIcon, Heart, Crosshair, Hammer, ShieldCheck, Swords, HandMetal, TreeDeciduous, Dumbbell, FileText, HeartHandshake, Drama } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
@@ -40,7 +40,8 @@ export type PowerIconType =
   | 'brain' | 'hand' | 'book' | 'zap' | 'sparkles' 
   | 'sword' | 'search' | 'eye' | 'move' | 'target' 
   | 'heart' | 'shield' | 'crosshair' | 'hammer' 
-  | 'shield-check' | 'swords' | 'hand-metal' | 'anvil' | 'trees';
+  | 'shield-check' | 'swords' | 'hand-metal' | 'anvil' | 'trees'
+  | 'dumbbell' | 'file-text' | 'heart-handshake' | 'mask';
 
 /**
  * Tipos de efeito de poderes ativáveis
@@ -63,7 +64,9 @@ export type PowerEffectType =
   | 'damage_bonus'        // Bônus de dano passivo (Golpe Pesado, Artista Marcial)
   | 'damage_multiplier'   // Multiplicador de dano (Golpe Demolidor)
   | 'triggered_attack'    // Ataque ao acertar (Segurar o Gatilho)
-  | 'passive_reminder';   // Lembrete de bônus passivo (Reflexos Defensivos)
+  | 'passive_reminder'    // Lembrete de bônus passivo (Reflexos Defensivos)
+  | 'skill_swap'          // Substitui teste por outra perícia (Motor de Busca, Impostor)
+  | 'ally_bonus';         // Bônus aplicado a aliado (Acalentar)
 
 /**
  * Poder ativável durante um teste
@@ -91,6 +94,14 @@ export interface ActivatablePower {
   applicableSkills?: string[];
   // Perícias excluídas
   excludedSkills?: string[];
+  // Para troca de perícia (Motor de Busca, Impostor)
+  swapToSkill?: string;
+  // Para bônus de aliado (Acalentar)
+  allyBonus?: number;
+  // Limite de uso (scene, round, turn)
+  usageLimit?: 'scene' | 'round' | 'turn';
+  // Nota especial sobre condições de uso
+  specialNote?: string;
 }
 
 /**
@@ -148,6 +159,10 @@ const POWER_ICONS: Record<PowerIconType, React.ComponentType<{ className?: strin
   'hand-metal': HandMetal,
   anvil: Hammer, // Lucide não tem anvil, usamos Hammer como fallback
   trees: TreeDeciduous, // Desbravador (Trabalhador Rural)
+  dumbbell: Dumbbell, // 110% (Atleta)
+  'file-text': FileText, // Processo Otimizado (Executivo)
+  'heart-handshake': HeartHandshake, // Acalentar (Religioso)
+  mask: Drama, // Impostor (Trambiqueiro) - Drama como fallback para máscara
 };
 
 // ========================================
