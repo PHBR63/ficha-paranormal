@@ -195,6 +195,93 @@ export function getActivatablePowersForCharacter(
     });
   }
   
+  // 110% (Atleta) - só aparece em testes de FOR ou AGI (exceto Luta/Pontaria)
+  const isAtleta = normalizedOrigin === 'atleta';
+  const isStrengthOrAgilityTest = testedAttribute === 'strength' || testedAttribute === 'agility';
+  
+  if (isAtleta && isStrengthOrAgilityTest) {
+    activatable.push({
+      id: '110-porcento',
+      name: '110%',
+      description: 'Quando faz um teste de perícia usando Força ou Agilidade (exceto Luta e Pontaria) você pode gastar 2 PE para receber +5 nesse teste.',
+      peCost: 2,
+      effect: '+5 no teste',
+      icon: 'dumbbell',
+      effectType: 'skill_bonus',
+      skillBonus: 5,
+      excludedSkills: ['luta', 'pontaria'],
+    });
+  }
+  
+  // Processo Otimizado (Executivo) - aparece em qualquer teste (contexto de teste estendido)
+  const isExecutivo = normalizedOrigin === 'executivo';
+  
+  if (isExecutivo) {
+    activatable.push({
+      id: 'processo-otimizado',
+      name: 'Processo Otimizado',
+      description: 'Sempre que faz um teste de perícia durante um teste estendido, ou uma ação para revisar documentos, pode pagar 2 PE para receber +5 nesse teste.',
+      peCost: 2,
+      effect: '+5 (teste estendido)',
+      icon: 'file-text',
+      effectType: 'skill_bonus',
+      skillBonus: 5,
+      specialNote: 'Apenas em testes estendidos ou revisão de documentos',
+    });
+  }
+  
+  // Motor de Busca (T.I.) - substitui qualquer teste por Tecnologia
+  const isTI = normalizedOrigin === 'ti' || normalizedOrigin === 't.i.';
+  
+  if (isTI) {
+    activatable.push({
+      id: 'motor-de-busca',
+      name: 'Motor de Busca',
+      description: 'Com acesso à internet, você pode gastar 2 PE para substituir um teste de perícia qualquer por um teste de Tecnologia.',
+      peCost: 2,
+      effect: 'Usar Tecnologia',
+      icon: 'search',
+      effectType: 'skill_swap',
+      swapToSkill: 'tecnologia',
+      specialNote: 'Requer acesso à internet (a critério do mestre)',
+    });
+  }
+  
+  // Acalentar (Religioso) - +10 em teste de atributo de aliado adjacente
+  const isReligioso = normalizedOrigin === 'religioso';
+  
+  if (isReligioso) {
+    activatable.push({
+      id: 'acalentar-aliado',
+      name: 'Acalentar (Aliado)',
+      description: 'Uma vez por cena, um aliado adjacente recebe +10 em um teste de atributo.',
+      peCost: 0,
+      effect: '+10 para aliado',
+      icon: 'heart-handshake',
+      effectType: 'ally_bonus',
+      allyBonus: 10,
+      usageLimit: 'scene',
+      specialNote: 'O bônus é aplicado ao aliado, não a você',
+    });
+  }
+  
+  // Impostor (Trambiqueiro) - substitui qualquer teste por Enganação
+  const isTrambiqueiro = normalizedOrigin === 'trambiqueiro';
+  
+  if (isTrambiqueiro) {
+    activatable.push({
+      id: 'impostor',
+      name: 'Impostor',
+      description: 'Uma vez por cena, você pode gastar 2 PE para substituir um teste de perícia qualquer por um teste de Enganação.',
+      peCost: 2,
+      effect: 'Usar Enganação',
+      icon: 'mask',
+      effectType: 'skill_swap',
+      swapToSkill: 'enganacao',
+      usageLimit: 'scene',
+    });
+  }
+  
   // ==================== ESPECIALISTA ====================
   
   // Conhecimento Aplicado
