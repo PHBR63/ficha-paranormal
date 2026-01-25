@@ -13,7 +13,7 @@
 
 import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Zap, Brain, Hand, BookOpen, Sparkles, AlertCircle, ChevronDown, ChevronUp, Sword, Search, Eye, Move, Target, Shield as ShieldIcon, Heart, Crosshair, Hammer, ShieldCheck, Swords, HandMetal, TreeDeciduous, Dumbbell, FileText, HeartHandshake, Drama } from 'lucide-react';
+import { Zap, Brain, Hand, BookOpen, Sparkles, AlertCircle, ChevronDown, ChevronUp, Sword, Search, Eye, Move, Target, Shield as ShieldIcon, Heart, Crosshair, Hammer, ShieldCheck, Swords, HandMetal, TreeDeciduous, Dumbbell, FileText, HeartHandshake, Drama, Star, ChefHat, Footprints, HelpingHand, Siren, Banknote, SearchCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
@@ -41,7 +41,9 @@ export type PowerIconType =
   | 'sword' | 'search' | 'eye' | 'move' | 'target' 
   | 'heart' | 'shield' | 'crosshair' | 'hammer' 
   | 'shield-check' | 'swords' | 'hand-metal' | 'anvil' | 'trees'
-  | 'dumbbell' | 'file-text' | 'heart-handshake' | 'mask';
+  | 'dumbbell' | 'file-text' | 'heart-handshake' | 'mask'
+  | 'magnifying-glass' | 'star' | 'chef-hat' | 'footprints' 
+  | 'helping-hand' | 'siren' | 'banknote';
 
 /**
  * Tipos de efeito de poderes ativáveis
@@ -163,6 +165,14 @@ const POWER_ICONS: Record<PowerIconType, React.ComponentType<{ className?: strin
   'file-text': FileText, // Processo Otimizado (Executivo)
   'heart-handshake': HeartHandshake, // Acalentar (Religioso)
   mask: Drama, // Impostor (Trambiqueiro) - Drama como fallback para máscara
+  // Novas origens (Fase 3)
+  'magnifying-glass': SearchCheck, // Faro para Pistas (Investigador)
+  star: Star, // Magnum Opus (Artista)
+  'chef-hat': ChefHat, // Ingrediente Secreto (Chef)
+  footprints: Footprints, // Posição de Combate (Mercenário)
+  'helping-hand': HelpingHand, // Espírito Cívico (Servidor Público)
+  siren: Siren, // Patrulha (Policial)
+  banknote: Banknote, // O Crime Compensa (Criminoso)
 };
 
 // ========================================

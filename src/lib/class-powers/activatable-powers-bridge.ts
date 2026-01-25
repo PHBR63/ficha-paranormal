@@ -282,6 +282,191 @@ export function getActivatablePowersForCharacter(
     });
   }
   
+  // ==================== NOVAS ORIGENS ATIVÁVEIS (Fase 3) ====================
+  
+  // Faro para Pistas (Investigador) - +5 em Investigação/Percepção para procurar pistas
+  const isInvestigador = normalizedOrigin === 'investigador';
+  
+  if (isInvestigador) {
+    activatable.push({
+      id: 'faro-para-pistas',
+      name: 'Faro para Pistas',
+      description: 'Quando faz um teste de Investigação ou Percepção para procurar pistas, você pode gastar 1 PE para receber +5 nesse teste.',
+      peCost: 1,
+      effect: '+5 no teste',
+      icon: 'magnifying-glass',
+      effectType: 'skill_bonus',
+      skillBonus: 5,
+      applicableSkills: ['investigacao', 'percepcao'],
+      specialNote: 'Apenas para procurar pistas (a critério do mestre)',
+    });
+  }
+  
+  // Magnum Opus (Artista) - +5 em Artes/Atuação quando reconhecido
+  const isArtista = normalizedOrigin === 'artista';
+  
+  if (isArtista) {
+    activatable.push({
+      id: 'magnum-opus',
+      name: 'Magnum Opus',
+      description: 'Uma vez por missão, quando faz um teste de Artes ou Atuação para alguém que reconhece seu trabalho, pode usar Presença×2 e +5.',
+      peCost: 0,
+      effect: 'PRE×2 +5',
+      icon: 'star',
+      effectType: 'skill_bonus',
+      skillBonus: 5,
+      applicableSkills: ['artes', 'atuacao'],
+      usageLimit: 'scene', // Tratamos missão como cena para simplificar rastreamento
+      specialNote: '1x/missão. PRE×2 no atributo. Alvo deve reconhecer seu trabalho.',
+    });
+  }
+  
+  // Ingrediente Secreto (Chef) - efeito narrativo de interlúdio
+  const isChef = normalizedOrigin === 'chef';
+  
+  if (isChef) {
+    activatable.push({
+      id: 'ingrediente-secreto',
+      name: 'Ingrediente Secreto',
+      description: 'Durante um interlúdio, você pode preparar até 2 pratos com efeitos especiais para aliados.',
+      peCost: 0,
+      effect: '2 pratos especiais',
+      icon: 'chef-hat',
+      effectType: 'skill_bonus',
+      skillBonus: 0,
+      applicableSkills: ['profissao'],
+      usageLimit: 'scene', // Interlúdio = entre cenas
+      specialNote: 'Narrativo. Preparar pratos conforme regras de interlúdio.',
+    });
+  }
+  
+  // Posição de Combate (Mercenário) - ação de movimento extra no 1º turno
+  const isMercenario = normalizedOrigin === 'mercenario' || normalizedOrigin === 'mercenário';
+  
+  if (isMercenario) {
+    activatable.push({
+      id: 'posicao-de-combate',
+      name: 'Posição de Combate',
+      description: 'No primeiro turno de uma cena de combate, você pode gastar 2 PE para receber uma ação de movimento adicional.',
+      peCost: 2,
+      effect: '+1 ação movimento',
+      icon: 'footprints',
+      effectType: 'movement_bonus',
+      usageLimit: 'scene',
+      specialNote: 'Apenas no 1º turno de combate',
+    });
+  }
+  
+  // Espírito Cívico (Servidor Público) - +2 ao ajudar
+  const isServidorPublico = normalizedOrigin === 'servidor publico' || 
+                            normalizedOrigin === 'servidor público' ||
+                            normalizedOrigin.includes('servidor');
+  
+  if (isServidorPublico) {
+    activatable.push({
+      id: 'espirito-civico',
+      name: 'Espírito Cívico',
+      description: 'Quando usa a ação ajudar para auxiliar um teste de um aliado, você pode gastar 1 PE para conceder +2 adicional ao bônus.',
+      peCost: 1,
+      effect: '+2 extra ao ajudar',
+      icon: 'helping-hand',
+      effectType: 'ally_bonus',
+      allyBonus: 2,
+      specialNote: 'Aplicado ao bônus de ajudar (+4 em vez de +2)',
+    });
+  }
+  
+  // Patrulha (Policial) - já é passivo (+2 Defesa em lugares e condições) no SUE
+  // Mas podemos adicionar um lembrete/toggle para o bônus de Iniciativa
+  const isPolicial = normalizedOrigin === 'policial';
+  
+  if (isPolicial) {
+    activatable.push({
+      id: 'patrulha-iniciativa',
+      name: 'Patrulha (Iniciativa)',
+      description: 'Você pode usar Percepção em vez de Agilidade para testes de Iniciativa.',
+      peCost: 0,
+      effect: 'Usar Percepção',
+      icon: 'siren',
+      effectType: 'attribute_swap',
+      newAttribute: 'presence', // Percepção usa Presença
+      applicableSkills: ['iniciativa'],
+      specialNote: 'Passivo: +2 Defesa em lugares e condições familiares (automático no SUE)',
+    });
+  }
+  
+  // O Crime Compensa (Criminoso) - efeito narrativo de fim de missão
+  const isCriminoso = normalizedOrigin === 'criminoso';
+  
+  if (isCriminoso) {
+    activatable.push({
+      id: 'o-crime-compensa',
+      name: 'O Crime Compensa',
+      description: 'No fim de cada missão, você pode fazer um teste de Crime (DT 20). Se passar, recebe um item adicional de até categoria II.',
+      peCost: 0,
+      effect: 'Item extra',
+      icon: 'banknote',
+      effectType: 'skill_bonus',
+      skillBonus: 0,
+      applicableSkills: ['crime'],
+      usageLimit: 'scene', // Fim de missão = entre cenas
+      specialNote: 'Narrativo. Teste de Crime DT 20 no fim da missão.',
+    });
+  }
+  
+  // Traços do Outro Lado (Cultista Arrependido) - poder paranormal grátis na criação
+  // Este é um poder de criação, não de ativação, mas podemos mostrar um lembrete
+  const isCultistaArrependido = normalizedOrigin === 'cultista arrependido' || 
+                                 normalizedOrigin.includes('cultista');
+  
+  if (isCultistaArrependido) {
+    activatable.push({
+      id: 'tracos-do-outro-lado',
+      name: 'Traços do Outro Lado',
+      description: 'Você recebe um poder paranormal de 1º círculo gratuitamente. Seu limite de PE por turno aumenta em +1.',
+      peCost: 0,
+      effect: 'Poder grátis',
+      icon: 'eye',
+      effectType: 'passive_reminder',
+      specialNote: 'Passivo: +1 limite PE/turno. Poder paranormal 1º círculo grátis na criação.',
+    });
+  }
+  
+  // Vislumbres do Passado (Amnésico) - 1x/cena, teste INT DT 10
+  const isAmnesico = normalizedOrigin === 'amnesico' || normalizedOrigin === 'amnésico';
+  
+  if (isAmnesico && isIntellectTest) {
+    activatable.push({
+      id: 'vislumbres-do-passado',
+      name: 'Vislumbres do Passado',
+      description: 'Uma vez por cena, teste Intelecto (DT 10). Sucesso: pista do mestre sobre a cena + 1d4 PE temporário.',
+      peCost: 0,
+      effect: 'Pista + 1d4 PE temp',
+      icon: 'brain',
+      effectType: 'knowledge_check',
+      usageLimit: 'scene',
+      specialNote: 'Falha por 5+: Tormenta ataca com medo. O mestre dá a pista.',
+    });
+  }
+  
+  // Cicatrizes (Vítima) - usar Vontade no lugar do atributo normal
+  const isVitima = normalizedOrigin === 'vitima' || normalizedOrigin === 'vítima';
+  
+  if (isVitima) {
+    activatable.push({
+      id: 'cicatrizes-vontade',
+      name: 'Cicatrizes (Vontade)',
+      description: 'Você pode substituir um teste de atributo por um teste de Vontade. Limite: 1x/cena.',
+      peCost: 0,
+      effect: 'Usar Vontade',
+      icon: 'heart',
+      effectType: 'skill_swap',
+      swapToSkill: 'vontade',
+      usageLimit: 'scene',
+      specialNote: 'Funciona para qualquer teste de atributo puro (não perícia)',
+    });
+  }
+  
   // ==================== ESPECIALISTA ====================
   
   // Conhecimento Aplicado
