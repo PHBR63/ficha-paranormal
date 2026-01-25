@@ -210,7 +210,7 @@ export const TRAINING_BONUS = {
   'Expert': 15,
 } as const;
 
-// Limite de PE por turno baseado no NEX
+// Limite de PE por turno baseado no NEX (sem bônus de origem)
 export function getPELimitByNex(nex: number): number {
   if (nex <= 5) return 1;
   if (nex <= 15) return 2;
@@ -223,6 +223,15 @@ export function getPELimitByNex(nex: number): number {
   if (nex <= 85) return 12;
   if (nex <= 95) return 15;
   return 20;
+}
+
+/**
+ * Limite de PE por turno com bônus de origem (Universitário: Dedicação)
+ * @param nex - NEX do personagem
+ * @param peLimitBonus - Bônus de limite de PE do SUE (computed.resources.peLimitBonus)
+ */
+export function getPELimitWithBonus(nex: number, peLimitBonus: number = 0): number {
+  return getPELimitByNex(nex) + peLimitBonus;
 }
 
 // Verifica se um grau de treinamento está disponível para o NEX
