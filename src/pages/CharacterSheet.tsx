@@ -3795,6 +3795,7 @@ export default function CharacterSheet() {
         onConfirm={handleCastRitual}
         ritualBonuses={ritualBonuses}
         intellect={character.intellect}
+        peLimitBonus={bonusSummary?.unifiedEffects?.computed?.resources?.peLimitBonus || 0}
       />
 
       {/* Modal de dano/cura do ritual (Fase 3) */}

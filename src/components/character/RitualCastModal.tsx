@@ -91,6 +91,8 @@ interface RitualCastModalProps {
   // === Bônus do SUE ===
   ritualBonuses?: RitualBonuses | null;
   intellect?: number; // Para cálculo de Ritual Potente
+  /** Bônus de limite de PE por turno do SUE (ex: Universitário: Dedicação = +1) */
+  peLimitBonus?: number;
 }
 
 // Ícones para tipos de modificadores
@@ -115,6 +117,7 @@ export function RitualCastModal({
   onConfirm,
   ritualBonuses,
   intellect = 0,
+  peLimitBonus = 0,
 }: RitualCastModalProps) {
   // Estado dos aprimoramentos selecionados
   const [selectedEnhancements, setSelectedEnhancements] = useState<string[]>([]);
@@ -123,14 +126,14 @@ export function RitualCastModal({
   // Estado para custo do ritual alvo (Anular Ritual)
   const [counterRitualCost, setCounterRitualCost] = useState<number>(0);
 
-  // Hook de validação de rituais
+  // Hook de validação de rituais COM bônus de limite de PE
   const {
     maxCircle,
     peLimitPerTurn,
     validateEnhancement,
     validatePECost,
     getAvailableEnhancements,
-  } = useRitualValidation(nex, elementalAffinity, peCurrent, peMax, turnPEState);
+  } = useRitualValidation(nex, elementalAffinity, peCurrent, peMax, turnPEState, peLimitBonus);
 
   // Aprimoramentos com validação
   const enhancementsWithValidation = useMemo(() => {

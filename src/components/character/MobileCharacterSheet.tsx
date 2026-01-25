@@ -2603,6 +2603,7 @@ export function MobileCharacterSheet({
           onConfirm={handleConfirmRitualCast}
           ritualBonuses={ritualBonuses}
           intellect={character.intellect}
+          peLimitBonus={bonusSummary?.unifiedEffects?.computed?.resources?.peLimitBonus || 0}
         />
       )}
 

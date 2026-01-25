@@ -33,6 +33,8 @@ interface TurnPETrackerProps {
   classTrack?: string;
   /** Habilidades do personagem (para verificar se tem Absorver Angústia/Gladiador) */
   characterAbilities?: string[];
+  /** Bônus de limite de PE do SUE (ex: Universitário: Dedicação = +1) */
+  peLimitBonus?: number;
 }
 
 /**
@@ -48,6 +50,7 @@ export function TurnPETracker({
   className,
   classTrack,
   characterAbilities = [],
+  peLimitBonus = 0,
 }: TurnPETrackerProps) {
   // PE gasto neste turno (resetado manualmente)
   const [peSpentThisTurn, setPeSpentThisTurn] = useState(0);
@@ -70,8 +73,8 @@ export function TurnPETracker({
   // Círculo selecionado para Absorver Angústia
   const [selectedCircle, setSelectedCircle] = useState<number>(1);
   
-  // Limite de PE por turno baseado no NEX
-  const peLimit = getPELimitByNex(nex);
+  // Limite de PE por turno baseado no NEX + bônus de origem (Universitário: Dedicação)
+  const peLimit = getPELimitByNex(nex) + peLimitBonus;
   
   // PE total disponível (temporário + normal)
   const totalPEAvailable = useMemo(() => {
