@@ -58,6 +58,10 @@ export interface RitualBonuses {
   damageAttributeBonus: { attribute: AttributeType; value: number } | null;
   damageBreakdown: RitualBonusBreakdown[];
   
+  // === Bônus de Cura de Origem (Agente de Saúde / Técnica Medicinal) ===
+  healingBonusFromOrigin: number;
+  healingBonusFromOriginSource: string | null;
+  
   // === Reduções de PE ===
   peReduction: number;
   peReductionByElement: Record<string, number>;
@@ -268,6 +272,10 @@ export function useRitualBonusesFromSUE(
       damageAttributeBonus: damageAttributeBonusResult,
       damageBreakdown,
       
+      // Bônus de Cura de Origem (Agente de Saúde / Técnica Medicinal)
+      healingBonusFromOrigin: computed.healing?.bonusFromOrigin || 0,
+      healingBonusFromOriginSource: computed.healing?.bonusFromOriginSource || null,
+      
       // PE
       peReduction: rituals.peReduction,
       peReductionByElement: rituals.peReductionByElement,
@@ -305,6 +313,8 @@ function createEmptyRitualBonuses(): RitualBonuses {
     damageBonus: 0,
     damageAttributeBonus: null,
     damageBreakdown: [],
+    healingBonusFromOrigin: 0,
+    healingBonusFromOriginSource: null,
     peReduction: 0,
     peReductionByElement: {},
     peReductionByRange: {},

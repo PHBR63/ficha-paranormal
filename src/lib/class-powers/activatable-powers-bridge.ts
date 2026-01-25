@@ -171,6 +171,30 @@ export function getActivatablePowersForCharacter(
     });
   }
   
+  // Desbravador (Trabalhador Rural) - só aparece em Adestramento/Sobrevivência
+  const isTrabalhadorRural = normalizedOrigin === 'trabalhador rural' || 
+                             normalizedOrigin.includes('trabalhador');
+  const isDesbravadorApplicable = !testedAttribute || 
+    ['adestramento', 'sobrevivencia'].some(skill => {
+      // Verifica se estamos em contexto de teste de perícia aplicável
+      // O atributo testado não é suficiente, precisamos verificar a perícia atual
+      return true; // Deixa aparecer e filtra no PowerActivationPanel via applicableSkills
+    });
+  
+  if (isTrabalhadorRural && isDesbravadorApplicable) {
+    activatable.push({
+      id: 'desbravador',
+      name: 'Desbravador',
+      description: 'Quando faz um teste de Adestramento ou Sobrevivência, você pode gastar 2 PE para receber +5 nesse teste. Você ignora penalidade de terreno difícil.',
+      peCost: 2,
+      effect: '+5 no teste',
+      icon: 'trees',
+      effectType: 'skill_bonus',
+      skillBonus: 5,
+      applicableSkills: ['adestramento', 'sobrevivencia'],
+    });
+  }
+  
   // ==================== ESPECIALISTA ====================
   
   // Conhecimento Aplicado
