@@ -102,6 +102,8 @@ interface MobileRitualCastModalProps {
   // === Bônus do SUE ===
   ritualBonuses?: RitualBonuses | null;
   intellect?: number;
+  /** Bônus de limite de PE por turno do SUE (ex: Universitário: Dedicação = +1) */
+  peLimitBonus?: number;
 }
 
 export function MobileRitualCastModal({
@@ -126,6 +128,7 @@ export function MobileRitualCastModal({
   // SUE props
   ritualBonuses,
   intellect = 0,
+  peLimitBonus = 0,
 }: MobileRitualCastModalProps) {
   const [selectedEnhancements, setSelectedEnhancements] = useState<string[]>([]);
   // Estado dos modificadores de trilha ativados
@@ -142,12 +145,13 @@ export function MobileRitualCastModal({
   const [castEnhancements, setCastEnhancements] = useState<string[]>([]);
   const [castPeCost, setCastPeCost] = useState(0);
 
+  // Hook de validação COM bônus de limite de PE
   const {
     maxCircle,
     peLimitPerTurn,
     validatePECost,
     getAvailableEnhancements,
-  } = useRitualValidation(nex, elementalAffinity, peCurrent, peMax, turnPEState);
+  } = useRitualValidation(nex, elementalAffinity, peCurrent, peMax, turnPEState, peLimitBonus);
 
   const enhancementsWithValidation = useMemo(() => {
     if (!ritual) return [];

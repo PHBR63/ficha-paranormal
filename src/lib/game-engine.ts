@@ -549,10 +549,16 @@ export function spendPE(
   };
 }
 
-export function createTurnState(nex: number): TurnState {
+/**
+ * Cria estado inicial do turno com limite de PE
+ * 
+ * @param nex - Nível de Exposição do personagem
+ * @param peLimitBonus - Bônus de limite de PE do SUE (ex: Universitário: Dedicação = +1)
+ */
+export function createTurnState(nex: number, peLimitBonus: number = 0): TurnState {
   return {
     peSpentThisTurn: 0,
-    peLimit: getPELimitByNex(nex),
+    peLimit: getPELimitByNex(nex) + peLimitBonus,
     hasActed: false,
     hasMoved: false,
     hasReacted: false,

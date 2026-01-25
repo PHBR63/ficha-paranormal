@@ -57,18 +57,35 @@ function getMaxRitualCircle(nex: number): number {
  * Hook principal para validação de rituais
  * Suporta tanto o tipo UnifiedRitual quanto o tipo legado Ritual
  */
+/**
+ * Hook principal para validação de rituais
+ * Suporta tanto o tipo UnifiedRitual quanto o tipo legado Ritual
+ * 
+ * ATUALIZADO: Agora aceita peLimitBonus do SUE para origens como Universitário
+ * 
+ * @param nex - Nível de Exposição do personagem
+ * @param elementalAffinity - Afinidade elemental (se houver)
+ * @param peCurrent - PE atual do personagem
+ * @param peMax - PE máximo do personagem
+ * @param turnPEState - Estado de PE do turno atual
+ * @param peLimitBonus - Bônus de limite de PE (ex: Universitário: Dedicação = +1)
+ */
 export function useRitualValidation(
   nex: number,
   elementalAffinity?: string | null,
   peCurrent: number = 0,
   peMax: number = 0,
-  turnPEState?: TurnPEState
+  turnPEState?: TurnPEState,
+  peLimitBonus: number = 0
 ) {
   // Calcula o círculo máximo do personagem
   const maxCircle = useMemo(() => getMaxRitualCircle(nex), [nex]);
 
-  // Calcula o limite de PE por turno
-  const peLimitPerTurn = useMemo(() => getPELimitByNex(nex), [nex]);
+  // Calcula o limite de PE por turno COM BÔNUS de origem (Universitário: Dedicação)
+  const peLimitPerTurn = useMemo(() => {
+    const baseLimit = getPELimitByNex(nex);
+    return baseLimit + peLimitBonus;
+  }, [nex, peLimitBonus]);
 
   // PE já gasto neste turno (padrão 0 se não rastreado)
   const peSpentThisTurn = turnPEState?.peSpentThisTurn ?? 0;
