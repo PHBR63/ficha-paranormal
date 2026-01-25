@@ -1,11 +1,10 @@
 /**
- * Sistema Unificado de Efeitos (SUE) - Módulo Central
- * Ordem Paranormal RPG v1.3
+ * SUE - Sistema Unificado de Efeitos
+ * Módulo de Hardening
  * 
- * Exporta todos os componentes do SUE Hardening:
- * - Ordem fixa de aplicação de efeitos
- * - Regras de stacking explícitas
- * - Tipos e interfaces
+ * Exporta as funcionalidades de ordem de aplicação, regras de stacking
+ * e integração com o motor de consolidação para garantir consistência
+ * e determinismo no cálculo de efeitos.
  * 
  * @module sue
  */
@@ -56,6 +55,23 @@ export type {
   StackableBonus,
   StackingResult,
 } from './stacking-rules';
+
+// ========================================
+// INTEGRAÇÃO COM CONSOLIDAÇÃO
+// ========================================
+
+export {
+  preprocessEffectsWithHardening,
+  orderEffectsForConsolidation,
+  shouldApplyBonus,
+  createBonusTracker,
+  trackAppliedBonus,
+} from './consolidation-with-hardening';
+
+export type {
+  PreparedEffect,
+  PreprocessResult,
+} from './consolidation-with-hardening';
 
 // ========================================
 // RE-EXPORTS DO MOTOR PRINCIPAL
