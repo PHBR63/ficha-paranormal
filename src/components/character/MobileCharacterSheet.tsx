@@ -2783,6 +2783,9 @@ export function MobileCharacterSheet({
           // Bônus do SUE para dano de rituais
           ritualDamageBonus={ritualBonuses.damageBonus}
           damageAttributeBonus={ritualBonuses.damageAttributeBonus}
+          // Bônus de Cura de Origem (Agente de Saúde / Técnica Medicinal)
+          healingBonusFromOrigin={ritualBonuses.healingBonusFromOrigin}
+          healingBonusFromOriginSource={ritualBonuses.healingBonusFromOriginSource}
           targetAttributes={{
             vigor: character.vigor,
             agility: character.agility,

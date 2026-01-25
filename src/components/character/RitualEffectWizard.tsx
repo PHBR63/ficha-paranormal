@@ -106,6 +106,9 @@ interface RitualEffectWizardProps {
   // === Bônus do SUE (Sistema Unificado de Efeitos) ===
   ritualDamageBonus?: number; // Bônus fixo de dano de rituais
   damageAttributeBonus?: { attribute: string; value: number }; // Ritual Potente (INT no dano)
+  // === Bônus de Cura de Origem (Agente de Saúde / Técnica Medicinal) ===
+  healingBonusFromOrigin?: number; // Bônus de Intelecto na cura
+  healingBonusFromOriginSource?: string | null; // Fonte do bônus (ex: "Técnica Medicinal")
 }
 
 // ==================== HELPERS ====================
@@ -847,6 +850,9 @@ export function RitualEffectWizard({
   // Bônus do SUE
   ritualDamageBonus = 0,
   damageAttributeBonus,
+  // Bônus de Cura de Origem (Agente de Saúde)
+  healingBonusFromOrigin = 0,
+  healingBonusFromOriginSource,
 }: RitualEffectWizardProps) {
   // Estado do wizard
   const [currentStep, setCurrentStep] = useState<WizardStep>('summary');
@@ -931,8 +937,8 @@ export function RitualEffectWizard({
       } else if (activeEffect.healing) {
         dice = rollDice(activeEffect.healing.diceCount, activeEffect.healing.diceType);
         diceType = activeEffect.healing.diceType;
-        // Aplica bônus do SUE também para cura (Ritual Potente)
-        bonus = (activeEffect.healing.bonus || 0) + sueBonus;
+        // Aplica bônus do SUE (Ritual Potente) + bônus de origem (Agente de Saúde/Técnica Medicinal)
+        bonus = (activeEffect.healing.bonus || 0) + sueBonus + healingBonusFromOrigin;
         damageType = 'verdadeiro'; // Cura não tem tipo
         ignoresRD = false;
       } else if (activeEffect.tempHP) {
@@ -950,7 +956,7 @@ export function RitualEffectWizard({
       setDamageResult({ dice, diceType, bonus, total, damageType, ignoresRD });
       setIsRolling(false);
     }, 500);
-  }, [activeEffect, ritualDamageBonus, damageAttributeBonus]);
+  }, [activeEffect, ritualDamageBonus, damageAttributeBonus, healingBonusFromOrigin]);
 
   // Handler de resistência
   const handleResistanceResult = useCallback((passed: boolean, damage?: number) => {
