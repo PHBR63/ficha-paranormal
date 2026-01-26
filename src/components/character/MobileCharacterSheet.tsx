@@ -1901,6 +1901,7 @@ export function MobileCharacterSheet({
               <MobileConditionalBonusesPanel
                 conditionalBonuses={bonusSummary.conditionalBonuses}
                 onToggleBonus={handleToggleConditionalBonus}
+                excludedEffects={bonusSummary.unifiedEffects?.hardening?.excludedEffects || []}
               />
             )}
             
