@@ -80,13 +80,13 @@ export function useCampaignPresence({
   }, []);
 
   // Handler para quando um usuário entra
-  const handleJoin = useCallback((payload: { key: string; newPresences: unknown[] }) => {
-    console.log('[Presence] Usuário entrou:', payload);
+  const handleJoin = useCallback((_payload: { key: string; newPresences: unknown[] }) => {
+    // Evento de entrada processado silenciosamente
   }, []);
 
   // Handler para quando um usuário sai
-  const handleLeave = useCallback((payload: { key: string; leftPresences: unknown[] }) => {
-    console.log('[Presence] Usuário saiu:', payload);
+  const handleLeave = useCallback((_payload: { key: string; leftPresences: unknown[] }) => {
+    // Evento de saída processado silenciosamente
   }, []);
 
   // Inicializa canal de presença
@@ -140,7 +140,6 @@ export function useCampaignPresence({
             isConnected: true,
             connectionError: null,
           }));
-          console.log('[Presence] Conectado à campanha:', campaignId);
         } else {
           setPresenceState(prev => ({
             ...prev,
@@ -162,7 +161,6 @@ export function useCampaignPresence({
     // Cleanup ao desmontar
     return () => {
       if (channelRef.current) {
-        console.log('[Presence] Desconectando da campanha:', campaignId);
         channelRef.current.untrack();
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;

@@ -217,8 +217,6 @@ export function CampaignRitualFeed({
 
   // Subscreve para atualizações em tempo real
   useEffect(() => {
-    console.log('[RitualFeed] Setting up realtime subscription for campaign:', campaignId);
-
     const channel = supabase
       .channel(`ritual-feed-${campaignId}`)
       .on(
@@ -230,7 +228,6 @@ export function CampaignRitualFeed({
           filter: `campaign_id=eq.${campaignId}`,
         },
         async (payload) => {
-          console.log('[RitualFeed] New cast received:', payload);
           const newCast = payload.new as CampaignRitualCast;
           
           // Marca como novo para animação
@@ -266,12 +263,10 @@ export function CampaignRitualFeed({
         }
       )
       .subscribe((status) => {
-        console.log('[RitualFeed] Subscription status:', status);
         setIsConnected(status === 'SUBSCRIBED');
       });
 
     return () => {
-      console.log('[RitualFeed] Cleaning up subscription');
       supabase.removeChannel(channel);
     };
   }, [campaignId, maxItems, characterNames]);
