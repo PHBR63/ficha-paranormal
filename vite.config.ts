@@ -82,8 +82,13 @@ export default defineConfig(({ mode }) => ({
         ],
       },
       workbox: {
-        // Importa script de push notifications no Service Worker
-        importScripts: ['sw-push.js'],
+        // Importa scripts de push notifications no Service Worker
+        // - sw-push.js: handler interno de notificações
+        // - PushAlert CDN: serviço externo de push notifications
+        importScripts: [
+          'sw-push.js',
+          'https://cdn.pushalert.co/sw-87351.js'
+        ],
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff,woff2}"],
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024, // 4MB limit
         // Always navigate to index.html - the app will handle offline detection
