@@ -184,27 +184,26 @@ usam os hooks SUE integrados.
 
 ---
 
-### Fase 7: Limpeza e Depreciação
+### Fase 7: Limpeza e Depreciação ✅ CONCLUÍDA
 **Objetivo**: Remover código legado
 
-**7.1 Remover AttackSystem.tsx**
-- Componente já marcado como `@deprecated`
-- Verificar se há referências restantes
-- Remover do codebase
+**7.1 Remover AttackSystem.tsx** ✅
+- Componente `@deprecated` removido do codebase
+- Verificado: nenhuma referência ativa encontrada
 
-**7.2 Marcar dice-roller.ts como deprecado**
-- Adicionar `@deprecated` nas funções
-- Manter por retrocompatibilidade (campanhas antigas)
-- Documentar migração recomendada
+**7.2 Marcar dice-roller.ts como deprecado** ✅
+- Header do módulo atualizado com documentação de depreciação
+- Funções `rollSkillTest`, `rollAttack`, `rollDamage`, `rollResistance` marcadas como `@deprecated`
+- Documentado: hooks SUE recomendados para cada caso de uso
+- Mantido para rolagens simples (chat, comandos /r)
 
-**7.3 Atualizar barrel exports**
-- Remover exports desnecessários
-- Adicionar novos hooks ao `src/hooks/index.ts`
+**7.3 Atualizar barrel exports** ✅
+- Hooks SUE já exportados via `src/hooks/sue/index.ts`
+- `src/hooks/index.ts` re-exporta `./sue` automaticamente
 
-**Arquivos a modificar/remover**:
-- `src/components/character/AttackSystem.tsx` (remover)
-- `src/lib/dice-roller.ts` (depreciar)
-- `src/hooks/sue/index.ts` (atualizar exports)
+**Arquivos modificados/removidos**:
+- `src/components/character/AttackSystem.tsx` (REMOVIDO)
+- `src/lib/dice-roller.ts` (depreciado com documentação)
 
 ---
 
