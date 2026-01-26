@@ -156,20 +156,31 @@ Migrar todos os componentes e lógicas que atualmente usam as funções legadas 
 
 ---
 
-### Fase 6: Migração de Componentes de Campanha
-**Objetivo**: Atualizar sistema de chat com dados
+### Fase 6: Migração de Componentes de Campanha ✅ CONCLUÍDA
+**Objetivo**: Documentar decisão arquitetural para rolagens de campanha
 
-**6.1 IntegratedDiceRoller.tsx**
-- Substituir imports de `dice-roller.ts`
-- Usar funções do rules-engine ou manter simples (sem SUE de personagem)
+**DECISÃO ARQUITETURAL**: 
+Rolagens de campanha (chat, comandos /r) usam `dice-roller.ts` diretamente porque:
+1. Não têm contexto de personagem associado
+2. São rolagens "genéricas" sem aplicação de bônus SUE
+3. O rules-engine (`rollAction`) espera `GameAction` com tipos específicos
 
-**6.2 CampaignView.tsx**
-- Atualizar import dinâmico para usar rules-engine
-- Manter retrocompatibilidade com comandos /r
+Para rolagens COM contexto de personagem, os modais (DiceRollModal, CombatRollModal, etc.) 
+usam os hooks SUE integrados.
 
-**Arquivos a modificar**:
-- `src/components/campaign/chat/IntegratedDiceRoller.tsx`
-- `src/pages/CampaignView.tsx`
+**6.1 IntegratedDiceRoller.tsx** ✅
+- Mantém `rollSkillTest` e `rollDamage` do `dice-roller.ts`
+- Documentado no header do arquivo
+- Não usa SUE (sem personagem associado)
+
+**6.2 CampaignView.tsx** ✅
+- Mantém import dinâmico de `dice-roller.ts`
+- Comentário explicativo adicionado
+- Comandos /r funcionam sem bônus de personagem (correto)
+
+**Arquivos modificados**:
+- `src/components/campaign/chat/IntegratedDiceRoller.tsx` (documentação)
+- `src/pages/CampaignView.tsx` (comentário explicativo)
 
 ---
 
