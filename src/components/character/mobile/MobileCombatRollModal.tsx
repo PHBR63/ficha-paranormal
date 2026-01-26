@@ -58,6 +58,10 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { cn } from '@/lib/utils';
 import confetti from 'canvas-confetti';
 import { rollSkillTest, rollDamage, DiceRollResult } from '@/lib/dice-roller';
+// TODO: Migração Fase 2 - Substituir rollSkillTest/rollDamage por useCombatRollWithSUE
+// O hook useCombatRollWithSUE encapsula rollAttackWithContext e rollDamageWithContext
+// com integração completa ao SUE para bônus automáticos
+import { useCombatRollWithSUE, type WeaponEntryCompat } from '@/hooks/use-combat-roll-with-sue';
 import { getSkillBonus } from '@/lib/character-data';
 import { ComputedEffects } from '@/lib/unified-effects-engine';
 import { WeaponBuff, ELEMENT_BUFF_COLORS, useRitualBonusesForCombat, useRitualCombatBonuses, SustainedRitualInput, useCombatFeedback } from '@/hooks';
@@ -237,6 +241,25 @@ export function MobileCombatRollModal({
   activeConditionalBonuses = [], // NOVO: Bônus condicionais ativos
   excludedEffects = [], // SUE Hardening: Efeitos excluídos por stacking
 }: MobileCombatRollModalProps) {
+  // === HOOK DE COMBATE INTEGRADO COM SUE ===
+  // Preparação para migração: hook já configurado para uso futuro
+  // Quando a migração estiver completa, substituirá rollSkillTest/rollDamage
+  const combatRollWithSUE = useCombatRollWithSUE({
+    characterClass,
+    classTrack,
+    nex,
+    attributes,
+    skills,
+    abilities,
+    classPowers: abilities,
+    generalPowers: [],
+    paranormalPowers,
+    unifiedEffects,
+    activeConditions: [], // Mobile não tem prop activeConditions direta
+    activatedPowers: activeConditionalBonuses,
+    activeConditionalBonuses,
+  });
+  
   // Bônus de rituais sustentados processados automaticamente
   const ritualBonuses = useRitualBonusesForCombat(sustainedRituals);
   const ritualCombatSummary = useRitualCombatBonuses(sustainedRituals);
