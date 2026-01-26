@@ -110,6 +110,7 @@ import { getActivatablePowersForCharacter } from '@/lib/class-powers/activatable
 import { VersatilityAbilityCard } from '@/components/character/VersatilityAbilityCard';
 import { useDeveloperMode } from '@/components/ui/theme-selector';
 import { ActiveEffectsPanel } from '@/components/character/ActiveEffectsPanel';
+import { SUEDevToolsPanel } from '@/components/dev';
 // Trilhas unificadas responsivas (FASE 5 - todas as 15 trilhas)
 import {
   // Combatente
@@ -3543,6 +3544,16 @@ export default function CharacterSheet() {
 
               {/* Painel do Sistema Unificado de Efeitos */}
               <ActiveEffectsPanel effectsResult={unifiedEffects} />
+              
+              {/* DevTools do SUE - apenas em desenvolvimento */}
+              <SUEDevToolsPanel 
+                hardeningData={unifiedEffects?.hardening ? {
+                  effects: unifiedEffects.hardening.preparedEffects,
+                  stackingBreakdowns: unifiedEffects.hardening.stackingBreakdowns,
+                  excludedEffects: unifiedEffects.hardening.excludedEffects,
+                  metadata: unifiedEffects.hardening.metadata,
+                } : null}
+              />
 
               {/* Botão de Descanso */}
               <Button
