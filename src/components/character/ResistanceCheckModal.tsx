@@ -2,9 +2,11 @@
  * ResistanceCheckModal - Modal para testes de resistência contra rituais
  * Fase 4: Sistema de resistência com Fortitude/Reflexos/Vontade
  * Calcula DT, permite rolar resistência e aplica efeitos parciais/totais
+ * 
+ * MIGRAÇÃO FASE 3: Usa useResistanceRollWithSUE para integração completa com SUE
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   MobileModal,
@@ -29,10 +31,19 @@ import {
   Brain,
   Wind,
   ChevronRight,
+  Info,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Ritual, ResistanceType, ResistanceEffect, RitualEffect } from '@/lib/rituals/legacy-exports';
 import { getElementConfig } from '@/lib/element-config';
+import { useResistanceRollWithSUE, ResistanceRollCharacterConfig } from '@/hooks/sue/useResistanceRollWithSUE';
+import type { ResistanceKey } from '@/lib/rules-engine/types';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 // Ícones para tipos de resistência
 const RESISTANCE_ICONS: Record<ResistanceType, typeof Shield> = {
@@ -55,6 +66,8 @@ const RESISTANCE_ATTRIBUTES: Record<ResistanceType, string> = {
   'vontade': 'PRE',
 };
 
+// Nota: ResistanceType ('fortitude' | 'reflexos' | 'vontade') é compatível com ResistanceKey do rules-engine
+
 // Interface para resultado do teste
 export interface ResistanceCheckResult {
   passed: boolean;
@@ -64,6 +77,7 @@ export interface ResistanceCheckResult {
   type: ResistanceType;
   effect: ResistanceEffect;
   margin: number; // Diferença entre total e DT (positivo = passou)
+  sources?: Array<{ name: string; value: number; type: string }>; // Fontes de bônus do SUE
 }
 
 interface ResistanceCheckModalProps {
@@ -78,24 +92,15 @@ interface ResistanceCheckModalProps {
     vigor: number;
     agility: number;
     presence: number;
+    strength?: number;
+    intellect?: number;
   };
+  // Dados do personagem para integração SUE
+  characterClass?: string;
+  classTrack?: string;
+  nex?: number;
+  activeConditions?: string[];
   defaultDT?: number;
-}
-
-// Função para rolar um d20
-function rollD20(): number {
-  return Math.floor(Math.random() * 20) + 1;
-}
-
-// Função para rolar pool de dados (maior de N d20)
-function rollPool(attributeValue: number): { dice: number[]; best: number } {
-  if (attributeValue <= 0) {
-    // Desvantagem: rola 2d20 e pega o menor
-    const dice = [rollD20(), rollD20()];
-    return { dice, best: Math.min(...dice) };
-  }
-  const dice = Array.from({ length: attributeValue }, () => rollD20());
-  return { dice, best: Math.max(...dice) };
 }
 
 export function ResistanceCheckModal({
@@ -106,6 +111,10 @@ export function ResistanceCheckModal({
   damage,
   onResult,
   targetAttributes,
+  characterClass = 'Combatente',
+  classTrack,
+  nex = 5,
+  activeConditions = [],
   defaultDT = 15,
 }: ResistanceCheckModalProps) {
   // Estados
@@ -115,12 +124,74 @@ export function ResistanceCheckModal({
     dice: number[];
     best: number;
     total: number;
+    sources?: Array<{ name: string; value: number; type: string }>;
   } | null>(null);
   const [isRolling, setIsRolling] = useState(false);
 
+  // Configuração do personagem para o hook SUE - DEVE ficar antes do early return
+  const characterConfig = useMemo<ResistanceRollCharacterConfig>(() => ({
+    characterClass,
+    classTrack,
+    nex,
+    attributes: targetAttributes ? {
+      strength: targetAttributes.strength || 1,
+      agility: targetAttributes.agility,
+      vigor: targetAttributes.vigor,
+      intellect: targetAttributes.intellect || 1,
+      presence: targetAttributes.presence,
+    } : {
+      strength: 1,
+      agility: 1,
+      vigor: 1,
+      intellect: 1,
+      presence: 1,
+    },
+    activeConditions,
+  }), [characterClass, classTrack, nex, targetAttributes, activeConditions]);
+
+  // Hook de resistência integrado com SUE - DEVE ficar antes do early return
+  const { executeResistanceRoll, getResistanceBonusBreakdown } = useResistanceRollWithSUE(characterConfig);
+
   // Obtém configuração de resistência do efeito
   const resistance = effect?.resistance;
-  if (!ritual || !resistance) return null;
+
+  // Calcula resultado do teste - movido antes do early return para consistência de hooks
+  const testResult = useMemo(() => {
+    if (!rollResult || !resistance) return null;
+
+    const effectiveDT = customDT ? parseInt(customDT) : (resistance.dt || defaultDT + ((ritual?.circle || 1) - 1) * 5);
+    const passed = rollResult.total >= effectiveDT;
+    const margin = rollResult.total - effectiveDT;
+
+    return {
+      passed,
+      roll: rollResult.best,
+      total: rollResult.total,
+      dt: effectiveDT,
+      type: resistance.type,
+      effect: resistance.effect,
+      margin,
+      sources: rollResult.sources,
+    };
+  }, [rollResult, customDT, defaultDT, resistance, ritual?.circle]);
+
+  // Calcula dano ajustado baseado no resultado - movido antes do early return
+  const adjustedDamage = useMemo(() => {
+    if (!testResult || damage === undefined || !resistance) return undefined;
+
+    switch (resistance.effect) {
+      case 'anula':
+        return testResult.passed ? 0 : damage;
+      case 'parcial':
+      case 'reduz_metade':
+        return testResult.passed ? Math.floor(damage / 2) : damage;
+      default:
+        return damage;
+    }
+  }, [testResult, damage, resistance]);
+  
+  // Early return após TODOS os hooks
+  if (!open || !ritual || !resistance) return null;
 
   // Configuração visual
   const elementConfig = getElementConfig(ritual.element);
@@ -138,7 +209,11 @@ export function ResistanceCheckModal({
     targetAttributes.presence
   ) : null;
 
-  // Função para rolar resistência
+  // Obtém breakdown de bônus para o tipo de resistência atual
+  // resistance.type já é 'fortitude' | 'reflexos' | 'vontade' - compatível com ResistanceKey
+  const resistanceBreakdown = getResistanceBonusBreakdown(resistance.type as ResistanceKey);
+
+  // Função para rolar resistência usando SUE
   const handleRoll = () => {
     if (targetAttribute === null) return;
 
@@ -146,58 +221,39 @@ export function ResistanceCheckModal({
     setRollResult(null);
 
     setTimeout(() => {
-      const { dice, best } = rollPool(targetAttribute);
-      const total = best; // Resistência não tem bônus de perícia normalmente
+      // Usa o hook SUE para rolar resistência
+      // resistance.type já é compatível com ResistanceKey
+      const result = executeResistanceRoll(
+        resistance.type as ResistanceKey, 
+        dt, 
+        {}
+      );
       
-      setRollResult({ dice, best, total });
+      setRollResult({ 
+        dice: result.dice, 
+        best: result.keptDice, 
+        total: result.total,
+        sources: result.sources,
+      });
       setIsRolling(false);
     }, 500);
   };
 
-  // Função para usar rolagem manual
+  // Função para usar rolagem manual (aplica bônus do SUE também)
   const handleManualRoll = () => {
     const roll = parseInt(manualRoll);
     if (isNaN(roll) || roll < 1 || roll > 20) return;
 
+    // Calcula total com bônus do SUE
+    const totalWithBonus = roll + resistanceBreakdown.total;
+
     setRollResult({
       dice: [roll],
       best: roll,
-      total: roll,
+      total: totalWithBonus,
+      sources: resistanceBreakdown.sources.map(s => ({ name: s.label, value: s.value, type: s.type })),
     });
   };
-
-  // Calcula resultado do teste
-  const testResult = useMemo(() => {
-    if (!rollResult) return null;
-
-    const passed = rollResult.total >= dt;
-    const margin = rollResult.total - dt;
-
-    return {
-      passed,
-      roll: rollResult.best,
-      total: rollResult.total,
-      dt,
-      type: resistance.type,
-      effect: resistance.effect,
-      margin,
-    };
-  }, [rollResult, dt, resistance]);
-
-  // Calcula dano ajustado baseado no resultado
-  const adjustedDamage = useMemo(() => {
-    if (!testResult || damage === undefined) return undefined;
-
-    switch (resistance.effect) {
-      case 'anula':
-        return testResult.passed ? 0 : damage;
-      case 'parcial':
-      case 'reduz_metade':
-        return testResult.passed ? Math.floor(damage / 2) : damage;
-      default:
-        return damage;
-    }
-  }, [testResult, damage, resistance.effect]);
 
   // Handler para confirmar resultado
   const handleConfirm = () => {
@@ -293,15 +349,43 @@ export function ResistanceCheckModal({
             <div className="space-y-3">
               {/* Rolagem automática (se tiver atributos do alvo) */}
               {targetAttribute !== null && (
-                <Button
-                  onClick={handleRoll}
-                  disabled={isRolling}
-                  className="w-full gap-2"
-                  variant="outline"
-                >
-                  <Dices className={cn("w-4 h-4", isRolling && "animate-spin")} />
-                  Rolar {targetAttribute}d20 ({attributeLabel} {targetAttribute})
-                </Button>
+                <div className="space-y-1">
+                  <Button
+                    onClick={handleRoll}
+                    disabled={isRolling}
+                    className="w-full gap-2"
+                    variant="outline"
+                  >
+                    <Dices className={cn("w-4 h-4", isRolling && "animate-spin")} />
+                    Rolar {targetAttribute}d20 ({attributeLabel} {targetAttribute})
+                    {resistanceBreakdown.total > 0 && (
+                      <span className="text-primary">+{resistanceBreakdown.total}</span>
+                    )}
+                  </Button>
+                  {/* Breakdown de bônus do SUE */}
+                  {resistanceBreakdown.sources.length > 1 && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground cursor-help">
+                            <Info className="w-3 h-3" />
+                            <span>Bônus aplicados automaticamente</span>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <div className="space-y-0.5">
+                            {resistanceBreakdown.sources.map((source, i) => (
+                              <div key={i} className="flex justify-between gap-4 text-xs">
+                                <span>{source.label}</span>
+                                <span className="text-primary">+{source.value}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
+                </div>
               )}
 
               {/* Rolagem manual */}
@@ -394,7 +478,11 @@ export function ResistanceCheckModal({
                     </div>
                     
                     <div className="text-sm text-muted-foreground">
-                      {rollResult.total} vs DT {dt}
+                      <span className="font-mono">{rollResult.best}</span>
+                      {rollResult.total !== rollResult.best && (
+                        <span className="text-primary"> +{rollResult.total - rollResult.best}</span>
+                      )}
+                      <span> = {rollResult.total} vs DT {dt}</span>
                       <span className={cn(
                         "ml-2",
                         testResult.margin >= 0 ? "text-success" : "text-destructive"
@@ -402,6 +490,16 @@ export function ResistanceCheckModal({
                         ({testResult.margin >= 0 ? '+' : ''}{testResult.margin})
                       </span>
                     </div>
+                    {/* Mostrar fontes de bônus se houver */}
+                    {testResult.sources && testResult.sources.length > 0 && (
+                      <div className="flex flex-wrap gap-1 justify-center mt-1">
+                        {testResult.sources.filter(s => s.value > 0).map((source, i) => (
+                          <Badge key={i} variant="outline" className="text-[10px] px-1.5 py-0">
+                            {source.name}: +{source.value}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
 
                     {/* Dano ajustado */}
                     {damage !== undefined && adjustedDamage !== undefined && (
