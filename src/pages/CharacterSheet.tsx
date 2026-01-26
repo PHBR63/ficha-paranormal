@@ -79,6 +79,7 @@ import { calculateDerivedStats, countTranscender } from '@/lib/character-data';
 import { calculateSkillOrigins } from '@/lib/skill-origins';
 import { AffinitySelectorCard } from '@/components/character/AffinitySelectorCard';
 import { hasUsedTranscenderPostNex50, hasParanormalPowersFromTranscender } from '@/lib/transcender-system';
+import { usePrimeiraImpressao } from '@/hooks/usePrimeiraImpressao';
 // Hook consolidado do SUE - fonte única de verdade para todos os bônus
 import { 
   useBonusSummaryFromSUE, 
@@ -683,10 +684,21 @@ export default function CharacterSheet() {
     clearAutoCorrectionsFlag: clearWeaponBuffsCorrectionsFlag,
   } = useWeaponBuffs(id, character?.active_buffs, handleWeaponBuffsChange);
 
-  // Callback para adicionar rolagem ao histórico
+  // Hook para rastrear "Primeira Impressão" do Especialista
+  const primeiraImpressao = usePrimeiraImpressao({
+    classPowers: character?.powers || [],
+    abilities: character?.abilities || {},
+    characterClass: character?.class,
+  });
+
+  // Callback para adicionar rolagem ao histórico e marcar perícia testada
   const handleRollComplete = useCallback((result: DiceRollResult) => {
     setRollHistory(prev => [result, ...prev].slice(0, 50));
-  }, []);
+    // Marca a perícia como testada para Primeira Impressão
+    if (rollTestedAttribute) {
+      primeiraImpressao.markSkillAsTested(rollTestedAttribute);
+    }
+  }, [rollTestedAttribute, primeiraImpressao]);
 
   // Limpar histórico
   const handleClearHistory = useCallback(() => {
@@ -900,7 +912,9 @@ export default function CharacterSheet() {
     setRollLabel(skillName);
     setRollAttribute(attributeValue);
     setRollSkillBonus(skillBonus);
-    setRollExtraDice(extraDice || 0);  // Dados extras de Discurso Motivador
+    // Dados extras: Discurso Motivador + Primeira Impressão
+    const primeiraImpressaoBonus = primeiraImpressao.getExtraDiceForSkill(skillName);
+    setRollExtraDice((extraDice || 0) + primeiraImpressaoBonus);
     
     // Constrói as fontes de bônus para exibição detalhada
     const sources: BonusSource[] = [];
@@ -945,6 +959,17 @@ export default function CharacterSheet() {
         type: 'power',
         sourceName: 'Negociador',
         description: `+${extraDice}d20 no pool de dados (até fim da cena)`,
+      });
+    }
+    
+    // Dados extras (Primeira Impressão)
+    if (primeiraImpressaoBonus > 0) {
+      sources.push({
+        label: 'Primeira Impressão',
+        value: primeiraImpressaoBonus,
+        type: 'power',
+        sourceName: 'Especialista',
+        description: '+1d20 no primeiro teste social da cena',
       });
     }
     
