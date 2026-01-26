@@ -4298,6 +4298,11 @@ export default function CharacterSheet() {
               ? ((character as unknown as Record<string, unknown>).training_grade_choices as Record<string, unknown>)?.nex35 || []
               : ((character as unknown as Record<string, unknown>).training_grade_choices as Record<string, unknown>)?.nex70 || []) as SkillUpgradeChoice[]
           }
+          previousNexConfigured={
+            trainingGradeNex === 70
+              ? (((character as unknown as Record<string, unknown>).training_grade_choices as Record<string, unknown>)?.nex35 as unknown[] || []).length > 0
+              : true // Para NEX 35%, sempre true (não há anterior obrigatório)
+          }
         />
       )}
       

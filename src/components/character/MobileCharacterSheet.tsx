@@ -2880,6 +2880,11 @@ export function MobileCharacterSheet({
             ? character.training_grade_choices?.nex35 || []
             : character.training_grade_choices?.nex70 || []) as SkillUpgradeChoice[]
         }
+        previousNexConfigured={
+          trainingGradeNex === 70
+            ? (character.training_grade_choices?.nex35 || []).length > 0
+            : true // Para NEX 35%, sempre true (não há anterior obrigatório)
+        }
       />
 
       {/* Modal de Seleção de Arma para Origens (Operário - Ferramenta de Trabalho) */}
