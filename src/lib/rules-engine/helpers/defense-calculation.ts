@@ -1,16 +1,24 @@
 /**
  * Helpers de cálculo de defesa
  * Ordem Paranormal RPG v1.3
+ * 
+ * INTEGRAÇÃO SUE: Consume dados consolidados do SUE quando disponíveis
  */
 
 import type { CharacterState, StatBreakdown, BreakdownSource, CalculationContext } from '../types';
+import type { SUEComputedForRulesEngine } from '../sue-bridge';
 
 /**
  * Calcula a defesa total com breakdown
+ * 
+ * @param state - Estado do personagem
+ * @param context - Contexto de cálculo
+ * @param sueComputed - Dados do SUE (opcional, para integração)
  */
 export function calculateDefense(
   state: CharacterState,
-  context: CalculationContext
+  context: CalculationContext,
+  sueComputed?: SUEComputedForRulesEngine
 ): StatBreakdown {
   const sources: BreakdownSource[] = [];
   
@@ -37,11 +45,24 @@ export function calculateDefense(
     });
   }
   
-  // TODO: Bônus de poderes (Reflexos Defensivos, etc.)
-  // TODO: Bônus de condições
-  // TODO: Penalidades de condições (Desprevenido -5, etc.)
+  // === INTEGRAÇÃO SUE ===
+  if (sueComputed) {
+    // Adicionar bônus de defesa do SUE (poderes, trilhas, etc.)
+    if (sueComputed.defenseBonus > 0) {
+      // Usar breakdown detalhado se disponível
+      if (sueComputed.defenseBreakdown.length > 0) {
+        sources.push(...sueComputed.defenseBreakdown);
+      } else {
+        sources.push({
+          name: 'Bônus (Poderes)',
+          sourceType: 'power',
+          value: sueComputed.defenseBonus,
+        });
+      }
+    }
+  }
   
-  // Penalidades de condições
+  // Penalidades de condições (sempre aplicar, mesmo com SUE)
   for (const condition of state.activeConditions) {
     const penalty = getConditionDefensePenalty(condition.conditionId);
     if (penalty !== 0) {
@@ -61,6 +82,7 @@ export function calculateDefense(
 
 /**
  * Retorna a penalidade de defesa de uma condição
+ * NOTA: Penalidades são processadas localmente pois são subtrativas
  */
 function getConditionDefensePenalty(conditionId: string): number {
   const penalties: Record<string, number> = {

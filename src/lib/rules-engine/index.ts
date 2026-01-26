@@ -23,4 +23,8 @@ export { calculateResourceBonuses } from './helpers/resource-bonuses';
 export { calculateDefense } from './helpers/defense-calculation';
 export { calculateResistances } from './helpers/resistance-calculation';
 export { calculateAttacks } from './helpers/attack-calculation';
-export { calculateSkillBonuses } from './helpers/skill-bonuses';
+export { calculateSkillBonuses, calculateSkillBonusesWithBreakdown } from './helpers/skill-bonuses';
+
+// Bridge SUE-RulesEngine
+export { getSUEBonusesForCharacter } from './sue-bridge';
+export type { SUEComputedForRulesEngine } from './sue-bridge';
