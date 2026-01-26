@@ -2545,8 +2545,9 @@ export function MobileCharacterSheet({
           abilities={character.abilities}
           nex={character.nex}
           unifiedEffects={unifiedEffects?.computed}
+          excludedEffects={unifiedEffects?.hardening?.excludedEffects || []}
           weaponBuffs={weaponBuffs}
-          paranormalPowers={character.paranormal_powers?.map(p => ({ 
+          paranormalPowers={character.paranormal_powers?.map(p => ({
             id: p.id, 
             name: p.name, 
             element: p.element 

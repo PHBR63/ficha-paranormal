@@ -64,6 +64,7 @@ import { WeaponBuff, ELEMENT_BUFF_COLORS, useRitualBonusesForCombat, useRitualCo
 import { getElementConfig } from '@/lib/element-config';
 import { WeaponEntry } from './MobileCombatPanel';
 import { AniquiladorTechniqueModal, TechniqueEffects } from '@/components/character/AniquiladorTechniqueModal';
+import { StackingExclusionIndicator, type ExcludedEffectInfo } from '../StackingExclusionIndicator';
 import { getTrackCombatBonuses } from '@/lib/effects/track-effects-adapter';
 import { formatDamageFormula as formatBuffDamage } from '@/lib/rituals/legacy-exports';
 import { SpecialAttackSelector, useSpecialAttackState } from '@/components/character/SpecialAttackSelector';
@@ -151,6 +152,13 @@ interface MobileCombatRollModalProps {
   activatedTrackEffects?: string[];
   // NOVO: Bônus condicionais ativos (Combate Defensivo, Combater com Duas Armas, etc.)
   activeConditionalBonuses?: string[];
+  // === SUE HARDENING ===
+  // Efeitos excluídos por stacking (para indicadores visuais)
+  excludedEffects?: Array<{
+    effect: { id: string; name: string; source: string };
+    reason: string;
+    replacedBy: string;
+  }>;
 }
 
 // Fases do combate
@@ -227,6 +235,7 @@ export function MobileCombatRollModal({
   isFavoriteWeapon,
   activatedTrackEffects = [],
   activeConditionalBonuses = [], // NOVO: Bônus condicionais ativos
+  excludedEffects = [], // SUE Hardening: Efeitos excluídos por stacking
 }: MobileCombatRollModalProps) {
   // Bônus de rituais sustentados processados automaticamente
   const ritualBonuses = useRitualBonusesForCombat(sustainedRituals);
@@ -1516,6 +1525,15 @@ export function MobileCombatRollModal({
                       </div>
                     )}
                   </motion.div>
+                )}
+
+                {/* === INDICADOR DE STACKING (SUE Hardening) === */}
+                {excludedEffects.length > 0 && (
+                  <StackingExclusionIndicator
+                    excludedEffects={excludedEffects as ExcludedEffectInfo[]}
+                    variant="inline"
+                    className="mt-2"
+                  />
                 )}
 
                 {/* === ATAQUE ESPECIAL (Combatente) com distribuição flexível === */}
