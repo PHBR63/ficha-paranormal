@@ -603,16 +603,28 @@ export function auditSkillTraining(character: CharacterForAudit): {
   const veteranCount = skillCounts[2] + skillCounts[3]; // Veterano ou superior
   const expertCount = skillCounts[3];
   
-  // ========== 1. Validar Níveis Veterano (NEX 35%) ==========
+  // ========== 1. Preparar Sets de Validação por Nível ==========
   // Usa constantes centralizadas de game-ids.ts com fallback para chaves legadas
   const grade35Choices = trainingGradeChoices[TRAINING_GRADE_KEYS.NEX_35] || trainingGradeChoices[LEGACY_TRAINING_GRADE_KEYS.NEX_35] || [];
-  const grade35SkillIds = new Set(grade35Choices.map(c => c.skillId));
+  const grade70Choices = trainingGradeChoices[TRAINING_GRADE_KEYS.NEX_70] || trainingGradeChoices[LEGACY_TRAINING_GRADE_KEYS.NEX_70] || [];
   
-  // Verificar se há perícias em Veterano sem registro (NEX 35%)
+  // Para Veterano: pode estar registrado no NEX 35% OU no NEX 70% (com toLevel === 2)
+  // Isso cobre o caso de perícias Treinadas → Veteranas feitas no NEX 70% em vez do 35%
+  const allVeteranSkillIds = new Set([
+    ...grade35Choices.filter(c => c.toLevel === 2).map(c => c.skillId),
+    ...grade70Choices.filter(c => c.toLevel === 2).map(c => c.skillId),
+  ]);
+  
+  // Para Expert: somente registros no NEX 70% com toLevel === 3
+  const grade70ExpertSkillIds = new Set(
+    grade70Choices.filter(c => c.toLevel === 3).map(c => c.skillId)
+  );
+  
+  // ========== 2. Validar Níveis Veterano (NEX 35%+) ==========
   let validVeteran = 0;
   for (const [skillId, level] of Object.entries(skills)) {
-    if (level >= 2) {
-      // Nível Veterano ou superior
+    if (level >= 2 && level < 3) {
+      // Nível Veterano exato (não Expert)
       if (nex < 35) {
         // Erro: NEX insuficiente para Veterano
         issues.push({
@@ -626,16 +638,16 @@ export function auditSkillTraining(character: CharacterForAudit): {
           autoFixable: true,
           fixAction: `Rebaixar ${skillId} para Treinado (nível 1)`,
         });
-      } else if (level === 2 && !grade35SkillIds.has(skillId)) {
-        // Aviso: sem registro no Grau de Treinamento
+      } else if (!allVeteranSkillIds.has(skillId)) {
+        // Aviso: sem registro no Grau de Treinamento (NEX 35% ou 70%)
         issues.push({
           id: `unregistered_veteran_${skillId}`,
           category: 'skill_training',
           severity: 'warning',
           title: 'Veterano Sem Registro',
-          description: `A perícia "${skillId}" está em nível Veterano, mas não há registro no Grau de Treinamento (NEX 35%). Isso pode indicar uma inconsistência.`,
+          description: `A perícia "${skillId}" está em nível Veterano, mas não há registro no Grau de Treinamento. Isso pode indicar uma inconsistência.`,
           currentValue: 'Veterano',
-          expectedValue: 'Registro em training_grade_choices',
+          expectedValue: 'Registro em training_grade_choices (nex35 ou nex70)',
           autoFixable: false,
           fixAction: 'Verificar se a perícia foi escolhida corretamente no Grau de Treinamento',
         });
@@ -645,10 +657,7 @@ export function auditSkillTraining(character: CharacterForAudit): {
     }
   }
   
-  // ========== 2. Validar Níveis Expert (NEX 70%) ==========
-  // Usa constantes centralizadas de game-ids.ts com fallback para chaves legadas
-  const grade70Choices = trainingGradeChoices[TRAINING_GRADE_KEYS.NEX_70] || trainingGradeChoices[LEGACY_TRAINING_GRADE_KEYS.NEX_70] || [];
-  const grade70SkillIds = new Set(grade70Choices.map(c => c.skillId));
+  // ========== 3. Validar Níveis Expert (NEX 70%+) ==========
   
   let validExpert = 0;
   for (const [skillId, level] of Object.entries(skills)) {
@@ -667,7 +676,7 @@ export function auditSkillTraining(character: CharacterForAudit): {
           autoFixable: true,
           fixAction: `Rebaixar ${skillId} para Veterano (nível 2)`,
         });
-      } else if (!grade70SkillIds.has(skillId)) {
+      } else if (!grade70ExpertSkillIds.has(skillId)) {
         // Aviso: sem registro no Grau de Treinamento
         issues.push({
           id: `unregistered_expert_${skillId}`,
@@ -686,7 +695,7 @@ export function auditSkillTraining(character: CharacterForAudit): {
     }
   }
   
-  // ========== 3. Verificar Grau de Treinamento Pendente ==========
+  // ========== 4. Verificar Grau de Treinamento Pendente ==========
   const pendingGradeChoices: ('35' | '70')[] = [];
   
   // Grau de Treinamento disponível em NEX 35%
@@ -727,7 +736,7 @@ export function auditSkillTraining(character: CharacterForAudit): {
     pendingGradeChoices.push('70');
   }
   
-  // ========== 4. Validar Perícias Obrigatórias da Classe ==========
+  // ========== 5. Validar Perícias Obrigatórias da Classe ==========
   const mandatorySkills = CLASS_MANDATORY_SKILLS[characterClass] || [];
   for (const skillId of mandatorySkills) {
     const skillLevel = skills[skillId] || 0;
