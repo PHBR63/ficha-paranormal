@@ -956,10 +956,10 @@ export function MobileCharacterSheet({
       'PRE': 'presence',
       'VIG': 'vigor',
     };
-    setRollTestedAttribute(attrMap[skillAttr]);
-    
-    // Busca bônus de poderes de classe (Perito, Versatilidade, etc.)
+    // CORREÇÃO: Define o skillId para filtrar poderes ativáveis (ex: Desbravador, Saber é Poder)
+    // Antes passava apenas o atributo, agora passa o ID real da perícia
     const skillKey = skillName.toLowerCase().replace(/\s+/g, '-');
+    setRollTestedAttribute(skillKey as typeof rollTestedAttribute);
     const classPowerBonus = bonusSummary?.skills?.[skillKey]?.total || 0;
     
     
@@ -2080,6 +2080,7 @@ export function MobileCharacterSheet({
               pvCurrent={character.hp_current}
               pvMax={character.hp_max}
               onHPChange={(newHP) => handleCombatStatsChange?.({ hp: newHP, pe: character.pe_current, san: character.san_current })}
+              computedEffects={unifiedEffects?.computed}
             />
 
             {/* Negociador */}

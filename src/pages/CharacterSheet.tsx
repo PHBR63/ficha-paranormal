@@ -905,8 +905,12 @@ export default function CharacterSheet() {
     // Constrói as fontes de bônus para exibição detalhada
     const sources: BonusSource[] = [];
     
-    // Obtém o ID da perícia para buscar detalhes
+    // Obtém o ID da perícia para buscar detalhes e filtrar poderes ativáveis
     const skillId = skillName.toLowerCase().replace(/\s+/g, '-');
+    
+    // CORREÇÃO: Define o skillId para filtrar poderes ativáveis (ex: Desbravador, Saber é Poder)
+    // Antes passava apenas o atributo, agora passa o ID real da perícia
+    setRollTestedAttribute(skillId as typeof rollTestedAttribute);
     const skillBonusEntry = bonusSummary.skills[skillId];
     
     // Treinamento (skillBonus sem classPowerBonus)
@@ -2785,6 +2789,7 @@ export default function CharacterSheet() {
                   pe: peCurrent, 
                   san: sanCurrent 
                 })}
+                computedEffects={unifiedEffects?.computed}
               />
 
               {/* Negociador */}
