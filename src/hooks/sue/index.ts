@@ -12,12 +12,19 @@
  * @module hooks/sue
  */
 
+// Hooks de efeitos
 export * from '../useUnifiedEffects';
 export * from '../useActivatedEffects';
 export * from '../useBonusSummaryFromSUE';
 export * from '../useRitualBonusesFromSUE';
 export * from '../useRitualModeConditions';
 export * from '../useAutoConditions';
+
+// Hooks de rolagem integrados com SUE (Fase 1 - Migração)
+export * from './useSkillRollWithSUE';
+export * from './useInitiativeRollWithSUE';
+export * from './useResistanceRollWithSUE';
+export * from './useRitualDamageWithSUE';
 
 // Re-exports de tipos do SUE Hardening
 export type {
