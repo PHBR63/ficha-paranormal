@@ -20,6 +20,10 @@ import { deriveCharacter } from './derive-character';
 import { getPowerById, meetsPrerequisites, ALL_CLASS_POWERS } from '../class-powers';
 import type { PowerPrerequisites, TrainingLevel } from '../class-powers/types';
 
+// Importar validadores especializados
+import { validateRituals } from './helpers/ritual-validation';
+import { validateEquipment } from './helpers/equipment-validation';
+
 // =====================================================
 // CONSTANTES DE VALIDAÇÃO
 // =====================================================
@@ -118,13 +122,16 @@ export function validateCharacter(state: CharacterState): ValidationResult {
   // 6. Validar perícias
   issues.push(...validateSkills(state));
   
-  // 7. Validar rituais (Ocultista)
+  // 7. Validar rituais (Ocultista e não-ocultistas com Transcender)
   issues.push(...validateRituals(state));
   
-  // 8. Validar poderes e pré-requisitos
+  // 8. Validar equipamentos (proficiência e capacidade de carga)
+  issues.push(...validateEquipment(state));
+  
+  // 9. Validar poderes e pré-requisitos
   issues.push(...validatePowers(state));
   
-  // 9. Validar condições
+  // 10. Validar condições
   issues.push(...validateConditions(state));
   
   // Contar por severidade
@@ -584,32 +591,7 @@ function validateSkills(state: CharacterState): ValidationIssue[] {
   return issues;
 }
 
-/**
- * Valida rituais (Ocultista)
- */
-function validateRituals(state: CharacterState): ValidationIssue[] {
-  const issues: ValidationIssue[] = [];
-  
-  if (state.characterClass !== 'Ocultista' && state.rituals.length > 0) {
-    // Não-ocultistas podem ter rituais via Transcender, mas menos
-    // TODO: Validar quantidade de rituais para não-ocultistas
-  }
-  
-  const derived = deriveCharacter(state);
-  
-  if (state.rituals.length > derived.ritualsMaxCount) {
-    issues.push({
-      severity: 'error',
-      ruleId: 'too-many-rituals',
-      message: `Rituais excedidos: ${state.rituals.length} de ${derived.ritualsMaxCount} permitidos`,
-      path: 'rituals',
-    });
-  }
-  
-  // TODO: Validar círculo dos rituais vs círculo máximo permitido
-  
-  return issues;
-}
+// validateRituals movido para helpers/ritual-validation.ts
 
 /**
  * Valida poderes e pré-requisitos
