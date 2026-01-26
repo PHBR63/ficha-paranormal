@@ -530,3 +530,206 @@ describe('Cenários Integrados de Validação', () => {
     expect(result.valid).toBe(false);
   });
 });
+
+// ========================================
+// VALIDAÇÃO DE PERÍCIAS DE ORIGEM
+// ========================================
+
+describe('Validação de Perícias de Origem', () => {
+  describe('Origem com perícias fixas', () => {
+    it('Deve exigir perícias concedidas pela origem Militar', () => {
+      const state = createBaseCharacter({
+        origin: 'militar',
+        skills: {
+          // Faltando pontaria e tática (perícias da origem Militar)
+          luta: 'treinado',
+          fortitude: 'treinado',
+          atletismo: 'treinado',
+        },
+      });
+      
+      const result = validateCharacter(state);
+      
+      const originErrors = result.issues.filter(i => i.ruleId === 'missing-origin-skill');
+      expect(originErrors.length).toBe(2); // Pontaria e Tática
+      expect(originErrors.some(e => e.path === 'skills.pontaria')).toBe(true);
+      expect(originErrors.some(e => e.path === 'skills.tatica')).toBe(true);
+    });
+    
+    it('Deve exigir perícias concedidas pela origem Acadêmico', () => {
+      const state = createBaseCharacter({
+        origin: 'academico',
+        skills: {
+          luta: 'treinado',
+          // Faltando ciências e investigação
+        },
+      });
+      
+      const result = validateCharacter(state);
+      
+      const originErrors = result.issues.filter(i => i.ruleId === 'missing-origin-skill');
+      expect(originErrors.length).toBe(2);
+      expect(originErrors.some(e => e.path === 'skills.ciencias')).toBe(true);
+      expect(originErrors.some(e => e.path === 'skills.investigacao')).toBe(true);
+    });
+    
+    it('Não deve gerar erro se perícias de origem estiverem treinadas', () => {
+      const state = createBaseCharacter({
+        origin: 'militar',
+        skills: {
+          pontaria: 'treinado', // Perícia da origem
+          tatica: 'treinado', // Perícia da origem
+          luta: 'treinado',
+        },
+      });
+      
+      const result = validateCharacter(state);
+      
+      const originErrors = result.issues.filter(i => i.ruleId === 'missing-origin-skill');
+      expect(originErrors.length).toBe(0);
+    });
+    
+    it('Deve aceitar perícias de origem em nível veterano ou expert', () => {
+      const state = createBaseCharacter({
+        nex: 70,
+        origin: 'investigador',
+        skills: {
+          investigacao: 'expert', // Origem concede, mas está em expert (ok)
+          percepcao: 'veterano', // Origem concede, mas está em veterano (ok)
+          luta: 'treinado',
+        },
+      });
+      
+      const result = validateCharacter(state);
+      
+      const originErrors = result.issues.filter(i => i.ruleId === 'missing-origin-skill');
+      expect(originErrors.length).toBe(0);
+    });
+  });
+  
+  describe('Amnésico (exceção)', () => {
+    it('Não deve exigir perícias específicas para Amnésico', () => {
+      const state = createBaseCharacter({
+        origin: 'amnesico',
+        skills: {
+          // Amnésico escolhe livremente suas perícias
+          luta: 'treinado',
+          atletismo: 'treinado',
+          acrobacia: 'treinado',
+        },
+      });
+      
+      const result = validateCharacter(state);
+      
+      const originErrors = result.issues.filter(i => i.ruleId === 'missing-origin-skill');
+      expect(originErrors.length).toBe(0);
+    });
+  });
+  
+  describe('Origens desconhecidas', () => {
+    it('Deve informar sobre origem não encontrada no catálogo', () => {
+      const state = createBaseCharacter({
+        origin: 'origem-homebrew-customizada',
+        skills: {
+          luta: 'treinado',
+        },
+      });
+      
+      const result = validateCharacter(state);
+      
+      const unknownOrigin = result.issues.find(i => i.ruleId === 'unknown-origin');
+      expect(unknownOrigin).toBeDefined();
+      expect(unknownOrigin?.severity).toBe('info'); // Info, não erro
+    });
+  });
+});
+
+// ========================================
+// VALIDAÇÃO DE PRÉ-REQUISITOS DE TRILHA
+// ========================================
+
+describe('Validação de Pré-requisitos de Trilha', () => {
+  describe('Médico de Campo', () => {
+    it('Deve exigir Medicina treinada para Médico de Campo', () => {
+      const state = createBaseCharacter({
+        characterClass: 'Especialista',
+        classTrack: 'medico-campo',
+        skills: {
+          // Faltando medicina
+          ciencias: 'treinado',
+          diplomacia: 'treinado',
+        },
+      });
+      
+      const result = validateCharacter(state);
+      
+      const prereqErrors = result.issues.filter(i => i.ruleId === 'missing-track-prereq');
+      expect(prereqErrors.length).toBe(1);
+      expect(prereqErrors[0].path).toBe('skills.medicina');
+      expect(prereqErrors[0].autoFixable).toBe(true);
+    });
+    
+    it('Não deve gerar erro se Medicina estiver treinada', () => {
+      const state = createBaseCharacter({
+        characterClass: 'Especialista',
+        classTrack: 'medico-campo',
+        skills: {
+          medicina: 'treinado',
+          ciencias: 'treinado',
+        },
+      });
+      
+      const result = validateCharacter(state);
+      
+      const prereqErrors = result.issues.filter(i => i.ruleId === 'missing-track-prereq');
+      expect(prereqErrors.length).toBe(0);
+    });
+    
+    it('Deve sugerir correção automática para pré-requisito faltante', () => {
+      const state = createBaseCharacter({
+        characterClass: 'Especialista',
+        classTrack: 'medico-de-campo', // Variante de nome
+        skills: {},
+      });
+      
+      const result = validateCharacter(state);
+      
+      const prereqError = result.issues.find(i => i.ruleId === 'missing-track-prereq');
+      expect(prereqError?.suggestedFix).toBeDefined();
+      expect(prereqError?.suggestedFix?.action).toBe('set');
+      expect(prereqError?.suggestedFix?.value).toBe('treinado');
+    });
+  });
+  
+  describe('Trilhas sem pré-requisitos', () => {
+    it('Aniquilador não deve exigir perícias específicas', () => {
+      const state = createBaseCharacter({
+        characterClass: 'Combatente',
+        classTrack: 'aniquilador',
+        skills: {
+          luta: 'treinado',
+        },
+      });
+      
+      const result = validateCharacter(state);
+      
+      const prereqErrors = result.issues.filter(i => i.ruleId === 'missing-track-prereq');
+      expect(prereqErrors.length).toBe(0);
+    });
+    
+    it('Infiltrador não deve exigir perícias específicas', () => {
+      const state = createBaseCharacter({
+        characterClass: 'Especialista',
+        classTrack: 'infiltrador',
+        skills: {
+          furtividade: 'treinado',
+        },
+      });
+      
+      const result = validateCharacter(state);
+      
+      const prereqErrors = result.issues.filter(i => i.ruleId === 'missing-track-prereq');
+      expect(prereqErrors.length).toBe(0);
+    });
+  });
+});
