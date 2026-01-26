@@ -31,6 +31,7 @@ import {
   History,
   Dices,
   Palette,
+  ShieldCheck,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -72,6 +73,8 @@ import { ConditionManager, type ActiveCondition } from '@/components/character/C
 import { RestModal } from '@/components/character/RestModal';
 import { NonOccultistRitualModal, RitualSource } from '@/components/character/NonOccultistRitualModal';
 import { LearnedRitual } from '@/components/character/GeneralPowersPanel';
+import { ValidationAutoFixModal, type ApplicableFix } from '@/components/character/ValidationAutoFixModal';
+import { useValidationAutoFix, characterToState } from '@/hooks/useValidationAutoFix';
 import { calculateDerivedStats, countTranscender } from '@/lib/character-data';
 import { calculateSkillOrigins } from '@/lib/skill-origins';
 import { AffinitySelectorCard } from '@/components/character/AffinitySelectorCard';
@@ -416,6 +419,9 @@ export default function CharacterSheet() {
   // Modal de Grau de Treinamento (NEX 35% e 70%)
   const [trainingGradeModalOpen, setTrainingGradeModalOpen] = useState(false);
   const [trainingGradeNex, setTrainingGradeNex] = useState<35 | 70>(35);
+  
+  // Modal de Validação e Correção Automática
+  const [validationModalOpen, setValidationModalOpen] = useState(false);
   
   // Estado para verificar se personagem já usou Transcender em NEX >= 50
   // (necessário para determinar se deve exibir seletor de afinidade elemental)
@@ -1670,6 +1676,59 @@ export default function CharacterSheet() {
     onFixComplete: refetchCharacter,
   });
   
+  // === HOOK DE VALIDAÇÃO E CORREÇÃO AUTOMÁTICA ===
+  const validationAutoFix = useValidationAutoFix({
+    onFixComplete: refetchCharacter,
+  });
+  
+  // Prepara o CharacterState para validação quando o modal abrir
+  const handleOpenValidationModal = useCallback(() => {
+    if (!character) return;
+    
+    const state = characterToState({
+      id: character.id,
+      name: character.name,
+      class: character.class,
+      origin: character.origin,
+      nex: character.nex,
+      class_track: character.class_track,
+      agility: character.agility,
+      strength: character.strength,
+      vigor: character.vigor,
+      intellect: character.intellect,
+      presence: character.presence,
+      skills: character.skills,
+      powers: character.abilities || [],
+      general_powers: (character.general_powers || []).map(p => 
+        typeof p === 'string' ? { id: p } : { id: p.id }
+      ),
+      paranormal_powers: (character.paranormal_powers || []).map(p => 
+        typeof p === 'string' ? { id: p } : { id: p.id }
+      ),
+      rituals: ((character.rituals || []) as Array<string | { id: string }>).map(r => 
+        typeof r === 'string' ? { id: r } : { id: r.id }
+      ),
+      hp_current: hpCurrent,
+      pe_current: peCurrent,
+      san_current: sanCurrent,
+      conditions: (character.conditions || []).map(c => 
+        typeof c === 'string' ? { id: c } : { id: c.id, name: c.name }
+      ),
+      inventory: character.inventory,
+    });
+    
+    validationAutoFix.validate(state);
+    setValidationModalOpen(true);
+  }, [character, hpCurrent, peCurrent, sanCurrent, validationAutoFix]);
+  
+  // Handler para aplicar correções
+  const handleApplyValidationFixes = useCallback(async (fixes: ApplicableFix[]) => {
+    if (!character || !user) {
+      return { success: false, appliedCount: 0, failedCount: 0, errors: ['Personagem não encontrado'] };
+    }
+    return validationAutoFix.applyFixes(character.id, user.id, fixes);
+  }, [character, user, validationAutoFix]);
+  
   // === HANDLERS PARA GRAU DE TREINAMENTO ===
   // Handler para abrir modal de Grau de Treinamento
   const handleOpenTrainingGradeModal = useCallback((nex: 35 | 70) => {
@@ -2261,6 +2320,16 @@ export default function CharacterSheet() {
                 EDITAR
               </Button>
               <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleOpenValidationModal}
+                className="font-display"
+                title="Validar e corrigir problemas do personagem"
+              >
+                <ShieldCheck className="w-4 h-4 mr-2" />
+                VALIDAR
+              </Button>
+              <Button 
                 variant="ghost" 
                 size="icon"
                 onClick={handleDelete}
@@ -2315,6 +2384,12 @@ export default function CharacterSheet() {
                       const charHistoryBtn = document.querySelector('[data-character-history-trigger]') as HTMLButtonElement;
                       charHistoryBtn?.click();
                     },
+                  },
+                  {
+                    id: 'validate',
+                    label: 'Validar Personagem',
+                    icon: ShieldCheck,
+                    onPress: handleOpenValidationModal,
                   },
                   {
                     id: 'delete',
@@ -4214,6 +4289,17 @@ export default function CharacterSheet() {
           />
         );
       })()}
+
+      {/* Modal de Validação e Correção Automática */}
+      <ValidationAutoFixModal
+        open={validationModalOpen}
+        onOpenChange={setValidationModalOpen}
+        validationResult={validationAutoFix.validationResult}
+        onApplyFixes={handleApplyValidationFixes}
+        onRefresh={handleOpenValidationModal}
+        isApplying={validationAutoFix.isApplying}
+        characterName={character?.name}
+      />
     </div>
   );
 }
