@@ -98,6 +98,12 @@ interface TrainingGradeSelectModalProps {
   currentSkills: Record<string, number>;
   /** Escolhas já feitas anteriormente (para edição) */
   existingChoices?: SkillUpgradeChoice[];
+  /** 
+   * Indica se o NEX anterior (35%) já foi configurado.
+   * Usado para validar precedência no NEX 70%.
+   * Se false no NEX 70%, não permite upgrades Treinado → Veterano.
+   */
+  previousNexConfigured?: boolean;
 }
 
 export function TrainingGradeSelectModal({
@@ -109,6 +115,7 @@ export function TrainingGradeSelectModal({
   intellect,
   currentSkills,
   existingChoices = [],
+  previousNexConfigured = true, // Por padrão, considera configurado (retrocompatibilidade)
 }: TrainingGradeSelectModalProps) {
   // Estado das escolhas
   const [choices, setChoices] = useState<SkillUpgradeChoice[]>(
@@ -157,14 +164,21 @@ export function TrainingGradeSelectModal({
         }
       } else if (nex === 70) {
         // NEX 70%: Treinado → Veterano OU Veterano → Expert
+        // REGRA: Se NEX 35% não foi configurado, só permite Veterano → Expert
+        // Isso força o usuário a configurar NEX 35% primeiro para upgrades Treinado → Veterano
         if (currentLevel === 1) {
-          eligible.push({
-            id: skill.id,
-            name: skill.name,
-            currentLevel: 1,
-            nextLevel: 2,
-          });
+          // Só permite Treinado → Veterano se NEX 35% já foi configurado
+          if (previousNexConfigured) {
+            eligible.push({
+              id: skill.id,
+              name: skill.name,
+              currentLevel: 1,
+              nextLevel: 2,
+            });
+          }
+          // Se previousNexConfigured === false, não adiciona (força ir ao NEX 35% primeiro)
         } else if (currentLevel === 2) {
+          // Veterano → Expert sempre disponível no NEX 70%
           eligible.push({
             id: skill.id,
             name: skill.name,
@@ -184,7 +198,7 @@ export function TrainingGradeSelectModal({
     });
 
     return eligible;
-  }, [currentSkills, nex]);
+  }, [currentSkills, nex, previousNexConfigured]);
 
   // IDs selecionados para verificação rápida
   const selectedSkillIds = useMemo(() => choices.map(c => c.skillId), [choices]);
@@ -309,6 +323,20 @@ export function TrainingGradeSelectModal({
                   );
                 })}
 
+                {/* Aviso de precedência: NEX 35% não configurado */}
+                {nex === 70 && !previousNexConfigured && (
+                  <div className="p-3 bg-warning/10 border border-warning/20 rounded-lg">
+                    <p className="text-xs text-warning flex items-center gap-2">
+                      <Info className="w-4 h-4 flex-shrink-0" />
+                      <span>
+                        Configure primeiro o <strong>Grau de Treinamento do NEX 35%</strong> para 
+                        aumentar perícias de Treinado para Veterano. No NEX 70%, apenas upgrades 
+                        de Veterano para Expert estão disponíveis até que o NEX 35% seja configurado.
+                      </span>
+                    </p>
+                  </div>
+                )}
+
                 {/* Mensagem quando não há perícias elegíveis */}
                 {availableSkills.length === 0 && (
                   <div className="text-center py-8 text-muted-foreground space-y-3">
@@ -318,7 +346,9 @@ export function TrainingGradeSelectModal({
                       <p className="text-xs mt-2 px-4">
                         {nex === 35 
                           ? "Você precisa ter pelo menos uma perícia no nível TREINADO para poder aumentá-la para VETERANO."
-                          : "Você precisa ter perícias no nível TREINADO (→ Veterano) ou VETERANO (→ Expert) para usar este recurso."
+                          : !previousNexConfigured
+                            ? "Configure o NEX 35% primeiro ou tenha perícias VETERANAS para aumentar para EXPERT."
+                            : "Você precisa ter perícias no nível TREINADO (→ Veterano) ou VETERANO (→ Expert) para usar este recurso."
                         }
                       </p>
                     </div>
