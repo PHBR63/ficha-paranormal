@@ -1,20 +1,23 @@
 /**
  * HealingRollModal - Modal de rolagem e aplicação de cura
+ * Fase 4: Migração para integração com SUE
  * 
  * Modal reutilizável para habilidades de cura (Paramédico, rituais, etc.)
  * Exibe dados rolados, bônus de origem (ex: INT de Agente de Saúde),
- * permite selecionar alvo e aplica a cura no HP do personagem.
+ * bônus de trilha (ex: Médico de Campo), permite selecionar alvo e 
+ * aplica a cura no HP do personagem.
  * 
  * @module components/character/HealingRollModal
  */
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Heart, Target, Sparkles, User } from 'lucide-react';
+import { Heart, Target, Sparkles, User, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useIsMobile } from '@/hooks/use-mobile';
 import {
   Dialog,
@@ -39,6 +42,13 @@ import { cn } from '@/lib/utils';
 // =====================================================
 // Tipos e Interfaces
 // =====================================================
+
+/** Fonte de bônus de cura do SUE */
+export interface HealingBonusSource {
+  source: string;
+  value: number;
+  type: 'origin' | 'track' | 'power' | 'ritual' | 'other';
+}
 
 export interface HealingRollModalProps {
   /** Modal aberto */
@@ -65,6 +75,10 @@ export interface HealingRollModalProps {
   maxHp: number;
   /** Lista de alvos disponíveis (futuro: aliados de campanha) */
   availableTargets?: Array<{ id: string; name: string; currentHp: number; maxHp: number }>;
+  
+  // === Bônus do SUE (Sistema Unificado de Efeitos) ===
+  /** Fontes de bônus de cura calculadas pelo SUE */
+  sueBonusSources?: HealingBonusSource[];
 }
 
 // =====================================================
@@ -120,6 +134,7 @@ export function HealingRollModal({
   currentHp,
   maxHp,
   availableTargets = [],
+  sueBonusSources = [],
 }: HealingRollModalProps) {
   const isMobile = useIsMobile();
   
@@ -166,14 +181,18 @@ export function HealingRollModal({
     }, 200);
   }, [diceCount, dieType]);
   
-  // Cálculo do total
+  // Cálculo do total incluindo bônus do SUE
+  const sueBonusTotal = useMemo(() => {
+    return sueBonusSources.reduce((sum, s) => sum + s.value, 0);
+  }, [sueBonusSources]);
+  
   const diceTotal = useMemo(() => {
     return rolledDice.reduce((sum, d) => sum + d, 0);
   }, [rolledDice]);
   
   const totalHealing = useMemo(() => {
-    return diceTotal + bonusFromOrigin + flatBonus;
-  }, [diceTotal, bonusFromOrigin, flatBonus]);
+    return diceTotal + bonusFromOrigin + flatBonus + sueBonusTotal;
+  }, [diceTotal, bonusFromOrigin, flatBonus, sueBonusTotal]);
   
   // Calcular HP final do alvo
   const targetHpData = useMemo(() => {
@@ -262,31 +281,62 @@ export function HealingRollModal({
         )}
       </div>
       
-      {/* Bônus de Origem */}
-      {(bonusFromOrigin > 0 || flatBonus > 0) && rolledDice.length > 0 && (
+      {/* Bônus de Origem e SUE */}
+      {(bonusFromOrigin > 0 || flatBonus > 0 || sueBonusSources.length > 0) && rolledDice.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: diceCount * 0.1 + 0.2 }}
           className="flex flex-wrap justify-center gap-2"
         >
-          {bonusFromOrigin > 0 && bonusFromOriginSource && (
-            <Badge 
-              variant="outline" 
-              className="bg-purple-500/20 border-purple-500/40 text-purple-300"
-            >
-              <Sparkles className="w-3 h-3 mr-1" />
-              {bonusFromOriginSource}: +{bonusFromOrigin}
-            </Badge>
-          )}
-          {flatBonus > 0 && (
-            <Badge 
-              variant="outline" 
-              className="bg-blue-500/20 border-blue-500/40 text-blue-300"
-            >
-              Bônus: +{flatBonus}
-            </Badge>
-          )}
+          <TooltipProvider>
+            {bonusFromOrigin > 0 && bonusFromOriginSource && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Badge 
+                    variant="outline" 
+                    className="bg-purple-500/20 border-purple-500/40 text-purple-300"
+                  >
+                    <Sparkles className="w-3 h-3 mr-1" />
+                    {bonusFromOriginSource}: +{bonusFromOrigin}
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="text-xs">
+                  Bônus de cura da origem
+                </TooltipContent>
+              </Tooltip>
+            )}
+            {flatBonus > 0 && (
+              <Badge 
+                variant="outline" 
+                className="bg-blue-500/20 border-blue-500/40 text-blue-300"
+              >
+                Bônus: +{flatBonus}
+              </Badge>
+            )}
+            {/* Bônus do SUE (trilhas, poderes, rituais) */}
+            {sueBonusSources.map((source, idx) => (
+              <Tooltip key={idx}>
+                <TooltipTrigger asChild>
+                  <Badge 
+                    variant="outline" 
+                    className={cn(
+                      source.type === 'track' && 'bg-amber-500/20 border-amber-500/40 text-amber-300',
+                      source.type === 'power' && 'bg-primary/20 border-primary/40 text-primary',
+                      source.type === 'ritual' && 'bg-purple-500/20 border-purple-500/40 text-purple-300',
+                      source.type === 'other' && 'bg-muted border-border text-muted-foreground'
+                    )}
+                  >
+                    <Info className="w-3 h-3 mr-1" />
+                    {source.source}: +{source.value}
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="text-xs">
+                  Bônus de cura via SUE ({source.type})
+                </TooltipContent>
+              </Tooltip>
+            ))}
+          </TooltipProvider>
         </motion.div>
       )}
       

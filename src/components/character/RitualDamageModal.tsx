@@ -1,15 +1,18 @@
 /**
  * RitualDamageModal - Modal de resultado de dano de rituais
- * Fase 3: Sistema de rolagem automática de dano para rituais
- * Mostra dados rolados, total, tipo de dano e permite aplicar
+ * Fase 4: Migração para useRitualDamageWithSUE
+ * 
+ * Integrado com SUE para bônus automáticos de dano de rituais.
+ * Mostra dados rolados, total, tipo de dano e permite aplicar.
  */
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { 
   Dices, 
   Skull, 
@@ -26,6 +29,7 @@ import {
   Check,
   Copy,
   Target,
+  Info,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getElementConfig } from '@/lib/element-config';
@@ -37,6 +41,11 @@ import {
   getActiveRitualEffect,
   formatDamageFormula,
 } from '@/lib/rituals/legacy-exports';
+import { 
+  useRitualDamageWithSUE, 
+  type RitualDamageCharacterConfig,
+  type RitualDamageResult as SUERitualDamageResult,
+} from '@/hooks/sue';
 
 // Ícones para tipos de dano
 const DAMAGE_TYPE_ICONS: Record<string, typeof Skull> = {
@@ -78,12 +87,12 @@ const DAMAGE_TYPE_COLORS: Record<string, string> = {
   'químico': 'text-lime-400',
 };
 
-// Função para rolar um dado
+// Função para rolar um dado (mantida para cura que não usa SUE)
 function rollDie(sides: number): number {
   return Math.floor(Math.random() * sides) + 1;
 }
 
-// Função para rolar múltiplos dados
+// Função para rolar múltiplos dados (mantida para cura que não usa SUE)
 function rollDice(count: number, sides: number): number[] {
   return Array.from({ length: count }, () => rollDie(sides));
 }
@@ -125,9 +134,29 @@ interface RitualDamageModalProps {
   onRequestResistance?: (damage: number) => void; // Callback para solicitar teste de resistência
   onRequestConditions?: () => void; // Callback para abrir modal de condições (Fase 6)
   onClose?: () => void;
-  // === Bônus do SUE (Sistema Unificado de Efeitos) ===
-  ritualDamageBonus?: number; // Bônus fixo de dano de rituais
-  damageAttributeBonus?: { attribute: string; value: number }; // Ritual Potente (INT no dano)
+  
+  // === Configuração do Personagem para SUE ===
+  characterClass?: string;
+  classTrack?: string;
+  nex?: number;
+  origin?: string;
+  attributes?: {
+    agility: number;
+    strength: number;
+    presence: number;
+    intellect: number;
+    vigor: number;
+  };
+  classPowers?: string[];
+  generalPowers?: string[];
+  paranormalPowers?: Array<{ id: string; name: string; element: string }>;
+  activeConditions?: string[];
+  
+  // === Bônus Legados (retrocompatibilidade) ===
+  /** @deprecated Use configuração de personagem para SUE */
+  ritualDamageBonus?: number;
+  /** @deprecated Use configuração de personagem para SUE */
+  damageAttributeBonus?: { attribute: string; value: number };
 }
 
 export function RitualDamageModal({
@@ -140,15 +169,42 @@ export function RitualDamageModal({
   onRequestResistance,
   onRequestConditions,
   onClose,
-  // Bônus do SUE
+  // Configuração do personagem para SUE
+  characterClass = 'Combatente',
+  classTrack,
+  nex = 5,
+  origin,
+  attributes = { agility: 1, strength: 1, presence: 1, intellect: 1, vigor: 1 },
+  classPowers = [],
+  generalPowers = [],
+  paranormalPowers = [],
+  activeConditions = [],
+  // Bônus legados (retrocompatibilidade)
   ritualDamageBonus = 0,
   damageAttributeBonus,
 }: RitualDamageModalProps) {
   // Estado do resultado da rolagem
   const [damageResult, setDamageResult] = useState<RitualDamageResult | null>(null);
+  const [sueResult, setSueResult] = useState<SUERitualDamageResult | null>(null);
   const [healingResult, setHealingResult] = useState<RitualHealingResult | null>(null);
   const [isRolling, setIsRolling] = useState(false);
   const [showDice, setShowDice] = useState(false);
+
+  // Configuração do personagem para o hook SUE
+  const characterConfig: RitualDamageCharacterConfig = useMemo(() => ({
+    characterClass,
+    classTrack,
+    nex,
+    origin,
+    attributes,
+    classPowers,
+    generalPowers,
+    paranormalPowers,
+    activeConditions,
+  }), [characterClass, classTrack, nex, origin, attributes, classPowers, generalPowers, paranormalPowers, activeConditions]);
+
+  // Hook integrado com SUE para dano de rituais
+  const { executeRitualDamageRoll, getRitualDamageBonusBreakdown } = useRitualDamageWithSUE(characterConfig);
 
   // Obtém o efeito ativo do ritual
   const activeEffect = useMemo(() => {
@@ -161,32 +217,43 @@ export function RitualDamageModal({
   const hasHealing = activeEffect?.healing;
   const hasTempHP = activeEffect?.tempHP;
 
-  // Função para rolar dano
-  const rollDamage = () => {
+  // Função para rolar dano usando SUE
+  const rollDamage = useCallback(() => {
     if (!ritual || !activeEffect?.damage) return;
 
     setIsRolling(true);
     setShowDice(false);
+    setSueResult(null);
 
     const { diceCount, diceType, bonus = 0, damageType, ignoresRD = false } = activeEffect.damage;
     
-    // Calcula bônus total do SUE (ritualDamageBonus + INT se Ritual Potente)
-    const sueBonus = ritualDamageBonus + (damageAttributeBonus?.value || 0);
-    const totalBonus = bonus + sueBonus;
+    // Calcula bônus legado (retrocompatibilidade)
+    const legacyBonus = ritualDamageBonus + (damageAttributeBonus?.value || 0);
     
     // Animação de rolagem
     setTimeout(() => {
-      const dice = rollDice(diceCount, diceType);
-      const total = dice.reduce((a, b) => a + b, 0) + totalBonus;
+      // Executa rolagem via hook SUE
+      const sueRollResult = executeRitualDamageRoll({
+        ritualId: ritual.id,
+        ritualName: ritual.name,
+        element: ritual.element,
+        circle: ritual.circle,
+        baseDamage: `${diceCount}d${diceType}${bonus > 0 ? `+${bonus}` : ''}`,
+        damageType,
+        manualModifiers: legacyBonus, // Aplica bônus legado como modificador
+      });
       
+      setSueResult(sueRollResult);
+      
+      // Converte para formato legacy para retrocompatibilidade
       setDamageResult({
-        dice,
+        dice: sueRollResult.baseDice,
         diceType,
-        bonus: totalBonus, // Inclui bônus do SUE no resultado
-        total,
+        bonus: sueRollResult.bonusSources.reduce((sum, b) => sum + b.value, 0) + bonus,
+        total: sueRollResult.total,
         damageType,
         ignoresRD,
-        formula: `${diceCount}d${diceType}${totalBonus > 0 ? `+${totalBonus}` : totalBonus < 0 ? totalBonus : ''}`,
+        formula: `${diceCount}d${diceType}${sueRollResult.total > diceCount ? `+${sueRollResult.total - sueRollResult.baseDice.reduce((a, b) => a + b, 0)}` : ''}`,
         ritualName: ritual.name,
         ritualId: ritual.id,
         enhancements,
@@ -195,7 +262,7 @@ export function RitualDamageModal({
       setShowDice(true);
       setIsRolling(false);
     }, 500);
-  };
+  }, [ritual, activeEffect, enhancements, ritualDamageBonus, damageAttributeBonus, executeRitualDamageRoll]);
 
   // Função para rolar cura
   const rollHealing = (type: 'healing' | 'tempHP') => {
@@ -235,6 +302,7 @@ export function RitualDamageModal({
     if (open && ritual && activeEffect) {
       setDamageResult(null);
       setHealingResult(null);
+      setSueResult(null);
       setShowDice(false);
       
       // Auto-rola após um pequeno delay
@@ -246,7 +314,7 @@ export function RitualDamageModal({
         setTimeout(() => rollHealing('tempHP'), 300);
       }
     }
-  }, [open, ritual?.id]);
+  }, [open, ritual?.id, rollDamage]);
 
   // Handler para fechar
   const handleClose = () => {
@@ -436,6 +504,35 @@ export function RitualDamageModal({
                   <div className="mt-4 text-xs text-muted-foreground">
                     Fórmula: <span className="font-mono">{damageResult?.formula || healingResult?.formula}</span>
                   </div>
+
+                  {/* Bônus do SUE - Exibe fontes detalhadas */}
+                  {sueResult && sueResult.bonusSources.length > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.4 }}
+                      className="mt-3 flex flex-wrap justify-center gap-1"
+                    >
+                      <TooltipProvider>
+                        {sueResult.bonusSources.map((source, idx) => (
+                          <Tooltip key={idx}>
+                            <TooltipTrigger asChild>
+                              <Badge 
+                                variant="outline" 
+                                className="text-[10px] bg-purple-500/10 border-purple-500/30 text-purple-300"
+                              >
+                                <Info className="w-2.5 h-2.5 mr-1" />
+                                {source.source}: +{source.value}
+                              </Badge>
+                            </TooltipTrigger>
+                            <TooltipContent side="bottom" className="text-xs">
+                              Bônus de dano de ritual via SUE
+                            </TooltipContent>
+                          </Tooltip>
+                        ))}
+                      </TooltipProvider>
+                    </motion.div>
+                  )}
                 </motion.div>
               ) : (
                 <motion.div

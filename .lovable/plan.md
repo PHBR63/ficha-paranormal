@@ -111,19 +111,22 @@ Migrar todos os componentes e lógicas que atualmente usam as funções legadas 
 
 ---
 
-### Fase 4: Migração de Dano de Rituais
+### Fase 4: Migração de Dano de Rituais ✅ CONCLUÍDA
 **Objetivo**: Integrar rituais ao sistema unificado de dano
 
-**4.1 RitualDamageModal.tsx**
-- Substituir `rollDamage` interno por `useRitualDamageWithSUE`
-- Integrar bônus de dano de rituais do SUE
-- Suportar elementos e potenciações
+**4.1 RitualDamageModal.tsx** ✅
+- Integrado `useRitualDamageWithSUE` para rolagem de dano
+- Props expandidas para receber configuração de personagem
+- Exibição de breakdown de bônus do SUE com tooltips
+- Retrocompatibilidade mantida com props legadas
 
-**4.2 HealingRollModal.tsx**
-- Avaliar se precisa de integração SUE (bônus de cura)
-- Migrar se aplicável (Agente de Saúde, Médico de Campo)
+**4.2 HealingRollModal.tsx** ✅
+- Adicionada prop `sueBonusSources` para bônus de cura do SUE
+- Exibição de fontes de bônus (origem, trilha, poder, ritual)
+- Cálculo de total atualizado para incluir bônus SUE
+- Badges coloridas por tipo de fonte
 
-**Arquivos a modificar**:
+**Arquivos modificados**:
 - `src/components/character/RitualDamageModal.tsx`
 - `src/components/character/HealingRollModal.tsx`
 
