@@ -1,6 +1,8 @@
 /**
  * MobileConditionalBonusesPanel - Painel de bônus condicionais para mobile
  * Toggle switches para ativar/desativar bônus situacionais
+ * 
+ * Agora inclui indicadores de exclusão por stacking (SUE Hardening)
  */
 
 import { memo, useState } from 'react';
@@ -20,10 +22,13 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ConditionalBonus } from '@/hooks/useCharacterBonusSummary';
+import { StackingExclusionIndicator, type ExcludedEffectInfo } from '../StackingExclusionIndicator';
 
 interface MobileConditionalBonusesPanelProps {
   conditionalBonuses: ConditionalBonus[];
   onToggleBonus: (bonusId: string, active: boolean) => void;
+  /** Efeitos excluídos por stacking (do SUE Hardening) */
+  excludedEffects?: ExcludedEffectInfo[];
   className?: string;
 }
 
@@ -70,6 +75,7 @@ function getSourceLabel(source: ConditionalBonus['source']) {
 export const MobileConditionalBonusesPanel = memo(function MobileConditionalBonusesPanel({
   conditionalBonuses,
   onToggleBonus,
+  excludedEffects = [],
   className,
 }: MobileConditionalBonusesPanelProps) {
   const [isExpanded, setIsExpanded] = useState(true);
@@ -187,6 +193,16 @@ export const MobileConditionalBonusesPanel = memo(function MobileConditionalBonu
                   </motion.div>
                 );
               })}
+              
+              {/* Indicador de Exclusões por Stacking */}
+              {excludedEffects.length > 0 && (
+                <div className="pt-2 border-t border-border/30">
+                  <StackingExclusionIndicator
+                    excludedEffects={excludedEffects}
+                    variant="badge"
+                  />
+                </div>
+              )}
               
               {/* Dica */}
               <p className="text-[10px] text-muted-foreground text-center pt-1 border-t border-border/30">

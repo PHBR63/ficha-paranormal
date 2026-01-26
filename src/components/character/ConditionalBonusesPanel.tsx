@@ -1,6 +1,8 @@
 /**
  * ConditionalBonusesPanel - Painel colapsável com bônus condicionais de trilha
  * Permite ativar/desativar bônus como Inquebrável, Disparo Letal, Ataque Furtivo
+ * 
+ * Agora inclui indicadores de exclusão por stacking (SUE Hardening)
  */
 
 import { useState } from 'react';
@@ -10,10 +12,13 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { ConditionalBonus } from '@/hooks/useCharacterBonusSummary';
+import { StackingExclusionIndicator, type ExcludedEffectInfo } from './StackingExclusionIndicator';
 
 interface ConditionalBonusesPanelProps {
   conditionalBonuses: ConditionalBonus[];
   onToggleBonus: (bonusId: string, active: boolean) => void;
+  /** Efeitos excluídos por stacking (do SUE Hardening) */
+  excludedEffects?: ExcludedEffectInfo[];
   className?: string;
 }
 
@@ -61,6 +66,7 @@ function getSourceLabel(source: ConditionalBonus['source']) {
 export function ConditionalBonusesPanel({
   conditionalBonuses,
   onToggleBonus,
+  excludedEffects = [],
   className,
 }: ConditionalBonusesPanelProps) {
   const [isExpanded, setIsExpanded] = useState(true);
@@ -178,6 +184,16 @@ export function ConditionalBonusesPanel({
                   </motion.div>
                 );
               })}
+              
+              {/* Indicador de Exclusões por Stacking */}
+              {excludedEffects.length > 0 && (
+                <div className="pt-2 border-t border-border/30">
+                  <StackingExclusionIndicator
+                    excludedEffects={excludedEffects}
+                    variant="badge"
+                  />
+                </div>
+              )}
               
               {/* Dica */}
               <p className="text-[10px] text-muted-foreground text-center pt-1 border-t border-border/30">

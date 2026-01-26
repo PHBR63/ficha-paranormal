@@ -2518,6 +2518,7 @@ export default function CharacterSheet() {
                 <ConditionalBonusesPanel
                   conditionalBonuses={bonusSummary.conditionalBonuses}
                   onToggleBonus={handleToggleConditionalBonus}
+                  excludedEffects={bonusSummary.unifiedEffects?.hardening?.excludedEffects || []}
                 />
               )}
 
