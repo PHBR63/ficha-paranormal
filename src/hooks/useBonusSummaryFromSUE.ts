@@ -4,10 +4,20 @@
  * Este hook atua como adapter entre o SUE (Sistema Unificado de Efeitos) e a interface
  * BonusSummary usada pelos componentes existentes. Ele elimina a duplicação de cálculo
  * e centraliza todas as fontes de bônus no SUE.
+ * 
+ * INTEGRAÇÃO SUE HARDENING:
+ * - Expõe metadados de processamento via unifiedEffects.hardening
+ * - Disponibiliza breakdown de stacking por categoria
+ * - Inclui lista de efeitos excluídos para debugging
  */
 
 import { useMemo, useCallback } from 'react';
-import { useUnifiedEffects, CharacterStateForEffects, CombatContextInput } from './useUnifiedEffects';
+import { 
+  useUnifiedEffects, 
+  CharacterStateForEffects, 
+  CombatContextInput,
+  type UnifiedEffectsResult,
+} from './useUnifiedEffects';
 import { useDefenseBonuses, DefenseBonusBreakdown, ResistanceBonusBreakdown, ActiveRitualForDefense } from './useDefenseBonuses';
 import { useParanormalEffects, ParanormalEffects } from './useParanormalEffects';
 import { useClassPowerBonuses, ClassPowerBonusResult } from './useClassPowerBonuses';
@@ -148,7 +158,12 @@ export function useBonusSummaryFromSUE({
   activeConditions = [],
   versatilityTrack,
   classPowerChoices = {},
-}: UseBonusSummaryFromSUEProps): BonusSummary & { unifiedEffects: ReturnType<typeof useUnifiedEffects> } {
+}: UseBonusSummaryFromSUEProps): BonusSummary & { 
+  /** Acesso completo ao resultado do SUE (inclui hardening) */
+  unifiedEffects: UnifiedEffectsResult;
+  /** Atalho para metadados de hardening */
+  hardeningMetadata: UnifiedEffectsResult['hardening']['metadata'] | null;
+} {
   
   // Monta o estado do personagem para o SUE
   const characterState = useMemo<CharacterStateForEffects>(() => ({
@@ -606,9 +621,10 @@ export function useBonusSummaryFromSUE({
     intellect,
   ]);
   
-  // Retorna BonusSummary + acesso ao SUE
+  // Retorna BonusSummary + acesso ao SUE com hardening
   return {
     ...bonusSummary,
     unifiedEffects,
+    hardeningMetadata: unifiedEffects.hardening?.metadata ?? null,
   };
 }

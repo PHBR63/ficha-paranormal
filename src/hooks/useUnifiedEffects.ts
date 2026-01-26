@@ -25,6 +25,20 @@ import {
   AttributeType,
 } from '@/lib/unified-effects-engine';
 import {
+  preprocessEffectsWithHardening,
+  type PreprocessResult,
+  type PreparedEffect,
+} from '@/lib/sue/consolidation-with-hardening';
+import {
+  EFFECT_APPLICATION_ORDER,
+  getEffectPriority,
+  type EffectCategory,
+} from '@/lib/sue/effect-application-order';
+import {
+  type BonusCategory,
+  type StackingResult,
+} from '@/lib/sue/stacking-rules';
+import {
   getOriginEffects,
 } from '@/lib/effects/origin-effects-adapter';
 import {
@@ -145,10 +159,43 @@ export interface UnifiedEffectsResult {
     conditional_bonus: UnifiedEffect[];
   };
   
+  // === SUE HARDENING: Informações de processamento ===
+  hardening: {
+    /** Efeitos preparados com ordem de aplicação */
+    preparedEffects: PreparedEffect[];
+    
+    /** Breakdown de stacking por categoria de bônus */
+    stackingBreakdowns: Map<BonusCategory, StackingResult>;
+    
+    /** Efeitos excluídos por regras de stacking (para UI/debug) */
+    excludedEffects: Array<{
+      effect: UnifiedEffect;
+      reason: string;
+      replacedBy: string;
+    }>;
+    
+    /** Metadados de performance */
+    metadata: {
+      totalReceived: number;
+      totalAfterOrdering: number;
+      totalAfterStacking: number;
+      processingTimeMs: number;
+    };
+    
+    /** Ordem oficial de aplicação (10 passos) */
+    applicationOrder: readonly string[];
+  };
+  
   // Helpers
   hasEffect: (effectId: string) => boolean;
   getEffectsFromSource: (source: UnifiedEffect['source']) => UnifiedEffect[];
   isEffectActive: (effectId: string) => boolean;
+  
+  // === SUE HARDENING: Helpers adicionais ===
+  /** Obtém prioridade de um efeito pela fonte */
+  getEffectPriority: (effectId: string) => number;
+  /** Verifica se um bônus foi excluído por stacking */
+  isBonusExcludedByStacking: (effectId: string, category: BonusCategory) => boolean;
 }
 
 // =====================================================
@@ -317,13 +364,16 @@ export function useUnifiedEffects(
     // ===== FASE 3: Cria contexto de cálculo =====
     const calculationContext = createCalculationContext(characterState, combatContext);
 
-    // ===== FASE 4: Consolida com regras de stacking =====
+    // ===== FASE 4: SUE HARDENING - Pré-processa com ordem e stacking =====
+    const hardeningResult = preprocessEffectsWithHardening(allEffects);
+
+    // ===== FASE 5: Consolida com regras de stacking =====
     const computed = consolidateEffects(allEffects, calculationContext);
 
-    // ===== FASE 5: Agrupa por fonte =====
+    // ===== FASE 6: Agrupa por fonte =====
     const bySource = groupEffectsBySource(allEffects);
 
-    // ===== FASE 6: Helpers =====
+    // ===== FASE 7: Helpers básicos =====
     const hasEffect = (effectId: string): boolean => {
       return allEffects.some(e => e.id === effectId);
     };
@@ -338,13 +388,42 @@ export function useUnifiedEffects(
       return effect.isActive && checkEffectConditions(effect, calculationContext);
     };
 
+    // ===== FASE 8: SUE HARDENING - Helpers avançados =====
+    const getEffectPriorityHelper = (effectId: string): number => {
+      const effect = allEffects.find(e => e.id === effectId);
+      if (!effect) return 99;
+      return getEffectPriority(effect.source);
+    };
+
+    const isBonusExcludedByStacking = (effectId: string, category: BonusCategory): boolean => {
+      const prepared = hardeningResult.effects.find(e => e.id === effectId);
+      if (!prepared) return false;
+      return prepared.excludedByStacking?.some(id => id.includes(category)) ?? false;
+    };
+
+    // ===== FASE 9: Monta resultado final =====
     return {
       allEffects,
       computed,
       bySource,
+      
+      // SUE Hardening
+      hardening: {
+        preparedEffects: hardeningResult.effects,
+        stackingBreakdowns: hardeningResult.stackingBreakdowns,
+        excludedEffects: hardeningResult.excludedEffects,
+        metadata: hardeningResult.metadata,
+        applicationOrder: EFFECT_APPLICATION_ORDER,
+      },
+      
+      // Helpers básicos
       hasEffect,
       getEffectsFromSource,
       isEffectActive,
+      
+      // Helpers de hardening
+      getEffectPriority: getEffectPriorityHelper,
+      isBonusExcludedByStacking,
     };
   // OTIMIZAÇÃO DE PERFORMANCE: Removemos currentHP/PE/SAN das dependências
   // Esses valores não afetam bônus mecânicos e causavam recálculos desnecessários
@@ -392,3 +471,8 @@ function collectConditionEffects(conditionIds: string[]): UnifiedEffect[] {
 // =====================================================
 
 export type { UnifiedEffect, EffectMechanics, ComputedEffects };
+
+// Re-export de tipos do SUE Hardening para conveniência
+export type { PreparedEffect, PreprocessResult } from '@/lib/sue/consolidation-with-hardening';
+export type { BonusCategory, StackingResult } from '@/lib/sue/stacking-rules';
+export type { EffectCategory } from '@/lib/sue/effect-application-order';
