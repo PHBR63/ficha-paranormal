@@ -685,17 +685,18 @@ export const MobileOverviewTab = memo(function MobileOverviewTab({
         activeConditionalBonuses={activeConditionalBonuses}
       />
 
-      {/* Painel de Combate Mobile */}
-      {equippedWeapons.length > 0 && (
-        <MobileCombatPanel
-          weapons={equippedWeapons}
-          weaponBuffs={weaponBuffs}
-          agility={character.agility}
-          onWeaponClick={onOpenCombat}
-          onRollInitiative={onRollInitiative}
-          especialistaArmaGroups={especialistaArmaGroups}
-        />
-      )}
+      {/* Painel de Combate Mobile - sempre exibe, mesmo sem armas (ataque desarmado) */}
+      <MobileCombatPanel
+        weapons={equippedWeapons}
+        weaponBuffs={weaponBuffs}
+        agility={character.agility}
+        strength={character.strength}
+        onWeaponClick={onOpenCombat}
+        onRollInitiative={onRollInitiative}
+        especialistaArmaGroups={especialistaArmaGroups}
+        unarmedDamage={bonusSummary?.unarmedDamage}
+        hasArtistaMarcial={!!bonusSummary?.unarmedDamage}
+      />
 
       {/* Gerenciador de Condições Mobile */}
       <MobileConditionManager

@@ -260,6 +260,34 @@ export const ACTIVATABLE_ESPECIALISTA_POWERS: ActivatableClassPower[] = [
     icon: 'zap',
     pageRef: 'Livro Base p.50',
   },
+  // ===== NOVOS PODERES: Na Trilha Certa + Pensamento Ágil =====
+  {
+    id: 'na-trilha-certa',
+    name: 'Na Trilha Certa',
+    shortEffect: '+1d20 cumulativo após sucesso em procurar pistas',
+    description: 'Sempre que tiver sucesso em um teste para procurar pistas, pode gastar PE para receber +1d20 no próximo teste. Custos e bônus são cumulativos (1 PE = +1d20, 2 PE total = +2d20, etc.).',
+    basePECost: 1,
+    scalingCost: {
+      multiplier: 1,
+      description: 'Custo aumenta +1 PE por uso na cena',
+    },
+    limit: 'perScene', // Reseta na cena, mas cumulativo dentro dela
+    minNex: 15,
+    icon: 'search',
+    pageRef: 'Livro Base p.50',
+    conditionalBonusId: 'na-trilha-certa-ativo',
+  },
+  {
+    id: 'pensamento-agil',
+    name: 'Pensamento Ágil',
+    shortEffect: 'Ação extra de procurar pistas (1x/rodada)',
+    description: 'Durante cena de investigação, gaste 2 PE para fazer uma ação adicional de procurar pistas.',
+    basePECost: 2,
+    limit: 'perRound',
+    minNex: 15,
+    icon: 'search',
+    pageRef: 'Livro Base p.51',
+  },
 ];
 
 // Array combinado para o hook poder usar todos os poderes
