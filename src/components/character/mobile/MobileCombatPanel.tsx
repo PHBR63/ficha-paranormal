@@ -54,10 +54,15 @@ interface MobileCombatPanelProps {
   weapons: WeaponEntry[];
   weaponBuffs?: WeaponBuff[];
   agility: number;
+  strength?: number;
   onWeaponClick: (weapon: WeaponEntry) => void;
   onRollInitiative?: () => void;
   /** Grupos de armas escolhidos em Especialista em Arma */
   especialistaArmaGroups?: string[];
+  /** Dano desarmado do SUE (Artista Marcial) */
+  unarmedDamage?: string;
+  /** Se o personagem tem Artista Marcial (ataque ágil) */
+  hasArtistaMarcial?: boolean;
 }
 
 // Ícone por tipo de arma
@@ -251,22 +256,101 @@ export function MobileCombatPanel({
   weapons,
   weaponBuffs = [],
   agility,
+  strength = 0,
   onWeaponClick,
   onRollInitiative,
   especialistaArmaGroups = [],
+  unarmedDamage,
+  hasArtistaMarcial = false,
 }: MobileCombatPanelProps) {
   // Separa armas por tipo
   const meleeWeapons = weapons.filter(w => w.type !== 'Disparo' && w.type !== 'Arremesso');
   const rangedWeapons = weapons.filter(w => w.type === 'Disparo' || w.type === 'Arremesso');
 
+  // Cria entrada de ataque desarmado
+  const unarmedWeaponEntry: WeaponEntry = {
+    id: '__unarmed__',
+    name: 'Ataque Desarmado',
+    type: 'Briga',
+    damage: unarmedDamage || '1d4',
+    damageType: 'contusão',
+    critical: '20',
+    criticalMultiplier: 'x2',
+    special: hasArtistaMarcial ? 'Ágil, Letal' : undefined,
+  };
+
+  // Handler para ataque desarmado
+  const handleUnarmedClick = () => {
+    onWeaponClick(unarmedWeaponEntry);
+  };
+
+  // Se não tem armas, mostra apenas opção desarmada
   if (weapons.length === 0) {
     return (
-      <div className="ordo-panel p-4 text-center">
-        <Sword className="w-10 h-10 mx-auto text-muted-foreground/40 mb-2" />
-        <p className="text-sm text-muted-foreground">Nenhuma arma equipada</p>
-        <p className="text-[10px] text-muted-foreground/70 mt-1">
-          Equipe armas no inventário para usar no combate
-        </p>
+      <div className="space-y-3">
+        {/* Header com iniciativa */}
+        <div className="ordo-panel p-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider">COMBATE</p>
+              <p className="text-[10px] text-muted-foreground">
+                Nenhuma arma equipada
+              </p>
+            </div>
+            {onRollInitiative && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onRollInitiative}
+                className="h-9 gap-1.5 text-xs font-display"
+              >
+                <Dices className="w-4 h-4" />
+                INICIATIVA
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Ataque Desarmado */}
+        <div className="space-y-2">
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wider px-1">
+            Desarmado
+          </p>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="p-3 rounded-lg border bg-card/50 border-border active:bg-card/80 cursor-pointer"
+            onClick={handleUnarmedClick}
+          >
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-orange-500/10 text-orange-500">
+                  <Hand className="w-4 h-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium text-sm truncate">Ataque Desarmado</p>
+                  <p className="text-[10px] text-muted-foreground">Briga</p>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {hasArtistaMarcial && (
+                  <Badge variant="secondary" className="text-[9px] bg-orange-500/20 text-orange-400 border-orange-500/30">
+                    Ágil
+                  </Badge>
+                )}
+                <div className="text-right">
+                  <p className="font-mono text-sm font-semibold text-orange-500">
+                    {unarmedDamage || '1d4'}
+                  </p>
+                  <p className="text-[9px] text-muted-foreground">
+                    {hasArtistaMarcial ? '+AGI' : '+FOR'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
       </div>
     );
   }

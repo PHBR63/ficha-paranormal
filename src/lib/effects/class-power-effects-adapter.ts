@@ -148,16 +148,32 @@ function convertPowerMechanicsToEffects(
       const weaponTypes = Array.isArray(mechanics.conditions.weaponType) 
         ? mechanics.conditions.weaponType 
         : [mechanics.conditions.weaponType];
-        
+      
+      // Verifica cada tipo de arma e aplica bônus adequadamente
+      // Ninja Urbano: ['melee', 'ranged-nonfirearm'] = corpo a corpo + distância (sem fogo)
       if (weaponTypes.includes('melee') || weaponTypes.includes('unarmed')) {
         effects.meleeDamageBonus = (effects.meleeDamageBonus || 0) + damageValue;
+      }
+      
+      // ranged-nonfirearm = armas de disparo que não são de fogo (arco, besta, etc.)
+      if (weaponTypes.includes('ranged-nonfirearm')) {
+        // Aplica a rangedDamageBonus, excluindo armas de fogo
+        effects.rangedDamageBonus = (effects.rangedDamageBonus || 0) + damageValue;
       } else if (weaponTypes.includes('firearm')) {
         // Armas de fogo usam bônus específico (Balística Avançada)
         effects.firearmDamageBonus = (effects.firearmDamageBonus || 0) + damageValue;
-      } else if (weaponTypes.includes('ranged')) {
-        // Armas de arremesso/distância genérica
+      } else if (weaponTypes.includes('ranged') && !weaponTypes.includes('melee')) {
+        // ranged genérico (sem 'melee' para evitar duplicação)
         effects.rangedDamageBonus = (effects.rangedDamageBonus || 0) + damageValue;
-      } else if (damageValue > 0) {
+      }
+      
+      // Se nenhum tipo específico foi aplicado, usa bônus genérico
+      if (damageValue > 0 && 
+          !weaponTypes.includes('melee') && 
+          !weaponTypes.includes('unarmed') &&
+          !weaponTypes.includes('ranged') &&
+          !weaponTypes.includes('ranged-nonfirearm') &&
+          !weaponTypes.includes('firearm')) {
         effects.damageBonus = damageValue;
       }
     } else if (damageValue > 0) {

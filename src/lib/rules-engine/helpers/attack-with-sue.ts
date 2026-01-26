@@ -102,8 +102,42 @@ export function rollAttackWithContext(context: AttackRollContext): DetailedAttac
     conditionalBonuses = [],
   } = context;
   
-  // 1. Buscar arma no estado
-  const weapon = characterState.equippedWeapons.find(w => w.id === weaponId);
+  // Importar constante de ataque desarmado
+  const UNARMED_WEAPON_ID = '__unarmed__';
+  
+  // 1. Buscar arma no estado OU criar arma virtual desarmada
+  let weapon = characterState.equippedWeapons.find(w => w.id === weaponId);
+  
+  // Se for ataque desarmado, criar arma virtual
+  if (!weapon && weaponId === UNARMED_WEAPON_ID) {
+    // Obter bônus do SUE para verificar se tem Artista Marcial
+    const sueComputed = getSUEBonusesForCharacter(characterState);
+    
+    // Verifica Artista Marcial por efeitos especiais no SUE
+    const hasArtistaMarcial = sueComputed.rawSUE?.specialEffects?.some(
+      e => e.effect.includes('Dano desarmado') || e.effect.includes('Ataques desarmados')
+    ) ?? false;
+    
+    // Determinar dano desarmado baseado no SUE ou usar 1d4 padrão
+    const unarmedDamage = sueComputed.rawSUE?.damage?.extraDice?.[0] || '1d4';
+    
+    // Artista Marcial torna o ataque Ágil (usa Agilidade)
+    const attackAttribute = hasArtistaMarcial ? 'agility' : 'strength';
+    
+    weapon = {
+      id: UNARMED_WEAPON_ID,
+      name: 'Ataque Desarmado',
+      category: 'Briga',
+      damage: unarmedDamage,
+      criticalMargin: 20,
+      criticalMultiplier: 2,
+      attackAttribute: attackAttribute as 'strength' | 'agility',
+      attackSkill: 'luta',
+      isEquipped: true,
+      properties: hasArtistaMarcial ? ['agil', 'letal'] : [],
+    };
+  }
+  
   if (!weapon) {
     return createAttackErrorResult(`Arma não encontrada: ${weaponId}`);
   }

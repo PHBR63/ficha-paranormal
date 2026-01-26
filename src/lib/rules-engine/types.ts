@@ -13,6 +13,13 @@
 // TIPOS BASE
 // =====================================================
 
+/**
+ * ID especial para representar ataques desarmados no sistema de combate.
+ * Usado quando o personagem não tem arma equipada ou escolhe atacar desarmado.
+ * O sistema automaticamente usa o dano desarmado do SUE (Artista Marcial) se disponível.
+ */
+export const UNARMED_WEAPON_ID = '__unarmed__';
+
 export type ClassId = 'Combatente' | 'Especialista' | 'Ocultista';
 export type AttributeKey = 'strength' | 'agility' | 'vigor' | 'intellect' | 'presence';
 export type SkillTrainingLevel = 'destreinado' | 'treinado' | 'veterano' | 'expert';
