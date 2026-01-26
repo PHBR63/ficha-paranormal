@@ -126,6 +126,7 @@ import {
   type BonusSource,
   type ActiveCondition,
 } from './mobile';
+import { SUEDevToolsPanel } from '@/components/dev';
 
 // Utilitários compartilhados
 import {
@@ -1926,6 +1927,16 @@ export function MobileCharacterSheet({
                 effectsResult={unifiedEffects}
               />
             )}
+            
+            {/* DevTools do SUE - apenas em desenvolvimento */}
+            <SUEDevToolsPanel 
+              hardeningData={unifiedEffects?.hardening ? {
+                effects: unifiedEffects.hardening.preparedEffects,
+                stackingBreakdowns: unifiedEffects.hardening.stackingBreakdowns,
+                excludedEffects: unifiedEffects.hardening.excludedEffects,
+                metadata: unifiedEffects.hardening.metadata,
+              } : null}
+            />
             
             {/* Controle de Rodada Mobile - Exibido apenas se houver uso de habilidades ou rodada > 1 */}
             {(roundTracking.usedCount > 0 || roundTracking.currentRound > 1) && (
