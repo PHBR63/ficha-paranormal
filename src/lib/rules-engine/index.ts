@@ -15,7 +15,8 @@ export * from './types';
 // Funções principais
 export { deriveCharacter } from './derive-character';
 export { validateCharacter } from './validate-character';
-export { applyEffect, rollAction } from './apply-and-roll';
+export { applyEffect, rollAction, rollDamageWithContext } from './apply-and-roll';
+export type { DamageRollContext, DetailedDamageResult } from './apply-and-roll';
 
 // Helpers (para uso interno ou extensão)
 export { getClassBaseStats } from './helpers/class-stats';
@@ -36,6 +37,23 @@ export {
   hasWeaponProficiency,
   hasArmorProficiency,
 } from './helpers/proficiency-collection';
+
+// Parser de fórmula de dano
+export {
+  parseDamageFormula,
+  rollDamageFromFormula,
+  combineDamageFormulas,
+  calculateAverageDamage,
+  calculateMaxDamage,
+  calculateMinDamage,
+  toLegacyDamageParams,
+} from './helpers/damage-formula-parser';
+export type {
+  DiceGroup,
+  ParsedDamageFormula,
+  DamageRollOptions,
+  DamageRollResult,
+} from './helpers/damage-formula-parser';
 
 // Bridge SUE-RulesEngine
 export { getSUEBonusesForCharacter } from './sue-bridge';
