@@ -883,6 +883,8 @@ export function calculatePowerActivationEffects(
   damageBonus?: number;
   defenseBonus?: number;
   movementBonus?: number;
+  swapToSkill?: string; // Para Motor de Busca (tecnologia), Impostor (enganacao), Cicatrizes (vontade)
+  allyBonus?: number;   // Para Acalentar (+10) e Espírito Cívico (+2)
 } {
   switch (powerId) {
     case 'conhecimento-aplicado':
@@ -1069,6 +1071,125 @@ export function calculatePowerActivationEffects(
       return {
         skillBonusChange: 5,
         specialNote: '+5 no teste de Intelecto (Saber é Poder)',
+      };
+    
+    case 'desbravador':
+      // Trabalhador Rural: +5 em Adestramento ou Sobrevivência
+      return {
+        skillBonusChange: 5,
+        specialNote: '+5 em Adestramento ou Sobrevivência',
+      };
+    
+    case '110-porcento':
+      // Atleta: +5 em FOR/AGI (exceto Luta/Pontaria)
+      return {
+        skillBonusChange: 5,
+        specialNote: '+5 no teste (FOR ou AGI, exceto Luta/Pontaria)',
+      };
+    
+    case 'faro-para-pistas':
+      // Investigador: +5 em Investigação/Percepção
+      return {
+        skillBonusChange: 5,
+        specialNote: '+5 em Investigação/Percepção para procurar pistas',
+      };
+    
+    case 'processo-otimizado':
+      // Executivo: +5 em teste estendido
+      return {
+        skillBonusChange: 5,
+        specialNote: '+5 em teste estendido ou revisão de documentos',
+      };
+    
+    case 'motor-de-busca':
+      // T.I.: Substitui perícia por Tecnologia
+      return {
+        skillBonusChange: 0,
+        swapToSkill: 'tecnologia',
+        specialNote: 'Substitui perícia por Tecnologia (requer internet)',
+      };
+    
+    case 'impostor':
+      // Trambiqueiro: Substitui perícia por Enganação
+      return {
+        skillBonusChange: 0,
+        swapToSkill: 'enganacao',
+        specialNote: 'Substitui perícia por Enganação (1x/cena)',
+      };
+    
+    case 'magnum-opus':
+      // Artista: PRE×2 no atributo + 5
+      return {
+        skillBonusChange: 5,
+        specialNote: 'PRE×2 no atributo + 5 (1x/missão, alvo reconhece trabalho)',
+      };
+    
+    case 'acalentar-aliado':
+      // Religioso: +10 para aliado adjacente
+      return {
+        skillBonusChange: 0,
+        allyBonus: 10,
+        specialNote: '+10 em teste de atributo para aliado adjacente (1x/cena)',
+      };
+    
+    case 'espirito-civico':
+      // Servidor Público: +2 ao ajudar (total +4)
+      return {
+        skillBonusChange: 0,
+        allyBonus: 2,
+        specialNote: 'Ajudar dá +4 em vez de +2',
+      };
+    
+    case 'posicao-de-combate':
+      // Mercenário: +1 ação de movimento no 1º turno
+      return {
+        skillBonusChange: 0,
+        movementBonus: 1,
+        specialNote: '+1 ação de movimento (1º turno de combate)',
+      };
+    
+    case 'patrulha-iniciativa':
+      // Policial: Usa Percepção em vez de Agilidade para Iniciativa
+      return {
+        skillBonusChange: 0,
+        attributeSwap: 'presence', // Percepção usa Presença
+        specialNote: 'Usa Percepção em vez de Agilidade para Iniciativa',
+      };
+    
+    case 'o-crime-compensa':
+      // Criminoso: Efeito narrativo de fim de missão
+      return {
+        skillBonusChange: 0,
+        specialNote: 'Teste de Crime DT 20 para item extra de categoria II',
+      };
+    
+    case 'tracos-do-outro-lado':
+      // Cultista Arrependido: Lembrete passivo
+      return {
+        skillBonusChange: 0,
+        specialNote: 'Passivo: +1 limite PE/turno. Poder paranormal 1º círculo grátis.',
+      };
+    
+    case 'vislumbres-do-passado':
+      // Amnésico: Teste INT DT 10 para pista + 1d4 PE temp
+      return {
+        skillBonusChange: 0,
+        specialNote: 'Teste INT DT 10: pista do mestre + 1d4 PE temporário',
+      };
+    
+    case 'cicatrizes-vontade':
+      // Vítima: Substitui teste de atributo por Vontade
+      return {
+        skillBonusChange: 0,
+        swapToSkill: 'vontade',
+        specialNote: 'Substitui teste de atributo por Vontade (1x/cena)',
+      };
+    
+    case 'ingrediente-secreto':
+      // Chef: Efeito narrativo de interlúdio
+      return {
+        skillBonusChange: 0,
+        specialNote: 'Narrativo: 2 pratos especiais durante interlúdio',
       };
       
     default:
