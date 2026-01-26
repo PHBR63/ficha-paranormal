@@ -1,105 +1,126 @@
 
-# Plano de Correção: Grau de Treinamento
+# Plano de Correção: Bug no Grau de Treinamento (NEX 70% absorvendo slots do NEX 35%)
 
-## Problemas Identificados
+## Problema Identificado
 
-### Problema 1: Modal não Fecha Após Confirmar Seleção
-O modal `TrainingGradeSelectModal` não fecha automaticamente após o usuário confirmar a seleção de perícias para melhorar.
+O sistema permite que o modal de **Grau de Treinamento do NEX 70%** seja usado para fazer upgrades **Treinado → Veterano** que deveriam ter sido feitos no **NEX 35%**. Isso resulta em:
 
-**Causa Raiz:**
-No arquivo `src/components/character/TrainingGradeSelectModal.tsx`, linhas 213-216:
-```tsx
-const handleConfirm = useCallback(() => {
-  if (!isValid) return;
-  onConfirm({ nex, choices });
-  // ← FALTA: onClose() não é chamado após onConfirm
-}, [isValid, onConfirm, nex, choices]);
+1. **Duplicação de upgrades**: Usuário consegue 8 perícias Veteranas em vez de 4 por milestone
+2. **Avisos de auditoria falsos**: "Veterano Sem Registro" para perícias corretamente upadas via NEX 70%
+3. **Violação da regra oficial**: O Grau de Treinamento de cada NEX deve ser usado no seu marco correspondente
+
+### Cenário do Bug (Demonstrado na Imagem)
+
+```text
+Personagem: Combatente NEX 70%, INT 2 (4 upgrades por milestone)
+
+1. Usuário NÃO configurou NEX 35% (pulou)
+2. Usuário abre modal NEX 70%
+3. Sistema mostra perícias Treinadas (podem virar Veteranas)
+4. Usuário seleciona 4 perícias Treinadas → Veteranas
+5. Sistema salva em nex70: [{skillId: X, toLevel: 2}, ...]
+6. Auditoria detecta: "Veterano Sem Registro" (esperava em nex35)
+
+Resultado: 4 upgrades usados "errado", auditoria acusa problemas inexistentes
 ```
 
-O `handleConfirm` apenas chama `onConfirm()` mas **não chama `onClose()`** para fechar o modal após a confirmação.
+### Causa Raiz
 
-### Problema 2: Avisos Falsos de "Expert Sem Registro"
-Após configurar corretamente o Grau de Treinamento no NEX 70%, a auditoria gera avisos de "Expert Sem Registro" para perícias que foram corretamente elevadas a Expert.
-
-**Causa Raiz:**
-No arquivo `src/lib/character-audit-engine.ts`, linhas 670-682, a validação apenas verifica se o `skillId` está presente no array `nex70`:
-
-```tsx
-else if (!grade70SkillIds.has(skillId)) {
-  // Aviso: sem registro no Grau de Treinamento
-  issues.push({...});
-}
-```
-
-Mas o `grade70SkillIds` é construído apenas com os `skillId` dos registros, **sem verificar se o `toLevel` é realmente 3 (Expert)**:
-
-```tsx
-// Linha 650-651
-const grade70Choices = trainingGradeChoices[TRAINING_GRADE_KEYS.NEX_70] || [];
-const grade70SkillIds = new Set(grade70Choices.map(c => c.skillId)); // ← Ignora toLevel!
-```
-
-Isso causa problemas porque:
-1. Uma perícia no NEX 70% pode ter sido elevada para Veterano (`toLevel: 2`), não Expert
-2. O `skillId` está presente, mas o nível final não é Expert
-3. A auditoria deveria verificar se há um registro com `toLevel === 3`
+1. **TrainingGradeSelectModal (linhas 158-166)**: No NEX 70%, o modal oferece upgrades Treinado → Veterano sem verificar se o NEX 35% já foi configurado
+2. **Ausência de validação de precedência**: O sistema não força que o NEX 35% seja configurado antes do NEX 70%
+3. **Auditoria parcial (linhas 641-656)**: Valida Veteranos apenas contra `allVeteranSkillIds`, mas não considera corretamente upgrades do NEX 70% com `toLevel === 2`
 
 ---
 
 ## Solução Proposta
 
-### Correção 1: Fechar Modal Após Confirmar
+### Estratégia: Forçar Sequência e Restringir Opções
 
-Adicionar chamada a `onClose()` no `handleConfirm`:
+O Livro Base v1.3 não define explicitamente se você pode "pular" o NEX 35%, mas a mecânica implica uso no milestone correto. A solução mais fiel às regras:
+
+**Opção Escolhida**: Restringir o modal do NEX 70% para só permitir upgrades **Veterano → Expert** se o NEX 35% ainda não foi configurado. Isso força o usuário a usar o NEX 35% primeiro para upgrades Treinado → Veterano.
+
+---
+
+## Alterações Técnicas
+
+### 1. TrainingGradeSelectModal.tsx - Filtrar Perícias Elegíveis
+
+**Arquivo**: `src/components/character/TrainingGradeSelectModal.tsx`
+
+Adicionar prop `previousNexChoices` e ajustar lógica de `availableSkills`:
 
 ```tsx
-const handleConfirm = useCallback(() => {
-  if (!isValid) return;
-  onConfirm({ nex, choices });
-  onClose(); // ← ADICIONAR: Fecha o modal após confirmar
-}, [isValid, onConfirm, nex, choices, onClose]);
-```
+// Nova prop para verificar se NEX anterior foi configurado
+interface TrainingGradeSelectModalProps {
+  // ... props existentes
+  /** Escolhas do NEX anterior (35) - para validar sequência */
+  previousNexConfigured?: boolean;
+}
 
-### Correção 2: Validar Expert com Base no toLevel
-
-Modificar a construção de `grade70SkillIds` para incluir apenas perícias que foram elevadas **para Expert** (toLevel === 3):
-
-```tsx
-// Antes (incorreto):
-const grade70SkillIds = new Set(grade70Choices.map(c => c.skillId));
-
-// Depois (correto):
-const grade70ExpertSkillIds = new Set(
-  grade70Choices
-    .filter(c => c.toLevel === 3)
-    .map(c => c.skillId)
-);
-```
-
-E atualizar a verificação:
-```tsx
-else if (!grade70ExpertSkillIds.has(skillId)) {
-  // Aviso: sem registro de upgrade para Expert no Grau de Treinamento
-  issues.push({...});
+// Dentro de availableSkills (linhas 137-187):
+if (nex === 70) {
+  // Se NEX 35% NÃO foi configurado, só permite Veterano → Expert
+  // (força o usuário a configurar NEX 35% primeiro para Treinado → Veterano)
+  if (!previousNexConfigured && currentLevel === 1) {
+    // NÃO adiciona perícias Treinadas se NEX 35% pendente
+    // Isso força o usuário a ir primeiro no NEX 35%
+    continue;
+  }
+  
+  if (currentLevel === 1) {
+    eligible.push({...});
+  } else if (currentLevel === 2) {
+    eligible.push({...});
+  }
 }
 ```
 
-**Nota adicional sobre Veterano no NEX 70%:**
-Uma perícia Veterana também pode estar registrada no `nex70` (foi Treinada → Veterana no NEX 70% em vez do NEX 35%). A lógica precisa considerar isso para evitar avisos duplicados.
+**Lógica**:
+- Se `nex === 70` e `previousNexConfigured === false`:
+  - Não mostrar opções Treinado → Veterano
+  - Mostrar apenas Veterano → Expert (se houver)
+  - Exibir aviso: "Configure primeiro o Grau de Treinamento do NEX 35%"
 
-Lógica ajustada completa:
+### 2. CharacterSheet.tsx - Passar `previousNexConfigured`
+
+**Arquivo**: `src/pages/CharacterSheet.tsx` (e `MobileCharacterSheet.tsx`)
+
+Calcular se NEX 35% está configurado antes de abrir modal do NEX 70%:
+
 ```tsx
-// Para Expert: verificar se há registro com toLevel === 3 em nex70
-const grade70ExpertSkillIds = new Set(
-  grade70Choices.filter(c => c.toLevel === 3).map(c => c.skillId)
-);
-
-// Para Veterano: verificar se há registro em nex35 OU nex70 com toLevel === 2
-const allVeteranSkillIds = new Set([
-  ...grade35Choices.filter(c => c.toLevel === 2).map(c => c.skillId),
-  ...grade70Choices.filter(c => c.toLevel === 2).map(c => c.skillId),
-]);
+<TrainingGradeSelectModal
+  // ... props existentes
+  previousNexConfigured={
+    trainingGradeNex === 70 
+      ? (character.training_grade_choices?.nex35?.length || 0) > 0
+      : true // Para NEX 35%, sempre true (não há anterior)
+  }
+/>
 ```
+
+### 3. TrainingGradeSelectModal.tsx - Aviso Visual
+
+Adicionar aviso quando NEX 35% está pendente e usuário tenta usar NEX 70% para upgrades Treinado → Veterano:
+
+```tsx
+{/* Aviso de precedência */}
+{nex === 70 && !previousNexConfigured && (
+  <div className="p-3 bg-warning/10 border border-warning/20 rounded-lg">
+    <p className="text-xs text-warning flex items-center gap-2">
+      <Info className="w-4 h-4" />
+      <span>
+        Configure primeiro o <strong>Grau de Treinamento do NEX 35%</strong> para 
+        aumentar perícias de Treinado para Veterano.
+      </span>
+    </p>
+  </div>
+)}
+```
+
+### 4. character-audit-engine.ts - Corrigir Validação de Veterano
+
+A correção anterior (adicionar `grade70Choices.filter(c => c.toLevel === 2)` a `allVeteranSkillIds`) já resolve o problema de avisos falsos. Verificar se está aplicada corretamente.
 
 ---
 
@@ -107,97 +128,61 @@ const allVeteranSkillIds = new Set([
 
 | Arquivo | Alteração |
 |---------|-----------|
-| `src/components/character/TrainingGradeSelectModal.tsx` | Adicionar `onClose()` ao `handleConfirm` |
-| `src/lib/character-audit-engine.ts` | Corrigir lógica de validação de Expert/Veterano |
+| `src/components/character/TrainingGradeSelectModal.tsx` | Adicionar prop `previousNexConfigured`, filtrar opções, aviso visual |
+| `src/pages/CharacterSheet.tsx` | Passar `previousNexConfigured` ao modal |
+| `src/components/character/MobileCharacterSheet.tsx` | Passar `previousNexConfigured` ao modal |
 
 ---
 
-## Detalhes Técnicos
+## Fluxo Corrigido
 
-### TrainingGradeSelectModal.tsx - Linha 213-216
+```text
+Personagem NEX 70% sem configurar NEX 35%:
 
-**Antes:**
-```tsx
-const handleConfirm = useCallback(() => {
-  if (!isValid) return;
-  onConfirm({ nex, choices });
-}, [isValid, onConfirm, nex, choices]);
+1. Usuário abre modal NEX 70%
+2. Sistema verifica: nex35 vazio? → previousNexConfigured = false
+3. Modal exibe:
+   - Aviso: "Configure primeiro o NEX 35%"
+   - Lista VAZIA (não há Veteranos para virar Expert)
+   - OU lista de Veteranos apenas (se houver de outras fontes)
+4. Usuário fecha modal
+5. Usuário abre modal NEX 35%
+6. Seleciona 4 perícias Treinadas → Veteranas
+7. Confirma e salva em nex35
+8. Agora pode voltar ao modal NEX 70%
+9. Sistema mostra Veteranos (já upados no passo 6) → Expert
+10. Auditoria: sem avisos falsos
 ```
 
-**Depois:**
-```tsx
-const handleConfirm = useCallback(() => {
-  if (!isValid) return;
-  onConfirm({ nex, choices });
-  onClose(); // Fecha o modal após confirmar
-}, [isValid, onConfirm, nex, choices, onClose]);
-```
+---
 
-### character-audit-engine.ts - Linhas 648-686
+## Regra Oficial Aplicada
 
-**Antes:**
-```tsx
-// Linha 650-651
-const grade70Choices = trainingGradeChoices[TRAINING_GRADE_KEYS.NEX_70] || 
-                       trainingGradeChoices[LEGACY_TRAINING_GRADE_KEYS.NEX_70] || [];
-const grade70SkillIds = new Set(grade70Choices.map(c => c.skillId));
+Segundo o Livro Base v1.3, o Grau de Treinamento é obtido ao atingir NEX 35% e 70%. A mecânica de "escolher X perícias para aumentar" está atrelada ao milestone específico. A correção força o respeito a essa progressão:
 
-// Linha 670
-} else if (!grade70SkillIds.has(skillId)) {
-```
-
-**Depois:**
-```tsx
-// Filtrar apenas upgrades para Expert (toLevel === 3)
-const grade70Choices = trainingGradeChoices[TRAINING_GRADE_KEYS.NEX_70] || 
-                       trainingGradeChoices[LEGACY_TRAINING_GRADE_KEYS.NEX_70] || [];
-const grade70ExpertSkillIds = new Set(
-  grade70Choices.filter(c => c.toLevel === 3).map(c => c.skillId)
-);
-
-// Linha 670 - usar o novo Set
-} else if (!grade70ExpertSkillIds.has(skillId)) {
-```
-
-**Veterano também precisa considerar upgrades do NEX 70%:**
-```tsx
-// Linha 608-609 - Adicionar fallback para nex70 com toLevel === 2
-const grade35Choices = trainingGradeChoices[TRAINING_GRADE_KEYS.NEX_35] || 
-                       trainingGradeChoices[LEGACY_TRAINING_GRADE_KEYS.NEX_35] || [];
-const grade70VeteranChoices = (trainingGradeChoices[TRAINING_GRADE_KEYS.NEX_70] || 
-                               trainingGradeChoices[LEGACY_TRAINING_GRADE_KEYS.NEX_70] || [])
-                              .filter(c => c.toLevel === 2);
-
-// Combinar ambos para verificação de Veterano
-const allVeteranSkillIds = new Set([
-  ...grade35Choices.filter(c => c.toLevel === 2).map(c => c.skillId),
-  ...grade70VeteranChoices.map(c => c.skillId),
-]);
-
-// Linha 629 - usar o novo Set combinado
-} else if (level === 2 && !allVeteranSkillIds.has(skillId)) {
-```
+- **NEX 35%**: Obrigatório usar para upgrades Treinado → Veterano
+- **NEX 70%**: Pode fazer Treinado → Veterano OU Veterano → Expert, **desde que NEX 35% já esteja configurado**
 
 ---
 
 ## Checklist de Implementação
 
-- [ ] Adicionar `onClose()` ao `handleConfirm` em `TrainingGradeSelectModal.tsx`
-- [ ] Adicionar `onClose` à lista de dependências do `useCallback`
-- [ ] Criar `grade70ExpertSkillIds` filtrando `toLevel === 3` em `character-audit-engine.ts`
-- [ ] Criar `allVeteranSkillIds` combinando NEX 35% e NEX 70% com `toLevel === 2`
-- [ ] Atualizar verificação de Expert para usar `grade70ExpertSkillIds`
-- [ ] Atualizar verificação de Veterano para usar `allVeteranSkillIds`
-- [ ] Testar: Configurar Grau de Treinamento no NEX 70% e verificar que não gera avisos falsos
-- [ ] Testar: Modal fecha automaticamente após confirmar seleção
+- [ ] Adicionar prop `previousNexConfigured` a `TrainingGradeSelectModal`
+- [ ] Filtrar opções Treinado → Veterano no NEX 70% se `previousNexConfigured === false`
+- [ ] Adicionar aviso visual quando precedência não respeitada
+- [ ] Atualizar `CharacterSheet.tsx` para passar a prop
+- [ ] Atualizar `MobileCharacterSheet.tsx` para passar a prop
+- [ ] Confirmar que `character-audit-engine.ts` reconhece upgrades do NEX 70% com `toLevel === 2`
+- [ ] Testar cenário: personagem NEX 70% sem configurar NEX 35%
+- [ ] Testar cenário: personagem NEX 70% com NEX 35% configurado
 
 ---
 
 ## Impacto
 
-- **Baixo risco**: Correções pontuais em lógica de validação e UX
-- **Alta prioridade**: Bugs afetam usabilidade do sistema de progressão de perícias
+- **Médio risco**: Alteração na lógica de filtragem do modal
+- **Alta prioridade**: Bug permite violação de regras e gera confusão com avisos falsos
 
 ## Tempo Estimado
 
-~30 minutos
+~45 minutos
