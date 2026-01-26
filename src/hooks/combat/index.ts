@@ -17,3 +17,4 @@ export * from './useCombatConditions';
 export * from './useCombatNotifications';
 export * from './useCombatWeaponBuffs';
 export * from './useTurnTimer';
+export * from '../use-combat-roll-with-sue';
