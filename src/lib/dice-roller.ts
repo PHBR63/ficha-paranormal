@@ -1,5 +1,19 @@
-// Ordem Paranormal RPG v1.3 - Dice Roller Engine
-// Sistema de Pool de Dados (Dice Pool)
+/**
+ * Ordem Paranormal RPG v1.3 - Dice Roller Engine
+ * Sistema de Pool de Dados (Dice Pool)
+ * 
+ * @deprecated Este módulo contém funções legadas de rolagem.
+ * Para rolagens COM contexto de personagem (combate, perícias, resistências),
+ * use os hooks integrados ao SUE:
+ * - useCombatRollWithSUE (ataques e dano)
+ * - useSkillRollWithSUE (testes de perícia)
+ * - useInitiativeRollWithSUE (iniciativa)
+ * - useResistanceRollWithSUE (resistências)
+ * - useRitualDamageWithSUE (dano de rituais)
+ * 
+ * Este módulo é mantido para rolagens SIMPLES sem contexto de personagem
+ * (chat de campanha, comandos /r) onde bônus automáticos não são necessários.
+ */
 
 export interface DiceRollResult {
   dice: number[];
@@ -71,6 +85,9 @@ function rollDice(count: number, sides: number): number[] {
  * 
  * - Se atributo > 0: rola N d20 e pega o MAIOR
  * - Se atributo == 0: rola 2d20 e pega o MENOR (desvantagem)
+ * 
+ * @deprecated Para rolagens com bônus de personagem, use useSkillRollWithSUE.
+ * Esta função é mantida para rolagens simples (chat, comandos /r).
  */
 export function rollSkillTest(params: SkillTestParams): DiceRollResult {
   const { 
@@ -121,8 +138,10 @@ export function rollSkillTest(params: SkillTestParams): DiceRollResult {
 /**
  * Rolagem de ataque
  * Similar ao teste de perícia, mas com verificação de acerto crítico
+ * 
+ * @deprecated Use useCombatRollWithSUE.executeAttackRoll() para ataques com bônus de personagem.
  */
-export function rollAttack(params: AttackParams): DiceRollResult & { 
+export function rollAttack(params: AttackParams): DiceRollResult & {
   hit: boolean; 
   targetDefense?: number;
 } {
@@ -151,6 +170,8 @@ export function rollAttack(params: AttackParams): DiceRollResult & {
 /**
  * Rolagem de dano
  * Em crítico, multiplica a QUANTIDADE de dados, não o resultado
+ * 
+ * @deprecated Use useCombatRollWithSUE.executeDamageRoll() ou useRitualDamageWithSUE para dano com bônus.
  */
 export function rollDamage(params: DamageParams): DamageResult {
   const { 
@@ -180,6 +201,8 @@ export function rollDamage(params: DamageParams): DamageResult {
 /**
  * Teste de Resistência
  * Fortitude (VIG), Reflexos (AGI), Vontade (PRE)
+ * 
+ * @deprecated Use useResistanceRollWithSUE para testes de resistência com bônus de personagem.
  */
 export function rollResistance(
   attributeValue: number,
