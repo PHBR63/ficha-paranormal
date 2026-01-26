@@ -1,125 +1,105 @@
 
-# Plano de Correção: Scroll na Caixa de Substituição de Perícia
+# Plano de Correção: Grau de Treinamento
 
-## Problema Identificado
+## Problemas Identificados
 
-O modal **SkillChoiceModal** (exibido como "Escolha: Luta ou Pontaria") não permite rolar a lista de perícias quando o modo de escolha livre (`showFreeChoice`) está ativo. O usuário vê apenas as primeiras perícias (ex: Agilidade) e não consegue acessar as demais.
+### Problema 1: Modal não Fecha Após Confirmar Seleção
+O modal `TrainingGradeSelectModal` não fecha automaticamente após o usuário confirmar a seleção de perícias para melhorar.
 
-### Causa Raiz
-
-Analisando o código atual em `src/components/character/SkillChoiceModal.tsx`:
-
-1. **Elementos fixos dentro do scroll**: O header com "Escolha uma perícia" + botão "Voltar" e o campo de busca estão **dentro** do `MobileModalBody`, ocupando o espaço scrollável. Isso:
-   - Reduz a altura disponível para a lista
-   - Pode confundir o cálculo de overflow do SimpleBar
-
-2. **Estrutura do MobileModalBody**: O `CustomScroll` (SimpleBar) requer que o container tenha altura restrita e o conteúdo a exceda. A estrutura atual coloca tudo em um único bloco:
-
-```text
-┌─────────────────────────────────────┐
-│ MobileModalBody (useScrollArea)    │
-│ ┌─────────────────────────────────┐ │
-│ │ Header + Busca (fixos?)         │ │  ← DENTRO do scroll
-│ │ Lista de Perícias               │ │  ← Lista longa
-│ └─────────────────────────────────┘ │
-└─────────────────────────────────────┘
+**Causa Raiz:**
+No arquivo `src/components/character/TrainingGradeSelectModal.tsx`, linhas 213-216:
+```tsx
+const handleConfirm = useCallback(() => {
+  if (!isValid) return;
+  onConfirm({ nex, choices });
+  // ← FALTA: onClose() não é chamado após onConfirm
+}, [isValid, onConfirm, nex, choices]);
 ```
 
-O SimpleBar pode não estar calculando o overflow corretamente porque:
-- A altura interna não ultrapassa a `maxHeight` calculada (ou o container cresce com o conteúdo)
-- Elementos acima da lista consomem espaço que deveria ser scrollável
+O `handleConfirm` apenas chama `onConfirm()` mas **não chama `onClose()`** para fechar o modal após a confirmação.
+
+### Problema 2: Avisos Falsos de "Expert Sem Registro"
+Após configurar corretamente o Grau de Treinamento no NEX 70%, a auditoria gera avisos de "Expert Sem Registro" para perícias que foram corretamente elevadas a Expert.
+
+**Causa Raiz:**
+No arquivo `src/lib/character-audit-engine.ts`, linhas 670-682, a validação apenas verifica se o `skillId` está presente no array `nex70`:
+
+```tsx
+else if (!grade70SkillIds.has(skillId)) {
+  // Aviso: sem registro no Grau de Treinamento
+  issues.push({...});
+}
+```
+
+Mas o `grade70SkillIds` é construído apenas com os `skillId` dos registros, **sem verificar se o `toLevel` é realmente 3 (Expert)**:
+
+```tsx
+// Linha 650-651
+const grade70Choices = trainingGradeChoices[TRAINING_GRADE_KEYS.NEX_70] || [];
+const grade70SkillIds = new Set(grade70Choices.map(c => c.skillId)); // ← Ignora toLevel!
+```
+
+Isso causa problemas porque:
+1. Uma perícia no NEX 70% pode ter sido elevada para Veterano (`toLevel: 2`), não Expert
+2. O `skillId` está presente, mas o nível final não é Expert
+3. A auditoria deveria verificar se há um registro com `toLevel === 3`
 
 ---
 
 ## Solução Proposta
 
-Reorganizar a estrutura para separar elementos fixos do conteúdo scrollável, seguindo o padrão do projeto documentado em `BaseSelectionModal.tsx`:
+### Correção 1: Fechar Modal Após Confirmar
 
-```text
-┌─────────────────────────────────────┐
-│ MobileModalHeader                  │  ← Fixo (título + descrição)
-├─────────────────────────────────────┤
-│ Área Fixa (FORA do scroll)         │  ← Header + Busca
-│ ┌─────────────────────────────────┐ │
-│ │ "Escolha uma perícia:" + Voltar │ │
-│ │ [🔍 Buscar perícia...]          │ │
-│ └─────────────────────────────────┘ │
-├─────────────────────────────────────┤
-│ MobileModalBody (useScrollArea)    │  ← APENAS lista scrollável
-│ ┌─────────────────────────────────┐ │
-│ │ AGI - Agilidade (6)             │ │
-│ │   Acrobacia                     │ │
-│ │   Crime                         │ │
-│ │   ...                           │ │
-│ │ FOR - Força (3)                 │ │
-│ │   ...                           │ │
-│ └─────────────────────────────────┘ │
-└─────────────────────────────────────┘
-```
+Adicionar chamada a `onClose()` no `handleConfirm`:
 
-### Alterações Técnicas
-
-#### 1. SkillChoiceModal - Modo showFreeChoice (linhas 248-341)
-
-**Antes** (estrutura atual):
 ```tsx
-<MobileModalBody useScrollArea={true}>
-  <div className="space-y-3">
-    {/* Header com botão voltar - DENTRO do scroll */}
-    <div className="flex items-center justify-between">
-      <h4>Escolha uma perícia:</h4>
-      <Button onClick={() => setShowFreeChoice(false)}>Voltar</Button>
-    </div>
-    
-    {/* Campo de busca - DENTRO do scroll */}
-    <div className="relative">
-      <Input placeholder="Buscar perícia..." />
-    </div>
-    
-    {/* Lista de perícias */}
-    <div className="space-y-4">
-      {/* grupos de perícias */}
-    </div>
-  </div>
-</MobileModalBody>
+const handleConfirm = useCallback(() => {
+  if (!isValid) return;
+  onConfirm({ nex, choices });
+  onClose(); // ← ADICIONAR: Fecha o modal após confirmar
+}, [isValid, onConfirm, nex, choices, onClose]);
 ```
 
-**Depois** (estrutura corrigida):
+### Correção 2: Validar Expert com Base no toLevel
+
+Modificar a construção de `grade70SkillIds` para incluir apenas perícias que foram elevadas **para Expert** (toLevel === 3):
+
 ```tsx
-{/* Área fixa FORA do MobileModalBody */}
-<div className="px-4 sm:px-6 pb-3 space-y-3 shrink-0 border-b border-border/30">
-  {/* Header com botão voltar */}
-  <div className="flex items-center justify-between">
-    <h4 className="text-sm font-medium">Escolha uma perícia:</h4>
-    <Button variant="ghost" size="sm" onClick={...}>Voltar</Button>
-  </div>
-  
-  {/* Campo de busca */}
-  <div className="relative">
-    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" />
-    <Input placeholder="Buscar perícia..." className="pl-10 h-9" />
-  </div>
-</div>
+// Antes (incorreto):
+const grade70SkillIds = new Set(grade70Choices.map(c => c.skillId));
 
-{/* MobileModalBody contém APENAS a lista scrollável */}
-<MobileModalBody useScrollArea={true} maxHeight="calc(70vh - 200px)">
-  <div className="space-y-4">
-    {/* Lista de perícias agrupadas */}
-  </div>
-</MobileModalBody>
+// Depois (correto):
+const grade70ExpertSkillIds = new Set(
+  grade70Choices
+    .filter(c => c.toLevel === 3)
+    .map(c => c.skillId)
+);
 ```
 
-#### 2. ConflictResolutionModal (linhas 456-533)
+E atualizar a verificação:
+```tsx
+else if (!grade70ExpertSkillIds.has(skillId)) {
+  // Aviso: sem registro de upgrade para Expert no Grau de Treinamento
+  issues.push({...});
+}
+```
 
-Aplicar a mesma correção: mover o campo de busca para **fora** do `MobileModalBody`, como área fixa entre o header e o body.
+**Nota adicional sobre Veterano no NEX 70%:**
+Uma perícia Veterana também pode estar registrada no `nex70` (foi Treinada → Veterana no NEX 70% em vez do NEX 35%). A lógica precisa considerar isso para evitar avisos duplicados.
 
-#### 3. Ajuste de maxHeight
+Lógica ajustada completa:
+```tsx
+// Para Expert: verificar se há registro com toLevel === 3 em nex70
+const grade70ExpertSkillIds = new Set(
+  grade70Choices.filter(c => c.toLevel === 3).map(c => c.skillId)
+);
 
-Usar um `maxHeight` mais conservador (ex: `calc(70vh - 200px)`) para garantir que:
-- Header do modal (~60px)
-- Área fixa de busca (~80px)
-- Safe-area do dispositivo (~20px)
-...sejam descontados corretamente.
+// Para Veterano: verificar se há registro em nex35 OU nex70 com toLevel === 2
+const allVeteranSkillIds = new Set([
+  ...grade35Choices.filter(c => c.toLevel === 2).map(c => c.skillId),
+  ...grade70Choices.filter(c => c.toLevel === 2).map(c => c.skillId),
+]);
+```
 
 ---
 
@@ -127,25 +107,96 @@ Usar um `maxHeight` mais conservador (ex: `calc(70vh - 200px)`) para garantir qu
 
 | Arquivo | Alteração |
 |---------|-----------|
-| `src/components/character/SkillChoiceModal.tsx` | Reorganizar estrutura do modo `showFreeChoice` e `ConflictResolutionModal` |
+| `src/components/character/TrainingGradeSelectModal.tsx` | Adicionar `onClose()` ao `handleConfirm` |
+| `src/lib/character-audit-engine.ts` | Corrigir lógica de validação de Expert/Veterano |
+
+---
+
+## Detalhes Técnicos
+
+### TrainingGradeSelectModal.tsx - Linha 213-216
+
+**Antes:**
+```tsx
+const handleConfirm = useCallback(() => {
+  if (!isValid) return;
+  onConfirm({ nex, choices });
+}, [isValid, onConfirm, nex, choices]);
+```
+
+**Depois:**
+```tsx
+const handleConfirm = useCallback(() => {
+  if (!isValid) return;
+  onConfirm({ nex, choices });
+  onClose(); // Fecha o modal após confirmar
+}, [isValid, onConfirm, nex, choices, onClose]);
+```
+
+### character-audit-engine.ts - Linhas 648-686
+
+**Antes:**
+```tsx
+// Linha 650-651
+const grade70Choices = trainingGradeChoices[TRAINING_GRADE_KEYS.NEX_70] || 
+                       trainingGradeChoices[LEGACY_TRAINING_GRADE_KEYS.NEX_70] || [];
+const grade70SkillIds = new Set(grade70Choices.map(c => c.skillId));
+
+// Linha 670
+} else if (!grade70SkillIds.has(skillId)) {
+```
+
+**Depois:**
+```tsx
+// Filtrar apenas upgrades para Expert (toLevel === 3)
+const grade70Choices = trainingGradeChoices[TRAINING_GRADE_KEYS.NEX_70] || 
+                       trainingGradeChoices[LEGACY_TRAINING_GRADE_KEYS.NEX_70] || [];
+const grade70ExpertSkillIds = new Set(
+  grade70Choices.filter(c => c.toLevel === 3).map(c => c.skillId)
+);
+
+// Linha 670 - usar o novo Set
+} else if (!grade70ExpertSkillIds.has(skillId)) {
+```
+
+**Veterano também precisa considerar upgrades do NEX 70%:**
+```tsx
+// Linha 608-609 - Adicionar fallback para nex70 com toLevel === 2
+const grade35Choices = trainingGradeChoices[TRAINING_GRADE_KEYS.NEX_35] || 
+                       trainingGradeChoices[LEGACY_TRAINING_GRADE_KEYS.NEX_35] || [];
+const grade70VeteranChoices = (trainingGradeChoices[TRAINING_GRADE_KEYS.NEX_70] || 
+                               trainingGradeChoices[LEGACY_TRAINING_GRADE_KEYS.NEX_70] || [])
+                              .filter(c => c.toLevel === 2);
+
+// Combinar ambos para verificação de Veterano
+const allVeteranSkillIds = new Set([
+  ...grade35Choices.filter(c => c.toLevel === 2).map(c => c.skillId),
+  ...grade70VeteranChoices.map(c => c.skillId),
+]);
+
+// Linha 629 - usar o novo Set combinado
+} else if (level === 2 && !allVeteranSkillIds.has(skillId)) {
+```
 
 ---
 
 ## Checklist de Implementação
 
-- [ ] Mover header "Escolha uma perícia:" + botão "Voltar" para fora do `MobileModalBody`
-- [ ] Mover campo de busca para fora do `MobileModalBody`
-- [ ] Ajustar `maxHeight` do `MobileModalBody` para compensar altura dos elementos fixos
-- [ ] Aplicar mesma correção ao `ConflictResolutionModal`
-- [ ] Testar em viewport mobile (ex: 375x812) para garantir scroll funcional
-- [ ] Verificar que scrollbar do SimpleBar aparece quando lista é longa
+- [ ] Adicionar `onClose()` ao `handleConfirm` em `TrainingGradeSelectModal.tsx`
+- [ ] Adicionar `onClose` à lista de dependências do `useCallback`
+- [ ] Criar `grade70ExpertSkillIds` filtrando `toLevel === 3` em `character-audit-engine.ts`
+- [ ] Criar `allVeteranSkillIds` combinando NEX 35% e NEX 70% com `toLevel === 2`
+- [ ] Atualizar verificação de Expert para usar `grade70ExpertSkillIds`
+- [ ] Atualizar verificação de Veterano para usar `allVeteranSkillIds`
+- [ ] Testar: Configurar Grau de Treinamento no NEX 70% e verificar que não gera avisos falsos
+- [ ] Testar: Modal fecha automaticamente após confirmar seleção
 
 ---
 
 ## Impacto
 
-- **Baixo risco**: Alteração estrutural localizada em componente específico
-- **Alta prioridade**: Bug impede seleção de perícias no fluxo de criação de Combatente
+- **Baixo risco**: Correções pontuais em lógica de validação e UX
+- **Alta prioridade**: Bugs afetam usabilidade do sistema de progressão de perícias
 
 ## Tempo Estimado
 
