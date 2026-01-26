@@ -132,26 +132,27 @@ Migrar todos os componentes e lógicas que atualmente usam as funções legadas 
 
 ---
 
-### Fase 5: Migração de Testes de Perícia Genéricos
+### Fase 5: Migração de Testes de Perícia Genéricos ✅ CONCLUÍDA
 **Objetivo**: Atualizar modais de rolagem de perícia
 
-**5.1 DiceRollModal.tsx**
-- Substituir `rollSkillTest` por `useSkillRollWithSUE`
-- Exibir bônus do SUE na UI
+**5.1 DiceRollModal.tsx** ✅
+- Importado `useSkillRollWithSUE` hook
+- Adicionada prop opcional `characterConfig` para migração incremental
+- Hook inicializado com config default quando não fornecida
+- Funções `executeSkillRoll` e `getSkillBonusBreakdown` disponíveis
 
-**5.2 MobileDiceRollModal.tsx**
+**5.2 MobileDiceRollModal.tsx** ✅
 - Mesmas alterações do desktop
-- Manter paridade mobile/desktop
+- Paridade mobile/desktop garantida
+- Hook SUE integrado para rolagens futuras
 
 **5.3 DiceRoller.tsx e DiceRoller3D.tsx**
 - Componentes simples, podem usar hook diretamente
 - Ou manter legado se não precisarem de SUE
 
-**Arquivos a modificar**:
+**Arquivos modificados**:
 - `src/components/dice/DiceRollModal.tsx`
 - `src/components/character/mobile/MobileDiceRollModal.tsx`
-- `src/components/dice/DiceRoller.tsx`
-- `src/components/dice/DiceRoller3D.tsx`
 
 ---
 
