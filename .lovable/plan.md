@@ -1,74 +1,152 @@
-# ✅ Plano de Correção: Poderes Ativáveis em Testes de Perícia (CONCLUÍDO)
 
-**Status**: ✅ Implementado com sucesso em 26/01/2026
+# Plano de Correção: Scroll na Caixa de Substituição de Perícia
 
-## Resumo das Correções
+## Problema Identificado
 
-### Bug 1: Rolagem Automática Prematura ✅
+O modal **SkillChoiceModal** (exibido como "Escolha: Luta ou Pontaria") não permite rolar a lista de perícias quando o modo de escolha livre (`showFreeChoice`) está ativo. O usuário vê apenas as primeiras perícias (ex: Agilidade) e não consegue acessar as demais.
 
-**Problema**: O modal rolava dados automaticamente ~150-200ms após abrir, antes do jogador escolher poderes.
+### Causa Raiz
 
-**Solução Implementada**:
-- Adicionada fase `'preparing'` ao estado do modal
-- Removido `useEffect` de auto-roll
-- Painel de poderes aparece ANTES da área de dados na fase preparing
-- Novo botão "ROLAR DADOS" que inicia a rolagem manualmente
-- Implementado em ambos `DiceRollModal.tsx` (desktop) e `MobileDiceRollModal.tsx` (mobile)
+Analisando o código atual em `src/components/character/SkillChoiceModal.tsx`:
 
-### Bug 2: Bônus de Poderes de Origem Não Aplicados ✅
+1. **Elementos fixos dentro do scroll**: O header com "Escolha uma perícia" + botão "Voltar" e o campo de busca estão **dentro** do `MobileModalBody`, ocupando o espaço scrollável. Isso:
+   - Reduz a altura disponível para a lista
+   - Pode confundir o cálculo de overflow do SimpleBar
 
-**Problema**: Poderes de origem retornavam `skillBonusChange: 0` no default case.
+2. **Estrutura do MobileModalBody**: O `CustomScroll` (SimpleBar) requer que o container tenha altura restrita e o conteúdo a exceda. A estrutura atual coloca tudo em um único bloco:
 
-**Solução Implementada** em `calculatePowerActivationEffects`:
-- `saber-e-poder` → +5 (Acadêmico)
-- `desbravador` → +5 (Trabalhador Rural)
-- `110-porcento` → +5 (Atleta)
-- `faro-para-pistas` → +5 (Investigador)
-- `processo-otimizado` → +5 (Executivo)
-- `motor-de-busca` → swapToSkill: 'tecnologia' (T.I.)
-- `impostor` → swapToSkill: 'enganacao' (Trambiqueiro)
-- `magnum-opus` → +5 (Artista)
-- `acalentar-aliado` → allyBonus: 10 (Religioso)
-- `espirito-civico` → allyBonus: 2 (Servidor Público)
-- `posicao-de-combate` → movementBonus: 1 (Mercenário)
-- `patrulha-iniciativa` → attributeSwap: 'presence' (Policial)
-- `o-crime-compensa` → narrativo (Criminoso)
-- `tracos-do-outro-lado` → passivo (Cultista Arrependido)
-- `vislumbres-do-passado` → narrativo (Amnésico)
-- `cicatrizes-vontade` → swapToSkill: 'vontade' (Vítima)
-- `ingrediente-secreto` → narrativo (Chef)
+```text
+┌─────────────────────────────────────┐
+│ MobileModalBody (useScrollArea)    │
+│ ┌─────────────────────────────────┐ │
+│ │ Header + Busca (fixos?)         │ │  ← DENTRO do scroll
+│ │ Lista de Perícias               │ │  ← Lista longa
+│ └─────────────────────────────────┘ │
+└─────────────────────────────────────┘
+```
 
-## Arquivos Modificados
+O SimpleBar pode não estar calculando o overflow corretamente porque:
+- A altura interna não ultrapassa a `maxHeight` calculada (ou o container cresce com o conteúdo)
+- Elementos acima da lista consomem espaço que deveria ser scrollável
+
+---
+
+## Solução Proposta
+
+Reorganizar a estrutura para separar elementos fixos do conteúdo scrollável, seguindo o padrão do projeto documentado em `BaseSelectionModal.tsx`:
+
+```text
+┌─────────────────────────────────────┐
+│ MobileModalHeader                  │  ← Fixo (título + descrição)
+├─────────────────────────────────────┤
+│ Área Fixa (FORA do scroll)         │  ← Header + Busca
+│ ┌─────────────────────────────────┐ │
+│ │ "Escolha uma perícia:" + Voltar │ │
+│ │ [🔍 Buscar perícia...]          │ │
+│ └─────────────────────────────────┘ │
+├─────────────────────────────────────┤
+│ MobileModalBody (useScrollArea)    │  ← APENAS lista scrollável
+│ ┌─────────────────────────────────┐ │
+│ │ AGI - Agilidade (6)             │ │
+│ │   Acrobacia                     │ │
+│ │   Crime                         │ │
+│ │   ...                           │ │
+│ │ FOR - Força (3)                 │ │
+│ │   ...                           │ │
+│ └─────────────────────────────────┘ │
+└─────────────────────────────────────┘
+```
+
+### Alterações Técnicas
+
+#### 1. SkillChoiceModal - Modo showFreeChoice (linhas 248-341)
+
+**Antes** (estrutura atual):
+```tsx
+<MobileModalBody useScrollArea={true}>
+  <div className="space-y-3">
+    {/* Header com botão voltar - DENTRO do scroll */}
+    <div className="flex items-center justify-between">
+      <h4>Escolha uma perícia:</h4>
+      <Button onClick={() => setShowFreeChoice(false)}>Voltar</Button>
+    </div>
+    
+    {/* Campo de busca - DENTRO do scroll */}
+    <div className="relative">
+      <Input placeholder="Buscar perícia..." />
+    </div>
+    
+    {/* Lista de perícias */}
+    <div className="space-y-4">
+      {/* grupos de perícias */}
+    </div>
+  </div>
+</MobileModalBody>
+```
+
+**Depois** (estrutura corrigida):
+```tsx
+{/* Área fixa FORA do MobileModalBody */}
+<div className="px-4 sm:px-6 pb-3 space-y-3 shrink-0 border-b border-border/30">
+  {/* Header com botão voltar */}
+  <div className="flex items-center justify-between">
+    <h4 className="text-sm font-medium">Escolha uma perícia:</h4>
+    <Button variant="ghost" size="sm" onClick={...}>Voltar</Button>
+  </div>
+  
+  {/* Campo de busca */}
+  <div className="relative">
+    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" />
+    <Input placeholder="Buscar perícia..." className="pl-10 h-9" />
+  </div>
+</div>
+
+{/* MobileModalBody contém APENAS a lista scrollável */}
+<MobileModalBody useScrollArea={true} maxHeight="calc(70vh - 200px)">
+  <div className="space-y-4">
+    {/* Lista de perícias agrupadas */}
+  </div>
+</MobileModalBody>
+```
+
+#### 2. ConflictResolutionModal (linhas 456-533)
+
+Aplicar a mesma correção: mover o campo de busca para **fora** do `MobileModalBody`, como área fixa entre o header e o body.
+
+#### 3. Ajuste de maxHeight
+
+Usar um `maxHeight` mais conservador (ex: `calc(70vh - 200px)`) para garantir que:
+- Header do modal (~60px)
+- Área fixa de busca (~80px)
+- Safe-area do dispositivo (~20px)
+...sejam descontados corretamente.
+
+---
+
+## Arquivos Afetados
 
 | Arquivo | Alteração |
 |---------|-----------|
-| `src/components/dice/DiceRollModal.tsx` | Fase 'preparing', botão "Rolar Dados", layout reorganizado |
-| `src/components/character/mobile/MobileDiceRollModal.tsx` | Paridade com desktop, import do Button |
-| `src/lib/class-powers/activatable-powers-bridge.ts` | +17 cases de poderes de origem, tipos expandidos |
+| `src/components/character/SkillChoiceModal.tsx` | Reorganizar estrutura do modo `showFreeChoice` e `ConflictResolutionModal` |
 
-## Testes Validados
+---
 
-```
-✅ 23/23 testes passando em activatable-origins.vitest.ts
-```
+## Checklist de Implementação
 
-## Fluxo Atual
+- [ ] Mover header "Escolha uma perícia:" + botão "Voltar" para fora do `MobileModalBody`
+- [ ] Mover campo de busca para fora do `MobileModalBody`
+- [ ] Ajustar `maxHeight` do `MobileModalBody` para compensar altura dos elementos fixos
+- [ ] Aplicar mesma correção ao `ConflictResolutionModal`
+- [ ] Testar em viewport mobile (ex: 375x812) para garantir scroll funcional
+- [ ] Verificar que scrollbar do SimpleBar aparece quando lista é longa
 
-```text
-┌─────────────────────────────────────────────┐
-│  FASE 1: PREPARAÇÃO                         │
-│  • Modal abre                               │
-│  • Painel de poderes no topo                │
-│  • Jogador seleciona poderes                │
-│  • Botão "ROLAR DADOS"                      │
-└─────────────────────────────────────────────┘
-                     │
-                     ▼
-┌─────────────────────────────────────────────┐
-│  FASE 2: ROLAGEM                            │
-│  • Animação de dados                        │
-│  • PE descontado automaticamente            │
-│  • Bônus aplicados no resultado             │
-│  • Botão "Rolar Novamente" disponível       │
-└─────────────────────────────────────────────┘
-```
+---
+
+## Impacto
+
+- **Baixo risco**: Alteração estrutural localizada em componente específico
+- **Alta prioridade**: Bug impede seleção de perícias no fluxo de criação de Combatente
+
+## Tempo Estimado
+
+~30 minutos
