@@ -146,8 +146,13 @@ export function DiceRollModal({
   
   const sueConfig = characterConfig || defaultConfig;
   const { executeSkillRoll, getSkillBonusBreakdown } = useSkillRollWithSUE(sueConfig);
+  
+  // === FASE DE ROLAGEM ===
+  // 'preparing' = modal aberto, aguardando seleção de poderes
+  // 'rolling' = animação de dados
+  // 'done' = resultado exibido
   // Estados
-  const [phase, setPhase] = useState<'idle' | 'rolling' | 'done'>('idle');
+  const [phase, setPhase] = useState<'preparing' | 'rolling' | 'done'>('preparing');
   const [displayDice, setDisplayDice] = useState<number[]>([]);
   const [result, setResult] = useState<DiceRollResult | null>(null);
   const [isPowerPanelExpanded, setIsPowerPanelExpanded] = useState(true);
@@ -325,15 +330,12 @@ export function DiceRollModal({
     onConhecimentoAplicadoUsed,
   ]);
 
-  // Efeito para auto-rolar quando abre
+  // Efeito para iniciar fase de preparação quando abre
+  // (NÃO rola automaticamente - aguarda ação do jogador)
   useEffect(() => {
-    if (open && !hasRolledRef.current) {
-      hasRolledRef.current = true;
-      // Pequeno delay antes de rolar
-      const timer = setTimeout(() => {
-        executeRoll();
-      }, 150);
-      return () => clearTimeout(timer);
+    if (open) {
+      setPhase('preparing');
+      hasRolledRef.current = false;
     }
   }, [open]);
 
@@ -346,7 +348,7 @@ export function DiceRollModal({
         animationRef.current = null;
       }
       // Reset estados
-      setPhase('idle');
+      setPhase('preparing');
       setDisplayDice([]);
       setResult(null);
       hasRolledRef.current = false;
@@ -354,6 +356,14 @@ export function DiceRollModal({
       resetActivations();
     }
   }, [open, resetActivations]);
+
+  // Handler para iniciar a rolagem (clique no botão "Rolar Dados")
+  const handleStartRoll = useCallback(() => {
+    if (phase === 'preparing' && !hasRolledRef.current) {
+      hasRolledRef.current = true;
+      executeRoll();
+    }
+  }, [phase, executeRoll]);
 
   // Cleanup no unmount
   useEffect(() => {
@@ -389,6 +399,36 @@ export function DiceRollModal({
         </DialogHeader>
 
         <div className="space-y-6 py-4">
+          {/* Painel de ativação de poderes - APARECE PRIMEIRO na fase preparing */}
+          {phase === 'preparing' && activatablePowers.length > 0 && peCurrent > 0 && (
+            <div className="border-b border-border pb-4">
+              <button
+                onClick={() => setIsPowerPanelExpanded(!isPowerPanelExpanded)}
+                className="w-full flex items-center justify-between text-sm font-medium text-muted-foreground hover:text-foreground transition-colors mb-2"
+              >
+                <span className="flex items-center gap-2">
+                  <Zap className="w-4 h-4 text-yellow-500" />
+                  Poderes Ativáveis ({activatablePowers.length})
+                </span>
+                <span className="text-xs">
+                  PE: {peCurrent} | Custo: {getTotalPECost()}
+                </span>
+              </button>
+              
+              {isPowerPanelExpanded && (
+                <PowerActivationPanel
+                  availablePowers={activatablePowers}
+                  activationStates={activationStates}
+                  onPowerToggle={togglePower}
+                  peCurrent={peCurrent}
+                  currentSkill={currentSkill || label}
+                  isExpanded={isPowerPanelExpanded}
+                  onExpandToggle={() => setIsPowerPanelExpanded(!isPowerPanelExpanded)}
+                />
+              )}
+            </div>
+          )}
+
           {/* Área dos dados */}
           <div className="flex flex-wrap justify-center gap-3 min-h-[80px]">
             {displayDice.map((die, index) => (
@@ -416,8 +456,26 @@ export function DiceRollModal({
             )}
           </div>
 
-          {/* Painel de ativação de poderes - só aparece se há poderes disponíveis */}
-          {activatablePowers.length > 0 && peCurrent > 0 && (
+          {/* Botão ROLAR DADOS - só na fase preparing */}
+          {phase === 'preparing' && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex justify-center"
+            >
+              <Button 
+                onClick={handleStartRoll}
+                size="lg"
+                className="w-full max-w-xs gap-2 font-display text-lg tracking-wider"
+              >
+                <Dices className="w-5 h-5" />
+                ROLAR DADOS
+              </Button>
+            </motion.div>
+          )}
+
+          {/* Painel de ativação de poderes - versão compacta APÓS rolagem */}
+          {phase !== 'preparing' && activatablePowers.length > 0 && peCurrent > 0 && (
             <div className="border-t border-border pt-4">
               <button
                 onClick={() => setIsPowerPanelExpanded(!isPowerPanelExpanded)}

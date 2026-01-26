@@ -20,6 +20,7 @@ import {
   MobileDrawerFooter 
 } from '@/components/ui/mobile-drawer';
 import { MobileButtonGroup } from '@/components/ui/mobile-button-group';
+import { Button } from '@/components/ui/button';
 import {
   Tooltip,
   TooltipContent,
@@ -141,8 +142,12 @@ export function MobileDiceRollModal({
   
   const sueConfig = characterConfig || defaultConfig;
   const { executeSkillRoll, getSkillBonusBreakdown } = useSkillRollWithSUE(sueConfig);
-  // Estados
-  const [phase, setPhase] = useState<'idle' | 'rolling' | 'done'>('idle');
+  
+  // === FASE DE ROLAGEM ===
+  // 'preparing' = modal aberto, aguardando seleção de poderes
+  // 'rolling' = animação de dados
+  // 'done' = resultado exibido
+  const [phase, setPhase] = useState<'preparing' | 'rolling' | 'done'>('preparing');
   const [displayDice, setDisplayDice] = useState<number[]>([]);
   const [result, setResult] = useState<DiceRollResult | null>(null);
   const [isPowerPanelExpanded, setIsPowerPanelExpanded] = useState(true);
@@ -271,16 +276,24 @@ export function MobileDiceRollModal({
         onRollComplete?.(rollResult);
       }
     }, 80);
-  }, [attributeValue, skillBonus, resistanceBonus, extraDice, activatedPowerEffects.extraBonus, label, diceCount, onRollComplete, getTotalPECost, onPEChange, peCurrent]);
+  }, [attributeValue, skillBonus, resistanceBonus, extraDice, activatedPowerEffects.extraBonus, activatedPowerEffects.attributeSwap, label, diceCount, onRollComplete, getTotalPECost, onPEChange, peCurrent, intellect, strength, agility]);
 
-  // Auto-rolar ao abrir
-  useEffect(() => {
-    if (open && !hasRolledRef.current) {
+  // Handler para iniciar a rolagem (clique no botão "Rolar Dados")
+  const handleStartRoll = useCallback(() => {
+    if (phase === 'preparing' && !hasRolledRef.current) {
       hasRolledRef.current = true;
-      const timer = setTimeout(executeRoll, 200);
-      return () => clearTimeout(timer);
+      executeRoll();
     }
-  }, [open, executeRoll]);
+  }, [phase, executeRoll]);
+
+  // Efeito para iniciar fase de preparação quando abre
+  // (NÃO rola automaticamente - aguarda ação do jogador)
+  useEffect(() => {
+    if (open) {
+      setPhase('preparing');
+      hasRolledRef.current = false;
+    }
+  }, [open]);
 
   // Reset ao fechar
   useEffect(() => {
@@ -289,7 +302,7 @@ export function MobileDiceRollModal({
         clearInterval(animationRef.current);
         animationRef.current = null;
       }
-      setPhase('idle');
+      setPhase('preparing');
       setDisplayDice([]);
       setResult(null);
       hasRolledRef.current = false;
@@ -329,6 +342,101 @@ export function MobileDiceRollModal({
 
         <MobileDrawerBody useScrollArea={false}>
           <div className="space-y-4">
+            {/* Painel de ativação de poderes - APARECE PRIMEIRO na fase preparing */}
+            {phase === 'preparing' && activatablePowers.length > 0 && peCurrent > 0 && (
+              <div className="border-b border-border pb-3">
+                <button
+                  onClick={() => setIsPowerPanelExpanded(!isPowerPanelExpanded)}
+                  className="w-full flex items-center justify-between text-xs font-medium text-muted-foreground hover:text-foreground transition-colors mb-2"
+                >
+                  <span className="flex items-center gap-1.5">
+                    <Zap className="w-3.5 h-3.5 text-yellow-500" />
+                    Poderes Ativáveis ({activatablePowers.length})
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <span className="text-[10px]">
+                      PE: {peCurrent} | Custo: {getTotalPECost()}
+                    </span>
+                    {isPowerPanelExpanded ? (
+                      <ChevronUp className="w-3.5 h-3.5" />
+                    ) : (
+                      <ChevronDown className="w-3.5 h-3.5" />
+                    )}
+                  </span>
+                </button>
+                
+                <AnimatePresence>
+                  {isPowerPanelExpanded && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="space-y-2">
+                        {activatablePowers.map((power) => {
+                          const isActive = activationStates.find(s => s.powerId === power.id)?.isActive || false;
+                          const canAfford = peCurrent >= (power.peCost || 0);
+                          
+                          return (
+                            <div
+                              key={power.id}
+                              className={cn(
+                                'flex items-center justify-between p-2 rounded-lg border transition-colors',
+                                isActive 
+                                  ? 'bg-accent/20 border-accent' 
+                                  : 'bg-muted/30 border-border',
+                                !canAfford && !isActive && 'opacity-50'
+                              )}
+                            >
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-xs font-medium truncate">
+                                    {power.name}
+                                  </span>
+                                  {power.peCost && power.peCost > 0 && (
+                                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/20 text-primary shrink-0">
+                                      {power.peCost} PE
+                                    </span>
+                                  )}
+                                </div>
+                                {power.description && (
+                                  <p className="text-[10px] text-muted-foreground truncate mt-0.5">
+                                    {power.description}
+                                  </p>
+                                )}
+                              </div>
+                              <Switch
+                                checked={isActive}
+                                onCheckedChange={(checked) => {
+                                  if (canAfford || isActive) {
+                                    togglePower(power.id, checked);
+                                  }
+                                }}
+                                disabled={!canAfford && !isActive}
+                                className="ml-2 shrink-0 scale-90"
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
+                      
+                      {/* Indicador de bônus ativo */}
+                      {activatedPowerEffects.extraBonus > 0 && (
+                        <div className="mt-2 p-2 rounded bg-accent/10 border border-accent/30">
+                          <div className="flex items-center gap-1.5 text-xs text-accent">
+                            <Sparkles className="w-3 h-3" />
+                            <span>Bônus ativado: +{activatedPowerEffects.extraBonus}</span>
+                          </div>
+                        </div>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
+
             {/* Área dos dados */}
             <div className="flex flex-wrap justify-center gap-2 min-h-[60px]">
               {displayDice.map((die, index) => (
@@ -356,8 +464,26 @@ export function MobileDiceRollModal({
               )}
             </div>
 
-            {/* Painel de ativação de poderes - mobile-friendly */}
-            {activatablePowers.length > 0 && peCurrent > 0 && (
+            {/* Botão ROLAR DADOS - só na fase preparing */}
+            {phase === 'preparing' && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex justify-center pt-2"
+              >
+                <Button 
+                  onClick={handleStartRoll}
+                  size="lg"
+                  className="w-full gap-2 font-display text-base tracking-wider"
+                >
+                  <Dices className="w-5 h-5" />
+                  ROLAR DADOS
+                </Button>
+              </motion.div>
+            )}
+
+            {/* Painel de ativação de poderes - versão compacta APÓS rolagem */}
+            {phase !== 'preparing' && activatablePowers.length > 0 && peCurrent > 0 && (
               <div className="border-t border-border pt-3 mt-3">
                 <button
                   onClick={() => setIsPowerPanelExpanded(!isPowerPanelExpanded)}
