@@ -1,224 +1,276 @@
 
-# Plano de Correção: Poderes de Classe do Especialista
+# Plano de Correção: Poderes Ativáveis em Testes de Perícia
 
 ## Resumo Executivo
-Cinco bugs foram identificados afetando poderes de classe do **Especialista**, envolvendo falta de UI para ativação, falta de opção de ataque desarmado, e bônus não sendo aplicados automaticamente.
+Dois bugs críticos afetam o sistema de ativação de poderes durante testes de perícia:
+1. **Rolagem automática prematura**: O sistema rola os dados automaticamente ~150-200ms após abrir o modal, antes do jogador escolher quais poderes ativar
+2. **Bônus de poderes não aplicados**: Mesmo ativando poderes, os bônus de perícia (+5) de várias origens não são calculados
 
 ---
 
-## Bugs Identificados
+## Bug 1: Rolagem Automática Prematura
 
-### Bug 1: "Na Trilha Certa" - Sem local para ativar
-**Descrição**: Poder não tem UI para ativar. Deveria permitir gastar PE cumulativamente após sucesso em "procurar pistas" para receber +1d20 nos próximos testes.
+### Descrição
+Ao abrir o modal de rolagem (desktop ou mobile), os dados são rolados automaticamente após um curto delay, **antes** do jogador ter chance de selecionar quais poderes ativar. O painel de poderes ativáveis só aparece visualmente após os dados já terem sido rolados.
 
-**Causa Raiz**: O poder está definido em `especialista-powers.ts:447-475` com `kind: 'triggered'`, mas **não está cadastrado** no array `ACTIVATABLE_ESPECIALISTA_POWERS` do hook `useActivatableClassPowers.ts`.
+### Causa Raiz
+**Desktop** (`DiceRollModal.tsx:328-338`):
+```tsx
+useEffect(() => {
+  if (open && !hasRolledRef.current) {
+    hasRolledRef.current = true;
+    const timer = setTimeout(() => {
+      executeRoll();  // ← Rola após 150ms
+    }, 150);
+    return () => clearTimeout(timer);
+  }
+}, [open]);
+```
+
+**Mobile** (`MobileDiceRollModal.tsx:277-283`):
+```tsx
+useEffect(() => {
+  if (open && !hasRolledRef.current) {
+    hasRolledRef.current = true;
+    const timer = setTimeout(executeRoll, 200);  // ← Rola após 200ms
+    return () => clearTimeout(timer);
+  }
+}, [open, executeRoll]);
+```
+
+### Solução
+Implementar **duas fases** no modal de rolagem:
+
+```text
+┌─────────────────────────────────────────────┐
+│  FASE 1: PREPARAÇÃO (Nova!)                 │
+│  ─────────────────────────────              │
+│  • Modal abre                               │
+│  • Exibe pool de dados (placeholders)       │
+│  • Exibe painel de poderes ativáveis        │
+│  • Jogador escolhe quais ativar             │
+│  • Botão "ROLAR DADOS" para confirmar       │
+└─────────────────────────────────────────────┘
+                     │
+                     ▼
+┌─────────────────────────────────────────────┐
+│  FASE 2: ROLAGEM (Comportamento atual)      │
+│  ─────────────────────────────              │
+│  • Animação de dados                        │
+│  • Exibe resultado                          │
+│  • Botão "Rolar Novamente" disponível       │
+└─────────────────────────────────────────────┘
+```
+
+**Alterações específicas**:
+
+1. Adicionar nova fase `'preparing'` ao estado:
+   ```tsx
+   const [phase, setPhase] = useState<'preparing' | 'rolling' | 'done'>('preparing');
+   ```
+
+2. Remover auto-roll no `useEffect` de abertura:
+   ```tsx
+   useEffect(() => {
+     if (open) {
+       setPhase('preparing'); // Começa na fase de preparação
+     }
+   }, [open]);
+   ```
+
+3. Mover painel de poderes para **antes** da área de dados quando em fase `'preparing'`
+
+4. Adicionar botão "ROLAR DADOS" que chama `executeRoll()` após seleção
+
+5. Se não houver poderes ativáveis disponíveis, pode manter comportamento automático (opcional)
 
 ---
 
-### Bug 2: "Pensamento Ágil" - Sem local para ativar
-**Descrição**: Poder não tem UI para ativar. Deveria permitir gastar 2 PE (1x/rodada) durante investigação para fazer ação extra de procurar pistas.
+## Bug 2: Bônus de Poderes de Origem Não Aplicados
 
-**Causa Raiz**: Similar ao anterior - poder definido em `especialista-powers.ts:527-551` com `kind: 'activated'`, mas **não está no catálogo** de poderes ativáveis.
+### Descrição
+Poderes de origem como "Desbravador" (+5), "110%" (+5), "Faro para Pistas" (+5), etc. aparecem no painel de ativação, mas quando ativados e a rolagem é feita, o bônus **não é somado** ao resultado.
 
----
+### Causa Raiz
+A função `calculatePowerActivationEffects` em `activatable-powers-bridge.ts` **não possui cases** para a maioria dos poderes de origem. Quando o `switch(powerId)` não encontra match, cai no `default` que retorna `skillBonusChange: 0`.
 
-### Bug 3: "Primeiras Impressões" - Efeito não aplicado
-**Descrição**: Deveria conceder +1d20 no **primeiro** teste de Diplomacia, Enganação, Intimidação ou Intuição de cada cena.
+**Poderes com case implementado**: Apenas `saber-e-poder` (linhas 1067-1072)
 
-**Causa Raiz**: O poder está definido corretamente em `especialista-powers.ts:571-593` com `extraDice` e condição `firstInScene: true`. Porém, o sistema de rolagem de perícias **não rastreia** se é o primeiro teste da cena dessas perícias, e a lógica de `extraDice` para perícias específicas **não está integrada** ao `DiceRollModal`.
+**Poderes SEM case (faltando)**:
+- `desbravador` → Deveria retornar `skillBonusChange: 5`
+- `110-porcento` → Deveria retornar `skillBonusChange: 5`
+- `faro-para-pistas` → Deveria retornar `skillBonusChange: 5`
+- `processo-otimizado` → Deveria retornar `skillBonusChange: 5`
+- `motor-de-busca` → Deveria retornar `swapToSkill: 'tecnologia'`
+- `impostor` → Deveria retornar `swapToSkill: 'enganacao'`
+- `magnum-opus` → Deveria retornar `skillBonusChange: 5` (com nota sobre PRE×2)
+- `espirito-civico` → Deveria retornar `allyBonus: 2`
 
----
-
-### Bug 4: "Artista Marcial" - Sem opção de ataque desarmado
-**Descrição**: Quando nenhuma arma está equipada, deveria aparecer opção de "Ataque Desarmado" na aba de combate. O dano base é 1d4+FOR (padrão) ou escala com o poder (1d6/1d8/1d10 + Ágil).
-
-**Causa Raiz**: 
-1. O painel de combate (`MobileCombatPanel.tsx:262`) simplesmente não mostra nada se `weapons.length === 0`
-2. As funções `rollAttackWithContext` e `rollDamageWithContext` exigem um `weaponId` e não suportam ataques desarmados
-3. O dano desarmado **é calculado** pelo SUE em `power-effects-engine.ts:386-393`, mas **não há arma virtual** criada para representar o ataque desarmado
-
----
-
-### Bug 5: "Ninja Urbano" - Passiva não aplicada em corpo a corpo
-**Descrição**: +2 de dano em armas corpo a corpo (e disparo não-fogo) não está sendo aplicado nas rolagens de combate.
-
-**Causa Raiz**: O poder está definido em `especialista-powers.ts:498-524` com `damageBonus: { value: 2, conditions: { weaponType: ['melee', 'ranged-nonfirearm'] } }`. O problema é que:
-1. O adaptador de efeitos (`class-power-effects-adapter.ts`) pode não estar mapeando `melee` corretamente
-2. O `rollDamageWithContext` usa `meleeDamageBonus` do SUE, mas a condição `['melee', 'ranged-nonfirearm']` pode não estar gerando esse campo
-
----
-
-## Solução Proposta
-
-### Parte 1: Adicionar "Na Trilha Certa" e "Pensamento Ágil" ao catálogo de ativáveis
-**Arquivo**: `src/hooks/useActivatableClassPowers.ts`
-
-Adicionar ambos os poderes ao array `ACTIVATABLE_ESPECIALISTA_POWERS`:
+### Solução
+Adicionar cases para todos os poderes de origem na função `calculatePowerActivationEffects`:
 
 ```typescript
-// Na Trilha Certa
-{
-  id: 'na-trilha-certa',
-  name: 'Na Trilha Certa',
-  shortEffect: '+1d20 cumulativo após sucesso em procurar pistas',
-  description: 'Sempre que tiver sucesso em um teste para procurar pistas, pode gastar PE para receber +1d20 no próximo teste. Custos e bônus são cumulativos.',
-  basePECost: 1,
-  scalingCost: {
-    multiplier: 1,
-    description: 'Custo aumenta +1 PE por uso na cena'
-  },
-  limit: 'perScene', // Reseta na cena, mas cumulativo dentro dela
-  minNex: 15,
-  icon: 'search',
-  pageRef: 'Livro Base p.50',
-  conditionalBonusId: 'na-trilha-certa-ativo',
-},
+// ========== ORIGENS ==========
 
-// Pensamento Ágil
-{
-  id: 'pensamento-agil',
-  name: 'Pensamento Ágil',
-  shortEffect: 'Ação extra de procurar pistas (1x/rodada)',
-  description: 'Durante cena de investigação, gaste 2 PE para fazer uma ação adicional de procurar pistas.',
-  basePECost: 2,
-  limit: 'perRound',
-  minNex: 15,
-  icon: 'search',
-  pageRef: 'Livro Base p.51',
-}
+case 'desbravador':
+  return {
+    skillBonusChange: 5,
+    specialNote: '+5 em Adestramento ou Sobrevivência',
+  };
+
+case '110-porcento':
+  return {
+    skillBonusChange: 5,
+    specialNote: '+5 no teste (FOR ou AGI, exceto Luta/Pontaria)',
+  };
+
+case 'faro-para-pistas':
+  return {
+    skillBonusChange: 5,
+    specialNote: '+5 em Investigação/Percepção para procurar pistas',
+  };
+
+case 'processo-otimizado':
+  return {
+    skillBonusChange: 5,
+    specialNote: '+5 em teste estendido ou revisão de documentos',
+  };
+
+case 'motor-de-busca':
+  return {
+    skillBonusChange: 0,
+    swapToSkill: 'tecnologia',
+    specialNote: 'Substitui perícia por Tecnologia (requer internet)',
+  };
+
+case 'impostor':
+  return {
+    skillBonusChange: 0,
+    swapToSkill: 'enganacao',
+    specialNote: 'Substitui perícia por Enganação (1x/cena)',
+  };
+
+case 'magnum-opus':
+  return {
+    skillBonusChange: 5,
+    specialNote: 'PRE×2 no atributo + 5 (1x/missão, alvo reconhece trabalho)',
+  };
+
+case 'espirito-civico':
+  return {
+    skillBonusChange: 0,
+    allyBonus: 2,
+    specialNote: 'Ajudar dá +4 em vez de +2',
+  };
+
+case 'posicao-de-combate':
+  return {
+    skillBonusChange: 0,
+    movementBonus: 1, // Ação de movimento extra
+    specialNote: '+1 ação de movimento (1º turno de combate)',
+  };
+
+case 'patrulha-iniciativa':
+  return {
+    skillBonusChange: 0,
+    attributeSwap: 'presence', // Percepção usa Presença
+    specialNote: 'Usa Percepção em vez de Agilidade para Iniciativa',
+  };
+
+case 'cicatrizes-vontade':
+  return {
+    skillBonusChange: 0,
+    swapToSkill: 'vontade',
+    specialNote: 'Substitui teste de atributo por Vontade (1x/cena)',
+  };
 ```
 
 ---
 
-### Parte 2: Implementar rastreamento de "primeiro teste da cena" para Primeiras Impressões
-**Arquivos**: 
-- `src/hooks/useActivatableClassPowers.ts` - Adicionar poder
-- `src/pages/CharacterSheet.tsx` e `MobileCharacterSheet.tsx` - Rastrear testes por cena
-- `src/components/dice/DiceRollModal.tsx` e mobile - Aplicar +1d20 quando aplicável
+## Arquivos Afetados
 
-**Lógica**:
-1. Manter um Set de perícias já testadas na cena
-2. Antes de rolar Diplomacia/Enganação/Intimidação/Intuição, verificar se é o primeiro teste
-3. Se sim E personagem tem "Primeira Impressão", adicionar +1d20 à pool automaticamente
-4. Marcar a perícia como testada para o resto da cena
-5. "Reset Scene" limpa o Set
+| Arquivo | Alteração |
+|---------|-----------|
+| `src/components/dice/DiceRollModal.tsx` | Adicionar fase "preparing", remover auto-roll, adicionar botão "Rolar" |
+| `src/components/character/mobile/MobileDiceRollModal.tsx` | Mesmas alterações para paridade mobile |
+| `src/lib/class-powers/activatable-powers-bridge.ts` | Adicionar ~15 cases de poderes de origem em `calculatePowerActivationEffects` |
 
 ---
 
-### Parte 3: Criar "Arma Virtual" de Ataque Desarmado
-**Arquivos**:
-- `src/lib/rules-engine/types.ts` - Definir constante `UNARMED_WEAPON_ID`
-- `src/lib/rules-engine/helpers/attack-with-sue.ts` - Suportar weaponId especial
-- `src/lib/rules-engine/apply-and-roll.ts` - Criar arma virtual quando `weaponId === 'unarmed'`
-- `src/components/combat/MobileCombatPanel.tsx` e desktop equivalente - Exibir botão "Desarmado"
+## Fluxo Visual Proposto
 
-**Lógica**:
-1. Definir constante `UNARMED_WEAPON_ID = '__unarmed__'`
-2. Quando `weaponId === UNARMED_WEAPON_ID`:
-   - Criar arma virtual com: `name: 'Ataque Desarmado'`, `damage: '1d4'` (padrão) ou valor do SUE `unarmedDamage` (Artista Marcial), `attackSkill: 'luta'`, `attackAttribute: 'agility'` se Artista Marcial (ágil) ou `strength`
-3. No painel de combate, sempre exibir opção "Ataque Desarmado" mesmo sem armas equipadas
-4. Se personagem tem Artista Marcial, mostrar dano escalado (1d6/1d8/1d10) e badge "Ágil"
-
----
-
-### Parte 4: Corrigir bônus de dano do Ninja Urbano
-**Arquivo**: `src/lib/effects/class-power-effects-adapter.ts`
-
-Garantir que a condição `weaponType: ['melee', 'ranged-nonfirearm']` gere corretamente os campos:
-- `meleeDamageBonus: 2` quando arma é corpo a corpo
-- Campo separado para disparo não-fogo (ou usar `rangedDamageBonus` com filtro)
-
-**Verificar**:
-1. Se o adaptador está processando arrays em `conditions.weaponType`
-2. Se o SUE bridge está passando o tipo de arma correto para o contexto
-
----
-
-## Detalhes Técnicos
-
-### Fluxo de Ativação de Poderes
 ```text
-CharacterSheet
-  └── ClassPowersActivationPanel
-        └── useActivatableClassPowers (hook)
-              └── ACTIVATABLE_ESPECIALISTA_POWERS (catálogo)
-                    └── [Faltam: na-trilha-certa, pensamento-agil]
-```
-
-### Fluxo de Ataque Desarmado (Proposto)
-```text
-CombatPanel (weapons.length === 0)
-  └── [NOVO] Botão "Ataque Desarmado"
-        └── CombatRollModal(weaponId='__unarmed__')
-              └── rollAttackWithContext
-                    └── [NOVO] Criar arma virtual
-                          └── damage: SUE.unarmedDamage || '1d4'
-                          └── attackSkill: 'luta'
-                          └── attackAttribute: hasArtistaMarcial ? 'agility' : 'strength'
-```
-
-### Condições de Perícias (Primeira Impressão)
-```text
-DiceRollModal
-  └── skillId in ['diplomacia', 'enganacao', 'intimidacao', 'intuicao']
-        └── isFirstInScene[skillId] === true
-              └── hasPower('primeira-impressao')
-                    └── [AUTOMÁTICO] Adicionar +1d20 à pool
-                    └── Marcar isFirstInScene[skillId] = false
+┌─────────────────────────────────────────────────────────────┐
+│                    🎲 ATUALIDADES                           │
+│                 Pool de 4d20, pega o maior                  │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  ⚡ Poderes Ativáveis (3)              PE: 55 | Custo: 0    │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │  ▼ Poderes Disponíveis                              │   │
+│  ├─────────────────────────────────────────────────────┤   │
+│  │ 🧠 Conhecimento Aplicado      2 PE      ○           │   │
+│  │    Usar INT no teste                                │   │
+│  │ 📖 Nerd                       2 PE      ○           │   │
+│  │    Info extra (1x/cena)                             │   │
+│  │ ⚡ Eclético (Treinado)         2 PE      ●           │   │
+│  │    +5 (treinado)                                    │   │
+│  └─────────────────────────────────────────────────────┘   │
+│                                                             │
+│       [  ]    [  ]    [  ]    [  ]     ← Placeholders       │
+│                                                             │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │            🎲 ROLAR DADOS                            │   │ ← NOVO
+│  └─────────────────────────────────────────────────────┘   │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
 ## Checklist de Implementação
 
-### Parte 1: Poderes Ativáveis (Na Trilha Certa + Pensamento Ágil)
-- [ ] Adicionar `na-trilha-certa` ao `ACTIVATABLE_ESPECIALISTA_POWERS` com custo escalável
-- [ ] Adicionar `pensamento-agil` ao `ACTIVATABLE_ESPECIALISTA_POWERS` com limite perRound
-- [ ] Testar se aparecem no `ClassPowersActivationPanel` para Especialistas
+### Desktop (`DiceRollModal.tsx`)
+- [ ] Adicionar estado `'preparing'` como fase inicial
+- [ ] Remover useEffect de auto-roll (linhas 328-338)
+- [ ] Mover painel de poderes para cima da área de dados quando em preparação
+- [ ] Adicionar botão "Rolar Dados" que chama `executeRoll()` e muda para fase `'rolling'`
+- [ ] Opcional: se não há poderes ativáveis, auto-rolar após curto delay
 
-### Parte 2: Primeira Impressão
-- [ ] Criar estado `firstTestsInScene: Set<string>` no CharacterSheet
-- [ ] Modificar `handleSkillRoll` para verificar se é primeiro teste das 4 perícias
-- [ ] Passar flag `isFirstInScene` para DiceRollModal
-- [ ] No DiceRollModal, se `isFirstInScene && hasPower('primeira-impressao')`, adicionar +1d20
-- [ ] Após rolagem, marcar perícia como usada no Set
-- [ ] Resetar Set no "Reset Scene"
-- [ ] Mesma lógica para mobile
+### Mobile (`MobileDiceRollModal.tsx`)
+- [ ] Mesmas alterações acima para paridade
+- [ ] Adaptar layout do botão para mobile
 
-### Parte 3: Ataque Desarmado
-- [ ] Definir `UNARMED_WEAPON_ID` em types.ts
-- [ ] Modificar `rollAttackWithContext` para criar arma virtual
-- [ ] Modificar `rollDamageWithContext` para usar `unarmedDamage` do SUE
-- [ ] Adicionar botão "Ataque Desarmado" no painel de combate (desktop + mobile)
-- [ ] Exibir dano correto baseado em Artista Marcial (se aplicável)
-- [ ] Marcar como "Ágil" se tiver Artista Marcial
-
-### Parte 4: Ninja Urbano
-- [ ] Auditar `class-power-effects-adapter.ts` para condição `weaponType: ['melee', ...]`
-- [ ] Garantir que `meleeDamageBonus` é populado quando arma é corpo a corpo
-- [ ] Adicionar tratamento para `ranged-nonfirearm` (arco, besta, etc.)
-- [ ] Verificar se `rollDamageWithContext` aplica o bônus corretamente
-- [ ] Testar com arma corpo a corpo e arma de disparo não-fogo
+### Bridge de Poderes (`activatable-powers-bridge.ts`)
+- [ ] Adicionar case `'desbravador'` com `skillBonusChange: 5`
+- [ ] Adicionar case `'110-porcento'` com `skillBonusChange: 5`
+- [ ] Adicionar case `'faro-para-pistas'` com `skillBonusChange: 5`
+- [ ] Adicionar case `'processo-otimizado'` com `skillBonusChange: 5`
+- [ ] Adicionar case `'motor-de-busca'` com `swapToSkill`
+- [ ] Adicionar case `'impostor'` com `swapToSkill`
+- [ ] Adicionar case `'magnum-opus'` com `skillBonusChange: 5`
+- [ ] Adicionar case `'espirito-civico'` com `allyBonus: 2`
+- [ ] Adicionar case `'posicao-de-combate'` com `movementBonus`
+- [ ] Adicionar case `'patrulha-iniciativa'` com `attributeSwap`
+- [ ] Adicionar case `'cicatrizes-vontade'` com `swapToSkill`
+- [ ] Adicionar cases restantes conforme definições em `getActivatablePowersForCharacter`
 
 ### Testes
-- [ ] Criar personagem Especialista com cada poder e verificar funcionamento
-- [ ] Testar "Na Trilha Certa" em sequência de testes de investigação
-- [ ] Testar "Pensamento Ágil" 2x na mesma rodada (deve bloquear segunda)
-- [ ] Testar "Primeira Impressão" - primeiro teste da cena deve ter +1d20
-- [ ] Testar "Artista Marcial" sem arma - deve mostrar ataque desarmado
-- [ ] Testar "Ninja Urbano" com espada - deve ter +2 dano
+- [ ] Testar Especialista com "Conhecimento Aplicado" - selecionar antes de rolar
+- [ ] Testar Trabalhador Rural com "Desbravador" - verificar +5 aplicado
+- [ ] Testar Acadêmico com "Saber é Poder" - verificar +5 aplicado
+- [ ] Testar fluxo sem poderes ativáveis - verificar se ainda funciona
+- [ ] Testar mobile com mesmos cenários
 
 ---
 
 ## Impacto
-- **Médio-Alto risco**: Mudanças afetam sistema de combate e rolagem de perícias
-- **Alta prioridade**: Bugs afetam 5 poderes oficiais do Especialista
+- **Médio risco**: Mudança no UX de rolagem (adiciona etapa de confirmação)
+- **Alta prioridade**: Bugs afetam usabilidade de múltiplas origens e poderes
 
 ## Tempo Estimado
-- Parte 1 (Ativáveis): ~30 minutos
-- Parte 2 (Primeira Impressão): ~45 minutos
-- Parte 3 (Ataque Desarmado): ~1 hora
-- Parte 4 (Ninja Urbano): ~30 minutos
+- Bug 1 (Fases de rolagem): ~1 hora
+- Bug 2 (Cases de poderes): ~30 minutos
 - Testes: ~30 minutos
 
-**Total**: ~3 horas
+**Total**: ~2 horas
