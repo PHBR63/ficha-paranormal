@@ -24,6 +24,18 @@ export { calculateDefense } from './helpers/defense-calculation';
 export { calculateResistances } from './helpers/resistance-calculation';
 export { calculateAttacks } from './helpers/attack-calculation';
 export { calculateSkillBonuses, calculateSkillBonusesWithBreakdown } from './helpers/skill-bonuses';
+export { calculateMovement } from './helpers/movement-calculation';
+export { calculatePELimit, checkPESpendLimit, getPELimitProgression } from './helpers/pe-limit-calculation';
+export { 
+  collectProficiencies, 
+  getClassProficiencies, 
+  getTrackProficiencies,
+  getPowerProficiencies,
+  getOriginProficiencies,
+  hasProficiency,
+  hasWeaponProficiency,
+  hasArmorProficiency,
+} from './helpers/proficiency-collection';
 
 // Bridge SUE-RulesEngine
 export { getSUEBonusesForCharacter } from './sue-bridge';
