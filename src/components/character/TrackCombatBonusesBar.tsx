@@ -2,9 +2,11 @@
  * TrackCombatBonusesBar - Barra de bônus de trilha na seção de combate
  * Mostra modificadores de dano e ataque de habilidades como Mira de Elite e Golpe Pesado
  * Inclui botão de rolagem de iniciativa com bônus automáticos
+ * 
+ * MIGRAÇÃO FASE 3: Usa useInitiativeRollWithSUE para integração completa com SUE
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Crosshair, Swords, Target, Zap, Shield, Brain, Sparkles, Dices } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -15,7 +17,8 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
-import { rollSkillTest, DiceRollResult } from '@/lib/dice-roller';
+import { DiceRollResult } from '@/lib/dice-roller';
+import { useInitiativeRollWithSUE, InitiativeRollCharacterConfig } from '@/hooks/sue/useInitiativeRollWithSUE';
 import { BonusBreakdown, CombatBonuses, DamageReduction, EffectResistances } from '@/hooks/useCharacterBonusSummary';
 
 interface TrackCombatBonusesBarProps {
@@ -23,6 +26,12 @@ interface TrackCombatBonusesBarProps {
   damageReduction: DamageReduction;
   effectResistances: EffectResistances;
   agility?: number; // Atributo de Agilidade para iniciativa
+  // Dados do personagem para integração SUE
+  characterClass?: string;
+  classTrack?: string;
+  nex?: number;
+  attributes?: { strength: number; agility: number; vigor: number; intellect: number; presence: number };
+  activeConditions?: string[];
   onInitiativeRoll?: (result: DiceRollResult) => void; // Callback para rolagem
   className?: string;
 }
@@ -98,6 +107,11 @@ export function TrackCombatBonusesBar({
   damageReduction,
   effectResistances,
   agility = 0,
+  characterClass = 'Combatente',
+  classTrack,
+  nex = 5,
+  attributes,
+  activeConditions = [],
   onInitiativeRoll,
   className,
 }: TrackCombatBonusesBarProps) {
@@ -105,26 +119,42 @@ export function TrackCombatBonusesBar({
   const [isRolling, setIsRolling] = useState(false);
   const [lastResult, setLastResult] = useState<DiceRollResult | null>(null);
 
-  // Handler para rolagem de iniciativa
+  // Configuração do personagem para o hook SUE
+  const characterConfig = useMemo<InitiativeRollCharacterConfig>(() => ({
+    characterClass,
+    classTrack,
+    nex,
+    attributes: attributes || {
+      strength: 1,
+      agility: agility,
+      vigor: 1,
+      intellect: 1,
+      presence: 1,
+    },
+    activeConditions,
+  }), [characterClass, classTrack, nex, attributes, agility, activeConditions]);
+
+  // Hook de iniciativa integrado com SUE
+  const { executeInitiativeRoll, getInitiativeBonusBreakdown } = useInitiativeRollWithSUE(characterConfig);
+
+  // Obtém breakdown de bônus para exibição
+  const initiativeBreakdown = useMemo(() => getInitiativeBonusBreakdown(), [getInitiativeBonusBreakdown]);
+
+  // Handler para rolagem de iniciativa usando SUE
   const handleInitiativeRoll = useCallback(() => {
     if (isRolling) return;
     
     setIsRolling(true);
     
-    // Simula delay de rolagem
+    // Simula delay de rolagem para feedback visual
     setTimeout(() => {
-      const result = rollSkillTest({
-        attributeValue: agility,
-        skillBonus: combat.initiative.total,
-        otherBonuses: 0,
-        label: 'Iniciativa',
-      });
+      const result = executeInitiativeRoll();
       
       setLastResult(result);
       setIsRolling(false);
       onInitiativeRoll?.(result);
     }, 300);
-  }, [agility, combat.initiative.total, isRolling, onInitiativeRoll]);
+  }, [isRolling, executeInitiativeRoll, onInitiativeRoll]);
 
   // Filtra apenas bônus de habilidades de trilha
   const attackBonuses = combat.attack.breakdown.filter(b => 
@@ -256,11 +286,11 @@ export function TrackCombatBonusesBar({
                     <Dices className="w-3.5 h-3.5 text-primary" />
                   </motion.div>
                   <span>Iniciativa</span>
-                  {combat.initiative.total > 0 && (
-                    <span className="text-primary font-display">+{agility + combat.initiative.total}</span>
+                  {initiativeBreakdown.total > 0 && (
+                    <span className="text-primary font-display">+{initiativeBreakdown.total}</span>
                   )}
-                  {combat.initiative.total === 0 && (
-                    <span className="text-muted-foreground font-display">+{agility}</span>
+                  {initiativeBreakdown.total === 0 && (
+                    <span className="text-muted-foreground font-display">+0</span>
                   )}
                 </Button>
               </motion.div>
@@ -269,11 +299,15 @@ export function TrackCombatBonusesBar({
               <div className="space-y-1">
                 <p className="font-medium">Rolar Iniciativa</p>
                 <div className="text-xs space-y-0.5 text-muted-foreground">
-                  <p>d20 + Agilidade ({agility})</p>
-                  {combat.initiative.total > 0 && (
-                    <p className="text-primary">+ Bônus de trilha ({combat.initiative.total})</p>
-                  )}
-                  <p className="text-foreground font-medium">Total: +{agility + combat.initiative.total}</p>
+                  {/* Breakdown de fontes do SUE */}
+                  {initiativeBreakdown.sources.map((source, i) => (
+                    <p key={i} className={source.type === 'track' ? 'text-primary' : ''}>
+                      {source.label}: +{source.value}
+                    </p>
+                  ))}
+                  <p className="text-foreground font-medium border-t border-border pt-1 mt-1">
+                    Total: +{initiativeBreakdown.total}
+                  </p>
                 </div>
                 {lastResult && (
                   <div className="pt-1 border-t border-border mt-1">
