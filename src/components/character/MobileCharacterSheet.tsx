@@ -79,6 +79,7 @@ import { hasUsedTranscenderPostNex50, hasParanormalPowersFromTranscender } from 
 import { MobileRitualEffectWizard } from './mobile/MobileRitualEffectWizard';
 import type { WeaponBuff } from '@/hooks/useWeaponBuffs';
 import { getActivatablePowersForCharacter } from '@/lib/class-powers/activatable-powers-bridge';
+import { usePrimeiraImpressao, isEligibleForPrimeiraImpressao } from '@/hooks/usePrimeiraImpressao';
 
 // Componentes mobile extraídos e memoizados
 import {
@@ -620,6 +621,14 @@ export function MobileCharacterSheet({
   // Hook de aplicação automática de condições (paridade desktop)
   const { processResourceChange } = useAutoConditions();
   
+  // Hook para rastrear "Primeira Impressão" do Especialista (paridade desktop)
+  // Concede +1d20 no primeiro teste de Diplomacia, Enganação, Intimidação ou Intuição da cena
+  const primeiraImpressao = usePrimeiraImpressao({
+    classPowers: character.powers?.map(p => p.name) || [],
+    abilities: character.abilities || [],
+    characterClass: character.class,
+  });
+  
   // Handler para salvar buffs de armas na nuvem
   const handleWeaponBuffsChange = useCallback(async (buffs: WeaponBuff[]) => {
     if (!character) return;
@@ -976,6 +985,10 @@ export function MobileCharacterSheet({
     // Total de bônus = treinamento + poderes de classe + SUE
     const totalSkillBonus = trainingBonus + classPowerBonus + sueSkillBonus;
     
+    // Verifica se aplica +1d20 de "Primeira Impressão" (Especialista)
+    // Se for o primeiro teste de Diplomacia/Enganação/Intimidação/Intuição na cena
+    const primeiraImpressaoBonus = primeiraImpressao.shouldApplyExtraDice(skillName) ? 1 : 0;
+    
     // Constrói fontes de bônus para exibição detalhada
     const bonusSources: BonusSource[] = [];
     if (trainingBonus > 0) {
@@ -993,15 +1006,24 @@ export function MobileCharacterSheet({
     if (sueSkillBonus > 0) {
       bonusSources.push({ label: 'Efeitos Ativos', value: sueSkillBonus, type: 'other' as const });
     }
+    // Adiciona fonte de "Primeira Impressão" se aplicável
+    if (primeiraImpressaoBonus > 0) {
+      bonusSources.push({ 
+        label: 'Primeira Impressão', 
+        value: primeiraImpressaoBonus, 
+        type: 'power' as const,
+        sourceName: 'Primeira Impressão (+1d20)',
+      });
+    }
     
     setDiceModalConfig({
       skillName,
-      pool: attrValue,
+      pool: attrValue + primeiraImpressaoBonus, // +1d20 se Primeira Impressão ativa
       bonus: totalSkillBonus,
       bonusSources: bonusSources.filter(b => b.value !== 0),
     });
     setDiceModalOpen(true);
-  }, [character, unifiedEffects, bonusSummary]);
+  }, [character, unifiedEffects, bonusSummary, primeiraImpressao]);
 
   // Handler para abrir modal de conjuração de ritual
   const handleOpenRitualModal = useCallback((ritualId: string) => {
@@ -1867,7 +1889,11 @@ export function MobileCharacterSheet({
                 peSpentThisRound: roundTracking.peSpentThisRound,
                 peSpentBreakdown: roundTracking.peSpentBreakdown,
                 advanceRound: roundTracking.advanceRound,
-                resetCombat: roundTracking.resetCombat,
+                resetCombat: () => {
+                  roundTracking.resetCombat();
+                  // Reseta "Primeira Impressão" junto com reset de cena
+                  primeiraImpressao.resetSceneTracking();
+                },
                 trackPESpent: roundTracking.trackPESpent,
               }}
               classPowers={character.powers as unknown[] || []}
@@ -2515,10 +2541,17 @@ export function MobileCharacterSheet({
           san: localSanCurrent 
         })}
         onRollComplete={(result) => {
-          const isInitiative = diceModalConfig?.skillName === 'Iniciativa';
+          const skillName = diceModalConfig?.skillName || 'Rolagem';
+          const isInitiative = skillName === 'Iniciativa';
+          
+          // Marca perícia como testada na cena (para Primeira Impressão do Especialista)
+          if (isEligibleForPrimeiraImpressao(skillName)) {
+            primeiraImpressao.markSkillAsTested(skillName);
+          }
+          
           addRoll({
             type: isInitiative ? 'initiative' : 'skill',
-            label: diceModalConfig?.skillName || 'Rolagem',
+            label: skillName,
             diceCount: result.dice.length,
             results: result.dice,
             bestResult: result.keptDice,
@@ -2527,7 +2560,7 @@ export function MobileCharacterSheet({
             success: undefined,
             critical: result.isCritical,
             criticalFail: result.keptDice === 1,
-            skillName: diceModalConfig?.skillName,
+            skillName: skillName,
           });
         }}
       />
@@ -2767,6 +2800,8 @@ export function MobileCharacterSheet({
             pe: newStats.pe_current,
             san: newStats.san_current,
           });
+          // Reseta rastreamento de "Primeira Impressão" (descanso = nova cena)
+          primeiraImpressao.resetSceneTracking();
         }}
       />
 
