@@ -2586,50 +2586,6 @@ export function CombatRollModal({
                     </motion.div>
                   )}
                   
-                  {/* === DEBUG: BUFFS ATIVOS NÃO APLICADOS (para diagnóstico) === */}
-                  {!buffDiceResult && weaponBuffs.length > 0 && (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="p-3 rounded-lg border border-dashed border-yellow-500/50 bg-yellow-500/5"
-                    >
-                      <div className="flex items-center justify-center gap-2 text-xs text-yellow-500 uppercase tracking-wider mb-2">
-                        <Info className="w-3 h-3" />
-                        <span>Buffs Ativos (DEBUG)</span>
-                      </div>
-                      
-                      <div className="space-y-1">
-                        {weaponBuffs.map((buff, i) => {
-                          const buffFormula = buff.bonusDamage 
-                            ? `+${buff.bonusDamage.diceCount || 1}d${buff.bonusDamage.diceType || 6}` 
-                            : 'sem dano extra';
-                          const elementColors = ELEMENT_BUFF_COLORS[buff.element] || { 
-                            bg: 'bg-paranormal/20', 
-                            text: 'text-paranormal', 
-                            border: 'border-paranormal/50' 
-                          };
-                          
-                          return (
-                            <div key={buff.id || i} className="flex items-center justify-between text-xs">
-                              <span className={cn("font-medium", elementColors.text)}>
-                                {buff.ritualName}
-                              </span>
-                              <Badge 
-                                variant="outline" 
-                                className={cn("text-[10px]", elementColors.bg, elementColors.border, elementColors.text)}
-                              >
-                                {buffFormula} ({buff.element})
-                              </Badge>
-                            </div>
-                          );
-                        })}
-                      </div>
-                      
-                      <p className="text-[10px] text-yellow-500/70 mt-2 text-center">
-                        ⚠️ Buff detectado mas não rolado. Verifique se bonusDamage está configurado corretamente.
-                      </p>
-                    </motion.div>
-                  )}
                 </div>
 
                 {/* Total de dano com detalhamento de bônus */}
