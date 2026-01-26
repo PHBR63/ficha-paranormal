@@ -24,7 +24,10 @@ import { calculateDefense } from './helpers/defense-calculation';
 import { calculateResistances } from './helpers/resistance-calculation';
 import { calculateAttacks } from './helpers/attack-calculation';
 import { calculateSkillBonuses } from './helpers/skill-bonuses';
-import { getPELimitByNex } from '../dice-roller';
+import { calculateMovement } from './helpers/movement-calculation';
+import { calculatePELimit } from './helpers/pe-limit-calculation';
+import { collectProficiencies } from './helpers/proficiency-collection';
+import { getSUEBonusesForCharacter } from './sue-bridge';
 
 // =====================================================
 // FUNÇÃO PRINCIPAL
@@ -40,7 +43,10 @@ export function deriveCharacter(state: CharacterState): DerivedStats {
   // 1. Obter estatísticas base da classe
   const classStats = getClassBaseStats(state.characterClass, state.nex);
   
-  // 2. Criar contexto para cálculos condicionais
+  // 2. Obter bônus consolidados do SUE
+  const sueComputed = getSUEBonusesForCharacter(state);
+  
+  // 3. Criar contexto para cálculos condicionais
   const context: CalculationContext = {
     nex: state.nex,
     attributes: state.attributes,
@@ -50,40 +56,40 @@ export function deriveCharacter(state: CharacterState): DerivedStats {
     isDying: state.activeConditions.some(c => c.conditionId === 'morrendo'),
   };
   
-  // 3. Calcular recursos (HP, PE, SAN)
-  const resourceBonuses = calculateResourceBonuses(state, context);
+  // 4. Calcular recursos (HP, PE, SAN) com bônus do SUE
+  const resourceBonuses = calculateResourceBonuses(state, context, sueComputed);
   
-  // 4. Calcular HP máximo
+  // 5. Calcular HP máximo
   const hpBreakdown = calculateHP(state, classStats, resourceBonuses.hp);
   
-  // 5. Calcular PE máximo
+  // 6. Calcular PE máximo
   const peBreakdown = calculatePE(state, classStats, resourceBonuses.pe);
   
-  // 6. Calcular SAN máximo
+  // 7. Calcular SAN máximo
   const sanBreakdown = calculateSAN(state, classStats, resourceBonuses.san);
   
-  // 7. Calcular Defesa
-  const defenseResult = calculateDefense(state, context);
+  // 8. Calcular Defesa com bônus do SUE
+  const defenseResult = calculateDefense(state, context, sueComputed);
   
-  // 8. Calcular Resistências
-  const resistancesResult = calculateResistances(state, context);
+  // 9. Calcular Resistências com bônus do SUE
+  const resistancesResult = calculateResistances(state, context, sueComputed);
   
-  // 9. Calcular limite de PE
-  const peLimitBreakdown = calculatePELimit(state, context);
+  // 10. Calcular limite de PE com bônus do SUE (Universitário: +1)
+  const peLimitBreakdown = calculatePELimit(state, context, sueComputed);
   
-  // 10. Calcular ataques disponíveis
+  // 11. Calcular ataques disponíveis
   const attacks = calculateAttacks(state, context);
   
-  // 11. Calcular bônus de perícias
-  const skillBonuses = calculateSkillBonuses(state, context);
+  // 12. Calcular bônus de perícias com bônus do SUE
+  const skillBonuses = calculateSkillBonuses(state, context, sueComputed);
   
-  // 12. Calcular movimento
-  const movementBreakdown = calculateMovement(state, context);
+  // 13. Calcular movimento com bônus do SUE (Ligeireza, condições)
+  const movementBreakdown = calculateMovement(state, context, sueComputed);
   
-  // 13. Determinar proficiências
-  const proficiencies = collectProficiencies(state);
+  // 14. Determinar proficiências de classe/trilha/poderes/origem
+  const proficiencies = collectProficiencies(state, sueComputed);
   
-  // 14. Limites de rituais (Ocultista)
+  // 15. Limites de rituais (Ocultista)
   const ritualLimits = calculateRitualLimits(state);
   
   return {
@@ -267,85 +273,8 @@ function calculateSAN(
   return { total, base, sources };
 }
 
-/**
- * Calcula limite de PE por turno
- */
-function calculatePELimit(
-  state: CharacterState,
-  context: CalculationContext
-): StatBreakdown {
-  const baseLimit = getPELimitByNex(state.nex);
-  const sources: BreakdownSource[] = [];
-  
-  sources.push({
-    name: `Base (NEX ${state.nex}%)`,
-    sourceType: 'class',
-    value: baseLimit,
-  });
-  
-  // TODO: Adicionar bônus de origem (Universitário: +1)
-  // TODO: Adicionar bônus de poderes
-  
-  const total = sources.reduce((sum, s) => sum + s.value, 0);
-  
-  return { total, base: baseLimit, sources };
-}
-
-/**
- * Calcula movimento
- */
-function calculateMovement(
-  state: CharacterState,
-  context: CalculationContext
-): StatBreakdown {
-  const baseMovement = 9; // 9m padrão
-  const sources: BreakdownSource[] = [];
-  
-  sources.push({
-    name: 'Base',
-    sourceType: 'class',
-    value: baseMovement,
-  });
-  
-  // TODO: Adicionar bônus de poderes (Ligeireza: +3m)
-  // TODO: Aplicar penalidades de condições
-  
-  const total = sources.reduce((sum, s) => sum + s.value, 0);
-  
-  return { total, base: baseMovement, sources };
-}
-
-/**
- * Coleta todas as proficiências do personagem
- */
-function collectProficiencies(state: CharacterState): string[] {
-  const proficiencies = new Set<string>();
-  
-  // Proficiências base da classe
-  const classProficiencies = getClassProficiencies(state.characterClass);
-  classProficiencies.forEach(p => proficiencies.add(p));
-  
-  // TODO: Adicionar proficiências de poderes
-  // TODO: Adicionar proficiências de origem
-  
-  return Array.from(proficiencies);
-}
-
-/**
- * Retorna proficiências base de uma classe
- */
-function getClassProficiencies(classId: string): string[] {
-  switch (classId) {
-    case 'Combatente':
-      return ['Armas simples', 'Armas táticas', 'Proteções leves'];
-    case 'Especialista':
-      return ['Armas simples', 'Proteções leves'];
-    case 'Ocultista':
-      return ['Armas simples'];
-    default:
-      return [];
-  }
-}
+// Funções calculatePELimit, calculateMovement e collectProficiencies
+// foram movidas para arquivos separados em ./helpers/
 
 /**
  * Calcula limites de rituais (apenas Ocultista)
