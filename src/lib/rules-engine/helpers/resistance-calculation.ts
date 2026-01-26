@@ -1,9 +1,12 @@
 /**
  * Helpers de cálculo de resistências
  * Ordem Paranormal RPG v1.3
+ * 
+ * INTEGRAÇÃO SUE: Consume dados consolidados do SUE quando disponíveis
  */
 
 import type { CharacterState, StatBreakdown, BreakdownSource, CalculationContext, ResistanceKey } from '../types';
+import type { SUEComputedForRulesEngine } from '../sue-bridge';
 
 interface ResistancesResult {
   fortitude: StatBreakdown;
@@ -13,15 +16,20 @@ interface ResistancesResult {
 
 /**
  * Calcula todas as resistências com breakdown
+ * 
+ * @param state - Estado do personagem
+ * @param context - Contexto de cálculo
+ * @param sueComputed - Dados do SUE (opcional, para integração)
  */
 export function calculateResistances(
   state: CharacterState,
-  context: CalculationContext
+  context: CalculationContext,
+  sueComputed?: SUEComputedForRulesEngine
 ): ResistancesResult {
   return {
-    fortitude: calculateSingleResistance('fortitude', state, context),
-    reflexos: calculateSingleResistance('reflexos', state, context),
-    vontade: calculateSingleResistance('vontade', state, context),
+    fortitude: calculateSingleResistance('fortitude', state, context, sueComputed),
+    reflexos: calculateSingleResistance('reflexos', state, context, sueComputed),
+    vontade: calculateSingleResistance('vontade', state, context, sueComputed),
   };
 }
 
@@ -31,7 +39,8 @@ export function calculateResistances(
 function calculateSingleResistance(
   resistance: ResistanceKey,
   state: CharacterState,
-  context: CalculationContext
+  context: CalculationContext,
+  sueComputed?: SUEComputedForRulesEngine
 ): StatBreakdown {
   const sources: BreakdownSource[] = [];
   
@@ -58,14 +67,52 @@ function calculateSingleResistance(
     }
   }
   
-  // TODO: Bônus de poderes
-  // TODO: Bônus de equipamentos
-  // TODO: Bônus de condições
+  // === INTEGRAÇÃO SUE ===
+  if (sueComputed) {
+    const sueBonus = getSUEResistanceBonus(resistance, sueComputed);
+    const sueBreakdown = getSUEResistanceBreakdown(resistance, sueComputed);
+    
+    if (sueBonus > 0) {
+      if (sueBreakdown.length > 0) {
+        sources.push(...sueBreakdown);
+      } else {
+        sources.push({
+          name: 'Bônus (Poderes)',
+          sourceType: 'power',
+          value: sueBonus,
+        });
+      }
+    }
+  }
   
   const total = sources.reduce((sum, s) => sum + s.value, 0);
   const base = attributeValue;
   
   return { total, base, sources };
+}
+
+/**
+ * Obtém bônus de resistência do SUE
+ */
+function getSUEResistanceBonus(resistance: ResistanceKey, sue: SUEComputedForRulesEngine): number {
+  switch (resistance) {
+    case 'fortitude': return sue.fortitudeBonus;
+    case 'reflexos': return sue.reflexosBonus;
+    case 'vontade': return sue.vontadeBonus;
+    default: return 0;
+  }
+}
+
+/**
+ * Obtém breakdown de resistência do SUE
+ */
+function getSUEResistanceBreakdown(resistance: ResistanceKey, sue: SUEComputedForRulesEngine): BreakdownSource[] {
+  switch (resistance) {
+    case 'fortitude': return sue.fortitudeBreakdown;
+    case 'reflexos': return sue.reflexosBreakdown;
+    case 'vontade': return sue.vontadeBreakdown;
+    default: return [];
+  }
 }
 
 /**
