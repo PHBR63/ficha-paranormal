@@ -8,6 +8,10 @@
  * - Rolagem de ataque com margem de crítico
  * - Rolagem de dano com fórmulas parseadas e buffs do SUE
  * - Rolagem de iniciativa
+ * 
+ * VERSÕES COM CONTEXTO SUE:
+ * As funções *WithContext integram automaticamente todos os bônus
+ * do Sistema Unificado de Efeitos (SUE) nas rolagens.
  */
 
 import type {
@@ -29,6 +33,12 @@ import {
   type DamageRollResult,
 } from './helpers/damage-formula-parser';
 import { getSUEBonusesForCharacter } from './sue-bridge';
+
+// Re-exportar funções com contexto SUE
+export { rollAttackWithContext, type AttackRollContext, type DetailedAttackResult } from './helpers/attack-with-sue';
+export { rollSkillCheckWithContext, type SkillCheckContext, type DetailedSkillCheckResult } from './helpers/skill-check-with-sue';
+export { rollInitiativeWithContext, type InitiativeRollContext, type DetailedInitiativeResult } from './helpers/initiative-with-sue';
+export { rollResistanceCheckWithContext, type ResistanceCheckContext, type DetailedResistanceResult } from './helpers/resistance-check-with-sue';
 
 // =====================================================
 // TIPOS ESTENDIDOS PARA DANO
