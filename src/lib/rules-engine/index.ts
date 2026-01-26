@@ -15,8 +15,30 @@ export * from './types';
 // Funções principais
 export { deriveCharacter } from './derive-character';
 export { validateCharacter } from './validate-character';
-export { applyEffect, rollAction, rollDamageWithContext } from './apply-and-roll';
-export type { DamageRollContext, DetailedDamageResult } from './apply-and-roll';
+
+// Funções de rolagem (básicas e com contexto SUE)
+export { 
+  applyEffect, 
+  rollAction, 
+  rollDamageWithContext,
+  // Funções com integração SUE completa
+  rollAttackWithContext,
+  rollSkillCheckWithContext,
+  rollInitiativeWithContext,
+  rollResistanceCheckWithContext,
+} from './apply-and-roll';
+export type { 
+  DamageRollContext, 
+  DetailedDamageResult,
+  AttackRollContext,
+  DetailedAttackResult,
+  SkillCheckContext,
+  DetailedSkillCheckResult,
+  InitiativeRollContext,
+  DetailedInitiativeResult,
+  ResistanceCheckContext,
+  DetailedResistanceResult,
+} from './apply-and-roll';
 
 // Helpers (para uso interno ou extensão)
 export { getClassBaseStats } from './helpers/class-stats';
