@@ -1,7 +1,9 @@
 import { defineConfig } from 'vitest/config';
+import react from '@vitejs/plugin-react-swc';
 import path from 'path';
 
 export default defineConfig({
+  plugins: [react()],
   test: {
     // Ambiente de teste - jsdom para testes de hooks React
     environment: 'jsdom',
@@ -15,6 +17,9 @@ export default defineConfig({
     
     // Globals para React Testing Library
     globals: true,
+    
+    // Setup file
+    setupFiles: ['./src/test/setup.ts'],
     
     // Padrões de arquivos de teste
     include: ['src/**/*.{test,spec,vitest}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
