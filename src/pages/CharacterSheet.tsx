@@ -3177,6 +3177,7 @@ export default function CharacterSheet() {
                   extraDamageDice: bonusSummary.combat.damage.extraDice,
                 }}
                 unifiedEffects={unifiedEffects.computed}
+                excludedEffects={unifiedEffects.hardening?.excludedEffects || []}
                 activeConditionalBonuses={character.active_conditional_bonuses || []}
                 onRollComplete={handleRollComplete}
                 weaponBuffs={weaponBuffs}

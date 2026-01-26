@@ -46,6 +46,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { StackingExclusionIndicator, type ExcludedEffectInfo } from './StackingExclusionIndicator';
 import { AniquiladorTechniqueModal, TechniqueEffects } from './AniquiladorTechniqueModal';
 import { checkWeaponProficiency, type ProficiencyCheckResult } from '@/lib/proficiency-utils';
 
@@ -165,6 +166,14 @@ interface CombatRollModalProps {
   // Efeitos de trilha ativados (para processar bônus automáticos)
   activatedTrackEffects?: string[];
   
+  // === SUE HARDENING ===
+  // Efeitos excluídos por stacking (para indicadores visuais)
+  excludedEffects?: Array<{
+    effect: { id: string; name: string; source: string };
+    reason: string;
+    replacedBy: string;
+  }>;
+  
   // === ORIGENS ===
   // ID da origem do personagem (ex: 'militar', 'operario')
   characterOrigin?: string;
@@ -238,6 +247,7 @@ export function CombatRollModal({
   activeConditions = [], // Condições ativas para exibição
   activeConditionalBonuses = [], // Bônus condicionais ativos (Combate Defensivo, etc.)
   activatedTrackEffects = [], // Efeitos de trilha ativados
+  excludedEffects = [], // SUE Hardening: Efeitos excluídos por stacking
   characterOrigin, // ID da origem do personagem
   originBoundWeaponId, // Arma vinculada pela origem (Operário)
   onRollComplete,
@@ -1910,6 +1920,15 @@ export function CombatRollModal({
                       ))}
                     </div>
                   </div>
+                )}
+
+                {/* === INDICADOR DE STACKING (SUE Hardening) === */}
+                {excludedEffects.length > 0 && (
+                  <StackingExclusionIndicator
+                    excludedEffects={excludedEffects as ExcludedEffectInfo[]}
+                    variant="inline"
+                    className="mt-2"
+                  />
                 )}
 
                 {/* === ATAQUE ESPECIAL (Combatente) com distribuição flexível === */}

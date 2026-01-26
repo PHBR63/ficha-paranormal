@@ -91,6 +91,13 @@ interface CombatWeaponsTableProps {
   // NOVO: Efeitos consolidados do Sistema Unificado de Efeitos (SUE)
   unifiedEffects?: ComputedEffects;
   
+  // NOVO: Efeitos excluídos por stacking (SUE Hardening)
+  excludedEffects?: Array<{
+    effect: { id: string; name: string; source: string };
+    reason: string;
+    replacedBy: string;
+  }>;
+  
   // NOVO: Bônus condicionais ativos (Combate Defensivo, Sentido Tático, etc.)
   activeConditionalBonuses?: string[];
   
@@ -126,7 +133,7 @@ function WeaponTypeIcon({ type }: { type: WeaponEntry['type'] }) {
   }
 }
 
-export function CombatWeaponsTable({ 
+export function CombatWeaponsTable({
   weapons,
   className,
   attributes,
@@ -146,6 +153,8 @@ export function CombatWeaponsTable({
   classPowerBonuses,
   // NOVO: Efeitos consolidados do SUE
   unifiedEffects,
+  // NOVO: Efeitos excluídos por stacking (SUE Hardening)
+  excludedEffects = [],
   // NOVO: Bônus condicionais ativos
   activeConditionalBonuses = [],
   onRollComplete,
@@ -373,6 +382,7 @@ export function CombatWeaponsTable({
           nex={nex || 5}
           classPowerBonuses={classPowerBonuses}
           unifiedEffects={unifiedEffects}
+          excludedEffects={excludedEffects}
           weaponBuffs={weaponBuffs}
           isFavoriteWeapon={selectedWeapon?.isFavoriteWeapon || false}
           activeConditionalBonuses={activeConditionalBonuses}
