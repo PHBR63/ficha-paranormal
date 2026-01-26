@@ -209,11 +209,12 @@ export function TrainingGradeSelectModal({
   // Valida se seleção está completa
   const isValid = choices.length === maxChoices;
 
-  // Handler de confirmação
+  // Handler de confirmação (fecha modal após confirmar)
   const handleConfirm = useCallback(() => {
     if (!isValid) return;
     onConfirm({ nex, choices });
-  }, [isValid, onConfirm, nex, choices]);
+    onClose(); // Fecha o modal após confirmar
+  }, [isValid, onConfirm, nex, choices, onClose]);
 
   // Handler de cancelamento (restaura estado anterior)
   const handleCancel = useCallback(() => {
