@@ -45,6 +45,48 @@ const CLASS_BASE_SKILLS: Record<string, number> = {
   'Ocultista': 2,
 };
 
+/**
+ * Perícias concedidas por origem (Livro Base v1.3)
+ * Amnésico não tem perícias fixas - o jogador escolhe
+ */
+const ORIGIN_GRANTED_SKILLS: Record<string, string[]> = {
+  'academico': ['ciencias', 'investigacao'],
+  'agente-de-saude': ['intuicao', 'medicina'],
+  'artista': ['artes', 'enganacao'],
+  'atleta': ['acrobacia', 'atletismo'],
+  'chef': ['fortitude', 'profissao'],
+  'criminoso': ['crime', 'furtividade'],
+  'cultista-arrependido': ['ocultismo', 'religiao'],
+  'desgarrado': ['fortitude', 'sobrevivencia'],
+  'engenheiro': ['profissao', 'tecnologia'],
+  'executivo': ['diplomacia', 'profissao'],
+  'investigador': ['investigacao', 'percepcao'],
+  'lutador': ['luta', 'reflexos'],
+  'magnata': ['diplomacia', 'pilotagem'],
+  'mercenario': ['iniciativa', 'intimidacao'],
+  'militar': ['pontaria', 'tatica'],
+  'operario': ['fortitude', 'profissao'],
+  'policial': ['percepcao', 'pontaria'],
+  'religioso': ['religiao', 'vontade'],
+  'servidor-publico': ['intuicao', 'vontade'],
+  'ti': ['investigacao', 'tecnologia'],
+  'teorico-da-conspiracao': ['investigacao', 'ocultismo'],
+  'trabalhador-rural': ['adestramento', 'sobrevivencia'],
+  'trambiqueiro': ['crime', 'enganacao'],
+  'universitario': ['atualidades', 'investigacao'],
+  'vitima': ['reflexos', 'vontade'],
+  // Amnésico não tem perícias fixas - excluído intencionalmente
+};
+
+/**
+ * Pré-requisitos de perícias por trilha (Livro Base v1.3)
+ */
+const TRACK_SKILL_PREREQUISITES: Record<string, string[]> = {
+  'medico-campo': ['medicina'],
+  'medico-de-campo': ['medicina'],
+  // Outras trilhas não têm pré-requisitos de perícias específicas
+};
+
 // =====================================================
 // FUNÇÃO PRINCIPAL
 // =====================================================
@@ -270,7 +312,9 @@ function validateClassAndTrack(state: CharacterState): ValidationIssue[] {
   // Validar se trilha pertence à classe
   if (state.classTrack) {
     const validTracks = getValidTracksForClass(state.characterClass);
-    if (!validTracks.includes(state.classTrack)) {
+    const normalizedTrack = state.classTrack.toLowerCase();
+    
+    if (!validTracks.includes(normalizedTrack)) {
       issues.push({
         severity: 'error',
         ruleId: 'invalid-track-for-class',
@@ -278,19 +322,82 @@ function validateClassAndTrack(state: CharacterState): ValidationIssue[] {
         path: 'classTrack',
       });
     }
+    
+    // Validar pré-requisitos de perícia da trilha
+    const trackPrereqs = TRACK_SKILL_PREREQUISITES[normalizedTrack] || [];
+    for (const skillId of trackPrereqs) {
+      const level = state.skills[skillId];
+      if (!level || level === 'destreinado') {
+        const skillDisplayName = getSkillDisplayName(skillId);
+        issues.push({
+          severity: 'error',
+          ruleId: 'missing-track-prereq',
+          message: `Trilha "${state.classTrack}" requer "${skillDisplayName}" treinada`,
+          path: `skills.${skillId}`,
+          suggestedFix: {
+            action: 'set',
+            field: `skills.${skillId}`,
+            value: 'treinado',
+            description: `Treinar ${skillDisplayName} (pré-requisito da trilha)`,
+          },
+          autoFixable: true,
+        });
+      }
+    }
   }
   
   return issues;
 }
 
 /**
- * Valida origem
+ * Valida origem e perícias concedidas
  */
 function validateOrigin(state: CharacterState): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
   
-  // TODO: Validar se origem existe no catálogo
-  // TODO: Validar se perícias de origem estão treinadas (exceto Amnésico)
+  // Normaliza ID da origem
+  const originId = state.origin.toLowerCase().replace(/\s+/g, '-');
+  
+  // Amnésico não tem perícias fixas - pula validação
+  if (originId === 'amnesico') {
+    return issues;
+  }
+  
+  // Verifica se origem existe no catálogo
+  const originSkills = ORIGIN_GRANTED_SKILLS[originId];
+  
+  if (!originSkills) {
+    // Origem não encontrada - pode ser homebrew ou suplemento
+    issues.push({
+      severity: 'info',
+      ruleId: 'unknown-origin',
+      message: `Origem "${state.origin}" não encontrada no catálogo oficial`,
+      path: 'origin',
+    });
+    return issues;
+  }
+  
+  // Valida se perícias de origem estão treinadas
+  for (const skillId of originSkills) {
+    const level = state.skills[skillId];
+    if (!level || level === 'destreinado') {
+      const skillDisplayName = getSkillDisplayName(skillId);
+      const originDisplayName = getOriginDisplayName(originId);
+      issues.push({
+        severity: 'error',
+        ruleId: 'missing-origin-skill',
+        message: `Origem "${originDisplayName}" concede "${skillDisplayName}" treinada`,
+        path: `skills.${skillId}`,
+        suggestedFix: {
+          action: 'set',
+          field: `skills.${skillId}`,
+          value: 'treinado',
+          description: `Treinar ${skillDisplayName} (concedida pela origem)`,
+        },
+        autoFixable: true,
+      });
+    }
+  }
   
   return issues;
 }
@@ -658,6 +765,41 @@ function getValidTracksForClass(classId: string): string[] {
     default:
       return [];
   }
+}
+
+/**
+ * Retorna nome de exibição da origem
+ */
+function getOriginDisplayName(originId: string): string {
+  const originNames: Record<string, string> = {
+    'academico': 'Acadêmico',
+    'agente-de-saude': 'Agente de Saúde',
+    'amnesico': 'Amnésico',
+    'artista': 'Artista',
+    'atleta': 'Atleta',
+    'chef': 'Chef',
+    'criminoso': 'Criminoso',
+    'cultista-arrependido': 'Cultista Arrependido',
+    'desgarrado': 'Desgarrado',
+    'engenheiro': 'Engenheiro',
+    'executivo': 'Executivo',
+    'investigador': 'Investigador',
+    'lutador': 'Lutador',
+    'magnata': 'Magnata',
+    'mercenario': 'Mercenário',
+    'militar': 'Militar',
+    'operario': 'Operário',
+    'policial': 'Policial',
+    'religioso': 'Religioso',
+    'servidor-publico': 'Servidor Público',
+    'ti': 'T.I.',
+    'teorico-da-conspiracao': 'Teórico da Conspiração',
+    'trabalhador-rural': 'Trabalhador Rural',
+    'trambiqueiro': 'Trambiqueiro',
+    'universitario': 'Universitário',
+    'vitima': 'Vítima',
+  };
+  return originNames[originId] || originId.charAt(0).toUpperCase() + originId.slice(1).replace(/-/g, ' ');
 }
 
 /**
