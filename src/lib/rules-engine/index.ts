@@ -38,6 +38,22 @@ export {
   hasArmorProficiency,
 } from './helpers/proficiency-collection';
 
+// Validação de rituais
+export {
+  validateRituals,
+  getMaxRitualCircleByNex,
+  getOccultistMaxRituals,
+  countTranscenderSlots,
+} from './helpers/ritual-validation';
+
+// Validação de equipamentos
+export {
+  validateEquipment,
+  calculateBaseCarryCapacity,
+  calculateUsedSpaces,
+  PROFICIENCY_PENALTIES,
+} from './helpers/equipment-validation';
+
 // Parser de fórmula de dano
 export {
   parseDamageFormula,
