@@ -1422,6 +1422,83 @@ export function getTrackEffects(
     };
 
     effects.push(effect);
+
+    // === TÉCNICAS ATIVÁVEIS DO ANIQUILADOR ===
+    // Processa techniqueEffects para criar efeitos individuais
+    if (ability.effects?.base?.techniqueEffects) {
+      for (const technique of ability.effects.base.techniqueEffects) {
+        const techniqueId = `track-tecnica-${technique.id}`;
+        const isActive = activatedEffects.includes(techniqueId);
+        
+        // Cria mecânicas para a técnica
+        const techniqueMechanics: EffectMechanics = {};
+        
+        if (technique.effects) {
+          if ('criticalMarginBonus' in technique.effects && typeof technique.effects.criticalMarginBonus === 'number') {
+            techniqueMechanics.criticalMarginBonus = technique.effects.criticalMarginBonus;
+          }
+          if ('criticalMultiplierBonus' in technique.effects && typeof technique.effects.criticalMultiplierBonus === 'number') {
+            techniqueMechanics.criticalMultiplierBonus = technique.effects.criticalMultiplierBonus;
+          }
+          if ('additionalTargets' in technique.effects && typeof technique.effects.additionalTargets === 'number') {
+            if (!techniqueMechanics.specialEffects) techniqueMechanics.specialEffects = [];
+            techniqueMechanics.specialEffects.push(`Atinge +${technique.effects.additionalTargets} alvo adicional`);
+          }
+          if ('ignoreResistance' in technique.effects && typeof technique.effects.ignoreResistance === 'number') {
+            if (!techniqueMechanics.specialEffects) techniqueMechanics.specialEffects = [];
+            techniqueMechanics.specialEffects.push(`Ignora ${technique.effects.ignoreResistance} de RD`);
+          }
+        }
+
+        // Só adiciona se tiver mecânicas
+        if (Object.keys(techniqueMechanics).length > 0) {
+          effects.push({
+            id: techniqueId,
+            name: technique.name,
+            description: technique.description,
+            source: 'track',
+            sourceId: technique.id,
+            sourceName: `Técnica ${track.name}: ${technique.name}`,
+            mechanics: techniqueMechanics,
+            isActive,
+            isToggleable: true,
+            conditions: {
+              requiresActivation: true,
+              costPE: technique.peCost,
+              costAction: 'free',
+            },
+            priority: ability.minNex,
+          });
+        }
+      }
+    }
+
+    // === DISPARO LETAL (Atirador de Elite) ===
+    // Adiciona efeito específico para Disparo Letal
+    if (ability.id === 'disparo-letal' && ability.effects?.base?.criticalBonus) {
+      const disparoLetalId = 'track-disparo-letal';
+      const isActive = activatedEffects.includes(disparoLetalId);
+      
+      effects.push({
+        id: disparoLetalId,
+        name: 'Disparo Letal',
+        description: ability.description,
+        source: 'track',
+        sourceId: 'disparo-letal',
+        sourceName: `Trilha ${track.name}: Disparo Letal`,
+        mechanics: {
+          criticalMarginBonus: ability.effects.base.criticalBonus.marginBonus || 2,
+        },
+        isActive,
+        isToggleable: true,
+        conditions: {
+          requiresActivation: true,
+          costPE: 1,
+          costAction: 'free',
+        },
+        priority: ability.minNex,
+      });
+    }
   }
 
   return effects;
