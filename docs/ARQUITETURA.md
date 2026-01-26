@@ -79,8 +79,10 @@ Sistema determinístico para cálculos de personagem, validação e rolagens.
 - `src/lib/rules-engine/derive-character.ts` - Cálculo de estatísticas derivadas
 - `src/lib/rules-engine/validate-character.ts` - Validação contra regras oficiais
 - `src/lib/rules-engine/apply-and-roll.ts` - Aplicação de efeitos e rolagens
+- `src/lib/rules-engine/roll-with-sue.ts` - Funções `*WithContext` integradas ao SUE
+- `src/lib/rules-engine/sue-bridge.ts` - Bridge SUE ↔ Rules Engine
 
-**Funções:**
+**Funções Base:**
 
 | Função | Responsabilidade |
 |--------|------------------|
@@ -88,6 +90,18 @@ Sistema determinístico para cálculos de personagem, validação e rolagens.
 | `validateCharacter` | Valida pré-requisitos, perícias de origem, trilha |
 | `applyEffect` | Aplica modificações ao estado do personagem |
 | `rollAction` | Executa rolagens de perícia, ataque, dano |
+
+**Funções de Rolagem com SUE:**
+
+| Função | Responsabilidade |
+|--------|------------------|
+| `rollAttackWithContext` | Rolagem de ataque com todos os bônus SUE |
+| `rollDamageWithContext` | Rolagem de dano com bônus e multiplicadores |
+| `rollSkillCheckWithContext` | Teste de perícia com bônus automáticos |
+| `rollInitiativeWithContext` | Iniciativa com bônus de trilha/origem |
+| `rollResistanceCheckWithContext` | Resistência com bônus de trilha/condição |
+
+**Documentação:** [SISTEMA_ROLAGEM_UNIFICADO.md](./SISTEMA_ROLAGEM_UNIFICADO.md)
 
 ### 3. Catálogos (`src/lib/catalogs/`)
 
@@ -198,7 +212,7 @@ Hooks organizados por domínio funcional.
 
 | Pasta | Descrição |
 |-------|-----------|
-| `sue/` | Sistema Unificado de Efeitos |
+| `sue/` | Sistema Unificado de Efeitos e Hooks de Rolagem Integrados |
 | `combat/` | Gerenciamento de combate |
 | `character/` | Dados e validação de personagem |
 | `inventory/` | Equipamentos e itens |
@@ -206,6 +220,16 @@ Hooks organizados por domínio funcional.
 | `campaign/` | Sincronização de campanhas |
 | `ui/` | Interface (mobile, toast, theme) |
 | `platform/` | PWA e funcionalidades de plataforma |
+
+#### Hooks de Rolagem com SUE (`src/hooks/sue/`)
+
+| Hook | Descrição |
+|------|-----------|
+| `useCombatRollWithSUE` | Rolagens de ataque e dano com bônus automáticos |
+| `useSkillRollWithSUE` | Testes de perícia com bônus de treino, origem, trilha |
+| `useInitiativeRollWithSUE` | Iniciativa com bônus de trilha (Operações Especiais) |
+| `useResistanceRollWithSUE` | Fortitude, Reflexos, Vontade com bônus |
+| `useRitualDamageWithSUE` | Dano de rituais com bônus de INT e trilha |
 
 ---
 
@@ -456,11 +480,26 @@ O projeto é uma Progressive Web App com:
 | Rules 5 | Modal de Correção Automática | ✅ 100% |
 | Rules 6 | Integração com CharacterSheet | ✅ 100% |
 
+### Fases de Migração SUE - Concluídas
+
+| Fase | Descrição | Status |
+|------|-----------|--------|
+| SUE Mig 1 | Infraestrutura de Hooks Adaptadores | ✅ 100% |
+| SUE Mig 2 | Migração dos Modais de Combate | ✅ 100% |
+| SUE Mig 3 | Migração de Iniciativa e Resistência | ✅ 100% |
+| SUE Mig 4 | Migração de Dano de Rituais | ✅ 100% |
+| SUE Mig 5 | Migração de Testes de Perícia | ✅ 100% |
+| SUE Mig 6 | Documentação de Separação Arquitetural | ✅ 100% |
+| SUE Mig 7 | Limpeza e Depreciação (`dice-roller.ts`) | ✅ 100% |
+| SUE Mig 8 | Testes e Validação (132/132 passaram) | ✅ 100% |
+
 ---
 
 ## Referências
 
 - [SISTEMA_UNIFICADO_EFEITOS.md](./SISTEMA_UNIFICADO_EFEITOS.md) - Motor SUE
+- [SISTEMA_ROLAGEM_UNIFICADO.md](./SISTEMA_ROLAGEM_UNIFICADO.md) - Sistema de Rolagem Integrado ao SUE
 - [SUE_TEST_COVERAGE.md](./SUE_TEST_COVERAGE.md) - Cobertura de testes
+- [MIGRACAO_SUE_ROLAGEM_COMPLETA.md](./MIGRACAO_SUE_ROLAGEM_COMPLETA.md) - Histórico da migração
 - [ORIGENS_MECANICAS_COMPLETAS.md](./ORIGENS_MECANICAS_COMPLETAS.md) - Implementação de origens
 - [MOBILE_DRAWER.md](./MOBILE_DRAWER.md) - Padrões de UI mobile

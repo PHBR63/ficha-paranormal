@@ -24,10 +24,11 @@ Sistema digital completo para o RPG Ordem Paranormal, desenvolvido com React, Ty
 
 - **Automação Completa de Regras**: Sistema Unificado de Efeitos (SUE) calcula automaticamente todos os bônus de origens, trilhas, poderes, rituais e condições
 - **Motor de Regras Padronizado**: 4 funções determinísticas (`deriveCharacter`, `validateCharacter`, `applyEffect`, `rollAction`) garantem cálculos fiéis ao Livro Base v1.3
+- **Sistema de Rolagem Unificado**: Todas as rolagens (ataque, dano, perícia, iniciativa, resistência) integradas ao SUE com breakdowns transparentes
 - **Validação e Correção Automática**: Sistema de auditoria detecta e corrige inconsistências em fichas de personagem
 - **Paridade Mobile/Desktop**: Todas as funcionalidades disponíveis em ambas as plataformas
 - **Campanhas em Tempo Real**: Sincronização instantânea entre mestre e jogadores via WebSocket
-- **~560 Testes Automatizados**: Cobertura completa de mecânicas contra o Livro Base v1.3
+- **~640 Testes Automatizados**: Cobertura completa de mecânicas contra o Livro Base v1.3 (inclui 132 testes de integração SUE)
 - **PWA Offline**: Funciona sem conexão com cache inteligente
 
 ---
@@ -88,10 +89,11 @@ Sistema digital completo para o RPG Ordem Paranormal, desenvolvido com React, Ty
 | Recurso | Descrição |
 |---------|-----------|
 | **Sistema Unificado de Efeitos (SUE)** | Motor central de cálculo de bônus ([📖 Documentação](docs/SISTEMA_UNIFICADO_EFEITOS.md)) |
+| **Sistema de Rolagem Unificado** | Todas as rolagens integradas ao SUE ([📖 Documentação](docs/SISTEMA_ROLAGEM_UNIFICADO.md)) |
 | **Motor de Regras** | 4 funções padronizadas para cálculos determinísticos ([📖 Arquitetura](docs/ARQUITETURA.md)) |
 | **Validação Automática** | Modal de correção com auto-fix para inconsistências |
 | **Auditoria de Personagem** | Validação contra regras oficiais com sugestões de correção |
-| **Testes Automatizados** | ~560 testes validando mecânicas ([📖 Cobertura](docs/SUE_TEST_COVERAGE.md)) |
+| **Testes Automatizados** | ~640 testes validando mecânicas ([📖 Cobertura](docs/SUE_TEST_COVERAGE.md)) |
 | **PWA** | Instalável, offline, notificações push |
 | **Temas Visuais** | Tema escuro paranormal com elementos de horror investigativo |
 | **IDs Centralizados** | Fonte única de verdade para todos os IDs do sistema |
@@ -157,7 +159,12 @@ src/
 │   └── ui/                     # Componentes base (shadcn)
 ├── contexts/                   # Auth, Theme, Campaign
 ├── hooks/                      # Hooks customizados
-│   ├── sue/                    # Sistema Unificado de Efeitos
+│   ├── sue/                    # Sistema Unificado de Efeitos + Hooks de Rolagem
+│   │   ├── useCombatRollWithSUE.ts    # Rolagens de ataque/dano
+│   │   ├── useSkillRollWithSUE.ts     # Testes de perícia
+│   │   ├── useInitiativeRollWithSUE.ts # Iniciativa
+│   │   ├── useResistanceRollWithSUE.ts # Resistências
+│   │   └── useRitualDamageWithSUE.ts   # Dano de rituais
 │   ├── combat/                 # Hooks de combate
 │   ├── character/              # Hooks de personagem
 │   ├── inventory/              # Hooks de inventário
@@ -190,8 +197,10 @@ src/
 | Documento | Descrição |
 |-----------|-----------|
 | [SISTEMA_UNIFICADO_EFEITOS.md](docs/SISTEMA_UNIFICADO_EFEITOS.md) | Arquitetura do SUE, adapters, stacking rules |
-| [SUE_TEST_COVERAGE.md](docs/SUE_TEST_COVERAGE.md) | Cobertura de ~560 testes automatizados |
+| [SISTEMA_ROLAGEM_UNIFICADO.md](docs/SISTEMA_ROLAGEM_UNIFICADO.md) | Sistema de rolagem integrado ao SUE |
+| [SUE_TEST_COVERAGE.md](docs/SUE_TEST_COVERAGE.md) | Cobertura de ~640 testes automatizados |
 | [ARQUITETURA.md](docs/ARQUITETURA.md) | Visão geral da arquitetura do sistema |
+| [MIGRACAO_SUE_ROLAGEM_COMPLETA.md](docs/MIGRACAO_SUE_ROLAGEM_COMPLETA.md) | Histórico da migração do sistema de rolagem |
 | [ORIGENS_MECANICAS_COMPLETAS.md](docs/ORIGENS_MECANICAS_COMPLETAS.md) | Implementação detalhada de origens |
 | [MOBILE_DRAWER.md](docs/MOBILE_DRAWER.md) | Padrões de UI mobile com drawers |
 
@@ -243,6 +252,17 @@ O módulo `src/lib/rules-engine/` implementa 4 funções determinísticas:
 | `deriveCharacter` | Calcula estatísticas derivadas (PV, PE, SAN, Defesa) com breakdowns |
 | `validateCharacter` | Valida personagem contra regras oficiais, sugere correções |
 | `applyEffect` | Gerencia modificações de estado |
+| `rollAction` | Executa rolagens de perícia, ataque, dano e rituais |
+
+### Funções de Rolagem com SUE
+
+| Função | Descrição |
+|--------|-----------|
+| `rollAttackWithContext` | Rolagem de ataque com todos os bônus SUE integrados |
+| `rollDamageWithContext` | Rolagem de dano com multiplicadores e bônus automáticos |
+| `rollSkillCheckWithContext` | Teste de perícia com bônus de treino, origem e trilha |
+| `rollInitiativeWithContext` | Iniciativa com bônus de trilha (Operações Especiais) |
+| `rollResistanceCheckWithContext` | Resistência com bônus de trilha e condições |
 | `rollAction` | Executa rolagens de perícia, ataque, dano e rituais |
 
 ### Validações Implementadas

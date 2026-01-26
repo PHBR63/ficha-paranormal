@@ -3,7 +3,7 @@
 ## Sistema Unificado de Efeitos (SUE) - Ordem Paranormal RPG v1.3
 
 > **Última atualização:** 2026-01-26  
-> **Total de testes:** ~560
+> **Total de testes:** ~640
 
 Este documento descreve a cobertura de testes unitários e de integração do SUE.
 
@@ -51,6 +51,16 @@ O SUE é o motor central do game engine que controla:
 | `sue-edge-cases.vitest.ts` | ~28 | Edge cases, performance, regressão |
 | **Subtotal FASE 7** | **~120** | |
 
+### Testes de Integração SUE-Rolagem (~80 testes) - NOVO
+
+| Arquivo | Testes | Cobertura |
+|---------|--------|-----------|
+| `roll-with-sue-integration.vitest.ts` | ~25 | Integração hooks de rolagem ↔ motor SUE |
+| `sue-stacking-rules.vitest.ts` | ~24 | Regras de stacking aplicadas em rolagens |
+| `rules-engine-e2e.vitest.ts` | ~36 | Fluxos E2E completos (ataque → dano → resultado) |
+| `combat-integration.vitest.ts` | ~27 | Cenários de combate com todas as classes/trilhas |
+| **Subtotal SUE-Rolagem** | **~112** | |
+
 ### Testes de Validação (~35 testes)
 
 | Arquivo | Testes | Cobertura |
@@ -67,7 +77,7 @@ O SUE é o motor central do game engine que controla:
 | `sue-realtime-sync.vitest.ts` | ~20 | Edge cases de sincronização realtime |
 | **Subtotal Campanha** | **~75** | |
 
-| **TOTAL GERAL** | **~560** | |
+| **TOTAL GERAL** | **~640** | |
 
 ---
 
@@ -238,8 +248,8 @@ O SUE é o motor central do game engine que controla:
 ## Comandos para Execução
 
 ```bash
-# Rodar todos os testes do SUE (~560 testes)
-npm run test -- --grep "SUE|unified-effects|effects-adapter|useUnifiedEffects|BonusSummary|validate-character"
+# Rodar todos os testes do SUE (~640 testes)
+npm run test -- --grep "SUE|unified-effects|effects-adapter|useUnifiedEffects|BonusSummary|validate-character|roll-with-sue"
 
 # Rodar testes base (~366 testes)
 npm run test -- src/lib/effects/__tests__/
@@ -270,6 +280,18 @@ npm run test -- src/lib/effects/__tests__/track-effects-adapter.vitest.ts
 
 # Rodar testes de integração E2E
 npm run test -- src/lib/__tests__/sue-integration-e2e.vitest.ts
+
+# Rodar testes de integração SUE-Rolagem (NOVO)
+npm run test -- roll-with-sue-integration
+
+# Rodar testes de stacking em rolagens
+npm run test -- sue-stacking-rules
+
+# Rodar testes E2E do motor de regras
+npm run test -- rules-engine-e2e
+
+# Rodar testes de combate
+npm run test -- combat-integration
 ```
 
 ---
@@ -305,6 +327,11 @@ npm run test -- src/lib/__tests__/sue-integration-e2e.vitest.ts
 | `checkEffectConditions` | unified-effects-engine | ✅ 100% |
 | `validateCharacter` | validate-character | ✅ 100% |
 | `deriveCharacter` | derive-character | ✅ 100% |
+| `rollAttackWithContext` | roll-with-sue | ✅ 100% |
+| `rollDamageWithContext` | roll-with-sue | ✅ 100% |
+| `rollSkillCheckWithContext` | roll-with-sue | ✅ 100% |
+| `rollInitiativeWithContext` | roll-with-sue | ✅ 100% |
+| `rollResistanceCheckWithContext` | roll-with-sue | ✅ 100% |
 
 ---
 
@@ -351,13 +378,16 @@ npm run test -- src/lib/__tests__/sue-integration-e2e.vitest.ts
 | 2.0.0 | 2025-12-31 | Documentação atualizada para refletir cobertura real (~366 testes) |
 | 3.0.0 | 2026-01-04 | **FASE 7**: +120 testes de integração avançados. Total: ~486 testes |
 | 4.0.0 | 2026-01-26 | **Validação**: +35 testes de validateCharacter (origens, trilhas). Total: ~560 testes |
+| 5.0.0 | 2026-01-26 | **SUE-Rolagem**: +80 testes de integração SUE com sistema de rolagem. Total: ~640 testes |
 
 ---
 
 ## Documentação Relacionada
 
 - [SISTEMA_UNIFICADO_EFEITOS.md](./SISTEMA_UNIFICADO_EFEITOS.md) - Arquitetura completa do SUE
+- [SISTEMA_ROLAGEM_UNIFICADO.md](./SISTEMA_ROLAGEM_UNIFICADO.md) - Sistema de rolagem integrado ao SUE
 - [ARQUITETURA.md](./ARQUITETURA.md) - Arquitetura geral do projeto
+- [MIGRACAO_SUE_ROLAGEM_COMPLETA.md](./MIGRACAO_SUE_ROLAGEM_COMPLETA.md) - Histórico da migração
 - [ORIGENS_MECANICAS_COMPLETAS.md](./ORIGENS_MECANICAS_COMPLETAS.md) - Implementação de origens
 
 ---
