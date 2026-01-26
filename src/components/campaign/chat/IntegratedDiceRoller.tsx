@@ -1,17 +1,21 @@
 /**
  * IntegratedDiceRoller - Rolador de dados integrado ao chat
  * Suporta comandos de texto e interface visual
+ * 
+ * NOTA: Este componente usa dice-roller.ts para rolagens SIMPLES (sem contexto de personagem).
+ * Para rolagens com bônus de personagem, os modais (DiceRollModal, CombatRollModal) 
+ * usam os hooks SUE integrados (useSkillRollWithSUE, useCombatRollWithSUE).
  */
 import { useState, useCallback } from 'react';
-import { Dices, ChevronDown, ChevronUp, Minus, Plus, Sparkles, Target, Shield } from 'lucide-react';
+import { Dices, ChevronDown, ChevronUp, Minus, Plus, Target, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
-import { rollSkillTest, rollDamage, type DiceRollResult, type DamageResult } from '@/lib/dice-roller';
+// Rolagens simples usam dice-roller diretamente (sem contexto de personagem)
+import { rollSkillTest, rollDamage, type DiceRollResult } from '@/lib/dice-roller';
 
 interface IntegratedDiceRollerProps {
   onRoll: (content: string, type: string, metadata: any) => void;
@@ -101,7 +105,7 @@ export function IntegratedDiceRoller({ onRoll, characterName, disabled }: Integr
   const [rollLabel, setRollLabel] = useState('');
   const [critThreshold, setCritThreshold] = useState(20);
 
-  // Rolagem de teste de perícia/atributo
+  // Rolagem de teste de perícia/atributo (simples, sem contexto de personagem)
   const handleSkillRoll = useCallback(() => {
     const result = rollSkillTest({
       attributeValue: diceCount,
@@ -132,7 +136,7 @@ export function IntegratedDiceRoller({ onRoll, characterName, disabled }: Integr
     setOpen(false);
   }, [diceCount, skillBonus, otherBonus, rollLabel, critThreshold, onRoll]);
 
-  // Rolagem rápida de preset
+  // Rolagem rápida de preset (simples, sem contexto de personagem)
   const handleQuickRoll = useCallback((preset: typeof ROLL_PRESETS[0]) => {
     const result = rollSkillTest({
       attributeValue: preset.dice,

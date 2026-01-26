@@ -447,7 +447,8 @@ export default function CampaignView() {
     // Verifica se é comando de dados e executa a rolagem real
     const diceCommand = parseDiceCommand(content);
     if (diceCommand.isCommand && type === 'chat') {
-      // Importar dinamicamente para evitar dependência circular
+      // Usa dice-roller para rolagens simples (sem contexto de personagem)
+      // Rolagens com bônus de personagem usam os hooks SUE nos modais específicos
       const { rollSkillTest, rollDamage } = await import('@/lib/dice-roller');
       
       let rollContent: string;
