@@ -128,11 +128,11 @@ CharacterSheet
 
 ## Checklist de Implementação
 
-- [ ] **CharacterSheet.tsx**: Adicionar `computedEffects={unifiedEffects}` ao MedicoDeCampoPanel
-- [ ] **MobileCharacterSheet.tsx**: Adicionar mesma prop ao MedicoDeCampoPanel mobile
-- [ ] **PowerActivationPanel.tsx**: Melhorar função `isPowerApplicable` com normalização de acentos
-- [ ] **CharacterSheet.tsx**: Garantir que `currentSkill` passa o ID da perícia, não o atributo
-- [ ] **MobileCharacterSheet.tsx**: Mesma correção para mobile
+- [x] **CharacterSheet.tsx**: Adicionar `computedEffects={unifiedEffects?.computed}` ao MedicoDeCampoPanel
+- [x] **MobileCharacterSheet.tsx**: Adicionar mesma prop ao MobileMedicoDeCampoPanel
+- [x] **PowerActivationPanel.tsx**: Melhorar função `isPowerApplicable` com normalização de acentos via `normalizeForComparison()`
+- [x] **CharacterSheet.tsx**: `handleSkillRoll` agora passa o skillId para `rollTestedAttribute` em vez do atributo
+- [x] **MobileCharacterSheet.tsx**: `handleSkillRoll` corrigido para passar skillId
 - [ ] **Testes manuais**: 
   - Criar personagem com origem "Agente de Saúde" e trilha "Médico de Campo", verificar se INT é somado nas curas
   - Criar personagem com origem "Trabalhador Rural", testar Adestramento/Sobrevivência e verificar se Desbravador aparece

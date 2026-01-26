@@ -243,25 +243,42 @@ export const ESPECIALISTA_ACTIVATABLE_POWERS: ActivatablePower[] = [
 // ========================================
 
 /**
+ * Normaliza string removendo acentos, espaços e hífen para comparação
+ */
+function normalizeForComparison(str: string): string {
+  return str
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+    .replace(/[\s-]+/g, '');          // Remove espaços e hífens
+}
+
+/**
  * Verifica se um poder é aplicável à perícia atual
+ * Suporta comparação com acentos e variações de formato (kebab-case, espaços)
  */
 function isPowerApplicable(power: ActivatablePower, skillId?: string): boolean {
   if (!skillId) return true;
   
-  const normalizedSkill = skillId.toLowerCase().replace(/\s+/g, '');
+  const normalizedSkill = normalizeForComparison(skillId);
   
-  // Se tem lista de perícias aplicáveis, verifica
+  // Se tem lista de perícias aplicáveis, verifica match exato ou parcial
   if (power.applicableSkills && power.applicableSkills.length > 0) {
-    return power.applicableSkills.some(s => 
-      normalizedSkill.includes(s.toLowerCase().replace(/\s+/g, ''))
-    );
+    return power.applicableSkills.some(s => {
+      const normalizedPowerSkill = normalizeForComparison(s);
+      return normalizedSkill === normalizedPowerSkill || 
+             normalizedSkill.includes(normalizedPowerSkill) ||
+             normalizedPowerSkill.includes(normalizedSkill);
+    });
   }
   
   // Se tem lista de perícias excluídas, verifica
   if (power.excludedSkills && power.excludedSkills.length > 0) {
-    return !power.excludedSkills.some(s => 
-      normalizedSkill.includes(s.toLowerCase().replace(/\s+/g, ''))
-    );
+    return !power.excludedSkills.some(s => {
+      const normalizedExcluded = normalizeForComparison(s);
+      return normalizedSkill === normalizedExcluded || 
+             normalizedSkill.includes(normalizedExcluded);
+    });
   }
   
   return true;
