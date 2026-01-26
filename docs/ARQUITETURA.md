@@ -1,6 +1,7 @@
 # Arquitetura do Projeto - Ordem Paranormal RPG
 
-> **FASES 5 e 6 CONCLUÍDAS** ✅ - Todas as 15 trilhas migradas para componentes responsivos unificados. Arquivos legados desktop/mobile removidos.
+> **Última atualização:** 2026-01-26  
+> **TODAS AS FASES CONCLUÍDAS** ✅ - Sistema completo com motor de regras, validação automática e ~560 testes.
 
 ## Visão Geral
 
@@ -17,9 +18,11 @@ src/
 │   ├── admin/           # Componentes de administração
 │   ├── auth/            # Autenticação (ProtectedRoute, AdminRoute)
 │   ├── campaign/        # Gerenciamento de campanhas
+│   │   └── diary/       # Diário de sessões
 │   ├── cards/           # Cards reutilizáveis
 │   ├── character/       # Ficha de personagem
-│   │   └── mobile/      # Versões mobile dos componentes
+│   │   ├── mobile/      # Versões mobile dos componentes
+│   │   └── tracks/      # Painéis de trilha (15 trilhas)
 │   ├── combat/          # Sistema de combate
 │   ├── dice/            # Sistema de dados
 │   ├── inventory/       # Sistema de inventário
@@ -46,7 +49,9 @@ src/
 │   ├── general-powers/  # Poderes gerais
 │   ├── origins/         # Origens de personagem
 │   ├── paranormal-powers/ # Poderes paranormais
-│   └── rituals/         # Sistema de rituais
+│   ├── rituals/         # Sistema de rituais
+│   ├── rules-engine/    # Motor de regras padronizado
+│   └── __tests__/       # Testes unitários (~560 testes)
 ├── pages/               # Páginas da aplicação
 └── docs/                # Documentação técnica
 ```
@@ -66,7 +71,25 @@ O coração do sistema de regras. Centraliza o cálculo de todos os efeitos, bô
 
 **Documentação:** [SISTEMA_UNIFICADO_EFEITOS.md](./SISTEMA_UNIFICADO_EFEITOS.md)
 
-### 2. Catálogos (`src/lib/catalogs/`)
+### 2. Motor de Regras Padronizado
+
+Sistema determinístico para cálculos de personagem, validação e rolagens.
+
+**Arquivos principais:**
+- `src/lib/rules-engine/derive-character.ts` - Cálculo de estatísticas derivadas
+- `src/lib/rules-engine/validate-character.ts` - Validação contra regras oficiais
+- `src/lib/rules-engine/apply-and-roll.ts` - Aplicação de efeitos e rolagens
+
+**Funções:**
+
+| Função | Responsabilidade |
+|--------|------------------|
+| `deriveCharacter` | Calcula PV, PE, SAN, Defesa, resistências com breakdowns |
+| `validateCharacter` | Valida pré-requisitos, perícias de origem, trilha |
+| `applyEffect` | Aplica modificações ao estado do personagem |
+| `rollAction` | Executa rolagens de perícia, ataque, dano |
+
+### 3. Catálogos (`src/lib/catalogs/`)
 
 Dados estáticos de equipamentos do jogo.
 
@@ -85,7 +108,7 @@ import {
 - `items-catalog.ts` - Itens gerais
 - `cursed-items.ts` - Itens amaldiçoados
 
-### 3. Constantes (`src/lib/constants/`)
+### 4. Constantes (`src/lib/constants/`)
 
 IDs centralizados do sistema para validação e consistência.
 
@@ -102,7 +125,7 @@ import {
 - `game-ids.ts` - IDs de classes, trilhas, origens, patentes, elementos
 - `attributes.ts` - Definições de atributos (AGI, FOR, INT, PRE, VIG)
 
-### 4. Poderes de Classe (`src/lib/class-powers/`)
+### 5. Poderes de Classe (`src/lib/class-powers/`)
 
 Sistema modular de poderes organizados por classe e trilha.
 
@@ -121,16 +144,9 @@ class-powers/
 └── track-ocultista.ts    # Trilhas do Ocultista
 ```
 
-### 5. Condições (`src/lib/conditions/`)
+### 6. Condições (`src/lib/conditions/`)
 
 Sistema de condições do jogo com parâmetros e efeitos.
-
-**Estrutura:**
-```
-conditions/
-├── index.ts                # Barrel exports + Registry
-└── condition-definitions.ts # Definições de condições
-```
 
 **Principais exports:**
 ```typescript
@@ -146,16 +162,9 @@ import {
 } from '@/lib/conditions';
 ```
 
-### 6. Origens (`src/lib/origins/`)
+### 7. Origens (`src/lib/origins/`)
 
 Origens de personagem incluindo suplementos.
-
-**Estrutura:**
-```
-origins/
-├── index.ts              # Barrel exports + Registry
-└── supplement-origins.ts # Origens de suplementos
-```
 
 **Principais exports:**
 ```typescript
@@ -167,51 +176,7 @@ import {
 } from '@/lib/origins';
 ```
 
-### 7. Poderes Paranormais (`src/lib/paranormal-powers/`)
-
-Poderes por elemento do Outro Lado.
-
-**Estrutura:**
-```
-paranormal-powers/
-├── index.ts              # Barrel exports + Registry
-└── power-definitions.ts  # Definições por elemento
-```
-
-**Principais exports:**
-```typescript
-import { 
-  PARANORMAL_POWERS_BY_ELEMENT,
-  ELEMENT_LABELS,
-  ELEMENT_COLORS,
-  AFFINITY_DESCRIPTIONS,
-  getParanormalPowerById,
-  getAllParanormalPowers
-} from '@/lib/paranormal-powers';
-```
-
-### 8. Poderes Gerais (`src/lib/general-powers/`)
-
-Poderes gerais disponíveis para todas as classes.
-
-**Estrutura:**
-```
-general-powers/
-├── index.ts              # Barrel exports + Registry
-└── power-definitions.ts  # Definições de poderes
-```
-
-**Principais exports:**
-```typescript
-import { 
-  GENERAL_POWERS,
-  POWER_REGISTRY,
-  getPowerById,
-  getAllPowers
-} from '@/lib/general-powers';
-```
-
-### 9. Rituais (`src/lib/rituals/`)
+### 8. Rituais (`src/lib/rituals/`)
 
 Sistema de rituais do 1º ao 4º círculo.
 
@@ -220,14 +185,14 @@ Sistema de rituais do 1º ao 4º círculo.
 rituals/
 ├── index.ts              # Barrel exports
 ├── types.ts              # Tipos TypeScript
-├── ritual-registry.ts    # Registry de rituais
-├── ritual-effects-engine.ts # Motor de efeitos
+├── unified-rituals.ts    # Catálogo unificado (97 rituais)
+├── ritual-casting-engine.ts # Motor de execução
 ├── second-circle.ts      # Rituais do 2º círculo
 ├── third-circle.ts       # Rituais do 3º círculo
 └── fourth-circle.ts      # Rituais do 4º círculo
 ```
 
-### 6. Hooks (`src/hooks/`)
+### 9. Hooks (`src/hooks/`)
 
 Hooks organizados por domínio funcional.
 
@@ -241,6 +206,36 @@ Hooks organizados por domínio funcional.
 | `campaign/` | Sincronização de campanhas |
 | `ui/` | Interface (mobile, toast, theme) |
 | `platform/` | PWA e funcionalidades de plataforma |
+
+---
+
+## Sistema de Validação Automática
+
+### ValidationAutoFixModal
+
+Modal que permite validar e corrigir automaticamente inconsistências em fichas de personagem.
+
+**Localização:** `src/components/character/ValidationAutoFixModal.tsx`
+
+**Funcionalidades:**
+- Lista problemas encontrados (erros e avisos)
+- Separa correções automáticas de revisões manuais
+- Permite selecionar quais correções aplicar
+- Aplica correções em batch com persistência no banco
+
+**Hook:** `src/hooks/useValidationAutoFix.ts`
+
+### Validações Implementadas
+
+| Categoria | Validação | Auto-Fix |
+|-----------|-----------|----------|
+| **Origens** | Perícias concedidas pela origem | ✅ |
+| **Origens** | Exceção para Amnésico | ✅ |
+| **Trilhas** | Pré-requisitos de perícia | ✅ |
+| **Poderes** | Pré-requisitos de NEX | ✅ |
+| **Poderes** | Pré-requisitos de atributo | ❌ |
+| **Atributos** | Valores dentro dos limites | ✅ |
+| **Perícias** | Níveis válidos | ✅ |
 
 ---
 
@@ -309,8 +304,10 @@ graph TD
     D --> E[Componentes]
     
     F[SUE Engine] --> D
-    G[Catálogos] --> F
-    H[Constantes] --> F
+    G[Rules Engine] --> D
+    H[Catálogos] --> F
+    I[Constantes] --> F
+    I --> G
 ```
 
 ### Ciclo de Cálculo de Efeitos
@@ -318,8 +315,18 @@ graph TD
 1. **Entrada**: Dados do personagem (origem, classe, trilha, poderes, condições)
 2. **Adaptadores**: Cada fonte de efeito tem um adaptador em `src/lib/effects/`
 3. **Motor SUE**: `unified-effects-engine.ts` processa e combina os efeitos
-4. **Hooks**: `useUnifiedEffects` expõe os resultados calculados
-5. **Componentes**: Consomem os valores finais via hooks
+4. **Motor de Regras**: `rules-engine/` calcula derivados e valida
+5. **Hooks**: `useUnifiedEffects` expõe os resultados calculados
+6. **Componentes**: Consomem os valores finais via hooks
+
+### Ciclo de Validação
+
+1. **Entrada**: Estado do personagem (`CharacterState`)
+2. **Validação**: `validateCharacter()` verifica regras
+3. **Issues**: Retorna lista de problemas com severidade
+4. **Sugestões**: Cada issue pode ter um `suggestedFix`
+5. **Modal**: `ValidationAutoFixModal` exibe e permite aplicar fixes
+6. **Persistência**: `useValidationAutoFix` salva no banco
 
 ---
 
@@ -331,6 +338,8 @@ O projeto usa Supabase com as seguintes tabelas principais:
 - `campaigns` - Campanhas
 - `campaign_members` - Membros de campanhas
 - `campaign_sessions` - Sessões de jogo
+- `character_active_conditions` - Condições ativas
+- `character_sustained_rituals` - Rituais sustentados
 - `profiles` - Perfis de usuário
 
 **Migrations:** `supabase/migrations/`
@@ -342,7 +351,7 @@ O projeto usa Supabase com as seguintes tabelas principais:
 ### Organização
 
 ```
-src/lib/__tests__/           # Testes de lib
+src/lib/__tests__/           # Testes de lib (~560 testes)
 src/hooks/__tests__/         # Testes de hooks
 src/components/ui/__tests__/ # Testes de UI
 ```
@@ -351,6 +360,7 @@ src/components/ui/__tests__/ # Testes de UI
 
 - **Unitários**: Funções isoladas
 - **Integração**: Hooks com múltiplas dependências
+- **E2E**: Fluxos completos de personagem
 - **Snapshot**: Componentes mobile
 
 ### Executar Testes
@@ -360,6 +370,16 @@ npm run test          # Todos os testes
 npm run test:ui       # Com interface
 npm run test -- -u    # Atualizar snapshots
 ```
+
+### Cobertura
+
+| Categoria | Testes |
+|-----------|--------|
+| **SUE Base** | ~366 |
+| **Integração Avançada** | ~120 |
+| **Validação** | ~35 |
+| **Origens** | ~50 |
+| **Trilhas** | ~100 |
 
 ---
 
@@ -376,9 +396,9 @@ O projeto é uma Progressive Web App com:
 
 ---
 
-## Status das Fases de Arquitetura
+## ✅ Status das Fases de Arquitetura
 
-### ✅ Fases de Arquitetura - Concluídas
+### Fases Concluídas
 
 | Fase | Descrição | Status |
 |------|-----------|--------|
@@ -389,91 +409,52 @@ O projeto é uma Progressive Web App com:
 | Arq 4b | Remover arquivos legados em src/lib/ | ✅ 100% |
 | Arq 5 | Migrar trilhas para componentes responsivos unificados | ✅ 15/15 |
 | Arq 6 | Remover arquivos legados desktop/mobile | ✅ 100% |
+| Arq 7 | Testes de Integração Avançados do SUE | ✅ +120 testes |
 
-### ✅ Fases de Combate - Concluídas
+### Fases de Combate - Concluídas
 
 | Fase | Descrição | Status |
 |------|-----------|--------|
-| Combat 7.5 | Push Notifications para combate (turno, oportunidades, HP baixo) | ✅ 100% |
-| Combat 7.6 | CombatTracker Mobile otimizado (gestos, layout compacto) | ✅ 100% |
+| Combat 7.5 | Push Notifications para combate | ✅ 100% |
+| Combat 7.6 | CombatTracker Mobile otimizado | ✅ 100% |
 
-### ✅ Fases de Testes SUE - Concluídas
+### Fases de Testes SUE - Concluídas
 
 | Fase | Descrição | Status |
 |------|-----------|--------|
 | Testes 1-6 | Testes unitários e de integração básicos | ✅ ~366 testes |
-| Testes 7 | Testes de integração avançados (stacking, conditions, paranormal, combat, edge cases) | ✅ +120 testes |
-| **Total** | | **~486 testes** |
+| Testes 7 | Testes de integração avançados | ✅ +120 testes |
+| **Total** | | **~560 testes** |
 
-### ✅ Fases de Condições - Concluídas
+### Fases de Condições - Concluídas
 
 | Fase | Descrição | Status |
 |------|-----------|--------|
 | Cond 8 | Sistema de condições com duração em rodadas | ✅ 100% |
 | Cond 8b | Sincronização realtime mestre/jogadores | ✅ 100% |
 
----
+### Fases de Rituais - Concluídas
 
-## 🔄 Fases Pendentes
+| Fase | Descrição | Status |
+|------|-----------|--------|
+| Rituals 9 | Sistema de Buffs por Turno | ✅ 100% |
 
-### Rituals 9 - Sistema de Buffs por Turno
-**Status:** ✅ 100% Concluído
+### Fases de Campanha - Concluídas
 
-Automação completa de buffs de arma que expiram por turno:
-- ✅ Integração com RitualEffectWizard
-- ✅ Decrementação automática no fim do turno
-- ✅ Sincronização com combatentes vinculados
-- ✅ Hook de gerenciamento de buffs no combate
-- ✅ Painel visual de buffs no CombatTracker
-- ✅ Notificações de expiração
-- ✅ **Integração completa no CombatTracker** (exibe automaticamente durante combate)
+| Fase | Descrição | Status |
+|------|-----------|--------|
+| Campaign 10 | Sistema de Diário de Sessão | ✅ 100% |
 
-**Arquivos relacionados:** 
-- `src/hooks/combat/useCombatWeaponBuffs.ts` - Hook de sincronização
-- `src/components/combat/CombatWeaponBuffsPanel.tsx` - Painel UI
-- `src/components/combat/CombatTracker.tsx` - Integração do painel
-- `src/components/character/RitualEffectWizard.tsx`
-- `src/components/character/WeaponBuffTurnTracker.tsx`
-- `src/hooks/useWeaponBuffs.ts` - Hook base de buffs
+### Fases de Motor de Regras - Concluídas
 
-### Arquitetura 7 - Testes de Integração Avançados do SUE
-**Status:** ✅ 100% Concluído
-
-Testes expandidos para cenários avançados:
-- ✅ Cenários de campanha completos (grupo, combate em equipe, exploração)
-- ✅ Interação entre múltiplos personagens (buffs, sinergias, conflitos)
-- ✅ Edge cases de sincronização realtime (mestre/jogadores)
-- ✅ Performance com múltiplos cálculos simultâneos
-
-**Arquivos criados:**
-- `src/lib/__tests__/sue-campaign-scenarios.vitest.ts` - ~30 testes
-- `src/lib/__tests__/sue-multi-character.vitest.ts` - ~25 testes
-- `src/lib/__tests__/sue-realtime-sync.vitest.ts` - ~20 testes
-
-**Total de testes SUE:** ~560 testes
-
-### Campaign 10 - Sistema de Diário de Sessão
-**Status:** ✅ 100% Concluído
-
-Sistema completo de diário cronológico da campanha:
-- ✅ Visualização cronológica de todas as sessões (timeline)
-- ✅ Resumos editáveis por sessão (apenas mestre)
-- ✅ Notas compartilhadas vinculadas às sessões
-- ✅ Filtros por status (todas, concluídas, agendadas)
-- ✅ Busca por título e conteúdo
-- ✅ Ordenação ascendente/descendente
-- ✅ Estatísticas (sessões jogadas, duração média)
-- ✅ Visualização em lista compacta alternativa
-- ✅ Sincronização realtime
-
-**Arquivos criados:**
-- `src/components/campaign/diary/SessionDiary.tsx` - Componente principal
-- `src/components/campaign/diary/SessionDiaryEntry.tsx` - Entrada individual
-- `src/components/campaign/diary/index.ts` - Exportações
-
-**Integração:**
-- Nova aba "DIÁRIO" na CampaignView
-- Utiliza tabelas existentes: `campaign_sessions`, `campaign_notes`
+| Fase | Descrição | Status |
+|------|-----------|--------|
+| Rules 1 | Motor de Regras Padronizado | ✅ 100% |
+| Rules 2 | Validação de Personagem | ✅ 100% |
+| Rules 3 | Validação de Perícias de Origem | ✅ 100% |
+| Rules 4 | Validação de Pré-requisitos de Trilha | ✅ 100% |
+| Rules 5 | Modal de Correção Automática | ✅ 100% |
+| Rules 6 | Integração com CharacterSheet | ✅ 100% |
 
 ---
 
@@ -481,3 +462,5 @@ Sistema completo de diário cronológico da campanha:
 
 - [SISTEMA_UNIFICADO_EFEITOS.md](./SISTEMA_UNIFICADO_EFEITOS.md) - Motor SUE
 - [SUE_TEST_COVERAGE.md](./SUE_TEST_COVERAGE.md) - Cobertura de testes
+- [ORIGENS_MECANICAS_COMPLETAS.md](./ORIGENS_MECANICAS_COMPLETAS.md) - Implementação de origens
+- [MOBILE_DRAWER.md](./MOBILE_DRAWER.md) - Padrões de UI mobile
