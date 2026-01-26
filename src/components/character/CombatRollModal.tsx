@@ -33,6 +33,10 @@ import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { rollSkillTest, rollDamage, DiceRollResult } from '@/lib/dice-roller';
+// TODO: Migração Fase 2 - Substituir rollSkillTest/rollDamage por useCombatRollWithSUE
+// O hook useCombatRollWithSUE encapsula rollAttackWithContext e rollDamageWithContext
+// com integração completa ao SUE para bônus automáticos
+import { useCombatRollWithSUE, type WeaponEntryCompat } from '@/hooks/use-combat-roll-with-sue';
 import { ComputedEffects } from '@/lib/unified-effects-engine';
 import { getSkillBonus } from '@/lib/character-data';
 import { useRitualBonusesForCombat, useRitualCombatBonuses, SustainedRitualInput, WeaponBuff, ELEMENT_BUFF_COLORS, useCombatFeedback } from '@/hooks';
@@ -252,6 +256,25 @@ export function CombatRollModal({
   originBoundWeaponId, // Arma vinculada pela origem (Operário)
   onRollComplete,
 }: CombatRollModalProps) {
+  // === HOOK DE COMBATE INTEGRADO COM SUE ===
+  // Preparação para migração: hook já configurado para uso futuro
+  // Quando a migração estiver completa, substituirá rollSkillTest/rollDamage
+  const combatRollWithSUE = useCombatRollWithSUE({
+    characterClass,
+    classTrack,
+    nex,
+    attributes,
+    skills,
+    abilities,
+    classPowers: abilities, // Poderes de classe são incluídos em abilities
+    generalPowers: [],
+    paranormalPowers,
+    unifiedEffects,
+    activeConditions: activeConditions,
+    activatedPowers: activeConditionalBonuses,
+    activeConditionalBonuses,
+  });
+  
   // Bônus de rituais sustentados processados automaticamente
   const ritualBonuses = useRitualBonusesForCombat(sustainedRituals);
   const ritualCombatSummary = useRitualCombatBonuses(sustainedRituals);
