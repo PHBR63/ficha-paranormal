@@ -17,6 +17,33 @@ import type {
 } from './types';
 import { getClassBaseStats } from './helpers/class-stats';
 import { deriveCharacter } from './derive-character';
+import { getPowerById, meetsPrerequisites, ALL_CLASS_POWERS } from '../class-powers';
+import type { PowerPrerequisites, TrainingLevel } from '../class-powers/types';
+
+// =====================================================
+// CONSTANTES DE VALIDAÇÃO
+// =====================================================
+
+/**
+ * Perícias obrigatórias por classe (Livro Base v1.3)
+ */
+const CLASS_MANDATORY_SKILLS: Record<string, string[]> = {
+  'Combatente': [], // Escolha entre Luta/Pontaria e Fortitude/Reflexos
+  'Especialista': [],
+  'Ocultista': ['ocultismo', 'vontade'],
+};
+
+/**
+ * Quantidade base de perícias por classe (Livro Base v1.3)
+ * Combatente: 2 + INT perícias
+ * Especialista: 4 + INT perícias  
+ * Ocultista: 2 + INT perícias
+ */
+const CLASS_BASE_SKILLS: Record<string, number> = {
+  'Combatente': 2,
+  'Especialista': 4,
+  'Ocultista': 2,
+};
 
 // =====================================================
 // FUNÇÃO PRINCIPAL
@@ -368,18 +395,66 @@ function validateResources(state: CharacterState): ValidationIssue[] {
 function validateSkills(state: CharacterState): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
   
-  // TODO: Validar quantidade de perícias treinadas
-  // TODO: Validar perícias obrigatórias de classe (Ocultista: Ocultismo, Vontade)
-  // TODO: Validar níveis veterano/expert vs NEX
+  // 1. Validar perícias obrigatórias de classe
+  const mandatorySkills = CLASS_MANDATORY_SKILLS[state.characterClass] || [];
+  for (const skillId of mandatorySkills) {
+    const level = state.skills[skillId];
+    if (!level || level === 'destreinado') {
+      const skillDisplayName = getSkillDisplayName(skillId);
+      issues.push({
+        severity: 'error',
+        ruleId: 'missing-mandatory-skill',
+        message: `${state.characterClass} deve ter "${skillDisplayName}" treinada`,
+        path: `skills.${skillId}`,
+        suggestedFix: {
+          action: 'set',
+          field: `skills.${skillId}`,
+          value: 'treinado',
+          description: `Treinar ${skillDisplayName}`,
+        },
+      });
+    }
+  }
   
-  // Verificar níveis veterano/expert
+  // 2. Validar quantidade de perícias treinadas
+  const trainedSkillsCount = Object.values(state.skills).filter(
+    level => level && level !== 'destreinado'
+  ).length;
+  
+  const baseSkillCount = CLASS_BASE_SKILLS[state.characterClass] || 2;
+  const intellect = state.attributes.intellect || 0;
+  const expectedSkillCount = baseSkillCount + intellect;
+  
+  if (trainedSkillsCount < expectedSkillCount) {
+    issues.push({
+      severity: 'warning',
+      ruleId: 'low-trained-skills',
+      message: `Perícias treinadas insuficientes: ${trainedSkillsCount} de ${expectedSkillCount} (${baseSkillCount} + INT ${intellect})`,
+      path: 'skills',
+    });
+  } else if (trainedSkillsCount > expectedSkillCount) {
+    issues.push({
+      severity: 'warning',
+      ruleId: 'excess-trained-skills',
+      message: `Perícias treinadas em excesso: ${trainedSkillsCount} de ${expectedSkillCount} permitidas`,
+      path: 'skills',
+    });
+  }
+  
+  // 3. Verificar níveis veterano/expert vs NEX
   for (const [skill, level] of Object.entries(state.skills)) {
     if (level === 'veterano' && state.nex < 35) {
       issues.push({
         severity: 'error',
         ruleId: 'veteran-before-nex35',
-        message: `Perícia "${skill}" em nível veterano requer NEX 35%`,
+        message: `Perícia "${getSkillDisplayName(skill)}" em nível veterano requer NEX 35%`,
         path: `skills.${skill}`,
+        suggestedFix: {
+          action: 'set',
+          field: `skills.${skill}`,
+          value: 'treinado',
+          description: `Rebaixar para treinado até NEX 35%`,
+        },
       });
     }
     
@@ -387,8 +462,14 @@ function validateSkills(state: CharacterState): ValidationIssue[] {
       issues.push({
         severity: 'error',
         ruleId: 'expert-before-nex70',
-        message: `Perícia "${skill}" em nível expert requer NEX 70%`,
+        message: `Perícia "${getSkillDisplayName(skill)}" em nível expert requer NEX 70%`,
         path: `skills.${skill}`,
+        suggestedFix: {
+          action: 'set',
+          field: `skills.${skill}`,
+          value: state.nex >= 35 ? 'veterano' : 'treinado',
+          description: `Rebaixar para ${state.nex >= 35 ? 'veterano' : 'treinado'}`,
+        },
       });
     }
   }
@@ -429,9 +510,92 @@ function validateRituals(state: CharacterState): ValidationIssue[] {
 function validatePowers(state: CharacterState): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
   
-  // TODO: Validar pré-requisitos de poderes de classe
-  // TODO: Validar pré-requisitos de poderes gerais
-  // TODO: Validar pré-requisitos de poderes paranormais
+  // Combinar todos os poderes do personagem
+  const allPowers = [
+    ...state.classPowers,
+    ...state.generalPowers,
+    ...state.paranormalPowers,
+  ];
+  
+  // Converter estado para formato esperado por meetsPrerequisites
+  const characterData = {
+    nex: state.nex,
+    attributes: {
+      strength: state.attributes.strength || 0,
+      agility: state.attributes.agility || 0,
+      vigor: state.attributes.vigor || 0,
+      intellect: state.attributes.intellect || 0,
+      presence: state.attributes.presence || 0,
+    },
+    skills: mapSkillsToTrainingLevel(state.skills),
+    powers: allPowers,
+    proficiencies: extractProficiencies(state),
+  };
+  
+  // Validar cada poder
+  for (const powerId of allPowers) {
+    const power = getPowerById(powerId);
+    
+    if (!power) {
+      // Poder não encontrado no catálogo - pode ser homebrew ou ID incorreto
+      issues.push({
+        severity: 'warning',
+        ruleId: 'unknown-power',
+        message: `Poder "${powerId}" não encontrado no catálogo oficial`,
+        path: 'powers',
+      });
+      continue;
+    }
+    
+    // Verificar NEX mínimo
+    if (power.minNex && state.nex < power.minNex) {
+      issues.push({
+        severity: 'error',
+        ruleId: 'power-nex-requirement',
+        message: `Poder "${power.name}" requer NEX ${power.minNex}% (atual: ${state.nex}%)`,
+        path: 'powers',
+        suggestedFix: {
+          action: 'remove',
+          field: 'powers',
+          value: powerId,
+          description: `Remover "${power.name}" até atingir NEX ${power.minNex}%`,
+        },
+      });
+    }
+    
+    // Verificar classe correta
+    if (power.classId && power.classId !== state.characterClass) {
+      // Poderes de trilha têm trackId definido
+      const isTrackPower = 'trackId' in power && power.trackId;
+      if (!isTrackPower) {
+        issues.push({
+          severity: 'error',
+          ruleId: 'power-wrong-class',
+          message: `Poder "${power.name}" é exclusivo de ${power.classId}`,
+          path: 'powers',
+        });
+      }
+    }
+    
+    // Verificar pré-requisitos
+    if (power.prerequisites) {
+      const prereqResult = meetsPrerequisites(power, characterData);
+      
+      if (!prereqResult.meets) {
+        issues.push({
+          severity: 'error',
+          ruleId: 'power-prerequisites-not-met',
+          message: `Poder "${power.name}" requer: ${prereqResult.missing.join(', ')}`,
+          path: 'powers',
+        suggestedFix: {
+          action: 'recalculate',
+          field: 'powers',
+          description: `Cumprir pré-requisitos: ${prereqResult.missing.join(', ')}`,
+        },
+        });
+      }
+    }
+  }
   
   return issues;
 }
@@ -494,6 +658,98 @@ function getValidTracksForClass(classId: string): string[] {
     default:
       return [];
   }
+}
+
+/**
+ * Retorna nome de exibição da perícia
+ */
+function getSkillDisplayName(skillId: string): string {
+  const skillNames: Record<string, string> = {
+    'acrobacia': 'Acrobacia',
+    'adestramento': 'Adestramento',
+    'artes': 'Artes',
+    'atletismo': 'Atletismo',
+    'atualidades': 'Atualidades',
+    'ciencias': 'Ciências',
+    'crime': 'Crime',
+    'diplomacia': 'Diplomacia',
+    'enganacao': 'Enganação',
+    'fortitude': 'Fortitude',
+    'furtividade': 'Furtividade',
+    'iniciativa': 'Iniciativa',
+    'intimidacao': 'Intimidação',
+    'intuicao': 'Intuição',
+    'investigacao': 'Investigação',
+    'luta': 'Luta',
+    'medicina': 'Medicina',
+    'ocultismo': 'Ocultismo',
+    'percepcao': 'Percepção',
+    'pilotagem': 'Pilotagem',
+    'pontaria': 'Pontaria',
+    'profissao': 'Profissão',
+    'reflexos': 'Reflexos',
+    'religiao': 'Religião',
+    'sobrevivencia': 'Sobrevivência',
+    'tatica': 'Tática',
+    'tecnologia': 'Tecnologia',
+    'vontade': 'Vontade',
+  };
+  return skillNames[skillId] || skillId.charAt(0).toUpperCase() + skillId.slice(1);
+}
+
+/**
+ * Converte formato de skills do CharacterState para TrainingLevel
+ */
+function mapSkillsToTrainingLevel(skills: Record<string, string>): Record<string, string> {
+  const mapped: Record<string, string> = {};
+  
+  for (const [skill, level] of Object.entries(skills)) {
+    // Mapeia 'treinado' -> 'trained', 'veterano' -> 'veteran', etc.
+    const levelMap: Record<string, string> = {
+      'destreinado': 'untrained',
+      'treinado': 'trained',
+      'veterano': 'veteran',
+      'expert': 'expert',
+    };
+    mapped[skill] = levelMap[level] || level;
+  }
+  
+  return mapped;
+}
+
+/**
+ * Extrai proficiências do personagem baseado em poderes e classe
+ */
+function extractProficiencies(state: CharacterState): string[] {
+  const proficiencies: string[] = [];
+  
+  // Proficiências base por classe (Livro Base v1.3)
+  switch (state.characterClass) {
+    case 'Combatente':
+      proficiencies.push('simples', 'taticas', 'leves');
+      break;
+    case 'Especialista':
+      proficiencies.push('simples', 'leves');
+      break;
+    case 'Ocultista':
+      proficiencies.push('simples');
+      break;
+  }
+  
+  // Verificar poderes que concedem proficiências
+  const proficiencyPowers: Record<string, string[]> = {
+    'armamento-pesado': ['pesadas'],
+    'proficiencia-armas-taticas': ['taticas'],
+    'proficiencia-protecoes-pesadas': ['pesadas'],
+  };
+  
+  for (const powerId of state.classPowers) {
+    if (proficiencyPowers[powerId]) {
+      proficiencies.push(...proficiencyPowers[powerId]);
+    }
+  }
+  
+  return [...new Set(proficiencies)]; // Remove duplicatas
 }
 
 export default validateCharacter;
