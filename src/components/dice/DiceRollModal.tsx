@@ -3,10 +3,8 @@
  * Abre instantaneamente ao clicar em uma perícia/atributo
  * Rola automaticamente e exibe resultado com animação
  * 
- * REFATORADO: Removida animação infinita problemática
- * Usa animação simples de fade/scale sem loops
- * 
- * FASE 2: Integrado com PowerActivationPanel para poderes ativáveis
+ * FASE 5: Migrado para usar useSkillRollWithSUE
+ * Integra automaticamente todos os bônus do SUE nas rolagens
  */
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
@@ -29,6 +27,7 @@ import {
   type ActivatablePower 
 } from './PowerActivationPanel';
 import { calculatePowerActivationEffects } from '@/lib/class-powers/activatable-powers-bridge';
+import { useSkillRollWithSUE, type SkillRollCharacterConfig } from '@/hooks/sue/useSkillRollWithSUE';
 
 // Interface para detalhamento de bônus por origem
 export interface BonusSource {
@@ -63,6 +62,8 @@ interface DiceRollModalProps {
   // Conhecimento Aplicado: se ativo, próximo teste usa Intelecto (exceto Luta/Pontaria)
   conhecimentoAplicadoAtivo?: boolean;
   onConhecimentoAplicadoUsed?: () => void;
+  // Props para integração SUE (opcional - para migração incremental)
+  characterConfig?: SkillRollCharacterConfig;
 }
 
 // Componente de dado individual - animação simples sem loop
@@ -126,7 +127,25 @@ export function DiceRollModal({
   // Conhecimento Aplicado
   conhecimentoAplicadoAtivo = false,
   onConhecimentoAplicadoUsed,
+  // SUE Config (migração incremental)
+  characterConfig,
 }: DiceRollModalProps) {
+  // Hook SUE para rolagens integradas (inicializa apenas se config disponível)
+  const defaultConfig: SkillRollCharacterConfig = useMemo(() => ({
+    characterClass: 'Especialista',
+    nex: nex,
+    attributes: {
+      agility: agility,
+      strength: strength,
+      presence: 1,
+      intellect: intellect,
+      vigor: 1,
+    },
+    skills: { [currentSkill || label]: skillBonus },
+  }), [nex, agility, strength, intellect, currentSkill, label, skillBonus]);
+  
+  const sueConfig = characterConfig || defaultConfig;
+  const { executeSkillRoll, getSkillBonusBreakdown } = useSkillRollWithSUE(sueConfig);
   // Estados
   const [phase, setPhase] = useState<'idle' | 'rolling' | 'done'>('idle');
   const [displayDice, setDisplayDice] = useState<number[]>([]);

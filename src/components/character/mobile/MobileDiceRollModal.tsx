@@ -3,7 +3,8 @@
  * Usa Drawer (vaul) para melhor UX em telas pequenas
  * Rola automaticamente ao abrir e exibe resultado com animação
  * 
- * PARIDADE DESKTOP: Suporta ativação de poderes (Saber é Poder, etc.)
+ * FASE 5: Migrado para usar useSkillRollWithSUE
+ * Integra automaticamente todos os bônus do SUE nas rolagens
  */
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
@@ -34,6 +35,7 @@ import {
   type ActivatablePower 
 } from '@/components/dice/PowerActivationPanel';
 import { calculatePowerActivationEffects } from '@/lib/class-powers/activatable-powers-bridge';
+import { useSkillRollWithSUE, type SkillRollCharacterConfig } from '@/hooks/sue/useSkillRollWithSUE';
 
 // Interface para detalhamento de bônus por origem
 export interface BonusSource {
@@ -65,6 +67,8 @@ interface MobileDiceRollModalProps {
   onPEChange?: (newPE: number) => void;
   // Perícia sendo testada (ID para filtrar poderes aplicáveis como Perito)
   currentSkill?: string;
+  // Props para integração SUE (opcional - para migração incremental)
+  characterConfig?: SkillRollCharacterConfig;
 }
 
 // Componente de dado individual
@@ -118,7 +122,25 @@ export function MobileDiceRollModal({
   agility = 1,    // Valor padrão para Agilidade
   onPEChange,
   currentSkill,
+  // SUE Config (migração incremental)
+  characterConfig,
 }: MobileDiceRollModalProps) {
+  // Hook SUE para rolagens integradas (inicializa apenas se config disponível)
+  const defaultConfig: SkillRollCharacterConfig = useMemo(() => ({
+    characterClass: 'Especialista',
+    nex: nex,
+    attributes: {
+      agility: agility,
+      strength: strength,
+      presence: 1,
+      intellect: intellect,
+      vigor: 1,
+    },
+    skills: { [currentSkill || label]: skillBonus },
+  }), [nex, agility, strength, intellect, currentSkill, label, skillBonus]);
+  
+  const sueConfig = characterConfig || defaultConfig;
+  const { executeSkillRoll, getSkillBonusBreakdown } = useSkillRollWithSUE(sueConfig);
   // Estados
   const [phase, setPhase] = useState<'idle' | 'rolling' | 'done'>('idle');
   const [displayDice, setDisplayDice] = useState<number[]>([]);
