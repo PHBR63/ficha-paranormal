@@ -2,8 +2,8 @@
 
 ## Documentação Técnica - Ordem Paranormal RPG v1.3
 
-> **Última atualização:** 2025-12-31  
-> **Versão:** 1.3.0
+> **Última atualização:** 2026-01-26  
+> **Versão:** 2.0.0
 
 ---
 

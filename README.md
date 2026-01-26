@@ -23,9 +23,11 @@ Sistema digital completo para o RPG Ordem Paranormal, desenvolvido com React, Ty
 ### 🎯 Principais Diferenciais
 
 - **Automação Completa de Regras**: Sistema Unificado de Efeitos (SUE) calcula automaticamente todos os bônus de origens, trilhas, poderes, rituais e condições
+- **Motor de Regras Padronizado**: 4 funções determinísticas (`deriveCharacter`, `validateCharacter`, `applyEffect`, `rollAction`) garantem cálculos fiéis ao Livro Base v1.3
+- **Validação e Correção Automática**: Sistema de auditoria detecta e corrige inconsistências em fichas de personagem
 - **Paridade Mobile/Desktop**: Todas as funcionalidades disponíveis em ambas as plataformas
 - **Campanhas em Tempo Real**: Sincronização instantânea entre mestre e jogadores via WebSocket
-- **~366 Testes Automatizados**: Cobertura completa de mecânicas contra o Livro Base v1.3
+- **~560 Testes Automatizados**: Cobertura completa de mecânicas contra o Livro Base v1.3
 - **PWA Offline**: Funciona sem conexão com cache inteligente
 
 ---
@@ -45,6 +47,7 @@ Sistema digital completo para o RPG Ordem Paranormal, desenvolvido com React, Ty
 | **Inventário** | Catálogo oficial de armas, armaduras, itens com sistema de carga e categorias |
 | **Condições** | 28+ condições oficiais com timers automáticos e efeitos mecânicos |
 | **Origens** | 26 origens do livro base + 17 de suplementos com poderes ativáveis |
+| **Validação** | Modal de correção automática para inconsistências detectadas |
 
 ### ⚔️ Sistema de Combate
 
@@ -65,6 +68,7 @@ Sistema digital completo para o RPG Ordem Paranormal, desenvolvido com React, Ty
 |---------|-----------|
 | **Criação** | Wizard completo com nome, descrição, imagem de capa |
 | **Sessões** | Agendamento, início, encerramento, resumos |
+| **Diário** | Timeline cronológica de sessões com filtros e busca |
 | **Convites** | Códigos de convite para jogadores entrarem |
 | **Notas** | Notas públicas (compartilhadas) e privadas (só mestre) |
 | **Feed de Rituais** | Visualização em tempo real dos rituais conjurados |
@@ -84,8 +88,10 @@ Sistema digital completo para o RPG Ordem Paranormal, desenvolvido com React, Ty
 | Recurso | Descrição |
 |---------|-----------|
 | **Sistema Unificado de Efeitos (SUE)** | Motor central de cálculo de bônus ([📖 Documentação](docs/SISTEMA_UNIFICADO_EFEITOS.md)) |
-| **Auditoria de Personagem** | Validação automática contra regras oficiais |
-| **Testes Automatizados** | ~366 testes validando mecânicas ([📖 Cobertura](docs/SUE_TEST_COVERAGE.md)) |
+| **Motor de Regras** | 4 funções padronizadas para cálculos determinísticos ([📖 Arquitetura](docs/ARQUITETURA.md)) |
+| **Validação Automática** | Modal de correção com auto-fix para inconsistências |
+| **Auditoria de Personagem** | Validação contra regras oficiais com sugestões de correção |
+| **Testes Automatizados** | ~560 testes validando mecânicas ([📖 Cobertura](docs/SUE_TEST_COVERAGE.md)) |
 | **PWA** | Instalável, offline, notificações push |
 | **Temas Visuais** | Tema escuro paranormal com elementos de horror investigativo |
 | **IDs Centralizados** | Fonte única de verdade para todos os IDs do sistema |
@@ -142,15 +148,27 @@ src/
 │   │   ├── mobile/             # Componentes mobile
 │   │   ├── combat/             # Combate e ataques
 │   │   ├── rituals/            # Rituais e conjuração
+│   │   ├── tracks/             # Trilhas (15 painéis)
 │   │   └── inventory/          # Inventário
 │   ├── campaign/               # Sistema de campanhas
+│   │   └── diary/              # Diário de sessões
+│   ├── combat/                 # Sistema de combate avançado
 │   ├── dice/                   # Rolagem de dados
 │   └── ui/                     # Componentes base (shadcn)
 ├── contexts/                   # Auth, Theme, Campaign
 ├── hooks/                      # Hooks customizados
+│   ├── sue/                    # Sistema Unificado de Efeitos
+│   ├── combat/                 # Hooks de combate
+│   ├── character/              # Hooks de personagem
+│   ├── inventory/              # Hooks de inventário
+│   ├── validation/             # Hooks de validação
+│   ├── campaign/               # Hooks de campanha
+│   ├── ui/                     # Hooks de UI
+│   └── platform/               # Hooks de plataforma (PWA)
 ├── lib/
 │   ├── constants/              # IDs centralizados (game-ids.ts)
 │   ├── effects/                # Motor de efeitos (SUE)
+│   ├── rules-engine/           # Motor de regras padronizado
 │   ├── class-powers/           # Poderes de classe e trilha
 │   ├── paranormal-powers/      # Poderes paranormais
 │   ├── general-powers/         # Poderes gerais
@@ -158,7 +176,7 @@ src/
 │   ├── origins/                # Origens e suplementos
 │   ├── conditions/             # Condições oficiais
 │   ├── catalogs/               # Catálogos de itens
-│   └── __tests__/              # Testes unitários
+│   └── __tests__/              # Testes unitários (~560 testes)
 ├── pages/                      # Rotas da aplicação
 ├── services/                   # Serviços externos
 ├── types/                      # Tipos TypeScript
@@ -172,7 +190,7 @@ src/
 | Documento | Descrição |
 |-----------|-----------|
 | [SISTEMA_UNIFICADO_EFEITOS.md](docs/SISTEMA_UNIFICADO_EFEITOS.md) | Arquitetura do SUE, adapters, stacking rules |
-| [SUE_TEST_COVERAGE.md](docs/SUE_TEST_COVERAGE.md) | Cobertura de ~366 testes automatizados |
+| [SUE_TEST_COVERAGE.md](docs/SUE_TEST_COVERAGE.md) | Cobertura de ~560 testes automatizados |
 | [ARQUITETURA.md](docs/ARQUITETURA.md) | Visão geral da arquitetura do sistema |
 | [ORIGENS_MECANICAS_COMPLETAS.md](docs/ORIGENS_MECANICAS_COMPLETAS.md) | Implementação detalhada de origens |
 | [MOBILE_DRAWER.md](docs/MOBILE_DRAWER.md) | Padrões de UI mobile com drawers |
@@ -216,6 +234,27 @@ import {
 
 ---
 
+## 🔧 Motor de Regras Padronizado
+
+O módulo `src/lib/rules-engine/` implementa 4 funções determinísticas:
+
+| Função | Descrição |
+|--------|-----------|
+| `deriveCharacter` | Calcula estatísticas derivadas (PV, PE, SAN, Defesa) com breakdowns |
+| `validateCharacter` | Valida personagem contra regras oficiais, sugere correções |
+| `applyEffect` | Gerencia modificações de estado |
+| `rollAction` | Executa rolagens de perícia, ataque, dano e rituais |
+
+### Validações Implementadas
+
+- ✅ Pré-requisitos de poderes (NEX, atributos)
+- ✅ Perícias de origem (exceto Amnésico)
+- ✅ Pré-requisitos de trilha
+- ✅ Limites de poderes por NEX
+- ✅ Atributos dentro dos limites
+
+---
+
 ## 🚀 Como Executar
 
 ### Pré-requisitos
@@ -253,7 +292,7 @@ npm run preview      # Preview do build
 # Testes
 npm run test         # Executa todos os testes
 npm run test:watch   # Testes em modo watch
-npm run test:sue     # Testes do SUE (~366 testes)
+npm run test:sue     # Testes do SUE (~560 testes)
 ```
 
 ---
@@ -277,6 +316,9 @@ npm run test -- origins
 
 # Testes de trilhas
 npm run test -- tracks
+
+# Testes de validação de personagem
+npm run test -- validate-character
 ```
 
 ### Cobertura por Categoria
@@ -284,12 +326,13 @@ npm run test -- tracks
 | Categoria | Testes | Descrição |
 |-----------|--------|-----------|
 | **Origens** | ~50 | Todas as 43 origens com efeitos mecânicos |
-| **Trilhas** | ~45 | Todas as 15 trilhas de classe |
-| **Condições** | ~40 | 28+ condições oficiais |
+| **Trilhas** | ~100 | Todas as 15 trilhas de classe |
+| **Condições** | ~50 | 28+ condições oficiais |
 | **Rituais** | ~30 | Sustentação, buffs, cura, dano |
 | **Poderes** | ~50 | Paranormais, gerais, classe |
 | **Stacking** | ~25 | Regras de acumulação de bônus |
-| **Cenários** | ~30 | Personagens completos |
+| **Cenários** | ~50 | Personagens completos, campanhas |
+| **Validação** | ~35 | Regras, origens, trilhas, perícias |
 | **IDs** | ~20 | Integridade do sistema de IDs |
 
 ---
@@ -305,6 +348,8 @@ Este projeto segue fielmente o **Ordem Paranormal RPG v1.3** e suplementos ofici
 - ✅ Condições oficiais com efeitos mecânicos
 - ✅ Regras de stacking de bônus (mesmo nome não acumula)
 - ✅ Transcender com perda de Sanidade e custos de PE
+- ✅ Validação de perícias concedidas por origem
+- ✅ Validação de pré-requisitos de trilha
 
 ---
 

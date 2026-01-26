@@ -2,6 +2,9 @@
 
 ## Sistema Unificado de Efeitos (SUE) - Ordem Paranormal RPG v1.3
 
+> **Última atualização:** 2026-01-26  
+> **Total de testes:** ~560
+
 Este documento descreve a cobertura de testes unitários e de integração do SUE.
 
 ---
@@ -17,6 +20,8 @@ O SUE é o motor central do game engine que controla:
 ---
 
 ## Arquivos de Teste
+
+### Base (~366 testes)
 
 | Arquivo | Testes | Cobertura |
 |---------|--------|-----------|
@@ -35,7 +40,7 @@ O SUE é o motor central do game engine que controla:
 | `computed-effects-snapshot.vitest.ts` | ~10 | Snapshots de estrutura ComputedEffects |
 | **Subtotal Base** | **~366** | |
 
-### Arquivos FASE 7 - Testes de Integração Avançados
+### FASE 7 - Testes de Integração Avançados (~120 testes)
 
 | Arquivo | Testes | Cobertura |
 |---------|--------|-----------|
@@ -46,7 +51,23 @@ O SUE é o motor central do game engine que controla:
 | `sue-edge-cases.vitest.ts` | ~28 | Edge cases, performance, regressão |
 | **Subtotal FASE 7** | **~120** | |
 
-| **TOTAL GERAL** | **~486** | |
+### Testes de Validação (~35 testes)
+
+| Arquivo | Testes | Cobertura |
+|---------|--------|-----------|
+| `validate-character-skills-powers.vitest.ts` | ~35 | Validação de perícias, poderes, origens, trilhas |
+| **Subtotal Validação** | **~35** | |
+
+### Testes de Campanha (~40 testes)
+
+| Arquivo | Testes | Cobertura |
+|---------|--------|-----------|
+| `sue-campaign-scenarios.vitest.ts` | ~30 | Cenários de campanha completos |
+| `sue-multi-character.vitest.ts` | ~25 | Interação entre múltiplos personagens |
+| `sue-realtime-sync.vitest.ts` | ~20 | Edge cases de sincronização realtime |
+| **Subtotal Campanha** | **~75** | |
+
+| **TOTAL GERAL** | **~560** | |
 
 ---
 
@@ -124,8 +145,8 @@ O SUE é o motor central do game engine que controla:
 ### 4. Adaptador de Origens (`origin-effects-adapter.ts`)
 
 #### Testes de Mapeamento
-- ✅ 8 origens base: Acadêmico, Agente de Saúde, Amnésico, Artista, Atleta, Chef, Combatente, Criminoso
-- ✅ Origens de suplemento: Militar, Operário, Religioso, Servidor Público, etc.
+- ✅ 26 origens base com mecânicas definidas
+- ✅ 17 origens de suplemento
 - ✅ Todas as origens têm mecânicas e descrição definidas
 
 #### Testes de Mecânicas
@@ -143,15 +164,11 @@ O SUE é o motor central do game engine que controla:
 - ✅ Origens que concedem proficiências em armas
 - ✅ Militar: armas de fogo leves
 
-#### Testes de Conversão
-- ✅ `getOriginEffects` retorna UnifiedEffect válidos
-- ✅ Efeitos dinâmicos baseados em atributos
-
 ---
 
 ### 5. Adaptador de Trilhas (`track-effects-adapter.ts`)
 
-#### Trilhas Combatente (~50 testes)
+#### Trilhas Combatente (~40 testes)
 - ✅ Aniquilador: técnicas (Amplo, Destruidor, Letal, Perfurante)
 - ✅ Comandante de Campo: inspiração, estratégia, brecha
 - ✅ Guerreiro: revidar, força opressora
@@ -165,7 +182,7 @@ O SUE é o motor central do game engine que controla:
 - ✅ Negociador: eloquência, discurso motivador
 - ✅ Técnico: remendo, improvisar
 
-#### Trilhas Ocultista (~60 testes)
+#### Trilhas Ocultista (~30 testes)
 - ✅ Condutor: ampliar ritual, acelerar ritual, anular ritual
 - ✅ Flagelador: poder do flagelo, abraçar a dor, absorver angústia
 - ✅ Graduado: saber ampliado, grimório ritualístico, rituais eficientes
@@ -181,20 +198,23 @@ O SUE é o motor central do game engine que controla:
 
 ---
 
-### 6. Adaptador de Poderes Paranormais (`paranormal-powers-effects-adapter.ts`)
+### 6. Testes de Validação de Personagem
 
-#### Testes de Mapeamento
-- ✅ Poderes de Sangue, Conhecimento, Energia, Morte, Medo
-- ✅ Poderes de afinidade específica
+#### Validação de Origens
+- ✅ Perícias obrigatórias por origem
+- ✅ Exceção para Amnésico (sem perícias fixas)
+- ✅ Origens desconhecidas geram info
+- ✅ Auto-fix sugere treinar perícias faltantes
 
-#### Testes de Mecânicas
-- ✅ Bônus passivos vs ativáveis
-- ✅ Escalamento com atributos
-- ✅ Custo de PE por ativação
+#### Validação de Trilhas
+- ✅ Pré-requisitos de perícia por trilha
+- ✅ Médico de Campo requer Medicina
+- ✅ Auto-fix sugere treinar perícias faltantes
 
-#### Testes de Conversão
-- ✅ `getParanormalPowerEffects` retorna UnifiedEffect válidos
-- ✅ Integração com afinidade elemental do personagem
+#### Validação de Poderes
+- ✅ Pré-requisitos de NEX
+- ✅ Pré-requisitos de atributo
+- ✅ Poderes duplicados
 
 ---
 
@@ -213,87 +233,22 @@ O SUE é o motor central do game engine que controla:
 - ✅ Mesma referência se dependências não mudam
 - ✅ Recalcula quando dados mudam
 
-#### Testes de Contexto
-- ✅ Funciona com e sem contexto de combate
-- ✅ Combate influencia efeitos de trilha
-
----
-
-### 8. Testes de Integração End-to-End
-
-#### Fluxo Combatente + Guerreiro
-- ✅ Bônus de poderes de combate corpo a corpo
-- ✅ Consolidação com condições
-
-#### Fluxo Ocultista + Conduíte
-- ✅ Bônus de DT para elemento especializado
-- ✅ Ritual Potente com INT
-
-#### Fluxo Especialista + Atirador de Elite
-- ✅ Bônus de dano à distância
-- ✅ Balística Avançada com nota condicional
-
-#### Condições em Combate
-- ✅ Desprevenido: -5 Defesa
-- ✅ Caído: bônus contextuais
-- ✅ Paralisado: isHelpless
-
----
-
-### 9. Testes E2E Avançados (`sue-integration-e2e.vitest.ts`)
-
-#### Fluxos Completos de Personagem
-- ✅ Combatente NEX 50% com Guerreiro completo
-- ✅ Ocultista NEX 75% com Conduíte e rituais sustentados
-- ✅ Especialista com múltiplas especializações
-
-#### Progressão de NEX
-- ✅ Transição 5% → 99% com ganho de poderes
-- ✅ Validação de pré-requisitos por NEX
-- ✅ Cálculo de bônus incrementais
-
-#### Condições Automáticas
-- ✅ Aplicação de condições por rituais
-- ✅ Remoção ao fim de duração
-- ✅ Interação entre múltiplas condições
-
-#### Múltiplas Fontes Simultâneas
-- ✅ Consolidação de 5+ fontes diferentes
-- ✅ Regras de acúmulo (maior prevalece)
-- ✅ Breakdown correto por fonte
-
-#### Testes de Regressão
-- ✅ Casos críticos do sistema
-- ✅ Edge cases de dados inválidos
-
----
-
-### 10. Testes de Snapshot (`computed-effects-snapshot.vitest.ts`)
-
-#### Estrutura Base
-- ✅ Todas as propriedades principais existem
-- ✅ Formato correto de attack, damage, defense, resistances
-- ✅ Formato correto de flags e rituals
-
-#### Tipos de Dados
-- ✅ Breakdowns são sempre arrays
-- ✅ Valores numéricos são numbers
-- ✅ Flags são booleans
-
-#### Regressão de Interface
-- ✅ Não adiciona propriedades inesperadas
-- ✅ Estrutura de attack/rituals não muda
-
 ---
 
 ## Comandos para Execução
 
 ```bash
-# Rodar todos os testes do SUE (~486 testes)
-npm run test -- --grep "SUE|unified-effects|effects-adapter|useUnifiedEffects|BonusSummary"
+# Rodar todos os testes do SUE (~560 testes)
+npm run test -- --grep "SUE|unified-effects|effects-adapter|useUnifiedEffects|BonusSummary|validate-character"
+
+# Rodar testes base (~366 testes)
+npm run test -- src/lib/effects/__tests__/
 
 # Rodar testes da FASE 7 (~120 testes)
 npm test -- sue-
+
+# Rodar testes de validação (~35 testes)
+npm run test -- validate-character
 
 # Rodar com cobertura
 npm run test:coverage -- --grep "effects"
@@ -310,27 +265,11 @@ npm run test -- src/lib/effects/__tests__/class-power-effects-adapter.vitest.ts
 # Rodar apenas testes de origens
 npm run test -- src/lib/effects/__tests__/origin-effects-adapter.vitest.ts
 
-# Rodar apenas testes de trilhas (incluindo Ocultista)
+# Rodar apenas testes de trilhas
 npm run test -- src/lib/effects/__tests__/track-effects-adapter.vitest.ts
-
-# Rodar apenas testes de poderes paranormais
-npm run test -- src/lib/effects/__tests__/paranormal-powers-effects-adapter.vitest.ts
-
-# Rodar apenas testes do hook
-npm run test -- src/hooks/__tests__/useUnifiedEffects.vitest.ts
 
 # Rodar testes de integração E2E
 npm run test -- src/lib/__tests__/sue-integration-e2e.vitest.ts
-
-# Rodar testes de snapshot
-npm run test -- src/lib/__tests__/computed-effects-snapshot.vitest.ts
-
-# Rodar testes FASE 7 individualmente
-npm run test -- src/lib/__tests__/sue-stacking-integration.vitest.ts
-npm run test -- src/lib/__tests__/sue-conditions-integration.vitest.ts
-npm run test -- src/lib/__tests__/sue-paranormal-integration.vitest.ts
-npm run test -- src/lib/__tests__/sue-combat-scenarios.vitest.ts
-npm run test -- src/lib/__tests__/sue-edge-cases.vitest.ts
 ```
 
 ---
@@ -364,29 +303,8 @@ npm run test -- src/lib/__tests__/sue-edge-cases.vitest.ts
 | `useRitualModifiersFromSUE` | useRitualModifiersFromSUE | ✅ 100% |
 | `consolidateEffects` | unified-effects-engine | ✅ 100% |
 | `checkEffectConditions` | unified-effects-engine | ✅ 100% |
-
----
-
-## Casos de Teste Prioritários
-
-### Alta Prioridade ✅
-1. Condições críticas (inconsciente, morrendo, paralisado)
-2. Modificadores contextuais (caído melee vs ranged)
-3. Poderes de Ocultista com rituais
-4. Consolidação de múltiplas fontes
-5. Todas as 15 trilhas oficiais
-
-### Média Prioridade ✅
-1. Poderes de Combatente e Especialista
-2. Rituais sustentados
-3. Helpers do hook
-4. Edge cases com dados inválidos
-5. Efeitos de origem com atributos
-
-### Baixa Prioridade ✅
-1. Poderes Paranormais com afinidade
-2. Efeitos de origem togglable
-3. Efeitos de trilha específicos por elemento
+| `validateCharacter` | validate-character | ✅ 100% |
+| `deriveCharacter` | derive-character | ✅ 100% |
 
 ---
 
@@ -413,7 +331,13 @@ npm run test -- src/lib/__tests__/sue-edge-cases.vitest.ts
 
 ### Ao Adicionar Nova Origem
 1. Adicionar em `ORIGIN_POWER_EFFECTS` (origin-effects-adapter.ts)
-2. Adicionar testes em `origin-effects-adapter.vitest.ts`
+2. Adicionar em `ORIGIN_GRANTED_SKILLS` (validate-character.ts)
+3. Adicionar testes em `origin-effects-adapter.vitest.ts`
+4. Adicionar testes em `validate-character-skills-powers.vitest.ts`
+
+### Ao Adicionar Novo Pré-requisito de Trilha
+1. Adicionar em `TRACK_SKILL_PREREQUISITES` (validate-character.ts)
+2. Adicionar teste em `validate-character-skills-powers.vitest.ts`
 
 ---
 
@@ -425,13 +349,16 @@ npm run test -- src/lib/__tests__/sue-edge-cases.vitest.ts
 | 1.1.0 | 2025-12-30 | Adicionados ~30 testes (useBonusSummaryFromSUE, performance) |
 | 1.2.0 | 2025-12-31 | Adicionados ~25 testes E2E, ~10 testes snapshot, getSustainableRituals |
 | 2.0.0 | 2025-12-31 | Documentação atualizada para refletir cobertura real (~366 testes) |
-| 3.0.0 | 2026-01-04 | **FASE 7**: +120 testes de integração avançados (stacking, conditions, paranormal, combat, edge cases). Total: ~486 testes |
+| 3.0.0 | 2026-01-04 | **FASE 7**: +120 testes de integração avançados. Total: ~486 testes |
+| 4.0.0 | 2026-01-26 | **Validação**: +35 testes de validateCharacter (origens, trilhas). Total: ~560 testes |
 
 ---
 
 ## Documentação Relacionada
 
 - [SISTEMA_UNIFICADO_EFEITOS.md](./SISTEMA_UNIFICADO_EFEITOS.md) - Arquitetura completa do SUE
+- [ARQUITETURA.md](./ARQUITETURA.md) - Arquitetura geral do projeto
+- [ORIGENS_MECANICAS_COMPLETAS.md](./ORIGENS_MECANICAS_COMPLETAS.md) - Implementação de origens
 
 ---
 
