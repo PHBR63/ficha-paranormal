@@ -186,17 +186,8 @@ export const CONDITIONAL_BONUS_CATALOG: ConditionalBonusDefinition[] = [
     },
     requirements: { classTrack: 'atirador-de-elite', minNex: 65 },
   },
-  {
-    id: 'disparo-letal',
-    name: 'Disparo Letal',
-    source: 'ability',
-    condition: 'Ao atacar alvo desprevenido à distância',
-    mechanics: {
-      extraDamageDice: '2d8', // Igual ao Ataque Furtivo
-      specialEffects: ['Adiciona dados de Ataque Furtivo em ataques à distância'],
-    },
-    requirements: { classTrack: 'atirador-de-elite', minNex: 40 },
-  },
+  // REMOVIDO: disparo-letal - Agora gerenciado exclusivamente pelo track-effects-adapter.ts
+  // para evitar duplicação no painel de bônus condicionais
   {
     id: 'bloqueio-casca-grossa',
     name: 'Bloqueio (Casca Grossa)',

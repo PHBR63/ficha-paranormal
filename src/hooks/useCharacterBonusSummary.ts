@@ -747,28 +747,9 @@ export function useCharacterBonusSummary({
       }
     }
 
-    // Disparo Letal (Atirador de Elite): +2 margem de ameaça após mirar
-    if (hasAbility('disparo letal')) {
-      const isActive = isConditionalActive('disparo-letal');
-      conditionalBonuses.push({
-        id: 'disparo-letal',
-        name: 'Disparo Letal',
-        condition: 'Após ação mirar (1 PE)',
-        active: isActive,
-        effects: ['+2 margem de ameaça'],
-        source: 'ability',
-      });
-      if (isActive) {
-        combat.criticalMargin.breakdown.push({
-          source: 'Disparo Letal',
-          value: 2,
-          type: 'ability',
-          conditional: 'após mirar',
-          active: true,
-        });
-        combat.criticalMargin.total += 2;
-      }
-    }
+    // REMOVIDO: Disparo Letal agora é gerenciado exclusivamente pelo SUE
+    // via track-effects-adapter.ts para evitar duplicação
+    // A lógica de margem de ameaça é aplicada pelo SUE quando o bônus está ativo
 
     // Ataque Furtivo (Infiltrador): dados extras de dano que escalam com NEX
     // Regra oficial: +1d6 (NEX 10%), +2d6 (NEX 40%), +3d6 (NEX 65%), +4d6 (NEX 99%)
