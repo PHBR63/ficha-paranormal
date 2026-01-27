@@ -103,6 +103,7 @@ import { SustainedRitualsPanel } from '@/components/character/SustainedRitualsPa
 import { ConditionalBonusesPanel } from '@/components/character/ConditionalBonusesPanel';
 import { TrackCombatBonusesBar } from '@/components/character/TrackCombatBonusesBar';
 import { ActiveAdvancedBonusesBar, useActiveAdvancedBonuses } from '@/components/character/ActiveAdvancedBonusesBar';
+import { MaquinaDeMatarIndicator } from '@/components/character/MaquinaDeMatarIndicator';
 import { CharacterAuditBanner } from '@/components/character/CharacterAuditBanner';
 // useCharacterAudit já importado acima via @/hooks
 import { CharacterForAudit, canAddParanormalPower } from '@/lib/character-audit-engine';
@@ -2173,6 +2174,22 @@ export default function CharacterSheet() {
     );
   }, [character?.skills, character?.origin, character?.class, character?.skill_training_choices]);
 
+  // Identificar arma favorita para indicador Máquina de Matar (ANTES do early return)
+  const favoriteWeapon = useMemo(() => {
+    if (!character) return null;
+    const favoriteItem = character.inventory.find(
+      (item: any) => item.isEquipped && item.itemType === 'weapon' && item.favoriteAbilityId
+    );
+    if (favoriteItem) {
+      return {
+        id: favoriteItem.id || '',
+        name: favoriteItem.name,
+        damage: (favoriteItem as any).damage,
+      };
+    }
+    return null;
+  }, [character?.inventory]);
+
   // Theme colors para efeitos dinâmicos (ANTES do early return para evitar erro de hooks)
   const themeColors = useThemeColors();
 
@@ -2266,6 +2283,7 @@ export default function CharacterSheet() {
       special: item.special,
       ammoType: item.ammoType,
     }));
+
 
   // Obter dados da origem
   const originData = ORIGINS.find(o => o.id === character.origin);
@@ -3250,6 +3268,14 @@ export default function CharacterSheet() {
 
             {/* === COLUNA DIREITA === */}
             <div className="space-y-4 min-w-0">
+              {/* Indicador Máquina de Matar (Aniquilador NEX 99%) */}
+              <MaquinaDeMatarIndicator
+                classTrack={character.class_track}
+                nex={character.nex}
+                favoriteWeapon={favoriteWeapon}
+                className="mb-3"
+              />
+
               {/* Barra de bônus avançados ativos (Assassinar, Potência Máxima, Atirar para Matar) */}
               <ActiveAdvancedBonusesBar
                 activeBonuses={bonusSummary.conditionalBonuses.map(b => ({

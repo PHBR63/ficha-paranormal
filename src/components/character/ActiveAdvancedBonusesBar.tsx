@@ -1,10 +1,10 @@
 /**
  * ActiveAdvancedBonusesBar - Barra de indicadores visuais para bônus condicionais avançados
- * Mostra quando Assassinar, Potência Máxima ou Atirar para Matar estão ativos
+ * Mostra quando Assassinar, Potência Máxima, Atirar para Matar ou Máquina de Matar estão ativos
  */
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { Crosshair, Swords, Target, Sparkles, Zap } from 'lucide-react';
+import { Crosshair, Swords, Target, Sparkles, Zap, Skull } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
@@ -47,6 +47,13 @@ const bonusConfig: Record<string, { icon: React.ElementType; color: string; bgCo
     color: 'text-purple-500',
     bgColor: 'bg-purple-500/20',
     glowColor: 'shadow-purple-500/50',
+  },
+  // Máquina de Matar (Aniquilador NEX 99%)
+  'maquina-de-matar': {
+    icon: Skull,
+    color: 'text-amber-400',
+    bgColor: 'bg-amber-500/20',
+    glowColor: 'shadow-amber-500/50',
   },
 };
 
