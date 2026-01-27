@@ -61,6 +61,14 @@ export function getParamedicoDice(nex: number): {
 // Props do Hook
 // =====================================================
 
+/** Tipo para trilha de Versatilidade */
+export interface VersatilityTrackInfo {
+  trackId: string;
+  abilityId: string;
+  trackName?: string;
+  abilityName?: string;
+}
+
 export interface UseMedicoDeCampoTrackProps {
   classTrack: string | null | undefined;
   nex: number;
@@ -79,6 +87,8 @@ export interface UseMedicoDeCampoTrackProps {
   pvMax?: number;
   /** Callback para atualizar HP */
   onHPChange?: (newHP: number) => void;
+  /** Trilha de Versatilidade do personagem (NEX 50%) */
+  versatilityTrack?: VersatilityTrackInfo | null;
 }
 
 // =====================================================
@@ -99,14 +109,20 @@ export function useMedicoDeCampoTrack({
   pvCurrent = 0,
   pvMax = 0,
   onHPChange,
+  versatilityTrack,
 }: UseMedicoDeCampoTrackProps) {
   const [extraDice, setExtraDice] = useState(0);
   const [showParamedicoDrawer, setShowParamedicoDrawer] = useState(false);
   const [showHealingRollModal, setShowHealingRollModal] = useState(false);
   const [pendingHealConfig, setPendingHealConfig] = useState<{ totalDice: number; cost: number } | null>(null);
 
-  // Verifica se é Médico de Campo (suporta múltiplos formatos)
+  // Verifica se é Médico de Campo (trilha principal)
   const isMedicoCampo = classTrack === 'Médico de Campo' || classTrack === 'medico-campo';
+  
+  // Verifica se obteve Paramédico via Versatilidade (NEX 50%)
+  const hasParamedicoFromVersatility = 
+    versatilityTrack?.trackId === 'medico-campo' && 
+    versatilityTrack?.abilityId === 'paramedico';
 
   // Dados de cura do SUE
   const sueHealing = computedEffects?.healing;
@@ -134,8 +150,9 @@ export function useMedicoDeCampoTrack({
   // Custo total do Paramédico (2 PE base + 1 PE por dado extra)
   const paramedicoCost = 2 + extraDice;
 
-  // Habilidades desbloqueadas por NEX
-  const hasParamedico = nex >= 10;
+  // Habilidades desbloqueadas por NEX (ou via Versatilidade)
+  // Paramédico: desbloqueado no NEX 10% da trilha OU via Versatilidade
+  const hasParamedico = (isMedicoCampo && nex >= 10) || hasParamedicoFromVersatility;
   const hasEquipeTrauma = nex >= 40;
   const hasResgate = nex >= 65;
   const hasReanimacao = nex >= 99;
@@ -294,7 +311,8 @@ export function useMedicoDeCampoTrack({
 
   return {
     // Estado
-    isMedicoCampo,
+    // Retorna true se tem acesso ao Médico de Campo (trilha principal OU Paramédico via Versatilidade)
+    isMedicoCampo: isMedicoCampo || hasParamedicoFromVersatility,
     extraDice,
     setExtraDice,
     showParamedicoDrawer,
