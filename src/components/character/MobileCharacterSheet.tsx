@@ -821,6 +821,21 @@ export function MobileCharacterSheet({
     })),
   [character.inventory]);
 
+  // Identificar arma favorita (para indicador Máquina de Matar)
+  const favoriteWeapon = useMemo(() => {
+    const favoriteItem = character.inventory.find(
+      (item: any) => item.isEquipped && item.itemType === 'weapon' && item.favoriteAbilityId
+    );
+    if (favoriteItem) {
+      return {
+        id: favoriteItem.id || '',
+        name: favoriteItem.name,
+        damage: (favoriteItem as any).damage,
+      };
+    }
+    return null;
+  }, [character.inventory]);
+
   // Hook de buffs de armas já declarado acima com persistência
 
   // Hook de efeitos unificados (SUE) - conversão segura de tipos
@@ -1901,6 +1916,7 @@ export function MobileCharacterSheet({
               paranormalPowers={character.paranormal_powers as SavedParanormalPower[] || []}
               elementalAffinity={character.elemental_affinity as ParanormalElement || null}
               affinityActive={character.affinity_active || false}
+              favoriteWeapon={favoriteWeapon}
               onHPChange={async (newHP) => {
                 if (handleCombatStatsChange) {
                   await handleCombatStatsChange({ 

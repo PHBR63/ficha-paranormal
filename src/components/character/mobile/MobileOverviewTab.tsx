@@ -36,6 +36,7 @@ import { MobileCombatPanel, type WeaponEntry } from './MobileCombatPanel';
 import { MobileRollHistory, useRollHistory, type RollHistoryEntry } from './MobileRollHistory';
 import { MobileConditionManager, type ActiveCondition } from './MobileConditionManager';
 import { ActiveAdvancedBonusesBar } from '../ActiveAdvancedBonusesBar';
+import { MaquinaDeMatarIndicator } from '../MaquinaDeMatarIndicator';
 import { BonusSummaryCard } from '../BonusSummaryCard';
 import { ClassPowerBonusesPanel } from '../ClassPowerBonusesPanel';
 import { RoundControlPanel } from '../RoundControlPanel';
@@ -66,6 +67,7 @@ interface MobileOverviewTabProps {
     intellect: number;
     presence: number;
     vigor: number;
+    class_track?: string | null;
   };
   // Condições separadas do character para evitar conflito de tipos
   conditions: ActiveCondition[];
@@ -117,6 +119,12 @@ interface MobileOverviewTabProps {
   elementalAffinity?: ParanormalElement | string | null;
   /** Se a afinidade está ativa (NEX >= 50%) */
   affinityActive?: boolean;
+  /** Arma favorita selecionada (para indicador Máquina de Matar) */
+  favoriteWeapon?: {
+    id: string;
+    name: string;
+    damage?: string;
+  } | null;
   /** Callback para alterar HP */
   onHPChange?: (newHP: number) => void;
   onOpenDiceRoller: () => void;
@@ -157,6 +165,7 @@ export const MobileOverviewTab = memo(function MobileOverviewTab({
   paranormalPowers,
   elementalAffinity,
   affinityActive = false,
+  favoriteWeapon,
   onHPChange,
   onOpenDiceRoller,
   onOpenRest,
@@ -328,6 +337,15 @@ export const MobileOverviewTab = memo(function MobileOverviewTab({
           </TooltipProvider>
         </div>
       </div>
+
+      {/* Indicador Máquina de Matar (Aniquilador NEX 99%) - versão compacta para mobile */}
+      <MaquinaDeMatarIndicator
+        classTrack={character.class_track}
+        nex={character.nex}
+        favoriteWeapon={favoriteWeapon}
+        variant="compact"
+        className="ordo-panel"
+      />
 
       {/* Barra de bônus avançados ativos */}
       {bonusSummary.conditionalBonuses?.length > 0 && (
