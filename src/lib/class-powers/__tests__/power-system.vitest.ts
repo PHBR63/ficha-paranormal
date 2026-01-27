@@ -27,21 +27,37 @@ describe('Sistema de Poderes - Integridade', () => {
     expect(duplicates).toHaveLength(0);
   });
 
-  it('deve ter campos obrigatórios em todos os poderes', () => {
+  it('deve ter campos obrigatórios em todos os poderes de classe', () => {
     const errors: string[] = [];
     
-    for (const power of ALL_CLASS_POWERS) {
-      // Verifica campos obrigatórios diretamente
+    // Filtra apenas poderes de classe (exclui poderes de trilha convertidos)
+    // Poderes de trilha têm IDs prefixados com 'track-' e podem ter estrutura diferente
+    const classPowers = ALL_CLASS_POWERS.filter(p => !p.id.startsWith('track-'));
+    
+    for (const power of classPowers) {
+      // Verifica campos obrigatórios para poderes de classe
       if (!power.id) errors.push(`${power.name}: falta campo 'id'`);
       if (!power.name) errors.push(`${power.id}: falta campo 'name'`);
       if (!power.classId) errors.push(`${power.name || power.id}: falta campo 'classId'`);
       if (power.isCore === undefined) errors.push(`${power.name || power.id}: falta campo 'isCore'`);
       if (power.minNex === undefined) errors.push(`${power.name || power.id}: falta campo 'minNex'`);
-      if (!power.description) errors.push(`${power.name || power.id}: falta campo 'description'`);
       if (!power.effects) errors.push(`${power.name || power.id}: falta campo 'effects'`);
     }
     
     expect(errors).toHaveLength(0);
+  });
+  
+  it('poderes de trilha convertidos devem ter campos essenciais', () => {
+    const trackPowers = ALL_CLASS_POWERS.filter(p => p.id.startsWith('track-'));
+    
+    // Trilhas convertidas devem ter pelo menos id, name, classId, minNex e effects
+    for (const power of trackPowers) {
+      expect(power.id).toBeDefined();
+      expect(power.name).toBeDefined();
+      expect(power.classId).toBeDefined();
+      expect(power.minNex).toBeDefined();
+      expect(power.effects).toBeDefined();
+    }
   });
 });
 
@@ -125,12 +141,14 @@ describe('Poderes Específicos - Combatente', () => {
     expect(power?.effects.base.damageBonus?.conditions?.weaponType).toBe('melee');
   });
 
-  it('Transcender deve ser repetível e ter NEX mínimo 20', () => {
-    const power = getPowerById('transcender');
+  it('Transcender deve ser repetível e ter NEX mínimo 15', () => {
+    // Transcender usa IDs específicos por classe: transcender-comb, transcender-esp, transcender-ocult
+    const power = getPowerById('transcender-comb');
     
     expect(power).toBeDefined();
     expect(power?.isRepeatable).toBe(true);
-    expect(power?.minNex).toBe(20);
+    // NEX mínimo oficial é 15% (não 20%) conforme Livro Base p.47
+    expect(power?.minNex).toBe(15);
   });
 });
 

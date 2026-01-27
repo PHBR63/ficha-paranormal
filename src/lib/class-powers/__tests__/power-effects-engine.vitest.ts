@@ -408,7 +408,8 @@ describe('Motor de Poderes - Poderes Específicos do Livro Base', () => {
     const power = getPowerById('golpe-pesado');
     
     if (power) {
-      expect(power.classId).toBe('combatente');
+      // ClassId usa PascalCase conforme definido em game-ids.ts
+      expect(power.classId).toBe('Combatente');
       expect(power.effects?.base).toBeDefined();
     } else {
       expect(true).toBe(true); // Pode não existir ainda
