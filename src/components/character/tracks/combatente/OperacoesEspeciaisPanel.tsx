@@ -110,7 +110,9 @@ function arePropsEqual(prev: OperacoesEspeciaisPanelProps, next: OperacoesEspeci
     prev.nex === next.nex &&
     prev.className === next.className &&
     prev.onPEChange === next.onPEChange &&
-    prev.onActivateEffect === next.onActivateEffect
+    prev.onActivateEffect === next.onActivateEffect &&
+    prev.versatilityTrack?.trackId === next.versatilityTrack?.trackId &&
+    prev.versatilityTrack?.abilityId === next.versatilityTrack?.abilityId
   );
 }
 

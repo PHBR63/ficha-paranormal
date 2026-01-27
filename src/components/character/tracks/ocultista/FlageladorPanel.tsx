@@ -30,7 +30,11 @@ import type { EffectDuration } from '@/hooks/useActivatedEffects';
 
 // Comparação customizada para evitar re-renders desnecessários
 function arePropsEqual(prev: FlageladorPanelProps, next: FlageladorPanelProps): boolean {
-  return prev.nex === next.nex && prev.classTrack === next.classTrack && prev.peCurrent === next.peCurrent;
+  return prev.nex === next.nex 
+    && prev.classTrack === next.classTrack 
+    && prev.peCurrent === next.peCurrent
+    && prev.versatilityTrack?.trackId === next.versatilityTrack?.trackId
+    && prev.versatilityTrack?.abilityId === next.versatilityTrack?.abilityId;
 }
 
 // =====================================================

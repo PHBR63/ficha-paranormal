@@ -61,7 +61,9 @@ function arePropsEqual(prev: AtiradorDeElitePanelProps, next: AtiradorDeElitePan
     prev.nex === next.nex &&
     prev.intellect === next.intellect &&
     prev.onPEChange === next.onPEChange &&
-    prev.onActivateEffect === next.onActivateEffect
+    prev.onActivateEffect === next.onActivateEffect &&
+    prev.versatilityTrack?.trackId === next.versatilityTrack?.trackId &&
+    prev.versatilityTrack?.abilityId === next.versatilityTrack?.abilityId
   );
 }
 

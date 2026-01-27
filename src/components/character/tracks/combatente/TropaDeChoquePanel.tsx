@@ -194,7 +194,9 @@ function arePropsEqual(prev: TropaDeChoquePanelProps, next: TropaDeChoquePanelPr
     prev.nex === next.nex &&
     prev.className === next.className &&
     prev.vigor === next.vigor &&
-    prev.onPEChange === next.onPEChange
+    prev.onPEChange === next.onPEChange &&
+    prev.versatilityTrack?.trackId === next.versatilityTrack?.trackId &&
+    prev.versatilityTrack?.abilityId === next.versatilityTrack?.abilityId
   );
 }
 

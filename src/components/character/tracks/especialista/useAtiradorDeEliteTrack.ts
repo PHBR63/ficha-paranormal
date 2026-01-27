@@ -107,6 +107,11 @@ export interface UseAtiradorDeEliteTrackProps {
   markAbilityUsedThisRound?: (abilityId: string) => void;
   /** Callback para rastrear PE gasto na rodada */
   onTrackPESpent?: (abilityName: string, cost: number) => void;
+  /** Trilha de Versatilidade do personagem (se houver) */
+  versatilityTrack?: {
+    trackId: string;
+    abilityId: string;
+  } | null;
 }
 
 // =====================================================
@@ -125,6 +130,7 @@ export function useAtiradorDeEliteTrack({
   isAbilityUsedThisRound,
   markAbilityUsedThisRound,
   onTrackPESpent,
+  versatilityTrack,
 }: UseAtiradorDeEliteTrackProps) {
   const [activatingAbility, setActivatingAbility] = useState<string | null>(null);
   const [showManeuverDrawer, setShowManeuverDrawer] = useState(false);
@@ -132,11 +138,17 @@ export function useAtiradorDeEliteTrack({
   // Estado local para tracking de rodada (fallback quando não há tracking externo)
   const [localUsedAbilities, setLocalUsedAbilities] = useState<Set<string>>(new Set());
 
-  // Verifica se é Atirador de Elite (suporta múltiplos formatos de ID)
-  const isAtiradorElite = useMemo(() => 
+  // Verifica se é Atirador de Elite (principal ou via Versatilidade)
+  const isAtiradorEliteBase = useMemo(() => 
     classTrack === 'Atirador de Elite' || classTrack === 'atirador-elite',
     [classTrack]
   );
+
+  // Detecta se tem habilidade de Atirador de Elite via Versatilidade
+  const hasAtiradorFromVersatility = versatilityTrack?.trackId === 'atirador-elite';
+
+  // É Atirador de Elite se for trilha principal ou via Versatilidade
+  const isAtiradorElite = isAtiradorEliteBase || hasAtiradorFromVersatility;
 
   // Filtra habilidades desbloqueadas pelo NEX
   const unlockedAbilities = useMemo(() => 

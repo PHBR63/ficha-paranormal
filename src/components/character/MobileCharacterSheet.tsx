@@ -2025,6 +2025,7 @@ export function MobileCharacterSheet({
               onPEChange={handlePEChange}
               onActivateEffect={activatedEffects.activateEffect}
               isEffectActive={activatedEffects.isEffectActive}
+              versatilityTrack={character.versatility_track}
             />
             
             {/* Guerreiro */}
@@ -2048,6 +2049,7 @@ export function MobileCharacterSheet({
               onActivateEffect={activatedEffects.activateEffect}
               isEffectActive={activatedEffects.isEffectActive}
               onTrackPESpent={roundTracking.trackPESpent}
+              versatilityTrack={character.versatility_track}
             />
             
             {/* Tropa de Choque */}
@@ -2062,6 +2064,7 @@ export function MobileCharacterSheet({
               onActivateEffect={activatedEffects.activateEffect}
               isEffectActive={activatedEffects.isEffectActive}
               onTrackPESpent={roundTracking.trackPESpent}
+              versatilityTrack={character.versatility_track}
             />
 
             {/* ====================================================== */}
@@ -2078,6 +2081,7 @@ export function MobileCharacterSheet({
               onActivateEffect={activatedEffects.activateEffect}
               isEffectActive={activatedEffects.isEffectActive}
               onTrackPESpent={roundTracking.trackPESpent}
+              versatilityTrack={character.versatility_track}
             />
 
             {/* Infiltrador */}
@@ -2163,6 +2167,7 @@ export function MobileCharacterSheet({
               onActivateEffect={activatedEffects.activateEffect}
               isEffectActive={activatedEffects.isEffectActive}
               onTrackPESpent={roundTracking.trackPESpent}
+              versatilityTrack={character.versatility_track}
             />
 
             {/* ====================================================== */}
@@ -2190,6 +2195,7 @@ export function MobileCharacterSheet({
               onActivateEffect={activatedEffects.activateEffect}
               isEffectActive={activatedEffects.isEffectActive}
               onTrackPESpent={roundTracking.trackPESpent}
+              versatilityTrack={character.versatility_track}
             />
 
             {/* Graduado */}
@@ -2197,6 +2203,7 @@ export function MobileCharacterSheet({
               classTrack={character.class_track}
               nex={character.nex}
               intellect={character.intellect}
+              versatilityTrack={character.versatility_track}
             />
 
             {/* Intuitivo */}
@@ -2204,6 +2211,7 @@ export function MobileCharacterSheet({
               classTrack={character.class_track}
               nex={character.nex}
               presence={character.presence}
+              versatilityTrack={character.versatility_track}
             />
 
             {/* Lâmina Paranormal */}

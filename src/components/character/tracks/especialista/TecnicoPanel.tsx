@@ -64,7 +64,9 @@ function arePropsEqual(prev: TecnicoPanelProps, next: TecnicoPanelProps): boolea
   return (
     prev.classTrack === next.classTrack &&
     prev.nex === next.nex &&
-    prev.onPEChange === next.onPEChange
+    prev.onPEChange === next.onPEChange &&
+    prev.versatilityTrack?.trackId === next.versatilityTrack?.trackId &&
+    prev.versatilityTrack?.abilityId === next.versatilityTrack?.abilityId
   );
 }
 

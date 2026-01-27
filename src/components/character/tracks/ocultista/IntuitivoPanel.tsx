@@ -28,7 +28,10 @@ import {
 
 // Comparação customizada para evitar re-renders desnecessários
 function arePropsEqual(prev: IntutivoPanelProps, next: IntutivoPanelProps): boolean {
-  return prev.nex === next.nex && prev.classTrack === next.classTrack;
+  return prev.nex === next.nex 
+    && prev.classTrack === next.classTrack
+    && prev.versatilityTrack?.trackId === next.versatilityTrack?.trackId
+    && prev.versatilityTrack?.abilityId === next.versatilityTrack?.abilityId;
 }
 
 // =====================================================
