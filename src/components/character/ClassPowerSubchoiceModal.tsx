@@ -25,7 +25,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Checkbox } from '@/components/ui/checkbox';
 import { Check, Swords, GraduationCap, AlertTriangle, Target } from 'lucide-react';
 import { WEAPON_GROUPS, type WeaponGroup } from '@/lib/constants/weapon-groups';
-import { SKILLS_BY_ATTRIBUTE } from '@/lib/constants/game-ids';
+import { SKILL_IDS, SKILLS_BY_ATTRIBUTE } from '@/lib/constants/game-ids';
 import type { UnifiedClassPower } from '@/lib/class-powers/types';
 
 // ============================================
@@ -61,6 +61,11 @@ interface ClassPowerSubchoiceModalProps {
   existingWeaponGroups?: string[];
   // Perícias já escolhidas em outras instâncias
   existingSkillChoices?: string[];
+  /**
+   * Lista de perícias treinadas do personagem (IDs).
+   * Usado para validar escolhas de poderes que exigem perícias treinadas (ex: Perito).
+   */
+  trainedSkillIds?: string[];
 }
 
 // ============================================
@@ -75,6 +80,7 @@ export function ClassPowerSubchoiceModal({
   instanceIndex = 0,
   existingWeaponGroups = [],
   existingSkillChoices = [],
+  trainedSkillIds = [],
 }: ClassPowerSubchoiceModalProps) {
   // Estado para valores selecionados
   const [selectedValues, setSelectedValues] = useState<string[]>([]);
@@ -94,6 +100,14 @@ export function ClassPowerSubchoiceModal({
           icon: Swords,
         };
       case 'skill':
+        // Perito tem restrições específicas (Livro Base v1.3 p.49)
+        if (power.id === 'perito') {
+          return {
+            title: 'Escolher Perícias do Perito',
+            description: `Escolha ${choiceCount} perícia${choiceCount > 1 ? 's' : ''} nas quais você é treinado (exceto Luta e Pontaria).`,
+            icon: GraduationCap,
+          };
+        }
         return {
           title: 'Escolher Perícia',
           description: `Escolha ${choiceCount} perícia${choiceCount > 1 ? 's' : ''} para aplicar o efeito.`,
@@ -314,7 +328,13 @@ export function ClassPowerSubchoiceModal({
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {skills.map((skillId) => {
                 const isSelected = selectedValues.includes(skillId);
-                const isDisabled = existingSkillChoices.includes(skillId);
+                // Regra do Perito: precisa ser treinado e não pode ser Luta/Pontaria
+                const isPerito = power.id === 'perito';
+                const isExcludedByPerito = isPerito && (skillId === SKILL_IDS.LUTA || skillId === SKILL_IDS.PONTARIA);
+                const isNotTrainedForPerito = isPerito && !trainedSkillIds.includes(skillId);
+                // existingSkillChoices é útil para poderes repetíveis, mas NÃO deve bloquear Perito
+                const isDisabledByExisting = !isPerito && existingSkillChoices.includes(skillId);
+                const isDisabled = isDisabledByExisting || isExcludedByPerito || isNotTrainedForPerito;
                 const skillName = skillNames[skillId] || skillId;
                 
                 return (
@@ -338,6 +358,13 @@ export function ClassPowerSubchoiceModal({
                           onCheckedChange={() => !isDisabled && handleToggle(skillId)}
                         />
                       </div>
+                      {isPerito && (isExcludedByPerito || isNotTrainedForPerito) && (
+                        <CardDescription className="text-[10px] mt-1">
+                          {isExcludedByPerito
+                            ? 'Não pode (Perito)'
+                            : 'Precisa ser treinado'}
+                        </CardDescription>
+                      )}
                     </CardHeader>
                   </Card>
                 );

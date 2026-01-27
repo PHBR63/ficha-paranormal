@@ -567,11 +567,37 @@ export function usePowerActivation(availablePowers: ActivatablePower[]) {
     availablePowers.map(p => ({ powerId: p.id, isActive: false, peCost: p.peCost }))
   );
 
-  const togglePower = React.useCallback((powerId: string, isActive: boolean) => {
-    setActivationStates(prev => 
-      prev.map(s => s.powerId === powerId ? { ...s, isActive } : s)
-    );
+  /**
+   * Retorna o grupo de exclusividade de um poder.
+   * 
+   * IMPORTANTE (Livro Base v1.3):
+   * - Perito: o jogador escolhe UMA opção de dado/custo por teste.
+   * - Eclético: o jogador escolhe UM nível (Treinado/Veterano/Expert) por teste.
+   * 
+   * Para evitar acúmulo indevido, tratamos variações como mutuamente exclusivas.
+   */
+  const getExclusiveGroup = React.useCallback((powerId: string): 'perito' | 'ecletico' | null => {
+    if (powerId.startsWith('perito')) return 'perito';
+    if (powerId.startsWith('ecletico')) return 'ecletico';
+    return null;
   }, []);
+
+  const togglePower = React.useCallback((powerId: string, isActive: boolean) => {
+    setActivationStates(prev => {
+      const group = getExclusiveGroup(powerId);
+      return prev.map(s => {
+        // Ativando um poder de um grupo exclusivo desativa os outros do mesmo grupo
+        if (isActive && group) {
+          const sGroup = getExclusiveGroup(s.powerId);
+          if (sGroup === group && s.powerId !== powerId) {
+            return { ...s, isActive: false };
+          }
+        }
+
+        return s.powerId === powerId ? { ...s, isActive } : s;
+      });
+    });
+  }, [getExclusiveGroup]);
 
   const resetActivations = React.useCallback(() => {
     setActivationStates(prev => prev.map(s => ({ ...s, isActive: false })));
