@@ -41,7 +41,7 @@ Requerem ativação manual e gasto de PE.
 | **T.I.** | Motor de Busca | 2 PE | Substitui teste por Tecnologia | 1 teste |
 | **Trabalhador Rural** | Desbravador | 2 PE | +5 Adestramento/Sobrevivência | 1 teste |
 | **Magnata** | Patrocinador da Ordem | - | Limite crédito +1 categoria | Missão |
-| **Trambiqueiro** | Impostor | 2 PE | +5 Enganação p/ fingir | 1 cena |
+| **Trambiqueiro** | Impostor | 2 PE | Substitui teste por Enganação | 1 cena |
 
 ### 🔵 1x por Cena (4 origens)
 Podem ser usados uma vez por cena.
@@ -49,7 +49,7 @@ Podem ser usados uma vez por cena.
 | Origem | Poder | Efeito |
 |--------|-------|--------|
 | **Religioso** | Acalentar | +10 em teste de atributo de aliado adjacente |
-| **Trambiqueiro** | Impostor | +5 Enganação para fingir ser outra pessoa |
+| **Trambiqueiro** | Impostor | Substitui teste de perícia por Enganação (2 PE) |
 | **Amnésico** | Vislumbres do Passado | Teste INT DT 10 para info + 1d4 PE temp |
 | **Vítima** | Cicatrizes (toggle) | Substitui teste de atributo por Vontade |
 
