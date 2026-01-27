@@ -1,126 +1,140 @@
 
-# Plano de Correção: Bug no Grau de Treinamento (NEX 70% absorvendo slots do NEX 35%)
+# Plano de Correção: Poder de Origem "Impostor" (Trambiqueiro)
 
 ## Problema Identificado
 
-O sistema permite que o modal de **Grau de Treinamento do NEX 70%** seja usado para fazer upgrades **Treinado → Veterano** que deveriam ter sido feitos no **NEX 35%**. Isso resulta em:
+A habilidade de origem **Impostor** do Trambiqueiro está com descrição incorreta e implementação mecânica incompleta.
 
-1. **Duplicação de upgrades**: Usuário consegue 8 perícias Veteranas em vez de 4 por milestone
-2. **Avisos de auditoria falsos**: "Veterano Sem Registro" para perícias corretamente upadas via NEX 70%
-3. **Violação da regra oficial**: O Grau de Treinamento de cada NEX deve ser usado no seu marco correspondente
+### Descrição Oficial (Livro Base v1.3)
+> "Uma vez por cena, você pode gastar 2 PE para substituir um teste de perícia qualquer por um teste de Enganação."
 
-### Cenário do Bug (Demonstrado na Imagem)
+### Descrição Atual no Sistema (Incorreta)
+> "1x/cena: +5 em Enganação para fingir ser outra pessoa | Falha por 5+: descoberto"
 
-```text
-Personagem: Combatente NEX 70%, INT 2 (4 upgrades por milestone)
+### Causas Raiz
 
-1. Usuário NÃO configurou NEX 35% (pulou)
-2. Usuário abre modal NEX 70%
-3. Sistema mostra perícias Treinadas (podem virar Veteranas)
-4. Usuário seleciona 4 perícias Treinadas → Veteranas
-5. Sistema salva em nex70: [{skillId: X, toLevel: 2}, ...]
-6. Auditoria detecta: "Veterano Sem Registro" (esperava em nex35)
+1. **Descrição incorreta no SUE** (`src/lib/effects/origin-effects-adapter.ts:258-267`):
+   - Descreve como "+5 em Enganação" quando deveria ser "substituir teste por Enganação"
+   - Inclui nota punitiva "Falha por 5+: descoberto" que **não existe** na regra oficial
 
-Resultado: 4 upgrades usados "errado", auditoria acusa problemas inexistentes
-```
-
-### Causa Raiz
-
-1. **TrainingGradeSelectModal (linhas 158-166)**: No NEX 70%, o modal oferece upgrades Treinado → Veterano sem verificar se o NEX 35% já foi configurado
-2. **Ausência de validação de precedência**: O sistema não força que o NEX 35% seja configurado antes do NEX 70%
-3. **Auditoria parcial (linhas 641-656)**: Valida Veteranos apenas contra `allVeteranSkillIds`, mas não considera corretamente upgrades do NEX 70% com `toLevel === 2`
+2. **Falta de suporte mecânico a `swapToSkill`** nos modais de rolagem:
+   - O bridge já define `swapToSkill: 'enganacao'` corretamente
+   - Mas os modais (`DiceRollModal.tsx` e `MobileDiceRollModal.tsx`) ignoram esse campo
+   - O bônus da perícia original é usado em vez do bônus de Enganação
 
 ---
 
 ## Solução Proposta
 
-### Estratégia: Forçar Sequência e Restringir Opções
+### Correção 1: Atualizar Descrição no SUE (origin-effects-adapter.ts)
 
-O Livro Base v1.3 não define explicitamente se você pode "pular" o NEX 35%, mas a mecânica implica uso no milestone correto. A solução mais fiel às regras:
+Corrigir a definição do Impostor para refletir a mecânica real de substituição:
 
-**Opção Escolhida**: Restringir o modal do NEX 70% para só permitir upgrades **Veterano → Expert** se o NEX 35% ainda não foi configurado. Isso força o usuário a usar o NEX 35% primeiro para upgrades Treinado → Veterano.
+```typescript
+// ANTES (incorreto):
+'impostor': {
+  mechanics: {
+    specialEffects: [
+      '1x/cena: +5 em Enganação para fingir ser outra pessoa',
+      'Falha por 5+: descoberto',
+    ],
+  },
+  description: 'Uma vez por cena, +5 em Enganação para fingir ser outra pessoa.',
+  isToggleable: true,
+},
 
----
+// DEPOIS (correto):
+'impostor': {
+  mechanics: {
+    specialEffects: [
+      '1x/cena: Substitui teste por Enganação (2 PE)',
+    ],
+  },
+  description: 'Uma vez por cena, substitua um teste de perícia qualquer por um teste de Enganação.',
+  isToggleable: true,
+  costPE: 2,
+},
+```
 
-## Alterações Técnicas
+### Correção 2: Suportar `swapToSkill` nos Modais de Rolagem
 
-### 1. TrainingGradeSelectModal.tsx - Filtrar Perícias Elegíveis
+Atualizar `DiceRollModal.tsx` e `MobileDiceRollModal.tsx` para:
 
-**Arquivo**: `src/components/character/TrainingGradeSelectModal.tsx`
-
-Adicionar prop `previousNexChoices` e ajustar lógica de `availableSkills`:
-
-```tsx
-// Nova prop para verificar se NEX anterior foi configurado
-interface TrainingGradeSelectModalProps {
-  // ... props existentes
-  /** Escolhas do NEX anterior (35) - para validar sequência */
-  previousNexConfigured?: boolean;
-}
-
-// Dentro de availableSkills (linhas 137-187):
-if (nex === 70) {
-  // Se NEX 35% NÃO foi configurado, só permite Veterano → Expert
-  // (força o usuário a configurar NEX 35% primeiro para Treinado → Veterano)
-  if (!previousNexConfigured && currentLevel === 1) {
-    // NÃO adiciona perícias Treinadas se NEX 35% pendente
-    // Isso força o usuário a ir primeiro no NEX 35%
-    continue;
+1. **Capturar `swapToSkill`** no cálculo de efeitos ativados:
+```typescript
+const activatedPowerEffects = useMemo(() => {
+  // ... código existente ...
+  let skillSwap: string | undefined;
+  
+  for (const ap of activePowers) {
+    const effects = calculatePowerActivationEffects(ap.powerId, nex, intellect);
+    // ... bônus existentes ...
+    if (effects.swapToSkill) skillSwap = effects.swapToSkill;
   }
   
-  if (currentLevel === 1) {
-    eligible.push({...});
-  } else if (currentLevel === 2) {
-    eligible.push({...});
+  return { extraBonus, extraDice, attributeSwap, skillSwap, notes };
+}, [...]);
+```
+
+2. **Buscar bônus da nova perícia** quando `skillSwap` estiver ativo:
+```typescript
+// Calcular bônus efetivo da perícia
+const effectiveSkillBonus = useMemo(() => {
+  const swap = activatedPowerEffects.skillSwap;
+  if (swap && sueConfig.skills[swap] !== undefined) {
+    // Usa bônus da perícia substituta (Enganação/Tecnologia)
+    return sueConfig.skills[swap];
   }
+  return skillBonus;
+}, [activatedPowerEffects.skillSwap, sueConfig.skills, skillBonus]);
+```
+
+3. **Atualizar atributo** se a nova perícia usar atributo diferente:
+```typescript
+// Mapear perícia → atributo base
+const SKILL_ATTRIBUTE_MAP: Record<string, string> = {
+  enganacao: 'presence',
+  tecnologia: 'intellect',
+  // ... outras perícias conforme necessário
+};
+
+const effectiveAttribute = useMemo(() => {
+  const swap = activatedPowerEffects.skillSwap;
+  if (swap) {
+    const newAttr = SKILL_ATTRIBUTE_MAP[swap];
+    if (newAttr === 'presence') return presence;
+    if (newAttr === 'intellect') return intellect;
+    // ... outros atributos
+  }
+  // ... lógica existente de attributeSwap
+  return attributeValue;
+}, [...]);
+```
+
+4. **Passar `presence` como nova prop** para os modais (se não existir):
+```typescript
+// DiceRollModalProps
+presence?: number;  // Presença para Impostor (Enganação usa Presença)
+```
+
+### Correção 3: Atualizar Documentação (docs/ORIGENS_MECANICAS_COMPLETAS.md)
+
+Alinhar a documentação técnica com a regra oficial:
+
+```markdown
+### Trambiqueiro - Impostor
+**Tipo:** Ativo (1x/cena, 2 PE)
+**Efeito:** Substituir teste de perícia por Enganação
+
+**Implementação SUE:**
+'impostor': {
+  mechanics: {
+    specialEffects: ['1x/cena: Substitui teste por Enganação (2 PE)'],
+  },
+  isToggleable: true,
+  costPE: 2,
 }
 ```
-
-**Lógica**:
-- Se `nex === 70` e `previousNexConfigured === false`:
-  - Não mostrar opções Treinado → Veterano
-  - Mostrar apenas Veterano → Expert (se houver)
-  - Exibir aviso: "Configure primeiro o Grau de Treinamento do NEX 35%"
-
-### 2. CharacterSheet.tsx - Passar `previousNexConfigured`
-
-**Arquivo**: `src/pages/CharacterSheet.tsx` (e `MobileCharacterSheet.tsx`)
-
-Calcular se NEX 35% está configurado antes de abrir modal do NEX 70%:
-
-```tsx
-<TrainingGradeSelectModal
-  // ... props existentes
-  previousNexConfigured={
-    trainingGradeNex === 70 
-      ? (character.training_grade_choices?.nex35?.length || 0) > 0
-      : true // Para NEX 35%, sempre true (não há anterior)
-  }
-/>
-```
-
-### 3. TrainingGradeSelectModal.tsx - Aviso Visual
-
-Adicionar aviso quando NEX 35% está pendente e usuário tenta usar NEX 70% para upgrades Treinado → Veterano:
-
-```tsx
-{/* Aviso de precedência */}
-{nex === 70 && !previousNexConfigured && (
-  <div className="p-3 bg-warning/10 border border-warning/20 rounded-lg">
-    <p className="text-xs text-warning flex items-center gap-2">
-      <Info className="w-4 h-4" />
-      <span>
-        Configure primeiro o <strong>Grau de Treinamento do NEX 35%</strong> para 
-        aumentar perícias de Treinado para Veterano.
-      </span>
-    </p>
-  </div>
-)}
-```
-
-### 4. character-audit-engine.ts - Corrigir Validação de Veterano
-
-A correção anterior (adicionar `grade70Choices.filter(c => c.toLevel === 2)` a `allVeteranSkillIds`) já resolve o problema de avisos falsos. Verificar se está aplicada corretamente.
 
 ---
 
@@ -128,61 +142,89 @@ A correção anterior (adicionar `grade70Choices.filter(c => c.toLevel === 2)` a
 
 | Arquivo | Alteração |
 |---------|-----------|
-| `src/components/character/TrainingGradeSelectModal.tsx` | Adicionar prop `previousNexConfigured`, filtrar opções, aviso visual |
-| `src/pages/CharacterSheet.tsx` | Passar `previousNexConfigured` ao modal |
-| `src/components/character/MobileCharacterSheet.tsx` | Passar `previousNexConfigured` ao modal |
+| `src/lib/effects/origin-effects-adapter.ts` | Corrigir descrição do Impostor |
+| `src/components/dice/DiceRollModal.tsx` | Adicionar suporte a `swapToSkill`, nova prop `presence` |
+| `src/components/character/mobile/MobileDiceRollModal.tsx` | Mesmo suporte a `swapToSkill` |
+| `src/pages/CharacterSheet.tsx` | Passar `presence` ao DiceRollModal |
+| `src/components/character/MobileCharacterSheet.tsx` | Passar `presence` ao MobileDiceRollModal |
+| `docs/ORIGENS_MECANICAS_COMPLETAS.md` | Atualizar documentação |
 
 ---
 
 ## Fluxo Corrigido
 
 ```text
-Personagem NEX 70% sem configurar NEX 35%:
+Personagem Trambiqueiro faz teste de Diplomacia:
 
-1. Usuário abre modal NEX 70%
-2. Sistema verifica: nex35 vazio? → previousNexConfigured = false
-3. Modal exibe:
-   - Aviso: "Configure primeiro o NEX 35%"
-   - Lista VAZIA (não há Veteranos para virar Expert)
-   - OU lista de Veteranos apenas (se houver de outras fontes)
-4. Usuário fecha modal
-5. Usuário abre modal NEX 35%
-6. Seleciona 4 perícias Treinadas → Veteranas
-7. Confirma e salva em nex35
-8. Agora pode voltar ao modal NEX 70%
-9. Sistema mostra Veteranos (já upados no passo 6) → Expert
-10. Auditoria: sem avisos falsos
+1. Modal de rolagem abre com atributo Presença e bônus de Diplomacia
+2. Usuário ativa "Impostor" no painel de poderes (gasta 2 PE)
+3. Sistema detecta swapToSkill: 'enganacao'
+4. Modal recalcula:
+   - Atributo: Presença (mesmo atributo, neste caso)
+   - Bônus de Perícia: Enganação (pode ser diferente de Diplomacia)
+   - Label atualiza para indicar "Teste de Enganação (via Impostor)"
+5. Rolagem usa os valores de Enganação
+6. Resultado final reflete a substituição correta
 ```
 
 ---
 
-## Regra Oficial Aplicada
+## Impacto em Outras Origens
 
-Segundo o Livro Base v1.3, o Grau de Treinamento é obtido ao atingir NEX 35% e 70%. A mecânica de "escolher X perícias para aumentar" está atrelada ao milestone específico. A correção força o respeito a essa progressão:
-
-- **NEX 35%**: Obrigatório usar para upgrades Treinado → Veterano
-- **NEX 70%**: Pode fazer Treinado → Veterano OU Veterano → Expert, **desde que NEX 35% já esteja configurado**
+A correção de suporte a `swapToSkill` também beneficia:
+- **Motor de Busca (T.I.)**: Substitui por Tecnologia
+- **Cicatrizes (Vítima)**: Substitui por Vontade (se implementado)
 
 ---
 
 ## Checklist de Implementação
 
-- [ ] Adicionar prop `previousNexConfigured` a `TrainingGradeSelectModal`
-- [ ] Filtrar opções Treinado → Veterano no NEX 70% se `previousNexConfigured === false`
-- [ ] Adicionar aviso visual quando precedência não respeitada
-- [ ] Atualizar `CharacterSheet.tsx` para passar a prop
-- [ ] Atualizar `MobileCharacterSheet.tsx` para passar a prop
-- [ ] Confirmar que `character-audit-engine.ts` reconhece upgrades do NEX 70% com `toLevel === 2`
-- [ ] Testar cenário: personagem NEX 70% sem configurar NEX 35%
-- [ ] Testar cenário: personagem NEX 70% com NEX 35% configurado
+- [ ] Corrigir descrição do Impostor em `origin-effects-adapter.ts`
+- [ ] Adicionar captura de `swapToSkill` em `activatedPowerEffects` (Desktop)
+- [ ] Adicionar captura de `swapToSkill` em `activatedPowerEffects` (Mobile)
+- [ ] Implementar `effectiveSkillBonus` baseado na perícia substituta
+- [ ] Implementar `effectiveAttribute` baseado na perícia substituta
+- [ ] Adicionar prop `presence` aos modais (se necessário)
+- [ ] Passar `presence` do personagem para os modais nas CharacterSheets
+- [ ] Atualizar documentação em `ORIGENS_MECANICAS_COMPLETAS.md`
+- [ ] Testar com Trambiqueiro: ativar Impostor em teste de Acrobacia
+- [ ] Testar com T.I.: ativar Motor de Busca em teste de Investigação
 
 ---
 
-## Impacto
-
-- **Médio risco**: Alteração na lógica de filtragem do modal
-- **Alta prioridade**: Bug permite violação de regras e gera confusão com avisos falsos
-
 ## Tempo Estimado
 
-~45 minutos
+~1 hora (correções em múltiplos arquivos + testes)
+
+---
+
+## Seção Técnica: Mapeamento Perícia → Atributo
+
+Para que a troca de perícia funcione corretamente, precisamos saber qual atributo base cada perícia usa:
+
+```typescript
+// Perícias por Atributo (Livro Base v1.3)
+const SKILL_ATTRIBUTES = {
+  // Agilidade
+  acrobacia: 'agility', reflexos: 'agility', furtividade: 'agility', 
+  crime: 'agility', pilotagem: 'agility', pontaria: 'agility',
+  
+  // Força
+  atletismo: 'strength', luta: 'strength',
+  
+  // Presença
+  artes: 'presence', atuacao: 'presence', diplomacia: 'presence',
+  enganacao: 'presence', intimidacao: 'presence', vontade: 'presence',
+  
+  // Intelecto
+  ciencias: 'intellect', investigacao: 'intellect', medicina: 'intellect',
+  ocultismo: 'intellect', percepcao: 'intellect', profissao: 'intellect',
+  sobrevivencia: 'intellect', tatica: 'intellect', tecnologia: 'intellect',
+  adestramento: 'intellect', intuicao: 'intellect', religiao: 'intellect',
+  
+  // Vigor (resistências)
+  fortitude: 'vigor',
+};
+```
+
+Este mapeamento garante que ao substituir Acrobacia (AGI) por Enganação (PRE), o sistema usa Presença como atributo base.
