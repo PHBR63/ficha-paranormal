@@ -300,12 +300,14 @@ export function useUnifiedEffects(
       : [];
     
     // Efeitos da trilha de Versatilidade (apenas a habilidade NEX 10% da trilha escolhida)
+    // Passa o NEX real do personagem para escalonamento correto (ex: Ataque Furtivo 4d6 no NEX 99%)
     const versatilityEffects = characterState.versatilityTrack?.trackId
       ? getVersatilityTrackEffects(
           characterState.versatilityTrack.trackId,
           characterState.versatilityTrack.abilityId,
           characterState.attributes as Record<AttributeType, number>,
-          characterState.activatedEffectIds ?? []
+          characterState.activatedEffectIds ?? [],
+          characterState.nex  // NEX real para escalonamento de habilidades
         )
       : [];
     

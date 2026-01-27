@@ -2092,6 +2092,7 @@ export function MobileCharacterSheet({
               onActivateEffect={activatedEffects.activateEffect}
               isEffectActive={activatedEffects.isEffectActive}
               onTrackPESpent={roundTracking.trackPESpent}
+              versatilityTrack={character.versatility_track}
             />
 
             {/* Médico de Campo */}
@@ -2107,6 +2108,7 @@ export function MobileCharacterSheet({
               pvMax={character.hp_max}
               onHPChange={(newHP) => handleCombatStatsChange?.({ hp: newHP, pe: character.pe_current, san: character.san_current })}
               computedEffects={unifiedEffects?.computed}
+              versatilityTrack={character.versatility_track}
             />
 
             {/* Negociador */}

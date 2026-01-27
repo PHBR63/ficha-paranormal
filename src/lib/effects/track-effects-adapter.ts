@@ -1799,7 +1799,8 @@ export function getVersatilityTrackEffects(
   trackId: string,
   abilityId: string,
   attributes: Record<AttributeType, number>,
-  activatedEffects: string[] = []
+  activatedEffects: string[] = [],
+  characterNex: number = 50  // NEX real do personagem para escalonamento correto
 ): UnifiedEffect[] {
   const effects: UnifiedEffect[] = [];
 
@@ -1812,8 +1813,8 @@ export function getVersatilityTrackEffects(
   const ability = track.abilities.find(a => a.id === abilityId);
   if (!ability) return effects;
 
-  // Usa NEX 50 para cálculos, mas a habilidade é sempre a de NEX 10%
-  const mechanics = convertTrackAbilityToMechanics(ability, attributes, 50);
+  // Usa o NEX real do personagem para escalonamento correto (ex: Ataque Furtivo 4d6 no NEX 99%)
+  const mechanics = convertTrackAbilityToMechanics(ability, attributes, characterNex);
 
   // Verifica se a habilidade tem mecânicas relevantes
   const hasMechanics = Object.keys(mechanics).length > 0;

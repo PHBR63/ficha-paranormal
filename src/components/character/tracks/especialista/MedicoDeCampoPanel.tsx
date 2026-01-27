@@ -53,7 +53,10 @@ import { HealingRollModal } from '../../HealingRollModal';
 // Props do Componente
 // =====================================================
 
-export interface MedicoDeCampoPanelProps extends UseMedicoDeCampoTrackProps {}
+export interface MedicoDeCampoPanelProps extends UseMedicoDeCampoTrackProps {
+  /** Trilha de Versatilidade do personagem (NEX 50%) */
+  versatilityTrack?: { trackId: string; abilityId: string } | null;
+}
 
 // =====================================================
 // Componente Principal
@@ -70,7 +73,9 @@ function arePropsEqual(prev: MedicoDeCampoPanelProps, next: MedicoDeCampoPanelPr
     prev.classTrack === next.classTrack &&
     prev.nex === next.nex &&
     prev.reanimacaoUsedThisScene === next.reanimacaoUsedThisScene &&
-    prev.onPEChange === next.onPEChange
+    prev.onPEChange === next.onPEChange &&
+    prev.versatilityTrack?.trackId === next.versatilityTrack?.trackId &&
+    prev.versatilityTrack?.abilityId === next.versatilityTrack?.abilityId
   );
 }
 

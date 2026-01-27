@@ -23,7 +23,10 @@ import {
 // Props do Componente
 // =====================================================
 
-export interface InfiltradorPanelProps extends UseInfiltradorTrackProps {}
+export interface InfiltradorPanelProps extends UseInfiltradorTrackProps {
+  /** Trilha de Versatilidade do personagem (NEX 50%) */
+  versatilityTrack?: { trackId: string; abilityId: string } | null;
+}
 
 // =====================================================
 // Componente Principal
@@ -41,7 +44,9 @@ function arePropsEqual(prev: InfiltradorPanelProps, next: InfiltradorPanelProps)
     prev.nex === next.nex &&
     prev.agility === next.agility &&
     prev.onPEChange === next.onPEChange &&
-    prev.onActivateEffect === next.onActivateEffect
+    prev.onActivateEffect === next.onActivateEffect &&
+    prev.versatilityTrack?.trackId === next.versatilityTrack?.trackId &&
+    prev.versatilityTrack?.abilityId === next.versatilityTrack?.abilityId
   );
 }
 

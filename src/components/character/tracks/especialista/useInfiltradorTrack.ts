@@ -61,6 +61,14 @@ export function getAssassinarDT(agility: number): number {
 // Props do Hook
 // =====================================================
 
+/** Tipo para trilha de Versatilidade */
+export interface VersatilityTrackInfo {
+  trackId: string;
+  abilityId: string;
+  trackName?: string;
+  abilityName?: string;
+}
+
 export interface UseInfiltradorTrackProps {
   classTrack: string | null | undefined;
   nex: number;
@@ -78,6 +86,8 @@ export interface UseInfiltradorTrackProps {
   activeConditionalBonuses?: string[];
   /** Callback para rastrear PE gasto na rodada */
   onTrackPESpent?: (abilityName: string, cost: number) => void;
+  /** Trilha de Versatilidade do personagem (NEX 50%) */
+  versatilityTrack?: VersatilityTrackInfo | null;
 }
 
 // =====================================================
@@ -98,6 +108,7 @@ export function useInfiltradorTrack({
   onToggleConditionalBonus,
   activeConditionalBonuses = [],
   onTrackPESpent,
+  versatilityTrack,
 }: UseInfiltradorTrackProps) {
   // Estado local para Assassinar (fallback se não tiver sincronização externa)
   const [localAssassinarActive, setLocalAssassinarActive] = useState(false);
@@ -105,11 +116,17 @@ export function useInfiltradorTrack({
   // Assassinar pode vir de bônus condicionais externos OU estado local
   const assassinarActive = activeConditionalBonuses.includes('assassinar') || localAssassinarActive;
 
-  // Verifica se é Infiltrador
+  // Verifica se é Infiltrador (trilha principal)
   const isInfiltrador = classTrack === 'infiltrador';
+  
+  // Verifica se obteve Ataque Furtivo via Versatilidade (NEX 50%)
+  const hasAtaqueFurtivoFromVersatility = 
+    versatilityTrack?.trackId === 'infiltrador' && 
+    versatilityTrack?.abilityId === 'ataque-furtivo-trilha';
 
-  // Habilidades desbloqueadas por NEX
-  const hasAtaqueFurtivo = nex >= 10;
+  // Habilidades desbloqueadas por NEX (ou via Versatilidade)
+  // Ataque Furtivo: desbloqueado no NEX 10% da trilha OU via Versatilidade
+  const hasAtaqueFurtivo = (isInfiltrador && nex >= 10) || hasAtaqueFurtivoFromVersatility;
   const hasGatuno = nex >= 40;
   const hasAssassinar = nex >= 65;
   const hasSombraFugaz = nex >= 99;
@@ -261,7 +278,8 @@ export function useInfiltradorTrack({
 
   return {
     // Estado
-    isInfiltrador,
+    // Retorna true se tem acesso ao Infiltrador (trilha principal OU Ataque Furtivo via Versatilidade)
+    isInfiltrador: isInfiltrador || hasAtaqueFurtivoFromVersatility,
     assassinarActive,
     ataqueFurtivoUsedThisRound,
     

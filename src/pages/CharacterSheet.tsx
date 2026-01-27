@@ -2792,6 +2792,7 @@ export default function CharacterSheet() {
                 onActivateEffect={activatedEffects.activateEffect}
                 isEffectActive={activatedEffects.isEffectActive}
                 onTrackPESpent={roundTracking.trackPESpent}
+                versatilityTrack={character.versatility_track}
               />
 
               {/* Médico de Campo */}
@@ -2815,6 +2816,7 @@ export default function CharacterSheet() {
                   san: sanCurrent 
                 })}
                 computedEffects={unifiedEffects?.computed}
+                versatilityTrack={character.versatility_track}
               />
 
               {/* Negociador */}
