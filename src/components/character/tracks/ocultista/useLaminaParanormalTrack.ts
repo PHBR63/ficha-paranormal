@@ -87,6 +87,8 @@ export interface UseLaminaParanormalTrackProps {
   onActivateEffect?: (id: string, name: string, duration: EffectDuration, metadata?: Record<string, unknown>) => void;
   /** Callback para rastrear PE gasto na rodada */
   onTrackPESpent?: (abilityName: string, cost: number) => void;
+  /** Trilha de Versatilidade do personagem (se houver) */
+  versatilityTrack?: { trackId: string; abilityId: string } | null;
 }
 
 // =====================================================
@@ -101,32 +103,47 @@ export function useLaminaParanormalTrack({
   onRequestAttack,
   onActivateEffect,
   onTrackPESpent,
+  versatilityTrack,
 }: UseLaminaParanormalTrackProps) {
   const { toast } = useToast();
   const [isActivating, setIsActivating] = useState(false);
 
-  // Verifica se é trilha Lâmina Paranormal
-  const isLamina = useMemo(() => {
+  // Verifica se é trilha Lâmina Paranormal (trilha principal)
+  const isLaminaBase = useMemo(() => {
     if (!classTrack) return false;
     const trackNorm = classTrack.toLowerCase().replace(/\s+/g, '-');
     return trackNorm.includes('lamina') || trackNorm.includes('lâmina');
   }, [classTrack]);
 
-  // Habilidades desbloqueadas pelo NEX
+  // Verifica se tem Lâmina Maldita via Versatilidade (habilidade NEX 10%)
+  const hasLaminaMalditaFromVersatility = 
+    versatilityTrack?.trackId === 'lamina-paranormal' && 
+    versatilityTrack?.abilityId === 'lamina-maldita';
+
+  // Considerar como Lâmina se for a trilha principal OU tiver habilidade via Versatilidade
+  const isLamina = isLaminaBase || hasLaminaMalditaFromVersatility;
+
+  // Habilidades desbloqueadas pelo NEX (apenas para trilha principal)
   const unlockedAbilities = useMemo(() => {
+    if (!isLaminaBase) return [];
     return LAMINA_ABILITIES.filter(a => nex >= a.minNex);
-  }, [nex]);
+  }, [nex, isLaminaBase]);
 
-  // Passivas desbloqueadas pelo NEX
+  // Passivas desbloqueadas pelo NEX (ou via Versatilidade para Lâmina Maldita)
   const unlockedPassives = useMemo(() => {
+    if (hasLaminaMalditaFromVersatility) {
+      // Se obteve via Versatilidade, só tem acesso à Lâmina Maldita
+      return LAMINA_PASSIVES.filter(p => p.minNex === 10);
+    }
+    if (!isLaminaBase) return [];
     return LAMINA_PASSIVES.filter(p => nex >= p.minNex);
-  }, [nex]);
+  }, [nex, isLaminaBase, hasLaminaMalditaFromVersatility]);
 
-  // Verifica se Conjuração Marcial está disponível
-  const hasConjuracaoMarcial = nex >= 65;
+  // Verifica se Conjuração Marcial está disponível (apenas trilha principal)
+  const hasConjuracaoMarcial = isLaminaBase && nex >= 65;
 
-  // Verifica se tem Gladiador Paranormal
-  const hasGladiadorParanormal = nex >= 40;
+  // Verifica se tem Gladiador Paranormal (apenas trilha principal)
+  const hasGladiadorParanormal = isLaminaBase && nex >= 40;
 
   // Verificar se pode pagar o custo de PE
   const canAffordAbility = useCallback((ability: LaminaAbility): boolean => {

@@ -32,6 +32,8 @@ export interface UseNegociadorTrackProps {
   computedEffects?: ComputedEffects;
   /** Callback para rastrear PE gasto na rodada */
   onTrackPESpent?: (abilityName: string, cost: number) => void;
+  /** Trilha de Versatilidade do personagem (se houver) */
+  versatilityTrack?: { trackId: string; abilityId: string } | null;
 }
 
 // =====================================================
@@ -51,6 +53,7 @@ export function useNegociadorTrack({
   isEffectActive,
   computedEffects,
   onTrackPESpent,
+  versatilityTrack,
 }: UseNegociadorTrackProps) {
   const [isConcentrating, setIsConcentrating] = useState(eloquenciaActive);
 
@@ -66,13 +69,21 @@ export function useNegociadorTrack({
   }, [computedEffects]);
 
   // Verifica se é Negociador (suporta múltiplos formatos)
-  const isNegociador = classTrack === 'Negociador' || classTrack === 'negociador';
+  const isNegociadorBase = classTrack === 'Negociador' || classTrack === 'negociador';
+  
+  // Verifica se tem Eloquência via Versatilidade (habilidade NEX 10% do Negociador)
+  const hasEloquenciaFromVersatility = 
+    versatilityTrack?.trackId === 'negociador' && 
+    versatilityTrack?.abilityId === 'eloquencia';
 
-  // Habilidades desbloqueadas por NEX
-  const hasEloquencia = nex >= 10;
-  const hasDiscursoMotivador = nex >= 40;
-  const hasConhecoCara = nex >= 65;
-  const hasTruqueMestre = nex >= 99;
+  // Considerar como Negociador se for a trilha principal OU tiver habilidade via Versatilidade
+  const isNegociador = isNegociadorBase || hasEloquenciaFromVersatility;
+
+  // Habilidades desbloqueadas por NEX (ou via Versatilidade)
+  const hasEloquencia = (isNegociadorBase && nex >= 10) || hasEloquenciaFromVersatility;
+  const hasDiscursoMotivador = isNegociadorBase && nex >= 40;
+  const hasConhecoCara = isNegociadorBase && nex >= 65;
+  const hasTruqueMestre = isNegociadorBase && nex >= 99;
   
   // Discurso Motivador: 4 PE para +2, ou 8 PE para +2 (NEX 65+)
   const discursoMotivadorCost = 4;
