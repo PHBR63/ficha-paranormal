@@ -208,6 +208,33 @@ export function SpecialAttackSelector({
               exit={{ opacity: 0, height: 0 }}
               className="space-y-2"
             >
+              {/* Barra de progressão de custo de PE */}
+              <div className="flex items-center justify-center gap-1">
+                {Array.from({ length: options.increments }, (_, i) => {
+                  const incrementNumber = i + 1;
+                  const peCostForThis = 1 + incrementNumber; // 2 PE, 3 PE, 4 PE, 5 PE
+                  const isActive = totalUsed >= incrementNumber;
+                  const isCurrent = totalUsed === incrementNumber;
+                  return (
+                    <motion.div
+                      key={i}
+                      className={cn(
+                        "flex items-center justify-center rounded-md text-xs font-medium transition-all",
+                        "h-6 min-w-[36px] px-1",
+                        isActive 
+                          ? "bg-primary text-primary-foreground" 
+                          : "bg-muted/50 text-muted-foreground",
+                        isCurrent && "ring-2 ring-primary ring-offset-1 ring-offset-background"
+                      )}
+                      animate={isCurrent ? { scale: [1, 1.05, 1] } : {}}
+                      transition={{ duration: 0.3 }}
+                    >
+                      {peCostForThis} PE
+                    </motion.div>
+                  );
+                })}
+              </div>
+              
               {/* Distribuição */}
               <div className="grid grid-cols-2 gap-2">
                 {/* Ataque */}
@@ -351,10 +378,45 @@ export function SpecialAttackSelector({
               exit={{ opacity: 0, height: 0 }}
               className="space-y-3"
             >
-              {/* Barra de incrementos restantes */}
-              <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <span>Incrementos disponíveis: {options.increments}</span>
-                <span>Usados: {totalUsed} / Restantes: {incrementsRemaining}</span>
+              {/* Barra de progressão de custo de PE (desktop) */}
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>Progressão de custo:</span>
+                  <span>Usados: {totalUsed} / Disponíveis: {options.increments}</span>
+                </div>
+                <div className="flex items-center justify-center gap-2">
+                  {Array.from({ length: options.increments }, (_, i) => {
+                    const incrementNumber = i + 1;
+                    const peCostForThis = 1 + incrementNumber; // 2 PE, 3 PE, 4 PE, 5 PE
+                    const bonusForThis = incrementNumber * 5; // +5, +10, +15, +20
+                    const isActive = totalUsed >= incrementNumber;
+                    const isCurrent = totalUsed === incrementNumber;
+                    return (
+                      <Tooltip key={i}>
+                        <TooltipTrigger asChild>
+                          <motion.div
+                            className={cn(
+                              "flex flex-col items-center justify-center rounded-lg transition-all cursor-help",
+                              "h-12 min-w-[52px] px-2 border",
+                              isActive 
+                                ? "bg-primary/20 border-primary text-primary" 
+                                : "bg-muted/30 border-muted text-muted-foreground",
+                              isCurrent && "ring-2 ring-primary ring-offset-2 ring-offset-background shadow-lg"
+                            )}
+                            animate={isCurrent ? { scale: [1, 1.05, 1] } : {}}
+                            transition={{ duration: 0.3 }}
+                          >
+                            <span className="text-sm font-bold">{peCostForThis} PE</span>
+                            <span className="text-[10px] opacity-70">+{bonusForThis}</span>
+                          </motion.div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{incrementNumber}º incremento: +{bonusForThis} total por {peCostForThis} PE</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    );
+                  })}
+                </div>
               </div>
               
               {/* Controles de distribuição */}
