@@ -810,7 +810,9 @@ export function useCharacterBonusSummary({
 
     // Assassinar (Infiltrador, NEX 65%): Dobra dados do Ataque Furtivo
     // Regra oficial: Gasta 3 PE + ação movimento. Próximo Ataque Furtivo tem dados somados 2x
-    if (hasAbility('assassinar')) {
+    // Usa hasTrackAbility para verificar corretamente via trilha + NEX
+    const hasAssassinar = classPowerBonuses.hasTrackAbility('assassinar') || hasAbility('assassinar');
+    if (hasAssassinar) {
       const isActive = isConditionalActive('assassinar');
       
       // Calcula dados do Ataque Furtivo para dobrar
@@ -859,7 +861,11 @@ export function useCharacterBonusSummary({
 
     // Potência Máxima (Guerreiro, NEX 99%): Dobra bônus do Ataque Especial corpo a corpo
     // Regra oficial: Todos os bônus numéricos do Ataque Especial são dobrados
-    if (hasAbility('potência máxima') || hasAbility('potencia maxima') || hasAbility('potencia-maxima')) {
+    // Usa hasTrackAbility para verificar corretamente via trilha + NEX
+    const hasPotenciaMaxima = classPowerBonuses.hasTrackAbility('potencia-maxima') || 
+                              hasAbility('potência máxima') || 
+                              hasAbility('potencia maxima');
+    if (hasPotenciaMaxima) {
       const isActive = isConditionalActive('potencia-maxima');
       
       conditionalBonuses.push({
@@ -893,7 +899,11 @@ export function useCharacterBonusSummary({
 
     // Atirar para Matar (Atirador de Elite, NEX 99%): Dano máximo em críticos
     // Regra oficial: Acerto crítico com arma de fogo = dano máximo (não rola dados)
-    if (hasAbility('atirar para matar') || hasAbility('atirar-matar')) {
+    // Usa hasTrackAbility para verificar corretamente via trilha + NEX
+    const hasAtirarMatar = classPowerBonuses.hasTrackAbility('atirar-para-matar') ||
+                           hasAbility('atirar para matar') || 
+                           hasAbility('atirar-matar');
+    if (hasAtirarMatar) {
       const isActive = isConditionalActive('atirar-matar');
       
       conditionalBonuses.push({

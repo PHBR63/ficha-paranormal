@@ -2644,9 +2644,9 @@ export function MobileCharacterSheet({
           }))}
           advancedBonuses={{
             assassinar: character.active_conditional_bonuses?.includes('assassinar'),
-            potenciaMaxima: character.active_conditional_bonuses?.includes('potencia_maxima'),
-            atirarParaMatar: character.active_conditional_bonuses?.includes('atirar_para_matar'),
-            ataqueFurtivo: character.active_conditional_bonuses?.includes('ataque_furtivo'),
+            potenciaMaxima: character.active_conditional_bonuses?.includes('potencia-maxima'),
+            atirarParaMatar: character.active_conditional_bonuses?.includes('atirar-matar'),
+            ataqueFurtivo: character.active_conditional_bonuses?.includes('ataque-furtivo'),
           }}
           isFavoriteWeapon={selectedWeapon?.id === (character as any).favorite_weapon_id}
           activatedTrackEffects={activatedEffects.activatedEffectIds}
