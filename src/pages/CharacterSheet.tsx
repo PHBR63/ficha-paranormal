@@ -3814,7 +3814,12 @@ export default function CharacterSheet() {
         intellect={character.intellect}
         strength={character.strength}
         agility={character.agility}
+        presence={character.presence}
+        vigor={character.vigor}
         currentSkill={rollTestedAttribute}
+        characterSkills={Object.fromEntries(
+          Object.entries(bonusSummary.skills).map(([k, v]) => [k, v.total])
+        )}
         onPEChange={(newPE) => handleCombatStatsChange({ hp: hpCurrent, pe: newPE, san: sanCurrent })}
       />
 

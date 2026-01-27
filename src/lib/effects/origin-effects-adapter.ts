@@ -255,15 +255,17 @@ export const ORIGIN_POWER_EFFECTS: Record<string, {
   },
   
   // === Trambiqueiro - Impostor ===
+  // REGRA OFICIAL (Livro Base v1.3): "Uma vez por cena, você pode gastar 2 PE para 
+  // substituir um teste de perícia qualquer por um teste de Enganação."
   'impostor': {
     mechanics: {
       specialEffects: [
-        '1x/cena: +5 em Enganação para fingir ser outra pessoa',
-        'Falha por 5+: descoberto',
+        '1x/cena: Substitui teste por Enganação (2 PE)',
       ],
     },
-    description: 'Uma vez por cena, +5 em Enganação para fingir ser outra pessoa.',
+    description: 'Uma vez por cena, você pode gastar 2 PE para substituir um teste de perícia qualquer por um teste de Enganação.',
     isToggleable: true,
+    costPE: 2,
   },
   
   // === Universitário - Dedicação ===

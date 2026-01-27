@@ -47,6 +47,25 @@ export interface BonusSource {
   sourceName?: string;
 }
 
+// Mapeamento de perícias para seus atributos base (Livro Base v1.3)
+const SKILL_ATTRIBUTE_MAP: Record<string, 'strength' | 'agility' | 'vigor' | 'intellect' | 'presence'> = {
+  // Agilidade
+  acrobacia: 'agility', reflexos: 'agility', furtividade: 'agility', 
+  crime: 'agility', pilotagem: 'agility', pontaria: 'agility',
+  // Força
+  atletismo: 'strength', luta: 'strength',
+  // Presença
+  artes: 'presence', atuacao: 'presence', diplomacia: 'presence',
+  enganacao: 'presence', intimidacao: 'presence', vontade: 'presence',
+  // Intelecto
+  ciencias: 'intellect', investigacao: 'intellect', medicina: 'intellect',
+  ocultismo: 'intellect', percepcao: 'intellect', profissao: 'intellect',
+  sobrevivencia: 'intellect', tatica: 'intellect', tecnologia: 'intellect',
+  adestramento: 'intellect', intuicao: 'intellect', religiao: 'intellect',
+  // Vigor (resistências)
+  fortitude: 'vigor',
+};
+
 // Props do modal mobile (com paridade desktop para ativação de poderes)
 interface MobileDiceRollModalProps {
   open: boolean;
@@ -65,9 +84,13 @@ interface MobileDiceRollModalProps {
   intellect?: number;
   strength?: number;   // Força para Incansável/Presteza Atlética
   agility?: number;    // Agilidade para Incansável/Presteza Atlética
+  presence?: number;   // Presença para Impostor (Enganação usa Presença)
+  vigor?: number;      // Vigor para completar mapeamento de atributos
   onPEChange?: (newPE: number) => void;
   // Perícia sendo testada (ID para filtrar poderes aplicáveis como Perito)
   currentSkill?: string;
+  // Bônus de perícias do personagem (para swapToSkill como Impostor/Motor de Busca)
+  characterSkills?: Record<string, number>;
   // Props para integração SUE (opcional - para migração incremental)
   characterConfig?: SkillRollCharacterConfig;
 }
@@ -121,8 +144,11 @@ export function MobileDiceRollModal({
   intellect = 1,
   strength = 1,   // Valor padrão para Força
   agility = 1,    // Valor padrão para Agilidade
+  presence = 1,   // Valor padrão para Presença (Impostor)
+  vigor = 1,      // Valor padrão para Vigor
   onPEChange,
   currentSkill,
+  characterSkills = {}, // Bônus de perícias do personagem
   // SUE Config (migração incremental)
   characterConfig,
 }: MobileDiceRollModalProps) {
@@ -171,6 +197,7 @@ export function MobileDiceRollModal({
     let extraBonus = 0;
     const extraDice: string[] = [];
     let attributeSwap: string | undefined;
+    let skillSwap: string | undefined; // Impostor/Motor de Busca: substitui perícia
     const notes: string[] = [];
     
     for (const ap of activePowers) {
@@ -178,11 +205,22 @@ export function MobileDiceRollModal({
       extraBonus += effects.skillBonusChange;
       if (effects.extraDice) extraDice.push(effects.extraDice);
       if (effects.attributeSwap) attributeSwap = effects.attributeSwap;
+      if (effects.swapToSkill) skillSwap = effects.swapToSkill;
       if (effects.specialNote) notes.push(effects.specialNote);
     }
     
-    return { extraBonus, extraDice, attributeSwap, notes };
+    return { extraBonus, extraDice, attributeSwap, skillSwap, notes };
   }, [getActivePowers, nex, intellect]);
+  
+  // Calcula o bônus efetivo da perícia considerando swapToSkill (Impostor/Motor de Busca)
+  const effectiveSkillBonus = useMemo(() => {
+    const swap = activatedPowerEffects.skillSwap;
+    if (swap && characterSkills[swap] !== undefined) {
+      // Usa o bônus da perícia substituta (Enganação para Impostor, Tecnologia para Motor de Busca)
+      return characterSkills[swap];
+    }
+    return skillBonus;
+  }, [activatedPowerEffects.skillSwap, characterSkills, skillBonus]);
 
   // Cores para cada tipo de bônus
   const bonusTypeColors: Record<BonusSource['type'], string> = {
@@ -195,14 +233,29 @@ export function MobileDiceRollModal({
     other: 'bg-secondary/50 text-secondary-foreground',
   };
 
-  // Calcula quantidade de dados (considera troca de atributo)
+  // Calcula quantidade de dados (considera troca de atributo OU swapToSkill)
   const effectiveAttribute = useMemo(() => {
-    const swap = activatedPowerEffects.attributeSwap;
-    if (swap === 'intellect') return intellect;
-    if (swap === 'strength') return strength;
-    if (swap === 'agility') return agility;
+    // Prioridade 1: Troca de perícia (swapToSkill) - usa o atributo da nova perícia
+    const skillSwap = activatedPowerEffects.skillSwap;
+    if (skillSwap) {
+      const newAttr = SKILL_ATTRIBUTE_MAP[skillSwap];
+      if (newAttr === 'presence') return presence;
+      if (newAttr === 'intellect') return intellect;
+      if (newAttr === 'strength') return strength;
+      if (newAttr === 'agility') return agility;
+      if (newAttr === 'vigor') return vigor;
+    }
+    
+    // Prioridade 2: Troca de atributo por poder ativado no modal
+    const attrSwap = activatedPowerEffects.attributeSwap;
+    if (attrSwap === 'intellect') return intellect;
+    if (attrSwap === 'strength') return strength;
+    if (attrSwap === 'agility') return agility;
+    if (attrSwap === 'presence') return presence;
+    if (attrSwap === 'vigor') return vigor;
+    
     return attributeValue;
-  }, [activatedPowerEffects.attributeSwap, intellect, strength, agility, attributeValue]);
+  }, [activatedPowerEffects.skillSwap, activatedPowerEffects.attributeSwap, intellect, strength, agility, presence, vigor, attributeValue]);
   
   const diceCount = effectiveAttribute <= 0 ? 2 : effectiveAttribute;
 
@@ -235,16 +288,28 @@ export function MobileDiceRollModal({
           animationRef.current = null;
         }
         
-        // Rolagem real com bônus de poderes ativados e troca de atributo
+        // Rolagem real com bônus de poderes ativados, swapToSkill e troca de atributo
         const powerBonus = activatedPowerEffects.extraBonus;
-        const totalBonus = skillBonus + resistanceBonus + powerBonus;
+        const baseSkillBonus = activatedPowerEffects.skillSwap ? effectiveSkillBonus : skillBonus;
+        const totalBonus = baseSkillBonus + resistanceBonus + powerBonus;
         
-        // Calcula atributo efetivo (considera troca para qualquer atributo)
-        const swap = activatedPowerEffects.attributeSwap;
+        // Calcula atributo efetivo (considera swapToSkill ou troca de atributo)
         let finalAttribute = attributeValue;
-        if (swap === 'intellect') finalAttribute = intellect;
-        else if (swap === 'strength') finalAttribute = strength;
-        else if (swap === 'agility') finalAttribute = agility;
+        if (activatedPowerEffects.skillSwap) {
+          const newAttr = SKILL_ATTRIBUTE_MAP[activatedPowerEffects.skillSwap];
+          if (newAttr === 'presence') finalAttribute = presence;
+          else if (newAttr === 'intellect') finalAttribute = intellect;
+          else if (newAttr === 'strength') finalAttribute = strength;
+          else if (newAttr === 'agility') finalAttribute = agility;
+          else if (newAttr === 'vigor') finalAttribute = vigor;
+        } else {
+          const swap = activatedPowerEffects.attributeSwap;
+          if (swap === 'intellect') finalAttribute = intellect;
+          else if (swap === 'strength') finalAttribute = strength;
+          else if (swap === 'agility') finalAttribute = agility;
+          else if (swap === 'presence') finalAttribute = presence;
+          else if (swap === 'vigor') finalAttribute = vigor;
+        }
         
         const rollResult = rollSkillTest({
           attributeValue: finalAttribute,
@@ -276,7 +341,7 @@ export function MobileDiceRollModal({
         onRollComplete?.(rollResult);
       }
     }, 80);
-  }, [attributeValue, skillBonus, resistanceBonus, extraDice, activatedPowerEffects.extraBonus, activatedPowerEffects.attributeSwap, label, diceCount, onRollComplete, getTotalPECost, onPEChange, peCurrent, intellect, strength, agility]);
+  }, [attributeValue, skillBonus, effectiveSkillBonus, resistanceBonus, extraDice, activatedPowerEffects, label, diceCount, onRollComplete, getTotalPECost, onPEChange, peCurrent, intellect, strength, agility, presence, vigor]);
 
   // Handler para iniciar a rolagem (clique no botão "Rolar Dados")
   const handleStartRoll = useCallback(() => {
