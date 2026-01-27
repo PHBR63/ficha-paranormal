@@ -30,6 +30,12 @@ export interface InitiativeRollCharacterConfig {
   nex: number;
   origin?: string;
   
+  /** Trilha obtida via Versatilidade (NEX 50%) */
+  versatilityTrack?: {
+    trackId: string;
+    abilityId: string;
+  } | null;
+  
   attributes: {
     agility: number;
     strength: number;
@@ -162,6 +168,7 @@ export function useInitiativeRollWithSUE(config: InitiativeRollCharacterConfig) 
     config.origin,
     config.attributes,
     config.activeConditions,
+    config.versatilityTrack,
   ]);
   
   /**
@@ -188,6 +195,27 @@ export function useInitiativeRollWithSUE(config: InitiativeRollCharacterConfig) 
   }, [characterState]);
   
   /**
+   * Verifica se tem Operações Especiais (trilha principal ou via Versatilidade)
+   */
+  const hasOperacoesEspeciais = useMemo(() => {
+    // Trilha principal
+    const mainTrack = config.classTrack?.toLowerCase().replace(/\s+/g, '-') || '';
+    if (mainTrack.includes('operacoes-especiais') || mainTrack.includes('operações-especiais')) {
+      return { has: true, isVersatility: false };
+    }
+    
+    // Trilha via Versatilidade
+    if (config.versatilityTrack?.trackId) {
+      const versTrackId = config.versatilityTrack.trackId.toLowerCase().replace(/\s+/g, '-');
+      if (versTrackId.includes('operacoes-especiais') || versTrackId.includes('operações-especiais')) {
+        return { has: true, isVersatility: true };
+      }
+    }
+    
+    return { has: false, isVersatility: false };
+  }, [config.classTrack, config.versatilityTrack]);
+  
+  /**
    * Obtém breakdown de bônus de iniciativa (para exibição prévia)
    */
   const getInitiativeBonusBreakdown = useCallback(() => {
@@ -200,15 +228,17 @@ export function useInitiativeRollWithSUE(config: InitiativeRollCharacterConfig) 
       type: 'attribute',
     });
     
-    // Bônus de trilha (Operações Especiais)
-    if (config.classTrack === 'operacoes-especiais' || 
-        config.classTrack === 'Operações Especiais') {
-      const nexBonus = Math.floor(config.nex / 5) >= 16 ? 6 
-        : Math.floor(config.nex / 5) >= 10 ? 4 
-        : 2;
+    // Bônus de trilha (Operações Especiais - principal ou via Versatilidade)
+    if (hasOperacoesEspeciais.has) {
+      // Calcula bônus baseado no NEX
+      // Iniciativa Aprimorada: +5 em Iniciativa (Livro Base v1.3)
+      const initiativeBonus = 5;
+      
       sources.push({
-        label: 'Operações Especiais',
-        value: nexBonus,
+        label: hasOperacoesEspeciais.isVersatility 
+          ? 'Operações Especiais (Versatilidade)' 
+          : 'Operações Especiais',
+        value: initiativeBonus,
         type: 'track',
       });
     }
@@ -217,7 +247,7 @@ export function useInitiativeRollWithSUE(config: InitiativeRollCharacterConfig) 
       sources,
       total: sources.reduce((sum, s) => sum + s.value, 0),
     };
-  }, [config.attributes.agility, config.classTrack, config.nex]);
+  }, [config.attributes.agility, hasOperacoesEspeciais]);
   
   return {
     executeInitiativeRoll,

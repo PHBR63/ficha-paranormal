@@ -3297,6 +3297,10 @@ export default function CharacterSheet() {
                 damageReduction={bonusSummary.damageReduction}
                 effectResistances={bonusSummary.effectResistances}
                 agility={character.agility}
+                characterClass={character.class}
+                classTrack={character.class_track}
+                nex={character.nex}
+                versatilityTrack={character.versatility_track}
                 onInitiativeRoll={handleRollComplete}
                 className="mb-2"
               />
