@@ -266,8 +266,15 @@ function convertTrackAbilityToMechanics(
     }
 
     // Dados extras de dano (Máquina de Matar)
+    // Se type === 'weapon', usa marcador especial "NW" (N = count, W = weapon die)
+    // que será substituído pelo dado real da arma no momento da rolagem
     if (dmgBonus.extraDice) {
-      mechanics.extraDamageDice = `${dmgBonus.extraDice.count}${dmgBonus.extraDice.dieType || 'd6'}`;
+      if (dmgBonus.extraDice.type === 'weapon') {
+        // Marcador especial: "1W" significa "1 dado do tipo da arma"
+        mechanics.extraDamageDice = `${dmgBonus.extraDice.count}W`;
+      } else {
+        mechanics.extraDamageDice = `${dmgBonus.extraDice.count}${dmgBonus.extraDice.dieType || 'd6'}`;
+      }
     }
   }
 

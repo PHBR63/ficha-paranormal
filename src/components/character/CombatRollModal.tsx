@@ -943,10 +943,16 @@ export function CombatRollModal({
         });
       }
       // Dados extras do SUE
+      // Traduz marcador "NW" para dado real da arma
       if (unifiedEffects.damage.extraDice.length > 0) {
+        const weaponDieSize = weapon?.damage ? parseDamageString(weapon.damage).size : 6;
+        const translatedDice = unifiedEffects.damage.extraDice.map(dice => {
+          const weaponDieMatch = dice.match(/^(\d+)W$/i);
+          return weaponDieMatch ? `${weaponDieMatch[1]}d${weaponDieSize}` : dice;
+        });
         sources.push({
           label: 'Dados Extras (SUE)',
-          value: unifiedEffects.damage.extraDice.join(' + '),
+          value: translatedDice.join(' + '),
           type: 'track',
           description: 'Dados de dano extras de origem, trilha ou condições',
         });
@@ -964,10 +970,16 @@ export function CombatRollModal({
     }
     
     // Dados extras de trilha
+    // Traduz marcador "NW" para dado real da arma
     if (trackCombatBonuses.extraDamageDice.length > 0) {
+      const weaponDieSize = weapon?.damage ? parseDamageString(weapon.damage).size : 6;
+      const translatedDice = trackCombatBonuses.extraDamageDice.map(dice => {
+        const weaponDieMatch = dice.match(/^(\d+)W$/i);
+        return weaponDieMatch ? `${weaponDieMatch[1]}d${weaponDieSize}` : dice;
+      });
       sources.push({
         label: 'Trilha (Dados)',
-        value: trackCombatBonuses.extraDamageDice.join(' + '),
+        value: translatedDice.join(' + '),
         type: 'track',
         description: 'Dados de dano extras de habilidades de trilha',
       });
@@ -984,10 +996,16 @@ export function CombatRollModal({
     }
     
     // Dados extras de poderes de classe (sistema legado - backup)
+    // Traduz marcador "NW" para dado real da arma
     if (!unifiedEffects && classPowerBonuses?.extraDamageDice && classPowerBonuses.extraDamageDice.length > 0) {
+      const weaponDieSize = weapon?.damage ? parseDamageString(weapon.damage).size : 6;
+      const translatedDice = classPowerBonuses.extraDamageDice.map(dice => {
+        const weaponDieMatch = dice.match(/^(\d+)W$/i);
+        return weaponDieMatch ? `${weaponDieMatch[1]}d${weaponDieSize}` : dice;
+      });
       sources.push({ 
         label: 'Dados Extras', 
-        value: classPowerBonuses.extraDamageDice.join(' + '), 
+        value: translatedDice.join(' + '), 
         type: 'power',
         description: 'Dados de dano extras de poderes de classe (ex: Golpe Pesado)',
       });
@@ -1311,8 +1329,19 @@ export function CombatRollModal({
     let extraDiceSize = parsed.size;
     
     // Dados extras do SUE (origem, trilha, condições)
+    // Suporta marcador especial "NW" para dados do tipo da arma (ex: "1W" = 1 dado do tipo da arma)
     if (unifiedEffects && unifiedEffects.damage.extraDice.length > 0) {
       unifiedEffects.damage.extraDice.forEach(diceStr => {
+        // Verificar marcador especial "NW" (dado do tipo da arma)
+        const weaponDieMatch = diceStr.match(/^(\d+)W$/i);
+        if (weaponDieMatch) {
+          const count = parseInt(weaponDieMatch[1]) || 1;
+          extraDiceCount += isCritical ? count * criticalMultiplier : count;
+          extraDiceSize = parsed.size; // Usa o tamanho do dado da arma
+          return;
+        }
+        
+        // Parse normal para dados explícitos (ex: "1d6", "2d8")
         const match = diceStr.match(/(\d*)d(\d+)/i);
         if (match) {
           const count = parseInt(match[1]) || 1;
@@ -1323,6 +1352,15 @@ export function CombatRollModal({
     } else if (classPowerBonuses?.extraDamageDice && classPowerBonuses.extraDamageDice.length > 0) {
       // Sistema legado - backup
       classPowerBonuses.extraDamageDice.forEach(diceStr => {
+        // Verificar marcador especial "NW" (dado do tipo da arma)
+        const weaponDieMatch = diceStr.match(/^(\d+)W$/i);
+        if (weaponDieMatch) {
+          const count = parseInt(weaponDieMatch[1]) || 1;
+          extraDiceCount += isCritical ? count * criticalMultiplier : count;
+          extraDiceSize = parsed.size;
+          return;
+        }
+        
         const match = diceStr.match(/(\d*)d(\d+)/i);
         if (match) {
           const count = parseInt(match[1]) || 1;
@@ -1335,6 +1373,15 @@ export function CombatRollModal({
     // === DADOS EXTRAS DA TRILHA (via track-effects-adapter) ===
     if (trackCombatBonuses.extraDamageDice.length > 0) {
       trackCombatBonuses.extraDamageDice.forEach(diceStr => {
+        // Verificar marcador especial "NW" (dado do tipo da arma)
+        const weaponDieMatch = diceStr.match(/^(\d+)W$/i);
+        if (weaponDieMatch) {
+          const count = parseInt(weaponDieMatch[1]) || 1;
+          extraDiceCount += isCritical ? count * criticalMultiplier : count;
+          extraDiceSize = parsed.size;
+          return;
+        }
+        
         const match = diceStr.match(/(\d*)d(\d+)/i);
         if (match) {
           const count = parseInt(match[1]) || 1;
