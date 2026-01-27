@@ -203,6 +203,11 @@ interface InventoryItemPersisted {
   // Campos de redução de categoria (A Favorita, Ferramenta Favorita, etc.)
   favoriteAbilityId?: string;
   effectiveCategory?: string;
+  // Campos de modificações de armas
+  baseCategory?: string;
+  baseDamage?: string;
+  baseCritical?: number;
+  appliedModifications?: string[];
   // Campos para itens temporários/improvisados
   isTemporary?: boolean;
   temporarySource?: string;
@@ -3162,6 +3167,11 @@ export default function CharacterSheet() {
                         // Campos de redução de categoria
                         favoriteAbilityId: (item as any).favoriteAbilityId,
                         effectiveCategory: (item as any).effectiveCategory,
+                        // Campos de modificações de armas
+                        baseCategory: (item as any).baseCategory,
+                        baseDamage: (item as any).baseDamage,
+                        baseCritical: (item as any).baseCritical,
+                        appliedModifications: (item as any).appliedModifications,
                         // Campos de itens temporários
                         isTemporary: (item as any).isTemporary,
                         temporarySource: (item as any).temporarySource,
