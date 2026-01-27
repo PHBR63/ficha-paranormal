@@ -256,16 +256,44 @@ export function useCharacterCategoryReductions({
     };
   }, [inventory]);
 
+  // IDs de habilidades do Aniquilador para migração automática
+  const ANIQUILADOR_ABILITY_IDS = ['a-favorita', 'tecnica-secreta', 'maquina-de-matar'];
+  
   // Calcula o inventário com categorias efetivas aplicadas
   const inventoryWithEffectiveCategories = useMemo(() => {
+    // Encontra a habilidade de Aniquilador disponível para o NEX atual (se houver)
+    const currentAniquiladorAbility = availableAbilities.find(a => 
+      ANIQUILADOR_ABILITY_IDS.includes(a.abilityId)
+    );
+    
     return inventory.map(item => {
       if (!item.favoriteAbilityId) return item;
 
-      const ability = getCategoryReductionAbility(item.favoriteAbilityId);
-      if (!ability) return item;
+      const savedAbility = getCategoryReductionAbility(item.favoriteAbilityId);
+      if (!savedAbility) return item;
 
-      // Verifica se o personagem ainda tem essa habilidade
-      // (pode ter perdido se mudou de trilha ou algo assim)
+      // Verifica se o item está usando uma habilidade de Aniquilador
+      const isAniquiladorAbility = ANIQUILADOR_ABILITY_IDS.includes(item.favoriteAbilityId);
+      
+      if (isAniquiladorAbility) {
+        // Se o personagem não tem mais nenhuma habilidade de Aniquilador, remove
+        if (!currentAniquiladorAbility) {
+          return removeFavoriteAbility(item);
+        }
+        
+        // MIGRAÇÃO AUTOMÁTICA: Atualiza para a habilidade correta baseada no NEX atual
+        // (ex: se tinha maquina-de-matar mas NEX é 10%, usa a-favorita)
+        const correctAbility = currentAniquiladorAbility;
+        const categoryToReduce = item.category;
+        
+        return {
+          ...item,
+          favoriteAbilityId: correctAbility.abilityId, // Atualiza para o ID correto
+          effectiveCategory: getEffectiveCategory(categoryToReduce, correctAbility.reductionAmount),
+        };
+      }
+
+      // Para outras habilidades (não-Aniquilador), mantém comportamento anterior
       if (!availableAbilities.some(a => a.abilityId === item.favoriteAbilityId)) {
         // Remove a habilidade do item se o personagem não a possui mais
         return removeFavoriteAbility(item);
@@ -278,7 +306,7 @@ export function useCharacterCategoryReductions({
       
       return {
         ...item,
-        effectiveCategory: getEffectiveCategory(categoryToReduce, ability.reductionAmount),
+        effectiveCategory: getEffectiveCategory(categoryToReduce, savedAbility.reductionAmount),
       };
     });
   }, [inventory, availableAbilities]);
