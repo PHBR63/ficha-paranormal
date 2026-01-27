@@ -24,6 +24,7 @@ import {
 import {
   getSpecialAttackOptions,
   calculateSpecialAttackFinal,
+  calculateDynamicPECost,
   SpecialAttackConfig,
   SpecialAttackResult,
   hasSpecialAttack,
@@ -90,12 +91,18 @@ export function SpecialAttackSelector({
     );
   }, [nex, config, hasForcaBruta, hasPotenciaMaxima, isMelee]);
   
-  // Verifica se pode pagar o custo
-  const canAfford = currentPE >= options.peCost;
-  
   // Total de incrementos usados
   const totalUsed = config.attackIncrements + config.damageIncrements;
   const incrementsRemaining = options.increments - totalUsed;
+  
+  // Custo dinâmico baseado nos incrementos usados (não no tier máximo)
+  const dynamicPECost = useMemo(() => 
+    calculateDynamicPECost(totalUsed),
+    [totalUsed]
+  );
+  
+  // Verifica se pode pagar pelo menos 1 incremento (custo mínimo = 2 PE)
+  const canAfford = currentPE >= 2;
   
   // Toggle ativar/desativar
   const handleToggle = useCallback((enabled: boolean) => {
@@ -183,8 +190,8 @@ export function SpecialAttackSelector({
               disabled={!canAfford}
             />
             <span className="text-sm font-medium">Ataque Especial</span>
-            <Badge variant="secondary" className="text-xs">
-              {options.peCost} PE
+            <Badge variant={dynamicPECost > 0 ? "default" : "secondary"} className="text-xs">
+              {dynamicPECost > 0 ? dynamicPECost : `max ${options.maxPECost}`} PE
             </Badge>
           </div>
           <Badge variant="outline" className="text-xs">
@@ -270,7 +277,7 @@ export function SpecialAttackSelector({
               <div className="flex flex-wrap gap-1">
                 {hasForcaBruta && config.damageIncrements > 0 && (
                   <Badge variant="outline" className="text-xs bg-orange-500/10 text-orange-400 border-orange-500/30">
-                    Força Bruta (+{options.peCost * 2})
+                    Força Bruta (+{dynamicPECost * 2})
                   </Badge>
                 )}
                 {hasPotenciaMaxima && isMelee && (
@@ -286,7 +293,7 @@ export function SpecialAttackSelector({
         {/* Aviso PE insuficiente */}
         {!canAfford && (
           <p className="text-xs text-destructive">
-            PE insuficiente ({currentPE}/{options.peCost} necessário)
+            PE insuficiente ({currentPE}/2 mínimo necessário)
           </p>
         )}
       </div>
@@ -316,8 +323,8 @@ export function SpecialAttackSelector({
           </div>
           
           <div className="flex items-center gap-2">
-            <Badge variant="secondary">
-              {options.peCost} PE
+            <Badge variant={dynamicPECost > 0 ? "default" : "secondary"}>
+              {dynamicPECost > 0 ? dynamicPECost : `max ${options.maxPECost}`} PE
             </Badge>
             <Badge variant="outline">
               {options.nexTier}
@@ -328,8 +335,7 @@ export function SpecialAttackSelector({
               </TooltipTrigger>
               <TooltipContent side="left" className="max-w-xs">
                 <p className="text-sm">
-                  Gaste {options.peCost} PE para distribuir +{options.totalBonus} entre ataque e dano.
-                  Cada +5 pode ir para ataque ou dano separadamente.
+                  Gaste 2 PE para +5 em ataque ou dano. Cada +5 adicional custa +1 PE (máx {options.maxPECost} PE).
                 </p>
               </TooltipContent>
             </Tooltip>
@@ -465,7 +471,7 @@ export function SpecialAttackSelector({
                             config.damageIncrements === 0 && "opacity-50"
                           )}
                         >
-                          Força Bruta {config.damageIncrements > 0 && `(+${options.peCost * 2} dano)`}
+                          Força Bruta {config.damageIncrements > 0 && `(+${dynamicPECost * 2} dano)`}
                         </Badge>
                       </TooltipTrigger>
                       <TooltipContent>
@@ -507,7 +513,7 @@ export function SpecialAttackSelector({
         {/* Aviso PE insuficiente */}
         {!canAfford && (
           <p className="text-xs text-destructive text-center">
-            PE insuficiente ({currentPE}/{options.peCost} necessário)
+            PE insuficiente ({currentPE}/2 mínimo necessário)
           </p>
         )}
       </div>

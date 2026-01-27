@@ -11,27 +11,43 @@
 
 // Tabela oficial de progressão do Ataque Especial por NEX
 export interface SpecialAttackOptions {
-  peCost: number;      // Custo total em PE
+  maxPECost: number;   // Custo MÁXIMO em PE (limite do tier)
   totalBonus: number;  // Bônus total disponível (+5 por incremento)
   increments: number;  // Quantidade de incrementos de +5
   nexTier: string;     // Label do tier para UI
 }
 
 /**
+ * Calcula o custo de PE baseado nos incrementos usados
+ * Regra oficial (Livro Base v1.3): 2 PE para primeiro +5, +1 PE por +5 adicional
+ * 
+ * @param totalIncrements - Quantidade de incrementos de +5 usados
+ * @returns Custo em PE (0 se nenhum incremento usado)
+ */
+export function calculateDynamicPECost(totalIncrements: number): number {
+  if (totalIncrements <= 0) return 0;
+  // 1 incremento = 2 PE, 2 incrementos = 3 PE, 3 incrementos = 4 PE, 4 incrementos = 5 PE
+  return 1 + totalIncrements;
+}
+
+/**
  * Retorna as opções de Ataque Especial baseado no NEX do personagem
  * Conforme Tabela 1.3 do Livro Base
+ * 
+ * Nota: maxPECost representa o custo MÁXIMO possível no tier, não o custo fixo.
+ * O custo real é calculado dinamicamente por calculateDynamicPECost().
  */
 export function getSpecialAttackOptions(nex: number): SpecialAttackOptions {
   if (nex >= 85) {
-    return { peCost: 5, totalBonus: 20, increments: 4, nexTier: 'NEX 85%+' };
+    return { maxPECost: 5, totalBonus: 20, increments: 4, nexTier: 'NEX 85%+' };
   }
   if (nex >= 55) {
-    return { peCost: 4, totalBonus: 15, increments: 3, nexTier: 'NEX 55%+' };
+    return { maxPECost: 4, totalBonus: 15, increments: 3, nexTier: 'NEX 55%+' };
   }
   if (nex >= 25) {
-    return { peCost: 3, totalBonus: 10, increments: 2, nexTier: 'NEX 25%+' };
+    return { maxPECost: 3, totalBonus: 10, increments: 2, nexTier: 'NEX 25%+' };
   }
-  return { peCost: 2, totalBonus: 5, increments: 1, nexTier: 'NEX 5%+' };
+  return { maxPECost: 2, totalBonus: 5, increments: 1, nexTier: 'NEX 5%+' };
 }
 
 /**
@@ -91,11 +107,14 @@ export function calculateSpecialAttackFinal(
     breakdown.push(`Ataque Especial: +${damageBonus} dano (${config.damageIncrements}x +5)`);
   }
   
+  // Calcula o custo dinâmico baseado nos incrementos usados
+  const actualPECost = calculateDynamicPECost(totalUsed);
+  
   // Força Bruta: +2 de dano por PE gasto (aplica apenas se houver dano)
   if (hasForcaBruta && config.damageIncrements > 0) {
-    const forcaBrutaBonus = options.peCost * 2;
+    const forcaBrutaBonus = actualPECost * 2;
     damageBonus += forcaBrutaBonus;
-    breakdown.push(`Força Bruta: +${forcaBrutaBonus} dano (${options.peCost} PE × +2)`);
+    breakdown.push(`Força Bruta: +${forcaBrutaBonus} dano (${actualPECost} PE × +2)`);
   }
   
   // Potência Máxima: dobra os bônus se for ataque corpo a corpo
@@ -115,7 +134,7 @@ export function calculateSpecialAttackFinal(
   return {
     attackBonus,
     damageBonus,
-    peCost: options.peCost,
+    peCost: actualPECost,
     breakdown
   };
 }
