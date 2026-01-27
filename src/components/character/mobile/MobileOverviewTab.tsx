@@ -37,6 +37,7 @@ import { MobileRollHistory, useRollHistory, type RollHistoryEntry } from './Mobi
 import { MobileConditionManager, type ActiveCondition } from './MobileConditionManager';
 import { ActiveAdvancedBonusesBar } from '../ActiveAdvancedBonusesBar';
 import { MaquinaDeMatarIndicator } from '../MaquinaDeMatarIndicator';
+import { AniquiladorPassivesIndicator } from '../AniquiladorPassivesIndicator';
 import { BonusSummaryCard } from '../BonusSummaryCard';
 import { ClassPowerBonusesPanel } from '../ClassPowerBonusesPanel';
 import { RoundControlPanel } from '../RoundControlPanel';
@@ -119,11 +120,13 @@ interface MobileOverviewTabProps {
   elementalAffinity?: ParanormalElement | string | null;
   /** Se a afinidade está ativa (NEX >= 50%) */
   affinityActive?: boolean;
-  /** Arma favorita selecionada (para indicador Máquina de Matar) */
+  /** Arma favorita selecionada (para indicador Aniquilador) */
   favoriteWeapon?: {
     id: string;
     name: string;
     damage?: string;
+    category?: number;
+    effectiveCategory?: number;
   } | null;
   /** Callback para alterar HP */
   onHPChange?: (newHP: number) => void;
@@ -338,8 +341,8 @@ export const MobileOverviewTab = memo(function MobileOverviewTab({
         </div>
       </div>
 
-      {/* Indicador Máquina de Matar (Aniquilador NEX 99%) - versão compacta para mobile */}
-      <MaquinaDeMatarIndicator
+      {/* Indicador de Passivas do Aniquilador (A Favorita, Técnica Secreta, Máquina de Matar) - versão compacta para mobile */}
+      <AniquiladorPassivesIndicator
         classTrack={character.class_track}
         nex={character.nex}
         favoriteWeapon={favoriteWeapon}
