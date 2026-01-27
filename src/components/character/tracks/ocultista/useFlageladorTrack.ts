@@ -74,6 +74,11 @@ export interface UseFlageladorTrackProps {
   onActivateEffect?: (id: string, name: string, duration: EffectDuration, metadata?: Record<string, unknown>) => void;
   /** Callback para rastrear PE gasto na rodada */
   onTrackPESpent?: (abilityName: string, cost: number) => void;
+  /** Trilha de Versatilidade do personagem (se houver) */
+  versatilityTrack?: {
+    trackId: string;
+    abilityId: string;
+  } | null;
 }
 
 // =====================================================
@@ -87,15 +92,22 @@ export function useFlageladorTrack({
   onPEChange,
   onActivateEffect,
   onTrackPESpent,
+  versatilityTrack,
 }: UseFlageladorTrackProps) {
   const { toast } = useToast();
   const [isActivating, setIsActivating] = useState(false);
 
-  // Verifica se é trilha Flagelador
-  const isFlagelador = useMemo(() => {
+  // Verifica se é trilha Flagelador (principal)
+  const isFlageladorBase = useMemo(() => {
     if (!classTrack) return false;
     return classTrack.toLowerCase().includes('flagelador');
   }, [classTrack]);
+
+  // Detecta se tem habilidade de Flagelador via Versatilidade
+  const hasFlageladorFromVersatility = versatilityTrack?.trackId === 'flagelador';
+
+  // É Flagelador se for trilha principal ou via Versatilidade
+  const isFlagelador = isFlageladorBase || hasFlageladorFromVersatility;
 
   // Habilidades desbloqueadas pelo NEX
   const unlockedAbilities = useMemo(() => {

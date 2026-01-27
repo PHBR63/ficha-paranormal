@@ -65,6 +65,11 @@ export interface AniquiladorPanelProps {
   isEffectActive?: (id: string) => boolean;
   /** Dados consolidados do SUE (opcional) */
   computedEffects?: ComputedEffects;
+  /** Trilha de Versatilidade do personagem (se houver) */
+  versatilityTrack?: {
+    trackId: string;
+    abilityId: string;
+  } | null;
 }
 
 // ==================== COMPONENTES INTERNOS ====================

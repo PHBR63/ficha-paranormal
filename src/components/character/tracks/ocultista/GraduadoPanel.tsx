@@ -30,7 +30,9 @@ import {
 function arePropsEqual(prev: GraduadoPanelProps, next: GraduadoPanelProps): boolean {
   return prev.nex === next.nex 
     && prev.classTrack === next.classTrack
-    && prev.className === next.className;
+    && prev.className === next.className
+    && prev.versatilityTrack?.trackId === next.versatilityTrack?.trackId
+    && prev.versatilityTrack?.abilityId === next.versatilityTrack?.abilityId;
 }
 
 // =====================================================

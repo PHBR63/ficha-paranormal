@@ -65,6 +65,11 @@ export interface UseGraduadoTrackProps {
   classTrack: string | null | undefined;
   nex: number;
   intellect?: number;
+  /** Trilha de Versatilidade do personagem (se houver) */
+  versatilityTrack?: {
+    trackId: string;
+    abilityId: string;
+  } | null;
 }
 
 // =====================================================
@@ -75,12 +80,19 @@ export function useGraduadoTrack({
   classTrack,
   nex,
   intellect = 1,
+  versatilityTrack,
 }: UseGraduadoTrackProps) {
-  // Verifica se é trilha Graduado
-  const isGraduado = useMemo(() => {
+  // Verifica se é trilha Graduado (principal)
+  const isGraduadoBase = useMemo(() => {
     if (!classTrack) return false;
     return classTrack.toLowerCase().includes('graduado');
   }, [classTrack]);
+
+  // Detecta se tem habilidade de Graduado via Versatilidade
+  const hasGraduadoFromVersatility = versatilityTrack?.trackId === 'graduado';
+
+  // É Graduado se for trilha principal ou via Versatilidade
+  const isGraduado = isGraduadoBase || hasGraduadoFromVersatility;
 
   // Habilidades desbloqueadas pelo NEX
   const unlockedAbilities = useMemo(() => {

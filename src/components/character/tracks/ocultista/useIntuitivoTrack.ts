@@ -69,6 +69,11 @@ export interface UseIntuitivoTrackProps {
   nex: number;
   presence?: number;
   peLimitPerTurn?: number;
+  /** Trilha de Versatilidade do personagem (se houver) */
+  versatilityTrack?: {
+    trackId: string;
+    abilityId: string;
+  } | null;
 }
 
 // =====================================================
@@ -80,12 +85,19 @@ export function useIntuitivoTrack({
   nex,
   presence = 1,
   peLimitPerTurn = 2,
+  versatilityTrack,
 }: UseIntuitivoTrackProps) {
-  // Verifica se é trilha Intuitivo
-  const isIntuitivo = useMemo(() => {
+  // Verifica se é trilha Intuitivo (principal)
+  const isIntuitivoBase = useMemo(() => {
     if (!classTrack) return false;
     return classTrack.toLowerCase().includes('intuitivo');
   }, [classTrack]);
+
+  // Detecta se tem habilidade de Intuitivo via Versatilidade
+  const hasIntuitivoFromVersatility = versatilityTrack?.trackId === 'intuitivo';
+
+  // É Intuitivo se for trilha principal ou via Versatilidade
+  const isIntuitivo = isIntuitivoBase || hasIntuitivoFromVersatility;
 
   // Habilidades desbloqueadas pelo NEX
   const unlockedAbilities = useMemo(() => {

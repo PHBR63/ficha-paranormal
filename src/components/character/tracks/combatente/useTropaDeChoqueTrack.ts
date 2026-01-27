@@ -112,6 +112,11 @@ export interface UseTropaDeChoqueTrackProps {
   computedEffects?: ComputedEffects;
   /** Callback para registrar PE gasto na rodada */
   onTrackPESpent?: (abilityName: string, cost: number) => void;
+  /** Trilha de Versatilidade do personagem (se houver) */
+  versatilityTrack?: {
+    trackId: string;
+    abilityId: string;
+  } | null;
 }
 
 // =====================================================
@@ -129,19 +134,26 @@ export function useTropaDeChoqueTrack({
   onActivateEffect,
   computedEffects,
   onTrackPESpent,
+  versatilityTrack,
 }: UseTropaDeChoqueTrackProps) {
   const { toast } = useToast();
 
   // Estado local
   const [isOpen, setIsOpen] = useState(true);
 
-  // Verifica se é trilha Tropa de Choque
-  const isTropaDeChoque = useMemo(() => {
+  // Verifica se é trilha Tropa de Choque (principal)
+  const isTropaDeChoqueBase = useMemo(() => {
     if (!classTrack) return false;
     const normalized = classTrack.toLowerCase().replace(/[^a-z]/g, '');
     return normalized.includes('tropa') || normalized.includes('choque') ||
       classTrack === 'tropa-choque';
   }, [classTrack]);
+
+  // Detecta se tem habilidade de Tropa de Choque via Versatilidade
+  const hasTropaFromVersatility = versatilityTrack?.trackId === 'tropa-choque';
+
+  // É Tropa de Choque se for trilha principal ou via Versatilidade
+  const isTropaDeChoque = isTropaDeChoqueBase || hasTropaFromVersatility;
 
   // Habilidades desbloqueadas
   const unlockedAbilities = useMemo(() => {

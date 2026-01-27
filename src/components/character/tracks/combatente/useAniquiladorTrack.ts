@@ -42,6 +42,11 @@ export interface UseAniquiladorTrackProps {
     duration: EffectDuration, 
     metadata?: Record<string, unknown>
   ) => void;
+  /** Trilha de Versatilidade do personagem (se houver) */
+  versatilityTrack?: {
+    trackId: string;
+    abilityId: string;
+  } | null;
 }
 
 // ==================== CONSTANTES ====================
@@ -111,6 +116,7 @@ export function useAniquiladorTrack({
   peCurrent,
   onPEChange,
   onActivateEffect,
+  versatilityTrack,
 }: UseAniquiladorTrackProps) {
   const { toast } = useToast();
   
@@ -119,12 +125,18 @@ export function useAniquiladorTrack({
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedEffects, setSelectedEffects] = useState<Record<string, number>>({});
 
-  // Verifica se é trilha Aniquilador
-  const isAniquilador = useMemo(() => {
+  // Verifica se é trilha Aniquilador (principal ou via Versatilidade)
+  const isAniquiladorBase = useMemo(() => {
     if (!classTrack) return false;
     const trackNorm = classTrack.toLowerCase().replace(/\s+/g, '-');
     return trackNorm.includes('aniquilador');
   }, [classTrack]);
+
+  // Detecta se tem habilidade de Aniquilador via Versatilidade
+  const hasAniquiladorFromVersatility = versatilityTrack?.trackId === 'aniquilador';
+
+  // É Aniquilador se for trilha principal ou via Versatilidade
+  const isAniquilador = isAniquiladorBase || hasAniquiladorFromVersatility;
 
   // Efeitos disponíveis pelo NEX
   const availableEffects = useMemo(() => {

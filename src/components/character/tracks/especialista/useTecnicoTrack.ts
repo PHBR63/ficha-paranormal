@@ -39,6 +39,11 @@ export interface UseTecnicoTrackProps {
   computedEffects?: ComputedEffects;
   /** Callback para rastrear PE gasto na rodada */
   onTrackPESpent?: (abilityName: string, cost: number) => void;
+  /** Trilha de Versatilidade do personagem (se houver) */
+  versatilityTrack?: {
+    trackId: string;
+    abilityId: string;
+  } | null;
 }
 
 // =====================================================
@@ -57,6 +62,7 @@ export function useTecnicoTrack({
   isEffectActive,
   computedEffects,
   onTrackPESpent,
+  versatilityTrack,
 }: UseTecnicoTrackProps) {
   const [remendaoDrawerOpen, setRemendaoDrawerOpen] = useState(false);
   const [improvisarDrawerOpen, setImprovisarDrawerOpen] = useState(false);
@@ -72,8 +78,14 @@ export function useTecnicoTrack({
     };
   }, [computedEffects]);
 
-  // Verifica se é a trilha correta
-  const isTecnico = classTrack === 'tecnico';
+  // Verifica se é a trilha correta (principal)
+  const isTecnicoBase = classTrack === 'tecnico';
+
+  // Detecta se tem habilidade de Técnico via Versatilidade
+  const hasTecnicoFromVersatility = versatilityTrack?.trackId === 'tecnico';
+
+  // É Técnico se for trilha principal ou via Versatilidade
+  const isTecnico = isTecnicoBase || hasTecnicoFromVersatility;
 
   // Habilidades disponíveis por NEX
   const hasInventarioOtimizado = nex >= 10;

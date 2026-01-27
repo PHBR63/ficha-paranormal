@@ -103,6 +103,11 @@ export interface UseOperacoesEspeciaisTrackProps {
   computedEffects?: ComputedEffects;
   /** Callback para registrar PE gasto na rodada */
   onTrackPESpent?: (abilityName: string, cost: number) => void;
+  /** Trilha de Versatilidade do personagem (se houver) */
+  versatilityTrack?: {
+    trackId: string;
+    abilityId: string;
+  } | null;
 }
 
 // =====================================================
@@ -118,6 +123,7 @@ export function useOperacoesEspeciaisTrack({
   onAbilityUsed,
   onActivateEffect,
   onTrackPESpent,
+  versatilityTrack,
 }: UseOperacoesEspeciaisTrackProps) {
   const { toast } = useToast();
 
@@ -134,13 +140,19 @@ export function useOperacoesEspeciaisTrack({
     return localUsedAbilities;
   }, [externalUsedAbilities, localUsedAbilities]);
 
-  // Verifica se é trilha Operações Especiais
-  const isOperacoesEspeciais = useMemo(() => {
+  // Verifica se é trilha Operações Especiais (principal)
+  const isOperacoesEspeciaisBase = useMemo(() => {
     if (!classTrack) return false;
     const normalized = classTrack.toLowerCase().replace(/[^a-z]/g, '');
     return normalized.includes('operacoes') || normalized.includes('especiais') ||
       classTrack === 'operacoes-especiais';
   }, [classTrack]);
+
+  // Detecta se tem habilidade de Operações Especiais via Versatilidade
+  const hasOperacoesFromVersatility = versatilityTrack?.trackId === 'operacoes-especiais';
+
+  // É Operações Especiais se for trilha principal ou via Versatilidade
+  const isOperacoesEspeciais = isOperacoesEspeciaisBase || hasOperacoesFromVersatility;
 
   // Habilidades desbloqueadas
   const unlockedAbilities = useMemo(() => {
