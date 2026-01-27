@@ -751,41 +751,9 @@ export function useCharacterBonusSummary({
     // via track-effects-adapter.ts para evitar duplicação
     // A lógica de margem de ameaça é aplicada pelo SUE quando o bônus está ativo
 
-    // Ataque Furtivo (Infiltrador): dados extras de dano que escalam com NEX
-    // Regra oficial: +1d6 (NEX 10%), +2d6 (NEX 40%), +3d6 (NEX 65%), +4d6 (NEX 99%)
-    if (hasAbility('ataque furtivo') || hasAbility('ataque-furtivo-trilha')) {
-      const isActive = isConditionalActive('ataque-furtivo');
-      
-      // Calcula quantidade de dados baseado no NEX (regra oficial do Infiltrador)
-      const calculateSneakAttackDice = (characterNex: number): number => {
-        if (characterNex >= 99) return 4; // NEX 99%: +4d6
-        if (characterNex >= 65) return 3; // NEX 65%: +3d6
-        if (characterNex >= 40) return 2; // NEX 40%: +2d6
-        return 1; // NEX 10%: +1d6
-      };
-      
-      const sneakAttackDice = calculateSneakAttackDice(nex);
-      const extraDice = `+${sneakAttackDice}d6`;
-      
-      conditionalBonuses.push({
-        id: 'ataque-furtivo',
-        name: 'Ataque Furtivo',
-        condition: 'Alvo desprevenido/flanqueado',
-        active: isActive,
-        effects: [`${extraDice} dano`],
-        source: 'ability',
-      });
-      if (isActive) {
-        combat.damage.extraDice.push(extraDice);
-        combat.damage.breakdown.push({
-          source: 'Ataque Furtivo',
-          value: extraDice,
-          type: 'ability',
-          conditional: 'alvo desprevenido/flanqueado',
-          active: true,
-        });
-      }
-    }
+    // REMOVIDO: Ataque Furtivo agora é gerenciado exclusivamente pelo SUE
+    // via track-effects-adapter.ts para evitar duplicação
+    // A lógica de dados extras é aplicada pelo SUE quando o bônus está ativo
 
     // === BÔNUS CONDICIONAIS AVANÇADOS (Fase 4) ===
 
@@ -878,42 +846,9 @@ export function useCharacterBonusSummary({
       }
     }
 
-    // Atirar para Matar (Atirador de Elite, NEX 99%): Dano máximo em críticos
-    // Regra oficial: Acerto crítico com arma de fogo = dano máximo (não rola dados)
-    // Usa hasTrackAbility para verificar corretamente via trilha + NEX
-    const hasAtirarMatar = classPowerBonuses.hasTrackAbility('atirar-para-matar') ||
-                           hasAbility('atirar para matar') || 
-                           hasAbility('atirar-matar');
-    if (hasAtirarMatar) {
-      const isActive = isConditionalActive('atirar-matar');
-      
-      conditionalBonuses.push({
-        id: 'atirar-matar',
-        name: 'Atirar para Matar',
-        condition: 'Acerto crítico com arma de fogo',
-        active: isActive,
-        effects: ['Dano máximo (não rola dados)'],
-        source: 'ability',
-      });
-      
-      if (isActive) {
-        // Marca como ativo - o sistema de dano deve usar valor máximo
-        special.push({
-          source: 'Atirar para Matar',
-          value: 'Dano MÁXIMO em crítico (arma de fogo)',
-          type: 'ability',
-          active: true,
-        });
-        
-        combat.damage.breakdown.push({
-          source: 'Atirar para Matar',
-          value: 'MAX',
-          type: 'ability',
-          conditional: 'crítico com arma de fogo',
-          active: true,
-        });
-      }
-    }
+    // REMOVIDO: Atirar para Matar agora é gerenciado exclusivamente pelo SUE
+    // via track-effects-adapter.ts para evitar duplicação
+    // A lógica de dano máximo é aplicada pelo SUE quando o bônus está ativo
 
     if (hasPower('iniciativa-melhorada')) {
       combat.initiative.breakdown.push({
