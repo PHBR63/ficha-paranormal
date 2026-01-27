@@ -211,6 +211,7 @@ function TropaDeChoquePanelComponent(props: TropaDeChoquePanelProps) {
     unlockedAbilities,
     unlockedPassives,
     vigorDT,
+    peLimit,
     isWounded,
     cascaGrossaHP,
     vigor,
@@ -282,7 +283,20 @@ function TropaDeChoquePanelComponent(props: TropaDeChoquePanelProps) {
                   </div>
                   <p className="text-[10px] text-muted-foreground">
                     {ability.shortEffect}
-                    {ability.usesVigorDT && ` (DT ${vigorDT})`}
+                    {ability.usesVigorDT && (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="underline decoration-dotted cursor-help ml-1">
+                              (DT {vigorDT})
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="text-xs">
+                            <p>10 + {peLimit} (Limite PE) + {vigor} (Vigor) = <strong>{vigorDT}</strong></p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
                   </p>
                 </div>
                 <Button
@@ -392,9 +406,19 @@ function TropaDeChoquePanelComponent(props: TropaDeChoquePanelProps) {
                         <p className="text-xs text-muted-foreground mt-0.5">{ability.shortEffect}</p>
 
                         {ability.usesVigorDT && (
-                          <p className="text-[10px] text-primary mt-0.5">
-                            DT: 10 + Vigor ({vigor}) = <span className="font-bold">{vigorDT}</span>
-                          </p>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <p className="text-[10px] text-primary mt-0.5 cursor-help underline decoration-dotted inline-flex items-center gap-1">
+                                  <Info className="w-3 h-3" />
+                                  DT: 10 + {peLimit} (Limite PE) + {vigor} (Vigor) = <span className="font-bold">{vigorDT}</span>
+                                </p>
+                              </TooltipTrigger>
+                              <TooltipContent side="bottom" className="max-w-xs">
+                                <p className="text-xs">A DT do teste de Vontade é calculada como 10 + Limite de PE por NEX + bônus de Vigor do personagem.</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                         )}
 
                         <div className="flex items-center gap-2 mt-2">
