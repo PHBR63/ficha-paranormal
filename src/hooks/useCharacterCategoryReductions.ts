@@ -13,7 +13,8 @@
  * com o sistema de marcação de itens favoritos no inventário.
  */
 
-import { useMemo, useCallback } from 'react';
+import { useMemo, useCallback, useEffect, useRef } from 'react';
+import { useToast } from '@/hooks/use-toast';
 import {
   getCharacterCategoryReductionAbilities,
   canMarkAsFavorite,
@@ -259,14 +260,35 @@ export function useCharacterCategoryReductions({
   // IDs de habilidades do Aniquilador para migração automática
   const ANIQUILADOR_ABILITY_IDS = ['a-favorita', 'tecnica-secreta', 'maquina-de-matar'];
   
-  // Calcula o inventário com categorias efetivas aplicadas
-  const inventoryWithEffectiveCategories = useMemo(() => {
+  // Nomes amigáveis das habilidades para o toast
+  const ABILITY_NAMES: Record<string, string> = {
+    'a-favorita': 'A Favorita',
+    'tecnica-secreta': 'Técnica Secreta',
+    'maquina-de-matar': 'Máquina de Matar',
+  };
+  
+  // Hook de toast para notificações
+  const { toast } = useToast();
+  
+  // Ref para rastrear a última habilidade de Aniquilador ativa (evita toasts repetidos)
+  const lastAniquiladorAbilityRef = useRef<string | null>(null);
+  
+  // Calcula o inventário com categorias efetivas aplicadas e detecta migrações
+  const { inventoryWithEffectiveCategories, migrationInfo } = useMemo(() => {
     // Encontra a habilidade de Aniquilador disponível para o NEX atual (se houver)
     const currentAniquiladorAbility = availableAbilities.find(a => 
       ANIQUILADOR_ABILITY_IDS.includes(a.abilityId)
     );
     
-    return inventory.map(item => {
+    let migrationDetected: { 
+      weaponName: string; 
+      fromAbility: string; 
+      toAbility: string;
+      fromReduction: number;
+      toReduction: number;
+    } | null = null;
+    
+    const processedInventory = inventory.map(item => {
       if (!item.favoriteAbilityId) return item;
 
       const savedAbility = getCategoryReductionAbility(item.favoriteAbilityId);
@@ -282,26 +304,33 @@ export function useCharacterCategoryReductions({
         }
         
         // MIGRAÇÃO AUTOMÁTICA: Atualiza para a habilidade correta baseada no NEX atual
-        // (ex: se tinha maquina-de-matar mas NEX é 10%, usa a-favorita)
         const correctAbility = currentAniquiladorAbility;
+        
+        // Detecta se houve migração (habilidade diferente da salva)
+        if (item.favoriteAbilityId !== correctAbility.abilityId) {
+          migrationDetected = {
+            weaponName: item.name,
+            fromAbility: item.favoriteAbilityId,
+            toAbility: correctAbility.abilityId,
+            fromReduction: savedAbility.reductionAmount,
+            toReduction: correctAbility.reductionAmount,
+          };
+        }
+        
         const categoryToReduce = item.category;
         
         return {
           ...item,
-          favoriteAbilityId: correctAbility.abilityId, // Atualiza para o ID correto
+          favoriteAbilityId: correctAbility.abilityId,
           effectiveCategory: getEffectiveCategory(categoryToReduce, correctAbility.reductionAmount),
         };
       }
 
       // Para outras habilidades (não-Aniquilador), mantém comportamento anterior
       if (!availableAbilities.some(a => a.abilityId === item.favoriteAbilityId)) {
-        // Remove a habilidade do item se o personagem não a possui mais
         return removeFavoriteAbility(item);
       }
 
-      // CORREÇÃO: Usa item.category que já é a categoria com modificações aplicadas
-      // (quando há modificações, category = categoria modificada; quando não há, category = base)
-      // A redução de favorita deve ser aplicada SOBRE a categoria final com modificações
       const categoryToReduce = item.category;
       
       return {
@@ -309,7 +338,36 @@ export function useCharacterCategoryReductions({
         effectiveCategory: getEffectiveCategory(categoryToReduce, savedAbility.reductionAmount),
       };
     });
+    
+    return { 
+      inventoryWithEffectiveCategories: processedInventory, 
+      migrationInfo: migrationDetected 
+    };
   }, [inventory, availableAbilities]);
+  
+  // Efeito para disparar toast quando há migração de habilidade
+  useEffect(() => {
+    if (!migrationInfo) return;
+    
+    const currentAbilityId = migrationInfo.toAbility;
+    
+    // Evita disparar toast repetidamente para a mesma habilidade
+    if (lastAniquiladorAbilityRef.current === currentAbilityId) return;
+    lastAniquiladorAbilityRef.current = currentAbilityId;
+    
+    const fromName = ABILITY_NAMES[migrationInfo.fromAbility] || migrationInfo.fromAbility;
+    const toName = ABILITY_NAMES[migrationInfo.toAbility] || migrationInfo.toAbility;
+    
+    // Determina se foi upgrade ou downgrade
+    const isUpgrade = migrationInfo.toReduction > migrationInfo.fromReduction;
+    
+    toast({
+      title: isUpgrade ? '⚔️ Habilidade Evoluiu!' : '📉 Habilidade Ajustada',
+      description: `${migrationInfo.weaponName}: ${fromName} → ${toName} (Cat. -${migrationInfo.toReduction})`,
+      variant: isUpgrade ? 'default' : 'default',
+      duration: 5000,
+    });
+  }, [migrationInfo, toast]);
 
   return {
     availableAbilities,
