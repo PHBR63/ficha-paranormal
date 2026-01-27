@@ -821,7 +821,7 @@ export function MobileCharacterSheet({
     })),
   [character.inventory]);
 
-  // Identificar arma favorita (para indicador Máquina de Matar)
+  // Identificar arma favorita (para indicador Aniquilador - A Favorita, Técnica Secreta, Máquina de Matar)
   const favoriteWeapon = useMemo(() => {
     const favoriteItem = character.inventory.find(
       (item: any) => item.isEquipped && item.itemType === 'weapon' && item.favoriteAbilityId
@@ -831,6 +831,8 @@ export function MobileCharacterSheet({
         id: favoriteItem.id || '',
         name: favoriteItem.name,
         damage: (favoriteItem as any).damage,
+        category: (favoriteItem as any).category,
+        effectiveCategory: (favoriteItem as any).effectiveCategory,
       };
     }
     return null;

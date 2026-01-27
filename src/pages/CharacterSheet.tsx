@@ -104,6 +104,7 @@ import { ConditionalBonusesPanel } from '@/components/character/ConditionalBonus
 import { TrackCombatBonusesBar } from '@/components/character/TrackCombatBonusesBar';
 import { ActiveAdvancedBonusesBar, useActiveAdvancedBonuses } from '@/components/character/ActiveAdvancedBonusesBar';
 import { MaquinaDeMatarIndicator } from '@/components/character/MaquinaDeMatarIndicator';
+import { AniquiladorPassivesIndicator } from '@/components/character/AniquiladorPassivesIndicator';
 import { CharacterAuditBanner } from '@/components/character/CharacterAuditBanner';
 // useCharacterAudit já importado acima via @/hooks
 import { CharacterForAudit, canAddParanormalPower } from '@/lib/character-audit-engine';
@@ -2174,7 +2175,7 @@ export default function CharacterSheet() {
     );
   }, [character?.skills, character?.origin, character?.class, character?.skill_training_choices]);
 
-  // Identificar arma favorita para indicador Máquina de Matar (ANTES do early return)
+  // Identificar arma favorita para indicador Aniquilador (A Favorita, Técnica Secreta, Máquina de Matar) - ANTES do early return
   const favoriteWeapon = useMemo(() => {
     if (!character) return null;
     const favoriteItem = character.inventory.find(
@@ -2185,6 +2186,8 @@ export default function CharacterSheet() {
         id: favoriteItem.id || '',
         name: favoriteItem.name,
         damage: (favoriteItem as any).damage,
+        category: (favoriteItem as any).category,
+        effectiveCategory: (favoriteItem as any).effectiveCategory,
       };
     }
     return null;
@@ -3268,12 +3271,13 @@ export default function CharacterSheet() {
 
             {/* === COLUNA DIREITA === */}
             <div className="space-y-4 min-w-0">
-              {/* Indicador Máquina de Matar (Aniquilador NEX 99%) */}
-              <MaquinaDeMatarIndicator
+              {/* Indicador de Passivas do Aniquilador (A Favorita, Técnica Secreta, Máquina de Matar) */}
+              <AniquiladorPassivesIndicator
                 classTrack={character.class_track}
                 nex={character.nex}
                 favoriteWeapon={favoriteWeapon}
                 className="mb-3"
+                defaultExpanded={true}
               />
 
               {/* Barra de bônus avançados ativos (Assassinar, Potência Máxima, Atirar para Matar) */}
