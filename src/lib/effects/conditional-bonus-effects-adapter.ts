@@ -175,17 +175,8 @@ export const CONDITIONAL_BONUS_CATALOG: ConditionalBonusDefinition[] = [
     },
     requirements: { classTrack: 'guerreiro', minNex: 65 },
   },
-  {
-    id: 'atirar-matar',
-    name: 'Atirar para Matar',
-    source: 'ability',
-    condition: 'Acerto crítico com arma de fogo',
-    mechanics: {
-      maximumDamageOnCrit: true,
-      specialEffects: ['Dano máximo em críticos com arma de fogo'],
-    },
-    requirements: { classTrack: 'atirador-de-elite', minNex: 65 },
-  },
+  // REMOVIDO: atirar-matar - Agora gerenciado exclusivamente pelo track-effects-adapter.ts
+  // para evitar duplicação no painel de bônus condicionais
   // REMOVIDO: disparo-letal - Agora gerenciado exclusivamente pelo track-effects-adapter.ts
   // para evitar duplicação no painel de bônus condicionais
   {
