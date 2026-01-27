@@ -386,6 +386,12 @@ export function CombatWeaponsTable({
           weaponBuffs={weaponBuffs}
           isFavoriteWeapon={selectedWeapon?.isFavoriteWeapon || false}
           activeConditionalBonuses={activeConditionalBonuses}
+          advancedBonuses={{
+            assassinar: activeConditionalBonuses?.includes('assassinar'),
+            potenciaMaxima: activeConditionalBonuses?.includes('potencia-maxima'),
+            atirarParaMatar: activeConditionalBonuses?.includes('atirar-matar'),
+            ataqueFurtivo: activeConditionalBonuses?.includes('ataque-furtivo'),
+          }}
           onRollComplete={onRollComplete}
         />
       )}
