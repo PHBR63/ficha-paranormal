@@ -32,6 +32,8 @@ interface TrackCombatBonusesBarProps {
   nex?: number;
   attributes?: { strength: number; agility: number; vigor: number; intellect: number; presence: number };
   activeConditions?: string[];
+  /** Trilha obtida via Versatilidade (NEX 50%) */
+  versatilityTrack?: { trackId: string; abilityId: string } | null;
   onInitiativeRoll?: (result: DiceRollResult) => void; // Callback para rolagem
   className?: string;
 }
@@ -112,6 +114,7 @@ export function TrackCombatBonusesBar({
   nex = 5,
   attributes,
   activeConditions = [],
+  versatilityTrack,
   onInitiativeRoll,
   className,
 }: TrackCombatBonusesBarProps) {
@@ -124,6 +127,7 @@ export function TrackCombatBonusesBar({
     characterClass,
     classTrack,
     nex,
+    versatilityTrack,
     attributes: attributes || {
       strength: 1,
       agility: agility,
@@ -132,7 +136,7 @@ export function TrackCombatBonusesBar({
       presence: 1,
     },
     activeConditions,
-  }), [characterClass, classTrack, nex, attributes, agility, activeConditions]);
+  }), [characterClass, classTrack, nex, attributes, agility, activeConditions, versatilityTrack]);
 
   // Hook de iniciativa integrado com SUE
   const { executeInitiativeRoll, getInitiativeBonusBreakdown } = useInitiativeRollWithSUE(characterConfig);
