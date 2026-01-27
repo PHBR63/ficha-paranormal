@@ -268,6 +268,36 @@ export function rollDamageWithContext(context: DamageRollContext): DetailedDamag
     }
   }
   
+  // 5.5. Adicionar dados extras do SUE (ex: Máquina de Matar)
+  // Processa o marcador especial "W" substituindo pelo dado real da arma
+  if (sueComputed.rawSUE?.damage?.extraDice) {
+    // Obter o tipo de dado principal da arma (ex: d10 de "2d10")
+    const primaryWeaponDie = weaponFormula.diceGroups[0]?.sides || 6;
+    
+    for (const extraDiceStr of sueComputed.rawSUE.damage.extraDice) {
+      // Verifica se é o marcador especial "NW" (ex: "1W", "2W")
+      const weaponDieMatch = extraDiceStr.match(/^(\d+)W$/i);
+      
+      if (weaponDieMatch) {
+        // Substitui pelo dado real da arma
+        const count = parseInt(weaponDieMatch[1], 10);
+        extraDice.push({
+          count,
+          sides: primaryWeaponDie,
+        });
+      } else {
+        // Parse normal para dados explícitos (ex: "1d6", "2d8")
+        const normalMatch = extraDiceStr.match(/^(\d+)d(\d+)$/i);
+        if (normalMatch) {
+          extraDice.push({
+            count: parseInt(normalMatch[1], 10),
+            sides: parseInt(normalMatch[2], 10),
+          });
+        }
+      }
+    }
+  }
+  
   // 6. Verificar poderes ativados que afetam dano
   const maximizeDice = isCritical && activatedPowers.includes('atirar-para-matar');
   const doubleBonuses = activatedPowers.includes('potencia-maxima');

@@ -822,11 +822,18 @@ export function MobileCombatRollModal({
       }
       
       // Dados extras do SUE (exibe como string)
+      // Traduz marcador "NW" para dado real da arma
       if (unifiedEffects.damage.extraDice.length > 0) {
+        const weaponDieSize = weapon?.damage ? parseDamageString(weapon.damage).size : 6;
         unifiedEffects.damage.extraDice.forEach(dice => {
+          // Verificar marcador especial "NW" e traduzir
+          const weaponDieMatch = dice.match(/^(\d+)W$/i);
+          const displayDice = weaponDieMatch 
+            ? `${weaponDieMatch[1]}d${weaponDieSize}` 
+            : dice;
           sources.push({
             label: 'Dados Extras',
-            value: `+${dice}`,
+            value: `+${displayDice}`,
             type: 'track',
           });
         });
@@ -844,11 +851,18 @@ export function MobileCombatRollModal({
     }
     
     // Dados extras de trilha
+    // Traduz marcador "NW" para dado real da arma
     if (trackCombatBonuses.extraDamageDice.length > 0) {
+      const weaponDieSize = weapon?.damage ? parseDamageString(weapon.damage).size : 6;
       trackCombatBonuses.extraDamageDice.forEach(dice => {
+        // Verificar marcador especial "NW" e traduzir
+        const weaponDieMatch = dice.match(/^(\d+)W$/i);
+        const displayDice = weaponDieMatch 
+          ? `${weaponDieMatch[1]}d${weaponDieSize}` 
+          : dice;
         sources.push({
           label: 'Trilha',
-          value: `+${dice}`,
+          value: `+${displayDice}`,
           type: 'track',
         });
       });
@@ -1178,8 +1192,18 @@ export function MobileCombatRollModal({
       let extraDiceSize = parsed.size;
       
       // SUE extra dice
+      // Suporta marcador especial "NW" para dados do tipo da arma (ex: "1W" = 1 dado do tipo da arma)
       if (unifiedEffects && unifiedEffects.damage.extraDice.length > 0) {
         unifiedEffects.damage.extraDice.forEach(diceStr => {
+          // Verificar marcador especial "NW" (dado do tipo da arma)
+          const weaponDieMatch = diceStr.match(/^(\d+)W$/i);
+          if (weaponDieMatch) {
+            const count = parseInt(weaponDieMatch[1]) || 1;
+            extraDiceCount += isCritical ? count * criticalMultiplier : count;
+            extraDiceSize = parsed.size; // Usa o tamanho do dado da arma
+            return;
+          }
+          
           const match = diceStr.match(/(\d*)d(\d+)/i);
           if (match) {
             const count = parseInt(match[1]) || 1;
@@ -1192,6 +1216,15 @@ export function MobileCombatRollModal({
       // Trilha extra dice
       if (trackCombatBonuses.extraDamageDice.length > 0) {
         trackCombatBonuses.extraDamageDice.forEach(diceStr => {
+          // Verificar marcador especial "NW" (dado do tipo da arma)
+          const weaponDieMatch = diceStr.match(/^(\d+)W$/i);
+          if (weaponDieMatch) {
+            const count = parseInt(weaponDieMatch[1]) || 1;
+            extraDiceCount += isCritical ? count * criticalMultiplier : count;
+            extraDiceSize = parsed.size;
+            return;
+          }
+          
           const match = diceStr.match(/(\d*)d(\d+)/i);
           if (match) {
             const count = parseInt(match[1]) || 1;
