@@ -639,3 +639,200 @@ export function createMultipleRitualsScenario(): CombatBonuses {
     },
   });
 }
+
+// ============================================================================
+// CENÁRIOS DE TESTES DE PERÍCIA (para DiceRollModal)
+// ============================================================================
+
+/**
+ * Interface para cenários de teste de perícia
+ */
+export interface SkillTestScenario {
+  skillId: string;
+  skillName: string;
+  attribute: string;
+  total: number;
+  resistanceBonus?: number;
+  extraDice?: string[];
+  breakdown: BonusBreakdown[];
+  swapInfo?: {
+    originalSkill?: string;
+    swappedSkill?: string;
+    originalAttribute?: string;
+    swappedAttribute?: string;
+    activePower?: string;
+    peCost?: number;
+  };
+}
+
+/**
+ * Cenário: Acadêmico testando Ciências com Saber é Poder
+ */
+export function createAcademicSkillScenario(): SkillTestScenario {
+  return {
+    skillId: 'ciencias',
+    skillName: 'Ciências',
+    attribute: 'intellect',
+    total: 10,
+    breakdown: createMockBreakdown([
+      { source: 'Ciências (Treinado)', value: 5, type: 'skill_training' },
+      { source: 'Saber é Poder', value: 5, type: 'origin', conditional: 'Teste de Intelecto' },
+    ]),
+  };
+}
+
+/**
+ * Cenário: Atleta testando Fortitude com Incansável (swap FOR)
+ */
+export function createAthleteFortitudeScenario(): SkillTestScenario {
+  return {
+    skillId: 'fortitude',
+    skillName: 'Fortitude',
+    attribute: 'strength', // Swapped de vigor para força
+    total: 5,
+    resistanceBonus: 5,
+    breakdown: createMockBreakdown([
+      { source: 'Fortitude (Treinado)', value: 5, type: 'skill_training' },
+    ]),
+    swapInfo: {
+      originalAttribute: 'vigor',
+      swappedAttribute: 'strength',
+      activePower: 'Incansável',
+      peCost: 0,
+    },
+  };
+}
+
+/**
+ * Cenário: Trambiqueiro usando Impostor (swap para Enganação)
+ */
+export function createImpostorSwapScenario(): SkillTestScenario {
+  return {
+    skillId: 'investigacao',
+    skillName: 'Investigação',
+    attribute: 'presence', // Swapped para Presença (Enganação)
+    total: 10,
+    breakdown: createMockBreakdown([
+      { source: 'Enganação (Veterano)', value: 10, type: 'skill_training' },
+    ]),
+    swapInfo: {
+      originalSkill: 'investigacao',
+      swappedSkill: 'enganacao',
+      originalAttribute: 'intellect',
+      swappedAttribute: 'presence',
+      activePower: 'Impostor',
+      peCost: 2,
+    },
+  };
+}
+
+/**
+ * Cenário: Hacker usando Motor de Busca (swap para Tecnologia)
+ */
+export function createMotorDeBuscaScenario(): SkillTestScenario {
+  return {
+    skillId: 'ocultismo',
+    skillName: 'Ocultismo',
+    attribute: 'intellect',
+    total: 8,
+    breakdown: createMockBreakdown([
+      { source: 'Tecnologia (Veterano)', value: 10, type: 'skill_training' },
+    ]),
+    swapInfo: {
+      originalSkill: 'ocultismo',
+      swappedSkill: 'tecnologia',
+      originalAttribute: 'intellect',
+      swappedAttribute: 'intellect', // Mesmo atributo
+      activePower: 'Motor de Busca',
+      peCost: 1,
+    },
+  };
+}
+
+/**
+ * Cenário: Especialista com Perito em Tecnologia
+ */
+export function createSpecialistPeritoScenario(): SkillTestScenario {
+  return {
+    skillId: 'tecnologia',
+    skillName: 'Tecnologia',
+    attribute: 'intellect',
+    total: 10,
+    extraDice: ['1d8'],
+    breakdown: createMockBreakdown([
+      { source: 'Tecnologia (Veterano)', value: 10, type: 'skill_training' },
+      { source: 'Perito (Tecnologia)', value: '1d8', type: 'ability' },
+    ]),
+  };
+}
+
+/**
+ * Cenário: Especialista usando Eclético em perícia não treinada
+ */
+export function createSpecialistEcleticoScenario(): SkillTestScenario {
+  return {
+    skillId: 'medicina',
+    skillName: 'Medicina',
+    attribute: 'intellect',
+    total: 10,
+    breakdown: createMockBreakdown([
+      { source: 'Eclético (Veterano)', value: 10, type: 'ability', conditional: '4 PE' },
+    ]),
+  };
+}
+
+/**
+ * Cenário: Teste com múltiplas fontes de bônus
+ */
+export function createMultipleSkillBonusesScenario(): SkillTestScenario {
+  return {
+    skillId: 'percepcao',
+    skillName: 'Percepção',
+    attribute: 'intellect',
+    total: 13,
+    breakdown: createMockBreakdown([
+      { source: 'Percepção (Veterano)', value: 10, type: 'skill_training' },
+      { source: 'Faro para Pistas', value: 5, type: 'origin' },
+      { 
+        source: 'Ritual Visão da Verdade', 
+        value: 2, 
+        type: 'ritual',
+        excluded: true,
+        excludedReason: 'Bônus de origem maior ativo',
+      },
+    ]),
+  };
+}
+
+/**
+ * Cenário: Especialista usando Primeira Impressão
+ */
+export function createPrimeiraImpressaoScenario(): SkillTestScenario {
+  return {
+    skillId: 'diplomacia',
+    skillName: 'Diplomacia',
+    attribute: 'presence',
+    total: 5,
+    extraDice: ['1d20'], // Dado extra, keep highest
+    breakdown: createMockBreakdown([
+      { source: 'Diplomacia (Treinado)', value: 5, type: 'skill_training' },
+      { source: 'Primeira Impressão', value: '1d20', type: 'ability', conditional: 'Primeiro teste da cena' },
+    ]),
+  };
+}
+
+/**
+ * Cenário: Origem com bônus de perícia (Desbravador, 110%)
+ */
+export function createOriginSkillBonusScenario(): SkillTestScenario {
+  return {
+    skillId: 'sobrevivencia',
+    skillName: 'Sobrevivência',
+    attribute: 'intellect',
+    total: 10,
+    breakdown: createMockBreakdown([
+      { source: 'Sobrevivência (Treinado)', value: 5, type: 'skill_training' },
+      { source: 'Desbravador', value: 5, type: 'origin', conditional: 'Ambiente selvagem' },
+    ]),
+  };
+}
