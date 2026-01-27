@@ -489,3 +489,153 @@ export function createFlagellator99Scenario(): CombatBonuses {
     },
   });
 }
+
+// ============================================================================
+// CENÁRIOS ADICIONAIS PARA MODAIS DE COMBATE
+// ============================================================================
+
+/**
+ * Cenário: Arma com buff de ritual ativo (Amaldiçoar Arma)
+ */
+export function createWeaponBuffScenario(): CombatBonuses {
+  return createMockCombatBonuses({
+    attack: {
+      total: 3,
+      breakdown: createMockBreakdown([
+        { source: 'Luta (Treinado)', value: 1, type: 'skill_training' },
+        { source: 'Força', value: 2, type: 'origin' },
+      ]),
+    },
+    damage: {
+      total: 2,
+      extraDice: ['1d6 Sangue'],
+      breakdown: createMockBreakdown([
+        { source: 'Força', value: 2, type: 'origin' },
+        { source: 'Amaldiçoar Arma (Sangue)', value: '1d6', type: 'ritual' },
+      ]),
+    },
+    criticalMargin: {
+      total: 0,
+      breakdown: [],
+    },
+    initiative: {
+      total: 2,
+      breakdown: createMockBreakdown([
+        { source: 'Agilidade', value: 2, type: 'origin' },
+      ]),
+    },
+  });
+}
+
+/**
+ * Cenário: Máquina de Matar ativa (NEX 99% Combatente)
+ */
+export function createMaquinaDeMatarScenario(): CombatBonuses {
+  return createMockCombatBonuses({
+    attack: {
+      total: 6,
+      breakdown: createMockBreakdown([
+        { source: 'Ataque Especial III', value: 5, type: 'ability' },
+        { source: 'Luta (Expert)', value: 2, type: 'skill_training' },
+      ]),
+    },
+    damage: {
+      total: 8,
+      extraDice: ['1d10'], // dado extra do nex 99
+      breakdown: createMockBreakdown([
+        { source: 'Ataque Especial III', value: 5, type: 'ability' },
+        { source: 'Força', value: 4, type: 'origin' },
+        { source: 'Máquina de Matar', value: '1d10', type: 'ability', conditional: 'NEX 99%' },
+      ]),
+    },
+    criticalMargin: {
+      total: 2,
+      breakdown: createMockBreakdown([
+        { source: 'Máquina de Matar', value: 2, type: 'ability', conditional: 'NEX 99%' },
+      ]),
+    },
+    initiative: {
+      total: 3,
+      breakdown: createMockBreakdown([
+        { source: 'Agilidade', value: 3, type: 'origin' },
+      ]),
+    },
+  });
+}
+
+/**
+ * Cenário: Técnica Secreta ativa (Aniquilador com Destruidor)
+ */
+export function createTecnicaSecretaScenario(): CombatBonuses {
+  return createMockCombatBonuses({
+    attack: {
+      total: 5,
+      breakdown: createMockBreakdown([
+        { source: 'Ataque Especial II', value: 3, type: 'ability' },
+        { source: 'Luta (Veterano)', value: 1, type: 'skill_training' },
+        { source: 'Força', value: 1, type: 'origin' },
+      ]),
+    },
+    damage: {
+      total: 10,
+      extraDice: [],
+      breakdown: createMockBreakdown([
+        { source: 'Ataque Especial II', value: 3, type: 'ability' },
+        { source: 'Técnica Destruidor', value: 4, type: 'track_effect', conditional: 'Ativada' },
+        { source: 'Força', value: 3, type: 'origin' },
+      ]),
+    },
+    criticalMargin: {
+      total: 2,
+      breakdown: createMockBreakdown([
+        { source: 'Técnica Destruidor', value: 2, type: 'track_effect' },
+      ]),
+    },
+    initiative: {
+      total: 2,
+      breakdown: createMockBreakdown([
+        { source: 'Agilidade', value: 2, type: 'origin' },
+      ]),
+    },
+  });
+}
+
+/**
+ * Cenário: Combate com múltiplos rituais (apenas o maior aplica)
+ */
+export function createMultipleRitualsScenario(): CombatBonuses {
+  return createMockCombatBonuses({
+    attack: {
+      total: 3,
+      breakdown: createMockBreakdown([
+        { source: 'Luta (Treinado)', value: 1, type: 'skill_training' },
+        { source: 'Ritual Arma Atroz', value: 2, type: 'ritual' },
+        { 
+          source: 'Ritual Proteção do Combatente', 
+          value: 1, 
+          type: 'ritual', 
+          excluded: true,
+          excludedReason: 'Ritual maior ativo (Arma Atroz)'
+        },
+      ]),
+    },
+    damage: {
+      total: 4,
+      extraDice: ['2d6 Morte'],
+      breakdown: createMockBreakdown([
+        { source: 'Força', value: 2, type: 'origin' },
+        { source: 'Ritual Arma Atroz', value: '2d6', type: 'ritual' },
+      ]),
+    },
+    criticalMargin: {
+      total: 0,
+      breakdown: [],
+    },
+    initiative: {
+      total: 2,
+      breakdown: createMockBreakdown([
+        { source: 'Agilidade', value: 2, type: 'origin' },
+      ]),
+    },
+  });
+}
