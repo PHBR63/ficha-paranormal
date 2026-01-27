@@ -901,6 +901,28 @@ export function CombatRollModal({
       });
     }
     
+    // === TÉCNICAS DO ANIQUILADOR ATIVAS ===
+    // Exibe as técnicas selecionadas para que o usuário saiba que estão aplicadas
+    if (activeTechniqueEffects && activeTechniqueEffects.selectedTechniques.length > 0) {
+      // Lista as técnicas ativas (para informação visual - bônus de crítico são aplicados separadamente)
+      const techniqueNames = activeTechniqueEffects.selectedTechniques.map(id => {
+        switch (id) {
+          case 'amplo': return 'Amplo';
+          case 'destruidor': return 'Destruidor';
+          case 'letal': return `Letal${activeTechniqueEffects.letalCount > 1 ? ` (${activeTechniqueEffects.letalCount}x)` : ''}`;
+          case 'perfurante': return 'Perfurante';
+          default: return id;
+        }
+      });
+      sources.push({
+        label: 'Técnicas Aniquilador',
+        value: techniqueNames.join(', '),
+        type: 'track',
+        sourceName: 'Trilha Aniquilador',
+        description: `Técnicas ativas: ${techniqueNames.join(', ')}. Bônus aplicados ao crítico e efeitos especiais.`,
+      });
+    }
+    
     return sources;
   }, [attackSkill, classPowerBonuses, passiveBonuses, selectedBonuses, availableBonuses, manualAttackMod, weaponBuffBonuses, unifiedEffects, weapon, trackCombatBonuses, specialAttackConfig.enabled, specialAttackResult, proficiencyCheck, activeConditionalBonuses]);
 
@@ -1622,9 +1644,20 @@ export function CombatRollModal({
           <div className="flex flex-wrap gap-2 text-sm">
             <Badge variant="outline">{weapon.type}</Badge>
             <Badge variant="destructive">{weapon.damage} {weapon.damageType}</Badge>
-            <Badge variant="secondary">
-              Crítico: {effectiveCritical}+ {weapon.criticalMultiplier || 'x2'}
+            <Badge variant="secondary" className="flex items-center gap-1">
+              Crítico: {effectiveCritical}+ x{criticalMultiplier}
+              {/* Indicador visual se há bônus de técnica aplicados */}
+              {(activeTechniqueEffects?.criticalMarginBonus || activeTechniqueEffects?.criticalMultiplierBonus) && (
+                <Sparkles className="w-3 h-3 text-amber-400" />
+              )}
             </Badge>
+            {/* Indicador visual de técnicas ativas em destaque */}
+            {activeTechniqueEffects && activeTechniqueEffects.selectedTechniques.length > 0 && (
+              <Badge variant="outline" className="bg-amber-500/10 border-amber-500/50 text-amber-400 gap-1">
+                <Crosshair className="w-3 h-3" />
+                {activeTechniqueEffects.selectedTechniques.length} técnica(s)
+              </Badge>
+            )}
           </div>
 
           {/* Indicador de Buffs de Arma Ativos - ANTES de rolar */}
@@ -2732,6 +2765,40 @@ export function CombatRollModal({
                       </>
                     )}
                   </div>
+                  
+                  {/* === INDICADORES DAS TÉCNICAS DO ANIQUILADOR APLICADAS === */}
+                  {activeTechniqueEffects && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="flex flex-wrap items-center justify-center gap-1.5 pt-2"
+                    >
+                      {activeTechniqueEffects.ignoreResistance > 0 && (
+                        <Badge variant="outline" className="text-xs gap-1 bg-rose-500/10 border-rose-500/50 text-rose-400">
+                          <Shield className="w-3 h-3" />
+                          Ignora {activeTechniqueEffects.ignoreResistance} RD
+                        </Badge>
+                      )}
+                      {activeTechniqueEffects.additionalTargets > 0 && (
+                        <Badge variant="outline" className="text-xs gap-1 bg-cyan-500/10 border-cyan-500/50 text-cyan-400">
+                          <Target className="w-3 h-3" />
+                          +{activeTechniqueEffects.additionalTargets} alvo adjacente
+                        </Badge>
+                      )}
+                      {activeTechniqueEffects.criticalMultiplierBonus > 0 && damageResult.isCritical && (
+                        <Badge variant="outline" className="text-xs gap-1 bg-amber-500/10 border-amber-500/50 text-amber-400">
+                          <Zap className="w-3 h-3" />
+                          +{activeTechniqueEffects.criticalMultiplierBonus} multiplicador
+                        </Badge>
+                      )}
+                      {activeTechniqueEffects.criticalMarginBonus > 0 && (
+                        <Badge variant="outline" className="text-xs gap-1 bg-purple-500/10 border-purple-500/50 text-purple-400">
+                          <Crosshair className="w-3 h-3" />
+                          +{activeTechniqueEffects.criticalMarginBonus} margem crítico
+                        </Badge>
+                      )}
+                    </motion.div>
+                  )}
                 </div>
 
                 <Separator />
