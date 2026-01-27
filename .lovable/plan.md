@@ -1,288 +1,149 @@
 
-# Plano de Correção: Custo de PE Dinâmico do Ataque Especial
+# Plano: Testes de Snapshot para Breakdowns de Bônus na UI
 
-## Resumo do Problema
+## Objetivo
+Adicionar testes de snapshot para garantir a consistência visual dos componentes que exibem breakdowns de bônus no sistema, detectando mudanças não-intencionais na estrutura de dados e apresentação.
 
-O sistema de Ataque Especial exibe e cobra um custo de PE fixo baseado no tier máximo do NEX, independentemente de quantos incrementos de +5 o jogador escolhe usar.
+## Análise da Situação Atual
 
-### Comportamento Atual (Bug)
-- NEX 85%+ = sempre 5 PE, mesmo com 0 incrementos usados
-- NEX 55%+ = sempre 4 PE, mesmo com 0 incrementos usados
-- NEX 25%+ = sempre 3 PE, mesmo com 0 incrementos usados
+### Componentes que Exibem Breakdowns
+1. **TrackCombatBonusesBar** - Barra de bônus de trilha com breakdown de ataque, dano, defesa e crítico
+2. **CombatRollModal** (Desktop) - Breakdown de bônus de ataque e dano com tooltips
+3. **MobileCombatRollModal** - Versão mobile com badges coloridos por fonte
+4. **DiceRollModal** - Breakdown de testes de perícia
+5. **Iniciativa** - Breakdown de fontes de bônus de iniciativa
 
-### Comportamento Correto (Regras Oficiais - Livro Base v1.3)
-- **Custo base**: 2 PE para o primeiro incremento (+5)
-- **Escalonamento**: +1 PE para cada incremento adicional
-- **Custo por incrementos usados**:
-  - 0 incrementos = 0 PE (não ativou)
-  - 1 incremento = 2 PE
-  - 2 incrementos = 3 PE
-  - 3 incrementos = 4 PE
-  - 4 incrementos = 5 PE
-
-O NEX determina **quantos incrementos estão disponíveis**, não o custo fixo.
-
----
-
-## Análise Técnica
-
-### Arquivos Afetados
-
-| Arquivo | Problema |
-|---------|----------|
-| `src/lib/class-powers/special-attack-utils.ts` | `getSpecialAttackOptions` retorna custo fixo; `calculateSpecialAttackFinal` usa esse custo fixo |
-| `src/components/character/SpecialAttackSelector.tsx` | UI exibe `options.peCost` (custo máximo) em vez de custo dinâmico |
-| `src/lib/class-powers/activatable-powers-bridge.ts` | `getAtaqueEspecialTier` também retorna custo fixo |
-
-### Causa Raiz
-
-1. **`getSpecialAttackOptions`** (linha 24-35): Define `peCost` como valor máximo do tier
-2. **`calculateSpecialAttackFinal`** (linha 118): Retorna `options.peCost` (fixo)
-3. **UI** (linhas 187, 320): Exibe `options.peCost` no badge
-
----
-
-## Solução Proposta
-
-### Estratégia: Custo Dinâmico Baseado em Incrementos Usados
-
-Criar nova função para calcular custo real baseado nos incrementos selecionados:
-
+### Estrutura de Dados Relevante
 ```typescript
-/**
- * Calcula o custo de PE baseado nos incrementos usados
- * Regra oficial: 2 PE base + 1 PE por incremento adicional
- */
-export function calculateDynamicPECost(totalIncrements: number): number {
-  if (totalIncrements <= 0) return 0;
-  // 1 incremento = 2 PE, 2 incrementos = 3 PE, etc.
-  return 1 + totalIncrements;  // ou: 2 + (totalIncrements - 1)
+interface BonusBreakdown {
+  source: string;        // Nome da fonte
+  value: number | string; // Valor do bônus
+  type: 'origin' | 'ability' | 'general_power' | ...;
+  conditional?: string;  // Condição se houver
+  active: boolean;       // Se está ativo
+  excluded?: boolean;    // Se excluído por stacking
+  excludedReason?: string; // Motivo da exclusão
 }
 ```
 
----
+### Infraestrutura Existente
+- Testes de snapshot para `ComputedEffects` já existem em `computed-effects-snapshot.vitest.ts`
+- Setup de testes configurado com jsdom, React Testing Library
+- Hook `useBonusSummaryFromSUE` converte SUE → BonusSummary para UI
 
-## Alterações Detalhadas
+## Estratégia de Implementação
 
-### 1. Atualizar `special-attack-utils.ts`
+### Fase 1: Criar Utilitários de Teste para Breakdowns
+Criar helpers que geram dados de breakdown consistentes para cenários de teste.
 
-**Arquivo**: `src/lib/class-powers/special-attack-utils.ts`
+### Fase 2: Testes de Snapshot para Estrutura de Dados
+Validar que a estrutura dos breakdowns permanece consistente.
 
-**Adicionar nova função**:
-```typescript
-/**
- * Calcula o custo de PE baseado nos incrementos usados
- * Regra oficial: 2 PE para primeiro +5, +1 PE por +5 adicional
- */
-export function calculateDynamicPECost(totalIncrements: number): number {
-  if (totalIncrements <= 0) return 0;
-  return 1 + totalIncrements; // 1 incr = 2 PE, 2 incr = 3 PE, etc.
-}
-```
-
-**Modificar `getSpecialAttackOptions`**:
-Renomear `peCost` para `maxPECost` para clareza (custo máximo possível no tier):
-```typescript
-export interface SpecialAttackOptions {
-  maxPECost: number;     // Custo MÁXIMO em PE (limite do tier)
-  totalBonus: number;    // Bônus total disponível (+5 por incremento)
-  increments: number;    // Quantidade de incrementos de +5
-  nexTier: string;       // Label do tier para UI
-}
-```
-
-**Modificar `calculateSpecialAttackFinal`**:
-Calcular custo dinamicamente baseado nos incrementos usados:
-```typescript
-// ANTES (linha 118):
-peCost: options.peCost,
-
-// DEPOIS:
-peCost: calculateDynamicPECost(totalUsed),
-```
-
-**Atualizar cálculo de Força Bruta** (linha 95-98):
-Usar custo dinâmico em vez de custo máximo:
-```typescript
-// ANTES:
-const forcaBrutaBonus = options.peCost * 2;
-
-// DEPOIS:
-const actualPECost = calculateDynamicPECost(totalUsed);
-const forcaBrutaBonus = actualPECost * 2;
-```
-
-### 2. Atualizar `SpecialAttackSelector.tsx`
-
-**Arquivo**: `src/components/character/SpecialAttackSelector.tsx`
-
-**Importar nova função**:
-```typescript
-import {
-  // ... imports existentes
-  calculateDynamicPECost,
-} from '@/lib/class-powers/special-attack-utils';
-```
-
-**Calcular custo dinâmico**:
-```typescript
-// Novo memo para custo dinâmico
-const dynamicPECost = useMemo(() => 
-  calculateDynamicPECost(config.attackIncrements + config.damageIncrements),
-  [config.attackIncrements, config.damageIncrements]
-);
-```
-
-**Atualizar verificação `canAfford`** (linha 94):
-```typescript
-// ANTES:
-const canAfford = currentPE >= options.peCost;
-
-// DEPOIS:
-// Pode pagar se: não ativou (0 PE) OU tem PE para pelo menos 1 incremento (2 PE)
-const canAfford = currentPE >= 2;
-```
-
-**Atualizar badges de PE** (linhas 187, 320):
-```typescript
-// ANTES:
-<Badge variant="secondary" className="text-xs">
-  {options.peCost} PE
-</Badge>
-
-// DEPOIS:
-<Badge variant="secondary" className={cn(
-  "text-xs",
-  dynamicPECost > 0 && "bg-primary text-primary-foreground"
-)}>
-  {dynamicPECost > 0 ? dynamicPECost : options.maxPECost} PE
-</Badge>
-```
-
-**Atualizar tooltip** (linhas 329-333):
-```typescript
-// ANTES:
-<p className="text-sm">
-  Gaste {options.peCost} PE para distribuir +{options.totalBonus} entre ataque e dano.
-</p>
-
-// DEPOIS:
-<p className="text-sm">
-  Gaste 2 PE para +5 em ataque ou dano. Cada +5 adicional custa +1 PE (máx {options.maxPECost} PE).
-</p>
-```
-
-**Atualizar aviso PE insuficiente** (linhas 287-291, 507-512):
-```typescript
-// ANTES:
-<p className="text-xs text-destructive">
-  PE insuficiente ({currentPE}/{options.peCost} necessário)
-</p>
-
-// DEPOIS:
-<p className="text-xs text-destructive">
-  PE insuficiente ({currentPE}/2 mínimo necessário)
-</p>
-```
-
-**Atualizar badge Força Bruta** (linhas 272-274, 468):
-```typescript
-// ANTES:
-Força Bruta (+{options.peCost * 2})
-
-// DEPOIS:
-Força Bruta (+{dynamicPECost * 2})
-```
-
-### 3. Atualizar `activatable-powers-bridge.ts`
-
-**Arquivo**: `src/lib/class-powers/activatable-powers-bridge.ts`
-
-**Modificar `getAtaqueEspecialTier`** (linhas 133-138):
-```typescript
-// Manter para limites de incrementos, mas clarificar que é o máximo
-export function getAtaqueEspecialTier(nex: number): { maxCost: number; maxBonus: number; increments: number } {
-  if (nex >= 85) return { maxCost: 5, maxBonus: 20, increments: 4 };
-  if (nex >= 55) return { maxCost: 4, maxBonus: 15, increments: 3 };
-  if (nex >= 25) return { maxCost: 3, maxBonus: 10, increments: 2 };
-  return { maxCost: 2, maxBonus: 5, increments: 1 };
-}
-```
+### Fase 3: Testes de Snapshot para Componentes de UI
+Testar a renderização dos componentes com diferentes cenários de bônus.
 
 ---
 
-## Fluxo Corrigido
+## Detalhamento Técnico
 
-### Exemplo: Personagem NEX 85%+ com 0 incrementos
-1. Toggle "Ataque Especial" = ON
-2. Badge mostra: "0 PE" (nenhum incremento selecionado)
-3. Incrementos disponíveis: 4, Usados: 0
+### Arquivos a Criar
 
-### Exemplo: Personagem NEX 85%+ com 2 incrementos (+10 total)
-1. Adiciona 1 incremento ao ataque (+5)
-2. Badge mostra: "2 PE"
-3. Adiciona 1 incremento ao dano (+5)
-4. Badge mostra: "3 PE"
-5. Força Bruta (se tiver): +6 dano (3 PE × 2)
+#### 1. `src/components/character/__tests__/BonusBreakdownSnapshot.test.tsx`
+Testes de snapshot para componentes de breakdown:
 
-### Exemplo: Personagem NEX 85%+ com 4 incrementos (+20 total)
-1. Usa todos os 4 incrementos
-2. Badge mostra: "5 PE" (máximo)
-3. Força Bruta: +10 dano (5 PE × 2)
+```typescript
+// Cenários de teste:
+describe('BonusBreakdown Snapshots', () => {
+  describe('TrackCombatBonusesBar', () => {
+    it('renderiza corretamente com bônus de ataque simples');
+    it('renderiza corretamente com múltiplas fontes');
+    it('renderiza corretamente com bônus excluídos por stacking');
+    it('renderiza corretamente com bônus condicionais');
+    it('renderiza corretamente breakdown de iniciativa');
+  });
+  
+  describe('CombatBonusBreakdown', () => {
+    it('snapshot de ataque com origem + poder geral');
+    it('snapshot de dano com trilha + atributo');
+    it('snapshot com rituais ativos');
+    it('snapshot com bônus de ataque especial');
+  });
+  
+  describe('SkillBreakdown', () => {
+    it('snapshot de perícia com treinamento');
+    it('snapshot com Conhecimento Aplicado ativo');
+    it('snapshot com swap de perícia (Impostor)');
+  });
+});
+```
 
----
+#### 2. `src/components/character/__tests__/breakdown-test-utils.ts`
+Utilitários para criar dados de teste:
 
-## Tabela de Custos Corrigida
+```typescript
+// Helpers para criar breakdowns de teste
+export function createMockCombatBonuses(overrides);
+export function createMockBreakdown(sources);
+export function createMockInitiativeBreakdown(sources);
+export function createMockDamageReduction(sources);
+```
 
-| Incrementos Usados | Bônus Total | Custo PE |
-|-------------------|-------------|----------|
-| 0 | +0 | 0 PE |
-| 1 | +5 | 2 PE |
-| 2 | +10 | 3 PE |
-| 3 | +15 | 4 PE |
-| 4 | +20 | 5 PE |
+#### 3. `src/hooks/__tests__/useBonusSummaryFromSUE.snapshot.test.ts`
+Testes de snapshot para a conversão SUE → BonusSummary:
 
----
+```typescript
+describe('useBonusSummaryFromSUE - Snapshots', () => {
+  describe('Estrutura de Saída', () => {
+    it('snapshot de combatente guerreiro NEX 50%');
+    it('snapshot de especialista infiltrador NEX 75%');
+    it('snapshot de ocultista flagelador NEX 99%');
+  });
+  
+  describe('Breakdowns por Categoria', () => {
+    it('attack breakdown com múltiplas fontes');
+    it('damage breakdown com trilha + poder');
+    it('defense breakdown com armadura + escudo + ritual');
+    it('initiative breakdown com operações especiais');
+  });
+});
+```
 
-## Compatibilidade com Força Bruta
+### Cenários de Teste Prioritários
 
-O poder **Força Bruta** concede +2 de dano por PE gasto. Com o custo dinâmico:
+| Cenário | Componente | Fontes de Bônus |
+|---------|------------|-----------------|
+| Guerreiro corpo-a-corpo | TrackCombatBonusesBar | Ataque Especial, Golpe Pesado, FOR |
+| Atirador de Elite | CombatRollModal | Mira de Elite, Tiro Certeiro, AGI |
+| Infiltrador assassino | MobileCombatRollModal | Ataque Furtivo, Assassinar, crítico |
+| Operações Especiais | Iniciativa | +5 trilha, treinamento, condição |
+| Tropa de Choque | DefenseBreakdown | Inquebrável, Casca Grossa, armadura |
 
-| Incrementos | Custo PE | Força Bruta |
-|-------------|----------|-------------|
-| 1 | 2 PE | +4 dano |
-| 2 | 3 PE | +6 dano |
-| 3 | 4 PE | +8 dano |
-| 4 | 5 PE | +10 dano |
+### Estrutura de Diretórios
 
----
+```text
+src/
+├── components/
+│   └── character/
+│       └── __tests__/
+│           ├── BonusBreakdownSnapshot.test.tsx  [NOVO]
+│           └── breakdown-test-utils.ts          [NOVO]
+├── hooks/
+│   └── __tests__/
+│       └── useBonusSummaryFromSUE.snapshot.test.ts [NOVO]
+└── lib/
+    └── __tests__/
+        └── computed-effects-snapshot.vitest.ts  [EXISTENTE - referência]
+```
 
-## Arquivos a Modificar
+## Benefícios
 
-1. **`src/lib/class-powers/special-attack-utils.ts`**
-   - Adicionar `calculateDynamicPECost`
-   - Modificar interface `SpecialAttackOptions` (renomear `peCost` → `maxPECost`)
-   - Atualizar `getSpecialAttackOptions`
-   - Atualizar `calculateSpecialAttackFinal` para usar custo dinâmico
-   - Corrigir cálculo de Força Bruta
+1. **Detecção de Regressões**: Qualquer mudança na estrutura de breakdowns será detectada automaticamente
+2. **Documentação Viva**: Snapshots servem como documentação da estrutura esperada
+3. **Consistência UI**: Garante que desktop e mobile exibem os mesmos dados
+4. **Validação de Stacking**: Testa que bônus excluídos aparecem corretamente com motivo
 
-2. **`src/components/character/SpecialAttackSelector.tsx`**
-   - Importar `calculateDynamicPECost`
-   - Adicionar memo para custo dinâmico
-   - Atualizar badges para exibir custo correto
-   - Atualizar tooltips explicativos
-   - Corrigir exibição de Força Bruta
+## Estimativa
 
-3. **`src/lib/class-powers/activatable-powers-bridge.ts`**
-   - Atualizar `getAtaqueEspecialTier` para clareza
-
----
-
-## Impacto
-
-- **Médio risco**: Alteração na lógica de custo pode afetar outros sistemas que usam `getSpecialAttackOptions`
-- **Alta prioridade**: Bug afeta todos os Combatentes com Ataque Especial
-
-## Tempo Estimado
-
-~45 minutos (correções em 3 arquivos + testes manuais)
+- **3 arquivos novos** de teste
+- **~25-30 cenários de teste** cobrindo os principais componentes
+- Compatível com a infraestrutura Vitest existente
