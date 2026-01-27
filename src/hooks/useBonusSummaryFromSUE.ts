@@ -343,8 +343,19 @@ export function useBonusSummaryFromSUE({
     // === BÔNUS CONDICIONAIS ===
     const conditionalBonuses: ConditionalBonus[] = [];
     
+    // Set para rastrear IDs já adicionados e evitar duplicatas
+    const addedBonusIds = new Set<string>();
+    
     // Converte efeitos toggleáveis do SUE para bônus condicionais
     for (const toggle of computed.toggleableEffects) {
+      // Normaliza o ID para evitar duplicatas (ex: track-disparo-letal vs disparo-letal)
+      const normalizedId = toggle.id.replace(/^track-/, '');
+      
+      // Pula se já foi adicionado (evita duplicatas)
+      if (addedBonusIds.has(normalizedId) || addedBonusIds.has(toggle.id)) {
+        continue;
+      }
+      
       conditionalBonuses.push({
         id: toggle.id,
         name: toggle.name,
@@ -353,6 +364,10 @@ export function useBonusSummaryFromSUE({
         effects: toggle.effects,
         source: 'ability' as const,
       });
+      
+      // Marca ambos os IDs como adicionados
+      addedBonusIds.add(toggle.id);
+      addedBonusIds.add(normalizedId);
     }
     
     // Adiciona bônus condicionais do sistema legado (poderes gerais)
