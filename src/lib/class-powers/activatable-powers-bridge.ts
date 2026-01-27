@@ -128,13 +128,16 @@ export function hasPowerOrAbility(
 
 /**
  * Calcula o tier de Ataque Especial baseado no NEX
- * Retorna o custo de PE e o bônus concedido
+ * Retorna o custo MÁXIMO de PE, bônus total e incrementos disponíveis
+ * 
+ * Nota: O custo real é dinâmico (2 PE para 1º incremento, +1 PE por adicional).
+ * Use calculateDynamicPECost() de special-attack-utils.ts para custo real.
  */
-export function getAtaqueEspecialTier(nex: number): { cost: number; bonus: number } {
-  if (nex >= 85) return { cost: 5, bonus: 20 };
-  if (nex >= 55) return { cost: 4, bonus: 15 };
-  if (nex >= 25) return { cost: 3, bonus: 10 };
-  return { cost: 2, bonus: 5 };
+export function getAtaqueEspecialTier(nex: number): { maxCost: number; maxBonus: number; increments: number } {
+  if (nex >= 85) return { maxCost: 5, maxBonus: 20, increments: 4 };
+  if (nex >= 55) return { maxCost: 4, maxBonus: 15, increments: 3 };
+  if (nex >= 25) return { maxCost: 3, maxBonus: 10, increments: 2 };
+  return { maxCost: 2, maxBonus: 5, increments: 1 };
 }
 
 // ========================================
@@ -589,9 +592,9 @@ export function getActivatablePowersForCharacter(
     activatable.push({
       id: 'ataque-especial',
       name: 'Ataque Especial',
-      description: `Gaste ${tier.cost} PE para +${tier.bonus} em ataque OU dano (ou divida entre ambos).`,
-      peCost: tier.cost,
-      effect: `+${tier.bonus} ataque/dano`,
+      description: `Gaste 2-${tier.maxCost} PE para até +${tier.maxBonus} em ataque E/OU dano (divida entre ambos).`,
+      peCost: 2, // Custo mínimo (1 incremento = 2 PE)
+      effect: `+5 a +${tier.maxBonus} ataque/dano`,
       icon: 'sword',
       effectType: 'combat_bonus',
       applicableSkills: ['luta', 'pontaria'],
@@ -940,9 +943,9 @@ export function calculatePowerActivationEffects(
       const tier = getAtaqueEspecialTier(nex);
       return {
         skillBonusChange: 0,
-        attackBonus: tier.bonus,
-        damageBonus: tier.bonus,
-        specialNote: `+${tier.bonus} para dividir entre ataque e dano`,
+        attackBonus: tier.maxBonus,
+        damageBonus: tier.maxBonus,
+        specialNote: `+${tier.maxBonus} para dividir entre ataque e dano (custo dinâmico 2-${tier.maxCost} PE)`,
       };
     }
     
