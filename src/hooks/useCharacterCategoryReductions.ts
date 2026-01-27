@@ -271,9 +271,14 @@ export function useCharacterCategoryReductions({
         return removeFavoriteAbility(item);
       }
 
+      // CORREÇÃO: Usa item.category que já é a categoria com modificações aplicadas
+      // (quando há modificações, category = categoria modificada; quando não há, category = base)
+      // A redução de favorita deve ser aplicada SOBRE a categoria final com modificações
+      const categoryToReduce = item.category;
+      
       return {
         ...item,
-        effectiveCategory: getEffectiveCategory(item.category, ability.reductionAmount),
+        effectiveCategory: getEffectiveCategory(categoryToReduce, ability.reductionAmount),
       };
     });
   }, [inventory, availableAbilities]);
