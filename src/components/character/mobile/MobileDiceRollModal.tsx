@@ -92,6 +92,9 @@ interface MobileDiceRollModalProps {
   onPEChange?: (newPE: number) => void;
   // Perícia sendo testada (ID para filtrar poderes aplicáveis como Perito)
   currentSkill?: string;
+  // Nível de treinamento atual da perícia (para filtrar Eclético)
+  // Eclético só aparece se oferecer um nível SUPERIOR ao atual
+  currentSkillTrainingLevel?: SkillTrainingLevel;
   // Bônus de perícias do personagem (para swapToSkill como Impostor/Motor de Busca)
   characterSkills?: Record<string, number>;
   // Props para integração SUE (opcional - para migração incremental)
@@ -151,10 +154,16 @@ export function MobileDiceRollModal({
   vigor = 1,      // Valor padrão para Vigor
   onPEChange,
   currentSkill,
+  currentSkillTrainingLevel, // Nível de treinamento atual (para filtrar Eclético)
   characterSkills = {}, // Bônus de perícias do personagem
   // SUE Config (migração incremental)
   characterConfig,
 }: MobileDiceRollModalProps) {
+  // Calcula o nível de treinamento automaticamente baseado no skillBonus se não fornecido
+  const effectiveTrainingLevel: SkillTrainingLevel = useMemo(() => {
+    if (currentSkillTrainingLevel) return currentSkillTrainingLevel;
+    return bonusToTrainingLevel(skillBonus);
+  }, [currentSkillTrainingLevel, skillBonus]);
   // Hook SUE para rolagens integradas (inicializa apenas se config disponível)
   const defaultConfig: SkillRollCharacterConfig = useMemo(() => ({
     characterClass: 'Especialista',
@@ -203,8 +212,23 @@ export function MobileDiceRollModal({
     let skillSwap: string | undefined; // Impostor/Motor de Busca: substitui perícia
     const notes: string[] = [];
     
+    // Eclético: bônus de treinamento temporário (substitui, não soma)
+    // Verifica qual tier de Eclético está ativo para calcular bônus de substituição
+    let ecleticoBonus: number | undefined;
+    
     for (const ap of activePowers) {
       const effects = calculatePowerActivationEffects(ap.powerId, nex, intellect);
+      
+      // Tratamento especial para Eclético: é SUBSTITUIÇÃO, não adição
+      // O Eclético dá "os benefícios de ser treinado", ou seja, o bônus TOTAL do nível
+      if (ap.powerId.startsWith('ecletico')) {
+        // Armazena o bônus do Eclético para uso especial
+        ecleticoBonus = effects.skillBonusChange;
+        if (effects.specialNote) notes.push(effects.specialNote);
+        // NÃO soma ao extraBonus - será tratado separadamente
+        continue;
+      }
+      
       extraBonus += effects.skillBonusChange;
       if (effects.extraDice) extraDice.push(effects.extraDice);
       if (effects.attributeSwap) attributeSwap = effects.attributeSwap;
@@ -212,18 +236,29 @@ export function MobileDiceRollModal({
       if (effects.specialNote) notes.push(effects.specialNote);
     }
     
-    return { extraBonus, extraDice, attributeSwap, skillSwap, notes };
+    return { extraBonus, extraDice, attributeSwap, skillSwap, notes, ecleticoBonus };
   }, [getActivePowers, nex, intellect]);
   
   // Calcula o bônus efetivo da perícia considerando swapToSkill (Impostor/Motor de Busca)
+  // e também Eclético (que SUBSTITUI o bônus de treinamento, não soma)
   const effectiveSkillBonus = useMemo(() => {
+    // Prioridade 1: Troca de perícia (Impostor/Motor de Busca)
     const swap = activatedPowerEffects.skillSwap;
     if (swap && characterSkills[swap] !== undefined) {
       // Usa o bônus da perícia substituta (Enganação para Impostor, Tecnologia para Motor de Busca)
       return characterSkills[swap];
     }
+    
+    // Prioridade 2: Eclético ativo - SUBSTITUI o bônus de treinamento
+    // O Eclético dá "os benefícios de ser treinado/veterano/expert"
+    // Portanto, se ativo, usa o bônus do Eclético NO LUGAR do bônus atual
+    if (activatedPowerEffects.ecleticoBonus !== undefined) {
+      // Retorna o bônus do Eclético, substituindo completamente o skillBonus original
+      return activatedPowerEffects.ecleticoBonus;
+    }
+    
     return skillBonus;
-  }, [activatedPowerEffects.skillSwap, characterSkills, skillBonus]);
+  }, [activatedPowerEffects.skillSwap, activatedPowerEffects.ecleticoBonus, characterSkills, skillBonus]);
 
   // Cores para cada tipo de bônus
   const bonusTypeColors: Record<BonusSource['type'], string> = {
@@ -291,9 +326,11 @@ export function MobileDiceRollModal({
           animationRef.current = null;
         }
         
-        // Rolagem real com bônus de poderes ativados, swapToSkill e troca de atributo
+        // Rolagem real com bônus de poderes ativados, swapToSkill, Eclético e troca de atributo
         const powerBonus = activatedPowerEffects.extraBonus;
-        const baseSkillBonus = activatedPowerEffects.skillSwap ? effectiveSkillBonus : skillBonus;
+        // Usa effectiveSkillBonus se skillSwap OU ecleticoBonus estiver ativo
+        const hasSkillReplacement = activatedPowerEffects.skillSwap || activatedPowerEffects.ecleticoBonus !== undefined;
+        const baseSkillBonus = hasSkillReplacement ? effectiveSkillBonus : skillBonus;
         const totalBonus = baseSkillBonus + resistanceBonus + powerBonus;
         
         // Calcula atributo efetivo (considera swapToSkill ou troca de atributo)
