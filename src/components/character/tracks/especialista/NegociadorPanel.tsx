@@ -31,7 +31,10 @@ import {
 // Props do Componente
 // =====================================================
 
-export interface NegociadorPanelProps extends UseNegociadorTrackProps {}
+export interface NegociadorPanelProps extends UseNegociadorTrackProps {
+  /** Trilha de Versatilidade do personagem (se houver) */
+  versatilityTrack?: { trackId: string; abilityId: string } | null;
+}
 
 // =====================================================
 // Componente Principal
@@ -47,7 +50,9 @@ function arePropsEqual(prev: NegociadorPanelProps, next: NegociadorPanelProps): 
   return (
     prev.classTrack === next.classTrack &&
     prev.nex === next.nex &&
-    prev.onPEChange === next.onPEChange
+    prev.onPEChange === next.onPEChange &&
+    prev.versatilityTrack?.trackId === next.versatilityTrack?.trackId &&
+    prev.versatilityTrack?.abilityId === next.versatilityTrack?.abilityId
   );
 }
 

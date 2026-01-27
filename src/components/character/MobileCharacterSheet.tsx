@@ -2120,6 +2120,7 @@ export function MobileCharacterSheet({
               onActivateEffect={activatedEffects.activateEffect}
               isEffectActive={activatedEffects.isEffectActive}
               onTrackPESpent={roundTracking.trackPESpent}
+              versatilityTrack={character.versatility_track}
             />
             
             {/* Técnico */}
@@ -2177,6 +2178,7 @@ export function MobileCharacterSheet({
               onActivateEffect={activatedEffects.activateEffect}
               isEffectActive={activatedEffects.isEffectActive}
               onTrackPESpent={roundTracking.trackPESpent}
+              versatilityTrack={character.versatility_track}
             />
 
             {/* Flagelador */}
@@ -2213,6 +2215,7 @@ export function MobileCharacterSheet({
               onActivateEffect={activatedEffects.activateEffect}
               isEffectActive={activatedEffects.isEffectActive}
               onTrackPESpent={roundTracking.trackPESpent}
+              versatilityTrack={character.versatility_track}
             />
             
             {/* Widget de Efeitos Passivos da Trilha */}

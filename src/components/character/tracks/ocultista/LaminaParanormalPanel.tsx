@@ -30,7 +30,13 @@ import type { EffectDuration } from '@/hooks/useActivatedEffects';
 
 // Comparação customizada para evitar re-renders desnecessários
 function arePropsEqual(prev: LaminaParanormalPanelProps, next: LaminaParanormalPanelProps): boolean {
-  return prev.nex === next.nex && prev.classTrack === next.classTrack && prev.peCurrent === next.peCurrent;
+  return (
+    prev.nex === next.nex && 
+    prev.classTrack === next.classTrack && 
+    prev.peCurrent === next.peCurrent &&
+    prev.versatilityTrack?.trackId === next.versatilityTrack?.trackId &&
+    prev.versatilityTrack?.abilityId === next.versatilityTrack?.abilityId
+  );
 }
 
 // =====================================================
@@ -40,6 +46,8 @@ function arePropsEqual(prev: LaminaParanormalPanelProps, next: LaminaParanormalP
 export interface LaminaParanormalPanelProps extends UseLaminaParanormalTrackProps {
   className?: string;
   isEffectActive?: (id: string) => boolean;
+  /** Trilha de Versatilidade do personagem (se houver) */
+  versatilityTrack?: { trackId: string; abilityId: string } | null;
 }
 
 // =====================================================

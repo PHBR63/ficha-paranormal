@@ -94,6 +94,8 @@ export interface UseConduiteTrackProps {
   onActivateEffect?: (id: string, name: string, duration: EffectDuration, metadata?: Record<string, unknown>) => void;
   /** Callback para rastrear PE gasto na rodada */
   onTrackPESpent?: (abilityName: string, cost: number) => void;
+  /** Trilha de Versatilidade do personagem (se houver) */
+  versatilityTrack?: { trackId: string; abilityId: string } | null;
 }
 
 // =====================================================
@@ -107,26 +109,41 @@ export function useConduiteTrack({
   onPEChange,
   onActivateEffect,
   onTrackPESpent,
+  versatilityTrack,
 }: UseConduiteTrackProps) {
   const { toast } = useToast();
   const [activatingAbility, setActivatingAbility] = useState<string | null>(null);
 
-  // Verifica se é trilha Conduíte (ID: condutor)
-  const isConduite = useMemo(() => {
+  // Verifica se é trilha Conduíte (trilha principal)
+  const isConduiteBase = useMemo(() => {
     if (!classTrack) return false;
     const trackNorm = classTrack.toLowerCase().replace(/\s+/g, '-');
     return trackNorm.includes('conduit') || trackNorm.includes('conduíte') || trackNorm === 'condutor';
   }, [classTrack]);
 
-  // Habilidades desbloqueadas pelo NEX
-  const unlockedAbilities = useMemo(() => {
-    return CONDUITE_ABILITIES.filter(a => nex >= a.minNex);
-  }, [nex]);
+  // Verifica se tem Ampliar Ritual via Versatilidade (habilidade NEX 10%)
+  const hasAmpliarRitualFromVersatility = 
+    versatilityTrack?.trackId === 'condutor' && 
+    versatilityTrack?.abilityId === 'ampliar-ritual';
 
-  // Passivas desbloqueadas pelo NEX
+  // Considerar como Conduíte se for a trilha principal OU tiver habilidade via Versatilidade
+  const isConduite = isConduiteBase || hasAmpliarRitualFromVersatility;
+
+  // Habilidades desbloqueadas pelo NEX (ou via Versatilidade para Ampliar Ritual)
+  const unlockedAbilities = useMemo(() => {
+    if (hasAmpliarRitualFromVersatility) {
+      // Se obteve via Versatilidade, só tem acesso ao Ampliar Ritual
+      return CONDUITE_ABILITIES.filter(a => a.id === 'ampliar-ritual');
+    }
+    if (!isConduiteBase) return [];
+    return CONDUITE_ABILITIES.filter(a => nex >= a.minNex);
+  }, [nex, isConduiteBase, hasAmpliarRitualFromVersatility]);
+
+  // Passivas desbloqueadas pelo NEX (apenas para trilha principal)
   const unlockedPassives = useMemo(() => {
+    if (!isConduiteBase) return [];
     return CONDUITE_PASSIVES.filter(p => nex >= p.minNex);
-  }, [nex]);
+  }, [nex, isConduiteBase]);
 
   // Verificar se pode pagar o custo de PE
   const canAffordAbility = useCallback((ability: ConduiteAbility): boolean => {
