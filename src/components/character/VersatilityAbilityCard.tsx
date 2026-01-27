@@ -109,14 +109,19 @@ export function VersatilityAbilityCard({
       transition={{ duration: 0.3 }}
     >
       <Card className={cn(
-        "border-2 transition-all hover:shadow-md",
+        "border-2 transition-all hover:shadow-md relative overflow-hidden",
         classColor
       )}>
+        {/* Faixa diagonal indicando Versatilidade */}
+        <div className="absolute -right-8 top-3 rotate-45 bg-gradient-to-r from-amber-500/80 to-orange-500/80 px-8 py-0.5 text-[9px] font-bold text-white shadow-sm">
+          VERSATILIDADE
+        </div>
+        
         <CardHeader className={compact ? "pb-2 py-3" : "pb-3"}>
           <div className="flex items-center gap-2">
-            {/* Ícone da classe */}
-            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-              <ClassIcon className="w-4 h-4 text-primary" />
+            {/* Ícone da classe com brilho */}
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-500/20 to-orange-500/20 flex items-center justify-center ring-2 ring-amber-500/30">
+              <ClassIcon className="w-4 h-4 text-amber-400" />
             </div>
             
             {/* Título e trilha */}
@@ -124,18 +129,18 @@ export function VersatilityAbilityCard({
               <CardTitle className="text-base font-semibold text-foreground truncate">
                 {ability.name}
               </CardTitle>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <Route className="w-3 h-3 text-amber-400" />
                 Trilha {track.name}
               </p>
             </div>
             
-            {/* Badge de Versatilidade */}
+            {/* Badge de NEX 50% */}
             <Badge 
               variant="outline" 
-              className="flex items-center gap-1 text-xs bg-primary/10 border-primary/30 text-primary"
+              className="flex items-center gap-1 text-[10px] bg-amber-500/10 border-amber-500/40 text-amber-300"
             >
-              <Route className="w-3 h-3" />
-              Versatilidade
+              NEX 50%
             </Badge>
           </div>
         </CardHeader>
@@ -178,10 +183,14 @@ export function VersatilityAbilityCard({
             </div>
           )}
           
-          {/* Indicador de fonte */}
-          <div className="mt-3 flex items-center gap-1 text-xs text-muted-foreground">
-            <Info className="w-3 h-3" />
-            <span>Obtido no NEX 50% via Versatilidade</span>
+          {/* Indicador de fonte com destaque */}
+          <div className="mt-3 flex items-center gap-2 p-2 rounded-md bg-gradient-to-r from-amber-500/10 to-orange-500/5 border border-amber-500/20">
+            <div className="flex items-center justify-center w-5 h-5 rounded-full bg-amber-500/20">
+              <Sparkles className="w-3 h-3 text-amber-400" />
+            </div>
+            <span className="text-xs text-amber-300/90">
+              Habilidade obtida via <span className="font-semibold text-amber-300">Versatilidade</span> (NEX 50%)
+            </span>
           </div>
         </CardContent>
       </Card>
