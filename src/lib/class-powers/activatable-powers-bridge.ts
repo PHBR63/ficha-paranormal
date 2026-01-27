@@ -566,20 +566,34 @@ export function getActivatablePowersForCharacter(
   
   // Perito (habilidade core do Especialista em NEX 5%)
   if (hasPowerOrAbility(powers, abilities, 'perito', 'Perito')) {
-    const peritoData = getPeritoExtraDice(nex);
-    
-    activatable.push({
-      id: 'perito',
-      name: 'Perito',
-      description: `Soma ${peritoData.dice} ao resultado do teste nas perícias escolhidas.`,
-      peCost: peritoData.cost,
-      effect: `+${peritoData.dice}`,
-      icon: 'sparkles',
-      effectType: 'extra_dice',
-      extraDice: peritoData.dice,
-      applicableSkills: peritoSkills && peritoSkills.length > 0 ? peritoSkills : undefined,
-      excludedSkills: ['luta', 'pontaria'],
-    });
+    /**
+     * Regra oficial (Livro Base v1.3 p.49):
+     * - Você pode gastar 2 PE para +1d6.
+     * - Conforme o NEX, você pode gastar +1 PE para aumentar o dado (até o limite liberado).
+     * 
+     * IMPORTANTE: exibimos TODAS as opções disponíveis (2–5 PE) e o usuário escolhe qual ativar ANTES da rolagem.
+     */
+    const peritoOptions: Array<{ id: string; dice: string; cost: number }> = [
+      { id: 'perito-d6', dice: '1d6', cost: 2 },
+    ];
+    if (nex >= 25) peritoOptions.push({ id: 'perito-d8', dice: '1d8', cost: 3 });
+    if (nex >= 55) peritoOptions.push({ id: 'perito-d10', dice: '1d10', cost: 4 });
+    if (nex >= 85) peritoOptions.push({ id: 'perito-d12', dice: '1d12', cost: 5 });
+
+    for (const opt of peritoOptions) {
+      activatable.push({
+        id: opt.id,
+        name: `Perito (${opt.dice})`,
+        description: `Soma ${opt.dice} ao resultado do teste nas perícias escolhidas.`,
+        peCost: opt.cost,
+        effect: `+${opt.dice}`,
+        icon: 'sparkles',
+        effectType: 'extra_dice',
+        extraDice: opt.dice,
+        applicableSkills: peritoSkills && peritoSkills.length > 0 ? peritoSkills : undefined,
+        excludedSkills: ['luta', 'pontaria'],
+      });
+    }
   }
   
   // ==================== COMBATENTE ====================
@@ -929,14 +943,17 @@ export function calculatePowerActivationEffects(
         specialNote: 'Benefícios de expert (+15)',
       };
       
-    case 'perito': {
-      const data = getPeritoExtraDice(nex);
-      return {
-        skillBonusChange: 0,
-        extraDice: data.dice,
-        specialNote: `Dados extras: ${data.dice}`,
-      };
-    }
+    // Perito (Especialista) - opções por dado/custo
+    // Regra: o jogador escolhe a opção (2–5 PE) ANTES da rolagem.
+    case 'perito': // legado (fallback)
+    case 'perito-d6':
+      return { skillBonusChange: 0, extraDice: '1d6', specialNote: 'Dados extras: 1d6' };
+    case 'perito-d8':
+      return { skillBonusChange: 0, extraDice: '1d8', specialNote: 'Dados extras: 1d8' };
+    case 'perito-d10':
+      return { skillBonusChange: 0, extraDice: '1d10', specialNote: 'Dados extras: 1d10' };
+    case 'perito-d12':
+      return { skillBonusChange: 0, extraDice: '1d12', specialNote: 'Dados extras: 1d12' };
     
     // Combatente
     case 'ataque-especial': {

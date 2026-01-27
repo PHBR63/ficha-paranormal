@@ -580,6 +580,8 @@ export function ClassPowerSelectionSection({
           }}
           power={pendingPower}
           onConfirm={handleSubchoiceConfirm}
+          // Para poderes como Perito que exigem perícias treinadas
+          trainedSkillIds={characterData.trainedSkills || []}
           existingWeaponGroups={Object.values(classPowerChoices)
             .filter(c => c.choiceType === 'weaponGroup')
             .flatMap(c => c.chosenValues)

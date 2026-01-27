@@ -1322,6 +1322,8 @@ export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) 
             onConfirm={handleClassPowerSubchoiceConfirm}
             instanceIndex={pendingClassPowerInstance}
             existingWeaponGroups={existingWeaponGroups}
+            // Para poderes como Perito que exigem perícias treinadas
+            trainedSkillIds={characterDataForPrereqs.trainedSkills || []}
           />
         )}
       </div>
