@@ -116,6 +116,35 @@ export interface PowerActivationState {
 }
 
 /**
+ * Nível de treinamento de perícia (conforme Livro Base v1.3)
+ * Valores numéricos para comparação: Destreinado < Treinado < Veterano < Expert
+ */
+export type SkillTrainingLevel = 'destreinado' | 'treinado' | 'veterano' | 'expert';
+
+/**
+ * Converte nível de treinamento para valor numérico para comparação
+ */
+export function getTrainingLevelValue(level: SkillTrainingLevel): number {
+  switch (level) {
+    case 'destreinado': return 0;
+    case 'treinado': return 1;
+    case 'veterano': return 2;
+    case 'expert': return 3;
+  }
+}
+
+/**
+ * Converte bônus numérico para nível de treinamento
+ * +5 = Treinado, +10 = Veterano, +15 = Expert
+ */
+export function bonusToTrainingLevel(bonus: number): SkillTrainingLevel {
+  if (bonus >= 15) return 'expert';
+  if (bonus >= 10) return 'veterano';
+  if (bonus >= 5) return 'treinado';
+  return 'destreinado';
+}
+
+/**
  * Props do componente
  */
 interface PowerActivationPanelProps {
@@ -129,6 +158,9 @@ interface PowerActivationPanelProps {
   onPowerToggle: (powerId: string, isActive: boolean) => void;
   // Perícia sendo testada (para filtrar poderes aplicáveis)
   currentSkill?: string;
+  // Nível de treinamento atual da perícia (para filtrar Eclético)
+  // Eclético só aparece se oferecer um nível SUPERIOR ao atual
+  currentSkillTrainingLevel?: SkillTrainingLevel;
   // Classes CSS adicionais
   className?: string;
   // Se o painel está expandido
@@ -285,6 +317,38 @@ function isPowerApplicable(power: ActivatablePower, skillId?: string): boolean {
 }
 
 /**
+ * Verifica se o poder Eclético é aplicável baseado no nível de treinamento atual
+ * 
+ * Regra oficial (Livro Base v1.3 p.49): Eclético permite "receber os benefícios de ser treinado"
+ * - Só faz sentido ativar se o nível oferecido for MAIOR que o nível atual
+ * - ecletico-treinado (+5): só aparece se perícia for Destreinada
+ * - ecletico-veterano (+10): só aparece se perícia for Destreinada ou Treinada
+ * - ecletico-expert (+15): só aparece se perícia for Destreinada, Treinada ou Veterana
+ */
+function isEcleticoApplicableForTrainingLevel(
+  powerId: string, 
+  currentLevel: SkillTrainingLevel
+): boolean {
+  const currentValue = getTrainingLevelValue(currentLevel);
+  
+  switch (powerId) {
+    case 'ecletico':
+    case 'ecletico-treinado':
+      // +5 (Treinado): só se for Destreinado (nível 0)
+      return currentValue < getTrainingLevelValue('treinado');
+    case 'ecletico-veterano':
+      // +10 (Veterano): só se for abaixo de Veterano (níveis 0-1)
+      return currentValue < getTrainingLevelValue('veterano');
+    case 'ecletico-expert':
+      // +15 (Expert): só se for abaixo de Expert (níveis 0-2)
+      return currentValue < getTrainingLevelValue('expert');
+    default:
+      // Não é Eclético, não aplica essa regra
+      return true;
+  }
+}
+
+/**
  * Calcula o dado do Perito baseado no NEX
  */
 export function getPeritoExtraDice(nex: number): { dice: string; cost: number } {
@@ -313,14 +377,26 @@ export function PowerActivationPanel({
   peCurrent,
   onPowerToggle,
   currentSkill,
+  currentSkillTrainingLevel = 'destreinado',
   className,
   isExpanded = true,
   onExpandToggle,
 }: PowerActivationPanelProps) {
   // Filtra poderes aplicáveis à perícia atual
+  // Inclui verificação de nível de treinamento para Eclético
   const applicablePowers = useMemo(() => {
-    return availablePowers.filter(power => isPowerApplicable(power, currentSkill));
-  }, [availablePowers, currentSkill]);
+    return availablePowers.filter(power => {
+      // Primeiro verifica se é aplicável pela perícia (match de nome)
+      if (!isPowerApplicable(power, currentSkill)) return false;
+      
+      // Se for Eclético, verifica se o nível oferecido é MAIOR que o atual
+      if (power.id.startsWith('ecletico')) {
+        return isEcleticoApplicableForTrainingLevel(power.id, currentSkillTrainingLevel);
+      }
+      
+      return true;
+    });
+  }, [availablePowers, currentSkill, currentSkillTrainingLevel]);
 
   // Calcula PE total que será gasto
   const totalPECost = useMemo(() => {

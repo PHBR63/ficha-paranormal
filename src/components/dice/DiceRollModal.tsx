@@ -24,7 +24,9 @@ import { DiceRollResult, rollSkillTest } from '@/lib/dice-roller';
 import { 
   PowerActivationPanel, 
   usePowerActivation, 
-  type ActivatablePower 
+  type ActivatablePower,
+  type SkillTrainingLevel,
+  bonusToTrainingLevel,
 } from './PowerActivationPanel';
 import { calculatePowerActivationEffects } from '@/lib/class-powers/activatable-powers-bridge';
 import { useSkillRollWithSUE, type SkillRollCharacterConfig } from '@/hooks/sue/useSkillRollWithSUE';
@@ -80,6 +82,9 @@ interface DiceRollModalProps {
   onPEChange?: (newPE: number) => void;
   // Perícia sendo testada (ID para filtrar poderes aplicáveis como Perito)
   currentSkill?: string;
+  // Nível de treinamento atual da perícia (para filtrar Eclético)
+  // Eclético só aparece se oferecer um nível SUPERIOR ao atual
+  currentSkillTrainingLevel?: SkillTrainingLevel;
   // Bônus de perícias do personagem (para swapToSkill como Impostor/Motor de Busca)
   characterSkills?: Record<string, number>;
   // Conhecimento Aplicado: se ativo, próximo teste usa Intelecto (exceto Luta/Pontaria)
@@ -149,6 +154,7 @@ export function DiceRollModal({
   vigor = 1,      // Valor padrão para Vigor
   onPEChange,
   currentSkill,
+  currentSkillTrainingLevel, // Nível de treinamento atual (para filtrar Eclético)
   characterSkills = {}, // Bônus de perícias do personagem
   // Conhecimento Aplicado
   conhecimentoAplicadoAtivo = false,
@@ -156,6 +162,11 @@ export function DiceRollModal({
   // SUE Config (migração incremental)
   characterConfig,
 }: DiceRollModalProps) {
+  // Calcula o nível de treinamento automaticamente baseado no skillBonus se não fornecido
+  const effectiveTrainingLevel: SkillTrainingLevel = useMemo(() => {
+    if (currentSkillTrainingLevel) return currentSkillTrainingLevel;
+    return bonusToTrainingLevel(skillBonus);
+  }, [currentSkillTrainingLevel, skillBonus]);
   // Hook SUE para rolagens integradas (inicializa apenas se config disponível)
   const defaultConfig: SkillRollCharacterConfig = useMemo(() => ({
     characterClass: 'Especialista',
@@ -217,8 +228,23 @@ export function DiceRollModal({
     let skillSwap: string | undefined; // Impostor/Motor de Busca: substitui perícia
     let notes: string[] = [];
     
+    // Eclético: bônus de treinamento temporário (substitui, não soma)
+    // Verifica qual tier de Eclético está ativo para calcular bônus de substituição
+    let ecleticoBonus: number | undefined;
+    
     for (const ap of activePowers) {
       const effects = calculatePowerActivationEffects(ap.powerId, nex, intellect);
+      
+      // Tratamento especial para Eclético: é SUBSTITUIÇÃO, não adição
+      // O Eclético dá "os benefícios de ser treinado", ou seja, o bônus TOTAL do nível
+      if (ap.powerId.startsWith('ecletico')) {
+        // Armazena o bônus do Eclético para uso especial
+        ecleticoBonus = effects.skillBonusChange;
+        if (effects.specialNote) notes.push(effects.specialNote);
+        // NÃO soma ao extraBonus - será tratado separadamente
+        continue;
+      }
+      
       extraBonus += effects.skillBonusChange;
       if (effects.extraDice) extraDice.push(effects.extraDice);
       if (effects.attributeSwap) attributeSwap = effects.attributeSwap;
@@ -226,18 +252,28 @@ export function DiceRollModal({
       if (effects.specialNote) notes.push(effects.specialNote);
     }
     
-    return { extraBonus, extraDice, attributeSwap, skillSwap, notes };
+    return { extraBonus, extraDice, attributeSwap, skillSwap, notes, ecleticoBonus };
   }, [getActivePowers, nex, intellect]);
   
   // Calcula o bônus efetivo da perícia considerando swapToSkill (Impostor/Motor de Busca)
+  // e também Eclético (que SUBSTITUI o bônus de treinamento, não soma)
   const effectiveSkillBonus = useMemo(() => {
+    // Prioridade 1: Troca de perícia (Impostor/Motor de Busca)
     const swap = activatedPowerEffects.skillSwap;
     if (swap && characterSkills[swap] !== undefined) {
-      // Usa o bônus da perícia substituta (Enganação para Impostor, Tecnologia para Motor de Busca)
       return characterSkills[swap];
     }
+    
+    // Prioridade 2: Eclético ativo - SUBSTITUI o bônus de treinamento
+    // O Eclético dá "os benefícios de ser treinado/veterano/expert"
+    // Portanto, se ativo, usa o bônus do Eclético NO LUGAR do bônus atual
+    if (activatedPowerEffects.ecleticoBonus !== undefined) {
+      // Retorna o bônus do Eclético, substituindo completamente o skillBonus original
+      return activatedPowerEffects.ecleticoBonus;
+    }
+    
     return skillBonus;
-  }, [activatedPowerEffects.skillSwap, characterSkills, skillBonus]);
+  }, [activatedPowerEffects.skillSwap, activatedPowerEffects.ecleticoBonus, characterSkills, skillBonus]);
 
   // Verifica se deve usar Conhecimento Aplicado (ativo externamente, exclui Luta/Pontaria)
   const shouldUseConhecimentoAplicado = useMemo(() => {
@@ -488,6 +524,7 @@ export function DiceRollModal({
                   onPowerToggle={togglePower}
                   peCurrent={peCurrent}
                   currentSkill={currentSkill || label}
+                  currentSkillTrainingLevel={effectiveTrainingLevel}
                   isExpanded={isPowerPanelExpanded}
                   onExpandToggle={() => setIsPowerPanelExpanded(!isPowerPanelExpanded)}
                 />
@@ -563,6 +600,7 @@ export function DiceRollModal({
                   onPowerToggle={togglePower}
                   peCurrent={peCurrent}
                   currentSkill={currentSkill || label}
+                  currentSkillTrainingLevel={effectiveTrainingLevel}
                   isExpanded={isPowerPanelExpanded}
                   onExpandToggle={() => setIsPowerPanelExpanded(!isPowerPanelExpanded)}
                 />

@@ -33,7 +33,10 @@ import confetti from 'canvas-confetti';
 import { DiceRollResult, rollSkillTest } from '@/lib/dice-roller';
 import { 
   usePowerActivation, 
-  type ActivatablePower 
+  type ActivatablePower,
+  type SkillTrainingLevel,
+  bonusToTrainingLevel,
+  getTrainingLevelValue,
 } from '@/components/dice/PowerActivationPanel';
 import { calculatePowerActivationEffects } from '@/lib/class-powers/activatable-powers-bridge';
 import { useSkillRollWithSUE, type SkillRollCharacterConfig } from '@/hooks/sue/useSkillRollWithSUE';
