@@ -691,6 +691,8 @@ export function MobileCharacterSheet({
     hpMax: character?.hp_max || 0,
     peCurrent: localPeCurrent,
     peMax: character?.pe_max || 0,
+    // Trilha de Versatilidade (NEX 50%) - necessário para bônus de iniciativa de Operações Especiais
+    versatilityTrack: character?.versatility_track || null,
   });
 
   // Sincroniza conjurações de rituais com a campanha em tempo real (paridade com desktop)
