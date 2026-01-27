@@ -6,11 +6,14 @@
  * - Ativas: Cai Dentro (NEX 40%), Duro de Matar (NEX 65%)
  * - Integração com SUE para bônus condicionais quando machucado
  * 
+ * DT de Cai Dentro: 10 + Limite de PE (por NEX) + Vigor (Livro Base v1.3)
+ * 
  * @module tracks/combatente/useTropaDeChoqueTrack
  */
 
 import { useState, useMemo, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { getPELimitByNex } from '@/lib/dice-roller';
 import type { EffectDuration, ComputedEffects } from '@/hooks';
 
 // =====================================================
@@ -56,7 +59,7 @@ export const TROPA_ABILITIES: TropaAbility[] = [
     minNex: 40,
     peCost: 1,
     actionType: 'reaction',
-    description: 'Sempre que um oponente em alcance curto ataca um de seus aliados, você pode gastar 1 reação e 1 PE para forçar que esse oponente faça um teste de Vontade (DT Vig). Se falhar, o oponente deve atacar você em vez de seu aliado. Este poder só funciona se você puder ser efetivamente atacado e estiver no alcance do ataque. Um oponente que passe no teste não pode ser afetado por Cai Dentro até o final da cena.',
+    description: 'Sempre que um oponente em alcance curto ataca um de seus aliados, você pode gastar 1 reação e 1 PE para forçar que esse oponente faça um teste de Vontade (DT 10 + Limite de PE + Vigor). Se falhar, o oponente deve atacar você em vez de seu aliado. Este poder só funciona se você puder ser efetivamente atacado e estiver no alcance do ataque. Um oponente que passe no teste não pode ser afetado por Cai Dentro até o final da cena.',
     shortEffect: 'Força inimigo a atacar você',
     usesVigorDT: true,
   },
@@ -168,7 +171,9 @@ export function useTropaDeChoqueTrack({
   }, [isTropaDeChoque, nex]);
 
   // Cálculos derivados
-  const vigorDT = useMemo(() => 10 + vigor, [vigor]);
+  // DT de Cai Dentro = 10 + Limite de PE (por NEX) + Vigor (Livro Base v1.3)
+  const peLimit = useMemo(() => getPELimitByNex(nex), [nex]);
+  const vigorDT = useMemo(() => 10 + peLimit + vigor, [peLimit, vigor]);
   const isWounded = useMemo(() => hpCurrent < (hpMax / 2), [hpCurrent, hpMax]);
   const cascaGrossaHP = useMemo(() => Math.floor(nex / 5), [nex]);
 
@@ -211,7 +216,7 @@ export function useTropaDeChoqueTrack({
       onActivateEffect?.(TROPA_EFFECT_IDS.CAI_DENTRO, 'Cai Dentro', 'instant', { dt: vigorDT });
       toast({
         title: 'Cai Dentro!',
-        description: `Inimigo testa Vontade (DT ${vigorDT}). -${ability.peCost} PE`,
+        description: `Inimigo testa Vontade (DT ${vigorDT} = 10 + ${peLimit} PE + ${vigor} Vig). -${ability.peCost} PE`,
       });
     } else if (ability.id === 'duro-de-matar') {
       const canReduceParanormal = nex >= 85;
@@ -221,7 +226,7 @@ export function useTropaDeChoqueTrack({
         description: `Dano ${canReduceParanormal ? '(físico ou paranormal)' : 'não paranormal'} reduzido à metade. -${ability.peCost} PE`,
       });
     }
-  }, [peCurrent, onPEChange, vigorDT, nex, toast, onActivateEffect]);
+  }, [peCurrent, onPEChange, vigorDT, peLimit, vigor, nex, toast, onActivateEffect, onTrackPESpent]);
 
   // Verifica se pode custear
   const canAfford = useCallback((peCost: number) => peCurrent >= peCost, [peCurrent]);
@@ -241,6 +246,7 @@ export function useTropaDeChoqueTrack({
     unlockedAbilities,
     unlockedPassives,
     vigorDT,
+    peLimit, // Limite de PE para exibição na DT
     isWounded,
     cascaGrossaHP,
     vigor,

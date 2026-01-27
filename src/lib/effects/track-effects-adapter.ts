@@ -402,18 +402,19 @@ function convertTrackAbilityToMechanics(
   }
 
   // === EFEITOS QUANDO MACHUCADO (Inquebrável) ===
+  // IMPORTANTE: Bônus são CONDICIONAIS (só quando machucado, PV < 50%)
+  // NÃO mapear para campos estáticos (defenseBonus, damageReduction) para evitar duplicação
   if (m.whenWounded) {
-    // Mapeia diretamente para EffectMechanics.whenWounded
+    // Mapeia apenas para EffectMechanics.whenWounded (condicional)
+    // O motor unified-effects-engine.ts aplica automaticamente quando isWounded = true
     mechanics.whenWounded = {
       hpThreshold: 50, // Padrão: PV abaixo de 50%
       defenseBonus: m.whenWounded.defenseBonus,
       damageReduction: m.whenWounded.damageResistance,
     };
 
-    // Legacy mapping para backward compatibility
-    mechanics.defenseBonus = m.whenWounded.defenseBonus;
-    mechanics.damageReduction = m.whenWounded.damageResistance;
-    mechanics.conditionalNote = 'Quando machucado';
+    // Nota para exibição (sem valores mapeados estaticamente)
+    mechanics.conditionalNote = 'Quando machucado (PV < 50%)';
   }
 
   // === EFEITOS QUANDO MORRENDO (Inquebrável) ===
