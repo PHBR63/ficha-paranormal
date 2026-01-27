@@ -5,6 +5,7 @@
  * Ordem Paranormal RPG
  */
 
+import '@testing-library/jest-dom';
 // Mock do matchMedia para testes de componentes responsivos
 Object.defineProperty(window, "matchMedia", {
   writable: true,
