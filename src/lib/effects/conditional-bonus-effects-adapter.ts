@@ -151,9 +151,11 @@ export const CONDITIONAL_BONUS_CATALOG: ConditionalBonusDefinition[] = [
     source: 'ability',
     condition: '3 PE + ação movimento (próximo Ataque Furtivo)',
     mechanics: {
+      // Multiplicador de dados do Ataque Furtivo (oficial v1.3)
+      sneakAttackMultiplier: 2,
       specialEffects: ['Ataque Furtivo causa dano dobrado'],
     },
-    requirements: { classTrack: 'infiltrador', minNex: 55 },
+    requirements: { classTrack: 'infiltrador', minNex: 65 }, // NEX 65% conforme Livro Base v1.3
   },
   {
     id: 'potencia-maxima',
