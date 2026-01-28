@@ -48,6 +48,8 @@ import {
   type UseMedicoDeCampoTrackProps 
 } from './useMedicoDeCampoTrack';
 import { HealingRollModal } from '../../HealingRollModal';
+import { EquipeTraumaModal, type CampaignAlly } from './EquipeTraumaModal';
+import type { ActiveCondition } from '@/hooks/character/useConditions';
 
 // =====================================================
 // Props do Componente
@@ -56,6 +58,16 @@ import { HealingRollModal } from '../../HealingRollModal';
 export interface MedicoDeCampoPanelProps extends UseMedicoDeCampoTrackProps {
   /** Trilha de Versatilidade do personagem (NEX 50%) */
   versatilityTrack?: { trackId: string; abilityId: string } | null;
+  /** ID do personagem */
+  characterId?: string;
+  /** Nome do personagem */
+  characterName?: string;
+  /** Condições ativas do personagem */
+  characterConditions?: ActiveCondition[];
+  /** Aliados de campanha (modo campanha) */
+  campaignAllies?: CampaignAlly[];
+  /** Callback para remover condição */
+  onRemoveCondition?: (conditionId: string) => Promise<boolean>;
 }
 
 // =====================================================
@@ -142,7 +154,7 @@ function MedicoDeCampoPanelComponent(props: MedicoDeCampoPanelProps) {
             size="sm"
             variant={track.canAffordEquipeTrauma ? "default" : "outline"}
             disabled={!track.canAffordEquipeTrauma}
-            onClick={track.handleEquipeTrauma}
+            onClick={track.handleOpenEquipeTrauma}
             className="shrink-0"
           >
             Usar
@@ -310,6 +322,21 @@ function MedicoDeCampoPanelComponent(props: MedicoDeCampoPanelProps) {
           currentHp={track.pvCurrent}
           maxHp={track.pvMax}
         />
+
+        {/* Modal de Equipe de Trauma (Mobile) */}
+        <EquipeTraumaModal
+          open={track.showEquipeTraumaModal}
+          onOpenChange={track.setShowEquipeTraumaModal}
+          characterId={props.characterId ?? ''}
+          characterName={props.characterName ?? 'Você'}
+          characterConditions={props.characterConditions ?? []}
+          campaignAllies={props.campaignAllies}
+          onConfirm={track.handleEquipeTrauma}
+          hasResgate={track.hasResgate}
+          defenseBonus={track.targetDefenseBonus}
+          peCost={2}
+          canAfford={track.canAffordEquipeTrauma}
+        />
       </>
     );
   }
@@ -389,6 +416,21 @@ function MedicoDeCampoPanelComponent(props: MedicoDeCampoPanelProps) {
         onApplyHealing={track.handleApplyHealing}
         currentHp={track.pvCurrent}
         maxHp={track.pvMax}
+      />
+
+      {/* Modal de Equipe de Trauma (Desktop) */}
+      <EquipeTraumaModal
+        open={track.showEquipeTraumaModal}
+        onOpenChange={track.setShowEquipeTraumaModal}
+        characterId={props.characterId ?? ''}
+        characterName={props.characterName ?? 'Você'}
+        characterConditions={props.characterConditions ?? []}
+        campaignAllies={props.campaignAllies}
+        onConfirm={track.handleEquipeTrauma}
+        hasResgate={track.hasResgate}
+        defenseBonus={track.targetDefenseBonus}
+        peCost={2}
+        canAfford={track.canAffordEquipeTrauma}
       />
     </>
   );

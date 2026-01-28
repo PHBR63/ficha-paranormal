@@ -115,7 +115,9 @@ export function useMedicoDeCampoTrack({
   const [showParamedicoDrawer, setShowParamedicoDrawer] = useState(false);
   const [showHealingRollModal, setShowHealingRollModal] = useState(false);
   const [pendingHealConfig, setPendingHealConfig] = useState<{ totalDice: number; cost: number } | null>(null);
-
+  
+  // Estado para o modal de Equipe de Trauma
+  const [showEquipeTraumaModal, setShowEquipeTraumaModal] = useState(false);
   // Verifica se é Médico de Campo (trilha principal)
   const isMedicoCampo = classTrack === 'Médico de Campo' || classTrack === 'medico-campo';
   
@@ -242,14 +244,24 @@ export function useMedicoDeCampoTrack({
   }, [pvCurrent, pvMax, onHPChange, hasResgate, targetDefenseBonus]);
 
   /**
-   * Usa Equipe de Trauma (2 PE)
+   * Abre o modal de seleção de alvo para Equipe de Trauma
    */
-  const handleEquipeTrauma = useCallback(() => {
+  const handleOpenEquipeTrauma = useCallback(() => {
+    setShowEquipeTraumaModal(true);
+  }, []);
+
+  /**
+   * Usa Equipe de Trauma (2 PE) - chamado após seleção de alvo e condição
+   * @param targetId - ID do alvo ('self', 'narrative', ou characterId do aliado)
+   * @param conditionId - ID da condição a remover (null se narrativo)
+   */
+  const handleEquipeTrauma = useCallback((targetId: 'self' | 'narrative' | string, conditionId: string | null) => {
     if (peCurrent < 2) {
       toast.error('PE insuficiente', { description: 'Equipe de Trauma requer 2 PE.' });
       return;
     }
 
+    // Deduz PE
     onPEChange(peCurrent - 2);
     onTrackPESpent?.('Equipe de Trauma', 2);
     
@@ -257,7 +269,13 @@ export function useMedicoDeCampoTrack({
       ? removeConditionAbilities[0].excludedConditions 
       : ['morrendo'];
     
-    onActivateEffect?.(TRACK_EFFECT_IDS.EQUIPE_TRAUMA ?? 'track-equipe-trauma', 'Equipe de Trauma', 'instant');
+    // Ativar efeito do Equipe de Trauma
+    onActivateEffect?.(
+      TRACK_EFFECT_IDS.EQUIPE_TRAUMA ?? 'track-equipe-trauma', 
+      'Equipe de Trauma', 
+      'instant',
+      { targetId, conditionId }
+    );
     
     // Ativar efeito de defesa do Resgate se desbloqueado
     if (hasResgate) {
@@ -269,13 +287,25 @@ export function useMedicoDeCampoTrack({
       );
     }
     
+    // Mensagem de feedback
+    const targetText = targetId === 'self' 
+      ? 'de você mesmo' 
+      : targetId === 'narrative' 
+        ? 'do aliado adjacente' 
+        : 'do aliado';
+    
     const defenseBonusText = hasResgate 
       ? ` Você e o aliado recebem +${targetDefenseBonus} Defesa até o início do seu próximo turno.` 
       : '';
     
     toast.success('Equipe de Trauma ativado!', {
-      description: `Remove uma condição negativa (exceto ${excludedConditions.join(', ')}) de aliado adjacente.${defenseBonusText}`
+      description: conditionId 
+        ? `Condição removida ${targetText}.${defenseBonusText}`
+        : `Remoção de condição ${targetText} (narrativo).${defenseBonusText}`
     });
+    
+    // Fecha o modal
+    setShowEquipeTraumaModal(false);
   }, [peCurrent, onPEChange, removeConditionAbilities, onActivateEffect, hasResgate, selfDefenseBonus, targetDefenseBonus, onTrackPESpent]);
 
   /**
@@ -321,6 +351,10 @@ export function useMedicoDeCampoTrack({
     setShowHealingRollModal,
     pendingHealConfig,
     
+    // Estado do modal Equipe de Trauma
+    showEquipeTraumaModal,
+    setShowEquipeTraumaModal,
+    
     // Habilidades desbloqueadas
     hasParamedico,
     hasEquipeTrauma,
@@ -343,7 +377,8 @@ export function useMedicoDeCampoTrack({
     // Handlers
     handleOpenParamedico,
     handleUseParamedico,
-    handleEquipeTrauma,
+    handleOpenEquipeTrauma, // Abre o modal de seleção de alvo
+    handleEquipeTrauma,     // Executa a ação após seleção
     handleReanimacao,
     handleApplyHealing,
     
