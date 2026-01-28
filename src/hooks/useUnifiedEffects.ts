@@ -351,10 +351,12 @@ export function useUnifiedEffects(
     );
 
     // ===== FASE 2: Combina todos os efeitos =====
+    // NOTA: trackCombatEffects já contém todos os efeitos de getTrackEffects (chama internamente)
+    // Por isso, quando em combate, usamos apenas trackCombatEffects para evitar duplicação
+    // Se NÃO está em combate, usamos trackEffects normalmente
     const allEffects: UnifiedEffect[] = [
       ...originEffects,
-      ...trackEffects,
-      ...trackCombatEffects,
+      ...(combatContext?.inCombat ? trackCombatEffects : trackEffects),
       ...versatilityEffects,
       ...conditionEffects,
       ...ritualEffects,

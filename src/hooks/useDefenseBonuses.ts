@@ -348,23 +348,9 @@ export function useDefenseBonuses({
       });
     }
     
-    // Inquebrável (Tropa de Choque): +5 Defesa quando machucado
-    const hasInquebravel = normalizedAbilities.some(a => 
-      a.includes('inquebravel') || a === 'inquebravel'
-    ) || abilities.some(a => 
-      a === 'inquebravel' || a === 'Inquebrável'
-    );
-    
-    if (hasInquebravel) {
-      const isActive = activeConditionalBonuses.includes('inquebravel');
-      breakdown.push({
-        source: 'Inquebrável',
-        type: 'ability',
-        bonus: 5,
-        conditional: 'quando machucado (PV < 50%)',
-        active: isActive,
-      });
-    }
+    // REMOVIDO: Inquebrável agora é gerenciado exclusivamente pelo SUE
+    // via track-effects-adapter.ts (whenWounded) para evitar duplicação
+    // O bônus de +5 Defesa é aplicado automaticamente quando PV < 50%
     
     // 10. PODER DE CLASSE: Aparas Precisas (+AGI em Defesa com arma leve corpo a corpo)
     // Livro Base p.50: "Quando está empunhando uma arma leve corpo a corpo, você soma 
