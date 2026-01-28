@@ -20,7 +20,7 @@ import { TacticalBoardKonva } from './TacticalBoardKonva';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
+// ScrollArea removido - usando overflow nativo para evitar bug #185 com React 19
 import {
   Select,
   SelectContent,

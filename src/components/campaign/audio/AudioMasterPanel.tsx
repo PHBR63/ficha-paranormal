@@ -25,7 +25,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
-import { ScrollArea } from '@/components/ui/scroll-area';
+// ScrollArea removido - usando overflow nativo para evitar bug #185 com React 19
 import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
@@ -220,7 +220,8 @@ export function AudioMasterPanel({ campaignId, isMaster }: AudioMasterPanelProps
         </div>
       </div>
 
-      <ScrollArea className="flex-1">
+      {/* Usando overflow nativo para evitar bug #185 */}
+      <div className="flex-1 overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
         <div className="p-3 space-y-4">
           {/* Cenas Rápidas */}
           <div>
@@ -506,7 +507,7 @@ export function AudioMasterPanel({ campaignId, isMaster }: AudioMasterPanelProps
             </div>
           </div>
         </div>
-      </ScrollArea>
+      </div>
 
       {/* Status atual */}
       {audioState?.playing_tracks.length > 0 && (

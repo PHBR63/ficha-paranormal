@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { ScrollArea } from '@/components/ui/scroll-area';
+// ScrollArea removido - usando overflow nativo para evitar bug #185 com React 19
 import { SessionCard } from './SessionCard';
 import { sendPushNotification } from '@/hooks';
 import {
@@ -339,8 +339,8 @@ export function SessionManager({
         </div>
       )}
 
-      {/* Lista de sessões */}
-      <ScrollArea className="h-[400px]">
+      {/* Lista de sessões - usando overflow nativo para evitar bug #185 */}
+      <div className="h-[400px] overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
         <div className="space-y-3">
           {sessions.filter(s => s.status !== 'active').map((session) => (
             <SessionCard
@@ -363,7 +363,7 @@ export function SessionManager({
             </div>
           )}
         </div>
-      </ScrollArea>
+      </div>
 
       {/* Dialog para criar sessão */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>

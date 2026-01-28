@@ -6,7 +6,7 @@ import React, { useState } from 'react';
 import { MessageSquare, Send, Lock, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
+// ScrollArea removido - usando overflow nativo para evitar bug #185 com React 19
 import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
@@ -132,8 +132,8 @@ export function WhisperDialog({ campaignId, members, currentCharacterId }: Whisp
             </Select>
           </div>
 
-          {/* Lista de mensagens */}
-          <ScrollArea className="flex-1 border rounded-lg p-3 bg-muted/20">
+          {/* Lista de mensagens - usando overflow nativo para evitar bug #185 */}
+          <div className="flex-1 border rounded-lg p-3 bg-muted/20 overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
             {!selectedRecipient ? (
               <div className="flex flex-col items-center justify-center h-full text-muted-foreground text-sm">
                 <MessageSquare className="w-8 h-8 mb-2 opacity-50" />
@@ -178,7 +178,7 @@ export function WhisperDialog({ campaignId, members, currentCharacterId }: Whisp
                 })}
               </div>
             )}
-          </ScrollArea>
+          </div>
 
           {/* Input de mensagem */}
           {selectedRecipient && (

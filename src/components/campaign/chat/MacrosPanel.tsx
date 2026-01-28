@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
+// ScrollArea removido - usando overflow nativo para evitar bug #185 com React 19
 import { Separator } from '@/components/ui/separator';
 import {
   DropdownMenu,
@@ -304,8 +304,8 @@ export function MacrosPanel({ characterId, campaignId, onRoll, className }: Macr
         </div>
       </div>
 
-      {/* Lista de Macros */}
-      <ScrollArea className="flex-1">
+      {/* Lista de Macros - usando overflow nativo para evitar bug #185 */}
+      <div className="flex-1 overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
         <div className="p-3 space-y-2">
           {(Object.keys(filteredMacros) as MacroType[]).map((type) => {
             const typeMacros = filteredMacros[type];
@@ -369,7 +369,7 @@ export function MacrosPanel({ characterId, campaignId, onRoll, className }: Macr
             </div>
           )}
         </div>
-      </ScrollArea>
+      </div>
 
       {/* Editor Dialog */}
       <MacroEditor

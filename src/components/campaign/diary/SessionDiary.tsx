@@ -8,7 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
+// ScrollArea removido - usando overflow nativo para evitar bug #185 com React 19
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SessionDiaryEntry } from './SessionDiaryEntry';
 import {
@@ -359,9 +359,9 @@ export function SessionDiary({ campaignId, campaignName = 'Campanha', isMaster }
           </TabsTrigger>
         </TabsList>
 
-        {/* Timeline View */}
+        {/* Timeline View - usando overflow nativo para evitar bug #185 */}
         <TabsContent value="timeline" className="mt-4">
-          <ScrollArea className="h-[500px] pr-4">
+          <div className="h-[500px] overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent pr-4">
             <div className="relative">
               {/* Linha do tempo vertical */}
               <div className="absolute left-[31px] top-6 bottom-6 w-0.5 bg-border" />
@@ -391,12 +391,12 @@ export function SessionDiary({ campaignId, campaignName = 'Campanha', isMaster }
                 )}
               </div>
             </div>
-          </ScrollArea>
+          </div>
         </TabsContent>
 
-        {/* List View - Simplificada */}
+        {/* List View - Simplificada - usando overflow nativo para evitar bug #185 */}
         <TabsContent value="list" className="mt-4">
-          <ScrollArea className="h-[500px]">
+          <div className="h-[500px] overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
             <div className="space-y-2">
               {filteredSessions.map((session) => (
                 <div
@@ -433,7 +433,7 @@ export function SessionDiary({ campaignId, campaignName = 'Campanha', isMaster }
                 </div>
               ))}
             </div>
-          </ScrollArea>
+          </div>
         </TabsContent>
       </Tabs>
     </div>
