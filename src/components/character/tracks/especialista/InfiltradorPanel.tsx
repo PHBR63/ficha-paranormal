@@ -154,6 +154,9 @@ function InfiltradorPanelComponent(props: InfiltradorPanelProps) {
                       </TooltipTrigger>
                       <TooltipContent className="max-w-xs">
                         <p>Gaste ação de movimento + 3 PE. Próximo Ataque Furtivo dobra dados. Se causar dano, alvo fica inconsciente/morrendo (Fort DT {track.assassinarDT} evita).</p>
+                        <p className="text-[10px] text-muted-foreground mt-1">
+                          DT = 10 + {track.assassinarPeLimit} (Limite PE) + {track.agility} (Agi) = {track.assassinarDT}
+                        </p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
@@ -162,6 +165,11 @@ function InfiltradorPanelComponent(props: InfiltradorPanelProps) {
               <p className={`${isMobile ? 'text-[10px]' : 'text-xs'} text-muted-foreground`}>
                 3 PE • Fort DT {track.assassinarDT}
               </p>
+              {!isMobile && (
+                <p className="text-[10px] text-primary/70 mt-0.5">
+                  10 + {track.assassinarPeLimit} (Limite PE) + {track.agility} (Agi)
+                </p>
+              )}
             </div>
           </div>
           <Button

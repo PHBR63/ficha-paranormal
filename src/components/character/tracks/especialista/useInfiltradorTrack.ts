@@ -20,7 +20,8 @@
 import { useState, useMemo, useCallback } from 'react';
 import { toast } from 'sonner';
 import { TRACK_EFFECT_IDS, type EffectDuration, type ComputedEffects } from '@/hooks';
-
+import { calculateAssassinarDT, type DTCalculationResult } from '@/lib/utils/ability-dt-calculator';
+import { getPELimitByNex } from '@/lib/dice-roller';
 // =====================================================
 // Constantes
 // =====================================================
@@ -52,9 +53,12 @@ export function getAtaqueFurtivoDice(nex: number): string {
 
 /**
  * Calcula a DT do teste de Fortitude para Assassinar
+ * Fórmula oficial v1.3: DT = 10 + Limite de PE + Agilidade
+ * 
+ * @deprecated Use calculateAssassinarDT de @/lib/utils/ability-dt-calculator
  */
-export function getAssassinarDT(agility: number): number {
-  return agility;
+export function getAssassinarDT(nex: number, agility: number): number {
+  return 10 + getPELimitByNex(nex) + agility;
 }
 
 // =====================================================
@@ -157,8 +161,10 @@ export function useInfiltradorTrack({
     return assassinarActive ? 2 : 1;
   }, [computedEffects?.sneakAttack, assassinarActive]);
 
-  // DT do Assassinar
-  const assassinarDT = useMemo(() => getAssassinarDT(agility), [agility]);
+  // DT do Assassinar (Fórmula v1.3: 10 + Limite PE + Agilidade)
+  const assassinarDTResult = useMemo(() => calculateAssassinarDT(nex, agility), [nex, agility]);
+  const assassinarDT = assassinarDTResult.total;
+  const assassinarPeLimit = assassinarDTResult.breakdown.peLimit;
 
   // Dados de furtividade do SUE
   const sueStealthBonuses = useMemo(() => computedEffects?.sneakAttack?.stealthBonuses, [computedEffects]);
@@ -242,9 +248,9 @@ export function useInfiltradorTrack({
     onActivateEffect?.(TRACK_EFFECT_IDS.ASSASSINAR, 'Assassinar', 'next-turn');
     
     toast.success('Assassinar ativado!', {
-      description: `Até o final do próximo turno: primeiro Ataque Furtivo terá dados dobrados. Alvo fica inconsciente/morrendo (Fort DT ${assassinarDT} evita).`
+      description: `Até o final do próximo turno: primeiro Ataque Furtivo terá dados dobrados. Alvo fica inconsciente/morrendo (Fort DT ${assassinarDT} = 10 + ${assassinarPeLimit} PE + ${agility} Agi evita).`
     });
-  }, [peCurrent, onPEChange, onActivateEffect, assassinarDT, onToggleConditionalBonus, onTrackPESpent]);
+  }, [peCurrent, onPEChange, onActivateEffect, assassinarDT, assassinarPeLimit, agility, onToggleConditionalBonus, onTrackPESpent]);
   
   /**
    * Cancela Assassinar (sem devolver PE)
@@ -294,6 +300,9 @@ export function useInfiltradorTrack({
     sneakAttackDice,
     sneakAttackMultiplier,
     assassinarDT,
+    assassinarPeLimit,
+    agility,
+    nex,
     removesStealthMovementPenalty,
     ignoresStealthPenalties,
     
