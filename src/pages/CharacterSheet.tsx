@@ -3342,6 +3342,7 @@ export default function CharacterSheet() {
                 unifiedEffects={unifiedEffects.computed}
                 excludedEffects={unifiedEffects.hardening?.excludedEffects || []}
                 activeConditionalBonuses={character.active_conditional_bonuses || []}
+                activatedTrackEffects={activatedEffects.activatedEffectIds}
                 onRollComplete={handleRollComplete}
                 weaponBuffs={weaponBuffs}
                 onRemoveWeaponBuff={removeWeaponBuff}

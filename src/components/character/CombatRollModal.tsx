@@ -295,6 +295,19 @@ export function CombatRollModal({
     vigor: attributes.vigor,
   }), [attributes]);
   
+  // Combina efeitos de trilha ativados com bônus condicionais que têm prefixo track-
+  // Isso garante que quando o usuário ativa pelo painel de bônus condicionais, o efeito seja aplicado
+  const combinedActivatedEffects = useMemo(() => {
+    const effectIds = new Set(activatedTrackEffects);
+    // Adiciona IDs de bônus condicionais que são efeitos de trilha
+    activeConditionalBonuses.forEach(id => {
+      if (id.startsWith('track-')) {
+        effectIds.add(id);
+      }
+    });
+    return Array.from(effectIds);
+  }, [activatedTrackEffects, activeConditionalBonuses]);
+  
   // Obtém bônus de trilha consolidados
   const trackCombatBonuses = useMemo(() => {
     return getTrackCombatBonuses(
@@ -302,9 +315,9 @@ export function CombatRollModal({
       nex,
       attributesForTrack,
       attackType,
-      activatedTrackEffects
+      combinedActivatedEffects
     );
-  }, [classTrack, nex, attributesForTrack, attackType, activatedTrackEffects]);
+  }, [classTrack, nex, attributesForTrack, attackType, combinedActivatedEffects]);
   
   // === PROCESSAR WEAPON BUFFS (Amaldiçoar Arma, etc.) ===
   // REGRA OFICIAL: Rituais NÃO acumulam entre si - usa o MAIOR de cada tipo
