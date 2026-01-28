@@ -1300,9 +1300,13 @@ export function CombatRollModal({
     const isMelee = weapon.type === 'Corpo a Corpo' || weapon.type === 'Briga';
     
     // Aplicar Atirar para Matar: dano máximo em crítico com arma de fogo
-    // Também verifica maximumDamageOnCrit da trilha (ex: Atirador de Elite)
-    const useMaxDamage = (advancedBonuses.atirarParaMatar && isCritical && isFirearm) ||
-      (trackCombatBonuses.maximumDamageOnCrit && isCritical);
+    // REGRA OFICIAL v1.3: Atirar para Matar só funciona com armas de fogo (firearm)
+    // advancedBonuses.atirarParaMatar = bônus condicional ativado manualmente
+    // trackCombatBonuses.maximumDamageOnCrit = habilidade passiva da trilha Atirador de Elite
+    const useMaxDamage = isCritical && isFirearm && (
+      advancedBonuses.atirarParaMatar || 
+      trackCombatBonuses.maximumDamageOnCrit
+    );
     
     // Calcular dados base (multiplicados se crítico)
     let diceCount = isCritical ? parsed.count * criticalMultiplier : parsed.count;
