@@ -24,8 +24,10 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { MobileCollapsibleSection } from '../../mobile/MobileCollapsibleSection';
 import { 
   useNegociadorTrack,
-  type UseNegociadorTrackProps 
+  type UseNegociadorTrackProps,
+  type SelectedAbility
 } from './useNegociadorTrack';
+import { TruqueMestreModal } from './TruqueMestreModal';
 
 // =====================================================
 // Props do Componente
@@ -236,24 +238,24 @@ function NegociadorPanelComponent(props: NegociadorPanelProps) {
 
       {/* NEX 99% - Truque de Mestre */}
       {track.hasTruqueMestre && (
-        <div className={`flex items-center justify-between gap-2 p-${isMobile ? '2' : '3'} rounded-lg bg-${isMobile ? 'yellow-900/30' : 'background/50'} border border-${isMobile ? 'yellow-500/20' : 'border/50'}`}>
+        <div className={`flex items-center justify-between gap-2 p-${isMobile ? '2' : '3'} rounded-lg bg-${isMobile ? 'accent/30' : 'background/50'} border border-${isMobile ? 'accent/20' : 'border/50'}`}>
           <div className="flex items-center gap-2 flex-1 min-w-0">
-            <Sparkles className="h-4 w-4 text-yellow-400 shrink-0" />
+            <Sparkles className="h-4 w-4 text-primary shrink-0" />
             <div className="min-w-0">
               <span className={`font-medium ${isMobile ? 'text-sm' : 'text-sm'}`}>Truque de Mestre</span>
               {!isMobile && <Badge variant="outline" className="text-[10px] ml-2">NEX 99%</Badge>}
               <p className={`${isMobile ? 'text-xs' : 'text-xs'} text-muted-foreground`}>
-                {isMobile ? 'Copia habilidade • 5 PE' : 'Simule qualquer habilidade que um aliado usou nesta cena. Ignora pré-requisitos, mas paga todos os custos.'}
+                {isMobile ? 'Copia habilidade • 5+ PE' : 'Simule qualquer habilidade que um aliado usou nesta cena. Ignora pré-requisitos, mas paga todos os custos.'}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            {!isMobile && <Badge variant="outline" className="text-[10px]">5 PE</Badge>}
+            {!isMobile && <Badge variant="outline" className="text-[10px]">5+ PE</Badge>}
             <Button
               size="sm"
               variant={track.canAffordTruqueMestre ? "default" : "outline"}
               disabled={!track.canAffordTruqueMestre}
-              onClick={track.handleTruqueMestre}
+              onClick={track.handleOpenTruqueMestre}
               className={isMobile ? '' : "h-7 text-xs"}
             >
               Usar
@@ -261,6 +263,20 @@ function NegociadorPanelComponent(props: NegociadorPanelProps) {
           </div>
         </div>
       )}
+
+      {/* Modal de Truque de Mestre */}
+      <TruqueMestreModal
+        open={track.showTruqueMestreModal}
+        onOpenChange={track.handleCloseTruqueMestreModal}
+        onConfirm={(ability) => track.handleTruqueMestre({
+          id: ability.id,
+          name: ability.name,
+          description: ability.description,
+          peCost: ability.peCost,
+          isPassive: ability.isPassive,
+        })}
+        peCurrent={props.peCurrent}
+      />
     </div>
   );
 
