@@ -1176,9 +1176,12 @@ export function MobileCombatRollModal({
       const isMelee = weapon.type === 'Corpo a Corpo' || weapon.type === 'Briga';
       const isFirearm = weapon.type === 'Disparo';
       
-      // Atirar para Matar ou dano máximo da trilha
-      const useMaxDamage = (advancedBonuses.atirarParaMatar && isCritical && isFirearm) ||
-        (trackCombatBonuses.maximumDamageOnCrit && isCritical);
+      // Atirar para Matar: dano máximo em crítico com arma de fogo
+      // REGRA OFICIAL v1.3: Só funciona com armas de fogo (firearm)
+      const useMaxDamage = isCritical && isFirearm && (
+        advancedBonuses.atirarParaMatar || 
+        trackCombatBonuses.maximumDamageOnCrit
+      );
       
       // Dados base
       let diceCount = isCritical ? parsed.count * criticalMultiplier : parsed.count;

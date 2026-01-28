@@ -26,6 +26,12 @@ const TRACK_BY_ID = new Map<string, UnifiedTrack>(
   ALL_TRACKS.map(t => [t.id, t])
 );
 
+// Mapa para busca por nome (normalizado) -> trilha
+// Usado como fallback quando o ID armazenado for o nome ao invés do ID
+const TRACK_BY_NAME = new Map<string, UnifiedTrack>(
+  ALL_TRACKS.map(t => [t.name.toLowerCase(), t])
+);
+
 // Mapa de habilidades por ID
 const ABILITY_BY_ID = new Map<string, UnifiedTrackAbility>();
 ALL_TRACKS.forEach(track => {
@@ -35,10 +41,41 @@ ALL_TRACKS.forEach(track => {
 });
 
 /**
- * Busca uma trilha pelo ID
+ * Normaliza um ID de trilha para formato canônico
+ * Remove hifens, converte para minúsculas
+ */
+function normalizeTrackId(id: string): string {
+  return id.toLowerCase().replace(/-/g, '').replace(/\s+/g, '');
+}
+
+/**
+ * Busca uma trilha pelo ID com normalização e fallback por nome
+ * 
+ * Prioridade de busca:
+ * 1. Busca exata pelo ID (ex: "atirador-elite")
+ * 2. Busca pelo nome (ex: "Atirador de Elite")
+ * 3. Busca normalizada (remove hifens e espaços)
  */
 export function getTrackById(id: string): UnifiedTrack | undefined {
-  return TRACK_BY_ID.get(id);
+  if (!id) return undefined;
+  
+  // 1. Busca exata pelo ID
+  const exactMatch = TRACK_BY_ID.get(id);
+  if (exactMatch) return exactMatch;
+  
+  // 2. Busca pelo nome (case-insensitive)
+  const byName = TRACK_BY_NAME.get(id.toLowerCase());
+  if (byName) return byName;
+  
+  // 3. Busca normalizada (remove hifens e espaços)
+  const normalizedInput = normalizeTrackId(id);
+  for (const track of ALL_TRACKS) {
+    if (normalizeTrackId(track.id) === normalizedInput) {
+      return track;
+    }
+  }
+  
+  return undefined;
 }
 
 /**
