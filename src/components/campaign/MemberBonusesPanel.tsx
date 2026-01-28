@@ -299,11 +299,16 @@ function MemberBonusCard({ member }: { member: MemberWithBonuses }) {
 export function MemberBonusesPanel({ campaignId, className }: MemberBonusesPanelProps) {
   const [refreshing, setRefreshing] = useState(false);
 
-  // OTIMIZAÇÃO: Migrado para useQuery com staleTime de 3 minutos
+  /**
+   * OTIMIZAÇÃO: Query em lote para evitar erro 400 (join inválido)
+   * A FK user_id aponta para auth.users, não public.profiles
+   * Então buscamos profiles separadamente e mesclamos com Map
+   */
   const { data: members = [], isLoading: loading, refetch } = useQuery({
     queryKey: ['campaign-members-bonuses', campaignId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // 1. Busca membros com join apenas em characters (FK válida)
+      const { data: membersRaw, error: membersError } = await supabase
         .from('campaign_members')
         .select(`
           id,
@@ -312,26 +317,34 @@ export function MemberBonusesPanel({ campaignId, className }: MemberBonusesPanel
           role,
           active_bonuses,
           bonuses_updated_at,
-          characters:character_id (
+          characters (
             name,
             class,
             nex,
             photo_url
-          ),
-          profiles:user_id (
-            display_name
           )
         `)
         .eq('campaign_id', campaignId)
         .neq('role', 'master');
 
-      if (error) throw error;
+      if (membersError) throw membersError;
+      if (!membersRaw || membersRaw.length === 0) return [];
 
-      // Formata dados
-      return (data || []).map(m => ({
+      // 2. Busca profiles em lote usando IN (sem FK direta)
+      const userIds = membersRaw.map(m => m.user_id);
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, display_name')
+        .in('user_id', userIds);
+
+      // 3. Cria lookup object para O(1) e mescla
+      const profileLookup: Record<string, { user_id: string; display_name: string | null }> = {};
+      (profiles || []).forEach(p => { profileLookup[p.user_id] = p; });
+      
+      return membersRaw.map(m => ({
         ...m,
         character: m.characters as any,
-        profile: m.profiles as any,
+        profile: profileLookup[m.user_id] || { display_name: null },
       }));
     },
     staleTime: 3 * 60 * 1000,  // 3 minutos

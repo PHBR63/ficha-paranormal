@@ -218,11 +218,15 @@ export default function CampaignView() {
     prevMessagesLengthRef.current = messages.length;
   }, [messages]);
 
+  /**
+   * Carrega dados da campanha com queries em lote (escalável e otimizado)
+   * Em vez de N+1 queries, usa batch queries com merge em O(n)
+   */
   const fetchCampaignData = async () => {
     if (!id || !user) return;
 
     try {
-      // Fetch campaign
+      // 1. Fetch campaign
       const { data: campaignData, error: campaignError } = await supabase
         .from('campaigns')
         .select('*')
@@ -232,45 +236,38 @@ export default function CampaignView() {
       if (campaignError) throw campaignError;
       setCampaign(campaignData);
 
-      // Fetch members
-      const { data: membersData, error: membersError } = await supabase
+      // 2. Fetch members com join em characters (FK válida)
+      const { data: membersRaw, error: membersError } = await supabase
         .from('campaign_members')
-        .select('*')
+        .select(`
+          id, user_id, character_id, role, joined_at,
+          characters (id, name, class, nex, hp_current, hp_max, pe_current, pe_max, san_current, san_max, photo_url, conditions)
+        `)
         .eq('campaign_id', id);
 
       if (membersError) throw membersError;
 
-      // Fetch profiles and characters separately for each member
-      const membersWithData = await Promise.all(
-        (membersData || []).map(async (member) => {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('display_name, avatar_url')
-            .eq('user_id', member.user_id)
-            .single();
+      // 3. Busca profiles em lote (sem FK, então usa IN)
+      const userIds = (membersRaw || []).map(m => m.user_id);
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, display_name, avatar_url')
+        .in('user_id', userIds);
 
-          let character = null;
-          if (member.character_id) {
-            const { data: charData } = await supabase
-              .from('characters')
-              .select('id, name, class, nex, hp_current, hp_max, pe_current, pe_max, san_current, san_max, photo_url, conditions')
-              .eq('id', member.character_id)
-              .single();
-            character = charData;
-          }
-
-          return {
-            ...member,
-            profiles: profile || { display_name: null, avatar_url: null },
-            characters: character,
-          };
-        })
-      );
+      // 4. Cria lookup Map para O(1) e mescla
+      const profileLookup: Record<string, typeof profiles extends (infer T)[] | null ? T : never> = {};
+      (profiles || []).forEach(p => { profileLookup[p.user_id] = p; });
+      
+      const membersWithData = (membersRaw || []).map(member => ({
+        ...member,
+        profiles: profileLookup[member.user_id] || { display_name: null, avatar_url: null },
+        characters: member.characters,
+      }));
 
       setMembers(membersWithData as CampaignMember[]);
 
-      // Fetch messages
-      const { data: messagesData, error: messagesError } = await supabase
+      // 5. Fetch messages
+      const { data: messagesRaw, error: messagesError } = await supabase
         .from('campaign_messages')
         .select('*')
         .eq('campaign_id', id)
@@ -279,45 +276,42 @@ export default function CampaignView() {
 
       if (messagesError) throw messagesError;
 
-      // Get profile info for messages
-      const messagesWithProfiles = await Promise.all(
-        (messagesData || []).map(async (msg) => {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('display_name')
-            .eq('user_id', msg.user_id)
-            .single();
+      // 6. Busca profiles e characters para mensagens em lote
+      const msgUserIds = [...new Set((messagesRaw || []).map(m => m.user_id))];
+      const msgCharIds = [...new Set((messagesRaw || []).filter(m => m.character_id).map(m => m.character_id!))];
 
-          let character = null;
-          if (msg.character_id) {
-            const { data: charData } = await supabase
-              .from('characters')
-              .select('name')
-              .eq('id', msg.character_id)
-              .single();
-            character = charData;
-          }
+      const [msgProfilesRes, msgCharsRes] = await Promise.all([
+        supabase.from('profiles').select('user_id, display_name').in('user_id', msgUserIds),
+        msgCharIds.length > 0 
+          ? supabase.from('characters').select('id, name').in('id', msgCharIds)
+          : Promise.resolve({ data: [] }),
+      ]);
 
-          return {
-            ...msg,
-            profiles: profile || { display_name: null },
-            characters: character,
-          };
-        })
-      );
+      // 7. Cria lookup objects e mescla mensagens
+      const msgProfileLookup: Record<string, { user_id: string; display_name: string | null }> = {};
+      (msgProfilesRes.data || []).forEach(p => { msgProfileLookup[p.user_id] = p; });
+      
+      const msgCharLookup: Record<string, { id: string; name: string }> = {};
+      (msgCharsRes.data || []).forEach(c => { msgCharLookup[c.id] = c; });
 
-      setMessages(messagesWithProfiles as Message[]);
+      const messagesWithData = (messagesRaw || []).map(msg => ({
+        ...msg,
+        profiles: msgProfileLookup[msg.user_id] || { display_name: null },
+        characters: msg.character_id ? msgCharLookup[msg.character_id] || null : null,
+      }));
 
-      // Fetch active invite
-      const { data: inviteData } = await supabase
+      setMessages(messagesWithData as Message[]);
+
+      // 8. Fetch active invite com maybeSingle (evita erro 406)
+      const { data: inviteData, error: inviteError } = await supabase
         .from('campaign_invites')
         .select('*')
         .eq('campaign_id', id)
         .order('created_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
-      if (inviteData) {
+      if (!inviteError && inviteData) {
         setInvite(inviteData);
       }
 
