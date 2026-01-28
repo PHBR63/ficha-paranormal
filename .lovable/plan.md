@@ -1,149 +1,137 @@
 
-# Plano: Testes de Snapshot para Breakdowns de Bônus na UI
+# Plano: Seleção de Alvo para Equipe de Trauma
 
-## Objetivo
-Adicionar testes de snapshot para garantir a consistência visual dos componentes que exibem breakdowns de bônus no sistema, detectando mudanças não-intencionais na estrutura de dados e apresentação.
+## Resumo
 
-## Análise da Situação Atual
+Implementar um modal de seleção de alvo para a habilidade "Equipe de Trauma" (Médico de Campo, NEX 40%) que permita:
+1. **Modo Ficha (sem campanha)**: Selecionar entre o próprio personagem ou "aliado adjacente" (narrativo)
+2. **Modo Campanha**: Selecionar entre os personagens aliados da campanha, exibindo suas condições ativas para escolha informada
 
-### Componentes que Exibem Breakdowns
-1. **TrackCombatBonusesBar** - Barra de bônus de trilha com breakdown de ataque, dano, defesa e crítico
-2. **CombatRollModal** (Desktop) - Breakdown de bônus de ataque e dano com tooltips
-3. **MobileCombatRollModal** - Versão mobile com badges coloridos por fonte
-4. **DiceRollModal** - Breakdown de testes de perícia
-5. **Iniciativa** - Breakdown de fontes de bônus de iniciativa
+## Fluxo de Uso
 
-### Estrutura de Dados Relevante
+```text
+┌──────────────────────────────────────────────────────────────────┐
+│  1. Usuário clica "Usar" em Equipe de Trauma                     │
+├──────────────────────────────────────────────────────────────────┤
+│  2. Abre Modal/Drawer de seleção de alvo                         │
+│     ┌────────────────────────────────────────┐                   │
+│     │  🎯 Selecionar Alvo                    │                   │
+│     │                                        │                   │
+│     │  ○ Você mesmo                          │                   │
+│     │    [Abalado] [Fatigado]                │                   │
+│     │                                        │                   │
+│     │  ─── Aliados da Campanha ───           │ (se em campanha)  │
+│     │  ○ Nome do Aliado 1                    │                   │
+│     │    [Envenenado] [Debilitado]           │                   │
+│     │  ○ Nome do Aliado 2                    │                   │
+│     │    [Atordoado]                         │                   │
+│     │                                        │                   │
+│     │  ○ Outro aliado adjacente (narrativo)  │ (se sem campanha) │
+│     └────────────────────────────────────────┘                   │
+├──────────────────────────────────────────────────────────────────┤
+│  3. Após selecionar alvo, abre Modal de Condição a Remover       │
+│     ┌────────────────────────────────────────┐                   │
+│     │  💊 Remover Condição                   │                   │
+│     │                                        │                   │
+│     │  Condições de [Nome do Alvo]:          │                   │
+│     │  ○ Abalado (-1 em testes)              │                   │
+│     │  ○ Fatigado (-2 em testes)             │                   │
+│     │                                        │                   │
+│     │  ⚠️ Não pode remover: Morrendo         │                   │
+│     └────────────────────────────────────────┘                   │
+├──────────────────────────────────────────────────────────────────┤
+│  4. Confirma → Gasta 2 PE, Remove condição, Aplica bônus Resgate │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+## Arquivos a Criar
+
+### 1. `src/components/character/tracks/especialista/EquipeTraumaModal.tsx`
+Modal/Drawer responsivo para seleção de alvo e condição a remover.
+
+**Funcionalidades:**
+- Lista de alvos (próprio personagem, aliados de campanha, opção narrativa)
+- Para cada alvo, exibe suas condições ativas como badges visuais
+- Após selecionar alvo, exibe lista de condições removíveis (exceto "morrendo")
+- Integração com sistema de condições existente (`useConditions`)
+- Aplica bônus de Defesa do Resgate (NEX 65%) quando aplicável
+
+**Props:**
 ```typescript
-interface BonusBreakdown {
-  source: string;        // Nome da fonte
-  value: number | string; // Valor do bônus
-  type: 'origin' | 'ability' | 'general_power' | ...;
-  conditional?: string;  // Condição se houver
-  active: boolean;       // Se está ativo
-  excluded?: boolean;    // Se excluído por stacking
-  excludedReason?: string; // Motivo da exclusão
+interface EquipeTraumaModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  // Dados do personagem atual
+  characterId: string;
+  characterName: string;
+  characterConditions: ActiveCondition[];
+  // Aliados de campanha (opcional)
+  campaignAllies?: CampaignAlly[];
+  // Callbacks
+  onConfirm: (targetId: 'self' | 'narrative' | string, conditionId: string) => void;
+  // Bônus de Resgate
+  hasResgate: boolean;
+  defenseBonus: number;
+}
+
+interface CampaignAlly {
+  id: string;
+  characterId: string;
+  name: string;
+  photoUrl?: string;
+  conditions: ActiveCondition[];
 }
 ```
 
-### Infraestrutura Existente
-- Testes de snapshot para `ComputedEffects` já existem em `computed-effects-snapshot.vitest.ts`
-- Setup de testes configurado com jsdom, React Testing Library
-- Hook `useBonusSummaryFromSUE` converte SUE → BonusSummary para UI
+## Arquivos a Modificar
 
-## Estratégia de Implementação
+### 2. `src/components/character/tracks/especialista/useMedicoDeCampoTrack.ts`
+Adicionar estado e lógica para o modal de Equipe de Trauma.
 
-### Fase 1: Criar Utilitários de Teste para Breakdowns
-Criar helpers que geram dados de breakdown consistentes para cenários de teste.
+**Alterações:**
+- Novo estado: `showEquipeTraumaModal: boolean`
+- Novo handler: `handleOpenEquipeTrauma()` - abre o modal
+- Modificar `handleEquipeTrauma()` para receber targetId e conditionId
+- Adicionar lógica para remover condição do alvo selecionado
+- Retornar novos estados e handlers
 
-### Fase 2: Testes de Snapshot para Estrutura de Dados
-Validar que a estrutura dos breakdowns permanece consistente.
+### 3. `src/components/character/tracks/especialista/MedicoDeCampoPanel.tsx`
+Integrar o novo modal ao painel.
 
-### Fase 3: Testes de Snapshot para Componentes de UI
-Testar a renderização dos componentes com diferentes cenários de bônus.
+**Alterações:**
+- Importar `EquipeTraumaModal`
+- Passar props de condições do personagem
+- Passar props de aliados de campanha (quando disponível)
+- Renderizar o modal
 
----
+### 4. `src/pages/CharacterSheet.tsx`
+Fornecer dados de campanha e condições ao MedicoDeCampoPanel.
 
-## Detalhamento Técnico
+**Alterações:**
+- Passar `characterConditions` ao MedicoDeCampoPanel
+- Passar `campaignAllies` (do contexto de campanha, se disponível)
+- Adicionar callback `onRemoveCondition` para integração com useConditions
 
-### Arquivos a Criar
+## Detalhes Técnicos
 
-#### 1. `src/components/character/__tests__/BonusBreakdownSnapshot.test.tsx`
-Testes de snapshot para componentes de breakdown:
+### Integração com Sistema de Condições
+- Usar `useConditions` hook existente para obter e remover condições
+- Respeitar a regra oficial: não pode remover "morrendo"
+- Filtrar apenas condições negativas (debuffs e conditions, não buffs)
 
-```typescript
-// Cenários de teste:
-describe('BonusBreakdown Snapshots', () => {
-  describe('TrackCombatBonusesBar', () => {
-    it('renderiza corretamente com bônus de ataque simples');
-    it('renderiza corretamente com múltiplas fontes');
-    it('renderiza corretamente com bônus excluídos por stacking');
-    it('renderiza corretamente com bônus condicionais');
-    it('renderiza corretamente breakdown de iniciativa');
-  });
-  
-  describe('CombatBonusBreakdown', () => {
-    it('snapshot de ataque com origem + poder geral');
-    it('snapshot de dano com trilha + atributo');
-    it('snapshot com rituais ativos');
-    it('snapshot com bônus de ataque especial');
-  });
-  
-  describe('SkillBreakdown', () => {
-    it('snapshot de perícia com treinamento');
-    it('snapshot com Conhecimento Aplicado ativo');
-    it('snapshot com swap de perícia (Impostor)');
-  });
-});
-```
+### Integração com Modo Campanha
+- Verificar se `isInCampaign` está ativo
+- Se sim, buscar membros da campanha via `useCampaignMembers` ou dados existentes
+- Cada membro terá suas condições carregadas via realtime ou fetch
 
-#### 2. `src/components/character/__tests__/breakdown-test-utils.ts`
-Utilitários para criar dados de teste:
+### Remoção de Condição em Aliados (Campanha)
+Para o modo campanha, a remoção de condição em aliados requer:
+1. Identificar o `characterId` do aliado selecionado
+2. Chamar função que remove a condição no banco de dados
+3. O realtime sync propagará a mudança para todos os clientes
 
-```typescript
-// Helpers para criar breakdowns de teste
-export function createMockCombatBonuses(overrides);
-export function createMockBreakdown(sources);
-export function createMockInitiativeBreakdown(sources);
-export function createMockDamageReduction(sources);
-```
-
-#### 3. `src/hooks/__tests__/useBonusSummaryFromSUE.snapshot.test.ts`
-Testes de snapshot para a conversão SUE → BonusSummary:
-
-```typescript
-describe('useBonusSummaryFromSUE - Snapshots', () => {
-  describe('Estrutura de Saída', () => {
-    it('snapshot de combatente guerreiro NEX 50%');
-    it('snapshot de especialista infiltrador NEX 75%');
-    it('snapshot de ocultista flagelador NEX 99%');
-  });
-  
-  describe('Breakdowns por Categoria', () => {
-    it('attack breakdown com múltiplas fontes');
-    it('damage breakdown com trilha + poder');
-    it('defense breakdown com armadura + escudo + ritual');
-    it('initiative breakdown com operações especiais');
-  });
-});
-```
-
-### Cenários de Teste Prioritários
-
-| Cenário | Componente | Fontes de Bônus |
-|---------|------------|-----------------|
-| Guerreiro corpo-a-corpo | TrackCombatBonusesBar | Ataque Especial, Golpe Pesado, FOR |
-| Atirador de Elite | CombatRollModal | Mira de Elite, Tiro Certeiro, AGI |
-| Infiltrador assassino | MobileCombatRollModal | Ataque Furtivo, Assassinar, crítico |
-| Operações Especiais | Iniciativa | +5 trilha, treinamento, condição |
-| Tropa de Choque | DefenseBreakdown | Inquebrável, Casca Grossa, armadura |
-
-### Estrutura de Diretórios
-
-```text
-src/
-├── components/
-│   └── character/
-│       └── __tests__/
-│           ├── BonusBreakdownSnapshot.test.tsx  [NOVO]
-│           └── breakdown-test-utils.ts          [NOVO]
-├── hooks/
-│   └── __tests__/
-│       └── useBonusSummaryFromSUE.snapshot.test.ts [NOVO]
-└── lib/
-    └── __tests__/
-        └── computed-effects-snapshot.vitest.ts  [EXISTENTE - referência]
-```
-
-## Benefícios
-
-1. **Detecção de Regressões**: Qualquer mudança na estrutura de breakdowns será detectada automaticamente
-2. **Documentação Viva**: Snapshots servem como documentação da estrutura esperada
-3. **Consistência UI**: Garante que desktop e mobile exibem os mesmos dados
-4. **Validação de Stacking**: Testa que bônus excluídos aparecem corretamente com motivo
-
-## Estimativa
-
-- **3 arquivos novos** de teste
-- **~25-30 cenários de teste** cobrindo os principais componentes
-- Compatível com a infraestrutura Vitest existente
+### Preparação para Futuro
+O modal será projetado para suportar:
+- Lista dinâmica de aliados de campanha
+- Sincronização em tempo real de condições
+- Efeitos de bônus de Defesa propagados para o alvo
