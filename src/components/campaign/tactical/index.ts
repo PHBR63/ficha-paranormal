@@ -3,3 +3,4 @@
  */
 
 export { TacticalBoard } from './TacticalBoard';
+export { MapImageUploader } from './MapImageUploader';
