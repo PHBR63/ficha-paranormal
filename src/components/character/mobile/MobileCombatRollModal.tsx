@@ -353,15 +353,28 @@ export function MobileCombatRollModal({
   }, [nex, specialAttackConfig, hasForcaBruta, advancedBonuses.potenciaMaxima, isMeleeForSpecialAttack]);
   
   // Obtém bônus de trilha consolidados
+  // Combina efeitos de trilha ativados com bônus condicionais que têm prefixo track-
+  // Isso garante que quando o usuário ativa pelo painel de bônus condicionais, o efeito seja aplicado
+  const combinedActivatedEffects = useMemo(() => {
+    const effectIds = new Set(activatedTrackEffects);
+    // Adiciona IDs de bônus condicionais que são efeitos de trilha
+    activeConditionalBonuses.forEach(id => {
+      if (id.startsWith('track-')) {
+        effectIds.add(id);
+      }
+    });
+    return Array.from(effectIds);
+  }, [activatedTrackEffects, activeConditionalBonuses]);
+  
   const trackCombatBonuses = useMemo(() => {
     return getTrackCombatBonuses(
       classTrack || '',
       nex,
       attributes,
       attackType,
-      activatedTrackEffects
+      combinedActivatedEffects
     );
-  }, [classTrack, nex, attributes, attackType, activatedTrackEffects]);
+  }, [classTrack, nex, attributes, attackType, combinedActivatedEffects]);
   
   // === PROCESSAR WEAPON BUFFS (Amaldiçoar Arma, etc.) ===
   const weaponBuffBonuses = useMemo(() => {

@@ -101,6 +101,9 @@ interface CombatWeaponsTableProps {
   // NOVO: Bônus condicionais ativos (Combate Defensivo, Sentido Tático, etc.)
   activeConditionalBonuses?: string[];
   
+  // NOVO: Efeitos de trilha ativados (track-disparo-letal, track-ataque-extra, etc.)
+  activatedTrackEffects?: string[];
+  
   // Callback para histórico
   onRollComplete?: (result: DiceRollResult) => void;
   
@@ -157,6 +160,8 @@ export function CombatWeaponsTable({
   excludedEffects = [],
   // NOVO: Bônus condicionais ativos
   activeConditionalBonuses = [],
+  // NOVO: Efeitos de trilha ativados (disparo-letal, ataque-extra, etc.)
+  activatedTrackEffects = [],
   onRollComplete,
   onRollAttack, // Fallback antigo
   // Fase 5: Props de buffs de arma
@@ -386,6 +391,7 @@ export function CombatWeaponsTable({
           weaponBuffs={weaponBuffs}
           isFavoriteWeapon={selectedWeapon?.isFavoriteWeapon || false}
           activeConditionalBonuses={activeConditionalBonuses}
+          activatedTrackEffects={activatedTrackEffects}
           advancedBonuses={{
             assassinar: activeConditionalBonuses?.includes('assassinar'),
             potenciaMaxima: activeConditionalBonuses?.includes('potencia-maxima'),
