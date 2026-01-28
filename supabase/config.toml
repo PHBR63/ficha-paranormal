@@ -1,5 +1,17 @@
 project_id = "rctbxgpjtgkinwzdymbt"
 
+# ============================================================================
+# NOTA DE SEGURANÇA: verify_jwt = false
+# ============================================================================
+# O verify_jwt está desabilitado intencionalmente porque:
+# 1. Lovable Cloud usa signing-keys que não é compatível com verify_jwt = true
+# 2. A validação JWT é feita INTERNAMENTE via getClaims() em cada função
+# 3. Todas as funções implementam validação de Authorization header
+# 4. Tentativas não autenticadas retornam 401 Unauthorized
+#
+# Ref: Padrão documentado em supabase-disable-jwt-edge-functions
+# ============================================================================
+
 [functions.get-vapid-key]
 verify_jwt = false
 

@@ -82,12 +82,11 @@ export default defineConfig(({ mode }) => ({
         ],
       },
       workbox: {
-        // Importa scripts de push notifications no Service Worker
-        // - sw-push.js: handler interno de notificações
-        // - PushAlert CDN: serviço externo de push notifications
+        // Importa apenas scripts locais de push notifications no Service Worker
+        // SEGURANÇA: Scripts externos (CDN) foram removidos para prevenir supply chain attacks
+        // Ref: https://owasp.org/www-project-web-security-testing-guide/
         importScripts: [
-          'sw-push.js',
-          'https://cdn.pushalert.co/sw-87351.js'
+          'sw-push.js'
         ],
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff,woff2}"],
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024, // 4MB limit
