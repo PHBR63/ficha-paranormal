@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { ScrollArea } from '@/components/ui/scroll-area'; // Mantido apenas para dialogs com conteúdo estático
 import { Separator } from '@/components/ui/separator';
 import {
   Dialog,
@@ -295,8 +295,8 @@ export function SoundSceneManager({ campaignId, isMaster }: SoundSceneManagerPro
           />
         </div>
 
-        {/* Lista de Cenas */}
-        <ScrollArea className="h-[400px]">
+        {/* Lista de Cenas - usando overflow nativo para evitar bug #185 */}
+        <div className="h-[400px] overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
           <AnimatePresence mode="popLayout">
             {filteredScenes.length === 0 ? (
               <motion.div
@@ -436,7 +436,7 @@ export function SoundSceneManager({ campaignId, isMaster }: SoundSceneManagerPro
               </div>
             )}
           </AnimatePresence>
-        </ScrollArea>
+        </div>
 
         {/* Dialog de Criação/Edição */}
         <Dialog open={showCreateDialog} onOpenChange={(open) => {

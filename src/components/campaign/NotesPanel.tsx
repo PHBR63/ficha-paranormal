@@ -8,7 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
+// ScrollArea removido - usando overflow nativo para evitar bug #185 com React 19
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { NoteEditor } from './NoteEditor';
 import {
@@ -251,7 +251,7 @@ export function NotesPanel({ campaignId, isMaster }: NotesPanelProps) {
           </TabsList>
 
           <TabsContent value="my" className="flex-1 mt-2">
-            <ScrollArea className="h-[400px]">
+            <div className="h-[400px] overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
               <div className="space-y-2">
                 {filterBySearch(myNotes).map((note) => (
                   <NoteListItem
@@ -269,11 +269,11 @@ export function NotesPanel({ campaignId, isMaster }: NotesPanelProps) {
                   </p>
                 )}
               </div>
-            </ScrollArea>
+            </div>
           </TabsContent>
 
           <TabsContent value="shared" className="flex-1 mt-2">
-            <ScrollArea className="h-[400px]">
+            <div className="h-[400px] overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
               <div className="space-y-2">
                 {filterBySearch(sharedNotes).map((note) => (
                   <NoteListItem
@@ -289,7 +289,7 @@ export function NotesPanel({ campaignId, isMaster }: NotesPanelProps) {
                   </p>
                 )}
               </div>
-            </ScrollArea>
+            </div>
           </TabsContent>
         </Tabs>
       </div>

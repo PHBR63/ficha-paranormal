@@ -48,9 +48,10 @@ export function useWhispers(campaignId: string) {
     // Enriquecer com nomes
     const enrichedWhispers = await Promise.all(
       (data || []).map(async (msg) => {
+        // Usar maybeSingle() para evitar erro 406 quando perfil não existe
         const [senderProfile, recipientProfile] = await Promise.all([
-          supabase.from('profiles').select('display_name').eq('user_id', msg.user_id).single(),
-          supabase.from('profiles').select('display_name').eq('user_id', msg.recipient_id).single()
+          supabase.from('profiles').select('display_name').eq('user_id', msg.user_id).maybeSingle(),
+          supabase.from('profiles').select('display_name').eq('user_id', msg.recipient_id).maybeSingle()
         ]);
 
         return {
@@ -123,9 +124,10 @@ export function useWhispers(campaignId: string) {
           if (msg.user_id !== user.id && msg.recipient_id !== user.id) return;
 
           // Enriquecer com nomes
+          // Usar maybeSingle() para evitar erro 406 quando perfil não existe
           const [senderProfile, recipientProfile] = await Promise.all([
-            supabase.from('profiles').select('display_name').eq('user_id', msg.user_id).single(),
-            supabase.from('profiles').select('display_name').eq('user_id', msg.recipient_id).single()
+            supabase.from('profiles').select('display_name').eq('user_id', msg.user_id).maybeSingle(),
+            supabase.from('profiles').select('display_name').eq('user_id', msg.recipient_id).maybeSingle()
           ]);
 
           const enrichedWhisper: Whisper = {
