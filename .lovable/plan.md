@@ -1,46 +1,45 @@
 
-# Plano: Seleção de Alvo para Equipe de Trauma ✅
-
-## Status: IMPLEMENTADO
+# Correção Visual: Labels do Discurso Motivador
 
 ## Resumo
 
-Implementado um modal de seleção de alvo para a habilidade "Equipe de Trauma" (Médico de Campo, NEX 40%) que permite:
-1. **Modo Ficha (sem campanha)**: Selecionar entre o próprio personagem ou "aliado adjacente" (narrativo)
-2. **Modo Campanha**: Selecionar entre os personagens aliados da campanha, exibindo suas condições ativas para escolha informada
+Atualizar os textos dos botões da habilidade **Discurso Motivador** (Negociador, NEX 40%) para refletir corretamente a mecânica oficial de dados:
+- Botão 1: `+2 (4 PE)` → `+1d20 (4 PE)`
+- Botão 2: `+2 (8 PE)` → `+2d20 (8 PE)`
 
-## Arquivos Criados
+## Contexto
 
-### 1. `src/components/character/tracks/especialista/EquipeTraumaModal.tsx`
-Modal/Drawer responsivo para seleção de alvo e condição a remover.
+A mecânica já está correta no código (o hook `useNegociadorTrack` usa `diceBonus: 1` e `diceBonus: 2`), mas os labels dos botões exibem incorretamente "+2" em ambos os casos. Esta é uma correção puramente visual.
 
-**Funcionalidades implementadas:**
-- Lista de alvos (próprio personagem, aliados de campanha, opção narrativa)
-- Para cada alvo, exibe suas condições ativas como badges visuais
-- Após selecionar alvo, exibe lista de condições removíveis (exceto "morrendo")
-- Aplica bônus de Defesa do Resgate (NEX 65%) quando aplicável
-- Fluxo em dois passos: 1) Seleção de alvo → 2) Seleção de condição
+## Arquivo a Modificar
 
-## Arquivos Modificados
+### `src/components/character/tracks/especialista/NegociadorPanel.tsx`
 
-### 2. `src/components/character/tracks/especialista/useMedicoDeCampoTrack.ts`
-- Adicionado estado: `showEquipeTraumaModal`
-- Adicionado handler: `handleOpenEquipeTrauma()` - abre o modal
-- Modificado `handleEquipeTrauma()` para receber `targetId` e `conditionId`
-- Novos valores retornados no hook para controle do modal
+**Alterações:**
 
-### 3. `src/components/character/tracks/especialista/MedicoDeCampoPanel.tsx`
-- Integrado `EquipeTraumaModal` ao painel
-- Props estendidas para receber dados de condições e aliados
-- Botão "Usar" agora abre o modal em vez de executar diretamente
+1. **Versão Mobile** (linhas 164 e 172):
+   - Linha 164: `label: '4 PE'` → `label: '+1d20 (4 PE)'`
+   - Linha 172: `label: '8 PE'` → `label: '+2d20 (8 PE)'`
 
-### 4. `src/pages/CharacterSheet.tsx`
-- Adicionadas props `characterId`, `characterName`, `characterConditions` ao MedicoDeCampoPanel
-- Conversão de condições locais para formato `ActiveCondition` compatível com o modal
+2. **Versão Desktop** (linhas 191 e 201):
+   - Linha 191: `+2 (4 PE)` → `+1d20 (4 PE)`
+   - Linha 201: `+2 (8 PE)` → `+2d20 (8 PE)`
 
-## Próximos Passos (Modo Campanha)
+## Resultado Esperado
 
-Para habilitar a funcionalidade completa de campanha, será necessário:
-1. Passar `campaignAllies` com dados dos membros da campanha
-2. Implementar callback `onRemoveCondition` para remover condições de aliados via Supabase
-3. Sincronização realtime das condições entre clientes
+```text
+┌─────────────────────────────────────────────────────┐
+│  💬 Discurso Motivador              NEX 40%        │
+│  Você e aliados em alcance curto ganham bônus...   │
+│                                                     │
+│  ┌──────────────────┐  ┌──────────────────┐        │
+│  │  +1d20 (4 PE)    │  │  +2d20 (8 PE)    │        │
+│  └──────────────────┘  └──────────────────┘        │
+└─────────────────────────────────────────────────────┘
+```
+
+## Escopo
+
+- Alteração apenas de strings de texto
+- Sem impacto na lógica ou mecânica
+- 4 linhas modificadas no total
