@@ -2847,6 +2847,40 @@ export default function CharacterSheet() {
                 })}
                 computedEffects={unifiedEffects?.computed}
                 versatilityTrack={character.versatility_track}
+                // Props para Equipe de Trauma
+                characterId={character.id}
+                characterName={character.name}
+                characterConditions={character.conditions.map(c => {
+                  const parsed = parseCondition(c);
+                  // Converte para o formato esperado pelo EquipeTraumaModal
+                  return {
+                    id: parsed.id,
+                    character_id: character.id,
+                    user_id: user?.id ?? '',
+                    condition_id: parsed.id,
+                    condition_name: parsed.name,
+                    condition_type: 'condition' as const,
+                    description: null,
+                    mechanical_effect: null,
+                    duration_type: parsed.turnsRemaining !== null ? 'rounds' as const : 'permanent' as const,
+                    duration_remaining: parsed.turnsRemaining,
+                    duration_total: null,
+                    applied_at_round: null,
+                    applied_at_turn: null,
+                    decrements_at: 'end_of_turn' as const,
+                    icon: null,
+                    color: null,
+                    source_name: null,
+                    source_type: null,
+                    stacks: 1,
+                    max_stacks: 1,
+                    can_be_removed: true,
+                    campaign_id: null,
+                    session_id: null,
+                    created_at: parsed.addedAt instanceof Date ? parsed.addedAt.toISOString() : String(parsed.addedAt),
+                    updated_at: new Date().toISOString(),
+                  };
+                })}
               />
 
               {/* Negociador */}
