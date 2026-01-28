@@ -161,7 +161,7 @@ function NegociadorPanelComponent(props: NegociadorPanelProps) {
               buttons={[
                 {
                   id: 'discurso-4pe',
-                  label: '4 PE',
+                  label: '+1d20 (4 PE)',
                   onClick: () => track.handleDiscursoMotivador(false),
                   variant: track.canAffordDiscurso ? 'default' : 'outline',
                   type: 'secondary',
@@ -169,7 +169,7 @@ function NegociadorPanelComponent(props: NegociadorPanelProps) {
                 },
                 ...(track.canUseEnhancedDiscurso ? [{
                   id: 'discurso-8pe',
-                  label: '8 PE',
+                  label: '+2d20 (8 PE)',
                   onClick: () => track.handleDiscursoMotivador(true),
                   variant: (track.canAffordEnhancedDiscurso ? 'default' : 'outline') as 'default' | 'outline',
                   type: 'secondary' as const,
@@ -188,7 +188,7 @@ function NegociadorPanelComponent(props: NegociadorPanelProps) {
                 onClick={() => track.handleDiscursoMotivador(false)}
                 className="h-7 text-xs flex-1"
               >
-                +2 (4 PE)
+                +1d20 (4 PE)
               </Button>
               {track.canUseEnhancedDiscurso && (
                 <Button
@@ -198,7 +198,7 @@ function NegociadorPanelComponent(props: NegociadorPanelProps) {
                   onClick={() => track.handleDiscursoMotivador(true)}
                   className="h-7 text-xs flex-1"
                 >
-                  +2 (8 PE)
+                  +2d20 (8 PE)
                 </Button>
               )}
             </div>
