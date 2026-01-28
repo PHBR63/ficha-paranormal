@@ -724,28 +724,9 @@ export function useCharacterBonusSummary({
       });
     }
 
-    // Inquebrável (Tropa de Choque): +5 Defesa, RD 5 quando machucado
-    if (hasAbility('inquebravel')) {
-      const isActive = isConditionalActive('inquebravel');
-      conditionalBonuses.push({
-        id: 'inquebravel',
-        name: 'Inquebrável',
-        condition: 'PV < 50% (machucado)',
-        active: isActive,
-        effects: ['+5 Defesa', 'RD 5'],
-        source: 'ability',
-      });
-      if (isActive) {
-        damageReduction.physical.breakdown.push({
-          source: 'Inquebrável',
-          value: 5,
-          type: 'ability',
-          conditional: 'quando machucado',
-          active: true,
-        });
-        damageReduction.physical.total += 5;
-      }
-    }
+    // REMOVIDO: Inquebrável agora é gerenciado exclusivamente pelo SUE
+    // via track-effects-adapter.ts (whenWounded) para evitar duplicação
+    // O bônus de +5 Defesa e RD 5 é aplicado automaticamente quando PV < 50%
 
     // REMOVIDO: Disparo Letal agora é gerenciado exclusivamente pelo SUE
     // via track-effects-adapter.ts para evitar duplicação

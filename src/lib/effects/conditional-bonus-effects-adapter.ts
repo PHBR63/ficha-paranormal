@@ -141,17 +141,8 @@ export const CONDITIONAL_BONUS_CATALOG: ConditionalBonusDefinition[] = [
     },
     requirements: { ability: 'sentido tatico' },
   },
-  {
-    id: 'inquebravel',
-    name: 'Inquebrável',
-    source: 'ability',
-    condition: 'Ao atingir 0 PV (1x por cena)',
-    mechanics: {
-      tempHP: 1, // Fica com 1 PV
-      specialEffects: ['Não fica inconsciente ao chegar em 0 PV'],
-    },
-    requirements: { ability: 'inquebravel' },
-  },
+  // REMOVIDO: inquebravel - Agora gerenciado exclusivamente pelo track-effects-adapter.ts
+  // A habilidade Inquebrável (Tropa de Choque) usa whenWounded para aplicar +5 Defesa e RD 5
 
   // ===== HABILIDADES DE TRILHA =====
   {
