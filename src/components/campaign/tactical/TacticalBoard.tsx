@@ -41,6 +41,7 @@ import {
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { validateImageUrl } from '@/lib/security/urlValidator';
+import { MapImageUploader } from './MapImageUploader';
 import { toast } from 'sonner';
 import {
   MousePointer2,
@@ -129,8 +130,9 @@ export function TacticalBoard({
   const [showMapDialog, setShowMapDialog] = useState(false);
   const [showTokenDialog, setShowTokenDialog] = useState(false);
   const [showImageDialog, setShowImageDialog] = useState(false);
-  const [newMapUrl, setNewMapUrl] = useState('');
   const [newMapName, setNewMapName] = useState('');
+  const [newMapImageData, setNewMapImageData] = useState<{ file?: File; url?: string; previewUrl: string } | null>(null);
+  const [isCreatingMap, setIsCreatingMap] = useState(false);
   const [newTokenName, setNewTokenName] = useState('');
   const [newTokenType, setNewTokenType] = useState<'pc' | 'npc' | 'creature' | 'object' | 'marker'>('npc');
   const [selectedCharacterId, setSelectedCharacterId] = useState<string | null>(null);
@@ -628,24 +630,52 @@ export function TacticalBoard({
   // =====================================================
 
   const handleCreateMap = async () => {
-    if (!newMapUrl || !newMapName) return;
+    if (!newMapName || !newMapImageData) return;
     
-    // SEGURANÇA: Valida URL antes de criar mapa
-    const validation = validateImageUrl(newMapUrl);
-    if (!validation.isValid) {
-      toast.error(validation.error || 'URL de imagem inválida');
-      return;
+    setIsCreatingMap(true);
+    
+    try {
+      // Se for upload de arquivo, primeiro cria o mapa, depois faz upload
+      if (newMapImageData.file) {
+        // Cria mapa com URL temporária (será atualizada após upload)
+        const newMap = await board.createMap({
+          name: newMapName,
+          image_url: '', // Temporário
+          grid_size: 40,
+        });
+        
+        if (newMap) {
+          // Faz upload da imagem para o Storage
+          const imageUrl = await board.uploadMapImage(newMap.id, newMapImageData.file);
+          
+          if (imageUrl) {
+            // Ativa o mapa
+            await board.setActiveMap(newMap.id);
+          }
+        }
+      } else if (newMapImageData.url) {
+        // Se for URL externa (já validada pelo MapImageUploader)
+        const newMap = await board.createMap({
+          name: newMapName,
+          image_url: newMapImageData.url,
+          grid_size: 40,
+        });
+        
+        if (newMap) {
+          await board.setActiveMap(newMap.id);
+        }
+      }
+      
+      // Limpa estados
+      setShowMapDialog(false);
+      setNewMapName('');
+      setNewMapImageData(null);
+      
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao criar mapa');
+    } finally {
+      setIsCreatingMap(false);
     }
-    
-    await board.createMap({
-      name: newMapName,
-      image_url: validation.normalizedUrl || newMapUrl,
-      grid_size: 40,
-    });
-    
-    setShowMapDialog(false);
-    setNewMapUrl('');
-    setNewMapName('');
   };
 
   const handleCreateToken = async () => {
@@ -752,42 +782,41 @@ export function TacticalBoard({
             <DialogHeader>
               <DialogTitle>Criar Novo Mapa</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div>
-                <label className="text-sm font-medium">Nome do Mapa</label>
-                <Input
-                  value={newMapName}
-                  onChange={(e) => setNewMapName(e.target.value)}
-                  placeholder="Ex: Sala do Ritual"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium">URL da Imagem</label>
-                <Input
-                  value={newMapUrl}
-                  onChange={(e) => setNewMapUrl(e.target.value)}
-                  placeholder="https://..."
-                />
-                <div className="mt-2 p-2 bg-muted/50 rounded text-xs text-muted-foreground">
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <AlertTriangle className="w-3 h-3 text-warning" />
-                    <span className="font-medium">Segurança:</span>
-                  </div>
-                  <p>
-                    Apenas URLs HTTPS de fontes confiáveis são permitidas: 
-                    Supabase Storage, Imgur, Google Drive, Discord CDN, etc.
-                  </p>
-                </div>
-              </div>
+          <div className="space-y-4 py-4">
+            <div>
+              <label className="text-sm font-medium">Nome do Mapa</label>
+              <Input
+                value={newMapName}
+                onChange={(e) => setNewMapName(e.target.value)}
+                placeholder="Ex: Sala do Ritual"
+              />
             </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowMapDialog(false)}>
-                Cancelar
-              </Button>
-              <Button onClick={handleCreateMap} disabled={!newMapName || !newMapUrl}>
-                Criar Mapa
-              </Button>
-            </DialogFooter>
+            <div>
+              <label className="text-sm font-medium mb-2 block">Imagem do Mapa</label>
+              <MapImageUploader 
+                onImageSelect={setNewMapImageData}
+                isLoading={isCreatingMap}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowMapDialog(false)} disabled={isCreatingMap}>
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleCreateMap} 
+              disabled={!newMapName || !newMapImageData || isCreatingMap}
+            >
+              {isCreatingMap ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Criando...
+                </>
+              ) : (
+                'Criar Mapa'
+              )}
+            </Button>
+          </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
@@ -1107,7 +1136,7 @@ export function TacticalBoard({
       
       {/* Dialog criar mapa */}
       <Dialog open={showMapDialog} onOpenChange={setShowMapDialog}>
-        <DialogContent>
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>Criar Novo Mapa</DialogTitle>
           </DialogHeader>
@@ -1121,20 +1150,29 @@ export function TacticalBoard({
               />
             </div>
             <div>
-              <label className="text-sm font-medium">URL da Imagem</label>
-              <Input
-                value={newMapUrl}
-                onChange={(e) => setNewMapUrl(e.target.value)}
-                placeholder="https://..."
+              <label className="text-sm font-medium mb-2 block">Imagem do Mapa</label>
+              <MapImageUploader 
+                onImageSelect={setNewMapImageData}
+                isLoading={isCreatingMap}
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowMapDialog(false)}>
+            <Button variant="outline" onClick={() => setShowMapDialog(false)} disabled={isCreatingMap}>
               Cancelar
             </Button>
-            <Button onClick={handleCreateMap} disabled={!newMapName || !newMapUrl}>
-              Criar
+            <Button 
+              onClick={handleCreateMap} 
+              disabled={!newMapName || !newMapImageData || isCreatingMap}
+            >
+              {isCreatingMap ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Criando...
+                </>
+              ) : (
+                'Criar Mapa'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
