@@ -1,138 +1,235 @@
 
-# Plano: Correção da Habilidade Preparado para Tudo (NEX 99%)
+# Plano: Migração do Mapa Tático para React-Konva
 
-## Resumo do Problema
+## Análise da Situação Atual
 
-Atualmente, a habilidade **Preparado para Tudo** (Técnico, NEX 99%) permite apenas selecionar uma categoria (I, II, III, IV) e exibe uma mensagem genérica. O correto seria funcionar como **Improvisar** (NEX 65%), permitindo selecionar um item específico do catálogo, mas com as diferenças:
+### Implementação Existente
+O mapa tático usa **Canvas 2D nativo** com renderização imperativa:
+- ~1200 linhas em `TacticalBoard.tsx`
+- Função `drawCanvas()` redesenha tudo a cada frame
+- Eventos de mouse tratados manualmente
+- Zoom/pan implementados via transformações de contexto
 
-| Aspecto | Improvisar (65%) | Preparado para Tudo (99%) |
-|---------|------------------|---------------------------|
-| Custo PE | 2 + (2 × categoria) | 2 × categoria |
-| Duração | Temporário (1 cena) | Permanente |
-| Itens | Apenas equipamentos gerais | Qualquer item (exceto armas) |
+### Limitações Identificadas
+1. **Escalabilidade**: Redesenho completo a cada interação
+2. **Interatividade**: Detecção de clique em tokens é manual
+3. **Tamanho fixo**: Canvas não é verdadeiramente "infinito"
+4. **Ferramentas limitadas**: Desenho livre não implementado
+5. **Performance**: Sem otimização de objetos fora do viewport
 
-## Arquivos a Criar
+## Comparativo de Bibliotecas
 
-### 1. `src/components/character/tracks/especialista/PreparadoParaTudoItemSelector.tsx`
+| Característica | React-Konva | Tldraw | Pixi.js |
+|----------------|-------------|--------|---------|
+| React 19 | Suporte total | Suporte total | Requer bridge |
+| Bundle | ~72KB | ~250-400KB | ~150KB |
+| Performance | Alta (layers) | Excelente | Ultra-alta (WebGL) |
+| Mobile/Touch | Nativo | Melhor da classe | Manual |
+| Curva de aprendizado | Baixa | Média | Alta |
+| Colaboração nativa | Manual | Embutida | Manual |
 
-Novo componente baseado no `ImprovisarItemSelector.tsx`, com as seguintes diferenças:
+## Decisão: React-Konva
 
-**Funcionalidades:**
-- Lista todos os itens do catálogo (não só equipamentos gerais)
-- Exclui munições e armas (se houver armas no catálogo)
-- Custo: 2 PE × categoria (sem custo base)
-- Aviso indicando que o item é permanente
+**Justificativa:**
+- Bundle 3-5x menor que Tldraw
+- API declarativa se encaixa perfeitamente no React
+- Suporte completo a React 19 (versão 19.2.1)
+- Drag & drop, zoom, transformações são built-in
+- Mantemos controle total sobre sincronização via Supabase
+- Comunidade ativa e bem documentada
 
-**Estrutura:**
+## Arquitetura Proposta
 
 ```text
-┌─────────────────────────────────────────────────────────────┐
-│  🎒 Preparado para Tudo              Custo: 2 PE/categoria │
-│  Encontre qualquer item no fundo da sua bolsa!             │
-├─────────────────────────────────────────────────────────────┤
-│  🔍 [Buscar item...                                     ]  │
-├─────────────────────────────────────────────────────────────┤
-│  ▼ Categoria I                                      2 PE   │
-│    ├─ Kit de Primeiros Socorros    Operacional     2 PE   │
-│    ├─ Lanterna Tática              Operacional     2 PE   │
-│    └─ ...                                                  │
-│                                                             │
-│  ▼ Categoria II                                     4 PE   │
-│    ├─ Colete Balístico Leve        Operacional     4 PE   │
-│    └─ ...                                                  │
-├─────────────────────────────────────────────────────────────┤
-│  ✅ Item selecionado: Lanterna Tática                       │
-│     Categoria I • 1 espaço                                  │
-│     Ilumina área de 6m em cone...                          │
-├─────────────────────────────────────────────────────────────┤
-│  ℹ️ O item é adicionado permanentemente ao inventário.     │
-│                                                             │
-│  [Cancelar]              [Encontrar Item (2 PE)]           │
-└─────────────────────────────────────────────────────────────┘
+src/components/campaign/tactical/
+├── TacticalBoardKonva.tsx      # Novo componente principal
+├── layers/
+│   ├── BackgroundLayer.tsx     # Imagem de fundo do mapa
+│   ├── GridLayer.tsx           # Grid quadrado/hexagonal
+│   ├── TokenLayer.tsx          # Tokens arrastáveis
+│   ├── FogOfWarLayer.tsx       # Névoa de guerra
+│   ├── HighlightLayer.tsx      # Células destacadas (movimento)
+│   ├── DrawingLayer.tsx        # Desenhos e anotações
+│   └── PingLayer.tsx           # Pings animados
+├── shapes/
+│   ├── TokenShape.tsx          # Componente de token individual
+│   ├── AuraShape.tsx           # Auras e raios de luz
+│   └── MeasurementLine.tsx     # Linha de régua
+├── hooks/
+│   └── useKonvaTransform.ts    # Zoom/pan com gestos
+└── TacticalBoard.tsx           # Mantido como wrapper/fallback
 ```
 
-## Arquivos a Modificar
+## Novas Funcionalidades
 
-### 2. `src/components/character/tracks/especialista/useTecnicoTrack.ts`
+### Fase 1: Migração Base
+- Renderização declarativa com Stage/Layer
+- Drag & drop nativo de tokens
+- Zoom com scroll wheel + pinch (mobile)
+- Pan com drag no fundo
+- Seleção múltipla de tokens
 
-**Alterações:**
-- Modificar `handlePreparadoParaTudo` para receber um `CatalogItem` ao invés de `number` (categoria)
-- Calcular custo: `2 × categoryToNumber(item.category)`
-- Adicionar o item ao inventário como **permanente** (sem `isTemporary` ou com `isTemporary: false`)
-- Adicionar callback `onAddPermanentItem` se necessário, ou reutilizar `onAddTemporaryItem` com flag diferente
+### Fase 2: Ferramentas Avançadas
+- Desenho livre (caneta) com cores
+- Formas geométricas (círculo, retângulo, cone)
+- Borracha para anotações
+- Texto em qualquer posição
+- Undo/Redo de ações
 
-```typescript
-// Antes:
-handlePreparadoParaTudo(categoria: number)
+### Fase 3: Melhorias de Combate
+- Tokens com imagem do personagem (fotos)
+- Barras de HP/Sanidade sobre tokens
+- Indicadores de condições visuais
+- Animações de dano/cura
+- Área de efeito visual (explosões, cones)
 
-// Depois:
-handlePreparadoParaTudo(item: CatalogItem, cost: number)
-```
+### Fase 4: Mapa Infinito
+- Viewport virtualizado
+- Lazy loading de tiles
+- Minimap para navegação
+- Camadas com opacidade ajustável
 
-### 3. `src/components/character/tracks/especialista/TecnicoPanel.tsx`
+## Implementação Técnica
 
-**Alterações:**
-- Importar `PreparadoParaTudoItemSelector`
-- Substituir o `PreparadoCategoryGrid` pelo novo seletor de itens
-- Atualizar o Drawer/MobileDrawer para usar o novo componente
-
-## Detalhes Técnicos
-
-### Cálculo de Custo para Preparado para Tudo
-
-```typescript
-// Nova função em PreparadoParaTudoItemSelector.tsx
-export function calculatePreparadoCost(item: CatalogItem): number {
-  return 2 * categoryToNumber(item.category);
+### Dependências
+```json
+{
+  "konva": "^9.3.18",
+  "react-konva": "^18.2.10"
 }
 ```
 
-### Item Permanente vs Temporário
-
-```typescript
-// Improvisar (temporário)
-const temporaryItem: InventoryItem = {
-  ...itemData,
-  isTemporary: true,
-  temporarySource: 'Improvisar (Técnico NEX 65%)',
-};
-
-// Preparado para Tudo (permanente)
-const permanentItem: InventoryItem = {
-  ...itemData,
-  isTemporary: false,
-  // Opcional: adicionar fonte para rastreamento
-  notes: 'Obtido via Preparado para Tudo',
-};
-```
-
-### Itens Excluídos
-
-- Munições (não faz sentido encontrar munição sozinha)
-- Armas (regra oficial exclui armas)
-
-## Fluxo de Uso Atualizado
+### Estrutura do Stage
 
 ```text
-1. Jogador clica "Encontrar Item" em Preparado para Tudo
-       ↓
-2. Abre Drawer com seletor de itens (similar ao Improvisar)
-       ↓
-3. Jogador busca/filtra e seleciona um item específico
-       ↓
-4. Sistema calcula custo: 2 PE × categoria
-       ↓
-5. Jogador confirma
-       ↓
-6. Sistema:
-   - Deduz PE
-   - Adiciona item PERMANENTE ao inventário
-   - Mostra toast: "Você lembrou que tinha um(a) [item]!"
+<Stage>
+  ├── <Layer> Background (imagem do mapa)
+  ├── <Layer> Grid (linhas do grid)
+  ├── <Layer> Highlights (células de movimento)
+  ├── <Layer> Fog of War (névoa)
+  ├── <Layer> Tokens (personagens/criaturas)
+  ├── <Layer> Drawing (anotações)
+  └── <Layer> UI (pings, régua, seleção)
+</Stage>
 ```
+
+### Token Interativo (exemplo)
+
+```typescript
+function TokenShape({ token, onDragEnd, onSelect }) {
+  return (
+    <Group
+      x={token.x * gridSize}
+      y={token.y * gridSize}
+      draggable={!token.locked}
+      onDragEnd={(e) => onDragEnd(token.id, e.target.x(), e.target.y())}
+      onClick={() => onSelect(token.id)}
+    >
+      {/* Aura de luz */}
+      {token.light_radius > 0 && (
+        <Circle
+          radius={token.light_radius * gridSize}
+          fill={token.light_color}
+          opacity={0.2}
+        />
+      )}
+      
+      {/* Círculo principal ou imagem */}
+      {token.image_url ? (
+        <Image image={loadedImage} width={size} height={size} cornerRadius={size/2} />
+      ) : (
+        <Circle radius={size/2} fill={colorByType[token.token_type]} />
+      )}
+      
+      {/* Badge de condições */}
+      {token.conditions.length > 0 && (
+        <Label offsetX={-size + 8} offsetY={-8}>
+          <Tag fill="#f59e0b" cornerRadius={8} />
+          <Text text={token.conditions.length} />
+        </Label>
+      )}
+      
+      {/* Nome */}
+      <Text text={token.name} y={size + 4} align="center" />
+    </Group>
+  );
+}
+```
+
+### Fog of War Eficiente
+
+```typescript
+function FogOfWarLayer({ cells, mapWidth, mapHeight }) {
+  // Usa composite operation para "recortar" áreas reveladas
+  return (
+    <Layer>
+      {/* Névoa cobrindo tudo */}
+      <Rect width={mapWidth} height={mapHeight} fill="rgba(0,0,0,0.85)" />
+      
+      {/* Células reveladas como "buracos" */}
+      <Group globalCompositeOperation="destination-out">
+        {cells.map(cell => (
+          <Rect 
+            key={`${cell.x}-${cell.y}`}
+            x={cell.x * gridSize}
+            y={cell.y * gridSize}
+            width={gridSize}
+            height={gridSize}
+            fill="white"
+          />
+        ))}
+      </Group>
+    </Layer>
+  );
+}
+```
+
+## Plano de Migração
+
+### Etapa 1: Setup (1 arquivo)
+- Instalar `konva` e `react-konva`
+- Criar `TacticalBoardKonva.tsx` básico
+
+### Etapa 2: Camadas Base (4 arquivos)
+- `BackgroundLayer.tsx` - Imagem de fundo
+- `GridLayer.tsx` - Grid quadrado
+- `TokenLayer.tsx` - Tokens com drag
+- `PingLayer.tsx` - Pings animados
+
+### Etapa 3: Ferramentas (3 arquivos)
+- `FogOfWarLayer.tsx` - Névoa de guerra
+- `HighlightLayer.tsx` - Células de movimento
+- `MeasurementLine.tsx` - Régua de distância
+
+### Etapa 4: Integração (2 arquivos)
+- `useKonvaTransform.ts` - Zoom/pan/gestos
+- Atualizar `TacticalBoard.tsx` para usar novo componente
+
+### Etapa 5: Desenho (2 arquivos)
+- `DrawingLayer.tsx` - Ferramenta de desenho
+- Persistência de desenhos no banco
+
+## Compatibilidade
+
+### Mantido Inalterado
+- `useTacticalBoard.ts` - Toda lógica de dados
+- Tabelas `campaign_maps` e `map_tokens`
+- Sincronização realtime via Supabase
+- Integração com sistema de combate
+- Upload de imagens para Storage
+
+### Migrado
+- Renderização de Canvas 2D → Konva Stage
+- Event handlers manuais → Eventos Konva
+- Transformações ctx → Propriedades declarativas
 
 ## Resultado Esperado
 
-- Jogador pode selecionar qualquer item do catálogo (exceto armas/munições)
-- Custo correto: 2 PE por categoria (sem base)
-- Item adicionado permanentemente ao inventário
-- Interface similar ao Improvisar, facilitando o uso
+- Mapa maior (virtualmente infinito)
+- Zoom suave de 10% a 500%
+- Tokens arrastáveis com animação
+- Gestos touch/pinch em mobile
+- Ferramenta de desenho livre
+- Seleção múltipla de tokens
+- Performance otimizada (apenas redesenha o que muda)
+- Código 40% menor e mais legível
