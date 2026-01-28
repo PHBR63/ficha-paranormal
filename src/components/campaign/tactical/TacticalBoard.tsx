@@ -16,6 +16,7 @@
 import { useRef, useEffect, useState, useCallback, MouseEvent as ReactMouseEvent } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTacticalBoard, MapToken, TacticalMap } from '@/hooks/campaign/useTacticalBoard';
+import { TacticalBoardKonva } from './TacticalBoardKonva';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -965,24 +966,68 @@ export function TacticalBoard({
         )}
       </div>
       
-      {/* Canvas */}
+      {/* Canvas Konva - Nova implementação */}
       <div 
         ref={containerRef}
         className="relative ordo-panel overflow-hidden"
         style={{ height: '500px' }}
       >
-        {/* Canvas para grid, imagem de fundo e tokens */}
-        <canvas
-          ref={canvasRef}
+        <TacticalBoardKonva
+          map={board.activeMap}
+          tokens={isDragging && dragToken 
+            ? board.tokens.map(t => t.id === dragToken.id ? dragToken : t) 
+            : board.tokens
+          }
+          pings={board.pings}
+          highlightedCells={board.highlightedCells}
+          selectedTokenId={board.selectedTokenId}
+          measureStart={board.measureStart}
+          measureEnd={board.measureEnd}
+          calculateDistance={board.calculateDistance}
+          activeTool={board.activeTool}
+          isMaster={isMaster}
           width={canvasSize.width}
           height={canvasSize.height}
-          className="absolute inset-0 cursor-crosshair"
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp}
-          onWheel={handleWheel}
-          onContextMenu={(e) => e.preventDefault()}
+          onTokenSelect={board.selectToken}
+          onTokenMove={async (tokenId, x, y) => {
+            // Modo combate: usa callback de confirmação com validação
+            if (combatMode && dragStartCell && onMovementConfirm) {
+              const distance = board.calculateDistance(dragStartCell.x, dragStartCell.y, x, y);
+              const isValid = distance <= movementRemaining;
+              
+              if (isValid) {
+                const success = await onMovementConfirm(tokenId, x, y, distance);
+                return success;
+              }
+              return false;
+            }
+            
+            // Modo normal: move diretamente
+            return await board.moveToken(tokenId, x, y);
+          }}
+          onTokenDoubleClick={(token) => {
+            // Poderia abrir um modal de edição do token
+            console.log('Double click on token:', token.name);
+          }}
+          onMeasureStart={(x, y) => board.startMeasure(x, y)}
+          onMeasureEnd={(x, y) => board.endMeasure(x, y)}
+          onPing={(x, y) => board.sendPing(x, y, '#ff0000')}
+          onFogToggle={(cells) => {
+            if (!isMaster || !board.activeMap) return;
+            // Toggle fog na célula
+            const cell = cells[0];
+            const isRevealed = board.activeMap.fog_of_war.some(
+              f => f.x === cell.x && f.y === cell.y
+            );
+            if (isRevealed) {
+              board.hideFog([cell]);
+            } else {
+              board.revealFog([cell]);
+            }
+          }}
+          combatMode={combatMode}
+          movementRemaining={movementRemaining}
+          onMovementPreview={onMovementPreview}
         />
         
         {/* Info do token selecionado */}

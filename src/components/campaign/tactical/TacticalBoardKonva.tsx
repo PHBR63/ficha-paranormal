@@ -1,0 +1,298 @@
+/**
+ * TacticalBoardKonva - Componente principal do mapa tático usando React-Konva
+ * 
+ * Renderização declarativa com:
+ * - Camadas separadas (background, grid, tokens, fog, pings)
+ * - Drag & drop nativo de tokens
+ * - Zoom com scroll wheel + pinch (mobile)
+ * - Pan com drag no fundo
+ * - Seleção de tokens
+ */
+
+import { useRef, useState, useCallback, useEffect } from 'react';
+import { Stage, Layer, Rect } from 'react-konva';
+import Konva from 'konva';
+import { MapToken, TacticalMap, BoardPing } from '@/hooks/campaign/useTacticalBoard';
+import { useKonvaTransform } from './hooks/useKonvaTransform';
+import { BackgroundLayer } from './layers/BackgroundLayer';
+import { GridLayer } from './layers/GridLayer';
+import { HighlightLayer, HighlightedCell } from './layers/HighlightLayer';
+import { FogOfWarLayer } from './layers/FogOfWarLayer';
+import { TokenLayer } from './layers/TokenLayer';
+import { PingLayer } from './layers/PingLayer';
+import { MeasurementLayer } from './layers/MeasurementLayer';
+
+export interface TacticalBoardKonvaProps {
+  // Dados do mapa
+  map: TacticalMap | null;
+  tokens: MapToken[];
+  pings: BoardPing[];
+  highlightedCells: HighlightedCell[];
+  
+  // Estado de seleção
+  selectedTokenId: string | null;
+  
+  // Medição
+  measureStart: { x: number; y: number } | null;
+  measureEnd: { x: number; y: number } | null;
+  calculateDistance: (x1: number, y1: number, x2: number, y2: number) => number;
+  
+  // Ferramenta ativa
+  activeTool: 'select' | 'move' | 'measure' | 'fog' | 'ping' | 'draw';
+  
+  // Permissões
+  isMaster: boolean;
+  
+  // Dimensões do container
+  width: number;
+  height: number;
+  
+  // Callbacks
+  onTokenSelect: (tokenId: string | null) => void;
+  onTokenMove: (tokenId: string, x: number, y: number) => Promise<boolean>;
+  onTokenDoubleClick?: (token: MapToken) => void;
+  onCellClick?: (x: number, y: number) => void;
+  onMeasureStart?: (x: number, y: number) => void;
+  onMeasureEnd?: (x: number, y: number) => void;
+  onPing?: (x: number, y: number) => void;
+  onFogToggle?: (cells: Array<{ x: number; y: number }>) => void;
+  
+  // Integração com combate
+  combatMode?: boolean;
+  movementRemaining?: number;
+  onMovementPreview?: (from: { x: number; y: number }, to: { x: number; y: number }, distance: number, isValid: boolean) => void;
+}
+
+export function TacticalBoardKonva({
+  map,
+  tokens,
+  pings,
+  highlightedCells,
+  selectedTokenId,
+  measureStart,
+  measureEnd,
+  calculateDistance,
+  activeTool,
+  isMaster,
+  width,
+  height,
+  onTokenSelect,
+  onTokenMove,
+  onTokenDoubleClick,
+  onCellClick,
+  onMeasureStart,
+  onMeasureEnd,
+  onPing,
+  onFogToggle,
+  combatMode = false,
+  movementRemaining = 9,
+  onMovementPreview,
+}: TacticalBoardKonvaProps) {
+  const stageRef = useRef<Konva.Stage>(null);
+  
+  // Estado de drag
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStartCell, setDragStartCell] = useState<{ x: number; y: number } | null>(null);
+  const [dragToken, setDragToken] = useState<MapToken | null>(null);
+  
+  // Transform (zoom/pan)
+  const transform = useKonvaTransform({
+    minScale: 0.1,
+    maxScale: 5,
+    initialScale: 1,
+  });
+
+  // Calcula dimensões do mapa (valores padrão se não houver mapa)
+  const gridSize = map?.grid_size || 40;
+  const widthCells = map?.width_cells || Math.ceil(width / gridSize);
+  const heightCells = map?.height_cells || Math.ceil(height / gridSize);
+  const mapWidth = widthCells * gridSize;
+  const mapHeight = heightCells * gridSize;
+
+  /**
+   * Converte coordenadas de pixel para célula do grid
+   */
+  const pixelToCell = useCallback((px: number, py: number) => {
+    return {
+      x: Math.floor(px / gridSize),
+      y: Math.floor(py / gridSize),
+    };
+  }, [gridSize]);
+
+  /**
+   * Handler de clique no Stage (fundo)
+   */
+  const handleStageClick = useCallback((e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
+    // Ignora cliques em tokens (tratados no TokenLayer)
+    if (e.target !== e.currentTarget && e.target.getParent()?.name() !== 'stage-background') {
+      return;
+    }
+
+    const stage = e.target.getStage();
+    if (!stage) return;
+
+    const pointer = stage.getPointerPosition();
+    if (!pointer) return;
+
+    // Converte para coordenadas do mapa (considerando zoom/pan)
+    const mapX = (pointer.x - transform.position.x) / transform.scale;
+    const mapY = (pointer.y - transform.position.y) / transform.scale;
+    const cell = pixelToCell(mapX, mapY);
+
+    // Ação baseada na ferramenta ativa
+    switch (activeTool) {
+      case 'select':
+        onTokenSelect(null);
+        break;
+      case 'measure':
+        if (!measureStart) {
+          onMeasureStart?.(cell.x, cell.y);
+        } else {
+          onMeasureEnd?.(cell.x, cell.y);
+        }
+        break;
+      case 'ping':
+        onPing?.(cell.x, cell.y);
+        break;
+      case 'fog':
+        if (isMaster) {
+          onFogToggle?.([cell]);
+        }
+        break;
+      default:
+        onCellClick?.(cell.x, cell.y);
+    }
+  }, [activeTool, measureStart, transform, pixelToCell, onTokenSelect, onMeasureStart, onMeasureEnd, onPing, onFogToggle, onCellClick, isMaster]);
+
+  /**
+   * Handler de início de drag de token
+   */
+  const handleTokenDragStart = useCallback((token: MapToken) => {
+    setIsDragging(true);
+    setDragToken(token);
+    setDragStartCell({ x: token.x, y: token.y });
+  }, []);
+
+  /**
+   * Handler de movimento de drag de token
+   */
+  const handleTokenDragMove = useCallback((token: MapToken, newX: number, newY: number) => {
+    if (!combatMode || !dragStartCell || !onMovementPreview) return;
+
+    const distance = calculateDistance(dragStartCell.x, dragStartCell.y, newX, newY);
+    const isValid = distance <= movementRemaining;
+    onMovementPreview(dragStartCell, { x: newX, y: newY }, distance, isValid);
+  }, [combatMode, dragStartCell, movementRemaining, calculateDistance, onMovementPreview]);
+
+  /**
+   * Handler de fim de drag de token
+   */
+  const handleTokenDragEnd = useCallback(async (tokenId: string, newX: number, newY: number) => {
+    setIsDragging(false);
+    setDragToken(null);
+    setDragStartCell(null);
+
+    // Valida movimento em modo de combate
+    if (combatMode && dragStartCell) {
+      const distance = calculateDistance(dragStartCell.x, dragStartCell.y, newX, newY);
+      if (distance > movementRemaining) {
+        // Movimento inválido - não salva
+        return;
+      }
+    }
+
+    // Salva nova posição
+    await onTokenMove(tokenId, newX, newY);
+  }, [combatMode, dragStartCell, movementRemaining, calculateDistance, onTokenMove]);
+
+  // Sem mapa, não renderiza nada (após todos os hooks)
+  if (!map) {
+    return (
+      <div className="flex items-center justify-center h-full text-muted-foreground">
+        Nenhum mapa ativo
+      </div>
+    );
+  }
+
+  return (
+    <Stage
+      ref={stageRef}
+      width={width}
+      height={height}
+      x={transform.position.x}
+      y={transform.position.y}
+      scaleX={transform.scale}
+      scaleY={transform.scale}
+      draggable={activeTool === 'select' || activeTool === 'move'}
+      onWheel={transform.handleWheel}
+      onTouchStart={transform.handleTouchStart}
+      onTouchMove={transform.handleTouchMove}
+      onTouchEnd={transform.handleTouchEnd}
+      onDragStart={transform.handleDragStart}
+      onDragEnd={transform.handleDragEnd}
+      onClick={handleStageClick}
+      onTap={handleStageClick}
+    >
+      {/* Camada 1: Background (imagem do mapa) */}
+      <BackgroundLayer
+        imageUrl={map.image_url}
+        width={mapWidth}
+        height={mapHeight}
+      />
+
+      {/* Camada 2: Grid */}
+      <GridLayer
+        gridSize={gridSize}
+        gridColor={map.grid_color}
+        gridType={map.grid_type as 'square' | 'hex' | 'none'}
+        widthCells={widthCells}
+        heightCells={heightCells}
+        visible={map.grid_visible}
+      />
+
+      {/* Camada 3: Células destacadas (movimento/alcance) */}
+      <HighlightLayer
+        cells={highlightedCells}
+        gridSize={gridSize}
+      />
+
+      {/* Camada 4: Fog of War */}
+      <FogOfWarLayer
+        revealedCells={map.fog_of_war}
+        gridSize={gridSize}
+        mapWidth={mapWidth}
+        mapHeight={mapHeight}
+        isMaster={isMaster}
+      />
+
+      {/* Camada 5: Tokens */}
+      <TokenLayer
+        tokens={tokens}
+        gridSize={gridSize}
+        selectedTokenId={selectedTokenId}
+        isMaster={isMaster}
+        onTokenSelect={onTokenSelect}
+        onTokenDragStart={handleTokenDragStart}
+        onTokenDragMove={handleTokenDragMove}
+        onTokenDragEnd={handleTokenDragEnd}
+        onTokenDoubleClick={onTokenDoubleClick}
+      />
+
+      {/* Camada 6: Medição */}
+      <MeasurementLayer
+        startCell={measureStart}
+        endCell={measureEnd}
+        gridSize={gridSize}
+        calculateDistance={calculateDistance}
+      />
+
+      {/* Camada 7: Pings */}
+      <PingLayer
+        pings={pings}
+        gridSize={gridSize}
+      />
+    </Stage>
+  );
+}
+
+export default TacticalBoardKonva;
