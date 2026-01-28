@@ -918,7 +918,13 @@ export default function CampaignView() {
 
             <TabsContent value="chat" className="flex-1 flex flex-col m-0 min-h-0">
               {/* Messages - Área expandida */}
-              <ScrollArea className="flex-1 p-4 sm:p-6">
+              {/*
+                Estabilidade (React 19): evitamos Radix ScrollArea aqui.
+                Motivo: o ScrollArea faz medições/reflows que podem entrar em loop
+                quando a lista atualiza rapidamente (realtime), resultando no erro #185.
+                Padrão já aplicado no PlayersSidebar.
+              */}
+              <div className="flex-1 overflow-y-auto p-4 sm:p-6 overscroll-contain scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
                 <div className="space-y-4 max-w-4xl mx-auto">
                   {messages.map((msg) => (
                     <ChatMessage
@@ -930,7 +936,7 @@ export default function CampaignView() {
                   ))}
                   <div ref={messagesEndRef} />
                 </div>
-              </ScrollArea>
+              </div>
 
               {/* Input - Expandido e mais visível */}
               <div className="p-4 sm:p-6 border-t border-border bg-card/80 backdrop-blur-sm">

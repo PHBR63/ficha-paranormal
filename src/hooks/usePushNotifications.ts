@@ -69,12 +69,14 @@ export function usePushNotifications() {
       
       if (subscription) {
         // Check if this subscription exists in our database
+        // IMPORTANTE: .single() quebra com 406 quando não existe registro.
+        // Padrão do projeto: usar .maybeSingle() quando pode retornar 0 linhas.
         const { data } = await supabase
           .from('push_subscriptions')
           .select('id')
           .eq('user_id', user.id)
           .eq('endpoint', subscription.endpoint)
-          .single();
+          .maybeSingle();
 
         setIsSubscribed(!!data);
       } else {
