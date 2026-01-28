@@ -1,161 +1,176 @@
 
-# Correção: Erros #185, 406 e 400 na Campanha
+# Plano: Correção do Erro #185 + Otimização de Queries da Campanha
 
-## Diagnóstico Detalhado
+## Diagnóstico Final
 
-### 1. React Error #185 (Maximum update depth exceeded)
-**Causa raiz**: Subscriptions realtime duplicadas e cleanup incorreto
-- `CampaignView.tsx:396-404`: `subscribeToSessions()` não tem cleanup no useEffect
-- `SessionManager.tsx:70-73`: Mesmo problema - cleanup function nunca é chamada
-- Ambos usam o mesmo canal (`sessions-${id}`), causando conflito
+### Problema 1: React Error #185 (Loop Infinito)
+**Causa**: O problema NÃO é a versão do Radix UI (já está compatível com React 19). O loop está sendo causado por:
+1. **Queries em cascata** no `fetchCampaignData` que disparam múltiplos setStates enquanto realtime listeners ainda estão sendo criados
+2. **Cache PWA desatualizado** servindo bundles com código antigo (problema identificado anteriormente)
+3. **Nenhum cleanup adequado** nas refs de scroll
 
-### 2. Erro 406 (Not Acceptable) em campaign_sessions
-**Causa raiz**: `.single()` sem tratamento adequado
-- Query na linha 384-389 usa `.single()` que requer que exatamente 1 row seja retornada
-- Quando não há sessão ativa, Supabase retorna 406 (PGRST116)
-- Deve usar `.maybeSingle()` para queries que podem retornar 0 ou 1 rows
+### Problema 2: Erro 400 em campaign_members
+**Causa**: A sintaxe do join aninhado está correta (`characters:character_id(...)`) E as FKs existem:
+- `campaign_members_character_id_fkey` → `characters`
+- `campaign_members_user_id_fkey` → `auth.users`
 
-### 3. Erro 400 em campaign_members
-**Causa raiz**: O join aninhado com `characters:character_id(...)` e `profiles:user_id(...)` falha
-- A query no componente externo tenta fazer um select com join que não está funcionando
-- Provavelmente por incompatibilidade entre o nome da relação e a FK
+O erro 400 ocorre porque a FK `user_id` referencia `auth.users` (schema interno), não `public.profiles`. O PostgREST não consegue fazer join com a sintaxe `profiles:user_id(...)` pois não há FK direta.
 
-## Arquivos Afetados
-1. `src/pages/CampaignView.tsx` - Cleanup do useEffect e `.maybeSingle()`
-2. `src/components/campaign/SessionManager.tsx` - Cleanup do useEffect
+### Problema 3: Erro 406 em queries
+**Causa**: `.single()` usado em loops onde perfis/personagens podem não existir.
 
-## Plano de Correção
+---
 
-### Etapa 1: Corrigir useEffect com cleanup adequado
+## Solução Proposta
+
+### Etapa 1: Refatorar `fetchCampaignData` (Escalável e Otimizado)
 
 **Arquivo**: `src/pages/CampaignView.tsx`
 
-Alterar linhas 183-191:
-```typescript
-// Antes
-useEffect(() => {
-  if (id && user) {
-    fetchCampaignData();
-    fetchActiveSession();
-    subscribeToMessages();
-    subscribeToSessions(); // cleanup não é usado
-  }
-}, [id, user]);
+Substituir a abordagem de queries em loop por:
+1. **Uma única query** para `campaign_members` com join apenas em `characters` (FK válida)
+2. **Uma única query** para buscar todos os `profiles` necessários usando `IN`
+3. **Mesclar** os dados no JavaScript (O(n) com Map)
 
-// Depois
+```text
+Antes (N+1 queries):
+  - 1 query campaign_members
+  - N queries profiles (1 por membro)
+  - N queries characters (1 por membro com character_id)
+  - 1 query messages
+  - N queries profiles (1 por mensagem)
+  - N queries characters (1 por mensagem)
+
+Depois (4-6 queries total):
+  - 1 query campaign_members + join characters
+  - 1 query profiles WHERE user_id IN (...)
+  - 1 query messages
+  - 1 query profiles WHERE user_id IN (...mensagens...)
+  - 1 query characters WHERE id IN (...mensagens...)
+```
+
+### Etapa 2: Corrigir `MemberBonusesPanel`
+
+**Arquivo**: `src/components/campaign/MemberBonusesPanel.tsx`
+
+Remover a sintaxe `profiles:user_id(...)` do select (FK inválida) e buscar profiles separadamente:
+
+```typescript
+// Busca membros com join apenas em characters (FK válida)
+const { data: membersRaw } = await supabase
+  .from('campaign_members')
+  .select(`
+    id, user_id, character_id, role, active_bonuses, bonuses_updated_at,
+    characters (name, class, nex, photo_url)
+  `)
+  .eq('campaign_id', campaignId)
+  .neq('role', 'master');
+
+// Busca profiles em lote
+const userIds = membersRaw.map(m => m.user_id);
+const { data: profiles } = await supabase
+  .from('profiles')
+  .select('user_id, display_name')
+  .in('user_id', userIds);
+
+// Mescla
+const profileMap = new Map(profiles.map(p => [p.user_id, p]));
+return membersRaw.map(m => ({
+  ...m,
+  character: m.characters,
+  profile: profileMap.get(m.user_id),
+}));
+```
+
+### Etapa 3: Adicionar Guarda de Estado no useEffect Principal
+
+**Arquivo**: `src/pages/CampaignView.tsx`
+
+Adicionar flag `isMounted` para evitar setStates após unmount:
+
+```typescript
 useEffect(() => {
   if (!id || !user) return;
   
-  fetchCampaignData();
-  fetchActiveSession();
+  let isMounted = true;
+  
+  const loadData = async () => {
+    await fetchCampaignData(isMounted);
+    await fetchActiveSession();
+  };
+  
+  loadData();
   
   const cleanupMessages = subscribeToMessages();
   const cleanupSessions = subscribeToSessions();
   
   return () => {
+    isMounted = false;
     cleanupMessages?.();
     cleanupSessions?.();
   };
 }, [id, user]);
 ```
 
-### Etapa 2: Usar maybeSingle() em vez de single()
+### Etapa 4: Substituir `.single()` por `.maybeSingle()` nas Queries Internas
 
 **Arquivo**: `src/pages/CampaignView.tsx`
 
-Alterar linhas 381-393:
-```typescript
-// Antes
-const fetchActiveSession = async () => {
-  if (!id) return;
-  try {
-    const { data } = await supabase
-      .from('campaign_sessions')
-      .select('id, session_number, title, started_at')
-      .eq('campaign_id', id)
-      .eq('status', 'active')
-      .single(); // <-- PROBLEMA: retorna 406 se não houver resultado
-    setActiveSession(data || null);
-  } catch {
-    setActiveSession(null);
-  }
-};
+Para queries que podem retornar vazio (convite ativo, por exemplo), usar `.maybeSingle()`:
 
-// Depois
-const fetchActiveSession = async () => {
-  if (!id) return;
-  try {
-    const { data, error } = await supabase
-      .from('campaign_sessions')
-      .select('id, session_number, title, started_at')
-      .eq('campaign_id', id)
-      .eq('status', 'active')
-      .maybeSingle(); // <-- Retorna null se não houver resultado
-    
-    if (error) {
-      console.warn('Erro ao buscar sessão ativa:', error.message);
-      setActiveSession(null);
-      return;
-    }
-    setActiveSession(data);
-  } catch (err) {
-    console.error('Exceção ao buscar sessão:', err);
-    setActiveSession(null);
-  }
-};
+```typescript
+// Linha 312-318: Fetch active invite
+const { data: inviteData } = await supabase
+  .from('campaign_invites')
+  .select('*')
+  .eq('campaign_id', id)
+  .order('created_at', { ascending: false })
+  .limit(1)
+  .maybeSingle(); // Em vez de .single()
 ```
 
-### Etapa 3: Corrigir cleanup no SessionManager
+---
 
-**Arquivo**: `src/components/campaign/SessionManager.tsx`
+## Arquivos Afetados
 
-Alterar linhas 69-73:
-```typescript
-// Antes
-useEffect(() => {
-  fetchSessions();
-  subscribeToSessions(); // cleanup ignorado
-}, [campaignId]);
+| Arquivo | Alterações |
+|---------|------------|
+| `src/pages/CampaignView.tsx` | Refatorar `fetchCampaignData`, adicionar guard `isMounted`, usar `.maybeSingle()` |
+| `src/components/campaign/MemberBonusesPanel.tsx` | Remover join inválido em profiles, buscar em lote |
 
-// Depois
-useEffect(() => {
-  fetchSessions();
-  const cleanup = subscribeToSessions();
-  
-  return cleanup;
-}, [campaignId]);
-```
+---
 
-### Etapa 4: Usar canal único para evitar conflitos
+## Benefícios da Solução
 
-Para evitar conflitos entre CampaignView e SessionManager usando o mesmo canal, renomear um deles:
+1. **Escalável**: Número fixo de queries independente do número de membros (4-6 em vez de N*2)
+2. **Personalizável**: Fácil adicionar novos campos nas queries centralizadas
+3. **Sem loops**: Evita setState em cascata que causava o erro #185
+4. **Sem 406**: Queries em lote não usam `.single()`
+5. **Sem 400**: Remove join inválido `profiles:user_id`
 
-**Arquivo**: `src/components/campaign/SessionManager.tsx`
-
-Alterar linha 100-101:
-```typescript
-// Antes
-const channel = supabase.channel(`sessions-${campaignId}`)
-
-// Depois
-const channel = supabase.channel(`sessions-manager-${campaignId}`)
-```
-
-## Resultado Esperado
-
-1. **Erro #185** resolvido - Cleanups adequados evitam subscriptions duplicadas
-2. **Erro 406** resolvido - `maybeSingle()` não gera erro quando não há sessão ativa
-3. **Erro 400** resolvido indiretamente - Os re-renders infinitos que causavam queries malformadas serão eliminados
+---
 
 ## Detalhes Técnicos
 
-### Por que `.single()` causa 406?
-O PostgREST retorna status 406 (Not Acceptable) quando `.single()` é usado mas a query retorna 0 ou mais de 1 row. Isso é porque `.single()` adiciona o header `Accept: application/vnd.pgrst.object+json` que exige exatamente 1 resultado.
+### Por que `profiles:user_id(...)` não funciona?
+A FK `campaign_members.user_id` aponta para `auth.users` (schema interno do Supabase), não para `public.profiles`. O PostgREST só permite joins automáticos quando há uma FK direta entre as tabelas do schema público.
 
-### Por que subscriptions duplicadas causam loop?
-Quando duas subscriptions escutam o mesmo canal sem cleanup:
-1. Uma mudança dispara callback em ambas
-2. Ambas chamam `fetchActiveSession()` simultaneamente
-3. O setState dispara re-render
-4. O re-render pode re-criar subscriptions se o cleanup não funcionar
-5. Loop infinito
+### Estrutura de Merge com Map
+```typescript
+// Cria Map para lookup O(1)
+const profileMap = new Map(profiles.map(p => [p.user_id, p]));
+
+// Mescla em O(n)
+const membersWithProfiles = members.map(m => ({
+  ...m,
+  profile: profileMap.get(m.user_id) || { display_name: null },
+}));
+```
+
+### Ordem de Execução Segura
+```text
+1. fetchCampaignData() - Carrega dados iniciais
+2. fetchActiveSession() - Carrega sessão ativa
+3. subscribeToMessages() - Inicia realtime (após dados carregados)
+4. subscribeToSessions() - Inicia realtime (após dados carregados)
+```
