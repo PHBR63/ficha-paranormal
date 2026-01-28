@@ -5,7 +5,7 @@
  * - NEX 10%: Eloquência - Fascina alvos em alcance curto (1 PE por alvo, ação completa, concentração)
  * - NEX 40%: Discurso Motivador - +1d20 em testes de perícia (4 PE) / +2d20 (8 PE em NEX 65%)
  * - NEX 65%: Eu Conheço um Cara - Ativa rede de contatos (1x/missão)
- * - NEX 99%: Truque de Mestre - Copia habilidade de aliado (5 PE)
+ * - NEX 99%: Truque de Mestre - Copia habilidade de aliado (5 PE + custo da habilidade)
  * 
  * @module tracks/especialista/useNegociadorTrack
  */
@@ -13,6 +13,19 @@
 import { useState, useMemo, useCallback } from 'react';
 import { toast } from 'sonner';
 import { TRACK_EFFECT_IDS, type EffectDuration, type ComputedEffects } from '@/hooks';
+
+// =====================================================
+// Tipos
+// =====================================================
+
+/** Estrutura de habilidade selecionada para Truque de Mestre */
+export interface SelectedAbility {
+  id: string;
+  name: string;
+  description: string;
+  peCost: number | 'varies' | 'passive';
+  isPassive: boolean;
+}
 
 // =====================================================
 // Props do Hook
@@ -56,6 +69,7 @@ export function useNegociadorTrack({
   versatilityTrack,
 }: UseNegociadorTrackProps) {
   const [isConcentrating, setIsConcentrating] = useState(eloquenciaActive);
+  const [showTruqueMestreModal, setShowTruqueMestreModal] = useState(false);
 
   // Dados do SUE
   const sueAbilities = useMemo(() => {
@@ -181,28 +195,69 @@ export function useNegociadorTrack({
   }, [conhecoCaraUsedThisMission, onConhecoCaraUsed, onActivateEffect]);
 
   /**
-   * Usa Truque de Mestre (5 PE)
+   * Abre o modal de seleção de habilidade para Truque de Mestre
    */
-  const handleTruqueMestre = useCallback(() => {
+  const handleOpenTruqueMestre = useCallback(() => {
     if (peCurrent < 5) {
-      toast.error('PE insuficiente', { description: 'Truque de Mestre requer 5 PE.' });
+      toast.error('PE insuficiente', { description: 'Truque de Mestre requer pelo menos 5 PE.' });
+      return;
+    }
+    setShowTruqueMestreModal(true);
+  }, [peCurrent]);
+
+  /**
+   * Usa Truque de Mestre com uma habilidade selecionada
+   * @param ability - Habilidade selecionada para copiar
+   */
+  const handleTruqueMestre = useCallback((ability?: SelectedAbility) => {
+    // Se não há habilidade, apenas abre o modal
+    if (!ability) {
+      handleOpenTruqueMestre();
       return;
     }
 
-    onPEChange(peCurrent - 5);
-    onTrackPESpent?.('Truque de Mestre', 5);
+    // Calcula custo total (5 PE base + custo da habilidade)
+    let abilityCost = 0;
+    if (ability.peCost !== 'passive' && ability.peCost !== 'varies' && typeof ability.peCost === 'number') {
+      abilityCost = ability.peCost;
+    }
+    const totalCost = 5 + abilityCost;
+
+    if (peCurrent < totalCost) {
+      toast.error('PE insuficiente', { 
+        description: `Truque de Mestre + ${ability.name} requer ${totalCost} PE.` 
+      });
+      return;
+    }
+
+    onPEChange(peCurrent - totalCost);
+    onTrackPESpent?.('Truque de Mestre', totalCost);
+    setShowTruqueMestreModal(false);
     
-    onActivateEffect?.(TRACK_EFFECT_IDS.TRUQUE_MESTRE ?? 'track-truque-mestre', 'Truque de Mestre', 'scene');
+    onActivateEffect?.(
+      TRACK_EFFECT_IDS.TRUQUE_MESTRE ?? 'track-truque-mestre', 
+      'Truque de Mestre', 
+      'scene',
+      { copiedAbility: ability.id, copiedAbilityName: ability.name }
+    );
     
-    toast.success('Truque de Mestre!', {
-      description: 'Simule o efeito de qualquer habilidade que um aliado tenha usado nesta cena. Você ignora pré-requisitos mas paga todos os custos.'
+    toast.success(`Truque de Mestre: ${ability.name}!`, {
+      description: `Você simulou "${ability.name}". Custo total: ${totalCost} PE. ${ability.isPassive ? 'Efeito passivo ativo até o fim da cena.' : 'Execute a ação da habilidade normalmente.'}`
     });
-  }, [peCurrent, onPEChange, onActivateEffect, onTrackPESpent]);
+  }, [peCurrent, onPEChange, onActivateEffect, onTrackPESpent, handleOpenTruqueMestre]);
+
+  /**
+   * Fecha o modal de Truque de Mestre
+   */
+  const handleCloseTruqueMestreModal = useCallback(() => {
+    setShowTruqueMestreModal(false);
+  }, []);
 
   return {
     // Estado
     isNegociador,
     isConcentrating,
+    showTruqueMestreModal,
     
     // Habilidades desbloqueadas
     hasEloquencia,
@@ -224,6 +279,8 @@ export function useNegociadorTrack({
     handleDiscursoMotivador,
     handleConhecoCara,
     handleTruqueMestre,
+    handleOpenTruqueMestre,
+    handleCloseTruqueMestreModal,
     
     // Helpers
     canAffordEloquencia: peCurrent >= 1 || isConcentrating,
