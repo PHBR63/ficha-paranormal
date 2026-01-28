@@ -43,6 +43,7 @@ import {
 } from './useTecnicoTrack';
 import { ImprovisarItemSelector } from './ImprovisarItemSelector';
 import { RemendaoItemSelector } from './RemendaoItemSelector';
+import { PreparadoParaTudoItemSelector } from './PreparadoParaTudoItemSelector';
 
 // =====================================================
 // Props do Componente
@@ -77,27 +78,7 @@ function TecnicoPanelComponent(props: TecnicoPanelProps) {
   // Verifica se é a trilha correta
   if (!track.isTecnico) return null;
 
-  // ===== COMPONENTE GRID DE CATEGORIAS (para Preparado para Tudo) =====
-  
-  const PreparadoCategoryGrid = () => (
-    <div className="grid grid-cols-2 gap-2">
-      {[1, 2, 3, 4].map((cat) => {
-        const cost = track.getPreparadoCost(cat);
-        return (
-          <Button
-            key={cat}
-            variant="outline"
-            onClick={() => track.handlePreparadoParaTudo(cat)}
-            disabled={!track.canAffordPreparado(cat)}
-            className={`${isMobile ? 'h-14' : 'h-12'} flex-col`}
-          >
-            <span className="font-medium">Categoria {cat}</span>
-            <span className="text-xs text-muted-foreground">{cost} PE</span>
-          </Button>
-        );
-      })}
-    </div>
-  );
+  // Não precisamos mais do PreparadoCategoryGrid, usamos o PreparadoParaTudoItemSelector
 
   // ===== COMPONENTE DE CONTEÚDO =====
   
@@ -298,20 +279,16 @@ function TecnicoPanelComponent(props: TecnicoPanelProps) {
                     Encontrar Item
                   </Button>
                 </MobileDrawerTrigger>
-                <MobileDrawerContent maxHeight="md">
+                <MobileDrawerContent maxHeight="lg">
                   <MobileDrawerHeader>
                     <MobileDrawerTitle>Preparado para Tudo</MobileDrawerTitle>
                   </MobileDrawerHeader>
                   <MobileDrawerBody useScrollArea={false}>
-                    <div className="space-y-3">
-                      <p className="text-sm text-muted-foreground">
-                        Escolha a categoria do item:
-                      </p>
-                      <PreparadoCategoryGrid />
-                      <p className="text-xs text-muted-foreground text-center italic">
-                        Exceto armas. Segue regras de inventário.
-                      </p>
-                    </div>
+                    <PreparadoParaTudoItemSelector
+                      peCurrent={track.peCurrent}
+                      onSelectItem={track.handlePreparadoParaTudo}
+                      isMobile={true}
+                    />
                   </MobileDrawerBody>
                 </MobileDrawerContent>
               </MobileDrawer>
@@ -327,14 +304,12 @@ function TecnicoPanelComponent(props: TecnicoPanelProps) {
                   <DrawerHeader>
                     <DrawerTitle>Preparado para Tudo</DrawerTitle>
                   </DrawerHeader>
-                  <div className="p-4 space-y-3">
-                    <p className="text-sm text-muted-foreground">
-                      Escolha a categoria do item que você "lembrou" que colocou na bolsa:
-                    </p>
-                    <PreparadoCategoryGrid />
-                    <p className="text-xs text-muted-foreground text-center italic">
-                      O item segue normalmente as regras de inventário. Exceto armas.
-                    </p>
+                  <div className="p-4">
+                    <PreparadoParaTudoItemSelector
+                      peCurrent={track.peCurrent}
+                      onSelectItem={track.handlePreparadoParaTudo}
+                      isMobile={false}
+                    />
                   </div>
                 </DrawerContent>
               </Drawer>

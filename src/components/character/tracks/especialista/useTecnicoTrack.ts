@@ -181,27 +181,50 @@ export function useTecnicoTrack({
   }, [peCurrent, onPEChange, onAddTemporaryItem, onActivateEffect, onTrackPESpent]);
 
   /**
-   * Handler para Preparado para Tudo (2 PE por categoria)
+   * Handler para Preparado para Tudo com item específico do catálogo
+   * Adiciona o item permanentemente ao inventário
    */
-  const handlePreparadoParaTudo = useCallback((categoria: number) => {
-    const peCost = 2 * categoria; // CORRIGIDO: 2 PE por categoria (não 3)
-    if (peCurrent < peCost) {
+  const handlePreparadoParaTudo = useCallback((item: CatalogItem, cost: number) => {
+    if (peCurrent < cost) {
       toast.error('PE insuficiente', {
-        description: `Você precisa de ${peCost} PE para lembrar de um item de categoria ${categoria}.`
+        description: `Você precisa de ${cost} PE para encontrar "${item.name}".`
       });
       return;
     }
 
-    onPEChange(peCurrent - peCost);
-    onTrackPESpent?.('Preparado para Tudo', peCost);
+    onPEChange(peCurrent - cost);
+    onTrackPESpent?.('Preparado para Tudo', cost);
     setPreparadoDrawerOpen(false);
     
-    onActivateEffect?.(TRACK_EFFECT_IDS.PREPARADO_PARA_TUDO ?? 'track-preparado-para-tudo', 'Preparado para Tudo', 'instant', { categoria });
+    // Cria o item PERMANENTE no inventário
+    const permanentItem: InventoryItem = {
+      id: crypto.randomUUID(),
+      name: item.name,
+      category: item.category as InventoryItem['category'],
+      slots: typeof item.spaces === 'number' ? item.spaces : 1,
+      quantity: 1,
+      description: item.description,
+      consumable: item.consumable,
+      uses: item.uses,
+      maxUses: item.uses,
+      effect: item.effect,
+      isTemporary: false, // PERMANENTE
+    };
     
-    toast.success('Preparado para Tudo!', {
-      description: `Você lembrou que colocou um item de categoria ${categoria} no fundo da bolsa! Gaste uma ação de movimento para encontrá-lo. O item segue as regras de inventário.`
+    // Adiciona ao inventário permanentemente
+    onAddTemporaryItem?.(permanentItem);
+    
+    onActivateEffect?.(TRACK_EFFECT_IDS.PREPARADO_PARA_TUDO ?? 'track-preparado-para-tudo', 'Preparado para Tudo', 'instant', { 
+      itemId: permanentItem.id,
+      itemName: item.name,
+      categoria: item.category,
+      cost 
     });
-  }, [peCurrent, onPEChange, onActivateEffect, onTrackPESpent]);
+    
+    toast.success('Você lembrou que tinha isso!', {
+      description: `"${item.name}" foi adicionado ao seu inventário.`
+    });
+  }, [peCurrent, onPEChange, onAddTemporaryItem, onActivateEffect, onTrackPESpent]);
 
   /**
    * Calcula custo de improvisar por item
@@ -209,9 +232,12 @@ export function useTecnicoTrack({
   const getImprovisarCostForItem = useCallback((item: CatalogItem) => calculateImprovisarCost(item), []);
 
   /**
-   * Calcula custo de Preparado para Tudo por categoria (2 PE por categoria)
+   * Calcula custo de Preparado para Tudo por item (2 PE por categoria)
    */
-  const getPreparadoCost = useCallback((categoria: number) => 2 * categoria, []);
+  const getPreparadoCostForItem = useCallback((item: CatalogItem) => {
+    const cat = categoryToNumber(item.category);
+    return cat === 0 ? 2 : 2 * cat;
+  }, []);
 
   return {
     // Estado
@@ -245,10 +271,14 @@ export function useTecnicoTrack({
     
     // Helpers
     getImprovisarCostForItem,
-    getPreparadoCost,
+    getPreparadoCostForItem,
     canAffordRemendao: peCurrent >= 1,
     canAffordImprovisar: (item: CatalogItem) => peCurrent >= calculateImprovisarCost(item),
-    canAffordPreparado: (categoria: number) => peCurrent >= getPreparadoCost(categoria),
+    canAffordPreparado: (item: CatalogItem) => {
+      const cat = categoryToNumber(item.category);
+      const cost = cat === 0 ? 2 : 2 * cat;
+      return peCurrent >= cost;
+    },
     peCurrent,
   };
 }
