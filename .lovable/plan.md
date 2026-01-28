@@ -1,176 +1,138 @@
 
-# Plano: Modal de Seleção de Habilidade para Truque de Mestre
+# Plano: Correção da Habilidade Preparado para Tudo (NEX 99%)
 
-## Resumo
+## Resumo do Problema
 
-Implementar um modal de seleção de habilidade para **Truque de Mestre** (Negociador, NEX 99%) que lista todas as habilidades de classe, trilha e origem do jogo (exceto rituais e poderes paranormais), permitindo ao jogador simular qualquer uma delas pagando seus custos.
+Atualmente, a habilidade **Preparado para Tudo** (Técnico, NEX 99%) permite apenas selecionar uma categoria (I, II, III, IV) e exibe uma mensagem genérica. O correto seria funcionar como **Improvisar** (NEX 65%), permitindo selecionar um item específico do catálogo, mas com as diferenças:
 
-## Contexto da Regra Oficial
-
-> "Acostumado a uma vida de fingimento e manipulação, você pode gastar 5 PE para simular o efeito de qualquer habilidade que você tenha visto um de seus aliados usar durante a cena. Você ignora os pré-requisitos da habilidade, mas ainda precisa pagar todos os seus custos (incluindo ações, PE e materiais) e usar os seus parâmetros de jogo, como se você estivesse usando a habilidade em questão."
-
-**Pontos importantes:**
-- Custo base: 5 PE para ativar
-- O personagem NÃO ganha a habilidade, apenas a usa naquele momento
-- Ignora pré-requisitos da habilidade copiada
-- Ainda precisa pagar custos adicionais da habilidade copiada
-- Deve ter "visto um aliado usar" durante a cena (flexibilizado para seleção livre no sistema)
+| Aspecto | Improvisar (65%) | Preparado para Tudo (99%) |
+|---------|------------------|---------------------------|
+| Custo PE | 2 + (2 × categoria) | 2 × categoria |
+| Duração | Temporário (1 cena) | Permanente |
+| Itens | Apenas equipamentos gerais | Qualquer item (exceto armas) |
 
 ## Arquivos a Criar
 
-### 1. `src/components/character/tracks/especialista/TruqueMestreModal.tsx`
+### 1. `src/components/character/tracks/especialista/PreparadoParaTudoItemSelector.tsx`
 
-Modal/Drawer responsivo para seleção de habilidade a copiar.
+Novo componente baseado no `ImprovisarItemSelector.tsx`, com as seguintes diferenças:
 
 **Funcionalidades:**
-- Listagem de todas as habilidades organizadas por categoria:
-  - Poderes de Combatente (20+ poderes)
-  - Poderes de Especialista (20+ poderes)
-  - Poderes de Ocultista (20+ poderes) - exceto rituais
-  - Habilidades de Trilha (60 habilidades, 4 por trilha × 15 trilhas)
-  - Poderes de Origem (26 origens)
-- Sistema de busca por nome
-- Filtros por classe/categoria
-- Exibição de custo, ação e descrição de cada habilidade
-- Confirmação mostra custo total (5 PE base + custo da habilidade)
+- Lista todos os itens do catálogo (não só equipamentos gerais)
+- Exclui munições e armas (se houver armas no catálogo)
+- Custo: 2 PE × categoria (sem custo base)
+- Aviso indicando que o item é permanente
 
-**Estrutura visual:**
+**Estrutura:**
 
 ```text
 ┌─────────────────────────────────────────────────────────────┐
-│  ✨ Truque de Mestre                    Custo Base: 5 PE   │
-│  Simule qualquer habilidade vista por um aliado na cena.   │
+│  🎒 Preparado para Tudo              Custo: 2 PE/categoria │
+│  Encontre qualquer item no fundo da sua bolsa!             │
 ├─────────────────────────────────────────────────────────────┤
-│  🔍 [Buscar habilidade...                              ]   │
-│                                                             │
-│  [Todos ▼] [Combatente] [Especialista] [Ocultista]         │
-│  [Trilhas] [Origens]                                        │
+│  🔍 [Buscar item...                                     ]  │
 ├─────────────────────────────────────────────────────────────┤
-│  📋 PODERES DE CLASSE - COMBATENTE                         │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │ ⚔️ Ataque Especial               2-5 PE | Livre    │   │
-│  │ +5 a +20 no ataque ou dano conforme NEX            │   │
-│  └─────────────────────────────────────────────────────┘   │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │ ⚔️ Golpe Pesado                  Passivo           │   │
-│  │ +1 dado de dano com armas corpo a corpo            │   │
-│  └─────────────────────────────────────────────────────┘   │
-│  ...                                                        │
+│  ▼ Categoria I                                      2 PE   │
+│    ├─ Kit de Primeiros Socorros    Operacional     2 PE   │
+│    ├─ Lanterna Tática              Operacional     2 PE   │
+│    └─ ...                                                  │
 │                                                             │
-│  📋 TRILHAS - MÉDICO DE CAMPO                              │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │ 💊 Paramédico                    2+ PE | Padrão    │   │
-│  │ Cura 2d10 PV (escala com NEX)                      │   │
-│  └─────────────────────────────────────────────────────┘   │
-│  ...                                                        │
+│  ▼ Categoria II                                     4 PE   │
+│    ├─ Colete Balístico Leve        Operacional     4 PE   │
+│    └─ ...                                                  │
 ├─────────────────────────────────────────────────────────────┤
-│  Habilidade selecionada: Paramédico                         │
-│  Custo total: 5 PE (Truque) + 2 PE (Paramédico) = 7 PE     │
+│  ✅ Item selecionado: Lanterna Tática                       │
+│     Categoria I • 1 espaço                                  │
+│     Ilumina área de 6m em cone...                          │
+├─────────────────────────────────────────────────────────────┤
+│  ℹ️ O item é adicionado permanentemente ao inventário.     │
 │                                                             │
-│  [Cancelar]                        [Usar Habilidade (7 PE)] │
+│  [Cancelar]              [Encontrar Item (2 PE)]           │
 └─────────────────────────────────────────────────────────────┘
 ```
 
 ## Arquivos a Modificar
 
-### 2. `src/components/character/tracks/especialista/useNegociadorTrack.ts`
-
-Adicionar estado e lógica para o modal de Truque de Mestre.
+### 2. `src/components/character/tracks/especialista/useTecnicoTrack.ts`
 
 **Alterações:**
-- Novo estado: `showTruqueMestreModal: boolean`
-- Novo handler: `handleOpenTruqueMestre()` - abre o modal
-- Modificar `handleTruqueMestre()` para receber `abilityId` e calcular custo total
-- Retornar novos estados e handlers
+- Modificar `handlePreparadoParaTudo` para receber um `CatalogItem` ao invés de `number` (categoria)
+- Calcular custo: `2 × categoryToNumber(item.category)`
+- Adicionar o item ao inventário como **permanente** (sem `isTemporary` ou com `isTemporary: false`)
+- Adicionar callback `onAddPermanentItem` se necessário, ou reutilizar `onAddTemporaryItem` com flag diferente
 
-### 3. `src/components/character/tracks/especialista/NegociadorPanel.tsx`
+```typescript
+// Antes:
+handlePreparadoParaTudo(categoria: number)
 
-Integrar o novo modal ao painel.
+// Depois:
+handlePreparadoParaTudo(item: CatalogItem, cost: number)
+```
+
+### 3. `src/components/character/tracks/especialista/TecnicoPanel.tsx`
 
 **Alterações:**
-- Importar `TruqueMestreModal`
-- Modificar botão "Usar" para abrir o modal ao invés de executar diretamente
-- Renderizar o modal
+- Importar `PreparadoParaTudoItemSelector`
+- Substituir o `PreparadoCategoryGrid` pelo novo seletor de itens
+- Atualizar o Drawer/MobileDrawer para usar o novo componente
 
 ## Detalhes Técnicos
 
-### Estrutura de Dados para Habilidades Copiáveis
+### Cálculo de Custo para Preparado para Tudo
 
 ```typescript
-interface CopyableAbility {
-  id: string;
-  name: string;
-  description: string;
-  source: 'class-power' | 'track-ability' | 'origin-power';
-  sourceClass?: 'Combatente' | 'Especialista' | 'Ocultista';
-  sourceTrack?: string;
-  sourceOrigin?: string;
-  peCost: number | 'varies' | 'passive';
-  actionType: 'free' | 'standard' | 'complete' | 'reaction' | 'movement' | 'none';
-  minNex?: number;
-  isPassive: boolean;
+// Nova função em PreparadoParaTudoItemSelector.tsx
+export function calculatePreparadoCost(item: CatalogItem): number {
+  return 2 * categoryToNumber(item.category);
 }
 ```
 
-### Fontes de Habilidades
-
-1. **Poderes de Classe** (`src/lib/class-powers/power-registry.ts`)
-   - COMBATENTE_POWERS, ESPECIALISTA_POWERS, OCULTISTA_POWERS
-   - Filtrar: excluir poderes de progressão (Aumento de Atributo, Grau de Treinamento)
-   - Filtrar: excluir poderes de rituais (Escolhido pelo Outro Lado)
-
-2. **Habilidades de Trilha** (`src/lib/class-powers/track-powers.ts`)
-   - ALL_TRACK_POWERS
-   - Total: 60 habilidades (5 trilhas × 4 habilidades × 3 classes)
-
-3. **Poderes de Origem** (`src/lib/character-data.ts`)
-   - CORE_ORIGINS + SUPPLEMENT_ORIGINS
-   - Total: 26 origens com poderes únicos
-
-### Cálculo de Custo Total
+### Item Permanente vs Temporário
 
 ```typescript
-// Custo total = 5 PE (base) + custo da habilidade copiada
-const calculateTotalCost = (ability: CopyableAbility): number => {
-  if (ability.isPassive || ability.peCost === 'passive') {
-    return 5; // Apenas custo base para passivos
-  }
-  if (ability.peCost === 'varies') {
-    return 5; // Custo variável, mostrar "5 PE + custo variável"
-  }
-  return 5 + ability.peCost;
+// Improvisar (temporário)
+const temporaryItem: InventoryItem = {
+  ...itemData,
+  isTemporary: true,
+  temporarySource: 'Improvisar (Técnico NEX 65%)',
+};
+
+// Preparado para Tudo (permanente)
+const permanentItem: InventoryItem = {
+  ...itemData,
+  isTemporary: false,
+  // Opcional: adicionar fonte para rastreamento
+  notes: 'Obtido via Preparado para Tudo',
 };
 ```
 
-### Integração Futura com Modo Campanha
+### Itens Excluídos
 
-O modal será projetado para suportar:
-- Lista de habilidades "vistas durante a cena" por aliados da campanha
-- Marcação de habilidades usadas por aliados na sessão atual
-- Restrição opcional para apenas habilidades vistas (toggle para mestre)
+- Munições (não faz sentido encontrar munição sozinha)
+- Armas (regra oficial exclui armas)
 
-## Habilidades Excluídas (Não Copiáveis)
-
-- Rituais e círculos de ritual (Ocultista core powers relacionados a rituais)
-- Poderes paranormais
-- Poderes de progressão automática (Aumento de Atributo, Grau de Treinamento)
-- Versatilidade (escolha de poder, não é um efeito copiável)
-
-## Fluxo de Uso
+## Fluxo de Uso Atualizado
 
 ```text
-1. Usuário clica "Usar" em Truque de Mestre (NEX 99%)
+1. Jogador clica "Encontrar Item" em Preparado para Tudo
        ↓
-2. Modal abre com lista de habilidades
+2. Abre Drawer com seletor de itens (similar ao Improvisar)
        ↓
-3. Usuário busca/filtra e seleciona uma habilidade
+3. Jogador busca/filtra e seleciona um item específico
        ↓
-4. Sistema calcula custo total (5 PE base + custo da habilidade)
+4. Sistema calcula custo: 2 PE × categoria
        ↓
-5. Usuário confirma
+5. Jogador confirma
        ↓
-6. Sistema deduz PE e exibe toast com:
-   - Nome da habilidade copiada
-   - Efeito/descrição
-   - Lembrete de ação necessária
+6. Sistema:
+   - Deduz PE
+   - Adiciona item PERMANENTE ao inventário
+   - Mostra toast: "Você lembrou que tinha um(a) [item]!"
 ```
+
+## Resultado Esperado
+
+- Jogador pode selecionar qualquer item do catálogo (exceto armas/munições)
+- Custo correto: 2 PE por categoria (sem base)
+- Item adicionado permanentemente ao inventário
+- Interface similar ao Improvisar, facilitando o uso
