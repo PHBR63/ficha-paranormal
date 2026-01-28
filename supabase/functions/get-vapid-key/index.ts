@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { checkRateLimit, createRateLimitResponse, RATE_LIMIT_PRESETS } from "../_shared/rateLimit.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -11,6 +12,10 @@ const corsHeaders = {
  * 
  * Retorna a chave pública VAPID para configuração de push notifications.
  * Requer autenticação - apenas usuários logados podem obter a chave.
+ * 
+ * SEGURANÇA:
+ * - Implementa rate limiting (5 req/min por usuário)
+ * - Valida JWT internamente via getClaims()
  */
 
 serve(async (req) => {
@@ -67,6 +72,13 @@ serve(async (req) => {
         JSON.stringify({ error: 'Unauthorized - User ID not found in token' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
+    }
+
+    // SEGURANÇA: Rate limiting por usuário (5 req/min)
+    const rateLimitResult = checkRateLimit(userId as string, RATE_LIMIT_PRESETS.auth);
+    if (!rateLimitResult.allowed) {
+      console.warn(`[get-vapid-key] Rate limit exceeded for user: ${userId}`);
+      return createRateLimitResponse(rateLimitResult, RATE_LIMIT_PRESETS.auth.maxRequests, corsHeaders);
     }
 
     console.log(`[get-vapid-key] Authenticated user: ${userId}`);

@@ -5,6 +5,7 @@ import {
   generateVapidKeys,
   type PushSubscription as WebPushSubscription,
 } from "jsr:@negrel/webpush";
+import { checkRateLimit, createRateLimitResponse, RATE_LIMIT_PRESETS } from "../_shared/rateLimit.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -16,6 +17,11 @@ const corsHeaders = {
  * 
  * Envia notificações push para membros de uma campanha.
  * Usa biblioteca @negrel/webpush para Deno com suporte VAPID.
+ * 
+ * SEGURANÇA:
+ * - Implementa rate limiting (10 req/min por usuário)
+ * - Apenas mestres de campanha podem enviar notificações
+ * - Valida JWT internamente via getClaims()
  */
 
 // Cache do ApplicationServer
@@ -85,6 +91,13 @@ serve(async (req) => {
         JSON.stringify({ error: 'Unauthorized' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
+    }
+
+    // SEGURANÇA: Rate limiting por usuário (10 req/min para push)
+    const rateLimitResult = checkRateLimit(userId as string, RATE_LIMIT_PRESETS.push);
+    if (!rateLimitResult.allowed) {
+      console.warn(`[push-notification] Rate limit exceeded for user: ${userId}`);
+      return createRateLimitResponse(rateLimitResult, RATE_LIMIT_PRESETS.push.maxRequests, corsHeaders);
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);

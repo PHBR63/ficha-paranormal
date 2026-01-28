@@ -8,6 +8,9 @@
  * - Fog of War (mestre)
  * - Ping e marcadores
  * - Zoom e pan
+ * 
+ * SEGURANÇA: URLs de imagem são validadas contra domínios permitidos
+ * para prevenir pixel tracking e data exfiltration.
  */
 
 import { useRef, useEffect, useState, useCallback, MouseEvent as ReactMouseEvent } from 'react';
@@ -37,6 +40,8 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
+import { validateImageUrl } from '@/lib/security/urlValidator';
+import { toast } from 'sonner';
 import {
   MousePointer2,
   Move,
@@ -63,6 +68,7 @@ import {
   RotateCw,
   Image,
   X,
+  AlertTriangle,
 } from 'lucide-react';
 
 interface TacticalBoardProps {
@@ -624,9 +630,16 @@ export function TacticalBoard({
   const handleCreateMap = async () => {
     if (!newMapUrl || !newMapName) return;
     
+    // SEGURANÇA: Valida URL antes de criar mapa
+    const validation = validateImageUrl(newMapUrl);
+    if (!validation.isValid) {
+      toast.error(validation.error || 'URL de imagem inválida');
+      return;
+    }
+    
     await board.createMap({
       name: newMapName,
-      image_url: newMapUrl,
+      image_url: validation.normalizedUrl || newMapUrl,
       grid_size: 40,
     });
     
@@ -755,9 +768,16 @@ export function TacticalBoard({
                   onChange={(e) => setNewMapUrl(e.target.value)}
                   placeholder="https://..."
                 />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Cole a URL de uma imagem de mapa
-                </p>
+                <div className="mt-2 p-2 bg-muted/50 rounded text-xs text-muted-foreground">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <AlertTriangle className="w-3 h-3 text-warning" />
+                    <span className="font-medium">Segurança:</span>
+                  </div>
+                  <p>
+                    Apenas URLs HTTPS de fontes confiáveis são permitidas: 
+                    Supabase Storage, Imgur, Google Drive, Discord CDN, etc.
+                  </p>
+                </div>
               </div>
             </div>
             <DialogFooter>
