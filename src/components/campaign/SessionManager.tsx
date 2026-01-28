@@ -69,7 +69,9 @@ export function SessionManager({
   // Busca sessões ao montar
   useEffect(() => {
     fetchSessions();
-    subscribeToSessions();
+    const cleanup = subscribeToSessions();
+    
+    return cleanup;
   }, [campaignId]);
 
   // Busca todas as sessões da campanha
@@ -98,7 +100,7 @@ export function SessionManager({
   // Subscribe para atualizações em tempo real
   const subscribeToSessions = () => {
     const channel = supabase
-      .channel(`sessions-${campaignId}`)
+      .channel(`sessions-manager-${campaignId}`)
       .on(
         'postgres_changes',
         {

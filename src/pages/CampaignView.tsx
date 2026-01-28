@@ -182,12 +182,18 @@ export default function CampaignView() {
 
   // Busca dados ao montar e subscribe para updates
   useEffect(() => {
-    if (id && user) {
-      fetchCampaignData();
-      fetchActiveSession();
-      subscribeToMessages();
-      subscribeToSessions();
-    }
+    if (!id || !user) return;
+    
+    fetchCampaignData();
+    fetchActiveSession();
+    
+    const cleanupMessages = subscribeToMessages();
+    const cleanupSessions = subscribeToSessions();
+    
+    return () => {
+      cleanupMessages?.();
+      cleanupSessions?.();
+    };
   }, [id, user]);
 
   // Ref para controlar se é o carregamento inicial
@@ -381,14 +387,21 @@ export default function CampaignView() {
   const fetchActiveSession = async () => {
     if (!id) return;
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('campaign_sessions')
         .select('id, session_number, title, started_at')
         .eq('campaign_id', id)
         .eq('status', 'active')
-        .single();
-      setActiveSession(data || null);
-    } catch {
+        .maybeSingle();
+      
+      if (error) {
+        console.warn('Erro ao buscar sessão ativa:', error.message);
+        setActiveSession(null);
+        return;
+      }
+      setActiveSession(data);
+    } catch (err) {
+      console.error('Exceção ao buscar sessão:', err);
       setActiveSession(null);
     }
   };
