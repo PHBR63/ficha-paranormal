@@ -64,6 +64,7 @@ export interface BoardPing {
 export interface UseTacticalBoardProps {
   campaignId: string;
   isMaster: boolean;
+  enabled?: boolean; // Flag para desativar subscrições (evita dupla instância #185)
 }
 
 // Célula destacada para visualização de movimento
@@ -138,6 +139,7 @@ export interface TacticalBoardReturn {
 export function useTacticalBoard({
   campaignId,
   isMaster,
+  enabled = true, // Por padrão ativo; quando externalBoard existe, passa false
 }: UseTacticalBoardProps): TacticalBoardReturn {
   const { toast } = useToast();
   
@@ -226,15 +228,15 @@ export function useTacticalBoard({
     }
   }, []);
 
-  // Subscribe para updates em tempo real
+  // Subscribe para updates em tempo real (só se enabled)
   useEffect(() => {
-    if (!campaignId) return;
+    if (!campaignId || !enabled) return;
     
     loadMaps();
     
     // Subscribe para mapas
     const mapsChannel = supabase
-      .channel(`maps-${campaignId}`)
+      .channel(`maps-${campaignId}-${Date.now()}`)
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
@@ -248,14 +250,14 @@ export function useTacticalBoard({
     return () => {
       supabase.removeChannel(mapsChannel);
     };
-  }, [campaignId, loadMaps]);
+  }, [campaignId, loadMaps, enabled]);
 
-  // Subscribe para tokens do mapa ativo
+  // Subscribe para tokens do mapa ativo (só se enabled)
   useEffect(() => {
-    if (!activeMap) return;
+    if (!activeMap || !enabled) return;
     
     const tokensChannel = supabase
-      .channel(`tokens-${activeMap.id}`)
+      .channel(`tokens-${activeMap.id}-${Date.now()}`)
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
@@ -269,7 +271,7 @@ export function useTacticalBoard({
     return () => {
       supabase.removeChannel(tokensChannel);
     };
-  }, [activeMap, loadTokens]);
+  }, [activeMap, loadTokens, enabled]);
 
   // Cleanup pings
   useEffect(() => {

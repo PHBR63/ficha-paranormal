@@ -118,7 +118,8 @@ export function TacticalBoard({
   const containerRef = useRef<HTMLDivElement>(null);
   
   // Usa board externo se fornecido, senão cria um novo
-  const internalBoard = useTacticalBoard({ campaignId, isMaster });
+  // IMPORTANTE: enabled: !externalBoard evita dupla subscrição ao Realtime (bug #185)
+  const internalBoard = useTacticalBoard({ campaignId, isMaster, enabled: !externalBoard });
   const board = externalBoard || internalBoard;
   
   // Estados locais
