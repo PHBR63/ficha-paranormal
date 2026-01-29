@@ -13,7 +13,7 @@
  * para prevenir pixel tracking e data exfiltration.
  */
 
-import { useRef, useEffect, useState, useCallback, MouseEvent as ReactMouseEvent } from 'react';
+import { useRef, useEffect, useState, useCallback, useMemo, MouseEvent as ReactMouseEvent } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTacticalBoard, MapToken, TacticalMap } from '@/hooks/campaign/useTacticalBoard';
 import { TacticalBoardKonva } from './TacticalBoardKonva';
@@ -122,6 +122,48 @@ export function TacticalBoard({
   const internalBoard = useTacticalBoard({ campaignId, isMaster, enabled: !externalBoard });
   const board = externalBoard || internalBoard;
   
+  // =====================================================
+  // ESTABILIZAÇÃO DE CALLBACKS (Prevenção de loop #185)
+  // =====================================================
+  // Refs para callbacks do board (proteção adicional contra loops em componentes Radix)
+  const setActiveMapRef = useRef(board.setActiveMap);
+  const setActiveToolRef = useRef(board.setActiveTool);
+  const setZoomRef = useRef(board.setZoom);
+  const clearMeasureRef = useRef(board.clearMeasure);
+  const fitToScreenRef = useRef(board.fitToScreen);
+  
+  // Atualiza refs quando callbacks mudam
+  useEffect(() => { setActiveMapRef.current = board.setActiveMap; }, [board.setActiveMap]);
+  useEffect(() => { setActiveToolRef.current = board.setActiveTool; }, [board.setActiveTool]);
+  useEffect(() => { setZoomRef.current = board.setZoom; }, [board.setZoom]);
+  useEffect(() => { clearMeasureRef.current = board.clearMeasure; }, [board.clearMeasure]);
+  useEffect(() => { fitToScreenRef.current = board.fitToScreen; }, [board.fitToScreen]);
+  
+  // Handlers estáveis para componentes Radix (deps vazias = referência nunca muda)
+  const handleSetActiveMap = useCallback((id: string) => {
+    setActiveMapRef.current?.(id);
+  }, []);
+  
+  const handleSetActiveTool = useCallback((tool: string) => {
+    setActiveToolRef.current?.(tool as 'select' | 'move' | 'measure' | 'fog' | 'ping' | 'draw');
+  }, []);
+  
+  const handleZoomIn = useCallback(() => {
+    setZoomRef.current?.(Math.min(3, board.zoom + 0.25));
+  }, [board.zoom]);
+  
+  const handleZoomOut = useCallback(() => {
+    setZoomRef.current?.(Math.max(0.25, board.zoom - 0.25));
+  }, [board.zoom]);
+  
+  const handleFitToScreen = useCallback(() => {
+    fitToScreenRef.current?.();
+  }, []);
+  
+  const handleToolClick = useCallback((toolId: string) => {
+    handleSetActiveTool(toolId);
+    if (toolId !== 'measure') clearMeasureRef.current?.();
+  }, [handleSetActiveTool]);
   // Estados locais
   const [isDragging, setIsDragging] = useState(false);
   const [dragToken, setDragToken] = useState<MapToken | null>(null);
@@ -851,12 +893,11 @@ export function TacticalBoard({
       {/* Toolbar */}
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <div className="flex items-center gap-2">
-          {/* Seletor de mapa - key estável para evitar remontagem (bug #185) */}
+          {/* Seletor de mapa - usa handler estável para evitar loop #185 */}
           {isMaster && board.activeMap && board.maps.length > 0 && (
             <Select 
-              key="map-selector-stable"
-              value={board.activeMap.id} 
-              onValueChange={board.setActiveMap}
+              value={board.activeMap?.id || ''} 
+              onValueChange={handleSetActiveMap}
             >
               <SelectTrigger className="w-40">
                 <Map className="w-4 h-4 mr-2" />
@@ -872,7 +913,7 @@ export function TacticalBoard({
             </Select>
           )}
           
-          {/* Ferramentas */}
+          {/* Ferramentas - usa handler estável para evitar loops */}
           <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-1">
             {[
               { id: 'select', icon: MousePointer2, label: 'Selecionar' },
@@ -886,10 +927,7 @@ export function TacticalBoard({
                 variant={board.activeTool === tool.id ? 'secondary' : 'ghost'}
                 size="icon"
                 className="w-8 h-8"
-                onClick={() => {
-                  board.setActiveTool(tool.id as any);
-                  if (tool.id !== 'measure') board.clearMeasure();
-                }}
+                onClick={() => handleToolClick(tool.id)}
                 title={tool.label}
               >
                 <tool.icon className="w-4 h-4" />
@@ -897,13 +935,13 @@ export function TacticalBoard({
             ))}
           </div>
           
-          {/* Zoom */}
+          {/* Zoom - usa handlers estáveis */}
           <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-1">
             <Button
               variant="ghost"
               size="icon"
               className="w-8 h-8"
-              onClick={() => board.setZoom(Math.max(0.25, board.zoom - 0.25))}
+              onClick={handleZoomOut}
             >
               <ZoomOut className="w-4 h-4" />
             </Button>
@@ -914,7 +952,7 @@ export function TacticalBoard({
               variant="ghost"
               size="icon"
               className="w-8 h-8"
-              onClick={() => board.setZoom(Math.min(3, board.zoom + 0.25))}
+              onClick={handleZoomIn}
             >
               <ZoomIn className="w-4 h-4" />
             </Button>
@@ -922,7 +960,7 @@ export function TacticalBoard({
               variant="ghost"
               size="icon"
               className="w-8 h-8"
-              onClick={board.fitToScreen}
+              onClick={handleFitToScreen}
               title="Ajustar à tela"
             >
               <Maximize className="w-4 h-4" />

@@ -238,7 +238,7 @@ export function useCampaignPresence({
         window.removeEventListener(event, updateActivity);
       });
     };
-  }, [enabled, userId, userName, userAvatar]); // Removido presenceState.presenceMap para evitar dependência circular
+  }, [enabled, userId]); // userName e userAvatar já usam refs (linhas 96-102) - evita re-execuções desnecessárias
 
   // Helper para verificar se um usuário está online
   const isUserOnline = useCallback((checkUserId: string): boolean => {
