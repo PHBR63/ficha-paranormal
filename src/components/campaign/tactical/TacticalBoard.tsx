@@ -444,9 +444,30 @@ export function TacticalBoard({
   }, [board, isMaster, backgroundImage, isDragging, dragToken, dragStartCell, combatMode, movementRemaining]);
 
   // Re-render quando dados mudam
+  // NOTA: Usamos refs para valores estáveis e evitamos objetos nas deps
+  // para prevenir loops de re-render (bug #185)
   useEffect(() => {
     drawCanvas();
-  }, [drawCanvas, board.tokens, board.activeMap, board.zoom, board.panOffset, board.pings, board.measureStart, board.measureEnd, board.selectedTokenId, board.highlightedCells, backgroundImage, isDragging, dragToken, movementPreview]);
+    // Deps simplificadas: apenas valores primitivos ou arrays/objects que realmente mudam
+  }, [
+    drawCanvas,
+    board.tokens.length, // Primitivo: só re-renderiza quando quantidade muda
+    board.activeMap?.id, // Primitivo: só re-renderiza quando mapa muda
+    board.zoom,
+    board.panOffset.x,
+    board.panOffset.y,
+    board.pings.length,
+    board.measureStart?.x,
+    board.measureStart?.y,
+    board.measureEnd?.x,
+    board.measureEnd?.y,
+    board.selectedTokenId,
+    board.highlightedCells.length,
+    backgroundImage,
+    isDragging,
+    dragToken?.id,
+    movementPreview?.distance,
+  ]);
 
   // Ajusta tamanho do canvas
   useEffect(() => {
@@ -830,9 +851,13 @@ export function TacticalBoard({
       {/* Toolbar */}
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <div className="flex items-center gap-2">
-          {/* Seletor de mapa */}
-          {isMaster && (
-            <Select value={board.activeMap.id} onValueChange={board.setActiveMap}>
+          {/* Seletor de mapa - key estável para evitar remontagem (bug #185) */}
+          {isMaster && board.activeMap && board.maps.length > 0 && (
+            <Select 
+              key="map-selector-stable"
+              value={board.activeMap.id} 
+              onValueChange={board.setActiveMap}
+            >
               <SelectTrigger className="w-40">
                 <Map className="w-4 h-4 mr-2" />
                 <SelectValue />

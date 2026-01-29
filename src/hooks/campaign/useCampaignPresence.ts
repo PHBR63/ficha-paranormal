@@ -89,7 +89,17 @@ export function useCampaignPresence({
     // Evento de saída processado silenciosamente
   }, []);
 
+  // Refs para valores que mudam mas não devem re-subscripar o canal
+  const userNameRef = useRef(userName);
+  const userAvatarRef = useRef(userAvatar);
+  
+  useEffect(() => {
+    userNameRef.current = userName;
+    userAvatarRef.current = userAvatar;
+  }, [userName, userAvatar]);
+
   // Inicializa canal de presença
+  // NOTA: Dependências mínimas para evitar re-subscriptions (bug #185)
   useEffect(() => {
     if (!enabled || !campaignId || !userId) {
       return;
@@ -122,11 +132,11 @@ export function useCampaignPresence({
     // Subscreve e envia presença inicial
     channel.subscribe(async (status) => {
       if (status === 'SUBSCRIBED') {
-        // Envia dados de presença do usuário atual
+        // Envia dados de presença do usuário atual (usa refs para valores atuais)
         const presenceData: UserPresence = {
           oderId: userId,
-          odername: userName,
-          oderAvatar: userAvatar,
+          odername: userNameRef.current,
+          oderAvatar: userAvatarRef.current,
           onlineSince: new Date().toISOString(),
           lastSeen: new Date().toISOString(),
           status: 'online',
@@ -166,7 +176,7 @@ export function useCampaignPresence({
         channelRef.current = null;
       }
     };
-  }, [enabled, campaignId, userId, userName, userAvatar, syncPresence, handleJoin, handleLeave]);
+  }, [enabled, campaignId, userId, syncPresence, handleJoin, handleLeave]);
 
   // Atualiza status de "away" quando usuário fica inativo
   useEffect(() => {
