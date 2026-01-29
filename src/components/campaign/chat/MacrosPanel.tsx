@@ -5,7 +5,7 @@
  * Integra com o sistema de chat da campanha.
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -140,63 +140,73 @@ export function MacrosPanel({ characterId, campaignId, onRoll, className }: Macr
     return grouped;
   }, [macros, searchQuery]);
 
-  // Executa rolagem
-  const handleRoll = (macro: RollMacro) => {
+  // =====================================================
+  // ESTABILIZAÇÃO DE CALLBACKS (Prevenção de loop #185)
+  // =====================================================
+  // Refs para funções que mudam - evita re-criar callbacks inline
+  const onRollRef = useRef(onRoll);
+  const toastFnRef = useRef(toast);
+  
+  useEffect(() => { onRollRef.current = onRoll; }, [onRoll]);
+  useEffect(() => { toastFnRef.current = toast; }, [toast]);
+  
+  // Executa rolagem - callback estável
+  const handleRoll = useCallback((macro: RollMacro) => {
     const formula = `${macro.diceCount}d${macro.diceType}${macro.bonus > 0 ? `+${macro.bonus}` : macro.bonus < 0 ? macro.bonus : ''}`;
     const label = macro.label || macro.name;
     
     // Chama onRoll se disponível, senão apenas mostra o toast
-    if (onRoll) {
-      onRoll(formula, label, macro.type);
+    if (onRollRef.current) {
+      onRollRef.current(formula, label, macro.type);
     }
     
-    toast({
+    toastFnRef.current?.({
       title: `🎲 ${macro.name}`,
-      description: onRoll ? `Rolando ${formula}...` : `Fórmula: ${formula}`,
+      description: onRollRef.current ? `Rolando ${formula}...` : `Fórmula: ${formula}`,
       duration: 2000,
     });
-  };
+  }, []);
 
-  // Editar macro
-  const handleEdit = (macro: RollMacro) => {
+  // Editar macro - callback estável
+  const handleEdit = useCallback((macro: RollMacro) => {
     setEditingMacro(macro);
     setEditorOpen(true);
-  };
+  }, []);
 
-  // Nova macro
-  const handleNew = () => {
+  // Nova macro - callback estável
+  const handleNew = useCallback(() => {
     setEditingMacro(null);
     setEditorOpen(true);
-  };
+  }, []);
 
-  // Salvar macro
-  const handleSave = (macroData: Omit<RollMacro, 'id' | 'createdAt' | 'updatedAt'>) => {
+  // Salvar macro - callback estável
+  const handleSave = useCallback((macroData: Omit<RollMacro, 'id' | 'createdAt' | 'updatedAt'>) => {
     if (editingMacro) {
       updateMacro(editingMacro.id, macroData);
-      toast({ title: 'Macro atualizada', description: `"${macroData.name}" foi salva.` });
+      toastFnRef.current?.({ title: 'Macro atualizada', description: `"${macroData.name}" foi salva.` });
     } else {
       addMacro(macroData);
-      toast({ title: 'Macro criada', description: `"${macroData.name}" foi adicionada.` });
+      toastFnRef.current?.({ title: 'Macro criada', description: `"${macroData.name}" foi adicionada.` });
     }
-  };
+  }, [editingMacro, updateMacro, addMacro]);
 
-  // Deletar macro
-  const handleDelete = (macroId: string) => {
+  // Deletar macro - callback estável
+  const handleDelete = useCallback((macroId: string) => {
     const macro = macros.find(m => m.id === macroId);
     deleteMacro(macroId);
-    toast({ title: 'Macro excluída', description: `"${macro?.name}" foi removida.` });
-  };
+    toastFnRef.current?.({ title: 'Macro excluída', description: `"${macro?.name}" foi removida.` });
+  }, [macros, deleteMacro]);
 
-  // Duplicar macro
-  const handleDuplicate = (macroId: string) => {
+  // Duplicar macro - callback estável
+  const handleDuplicate = useCallback((macroId: string) => {
     const duplicate = duplicateMacro(macroId);
     if (duplicate) {
-      toast({ title: 'Macro duplicada', description: `"${duplicate.name}" foi criada.` });
+      toastFnRef.current?.({ title: 'Macro duplicada', description: `"${duplicate.name}" foi criada.` });
     }
-  };
+  }, [duplicateMacro]);
 
-  // Exportar
-  const handleExport = () => {
+  // Exportar - callback estável
+  const handleExport = useCallback(() => {
     const json = exportMacros();
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -205,11 +215,11 @@ export function MacrosPanel({ characterId, campaignId, onRoll, className }: Macr
     a.download = `macros-${characterId}.json`;
     a.click();
     URL.revokeObjectURL(url);
-    toast({ title: 'Macros exportadas', description: `${macros.length} macros salvas.` });
-  };
+    toastFnRef.current?.({ title: 'Macros exportadas', description: `${macros.length} macros salvas.` });
+  }, [exportMacros, characterId, macros.length]);
 
-  // Importar
-  const handleImport = () => {
+  // Importar - callback estável
+  const handleImport = useCallback(() => {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.json';
@@ -219,26 +229,26 @@ export function MacrosPanel({ characterId, campaignId, onRoll, className }: Macr
         const reader = new FileReader();
         reader.onload = () => {
           const count = importMacros(reader.result as string);
-          toast({ title: 'Macros importadas', description: `${count} macros adicionadas.` });
+          toastFnRef.current?.({ title: 'Macros importadas', description: `${count} macros adicionadas.` });
         };
         reader.readAsText(file);
       }
     };
     input.click();
-  };
+  }, [importMacros]);
 
-  // Resetar
-  const handleReset = () => {
+  // Resetar - callback estável
+  const handleReset = useCallback(() => {
     resetToDefaults();
-    toast({ title: 'Macros restauradas', description: 'Macros padrão foram restauradas.' });
-  };
+    toastFnRef.current?.({ title: 'Macros restauradas', description: 'Macros padrão foram restauradas.' });
+  }, [resetToDefaults]);
 
-  // Toggle de categoria expandida
-  const toggleType = (type: MacroType) => {
+  // Toggle de categoria expandida - callback estável
+  const toggleType = useCallback((type: MacroType) => {
     setExpandedTypes(prev =>
       prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type]
     );
-  };
+  }, []);
 
   if (isLoading) {
     return (
@@ -341,10 +351,10 @@ export function MacrosPanel({ characterId, campaignId, onRoll, className }: Macr
                         <MacroItem
                           key={macro.id}
                           macro={macro}
-                          onRoll={() => handleRoll(macro)}
-                          onEdit={() => handleEdit(macro)}
-                          onDelete={() => handleDelete(macro.id)}
-                          onDuplicate={() => handleDuplicate(macro.id)}
+                          onRoll={handleRoll}
+                          onEdit={handleEdit}
+                          onDelete={handleDelete}
+                          onDuplicate={handleDuplicate}
                         />
                       ))}
                     </AnimatePresence>
@@ -383,20 +393,34 @@ export function MacrosPanel({ characterId, campaignId, onRoll, className }: Macr
   );
 }
 
-// Componente de item de macro
+// =====================================================
+// COMPONENTE MACROITEM - Memoizado para evitar re-renders
+// =====================================================
 interface MacroItemProps {
   macro: RollMacro;
-  onRoll: () => void;
-  onEdit: () => void;
-  onDelete: () => void;
-  onDuplicate: () => void;
+  onRoll: (macro: RollMacro) => void;
+  onEdit: (macro: RollMacro) => void;
+  onDelete: (macroId: string) => void;
+  onDuplicate: (macroId: string) => void;
 }
 
-function MacroItem({ macro, onRoll, onEdit, onDelete, onDuplicate }: MacroItemProps) {
+const MacroItem = memo(function MacroItem({
+  macro, 
+  onRoll, 
+  onEdit, 
+  onDelete, 
+  onDuplicate 
+}: MacroItemProps) {
   const IconComponent = ICON_MAP[macro.icon || 'dices'] || Dices;
   const colorClass = COLOR_MAP[macro.color || 'default'] || COLOR_MAP.default;
   
   const formula = `${macro.diceCount}d${macro.diceType}${macro.bonus > 0 ? `+${macro.bonus}` : macro.bonus < 0 ? macro.bonus : ''}`;
+
+  // Handlers locais estáveis - chamam callbacks do pai com o macro
+  const handleRollClick = useCallback(() => onRoll(macro), [onRoll, macro]);
+  const handleEditClick = useCallback(() => onEdit(macro), [onEdit, macro]);
+  const handleDeleteClick = useCallback(() => onDelete(macro.id), [onDelete, macro.id]);
+  const handleDuplicateClick = useCallback(() => onDuplicate(macro.id), [onDuplicate, macro.id]);
 
   return (
     <motion.div
@@ -420,23 +444,17 @@ function MacroItem({ macro, onRoll, onEdit, onDelete, onDuplicate }: MacroItemPr
         <p className="text-xs text-muted-foreground font-mono">{formula}</p>
       </div>
 
-      {/* Ações */}
+      {/* Ações - Tooltip removido para evitar loop #185 com Radix */}
       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7"
-                onClick={onRoll}
-              >
-                <Play className="w-3.5 h-3.5 text-primary" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Rolar</TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7"
+          onClick={handleRollClick}
+          title="Rolar"
+        >
+          <Play className="w-3.5 h-3.5 text-primary" />
+        </Button>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -445,20 +463,20 @@ function MacroItem({ macro, onRoll, onEdit, onDelete, onDuplicate }: MacroItemPr
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={onRoll}>
+            <DropdownMenuItem onClick={handleRollClick}>
               <Play className="w-4 h-4 mr-2" />
               Rolar
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={onEdit}>
+            <DropdownMenuItem onClick={handleEditClick}>
               <Edit2 className="w-4 h-4 mr-2" />
               Editar
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={onDuplicate}>
+            <DropdownMenuItem onClick={handleDuplicateClick}>
               <Copy className="w-4 h-4 mr-2" />
               Duplicar
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={onDelete} className="text-destructive">
+            <DropdownMenuItem onClick={handleDeleteClick} className="text-destructive">
               <Trash2 className="w-4 h-4 mr-2" />
               Excluir
             </DropdownMenuItem>
@@ -467,6 +485,6 @@ function MacroItem({ macro, onRoll, onEdit, onDelete, onDuplicate }: MacroItemPr
       </div>
     </motion.div>
   );
-}
+});
 
 export default MacrosPanel;
