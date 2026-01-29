@@ -16,7 +16,7 @@ import {
   ZoomIn
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
+// ScrollArea removido - usando overflow nativo para evitar bug #185 com React 19
 import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
@@ -160,7 +160,7 @@ export function PlayerHandoutsViewer({ campaignId }: PlayerHandoutsViewerProps) 
                 </DialogTitle>
               </DialogHeader>
               
-              <ScrollArea className="flex-1 pr-4">
+              <div className="flex-1 overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent pr-4">
                 {selectedHandout.image_url && (
                   <div className="mb-4 rounded-lg overflow-hidden">
                     <img 
@@ -194,7 +194,7 @@ export function PlayerHandoutsViewer({ campaignId }: PlayerHandoutsViewerProps) 
                     })}
                   </div>
                 )}
-              </ScrollArea>
+              </div>
               
               {selectedHandout.revealed_at && (
                 <div className="flex items-center gap-2 pt-4 border-t text-sm text-muted-foreground">

@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ScrollArea } from '@/components/ui/scroll-area';
+// ScrollArea removido - usando overflow nativo para evitar bug #185 com React 19
 import {
   Popover,
   PopoverContent,
@@ -152,7 +152,7 @@ export function RangeCalculator({
           </Badge>
         </div>
 
-        <ScrollArea className="h-[200px] rounded-lg border border-border p-2">
+        <div className="h-[200px] overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent rounded-lg border border-border p-2">
           <div className="space-y-1">
             <AnimatePresence mode="popLayout">
               {allTargets.map(({ combatant, range }) => {
@@ -248,7 +248,7 @@ export function RangeCalculator({
               )}
             </AnimatePresence>
           </div>
-        </ScrollArea>
+        </div>
       </div>
 
       {/* Resumo de alcance */}

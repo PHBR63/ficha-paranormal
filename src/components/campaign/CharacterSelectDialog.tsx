@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
+// ScrollArea removido - usando overflow nativo para evitar bug #185 com React 19
 import { Input } from '@/components/ui/input';
 import {
   Dialog,
@@ -330,7 +330,7 @@ export function CharacterSelectDialog({
             </div>
           ) : (
             <>
-              <ScrollArea className="flex-1 min-h-0 max-h-[50vh]">
+              <div className="flex-1 min-h-0 max-h-[50vh] overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
                 <div className="grid gap-3 pr-4">
                   {characters.map((char) => {
                     const isSelected = selectedId === char.id;
@@ -467,7 +467,7 @@ export function CharacterSelectDialog({
                     );
                   })}
                 </div>
-              </ScrollArea>
+              </div>
 
               {/* Separador e botão criar novo */}
               <div className="mt-4 pt-4 border-t border-border">

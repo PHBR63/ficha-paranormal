@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
+// ScrollArea removido - usando overflow nativo para evitar bug #185 com React 19
 import {
   Dialog,
   DialogContent,
@@ -101,7 +101,7 @@ export function CombatBoardLinker({
           </Button>
         </div>
 
-        <ScrollArea className="h-[50vh] pr-4">
+        <div className="h-[50vh] overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent pr-4">
           <div className="space-y-3">
             <AnimatePresence mode="popLayout">
               {combatants.map((combatant) => {
@@ -198,7 +198,7 @@ export function CombatBoardLinker({
               })}
             </AnimatePresence>
           </div>
-        </ScrollArea>
+        </div>
 
         {/* Resumo */}
         <div className="pt-4 border-t border-border flex items-center justify-between text-sm text-muted-foreground">
