@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+// ScrollArea removido - usando overflow nativo para evitar bug #185 com React 19
 import {
   Tooltip,
   TooltipContent,
@@ -168,7 +168,7 @@ export function MacroBar({
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.2 }}
           >
-            <ScrollArea className="w-full">
+            <div className="w-full overflow-x-auto overscroll-contain scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
               <div className="flex gap-2 pb-2">
                 <TooltipProvider delayDuration={300}>
                   {visibleMacros.map((macro) => (
@@ -182,8 +182,7 @@ export function MacroBar({
                   ))}
                 </TooltipProvider>
               </div>
-              <ScrollBar orientation="horizontal" />
-            </ScrollArea>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

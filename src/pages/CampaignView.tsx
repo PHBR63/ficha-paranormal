@@ -9,7 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { ScrollArea } from '@/components/ui/scroll-area';
+// ScrollArea removido - usando overflow nativo para evitar bug #185 com React 19
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { 
@@ -344,20 +344,21 @@ export default function CampaignView() {
         async (payload) => {
           const newMsg = payload.new as any;
           
-          // Fetch profile
+          // Fetch profile - usando maybeSingle para evitar erro 406
           const { data: profile } = await supabase
             .from('profiles')
             .select('display_name')
             .eq('user_id', newMsg.user_id)
-            .single();
+            .maybeSingle();
 
           let character = null;
           if (newMsg.character_id) {
+            // Usando maybeSingle para evitar erro 406
             const { data: charData } = await supabase
               .from('characters')
               .select('name')
               .eq('id', newMsg.character_id)
-              .single();
+              .maybeSingle();
             character = charData;
           }
 

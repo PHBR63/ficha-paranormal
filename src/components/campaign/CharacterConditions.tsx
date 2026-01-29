@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
+// ScrollArea removido - usando overflow nativo para evitar bug #185 com React 19
 import {
   Dialog,
   DialogContent,
@@ -110,7 +110,7 @@ export function CharacterConditions({
                 </DialogDescription>
               </DialogHeader>
               
-              <ScrollArea className="max-h-[60vh]">
+              <div className="max-h-[60vh] overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
                 <div className="space-y-6 pr-4">
                   {/* Combat Conditions */}
                   <ConditionCategory
@@ -158,7 +158,7 @@ export function CharacterConditions({
                     danger
                   />
                 </div>
-              </ScrollArea>
+              </div>
             </DialogContent>
           </Dialog>
         )}

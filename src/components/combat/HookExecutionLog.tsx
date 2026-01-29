@@ -131,7 +131,7 @@ export function HookExecutionLog({
       </div>
 
       {/* Entries */}
-      <ScrollArea className="h-[300px] pr-3">
+      <div className="h-[300px] overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent pr-3">
         <AnimatePresence mode="popLayout">
           {displayEntries.reverse().map((entry) => {
             const isExpanded = expandedEntries.has(entry.id);
@@ -470,7 +470,7 @@ export function HookExecutionLog({
             );
           })}
         </AnimatePresence>
-      </ScrollArea>
+      </div>
     </div>
   );
 }

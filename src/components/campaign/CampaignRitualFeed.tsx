@@ -7,7 +7,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
+// ScrollArea removido - usando overflow nativo para evitar bug #185 com React 19
 import { 
   Sparkles, 
   Clock, 
@@ -308,7 +308,10 @@ export function CampaignRitualFeed({
           <p className="text-xs">Rituais conjurados aparecerão aqui em tempo real</p>
         </div>
       ) : (
-        <ScrollArea className={compact ? "max-h-[200px]" : "max-h-[400px]"}>
+        <div className={cn(
+          "overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent",
+          compact ? "max-h-[200px]" : "max-h-[400px]"
+        )}>
           <AnimatePresence mode="popLayout">
             <div className="space-y-2">
               {casts.map((cast) => (
@@ -322,7 +325,7 @@ export function CampaignRitualFeed({
               ))}
             </div>
           </AnimatePresence>
-        </ScrollArea>
+        </div>
       )}
     </div>
   );

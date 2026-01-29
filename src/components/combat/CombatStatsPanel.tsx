@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { ScrollArea } from '@/components/ui/scroll-area';
+// ScrollArea removido - usando overflow nativo para evitar bug #185 com React 19
 import { Separator } from '@/components/ui/separator';
 import { 
   Shield, 
@@ -133,7 +133,7 @@ export function CombatStatsPanel({ refreshKey }: CombatStatsPanelProps) {
             Eficiência por Ritual
           </h4>
           
-          <ScrollArea className="h-32">
+          <div className="h-32 overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
             <div className="space-y-2">
               {Object.entries(stats.ritualStats).length === 0 ? (
                 <p className="text-xs text-muted-foreground text-center py-2">
@@ -152,7 +152,7 @@ export function CombatStatsPanel({ refreshKey }: CombatStatsPanelProps) {
                   ))
               )}
             </div>
-          </ScrollArea>
+          </div>
         </div>
 
         <Separator className="bg-border/50" />

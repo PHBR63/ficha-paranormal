@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
+// ScrollArea removido - usando overflow nativo para evitar bug #185 com React 19
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 
@@ -278,7 +278,7 @@ export function SessionActivityLog({ messages, className }: SessionActivityLogPr
         </div>
 
         {/* Lista de atividades */}
-        <ScrollArea className="h-[400px]">
+        <div className="h-[400px] overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
           <div className="p-2 space-y-1">
             {filteredActivities.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
@@ -292,7 +292,7 @@ export function SessionActivityLog({ messages, className }: SessionActivityLogPr
               ))
             )}
           </div>
-        </ScrollArea>
+        </div>
       </PopoverContent>
     </Popover>
   );

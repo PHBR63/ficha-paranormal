@@ -27,7 +27,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
+// ScrollArea removido - usando overflow nativo para evitar bug #185 com React 19
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
@@ -291,7 +291,7 @@ export function TacticalPauseModal({
             <div className="flex-1 overflow-hidden mt-4">
               {/* Aba de Ações */}
               <TabsContent value="acoes" className="h-full m-0">
-                <ScrollArea className="h-[400px]">
+                <div className="h-[400px] overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
                   <div className="grid grid-cols-2 gap-4 pr-4">
                     {/* Turno atual */}
                     <div className="space-y-4">
@@ -324,12 +324,12 @@ export function TacticalPauseModal({
                       ))}
                     </div>
                   </div>
-                </ScrollArea>
+                </div>
               </TabsContent>
 
               {/* Aba de Combatentes */}
               <TabsContent value="combatentes" className="h-full m-0">
-                <ScrollArea className="h-[400px]">
+                <div className="h-[400px] overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
                   <div className="grid grid-cols-2 gap-3 pr-4">
                     {allCombatants.map((combatant, index) => (
                       <CombatantSummaryCard 
@@ -337,14 +337,14 @@ export function TacticalPauseModal({
                         combatant={combatant}
                         isCurrent={combatant.id === currentCombatant.id}
                       />
-                    ))}
-                  </div>
-                </ScrollArea>
+                  ))}
+                </div>
+              </div>
               </TabsContent>
 
               {/* Aba de Táticas */}
               <TabsContent value="taticas" className="h-full m-0">
-                <ScrollArea className="h-[400px]">
+                <div className="h-[400px] overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
                   <div className="space-y-4 pr-4">
                     {/* Adiar Turno */}
                     <div className="p-4 bg-card rounded-lg border border-border">
@@ -427,12 +427,12 @@ export function TacticalPauseModal({
                       </ul>
                     </div>
                   </div>
-                </ScrollArea>
+                </div>
               </TabsContent>
 
               {/* Aba de Regras */}
               <TabsContent value="regras" className="h-full m-0">
-                <ScrollArea className="h-[400px]">
+                <div className="h-[400px] overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
                   <div className="space-y-3 pr-4">
                     {COMBAT_RULES.map((rule, index) => (
                       <div key={index} className="p-3 bg-card rounded-lg border border-border">
@@ -446,7 +446,7 @@ export function TacticalPauseModal({
                       </div>
                     ))}
                   </div>
-                </ScrollArea>
+                </div>
               </TabsContent>
             </div>
           </Tabs>

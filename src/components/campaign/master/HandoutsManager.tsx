@@ -23,7 +23,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { ScrollArea } from '@/components/ui/scroll-area';
+// ScrollArea removido - usando overflow nativo para evitar bug #185 com React 19
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -260,7 +260,7 @@ export function HandoutsManager({ campaignId, members }: HandoutsManagerProps) {
       </div>
 
       {/* Lista de Handouts */}
-      <ScrollArea className="h-[400px]">
+      <div className="h-[400px] overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
         <div className="space-y-4">
           {/* Ocultos */}
           {groupedHandouts.hidden.length > 0 && (
@@ -315,7 +315,7 @@ export function HandoutsManager({ campaignId, members }: HandoutsManagerProps) {
             </div>
           )}
         </div>
-      </ScrollArea>
+      </div>
 
       {/* Dialog de Edição */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
