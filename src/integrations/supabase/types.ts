@@ -1994,7 +1994,15 @@ export type Database = {
         Args: { _campaign_id: string; _user_id: string }
         Returns: boolean
       }
+      is_campaign_master_v2: {
+        Args: { _campaign_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_campaign_member: {
+        Args: { _campaign_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_campaign_member_v2: {
         Args: { _campaign_id: string; _user_id: string }
         Returns: boolean
       }
