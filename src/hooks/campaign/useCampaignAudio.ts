@@ -127,23 +127,25 @@ export function useCampaignAudio(campaignId: string, isMaster: boolean) {
 
   // Carregar estado atual do áudio
   const loadAudioState = useCallback(async () => {
-    // Usa maybeSingle() para evitar erro 406 quando campanha não tem estado de áudio
+    // Usa select + limit(1) para evitar erro 406 quando campanha não tem estado de áudio
     const { data, error } = await supabase
       .from('campaign_audio_state')
       .select('*')
       .eq('campaign_id', campaignId)
-      .maybeSingle();
+      .limit(1);
 
-    if (error && error.code !== 'PGRST116') {
+    if (error) {
       console.error('Erro ao carregar estado do áudio:', error);
       return;
     }
 
-    if (data) {
+    // Pega o primeiro resultado (ou undefined se vazio)
+    const audioStateData = data?.[0];
+    if (audioStateData) {
       setAudioState({
-        ...data,
-        playing_tracks: (data.playing_tracks as unknown as PlayingTrack[]) || [],
-        master_volume: Number(data.master_volume) || 1.0
+        ...audioStateData,
+        playing_tracks: (audioStateData.playing_tracks as unknown as PlayingTrack[]) || [],
+        master_volume: Number(audioStateData.master_volume) || 1.0
       });
     }
   }, [campaignId]);
