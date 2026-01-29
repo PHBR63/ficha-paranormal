@@ -2,6 +2,9 @@
  * useTacticalBoard - Hook para gerenciamento do tabuleiro tático
  * 
  * Controla mapas, tokens, movimento, grid e sincronização em tempo real.
+ * 
+ * IMPORTANTE: Todas as funções usam toastRef para evitar re-criação
+ * de callbacks quando useToast retorna nova referência (bug #185).
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -139,16 +142,22 @@ export interface TacticalBoardReturn {
 export function useTacticalBoard({
   campaignId,
   isMaster,
-  enabled = true, // Por padrão ativo; quando externalBoard existe, passa false
+  enabled = true,
 }: UseTacticalBoardProps): TacticalBoardReturn {
   const { toast } = useToast();
   
-  // IMPORTANTE: estabiliza o callback de toast para não recriar funções memoizadas
-  // Isso evita loops de render quando loadMaps/loadTokens entram como dependência de useEffect.
+  // CRÍTICO: Estabiliza toast via ref para não recriar callbacks
+  // Isso evita loops de render (bug #185)
   const toastRef = useRef(toast);
   useEffect(() => {
     toastRef.current = toast;
   }, [toast]);
+  
+  // Refs para valores usados em callbacks (evita dependências instáveis)
+  const isMasterRef = useRef(isMaster);
+  useEffect(() => {
+    isMasterRef.current = isMaster;
+  }, [isMaster]);
   
   // Estado principal
   const [maps, setMaps] = useState<TacticalMap[]>([]);
@@ -177,7 +186,33 @@ export function useTacticalBoard({
   // CARREGAMENTO E REALTIME
   // =====================================================
 
+  // loadTokens deve ser definido primeiro pois loadMaps depende dele
+  const loadTokens = useCallback(async (mapId: string) => {
+    if (!mapId) return;
+    try {
+      const { data, error } = await supabase
+        .from('map_tokens')
+        .select('*')
+        .eq('map_id', mapId);
+      
+      if (error) throw error;
+      
+      const typedTokens = (data || []).map(t => ({
+        ...t,
+        conditions: Array.isArray(t.conditions) ? t.conditions : [],
+        token_type: t.token_type as TokenType,
+        layer: t.layer as TokenLayer,
+      })) as MapToken[];
+      
+      setTokens(typedTokens);
+    } catch (error: any) {
+      console.error('Erro ao carregar tokens:', error);
+    }
+  }, []);
+
   const loadMaps = useCallback(async () => {
+    if (!campaignId) return;
+    
     setIsLoading(true);
     try {
       const { data, error } = await supabase
@@ -200,7 +235,10 @@ export function useTacticalBoard({
       const active = typedMaps.find(m => m.is_active);
       if (active) {
         setActiveMapState(active as TacticalMap);
-        await loadTokens(active.id);
+        loadTokens(active.id);
+      } else {
+        setActiveMapState(null);
+        setTokens([]);
       }
     } catch (error: any) {
       toastRef.current?.({
@@ -211,40 +249,18 @@ export function useTacticalBoard({
     } finally {
       setIsLoading(false);
     }
-  }, [campaignId]);
-
-  const loadTokens = useCallback(async (mapId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('map_tokens')
-        .select('*')
-        .eq('map_id', mapId);
-      
-      if (error) throw error;
-      
-      const typedTokens = (data || []).map(t => ({
-        ...t,
-        conditions: Array.isArray(t.conditions) ? t.conditions : [],
-        token_type: t.token_type as TokenType,
-        layer: t.layer as TokenLayer,
-      })) as MapToken[];
-      
-      setTokens(typedTokens);
-    } catch (error: any) {
-      console.error('Erro ao carregar tokens:', error);
-    }
-  }, []);
+  }, [campaignId, loadTokens]);
 
   // Subscribe para updates em tempo real (só se enabled)
   useEffect(() => {
     if (!campaignId || !enabled) return;
     
+    // Carrega mapas iniciais
     loadMaps();
     
-    // Subscribe para mapas
+    // Subscribe para mapas - nome estável para evitar re-subscriptions
     const mapsChannel = supabase
-      // Nome estável: evita re-subscrições desnecessárias e facilita cleanup
-      .channel(`maps-${campaignId}`)
+      .channel(`tactical-maps-${campaignId}`)
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
@@ -258,29 +274,30 @@ export function useTacticalBoard({
     return () => {
       supabase.removeChannel(mapsChannel);
     };
-  }, [campaignId, loadMaps, enabled]);
+  }, [campaignId, enabled, loadMaps]);
 
   // Subscribe para tokens do mapa ativo (só se enabled)
   useEffect(() => {
-    if (!activeMap || !enabled) return;
+    if (!activeMap?.id || !enabled) return;
+    
+    const mapId = activeMap.id;
     
     const tokensChannel = supabase
-      // Nome estável: evita re-subscrições desnecessárias e facilita cleanup
-      .channel(`tokens-${activeMap.id}`)
+      .channel(`tactical-tokens-${mapId}`)
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
         table: 'map_tokens',
-        filter: `map_id=eq.${activeMap.id}`,
+        filter: `map_id=eq.${mapId}`,
       }, () => {
-        loadTokens(activeMap.id);
+        loadTokens(mapId);
       })
       .subscribe();
     
     return () => {
       supabase.removeChannel(tokensChannel);
     };
-  }, [activeMap, loadTokens, enabled]);
+  }, [activeMap?.id, enabled, loadTokens]);
 
   // Cleanup pings
   useEffect(() => {
@@ -290,11 +307,11 @@ export function useTacticalBoard({
   }, []);
 
   // =====================================================
-  // AÇÕES DE MAPA
+  // AÇÕES DE MAPA (todas usam refs para estabilidade)
   // =====================================================
 
   const createMap = useCallback(async (data: Partial<TacticalMap>): Promise<TacticalMap | null> => {
-    if (!isMaster) return null;
+    if (!isMasterRef.current) return null;
     
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -319,24 +336,24 @@ export function useTacticalBoard({
       
       if (error) throw error;
       
-      toast({ title: 'Mapa criado', description: data.name });
+      toastRef.current?.({ title: 'Mapa criado', description: data.name });
       return {
         ...newMap,
         fog_of_war: [],
         grid_type: newMap.grid_type as GridType,
       } as TacticalMap;
     } catch (error: any) {
-      toast({
+      toastRef.current?.({
         title: 'Erro ao criar mapa',
         description: error.message,
         variant: 'destructive',
       });
       return null;
     }
-  }, [campaignId, isMaster, toast]);
+  }, [campaignId]);
 
   const updateMap = useCallback(async (mapId: string, data: Partial<TacticalMap>): Promise<boolean> => {
-    if (!isMaster) return false;
+    if (!isMasterRef.current) return false;
     
     try {
       const { error } = await supabase
@@ -347,17 +364,17 @@ export function useTacticalBoard({
       if (error) throw error;
       return true;
     } catch (error: any) {
-      toast({
+      toastRef.current?.({
         title: 'Erro ao atualizar mapa',
         description: error.message,
         variant: 'destructive',
       });
       return false;
     }
-  }, [isMaster, toast]);
+  }, []);
 
   const deleteMap = useCallback(async (mapId: string): Promise<boolean> => {
-    if (!isMaster) return false;
+    if (!isMasterRef.current) return false;
     
     try {
       const { error } = await supabase
@@ -367,20 +384,20 @@ export function useTacticalBoard({
       
       if (error) throw error;
       
-      toast({ title: 'Mapa excluído' });
+      toastRef.current?.({ title: 'Mapa excluído' });
       return true;
     } catch (error: any) {
-      toast({
+      toastRef.current?.({
         title: 'Erro ao excluir mapa',
         description: error.message,
         variant: 'destructive',
       });
       return false;
     }
-  }, [isMaster, toast]);
+  }, []);
 
   const setActiveMap = useCallback(async (mapId: string): Promise<boolean> => {
-    if (!isMaster) return false;
+    if (!isMasterRef.current) return false;
     
     try {
       // Desativa todos os mapas
@@ -397,30 +414,25 @@ export function useTacticalBoard({
       
       if (error) throw error;
       
-      const map = maps.find(m => m.id === mapId);
-      if (map) {
-        setActiveMapState({ ...map, is_active: true } as TacticalMap);
-        await loadTokens(mapId);
-      }
-      
-      toast({ title: 'Mapa ativado' });
+      // O Realtime vai atualizar o estado automaticamente
+      toastRef.current?.({ title: 'Mapa ativado' });
       return true;
     } catch (error: any) {
-      toast({
+      toastRef.current?.({
         title: 'Erro ao ativar mapa',
         description: error.message,
         variant: 'destructive',
       });
       return false;
     }
-  }, [campaignId, isMaster, maps, loadTokens, toast]);
+  }, [campaignId]);
 
   // =====================================================
   // UPLOAD DE IMAGEM DO MAPA
   // =====================================================
 
   const uploadMapImage = useCallback(async (mapId: string, file: File): Promise<string | null> => {
-    if (!isMaster) return null;
+    if (!isMasterRef.current) return null;
     
     try {
       const fileExt = file.name.split('.').pop()?.toLowerCase() || 'png';
@@ -450,25 +462,25 @@ export function useTacticalBoard({
       const success = await updateMap(mapId, { image_url: publicUrl });
       if (!success) throw new Error('Falha ao atualizar mapa');
       
-      toast({ title: 'Imagem carregada', description: 'O fundo do mapa foi atualizado.' });
+      toastRef.current?.({ title: 'Imagem carregada', description: 'O fundo do mapa foi atualizado.' });
       return publicUrl;
     } catch (error: any) {
-      toast({
+      toastRef.current?.({
         title: 'Erro ao carregar imagem',
         description: error.message,
         variant: 'destructive',
       });
       return null;
     }
-  }, [campaignId, isMaster, updateMap, toast]);
+  }, [campaignId, updateMap]);
 
   const removeMapImage = useCallback(async (mapId: string): Promise<boolean> => {
-    if (!isMaster) return false;
+    if (!isMasterRef.current) return false;
     
     try {
+      // Busca o mapa atual para obter a URL
       const map = maps.find(m => m.id === mapId);
       if (map?.image_url) {
-        // Extrai o path do arquivo da URL
         const urlParts = map.image_url.split('/campaign-maps/');
         if (urlParts.length > 1) {
           const filePath = urlParts[1];
@@ -476,28 +488,27 @@ export function useTacticalBoard({
         }
       }
       
-      // Limpa a URL no banco
       const success = await updateMap(mapId, { image_url: '' });
       if (success) {
-        toast({ title: 'Imagem removida' });
+        toastRef.current?.({ title: 'Imagem removida' });
       }
       return success;
     } catch (error: any) {
-      toast({
+      toastRef.current?.({
         title: 'Erro ao remover imagem',
         description: error.message,
         variant: 'destructive',
       });
       return false;
     }
-  }, [isMaster, maps, updateMap, toast]);
+  }, [maps, updateMap]);
 
   // =====================================================
   // AÇÕES DE TOKEN
   // =====================================================
 
   const createToken = useCallback(async (data: Partial<MapToken>): Promise<MapToken | null> => {
-    if (!isMaster || !activeMap) return null;
+    if (!isMasterRef.current || !activeMap) return null;
     
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -531,14 +542,14 @@ export function useTacticalBoard({
       
       return newToken as MapToken;
     } catch (error: any) {
-      toast({
+      toastRef.current?.({
         title: 'Erro ao criar token',
         description: error.message,
         variant: 'destructive',
       });
       return null;
     }
-  }, [activeMap, isMaster, toast]);
+  }, [activeMap]);
 
   const updateToken = useCallback(async (tokenId: string, data: Partial<MapToken>): Promise<boolean> => {
     try {
@@ -560,15 +571,15 @@ export function useTacticalBoard({
     setTokens(prev => prev.map(t => t.id === tokenId ? { ...t, x, y } : t));
     
     const success = await updateToken(tokenId, { x, y });
-    if (!success) {
+    if (!success && activeMap) {
       // Reverte se falhar
-      loadTokens(activeMap?.id || '');
+      loadTokens(activeMap.id);
     }
     return success;
   }, [activeMap, updateToken, loadTokens]);
 
   const deleteToken = useCallback(async (tokenId: string): Promise<boolean> => {
-    if (!isMaster) return false;
+    if (!isMasterRef.current) return false;
     
     try {
       const { error } = await supabase
@@ -581,14 +592,14 @@ export function useTacticalBoard({
       setSelectedTokenId(null);
       return true;
     } catch (error: any) {
-      toast({
+      toastRef.current?.({
         title: 'Erro ao excluir token',
         description: error.message,
         variant: 'destructive',
       });
       return false;
     }
-  }, [isMaster, toast]);
+  }, []);
 
   const selectToken = useCallback((tokenId: string | null) => {
     setSelectedTokenId(tokenId);
@@ -640,7 +651,7 @@ export function useTacticalBoard({
   // =====================================================
 
   const revealFog = useCallback(async (cells: { x: number; y: number }[]): Promise<boolean> => {
-    if (!isMaster || !activeMap) return false;
+    if (!isMasterRef.current || !activeMap) return false;
     
     const currentFog = activeMap.fog_of_war || [];
     const newFog = [...currentFog];
@@ -652,10 +663,10 @@ export function useTacticalBoard({
     });
     
     return updateMap(activeMap.id, { fog_of_war: newFog } as any);
-  }, [activeMap, isMaster, updateMap]);
+  }, [activeMap, updateMap]);
 
   const hideFog = useCallback(async (cells: { x: number; y: number }[]): Promise<boolean> => {
-    if (!isMaster || !activeMap) return false;
+    if (!isMasterRef.current || !activeMap) return false;
     
     const currentFog = activeMap.fog_of_war || [];
     const newFog = currentFog.filter(f => 
@@ -663,7 +674,7 @@ export function useTacticalBoard({
     );
     
     return updateMap(activeMap.id, { fog_of_war: newFog } as any);
-  }, [activeMap, isMaster, updateMap]);
+  }, [activeMap, updateMap]);
 
   // =====================================================
   // UTILIDADES
@@ -675,7 +686,7 @@ export function useTacticalBoard({
       x: Math.floor(px / gridSize),
       y: Math.floor(py / gridSize),
     };
-  }, [activeMap]);
+  }, [activeMap?.grid_size]);
 
   const cellToPixel = useCallback((cx: number, cy: number): { x: number; y: number } => {
     const gridSize = activeMap?.grid_size || 40;
@@ -683,7 +694,7 @@ export function useTacticalBoard({
       x: cx * gridSize,
       y: cy * gridSize,
     };
-  }, [activeMap]);
+  }, [activeMap?.grid_size]);
 
   const calculateDistance = useCallback((x1: number, y1: number, x2: number, y2: number): number => {
     // Distância em células, convertida para metros (1.5m por célula)

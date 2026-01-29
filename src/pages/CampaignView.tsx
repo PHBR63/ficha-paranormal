@@ -164,23 +164,32 @@ export default function CampaignView() {
   // Estado de combate compartilhado entre CombatTracker e IntegratedCombatBoard
   const [sharedCombatState, setSharedCombatState] = useState<CombatState>(() => createCombatState());
 
-  const isMaster = campaign?.master_id === userId;
+  // IMPORTANTE: isMaster como boolean estável para evitar re-renders
+  // Usa !! para garantir boolean (não undefined) e evitar mudança de tipo
+  const isMaster = !!(campaign?.master_id && campaign.master_id === userId);
   const currentMember = members.find(m => m.user_id === userId);
   
+  // Memoiza campaignId para estabilidade do hook tático
+  const campaignIdStable = id || '';
+  
   // Hook do tabuleiro tático elevado para compartilhamento com combate
+  // NOTA: O hook usa refs internos para isMaster, então mudanças são seguras
   const board = useTacticalBoard({
-    campaignId: id || '',
-    isMaster: isMaster,
+    campaignId: campaignIdStable,
+    isMaster,
   });
 
   // Hook de presença em tempo real para rastrear jogadores online
-  // Usa userId estável em vez de user objeto para evitar re-subscriptions
+  // Usa valores primitivos estáveis extraídos do currentMember para evitar re-subscriptions
+  const currentMemberName = currentMember?.profiles?.display_name || undefined;
+  const currentMemberAvatar = currentMember?.profiles?.avatar_url || undefined;
+  
   const presence = useCampaignPresence({
-    campaignId: id || '',
+    campaignId: campaignIdStable,
     userId: userId || '',
-    userName: currentMember?.profiles?.display_name || undefined,
-    userAvatar: currentMember?.profiles?.avatar_url || undefined,
-    enabled: !!id && !!userId,
+    userName: currentMemberName,
+    userAvatar: currentMemberAvatar,
+    enabled: !!campaignIdStable && !!userId,
   });
 
   // Ref para controlar se é o carregamento inicial
