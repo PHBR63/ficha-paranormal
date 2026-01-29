@@ -11,10 +11,10 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { 
-  ArrowLeft, 
-  Loader2, 
-  Crown, 
+import {
+  ArrowLeft,
+  Loader2,
+  Crown,
   Send,
   Copy,
   RefreshCw,
@@ -146,13 +146,22 @@ export default function CampaignView() {
   // Estabiliza userId para evitar re-renders quando objeto user muda de referência
   const userId = user?.id;
 
+  // Refs para estabilizar dependências em useCallbacks (evita loop infinito #185)
+  const toastRef = useRef(toast);
+  const navigateRef = useRef(navigate);
+
+  useEffect(() => {
+    toastRef.current = toast;
+    navigateRef.current = navigate;
+  }, [toast, navigate]);
+
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [members, setMembers] = useState<CampaignMember[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [invite, setInvite] = useState<CampaignInvite | null>(null);
   const [activeSession, setActiveSession] = useState<ActiveSession | null>(null);
   const [loading, setLoading] = useState(true);
-  
+
   const [messageInput, setMessageInput] = useState('');
   const [sending, setSending] = useState(false);
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
@@ -160,7 +169,7 @@ export default function CampaignView() {
   const [characterSelectOpen, setCharacterSelectOpen] = useState(false);
   const [endSessionDialogOpen, setEndSessionDialogOpen] = useState(false);
   const [endingSession, setEndingSession] = useState(false);
-  
+
   // Estado de combate compartilhado entre CombatTracker e IntegratedCombatBoard
   const [sharedCombatState, setSharedCombatState] = useState<CombatState>(() => createCombatState());
 
@@ -168,10 +177,10 @@ export default function CampaignView() {
   // Usa !! para garantir boolean (não undefined) e evitar mudança de tipo
   const isMaster = !!(campaign?.master_id && campaign.master_id === userId);
   const currentMember = members.find(m => m.user_id === userId);
-  
+
   // Memoiza campaignId para estabilidade do hook tático
   const campaignIdStable = id || '';
-  
+
   // Hook do tabuleiro tático elevado para compartilhamento com combate
   // NOTA: O hook usa refs internos para isMaster, então mudanças são seguras
   const board = useTacticalBoard({
@@ -183,7 +192,7 @@ export default function CampaignView() {
   // Usa valores primitivos estáveis extraídos do currentMember para evitar re-subscriptions
   const currentMemberName = currentMember?.profiles?.display_name || undefined;
   const currentMemberAvatar = currentMember?.profiles?.avatar_url || undefined;
-  
+
   const presence = useCampaignPresence({
     campaignId: campaignIdStable,
     userId: userId || '',
@@ -210,7 +219,7 @@ export default function CampaignView() {
     if (messages.length > prevMessagesLengthRef.current) {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
-    
+
     prevMessagesLengthRef.current = messages.length;
   }, [messages]);
 
@@ -254,7 +263,7 @@ export default function CampaignView() {
       // 4. Cria lookup Map para O(1) e mescla
       const profileLookup: Record<string, typeof profiles extends (infer T)[] | null ? T : never> = {};
       (profiles || []).forEach(p => { profileLookup[p.user_id] = p; });
-      
+
       const membersWithData = (membersRaw || []).map(member => ({
         ...member,
         profiles: profileLookup[member.user_id] || { display_name: null, avatar_url: null },
@@ -279,7 +288,7 @@ export default function CampaignView() {
 
       const [msgProfilesRes, msgCharsRes] = await Promise.all([
         supabase.from('profiles').select('user_id, display_name').in('user_id', msgUserIds),
-        msgCharIds.length > 0 
+        msgCharIds.length > 0
           ? supabase.from('characters').select('id, name').in('id', msgCharIds)
           : Promise.resolve({ data: [] }),
       ]);
@@ -287,7 +296,7 @@ export default function CampaignView() {
       // 7. Cria lookup objects e mescla mensagens
       const msgProfileLookup: Record<string, { user_id: string; display_name: string | null }> = {};
       (msgProfilesRes.data || []).forEach(p => { msgProfileLookup[p.user_id] = p; });
-      
+
       const msgCharLookup: Record<string, { id: string; name: string }> = {};
       (msgCharsRes.data || []).forEach(c => { msgCharLookup[c.id] = c; });
 
@@ -314,16 +323,16 @@ export default function CampaignView() {
 
     } catch (error: any) {
       console.error('Error fetching campaign:', error);
-      toast({
+      toastRef.current({
         title: 'Erro',
         description: 'Não foi possível carregar a campanha.',
         variant: 'destructive',
       });
-      navigate('/campaigns');
+      navigateRef.current('/campaigns');
     } finally {
       setLoading(false);
     }
-  }, [id, userId, toast, navigate]);
+  }, [id, userId]); // toast e navigate removidos - usamos refs para estabilidade
 
   /**
    * Subscribe para novas mensagens via Realtime
@@ -344,7 +353,7 @@ export default function CampaignView() {
         },
         async (payload) => {
           const newMsg = payload.new as any;
-          
+
           // Fetch profile - usando maybeSingle para evitar erro 406
           const { data: profile } = await supabase
             .from('profiles')
@@ -392,7 +401,7 @@ export default function CampaignView() {
         .eq('campaign_id', id)
         .eq('status', 'active')
         .maybeSingle();
-      
+
       if (error) {
         console.warn('Erro ao buscar sessão ativa:', error.message);
         setActiveSession(null);
@@ -422,13 +431,13 @@ export default function CampaignView() {
   // Usa userId estável (não user objeto) para evitar loop de re-subscriptions
   useEffect(() => {
     if (!id || !userId) return;
-    
+
     fetchCampaignData();
     fetchActiveSession();
-    
+
     const cleanupMessages = subscribeToMessages();
     const cleanupSessions = subscribeToSessions();
-    
+
     return () => {
       cleanupMessages?.();
       cleanupSessions?.();
@@ -443,9 +452,9 @@ export default function CampaignView() {
     try {
       const { error } = await supabase
         .from('campaign_sessions')
-        .update({ 
-          status: 'completed', 
-          ended_at: new Date().toISOString() 
+        .update({
+          status: 'completed',
+          ended_at: new Date().toISOString()
         })
         .eq('id', activeSession.id);
 
@@ -482,10 +491,10 @@ export default function CampaignView() {
       // Usa dice-roller para rolagens simples (sem contexto de personagem)
       // Rolagens com bônus de personagem usam os hooks SUE nos modais específicos
       const { rollSkillTest, rollDamage } = await import('@/lib/dice-roller');
-      
+
       let rollContent: string;
       let rollMetadata: any;
-      
+
       if (diceCommand.damageType) {
         // Rolagem de dano (ex: /r 2d6+3)
         const { count, sides, bonus } = diceCommand.damageType;
@@ -494,7 +503,7 @@ export default function CampaignView() {
           diceType: sides,
           bonusDamage: bonus,
         });
-        
+
         const bonusText = bonus > 0 ? `+${bonus}` : '';
         rollContent = `🎲 ${diceCommand.label}: ${count}d${sides}${bonusText} [${result.dice.join(', ')}] → **${result.total}**`;
         rollMetadata = {
@@ -511,7 +520,7 @@ export default function CampaignView() {
           skillBonus: diceCommand.bonus || 0,
           label: diceCommand.label || 'Teste',
         });
-        
+
         const bonusText = result.skillBonus > 0 ? ` +${result.skillBonus}` : '';
         const critText = result.isCritical ? ' ★ CRÍTICO!' : '';
         rollContent = `🎲 ${result.label}: [${result.dice.join(', ')}]${bonusText} → **${result.total}**${critText}`;
@@ -525,7 +534,7 @@ export default function CampaignView() {
           label: result.label,
         };
       }
-      
+
       handleDiceRoll(rollContent, 'dice_roll', rollMetadata);
       return;
     }
@@ -561,7 +570,7 @@ export default function CampaignView() {
   // Handler para rolagens do IntegratedDiceRoller
   const handleDiceRoll = async (content: string, type: string, metadata: any) => {
     if (!user || !id) return;
-    
+
     setSending(true);
     try {
       const currentMember = members.find(m => m.user_id === user.id);
@@ -596,7 +605,7 @@ export default function CampaignView() {
     setGeneratingInvite(true);
     try {
       // Generate random code
-      const code = Array.from({ length: 6 }, () => 
+      const code = Array.from({ length: 6 }, () =>
         'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'[Math.floor(Math.random() * 36)]
       ).join('');
 
@@ -653,17 +662,17 @@ export default function CampaignView() {
         .eq('id', memberId);
 
       if (error) throw error;
-      
+
       setMembers(prev => prev.filter(m => m.id !== memberId));
-      toast({ title: 'Jogador removido' });
+      toastRef.current({ title: 'Jogador removido' });
     } catch (error: any) {
-      toast({
+      toastRef.current({
         title: 'Erro ao remover',
         description: error.message,
         variant: 'destructive',
       });
     }
-  }, [toast]);
+  }, []); // toast removido - usamos ref
 
   /**
    * Seleciona um personagem para o jogador atual
@@ -671,7 +680,7 @@ export default function CampaignView() {
    */
   const handleCharacterSelect = useCallback(async (characterId: string | null) => {
     if (!userId || !id) return;
-    
+
     // Busca o membro atual a partir do state mais recente
     const member = members.find(m => m.user_id === userId);
     if (!member) return;
@@ -685,8 +694,8 @@ export default function CampaignView() {
       if (error) throw error;
 
       // Update local state
-      setMembers(prev => prev.map(m => 
-        m.id === member.id 
+      setMembers(prev => prev.map(m =>
+        m.id === member.id
           ? { ...m, character_id: characterId }
           : m
       ));
@@ -704,33 +713,33 @@ export default function CampaignView() {
             ...charData,
             conditions: Array.isArray(charData.conditions) ? charData.conditions as string[] : [],
           };
-          setMembers(prev => prev.map(m => 
-            m.id === member.id 
+          setMembers(prev => prev.map(m =>
+            m.id === member.id
               ? { ...m, character_id: characterId, characters: typedCharData }
               : m
           ));
         }
       } else {
-        setMembers(prev => prev.map(m => 
-          m.id === member.id 
+        setMembers(prev => prev.map(m =>
+          m.id === member.id
             ? { ...m, character_id: null, characters: null }
             : m
         ));
       }
 
-      toast({ 
+      toastRef.current({
         title: characterId ? 'Personagem selecionado!' : 'Personagem removido',
         description: characterId ? 'Seu agente foi vinculado à campanha.' : 'Você não está mais usando um personagem nesta campanha.',
       });
     } catch (error: any) {
-      toast({
+      toastRef.current({
         title: 'Erro ao selecionar personagem',
         description: error.message,
         variant: 'destructive',
       });
       throw error;
     }
-  }, [userId, id, members, toast]);
+  }, [userId, id, members]); // toast removido - usamos ref. members mantido pois é usado na lógica
 
   if (loading) {
     return (
@@ -760,7 +769,7 @@ export default function CampaignView() {
                 </Button>
               </Link>
               <div className="h-8 w-px bg-border/50 hidden sm:block" />
-              
+
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-3">
                   {isMaster && (
@@ -784,14 +793,14 @@ export default function CampaignView() {
                 </div>
               </div>
             </div>
-            
+
             {/* Lado direito - Ações */}
             <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
               {/* Character Select Button - for players */}
               {!isMaster && (
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   className="font-display text-[10px] sm:text-xs px-2 sm:px-3"
                   onClick={() => setCharacterSelectOpen(true)}
                 >
@@ -833,7 +842,7 @@ export default function CampaignView() {
                             </Button>
                           </div>
                           <p className="text-xs text-muted-foreground text-center">
-                            Usado {invite.uses} vezes • 
+                            Usado {invite.uses} vezes •
                             {invite.expires_at && ` Expira em ${new Date(invite.expires_at).toLocaleDateString()}`}
                           </p>
                         </div>
@@ -985,17 +994,17 @@ export default function CampaignView() {
                       characterName={currentMember?.characters?.name}
                       disabled={sending}
                     />
-                    
+
                     {/* Log de Atividades */}
                     <SessionActivityLog messages={messages} />
-                    
+
                     {/* Botão de Sussurros */}
-                    <WhisperDialog 
-                      campaignId={id || ''} 
+                    <WhisperDialog
+                      campaignId={id || ''}
                       members={members}
                       currentCharacterId={currentMember?.character_id}
                     />
-                    
+
                     <Input
                       value={messageInput}
                       onChange={(e) => setMessageInput(e.target.value)}
@@ -1029,7 +1038,7 @@ export default function CampaignView() {
                   isMaster={isMaster}
                   onCombatUpdate={setSharedCombatState}
                 />
-                
+
                 {/* Integração com tabuleiro tático */}
                 <IntegratedCombatBoard
                   board={board}
@@ -1122,7 +1131,7 @@ export default function CampaignView() {
                       LINHA DO TEMPO
                     </TabsTrigger>
                   </TabsList>
-                  
+
                   <TabsContent value="diary" className="mt-4">
                     <SessionDiary
                       campaignId={id || ''}
@@ -1130,7 +1139,7 @@ export default function CampaignView() {
                       isMaster={isMaster}
                     />
                   </TabsContent>
-                  
+
                   <TabsContent value="timeline" className="mt-4">
                     <CampaignTimeline
                       campaignId={id || ''}
@@ -1153,7 +1162,7 @@ export default function CampaignView() {
                     <TabsTrigger value="controls" className="font-display text-xs">CONTROLES</TabsTrigger>
                     <TabsTrigger value="bonuses" className="font-display text-xs">BÔNUS</TabsTrigger>
                   </TabsList>
-                  
+
                   {/* Aba de Fichas - Nova */}
                   <TabsContent value="sheets" className="mt-4">
                     <MasterSheetViewer
@@ -1162,32 +1171,32 @@ export default function CampaignView() {
                       onMemberUpdate={fetchCampaignData}
                     />
                   </TabsContent>
-                  
+
                   {/* Aba de NPCs/Bestiário */}
                   <TabsContent value="npcs" className="mt-4">
                     <NPCManager campaignId={id || ''} />
                   </TabsContent>
-                  
+
                   {/* Aba de Macros de Rolagem */}
                   <TabsContent value="macros" className="mt-4">
                     <div className="ordo-panel p-6">
                       <MacrosPanel campaignId={id || ''} />
                     </div>
                   </TabsContent>
-                  
+
                   {/* Aba de Handouts do Mestre */}
                   <TabsContent value="handouts" className="mt-4">
                     <div className="ordo-panel p-6">
                       <HandoutsManager campaignId={id || ''} members={members} />
                     </div>
                   </TabsContent>
-                  
+
                   {/* Aba de Áudio - Com Cenas de Som */}
                   <TabsContent value="audio" className="mt-4 space-y-6">
                     <AudioMasterPanel campaignId={id || ''} isMaster={isMaster} />
                     <SoundSceneManager campaignId={id || ''} isMaster={isMaster} />
                   </TabsContent>
-                  
+
                   {/* Aba de Controles */}
                   <TabsContent value="controls" className="mt-4">
                     <div className="grid md:grid-cols-2 gap-4">
@@ -1213,8 +1222,8 @@ export default function CampaignView() {
                           AÇÕES RÁPIDAS
                         </h3>
                         <div className="space-y-2">
-                          <Button 
-                            variant="outline" 
+                          <Button
+                            variant="outline"
                             className="w-full justify-start"
                             onClick={() => {
                               sendMessage('system', '⚔️ O Mestre iniciou uma cena de combate!');
@@ -1222,8 +1231,8 @@ export default function CampaignView() {
                           >
                             Iniciar Combate
                           </Button>
-                          <Button 
-                            variant="outline" 
+                          <Button
+                            variant="outline"
                             className="w-full justify-start"
                             onClick={() => {
                               sendMessage('system', '🔍 O Mestre pediu testes de Percepção.');
@@ -1231,8 +1240,8 @@ export default function CampaignView() {
                           >
                             Pedir Teste de Percepção
                           </Button>
-                          <Button 
-                            variant="outline" 
+                          <Button
+                            variant="outline"
                             className="w-full justify-start"
                             onClick={() => {
                               sendMessage('system', '🧠 O Mestre pediu testes de Vontade.');
@@ -1244,7 +1253,7 @@ export default function CampaignView() {
                       </div>
                     </div>
                   </TabsContent>
-                  
+
                   {/* Aba de Bônus */}
                   <TabsContent value="bonuses" className="mt-4">
                     <div className="ordo-panel p-6">
@@ -1256,7 +1265,7 @@ export default function CampaignView() {
             )}
           </Tabs>
         </main>
-        
+
         {/* Players Sidebar - Right side */}
         <PlayersSidebar
           members={members}
