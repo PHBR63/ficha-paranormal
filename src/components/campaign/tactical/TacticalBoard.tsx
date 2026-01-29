@@ -180,6 +180,11 @@ export function TacticalBoard({
   const [newTokenName, setNewTokenName] = useState('');
   const [newTokenType, setNewTokenType] = useState<'pc' | 'npc' | 'creature' | 'object' | 'marker'>('npc');
   const [selectedCharacterId, setSelectedCharacterId] = useState<string | null>(null);
+  
+  // Handler estável para Select do Radix (evita loop #185)
+  const handleNewTokenTypeChange = useCallback((value: string) => {
+    setNewTokenType(value as 'pc' | 'npc' | 'creature' | 'object' | 'marker');
+  }, []);
   const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 });
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [backgroundImage, setBackgroundImage] = useState<HTMLImageElement | null>(null);
@@ -1199,7 +1204,7 @@ export function TacticalBoard({
             </div>
             <div>
               <label className="text-sm font-medium">Tipo</label>
-              <Select value={newTokenType} onValueChange={(v: any) => setNewTokenType(v)}>
+              <Select value={newTokenType} onValueChange={handleNewTokenTypeChange}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>

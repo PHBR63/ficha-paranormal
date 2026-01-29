@@ -5,7 +5,7 @@
  * Integra com o sistema de combate.
  */
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -430,6 +430,11 @@ function NPCEditorDialog({ open, onOpenChange, npc, campaignId, userId, onSave }
   const [defense, setDefense] = useState(10);
   const [movement, setMovement] = useState(9);
   const [notes, setNotes] = useState('');
+  
+  // Handler estável para Select do Radix (evita loop #185)
+  const handleCategoryChange = useCallback((value: string) => {
+    setCategory(value as NPCCategory);
+  }, []);
 
   // Reset form quando abrir
   useEffect(() => {
@@ -566,7 +571,7 @@ function NPCEditorDialog({ open, onOpenChange, npc, campaignId, userId, onSave }
           {/* Categoria */}
           <div className="space-y-2">
             <Label>Categoria</Label>
-            <Select value={category} onValueChange={(v) => setCategory(v as NPCCategory)}>
+            <Select value={category} onValueChange={handleCategoryChange}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>

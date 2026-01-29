@@ -241,6 +241,15 @@ export function InventoryPanel({
     quantity: 1,
     itemType: 'misc',
   });
+  
+  // Handlers estáveis para Selects do Radix (evita loop #185)
+  const handleNewItemTypeChange = useCallback((value: string) => {
+    setNewItem(prev => ({ ...prev, itemType: value as ItemType }));
+  }, []);
+  
+  const handleNewItemCategoryChange = useCallback((value: string) => {
+    setNewItem(prev => ({ ...prev, category: value as InventoryItem['category'] }));
+  }, []);
 
   // Evita loop de persistência: só migra automaticamente quando detectar necessidade real
   const lastAutoMigrationSignatureRef = useRef<string>('');
@@ -966,7 +975,7 @@ export function InventoryPanel({
                     <label className="text-xs text-muted-foreground">Tipo</label>
                     <Select
                       value={newItem.itemType}
-                      onValueChange={(v) => setNewItem({ ...newItem, itemType: v as ItemType })}
+                      onValueChange={handleNewItemTypeChange}
                     >
                       <SelectTrigger className="bg-background">
                         <SelectValue />
@@ -987,7 +996,7 @@ export function InventoryPanel({
                     <label className="text-xs text-muted-foreground">Categoria</label>
                     <Select
                       value={newItem.category}
-                      onValueChange={(v) => setNewItem({ ...newItem, category: v as InventoryItem['category'] })}
+                      onValueChange={handleNewItemCategoryChange}
                     >
                       <SelectTrigger className="bg-background">
                         <SelectValue />
