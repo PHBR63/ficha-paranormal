@@ -127,11 +127,12 @@ export function useCampaignAudio(campaignId: string, isMaster: boolean) {
 
   // Carregar estado atual do áudio
   const loadAudioState = useCallback(async () => {
+    // Usa maybeSingle() para evitar erro 406 quando campanha não tem estado de áudio
     const { data, error } = await supabase
       .from('campaign_audio_state')
       .select('*')
       .eq('campaign_id', campaignId)
-      .single();
+      .maybeSingle();
 
     if (error && error.code !== 'PGRST116') {
       console.error('Erro ao carregar estado do áudio:', error);

@@ -3,7 +3,7 @@
  * Permite criar, editar, revelar e compartilhar documentos/pistas com jogadores
  */
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   FileText,
@@ -101,6 +101,11 @@ export function HandoutsManager({ campaignId, members }: HandoutsManagerProps) {
   const [newTitle, setNewTitle] = useState('');
   const [newContent, setNewContent] = useState('');
   const [newType, setNewType] = useState<Handout['handout_type']>('document');
+  
+  // Handler estável para Select do Radix (evita loop #185)
+  const handleNewTypeChange = useCallback((value: string) => {
+    setNewType(value as Handout['handout_type']);
+  }, []);
   const [newImageUrl, setNewImageUrl] = useState('');
 
   // Filtrar handouts
@@ -202,7 +207,7 @@ export function HandoutsManager({ campaignId, members }: HandoutsManagerProps) {
             </DialogHeader>
             <div className="space-y-4">
               <div className="flex gap-2">
-                <Select value={newType} onValueChange={(v: any) => setNewType(v)}>
+                <Select value={newType} onValueChange={handleNewTypeChange}>
                   <SelectTrigger className="w-32">
                     <SelectValue />
                   </SelectTrigger>
@@ -325,7 +330,7 @@ export function HandoutsManager({ campaignId, members }: HandoutsManagerProps) {
           </DialogHeader>
           <div className="space-y-4">
             <div className="flex gap-2">
-              <Select value={newType} onValueChange={(v: any) => setNewType(v)}>
+              <Select value={newType} onValueChange={handleNewTypeChange}>
                 <SelectTrigger className="w-32">
                   <SelectValue />
                 </SelectTrigger>

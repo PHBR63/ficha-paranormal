@@ -4,7 +4,7 @@
  * Exibe eventos importantes cronologicamente.
  */
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -95,6 +95,11 @@ export function CampaignTimeline({ campaignId, isMaster }: CampaignTimelineProps
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<EventType | 'all'>('all');
+  
+  // Handler estável para Select do Radix (evita loop #185)
+  const handleFilterTypeChange = useCallback((value: string) => {
+    setFilterType(value as EventType | 'all');
+  }, []);
 
   // Dialog
   const [editorOpen, setEditorOpen] = useState(false);
@@ -219,7 +224,7 @@ export function CampaignTimeline({ campaignId, isMaster }: CampaignTimelineProps
           />
         </div>
 
-        <Select value={filterType} onValueChange={(v) => setFilterType(v as EventType | 'all')}>
+        <Select value={filterType} onValueChange={handleFilterTypeChange}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Tipo" />
           </SelectTrigger>
