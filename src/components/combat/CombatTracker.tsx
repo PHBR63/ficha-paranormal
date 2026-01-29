@@ -7,8 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MagicCard } from "@/components/ui/magic-card";
 import { AnimatedProgress } from "@/components/ui/animated-progress";
-import { 
-  type CombatState, 
+import {
+  type CombatState,
   type CombatantState,
   createCombatState,
   rollInitiative,
@@ -104,22 +104,22 @@ export function CombatTracker({
   const [newCombatantName, setNewCombatantName] = useState("");
   const [newCombatantAgility, setNewCombatantAgility] = useState(1);
   const [hookLogKey, setHookLogKey] = useState(0); // Force re-render of hook log
-  
+
   // Novos estados para combate avançado
   const [tacticalPauseOpen, setTacticalPauseOpen] = useState(false);
   const [preparedActions, setPreparedActions] = useState<PreparedAction[]>([]);
   const [delayedCombatants, setDelayedCombatants] = useState<string[]>([]);
-  
+
   // Estado de condições locais por combatente (para NPCs sem personagem vinculado)
   const [combatantConditions, setCombatantConditions] = useState<Record<string, LocalCombatCondition[]>>({});
-  
+
   // Extrai IDs de personagens vinculados para sync em tempo real
   const linkedCharacterIds = useMemo(() => {
     return combatState.combatants
       .filter(c => c.characterId)
       .map(c => c.characterId as string);
   }, [combatState.combatants]);
-  
+
   // Hook de gerenciamento de condições com realtime sync
   const conditionsHook = useCombatConditions({
     campaignId,
@@ -127,7 +127,7 @@ export function CombatTracker({
     enabled: !!user?.id,
     characterIds: linkedCharacterIds,
   });
-  
+
   // Hook de sincronização de buffs de arma com combate
   const weaponBuffsHook = useCombatWeaponBuffs({
     combatants: combatState.combatants,
@@ -141,7 +141,7 @@ export function CombatTracker({
         type: 'condition' as const,
         message: msg,
       })));
-      
+
       if (newLogEntries.length > 0) {
         setCombatState(prev => ({
           ...prev,
@@ -181,20 +181,21 @@ export function CombatTracker({
   // Sincroniza condições do BD com estado local quando mudam via realtime
   useEffect(() => {
     if (Object.keys(conditionsHook.syncedConditions).length === 0) return;
-    
+
     // Atualiza condições locais para combatentes com characterId
     setCombatantConditions(prev => {
       const updated = { ...prev };
-      
+
+      // combatState.combatants acessado via closure - sempre valor mais recente
       for (const combatant of combatState.combatants) {
         if (combatant.characterId && conditionsHook.syncedConditions[combatant.characterId]) {
           updated[combatant.id] = conditionsHook.syncedConditions[combatant.characterId];
         }
       }
-      
+
       return updated;
     });
-  }, [conditionsHook.syncedConditions, combatState.combatants]);
+  }, [conditionsHook.syncedConditions]); // combatState.combatants removido - evita loop infinito #185
 
   const updateState = useCallback((newState: CombatState) => {
     setCombatState(newState);
@@ -203,7 +204,7 @@ export function CombatTracker({
 
   const addCombatant = useCallback((name: string, agility: number, isNPC = false) => {
     const { total, rolls } = rollInitiative(agility);
-    
+
     const newCombatant: CombatantState = {
       id: crypto.randomUUID(),
       name,
@@ -277,25 +278,25 @@ export function CombatTracker({
   const handleNextTurn = useCallback(async () => {
     const newState = nextTurn(combatState);
     const currentCombatant = newState.combatants[newState.currentTurnIndex];
-    
+
     // Limpa hooks expirados
     const expiredHooks = cleanupExpiredHooks(newState.round);
-    
+
     // Dispara hooks de início de turno
     const turnStartHooks = executeHooks({
       trigger: 'onTurnStart',
       round: newState.round,
       targetId: currentCombatant.id,
     });
-    
+
     // Process start of turn effects
     const turnResult = processStartOfTurn(currentCombatant);
-    
+
     // Processa rituais sustentados
     const sustainedRituals = getSustainedRitualsForCharacter(currentCombatant.id);
     let sustainPECost = 0;
     const sustainMessages: string[] = [];
-    
+
     if (sustainedRituals.length > 0) {
       const sustainResult = processSustainedRitualsOnTurnStart(
         currentCombatant.id,
@@ -305,12 +306,12 @@ export function CombatTracker({
       sustainPECost = sustainResult.totalPECost;
       sustainMessages.push(...sustainResult.results.map(r => r.message));
     }
-    
+
     // Processa condições no início do turno (sistema novo)
     const localConditions = combatantConditions[currentCombatant.id] || [];
     const conditionEffects = conditionsHook.processConditionEffects(currentCombatant, localConditions);
     const decrementResult = await conditionsHook.decrementOnTurnStart(currentCombatant, localConditions);
-    
+
     // Remove condições expiradas do estado local
     if (decrementResult.expiredConditions.length > 0) {
       setCombatantConditions(prev => ({
@@ -326,12 +327,12 @@ export function CombatTracker({
         }),
       }));
     }
-    
+
     // Coleta mensagens dos hooks
-    const hookMessages = turnStartHooks.map(h => 
+    const hookMessages = turnStartHooks.map(h =>
       `⚡ ${h.ritualName}: ${h.modifications?.message || h.effect}`
     );
-    
+
     // Atualiza combatente com dano de condições e custo de sustentação
     const totalConditionDamage = turnResult.damage + conditionEffects.damage;
     const updatedCombatants = newState.combatants.map((c, i) => {
@@ -341,8 +342,8 @@ export function CombatTracker({
         hp: Math.max(0, c.hp - totalConditionDamage),
         pe: Math.max(0, c.pe - sustainPECost),
         conditions: c.conditions.filter(cond => !turnResult.removedConditions.includes(cond)),
-        dyingCounter: turnResult.dyingCounterReduced && c.dyingCounter !== undefined 
-          ? c.dyingCounter - 1 
+        dyingCounter: turnResult.dyingCounterReduced && c.dyingCounter !== undefined
+          ? c.dyingCounter - 1
           : c.dyingCounter,
       };
     });
@@ -355,7 +356,7 @@ export function CombatTracker({
       ...hookMessages,
       ...sustainMessages,
     ];
-    
+
     if (expiredHooks.length > 0) {
       allMessages.push(`${expiredHooks.length} efeito(s) de ritual expirou(aram).`);
     }
@@ -378,9 +379,9 @@ export function CombatTracker({
   const handleDelayTurn = useCallback(() => {
     const current = combatState.combatants[combatState.currentTurnIndex];
     if (!current) return;
-    
+
     setDelayedCombatants(prev => [...prev, current.id]);
-    
+
     const newState = nextTurn(combatState);
     updateState({
       ...newState,
@@ -399,7 +400,7 @@ export function CombatTracker({
   const handlePrepareAction = useCallback((trigger: string, action: string) => {
     const current = combatState.combatants[combatState.currentTurnIndex];
     if (!current) return;
-    
+
     const preparedAction: PreparedAction = {
       id: crypto.randomUUID(),
       combatantId: current.id,
@@ -409,15 +410,15 @@ export function CombatTracker({
       round: combatState.round,
       isActive: true,
     };
-    
+
     setPreparedActions(prev => [...prev, preparedAction]);
-    
-    const updatedCombatants = combatState.combatants.map(c => 
-      c.id === current.id 
+
+    const updatedCombatants = combatState.combatants.map(c =>
+      c.id === current.id
         ? { ...c, turnState: { ...c.turnState, hasActed: true } }
         : c
     );
-    
+
     updateState({
       ...combatState,
       combatants: updatedCombatants,
@@ -436,15 +437,15 @@ export function CombatTracker({
   const handleTriggerPreparedAction = useCallback((actionId: string) => {
     const action = preparedActions.find(a => a.id === actionId);
     if (!action) return;
-    
+
     setPreparedActions(prev => prev.filter(a => a.id !== actionId));
-    
-    const updatedCombatants = combatState.combatants.map(c => 
-      c.id === action.combatantId 
+
+    const updatedCombatants = combatState.combatants.map(c =>
+      c.id === action.combatantId
         ? { ...c, turnState: { ...c.turnState, hasReacted: true } }
         : c
     );
-    
+
     updateState({
       ...combatState,
       combatants: updatedCombatants,
@@ -468,7 +469,7 @@ export function CombatTracker({
   const handleMarkAction = useCallback((combatantId: string, action: 'standard' | 'move' | 'reaction') => {
     const updatedCombatants = combatState.combatants.map(c => {
       if (c.id !== combatantId) return c;
-      
+
       const newTurnState = { ...c.turnState };
       switch (action) {
         case 'standard':
@@ -481,17 +482,17 @@ export function CombatTracker({
           newTurnState.hasReacted = !newTurnState.hasReacted;
           break;
       }
-      
+
       return { ...c, turnState: newTurnState };
     });
-    
+
     updateState({ ...combatState, combatants: updatedCombatants });
   }, [combatState, updateState]);
 
   // Resetar ações
   const handleResetActions = useCallback((combatantId: string) => {
-    const updatedCombatants = combatState.combatants.map(c => 
-      c.id === combatantId 
+    const updatedCombatants = combatState.combatants.map(c =>
+      c.id === combatantId
         ? { ...c, turnState: { ...c.turnState, hasActed: false, hasMoved: false, hasReacted: false } }
         : c
     );
@@ -500,8 +501,8 @@ export function CombatTracker({
 
   // Ação completa
   const handleFullAction = useCallback((combatantId: string) => {
-    const updatedCombatants = combatState.combatants.map(c => 
-      c.id === combatantId 
+    const updatedCombatants = combatState.combatants.map(c =>
+      c.id === combatantId
         ? { ...c, turnState: { ...c.turnState, hasActed: true, hasMoved: true } }
         : c
     );
@@ -509,8 +510,8 @@ export function CombatTracker({
   }, [combatState, updateState]);
 
   const updateCombatantHP = useCallback((
-    id: string, 
-    delta: number, 
+    id: string,
+    delta: number,
     damageType?: string,
     damageSource?: string
   ) => {
@@ -536,7 +537,7 @@ export function CombatTracker({
       // Aplica resultado
       finalDelta = damageResult.blocked ? 0 : -damageResult.finalDamage;
       hookMessages.push(...damageResult.messages);
-      
+
       // Atualiza key para forçar re-render do log
       setHookLogKey(k => k + 1);
 
@@ -544,8 +545,8 @@ export function CombatTracker({
       if (!damageResult.blocked && damageResult.finalDamage > 0) {
         const concentrationResults = testConcentration(id, damageResult.finalDamage);
         for (const result of concentrationResults) {
-          hookMessages.push(result.concentrationBroken 
-            ? `💔 ${result.message}` 
+          hookMessages.push(result.concentrationBroken
+            ? `💔 ${result.message}`
             : `✨ ${result.message}`);
         }
       }
@@ -659,23 +660,23 @@ export function CombatTracker({
               onConfigChange={turnTimer.updateConfig}
             />
           </div>
-          
+
           {/* Versão compacta para mobile */}
           <div className="md:hidden flex items-center gap-3 w-full">
             <div className="flex items-center gap-2 flex-1">
               <Timer className={cn(
                 "w-5 h-5",
                 turnTimer.isCritical ? "text-destructive animate-pulse" :
-                turnTimer.isWarning ? "text-amber-500" :
-                turnTimer.timerState.isRunning ? "text-emerald-500" :
-                "text-muted-foreground"
+                  turnTimer.isWarning ? "text-amber-500" :
+                    turnTimer.timerState.isRunning ? "text-emerald-500" :
+                      "text-muted-foreground"
               )} />
               <span className={cn(
                 "font-mono text-xl font-bold",
                 turnTimer.isCritical ? "text-destructive" :
-                turnTimer.isWarning ? "text-amber-500" :
-                turnTimer.timerState.isRunning ? "text-emerald-500" :
-                "text-muted-foreground"
+                  turnTimer.isWarning ? "text-amber-500" :
+                    turnTimer.timerState.isRunning ? "text-emerald-500" :
+                      "text-muted-foreground"
               )}>
                 {turnTimer.formattedTime}
               </span>
@@ -683,7 +684,7 @@ export function CombatTracker({
                 {currentCombatant.name}
               </span>
             </div>
-            
+
             <div className="flex gap-1">
               {!turnTimer.timerState.isRunning ? (
                 <Button size="sm" variant="outline" onClick={turnTimer.startTimer} className="gap-1">
@@ -705,7 +706,7 @@ export function CombatTracker({
               )}
             </div>
           </div>
-          
+
           {/* Info do turno atual para desktop */}
           <div className="hidden md:flex flex-col items-end gap-1">
             <span className="text-xs text-muted-foreground">Turno Atual</span>
@@ -774,8 +775,8 @@ export function CombatTracker({
                     {/* Initiative order */}
                     <div className={cn(
                       "w-10 h-10 rounded-lg flex items-center justify-center font-display text-lg",
-                      isCurrentTurn 
-                        ? "bg-primary text-primary-foreground" 
+                      isCurrentTurn
+                        ? "bg-primary text-primary-foreground"
                         : "bg-secondary text-muted-foreground"
                     )}>
                       {index + 1}
@@ -934,7 +935,7 @@ export function CombatTracker({
                           maxVisible={4}
                         />
                       )}
-                      
+
                       {/* Condições legadas (strings) - exibe como badges simples */}
                       {combatant.conditions.length > 0 && (combatantConditions[combatant.id] || []).length === 0 && (
                         <div className="flex flex-wrap gap-1">
@@ -945,7 +946,7 @@ export function CombatTracker({
                           ))}
                         </div>
                       )}
-                      
+
                       {/* Botão de adicionar condição (apenas para mestres) */}
                       {isMaster && (
                         <QuickAddConditionButton
@@ -961,7 +962,7 @@ export function CombatTracker({
                       )}
                     </div>
                   )}
-                  
+
                   {/* Botão para adicionar condição quando não há nenhuma */}
                   {(combatantConditions[combatant.id] || []).length === 0 && combatant.conditions.length === 0 && isMaster && (
                     <div className="mt-3 pt-3 border-t border-border">
