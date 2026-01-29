@@ -143,6 +143,13 @@ export function useTacticalBoard({
 }: UseTacticalBoardProps): TacticalBoardReturn {
   const { toast } = useToast();
   
+  // IMPORTANTE: estabiliza o callback de toast para não recriar funções memoizadas
+  // Isso evita loops de render quando loadMaps/loadTokens entram como dependência de useEffect.
+  const toastRef = useRef(toast);
+  useEffect(() => {
+    toastRef.current = toast;
+  }, [toast]);
+  
   // Estado principal
   const [maps, setMaps] = useState<TacticalMap[]>([]);
   const [activeMap, setActiveMapState] = useState<TacticalMap | null>(null);
@@ -196,7 +203,7 @@ export function useTacticalBoard({
         await loadTokens(active.id);
       }
     } catch (error: any) {
-      toast({
+      toastRef.current?.({
         title: 'Erro ao carregar mapas',
         description: error.message,
         variant: 'destructive',
@@ -204,7 +211,7 @@ export function useTacticalBoard({
     } finally {
       setIsLoading(false);
     }
-  }, [campaignId, toast]);
+  }, [campaignId]);
 
   const loadTokens = useCallback(async (mapId: string) => {
     try {
@@ -236,7 +243,8 @@ export function useTacticalBoard({
     
     // Subscribe para mapas
     const mapsChannel = supabase
-      .channel(`maps-${campaignId}-${Date.now()}`)
+      // Nome estável: evita re-subscrições desnecessárias e facilita cleanup
+      .channel(`maps-${campaignId}`)
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
@@ -257,7 +265,8 @@ export function useTacticalBoard({
     if (!activeMap || !enabled) return;
     
     const tokensChannel = supabase
-      .channel(`tokens-${activeMap.id}-${Date.now()}`)
+      // Nome estável: evita re-subscrições desnecessárias e facilita cleanup
+      .channel(`tokens-${activeMap.id}`)
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
