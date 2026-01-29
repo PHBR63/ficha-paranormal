@@ -63,23 +63,8 @@ export default defineConfig(({ mode }) => ({
             purpose: "maskable",
           },
         ],
-        // Screenshots para Rich Install UI no Android
-        screenshots: [
-          {
-            src: "/screenshot-mobile.png",
-            sizes: "640x1136",
-            type: "image/png",
-            form_factor: "narrow",
-            label: "Ficha de personagem no modo mobile"
-          },
-          {
-            src: "/screenshot-wide.png",
-            sizes: "1280x720",
-            type: "image/png",
-            form_factor: "wide",
-            label: "Dashboard principal do Let's Roll"
-          }
-        ],
+        // Screenshots removidos para evitar 404 (arquivos não existem)
+        // NOTA: Adicionar screenshots reais quando disponíveis
       },
       workbox: {
         // Importa apenas scripts locais de push notifications no Service Worker
@@ -98,8 +83,9 @@ export default defineConfig(({ mode }) => ({
         clientsClaim: true,
         // Limpa caches antigos automaticamente
         cleanupOutdatedCaches: true,
-        // Preload de navegação para melhor performance
-        navigationPreload: true,
+        // DESATIVADO: O SW customizado não trata preloadResponse corretamente
+        // Isso evita o warning "navigation preload request was cancelled"
+        navigationPreload: false,
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,

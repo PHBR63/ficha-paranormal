@@ -304,6 +304,68 @@ export type Database = {
           },
         ]
       }
+      campaign_maps_v2: {
+        Row: {
+          campaign_id: string
+          created_at: string
+          created_by: string
+          fog_of_war: Json | null
+          grid_color: string | null
+          grid_size: number
+          grid_type: string
+          grid_visible: boolean | null
+          height_cells: number | null
+          id: string
+          image_url: string
+          is_active: boolean
+          name: string
+          updated_at: string
+          width_cells: number | null
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string
+          created_by: string
+          fog_of_war?: Json | null
+          grid_color?: string | null
+          grid_size?: number
+          grid_type?: string
+          grid_visible?: boolean | null
+          height_cells?: number | null
+          id?: string
+          image_url?: string
+          is_active?: boolean
+          name: string
+          updated_at?: string
+          width_cells?: number | null
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string
+          created_by?: string
+          fog_of_war?: Json | null
+          grid_color?: string | null
+          grid_size?: number
+          grid_type?: string
+          grid_visible?: boolean | null
+          height_cells?: number | null
+          id?: string
+          image_url?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+          width_cells?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_maps_v2_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns_v2"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaign_members: {
         Row: {
           active_bonuses: Json | null
@@ -345,6 +407,54 @@ export type Database = {
           },
           {
             foreignKeyName: "campaign_members_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: false
+            referencedRelation: "characters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaign_members_v2: {
+        Row: {
+          active_bonuses: Json | null
+          bonuses_updated_at: string | null
+          campaign_id: string
+          character_id: string | null
+          id: string
+          joined_at: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          active_bonuses?: Json | null
+          bonuses_updated_at?: string | null
+          campaign_id: string
+          character_id?: string | null
+          id?: string
+          joined_at?: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          active_bonuses?: Json | null
+          bonuses_updated_at?: string | null
+          campaign_id?: string
+          character_id?: string | null
+          id?: string
+          joined_at?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_members_v2_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_members_v2_character_id_fkey"
             columns: ["character_id"]
             isOneToOne: false
             referencedRelation: "characters"
@@ -396,6 +506,57 @@ export type Database = {
           },
           {
             foreignKeyName: "campaign_messages_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: false
+            referencedRelation: "characters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaign_messages_v2: {
+        Row: {
+          campaign_id: string
+          character_id: string | null
+          content: string
+          created_at: string
+          id: string
+          message_type: string
+          metadata: Json | null
+          recipient_id: string | null
+          user_id: string
+        }
+        Insert: {
+          campaign_id: string
+          character_id?: string | null
+          content: string
+          created_at?: string
+          id?: string
+          message_type?: string
+          metadata?: Json | null
+          recipient_id?: string | null
+          user_id: string
+        }
+        Update: {
+          campaign_id?: string
+          character_id?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          message_type?: string
+          metadata?: Json | null
+          recipient_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_messages_v2_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_messages_v2_character_id_fkey"
             columns: ["character_id"]
             isOneToOne: false
             referencedRelation: "characters"
@@ -717,6 +878,56 @@ export type Database = {
           },
         ]
       }
+      campaign_sessions_v2: {
+        Row: {
+          campaign_id: string
+          created_at: string
+          ended_at: string | null
+          id: string
+          notes: Json | null
+          scheduled_at: string | null
+          session_number: number
+          started_at: string | null
+          status: string
+          summary: string | null
+          title: string | null
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          notes?: Json | null
+          scheduled_at?: string | null
+          session_number: number
+          started_at?: string | null
+          status?: string
+          summary?: string | null
+          title?: string | null
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          notes?: Json | null
+          scheduled_at?: string | null
+          session_number?: number
+          started_at?: string | null
+          status?: string
+          summary?: string | null
+          title?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_sessions_v2_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns_v2"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaign_sound_scenes: {
         Row: {
           campaign_id: string
@@ -825,6 +1036,45 @@ export type Database = {
         ]
       }
       campaigns: {
+        Row: {
+          cover_image_url: string | null
+          created_at: string
+          current_session: number
+          description: string | null
+          id: string
+          master_id: string
+          name: string
+          settings: Json
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          cover_image_url?: string | null
+          created_at?: string
+          current_session?: number
+          description?: string | null
+          id?: string
+          master_id: string
+          name: string
+          settings?: Json
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          cover_image_url?: string | null
+          created_at?: string
+          current_session?: number
+          description?: string | null
+          id?: string
+          master_id?: string
+          name?: string
+          settings?: Json
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      campaigns_v2: {
         Row: {
           cover_image_url: string | null
           created_at: string
@@ -1471,6 +1721,90 @@ export type Database = {
             columns: ["map_id"]
             isOneToOne: false
             referencedRelation: "campaign_maps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      map_tokens_v2: {
+        Row: {
+          character_id: string | null
+          conditions: Json | null
+          created_at: string
+          created_by: string
+          id: string
+          image_url: string | null
+          layer: string
+          light_color: string | null
+          light_radius: number | null
+          locked: boolean | null
+          map_id: string
+          name: string
+          notes: string | null
+          rotation: number | null
+          size: number
+          token_type: string
+          updated_at: string
+          visible_to: string[] | null
+          x: number
+          y: number
+        }
+        Insert: {
+          character_id?: string | null
+          conditions?: Json | null
+          created_at?: string
+          created_by: string
+          id?: string
+          image_url?: string | null
+          layer?: string
+          light_color?: string | null
+          light_radius?: number | null
+          locked?: boolean | null
+          map_id: string
+          name: string
+          notes?: string | null
+          rotation?: number | null
+          size?: number
+          token_type?: string
+          updated_at?: string
+          visible_to?: string[] | null
+          x?: number
+          y?: number
+        }
+        Update: {
+          character_id?: string | null
+          conditions?: Json | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          image_url?: string | null
+          layer?: string
+          light_color?: string | null
+          light_radius?: number | null
+          locked?: boolean | null
+          map_id?: string
+          name?: string
+          notes?: string | null
+          rotation?: number | null
+          size?: number
+          token_type?: string
+          updated_at?: string
+          visible_to?: string[] | null
+          x?: number
+          y?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "map_tokens_v2_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: false
+            referencedRelation: "characters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "map_tokens_v2_map_id_fkey"
+            columns: ["map_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_maps_v2"
             referencedColumns: ["id"]
           },
         ]

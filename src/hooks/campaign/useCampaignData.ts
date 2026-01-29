@@ -1,0 +1,271 @@
+/**
+ * useCampaignData - Hook único para dados da campanha v2
+ * 
+ * Centraliza carregamento de campanha + membros + profiles
+ * Usa Ref-First pattern para callbacks estáveis (evita loop #185)
+ * 
+ * @module hooks/campaign/useCampaignData
+ */
+
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+
+// Interface da campanha v2
+export interface CampaignV2 {
+  id: string;
+  master_id: string;
+  name: string;
+  description: string | null;
+  cover_image_url: string | null;
+  status: 'active' | 'paused' | 'completed' | 'archived';
+  current_session: number;
+  settings: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+}
+
+// Interface de membro da campanha v2
+export interface CampaignMemberV2 {
+  id: string;
+  campaign_id: string;
+  user_id: string;
+  character_id: string | null;
+  role: 'master' | 'player';
+  active_bonuses: Record<string, unknown> | null;
+  bonuses_updated_at: string | null;
+  joined_at: string;
+  profiles?: {
+    display_name: string | null;
+    avatar_url: string | null;
+  };
+  characters?: {
+    id: string;
+    name: string;
+    class: string;
+    nex: number;
+    hp_current: number;
+    hp_max: number;
+    pe_current: number;
+    pe_max: number;
+    san_current: number;
+    san_max: number;
+    photo_url: string | null;
+    conditions: string[];
+  } | null;
+}
+
+// Props do hook
+interface UseCampaignDataProps {
+  campaignId: string;
+  userId: string;
+}
+
+// Retorno do hook
+export interface UseCampaignDataReturn {
+  campaign: CampaignV2 | null;
+  members: CampaignMemberV2[];
+  isMaster: boolean;
+  loading: boolean;
+  error: string | null;
+  refetch: () => Promise<void>;
+}
+
+export function useCampaignData({
+  campaignId,
+  userId,
+}: UseCampaignDataProps): UseCampaignDataReturn {
+  const { toast } = useToast();
+  
+  // Ref-First: estabiliza toast para evitar recriação de callbacks
+  const toastRef = useRef(toast);
+  useEffect(() => { toastRef.current = toast; }, [toast]);
+  
+  // Estado principal
+  const [campaign, setCampaign] = useState<CampaignV2 | null>(null);
+  const [members, setMembers] = useState<CampaignMemberV2[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Calcula isMaster de forma derivada (estável)
+  const isMaster = !!(campaign?.master_id && campaign.master_id === userId);
+  
+  /**
+   * Carrega dados da campanha com queries em lote
+   * Memoizado com dependências mínimas para estabilidade
+   */
+  const refetch = useCallback(async () => {
+    if (!campaignId || !userId) {
+      setLoading(false);
+      return;
+    }
+    
+    try {
+      // 1. Fetch campanha v2
+      const { data: campaignData, error: campaignError } = await supabase
+        .from('campaigns_v2')
+        .select('*')
+        .eq('id', campaignId)
+        .single();
+      
+      if (campaignError) {
+        // Se não encontrar na v2, tenta v1 como fallback
+        const { data: campaignV1, error: v1Error } = await supabase
+          .from('campaigns')
+          .select('*')
+          .eq('id', campaignId)
+          .single();
+        
+        if (v1Error) throw v1Error;
+        
+        // Adapta dados v1 para interface v2
+        setCampaign({
+          ...campaignV1,
+          status: campaignV1.status as CampaignV2['status'],
+          settings: typeof campaignV1.settings === 'object' ? campaignV1.settings as Record<string, unknown> : {},
+        });
+        
+        // Continua com membros v1
+        await loadMembersV1(campaignId);
+        return;
+      }
+      
+      setCampaign(campaignData as CampaignV2);
+      
+      // 2. Fetch membros v2 com join em characters
+      const { data: membersRaw, error: membersError } = await supabase
+        .from('campaign_members_v2')
+        .select(`
+          id, campaign_id, user_id, character_id, role, active_bonuses, bonuses_updated_at, joined_at,
+          characters (id, name, class, nex, hp_current, hp_max, pe_current, pe_max, san_current, san_max, photo_url, conditions)
+        `)
+        .eq('campaign_id', campaignId);
+      
+      if (membersError) throw membersError;
+      
+      // 3. Busca profiles em lote (sem FK, usa IN)
+      const userIds = (membersRaw || []).map(m => m.user_id);
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, display_name, avatar_url')
+        .in('user_id', userIds);
+      
+      // 4. Cria lookup Map para O(1) e mescla
+      const profileLookup: Record<string, { display_name: string | null; avatar_url: string | null }> = {};
+      (profiles || []).forEach(p => { profileLookup[p.user_id] = p; });
+      
+      const membersWithData = (membersRaw || []).map(member => ({
+        ...member,
+        role: member.role as CampaignMemberV2['role'],
+        profiles: profileLookup[member.user_id] || { display_name: null, avatar_url: null },
+        characters: member.characters ? {
+          ...member.characters,
+          conditions: Array.isArray(member.characters.conditions) 
+            ? member.characters.conditions as string[] 
+            : [],
+        } : null,
+      })) as CampaignMemberV2[];
+      
+      setMembers(membersWithData);
+      setError(null);
+      
+    } catch (err: any) {
+      console.error('Erro ao carregar campanha:', err);
+      setError(err.message || 'Erro ao carregar campanha');
+      toastRef.current?.({
+        title: 'Erro',
+        description: 'Não foi possível carregar a campanha.',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [campaignId, userId]); // Deps mínimas - toast usa ref
+  
+  /**
+   * Fallback para carregar membros v1 (compatibilidade)
+   */
+  const loadMembersV1 = async (campId: string) => {
+    try {
+      const { data: membersRaw, error: membersError } = await supabase
+        .from('campaign_members')
+        .select(`
+          id, user_id, character_id, role, joined_at,
+          characters (id, name, class, nex, hp_current, hp_max, pe_current, pe_max, san_current, san_max, photo_url, conditions)
+        `)
+        .eq('campaign_id', campId);
+      
+      if (membersError) throw membersError;
+      
+      const userIds = (membersRaw || []).map(m => m.user_id);
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, display_name, avatar_url')
+        .in('user_id', userIds);
+      
+      const profileLookup: Record<string, { display_name: string | null; avatar_url: string | null }> = {};
+      (profiles || []).forEach(p => { profileLookup[p.user_id] = p; });
+      
+      const membersWithData = (membersRaw || []).map(member => ({
+        ...member,
+        campaign_id: campId,
+        role: member.role as CampaignMemberV2['role'],
+        active_bonuses: null,
+        bonuses_updated_at: null,
+        profiles: profileLookup[member.user_id] || { display_name: null, avatar_url: null },
+        characters: member.characters ? {
+          ...member.characters,
+          conditions: Array.isArray(member.characters.conditions) 
+            ? member.characters.conditions as string[] 
+            : [],
+        } : null,
+      })) as CampaignMemberV2[];
+      
+      setMembers(membersWithData);
+      setError(null);
+    } catch (err: any) {
+      console.error('Erro ao carregar membros v1:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // Carregamento inicial e realtime
+  useEffect(() => {
+    if (!campaignId || !userId) return;
+    
+    refetch();
+    
+    // Subscribe para mudanças em membros (v2 primeiro, fallback v1)
+    const channelName = `campaign-data-${campaignId}`;
+    const channel = supabase
+      .channel(channelName)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'campaign_members_v2',
+        filter: `campaign_id=eq.${campaignId}`,
+      }, () => refetch())
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'campaign_members',
+        filter: `campaign_id=eq.${campaignId}`,
+      }, () => refetch())
+      .subscribe();
+    
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [campaignId, userId, refetch]);
+  
+  return {
+    campaign,
+    members,
+    isMaster,
+    loading,
+    error,
+    refetch,
+  };
+}
