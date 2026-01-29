@@ -11,9 +11,9 @@ import type { RealtimeChannel } from '@supabase/supabase-js';
 
 // Interface para dados de presença do usuário
 export interface UserPresence {
-  oderId: string;
-  odername?: string;
-  oderAvatar?: string;
+  userId: string;
+  userName?: string;
+  userAvatar?: string;
   onlineSince: string;
   lastSeen: string;
   status: 'online' | 'away' | 'offline';
@@ -53,6 +53,9 @@ export function useCampaignPresence({
   // Referência do canal para cleanup
   const channelRef = useRef<RealtimeChannel | null>(null);
 
+  // Referência para presenceMap para evitar dependência circular no useEffect de inatividade
+  const presenceMapRef = useRef<Record<string, UserPresence>>({});
+
   // Handler para sincronizar estado de presença
   const syncPresence = useCallback((state: Record<string, unknown[]>) => {
     const onlineUsers: string[] = [];
@@ -63,11 +66,11 @@ export function useCampaignPresence({
       // Cada usuário pode ter múltiplas sessões, pegamos a mais recente
       if (presences.length > 0) {
         const latestPresence = presences[presences.length - 1] as UserPresence;
-        const oderId = latestPresence.oderId;
-        
-        if (oderId) {
-          onlineUsers.push(oderId);
-          presenceMap[oderId] = latestPresence;
+        const userId = latestPresence.userId;
+
+        if (userId) {
+          onlineUsers.push(userId);
+          presenceMap[userId] = latestPresence;
         }
       }
     });
@@ -92,11 +95,16 @@ export function useCampaignPresence({
   // Refs para valores que mudam mas não devem re-subscripar o canal
   const userNameRef = useRef(userName);
   const userAvatarRef = useRef(userAvatar);
-  
+
   useEffect(() => {
     userNameRef.current = userName;
     userAvatarRef.current = userAvatar;
   }, [userName, userAvatar]);
+
+  // Atualiza presenceMapRef quando presenceState.presenceMap mudar
+  useEffect(() => {
+    presenceMapRef.current = presenceState.presenceMap;
+  }, [presenceState.presenceMap]);
 
   // Inicializa canal de presença
   // NOTA: Dependências mínimas para evitar re-subscriptions (bug #185)
@@ -106,7 +114,7 @@ export function useCampaignPresence({
     }
 
     const channelName = `campaign-presence:${campaignId}`;
-    
+
     // Cria canal com presença
     const channel = supabase.channel(channelName, {
       config: {
@@ -134,16 +142,16 @@ export function useCampaignPresence({
       if (status === 'SUBSCRIBED') {
         // Envia dados de presença do usuário atual (usa refs para valores atuais)
         const presenceData: UserPresence = {
-          oderId: userId,
-          odername: userNameRef.current,
-          oderAvatar: userAvatarRef.current,
+          userId: userId,
+          userName: userNameRef.current,
+          userAvatar: userAvatarRef.current,
           onlineSince: new Date().toISOString(),
           lastSeen: new Date().toISOString(),
           status: 'online',
         };
 
         const trackResult = await channel.track(presenceData);
-        
+
         if (trackResult === 'ok') {
           setPresenceState(prev => ({
             ...prev,
@@ -187,14 +195,14 @@ export function useCampaignPresence({
     const updateActivity = () => {
       // Reseta timer de inatividade
       clearTimeout(inactivityTimeout);
-      
-      // Atualiza lastSeen
+
+      // Atualiza lastSeen (usa presenceMapRef para evitar dependência circular)
       if (channelRef.current) {
         channelRef.current.track({
-          oderId: userId,
-          odername: userName,
-          oderAvatar: userAvatar,
-          onlineSince: presenceState.presenceMap[userId]?.onlineSince || new Date().toISOString(),
+          userId: userId,
+          userName: userName,
+          userAvatar: userAvatar,
+          onlineSince: presenceMapRef.current[userId]?.onlineSince || new Date().toISOString(),
           lastSeen: new Date().toISOString(),
           status: 'online' as const,
         });
@@ -204,10 +212,10 @@ export function useCampaignPresence({
       inactivityTimeout = setTimeout(() => {
         if (channelRef.current) {
           channelRef.current.track({
-            oderId: userId,
-            odername: userName,
-            oderAvatar: userAvatar,
-            onlineSince: presenceState.presenceMap[userId]?.onlineSince || new Date().toISOString(),
+            userId: userId,
+            userName: userName,
+            userAvatar: userAvatar,
+            onlineSince: presenceMapRef.current[userId]?.onlineSince || new Date().toISOString(),
             lastSeen: new Date().toISOString(),
             status: 'away' as const,
           });
@@ -230,7 +238,7 @@ export function useCampaignPresence({
         window.removeEventListener(event, updateActivity);
       });
     };
-  }, [enabled, userId, userName, userAvatar, presenceState.presenceMap]);
+  }, [enabled, userId, userName, userAvatar]); // Removido presenceState.presenceMap para evitar dependência circular
 
   // Helper para verificar se um usuário está online
   const isUserOnline = useCallback((checkUserId: string): boolean => {
