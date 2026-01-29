@@ -16,6 +16,11 @@ export * from './useCampaignAudio';
 export * from './useCampaignEvents';
 export * from './useCombatBoardSync';
 
+// Hooks v2 reconstruídos para estabilidade (evita #185)
+export * from './useCampaignData';
+export * from './useCampaignRealtime';
+export * from './useCampaignPresence';
+
 // useHandouts exporta Handout como tipo base
 export { useHandouts } from './useHandouts';
 export type { Handout } from './useHandouts';
