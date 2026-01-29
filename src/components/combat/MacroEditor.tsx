@@ -5,7 +5,7 @@
  * Suporta dados, bônus, e labels personalizados.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -112,6 +112,15 @@ export function MacroEditor({
   const [selectedIcon, setSelectedIcon] = useState('dices');
   const [selectedColor, setSelectedColor] = useState('default');
   const [showInBar, setShowInBar] = useState(true);
+  
+  // Handlers estáveis para Selects do Radix (evita loop #185)
+  const handleTypeChange = useCallback((value: string) => {
+    setType(value as MacroType);
+  }, []);
+  
+  const handleDiceTypeChange = useCallback((value: string) => {
+    setDiceType(parseInt(value));
+  }, []);
 
   // Preenche formulário ao editar
   useEffect(() => {
@@ -222,7 +231,7 @@ export function MacroEditor({
           {/* Tipo */}
           <div className="space-y-2">
             <Label>Tipo</Label>
-            <Select value={type} onValueChange={(v) => setType(v as MacroType)}>
+            <Select value={type} onValueChange={handleTypeChange}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -270,7 +279,7 @@ export function MacroEditor({
 
             <div className="space-y-2">
               <Label>Tipo de Dado</Label>
-              <Select value={diceType.toString()} onValueChange={(v) => setDiceType(parseInt(v))}>
+              <Select value={diceType.toString()} onValueChange={handleDiceTypeChange}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>

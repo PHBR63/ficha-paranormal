@@ -4,7 +4,7 @@
  * Permite adicionar, remover e gerenciar condições ativas.
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -243,6 +243,11 @@ function AddConditionContent({
   const [isCustom, setIsCustom] = useState(false);
   const [customName, setCustomName] = useState('');
   const [customEffect, setCustomEffect] = useState('');
+  
+  // Handler estável para Select do Radix (evita loop #185)
+  const handleDurationTypeChange = useCallback((value: string) => {
+    setDurationType(value as AddConditionData['durationType']);
+  }, []);
 
   const handleAdd = async () => {
     if (isCustom && !customName.trim()) return;
@@ -358,7 +363,7 @@ function AddConditionContent({
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-2">
             <Label>Duração</Label>
-            <Select value={durationType} onValueChange={(v) => setDurationType(v as any)}>
+            <Select value={durationType} onValueChange={handleDurationTypeChange}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
