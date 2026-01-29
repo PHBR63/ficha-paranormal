@@ -2,7 +2,7 @@
  * SessionManager - Componente para gerenciar sessões da campanha (painel do mestre)
  * Permite criar, iniciar, pausar e encerrar sessões
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -66,16 +66,15 @@ export function SessionManager({
   const [newSessionTitle, setNewSessionTitle] = useState('');
   const [newSessionSchedule, setNewSessionSchedule] = useState('');
 
-  // Busca sessões ao montar
-  useEffect(() => {
-    fetchSessions();
-    const cleanup = subscribeToSessions();
-    
-    return cleanup;
-  }, [campaignId]);
+  // Refs para estabilização (Padrão Ref-First - evita loops #185)
+  const toastRef = useRef(toast);
+  useEffect(() => { toastRef.current = toast; }, [toast]);
 
-  // Busca todas as sessões da campanha
-  const fetchSessions = async () => {
+  const onSessionUpdateRef = useRef(onSessionUpdate);
+  useEffect(() => { onSessionUpdateRef.current = onSessionUpdate; }, [onSessionUpdate]);
+
+  // Busca todas as sessões da campanha (memoizado com useCallback)
+  const fetchSessions = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('campaign_sessions')
@@ -87,7 +86,7 @@ export function SessionManager({
       setSessions(data || []);
     } catch (error: any) {
       console.error('Erro ao buscar sessões:', error);
-      toast({
+      toastRef.current({
         title: 'Erro',
         description: 'Não foi possível carregar as sessões.',
         variant: 'destructive',
@@ -95,10 +94,10 @@ export function SessionManager({
     } finally {
       setLoading(false);
     }
-  };
+  }, [campaignId]);
 
-  // Subscribe para atualizações em tempo real
-  const subscribeToSessions = () => {
+  // Subscribe para atualizações em tempo real (memoizado com useCallback)
+  const subscribeToSessions = useCallback(() => {
     const channel = supabase
       .channel(`sessions-manager-${campaignId}`)
       .on(
@@ -119,7 +118,15 @@ export function SessionManager({
     return () => {
       supabase.removeChannel(channel);
     };
-  };
+  }, [campaignId, fetchSessions]);
+
+  // Busca sessões ao montar
+  useEffect(() => {
+    fetchSessions();
+    const cleanup = subscribeToSessions();
+    
+    return cleanup;
+  }, [fetchSessions, subscribeToSessions]);
 
   // Cria nova sessão
   const createSession = async () => {
@@ -182,14 +189,14 @@ export function SessionManager({
         }
       }
 
-      toast({ title: 'Sessão criada!', description: `Sessão ${nextNumber} agendada.` });
+      toastRef.current({ title: 'Sessão criada!', description: `Sessão ${nextNumber} agendada.` });
       setDialogOpen(false);
       setNewSessionTitle('');
       setNewSessionSchedule('');
       fetchSessions();
-      onSessionUpdate?.();
+      onSessionUpdateRef.current?.();
     } catch (error: any) {
-      toast({
+      toastRef.current({
         title: 'Erro ao criar sessão',
         description: error.message,
         variant: 'destructive',
@@ -214,11 +221,11 @@ export function SessionManager({
 
       if (error) throw error;
 
-      toast({ title: 'Sessão iniciada!' });
+      toastRef.current({ title: 'Sessão iniciada!' });
       fetchSessions();
-      onSessionUpdate?.();
+      onSessionUpdateRef.current?.();
     } catch (error: any) {
-      toast({
+      toastRef.current({
         title: 'Erro ao iniciar sessão',
         description: error.message,
         variant: 'destructive',
@@ -252,11 +259,11 @@ export function SessionManager({
           .eq('id', campaignId);
       }
 
-      toast({ title: 'Sessão encerrada!' });
+      toastRef.current({ title: 'Sessão encerrada!' });
       fetchSessions();
-      onSessionUpdate?.();
+      onSessionUpdateRef.current?.();
     } catch (error: any) {
-      toast({
+      toastRef.current({
         title: 'Erro ao encerrar sessão',
         description: error.message,
         variant: 'destructive',
@@ -277,10 +284,10 @@ export function SessionManager({
 
       if (error) throw error;
 
-      toast({ title: 'Sessão deletada' });
+      toastRef.current({ title: 'Sessão deletada' });
       fetchSessions();
     } catch (error: any) {
-      toast({
+      toastRef.current({
         title: 'Erro ao deletar sessão',
         description: error.message,
         variant: 'destructive',

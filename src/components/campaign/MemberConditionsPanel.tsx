@@ -1,4 +1,9 @@
-import { useState, useEffect } from 'react';
+/**
+ * MemberConditionsPanel - Painel para visualizar/editar condições dos membros
+ * 
+ * ARQUITETURA: Usa refs para estabilizar onMemberUpdate e evitar loops #185
+ */
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { CharacterConditions } from './CharacterConditions';
@@ -44,9 +49,17 @@ export function MemberConditionsPanel({
   const { toast } = useToast();
   const [updating, setUpdating] = useState<string | null>(null);
 
+  // Refs para estabilização (Padrão Ref-First - evita loops #185)
+  const toastRef = useRef(toast);
+  const onMemberUpdateRef = useRef(onMemberUpdate);
+
+  useEffect(() => { toastRef.current = toast; }, [toast]);
+  useEffect(() => { onMemberUpdateRef.current = onMemberUpdate; }, [onMemberUpdate]);
+
   const membersWithCharacters = members.filter(m => m.characters);
 
-  const updateConditions = async (characterId: string, conditions: string[]) => {
+  // Atualiza condições com refs estabilizadas
+  const updateConditions = useCallback(async (characterId: string, conditions: string[]) => {
     setUpdating(characterId);
     try {
       const { error } = await supabase
@@ -56,14 +69,15 @@ export function MemberConditionsPanel({
 
       if (error) throw error;
 
-      onMemberUpdate?.();
+      // Usa ref para evitar que mudança de callback cause re-render
+      onMemberUpdateRef.current?.();
       
-      toast({
+      toastRef.current({
         title: 'Condições atualizadas',
         description: 'As condições do personagem foram atualizadas.',
       });
     } catch (error: any) {
-      toast({
+      toastRef.current({
         title: 'Erro ao atualizar',
         description: error.message,
         variant: 'destructive',
@@ -71,7 +85,7 @@ export function MemberConditionsPanel({
     } finally {
       setUpdating(null);
     }
-  };
+  }, []); // Sem dependências - usa refs
 
   if (membersWithCharacters.length === 0) {
     return (
