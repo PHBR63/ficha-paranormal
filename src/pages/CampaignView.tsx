@@ -2,14 +2,13 @@
  * CampaignView - Página principal de visualização e gerenciamento da campanha
  * Integra chat, combate, sessões, notas e gerenciamento de jogadores
  */
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-// ScrollArea removido - usando overflow nativo para evitar bug #185 com React 19
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { 
@@ -144,6 +143,9 @@ export default function CampaignView() {
   const { toast } = useToast();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Estabiliza userId para evitar re-renders quando objeto user muda de referência
+  const userId = user?.id;
+
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [members, setMembers] = useState<CampaignMember[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -162,8 +164,8 @@ export default function CampaignView() {
   // Estado de combate compartilhado entre CombatTracker e IntegratedCombatBoard
   const [sharedCombatState, setSharedCombatState] = useState<CombatState>(() => createCombatState());
 
-  const isMaster = campaign?.master_id === user?.id;
-  const currentMember = members.find(m => m.user_id === user?.id);
+  const isMaster = campaign?.master_id === userId;
+  const currentMember = members.find(m => m.user_id === userId);
   
   // Hook do tabuleiro tático elevado para compartilhamento com combate
   const board = useTacticalBoard({
@@ -172,29 +174,14 @@ export default function CampaignView() {
   });
 
   // Hook de presença em tempo real para rastrear jogadores online
+  // Usa userId estável em vez de user objeto para evitar re-subscriptions
   const presence = useCampaignPresence({
     campaignId: id || '',
-    userId: user?.id || '',
+    userId: userId || '',
     userName: currentMember?.profiles?.display_name || undefined,
     userAvatar: currentMember?.profiles?.avatar_url || undefined,
-    enabled: !!id && !!user,
+    enabled: !!id && !!userId,
   });
-
-  // Busca dados ao montar e subscribe para updates
-  useEffect(() => {
-    if (!id || !user) return;
-    
-    fetchCampaignData();
-    fetchActiveSession();
-    
-    const cleanupMessages = subscribeToMessages();
-    const cleanupSessions = subscribeToSessions();
-    
-    return () => {
-      cleanupMessages?.();
-      cleanupSessions?.();
-    };
-  }, [id, user]);
 
   // Ref para controlar se é o carregamento inicial
   const isInitialLoadRef = useRef(true);
@@ -221,9 +208,10 @@ export default function CampaignView() {
   /**
    * Carrega dados da campanha com queries em lote (escalável e otimizado)
    * Em vez de N+1 queries, usa batch queries com merge em O(n)
+   * Memoizado com useCallback para evitar re-criação a cada render
    */
-  const fetchCampaignData = async () => {
-    if (!id || !user) return;
+  const fetchCampaignData = useCallback(async () => {
+    if (!id || !userId) return;
 
     try {
       // 1. Fetch campaign
@@ -326,13 +314,17 @@ export default function CampaignView() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, userId, toast, navigate]);
 
-  const subscribeToMessages = () => {
+  /**
+   * Subscribe para novas mensagens via Realtime
+   * Memoizado com useCallback para evitar re-subscriptions em loop
+   */
+  const subscribeToMessages = useCallback(() => {
     if (!id) return;
 
     const channel = supabase
-      .channel(`campaign-${id}`)
+      .channel(`campaign-messages-${id}`)
       .on(
         'postgres_changes',
         {
@@ -376,10 +368,13 @@ export default function CampaignView() {
     return () => {
       supabase.removeChannel(channel);
     };
-  };
+  }, [id]);
 
-  // Busca sessão ativa da campanha
-  const fetchActiveSession = async () => {
+  /**
+   * Busca sessão ativa da campanha
+   * Memoizado com useCallback para poder ser usado como dependência
+   */
+  const fetchActiveSession = useCallback(async () => {
     if (!id) return;
     try {
       const { data, error } = await supabase
@@ -399,17 +394,37 @@ export default function CampaignView() {
       console.error('Exceção ao buscar sessão:', err);
       setActiveSession(null);
     }
-  };
+  }, [id]);
 
-  // Subscribe para mudanças em sessões (realtime)
-  const subscribeToSessions = () => {
+  /**
+   * Subscribe para mudanças em sessões (realtime)
+   * Memoizado com useCallback para evitar re-subscriptions em loop
+   */
+  const subscribeToSessions = useCallback(() => {
     if (!id) return;
     const channel = supabase
-      .channel(`sessions-${id}`)
+      .channel(`campaign-sessions-${id}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'campaign_sessions', filter: `campaign_id=eq.${id}` }, () => fetchActiveSession())
       .subscribe();
     return () => supabase.removeChannel(channel);
-  };
+  }, [id, fetchActiveSession]);
+
+  // Busca dados ao montar e subscribe para updates
+  // Usa userId estável (não user objeto) para evitar loop de re-subscriptions
+  useEffect(() => {
+    if (!id || !userId) return;
+    
+    fetchCampaignData();
+    fetchActiveSession();
+    
+    const cleanupMessages = subscribeToMessages();
+    const cleanupSessions = subscribeToSessions();
+    
+    return () => {
+      cleanupMessages?.();
+      cleanupSessions?.();
+    };
+  }, [id, userId, fetchCampaignData, fetchActiveSession, subscribeToMessages, subscribeToSessions]);
 
   // Encerra a sessão ativa
   const handleEndSession = async () => {
@@ -615,7 +630,11 @@ export default function CampaignView() {
     }
   };
 
-  const removeMember = async (memberId: string) => {
+  /**
+   * Remove um membro da campanha
+   * Memoizado com useCallback para ser passado como prop estável
+   */
+  const removeMember = useCallback(async (memberId: string) => {
     if (!confirm('Remover este jogador da campanha?')) return;
 
     try {
@@ -635,22 +654,30 @@ export default function CampaignView() {
         variant: 'destructive',
       });
     }
-  };
+  }, [toast]);
 
-  const handleCharacterSelect = async (characterId: string | null) => {
-    if (!user || !id || !currentMember) return;
+  /**
+   * Seleciona um personagem para o jogador atual
+   * Memoizado com useCallback para ser passado como prop estável
+   */
+  const handleCharacterSelect = useCallback(async (characterId: string | null) => {
+    if (!userId || !id) return;
+    
+    // Busca o membro atual a partir do state mais recente
+    const member = members.find(m => m.user_id === userId);
+    if (!member) return;
 
     try {
       const { error } = await supabase
         .from('campaign_members')
         .update({ character_id: characterId })
-        .eq('id', currentMember.id);
+        .eq('id', member.id);
 
       if (error) throw error;
 
       // Update local state
       setMembers(prev => prev.map(m => 
-        m.id === currentMember.id 
+        m.id === member.id 
           ? { ...m, character_id: characterId }
           : m
       ));
@@ -669,14 +696,14 @@ export default function CampaignView() {
             conditions: Array.isArray(charData.conditions) ? charData.conditions as string[] : [],
           };
           setMembers(prev => prev.map(m => 
-            m.id === currentMember.id 
+            m.id === member.id 
               ? { ...m, character_id: characterId, characters: typedCharData }
               : m
           ));
         }
       } else {
         setMembers(prev => prev.map(m => 
-          m.id === currentMember.id 
+          m.id === member.id 
             ? { ...m, character_id: null, characters: null }
             : m
         ));
@@ -694,7 +721,7 @@ export default function CampaignView() {
       });
       throw error;
     }
-  };
+  }, [userId, id, members, toast]);
 
   if (loading) {
     return (
