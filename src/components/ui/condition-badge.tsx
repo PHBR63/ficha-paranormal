@@ -1,3 +1,13 @@
+/**
+ * ConditionBadge - Badge para exibir condições do sistema Ordem Paranormal
+ * 
+ * NOTA: Usa atributo title nativo para tooltip em vez de Radix Tooltip
+ * Isso evita o erro React #185 (Maximum update depth exceeded) quando
+ * múltiplos badges são renderizados em sequência (AnimatePresence + setRef)
+ * 
+ * @module components/ui/condition-badge
+ */
+
 "use client";
 
 import * as React from "react";
@@ -5,12 +15,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { CONDITIONS, type Condition } from "@/lib/conditions";
 import { CONDITION_EFFECTS } from "@/lib/game-engine";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 
 interface ConditionBadgeProps {
   conditionId: string;
@@ -33,6 +37,42 @@ const iconSizes = {
   lg: 'text-lg',
 };
 
+/**
+ * Gera texto de tooltip concatenado para o badge
+ * Inclui nome, descrição, efeito e remoção quando disponíveis
+ */
+function buildTooltipText(
+  condition: Condition, 
+  effect?: typeof CONDITION_EFFECTS[keyof typeof CONDITION_EFFECTS]
+): string {
+  const parts: string[] = [
+    `${condition.icon} ${condition.name}`,
+    condition.description,
+    `Efeito: ${condition.effect}`,
+  ];
+  
+  if (condition.removal) {
+    parts.push(`Remoção: ${condition.removal}`);
+  }
+  
+  if (effect) {
+    const modParts: string[] = [];
+    if (effect.defenseModifier !== 0) {
+      modParts.push(`Defesa: ${effect.defenseModifier > 0 ? '+' : ''}${effect.defenseModifier}`);
+    }
+    if (effect.testModifier !== 0) {
+      modParts.push(`Testes: ${effect.testModifier > 0 ? '+' : ''}${effect.testModifier}`);
+    }
+    if (!effect.canAct) modParts.push('Não pode agir');
+    if (!effect.canMove) modParts.push('Não pode se mover');
+    if (modParts.length > 0) {
+      parts.push(`Modificadores: ${modParts.join(', ')}`);
+    }
+  }
+  
+  return parts.join(' | ');
+}
+
 export const ConditionBadge = React.forwardRef<HTMLDivElement, ConditionBadgeProps>(({
   conditionId,
   size = 'md',
@@ -50,7 +90,10 @@ export const ConditionBadge = React.forwardRef<HTMLDivElement, ConditionBadgePro
   const isCritical = ['morrendo', 'inconsciente', 'indefeso', 'paralisado'].includes(conditionId);
   const isMental = ['perturbado', 'enlouquecendo', 'confuso', 'apavorado'].includes(conditionId);
 
-  const badge = (
+  // Gera texto de tooltip para atributo title nativo (evita Radix Tooltip que causa loop #185)
+  const tooltipText = showTooltip ? buildTooltipText(condition, effect) : undefined;
+
+  return (
     <motion.div
       ref={ref}
       layout
@@ -58,6 +101,7 @@ export const ConditionBadge = React.forwardRef<HTMLDivElement, ConditionBadgePro
       animate={{ scale: 1, opacity: 1 }}
       exit={{ scale: 0, opacity: 0 }}
       whileHover={onRemove ? { scale: 1.05 } : undefined}
+      title={tooltipText}
       className={cn(
         "inline-flex items-center rounded-md border font-medium",
         sizeStyles[size],
@@ -78,61 +122,6 @@ export const ConditionBadge = React.forwardRef<HTMLDivElement, ConditionBadgePro
         </span>
       )}
     </motion.div>
-  );
-
-  if (!showTooltip) return badge;
-
-  return (
-    <TooltipProvider>
-      <Tooltip delayDuration={200}>
-        <TooltipTrigger asChild>{badge}</TooltipTrigger>
-        <TooltipContent side="top" className="max-w-xs">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <span className="text-lg">{condition.icon}</span>
-              <span className="font-semibold">{condition.name}</span>
-            </div>
-            <p className="text-muted-foreground text-sm">{condition.description}</p>
-            <div className="border-t border-border pt-2">
-              <p className="text-sm font-medium text-primary">Efeito:</p>
-              <p className="text-sm">{condition.effect}</p>
-            </div>
-            {condition.removal && (
-              <div className="border-t border-border pt-2">
-                <p className="text-sm font-medium text-success">Remoção:</p>
-                <p className="text-sm">{condition.removal}</p>
-              </div>
-            )}
-            {effect && (
-              <div className="border-t border-border pt-2 space-y-1 text-xs">
-                {effect.defenseModifier !== 0 && (
-                  <div className="flex justify-between">
-                    <span>Defesa:</span>
-                    <span className={effect.defenseModifier < 0 ? 'text-destructive' : 'text-success'}>
-                      {effect.defenseModifier > 0 ? '+' : ''}{effect.defenseModifier}
-                    </span>
-                  </div>
-                )}
-                {effect.testModifier !== 0 && (
-                  <div className="flex justify-between">
-                    <span>Testes:</span>
-                    <span className={effect.testModifier < 0 ? 'text-destructive' : 'text-success'}>
-                      {effect.testModifier > 0 ? '+' : ''}{effect.testModifier}
-                    </span>
-                  </div>
-                )}
-                {!effect.canAct && (
-                  <div className="text-destructive">⚠️ Não pode agir</div>
-                )}
-                {!effect.canMove && (
-                  <div className="text-destructive">⚠️ Não pode se mover</div>
-                )}
-              </div>
-            )}
-          </div>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
   );
 });
 
@@ -188,7 +177,7 @@ function getColorClasses(color: string) {
   }
 }
 
-// List of conditions with animations
+// Lista de condições com animações (memoizada para evitar re-renders)
 interface ConditionListProps {
   conditions: string[];
   size?: 'sm' | 'md' | 'lg';
@@ -196,7 +185,7 @@ interface ConditionListProps {
   maxVisible?: number;
 }
 
-export function ConditionList({
+export const ConditionList = React.memo(function ConditionList({
   conditions,
   size = 'md',
   onRemove,
@@ -231,4 +220,4 @@ export function ConditionList({
       </AnimatePresence>
     </div>
   );
-}
+});

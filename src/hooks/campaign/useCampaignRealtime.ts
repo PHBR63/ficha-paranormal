@@ -348,18 +348,18 @@ export function useCampaignRealtime({
       }, async (payload) => {
         const newMsg = payload.new as CampaignMessage;
         
-        // Busca dados adicionais
+        // Busca dados adicionais - usa .limit(1) para evitar erro 406
         const [profileRes, charRes] = await Promise.all([
-          supabase.from('profiles').select('display_name').eq('user_id', newMsg.user_id).maybeSingle(),
+          supabase.from('profiles').select('display_name').eq('user_id', newMsg.user_id).limit(1),
           newMsg.character_id
-            ? supabase.from('characters').select('name').eq('id', newMsg.character_id).maybeSingle()
-            : Promise.resolve({ data: null }),
+            ? supabase.from('characters').select('name').eq('id', newMsg.character_id).limit(1)
+            : Promise.resolve({ data: [] }),
         ]);
         
         const messageWithData: CampaignMessage = {
           ...newMsg,
-          profiles: profileRes.data || { display_name: null },
-          characters: charRes.data || null,
+          profiles: profileRes.data?.[0] || { display_name: null },
+          characters: charRes.data?.[0] || null,
         };
         
         setMessages(prev => [...prev, messageWithData]);
@@ -378,18 +378,19 @@ export function useCampaignRealtime({
       }, async (payload) => {
         const newMsg = payload.new as CampaignMessage;
         
+        // Busca dados adicionais - usa .limit(1) para evitar erro 406
         const [profileRes, charRes] = await Promise.all([
-          supabase.from('profiles').select('display_name').eq('user_id', newMsg.user_id).maybeSingle(),
+          supabase.from('profiles').select('display_name').eq('user_id', newMsg.user_id).limit(1),
           newMsg.character_id
-            ? supabase.from('characters').select('name').eq('id', newMsg.character_id).maybeSingle()
-            : Promise.resolve({ data: null }),
+            ? supabase.from('characters').select('name').eq('id', newMsg.character_id).limit(1)
+            : Promise.resolve({ data: [] }),
         ]);
         
         const messageWithData: CampaignMessage = {
           ...newMsg,
           recipient_id: null,
-          profiles: profileRes.data || { display_name: null },
-          characters: charRes.data || null,
+          profiles: profileRes.data?.[0] || { display_name: null },
+          characters: charRes.data?.[0] || null,
         };
         
         setMessages(prev => [...prev, messageWithData]);

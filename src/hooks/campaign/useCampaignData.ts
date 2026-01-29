@@ -101,22 +101,25 @@ export function useCampaignData({
     }
     
     try {
-      // 1. Fetch campanha v2
-      const { data: campaignData, error: campaignError } = await supabase
+      // 1. Fetch campanha v2 - usa .limit(1) para evitar erro 406 (Not Acceptable)
+      const { data: campaignDataArr, error: campaignError } = await supabase
         .from('campaigns_v2')
         .select('*')
         .eq('id', campaignId)
-        .single();
+        .limit(1);
       
-      if (campaignError) {
+      const campaignData = campaignDataArr?.[0];
+      
+      if (campaignError || !campaignData) {
         // Se não encontrar na v2, tenta v1 como fallback
-        const { data: campaignV1, error: v1Error } = await supabase
+        const { data: campaignV1Arr, error: v1Error } = await supabase
           .from('campaigns')
           .select('*')
           .eq('id', campaignId)
-          .single();
+          .limit(1);
         
-        if (v1Error) throw v1Error;
+        const campaignV1 = campaignV1Arr?.[0];
+        if (v1Error || !campaignV1) throw v1Error || new Error('Campanha não encontrada');
         
         // Adapta dados v1 para interface v2
         setCampaign({

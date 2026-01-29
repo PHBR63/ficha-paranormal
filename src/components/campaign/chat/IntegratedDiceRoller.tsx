@@ -105,6 +105,19 @@ export function IntegratedDiceRoller({ onRoll, characterName, disabled }: Integr
   const [rollLabel, setRollLabel] = useState('');
   const [critThreshold, setCritThreshold] = useState(20);
 
+  // Handlers estáveis para sliders (evitam loop #185)
+  const handleSkillBonusChange = useCallback(([v]: number[]) => {
+    setSkillBonus(v);
+  }, []);
+  
+  const handleOtherBonusChange = useCallback(([v]: number[]) => {
+    setOtherBonus(v);
+  }, []);
+  
+  const handleCritThresholdChange = useCallback(([v]: number[]) => {
+    setCritThreshold(v);
+  }, []);
+
   // Rolagem de teste de perícia/atributo (simples, sem contexto de personagem)
   const handleSkillRoll = useCallback(() => {
     const result = rollSkillTest({
@@ -295,7 +308,7 @@ export function IntegratedDiceRoller({ onRoll, characterName, disabled }: Integr
                 </Label>
                 <Slider
                   value={[skillBonus]}
-                  onValueChange={([v]) => setSkillBonus(v)}
+                  onValueChange={handleSkillBonusChange}
                   max={20}
                   min={0}
                   step={1}
@@ -310,7 +323,7 @@ export function IntegratedDiceRoller({ onRoll, characterName, disabled }: Integr
                 </Label>
                 <Slider
                   value={[otherBonus]}
-                  onValueChange={([v]) => setOtherBonus(v)}
+                  onValueChange={handleOtherBonusChange}
                   max={10}
                   min={-10}
                   step={1}
@@ -325,7 +338,7 @@ export function IntegratedDiceRoller({ onRoll, characterName, disabled }: Integr
                 </Label>
                 <Slider
                   value={[critThreshold]}
-                  onValueChange={([v]) => setCritThreshold(v)}
+                  onValueChange={handleCritThresholdChange}
                   max={20}
                   min={15}
                   step={1}

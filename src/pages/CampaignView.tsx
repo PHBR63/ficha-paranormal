@@ -203,6 +203,7 @@ export default function CampaignView() {
         'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'[Math.floor(Math.random() * 36)]
       ).join('');
 
+      // Usa .limit(1) para evitar erro 406 (Not Acceptable)
       const { data, error } = await supabase
         .from('campaign_invites')
         .insert({
@@ -212,10 +213,11 @@ export default function CampaignView() {
           expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
         })
         .select()
-        .single();
+        .limit(1);
 
       if (error) throw error;
-      setInvite(data);
+      const inviteData = data?.[0];
+      if (inviteData) setInvite(inviteData);
 
       toastRef.current({
         title: 'Código gerado!',

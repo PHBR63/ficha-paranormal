@@ -3,7 +3,7 @@
  * Exibe o que está tocando e controles básicos
  */
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Music, Volume2, VolumeX } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
@@ -21,6 +21,11 @@ export function AudioPlayerBar({ campaignId }: AudioPlayerBarProps) {
     setMasterVolume,
     toggleMute
   } = useCampaignAudio(campaignId, false);
+
+  // Handler estável para slider de volume (evita loop #185)
+  const handleMasterVolumeChange = useCallback(([v]: number[]) => {
+    setMasterVolume(v);
+  }, [setMasterVolume]);
 
   // Obter nomes das tracks tocando
   const playingTrackNames = audioState?.playing_tracks
@@ -70,7 +75,7 @@ export function AudioPlayerBar({ campaignId }: AudioPlayerBarProps) {
                 min={0}
                 max={1}
                 step={0.05}
-                onValueChange={([v]) => setMasterVolume(v)}
+                onValueChange={handleMasterVolumeChange}
                 className="cursor-pointer flex-1"
               />
               <span className="text-xs text-muted-foreground w-7 text-right">

@@ -3,7 +3,7 @@
  * Gerencia playlists, SFX, cenas sonoras e uploads
  */
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Music,
@@ -93,6 +93,11 @@ export function AudioMasterPanel({ campaignId, isMaster }: AudioMasterPanelProps
   const [sceneIcon, setSceneIcon] = useState('🎵');
   const [sceneDescription, setSceneDescription] = useState('');
   const [selectedTracks, setSelectedTracks] = useState<{audio_id: string, volume: number}[]>([]);
+
+  // Handler estável para slider de volume master (evita loop #185)
+  const handleMasterVolumeChange = useCallback(([v]: number[]) => {
+    setMasterVolume(v);
+  }, [setMasterVolume]);
 
   // Verificar se um áudio está tocando
   const isPlaying = (audioId: string) => {
@@ -198,7 +203,7 @@ export function AudioMasterPanel({ campaignId, isMaster }: AudioMasterPanelProps
               min={0}
               max={1}
               step={0.05}
-              onValueChange={([v]) => setMasterVolume(v)}
+              onValueChange={handleMasterVolumeChange}
               className="cursor-pointer flex-1"
             />
             <span className="text-xs text-muted-foreground w-8 text-right">
