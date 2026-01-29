@@ -7,7 +7,7 @@
  * de callbacks quando useToast retorna nova referência (bug #185).
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -706,7 +706,13 @@ export function useTacticalBoard({
     return distance * 1.5; // metros
   }, []);
 
-  return {
+  // =====================================================
+  // MEMOIZAÇÃO DO RETORNO (CRÍTICO para evitar loop #185)
+  // =====================================================
+  // Sem useMemo, cada render cria um novo objeto de retorno,
+  // causando re-renders em cascata nos componentes filhos (Select, etc.)
+  
+  return useMemo(() => ({
     maps,
     activeMap,
     tokens,
@@ -746,5 +752,46 @@ export function useTacticalBoard({
     pixelToCell,
     cellToPixel,
     calculateDistance,
-  };
+  }), [
+    // Estados (mudam quando dados mudam)
+    maps,
+    activeMap,
+    tokens,
+    selectedTokenId,
+    isLoading,
+    pings,
+    zoom,
+    panOffset,
+    activeTool,
+    measureStart,
+    measureEnd,
+    highlightedCells,
+    // Callbacks (estáveis via useCallback - não causam re-memoização)
+    loadMaps,
+    createMap,
+    updateMap,
+    deleteMap,
+    setActiveMap,
+    uploadMapImage,
+    removeMapImage,
+    createToken,
+    updateToken,
+    moveToken,
+    deleteToken,
+    selectToken,
+    setZoom,
+    setPanOffset,
+    fitToScreen,
+    setActiveTool,
+    startMeasure,
+    endMeasure,
+    clearMeasure,
+    sendPing,
+    revealFog,
+    hideFog,
+    setHighlightedCellsState,
+    pixelToCell,
+    cellToPixel,
+    calculateDistance,
+  ]);
 }
