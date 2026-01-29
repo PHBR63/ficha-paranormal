@@ -149,11 +149,22 @@ export default function CampaignView() {
   // Refs para estabilizar dependências em useCallbacks (evita loop infinito #185)
   const toastRef = useRef(toast);
   const navigateRef = useRef(navigate);
+  // Ref para debounce de updates em cascata
+  const updateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     toastRef.current = toast;
     navigateRef.current = navigate;
   }, [toast, navigate]);
+
+  // Cleanup do timeout ao desmontar
+  useEffect(() => {
+    return () => {
+      if (updateTimeoutRef.current) {
+        clearTimeout(updateTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [members, setMembers] = useState<CampaignMember[]>([]);
@@ -333,6 +344,25 @@ export default function CampaignView() {
       setLoading(false);
     }
   }, [id, userId]); // toast e navigate removidos - usamos refs para estabilidade
+
+  /**
+   * Versão debounced de fetchCampaignData para passar como onMemberUpdate
+   * Evita múltiplas chamadas em cascata quando vários componentes atualizam
+   * Usa ref para sempre ter a versão mais recente do fetchCampaignData
+   */
+  const fetchCampaignDataRef = useRef(fetchCampaignData);
+  useEffect(() => { fetchCampaignDataRef.current = fetchCampaignData; }, [fetchCampaignData]);
+
+  const onMemberUpdateThrottled = useCallback(() => {
+    // Limpa timeout anterior se existir
+    if (updateTimeoutRef.current) {
+      clearTimeout(updateTimeoutRef.current);
+    }
+    // Debounce de 500ms para evitar múltiplas chamadas em sequência
+    updateTimeoutRef.current = setTimeout(() => {
+      fetchCampaignDataRef.current();
+    }, 500);
+  }, []); // Sem dependências = estável para sempre
 
   /**
    * Subscribe para novas mensagens via Realtime
@@ -1074,7 +1104,7 @@ export default function CampaignView() {
                 <MemberConditionsPanel
                   members={members}
                   isMaster={isMaster}
-                  onMemberUpdate={fetchCampaignData}
+                  onMemberUpdate={onMemberUpdateThrottled}
                 />
               </div>
             </TabsContent>
@@ -1168,7 +1198,7 @@ export default function CampaignView() {
                     <MasterSheetViewer
                       campaignId={id || ''}
                       members={members}
-                      onMemberUpdate={fetchCampaignData}
+                      onMemberUpdate={onMemberUpdateThrottled}
                     />
                   </TabsContent>
 

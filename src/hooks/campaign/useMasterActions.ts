@@ -5,9 +5,13 @@
  * e gerenciar handouts dos personagens da campanha.
  * 
  * Sincronização em tempo real via Supabase.
+ * 
+ * ARQUITETURA: Usa padrão "Ref-First" para estabilizar callbacks e evitar
+ * o erro React #185 (Maximum update depth exceeded). Todas as funções externas
+ * (toast, onUpdate) são armazenadas em refs para não causarem recriação de callbacks.
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -76,11 +80,24 @@ export function useMasterActions({
   const [isUpdating, setIsUpdating] = useState(false);
   const [lastError, setLastError] = useState<string | null>(null);
 
-  // Helper para verificar autorização
+  // =====================================================
+  // REFS PARA ESTABILIDADE (Padrão Ref-First)
+  // Evita que mudanças em toast/onUpdate recriem callbacks
+  // =====================================================
+  const toastRef = useRef(toast);
+  const onUpdateRef = useRef(onUpdate);
+  const isMasterRef = useRef(isMaster);
+
+  // Sincroniza refs quando valores mudam
+  useEffect(() => { toastRef.current = toast; }, [toast]);
+  useEffect(() => { onUpdateRef.current = onUpdate; }, [onUpdate]);
+  useEffect(() => { isMasterRef.current = isMaster; }, [isMaster]);
+
+  // Helper para verificar autorização (usa ref para evitar deps instáveis)
   const checkAuth = useCallback(() => {
-    if (!isMaster) {
+    if (!isMasterRef.current) {
       setLastError('Apenas o mestre pode executar esta ação');
-      toast({
+      toastRef.current({
         title: 'Acesso negado',
         description: 'Apenas o mestre pode executar esta ação.',
         variant: 'destructive',
@@ -88,7 +105,7 @@ export function useMasterActions({
       return false;
     }
     return true;
-  }, [isMaster, toast]);
+  }, []); // Sem dependências - usa refs
 
   // =====================================================
   // AÇÕES DE STATUS (PV/PE/SAN)
@@ -124,16 +141,16 @@ export function useMasterActions({
       
       if (updateError) throw updateError;
       
-      toast({
+      toastRef.current({
         title: delta > 0 ? 'PV restaurado' : 'Dano aplicado',
         description: `PV ${delta > 0 ? '+' : ''}${delta} → ${newHP}/${char.hp_max}`,
       });
       
-      onUpdate?.();
+      onUpdateRef.current?.();
       return true;
     } catch (error: any) {
       setLastError(error.message);
-      toast({
+      toastRef.current({
         title: 'Erro ao ajustar PV',
         description: error.message,
         variant: 'destructive',
@@ -142,7 +159,7 @@ export function useMasterActions({
     } finally {
       setIsUpdating(false);
     }
-  }, [checkAuth, toast, onUpdate]);
+  }, [checkAuth]); // Apenas checkAuth (que é estável)
 
   /**
    * Ajusta PE do personagem
@@ -171,16 +188,16 @@ export function useMasterActions({
       
       if (updateError) throw updateError;
       
-      toast({
+      toastRef.current({
         title: delta > 0 ? 'PE restaurado' : 'PE consumido',
         description: `PE ${delta > 0 ? '+' : ''}${delta} → ${newPE}/${char.pe_max}`,
       });
       
-      onUpdate?.();
+      onUpdateRef.current?.();
       return true;
     } catch (error: any) {
       setLastError(error.message);
-      toast({
+      toastRef.current({
         title: 'Erro ao ajustar PE',
         description: error.message,
         variant: 'destructive',
@@ -189,7 +206,7 @@ export function useMasterActions({
     } finally {
       setIsUpdating(false);
     }
-  }, [checkAuth, toast, onUpdate]);
+  }, [checkAuth]);
 
   /**
    * Ajusta SAN do personagem
@@ -218,16 +235,16 @@ export function useMasterActions({
       
       if (updateError) throw updateError;
       
-      toast({
+      toastRef.current({
         title: delta > 0 ? 'Sanidade restaurada' : 'Sanidade perdida',
         description: `SAN ${delta > 0 ? '+' : ''}${delta} → ${newSAN}/${char.san_max}`,
       });
       
-      onUpdate?.();
+      onUpdateRef.current?.();
       return true;
     } catch (error: any) {
       setLastError(error.message);
-      toast({
+      toastRef.current({
         title: 'Erro ao ajustar Sanidade',
         description: error.message,
         variant: 'destructive',
@@ -236,7 +253,7 @@ export function useMasterActions({
     } finally {
       setIsUpdating(false);
     }
-  }, [checkAuth, toast, onUpdate]);
+  }, [checkAuth]);
 
   /**
    * Define PV para valor absoluto
@@ -265,16 +282,16 @@ export function useMasterActions({
       
       if (updateError) throw updateError;
       
-      toast({
+      toastRef.current({
         title: 'PV definido',
         description: `PV → ${newHP}/${char.hp_max}`,
       });
       
-      onUpdate?.();
+      onUpdateRef.current?.();
       return true;
     } catch (error: any) {
       setLastError(error.message);
-      toast({
+      toastRef.current({
         title: 'Erro ao definir PV',
         description: error.message,
         variant: 'destructive',
@@ -283,7 +300,7 @@ export function useMasterActions({
     } finally {
       setIsUpdating(false);
     }
-  }, [checkAuth, toast, onUpdate]);
+  }, [checkAuth]);
 
   /**
    * Define PE para valor absoluto
@@ -312,16 +329,16 @@ export function useMasterActions({
       
       if (updateError) throw updateError;
       
-      toast({
+      toastRef.current({
         title: 'PE definido',
         description: `PE → ${newPE}/${char.pe_max}`,
       });
       
-      onUpdate?.();
+      onUpdateRef.current?.();
       return true;
     } catch (error: any) {
       setLastError(error.message);
-      toast({
+      toastRef.current({
         title: 'Erro ao definir PE',
         description: error.message,
         variant: 'destructive',
@@ -330,7 +347,7 @@ export function useMasterActions({
     } finally {
       setIsUpdating(false);
     }
-  }, [checkAuth, toast, onUpdate]);
+  }, [checkAuth]);
 
   /**
    * Define SAN para valor absoluto
@@ -359,16 +376,16 @@ export function useMasterActions({
       
       if (updateError) throw updateError;
       
-      toast({
+      toastRef.current({
         title: 'Sanidade definida',
         description: `SAN → ${newSAN}/${char.san_max}`,
       });
       
-      onUpdate?.();
+      onUpdateRef.current?.();
       return true;
     } catch (error: any) {
       setLastError(error.message);
-      toast({
+      toastRef.current({
         title: 'Erro ao definir Sanidade',
         description: error.message,
         variant: 'destructive',
@@ -377,7 +394,7 @@ export function useMasterActions({
     } finally {
       setIsUpdating(false);
     }
-  }, [checkAuth, toast, onUpdate]);
+  }, [checkAuth]);
 
   // =====================================================
   // AÇÕES DE CONDIÇÕES
@@ -405,7 +422,7 @@ export function useMasterActions({
       // Adiciona nova condição se não existir
       const currentConditions = Array.isArray(char.conditions) ? char.conditions : [];
       if (currentConditions.includes(conditionName)) {
-        toast({
+        toastRef.current({
           title: 'Condição já aplicada',
           description: `O personagem já possui a condição "${conditionName}".`,
         });
@@ -421,16 +438,16 @@ export function useMasterActions({
       
       if (updateError) throw updateError;
       
-      toast({
+      toastRef.current({
         title: 'Condição aplicada',
         description: `"${conditionName}" foi aplicada ao personagem.`,
       });
       
-      onUpdate?.();
+      onUpdateRef.current?.();
       return true;
     } catch (error: any) {
       setLastError(error.message);
-      toast({
+      toastRef.current({
         title: 'Erro ao aplicar condição',
         description: error.message,
         variant: 'destructive',
@@ -439,7 +456,7 @@ export function useMasterActions({
     } finally {
       setIsUpdating(false);
     }
-  }, [checkAuth, toast, onUpdate]);
+  }, [checkAuth]);
 
   /**
    * Remove uma condição do personagem
@@ -469,16 +486,16 @@ export function useMasterActions({
       
       if (updateError) throw updateError;
       
-      toast({
+      toastRef.current({
         title: 'Condição removida',
         description: `"${conditionName}" foi removida do personagem.`,
       });
       
-      onUpdate?.();
+      onUpdateRef.current?.();
       return true;
     } catch (error: any) {
       setLastError(error.message);
-      toast({
+      toastRef.current({
         title: 'Erro ao remover condição',
         description: error.message,
         variant: 'destructive',
@@ -487,7 +504,7 @@ export function useMasterActions({
     } finally {
       setIsUpdating(false);
     }
-  }, [checkAuth, toast, onUpdate]);
+  }, [checkAuth]);
 
   /**
    * Remove todas as condições do personagem
@@ -506,16 +523,16 @@ export function useMasterActions({
       
       if (updateError) throw updateError;
       
-      toast({
+      toastRef.current({
         title: 'Condições limpas',
         description: 'Todas as condições foram removidas.',
       });
       
-      onUpdate?.();
+      onUpdateRef.current?.();
       return true;
     } catch (error: any) {
       setLastError(error.message);
-      toast({
+      toastRef.current({
         title: 'Erro ao limpar condições',
         description: error.message,
         variant: 'destructive',
@@ -524,7 +541,7 @@ export function useMasterActions({
     } finally {
       setIsUpdating(false);
     }
-  }, [checkAuth, toast, onUpdate]);
+  }, [checkAuth]);
 
   // =====================================================
   // AÇÕES DE HANDOUTS
@@ -557,16 +574,16 @@ export function useMasterActions({
       
       if (error) throw error;
       
-      toast({
+      toastRef.current({
         title: 'Handout criado',
         description: `"${handout.title}" foi criado com sucesso.`,
       });
       
-      onUpdate?.();
+      onUpdateRef.current?.();
       return data as Handout;
     } catch (error: any) {
       setLastError(error.message);
-      toast({
+      toastRef.current({
         title: 'Erro ao criar handout',
         description: error.message,
         variant: 'destructive',
@@ -575,7 +592,7 @@ export function useMasterActions({
     } finally {
       setIsUpdating(false);
     }
-  }, [checkAuth, campaignId, toast, onUpdate]);
+  }, [checkAuth, campaignId]);
 
   /**
    * Revela um handout para todos ou para usuários específicos
@@ -598,18 +615,18 @@ export function useMasterActions({
       
       if (error) throw error;
       
-      toast({
+      toastRef.current({
         title: 'Handout revelado',
         description: targetUserIds 
           ? `Revelado para ${targetUserIds.length} jogador(es).`
           : 'Revelado para todos os jogadores.',
       });
       
-      onUpdate?.();
+      onUpdateRef.current?.();
       return true;
     } catch (error: any) {
       setLastError(error.message);
-      toast({
+      toastRef.current({
         title: 'Erro ao revelar handout',
         description: error.message,
         variant: 'destructive',
@@ -618,7 +635,7 @@ export function useMasterActions({
     } finally {
       setIsUpdating(false);
     }
-  }, [checkAuth, toast, onUpdate]);
+  }, [checkAuth]);
 
   /**
    * Esconde um handout
@@ -637,16 +654,16 @@ export function useMasterActions({
       
       if (error) throw error;
       
-      toast({
+      toastRef.current({
         title: 'Handout escondido',
         description: 'O handout não está mais visível para os jogadores.',
       });
       
-      onUpdate?.();
+      onUpdateRef.current?.();
       return true;
     } catch (error: any) {
       setLastError(error.message);
-      toast({
+      toastRef.current({
         title: 'Erro ao esconder handout',
         description: error.message,
         variant: 'destructive',
@@ -655,7 +672,7 @@ export function useMasterActions({
     } finally {
       setIsUpdating(false);
     }
-  }, [checkAuth, toast, onUpdate]);
+  }, [checkAuth]);
 
   /**
    * Deleta um handout
@@ -674,16 +691,16 @@ export function useMasterActions({
       
       if (error) throw error;
       
-      toast({
+      toastRef.current({
         title: 'Handout deletado',
         description: 'O handout foi removido permanentemente.',
       });
       
-      onUpdate?.();
+      onUpdateRef.current?.();
       return true;
     } catch (error: any) {
       setLastError(error.message);
-      toast({
+      toastRef.current({
         title: 'Erro ao deletar handout',
         description: error.message,
         variant: 'destructive',
@@ -692,7 +709,7 @@ export function useMasterActions({
     } finally {
       setIsUpdating(false);
     }
-  }, [checkAuth, toast, onUpdate]);
+  }, [checkAuth]);
 
   return {
     isUpdating,
