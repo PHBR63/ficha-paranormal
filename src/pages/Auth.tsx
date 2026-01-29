@@ -187,9 +187,9 @@ export default function Auth() {
       <div className="relative z-10 w-full max-w-md">
         <div className="relative p-6 sm:p-8 rounded-xl bg-gradient-to-b from-[#1A1214] to-[#0D0A0B] border border-[#8B0000]/30 shadow-[0_0_40px_rgba(139,0,0,0.15)] animate-scale-in">
           
-          {/* Static noise overlay on card */}
-          <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none">
-            <div className="absolute inset-0 landing-noise opacity-50" />
+          {/* Static noise overlay on card - opacidade reduzida para não cobrir o conteúdo */}
+          <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none z-0">
+            <div className="absolute inset-0 landing-noise opacity-20" />
           </div>
           
           {/* Header */}
