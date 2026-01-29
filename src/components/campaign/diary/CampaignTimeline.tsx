@@ -408,6 +408,15 @@ function TimelineEventEditor({ open, onOpenChange, event, campaignId, userId, on
   const [eventType, setEventType] = useState<EventType>('milestone');
   const [importance, setImportance] = useState(1);
   const [eventDate, setEventDate] = useState('');
+  
+  // Handlers estáveis para Selects do Radix (evita loop #185)
+  const handleEventTypeChange = useCallback((value: string) => {
+    setEventType(value as EventType);
+  }, []);
+  
+  const handleImportanceChange = useCallback((value: string) => {
+    setImportance(parseInt(value));
+  }, []);
 
   // Reset form
   useEffect(() => {
@@ -516,7 +525,7 @@ function TimelineEventEditor({ open, onOpenChange, event, campaignId, userId, on
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Tipo</Label>
-              <Select value={eventType} onValueChange={(v) => setEventType(v as EventType)}>
+              <Select value={eventType} onValueChange={handleEventTypeChange}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -539,7 +548,7 @@ function TimelineEventEditor({ open, onOpenChange, event, campaignId, userId, on
 
             <div className="space-y-2">
               <Label>Importância</Label>
-              <Select value={importance.toString()} onValueChange={(v) => setImportance(parseInt(v))}>
+              <Select value={importance.toString()} onValueChange={handleImportanceChange}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
