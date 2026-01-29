@@ -1,193 +1,199 @@
 
+# Plano Definitivo: Correção do React Error #185 na Campanha
 
-# Plano: Correção Definitiva do React Error #185 na Campanha
+## Diagnóstico Confirmado
 
-## Resumo Executivo
+O erro **React #185** (Maximum update depth exceeded) ocorre imediatamente ao clicar no card da campanha "TESTE 1". A causa é o **Radix UI ScrollArea** que entra em loop infinito de recalculo de layout quando:
 
-O erro **React #185** (Maximum update depth exceeded) persiste na página de campanha (`/campaigns/:id`). A análise do stack trace confirma que o problema está no componente `scroll-area-*.js` do Radix UI, que entra em loop infinito de recalculo de layout quando há atualizações rápidas de estado (via Realtime ou animações).
+1. O componente monta e inicia subscriptions realtime
+2. Estados atualizam rapidamente (presença, mensagens, sessões)
+3. ScrollArea faz medições de layout (ResizeObserver)
+4. Medições disparam re-renders que disparam novas medições
 
-Adicionalmente, corrigiremos o erro **HTTP 406** no `push_subscriptions` para que retorne silenciosamente quando não houver assinatura registrada.
+## Arquivos que Precisam de Migração (Campanha)
+
+A auditoria completa revelou que os seguintes arquivos ainda usam `ScrollArea` e são carregados na página de campanha:
+
+### Prioridade Crítica (Carregados imediatamente)
+| Arquivo | Linha do Import | Uso |
+|---------|-----------------|-----|
+| `src/pages/CampaignView.tsx` | 12 | Import não utilizado (remover) |
+| `src/components/campaign/CampaignRitualFeed.tsx` | 10 | Lista de rituais (realtime) |
+| `src/components/campaign/chat/SessionActivityLog.tsx` | 21 | Log de atividades (realtime) |
+| `src/components/campaign/CharacterSelectDialog.tsx` | 5 | Dialog de seleção |
+| `src/components/campaign/CharacterConditions.tsx` | 3 | Lista de condições |
+
+### Prioridade Alta (Componentes de Combate)
+| Arquivo | Linha do Import | Uso |
+|---------|-----------------|-----|
+| `src/components/combat/TacticalPauseModal.tsx` | 30 | 4 instâncias de ScrollArea |
+| `src/components/combat/CombatBoardLinker.tsx` | 11 | Lista de combatentes |
+| `src/components/combat/HookExecutionLog.tsx` | 8 | Log de hooks |
+| `src/components/combat/RangeCalculator.tsx` | 14 | Lista de alvos |
+| `src/components/combat/CombatStatsPanel.tsx` | 11 | Estatísticas |
+| `src/components/combat/MacroBar.tsx` | 12 | Scroll horizontal |
+
+### Prioridade Média (Handouts e Mestre)
+| Arquivo | Linha do Import | Uso |
+|---------|-----------------|-----|
+| `src/components/campaign/handouts/PlayerHandoutsViewer.tsx` | 19 | Lista de handouts |
+| `src/components/campaign/master/HandoutsManager.tsx` | 26 | Gerenciador de handouts |
+| `src/components/campaign/master/MasterSheetViewer.tsx` | 16 | Mantido para popovers estáticos |
+
+### Já Migrados (Confirmados)
+- `WhisperDialog.tsx` - linha 9 tem comentário confirmando remoção
+- `NPCManager.tsx` - linha 16 tem comentário confirmando remoção
+- `SessionManager.tsx` - migrado anteriormente
+- `NotesPanel.tsx` - migrado anteriormente
+- `TacticalBoard.tsx` - migrado anteriormente
+
+## Correções Adicionais
+
+### Erro 406 no Listener Realtime
+O `CampaignView.tsx` ainda usa `.single()` nas linhas 352 e 360:
+
+```text
+Linha 352: .single() ao buscar profile
+Linha 360: .single() ao buscar character
+```
+
+Ambos devem ser substituídos por `.maybeSingle()` para evitar erros quando o perfil/personagem não existe.
 
 ---
 
-## Diagnóstico Completo
+## Plano de Implementação
 
-### Causa Raiz do #185
-O **Radix UI ScrollArea** faz medições de layout (`getBoundingClientRect`, `ResizeObserver`) para calcular a posição e tamanho da barra de rolagem customizada. No React 19, quando o conteúdo dentro do ScrollArea é atualizado rapidamente (mensagens em tempo real, presença de usuários, etc.), essas medições disparam re-renders que, por sua vez, disparam novas medições, criando um loop infinito.
+### Fase 1: Limpar CampaignView.tsx
+1. Remover import não utilizado de ScrollArea (linha 12)
+2. Substituir `.single()` por `.maybeSingle()` nas linhas 352 e 360
 
-### Componentes Afetados
-Os seguintes componentes ainda usam `ScrollArea` e são renderizados na página de campanha:
+### Fase 2: Migrar Componentes Críticos
+Para cada arquivo, aplicar o padrão:
 
-| Componente | Arquivo | Risco |
-|------------|---------|-------|
-| SessionManager | `src/components/campaign/SessionManager.tsx:11` | Alto (realtime) |
-| NotesPanel | `src/components/campaign/NotesPanel.tsx:11` | Médio |
-| SessionDiary | `src/components/campaign/diary/SessionDiary.tsx:11` | Médio |
-| CampaignTimeline | `src/components/campaign/diary/CampaignTimeline.tsx:15` | Médio |
-| NPCManager | `src/components/campaign/master/NPCManager.tsx:16` | Baixo |
-| MasterSheetViewer | `src/components/campaign/master/MasterSheetViewer.tsx:16` | Baixo |
-| TacticalBoard | `src/components/campaign/tactical/TacticalBoard.tsx:23` | Médio |
-| WhisperDialog | `src/components/campaign/chat/WhisperDialog.tsx:9` | Alto (realtime) |
-| MacrosPanel | `src/components/campaign/chat/MacrosPanel.tsx:14` | Baixo |
-| AudioMasterPanel | `src/components/campaign/audio/AudioMasterPanel.tsx:28` | Baixo |
-| SoundSceneManager | `src/components/campaign/audio/SoundSceneManager.tsx:15` | Baixo |
-
-### Padrão Já Aplicado com Sucesso
-O chat principal e a sidebar de jogadores já foram migrados para **overflow nativo**:
-- `CampaignView.tsx:927` - Chat usa `div` com `overflow-y-auto`
-- `PlayersSidebar.tsx:176` - Sidebar usa `div` com `overflow-y-auto`
-
----
-
-## Plano de Correção
-
-### Fase 1: Migrar Componentes de Alto Risco (Realtime)
-
-#### 1.1 SessionManager.tsx
-Substituir `ScrollArea` por container nativo:
-```text
-Linha 11: Remover import de ScrollArea
-Linhas onde usa ScrollArea: Substituir por <div className="overflow-y-auto">
-```
-
-#### 1.2 WhisperDialog.tsx
-Substituir `ScrollArea` na lista de sussurros:
-```text
-Linha 9: Remover import de ScrollArea
-Linhas onde usa ScrollArea: Substituir por <div className="overflow-y-auto max-h-[400px]">
-```
-
-#### 1.3 NotesPanel.tsx
-Substituir `ScrollArea` na lista de notas:
-```text
-Linha 11: Remover import de ScrollArea
-Linhas onde usa ScrollArea: Substituir por <div className="overflow-y-auto">
-```
-
-### Fase 2: Migrar Componentes de Médio Risco
-
-#### 2.1 SessionDiary.tsx
-```text
-Linha 11: Remover import de ScrollArea
-Linhas onde usa ScrollArea: Substituir por <div className="overflow-y-auto">
-```
-
-#### 2.2 CampaignTimeline.tsx
-```text
-Linha 15: Remover import de ScrollArea
-Linhas onde usa ScrollArea: Substituir por <div className="overflow-y-auto">
-```
-
-#### 2.3 TacticalBoard.tsx
-```text
-Linha 23: Remover import de ScrollArea
-Linhas onde usa ScrollArea: Substituir por <div className="overflow-y-auto">
-```
-
-### Fase 3: Migrar Componentes de Baixo Risco (Mestre)
-
-Os componentes usados apenas pelo mestre têm menor frequência de atualização, mas devem ser migrados para consistência:
-
-- NPCManager.tsx
-- MasterSheetViewer.tsx
-- MacrosPanel.tsx
-- AudioMasterPanel.tsx
-- SoundSceneManager.tsx
-
-### Fase 4: Corrigir Erro 406 do push_subscriptions
-
-#### 4.1 Usar `.maybeSingle()` em todas as queries de assinatura
-O hook `usePushNotifications.ts` já foi corrigido, mas verificar se há outros pontos do código que fazem queries em `push_subscriptions` com `.single()`.
-
-#### 4.2 Verificar hook `useWhispers.ts`
-O arquivo `src/hooks/campaign/useWhispers.ts:52-54` ainda usa `.single()` para buscar perfis, o que pode gerar 406 se um usuário for deletado:
-```text
-Linhas 52-54: Substituir .single() por .maybeSingle()
-```
-
----
-
-## Padrão de Código para Migração
-
-Para cada componente, o padrão de substituição é:
-
-```text
-ANTES:
+```tsx
+// ANTES
 import { ScrollArea } from '@/components/ui/scroll-area';
 ...
-<ScrollArea className="h-[400px]">
-  <div className="space-y-2">
-    {items.map(...)}
-  </div>
+<ScrollArea className="h-[300px]">
+  {children}
 </ScrollArea>
 
-DEPOIS:
+// DEPOIS
 // ScrollArea removido - usando overflow nativo para evitar bug #185 com React 19
 ...
-<div 
-  className="h-[400px] overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent"
->
-  <div className="space-y-2">
-    {items.map(...)}
-  </div>
+<div className="h-[300px] overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
+  {children}
 </div>
+```
+
+#### 2.1 CampaignRitualFeed.tsx
+- Remover import (linha 10)
+- Substituir uso do ScrollArea
+
+#### 2.2 SessionActivityLog.tsx
+- Remover import (linha 21)
+- Substituir uso do ScrollArea
+
+#### 2.3 CharacterSelectDialog.tsx
+- Remover import (linha 5)
+- Substituir uso do ScrollArea
+
+#### 2.4 CharacterConditions.tsx
+- Remover import (linha 3)
+- Substituir uso do ScrollArea
+
+### Fase 3: Migrar Componentes de Combate
+
+#### 3.1 TacticalPauseModal.tsx
+- Remover import (linha 30)
+- Substituir 4 instâncias de ScrollArea
+
+#### 3.2 CombatBoardLinker.tsx
+- Remover import (linha 11)
+- Substituir ScrollArea
+
+#### 3.3 HookExecutionLog.tsx
+- Remover import (linha 8)
+- Substituir ScrollArea
+
+#### 3.4 RangeCalculator.tsx
+- Remover import (linha 14)
+- Substituir ScrollArea
+
+#### 3.5 CombatStatsPanel.tsx
+- Remover import (linha 11)
+- Substituir ScrollArea
+
+#### 3.6 MacroBar.tsx (Scroll Horizontal)
+- Remover import de ScrollArea e ScrollBar (linha 12)
+- Substituir por div com `overflow-x-auto`
+
+### Fase 4: Migrar Componentes de Handouts
+
+#### 4.1 PlayerHandoutsViewer.tsx
+- Remover import (linha 19)
+- Substituir ScrollArea
+
+#### 4.2 HandoutsManager.tsx
+- Remover import (linha 26)
+- Substituir ScrollArea
+
+---
+
+## Classes CSS para Migração
+
+```css
+/* Scroll Vertical */
+overflow-y-auto           /* Habilita scroll vertical */
+overscroll-contain        /* Impede scroll chaining */
+scrollbar-thin            /* Scrollbar fina */
+scrollbar-thumb-border    /* Cor do thumb */
+scrollbar-track-transparent /* Track invisível */
+
+/* Scroll Horizontal (MacroBar) */
+overflow-x-auto           /* Habilita scroll horizontal */
 ```
 
 ---
 
 ## Arquivos a Serem Modificados
 
-| Arquivo | Tipo de Alteração |
-|---------|-------------------|
-| `src/components/campaign/SessionManager.tsx` | Remover ScrollArea, usar div nativo |
-| `src/components/campaign/NotesPanel.tsx` | Remover ScrollArea, usar div nativo |
-| `src/components/campaign/diary/SessionDiary.tsx` | Remover ScrollArea, usar div nativo |
-| `src/components/campaign/diary/CampaignTimeline.tsx` | Remover ScrollArea, usar div nativo |
-| `src/components/campaign/chat/WhisperDialog.tsx` | Remover ScrollArea, usar div nativo |
-| `src/components/campaign/tactical/TacticalBoard.tsx` | Remover ScrollArea, usar div nativo |
-| `src/components/campaign/master/NPCManager.tsx` | Remover ScrollArea, usar div nativo |
-| `src/components/campaign/master/MasterSheetViewer.tsx` | Remover ScrollArea, usar div nativo |
-| `src/components/campaign/chat/MacrosPanel.tsx` | Remover ScrollArea, usar div nativo |
-| `src/components/campaign/audio/AudioMasterPanel.tsx` | Remover ScrollArea, usar div nativo |
-| `src/components/campaign/audio/SoundSceneManager.tsx` | Remover ScrollArea, usar div nativo |
-| `src/hooks/campaign/useWhispers.ts` | Substituir .single() por .maybeSingle() |
+| # | Arquivo | Alteração |
+|---|---------|-----------|
+| 1 | `src/pages/CampaignView.tsx` | Remover import; .single() para .maybeSingle() |
+| 2 | `src/components/campaign/CampaignRitualFeed.tsx` | Substituir ScrollArea |
+| 3 | `src/components/campaign/chat/SessionActivityLog.tsx` | Substituir ScrollArea |
+| 4 | `src/components/campaign/CharacterSelectDialog.tsx` | Substituir ScrollArea |
+| 5 | `src/components/campaign/CharacterConditions.tsx` | Substituir ScrollArea |
+| 6 | `src/components/combat/TacticalPauseModal.tsx` | Substituir 4x ScrollArea |
+| 7 | `src/components/combat/CombatBoardLinker.tsx` | Substituir ScrollArea |
+| 8 | `src/components/combat/HookExecutionLog.tsx` | Substituir ScrollArea |
+| 9 | `src/components/combat/RangeCalculator.tsx` | Substituir ScrollArea |
+| 10 | `src/components/combat/CombatStatsPanel.tsx` | Substituir ScrollArea |
+| 11 | `src/components/combat/MacroBar.tsx` | Substituir ScrollArea horizontal |
+| 12 | `src/components/campaign/handouts/PlayerHandoutsViewer.tsx` | Substituir ScrollArea |
+| 13 | `src/components/campaign/master/HandoutsManager.tsx` | Substituir ScrollArea |
+
+**Total: 13 arquivos**
 
 ---
 
 ## Resultado Esperado
 
-1. **Erro #185 eliminado** - Sem loops de medição de layout
-2. **Erro 406 eliminado** - Queries retornam null em vez de erro
+1. **Erro #185 eliminado** - Sem loops de medição de layout do Radix
+2. **Erro 406 eliminado** - Queries com `.maybeSingle()` não quebram
 3. **Performance melhorada** - Menos overhead de ResizeObserver
-4. **Consistência** - Todos os componentes de campanha seguem o mesmo padrão
+4. **Estabilidade** - Campanha carrega e funciona sem crashar
 
 ---
 
-## Detalhes Técnicos
+## Notas Importantes
 
-### Por que overflow nativo funciona?
-O CSS `overflow-y: auto` usa a scrollbar nativa do navegador, que não precisa de medições JavaScript para calcular sua posição. Isso elimina a fonte do loop infinito.
+### Componentes Mantidos com ScrollArea
+Os seguintes componentes são de baixo risco (conteúdo estático, sem realtime) e podem manter o ScrollArea:
+- `MasterSheetViewer.tsx` - Apenas popovers com listas estáticas
+- Componentes de ficha de personagem (fora do fluxo da campanha)
+- Componentes admin/dev
 
-### Classes CSS utilizadas
-```text
-overflow-y-auto       → Habilita scroll vertical quando necessário
-overscroll-contain    → Impede scroll chaining (propagação para elementos pai)
-scrollbar-thin        → Tailwind: scrollbar fina (via plugin)
-scrollbar-thumb-border → Tailwind: cor do thumb da scrollbar
-scrollbar-track-transparent → Tailwind: track invisível
-```
-
-### Compatibilidade
-- Chrome/Edge: Suporte nativo
-- Firefox: Suporte via `scrollbar-width: thin`
-- Safari: Scrollbar nativa (sem customização)
-
----
-
-## Ordem de Implementação
-
-1. Componentes de alto risco (SessionManager, WhisperDialog, NotesPanel)
-2. Componentes de médio risco (SessionDiary, CampaignTimeline, TacticalBoard)
-3. Componentes de baixo risco (NPCManager, MasterSheetViewer, etc.)
-4. Hook useWhispers (correção do 406)
-
+### Por que não migrar tudo?
+Migrar todos os 50+ arquivos de uma vez seria arriscado e demorado. A estratégia é focar nos componentes da **campanha** que estão causando o crash. Os demais podem ser migrados incrementalmente se apresentarem problemas.
