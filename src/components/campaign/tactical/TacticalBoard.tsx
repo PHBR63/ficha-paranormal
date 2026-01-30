@@ -1035,11 +1035,10 @@ export function TacticalBoard({
         )}
       </div>
       
-      {/* Canvas Konva - Nova implementação */}
+      {/* Canvas Konva - Altura dinâmica baseada no viewport */}
       <div 
         ref={containerRef}
-        className="relative ordo-panel overflow-hidden"
-        style={{ height: '500px' }}
+        className="relative ordo-panel overflow-hidden h-[calc(100vh-280px)] min-h-[400px] max-h-[800px]"
       >
         <TacticalBoardKonva
           map={board.activeMap}

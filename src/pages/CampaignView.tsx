@@ -542,7 +542,7 @@ export default function CampaignView() {
             </div>
 
             {/* Aba Status - Responsivo: ocupa toda largura disponível */}
-            <TabsContent value="status" className="flex-1 p-4 sm:p-6 lg:p-8 m-0 overflow-auto">
+            <TabsContent value="status" className="flex-1 flex flex-col p-4 sm:p-6 lg:p-8 m-0 overflow-auto">
               <div className="w-full">
                 <div className="flex items-center justify-between mb-8">
                   <div className="flex items-center gap-3">
@@ -561,8 +561,8 @@ export default function CampaignView() {
               </div>
             </TabsContent>
 
-            {/* Aba Chat - Usa componente stateless */}
-            <TabsContent value="chat" className="flex-1 flex flex-col m-0 min-h-0">
+            {/* Aba Chat - Usa componente stateless, overflow-hidden força scroll interno */}
+            <TabsContent value="chat" className="flex-1 flex flex-col m-0 min-h-0 overflow-hidden">
               <CampaignChatTab
                 campaignId={campaignId}
                 messages={realtime.messages}
@@ -574,8 +574,8 @@ export default function CampaignView() {
               />
             </TabsContent>
 
-            {/* Aba Combate */}
-            <TabsContent value="combat" className="flex-1 p-6 sm:p-8 m-0 overflow-auto">
+            {/* Aba Combate - flex flex-col para preencher altura */}
+            <TabsContent value="combat" className="flex-1 flex flex-col p-6 sm:p-8 m-0 overflow-auto">
               <CampaignCombatTab
                 campaignId={campaignId}
                 isMaster={campaignData.isMaster}
@@ -585,8 +585,8 @@ export default function CampaignView() {
               />
             </TabsContent>
 
-            {/* Aba Tabuleiro */}
-            <TabsContent value="tactical" className="flex-1 p-4 sm:p-6 m-0 overflow-auto">
+            {/* Aba Tabuleiro - flex flex-col para altura dinâmica */}
+            <TabsContent value="tactical" className="flex-1 flex flex-col p-4 sm:p-6 m-0 overflow-hidden">
               <CampaignBoardTab
                 campaignId={campaignId}
                 isMaster={campaignData.isMaster}
@@ -596,7 +596,7 @@ export default function CampaignView() {
             </TabsContent>
 
             {/* Aba Condições - Responsivo: expande em telas grandes */}
-            <TabsContent value="conditions" className="flex-1 p-4 sm:p-6 lg:p-8 m-0 overflow-auto">
+            <TabsContent value="conditions" className="flex-1 flex flex-col p-4 sm:p-6 lg:p-8 m-0 overflow-auto">
               <div className="max-w-4xl lg:max-w-6xl xl:max-w-full mx-auto">
                 <div className="flex items-center gap-3 mb-8">
                   <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center">
@@ -618,7 +618,7 @@ export default function CampaignView() {
             </TabsContent>
 
             {/* Aba Notas - Responsivo: expande totalmente */}
-            <TabsContent value="notes" className="flex-1 p-4 sm:p-6 lg:p-8 m-0 overflow-auto">
+            <TabsContent value="notes" className="flex-1 flex flex-col p-4 sm:p-6 lg:p-8 m-0 overflow-auto">
               <div className="w-full">
                 <div className="ordo-panel p-4 sm:p-6 lg:p-8 h-full">
                   <NotesPanel campaignId={campaignId} isMaster={campaignData.isMaster} />
@@ -627,7 +627,7 @@ export default function CampaignView() {
             </TabsContent>
 
             {/* Aba Handouts - Responsivo: expande em telas grandes */}
-            <TabsContent value="handouts" className="flex-1 p-4 sm:p-6 lg:p-8 m-0 overflow-auto">
+            <TabsContent value="handouts" className="flex-1 flex flex-col p-4 sm:p-6 lg:p-8 m-0 overflow-auto">
               <div className="max-w-5xl lg:max-w-6xl xl:max-w-full mx-auto">
                 <div className="flex items-center gap-3 mb-8">
                   <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center">
@@ -645,7 +645,7 @@ export default function CampaignView() {
             </TabsContent>
 
             {/* Aba Sessões - Responsivo: expande em telas grandes */}
-            <TabsContent value="sessions" className="flex-1 p-4 sm:p-6 lg:p-8 m-0 overflow-auto">
+            <TabsContent value="sessions" className="flex-1 flex flex-col p-4 sm:p-6 lg:p-8 m-0 overflow-auto">
               <div className="max-w-4xl lg:max-w-5xl xl:max-w-full mx-auto">
                 <SessionManager
                   campaignId={campaignId}
@@ -658,7 +658,7 @@ export default function CampaignView() {
             </TabsContent>
 
             {/* Aba Diário - Responsivo: expande em telas grandes */}
-            <TabsContent value="diary" className="flex-1 p-4 sm:p-6 lg:p-8 m-0 overflow-auto">
+            <TabsContent value="diary" className="flex-1 flex flex-col p-4 sm:p-6 lg:p-8 m-0 overflow-auto">
               <div className="max-w-5xl lg:max-w-6xl xl:max-w-full mx-auto">
                 <Tabs defaultValue="diary" className="space-y-4">
                   <TabsList className="bg-card border border-border">
@@ -690,9 +690,9 @@ export default function CampaignView() {
               </div>
             </TabsContent>
 
-            {/* Aba Mestre */}
+            {/* Aba Mestre - flex flex-col para layout interno */}
             {campaignData.isMaster && (
-              <TabsContent value="master" className="flex-1 p-4 m-0 overflow-auto">
+              <TabsContent value="master" className="flex-1 flex flex-col p-4 m-0 overflow-auto">
                 <CampaignMasterTab
                   campaignId={campaignId}
                   campaign={campaign}
