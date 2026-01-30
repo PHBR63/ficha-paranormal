@@ -346,8 +346,8 @@ export function SessionManager({
         </div>
       )}
 
-      {/* Lista de sessões - usando overflow nativo para evitar bug #185 */}
-      <div className="h-[400px] overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
+      {/* Lista de sessões - usando overflow nativo e altura dinâmica para evitar bug #185 */}
+      <div className="h-[calc(100vh-350px)] min-h-[250px] max-h-[500px] overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
         <div className="space-y-3">
           {sessions.filter(s => s.status !== 'active').map((session) => (
             <SessionCard

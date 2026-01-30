@@ -359,9 +359,9 @@ export function SessionDiary({ campaignId, campaignName = 'Campanha', isMaster }
           </TabsTrigger>
         </TabsList>
 
-        {/* Timeline View - usando overflow nativo para evitar bug #185 */}
+        {/* Timeline View - usando overflow nativo e altura dinâmica para evitar bug #185 */}
         <TabsContent value="timeline" className="mt-4">
-          <div className="h-[500px] overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent pr-4">
+          <div className="h-[calc(100vh-400px)] min-h-[300px] max-h-[700px] overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent pr-4">
             <div className="relative">
               {/* Linha do tempo vertical */}
               <div className="absolute left-[31px] top-6 bottom-6 w-0.5 bg-border" />
@@ -394,9 +394,9 @@ export function SessionDiary({ campaignId, campaignName = 'Campanha', isMaster }
           </div>
         </TabsContent>
 
-        {/* List View - Simplificada - usando overflow nativo para evitar bug #185 */}
+        {/* List View - Simplificada - usando overflow nativo e altura dinâmica para evitar bug #185 */}
         <TabsContent value="list" className="mt-4">
-          <div className="h-[500px] overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
+          <div className="h-[calc(100vh-400px)] min-h-[300px] max-h-[700px] overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
             <div className="space-y-2">
               {filteredSessions.map((session) => (
                 <div
