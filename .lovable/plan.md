@@ -1,322 +1,312 @@
 
+# Plano: Correção de Responsividade e Espaços em Branco na CampaignView
 
-# Plano Atualizado: Correção #185 + Erros 406 + Acessibilidade de Formulários
+## Diagnóstico Confirmado
 
-## Visão Geral
+Analisando a screenshot e o código, identifiquei os seguintes problemas de responsividade:
 
-Este plano corrige três categorias de problemas:
-1. **React Error #185** - Loop infinito causado por Radix Tooltips
-2. **Erros 406** - Queries Supabase com `.single()` sem resultados
-3. **Acessibilidade** - Inputs sem id/name e labels não associadas
+```text
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                         LAYOUT ATUAL                                          │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                               │
+│  ┌─────────────────────────────────────┐  ┌────────────────┐                  │
+│  │                                     │  │                │                  │
+│  │       ESPAÇO EM BRANCO              │  │   SIDEBAR      │                  │
+│  │       (max-w-* + mx-auto)           │  │   w-80/w-96    │                  │
+│  │                                     │  │                │                  │
+│  │   ┌───────────────────────┐         │  │  (fixa, não    │                  │
+│  │   │                       │         │  │   redimensiona)│                  │
+│  │   │   CONTEÚDO LIMITADO   │         │  │                │                  │
+│  │   │   (ex: max-w-5xl)     │         │  │                │                  │
+│  │   │                       │         │  │                │                  │
+│  │   └───────────────────────┘         │  └────────────────┘                  │
+│  │                                     │                                      │
+│  │       ESPAÇO EM BRANCO              │  <-- hidden lg:flex                  │
+│  │                                     │      (invisível em mobile)           │
+│  └─────────────────────────────────────┘                                      │
+│                                                                               │
+└──────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Problemas Identificados
+
+| Problema | Arquivo | Linhas | Impacto |
+|----------|---------|--------|---------|
+| `max-w-6xl mx-auto` na aba Status | `CampaignView.tsx` | 545 | ~600px de espaço vazio em telas 1920px |
+| `max-w-3xl mx-auto` na aba Condições | `CampaignView.tsx` | 599 | ~800px de espaço vazio |
+| `max-w-4xl mx-auto` na aba Notas | `CampaignView.tsx` | 621 | ~700px de espaço vazio |
+| `max-w-5xl mx-auto` na aba Diário | `CampaignView.tsx` | 661 | ~500px de espaço vazio |
+| `max-w-4xl mx-auto` na aba Sessões | `CampaignView.tsx` | 648 | ~700px de espaço vazio |
+| `max-w-5xl mx-auto` na aba Handouts | `CampaignView.tsx` | 630 | ~500px de espaço vazio |
+| `max-w-4xl mx-auto` no Chat | `CampaignChatTab.tsx` | 160, 175 | ~700px de espaço vazio |
+| `max-w-7xl mx-auto` no Combate | `CampaignCombatTab.tsx` | 33 | ~300px de espaço vazio |
+| `h-[400px]` e `h-[500px]` fixos | Vários | - | Não preenche altura disponível |
+| Sidebar `hidden lg:flex` | `PlayersSidebar.tsx` | 138 | Invisível abaixo de 1024px |
 
 ---
 
-## FASE 1: Eliminar Loop #185 (CRÍTICO)
+## Solução Proposta
 
-### 1.1 Remover Radix Tooltips em CharacterConditions.tsx
+### Fase 1: Responsividade das Abas (Crítico)
 
-O componente ainda usa `TooltipProvider > Tooltip > TooltipTrigger` nas linhas 57-88 e 171-211, causando o loop.
+Substituir os contêineres com largura máxima estática por layouts flexíveis que ocupam todo o espaço disponível:
 
-**Modificação:**
+#### 1.1 CampaignView.tsx - Remover Limitações de Largura
 
-```typescript
-// ANTES (linha 57-88 - modo compact):
-if (compact) {
-  return (
-    <TooltipProvider>
-      <div className="flex flex-wrap gap-1">
-        {activeConditions.map((condition) => (
-          <Tooltip key={condition.id}>
-            <TooltipTrigger asChild>
-              <Badge>...</Badge>
-            </TooltipTrigger>
-            <TooltipContent>...</TooltipContent>
-          </Tooltip>
-        ))}
-      </div>
-    </TooltipProvider>
-  );
+**Antes:**
+```tsx
+<TabsContent value="status" className="flex-1 p-6 sm:p-8 m-0 overflow-auto">
+  <div className="max-w-6xl mx-auto">
+    ...
+  </div>
+</TabsContent>
+```
+
+**Depois:**
+```tsx
+<TabsContent value="status" className="flex-1 p-4 sm:p-6 lg:p-8 m-0 overflow-auto">
+  <div className="w-full">
+    ...
+  </div>
+</TabsContent>
+```
+
+Alterações específicas por aba:
+
+| Aba | Alteração |
+|-----|-----------|
+| Status | `max-w-6xl mx-auto` → `w-full` |
+| Condições | `max-w-3xl mx-auto` → `max-w-4xl lg:max-w-6xl xl:max-w-full mx-auto` |
+| Notas | `max-w-4xl mx-auto` → `w-full` |
+| Sessões | `max-w-4xl mx-auto` → `max-w-5xl lg:max-w-6xl xl:max-w-full mx-auto` |
+| Diário | `max-w-5xl mx-auto` → `max-w-6xl lg:max-w-7xl xl:max-w-full mx-auto` |
+| Handouts | `max-w-5xl mx-auto` → `max-w-6xl lg:max-w-full mx-auto` |
+
+#### 1.2 CampaignChatTab.tsx - Expandir Mensagens
+
+**Antes:**
+```tsx
+<div className="space-y-4 max-w-4xl mx-auto">
+```
+
+**Depois:**
+```tsx
+<div className="space-y-4 max-w-4xl lg:max-w-5xl xl:max-w-6xl mx-auto">
+```
+
+#### 1.3 CampaignCombatTab.tsx - Usar Largura Total
+
+**Antes:**
+```tsx
+<div className="space-y-8 max-w-7xl mx-auto">
+```
+
+**Depois:**
+```tsx
+<div className="space-y-8 w-full">
+```
+
+---
+
+### Fase 2: Sidebar Responsiva com Toggle (Média)
+
+Criar um sistema onde a sidebar pode ser colapsada/expandida e visível em mobile via botão:
+
+#### 2.1 PlayersSidebar.tsx - Adicionar Toggle
+
+**Modificações:**
+- Adicionar prop `isCollapsed` e `onToggle`
+- Criar modo compacto para largura reduzida (w-16)
+- Exibir apenas avatares no modo compacto
+- Adicionar botão flutuante para mobile
+
+```tsx
+interface PlayersSidebarProps {
+  // ... props existentes
+  isCollapsed?: boolean;
+  onToggle?: () => void;
 }
 
-// DEPOIS - Usar atributo title nativo:
-if (compact) {
-  return (
-    <div className="flex flex-wrap gap-1">
-      {activeConditions.length === 0 ? (
-        <span className="text-xs text-muted-foreground">Sem condições</span>
-      ) : (
-        activeConditions.map((condition) => (
-          <Badge
-            key={condition.id}
-            variant="outline"
-            title={`${condition.name}: ${condition.effect}`}
-            className={cn(...)}
-          >
-            {condition.icon} {condition.name}
-          </Badge>
-        ))
-      )}
-    </div>
-  );
-}
+// Modo compacto
+<aside className={cn(
+  'border-l border-border bg-gradient-to-b from-card/50 to-card/30 backdrop-blur-sm flex flex-col transition-all duration-300',
+  isCollapsed ? 'w-16' : 'w-80 xl:w-96',
+  'hidden md:flex' // Visível a partir de md (768px)
+)}>
 ```
 
-```typescript
-// ANTES (linhas 171-211 - modo normal):
-<TooltipProvider>
-  {activeConditions.map((condition) => (
-    <Tooltip key={condition.id}>
-      <TooltipTrigger asChild>
-        <div>...</div>
-      </TooltipTrigger>
-      <TooltipContent>...</TooltipContent>
-    </Tooltip>
-  ))}
-</TooltipProvider>
+#### 2.2 CampaignView.tsx - Adicionar Estado de Collapse
 
-// DEPOIS:
-{activeConditions.map((condition) => {
-  const tooltipText = [
-    condition.name,
-    condition.effect,
-    condition.removal ? `Remoção: ${condition.removal}` : null,
-  ].filter(Boolean).join(' | ');
+```tsx
+const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  return (
-    <div
-      key={condition.id}
-      title={tooltipText}
-      className={cn(...)}
-    >
-      {/* ... conteúdo do badge ... */}
-    </div>
-  );
-})}
-```
+// Na sidebar
+<PlayersSidebar
+  // ... outras props
+  isCollapsed={sidebarCollapsed}
+  onToggle={() => setSidebarCollapsed(prev => !prev)}
+/>
 
-**Remover imports não utilizados:**
-```typescript
-// REMOVER do topo:
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
-```
-
-### 1.2 Modificar forceMount em tabs.tsx
-
-Atualmente, `forceMount={true}` força a renderização de TODAS as abas, incluindo componentes com Tooltips problemáticos.
-
-```typescript
-// ANTES (linha 47):
-forceMount={unmountOnHide ? undefined : true}
-
-// DEPOIS - Comportamento lazy por padrão:
-forceMount={unmountOnHide === false ? true : undefined}
-// Ou seja: só força montagem se explicitamente unmountOnHide=false
-```
-
-**Alternativa menos invasiva:** Adicionar `unmountOnHide={true}` nas abas pesadas em `CampaignView.tsx`.
-
----
-
-## FASE 2: Corrigir Erros 406 (ALTA)
-
-### 2.1 useCampaignData.ts
-
-```typescript
-// ANTES (linha ~105):
-const { data, error } = await supabase
-  .from('campaigns_v2')
-  .select('*')
-  .eq('id', campaignId)
-  .single();
-
-// DEPOIS:
-const { data, error } = await supabase
-  .from('campaigns_v2')
-  .select('*')
-  .eq('id', campaignId)
-  .limit(1);
-
-const campaignData = data?.[0];
-```
-
-### 2.2 useCampaignRealtime.ts
-
-```typescript
-// ANTES:
-const [profileRes, charRes] = await Promise.all([
-  supabase.from('profiles').select('display_name').eq('user_id', newMsg.user_id).maybeSingle(),
-  ...
-]);
-
-// DEPOIS:
-const [profileRes, charRes] = await Promise.all([
-  supabase.from('profiles').select('display_name').eq('user_id', newMsg.user_id).limit(1),
-  newMsg.character_id
-    ? supabase.from('characters').select('name').eq('id', newMsg.character_id).limit(1)
-    : Promise.resolve({ data: [] }),
-]);
-
-const profile = profileRes.data?.[0] || { display_name: null };
-```
-
-### 2.3 CampaignView.tsx (insert de convite)
-
-```typescript
-// ANTES:
-const { data, error } = await supabase
-  .from('campaign_invites')
-  .insert({...})
-  .select()
-  .single();
-
-// DEPOIS:
-const { data, error } = await supabase
-  .from('campaign_invites')
-  .insert({...})
-  .select()
-  .limit(1);
-
-const inviteData = data?.[0];
-if (inviteData) setInvite(inviteData);
+// Botão flutuante para mobile (abaixo de md)
+{!sidebarCollapsed && (
+  <div className="fixed bottom-4 right-4 md:hidden z-50">
+    <Button onClick={() => setSidebarCollapsed(false)}>
+      <Users className="w-4 h-4" />
+    </Button>
+  </div>
+)}
 ```
 
 ---
 
-## FASE 3: Acessibilidade de Formulários (MÉDIA)
+### Fase 3: Alturas Dinâmicas (Alta)
 
-Corrigir os 7 inputs sem id/name e 1 label não associada identificados no DevTools.
+Substituir alturas fixas por cálculos baseados no viewport:
 
-### 3.1 NoteEditor.tsx (3 campos)
+#### 3.1 SessionDiary.tsx
 
-```typescript
-// ANTES (linhas 156-171):
-<Input
-  value={title}
-  onChange={...}
-  placeholder="Título da nota"
-/>
-<Textarea
-  value={content}
-  onChange={...}
-  placeholder="Escreva suas anotações..."
-/>
-
-// DEPOIS:
-<div className="space-y-1">
-  <Label htmlFor="note-title" className="sr-only">Título</Label>
-  <Input
-    id="note-title"
-    name="note-title"
-    value={title}
-    onChange={...}
-    placeholder="Título da nota"
-  />
-</div>
-<div className="space-y-1">
-  <Label htmlFor="note-content" className="sr-only">Conteúdo</Label>
-  <Textarea
-    id="note-content"
-    name="note-content"
-    value={content}
-    onChange={...}
-    placeholder="Escreva suas anotações..."
-  />
-</div>
+**Antes:**
+```tsx
+<div className="h-[500px] overflow-y-auto ...">
 ```
 
-### 3.2 IntellectSkillSelectModal.tsx (1 campo)
-
-```typescript
-// ANTES (linhas 122-126):
-<Checkbox 
-  checked={isSelected}
-  onCheckedChange={() => handleToggleSkill(skill.id)}
-/>
-
-// DEPOIS - Adicionar id único via skill.id:
-<Checkbox 
-  id={`skill-${skill.id}`}
-  checked={isSelected}
-  onCheckedChange={() => handleToggleSkill(skill.id)}
-  aria-label={`Selecionar ${skill.name}`}
-/>
+**Depois:**
+```tsx
+<div className="h-[calc(100vh-400px)] min-h-[300px] max-h-[600px] overflow-y-auto ...">
 ```
 
-### 3.3 VersatilitySection.tsx (2 campos)
+#### 3.2 SessionManager.tsx
 
-Usar `useId()` para gerar IDs únicos em vez de strings estáticas:
-
-```typescript
-// ANTES:
-<RadioGroupItem value="class_power" id="class_power" />
-<Label htmlFor="class_power">
-
-// DEPOIS:
-const classPowerId = useId();
-const trackAbilityId = useId();
-
-<RadioGroupItem value="class_power" id={classPowerId} />
-<Label htmlFor={classPowerId}>
+**Antes:**
+```tsx
+<div className="h-[400px] overflow-y-auto ...">
 ```
 
-### 3.4 SUEDebugPanel.tsx (1 campo)
+**Depois:**
+```tsx
+<div className="h-[calc(100vh-350px)] min-h-[250px] max-h-[500px] overflow-y-auto ...">
+```
 
-```typescript
-// ANTES:
-<Switch id="show-inactive" ... />
-<label htmlFor="show-inactive">
+#### 3.3 NotesPanel.tsx
 
-// DEPOIS - useId para evitar colisões:
-const showInactiveId = useId();
+**Antes:**
+```tsx
+<div className="h-[400px] overflow-y-auto ...">
+```
 
-<Switch id={showInactiveId} ... />
-<label htmlFor={showInactiveId}>
+**Depois:**
+```tsx
+<div className="flex-1 min-h-[200px] overflow-y-auto ...">
+```
+
+---
+
+### Fase 4: Grid Responsivo do CampaignStatusGrid (Média)
+
+Melhorar o grid para usar mais espaço:
+
+**Antes:**
+```tsx
+<div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+```
+
+**Depois:**
+```tsx
+<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+```
+
+---
+
+### Fase 5: MasterTab com Grid Expandido (Baixa)
+
+O `CampaignMasterTab` pode ter um layout mais eficiente:
+
+**Antes:**
+```tsx
+<div className="grid md:grid-cols-2 gap-4">
+```
+
+**Depois:**
+```tsx
+<div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
 ```
 
 ---
 
 ## Ordem de Execução
 
-| Fase | Prioridade | Arquivo | Alteração |
-|------|------------|---------|-----------|
-| 1.1 | **CRÍTICA** | `CharacterConditions.tsx` | Remover Radix Tooltip → usar `title` |
-| 1.2 | **CRÍTICA** | `tabs.tsx` | Ajustar `forceMount` para lazy por padrão |
-| 2.1 | Alta | `useCampaignData.ts` | `.single()` → `.limit(1)` |
-| 2.2 | Alta | `useCampaignRealtime.ts` | `.maybeSingle()` → `.limit(1)` |
-| 2.3 | Alta | `CampaignView.tsx` | `.single()` → `.limit(1)` |
-| 3.1 | Média | `NoteEditor.tsx` | Adicionar id/name + labels |
-| 3.2 | Média | `IntellectSkillSelectModal.tsx` | Adicionar id ao Checkbox |
-| 3.3 | Média | `VersatilitySection.tsx` | useId() em RadioGroup |
-| 3.4 | Baixa | `SUEDebugPanel.tsx` | useId() no Switch |
+| Fase | Prioridade | Arquivos | Descrição |
+|------|------------|----------|-----------|
+| 1.1 | **Crítica** | `CampaignView.tsx` | Expandir larguras das abas |
+| 1.2 | **Crítica** | `CampaignChatTab.tsx` | Expandir área de mensagens |
+| 1.3 | **Crítica** | `CampaignCombatTab.tsx` | Usar largura total |
+| 2.1 | Alta | `PlayersSidebar.tsx` | Adicionar modo collapse |
+| 2.2 | Alta | `CampaignView.tsx` | Estado de sidebar |
+| 3.1 | Média | `SessionDiary.tsx` | Alturas dinâmicas |
+| 3.2 | Média | `SessionManager.tsx` | Alturas dinâmicas |
+| 3.3 | Média | `NotesPanel.tsx` | Alturas dinâmicas |
+| 4 | Média | `CampaignStatusGrid.tsx` | Grid mais colunas |
+| 5 | Baixa | `CampaignMasterTab.tsx` | Grid expandido |
 
 ---
 
 ## Resultado Esperado
 
-- **Error #185**: Eliminado - Tooltips não disparam mais loop de `setRef`
-- **Error 406**: Eliminado - Queries retornam array vazio (HTTP 200)
-- **DevTools Warnings**: Eliminados - 7 inputs com id/name, 1 label associada
-- **Acessibilidade**: Melhorada - Navegação por teclado e leitores de tela
+```text
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                         LAYOUT CORRIGIDO                                      │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                               │
+│  ┌────────────────────────────────────────────────────┐  ┌─────────────────┐  │
+│  │                                                    │  │    SIDEBAR      │  │
+│  │           CONTEÚDO EXPANDIDO                       │  │    COLAPSÁVEL   │  │
+│  │           (ocupa todo o espaço)                    │  │                 │  │
+│  │                                                    │◄─┤  [=] toggle     │  │
+│  │   ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐         │  │                 │  │
+│  │   │Card │ │Card │ │Card │ │Card │ │Card │         │  │ Modo compacto   │  │
+│  │   └─────┘ └─────┘ └─────┘ └─────┘ └─────┘         │  │ em telas médias │  │
+│  │                                                    │  │                 │  │
+│  │   Grid responsivo: 1→2→3→4→5 colunas              │  │ Drawer mobile   │  │
+│  │                                                    │  │ em telas < md   │  │
+│  └────────────────────────────────────────────────────┘  └─────────────────┘  │
+│                                                                               │
+└──────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Benefícios
+
+- **Espaços em branco eliminados**: Conteúdo ocupa toda largura disponível
+- **Melhor uso de telas grandes**: 4K e ultrawide mostram mais dados simultaneamente
+- **Mobile melhorado**: Sidebar acessível via drawer
+- **Flexibilidade para o mestre**: Pode colapsar sidebar para ter mais espaço
 
 ---
 
-## Notas Técnicas
+## Detalhes Técnicos
 
-### Por que usar `title` em vez de Radix Tooltip em listas?
+### Classes Tailwind Responsivas Usadas
 
-O Radix `TooltipTrigger` usa um sistema de ref forwarding que chama `setRef()` internamente. Quando múltiplos triggers são montados em sequência (como em um `.map()` dentro de `AnimatePresence`), cada chamada a `setRef()` pode disparar um re-render do componente pai, criando o ciclo infinito.
+| Breakpoint | Largura | Uso |
+|------------|---------|-----|
+| `sm` | 640px | Mobile landscape |
+| `md` | 768px | Tablets, sidebar visível |
+| `lg` | 1024px | Laptops, grid expandido |
+| `xl` | 1280px | Desktops |
+| `2xl` | 1536px | Monitores grandes, 5 colunas |
 
-O atributo `title` nativo do HTML é processado pelo navegador sem interferir no ciclo de renderização do React.
+### Notas de Implementação
 
-### Conformidade com Regras do Projeto
+1. As alterações são **retrocompatíveis** - não quebram layouts existentes
+2. Uso de `min-h` e `max-h` garante que conteúdo não quebre em telas extremas
+3. Transições `transition-all duration-300` mantêm experiência suave
+4. Sidebar com toggle usa estado local, sem impacto em hooks globais
 
-- Segue memória `architecture/restricao-tooltip-radix-listas-dinamicas`
-- Segue memória `development/padrao-supressao-erro-406-postgrest`
+---
+
+## Conformidade com Regras do Projeto
+
 - Todos os comentários em PT-BR
+- Segue padrão de memória para lazy loading de tabs
 - Não modifica mecânicas de Ordem Paranormal RPG
-
+- Usa componentes UI existentes (Button, cn, etc.)
