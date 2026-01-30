@@ -542,8 +542,8 @@ export default function CampaignView() {
             </div>
 
             {/* Aba Status - Responsivo: ocupa toda largura disponível */}
-            <TabsContent value="status" className="flex-1 flex flex-col p-4 sm:p-6 lg:p-8 m-0 overflow-auto">
-              <div className="w-full">
+            <TabsContent value="status" className="flex-1 flex flex-col min-h-0 p-4 sm:p-6 lg:p-8 m-0 overflow-auto">
+              <div className="flex-1 flex flex-col min-h-0 w-full">
                 <div className="flex items-center justify-between mb-8">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center">
@@ -574,8 +574,8 @@ export default function CampaignView() {
               />
             </TabsContent>
 
-            {/* Aba Combate - flex flex-col para preencher altura */}
-            <TabsContent value="combat" className="flex-1 flex flex-col p-6 sm:p-8 m-0 overflow-auto">
+            {/* Aba Combate - flex flex-col min-h-0 overflow-hidden para scroll interno */}
+            <TabsContent value="combat" className="flex-1 flex flex-col min-h-0 p-6 sm:p-8 m-0 overflow-hidden">
               <CampaignCombatTab
                 campaignId={campaignId}
                 isMaster={campaignData.isMaster}
@@ -596,8 +596,8 @@ export default function CampaignView() {
             </TabsContent>
 
             {/* Aba Condições - Responsivo: expande em telas grandes */}
-            <TabsContent value="conditions" className="flex-1 flex flex-col p-4 sm:p-6 lg:p-8 m-0 overflow-auto">
-              <div className="max-w-4xl lg:max-w-6xl xl:max-w-full mx-auto">
+            <TabsContent value="conditions" className="flex-1 flex flex-col min-h-0 p-4 sm:p-6 lg:p-8 m-0 overflow-hidden">
+              <div className="flex-1 flex flex-col min-h-0 max-w-4xl lg:max-w-6xl xl:max-w-full mx-auto overflow-y-auto">
                 <div className="flex items-center gap-3 mb-8">
                   <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center">
                     <Activity className="w-5 h-5 text-primary" />
@@ -618,17 +618,17 @@ export default function CampaignView() {
             </TabsContent>
 
             {/* Aba Notas - Responsivo: expande totalmente */}
-            <TabsContent value="notes" className="flex-1 flex flex-col p-4 sm:p-6 lg:p-8 m-0 overflow-auto">
-              <div className="w-full">
-                <div className="ordo-panel p-4 sm:p-6 lg:p-8 h-full">
+            <TabsContent value="notes" className="flex-1 flex flex-col min-h-0 p-4 sm:p-6 lg:p-8 m-0 overflow-hidden">
+              <div className="flex-1 flex flex-col min-h-0 w-full">
+                <div className="ordo-panel p-4 sm:p-6 lg:p-8 flex-1 flex flex-col min-h-0">
                   <NotesPanel campaignId={campaignId} isMaster={campaignData.isMaster} />
                 </div>
               </div>
             </TabsContent>
 
             {/* Aba Handouts - Responsivo: expande em telas grandes */}
-            <TabsContent value="handouts" className="flex-1 flex flex-col p-4 sm:p-6 lg:p-8 m-0 overflow-auto">
-              <div className="max-w-5xl lg:max-w-6xl xl:max-w-full mx-auto">
+            <TabsContent value="handouts" className="flex-1 flex flex-col min-h-0 p-4 sm:p-6 lg:p-8 m-0 overflow-hidden">
+              <div className="flex-1 flex flex-col min-h-0 max-w-5xl lg:max-w-6xl xl:max-w-full mx-auto overflow-y-auto">
                 <div className="flex items-center gap-3 mb-8">
                   <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center">
                     <FileText className="w-5 h-5 text-primary" />
@@ -645,8 +645,8 @@ export default function CampaignView() {
             </TabsContent>
 
             {/* Aba Sessões - Responsivo: expande em telas grandes */}
-            <TabsContent value="sessions" className="flex-1 flex flex-col p-4 sm:p-6 lg:p-8 m-0 overflow-auto">
-              <div className="max-w-4xl lg:max-w-5xl xl:max-w-full mx-auto">
+            <TabsContent value="sessions" className="flex-1 flex flex-col min-h-0 p-4 sm:p-6 lg:p-8 m-0 overflow-hidden">
+              <div className="flex-1 flex flex-col min-h-0 max-w-4xl lg:max-w-5xl xl:max-w-full mx-auto">
                 <SessionManager
                   campaignId={campaignId}
                   campaignName={campaign?.name}
@@ -658,9 +658,9 @@ export default function CampaignView() {
             </TabsContent>
 
             {/* Aba Diário - Responsivo: expande em telas grandes */}
-            <TabsContent value="diary" className="flex-1 flex flex-col p-4 sm:p-6 lg:p-8 m-0 overflow-auto">
-              <div className="max-w-5xl lg:max-w-6xl xl:max-w-full mx-auto">
-                <Tabs defaultValue="diary" className="space-y-4">
+            <TabsContent value="diary" className="flex-1 flex flex-col min-h-0 p-4 sm:p-6 lg:p-8 m-0 overflow-hidden">
+              <div className="flex-1 flex flex-col min-h-0 max-w-5xl lg:max-w-6xl xl:max-w-full mx-auto">
+                <Tabs defaultValue="diary" className="flex-1 flex flex-col min-h-0 space-y-4">
                   <TabsList className="bg-card border border-border">
                     <TabsTrigger value="diary" className="font-display text-xs">
                       <BookOpen className="w-4 h-4 mr-1.5" />
@@ -672,7 +672,7 @@ export default function CampaignView() {
                     </TabsTrigger>
                   </TabsList>
 
-                  <TabsContent value="diary" className="mt-4">
+                  <TabsContent value="diary" className="flex-1 flex flex-col min-h-0 mt-4">
                     <SessionDiary
                       campaignId={campaignId}
                       campaignName={campaign?.name}
@@ -680,7 +680,7 @@ export default function CampaignView() {
                     />
                   </TabsContent>
 
-                  <TabsContent value="timeline" className="mt-4">
+                  <TabsContent value="timeline" className="flex-1 flex flex-col min-h-0 mt-4">
                     <CampaignTimeline
                       campaignId={campaignId}
                       isMaster={campaignData.isMaster}
@@ -692,7 +692,7 @@ export default function CampaignView() {
 
             {/* Aba Mestre - flex flex-col para layout interno */}
             {campaignData.isMaster && (
-              <TabsContent value="master" className="flex-1 flex flex-col p-4 m-0 overflow-auto">
+              <TabsContent value="master" className="flex-1 flex flex-col min-h-0 p-4 m-0 overflow-hidden">
                 <CampaignMasterTab
                   campaignId={campaignId}
                   campaign={campaign}

@@ -30,7 +30,7 @@ export function CampaignCombatTab({
   movementPerRound = 9,
 }: CampaignCombatTabProps) {
   return (
-    <div className="space-y-8 w-full">
+    <div className="flex-1 flex flex-col min-h-0 gap-8 w-full overflow-y-auto">
       {/* CombatTracker principal */}
       <CombatTracker
         campaignId={campaignId}

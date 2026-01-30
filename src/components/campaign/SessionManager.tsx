@@ -307,7 +307,7 @@ export function SessionManager({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="flex-1 flex flex-col min-h-0 gap-6">
       {/* Header com ações */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -346,8 +346,8 @@ export function SessionManager({
         </div>
       )}
 
-      {/* Lista de sessões - usando overflow nativo e altura dinâmica para evitar bug #185 */}
-      <div className="h-[calc(100vh-350px)] min-h-[250px] max-h-[500px] overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
+      {/* Lista de sessões - usando flex-1 e overflow para evitar bug #185 */}
+      <div className="flex-1 min-h-[200px] overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
         <div className="space-y-3">
           {sessions.filter(s => s.status !== 'active').map((session) => (
             <SessionCard

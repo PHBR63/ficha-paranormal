@@ -271,7 +271,7 @@ export function SessionDiary({ campaignId, campaignName = 'Campanha', isMaster }
   }
 
   return (
-    <div className="space-y-6">
+    <div className="flex-1 flex flex-col min-h-0 gap-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -347,7 +347,7 @@ export function SessionDiary({ campaignId, campaignName = 'Campanha', isMaster }
       </div>
 
       {/* Tabs de visualização */}
-      <Tabs defaultValue="timeline" className="w-full">
+      <Tabs defaultValue="timeline" className="flex-1 flex flex-col min-h-0 w-full">
         <TabsList className="w-full max-w-[300px]">
           <TabsTrigger value="timeline" className="flex-1">
             <Calendar className="w-4 h-4 mr-2" />
@@ -359,9 +359,9 @@ export function SessionDiary({ campaignId, campaignName = 'Campanha', isMaster }
           </TabsTrigger>
         </TabsList>
 
-        {/* Timeline View - usando overflow nativo e altura dinâmica para evitar bug #185 */}
-        <TabsContent value="timeline" className="mt-4">
-          <div className="h-[calc(100vh-400px)] min-h-[300px] max-h-[700px] overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent pr-4">
+        {/* Timeline View - usando flex-1 e overflow para evitar bug #185 */}
+        <TabsContent value="timeline" className="flex-1 flex flex-col min-h-0 mt-4">
+          <div className="flex-1 min-h-[200px] overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent pr-4">
             <div className="relative">
               {/* Linha do tempo vertical */}
               <div className="absolute left-[31px] top-6 bottom-6 w-0.5 bg-border" />
@@ -394,9 +394,9 @@ export function SessionDiary({ campaignId, campaignName = 'Campanha', isMaster }
           </div>
         </TabsContent>
 
-        {/* List View - Simplificada - usando overflow nativo e altura dinâmica para evitar bug #185 */}
-        <TabsContent value="list" className="mt-4">
-          <div className="h-[calc(100vh-400px)] min-h-[300px] max-h-[700px] overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
+        {/* List View - Simplificada - usando flex-1 e overflow para evitar bug #185 */}
+        <TabsContent value="list" className="flex-1 flex flex-col min-h-0 mt-4">
+          <div className="flex-1 min-h-[200px] overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
             <div className="space-y-2">
               {filteredSessions.map((session) => (
                 <div
