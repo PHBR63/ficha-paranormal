@@ -209,9 +209,9 @@ export function NotesPanel({ campaignId, isMaster }: NotesPanelProps) {
   }
 
   return (
-    <div className="flex h-full gap-4">
+    <div className="flex-1 flex min-h-0 gap-4">
       {/* Lista de notas */}
-      <div className="w-80 flex flex-col border-r border-border pr-4">
+      <div className="w-80 flex flex-col min-h-0 border-r border-border pr-4">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-display text-lg tracking-wider text-primary">
@@ -250,8 +250,8 @@ export function NotesPanel({ campaignId, isMaster }: NotesPanelProps) {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="my" className="flex-1 mt-2">
-            <div className="h-[calc(100vh-450px)] min-h-[200px] max-h-[500px] overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
+          <TabsContent value="my" className="flex-1 flex flex-col min-h-0 mt-2">
+            <div className="flex-1 min-h-[150px] overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
               <div className="space-y-2">
                 {filterBySearch(myNotes).map((note) => (
                   <NoteListItem
@@ -272,8 +272,8 @@ export function NotesPanel({ campaignId, isMaster }: NotesPanelProps) {
             </div>
           </TabsContent>
 
-          <TabsContent value="shared" className="flex-1 mt-2">
-            <div className="h-[calc(100vh-450px)] min-h-[200px] max-h-[500px] overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
+          <TabsContent value="shared" className="flex-1 flex flex-col min-h-0 mt-2">
+            <div className="flex-1 min-h-[150px] overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
               <div className="space-y-2">
                 {filterBySearch(sharedNotes).map((note) => (
                   <NoteListItem
