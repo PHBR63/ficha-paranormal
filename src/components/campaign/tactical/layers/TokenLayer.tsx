@@ -86,17 +86,22 @@ function TokenShape({
   }, [token.image_url]);
 
   // Handlers de drag
-  const handleDragStart = useCallback(() => {
+  // Handler de drag - cancela bubble para não mover o Stage junto
+  const handleDragStart = useCallback((e: Konva.KonvaEventObject<DragEvent>) => {
+    e.cancelBubble = true; // Impede propagação para o Stage
     onDragStart();
   }, [onDragStart]);
 
   const handleDragMove = useCallback((e: Konva.KonvaEventObject<DragEvent>) => {
+    e.cancelBubble = true; // Impede propagação para o Stage
     const x = Math.floor(e.target.x() / gridSize);
     const y = Math.floor(e.target.y() / gridSize);
     onDragMove(x, y);
   }, [gridSize, onDragMove]);
 
   const handleDragEnd = useCallback((e: Konva.KonvaEventObject<DragEvent>) => {
+    e.cancelBubble = true; // Impede propagação para o Stage
+    
     // Snap to grid
     const x = Math.round(e.target.x() / gridSize);
     const y = Math.round(e.target.y() / gridSize);
