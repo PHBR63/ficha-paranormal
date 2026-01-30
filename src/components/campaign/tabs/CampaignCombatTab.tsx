@@ -30,7 +30,7 @@ export function CampaignCombatTab({
   movementPerRound = 9,
 }: CampaignCombatTabProps) {
   return (
-    <div className="space-y-8 max-w-7xl mx-auto">
+    <div className="space-y-8 w-full">
       {/* CombatTracker principal */}
       <CombatTracker
         campaignId={campaignId}

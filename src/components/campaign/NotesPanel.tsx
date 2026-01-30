@@ -251,7 +251,7 @@ export function NotesPanel({ campaignId, isMaster }: NotesPanelProps) {
           </TabsList>
 
           <TabsContent value="my" className="flex-1 mt-2">
-            <div className="h-[400px] overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
+            <div className="h-[calc(100vh-450px)] min-h-[200px] max-h-[500px] overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
               <div className="space-y-2">
                 {filterBySearch(myNotes).map((note) => (
                   <NoteListItem
@@ -273,7 +273,7 @@ export function NotesPanel({ campaignId, isMaster }: NotesPanelProps) {
           </TabsContent>
 
           <TabsContent value="shared" className="flex-1 mt-2">
-            <div className="h-[400px] overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
+            <div className="h-[calc(100vh-450px)] min-h-[200px] max-h-[500px] overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
               <div className="space-y-2">
                 {filterBySearch(sharedNotes).map((note) => (
                   <NoteListItem

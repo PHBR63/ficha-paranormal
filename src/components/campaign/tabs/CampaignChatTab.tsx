@@ -155,9 +155,9 @@ export function CampaignChatTab({
   
   return (
     <div className="flex-1 flex flex-col min-h-0">
-      {/* Área de mensagens - Scroll nativo para evitar bug #185 */}
+      {/* Área de mensagens - Scroll nativo para evitar bug #185, responsivo em telas grandes */}
       <div className="flex-1 overflow-y-auto p-4 sm:p-6 overscroll-contain scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
-        <div className="space-y-4 max-w-4xl mx-auto">
+        <div className="space-y-4 max-w-4xl lg:max-w-5xl xl:max-w-6xl mx-auto">
           {adaptedMessages.map((msg) => (
             <ChatMessage
               key={msg.id}
@@ -170,9 +170,9 @@ export function CampaignChatTab({
         </div>
       </div>
       
-      {/* Input de mensagem */}
+      {/* Input de mensagem - Responsivo em telas grandes */}
       <div className="p-4 sm:p-6 border-t border-border bg-card/80 backdrop-blur-sm">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-4xl lg:max-w-5xl xl:max-w-6xl mx-auto">
           <div className="flex items-center gap-2 sm:gap-3">
             {/* Rolador de Dados Integrado */}
             <IntegratedDiceRoller

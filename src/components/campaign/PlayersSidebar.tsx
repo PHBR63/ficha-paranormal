@@ -8,7 +8,7 @@
 
 import { useState, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Crown, User, X, Eye, UserMinus, Shield, Zap, Brain, ChevronRight } from 'lucide-react';
+import { Crown, User, X, Eye, UserMinus, Shield, Zap, Brain, ChevronRight, ChevronLeft, PanelRightClose, PanelRightOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { MobileActionSheet } from '@/components/ui/mobile-action-sheet';
 import { cn } from '@/lib/utils';
@@ -49,6 +49,9 @@ interface PlayersSidebarProps {
   // Funções de presença em tempo real
   getUserStatus?: (userId: string) => 'online' | 'away' | 'offline';
   isConnected?: boolean;
+  // Props para modo colapsável
+  isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
 // Configuração de cores por classe
@@ -82,6 +85,8 @@ export function PlayersSidebar({
   onViewCharacter,
   getUserStatus,
   isConnected = false,
+  isCollapsed = false,
+  onToggleCollapse,
 }: PlayersSidebarProps) {
   // Estado do ActionSheet para membros
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
@@ -134,8 +139,84 @@ export function PlayersSidebar({
     ? members.filter(m => getUserStatus(m.user_id) !== 'offline').length 
     : members.length;
 
+  // Modo compacto - apenas avatares
+  if (isCollapsed) {
+    return (
+      <aside className="w-16 border-l border-border bg-gradient-to-b from-card/50 to-card/30 backdrop-blur-sm hidden md:flex flex-col transition-all duration-300">
+        {/* Botão para expandir */}
+        <div className="p-2 border-b border-border bg-card/50">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="w-full h-10"
+            onClick={onToggleCollapse}
+            title="Expandir painel de jogadores"
+          >
+            <PanelRightOpen className="w-5 h-5 text-muted-foreground" />
+          </Button>
+        </div>
+
+        {/* Lista compacta de avatares */}
+        <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent p-2">
+          <div className="space-y-2">
+            {members.map((member) => {
+              const isMasterMember = member.role === 'master';
+              const userStatus = getUserStatus ? getUserStatus(member.user_id) : 'offline';
+              const isOnline = userStatus === 'online';
+              const isAway = userStatus === 'away';
+              const char = member.characters;
+              
+              return (
+                <div
+                  key={member.id}
+                  className="relative group"
+                  title={`${member.profiles?.display_name || 'Jogador'}${char ? ` - ${char.name}` : ''}`}
+                >
+                  <div className={cn(
+                    'w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden',
+                    'bg-muted border-2 transition-colors cursor-pointer hover:border-primary/50',
+                    isMasterMember ? 'border-primary/60' : 'border-border/50'
+                  )}>
+                    {char?.photo_url ? (
+                      <img src={char.photo_url} alt={char.name} className="w-full h-full object-cover" />
+                    ) : member.profiles?.avatar_url ? (
+                      <img src={member.profiles.avatar_url} alt="" className="w-full h-full object-cover" />
+                    ) : isMasterMember ? (
+                      <Crown className="w-5 h-5 text-primary" />
+                    ) : (
+                      <User className="w-5 h-5 text-muted-foreground" />
+                    )}
+                  </div>
+                  {/* Indicador de presença */}
+                  <div 
+                    className={cn(
+                      'absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-card',
+                      isOnline && 'bg-emerald-500',
+                      isAway && 'bg-amber-500',
+                      !isOnline && !isAway && 'bg-muted-foreground/50'
+                    )}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Contador */}
+        <div className="p-2 border-t border-border bg-card/50 text-center">
+          <span className="text-xs text-muted-foreground">{onlineCount}/{members.length}</span>
+        </div>
+      </aside>
+    );
+  }
+
+  // Modo expandido (padrão)
   return (
-    <aside className="w-80 xl:w-96 border-l border-border bg-gradient-to-b from-card/50 to-card/30 backdrop-blur-sm hidden lg:flex flex-col">
+    <aside className={cn(
+      'border-l border-border bg-gradient-to-b from-card/50 to-card/30 backdrop-blur-sm flex flex-col transition-all duration-300',
+      'w-80 xl:w-96',
+      'hidden md:flex'
+    )}>
       {/* Header expandido */}
       <div className="p-5 border-b border-border bg-card/50">
         <div className="flex items-center gap-3">
@@ -162,12 +243,17 @@ export function PlayersSidebar({
               )}
             </div>
           </div>
-          {/* Indicador de conexão */}
-          {getUserStatus && (
-            <div className={cn(
-              'w-2 h-2 rounded-full',
-              isConnected ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'
-            )} title={isConnected ? 'Conectado' : 'Reconectando...'} />
+          {/* Botão para colapsar */}
+          {onToggleCollapse && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="w-8 h-8"
+              onClick={onToggleCollapse}
+              title="Recolher painel de jogadores"
+            >
+              <PanelRightClose className="w-4 h-4 text-muted-foreground" />
+            </Button>
           )}
         </div>
       </div>

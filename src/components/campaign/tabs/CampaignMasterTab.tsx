@@ -85,9 +85,9 @@ export function CampaignMasterTab({
         <SoundSceneManager campaignId={campaignId} isMaster={true} />
       </TabsContent>
 
-      {/* Aba de Controles */}
+      {/* Aba de Controles - Grid responsivo expandido */}
       <TabsContent value="controls" className="mt-4">
-        <div className="grid md:grid-cols-2 gap-4">
+        <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
           {/* Controle de Sessão */}
           <div className="ordo-panel p-6">
             <h3 className="font-display text-lg tracking-wider mb-4 text-primary">
