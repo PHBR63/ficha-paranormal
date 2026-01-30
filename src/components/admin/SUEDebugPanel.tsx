@@ -9,7 +9,7 @@
  * @module Ordem Paranormal RPG v1.3
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useId } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Bug,
@@ -153,6 +153,9 @@ export function SUEDebugPanel({
   compact = false,
   className,
 }: SUEDebugPanelProps) {
+  // ID único para acessibilidade (evita colisões no DOM)
+  const showInactiveId = useId();
+  
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [showInactive, setShowInactive] = useState(false);
@@ -391,11 +394,11 @@ export function SUEDebugPanel({
             </div>
             <div className="flex items-center gap-2">
               <Switch
-                id="show-inactive"
+                id={showInactiveId}
                 checked={showInactive}
                 onCheckedChange={setShowInactive}
               />
-              <label htmlFor="show-inactive" className="text-xs text-muted-foreground">
+              <label htmlFor={showInactiveId} className="text-xs text-muted-foreground">
                 Inativos
               </label>
             </div>

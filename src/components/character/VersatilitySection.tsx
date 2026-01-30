@@ -14,7 +14,7 @@
  * @module VersatilitySection
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useId } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -92,6 +92,10 @@ export function VersatilitySection({
   compact = false,
   characterData,
 }: VersatilitySectionProps) {
+  // IDs únicos para acessibilidade (evita colisões no DOM)
+  const classPowerId = useId();
+  const trackAbilityId = useId();
+  
   // Estado para controlar se mostra lista de trilhas
   const [showTracks, setShowTracks] = useState(selected?.type === 'track_ability');
   // Estado para filtro de busca
@@ -205,9 +209,9 @@ export function VersatilitySection({
             )}
             onClick={() => handleTypeChange('class_power')}
           >
-            <RadioGroupItem value="class_power" id="class_power" className="mt-1" />
+            <RadioGroupItem value="class_power" id={classPowerId} className="mt-1" />
             <div className="flex-1">
-              <Label htmlFor="class_power" className="flex items-center gap-2 cursor-pointer">
+              <Label htmlFor={classPowerId} className="flex items-center gap-2 cursor-pointer">
                 <Plus className="w-4 h-4 text-primary" />
                 <span className="font-medium">Poder de Classe Adicional</span>
               </Label>
@@ -230,9 +234,9 @@ export function VersatilitySection({
             )}
             onClick={() => handleTypeChange('track_ability')}
           >
-            <RadioGroupItem value="track_ability" id="track_ability" className="mt-1" />
+            <RadioGroupItem value="track_ability" id={trackAbilityId} className="mt-1" />
             <div className="flex-1">
-              <Label htmlFor="track_ability" className="flex items-center gap-2 cursor-pointer">
+              <Label htmlFor={trackAbilityId} className="flex items-center gap-2 cursor-pointer">
                 <Route className="w-4 h-4 text-primary" />
                 <span className="font-medium">Trilha Diferente</span>
               </Label>

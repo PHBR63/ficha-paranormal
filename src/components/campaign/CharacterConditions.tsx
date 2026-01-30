@@ -1,3 +1,12 @@
+/**
+ * CharacterConditions - Gerenciador de condições do personagem
+ * 
+ * NOTA: Radix Tooltip removido para evitar React Error #185 (Maximum update depth exceeded)
+ * Em listas dinâmicas, TooltipTrigger dispara setRef() em cascata causando loop infinito
+ * Solução: usar atributo title nativo do HTML
+ * 
+ * @see memory/architecture/restricao-tooltip-radix-listas-dinamicas
+ */
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 // ScrollArea removido - usando overflow nativo para evitar bug #185 com React 19
@@ -9,12 +18,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+// Tooltip do Radix removido - causa loop #185 em listas dinâmicas
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { CONDITIONS, CONDITION_CATEGORIES, type Condition } from '@/lib/conditions';
@@ -54,37 +58,30 @@ export function CharacterConditions({
     onConditionsChange(conditions.filter(c => c !== conditionId));
   };
 
+  // Modo compacto: usa atributo title nativo em vez de Radix Tooltip (evita loop #185)
   if (compact) {
     return (
-      <TooltipProvider>
-        <div className="flex flex-wrap gap-1">
-          {activeConditions.length === 0 ? (
-            <span className="text-xs text-muted-foreground">Sem condições</span>
-          ) : (
-            activeConditions.map((condition) => (
-              <Tooltip key={condition.id}>
-                <TooltipTrigger asChild>
-                  <Badge
-                    variant="outline"
-                    className={cn(
-                      'text-xs cursor-help',
-                      condition.id === 'morrendo' && 'border-destructive text-destructive animate-pulse',
-                      condition.id === 'sangrando' && 'border-health text-health',
-                      condition.id === 'vulneravel' && 'border-warning text-warning'
-                    )}
-                  >
-                    {condition.icon} {condition.name}
-                  </Badge>
-                </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-xs">
-                  <p className="font-medium">{condition.name}</p>
-                  <p className="text-xs text-muted-foreground">{condition.effect}</p>
-                </TooltipContent>
-              </Tooltip>
-            ))
-          )}
-        </div>
-      </TooltipProvider>
+      <div className="flex flex-wrap gap-1">
+        {activeConditions.length === 0 ? (
+          <span className="text-xs text-muted-foreground">Sem condições</span>
+        ) : (
+          activeConditions.map((condition) => (
+            <Badge
+              key={condition.id}
+              variant="outline"
+              title={`${condition.name}: ${condition.effect}`}
+              className={cn(
+                'text-xs cursor-help',
+                condition.id === 'morrendo' && 'border-destructive text-destructive animate-pulse',
+                condition.id === 'sangrando' && 'border-health text-health',
+                condition.id === 'vulneravel' && 'border-warning text-warning'
+              )}
+            >
+              {condition.icon} {condition.name}
+            </Badge>
+          ))
+        )}
+      </div>
     );
   }
 
@@ -164,51 +161,45 @@ export function CharacterConditions({
         )}
       </div>
 
+      {/* Lista de condições ativas - usa title nativo (evita loop #185) */}
       <div className="flex flex-wrap gap-2">
         {activeConditions.length === 0 ? (
           <p className="text-xs text-muted-foreground italic">Nenhuma condição ativa</p>
         ) : (
-          <TooltipProvider>
-            {activeConditions.map((condition) => (
-              <Tooltip key={condition.id}>
-                <TooltipTrigger asChild>
-                  <div
-                    className={cn(
-                      'group flex items-center gap-1.5 px-2 py-1 rounded-md border transition-all',
-                      'bg-muted/30 hover:bg-muted/50',
-                      condition.id === 'morrendo' && 'border-destructive bg-destructive/10 animate-pulse',
-                      condition.id === 'sangrando' && 'border-health bg-health/10',
-                      condition.id === 'vulneravel' && 'border-warning bg-warning/10',
-                      condition.id === 'apavorado' && 'border-sanity bg-sanity/10',
-                      condition.id === 'enlouquecendo' && 'border-destructive bg-destructive/10'
-                    )}
+          activeConditions.map((condition) => {
+            // Tooltip nativo concatenado (nome + efeito + remoção)
+            const tooltipText = [
+              `${condition.name}: ${condition.effect}`,
+              condition.removal ? `Remoção: ${condition.removal}` : null,
+            ].filter(Boolean).join(' | ');
+
+            return (
+              <div
+                key={condition.id}
+                title={tooltipText}
+                className={cn(
+                  'group flex items-center gap-1.5 px-2 py-1 rounded-md border transition-all cursor-help',
+                  'bg-muted/30 hover:bg-muted/50',
+                  condition.id === 'morrendo' && 'border-destructive bg-destructive/10 animate-pulse',
+                  condition.id === 'sangrando' && 'border-health bg-health/10',
+                  condition.id === 'vulneravel' && 'border-warning bg-warning/10',
+                  condition.id === 'apavorado' && 'border-sanity bg-sanity/10',
+                  condition.id === 'enlouquecendo' && 'border-destructive bg-destructive/10'
+                )}
+              >
+                <span className="text-base">{condition.icon}</span>
+                <span className="text-sm font-medium">{condition.name}</span>
+                {!readonly && (
+                  <button
+                    onClick={() => removeCondition(condition.id)}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity ml-1"
                   >
-                    <span className="text-base">{condition.icon}</span>
-                    <span className="text-sm font-medium">{condition.name}</span>
-                    {!readonly && (
-                      <button
-                        onClick={() => removeCondition(condition.id)}
-                        className="opacity-0 group-hover:opacity-100 transition-opacity ml-1"
-                      >
-                        <X className="w-3 h-3 text-muted-foreground hover:text-foreground" />
-                      </button>
-                    )}
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-xs">
-                  <div className="space-y-1">
-                    <p className="font-medium">{condition.name}</p>
-                    <p className="text-xs">{condition.effect}</p>
-                    {condition.removal && (
-                      <p className="text-xs text-muted-foreground">
-                        <strong>Remoção:</strong> {condition.removal}
-                      </p>
-                    )}
-                  </div>
-                </TooltipContent>
-              </Tooltip>
-            ))}
-          </TooltipProvider>
+                    <X className="w-3 h-3 text-muted-foreground hover:text-foreground" />
+                  </button>
+                )}
+              </div>
+            );
+          })
         )}
       </div>
     </div>
