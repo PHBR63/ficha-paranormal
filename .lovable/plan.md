@@ -1,117 +1,133 @@
 
 
-# Plano: Correção Definitiva do Erro #185 (Maximum update depth exceeded) + Erros 406/500
+# Plano Atualizado: Correção #185 + Erros 406 + Acessibilidade de Formulários
 
-## Diagnóstico Confirmado
+## Visão Geral
 
-O erro **React #185** ocorre **sem interação do usuário**, ao carregar a **aba "Agentes"** (defaultValue: `"chat"` mas o erro parece estar nas abas renderizadas em memória) com o usuário logado como **Mestre**.
-
-### Causas Raiz Identificadas
-
-```text
-┌────────────────────────────────────────────────────────────────────────┐
-│                         FLUXO DO LOOP #185                             │
-├────────────────────────────────────────────────────────────────────────┤
-│                                                                        │
-│  CampaignView                                                          │
-│      ↓                                                                 │
-│  CampaignStatusGrid (aba "status")                                     │
-│      ↓                                                                 │
-│  ConditionList (para cada membro com personagem)                       │
-│      ↓                                                                 │
-│  ConditionBadge (para cada condição)                                   │
-│      ↓                                                                 │
-│  TooltipProvider → Tooltip → TooltipTrigger  ← PROBLEMA!               │
-│      ↓                                                                 │
-│  Radix chama setRef() ao montar cada TooltipTrigger                   │
-│      ↓                                                                 │
-│  React detecta atualização de estado durante render                    │
-│      ↓                                                                 │
-│  Re-render de ConditionList → Novos TooltipTriggers                   │
-│      ↓                                                                 │
-│  LOOP INFINITO → Erro #185                                             │
-│                                                                        │
-└────────────────────────────────────────────────────────────────────────┘
-```
-
-### Problema 1: Tooltip em Loop de Renderização
-
-O componente `ConditionBadge` (`src/components/ui/condition-badge.tsx`) envolve cada badge com `TooltipProvider > Tooltip > TooltipTrigger`. Quando múltiplos badges são renderizados em sequência (dentro de `AnimatePresence`), o Radix UI dispara `setRef` internamente, causando re-renders em cascata.
-
-**Arquivo afetado**: `src/components/ui/condition-badge.tsx:85-136`
-
-### Problema 2: Erro 406 (Not Acceptable) em campaigns_v2
-
-A query em `useCampaignData.ts` usa `.single()`, que dispara erro 406 quando não encontra registro (comum durante fallback v1→v2):
-
-```typescript
-// Linha 105-109
-const { data, error } = await supabase
-  .from('campaigns_v2')
-  .select('*')
-  .eq('id', campaignId)
-  .single(); // ← Erro 406 quando não existe
-```
-
-**Arquivos afetados**:
-- `src/hooks/campaign/useCampaignData.ts:105-109` (campaigns_v2)
-- `src/hooks/campaign/useCampaignData.ts:113-117` (campaigns fallback)
-- `src/hooks/campaign/useCampaignRealtime.ts:352-357` (profiles/characters)
-- `src/pages/CampaignView.tsx:214-215` (campaign_invites insert)
-
-### Problema 3: Callbacks Inline em Sliders e Selects
-
-Diversos componentes ainda usam arrow functions inline em `onValueChange`:
-
-- `AudioMasterPanel.tsx:201` → `onValueChange={([v]) => setMasterVolume(v)}`
-- `AudioPlayerBar.tsx:73` → `onValueChange={([v]) => setMasterVolume(v)}`
-- `IntegratedDiceRoller.tsx:298, 313, 328` → `onValueChange={([v]) => ...}`
+Este plano corrige três categorias de problemas:
+1. **React Error #185** - Loop infinito causado por Radix Tooltips
+2. **Erros 406** - Queries Supabase com `.single()` sem resultados
+3. **Acessibilidade** - Inputs sem id/name e labels não associadas
 
 ---
 
-## Fase 1: Substituir Tooltips por Atributo Nativo (Crítico)
+## FASE 1: Eliminar Loop #185 (CRÍTICO)
 
-Modificar `ConditionBadge` para usar o atributo `title` em vez de Radix Tooltip quando `showTooltip=true` (comportamento padrão):
+### 1.1 Remover Radix Tooltips em CharacterConditions.tsx
+
+O componente ainda usa `TooltipProvider > Tooltip > TooltipTrigger` nas linhas 57-88 e 171-211, causando o loop.
+
+**Modificação:**
 
 ```typescript
-// ANTES: Radix Tooltip (causa loop)
-if (showTooltip) {
+// ANTES (linha 57-88 - modo compact):
+if (compact) {
   return (
     <TooltipProvider>
-      <Tooltip delayDuration={200}>
-        <TooltipTrigger asChild>{badge}</TooltipTrigger>
-        ...
-      </Tooltip>
+      <div className="flex flex-wrap gap-1">
+        {activeConditions.map((condition) => (
+          <Tooltip key={condition.id}>
+            <TooltipTrigger asChild>
+              <Badge>...</Badge>
+            </TooltipTrigger>
+            <TooltipContent>...</TooltipContent>
+          </Tooltip>
+        ))}
+      </div>
     </TooltipProvider>
   );
 }
 
-// DEPOIS: Atributo title nativo (estável)
-const tooltipText = `${condition.name}: ${condition.effect}`;
-
-const badge = (
-  <motion.div
-    ref={ref}
-    title={showTooltip ? tooltipText : undefined}
-    // ... resto igual
-  />
-);
-
-return badge; // Sem wrapper de Tooltip
+// DEPOIS - Usar atributo title nativo:
+if (compact) {
+  return (
+    <div className="flex flex-wrap gap-1">
+      {activeConditions.length === 0 ? (
+        <span className="text-xs text-muted-foreground">Sem condições</span>
+      ) : (
+        activeConditions.map((condition) => (
+          <Badge
+            key={condition.id}
+            variant="outline"
+            title={`${condition.name}: ${condition.effect}`}
+            className={cn(...)}
+          >
+            {condition.icon} {condition.name}
+          </Badge>
+        ))
+      )}
+    </div>
+  );
+}
 ```
 
-**Arquivo**: `src/components/ui/condition-badge.tsx`
+```typescript
+// ANTES (linhas 171-211 - modo normal):
+<TooltipProvider>
+  {activeConditions.map((condition) => (
+    <Tooltip key={condition.id}>
+      <TooltipTrigger asChild>
+        <div>...</div>
+      </TooltipTrigger>
+      <TooltipContent>...</TooltipContent>
+    </Tooltip>
+  ))}
+</TooltipProvider>
+
+// DEPOIS:
+{activeConditions.map((condition) => {
+  const tooltipText = [
+    condition.name,
+    condition.effect,
+    condition.removal ? `Remoção: ${condition.removal}` : null,
+  ].filter(Boolean).join(' | ');
+
+  return (
+    <div
+      key={condition.id}
+      title={tooltipText}
+      className={cn(...)}
+    >
+      {/* ... conteúdo do badge ... */}
+    </div>
+  );
+})}
+```
+
+**Remover imports não utilizados:**
+```typescript
+// REMOVER do topo:
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+```
+
+### 1.2 Modificar forceMount em tabs.tsx
+
+Atualmente, `forceMount={true}` força a renderização de TODAS as abas, incluindo componentes com Tooltips problemáticos.
+
+```typescript
+// ANTES (linha 47):
+forceMount={unmountOnHide ? undefined : true}
+
+// DEPOIS - Comportamento lazy por padrão:
+forceMount={unmountOnHide === false ? true : undefined}
+// Ou seja: só força montagem se explicitamente unmountOnHide=false
+```
+
+**Alternativa menos invasiva:** Adicionar `unmountOnHide={true}` nas abas pesadas em `CampaignView.tsx`.
 
 ---
 
-## Fase 2: Corrigir Queries 406 (.single() → .limit(1))
+## FASE 2: Corrigir Erros 406 (ALTA)
 
-Converter todas as chamadas `.single()` e `.maybeSingle()` para `.select().limit(1)`:
-
-### useCampaignData.ts
+### 2.1 useCampaignData.ts
 
 ```typescript
-// ANTES (linha 105-109):
+// ANTES (linha ~105):
 const { data, error } = await supabase
   .from('campaigns_v2')
   .select('*')
@@ -126,15 +142,12 @@ const { data, error } = await supabase
   .limit(1);
 
 const campaignData = data?.[0];
-if (!campaignData) {
-  // Fallback para v1
-}
 ```
 
-### useCampaignRealtime.ts
+### 2.2 useCampaignRealtime.ts
 
 ```typescript
-// ANTES (linha 352-357):
+// ANTES:
 const [profileRes, charRes] = await Promise.all([
   supabase.from('profiles').select('display_name').eq('user_id', newMsg.user_id).maybeSingle(),
   ...
@@ -149,13 +162,12 @@ const [profileRes, charRes] = await Promise.all([
 ]);
 
 const profile = profileRes.data?.[0] || { display_name: null };
-const character = charRes.data?.[0] || null;
 ```
 
-### CampaignView.tsx (insert de convite)
+### 2.3 CampaignView.tsx (insert de convite)
 
 ```typescript
-// ANTES (linha 214-215):
+// ANTES:
 const { data, error } = await supabase
   .from('campaign_invites')
   .insert({...})
@@ -175,68 +187,95 @@ if (inviteData) setInvite(inviteData);
 
 ---
 
-## Fase 3: Estabilizar Callbacks de Sliders (Média)
+## FASE 3: Acessibilidade de Formulários (MÉDIA)
 
-Converter arrow functions inline para `useCallback`:
+Corrigir os 7 inputs sem id/name e 1 label não associada identificados no DevTools.
 
-### AudioMasterPanel.tsx
+### 3.1 NoteEditor.tsx (3 campos)
 
 ```typescript
-// Adicionar no topo do componente:
-const handleMasterVolumeChange = useCallback(([v]: number[]) => {
-  setMasterVolume(v);
-}, [setMasterVolume]);
+// ANTES (linhas 156-171):
+<Input
+  value={title}
+  onChange={...}
+  placeholder="Título da nota"
+/>
+<Textarea
+  value={content}
+  onChange={...}
+  placeholder="Escreva suas anotações..."
+/>
 
-// Usar no Slider:
-<Slider
-  value={[audioState?.master_volume ?? 1]}
-  onValueChange={handleMasterVolumeChange}
-  ...
+// DEPOIS:
+<div className="space-y-1">
+  <Label htmlFor="note-title" className="sr-only">Título</Label>
+  <Input
+    id="note-title"
+    name="note-title"
+    value={title}
+    onChange={...}
+    placeholder="Título da nota"
+  />
+</div>
+<div className="space-y-1">
+  <Label htmlFor="note-content" className="sr-only">Conteúdo</Label>
+  <Textarea
+    id="note-content"
+    name="note-content"
+    value={content}
+    onChange={...}
+    placeholder="Escreva suas anotações..."
+  />
+</div>
+```
+
+### 3.2 IntellectSkillSelectModal.tsx (1 campo)
+
+```typescript
+// ANTES (linhas 122-126):
+<Checkbox 
+  checked={isSelected}
+  onCheckedChange={() => handleToggleSkill(skill.id)}
+/>
+
+// DEPOIS - Adicionar id único via skill.id:
+<Checkbox 
+  id={`skill-${skill.id}`}
+  checked={isSelected}
+  onCheckedChange={() => handleToggleSkill(skill.id)}
+  aria-label={`Selecionar ${skill.name}`}
 />
 ```
 
-### AudioPlayerBar.tsx
+### 3.3 VersatilitySection.tsx (2 campos)
+
+Usar `useId()` para gerar IDs únicos em vez de strings estáticas:
 
 ```typescript
-const handleMasterVolumeChange = useCallback(([v]: number[]) => {
-  setMasterVolume(v);
-}, [setMasterVolume]);
+// ANTES:
+<RadioGroupItem value="class_power" id="class_power" />
+<Label htmlFor="class_power">
+
+// DEPOIS:
+const classPowerId = useId();
+const trackAbilityId = useId();
+
+<RadioGroupItem value="class_power" id={classPowerId} />
+<Label htmlFor={classPowerId}>
 ```
 
-### IntegratedDiceRoller.tsx
+### 3.4 SUEDebugPanel.tsx (1 campo)
 
 ```typescript
-const handleSkillBonusChange = useCallback(([v]: number[]) => {
-  setSkillBonus(v);
-}, []);
+// ANTES:
+<Switch id="show-inactive" ... />
+<label htmlFor="show-inactive">
 
-const handleOtherBonusChange = useCallback(([v]: number[]) => {
-  setOtherBonus(v);
-}, []);
+// DEPOIS - useId para evitar colisões:
+const showInactiveId = useId();
 
-const handleCritThresholdChange = useCallback(([v]: number[]) => {
-  setCritThreshold(v);
-}, []);
-```
-
----
-
-## Fase 4: Memoizar ConditionList e MagicCard (Opcional)
-
-Para evitar re-renders desnecessários quando apenas um membro muda:
-
-```typescript
-// Em CampaignStatusGrid.tsx:
-import { memo } from 'react';
-
-const MemberCard = memo(function MemberCard({ member, isMaster }: MemberCardProps) {
-  // ... lógica do card
-});
-
-// Em condition-badge.tsx:
-export const ConditionList = memo(function ConditionList({...}: ConditionListProps) {
-  // ... lógica da lista
-});
+<Switch id={showInactiveId} ... />
+<label htmlFor={showInactiveId}>
 ```
 
 ---
@@ -245,36 +284,39 @@ export const ConditionList = memo(function ConditionList({...}: ConditionListPro
 
 | Fase | Prioridade | Arquivo | Alteração |
 |------|------------|---------|-----------|
-| 1 | Crítica | `condition-badge.tsx` | Remover Radix Tooltip, usar `title` nativo |
-| 2a | Alta | `useCampaignData.ts` | `.single()` → `.limit(1)` |
-| 2b | Alta | `useCampaignRealtime.ts` | `.maybeSingle()` → `.limit(1)` |
-| 2c | Alta | `CampaignView.tsx` | `.single()` → `.limit(1)` em insert |
-| 3a | Média | `AudioMasterPanel.tsx` | `useCallback` para Slider |
-| 3b | Média | `AudioPlayerBar.tsx` | `useCallback` para Slider |
-| 3c | Média | `IntegratedDiceRoller.tsx` | `useCallback` para Sliders (3x) |
-| 4 | Baixa | `CampaignStatusGrid.tsx` | Memoizar cards |
+| 1.1 | **CRÍTICA** | `CharacterConditions.tsx` | Remover Radix Tooltip → usar `title` |
+| 1.2 | **CRÍTICA** | `tabs.tsx` | Ajustar `forceMount` para lazy por padrão |
+| 2.1 | Alta | `useCampaignData.ts` | `.single()` → `.limit(1)` |
+| 2.2 | Alta | `useCampaignRealtime.ts` | `.maybeSingle()` → `.limit(1)` |
+| 2.3 | Alta | `CampaignView.tsx` | `.single()` → `.limit(1)` |
+| 3.1 | Média | `NoteEditor.tsx` | Adicionar id/name + labels |
+| 3.2 | Média | `IntellectSkillSelectModal.tsx` | Adicionar id ao Checkbox |
+| 3.3 | Média | `VersatilitySection.tsx` | useId() em RadioGroup |
+| 3.4 | Baixa | `SUEDebugPanel.tsx` | useId() no Switch |
 
 ---
 
 ## Resultado Esperado
 
-- **Erro #185 eliminado**: Tooltips não disparam mais loop de `setRef`
-- **Erro 406 eliminado**: Queries retornam array vazio (HTTP 200) em vez de erro
-- **Aba Agentes funcional**: Carrega corretamente sem travar o React
-- **Performance melhorada**: Re-renders isolados por membro
+- **Error #185**: Eliminado - Tooltips não disparam mais loop de `setRef`
+- **Error 406**: Eliminado - Queries retornam array vazio (HTTP 200)
+- **DevTools Warnings**: Eliminados - 7 inputs com id/name, 1 label associada
+- **Acessibilidade**: Melhorada - Navegação por teclado e leitores de tela
 
 ---
 
 ## Notas Técnicas
 
-### Por que Radix Tooltip causa loop?
+### Por que usar `title` em vez de Radix Tooltip em listas?
 
-O Radix `TooltipTrigger` usa um sistema de ref forwarding que chama `setRef()` internamente. Quando múltiplos triggers são montados em sequência (como em um `.map()`), cada chamada a `setRef()` pode disparar um re-render do componente pai, que remonta os triggers, criando o ciclo.
+O Radix `TooltipTrigger` usa um sistema de ref forwarding que chama `setRef()` internamente. Quando múltiplos triggers são montados em sequência (como em um `.map()` dentro de `AnimatePresence`), cada chamada a `setRef()` pode disparar um re-render do componente pai, criando o ciclo infinito.
+
+O atributo `title` nativo do HTML é processado pelo navegador sem interferir no ciclo de renderização do React.
 
 ### Conformidade com Regras do Projeto
 
-- Segue padrão Ref-First documentado na memória
-- Comentários em PT-BR
+- Segue memória `architecture/restricao-tooltip-radix-listas-dinamicas`
+- Segue memória `development/padrao-supressao-erro-406-postgrest`
+- Todos os comentários em PT-BR
 - Não modifica mecânicas de Ordem Paranormal RPG
-- Usa apenas termos oficiais do sistema
 
