@@ -894,7 +894,7 @@ export function TacticalBoard({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col flex-1 min-h-0 gap-4">
       {/* Toolbar */}
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <div className="flex items-center gap-2">
@@ -1035,10 +1035,10 @@ export function TacticalBoard({
         )}
       </div>
       
-      {/* Canvas Konva - Altura dinâmica baseada no viewport */}
+      {/* Canvas Konva - flex-1 para preencher espaço disponível */}
       <div 
         ref={containerRef}
-        className="relative ordo-panel overflow-hidden h-[calc(100vh-280px)] min-h-[400px] max-h-[800px]"
+        className="relative ordo-panel overflow-hidden flex-1 min-h-[300px]"
       >
         <TacticalBoardKonva
           map={board.activeMap}
