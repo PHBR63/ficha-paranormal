@@ -35,19 +35,28 @@ const TabsTrigger = React.forwardRef<
 ));
 TabsTrigger.displayName = TabsPrimitive.Trigger.displayName;
 
+/**
+ * TabsContent - Conteúdo de uma aba
+ * 
+ * ATUALIZADO: forceMount agora é lazy por padrão para evitar React Error #185
+ * Abas inativas não são mais montadas no DOM, prevenindo loops causados
+ * por componentes Radix (Tooltip, ScrollArea) que disparam setRef em background
+ * 
+ * Use unmountOnHide={false} explicitamente se precisar manter o conteúdo montado
+ */
 const TabsContent = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof TabsPrimitive.Content> & { unmountOnHide?: boolean }
->(({ className, unmountOnHide = false, ...props }, ref) => {
-  // Quando unmountOnHide é true, o conteúdo não será renderizado quando inativo
-  // Por padrão, Radix mantém elementos hidden no DOM; forceMount controla isso
+>(({ className, unmountOnHide = true, ...props }, ref) => {
+  // unmountOnHide=true (padrão): abas inativas são desmontadas (lazy loading)
+  // unmountOnHide=false: abas permanecem montadas (hidden via CSS)
   return (
     <TabsPrimitive.Content
       ref={ref}
       forceMount={unmountOnHide ? undefined : true}
       className={cn(
         "mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-        "data-[state=inactive]:hidden",
+        !unmountOnHide && "data-[state=inactive]:hidden",
         className,
       )}
       {...props}

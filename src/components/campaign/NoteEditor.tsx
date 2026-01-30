@@ -152,21 +152,27 @@ export function NoteEditor({ note, isOwner, onUpdate }: NoteEditorProps) {
         </div>
       </div>
 
-      {/* Campo de título */}
+      {/* Campo de título - id/name adicionados para acessibilidade */}
       <Input
+        id="note-title"
+        name="note-title"
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         placeholder="Título da nota"
         disabled={!isOwner}
+        aria-label="Título da nota"
         className="text-lg font-display mb-4 border-0 border-b border-border rounded-none px-0 focus-visible:ring-0"
       />
 
-      {/* Conteúdo */}
+      {/* Conteúdo - id/name adicionados para acessibilidade */}
       <Textarea
+        id="note-content"
+        name="note-content"
         value={content}
         onChange={(e) => setContent(e.target.value)}
         placeholder="Escreva suas anotações aqui..."
         disabled={!isOwner}
+        aria-label="Conteúdo da nota"
         className="flex-1 min-h-[300px] resize-none"
       />
 

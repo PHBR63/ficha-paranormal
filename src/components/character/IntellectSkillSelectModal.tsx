@@ -120,8 +120,10 @@ export function IntellectSkillSelectModal({
                 >
                   <div className="flex items-start gap-3">
                     <Checkbox 
+                      id={`skill-select-${skill.id}`}
                       checked={isSelected}
                       onCheckedChange={() => handleToggleSkill(skill.id)}
+                      aria-label={`Selecionar ${skill.name}`}
                       className="mt-0.5"
                     />
                     <div className="flex-1 min-w-0">
