@@ -25,11 +25,14 @@ export function CampaignBoardTab({
   board,
 }: CampaignBoardTabProps) {
   return (
-    <TacticalBoard
-      campaignId={campaignId}
-      isMaster={isMaster}
-      members={members as any}
-      externalBoard={board}
-    />
+    // Wrapper com flex para garantir altura dinâmica do tabuleiro
+    <div className="flex-1 flex flex-col min-h-0">
+      <TacticalBoard
+        campaignId={campaignId}
+        isMaster={isMaster}
+        members={members as any}
+        externalBoard={board}
+      />
+    </div>
   );
 }
