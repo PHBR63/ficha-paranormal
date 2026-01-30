@@ -1,312 +1,163 @@
 
-# Plano: Correção de Responsividade e Espaços em Branco na CampaignView
+# Plano: Correção de Sobreposição e Scroll no Chat da CampaignView
 
-## Diagnóstico Confirmado
+## Problemas Identificados
 
-Analisando a screenshot e o código, identifiquei os seguintes problemas de responsividade:
+### 1. Espaço em Branco no Topo (Todas as Abas)
+As screenshots mostram que o conteúdo está sendo empurrado para baixo, criando espaço vazio no topo. Isso ocorre porque:
+- Os containers `TabsContent` usam `overflow-auto` mas o conteúdo interno não expande para preencher
+- Componentes como `TacticalBoard` têm altura fixa (`height: '500px'`) em vez de dinâmica
+- Falta `h-full` ou alturas calculadas nos containers de conteúdo
 
-```text
-┌──────────────────────────────────────────────────────────────────────────────┐
-│                         LAYOUT ATUAL                                          │
-├──────────────────────────────────────────────────────────────────────────────┤
-│                                                                               │
-│  ┌─────────────────────────────────────┐  ┌────────────────┐                  │
-│  │                                     │  │                │                  │
-│  │       ESPAÇO EM BRANCO              │  │   SIDEBAR      │                  │
-│  │       (max-w-* + mx-auto)           │  │   w-80/w-96    │                  │
-│  │                                     │  │                │                  │
-│  │   ┌───────────────────────┐         │  │  (fixa, não    │                  │
-│  │   │                       │         │  │   redimensiona)│                  │
-│  │   │   CONTEÚDO LIMITADO   │         │  │                │                  │
-│  │   │   (ex: max-w-5xl)     │         │  │                │                  │
-│  │   │                       │         │  │                │                  │
-│  │   └───────────────────────┘         │  └────────────────┘                  │
-│  │                                     │                                      │
-│  │       ESPAÇO EM BRANCO              │  <-- hidden lg:flex                  │
-│  │                                     │      (invisível em mobile)           │
-│  └─────────────────────────────────────┘                                      │
-│                                                                               │
-└──────────────────────────────────────────────────────────────────────────────┘
-```
+### 2. Chat Sem Scroll
+O componente `CampaignChatTab` está correto na estrutura (`flex-1 overflow-y-auto`), mas precisa de `min-h-0` no container pai para que o overflow funcione em flex containers.
 
-### Problemas Identificados
-
-| Problema | Arquivo | Linhas | Impacto |
-|----------|---------|--------|---------|
-| `max-w-6xl mx-auto` na aba Status | `CampaignView.tsx` | 545 | ~600px de espaço vazio em telas 1920px |
-| `max-w-3xl mx-auto` na aba Condições | `CampaignView.tsx` | 599 | ~800px de espaço vazio |
-| `max-w-4xl mx-auto` na aba Notas | `CampaignView.tsx` | 621 | ~700px de espaço vazio |
-| `max-w-5xl mx-auto` na aba Diário | `CampaignView.tsx` | 661 | ~500px de espaço vazio |
-| `max-w-4xl mx-auto` na aba Sessões | `CampaignView.tsx` | 648 | ~700px de espaço vazio |
-| `max-w-5xl mx-auto` na aba Handouts | `CampaignView.tsx` | 630 | ~500px de espaço vazio |
-| `max-w-4xl mx-auto` no Chat | `CampaignChatTab.tsx` | 160, 175 | ~700px de espaço vazio |
-| `max-w-7xl mx-auto` no Combate | `CampaignCombatTab.tsx` | 33 | ~300px de espaço vazio |
-| `h-[400px]` e `h-[500px]` fixos | Vários | - | Não preenche altura disponível |
-| Sidebar `hidden lg:flex` | `PlayersSidebar.tsx` | 138 | Invisível abaixo de 1024px |
+### 3. Altura Fixa do Tabuleiro
+O `TacticalBoard` usa altura fixa de 500px, causando:
+- Espaço vazio acima do mapa
+- Não aproveitamento da tela completa
 
 ---
 
-## Solução Proposta
+## Correções Propostas
 
-### Fase 1: Responsividade das Abas (Crítico)
+### Fase 1: Corrigir Layout do Chat (CRÍTICO)
 
-Substituir os contêineres com largura máxima estática por layouts flexíveis que ocupam todo o espaço disponível:
+**Arquivo:** `src/pages/CampaignView.tsx` (linha 565)
 
-#### 1.1 CampaignView.tsx - Remover Limitações de Largura
-
-**Antes:**
 ```tsx
-<TabsContent value="status" className="flex-1 p-6 sm:p-8 m-0 overflow-auto">
-  <div className="max-w-6xl mx-auto">
-    ...
-  </div>
-</TabsContent>
+// ANTES:
+<TabsContent value="chat" className="flex-1 flex flex-col m-0 min-h-0">
+
+// DEPOIS - Adicionar overflow-hidden no TabsContent:
+<TabsContent value="chat" className="flex-1 flex flex-col m-0 min-h-0 overflow-hidden">
 ```
 
-**Depois:**
+O `overflow-hidden` força o container a respeitar os limites e permite que o filho com `overflow-y-auto` funcione.
+
+---
+
+### Fase 2: Corrigir Altura do Tabuleiro (CRÍTICO)
+
+**Arquivo:** `src/components/campaign/tactical/TacticalBoard.tsx` (linha 1039-1043)
+
 ```tsx
+// ANTES:
+<div 
+  ref={containerRef}
+  className="relative ordo-panel overflow-hidden"
+  style={{ height: '500px' }}
+>
+
+// DEPOIS - Usar altura dinâmica:
+<div 
+  ref={containerRef}
+  className="relative ordo-panel overflow-hidden h-[calc(100vh-280px)] min-h-[400px] max-h-[800px]"
+>
+```
+
+Remove a altura fixa inline e usa classe Tailwind que:
+- Calcula altura baseada no viewport
+- Garante mínimo de 400px
+- Limita máximo de 800px para não ficar excessivo
+
+---
+
+### Fase 3: Ajustar TabsContent do Tabuleiro
+
+**Arquivo:** `src/pages/CampaignView.tsx` (linha 589)
+
+```tsx
+// ANTES:
+<TabsContent value="tactical" className="flex-1 p-4 sm:p-6 m-0 overflow-auto">
+
+// DEPOIS - Garantir preenchimento de altura:
+<TabsContent value="tactical" className="flex-1 flex flex-col p-4 sm:p-6 m-0 overflow-hidden">
+```
+
+---
+
+### Fase 4: Ajustar Outras Abas com Espaço Vazio
+
+Todas as abas precisam de ajustes para que o conteúdo preencha o espaço:
+
+**Aba Combate (linha 578):**
+```tsx
+// ANTES:
+<TabsContent value="combat" className="flex-1 p-6 sm:p-8 m-0 overflow-auto">
+
+// DEPOIS:
+<TabsContent value="combat" className="flex-1 flex flex-col p-6 sm:p-8 m-0 overflow-hidden">
+```
+
+**Aba Status (linha 545):**
+```tsx
+// ANTES:
 <TabsContent value="status" className="flex-1 p-4 sm:p-6 lg:p-8 m-0 overflow-auto">
-  <div className="w-full">
-    ...
-  </div>
-</TabsContent>
+
+// DEPOIS:
+<TabsContent value="status" className="flex-1 flex flex-col p-4 sm:p-6 lg:p-8 m-0 overflow-auto">
 ```
 
-Alterações específicas por aba:
-
-| Aba | Alteração |
-|-----|-----------|
-| Status | `max-w-6xl mx-auto` → `w-full` |
-| Condições | `max-w-3xl mx-auto` → `max-w-4xl lg:max-w-6xl xl:max-w-full mx-auto` |
-| Notas | `max-w-4xl mx-auto` → `w-full` |
-| Sessões | `max-w-4xl mx-auto` → `max-w-5xl lg:max-w-6xl xl:max-w-full mx-auto` |
-| Diário | `max-w-5xl mx-auto` → `max-w-6xl lg:max-w-7xl xl:max-w-full mx-auto` |
-| Handouts | `max-w-5xl mx-auto` → `max-w-6xl lg:max-w-full mx-auto` |
-
-#### 1.2 CampaignChatTab.tsx - Expandir Mensagens
-
-**Antes:**
+**Aba Condições (linha 599):**
 ```tsx
-<div className="space-y-4 max-w-4xl mx-auto">
+// ANTES:
+<TabsContent value="conditions" className="flex-1 p-4 sm:p-6 lg:p-8 m-0 overflow-auto">
+
+// DEPOIS:
+<TabsContent value="conditions" className="flex-1 flex flex-col p-4 sm:p-6 lg:p-8 m-0 overflow-auto">
 ```
 
-**Depois:**
-```tsx
-<div className="space-y-4 max-w-4xl lg:max-w-5xl xl:max-w-6xl mx-auto">
-```
-
-#### 1.3 CampaignCombatTab.tsx - Usar Largura Total
-
-**Antes:**
-```tsx
-<div className="space-y-8 max-w-7xl mx-auto">
-```
-
-**Depois:**
-```tsx
-<div className="space-y-8 w-full">
-```
+(E assim por diante para Notas, Handouts, Sessões, Diário, Mestre)
 
 ---
 
-### Fase 2: Sidebar Responsiva com Toggle (Média)
+### Fase 5: Ajustar CampaignBoardTab
 
-Criar um sistema onde a sidebar pode ser colapsada/expandida e visível em mobile via botão:
-
-#### 2.1 PlayersSidebar.tsx - Adicionar Toggle
-
-**Modificações:**
-- Adicionar prop `isCollapsed` e `onToggle`
-- Criar modo compacto para largura reduzida (w-16)
-- Exibir apenas avatares no modo compacto
-- Adicionar botão flutuante para mobile
+**Arquivo:** `src/components/campaign/tabs/CampaignBoardTab.tsx`
 
 ```tsx
-interface PlayersSidebarProps {
-  // ... props existentes
-  isCollapsed?: boolean;
-  onToggle?: () => void;
+// ANTES:
+export function CampaignBoardTab({ ... }) {
+  return (
+    <TacticalBoard ... />
+  );
 }
 
-// Modo compacto
-<aside className={cn(
-  'border-l border-border bg-gradient-to-b from-card/50 to-card/30 backdrop-blur-sm flex flex-col transition-all duration-300',
-  isCollapsed ? 'w-16' : 'w-80 xl:w-96',
-  'hidden md:flex' // Visível a partir de md (768px)
-)}>
-```
-
-#### 2.2 CampaignView.tsx - Adicionar Estado de Collapse
-
-```tsx
-const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-
-// Na sidebar
-<PlayersSidebar
-  // ... outras props
-  isCollapsed={sidebarCollapsed}
-  onToggle={() => setSidebarCollapsed(prev => !prev)}
-/>
-
-// Botão flutuante para mobile (abaixo de md)
-{!sidebarCollapsed && (
-  <div className="fixed bottom-4 right-4 md:hidden z-50">
-    <Button onClick={() => setSidebarCollapsed(false)}>
-      <Users className="w-4 h-4" />
-    </Button>
-  </div>
-)}
+// DEPOIS - Adicionar wrapper com altura completa:
+export function CampaignBoardTab({ ... }) {
+  return (
+    <div className="flex-1 flex flex-col min-h-0">
+      <TacticalBoard ... />
+    </div>
+  );
+}
 ```
 
 ---
 
-### Fase 3: Alturas Dinâmicas (Alta)
+## Resumo das Alterações
 
-Substituir alturas fixas por cálculos baseados no viewport:
-
-#### 3.1 SessionDiary.tsx
-
-**Antes:**
-```tsx
-<div className="h-[500px] overflow-y-auto ...">
-```
-
-**Depois:**
-```tsx
-<div className="h-[calc(100vh-400px)] min-h-[300px] max-h-[600px] overflow-y-auto ...">
-```
-
-#### 3.2 SessionManager.tsx
-
-**Antes:**
-```tsx
-<div className="h-[400px] overflow-y-auto ...">
-```
-
-**Depois:**
-```tsx
-<div className="h-[calc(100vh-350px)] min-h-[250px] max-h-[500px] overflow-y-auto ...">
-```
-
-#### 3.3 NotesPanel.tsx
-
-**Antes:**
-```tsx
-<div className="h-[400px] overflow-y-auto ...">
-```
-
-**Depois:**
-```tsx
-<div className="flex-1 min-h-[200px] overflow-y-auto ...">
-```
-
----
-
-### Fase 4: Grid Responsivo do CampaignStatusGrid (Média)
-
-Melhorar o grid para usar mais espaço:
-
-**Antes:**
-```tsx
-<div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-```
-
-**Depois:**
-```tsx
-<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
-```
-
----
-
-### Fase 5: MasterTab com Grid Expandido (Baixa)
-
-O `CampaignMasterTab` pode ter um layout mais eficiente:
-
-**Antes:**
-```tsx
-<div className="grid md:grid-cols-2 gap-4">
-```
-
-**Depois:**
-```tsx
-<div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
-```
-
----
-
-## Ordem de Execução
-
-| Fase | Prioridade | Arquivos | Descrição |
-|------|------------|----------|-----------|
-| 1.1 | **Crítica** | `CampaignView.tsx` | Expandir larguras das abas |
-| 1.2 | **Crítica** | `CampaignChatTab.tsx` | Expandir área de mensagens |
-| 1.3 | **Crítica** | `CampaignCombatTab.tsx` | Usar largura total |
-| 2.1 | Alta | `PlayersSidebar.tsx` | Adicionar modo collapse |
-| 2.2 | Alta | `CampaignView.tsx` | Estado de sidebar |
-| 3.1 | Média | `SessionDiary.tsx` | Alturas dinâmicas |
-| 3.2 | Média | `SessionManager.tsx` | Alturas dinâmicas |
-| 3.3 | Média | `NotesPanel.tsx` | Alturas dinâmicas |
-| 4 | Média | `CampaignStatusGrid.tsx` | Grid mais colunas |
-| 5 | Baixa | `CampaignMasterTab.tsx` | Grid expandido |
+| Arquivo | Linha | Alteração |
+|---------|-------|-----------|
+| `CampaignView.tsx` | 565 | Adicionar `overflow-hidden` no chat |
+| `CampaignView.tsx` | 545, 578, 589, 599, 621, 630, 648, 661, 695 | Adicionar `flex flex-col` e ajustar overflow |
+| `TacticalBoard.tsx` | 1039-1043 | Substituir `style={{ height: '500px' }}` por classes Tailwind dinâmicas |
+| `CampaignBoardTab.tsx` | 27-34 | Adicionar wrapper com `flex-1 min-h-0` |
 
 ---
 
 ## Resultado Esperado
 
-```text
-┌──────────────────────────────────────────────────────────────────────────────┐
-│                         LAYOUT CORRIGIDO                                      │
-├──────────────────────────────────────────────────────────────────────────────┤
-│                                                                               │
-│  ┌────────────────────────────────────────────────────┐  ┌─────────────────┐  │
-│  │                                                    │  │    SIDEBAR      │  │
-│  │           CONTEÚDO EXPANDIDO                       │  │    COLAPSÁVEL   │  │
-│  │           (ocupa todo o espaço)                    │  │                 │  │
-│  │                                                    │◄─┤  [=] toggle     │  │
-│  │   ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐         │  │                 │  │
-│  │   │Card │ │Card │ │Card │ │Card │ │Card │         │  │ Modo compacto   │  │
-│  │   └─────┘ └─────┘ └─────┘ └─────┘ └─────┘         │  │ em telas médias │  │
-│  │                                                    │  │                 │  │
-│  │   Grid responsivo: 1→2→3→4→5 colunas              │  │ Drawer mobile   │  │
-│  │                                                    │  │ em telas < md   │  │
-│  └────────────────────────────────────────────────────┘  └─────────────────┘  │
-│                                                                               │
-└──────────────────────────────────────────────────────────────────────────────┘
-```
-
-### Benefícios
-
-- **Espaços em branco eliminados**: Conteúdo ocupa toda largura disponível
-- **Melhor uso de telas grandes**: 4K e ultrawide mostram mais dados simultaneamente
-- **Mobile melhorado**: Sidebar acessível via drawer
-- **Flexibilidade para o mestre**: Pode colapsar sidebar para ter mais espaço
+- **Chat**: Scroll funcionando, mensagens ocupando espaço disponível
+- **Tabuleiro**: Mapa ocupa altura dinâmica, sem espaço em branco acima
+- **Todas as abas**: Conteúdo alinhado ao topo, preenchendo o espaço
+- **Responsividade**: Funciona em diferentes tamanhos de tela
 
 ---
 
-## Detalhes Técnicos
+## Conformidade
 
-### Classes Tailwind Responsivas Usadas
-
-| Breakpoint | Largura | Uso |
-|------------|---------|-----|
-| `sm` | 640px | Mobile landscape |
-| `md` | 768px | Tablets, sidebar visível |
-| `lg` | 1024px | Laptops, grid expandido |
-| `xl` | 1280px | Desktops |
-| `2xl` | 1536px | Monitores grandes, 5 colunas |
-
-### Notas de Implementação
-
-1. As alterações são **retrocompatíveis** - não quebram layouts existentes
-2. Uso de `min-h` e `max-h` garante que conteúdo não quebre em telas extremas
-3. Transições `transition-all duration-300` mantêm experiência suave
-4. Sidebar com toggle usa estado local, sem impacto em hooks globais
-
----
-
-## Conformidade com Regras do Projeto
-
-- Todos os comentários em PT-BR
-- Segue padrão de memória para lazy loading de tabs
+- Comentários em PT-BR
+- Segue padrão de memória para layouts responsivos
 - Não modifica mecânicas de Ordem Paranormal RPG
-- Usa componentes UI existentes (Button, cn, etc.)
