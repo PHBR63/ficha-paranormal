@@ -516,21 +516,44 @@ export function TacticalBoard({
     movementPreview?.distance,
   ]);
 
-  // Ajusta tamanho do canvas
+  // Ajusta tamanho do canvas usando ResizeObserver
+  // ResizeObserver detecta mudanças de tamanho do container independentemente
+  // da causa (resize da janela, layout, visibilidade, troca de abas)
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
     
+    // Função para atualizar tamanho com validação
     const updateSize = () => {
-      setCanvasSize({
-        width: container.clientWidth,
-        height: container.clientHeight,
-      });
+      const { clientWidth, clientHeight } = container;
+      if (clientWidth > 0 && clientHeight > 0) {
+        setCanvasSize({ width: clientWidth, height: clientHeight });
+      }
     };
     
-    updateSize();
-    window.addEventListener('resize', updateSize);
-    return () => window.removeEventListener('resize', updateSize);
+    // ResizeObserver para mudanças dinâmicas
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect;
+        // Só atualiza se tiver dimensões válidas (> 0)
+        if (width > 0 && height > 0) {
+          setCanvasSize({ width, height });
+        }
+      }
+    });
+    
+    resizeObserver.observe(container);
+    
+    // Fallback: força atualização após o layout inicial
+    // Usa requestAnimationFrame para garantir que o layout foi calculado
+    const rafId = requestAnimationFrame(() => {
+      updateSize();
+    });
+    
+    return () => {
+      resizeObserver.disconnect();
+      cancelAnimationFrame(rafId);
+    };
   }, []);
 
   // =====================================================
