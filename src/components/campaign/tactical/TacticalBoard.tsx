@@ -1196,8 +1196,8 @@ export function TacticalBoard({
           )}
         </AnimatePresence>
         
-        {/* Instruções da ferramenta */}
-        <div className="absolute top-2 left-2 bg-card/80 rounded px-2 py-1">
+        {/* Instruções da ferramenta - pointer-events-none para não bloquear interação com o mapa */}
+        <div className="absolute top-2 left-2 bg-card/80 rounded px-2 py-1 pointer-events-none z-10">
           <p className="text-xs text-muted-foreground">
             {board.activeTool === 'select' && 'Clique para selecionar tokens'}
             {board.activeTool === 'move' && 'Arraste tokens para mover'}
