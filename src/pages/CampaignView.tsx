@@ -585,8 +585,8 @@ export default function CampaignView() {
               />
             </TabsContent>
 
-            {/* Aba Tabuleiro - flex flex-col para altura dinâmica */}
-            <TabsContent value="tactical" className="flex-1 flex flex-col p-4 sm:p-6 m-0 overflow-hidden">
+            {/* Aba Tabuleiro - flex flex-col min-h-0 para altura dinâmica correta */}
+            <TabsContent value="tactical" className="flex-1 flex flex-col min-h-0 p-4 sm:p-6 m-0 overflow-hidden">
               <CampaignBoardTab
                 campaignId={campaignId}
                 isMaster={campaignData.isMaster}
