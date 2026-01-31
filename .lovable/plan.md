@@ -1,409 +1,395 @@
 
-# Plano: Reestruturação Visual Completa da CampaignView
+
+# Plano: Reconstrução Total da Interface de Campanha
 
 ## Visão Geral
 
-Após análise detalhada do código atual e pesquisa de bibliotecas compatíveis com React 19 + TypeScript + Tailwind, proponho uma reestruturação completa utilizando as bibliotecas já instaladas de forma mais eficiente, além da adição de duas novas bibliotecas para resolver problemas estruturais.
+Reconstrução completa do módulo de campanha com foco em **minimalismo funcional**: interface limpa, alta densidade de informações, sem distrações visuais. O novo layout será **centralizado** sem painéis laterais fixos, com todos os elementos quebrados corrigidos.
 
 ---
 
-## Bibliotecas Envolvidas
-
-### Já Instaladas (usar melhor)
-| Biblioteca | Versão | Uso Atual | Uso Proposto |
-|------------|--------|-----------|--------------|
-| `react-resizable-panels` | ^2.1.9 | Não utilizada | Layout principal com painéis redimensionáveis |
-| `@tanstack/react-virtual` | ^3.13.13 | Não utilizada | Virtualização de listas longas (chat, diário) |
-| `framer-motion` | ^12.23.26 | Animações básicas | Transições de layout e feedback visual |
-| `react-konva` | ^19.2.1 | TacticalBoard | Manter, mas otimizar camadas |
-
-### Novas Bibliotecas Sugeridas
-| Biblioteca | Propósito | Justificativa |
-|------------|-----------|---------------|
-| `@dnd-kit/core` + `@dnd-kit/sortable` | Drag-and-drop modular | Reordenação de tokens, ordem de iniciativa, widgets do mestre |
-
----
-
-## Arquitetura Visual Proposta
+## Diagnóstico dos Problemas Atuais
 
 ```text
-┌─────────────────────────────────────────────────────────────────────────────────┐
-│ HEADER (shrink-0)                                                               │
-├─────────────────────────────────────────────────────────────────────────────────┤
-│                                                                                 │
-│  ┌───────────────────────────────────────────────────────────────┐ ┌─────────┐  │
-│  │                                                               │ │         │  │
-│  │                    PAINEL PRINCIPAL                           │ │ SIDEBAR │  │
-│  │                    (ResizablePanel)                           │ │COLAPSÁVEL│ │
-│  │                                                               │ │         │  │
-│  │  ┌──────────────────────────────────────────────────────────┐ │ │ Avatar  │  │
-│  │  │ TABS (NavigationTabs component)                          │ │ │ Cards   │  │
-│  │  └──────────────────────────────────────────────────────────┘ │ │         │  │
-│  │                                                               │ │ Status  │  │
-│  │  ┌─────────────────────────┐ ┌────────────────────────────┐  │ │ Online  │  │
-│  │  │                         │ │                            │  │ │         │  │
-│  │  │  CONTEÚDO PRIMÁRIO      │ │  PAINEL SECUNDÁRIO        │  │ │         │  │
-│  │  │  (Chat, Mapa, Status)   │ │  (Mestre: NPCs, Macros)   │  │ │         │  │
-│  │  │                         │ │  (Jogador: Inventário)    │  │ │         │  │
-│  │  │  ResizablePanel         │ │  ResizablePanel           │  │ │         │  │
-│  │  │  (virtualizado)         │ │  (redimensionável)        │  │ │         │  │
-│  │  │                         │ │                            │  │ │         │  │
-│  │  └─────────────────────────┘ └────────────────────────────┘  │ │         │  │
-│  │                                                               │ │         │  │
-│  └───────────────────────────────────────────────────────────────┘ └─────────┘  │
-│                                                                                 │
-└─────────────────────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                    PROBLEMAS IDENTIFICADOS                       │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  TABULEIRO TÁTICO                                                │
+│  ├─ Canvas não preenche espaço (ResizeObserver não funciona)    │
+│  ├─ Camadas Konva renderizam fora da área visível               │
+│  ├─ Zoom/Pan conflitam com scroll da página                     │
+│  └─ Toolbar ocupa espaço demais em telas pequenas               │
+│                                                                  │
+│  SISTEMA DE CHAT                                                 │
+│  ├─ VirtualizedChatList não calcula altura correta              │
+│  ├─ Auto-scroll inconsistente                                   │
+│  ├─ Input de mensagem separado do contexto                      │
+│  └─ Rolador de dados e controles ocupam muito espaço            │
+│                                                                  │
+│  SIDEBAR DE JOGADORES                                            │
+│  ├─ Modo colapsado não sincroniza com estado global             │
+│  ├─ Presença online não atualiza em tempo real                  │
+│  ├─ Cards muito grandes para informação mostrada                │
+│  └─ Não funciona bem em mobile                                  │
+│                                                                  │
+│  NAVEGAÇÃO                                                       │
+│  ├─ 10+ abas = difícil encontrar o que precisa                  │
+│  ├─ Tabs não indicam conteúdo novo/pendente                     │
+│  └─ Hierarquia confusa (tabs dentro de tabs)                    │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Fase 1: Layout Base com Painéis Redimensionáveis
+## Arquitetura Proposta: Layout Único Central
 
-### 1.1 Criar CampaignLayout.tsx
-
-Novo componente de layout principal usando `react-resizable-panels`:
-
-```tsx
-// src/components/campaign/layout/CampaignLayout.tsx
-import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
-
-interface CampaignLayoutProps {
-  children: React.ReactNode;
-  sidebar: React.ReactNode;
-  secondaryPanel?: React.ReactNode;
-  showSecondary?: boolean;
-}
-
-export function CampaignLayout({ 
-  children, 
-  sidebar, 
-  secondaryPanel,
-  showSecondary = false 
-}: CampaignLayoutProps) {
-  return (
-    <ResizablePanelGroup direction="horizontal" className="flex-1">
-      {/* Painel principal */}
-      <ResizablePanel defaultSize={showSecondary ? 60 : 80} minSize={40}>
-        {children}
-      </ResizablePanel>
-      
-      {/* Painel secundário opcional (mestre) */}
-      {showSecondary && secondaryPanel && (
-        <>
-          <ResizableHandle withHandle />
-          <ResizablePanel defaultSize={20} minSize={15} maxSize={40}>
-            {secondaryPanel}
-          </ResizablePanel>
-        </>
-      )}
-      
-      {/* Sidebar de jogadores */}
-      <ResizableHandle />
-      <ResizablePanel defaultSize={20} minSize={5} maxSize={30} collapsible>
-        {sidebar}
-      </ResizablePanel>
-    </ResizablePanelGroup>
-  );
-}
-```
-
-### 1.2 Arquivos a Criar
-
-| Arquivo | Propósito |
-|---------|-----------|
-| `src/components/campaign/layout/CampaignLayout.tsx` | Container principal com painéis |
-| `src/components/campaign/layout/NavigationTabs.tsx` | Tabs otimizadas com ícones e badges |
-| `src/components/campaign/layout/index.ts` | Barrel export |
-
----
-
-## Fase 2: Chat Virtualizado
-
-### 2.1 Criar VirtualizedChatList.tsx
-
-Usando `@tanstack/react-virtual` para listas de mensagens:
-
-```tsx
-// src/components/campaign/chat/VirtualizedChatList.tsx
-import { useVirtualizer } from '@tanstack/react-virtual';
-
-interface VirtualizedChatListProps {
-  messages: CampaignMessage[];
-  currentUserId: string;
-  masterId: string;
-}
-
-export function VirtualizedChatList({ messages, currentUserId, masterId }: VirtualizedChatListProps) {
-  const parentRef = useRef<HTMLDivElement>(null);
-  
-  const virtualizer = useVirtualizer({
-    count: messages.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => 80, // Altura estimada de cada mensagem
-    overscan: 5,
-  });
-  
-  // Auto-scroll para novas mensagens
-  useEffect(() => {
-    virtualizer.scrollToIndex(messages.length - 1, { align: 'end' });
-  }, [messages.length]);
-  
-  return (
-    <div ref={parentRef} className="flex-1 overflow-y-auto">
-      <div
-        style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}
-      >
-        {virtualizer.getVirtualItems().map((virtualRow) => (
-          <div
-            key={virtualRow.key}
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              transform: `translateY(${virtualRow.start}px)`,
-            }}
-          >
-            <ChatMessage
-              message={messages[virtualRow.index]}
-              currentUserId={currentUserId}
-              masterId={masterId}
-            />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-```
-
-### 2.2 Benefícios
-
-- Suporte a milhares de mensagens sem perda de performance
-- Scroll suave mesmo com histórico longo
-- Reduz DOM nodes de 1000+ para ~20 visíveis
-
----
-
-## Fase 3: Sidebar Melhorada
-
-### 3.1 Atualizar PlayersSidebar.tsx
-
-Melhorias com animações e virtualização:
-
-```tsx
-// Alterações principais:
-// 1. Usar useVirtualizer para listas longas de membros
-// 2. Adicionar animações de entrada/saída com AnimatePresence
-// 3. Implementar colapso animado com LayoutGroup
-// 4. Adicionar indicadores de atividade em tempo real
-
-// Exemplo de animação de colapso:
-<motion.aside
-  layout
-  initial={false}
-  animate={{ width: isCollapsed ? 64 : 320 }}
-  transition={{ type: 'spring', stiffness: 300, damping: 30 }}
->
-  {/* Conteúdo */}
-</motion.aside>
+```text
+┌─────────────────────────────────────────────────────────────────┐
+│ HEADER COMPACTO                                                  │
+│ [← Voltar] [Nome da Campanha] [Sessão X] [🔴 5 online] [Config] │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  ┌───────────────────────────────────────────────────────────┐  │
+│  │ NAVEGAÇÃO CONSOLIDADA (4 abas principais)                 │  │
+│  │ [📊 Painel] [💬 Chat] [🗺️ Mapa] [📋 Recursos]            │  │
+│  └───────────────────────────────────────────────────────────┘  │
+│                                                                  │
+│  ┌───────────────────────────────────────────────────────────┐  │
+│  │                                                            │  │
+│  │                                                            │  │
+│  │              CONTEÚDO CENTRALIZADO                         │  │
+│  │              (expande para preencher tudo)                 │  │
+│  │                                                            │  │
+│  │                                                            │  │
+│  └───────────────────────────────────────────────────────────┘  │
+│                                                                  │
+│  ┌───────────────────────────────────────────────────────────┐  │
+│  │ BARRA DE STATUS (presença + ações rápidas)                │  │
+│  │ [👤 Ana ●] [👤 Carlos ●] [👤 Julia ○] │ [🎲 Rolar] [📝]   │  │
+│  └───────────────────────────────────────────────────────────┘  │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Fase 4: Tabuleiro Tático Otimizado
+## Componentes Novos
 
-### 4.1 Corrigir TacticalBoard.tsx
+### 1. CampaignShell.tsx (Container Principal)
 
-Problemas identificados e soluções:
-
-| Problema | Solução |
-|----------|---------|
-| Canvas não preenche espaço | ResizeObserver (já planejado) |
-| Overlay bloqueia interações | `pointer-events-none` (já aplicado) |
-| Re-renders desnecessários | Memoização de camadas Konva |
-| Zoom em mobile bugado | Implementar pinch-to-zoom nativo |
-
-### 4.2 Estrutura de Camadas Konva
+Substitui CampaignView.tsx com estrutura simplificada:
 
 ```tsx
-// Otimizar TacticalBoardKonva.tsx com camadas separadas:
-<Stage ref={stageRef} width={canvasSize.width} height={canvasSize.height}>
-  {/* Camada de background - raramente atualiza */}
-  <Layer listening={false}>
-    <BackgroundImage />
-  </Layer>
-  
-  {/* Camada de grid - atualiza com zoom */}
-  <Layer listening={false}>
-    <GridLines />
-  </Layer>
-  
-  {/* Camada de fog - atualiza com edição do mestre */}
-  <Layer>
-    <FogOfWar />
-  </Layer>
-  
-  {/* Camada de tokens - atualiza frequentemente */}
-  <Layer>
-    {tokens.map(token => (
-      <TokenRenderer key={token.id} token={token} />
-    ))}
-  </Layer>
-  
-  {/* Camada de UI - sempre no topo */}
-  <Layer listening={false}>
-    <MeasurementRuler />
-    <SelectionBox />
-  </Layer>
-</Stage>
-```
-
----
-
-## Fase 5: Status Grid Responsivo
-
-### 5.1 Atualizar CampaignStatusGrid.tsx
-
-```tsx
-// Usar CSS Grid com auto-fill para responsividade perfeita:
-<div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4">
-  {members.map(member => (
-    <MagicCard key={member.id}>
-      {/* Conteúdo do card */}
-    </MagicCard>
-  ))}
+// Estrutura básica
+<div className="h-screen flex flex-col bg-background">
+  <CampaignHeader />       {/* Compacto: 48px fixo */}
+  <CampaignNavigation />   {/* 4 abas consolidadas */}
+  <main className="flex-1 min-h-0 overflow-hidden">
+    {/* Conteúdo da aba ativa */}
+  </main>
+  <CampaignStatusBar />    {/* Presença + ações: 56px fixo */}
 </div>
 ```
 
-### 5.2 Cards com Micro-interações
+### 2. Navegação Consolidada (4 Abas)
+
+Reduz de 10+ abas para 4 grupos lógicos:
+
+| Aba | Conteúdo |
+|-----|----------|
+| **Painel** | Status dos agentes + Condições + Sessão ativa |
+| **Chat** | Mensagens + Dados + Sussurros + Atividades |
+| **Mapa** | Tabuleiro Tático (full-screen) |
+| **Recursos** | Notas + Handouts + Diário + Timeline |
+
+Para o mestre, adiciona uma 5ª aba:
+
+| Aba | Conteúdo |
+|-----|----------|
+| **Mestre** | NPCs + Macros + Áudio + Controles + Bônus |
+
+### 3. CampaignStatusBar.tsx (Nova)
+
+Barra inferior compacta com:
+- Avatares dos membros online (clicáveis para detalhes)
+- Indicadores de presença em tempo real
+- Botão de rolagem rápida de dados
+- Acesso rápido ao personagem selecionado
+
+---
+
+## Correções por Área
+
+### Tabuleiro Tático
+
+**Problema**: Canvas não preenche espaço disponível
+
+**Solução**:
+```tsx
+// Novo container com altura explícita
+<div className="relative w-full h-full">
+  <TacticalBoardKonva
+    width={containerWidth}   // Via ResizeObserver
+    height={containerHeight}
+    // ... props
+  />
+  {/* Toolbar como overlay no canto */}
+  <div className="absolute top-2 left-2 z-10">
+    <TacticalToolbar floating />
+  </div>
+</div>
+```
+
+**Mudanças**:
+1. Toolbar vira overlay flutuante (não empurra canvas)
+2. Stage Konva usa 100% do container
+3. ResizeObserver com debounce para evitar flickering
+4. Seletor de mapas vira dropdown no header
+
+### Sistema de Chat
+
+**Problema**: Lista virtualizada não calcula altura
+
+**Solução**:
+```tsx
+// Chat com altura explícita
+<div className="flex flex-col h-full">
+  <div className="flex-1 min-h-0 relative">
+    <VirtualizedChatList 
+      messages={messages}
+      className="absolute inset-0" // Preenche container
+    />
+  </div>
+  <ChatInput className="shrink-0" />
+</div>
+```
+
+**Mudanças**:
+1. Container pai com altura explícita (não depende de flex)
+2. Lista usa `absolute inset-0` para garantir preenchimento
+3. Input de mensagem usa `shrink-0` para nunca comprimir
+4. Botões de rolagem e sussurro integrados ao input
+
+### Sidebar de Jogadores → Barra de Status
+
+**Problema**: Ocupa muito espaço, não funciona mobile
+
+**Solução**: Transforma em barra horizontal no rodapé
 
 ```tsx
-// Adicionar feedback visual com Framer Motion:
-<motion.div
-  whileHover={{ scale: 1.02, y: -4 }}
-  whileTap={{ scale: 0.98 }}
-  transition={{ type: 'spring', stiffness: 400 }}
->
-  <MagicCard>
-    {/* Conteúdo */}
-  </MagicCard>
-</motion.div>
+<div className="h-14 border-t bg-card/50 flex items-center px-4 gap-2">
+  {/* Avatares compactos clicáveis */}
+  <div className="flex -space-x-2">
+    {members.map(m => (
+      <Avatar 
+        key={m.id} 
+        onClick={() => setSelectedMember(m)}
+        className="ring-2 ring-background"
+      />
+    ))}
+  </div>
+  
+  {/* Detalhes aparecem em popover/drawer */}
+  <Popover>
+    <PopoverContent>
+      {/* Status completo do membro selecionado */}
+    </PopoverContent>
+  </Popover>
+</div>
+```
+
+**Benefícios**:
+- Sempre visível sem ocupar espaço lateral
+- Funciona igual em desktop e mobile
+- Clique expande detalhes on-demand
+
+### Navegação Consolidada
+
+**Problema**: Muitas abas, hierarquia confusa
+
+**Solução**: 4 abas principais com sub-navegação interna
+
+```tsx
+<Tabs defaultValue="panel" className="flex-1 flex flex-col">
+  <TabsList className="justify-center bg-transparent">
+    <TabsTrigger value="panel" className="gap-2">
+      <LayoutDashboard className="w-4 h-4" />
+      Painel
+    </TabsTrigger>
+    <TabsTrigger value="chat" className="gap-2">
+      <MessageSquare className="w-4 h-4" />
+      Chat
+      {unreadCount > 0 && <Badge>{unreadCount}</Badge>}
+    </TabsTrigger>
+    <TabsTrigger value="map" className="gap-2">
+      <Map className="w-4 h-4" />
+      Mapa
+    </TabsTrigger>
+    <TabsTrigger value="resources" className="gap-2">
+      <FolderOpen className="w-4 h-4" />
+      Recursos
+    </TabsTrigger>
+    {isMaster && (
+      <TabsTrigger value="master" className="gap-2 text-primary">
+        <Crown className="w-4 h-4" />
+        Mestre
+      </TabsTrigger>
+    )}
+  </TabsList>
+  
+  {/* Conteúdo preenche resto da tela */}
+  <TabsContent value="panel" className="flex-1 min-h-0">
+    <PanelTab />
+  </TabsContent>
+  {/* ... outras abas */}
+</Tabs>
 ```
 
 ---
 
-## Fase 6: Aba do Mestre com Widgets Arrastáveis (Opcional)
-
-### 6.1 Instalar dnd-kit
-
-```bash
-npm install @dnd-kit/core @dnd-kit/sortable @dnd-kit/utilities
-```
-
-### 6.2 Criar MasterDashboard.tsx
-
-```tsx
-// src/components/campaign/master/MasterDashboard.tsx
-import { DndContext, closestCenter } from '@dnd-kit/core';
-import { SortableContext, arrayMove, rectSortingStrategy } from '@dnd-kit/sortable';
-
-// Widgets que o mestre pode reorganizar:
-const MASTER_WIDGETS = [
-  { id: 'npcs', title: 'NPCs Ativos', component: NPCWidget },
-  { id: 'macros', title: 'Macros Rápidas', component: MacrosWidget },
-  { id: 'audio', title: 'Controle de Áudio', component: AudioWidget },
-  { id: 'initiative', title: 'Iniciativa', component: InitiativeWidget },
-];
-```
-
----
-
-## Resumo de Arquivos
+## Estrutura de Arquivos
 
 ### Novos Arquivos
 
 | Caminho | Descrição |
 |---------|-----------|
-| `src/components/campaign/layout/CampaignLayout.tsx` | Layout principal com painéis redimensionáveis |
-| `src/components/campaign/layout/NavigationTabs.tsx` | Tabs otimizadas |
-| `src/components/campaign/layout/index.ts` | Barrel export |
-| `src/components/campaign/chat/VirtualizedChatList.tsx` | Chat virtualizado |
-| `src/components/campaign/master/MasterDashboard.tsx` | Dashboard com widgets arrastáveis |
-| `src/components/campaign/master/widgets/` | Componentes de widget individuais |
+| `src/pages/CampaignShell.tsx` | Novo container principal (substitui CampaignView) |
+| `src/components/campaign/v3/CampaignHeader.tsx` | Header compacto |
+| `src/components/campaign/v3/CampaignNavigation.tsx` | 4-5 abas consolidadas |
+| `src/components/campaign/v3/CampaignStatusBar.tsx` | Barra de presença inferior |
+| `src/components/campaign/v3/tabs/PanelTab.tsx` | Status + Condições + Sessão |
+| `src/components/campaign/v3/tabs/ChatTab.tsx` | Chat redesenhado |
+| `src/components/campaign/v3/tabs/MapTab.tsx` | Mapa full-screen |
+| `src/components/campaign/v3/tabs/ResourcesTab.tsx` | Notas + Handouts + Diário |
+| `src/components/campaign/v3/tabs/MasterTab.tsx` | Ferramentas do mestre |
+| `src/components/campaign/v3/index.ts` | Barrel export |
 
 ### Arquivos a Modificar
 
-| Arquivo | Alterações |
-|---------|------------|
-| `src/pages/CampaignView.tsx` | Usar novo CampaignLayout, simplificar estrutura |
-| `src/components/campaign/PlayersSidebar.tsx` | Animações, virtualização, colapso animado |
-| `src/components/campaign/CampaignStatusGrid.tsx` | CSS Grid responsivo, micro-interações |
-| `src/components/campaign/tabs/CampaignChatTab.tsx` | Usar VirtualizedChatList |
-| `src/components/campaign/tactical/TacticalBoard.tsx` | ResizeObserver, otimização de camadas |
-| `src/components/campaign/tabs/CampaignMasterTab.tsx` | Integrar MasterDashboard |
+| Arquivo | Alteração |
+|---------|-----------|
+| `src/App.tsx` ou router | Apontar `/campaign/:id` para CampaignShell |
+| `src/components/campaign/tactical/TacticalBoard.tsx` | Toolbar flutuante, altura explícita |
+| `src/components/campaign/chat/VirtualizedChatList.tsx` | Container com altura absoluta |
+
+### Arquivos que Podem Ser Removidos (após migração)
+
+| Arquivo | Motivo |
+|---------|--------|
+| `src/pages/CampaignView.tsx` | Substituído por CampaignShell |
+| `src/components/campaign/layout/*` | Layout com painéis não será mais usado |
+| `src/components/campaign/PlayersSidebar.tsx` | Substituído por StatusBar |
 
 ---
 
-## Dependências a Instalar
+## Fases de Implementação
 
-```bash
-npm install @dnd-kit/core @dnd-kit/sortable @dnd-kit/utilities
+### Fase 1: Estrutura Base
+1. Criar `CampaignShell.tsx` com estrutura flex
+2. Criar `CampaignHeader.tsx` compacto
+3. Criar `CampaignNavigation.tsx` com 4 abas
+4. Criar `CampaignStatusBar.tsx` com presença
+
+### Fase 2: Migrar Conteúdo das Abas
+1. `PanelTab.tsx` - Combina Status + Condições
+2. `ChatTab.tsx` - Chat com altura corrigida
+3. `MapTab.tsx` - Tabuleiro full-screen
+4. `ResourcesTab.tsx` - Agrupa recursos existentes
+5. `MasterTab.tsx` - Ferramentas do mestre
+
+### Fase 3: Correções de Layout
+1. TacticalBoard com toolbar flutuante
+2. VirtualizedChatList com altura absoluta
+3. Testes em diferentes resoluções
+
+### Fase 4: Limpeza
+1. Atualizar router para usar CampaignShell
+2. Remover arquivos obsoletos
+3. Atualizar memórias do projeto
+
+---
+
+## Estilo Visual Minimalista
+
+### Princípios
+
+1. **Fundo neutro**: `bg-background` sem gradientes
+2. **Bordas sutis**: `border-border/50` apenas onde necessário
+3. **Tipografia**: Hierarquia clara, sem decorações
+4. **Espaçamento**: Compacto mas respirável (`p-3` em vez de `p-6`)
+5. **Cores**: Primário apenas para ações e destaques
+6. **Ícones**: Lucide, tamanho consistente (16-20px)
+
+### Paleta Reduzida
+
+```css
+/* Uso restrito de cores */
+--foreground: texto principal
+--muted-foreground: texto secundário
+--primary: apenas ações e indicadores importantes
+--destructive: apenas alertas críticos
 ```
 
 ---
 
-## Cronograma de Implementação
-
-| Fase | Duração Estimada | Prioridade |
-|------|------------------|------------|
-| 1. Layout com Painéis | Alta complexidade | CRÍTICA |
-| 2. Chat Virtualizado | Média complexidade | ALTA |
-| 3. Sidebar Melhorada | Baixa complexidade | MÉDIA |
-| 4. Tabuleiro Otimizado | Alta complexidade | ALTA |
-| 5. Status Grid | Baixa complexidade | MÉDIA |
-| 6. Widgets do Mestre | Média complexidade | BAIXA |
-
----
-
-## Resultado Visual Esperado
+## Resultado Esperado
 
 ```text
 ANTES:
-┌────────────────────────────────────┐
-│ [Tabs fixas no topo]               │
-├────────────────────────────────────┤
-│                                    │
-│   Conteúdo cortado ou com         │
-│   espaços em branco               │
-│                                    │
-│   Sem redimensionamento           │
-│                                    │
-└────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│ [Header largo com muitos botões]                              │
+├──────────────────────────────────────────────────────────────┤
+│ [10 tabs pequenas difíceis de clicar]                         │
+├──────────────────────────────────────┬───────────────────────┤
+│                                      │                        │
+│   Conteúdo cortado                   │  Sidebar ocupando     │
+│   ou com espaço em branco            │  25% da tela          │
+│                                      │                        │
+│   Scroll não funciona                │  Cards muito grandes  │
+│                                      │                        │
+└──────────────────────────────────────┴───────────────────────┘
 
 DEPOIS:
-┌────────────────────────────────────────────────────────────┐
-│ [Tabs com badges de notificação]                           │
-├───────────────────────────────────┬────────────────────────┤
-│                                   │                        │
-│   PAINEL REDIMENSIONÁVEL          │   SIDEBAR COLAPSÁVEL   │
-│                                   │                        │
-│   ├─ Chat virtualizado           │   ├─ Avatares         │
-│   ├─ Mapa full-height            │   ├─ Status bars      │
-│   └─ Widgets arrastáveis         │   └─ Presença online  │
-│                                   │                        │
-│   ◀─────── Handle ──────▶        │                        │
-│                                   │                        │
-└───────────────────────────────────┴────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│ [← Back] Campanha Nome      Sessão 15    [⚙️]                │
+├──────────────────────────────────────────────────────────────┤
+│        [📊 Painel] [💬 Chat] [🗺️ Mapa] [📋 Recursos]         │
+├──────────────────────────────────────────────────────────────┤
+│                                                              │
+│                                                              │
+│                    CONTEÚDO LIMPO                            │
+│                    Preenche 100% do espaço                   │
+│                    Scroll funciona corretamente              │
+│                                                              │
+│                                                              │
+├──────────────────────────────────────────────────────────────┤
+│ [👤●] [👤●] [👤●] [👤○] [👤○]          [🎲 Rolar] [📝 Notas]│
+└──────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Observações Técnicas
+## Seção Técnica
 
-1. **Compatibilidade React 19**: Todas as bibliotecas foram verificadas para compatibilidade
-2. **Performance**: Virtualização reduz DOM nodes de milhares para dezenas
-3. **Acessibilidade**: dnd-kit tem suporte nativo a keyboard navigation
-4. **Persistência**: Estado dos painéis pode ser salvo em localStorage
-5. **Mobile**: Painéis redimensionáveis desabilitados em telas pequenas (layout stack)
+### Compatibilidade
+- React 19.2.3
+- Framer Motion 12.x para transições
+- Tanstack Virtual 3.x para listas
+- React-Konva 19.x para mapa
+
+### Hooks Reutilizados
+Todos os hooks existentes em `src/hooks/campaign/` serão reutilizados:
+- `useCampaignData`
+- `useCampaignRealtime`
+- `useCampaignPresence`
+- `useTacticalBoard`
+- `useMasterActions`
+
+### Padrões Mantidos
+- Singleton Pattern para hooks
+- Ref-First para callbacks
+- Virtualização para listas longas
+- ResizeObserver para dimensões dinâmicas
 
