@@ -1,3 +1,12 @@
+/**
+ * CampaignStatusGrid - Grid responsivo de status dos agentes
+ * 
+ * Usa CSS Grid com auto-fill para responsividade perfeita em todas as telas.
+ * Inclui micro-interações com Framer Motion.
+ * 
+ * @module components/campaign/CampaignStatusGrid
+ */
+
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { MagicCard } from '@/components/ui/magic-card';
@@ -45,6 +54,31 @@ const CLASS_CONFIG = {
   Ocultista: { icon: Skull, color: 'hsl(var(--paranormal))' },
 } as const;
 
+// Variantes de animação para o grid
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.08,
+    },
+  },
+} as const;
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20, scale: 0.95 },
+  visible: { 
+    opacity: 1, 
+    y: 0, 
+    scale: 1,
+    transition: {
+      type: 'spring' as const,
+      stiffness: 300,
+      damping: 24,
+    },
+  },
+};
+
 export function CampaignStatusGrid({ members, isMaster }: CampaignStatusGridProps) {
   const membersWithCharacters = members.filter(m => m.characters && m.role !== 'master');
   
@@ -63,8 +97,13 @@ export function CampaignStatusGrid({ members, isMaster }: CampaignStatusGridProp
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
-      {membersWithCharacters.map((member, index) => {
+    <motion.div 
+      className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
+      {membersWithCharacters.map((member) => {
         const char = member.characters!;
         const classConfig = CLASS_CONFIG[char.class as keyof typeof CLASS_CONFIG] || {
           icon: FileText,
@@ -80,13 +119,14 @@ export function CampaignStatusGrid({ members, isMaster }: CampaignStatusGridProp
         return (
           <motion.div
             key={member.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
+            variants={itemVariants}
+            whileHover={{ scale: 1.02, y: -4 }}
+            whileTap={{ scale: 0.98 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 25 }}
           >
             <MagicCard
               className={cn(
-                'relative overflow-hidden',
+                'relative overflow-hidden cursor-pointer',
                 isCritical && 'border-destructive/50'
               )}
               gradientColor={classConfig.color}
@@ -176,6 +216,6 @@ export function CampaignStatusGrid({ members, isMaster }: CampaignStatusGridProp
           </motion.div>
         );
       })}
-    </div>
+    </motion.div>
   );
 }

@@ -22,14 +22,9 @@ import {
   Copy,
   RefreshCw,
   UserPlus,
-  MessageSquare,
-  Scroll,
   UserCog,
   Activity,
-  Swords,
   Users,
-  CalendarDays,
-  Map,
   FileText,
   BookOpen,
   Clock,
@@ -54,6 +49,9 @@ import { useMasterActions } from '@/hooks/campaign/useMasterActions';
 
 // Componentes de abas (stateless)
 import { CampaignChatTab, CampaignCombatTab, CampaignBoardTab, CampaignMasterTab } from '@/components/campaign/tabs';
+
+// Novo layout com painéis redimensionáveis
+import { CampaignLayout, NavigationTabs } from '@/components/campaign/layout';
 
 // Componentes legados
 import { CharacterSelectDialog } from '@/components/campaign/CharacterSelectDialog';
@@ -489,57 +487,26 @@ export default function CampaignView() {
         />
       )}
 
-      {/* Main content */}
-      <div className="flex-1 flex overflow-hidden">
-        <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
-          <Tabs defaultValue="chat" className="flex-1 flex flex-col overflow-hidden">
-            {/* Tabs fixas no topo */}
-            <div className="shrink-0 z-20 border-b border-border/60 bg-background/95 backdrop-blur-md overflow-x-auto shadow-lg">
-              <TabsList className="bg-transparent px-4 sm:px-6 lg:px-8 min-w-max h-12 sm:h-14">
-                <TabsTrigger value="status" className="font-display tracking-wider text-xs sm:text-sm px-3 sm:px-5 h-10 sm:h-12 text-white/70 hover:text-white data-[state=active]:bg-primary/15 data-[state=active]:text-white transition-all">
-                  <Users className="w-4 h-4 sm:w-5 sm:h-5 sm:mr-2" />
-                  <span className="hidden sm:inline">AGENTES</span>
-                </TabsTrigger>
-                <TabsTrigger value="chat" className="font-display tracking-wider text-xs sm:text-sm px-3 sm:px-5 h-10 sm:h-12 text-white/70 hover:text-white data-[state=active]:bg-primary/15 data-[state=active]:text-white transition-all">
-                  <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5 sm:mr-2" />
-                  <span className="hidden sm:inline">CHAT</span>
-                </TabsTrigger>
-                <TabsTrigger value="combat" className="font-display tracking-wider text-xs sm:text-sm px-3 sm:px-5 h-10 sm:h-12 text-white/70 hover:text-white data-[state=active]:bg-primary/15 data-[state=active]:text-white transition-all">
-                  <Swords className="w-4 h-4 sm:w-5 sm:h-5 sm:mr-2" />
-                  <span className="hidden sm:inline">COMBATE</span>
-                </TabsTrigger>
-                <TabsTrigger value="tactical" className="font-display tracking-wider text-xs sm:text-sm px-3 sm:px-5 h-10 sm:h-12 text-white/70 hover:text-white data-[state=active]:bg-primary/15 data-[state=active]:text-white transition-all">
-                  <Map className="w-4 h-4 sm:w-5 sm:h-5 sm:mr-2" />
-                  <span className="hidden sm:inline">TABULEIRO</span>
-                </TabsTrigger>
-                <TabsTrigger value="conditions" className="font-display tracking-wider text-xs sm:text-sm px-3 sm:px-5 h-10 sm:h-12 text-white/70 hover:text-white data-[state=active]:bg-primary/15 data-[state=active]:text-white transition-all">
-                  <Activity className="w-4 h-4 sm:w-5 sm:h-5 sm:mr-2" />
-                  <span className="hidden sm:inline">CONDIÇÕES</span>
-                </TabsTrigger>
-                <TabsTrigger value="notes" className="font-display tracking-wider text-xs sm:text-sm px-3 sm:px-5 h-10 sm:h-12 text-white/70 hover:text-white data-[state=active]:bg-primary/15 data-[state=active]:text-white transition-all">
-                  <Scroll className="w-4 h-4 sm:w-5 sm:h-5 sm:mr-2" />
-                  <span className="hidden sm:inline">NOTAS</span>
-                </TabsTrigger>
-                <TabsTrigger value="handouts" className="font-display tracking-wider text-xs sm:text-sm px-3 sm:px-5 h-10 sm:h-12 text-white/70 hover:text-white data-[state=active]:bg-primary/15 data-[state=active]:text-white transition-all">
-                  <FileText className="w-4 h-4 sm:w-5 sm:h-5 sm:mr-2" />
-                  <span className="hidden sm:inline">HANDOUTS</span>
-                </TabsTrigger>
-                <TabsTrigger value="sessions" className="font-display tracking-wider text-xs sm:text-sm px-3 sm:px-5 h-10 sm:h-12 text-white/70 hover:text-white data-[state=active]:bg-primary/15 data-[state=active]:text-white transition-all">
-                  <CalendarDays className="w-4 h-4 sm:w-5 sm:h-5 sm:mr-2" />
-                  <span className="hidden sm:inline">SESSÕES</span>
-                </TabsTrigger>
-                <TabsTrigger value="diary" className="font-display tracking-wider text-xs sm:text-sm px-3 sm:px-5 h-10 sm:h-12 text-white/70 hover:text-white data-[state=active]:bg-primary/15 data-[state=active]:text-white transition-all">
-                  <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 sm:mr-2" />
-                  <span className="hidden sm:inline">DIÁRIO</span>
-                </TabsTrigger>
-                {campaignData.isMaster && (
-                  <TabsTrigger value="master" className="font-display tracking-wider text-xs sm:text-sm px-3 sm:px-5 h-10 sm:h-12 text-white/70 hover:text-white data-[state=active]:bg-primary/20 data-[state=active]:text-white transition-all">
-                    <Crown className="w-4 h-4 sm:w-5 sm:h-5 sm:mr-2" />
-                    <span className="hidden sm:inline">MESTRE</span>
-                  </TabsTrigger>
-                )}
-              </TabsList>
-            </div>
+      {/* Main content com layout redimensionável */}
+      <CampaignLayout
+        sidebar={
+          <PlayersSidebar
+            members={campaignData.members as any}
+            masterId={campaign.master_id}
+            isMaster={campaignData.isMaster}
+            onRemoveMember={removeMember}
+            getUserStatus={presence.getUserStatus}
+            isConnected={presence.isConnected}
+            isCollapsed={sidebarCollapsed}
+            onToggleCollapse={() => setSidebarCollapsed(prev => !prev)}
+          />
+        }
+        defaultSidebarCollapsed={sidebarCollapsed}
+        onSidebarToggle={setSidebarCollapsed}
+      >
+        <Tabs defaultValue="chat" className="flex-1 flex flex-col overflow-hidden">
+          {/* Tabs de navegação otimizadas */}
+          <NavigationTabs isMaster={campaignData.isMaster} />
 
             {/* Aba Status - Responsivo: ocupa toda largura disponível */}
             <TabsContent value="status" className="flex-1 flex flex-col min-h-0 p-4 sm:p-6 lg:p-8 m-0 overflow-auto">
@@ -703,20 +670,7 @@ export default function CampaignView() {
               </TabsContent>
             )}
           </Tabs>
-        </main>
-
-        {/* Sidebar de jogadores - Colapsável */}
-        <PlayersSidebar
-          members={campaignData.members as any}
-          masterId={campaign.master_id}
-          isMaster={campaignData.isMaster}
-          onRemoveMember={removeMember}
-          getUserStatus={presence.getUserStatus}
-          isConnected={presence.isConnected}
-          isCollapsed={sidebarCollapsed}
-          onToggleCollapse={() => setSidebarCollapsed(prev => !prev)}
-        />
-      </div>
+        </CampaignLayout>
 
       {/* Dialog de seleção de personagem */}
       <CharacterSelectDialog

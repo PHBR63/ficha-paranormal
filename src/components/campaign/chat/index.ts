@@ -7,3 +7,4 @@ export { ChatMessage } from './ChatMessage';
 export { IntegratedDiceRoller, parseDiceCommand } from './IntegratedDiceRoller';
 export { SessionActivityLog } from './SessionActivityLog';
 export { MacrosPanel } from './MacrosPanel';
+export { VirtualizedChatList } from './VirtualizedChatList';
