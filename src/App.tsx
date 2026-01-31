@@ -25,7 +25,7 @@ const CharacterCreate = lazy(() => import("./pages/CharacterCreate"));
 const CharacterSheet = lazy(() => import("./pages/CharacterSheet"));
 const Campaigns = lazy(() => import("./pages/Campaigns"));
 const CampaignCreate = lazy(() => import("./pages/CampaignCreate"));
-const CampaignView = lazy(() => import("./pages/CampaignView"));
+const CampaignShell = lazy(() => import("./pages/CampaignShell")); // Nova versão v3
 const AdminImport = lazy(() => import("./pages/AdminImport"));
 const AdminUsers = lazy(() => import("./pages/AdminUsers"));
 const AdminDataIntegrity = lazy(() => import("./pages/AdminDataIntegrity"));
@@ -93,7 +93,7 @@ const App = () => (
                   } />
                   <Route path="/campaigns/:id" element={
                     <ProtectedRoute>
-                      <CampaignView />
+                      <CampaignShell />
                     </ProtectedRoute>
                   } />
                   <Route path="/my-templates" element={
