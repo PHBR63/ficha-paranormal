@@ -526,6 +526,7 @@ export function TacticalBoard({
     // Função para atualizar tamanho com validação
     const updateSize = () => {
       const { clientWidth, clientHeight } = container;
+      console.log('[TacticalBoard] updateSize called:', { clientWidth, clientHeight });
       if (clientWidth > 0 && clientHeight > 0) {
         setCanvasSize({ width: clientWidth, height: clientHeight });
       }
@@ -535,6 +536,7 @@ export function TacticalBoard({
     const resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
         const { width, height } = entry.contentRect;
+        console.log('[TacticalBoard] ResizeObserver:', { width, height });
         // Só atualiza se tiver dimensões válidas (> 0)
         if (width > 0 && height > 0) {
           setCanvasSize({ width, height });
@@ -550,9 +552,15 @@ export function TacticalBoard({
       updateSize();
     });
     
+    // Segundo fallback com delay para garantir que o layout foi finalizado
+    const timeoutId = setTimeout(() => {
+      updateSize();
+    }, 100);
+    
     return () => {
       resizeObserver.disconnect();
       cancelAnimationFrame(rafId);
+      clearTimeout(timeoutId);
     };
   }, []);
 
