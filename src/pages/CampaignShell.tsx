@@ -19,6 +19,7 @@ import { useCampaignData } from '@/hooks/campaign/useCampaignData';
 import { useCampaignRealtime } from '@/hooks/campaign/useCampaignRealtime';
 import { useCampaignPresence } from '@/hooks/campaign/useCampaignPresence';
 import { useTacticalBoard } from '@/hooks/campaign/useTacticalBoard';
+import { useMasterActions } from '@/hooks/campaign/useMasterActions';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   CampaignHeader,
@@ -31,6 +32,7 @@ import {
   MasterTab,
   type CampaignTab,
 } from '@/components/campaign/v3';
+import { DiceRollModal, type DiceRollMetadata } from '@/components/campaign/v3/modals';
 
 export default function CampaignShell() {
   const { id: campaignId } = useParams<{ id: string }>();
@@ -40,6 +42,7 @@ export default function CampaignShell() {
 
   // Estado local - DEVE vir antes de qualquer hook condicional
   const [activeTab, setActiveTab] = useState<CampaignTab>('panel');
+  const [isDiceModalOpen, setIsDiceModalOpen] = useState(false);
 
   // =====================================================
   // HOOKS DE DADOS (Singleton Pattern)
@@ -95,6 +98,12 @@ export default function CampaignShell() {
     enabled: !!campaignId && !campaignLoading,
   });
 
+  // Ações do mestre (ajuste HP/PE/SAN, condições)
+  const masterActions = useMasterActions({
+    campaignId: campaignId || '',
+    isMaster,
+  });
+
   // =====================================================
   // CALLBACKS (memoizados para estabilidade)
   // =====================================================
@@ -107,8 +116,7 @@ export default function CampaignShell() {
 
   // Callback para rolagem rápida de dados
   const handleOpenDice = useCallback(() => {
-    // TODO: Implementar modal de dados
-    console.log('Abrir rolador de dados');
+    setIsDiceModalOpen(true);
   }, []);
 
   // Callback para notas rápidas
@@ -128,6 +136,20 @@ export default function CampaignShell() {
       await endSession(activeSession.id);
     }
   }, [endSession, activeSession]);
+
+  // Callback para enviar rolagem ao chat
+  const handleDiceRoll = useCallback((
+    description: string, 
+    metadata: DiceRollMetadata, 
+    isHidden: boolean
+  ) => {
+    if (isHidden) {
+      // Rolagem oculta - só mestre vê
+      sendMessage(description, 'dice_roll', { ...metadata, hidden: true } as Record<string, unknown>);
+    } else {
+      sendMessage(description, 'dice_roll', metadata as unknown as Record<string, unknown>);
+    }
+  }, [sendMessage]);
 
   // Marca como lidas ao entrar no chat
   useEffect(() => {
@@ -293,6 +315,12 @@ export default function CampaignShell() {
         {activeTab === 'master' && isMaster && (
           <MasterTab
             members={members}
+            onModifyHP={masterActions.adjustHP}
+            onModifySAN={masterActions.adjustSAN}
+            onModifyPE={masterActions.adjustPE}
+            onApplyCondition={masterActions.applyCondition}
+            onRemoveCondition={masterActions.removeCondition}
+            isUpdating={masterActions.isUpdating}
           />
         )}
       </main>
@@ -307,6 +335,14 @@ export default function CampaignShell() {
         onOpenNotes={handleOpenNotes}
         onStartSession={isMaster ? handleStartSession : undefined}
         onEndSession={isMaster ? handleEndSession : undefined}
+      />
+
+      {/* Modal de rolagem de dados */}
+      <DiceRollModal
+        open={isDiceModalOpen}
+        onOpenChange={setIsDiceModalOpen}
+        isMaster={isMaster}
+        onRoll={handleDiceRoll}
       />
     </div>
   );

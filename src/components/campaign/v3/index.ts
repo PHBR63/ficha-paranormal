@@ -9,13 +9,21 @@
  * @module components/campaign/v3
  */
 
+// Layout
 export { CampaignHeader } from './CampaignHeader';
 export { CampaignNavigation, type CampaignTab } from './CampaignNavigation';
 export { CampaignStatusBar } from './CampaignStatusBar';
 
-// Tabs serão adicionadas progressivamente
+// Tabs
 export { PanelTab } from './tabs/PanelTab';
 export { ChatTab } from './tabs/ChatTab';
 export { MapTab } from './tabs/MapTab';
 export { ResourcesTab } from './tabs/ResourcesTab';
 export { MasterTab } from './tabs/MasterTab';
+
+// Master components
+export { ConditionSelector, OP_CONDITIONS } from './master/ConditionSelector';
+export { AudioControlPanel } from './master/AudioControlPanel';
+
+// Modals
+export { DiceRollModal, type DiceRollResult, type DiceRollMetadata } from './modals/DiceRollModal';
