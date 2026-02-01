@@ -11,26 +11,28 @@
  * @module components/campaign/v3/tabs/MasterTab
  */
 
-import { memo, useState } from 'react';
+import { memo, useState, useCallback } from 'react';
 import { 
   Users, 
   Zap, 
   Volume2, 
-  Gift,
   Swords,
   Heart,
   Brain,
   Minus,
-  Plus
+  Plus,
+  RefreshCw
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
+import { ConditionSelector } from '@/components/campaign/v3/master/ConditionSelector';
+import { AudioControlPanel } from '@/components/campaign/v3/master/AudioControlPanel';
 import type { CampaignMemberV2 } from '@/hooks/campaign/useCampaignData';
+import type { SoundScene, CampaignAudio, AudioState } from '@/hooks/campaign/useCampaignAudio';
 
 type MasterSubTab = 'npcs' | 'macros' | 'audio' | 'players';
 
@@ -38,11 +40,27 @@ interface MasterTabProps {
   /** Membros da campanha */
   members: CampaignMemberV2[];
   /** Callback para modificar HP */
-  onModifyHP?: (characterId: string, delta: number) => void;
+  onModifyHP?: (characterId: string, delta: number) => Promise<boolean>;
   /** Callback para modificar SAN */
-  onModifySAN?: (characterId: string, delta: number) => void;
+  onModifySAN?: (characterId: string, delta: number) => Promise<boolean>;
   /** Callback para modificar PE */
-  onModifyPE?: (characterId: string, delta: number) => void;
+  onModifyPE?: (characterId: string, delta: number) => Promise<boolean>;
+  /** Callback para aplicar condição */
+  onApplyCondition?: (characterId: string, conditionName: string) => Promise<boolean>;
+  /** Callback para remover condição */
+  onRemoveCondition?: (characterId: string, conditionName: string) => Promise<boolean>;
+  /** Se está processando */
+  isUpdating?: boolean;
+  /** Dados de áudio */
+  audioLibrary?: CampaignAudio[];
+  soundScenes?: SoundScene[];
+  audioState?: AudioState | null;
+  audioLoading?: boolean;
+  onActivateScene?: (sceneId: string) => Promise<void>;
+  onPlaySFX?: (sfxId: string) => void;
+  onStopAllAudio?: () => void;
+  onSetMasterVolume?: (volume: number) => void;
+  onToggleMute?: () => void;
   /** Classe CSS adicional */
   className?: string;
 }
@@ -53,18 +71,44 @@ const PlayerControlCard = memo(function PlayerControlCard({
   onModifyHP,
   onModifySAN,
   onModifyPE,
+  onApplyCondition,
+  onRemoveCondition,
+  isUpdating,
 }: {
   member: CampaignMemberV2;
-  onModifyHP?: (characterId: string, delta: number) => void;
-  onModifySAN?: (characterId: string, delta: number) => void;
-  onModifyPE?: (characterId: string, delta: number) => void;
+  onModifyHP?: (characterId: string, delta: number) => Promise<boolean>;
+  onModifySAN?: (characterId: string, delta: number) => Promise<boolean>;
+  onModifyPE?: (characterId: string, delta: number) => Promise<boolean>;
+  onApplyCondition?: (characterId: string, conditionName: string) => Promise<boolean>;
+  onRemoveCondition?: (characterId: string, conditionName: string) => Promise<boolean>;
+  isUpdating?: boolean;
 }) {
   const character = member.characters;
+  
+  // Handlers memoizados para condições - ANTES do early return
+  const characterId = character?.id || '';
+  
+  const handleApplyCondition = useCallback((conditionId: string) => {
+    if (characterId) {
+      onApplyCondition?.(characterId, conditionId);
+    }
+  }, [characterId, onApplyCondition]);
+
+  const handleRemoveCondition = useCallback((conditionId: string) => {
+    if (characterId) {
+      onRemoveCondition?.(characterId, conditionId);
+    }
+  }, [characterId, onRemoveCondition]);
+
+  // Early return após hooks
   if (!character) return null;
 
   const displayName = character.name;
   const avatarUrl = character.photo_url;
   const initials = displayName.substring(0, 2).toUpperCase();
+  
+  // Condições ativas (array de strings)
+  const activeConditions = character.conditions || [];
 
   return (
     <Card className="overflow-hidden">
@@ -82,6 +126,13 @@ const PlayerControlCard = memo(function PlayerControlCard({
               {character.class} • NEX {character.nex}%
             </CardDescription>
           </div>
+          {/* Seletor de condições */}
+          <ConditionSelector
+            activeConditions={activeConditions}
+            onApply={handleApplyCondition}
+            onRemove={handleRemoveCondition}
+            isLoading={isUpdating}
+          />
         </div>
       </CardHeader>
       
@@ -89,7 +140,7 @@ const PlayerControlCard = memo(function PlayerControlCard({
         {/* Controle de HP */}
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-1.5 text-xs">
-            <Heart className="h-3.5 w-3.5 text-red-500" />
+            <Heart className="h-3.5 w-3.5 text-destructive" />
             <span className="font-medium">
               {character.hp_current}/{character.hp_max}
             </span>
@@ -99,7 +150,9 @@ const PlayerControlCard = memo(function PlayerControlCard({
               variant="outline"
               size="icon"
               className="h-6 w-6"
-              onClick={() => onModifyHP?.(character.id, -1)}
+              onClick={() => onModifyHP?.(character.id, -5)}
+              disabled={isUpdating}
+              title="-5 PV"
             >
               <Minus className="h-3 w-3" />
             </Button>
@@ -107,7 +160,9 @@ const PlayerControlCard = memo(function PlayerControlCard({
               variant="outline"
               size="icon"
               className="h-6 w-6"
-              onClick={() => onModifyHP?.(character.id, 1)}
+              onClick={() => onModifyHP?.(character.id, 5)}
+              disabled={isUpdating}
+              title="+5 PV"
             >
               <Plus className="h-3 w-3" />
             </Button>
@@ -128,6 +183,8 @@ const PlayerControlCard = memo(function PlayerControlCard({
               size="icon"
               className="h-6 w-6"
               onClick={() => onModifySAN?.(character.id, -1)}
+              disabled={isUpdating}
+              title="-1 SAN"
             >
               <Minus className="h-3 w-3" />
             </Button>
@@ -136,6 +193,8 @@ const PlayerControlCard = memo(function PlayerControlCard({
               size="icon"
               className="h-6 w-6"
               onClick={() => onModifySAN?.(character.id, 1)}
+              disabled={isUpdating}
+              title="+1 SAN"
             >
               <Plus className="h-3 w-3" />
             </Button>
@@ -145,7 +204,7 @@ const PlayerControlCard = memo(function PlayerControlCard({
         {/* Controle de PE */}
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-1.5 text-xs">
-            <Zap className="h-3.5 w-3.5 text-blue-500" />
+            <Zap className="h-3.5 w-3.5 text-primary" />
             <span className="font-medium">
               {character.pe_current}/{character.pe_max}
             </span>
@@ -156,6 +215,8 @@ const PlayerControlCard = memo(function PlayerControlCard({
               size="icon"
               className="h-6 w-6"
               onClick={() => onModifyPE?.(character.id, -1)}
+              disabled={isUpdating}
+              title="-1 PE"
             >
               <Minus className="h-3 w-3" />
             </Button>
@@ -164,6 +225,8 @@ const PlayerControlCard = memo(function PlayerControlCard({
               size="icon"
               className="h-6 w-6"
               onClick={() => onModifyPE?.(character.id, 1)}
+              disabled={isUpdating}
+              title="+1 PE"
             >
               <Plus className="h-3 w-3" />
             </Button>
@@ -179,6 +242,18 @@ export const MasterTab = memo(function MasterTab({
   onModifyHP,
   onModifySAN,
   onModifyPE,
+  onApplyCondition,
+  onRemoveCondition,
+  isUpdating,
+  audioLibrary = [],
+  soundScenes = [],
+  audioState,
+  audioLoading,
+  onActivateScene,
+  onPlaySFX,
+  onStopAllAudio,
+  onSetMasterVolume,
+  onToggleMute,
   className,
 }: MasterTabProps) {
   const [activeSubTab, setActiveSubTab] = useState<MasterSubTab>('players');
@@ -226,6 +301,9 @@ export const MasterTab = memo(function MasterTab({
                     onModifyHP={onModifyHP}
                     onModifySAN={onModifySAN}
                     onModifyPE={onModifyPE}
+                    onApplyCondition={onApplyCondition}
+                    onRemoveCondition={onRemoveCondition}
+                    isUpdating={isUpdating}
                   />
                 ))}
               </div>
@@ -270,11 +348,17 @@ export const MasterTab = memo(function MasterTab({
         <TabsContent value="audio" className="flex-1 m-0 min-h-0">
           <ScrollArea className="h-full">
             <div className="p-4">
-              <div className="text-center py-8 text-muted-foreground">
-                <Volume2 className="h-10 w-10 mx-auto mb-3 opacity-50" />
-                <p className="text-sm">Sistema de áudio em desenvolvimento</p>
-                <p className="text-xs mt-1">Em breve você poderá controlar música ambiente</p>
-              </div>
+              <AudioControlPanel
+                audioLibrary={audioLibrary}
+                soundScenes={soundScenes}
+                audioState={audioState ?? null}
+                isLoading={audioLoading}
+                onActivateScene={onActivateScene}
+                onPlaySFX={onPlaySFX}
+                onStopAll={onStopAllAudio}
+                onSetMasterVolume={onSetMasterVolume}
+                onToggleMute={onToggleMute}
+              />
             </div>
           </ScrollArea>
         </TabsContent>
