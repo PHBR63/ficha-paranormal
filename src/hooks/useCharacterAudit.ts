@@ -23,7 +23,7 @@ interface UseCharacterAuditOptions {
   // Se true, corrige problemas críticos (severity: 'error') automaticamente
   autoFixCritical?: boolean;
   // Callback executado após correções serem aplicadas (para invalidar cache)
-  onFixComplete?: () => Promise<void> | void;
+  onFixComplete?: () => Promise<unknown> | void;
 }
 
 interface UseCharacterAuditReturn {

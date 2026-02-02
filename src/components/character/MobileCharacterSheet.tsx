@@ -243,7 +243,7 @@ interface MobileCharacterSheetProps {
   // Callback para toggle de bônus condicionais
   onToggleConditionalBonus?: (bonusId: string, active: boolean) => void;
   // Callback para atualizar dados após correções automáticas
-  onRefetch?: () => Promise<void> | void;
+  onRefetch?: () => Promise<unknown> | void;
   // Callback para seleção de afinidade
   onSelectAffinity?: (element: string) => Promise<void>;
   // Callback para adicionar poderes paranormais (Transcender)

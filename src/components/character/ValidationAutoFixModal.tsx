@@ -217,11 +217,17 @@ export function ValidationAutoFixModal({
       // Limpa seleção
       setSelectedFixes(new Set());
 
-      // Fecha modal após delay
+      // Após um breve delay, revalida para mostrar problemas restantes
       setTimeout(() => {
-        onOpenChange(false);
         setApplyResult(null);
-      }, 1500);
+        // Chama onRefresh para revalidar e atualizar a lista
+        if (onRefresh) {
+          onRefresh();
+        }
+        // NÃO fecha o modal automaticamente - deixa o usuário decidir
+        // O modal só fechará quando o usuário clicar em Fechar ou quando
+        // a revalidação mostrar que não há mais problemas
+      }, 800);
     } else if (result.errors.length > 0) {
       toast({
         title: '❌ Erro ao aplicar correções',

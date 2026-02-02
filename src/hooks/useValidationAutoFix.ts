@@ -58,7 +58,7 @@ function toColumnName(field: string): string {
 
 interface UseValidationAutoFixOptions {
   // Callback executado após aplicar correções (para invalidar cache)
-  onFixComplete?: () => Promise<void> | void;
+  onFixComplete?: () => Promise<unknown> | void;
 }
 
 interface UseValidationAutoFixReturn {
