@@ -21,11 +21,19 @@
 | `src/components/character/AtmosphericEffects.tsx` | ✅ Criado | Efeitos atmosféricos condicionais (mobile/performance) |
 | `src/pages/CharacterSheet.tsx` | ✅ Atualizado | Integrado AtmosphericEffects condicional |
 
-### Próximos Passos (Fase 3)
+### Fase 3: Unificação Desktop/Mobile - CONCLUÍDA
 
-- [ ] Criar CharacterSheetAdapter.tsx
-- [ ] Migrar CharacterSheet.tsx para usar CharacterSheetProvider
-- [ ] Migrar MobileCharacterSheet.tsx para consumir do Provider
+| Arquivo | Status | Descrição |
+|---------|--------|-----------|
+| `src/components/character/CharacterSheetAdapter.tsx` | ✅ Criado | Adapter unificado desktop/mobile com lazy loading |
+| `src/hooks/character/useCombatRollSetup.ts` | ✅ Criado | Setup de ataques com bônus do SUE |
+| `src/hooks/character/useRitualCast.ts` | ✅ Criado | Gerenciamento de conjuração e custos de PE |
+| `src/hooks/character/useTrackPanel.ts` | ✅ Criado | Mapeamento de trilhas para componentes e metadados |
+
+### Próximos Passos (Fase 4)
+
+- [ ] Sincronização campanha aprimorada
+- [ ] Migrar CombatRollModal para useCombatRollWithSUE
 
 ---
 

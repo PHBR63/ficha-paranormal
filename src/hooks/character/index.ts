@@ -13,6 +13,9 @@ export * from './useCharacterSheetState';
 // Hooks de edição e rolagem
 export * from './useCharacterStats';
 export * from './useSkillRoll';
+export * from './useCombatRollSetup';
+export * from './useRitualCast';
+export * from './useTrackPanel';
 
 // Hooks de dados e validação
 export * from '../useCharacterAutoSave';
