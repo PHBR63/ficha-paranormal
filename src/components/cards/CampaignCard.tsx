@@ -52,34 +52,35 @@ interface CampaignCardProps {
   index?: number;
 }
 
+// Configuração de cores de status com alta visibilidade
 const STATUS_CONFIG = {
   active: { 
     label: 'Ativa', 
     icon: Play, 
-    color: 'text-green-400',
-    bgColor: 'bg-green-500/10',
-    borderColor: 'border-green-500/30'
+    color: 'text-emerald-300',
+    bgColor: 'bg-emerald-500/25',
+    borderColor: 'border-emerald-400/50'
   },
   paused: { 
     label: 'Pausada', 
     icon: Pause, 
-    color: 'text-amber-400',
-    bgColor: 'bg-amber-500/10',
-    borderColor: 'border-amber-500/30'
+    color: 'text-amber-300',
+    bgColor: 'bg-amber-500/25',
+    borderColor: 'border-amber-400/50'
   },
   completed: { 
     label: 'Concluída', 
     icon: CheckCircle, 
-    color: 'text-blue-400',
-    bgColor: 'bg-blue-500/10',
-    borderColor: 'border-blue-500/30'
+    color: 'text-sky-300',
+    bgColor: 'bg-sky-500/25',
+    borderColor: 'border-sky-400/50'
   },
   archived: { 
     label: 'Arquivada', 
     icon: Archive, 
-    color: 'text-muted-foreground',
-    bgColor: 'bg-muted/10',
-    borderColor: 'border-muted/30'
+    color: 'text-zinc-400',
+    bgColor: 'bg-zinc-500/20',
+    borderColor: 'border-zinc-400/40'
   },
 } as const;
 
