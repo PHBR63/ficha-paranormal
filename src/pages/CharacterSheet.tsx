@@ -11,8 +11,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { useToast, useIsMobile, useThemeColors } from '@/hooks';
 import { ThemeSelector } from '@/components/ui/theme-selector';
-import { Particles } from '@/components/ui/particles';
-import { FlickeringGrid } from '@/components/ui/flickering-grid';
+// AtmosphericEffects com lazy loading condicional (substitui Particles e FlickeringGrid)
+import { AtmosphericEffects } from '@/components/character/AtmosphericEffects';
 import {
   ArrowLeft, 
   Loader2, 
@@ -2294,21 +2294,14 @@ export default function CharacterSheet() {
 
   return (
     <div className={cn("min-h-screen bg-background sheet-background relative overflow-hidden", isSanLow && "animate-flicker")}>
-      {/* Atmospheric Effects - Dynamic */}
+      {/* Atmospheric Effects - Condicional: desativado em mobile, preferência de movimento reduzido, ou baixo desempenho */}
       <div className="fixed inset-0 pointer-events-none z-0">
-        <FlickeringGrid 
-          className="absolute inset-0 opacity-[0.02]"
-          squareSize={4}
-          gridGap={10}
-          flickerChance={0.015}
-          color={`rgb(${themeColors.rgb})`}
-        />
-        <Particles
+        <AtmosphericEffects
+          particleColor={themeColors.primary}
+          particleQuantity={20}
+          gridColor={`rgb(${themeColors.rgb})`}
+          gridMaxOpacity={0.02}
           className="absolute inset-0"
-          quantity={20}
-          staticity={50}
-          color={themeColors.primary}
-          size={0.3}
         />
         {/* Mist - Dynamic */}
         <div 
