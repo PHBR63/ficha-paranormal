@@ -323,6 +323,33 @@ function serializeCondition(c: ActiveCondition): PersistedCondition {
 function getConditionNames(conditions: (string | PersistedCondition)[]): string[] {
   return conditions.map(c => typeof c === 'string' ? c : c.name);
 }
+
+// ==================== UTILITÁRIO DE PARSING ====================
+
+/**
+ * Parseia dados do personagem do banco para o formato do cliente
+ * Centraliza a lógica de parsing para evitar duplicação entre fetchCharacter e refetchCharacter
+ */
+function parseCharacterDataFromDB(
+  data: Record<string, unknown>, 
+  inventory: InventoryItemPersisted[]
+): Character {
+  return {
+    ...data,
+    inventory,
+    // Suporta condições como string legado ou objeto completo
+    conditions: Array.isArray(data.conditions) ? data.conditions : [],
+    abilities: Array.isArray(data.abilities) ? (data.abilities as string[]) : [],
+    rituals: Array.isArray(data.rituals) ? (data.rituals as string[]) : [],
+    class_track: (data.class_track as string) || null,
+    elemental_affinity: (data.elemental_affinity as string) || null,
+    affinity_active: (data.affinity_active as boolean) || false,
+    // Carrega buffs ativos da nuvem
+    active_buffs: Array.isArray(data.active_buffs) ? data.active_buffs : [],
+    // Carrega escolhas de Treinamento em Perícia
+    skill_training_choices: (data as Record<string, unknown>).skill_training_choices || {},
+  } as unknown as Character;
+}
 export default function CharacterSheet() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
@@ -846,21 +873,8 @@ export default function CharacterSheet() {
         });
       }
 
-      const charData = {
-        ...data,
-        inventory,
-        // Suporta condições como string legado ou objeto completo
-        conditions: Array.isArray(data.conditions) ? data.conditions : [],
-        abilities: Array.isArray(data.abilities) ? data.abilities as string[] : [],
-        rituals: Array.isArray(data.rituals) ? data.rituals as string[] : [],
-        class_track: data.class_track || null,
-        elemental_affinity: data.elemental_affinity || null,
-        affinity_active: data.affinity_active || false,
-        // Carrega buffs ativos da nuvem
-        active_buffs: Array.isArray(data.active_buffs) ? data.active_buffs : [],
-        // Carrega escolhas de Treinamento em Perícia
-        skill_training_choices: (data as any).skill_training_choices || {},
-      };
+      // Usa função utilitária para parsing consistente
+      const charData = parseCharacterDataFromDB(data, inventory);
       setCharacter(charData as unknown as Character);
       setHpCurrent(data.hp_current);
       setPeCurrent(data.pe_current);
@@ -891,21 +905,10 @@ export default function CharacterSheet() {
         ? (data.inventory as unknown as InventoryItemPersisted[]) 
         : [];
       
-      const charData = {
-        ...data,
-        inventory,
-        conditions: Array.isArray(data.conditions) ? data.conditions : [],
-        abilities: Array.isArray(data.abilities) ? data.abilities as string[] : [],
-        rituals: Array.isArray(data.rituals) ? data.rituals as string[] : [],
-        class_track: data.class_track || null,
-        elemental_affinity: data.elemental_affinity || null,
-        affinity_active: data.affinity_active || false,
-        active_buffs: Array.isArray(data.active_buffs) ? data.active_buffs : [],
-        // Carrega escolhas de Treinamento em Perícia
-        skill_training_choices: (data as any).skill_training_choices || {},
-      };
+      // Usa função utilitária para parsing consistente
+      const charData = parseCharacterDataFromDB(data, inventory);
       
-      setCharacter(charData as unknown as Character);
+      setCharacter(charData);
       setHpCurrent(data.hp_current);
       setPeCurrent(data.pe_current);
       setSanCurrent(data.san_current);
@@ -1149,7 +1152,70 @@ export default function CharacterSheet() {
     }
   };
 
-  // Handler de salvamento manual (Ctrl+S) - Fase 6 UX
+  // ==================== CALLBACKS MEMOIZADOS (REFATORAÇÃO) ====================
+  
+  /**
+   * Handler memoizado para mudança de PE
+   * Substitui os 15+ callbacks inline `onPEChange` nos painéis de trilha
+   */
+  const handlePEChange = useCallback(
+    (newPE: number) => {
+      handleCombatStatsChange({ hp: hpCurrent, pe: newPE, san: sanCurrent });
+    },
+    [hpCurrent, sanCurrent]
+  );
+
+  /**
+   * Handler memoizado para mudança de PE com delta (ex: Infiltrador)
+   */
+  const handlePEDelta = useCallback(
+    (delta: number) => {
+      handleCombatStatsChange({ hp: hpCurrent, pe: peCurrent + delta, san: sanCurrent });
+    },
+    [hpCurrent, peCurrent, sanCurrent]
+  );
+
+  /**
+   * Handler memoizado para mudança de HP
+   */
+  const handleHPChange = useCallback(
+    (newHP: number) => {
+      handleCombatStatsChange({ hp: newHP, pe: peCurrent, san: sanCurrent });
+    },
+    [peCurrent, sanCurrent]
+  );
+
+  // ==================== DADOS DERIVADOS MEMOIZADOS (REFATORAÇÃO) ====================
+  
+  /**
+   * Poderes paranormais enriquecidos com dados completos do catálogo
+   * Evita repetir o .map() com PARANORMAL_POWERS.find() em 8+ lugares
+   */
+  const enrichedParanormalPowers = useMemo(() => {
+    const powers = character?.paranormal_powers;
+    if (!powers || powers.length === 0) return [];
+    
+    return powers.map(p => {
+      const fullPower = PARANORMAL_POWERS.find(fp => fp.id === p.id);
+      return fullPower || {
+        id: p.id,
+        name: p.name,
+        element: p.element as ParanormalElement | 'generic',
+        description: p.description,
+        effect: { type: 'special' as const, description: p.description },
+      };
+    });
+  }, [character?.paranormal_powers]);
+
+  /**
+   * Condições parseadas do formato persistido para ActiveCondition
+   * Evita repetir character.conditions.map(parseCondition) em 7+ lugares
+   */
+  const parsedConditions = useMemo(
+    () => (character?.conditions || []).map(parseCondition),
+    [character?.conditions]
+  );
+
   const handleManualSave = useCallback(async () => {
     if (!character || saving) return;
     
@@ -2720,7 +2786,7 @@ export default function CharacterSheet() {
                   Condições Ativas
                 </h3>
                 <ConditionManager
-                  conditions={character.conditions.map(parseCondition)}
+                  conditions={parsedConditions}
                   onConditionsChange={async (newConditions) => {
                     // Serializa condições completas para persistir na nuvem
                     const serializedConditions = newConditions.map(serializeCondition);
@@ -2780,9 +2846,7 @@ export default function CharacterSheet() {
                 abilities={(Array.isArray(character.abilities) ? {} : character.abilities) as Record<string, unknown> || {}}
                 nex={character.nex}
                 peCurrent={peCurrent}
-                onPEChange={async (newPE) => {
-                  await handleCombatStatsChange({ hp: hpCurrent, pe: newPE, san: sanCurrent });
-                }}
+                onPEChange={handlePEChange}
                 onTrackPESpent={roundTracking.trackPESpent}
                 onToggleConditionalBonus={handleToggleConditionalBonus}
                 activeConditionalBonuses={character.active_conditional_bonuses || []}
@@ -2799,9 +2863,7 @@ export default function CharacterSheet() {
                 onHPChange={async (newHP) => {
                   await handleCombatStatsChange({ hp: newHP, pe: peCurrent, san: sanCurrent });
                 }}
-                onPEChange={async (newPE) => {
-                  await handleCombatStatsChange({ hp: hpCurrent, pe: newPE, san: sanCurrent });
-                }}
+                onPEChange={handlePEChange}
                 onTrackPESpent={roundTracking.trackPESpent}
                 onToggleConditionalBonus={handleToggleConditionalBonus}
                 activeConditionalBonuses={character.active_conditional_bonuses || []}
@@ -2817,11 +2879,7 @@ export default function CharacterSheet() {
                 nex={character.nex}
                 peCurrent={peCurrent}
                 intellect={character.intellect}
-                onPEChange={(newPE) => handleCombatStatsChange({ 
-                  hp: hpCurrent, 
-                  pe: newPE, 
-                  san: sanCurrent 
-                })}
+                onPEChange={handlePEChange}
                 usedAbilitiesThisRound={roundTracking.usedAbilitiesThisRound}
                 onAbilityUsed={roundTracking.markAbilityUsed}
                 onActivateEffect={activatedEffects.activateEffect}
@@ -2834,11 +2892,7 @@ export default function CharacterSheet() {
                 classTrack={character.class_track}
                 nex={character.nex}
                 peCurrent={peCurrent}
-                onPEChange={(newPE) => handleCombatStatsChange({ 
-                  hp: hpCurrent, 
-                  pe: newPE, 
-                  san: sanCurrent 
-                })}
+                onPEChange={handlePEChange}
                 onActivateEffect={activatedEffects.activateEffect}
                 isEffectActive={activatedEffects.isEffectActive}
                 versatilityTrack={character.versatility_track}
@@ -2849,11 +2903,7 @@ export default function CharacterSheet() {
                 classTrack={character.class_track}
                 nex={character.nex}
                 peCurrent={peCurrent}
-                onPEChange={(newPE) => handleCombatStatsChange({ 
-                  hp: hpCurrent, 
-                  pe: newPE, 
-                  san: sanCurrent 
-                })}
+                onPEChange={handlePEChange}
                 onActivateEffect={activatedEffects.activateEffect}
                 isEffectActive={activatedEffects.isEffectActive}
                 onTrackPESpent={roundTracking.trackPESpent}
@@ -2864,11 +2914,7 @@ export default function CharacterSheet() {
                 classTrack={character.class_track}
                 nex={character.nex}
                 peCurrent={peCurrent}
-                onPEChange={(newPE) => handleCombatStatsChange({ 
-                  hp: hpCurrent, 
-                  pe: newPE, 
-                  san: sanCurrent 
-                })}
+                onPEChange={handlePEChange}
                 usedAbilitiesThisRound={roundTracking.usedAbilitiesThisRound}
                 onAbilityUsed={roundTracking.markAbilityUsed}
                 onActivateEffect={activatedEffects.activateEffect}
@@ -2885,11 +2931,7 @@ export default function CharacterSheet() {
                 vigor={character.vigor}
                 hpCurrent={hpCurrent}
                 hpMax={character.hp_max}
-                onPEChange={(newPE) => handleCombatStatsChange({ 
-                  hp: hpCurrent, 
-                  pe: newPE, 
-                  san: sanCurrent 
-                })}
+                onPEChange={handlePEChange}
                 onActivateEffect={activatedEffects.activateEffect}
                 isEffectActive={activatedEffects.isEffectActive}
                 onTrackPESpent={roundTracking.trackPESpent}
@@ -2906,11 +2948,7 @@ export default function CharacterSheet() {
                 nex={character.nex}
                 peCurrent={peCurrent}
                 intellect={character.intellect}
-                onPEChange={(newPE) => handleCombatStatsChange({ 
-                  hp: hpCurrent, 
-                  pe: newPE, 
-                  san: sanCurrent 
-                })}
+                onPEChange={handlePEChange}
                 onActivateEffect={activatedEffects.activateEffect}
                 isEffectActive={activatedEffects.isEffectActive}
                 onTrackPESpent={roundTracking.trackPESpent}
@@ -2923,11 +2961,7 @@ export default function CharacterSheet() {
                 nex={character.nex}
                 peCurrent={peCurrent}
                 agility={character.agility}
-                onPEChange={(delta) => handleCombatStatsChange({ 
-                  hp: hpCurrent, 
-                  pe: peCurrent + delta, 
-                  san: sanCurrent 
-                })}
+                onPEChange={handlePEDelta}
                 usedAbilitiesThisRound={roundTracking.usedAbilitiesThisRound}
                 onAbilityUsed={roundTracking.markAbilityUsed}
                 onActivateEffect={activatedEffects.activateEffect}
@@ -2941,11 +2975,7 @@ export default function CharacterSheet() {
                 classTrack={character.class_track}
                 nex={character.nex}
                 peCurrent={peCurrent}
-                onPEChange={(newPE) => handleCombatStatsChange({ 
-                  hp: hpCurrent, 
-                  pe: newPE, 
-                  san: sanCurrent 
-                })}
+                onPEChange={handlePEChange}
                 onActivateEffect={activatedEffects.activateEffect}
                 isEffectActive={activatedEffects.isEffectActive}
                 onTrackPESpent={roundTracking.trackPESpent}
@@ -2999,11 +3029,7 @@ export default function CharacterSheet() {
                 classTrack={character.class_track}
                 nex={character.nex}
                 peCurrent={peCurrent}
-                onPEChange={(newPE) => handleCombatStatsChange({ 
-                  hp: hpCurrent, 
-                  pe: newPE, 
-                  san: sanCurrent 
-                })}
+                onPEChange={handlePEChange}
                 onActivateEffect={activatedEffects.activateEffect}
                 isEffectActive={activatedEffects.isEffectActive}
                 onTrackPESpent={roundTracking.trackPESpent}
@@ -3015,11 +3041,7 @@ export default function CharacterSheet() {
                 classTrack={character.class_track}
                 nex={character.nex}
                 peCurrent={peCurrent}
-                onPEChange={(newPE) => handleCombatStatsChange({ 
-                  hp: hpCurrent, 
-                  pe: newPE, 
-                  san: sanCurrent 
-                })}
+                onPEChange={handlePEChange}
                 attributes={{
                   strength: character.strength,
                   intellect: character.intellect
@@ -3072,11 +3094,7 @@ export default function CharacterSheet() {
                 classTrack={character.class_track}
                 nex={character.nex}
                 peCurrent={peCurrent}
-                onPEChange={(newPE) => handleCombatStatsChange({ 
-                  hp: hpCurrent, 
-                  pe: newPE, 
-                  san: sanCurrent 
-                })}
+                onPEChange={handlePEChange}
                 onActivateEffect={activatedEffects.activateEffect}
                 isEffectActive={activatedEffects.isEffectActive}
                 onTrackPESpent={roundTracking.trackPESpent}
@@ -3088,11 +3106,7 @@ export default function CharacterSheet() {
                 classTrack={character.class_track}
                 nex={character.nex}
                 peCurrent={peCurrent}
-                onPEChange={(newPE) => handleCombatStatsChange({ 
-                  hp: hpCurrent, 
-                  pe: newPE, 
-                  san: sanCurrent 
-                })}
+                onPEChange={handlePEChange}
                 onActivateEffect={activatedEffects.activateEffect}
                 isEffectActive={activatedEffects.isEffectActive}
                 onTrackPESpent={roundTracking.trackPESpent}
@@ -3120,11 +3134,7 @@ export default function CharacterSheet() {
                 classTrack={character.class_track}
                 nex={character.nex}
                 peCurrent={peCurrent}
-                onPEChange={(newPE) => handleCombatStatsChange({ 
-                  hp: hpCurrent, 
-                  pe: newPE, 
-                  san: sanCurrent 
-                })}
+                onPEChange={handlePEChange}
                 onActivateEffect={activatedEffects.activateEffect}
                 isEffectActive={activatedEffects.isEffectActive}
                 onTrackPESpent={roundTracking.trackPESpent}
@@ -3673,18 +3683,9 @@ export default function CharacterSheet() {
                       )}
                     </div>
                     
-                    {character.paranormal_powers && character.paranormal_powers.length > 0 ? (
+                    {enrichedParanormalPowers.length > 0 ? (
                       <ParanormalPowersPanel
-                        powers={character.paranormal_powers.map(p => {
-                          const fullPower = PARANORMAL_POWERS.find(fp => fp.id === p.id);
-                          return fullPower || {
-                            id: p.id,
-                            name: p.name,
-                            element: p.element as ParanormalElement | 'generic',
-                            description: p.description,
-                            effect: { type: 'special' as const, description: p.description },
-                          };
-                        })}
+                        powers={enrichedParanormalPowers}
                         elementalAffinity={character.elemental_affinity as ParanormalElement | null}
                         affinityActive={character.affinity_active}
                         nex={character.nex}
@@ -4023,7 +4024,7 @@ export default function CharacterSheet() {
         characterSkills={Object.fromEntries(
           Object.entries(bonusSummary.skills).map(([k, v]) => [k, v.total])
         )}
-        onPEChange={(newPE) => handleCombatStatsChange({ hp: hpCurrent, pe: newPE, san: sanCurrent })}
+        onPEChange={handlePEChange}
       />
 
       {/* Modal de seleção de poderes paranormais */}
@@ -4031,16 +4032,7 @@ export default function CharacterSheet() {
         open={paranormalPowerModalOpen}
         onOpenChange={setParanormalPowerModalOpen}
         onSelectPower={handleParanormalPowerSelect}
-        characterPowers={(character.paranormal_powers || []).map(p => {
-          const fullPower = PARANORMAL_POWERS.find(fp => fp.id === p.id);
-          return fullPower || {
-            id: p.id,
-            name: p.name,
-            element: p.element as ParanormalElement | 'generic',
-            description: p.description,
-            effect: { type: 'special' as const, description: p.description },
-          };
-        })}
+        characterPowers={enrichedParanormalPowers}
         elementalAffinity={character.elemental_affinity as ParanormalElement | null}
         affinityActive={character.affinity_active}
       />
@@ -4448,7 +4440,7 @@ export default function CharacterSheet() {
           isAuditing={isAuditing}
           bonusSummary={bonusSummary}
           defenseBonuses={defenseBonuses}
-          activeConditions={character.conditions.map(parseCondition).map(c => ({
+          activeConditions={parsedConditions.map(c => ({
             id: c.id,
             name: c.name,
             turnsRemaining: c.turnsRemaining,
