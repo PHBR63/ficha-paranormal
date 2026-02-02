@@ -21,6 +21,9 @@ export * from './useCampaignData';
 export * from './useCampaignRealtime';
 export * from './useCampaignPresence';
 
+// Hook de sincronização de stats em tempo real
+export * from './useCharacterStatsSync';
+
 // useHandouts exporta Handout como tipo base
 export { useHandouts } from './useHandouts';
 export type { Handout } from './useHandouts';
