@@ -25,11 +25,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useIsMobile } from '@/hooks';
 
 const THEMES: { id: ColorTheme; name: string; color: string }[] = [
-  { id: 'purple', name: 'Roxo Abissal', color: '#8B5CF6' },
-  { id: 'red', name: 'Sangue Ritual', color: '#DC2626' },
-  { id: 'green', name: 'Conhecimento', color: '#22C55E' },
-  { id: 'blue', name: 'Ciano Espectral', color: '#0EA5E9' },
-  { id: 'amber', name: 'Energia Arcana', color: '#F59E0B' },
+  { id: 'purple', name: 'Pulso Entrópico', color: '#7B3FE4' },
+  { id: 'red', name: 'Carnificina Viva', color: '#8B1E1E' },
+  { id: 'green', name: 'Sigilo Dourado', color: '#D4AF37' },
+  { id: 'blue', name: 'Abismo Observador', color: '#0F3D2E' },
+  { id: 'amber', name: 'Cinza Terminal', color: '#5A5E5A' },
 ];
 
 export function ThemeSelector() {
