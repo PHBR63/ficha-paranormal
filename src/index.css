@@ -114,7 +114,7 @@
     --status-xp: 45 93% 47%;
     
     /* Cores dos atributos - para badges e indicadores */
-    --attr-agility: 200 85% 60%;      /* Azul claro - Agilidade */
+    --attr-agility: 190 95% 70%;      /* Ciano vibrante - Agilidade */
     --attr-strength: 15 90% 55%;      /* Laranja vibrante - Força */
     --attr-intellect: 260 70% 65%;    /* Roxo suave - Intelecto */
     --attr-presence: 320 75% 60%;     /* Magenta/Rosa - Presença */
@@ -216,7 +216,7 @@
     --status-xp: 45 93% 47%;
     
     /* Cores dos atributos - mesmas do light mode */
-    --attr-agility: 200 85% 60%;
+    --attr-agility: 190 95% 70%;
     --attr-strength: 15 90% 55%;
     --attr-intellect: 260 70% 65%;
     --attr-presence: 320 75% 60%;
