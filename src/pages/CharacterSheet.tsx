@@ -453,6 +453,43 @@ export default function CharacterSheet() {
   // Modal de atalhos de teclado
   const [shortcutsHelpOpen, setShortcutsHelpOpen] = useState(false);
 
+  // === HOOK DE ATALHOS DE TECLADO (Fase 6 UX) ===
+  // IMPORTANTE: Chamado ANTES dos early returns para respeitar as regras de hooks
+  // Atalhos desativados durante loading, sem personagem, ou modais abertos
+  useSheetKeyboardShortcuts({
+    disabled: loading || !character || diceModalOpen || editModalOpen || nexModalOpen || ritualModalOpen || castModalOpen,
+    onRollAttribute: (attr) => {
+      if (!character) return; // Guard: personagem deve existir
+      const attrMap: Record<string, { value: number; label: string }> = {
+        agility: { value: character.agility, label: 'Agilidade' },
+        strength: { value: character.strength, label: 'Força' },
+        vigor: { value: character.vigor, label: 'Vigor' },
+        intellect: { value: character.intellect, label: 'Intelecto' },
+        presence: { value: character.presence, label: 'Presença' },
+      };
+      const attrData = attrMap[attr];
+      if (attrData) {
+        handleAttributeRoll(attrData.value, attrData.label);
+      }
+    },
+    onRollInitiative: () => {
+      if (!character) return; // Guard: personagem deve existir
+      setRollLabel('Iniciativa');
+      setRollAttribute(character.agility);
+      setRollSkillBonus(0);
+      setRollResistanceBonus(0);
+      setRollExtraDice(0);
+      setRollBonusSources([]);
+      setRollTestedAttribute('agility');
+      setDiceModalOpen(true);
+    },
+    onSave: () => {
+      if (!character) return; // Guard: personagem deve existir
+      handleManualSave();
+    },
+    onShowHelp: () => setShortcutsHelpOpen(true),
+  });
+
   // Hook CONSOLIDADO de todos os bônus do personagem (inclui defenseBonuses e paranormalEffects)
   // OTIMIZAÇÃO: Evita chamadas duplicadas de hooks
   
@@ -2350,37 +2387,6 @@ export default function CharacterSheet() {
 
   // Obter dados da origem
   const originData = ORIGINS.find(o => o.id === character.origin);
-  
-  // === HOOK DE ATALHOS DE TECLADO (Fase 6 UX) ===
-  // Atalhos desativados durante modais para evitar conflitos
-  useSheetKeyboardShortcuts({
-    disabled: diceModalOpen || editModalOpen || nexModalOpen || ritualModalOpen || castModalOpen,
-    onRollAttribute: (attr) => {
-      const attrMap: Record<string, { value: number; label: string }> = {
-        agility: { value: character.agility, label: 'Agilidade' },
-        strength: { value: character.strength, label: 'Força' },
-        vigor: { value: character.vigor, label: 'Vigor' },
-        intellect: { value: character.intellect, label: 'Intelecto' },
-        presence: { value: character.presence, label: 'Presença' },
-      };
-      const attrData = attrMap[attr];
-      if (attrData) {
-        handleAttributeRoll(attrData.value, attrData.label);
-      }
-    },
-    onRollInitiative: () => {
-      setRollLabel('Iniciativa');
-      setRollAttribute(character.agility);
-      setRollSkillBonus(0);
-      setRollResistanceBonus(0);
-      setRollExtraDice(0);
-      setRollBonusSources([]);
-      setRollTestedAttribute('agility');
-      setDiceModalOpen(true);
-    },
-    onSave: handleManualSave,
-    onShowHelp: () => setShortcutsHelpOpen(true),
-  });
 
 
   return (
