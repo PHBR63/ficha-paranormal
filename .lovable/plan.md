@@ -48,9 +48,27 @@
 | `src/hooks/character/__tests__/useSkillRoll.test.ts` | ✅ Criado | Testes de integração do hook de perícia |
 | `src/hooks/character/__tests__/useCombatRollSetup.test.ts` | ✅ Criado | Testes do hook de setup de combate |
 
-### Próximos Passos (Fase 6)
+### Fase 6: Melhorias de UX - CONCLUÍDA
 
-- [ ] Melhorias de UX (modo offline, atalhos de teclado, indicadores de salvamento)
+| Arquivo | Status | Descrição |
+|---------|--------|-----------|
+| `src/hooks/useOnlineStatus.ts` | ✅ Existente | Hook de detecção de conectividade com verificação real |
+| `src/hooks/useSheetKeyboardShortcuts.ts` | ✅ Criado | Atalhos de teclado da ficha (Alt+1-5, Ctrl+S, F1) |
+| `src/components/ui/SaveStatusIndicator.tsx` | ✅ Criado | Indicador visual de status de salvamento |
+| `src/components/ui/OfflineBanner.tsx` | ✅ Criado | Banner animado quando offline |
+| `src/components/ui/KeyboardShortcutsHelp.tsx` | ✅ Criado | Modal de ajuda de atalhos |
+
+---
+
+## ✅ PLANO CONCLUÍDO
+
+Todas as 6 fases foram implementadas com sucesso:
+- Fase 1: Refatoração de Arquitetura
+- Fase 2: Otimização de Performance
+- Fase 3: Unificação Desktop/Mobile
+- Fase 4: Melhorias de Integração
+- Fase 5: Testes e Validação
+- Fase 6: Melhorias de UX
 
 ---
 
