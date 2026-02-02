@@ -35,7 +35,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { CustomScroll } from '@/components/ui/custom-scroll';
+
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from '@/hooks/use-toast';
 import type { ValidationIssue, ValidationResult, SuggestedFix } from '@/lib/rules-engine/types';
@@ -266,10 +266,10 @@ export function ValidationAutoFixModal({
           </DialogDescription>
         </DialogHeader>
 
-        {/* Corpo do Modal */}
-        <div className="flex-1 overflow-hidden">
-          {/* Estatísticas */}
-          <div className="flex items-center gap-3 mb-4">
+        {/* Corpo do Modal com layout flex para scroll adequado */}
+        <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+          {/* Estatísticas - header fixo */}
+          <div className="flex items-center gap-3 mb-4 flex-shrink-0">
             {validationResult.errorCount > 0 && (
               <Badge variant="destructive" className="gap-1">
                 <AlertCircle className="w-3 h-3" />
@@ -290,9 +290,9 @@ export function ValidationAutoFixModal({
             )}
           </div>
 
-          {/* Seleção rápida */}
+          {/* Seleção rápida - header fixo */}
           {fixableIssues.length > 0 && (
-            <div className="flex items-center justify-between mb-3 pb-3 border-b border-border/50">
+            <div className="flex items-center justify-between mb-3 pb-3 border-b border-border/50 flex-shrink-0">
               <button
                 onClick={toggleSelectAll}
                 className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
@@ -310,8 +310,8 @@ export function ValidationAutoFixModal({
             </div>
           )}
 
-          {/* Lista de Issues */}
-          <CustomScroll maxHeight="calc(55vh - 160px)" className="pr-2">
+          {/* Lista de Issues - área scrollável que preenche o espaço restante */}
+          <div className="flex-1 min-h-0 overflow-y-auto pr-2">
             <div className="space-y-2">
               {/* Auto-corrigíveis */}
               {fixableIssues.length > 0 && (
@@ -364,7 +364,7 @@ export function ValidationAutoFixModal({
                 </div>
               )}
             </div>
-          </CustomScroll>
+          </div>
         </div>
 
         {/* Footer */}
