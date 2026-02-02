@@ -1,264 +1,373 @@
 
-# Plano: Continuação das Funcionalidades da Campanha v3
 
-## Visão Geral
+# Revisão Robusta e Proposta de Otimização da Ficha de Personagem
 
-Continuação do desenvolvimento da interface de campanha v3, implementando as funcionalidades pendentes identificadas nos placeholders das abas e integrando bibliotecas externas modernas para melhorar a experiência.
+## Visão Geral do Diagnóstico
+
+Após análise detalhada do código-fonte da ficha de personagem (CharacterSheet.tsx: 4437 linhas, MobileCharacterSheet.tsx: 2990 linhas), identifiquei oportunidades significativas de refatoração, otimização de performance e melhorias de arquitetura.
 
 ---
 
-## Estado Atual
+## Diagnóstico de Problemas
 
 ```text
-┌─────────────────────────────────────────────────────────────────┐
-│                    COMPONENTES v3 EXISTENTES                     │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│  ✅ IMPLEMENTADOS                                                │
-│  ├─ CampaignShell.tsx (container principal)                     │
-│  ├─ CampaignHeader.tsx (header compacto)                        │
-│  ├─ CampaignNavigation.tsx (5 abas consolidadas)                │
-│  ├─ CampaignStatusBar.tsx (presença inferior)                   │
-│  ├─ PanelTab.tsx (grid de agentes com status)                   │
-│  ├─ ChatTab.tsx (virtualizado com auto-scroll)                  │
-│  └─ MapTab.tsx (tabuleiro tático full-screen)                   │
-│                                                                  │
-│  🚧 PARCIALMENTE IMPLEMENTADOS (placeholders)                    │
-│  ├─ ResourcesTab.tsx (notas, handouts, timeline)                │
-│  └─ MasterTab.tsx (NPCs, macros, áudio, jogadores)              │
-│                                                                  │
-│  ❌ FUNCIONALIDADES PENDENTES NO SHELL                           │
-│  ├─ Modal de rolagem de dados (handleOpenDice)                  │
-│  ├─ Modal de notas rápidas (handleOpenNotes)                    │
-│  └─ Modal de configurações (handleOpenSettings)                 │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         PROBLEMAS IDENTIFICADOS                              │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  🔴 CRÍTICOS (Performance e Manutenibilidade)                                │
+│  ├─ CharacterSheet.tsx com 4437 linhas → muito grande para manutenção       │
+│  ├─ MobileCharacterSheet.tsx com 2990 linhas → duplicação de lógica         │
+│  ├─ 50+ useState no CharacterSheet → difícil rastrear estado                │
+│  ├─ Modais importados inline → bundle inicial pesado                        │
+│  └─ Callbacks inline em render → re-criados a cada ciclo                    │
+│                                                                              │
+│  🟡 MODERADOS (Organização e DX)                                             │
+│  ├─ Paridade desktop/mobile mantida manualmente → propenso a divergências   │
+│  ├─ Hooks do SUE chamados em ambos os componentes → duplicação              │
+│  ├─ Apenas 3 modais com lazy loading → outros deveriam usar também          │
+│  └─ Falta de testes unitários para componentes visuais                      │
+│                                                                              │
+│  🟢 MELHORIAS POTENCIAIS                                                     │
+│  ├─ Virtualização não aplicada em listas de perícias/poderes                │
+│  ├─ Efeitos atmosféricos (FlickeringGrid, Particles) sempre renderizados    │
+│  ├─ Validação offline não implementada (PWA)                                │
+│  └─ Integração com campanha poderia ser mais profunda                       │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Hooks Disponíveis (Backend Pronto)
+## Fase 1: Refatoração de Arquitetura (Alta Prioridade)
 
-| Hook | Status | Funcionalidades |
-|------|--------|-----------------|
-| `useCampaignData` | ✅ | Dados da campanha, membros, isMaster |
-| `useCampaignRealtime` | ✅ | Chat, sessões, mensagens em tempo real |
-| `useCampaignPresence` | ✅ | Presença online, avatares |
-| `useTacticalBoard` | ✅ | Mapa, tokens, fog, medição |
-| `useCampaignAudio` | ✅ | Biblioteca de áudio, cenas sonoras, SFX |
-| `useHandouts` | ✅ | Documentos, pistas, imagens compartilháveis |
-| `useMasterActions` | ✅ | Ajuste HP/PE/SAN, condições |
-| `useWhispers` | ✅ | Mensagens privadas |
-| `useMacros` | ✅ | Ações rápidas do mestre |
+### 1.1 Extrair Estado para Context/Hook Dedicado
 
----
+Problema: 50+ `useState` no CharacterSheet dificultam manutenção.
 
-## Bibliotecas Externas Recomendadas
-
-### Já Instaladas (Usar Melhor)
-
-| Biblioteca | Versão | Uso Proposto |
-|------------|--------|--------------|
-| `@tanstack/react-virtual` | ^3.13.13 | Timeline virtualizada, lista de handouts |
-| `framer-motion` | ^12.23.26 | Animações de dados, transições de modal |
-| `react-konva` | ^19.2.1 | Já em uso no TacticalBoard |
-| `@dnd-kit/core` | ^6.3.1 | Reordenação de widgets do mestre |
-
-### Novas Bibliotecas Sugeridas
-
-| Biblioteca | Propósito | Justificativa |
-|------------|-----------|---------------|
-| `@tiptap/react` | Editor de notas rico | Headless, extensível, colaboração via Yjs |
-| `react-chrono` | Timeline de campanha | Vertical/horizontal, suporte a mídia |
-| `howler` | Player de áudio | Já temos lógica, falta UI robusta |
-
----
-
-## Fase 1: Modal de Rolagem de Dados
-
-### 1.1 Criar DiceRollModal.tsx
-
-Modal para rolagem rápida de dados integrado ao sistema v1.3:
+**Solução**: Criar `useCharacterSheetState` como hook consolidado:
 
 ```tsx
-// src/components/campaign/v3/modals/DiceRollModal.tsx
+// src/hooks/character/useCharacterSheetState.ts
 
-// Funcionalidades:
-// - Input para expressão de dados (2d20+5, 3d6, etc.)
-// - Parser de dados compatível com OP v1.3
-// - Animação de rolagem usando Framer Motion
-// - Histórico de últimas rolagens
-// - Envio automático para o chat
-// - Rolagens ocultas (mestre)
-// - Suporte a vantagem/desvantagem
+interface CharacterSheetState {
+  // Modais
+  modals: {
+    nex: boolean;
+    ritual: boolean;
+    edit: boolean;
+    // ... todos os modais
+  };
+  
+  // Stats editáveis
+  stats: {
+    hp: number;
+    pe: number;
+    san: number;
+  };
+  
+  // Rolagem
+  roll: {
+    modalOpen: boolean;
+    label: string;
+    attribute: number;
+    // ...
+  };
+}
+
+export function useCharacterSheetState(characterId: string) {
+  // Estado consolidado com useReducer
+  const [state, dispatch] = useReducer(characterSheetReducer, initialState);
+  
+  // Actions memoizadas
+  const actions = useMemo(() => ({
+    openModal: (modal: ModalType) => dispatch({ type: 'OPEN_MODAL', modal }),
+    closeModal: (modal: ModalType) => dispatch({ type: 'CLOSE_MODAL', modal }),
+    updateStats: (stats: Partial<Stats>) => dispatch({ type: 'UPDATE_STATS', stats }),
+    // ...
+  }), []);
+  
+  return { state, actions };
+}
 ```
 
-### 1.2 Integração
+**Benefícios**:
+- Reduz de 50+ useState para 1 useReducer
+- Memoização automática de actions
+- Facilita testing e debugging
+- Permite reutilização entre desktop e mobile
+
+### 1.2 Criar CharacterSheetProvider
+
+Para compartilhar estado entre desktop/mobile:
 
 ```tsx
-// No CampaignShell.tsx
-const [isDiceModalOpen, setIsDiceModalOpen] = useState(false);
+// src/contexts/CharacterSheetContext.tsx
 
-const handleOpenDice = useCallback(() => {
-  setIsDiceModalOpen(true);
-}, []);
+export const CharacterSheetProvider: React.FC<{
+  characterId: string;
+  children: React.ReactNode;
+}> = ({ characterId, children }) => {
+  // Hook consolidado do SUE
+  const bonusSummary = useBonusSummaryFromSUE({ ... });
+  
+  // Hook de estado da sheet
+  const { state, actions } = useCharacterSheetState(characterId);
+  
+  // Hook de auditoria
+  const audit = useCharacterAudit(characterId);
+  
+  return (
+    <CharacterSheetContext.Provider value={{ bonusSummary, state, actions, audit }}>
+      {children}
+    </CharacterSheetContext.Provider>
+  );
+};
+```
 
-// Renderização
-{isDiceModalOpen && (
-  <DiceRollModal
-    onClose={() => setIsDiceModalOpen(false)}
-    onRoll={(result) => sendMessage(result.description, 'dice_roll', result.metadata)}
-  />
+### 1.3 Dividir CharacterSheet em Subcomponentes
+
+Arquivos a criar:
+
+| Arquivo | Conteúdo |
+|---------|----------|
+| `src/components/character/sheet/SheetHeader.tsx` | Header com ações |
+| `src/components/character/sheet/SheetModalsContainer.tsx` | Todos os modais |
+| `src/components/character/sheet/SheetLeftColumn.tsx` | Coluna esquerda |
+| `src/components/character/sheet/SheetRightColumn.tsx` | Coluna direita |
+| `src/components/character/sheet/SheetLoadingState.tsx` | Estado de loading |
+| `src/components/character/sheet/index.ts` | Barrel export |
+
+---
+
+## Fase 2: Otimização de Performance
+
+### 2.1 Expandir Lazy Loading
+
+Atualmente apenas 3 modais usam lazy loading:
+- NexProgressionModal
+- RitualSelectionModal
+- CharacterEditModal
+
+**Proposta**: Aplicar lazy loading em TODOS os modais pesados:
+
+```tsx
+// src/components/character/sheet/LazyModals.tsx
+
+export const CharacterModals = {
+  NexProgression: lazy(() => import('../NexProgressionModal')),
+  RitualSelection: lazy(() => import('../RitualSelectionModal')),
+  CharacterEdit: lazy(() => import('../CharacterEditModal')),
+  ParanormalPowerSelect: lazy(() => import('../ParanormalPowerSelectModal')),
+  CombatRoll: lazy(() => import('../CombatRollModal')),
+  DiceRoll: lazy(() => import('../DiceRollModal')),
+  TrainingGrade: lazy(() => import('../TrainingGradeSelectModal')),
+  ValidationAutoFix: lazy(() => import('../ValidationAutoFixModal')),
+  // ... todos os modais
+};
+```
+
+### 2.2 Virtualizar Listas de Perícias
+
+A lista de perícias não está virtualizada. Para personagens com muitas perícias, isso pode impactar performance.
+
+```tsx
+// Usar @tanstack/react-virtual (já instalado)
+const virtualizer = useVirtualizer({
+  count: skills.length,
+  getScrollElement: () => parentRef.current,
+  estimateSize: () => 48,
+  overscan: 5,
+});
+```
+
+### 2.3 Memoização Agressiva de Callbacks
+
+Identificados callbacks inline que são recriados a cada render:
+
+```tsx
+// ANTES (em CharacterSheet.tsx linha 3584)
+onRemovePowers={async (powerIds) => {
+  const updatedPowers = character.paranormal_powers?.filter(
+    p => !powerIds.includes(p.id)
+  ) || [];
+  // ...
+}}
+
+// DEPOIS
+const handleRemovePowers = useCallback(async (powerIds: string[]) => {
+  // mesma lógica, mas memoizada
+}, [character.paranormal_powers, character.id, supabase]);
+```
+
+### 2.4 Efeitos Atmosféricos Condicionais
+
+FlickeringGrid e Particles sempre renderizados podem impactar performance em dispositivos modestos.
+
+```tsx
+// Renderizar efeitos apenas em desktop ou quando não estiver em modo de economia
+const { prefersReducedMotion } = useMediaQuery('(prefers-reduced-motion: reduce)');
+const isMobile = useIsMobile();
+
+{!prefersReducedMotion && !isMobile && (
+  <>
+    <FlickeringGrid ... />
+    <Particles ... />
+  </>
 )}
 ```
 
 ---
 
-## Fase 2: Sistema de Notas Completo (ResourcesTab)
+## Fase 3: Unificação Desktop/Mobile
 
-### 2.1 Instalar Tiptap
+### 3.1 Criar Componentes Adaptativos
 
-```bash
-npm install @tiptap/react @tiptap/starter-kit @tiptap/extension-placeholder
-```
-
-### 2.2 Criar Editor de Notas
+Em vez de manter CharacterSheet e MobileCharacterSheet separados:
 
 ```tsx
-// src/components/campaign/v3/resources/NoteEditor.tsx
+// src/components/character/CharacterSheetAdapter.tsx
 
-// Funcionalidades:
-// - Editor WYSIWYG minimalista
-// - Formatação básica (negrito, itálico, listas)
-// - Vinculação a sessões
-// - Auto-save com debounce
-// - Exportação para Markdown
+export function CharacterSheetAdapter({ characterId }: Props) {
+  const isMobile = useIsMobile();
+  
+  return (
+    <CharacterSheetProvider characterId={characterId}>
+      {isMobile ? <MobileSheetLayout /> : <DesktopSheetLayout />}
+    </CharacterSheetProvider>
+  );
+}
 ```
 
-### 2.3 Integrar com ResourcesTab
+### 3.2 Mover Lógica Comum para Hooks
+
+Identificar lógica duplicada entre desktop e mobile e extrair:
+
+| Hook Proposto | Lógica Extraída |
+|---------------|-----------------|
+| `useSkillRoll` | Preparação e execução de testes de perícia |
+| `useCombatRollSetup` | Setup de ataque/dano com arma |
+| `useRitualCast` | Conjuração e efeitos de rituais |
+| `useCharacterStats` | Edição de HP/PE/SAN com persistência |
+| `useTrackPanel` | Renderização de painel de trilha baseado no ID |
+
+---
+
+## Fase 4: Melhorias de Integração
+
+### 4.1 Sincronização Campanha Aprimorada
+
+A ficha já tem hooks de sincronização (useCampaignRitualSync, useBonusSync), mas pode melhorar:
 
 ```tsx
-// Atualizar ResourcesTab.tsx para consumir useHandouts e renderizar:
-// - Lista de notas com busca
-// - Editor inline ou modal
-// - Indicadores de compartilhamento
+// Notificações em tempo real quando stats mudam
+const { broadcastChange } = useCampaignSync({
+  characterId,
+  enabled: isInCampaign,
+});
+
+// Quando HP/PE/SAN mudam, notificar a campanha
+useEffect(() => {
+  if (isInCampaign) {
+    broadcastChange('stats', { hp: hpCurrent, pe: peCurrent, san: sanCurrent });
+  }
+}, [hpCurrent, peCurrent, sanCurrent, isInCampaign]);
+```
+
+### 4.2 Integração com Motor de Regras Completa
+
+O CombatRollModal ainda usa funções legadas:
+
+```tsx
+// Linha 36-37 do CombatRollModal.tsx
+// TODO: Migração Fase 2 - Substituir rollSkillTest/rollDamage por useCombatRollWithSUE
+```
+
+**Proposta**: Completar a migração para useCombatRollWithSUE, garantindo que todos os bônus do SUE sejam aplicados automaticamente.
+
+---
+
+## Fase 5: Testes e Validação
+
+### 5.1 Cobertura de Testes
+
+Atualmente há apenas 3 arquivos de teste em `__tests__`:
+- CombatRollModalSnapshot.test.tsx
+- DiceRollModalSnapshot.test.tsx
+- breakdown-test-utils.ts
+
+**Proposta**: Expandir para cobrir:
+
+| Componente | Tipo de Teste |
+|------------|---------------|
+| AttributeGridNew | Snapshot + Interação |
+| SkillsByAttribute | Snapshot + Cálculo de bônus |
+| CombatWeaponsTable | Interação + Rolagem |
+| RitualCard | Conjuração + Efeitos |
+| ConditionManager | Adição/Remoção + Timer |
+| TrackPanels (15) | Ativação + Custos PE |
+
+### 5.2 Testes de Integração E2E para Ficha
+
+```tsx
+// src/components/character/__tests__/character-sheet-e2e.vitest.ts
+
+describe('CharacterSheet E2E', () => {
+  it('deve exibir stats corretos baseados no SUE', () => {
+    // Criar personagem mock
+    // Verificar que HP/PE/SAN calculados batem com regras
+  });
+  
+  it('deve aplicar condições corretamente', () => {
+    // Aplicar condição Agarrado
+    // Verificar penalidades de Agilidade
+  });
+  
+  it('deve calcular dano de ataque com todos os bônus', () => {
+    // Setup de ataque
+    // Verificar breakdown inclui bônus de trilha, origem, ritual
+  });
+});
 ```
 
 ---
 
-## Fase 3: Sistema de Áudio (MasterTab)
+## Fase 6: Melhorias de UX
 
-### 3.1 Criar AudioControlPanel.tsx
-
-```tsx
-// src/components/campaign/v3/master/AudioControlPanel.tsx
-
-// Funcionalidades usando useCampaignAudio:
-// - Player minimalista com controles
-// - Lista de cenas sonoras (cards clicáveis)
-// - SFX rápidos (grid de botões)
-// - Upload de áudio (mestre)
-// - Volume master + mute global
-// - Sincronização automática para jogadores
-```
-
-### 3.2 Estrutura Visual
-
-```text
-┌─────────────────────────────────────────┐
-│ 🎵 ÁUDIO                    [🔊] [⏸️]   │
-├─────────────────────────────────────────┤
-│ CENAS SONORAS                           │
-│ ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐    │
-│ │ 🏚️   │ │ 🌧️   │ │ ⚔️   │ │ 🔮   │    │
-│ │ Casa │ │ Chuva│ │ Luta │ │ Ritual│   │
-│ └──────┘ └──────┘ └──────┘ └──────┘    │
-├─────────────────────────────────────────┤
-│ SFX RÁPIDOS                             │
-│ [🚪 Porta] [👣 Passos] [🔫 Tiro] [⚡]   │
-└─────────────────────────────────────────┘
-```
-
----
-
-## Fase 4: Controles de Personagem (MasterTab)
-
-### 4.1 Criar PlayerControlPanel.tsx
+### 6.1 Modo Offline (PWA)
 
 ```tsx
-// src/components/campaign/v3/master/PlayerControlPanel.tsx
-
-// Funcionalidades usando useMasterActions:
-// - Cards compactos por jogador
-// - Botões +/- para HP, PE, SAN
-// - Dropdown para aplicar condições
-// - Indicador de condições ativas
-// - Ações em lote (curar todos, etc.)
+// Hook para detectar estado offline e cachear dados
+const useOfflineCharacter = (characterId: string) => {
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  
+  // Cachear dados no IndexedDB quando online
+  // Usar cache quando offline
+  // Sincronizar quando voltar online
+};
 ```
 
-### 4.2 Lista de Condições OP v1.3
+### 6.2 Atalhos de Teclado
 
 ```tsx
-const CONDITIONS = [
-  'Agarrado', 'Amedrontado', 'Alquebrado', 'Atordoado',
-  'Caído', 'Cego', 'Confuso', 'Desprevenido',
-  'Exausto', 'Fascinado', 'Imóvel', 'Inconsciente',
-  'Enjoado', 'Envenenado', 'Paralisado', 'Pasmo',
-  'Sangrando', 'Surdo', 'Traumatizado', 'Vulnerável'
-];
+// Hook para atalhos de teclado na ficha
+useHotkeys({
+  'd': () => openDiceModal(),
+  'r': () => openRestModal(),
+  'i': () => openInventoryTab(),
+  'Escape': () => closeAllModals(),
+});
 ```
 
----
-
-## Fase 5: Timeline de Campanha (ResourcesTab)
-
-### 5.1 Criar CampaignTimeline.tsx
+### 6.3 Indicadores de Salvamento
 
 ```tsx
-// src/components/campaign/v3/resources/CampaignTimeline.tsx
+// Feedback visual de auto-save
+const { isSaving, lastSavedAt } = useAutoSaveStatus();
 
-// Funcionalidades:
-// - Renderização vertical de eventos
-// - Agrupamento por sessão
-// - Tipos: evento, descoberta, combate, morte
-// - Filtragem por tipo
-// - Virtualização para histórico longo
-```
-
-### 5.2 Estrutura Visual
-
-```text
-┌─────────────────────────────────────────┐
-│ TIMELINE                      [Filtrar] │
-├─────────────────────────────────────────┤
-│ ● Sessão 15 - 28/01/2026                │
-│ │                                       │
-│ ├─ 🔍 Pista encontrada: Diário antigo   │
-│ ├─ ⚔️ Combate: Zumbis no cemitério     │
-│ └─ 💀 Morte: NPC Maria                  │
-│                                         │
-│ ● Sessão 14 - 21/01/2026                │
-│ │                                       │
-│ ├─ 📍 Chegada em Mauá                   │
-│ └─ 👤 Novo NPC: Padre João              │
-└─────────────────────────────────────────┘
-```
-
----
-
-## Fase 6: Modal de Configurações
-
-### 6.1 Criar CampaignSettingsModal.tsx
-
-```tsx
-// src/components/campaign/v3/modals/CampaignSettingsModal.tsx
-
-// Seções:
-// - Informações da campanha (nome, descrição)
-// - Gerenciamento de membros (convidar, remover)
-// - Configurações de notificação
-// - Importar/Exportar dados
-// - Zona de perigo (arquivar, excluir)
+// No footer da ficha
+{isSaving && <span className="text-xs text-muted-foreground animate-pulse">Salvando...</span>}
+{lastSavedAt && <span className="text-xs text-muted-foreground">Salvo há {formatDistanceToNow(lastSavedAt)}</span>}
 ```
 
 ---
@@ -269,114 +378,59 @@ const CONDITIONS = [
 
 | Caminho | Descrição |
 |---------|-----------|
-| `src/components/campaign/v3/modals/DiceRollModal.tsx` | Rolador de dados animado |
-| `src/components/campaign/v3/modals/QuickNotesModal.tsx` | Notas rápidas |
-| `src/components/campaign/v3/modals/CampaignSettingsModal.tsx` | Configurações |
-| `src/components/campaign/v3/resources/NoteEditor.tsx` | Editor Tiptap |
-| `src/components/campaign/v3/resources/NotesList.tsx` | Lista de notas |
-| `src/components/campaign/v3/resources/HandoutCard.tsx` | Card de handout |
-| `src/components/campaign/v3/resources/CampaignTimeline.tsx` | Timeline vertical |
-| `src/components/campaign/v3/master/AudioControlPanel.tsx` | Controles de áudio |
-| `src/components/campaign/v3/master/PlayerControlPanel.tsx` | Controles HP/PE/SAN |
-| `src/components/campaign/v3/master/ConditionSelector.tsx` | Seletor de condições |
-| `src/components/campaign/v3/master/index.ts` | Barrel export |
-| `src/components/campaign/v3/modals/index.ts` | Barrel export |
-| `src/components/campaign/v3/resources/index.ts` | Barrel export |
+| `src/hooks/character/useCharacterSheetState.ts` | Estado consolidado da sheet |
+| `src/contexts/CharacterSheetContext.tsx` | Provider compartilhado |
+| `src/components/character/sheet/SheetHeader.tsx` | Header extraído |
+| `src/components/character/sheet/SheetModalsContainer.tsx` | Container de modais |
+| `src/components/character/sheet/SheetLeftColumn.tsx` | Coluna esquerda |
+| `src/components/character/sheet/SheetRightColumn.tsx` | Coluna direita |
+| `src/components/character/sheet/LazyModals.tsx` | Modais com lazy loading |
+| `src/components/character/CharacterSheetAdapter.tsx` | Adapter desktop/mobile |
+| `src/hooks/character/useSkillRoll.ts` | Lógica de teste de perícia |
+| `src/hooks/character/useCombatRollSetup.ts` | Setup de combate |
+| `src/hooks/character/useCharacterStats.ts` | Edição de stats |
 
-### Arquivos a Modificar
+### Arquivos a Refatorar
 
 | Arquivo | Alterações |
 |---------|------------|
-| `src/pages/CampaignShell.tsx` | Adicionar modais, integrar useMasterActions |
-| `src/components/campaign/v3/tabs/ResourcesTab.tsx` | Integrar NoteEditor, Timeline, Handouts |
-| `src/components/campaign/v3/tabs/MasterTab.tsx` | Integrar AudioControlPanel, PlayerControlPanel |
-| `src/components/campaign/v3/index.ts` | Exportar novos componentes |
+| `src/pages/CharacterSheet.tsx` | Dividir em subcomponentes, usar Provider |
+| `src/components/character/MobileCharacterSheet.tsx` | Consumir do Provider |
+| `src/components/character/CombatRollModal.tsx` | Migrar para useCombatRollWithSUE |
+| `src/components/character/SkillsByAttribute.tsx` | Adicionar virtualização |
 
 ---
 
-## Dependências a Instalar
+## Priorização
 
-```bash
-npm install @tiptap/react @tiptap/starter-kit @tiptap/extension-placeholder
-```
-
----
-
-## Cronograma de Implementação
-
-| Fase | Componentes | Prioridade |
-|------|-------------|------------|
-| 1 | DiceRollModal | ALTA - Mais solicitado |
-| 2 | NoteEditor + NotesList | ALTA - Essencial para jogo |
-| 3 | AudioControlPanel | MÉDIA - Melhora imersão |
-| 4 | PlayerControlPanel | ALTA - Essencial para mestre |
-| 5 | CampaignTimeline | BAIXA - Enhancement |
-| 6 | CampaignSettingsModal | MÉDIA - Configuração |
+| Fase | Impacto | Complexidade | Prioridade |
+|------|---------|--------------|------------|
+| 1. Refatoração de Arquitetura | ALTO | ALTA | CRÍTICA |
+| 2. Otimização de Performance | ALTO | MÉDIA | ALTA |
+| 3. Unificação Desktop/Mobile | MÉDIO | ALTA | MÉDIA |
+| 4. Melhorias de Integração | MÉDIO | BAIXA | MÉDIA |
+| 5. Testes e Validação | ALTO | MÉDIA | ALTA |
+| 6. Melhorias de UX | BAIXO | BAIXA | BAIXA |
 
 ---
 
-## Ordem de Implementação Sugerida
+## Bibliotecas Externas Sugeridas
 
-1. **Primeiro**: DiceRollModal + PlayerControlPanel (funcionalidades mais usadas)
-2. **Segundo**: AudioControlPanel (hook já pronto, falta UI)
-3. **Terceiro**: NoteEditor + ResourcesTab completo
-4. **Quarto**: Timeline e Settings
+| Biblioteca | Propósito | Justificativa |
+|------------|-----------|---------------|
+| `@tanstack/react-query` | Cache e sincronização | Já instalado, usar para cache de personagem |
+| `react-hotkeys-hook` | Atalhos de teclado | Leve, bem mantido |
+| `idb-keyval` | IndexedDB simplificado | Para cache offline |
 
 ---
 
-## Seção Técnica
+## Métricas de Sucesso
 
-### Padrões a Seguir
+Após implementação:
 
-1. **Ref-First Pattern**: Para callbacks estáveis (evita #185)
-2. **Memoização**: `memo()` em todos os componentes de lista
-3. **Virtualização**: Para listas longas (notas, timeline)
-4. **Lazy Loading**: Modais carregados sob demanda
+- **Bundle Size**: Redução de ~20% no chunk inicial (lazy loading de modais)
+- **Time to Interactive**: Redução de ~30% (menos código executado no carregamento)
+- **Manutenibilidade**: CharacterSheet.tsx de 4437 para ~500 linhas
+- **Paridade**: 0 divergências entre desktop e mobile (Provider compartilhado)
+- **Cobertura de Testes**: De ~10% para ~60% nos componentes de ficha
 
-### Estrutura de Modal
-
-```tsx
-// Padrão para todos os modais
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-
-export const ExampleModal = memo(function ExampleModal({
-  open,
-  onOpenChange,
-  // ...props
-}: ExampleModalProps) {
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>Título</DialogTitle>
-        </DialogHeader>
-        {/* Conteúdo */}
-      </DialogContent>
-    </Dialog>
-  );
-});
-```
-
-### Integração com Hooks Existentes
-
-```tsx
-// CampaignShell.tsx já tem os hooks configurados
-// Basta passar para os novos componentes:
-
-const masterActions = useMasterActions({
-  campaignId: campaignId || '',
-  isMaster,
-});
-
-const audioData = useCampaignAudio(campaignId || '', isMaster);
-
-// E usar nos componentes:
-<PlayerControlPanel
-  members={members}
-  adjustHP={masterActions.adjustHP}
-  adjustPE={masterActions.adjustPE}
-  adjustSAN={masterActions.adjustSAN}
-  applyCondition={masterActions.applyCondition}
-  removeCondition={masterActions.removeCondition}
-/>
-```
