@@ -87,21 +87,17 @@ const powerTypeConfig: Record<PowerType, {
   },
 };
 
-// Ícones de elementos para poderes paranormais (inclui todos os 5 elementos)
-const elementConfig: Record<string, { icon: string; color: string; bgColor: string }> = {
-  sangue: { icon: '🩸', color: 'text-red-400', bgColor: 'bg-red-500/20' },
-  morte: { icon: '💀', color: 'text-purple-400', bgColor: 'bg-purple-500/20' },
-  conhecimento: { icon: '📖', color: 'text-blue-400', bgColor: 'bg-blue-500/20' },
-  energia: { icon: '⚡', color: 'text-yellow-400', bgColor: 'bg-yellow-500/20' },
-  medo: { icon: '👻', color: 'text-emerald-400', bgColor: 'bg-emerald-500/20' },
-};
+// Usa config centralizado de elementos em src/lib/element-config.ts
+import { getElementConfig } from '@/lib/element-config';
 
 export function PowerDetailModal({ open, onOpenChange, power, onCastRitual }: PowerDetailModalProps) {
   if (!power) return null;
 
   const config = powerTypeConfig[power.type];
   const Icon = config.icon;
-  const elementData = power.element ? elementConfig[power.element.toLowerCase()] : null;
+  
+  // Obtém configuração do elemento via função centralizada
+  const elementConfig = power.element ? getElementConfig(power.element) : null;
 
   // Handler para conjurar o ritual
   const handleCast = () => {
@@ -129,8 +125,8 @@ export function PowerDetailModal({ open, onOpenChange, power, onCastRitual }: Po
                 "border",
                 config.borderColor
               )}>
-                {power.type === 'paranormal' && elementData ? (
-                  <span className="text-2xl">{elementData.icon}</span>
+                {power.type === 'paranormal' && elementConfig ? (
+                  <span className="text-2xl">{elementConfig.emoji}</span>
                 ) : (
                   <Icon className={cn("w-6 h-6", config.color)} />
                 )}
@@ -152,8 +148,8 @@ export function PowerDetailModal({ open, onOpenChange, power, onCastRitual }: Po
                       variant="outline" 
                       className={cn(
                         "text-[10px] capitalize",
-                        elementData?.color,
-                        elementData?.bgColor
+                        elementConfig?.text,
+                        elementConfig?.bg
                       )}
                     >
                       {power.element}

@@ -222,6 +222,37 @@
     --attr-presence: 320 75% 60%;
     --attr-vigor: 145 70% 45%;
 
+    /* Cores dos Elementos Paranormais */
+    /* 🧠 Conhecimento - dourado arcano, místico-intelectual */
+    --element-conhecimento: 43 66% 52%;
+    --element-conhecimento-light: 49 76% 80%;
+    --element-conhecimento-glow: 43 100% 70%;
+    --element-conhecimento-dark: 43 66% 33%;
+    
+    /* ⚡ Energia - roxo elétrico, instável e vibrante */
+    --element-energia: 262 75% 57%;
+    --element-energia-light: 255 100% 83%;
+    --element-energia-glow: 262 100% 71%;
+    --element-energia-accent: 188 100% 62%;
+    
+    /* 🩸 Sangue - vermelho profundo, visceral e brutal */
+    --element-sangue: 0 65% 33%;
+    --element-sangue-light: 0 72% 67%;
+    --element-sangue-glow: 0 100% 65%;
+    --element-sangue-dark: 0 66% 17%;
+    
+    /* ☠️ Morte - cinza fúnebre, fria e opressiva */
+    --element-morte: 120 2% 36%;
+    --element-morte-light: 120 2% 69%;
+    --element-morte-glow: 120 2% 49%;
+    --element-morte-dark: 0 0% 18%;
+    
+    /* 👁️ Medo - verde abissal, antinatural e perturbador */
+    --element-medo: 157 61% 15%;
+    --element-medo-light: 157 100% 72%;
+    --element-medo-glow: 164 100% 62%;
+    --element-medo-dark: 154 59% 8%;
+
     /* Sidebar */
     --sidebar: 260 30% 12%;
     --sidebar-background: 260 80% 3%;
