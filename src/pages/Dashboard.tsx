@@ -3,17 +3,20 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ThemeSelector } from '@/components/ui/theme-selector';
 import { Particles } from '@/components/ui/particles';
 import { FlickeringGrid } from '@/components/ui/flickering-grid';
 import { DecryptedText } from '@/components/ui/decrypted-text';
 import { BlurText } from '@/components/ui/blur-text';
-import { Plus, LogOut, User, FileText, Users, Settings, Loader2, AlertTriangle, Skull, Shield, Smartphone, Package } from 'lucide-react';
+import { Plus, LogOut, User, FileText, Users, Shield, Smartphone, Package, MapPin } from 'lucide-react';
 import { LogoBox } from '@/components/ui/logo';
 import { useToast, useAdminCheck, useThemeColors } from '@/hooks';
 import { CharacterCard } from '@/components/cards/CharacterCard';
+import { CampaignCard, type CampaignCardData } from '@/components/cards/CampaignCard';
 import { ParanormalElementIcon } from '@/components/ui/paranormal-element-icon';
 
+// Interface para personagem no dashboard
 interface Character {
   id: string;
   name: string;
@@ -36,13 +39,18 @@ export default function Dashboard() {
   const { toast } = useToast();
   const { isAdmin } = useAdminCheck();
   const [characters, setCharacters] = useState<Character[]>([]);
+  const [campaigns, setCampaigns] = useState<CampaignCardData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingCampaigns, setLoadingCampaigns] = useState(true);
   const [profile, setProfile] = useState<{ display_name: string | null; } | null>(null);
+  const [activeTab, setActiveTab] = useState('agents');
 
+  // Busca dados do usuário
   useEffect(() => {
     async function fetchData() {
       if (!user) return;
 
+      // Busca perfil
       const { data: profileData } = await supabase
         .from('profiles')
         .select('display_name')
@@ -50,6 +58,7 @@ export default function Dashboard() {
         .single();
       setProfile(profileData);
 
+      // Busca personagens
       const { data: charactersData } = await supabase
         .from('characters')
         .select('id, name, class, origin, nex, patent, hp_current, hp_max, pe_current, pe_max, san_current, san_max, photo_url, conditions')
@@ -66,6 +75,177 @@ export default function Dashboard() {
     fetchData();
   }, [user]);
 
+  // Busca campanhas (v2 com fallback v1)
+  useEffect(() => {
+    async function fetchCampaigns() {
+      if (!user) return;
+      setLoadingCampaigns(true);
+
+      try {
+        // Busca membros v2 do usuário
+        const { data: membershipV2 } = await supabase
+          .from('campaign_members_v2')
+          .select(`
+            campaign_id,
+            role,
+            character_id,
+            characters (id, name, class, photo_url)
+          `)
+          .eq('user_id', user.id);
+
+        // IDs de campanhas v2
+        const campaignIdsV2 = (membershipV2 || []).map(m => m.campaign_id);
+
+        // Busca campanhas v2
+        let campaignsV2: CampaignCardData[] = [];
+        if (campaignIdsV2.length > 0) {
+          const { data: campaignsDataV2 } = await supabase
+            .from('campaigns_v2')
+            .select('*')
+            .in('id', campaignIdsV2);
+
+          // Conta jogadores por campanha v2
+          const { data: memberCountsV2 } = await supabase
+            .from('campaign_members_v2')
+            .select('campaign_id')
+            .in('campaign_id', campaignIdsV2);
+
+          // Busca próximas sessões v2
+          const { data: sessionsV2 } = await supabase
+            .from('campaign_sessions_v2')
+            .select('campaign_id, scheduled_at')
+            .in('campaign_id', campaignIdsV2)
+            .eq('status', 'scheduled')
+            .gte('scheduled_at', new Date().toISOString())
+            .order('scheduled_at', { ascending: true });
+
+          // Mapeia contagens e sessões
+          const countMapV2: Record<string, number> = {};
+          (memberCountsV2 || []).forEach(m => {
+            countMapV2[m.campaign_id] = (countMapV2[m.campaign_id] || 0) + 1;
+          });
+
+          const sessionMapV2: Record<string, string> = {};
+          (sessionsV2 || []).forEach(s => {
+            if (!sessionMapV2[s.campaign_id]) {
+              sessionMapV2[s.campaign_id] = s.scheduled_at!;
+            }
+          });
+
+          // Monta dados das campanhas v2
+          campaignsV2 = (campaignsDataV2 || []).map(c => {
+            const membership = membershipV2?.find(m => m.campaign_id === c.id);
+            const isMaster = c.master_id === user.id;
+            return {
+              id: c.id,
+              name: c.name,
+              description: c.description,
+              cover_image_url: c.cover_image_url,
+              status: c.status as CampaignCardData['status'],
+              current_session: c.current_session,
+              master_id: c.master_id,
+              player_count: countMapV2[c.id] || 0,
+              next_session: sessionMapV2[c.id] || null,
+              user_character: membership?.characters ? {
+                id: membership.characters.id,
+                name: membership.characters.name,
+                class: membership.characters.class,
+                photo_url: membership.characters.photo_url,
+              } : null,
+              is_master: isMaster,
+            };
+          });
+        }
+
+        // Busca membros v1 do usuário (fallback)
+        const { data: membershipV1 } = await supabase
+          .from('campaign_members')
+          .select(`
+            campaign_id,
+            role,
+            character_id,
+            characters (id, name, class, photo_url)
+          `)
+          .eq('user_id', user.id);
+
+        // IDs de campanhas v1 (excluindo as que já estão em v2)
+        const campaignIdsV1 = (membershipV1 || [])
+          .map(m => m.campaign_id)
+          .filter(id => !campaignIdsV2.includes(id));
+
+        // Busca campanhas v1
+        let campaignsV1: CampaignCardData[] = [];
+        if (campaignIdsV1.length > 0) {
+          const { data: campaignsDataV1 } = await supabase
+            .from('campaigns')
+            .select('*')
+            .in('id', campaignIdsV1);
+
+          // Conta jogadores por campanha v1
+          const { data: memberCountsV1 } = await supabase
+            .from('campaign_members')
+            .select('campaign_id')
+            .in('campaign_id', campaignIdsV1);
+
+          // Busca próximas sessões v1
+          const { data: sessionsV1 } = await supabase
+            .from('campaign_sessions')
+            .select('campaign_id, scheduled_at')
+            .in('campaign_id', campaignIdsV1)
+            .eq('status', 'scheduled')
+            .gte('scheduled_at', new Date().toISOString())
+            .order('scheduled_at', { ascending: true });
+
+          // Mapeia contagens e sessões
+          const countMapV1: Record<string, number> = {};
+          (memberCountsV1 || []).forEach(m => {
+            countMapV1[m.campaign_id] = (countMapV1[m.campaign_id] || 0) + 1;
+          });
+
+          const sessionMapV1: Record<string, string> = {};
+          (sessionsV1 || []).forEach(s => {
+            if (!sessionMapV1[s.campaign_id] && s.scheduled_at) {
+              sessionMapV1[s.campaign_id] = s.scheduled_at;
+            }
+          });
+
+          // Monta dados das campanhas v1
+          campaignsV1 = (campaignsDataV1 || []).map(c => {
+            const membership = membershipV1?.find(m => m.campaign_id === c.id);
+            const isMaster = c.master_id === user.id;
+            return {
+              id: c.id,
+              name: c.name,
+              description: c.description,
+              cover_image_url: c.cover_image_url,
+              status: c.status as CampaignCardData['status'],
+              current_session: c.current_session,
+              master_id: c.master_id,
+              player_count: countMapV1[c.id] || 0,
+              next_session: sessionMapV1[c.id] || null,
+              user_character: membership?.characters ? {
+                id: membership.characters.id,
+                name: membership.characters.name,
+                class: membership.characters.class,
+                photo_url: membership.characters.photo_url,
+              } : null,
+              is_master: isMaster,
+            };
+          });
+        }
+
+        // Combina v2 e v1
+        setCampaigns([...campaignsV2, ...campaignsV1]);
+      } catch (error) {
+        console.error('Erro ao carregar campanhas:', error);
+      } finally {
+        setLoadingCampaigns(false);
+      }
+    }
+    fetchCampaigns();
+  }, [user]);
+
+  // Exclusão de personagem
   const handleDeleteCharacter = async (id: string, name: string) => {
     if (!confirm(`Tem certeza que deseja excluir ${name}? Esta ação não pode ser desfeita.`)) {
       return;
@@ -86,15 +266,42 @@ export default function Dashboard() {
     }
   };
 
+  // Exclusão de campanha
+  const handleDeleteCampaign = async (id: string, name: string) => {
+    if (!confirm(`Tem certeza que deseja excluir a campanha "${name}"? Esta ação não pode ser desfeita.`)) {
+      return;
+    }
+    // Tenta deletar v2 primeiro, depois v1
+    const { error: errorV2 } = await supabase.from('campaigns_v2').delete().eq('id', id);
+    const { error: errorV1 } = await supabase.from('campaigns').delete().eq('id', id);
+    
+    if (errorV2 && errorV1) {
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível excluir a campanha.',
+        variant: 'destructive'
+      });
+    } else {
+      setCampaigns(campaigns.filter(c => c.id !== id));
+      toast({
+        title: 'Campanha Removida',
+        description: `A campanha "${name}" foi arquivada permanentemente.`
+      });
+    }
+  };
+
   const displayName = profile?.display_name || user?.email?.split('@')[0] || 'Agente';
 
-  // Check if any character has low HP or SAN
+  // Verifica se algum personagem tem HP ou SAN baixos
   const hasLowStats = characters.some(c => 
     c.hp_current < c.hp_max * 0.3 || c.san_current < c.san_max * 0.3
   );
 
-  // Theme colors for dynamic effects
+  // Cores do tema para efeitos dinâmicos
   const themeColors = useThemeColors();
+
+  // Contagem de campanhas ativas
+  const activeCampaigns = campaigns.filter(c => c.status === 'active').length;
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
@@ -178,12 +385,12 @@ export default function Dashboard() {
         <section className="mb-6 sm:mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <p className="text-[10px] sm:text-xs tracking-[0.2em] uppercase text-[#8B0000] font-mono mb-1">
+              <p className="text-[10px] sm:text-xs tracking-[0.2em] uppercase text-primary font-mono mb-1">
                 Central de Operações
               </p>
-              <h2 className="font-display text-2xl sm:text-4xl tracking-wide text-[#F5F5F5] flex items-center gap-2 flex-wrap">
+              <h2 className="font-display text-2xl sm:text-4xl tracking-wide text-foreground flex items-center gap-2 flex-wrap">
                 <span>BEM-VINDO,</span>
-                <span className="text-[#B22222]">
+                <span className="text-primary">
                   <DecryptedText 
                     text={displayName.toUpperCase()} 
                     speed={40}
@@ -191,14 +398,14 @@ export default function Dashboard() {
                   />
                 </span>
               </h2>
-              <span className="text-sm text-[#808080] mt-1 hidden sm:block">
+              <span className="text-sm text-muted-foreground mt-1 hidden sm:block">
                 <BlurText text="Gerencie seus agentes e missões na Ordo Realitas." delay={0.3} />
               </span>
             </div>
             <div className="flex gap-2 sm:gap-3">
               {isAdmin && (
                 <Link to="/admin/import" className="flex-1 sm:flex-none">
-                  <Button className="w-full sm:w-auto font-display tracking-wider text-xs sm:text-sm bg-[#1A1214] border border-[#8B0000]/30 hover:bg-[#8B0000]/20 hover:border-[#8B0000]/50 text-[#C0C0C0]">
+                  <Button className="w-full sm:w-auto font-display tracking-wider text-xs sm:text-sm bg-card border border-primary/30 hover:bg-primary/20 hover:border-primary/50 text-muted-foreground">
                     <Shield className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
                     <span className="hidden sm:inline">Admin</span>
                     <span className="sm:hidden">Adm</span>
@@ -206,24 +413,10 @@ export default function Dashboard() {
                 </Link>
               )}
               <Link to="/my-templates" className="flex-1 sm:flex-none">
-                <Button className="w-full sm:w-auto font-display tracking-wider text-xs sm:text-sm bg-[#1A1214] border border-[#8B0000]/30 hover:bg-[#8B0000]/20 hover:border-[#8B0000]/50 text-[#C0C0C0]">
+                <Button className="w-full sm:w-auto font-display tracking-wider text-xs sm:text-sm bg-card border border-primary/30 hover:bg-primary/20 hover:border-primary/50 text-muted-foreground">
                   <Package className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
                   <span className="hidden sm:inline">Templates</span>
                   <span className="sm:hidden">Tpl</span>
-                </Button>
-              </Link>
-              <Link to="/campaigns" className="flex-1 sm:flex-none">
-                <Button className="w-full sm:w-auto font-display tracking-wider text-xs sm:text-sm bg-[#1A1214] border border-[#8B0000]/30 hover:bg-[#8B0000]/20 hover:border-[#8B0000]/50 text-[#C0C0C0]">
-                  <Users className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
-                  <span className="hidden sm:inline">Campanhas</span>
-                  <span className="sm:hidden">Mesas</span>
-                </Button>
-              </Link>
-              <Link to="/character/create" className="flex-1 sm:flex-none">
-                <Button className="w-full sm:w-auto font-display tracking-wider text-xs sm:text-sm bg-[#8B0000] hover:bg-[#B22222] text-white border border-[#B22222]/30 shadow-[0_0_15px_rgba(139,0,0,0.3)] hover:shadow-[0_0_25px_rgba(139,0,0,0.5)] transition-all">
-                  <Plus className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
-                  <span className="hidden sm:inline">Novo Agente</span>
-                  <span className="sm:hidden">Novo</span>
                 </Button>
               </Link>
             </div>
@@ -234,123 +427,234 @@ export default function Dashboard() {
         <section className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-8 sm:mb-10">
           <div className="dossier-classified p-4 group hover:scale-[1.02] transition-transform">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-[#8B0000]/10 border border-[#8B0000]/30 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-lg bg-primary/10 border border-primary/30 flex items-center justify-center">
                 <ParanormalElementIcon element="sangue" size="sm" variant="glow" />
               </div>
               <div>
-                <p className="font-display text-2xl text-[#F5F5F5]">{characters.length}</p>
-                <p className="text-[10px] text-[#808080] uppercase tracking-wider font-mono">Agentes</p>
+                <p className="font-display text-2xl text-foreground">{characters.length}</p>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-mono">Agentes</p>
               </div>
             </div>
           </div>
           <div className="dossier-classified p-4 group hover:scale-[1.02] transition-transform">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-[#8B0000]/10 border border-[#8B0000]/30 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-lg bg-primary/10 border border-primary/30 flex items-center justify-center">
                 <ParanormalElementIcon element="conhecimento" size="sm" variant="glow" />
               </div>
               <div>
-                <p className="font-display text-2xl text-[#F5F5F5]">0</p>
-                <p className="text-[10px] text-[#808080] uppercase tracking-wider font-mono">Mesas</p>
+                <p className="font-display text-2xl text-foreground">{campaigns.length}</p>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-mono">Mesas</p>
               </div>
             </div>
           </div>
           <div className="dossier-classified p-4 group hover:scale-[1.02] transition-transform">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-[#8B0000]/10 border border-[#8B0000]/30 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-lg bg-primary/10 border border-primary/30 flex items-center justify-center">
                 <ParanormalElementIcon element="medo" size="sm" variant="glow" />
               </div>
               <div>
-                <p className="font-display text-2xl text-[#F5F5F5]">0</p>
-                <p className="text-[10px] text-[#808080] uppercase tracking-wider font-mono">Missões</p>
+                <p className="font-display text-2xl text-foreground">{activeCampaigns}</p>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-mono">Ativas</p>
               </div>
             </div>
           </div>
           <div className="dossier-classified p-4 group hover:scale-[1.02] transition-transform">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-[#8B0000]/10 border border-[#8B0000]/30 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-lg bg-primary/10 border border-primary/30 flex items-center justify-center">
                 <ParanormalElementIcon element="energia" size="sm" variant="glow" />
               </div>
               <div>
-                <p className="font-display text-2xl text-[#F5F5F5]">—</p>
-                <p className="text-[10px] text-[#808080] uppercase tracking-wider font-mono">Config</p>
+                <p className="font-display text-2xl text-foreground">{campaigns.filter(c => c.is_master).length}</p>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-mono">Mestrando</p>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Characters section */}
-        <section>
+        {/* Tabs para Agentes e Campanhas */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="w-full max-w-md mx-auto mb-6 sm:mb-8 grid grid-cols-2 bg-card border border-primary/20">
+            <TabsTrigger 
+              value="agents" 
+              className="data-[state=active]:bg-primary/20 data-[state=active]:text-foreground font-display tracking-wider"
+            >
+              <FileText className="w-4 h-4 mr-2" />
+              Agentes
+              <span className="ml-2 text-xs text-muted-foreground">({characters.length})</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="campaigns" 
+              className="data-[state=active]:bg-primary/20 data-[state=active]:text-foreground font-display tracking-wider"
+            >
+              <Users className="w-4 h-4 mr-2" />
+              Campanhas
+              <span className="ml-2 text-xs text-muted-foreground">({campaigns.length})</span>
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Aba de Agentes */}
+          <TabsContent value="agents">
             <div className="flex items-center gap-4 mb-6">
-            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#8B0000]/40 to-transparent" />
-            <h3 className="font-display text-lg sm:text-xl tracking-wider text-[#B22222] flex items-center gap-2">
-              DOSSIÊS DE AGENTES
-            </h3>
-            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#8B0000]/40 to-transparent" />
-          </div>
+              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+              <h3 className="font-display text-lg sm:text-xl tracking-wider text-primary flex items-center gap-2">
+                DOSSIÊS DE AGENTES
+              </h3>
+              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+            </div>
 
-          {loading ? (
-            <div className="flex flex-col items-center justify-center py-16">
-              <div className="relative">
-                <LogoBox size="lg" animate />
-              </div>
-              <p className="text-[#808080] mt-4 font-mono text-sm">Carregando dossiês...</p>
+            {/* Botão criar novo agente */}
+            <div className="flex justify-end mb-6">
+              <Link to="/character/create">
+                <Button className="font-display tracking-wider text-xs sm:text-sm bg-primary hover:bg-primary/80 text-primary-foreground border border-primary/30 shadow-[0_0_15px_hsl(var(--primary)/0.3)] hover:shadow-[0_0_25px_hsl(var(--primary)/0.5)] transition-all">
+                  <Plus className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
+                  Novo Agente
+                </Button>
+              </Link>
             </div>
-          ) : characters.length === 0 ? (
-            <div className="dossier-classified text-center py-12 sm:py-16 relative overflow-hidden">
-              {/* Background effect */}
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(139,0,0,0.1)_0%,_transparent_70%)]" />
-              
-              <div className="relative z-10">
-                <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-[#8B0000]/10 border border-[#8B0000]/30 flex items-center justify-center">
-                  <FileText className="w-10 h-10 text-[#808080]" />
+
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-16">
+                <div className="relative">
+                  <LogoBox size="lg" animate />
                 </div>
-                <h3 className="font-display text-xl sm:text-2xl text-[#F5F5F5] mb-2">
-                  <DecryptedText text="NENHUM DOSSIÊ ENCONTRADO" speed={30} />
-                </h3>
-                <p className="text-[#808080] mb-6 text-sm sm:text-base">
-                  Crie seu primeiro agente para começar suas missões.
-                </p>
-                <Link to="/character/create">
-                  <Button className="bg-[#8B0000] hover:bg-[#B22222] text-white border border-[#B22222]/30 shadow-[0_0_20px_rgba(139,0,0,0.3)] hover:shadow-[0_0_30px_rgba(139,0,0,0.5)] transition-all">
-                    <Plus className="w-5 h-5 mr-2" />
-                    Criar Primeiro Agente
-                  </Button>
-                </Link>
+                <p className="text-muted-foreground mt-4 font-mono text-sm">Carregando dossiês...</p>
               </div>
-              
-              {/* Classified stamp */}
-              <div className="absolute -bottom-2 -right-2 text-[#8B0000]/10 font-display text-6xl tracking-widest rotate-[-15deg] select-none">
-                VAZIO
+            ) : characters.length === 0 ? (
+              <div className="dossier-classified text-center py-12 sm:py-16 relative overflow-hidden">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_hsl(var(--primary)/0.1)_0%,_transparent_70%)]" />
+                
+                <div className="relative z-10">
+                  <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center">
+                    <FileText className="w-10 h-10 text-muted-foreground" />
+                  </div>
+                  <h3 className="font-display text-xl sm:text-2xl text-foreground mb-2">
+                    <DecryptedText text="NENHUM DOSSIÊ ENCONTRADO" speed={30} />
+                  </h3>
+                  <p className="text-muted-foreground mb-6 text-sm sm:text-base">
+                    Crie seu primeiro agente para começar suas missões.
+                  </p>
+                  <Link to="/character/create">
+                    <Button className="bg-primary hover:bg-primary/80 text-primary-foreground border border-primary/30 shadow-[0_0_20px_hsl(var(--primary)/0.3)] hover:shadow-[0_0_30px_hsl(var(--primary)/0.5)] transition-all">
+                      <Plus className="w-5 h-5 mr-2" />
+                      Criar Primeiro Agente
+                    </Button>
+                  </Link>
+                </div>
+                
+                <div className="absolute -bottom-2 -right-2 text-primary/10 font-display text-6xl tracking-widest rotate-[-15deg] select-none">
+                  VAZIO
+                </div>
               </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                {characters.map((character, index) => (
+                  <CharacterCard 
+                    key={character.id} 
+                    character={{
+                      id: character.id,
+                      name: character.name,
+                      class: character.class,
+                      origin: character.origin,
+                      nex: character.nex,
+                      patent: character.patent,
+                      hp_current: character.hp_current,
+                      hp_max: character.hp_max,
+                      pe_current: character.pe_current,
+                      pe_max: character.pe_max,
+                      san_current: character.san_current,
+                      san_max: character.san_max,
+                      photo_url: character.photo_url,
+                      conditions: character.conditions || []
+                    }} 
+                    onDelete={() => handleDeleteCharacter(character.id, character.name)} 
+                    index={index} 
+                  />
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Aba de Campanhas */}
+          <TabsContent value="campaigns">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+              <h3 className="font-display text-lg sm:text-xl tracking-wider text-primary flex items-center gap-2">
+                MINHAS CAMPANHAS
+              </h3>
+              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
             </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-              {characters.map((character, index) => (
-                <CharacterCard 
-                  key={character.id} 
-                  character={{
-                    id: character.id,
-                    name: character.name,
-                    class: character.class,
-                    origin: character.origin,
-                    nex: character.nex,
-                    patent: character.patent,
-                    hp_current: character.hp_current,
-                    hp_max: character.hp_max,
-                    pe_current: character.pe_current,
-                    pe_max: character.pe_max,
-                    san_current: character.san_current,
-                    san_max: character.san_max,
-                    photo_url: character.photo_url,
-                    conditions: character.conditions || []
-                  }} 
-                  onDelete={() => handleDeleteCharacter(character.id, character.name)} 
-                  index={index} 
-                />
-              ))}
+
+            {/* Botões de ação para campanhas */}
+            <div className="flex justify-end gap-2 mb-6">
+              <Link to="/campaigns">
+                <Button variant="outline" className="font-display tracking-wider text-xs sm:text-sm border-primary/30 hover:bg-primary/20">
+                  <Users className="w-4 h-4 mr-2" />
+                  Ver Todas
+                </Button>
+              </Link>
+              <Link to="/campaigns/create">
+                <Button className="font-display tracking-wider text-xs sm:text-sm bg-primary hover:bg-primary/80 text-primary-foreground border border-primary/30 shadow-[0_0_15px_hsl(var(--primary)/0.3)] hover:shadow-[0_0_25px_hsl(var(--primary)/0.5)] transition-all">
+                  <Plus className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
+                  Nova Campanha
+                </Button>
+              </Link>
             </div>
-          )}
-        </section>
+
+            {loadingCampaigns ? (
+              <div className="flex flex-col items-center justify-center py-16">
+                <div className="relative">
+                  <LogoBox size="lg" animate />
+                </div>
+                <p className="text-muted-foreground mt-4 font-mono text-sm">Carregando campanhas...</p>
+              </div>
+            ) : campaigns.length === 0 ? (
+              <div className="dossier-classified text-center py-12 sm:py-16 relative overflow-hidden">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_hsl(var(--primary)/0.1)_0%,_transparent_70%)]" />
+                
+                <div className="relative z-10">
+                  <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center">
+                    <MapPin className="w-10 h-10 text-muted-foreground" />
+                  </div>
+                  <h3 className="font-display text-xl sm:text-2xl text-foreground mb-2">
+                    <DecryptedText text="NENHUMA CAMPANHA ENCONTRADA" speed={30} />
+                  </h3>
+                  <p className="text-muted-foreground mb-6 text-sm sm:text-base">
+                    Crie uma nova campanha ou entre em uma existente.
+                  </p>
+                  <div className="flex gap-3 justify-center">
+                    <Link to="/campaigns">
+                      <Button variant="outline" className="border-primary/30 hover:bg-primary/20">
+                        <Users className="w-5 h-5 mr-2" />
+                        Explorar Campanhas
+                      </Button>
+                    </Link>
+                    <Link to="/campaigns/create">
+                      <Button className="bg-primary hover:bg-primary/80 text-primary-foreground border border-primary/30 shadow-[0_0_20px_hsl(var(--primary)/0.3)] hover:shadow-[0_0_30px_hsl(var(--primary)/0.5)] transition-all">
+                        <Plus className="w-5 h-5 mr-2" />
+                        Criar Campanha
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+                
+                <div className="absolute -bottom-2 -right-2 text-primary/10 font-display text-6xl tracking-widest rotate-[-15deg] select-none">
+                  VAZIO
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                {campaigns.map((campaign, index) => (
+                  <CampaignCard
+                    key={campaign.id}
+                    campaign={campaign}
+                    onDelete={campaign.is_master ? () => handleDeleteCampaign(campaign.id, campaign.name) : undefined}
+                    index={index}
+                  />
+                ))}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );
