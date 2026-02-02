@@ -19,9 +19,7 @@ import {
   BookOpen,
   Swords,
   Zap,
-  X,
   RefreshCw,
-  Check,
 } from 'lucide-react';
 import {
   Dialog,
@@ -50,7 +48,8 @@ interface ValidationAutoFixModalProps {
   onOpenChange: (open: boolean) => void;
   validationResult: ValidationResult | null;
   onApplyFixes: (fixes: ApplicableFix[]) => Promise<ApplyFixesResult>;
-  onRefresh?: () => void;
+  /** Callback para revalidar (pode ser async) */
+  onRefresh?: () => void | Promise<void>;
   isApplying?: boolean;
   characterName?: string;
 }
@@ -128,6 +127,18 @@ export function ValidationAutoFixModal({
   const [selectedFixes, setSelectedFixes] = useState<Set<string>>(new Set());
   const [expandedRules, setExpandedRules] = useState<Set<string>>(new Set());
   const [applyResult, setApplyResult] = useState<ApplyFixesResult | null>(null);
+  const [isRevalidating, setIsRevalidating] = useState(false);
+
+  // Handler para revalidar com loading state
+  const handleRevalidate = async () => {
+    if (!onRefresh) return;
+    setIsRevalidating(true);
+    try {
+      await onRefresh();
+    } finally {
+      setIsRevalidating(false);
+    }
+  };
 
   // Separar issues por tipo
   const { autoFixable, manual, fixableIssues } = useMemo(() => {
@@ -218,15 +229,18 @@ export function ValidationAutoFixModal({
       setSelectedFixes(new Set());
 
       // Após um breve delay, revalida para mostrar problemas restantes
-      setTimeout(() => {
+      // Nota: onFixComplete já foi chamado no hook, então só precisamos revalidar a UI
+      setTimeout(async () => {
         setApplyResult(null);
         // Chama onRefresh para revalidar e atualizar a lista
         if (onRefresh) {
-          onRefresh();
+          setIsRevalidating(true);
+          try {
+            await onRefresh();
+          } finally {
+            setIsRevalidating(false);
+          }
         }
-        // NÃO fecha o modal automaticamente - deixa o usuário decidir
-        // O modal só fechará quando o usuário clicar em Fechar ou quando
-        // a revalidação mostrar que não há mais problemas
       }, 800);
     } else if (result.errors.length > 0) {
       toast({
@@ -379,18 +393,18 @@ export function ValidationAutoFixModal({
             <Button
               variant="ghost"
               size="sm"
-              onClick={onRefresh}
-              disabled={isApplying}
+              onClick={handleRevalidate}
+              disabled={isApplying || isRevalidating}
             >
-              <RefreshCw className="w-4 h-4 mr-1" />
-              Revalidar
+              <RefreshCw className={`w-4 h-4 mr-1 ${isRevalidating ? 'animate-spin' : ''}`} />
+              {isRevalidating ? 'Revalidando...' : 'Revalidar'}
             </Button>
           )}
 
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
-            disabled={isApplying}
+            disabled={isApplying || isRevalidating}
           >
             Fechar
           </Button>
@@ -398,7 +412,7 @@ export function ValidationAutoFixModal({
           {selectedFixes.size > 0 && (
             <Button
               onClick={handleApplyFixes}
-              disabled={isApplying || selectedFixes.size === 0}
+              disabled={isApplying || isRevalidating || selectedFixes.size === 0}
             >
               {isApplying ? (
                 <>
