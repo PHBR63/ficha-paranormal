@@ -18,6 +18,41 @@ import type {
 import type { ApplicableFix, ApplyFixesResult } from '@/components/character/ValidationAutoFixModal';
 
 // ========================================
+// MAPEAMENTO DE CAMPOS
+// ========================================
+
+/**
+ * Mapeamento de campos CharacterState (camelCase) → colunas do banco (snake_case)
+ * Necessário porque o validador usa nomes do TypeScript e o banco usa convenção SQL
+ */
+const FIELD_TO_COLUMN_MAP: Record<string, string> = {
+  'hpCurrent': 'hp_current',
+  'peCurrent': 'pe_current',
+  'sanCurrent': 'san_current',
+  'classTrack': 'class_track',
+  'characterClass': 'class',
+  'hpMax': 'hp_max',
+  'peMax': 'pe_max',
+  'sanMax': 'san_max',
+};
+
+/**
+ * Converte nome de campo do CharacterState para nome de coluna do banco
+ */
+function toColumnName(field: string): string {
+  // Campos mapeados explicitamente
+  if (FIELD_TO_COLUMN_MAP[field]) {
+    return FIELD_TO_COLUMN_MAP[field];
+  }
+  // Campos com ponto (ex: attributes.strength) - mantém o segundo segmento
+  if (field.includes('.')) {
+    return field.split('.')[1];
+  }
+  // Fallback: converte camelCase para snake_case
+  return field.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+}
+
+// ========================================
 // TIPOS
 // ========================================
 
@@ -112,7 +147,9 @@ export function useValidationAutoFix(
               } else if (fieldType === 'attributes' && fieldName) {
                 attributeUpdates[fieldName] = fix.value as number;
               } else if (fix.value !== undefined) {
-                updates[fix.field.replace('.', '_')] = fix.value;
+                // Usa o mapeamento correto camelCase → snake_case
+                const columnName = toColumnName(fix.field);
+                updates[columnName] = fix.value;
               }
               appliedCount++;
               break;
