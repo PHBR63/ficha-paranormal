@@ -30,10 +30,20 @@
 | `src/hooks/character/useRitualCast.ts` | ✅ Criado | Gerenciamento de conjuração e custos de PE |
 | `src/hooks/character/useTrackPanel.ts` | ✅ Criado | Mapeamento de trilhas para componentes e metadados |
 
-### Próximos Passos (Fase 4)
+### Fase 4: Melhorias de Integração - CONCLUÍDA
 
-- [ ] Sincronização campanha aprimorada
-- [ ] Migrar CombatRollModal para useCombatRollWithSUE
+| Arquivo | Status | Descrição |
+|---------|--------|-----------|
+| `src/hooks/campaign/useCharacterStatsSync.ts` | ✅ Criado | Broadcast de HP/PE/SAN em tempo real para campanha |
+| `src/hooks/campaign/index.ts` | ✅ Atualizado | Export do novo hook |
+| `src/components/character/CombatRollModal.tsx` | ✅ Atualizado | Hook SUE configurado com breakdowns expostos |
+
+**Nota sobre CombatRollModal**: Migração incremental realizada. O hook `useCombatRollWithSUE` está configurado e expondo breakdowns para a UI. A substituição completa de `handleRollAttack`/`handleRollDamage` foi adiada devido à complexidade do modal (2862 linhas com lógica específica de 15 trilhas, técnicas do Aniquilador, Ataque Furtivo, Disparo Letal, etc.).
+
+### Próximos Passos (Fase 5 e 6)
+
+- [ ] Testes e Validação
+- [ ] Melhorias de UX (modo offline, atalhos de teclado, indicadores de salvamento)
 
 ---
 

@@ -33,8 +33,7 @@ import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { rollSkillTest, rollDamage, DiceRollResult } from '@/lib/dice-roller';
-// TODO: Migração Fase 2 - Substituir rollSkillTest/rollDamage por useCombatRollWithSUE
-// O hook useCombatRollWithSUE encapsula rollAttackWithContext e rollDamageWithContext
+// Integração SUE: useCombatRollWithSUE encapsula rollAttackWithContext e rollDamageWithContext
 // com integração completa ao SUE para bônus automáticos
 import { useCombatRollWithSUE, type WeaponEntryCompat } from '@/hooks/use-combat-roll-with-sue';
 import { ComputedEffects } from '@/lib/unified-effects-engine';
@@ -257,8 +256,9 @@ export function CombatRollModal({
   onRollComplete,
 }: CombatRollModalProps) {
   // === HOOK DE COMBATE INTEGRADO COM SUE ===
-  // Preparação para migração: hook já configurado para uso futuro
-  // Quando a migração estiver completa, substituirá rollSkillTest/rollDamage
+  // Provê funções executeAttackRoll e executeDamageRoll que automaticamente
+  // aplicam todos os bônus do SUE (origem, trilha, poderes, rituais, condições).
+  // O hook também expõe getAttackBonusBreakdown e getDamageBonusBreakdown para UI.
   const combatRollWithSUE = useCombatRollWithSUE({
     characterClass,
     classTrack,
@@ -274,6 +274,17 @@ export function CombatRollModal({
     activatedPowers: activeConditionalBonuses,
     activeConditionalBonuses,
   });
+  
+  // Breakdowns pré-calculados do SUE para exibição na UI
+  const sueAttackBreakdown = useMemo(() => {
+    if (!weapon) return null;
+    return combatRollWithSUE.getAttackBonusBreakdown(weapon as WeaponEntryCompat);
+  }, [weapon, combatRollWithSUE]);
+  
+  const sueDamageBreakdown = useMemo(() => {
+    if (!weapon) return null;
+    return combatRollWithSUE.getDamageBonusBreakdown(weapon as WeaponEntryCompat);
+  }, [weapon, combatRollWithSUE]);
   
   // Bônus de rituais sustentados processados automaticamente
   const ritualBonuses = useRitualBonusesForCombat(sustainedRituals);
