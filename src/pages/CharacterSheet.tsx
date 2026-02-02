@@ -890,8 +890,9 @@ export default function CharacterSheet() {
   }, [id, user, navigate, toast, runMigration, resetMigration]);
   
   // Função de refetch para atualizar dados do personagem após correções
-  const refetchCharacter = useCallback(async () => {
-    if (!id || !user) return;
+  // Retorna os dados atualizados para uso imediato (ex: revalidação)
+  const refetchCharacter = useCallback(async (): Promise<Character | null> => {
+    if (!id || !user) return null;
     
     const { data, error } = await supabase
       .from('characters')
@@ -914,7 +915,9 @@ export default function CharacterSheet() {
       setSanCurrent(data.san_current);
       
       console.log('[CharacterSheet] Dados do personagem atualizados após correção');
+      return charData;
     }
+    return null;
   }, [id, user]);
 
   // Handler para rolar atributo (inclui detecção de resistências)
@@ -1881,44 +1884,54 @@ export default function CharacterSheet() {
   });
   
   // Prepara o CharacterState para validação quando o modal abrir
-  const handleOpenValidationModal = useCallback(() => {
+  // Recarrega dados do banco antes de validar para garantir dados atualizados
+  const handleOpenValidationModal = useCallback(async () => {
     if (!character) return;
     
+    // Se o modal já está aberto, faz refetch e usa dados atualizados
+    let charToValidate = character;
+    if (validationModalOpen) {
+      const refreshedChar = await refetchCharacter();
+      if (refreshedChar) {
+        charToValidate = refreshedChar;
+      }
+    }
+    
     const state = characterToState({
-      id: character.id,
-      name: character.name,
-      class: character.class,
-      origin: character.origin,
-      nex: character.nex,
-      class_track: character.class_track,
-      agility: character.agility,
-      strength: character.strength,
-      vigor: character.vigor,
-      intellect: character.intellect,
-      presence: character.presence,
-      skills: character.skills,
-      powers: character.abilities || [],
-      general_powers: (character.general_powers || []).map(p => 
+      id: charToValidate.id,
+      name: charToValidate.name,
+      class: charToValidate.class,
+      origin: charToValidate.origin,
+      nex: charToValidate.nex,
+      class_track: charToValidate.class_track,
+      agility: charToValidate.agility,
+      strength: charToValidate.strength,
+      vigor: charToValidate.vigor,
+      intellect: charToValidate.intellect,
+      presence: charToValidate.presence,
+      skills: charToValidate.skills,
+      powers: charToValidate.abilities || [],
+      general_powers: (charToValidate.general_powers || []).map(p => 
         typeof p === 'string' ? { id: p } : { id: p.id }
       ),
-      paranormal_powers: (character.paranormal_powers || []).map(p => 
+      paranormal_powers: (charToValidate.paranormal_powers || []).map(p => 
         typeof p === 'string' ? { id: p } : { id: p.id }
       ),
-      rituals: ((character.rituals || []) as Array<string | { id: string }>).map(r => 
+      rituals: ((charToValidate.rituals || []) as Array<string | { id: string }>).map(r => 
         typeof r === 'string' ? { id: r } : { id: r.id }
       ),
       hp_current: hpCurrent,
       pe_current: peCurrent,
       san_current: sanCurrent,
-      conditions: (character.conditions || []).map(c => 
+      conditions: (charToValidate.conditions || []).map(c => 
         typeof c === 'string' ? { id: c } : { id: c.id, name: c.name }
       ),
-      inventory: character.inventory,
+      inventory: charToValidate.inventory,
     });
     
     validationAutoFix.validate(state);
     setValidationModalOpen(true);
-  }, [character, hpCurrent, peCurrent, sanCurrent, validationAutoFix]);
+  }, [character, hpCurrent, peCurrent, sanCurrent, validationAutoFix, validationModalOpen, refetchCharacter]);
   
   // Handler para aplicar correções
   const handleApplyValidationFixes = useCallback(async (fixes: ApplicableFix[]) => {

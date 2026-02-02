@@ -12,7 +12,7 @@ interface IncompleteDataBannerProps {
   /** Mensagem descrevendo o problema */
   message: string;
   /** Callback para refetch dos dados */
-  onRefetch: () => Promise<void>;
+  onRefetch: () => Promise<unknown>;
   /** Lista de campos com problema (opcional) */
   missingFields?: string[];
 }
