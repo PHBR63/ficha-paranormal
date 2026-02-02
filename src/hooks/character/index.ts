@@ -7,6 +7,14 @@
  * @module hooks/character
  */
 
+// Hook consolidado de estado da ficha
+export * from './useCharacterSheetState';
+
+// Hooks de edição e rolagem
+export * from './useCharacterStats';
+export * from './useSkillRoll';
+
+// Hooks de dados e validação
 export * from '../useCharacterAutoSave';
 export * from '../useCharacterAudit';
 export * from '../useCharacterBonusSummary';
