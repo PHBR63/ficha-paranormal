@@ -16,29 +16,30 @@ interface AnimatedProgressProps {
 }
 
 // Estilos de variantes para as barras de progresso
+// Estilos de variantes com cores vibrantes e tracks mais visíveis
 const variantStyles = {
   hp: {
-    bar: 'bg-hp',
-    glow: 'shadow-[0_0_10px_hsl(var(--hp)/0.5)]',
-    track: 'bg-hp/20',
+    bar: 'bg-[hsl(0_72%_51%)]',
+    glow: 'shadow-[0_0_12px_hsl(0_72%_51%/0.6)]',
+    track: 'bg-[hsl(0_72%_51%/0.35)]',
     label: 'PV',
   },
   pe: {
-    bar: 'bg-pe',
-    glow: 'shadow-[0_0_10px_hsl(var(--pe)/0.5)]',
-    track: 'bg-pe/20',
+    bar: 'bg-[hsl(199_89%_48%)]',
+    glow: 'shadow-[0_0_12px_hsl(199_89%_48%/0.6)]',
+    track: 'bg-[hsl(199_89%_48%/0.35)]',
     label: 'PE',
   },
   san: {
-    bar: 'bg-san',
-    glow: 'shadow-[0_0_10px_hsl(var(--san)/0.5)]',
-    track: 'bg-san/20',
+    bar: 'bg-[hsl(280_65%_55%)]',
+    glow: 'shadow-[0_0_12px_hsl(280_65%_55%/0.6)]',
+    track: 'bg-[hsl(280_65%_55%/0.35)]',
     label: 'SAN',
   },
   xp: {
-    bar: 'bg-[hsl(var(--status-xp))]',
-    glow: 'shadow-[0_0_10px_hsl(var(--status-xp)/0.5)]',
-    track: 'bg-[hsl(var(--status-xp)/0.2)]',
+    bar: 'bg-[hsl(45_93%_47%)]',
+    glow: 'shadow-[0_0_12px_hsl(45_93%_47%/0.6)]',
+    track: 'bg-[hsl(45_93%_47%/0.35)]',
     label: 'XP',
   },
   default: {
