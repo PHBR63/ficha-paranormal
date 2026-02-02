@@ -1,8 +1,8 @@
-# Revisão Robusta e Proposta de Otimização da Ficha de Personagem
+# Plano de Otimização da Ficha de Personagem
 
 ## ✅ PROGRESSO DA IMPLEMENTAÇÃO
 
-### Fase 1: Refatoração de Arquitetura - INICIADA
+### Fase 1: Refatoração de Arquitetura - CONCLUÍDA
 
 | Arquivo | Status | Descrição |
 |---------|--------|-----------|
@@ -12,17 +12,20 @@
 | `src/hooks/character/useCharacterStats.ts` | ✅ Criado | Edição de HP/PE/SAN com debounce |
 | `src/hooks/character/useSkillRoll.ts` | ✅ Criado | Preparação de testes de perícia |
 
-### Próximos Passos (Fase 1 Continuação)
+### Fase 2: Otimização de Performance - CONCLUÍDA
 
-- [ ] Criar SheetHeader.tsx, SheetLeftColumn.tsx, SheetRightColumn.tsx
+| Arquivo | Status | Descrição |
+|---------|--------|-----------|
+| `src/hooks/useReducedMotion.ts` | ✅ Criado | Hook para preferência de movimento reduzido + detecção de baixo desempenho |
+| `src/components/character/VirtualizedSkillsList.tsx` | ✅ Criado | Lista virtualizada de perícias com @tanstack/react-virtual |
+| `src/components/character/AtmosphericEffects.tsx` | ✅ Criado | Efeitos atmosféricos condicionais (mobile/performance) |
+| `src/pages/CharacterSheet.tsx` | ✅ Atualizado | Integrado AtmosphericEffects condicional |
+
+### Próximos Passos (Fase 3)
+
+- [ ] Criar CharacterSheetAdapter.tsx
 - [ ] Migrar CharacterSheet.tsx para usar CharacterSheetProvider
 - [ ] Migrar MobileCharacterSheet.tsx para consumir do Provider
-
----
-
-## Visão Geral do Diagnóstico
-
-Após análise detalhada do código-fonte da ficha de personagem (CharacterSheet.tsx: 4437 linhas, MobileCharacterSheet.tsx: 2990 linhas), identifiquei oportunidades significativas de refatoração, otimização de performance e melhorias de arquitetura.
 
 ---
 
