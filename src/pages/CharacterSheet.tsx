@@ -11,6 +11,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { useToast, useIsMobile, useThemeColors } from '@/hooks';
 import { ThemeSelector } from '@/components/ui/theme-selector';
+// Hooks de UX (Fase 6)
+import { useOnlineStatus } from '@/hooks/useOnlineStatus';
+import { useSheetKeyboardShortcuts } from '@/hooks/useSheetKeyboardShortcuts';
+// Componentes de UX (Fase 6)
+import { OfflineBanner } from '@/components/ui/OfflineBanner';
+import { SaveStatusIndicator, SaveStatus } from '@/components/ui/SaveStatusIndicator';
+import { KeyboardShortcutsHelp } from '@/components/ui/KeyboardShortcutsHelp';
 // AtmosphericEffects com lazy loading condicional (substitui Particles e FlickeringGrid)
 import { AtmosphericEffects } from '@/components/character/AtmosphericEffects';
 import {
@@ -434,6 +441,17 @@ export default function CharacterSheet() {
   // Estado para verificar se personagem já usou Transcender em NEX >= 50
   // (necessário para determinar se deve exibir seletor de afinidade elemental)
   const [hasTranscendedPost50, setHasTranscendedPost50] = useState(false);
+
+  // === ESTADOS DE UX (Fase 6) ===
+  // Status de conectividade (offline/online)
+  const { isOnline, checkRealConnectivity } = useOnlineStatus();
+  
+  // Status de salvamento (idle, saving, saved, error, offline)
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  
+  // Modal de atalhos de teclado
+  const [shortcutsHelpOpen, setShortcutsHelpOpen] = useState(false);
 
   // Hook CONSOLIDADO de todos os bônus do personagem (inclui defenseBonuses e paranormalEffects)
   // OTIMIZAÇÃO: Evita chamadas duplicadas de hooks
@@ -1022,8 +1040,12 @@ export default function CharacterSheet() {
   }, [defenseBonuses.resistances, bonusSummary.skills]);
 
   // Handler para mudança de stats com aplicação automática de condições
+  // Atualizado para integrar com SaveStatusIndicator (Fase 6 UX)
   const handleCombatStatsChange = async (stats: { hp: number; pe: number; san: number }) => {
     if (!character) return;
+
+    // Atualiza status para "saving"
+    setSaveStatus('saving');
 
     // Verifica e aplica condições automáticas baseado nos novos valores
     const currentConditions = character.conditions.map(parseCondition);
@@ -1077,8 +1099,46 @@ export default function CharacterSheet() {
           san_current: stats.san,
         } : null);
       }
+      
+      // Atualiza status para "saved" e registra timestamp
+      setSaveStatus('saved');
+      setLastSaved(new Date());
+      
+      // Volta para idle após 3 segundos
+      setTimeout(() => setSaveStatus('idle'), 3000);
+    } else {
+      // Erro ao salvar
+      setSaveStatus('error');
     }
   };
+
+  // Handler de salvamento manual (Ctrl+S) - Fase 6 UX
+  const handleManualSave = useCallback(async () => {
+    if (!character || saving) return;
+    
+    setSaveStatus('saving');
+    
+    try {
+      const { error } = await supabase
+        .from('characters')
+        .update({
+          hp_current: hpCurrent,
+          pe_current: peCurrent,
+          san_current: sanCurrent,
+        })
+        .eq('id', character.id);
+
+      if (error) throw error;
+      
+      setSaveStatus('saved');
+      setLastSaved(new Date());
+      
+      // Volta para idle após 3 segundos
+      setTimeout(() => setSaveStatus('idle'), 3000);
+    } catch {
+      setSaveStatus('error');
+    }
+  }, [character, saving, hpCurrent, peCurrent, sanCurrent]);
 
   // Handler para abrir modal de conjuração de ritual
   const handleOpenCastModal = useCallback((ritual: Ritual) => {
@@ -2291,6 +2351,37 @@ export default function CharacterSheet() {
   // Obter dados da origem
   const originData = ORIGINS.find(o => o.id === character.origin);
   
+  // === HOOK DE ATALHOS DE TECLADO (Fase 6 UX) ===
+  // Atalhos desativados durante modais para evitar conflitos
+  useSheetKeyboardShortcuts({
+    disabled: diceModalOpen || editModalOpen || nexModalOpen || ritualModalOpen || castModalOpen,
+    onRollAttribute: (attr) => {
+      const attrMap: Record<string, { value: number; label: string }> = {
+        agility: { value: character.agility, label: 'Agilidade' },
+        strength: { value: character.strength, label: 'Força' },
+        vigor: { value: character.vigor, label: 'Vigor' },
+        intellect: { value: character.intellect, label: 'Intelecto' },
+        presence: { value: character.presence, label: 'Presença' },
+      };
+      const attrData = attrMap[attr];
+      if (attrData) {
+        handleAttributeRoll(attrData.value, attrData.label);
+      }
+    },
+    onRollInitiative: () => {
+      setRollLabel('Iniciativa');
+      setRollAttribute(character.agility);
+      setRollSkillBonus(0);
+      setRollResistanceBonus(0);
+      setRollExtraDice(0);
+      setRollBonusSources([]);
+      setRollTestedAttribute('agility');
+      setDiceModalOpen(true);
+    },
+    onSave: handleManualSave,
+    onShowHelp: () => setShortcutsHelpOpen(true),
+  });
+
 
   return (
     <div className={cn("min-h-screen bg-background sheet-background relative overflow-hidden", isSanLow && "animate-flicker")}>
@@ -2321,6 +2412,13 @@ export default function CharacterSheet() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.3)_100%)]" />
       </div>
 
+      {/* Banner de Offline - Fase 6 UX */}
+      <OfflineBanner 
+        isOffline={!isOnline} 
+        onRetry={checkRealConnectivity}
+        className="sticky top-0 z-20"
+      />
+
       {/* Header fixo - responsivo para mobile */}
       <header className="border-b border-border bg-card/80 sticky top-0 z-10 backdrop-blur-md relative">
         <div className="container mx-auto px-2 sm:px-4 py-2 sm:py-3">
@@ -2340,6 +2438,20 @@ export default function CharacterSheet() {
             
             {/* Lado direito: Ações - Desktop */}
             <div className="hidden sm:flex items-center gap-1 flex-shrink-0">
+              {/* Indicador de Status de Salvamento - Fase 6 UX */}
+              <SaveStatusIndicator
+                status={!isOnline ? 'offline' : saveStatus}
+                lastSaved={lastSaved}
+                showLabel={false}
+                size="sm"
+              />
+              
+              {/* Botão de Atalhos de Teclado - Fase 6 UX */}
+              <KeyboardShortcutsHelp
+                open={shortcutsHelpOpen}
+                onOpenChange={setShortcutsHelpOpen}
+              />
+              
               <ThemeSelector />
               <DiceRollHistoryDrawer 
                 rolls={rollHistory}
