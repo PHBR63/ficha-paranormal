@@ -284,65 +284,65 @@
  * Usa seletores com alta especificidade para sobrescrever @layer base
  * ======================================== */
  
-/* ROXO ABISSAL (Padrão) - quando não há tema ou tema é purple */
+/* PULSO ENTRÓPICO (Energia) - roxo elétrico, instável e vibrante */
 html.dark:not([data-color-theme]),
 html.dark[data-color-theme="purple"] {
-  --primary: 263 70% 50%;
+  --primary: 262 75% 57%;
   --primary-foreground: 0 0% 100%;
-  --ring: 263 70% 50%;
-  --sidebar-primary: 263 70% 50%;
+  --ring: 262 75% 57%;
+  --sidebar-primary: 262 75% 57%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 263 40% 25%;
-  --sidebar-accent-foreground: 263 70% 85%;
-  --sidebar-ring: 263 70% 50%;
+  --sidebar-accent: 262 40% 20%;
+  --sidebar-accent-foreground: 255 100% 90%;
+  --sidebar-ring: 262 75% 57%;
 }
 
-/* SANGUE RITUAL (Vermelho) */
+/* CARNIFICINA VIVA (Sangue) - vermelho profundo, visceral */
 html.dark[data-color-theme="red"] {
-  --primary: 0 72% 51%;
+  --primary: 0 65% 45%;
   --primary-foreground: 0 0% 100%;
-  --ring: 0 72% 51%;
-  --sidebar-primary: 0 72% 51%;
+  --ring: 0 65% 45%;
+  --sidebar-primary: 0 65% 45%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 0 40% 20%;
-  --sidebar-accent-foreground: 0 72% 85%;
-  --sidebar-ring: 0 72% 51%;
+  --sidebar-accent: 0 50% 18%;
+  --sidebar-accent-foreground: 0 72% 80%;
+  --sidebar-ring: 0 65% 45%;
 }
 
-/* CONHECIMENTO (Verde) */
+/* SIGILO DOURADO (Conhecimento) - dourado arcano, místico */
 html.dark[data-color-theme="green"] {
-  --primary: 142 71% 45%;
-  --primary-foreground: 0 0% 100%;
-  --ring: 142 71% 45%;
-  --sidebar-primary: 142 71% 45%;
-  --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 142 40% 20%;
-  --sidebar-accent-foreground: 142 71% 85%;
-  --sidebar-ring: 142 71% 45%;
-}
-
-/* CIANO ESPECTRAL (Azul) */
-html.dark[data-color-theme="blue"] {
-  --primary: 199 89% 48%;
-  --primary-foreground: 0 0% 100%;
-  --ring: 199 89% 48%;
-  --sidebar-primary: 199 89% 48%;
-  --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 199 40% 20%;
-  --sidebar-accent-foreground: 199 89% 85%;
-  --sidebar-ring: 199 89% 48%;
-}
-
-/* ENERGIA ARCANA (Âmbar) - cor clara, precisa texto escuro */
-html.dark[data-color-theme="amber"] {
-  --primary: 38 92% 50%;
+  --primary: 43 66% 52%;
   --primary-foreground: 0 0% 5%;
-  --ring: 38 92% 50%;
-  --sidebar-primary: 38 92% 50%;
+  --ring: 43 66% 52%;
+  --sidebar-primary: 43 66% 52%;
   --sidebar-primary-foreground: 0 0% 5%;
-  --sidebar-accent: 38 40% 20%;
-  --sidebar-accent-foreground: 38 92% 85%;
-  --sidebar-ring: 38 92% 50%;
+  --sidebar-accent: 43 50% 18%;
+  --sidebar-accent-foreground: 49 76% 85%;
+  --sidebar-ring: 43 66% 52%;
+}
+
+/* ABISMO OBSERVADOR (Medo) - verde espectral, perturbador */
+html.dark[data-color-theme="blue"] {
+  --primary: 157 100% 72%;
+  --primary-foreground: 0 0% 5%;
+  --ring: 157 100% 72%;
+  --sidebar-primary: 157 100% 72%;
+  --sidebar-primary-foreground: 0 0% 5%;
+  --sidebar-accent: 157 50% 15%;
+  --sidebar-accent-foreground: 157 100% 85%;
+  --sidebar-ring: 157 100% 72%;
+}
+
+/* CINZA TERMINAL (Morte) - cinza fúnebre, opressivo */
+html.dark[data-color-theme="amber"] {
+  --primary: 120 2% 55%;
+  --primary-foreground: 0 0% 5%;
+  --ring: 120 2% 55%;
+  --sidebar-primary: 120 2% 55%;
+  --sidebar-primary-foreground: 0 0% 5%;
+  --sidebar-accent: 0 0% 15%;
+  --sidebar-accent-foreground: 120 2% 80%;
+  --sidebar-ring: 120 2% 55%;
 }
 
 /* ========================================
@@ -934,30 +934,30 @@ html.dark[data-color-theme="amber"] {
   box-shadow: inset 0 0 150px hsl(var(--primary) / 0.3);
 }
 
-/* Purple theme vignette */
+/* Purple theme vignette - Pulso Entrópico (Energia) */
 html.dark[data-color-theme="purple"] .vignette-theme,
 html.dark:not([data-color-theme]) .vignette-theme {
-  box-shadow: inset 0 0 150px rgba(139, 92, 246, 0.25);
+  box-shadow: inset 0 0 150px rgba(123, 63, 228, 0.25);
 }
 
-/* Red theme vignette */
+/* Red theme vignette - Carnificina Viva (Sangue) */
 html.dark[data-color-theme="red"] .vignette-theme {
-  box-shadow: inset 0 0 150px rgba(139, 0, 0, 0.3);
+  box-shadow: inset 0 0 150px rgba(139, 30, 30, 0.3);
 }
 
-/* Green theme vignette */
+/* Green theme vignette - Sigilo Dourado (Conhecimento) */
 html.dark[data-color-theme="green"] .vignette-theme {
-  box-shadow: inset 0 0 150px rgba(34, 197, 94, 0.2);
+  box-shadow: inset 0 0 150px rgba(212, 175, 55, 0.2);
 }
 
-/* Blue theme vignette */
+/* Blue theme vignette - Abismo Observador (Medo) */
 html.dark[data-color-theme="blue"] .vignette-theme {
-  box-shadow: inset 0 0 150px rgba(14, 165, 233, 0.25);
+  box-shadow: inset 0 0 150px rgba(15, 61, 46, 0.3);
 }
 
-/* Amber theme vignette */
+/* Amber theme vignette - Cinza Terminal (Morte) */
 html.dark[data-color-theme="amber"] .vignette-theme {
-  box-shadow: inset 0 0 150px rgba(245, 158, 11, 0.2);
+  box-shadow: inset 0 0 150px rgba(90, 94, 90, 0.2);
 }
 
 /* Landing page gradient - dynamic */
@@ -971,19 +971,19 @@ html.dark:not([data-color-theme]) .bg-landing-gradient-theme {
 }
 
 html.dark[data-color-theme="red"] .bg-landing-gradient-theme {
-  background: linear-gradient(180deg, #0D0A0B 0%, #1A0505 50%, #0D0A0B 100%);
+  background: linear-gradient(180deg, #0D0A0B 0%, #1A0808 50%, #0D0A0B 100%);
 }
 
 html.dark[data-color-theme="green"] .bg-landing-gradient-theme {
-  background: linear-gradient(180deg, #0D0A0B 0%, #051A0A 50%, #0D0A0B 100%);
+  background: linear-gradient(180deg, #0D0A0B 0%, #1A1508 50%, #0D0A0B 100%);
 }
 
 html.dark[data-color-theme="blue"] .bg-landing-gradient-theme {
-  background: linear-gradient(180deg, #0D0A0B 0%, #051520 50%, #0D0A0B 100%);
+  background: linear-gradient(180deg, #0D0A0B 0%, #081A14 50%, #0D0A0B 100%);
 }
 
 html.dark[data-color-theme="amber"] .bg-landing-gradient-theme {
-  background: linear-gradient(180deg, #0D0A0B 0%, #1A1205 50%, #0D0A0B 100%);
+  background: linear-gradient(180deg, #0D0A0B 0%, #121212 50%, #0D0A0B 100%);
 }
 
 /* Legacy gradients */
