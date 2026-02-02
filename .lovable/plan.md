@@ -40,9 +40,16 @@
 
 **Nota sobre CombatRollModal**: Migração incremental realizada. O hook `useCombatRollWithSUE` está configurado e expondo breakdowns para a UI. A substituição completa de `handleRollAttack`/`handleRollDamage` foi adiada devido à complexidade do modal (2862 linhas com lógica específica de 15 trilhas, técnicas do Aniquilador, Ataque Furtivo, Disparo Letal, etc.).
 
-### Próximos Passos (Fase 5 e 6)
+### Fase 5: Testes e Validação - CONCLUÍDA
 
-- [ ] Testes e Validação
+| Arquivo | Status | Descrição |
+|---------|--------|-----------|
+| `src/components/character/__tests__/AttributeGridNew.test.tsx` | ✅ Criado | Testes unitários do grid de atributos |
+| `src/hooks/character/__tests__/useSkillRoll.test.ts` | ✅ Criado | Testes de integração do hook de perícia |
+| `src/hooks/character/__tests__/useCombatRollSetup.test.ts` | ✅ Criado | Testes do hook de setup de combate |
+
+### Próximos Passos (Fase 6)
+
 - [ ] Melhorias de UX (modo offline, atalhos de teclado, indicadores de salvamento)
 
 ---
