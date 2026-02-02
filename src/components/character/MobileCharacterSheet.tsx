@@ -2792,13 +2792,13 @@ export function MobileCharacterSheet({
         character={{
           id: character.id,
           name: character.name,
-          player_name: null,
-          age: null,
-          gender: null,
-          appearance: null,
-          personality: null,
-          background: null,
-          notes: null,
+          player_name: null, // Campo não disponível na interface mobile
+          age: null, // Campo não disponível na interface mobile
+          gender: null, // Campo não disponível na interface mobile
+          appearance: null, // Campo não disponível na interface mobile
+          personality: null, // Campo não disponível na interface mobile
+          background: null, // Campo não disponível na interface mobile
+          notes: null, // Campo não disponível na interface mobile
           class: character.class,
           origin: character.origin,
           nex: character.nex,
@@ -2811,6 +2811,7 @@ export function MobileCharacterSheet({
           defense: character.defense,
           photo_url: character.photo_url || null,
           abilities: character.abilities || [],
+          class_track: character.class_track || null,
         }}
         onSave={handleCharacterEdit}
         initialTab={editModalInitialTab}

@@ -1,5 +1,15 @@
-// Modal de Edição Completa do Personagem
-// Permite alterar atributos, perícias e características
+/**
+ * Modal de Edição Completa do Personagem
+ * Permite alterar atributos, perícias e características
+ * 
+ * VALIDAÇÕES DE REGRAS OFICIAIS (Livro Base v1.3):
+ * - Limite de perícias por classe (Base + INT)
+ * - Perícias de origem não podem ser removidas
+ * - Atributos limitados entre 1-5 (regra base)
+ * - Perícias de trilha (pré-requisitos) protegidas
+ * 
+ * @module components/character/CharacterEditModal
+ */
 
 import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
@@ -57,10 +67,67 @@ import {
   ArrowUp,
   RotateCcw,
   HelpCircle,
+  Lock,
+  ShieldAlert,
 } from 'lucide-react';
 import { ORIGINS, SKILLS, CLASSES, calculateDerivedStats, countTranscender } from '@/lib/character-data';
 import { ImageUploader } from '@/components/ui/image-uploader';
 import { supabase } from '@/integrations/supabase/client';
+
+// ==================== CONSTANTES DE REGRAS OFICIAIS ====================
+
+/**
+ * Quantidade base de perícias por classe (Livro Base v1.3)
+ * Fórmula: Base + INT perícias treinadas
+ */
+const CLASS_SKILL_BASE: Record<string, number> = {
+  'Combatente': 2,
+  'Especialista': 4,
+  'Ocultista': 2,
+};
+
+/**
+ * Perícias concedidas por origem (Livro Base v1.3)
+ * PROTEGIDAS: Não podem ser removidas pelo jogador
+ */
+const ORIGIN_SKILLS: Record<string, string[]> = {
+  'academico': ['ciencias', 'investigacao'],
+  'agente-de-saude': ['intuicao', 'medicina'],
+  'artista': ['artes', 'enganacao'],
+  'atleta': ['acrobacia', 'atletismo'],
+  'chef': ['fortitude', 'profissao'],
+  'criminoso': ['crime', 'furtividade'],
+  'cultista-arrependido': ['ocultismo', 'religiao'],
+  'desgarrado': ['fortitude', 'sobrevivencia'],
+  'engenheiro': ['profissao', 'tecnologia'],
+  'executivo': ['diplomacia', 'profissao'],
+  'investigador': ['investigacao', 'percepcao'],
+  'lutador': ['luta', 'reflexos'],
+  'magnata': ['diplomacia', 'pilotagem'],
+  'mercenario': ['iniciativa', 'intimidacao'],
+  'militar': ['pontaria', 'tatica'],
+  'operario': ['fortitude', 'profissao'],
+  'policial': ['percepcao', 'pontaria'],
+  'religioso': ['religiao', 'vontade'],
+  'servidor-publico': ['intuicao', 'vontade'],
+  'ti': ['investigacao', 'tecnologia'],
+  'teorico-da-conspiracao': ['investigacao', 'ocultismo'],
+  'trabalhador-rural': ['adestramento', 'sobrevivencia'],
+  'trambiqueiro': ['crime', 'enganacao'],
+  'universitario': ['atualidades', 'investigacao'],
+  'vitima': ['reflexos', 'vontade'],
+  // Amnésico não tem perícias fixas - escolhidas pelo mestre
+};
+
+/**
+ * Pré-requisitos de perícia por trilha (Livro Base v1.3)
+ * PROTEGIDAS: Não podem ser removidas se a trilha exige
+ */
+const TRACK_SKILL_PREREQS: Record<string, string[]> = {
+  'medico-de-campo': ['medicina'],
+  'medico-campo': ['medicina'],
+  // Outras trilhas não têm pré-requisitos específicos
+};
 
 // Tooltips explicativos para cada campo
 const FIELD_TOOLTIPS = {
@@ -146,6 +213,8 @@ interface CharacterEditModalProps {
     defense: number;
     photo_url?: string | null;
     abilities?: string[];
+    /** Trilha de classe para validação de pré-requisitos */
+    class_track?: string | null;
   };
   onSave: (data: CharacterEditData) => Promise<void>;
   /** Aba inicial ao abrir o modal (info, attributes, skills, notes) */
@@ -216,8 +285,65 @@ export function CharacterEditModal({
   const totalAttributePoints = agility + strength + intellect + presence + vigor;
   const originData = ORIGINS.find(o => o.id === character.origin);
 
+  // ==================== VALIDAÇÃO DE REGRAS OFICIAIS ====================
+  
+  /**
+   * Normaliza o ID da origem para buscar nas tabelas de regras
+   */
+  const originId = useMemo(() => 
+    character.origin.toLowerCase().replace(/\s+/g, '-'),
+    [character.origin]
+  );
+  
+  /**
+   * Normaliza o ID da trilha para buscar nas tabelas de regras
+   */
+  const trackId = useMemo(() => 
+    character.class_track?.toLowerCase().replace(/\s+/g, '-') || null,
+    [character.class_track]
+  );
+  
+  /**
+   * Perícias que NÃO podem ser removidas (protegidas por regras oficiais)
+   * Inclui: perícias de origem + pré-requisitos de trilha
+   */
+  const protectedSkills = useMemo(() => {
+    const protected_: Set<string> = new Set();
+    
+    // 1. Adiciona perícias de origem (Livro Base v1.3)
+    const originSkillList = ORIGIN_SKILLS[originId] || [];
+    originSkillList.forEach(s => protected_.add(s));
+    
+    // 2. Adiciona pré-requisitos de trilha (ex: Medicina para Médico de Campo)
+    if (trackId) {
+      const trackPrereqs = TRACK_SKILL_PREREQS[trackId] || [];
+      trackPrereqs.forEach(s => protected_.add(s));
+    }
+    
+    return protected_;
+  }, [originId, trackId]);
+  
+  /**
+   * Calcula o limite máximo de perícias treinadas (Livro Base v1.3)
+   * Fórmula: Base da classe + Intelecto
+   * Nota: Perícias de origem NÃO contam contra o limite livre
+   */
+  const maxTrainedSkills = useMemo(() => {
+    const baseSkills = CLASS_SKILL_BASE[character.class] || 2;
+    // INT atual do formulário (pode ter mudado)
+    const currentInt = intellect;
+    // Perícias de origem são "grátis" - não contam no limite
+    const originSkillCount = (ORIGIN_SKILLS[originId] || []).length;
+    return originSkillCount + baseSkills + currentInt;
+  }, [character.class, intellect, originId]);
+
   // Conta perícias treinadas
   const trainedSkillCount = Object.keys(trainedSkills).length;
+  
+  /**
+   * Verifica se está no limite máximo de perícias
+   */
+  const isAtSkillLimit = trainedSkillCount >= maxTrainedSkills;
 
   // Stats originais do personagem
   const originalStats = useMemo(() => {
@@ -302,17 +428,57 @@ export function CharacterEditModal({
     }
   };
 
-  // Handler para toggle de perícia
+  /**
+   * Handler para toggle de perícia COM validação de regras oficiais
+   * - Perícias protegidas (origem/trilha) não podem ser removidas
+   * - Não pode exceder o limite máximo de perícias
+   */
   const handleSkillToggle = (skillId: string) => {
+    // Se a perícia é protegida, não permite toggle
+    if (protectedSkills.has(skillId) && trainedSkills[skillId]) {
+      // Não permite remover - perícia protegida
+      return;
+    }
+    
     setTrainedSkills(prev => {
       const newSkills = { ...prev };
+      
       if (newSkills[skillId]) {
+        // Removendo perícia - sempre permitido se não for protegida
         delete newSkills[skillId];
       } else {
+        // Adicionando perícia - verificar limite máximo
+        const currentCount = Object.keys(prev).length;
+        if (currentCount >= maxTrainedSkills) {
+          // Já está no limite - não permite adicionar mais
+          return prev;
+        }
         newSkills[skillId] = 5; // Bônus de treino padrão
       }
+      
       return newSkills;
     });
+  };
+  
+  /**
+   * Verifica o motivo de uma perícia ser protegida
+   * Retorna mensagem para exibir no tooltip
+   */
+  const getSkillProtectionReason = (skillId: string): string | null => {
+    const originSkillList = ORIGIN_SKILLS[originId] || [];
+    if (originSkillList.includes(skillId)) {
+      const originName = originData?.name || character.origin;
+      return `Concedida pela origem "${originName}"`;
+    }
+    
+    if (trackId) {
+      const trackPrereqs = TRACK_SKILL_PREREQS[trackId] || [];
+      if (trackPrereqs.includes(skillId)) {
+        return `Pré-requisito da trilha "${character.class_track}"`;
+      }
+    }
+    
+    return null;
   };
 
   // Handler para resetar todos os valores
@@ -387,7 +553,7 @@ export function CharacterEditModal({
   const getFieldClass = (isChanged: boolean) => 
     isChanged ? 'ring-2 ring-warning/50 bg-warning/5' : '';
 
-  // Função de validação do formulário
+  // Função de validação do formulário (inclui regras oficiais v1.3)
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
@@ -435,6 +601,36 @@ export function CharacterEditModal({
     }
     if (notes.length > 2000) {
       newErrors.notes = 'As notas devem ter no máximo 2000 caracteres.';
+    }
+    
+    // ==================== VALIDAÇÃO DE REGRAS OFICIAIS ====================
+    
+    // Validação de perícias (Livro Base v1.3)
+    // 1. Verificar se perícias de origem estão treinadas
+    const originSkillList = ORIGIN_SKILLS[originId] || [];
+    for (const skillId of originSkillList) {
+      if (!trainedSkills[skillId]) {
+        const skillName = SKILLS.find(s => s.id === skillId)?.name || skillId;
+        newErrors.skills = `Perícia "${skillName}" é obrigatória (origem ${originData?.name || character.origin}).`;
+        break; // Mostra só um erro por vez
+      }
+    }
+    
+    // 2. Verificar se pré-requisitos de trilha estão treinados
+    if (trackId && !newErrors.skills) {
+      const trackPrereqs = TRACK_SKILL_PREREQS[trackId] || [];
+      for (const skillId of trackPrereqs) {
+        if (!trainedSkills[skillId]) {
+          const skillName = SKILLS.find(s => s.id === skillId)?.name || skillId;
+          newErrors.skills = `Perícia "${skillName}" é pré-requisito da trilha ${character.class_track}.`;
+          break;
+        }
+      }
+    }
+    
+    // 3. Verificar limite de perícias (não pode exceder)
+    if (!newErrors.skills && trainedSkillCount > maxTrainedSkills) {
+      newErrors.skills = `Excedeu o limite de perícias: ${trainedSkillCount}/${maxTrainedSkills}.`;
     }
 
     setErrors(newErrors);
@@ -822,26 +1018,64 @@ export function CharacterEditModal({
 
             {/* SKILLS TAB */}
             <TabsContent value="skills" className="space-y-4 mt-0">
-              <div className="flex items-center justify-between">
-                <p className="text-sm text-muted-foreground flex items-center gap-2">
-                  Perícias Treinadas:{' '}
-                  <span className="font-display text-lg text-primary">{trainedSkillCount}</span>
-                  {changedFields.skills && (
-                    <span className="text-xs text-warning flex items-center gap-1">
-                      <span className="w-2 h-2 rounded-full bg-warning animate-pulse" />
-                      Alterado
+              {/* Header com contagem e limite */}
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-muted-foreground flex items-center gap-2">
+                    Perícias Treinadas:{' '}
+                    <span className={`font-display text-lg ${trainedSkillCount >= maxTrainedSkills ? 'text-warning' : 'text-primary'}`}>
+                      {trainedSkillCount}/{maxTrainedSkills}
                     </span>
-                  )}
-                  <FieldTooltip content={FIELD_TOOLTIPS.skills} />
-                </p>
-                <Badge variant="outline" className="text-xs">
-                  +5 de bônus por treino
-                </Badge>
+                    {changedFields.skills && (
+                      <span className="text-xs text-warning flex items-center gap-1">
+                        <span className="w-2 h-2 rounded-full bg-warning animate-pulse" />
+                        Alterado
+                      </span>
+                    )}
+                  </p>
+                  <Badge variant="outline" className="text-xs">
+                    +5 de bônus por treino
+                  </Badge>
+                </div>
+                
+                {/* Aviso de limite atingido */}
+                {isAtSkillLimit && (
+                  <div className="p-2 bg-warning/10 border border-warning/30 rounded-lg flex items-start gap-2">
+                    <ShieldAlert className="w-4 h-4 text-warning shrink-0 mt-0.5" />
+                    <p className="text-xs text-muted-foreground">
+                      <strong className="text-warning">Limite atingido!</strong>{' '}
+                      Você pode ter no máximo {maxTrainedSkills} perícias treinadas 
+                      ({CLASS_SKILL_BASE[character.class] || 2} + INT {intellect} + {(ORIGIN_SKILLS[originId] || []).length} de origem).
+                      Para treinar outra, remova uma primeiro.
+                    </p>
+                  </div>
+                )}
+                
+                {/* Legenda de proteção */}
+                <div className="flex gap-3 text-[10px] text-muted-foreground">
+                  <span className="flex items-center gap-1">
+                    <Lock className="w-3 h-3 text-primary" />
+                    Origem
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <ShieldAlert className="w-3 h-3 text-accent" />
+                    Trilha
+                  </span>
+                </div>
               </div>
 
+              {/* Lista de Perícias */}
               <div className="grid grid-cols-2 gap-2">
                 {SKILLS.map((skill) => {
                   const isTrained = !!trainedSkills[skill.id];
+                  const isProtected = protectedSkills.has(skill.id) && isTrained;
+                  const protectionReason = getSkillProtectionReason(skill.id);
+                  const isOriginSkill = (ORIGIN_SKILLS[originId] || []).includes(skill.id);
+                  const isTrackSkill = trackId ? (TRACK_SKILL_PREREQS[trackId] || []).includes(skill.id) : false;
+                  
+                  // Desabilita adicionar se já atingiu o limite
+                  const cannotAdd = !isTrained && isAtSkillLimit;
+                  
                   const attrLabels: Record<string, string> = {
                     agility: 'AGI',
                     strength: 'FOR',
@@ -851,31 +1085,64 @@ export function CharacterEditModal({
                   };
                   
                   return (
-                    <motion.div
-                      key={skill.id}
-                      className={`
-                        flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors
-                        ${isTrained 
-                          ? 'bg-primary/10 border border-primary/30' 
-                          : 'bg-muted/20 border border-transparent hover:bg-muted/40'
-                        }
-                      `}
-                      onClick={() => handleSkillToggle(skill.id)}
-                      whileTap={{ scale: 0.98 }}
-                    >
-                      <Checkbox 
-                        checked={isTrained} 
-                        onCheckedChange={() => handleSkillToggle(skill.id)}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <span className={`text-sm ${isTrained ? 'font-medium' : ''}`}>
-                          {skill.name}
-                        </span>
-                      </div>
-                      <Badge variant="outline" className="text-[10px]">
-                        {attrLabels[skill.attribute]}
-                      </Badge>
-                    </motion.div>
+                    <TooltipProvider key={skill.id} delayDuration={200}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <motion.div
+                            className={`
+                              flex items-center gap-3 p-3 rounded-lg transition-colors relative
+                              ${isProtected 
+                                ? 'cursor-not-allowed opacity-80' 
+                                : cannotAdd 
+                                  ? 'cursor-not-allowed opacity-50'
+                                  : 'cursor-pointer'
+                              }
+                              ${isTrained 
+                                ? isProtected
+                                  ? 'bg-primary/20 border-2 border-primary/50'
+                                  : 'bg-primary/10 border border-primary/30' 
+                                : 'bg-muted/20 border border-transparent hover:bg-muted/40'
+                              }
+                            `}
+                            onClick={() => !cannotAdd && handleSkillToggle(skill.id)}
+                            whileTap={{ scale: isProtected || cannotAdd ? 1 : 0.98 }}
+                          >
+                            {/* Indicador de proteção */}
+                            {isProtected && (
+                              <div className="absolute top-1 right-1">
+                                {isOriginSkill ? (
+                                  <Lock className="w-3.5 h-3.5 text-primary" />
+                                ) : isTrackSkill ? (
+                                  <ShieldAlert className="w-3.5 h-3.5 text-accent" />
+                                ) : null}
+                              </div>
+                            )}
+                            
+                            <Checkbox 
+                              checked={isTrained} 
+                              disabled={isProtected || cannotAdd}
+                              onCheckedChange={() => !cannotAdd && handleSkillToggle(skill.id)}
+                            />
+                            <div className="flex-1 min-w-0">
+                              <span className={`text-sm ${isTrained ? 'font-medium' : ''}`}>
+                                {skill.name}
+                              </span>
+                            </div>
+                            <Badge variant="outline" className="text-[10px]">
+                              {attrLabels[skill.attribute]}
+                            </Badge>
+                          </motion.div>
+                        </TooltipTrigger>
+                        {(isProtected || cannotAdd) && (
+                          <TooltipContent side="top" className="max-w-[200px] text-xs">
+                            {isProtected 
+                              ? protectionReason 
+                              : 'Limite de perícias atingido. Remova uma para adicionar outra.'
+                            }
+                          </TooltipContent>
+                        )}
+                      </Tooltip>
+                    </TooltipProvider>
                   );
                 })}
               </div>

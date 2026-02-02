@@ -3956,7 +3956,10 @@ export default function CharacterSheet() {
             // Reset para aba padrão ao fechar
             setEditModalInitialTab('info');
           }}
-          character={character}
+          character={{
+            ...character,
+            class_track: character.class_track || null,
+          }}
           onSave={handleCharacterEdit}
           initialTab={editModalInitialTab}
         />
