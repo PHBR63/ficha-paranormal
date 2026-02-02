@@ -50,6 +50,16 @@ export {
   getMaxActionsFromConditions,
 } from './condition-definitions';
 
+// Re-exporta funções de serialização
+export {
+  parseCondition,
+  serializeCondition,
+  getConditionNames,
+  parseConditions,
+  serializeConditions,
+  type PersistedCondition,
+} from './condition-serialization';
+
 // ==================== REGISTRY DE CONDIÇÕES ====================
 
 import { CONDITIONS, type Condition } from './condition-definitions';
