@@ -225,11 +225,12 @@ function useAdminUsersList() {
 - [x] Criar componentes skeleton
 - [x] Verificar ScrollArea em modais (imports adicionados)
 
-### Fase 4 - Busca/Paginação
-- [ ] useAdminUsersList hook
-- [ ] UI de busca e filtros
-- [ ] Componente de paginação
-- [ ] Aplicar em AdminDataIntegrity
+### Fase 4 - Busca/Paginação ✅ CONCLUÍDA
+- [x] useAdminFilters hook
+- [x] AdminSearchBar component
+- [x] AdminPagination component
+- [x] Aplicar em AdminUsers
+- [ ] Aplicar em AdminDataIntegrity (pendente)
 
 ---
 

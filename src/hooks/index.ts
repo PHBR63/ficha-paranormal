@@ -34,3 +34,4 @@ export * from './useCombatFeedback';
 export * from './useRoundTracking';
 export * from './useActivatableClassPowers';
 export * from './useReducedMotion';
+export * from './useAdminFilters';

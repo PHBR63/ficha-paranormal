@@ -20,6 +20,8 @@ export {
   AdminChartSkeleton,
   AdminUserListSkeleton
 } from './AdminSkeletons';
+export { AdminSearchBar } from './AdminSearchBar';
+export { AdminPagination } from './AdminPagination';
 
 // Painéis de validação e debug
 export { RulesValidationPanel } from './RulesValidationPanel';
