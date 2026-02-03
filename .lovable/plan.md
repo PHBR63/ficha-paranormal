@@ -205,15 +205,19 @@ function useAdminUsersList() {
 - [x] SUEDebugPanel.tsx - Substituir cores hardcoded
 - [x] Criado `src/lib/admin-theme-tokens.ts` para referência futura
 
-### Fase 2 - Refatoração
-- [ ] Criar estrutura de pastas sue-debug/
-- [ ] Extrair ComputedEffectsView
-- [ ] Extrair RawEffectsView
-- [ ] Extrair BreakdownView
-- [ ] Criar estrutura rules-validation/
-- [ ] Extrair ValidationResultsList
-- [ ] Extrair ValidationExporter
-- [ ] Testar todos os componentes refatorados
+### Fase 2 - Refatoração ✅ CONCLUÍDA
+- [x] Criar estrutura de pastas sue-debug/
+- [x] Extrair ComputedEffectsView
+- [x] Extrair RawEffectsView
+- [x] Extrair BreakdownView
+- [x] Extrair EffectCategorySection
+- [x] Extrair EffectSourceBadge
+- [x] Criar subcomponentes de seção (Flags, CombatAdvanced, SneakAttack, Healing, Occultist, Skills)
+- [x] Criar estrutura rules-validation/
+- [x] Extrair ValidationResultsList
+- [x] Extrair CategorySection
+- [x] Extrair validation-report-templates.ts
+- [x] Manter compatibilidade com imports existentes
 
 ### Fase 3 - UX
 - [ ] Criar AdminNav.tsx
@@ -229,12 +233,47 @@ function useAdminUsersList() {
 
 ---
 
+## 📁 Nova Estrutura de Arquivos
+
+### SUEDebugPanel (1008 → ~200 linhas por arquivo)
+```
+src/components/admin/sue-debug/
+├── index.ts                    # Re-exports
+├── SUEDebugPanel.tsx           # Componente principal (~270 linhas)
+├── ComputedEffectsView.tsx     # Aba de efeitos computados (~110 linhas)
+├── RawEffectsView.tsx          # Aba de efeitos brutos (~70 linhas)
+├── BreakdownView.tsx           # Aba de breakdown por fonte (~90 linhas)
+├── EffectCategorySection.tsx   # Seção de categoria (~90 linhas)
+├── EffectSourceBadge.tsx       # Badge de fonte (~55 linhas)
+├── sue-debug-constants.ts      # Constantes visuais (~65 linhas)
+├── sue-debug-types.ts          # Tipos e interfaces (~40 linhas)
+└── sections/
+    ├── index.ts                # Re-exports
+    ├── FlagsSection.tsx        # Seção de flags (~40 linhas)
+    ├── CombatAdvancedSection.tsx  # Combate avançado (~145 linhas)
+    ├── SneakAttackSection.tsx  # Ataque furtivo (~40 linhas)
+    ├── HealingSection.tsx      # Cura (~40 linhas)
+    ├── OccultistSection.tsx    # Ocultista (~50 linhas)
+    └── SkillsSection.tsx       # Perícias (~70 linhas)
+```
+
+### RulesValidationPanel (695 → ~150 linhas por arquivo)
+```
+src/components/admin/rules-validation/
+├── index.ts                    # Re-exports
+├── RulesValidationPanel.tsx    # Componente principal (~280 linhas)
+├── ValidationResultsList.tsx   # Lista de resultados (~40 linhas)
+├── CategorySection.tsx         # Seção de categoria (~115 linhas)
+├── validation-constants.tsx    # Ícones e constantes (~55 linhas)
+└── validation-report-templates.ts  # Templates JSON/HTML (~195 linhas)
+```
+
+---
+
 ## 🚀 Próximos Passos
 
-Para iniciar a implementação, responda com uma das opções:
+Para continuar a implementação, responda com uma das opções:
 
-1. **"Iniciar Fase 1"** - Padronização de cores
-2. **"Iniciar Fase 2"** - Refatoração de arquivos grandes
-3. **"Iniciar Fase 3"** - Melhorias de UX
-4. **"Iniciar Fase 4"** - Busca e paginação
-5. **"Implementar tudo"** - Executar todas as fases sequencialmente
+1. **"Iniciar Fase 3"** - Melhorias de UX (AdminNav, Breadcrumbs, Skeletons)
+2. **"Iniciar Fase 4"** - Busca e paginação
+3. **"Implementar tudo"** - Executar as fases restantes sequencialmente
