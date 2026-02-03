@@ -68,6 +68,8 @@ interface SUEDevToolsPanelProps {
   defaultExpanded?: boolean;
   /** Classe CSS adicional */
   className?: string;
+  /** Controle externo: se deve estar visível (respeitando modo desenvolvedor) */
+  isDeveloperMode?: boolean;
 }
 
 // ========================================
@@ -464,13 +466,15 @@ function MetadataSection({ metadata }: { metadata: PreprocessResult['metadata'] 
 export function SUEDevToolsPanel({ 
   hardeningData,
   defaultExpanded = false,
-  className = ''
+  className = '',
+  isDeveloperMode = false
 }: SUEDevToolsPanelProps) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const [isVisible, setIsVisible] = useState(true);
   
-  // Não renderiza em produção
-  if (import.meta.env.PROD) {
+  // Só renderiza se modo desenvolvedor estiver ativo
+  // Em produção, também oculta por segurança
+  if (import.meta.env.PROD || !isDeveloperMode) {
     return null;
   }
   
