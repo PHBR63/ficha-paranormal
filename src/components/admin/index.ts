@@ -44,3 +44,11 @@ export {
   ActivityChart,
   NexDistributionChart
 } from './metrics';
+
+// Logs de Auditoria
+export { 
+  AuditLogTimeline,
+  AuditLogEntryComponent,
+  AuditLogStats,
+  AuditLogFiltersComponent
+} from './audit-logs';

@@ -48,7 +48,8 @@ import {
   BookOpen,
   BarChart3,
   Sparkles,
-  TrendingUp
+  TrendingUp,
+  History
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -60,6 +61,7 @@ import { ValidationHistoryDashboard } from '@/components/admin/ValidationHistory
 import { ClassPowerBonusTests } from '@/components/admin/ClassPowerBonusTests';
 import { SUETestCoverageDashboard } from '@/components/admin/SUETestCoverageDashboard';
 import { AdminMetricsDashboard } from '@/components/admin/metrics';
+import { AuditLogTimeline } from '@/components/admin/audit-logs';
 import { useValidationHistory, useAdminFilters } from '@/hooks';
 
 interface CharacterData {
@@ -325,11 +327,16 @@ export default function AdminDataIntegrity() {
 
       <main className="container mx-auto px-4 py-8">
         <Tabs defaultValue="metrics" className="space-y-6">
-          <TabsList className="grid w-full max-w-5xl grid-cols-6">
+          <TabsList className="grid w-full max-w-6xl grid-cols-7">
             <TabsTrigger value="metrics" className="flex items-center gap-2">
               <TrendingUp className="w-4 h-4" />
               <span className="hidden sm:inline">Métricas</span>
               <span className="sm:hidden">Stats</span>
+            </TabsTrigger>
+            <TabsTrigger value="audit" className="flex items-center gap-2">
+              <History className="w-4 h-4" />
+              <span className="hidden sm:inline">Auditoria</span>
+              <span className="sm:hidden">Audit</span>
             </TabsTrigger>
             <TabsTrigger value="integrity" className="flex items-center gap-2">
               <Database className="w-4 h-4" />
@@ -354,13 +361,18 @@ export default function AdminDataIntegrity() {
             <TabsTrigger value="history" className="flex items-center gap-2">
               <BarChart3 className="w-4 h-4" />
               <span className="hidden sm:inline">Histórico</span>
-              <span className="sm:hidden">Histórico</span>
+              <span className="sm:hidden">Hist</span>
             </TabsTrigger>
           </TabsList>
 
-          {/* Aba de Métricas - Nova */}
+          {/* Aba de Métricas */}
           <TabsContent value="metrics">
             <AdminMetricsDashboard />
+          </TabsContent>
+
+          {/* Aba de Auditoria */}
+          <TabsContent value="audit">
+            <AuditLogTimeline />
           </TabsContent>
 
           {/* Aba de Integridade de Dados */}
