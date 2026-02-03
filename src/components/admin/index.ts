@@ -34,3 +34,13 @@ export { ClassPowerBonusTests } from './ClassPowerBonusTests';
 export { JsonExamples, TYPE_LABELS } from './JsonExamples';
 export type { ImportType } from './JsonExamples';
 export { ImportPreview } from './ImportPreview';
+
+// Métricas
+export { 
+  AdminMetricsDashboard,
+  MetricsStatsCards,
+  ClassDistributionChart,
+  OriginDistributionChart,
+  ActivityChart,
+  NexDistributionChart
+} from './metrics';

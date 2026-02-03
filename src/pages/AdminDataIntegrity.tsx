@@ -47,7 +47,8 @@ import {
   RefreshCw,
   BookOpen,
   BarChart3,
-  Sparkles
+  Sparkles,
+  TrendingUp
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -58,6 +59,7 @@ import { RulesValidationPanel } from '@/components/admin/RulesValidationPanel';
 import { ValidationHistoryDashboard } from '@/components/admin/ValidationHistoryDashboard';
 import { ClassPowerBonusTests } from '@/components/admin/ClassPowerBonusTests';
 import { SUETestCoverageDashboard } from '@/components/admin/SUETestCoverageDashboard';
+import { AdminMetricsDashboard } from '@/components/admin/metrics';
 import { useValidationHistory, useAdminFilters } from '@/hooks';
 
 interface CharacterData {
@@ -322,8 +324,13 @@ export default function AdminDataIntegrity() {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        <Tabs defaultValue="integrity" className="space-y-6">
-          <TabsList className="grid w-full max-w-4xl grid-cols-5">
+        <Tabs defaultValue="metrics" className="space-y-6">
+          <TabsList className="grid w-full max-w-5xl grid-cols-6">
+            <TabsTrigger value="metrics" className="flex items-center gap-2">
+              <TrendingUp className="w-4 h-4" />
+              <span className="hidden sm:inline">Métricas</span>
+              <span className="sm:hidden">Stats</span>
+            </TabsTrigger>
             <TabsTrigger value="integrity" className="flex items-center gap-2">
               <Database className="w-4 h-4" />
               <span className="hidden sm:inline">Integridade</span>
@@ -350,6 +357,11 @@ export default function AdminDataIntegrity() {
               <span className="sm:hidden">Histórico</span>
             </TabsTrigger>
           </TabsList>
+
+          {/* Aba de Métricas - Nova */}
+          <TabsContent value="metrics">
+            <AdminMetricsDashboard />
+          </TabsContent>
 
           {/* Aba de Integridade de Dados */}
           <TabsContent value="integrity" className="space-y-6">
