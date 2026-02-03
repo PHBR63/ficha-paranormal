@@ -75,7 +75,7 @@ interface UserWithRole {
   role: AppRole;
 }
 
-// Configuração visual de cada role
+// Configuração visual de cada role - usando tokens semânticos
 const roleConfig: Record<AppRole, { 
   label: string; 
   icon: React.ReactNode; 
@@ -89,7 +89,7 @@ const roleConfig: Record<AppRole, {
   moderator: {
     label: 'Moderador',
     icon: <Shield className="h-3 w-3" />,
-    badgeClass: 'bg-blue-500/20 text-blue-500 border-blue-500/30',
+    badgeClass: 'bg-sky-500/20 text-sky-500 border-sky-500/30',
   },
   user: {
     label: 'Usuário',
@@ -434,7 +434,7 @@ export default function AdminUsers() {
                                 </SelectItem>
                                 <SelectItem value="moderator">
                                   <div className="flex items-center gap-2">
-                                    <Shield className="h-4 w-4 text-blue-500" />
+                                    <Shield className="h-4 w-4 text-sky-500" />
                                     Moderador
                                   </div>
                                 </SelectItem>

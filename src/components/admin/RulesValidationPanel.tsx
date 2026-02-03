@@ -60,16 +60,16 @@ import {
 } from '@/lib/official-rules-validator';
 import { toast } from 'sonner';
 
-// Ícones por categoria
+// Ícones por categoria - usando cores semânticas
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
   'Rituais': <Sparkles className="w-4 h-4" />,
-  'Rituais Detalhados': <Sparkles className="w-4 h-4 text-purple-500" />,
-  'Rituais - Custos PE': <Sparkles className="w-4 h-4 text-blue-500" />,
-  'Rituais - Resistências': <Shield className="w-4 h-4 text-orange-500" />,
-  'Rituais - Aprimoramentos': <Sparkles className="w-4 h-4 text-green-500" />,
+  'Rituais Detalhados': <Sparkles className="w-4 h-4 text-violet-500" />,
+  'Rituais - Custos PE': <Sparkles className="w-4 h-4 text-sky-500" />,
+  'Rituais - Resistências': <Shield className="w-4 h-4 text-amber-500" />,
+  'Rituais - Aprimoramentos': <Sparkles className="w-4 h-4 text-emerald-500" />,
   'Rituais - Custos Aprimoramentos': <Sparkles className="w-4 h-4 text-cyan-500" />,
-  'Rituais - Círculos': <Sparkles className="w-4 h-4 text-red-500" />,
-  'Rituais - Elementos': <Flame className="w-4 h-4 text-yellow-500" />,
+  'Rituais - Círculos': <Sparkles className="w-4 h-4 text-rose-500" />,
+  'Rituais - Elementos': <Flame className="w-4 h-4 text-amber-500" />,
   'Condições': <AlertTriangle className="w-4 h-4" />,
   'Modificadores': <Shield className="w-4 h-4" />,
   'Tipos de Dano': <Flame className="w-4 h-4" />,

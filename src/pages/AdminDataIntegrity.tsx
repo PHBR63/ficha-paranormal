@@ -356,8 +356,8 @@ export default function AdminDataIntegrity() {
               <Card>
                 <CardContent className="p-6">
                   <div className="flex items-center gap-4">
-                    <div className="p-3 rounded-full bg-green-500/10">
-                      <CheckCircle className="w-6 h-6 text-green-500" />
+                    <div className="p-3 rounded-full bg-emerald-500/10">
+                      <CheckCircle className="w-6 h-6 text-emerald-500" />
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Válidos</p>
@@ -386,7 +386,7 @@ export default function AdminDataIntegrity() {
               </div>
             ) : characters.length === 0 ? (
               <div className="text-center py-12">
-                <CheckCircle className="w-16 h-16 mx-auto text-green-500 mb-4" />
+                <CheckCircle className="w-16 h-16 mx-auto text-emerald-500 mb-4" />
                 <h3 className="text-lg font-semibold mb-2">Todos os dados estão válidos!</h3>
                 <p className="text-muted-foreground">
                   Nenhum personagem com classe ou trilha inválida foi encontrado.

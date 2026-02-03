@@ -88,6 +88,7 @@ type SourceType = 'origin' | 'track' | 'condition' | 'ritual' | 'paranormal_powe
 // Constantes de Estilo
 // =====================================================
 
+// Configuração de fontes - usando cores semânticas consistentes
 const SOURCE_CONFIG: Record<SourceType, { 
   label: string; 
   icon: React.ElementType; 
@@ -97,26 +98,26 @@ const SOURCE_CONFIG: Record<SourceType, {
   origin: { 
     label: 'Origem', 
     icon: User, 
-    color: 'text-blue-400',
-    bgColor: 'bg-blue-500/10',
+    color: 'text-sky-400',
+    bgColor: 'bg-sky-500/10',
   },
   track: { 
     label: 'Trilha', 
     icon: Target, 
-    color: 'text-purple-400',
-    bgColor: 'bg-purple-500/10',
+    color: 'text-violet-400',
+    bgColor: 'bg-violet-500/10',
   },
   condition: { 
     label: 'Condição', 
     icon: AlertTriangle, 
-    color: 'text-yellow-400',
-    bgColor: 'bg-yellow-500/10',
+    color: 'text-amber-400',
+    bgColor: 'bg-amber-500/10',
   },
   ritual: { 
     label: 'Ritual', 
     icon: Sparkles, 
-    color: 'text-red-400',
-    bgColor: 'bg-red-500/10',
+    color: 'text-rose-400',
+    bgColor: 'bg-rose-500/10',
   },
   paranormal_power: { 
     label: 'Poder Paranormal', 
@@ -127,19 +128,20 @@ const SOURCE_CONFIG: Record<SourceType, {
   class_power: { 
     label: 'Poder de Classe', 
     icon: Sword, 
-    color: 'text-green-400',
-    bgColor: 'bg-green-500/10',
+    color: 'text-emerald-400',
+    bgColor: 'bg-emerald-500/10',
   },
 };
 
+// Configuração de categorias - usando cores semânticas consistentes
 const CATEGORY_CONFIG = {
-  combat: { label: 'Combate', icon: Sword, color: 'text-red-400' },
-  defense: { label: 'Defesa', icon: Shield, color: 'text-blue-400' },
+  combat: { label: 'Combate', icon: Sword, color: 'text-rose-400' },
+  defense: { label: 'Defesa', icon: Shield, color: 'text-sky-400' },
   resources: { label: 'Recursos', icon: Heart, color: 'text-pink-400' },
   skills: { label: 'Perícias', icon: BookOpen, color: 'text-cyan-400' },
-  movement: { label: 'Movimento', icon: Footprints, color: 'text-green-400' },
-  special: { label: 'Especial', icon: Sparkles, color: 'text-purple-400' },
-  advanced: { label: 'Avançado', icon: Activity, color: 'text-orange-400' },
+  movement: { label: 'Movimento', icon: Footprints, color: 'text-emerald-400' },
+  special: { label: 'Especial', icon: Sparkles, color: 'text-violet-400' },
+  advanced: { label: 'Avançado', icon: Activity, color: 'text-amber-400' },
   occultist: { label: 'Ocultista', icon: Brain, color: 'text-violet-400' },
 };
 
@@ -459,7 +461,7 @@ function ComputedEffectsView({
       <EffectCategorySection
         title="Combate"
         icon={Sword}
-        color="text-red-400"
+        color="text-rose-400"
         items={[
           { label: 'Ataque (geral)', value: computed.attack.general, breakdown: computed.attack.breakdown },
           { label: 'Ataque (corpo)', value: computed.attack.melee },
@@ -475,7 +477,7 @@ function ComputedEffectsView({
       <EffectCategorySection
         title="Defesa"
         icon={Shield}
-        color="text-blue-400"
+        color="text-sky-400"
         items={[
           { label: 'Defesa (geral)', value: computed.defense.general, breakdown: computed.defense.breakdown },
           { label: 'vs Corpo-a-corpo', value: computed.defense.vsMelee },
@@ -490,7 +492,7 @@ function ComputedEffectsView({
       <EffectCategorySection
         title="Resistências"
         icon={Shield}
-        color="text-green-400"
+        color="text-emerald-400"
         items={[
           { label: 'Fortitude', value: computed.resistances.fortitude },
           { label: 'Reflexos', value: computed.resistances.reflexos },
@@ -517,7 +519,7 @@ function ComputedEffectsView({
       <EffectCategorySection
         title="Movimento & Iniciativa"
         icon={Footprints}
-        color="text-green-400"
+        color="text-emerald-400"
         items={[
           { label: 'Movimento', value: computed.movement.bonus },
           { label: 'Mult. Movimento', value: computed.movement.multiplier },
@@ -619,7 +621,7 @@ function FlagsSection({
   return (
     <div className="space-y-1">
       <div className="flex items-center gap-2">
-        <AlertTriangle className="h-4 w-4 text-yellow-400" />
+        <AlertTriangle className="h-4 w-4 text-amber-400" />
         <span className="text-sm font-medium">Flags Ativas</span>
       </div>
       <div className="flex flex-wrap gap-1 pl-6">
@@ -661,7 +663,7 @@ function CombatAdvancedSection({
       <CollapsibleTrigger asChild>
         <div className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 p-1 rounded">
           {isOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-          <Activity className="h-4 w-4 text-orange-400" />
+          <Activity className="h-4 w-4 text-amber-400" />
           <span className="text-sm font-medium">Combate Avançado</span>
           <Badge variant="secondary" className="text-xs">
             {[
@@ -702,7 +704,7 @@ function CombatAdvancedSection({
 
           {combatAdvanced.maximumDamageOnCrit.enabled && (
             <div className="text-xs flex items-center gap-1">
-              <Check className="h-3 w-3 text-green-400" />
+              <Check className="h-3 w-3 text-emerald-400" />
               <span>Dano Máximo em Crítico</span>
               {combatAdvanced.maximumDamageOnCrit.weaponTypes.length > 0 && (
                 <span className="text-muted-foreground">
@@ -714,14 +716,14 @@ function CombatAdvancedSection({
 
           {combatAdvanced.blockVigorBonus.enabled && (
             <div className="text-xs flex items-center gap-1">
-              <Check className="h-3 w-3 text-green-400" />
+              <Check className="h-3 w-3 text-emerald-400" />
               <span>Bônus de Vigor ao Bloquear</span>
             </div>
           )}
 
           {combatAdvanced.occultismAsAttack.enabled && (
             <div className="text-xs flex items-center gap-1">
-              <Check className="h-3 w-3 text-green-400" />
+              <Check className="h-3 w-3 text-emerald-400" />
               <span>Ocultismo como Ataque</span>
             </div>
           )}
@@ -747,7 +749,7 @@ function CombatAdvancedSection({
 
           {combatAdvanced.conditionalBonuses.whenDying.canAct && (
             <div className="text-xs flex items-center gap-1">
-              <Check className="h-3 w-3 text-green-400" />
+              <Check className="h-3 w-3 text-emerald-400" />
               <span>Pode Agir Morrendo</span>
             </div>
           )}
@@ -827,7 +829,7 @@ function OccultistSection({
         )}
         {occultist.grimoire?.available && (
           <div className="flex items-center gap-1">
-            <Check className="h-3 w-3 text-green-400" />
+            <Check className="h-3 w-3 text-emerald-400" />
             <span>Grimório Disponível</span>
           </div>
         )}
