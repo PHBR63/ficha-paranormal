@@ -182,16 +182,17 @@ export function TemplateGallery({
     }
 
     return (
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 auto-rows-auto">
-        <AnimatePresence mode="popLayout">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+        <AnimatePresence mode="sync">
           {templates.map(template => (
-            <TemplateCard
-              key={template.id}
-              template={template}
-              onView={handleView}
-              onApply={handleApply}
-              isApplying={isApplying}
-            />
+            <div key={template.id} className="min-h-0">
+              <TemplateCard
+                template={template}
+                onView={handleView}
+                onApply={handleApply}
+                isApplying={isApplying}
+              />
+            </div>
           ))}
         </AnimatePresence>
       </div>
