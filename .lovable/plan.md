@@ -1,190 +1,239 @@
+# Plano de Melhorias - Infraestrutura Administrativa
 
-# Plano: Integrar Componentes de UX na Ficha de Personagem
+## Visão Geral
 
-## Objetivo
-Adicionar os componentes `SaveStatusIndicator`, `OfflineBanner` e `KeyboardShortcutsHelp` criados na Fase 6 à ficha de personagem desktop (`CharacterSheet.tsx`), proporcionando feedback visual de salvamento, suporte offline e atalhos de teclado.
-
----
-
-## Componentes a Integrar
-
-### 1. OfflineBanner
-**Localização**: Topo fixo da página, acima do header  
-**Propósito**: Notificar o usuário quando estiver offline
-
-### 2. SaveStatusIndicator
-**Localização**: Header da ficha, próximo ao nome do personagem  
-**Propósito**: Mostrar estado do salvamento (salvando, salvo, erro, offline)
-
-### 3. KeyboardShortcutsHelp
-**Localização**: Header, junto aos outros botões de ação  
-**Propósito**: Exibir modal de atalhos (F1 ou ?)
+Este plano detalha as melhorias necessárias para os componentes administrativos do sistema Ordem Paranormal RPG, focando em padronização, refatoração, UX e funcionalidades.
 
 ---
 
-## Mudanças Planejadas
+## 📊 Diagnóstico Atual
 
-### src/pages/CharacterSheet.tsx
+| Arquivo | Linhas | Status | Problemas |
+|---------|--------|--------|-----------|
+| `AdminDataIntegrity.tsx` | 629 | ⚠️ | Cores hardcoded, arquivo grande |
+| `AdminUsers.tsx` | 594 | ⚠️ | Cores hardcoded, sem busca/paginação |
+| `AdminImport.tsx` | 402 | ⚠️ | Cores hardcoded |
+| `RulesValidationPanel.tsx` | 695 | 🔴 | Muito grande, HTML inline |
+| `SUEDebugPanel.tsx` | 1006 | 🔴 | Extremamente grande |
+| `ValidationHistoryDashboard.tsx` | ? | ⚠️ | Verificar |
+| `SUETestCoverageDashboard.tsx` | ? | ⚠️ | Verificar |
+| `ClassPowerBonusTests.tsx` | ? | ⚠️ | Verificar |
+| `JsonExamples.tsx` | 381 | ✅ | OK |
+| `ImportPreview.tsx` | 123 | ✅ | OK |
 
-#### Novos Imports
-```typescript
-import { useOnlineStatus } from '@/hooks/useOnlineStatus';
-import { useSheetKeyboardShortcuts } from '@/hooks/useSheetKeyboardShortcuts';
-import { OfflineBanner } from '@/components/ui/OfflineBanner';
-import { SaveStatusIndicator, SaveStatus } from '@/components/ui/SaveStatusIndicator';
-import { KeyboardShortcutsHelp } from '@/components/ui/KeyboardShortcutsHelp';
+---
+
+## 🎯 Fase 1: Padronização de Cores (Prioridade Alta)
+
+### Objetivo
+Substituir todas as cores hardcoded por tokens semânticos do design system.
+
+### Arquivos a Modificar
+1. `src/pages/AdminDataIntegrity.tsx`
+2. `src/pages/AdminUsers.tsx`
+3. `src/pages/AdminImport.tsx`
+4. `src/components/admin/RulesValidationPanel.tsx`
+5. `src/components/admin/SUEDebugPanel.tsx`
+
+### Mapeamento de Cores
+
+| Cor Hardcoded | Token Semântico |
+|---------------|-----------------|
+| `text-green-500`, `text-green-400` | `text-emerald-400` ou CSS var |
+| `text-blue-500`, `text-blue-400` | `text-sky-400` ou CSS var |
+| `text-red-500`, `text-red-400` | `text-destructive` |
+| `text-yellow-500`, `text-yellow-400` | `text-amber-400` |
+| `text-purple-400`, `text-purple-500` | `text-violet-400` |
+| `bg-green-500/10` | `bg-emerald-500/10` |
+| `bg-blue-500/10` | `bg-sky-500/10` |
+| `bg-red-500/10` | `bg-destructive/10` |
+
+### Estimativa
+- Tempo: ~2 horas
+- Risco: Baixo
+
+---
+
+## 🧩 Fase 2: Refatoração de Arquivos Grandes (Prioridade Alta)
+
+### 2.1 SUEDebugPanel.tsx (1006 linhas → ~4 arquivos)
+
+#### Nova Estrutura
+```
+src/components/admin/sue-debug/
+├── index.ts                    # Re-export
+├── SUEDebugPanel.tsx           # Componente principal (~200 linhas)
+├── ComputedEffectsView.tsx     # Aba de efeitos computados (~150 linhas)
+├── RawEffectsView.tsx          # Aba de efeitos brutos (~150 linhas)
+├── BreakdownView.tsx           # Aba de breakdown por fonte (~150 linhas)
+├── EffectCategorySection.tsx   # Seção de categoria (~100 linhas)
+├── EffectSourceBadge.tsx       # Badge de fonte (~50 linhas)
+└── sue-debug-utils.ts          # Funções utilitárias (~100 linhas)
 ```
 
-#### Novos Estados e Hooks
-```typescript
-// Hook de status online (já existe no projeto)
-const { isOnline } = useOnlineStatus();
+#### Benefícios
+- Componentes focados e testáveis
+- Manutenção simplificada
+- Lazy loading possível
 
-// Estado de status de salvamento
-const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
-const [lastSaved, setLastSaved] = useState<Date | null>(null);
+### 2.2 RulesValidationPanel.tsx (695 linhas → ~3 arquivos)
 
-// Modal de atalhos
-const [shortcutsHelpOpen, setShortcutsHelpOpen] = useState(false);
+#### Nova Estrutura
+```
+src/components/admin/rules-validation/
+├── index.ts
+├── RulesValidationPanel.tsx    # Componente principal (~200 linhas)
+├── ValidationResultsList.tsx   # Lista de resultados (~150 linhas)
+├── CategorySection.tsx         # Seção de categoria (~100 linhas)
+├── ValidationExporter.tsx      # Lógica de exportação (~150 linhas)
+└── validation-report-templates.ts  # Templates HTML/JSON (~100 linhas)
 ```
 
-#### Hook de Atalhos de Teclado
-```typescript
-// Hook de atalhos de teclado
-useSheetKeyboardShortcuts({
-  disabled: diceModalOpen || editModalOpen || nexModalOpen, // Desativa durante modais
-  onRollAttribute: (attr) => handleAttributeRoll(attributes[attr]),
-  onRollInitiative: () => handleSkillRoll('Iniciativa', character.agility, 0),
-  onSave: () => handleManualSave(),
-  onShowHelp: () => setShortcutsHelpOpen(true),
-});
-```
+### Estimativa
+- Tempo: ~4 horas
+- Risco: Médio (requer testes após refatoração)
 
-#### Handler de Salvamento Manual
-```typescript
-const handleManualSave = useCallback(async () => {
-  if (!character || saving) return;
-  
-  setSaveStatus('saving');
-  try {
-    // Re-salva estado atual (HP, PE, SAN)
-    const { error } = await supabase
-      .from('characters')
-      .update({
-        hp_current: hpCurrent,
-        pe_current: peCurrent,
-        san_current: sanCurrent,
-      })
-      .eq('id', character.id);
+---
 
-    if (error) throw error;
-    
-    setSaveStatus('saved');
-    setLastSaved(new Date());
-    
-    // Volta para idle após 3 segundos
-    setTimeout(() => setSaveStatus('idle'), 3000);
-  } catch {
-    setSaveStatus('error');
-  }
-}, [character, saving, hpCurrent, peCurrent, sanCurrent]);
-```
+## 🎨 Fase 3: Melhorias de UX/Navegação (Prioridade Média)
 
-#### Atualização do Status ao Salvar
-Modificar funções existentes de salvamento para atualizar `saveStatus`:
-- `handleCombatStatsChange`
-- `handleCharacterEdit`
-- Outras funções que salvam no banco
+### 3.1 Navegação Unificada
 
-#### Layout: OfflineBanner no Topo
+Criar componente `AdminNav` para navegação consistente entre páginas admin.
+
 ```tsx
-<div className={cn("min-h-screen bg-background...")}>
-  {/* Banner de Offline - Fixo no topo */}
-  <OfflineBanner isOffline={!isOnline} />
-  
-  {/* Atmospheric Effects */}
-  <div className="fixed inset-0...">
+// src/components/admin/AdminNav.tsx
+interface AdminNavProps {
+  currentPage: 'users' | 'import' | 'integrity';
+}
 ```
 
-#### Layout: Header com SaveStatus e KeyboardHelp
-No header desktop (linhas 2342-2388):
+### 3.2 Breadcrumbs
+
+Adicionar breadcrumbs em todas as páginas admin:
+```
+Dashboard > Administração > [Página Atual]
+```
+
+### 3.3 Indicadores de Loading
+
+Padronizar skeleton loaders em todas as tabelas admin:
+- `TableSkeleton` para tabelas
+- `CardSkeleton` para cards de estatísticas
+- `ChartSkeleton` para gráficos
+
+### 3.4 ScrollArea em Modais
+
+Verificar e adicionar ScrollArea em todos os modais que possam ter conteúdo extenso:
+- Modal de correção de personagem
+- Modal de confirmação de exclusão
+- Modal de detalhes de validação
+
+### Estimativa
+- Tempo: ~3 horas
+- Risco: Baixo
+
+---
+
+## 🔍 Fase 4: Busca e Paginação (Prioridade Média)
+
+### 4.1 AdminUsers.tsx
+
+#### Funcionalidades
+1. **Campo de busca** - Filtrar por nome/email
+2. **Filtro por role** - Admin/Moderador/Usuário
+3. **Paginação** - 20 usuários por página
+4. **Ordenação** - Por nome, data de cadastro, role
+
+#### Implementação
 ```tsx
-<div className="hidden sm:flex items-center gap-1 flex-shrink-0">
-  {/* NOVO: Indicador de Status de Salvamento */}
-  <SaveStatusIndicator
-    status={!isOnline ? 'offline' : saveStatus}
-    lastSaved={lastSaved}
-    showLabel={false}
-    size="sm"
-  />
+// Hook personalizado
+function useAdminUsersList() {
+  const [search, setSearch] = useState('');
+  const [roleFilter, setRoleFilter] = useState<AppRole | 'all'>('all');
+  const [page, setPage] = useState(1);
+  const [sortBy, setSortBy] = useState<'name' | 'created_at' | 'role'>('created_at');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   
-  {/* NOVO: Botão de Atalhos de Teclado */}
-  <KeyboardShortcutsHelp
-    open={shortcutsHelpOpen}
-    onOpenChange={setShortcutsHelpOpen}
-  />
+  // Query com filtros
+  const { data, isLoading } = useQuery({
+    queryKey: ['admin-users', search, roleFilter, page, sortBy, sortOrder],
+    queryFn: () => fetchUsersWithFilters({ search, roleFilter, page, sortBy, sortOrder })
+  });
   
-  <ThemeSelector />
-  <DiceRollHistoryDrawer ... />
-  ...
-</div>
+  return { data, isLoading, filters, setters };
+}
 ```
 
----
+### 4.2 AdminDataIntegrity.tsx
 
-## Fluxo de Status de Salvamento
+#### Funcionalidades
+1. **Busca por nome** do personagem
+2. **Filtro por tipo de problema** (classe inválida, trilha inválida, etc.)
+3. **Paginação** - Para listas grandes
 
-```text
-┌─────────────────────────────────────────────────────────────┐
-│                    Estado: idle (Cloud)                     │
-└─────────────────────────────────────────────────────────────┘
-                            │
-                            ▼ (usuário modifica dados)
-┌─────────────────────────────────────────────────────────────┐
-│                 Estado: saving (Loader)                     │
-└─────────────────────────────────────────────────────────────┘
-                            │
-              ┌─────────────┼─────────────┐
-              ▼             ▼             ▼
-┌──────────────────┐ ┌──────────────┐ ┌───────────────────┐
-│ Estado: saved    │ │ Estado: error│ │ Estado: offline   │
-│ (Check verde)    │ │ (Alerta)     │ │ (CloudOff)        │
-└──────────────────┘ └──────────────┘ └───────────────────┘
-        │                                      │
-        ▼ (após 3s)                            │
-┌─────────────────────────────────────────────────────────────┐
-│                    Estado: idle                             │
-└─────────────────────────────────────────────────────────────┘
-```
+### Estimativa
+- Tempo: ~4 horas
+- Risco: Baixo
 
 ---
 
-## Arquivos Modificados
+## 📋 Cronograma Sugerido
 
-| Arquivo | Tipo de Mudança |
-|---------|-----------------|
-| `src/pages/CharacterSheet.tsx` | Adicionar imports, estados, hooks, e componentes no JSX |
+| Fase | Descrição | Tempo | Prioridade |
+|------|-----------|-------|------------|
+| 1 | Padronização de Cores | 2h | 🔴 Alta |
+| 2 | Refatoração SUEDebugPanel | 2h | 🔴 Alta |
+| 2 | Refatoração RulesValidationPanel | 2h | 🔴 Alta |
+| 3 | AdminNav + Breadcrumbs | 1.5h | 🟡 Média |
+| 3 | Loading States | 1h | 🟡 Média |
+| 3 | ScrollArea em Modais | 0.5h | 🟡 Média |
+| 4 | Busca/Paginação AdminUsers | 2h | 🟡 Média |
+| 4 | Busca/Filtro AdminDataIntegrity | 2h | 🟡 Média |
+
+**Total Estimado: ~13 horas de desenvolvimento**
 
 ---
 
-## Detalhes Técnicos
+## ✅ Checklist de Implementação
 
-### Integração com Hook useOnlineStatus
-O hook `useOnlineStatus` já existe em `src/hooks/useOnlineStatus.ts` e retorna `{ isOnline, isChecking, checkRealConnectivity }`.
+### Fase 1 - Cores
+- [ ] AdminDataIntegrity.tsx - Substituir cores hardcoded
+- [ ] AdminUsers.tsx - Substituir cores hardcoded
+- [ ] AdminImport.tsx - Substituir cores hardcoded
+- [ ] RulesValidationPanel.tsx - Substituir cores hardcoded
+- [ ] SUEDebugPanel.tsx - Substituir cores hardcoded
 
-### Integração com useSheetKeyboardShortcuts
-O hook aceita callbacks para:
-- `onRollAttribute(attribute)` - Alt+1 a Alt+5
-- `onRollSkill()` - Alt+P
-- `onRollInitiative()` - Alt+I
-- `onOpenCombat()` - Alt+C
-- `onSave()` - Ctrl+S
-- `onShowHelp()` - F1 ou ?
+### Fase 2 - Refatoração
+- [ ] Criar estrutura de pastas sue-debug/
+- [ ] Extrair ComputedEffectsView
+- [ ] Extrair RawEffectsView
+- [ ] Extrair BreakdownView
+- [ ] Criar estrutura rules-validation/
+- [ ] Extrair ValidationResultsList
+- [ ] Extrair ValidationExporter
+- [ ] Testar todos os componentes refatorados
 
-### Desativação Durante Modais
-Os atalhos são desativados quando modais importantes estão abertas para evitar conflitos.
+### Fase 3 - UX
+- [ ] Criar AdminNav.tsx
+- [ ] Adicionar breadcrumbs
+- [ ] Criar componentes skeleton
+- [ ] Verificar ScrollArea em modais
 
-### Responsividade
-- `OfflineBanner`: Aparece em todas as resoluções
-- `SaveStatusIndicator`: Visível apenas no desktop (dentro de `hidden sm:flex`)
-- `KeyboardShortcutsHelp`: Visível apenas no desktop (atalhos são para teclado)
+### Fase 4 - Busca/Paginação
+- [ ] useAdminUsersList hook
+- [ ] UI de busca e filtros
+- [ ] Componente de paginação
+- [ ] Aplicar em AdminDataIntegrity
+
+---
+
+## 🚀 Próximos Passos
+
+Para iniciar a implementação, responda com uma das opções:
+
+1. **"Iniciar Fase 1"** - Padronização de cores
+2. **"Iniciar Fase 2"** - Refatoração de arquivos grandes
+3. **"Iniciar Fase 3"** - Melhorias de UX
+4. **"Iniciar Fase 4"** - Busca e paginação
+5. **"Implementar tudo"** - Executar todas as fases sequencialmente
