@@ -26,7 +26,7 @@ export function TemplateGalleryModal({
 }: TemplateGalleryModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl h-[90vh] flex flex-col p-0 gap-0 overflow-hidden">
+      <DialogContent className="max-w-5xl max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden">
         <DialogHeader className="px-6 py-4 border-b border-border shrink-0">
           <DialogTitle className="flex items-center gap-3 font-display text-xl tracking-wider">
             <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -41,11 +41,12 @@ export function TemplateGalleryModal({
           </DialogTitle>
         </DialogHeader>
         
-        <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4">
+        <div className="flex-1 min-h-0 px-6 py-4">
           <TemplateGallery
             onApply={onApply}
             closeOnApply={true}
             onClose={() => onOpenChange(false)}
+            className="h-full"
           />
         </div>
       </DialogContent>

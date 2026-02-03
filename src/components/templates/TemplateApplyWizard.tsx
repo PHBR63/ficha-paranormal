@@ -535,7 +535,7 @@ export function TemplateApplyWizard({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-2xl h-[85vh] flex flex-col p-0 gap-0 overflow-hidden">
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden">
         {/* Header */}
         <DialogHeader className="px-6 py-4 border-b border-border shrink-0">
           <DialogTitle className="flex items-center gap-3 font-display text-xl tracking-wider">
@@ -588,7 +588,7 @@ export function TemplateApplyWizard({
         </div>
 
         {/* Content */}
-        <ScrollArea className="flex-1 px-6 py-4">
+        <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4">
           <AnimatePresence mode="wait">
             <motion.div
               key={currentStep?.id}
@@ -596,11 +596,12 @@ export function TemplateApplyWizard({
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.2 }}
+              className="min-h-[200px]"
             >
               {renderStep()}
             </motion.div>
           </AnimatePresence>
-        </ScrollArea>
+        </div>
 
         {/* Footer */}
         <div className="px-6 py-4 border-t border-border shrink-0 flex justify-between">
