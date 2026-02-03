@@ -542,6 +542,26 @@ const CLASS_FREE_SKILLS_FORMULA: Record<string, (intellect: number) => number> =
 };
 
 /**
+ * Quantidade de perícias para Grau de Treinamento (NEX 35% e 70%)
+ * Conforme Livro Base v1.3:
+ * - Combatente: 2 + INT
+ * - Especialista: 5 + INT
+ * - Ocultista: 3 + INT
+ * 
+ * IMPORTANTE: Esta fórmula é DIFERENTE da fórmula de perícias livres!
+ */
+const TRAINING_GRADE_BASE_COUNT: Record<string, number> = {
+  'Combatente': 2,
+  'Especialista': 5,
+  'Ocultista': 3,
+};
+
+function getTrainingGradeCountForAudit(characterClass: string, intellect: number): number {
+  const baseCount = TRAINING_GRADE_BASE_COUNT[characterClass] || 2;
+  return baseCount + intellect;
+}
+
+/**
  * Perícias obrigatórias por classe
  */
 const CLASS_MANDATORY_SKILLS: Record<string, string[]> = {
@@ -699,9 +719,9 @@ export function auditSkillTraining(character: CharacterForAudit): {
   const pendingGradeChoices: ('35' | '70')[] = [];
   
   // Grau de Treinamento disponível em NEX 35%
+  // Fórmula correta: Combatente (2+INT), Especialista (5+INT), Ocultista (3+INT)
   if (nex >= 35 && grade35Choices.length === 0) {
-    const freeSkillFormula = CLASS_FREE_SKILLS_FORMULA[characterClass];
-    const expectedCount = freeSkillFormula ? Math.max(0, freeSkillFormula(intellect) - 2) + 2 : 2;
+    const expectedCount = getTrainingGradeCountForAudit(characterClass, intellect);
     
     issues.push({
       id: `pending_training_grade_35_${character.id}`,
@@ -719,8 +739,7 @@ export function auditSkillTraining(character: CharacterForAudit): {
   
   // Grau de Treinamento disponível em NEX 70%
   if (nex >= 70 && grade70Choices.length === 0) {
-    const freeSkillFormula = CLASS_FREE_SKILLS_FORMULA[characterClass];
-    const expectedCount = freeSkillFormula ? Math.max(0, freeSkillFormula(intellect) - 2) + 2 : 2;
+    const expectedCount = getTrainingGradeCountForAudit(characterClass, intellect);
     
     issues.push({
       id: `pending_training_grade_70_${character.id}`,
