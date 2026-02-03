@@ -1,13 +1,14 @@
 /**
  * Galeria de Templates
  * Exibe lista de templates com filtros e tabs
+ * Integra templates oficiais do seed quando o banco está vazio
  * 
  * @module components/templates/TemplateGallery
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Loader2, Package, Crown, User, Search, RefreshCw } from 'lucide-react';
+import { Loader2, Package, Crown, User, Search, RefreshCw, Plus } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 
@@ -15,15 +16,19 @@ import { cn } from '@/lib/utils';
 import { TemplateCard } from './TemplateCard';
 import { TemplateFilters } from './TemplateFilters';
 import { TemplatePreviewModal } from './TemplatePreviewModal';
+import { TemplateCreationWizard } from './TemplateCreationWizard';
 import {
   usePublicTemplates,
   useOfficialTemplates,
   useMyTemplates,
   useTemplateFilters,
   useApplyTemplate,
+  useCreateTemplate,
 } from '@/hooks/useTemplates';
 import { useAuth } from '@/contexts/AuthContext';
-import type { CharacterTemplate, TemplateWithAuthor } from '@/types/templates';
+import { OFFICIAL_TEMPLATES } from '@/lib/templates/official-templates-seed';
+import type { CharacterTemplate, TemplateWithAuthor, CharacterTemplateData } from '@/types/templates';
+import { TEMPLATE_SCHEMA_VERSION } from '@/types/templates';
 
 interface TemplateGalleryProps {
   /** Callback quando um template é aplicado */
@@ -38,6 +43,32 @@ interface TemplateGalleryProps {
 
 type TabValue = 'official' | 'community' | 'my';
 
+/**
+ * Converte templates oficiais do seed para o formato CharacterTemplate
+ * Usado como fallback quando o banco não tem templates oficiais
+ */
+function seedToCharacterTemplates(): CharacterTemplate[] {
+  return OFFICIAL_TEMPLATES.map(t => ({
+    id: t.id,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    name: t.name,
+    description: t.description,
+    author_id: 'system',
+    is_public: true,
+    is_official: true,
+    tags: t.tags,
+    difficulty_level: t.difficulty,
+    usage_count: 0,
+    rating: null,
+    rating_count: 0,
+    template_data: t.data,
+    min_nex: 5,
+    max_nex: 99,
+    deleted_at: null,
+  }));
+}
+
 export function TemplateGallery({
   onApply,
   closeOnApply = true,
@@ -47,7 +78,9 @@ export function TemplateGallery({
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<TabValue>('official');
   const [selectedTemplate, setSelectedTemplate] = useState<CharacterTemplate | TemplateWithAuthor | null>(null);
+  const [showCreationWizard, setShowCreationWizard] = useState(false);
   const { apply, isApplying } = useApplyTemplate();
+  const { mutate: createTemplate, isPending: isCreating } = useCreateTemplate();
 
   // Filtros para templates da comunidade
   const {
@@ -63,6 +96,15 @@ export function TemplateGallery({
   const officialQuery = useOfficialTemplates();
   const communityQuery = usePublicTemplates(filters, page);
   const myTemplatesQuery = useMyTemplates();
+
+  // Usa templates do seed como fallback se o banco estiver vazio
+  const officialTemplates = useMemo(() => {
+    if (officialQuery.data && officialQuery.data.length > 0) {
+      return officialQuery.data;
+    }
+    // Fallback para templates do seed
+    return seedToCharacterTemplates();
+  }, [officialQuery.data]);
 
   // Handler para ver detalhes
   const handleView = useCallback((template: CharacterTemplate | TemplateWithAuthor) => {
@@ -87,6 +129,16 @@ export function TemplateGallery({
       setSelectedTemplate(null);
     }
   }, [selectedTemplate, handleApply]);
+
+  // Handler para criar template
+  const handleCreateTemplate = useCallback((dto: any) => {
+    createTemplate(dto, {
+      onSuccess: () => {
+        setShowCreationWizard(false);
+        myTemplatesQuery.refetch();
+      },
+    });
+  }, [createTemplate, myTemplatesQuery]);
 
   // Renderiza grid de templates
   const renderTemplateGrid = (
@@ -181,7 +233,7 @@ export function TemplateGallery({
         <TabsContent value="official" unmountOnHide className="flex-1 mt-0 min-h-0 overflow-y-auto px-1 pt-0 border-0 outline-none ring-0">
           <div className="pr-3 pb-8">
             {renderTemplateGrid(
-              officialQuery.data || [],
+              officialTemplates,
               officialQuery.isLoading,
               officialQuery.error as Error | null
             )}
@@ -240,8 +292,17 @@ export function TemplateGallery({
         {user && (
           <TabsContent value="my" unmountOnHide className="flex-1 mt-0 min-h-0 overflow-y-auto px-1 pt-0 border-0 outline-none ring-0">
             <div className="pr-3 pb-8">
-              {/* Botão de refresh */}
-              <div className="flex justify-end mb-4">
+              {/* Ações */}
+              <div className="flex justify-between mb-4">
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={() => setShowCreationWizard(true)}
+                  className="gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  Criar Template
+                </Button>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -273,6 +334,14 @@ export function TemplateGallery({
         onClose={() => setSelectedTemplate(null)}
         onApply={handleApplyFromModal}
         isApplying={isApplying}
+      />
+
+      {/* Wizard de Criação */}
+      <TemplateCreationWizard
+        isOpen={showCreationWizard}
+        onClose={() => setShowCreationWizard(false)}
+        onCreate={handleCreateTemplate}
+        isSaving={isCreating}
       />
     </div>
   );
