@@ -102,11 +102,13 @@ export const TemplateCard = memo(function TemplateCard({
 
   return (
     <motion.div
+      layout
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -10 }}
+      exit={{ opacity: 0, scale: 0.95 }}
       whileHover={{ y: -2 }}
       transition={{ duration: 0.2 }}
+      className="h-full"
     >
       <Card 
         className={cn(
