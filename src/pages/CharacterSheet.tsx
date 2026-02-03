@@ -3867,7 +3867,7 @@ export default function CharacterSheet() {
               {/* Painel do Sistema Unificado de Efeitos */}
               <ActiveEffectsPanel effectsResult={unifiedEffects} />
               
-              {/* DevTools do SUE - apenas em desenvolvimento */}
+              {/* DevTools do SUE - apenas em modo desenvolvedor */}
               <SUEDevToolsPanel 
                 hardeningData={unifiedEffects?.hardening ? {
                   effects: unifiedEffects.hardening.preparedEffects,
@@ -3875,6 +3875,7 @@ export default function CharacterSheet() {
                   excludedEffects: unifiedEffects.hardening.excludedEffects,
                   metadata: unifiedEffects.hardening.metadata,
                 } : null}
+                isDeveloperMode={developerMode}
               />
 
               {/* Botão de Descanso */}
