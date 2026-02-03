@@ -2,7 +2,7 @@
  * Página administrativa para gerenciamento de usuários
  * Permite visualizar usuários e alterar suas permissões (Admin, Moderador, Usuário)
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -49,7 +49,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { AdminNav, AdminUserListSkeleton } from '@/components/admin';
+import { AdminNav, AdminUserListSkeleton, AdminSearchBar, AdminPagination } from '@/components/admin';
+import { useAdminFilters } from '@/hooks';
 
 // Interface para logs de auditoria
 interface AuditLog {
@@ -109,6 +110,37 @@ export default function AdminUsers() {
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [showAuditLogs, setShowAuditLogs] = useState(false);
   const [loadingLogs, setLoadingLogs] = useState(false);
+
+  // Hook de filtros e paginação
+  const {
+    paginatedData,
+    searchTerm,
+    setSearchTerm,
+    filters,
+    setFilter,
+    pagination,
+    goToPage,
+    setPageSize,
+    hasActiveFilters,
+    clearFilters
+  } = useAdminFilters<UserWithRole, { role: string }>({
+    data: users,
+    pageSize: 20,
+    searchFn: (user, term) => 
+      (user.display_name?.toLowerCase().includes(term) || false) ||
+      user.user_id.toLowerCase().includes(term),
+    filterFn: (user, f) => !f.role || f.role === 'all' || user.role === f.role,
+    initialSortField: 'created_at',
+    initialSortOrder: 'desc',
+    sortFn: (a, b, sort) => {
+      if (sort.field === 'created_at') {
+        const dateA = new Date(a.created_at).getTime();
+        const dateB = new Date(b.created_at).getTime();
+        return sort.order === 'asc' ? dateA - dateB : dateB - dateA;
+      }
+      return 0;
+    }
+  });
   
   // Dialog de confirmação
   const [confirmDialog, setConfirmDialog] = useState<{
@@ -303,13 +335,42 @@ export default function AdminUsers() {
       <div className="container mx-auto px-4 py-6">
         <Card className="border-border/50">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-primary" />
-              Usuários do Sistema ({users.length})
-            </CardTitle>
-            <CardDescription>
-              Gerencie permissões dos usuários: Administrador, Moderador ou Usuário
-            </CardDescription>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5 text-primary" />
+                  Usuários do Sistema ({users.length})
+                </CardTitle>
+                <CardDescription>
+                  Gerencie permissões dos usuários: Administrador, Moderador ou Usuário
+                </CardDescription>
+              </div>
+            </div>
+            
+            {/* Barra de busca e filtros */}
+            <AdminSearchBar
+              searchTerm={searchTerm}
+              onSearchChange={setSearchTerm}
+              searchPlaceholder="Buscar por nome ou ID..."
+              filters={[
+                {
+                  id: 'role',
+                  label: 'Permissão',
+                  value: filters.role || 'all',
+                  options: [
+                    { value: 'all', label: 'Todos' },
+                    { value: 'admin', label: 'Administrador', icon: <Crown className="h-3 w-3 text-amber-500" /> },
+                    { value: 'moderator', label: 'Moderador', icon: <Shield className="h-3 w-3 text-sky-500" /> },
+                    { value: 'user', label: 'Usuário', icon: <User className="h-3 w-3" /> }
+                  ],
+                  onChange: (value) => setFilter('role', value as 'all' | AppRole)
+                }
+              ]}
+              hasActiveFilters={hasActiveFilters}
+              onClearFilters={clearFilters}
+              totalResults={pagination.totalItems}
+              totalItems={users.length}
+            />
           </CardHeader>
           <CardContent>
             {loading ? (
@@ -319,20 +380,21 @@ export default function AdminUsers() {
                 Nenhum usuário cadastrado
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Usuário</TableHead>
-                    <TableHead>Cadastro</TableHead>
-                    <TableHead>Permissão</TableHead>
-                    <TableHead className="text-right">Alterar Para</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {users.map((userItem) => {
-                    const isCurrentUser = userItem.user_id === currentUser?.id;
-                    const isLoading = actionLoading === userItem.user_id;
-                    const config = roleConfig[userItem.role];
+              <>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Usuário</TableHead>
+                      <TableHead>Cadastro</TableHead>
+                      <TableHead>Permissão</TableHead>
+                      <TableHead className="text-right">Alterar Para</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedData.map((userItem) => {
+                      const isCurrentUser = userItem.user_id === currentUser?.id;
+                      const isLoading = actionLoading === userItem.user_id;
+                      const config = roleConfig[userItem.role];
 
                     return (
                       <TableRow key={userItem.user_id}>
@@ -414,12 +476,22 @@ export default function AdminUsers() {
                       </TableRow>
                     );
                   })}
-                </TableBody>
-              </Table>
+                  </TableBody>
+                </Table>
+                
+                {/* Paginação */}
+                <AdminPagination
+                  page={pagination.page}
+                  totalPages={pagination.totalPages}
+                  totalItems={pagination.totalItems}
+                  pageSize={pagination.pageSize}
+                  onPageChange={goToPage}
+                  onPageSizeChange={setPageSize}
+                />
+              </>
             )}
           </CardContent>
         </Card>
-
         {/* Seção de Logs de Auditoria */}
         <Card className="border-border/50 mt-6">
           <CardHeader 
