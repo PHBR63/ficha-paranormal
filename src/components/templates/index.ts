@@ -8,6 +8,7 @@ export { TemplateCard } from './TemplateCard';
 export { TemplateGallery } from './TemplateGallery';
 export { TemplateGalleryModal } from './TemplateGalleryModal';
 export { TemplateApplyWizard } from './TemplateApplyWizard';
+export { TemplateCreationWizard } from './TemplateCreationWizard';
 export { TemplatePreviewModal } from './TemplatePreviewModal';
 export { TemplateSaveModal } from './TemplateSaveModal';
 export { TemplateEditModal } from './TemplateEditModal';
