@@ -32,7 +32,6 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
@@ -108,8 +107,8 @@ export function TemplatePreviewModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-3xl h-[85vh] flex flex-col p-0 gap-0 overflow-hidden">
-        <DialogHeader className="p-6 pb-0">
+      <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden">
+        <DialogHeader className="px-6 pt-6 pb-4 shrink-0">
           <div className="flex items-start justify-between">
             <div className="flex items-start gap-4">
               {/* Ícone da classe */}
@@ -189,11 +188,11 @@ export function TemplatePreviewModal({
           )}
         </DialogHeader>
 
-        <Separator className="my-4" />
+        <Separator className="mx-6" />
 
         {/* Conteúdo com tabs */}
-        <Tabs defaultValue="overview" className="flex-1 flex flex-col min-h-0">
-          <TabsList className="mx-6 shrink-0">
+        <Tabs defaultValue="overview" className="flex-1 flex flex-col min-h-0 overflow-hidden">
+          <TabsList className="mx-6 mt-4 shrink-0 w-fit">
             <TabsTrigger value="overview">Visão Geral</TabsTrigger>
             <TabsTrigger value="powers">Poderes</TabsTrigger>
             {data.progression && data.progression.length > 0 && (
@@ -204,9 +203,9 @@ export function TemplatePreviewModal({
             )}
           </TabsList>
 
-          <ScrollArea className="flex-1 min-h-0 px-6 pb-4">
+          <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4">
             {/* Tab: Visão Geral */}
-            <TabsContent value="overview" className="mt-4 space-y-6">
+            <TabsContent value="overview" className="mt-0 space-y-6 data-[state=inactive]:hidden">
               {/* Descrição */}
               {template.description && (
                 <div>
@@ -301,7 +300,7 @@ export function TemplatePreviewModal({
             </TabsContent>
 
             {/* Tab: Poderes */}
-            <TabsContent value="powers" className="mt-4 space-y-6">
+            <TabsContent value="powers" className="mt-0 space-y-6 data-[state=inactive]:hidden">
               {/* Poderes de Classe */}
               {data.classPowers && data.classPowers.length > 0 && (
                 <div>
@@ -368,7 +367,7 @@ export function TemplatePreviewModal({
 
             {/* Tab: Progressão - usando novo componente ProgressionRoadmap */}
             {data.progression && data.progression.length > 0 && (
-              <TabsContent value="progression" className="mt-4">
+              <TabsContent value="progression" className="mt-0 data-[state=inactive]:hidden">
                 <ProgressionRoadmap
                   progression={data.progression}
                   currentNex={template.min_nex}
@@ -379,7 +378,7 @@ export function TemplatePreviewModal({
 
             {/* Tab: Avaliar */}
             {canRate && (
-              <TabsContent value="rate" className="mt-4">
+              <TabsContent value="rate" className="mt-0 data-[state=inactive]:hidden">
                 <div className="flex flex-col items-center py-8">
                   <h4 className="text-lg font-medium mb-6">
                     O que você achou deste template?
@@ -403,7 +402,7 @@ export function TemplatePreviewModal({
                 </div>
               </TabsContent>
             )}
-          </ScrollArea>
+          </div>
         </Tabs>
 
         {/* Ações */}
