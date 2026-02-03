@@ -33,23 +33,23 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 import { 
-  ArrowLeft, 
-  Shield, 
   Users,
   Loader2,
-  FileJson,
   Crown,
   User,
   History,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Shield
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { AdminNav, AdminUserListSkeleton } from '@/components/admin';
 
 // Interface para logs de auditoria
 interface AuditLog {
@@ -281,58 +281,23 @@ export default function AdminUsers() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="border-b border-border bg-card/50 sticky top-0 z-10">
+      {/* Header com navegação unificada */}
+      <header className="border-b border-border bg-card/50 sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => navigate('/dashboard')}
-              >
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-              <div>
-                <h1 className="text-xl font-bold text-foreground">
-                  Painel Administrativo
-                </h1>
-                <p className="text-sm text-muted-foreground">
-                  Gerenciamento de Usuários
-                </p>
-              </div>
-            </div>
-            
-            {/* Navegação Admin */}
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate('/admin/import')}
-              >
-                <FileJson className="h-4 w-4 mr-2" />
-                Importação
-              </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                disabled
-              >
-                <Users className="h-4 w-4 mr-2" />
-                Usuários
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate('/admin/data-integrity')}
-              >
-                <Shield className="h-4 w-4 mr-2" />
-                Integridade
-              </Button>
+          <div className="flex items-center gap-4 mb-4">
+            <Users className="w-6 h-6 text-primary" />
+            <div>
+              <h1 className="text-xl font-bold text-foreground">
+                Painel Administrativo
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                Gerenciamento de Usuários
+              </p>
             </div>
           </div>
+          <AdminNav currentPage="users" />
         </div>
-      </div>
+      </header>
 
       {/* Content */}
       <div className="container mx-auto px-4 py-6">
@@ -348,9 +313,7 @@ export default function AdminUsers() {
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-              </div>
+              <AdminUserListSkeleton rows={6} />
             ) : users.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 Nenhum usuário cadastrado

@@ -34,9 +34,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 import { 
-  ArrowLeft, 
   Shield, 
   Database,
   Loader2,
@@ -45,16 +45,15 @@ import {
   Wrench,
   Trash2,
   RefreshCw,
-  Users,
   BookOpen,
   BarChart3,
-  Sparkles,
-  FileJson
+  Sparkles
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { CLASSES, CLASS_TRACKS, getClassTracks } from '@/lib/character-data';
 import { checkExistingCharacterValidity } from '@/lib/character-validation';
+import { AdminNav, AdminPageSkeleton } from '@/components/admin';
 import { RulesValidationPanel } from '@/components/admin/RulesValidationPanel';
 import { ValidationHistoryDashboard } from '@/components/admin/ValidationHistoryDashboard';
 import { ClassPowerBonusTests } from '@/components/admin/ClassPowerBonusTests';
@@ -231,47 +230,28 @@ export default function AdminDataIntegrity() {
   // Trilhas disponíveis para a classe selecionada
   const availableTracks = newClass ? getClassTracks(newClass) : [];
 
+  // Loading state com skeleton
+  if (loading && characters.length === 0) {
+    return <AdminPageSkeleton />;
+  }
+
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
+      {/* Header com navegação unificada */}
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => navigate('/admin/users')}
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </Button>
-              <div>
-                <h1 className="font-display text-xl tracking-wider flex items-center gap-2">
-                  <Shield className="w-5 h-5 text-primary" />
-                  ADMINISTRAÇÃO DO SISTEMA
-                </h1>
-                <p className="text-sm text-muted-foreground">
-                  Integridade de dados e validação de regras oficiais
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                onClick={() => navigate('/admin/import')}
-              >
-                <FileJson className="w-4 h-4 mr-2" />
-                Importação
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => navigate('/admin/users')}
-              >
-                <Users className="w-4 h-4 mr-2" />
-                Usuários
-              </Button>
+          <div className="flex items-center gap-4 mb-4">
+            <Shield className="w-6 h-6 text-primary" />
+            <div>
+              <h1 className="font-display text-xl tracking-wider">
+                ADMINISTRAÇÃO DO SISTEMA
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                Integridade de dados e validação de regras oficiais
+              </p>
             </div>
           </div>
+          <AdminNav currentPage="integrity" />
         </div>
       </header>
 

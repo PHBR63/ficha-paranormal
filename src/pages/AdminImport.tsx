@@ -11,7 +11,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { 
-  ArrowLeft, 
   Upload, 
   CheckCircle, 
   FileJson, 
@@ -21,9 +20,9 @@ import {
   Sparkles,
   Loader2,
   Download,
-  Users,
   AlertTriangle
 } from 'lucide-react';
+import { AdminNav } from '@/components/admin';
 import { JsonExamples, ImportType, TYPE_LABELS } from '@/components/admin/JsonExamples';
 import { ImportPreview } from '@/components/admin/ImportPreview';
 import {
@@ -232,18 +231,12 @@ export default function AdminImport() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="border-b border-border bg-card/50 sticky top-0 z-10">
+      {/* Header com navegação unificada */}
+      <header className="border-b border-border bg-card/50 sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => navigate('/dashboard')}
-              >
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
+              <FileJson className="w-6 h-6 text-primary" />
               <div>
                 <h1 className="text-xl font-bold text-foreground">
                   Painel Administrativo
@@ -253,45 +246,18 @@ export default function AdminImport() {
                 </p>
               </div>
             </div>
-            
-            {/* Navegação Admin */}
-            <div className="flex gap-2">
-              <Button
-                variant="secondary"
-                size="sm"
-                disabled
-              >
-                <FileJson className="h-4 w-4 mr-2" />
-                Importação
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate('/admin/data-integrity')}
-              >
-                <Shield className="h-4 w-4 mr-2" />
-                Integridade
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate('/admin/users')}
-              >
-                <Users className="h-4 w-4 mr-2" />
-                Usuários
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleExport}
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Exportar
-              </Button>
-            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExport}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Exportar
+            </Button>
           </div>
+          <AdminNav currentPage="import" />
         </div>
-      </div>
+      </header>
 
       {/* Content */}
       <div className="container mx-auto px-4 py-6">
