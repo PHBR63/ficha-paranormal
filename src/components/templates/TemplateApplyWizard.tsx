@@ -49,7 +49,7 @@ import {
 import type { CharacterTemplate, TemplateWithAuthor, CharacterTemplateData } from '@/types/templates';
 import type { CharacterFormData } from '@/pages/CharacterCreate';
 import { ORIGINS, CLASSES, getExtraSkillsByNex, getOcultistRituals, getExtraAttributePoints } from '@/lib/character-data';
-import { getMaxAttributeByNex, getClassSkillRules } from '@/lib/character-builder-engine';
+import { getMaxAttributeByNex, getClassSkillRules, getOriginSkills } from '@/lib/character-builder-engine';
 import { ALL_RITUALS } from '@/lib/rituals/legacy-exports';
 
 // ========================================
@@ -324,6 +324,27 @@ export function TemplateApplyWizard({
 
   const handleApply = () => {
     if (!data) return;
+    
+    // Obter perícias da origem para separar corretamente
+    const originSkillsList = getOriginSkills(data.origin);
+    
+    // Separar perícias de classe das perícias livres
+    // O template.trainedSkills inclui todas as perícias, então precisamos:
+    // 1. Perícias de origem (vêm de originSkillsList)
+    // 2. Escolhas de perícia de classe (vêm de data.classSkillChoices)
+    // 3. Perícias livres (as restantes de wizardState.skills)
+    
+    const classChoices = data.classSkillChoices || [];
+    const classSkillChoicesMap: Record<string, string> = {};
+    
+    // Mapear escolhas de classe para o formato esperado
+    classChoices.forEach((skillId, index) => {
+      classSkillChoicesMap[`choice_${index}`] = skillId;
+    });
+    
+    // Perícias livres são as que não são de origem nem de classe
+    const allMandatory = new Set([...originSkillsList, ...classChoices]);
+    const freeSkillsList = wizardState.skills.filter(s => !allMandatory.has(s));
 
     const adjustedData: Partial<CharacterFormData> = {
       name: wizardState.name,
@@ -334,7 +355,10 @@ export function TemplateApplyWizard({
       characterClass: data.classId,
       classTrack: data.classTrack || '',
       attributes: wizardState.attributes,
-      freeSkills: wizardState.skills,
+      // Separar perícias por categoria para validação correta
+      originSkills: originSkillsList,
+      classSkillChoices: classSkillChoicesMap,
+      freeSkills: freeSkillsList,
       abilities: wizardState.powers,
       rituals: wizardState.rituals,
     };
