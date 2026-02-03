@@ -1,14 +1,15 @@
 /**
- * Wizard de Aplicação Interativa de Template
- * Permite ajustar atributos, perícias e poderes antes de aplicar
+ * Wizard de Aplicação Interativa de Template (v2 - Híbrido Inteligente)
+ * Steps dinâmicos: mostra apenas steps que precisam de ajuste/escolha
+ * NEX ajustável com recálculo de limites em tempo real
+ * Validações oficiais v1.3
  * 
  * @module components/templates/TemplateApplyWizard
  */
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  X,
   ChevronLeft,
   ChevronRight,
   Check,
@@ -18,6 +19,11 @@ import {
   Plus,
   AlertTriangle,
   Info,
+  User,
+  Gauge,
+  Swords,
+  BookOpen,
+  Wand2,
 } from 'lucide-react';
 import {
   Dialog,
@@ -29,6 +35,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
 import {
   Tooltip,
@@ -36,17 +46,27 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import type { CharacterTemplate, TemplateWithAuthor, CharacterTemplateData, TemplateAttributes } from '@/types/templates';
+import type { CharacterTemplate, TemplateWithAuthor, CharacterTemplateData } from '@/types/templates';
 import type { CharacterFormData } from '@/pages/CharacterCreate';
-import { ORIGINS, CLASSES, getExtraAttributePoints } from '@/lib/character-data';
-import { getMaxAttributeByNex } from '@/lib/character-builder-engine';
+import { ORIGINS, CLASSES, getExtraSkillsByNex, getOcultistRituals, getExtraAttributePoints } from '@/lib/character-data';
+import { getMaxAttributeByNex, getClassSkillRules } from '@/lib/character-builder-engine';
+import { ALL_RITUALS } from '@/lib/rituals/legacy-exports';
 
 // ========================================
 // Tipos Internos
 // ========================================
 
+/** Estado completo do wizard */
 interface WizardState {
-  /** Atributos ajustados */
+  // Conceito
+  name: string;
+  concept: string;
+  age: number | null;
+  
+  // NEX
+  nex: number;
+  
+  // Atributos
   attributes: {
     strength: number;
     agility: number;
@@ -54,12 +74,25 @@ interface WizardState {
     intellect: number;
     presence: number;
   };
-  /** Perícias selecionadas */
+  
+  // Perícias
   skills: string[];
-  /** Poderes selecionados */
+  
+  // Poderes
   powers: string[];
-  /** Rituais selecionados (Ocultista) */
+  
+  // Rituais (Ocultista)
   rituals: string[];
+}
+
+/** Configuração de step dinâmico */
+interface DynamicStep {
+  id: string;
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+  /** Função que determina se o step deve aparecer */
+  shouldShow: (state: WizardState, data: CharacterTemplateData | undefined) => boolean;
 }
 
 interface TemplateApplyWizardProps {
@@ -67,7 +100,7 @@ interface TemplateApplyWizardProps {
   template: CharacterTemplate | TemplateWithAuthor | null;
   /** Se o modal está aberto */
   isOpen: boolean;
-  /** NEX inicial do personagem */
+  /** NEX inicial do personagem (sugerido) */
   nex: number;
   /** Callback para fechar */
   onClose: () => void;
@@ -79,11 +112,67 @@ interface TemplateApplyWizardProps {
 // Constantes
 // ========================================
 
-const WIZARD_STEPS = [
-  { id: 'attributes', title: 'Atributos', description: 'Ajuste a distribuição de atributos' },
-  { id: 'skills', title: 'Perícias', description: 'Selecione suas perícias treinadas' },
-  { id: 'powers', title: 'Poderes', description: 'Escolha seus poderes de classe' },
-  { id: 'review', title: 'Revisar', description: 'Confirme suas escolhas' },
+/** Steps dinâmicos - aparecem conforme necessidade */
+const ALL_STEPS: DynamicStep[] = [
+  {
+    id: 'concept',
+    title: 'Conceito',
+    description: 'Nome e conceito do personagem',
+    icon: <User className="w-4 h-4" />,
+    shouldShow: () => true, // Sempre mostra
+  },
+  {
+    id: 'nex',
+    title: 'NEX',
+    description: 'Nível de exposição paranormal',
+    icon: <Gauge className="w-4 h-4" />,
+    shouldShow: (_, data) => {
+      // Mostra se o template tem range de NEX
+      if (!data) return true;
+      return true; // Sempre mostra para permitir ajuste
+    },
+  },
+  {
+    id: 'attributes',
+    title: 'Atributos',
+    description: 'Distribuição de pontos',
+    icon: <Sparkles className="w-4 h-4" />,
+    shouldShow: () => true, // Sempre mostra pois usuário pode querer ajustar
+  },
+  {
+    id: 'skills',
+    title: 'Perícias',
+    description: 'Perícias treinadas',
+    icon: <BookOpen className="w-4 h-4" />,
+    shouldShow: () => true, // Sempre mostra
+  },
+  {
+    id: 'powers',
+    title: 'Poderes',
+    description: 'Poderes de classe',
+    icon: <Swords className="w-4 h-4" />,
+    shouldShow: (_, data) => {
+      // Mostra se o template tem poderes sugeridos
+      return (data?.classPowers?.length ?? 0) > 0;
+    },
+  },
+  {
+    id: 'rituals',
+    title: 'Rituais',
+    description: 'Rituais iniciais',
+    icon: <Wand2 className="w-4 h-4" />,
+    shouldShow: (_, data) => {
+      // Mostra apenas para Ocultistas
+      return data?.classId?.toLowerCase() === 'ocultista';
+    },
+  },
+  {
+    id: 'review',
+    title: 'Revisar',
+    description: 'Confirme suas escolhas',
+    icon: <Check className="w-4 h-4" />,
+    shouldShow: () => true, // Sempre mostra
+  },
 ];
 
 const ATTRIBUTES = [
@@ -95,35 +184,20 @@ const ATTRIBUTES = [
 ];
 
 const SKILL_LABELS: Record<string, string> = {
-  acrobacia: 'Acrobacia',
-  adestramento: 'Adestramento',
-  artes: 'Artes',
-  atletismo: 'Atletismo',
-  atualidades: 'Atualidades',
-  ciencias: 'Ciências',
-  crime: 'Crime',
-  diplomacia: 'Diplomacia',
-  enganacao: 'Enganação',
-  fortitude: 'Fortitude',
-  furtividade: 'Furtividade',
-  iniciativa: 'Iniciativa',
-  intimidacao: 'Intimidação',
-  intuicao: 'Intuição',
-  investigacao: 'Investigação',
-  luta: 'Luta',
-  medicina: 'Medicina',
-  ocultismo: 'Ocultismo',
-  percepcao: 'Percepção',
-  pilotagem: 'Pilotagem',
-  pontaria: 'Pontaria',
-  profissao: 'Profissão',
-  reflexos: 'Reflexos',
-  religiao: 'Religião',
-  sobrevivencia: 'Sobrevivência',
-  tatica: 'Tática',
-  tecnologia: 'Tecnologia',
+  acrobacia: 'Acrobacia', adestramento: 'Adestramento', artes: 'Artes',
+  atletismo: 'Atletismo', atualidades: 'Atualidades', ciencias: 'Ciências',
+  crime: 'Crime', diplomacia: 'Diplomacia', enganacao: 'Enganação',
+  fortitude: 'Fortitude', furtividade: 'Furtividade', iniciativa: 'Iniciativa',
+  intimidacao: 'Intimidação', intuicao: 'Intuição', investigacao: 'Investigação',
+  luta: 'Luta', medicina: 'Medicina', ocultismo: 'Ocultismo',
+  percepcao: 'Percepção', pilotagem: 'Pilotagem', pontaria: 'Pontaria',
+  profissao: 'Profissão', reflexos: 'Reflexos', religiao: 'Religião',
+  sobrevivencia: 'Sobrevivência', tatica: 'Tática', tecnologia: 'Tecnologia',
   vontade: 'Vontade',
 };
+
+// NEX válidos conforme v1.3
+const NEX_VALUES = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 99];
 
 // ========================================
 // Componente Principal
@@ -136,12 +210,19 @@ export function TemplateApplyWizard({
   onClose,
   onApply,
 }: TemplateApplyWizardProps) {
-  const [currentStep, setCurrentStep] = useState(0);
+  const [currentStepIndex, setCurrentStepIndex] = useState(0);
   
-  // Estado do wizard baseado no template
-  const [wizardState, setWizardState] = useState<WizardState>(() => {
-    const data = template?.template_data;
+  // Dados do template
+  const data = template?.template_data;
+  
+  // Estado inicial baseado no template
+  const createInitialState = useCallback((): WizardState => {
+    const templateNex = data ? Math.max(template?.min_nex ?? 5, nex) : nex;
     return {
+      name: data?.appearance?.suggested_name || '',
+      concept: data?.appearance?.suggested_concept || '',
+      age: null,
+      nex: templateNex,
       attributes: {
         strength: data?.attributes?.strength ?? 1,
         agility: data?.attributes?.agility ?? 1,
@@ -153,64 +234,102 @@ export function TemplateApplyWizard({
       powers: data?.classPowers?.map(p => p.powerId) ?? [],
       rituals: data?.initialRituals ?? [],
     };
-  });
+  }, [data, template, nex]);
+  
+  const [wizardState, setWizardState] = useState<WizardState>(createInitialState);
 
   // Reset ao mudar de template
-  const templateId = template?.id;
-  const resetState = useCallback(() => {
-    const data = template?.template_data;
-    setWizardState({
-      attributes: {
-        strength: data?.attributes?.strength ?? 1,
-        agility: data?.attributes?.agility ?? 1,
-        vigor: data?.attributes?.vigor ?? 1,
-        intellect: data?.attributes?.intellect ?? 1,
-        presence: data?.attributes?.presence ?? 1,
-      },
-      skills: data?.trainedSkills ?? [],
-      powers: data?.classPowers?.map(p => p.powerId) ?? [],
-      rituals: data?.initialRituals ?? [],
-    });
-    setCurrentStep(0);
-  }, [template]);
+  useEffect(() => {
+    if (isOpen && template) {
+      setWizardState(createInitialState());
+      setCurrentStepIndex(0);
+    }
+  }, [isOpen, template, createInitialState]);
 
-  // Dados do template
-  const data = template?.template_data;
+  // Steps visíveis dinamicamente
+  const visibleSteps = useMemo(() => {
+    return ALL_STEPS.filter(step => step.shouldShow(wizardState, data));
+  }, [wizardState, data]);
 
-  // Calcular pontos de atributos
-  const maxAttribute = getMaxAttributeByNex(nex);
-  const extraPoints = getExtraAttributePoints(nex);
-  const basePoints = 4 + extraPoints; // 4 pontos base + extras por NEX
+  const currentStep = visibleSteps[currentStepIndex];
+
+  // ========================================
+  // Cálculos de limites por NEX
+  // ========================================
   
-  const totalAttributePoints = useMemo(() => {
-    return Object.values(wizardState.attributes).reduce((sum, val) => sum + val, 0) - 5; // -5 porque cada atributo começa em 1
+  const maxAttribute = getMaxAttributeByNex(wizardState.nex);
+  const extraAttributePoints = getExtraAttributePoints(wizardState.nex);
+  const baseAttributePoints = 4 + extraAttributePoints;
+  
+  // Calcular pontos de atributos usados
+  const attributePointsUsed = useMemo(() => {
+    return Object.values(wizardState.attributes).reduce((sum, val) => sum + val, 0) - 5;
   }, [wizardState.attributes]);
+  
+  const attributePointsRemaining = baseAttributePoints - attributePointsUsed;
 
-  const pointsRemaining = basePoints - totalAttributePoints;
+  // Calcular limite de perícias (INT + base da classe + extras por NEX)
+  const skillLimit = useMemo(() => {
+    if (!data?.classId) return 5;
+    const classRules = getClassSkillRules(data.classId, wizardState.attributes.intellect);
+    const nexExtra = getExtraSkillsByNex(wizardState.nex);
+    return classRules.freePoints + nexExtra;
+  }, [data?.classId, wizardState.attributes.intellect, wizardState.nex]);
 
-  // Validações
-  const isAttributesValid = pointsRemaining === 0 && Object.values(wizardState.attributes).every(v => v >= 0 && v <= maxAttribute);
-  const isSkillsValid = wizardState.skills.length >= 2;
-  const isPowersValid = wizardState.powers.length >= 1;
+  // Calcular limite de rituais (Ocultista)
+  const ritualLimit = useMemo(() => {
+    if (data?.classId?.toLowerCase() !== 'ocultista') return 0;
+    const ritualsAllowed = getOcultistRituals(wizardState.nex);
+    return ritualsAllowed?.count ?? 0;
+  }, [data?.classId, wizardState.nex]);
 
-  // Navegar entre steps
+  // Círculo máximo de ritual permitido
+  const maxRitualCircle = useMemo(() => {
+    if (wizardState.nex < 40) return 1;
+    if (wizardState.nex < 65) return 2;
+    if (wizardState.nex < 80) return 3;
+    return 4;
+  }, [wizardState.nex]);
+
+  // ========================================
+  // Validações por step
+  // ========================================
+  
+  const isConceptValid = wizardState.name.trim().length >= 2;
+  const isNexValid = NEX_VALUES.includes(wizardState.nex) && 
+    wizardState.nex >= (template?.min_nex ?? 5) &&
+    wizardState.nex <= (template?.max_nex ?? 99);
+  const isAttributesValid = attributePointsRemaining === 0 && 
+    Object.values(wizardState.attributes).every(v => v >= 0 && v <= maxAttribute);
+  const isSkillsValid = wizardState.skills.length >= 2 && wizardState.skills.length <= skillLimit + 5; // +5 margem para origem
+  const isPowersValid = true; // Poderes são opcionais no template
+  const isRitualsValid = data?.classId?.toLowerCase() !== 'ocultista' || 
+    (wizardState.rituals.length > 0 && wizardState.rituals.length <= ritualLimit);
+
+  // ========================================
+  // Handlers
+  // ========================================
+
   const handleNext = () => {
-    if (currentStep < WIZARD_STEPS.length - 1) {
-      setCurrentStep(prev => prev + 1);
+    if (currentStepIndex < visibleSteps.length - 1) {
+      setCurrentStepIndex(prev => prev + 1);
     }
   };
 
   const handleBack = () => {
-    if (currentStep > 0) {
-      setCurrentStep(prev => prev - 1);
+    if (currentStepIndex > 0) {
+      setCurrentStepIndex(prev => prev - 1);
     }
   };
 
-  // Aplicar template
   const handleApply = () => {
     if (!data) return;
 
     const adjustedData: Partial<CharacterFormData> = {
+      name: wizardState.name,
+      concept: wizardState.concept,
+      age: wizardState.age,
+      nex: wizardState.nex,
       origin: data.origin,
       characterClass: data.classId,
       classTrack: data.classTrack || '',
@@ -224,63 +343,144 @@ export function TemplateApplyWizard({
     onClose();
   };
 
-  // Atualizar atributo
-  const updateAttribute = (attrId: string, delta: number) => {
+  const updateState = useCallback(<K extends keyof WizardState>(
+    key: K,
+    value: WizardState[K]
+  ) => {
+    setWizardState(prev => ({ ...prev, [key]: value }));
+  }, []);
+
+  const updateAttribute = useCallback((attrId: string, delta: number) => {
     setWizardState(prev => {
       const currentValue = prev.attributes[attrId as keyof typeof prev.attributes];
       const newValue = currentValue + delta;
       
-      // Verificar limites
       if (newValue < 0 || newValue > maxAttribute) return prev;
       
       // Verificar pontos restantes
-      if (delta > 0 && pointsRemaining <= 0) return prev;
+      const currentUsed = Object.values(prev.attributes).reduce((sum, v) => sum + v, 0) - 5;
+      if (delta > 0 && currentUsed >= baseAttributePoints) return prev;
       
       return {
         ...prev,
+        attributes: { ...prev.attributes, [attrId]: newValue },
+      };
+    });
+  }, [maxAttribute, baseAttributePoints]);
+
+  const toggleSkill = useCallback((skillId: string) => {
+    setWizardState(prev => ({
+      ...prev,
+      skills: prev.skills.includes(skillId)
+        ? prev.skills.filter(s => s !== skillId)
+        : [...prev.skills, skillId],
+    }));
+  }, []);
+
+  const togglePower = useCallback((powerId: string) => {
+    setWizardState(prev => ({
+      ...prev,
+      powers: prev.powers.includes(powerId)
+        ? prev.powers.filter(p => p !== powerId)
+        : [...prev.powers, powerId],
+    }));
+  }, []);
+
+  const toggleRitual = useCallback((ritualId: string) => {
+    setWizardState(prev => {
+      const isSelected = prev.rituals.includes(ritualId);
+      if (!isSelected && prev.rituals.length >= ritualLimit) {
+        return prev; // Não pode adicionar mais
+      }
+      return {
+        ...prev,
+        rituals: isSelected
+          ? prev.rituals.filter(r => r !== ritualId)
+          : [...prev.rituals, ritualId],
+      };
+    });
+  }, [ritualLimit]);
+
+  // Ajustar seleções quando NEX muda
+  useEffect(() => {
+    // Verificar se rituais selecionados ainda são válidos para o novo NEX
+    if (data?.classId?.toLowerCase() === 'ocultista') {
+      const allowedRituals = getOcultistRituals(wizardState.nex);
+      if (allowedRituals && wizardState.rituals.length > allowedRituals.count) {
+        setWizardState(prev => ({
+          ...prev,
+          rituals: prev.rituals.slice(0, allowedRituals.count),
+        }));
+      }
+    }
+    
+    // Verificar atributos
+    const newMax = getMaxAttributeByNex(wizardState.nex);
+    const needsAttrAdjust = Object.values(wizardState.attributes).some(v => v > newMax);
+    if (needsAttrAdjust) {
+      setWizardState(prev => ({
+        ...prev,
         attributes: {
-          ...prev.attributes,
-          [attrId]: newValue,
+          strength: Math.min(prev.attributes.strength, newMax),
+          agility: Math.min(prev.attributes.agility, newMax),
+          vigor: Math.min(prev.attributes.vigor, newMax),
+          intellect: Math.min(prev.attributes.intellect, newMax),
+          presence: Math.min(prev.attributes.presence, newMax),
         },
-      };
-    });
-  };
+      }));
+    }
+  }, [wizardState.nex, data?.classId]);
 
-  // Toggle skill
-  const toggleSkill = (skillId: string) => {
-    setWizardState(prev => {
-      const isSelected = prev.skills.includes(skillId);
-      return {
-        ...prev,
-        skills: isSelected
-          ? prev.skills.filter(s => s !== skillId)
-          : [...prev.skills, skillId],
-      };
-    });
-  };
+  // Verificar se pode avançar
+  const canProceed = useCallback(() => {
+    switch (currentStep?.id) {
+      case 'concept': return isConceptValid;
+      case 'nex': return isNexValid;
+      case 'attributes': return isAttributesValid;
+      case 'skills': return isSkillsValid;
+      case 'powers': return isPowersValid;
+      case 'rituals': return isRitualsValid;
+      case 'review': return true;
+      default: return false;
+    }
+  }, [currentStep?.id, isConceptValid, isNexValid, isAttributesValid, isSkillsValid, isPowersValid, isRitualsValid]);
 
-  // Toggle power
-  const togglePower = (powerId: string) => {
-    setWizardState(prev => {
-      const isSelected = prev.powers.includes(powerId);
-      return {
-        ...prev,
-        powers: isSelected
-          ? prev.powers.filter(p => p !== powerId)
-          : [...prev.powers, powerId],
-      };
-    });
-  };
+  // ========================================
+  // Renderização de Steps
+  // ========================================
 
-  // Renderizar step atual
   const renderStep = () => {
-    switch (WIZARD_STEPS[currentStep].id) {
+    switch (currentStep?.id) {
+      case 'concept':
+        return (
+          <StepConcept
+            name={wizardState.name}
+            concept={wizardState.concept}
+            suggestedName={data?.appearance?.suggested_name}
+            suggestedConcept={data?.appearance?.suggested_concept}
+            suggestedBackground={data?.appearance?.suggested_background}
+            onNameChange={(v) => updateState('name', v)}
+            onConceptChange={(v) => updateState('concept', v)}
+          />
+        );
+      case 'nex':
+        return (
+          <StepNex
+            nex={wizardState.nex}
+            minNex={template?.min_nex ?? 5}
+            maxNex={template?.max_nex ?? 99}
+            suggestedNex={template?.min_nex ?? 5}
+            onNexChange={(v) => updateState('nex', v)}
+          />
+        );
       case 'attributes':
         return (
           <StepAttributes
             attributes={wizardState.attributes}
-            pointsRemaining={pointsRemaining}
+            pointsRemaining={attributePointsRemaining}
+            totalPoints={baseAttributePoints}
             maxAttribute={maxAttribute}
+            nex={wizardState.nex}
             onUpdate={updateAttribute}
           />
         );
@@ -289,6 +489,9 @@ export function TemplateApplyWizard({
           <StepSkills
             selectedSkills={wizardState.skills}
             suggestedSkills={data?.trainedSkills || []}
+            skillLimit={skillLimit}
+            origin={data?.origin}
+            classId={data?.classId}
             onToggle={toggleSkill}
           />
         );
@@ -298,48 +501,33 @@ export function TemplateApplyWizard({
             selectedPowers={wizardState.powers}
             suggestedPowers={data?.classPowers?.map(p => p.powerId) || []}
             classId={data?.classId || ''}
-            rituals={wizardState.rituals}
-            initialRituals={data?.initialRituals || []}
-            onTogglePower={togglePower}
-            onToggleRitual={(ritualId) => {
-              setWizardState(prev => ({
-                ...prev,
-                rituals: prev.rituals.includes(ritualId)
-                  ? prev.rituals.filter(r => r !== ritualId)
-                  : [...prev.rituals, ritualId],
-              }));
-            }}
+            nex={wizardState.nex}
+            onToggle={togglePower}
+          />
+        );
+      case 'rituals':
+        return (
+          <StepRituals
+            selectedRituals={wizardState.rituals}
+            suggestedRituals={data?.initialRituals || []}
+            ritualLimit={ritualLimit}
+            maxCircle={maxRitualCircle}
+            elementalAffinity={data?.elementalAffinity}
+            onToggle={toggleRitual}
           />
         );
       case 'review':
         return (
           <StepReview
+            state={wizardState}
             templateName={template?.name || ''}
-            attributes={wizardState.attributes}
-            skills={wizardState.skills}
-            powers={wizardState.powers}
-            rituals={wizardState.rituals}
             classId={data?.classId || ''}
+            origin={data?.origin || ''}
+            classTrack={data?.classTrack}
           />
         );
       default:
         return null;
-    }
-  };
-
-  // Verificar se pode avançar
-  const canProceed = () => {
-    switch (WIZARD_STEPS[currentStep].id) {
-      case 'attributes':
-        return isAttributesValid;
-      case 'skills':
-        return isSkillsValid;
-      case 'powers':
-        return isPowersValid;
-      case 'review':
-        return true;
-      default:
-        return false;
     }
   };
 
@@ -363,42 +551,36 @@ export function TemplateApplyWizard({
           </DialogTitle>
         </DialogHeader>
 
-        {/* Stepper */}
-        <div className="px-6 py-4 border-b border-border bg-muted/30 shrink-0">
-          <div className="flex items-center justify-between">
-            {WIZARD_STEPS.map((step, index) => (
+        {/* Stepper dinâmico */}
+        <div className="px-6 py-3 border-b border-border bg-muted/30 shrink-0 overflow-x-auto">
+          <div className="flex items-center justify-between min-w-max">
+            {visibleSteps.map((step, index) => (
               <div key={step.id} className="flex items-center">
                 <div className="flex flex-col items-center">
                   <div
                     className={cn(
-                      'w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors',
-                      index < currentStep
+                      'w-8 h-8 rounded-full flex items-center justify-center transition-colors',
+                      index < currentStepIndex
                         ? 'bg-primary text-primary-foreground'
-                        : index === currentStep
+                        : index === currentStepIndex
                         ? 'bg-primary text-primary-foreground ring-2 ring-primary/30 ring-offset-2 ring-offset-background'
                         : 'bg-muted text-muted-foreground'
                     )}
                   >
-                    {index < currentStep ? (
-                      <Check className="w-4 h-4" />
-                    ) : (
-                      index + 1
-                    )}
+                    {index < currentStepIndex ? <Check className="w-4 h-4" /> : step.icon}
                   </div>
                   <span className={cn(
-                    'text-xs mt-1 hidden sm:block',
-                    index === currentStep ? 'text-foreground font-medium' : 'text-muted-foreground'
+                    'text-xs mt-1 hidden sm:block whitespace-nowrap',
+                    index === currentStepIndex ? 'text-foreground font-medium' : 'text-muted-foreground'
                   )}>
                     {step.title}
                   </span>
                 </div>
-                {index < WIZARD_STEPS.length - 1 && (
-                  <div
-                    className={cn(
-                      'h-0.5 w-12 mx-2',
-                      index < currentStep ? 'bg-primary' : 'bg-border'
-                    )}
-                  />
+                {index < visibleSteps.length - 1 && (
+                  <div className={cn(
+                    'h-0.5 w-6 sm:w-10 mx-1 sm:mx-2',
+                    index < currentStepIndex ? 'bg-primary' : 'bg-border'
+                  )} />
                 )}
               </div>
             ))}
@@ -409,7 +591,7 @@ export function TemplateApplyWizard({
         <ScrollArea className="flex-1 px-6 py-4">
           <AnimatePresence mode="wait">
             <motion.div
-              key={currentStep}
+              key={currentStep?.id}
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
@@ -424,14 +606,14 @@ export function TemplateApplyWizard({
         <div className="px-6 py-4 border-t border-border shrink-0 flex justify-between">
           <Button
             variant="outline"
-            onClick={currentStep === 0 ? onClose : handleBack}
+            onClick={currentStepIndex === 0 ? onClose : handleBack}
             className="gap-2"
           >
             <ChevronLeft className="w-4 h-4" />
-            {currentStep === 0 ? 'Cancelar' : 'Voltar'}
+            {currentStepIndex === 0 ? 'Cancelar' : 'Voltar'}
           </Button>
 
-          {currentStep < WIZARD_STEPS.length - 1 ? (
+          {currentStepIndex < visibleSteps.length - 1 ? (
             <Button
               onClick={handleNext}
               disabled={!canProceed()}
@@ -459,15 +641,219 @@ export function TemplateApplyWizard({
 // Sub-componentes de Steps
 // ========================================
 
+// Step: Conceito
+interface StepConceptProps {
+  name: string;
+  concept: string;
+  suggestedName?: string;
+  suggestedConcept?: string;
+  suggestedBackground?: string;
+  onNameChange: (v: string) => void;
+  onConceptChange: (v: string) => void;
+}
+
+function StepConcept({
+  name,
+  concept,
+  suggestedName,
+  suggestedConcept,
+  suggestedBackground,
+  onNameChange,
+  onConceptChange,
+}: StepConceptProps) {
+  return (
+    <div className="space-y-6">
+      <div className="text-center">
+        <h3 className="font-display text-lg tracking-wider mb-2">CONCEITO DO PERSONAGEM</h3>
+        <p className="text-sm text-muted-foreground">
+          Defina quem é seu agente da Ordem
+        </p>
+      </div>
+
+      {/* Sugestões do template */}
+      {(suggestedName || suggestedConcept) && (
+        <div className="p-4 rounded-lg bg-primary/5 border border-primary/20 space-y-2">
+          <div className="flex items-center gap-2 text-primary text-sm font-medium">
+            <Sparkles className="w-4 h-4" />
+            Sugestões do Template
+          </div>
+          {suggestedName && (
+            <button
+              onClick={() => onNameChange(suggestedName)}
+              className="w-full text-left text-sm p-2 rounded bg-background/50 hover:bg-background transition-colors"
+            >
+              <span className="text-muted-foreground">Nome sugerido:</span>{' '}
+              <span className="font-medium">{suggestedName}</span>
+            </button>
+          )}
+          {suggestedConcept && (
+            <button
+              onClick={() => onConceptChange(suggestedConcept)}
+              className="w-full text-left text-sm p-2 rounded bg-background/50 hover:bg-background transition-colors"
+            >
+              <span className="text-muted-foreground">Conceito:</span>{' '}
+              <span className="font-medium">{suggestedConcept}</span>
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Campos */}
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="name">Nome do Agente *</Label>
+          <Input
+            id="name"
+            value={name}
+            onChange={(e) => onNameChange(e.target.value)}
+            placeholder="Ex: Agente Silva"
+            className="font-medium"
+          />
+          {name.length > 0 && name.length < 2 && (
+            <p className="text-xs text-destructive">Nome deve ter pelo menos 2 caracteres</p>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="concept">Conceito (opcional)</Label>
+          <Textarea
+            id="concept"
+            value={concept}
+            onChange={(e) => onConceptChange(e.target.value)}
+            placeholder="Uma breve descrição do seu personagem..."
+            rows={3}
+          />
+        </div>
+      </div>
+
+      {/* Background sugerido */}
+      {suggestedBackground && (
+        <div className="p-3 rounded-lg bg-muted/50 border border-border">
+          <p className="text-xs text-muted-foreground mb-1">Histórico sugerido:</p>
+          <p className="text-sm">{suggestedBackground}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Step: NEX
+interface StepNexProps {
+  nex: number;
+  minNex: number;
+  maxNex: number;
+  suggestedNex: number;
+  onNexChange: (v: number) => void;
+}
+
+function StepNex({ nex, minNex, maxNex, suggestedNex, onNexChange }: StepNexProps) {
+  // Filtrar NEX válidos dentro do range
+  const validNexValues = NEX_VALUES.filter(v => v >= minNex && v <= maxNex);
+  const nexIndex = validNexValues.indexOf(nex);
+  
+  // Calcular benefícios do NEX
+  const extraPoints = getExtraAttributePoints(nex);
+  const extraSkills = getExtraSkillsByNex(nex);
+  const maxAttr = getMaxAttributeByNex(nex);
+  
+  return (
+    <div className="space-y-6">
+      <div className="text-center">
+        <h3 className="font-display text-lg tracking-wider mb-2">NÍVEL DE EXPOSIÇÃO (NEX)</h3>
+        <p className="text-sm text-muted-foreground">
+          Ajuste o NEX do seu personagem
+        </p>
+      </div>
+
+      {/* Sugestão do template */}
+      <div className="flex items-center justify-center gap-2">
+        <Badge variant="outline" className="gap-1">
+          <Sparkles className="w-3 h-3" />
+          Template sugere: {suggestedNex}%
+        </Badge>
+        {nex !== suggestedNex && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onNexChange(suggestedNex)}
+            className="h-6 text-xs"
+          >
+            Usar sugerido
+          </Button>
+        )}
+      </div>
+
+      {/* Slider de NEX */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-muted-foreground">NEX Mínimo: {minNex}%</span>
+          <span className="text-sm text-muted-foreground">NEX Máximo: {maxNex}%</span>
+        </div>
+        
+        <div className="px-2">
+          <Slider
+            value={[nexIndex >= 0 ? nexIndex : 0]}
+            min={0}
+            max={validNexValues.length - 1}
+            step={1}
+            onValueChange={([index]) => onNexChange(validNexValues[index])}
+            className="w-full"
+          />
+        </div>
+
+        <div className="text-center">
+          <span className="text-4xl font-display font-bold text-primary">{nex}%</span>
+        </div>
+      </div>
+
+      {/* Benefícios por NEX */}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="p-3 rounded-lg bg-card border border-border text-center">
+          <p className="text-xs text-muted-foreground mb-1">Pontos Extra</p>
+          <p className="text-lg font-bold text-primary">+{extraPoints}</p>
+        </div>
+        <div className="p-3 rounded-lg bg-card border border-border text-center">
+          <p className="text-xs text-muted-foreground mb-1">Perícias Extra</p>
+          <p className="text-lg font-bold text-blue-500">+{extraSkills}</p>
+        </div>
+        <div className="p-3 rounded-lg bg-card border border-border text-center">
+          <p className="text-xs text-muted-foreground mb-1">Atributo Máx</p>
+          <p className="text-lg font-bold text-yellow-500">{maxAttr}</p>
+        </div>
+      </div>
+
+      {/* Info */}
+      <div className="flex items-start gap-2 p-3 rounded-lg bg-muted/50 border border-border">
+        <Info className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
+        <p className="text-xs text-muted-foreground">
+          O NEX determina sua experiência paranormal. NEX mais alto significa mais recursos,
+          mas também maior exposição aos perigos do Outro Lado.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// Step: Atributos
 interface StepAttributesProps {
   attributes: WizardState['attributes'];
   pointsRemaining: number;
+  totalPoints: number;
   maxAttribute: number;
+  nex: number;
   onUpdate: (attrId: string, delta: number) => void;
 }
 
-function StepAttributes({ attributes, pointsRemaining, maxAttribute, onUpdate }: StepAttributesProps) {
+function StepAttributes({
+  attributes,
+  pointsRemaining,
+  totalPoints,
+  maxAttribute,
+  nex,
+  onUpdate,
+}: StepAttributesProps) {
   const hasZeroAttribute = Object.values(attributes).some(v => v === 0);
+  const zeroCount = Object.values(attributes).filter(v => v === 0).length;
   
   return (
     <div className="space-y-6">
@@ -478,23 +864,32 @@ function StepAttributes({ attributes, pointsRemaining, maxAttribute, onUpdate }:
         </p>
       </div>
 
+      {/* Info de NEX */}
+      <div className="flex items-center justify-center gap-4">
+        <Badge variant="secondary">NEX {nex}%</Badge>
+        <Badge variant="outline">Máximo por atributo: {maxAttribute}</Badge>
+      </div>
+
       {/* Pontos restantes */}
       <div className={cn(
         'flex items-center justify-center gap-2 p-3 rounded-lg',
-        pointsRemaining === 0 
+        pointsRemaining === 0
           ? 'bg-green-500/10 border border-green-500/30'
           : pointsRemaining < 0
           ? 'bg-destructive/10 border border-destructive/30'
           : 'bg-primary/10 border border-primary/30'
       )}>
-        <span className="text-sm font-medium">
-          Pontos restantes:
-        </span>
+        <span className="text-sm font-medium">Pontos:</span>
         <Badge variant={pointsRemaining === 0 ? 'default' : 'outline'} className={cn(
           pointsRemaining < 0 && 'bg-destructive text-destructive-foreground'
         )}>
-          {pointsRemaining}
+          {totalPoints - pointsRemaining} / {totalPoints}
         </Badge>
+        {pointsRemaining > 0 && (
+          <span className="text-xs text-muted-foreground">
+            ({pointsRemaining} restantes)
+          </span>
+        )}
       </div>
 
       {/* Atributos */}
@@ -543,12 +938,14 @@ function StepAttributes({ attributes, pointsRemaining, maxAttribute, onUpdate }:
         ))}
       </div>
 
-      {/* Info sobre reduzir a 0 */}
+      {/* Info sobre atributo 0 */}
       {hasZeroAttribute && (
         <div className="flex items-start gap-2 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
           <AlertTriangle className="w-4 h-4 text-yellow-500 mt-0.5 shrink-0" />
           <p className="text-xs text-yellow-600 dark:text-yellow-400">
-            Reduzir um atributo a 0 dá +1 ponto extra, mas apenas uma vez.
+            {zeroCount === 1 
+              ? 'Reduzir um atributo a 0 dá +1 ponto extra (já aplicado).'
+              : 'Atenção: Apenas UM atributo pode ser reduzido a 0 por personagem.'}
           </p>
         </div>
       )}
@@ -556,14 +953,29 @@ function StepAttributes({ attributes, pointsRemaining, maxAttribute, onUpdate }:
   );
 }
 
+// Step: Perícias
 interface StepSkillsProps {
   selectedSkills: string[];
   suggestedSkills: string[];
+  skillLimit: number;
+  origin?: string;
+  classId?: string;
   onToggle: (skillId: string) => void;
 }
 
-function StepSkills({ selectedSkills, suggestedSkills, onToggle }: StepSkillsProps) {
+function StepSkills({
+  selectedSkills,
+  suggestedSkills,
+  skillLimit,
+  origin,
+  classId,
+  onToggle,
+}: StepSkillsProps) {
   const allSkills = Object.entries(SKILL_LABELS);
+  
+  // Obter perícias de origem
+  const originData = ORIGINS.find(o => o.id === origin);
+  const originSkills = originData?.skills || [];
   
   return (
     <div className="space-y-6">
@@ -574,15 +986,22 @@ function StepSkills({ selectedSkills, suggestedSkills, onToggle }: StepSkillsPro
         </p>
       </div>
 
-      {/* Info */}
-      <div className="flex items-center justify-center gap-2">
-        <Badge variant="outline">
-          {selectedSkills.length} selecionadas
+      {/* Contadores */}
+      <div className="flex items-center justify-center gap-3 flex-wrap">
+        <Badge variant="outline" className={cn(
+          selectedSkills.length > skillLimit + originSkills.length && 'border-destructive text-destructive'
+        )}>
+          {selectedSkills.length} / {skillLimit + originSkills.length} perícias
         </Badge>
+        {originSkills.length > 0 && (
+          <Badge variant="secondary" className="text-xs">
+            +{originSkills.length} da origem
+          </Badge>
+        )}
         {suggestedSkills.length > 0 && (
-          <Badge variant="secondary" className="gap-1">
+          <Badge variant="secondary" className="gap-1 text-xs">
             <Sparkles className="w-3 h-3" />
-            Sugeridas pelo template
+            {suggestedSkills.length} sugeridas
           </Badge>
         )}
       </div>
@@ -592,6 +1011,7 @@ function StepSkills({ selectedSkills, suggestedSkills, onToggle }: StepSkillsPro
         {allSkills.map(([skillId, skillName]) => {
           const isSelected = selectedSkills.includes(skillId);
           const isSuggested = suggestedSkills.includes(skillId);
+          const isFromOrigin = originSkills.map(s => s.toLowerCase().replace(/\s+/g, '')).includes(skillId);
           
           return (
             <button
@@ -601,13 +1021,24 @@ function StepSkills({ selectedSkills, suggestedSkills, onToggle }: StepSkillsPro
                 'flex items-center gap-2 p-2 rounded-lg border text-left transition-all text-sm',
                 isSelected
                   ? 'bg-primary/10 border-primary/50 text-primary'
-                  : 'bg-card border-border hover:border-primary/30'
+                  : 'bg-card border-border hover:border-primary/30',
+                isFromOrigin && !isSelected && 'border-yellow-500/30'
               )}
             >
               <Checkbox checked={isSelected} className="pointer-events-none" />
               <span className="flex-1 truncate">{skillName}</span>
               {isSuggested && !isSelected && (
                 <Sparkles className="w-3 h-3 text-primary/50" />
+              )}
+              {isFromOrigin && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Badge variant="outline" className="text-[10px] px-1 py-0">OR</Badge>
+                    </TooltipTrigger>
+                    <TooltipContent>Da origem</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               )}
             </button>
           );
@@ -617,46 +1048,51 @@ function StepSkills({ selectedSkills, suggestedSkills, onToggle }: StepSkillsPro
   );
 }
 
+// Step: Poderes
 interface StepPowersProps {
   selectedPowers: string[];
   suggestedPowers: string[];
   classId: string;
-  rituals: string[];
-  initialRituals: string[];
-  onTogglePower: (powerId: string) => void;
-  onToggleRitual: (ritualId: string) => void;
+  nex: number;
+  onToggle: (powerId: string) => void;
 }
 
-function StepPowers({ 
-  selectedPowers, 
-  suggestedPowers, 
+function StepPowers({
+  selectedPowers,
+  suggestedPowers,
   classId,
-  rituals,
-  initialRituals,
-  onTogglePower,
-  onToggleRitual,
+  nex,
+  onToggle,
 }: StepPowersProps) {
-  const isOcultista = classId.toLowerCase() === 'ocultista';
-  
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h3 className="font-display text-lg tracking-wider mb-2">PODERES E RITUAIS</h3>
+        <h3 className="font-display text-lg tracking-wider mb-2">PODERES DE CLASSE</h3>
         <p className="text-sm text-muted-foreground">
-          Confirme os poderes de classe sugeridos pelo template
+          Confirme os poderes sugeridos pelo template
         </p>
       </div>
 
-      {/* Poderes selecionados */}
-      <div className="space-y-3">
-        <h4 className="text-sm font-medium text-muted-foreground">Poderes de Classe</h4>
-        <div className="space-y-2">
-          {suggestedPowers.map((powerId) => {
+      {/* Info */}
+      <div className="flex items-center justify-center gap-2">
+        <Badge variant="outline">{selectedPowers.length} selecionados</Badge>
+        <Badge variant="secondary">NEX {nex}%</Badge>
+      </div>
+
+      {/* Poderes sugeridos */}
+      <div className="space-y-2">
+        {suggestedPowers.length === 0 ? (
+          <p className="text-center text-sm text-muted-foreground py-4">
+            Este template não sugere poderes específicos.
+            Você poderá escolhê-los na ficha completa.
+          </p>
+        ) : (
+          suggestedPowers.map((powerId) => {
             const isSelected = selectedPowers.includes(powerId);
             return (
               <button
                 key={powerId}
-                onClick={() => onTogglePower(powerId)}
+                onClick={() => onToggle(powerId)}
                 className={cn(
                   'w-full flex items-center gap-3 p-3 rounded-lg border text-left transition-all',
                   isSelected
@@ -668,37 +1104,9 @@ function StepPowers({
                 <span className="font-medium capitalize">{powerId.replace(/-/g, ' ')}</span>
               </button>
             );
-          })}
-        </div>
+          })
+        )}
       </div>
-
-      {/* Rituais (apenas Ocultista) */}
-      {isOcultista && initialRituals.length > 0 && (
-        <div className="space-y-3">
-          <h4 className="text-sm font-medium text-muted-foreground">Rituais Iniciais</h4>
-          <div className="space-y-2">
-            {initialRituals.map((ritualId) => {
-              const isSelected = rituals.includes(ritualId);
-              return (
-                <button
-                  key={ritualId}
-                  onClick={() => onToggleRitual(ritualId)}
-                  className={cn(
-                    'w-full flex items-center gap-3 p-3 rounded-lg border text-left transition-all',
-                    isSelected
-                      ? 'bg-purple-500/10 border-purple-500/50'
-                      : 'bg-card border-border hover:border-purple-500/30'
-                  )}
-                >
-                  <Checkbox checked={isSelected} className="pointer-events-none" />
-                  <Sparkles className="w-4 h-4 text-purple-500" />
-                  <span className="font-medium capitalize">{ritualId.replace(/-/g, ' ')}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
 
       {/* Info */}
       <div className="flex items-start gap-2 p-3 rounded-lg bg-muted/50 border border-border">
@@ -711,18 +1119,136 @@ function StepPowers({
   );
 }
 
-interface StepReviewProps {
-  templateName: string;
-  attributes: WizardState['attributes'];
-  skills: string[];
-  powers: string[];
-  rituals: string[];
-  classId: string;
+// Step: Rituais
+interface StepRitualsProps {
+  selectedRituals: string[];
+  suggestedRituals: string[];
+  ritualLimit: number;
+  maxCircle: number;
+  elementalAffinity?: string;
+  onToggle: (ritualId: string) => void;
 }
 
-function StepReview({ templateName, attributes, skills, powers, rituals, classId }: StepReviewProps) {
-  const total = Object.values(attributes).reduce((sum, val) => sum + val, 0);
+function StepRituals({
+  selectedRituals,
+  suggestedRituals,
+  ritualLimit,
+  maxCircle,
+  elementalAffinity,
+  onToggle,
+}: StepRitualsProps) {
+  // Filtrar rituais disponíveis por círculo
+  const availableRituals = useMemo(() => {
+    return ALL_RITUALS.filter(r => r.circle <= maxCircle);
+  }, [maxCircle]);
+
+  // Agrupar por elemento
+  const ritualsByElement = useMemo(() => {
+    const grouped: Record<string, typeof availableRituals> = {};
+    availableRituals.forEach(ritual => {
+      const element = ritual.element || 'Variado';
+      if (!grouped[element]) grouped[element] = [];
+      grouped[element].push(ritual);
+    });
+    return grouped;
+  }, [availableRituals]);
+
+  return (
+    <div className="space-y-6">
+      <div className="text-center">
+        <h3 className="font-display text-lg tracking-wider mb-2">RITUAIS INICIAIS</h3>
+        <p className="text-sm text-muted-foreground">
+          Escolha os rituais que seu ocultista conhece
+        </p>
+      </div>
+
+      {/* Contadores */}
+      <div className="flex items-center justify-center gap-3 flex-wrap">
+        <Badge variant={selectedRituals.length === ritualLimit ? 'default' : 'outline'} className={cn(
+          selectedRituals.length > ritualLimit && 'border-destructive text-destructive'
+        )}>
+          {selectedRituals.length} / {ritualLimit} rituais
+        </Badge>
+        <Badge variant="secondary">Círculo máximo: {maxCircle}º</Badge>
+        {elementalAffinity && (
+          <Badge variant="outline" className="gap-1">
+            <Wand2 className="w-3 h-3" />
+            Afinidade: {elementalAffinity}
+          </Badge>
+        )}
+      </div>
+
+      {/* Lista de rituais por elemento */}
+      <ScrollArea className="h-[300px]">
+        <div className="space-y-4 pr-4">
+          {Object.entries(ritualsByElement).map(([element, rituals]) => (
+            <div key={element} className="space-y-2">
+              <h4 className="text-sm font-medium text-muted-foreground sticky top-0 bg-background py-1">
+                {element} ({rituals.length})
+              </h4>
+              <div className="space-y-1">
+                {rituals.map((ritual) => {
+                  const isSelected = selectedRituals.includes(ritual.id);
+                  const isSuggested = suggestedRituals.includes(ritual.id);
+                  const isAffinity = elementalAffinity && ritual.element === elementalAffinity;
+                  
+                  return (
+                    <button
+                      key={ritual.id}
+                      onClick={() => onToggle(ritual.id)}
+                      disabled={!isSelected && selectedRituals.length >= ritualLimit}
+                      className={cn(
+                        'w-full flex items-center gap-2 p-2 rounded-lg border text-left transition-all text-sm',
+                        isSelected
+                          ? 'bg-purple-500/10 border-purple-500/50'
+                          : 'bg-card border-border hover:border-purple-500/30',
+                        isAffinity && !isSelected && 'border-purple-500/30',
+                        !isSelected && selectedRituals.length >= ritualLimit && 'opacity-50 cursor-not-allowed'
+                      )}
+                    >
+                      <Checkbox checked={isSelected} className="pointer-events-none" />
+                      <div className="flex-1 min-w-0">
+                        <span className="font-medium">{ritual.name}</span>
+                        <span className="text-xs text-muted-foreground ml-2">
+                          {ritual.circle}º Círculo
+                        </span>
+                      </div>
+                      {isSuggested && !isSelected && (
+                        <Sparkles className="w-3 h-3 text-purple-500/50 shrink-0" />
+                      )}
+                      {isAffinity && (
+                        <Badge variant="outline" className="text-[10px] px-1 py-0 shrink-0">
+                          Afinidade
+                        </Badge>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      </ScrollArea>
+    </div>
+  );
+}
+
+// Step: Revisão
+interface StepReviewProps {
+  state: WizardState;
+  templateName: string;
+  classId: string;
+  origin: string;
+  classTrack?: string | null;
+}
+
+function StepReview({ state, templateName, classId, origin, classTrack }: StepReviewProps) {
+  const total = Object.values(state.attributes).reduce((sum, val) => sum + val, 0);
   const isOcultista = classId.toLowerCase() === 'ocultista';
+  
+  // Obter nomes legíveis
+  const originData = ORIGINS.find(o => o.id === origin);
+  const classData = CLASSES.find(c => c.id === classId);
   
   return (
     <div className="space-y-6">
@@ -733,10 +1259,22 @@ function StepReview({ templateName, attributes, skills, powers, rituals, classId
         </p>
       </div>
 
-      {/* Template */}
+      {/* Template Info */}
       <div className="p-4 rounded-lg bg-primary/5 border border-primary/20 text-center">
         <Package className="w-8 h-8 text-primary mx-auto mb-2" />
         <p className="font-display tracking-wider">{templateName}</p>
+        <p className="text-sm text-muted-foreground mt-1">
+          {classData?.name} • {originData?.name} • NEX {state.nex}%
+        </p>
+      </div>
+
+      {/* Nome */}
+      <div className="p-4 rounded-lg bg-card border border-border">
+        <h4 className="text-sm font-medium mb-2 text-muted-foreground">Personagem</h4>
+        <p className="font-display text-lg tracking-wider">{state.name}</p>
+        {state.concept && (
+          <p className="text-sm text-muted-foreground mt-1">{state.concept}</p>
+        )}
       </div>
 
       {/* Resumo */}
@@ -748,7 +1286,7 @@ function StepReview({ templateName, attributes, skills, powers, rituals, classId
             {ATTRIBUTES.map((attr) => (
               <div key={attr.id}>
                 <span className={cn('text-xs font-mono', attr.color)}>{attr.abbr}</span>
-                <p className="font-bold">{attributes[attr.id as keyof typeof attributes]}</p>
+                <p className="font-bold">{state.attributes[attr.id as keyof typeof state.attributes]}</p>
               </div>
             ))}
           </div>
@@ -756,16 +1294,16 @@ function StepReview({ templateName, attributes, skills, powers, rituals, classId
 
         {/* Perícias */}
         <div className="p-4 rounded-lg bg-card border border-border">
-          <h4 className="text-sm font-medium mb-3 text-muted-foreground">Perícias ({skills.length})</h4>
+          <h4 className="text-sm font-medium mb-3 text-muted-foreground">Perícias ({state.skills.length})</h4>
           <div className="flex flex-wrap gap-1">
-            {skills.slice(0, 6).map((skill) => (
+            {state.skills.slice(0, 6).map((skill) => (
               <Badge key={skill} variant="secondary" className="text-xs">
                 {SKILL_LABELS[skill] || skill}
               </Badge>
             ))}
-            {skills.length > 6 && (
+            {state.skills.length > 6 && (
               <Badge variant="outline" className="text-xs">
-                +{skills.length - 6}
+                +{state.skills.length - 6}
               </Badge>
             )}
           </div>
@@ -773,27 +1311,35 @@ function StepReview({ templateName, attributes, skills, powers, rituals, classId
       </div>
 
       {/* Poderes */}
-      <div className="p-4 rounded-lg bg-card border border-border">
-        <h4 className="text-sm font-medium mb-3 text-muted-foreground">Poderes ({powers.length})</h4>
-        <div className="flex flex-wrap gap-1">
-          {powers.map((power) => (
-            <Badge key={power} variant="secondary" className="text-xs capitalize">
-              {power.replace(/-/g, ' ')}
-            </Badge>
-          ))}
-        </div>
-      </div>
-
-      {/* Rituais */}
-      {isOcultista && rituals.length > 0 && (
-        <div className="p-4 rounded-lg bg-purple-500/5 border border-purple-500/20">
-          <h4 className="text-sm font-medium mb-3 text-purple-400">Rituais ({rituals.length})</h4>
+      {state.powers.length > 0 && (
+        <div className="p-4 rounded-lg bg-card border border-border">
+          <h4 className="text-sm font-medium mb-3 text-muted-foreground">Poderes ({state.powers.length})</h4>
           <div className="flex flex-wrap gap-1">
-            {rituals.map((ritual) => (
-              <Badge key={ritual} className="text-xs capitalize bg-purple-500/20 text-purple-300 border-purple-500/30">
-                {ritual.replace(/-/g, ' ')}
+            {state.powers.map((power) => (
+              <Badge key={power} variant="secondary" className="text-xs capitalize">
+                {power.replace(/-/g, ' ')}
               </Badge>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Rituais */}
+      {isOcultista && state.rituals.length > 0 && (
+        <div className="p-4 rounded-lg bg-purple-500/5 border border-purple-500/20">
+          <h4 className="text-sm font-medium mb-3 text-purple-400">Rituais ({state.rituals.length})</h4>
+          <div className="flex flex-wrap gap-1">
+            {state.rituals.map((ritual) => {
+              const ritualData = ALL_RITUALS.find(r => r.id === ritual);
+              return (
+                <Badge 
+                  key={ritual} 
+                  className="text-xs bg-purple-500/20 text-purple-300 border-purple-500/30"
+                >
+                  {ritualData?.name || ritual}
+                </Badge>
+              );
+            })}
           </div>
         </div>
       )}
