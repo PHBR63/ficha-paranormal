@@ -230,7 +230,7 @@ function useAdminUsersList() {
 - [x] AdminSearchBar component
 - [x] AdminPagination component
 - [x] Aplicar em AdminUsers
-- [ ] Aplicar em AdminDataIntegrity (pendente)
+- [x] Aplicar em AdminDataIntegrity
 
 ---
 
