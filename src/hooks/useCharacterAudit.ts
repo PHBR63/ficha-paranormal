@@ -88,7 +88,13 @@ export function useCharacterAudit(
         const fixResult = await autoFixCharacterIssues(
           character.id,
           userId,
-          result.autoFixableIssues
+          result.autoFixableIssues,
+          {
+            paranormal_powers: character.paranormal_powers,
+            nex: character.nex,
+            origin: character.origin,
+            skills: character.skills,
+          }
         );
         
         if (fixResult.success && fixResult.fixedCount > 0) {
@@ -127,6 +133,7 @@ export function useCharacterAudit(
           paranormal_powers: character.paranormal_powers,
           nex: character.nex,
           origin: character.origin,
+          skills: character.skills, // Necessário para correções de perícias
         }
       );
       
