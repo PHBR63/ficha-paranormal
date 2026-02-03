@@ -3,7 +3,7 @@
  * Permite visualizar e corrigir personagens com classes ou trilhas inválidas
  * Também valida conformidade com as regras oficiais do sistema
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -53,12 +53,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { CLASSES, CLASS_TRACKS, getClassTracks } from '@/lib/character-data';
 import { checkExistingCharacterValidity } from '@/lib/character-validation';
-import { AdminNav, AdminPageSkeleton } from '@/components/admin';
+import { AdminNav, AdminPageSkeleton, AdminSearchBar, AdminPagination } from '@/components/admin';
 import { RulesValidationPanel } from '@/components/admin/RulesValidationPanel';
 import { ValidationHistoryDashboard } from '@/components/admin/ValidationHistoryDashboard';
 import { ClassPowerBonusTests } from '@/components/admin/ClassPowerBonusTests';
 import { SUETestCoverageDashboard } from '@/components/admin/SUETestCoverageDashboard';
-import { useValidationHistory } from '@/hooks';
+import { useValidationHistory, useAdminFilters } from '@/hooks';
 
 interface CharacterData {
   id: string;
@@ -77,6 +77,14 @@ interface CharacterWithIssues extends CharacterData {
   };
 }
 
+// Tipos de problema possíveis para filtro
+type IssueType = 'all' | 'invalid_class' | 'invalid_track' | 'invalid_origin';
+
+// Interface para filtros (com index signature para compatibilidade)
+interface IntegrityFilters extends Record<string, unknown> {
+  issueType: IssueType;
+}
+
 export default function AdminDataIntegrity() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -92,6 +100,64 @@ export default function AdminDataIntegrity() {
   const [newClass, setNewClass] = useState('');
   const [newTrack, setNewTrack] = useState('');
   const [saving, setSaving] = useState(false);
+
+  // Função de busca textual - busca por nome ou jogador
+  const searchCharacter = (char: CharacterWithIssues, term: string) => {
+    return (
+      char.name.toLowerCase().includes(term) ||
+      char.profile?.display_name?.toLowerCase().includes(term) ||
+      char.class.toLowerCase().includes(term) ||
+      (char.class_track?.toLowerCase().includes(term) ?? false)
+    );
+  };
+
+  // Função de filtro por tipo de problema
+  const filterByIssueType = (char: CharacterWithIssues, filters: IntegrityFilters) => {
+    if (!filters.issueType || filters.issueType === 'all') return true;
+    
+    const issueText = char.issues.join(' ').toLowerCase();
+    
+    switch (filters.issueType) {
+      case 'invalid_class':
+        return issueText.includes('classe');
+      case 'invalid_track':
+        return issueText.includes('trilha');
+      case 'invalid_origin':
+        return issueText.includes('origem');
+      default:
+        return true;
+    }
+  };
+
+  // Hook de filtros e paginação
+  const {
+    filteredData,
+    paginatedData,
+    searchTerm,
+    setSearchTerm,
+    filters,
+    setFilter,
+    clearFilters,
+    pagination,
+    goToPage,
+    nextPage,
+    prevPage,
+    setPageSize,
+    hasActiveFilters
+  } = useAdminFilters<CharacterWithIssues, IntegrityFilters>({
+    data: characters,
+    pageSize: 15,
+    searchFn: searchCharacter,
+    filterFn: filterByIssueType
+  });
+
+  // Opções de filtro por tipo de problema
+  const issueTypeOptions = useMemo(() => [
+    { value: 'all', label: 'Todos os tipos' },
+    { value: 'invalid_class', label: 'Classe inválida' },
+    { value: 'invalid_track', label: 'Trilha inválida' },
+    { value: 'invalid_origin', label: 'Origem inválida' }
+  ], []);
 
   // Escuta eventos de validação concluída para salvar no histórico
   useEffect(() => {
@@ -359,7 +425,29 @@ export default function AdminDataIntegrity() {
               Personagens que usam classes ou trilhas que não existem mais no sistema
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
+            {/* Barra de busca e filtros */}
+            {characters.length > 0 && (
+              <AdminSearchBar
+                searchTerm={searchTerm}
+                onSearchChange={setSearchTerm}
+                searchPlaceholder="Buscar por nome, jogador ou classe..."
+                filters={[
+                  {
+                    id: 'issueType',
+                    label: 'Tipo de Problema',
+                    value: filters.issueType || 'all',
+                    options: issueTypeOptions,
+                    onChange: (value) => setFilter('issueType', value as IssueType)
+                  }
+                ]}
+                hasActiveFilters={hasActiveFilters}
+                onClearFilters={clearFilters}
+                totalResults={filteredData.length}
+                totalItems={characters.length}
+              />
+            )}
+
             {loading ? (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -372,79 +460,105 @@ export default function AdminDataIntegrity() {
                   Nenhum personagem com classe ou trilha inválida foi encontrado.
                 </p>
               </div>
+            ) : filteredData.length === 0 ? (
+              <div className="text-center py-12">
+                <AlertTriangle className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold mb-2">Nenhum resultado encontrado</h3>
+                <p className="text-muted-foreground mb-4">
+                  Tente ajustar os filtros ou termos de busca.
+                </p>
+                <Button variant="outline" onClick={clearFilters}>
+                  Limpar filtros
+                </Button>
+              </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Personagem</TableHead>
-                    <TableHead>Jogador</TableHead>
-                    <TableHead>Classe</TableHead>
-                    <TableHead>Trilha</TableHead>
-                    <TableHead>NEX</TableHead>
-                    <TableHead>Problemas</TableHead>
-                    <TableHead className="text-right">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {characters.map((char) => (
-                    <TableRow key={char.id}>
-                      <TableCell className="font-medium">{char.name}</TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {char.profile?.display_name || 'Desconhecido'}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="destructive">{char.class}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        {char.class_track ? (
-                          <Badge variant="outline" className="border-destructive text-destructive">
-                            {char.class_track}
-                          </Badge>
-                        ) : (
-                          <span className="text-muted-foreground">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell>{char.nex}%</TableCell>
-                      <TableCell>
-                        <div className="flex flex-col gap-1">
-                          {char.issues.map((issue, idx) => (
-                            <span key={idx} className="text-xs text-destructive">
-                              {issue}
-                            </span>
-                          ))}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setSelectedCharacter(char);
-                              setNewClass('');
-                              setNewTrack('');
-                              setShowFixDialog(true);
-                            }}
-                          >
-                            <Wrench className="w-4 h-4 mr-1" />
-                            Corrigir
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => {
-                              setSelectedCharacter(char);
-                              setShowDeleteDialog(true);
-                            }}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
+              <>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Personagem</TableHead>
+                      <TableHead>Jogador</TableHead>
+                      <TableHead>Classe</TableHead>
+                      <TableHead>Trilha</TableHead>
+                      <TableHead>NEX</TableHead>
+                      <TableHead>Problemas</TableHead>
+                      <TableHead className="text-right">Ações</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedData.map((char) => (
+                      <TableRow key={char.id}>
+                        <TableCell className="font-medium">{char.name}</TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {char.profile?.display_name || 'Desconhecido'}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="destructive">{char.class}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          {char.class_track ? (
+                            <Badge variant="outline" className="border-destructive text-destructive">
+                              {char.class_track}
+                            </Badge>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell>{char.nex}%</TableCell>
+                        <TableCell>
+                          <div className="flex flex-col gap-1">
+                            {char.issues.map((issue, idx) => (
+                              <span key={idx} className="text-xs text-destructive">
+                                {issue}
+                              </span>
+                            ))}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setSelectedCharacter(char);
+                                setNewClass('');
+                                setNewTrack('');
+                                setShowFixDialog(true);
+                              }}
+                            >
+                              <Wrench className="w-4 h-4 mr-1" />
+                              Corrigir
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => {
+                                setSelectedCharacter(char);
+                                setShowDeleteDialog(true);
+                              }}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+
+                {/* Paginação */}
+                {pagination.totalPages > 1 && (
+                  <AdminPagination
+                    page={pagination.page}
+                    totalPages={pagination.totalPages}
+                    pageSize={pagination.pageSize}
+                    totalItems={pagination.totalItems}
+                    onPageChange={goToPage}
+                    onPageSizeChange={setPageSize}
+                    pageSizeOptions={[10, 15, 25, 50]}
+                  />
+                )}
+              </>
             )}
           </CardContent>
         </Card>
