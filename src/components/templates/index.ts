@@ -14,3 +14,4 @@ export { TemplateSaveModal } from './TemplateSaveModal';
 export { TemplateEditModal } from './TemplateEditModal';
 export { TemplateRatingStars, InteractiveRating } from './TemplateRatingStars';
 export { TemplateFilters } from './TemplateFilters';
+export { ProgressionRoadmap, MiniProgression } from './ProgressionRoadmap';

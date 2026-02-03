@@ -1,6 +1,7 @@
 /**
  * Modal de Preview de Template
  * Exibe detalhes completos de um template antes de aplicar
+ * Inclui visualização de progressão por NEX
  * 
  * @module components/templates/TemplatePreviewModal
  */
@@ -36,6 +37,7 @@ import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { TemplateRatingStars, InteractiveRating } from './TemplateRatingStars';
+import { ProgressionRoadmap } from './ProgressionRoadmap';
 import { useRateTemplate } from '@/hooks/useTemplates';
 import { useAuth } from '@/contexts/AuthContext';
 import type { CharacterTemplate, TemplateWithAuthor } from '@/types/templates';
@@ -364,41 +366,14 @@ export function TemplatePreviewModal({
               )}
             </TabsContent>
 
-            {/* Tab: Progressão */}
+            {/* Tab: Progressão - usando novo componente ProgressionRoadmap */}
             {data.progression && data.progression.length > 0 && (
               <TabsContent value="progression" className="mt-4">
-                <h4 className="text-sm font-medium text-muted-foreground mb-4 flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4" />
-                  Roadmap de Progressão
-                </h4>
-                <div className="space-y-3">
-                  {data.progression.map((step, idx) => (
-                    <div 
-                      key={idx}
-                      className="relative pl-6 pb-4 border-l-2 border-primary/30 last:border-transparent"
-                    >
-                      {/* Dot */}
-                      <div className="absolute left-0 top-0 -translate-x-1/2 w-3 h-3 rounded-full bg-primary" />
-                      
-                      <div className="bg-secondary/30 rounded-lg p-3">
-                        <Badge variant="outline" className="mb-2">
-                          NEX {step.nex}%
-                        </Badge>
-                        <div className="text-sm space-y-1">
-                          {step.suggestions.power && (
-                            <p><span className="text-muted-foreground">Poder:</span> {step.suggestions.power}</p>
-                          )}
-                          {step.suggestions.ritual && (
-                            <p><span className="text-muted-foreground">Ritual:</span> {step.suggestions.ritual}</p>
-                          )}
-                          {step.suggestions.notes && (
-                            <p className="text-muted-foreground italic">{step.suggestions.notes}</p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <ProgressionRoadmap
+                  progression={data.progression}
+                  currentNex={template.min_nex}
+                  classId={data.classId}
+                />
               </TabsContent>
             )}
 
