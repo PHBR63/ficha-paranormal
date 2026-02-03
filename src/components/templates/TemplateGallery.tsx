@@ -8,12 +8,14 @@
 
 import { useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Loader2, Package, Crown, User, Search, RefreshCw, Plus } from 'lucide-react';
+import { Loader2, Package, Crown, User, Search, RefreshCw, Plus, LayoutGrid, List } from 'lucide-react';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 
 import { cn } from '@/lib/utils';
 import { TemplateCard } from './TemplateCard';
+import { TemplateListItem } from './TemplateListItem';
 import { TemplateFilters } from './TemplateFilters';
 import { TemplatePreviewModal } from './TemplatePreviewModal';
 import { TemplateCreationWizard } from './TemplateCreationWizard';
@@ -77,6 +79,7 @@ export function TemplateGallery({
 }: TemplateGalleryProps) {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<TabValue>('official');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [selectedTemplate, setSelectedTemplate] = useState<CharacterTemplate | TemplateWithAuthor | null>(null);
   const [showCreationWizard, setShowCreationWizard] = useState(false);
   const { apply, isApplying } = useApplyTemplate();
@@ -181,6 +184,26 @@ export function TemplateGallery({
       );
     }
 
+    // Modo Lista Compacta
+    if (viewMode === 'list') {
+      return (
+        <div className="flex flex-col gap-2">
+          <AnimatePresence mode="sync">
+            {templates.map(template => (
+              <TemplateListItem
+                key={template.id}
+                template={template}
+                onView={handleView}
+                onApply={handleApply}
+                isApplying={isApplying}
+              />
+            ))}
+          </AnimatePresence>
+        </div>
+      );
+    }
+
+    // Modo Grid (padrão)
     return (
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
         <AnimatePresence mode="sync">
@@ -206,29 +229,46 @@ export function TemplateGallery({
         onValueChange={(v) => setActiveTab(v as TabValue)}
         className="flex flex-col h-full"
       >
-        {/* Tabs Header */}
-        <TabsList className="w-full justify-start mb-4 shrink-0">
-          <TabsTrigger value="official" className="gap-2">
-            <Crown className="w-4 h-4" />
-            Oficiais
-            {officialQuery.data && (
-              <span className="text-xs opacity-70">({officialQuery.data.length})</span>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="community" className="gap-2">
-            <Search className="w-4 h-4" />
-            Comunidade
-          </TabsTrigger>
-          {user && (
-            <TabsTrigger value="my" className="gap-2">
-              <User className="w-4 h-4" />
-              Meus Templates
-              {myTemplatesQuery.data && (
-                <span className="text-xs opacity-70">({myTemplatesQuery.data.length})</span>
+        {/* Tabs Header com Toggle de Visualização */}
+        <div className="flex items-center justify-between mb-4 shrink-0 gap-4">
+          <TabsList className="justify-start">
+            <TabsTrigger value="official" className="gap-2">
+              <Crown className="w-4 h-4" />
+              Oficiais
+              {officialQuery.data && (
+                <span className="text-xs opacity-70">({officialQuery.data.length})</span>
               )}
             </TabsTrigger>
-          )}
-        </TabsList>
+            <TabsTrigger value="community" className="gap-2">
+              <Search className="w-4 h-4" />
+              Comunidade
+            </TabsTrigger>
+            {user && (
+              <TabsTrigger value="my" className="gap-2">
+                <User className="w-4 h-4" />
+                Meus Templates
+                {myTemplatesQuery.data && (
+                  <span className="text-xs opacity-70">({myTemplatesQuery.data.length})</span>
+                )}
+              </TabsTrigger>
+            )}
+          </TabsList>
+
+          {/* Toggle Grid/Lista */}
+          <ToggleGroup 
+            type="single" 
+            value={viewMode} 
+            onValueChange={(v) => v && setViewMode(v as 'grid' | 'list')}
+            className="shrink-0"
+          >
+            <ToggleGroupItem value="grid" aria-label="Visualização em grid" className="h-8 w-8 p-0">
+              <LayoutGrid className="w-4 h-4" />
+            </ToggleGroupItem>
+            <ToggleGroupItem value="list" aria-label="Visualização em lista" className="h-8 w-8 p-0">
+              <List className="w-4 h-4" />
+            </ToggleGroupItem>
+          </ToggleGroup>
+        </div>
 
         {/* Tab: Oficiais */}
         <TabsContent value="official" unmountOnHide className="flex-1 mt-0 min-h-0 overflow-y-auto px-1 pt-0 border-0 outline-none ring-0">
