@@ -1,44 +1,45 @@
 import { ColorTheme } from '@/contexts/ColorThemeContext';
 
 export interface ThemeColors {
-  /** Primary HEX color for components */
+  /** Cor HEX primária do tema (corresponde à --primary do CSS) */
   primary: string;
-  /** Secondary/lighter HEX color */
+  /** Cor HEX secundária/mais clara */
   secondary: string;
-  /** RGB string for FlickeringGrid (e.g., "139, 0, 0") */
+  /** String RGB para FlickeringGrid (e.g., "124, 58, 237") */
   rgb: string;
-  /** Gradient colors */
+  /** Cores de gradiente para fundos atmosféricos */
   gradient: {
     via: string;
     dark: string;
   };
-  /** Ordem Paranormal element name */
+  /** Nome do elemento paranormal correspondente ao tema */
   element: 'sangue' | 'morte' | 'conhecimento' | 'energia' | 'medo';
 }
 
 /**
- * Theme color configurations based on Ordem Paranormal elements
- * - Purple (Morte): Death element - abyssal purple
- * - Red (Sangue): Blood element - ritual red
- * - Green (Conhecimento): Knowledge element - emerald
- * - Blue (Medo): Fear element - spectral cyan
- * - Amber (Energia): Energy element - arcane amber
+ * Configurações de cor por tema, alinhadas com os CSS vars e o ThemeSelector.
+ * 
+ * - Purple  → Pulso Entrópico   → Energia      (roxo elétrico)
+ * - Red     → Carnificina Viva  → Sangue       (vermelho visceral)
+ * - Green   → Sigilo Dourado    → Conhecimento (dourado arcano)
+ * - Blue    → Abismo Observador → Medo         (verde espectral)
+ * - Amber   → Cinza Terminal    → Morte        (cinza fúnebre)
  */
 export const THEME_COLORS: Record<ColorTheme, ThemeColors> = {
   purple: {
-    primary: '#8B5CF6',
+    primary: '#7C3AED',
     secondary: '#A78BFA',
-    rgb: '139, 92, 246',
+    rgb: '124, 58, 237',
     gradient: {
       via: '#1A0520',
       dark: '#0D0512',
     },
-    element: 'morte',
+    element: 'energia',
   },
   red: {
-    primary: '#8B0000',
-    secondary: '#B22222',
-    rgb: '139, 0, 0',
+    primary: '#BD2626',
+    secondary: '#E06060',
+    rgb: '189, 38, 38',
     gradient: {
       via: '#1A0505',
       dark: '#0D0A0B',
@@ -46,47 +47,48 @@ export const THEME_COLORS: Record<ColorTheme, ThemeColors> = {
     element: 'sangue',
   },
   green: {
-    primary: '#22C55E',
-    secondary: '#4ADE80',
-    rgb: '34, 197, 94',
+    primary: '#D4A51A',
+    secondary: '#F0E09A',
+    rgb: '212, 165, 26',
     gradient: {
-      via: '#051A0A',
-      dark: '#0A0D0B',
+      via: '#1A1505',
+      dark: '#0D0B08',
     },
     element: 'conhecimento',
   },
   blue: {
-    primary: '#0EA5E9',
-    secondary: '#38BDF8',
-    rgb: '14, 165, 233',
+    primary: '#70FFBA',
+    secondary: '#3DFFC4',
+    rgb: '112, 255, 186',
     gradient: {
-      via: '#051520',
-      dark: '#0A0D12',
+      via: '#051A15',
+      dark: '#0A0D0B',
     },
     element: 'medo',
   },
   amber: {
-    primary: '#F59E0B',
-    secondary: '#FBBF24',
-    rgb: '245, 158, 11',
+    primary: '#8A8E8A',
+    secondary: '#AEB1AE',
+    rgb: '138, 142, 138',
     gradient: {
-      via: '#1A1205',
-      dark: '#0D0B08',
+      via: '#121212',
+      dark: '#0A0A0A',
     },
-    element: 'energia',
+    element: 'morte',
   },
 };
 
 /**
- * Get CSS variable value for current theme
+ * Retorna o valor HSL da --primary para cada tema (sem hsl() wrapper)
+ * Deve corresponder exatamente ao CSS em index.css
  */
 export function getThemeCSSVar(theme: ColorTheme): string {
   const vars: Record<ColorTheme, string> = {
-    purple: '263 70% 50%',
-    red: '0 100% 27%',
-    green: '142 71% 45%',
-    blue: '199 89% 48%',
-    amber: '38 92% 50%',
+    purple: '262 75% 57%',
+    red: '0 65% 45%',
+    green: '43 66% 52%',
+    blue: '157 100% 72%',
+    amber: '120 2% 55%',
   };
   return vars[theme];
 }
