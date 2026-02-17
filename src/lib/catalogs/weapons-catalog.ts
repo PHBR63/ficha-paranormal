@@ -28,9 +28,13 @@ export type AmmoType = 'balas_curtas' | 'balas_longas' | 'cartuchos' | 'flechas'
 // ==================== SISTEMA DE MODIFICAÇÕES (Tabela 3.5) ====================
 
 // Tipos de modificação disponíveis
-export type MeleeWeaponModification = 'certeira' | 'cruel' | 'discreta' | 'perigosa' | 'tatica';
-export type FirearmModification = 'alongada' | 'calibre_grosso' | 'compensador' | 'mira_laser';
-export type WeaponModification = MeleeWeaponModification | FirearmModification;
+// Modificações para armas corpo a corpo e de disparo (Tabela 3.5)
+export type MeleeWeaponModification = 'certeira' | 'cruel' | 'discreta_melee' | 'perigosa' | 'tatica_melee';
+// Modificações para armas de fogo (Tabela 3.5)
+export type FirearmModification = 'alongada' | 'calibre_grosso' | 'compensador' | 'discreta_firearm' | 'ferrolho_automatico' | 'mira_laser' | 'mira_telescopica' | 'silenciador' | 'tatica_firearm' | 'visao_de_calor';
+// Modificações para munições (Tabela 3.5)
+export type AmmoModification = 'dum_dum' | 'explosiva';
+export type WeaponModification = MeleeWeaponModification | FirearmModification | AmmoModification;
 
 // Interface para dados de modificação
 export interface WeaponModificationData {
@@ -39,20 +43,22 @@ export interface WeaponModificationData {
   description: string;
   applicableTo: ('melee' | 'ranged' | 'firearm')[];
   categoryIncrease: number; // +1 ou 0
-  attackBonus?: number;      // Certeira/Compensador: +2
-  criticalBonus?: number;    // Cruel: +1 margem
-  damageBonus?: string;      // Perigosa/Calibre Grosso: +1 dado
-  rangeBonus?: number;       // Alongada: +1 categoria alcance
-  properties?: string[];     // Tática: adiciona propriedades
+  attackBonus?: number;      // Alongada: +2 em testes de ataque
+  criticalBonus?: number;    // Perigosa/Mira Laser: +2 margem de ameaça
+  damageBonus?: string;      // Calibre Grosso: +1 dado; Cruel: +2 rolagens de dano
+  criticalMultiplierBonus?: number; // Dum dum: +1 multiplicador de crítico
+  rangeBonus?: number;       // Mira Telescópica: aumenta alcance
+  spaceReduction?: number;   // Discreta: -1 espaço
+  properties?: string[];     // Propriedades adicionadas
   special?: string;          // Descrição de efeito especial
 }
 
-// Catálogo de modificações para armas corpo a corpo (Tabela 3.5)
+// Catálogo de modificações para armas corpo a corpo e de disparo (Tabela 3.5)
 export const MELEE_WEAPON_MODIFICATIONS: WeaponModificationData[] = [
   {
     id: 'certeira',
     name: 'Certeira',
-    description: 'A arma é balanceada e precisa, concedendo +2 em testes de ataque.',
+    description: '+2 em testes de ataque.',
     applicableTo: ['melee', 'ranged'],
     categoryIncrease: 1,
     attackBonus: 2,
@@ -60,35 +66,35 @@ export const MELEE_WEAPON_MODIFICATIONS: WeaponModificationData[] = [
   {
     id: 'cruel',
     name: 'Cruel',
-    description: 'A arma possui lâmina ou ponta especialmente afiada, aumentando a margem de ameaça em 1.',
+    description: '+2 em rolagens de dano.',
     applicableTo: ['melee', 'ranged'],
     categoryIncrease: 1,
-    criticalBonus: 1,
+    damageBonus: '+2',
   },
   {
-    id: 'discreta',
+    id: 'discreta_melee',
     name: 'Discreta',
-    description: 'A arma é facilmente escondida, concedendo +5 em testes de Crime para ocultá-la.',
+    description: '+5 em testes para ser ocultada e reduz o espaço em –1.',
     applicableTo: ['melee', 'ranged'],
     categoryIncrease: 0,
-    special: '+5 em testes de Crime para esconder a arma',
+    spaceReduction: 1,
+    special: '+5 em testes para ser ocultada e reduz o espaço em –1',
   },
   {
     id: 'perigosa',
     name: 'Perigosa',
-    description: 'A arma é mais pesada ou possui lâmina maior, causando +1 dado de dano.',
+    description: '+2 em margem de ameaça.',
     applicableTo: ['melee', 'ranged'],
     categoryIncrease: 1,
-    damageBonus: '+1 dado',
+    criticalBonus: 2,
   },
   {
-    id: 'tatica',
+    id: 'tatica_melee',
     name: 'Tática',
-    description: 'A arma possui modificações que a tornam mais versátil. Ganha a propriedade Versátil (ou Arremessável, se já for Versátil).',
-    applicableTo: ['melee'],
+    description: 'Pode sacar como ação livre.',
+    applicableTo: ['melee', 'ranged'],
     categoryIncrease: 1,
-    properties: ['Versátil ou Arremessável'],
-    special: 'Ganha Versátil. Se já tiver Versátil, ganha Arremessável.',
+    special: 'Pode sacar como ação livre',
   },
 ];
 
@@ -97,16 +103,15 @@ export const FIREARM_MODIFICATIONS: WeaponModificationData[] = [
   {
     id: 'alongada',
     name: 'Alongada',
-    description: 'O cano da arma é mais longo, aumentando o alcance em uma categoria.',
+    description: '+2 em testes de ataque.',
     applicableTo: ['firearm'],
     categoryIncrease: 1,
-    rangeBonus: 1,
-    special: 'Curto → Médio → Longo → Extremo',
+    attackBonus: 2,
   },
   {
     id: 'calibre_grosso',
     name: 'Calibre Grosso',
-    description: 'A arma foi modificada para usar munição mais pesada, causando +1 dado de dano.',
+    description: 'Aumenta o dano em mais um dado do mesmo tipo.',
     applicableTo: ['firearm'],
     categoryIncrease: 1,
     damageBonus: '+1 dado',
@@ -114,18 +119,88 @@ export const FIREARM_MODIFICATIONS: WeaponModificationData[] = [
   {
     id: 'compensador',
     name: 'Compensador',
-    description: 'A arma possui compensador de recuo, concedendo +2 em testes de ataque.',
+    description: 'Anula penalidade por rajadas.',
     applicableTo: ['firearm'],
     categoryIncrease: 1,
-    attackBonus: 2,
+    special: 'Anula penalidade por rajadas',
+  },
+  {
+    id: 'discreta_firearm',
+    name: 'Discreta',
+    description: '+5 em testes para ser ocultada e reduz o espaço em –1.',
+    applicableTo: ['firearm'],
+    categoryIncrease: 0,
+    spaceReduction: 1,
+    special: '+5 em testes para ser ocultada e reduz o espaço em –1',
+  },
+  {
+    id: 'ferrolho_automatico',
+    name: 'Ferrolho Automático',
+    description: 'A arma se torna automática.',
+    applicableTo: ['firearm'],
+    categoryIncrease: 1,
+    special: 'A arma se torna automática',
   },
   {
     id: 'mira_laser',
     name: 'Mira Laser',
-    description: 'A arma possui mira laser, ignorando penalidades por alcance.',
+    description: '+2 em margem de ameaça.',
     applicableTo: ['firearm'],
     categoryIncrease: 1,
-    special: 'Ignora penalidades por alcance',
+    criticalBonus: 2,
+  },
+  {
+    id: 'mira_telescopica',
+    name: 'Mira Telescópica',
+    description: 'Aumenta alcance da arma e da habilidade Ataque Furtivo.',
+    applicableTo: ['firearm'],
+    categoryIncrease: 1,
+    rangeBonus: 1,
+    special: 'Aumenta alcance da arma e da habilidade Ataque Furtivo',
+  },
+  {
+    id: 'silenciador',
+    name: 'Silenciador',
+    description: 'Reduz em –5 a penalidade em Furtividade para se esconder após atacar.',
+    applicableTo: ['firearm'],
+    categoryIncrease: 1,
+    special: 'Reduz em –5 a penalidade em Furtividade para se esconder após atacar',
+  },
+  {
+    id: 'tatica_firearm',
+    name: 'Tática',
+    description: 'Pode sacar como ação livre.',
+    applicableTo: ['firearm'],
+    categoryIncrease: 1,
+    special: 'Pode sacar como ação livre',
+  },
+  {
+    id: 'visao_de_calor',
+    name: 'Visão de Calor',
+    description: 'Ignora camuflagem.',
+    applicableTo: ['firearm'],
+    categoryIncrease: 1,
+    special: 'Ignora camuflagem',
+  },
+];
+
+// Catálogo de modificações para munições (Tabela 3.5)
+export const AMMO_MODIFICATIONS: WeaponModificationData[] = [
+  {
+    id: 'dum_dum',
+    name: 'Dum dum',
+    description: '+1 em multiplicador de crítico.',
+    applicableTo: ['firearm'],
+    categoryIncrease: 1,
+    criticalMultiplierBonus: 1,
+  },
+  {
+    id: 'explosiva',
+    name: 'Explosiva',
+    description: 'Aumenta o dano em +2d6.',
+    applicableTo: ['firearm'],
+    categoryIncrease: 1,
+    damageBonus: '+2d6',
   },
 ];
 
@@ -133,6 +208,7 @@ export const FIREARM_MODIFICATIONS: WeaponModificationData[] = [
 export const ALL_WEAPON_MODIFICATIONS: WeaponModificationData[] = [
   ...MELEE_WEAPON_MODIFICATIONS,
   ...FIREARM_MODIFICATIONS,
+  ...AMMO_MODIFICATIONS,
 ];
 
 // Interface para arma com modificações aplicadas
@@ -142,6 +218,7 @@ export interface ModifiedWeaponStats {
   finalCategory: CatalogWeapon['category'];
   attackBonus: number;
   criticalMargin: number;
+  criticalMultiplier: number;
   damage: string;
   range?: RangeType;
   addedProperties: string[];
@@ -1042,6 +1119,7 @@ export function calculateModifiedWeaponStats(
 ): ModifiedWeaponStats {
   let attackBonus = 0;
   let criticalMargin = baseWeapon.critical;
+  let criticalMultiplier = baseWeapon.criticalMultiplier;
   let damage = baseWeapon.damage;
   let range = baseWeapon.range;
   const addedProperties: string[] = [];
@@ -1052,32 +1130,46 @@ export function calculateModifiedWeaponStats(
     const mod = getWeaponModificationById(modId);
     if (!mod) continue;
     
-    // Bônus de ataque (Certeira, Compensador)
+    // Bônus de ataque (Certeira, Alongada)
     if (mod.attackBonus) {
       attackBonus += mod.attackBonus;
     }
     
-    // Bônus de crítico (Cruel)
+    // Bônus de margem de ameaça (Perigosa, Mira Laser: +2)
     if (mod.criticalBonus) {
       criticalMargin -= mod.criticalBonus; // Reduz margem = aumenta chance
     }
     
-    // Bônus de dano (Perigosa, Calibre Grosso)
+    // Bônus de dano
     if (mod.damageBonus) {
-      damage = increaseDamageDie(damage);
+      if (mod.damageBonus === '+1 dado') {
+        // Calibre Grosso: adiciona mais um dado do mesmo tipo
+        damage = increaseDamageDie(damage);
+      } else if (mod.damageBonus === '+2d6') {
+        // Explosiva: adiciona +2d6 ao dano
+        damage = `${damage}+2d6`;
+      } else if (mod.damageBonus === '+2') {
+        // Cruel: +2 em rolagens de dano (bônus fixo)
+        damage = `${damage}+2`;
+      }
     }
     
-    // Bônus de alcance (Alongada)
+    // Bônus de multiplicador de crítico (Dum dum)
+    if (mod.criticalMultiplierBonus) {
+      criticalMultiplier += mod.criticalMultiplierBonus;
+    }
+    
+    // Bônus de alcance (Mira Telescópica)
     if (mod.rangeBonus) {
       range = getNextRange(range);
     }
     
-    // Propriedades adicionais (Tática)
+    // Propriedades adicionais
     if (mod.properties) {
       addedProperties.push(...mod.properties);
     }
     
-    // Efeitos especiais (Discreta, Mira Laser)
+    // Efeitos especiais
     if (mod.special) {
       specialEffects.push(mod.special);
     }
@@ -1089,6 +1181,7 @@ export function calculateModifiedWeaponStats(
     finalCategory: getModifiedCategory(baseWeapon.category, modifications),
     attackBonus,
     criticalMargin: Math.max(criticalMargin, 1), // Mínimo 1
+    criticalMultiplier,
     damage,
     range,
     addedProperties,
@@ -1100,11 +1193,19 @@ export function calculateModifiedWeaponStats(
 export const MODIFICATION_LABELS: Record<WeaponModification, { label: string; color: string; icon: string }> = {
   certeira: { label: 'Certeira', color: 'text-blue-500', icon: 'Target' },
   cruel: { label: 'Cruel', color: 'text-red-500', icon: 'Skull' },
-  discreta: { label: 'Discreta', color: 'text-gray-500', icon: 'EyeOff' },
+  discreta_melee: { label: 'Discreta', color: 'text-gray-500', icon: 'EyeOff' },
   perigosa: { label: 'Perigosa', color: 'text-orange-500', icon: 'AlertTriangle' },
-  tatica: { label: 'Tática', color: 'text-purple-500', icon: 'Wrench' },
-  alongada: { label: 'Alongada', color: 'text-cyan-500', icon: 'Maximize2' },
+  tatica_melee: { label: 'Tática', color: 'text-purple-500', icon: 'Wrench' },
+  alongada: { label: 'Alongada', color: 'text-cyan-500', icon: 'Target' },
   calibre_grosso: { label: 'Calibre Grosso', color: 'text-amber-500', icon: 'CircleDot' },
   compensador: { label: 'Compensador', color: 'text-green-500', icon: 'Crosshair' },
+  discreta_firearm: { label: 'Discreta', color: 'text-gray-500', icon: 'EyeOff' },
+  ferrolho_automatico: { label: 'Ferrolho Automático', color: 'text-red-400', icon: 'Wrench' },
   mira_laser: { label: 'Mira Laser', color: 'text-red-400', icon: 'Focus' },
+  mira_telescopica: { label: 'Mira Telescópica', color: 'text-indigo-500', icon: 'Maximize2' },
+  silenciador: { label: 'Silenciador', color: 'text-gray-400', icon: 'EyeOff' },
+  tatica_firearm: { label: 'Tática', color: 'text-purple-500', icon: 'Wrench' },
+  visao_de_calor: { label: 'Visão de Calor', color: 'text-orange-400', icon: 'Focus' },
+  dum_dum: { label: 'Dum dum', color: 'text-red-600', icon: 'Skull' },
+  explosiva: { label: 'Explosiva', color: 'text-amber-600', icon: 'AlertTriangle' },
 };

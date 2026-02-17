@@ -20,6 +20,7 @@ export {
   type AmmoType,
   type MeleeWeaponModification,
   type FirearmModification,
+  type AmmoModification,
   type WeaponModification,
   type WeaponModificationData,
   type CatalogWeapon,
@@ -27,6 +28,7 @@ export {
   // Modificações
   MELEE_WEAPON_MODIFICATIONS,
   FIREARM_MODIFICATIONS,
+  AMMO_MODIFICATIONS,
   ALL_WEAPON_MODIFICATIONS,
   MODIFICATION_LABELS,
   
