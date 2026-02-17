@@ -188,7 +188,7 @@ export function WeaponModificationModal({
                 Modificações Disponíveis
               </h4>
               
-              <div className="space-y-2">
+              <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1">
                 {displayModifications.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-4">
                     Esta arma não pode ser modificada.

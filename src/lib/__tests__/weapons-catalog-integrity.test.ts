@@ -431,13 +431,13 @@ describe('weapons-catalog.ts - Sistema de Modificações', () => {
       expect(MELEE_WEAPON_MODIFICATIONS.length).toBe(5);
     });
 
-    it('FIREARM_MODIFICATIONS deve ter 4 modificações', () => {
-      expect(FIREARM_MODIFICATIONS.length).toBe(4);
+    it('FIREARM_MODIFICATIONS deve ter 10 modificações', () => {
+      expect(FIREARM_MODIFICATIONS.length).toBe(10);
     });
 
-    it('ALL_WEAPON_MODIFICATIONS deve ser a soma das duas listas', () => {
+    it('ALL_WEAPON_MODIFICATIONS deve ser a soma das três listas', () => {
       expect(ALL_WEAPON_MODIFICATIONS.length).toBe(
-        MELEE_WEAPON_MODIFICATIONS.length + FIREARM_MODIFICATIONS.length
+        MELEE_WEAPON_MODIFICATIONS.length + FIREARM_MODIFICATIONS.length + 2 // +2 para munições
       );
     });
   });
@@ -493,8 +493,8 @@ describe('weapons-catalog.ts - Sistema de Modificações', () => {
       expect(meleeIds).toContain('certeira');
       expect(meleeIds).toContain('perigosa');
       expect(meleeIds).toContain('cruel');
-      expect(meleeIds).toContain('discreta');
-      expect(meleeIds).toContain('tatica');
+      expect(meleeIds).toContain('discreta_melee');
+      expect(meleeIds).toContain('tatica_melee');
     });
 
     it('modificações firearm específicas devem existir', () => {
@@ -503,6 +503,12 @@ describe('weapons-catalog.ts - Sistema de Modificações', () => {
       expect(firearmIds).toContain('mira_laser');
       expect(firearmIds).toContain('compensador');
       expect(firearmIds).toContain('alongada');
+      expect(firearmIds).toContain('discreta_firearm');
+      expect(firearmIds).toContain('ferrolho_automatico');
+      expect(firearmIds).toContain('mira_telescopica');
+      expect(firearmIds).toContain('silenciador');
+      expect(firearmIds).toContain('tatica_firearm');
+      expect(firearmIds).toContain('visao_de_calor');
     });
   });
 
@@ -544,7 +550,7 @@ describe('weapons-catalog.ts - Aplicação de Modificações', () => {
       const firearm = FIREARMS[0];
       if (firearm) {
         expect(canApplyModification(firearm, 'certeira')).toBe(false);
-        expect(canApplyModification(firearm, 'tatica')).toBe(false);
+        expect(canApplyModification(firearm, 'tatica_melee')).toBe(false);
       }
     });
 
