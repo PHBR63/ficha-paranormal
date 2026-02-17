@@ -65,7 +65,7 @@ export function usePushNotifications() {
 
     try {
       const registration = await navigator.serviceWorker.ready;
-      const subscription = await registration.pushManager.getSubscription();
+      const subscription = await (registration as any).pushManager.getSubscription();
       
       if (subscription) {
         // Check if this subscription exists in our database
@@ -114,9 +114,9 @@ export function usePushNotifications() {
       // Get service worker registration
       const registration = await navigator.serviceWorker.ready;
 
-      // Subscribe to push
+      // Subscreve ao push
       const applicationServerKey = urlBase64ToUint8Array(vapidKey);
-      const subscription = await registration.pushManager.subscribe({
+      const subscription = await (registration as any).pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: applicationServerKey.buffer as ArrayBuffer
       });
@@ -164,7 +164,7 @@ export function usePushNotifications() {
     setLoading(true);
     try {
       const registration = await navigator.serviceWorker.ready;
-      const subscription = await registration.pushManager.getSubscription();
+      const subscription = await (registration as any).pushManager.getSubscription();
 
       if (subscription) {
         await subscription.unsubscribe();
