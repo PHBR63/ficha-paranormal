@@ -1,25 +1,53 @@
 
+# Corrigir Modificações para Equipamentos Gerais (Acessórios)
 
-## Verificacao do Estado Atual
+## Problema Identificado
 
-Apos analise detalhada do codigo, as alteracoes solicitadas **ja foram implementadas** na mensagem anterior:
+O botão "Modificar" **nunca aparece** para acessórios no inventário. A causa raiz:
 
-### O que ja esta funcionando:
+1. Quando um acessório é adicionado do catálogo, seu tipo original (`'acessorio'`) é convertido para `'misc'` pelo `ITEM_TYPE_MIGRATION_MAP` (linha 127).
+2. O campo `catalogType` nunca é salvo no item.
+3. A condição que exibe o botão "Modificar" verifica `(item.itemType as string) === 'acessorio'` ou `(item as any).catalogType === 'acessorio'` -- ambas falham porque o tipo virou `'misc'` e `catalogType` não existe.
 
-1. **Catalogo de Protecoes** (`ArmorCatalogModal.tsx`, linhas 259-261): Ja filtra apenas `BASE_ARMORS`, mostrando somente as 3 opcoes base:
-   - Protecao Leve
-   - Protecao Pesada
-   - Escudo
+## Solucao
 
-2. **Modal de Modificacoes de Protecoes** (`ArmorModificationModal.tsx`): Ja existe e implementa as 4 modificacoes da Tabela 3.7 (Antibombas, Blindada, Discreta, Reforcada) com prevencao de duplicatas.
+### 1. Preservar o tipo original do catalogo no item
 
-3. **Modal de Modificacoes de Acessorios** (`AccessoryModificationModal.tsx`): Ja existe e implementa as 4 modificacoes da Tabela 3.9 (Aprimorado, Discreto, Funcao Adicional, Instrumental).
+No `handleAddItemFromCatalog` (linha ~777), adicionar a propriedade `catalogType` ao `baseItem` com o valor original de `catalogItem.type`. Isso permite identificar acessorios mesmo apos a normalizacao.
 
-4. **Integracao no InventoryPanel** (linhas 914-1042): Handlers `handleOpenArmorMod` e `handleOpenAccessoryMod` ja estao conectados ao botao "Modificar".
+```typescript
+const baseItem = {
+  // ... campos existentes ...
+  catalogType: catalogItem.type, // Preserva tipo original do catalogo
+};
+```
 
-### Acao Necessaria
+### 2. Atualizar ExtendedInventoryItem
 
-Nenhuma alteracao de codigo e necessaria. O sistema ja esta implementado conforme solicitado. Se o problema persistir na visualizacao, pode ser necessario recarregar a pagina para que as alteracoes da ultima atualizacao sejam aplicadas corretamente.
+Adicionar `catalogType?: string` a interface `ExtendedInventoryItem` para tipar corretamente o campo (eliminando os `(item as any).catalogType`).
 
-Se voce ainda esta vendo as protecoes pre-modificadas (Protecao Leve Discreta, Protecao Pesada Blindada, etc.) no catalogo, por favor tire um screenshot para eu verificar se ha um problema de cache ou de renderizacao.
+### 3. Garantir persistencia do catalogType
 
+Nos mapeamentos de `onInventoryChange` (linhas ~804, 639, 699, etc.), incluir `catalogType` junto com `itemType` e `equipSlot` para que o campo seja preservado ao salvar.
+
+### 4. Atualizar condicoes do botao Modificar
+
+Nas 4 ocorrencias onde a condicao de `onModify` e definida (linhas ~1694, 1710, 1732, 1748), usar a propriedade tipada:
+
+```typescript
+item.itemType === 'weapon' || item.itemType === 'armor' || item.catalogType === 'acessorio'
+```
+
+---
+
+### Detalhes Tecnicos
+
+**Arquivos a modificar:**
+- `src/components/inventory/InventoryPanel.tsx`
+  - Interface `ExtendedInventoryItem`: adicionar `catalogType?: string`
+  - `handleAddItemFromCatalog`: salvar `catalogType: catalogItem.type`
+  - Todos os mapeamentos de `onInventoryChange`: propagar `catalogType`
+  - 4 condicoes de `onModify`: usar `item.catalogType` tipado
+  - `handleOpenModification`: remover cast `(item as any)`
+
+**Nenhum arquivo novo necessario** -- o `AccessoryModificationModal.tsx` ja existe e esta correto com as 4 modificacoes da Tabela 3.9.
