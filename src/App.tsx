@@ -29,6 +29,7 @@ const CampaignShell = lazy(() => import("./pages/CampaignShell")); // Nova versÃ
 const AdminImport = lazy(() => import("./pages/AdminImport"));
 const AdminUsers = lazy(() => import("./pages/AdminUsers"));
 const AdminDataIntegrity = lazy(() => import("./pages/AdminDataIntegrity"));
+const AdminCampaigns = lazy(() => import("./pages/AdminCampaigns"));
 const MyTemplates = lazy(() => import("./pages/MyTemplates"));
 const Install = lazy(() => import("./pages/Install"));
 
@@ -114,6 +115,11 @@ const App = () => (
                   <Route path="/admin/data-integrity" element={
                     <AdminRoute>
                       <AdminDataIntegrity />
+                    </AdminRoute>
+                  } />
+                  <Route path="/admin/campaigns" element={
+                    <AdminRoute>
+                      <AdminCampaigns />
                     </AdminRoute>
                   } />
                   <Route path="*" element={<NotFound />} />
