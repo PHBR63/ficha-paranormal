@@ -38,6 +38,13 @@ const adminPages = [
     description: 'Gerenciamento de permissões'
   },
   {
+    id: 'campaigns',
+    path: '/admin/campaigns',
+    label: 'Campanhas',
+    icon: Shield,
+    description: 'Gerenciar campanhas e mestres'
+  },
+  {
     id: 'import',
     path: '/admin/import',
     label: 'Importação',
