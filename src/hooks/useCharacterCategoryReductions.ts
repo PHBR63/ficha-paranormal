@@ -157,7 +157,16 @@ export function useCharacterCategoryReductions({
         }
       }
       
-      return abilities;
+      // Filtra habilidades substituídas por progressão (ex: A Favorita → Técnica Secreta → Máquina de Matar)
+      // Se uma habilidade tem replacesAbility, remove a substituída da lista
+      const replacedIds = new Set<string>();
+      for (const ability of abilities) {
+        if (ability.replacesAbility) {
+          replacedIds.add(ability.replacesAbility);
+        }
+      }
+      
+      return abilities.filter(a => !replacedIds.has(a.abilityId));
     }
     
     // Fallback: detecção legada baseada nos dados do personagem
@@ -276,9 +285,13 @@ export function useCharacterCategoryReductions({
   // Calcula o inventário com categorias efetivas aplicadas e detecta migrações
   const { inventoryWithEffectiveCategories, migrationInfo } = useMemo(() => {
     // Encontra a habilidade de Aniquilador disponível para o NEX atual (se houver)
-    const currentAniquiladorAbility = availableAbilities.find(a => 
+    // Encontra a habilidade de Aniquilador com MAIOR redução disponível para o NEX atual
+    const aniquiladorAbilities = availableAbilities.filter(a => 
       ANIQUILADOR_ABILITY_IDS.includes(a.abilityId)
     );
+    const currentAniquiladorAbility = aniquiladorAbilities.length > 0
+      ? aniquiladorAbilities.reduce((best, a) => a.reductionAmount > best.reductionAmount ? a : best)
+      : undefined;
     
     let migrationDetected: { 
       weaponName: string; 
