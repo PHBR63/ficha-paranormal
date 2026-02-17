@@ -169,6 +169,8 @@ const CATEGORY_LABELS: Record<string, { label: string; color: string }> = {
 export interface ExtendedInventoryItem extends InventoryItem {
   itemType?: ItemType;
   equipSlot?: EquipmentSlotType;
+  /** Tipo original do catálogo (preservado antes da normalização, ex: 'acessorio') */
+  catalogType?: string;
   // Campos para redução de categoria (A Favorita, Ferramenta Favorita, etc.)
   favoriteAbilityId?: string;  // ID da habilidade que está sendo aplicada
   effectiveCategory?: InventoryItem['category'];  // Categoria efetiva após redução
@@ -640,6 +642,7 @@ export function InventoryPanel({
         ...i,
         itemType: (i as ExtendedInventoryItem).itemType || 'misc',
         equipSlot: (i as ExtendedInventoryItem).equipSlot,
+        catalogType: (i as ExtendedInventoryItem).catalogType,
       })));
       toast({
         title: result.itemRemoved ? 'Item consumido' : 'Item usado',
@@ -700,6 +703,7 @@ export function InventoryPanel({
         ...i,
         itemType: (i as ExtendedInventoryItem).itemType || 'misc',
         equipSlot: (i as ExtendedInventoryItem).equipSlot,
+        catalogType: (i as ExtendedInventoryItem).catalogType,
       })));
       setWeaponCatalogOpen(false);
       toast({
@@ -752,6 +756,7 @@ export function InventoryPanel({
         ...i,
         itemType: (i as ExtendedInventoryItem).itemType || 'misc',
         equipSlot: (i as ExtendedInventoryItem).equipSlot,
+        catalogType: (i as ExtendedInventoryItem).catalogType,
       })));
       setArmorCatalogOpen(false);
       toast({
@@ -781,6 +786,7 @@ export function InventoryPanel({
       slots: catalogItem.spaces,
       quantity: 1,
       itemType: mappedItemType, // Usa tipo mapeado corretamente
+      catalogType: catalogItem.type, // Preserva tipo original do catálogo (ex: 'acessorio')
       description: catalogItem.description,
       // Dados extras para itens gerais
       effect: catalogItem.effect,
@@ -805,6 +811,7 @@ export function InventoryPanel({
         ...i,
         itemType: (i as ExtendedInventoryItem).itemType || 'misc',
         equipSlot: (i as ExtendedInventoryItem).equipSlot,
+        catalogType: (i as ExtendedInventoryItem).catalogType,
       })));
       setItemCatalogOpen(false);
       toast({
@@ -1036,7 +1043,7 @@ export function InventoryPanel({
       handleOpenWeaponMod(item);
     } else if (item.itemType === 'armor') {
       handleOpenArmorMod(item);
-    } else if ((item.itemType as string) === 'acessorio' || (item as any).catalogType === 'acessorio') {
+    } else if (item.catalogType === 'acessorio') {
       handleOpenAccessoryMod(item);
     }
   };
@@ -1691,7 +1698,7 @@ export function InventoryPanel({
                           onEquip={!readOnly && canEquipItem(item) ? handleEquipItem : undefined}
                           onUnequip={!readOnly && item.isEquipped ? handleUnequipItem : undefined}
                           onUse={!readOnly && canUseItem(item) ? handleRequestUseItem : undefined}
-                          onModify={!readOnly && (item.itemType === 'weapon' || item.itemType === 'armor' || (item.itemType as string) === 'acessorio') ? handleOpenModification : undefined}
+                          onModify={!readOnly && (item.itemType === 'weapon' || item.itemType === 'armor' || item.catalogType === 'acessorio') ? handleOpenModification : undefined}
                           onToggleFavorite={!readOnly && categoryAbilities.length > 0 && item.itemType === 'weapon' ? handleToggleFavorite : undefined}
                           availableAbilities={categoryAbilities}
                           onViewDetails={(itemToView) => {
@@ -1707,7 +1714,7 @@ export function InventoryPanel({
                           onEquip={!readOnly && canEquipItem(item) ? handleEquipItem : undefined}
                           onUnequip={!readOnly && item.isEquipped ? handleUnequipItem : undefined}
                           onUse={!readOnly && canUseItem(item) ? handleRequestUseItem : undefined}
-                          onModify={!readOnly && (item.itemType === 'weapon' || item.itemType === 'armor' || (item.itemType as string) === 'acessorio') ? handleOpenModification : undefined}
+                          onModify={!readOnly && (item.itemType === 'weapon' || item.itemType === 'armor' || item.catalogType === 'acessorio') ? handleOpenModification : undefined}
                           onToggleFavorite={!readOnly && categoryAbilities.length > 0 && item.itemType === 'weapon' ? handleToggleFavorite : undefined}
                           availableAbilities={categoryAbilities}
                           onViewDetails={(itemToView) => {
@@ -1729,7 +1736,7 @@ export function InventoryPanel({
                           onEquip={!readOnly && canEquipItem(item) ? handleEquipItem : undefined}
                           onUnequip={!readOnly && item.isEquipped ? handleUnequipItem : undefined}
                           onUse={!readOnly && canUseItem(item) ? handleRequestUseItem : undefined}
-                          onModify={!readOnly && (item.itemType === 'weapon' || item.itemType === 'armor' || (item.itemType as string) === 'acessorio') ? handleOpenModification : undefined}
+                          onModify={!readOnly && (item.itemType === 'weapon' || item.itemType === 'armor' || item.catalogType === 'acessorio') ? handleOpenModification : undefined}
                           onToggleFavorite={!readOnly && categoryAbilities.length > 0 && item.itemType === 'weapon' ? handleToggleFavorite : undefined}
                           availableAbilities={categoryAbilities}
                           onViewDetails={(itemToView) => {
@@ -1745,7 +1752,7 @@ export function InventoryPanel({
                           onEquip={!readOnly && canEquipItem(item) ? handleEquipItem : undefined}
                           onUnequip={!readOnly && item.isEquipped ? handleUnequipItem : undefined}
                           onUse={!readOnly && canUseItem(item) ? handleRequestUseItem : undefined}
-                          onModify={!readOnly && (item.itemType === 'weapon' || item.itemType === 'armor' || (item.itemType as string) === 'acessorio') ? handleOpenModification : undefined}
+                          onModify={!readOnly && (item.itemType === 'weapon' || item.itemType === 'armor' || item.catalogType === 'acessorio') ? handleOpenModification : undefined}
                           onToggleFavorite={!readOnly && categoryAbilities.length > 0 && item.itemType === 'weapon' ? handleToggleFavorite : undefined}
                           availableAbilities={categoryAbilities}
                           onViewDetails={(itemToView) => {
