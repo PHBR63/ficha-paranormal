@@ -255,10 +255,10 @@ export function ArmorCatalogModal({
     );
   };
 
-  // Proteções filtradas por tipo
-  const filteredLight = filterArmors(ALL_ARMORS.filter(a => a.type === 'leve'));
-  const filteredHeavy = filterArmors(ALL_ARMORS.filter(a => a.type === 'pesada'));
-  const filteredShields = filterArmors(ALL_ARMORS.filter(a => a.type === 'escudo'));
+  // Proteções filtradas por tipo - APENAS as 3 proteções base (sem pré-modificadas)
+  const filteredLight = filterArmors(BASE_ARMORS.filter(a => a.type === 'leve'));
+  const filteredHeavy = filterArmors(BASE_ARMORS.filter(a => a.type === 'pesada'));
+  const filteredShields = filterArmors(BASE_ARMORS.filter(a => a.type === 'escudo'));
 
   // Status das categorias para indicadores visuais
   const categoryStatus = useMemo(() => {

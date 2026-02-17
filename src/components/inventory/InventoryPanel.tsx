@@ -92,12 +92,15 @@ import { WeaponCatalogModal } from './WeaponCatalogModal';
 import { ArmorCatalogModal } from './ArmorCatalogModal';
 import { ItemCatalogModal } from './ItemCatalogModal';
 import { WeaponModificationModal } from './WeaponModificationModal';
-import type { CatalogWeapon, WeaponModification, CatalogArmor, CatalogItem } from '@/lib/catalogs';
+import { ArmorModificationModal } from './ArmorModificationModal';
+import { AccessoryModificationModal, type AccessoryModification } from './AccessoryModificationModal';
+import type { CatalogWeapon, WeaponModification, CatalogArmor, ArmorModification, CatalogItem } from '@/lib/catalogs';
 import { 
   calculateModifiedWeaponStats, 
   getModifiedCategory, 
   MODIFICATION_LABELS,
   getWeaponModificationById,
+  ARMOR_MODIFICATIONS,
 } from '@/lib/catalogs';
 import { ProtectionWidget } from './ProtectionWidget';
 import { InventoryItemDetailModal } from './InventoryItemDetailModal';
@@ -229,6 +232,12 @@ export function InventoryPanel({
   // Estado para modal de modificação de armas
   const [weaponModModalOpen, setWeaponModModalOpen] = useState(false);
   const [weaponToModify, setWeaponToModify] = useState<ExtendedInventoryItem | null>(null);
+  // Estado para modal de modificação de proteções
+  const [armorModModalOpen, setArmorModModalOpen] = useState(false);
+  const [armorToModify, setArmorToModify] = useState<ExtendedInventoryItem | null>(null);
+  // Estado para modal de modificação de acessórios
+  const [accessoryModModalOpen, setAccessoryModModalOpen] = useState(false);
+  const [accessoryToModify, setAccessoryToModify] = useState<ExtendedInventoryItem | null>(null);
   // Estado para modal de detalhes do item
   const [itemDetailOpen, setItemDetailOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<ExtendedInventoryItem | null>(null);
@@ -902,6 +911,136 @@ export function InventoryPanel({
     });
   };
 
+  // Handler para abrir modal de modificação de proteção
+  const handleOpenArmorMod = (item: ExtendedInventoryItem) => {
+    setArmorToModify(item);
+    setArmorModModalOpen(true);
+  };
+
+  // Handler para aplicar modificações em proteção
+  const handleApplyArmorModifications = (modifications: ArmorModification[]) => {
+    if (!armorToModify || !onInventoryChange) return;
+
+    const hasModifications = modifications.length > 0;
+    const baseName = armorToModify.name.replace(/\s*\(Mod\.\)$/, '');
+
+    // Calcular categoria final (cada mod nova = +1 categoria)
+    const CATEGORY_ORDER_LOCAL = ['0', 'I', 'II', 'III', 'IV'] as const;
+    const baseCategory = (armorToModify as any).baseArmorCategory || armorToModify.category;
+    const baseCatIndex = CATEGORY_ORDER_LOCAL.indexOf(baseCategory as typeof CATEGORY_ORDER_LOCAL[number]);
+    const finalCatIndex = Math.min(baseCatIndex + modifications.length, CATEGORY_ORDER_LOCAL.length - 1);
+    const finalCategory = CATEGORY_ORDER_LOCAL[finalCatIndex] as ExtendedInventoryItem['category'];
+
+    // Calcular stats modificados
+    let defenseBonus = (armorToModify as any).baseDefenseBonus ?? (armorToModify as any).defenseBonus ?? 0;
+    let rd = (armorToModify as any).baseRd ?? (armorToModify as any).rd ?? 0;
+    let spaces = (armorToModify as any).baseSpaces ?? armorToModify.slots ?? 0;
+
+    modifications.forEach(modId => {
+      const mod = ARMOR_MODIFICATIONS.find(m => m.id === modId);
+      if (mod) {
+        if (mod.defenseBonus) defenseBonus += mod.defenseBonus;
+        if (mod.rdBonus) rd += mod.rdBonus;
+        if (mod.spacesModifier) spaces += mod.spacesModifier;
+      }
+    });
+
+    const updatedInventory = inventory.map(item => {
+      if (item.id === armorToModify.id) {
+        return {
+          ...item,
+          name: hasModifications ? `${baseName} (Mod.)` : baseName,
+          category: finalCategory,
+          slots: spaces,
+          defenseBonus,
+          rd,
+          appliedArmorModifications: modifications,
+          baseArmorCategory: baseCategory,
+          baseDefenseBonus: (armorToModify as any).baseDefenseBonus ?? (armorToModify as any).defenseBonus,
+          baseRd: (armorToModify as any).baseRd ?? (armorToModify as any).rd,
+          baseSpaces: (armorToModify as any).baseSpaces ?? armorToModify.slots,
+        } as ExtendedInventoryItem;
+      }
+      return item;
+    });
+
+    onInventoryChange(updatedInventory);
+    setArmorModModalOpen(false);
+    setArmorToModify(null);
+
+    toast({
+      title: hasModifications ? 'Modificações aplicadas' : 'Modificações removidas',
+      description: hasModifications
+        ? `${modifications.length} modificação(ões) aplicada(s) em ${baseName}.`
+        : `Todas as modificações foram removidas de ${baseName}.`,
+    });
+  };
+
+  // Handler para abrir modal de modificação de acessório
+  const handleOpenAccessoryMod = (item: ExtendedInventoryItem) => {
+    setAccessoryToModify(item);
+    setAccessoryModModalOpen(true);
+  };
+
+  // Handler para aplicar modificações em acessório
+  const handleApplyAccessoryModifications = (modifications: AccessoryModification[]) => {
+    if (!accessoryToModify || !onInventoryChange) return;
+
+    const hasModifications = modifications.length > 0;
+    const baseName = accessoryToModify.name.replace(/\s*\(Mod\.\)$/, '');
+
+    // Calcular categoria final
+    const CATEGORY_ORDER_LOCAL = ['0', 'I', 'II', 'III', 'IV'] as const;
+    const baseCategory = (accessoryToModify as any).baseAccessoryCategory || accessoryToModify.category;
+    const baseCatIndex = CATEGORY_ORDER_LOCAL.indexOf(baseCategory as typeof CATEGORY_ORDER_LOCAL[number]);
+    const finalCatIndex = Math.min(baseCatIndex + modifications.length, CATEGORY_ORDER_LOCAL.length - 1);
+    const finalCategory = CATEGORY_ORDER_LOCAL[finalCatIndex] as ExtendedInventoryItem['category'];
+
+    // Calcular espaços
+    let spaces = (accessoryToModify as any).baseAccessorySpaces ?? accessoryToModify.slots ?? 1;
+    modifications.forEach(modId => {
+      if (modId === 'discreto') spaces -= 1;
+    });
+    spaces = Math.max(0, spaces);
+
+    const updatedInventory = inventory.map(item => {
+      if (item.id === accessoryToModify.id) {
+        return {
+          ...item,
+          name: hasModifications ? `${baseName} (Mod.)` : baseName,
+          category: finalCategory,
+          slots: spaces,
+          appliedAccessoryModifications: modifications,
+          baseAccessoryCategory: baseCategory,
+          baseAccessorySpaces: (accessoryToModify as any).baseAccessorySpaces ?? accessoryToModify.slots,
+        } as ExtendedInventoryItem;
+      }
+      return item;
+    });
+
+    onInventoryChange(updatedInventory);
+    setAccessoryModModalOpen(false);
+    setAccessoryToModify(null);
+
+    toast({
+      title: hasModifications ? 'Modificações aplicadas' : 'Modificações removidas',
+      description: hasModifications
+        ? `${modifications.length} modificação(ões) aplicada(s) em ${baseName}.`
+        : `Todas as modificações foram removidas de ${baseName}.`,
+    });
+  };
+
+  // Handler genérico para abrir modal de modificação (arma, proteção ou acessório)
+  const handleOpenModification = (item: ExtendedInventoryItem) => {
+    if (item.itemType === 'weapon') {
+      handleOpenWeaponMod(item);
+    } else if (item.itemType === 'armor') {
+      handleOpenArmorMod(item);
+    } else if ((item.itemType as string) === 'acessorio' || (item as any).catalogType === 'acessorio') {
+      handleOpenAccessoryMod(item);
+    }
+  };
+
   const loadPercentage = (loadStatus.currentLoad / loadStatus.maxCapacity) * 100;
   const loadColor = loadStatus.isOverloaded 
     ? 'text-destructive' 
@@ -1179,6 +1318,41 @@ export function InventoryPanel({
               ? getCategoryReductionAbility(weaponToModify.favoriteAbilityId)?.reductionAmount 
               : undefined
           }
+        />
+      )}
+
+      {/* Armor Modification Modal */}
+      {armorToModify && (
+        <ArmorModificationModal
+          open={armorModModalOpen}
+          onOpenChange={setArmorModModalOpen}
+          armor={{
+            id: armorToModify.id,
+            name: armorToModify.name.replace(/\s*\(Mod\.\)$/, ''),
+            type: ((armorToModify as any).armorType || 'leve') as CatalogArmor['type'],
+            defenseBonus: (armorToModify as any).baseDefenseBonus ?? (armorToModify as any).defenseBonus ?? 0,
+            rd: (armorToModify as any).baseRd ?? (armorToModify as any).rd ?? 0,
+            agilityPenalty: (armorToModify as any).agilityPenalty ?? 0,
+            category: ((armorToModify as any).baseArmorCategory || armorToModify.category) as CatalogArmor['category'],
+            spaces: (armorToModify as any).baseSpaces ?? armorToModify.slots ?? 0,
+            description: (armorToModify as any).description || '',
+            special: (armorToModify as any).special,
+          }}
+          currentModifications={(armorToModify as any).appliedArmorModifications || []}
+          onApplyModifications={handleApplyArmorModifications}
+        />
+      )}
+
+      {/* Accessory Modification Modal */}
+      {accessoryToModify && (
+        <AccessoryModificationModal
+          open={accessoryModModalOpen}
+          onOpenChange={setAccessoryModModalOpen}
+          itemName={accessoryToModify.name.replace(/\s*\(Mod\.\)$/, '')}
+          itemCategory={(accessoryToModify as any).baseAccessoryCategory || accessoryToModify.category || '0'}
+          itemSpaces={(accessoryToModify as any).baseAccessorySpaces ?? accessoryToModify.slots ?? 1}
+          currentModifications={(accessoryToModify as any).appliedAccessoryModifications || []}
+          onApplyModifications={handleApplyAccessoryModifications}
         />
       )}
       <Dialog open={useItemConfirmOpen} onOpenChange={setUseItemConfirmOpen}>
@@ -1517,7 +1691,7 @@ export function InventoryPanel({
                           onEquip={!readOnly && canEquipItem(item) ? handleEquipItem : undefined}
                           onUnequip={!readOnly && item.isEquipped ? handleUnequipItem : undefined}
                           onUse={!readOnly && canUseItem(item) ? handleRequestUseItem : undefined}
-                          onModify={!readOnly && item.itemType === 'weapon' ? handleOpenWeaponMod : undefined}
+                          onModify={!readOnly && (item.itemType === 'weapon' || item.itemType === 'armor' || (item.itemType as string) === 'acessorio') ? handleOpenModification : undefined}
                           onToggleFavorite={!readOnly && categoryAbilities.length > 0 && item.itemType === 'weapon' ? handleToggleFavorite : undefined}
                           availableAbilities={categoryAbilities}
                           onViewDetails={(itemToView) => {
@@ -1533,7 +1707,7 @@ export function InventoryPanel({
                           onEquip={!readOnly && canEquipItem(item) ? handleEquipItem : undefined}
                           onUnequip={!readOnly && item.isEquipped ? handleUnequipItem : undefined}
                           onUse={!readOnly && canUseItem(item) ? handleRequestUseItem : undefined}
-                          onModify={!readOnly && item.itemType === 'weapon' ? handleOpenWeaponMod : undefined}
+                          onModify={!readOnly && (item.itemType === 'weapon' || item.itemType === 'armor' || (item.itemType as string) === 'acessorio') ? handleOpenModification : undefined}
                           onToggleFavorite={!readOnly && categoryAbilities.length > 0 && item.itemType === 'weapon' ? handleToggleFavorite : undefined}
                           availableAbilities={categoryAbilities}
                           onViewDetails={(itemToView) => {
@@ -1555,7 +1729,7 @@ export function InventoryPanel({
                           onEquip={!readOnly && canEquipItem(item) ? handleEquipItem : undefined}
                           onUnequip={!readOnly && item.isEquipped ? handleUnequipItem : undefined}
                           onUse={!readOnly && canUseItem(item) ? handleRequestUseItem : undefined}
-                          onModify={!readOnly && item.itemType === 'weapon' ? handleOpenWeaponMod : undefined}
+                          onModify={!readOnly && (item.itemType === 'weapon' || item.itemType === 'armor' || (item.itemType as string) === 'acessorio') ? handleOpenModification : undefined}
                           onToggleFavorite={!readOnly && categoryAbilities.length > 0 && item.itemType === 'weapon' ? handleToggleFavorite : undefined}
                           availableAbilities={categoryAbilities}
                           onViewDetails={(itemToView) => {
@@ -1571,7 +1745,7 @@ export function InventoryPanel({
                           onEquip={!readOnly && canEquipItem(item) ? handleEquipItem : undefined}
                           onUnequip={!readOnly && item.isEquipped ? handleUnequipItem : undefined}
                           onUse={!readOnly && canUseItem(item) ? handleRequestUseItem : undefined}
-                          onModify={!readOnly && item.itemType === 'weapon' ? handleOpenWeaponMod : undefined}
+                          onModify={!readOnly && (item.itemType === 'weapon' || item.itemType === 'armor' || (item.itemType as string) === 'acessorio') ? handleOpenModification : undefined}
                           onToggleFavorite={!readOnly && categoryAbilities.length > 0 && item.itemType === 'weapon' ? handleToggleFavorite : undefined}
                           availableAbilities={categoryAbilities}
                           onViewDetails={(itemToView) => {

@@ -1,0 +1,263 @@
+/**
+ * Modal de Modificações para Acessórios
+ * Baseado na Tabela 3.9 do livro oficial - Ordem Paranormal RPG
+ * 
+ * Modificações disponíveis (apenas para acessórios):
+ * - Aprimorado: Aumenta bônus em perícia para +5
+ * - Discreto: +5 testes de ocultar, -1 espaço
+ * - Função Adicional: +2 em perícia adicional
+ * - Instrumental: Funciona como kit de perícia
+ * 
+ * Cada modificação aumenta a categoria do item em I.
+ * Cada modificação só pode ser aplicada ao mesmo acessório uma vez.
+ */
+
+import { useState, useMemo } from 'react';
+import {
+  MobileModal,
+  MobileModalContent,
+  MobileModalHeader,
+  MobileModalBody,
+  MobileModalFooter,
+  MobileModalTitle,
+  MobileModalDescription,
+} from '@/components/ui/mobile-modal';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Separator } from '@/components/ui/separator';
+import { Briefcase, Wrench, Check, Star, EyeOff, PlusCircle, BookOpen } from 'lucide-react';
+
+// Tipos de modificação para acessórios
+export type AccessoryModification = 'aprimorado' | 'discreto' | 'funcao_adicional' | 'instrumental';
+
+// Dados de cada modificação
+export interface AccessoryModificationData {
+  id: AccessoryModification;
+  name: string;
+  description: string;
+  effect: string;
+  spaceModifier?: number;
+}
+
+// Tabela 3.9: Modificações para Acessórios
+export const ACCESSORY_MODIFICATIONS: AccessoryModificationData[] = [
+  {
+    id: 'aprimorado',
+    name: 'Aprimorado',
+    description: 'O bônus em perícia concedido pelo acessório aumenta para +5. Se o item tiver função adicional, esta modificação poderá ser escolhida uma segunda vez para esta função.',
+    effect: 'Aumenta um dos bônus em perícia para +5.',
+  },
+  {
+    id: 'discreto',
+    name: 'Discreto',
+    description: 'O item é miniaturizado ou disfarçado como outro item inócuo (como um relógio). Reduz o número de espaços ocupados em 1, fornece +5 em testes de Crime para ser ocultado e permite que você faça esse teste mesmo que não seja treinado na perícia.',
+    effect: '+5 em testes de ocultar e reduz o espaço em -1.',
+    spaceModifier: -1,
+  },
+  {
+    id: 'funcao_adicional',
+    name: 'Função Adicional',
+    description: 'O acessório fornece +2 em uma perícia adicional à sua escolha, sujeita à aprovação do mestre.',
+    effect: 'Concede +2 a uma perícia adicional.',
+  },
+  {
+    id: 'instrumental',
+    name: 'Instrumental',
+    description: 'O acessório pode ser usado como um kit de perícia específico (escolhido ao aplicar esta modificação).',
+    effect: 'O acessório funciona como um kit de perícia.',
+  },
+];
+
+// Ícones por modificação
+const MOD_ICONS: Record<AccessoryModification, React.ComponentType<{ className?: string }>> = {
+  aprimorado: Star,
+  discreto: EyeOff,
+  funcao_adicional: PlusCircle,
+  instrumental: BookOpen,
+};
+
+// Ordem de categorias
+const CATEGORY_ORDER = ['0', 'I', 'II', 'III', 'IV'] as const;
+
+interface AccessoryModificationModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  itemName: string;
+  itemCategory: string;
+  itemSpaces: number | '*';
+  currentModifications: AccessoryModification[];
+  onApplyModifications: (modifications: AccessoryModification[]) => void;
+}
+
+export function AccessoryModificationModal({
+  open,
+  onOpenChange,
+  itemName,
+  itemCategory,
+  itemSpaces,
+  currentModifications,
+  onApplyModifications,
+}: AccessoryModificationModalProps) {
+  const [selectedMods, setSelectedMods] = useState<AccessoryModification[]>(currentModifications);
+
+  // Modificações já aplicadas previamente (permanentes)
+  const alreadyAppliedMods = useMemo(
+    () => new Set(currentModifications),
+    [currentModifications]
+  );
+
+  // Categoria final
+  const finalCategory = useMemo(() => {
+    const baseIndex = CATEGORY_ORDER.indexOf(itemCategory as typeof CATEGORY_ORDER[number]);
+    const newModsCount = selectedMods.filter(m => !alreadyAppliedMods.has(m)).length;
+    const newIndex = Math.min(baseIndex + newModsCount + alreadyAppliedMods.size, CATEGORY_ORDER.length - 1);
+    return CATEGORY_ORDER[newIndex];
+  }, [itemCategory, selectedMods, alreadyAppliedMods]);
+
+  // Espaços finais
+  const finalSpaces = useMemo(() => {
+    if (itemSpaces === '*') return '*';
+    let spaces = itemSpaces;
+    selectedMods.forEach(modId => {
+      const mod = ACCESSORY_MODIFICATIONS.find(m => m.id === modId);
+      if (mod?.spaceModifier) spaces += mod.spaceModifier;
+    });
+    return Math.max(0, spaces);
+  }, [itemSpaces, selectedMods]);
+
+  // Toggle de modificação
+  const toggleModification = (modId: AccessoryModification) => {
+    if (alreadyAppliedMods.has(modId)) return;
+
+    setSelectedMods(prev =>
+      prev.includes(modId)
+        ? prev.filter(m => m !== modId)
+        : [...prev, modId]
+    );
+  };
+
+  // Aplicar
+  const handleApply = () => {
+    onApplyModifications(selectedMods);
+    onOpenChange(false);
+  };
+
+  const hasNewMods = selectedMods.some(m => !alreadyAppliedMods.has(m));
+
+  return (
+    <MobileModal open={open} onOpenChange={onOpenChange}>
+      <MobileModalContent size="md" className="h-[85vh] max-h-[85vh] flex flex-col p-0">
+        <MobileModalHeader bordered className="p-4 sm:p-6 shrink-0">
+          <MobileModalTitle className="flex items-center gap-2">
+            <Briefcase className="w-5 h-5 text-primary" />
+            Modificações: {itemName}
+          </MobileModalTitle>
+          <MobileModalDescription>
+            Tabela 3.9 — Cada modificação aumenta a categoria em I. Cada uma só pode ser aplicada uma vez ao mesmo acessório.
+          </MobileModalDescription>
+        </MobileModalHeader>
+
+        <MobileModalBody className="px-4 sm:px-6 py-4 flex-1 overflow-y-auto">
+          {/* Resumo do item */}
+          <div className="p-3 rounded-lg bg-muted/30 border border-border mb-4">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <span className="text-sm font-medium text-foreground">{itemName}</span>
+              <div className="flex gap-2">
+                <Badge variant="outline" className="text-xs">
+                  Base: Cat {itemCategory === '0' ? '-' : itemCategory}
+                </Badge>
+                {finalCategory !== itemCategory && (
+                  <Badge variant="outline" className="text-xs bg-amber-500/20 text-amber-400 border-amber-500/30">
+                    → Cat {finalCategory}
+                  </Badge>
+                )}
+              </div>
+            </div>
+
+            <Separator className="my-2" />
+
+            <div className="text-sm text-muted-foreground">
+              Espaços: <span className="font-medium text-foreground">
+                {finalSpaces === '*' ? 'Especial' : finalSpaces}
+              </span>
+              {finalSpaces !== itemSpaces && itemSpaces !== '*' && (
+                <span className="text-green-400 ml-1">(era {itemSpaces})</span>
+              )}
+            </div>
+          </div>
+
+          {/* Lista de modificações */}
+          <div className="space-y-2">
+            <h3 className="text-sm font-semibold text-foreground mb-2">
+              Modificações Disponíveis ({ACCESSORY_MODIFICATIONS.length})
+            </h3>
+            {ACCESSORY_MODIFICATIONS.map(mod => {
+              const isSelected = selectedMods.includes(mod.id);
+              const isLocked = alreadyAppliedMods.has(mod.id);
+              const Icon = MOD_ICONS[mod.id];
+
+              return (
+                <div
+                  key={mod.id}
+                  className={`
+                    p-3 rounded-lg border transition-all
+                    ${isLocked
+                      ? 'bg-green-500/10 border-green-500/50 opacity-75 cursor-default'
+                      : isSelected
+                        ? 'bg-primary/10 border-primary/50 cursor-pointer'
+                        : 'bg-muted/20 border-border hover:border-primary/30 cursor-pointer'
+                    }
+                  `}
+                  onClick={isLocked ? undefined : () => toggleModification(mod.id)}
+                >
+                  <div className="flex items-start gap-3">
+                    <Checkbox
+                      checked={isSelected}
+                      onCheckedChange={isLocked ? undefined : () => toggleModification(mod.id)}
+                      disabled={isLocked}
+                      className="mt-1"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Icon className="w-4 h-4 text-primary shrink-0" />
+                        <span className="font-semibold text-foreground text-sm">{mod.name}</span>
+                        <Badge variant="outline" className="text-[10px] bg-amber-500/20 text-amber-400 border-amber-500/30">
+                          +1 Cat
+                        </Badge>
+                        {isLocked && (
+                          <Badge variant="secondary" className="text-xs bg-green-500/20 text-green-400 border-green-500/30">
+                            <Check className="w-3 h-3 mr-1" />
+                            Aplicada
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">{mod.description}</p>
+                      <p className="text-xs text-primary/80 mt-1 font-medium">Efeito: {mod.effect}</p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </MobileModalBody>
+
+        <MobileModalFooter className="p-4 sm:p-6 shrink-0">
+          <div className="flex gap-2 w-full">
+            <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleApply}
+              disabled={!hasNewMods}
+              className="flex-1"
+            >
+              <Wrench className="w-4 h-4 mr-2" />
+              Aplicar Modificações
+            </Button>
+          </div>
+        </MobileModalFooter>
+      </MobileModalContent>
+    </MobileModal>
+  );
+}
