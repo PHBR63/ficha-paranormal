@@ -140,8 +140,11 @@ export function WeaponModificationModal({
     return CATEGORY_ORDER[newIndex] as CatalogWeapon['category'];
   }, [modifiedStats.finalCategory, favoriteReduction, isFavorite]);
   
-  // Toggle de modificação
+  // Toggle de modificação (apenas para modificações não aplicadas previamente)
   const toggleModification = (modId: WeaponModification) => {
+    // Modificações já aplicadas não podem ser removidas (são permanentes)
+    if (alreadyAppliedMods.has(modId)) return;
+    
     setSelectedMods(prev => 
       prev.includes(modId) 
         ? prev.filter(m => m !== modId)
@@ -378,23 +381,27 @@ function ModificationCard({
   const labelData = MODIFICATION_LABELS[modification.id];
   const IconComponent = MODIFICATION_ICONS[labelData?.icon || 'Wrench'];
   
+  // Modificações já aplicadas são permanentes e não podem ser removidas
+  const isLocked = isApplied;
+  
   return (
     <div 
       className={`
-        p-3 rounded-lg border cursor-pointer transition-all
-        ${isApplied && isSelected
-          ? 'bg-green-500/10 border-green-500/50' 
+        p-3 rounded-lg border transition-all
+        ${isLocked
+          ? 'bg-green-500/10 border-green-500/50 opacity-75 cursor-default' 
           : isSelected 
-            ? 'bg-primary/10 border-primary/50' 
-            : 'bg-muted/20 border-border hover:border-primary/30'
+            ? 'bg-primary/10 border-primary/50 cursor-pointer' 
+            : 'bg-muted/20 border-border hover:border-primary/30 cursor-pointer'
         }
       `}
-      onClick={onToggle}
+      onClick={isLocked ? undefined : onToggle}
     >
       <div className="flex items-start gap-3">
         <Checkbox 
           checked={isSelected}
-          onCheckedChange={onToggle}
+          onCheckedChange={isLocked ? undefined : onToggle}
+          disabled={isLocked}
           className="mt-1"
         />
         
@@ -407,7 +414,7 @@ function ModificationCard({
                 +{modification.categoryIncrease} Cat
               </Badge>
             )}
-            {isApplied && isSelected && (
+            {isLocked && (
               <Badge variant="secondary" className="text-xs bg-green-500/20 text-green-400 border-green-500/30">
                 <Check className="w-3 h-3 mr-1" />
                 Aplicada
