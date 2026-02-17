@@ -1512,44 +1512,55 @@ export function MobileCharacterSheet({
 
   // Handler para confirmar escolhas de Grau de Treinamento
   const handleTrainingGradeConfirm = useCallback(async (result: TrainingGradeResult) => {
-    if (!character) return;
+    if (!character || !user) return;
+    
+    console.log('[TrainingGrade:Mobile] Recebido resultado:', JSON.stringify(result));
     
     // Busca escolhas existentes
     const existingChoices = character.training_grade_choices || {};
     
     // Atualiza as escolhas para o NEX específico usando constantes centralizadas
+    const nexKey = result.nex === 35 ? TRAINING_GRADE_KEYS.NEX_35 : TRAINING_GRADE_KEYS.NEX_70;
     const updatedChoices = {
       ...existingChoices,
-      [result.nex === 35 ? TRAINING_GRADE_KEYS.NEX_35 : TRAINING_GRADE_KEYS.NEX_70]: result.choices,
+      [nexKey]: result.choices,
     };
     
     // Aplica os upgrades às perícias
-    const updatedSkills = applyTrainingGradeUpgrades(
-      character.skills || {},
-      result.choices
-    );
+    const currentSkills = (character.skills || {}) as Record<string, number>;
+    const updatedSkills = applyTrainingGradeUpgrades(currentSkills, result.choices);
+    
+    console.log('[TrainingGrade:Mobile] Salvando:', {
+      nexKey,
+      choicesCount: result.choices.length,
+      characterId: character.id,
+    });
     
     // Salva no banco
     const { error } = await supabase
       .from('characters')
       .update({
-        training_grade_choices: updatedChoices,
+        training_grade_choices: JSON.parse(JSON.stringify(updatedChoices)),
         skills: updatedSkills,
+        updated_at: new Date().toISOString(),
       })
-      .eq('id', character.id);
+      .eq('id', character.id)
+      .eq('user_id', user.id);
     
     if (error) {
+      console.error('[TrainingGrade:Mobile] Erro ao salvar:', error);
       toast.error('Erro ao salvar', { description: error.message });
       return;
     }
     
+    console.log('[TrainingGrade:Mobile] Salvo com sucesso!');
     toast.success('Grau de Treinamento configurado!', {
       description: `${result.choices.length} perícias aprimoradas no NEX ${result.nex}%.`,
     });
     
     setTrainingGradeModalOpen(false);
     if (onRefetch) await onRefetch();
-  }, [character, onRefetch]);
+  }, [character, user, onRefetch]);
   
   // Handler para confirmar correção de perícias faltantes (auditoria)
   const handleMissingSkillsConfirm = useCallback(async (newSkillIds: string[]) => {

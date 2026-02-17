@@ -287,6 +287,11 @@ interface Character {
   skill_training_choices?: Record<string, Array<{ skillId: string; fromLevel: number; toLevel: number }>>;
   // Sub-escolhas de poderes de classe (Especialista em Arma, Perito, etc.)
   class_power_choices?: Record<string, { powerId: string; choiceType: string; chosenValues: string[] }>;
+  // Escolhas de Grau de Treinamento (NEX 35% e 70%)
+  training_grade_choices?: {
+    nex35?: Array<{ skillId: string; fromLevel: number; toLevel: number }>;
+    nex70?: Array<{ skillId: string; fromLevel: number; toLevel: number }>;
+  };
 }
 
 // Helper para converter condições persistidas para ActiveCondition
@@ -348,6 +353,8 @@ function parseCharacterDataFromDB(
     active_buffs: Array.isArray(data.active_buffs) ? data.active_buffs : [],
     // Carrega escolhas de Treinamento em Perícia
     skill_training_choices: (data as Record<string, unknown>).skill_training_choices || {},
+    // Carrega escolhas de Grau de Treinamento (NEX 35% e 70%)
+    training_grade_choices: (data as Record<string, unknown>).training_grade_choices as Character['training_grade_choices'] || undefined,
   } as unknown as Character;
 }
 export default function CharacterSheet() {
@@ -1950,33 +1957,46 @@ export default function CharacterSheet() {
 
   // Handler para confirmar escolhas de Grau de Treinamento
   const handleTrainingGradeConfirm = useCallback(async (result: TrainingGradeResult) => {
-    if (!character) return;
+    if (!character || !user) return;
     
-    // Busca escolhas existentes - cast para tipo correto
-    const existingChoices = (character as unknown as Record<string, unknown>).training_grade_choices as Record<string, unknown> || {};
+    console.log('[TrainingGrade] Recebido resultado:', JSON.stringify(result));
+    
+    // Busca escolhas existentes
+    const existingChoices = character.training_grade_choices || {};
     
     // Atualiza as escolhas para o NEX específico usando constantes centralizadas
+    const nexKey = result.nex === 35 ? TRAINING_GRADE_KEYS.NEX_35 : TRAINING_GRADE_KEYS.NEX_70;
     const updatedChoices = {
       ...existingChoices,
-      [result.nex === 35 ? TRAINING_GRADE_KEYS.NEX_35 : TRAINING_GRADE_KEYS.NEX_70]: result.choices,
+      [nexKey]: result.choices,
     };
     
     // Aplica os upgrades às perícias
-    const updatedSkills = applyTrainingGradeUpgrades(
-      character.skills || {},
-      result.choices
-    );
+    const currentSkills = (character.skills || {}) as Record<string, number>;
+    const updatedSkills = applyTrainingGradeUpgrades(currentSkills, result.choices);
     
-    // Salva no banco - cast para Json para compatibilidade com Supabase
+    console.log('[TrainingGrade] Salvando:', { 
+      nexKey, 
+      choicesCount: result.choices.length,
+      updatedChoices: JSON.stringify(updatedChoices), 
+      updatedSkills: JSON.stringify(updatedSkills),
+      characterId: character.id,
+      userId: user.id,
+    });
+    
+    // Salva no banco
     const { error } = await supabase
       .from('characters')
       .update({
         training_grade_choices: JSON.parse(JSON.stringify(updatedChoices)),
         skills: updatedSkills,
+        updated_at: new Date().toISOString(),
       })
-      .eq('id', character.id);
+      .eq('id', character.id)
+      .eq('user_id', user.id);
     
     if (error) {
+      console.error('[TrainingGrade] Erro ao salvar:', error);
       toast({
         title: 'Erro ao salvar',
         description: error.message,
@@ -1985,14 +2005,15 @@ export default function CharacterSheet() {
       return;
     }
     
+    console.log('[TrainingGrade] Salvo com sucesso!');
     toast({
       title: 'Grau de Treinamento configurado!',
       description: `${result.choices.length} perícias aprimoradas no NEX ${result.nex}%.`,
     });
     
     setTrainingGradeModalOpen(false);
-    refetchCharacter();
-  }, [character, refetchCharacter, toast]);
+    await refetchCharacter();
+  }, [character, user, refetchCharacter, toast]);
   
   // Handler para confirmar correção de perícias faltantes (auditoria)
   const handleMissingSkillsConfirm = useCallback(async (newSkillIds: string[]) => {
@@ -4512,12 +4533,12 @@ export default function CharacterSheet() {
           currentSkills={character.skills || {}}
           existingChoices={
             (trainingGradeNex === 35
-              ? ((character as unknown as Record<string, unknown>).training_grade_choices as Record<string, unknown>)?.nex35 || []
-              : ((character as unknown as Record<string, unknown>).training_grade_choices as Record<string, unknown>)?.nex70 || []) as SkillUpgradeChoice[]
+              ? character.training_grade_choices?.nex35 || []
+              : character.training_grade_choices?.nex70 || []) as SkillUpgradeChoice[]
           }
           previousNexConfigured={
             trainingGradeNex === 70
-              ? (((character as unknown as Record<string, unknown>).training_grade_choices as Record<string, unknown>)?.nex35 as unknown[] || []).length > 0
+              ? (character.training_grade_choices?.nex35 || []).length > 0
               : true // Para NEX 35%, sempre true (não há anterior obrigatório)
           }
         />
