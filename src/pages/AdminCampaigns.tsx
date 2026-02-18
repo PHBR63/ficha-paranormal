@@ -35,6 +35,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
@@ -154,7 +155,7 @@ export default function AdminCampaigns() {
     open: boolean;
     campaignId: string;
     campaignName: string;
-    action: 'pause' | 'resume' | 'complete' | 'delete';
+    action: 'pause' | 'resume' | 'complete' | 'archive' | 'delete';
     schemaVersion: 'v1' | 'v2';
   } | null>(null);
 
@@ -394,7 +395,15 @@ export default function AdminCampaigns() {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'campaign_messages_v2' },
         () => {
-          // Atualizar eventos recentes quando houver nova atividade
+          // Atualizar eventos recentes quando houver nova atividade (v2)
+          fetchRecentEvents();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'campaign_messages' },
+        () => {
+          // Atualizar eventos recentes quando houver nova atividade (v1)
           fetchRecentEvents();
         }
       )
@@ -402,7 +411,15 @@ export default function AdminCampaigns() {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'campaigns_v2' },
         () => {
-          // Recarregar campanhas quando houver mudanças
+          // Recarregar campanhas quando houver mudanças (v2)
+          fetchCampaigns();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'campaigns' },
+        () => {
+          // Recarregar campanhas quando houver mudanças (v1)
           fetchCampaigns();
         }
       )
@@ -433,10 +450,10 @@ export default function AdminCampaigns() {
 
       if (error) throw error;
 
-      // Registrar log de auditoria
+      // Registrar log de auditoria (target_user_id = mestre da campanha afetada)
       await supabase.from('audit_logs').insert({
         action_type: 'campaign_status_change',
-        target_user_id: currentUser?.id || '',
+        target_user_id: campaigns.find(c => c.id === campaignId)?.master_id || currentUser?.id || '',
         performed_by: currentUser?.id || '',
         old_value: campaigns.find(c => c.id === campaignId)?.status || '',
         new_value: newStatus,
@@ -509,6 +526,9 @@ export default function AdminCampaigns() {
       case 'complete':
         changeCampaignStatus(confirmDialog.campaignId, 'completed', confirmDialog.schemaVersion);
         break;
+      case 'archive':
+        changeCampaignStatus(confirmDialog.campaignId, 'archived', confirmDialog.schemaVersion);
+        break;
       case 'delete':
         deleteCampaign(confirmDialog.campaignId, confirmDialog.schemaVersion);
         break;
@@ -537,6 +557,10 @@ export default function AdminCampaigns() {
       complete: {
         title: 'Encerrar Campanha',
         description: `Tem certeza que deseja encerrar a campanha "${confirmDialog.campaignName}"? Esta ação marca a campanha como concluída.`,
+      },
+      archive: {
+        title: 'Arquivar Campanha',
+        description: `Deseja arquivar a campanha "${confirmDialog.campaignName}"? Campanhas arquivadas ficam preservadas mas inacessíveis para os jogadores.`,
       },
       delete: {
         title: 'Excluir Campanha',
@@ -922,7 +946,7 @@ export default function AdminCampaigns() {
                                   ) : null}
 
                                   {/* Encerrar */}
-                                  {campaign.status !== 'completed' && (
+                                  {campaign.status !== 'completed' && campaign.status !== 'archived' && (
                                     <DropdownMenuItem
                                       onClick={() =>
                                         setConfirmDialog({
@@ -937,6 +961,25 @@ export default function AdminCampaigns() {
                                     >
                                       <XCircle className="h-4 w-4 text-sky-500" />
                                       Encerrar
+                                    </DropdownMenuItem>
+                                  )}
+
+                                  {/* Arquivar (disponível para campanhas concluídas) */}
+                                  {campaign.status === 'completed' && (
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        setConfirmDialog({
+                                          open: true,
+                                          campaignId: campaign.id,
+                                          campaignName: campaign.name,
+                                          action: 'archive',
+                                          schemaVersion: campaign.schema_version,
+                                        })
+                                      }
+                                      className="gap-2"
+                                    >
+                                      <Clock className="h-4 w-4 text-muted-foreground" />
+                                      Arquivar
                                     </DropdownMenuItem>
                                   )}
 
