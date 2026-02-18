@@ -66,6 +66,7 @@ import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { AdminNav, AdminPageSkeleton, AdminSearchBar, AdminPagination } from '@/components/admin';
 import { useAdminFilters } from '@/hooks';
+import { useAuditAlerts } from '@/hooks/useAuditAlerts';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // ============================================================
@@ -149,6 +150,10 @@ export default function AdminCampaigns() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [showRealtime, setShowRealtime] = useState(true);
+
+  // Alertas em tempo real para ações críticas de auditoria
+  // O hook escuta audit_logs via Realtime e dispara toasts visuais automaticamente
+  useAuditAlerts({ enabled: true });
 
   // Dialog de confirmação para ações destrutivas
   const [confirmDialog, setConfirmDialog] = useState<{
