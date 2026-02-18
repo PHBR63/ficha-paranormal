@@ -12,13 +12,16 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
 import { 
   RefreshCw, 
   History, 
   AlertTriangle,
-  Inbox
+  Inbox,
+  Bell
 } from 'lucide-react';
 import { useAuditLogs } from '@/hooks/useAuditLogs';
+import { useAuditAlerts } from '@/hooks/useAuditAlerts';
 import { AuditLogStats } from './AuditLogStats';
 import { AuditLogFiltersComponent } from './AuditLogFilters';
 import { AuditLogEntryComponent } from './AuditLogEntry';
@@ -32,11 +35,23 @@ export function AuditLogTimeline() {
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(15);
   const [filters, setFilters] = useState<AuditLogFilters>({});
+  // Contador de alertas críticos recebidos em tempo real nesta sessão
+  const [criticalCount, setCriticalCount] = useState(0);
 
   const { logs, total, stats, isLoading, error, refetch } = useAuditLogs({
     page,
     pageSize,
     filters
+  });
+
+  // Escuta audit_logs em tempo real: ao receber ação crítica,
+  // atualiza a lista e incrementa o contador de alertas
+  useAuditAlerts({
+    enabled: true,
+    onCriticalAction: () => {
+      setCriticalCount(prev => prev + 1);
+      refetch(); // Recarrega a lista para mostrar o novo log
+    },
   });
 
   // Handlers de filtro
@@ -108,9 +123,25 @@ export function AuditLogTimeline() {
             <CardTitle className="flex items-center gap-2">
               <History className="w-5 h-5" />
               Timeline de Auditoria
+              {/* Badge de alertas críticos recebidos nesta sessão */}
+              {criticalCount > 0 && (
+                <Badge
+                  variant="destructive"
+                  className="ml-1 animate-pulse flex items-center gap-1 text-xs"
+                  title={`${criticalCount} ação(ões) crítica(s) detectada(s) nesta sessão`}
+                >
+                  <Bell className="w-3 h-3" />
+                  {criticalCount}
+                </Badge>
+              )}
             </CardTitle>
             <CardDescription>
               Histórico completo de ações administrativas no sistema
+              {criticalCount > 0 && (
+                <span className="ml-2 text-destructive font-medium text-xs">
+                  — {criticalCount} alerta(s) crítico(s) recebido(s)
+                </span>
+              )}
             </CardDescription>
           </div>
           <Button

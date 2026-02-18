@@ -36,3 +36,4 @@ export * from './useActivatableClassPowers';
 export * from './useReducedMotion';
 export * from './useAdminFilters';
 export * from './useAuditLogs';
+export * from './useAuditAlerts';
