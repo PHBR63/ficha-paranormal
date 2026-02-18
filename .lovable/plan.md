@@ -1,53 +1,107 @@
 
-# Corrigir Modificações para Equipamentos Gerais (Acessórios)
+# Verificação Completa do Painel Administrativo de Campanhas
 
-## Problema Identificado
+## Resumo da Análise
 
-O botão "Modificar" **nunca aparece** para acessórios no inventário. A causa raiz:
+O painel `/admin/campaigns` foi implementado corretamente em termos de interface e lógica de negócio. No entanto, a verificação revelou **um problema crítico de acesso a dados** e **três melhorias funcionais** necessárias para que o painel funcione conforme o esperado.
 
-1. Quando um acessório é adicionado do catálogo, seu tipo original (`'acessorio'`) é convertido para `'misc'` pelo `ITEM_TYPE_MIGRATION_MAP` (linha 127).
-2. O campo `catalogType` nunca é salvo no item.
-3. A condição que exibe o botão "Modificar" verifica `(item.itemType as string) === 'acessorio'` ou `(item as any).catalogType === 'acessorio'` -- ambas falham porque o tipo virou `'misc'` e `catalogType` não existe.
+---
 
-## Solucao
+## Problema Crítico: RLS Bloqueando o Admin
 
-### 1. Preservar o tipo original do catalogo no item
+### O que está errado
 
-No `handleAddItemFromCatalog` (linha ~777), adicionar a propriedade `catalogType` ao `baseItem` com o valor original de `catalogItem.type`. Isso permite identificar acessorios mesmo apos a normalizacao.
+As políticas de segurança (RLS) das tabelas de campanhas **não concedem acesso irrestrito a administradores**. As políticas atuais permitem visualizar apenas as campanhas onde o usuário logado é mestre ou membro:
 
-```typescript
-const baseItem = {
-  // ... campos existentes ...
-  catalogType: catalogItem.type, // Preserva tipo original do catalogo
-};
+```text
+campaigns          → SELECT: apenas master_id = auth.uid() OU membro
+campaigns_v2       → SELECT: apenas master_id = auth.uid() OU membro (via is_campaign_member_v2)
+campaign_members   → SELECT: apenas user_id = auth.uid() OU mestre/membro da campanha
+campaign_members_v2 → SELECT: apenas membro ou mestre da campanha
 ```
 
-### 2. Atualizar ExtendedInventoryItem
+**Consequência real:** Um administrador que não seja mestre de nenhuma campanha verá o painel completamente vazio. Mesmo sendo admin, as queries falham silenciosamente e retornam 0 campanhas.
 
-Adicionar `catalogType?: string` a interface `ExtendedInventoryItem` para tipar corretamente o campo (eliminando os `(item as any).catalogType`).
+### Confirmação no banco
 
-### 3. Garantir persistencia do catalogType
+O banco possui 3 campanhas (2 v1 + 1 v2) com 6 membros no total. Apenas 1 usuário é mestre dessas campanhas. Se o admin logado for outro usuário, verá tudo vazio.
 
-Nos mapeamentos de `onInventoryChange` (linhas ~804, 639, 699, etc.), incluir `catalogType` junto com `itemType` e `equipSlot` para que o campo seja preservado ao salvar.
+### A correção
 
-### 4. Atualizar condicoes do botao Modificar
+Adicionar políticas RLS que usem a função `is_admin()` já existente no banco:
 
-Nas 4 ocorrencias onde a condicao de `onModify` e definida (linhas ~1694, 1710, 1732, 1748), usar a propriedade tipada:
+```sql
+-- Para campaigns
+CREATE POLICY "Admins can view all campaigns"
+ON public.campaigns FOR SELECT
+USING (is_admin(auth.uid()));
 
-```typescript
-item.itemType === 'weapon' || item.itemType === 'armor' || item.catalogType === 'acessorio'
+CREATE POLICY "Admins can update all campaigns"
+ON public.campaigns FOR UPDATE
+USING (is_admin(auth.uid()));
+
+CREATE POLICY "Admins can delete all campaigns"
+ON public.campaigns FOR DELETE
+USING (is_admin(auth.uid()));
+
+-- Repetir para campaigns_v2, campaign_members e campaign_members_v2
 ```
 
 ---
 
-### Detalhes Tecnicos
+## Melhorias Funcionais Identificadas
 
-**Arquivos a modificar:**
-- `src/components/inventory/InventoryPanel.tsx`
-  - Interface `ExtendedInventoryItem`: adicionar `catalogType?: string`
-  - `handleAddItemFromCatalog`: salvar `catalogType: catalogItem.type`
-  - Todos os mapeamentos de `onInventoryChange`: propagar `catalogType`
-  - 4 condicoes de `onModify`: usar `item.catalogType` tipado
-  - `handleOpenModification`: remover cast `(item as any)`
+### 1. Log de Auditoria com target_user_id incorreto
 
-**Nenhum arquivo novo necessario** -- o `AccessoryModificationModal.tsx` ja existe e esta correto com as 4 modificacoes da Tabela 3.9.
+Na função `changeCampaignStatus` (linha 437), o campo `target_user_id` é preenchido com `currentUser?.id` (o próprio admin), quando deveria ser o `master_id` da campanha afetada — que é o usuário impactado pela ação.
+
+```typescript
+// ERRADO (atual):
+target_user_id: currentUser?.id || '',
+
+// CORRETO:
+target_user_id: campaigns.find(c => c.id === campaignId)?.master_id || currentUser?.id || '',
+```
+
+### 2. Monitor em tempo real não atualiza campanhas v1
+
+O canal Realtime (linha 388-414) escuta mudanças em `campaigns_v2` mas não em `campaigns`. Novas campanhas v1 ou mudanças de status em v1 não serão refletidas automaticamente.
+
+```typescript
+// Falta este listener:
+.on('postgres_changes', { event: '*', schema: 'public', table: 'campaigns' }, () => fetchCampaigns())
+```
+
+### 3. Ausência de ação "Arquivar"
+
+O menu de ações por campanha oferece Pausar, Retomar, Encerrar e Excluir, mas não tem "Arquivar" — que é um status válido no sistema (`CampaignStatus = 'archived'`). Campanhas encerradas poderiam ser arquivadas como etapa seguinte.
+
+---
+
+## Plano de Implementação
+
+### Fase 1 - Migração de banco (crítica)
+
+Criar migração SQL para adicionar políticas RLS que concedam ao administrador acesso total de leitura e moderação em:
+- `campaigns` (SELECT, UPDATE, DELETE)
+- `campaigns_v2` (SELECT, UPDATE, DELETE)
+- `campaign_members` (SELECT)
+- `campaign_members_v2` (SELECT)
+
+### Fase 2 - Correções no código (`AdminCampaigns.tsx`)
+
+1. Corrigir `target_user_id` no log de auditoria da função `changeCampaignStatus`
+2. Adicionar listener Realtime para tabela `campaigns` (v1)
+3. Adicionar opção "Arquivar" no menu de ações para campanhas já encerradas (`completed`)
+
+---
+
+## Detalhes Técnicos
+
+**Arquivo a modificar:**
+- `src/pages/AdminCampaigns.tsx` — 3 correções pontuais
+
+**Migração de banco:**
+- 8 novas políticas RLS usando `is_admin(auth.uid())` — função SECURITY DEFINER já existente
+
+**Nenhum novo arquivo necessário.** Todas as correções são ajustes sobre o que já foi implementado.
