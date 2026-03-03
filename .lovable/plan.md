@@ -1,107 +1,93 @@
 
-# Verificação Completa do Painel Administrativo de Campanhas
 
-## Resumo da Análise
+## Plano: Evolução do Mapa 2D — Desenhos, Textos e Tokens Animados (WebM)
 
-O painel `/admin/campaigns` foi implementado corretamente em termos de interface e lógica de negócio. No entanto, a verificação revelou **um problema crítico de acesso a dados** e **três melhorias funcionais** necessárias para que o painel funcione conforme o esperado.
+### Análise do Estado Atual
 
----
+O mapa tático já possui:
+- ✅ Canvas via React-Konva (zoom, pan, pinch)
+- ✅ Tokens arrastáveis com imagem
+- ✅ Fog of War
+- ✅ Imagens de fundo (mapas)
+- ✅ Grid, medição, pings
+- ✅ Realtime para tokens (Supabase)
 
-## Problema Crítico: RLS Bloqueando o Admin
-
-### O que está errado
-
-As políticas de segurança (RLS) das tabelas de campanhas **não concedem acesso irrestrito a administradores**. As políticas atuais permitem visualizar apenas as campanhas onde o usuário logado é mestre ou membro:
-
-```text
-campaigns          → SELECT: apenas master_id = auth.uid() OU membro
-campaigns_v2       → SELECT: apenas master_id = auth.uid() OU membro (via is_campaign_member_v2)
-campaign_members   → SELECT: apenas user_id = auth.uid() OU mestre/membro da campanha
-campaign_members_v2 → SELECT: apenas membro ou mestre da campanha
-```
-
-**Consequência real:** Um administrador que não seja mestre de nenhuma campanha verá o painel completamente vazio. Mesmo sendo admin, as queries falham silenciosamente e retornam 0 campanhas.
-
-### Confirmação no banco
-
-O banco possui 3 campanhas (2 v1 + 1 v2) com 6 membros no total. Apenas 1 usuário é mestre dessas campanhas. Se o admin logado for outro usuário, verá tudo vazio.
-
-### A correção
-
-Adicionar políticas RLS que usem a função `is_admin()` já existente no banco:
-
-```sql
--- Para campaigns
-CREATE POLICY "Admins can view all campaigns"
-ON public.campaigns FOR SELECT
-USING (is_admin(auth.uid()));
-
-CREATE POLICY "Admins can update all campaigns"
-ON public.campaigns FOR UPDATE
-USING (is_admin(auth.uid()));
-
-CREATE POLICY "Admins can delete all campaigns"
-ON public.campaigns FOR DELETE
-USING (is_admin(auth.uid()));
-
--- Repetir para campaigns_v2, campaign_members e campaign_members_v2
-```
+**Faltam** (conforme a imagem de referência):
+- ❌ Camada de desenhos (freehand, linhas, formas)
+- ❌ Camada de textos (anotações no mapa)
+- ❌ Suporte a tokens WebM (animados)
 
 ---
 
-## Melhorias Funcionais Identificadas
+### Etapa 1 — Tabelas no Banco (Migração SQL)
 
-### 1. Log de Auditoria com target_user_id incorreto
+Criar duas tabelas para persistir desenhos e textos no mapa:
 
-Na função `changeCampaignStatus` (linha 437), o campo `target_user_id` é preenchido com `currentUser?.id` (o próprio admin), quando deveria ser o `master_id` da campanha afetada — que é o usuário impactado pela ação.
+**`map_drawings`**: `id`, `map_id`, `created_by`, `tool` (pen/line/rect/circle/eraser), `points` (jsonb — array de coordenadas), `color`, `stroke_width`, `opacity`, `created_at`
 
-```typescript
-// ERRADO (atual):
-target_user_id: currentUser?.id || '',
+**`map_texts`**: `id`, `map_id`, `created_by`, `text`, `x`, `y`, `font_size`, `color`, `rotation`, `created_at`
 
-// CORRETO:
-target_user_id: campaigns.find(c => c.id === campaignId)?.master_id || currentUser?.id || '',
-```
-
-### 2. Monitor em tempo real não atualiza campanhas v1
-
-O canal Realtime (linha 388-414) escuta mudanças em `campaigns_v2` mas não em `campaigns`. Novas campanhas v1 ou mudanças de status em v1 não serão refletidas automaticamente.
-
-```typescript
-// Falta este listener:
-.on('postgres_changes', { event: '*', schema: 'public', table: 'campaigns' }, () => fetchCampaigns())
-```
-
-### 3. Ausência de ação "Arquivar"
-
-O menu de ações por campanha oferece Pausar, Retomar, Encerrar e Excluir, mas não tem "Arquivar" — que é um status válido no sistema (`CampaignStatus = 'archived'`). Campanhas encerradas poderiam ser arquivadas como etapa seguinte.
+Ambas com RLS para membros da campanha e Realtime habilitado.
 
 ---
 
-## Plano de Implementação
+### Etapa 2 — DrawingLayer (Konva)
 
-### Fase 1 - Migração de banco (crítica)
-
-Criar migração SQL para adicionar políticas RLS que concedam ao administrador acesso total de leitura e moderação em:
-- `campaigns` (SELECT, UPDATE, DELETE)
-- `campaigns_v2` (SELECT, UPDATE, DELETE)
-- `campaign_members` (SELECT)
-- `campaign_members_v2` (SELECT)
-
-### Fase 2 - Correções no código (`AdminCampaigns.tsx`)
-
-1. Corrigir `target_user_id` no log de auditoria da função `changeCampaignStatus`
-2. Adicionar listener Realtime para tabela `campaigns` (v1)
-3. Adicionar opção "Arquivar" no menu de ações para campanhas já encerradas (`completed`)
+Novo componente `src/components/campaign/tactical/layers/DrawingLayer.tsx`:
+- Renderiza `Line` (Konva) para cada desenho salvo
+- Modo de desenho ativo: captura `onMouseDown/Move/Up` no Stage para criar strokes freehand
+- Ferramentas: caneta, linha reta, retângulo, círculo, borracha
+- Cada stroke é salvo no banco ao `mouseUp`
+- Sincroniza via Realtime (INSERT na `map_drawings`)
 
 ---
 
-## Detalhes Técnicos
+### Etapa 3 — TextLayer (Konva)
 
-**Arquivo a modificar:**
-- `src/pages/AdminCampaigns.tsx` — 3 correções pontuais
+Novo componente `src/components/campaign/tactical/layers/TextLayer.tsx`:
+- Renderiza `Text` (Konva) para cada anotação
+- Clique no mapa com ferramenta "texto" abre input inline
+- Textos arrastáveis e editáveis (double-click)
+- Salvos no banco e sincronizados via Realtime
 
-**Migração de banco:**
-- 8 novas políticas RLS usando `is_admin(auth.uid())` — função SECURITY DEFINER já existente
+---
 
-**Nenhum novo arquivo necessário.** Todas as correções são ajustes sobre o que já foi implementado.
+### Etapa 4 — Tokens WebM (Animados)
+
+- Modificar `TokenShape` em `TokenLayer.tsx` para detectar URLs `.webm`
+- Para WebM: usar `<video>` como fonte de imagem Konva via `Konva.Animation` loop
+- O vídeo é carregado em um elemento `<video>` oculto, e cada frame é pintado no canvas via `requestAnimationFrame`
+- Atualizar dialog de criação de token para aceitar upload de `.webm`
+
+---
+
+### Etapa 5 — Ferramentas na Toolbar
+
+Expandir a toolbar existente com novas ferramentas:
+- **Caneta** (draw mode — já existe no enum, mas sem implementação)
+- **Texto** (nova ferramenta)
+- Controles: cor, espessura, tamanho de fonte
+- Botão "Limpar desenhos" (mestre)
+
+---
+
+### Etapa 6 — Integração no Hook `useTacticalBoard`
+
+Adicionar ao hook:
+- `drawings` / `texts` — estado local
+- `loadDrawings()` / `loadTexts()` — carrega do banco
+- `createDrawing()` / `deleteDrawing()`
+- `createText()` / `updateText()` / `deleteText()`
+- Subscrições Realtime para ambas tabelas
+
+---
+
+### Ordem de Implementação
+
+1. Migração SQL (tabelas + RLS + Realtime)
+2. Hook: funções de CRUD e Realtime para drawings/texts
+3. DrawingLayer + integração no TacticalBoardKonva
+4. TextLayer + integração no TacticalBoardKonva
+5. Suporte WebM no TokenLayer
+6. Toolbar expandida com controles de desenho/texto
+
