@@ -1,93 +1,70 @@
 
 
-## Plano: Evolução do Mapa 2D — Desenhos, Textos e Tokens Animados (WebM)
+## Plano: Gerenciador de Assets do Mapa — Com Pastas e Subpastas
 
-### Análise do Estado Atual
+### Visão Geral
 
-O mapa tático já possui:
-- ✅ Canvas via React-Konva (zoom, pan, pinch)
-- ✅ Tokens arrastáveis com imagem
-- ✅ Fog of War
-- ✅ Imagens de fundo (mapas)
-- ✅ Grid, medição, pings
-- ✅ Realtime para tokens (Supabase)
-
-**Faltam** (conforme a imagem de referência):
-- ❌ Camada de desenhos (freehand, linhas, formas)
-- ❌ Camada de textos (anotações no mapa)
-- ❌ Suporte a tokens WebM (animados)
+Sistema de arquivos completo para o mestre organizar assets (imagens, ícones, tokens) em pastas e subpastas livres, com upload, navegação estilo explorador e posicionamento no mapa.
 
 ---
 
-### Etapa 1 — Tabelas no Banco (Migração SQL)
+### Etapa 1 — Banco de Dados
 
-Criar duas tabelas para persistir desenhos e textos no mapa:
+**Tabela `campaign_asset_folders`** — estrutura de pastas recursiva:
+- `id`, `campaign_id`, `parent_id` (uuid nullable, FK self — null = raiz), `name`, `created_by`, `created_at`
 
-**`map_drawings`**: `id`, `map_id`, `created_by`, `tool` (pen/line/rect/circle/eraser), `points` (jsonb — array de coordenadas), `color`, `stroke_width`, `opacity`, `created_at`
+**Tabela `campaign_assets`** — arquivos dentro das pastas:
+- `id`, `campaign_id`, `folder_id` (uuid nullable, FK folders — null = raiz), `name`, `file_url`, `file_type`, `file_size`, `category` (token/decoration/effect/general), `tags` (text[]), `uploaded_by`, `created_at`
 
-**`map_texts`**: `id`, `map_id`, `created_by`, `text`, `x`, `y`, `font_size`, `color`, `rotation`, `created_at`
+**RLS** (padrão campanha):
+- Mestre: ALL em ambas tabelas (usando `is_campaign_master`)
+- Membros: SELECT em ambas (usando `is_campaign_member`)
 
-Ambas com RLS para membros da campanha e Realtime habilitado.
+**Bucket**: `campaign-assets` (público), com RLS no `storage.objects` restringindo upload ao mestre.
 
----
-
-### Etapa 2 — DrawingLayer (Konva)
-
-Novo componente `src/components/campaign/tactical/layers/DrawingLayer.tsx`:
-- Renderiza `Line` (Konva) para cada desenho salvo
-- Modo de desenho ativo: captura `onMouseDown/Move/Up` no Stage para criar strokes freehand
-- Ferramentas: caneta, linha reta, retângulo, círculo, borracha
-- Cada stroke é salvo no banco ao `mouseUp`
-- Sincroniza via Realtime (INSERT na `map_drawings`)
+**Realtime**: habilitar ambas tabelas.
 
 ---
 
-### Etapa 3 — TextLayer (Konva)
+### Etapa 2 — Hook `useCampaignAssets`
 
-Novo componente `src/components/campaign/tactical/layers/TextLayer.tsx`:
-- Renderiza `Text` (Konva) para cada anotação
-- Clique no mapa com ferramenta "texto" abre input inline
-- Textos arrastáveis e editáveis (double-click)
-- Salvos no banco e sincronizados via Realtime
-
----
-
-### Etapa 4 — Tokens WebM (Animados)
-
-- Modificar `TokenShape` em `TokenLayer.tsx` para detectar URLs `.webm`
-- Para WebM: usar `<video>` como fonte de imagem Konva via `Konva.Animation` loop
-- O vídeo é carregado em um elemento `<video>` oculto, e cada frame é pintado no canvas via `requestAnimationFrame`
-- Atualizar dialog de criação de token para aceitar upload de `.webm`
+Novo `src/hooks/campaign/useCampaignAssets.ts`:
+- **Pastas**: `createFolder`, `renameFolder`, `moveFolder`, `deleteFolder` (cascata nos filhos)
+- **Assets**: `uploadAsset`, `renameAsset`, `moveAsset`, `deleteAsset`
+- **Navegação**: `currentFolderId` (estado), `navigateToFolder`, `navigateUp`, `breadcrumbs` (caminho completo)
+- **Listagem**: query filtrada por `folder_id` atual (pastas + assets do nível)
+- Realtime para sincronizar entre usuários
 
 ---
 
-### Etapa 5 — Ferramentas na Toolbar
+### Etapa 3 — Componente `MapAssetsPanel`
 
-Expandir a toolbar existente com novas ferramentas:
-- **Caneta** (draw mode — já existe no enum, mas sem implementação)
-- **Texto** (nova ferramenta)
-- Controles: cor, espessura, tamanho de fonte
-- Botão "Limpar desenhos" (mestre)
+Novo `src/components/campaign/tactical/MapAssetsPanel.tsx` (Sheet lateral):
+
+- **Header**: Breadcrumbs clicáveis (Raiz > Monstros > Chefes), botão voltar
+- **Ações**: "Nova Pasta", "Upload" (drag & drop + botão)
+- **Grid/Lista** de conteúdo do nível atual:
+  - Pastas (ícone de pasta, clique navega para dentro)
+  - Assets (thumbnail, nome, categoria)
+- **Context menu** por item: Renomear, Mover para..., Excluir, Categorizar
+- **Filtro** por categoria e busca por nome
+- **Seleção de asset**: clique no asset entra em modo `place-asset`
 
 ---
 
-### Etapa 6 — Integração no Hook `useTacticalBoard`
+### Etapa 4 — Integração no Canvas
 
-Adicionar ao hook:
-- `drawings` / `texts` — estado local
-- `loadDrawings()` / `loadTexts()` — carrega do banco
-- `createDrawing()` / `deleteDrawing()`
-- `createText()` / `updateText()` / `deleteText()`
-- Subscrições Realtime para ambas tabelas
+- Novo `activeTool: 'place-asset'` com referência ao asset selecionado
+- Clique no canvas → `createToken` com `image_url` do asset
+- Preview do asset no cursor durante posicionamento
+- Botão `FolderOpen` na toolbar abre o painel
 
 ---
 
 ### Ordem de Implementação
 
-1. Migração SQL (tabelas + RLS + Realtime)
-2. Hook: funções de CRUD e Realtime para drawings/texts
-3. DrawingLayer + integração no TacticalBoardKonva
-4. TextLayer + integração no TacticalBoardKonva
-5. Suporte WebM no TokenLayer
-6. Toolbar expandida com controles de desenho/texto
+1. Migração SQL (tabelas + bucket + RLS + Realtime)
+2. Hook `useCampaignAssets` (CRUD pastas/assets + navegação + Realtime)
+3. Componente `MapAssetsPanel` (UI explorador de arquivos)
+4. Integração na toolbar + modo `place-asset` no canvas
 
