@@ -1,12 +1,14 @@
 // Step 1: Informações básicas da campanha
 // Nome, descrição e imagem de capa
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { ImagePlus, X, Sparkles } from 'lucide-react';
+import { ImagePlus, X, Sparkles, Upload, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 import type { CampaignFormData } from '@/pages/CampaignCreate';
 
 interface StepCampaignInfoProps {
@@ -25,7 +27,62 @@ const COVER_PRESETS = [
 export function StepCampaignInfo({ formData, updateFormData }: StepCampaignInfoProps) {
   const [showCoverPicker, setShowCoverPicker] = useState(false);
   const [customUrl, setCustomUrl] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
   
+  // Upload de imagem para o storage
+  const handleFileUpload = async (file: File) => {
+    // Validação de tipo e tamanho
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!allowedTypes.includes(file.type)) {
+      toast({ title: 'Formato inválido', description: 'Use JPG, PNG, WebP ou GIF.', variant: 'destructive' });
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: 'Arquivo muito grande', description: 'O tamanho máximo é 5MB.', variant: 'destructive' });
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const ext = file.name.split('.').pop() || 'png';
+      const filePath = `campaign-covers/${crypto.randomUUID()}.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('campaign-assets')
+        .upload(filePath, file, { contentType: file.type });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('campaign-assets')
+        .getPublicUrl(filePath);
+
+      updateFormData({ coverImageUrl: publicUrl });
+      setShowCoverPicker(false);
+      toast({ title: 'Imagem enviada!', description: 'A capa foi carregada com sucesso.' });
+    } catch (error: any) {
+      console.error('Erro no upload:', error);
+      toast({ title: 'Erro no upload', description: error.message, variant: 'destructive' });
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const onFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) handleFileUpload(file);
+  };
+
+  // Suporte a drag & drop no placeholder
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files?.[0];
+    if (file) handleFileUpload(file);
+  };
+
   // Seleciona uma capa pré-definida
   const selectPresetCover = (url: string) => {
     updateFormData({ coverImageUrl: url });
@@ -80,12 +137,32 @@ export function StepCampaignInfo({ formData, updateFormData }: StepCampaignInfoP
           <div 
             className="aspect-video rounded-lg border-2 border-dashed border-border bg-muted/20 flex flex-col items-center justify-center cursor-pointer hover:border-primary/50 hover:bg-muted/30 transition-colors"
             onClick={() => setShowCoverPicker(true)}
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={handleDrop}
           >
-            <ImagePlus className="w-12 h-12 text-muted-foreground mb-3" />
-            <p className="text-sm text-muted-foreground">Clique para adicionar uma capa</p>
+            {isUploading ? (
+              <>
+                <Loader2 className="w-12 h-12 text-primary mb-3 animate-spin" />
+                <p className="text-sm text-muted-foreground">Enviando imagem...</p>
+              </>
+            ) : (
+              <>
+                <ImagePlus className="w-12 h-12 text-muted-foreground mb-3" />
+                <p className="text-sm text-muted-foreground">Clique para escolher ou arraste uma imagem</p>
+              </>
+            )}
           </div>
         )}
         
+        {/* Hidden file input */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/gif"
+          className="hidden"
+          onChange={onFileInputChange}
+        />
+
         {/* Picker de capas */}
         {showCoverPicker && (
           <div className="ordo-panel p-4 space-y-4">
@@ -95,6 +172,20 @@ export function StepCampaignInfo({ formData, updateFormData }: StepCampaignInfoP
                 <X className="w-4 h-4" />
               </Button>
             </div>
+
+            {/* Botão de upload */}
+            <Button
+              variant="outline"
+              className="w-full border-dashed"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploading}
+            >
+              {isUploading ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Enviando...</>
+              ) : (
+                <><Upload className="w-4 h-4 mr-2" /> Fazer upload de imagem (max 5MB)</>
+              )}
+            </Button>
             
             {/* Presets */}
             <div className="grid grid-cols-2 gap-3">
