@@ -302,6 +302,19 @@ export default function CampaignShell() {
             onFogReveal={tacticalBoard.revealFog}
             onFogHide={tacticalBoard.hideFog}
             calculateDistance={tacticalBoard.calculateDistance}
+            drawings={tacticalBoard.drawings}
+            texts={tacticalBoard.texts}
+            onDrawingComplete={tacticalBoard.createDrawing}
+            onDrawingDelete={tacticalBoard.deleteDrawing}
+            onDrawingClearAll={tacticalBoard.clearAllDrawings}
+            onDrawingUndo={tacticalBoard.undoDrawing}
+            onDrawingRedo={tacticalBoard.redoDrawing}
+            canUndoDrawing={tacticalBoard.canUndoDrawing}
+            canRedoDrawing={tacticalBoard.canRedoDrawing}
+            onTextCreate={tacticalBoard.createText}
+            onTextUpdate={tacticalBoard.updateText}
+            onTextDelete={tacticalBoard.deleteText}
+            currentUserId={userId}
           />
         )}
 
