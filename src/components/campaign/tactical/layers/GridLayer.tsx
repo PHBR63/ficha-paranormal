@@ -6,7 +6,7 @@
  */
 
 import { useMemo, ReactNode } from 'react';
-import { Layer, Line, Group } from 'react-konva';
+import { Line, Group } from 'react-konva';
 
 interface GridLayerProps {
   gridSize: number;
@@ -95,9 +95,9 @@ export function GridLayer({
   if (!visible || gridType === 'none') return null;
 
   return (
-    <Layer listening={false}>
-      <Group>{gridLines}</Group>
-    </Layer>
+    <Group listening={false}>
+      {gridLines}
+    </Group>
   );
 }
 

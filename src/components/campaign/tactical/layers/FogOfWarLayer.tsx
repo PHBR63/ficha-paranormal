@@ -9,7 +9,7 @@
  */
 
 import { useMemo } from 'react';
-import { Layer, Rect, Group, Shape } from 'react-konva';
+import { Rect, Group } from 'react-konva';
 
 interface FogCell {
   x: number;
@@ -62,22 +62,20 @@ export function FogOfWarLayer({
     if (revealedCells.length === 0) return null;
 
     return (
-      <Layer listening={false}>
-        <Group>
-          {revealedCells.map((cell) => (
-            <Rect
-              key={`revealed-${cell.x}-${cell.y}`}
-              x={cell.x * gridSize}
-              y={cell.y * gridSize}
-              width={gridSize}
-              height={gridSize}
-              fill="rgba(0, 200, 100, 0.1)"
-              stroke="rgba(0, 200, 100, 0.3)"
-              strokeWidth={1}
-            />
-          ))}
-        </Group>
-      </Layer>
+      <Group listening={false}>
+        {revealedCells.map((cell) => (
+          <Rect
+            key={`revealed-${cell.x}-${cell.y}`}
+            x={cell.x * gridSize}
+            y={cell.y * gridSize}
+            width={gridSize}
+            height={gridSize}
+            fill="rgba(0, 200, 100, 0.1)"
+            stroke="rgba(0, 200, 100, 0.3)"
+            strokeWidth={1}
+          />
+        ))}
+      </Group>
     );
   }
 
@@ -85,20 +83,18 @@ export function FogOfWarLayer({
   if (!visible || fogCells.length === 0) return null;
 
   return (
-    <Layer listening={false}>
-      <Group>
-        {fogCells.map((cell) => (
-          <Rect
-            key={`fog-${cell.x}-${cell.y}`}
-            x={cell.x * gridSize}
-            y={cell.y * gridSize}
-            width={gridSize}
-            height={gridSize}
-            fill="rgba(10, 10, 15, 0.92)"
-          />
-        ))}
-      </Group>
-    </Layer>
+    <Group listening={false}>
+      {fogCells.map((cell) => (
+        <Rect
+          key={`fog-${cell.x}-${cell.y}`}
+          x={cell.x * gridSize}
+          y={cell.y * gridSize}
+          width={gridSize}
+          height={gridSize}
+          fill="rgba(10, 10, 15, 0.92)"
+        />
+      ))}
+    </Group>
   );
 }
 
