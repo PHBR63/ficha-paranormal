@@ -10,6 +10,8 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import type { MapDrawing } from '@/components/campaign/tactical/layers/DrawingLayer';
+import type { MapText } from '@/components/campaign/tactical/layers/TextLayer';
 
 // Tipos de token
 export type TokenType = 'pc' | 'npc' | 'creature' | 'object' | 'marker';
@@ -133,6 +135,16 @@ export interface TacticalBoardReturn {
   setHighlightedCells: (cells: HighlightedCell[]) => void;
   clearHighlightedCells: () => void;
   
+  // Desenhos e textos
+  drawings: MapDrawing[];
+  texts: MapText[];
+  createDrawing: (data: Omit<MapDrawing, 'id' | 'map_id' | 'created_by' | 'created_at'>) => Promise<void>;
+  deleteDrawing: (drawingId: string) => Promise<void>;
+  clearAllDrawings: () => Promise<void>;
+  createText: (data: Omit<MapText, 'id' | 'map_id' | 'created_by' | 'created_at'>) => Promise<void>;
+  updateText: (textId: string, data: Partial<MapText>) => Promise<void>;
+  deleteText: (textId: string) => Promise<void>;
+  
   // Utilidades
   pixelToCell: (px: number, py: number) => { x: number; y: number };
   cellToPixel: (cx: number, cy: number) => { x: number; y: number };
@@ -178,6 +190,10 @@ export function useTacticalBoard({
   
   // Células destacadas (movimento, alcance)
   const [highlightedCells, setHighlightedCellsState] = useState<HighlightedCell[]>([]);
+  
+  // Desenhos e textos no mapa
+  const [drawings, setDrawings] = useState<MapDrawing[]>([]);
+  const [texts, setTexts] = useState<MapText[]>([]);
   
   // Ref para cleanup de pings
   const pingTimeoutRef = useRef<NodeJS.Timeout[]>([]);
@@ -305,6 +321,78 @@ export function useTacticalBoard({
       pingTimeoutRef.current.forEach(clearTimeout);
     };
   }, []);
+
+  // =====================================================
+  // CARREGAMENTO DE DESENHOS E TEXTOS
+  // =====================================================
+
+  const loadDrawings = useCallback(async (mapId: string) => {
+    if (!mapId) return;
+    try {
+      const { data, error } = await supabase
+        .from('map_drawings')
+        .select('*')
+        .eq('map_id', mapId)
+        .order('created_at', { ascending: true });
+      if (error) throw error;
+      setDrawings((data || []) as MapDrawing[]);
+    } catch (err: any) {
+      console.error('Erro ao carregar desenhos:', err);
+    }
+  }, []);
+
+  const loadTexts = useCallback(async (mapId: string) => {
+    if (!mapId) return;
+    try {
+      const { data, error } = await supabase
+        .from('map_texts')
+        .select('*')
+        .eq('map_id', mapId)
+        .order('created_at', { ascending: true });
+      if (error) throw error;
+      setTexts((data || []) as MapText[]);
+    } catch (err: any) {
+      console.error('Erro ao carregar textos:', err);
+    }
+  }, []);
+
+  // Carrega desenhos/textos quando mapa ativo muda
+  useEffect(() => {
+    if (!activeMap?.id || !enabled) return;
+    loadDrawings(activeMap.id);
+    loadTexts(activeMap.id);
+  }, [activeMap?.id, enabled, loadDrawings, loadTexts]);
+
+  // Realtime para desenhos e textos
+  useEffect(() => {
+    if (!activeMap?.id || !enabled) return;
+    const mapId = activeMap.id;
+
+    const drawingsChannel = supabase
+      .channel(`tactical-drawings-${mapId}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'map_drawings',
+        filter: `map_id=eq.${mapId}`,
+      }, () => { loadDrawings(mapId); })
+      .subscribe();
+
+    const textsChannel = supabase
+      .channel(`tactical-texts-${mapId}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'map_texts',
+        filter: `map_id=eq.${mapId}`,
+      }, () => { loadTexts(mapId); })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(drawingsChannel);
+      supabase.removeChannel(textsChannel);
+    };
+  }, [activeMap?.id, enabled, loadDrawings, loadTexts]);
 
   // =====================================================
   // AÇÕES DE MAPA (todas usam refs para estabilidade)
@@ -707,10 +795,91 @@ export function useTacticalBoard({
   }, []);
 
   // =====================================================
+  // CRUD DE DESENHOS E TEXTOS
+  // =====================================================
+
+  const createDrawing = useCallback(async (data: Omit<MapDrawing, 'id' | 'map_id' | 'created_by' | 'created_at'>) => {
+    if (!activeMap?.id) return;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { error } = await supabase.from('map_drawings').insert({
+        map_id: activeMap.id,
+        created_by: user.id,
+        tool: data.tool,
+        points: data.points as any,
+        color: data.color,
+        stroke_width: data.stroke_width,
+        opacity: data.opacity,
+      });
+      if (error) throw error;
+    } catch (err: any) {
+      console.error('Erro ao criar desenho:', err);
+    }
+  }, [activeMap?.id]);
+
+  const deleteDrawing = useCallback(async (drawingId: string) => {
+    try {
+      const { error } = await supabase.from('map_drawings').delete().eq('id', drawingId);
+      if (error) throw error;
+    } catch (err: any) {
+      console.error('Erro ao deletar desenho:', err);
+    }
+  }, []);
+
+  const clearAllDrawings = useCallback(async () => {
+    if (!activeMap?.id || !isMasterRef.current) return;
+    try {
+      const { error } = await supabase.from('map_drawings').delete().eq('map_id', activeMap.id);
+      if (error) throw error;
+      toastRef.current?.({ title: 'Desenhos limpos' });
+    } catch (err: any) {
+      console.error('Erro ao limpar desenhos:', err);
+    }
+  }, [activeMap?.id]);
+
+  const createText = useCallback(async (data: Omit<MapText, 'id' | 'map_id' | 'created_by' | 'created_at'>) => {
+    if (!activeMap?.id) return;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { error } = await supabase.from('map_texts').insert({
+        map_id: activeMap.id,
+        created_by: user.id,
+        text: data.text,
+        x: data.x,
+        y: data.y,
+        font_size: data.font_size,
+        color: data.color,
+        rotation: data.rotation,
+      });
+      if (error) throw error;
+    } catch (err: any) {
+      console.error('Erro ao criar texto:', err);
+    }
+  }, [activeMap?.id]);
+
+  const updateText = useCallback(async (textId: string, data: Partial<MapText>) => {
+    try {
+      const { error } = await supabase.from('map_texts').update(data).eq('id', textId);
+      if (error) throw error;
+    } catch (err: any) {
+      console.error('Erro ao atualizar texto:', err);
+    }
+  }, []);
+
+  const deleteText = useCallback(async (textId: string) => {
+    try {
+      const { error } = await supabase.from('map_texts').delete().eq('id', textId);
+      if (error) throw error;
+    } catch (err: any) {
+      console.error('Erro ao deletar texto:', err);
+    }
+  }, []);
+
+  // =====================================================
   // MEMOIZAÇÃO DO RETORNO (CRÍTICO para evitar loop #185)
   // =====================================================
-  // Sem useMemo, cada render cria um novo objeto de retorno,
-  // causando re-renders em cascata nos componentes filhos (Select, etc.)
   
   return useMemo(() => ({
     maps,
@@ -725,6 +894,8 @@ export function useTacticalBoard({
     measureStart,
     measureEnd,
     highlightedCells,
+    drawings,
+    texts,
     loadMaps,
     createMap,
     updateMap,
@@ -749,49 +920,26 @@ export function useTacticalBoard({
     hideFog,
     setHighlightedCells: setHighlightedCellsState,
     clearHighlightedCells: () => setHighlightedCellsState([]),
+    createDrawing,
+    deleteDrawing,
+    clearAllDrawings,
+    createText,
+    updateText,
+    deleteText,
     pixelToCell,
     cellToPixel,
     calculateDistance,
   }), [
-    // Estados (mudam quando dados mudam)
-    maps,
-    activeMap,
-    tokens,
-    selectedTokenId,
-    isLoading,
-    pings,
-    zoom,
-    panOffset,
-    activeTool,
-    measureStart,
-    measureEnd,
-    highlightedCells,
-    // Callbacks (estáveis via useCallback - não causam re-memoização)
-    loadMaps,
-    createMap,
-    updateMap,
-    deleteMap,
-    setActiveMap,
-    uploadMapImage,
-    removeMapImage,
-    createToken,
-    updateToken,
-    moveToken,
-    deleteToken,
-    selectToken,
-    setZoom,
-    setPanOffset,
-    fitToScreen,
-    setActiveTool,
-    startMeasure,
-    endMeasure,
-    clearMeasure,
-    sendPing,
-    revealFog,
-    hideFog,
-    setHighlightedCellsState,
-    pixelToCell,
-    cellToPixel,
-    calculateDistance,
+    maps, activeMap, tokens, selectedTokenId, isLoading, pings,
+    zoom, panOffset, activeTool, measureStart, measureEnd, highlightedCells,
+    drawings, texts,
+    loadMaps, createMap, updateMap, deleteMap, setActiveMap, uploadMapImage, removeMapImage,
+    createToken, updateToken, moveToken, deleteToken, selectToken,
+    setZoom, setPanOffset, fitToScreen, setActiveTool,
+    startMeasure, endMeasure, clearMeasure, sendPing,
+    revealFog, hideFog, setHighlightedCellsState,
+    createDrawing, deleteDrawing, clearAllDrawings,
+    createText, updateText, deleteText,
+    pixelToCell, cellToPixel, calculateDistance,
   ]);
 }
