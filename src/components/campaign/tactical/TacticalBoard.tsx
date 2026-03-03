@@ -44,6 +44,8 @@ import {
 import { cn } from '@/lib/utils';
 import { validateImageUrl } from '@/lib/security/urlValidator';
 import { MapImageUploader } from './MapImageUploader';
+import { MapAssetsPanel } from './MapAssetsPanel';
+import { type CampaignAsset } from '@/hooks/campaign/useCampaignAssets';
 import { toast } from 'sonner';
 import {
   MousePointer2,
@@ -76,6 +78,7 @@ import {
   AlertTriangle,
   Undo2,
   Redo2,
+  FolderOpen,
 } from 'lucide-react';
 
 interface TacticalBoardProps {
@@ -202,6 +205,10 @@ export function TacticalBoard({
   const [drawStrokeWidth, setDrawStrokeWidth] = useState(3);
   const [textFontSize, setTextFontSize] = useState(16);
   const [textColor, setTextColor] = useState('#ffffff');
+  
+  // Estado do painel de assets
+  const [showAssetsPanel, setShowAssetsPanel] = useState(false);
+  const [selectedAssetForPlacement, setSelectedAssetForPlacement] = useState<CampaignAsset | null>(null);
   
   // Estados para preview de movimento (Fase 7.2)
   const [movementPreview, setMovementPreview] = useState<{
@@ -1173,6 +1180,15 @@ export function TacticalBoard({
             <Button
               variant="outline"
               size="sm"
+              onClick={() => setShowAssetsPanel(true)}
+              title="Gerenciar assets do mapa"
+            >
+              <FolderOpen className="w-4 h-4 mr-1" />
+              Assets
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => setShowMapDialog(true)}
             >
               <Plus className="w-4 h-4 mr-1" />
@@ -1181,6 +1197,24 @@ export function TacticalBoard({
           </div>
         )}
       </div>
+      
+      {/* Indicador de modo place-asset */}
+      {selectedAssetForPlacement && (
+        <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 border-b border-primary/20">
+          <Target className="w-4 h-4 text-primary" />
+          <span className="text-xs text-primary">
+            Clique no mapa para posicionar: <strong>{selectedAssetForPlacement.name}</strong>
+          </span>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="w-5 h-5 ml-auto"
+            onClick={() => setSelectedAssetForPlacement(null)}
+          >
+            <X className="w-3 h-3" />
+          </Button>
+        </div>
+      )}
       
       {/* Canvas Konva - flex-1 para preencher espaço disponível */}
       <div 
@@ -1230,6 +1264,27 @@ export function TacticalBoard({
           }}
           onTokenDoubleClick={(token) => {
             console.log('Double click on token:', token.name);
+          }}
+          onCellClick={async (x, y) => {
+            // Modo place-asset: cria token com a imagem do asset selecionado
+            if (selectedAssetForPlacement && isMaster && board.activeMap) {
+              const tokenType = selectedAssetForPlacement.category === 'token' ? 'npc' 
+                : selectedAssetForPlacement.category === 'decoration' ? 'object'
+                : 'object';
+              
+              await board.createToken({
+                map_id: board.activeMap.id,
+                name: selectedAssetForPlacement.name.replace(/\.[^.]+$/, ''),
+                token_type: tokenType as any,
+                image_url: selectedAssetForPlacement.file_url,
+                x,
+                y,
+                size: 1,
+              });
+              
+              toast.success(`"${selectedAssetForPlacement.name}" posicionado no mapa`);
+              setSelectedAssetForPlacement(null);
+            }
           }}
           onMeasureStart={(x, y) => board.startMeasure(x, y)}
           onMeasureEnd={(x, y) => board.endMeasure(x, y)}
@@ -1448,6 +1503,19 @@ export function TacticalBoard({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Painel de Assets do Mapa */}
+      <MapAssetsPanel
+        open={showAssetsPanel}
+        onOpenChange={setShowAssetsPanel}
+        campaignId={campaignId}
+        isMaster={isMaster}
+        onAssetSelect={(asset) => {
+          setSelectedAssetForPlacement(asset);
+          setShowAssetsPanel(false);
+          toast.info(`Clique no mapa para posicionar "${asset.name}"`);
+        }}
+      />
     </div>
   );
 }

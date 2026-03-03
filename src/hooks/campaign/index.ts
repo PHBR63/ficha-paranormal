@@ -43,3 +43,4 @@ export {
 export * from './useOpportunityAttacks';
 export * from './useTacticalBoard';
 export * from './useWhispers';
+export * from './useCampaignAssets';

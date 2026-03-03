@@ -47,6 +47,105 @@ export type Database = {
         }
         Relationships: []
       }
+      campaign_asset_folders: {
+        Row: {
+          campaign_id: string
+          created_at: string
+          created_by: string
+          id: string
+          name: string
+          parent_id: string | null
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string
+          created_by: string
+          id?: string
+          name: string
+          parent_id?: string | null
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          name?: string
+          parent_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_asset_folders_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_asset_folders_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_asset_folders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaign_assets: {
+        Row: {
+          campaign_id: string
+          category: string
+          created_at: string
+          file_size: number
+          file_type: string
+          file_url: string
+          folder_id: string | null
+          id: string
+          name: string
+          tags: string[]
+          uploaded_by: string
+        }
+        Insert: {
+          campaign_id: string
+          category?: string
+          created_at?: string
+          file_size?: number
+          file_type?: string
+          file_url: string
+          folder_id?: string | null
+          id?: string
+          name: string
+          tags?: string[]
+          uploaded_by: string
+        }
+        Update: {
+          campaign_id?: string
+          category?: string
+          created_at?: string
+          file_size?: number
+          file_type?: string
+          file_url?: string
+          folder_id?: string | null
+          id?: string
+          name?: string
+          tags?: string[]
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_assets_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_assets_folder_id_fkey"
+            columns: ["folder_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_asset_folders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaign_audio: {
         Row: {
           audio_type: string
