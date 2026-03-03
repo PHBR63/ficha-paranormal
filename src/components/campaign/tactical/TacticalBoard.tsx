@@ -145,7 +145,7 @@ export function TacticalBoard({
   }, []);
   
   const handleSetActiveTool = useCallback((tool: string) => {
-    setActiveToolRef.current?.(tool as 'select' | 'move' | 'measure' | 'fog' | 'ping' | 'draw');
+    setActiveToolRef.current?.(tool as 'select' | 'move' | 'measure' | 'fog' | 'ping' | 'draw' | 'text');
   }, []);
   
   const handleZoomIn = useCallback(() => {
@@ -1079,11 +1079,18 @@ export function TacticalBoard({
           }
           pings={board.pings}
           highlightedCells={board.highlightedCells}
+          drawings={[]}
+          texts={[]}
           selectedTokenId={board.selectedTokenId}
           measureStart={board.measureStart}
           measureEnd={board.measureEnd}
           calculateDistance={board.calculateDistance}
           activeTool={board.activeTool}
+          drawTool="pen"
+          drawColor="#ffffff"
+          drawStrokeWidth={3}
+          textFontSize={16}
+          textColor="#ffffff"
           isMaster={isMaster}
           width={canvasSize.width}
           height={canvasSize.height}
@@ -1105,7 +1112,6 @@ export function TacticalBoard({
             return await board.moveToken(tokenId, x, y);
           }}
           onTokenDoubleClick={(token) => {
-            // Poderia abrir um modal de edição do token
             console.log('Double click on token:', token.name);
           }}
           onMeasureStart={(x, y) => board.startMeasure(x, y)}
@@ -1113,7 +1119,6 @@ export function TacticalBoard({
           onPing={(x, y) => board.sendPing(x, y, '#ff0000')}
           onFogToggle={(cells) => {
             if (!isMaster || !board.activeMap) return;
-            // Toggle fog na célula
             const cell = cells[0];
             const isRevealed = board.activeMap.fog_of_war.some(
               f => f.x === cell.x && f.y === cell.y
@@ -1124,6 +1129,9 @@ export function TacticalBoard({
               board.revealFog([cell]);
             }
           }}
+          onDrawingComplete={() => {}}
+          onTextCreate={() => {}}
+          onTextUpdate={() => {}}
           combatMode={combatMode}
           movementRemaining={movementRemaining}
           onMovementPreview={onMovementPreview}

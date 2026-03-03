@@ -1641,6 +1641,97 @@ export type Database = {
         }
         Relationships: []
       }
+      map_drawings: {
+        Row: {
+          color: string
+          created_at: string
+          created_by: string
+          id: string
+          map_id: string
+          opacity: number
+          points: Json
+          stroke_width: number
+          tool: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          created_by: string
+          id?: string
+          map_id: string
+          opacity?: number
+          points?: Json
+          stroke_width?: number
+          tool?: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          map_id?: string
+          opacity?: number
+          points?: Json
+          stroke_width?: number
+          tool?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "map_drawings_map_id_fkey"
+            columns: ["map_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_maps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      map_texts: {
+        Row: {
+          color: string
+          created_at: string
+          created_by: string
+          font_size: number
+          id: string
+          map_id: string
+          rotation: number
+          text: string
+          x: number
+          y: number
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          created_by: string
+          font_size?: number
+          id?: string
+          map_id: string
+          rotation?: number
+          text?: string
+          x?: number
+          y?: number
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          created_by?: string
+          font_size?: number
+          id?: string
+          map_id?: string
+          rotation?: number
+          text?: string
+          x?: number
+          y?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "map_texts_map_id_fkey"
+            columns: ["map_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_maps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       map_tokens: {
         Row: {
           character_id: string | null

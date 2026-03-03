@@ -41,7 +41,7 @@ import type { TacticalMap, MapToken, BoardPing } from '@/hooks/campaign/useTacti
 import type { HighlightedCell } from '@/components/campaign/tactical/layers/HighlightLayer';
 
 // Tipos de ferramentas
-type ToolType = 'select' | 'move' | 'measure' | 'fog' | 'ping' | 'draw';
+type ToolType = 'select' | 'move' | 'measure' | 'fog' | 'ping' | 'draw' | 'text';
 
 interface MapTabProps {
   /** Mapa ativo */
@@ -164,8 +164,15 @@ export const MapTab = memo(function MapTab({
             tokens={tokens}
             pings={pings}
             highlightedCells={highlightedCells}
+            drawings={[]}
+            texts={[]}
             selectedTokenId={selectedTokenId}
             activeTool={activeTool}
+            drawTool="pen"
+            drawColor="#ffffff"
+            drawStrokeWidth={3}
+            textFontSize={16}
+            textColor="#ffffff"
             isMaster={isMaster}
             width={canvasSize.width}
             height={canvasSize.height}
@@ -179,6 +186,9 @@ export const MapTab = memo(function MapTab({
             onMeasureEnd={onMeasureEnd}
             onPing={(x, y) => onPing?.(x, y)}
             onFogToggle={onFogReveal ? async (cells) => { await onFogReveal(cells); } : undefined}
+            onDrawingComplete={() => {}}
+            onTextCreate={() => {}}
+            onTextUpdate={() => {}}
           />
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-3">
