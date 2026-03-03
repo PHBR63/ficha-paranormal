@@ -16,6 +16,7 @@
 import { useRef, useEffect, useState, useCallback, useMemo, MouseEvent as ReactMouseEvent } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTacticalBoard, MapToken, TacticalMap } from '@/hooks/campaign/useTacticalBoard';
+import { useAuth } from '@/contexts/AuthContext';
 import { TacticalBoardKonva } from './TacticalBoardKonva';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -51,6 +52,8 @@ import {
   Cloud,
   Target,
   Pencil,
+  Type,
+  Eraser,
   ZoomIn,
   ZoomOut,
   Maximize,
@@ -114,6 +117,7 @@ export function TacticalBoard({
   onMovementPreview,
   onMovementConfirm,
 }: TacticalBoardProps) {
+  const { user } = useAuth();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   
@@ -189,6 +193,13 @@ export function TacticalBoard({
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [backgroundImage, setBackgroundImage] = useState<HTMLImageElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Estado de ferramentas de desenho/texto
+  const [drawTool, setDrawTool] = useState<'pen' | 'line' | 'rect' | 'circle' | 'eraser'>('pen');
+  const [drawColor, setDrawColor] = useState('#ffffff');
+  const [drawStrokeWidth, setDrawStrokeWidth] = useState(3);
+  const [textFontSize, setTextFontSize] = useState(16);
+  const [textColor, setTextColor] = useState('#ffffff');
   
   // Estados para preview de movimento (Fase 7.2)
   const [movementPreview, setMovementPreview] = useState<{
@@ -956,6 +967,8 @@ export function TacticalBoard({
               { id: 'move', icon: Move, label: 'Mover' },
               { id: 'measure', icon: Ruler, label: 'Medir' },
               { id: 'ping', icon: Target, label: 'Ping' },
+              { id: 'draw', icon: Pencil, label: 'Desenhar' },
+              { id: 'text', icon: Type, label: 'Texto' },
               ...(isMaster ? [{ id: 'fog', icon: Cloud, label: 'Fog of War' }] : []),
             ].map(tool => (
               <Button
@@ -970,6 +983,84 @@ export function TacticalBoard({
               </Button>
             ))}
           </div>
+
+          {/* Sub-toolbar de desenho */}
+          {board.activeTool === 'draw' && (
+            <div className="flex items-center gap-2 bg-muted/50 rounded-lg p-1 px-2">
+              {/* Ferramenta de desenho */}
+              {[
+                { id: 'pen' as const, label: 'Caneta' },
+                { id: 'line' as const, label: 'Linha' },
+                { id: 'rect' as const, label: 'Retângulo' },
+                { id: 'circle' as const, label: 'Círculo' },
+                { id: 'eraser' as const, label: 'Borracha' },
+              ].map(dt => (
+                <Button
+                  key={dt.id}
+                  variant={drawTool === dt.id ? 'secondary' : 'ghost'}
+                  size="sm"
+                  className="h-7 text-xs px-2"
+                  onClick={() => setDrawTool(dt.id)}
+                  title={dt.label}
+                >
+                  {dt.label}
+                </Button>
+              ))}
+              <input
+                type="color"
+                value={drawColor}
+                onChange={(e) => setDrawColor(e.target.value)}
+                className="w-7 h-7 rounded cursor-pointer border border-border"
+                title="Cor do traço"
+              />
+              <Select value={String(drawStrokeWidth)} onValueChange={(v) => setDrawStrokeWidth(Number(v))}>
+                <SelectTrigger className="w-16 h-7 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {[1, 2, 3, 5, 8, 12].map(w => (
+                    <SelectItem key={w} value={String(w)}>{w}px</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {isMaster && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-xs text-destructive"
+                  onClick={() => board.clearAllDrawings()}
+                  title="Limpar todos os desenhos"
+                >
+                  <Trash2 className="w-3.5 h-3.5 mr-1" />
+                  Limpar
+                </Button>
+              )}
+            </div>
+          )}
+
+          {/* Sub-toolbar de texto */}
+          {board.activeTool === 'text' && (
+            <div className="flex items-center gap-2 bg-muted/50 rounded-lg p-1 px-2">
+              <input
+                type="color"
+                value={textColor}
+                onChange={(e) => setTextColor(e.target.value)}
+                className="w-7 h-7 rounded cursor-pointer border border-border"
+                title="Cor do texto"
+              />
+              <Select value={String(textFontSize)} onValueChange={(v) => setTextFontSize(Number(v))}>
+                <SelectTrigger className="w-16 h-7 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {[12, 14, 16, 20, 24, 32, 48].map(s => (
+                    <SelectItem key={s} value={String(s)}>{s}pt</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <span className="text-xs text-muted-foreground">Clique no mapa para adicionar</span>
+            </div>
+          )}
           
           {/* Zoom - usa handlers estáveis */}
           <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-1">
@@ -1086,12 +1177,13 @@ export function TacticalBoard({
           measureEnd={board.measureEnd}
           calculateDistance={board.calculateDistance}
           activeTool={board.activeTool}
-          drawTool="pen"
-          drawColor="#ffffff"
-          drawStrokeWidth={3}
-          textFontSize={16}
-          textColor="#ffffff"
+          drawTool={drawTool}
+          drawColor={drawColor}
+          drawStrokeWidth={drawStrokeWidth}
+          textFontSize={textFontSize}
+          textColor={textColor}
           isMaster={isMaster}
+          currentUserId={user?.id}
           width={canvasSize.width}
           height={canvasSize.height}
           onTokenSelect={board.selectToken}
@@ -1130,8 +1222,10 @@ export function TacticalBoard({
             }
           }}
           onDrawingComplete={(drawing) => board.createDrawing(drawing)}
+          onDrawingDelete={(id) => board.deleteDrawing(id)}
           onTextCreate={(text) => board.createText(text)}
           onTextUpdate={(textId, data) => board.updateText(textId, data)}
+          onTextDelete={(id) => board.deleteText(id)}
           combatMode={combatMode}
           movementRemaining={movementRemaining}
           onMovementPreview={onMovementPreview}
