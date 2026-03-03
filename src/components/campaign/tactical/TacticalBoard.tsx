@@ -74,6 +74,8 @@ import {
   Image,
   X,
   AlertTriangle,
+  Undo2,
+  Redo2,
 } from 'lucide-react';
 
 interface TacticalBoardProps {
@@ -1035,6 +1037,29 @@ export function TacticalBoard({
                   Limpar
                 </Button>
               )}
+              {/* Undo/Redo de desenhos */}
+              <div className="flex items-center gap-0.5 ml-1 border-l border-border pl-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="w-7 h-7"
+                  onClick={() => board.undoDrawing()}
+                  disabled={!board.canUndoDrawing}
+                  title="Desfazer desenho (Ctrl+Z)"
+                >
+                  <Undo2 className="w-3.5 h-3.5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="w-7 h-7"
+                  onClick={() => board.redoDrawing()}
+                  disabled={!board.canRedoDrawing}
+                  title="Refazer desenho (Ctrl+Y)"
+                >
+                  <Redo2 className="w-3.5 h-3.5" />
+                </Button>
+              </div>
             </div>
           )}
 

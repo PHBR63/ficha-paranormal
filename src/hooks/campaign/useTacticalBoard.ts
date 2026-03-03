@@ -141,6 +141,10 @@ export interface TacticalBoardReturn {
   createDrawing: (data: Omit<MapDrawing, 'id' | 'map_id' | 'created_by' | 'created_at'>) => Promise<void>;
   deleteDrawing: (drawingId: string) => Promise<void>;
   clearAllDrawings: () => Promise<void>;
+  undoDrawing: () => Promise<void>;
+  redoDrawing: () => Promise<void>;
+  canUndoDrawing: boolean;
+  canRedoDrawing: boolean;
   createText: (data: Omit<MapText, 'id' | 'map_id' | 'created_by' | 'created_at'>) => Promise<void>;
   updateText: (textId: string, data: Partial<MapText>) => Promise<void>;
   deleteText: (textId: string) => Promise<void>;
@@ -194,6 +198,10 @@ export function useTacticalBoard({
   // Desenhos e textos no mapa
   const [drawings, setDrawings] = useState<MapDrawing[]>([]);
   const [texts, setTexts] = useState<MapText[]>([]);
+  
+  // Pilha de Undo/Redo para desenhos
+  const [drawingUndoStack, setDrawingUndoStack] = useState<MapDrawing[]>([]);
+  const [drawingRedoStack, setDrawingRedoStack] = useState<MapDrawing[]>([]);
   
   // Ref para cleanup de pings
   const pingTimeoutRef = useRef<NodeJS.Timeout[]>([]);
@@ -356,14 +364,17 @@ export function useTacticalBoard({
     }
   }, []);
 
-  // Carrega desenhos/textos quando mapa ativo muda
+  // Carrega desenhos/textos quando mapa ativo muda e reseta undo/redo
   useEffect(() => {
     if (!activeMap?.id || !enabled) return;
     loadDrawings(activeMap.id);
     loadTexts(activeMap.id);
+    setDrawingUndoStack([]);
+    setDrawingRedoStack([]);
   }, [activeMap?.id, enabled, loadDrawings, loadTexts]);
 
-  // Realtime para desenhos e textos
+  // Realtime otimista para desenhos e textos
+  // Em vez de recarregar tudo do banco, aplica mudanças localmente
   useEffect(() => {
     if (!activeMap?.id || !enabled) return;
     const mapId = activeMap.id;
@@ -371,28 +382,68 @@ export function useTacticalBoard({
     const drawingsChannel = supabase
       .channel(`tactical-drawings-${mapId}`)
       .on('postgres_changes', {
-        event: '*',
+        event: 'INSERT',
         schema: 'public',
         table: 'map_drawings',
         filter: `map_id=eq.${mapId}`,
-      }, () => { loadDrawings(mapId); })
+      }, (payload) => {
+        // Adiciona localmente se não existir (evita duplicatas do otimismo)
+        const newDrawing = payload.new as MapDrawing;
+        setDrawings(prev => {
+          if (prev.some(d => d.id === newDrawing.id)) return prev;
+          return [...prev, newDrawing];
+        });
+      })
+      .on('postgres_changes', {
+        event: 'DELETE',
+        schema: 'public',
+        table: 'map_drawings',
+        filter: `map_id=eq.${mapId}`,
+      }, (payload) => {
+        const oldId = (payload.old as any).id;
+        setDrawings(prev => prev.filter(d => d.id !== oldId));
+      })
       .subscribe();
 
     const textsChannel = supabase
       .channel(`tactical-texts-${mapId}`)
       .on('postgres_changes', {
-        event: '*',
+        event: 'INSERT',
         schema: 'public',
         table: 'map_texts',
         filter: `map_id=eq.${mapId}`,
-      }, () => { loadTexts(mapId); })
+      }, (payload) => {
+        const newText = payload.new as MapText;
+        setTexts(prev => {
+          if (prev.some(t => t.id === newText.id)) return prev;
+          return [...prev, newText];
+        });
+      })
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'map_texts',
+        filter: `map_id=eq.${mapId}`,
+      }, (payload) => {
+        const updated = payload.new as MapText;
+        setTexts(prev => prev.map(t => t.id === updated.id ? updated : t));
+      })
+      .on('postgres_changes', {
+        event: 'DELETE',
+        schema: 'public',
+        table: 'map_texts',
+        filter: `map_id=eq.${mapId}`,
+      }, (payload) => {
+        const oldId = (payload.old as any).id;
+        setTexts(prev => prev.filter(t => t.id !== oldId));
+      })
       .subscribe();
 
     return () => {
       supabase.removeChannel(drawingsChannel);
       supabase.removeChannel(textsChannel);
     };
-  }, [activeMap?.id, enabled, loadDrawings, loadTexts]);
+  }, [activeMap?.id, enabled]);
 
   // =====================================================
   // AÇÕES DE MAPA (todas usam refs para estabilidade)
@@ -803,7 +854,9 @@ export function useTacticalBoard({
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { error } = await supabase.from('map_drawings').insert({
+      
+      // Insert otimista: gera ID temporário para preview imediato
+      const { data: inserted, error } = await supabase.from('map_drawings').insert({
         map_id: activeMap.id,
         created_by: user.id,
         tool: data.tool,
@@ -811,32 +864,108 @@ export function useTacticalBoard({
         color: data.color,
         stroke_width: data.stroke_width,
         opacity: data.opacity,
-      });
+      }).select().single();
       if (error) throw error;
+      
+      // Adiciona à pilha de undo e limpa redo
+      if (inserted) {
+        const drawing = inserted as MapDrawing;
+        // O Realtime otimista já adiciona ao estado, mas garantimos aqui
+        setDrawings(prev => {
+          if (prev.some(d => d.id === drawing.id)) return prev;
+          return [...prev, drawing];
+        });
+        setDrawingUndoStack(prev => [...prev, drawing]);
+        setDrawingRedoStack([]); // Limpa redo ao criar novo desenho
+      }
     } catch (err: any) {
       console.error('Erro ao criar desenho:', err);
     }
   }, [activeMap?.id]);
 
+  /** Desfaz o último desenho criado pelo usuário */
+  const undoDrawing = useCallback(async () => {
+    if (drawingUndoStack.length === 0) return;
+    const lastDrawing = drawingUndoStack[drawingUndoStack.length - 1];
+    
+    // Remove otimisticamente do estado local
+    setDrawings(prev => prev.filter(d => d.id !== lastDrawing.id));
+    setDrawingUndoStack(prev => prev.slice(0, -1));
+    setDrawingRedoStack(prev => [...prev, lastDrawing]);
+    
+    // Remove do banco
+    try {
+      const { error } = await supabase.from('map_drawings').delete().eq('id', lastDrawing.id);
+      if (error) throw error;
+    } catch (err: any) {
+      // Reverte se falhar
+      console.error('Erro ao desfazer desenho:', err);
+      setDrawings(prev => [...prev, lastDrawing]);
+      setDrawingUndoStack(prev => [...prev, lastDrawing]);
+      setDrawingRedoStack(prev => prev.filter(d => d.id !== lastDrawing.id));
+    }
+  }, [drawingUndoStack]);
+
+  /** Refaz o último desenho desfeito */
+  const redoDrawing = useCallback(async () => {
+    if (drawingRedoStack.length === 0 || !activeMap?.id) return;
+    const drawing = drawingRedoStack[drawingRedoStack.length - 1];
+    
+    // Adiciona otimisticamente ao estado local
+    setDrawings(prev => [...prev, drawing]);
+    setDrawingRedoStack(prev => prev.slice(0, -1));
+    setDrawingUndoStack(prev => [...prev, drawing]);
+    
+    // Re-insere no banco
+    try {
+      const { error } = await supabase.from('map_drawings').insert({
+        map_id: drawing.map_id,
+        created_by: drawing.created_by,
+        tool: drawing.tool,
+        points: drawing.points as any,
+        color: drawing.color,
+        stroke_width: drawing.stroke_width,
+        opacity: drawing.opacity,
+      });
+      if (error) throw error;
+    } catch (err: any) {
+      // Reverte se falhar
+      console.error('Erro ao refazer desenho:', err);
+      setDrawings(prev => prev.filter(d => d.id !== drawing.id));
+      setDrawingUndoStack(prev => prev.slice(0, -1));
+      setDrawingRedoStack(prev => [...prev, drawing]);
+    }
+  }, [drawingRedoStack, activeMap?.id]);
+
   const deleteDrawing = useCallback(async (drawingId: string) => {
+    // Remove otimisticamente
+    setDrawings(prev => prev.filter(d => d.id !== drawingId));
     try {
       const { error } = await supabase.from('map_drawings').delete().eq('id', drawingId);
       if (error) throw error;
     } catch (err: any) {
       console.error('Erro ao deletar desenho:', err);
+      // Recarrega em caso de falha
+      if (activeMap?.id) loadDrawings(activeMap.id);
     }
-  }, []);
+  }, [activeMap?.id, loadDrawings]);
 
   const clearAllDrawings = useCallback(async () => {
     if (!activeMap?.id || !isMasterRef.current) return;
+    // Remove otimisticamente
+    const previousDrawings = [...drawings];
+    setDrawings([]);
+    setDrawingUndoStack([]);
+    setDrawingRedoStack([]);
     try {
       const { error } = await supabase.from('map_drawings').delete().eq('map_id', activeMap.id);
       if (error) throw error;
       toastRef.current?.({ title: 'Desenhos limpos' });
     } catch (err: any) {
       console.error('Erro ao limpar desenhos:', err);
+      setDrawings(previousDrawings); // Reverte
     }
-  }, [activeMap?.id]);
+  }, [activeMap?.id, drawings]);
 
   const createText = useCallback(async (data: Omit<MapText, 'id' | 'map_id' | 'created_by' | 'created_at'>) => {
     if (!activeMap?.id) return;
@@ -923,6 +1052,10 @@ export function useTacticalBoard({
     createDrawing,
     deleteDrawing,
     clearAllDrawings,
+    undoDrawing,
+    redoDrawing,
+    canUndoDrawing: drawingUndoStack.length > 0,
+    canRedoDrawing: drawingRedoStack.length > 0,
     createText,
     updateText,
     deleteText,
@@ -932,13 +1065,13 @@ export function useTacticalBoard({
   }), [
     maps, activeMap, tokens, selectedTokenId, isLoading, pings,
     zoom, panOffset, activeTool, measureStart, measureEnd, highlightedCells,
-    drawings, texts,
+    drawings, texts, drawingUndoStack.length, drawingRedoStack.length,
     loadMaps, createMap, updateMap, deleteMap, setActiveMap, uploadMapImage, removeMapImage,
     createToken, updateToken, moveToken, deleteToken, selectToken,
     setZoom, setPanOffset, fitToScreen, setActiveTool,
     startMeasure, endMeasure, clearMeasure, sendPing,
     revealFog, hideFog, setHighlightedCellsState,
-    createDrawing, deleteDrawing, clearAllDrawings,
+    createDrawing, deleteDrawing, clearAllDrawings, undoDrawing, redoDrawing,
     createText, updateText, deleteText,
     pixelToCell, cellToPixel, calculateDistance,
   ]);
