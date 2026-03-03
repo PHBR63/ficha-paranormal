@@ -93,7 +93,7 @@ export interface TacticalBoardReturn {
   panOffset: { x: number; y: number };
   
   // Tool state
-  activeTool: 'select' | 'move' | 'measure' | 'fog' | 'ping' | 'draw';
+  activeTool: 'select' | 'move' | 'measure' | 'fog' | 'ping' | 'draw' | 'text';
   measureStart: { x: number; y: number } | null;
   measureEnd: { x: number; y: number } | null;
   
@@ -119,7 +119,7 @@ export interface TacticalBoardReturn {
   fitToScreen: () => void;
   
   // Ações de ferramentas
-  setActiveTool: (tool: 'select' | 'move' | 'measure' | 'fog' | 'ping' | 'draw') => void;
+  setActiveTool: (tool: 'select' | 'move' | 'measure' | 'fog' | 'ping' | 'draw' | 'text') => void;
   startMeasure: (x: number, y: number) => void;
   endMeasure: (x: number, y: number) => void;
   clearMeasure: () => void;
@@ -172,7 +172,7 @@ export function useTacticalBoard({
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   
   // Ferramentas
-  const [activeTool, setActiveTool] = useState<'select' | 'move' | 'measure' | 'fog' | 'ping' | 'draw'>('select');
+  const [activeTool, setActiveTool] = useState<'select' | 'move' | 'measure' | 'fog' | 'ping' | 'draw' | 'text'>('select');
   const [measureStart, setMeasureStart] = useState<{ x: number; y: number } | null>(null);
   const [measureEnd, setMeasureEnd] = useState<{ x: number; y: number } | null>(null);
   

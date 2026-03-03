@@ -9,3 +9,5 @@ export { FogOfWarLayer } from './FogOfWarLayer';
 export { TokenLayer } from './TokenLayer';
 export { PingLayer } from './PingLayer';
 export { MeasurementLayer } from './MeasurementLayer';
+export { DrawingLayer, type MapDrawing } from './DrawingLayer';
+export { TextLayer, type MapText } from './TextLayer';

@@ -21,6 +21,8 @@ import { FogOfWarLayer } from './layers/FogOfWarLayer';
 import { TokenLayer } from './layers/TokenLayer';
 import { PingLayer } from './layers/PingLayer';
 import { MeasurementLayer } from './layers/MeasurementLayer';
+import { DrawingLayer, MapDrawing } from './layers/DrawingLayer';
+import { TextLayer, MapText } from './layers/TextLayer';
 
 export interface TacticalBoardKonvaProps {
   // Dados do mapa
@@ -28,6 +30,10 @@ export interface TacticalBoardKonvaProps {
   tokens: MapToken[];
   pings: BoardPing[];
   highlightedCells: HighlightedCell[];
+  
+  // Desenhos e textos
+  drawings: MapDrawing[];
+  texts: MapText[];
   
   // Estado de seleção
   selectedTokenId: string | null;
@@ -38,10 +44,18 @@ export interface TacticalBoardKonvaProps {
   calculateDistance: (x1: number, y1: number, x2: number, y2: number) => number;
   
   // Ferramenta ativa
-  activeTool: 'select' | 'move' | 'measure' | 'fog' | 'ping' | 'draw';
+  activeTool: 'select' | 'move' | 'measure' | 'fog' | 'ping' | 'draw' | 'text';
+  
+  // Configurações de desenho
+  drawTool: 'pen' | 'line' | 'rect' | 'circle' | 'eraser';
+  drawColor: string;
+  drawStrokeWidth: number;
+  textFontSize: number;
+  textColor: string;
   
   // Permissões
   isMaster: boolean;
+  currentUserId?: string;
   
   // Dimensões do container
   width: number;
@@ -57,6 +71,13 @@ export interface TacticalBoardKonvaProps {
   onPing?: (x: number, y: number) => void;
   onFogToggle?: (cells: Array<{ x: number; y: number }>) => void;
   
+  // Callbacks de desenho/texto
+  onDrawingComplete: (drawing: Omit<MapDrawing, 'id' | 'map_id' | 'created_by' | 'created_at'>) => void;
+  onDrawingDelete?: (drawingId: string) => void;
+  onTextCreate: (text: Omit<MapText, 'id' | 'map_id' | 'created_by' | 'created_at'>) => void;
+  onTextUpdate: (textId: string, data: Partial<MapText>) => void;
+  onTextDelete?: (textId: string) => void;
+  
   // Integração com combate
   combatMode?: boolean;
   movementRemaining?: number;
@@ -68,12 +89,20 @@ export function TacticalBoardKonva({
   tokens,
   pings,
   highlightedCells,
+  drawings,
+  texts,
   selectedTokenId,
   measureStart,
   measureEnd,
   calculateDistance,
   activeTool,
+  drawTool,
+  drawColor,
+  drawStrokeWidth,
+  textFontSize,
+  textColor,
   isMaster,
+  currentUserId,
   width,
   height,
   onTokenSelect,
@@ -84,6 +113,11 @@ export function TacticalBoardKonva({
   onMeasureEnd,
   onPing,
   onFogToggle,
+  onDrawingComplete,
+  onDrawingDelete,
+  onTextCreate,
+  onTextUpdate,
+  onTextDelete,
   combatMode = false,
   movementRemaining = 9,
   onMovementPreview,
@@ -223,7 +257,7 @@ export function TacticalBoardKonva({
       y={transform.position.y}
       scaleX={transform.scale}
       scaleY={transform.scale}
-      draggable={activeTool === 'select' || activeTool === 'move'}
+      draggable={activeTool === 'select' || activeTool === 'move' || activeTool === 'text'}
       onWheel={transform.handleWheel}
       onTouchStart={transform.handleTouchStart}
       onTouchMove={transform.handleTouchMove}
@@ -265,7 +299,18 @@ export function TacticalBoardKonva({
         isMaster={isMaster}
       />
 
-      {/* Camada 5: Tokens */}
+      {/* Camada 5: Desenhos */}
+      <DrawingLayer
+        drawings={drawings}
+        isDrawing={activeTool === 'draw'}
+        drawTool={drawTool}
+        drawColor={drawColor}
+        drawStrokeWidth={drawStrokeWidth}
+        onDrawingComplete={onDrawingComplete}
+        onDrawingDelete={onDrawingDelete}
+      />
+
+      {/* Camada 6: Tokens */}
       <TokenLayer
         tokens={tokens}
         gridSize={gridSize}
@@ -278,7 +323,20 @@ export function TacticalBoardKonva({
         onTokenDoubleClick={onTokenDoubleClick}
       />
 
-      {/* Camada 6: Medição */}
+      {/* Camada 7: Textos */}
+      <TextLayer
+        texts={texts}
+        isTextMode={activeTool === 'text'}
+        defaultFontSize={textFontSize}
+        defaultColor={textColor}
+        isMaster={isMaster}
+        currentUserId={currentUserId}
+        onTextCreate={onTextCreate}
+        onTextUpdate={onTextUpdate}
+        onTextDelete={onTextDelete}
+      />
+
+      {/* Camada 8: Medição */}
       <MeasurementLayer
         startCell={measureStart}
         endCell={measureEnd}
@@ -286,7 +344,7 @@ export function TacticalBoardKonva({
         calculateDistance={calculateDistance}
       />
 
-      {/* Camada 7: Pings */}
+      {/* Camada 9: Pings */}
       <PingLayer
         pings={pings}
         gridSize={gridSize}
