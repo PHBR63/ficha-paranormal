@@ -6,7 +6,7 @@
  */
 
 import { useMemo } from 'react';
-import { Layer, Rect, Group } from 'react-konva';
+import { Rect, Group } from 'react-konva';
 
 export interface HighlightedCell {
   x: number;
@@ -59,7 +59,7 @@ export function HighlightLayer({ cells, gridSize }: HighlightLayerProps) {
   if (cells.length === 0) return null;
 
   return (
-    <Layer listening={false}>
+    <Group listening={false}>
       {/* Renderiza cada tipo de célula em grupos separados */}
       {(Object.keys(cellsByType) as HighlightedCell['type'][]).map((type) => {
         const typeCells = cellsByType[type];
@@ -85,7 +85,7 @@ export function HighlightLayer({ cells, gridSize }: HighlightLayerProps) {
           </Group>
         );
       })}
-    </Layer>
+    </Group>
   );
 }
 

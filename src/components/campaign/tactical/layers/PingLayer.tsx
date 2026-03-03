@@ -6,7 +6,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { Layer, Circle, Group } from 'react-konva';
+import { Circle, Group } from 'react-konva';
 import { BoardPing } from '@/hooks/campaign/useTacticalBoard';
 
 interface PingLayerProps {
@@ -96,11 +96,11 @@ export function PingLayer({ pings, gridSize }: PingLayerProps) {
   if (visiblePings.length === 0) return null;
 
   return (
-    <Layer listening={false}>
+    <Group listening={false}>
       {visiblePings.map((ping) => (
         <AnimatedPing key={ping.id} ping={ping} gridSize={gridSize} />
       ))}
-    </Layer>
+    </Group>
   );
 }
 

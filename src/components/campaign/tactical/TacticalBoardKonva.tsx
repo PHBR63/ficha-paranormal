@@ -267,39 +267,28 @@ export function TacticalBoardKonva({
       onClick={handleStageClick}
       onTap={handleStageClick}
     >
-      {/* Camada 1: Background (imagem do mapa) */}
-      <BackgroundLayer
-        imageUrl={map.image_url}
-        width={mapWidth}
-        height={mapHeight}
-      />
+      {/* Layer 1 (base): Background + Grid + Highlights */}
+      <Layer listening={false}>
+        <BackgroundLayer
+          imageUrl={map.image_url}
+          width={mapWidth}
+          height={mapHeight}
+        />
+        <GridLayer
+          gridSize={gridSize}
+          gridColor={map.grid_color}
+          gridType={map.grid_type as 'square' | 'hex' | 'none'}
+          widthCells={widthCells}
+          heightCells={heightCells}
+          visible={map.grid_visible}
+        />
+        <HighlightLayer
+          cells={highlightedCells}
+          gridSize={gridSize}
+        />
+      </Layer>
 
-      {/* Camada 2: Grid */}
-      <GridLayer
-        gridSize={gridSize}
-        gridColor={map.grid_color}
-        gridType={map.grid_type as 'square' | 'hex' | 'none'}
-        widthCells={widthCells}
-        heightCells={heightCells}
-        visible={map.grid_visible}
-      />
-
-      {/* Camada 3: Células destacadas (movimento/alcance) */}
-      <HighlightLayer
-        cells={highlightedCells}
-        gridSize={gridSize}
-      />
-
-      {/* Camada 4: Fog of War */}
-      <FogOfWarLayer
-        revealedCells={map.fog_of_war}
-        gridSize={gridSize}
-        mapWidth={mapWidth}
-        mapHeight={mapHeight}
-        isMaster={isMaster}
-      />
-
-      {/* Camada 5: Desenhos */}
+      {/* Layer 2: Desenhos (interativo quando ativo) */}
       <DrawingLayer
         drawings={drawings}
         isDrawing={activeTool === 'draw'}
@@ -310,7 +299,7 @@ export function TacticalBoardKonva({
         onDrawingDelete={onDrawingDelete}
       />
 
-      {/* Camada 6: Tokens */}
+      {/* Layer 3: Tokens (interativo) */}
       <TokenLayer
         tokens={tokens}
         gridSize={gridSize}
@@ -323,7 +312,7 @@ export function TacticalBoardKonva({
         onTokenDoubleClick={onTokenDoubleClick}
       />
 
-      {/* Camada 7: Textos */}
+      {/* Layer 4: Textos (interativo) */}
       <TextLayer
         texts={texts}
         isTextMode={activeTool === 'text'}
@@ -336,19 +325,26 @@ export function TacticalBoardKonva({
         onTextDelete={onTextDelete}
       />
 
-      {/* Camada 8: Medição */}
-      <MeasurementLayer
-        startCell={measureStart}
-        endCell={measureEnd}
-        gridSize={gridSize}
-        calculateDistance={calculateDistance}
-      />
-
-      {/* Camada 9: Pings */}
-      <PingLayer
-        pings={pings}
-        gridSize={gridSize}
-      />
+      {/* Layer 5 (overlay): FogOfWar + Medição + Pings */}
+      <Layer listening={false}>
+        <FogOfWarLayer
+          revealedCells={map.fog_of_war}
+          gridSize={gridSize}
+          mapWidth={mapWidth}
+          mapHeight={mapHeight}
+          isMaster={isMaster}
+        />
+        <MeasurementLayer
+          startCell={measureStart}
+          endCell={measureEnd}
+          gridSize={gridSize}
+          calculateDistance={calculateDistance}
+        />
+        <PingLayer
+          pings={pings}
+          gridSize={gridSize}
+        />
+      </Layer>
     </Stage>
   );
 }

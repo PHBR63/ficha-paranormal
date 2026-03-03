@@ -6,7 +6,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { Layer, Rect, Image as KonvaImage } from 'react-konva';
+import { Group, Rect, Image as KonvaImage } from 'react-konva';
 
 interface BackgroundLayerProps {
   imageUrl: string | null;
@@ -60,7 +60,7 @@ export function BackgroundLayer({
   }, [imageUrl]);
 
   return (
-    <Layer listening={false}>
+    <Group listening={false}>
       {/* Fundo padrão (fallback ou quando não há imagem) */}
       <Rect
         x={0}
@@ -91,7 +91,7 @@ export function BackgroundLayer({
           fill="rgba(50, 20, 20, 0.9)"
         />
       )}
-    </Layer>
+    </Group>
   );
 }
 

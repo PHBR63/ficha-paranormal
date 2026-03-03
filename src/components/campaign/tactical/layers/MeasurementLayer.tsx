@@ -5,7 +5,7 @@
  * com badge mostrando a distância em metros.
  */
 
-import { Layer, Line, Rect, Text, Group } from 'react-konva';
+import { Line, Rect, Text, Group } from 'react-konva';
 
 interface MeasurementLayerProps {
   startCell: { x: number; y: number } | null;
@@ -39,7 +39,7 @@ export function MeasurementLayer({
   const badgeHeight = 20;
 
   return (
-    <Layer listening={false}>
+    <Group listening={false}>
       {/* Linha de medição (tracejada) */}
       <Line
         points={[startX, startY, endX, endY]}
@@ -97,7 +97,7 @@ export function MeasurementLayer({
           align="center"
         />
       </Group>
-    </Layer>
+    </Group>
   );
 }
 
