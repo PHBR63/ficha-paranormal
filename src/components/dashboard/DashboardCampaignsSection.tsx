@@ -3,7 +3,8 @@
  */
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Plus, Users, MapPin } from 'lucide-react';
+import { Plus } from 'lucide-react';
+import { Binoculars, UsersThree, Crosshair } from '@phosphor-icons/react';
 import { LogoBox } from '@/components/ui/logo';
 import { DecryptedText } from '@/components/ui/decrypted-text';
 import { CampaignCard, type CampaignCardData } from '@/components/cards/CampaignCard';
@@ -32,7 +33,7 @@ export function DashboardCampaignsSection({ campaigns, loading, onDelete }: Dash
         <div className="flex gap-2">
           <Link to="/campaigns">
             <Button variant="outline" size="sm" className="font-display tracking-wider text-xs border-primary/20 hover:bg-primary/10">
-              <Users className="w-4 h-4 mr-1" />
+              <UsersThree className="w-4 h-4 mr-1" weight="duotone" />
               <span className="hidden sm:inline">Ver Todas</span>
             </Button>
           </Link>
@@ -62,7 +63,7 @@ export function DashboardCampaignsSection({ campaigns, loading, onDelete }: Dash
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_hsl(var(--primary)/0.08)_0%,_transparent_70%)]" />
           <div className="relative z-10">
             <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center">
-              <MapPin className="w-8 h-8 text-muted-foreground" />
+              <Crosshair className="w-8 h-8 text-muted-foreground" weight="duotone" />
             </div>
             <h4 className="font-display text-lg text-foreground mb-2">
               <DecryptedText text="NENHUMA OPERAÇÃO EM ANDAMENTO" speed={30} />
@@ -73,7 +74,7 @@ export function DashboardCampaignsSection({ campaigns, loading, onDelete }: Dash
             <div className="flex gap-3 justify-center">
               <Link to="/campaigns">
                 <Button variant="outline" className="border-primary/30 hover:bg-primary/20">
-                  <Users className="w-5 h-5 mr-2" />
+                  <Binoculars className="w-5 h-5 mr-2" weight="duotone" />
                   Explorar
                 </Button>
               </Link>

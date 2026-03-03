@@ -11,14 +11,16 @@ import { FlickeringGrid } from '@/components/ui/flickering-grid';
 import { DecryptedText } from '@/components/ui/decrypted-text';
 import { ParanormalElementIcon } from '@/components/ui/paranormal-element-icon';
 import { 
-  Plus, 
-  Users, 
-  Crown, 
-  Calendar, 
   ArrowLeft,
   Loader2,
-  LogIn
 } from 'lucide-react';
+import { 
+  Plus, 
+  UsersThree, 
+  Crown, 
+  CalendarCheck, 
+  SignIn 
+} from '@phosphor-icons/react';
 import { Logo } from '@/components/ui/logo';
 import {
   Dialog,
@@ -280,7 +282,7 @@ export default function Campaigns() {
               <Dialog open={joinDialogOpen} onOpenChange={setJoinDialogOpen}>
                 <DialogTrigger asChild>
                   <Button className="font-display tracking-wider text-xs sm:text-sm px-2 sm:px-4 bg-[#1A1214] border border-[#8B0000]/30 hover:bg-[#8B0000]/20 hover:border-[#8B0000]/50 text-[#C0C0C0]">
-                    <LogIn className="w-4 h-4" />
+                    <SignIn className="w-4 h-4" weight="duotone" />
                     <span className="hidden sm:inline ml-2">ENTRAR</span>
                   </Button>
                 </DialogTrigger>
@@ -317,7 +319,7 @@ export default function Campaigns() {
 
               <Link to="/campaigns/create">
                 <Button className="font-display tracking-wider text-xs sm:text-sm px-2 sm:px-4 bg-[#8B0000] hover:bg-[#B22222] text-white border border-[#B22222]/30 shadow-[0_0_15px_rgba(139,0,0,0.3)] hover:shadow-[0_0_25px_rgba(139,0,0,0.5)]">
-                  <Plus className="w-4 h-4" />
+                  <Plus className="w-4 h-4" weight="bold" />
                   <span className="hidden sm:inline ml-2">NOVA CAMPANHA</span>
                 </Button>
               </Link>
@@ -334,7 +336,7 @@ export default function Campaigns() {
               
               <div className="relative z-10">
                 <div className="w-24 h-24 sm:w-32 sm:h-32 mx-auto mb-6 sm:mb-8 rounded-full bg-[#8B0000]/10 border-2 border-[#8B0000]/30 flex items-center justify-center">
-                  <Users className="w-12 h-12 sm:w-16 sm:h-16 text-[#808080]" />
+                  <UsersThree className="w-12 h-12 sm:w-16 sm:h-16 text-[#808080]" weight="duotone" />
                 </div>
                 <h2 className="font-display text-2xl sm:text-3xl tracking-wider text-[#F5F5F5] mb-3">
                   <DecryptedText text="NENHUMA CAMPANHA" speed={30} />
@@ -344,11 +346,11 @@ export default function Campaigns() {
                 </p>
                 <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
                   <Button onClick={() => setJoinDialogOpen(true)} size="lg" className="w-full sm:w-auto bg-[#1A1214] border border-[#8B0000]/30 hover:bg-[#8B0000]/20 text-[#C0C0C0]">
-                    <LogIn className="w-5 h-5 mr-2" />
+                    <SignIn className="w-5 h-5 mr-2" weight="duotone" />
                     Entrar com Código
                   </Button>
                   <Button onClick={() => setCreateDialogOpen(true)} size="lg" className="w-full sm:w-auto bg-[#8B0000] hover:bg-[#B22222] text-white border border-[#B22222]/30">
-                    <Plus className="w-5 h-5 mr-2" />
+                    <Plus className="w-5 h-5 mr-2" weight="bold" />
                     Criar Campanha
                   </Button>
                 </div>
@@ -384,7 +386,7 @@ export default function Campaigns() {
                         <div className="flex items-center gap-3 mb-2">
                           {isMaster && (
                             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#8B0000]/20 border border-[#8B0000]/30">
-                              <Crown className="w-4 h-4 text-[#B22222]" />
+                              <Crown className="w-4 h-4 text-[#B22222]" weight="duotone" />
                               <span className="text-[10px] sm:text-xs font-display tracking-wider text-[#B22222]">MESTRE</span>
                             </div>
                           )}
@@ -417,7 +419,7 @@ export default function Campaigns() {
                       <div className="flex items-center gap-6">
                         <div className="flex items-center gap-2">
                           <div className="w-8 h-8 rounded-lg bg-[#8B0000]/10 flex items-center justify-center">
-                            <Users className="w-4 h-4 text-[#B22222]" />
+                            <UsersThree className="w-4 h-4 text-[#B22222]" weight="duotone" />
                           </div>
                           <div>
                             <p className="text-xs text-[#606060] uppercase tracking-wider">Agentes</p>
@@ -426,7 +428,7 @@ export default function Campaigns() {
                         </div>
                         <div className="flex items-center gap-2">
                           <div className="w-8 h-8 rounded-lg bg-[#8B0000]/10 flex items-center justify-center">
-                            <Calendar className="w-4 h-4 text-[#B22222]" />
+                            <CalendarCheck className="w-4 h-4 text-[#B22222]" weight="duotone" />
                           </div>
                           <div>
                             <p className="text-xs text-[#606060] uppercase tracking-wider">Sessão</p>

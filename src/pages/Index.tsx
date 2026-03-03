@@ -9,14 +9,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Particles } from '@/components/ui/particles';
 import { LogoBox, LogoHero } from '@/components/ui/logo';
+import { ChevronRight } from 'lucide-react';
 import { 
-  ChevronRight,
-  Shield,
-  FileText,
-  Dices,
+  ShieldStar, 
+  Scroll, 
+  GameController, 
   Brain,
-  Smartphone
-} from 'lucide-react';
+  DeviceMobile
+} from '@phosphor-icons/react';
 import { ParanormalElementsRow, ParanormalElementIcon } from '@/components/ui/paranormal-element-icon';
 
 const Index = () => {
@@ -196,19 +196,19 @@ const Index = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             {[
               {
-                icon: Shield,
+                icon: ShieldStar,
                 title: 'Controle de Operações',
                 description: 'Mestre no comando total sobre sessões, NPCs, combates e narrativa. O Outro Lado responde a você.',
                 element: 'energia' as const
               },
               {
-                icon: FileText,
+                icon: Scroll,
                 title: 'Dossiês de Agentes',
                 description: 'Fichas completas com cálculos automáticos, rituais, poderes e atualizações em tempo real.',
                 element: 'conhecimento' as const
               },
               {
-                icon: Dices,
+                icon: GameController,
                 title: 'Sistema de Testes',
                 description: 'Rolagem nativa com d20, vantagens, desvantagens, críticos e animações imersivas.',
                 element: 'sangue' as const
@@ -327,7 +327,7 @@ const Index = () => {
             to="/install" 
             className="inline-flex items-center gap-2 px-4 py-2 mb-4 rounded-lg border border-[#8B0000]/30 bg-[#8B0000]/10 hover:bg-[#8B0000]/20 text-[#B22222] hover:text-[#F5F5F5] transition-all group"
           >
-            <Smartphone className="w-4 h-4 group-hover:scale-110 transition-transform" />
+            <DeviceMobile className="w-4 h-4 group-hover:scale-110 transition-transform" weight="duotone" />
             <span className="text-xs sm:text-sm font-medium">Instalar App no Celular</span>
           </Link>
           

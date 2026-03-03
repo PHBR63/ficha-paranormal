@@ -5,7 +5,13 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ThemeSelector } from '@/components/ui/theme-selector';
 import { LogoBox } from '@/components/ui/logo';
-import { LogOut, User, Smartphone, Shield, Package } from 'lucide-react';
+import { 
+  SignOut, 
+  UserCircle, 
+  DeviceMobile, 
+  ShieldStar, 
+  SquaresFour 
+} from '@phosphor-icons/react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdminCheck } from '@/hooks';
 
@@ -39,30 +45,30 @@ export function DashboardHeader({ displayName, hasLowStats }: DashboardHeaderPro
           {isAdmin && (
             <Link to="/admin/import" className="hidden sm:flex">
               <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground hover:bg-primary/10">
-                <Shield className="w-5 h-5" />
+                <ShieldStar className="w-5 h-5" weight="duotone" />
               </Button>
             </Link>
           )}
           
           <Link to="/my-templates" className="hidden sm:flex">
             <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground hover:bg-primary/10">
-              <Package className="w-5 h-5" />
+              <SquaresFour className="w-5 h-5" weight="duotone" />
             </Button>
           </Link>
 
           <Link to="/install" className="hidden sm:flex">
             <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground hover:bg-primary/10">
-              <Smartphone className="w-5 h-5" />
+              <DeviceMobile className="w-5 h-5" weight="duotone" />
             </Button>
           </Link>
 
           <div className="flex items-center gap-2 text-muted-foreground">
-            <User className="w-4 h-4" />
+            <UserCircle className="w-4 h-4" weight="duotone" />
             <span className="text-sm hidden md:block">{displayName}</span>
           </div>
 
           <Button variant="ghost" size="icon" onClick={signOut} className="text-muted-foreground hover:text-foreground hover:bg-primary/10">
-            <LogOut className="w-5 h-5" />
+            <SignOut className="w-5 h-5" weight="duotone" />
           </Button>
         </div>
       </div>
