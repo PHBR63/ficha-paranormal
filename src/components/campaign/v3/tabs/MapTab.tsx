@@ -2,7 +2,7 @@
  * MapTab - Aba do mapa tático da campanha v3
  * 
  * Container full-screen para o tabuleiro com:
- * - Toolbar flutuante (não empurra canvas)
+ * - Toolbar flutuante com ferramentas de desenho, texto e undo/redo
  * - ResizeObserver para altura dinâmica
  * - Integração com TacticalBoardKonva
  * 
@@ -17,6 +17,12 @@ import {
   Ruler, 
   CloudFog, 
   Radio,
+  Pencil,
+  Type,
+  Eraser,
+  Undo2,
+  Redo2,
+  Trash2,
   ZoomIn,
   ZoomOut,
   Maximize2,
@@ -45,6 +51,12 @@ import type { MapText } from '@/components/campaign/tactical/layers/TextLayer';
 // Tipos de ferramentas
 type ToolType = 'select' | 'move' | 'measure' | 'fog' | 'ping' | 'draw' | 'text';
 
+// Cores predefinidas para desenho
+const DRAW_COLORS = [
+  '#ffffff', '#ff0000', '#00ff00', '#0088ff', 
+  '#ffff00', '#ff8800', '#ff00ff', '#00ffff',
+];
+
 interface MapTabProps {
   /** Mapa ativo */
   map: TacticalMap | null;
@@ -70,7 +82,7 @@ interface MapTabProps {
   measureStart: { x: number; y: number } | null;
   /** Fim da medição */
   measureEnd: { x: number; y: number } | null;
-  /** Callbacks */
+  /** Callbacks de navegação */
   onToolChange: (tool: ToolType) => void;
   onMapChange: (mapId: string) => Promise<boolean>;
   onTokenSelect: (tokenId: string | null) => void;
@@ -88,10 +100,20 @@ interface MapTabProps {
   drawings?: MapDrawing[];
   /** Textos no mapa */
   texts?: MapText[];
-  /** Callbacks de desenho/texto */
+  /** Callbacks de desenho */
   onDrawingComplete?: (drawing: Omit<MapDrawing, 'id' | 'map_id' | 'created_by' | 'created_at'>) => void;
+  onDrawingDelete?: (drawingId: string) => void;
+  onDrawingClearAll?: () => void;
+  onDrawingUndo?: () => void;
+  onDrawingRedo?: () => void;
+  canUndoDrawing?: boolean;
+  canRedoDrawing?: boolean;
+  /** Callbacks de texto */
   onTextCreate?: (text: Omit<MapText, 'id' | 'map_id' | 'created_by' | 'created_at'>) => void;
   onTextUpdate?: (textId: string, data: Partial<MapText>) => void;
+  onTextDelete?: (textId: string) => void;
+  /** ID do usuário atual */
+  currentUserId?: string;
   /** Classe CSS adicional */
   className?: string;
 }
@@ -102,6 +124,8 @@ const TOOLS = [
   { id: 'move' as ToolType, icon: Move, label: 'Mover', masterOnly: false },
   { id: 'measure' as ToolType, icon: Ruler, label: 'Medir', masterOnly: false },
   { id: 'ping' as ToolType, icon: Radio, label: 'Ping', masterOnly: false },
+  { id: 'draw' as ToolType, icon: Pencil, label: 'Desenhar', masterOnly: false },
+  { id: 'text' as ToolType, icon: Type, label: 'Texto', masterOnly: false },
   { id: 'fog' as ToolType, icon: CloudFog, label: 'Névoa', masterOnly: true },
 ] as const;
 
@@ -133,12 +157,27 @@ export const MapTab = memo(function MapTab({
   drawings = [],
   texts = [],
   onDrawingComplete,
+  onDrawingDelete,
+  onDrawingClearAll,
+  onDrawingUndo,
+  onDrawingRedo,
+  canUndoDrawing = false,
+  canRedoDrawing = false,
   onTextCreate,
   onTextUpdate,
+  onTextDelete,
+  currentUserId,
   className,
 }: MapTabProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 });
+  
+  // Estado local para ferramentas de desenho
+  const [drawTool, setDrawTool] = useState<'pen' | 'line' | 'rect' | 'circle' | 'eraser'>('pen');
+  const [drawColor, setDrawColor] = useState('#ffffff');
+  const [drawStrokeWidth, setDrawStrokeWidth] = useState(3);
+  const [textFontSize, setTextFontSize] = useState(16);
+  const [textColor, setTextColor] = useState('#ffffff');
 
   // ResizeObserver para dimensões dinâmicas
   useEffect(() => {
@@ -148,7 +187,6 @@ export const MapTab = memo(function MapTab({
       const entry = entries[0];
       if (entry) {
         const { width, height } = entry.contentRect;
-        // Usa requestAnimationFrame para evitar flickering
         requestAnimationFrame(() => {
           setCanvasSize({ 
             width: Math.floor(width), 
@@ -183,12 +221,13 @@ export const MapTab = memo(function MapTab({
             texts={texts}
             selectedTokenId={selectedTokenId}
             activeTool={activeTool}
-            drawTool="pen"
-            drawColor="#ffffff"
-            drawStrokeWidth={3}
-            textFontSize={16}
-            textColor="#ffffff"
+            drawTool={drawTool}
+            drawColor={drawColor}
+            drawStrokeWidth={drawStrokeWidth}
+            textFontSize={textFontSize}
+            textColor={textColor}
             isMaster={isMaster}
+            currentUserId={currentUserId}
             width={canvasSize.width}
             height={canvasSize.height}
             measureStart={measureStart}
@@ -202,8 +241,10 @@ export const MapTab = memo(function MapTab({
             onPing={(x, y) => onPing?.(x, y)}
             onFogToggle={onFogReveal ? async (cells) => { await onFogReveal(cells); } : undefined}
             onDrawingComplete={onDrawingComplete || (() => {})}
+            onDrawingDelete={onDrawingDelete}
             onTextCreate={onTextCreate || (() => {})}
             onTextUpdate={onTextUpdate || (() => {})}
+            onTextDelete={onTextDelete}
           />
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-3">
@@ -262,6 +303,135 @@ export const MapTab = memo(function MapTab({
                 </Tooltip>
               );
             })}
+
+            {/* Separador + sub-ferramentas de desenho */}
+            {activeTool === 'draw' && (
+              <>
+                <div className="h-px bg-border/50 my-1" />
+                
+                {/* Seletor de cor */}
+                <div className="flex flex-wrap gap-0.5 px-0.5">
+                  {DRAW_COLORS.map(color => (
+                    <button
+                      key={color}
+                      className={cn(
+                        'w-4 h-4 rounded-full border border-border/50 transition-transform',
+                        drawColor === color && 'ring-2 ring-primary scale-110'
+                      )}
+                      style={{ backgroundColor: color }}
+                      onClick={() => setDrawColor(color)}
+                    />
+                  ))}
+                </div>
+
+                {/* Espessura do traço */}
+                <div className="flex items-center gap-1 px-1">
+                  {[2, 4, 8].map(w => (
+                    <button
+                      key={w}
+                      className={cn(
+                        'flex-1 h-6 rounded flex items-center justify-center text-[10px]',
+                        drawStrokeWidth === w 
+                          ? 'bg-primary text-primary-foreground' 
+                          : 'bg-muted/50 text-muted-foreground hover:bg-muted'
+                      )}
+                      onClick={() => setDrawStrokeWidth(w)}
+                    >
+                      {w}px
+                    </button>
+                  ))}
+                </div>
+
+                {/* Undo/Redo */}
+                <div className="flex gap-0.5">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        disabled={!canUndoDrawing}
+                        onClick={onDrawingUndo}
+                      >
+                        <Undo2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="right">Desfazer (Ctrl+Z)</TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        disabled={!canRedoDrawing}
+                        onClick={onDrawingRedo}
+                      >
+                        <Redo2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="right">Refazer (Ctrl+Y)</TooltipContent>
+                  </Tooltip>
+                </div>
+
+                {/* Limpar tudo (apenas mestre) */}
+                {isMaster && onDrawingClearAll && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-destructive hover:text-destructive"
+                        onClick={onDrawingClearAll}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="right">Limpar todos os desenhos</TooltipContent>
+                  </Tooltip>
+                )}
+              </>
+            )}
+
+            {/* Sub-ferramentas de texto */}
+            {activeTool === 'text' && (
+              <>
+                <div className="h-px bg-border/50 my-1" />
+                
+                {/* Seletor de cor do texto */}
+                <div className="flex flex-wrap gap-0.5 px-0.5">
+                  {DRAW_COLORS.map(color => (
+                    <button
+                      key={color}
+                      className={cn(
+                        'w-4 h-4 rounded-full border border-border/50 transition-transform',
+                        textColor === color && 'ring-2 ring-primary scale-110'
+                      )}
+                      style={{ backgroundColor: color }}
+                      onClick={() => setTextColor(color)}
+                    />
+                  ))}
+                </div>
+
+                {/* Tamanho da fonte */}
+                <div className="flex items-center gap-1 px-1">
+                  {[12, 16, 24].map(s => (
+                    <button
+                      key={s}
+                      className={cn(
+                        'flex-1 h-6 rounded flex items-center justify-center text-[10px]',
+                        textFontSize === s 
+                          ? 'bg-primary text-primary-foreground' 
+                          : 'bg-muted/50 text-muted-foreground hover:bg-muted'
+                      )}
+                      onClick={() => setTextFontSize(s)}
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         </motion.div>
       )}
