@@ -1,7 +1,7 @@
 /**
  * DashboardActivityFeed - Feed de atividade recente estilo log de operações
  */
-import { Clock, FileText, Users, Calendar } from 'lucide-react';
+import { ClockCountdown, IdentificationBadge, UsersThree, CalendarCheck } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
 import type { RecentActivity } from '@/hooks/useDashboardData';
 
@@ -30,13 +30,13 @@ function getActivityIcon(type: RecentActivity['type']) {
   switch (type) {
     case 'character_created':
     case 'character_updated':
-      return FileText;
+      return IdentificationBadge;
     case 'campaign_joined':
-      return Users;
+      return UsersThree;
     case 'session_scheduled':
-      return Calendar;
+      return CalendarCheck;
     default:
-      return Clock;
+      return ClockCountdown;
   }
 }
 
@@ -67,7 +67,7 @@ export function DashboardActivityFeed({ activities }: DashboardActivityFeedProps
               {/* Linha temporal */}
               <div className="flex flex-col items-center">
                 <div className="w-7 h-7 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center group-hover:border-primary/40 transition-colors">
-                  <Icon className="w-3.5 h-3.5 text-primary/70" />
+                  <Icon className="w-3.5 h-3.5 text-primary/70" weight="duotone" />
                 </div>
               </div>
 

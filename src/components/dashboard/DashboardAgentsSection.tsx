@@ -3,7 +3,8 @@
  */
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Plus, FileText, ChevronRight } from 'lucide-react';
+import { Plus } from 'lucide-react';
+import { IdentificationBadge } from '@phosphor-icons/react';
 import { LogoBox } from '@/components/ui/logo';
 import { DecryptedText } from '@/components/ui/decrypted-text';
 import { CharacterCard } from '@/components/cards/CharacterCard';
@@ -55,7 +56,7 @@ export function DashboardAgentsSection({ characters, loading, onDelete }: Dashbo
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_hsl(var(--primary)/0.08)_0%,_transparent_70%)]" />
           <div className="relative z-10">
             <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center">
-              <FileText className="w-8 h-8 text-muted-foreground" />
+              <IdentificationBadge className="w-8 h-8 text-muted-foreground" weight="duotone" />
             </div>
             <h4 className="font-display text-lg text-foreground mb-2">
               <DecryptedText text="NENHUM DOSSIÊ ENCONTRADO" speed={30} />

@@ -3,28 +3,28 @@
  */
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Plus, Users, Dice5, FileText } from 'lucide-react';
+import { UserPlus, Crosshair, Folder } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
 
 export function DashboardQuickActions() {
   const actions = [
     {
       label: 'Novo Agente',
-      icon: Plus,
+      icon: UserPlus,
       href: '/character/create',
       variant: 'default' as const,
       description: 'Criar dossiê',
     },
     {
       label: 'Nova Campanha',
-      icon: Users,
+      icon: Crosshair,
       href: '/campaigns/create',
       variant: 'outline' as const,
       description: 'Abrir operação',
     },
     {
       label: 'Campanhas',
-      icon: FileText,
+      icon: Folder,
       href: '/campaigns',
       variant: 'outline' as const,
       description: 'Ver todas',
@@ -58,7 +58,7 @@ export function DashboardQuickActions() {
                     : 'border-primary/20 hover:bg-primary/10 hover:border-primary/40'
                   }`}
               >
-                <action.icon className="w-5 h-5" />
+                <action.icon className="w-5 h-5" weight="duotone" />
                 <span>{action.label}</span>
                 <span className="text-[10px] font-mono text-muted-foreground opacity-70">{action.description}</span>
               </Button>
