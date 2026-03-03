@@ -1079,8 +1079,8 @@ export function TacticalBoard({
           }
           pings={board.pings}
           highlightedCells={board.highlightedCells}
-          drawings={[]}
-          texts={[]}
+          drawings={board.drawings}
+          texts={board.texts}
           selectedTokenId={board.selectedTokenId}
           measureStart={board.measureStart}
           measureEnd={board.measureEnd}
@@ -1129,9 +1129,9 @@ export function TacticalBoard({
               board.revealFog([cell]);
             }
           }}
-          onDrawingComplete={() => {}}
-          onTextCreate={() => {}}
-          onTextUpdate={() => {}}
+          onDrawingComplete={(drawing) => board.createDrawing(drawing)}
+          onTextCreate={(text) => board.createText(text)}
+          onTextUpdate={(textId, data) => board.updateText(textId, data)}
           combatMode={combatMode}
           movementRemaining={movementRemaining}
           onMovementPreview={onMovementPreview}

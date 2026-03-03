@@ -39,6 +39,8 @@ import { cn } from '@/lib/utils';
 import TacticalBoardKonva from '@/components/campaign/tactical/TacticalBoardKonva';
 import type { TacticalMap, MapToken, BoardPing } from '@/hooks/campaign/useTacticalBoard';
 import type { HighlightedCell } from '@/components/campaign/tactical/layers/HighlightLayer';
+import type { MapDrawing } from '@/components/campaign/tactical/layers/DrawingLayer';
+import type { MapText } from '@/components/campaign/tactical/layers/TextLayer';
 
 // Tipos de ferramentas
 type ToolType = 'select' | 'move' | 'measure' | 'fog' | 'ping' | 'draw' | 'text';
@@ -82,6 +84,14 @@ interface MapTabProps {
   onFogReveal?: (cells: Array<{ x: number; y: number }>) => Promise<boolean>;
   onFogHide?: (cells: Array<{ x: number; y: number }>) => Promise<boolean>;
   calculateDistance: (x1: number, y1: number, x2: number, y2: number) => number;
+  /** Desenhos no mapa */
+  drawings?: MapDrawing[];
+  /** Textos no mapa */
+  texts?: MapText[];
+  /** Callbacks de desenho/texto */
+  onDrawingComplete?: (drawing: Omit<MapDrawing, 'id' | 'map_id' | 'created_by' | 'created_at'>) => void;
+  onTextCreate?: (text: Omit<MapText, 'id' | 'map_id' | 'created_by' | 'created_at'>) => void;
+  onTextUpdate?: (textId: string, data: Partial<MapText>) => void;
   /** Classe CSS adicional */
   className?: string;
 }
@@ -120,6 +130,11 @@ export const MapTab = memo(function MapTab({
   onFogReveal,
   onFogHide,
   calculateDistance,
+  drawings = [],
+  texts = [],
+  onDrawingComplete,
+  onTextCreate,
+  onTextUpdate,
   className,
 }: MapTabProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -164,8 +179,8 @@ export const MapTab = memo(function MapTab({
             tokens={tokens}
             pings={pings}
             highlightedCells={highlightedCells}
-            drawings={[]}
-            texts={[]}
+            drawings={drawings}
+            texts={texts}
             selectedTokenId={selectedTokenId}
             activeTool={activeTool}
             drawTool="pen"
@@ -186,9 +201,9 @@ export const MapTab = memo(function MapTab({
             onMeasureEnd={onMeasureEnd}
             onPing={(x, y) => onPing?.(x, y)}
             onFogToggle={onFogReveal ? async (cells) => { await onFogReveal(cells); } : undefined}
-            onDrawingComplete={() => {}}
-            onTextCreate={() => {}}
-            onTextUpdate={() => {}}
+            onDrawingComplete={onDrawingComplete || (() => {})}
+            onTextCreate={onTextCreate || (() => {})}
+            onTextUpdate={onTextUpdate || (() => {})}
           />
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-3">
