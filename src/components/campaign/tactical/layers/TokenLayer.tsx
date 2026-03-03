@@ -19,6 +19,8 @@ interface TokenLayerProps {
   gridSize: number;
   selectedTokenId: string | null;
   isMaster: boolean;
+  /** Desabilita interação (quando outra ferramenta está ativa) */
+  listening?: boolean;
   onTokenSelect: (tokenId: string | null) => void;
   onTokenDragStart?: (token: MapToken) => void;
   onTokenDragMove?: (token: MapToken, newX: number, newY: number) => void;
@@ -304,6 +306,7 @@ export function TokenLayer({
   gridSize,
   selectedTokenId,
   isMaster,
+  listening = true,
   onTokenSelect,
   onTokenDragStart,
   onTokenDragMove,
@@ -318,7 +321,7 @@ export function TokenLayer({
   });
 
   return (
-    <Layer>
+    <Layer listening={listening}>
       {sortedTokens.map((token) => (
         <TokenShape
           key={token.id}

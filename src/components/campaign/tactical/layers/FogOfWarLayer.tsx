@@ -90,10 +90,15 @@ export function FogOfWarLayer({
 
     if (!shouldRender) return;
 
+    // Guarda: não cacheia se as dimensões forem 0
+    if (mapWidth <= 0 || mapHeight <= 0) return;
+
     requestAnimationFrame(() => {
       try {
-        group.cache({ pixelRatio: 1 });
-        group.getLayer()?.batchDraw();
+        const g = groupRef.current;
+        if (!g || !g.getLayer()) return;
+        g.cache({ pixelRatio: 1 });
+        g.getLayer()?.batchDraw();
       } catch {
         // Ignora se o grupo não estiver mais no DOM
       }

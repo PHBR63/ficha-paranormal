@@ -38,6 +38,8 @@ interface TextLayerProps {
   isMaster: boolean;
   /** ID do usuário atual */
   currentUserId?: string;
+  /** Desabilita interação (quando outra ferramenta está ativa) */
+  listening?: boolean;
   /** Callback ao criar um novo texto */
   onTextCreate: (text: Omit<MapText, 'id' | 'map_id' | 'created_by' | 'created_at'>) => void;
   /** Callback ao atualizar texto */
@@ -168,6 +170,7 @@ export function TextLayer({
   defaultColor,
   isMaster,
   currentUserId,
+  listening = true,
   onTextCreate,
   onTextUpdate,
   onTextDelete,
@@ -199,7 +202,7 @@ export function TextLayer({
   }, [isTextMode, defaultFontSize, defaultColor, onTextCreate]);
 
   return (
-    <Layer onClick={handleClick} onTap={handleClick}>
+    <Layer listening={listening} onClick={handleClick} onTap={handleClick}>
       {texts.map((item) => {
         const canEdit = isMaster || item.created_by === currentUserId;
         return (
