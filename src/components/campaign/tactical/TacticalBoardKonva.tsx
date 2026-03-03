@@ -295,16 +295,19 @@ export function TacticalBoardKonva({
         drawTool={drawTool}
         drawColor={drawColor}
         drawStrokeWidth={drawStrokeWidth}
+        mapWidth={mapWidth}
+        mapHeight={mapHeight}
         onDrawingComplete={onDrawingComplete}
         onDrawingDelete={onDrawingDelete}
       />
 
-      {/* Layer 3: Tokens (interativo) */}
+      {/* Layer 3: Tokens (não-interativo quando desenhando) */}
       <TokenLayer
         tokens={tokens}
         gridSize={gridSize}
         selectedTokenId={selectedTokenId}
         isMaster={isMaster}
+        listening={activeTool !== 'draw'}
         onTokenSelect={onTokenSelect}
         onTokenDragStart={handleTokenDragStart}
         onTokenDragMove={handleTokenDragMove}
@@ -312,7 +315,7 @@ export function TacticalBoardKonva({
         onTokenDoubleClick={onTokenDoubleClick}
       />
 
-      {/* Layer 4: Textos (interativo) */}
+      {/* Layer 4: Textos (não-interativo quando desenhando) */}
       <TextLayer
         texts={texts}
         isTextMode={activeTool === 'text'}
@@ -320,6 +323,7 @@ export function TacticalBoardKonva({
         defaultColor={textColor}
         isMaster={isMaster}
         currentUserId={currentUserId}
+        listening={activeTool !== 'draw'}
         onTextCreate={onTextCreate}
         onTextUpdate={onTextUpdate}
         onTextDelete={onTextDelete}

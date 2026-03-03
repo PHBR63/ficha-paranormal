@@ -77,13 +77,18 @@ export function GridLayer({
     const group = groupRef.current;
     if (!group || !visible || gridType === 'none') return;
 
+    // Guarda: não cacheia se as dimensões forem 0
+    const totalW = widthCells * gridSize;
+    const totalH = heightCells * gridSize;
+    if (totalW <= 0 || totalH <= 0) return;
+
     // Aguarda o próximo frame para garantir que o Shape foi renderizado
     requestAnimationFrame(() => {
       try {
-        group.cache({
-          pixelRatio: 1, // 1:1 para performance; 2 para retina se necessário
-        });
-        group.getLayer()?.batchDraw();
+        const g = groupRef.current;
+        if (!g || !g.getLayer()) return;
+        g.cache({ pixelRatio: 1 });
+        g.getLayer()?.batchDraw();
       } catch {
         // Ignora erro se o grupo não estiver mais no DOM
       }

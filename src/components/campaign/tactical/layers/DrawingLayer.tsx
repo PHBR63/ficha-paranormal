@@ -34,6 +34,9 @@ interface DrawingLayerProps {
   drawColor: string;
   /** Espessura do traço */
   drawStrokeWidth: number;
+  /** Dimensões do mapa para área de captura de eventos */
+  mapWidth?: number;
+  mapHeight?: number;
   /** Callback ao finalizar um stroke */
   onDrawingComplete: (drawing: Omit<MapDrawing, 'id' | 'map_id' | 'created_by' | 'created_at'>) => void;
   /** Callback ao deletar um desenho (borracha) */
@@ -105,6 +108,8 @@ export function DrawingLayer({
   drawTool,
   drawColor,
   drawStrokeWidth,
+  mapWidth = 2000,
+  mapHeight = 2000,
   onDrawingComplete,
   onDrawingDelete,
 }: DrawingLayerProps) {
@@ -188,6 +193,18 @@ export function DrawingLayer({
       onTouchMove={handleMouseMove}
       onTouchEnd={handleMouseUp}
     >
+      {/* Rect transparente para capturar eventos em toda a área do mapa */}
+      {isDrawing && (
+        <Rect
+          x={0}
+          y={0}
+          width={mapWidth}
+          height={mapHeight}
+          fill="transparent"
+          listening={true}
+        />
+      )}
+
       {/* Desenhos salvos */}
       {drawings.map((drawing) => (
         <DrawingShape key={drawing.id} drawing={drawing} />
