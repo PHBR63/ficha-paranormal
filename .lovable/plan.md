@@ -1,50 +1,46 @@
 
 
-# Mapa Tático em Janela Separada
+# Otimização de Bundle JS e CSS
 
-## Análise da Proposta
+## Diagnóstico Atual
 
-Separar o mapa em um **projeto Lovable separado** traz complicações significativas:
-- Cada projeto Lovable Cloud tem seu próprio backend isolado — não compartilham banco de dados
-- Seria necessário duplicar autenticação, tabelas e lógica
-- Sincronização em tempo real entre dois backends distintos seria complexa e frágil
+**JS (1,1 MB):** O lazy loading por rota já está implementado para a maioria das páginas. Porém:
+- `Index` (346 linhas), `Auth` (600 linhas) e `NotFound` são importados eagerly no bundle principal
+- Não há `manualChunks` no Vite — todas as dependências de vendor (react, supabase, konva, framer-motion, recharts, dnd-kit) ficam num único chunk
+- Bibliotecas pesadas como `konva`, `react-konva`, `framer-motion`, `recharts` e `@rive-app/react-canvas` entram no bundle mesmo quando não são usadas na rota atual
 
-## Recomendação: Rota dedicada no mesmo projeto
+**CSS (190 KB / 1120 linhas em `index.css`):** O `content` do Tailwind já está configurado corretamente (`src/**/*.{ts,tsx}`). Os 190 KB vêm principalmente de:
+- CSS custom extenso (variáveis de 5 temas, animações, efeitos atmosféricos, gradients por tema)
+- Muitas keyframes e animações customizadas no `tailwind.config.ts`
+- Arquivo `App.css` com estilos legados não utilizados (logo spin, .card, .read-the-docs)
 
-A abordagem mais eficiente é criar uma **rota dedicada** (`/map/:campaignId`) que abre em uma **nova aba do navegador**, mantendo:
-- Mesmo banco de dados e autenticação
-- Mesmo Realtime (tokens, desenhos, pings sincronizados)
-- Zero duplicação de código
+## Plano de Implementação
 
-## O que muda
+### 1. Configurar `manualChunks` no Vite (maior impacto)
 
-1. **Nova rota `/map/:campaignId`** — página standalone com o mapa em tela cheia, sem header/navigation/statusbar da campanha. Apenas o mapa + toolbar flutuante.
+Adicionar em `vite.config.ts` a configuração `build.rollupOptions.output.manualChunks` para separar vendors pesados em chunks independentes:
 
-2. **Botão "Abrir em nova aba"** na aba Mapa do CampaignShell — abre `window.open('/map/{campaignId}')`.
+- **`vendor-react`**: react, react-dom, react-router-dom
+- **`vendor-supabase`**: @supabase/supabase-js, @tanstack/react-query
+- **`vendor-ui`**: @radix-ui/*, class-variance-authority, tailwind-merge, cmdk, sonner, vaul
+- **`vendor-canvas`**: konva, react-konva (carregado apenas na rota do mapa)
+- **`vendor-motion`**: framer-motion (carregado apenas quando componentes animados são usados)
+- **`vendor-charts`**: recharts (carregado apenas em páginas com gráficos)
 
-3. **Aba Mapa original permanece** como opção inline para quem preferir não abrir nova janela.
+Isso permite caching granular — atualizar código da app não invalida o cache dos vendors.
 
-4. **A nova página** reutiliza os mesmos componentes (`TacticalBoardKonva`, `TacticalToolbar`, etc.) e o mesmo hook `useTacticalBoard` — 100% do viewport dedicado ao canvas.
+### 2. Lazy load de `Auth` e `NotFound`
 
-## Estrutura técnica
+Converter `Auth` e `NotFound` para `lazy()` — são páginas que não precisam estar no bundle inicial. A landing page (`Index`) permanece eager pois é o first paint.
 
-```text
-CampaignShell (existente)
-  └── MapTab → botão "Pop Out" → window.open('/map/:id')
+### 3. Remover `App.css` legado
 
-/map/:campaignId (nova rota)
-  └── TacticalMapFullscreen (nova página)
-      ├── useTacticalBoard (mesmo hook)
-      ├── TacticalBoardKonva (mesmo componente)
-      └── Toolbar flutuante compacta
-```
+O arquivo `src/App.css` contém apenas estilos não utilizados (`.logo`, `.card`, `.read-the-docs`, `logo-spin`). Será removido e qualquer import eliminado.
 
-## Escopo de implementação
+### 4. Resultado esperado
 
-1. Criar `src/pages/TacticalMapFullscreen.tsx` — página standalone com autenticação, hook do mapa e canvas em tela cheia
-2. Adicionar rota `/map/:campaignId` no router
-3. Adicionar botão "Abrir em nova aba" no `MapTab` existente
-4. Garantir que a página standalone valide autenticação e permissões
-
-Nenhuma migração de banco necessária. Nenhuma alteração nos componentes do mapa.
+- Bundle inicial reduzido de ~1,1 MB para ~400-500 KB (vendors separados + lazy routes)
+- Vendors cacheados independentemente pelo browser
+- CSS reduzido em ~2-3 KB (remoção do App.css legado)
+- O CSS de 190 KB em si é majoritariamente variáveis de tema necessárias — a redução significativa exigiria remover temas, o que não é desejável
 
