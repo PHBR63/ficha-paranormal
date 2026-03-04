@@ -41,12 +41,7 @@ import type { HighlightedCell } from '@/components/campaign/tactical/layers/High
 import type { MapDrawing } from '@/components/campaign/tactical/layers/DrawingLayer';
 import type { MapText } from '@/components/campaign/tactical/layers/TextLayer';
 
-// Cores predefinidas para desenho
-const DRAW_COLORS = [
-  '#ffffff', '#ff0000', '#00ff00', '#0088ff', 
-  '#ffff00', '#ff8800', '#ff00ff', '#00ffff',
-];
-
+// Cores predefinidas removidas — agora ficam no MapToolbar
 interface MapTabProps {
   /** Mapa ativo */
   map: TacticalMap | null;
