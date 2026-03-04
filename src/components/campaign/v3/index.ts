@@ -18,6 +18,7 @@ export { CampaignStatusBar } from './CampaignStatusBar';
 export { PanelTab } from './tabs/PanelTab';
 export { ChatTab } from './tabs/ChatTab';
 export { MapTab } from './tabs/MapTab';
+export { MapListTab } from './tabs/MapListTab';
 export { ResourcesTab } from './tabs/ResourcesTab';
 export { MasterTab } from './tabs/MasterTab';
 
