@@ -165,7 +165,7 @@ export const MasterMapPanel = memo(function MasterMapPanel({
                 onClearAllConditions={onClearAllConditions}
                 onOpenBulkDamage={() => setBulkDamageOpen(true)}
                 isUpdating={isUpdating}
-                compact
+                className="py-2"
               />
             </div>
 
