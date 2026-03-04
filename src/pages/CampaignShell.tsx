@@ -28,6 +28,7 @@ import {
   PanelTab,
   ChatTab,
   MapTab,
+  MapListTab,
   ResourcesTab,
   MasterTab,
   type CampaignTab,
@@ -276,48 +277,15 @@ export default function CampaignShell() {
           />
         )}
 
-        {activeTab === 'map' && (
-          <MapTab
-            map={tacticalBoard.activeMap}
+        {activeTab === 'map' && campaignId && (
+          <MapListTab
+            campaignId={campaignId}
             maps={tacticalBoard.maps}
-            tokens={tacticalBoard.tokens}
-            pings={tacticalBoard.pings}
-            highlightedCells={tacticalBoard.highlightedCells}
-            selectedTokenId={tacticalBoard.selectedTokenId}
-            activeTool={tacticalBoard.activeTool}
+            activeMap={tacticalBoard.activeMap}
             isMaster={isMaster}
-            zoom={tacticalBoard.zoom}
-            panOffset={tacticalBoard.panOffset}
-            measureStart={tacticalBoard.measureStart}
-            measureEnd={tacticalBoard.measureEnd}
-            onToolChange={tacticalBoard.setActiveTool}
-            onMapChange={tacticalBoard.setActiveMap}
-            onTokenSelect={tacticalBoard.selectToken}
-            onTokenMove={tacticalBoard.moveToken}
-            onZoomChange={tacticalBoard.setZoom}
-            onResetView={tacticalBoard.fitToScreen}
-            onMeasureStart={tacticalBoard.startMeasure}
-            onMeasureEnd={tacticalBoard.endMeasure}
-            onPing={tacticalBoard.sendPing}
-            onFogReveal={tacticalBoard.revealFog}
-            onFogHide={tacticalBoard.hideFog}
-            calculateDistance={tacticalBoard.calculateDistance}
-            drawings={tacticalBoard.drawings}
-            texts={tacticalBoard.texts}
-            onDrawingComplete={tacticalBoard.createDrawing}
-            onDrawingDelete={tacticalBoard.deleteDrawing}
-            onDrawingClearAll={tacticalBoard.clearAllDrawings}
-            onDrawingUndo={tacticalBoard.undoDrawing}
-            onDrawingRedo={tacticalBoard.redoDrawing}
-            canUndoDrawing={tacticalBoard.canUndoDrawing}
-            canRedoDrawing={tacticalBoard.canRedoDrawing}
-            onTextCreate={tacticalBoard.createText}
-            onTextUpdate={tacticalBoard.updateText}
-            onTextDelete={tacticalBoard.deleteText}
             onCreateMap={tacticalBoard.createMap}
             onUploadMapImage={tacticalBoard.uploadMapImage}
             onSetActiveMap={tacticalBoard.setActiveMap}
-            currentUserId={userId}
           />
         )}
 
