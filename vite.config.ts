@@ -135,6 +135,29 @@ export default defineConfig(({ mode }) => ({
       },
     }),
   ].filter(Boolean),
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Core React — carregado em todas as rotas
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          // Backend e data fetching
+          'vendor-supabase': ['@supabase/supabase-js', '@tanstack/react-query'],
+          // Componentes UI (Radix, etc.)
+          'vendor-ui': [
+            'class-variance-authority', 'tailwind-merge', 'clsx',
+            'cmdk', 'sonner', 'vaul', 'lucide-react',
+          ],
+          // Canvas/Mapa — carregado apenas na rota do mapa
+          'vendor-canvas': ['konva', 'react-konva'],
+          // Animações — carregado sob demanda
+          'vendor-motion': ['framer-motion'],
+          // Gráficos — carregado sob demanda
+          'vendor-charts': ['recharts'],
+        },
+      },
+    },
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
