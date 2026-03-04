@@ -184,8 +184,9 @@ export const MapTab = memo(function MapTab({
     return () => resizeObserver.disconnect();
   }, []);
 
-  // Filtra ferramentas visíveis (algumas são só para mestre)
-  const visibleTools = TOOLS.filter(tool => !tool.masterOnly || isMaster);
+  // Estado de visibilidade do grid (toggle local)
+  const [gridVisible, setGridVisible] = useState(true);
+  const handleToggleGrid = useCallback(() => setGridVisible(prev => !prev), []);
 
   return (
     <div className={cn('relative w-full h-full overflow-hidden', className)}>
