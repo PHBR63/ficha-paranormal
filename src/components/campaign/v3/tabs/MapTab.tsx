@@ -10,21 +10,10 @@
  */
 
 import { memo, useRef, useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { CreateMapDialog } from './CreateMapDialog';
 import { 
-  MousePointer2,
   Plus,
-  Move, 
-  Ruler, 
-  CloudFog, 
-  Radio,
-  Pencil,
-  Type,
-  Eraser,
-  Undo2,
-  Redo2,
-  Trash2,
   ZoomIn,
   ZoomOut,
   Maximize2,
@@ -46,13 +35,11 @@ import {
 } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import TacticalBoardKonva from '@/components/campaign/tactical/TacticalBoardKonva';
+import { MapToolbar, type ToolType, type DrawToolType } from '@/components/campaign/v3/map/MapToolbar';
 import type { TacticalMap, MapToken, BoardPing } from '@/hooks/campaign/useTacticalBoard';
 import type { HighlightedCell } from '@/components/campaign/tactical/layers/HighlightLayer';
 import type { MapDrawing } from '@/components/campaign/tactical/layers/DrawingLayer';
 import type { MapText } from '@/components/campaign/tactical/layers/TextLayer';
-
-// Tipos de ferramentas
-type ToolType = 'select' | 'move' | 'measure' | 'fog' | 'ping' | 'draw' | 'text';
 
 // Cores predefinidas para desenho
 const DRAW_COLORS = [
