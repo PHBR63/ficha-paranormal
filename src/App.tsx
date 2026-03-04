@@ -31,6 +31,7 @@ const AdminUsers = lazy(() => import("./pages/AdminUsers"));
 const AdminDataIntegrity = lazy(() => import("./pages/AdminDataIntegrity"));
 const AdminCampaigns = lazy(() => import("./pages/AdminCampaigns"));
 const MyTemplates = lazy(() => import("./pages/MyTemplates"));
+const TacticalMapFullscreen = lazy(() => import("./pages/TacticalMapFullscreen"));
 const Install = lazy(() => import("./pages/Install"));
 
 const queryClient = new QueryClient();
@@ -100,6 +101,11 @@ const App = () => (
                   <Route path="/my-templates" element={
                     <ProtectedRoute>
                       <MyTemplates />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/map/:id" element={
+                    <ProtectedRoute>
+                      <TacticalMapFullscreen />
                     </ProtectedRoute>
                   } />
                   <Route path="/admin/import" element={

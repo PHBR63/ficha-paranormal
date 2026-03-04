@@ -26,6 +26,7 @@ import {
   ZoomIn,
   ZoomOut,
   Maximize2,
+  ExternalLink,
   Map as MapIcon
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -488,6 +489,25 @@ export const MapTab = memo(function MapTab({
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Resetar visualização</TooltipContent>
+            </Tooltip>
+
+            {/* Botão Pop Out — abre mapa em nova aba */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => {
+                    if (map?.campaign_id) {
+                      window.open(`/map/${map.campaign_id}`, '_blank');
+                    }
+                  }}
+                >
+                  <ExternalLink className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Abrir em nova aba</TooltipContent>
             </Tooltip>
           </div>
         </motion.div>
