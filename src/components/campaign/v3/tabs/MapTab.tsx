@@ -13,7 +13,8 @@ import { memo, useRef, useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CreateMapDialog } from './CreateMapDialog';
 import { 
-  MousePointer2, 
+  MousePointer2,
+  Plus,
   Move, 
   Ruler, 
   CloudFog, 
@@ -256,43 +257,88 @@ export const MapTab = memo(function MapTab({
             onTextDelete={onTextDelete}
           />
         ) : (
-          <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-4">
-            <MapIcon className="h-12 w-12 opacity-50" />
-            <p className="text-sm">Nenhum mapa ativo</p>
-            
-            {isMaster && (
-              <div className="flex flex-col items-center gap-2">
-                {/* Botão de criar mapa */}
-                {onCreateMap && onUploadMapImage && onSetActiveMap && (
-                  <CreateMapDialog
-                    onCreateMap={onCreateMap}
-                    onUploadMapImage={onUploadMapImage}
-                    onSetActiveMap={onSetActiveMap}
-                  />
-                )}
+          <div className="flex flex-col items-center justify-center h-full relative overflow-hidden">
+            {/* Fundo atmosférico com grid sutil */}
+            <div className="absolute inset-0 bg-gradient-to-b from-background via-card/30 to-background" />
+            <div 
+              className="absolute inset-0 opacity-[0.03]"
+              style={{
+                backgroundImage: 'linear-gradient(hsl(var(--muted-foreground)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--muted-foreground)) 1px, transparent 1px)',
+                backgroundSize: '40px 40px',
+              }}
+            />
+            {/* Efeito de névoa sutil */}
+            <div className="absolute inset-0 bg-gradient-radial from-primary/5 via-transparent to-transparent opacity-50" />
 
-                {/* Seletor de mapa existente */}
-                {maps.length > 0 && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="sm">
-                        Selecionar mapa existente
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                      {maps.map((m) => (
-                        <DropdownMenuItem 
-                          key={m.id}
-                          onClick={() => onMapChange(m.id)}
-                        >
-                          {m.name}
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
+            {/* Conteúdo central */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="relative z-10 flex flex-col items-center gap-6 max-w-sm text-center px-4"
+            >
+              {/* Ícone decorativo */}
+              <div className="relative">
+                <div className="absolute inset-0 blur-xl bg-primary/10 rounded-full scale-150" />
+                <div className="relative p-5 rounded-2xl border border-border/30 bg-card/50 backdrop-blur-sm">
+                  <MapIcon className="h-10 w-10 text-muted-foreground/60" />
+                </div>
               </div>
-            )}
+
+              {/* Texto */}
+              <div className="space-y-2">
+                <h3 className="text-base font-semibold text-foreground/80 font-display tracking-wide">
+                  Nenhum mapa ativo
+                </h3>
+                <p className="text-xs text-muted-foreground/60 leading-relaxed">
+                  {isMaster 
+                    ? 'Crie um novo mapa tático ou selecione um existente para começar a sessão.'
+                    : 'Aguarde o mestre configurar o mapa tático para esta sessão.'}
+                </p>
+              </div>
+
+              {/* Ações do mestre */}
+              {isMaster && (
+                <div className="flex flex-col items-center gap-2 w-full">
+                  {onCreateMap && onUploadMapImage && onSetActiveMap && (
+                    <CreateMapDialog
+                      onCreateMap={onCreateMap}
+                      onUploadMapImage={onUploadMapImage}
+                      onSetActiveMap={onSetActiveMap}
+                      trigger={
+                        <Button size="sm" className="gap-2 w-full max-w-48">
+                          <Plus className="h-4 w-4" />
+                          Criar Novo Mapa
+                        </Button>
+                      }
+                    />
+                  )}
+
+                  {maps.length > 0 && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm" className="gap-2 w-full max-w-48 text-muted-foreground">
+                          <MapIcon className="h-3.5 w-3.5" />
+                          Selecionar existente ({maps.length})
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="center">
+                        {maps.map((m) => (
+                          <DropdownMenuItem 
+                            key={m.id}
+                            onClick={() => onMapChange(m.id)}
+                            className="gap-2"
+                          >
+                            <MapIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                            {m.name}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
+                </div>
+              )}
+            </motion.div>
           </div>
         )}
       </div>
