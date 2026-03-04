@@ -304,6 +304,29 @@ export default function CampaignShell() {
             onModifyPE={masterActions.adjustPE}
             onApplyCondition={masterActions.applyCondition}
             onRemoveCondition={masterActions.removeCondition}
+            onRestFull={async (charId) => {
+              const r1 = await masterActions.setHP(charId, 9999);
+              const r2 = await masterActions.setPE(charId, 9999);
+              return r1 && r2;
+            }}
+            onGroupRest={async () => {
+              const players = members.filter(m => m.characters && m.role !== 'master');
+              for (const p of players) {
+                if (p.characters) {
+                  await masterActions.setHP(p.characters.id, 9999);
+                  await masterActions.setPE(p.characters.id, 9999);
+                }
+              }
+            }}
+            onClearAllConditions={async () => {
+              const players = members.filter(m => m.characters && m.role !== 'master');
+              for (const p of players) {
+                if (p.characters) {
+                  await masterActions.clearAllConditions(p.characters.id);
+                }
+              }
+            }}
+            onSendMessage={sendMessage}
             isUpdating={masterActions.isUpdating}
           />
         )}

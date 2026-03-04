@@ -1,12 +1,10 @@
 /**
- * MasterTab - Aba exclusiva do mestre da campanha v3
+ * MasterTab - Aba do mestre da campanha v3 (redesign completo)
  * 
- * Ferramentas do GM:
- * - Controle de NPCs
- * - Macros rápidas
- * - Controle de áudio
- * - Gerenciamento de bônus
- * - Ações em personagens
+ * Estrutura:
+ * - Barra de ações rápidas (topo fixo)
+ * - Sub-abas: Jogadores | Combate | NPCs | Áudio
+ * - Cards expandidos com barras de progresso e condições
  * 
  * @module components/campaign/v3/tabs/MasterTab
  */
@@ -14,27 +12,24 @@
 import { memo, useState, useCallback } from 'react';
 import { 
   Users, 
-  Zap, 
-  Volume2, 
   Swords,
-  Heart,
-  Brain,
-  Minus,
-  Plus,
-  RefreshCw
+  Volume2,
 } from 'lucide-react';
+import {
+  Sword as SwordIcon,
+} from '@phosphor-icons/react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
-import { ConditionSelector } from '@/components/campaign/v3/master/ConditionSelector';
+import { PlayerControlCard } from '@/components/campaign/v3/master/PlayerControlCard';
+import { MasterQuickActions } from '@/components/campaign/v3/master/MasterQuickActions';
+import { CombatTracker } from '@/components/campaign/v3/master/CombatTracker';
+import { BulkDamageModal } from '@/components/campaign/v3/master/BulkDamageModal';
 import { AudioControlPanel } from '@/components/campaign/v3/master/AudioControlPanel';
 import type { CampaignMemberV2 } from '@/hooks/campaign/useCampaignData';
 import type { SoundScene, CampaignAudio, AudioState } from '@/hooks/campaign/useCampaignAudio';
 
-type MasterSubTab = 'npcs' | 'macros' | 'audio' | 'players';
+type MasterSubTab = 'players' | 'combat' | 'npcs' | 'audio';
 
 interface MasterTabProps {
   /** Membros da campanha */
@@ -49,6 +44,16 @@ interface MasterTabProps {
   onApplyCondition?: (characterId: string, conditionName: string) => Promise<boolean>;
   /** Callback para remover condição */
   onRemoveCondition?: (characterId: string, conditionName: string) => Promise<boolean>;
+  /** Callback para descanso completo individual */
+  onRestFull?: (characterId: string) => Promise<boolean>;
+  /** Callback para descanso do grupo */
+  onGroupRest?: () => Promise<void>;
+  /** Callback para limpar condições de todos */
+  onClearAllConditions?: () => Promise<void>;
+  /** Callback para dano em área */
+  onBulkDamage?: (characterIds: string[], damage: number) => Promise<void>;
+  /** Envia mensagem no chat */
+  onSendMessage?: (content: string, type?: string, metadata?: Record<string, unknown>) => void;
   /** Se está processando */
   isUpdating?: boolean;
   /** Dados de áudio */
@@ -65,178 +70,6 @@ interface MasterTabProps {
   className?: string;
 }
 
-// Card de controle rápido de personagem
-const PlayerControlCard = memo(function PlayerControlCard({
-  member,
-  onModifyHP,
-  onModifySAN,
-  onModifyPE,
-  onApplyCondition,
-  onRemoveCondition,
-  isUpdating,
-}: {
-  member: CampaignMemberV2;
-  onModifyHP?: (characterId: string, delta: number) => Promise<boolean>;
-  onModifySAN?: (characterId: string, delta: number) => Promise<boolean>;
-  onModifyPE?: (characterId: string, delta: number) => Promise<boolean>;
-  onApplyCondition?: (characterId: string, conditionName: string) => Promise<boolean>;
-  onRemoveCondition?: (characterId: string, conditionName: string) => Promise<boolean>;
-  isUpdating?: boolean;
-}) {
-  const character = member.characters;
-  
-  // Handlers memoizados para condições - ANTES do early return
-  const characterId = character?.id || '';
-  
-  const handleApplyCondition = useCallback((conditionId: string) => {
-    if (characterId) {
-      onApplyCondition?.(characterId, conditionId);
-    }
-  }, [characterId, onApplyCondition]);
-
-  const handleRemoveCondition = useCallback((conditionId: string) => {
-    if (characterId) {
-      onRemoveCondition?.(characterId, conditionId);
-    }
-  }, [characterId, onRemoveCondition]);
-
-  // Early return após hooks
-  if (!character) return null;
-
-  const displayName = character.name;
-  const avatarUrl = character.photo_url;
-  const initials = displayName.substring(0, 2).toUpperCase();
-  
-  // Condições ativas (array de strings)
-  const activeConditions = character.conditions || [];
-
-  return (
-    <Card className="overflow-hidden">
-      <CardHeader className="pb-2 pt-3 px-3">
-        <div className="flex items-center gap-2">
-          <Avatar className="h-8 w-8">
-            <AvatarImage src={avatarUrl || undefined} alt={displayName} />
-            <AvatarFallback className="text-xs">{initials}</AvatarFallback>
-          </Avatar>
-          <div className="flex-1 min-w-0">
-            <CardTitle className="text-sm font-medium truncate">
-              {displayName}
-            </CardTitle>
-            <CardDescription className="text-xs">
-              {character.class} • NEX {character.nex}%
-            </CardDescription>
-          </div>
-          {/* Seletor de condições */}
-          <ConditionSelector
-            activeConditions={activeConditions}
-            onApply={handleApplyCondition}
-            onRemove={handleRemoveCondition}
-            isLoading={isUpdating}
-          />
-        </div>
-      </CardHeader>
-      
-      <CardContent className="px-3 pb-3 space-y-2">
-        {/* Controle de HP */}
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-1.5 text-xs">
-            <Heart className="h-3.5 w-3.5 text-destructive" />
-            <span className="font-medium">
-              {character.hp_current}/{character.hp_max}
-            </span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-6 w-6"
-              onClick={() => onModifyHP?.(character.id, -5)}
-              disabled={isUpdating}
-              title="-5 PV"
-            >
-              <Minus className="h-3 w-3" />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-6 w-6"
-              onClick={() => onModifyHP?.(character.id, 5)}
-              disabled={isUpdating}
-              title="+5 PV"
-            >
-              <Plus className="h-3 w-3" />
-            </Button>
-          </div>
-        </div>
-
-        {/* Controle de SAN */}
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-1.5 text-xs">
-            <Brain className="h-3.5 w-3.5 text-purple-500" />
-            <span className="font-medium">
-              {character.san_current}/{character.san_max}
-            </span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-6 w-6"
-              onClick={() => onModifySAN?.(character.id, -1)}
-              disabled={isUpdating}
-              title="-1 SAN"
-            >
-              <Minus className="h-3 w-3" />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-6 w-6"
-              onClick={() => onModifySAN?.(character.id, 1)}
-              disabled={isUpdating}
-              title="+1 SAN"
-            >
-              <Plus className="h-3 w-3" />
-            </Button>
-          </div>
-        </div>
-
-        {/* Controle de PE */}
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-1.5 text-xs">
-            <Zap className="h-3.5 w-3.5 text-primary" />
-            <span className="font-medium">
-              {character.pe_current}/{character.pe_max}
-            </span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-6 w-6"
-              onClick={() => onModifyPE?.(character.id, -1)}
-              disabled={isUpdating}
-              title="-1 PE"
-            >
-              <Minus className="h-3 w-3" />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-6 w-6"
-              onClick={() => onModifyPE?.(character.id, 1)}
-              disabled={isUpdating}
-              title="+1 PE"
-            >
-              <Plus className="h-3 w-3" />
-            </Button>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-});
-
 export const MasterTab = memo(function MasterTab({
   members,
   onModifyHP,
@@ -244,6 +77,11 @@ export const MasterTab = memo(function MasterTab({
   onModifyPE,
   onApplyCondition,
   onRemoveCondition,
+  onRestFull,
+  onGroupRest,
+  onClearAllConditions,
+  onBulkDamage,
+  onSendMessage,
   isUpdating,
   audioLibrary = [],
   soundScenes = [],
@@ -257,30 +95,54 @@ export const MasterTab = memo(function MasterTab({
   className,
 }: MasterTabProps) {
   const [activeSubTab, setActiveSubTab] = useState<MasterSubTab>('players');
+  const [bulkDamageOpen, setBulkDamageOpen] = useState(false);
   
-  // Filtra membros com personagem (exclui mestre sem char)
+  // Filtra jogadores com personagem
   const playersWithCharacter = members.filter(m => m.characters && m.role !== 'master');
+
+  // Handler para dano em área
+  const handleBulkDamage = useCallback(async (characterIds: string[], damage: number) => {
+    if (onBulkDamage) {
+      await onBulkDamage(characterIds, damage);
+    } else if (onModifyHP) {
+      // Fallback: aplica dano individualmente
+      for (const charId of characterIds) {
+        await onModifyHP(charId, -damage);
+      }
+    }
+  }, [onBulkDamage, onModifyHP]);
 
   return (
     <div className={cn('flex flex-col h-full', className)}>
+      {/* Barra de ações rápidas (topo fixo) */}
+      <MasterQuickActions
+        members={members}
+        onSendMessage={onSendMessage}
+        onGroupRest={onGroupRest}
+        onClearAllConditions={onClearAllConditions}
+        onOpenBulkDamage={() => setBulkDamageOpen(true)}
+        isUpdating={isUpdating}
+      />
+
+      {/* Sub-abas */}
       <Tabs 
         value={activeSubTab} 
         onValueChange={(v) => setActiveSubTab(v as MasterSubTab)}
-        className="flex flex-col h-full"
+        className="flex flex-col flex-1 min-h-0"
       >
-        <div className="shrink-0 px-4 pt-3 pb-2 border-b border-border/30">
+        <div className="shrink-0 px-4 pt-2 pb-1 border-b border-border/30">
           <TabsList className="bg-transparent h-9">
             <TabsTrigger value="players" className="gap-1.5 text-xs">
               <Swords className="h-3.5 w-3.5" />
               Jogadores
             </TabsTrigger>
+            <TabsTrigger value="combat" className="gap-1.5 text-xs">
+              <SwordIcon weight="duotone" className="h-3.5 w-3.5" />
+              Combate
+            </TabsTrigger>
             <TabsTrigger value="npcs" className="gap-1.5 text-xs">
               <Users className="h-3.5 w-3.5" />
               NPCs
-            </TabsTrigger>
-            <TabsTrigger value="macros" className="gap-1.5 text-xs">
-              <Zap className="h-3.5 w-3.5" />
-              Macros
             </TabsTrigger>
             <TabsTrigger value="audio" className="gap-1.5 text-xs">
               <Volume2 className="h-3.5 w-3.5" />
@@ -289,7 +151,7 @@ export const MasterTab = memo(function MasterTab({
           </TabsList>
         </div>
 
-        {/* Controle de jogadores */}
+        {/* Jogadores */}
         <TabsContent value="players" className="flex-1 m-0 min-h-0">
           <ScrollArea className="h-full">
             <div className="p-4">
@@ -303,6 +165,7 @@ export const MasterTab = memo(function MasterTab({
                     onModifyPE={onModifyPE}
                     onApplyCondition={onApplyCondition}
                     onRemoveCondition={onRemoveCondition}
+                    onRestFull={onRestFull}
                     isUpdating={isUpdating}
                   />
                 ))}
@@ -318,6 +181,15 @@ export const MasterTab = memo(function MasterTab({
           </ScrollArea>
         </TabsContent>
 
+        {/* Combate */}
+        <TabsContent value="combat" className="flex-1 m-0 min-h-0">
+          <ScrollArea className="h-full">
+            <div className="p-4">
+              <CombatTracker members={members} />
+            </div>
+          </ScrollArea>
+        </TabsContent>
+
         {/* NPCs */}
         <TabsContent value="npcs" className="flex-1 m-0 min-h-0">
           <ScrollArea className="h-full">
@@ -326,19 +198,6 @@ export const MasterTab = memo(function MasterTab({
                 <Users className="h-10 w-10 mx-auto mb-3 opacity-50" />
                 <p className="text-sm">Sistema de NPCs em desenvolvimento</p>
                 <p className="text-xs mt-1">Em breve você poderá gerenciar NPCs da campanha</p>
-              </div>
-            </div>
-          </ScrollArea>
-        </TabsContent>
-
-        {/* Macros */}
-        <TabsContent value="macros" className="flex-1 m-0 min-h-0">
-          <ScrollArea className="h-full">
-            <div className="p-4">
-              <div className="text-center py-8 text-muted-foreground">
-                <Zap className="h-10 w-10 mx-auto mb-3 opacity-50" />
-                <p className="text-sm">Sistema de macros em desenvolvimento</p>
-                <p className="text-xs mt-1">Em breve você poderá criar ações rápidas</p>
               </div>
             </div>
           </ScrollArea>
@@ -363,6 +222,15 @@ export const MasterTab = memo(function MasterTab({
           </ScrollArea>
         </TabsContent>
       </Tabs>
+
+      {/* Modal de dano em área */}
+      <BulkDamageModal
+        open={bulkDamageOpen}
+        onOpenChange={setBulkDamageOpen}
+        members={members}
+        onApplyDamage={handleBulkDamage}
+        isUpdating={isUpdating}
+      />
     </div>
   );
 });
