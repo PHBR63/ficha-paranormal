@@ -1,70 +1,50 @@
 
 
-## Plano: Gerenciador de Assets do Mapa — Com Pastas e Subpastas
+# Mapa Tático em Janela Separada
 
-### Visão Geral
+## Análise da Proposta
 
-Sistema de arquivos completo para o mestre organizar assets (imagens, ícones, tokens) em pastas e subpastas livres, com upload, navegação estilo explorador e posicionamento no mapa.
+Separar o mapa em um **projeto Lovable separado** traz complicações significativas:
+- Cada projeto Lovable Cloud tem seu próprio backend isolado — não compartilham banco de dados
+- Seria necessário duplicar autenticação, tabelas e lógica
+- Sincronização em tempo real entre dois backends distintos seria complexa e frágil
 
----
+## Recomendação: Rota dedicada no mesmo projeto
 
-### Etapa 1 — Banco de Dados
+A abordagem mais eficiente é criar uma **rota dedicada** (`/map/:campaignId`) que abre em uma **nova aba do navegador**, mantendo:
+- Mesmo banco de dados e autenticação
+- Mesmo Realtime (tokens, desenhos, pings sincronizados)
+- Zero duplicação de código
 
-**Tabela `campaign_asset_folders`** — estrutura de pastas recursiva:
-- `id`, `campaign_id`, `parent_id` (uuid nullable, FK self — null = raiz), `name`, `created_by`, `created_at`
+## O que muda
 
-**Tabela `campaign_assets`** — arquivos dentro das pastas:
-- `id`, `campaign_id`, `folder_id` (uuid nullable, FK folders — null = raiz), `name`, `file_url`, `file_type`, `file_size`, `category` (token/decoration/effect/general), `tags` (text[]), `uploaded_by`, `created_at`
+1. **Nova rota `/map/:campaignId`** — página standalone com o mapa em tela cheia, sem header/navigation/statusbar da campanha. Apenas o mapa + toolbar flutuante.
 
-**RLS** (padrão campanha):
-- Mestre: ALL em ambas tabelas (usando `is_campaign_master`)
-- Membros: SELECT em ambas (usando `is_campaign_member`)
+2. **Botão "Abrir em nova aba"** na aba Mapa do CampaignShell — abre `window.open('/map/{campaignId}')`.
 
-**Bucket**: `campaign-assets` (público), com RLS no `storage.objects` restringindo upload ao mestre.
+3. **Aba Mapa original permanece** como opção inline para quem preferir não abrir nova janela.
 
-**Realtime**: habilitar ambas tabelas.
+4. **A nova página** reutiliza os mesmos componentes (`TacticalBoardKonva`, `TacticalToolbar`, etc.) e o mesmo hook `useTacticalBoard` — 100% do viewport dedicado ao canvas.
 
----
+## Estrutura técnica
 
-### Etapa 2 — Hook `useCampaignAssets`
+```text
+CampaignShell (existente)
+  └── MapTab → botão "Pop Out" → window.open('/map/:id')
 
-Novo `src/hooks/campaign/useCampaignAssets.ts`:
-- **Pastas**: `createFolder`, `renameFolder`, `moveFolder`, `deleteFolder` (cascata nos filhos)
-- **Assets**: `uploadAsset`, `renameAsset`, `moveAsset`, `deleteAsset`
-- **Navegação**: `currentFolderId` (estado), `navigateToFolder`, `navigateUp`, `breadcrumbs` (caminho completo)
-- **Listagem**: query filtrada por `folder_id` atual (pastas + assets do nível)
-- Realtime para sincronizar entre usuários
+/map/:campaignId (nova rota)
+  └── TacticalMapFullscreen (nova página)
+      ├── useTacticalBoard (mesmo hook)
+      ├── TacticalBoardKonva (mesmo componente)
+      └── Toolbar flutuante compacta
+```
 
----
+## Escopo de implementação
 
-### Etapa 3 — Componente `MapAssetsPanel`
+1. Criar `src/pages/TacticalMapFullscreen.tsx` — página standalone com autenticação, hook do mapa e canvas em tela cheia
+2. Adicionar rota `/map/:campaignId` no router
+3. Adicionar botão "Abrir em nova aba" no `MapTab` existente
+4. Garantir que a página standalone valide autenticação e permissões
 
-Novo `src/components/campaign/tactical/MapAssetsPanel.tsx` (Sheet lateral):
-
-- **Header**: Breadcrumbs clicáveis (Raiz > Monstros > Chefes), botão voltar
-- **Ações**: "Nova Pasta", "Upload" (drag & drop + botão)
-- **Grid/Lista** de conteúdo do nível atual:
-  - Pastas (ícone de pasta, clique navega para dentro)
-  - Assets (thumbnail, nome, categoria)
-- **Context menu** por item: Renomear, Mover para..., Excluir, Categorizar
-- **Filtro** por categoria e busca por nome
-- **Seleção de asset**: clique no asset entra em modo `place-asset`
-
----
-
-### Etapa 4 — Integração no Canvas
-
-- Novo `activeTool: 'place-asset'` com referência ao asset selecionado
-- Clique no canvas → `createToken` com `image_url` do asset
-- Preview do asset no cursor durante posicionamento
-- Botão `FolderOpen` na toolbar abre o painel
-
----
-
-### Ordem de Implementação
-
-1. Migração SQL (tabelas + bucket + RLS + Realtime)
-2. Hook `useCampaignAssets` (CRUD pastas/assets + navegação + Realtime)
-3. Componente `MapAssetsPanel` (UI explorador de arquivos)
-4. Integração na toolbar + modo `place-asset` no canvas
+Nenhuma migração de banco necessária. Nenhuma alteração nos componentes do mapa.
 
