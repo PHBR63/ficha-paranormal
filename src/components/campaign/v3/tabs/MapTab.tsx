@@ -107,16 +107,7 @@ interface MapTabProps {
   className?: string;
 }
 
-// Configuração das ferramentas
-const TOOLS = [
-  { id: 'select' as ToolType, icon: MousePointer2, label: 'Selecionar', masterOnly: false },
-  { id: 'move' as ToolType, icon: Move, label: 'Mover', masterOnly: false },
-  { id: 'measure' as ToolType, icon: Ruler, label: 'Medir', masterOnly: false },
-  { id: 'ping' as ToolType, icon: Radio, label: 'Ping', masterOnly: false },
-  { id: 'draw' as ToolType, icon: Pencil, label: 'Desenhar', masterOnly: false },
-  { id: 'text' as ToolType, icon: Type, label: 'Texto', masterOnly: false },
-  { id: 'fog' as ToolType, icon: CloudFog, label: 'Névoa', masterOnly: true },
-] as const;
+// Ferramentas movidas para MapToolbar
 
 export const MapTab = memo(function MapTab({
   map,
