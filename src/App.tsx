@@ -14,10 +14,12 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { Skeleton } from "@/components/ui/skeleton";
 
-// Páginas com carregamento imediato (críticas para first paint)
+// Página crítica para first paint (eager)
 import Index from "./pages/Index";
-import Auth from "./pages/Auth";
-import NotFound from "./pages/NotFound";
+
+// Páginas secundárias (lazy loaded)
+const Auth = lazy(() => import("./pages/Auth"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 // Lazy loading para páginas pesadas
 const Dashboard = lazy(() => import("./pages/Dashboard"));
