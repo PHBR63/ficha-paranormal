@@ -314,6 +314,9 @@ export default function CampaignShell() {
             onTextCreate={tacticalBoard.createText}
             onTextUpdate={tacticalBoard.updateText}
             onTextDelete={tacticalBoard.deleteText}
+            onCreateMap={tacticalBoard.createMap}
+            onUploadMapImage={tacticalBoard.uploadMapImage}
+            onSetActiveMap={tacticalBoard.setActiveMap}
             currentUserId={userId}
           />
         )}

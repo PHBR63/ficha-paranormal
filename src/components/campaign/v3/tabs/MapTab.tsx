@@ -11,6 +11,7 @@
 
 import { memo, useRef, useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { CreateMapDialog } from './CreateMapDialog';
 import { 
   MousePointer2, 
   Move, 
@@ -113,6 +114,10 @@ interface MapTabProps {
   onTextCreate?: (text: Omit<MapText, 'id' | 'map_id' | 'created_by' | 'created_at'>) => void;
   onTextUpdate?: (textId: string, data: Partial<MapText>) => void;
   onTextDelete?: (textId: string) => void;
+  /** Callbacks de criação de mapa (mestre) */
+  onCreateMap?: (data: Partial<TacticalMap>) => Promise<TacticalMap | null>;
+  onUploadMapImage?: (mapId: string, file: File) => Promise<string | null>;
+  onSetActiveMap?: (mapId: string) => Promise<boolean>;
   /** ID do usuário atual */
   currentUserId?: string;
   /** Classe CSS adicional */
@@ -167,6 +172,9 @@ export const MapTab = memo(function MapTab({
   onTextCreate,
   onTextUpdate,
   onTextDelete,
+  onCreateMap,
+  onUploadMapImage,
+  onSetActiveMap,
   currentUserId,
   className,
 }: MapTabProps) {
@@ -248,27 +256,42 @@ export const MapTab = memo(function MapTab({
             onTextDelete={onTextDelete}
           />
         ) : (
-          <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-3">
+          <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-4">
             <MapIcon className="h-12 w-12 opacity-50" />
             <p className="text-sm">Nenhum mapa ativo</p>
-            {isMaster && maps.length > 0 && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    Selecionar mapa
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  {maps.map((m) => (
-                    <DropdownMenuItem 
-                      key={m.id}
-                      onClick={() => onMapChange(m.id)}
-                    >
-                      {m.name}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
+            
+            {isMaster && (
+              <div className="flex flex-col items-center gap-2">
+                {/* Botão de criar mapa */}
+                {onCreateMap && onUploadMapImage && onSetActiveMap && (
+                  <CreateMapDialog
+                    onCreateMap={onCreateMap}
+                    onUploadMapImage={onUploadMapImage}
+                    onSetActiveMap={onSetActiveMap}
+                  />
+                )}
+
+                {/* Seletor de mapa existente */}
+                {maps.length > 0 && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        Selecionar mapa existente
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      {maps.map((m) => (
+                        <DropdownMenuItem 
+                          key={m.id}
+                          onClick={() => onMapChange(m.id)}
+                        >
+                          {m.name}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+              </div>
             )}
           </div>
         )}
