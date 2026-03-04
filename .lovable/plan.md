@@ -1,58 +1,46 @@
 
 
-# Toolbar do Mestre na Aba Fullscreen do Mapa
+# Otimização de Bundle JS e CSS
 
-## Contexto
+## Diagnóstico Atual
 
-A página fullscreen do mapa (`TacticalMapFullscreen.tsx`) tem apenas um header mínimo (nome + botão fechar) e a toolbar básica de ferramentas de desenho/navegação do `MapTab`. O mestre não tem acesso a nenhuma das ferramentas de controle de jogadores (PV/SAN/PE, condições, testes de perícia, combate) enquanto está na view fullscreen do mapa — sendo obrigado a voltar para a aba da campanha para qualquer ação de mestre.
+**JS (1,1 MB):** O lazy loading por rota já está implementado para a maioria das páginas. Porém:
+- `Index` (346 linhas), `Auth` (600 linhas) e `NotFound` são importados eagerly no bundle principal
+- Não há `manualChunks` no Vite — todas as dependências de vendor (react, supabase, konva, framer-motion, recharts, dnd-kit) ficam num único chunk
+- Bibliotecas pesadas como `konva`, `react-konva`, `framer-motion`, `recharts` e `@rive-app/react-canvas` entram no bundle mesmo quando não são usadas na rota atual
 
-## Plano
+**CSS (190 KB / 1120 linhas em `index.css`):** O `content` do Tailwind já está configurado corretamente (`src/**/*.{ts,tsx}`). Os 190 KB vêm principalmente de:
+- CSS custom extenso (variáveis de 5 temas, animações, efeitos atmosféricos, gradients por tema)
+- Muitas keyframes e animações customizadas no `tailwind.config.ts`
+- Arquivo `App.css` com estilos legados não utilizados (logo spin, .card, .read-the-docs)
 
-### 1. Painel lateral colapsável do Mestre no mapa fullscreen
+## Plano de Implementação
 
-Adicionar um painel lateral direito (drawer) que o mestre pode abrir/fechar, contendo versões compactas dos controles existentes:
+### 1. Configurar `manualChunks` no Vite (maior impacto)
 
-- **Mini PlayerControlCards** — barras de PV/SAN/PE com ajuste rápido (reutilizando `PlayerControlCard`)
-- **Ações Rápidas** — pedir teste de perícia, dano em área, descanso do grupo (reutilizando `MasterQuickActions`)
-- **Mini CombatTracker** — tracker de iniciativa e rodadas
+Adicionar em `vite.config.ts` a configuração `build.rollupOptions.output.manualChunks` para separar vendors pesados em chunks independentes:
 
-O painel é ativado por um botão flutuante no canto superior direito (ícone de escudo/mestre).
+- **`vendor-react`**: react, react-dom, react-router-dom
+- **`vendor-supabase`**: @supabase/supabase-js, @tanstack/react-query
+- **`vendor-ui`**: @radix-ui/*, class-variance-authority, tailwind-merge, cmdk, sonner, vaul
+- **`vendor-canvas`**: konva, react-konva (carregado apenas na rota do mapa)
+- **`vendor-motion`**: framer-motion (carregado apenas quando componentes animados são usados)
+- **`vendor-charts`**: recharts (carregado apenas em páginas com gráficos)
 
-### 2. Integração de hooks no TacticalMapFullscreen
+Isso permite caching granular — atualizar código da app não invalida o cache dos vendors.
 
-Adicionar `useMasterActions`, `useCampaignData` (members) e `useCampaignRealtime` (sendMessage) à página fullscreen para alimentar os componentes de mestre.
+### 2. Lazy load de `Auth` e `NotFound`
 
-### 3. Header expandido
+Converter `Auth` e `NotFound` para `lazy()` — são páginas que não precisam estar no bundle inicial. A landing page (`Index`) permanece eager pois é o first paint.
 
-Expandir o header mínimo para incluir:
-- Indicador de sessão ativa
-- Contador de jogadores online
-- Botão de abrir/fechar painel do mestre (apenas se `isMaster`)
+### 3. Remover `App.css` legado
 
-## Estrutura Visual
+O arquivo `src/App.css` contém apenas estilos não utilizados (`.logo`, `.card`, `.read-the-docs`, `logo-spin`). Será removido e qualquer import eliminado.
 
-```text
-┌──────────────────────────────────────┬─────────────┐
-│ ← 🗺️ Nome da Campanha    👥3  ⚔️ M │             │
-├──────────────────────────────────────┤  PAINEL DO  │
-│                                      │   MESTRE    │
-│  [Toolbar ferramentas]               │             │
-│                                      │ ⚡Ações     │
-│         CANVAS DO MAPA               │ Rápidas     │
-│                                      │             │
-│                                      │ 🧑 Agente X │
-│                                      │ ██████ PV   │
-│                                      │ ██████ SAN  │
-│               [Zoom controls]        │ ██████ PE   │
-└──────────────────────────────────────┴─────────────┘
-```
+### 4. Resultado esperado
 
-## Arquivos
-
-| Arquivo | Ação |
-|---------|------|
-| `src/components/campaign/v3/map/MasterMapPanel.tsx` | **Novo** — Painel lateral colapsável com PlayerControlCards, ações rápidas e combat tracker |
-| `src/pages/TacticalMapFullscreen.tsx` | **Editado** — Integrar `useMasterActions`, `useCampaignRealtime`, `useCampaignPresence`, renderizar `MasterMapPanel` e expandir header |
-
-Os componentes `PlayerControlCard`, `MasterQuickActions`, `CombatTracker` e `BulkDamageModal` são reutilizados diretamente — nenhuma duplicação de lógica.
+- Bundle inicial reduzido de ~1,1 MB para ~400-500 KB (vendors separados + lazy routes)
+- Vendors cacheados independentemente pelo browser
+- CSS reduzido em ~2-3 KB (remoção do App.css legado)
+- O CSS de 190 KB em si é majoritariamente variáveis de tema necessárias — a redução significativa exigiria remover temas, o que não é desejável
 

@@ -3,19 +3,27 @@
  * 
  * Abre em nova aba via /map/:campaignId, reutilizando os mesmos hooks e
  * componentes do mapa inline. 100% do viewport dedicado ao canvas.
+ * Inclui painel lateral do mestre (colapsável) com controles de jogadores.
  * 
  * @module pages/TacticalMapFullscreen
  */
 
-import { useEffect, useMemo } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCampaignData } from '@/hooks/campaign/useCampaignData';
+import { useCampaignRealtime } from '@/hooks/campaign/useCampaignRealtime';
+import { useMasterActions } from '@/hooks/campaign/useMasterActions';
 import { useTacticalBoard } from '@/hooks/campaign/useTacticalBoard';
 import { MapTab } from '@/components/campaign/v3/tabs/MapTab';
+import { MasterMapPanel } from '@/components/campaign/v3/map/MasterMapPanel';
 import { Logo } from '@/components/ui/logo';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { ArrowLeft, Users } from 'lucide-react';
+import {
+  Shield as ShieldIcon,
+} from '@phosphor-icons/react';
 
 export default function TacticalMapFullscreen() {
   const { id: campaignId } = useParams<{ id: string }>();
@@ -23,13 +31,31 @@ export default function TacticalMapFullscreen() {
   const { user, loading: authLoading } = useAuth();
   const userId = user?.id;
 
-  // Dados da campanha (para validar permissões)
+  // Estado do painel lateral do mestre
+  const [masterPanelOpen, setMasterPanelOpen] = useState(false);
+
+  // Dados da campanha (para validar permissões e obter membros)
   const campaignData = useCampaignData({
     campaignId: campaignId || '',
     userId: userId || '',
   });
 
-  const { campaign, isMaster, loading: campaignLoading } = campaignData;
+  const { campaign, members, isMaster, loading: campaignLoading } = campaignData;
+
+  // Chat e sessões em tempo real (para enviar mensagens de sistema do mestre)
+  const realtimeData = useCampaignRealtime({
+    campaignId: campaignId || '',
+    userId: userId || '',
+    enabled: !!campaignId && !!userId && !campaignLoading && !!campaign,
+  });
+
+  const { sendMessage } = realtimeData;
+
+  // Ações do mestre (ajuste PV/PE/SAN, condições)
+  const masterActions = useMasterActions({
+    campaignId: campaignId || '',
+    isMaster,
+  });
 
   // Tabuleiro tático (instância própria desta aba)
   const tacticalBoard = useTacticalBoard({
@@ -37,6 +63,37 @@ export default function TacticalMapFullscreen() {
     isMaster,
     enabled: !!campaignId && !campaignLoading && !!campaign,
   });
+
+  // Toggle do painel do mestre
+  const toggleMasterPanel = useCallback(() => {
+    setMasterPanelOpen(prev => !prev);
+  }, []);
+
+  // Callbacks de ações em lote do mestre
+  const handleGroupRest = useCallback(async () => {
+    const players = members.filter(m => m.characters && m.role !== 'master');
+    for (const p of players) {
+      if (p.characters) {
+        await masterActions.setHP(p.characters.id, 9999);
+        await masterActions.setPE(p.characters.id, 9999);
+      }
+    }
+  }, [members, masterActions]);
+
+  const handleClearAllConditions = useCallback(async () => {
+    const players = members.filter(m => m.characters && m.role !== 'master');
+    for (const p of players) {
+      if (p.characters) {
+        await masterActions.clearAllConditions(p.characters.id);
+      }
+    }
+  }, [members, masterActions]);
+
+  const handleRestFull = useCallback(async (charId: string) => {
+    const r1 = await masterActions.setHP(charId, 9999);
+    const r2 = await masterActions.setPE(charId, 9999);
+    return r1 && r2;
+  }, [masterActions]);
 
   // Título da aba do navegador
   useEffect(() => {
@@ -48,11 +105,13 @@ export default function TacticalMapFullscreen() {
     };
   }, [campaign?.name]);
 
+  // Contagem de jogadores com personagem
+  const playerCount = members.filter(m => m.characters && m.role !== 'master').length;
+
   // =====================================================
   // EARLY RETURNS
   // =====================================================
 
-  // Carregando autenticação
   if (authLoading) {
     return (
       <div className="h-screen flex items-center justify-center bg-background">
@@ -64,7 +123,6 @@ export default function TacticalMapFullscreen() {
     );
   }
 
-  // Não autenticado
   if (!user) {
     return (
       <div className="h-screen flex items-center justify-center bg-background">
@@ -78,7 +136,6 @@ export default function TacticalMapFullscreen() {
     );
   }
 
-  // Carregando campanha
   if (campaignLoading) {
     return (
       <div className="h-screen flex items-center justify-center bg-background">
@@ -90,7 +147,6 @@ export default function TacticalMapFullscreen() {
     );
   }
 
-  // Campanha não encontrada
   if (!campaign || !campaignId || !userId) {
     return (
       <div className="h-screen flex items-center justify-center bg-background">
@@ -105,12 +161,12 @@ export default function TacticalMapFullscreen() {
   }
 
   // =====================================================
-  // RENDER — Mapa em tela cheia
+  // RENDER — Mapa em tela cheia + painel do mestre
   // =====================================================
 
   return (
     <div className="h-screen w-screen flex flex-col bg-background overflow-hidden">
-      {/* Header mínimo — nome da campanha + botão voltar */}
+      {/* Header expandido — nome, jogadores, botão mestre */}
       <div className="h-10 flex items-center gap-2 px-3 bg-card/80 backdrop-blur-sm border-b border-border/30 shrink-0 z-20">
         <Button
           variant="ghost"
@@ -121,9 +177,31 @@ export default function TacticalMapFullscreen() {
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>
+
         <span className="text-xs font-medium text-muted-foreground truncate">
           🗺️ {campaign.name}
         </span>
+
+        {/* Indicador de jogadores */}
+        {playerCount > 0 && (
+          <Badge variant="outline" className="text-[10px] h-5 gap-1 ml-auto mr-1">
+            <Users className="h-3 w-3" />
+            {playerCount}
+          </Badge>
+        )}
+
+        {/* Botão do painel do mestre (apenas para GM) */}
+        {isMaster && (
+          <Button
+            variant={masterPanelOpen ? 'secondary' : 'ghost'}
+            size="icon"
+            className="h-7 w-7 shrink-0"
+            onClick={toggleMasterPanel}
+            title={masterPanelOpen ? 'Fechar painel do Mestre' : 'Abrir painel do Mestre'}
+          >
+            <ShieldIcon weight="duotone" className="h-4 w-4 text-primary" />
+          </Button>
+        )}
       </div>
 
       {/* Mapa — ocupa todo o viewport restante */}
@@ -170,6 +248,25 @@ export default function TacticalMapFullscreen() {
           onSetActiveMap={tacticalBoard.setActiveMap}
           currentUserId={userId}
         />
+
+        {/* Painel lateral do mestre (overlay sobre o mapa) */}
+        {isMaster && (
+          <MasterMapPanel
+            open={masterPanelOpen}
+            onToggle={toggleMasterPanel}
+            members={members}
+            onModifyHP={masterActions.adjustHP}
+            onModifySAN={masterActions.adjustSAN}
+            onModifyPE={masterActions.adjustPE}
+            onApplyCondition={masterActions.applyCondition}
+            onRemoveCondition={masterActions.removeCondition}
+            onRestFull={handleRestFull}
+            onGroupRest={handleGroupRest}
+            onClearAllConditions={handleClearAllConditions}
+            onSendMessage={sendMessage}
+            isUpdating={masterActions.isUpdating}
+          />
+        )}
       </div>
     </div>
   );
