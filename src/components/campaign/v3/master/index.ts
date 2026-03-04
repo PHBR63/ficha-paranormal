@@ -6,3 +6,7 @@
 
 export { ConditionSelector, OP_CONDITIONS } from './ConditionSelector';
 export { AudioControlPanel } from './AudioControlPanel';
+export { PlayerControlCard } from './PlayerControlCard';
+export { MasterQuickActions } from './MasterQuickActions';
+export { CombatTracker } from './CombatTracker';
+export { BulkDamageModal } from './BulkDamageModal';
