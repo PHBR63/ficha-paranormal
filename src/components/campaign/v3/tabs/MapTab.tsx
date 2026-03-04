@@ -197,7 +197,7 @@ export const MapTab = memo(function MapTab({
       >
         {map ? (
           <TacticalBoardKonva
-            map={map}
+            map={{ ...map, grid_visible: gridVisible }}
             tokens={tokens}
             pings={pings}
             highlightedCells={highlightedCells}
