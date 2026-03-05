@@ -76,8 +76,9 @@ export default defineConfig(({ mode }) => ({
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff,woff2}"],
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024, // 4MB limit
         // Always navigate to index.html - the app will handle offline detection
-        navigateFallback: "/index.html",
-        navigateFallbackDenylist: [/^\/api/, /^\/auth/],
+      navigateFallback: "/index.html",
+      navigateFallbackAllowlist: [/^\/$/,  /^\/map\//],
+      navigateFallbackDenylist: [/^\/api/, /^\/auth/],
         // Força ativação imediata do novo Service Worker
         skipWaiting: true,
         clientsClaim: true,
