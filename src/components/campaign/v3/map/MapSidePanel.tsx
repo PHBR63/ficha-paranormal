@@ -347,6 +347,13 @@ export const MapSidePanel = memo(function MapSidePanel({
   onFogHide,
   gridVisible,
   onToggleGrid,
+  areas = [],
+  selectedAreaId,
+  onCreateArea,
+  onUpdateArea,
+  onDeleteArea,
+  onClearAllAreas,
+  onSelectArea,
 }: MapSidePanelProps) {
   const [codeCopied, setCodeCopied] = useState(false);
 
