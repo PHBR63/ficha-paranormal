@@ -215,6 +215,17 @@ export default function TacticalMapFullscreen() {
             <ShieldIcon weight="duotone" className="h-4 w-4 text-primary" />
           </Button>
         )}
+
+        {/* Toggle sidebar de ferramentas */}
+        <Button
+          variant={sidePanelOpen ? 'secondary' : 'ghost'}
+          size="icon"
+          className="h-7 w-7 shrink-0"
+          onClick={toggleSidePanel}
+          title={sidePanelOpen ? 'Fechar painel lateral' : 'Abrir painel lateral'}
+        >
+          {sidePanelOpen ? <PanelRightClose className="h-4 w-4" /> : <PanelRightOpen className="h-4 w-4" />}
+        </Button>
       </div>
 
       {/* Mapa — ocupa todo o viewport restante */}
