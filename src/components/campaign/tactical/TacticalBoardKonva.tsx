@@ -323,6 +323,7 @@ export function TacticalBoardKonva({
       onDragStart={transform.handleDragStart}
       onDragEnd={transform.handleDragEnd}
       onClick={handleStageClick}
+      onDblClick={handleStageDblClick}
       onTap={handleStageClick}
     >
       {/* Layer 1 (base): Background + Grid + Highlights */}
