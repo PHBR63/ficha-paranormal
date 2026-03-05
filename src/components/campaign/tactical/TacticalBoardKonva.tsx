@@ -134,6 +134,8 @@ export function TacticalBoardKonva({
   combatMode = false,
   movementRemaining = 9,
   onMovementPreview,
+  cameraSyncTarget,
+  onCameraSyncHandled,
 }: TacticalBoardKonvaProps) {
   const stageRef = useRef<Konva.Stage>(null);
   
@@ -148,6 +150,16 @@ export function TacticalBoardKonva({
     maxScale: 5,
     initialScale: 1,
   });
+
+  // Sincronização de câmera (Fase E)
+  useEffect(() => {
+    if (!cameraSyncTarget || !map) return;
+    const gs = map.grid_size || 40;
+    const targetX = cameraSyncTarget.x * gs + gs / 2;
+    const targetY = cameraSyncTarget.y * gs + gs / 2;
+    transform.centerOnPoint(targetX, targetY, width, height);
+    onCameraSyncHandled?.();
+  }, [cameraSyncTarget]);
 
   // Calcula dimensões do mapa (valores padrão se não houver mapa)
   const gridSize = map?.grid_size || 40;
