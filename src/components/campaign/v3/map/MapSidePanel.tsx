@@ -638,7 +638,7 @@ export const MapSidePanel = memo(function MapSidePanel({
                 {/* Botões de criação */}
                 <div className="flex gap-1.5">
                   {onTokenCreate && (
-                    <CreateTokenDialog onCreateToken={onTokenCreate} mapId={map.id} />
+                    <CreateTokenDialog onCreateToken={onTokenCreate} mapId={map.id} campaignId={campaignId} />
                   )}
                 </div>
 
