@@ -16,6 +16,7 @@ import { useCampaignData } from '@/hooks/campaign/useCampaignData';
 import { useCampaignRealtime } from '@/hooks/campaign/useCampaignRealtime';
 import { useMasterActions } from '@/hooks/campaign/useMasterActions';
 import { useTacticalBoard } from '@/hooks/campaign/useTacticalBoard';
+import { useAreaEffects } from '@/hooks/campaign/useAreaEffects';
 import { MapTab } from '@/components/campaign/v3/tabs/MapTab';
 import { MasterMapPanel } from '@/components/campaign/v3/map/MasterMapPanel';
 import { MapSidePanel } from '@/components/campaign/v3/map/MapSidePanel';
@@ -76,6 +77,12 @@ export default function TacticalMapFullscreen() {
   const tacticalBoard = useTacticalBoard({
     campaignId: campaignId || '',
     isMaster,
+    enabled: !!campaignId && !campaignLoading && !!campaign,
+  });
+
+  // Áreas de efeito (Fase D)
+  const areaEffects = useAreaEffects({
+    mapId: tacticalBoard.activeMap?.id || null,
     enabled: !!campaignId && !campaignLoading && !!campaign,
   });
 
@@ -300,6 +307,10 @@ export default function TacticalMapFullscreen() {
           externalDrawStrokeWidth={drawStrokeWidth}
           externalTextColor={textColor}
           externalTextFontSize={textFontSize}
+          areas={areaEffects.areas}
+          selectedAreaId={areaEffects.selectedAreaId}
+          onAreaClick={areaEffects.selectArea}
+          onAreaDrag={areaEffects.moveArea}
         />
 
         {/* Painel lateral de chat (esquerda, overlay sobre o mapa) */}
