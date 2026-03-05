@@ -9,6 +9,7 @@
  */
 
 import { useEffect, useState, useCallback } from 'react';
+import { AnimatePresence } from 'framer-motion';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCampaignData } from '@/hooks/campaign/useCampaignData';
