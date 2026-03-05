@@ -271,7 +271,7 @@ function AnimatedPing({ ping, gridSize }: AnimatedPingProps) {
 
 export function PingLayer({ pings, gridSize }: PingLayerProps) {
   // Filtra pings que ainda estão visíveis
-  const [visiblePings, setVisiblePings] = useState<AdvancedPing[]>([]);
+  const [visiblePings, setVisiblePings] = useState<BoardPing[]>([]);
 
   useEffect(() => {
     const updatePings = () => {
