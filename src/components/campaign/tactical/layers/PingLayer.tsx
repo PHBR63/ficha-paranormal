@@ -17,12 +17,12 @@ import type { BoardPing } from '@/hooks/campaign/useTacticalBoard';
 type AdvancedPing = BoardPing;
 
 interface PingLayerProps {
-  pings: AdvancedPing[];
+  pings: BoardPing[];
   gridSize: number;
 }
 
 interface AnimatedPingProps {
-  ping: AdvancedPing;
+  ping: BoardPing;
   gridSize: number;
 }
 
