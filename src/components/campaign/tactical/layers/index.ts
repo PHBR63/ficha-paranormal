@@ -11,3 +11,4 @@ export { PingLayer } from './PingLayer';
 export { MeasurementLayer } from './MeasurementLayer';
 export { DrawingLayer, type MapDrawing } from './DrawingLayer';
 export { TextLayer, type MapText } from './TextLayer';
+export { AreaEffectLayer, type MapAreaEffect } from './AreaEffectLayer';

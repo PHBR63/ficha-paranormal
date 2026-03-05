@@ -23,6 +23,7 @@ import { PingLayer } from './layers/PingLayer';
 import { MeasurementLayer } from './layers/MeasurementLayer';
 import { DrawingLayer, MapDrawing } from './layers/DrawingLayer';
 import { TextLayer, MapText } from './layers/TextLayer';
+import { AreaEffectLayer, MapAreaEffect } from './layers/AreaEffectLayer';
 
 export interface TacticalBoardKonvaProps {
   // Dados do mapa
@@ -31,9 +32,13 @@ export interface TacticalBoardKonvaProps {
   pings: BoardPing[];
   highlightedCells: HighlightedCell[];
   
-  // Desenhos e textos
+  // Desenhos, textos e áreas de efeito
   drawings: MapDrawing[];
   texts: MapText[];
+  areas?: MapAreaEffect[];
+  selectedAreaId?: string | null;
+  onAreaClick?: (areaId: string) => void;
+  onAreaDrag?: (areaId: string, newX: number, newY: number) => void;
   
   // Estado de seleção
   selectedTokenId: string | null;
@@ -91,6 +96,10 @@ export function TacticalBoardKonva({
   highlightedCells,
   drawings,
   texts,
+  areas = [],
+  selectedAreaId,
+  onAreaClick,
+  onAreaDrag,
   selectedTokenId,
   measureStart,
   measureEnd,
@@ -314,6 +323,19 @@ export function TacticalBoardKonva({
         onTokenDragEnd={handleTokenDragEnd}
         onTokenDoubleClick={onTokenDoubleClick}
       />
+
+      {/* Layer 3.5: Áreas de efeito (entre tokens e textos) */}
+      {areas.length > 0 && (
+        <AreaEffectLayer
+          areas={areas}
+          gridSize={gridSize}
+          isMaster={isMaster}
+          selectedAreaId={selectedAreaId}
+          listening={activeTool !== 'draw'}
+          onAreaClick={onAreaClick}
+          onAreaDrag={onAreaDrag}
+        />
+      )}
 
       {/* Layer 4: Textos (não-interativo quando desenhando) */}
       <TextLayer
