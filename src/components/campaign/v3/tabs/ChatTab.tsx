@@ -158,7 +158,7 @@ const ChatMessageItem = memo(function ChatMessageItem({
             <span className="text-xs font-medium">
               {senderName}
             </span>
-            {isMaster && (
+            {isMasterMsg && (
               <Badge variant="secondary" className="text-[9px] px-1 py-0 h-4">
                 Mestre
               </Badge>
@@ -169,6 +169,43 @@ const ChatMessageItem = memo(function ChatMessageItem({
         <p className="text-sm break-words whitespace-pre-wrap">
           {message.content}
         </p>
+
+        {/* Botão Aplicar Dano/Cura — Fase C (apenas mestre) */}
+        {isMaster && (isDamageEvent || isHealEvent) && onApplyDamage && message.metadata && (
+          (() => {
+            const meta = message.metadata as { characterId?: string; amount?: number; targetName?: string };
+            if (!meta.characterId || !meta.amount) return null;
+            const alreadyApplied = (message.metadata as any)?.applied;
+            return (
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={applying || alreadyApplied}
+                className={cn(
+                  'mt-1.5 h-6 text-[10px] gap-1 w-full',
+                  isDamageEvent
+                    ? 'border-destructive/40 text-destructive hover:bg-destructive/10'
+                    : 'border-green-500/40 text-green-500 hover:bg-green-500/10'
+                )}
+                onClick={async () => {
+                  setApplying(true);
+                  try {
+                    await onApplyDamage(
+                      meta.characterId!,
+                      isDamageEvent ? -meta.amount! : meta.amount!,
+                      meta.targetName || senderName
+                    );
+                  } finally {
+                    setApplying(false);
+                  }
+                }}
+              >
+                <Swords className="h-3 w-3" />
+                {applying ? 'Aplicando...' : isDamageEvent ? `Aplicar -${meta.amount} PV` : `Aplicar +${meta.amount} PV`}
+              </Button>
+            );
+          })()
+        )}
         
         <span className={cn(
           'text-[10px] mt-1 block',
