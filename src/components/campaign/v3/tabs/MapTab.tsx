@@ -43,6 +43,8 @@ import type { MapText } from '@/components/campaign/tactical/layers/TextLayer';
 
 // Cores predefinidas removidas — agora ficam no MapToolbar
 interface MapTabProps {
+  /** Ocultar toolbar lateral esquerda (quando sidebar direita assume) */
+  hideToolbar?: boolean;
   /** Mapa ativo */
   map: TacticalMap | null;
   /** Lista de mapas disponíveis */
