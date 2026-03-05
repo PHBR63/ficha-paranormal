@@ -427,6 +427,10 @@ export default function TacticalMapFullscreen() {
             onDeleteArea={areaEffects.deleteArea}
             onClearAllAreas={areaEffects.clearAllAreas}
             onSelectArea={areaEffects.selectArea}
+            pingType={advancedPings.pingType}
+            pingMessage={advancedPings.pingMessage}
+            onPingTypeChange={advancedPings.setPingType}
+            onPingMessageChange={advancedPings.setPingMessage}
           />
         </AnimatePresence>
       </div>
