@@ -18,7 +18,7 @@ export interface CampaignMessage {
   user_id: string;
   character_id: string | null;
   recipient_id: string | null;
-  message_type: 'chat' | 'dice_roll' | 'system' | 'whisper';
+  message_type: 'chat' | 'dice_roll' | 'system' | 'whisper' | 'event_damage' | 'event_heal' | 'event_ritual' | 'event_condition' | 'event_attack' | 'event_defense';
   content: string;
   metadata: Record<string, unknown> | null;
   created_at: string;
