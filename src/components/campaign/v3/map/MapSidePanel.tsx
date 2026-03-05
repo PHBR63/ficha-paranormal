@@ -364,6 +364,10 @@ export const MapSidePanel = memo(function MapSidePanel({
   onDeleteArea,
   onClearAllAreas,
   onSelectArea,
+  pingType = 'normal',
+  pingMessage = '',
+  onPingTypeChange,
+  onPingMessageChange,
 }: MapSidePanelProps) {
   const [codeCopied, setCodeCopied] = useState(false);
 
