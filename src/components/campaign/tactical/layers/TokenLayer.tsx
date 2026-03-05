@@ -522,6 +522,7 @@ export function TokenLayer({
           onDragMove={(x, y) => onTokenDragMove?.(token, x, y)}
           onDragEnd={(x, y) => onTokenDragEnd(token.id, x, y)}
           onDoubleClick={() => onTokenDoubleClick?.(token)}
+          onResize={onTokenResize ? (newSize) => onTokenResize(token.id, newSize) : undefined}
         />
       ))}
     </Layer>
