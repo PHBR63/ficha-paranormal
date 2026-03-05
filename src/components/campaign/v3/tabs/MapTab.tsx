@@ -275,6 +275,8 @@ export const MapTab = memo(function MapTab({
             onTextCreate={onTextCreate || (() => {})}
             onTextUpdate={onTextUpdate || (() => {})}
             onTextDelete={onTextDelete}
+            cameraSyncTarget={cameraSyncTarget}
+            onCameraSyncHandled={onCameraSyncHandled}
           />
         ) : (
           <div className="flex flex-col items-center justify-center h-full relative overflow-hidden">

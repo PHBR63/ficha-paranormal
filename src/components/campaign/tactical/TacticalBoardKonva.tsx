@@ -87,6 +87,10 @@ export interface TacticalBoardKonvaProps {
   combatMode?: boolean;
   movementRemaining?: number;
   onMovementPreview?: (from: { x: number; y: number }, to: { x: number; y: number }, distance: number, isValid: boolean) => void;
+  
+  // Sincronização de câmera (Fase E)
+  cameraSyncTarget?: { x: number; y: number } | null;
+  onCameraSyncHandled?: () => void;
 }
 
 export function TacticalBoardKonva({
