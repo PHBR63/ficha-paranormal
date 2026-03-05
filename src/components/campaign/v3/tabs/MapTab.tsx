@@ -351,8 +351,8 @@ export const MapTab = memo(function MapTab({
         />
       )}
 
-      {/* Controles de zoom (canto inferior direito) */}
-      {map && (
+      {/* Controles de zoom (canto inferior direito) — oculta quando toolbar está escondida (sidebar assume) */}
+      {map && !hideToolbar && (
         <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
