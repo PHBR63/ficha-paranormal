@@ -12,7 +12,7 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
 import { Stage, Layer, Rect } from 'react-konva';
 import Konva from 'konva';
-import { MapToken, TacticalMap, BoardPing } from '@/hooks/campaign/useTacticalBoard';
+import type { MapToken, TacticalMap, BoardPing } from '@/hooks/campaign/useTacticalBoard';
 import { useKonvaTransform } from './hooks/useKonvaTransform';
 import { BackgroundLayer } from './layers/BackgroundLayer';
 import { GridLayer } from './layers/GridLayer';

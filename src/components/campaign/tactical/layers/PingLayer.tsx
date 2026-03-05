@@ -11,7 +11,10 @@
 
 import { useEffect, useState } from 'react';
 import { Circle, Group, Text, RegularPolygon, Ring } from 'react-konva';
-import type { AdvancedPing } from '@/hooks/campaign/useAdvancedPings';
+import type { BoardPing } from '@/hooks/campaign/useTacticalBoard';
+
+// Re-exporta para compat
+type AdvancedPing = BoardPing;
 
 interface PingLayerProps {
   pings: AdvancedPing[];
