@@ -35,6 +35,12 @@ import {
   ZoomOut,
   Copy,
   Check,
+  MousePointer2,
+  Move,
+  Ruler,
+  Radio,
+  Grid3X3,
+  Wrench,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -128,6 +134,10 @@ interface MapSidePanelProps {
   // Callbacks de zoom/view
   onZoomChange: (zoom: number) => void;
   onResetView: () => void;
+
+  // Grid
+  gridVisible?: boolean;
+  onToggleGrid?: () => void;
 
   // Fog of war
   onFogReveal?: (cells: Array<{ x: number; y: number }>) => Promise<boolean>;
@@ -322,6 +332,8 @@ export const MapSidePanel = memo(function MapSidePanel({
   onResetView,
   onFogReveal,
   onFogHide,
+  gridVisible,
+  onToggleGrid,
 }: MapSidePanelProps) {
   const [codeCopied, setCodeCopied] = useState(false);
 
@@ -394,6 +406,55 @@ export const MapSidePanel = memo(function MapSidePanel({
       {/* ===== CONTEÚDO COM SCROLL ===== */}
       <ScrollArea className="flex-1">
         <div className="py-1">
+
+          {/* ——— FERRAMENTAS (modos) ——— */}
+          <SideSection title="Ferramentas" icon={Wrench} defaultOpen={true}>
+            <div className="space-y-2">
+              {/* Botões de modo principal */}
+              <div className="grid grid-cols-5 gap-1">
+                {([
+                  { id: 'select' as const, icon: MousePointer2, label: 'Selecionar (V)' },
+                  { id: 'move' as const, icon: Move, label: 'Mover câmera (H)' },
+                  { id: 'measure' as const, icon: Ruler, label: 'Medir distância (M)' },
+                  { id: 'ping' as const, icon: Radio, label: 'Ping (P)' },
+                ] as const).map(tool => {
+                  const ToolIcon = tool.icon;
+                  const isActive = activeTool === tool.id;
+                  return (
+                    <Tooltip key={tool.id}>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant={isActive ? 'default' : 'ghost'}
+                          size="icon"
+                          className={cn('h-8 w-8', isActive && 'shadow-sm')}
+                          onClick={() => onToolChange(tool.id)}
+                        >
+                          <ToolIcon className="h-3.5 w-3.5" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>{tool.label}</TooltipContent>
+                    </Tooltip>
+                  );
+                })}
+                {/* Toggle grid */}
+                {onToggleGrid && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant={gridVisible ? 'secondary' : 'ghost'}
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={onToggleGrid}
+                      >
+                        <Grid3X3 className={cn('h-3.5 w-3.5', !gridVisible && 'opacity-40')} />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>{gridVisible ? 'Ocultar grid (G)' : 'Mostrar grid (G)'}</TooltipContent>
+                  </Tooltip>
+                )}
+              </div>
+            </div>
+          </SideSection>
 
           {/* ——— JOGADORES ——— */}
           <SideSection title="Jogadores" icon={Users} badge={playersWithChar.length} defaultOpen={true}>

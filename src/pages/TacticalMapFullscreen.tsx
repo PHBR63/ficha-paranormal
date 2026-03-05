@@ -44,6 +44,8 @@ export default function TacticalMapFullscreen() {
   const [drawStrokeWidth, setDrawStrokeWidth] = useState(3);
   const [textColor, setTextColor] = useState('#ffffff');
   const [textFontSize, setTextFontSize] = useState(16);
+  const [gridVisible, setGridVisible] = useState(true);
+  const toggleGrid = useCallback(() => setGridVisible(prev => !prev), []);
 
   // Dados da campanha (para validar permissões e obter membros)
   const campaignData = useCampaignData({
@@ -232,6 +234,7 @@ export default function TacticalMapFullscreen() {
       {/* Mapa — ocupa todo o viewport restante */}
       <div className="flex-1 min-h-0 relative">
         <MapTab
+          hideToolbar={true}
           map={tacticalBoard.activeMap}
           maps={tacticalBoard.maps}
           tokens={tacticalBoard.tokens}
@@ -272,6 +275,8 @@ export default function TacticalMapFullscreen() {
           onUploadMapImage={tacticalBoard.uploadMapImage}
           onSetActiveMap={tacticalBoard.setActiveMap}
           currentUserId={userId}
+          externalGridVisible={gridVisible}
+          onExternalToggleGrid={toggleGrid}
         />
 
         {/* Painel lateral do mestre (overlay sobre o mapa) */}
@@ -330,6 +335,8 @@ export default function TacticalMapFullscreen() {
             onResetView={tacticalBoard.fitToScreen}
             onFogReveal={tacticalBoard.revealFog}
             onFogHide={tacticalBoard.hideFog}
+            gridVisible={gridVisible}
+            onToggleGrid={toggleGrid}
           />
         </AnimatePresence>
       </div>

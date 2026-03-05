@@ -43,6 +43,8 @@ import type { MapText } from '@/components/campaign/tactical/layers/TextLayer';
 
 // Cores predefinidas removidas — agora ficam no MapToolbar
 interface MapTabProps {
+  /** Ocultar toolbar lateral esquerda (quando sidebar direita assume) */
+  hideToolbar?: boolean;
   /** Mapa ativo */
   map: TacticalMap | null;
   /** Lista de mapas disponíveis */
@@ -103,6 +105,9 @@ interface MapTabProps {
   onSetActiveMap?: (mapId: string) => Promise<boolean>;
   /** ID do usuário atual */
   currentUserId?: string;
+  /** Grid visível (controlado externamente) */
+  externalGridVisible?: boolean;
+  onExternalToggleGrid?: () => void;
   /** Classe CSS adicional */
   className?: string;
 }
@@ -110,6 +115,7 @@ interface MapTabProps {
 // Ferramentas movidas para MapToolbar
 
 export const MapTab = memo(function MapTab({
+  hideToolbar = false,
   map,
   maps,
   tokens,
@@ -150,6 +156,8 @@ export const MapTab = memo(function MapTab({
   onUploadMapImage,
   onSetActiveMap,
   currentUserId,
+  externalGridVisible,
+  onExternalToggleGrid,
   className,
 }: MapTabProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -184,9 +192,10 @@ export const MapTab = memo(function MapTab({
     return () => resizeObserver.disconnect();
   }, []);
 
-  // Estado de visibilidade do grid (toggle local)
-  const [gridVisible, setGridVisible] = useState(true);
-  const handleToggleGrid = useCallback(() => setGridVisible(prev => !prev), []);
+  // Estado de visibilidade do grid (usa externo se disponível, senão local)
+  const [localGridVisible, setLocalGridVisible] = useState(true);
+  const gridVisible = externalGridVisible !== undefined ? externalGridVisible : localGridVisible;
+  const handleToggleGrid = onExternalToggleGrid || (() => setLocalGridVisible(prev => !prev));
 
   return (
     <div className={cn('relative w-full h-full overflow-hidden', className)}>
@@ -317,7 +326,7 @@ export const MapTab = memo(function MapTab({
         )}
       </div>
 
-      {map && (
+      {map && !hideToolbar && (
         <MapToolbar
           activeTool={activeTool}
           onToolChange={onToolChange}
@@ -342,8 +351,8 @@ export const MapTab = memo(function MapTab({
         />
       )}
 
-      {/* Controles de zoom (canto inferior direito) */}
-      {map && (
+      {/* Controles de zoom (canto inferior direito) — oculta quando toolbar está escondida (sidebar assume) */}
+      {map && !hideToolbar && (
         <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
