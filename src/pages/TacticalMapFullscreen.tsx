@@ -477,6 +477,7 @@ export default function TacticalMapFullscreen() {
               if (pinId) setPinDialogOpen(true);
             }}
             onDeletePin={mapPins.deletePin}
+            currentUserId={userId}
           />
         </AnimatePresence>
 

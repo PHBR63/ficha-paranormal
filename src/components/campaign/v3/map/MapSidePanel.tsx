@@ -172,6 +172,9 @@ interface MapSidePanelProps {
   selectedPinId?: string | null;
   onSelectPin?: (pinId: string | null) => void;
   onDeletePin?: (pinId: string) => Promise<boolean>;
+
+  /** ID do usuário atual (para verificar permissões de pins) */
+  currentUserId?: string;
 }
 
 // =====================================================
@@ -379,6 +382,7 @@ export const MapSidePanel = memo(function MapSidePanel({
   selectedPinId,
   onSelectPin,
   onDeletePin,
+  currentUserId,
 }: MapSidePanelProps) {
   const [codeCopied, setCodeCopied] = useState(false);
 
@@ -884,7 +888,7 @@ export const MapSidePanel = memo(function MapSidePanel({
                       key={pin.id}
                       onClick={() => onSelectPin?.(pin.id === selectedPinId ? null : pin.id)}
                       className={cn(
-                        'flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer transition-colors text-xs',
+                        'group flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer transition-colors text-xs',
                         pin.id === selectedPinId
                           ? 'bg-amber-500/15 text-amber-300'
                           : 'hover:bg-accent/30 text-foreground/80'
@@ -895,7 +899,7 @@ export const MapSidePanel = memo(function MapSidePanel({
                       {pin.visibility === 'master' && isMaster && (
                         <span className="text-[9px] text-muted-foreground">🔒</span>
                       )}
-                      {onDeletePin && (isMaster || pin.created_by === '') && (
+                      {onDeletePin && (isMaster || pin.created_by === currentUserId) && (
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
