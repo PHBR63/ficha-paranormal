@@ -164,6 +164,11 @@ export const MapTab = memo(function MapTab({
   currentUserId,
   externalGridVisible,
   onExternalToggleGrid,
+  externalDrawTool,
+  externalDrawColor,
+  externalDrawStrokeWidth,
+  externalTextColor,
+  externalTextFontSize,
   className,
 }: MapTabProps) {
   const containerRef = useRef<HTMLDivElement>(null);
