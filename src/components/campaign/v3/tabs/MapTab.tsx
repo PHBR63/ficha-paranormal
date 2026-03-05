@@ -76,6 +76,8 @@ interface MapTabProps {
   onMapChange: (mapId: string) => Promise<boolean>;
   onTokenSelect: (tokenId: string | null) => void;
   onTokenMove: (tokenId: string, x: number, y: number) => Promise<boolean>;
+  /** Callback de redimensionamento de token */
+  onTokenResize?: (tokenId: string, newSize: number) => void;
   onTokenDoubleClick?: (token: MapToken) => void;
   onZoomChange: (zoom: number) => void;
   onResetView: () => void;
@@ -154,6 +156,7 @@ export const MapTab = memo(function MapTab({
   onMapChange,
   onTokenSelect,
   onTokenMove,
+  onTokenResize,
   onTokenDoubleClick,
   onZoomChange,
   onResetView,
@@ -282,6 +285,7 @@ export const MapTab = memo(function MapTab({
             calculateDistance={calculateDistance}
             onTokenSelect={onTokenSelect}
             onTokenMove={onTokenMove}
+            onTokenResize={onTokenResize}
             onTokenDoubleClick={onTokenDoubleClick}
             onMeasureStart={onMeasureStart}
             onMeasureEnd={onMeasureEnd}
