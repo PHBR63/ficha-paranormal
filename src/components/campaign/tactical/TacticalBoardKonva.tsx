@@ -374,6 +374,7 @@ export function TacticalBoardKonva({
         onTokenDragMove={handleTokenDragMove}
         onTokenDragEnd={handleTokenDragEnd}
         onTokenDoubleClick={onTokenDoubleClick}
+        onTokenResize={onTokenResize}
       />
 
       {/* Layer 3.5: Áreas de efeito (entre tokens e textos) */}
