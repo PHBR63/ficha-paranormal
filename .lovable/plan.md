@@ -1,46 +1,33 @@
 
 
-# Otimização de Bundle JS e CSS
+# Plano: Corrigir Upload de Token Animado + Bugs na Sidebar
 
-## Diagnóstico Atual
+## Problemas Identificados
 
-**JS (1,1 MB):** O lazy loading por rota já está implementado para a maioria das páginas. Porém:
-- `Index` (346 linhas), `Auth` (600 linhas) e `NotFound` são importados eagerly no bundle principal
-- Não há `manualChunks` no Vite — todas as dependências de vendor (react, supabase, konva, framer-motion, recharts, dnd-kit) ficam num único chunk
-- Bibliotecas pesadas como `konva`, `react-konva`, `framer-motion`, `recharts` e `@rive-app/react-canvas` entram no bundle mesmo quando não são usadas na rota atual
+### 1. Dialog "Criar Token Rápido" (sidebar) não tem upload de imagem
+O botão "Criar Token" na sidebar usa o `CreateTokenDialog` que só tem campo de **nome** e **cor**. O dialog completo com upload de imagem existe apenas no `TacticalBoard.tsx` antigo e não é acessível pela interface fullscreen/sidebar.
 
-**CSS (190 KB / 1120 linhas em `index.css`):** O `content` do Tailwind já está configurado corretamente (`src/**/*.{ts,tsx}`). Os 190 KB vêm principalmente de:
-- CSS custom extenso (variáveis de 5 temas, animações, efeitos atmosféricos, gradients por tema)
-- Muitas keyframes e animações customizadas no `tailwind.config.ts`
-- Arquivo `App.css` com estilos legados não utilizados (logo spin, .card, .read-the-docs)
+### 2. Botão delete de tokens na listagem nunca aparece
+O botão de delete na lista de tokens (linha 565) usa `group-hover:opacity-100`, mas o container pai (linha 546) não tem a classe `group` — mesmo bug que foi corrigido nos pins.
 
-## Plano de Implementação
+---
 
-### 1. Configurar `manualChunks` no Vite (maior impacto)
+## Correções Planejadas
 
-Adicionar em `vite.config.ts` a configuração `build.rollupOptions.output.manualChunks` para separar vendors pesados em chunks independentes:
+### A. Expandir `CreateTokenDialog` no `MapSidePanel.tsx`
+- Adicionar campo de **tipo** de token (PC, NPC, Criatura, Objeto, Marcador) com `Select`
+- Adicionar o componente `ImageUploader` para upload de imagem (PNG, JPG, GIF, WebM)
+- Adicionar lógica de upload para o bucket `campaign-assets` antes de criar o token
+- Receber `campaignId` como prop para montar o path de upload
 
-- **`vendor-react`**: react, react-dom, react-router-dom
-- **`vendor-supabase`**: @supabase/supabase-js, @tanstack/react-query
-- **`vendor-ui`**: @radix-ui/*, class-variance-authority, tailwind-merge, cmdk, sonner, vaul
-- **`vendor-canvas`**: konva, react-konva (carregado apenas na rota do mapa)
-- **`vendor-motion`**: framer-motion (carregado apenas quando componentes animados são usados)
-- **`vendor-charts`**: recharts (carregado apenas em páginas com gráficos)
+### B. Adicionar classe `group` ao container de tokens na listagem
+- Linha 546: adicionar `group` à className do `div` de cada token na lista, para que o botão de delete apareça no hover.
 
-Isso permite caching granular — atualizar código da app não invalida o cache dos vendors.
+### C. Manter o dialog completo do `TacticalBoard.tsx` como está
+- Ele serve como fallback para o modo não-fullscreen.
 
-### 2. Lazy load de `Auth` e `NotFound`
+---
 
-Converter `Auth` e `NotFound` para `lazy()` — são páginas que não precisam estar no bundle inicial. A landing page (`Index`) permanece eager pois é o first paint.
-
-### 3. Remover `App.css` legado
-
-O arquivo `src/App.css` contém apenas estilos não utilizados (`.logo`, `.card`, `.read-the-docs`, `logo-spin`). Será removido e qualquer import eliminado.
-
-### 4. Resultado esperado
-
-- Bundle inicial reduzido de ~1,1 MB para ~400-500 KB (vendors separados + lazy routes)
-- Vendors cacheados independentemente pelo browser
-- CSS reduzido em ~2-3 KB (remoção do App.css legado)
-- O CSS de 190 KB em si é majoritariamente variáveis de tema necessárias — a redução significativa exigiria remover temas, o que não é desejável
+## Arquivos Modificados
+- `src/components/campaign/v3/map/MapSidePanel.tsx` — expandir `CreateTokenDialog` + fix classe `group`
 
