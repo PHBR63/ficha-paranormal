@@ -361,6 +361,7 @@ export default function TacticalMapFullscreen() {
             selectedPinId={mapPins.selectedPinId}
             onPinClick={handlePinClick}
             onPinDrag={mapPins.movePin}
+            onCellDoubleClick={handleCellDoubleClick}
             cameraSyncTarget={cameraSyncTarget}
             onCameraSyncHandled={advancedPings.clearCameraSync}
           />
