@@ -1740,6 +1740,80 @@ export type Database = {
         }
         Relationships: []
       }
+      map_area_effects: {
+        Row: {
+          angle: number | null
+          border_color: string | null
+          color: string
+          created_at: string
+          created_by: string
+          element: string | null
+          id: string
+          label: string | null
+          line_length: number | null
+          map_id: string
+          opacity: number
+          origin_x: number
+          origin_y: number
+          radius: number | null
+          rotation: number | null
+          shape_type: string
+          side_length: number | null
+          updated_at: string
+          visibility: string
+        }
+        Insert: {
+          angle?: number | null
+          border_color?: string | null
+          color?: string
+          created_at?: string
+          created_by: string
+          element?: string | null
+          id?: string
+          label?: string | null
+          line_length?: number | null
+          map_id: string
+          opacity?: number
+          origin_x?: number
+          origin_y?: number
+          radius?: number | null
+          rotation?: number | null
+          shape_type?: string
+          side_length?: number | null
+          updated_at?: string
+          visibility?: string
+        }
+        Update: {
+          angle?: number | null
+          border_color?: string | null
+          color?: string
+          created_at?: string
+          created_by?: string
+          element?: string | null
+          id?: string
+          label?: string | null
+          line_length?: number | null
+          map_id?: string
+          opacity?: number
+          origin_x?: number
+          origin_y?: number
+          radius?: number | null
+          rotation?: number | null
+          shape_type?: string
+          side_length?: number | null
+          updated_at?: string
+          visibility?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "map_area_effects_map_id_fkey"
+            columns: ["map_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_maps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       map_drawings: {
         Row: {
           color: string
