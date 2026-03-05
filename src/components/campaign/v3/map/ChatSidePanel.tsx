@@ -29,12 +29,16 @@ interface ChatSidePanelProps {
   currentUserId: string;
   /** ID do mestre */
   masterId: string;
+  /** Se o usuário é o mestre */
+  isMaster?: boolean;
   /** Callback para enviar mensagem */
   onSendMessage: (
     content: string,
     type?: CampaignMessage['message_type'],
     metadata?: Record<string, unknown>
   ) => Promise<boolean>;
+  /** Callback para aplicar dano (Fase C) */
+  onApplyDamage?: (characterId: string, amount: number, characterName: string) => Promise<boolean>;
 }
 
 // =====================================================
@@ -65,7 +69,9 @@ export const ChatSidePanel = memo(function ChatSidePanel({
   messages,
   currentUserId,
   masterId,
+  isMaster,
   onSendMessage,
+  onApplyDamage,
 }: ChatSidePanelProps) {
   return (
     <AnimatePresence>
@@ -103,7 +109,9 @@ export const ChatSidePanel = memo(function ChatSidePanel({
               messages={messages}
               currentUserId={currentUserId}
               masterId={masterId}
+              isMaster={isMaster}
               onSendMessage={onSendMessage}
+              onApplyDamage={onApplyDamage}
             />
           </div>
         </motion.aside>
