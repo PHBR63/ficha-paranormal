@@ -275,6 +275,8 @@ export default function TacticalMapFullscreen() {
           onUploadMapImage={tacticalBoard.uploadMapImage}
           onSetActiveMap={tacticalBoard.setActiveMap}
           currentUserId={userId}
+          externalGridVisible={gridVisible}
+          onExternalToggleGrid={toggleGrid}
         />
 
         {/* Painel lateral do mestre (overlay sobre o mapa) */}
@@ -333,6 +335,8 @@ export default function TacticalMapFullscreen() {
             onResetView={tacticalBoard.fitToScreen}
             onFogReveal={tacticalBoard.revealFog}
             onFogHide={tacticalBoard.hideFog}
+            gridVisible={gridVisible}
+            onToggleGrid={toggleGrid}
           />
         </AnimatePresence>
       </div>
