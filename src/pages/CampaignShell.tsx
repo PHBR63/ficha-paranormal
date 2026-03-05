@@ -272,7 +272,18 @@ export default function CampaignShell() {
             messages={messages}
             currentUserId={userId}
             masterId={campaign.master_id}
+            isMaster={isMaster}
             onSendMessage={sendMessage}
+            onApplyDamage={isMaster ? async (charId, amount, charName) => {
+              const success = await masterActions.adjustHP(charId, amount);
+              if (success) {
+                await sendMessage(
+                  `**${charName}** recebeu ${amount > 0 ? '+' : ''}${amount} PV`,
+                  'system'
+                );
+              }
+              return success;
+            } : undefined}
             onMarkAsRead={markAsRead}
           />
         )}

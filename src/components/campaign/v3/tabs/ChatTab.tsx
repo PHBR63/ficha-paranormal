@@ -14,7 +14,7 @@
 import { memo, useState, useCallback, useRef, useEffect } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Dice6, ArrowDown } from 'lucide-react';
+import { Send, Dice6, ArrowDown, Swords } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -29,8 +29,12 @@ interface ChatTabProps {
   currentUserId: string;
   /** ID do mestre */
   masterId: string;
+  /** Se o usuário é o mestre da campanha */
+  isMaster?: boolean;
   /** Callback para enviar mensagem */
   onSendMessage: (content: string, type?: CampaignMessage['message_type'], metadata?: Record<string, unknown>) => Promise<boolean>;
+  /** Callback para aplicar dano a um personagem (Fase C) */
+  onApplyDamage?: (characterId: string, amount: number, characterName: string) => Promise<boolean>;
   /** Callback para marcar como lidas */
   onMarkAsRead?: () => void;
   /** Classe CSS adicional */
@@ -46,15 +50,22 @@ const ChatMessageItem = memo(function ChatMessageItem({
   message,
   currentUserId,
   masterId,
+  isMaster,
+  onApplyDamage,
 }: {
   message: CampaignMessage;
   currentUserId: string;
   masterId: string;
+  isMaster?: boolean;
+  onApplyDamage?: (characterId: string, amount: number, characterName: string) => Promise<boolean>;
 }) {
+  const [applying, setApplying] = useState(false);
   const isOwn = message.user_id === currentUserId;
-  const isMaster = message.user_id === masterId;
+  const isMasterMsg = message.user_id === masterId;
   const isSystem = message.message_type === 'system';
   const isDiceRoll = message.message_type === 'dice_roll';
+  const isDamageEvent = (message.message_type as string) === 'event_damage';
+  const isHealEvent = (message.message_type as string) === 'event_heal';
   
   // Nome do remetente
   const senderName = message.characters?.name 
@@ -147,7 +158,7 @@ const ChatMessageItem = memo(function ChatMessageItem({
             <span className="text-xs font-medium">
               {senderName}
             </span>
-            {isMaster && (
+            {isMasterMsg && (
               <Badge variant="secondary" className="text-[9px] px-1 py-0 h-4">
                 Mestre
               </Badge>
@@ -158,6 +169,43 @@ const ChatMessageItem = memo(function ChatMessageItem({
         <p className="text-sm break-words whitespace-pre-wrap">
           {message.content}
         </p>
+
+        {/* Botão Aplicar Dano/Cura — Fase C (apenas mestre) */}
+        {isMaster && (isDamageEvent || isHealEvent) && onApplyDamage && message.metadata && (
+          (() => {
+            const meta = message.metadata as { characterId?: string; amount?: number; targetName?: string };
+            if (!meta.characterId || !meta.amount) return null;
+            const alreadyApplied = (message.metadata as any)?.applied;
+            return (
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={applying || alreadyApplied}
+                className={cn(
+                  'mt-1.5 h-6 text-[10px] gap-1 w-full',
+                  isDamageEvent
+                    ? 'border-destructive/40 text-destructive hover:bg-destructive/10'
+                    : 'border-green-500/40 text-green-500 hover:bg-green-500/10'
+                )}
+                onClick={async () => {
+                  setApplying(true);
+                  try {
+                    await onApplyDamage(
+                      meta.characterId!,
+                      isDamageEvent ? -meta.amount! : meta.amount!,
+                      meta.targetName || senderName
+                    );
+                  } finally {
+                    setApplying(false);
+                  }
+                }}
+              >
+                <Swords className="h-3 w-3" />
+                {applying ? 'Aplicando...' : isDamageEvent ? `Aplicar -${meta.amount} PV` : `Aplicar +${meta.amount} PV`}
+              </Button>
+            );
+          })()
+        )}
         
         <span className={cn(
           'text-[10px] mt-1 block',
@@ -174,7 +222,9 @@ export const ChatTab = memo(function ChatTab({
   messages,
   currentUserId,
   masterId,
+  isMaster,
   onSendMessage,
+  onApplyDamage,
   onMarkAsRead,
   className,
 }: ChatTabProps) {
@@ -293,6 +343,8 @@ export const ChatTab = memo(function ChatTab({
                         message={message}
                         currentUserId={currentUserId}
                         masterId={masterId}
+                        isMaster={isMaster}
+                        onApplyDamage={onApplyDamage}
                       />
                     </div>
                   );
