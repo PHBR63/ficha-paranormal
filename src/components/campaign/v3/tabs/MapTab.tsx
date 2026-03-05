@@ -105,6 +105,9 @@ interface MapTabProps {
   onSetActiveMap?: (mapId: string) => Promise<boolean>;
   /** ID do usuário atual */
   currentUserId?: string;
+  /** Grid visível (controlado externamente) */
+  externalGridVisible?: boolean;
+  onExternalToggleGrid?: () => void;
   /** Classe CSS adicional */
   className?: string;
 }
