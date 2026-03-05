@@ -742,6 +742,22 @@ export const MapSidePanel = memo(function MapSidePanel({
             </div>
           </SideSection>
 
+          {/* ——— ÁREAS DE EFEITO (Fase D) ——— */}
+          {onCreateArea && (
+            <SideSection title="Áreas de Efeito" icon={Target} defaultOpen={false} badge={areas.length > 0 ? areas.length : undefined}>
+              <AreaEffectControls
+                areas={areas}
+                selectedAreaId={selectedAreaId || null}
+                isMaster={isMaster}
+                onCreateArea={onCreateArea}
+                onUpdateArea={onUpdateArea || (async () => false)}
+                onDeleteArea={onDeleteArea || (async () => false)}
+                onClearAll={onClearAllAreas || (async () => false)}
+                onSelectArea={onSelectArea || (() => {})}
+              />
+            </SideSection>
+          )}
+
           {/* ——— NÉVOA DE GUERRA ——— */}
           {isMaster && (
             <SideSection title="Névoa de Guerra" icon={CloudFog} defaultOpen={false}>
