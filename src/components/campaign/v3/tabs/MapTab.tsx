@@ -120,6 +120,9 @@ interface MapTabProps {
   selectedAreaId?: string | null;
   onAreaClick?: (areaId: string) => void;
   onAreaDrag?: (areaId: string, newX: number, newY: number) => void;
+  /** Sincronização de câmera (Fase E) — célula para centralizar */
+  cameraSyncTarget?: { x: number; y: number } | null;
+  onCameraSyncHandled?: () => void;
   /** Classe CSS adicional */
   className?: string;
 }
@@ -179,6 +182,8 @@ export const MapTab = memo(function MapTab({
   selectedAreaId,
   onAreaClick,
   onAreaDrag,
+  cameraSyncTarget,
+  onCameraSyncHandled,
   className,
 }: MapTabProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -270,6 +275,8 @@ export const MapTab = memo(function MapTab({
             onTextCreate={onTextCreate || (() => {})}
             onTextUpdate={onTextUpdate || (() => {})}
             onTextDelete={onTextDelete}
+            cameraSyncTarget={cameraSyncTarget}
+            onCameraSyncHandled={onCameraSyncHandled}
           />
         ) : (
           <div className="flex flex-col items-center justify-center h-full relative overflow-hidden">

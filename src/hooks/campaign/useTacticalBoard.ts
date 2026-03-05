@@ -64,11 +64,15 @@ export interface MapToken {
 }
 
 // Interface para ping/marcador temporário
+// Compatível com AdvancedPing (Fase E) — campos extras são opcionais
 export interface BoardPing {
   id: string;
   x: number;
   y: number;
   color: string;
+  type?: 'normal' | 'alert' | 'camera_sync';
+  message?: string;
+  senderName?: string;
   createdAt: number;
 }
 

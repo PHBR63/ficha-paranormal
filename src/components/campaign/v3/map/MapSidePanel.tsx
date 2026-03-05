@@ -41,6 +41,9 @@ import {
   Radio,
   Grid3X3,
   Wrench,
+  AlertTriangle,
+  Eye,
+  MessageCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -67,6 +70,7 @@ import type { MapAreaEffect } from '@/components/campaign/tactical/layers/AreaEf
 import type { CreateAreaEffectData } from '@/hooks/campaign/useAreaEffects';
 import { AreaEffectControls } from '@/components/campaign/tactical/AreaEffectControls';
 import { Target } from 'lucide-react';
+import type { PingType } from '@/hooks/campaign/useAdvancedPings';
 
 // =====================================================
 // CONSTANTES
@@ -155,6 +159,12 @@ interface MapSidePanelProps {
   // Fog of war
   onFogReveal?: (cells: Array<{ x: number; y: number }>) => Promise<boolean>;
   onFogHide?: (cells: Array<{ x: number; y: number }>) => Promise<boolean>;
+
+  // Pings avançados (Fase E)
+  pingType?: PingType;
+  pingMessage?: string;
+  onPingTypeChange?: (type: PingType) => void;
+  onPingMessageChange?: (msg: string) => void;
 }
 
 // =====================================================
@@ -354,6 +364,10 @@ export const MapSidePanel = memo(function MapSidePanel({
   onDeleteArea,
   onClearAllAreas,
   onSelectArea,
+  pingType = 'normal',
+  pingMessage = '',
+  onPingTypeChange,
+  onPingMessageChange,
 }: MapSidePanelProps) {
   const [codeCopied, setCodeCopied] = useState(false);
 
@@ -758,7 +772,93 @@ export const MapSidePanel = memo(function MapSidePanel({
             </SideSection>
           )}
 
-          {/* ——— NÉVOA DE GUERRA ——— */}
+          {/* ——— PINGS AVANÇADOS (Fase E) ——— */}
+          {onPingTypeChange && (
+            <SideSection title="Pings" icon={Radio} defaultOpen={false}>
+              <div className="space-y-2">
+                {/* Ativar ferramenta de ping */}
+                <Button
+                  variant={activeTool === 'ping' ? 'default' : 'outline'}
+                  size="sm"
+                  className="w-full h-8 text-xs gap-1.5"
+                  onClick={() => onToolChange(activeTool === 'ping' ? 'select' : 'ping')}
+                >
+                  <Radio className="h-3.5 w-3.5" />
+                  {activeTool === 'ping' ? 'Ping ativo' : 'Ativar ping'}
+                </Button>
+
+                {/* Tipo de ping */}
+                <div className="flex gap-1">
+                  <button
+                    className={cn(
+                      'flex-1 h-7 rounded text-[10px] font-medium flex items-center justify-center gap-1 transition-colors',
+                      pingType === 'normal'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted/50 text-muted-foreground hover:bg-muted'
+                    )}
+                    onClick={() => onPingTypeChange('normal')}
+                    title="Ping normal"
+                  >
+                    <Radio className="h-3 w-3" />
+                    Normal
+                  </button>
+                  <button
+                    className={cn(
+                      'flex-1 h-7 rounded text-[10px] font-medium flex items-center justify-center gap-1 transition-colors',
+                      pingType === 'alert'
+                        ? 'bg-destructive text-destructive-foreground'
+                        : 'bg-muted/50 text-muted-foreground hover:bg-muted'
+                    )}
+                    onClick={() => onPingTypeChange('alert')}
+                    title="Alerta vermelho pulsante"
+                  >
+                    <AlertTriangle className="h-3 w-3" />
+                    Alerta
+                  </button>
+                  {isMaster && (
+                    <button
+                      className={cn(
+                        'flex-1 h-7 rounded text-[10px] font-medium flex items-center justify-center gap-1 transition-colors',
+                        pingType === 'camera_sync'
+                          ? 'bg-accent text-accent-foreground'
+                          : 'bg-muted/50 text-muted-foreground hover:bg-muted'
+                      )}
+                      onClick={() => onPingTypeChange('camera_sync')}
+                      title="Sincroniza a câmera de todos"
+                    >
+                      <Eye className="h-3 w-3" />
+                      Câmera
+                    </button>
+                  )}
+                </div>
+
+                {/* Mensagem opcional */}
+                {onPingMessageChange && (
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-muted-foreground flex items-center gap-1">
+                      <MessageCircle className="h-3 w-3" />
+                      Mensagem (opcional)
+                    </label>
+                    <Input
+                      value={pingMessage}
+                      onChange={(e) => onPingMessageChange(e.target.value)}
+                      placeholder="Ex: Inimigo aqui!"
+                      className="h-7 text-xs"
+                      maxLength={40}
+                    />
+                  </div>
+                )}
+
+                <p className="text-[10px] text-muted-foreground">
+                  {pingType === 'normal' && 'Clique no mapa para marcar uma posição.'}
+                  {pingType === 'alert' && 'Clique no mapa para enviar um alerta vermelho!'}
+                  {pingType === 'camera_sync' && 'Clique para centralizar a câmera de todos nesse ponto.'}
+                </p>
+              </div>
+            </SideSection>
+          )}
+
+
           {isMaster && (
             <SideSection title="Névoa de Guerra" icon={CloudFog} defaultOpen={false}>
               <div className="space-y-2">

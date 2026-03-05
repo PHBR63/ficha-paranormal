@@ -17,6 +17,7 @@ import { useCampaignRealtime } from '@/hooks/campaign/useCampaignRealtime';
 import { useMasterActions } from '@/hooks/campaign/useMasterActions';
 import { useTacticalBoard } from '@/hooks/campaign/useTacticalBoard';
 import { useAreaEffects } from '@/hooks/campaign/useAreaEffects';
+import { useAdvancedPings } from '@/hooks/campaign/useAdvancedPings';
 import { MapTab } from '@/components/campaign/v3/tabs/MapTab';
 import { MasterMapPanel } from '@/components/campaign/v3/map/MasterMapPanel';
 import { MapSidePanel } from '@/components/campaign/v3/map/MapSidePanel';
@@ -86,6 +87,19 @@ export default function TacticalMapFullscreen() {
     enabled: !!campaignId && !campaignLoading && !!campaign,
   });
 
+  // Pings avançados (Fase E)
+  // Nome do usuário atual para exibir nos pings
+  const currentMember = members.find(m => m.user_id === userId);
+  const currentUserName = currentMember?.characters?.name || currentMember?.profiles?.display_name || 'Jogador';
+
+  const advancedPings = useAdvancedPings({
+    campaignId: campaignId || '',
+    mapId: tacticalBoard.activeMap?.id || null,
+    enabled: !!campaignId && !campaignLoading && !!campaign,
+    currentUserName,
+    currentUserId: userId,
+  });
+
   // Toggles dos painéis
   const toggleMasterPanel = useCallback(() => {
     setMasterPanelOpen(prev => !prev);
@@ -123,7 +137,13 @@ export default function TacticalMapFullscreen() {
     return r1 && r2;
   }, [masterActions]);
 
-  // Título da aba do navegador
+  // Sincronização de câmera (Fase E)
+  // Converte lastCameraSync para {x,y} target para passar ao board
+  const cameraSyncTarget = advancedPings.lastCameraSync
+    ? { x: advancedPings.lastCameraSync.x, y: advancedPings.lastCameraSync.y }
+    : null;
+
+
   useEffect(() => {
     if (campaign?.name) {
       document.title = `🗺️ ${campaign.name} — Mapa Tático`;
@@ -263,7 +283,7 @@ export default function TacticalMapFullscreen() {
           map={tacticalBoard.activeMap}
           maps={tacticalBoard.maps}
           tokens={tacticalBoard.tokens}
-          pings={tacticalBoard.pings}
+          pings={advancedPings.pings}
           highlightedCells={tacticalBoard.highlightedCells}
           selectedTokenId={tacticalBoard.selectedTokenId}
           activeTool={tacticalBoard.activeTool}
@@ -280,7 +300,7 @@ export default function TacticalMapFullscreen() {
           onResetView={tacticalBoard.fitToScreen}
           onMeasureStart={tacticalBoard.startMeasure}
           onMeasureEnd={tacticalBoard.endMeasure}
-          onPing={tacticalBoard.sendPing}
+          onPing={advancedPings.sendPing}
           onFogReveal={tacticalBoard.revealFog}
           onFogHide={tacticalBoard.hideFog}
           calculateDistance={tacticalBoard.calculateDistance}
@@ -311,6 +331,8 @@ export default function TacticalMapFullscreen() {
           selectedAreaId={areaEffects.selectedAreaId}
           onAreaClick={areaEffects.selectArea}
           onAreaDrag={areaEffects.moveArea}
+          cameraSyncTarget={cameraSyncTarget}
+          onCameraSyncHandled={advancedPings.clearCameraSync}
         />
 
         {/* Painel lateral de chat (esquerda, overlay sobre o mapa) */}
@@ -413,6 +435,10 @@ export default function TacticalMapFullscreen() {
             onDeleteArea={areaEffects.deleteArea}
             onClearAllAreas={areaEffects.clearAllAreas}
             onSelectArea={areaEffects.selectArea}
+            pingType={advancedPings.pingType}
+            pingMessage={advancedPings.pingMessage}
+            onPingTypeChange={advancedPings.setPingType}
+            onPingMessageChange={advancedPings.setPingMessage}
           />
         </AnimatePresence>
       </div>
