@@ -63,6 +63,15 @@ import {
   DialogTrigger,
   DialogClose,
 } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { ImageUploader } from '@/components/ui/image-uploader';
+import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import type { TacticalMap, MapToken } from '@/hooks/campaign/useTacticalBoard';
 import type { CampaignMemberV2 } from '@/hooks/campaign/useCampaignData';
