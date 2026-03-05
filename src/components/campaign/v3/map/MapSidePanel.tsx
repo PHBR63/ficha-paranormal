@@ -63,6 +63,10 @@ import { cn } from '@/lib/utils';
 import type { TacticalMap, MapToken } from '@/hooks/campaign/useTacticalBoard';
 import type { CampaignMemberV2 } from '@/hooks/campaign/useCampaignData';
 import type { DrawToolType } from '@/components/campaign/v3/map/MapToolbar';
+import type { MapAreaEffect } from '@/components/campaign/tactical/layers/AreaEffectLayer';
+import type { CreateAreaEffectData } from '@/hooks/campaign/useAreaEffects';
+import { AreaEffectControls } from '@/components/campaign/tactical/AreaEffectControls';
+import { Target } from 'lucide-react';
 
 // =====================================================
 // CONSTANTES
@@ -138,6 +142,15 @@ interface MapSidePanelProps {
   // Grid
   gridVisible?: boolean;
   onToggleGrid?: () => void;
+
+  // Áreas de efeito (Fase D)
+  areas?: MapAreaEffect[];
+  selectedAreaId?: string | null;
+  onCreateArea?: (data: CreateAreaEffectData) => Promise<any>;
+  onUpdateArea?: (areaId: string, data: Partial<CreateAreaEffectData>) => Promise<boolean>;
+  onDeleteArea?: (areaId: string) => Promise<boolean>;
+  onClearAllAreas?: () => Promise<boolean>;
+  onSelectArea?: (areaId: string | null) => void;
 
   // Fog of war
   onFogReveal?: (cells: Array<{ x: number; y: number }>) => Promise<boolean>;
