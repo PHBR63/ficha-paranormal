@@ -203,13 +203,26 @@ export default function TacticalMapFullscreen() {
           🗺️ {campaign.name}
         </span>
 
-        {/* Indicador de jogadores */}
-        {playerCount > 0 && (
-          <Badge variant="outline" className="text-[10px] h-5 gap-1 ml-auto mr-1">
-            <Users className="h-3 w-3" />
-            {playerCount}
-          </Badge>
-        )}
+        {/* Indicador de jogadores + toggle chat */}
+        <div className="flex items-center gap-1 ml-auto">
+          {playerCount > 0 && (
+            <Badge variant="outline" className="text-[10px] h-5 gap-1">
+              <Users className="h-3 w-3" />
+              {playerCount}
+            </Badge>
+          )}
+
+          {/* Botão do chat lateral */}
+          <Button
+            variant={chatPanelOpen ? 'secondary' : 'ghost'}
+            size="icon"
+            className="h-7 w-7 shrink-0"
+            onClick={toggleChatPanel}
+            title={chatPanelOpen ? 'Fechar chat' : 'Abrir chat'}
+          >
+            <MessageSquare className="h-4 w-4" />
+          </Button>
+        </div>
 
         {/* Botão do painel do mestre (apenas para GM) */}
         {isMaster && (
