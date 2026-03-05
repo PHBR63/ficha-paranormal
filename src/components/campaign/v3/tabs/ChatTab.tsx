@@ -14,7 +14,7 @@
 import { memo, useState, useCallback, useRef, useEffect } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Dice6, ArrowDown } from 'lucide-react';
+import { Send, Dice6, ArrowDown, Swords } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -29,8 +29,12 @@ interface ChatTabProps {
   currentUserId: string;
   /** ID do mestre */
   masterId: string;
+  /** Se o usuário é o mestre da campanha */
+  isMaster?: boolean;
   /** Callback para enviar mensagem */
   onSendMessage: (content: string, type?: CampaignMessage['message_type'], metadata?: Record<string, unknown>) => Promise<boolean>;
+  /** Callback para aplicar dano a um personagem (Fase C) */
+  onApplyDamage?: (characterId: string, amount: number, characterName: string) => Promise<boolean>;
   /** Callback para marcar como lidas */
   onMarkAsRead?: () => void;
   /** Classe CSS adicional */
