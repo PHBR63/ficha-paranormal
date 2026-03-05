@@ -1,46 +1,56 @@
 
 
-# Otimização de Bundle JS e CSS
+# Fase A — Chat Lateral no Mapa Fullscreen
 
-## Diagnóstico Atual
+## Objetivo
+Adicionar painel de chat colapsável no mapa em tela cheia, permitindo enviar mensagens e ver rolagens sem sair do mapa.
 
-**JS (1,1 MB):** O lazy loading por rota já está implementado para a maioria das páginas. Porém:
-- `Index` (346 linhas), `Auth` (600 linhas) e `NotFound` são importados eagerly no bundle principal
-- Não há `manualChunks` no Vite — todas as dependências de vendor (react, supabase, konva, framer-motion, recharts, dnd-kit) ficam num único chunk
-- Bibliotecas pesadas como `konva`, `react-konva`, `framer-motion`, `recharts` e `@rive-app/react-canvas` entram no bundle mesmo quando não são usadas na rota atual
+## O que fazer
 
-**CSS (190 KB / 1120 linhas em `index.css`):** O `content` do Tailwind já está configurado corretamente (`src/**/*.{ts,tsx}`). Os 190 KB vêm principalmente de:
-- CSS custom extenso (variáveis de 5 temas, animações, efeitos atmosféricos, gradients por tema)
-- Muitas keyframes e animações customizadas no `tailwind.config.ts`
-- Arquivo `App.css` com estilos legados não utilizados (logo spin, .card, .read-the-docs)
+### 1. Criar `ChatSidePanel.tsx` (novo arquivo)
+`src/components/campaign/v3/map/ChatSidePanel.tsx`
 
-## Plano de Implementação
+Wrapper fino que reutiliza o `ChatTab` (v3) existente, com:
+- `motion.aside` fixado à esquerda (espelhando o `MapSidePanel` da direita)
+- Largura ~300px, animação slide-in/out igual ao MapSidePanel
+- Header compacto com título "Chat" e botão fechar
+- Passa props de messages/sendMessage/currentUserId/masterId diretamente ao ChatTab
 
-### 1. Configurar `manualChunks` no Vite (maior impacto)
+### 2. Modificar `TacticalMapFullscreen.tsx`
+- Novo estado `chatPanelOpen` (default `false`)
+- Botão toggle no header com ícone `MessageSquare`
+- Badge de mensagens não lidas (opcional — baseado em `realtimeData.messages.length`)
+- Renderizar `ChatSidePanel` no lado esquerdo do mapa, abaixo do header
+- Passa `realtimeData.messages`, `sendMessage`, `userId`, `campaign.master_id`
 
-Adicionar em `vite.config.ts` a configuração `build.rollupOptions.output.manualChunks` para separar vendors pesados em chunks independentes:
+### Layout resultante
 
-- **`vendor-react`**: react, react-dom, react-router-dom
-- **`vendor-supabase`**: @supabase/supabase-js, @tanstack/react-query
-- **`vendor-ui`**: @radix-ui/*, class-variance-authority, tailwind-merge, cmdk, sonner, vaul
-- **`vendor-canvas`**: konva, react-konva (carregado apenas na rota do mapa)
-- **`vendor-motion`**: framer-motion (carregado apenas quando componentes animados são usados)
-- **`vendor-charts`**: recharts (carregado apenas em páginas com gráficos)
+```text
+┌──────────────────────────────────────────────────┐
+│  ← 🗺️ Nome  [👥] [💬] [🛡️] [⚙️ →]             │
+├──────────┬──────────────────────┬────────────────┤
+│  Chat    │                     │  MapSidePanel  │
+│  Side    │    Canvas Konva     │  (ferramentas) │
+│  Panel   │                     │                │
+│  (novo)  │                     │                │
+│──────────│                     │                │
+│  [input] │                     │                │
+└──────────┴──────────────────────┴────────────────┘
+```
 
-Isso permite caching granular — atualizar código da app não invalida o cache dos vendors.
+## Detalhes técnicos
 
-### 2. Lazy load de `Auth` e `NotFound`
+- `realtimeData.messages` e `sendMessage` já estão disponíveis em `TacticalMapFullscreen` (linhas 59-65)
+- `campaign.master_id` vem de `campaignData.campaign`
+- O `ChatTab` aceita `onSendMessage` com signature `(content, type?, metadata?) => Promise<boolean>` — compatível com `sendMessage`
+- Posicionar à esquerda para não conflitar com `MapSidePanel` (direita) e `MasterMapPanel` (direita, overlay)
 
-Converter `Auth` e `NotFound` para `lazy()` — são páginas que não precisam estar no bundle inicial. A landing page (`Index`) permanece eager pois é o first paint.
+## Arquivos
 
-### 3. Remover `App.css` legado
+| Arquivo | Ação |
+|---------|------|
+| `src/components/campaign/v3/map/ChatSidePanel.tsx` | **Criar** |
+| `src/pages/TacticalMapFullscreen.tsx` | **Modificar** — estado + toggle + renderização |
 
-O arquivo `src/App.css` contém apenas estilos não utilizados (`.logo`, `.card`, `.read-the-docs`, `logo-spin`). Será removido e qualquer import eliminado.
-
-### 4. Resultado esperado
-
-- Bundle inicial reduzido de ~1,1 MB para ~400-500 KB (vendors separados + lazy routes)
-- Vendors cacheados independentemente pelo browser
-- CSS reduzido em ~2-3 KB (remoção do App.css legado)
-- O CSS de 190 KB em si é majoritariamente variáveis de tema necessárias — a redução significativa exigiria remover temas, o que não é desejável
+Esforço baixo, impacto alto. Sem migration SQL, sem biblioteca nova.
 
