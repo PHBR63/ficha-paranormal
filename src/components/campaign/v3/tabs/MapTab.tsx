@@ -174,12 +174,19 @@ export const MapTab = memo(function MapTab({
   const containerRef = useRef<HTMLDivElement>(null);
   const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 });
   
-  // Estado local para ferramentas de desenho
-  const [drawTool, setDrawTool] = useState<'pen' | 'line' | 'rect' | 'circle' | 'eraser'>('pen');
-  const [drawColor, setDrawColor] = useState('#ffffff');
-  const [drawStrokeWidth, setDrawStrokeWidth] = useState(3);
-  const [textFontSize, setTextFontSize] = useState(16);
-  const [textColor, setTextColor] = useState('#ffffff');
+  // Estado local para ferramentas de desenho (usa externo se disponível)
+  const [localDrawTool, setLocalDrawTool] = useState<'pen' | 'line' | 'rect' | 'circle' | 'eraser'>('pen');
+  const [localDrawColor, setLocalDrawColor] = useState('#ffffff');
+  const [localDrawStrokeWidth, setLocalDrawStrokeWidth] = useState(3);
+  const [localTextFontSize, setLocalTextFontSize] = useState(16);
+  const [localTextColor, setLocalTextColor] = useState('#ffffff');
+
+  // Resolve: externo tem prioridade sobre local
+  const drawTool = externalDrawTool ?? localDrawTool;
+  const drawColor = externalDrawColor ?? localDrawColor;
+  const drawStrokeWidth = externalDrawStrokeWidth ?? localDrawStrokeWidth;
+  const textFontSize = externalTextFontSize ?? localTextFontSize;
+  const textColor = externalTextColor ?? localTextColor;
 
   // ResizeObserver para dimensões dinâmicas
   useEffect(() => {
