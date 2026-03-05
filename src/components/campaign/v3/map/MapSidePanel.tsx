@@ -135,6 +135,10 @@ interface MapSidePanelProps {
   onZoomChange: (zoom: number) => void;
   onResetView: () => void;
 
+  // Grid
+  gridVisible?: boolean;
+  onToggleGrid?: () => void;
+
   // Fog of war
   onFogReveal?: (cells: Array<{ x: number; y: number }>) => Promise<boolean>;
   onFogHide?: (cells: Array<{ x: number; y: number }>) => Promise<boolean>;
