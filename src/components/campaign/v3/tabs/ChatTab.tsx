@@ -50,15 +50,22 @@ const ChatMessageItem = memo(function ChatMessageItem({
   message,
   currentUserId,
   masterId,
+  isMaster,
+  onApplyDamage,
 }: {
   message: CampaignMessage;
   currentUserId: string;
   masterId: string;
+  isMaster?: boolean;
+  onApplyDamage?: (characterId: string, amount: number, characterName: string) => Promise<boolean>;
 }) {
+  const [applying, setApplying] = useState(false);
   const isOwn = message.user_id === currentUserId;
-  const isMaster = message.user_id === masterId;
+  const isMasterMsg = message.user_id === masterId;
   const isSystem = message.message_type === 'system';
   const isDiceRoll = message.message_type === 'dice_roll';
+  const isDamageEvent = message.message_type === 'event_damage';
+  const isHealEvent = message.message_type === 'event_heal';
   
   // Nome do remetente
   const senderName = message.characters?.name 
