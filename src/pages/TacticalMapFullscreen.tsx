@@ -18,9 +18,11 @@ import { useMasterActions } from '@/hooks/campaign/useMasterActions';
 import { useTacticalBoard } from '@/hooks/campaign/useTacticalBoard';
 import { useAreaEffects } from '@/hooks/campaign/useAreaEffects';
 import { useAdvancedPings } from '@/hooks/campaign/useAdvancedPings';
+import { useMapPins } from '@/hooks/campaign/useMapPins';
 import { MapTab } from '@/components/campaign/v3/tabs/MapTab';
 import { MasterMapPanel } from '@/components/campaign/v3/map/MasterMapPanel';
 import { MapSidePanel } from '@/components/campaign/v3/map/MapSidePanel';
+import { MapPinDialog } from '@/components/campaign/tactical/MapPinDialog';
 import { ChatSidePanel } from '@/components/campaign/v3/map/ChatSidePanel';
 import { Logo } from '@/components/ui/logo';
 import { Button } from '@/components/ui/button';
@@ -87,6 +89,19 @@ export default function TacticalMapFullscreen() {
     enabled: !!campaignId && !campaignLoading && !!campaign,
   });
 
+  // Pins no mapa (Fase F)
+  const mapPins = useMapPins({
+    mapId: tacticalBoard.activeMap?.id || null,
+    enabled: !!campaignId && !campaignLoading && !!campaign,
+  });
+
+  // Estado do dialog de pin (Fase F)
+  const [pinDialogOpen, setPinDialogOpen] = useState(false);
+  const [pinCreateAt, setPinCreateAt] = useState<{ x: number; y: number } | null>(null);
+
+  // Pin selecionado para edição
+  const selectedPin = mapPins.pins.find(p => p.id === mapPins.selectedPinId) || null;
+
   // Pings avançados (Fase E)
   // Nome do usuário atual para exibir nos pings
   const currentMember = members.find(m => m.user_id === userId);
@@ -136,6 +151,17 @@ export default function TacticalMapFullscreen() {
     const r2 = await masterActions.setPE(charId, 9999);
     return r1 && r2;
   }, [masterActions]);
+  // Handler duplo-clique para criar pin (Fase F)
+  const handleCellDoubleClick = useCallback((x: number, y: number) => {
+    setPinCreateAt({ x, y });
+    setPinDialogOpen(true);
+  }, []);
+
+  // Handler click em pin (Fase F)
+  const handlePinClick = useCallback((pinId: string) => {
+    mapPins.selectPin(pinId);
+    setPinDialogOpen(true);
+  }, [mapPins]);
 
   // Sincronização de câmera (Fase E)
   // Converte lastCameraSync para {x,y} target para passar ao board
