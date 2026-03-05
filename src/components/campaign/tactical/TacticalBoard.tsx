@@ -44,6 +44,8 @@ import {
 import { cn } from '@/lib/utils';
 import { validateImageUrl } from '@/lib/security/urlValidator';
 import { MapImageUploader } from './MapImageUploader';
+import { supabase } from '@/integrations/supabase/client';
+import { ImageUploader } from '@/components/ui/image-uploader';
 import { MapAssetsPanel } from './MapAssetsPanel';
 import { type CampaignAsset } from '@/hooks/campaign/useCampaignAssets';
 import { toast } from 'sonner';
@@ -189,6 +191,8 @@ export function TacticalBoard({
   const [newTokenName, setNewTokenName] = useState('');
   const [newTokenType, setNewTokenType] = useState<'pc' | 'npc' | 'creature' | 'object' | 'marker'>('npc');
   const [selectedCharacterId, setSelectedCharacterId] = useState<string | null>(null);
+  const [newTokenImageFile, setNewTokenImageFile] = useState<File | null>(null);
+  const [newTokenImagePreview, setNewTokenImagePreview] = useState<string | null>(null);
   
   // Handler estável para Select do Radix (evita loop #185)
   const handleNewTokenTypeChange = useCallback((value: string) => {
@@ -808,19 +812,48 @@ export function TacticalBoard({
     
     const member = members.find(m => m.character_id === selectedCharacterId);
     
+    // Upload de imagem customizada do token (suporta GIF/WebM animados)
+    let tokenImageUrl = member?.characters?.photo_url || undefined;
+    
+    if (newTokenImageFile && campaignId) {
+      try {
+        const fileExt = newTokenImageFile.name.split('.').pop();
+        const fileName = `${campaignId}/tokens/${crypto.randomUUID()}.${fileExt}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('campaign-assets')
+          .upload(fileName, newTokenImageFile);
+        
+        if (uploadError) {
+          toast.error('Erro ao enviar imagem do token');
+          console.error('[TacticalBoard] Upload erro:', uploadError);
+        } else {
+          const { data: urlData } = supabase.storage
+            .from('campaign-assets')
+            .getPublicUrl(fileName);
+          tokenImageUrl = urlData.publicUrl;
+        }
+      } catch (err) {
+        console.error('[TacticalBoard] Erro no upload do token:', err);
+        toast.error('Erro ao enviar imagem');
+      }
+    }
+    
     await board.createToken({
       name: newTokenName,
       token_type: newTokenType,
       character_id: selectedCharacterId,
       x: centerX,
       y: centerY,
-      image_url: member?.characters?.photo_url || undefined,
+      image_url: tokenImageUrl,
     });
     
     setShowTokenDialog(false);
     setNewTokenName('');
     setNewTokenType('npc');
     setSelectedCharacterId(null);
+    setNewTokenImageFile(null);
+    setNewTokenImagePreview(null);
   };
 
   // =====================================================
@@ -1428,6 +1461,31 @@ export function TacticalBoard({
                   <SelectItem value="marker">Marcador</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+            
+            {/* Upload de imagem do token (suporta GIF/WebM animados) */}
+            <div>
+              <label className="text-sm font-medium">Imagem do Token</label>
+              <p className="text-xs text-muted-foreground mb-2">
+                Suporta PNG, JPG, GIF animado e WebM
+              </p>
+              <div className="flex items-center gap-3">
+                <ImageUploader
+                  value={newTokenImagePreview}
+                  onChange={(url, file) => {
+                    setNewTokenImagePreview(url);
+                    setNewTokenImageFile(file || null);
+                  }}
+                  size="sm"
+                  shape="circle"
+                  placeholder="Token"
+                />
+                {newTokenImagePreview && (
+                  <span className="text-xs text-muted-foreground">
+                    {newTokenImageFile?.name || 'Imagem selecionada'}
+                  </span>
+                )}
+              </div>
             </div>
             
             {/* Vincular a personagem (para PCs) */}
