@@ -20,7 +20,7 @@ const sizeClasses = {
 };
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'video/webm'];
 
 export function ImageUploader({
   value,
@@ -131,7 +131,7 @@ export function ImageUploader({
       <input
         ref={inputRef}
         type="file"
-        accept="image/*"
+        accept="image/*,video/webm"
         className="hidden"
         onChange={handleInputChange}
       />
