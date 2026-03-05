@@ -9,6 +9,7 @@
  */
 
 import { useEffect, useState, useCallback } from 'react';
+import { AnimatePresence } from 'framer-motion';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCampaignData } from '@/hooks/campaign/useCampaignData';
@@ -17,10 +18,12 @@ import { useMasterActions } from '@/hooks/campaign/useMasterActions';
 import { useTacticalBoard } from '@/hooks/campaign/useTacticalBoard';
 import { MapTab } from '@/components/campaign/v3/tabs/MapTab';
 import { MasterMapPanel } from '@/components/campaign/v3/map/MasterMapPanel';
+import { MapSidePanel } from '@/components/campaign/v3/map/MapSidePanel';
 import { Logo } from '@/components/ui/logo';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Users } from 'lucide-react';
+import { ArrowLeft, Users, PanelRightOpen, PanelRightClose } from 'lucide-react';
+import type { DrawToolType } from '@/components/campaign/v3/map/MapToolbar';
 import {
   Shield as ShieldIcon,
 } from '@phosphor-icons/react';
@@ -31,8 +34,16 @@ export default function TacticalMapFullscreen() {
   const { user, loading: authLoading } = useAuth();
   const userId = user?.id;
 
-  // Estado do painel lateral do mestre
+  // Estado dos painéis laterais
   const [masterPanelOpen, setMasterPanelOpen] = useState(false);
+  const [sidePanelOpen, setSidePanelOpen] = useState(true);
+
+  // Estado local de ferramentas de desenho/texto (para sidebar)
+  const [drawTool, setDrawTool] = useState<DrawToolType>('pen');
+  const [drawColor, setDrawColor] = useState('#ffffff');
+  const [drawStrokeWidth, setDrawStrokeWidth] = useState(3);
+  const [textColor, setTextColor] = useState('#ffffff');
+  const [textFontSize, setTextFontSize] = useState(16);
 
   // Dados da campanha (para validar permissões e obter membros)
   const campaignData = useCampaignData({
@@ -64,9 +75,12 @@ export default function TacticalMapFullscreen() {
     enabled: !!campaignId && !campaignLoading && !!campaign,
   });
 
-  // Toggle do painel do mestre
+  // Toggles dos painéis
   const toggleMasterPanel = useCallback(() => {
     setMasterPanelOpen(prev => !prev);
+  }, []);
+  const toggleSidePanel = useCallback(() => {
+    setSidePanelOpen(prev => !prev);
   }, []);
 
   // Callbacks de ações em lote do mestre
@@ -202,6 +216,17 @@ export default function TacticalMapFullscreen() {
             <ShieldIcon weight="duotone" className="h-4 w-4 text-primary" />
           </Button>
         )}
+
+        {/* Toggle sidebar de ferramentas */}
+        <Button
+          variant={sidePanelOpen ? 'secondary' : 'ghost'}
+          size="icon"
+          className="h-7 w-7 shrink-0"
+          onClick={toggleSidePanel}
+          title={sidePanelOpen ? 'Fechar painel lateral' : 'Abrir painel lateral'}
+        >
+          {sidePanelOpen ? <PanelRightClose className="h-4 w-4" /> : <PanelRightOpen className="h-4 w-4" />}
+        </Button>
       </div>
 
       {/* Mapa — ocupa todo o viewport restante */}
@@ -267,6 +292,46 @@ export default function TacticalMapFullscreen() {
             isUpdating={masterActions.isUpdating}
           />
         )}
+
+        {/* Sidebar lateral de ferramentas do mapa */}
+        <AnimatePresence>
+          <MapSidePanel
+            open={sidePanelOpen}
+            onToggle={toggleSidePanel}
+            map={tacticalBoard.activeMap}
+            tokens={tacticalBoard.tokens}
+            selectedTokenId={tacticalBoard.selectedTokenId}
+            members={members}
+            isMaster={isMaster}
+            campaignId={campaignId}
+            zoom={tacticalBoard.zoom}
+            onTokenSelect={tacticalBoard.selectToken}
+            onTokenCreate={tacticalBoard.createToken}
+            onTokenUpdate={tacticalBoard.updateToken}
+            onTokenDelete={tacticalBoard.deleteToken}
+            activeTool={tacticalBoard.activeTool}
+            drawTool={drawTool}
+            drawColor={drawColor}
+            drawStrokeWidth={drawStrokeWidth}
+            onToolChange={tacticalBoard.setActiveTool}
+            onDrawToolChange={setDrawTool}
+            onDrawColorChange={setDrawColor}
+            onDrawStrokeWidthChange={setDrawStrokeWidth}
+            canUndoDrawing={tacticalBoard.canUndoDrawing}
+            canRedoDrawing={tacticalBoard.canRedoDrawing}
+            onDrawingUndo={tacticalBoard.undoDrawing}
+            onDrawingRedo={tacticalBoard.redoDrawing}
+            onDrawingClearAll={tacticalBoard.clearAllDrawings}
+            textColor={textColor}
+            textFontSize={textFontSize}
+            onTextColorChange={setTextColor}
+            onTextFontSizeChange={setTextFontSize}
+            onZoomChange={tacticalBoard.setZoom}
+            onResetView={tacticalBoard.fitToScreen}
+            onFogReveal={tacticalBoard.revealFog}
+            onFogHide={tacticalBoard.hideFog}
+          />
+        </AnimatePresence>
       </div>
     </div>
   );
