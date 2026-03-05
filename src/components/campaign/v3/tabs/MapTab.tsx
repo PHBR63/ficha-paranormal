@@ -156,6 +156,8 @@ export const MapTab = memo(function MapTab({
   onUploadMapImage,
   onSetActiveMap,
   currentUserId,
+  externalGridVisible,
+  onExternalToggleGrid,
   className,
 }: MapTabProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -190,9 +192,10 @@ export const MapTab = memo(function MapTab({
     return () => resizeObserver.disconnect();
   }, []);
 
-  // Estado de visibilidade do grid (toggle local)
-  const [gridVisible, setGridVisible] = useState(true);
-  const handleToggleGrid = useCallback(() => setGridVisible(prev => !prev), []);
+  // Estado de visibilidade do grid (usa externo se disponível, senão local)
+  const [localGridVisible, setLocalGridVisible] = useState(true);
+  const gridVisible = externalGridVisible !== undefined ? externalGridVisible : localGridVisible;
+  const handleToggleGrid = onExternalToggleGrid || (() => setLocalGridVisible(prev => !prev));
 
   return (
     <div className={cn('relative w-full h-full overflow-hidden', className)}>
