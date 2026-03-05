@@ -44,6 +44,8 @@ export default function TacticalMapFullscreen() {
   const [drawStrokeWidth, setDrawStrokeWidth] = useState(3);
   const [textColor, setTextColor] = useState('#ffffff');
   const [textFontSize, setTextFontSize] = useState(16);
+  const [gridVisible, setGridVisible] = useState(true);
+  const toggleGrid = useCallback(() => setGridVisible(prev => !prev), []);
 
   // Dados da campanha (para validar permissões e obter membros)
   const campaignData = useCampaignData({
