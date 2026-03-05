@@ -17,10 +17,12 @@ import { useMasterActions } from '@/hooks/campaign/useMasterActions';
 import { useTacticalBoard } from '@/hooks/campaign/useTacticalBoard';
 import { MapTab } from '@/components/campaign/v3/tabs/MapTab';
 import { MasterMapPanel } from '@/components/campaign/v3/map/MasterMapPanel';
+import { MapSidePanel } from '@/components/campaign/v3/map/MapSidePanel';
 import { Logo } from '@/components/ui/logo';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Users } from 'lucide-react';
+import { ArrowLeft, Users, PanelRightOpen, PanelRightClose } from 'lucide-react';
+import type { DrawToolType } from '@/components/campaign/v3/map/MapToolbar';
 import {
   Shield as ShieldIcon,
 } from '@phosphor-icons/react';
