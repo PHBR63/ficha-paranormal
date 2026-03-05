@@ -108,6 +108,12 @@ interface MapTabProps {
   /** Grid visível (controlado externamente) */
   externalGridVisible?: boolean;
   onExternalToggleGrid?: () => void;
+  /** Estados de desenho/texto controlados externamente (ex: sidebar fullscreen) */
+  externalDrawTool?: 'pen' | 'line' | 'rect' | 'circle' | 'eraser';
+  externalDrawColor?: string;
+  externalDrawStrokeWidth?: number;
+  externalTextColor?: string;
+  externalTextFontSize?: number;
   /** Classe CSS adicional */
   className?: string;
 }
@@ -158,17 +164,29 @@ export const MapTab = memo(function MapTab({
   currentUserId,
   externalGridVisible,
   onExternalToggleGrid,
+  externalDrawTool,
+  externalDrawColor,
+  externalDrawStrokeWidth,
+  externalTextColor,
+  externalTextFontSize,
   className,
 }: MapTabProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 });
   
-  // Estado local para ferramentas de desenho
-  const [drawTool, setDrawTool] = useState<'pen' | 'line' | 'rect' | 'circle' | 'eraser'>('pen');
-  const [drawColor, setDrawColor] = useState('#ffffff');
-  const [drawStrokeWidth, setDrawStrokeWidth] = useState(3);
-  const [textFontSize, setTextFontSize] = useState(16);
-  const [textColor, setTextColor] = useState('#ffffff');
+  // Estado local para ferramentas de desenho (usa externo se disponível)
+  const [localDrawTool, setLocalDrawTool] = useState<'pen' | 'line' | 'rect' | 'circle' | 'eraser'>('pen');
+  const [localDrawColor, setLocalDrawColor] = useState('#ffffff');
+  const [localDrawStrokeWidth, setLocalDrawStrokeWidth] = useState(3);
+  const [localTextFontSize, setLocalTextFontSize] = useState(16);
+  const [localTextColor, setLocalTextColor] = useState('#ffffff');
+
+  // Resolve: externo tem prioridade sobre local
+  const drawTool = externalDrawTool ?? localDrawTool;
+  const drawColor = externalDrawColor ?? localDrawColor;
+  const drawStrokeWidth = externalDrawStrokeWidth ?? localDrawStrokeWidth;
+  const textFontSize = externalTextFontSize ?? localTextFontSize;
+  const textColor = externalTextColor ?? localTextColor;
 
   // ResizeObserver para dimensões dinâmicas
   useEffect(() => {
@@ -331,15 +349,15 @@ export const MapTab = memo(function MapTab({
           activeTool={activeTool}
           onToolChange={onToolChange}
           drawTool={drawTool}
-          onDrawToolChange={setDrawTool}
+          onDrawToolChange={setLocalDrawTool}
           drawColor={drawColor}
-          onDrawColorChange={setDrawColor}
+          onDrawColorChange={setLocalDrawColor}
           drawStrokeWidth={drawStrokeWidth}
-          onDrawStrokeWidthChange={setDrawStrokeWidth}
+          onDrawStrokeWidthChange={setLocalDrawStrokeWidth}
           textColor={textColor}
-          onTextColorChange={setTextColor}
+          onTextColorChange={setLocalTextColor}
           textFontSize={textFontSize}
-          onTextFontSizeChange={setTextFontSize}
+          onTextFontSizeChange={setLocalTextFontSize}
           isMaster={isMaster}
           gridVisible={gridVisible}
           onToggleGrid={handleToggleGrid}
