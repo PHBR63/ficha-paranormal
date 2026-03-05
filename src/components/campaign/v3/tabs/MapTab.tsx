@@ -120,6 +120,9 @@ interface MapTabProps {
   selectedAreaId?: string | null;
   onAreaClick?: (areaId: string) => void;
   onAreaDrag?: (areaId: string, newX: number, newY: number) => void;
+  /** Sincronização de câmera (Fase E) — célula para centralizar */
+  cameraSyncTarget?: { x: number; y: number } | null;
+  onCameraSyncHandled?: () => void;
   /** Classe CSS adicional */
   className?: string;
 }
