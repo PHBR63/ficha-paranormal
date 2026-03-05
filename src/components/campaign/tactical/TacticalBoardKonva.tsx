@@ -71,6 +71,7 @@ export interface TacticalBoardKonvaProps {
   // Callbacks
   onTokenSelect: (tokenId: string | null) => void;
   onTokenMove: (tokenId: string, x: number, y: number) => Promise<boolean>;
+  onTokenResize?: (tokenId: string, newSize: number) => void;
   onTokenDoubleClick?: (token: MapToken) => void;
   onCellClick?: (x: number, y: number) => void;
   onCellDoubleClick?: (x: number, y: number) => void;
@@ -133,6 +134,7 @@ export function TacticalBoardKonva({
   height,
   onTokenSelect,
   onTokenMove,
+  onTokenResize,
   onTokenDoubleClick,
   onCellClick,
   onCellDoubleClick,
