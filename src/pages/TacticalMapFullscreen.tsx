@@ -138,20 +138,10 @@ export default function TacticalMapFullscreen() {
   }, [masterActions]);
 
   // Sincronização de câmera (Fase E)
-  // Quando o mestre envia camera_sync, centraliza a visão de todos
-  useEffect(() => {
-    if (!advancedPings.lastCameraSync) return;
-    const { x, y } = advancedPings.lastCameraSync;
-    const gridSize = tacticalBoard.activeMap?.grid_size || 40;
-    // Centraliza o viewport na célula indicada
-    const targetPixelX = x * gridSize + gridSize / 2;
-    const targetPixelY = y * gridSize + gridSize / 2;
-    // Calcula offset para centralizar (considerando zoom atual)
-    const newPanX = window.innerWidth / 2 - targetPixelX * tacticalBoard.zoom;
-    const newPanY = window.innerHeight / 2 - targetPixelY * tacticalBoard.zoom;
-    tacticalBoard.setPanOffset({ x: newPanX, y: newPanY });
-    advancedPings.clearCameraSync();
-  }, [advancedPings.lastCameraSync]);
+  // Converte lastCameraSync para {x,y} target para passar ao board
+  const cameraSyncTarget = advancedPings.lastCameraSync
+    ? { x: advancedPings.lastCameraSync.x, y: advancedPings.lastCameraSync.y }
+    : null;
 
 
   useEffect(() => {
