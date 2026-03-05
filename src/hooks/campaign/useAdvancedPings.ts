@@ -11,21 +11,10 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import type { BoardPing } from '@/hooks/campaign/useTacticalBoard';
 
-// Tipos de ping
+// Tipos de ping (re-exporta para UI)
 export type PingType = 'normal' | 'alert' | 'camera_sync';
-
-// Ping avançado com tipo e mensagem
-export interface AdvancedPing {
-  id: string;
-  x: number;
-  y: number;
-  color: string;
-  type: PingType;
-  message?: string;
-  senderName?: string;
-  createdAt: number;
-}
 
 // Evento de sincronização de câmera
 export interface CameraSyncEvent {
@@ -46,7 +35,7 @@ interface UseAdvancedPingsProps {
 
 interface UseAdvancedPingsReturn {
   /** Lista de pings ativos */
-  pings: AdvancedPing[];
+  pings: BoardPing[];
   /** Tipo de ping selecionado */
   pingType: PingType;
   /** Mensagem a ser anexada ao próximo ping */
