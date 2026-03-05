@@ -59,7 +59,7 @@ export function useAdvancedPings({
   currentUserName = 'Jogador',
   currentUserId,
 }: UseAdvancedPingsProps): UseAdvancedPingsReturn {
-  const [pings, setPings] = useState<AdvancedPing[]>([]);
+  const [pings, setPings] = useState<BoardPing[]>([]);
   const [pingType, setPingType] = useState<PingType>('normal');
   const [pingMessage, setPingMessage] = useState('');
   const [lastCameraSync, setLastCameraSync] = useState<CameraSyncEvent | null>(null);
@@ -95,7 +95,7 @@ export function useAdvancedPings({
 
     // Recebe pings de outros jogadores
     channel.on('broadcast', { event: 'ping' }, ({ payload }) => {
-      const ping = payload as AdvancedPing;
+      const ping = payload as BoardPing;
       
       // Adiciona ao estado local
       setPings(prev => {
@@ -134,7 +134,7 @@ export function useAdvancedPings({
     const message = pingMessageRef.current || undefined;
     const senderName = currentUserNameRef.current;
 
-    const ping: AdvancedPing = {
+    const ping: BoardPing = {
       id: `ping-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       x,
       y,
