@@ -406,6 +406,13 @@ export default function TacticalMapFullscreen() {
             onFogHide={tacticalBoard.hideFog}
             gridVisible={gridVisible}
             onToggleGrid={toggleGrid}
+            areas={areaEffects.areas}
+            selectedAreaId={areaEffects.selectedAreaId}
+            onCreateArea={areaEffects.createArea}
+            onUpdateArea={areaEffects.updateArea}
+            onDeleteArea={areaEffects.deleteArea}
+            onClearAllAreas={areaEffects.clearAllAreas}
+            onSelectArea={areaEffects.selectArea}
           />
         </AnimatePresence>
       </div>
