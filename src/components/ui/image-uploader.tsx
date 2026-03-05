@@ -19,7 +19,7 @@ const sizeClasses = {
   lg: 'w-40 h-40',
 };
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'video/webm'];
 
 export function ImageUploader({
@@ -49,7 +49,7 @@ export function ImageUploader({
     if (file.size > MAX_FILE_SIZE) {
       toast({
         title: 'Arquivo muito grande',
-        description: 'O tamanho máximo é 5MB.',
+        description: 'O tamanho máximo é 100MB.',
         variant: 'destructive',
       });
       return false;
@@ -169,7 +169,7 @@ export function ImageUploader({
         <div className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground group-hover:text-primary transition-colors">
           <Upload className="w-6 h-6 mb-1" />
           <span className="text-xs text-center px-2">{placeholder}</span>
-          <span className="text-[10px] opacity-70 mt-1">Max 5MB</span>
+          <span className="text-[10px] opacity-70 mt-1">Max 100MB</span>
         </div>
       )}
     </div>
