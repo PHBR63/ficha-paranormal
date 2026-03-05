@@ -120,6 +120,7 @@ function TokenShape({
   onDragMove,
   onDragEnd,
   onDoubleClick,
+  onResize,
 }: TokenShapeProps) {
   const [image, setImage] = useState<HTMLImageElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
