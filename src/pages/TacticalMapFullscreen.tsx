@@ -277,7 +277,7 @@ export default function TacticalMapFullscreen() {
           map={tacticalBoard.activeMap}
           maps={tacticalBoard.maps}
           tokens={tacticalBoard.tokens}
-          pings={tacticalBoard.pings}
+          pings={advancedPings.pings}
           highlightedCells={tacticalBoard.highlightedCells}
           selectedTokenId={tacticalBoard.selectedTokenId}
           activeTool={tacticalBoard.activeTool}
@@ -294,7 +294,7 @@ export default function TacticalMapFullscreen() {
           onResetView={tacticalBoard.fitToScreen}
           onMeasureStart={tacticalBoard.startMeasure}
           onMeasureEnd={tacticalBoard.endMeasure}
-          onPing={tacticalBoard.sendPing}
+          onPing={advancedPings.sendPing}
           onFogReveal={tacticalBoard.revealFog}
           onFogHide={tacticalBoard.hideFog}
           calculateDistance={tacticalBoard.calculateDistance}
