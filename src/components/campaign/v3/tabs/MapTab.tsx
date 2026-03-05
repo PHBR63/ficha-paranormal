@@ -320,7 +320,7 @@ export const MapTab = memo(function MapTab({
         )}
       </div>
 
-      {map && (
+      {map && !hideToolbar && (
         <MapToolbar
           activeTool={activeTool}
           onToolChange={onToolChange}
