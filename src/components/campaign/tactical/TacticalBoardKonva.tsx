@@ -135,6 +135,7 @@ export function TacticalBoardKonva({
   onTokenMove,
   onTokenDoubleClick,
   onCellClick,
+  onCellDoubleClick,
   onMeasureStart,
   onMeasureEnd,
   onPing,
