@@ -314,7 +314,7 @@ const CreateTokenDialog = memo(function CreateTokenDialog({
     await onCreateToken({
       map_id: mapId,
       name: name.trim(),
-      token_type: tokenType,
+      token_type: tokenType as MapToken['token_type'],
       x: 5,
       y: 5,
       size: 1,
