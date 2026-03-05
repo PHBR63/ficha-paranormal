@@ -172,6 +172,9 @@ interface MapSidePanelProps {
   selectedPinId?: string | null;
   onSelectPin?: (pinId: string | null) => void;
   onDeletePin?: (pinId: string) => Promise<boolean>;
+
+  /** ID do usuário atual (para verificar permissões de pins) */
+  currentUserId?: string;
 }
 
 // =====================================================
