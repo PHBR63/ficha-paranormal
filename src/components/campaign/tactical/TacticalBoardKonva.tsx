@@ -238,6 +238,25 @@ export function TacticalBoardKonva({
   }, [activeTool, measureStart, transform, pixelToCell, onTokenSelect, onMeasureStart, onMeasureEnd, onPing, onFogToggle, onCellClick, isMaster]);
 
   /**
+   * Handler de duplo-clique no Stage (para criar pins)
+   */
+  const handleStageDblClick = useCallback((e: Konva.KonvaEventObject<MouseEvent>) => {
+    if (activeTool !== 'select') return;
+
+    const stage = e.target.getStage();
+    if (!stage) return;
+
+    const pointer = stage.getPointerPosition();
+    if (!pointer) return;
+
+    const mapX = (pointer.x - transform.position.x) / transform.scale;
+    const mapY = (pointer.y - transform.position.y) / transform.scale;
+    const cell = pixelToCell(mapX, mapY);
+
+    onCellDoubleClick?.(cell.x, cell.y);
+  }, [activeTool, transform, pixelToCell, onCellDoubleClick]);
+
+  /**
    * Handler de início de drag de token
    */
   const handleTokenDragStart = useCallback((token: MapToken) => {
