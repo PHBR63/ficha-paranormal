@@ -39,8 +39,8 @@ export function StepCampaignInfo({ formData, updateFormData }: StepCampaignInfoP
       toast({ title: 'Formato inválido', description: 'Use JPG, PNG, WebP ou GIF.', variant: 'destructive' });
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
-      toast({ title: 'Arquivo muito grande', description: 'O tamanho máximo é 5MB.', variant: 'destructive' });
+    if (file.size > 100 * 1024 * 1024) {
+      toast({ title: 'Arquivo muito grande', description: 'O tamanho máximo é 100MB.', variant: 'destructive' });
       return;
     }
 
@@ -183,7 +183,7 @@ export function StepCampaignInfo({ formData, updateFormData }: StepCampaignInfoP
               {isUploading ? (
                 <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Enviando...</>
               ) : (
-                <><Upload className="w-4 h-4 mr-2" /> Fazer upload de imagem (max 5MB)</>
+                <><Upload className="w-4 h-4 mr-2" /> Fazer upload de imagem (max 100MB)</>
               )}
             </Button>
             
