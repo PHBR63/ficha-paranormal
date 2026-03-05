@@ -1295,6 +1295,7 @@ export function TacticalBoard({
             // Modo normal: move diretamente
             return await board.moveToken(tokenId, x, y);
           }}
+          onTokenResize={(tokenId, newSize) => board.updateToken(tokenId, { size: newSize })}
           onTokenDoubleClick={(token) => {
             console.log('Double click on token:', token.name);
           }}
