@@ -206,10 +206,14 @@ function TokenShape({
   const size = token.size * gridSize;
   const color = TOKEN_COLORS[token.token_type] || '#666';
 
-  // Detecta tipo de mídia animada
-  const imageUrl = token.image_url?.toLowerCase() ?? '';
-  const isWebM = imageUrl.endsWith('.webm');
-  const isGif = imageUrl.endsWith('.gif');
+  // Detecta tipo de mídia animada (suporta URLs com query params)
+  const imageUrl = token.image_url ?? '';
+  const urlPath = (() => {
+    try { return new URL(imageUrl).pathname.toLowerCase(); }
+    catch { return imageUrl.toLowerCase(); }
+  })();
+  const isWebM = urlPath.endsWith('.webm');
+  const isGif = urlPath.endsWith('.gif');
   const isAnimated = isWebM || isGif;
 
   // Carrega imagem estática do token (se não for animado)
