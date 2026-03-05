@@ -98,8 +98,14 @@ const AreaEffectShape = memo(function AreaEffectShape({
     onAreaClick?.(area.id);
   };
 
+  // Handler de drag start - impede que o Stage também seja arrastado
+  const handleDragStart = (e: any) => {
+    e.cancelBubble = true;
+  };
+
   // Handler de drag end
   const handleDragEnd = (e: any) => {
+    e.cancelBubble = true;
     if (!onAreaDrag) return;
     const newCellX = Math.round(e.target.x() / gridSize);
     const newCellY = Math.round(e.target.y() / gridSize);
