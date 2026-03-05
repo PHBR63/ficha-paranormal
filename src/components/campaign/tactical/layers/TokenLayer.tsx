@@ -26,6 +26,8 @@ interface TokenLayerProps {
   onTokenDragMove?: (token: MapToken, newX: number, newY: number) => void;
   onTokenDragEnd: (tokenId: string, newX: number, newY: number) => void;
   onTokenDoubleClick?: (token: MapToken) => void;
+  /** Callback de redimensionamento do token (novo tamanho em unidades de grid) */
+  onTokenResize?: (tokenId: string, newSize: number) => void;
 }
 
 // Cores por tipo de token
@@ -102,6 +104,7 @@ interface TokenShapeProps {
   onDragMove: (x: number, y: number) => void;
   onDragEnd: (x: number, y: number) => void;
   onDoubleClick?: () => void;
+  onResize?: (newSize: number) => void;
 }
 
 /**
