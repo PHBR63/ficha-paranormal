@@ -120,18 +120,22 @@ function TokenShape({
 }: TokenShapeProps) {
   const [image, setImage] = useState<HTMLImageElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const gifRef = useRef<HTMLImageElement | null>(null);
   const animFrameRef = useRef<number>(0);
   const konvaImageRef = useRef<Konva.Image | null>(null);
   
   const size = token.size * gridSize;
   const color = TOKEN_COLORS[token.token_type] || '#666';
 
-  // Detecta se é WebM (animado)
-  const isWebM = token.image_url?.toLowerCase().endsWith('.webm') ?? false;
+  // Detecta tipo de mídia animada
+  const imageUrl = token.image_url?.toLowerCase() ?? '';
+  const isWebM = imageUrl.endsWith('.webm');
+  const isGif = imageUrl.endsWith('.gif');
+  const isAnimated = isWebM || isGif;
 
-  // Carrega imagem estática do token (se não for WebM)
+  // Carrega imagem estática do token (se não for animado)
   useEffect(() => {
-    if (!token.image_url || isWebM) {
+    if (!token.image_url || isAnimated) {
       setImage(null);
       return;
     }
@@ -146,18 +150,63 @@ function TokenShape({
       img.onload = null;
       img.onerror = null;
     };
-  }, [token.image_url, isWebM]);
+  }, [token.image_url, isAnimated]);
 
-  // Carrega vídeo WebM e anima frame a frame
+  /**
+   * Loop de animação compartilhado para GIF e WebM.
+   * Chama batchDraw na layer para capturar o frame atual da mídia.
+   * Usa throttle (~30fps) para evitar sobrecarga em múltiplos tokens.
+   */
+  const startAnimationLoop = useCallback(() => {
+    let lastTime = 0;
+    const FPS_INTERVAL = 1000 / 30; // ~30fps max
+
+    const animate = (timestamp: number) => {
+      if (timestamp - lastTime >= FPS_INTERVAL) {
+        const layer = konvaImageRef.current?.getLayer();
+        if (layer) {
+          layer.batchDraw();
+        }
+        lastTime = timestamp;
+      }
+      animFrameRef.current = requestAnimationFrame(animate);
+    };
+
+    animFrameRef.current = requestAnimationFrame(animate);
+  }, []);
+
+  // Carrega e anima GIF
+  useEffect(() => {
+    if (!token.image_url || !isGif) {
+      gifRef.current = null;
+      return;
+    }
+
+    const img = new window.Image();
+    img.crossOrigin = 'anonymous';
+    img.src = token.image_url;
+    gifRef.current = img;
+
+    img.onload = () => {
+      // GIF anima automaticamente no <img>, batchDraw captura o frame atual
+      startAnimationLoop();
+    };
+
+    return () => {
+      cancelAnimationFrame(animFrameRef.current);
+      gifRef.current = null;
+    };
+  }, [token.image_url, isGif, startAnimationLoop]);
+
+  // Carrega e anima WebM via <video>
   useEffect(() => {
     if (!token.image_url || !isWebM) {
-      // Limpa vídeo anterior se existir
       if (videoRef.current) {
         videoRef.current.pause();
         videoRef.current.src = '';
         videoRef.current = null;
       }
-      if (animFrameRef.current) {
+      if (!isGif && animFrameRef.current) {
         cancelAnimationFrame(animFrameRef.current);
       }
       return;
@@ -172,23 +221,9 @@ function TokenShape({
     video.autoplay = true;
     videoRef.current = video;
 
-    // Função de animação: pinta cada frame do vídeo no canvas Konva
-    const animate = () => {
-      if (!videoRef.current || videoRef.current.paused || videoRef.current.ended) {
-        animFrameRef.current = requestAnimationFrame(animate);
-        return;
-      }
-      // Força re-draw da camada Konva para atualizar o frame do vídeo
-      const layer = konvaImageRef.current?.getLayer();
-      if (layer) {
-        layer.batchDraw();
-      }
-      animFrameRef.current = requestAnimationFrame(animate);
-    };
-
     video.addEventListener('loadeddata', () => {
       video.play().catch(() => {});
-      animFrameRef.current = requestAnimationFrame(animate);
+      startAnimationLoop();
     });
 
     video.load();
@@ -199,38 +234,39 @@ function TokenShape({
       video.src = '';
       videoRef.current = null;
     };
-  }, [token.image_url, isWebM]);
+  }, [token.image_url, isWebM, isGif, startAnimationLoop]);
 
-  // Handlers de drag
-  // Handler de drag - cancela bubble para não mover o Stage junto
+  // Handlers de drag - cancela bubble para não mover o Stage junto
   const handleDragStart = useCallback((e: Konva.KonvaEventObject<DragEvent>) => {
-    e.cancelBubble = true; // Impede propagação para o Stage
+    e.cancelBubble = true;
     onDragStart();
   }, [onDragStart]);
 
   const handleDragMove = useCallback((e: Konva.KonvaEventObject<DragEvent>) => {
-    e.cancelBubble = true; // Impede propagação para o Stage
+    e.cancelBubble = true;
     const x = Math.floor(e.target.x() / gridSize);
     const y = Math.floor(e.target.y() / gridSize);
     onDragMove(x, y);
   }, [gridSize, onDragMove]);
 
   const handleDragEnd = useCallback((e: Konva.KonvaEventObject<DragEvent>) => {
-    e.cancelBubble = true; // Impede propagação para o Stage
-    
-    // Snap to grid
+    e.cancelBubble = true;
     const x = Math.round(e.target.x() / gridSize);
     const y = Math.round(e.target.y() / gridSize);
-    
-    // Atualiza posição visual para encaixar no grid
     e.target.x(x * gridSize);
     e.target.y(y * gridSize);
-    
     onDragEnd(x, y);
   }, [gridSize, onDragEnd]);
 
   // Verifica se pode arrastar
   const canDrag = !token.locked && (isMaster || token.token_type === 'pc');
+
+  // Determina a fonte da imagem animada (GIF ou WebM)
+  const animatedSource = isGif 
+    ? gifRef.current 
+    : isWebM 
+      ? (videoRef.current as unknown as HTMLImageElement) 
+      : null;
 
   return (
     <Group
@@ -260,15 +296,14 @@ function TokenShape({
         />
       )}
 
-      {/* Círculo do token (imagem estática, WebM animado, ou cor sólida) */}
-      {isWebM && videoRef.current ? (
-        // Token WebM animado — usa <video> como source do KonvaImage
+      {/* Token animado (GIF ou WebM) */}
+      {isAnimated && animatedSource ? (
         <Group clipFunc={(ctx) => {
           ctx.arc(size / 2, size / 2, size / 2 - 2, 0, Math.PI * 2);
         }}>
           <KonvaImage
             ref={(node) => { konvaImageRef.current = node; }}
-            image={videoRef.current as unknown as HTMLImageElement}
+            image={animatedSource}
             x={0}
             y={0}
             width={size}
@@ -276,7 +311,7 @@ function TokenShape({
           />
         </Group>
       ) : image ? (
-        // Token com imagem estática
+        /* Token com imagem estática */
         <Group clipFunc={(ctx) => {
           ctx.arc(size / 2, size / 2, size / 2 - 2, 0, Math.PI * 2);
         }}>
@@ -289,7 +324,7 @@ function TokenShape({
           />
         </Group>
       ) : (
-        // Token sem imagem (círculo colorido)
+        /* Token sem imagem (círculo colorido) */
         <Circle
           x={size / 2}
           y={size / 2}
