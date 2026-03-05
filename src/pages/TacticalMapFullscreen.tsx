@@ -322,6 +322,7 @@ export default function TacticalMapFullscreen() {
           onMapChange={tacticalBoard.setActiveMap}
           onTokenSelect={tacticalBoard.selectToken}
           onTokenMove={tacticalBoard.moveToken}
+          onTokenResize={(tokenId, newSize) => tacticalBoard.updateToken(tokenId, { size: newSize })}
           onZoomChange={tacticalBoard.setZoom}
           onResetView={tacticalBoard.fitToScreen}
           onMeasureStart={tacticalBoard.startMeasure}
