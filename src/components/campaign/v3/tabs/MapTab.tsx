@@ -40,6 +40,7 @@ import type { TacticalMap, MapToken, BoardPing } from '@/hooks/campaign/useTacti
 import type { HighlightedCell } from '@/components/campaign/tactical/layers/HighlightLayer';
 import type { MapDrawing } from '@/components/campaign/tactical/layers/DrawingLayer';
 import type { MapText } from '@/components/campaign/tactical/layers/TextLayer';
+import type { MapAreaEffect } from '@/components/campaign/tactical/layers/AreaEffectLayer';
 
 // Cores predefinidas removidas — agora ficam no MapToolbar
 interface MapTabProps {
@@ -114,6 +115,11 @@ interface MapTabProps {
   externalDrawStrokeWidth?: number;
   externalTextColor?: string;
   externalTextFontSize?: number;
+  /** Áreas de efeito */
+  areas?: MapAreaEffect[];
+  selectedAreaId?: string | null;
+  onAreaClick?: (areaId: string) => void;
+  onAreaDrag?: (areaId: string, newX: number, newY: number) => void;
   /** Classe CSS adicional */
   className?: string;
 }
@@ -169,6 +175,10 @@ export const MapTab = memo(function MapTab({
   externalDrawStrokeWidth,
   externalTextColor,
   externalTextFontSize,
+  areas = [],
+  selectedAreaId,
+  onAreaClick,
+  onAreaDrag,
   className,
 }: MapTabProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -230,6 +240,10 @@ export const MapTab = memo(function MapTab({
             highlightedCells={highlightedCells}
             drawings={drawings}
             texts={texts}
+            areas={areas}
+            selectedAreaId={selectedAreaId}
+            onAreaClick={onAreaClick}
+            onAreaDrag={onAreaDrag}
             selectedTokenId={selectedTokenId}
             activeTool={activeTool}
             drawTool={drawTool}
