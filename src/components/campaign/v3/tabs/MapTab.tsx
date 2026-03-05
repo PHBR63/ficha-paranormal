@@ -182,6 +182,8 @@ export const MapTab = memo(function MapTab({
   selectedAreaId,
   onAreaClick,
   onAreaDrag,
+  cameraSyncTarget,
+  onCameraSyncHandled,
   className,
 }: MapTabProps) {
   const containerRef = useRef<HTMLDivElement>(null);
