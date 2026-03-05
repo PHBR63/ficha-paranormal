@@ -1,12 +1,12 @@
 /**
  * CreateMapDialog - Dialog para criação de novo mapa tático
  * 
- * Permite definir nome, dimensões do grid e upload de imagem.
- * Integra com useTacticalBoard.createMap e uploadMapImage.
+ * Auto-ajusta dimensões do grid com base na imagem enviada.
+ * Exibe aviso se a imagem for muito pequena para mapas táticos.
  */
 
-import { useState, useCallback } from 'react';
-import { Loader2, Plus } from 'lucide-react';
+import { useState, useCallback, useEffect } from 'react';
+import { Loader2, Plus, AlertTriangle, Info } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -19,9 +19,21 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { MapImageUploader } from '@/components/campaign/tactical/MapImageUploader';
+import { MapImageUploader, type MapImageData } from '@/components/campaign/tactical/MapImageUploader';
 import { toast } from 'sonner';
 import type { TacticalMap } from '@/hooks/campaign/useTacticalBoard';
+
+/** Limites para cálculo automático de cells */
+const MIN_CELLS = 10;
+const MAX_CELLS = 200;
+/** Resolução mínima recomendada */
+const MIN_RECOMMENDED_WIDTH = 800;
+const MIN_RECOMMENDED_HEIGHT = 600;
+
+/** Calcula quantidade de cells com limites */
+function calcCells(imagePx: number, gridSize: number): number {
+  return Math.min(MAX_CELLS, Math.max(MIN_CELLS, Math.ceil(imagePx / gridSize)));
+}
 
 interface CreateMapDialogProps {
   /** Callback para criar o mapa no banco */
@@ -46,7 +58,9 @@ export function CreateMapDialog({
   const [gridSize, setGridSize] = useState(40);
   const [widthCells, setWidthCells] = useState(30);
   const [heightCells, setHeightCells] = useState(20);
-  const [imageData, setImageData] = useState<{ file?: File; url?: string; previewUrl: string } | null>(null);
+  const [imageData, setImageData] = useState<MapImageData | null>(null);
+  /** Dimensões naturais da imagem para recalcular ao mudar gridSize */
+  const [imageDimensions, setImageDimensions] = useState<{ w: number; h: number } | null>(null);
 
   /** Reseta estado ao fechar */
   const resetForm = useCallback(() => {
@@ -55,8 +69,32 @@ export function CreateMapDialog({
     setWidthCells(30);
     setHeightCells(20);
     setImageData(null);
+    setImageDimensions(null);
     setIsCreating(false);
   }, []);
+
+  /** Quando a imagem é selecionada, auto-ajusta cells */
+  const handleImageSelect = useCallback((data: MapImageData) => {
+    setImageData(data);
+    if (data.imageWidth && data.imageHeight) {
+      setImageDimensions({ w: data.imageWidth, h: data.imageHeight });
+      setWidthCells(calcCells(data.imageWidth, gridSize));
+      setHeightCells(calcCells(data.imageHeight, gridSize));
+    }
+  }, [gridSize]);
+
+  /** Recalcula cells ao mudar gridSize se temos dimensões da imagem */
+  useEffect(() => {
+    if (imageDimensions) {
+      setWidthCells(calcCells(imageDimensions.w, gridSize));
+      setHeightCells(calcCells(imageDimensions.h, gridSize));
+    }
+  }, [gridSize, imageDimensions]);
+
+  /** Verifica se a imagem é pequena demais */
+  const isSmallImage = imageDimensions && (
+    imageDimensions.w < MIN_RECOMMENDED_WIDTH || imageDimensions.h < MIN_RECOMMENDED_HEIGHT
+  );
 
   /** Cria o mapa e faz upload da imagem se necessário */
   const handleCreate = useCallback(async () => {
@@ -68,13 +106,12 @@ export function CreateMapDialog({
     setIsCreating(true);
 
     try {
-      // 1. Cria o mapa no banco
       const newMap = await onCreateMap({
         name: mapName.trim(),
         grid_size: gridSize,
         width_cells: widthCells,
         height_cells: heightCells,
-        image_url: imageData?.url || '', // URL externa ou vazio
+        image_url: imageData?.url || '',
       });
 
       if (!newMap) {
@@ -82,7 +119,6 @@ export function CreateMapDialog({
         return;
       }
 
-      // 2. Se tem arquivo local, faz upload
       if (imageData?.file) {
         const uploadedUrl = await onUploadMapImage(newMap.id, imageData.file);
         if (!uploadedUrl) {
@@ -90,7 +126,6 @@ export function CreateMapDialog({
         }
       }
 
-      // 3. Ativa o mapa
       await onSetActiveMap(newMap.id);
 
       toast.success(`Mapa "${mapName.trim()}" criado!`);
@@ -136,10 +171,38 @@ export function CreateMapDialog({
             />
           </div>
 
+          {/* Upload de imagem — antes do grid para auto-ajustar */}
+          <div className="space-y-2">
+            <Label>Imagem de Fundo (opcional)</Label>
+            <MapImageUploader
+              onImageSelect={handleImageSelect}
+              isLoading={isCreating}
+            />
+
+            {/* Resolução da imagem */}
+            {imageDimensions && (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Info className="h-3.5 w-3.5 shrink-0" />
+                <span>Resolução: {imageDimensions.w} × {imageDimensions.h} px</span>
+              </div>
+            )}
+
+            {/* Aviso de imagem pequena */}
+            {isSmallImage && (
+              <div className="flex items-start gap-2 rounded-md border border-yellow-500/30 bg-yellow-500/10 p-3 text-xs text-yellow-200">
+                <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-yellow-400" />
+                <span>
+                  Imagem pequena — recomenda-se uma resolução maior para mapas táticos (mínimo 1920×1080).
+                  Mapas muito pequenos ficam pixelados ao ampliar.
+                </span>
+              </div>
+            )}
+          </div>
+
           {/* Dimensões do grid */}
           <div className="grid grid-cols-3 gap-3">
             <div className="space-y-2">
-              <Label htmlFor="grid-size">Tamanho do Grid (px)</Label>
+              <Label htmlFor="grid-size">Grid (px)</Label>
               <Input
                 id="grid-size"
                 type="number"
@@ -158,7 +221,7 @@ export function CreateMapDialog({
                 value={widthCells}
                 onChange={(e) => setWidthCells(Number(e.target.value) || 10)}
                 min={5}
-                max={100}
+                max={MAX_CELLS}
                 disabled={isCreating}
               />
             </div>
@@ -170,20 +233,19 @@ export function CreateMapDialog({
                 value={heightCells}
                 onChange={(e) => setHeightCells(Number(e.target.value) || 10)}
                 min={5}
-                max={100}
+                max={MAX_CELLS}
                 disabled={isCreating}
               />
             </div>
           </div>
 
-          {/* Upload de imagem */}
-          <div className="space-y-2">
-            <Label>Imagem de Fundo (opcional)</Label>
-            <MapImageUploader
-              onImageSelect={setImageData}
-              isLoading={isCreating}
-            />
-          </div>
+          {/* Info: dimensões resultantes */}
+          {imageDimensions && (
+            <div className="text-xs text-muted-foreground bg-muted/30 rounded-md p-2">
+              Tamanho resultante: {widthCells * gridSize} × {heightCells * gridSize} px
+              ({widthCells} × {heightCells} cells de {gridSize}px)
+            </div>
+          )}
         </div>
 
         <DialogFooter>
