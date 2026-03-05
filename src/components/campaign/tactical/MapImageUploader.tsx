@@ -21,9 +21,20 @@ import { toast } from 'sonner';
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB para mapas (maiores que avatares)
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
+/** Dados retornados ao selecionar uma imagem */
+export interface MapImageData {
+  file?: File;
+  url?: string;
+  previewUrl: string;
+  /** Largura natural da imagem em pixels */
+  imageWidth?: number;
+  /** Altura natural da imagem em pixels */
+  imageHeight?: number;
+}
+
 interface MapImageUploaderProps {
   /** Callback quando imagem é selecionada */
-  onImageSelect: (data: { file?: File; url?: string; previewUrl: string }) => void;
+  onImageSelect: (data: MapImageData) => void;
   /** Se está em estado de loading */
   isLoading?: boolean;
   /** Classe CSS adicional */
@@ -70,13 +81,27 @@ export function MapImageUploader({
   const handleFileSelect = useCallback((file: File) => {
     if (!validateFile(file)) return;
 
-    // Cria preview local
+    // Cria preview local e extrai dimensões naturais da imagem
     const reader = new FileReader();
     reader.onload = (e) => {
-      const url = e.target?.result as string;
-      setPreviewUrl(url);
-      setSelectedFile(file);
-      onImageSelect({ file, previewUrl: url });
+      const dataUrl = e.target?.result as string;
+      const img = new window.Image();
+      img.onload = () => {
+        setPreviewUrl(dataUrl);
+        setSelectedFile(file);
+        onImageSelect({
+          file,
+          previewUrl: dataUrl,
+          imageWidth: img.naturalWidth,
+          imageHeight: img.naturalHeight,
+        });
+      };
+      img.onerror = () => {
+        setPreviewUrl(dataUrl);
+        setSelectedFile(file);
+        onImageSelect({ file, previewUrl: dataUrl });
+      };
+      img.src = dataUrl;
     };
     reader.onerror = () => {
       toast.error('Erro ao ler arquivo');
@@ -155,7 +180,12 @@ export function MapImageUploader({
       const normalizedUrl = validation.normalizedUrl || urlInput;
       setPreviewUrl(normalizedUrl);
       setSelectedFile(null);
-      onImageSelect({ url: normalizedUrl, previewUrl: normalizedUrl });
+      onImageSelect({
+        url: normalizedUrl,
+        previewUrl: normalizedUrl,
+        imageWidth: img.naturalWidth,
+        imageHeight: img.naturalHeight,
+      });
       setIsValidatingUrl(false);
       toast.success('Imagem carregada com sucesso');
     };
