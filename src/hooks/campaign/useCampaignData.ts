@@ -43,6 +43,9 @@ export interface CampaignMemberV2 {
     id: string;
     name: string;
     class: string;
+    class_track: string | null;
+    origin: string;
+    patent: string;
     nex: number;
     hp_current: number;
     hp_max: number;
@@ -50,6 +53,8 @@ export interface CampaignMemberV2 {
     pe_max: number;
     san_current: number;
     san_max: number;
+    defense: number;
+    movement: number;
     photo_url: string | null;
     conditions: string[];
   } | null;
@@ -140,7 +145,7 @@ export function useCampaignData({
         .from('campaign_members_v2')
         .select(`
           id, campaign_id, user_id, character_id, role, active_bonuses, bonuses_updated_at, joined_at,
-          characters (id, name, class, nex, hp_current, hp_max, pe_current, pe_max, san_current, san_max, photo_url, conditions)
+          characters (id, name, class, class_track, origin, patent, nex, hp_current, hp_max, pe_current, pe_max, san_current, san_max, defense, movement, photo_url, conditions)
         `)
         .eq('campaign_id', campaignId);
       
@@ -194,7 +199,7 @@ export function useCampaignData({
         .from('campaign_members')
         .select(`
           id, user_id, character_id, role, joined_at,
-          characters (id, name, class, nex, hp_current, hp_max, pe_current, pe_max, san_current, san_max, photo_url, conditions)
+          characters (id, name, class, class_track, origin, patent, nex, hp_current, hp_max, pe_current, pe_max, san_current, san_max, defense, movement, photo_url, conditions)
         `)
         .eq('campaign_id', campId);
       
