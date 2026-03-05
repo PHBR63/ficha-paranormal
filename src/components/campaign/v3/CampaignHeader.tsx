@@ -1,8 +1,8 @@
 /**
- * CampaignHeader - Header compacto da campanha v3
+ * CampaignHeader - Header compacto com estética Ordem Paranormal
  * 
- * Exibe informações essenciais: nome, sessão ativa, status de conexão
- * Design minimalista funcional com altura fixa de 48px
+ * Exibe nome da campanha, sessão ativa, status de conexão.
+ * Visual escuro com bordas primárias sutis.
  * 
  * @module components/campaign/v3/CampaignHeader
  */
@@ -20,21 +20,13 @@ import {
 import { cn } from '@/lib/utils';
 
 interface CampaignHeaderProps {
-  /** Nome da campanha */
   campaignName: string;
-  /** Número da sessão atual (se ativa) */
   currentSession?: number | null;
-  /** Indica se há sessão ativa */
   hasActiveSession?: boolean;
-  /** Número de usuários online */
   onlineCount?: number;
-  /** Status da conexão realtime */
   isConnected?: boolean;
-  /** Callback para abrir configurações */
   onOpenSettings?: () => void;
-  /** Se o usuário é mestre */
   isMaster?: boolean;
-  /** Classe CSS adicional */
   className?: string;
 }
 
@@ -51,40 +43,40 @@ export const CampaignHeader = memo(function CampaignHeader({
   const navigate = useNavigate();
 
   return (
-    <header 
+    <header
       className={cn(
-        'h-12 shrink-0 border-b border-border/50 bg-card/30 backdrop-blur-sm',
+        'h-12 shrink-0 bg-card/50 backdrop-blur-sm',
+        'border-b border-primary/10',
         'flex items-center justify-between px-3 gap-3',
         className
       )}
     >
-      {/* Lado esquerdo: Voltar + Nome */}
+      {/* Esquerda: Voltar + Nome */}
       <div className="flex items-center gap-2 min-w-0 flex-1">
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               size="icon"
-              className="h-8 w-8 shrink-0"
+              className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
               onClick={() => navigate('/campaigns')}
             >
               <ArrowLeft className="h-4 w-4" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="bottom">
-            Voltar para campanhas
-          </TooltipContent>
+          <TooltipContent side="bottom">Voltar para campanhas</TooltipContent>
         </Tooltip>
 
-        <h1 className="text-sm font-medium text-foreground truncate">
+        {/* Nome com estilo dossiê */}
+        <h1 className="text-sm font-semibold text-foreground truncate tracking-wide">
           {campaignName}
         </h1>
 
         {/* Badge de sessão */}
         {hasActiveSession && currentSession && (
-          <Badge 
-            variant="outline" 
-            className="shrink-0 text-xs bg-primary/10 text-primary border-primary/30"
+          <Badge
+            variant="outline"
+            className="shrink-0 text-xs bg-primary/10 text-primary border-primary/30 animate-pulse"
           >
             Sessão {currentSession}
           </Badge>
@@ -92,23 +84,23 @@ export const CampaignHeader = memo(function CampaignHeader({
 
         {/* Indicador mestre */}
         {isMaster && (
-          <Badge 
-            variant="secondary" 
-            className="shrink-0 text-xs"
+          <Badge
+            variant="secondary"
+            className="shrink-0 text-xs bg-accent/20 text-accent-foreground border-accent/30"
           >
             Mestre
           </Badge>
         )}
       </div>
 
-      {/* Lado direito: Status + Ações */}
+      {/* Direita: Status + Ações */}
       <div className="flex items-center gap-2 shrink-0">
         {/* Contador online */}
         <Tooltip>
           <TooltipTrigger asChild>
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <Users className="h-3.5 w-3.5" />
-              <span>{onlineCount}</span>
+              <span className="tabular-nums">{onlineCount}</span>
             </div>
           </TooltipTrigger>
           <TooltipContent side="bottom">
@@ -135,12 +127,12 @@ export const CampaignHeader = memo(function CampaignHeader({
           </TooltipContent>
         </Tooltip>
 
-        {/* Configurações (apenas mestre) */}
+        {/* Configurações (mestre) */}
         {isMaster && onOpenSettings && (
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             size="icon"
-            className="h-8 w-8"
+            className="h-8 w-8 text-muted-foreground hover:text-foreground"
             onClick={onOpenSettings}
           >
             <Settings className="h-4 w-4" />
