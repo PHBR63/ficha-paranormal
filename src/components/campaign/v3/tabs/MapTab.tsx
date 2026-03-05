@@ -292,6 +292,7 @@ export const MapTab = memo(function MapTab({
             onTextCreate={onTextCreate || (() => {})}
             onTextUpdate={onTextUpdate || (() => {})}
             onTextDelete={onTextDelete}
+            onCellDoubleClick={onCellDoubleClick}
             cameraSyncTarget={cameraSyncTarget}
             onCameraSyncHandled={onCameraSyncHandled}
           />
