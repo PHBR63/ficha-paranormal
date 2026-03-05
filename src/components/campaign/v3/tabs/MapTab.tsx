@@ -126,6 +126,8 @@ interface MapTabProps {
   selectedPinId?: string | null;
   onPinClick?: (pinId: string) => void;
   onPinDrag?: (pinId: string, newX: number, newY: number) => void;
+  /** Duplo-clique em célula (para criar pin) */
+  onCellDoubleClick?: (x: number, y: number) => void;
   /** Sincronização de câmera (Fase E) — célula para centralizar */
   cameraSyncTarget?: { x: number; y: number } | null;
   onCameraSyncHandled?: () => void;
