@@ -73,6 +73,7 @@ export interface TacticalBoardKonvaProps {
   onTokenMove: (tokenId: string, x: number, y: number) => Promise<boolean>;
   onTokenDoubleClick?: (token: MapToken) => void;
   onCellClick?: (x: number, y: number) => void;
+  onCellDoubleClick?: (x: number, y: number) => void;
   onMeasureStart?: (x: number, y: number) => void;
   onMeasureEnd?: (x: number, y: number) => void;
   onPing?: (x: number, y: number) => void;
