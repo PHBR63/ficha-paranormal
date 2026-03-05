@@ -277,6 +277,11 @@ export default function TacticalMapFullscreen() {
           currentUserId={userId}
           externalGridVisible={gridVisible}
           onExternalToggleGrid={toggleGrid}
+          externalDrawTool={drawTool}
+          externalDrawColor={drawColor}
+          externalDrawStrokeWidth={drawStrokeWidth}
+          externalTextColor={textColor}
+          externalTextFontSize={textFontSize}
         />
 
         {/* Painel lateral do mestre (overlay sobre o mapa) */}
