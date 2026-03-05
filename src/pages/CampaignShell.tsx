@@ -310,7 +310,22 @@ export default function CampaignShell() {
         {activeTab === 'master' && isMaster && (
           <MasterTab
             members={members}
-            onModifyHP={masterActions.adjustHP}
+            onModifyHP={async (charId, delta) => {
+              const member = members.find(m => m.characters?.id === charId);
+              const charName = member?.characters?.name || 'Personagem';
+              const success = await masterActions.adjustHP(charId, delta);
+              if (success) {
+                // Envia evento ao chat para visibilidade
+                await sendMessage(
+                  delta < 0
+                    ? `💀 **${charName}** recebeu **${Math.abs(delta)}** de dano`
+                    : `💚 **${charName}** recuperou **${delta}** PV`,
+                  delta < 0 ? 'event_damage' : 'event_heal',
+                  { amount: Math.abs(delta), targetName: charName, characterId: charId }
+                );
+              }
+              return success;
+            }}
             onModifySAN={masterActions.adjustSAN}
             onModifyPE={masterActions.adjustPE}
             onApplyCondition={masterActions.applyCondition}

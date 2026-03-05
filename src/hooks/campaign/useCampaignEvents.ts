@@ -30,7 +30,8 @@ interface DamageEventData {
   amount: number;
   damageType?: string;
   targetName: string;
-  targetId?: string;
+  characterId?: string;
+  targetId?: string; // deprecated, usar characterId
   sourceName?: string;
   isCritical?: boolean;
 }
@@ -38,7 +39,8 @@ interface DamageEventData {
 interface HealEventData {
   amount: number;
   targetName: string;
-  targetId?: string;
+  characterId?: string;
+  targetId?: string; // deprecated, usar characterId
   sourceName?: string;
   healType?: 'hp' | 'san' | 'pe';
 }
