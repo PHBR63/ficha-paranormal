@@ -1,46 +1,75 @@
 
 
-# Otimização de Bundle JS e CSS
+# Verificação das Implementações Recentes - Relatório
 
-## Diagnóstico Atual
+Após análise detalhada do código, aqui está o status de cada funcionalidade implementada:
 
-**JS (1,1 MB):** O lazy loading por rota já está implementado para a maioria das páginas. Porém:
-- `Index` (346 linhas), `Auth` (600 linhas) e `NotFound` são importados eagerly no bundle principal
-- Não há `manualChunks` no Vite — todas as dependências de vendor (react, supabase, konva, framer-motion, recharts, dnd-kit) ficam num único chunk
-- Bibliotecas pesadas como `konva`, `react-konva`, `framer-motion`, `recharts` e `@rive-app/react-canvas` entram no bundle mesmo quando não são usadas na rota atual
+---
 
-**CSS (190 KB / 1120 linhas em `index.css`):** O `content` do Tailwind já está configurado corretamente (`src/**/*.{ts,tsx}`). Os 190 KB vêm principalmente de:
-- CSS custom extenso (variáveis de 5 temas, animações, efeitos atmosféricos, gradients por tema)
-- Muitas keyframes e animações customizadas no `tailwind.config.ts`
-- Arquivo `App.css` com estilos legados não utilizados (logo spin, .card, .read-the-docs)
+## 1. Tokens Animados (GIF/WebM) — Implementado
 
-## Plano de Implementação
+**Visual**: O `TokenLayer.tsx` renderiza tokens animados usando `KonvaImage` com loop de `requestAnimationFrame` a ~30fps. GIFs usam `HTMLImageElement` e WebMs usam `<video>` oculto.
 
-### 1. Configurar `manualChunks` no Vite (maior impacto)
+**Upload**: O dialog de criação de token em `TacticalBoard.tsx` (linhas 1466-1489) inclui o `ImageUploader` com suporte a GIF/WebM. O upload vai para o bucket `campaign-assets` com path `{campaignId}/tokens/{uuid}.{ext}`.
 
-Adicionar em `vite.config.ts` a configuração `build.rollupOptions.output.manualChunks` para separar vendors pesados em chunks independentes:
+**Status**: Completo e funcional.
 
-- **`vendor-react`**: react, react-dom, react-router-dom
-- **`vendor-supabase`**: @supabase/supabase-js, @tanstack/react-query
-- **`vendor-ui`**: @radix-ui/*, class-variance-authority, tailwind-merge, cmdk, sonner, vaul
-- **`vendor-canvas`**: konva, react-konva (carregado apenas na rota do mapa)
-- **`vendor-motion`**: framer-motion (carregado apenas quando componentes animados são usados)
-- **`vendor-charts`**: recharts (carregado apenas em páginas com gráficos)
+---
 
-Isso permite caching granular — atualizar código da app não invalida o cache dos vendors.
+## 2. Map Pins / Notas Ancoradas (Fase F) — Implementado
 
-### 2. Lazy load de `Auth` e `NotFound`
+**Visual**: `MapPinLayer.tsx` renderiza emojis clicáveis com indicadores de visibilidade (🔒) e tipo (📄). Suporta drag-and-drop com snap ao grid.
 
-Converter `Auth` e `NotFound` para `lazy()` — são páginas que não precisam estar no bundle inicial. A landing page (`Index`) permanece eager pois é o first paint.
+**Dialog**: `MapPinDialog.tsx` permite criar/editar pins com título, conteúdo, ícone, cor, visibilidade e vínculo com handouts.
 
-### 3. Remover `App.css` legado
+**Sidebar**: `MapSidePanel.tsx` (linhas 872-920) exibe seção "Pins / Notas" com listagem e seleção.
 
-O arquivo `src/App.css` contém apenas estilos não utilizados (`.logo`, `.card`, `.read-the-docs`, `logo-spin`). Será removido e qualquer import eliminado.
+**Problema encontrado**: Na listagem de pins no sidebar (linha 898), a verificação de permissão para deletar usa `pin.created_by === ''` (string vazia), o que nunca será verdadeiro para um jogador. Deveria ser `pin.created_by === currentUserId`.
 
-### 4. Resultado esperado
+---
 
-- Bundle inicial reduzido de ~1,1 MB para ~400-500 KB (vendors separados + lazy routes)
-- Vendors cacheados independentemente pelo browser
-- CSS reduzido em ~2-3 KB (remoção do App.css legado)
-- O CSS de 190 KB em si é majoritariamente variáveis de tema necessárias — a redução significativa exigiria remover temas, o que não é desejável
+## 3. Áreas de Efeito (Fase D) — Implementado
+
+**Visual**: `AreaEffectLayer.tsx` renderiza formas (cone, círculo, linha, quadrado) com cores por elemento. O fix de `cancelBubble` foi aplicado para evitar que o drag descentralize o mapa.
+
+**Status**: Completo e funcional.
+
+---
+
+## 4. Pings Avançados (Fase E) — Implementado
+
+**Visual**: Sidebar mostra 3 tipos de ping (Normal, Alerta, Câmera) com campo de mensagem opcional.
+
+**Status**: Completo e funcional.
+
+---
+
+## 5. Barras de Recurso nos Tokens (Fase B) — Implementado
+
+**Visual**: `TokenLayer.tsx` (linhas 376-382) renderiza barras PV/SAN/PE abaixo de tokens vinculados a personagens.
+
+**Status**: Completo e funcional.
+
+---
+
+## Problema Identificado
+
+**Bug no sidebar de pins**: O botão de deletar pin para jogadores nunca aparece porque compara `pin.created_by === ''` em vez de comparar com o ID do usuário atual. Além disso, o botão tem `opacity-0 group-hover:opacity-100` mas o container pai não tem a classe `group`, então o hover nunca mostra o botão mesmo para o mestre.
+
+### Correções necessárias:
+1. Passar `currentUserId` para o `MapSidePanel` e usar na comparação de permissão de delete
+2. Adicionar classe `group` ao container do item de pin para o hover funcionar
+
+---
+
+## Resumo
+
+| Funcionalidade | Visual | Funcional | Problema |
+|---|---|---|---|
+| Tokens Animados | OK | OK | - |
+| Map Pins (Fase F) | OK | Parcial | Botão delete no sidebar não funciona |
+| Áreas de Efeito (Fase D) | OK | OK | - |
+| Pings Avançados (Fase E) | OK | OK | - |
+| Barras de Recurso (Fase B) | OK | OK | - |
+| Upload de Token | OK | OK | - |
 
