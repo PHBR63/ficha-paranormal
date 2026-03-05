@@ -54,6 +54,13 @@ export interface MapToken {
   visible_to: string[] | null;
   locked: boolean;
   notes: string | null;
+  // Dados de recurso do personagem vinculado (Fase B)
+  hp_current?: number;
+  hp_max?: number;
+  san_current?: number;
+  san_max?: number;
+  pe_current?: number;
+  pe_max?: number;
 }
 
 // Interface para ping/marcador temporário
@@ -214,19 +221,31 @@ export function useTacticalBoard({
   const loadTokens = useCallback(async (mapId: string) => {
     if (!mapId) return;
     try {
+      // Join com characters para obter PV/SAN/PE (Fase B)
       const { data, error } = await supabase
         .from('map_tokens')
-        .select('*')
+        .select('*, characters(hp_current, hp_max, san_current, san_max, pe_current, pe_max)')
         .eq('map_id', mapId);
       
       if (error) throw error;
       
-      const typedTokens = (data || []).map(t => ({
-        ...t,
-        conditions: Array.isArray(t.conditions) ? t.conditions : [],
-        token_type: t.token_type as TokenType,
-        layer: t.layer as TokenLayer,
-      })) as MapToken[];
+      const typedTokens = (data || []).map((t: any) => {
+        const char = t.characters;
+        return {
+          ...t,
+          characters: undefined, // Remove o objeto aninhado
+          conditions: Array.isArray(t.conditions) ? t.conditions : [],
+          token_type: t.token_type as TokenType,
+          layer: t.layer as TokenLayer,
+          // Dados de recurso do personagem vinculado
+          hp_current: char?.hp_current,
+          hp_max: char?.hp_max,
+          san_current: char?.san_current,
+          san_max: char?.san_max,
+          pe_current: char?.pe_current,
+          pe_max: char?.pe_max,
+        };
+      }) as MapToken[];
       
       setTokens(typedTokens);
     } catch (error: any) {
