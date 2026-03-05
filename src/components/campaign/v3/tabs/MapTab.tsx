@@ -194,6 +194,7 @@ export const MapTab = memo(function MapTab({
   selectedPinId,
   onPinClick,
   onPinDrag,
+  onCellDoubleClick,
   cameraSyncTarget,
   onCameraSyncHandled,
   className,
