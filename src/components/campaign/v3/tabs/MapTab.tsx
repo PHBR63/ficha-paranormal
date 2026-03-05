@@ -112,6 +112,7 @@ interface MapTabProps {
 // Ferramentas movidas para MapToolbar
 
 export const MapTab = memo(function MapTab({
+  hideToolbar = false,
   map,
   maps,
   tokens,
