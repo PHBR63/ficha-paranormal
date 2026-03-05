@@ -122,6 +122,7 @@ const AreaEffectShape = memo(function AreaEffectShape({
     draggable: !!onAreaDrag,
     onClick: handleClick,
     onTap: handleClick,
+    onDragStart: handleDragStart,
     onDragEnd: handleDragEnd,
   };
 
