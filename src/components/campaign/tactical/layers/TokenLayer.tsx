@@ -399,6 +399,16 @@ function TokenShape({
         shadowBlur={3}
         listening={false}
       />
+
+      {/* Handles de redimensionamento (visíveis quando selecionado e pode editar) */}
+      {isSelected && canDrag && onResize && (
+        <TokenResizeHandles
+          size={size}
+          gridSize={gridSize}
+          tokenSize={token.size}
+          onResize={onResize}
+        />
+      )}
     </Group>
   );
 }
