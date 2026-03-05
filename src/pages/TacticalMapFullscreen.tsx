@@ -291,6 +291,46 @@ export default function TacticalMapFullscreen() {
             isUpdating={masterActions.isUpdating}
           />
         )}
+
+        {/* Sidebar lateral de ferramentas do mapa */}
+        <AnimatePresence>
+          <MapSidePanel
+            open={sidePanelOpen}
+            onToggle={toggleSidePanel}
+            map={tacticalBoard.activeMap}
+            tokens={tacticalBoard.tokens}
+            selectedTokenId={tacticalBoard.selectedTokenId}
+            members={members}
+            isMaster={isMaster}
+            campaignId={campaignId}
+            zoom={tacticalBoard.zoom}
+            onTokenSelect={tacticalBoard.selectToken}
+            onTokenCreate={tacticalBoard.createToken}
+            onTokenUpdate={tacticalBoard.updateToken}
+            onTokenDelete={tacticalBoard.deleteToken}
+            activeTool={tacticalBoard.activeTool}
+            drawTool={drawTool}
+            drawColor={drawColor}
+            drawStrokeWidth={drawStrokeWidth}
+            onToolChange={tacticalBoard.setActiveTool}
+            onDrawToolChange={setDrawTool}
+            onDrawColorChange={setDrawColor}
+            onDrawStrokeWidthChange={setDrawStrokeWidth}
+            canUndoDrawing={tacticalBoard.canUndoDrawing}
+            canRedoDrawing={tacticalBoard.canRedoDrawing}
+            onDrawingUndo={tacticalBoard.undoDrawing}
+            onDrawingRedo={tacticalBoard.redoDrawing}
+            onDrawingClearAll={tacticalBoard.clearAllDrawings}
+            textColor={textColor}
+            textFontSize={textFontSize}
+            onTextColorChange={setTextColor}
+            onTextFontSizeChange={setTextFontSize}
+            onZoomChange={tacticalBoard.setZoom}
+            onResetView={tacticalBoard.fitToScreen}
+            onFogReveal={tacticalBoard.revealFog}
+            onFogHide={tacticalBoard.hideFog}
+          />
+        </AnimatePresence>
       </div>
     </div>
   );
