@@ -302,6 +302,16 @@ export default function TacticalMapFullscreen() {
           externalTextFontSize={textFontSize}
         />
 
+        {/* Painel lateral de chat (esquerda, overlay sobre o mapa) */}
+        <ChatSidePanel
+          open={chatPanelOpen}
+          onToggle={toggleChatPanel}
+          messages={messages}
+          currentUserId={userId}
+          masterId={campaign.master_id}
+          onSendMessage={sendMessage}
+        />
+
         {/* Painel lateral do mestre (overlay sobre o mapa) */}
         {isMaster && (
           <MasterMapPanel
