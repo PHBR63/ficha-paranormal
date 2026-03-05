@@ -222,7 +222,9 @@ export const ChatTab = memo(function ChatTab({
   messages,
   currentUserId,
   masterId,
+  isMaster,
   onSendMessage,
+  onApplyDamage,
   onMarkAsRead,
   className,
 }: ChatTabProps) {
@@ -341,6 +343,8 @@ export const ChatTab = memo(function ChatTab({
                         message={message}
                         currentUserId={currentUserId}
                         masterId={masterId}
+                        isMaster={isMaster}
+                        onApplyDamage={onApplyDamage}
                       />
                     </div>
                   );
