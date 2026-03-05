@@ -17,6 +17,7 @@ import { useCampaignRealtime } from '@/hooks/campaign/useCampaignRealtime';
 import { useMasterActions } from '@/hooks/campaign/useMasterActions';
 import { useTacticalBoard } from '@/hooks/campaign/useTacticalBoard';
 import { useAreaEffects } from '@/hooks/campaign/useAreaEffects';
+import { useAdvancedPings } from '@/hooks/campaign/useAdvancedPings';
 import { MapTab } from '@/components/campaign/v3/tabs/MapTab';
 import { MasterMapPanel } from '@/components/campaign/v3/map/MasterMapPanel';
 import { MapSidePanel } from '@/components/campaign/v3/map/MapSidePanel';
@@ -84,6 +85,19 @@ export default function TacticalMapFullscreen() {
   const areaEffects = useAreaEffects({
     mapId: tacticalBoard.activeMap?.id || null,
     enabled: !!campaignId && !campaignLoading && !!campaign,
+  });
+
+  // Pings avançados (Fase E)
+  // Nome do usuário atual para exibir nos pings
+  const currentMember = members.find(m => m.user_id === userId);
+  const currentUserName = currentMember?.characters?.name || currentMember?.profiles?.display_name || 'Jogador';
+
+  const advancedPings = useAdvancedPings({
+    campaignId: campaignId || '',
+    mapId: tacticalBoard.activeMap?.id || null,
+    enabled: !!campaignId && !campaignLoading && !!campaign,
+    currentUserName,
+    currentUserId: userId,
   });
 
   // Toggles dos painéis
