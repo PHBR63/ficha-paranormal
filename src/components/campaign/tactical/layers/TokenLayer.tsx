@@ -94,6 +94,81 @@ function TokenResourceBars({ token, size }: { token: MapToken; size: number }) {
   );
 }
 
+/**
+ * Handles de redimensionamento nos cantos do token selecionado.
+ * Arraste o handle inferior-direito para alterar o tamanho.
+ */
+function TokenResizeHandles({
+  size,
+  gridSize,
+  tokenSize,
+  onResize,
+}: {
+  size: number;
+  gridSize: number;
+  tokenSize: number;
+  onResize: (newSize: number) => void;
+}) {
+  const handleSize = 8;
+  const handleColor = '#3b82f6';
+  const handleStroke = '#fff';
+
+  // Posições dos 4 cantos (apenas visual) + handle ativo no canto inferior-direito
+  const corners = [
+    { x: -handleSize / 2, y: -handleSize / 2, active: false },
+    { x: size - handleSize / 2, y: -handleSize / 2, active: false },
+    { x: -handleSize / 2, y: size - handleSize / 2, active: false },
+    { x: size - handleSize / 2, y: size - handleSize / 2, active: true },
+  ];
+
+  const handleDragMove = useCallback((e: Konva.KonvaEventObject<DragEvent>) => {
+    e.cancelBubble = true;
+  }, []);
+
+  const handleDragEnd = useCallback((e: Konva.KonvaEventObject<DragEvent>) => {
+    e.cancelBubble = true;
+    // Calcula novo tamanho baseado na posição do handle
+    const newPixelSize = Math.max(
+      e.target.x() + handleSize / 2,
+      e.target.y() + handleSize / 2
+    );
+    // Converte pixels para unidades de grid, mínimo 1, máximo 6
+    const newGridSize = Math.max(1, Math.min(6, Math.round(newPixelSize / gridSize)));
+    
+    // Reseta a posição do handle para o lugar correto
+    const finalPixel = newGridSize * gridSize;
+    e.target.x(finalPixel - handleSize / 2);
+    e.target.y(finalPixel - handleSize / 2);
+    
+    if (newGridSize !== tokenSize) {
+      onResize(newGridSize);
+    }
+  }, [gridSize, tokenSize, onResize, handleSize]);
+
+  return (
+    <Group listening={true}>
+      {corners.map((corner, i) => (
+        <Rect
+          key={i}
+          x={corner.x}
+          y={corner.y}
+          width={handleSize}
+          height={handleSize}
+          fill={handleColor}
+          stroke={handleStroke}
+          strokeWidth={1}
+          cornerRadius={2}
+          draggable={corner.active}
+          onDragStart={(e) => { e.cancelBubble = true; }}
+          onDragMove={corner.active ? handleDragMove : undefined}
+          onDragEnd={corner.active ? handleDragEnd : undefined}
+          cursor={corner.active ? 'nwse-resize' : 'default'}
+        />
+      ))}
+    </Group>
+  );
+}
+
 interface TokenShapeProps {
   token: MapToken;
   gridSize: number;
@@ -424,6 +499,7 @@ export function TokenLayer({
   onTokenDragMove,
   onTokenDragEnd,
   onTokenDoubleClick,
+  onTokenResize,
 }: TokenLayerProps) {
   // Ordena tokens: selecionado por último (em cima)
   const sortedTokens = [...tokens].sort((a, b) => {
