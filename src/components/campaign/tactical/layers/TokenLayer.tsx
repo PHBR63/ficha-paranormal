@@ -283,10 +283,18 @@ function TokenShape({
         </Group>
       )}
 
+      {/* Barras de recurso PV/PE/SAN (Fase B) */}
+      {token.character_id && token.hp_max != null && token.hp_max > 0 && (
+        <TokenResourceBars
+          token={token}
+          size={size}
+        />
+      )}
+
       {/* Nome do token */}
       <Text
         x={0}
-        y={size + 4}
+        y={size + (token.character_id && token.hp_max ? 18 : 4)}
         width={size}
         text={token.name.substring(0, 10)}
         fontSize={11}

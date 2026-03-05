@@ -342,6 +342,49 @@ export function useTacticalBoard({
     };
   }, [activeMap?.id, enabled, loadTokens]);
 
+  // Subscribe para mudanças nos personagens vinculados aos tokens (Fase B - barras de recurso)
+  useEffect(() => {
+    if (!activeMap?.id || !enabled) return;
+    
+    const mapId = activeMap.id;
+    
+    // Obtém character_ids dos tokens atuais para filtrar
+    const characterIds = tokens
+      .filter(t => t.character_id)
+      .map(t => t.character_id!);
+    
+    if (characterIds.length === 0) return;
+    
+    // Subscreve mudanças na tabela characters para atualizar barras em tempo real
+    const charsChannel = supabase
+      .channel(`tactical-chars-${mapId}`)
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'characters',
+      }, (payload) => {
+        const updated = payload.new as any;
+        // Atualiza apenas tokens que referenciam este personagem
+        setTokens(prev => prev.map(t => {
+          if (t.character_id !== updated.id) return t;
+          return {
+            ...t,
+            hp_current: updated.hp_current,
+            hp_max: updated.hp_max,
+            san_current: updated.san_current,
+            san_max: updated.san_max,
+            pe_current: updated.pe_current,
+            pe_max: updated.pe_max,
+          };
+        }));
+      })
+      .subscribe();
+    
+    return () => {
+      supabase.removeChannel(charsChannel);
+    };
+  }, [activeMap?.id, enabled, tokens.length]); // Re-subscribe quando qtd de tokens muda
+
   // Cleanup pings
   useEffect(() => {
     return () => {
