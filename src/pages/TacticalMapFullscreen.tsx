@@ -33,8 +33,16 @@ export default function TacticalMapFullscreen() {
   const { user, loading: authLoading } = useAuth();
   const userId = user?.id;
 
-  // Estado do painel lateral do mestre
+  // Estado dos painéis laterais
   const [masterPanelOpen, setMasterPanelOpen] = useState(false);
+  const [sidePanelOpen, setSidePanelOpen] = useState(true);
+
+  // Estado local de ferramentas de desenho/texto (para sidebar)
+  const [drawTool, setDrawTool] = useState<DrawToolType>('pen');
+  const [drawColor, setDrawColor] = useState('#ffffff');
+  const [drawStrokeWidth, setDrawStrokeWidth] = useState(3);
+  const [textColor, setTextColor] = useState('#ffffff');
+  const [textFontSize, setTextFontSize] = useState(16);
 
   // Dados da campanha (para validar permissões e obter membros)
   const campaignData = useCampaignData({
