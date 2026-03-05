@@ -44,6 +44,7 @@ import {
   AlertTriangle,
   Eye,
   MessageCircle,
+  Loader2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -62,6 +63,15 @@ import {
   DialogTrigger,
   DialogClose,
 } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { ImageUploader } from '@/components/ui/image-uploader';
+import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import type { TacticalMap, MapToken } from '@/hooks/campaign/useTacticalBoard';
 import type { CampaignMemberV2 } from '@/hooks/campaign/useCampaignData';
@@ -244,24 +254,67 @@ const SideSection = memo(function SideSection({
 // DIALOG CRIAR TOKEN RÁPIDO
 // =====================================================
 
+/** Tipos de token disponíveis */
+const TOKEN_TYPES = [
+  { value: 'pc', label: 'Jogador (PC)' },
+  { value: 'npc', label: 'NPC' },
+  { value: 'creature', label: 'Criatura' },
+  { value: 'object', label: 'Objeto' },
+  { value: 'marker', label: 'Marcador' },
+];
+
 const CreateTokenDialog = memo(function CreateTokenDialog({
   onCreateToken,
   mapId,
+  campaignId,
 }: {
   onCreateToken: (data: Partial<MapToken>) => Promise<MapToken | null>;
   mapId: string;
+  campaignId: string;
 }) {
   const [name, setName] = useState('');
   const [color, setColor] = useState(TOKEN_COLORS[0]);
+  const [tokenType, setTokenType] = useState('npc');
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
+  /** Upload da imagem para o bucket campaign-assets */
+  const uploadTokenImage = useCallback(async (file: File): Promise<string | null> => {
+    const ext = file.name.split('.').pop()?.toLowerCase() || 'png';
+    const filePath = `${campaignId}/tokens/${crypto.randomUUID()}.${ext}`;
+
+    const { error } = await supabase.storage
+      .from('campaign-assets')
+      .upload(filePath, file, { contentType: file.type });
+
+    if (error) {
+      console.error('Erro ao fazer upload do token:', error);
+      return null;
+    }
+
+    const { data: urlData } = supabase.storage
+      .from('campaign-assets')
+      .getPublicUrl(filePath);
+
+    return urlData.publicUrl;
+  }, [campaignId]);
+
+  /** Cria o token (com ou sem imagem) */
   const handleCreate = useCallback(async () => {
     if (!name.trim()) return;
     setCreating(true);
+
+    let imageUrl: string | null = null;
+    if (imageFile) {
+      imageUrl = await uploadTokenImage(imageFile);
+    }
+
     await onCreateToken({
       map_id: mapId,
       name: name.trim(),
-      token_type: 'npc',
+      token_type: tokenType as MapToken['token_type'],
       x: 5,
       y: 5,
       size: 1,
@@ -271,13 +324,26 @@ const CreateTokenDialog = memo(function CreateTokenDialog({
       light_radius: 0,
       light_color: color,
       locked: false,
+      ...(imageUrl ? { image_url: imageUrl } : {}),
     });
+
+    // Reset do formulário
     setName('');
+    setTokenType('npc');
+    setImageFile(null);
+    setImagePreview(null);
     setCreating(false);
-  }, [name, color, onCreateToken, mapId]);
+    setDialogOpen(false);
+  }, [name, color, tokenType, imageFile, onCreateToken, mapId, uploadTokenImage]);
+
+  /** Callback do ImageUploader */
+  const handleImageChange = useCallback((url: string | null, file?: File) => {
+    setImagePreview(url);
+    setImageFile(file || null);
+  }, []);
 
   return (
-    <Dialog>
+    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
       <DialogTrigger asChild>
         <Button size="sm" className="flex-1 gap-1.5 h-8 text-xs bg-amber-600/80 hover:bg-amber-600 text-white border-0">
           <Plus className="h-3.5 w-3.5" />
@@ -286,40 +352,80 @@ const CreateTokenDialog = memo(function CreateTokenDialog({
       </DialogTrigger>
       <DialogContent className="max-w-xs">
         <DialogHeader>
-          <DialogTitle className="text-sm">Criar Token Rápido</DialogTitle>
+          <DialogTitle className="text-sm">Criar Token</DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
+          {/* Nome */}
           <Input
             placeholder="Nome do token..."
             value={name}
             onChange={(e) => setName(e.target.value)}
             className="h-8 text-sm"
-            onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
+            onKeyDown={(e) => e.key === 'Enter' && !creating && handleCreate()}
           />
-          {/* Paleta de cores */}
-          <div className="flex gap-1.5 flex-wrap">
-            {TOKEN_COLORS.map(c => (
-              <button
-                key={c}
-                className={cn(
-                  'w-6 h-6 rounded-full border-2 transition-all',
-                  color === c ? 'border-foreground scale-110' : 'border-transparent hover:scale-105'
-                )}
-                style={{ backgroundColor: c }}
-                onClick={() => setColor(c)}
-              />
-            ))}
-          </div>
-          <DialogClose asChild>
-            <Button
+
+          {/* Tipo de token */}
+          <Select value={tokenType} onValueChange={setTokenType}>
+            <SelectTrigger className="h-8 text-xs">
+              <SelectValue placeholder="Tipo do token" />
+            </SelectTrigger>
+            <SelectContent>
+              {TOKEN_TYPES.map(t => (
+                <SelectItem key={t.value} value={t.value} className="text-xs">
+                  {t.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Upload de imagem (suporta GIF/WebM) */}
+          <div className="flex flex-col items-center gap-2">
+            <label className="text-[10px] text-muted-foreground self-start">
+              Imagem / Avatar (GIF, WebM, PNG, JPG)
+            </label>
+            <ImageUploader
+              value={imagePreview}
+              onChange={handleImageChange}
               size="sm"
-              className="w-full h-8 bg-amber-600 hover:bg-amber-700 text-white"
-              disabled={!name.trim() || creating}
-              onClick={handleCreate}
-            >
-              Criar
-            </Button>
-          </DialogClose>
+              shape="circle"
+              placeholder="Token"
+            />
+          </div>
+
+          {/* Paleta de cores (usada como light_color / fallback) */}
+          <div>
+            <label className="text-[10px] text-muted-foreground">Cor do token</label>
+            <div className="flex gap-1.5 flex-wrap mt-1">
+              {TOKEN_COLORS.map(c => (
+                <button
+                  key={c}
+                  className={cn(
+                    'w-6 h-6 rounded-full border-2 transition-all',
+                    color === c ? 'border-foreground scale-110' : 'border-transparent hover:scale-105'
+                  )}
+                  style={{ backgroundColor: c }}
+                  onClick={() => setColor(c)}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Botão criar */}
+          <Button
+            size="sm"
+            className="w-full h-8 bg-amber-600 hover:bg-amber-700 text-white"
+            disabled={!name.trim() || creating}
+            onClick={handleCreate}
+          >
+            {creating ? (
+              <>
+                <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
+                Criando...
+              </>
+            ) : (
+              'Criar'
+            )}
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
@@ -532,7 +638,7 @@ export const MapSidePanel = memo(function MapSidePanel({
                 {/* Botões de criação */}
                 <div className="flex gap-1.5">
                   {onTokenCreate && (
-                    <CreateTokenDialog onCreateToken={onTokenCreate} mapId={map.id} />
+                    <CreateTokenDialog onCreateToken={onTokenCreate} mapId={map.id} campaignId={campaignId} />
                   )}
                 </div>
 
@@ -544,7 +650,7 @@ export const MapSidePanel = memo(function MapSidePanel({
                         key={t.id}
                         onClick={() => onTokenSelect(t.id === selectedTokenId ? null : t.id)}
                         className={cn(
-                          'flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer transition-colors text-xs',
+                          'group flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer transition-colors text-xs',
                           t.id === selectedTokenId
                             ? 'bg-amber-500/15 text-amber-300'
                             : 'hover:bg-accent/30 text-foreground/80'
