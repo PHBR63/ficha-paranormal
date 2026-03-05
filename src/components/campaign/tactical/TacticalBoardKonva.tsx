@@ -24,6 +24,8 @@ import { MeasurementLayer } from './layers/MeasurementLayer';
 import { DrawingLayer, MapDrawing } from './layers/DrawingLayer';
 import { TextLayer, MapText } from './layers/TextLayer';
 import { AreaEffectLayer, MapAreaEffect } from './layers/AreaEffectLayer';
+import { MapPinLayer } from './layers/MapPinLayer';
+import type { MapPin } from '@/hooks/campaign/useMapPins';
 
 export interface TacticalBoardKonvaProps {
   // Dados do mapa
@@ -71,6 +73,7 @@ export interface TacticalBoardKonvaProps {
   onTokenMove: (tokenId: string, x: number, y: number) => Promise<boolean>;
   onTokenDoubleClick?: (token: MapToken) => void;
   onCellClick?: (x: number, y: number) => void;
+  onCellDoubleClick?: (x: number, y: number) => void;
   onMeasureStart?: (x: number, y: number) => void;
   onMeasureEnd?: (x: number, y: number) => void;
   onPing?: (x: number, y: number) => void;
@@ -82,6 +85,12 @@ export interface TacticalBoardKonvaProps {
   onTextCreate: (text: Omit<MapText, 'id' | 'map_id' | 'created_by' | 'created_at'>) => void;
   onTextUpdate: (textId: string, data: Partial<MapText>) => void;
   onTextDelete?: (textId: string) => void;
+  
+  // Pins no mapa (Fase F)
+  pins?: MapPin[];
+  selectedPinId?: string | null;
+  onPinClick?: (pinId: string) => void;
+  onPinDrag?: (pinId: string, newX: number, newY: number) => void;
   
   // Integração com combate
   combatMode?: boolean;
@@ -104,6 +113,10 @@ export function TacticalBoardKonva({
   selectedAreaId,
   onAreaClick,
   onAreaDrag,
+  pins = [],
+  selectedPinId,
+  onPinClick,
+  onPinDrag,
   selectedTokenId,
   measureStart,
   measureEnd,
@@ -122,6 +135,7 @@ export function TacticalBoardKonva({
   onTokenMove,
   onTokenDoubleClick,
   onCellClick,
+  onCellDoubleClick,
   onMeasureStart,
   onMeasureEnd,
   onPing,
@@ -224,6 +238,25 @@ export function TacticalBoardKonva({
   }, [activeTool, measureStart, transform, pixelToCell, onTokenSelect, onMeasureStart, onMeasureEnd, onPing, onFogToggle, onCellClick, isMaster]);
 
   /**
+   * Handler de duplo-clique no Stage (para criar pins)
+   */
+  const handleStageDblClick = useCallback((e: Konva.KonvaEventObject<MouseEvent>) => {
+    if (activeTool !== 'select') return;
+
+    const stage = e.target.getStage();
+    if (!stage) return;
+
+    const pointer = stage.getPointerPosition();
+    if (!pointer) return;
+
+    const mapX = (pointer.x - transform.position.x) / transform.scale;
+    const mapY = (pointer.y - transform.position.y) / transform.scale;
+    const cell = pixelToCell(mapX, mapY);
+
+    onCellDoubleClick?.(cell.x, cell.y);
+  }, [activeTool, transform, pixelToCell, onCellDoubleClick]);
+
+  /**
    * Handler de início de drag de token
    */
   const handleTokenDragStart = useCallback((token: MapToken) => {
@@ -290,6 +323,7 @@ export function TacticalBoardKonva({
       onDragStart={transform.handleDragStart}
       onDragEnd={transform.handleDragEnd}
       onClick={handleStageClick}
+      onDblClick={handleStageDblClick}
       onTap={handleStageClick}
     >
       {/* Layer 1 (base): Background + Grid + Highlights */}
@@ -366,6 +400,19 @@ export function TacticalBoardKonva({
         onTextUpdate={onTextUpdate}
         onTextDelete={onTextDelete}
       />
+
+      {/* Layer 4.5: Pins no mapa (Fase F) */}
+      {pins.length > 0 && (
+        <MapPinLayer
+          pins={pins}
+          gridSize={gridSize}
+          isMaster={isMaster}
+          selectedPinId={selectedPinId || null}
+          listening={activeTool !== 'draw'}
+          onPinClick={onPinClick}
+          onPinDrag={onPinDrag}
+        />
+      )}
 
       {/* Layer 5 (overlay): FogOfWar + Medição + Pings */}
       <Layer listening={false}>

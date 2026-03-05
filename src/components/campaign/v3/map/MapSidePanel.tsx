@@ -69,8 +69,9 @@ import type { DrawToolType } from '@/components/campaign/v3/map/MapToolbar';
 import type { MapAreaEffect } from '@/components/campaign/tactical/layers/AreaEffectLayer';
 import type { CreateAreaEffectData } from '@/hooks/campaign/useAreaEffects';
 import { AreaEffectControls } from '@/components/campaign/tactical/AreaEffectControls';
-import { Target } from 'lucide-react';
+import { Target, MapPin } from 'lucide-react';
 import type { PingType } from '@/hooks/campaign/useAdvancedPings';
+import type { MapPin as MapPinType, CreateMapPinData } from '@/hooks/campaign/useMapPins';
 
 // =====================================================
 // CONSTANTES
@@ -165,6 +166,12 @@ interface MapSidePanelProps {
   pingMessage?: string;
   onPingTypeChange?: (type: PingType) => void;
   onPingMessageChange?: (msg: string) => void;
+
+  // Pins no mapa (Fase F)
+  mapPins?: MapPinType[];
+  selectedPinId?: string | null;
+  onSelectPin?: (pinId: string | null) => void;
+  onDeletePin?: (pinId: string) => Promise<boolean>;
 }
 
 // =====================================================
@@ -368,6 +375,10 @@ export const MapSidePanel = memo(function MapSidePanel({
   pingMessage = '',
   onPingTypeChange,
   onPingMessageChange,
+  mapPins = [],
+  selectedPinId,
+  onSelectPin,
+  onDeletePin,
 }: MapSidePanelProps) {
   const [codeCopied, setCodeCopied] = useState(false);
 
@@ -855,8 +866,58 @@ export const MapSidePanel = memo(function MapSidePanel({
                   {pingType === 'camera_sync' && 'Clique para centralizar a câmera de todos nesse ponto.'}
                 </p>
               </div>
-            </SideSection>
+          </SideSection>
           )}
+
+          {/* ——— PINS NO MAPA (Fase F) ——— */}
+          <SideSection title="Pins / Notas" icon={MapPin} defaultOpen={false} badge={mapPins.length > 0 ? mapPins.length : undefined}>
+            <div className="space-y-2">
+              <p className="text-[10px] text-muted-foreground">
+                Use a ferramenta <strong>Selecionar</strong> e clique com <strong>duplo-clique</strong> no mapa para criar um pin.
+              </p>
+
+              {/* Lista de pins existentes */}
+              {mapPins.length > 0 && (
+                <div className="space-y-0.5 max-h-40 overflow-y-auto">
+                  {mapPins.map(pin => (
+                    <div
+                      key={pin.id}
+                      onClick={() => onSelectPin?.(pin.id === selectedPinId ? null : pin.id)}
+                      className={cn(
+                        'flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer transition-colors text-xs',
+                        pin.id === selectedPinId
+                          ? 'bg-amber-500/15 text-amber-300'
+                          : 'hover:bg-accent/30 text-foreground/80'
+                      )}
+                    >
+                      <span className="text-sm shrink-0">{pin.icon}</span>
+                      <span className="truncate flex-1">{pin.title || 'Sem título'}</span>
+                      {pin.visibility === 'master' && isMaster && (
+                        <span className="text-[9px] text-muted-foreground">🔒</span>
+                      )}
+                      {onDeletePin && (isMaster || pin.created_by === '') && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDeletePin(pin.id);
+                          }}
+                          className="opacity-0 group-hover:opacity-100 hover:text-destructive transition-opacity"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {mapPins.length === 0 && (
+                <p className="text-[10px] text-muted-foreground italic">
+                  Nenhum pin no mapa atual.
+                </p>
+              )}
+            </div>
+          </SideSection>
 
 
           {isMaster && (

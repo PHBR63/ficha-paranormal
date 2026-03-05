@@ -1858,6 +1858,72 @@ export type Database = {
           },
         ]
       }
+      map_pins: {
+        Row: {
+          color: string
+          content: string | null
+          created_at: string
+          created_by: string
+          handout_id: string | null
+          icon: string
+          id: string
+          map_id: string
+          pin_type: string
+          title: string
+          updated_at: string
+          visibility: string
+          x: number
+          y: number
+        }
+        Insert: {
+          color?: string
+          content?: string | null
+          created_at?: string
+          created_by: string
+          handout_id?: string | null
+          icon?: string
+          id?: string
+          map_id: string
+          pin_type?: string
+          title?: string
+          updated_at?: string
+          visibility?: string
+          x?: number
+          y?: number
+        }
+        Update: {
+          color?: string
+          content?: string | null
+          created_at?: string
+          created_by?: string
+          handout_id?: string | null
+          icon?: string
+          id?: string
+          map_id?: string
+          pin_type?: string
+          title?: string
+          updated_at?: string
+          visibility?: string
+          x?: number
+          y?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "map_pins_handout_id_fkey"
+            columns: ["handout_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_handouts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "map_pins_map_id_fkey"
+            columns: ["map_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_maps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       map_texts: {
         Row: {
           color: string

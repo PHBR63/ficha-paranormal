@@ -41,6 +41,7 @@ import type { HighlightedCell } from '@/components/campaign/tactical/layers/High
 import type { MapDrawing } from '@/components/campaign/tactical/layers/DrawingLayer';
 import type { MapText } from '@/components/campaign/tactical/layers/TextLayer';
 import type { MapAreaEffect } from '@/components/campaign/tactical/layers/AreaEffectLayer';
+import type { MapPin } from '@/hooks/campaign/useMapPins';
 
 // Cores predefinidas removidas — agora ficam no MapToolbar
 interface MapTabProps {
@@ -120,6 +121,13 @@ interface MapTabProps {
   selectedAreaId?: string | null;
   onAreaClick?: (areaId: string) => void;
   onAreaDrag?: (areaId: string, newX: number, newY: number) => void;
+  /** Pins no mapa (Fase F) */
+  pins?: MapPin[];
+  selectedPinId?: string | null;
+  onPinClick?: (pinId: string) => void;
+  onPinDrag?: (pinId: string, newX: number, newY: number) => void;
+  /** Duplo-clique em célula (para criar pin) */
+  onCellDoubleClick?: (x: number, y: number) => void;
   /** Sincronização de câmera (Fase E) — célula para centralizar */
   cameraSyncTarget?: { x: number; y: number } | null;
   onCameraSyncHandled?: () => void;
@@ -182,6 +190,11 @@ export const MapTab = memo(function MapTab({
   selectedAreaId,
   onAreaClick,
   onAreaDrag,
+  pins = [],
+  selectedPinId,
+  onPinClick,
+  onPinDrag,
+  onCellDoubleClick,
   cameraSyncTarget,
   onCameraSyncHandled,
   className,
@@ -249,6 +262,10 @@ export const MapTab = memo(function MapTab({
             selectedAreaId={selectedAreaId}
             onAreaClick={onAreaClick}
             onAreaDrag={onAreaDrag}
+            pins={pins}
+            selectedPinId={selectedPinId}
+            onPinClick={onPinClick}
+            onPinDrag={onPinDrag}
             selectedTokenId={selectedTokenId}
             activeTool={activeTool}
             drawTool={drawTool}
@@ -275,6 +292,7 @@ export const MapTab = memo(function MapTab({
             onTextCreate={onTextCreate || (() => {})}
             onTextUpdate={onTextUpdate || (() => {})}
             onTextDelete={onTextDelete}
+            onCellDoubleClick={onCellDoubleClick}
             cameraSyncTarget={cameraSyncTarget}
             onCameraSyncHandled={onCameraSyncHandled}
           />
