@@ -232,6 +232,7 @@ export default function TacticalMapFullscreen() {
       {/* Mapa — ocupa todo o viewport restante */}
       <div className="flex-1 min-h-0 relative">
         <MapTab
+          hideToolbar={true}
           map={tacticalBoard.activeMap}
           maps={tacticalBoard.maps}
           tokens={tacticalBoard.tokens}

@@ -35,6 +35,12 @@ import {
   ZoomOut,
   Copy,
   Check,
+  MousePointer2,
+  Move,
+  Ruler,
+  Radio,
+  Grid3X3,
+  Wrench,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
