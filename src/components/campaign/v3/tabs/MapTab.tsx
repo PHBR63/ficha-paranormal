@@ -108,6 +108,12 @@ interface MapTabProps {
   /** Grid visível (controlado externamente) */
   externalGridVisible?: boolean;
   onExternalToggleGrid?: () => void;
+  /** Estados de desenho/texto controlados externamente (ex: sidebar fullscreen) */
+  externalDrawTool?: 'pen' | 'line' | 'rect' | 'circle' | 'eraser';
+  externalDrawColor?: string;
+  externalDrawStrokeWidth?: number;
+  externalTextColor?: string;
+  externalTextFontSize?: number;
   /** Classe CSS adicional */
   className?: string;
 }
