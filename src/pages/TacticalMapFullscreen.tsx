@@ -74,9 +74,12 @@ export default function TacticalMapFullscreen() {
     enabled: !!campaignId && !campaignLoading && !!campaign,
   });
 
-  // Toggle do painel do mestre
+  // Toggles dos painéis
   const toggleMasterPanel = useCallback(() => {
     setMasterPanelOpen(prev => !prev);
+  }, []);
+  const toggleSidePanel = useCallback(() => {
+    setSidePanelOpen(prev => !prev);
   }, []);
 
   // Callbacks de ações em lote do mestre
