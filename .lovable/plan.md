@@ -1,46 +1,61 @@
 
 
-# Otimização de Bundle JS e CSS
+# Plano — Melhoria Visual e Diferenciação das 5 Abas
 
-## Diagnóstico Atual
+## Contexto das Decisões
 
-**JS (1,1 MB):** O lazy loading por rota já está implementado para a maioria das páginas. Porém:
-- `Index` (346 linhas), `Auth` (600 linhas) e `NotFound` são importados eagerly no bundle principal
-- Não há `manualChunks` no Vite — todas as dependências de vendor (react, supabase, konva, framer-motion, recharts, dnd-kit) ficam num único chunk
-- Bibliotecas pesadas como `konva`, `react-konva`, `framer-motion`, `recharts` e `@rive-app/react-canvas` entram no bundle mesmo quando não são usadas na rota atual
+Baseado nas suas respostas:
+- **PanelTab** → mantém como dashboard completo dos agentes
+- **MasterTab** → mantém como centro de comando separado do mapa
+- **MapListTab** → mantém como hub de seleção
+- **Sem consolidação** — as 5 abas permanecem, mas cada uma precisa ter identidade visual clara e não parecer repetição
 
-**CSS (190 KB / 1120 linhas em `index.css`):** O `content` do Tailwind já está configurado corretamente (`src/**/*.{ts,tsx}`). Os 190 KB vêm principalmente de:
-- CSS custom extenso (variáveis de 5 temas, animações, efeitos atmosféricos, gradients por tema)
-- Muitas keyframes e animações customizadas no `tailwind.config.ts`
-- Arquivo `App.css` com estilos legados não utilizados (logo spin, .card, .read-the-docs)
+## Problema Atual
 
-## Plano de Implementação
+O `PanelTab` e o `CampaignStatusBar` exibem os mesmos dados (PV/SAN/PE) no mesmo formato (Progress bars). Não há diferenciação de propósito visual. O `PanelTab` é basicamente uma versão expandida do popover do StatusBar.
 
-### 1. Configurar `manualChunks` no Vite (maior impacto)
+## Plano de Melhoria
 
-Adicionar em `vite.config.ts` a configuração `build.rollupOptions.output.manualChunks` para separar vendors pesados em chunks independentes:
+### 1. PanelTab — Evoluir para Dashboard Tático Completo
+Atualmente é um grid de cards simples com barras. Precisa se diferenciar adicionando informações que **não existem em nenhum outro lugar**:
 
-- **`vendor-react`**: react, react-dom, react-router-dom
-- **`vendor-supabase`**: @supabase/supabase-js, @tanstack/react-query
-- **`vendor-ui`**: @radix-ui/*, class-variance-authority, tailwind-merge, cmdk, sonner, vaul
-- **`vendor-canvas`**: konva, react-konva (carregado apenas na rota do mapa)
-- **`vendor-motion`**: framer-motion (carregado apenas quando componentes animados são usados)
-- **`vendor-charts`**: recharts (carregado apenas em páginas com gráficos)
+**Adicionar aos MemberStatusCards:**
+- **Origem** do personagem (já existe em `character.origin`)
+- **Patente** (já existe em `character.patent`)
+- **Classe e Trilha** (informação de identidade, não status)
+- **Lista completa de condições** (atualmente corta em 3 e mostra "+N", expandir)
+- **Foto maior** do personagem (não apenas avatar 32px)
 
-Isso permite caching granular — atualizar código da app não invalida o cache dos vendors.
+**Adicionar ao PanelTab:**
+- **Seção de Sessão** mais rica — quando tem sessão ativa, mostrar número, título e duração (tempo desde início)
+- **Resumo geral** no topo — "4 agentes | 2 online | 1 em estado crítico"
 
-### 2. Lazy load de `Auth` e `NotFound`
+**Resultado:** O PanelTab se torna um *dossier de campo* com identidade dos agentes, enquanto o StatusBar permanece como *monitor rápido de status*.
 
-Converter `Auth` e `NotFound` para `lazy()` — são páginas que não precisam estar no bundle inicial. A landing page (`Index`) permanece eager pois é o first paint.
+### 2. CampaignStatusBar — Simplificar Popover
 
-### 3. Remover `App.css` legado
+O popover do StatusBar já mostra PV/SAN/PE completo, duplicando o PanelTab. Proposta:
+- **Reduzir o popover** para mostrar apenas nome, classe e status de presença (sem barras)
+- Manter as barras **somente no PanelTab** para diferenciação clara
+- O popover funciona como "quem está online" e não como "monitor de saúde"
 
-O arquivo `src/App.css` contém apenas estilos não utilizados (`.logo`, `.card`, `.read-the-docs`, `logo-spin`). Será removido e qualquer import eliminado.
+### 3. CampaignHeader — Polimento Visual
 
-### 4. Resultado esperado
+- Adicionar ícone/logo da campanha (se houver imagem configurada)
+- Estilizar com a identidade visual OP (tons escuros, borda sutil primária)
 
-- Bundle inicial reduzido de ~1,1 MB para ~400-500 KB (vendors separados + lazy routes)
-- Vendors cacheados independentemente pelo browser
-- CSS reduzido em ~2-3 KB (remoção do App.css legado)
-- O CSS de 190 KB em si é majoritariamente variáveis de tema necessárias — a redução significativa exigiria remover temas, o que não é desejável
+### 4. CampaignNavigation — Melhorar Responsividade
+
+- Ícones sempre visíveis, labels responsivos (já funciona)
+- Sem mudanças estruturais, apenas garantir consistência visual
+
+## Arquivos a Modificar
+
+| Arquivo | Ação | Descrição |
+|---------|------|-----------|
+| `src/components/campaign/v3/tabs/PanelTab.tsx` | **Modificar** | Expandir cards com foto, origem, patente, trilha, condições completas + resumo no topo |
+| `src/components/campaign/v3/CampaignStatusBar.tsx` | **Modificar** | Simplificar popover (remover barras PV/SAN/PE, manter só presença) |
+| `src/components/campaign/v3/CampaignHeader.tsx` | **Modificar** | Polimento visual com estética OP |
+
+Sem novos arquivos. Sem migrations. Mudanças puramente visuais e de UX.
 
