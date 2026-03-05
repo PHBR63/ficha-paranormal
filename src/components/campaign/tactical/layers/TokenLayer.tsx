@@ -258,25 +258,37 @@ function TokenShape({
     animFrameRef.current = requestAnimationFrame(animate);
   }, []);
 
-  // Carrega e anima GIF
+  // Carrega e anima GIF — o elemento DEVE estar no DOM para o browser avançar frames
   useEffect(() => {
     if (!token.image_url || !isGif) {
       gifRef.current = null;
       return;
     }
 
-    const img = new window.Image();
+    const img = document.createElement('img');
     img.crossOrigin = 'anonymous';
     img.src = token.image_url;
+    // Esconde o elemento mas mantém no DOM para que o browser anime o GIF
+    img.style.position = 'fixed';
+    img.style.left = '-9999px';
+    img.style.top = '-9999px';
+    img.style.width = '1px';
+    img.style.height = '1px';
+    img.style.opacity = '0';
+    img.style.pointerEvents = 'none';
+    document.body.appendChild(img);
     gifRef.current = img;
 
     img.onload = () => {
-      // GIF anima automaticamente no <img>, batchDraw captura o frame atual
+      // Com o <img> no DOM, o browser anima o GIF e batchDraw captura cada frame
       startAnimationLoop();
     };
 
     return () => {
       cancelAnimationFrame(animFrameRef.current);
+      if (img.parentNode) {
+        img.parentNode.removeChild(img);
+      }
       gifRef.current = null;
     };
   }, [token.image_url, isGif, startAnimationLoop]);
