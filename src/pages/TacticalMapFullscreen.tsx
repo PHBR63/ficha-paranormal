@@ -356,10 +356,14 @@ export default function TacticalMapFullscreen() {
           areas={areaEffects.areas}
           selectedAreaId={areaEffects.selectedAreaId}
           onAreaClick={areaEffects.selectArea}
-          onAreaDrag={areaEffects.moveArea}
-          cameraSyncTarget={cameraSyncTarget}
-          onCameraSyncHandled={advancedPings.clearCameraSync}
-        />
+            onAreaDrag={areaEffects.moveArea}
+            pins={mapPins.pins}
+            selectedPinId={mapPins.selectedPinId}
+            onPinClick={handlePinClick}
+            onPinDrag={mapPins.movePin}
+            cameraSyncTarget={cameraSyncTarget}
+            onCameraSyncHandled={advancedPings.clearCameraSync}
+          />
 
         {/* Painel lateral de chat (esquerda, overlay sobre o mapa) */}
         <ChatSidePanel
@@ -465,8 +469,32 @@ export default function TacticalMapFullscreen() {
             pingMessage={advancedPings.pingMessage}
             onPingTypeChange={advancedPings.setPingType}
             onPingMessageChange={advancedPings.setPingMessage}
+            mapPins={mapPins.pins}
+            selectedPinId={mapPins.selectedPinId}
+            onSelectPin={(pinId) => {
+              mapPins.selectPin(pinId);
+              if (pinId) setPinDialogOpen(true);
+            }}
+            onDeletePin={mapPins.deletePin}
           />
         </AnimatePresence>
+
+        {/* Dialog de criação/edição de pin (Fase F) */}
+        <MapPinDialog
+          open={pinDialogOpen}
+          onClose={() => {
+            setPinDialogOpen(false);
+            setPinCreateAt(null);
+            mapPins.selectPin(null);
+          }}
+          pin={selectedPin}
+          createAt={pinCreateAt}
+          isMaster={isMaster}
+          isOwner={selectedPin ? selectedPin.created_by === userId : true}
+          onCreatePin={mapPins.createPin}
+          onUpdatePin={mapPins.updatePin}
+          onDeletePin={mapPins.deletePin}
+        />
       </div>
     </div>
   );
