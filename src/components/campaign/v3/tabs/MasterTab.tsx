@@ -1,10 +1,7 @@
 /**
- * MasterTab - Aba do mestre da campanha v3 (redesign completo)
+ * MasterTab - Aba do mestre da campanha v3 (completa)
  * 
- * Estrutura:
- * - Barra de ações rápidas (topo fixo)
- * - Sub-abas: Jogadores | Combate | NPCs | Áudio
- * - Cards expandidos com barras de progresso e condições
+ * Sub-abas: Jogadores | Combate | NPCs | Áudio | Handouts | Macros | Bônus
  * 
  * @module components/campaign/v3/tabs/MasterTab
  */
@@ -14,6 +11,9 @@ import {
   Users, 
   Swords,
   Volume2,
+  FileText,
+  Terminal,
+  Gift,
 } from 'lucide-react';
 import {
   Sword as SwordIcon,
@@ -26,37 +26,30 @@ import { MasterQuickActions } from '@/components/campaign/v3/master/MasterQuickA
 import { CombatTracker } from '@/components/campaign/v3/master/CombatTracker';
 import { BulkDamageModal } from '@/components/campaign/v3/master/BulkDamageModal';
 import { AudioControlPanel } from '@/components/campaign/v3/master/AudioControlPanel';
+import { NPCManager } from '@/components/campaign/master';
+import { MacrosPanel } from '@/components/campaign/chat';
+import { HandoutsManager } from '@/components/campaign/master/HandoutsManager';
+import { MemberBonusesPanel } from '@/components/campaign/MemberBonusesPanel';
 import type { CampaignMemberV2 } from '@/hooks/campaign/useCampaignData';
 import type { SoundScene, CampaignAudio, AudioState } from '@/hooks/campaign/useCampaignAudio';
 
-type MasterSubTab = 'players' | 'combat' | 'npcs' | 'audio';
+type MasterSubTab = 'players' | 'combat' | 'npcs' | 'audio' | 'handouts' | 'macros' | 'bonuses';
 
 interface MasterTabProps {
-  /** Membros da campanha */
   members: CampaignMemberV2[];
-  /** Callback para modificar HP */
+  campaignId: string;
   onModifyHP?: (characterId: string, delta: number) => Promise<boolean>;
-  /** Callback para modificar SAN */
   onModifySAN?: (characterId: string, delta: number) => Promise<boolean>;
-  /** Callback para modificar PE */
   onModifyPE?: (characterId: string, delta: number) => Promise<boolean>;
-  /** Callback para aplicar condição */
   onApplyCondition?: (characterId: string, conditionName: string) => Promise<boolean>;
-  /** Callback para remover condição */
   onRemoveCondition?: (characterId: string, conditionName: string) => Promise<boolean>;
-  /** Callback para descanso completo individual */
   onRestFull?: (characterId: string) => Promise<boolean>;
-  /** Callback para descanso do grupo */
   onGroupRest?: () => Promise<void>;
-  /** Callback para limpar condições de todos */
   onClearAllConditions?: () => Promise<void>;
-  /** Callback para dano em área */
   onBulkDamage?: (characterIds: string[], damage: number) => Promise<void>;
-  /** Envia mensagem no chat */
   onSendMessage?: (content: string, type?: string, metadata?: Record<string, unknown>) => void;
-  /** Se está processando */
   isUpdating?: boolean;
-  /** Dados de áudio */
+  // Áudio
   audioLibrary?: CampaignAudio[];
   soundScenes?: SoundScene[];
   audioState?: AudioState | null;
@@ -66,12 +59,12 @@ interface MasterTabProps {
   onStopAllAudio?: () => void;
   onSetMasterVolume?: (volume: number) => void;
   onToggleMute?: () => void;
-  /** Classe CSS adicional */
   className?: string;
 }
 
 export const MasterTab = memo(function MasterTab({
   members,
+  campaignId,
   onModifyHP,
   onModifySAN,
   onModifyPE,
@@ -105,7 +98,6 @@ export const MasterTab = memo(function MasterTab({
     if (onBulkDamage) {
       await onBulkDamage(characterIds, damage);
     } else if (onModifyHP) {
-      // Fallback: aplica dano individualmente
       for (const charId of characterIds) {
         await onModifyHP(charId, -damage);
       }
@@ -130,7 +122,7 @@ export const MasterTab = memo(function MasterTab({
         onValueChange={(v) => setActiveSubTab(v as MasterSubTab)}
         className="flex flex-col flex-1 min-h-0"
       >
-        <div className="shrink-0 px-4 pt-2 pb-1 border-b border-border/30">
+        <div className="shrink-0 px-4 pt-2 pb-1 border-b border-border/30 overflow-x-auto">
           <TabsList className="bg-transparent h-9">
             <TabsTrigger value="players" className="gap-1.5 text-xs">
               <Swords className="h-3.5 w-3.5" />
@@ -147,6 +139,18 @@ export const MasterTab = memo(function MasterTab({
             <TabsTrigger value="audio" className="gap-1.5 text-xs">
               <Volume2 className="h-3.5 w-3.5" />
               Áudio
+            </TabsTrigger>
+            <TabsTrigger value="handouts" className="gap-1.5 text-xs">
+              <FileText className="h-3.5 w-3.5" />
+              Handouts
+            </TabsTrigger>
+            <TabsTrigger value="macros" className="gap-1.5 text-xs">
+              <Terminal className="h-3.5 w-3.5" />
+              Macros
+            </TabsTrigger>
+            <TabsTrigger value="bonuses" className="gap-1.5 text-xs">
+              <Gift className="h-3.5 w-3.5" />
+              Bônus
             </TabsTrigger>
           </TabsList>
         </div>
@@ -190,20 +194,16 @@ export const MasterTab = memo(function MasterTab({
           </ScrollArea>
         </TabsContent>
 
-        {/* NPCs */}
+        {/* NPCs (Fase 4 - componente funcional existente) */}
         <TabsContent value="npcs" className="flex-1 m-0 min-h-0">
           <ScrollArea className="h-full">
             <div className="p-4">
-              <div className="text-center py-8 text-muted-foreground">
-                <Users className="h-10 w-10 mx-auto mb-3 opacity-50" />
-                <p className="text-sm">Sistema de NPCs em desenvolvimento</p>
-                <p className="text-xs mt-1">Em breve você poderá gerenciar NPCs da campanha</p>
-              </div>
+              <NPCManager campaignId={campaignId} />
             </div>
           </ScrollArea>
         </TabsContent>
 
-        {/* Áudio */}
+        {/* Áudio (Fase 3 - conectado ao hook) */}
         <TabsContent value="audio" className="flex-1 m-0 min-h-0">
           <ScrollArea className="h-full">
             <div className="p-4">
@@ -218,6 +218,33 @@ export const MasterTab = memo(function MasterTab({
                 onSetMasterVolume={onSetMasterVolume}
                 onToggleMute={onToggleMute}
               />
+            </div>
+          </ScrollArea>
+        </TabsContent>
+
+        {/* Handouts do Mestre (Fase 5) */}
+        <TabsContent value="handouts" className="flex-1 m-0 min-h-0">
+          <ScrollArea className="h-full">
+            <div className="p-4">
+              <HandoutsManager campaignId={campaignId} members={members as any} />
+            </div>
+          </ScrollArea>
+        </TabsContent>
+
+        {/* Macros (Fase 5) */}
+        <TabsContent value="macros" className="flex-1 m-0 min-h-0">
+          <ScrollArea className="h-full">
+            <div className="p-4">
+              <MacrosPanel campaignId={campaignId} />
+            </div>
+          </ScrollArea>
+        </TabsContent>
+
+        {/* Bônus (Fase 5) */}
+        <TabsContent value="bonuses" className="flex-1 m-0 min-h-0">
+          <ScrollArea className="h-full">
+            <div className="p-4">
+              <MemberBonusesPanel campaignId={campaignId} />
             </div>
           </ScrollArea>
         </TabsContent>

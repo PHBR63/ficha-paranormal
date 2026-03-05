@@ -5,3 +5,5 @@
  */
 
 export { DiceRollModal, type DiceRollResult, type DiceRollMetadata } from './DiceRollModal';
+export { CampaignSettingsModal } from './CampaignSettingsModal';
+export { QuickNotesModal } from './QuickNotesModal';
