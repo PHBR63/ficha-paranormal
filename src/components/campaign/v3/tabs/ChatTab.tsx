@@ -64,8 +64,9 @@ const ChatMessageItem = memo(function ChatMessageItem({
   const isMasterMsg = message.user_id === masterId;
   const isSystem = message.message_type === 'system';
   const isDiceRoll = message.message_type === 'dice_roll';
-  const isDamageEvent = (message.message_type as string) === 'event_damage';
-  const isHealEvent = (message.message_type as string) === 'event_heal';
+  const isDamageEvent = message.message_type === 'event_damage';
+  const isHealEvent = message.message_type === 'event_heal';
+  const isEvent = (message.message_type as string).startsWith('event_');
   
   // Nome do remetente
   const senderName = message.characters?.name 
@@ -148,9 +149,15 @@ const ChatMessageItem = memo(function ChatMessageItem({
       
       <div className={cn(
         'max-w-[75%] rounded-lg px-3 py-2',
-        isOwn 
-          ? 'bg-primary text-primary-foreground' 
-          : 'bg-muted'
+        isDamageEvent
+          ? 'bg-destructive/10 border border-destructive/20'
+          : isHealEvent
+            ? 'bg-green-500/10 border border-green-500/20'
+            : isEvent
+              ? 'bg-accent/10 border border-accent/20'
+              : isOwn 
+                ? 'bg-primary text-primary-foreground' 
+                : 'bg-muted'
       )}>
         {/* Header com nome (apenas para outros) */}
         {!isOwn && (
@@ -173,8 +180,9 @@ const ChatMessageItem = memo(function ChatMessageItem({
         {/* Botão Aplicar Dano/Cura — Fase C (apenas mestre) */}
         {isMaster && (isDamageEvent || isHealEvent) && onApplyDamage && message.metadata && (
           (() => {
-            const meta = message.metadata as { characterId?: string; amount?: number; targetName?: string };
-            if (!meta.characterId || !meta.amount) return null;
+            const meta = message.metadata as { characterId?: string; targetId?: string; amount?: number; targetName?: string };
+            const charId = meta.characterId || meta.targetId;
+            if (!charId || !meta.amount) return null;
             const alreadyApplied = (message.metadata as any)?.applied;
             return (
               <Button
@@ -191,7 +199,7 @@ const ChatMessageItem = memo(function ChatMessageItem({
                   setApplying(true);
                   try {
                     await onApplyDamage(
-                      meta.characterId!,
+                      charId!,
                       isDamageEvent ? -meta.amount! : meta.amount!,
                       meta.targetName || senderName
                     );
