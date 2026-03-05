@@ -20,6 +20,7 @@ import { useCampaignRealtime } from '@/hooks/campaign/useCampaignRealtime';
 import { useCampaignPresence } from '@/hooks/campaign/useCampaignPresence';
 import { useTacticalBoard } from '@/hooks/campaign/useTacticalBoard';
 import { useMasterActions } from '@/hooks/campaign/useMasterActions';
+import { useCampaignAudio } from '@/hooks/campaign/useCampaignAudio';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   CampaignHeader,
@@ -33,7 +34,12 @@ import {
   MasterTab,
   type CampaignTab,
 } from '@/components/campaign/v3';
-import { DiceRollModal, type DiceRollMetadata } from '@/components/campaign/v3/modals';
+import { 
+  DiceRollModal, 
+  CampaignSettingsModal,
+  QuickNotesModal,
+  type DiceRollMetadata,
+} from '@/components/campaign/v3/modals';
 
 export default function CampaignShell() {
   const { id: campaignId } = useParams<{ id: string }>();
@@ -41,16 +47,16 @@ export default function CampaignShell() {
   const { user } = useAuth();
   const userId = user?.id;
 
-  // Estado local - DEVE vir antes de qualquer hook condicional
+  // Estado local
   const [activeTab, setActiveTab] = useState<CampaignTab>('panel');
   const [isDiceModalOpen, setIsDiceModalOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isQuickNotesOpen, setIsQuickNotesOpen] = useState(false);
 
   // =====================================================
   // HOOKS DE DADOS (Singleton Pattern)
-  // CRÍTICO: Todos os hooks ANTES de qualquer early return
   // =====================================================
 
-  // Dados principais da campanha - enabled somente se tiver IDs válidos
   const campaignData = useCampaignData({
     campaignId: campaignId || '',
     userId: userId || '',
@@ -76,7 +82,7 @@ export default function CampaignShell() {
     markAsRead,
   } = realtimeData;
 
-  // Presença - busca dados do membro atual
+  // Presença
   const currentMember = useMemo(() => 
     members.find(m => m.user_id === userId),
     [members, userId]
@@ -99,53 +105,47 @@ export default function CampaignShell() {
     enabled: !!campaignId && !campaignLoading,
   });
 
-  // Ações do mestre (ajuste HP/PE/SAN, condições)
+  // Ações do mestre
   const masterActions = useMasterActions({
     campaignId: campaignId || '',
     isMaster,
   });
 
+  // Áudio da campanha (Fase 3)
+  const audioData = useCampaignAudio(campaignId || '', isMaster);
+
   // =====================================================
-  // CALLBACKS (memoizados para estabilidade)
+  // CALLBACKS
   // =====================================================
 
-  // Callback para abrir configurações
   const handleOpenSettings = useCallback(() => {
-    // TODO: Implementar modal de configurações
-    console.log('Abrir configurações');
+    setIsSettingsOpen(true);
   }, []);
 
-  // Callback para rolagem rápida de dados
   const handleOpenDice = useCallback(() => {
     setIsDiceModalOpen(true);
   }, []);
 
-  // Callback para notas rápidas
   const handleOpenNotes = useCallback(() => {
-    // TODO: Implementar modal de notas
-    console.log('Abrir notas');
+    setIsQuickNotesOpen(true);
   }, []);
 
-  // Callback para iniciar sessão
   const handleStartSession = useCallback(async () => {
     await startSession();
   }, [startSession]);
 
-  // Callback para encerrar sessão
   const handleEndSession = useCallback(async () => {
     if (activeSession) {
       await endSession(activeSession.id);
     }
   }, [endSession, activeSession]);
 
-  // Callback para enviar rolagem ao chat
   const handleDiceRoll = useCallback((
     description: string, 
     metadata: DiceRollMetadata, 
     isHidden: boolean
   ) => {
     if (isHidden) {
-      // Rolagem oculta - só mestre vê
       sendMessage(description, 'dice_roll', { ...metadata, hidden: true } as Record<string, unknown>);
     } else {
       sendMessage(description, 'dice_roll', metadata as unknown as Record<string, unknown>);
@@ -160,10 +160,9 @@ export default function CampaignShell() {
   }, [activeTab, markAsRead]);
 
   // =====================================================
-  // EARLY RETURNS (após todos os hooks)
+  // EARLY RETURNS
   // =====================================================
 
-  // Validação de parâmetros
   if (!campaignId || !userId) {
     return (
       <div className="h-screen flex items-center justify-center bg-background">
@@ -172,27 +171,21 @@ export default function CampaignShell() {
     );
   }
 
-  // Loading state
   if (campaignLoading) {
     return (
       <div className="h-screen flex flex-col bg-background">
-        {/* Header skeleton */}
         <div className="h-12 border-b border-border/50 px-4 flex items-center gap-3">
           <Skeleton className="h-8 w-8 rounded" />
           <Skeleton className="h-5 w-48" />
           <div className="flex-1" />
           <Skeleton className="h-5 w-20" />
         </div>
-
-        {/* Navigation skeleton */}
         <div className="h-11 border-b border-border/50 flex items-center justify-center gap-4 px-4">
           <Skeleton className="h-8 w-24 rounded" />
           <Skeleton className="h-8 w-24 rounded" />
           <Skeleton className="h-8 w-24 rounded" />
           <Skeleton className="h-8 w-24 rounded" />
         </div>
-
-        {/* Content skeleton */}
         <div className="flex-1 p-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <Skeleton className="h-40 rounded-lg" />
@@ -200,8 +193,6 @@ export default function CampaignShell() {
             <Skeleton className="h-40 rounded-lg" />
           </div>
         </div>
-
-        {/* StatusBar skeleton */}
         <div className="h-14 border-t border-border/50 px-4 flex items-center gap-3">
           <div className="flex -space-x-2">
             <Skeleton className="h-8 w-8 rounded-full" />
@@ -215,7 +206,6 @@ export default function CampaignShell() {
     );
   }
 
-  // Campanha não encontrada
   if (!campaign) {
     return (
       <div className="h-screen flex items-center justify-center bg-background">
@@ -310,12 +300,12 @@ export default function CampaignShell() {
         {activeTab === 'master' && isMaster && (
           <MasterTab
             members={members}
+            campaignId={campaignId}
             onModifyHP={async (charId, delta) => {
               const member = members.find(m => m.characters?.id === charId);
               const charName = member?.characters?.name || 'Personagem';
               const success = await masterActions.adjustHP(charId, delta);
               if (success) {
-                // Envia evento ao chat para visibilidade
                 await sendMessage(
                   delta < 0
                     ? `💀 **${charName}** recebeu **${Math.abs(delta)}** de dano`
@@ -354,6 +344,16 @@ export default function CampaignShell() {
             }}
             onSendMessage={sendMessage}
             isUpdating={masterActions.isUpdating}
+            // Áudio (Fase 3)
+            audioLibrary={audioData.audioLibrary}
+            soundScenes={audioData.soundScenes}
+            audioState={audioData.audioState}
+            audioLoading={audioData.isLoading}
+            onActivateScene={audioData.activateScene}
+            onPlaySFX={audioData.playSFX}
+            onStopAllAudio={audioData.stopAllAudio}
+            onSetMasterVolume={audioData.setMasterVolume}
+            onToggleMute={audioData.toggleMute}
           />
         )}
       </main>
@@ -376,6 +376,26 @@ export default function CampaignShell() {
         onOpenChange={setIsDiceModalOpen}
         isMaster={isMaster}
         onRoll={handleDiceRoll}
+      />
+
+      {/* Modal de configurações (Fase 1) */}
+      {isMaster && (
+        <CampaignSettingsModal
+          open={isSettingsOpen}
+          onOpenChange={setIsSettingsOpen}
+          campaignId={campaignId}
+          campaignName={campaign.name}
+          campaignDescription={campaign.description}
+          members={members}
+          onMemberUpdate={campaignData.refetch}
+        />
+      )}
+
+      {/* Modal de notas rápidas (Fase 1) */}
+      <QuickNotesModal
+        open={isQuickNotesOpen}
+        onOpenChange={setIsQuickNotesOpen}
+        campaignId={campaignId}
       />
     </div>
   );
