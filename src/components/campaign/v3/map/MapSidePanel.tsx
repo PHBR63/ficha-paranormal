@@ -41,6 +41,9 @@ import {
   Radio,
   Grid3X3,
   Wrench,
+  AlertTriangle,
+  Eye,
+  MessageCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -67,6 +70,7 @@ import type { MapAreaEffect } from '@/components/campaign/tactical/layers/AreaEf
 import type { CreateAreaEffectData } from '@/hooks/campaign/useAreaEffects';
 import { AreaEffectControls } from '@/components/campaign/tactical/AreaEffectControls';
 import { Target } from 'lucide-react';
+import type { PingType } from '@/hooks/campaign/useAdvancedPings';
 
 // =====================================================
 // CONSTANTES
@@ -155,6 +159,12 @@ interface MapSidePanelProps {
   // Fog of war
   onFogReveal?: (cells: Array<{ x: number; y: number }>) => Promise<boolean>;
   onFogHide?: (cells: Array<{ x: number; y: number }>) => Promise<boolean>;
+
+  // Pings avançados (Fase E)
+  pingType?: PingType;
+  pingMessage?: string;
+  onPingTypeChange?: (type: PingType) => void;
+  onPingMessageChange?: (msg: string) => void;
 }
 
 // =====================================================
