@@ -24,6 +24,8 @@ import { MeasurementLayer } from './layers/MeasurementLayer';
 import { DrawingLayer, MapDrawing } from './layers/DrawingLayer';
 import { TextLayer, MapText } from './layers/TextLayer';
 import { AreaEffectLayer, MapAreaEffect } from './layers/AreaEffectLayer';
+import { MapPinLayer } from './layers/MapPinLayer';
+import type { MapPin } from '@/hooks/campaign/useMapPins';
 
 export interface TacticalBoardKonvaProps {
   // Dados do mapa
@@ -83,6 +85,12 @@ export interface TacticalBoardKonvaProps {
   onTextUpdate: (textId: string, data: Partial<MapText>) => void;
   onTextDelete?: (textId: string) => void;
   
+  // Pins no mapa (Fase F)
+  pins?: MapPin[];
+  selectedPinId?: string | null;
+  onPinClick?: (pinId: string) => void;
+  onPinDrag?: (pinId: string, newX: number, newY: number) => void;
+  
   // Integração com combate
   combatMode?: boolean;
   movementRemaining?: number;
@@ -104,6 +112,10 @@ export function TacticalBoardKonva({
   selectedAreaId,
   onAreaClick,
   onAreaDrag,
+  pins = [],
+  selectedPinId,
+  onPinClick,
+  onPinDrag,
   selectedTokenId,
   measureStart,
   measureEnd,
@@ -366,6 +378,19 @@ export function TacticalBoardKonva({
         onTextUpdate={onTextUpdate}
         onTextDelete={onTextDelete}
       />
+
+      {/* Layer 4.5: Pins no mapa (Fase F) */}
+      {pins.length > 0 && (
+        <MapPinLayer
+          pins={pins}
+          gridSize={gridSize}
+          isMaster={isMaster}
+          selectedPinId={selectedPinId || null}
+          listening={activeTool !== 'draw'}
+          onPinClick={onPinClick}
+          onPinDrag={onPinDrag}
+        />
+      )}
 
       {/* Layer 5 (overlay): FogOfWar + Medição + Pings */}
       <Layer listening={false}>

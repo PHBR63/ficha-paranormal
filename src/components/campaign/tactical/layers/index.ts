@@ -12,3 +12,4 @@ export { MeasurementLayer } from './MeasurementLayer';
 export { DrawingLayer, type MapDrawing } from './DrawingLayer';
 export { TextLayer, type MapText } from './TextLayer';
 export { AreaEffectLayer, type MapAreaEffect } from './AreaEffectLayer';
+export { MapPinLayer } from './MapPinLayer';
