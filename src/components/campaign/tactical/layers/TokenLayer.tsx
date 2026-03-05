@@ -37,6 +37,61 @@ const TOKEN_COLORS: Record<string, string> = {
   marker: '#f59e0b',
 };
 
+// Cores das barras de recurso
+const BAR_COLORS = {
+  hp: { fill: '#ef4444', bg: '#450a0a' },   // Vermelho (PV)
+  san: { fill: '#3b82f6', bg: '#172554' },   // Azul (SAN)
+  pe: { fill: '#a855f7', bg: '#3b0764' },    // Roxo (PE)
+};
+
+/**
+ * Barras de recurso (PV/SAN/PE) renderizadas abaixo do token
+ */
+function TokenResourceBars({ token, size }: { token: MapToken; size: number }) {
+  const barWidth = size - 4;
+  const barHeight = 3;
+  const barSpacing = 1;
+  const startY = size + 2;
+  const startX = 2;
+
+  const bars = [
+    { current: token.hp_current ?? 0, max: token.hp_max ?? 1, color: BAR_COLORS.hp },
+    { current: token.san_current ?? 0, max: token.san_max ?? 1, color: BAR_COLORS.san },
+    { current: token.pe_current ?? 0, max: token.pe_max ?? 1, color: BAR_COLORS.pe },
+  ];
+
+  return (
+    <Group listening={false}>
+      {bars.map((bar, i) => {
+        const ratio = Math.max(0, Math.min(1, bar.current / bar.max));
+        const y = startY + i * (barHeight + barSpacing);
+        return (
+          <Group key={i}>
+            {/* Fundo da barra */}
+            <Rect
+              x={startX}
+              y={y}
+              width={barWidth}
+              height={barHeight}
+              fill={bar.color.bg}
+              cornerRadius={1}
+            />
+            {/* Preenchimento */}
+            <Rect
+              x={startX}
+              y={y}
+              width={barWidth * ratio}
+              height={barHeight}
+              fill={bar.color.fill}
+              cornerRadius={1}
+            />
+          </Group>
+        );
+      })}
+    </Group>
+  );
+}
+
 interface TokenShapeProps {
   token: MapToken;
   gridSize: number;
@@ -283,10 +338,18 @@ function TokenShape({
         </Group>
       )}
 
+      {/* Barras de recurso PV/PE/SAN (Fase B) */}
+      {token.character_id && token.hp_max != null && token.hp_max > 0 && (
+        <TokenResourceBars
+          token={token}
+          size={size}
+        />
+      )}
+
       {/* Nome do token */}
       <Text
         x={0}
-        y={size + 4}
+        y={size + (token.character_id && token.hp_max ? 18 : 4)}
         width={size}
         text={token.name.substring(0, 10)}
         fontSize={11}
