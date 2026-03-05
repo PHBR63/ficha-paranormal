@@ -650,7 +650,7 @@ export const MapSidePanel = memo(function MapSidePanel({
                         key={t.id}
                         onClick={() => onTokenSelect(t.id === selectedTokenId ? null : t.id)}
                         className={cn(
-                          'flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer transition-colors text-xs',
+                          'group flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer transition-colors text-xs',
                           t.id === selectedTokenId
                             ? 'bg-amber-500/15 text-amber-300'
                             : 'hover:bg-accent/30 text-foreground/80'
