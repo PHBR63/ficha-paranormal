@@ -19,10 +19,11 @@ import { useTacticalBoard } from '@/hooks/campaign/useTacticalBoard';
 import { MapTab } from '@/components/campaign/v3/tabs/MapTab';
 import { MasterMapPanel } from '@/components/campaign/v3/map/MasterMapPanel';
 import { MapSidePanel } from '@/components/campaign/v3/map/MapSidePanel';
+import { ChatSidePanel } from '@/components/campaign/v3/map/ChatSidePanel';
 import { Logo } from '@/components/ui/logo';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Users, PanelRightOpen, PanelRightClose } from 'lucide-react';
+import { ArrowLeft, Users, PanelRightOpen, PanelRightClose, MessageSquare } from 'lucide-react';
 import type { DrawToolType } from '@/components/campaign/v3/map/MapToolbar';
 import {
   Shield as ShieldIcon,
@@ -37,6 +38,7 @@ export default function TacticalMapFullscreen() {
   // Estado dos painéis laterais
   const [masterPanelOpen, setMasterPanelOpen] = useState(false);
   const [sidePanelOpen, setSidePanelOpen] = useState(true);
+  const [chatPanelOpen, setChatPanelOpen] = useState(false);
 
   // Estado local de ferramentas de desenho/texto (para sidebar)
   const [drawTool, setDrawTool] = useState<DrawToolType>('pen');
@@ -62,7 +64,7 @@ export default function TacticalMapFullscreen() {
     enabled: !!campaignId && !!userId && !campaignLoading && !!campaign,
   });
 
-  const { sendMessage } = realtimeData;
+  const { sendMessage, messages } = realtimeData;
 
   // Ações do mestre (ajuste PV/PE/SAN, condições)
   const masterActions = useMasterActions({
@@ -83,6 +85,9 @@ export default function TacticalMapFullscreen() {
   }, []);
   const toggleSidePanel = useCallback(() => {
     setSidePanelOpen(prev => !prev);
+  }, []);
+  const toggleChatPanel = useCallback(() => {
+    setChatPanelOpen(prev => !prev);
   }, []);
 
   // Callbacks de ações em lote do mestre
