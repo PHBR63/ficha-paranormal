@@ -331,6 +331,8 @@ export default function TacticalMapFullscreen() {
           selectedAreaId={areaEffects.selectedAreaId}
           onAreaClick={areaEffects.selectArea}
           onAreaDrag={areaEffects.moveArea}
+          cameraSyncTarget={cameraSyncTarget}
+          onCameraSyncHandled={advancedPings.clearCameraSync}
         />
 
         {/* Painel lateral de chat (esquerda, overlay sobre o mapa) */}
