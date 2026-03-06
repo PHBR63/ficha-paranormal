@@ -198,8 +198,8 @@ function TokenShape({
   onResize,
 }: TokenShapeProps) {
   const [image, setImage] = useState<HTMLImageElement | null>(null);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const gifRef = useRef<HTMLImageElement | null>(null);
+  const [gifImage, setGifImage] = useState<HTMLImageElement | null>(null);
+  const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(null);
   const animFrameRef = useRef<number>(0);
   const konvaImageRef = useRef<Konva.Image | null>(null);
   
@@ -261,7 +261,7 @@ function TokenShape({
   // Carrega e anima GIF — o elemento DEVE estar no DOM para o browser avançar frames
   useEffect(() => {
     if (!token.image_url || !isGif) {
-      gifRef.current = null;
+      setGifImage(null);
       return;
     }
 
@@ -277,11 +277,10 @@ function TokenShape({
     img.style.opacity = '0';
     img.style.pointerEvents = 'none';
     document.body.appendChild(img);
-    gifRef.current = img;
 
     img.onload = () => {
-      // Com o <img> no DOM, o browser anima o GIF e batchDraw captura cada frame
-      startAnimationLoop();
+      // Seta estado para disparar re-render e montar o KonvaImage
+      setGifImage(img);
     };
 
     return () => {
@@ -289,18 +288,17 @@ function TokenShape({
       if (img.parentNode) {
         img.parentNode.removeChild(img);
       }
-      gifRef.current = null;
+      setGifImage(null);
     };
   }, [token.image_url, isGif, startAnimationLoop]);
 
   // Carrega e anima WebM via <video>
   useEffect(() => {
     if (!token.image_url || !isWebM) {
-      if (videoRef.current) {
-        videoRef.current.pause();
-        videoRef.current.src = '';
-        videoRef.current = null;
-      }
+      setVideoElement((prev) => {
+        if (prev) { prev.pause(); prev.src = ''; }
+        return null;
+      });
       if (!isGif && animFrameRef.current) {
         cancelAnimationFrame(animFrameRef.current);
       }
@@ -314,11 +312,11 @@ function TokenShape({
     video.muted = true;
     video.playsInline = true;
     video.autoplay = true;
-    videoRef.current = video;
 
     video.addEventListener('loadeddata', () => {
       video.play().catch(() => {});
-      startAnimationLoop();
+      // Seta estado para disparar re-render e montar o KonvaImage
+      setVideoElement(video);
     });
 
     video.load();
@@ -327,7 +325,7 @@ function TokenShape({
       cancelAnimationFrame(animFrameRef.current);
       video.pause();
       video.src = '';
-      videoRef.current = null;
+      setVideoElement(null);
     };
   }, [token.image_url, isWebM, isGif, startAnimationLoop]);
 
@@ -356,11 +354,19 @@ function TokenShape({
   // Verifica se pode arrastar
   const canDrag = !token.locked && (isMaster || token.token_type === 'pc');
 
+  // Inicia loop de animação quando a mídia animada estiver pronta
+  useEffect(() => {
+    if (gifImage || videoElement) {
+      startAnimationLoop();
+    }
+    return () => { cancelAnimationFrame(animFrameRef.current); };
+  }, [gifImage, videoElement, startAnimationLoop]);
+
   // Determina a fonte da imagem animada (GIF ou WebM)
   const animatedSource = isGif 
-    ? gifRef.current 
+    ? gifImage 
     : isWebM 
-      ? (videoRef.current as unknown as HTMLImageElement) 
+      ? (videoElement as unknown as HTMLImageElement) 
       : null;
 
   return (
