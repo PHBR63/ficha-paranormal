@@ -65,7 +65,7 @@ const MasterToggleButton = memo(function MasterToggleButton({
       initial={{ opacity: 0, scale: 0.8 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.8 }}
-      className="fixed top-14 right-3 z-30"
+      className="fixed top-14 left-3 z-30"
     >
       <Button
         variant="outline"
@@ -124,15 +124,15 @@ export const MasterMapPanel = memo(function MasterMapPanel({
       <AnimatePresence>
         {open && (
           <motion.aside
-            initial={{ x: '100%', opacity: 0 }}
+            initial={{ x: '-100%', opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
-            exit={{ x: '100%', opacity: 0 }}
+            exit={{ x: '-100%', opacity: 0 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
             className={cn(
-              'fixed top-10 right-0 bottom-0 z-20',
+              'fixed top-10 left-0 bottom-0 z-20',
               'w-[340px] max-w-[90vw]',
               'bg-card/95 backdrop-blur-md',
-              'border-l border-border/40',
+              'border-r border-border/40',
               'flex flex-col',
               'shadow-2xl',
             )}
