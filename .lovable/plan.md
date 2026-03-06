@@ -1,46 +1,51 @@
 
 
-# Otimização de Bundle JS e CSS
+# Diagnóstico — GIF Animado Estático no Mapa Tático
 
-## Diagnóstico Atual
+## Causa Raiz Identificada
 
-**JS (1,1 MB):** O lazy loading por rota já está implementado para a maioria das páginas. Porém:
-- `Index` (346 linhas), `Auth` (600 linhas) e `NotFound` são importados eagerly no bundle principal
-- Não há `manualChunks` no Vite — todas as dependências de vendor (react, supabase, konva, framer-motion, recharts, dnd-kit) ficam num único chunk
-- Bibliotecas pesadas como `konva`, `react-konva`, `framer-motion`, `recharts` e `@rive-app/react-canvas` entram no bundle mesmo quando não são usadas na rota atual
+O bug está na **linha 280 vs linha 360** do `TokenLayer.tsx`. A lógica usa `useRef` (`gifRef`) para armazenar o elemento `<img>` do GIF, mas **refs não disparam re-render no React**. O fluxo atual:
 
-**CSS (190 KB / 1120 linhas em `index.css`):** O `content` do Tailwind já está configurado corretamente (`src/**/*.{ts,tsx}`). Os 190 KB vêm principalmente de:
-- CSS custom extenso (variáveis de 5 temas, animações, efeitos atmosféricos, gradients por tema)
-- Muitas keyframes e animações customizadas no `tailwind.config.ts`
-- Arquivo `App.css` com estilos legados não utilizados (logo spin, .card, .read-the-docs)
+```text
+1. Render inicial → gifRef.current = null → animatedSource = null → renderiza círculo colorido
+2. useEffect executa → cria <img>, seta gifRef.current = img
+3. React NÃO re-renderiza (ref mudou, não state)
+4. animatedSource continua null → KonvaImage do GIF NUNCA monta
+5. batchDraw() roda no loop mas não tem nada para atualizar
+```
 
-## Plano de Implementação
+O `KonvaImage` animado simplesmente **nunca é montado** porque a condição `isAnimated && animatedSource` (linha 395) é `false` durante todo o ciclo de vida — `animatedSource` lê `gifRef.current` que era `null` no último render e nenhum state change forçou novo render.
 
-### 1. Configurar `manualChunks` no Vite (maior impacto)
+## Plano de Correção
 
-Adicionar em `vite.config.ts` a configuração `build.rollupOptions.output.manualChunks` para separar vendors pesados em chunks independentes:
+### Mudança única em `TokenLayer.tsx`
 
-- **`vendor-react`**: react, react-dom, react-router-dom
-- **`vendor-supabase`**: @supabase/supabase-js, @tanstack/react-query
-- **`vendor-ui`**: @radix-ui/*, class-variance-authority, tailwind-merge, cmdk, sonner, vaul
-- **`vendor-canvas`**: konva, react-konva (carregado apenas na rota do mapa)
-- **`vendor-motion`**: framer-motion (carregado apenas quando componentes animados são usados)
-- **`vendor-charts`**: recharts (carregado apenas em páginas com gráficos)
+1. **Substituir `gifRef` por estado** — Trocar `const gifRef = useRef<HTMLImageElement | null>(null)` por `const [gifImage, setGifImage] = useState<HTMLImageElement | null>(null)` para que quando o GIF carregar, o React re-renderize e monte o `KonvaImage`.
 
-Isso permite caching granular — atualizar código da app não invalida o cache dos vendors.
+2. **Atualizar o `useEffect` do GIF** (linhas 262-294):
+   - Continuar criando o `<img>` via `document.createElement` e anexando ao DOM (necessário para animação)
+   - No `onload`, chamar `setGifImage(img)` em vez de apenas `startAnimationLoop()`
+   - No cleanup, chamar `setGifImage(null)` além de remover do DOM
 
-### 2. Lazy load de `Auth` e `NotFound`
+3. **Atualizar `animatedSource`** (linhas 360-364):
+   - Trocar `gifRef.current` por `gifImage`
 
-Converter `Auth` e `NotFound` para `lazy()` — são páginas que não precisam estar no bundle inicial. A landing page (`Index`) permanece eager pois é o first paint.
+4. **Iniciar loop de animação quando KonvaImage monta** — Adicionar um `useEffect` que observe `gifImage` para iniciar o `startAnimationLoop()` somente quando a imagem estiver carregada E o componente re-renderizado.
 
-### 3. Remover `App.css` legado
+### Verificação do WebM (mesmo padrão)
 
-O arquivo `src/App.css` contém apenas estilos não utilizados (`.logo`, `.card`, `.read-the-docs`, `logo-spin`). Será removido e qualquer import eliminado.
+O `videoRef` tem o mesmo problema potencial, mas como o `video.addEventListener('loadeddata')` dispara e o `startAnimationLoop` roda, o `batchDraw` funciona SOMENTE se o `animatedSource` estiver montado. Precisamos aplicar a mesma correção: trocar `videoRef` usado no render por estado.
 
-### 4. Resultado esperado
+### Resumo das alterações
 
-- Bundle inicial reduzido de ~1,1 MB para ~400-500 KB (vendors separados + lazy routes)
-- Vendors cacheados independentemente pelo browser
-- CSS reduzido em ~2-3 KB (remoção do App.css legado)
-- O CSS de 190 KB em si é majoritariamente variáveis de tema necessárias — a redução significativa exigiria remover temas, o que não é desejável
+| Linha | De | Para |
+|-------|-----|------|
+| 202 | `const videoRef = useRef` (para render) | `const [videoElement, setVideoElement] = useState` |
+| 202-203 | `const gifRef = useRef` | `const [gifImage, setGifImage] = useState` |
+| 280 | `gifRef.current = img` | `setGifImage(img)` (no onload) |
+| 317 | `videoRef.current = video` | `setVideoElement(video)` (no loadeddata) |
+| 360-364 | `gifRef.current` / `videoRef.current` | `gifImage` / `videoElement` |
+
+**Arquivo**: `src/components/campaign/tactical/layers/TokenLayer.tsx`  
+**Escopo**: ~15 linhas alteradas, zero arquivos novos.
 
