@@ -269,13 +269,13 @@ function TokenShape({
     img.crossOrigin = 'anonymous';
     img.src = token.image_url;
     // Esconde o elemento mas mantém no DOM para que o browser anime o GIF
+    // Posiciona fora da tela mas com tamanho real e visível para o browser
+    // NÃO usar opacity:0 nem width/height:1px — o browser pode pular frames de GIFs "invisíveis"
     img.style.position = 'fixed';
     img.style.left = '-9999px';
     img.style.top = '-9999px';
-    img.style.width = '1px';
-    img.style.height = '1px';
-    img.style.opacity = '0';
     img.style.pointerEvents = 'none';
+    img.style.zIndex = '-1';
     document.body.appendChild(img);
 
     img.onload = () => {
