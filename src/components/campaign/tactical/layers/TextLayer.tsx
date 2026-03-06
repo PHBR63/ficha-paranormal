@@ -40,6 +40,10 @@ interface TextLayerProps {
   currentUserId?: string;
   /** Desabilita interação (quando outra ferramenta está ativa) */
   listening?: boolean;
+  /** Largura do mapa em pixels (para Rect de captura) */
+  mapWidth?: number;
+  /** Altura do mapa em pixels (para Rect de captura) */
+  mapHeight?: number;
   /** Callback ao criar um novo texto */
   onTextCreate: (text: Omit<MapText, 'id' | 'map_id' | 'created_by' | 'created_at'>) => void;
   /** Callback ao atualizar texto */
@@ -171,17 +175,16 @@ export function TextLayer({
   isMaster,
   currentUserId,
   listening = true,
+  mapWidth = 4000,
+  mapHeight = 4000,
   onTextCreate,
   onTextUpdate,
   onTextDelete,
 }: TextLayerProps) {
 
-  /** Handler de clique para criar novo texto */
+  /** Handler de clique no Rect de captura para criar novo texto */
   const handleClick = useCallback((e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
     if (!isTextMode) return;
-
-    // Ignora se clicou em um texto existente
-    if (e.target !== e.currentTarget) return;
 
     e.cancelBubble = true;
     const stage = e.target.getStage();
@@ -202,7 +205,19 @@ export function TextLayer({
   }, [isTextMode, defaultFontSize, defaultColor, onTextCreate]);
 
   return (
-    <Layer listening={listening} onClick={handleClick} onTap={handleClick}>
+    <Layer listening={listening}>
+      {/* Rect transparente de captura — só ativo no modo texto */}
+      {isTextMode && (
+        <Rect
+          x={0}
+          y={0}
+          width={mapWidth}
+          height={mapHeight}
+          fill="transparent"
+          onClick={handleClick}
+          onTap={handleClick}
+        />
+      )}
       {texts.map((item) => {
         const canEdit = isMaster || item.created_by === currentUserId;
         return (
