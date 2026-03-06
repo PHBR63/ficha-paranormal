@@ -408,6 +408,31 @@ function TokenShape({
     };
   }, [proxyCanvas, token.name]);
 
+  // Handlers de drag - cancela bubble para não mover o Stage junto
+  const handleDragStart = useCallback((e: Konva.KonvaEventObject<DragEvent>) => {
+    e.cancelBubble = true;
+    onDragStart();
+  }, [onDragStart]);
+
+  const handleDragMove = useCallback((e: Konva.KonvaEventObject<DragEvent>) => {
+    e.cancelBubble = true;
+    const x = Math.floor(e.target.x() / gridSize);
+    const y = Math.floor(e.target.y() / gridSize);
+    onDragMove(x, y);
+  }, [gridSize, onDragMove]);
+
+  const handleDragEnd = useCallback((e: Konva.KonvaEventObject<DragEvent>) => {
+    e.cancelBubble = true;
+    const x = Math.round(e.target.x() / gridSize);
+    const y = Math.round(e.target.y() / gridSize);
+    e.target.x(x * gridSize);
+    e.target.y(y * gridSize);
+    onDragEnd(x, y);
+  }, [gridSize, onDragEnd]);
+
+  // Verifica se pode arrastar
+  const canDrag = !token.locked && (isMaster || token.token_type === 'pc');
+
   return (
     <Group
       x={token.x * gridSize}
@@ -436,8 +461,8 @@ function TokenShape({
         />
       )}
 
-      {/* Token animado (GIF ou WebM) */}
-      {isAnimated && animatedSource ? (
+      {/* Token animado (GIF ou WebM) — usa proxyCanvas como fonte */}
+      {isAnimated && proxyCanvas ? (
         <Group clipFunc={(ctx) => {
           ctx.arc(size / 2, size / 2, size / 2 - 2, 0, Math.PI * 2);
         }}>
