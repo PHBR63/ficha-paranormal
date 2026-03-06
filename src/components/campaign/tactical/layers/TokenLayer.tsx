@@ -332,11 +332,11 @@ function TokenShape({
       // Busca o GIF completo como ArrayBuffer para garantir que todos os frames estejam disponíveis
       const response = await fetch(url);
       if (cancelled) return;
-      const blob = await response.blob();
+      const arrayBuffer = await response.arrayBuffer();
       if (cancelled) return;
 
       const decoder = new (window as any).ImageDecoder({
-        data: blob,
+        data: arrayBuffer,
         type: 'image/gif',
       });
       imageDecoderRef.current = decoder;
@@ -421,7 +421,7 @@ function TokenShape({
     } catch (error) {
       console.error(`[TokenAnim] ❌ ImageDecoder falhou para "${name}":`, error);
       // Fallback para método <img>
-      loadGifWithFallback(url, name, canvas, cancelled);
+      if (!cancelled) loadGifWithFallback(url, name, canvas, cancelled);
     }
   }, []);
 
@@ -432,6 +432,7 @@ function TokenShape({
   const loadGifWithFallback = useCallback((
     url: string, name: string, canvas: HTMLCanvasElement, cancelled: boolean
   ) => {
+    if (cancelled || !document.body) return;
     const img = document.createElement('img');
     img.crossOrigin = 'anonymous';
     // Imagem visível no viewport, tamanho real, atrás de tudo
