@@ -241,10 +241,12 @@ function TokenShape({
 
   /**
    * Carrega mídia animada (GIF ou WebM) e cria um canvas proxy.
-   * O canvas proxy recebe pixels frescos a cada frame via drawImage(),
-   * garantindo que o Konva sempre renderize o frame atual da animação.
    * 
-   * Fluxo: img/video → drawImage cada frame → proxyCanvas → KonvaImage
+   * Para GIF: usa ImageDecoder API (WebCodecs) para decodificar frame a frame
+   * de forma confiável, sem depender do browser animar o <img>.
+   * Fallback: usa <img> visível atrás do canvas para browsers sem ImageDecoder.
+   * 
+   * Para WebM: usa <video> com autoplay.
    */
   useEffect(() => {
     if (!token.image_url || !isAnimated) {
@@ -253,176 +255,266 @@ function TokenShape({
         konvaAnimRef.current.stop();
         konvaAnimRef.current = null;
       }
-      if (gifDomRef.current) {
-        // Remove o container pai (div com overflow:hidden) que contém a img
-        const parentContainer = gifDomRef.current.parentNode;
-        if (parentContainer?.parentNode) {
-          parentContainer.parentNode.removeChild(parentContainer);
-        } else if (gifDomRef.current.parentNode) {
-          gifDomRef.current.parentNode.removeChild(gifDomRef.current);
-        }
-        gifDomRef.current = null;
-      }
-      if (videoDomRef.current) {
-        videoDomRef.current.pause();
-        videoDomRef.current.src = '';
-        if (videoDomRef.current.parentNode) videoDomRef.current.parentNode.removeChild(videoDomRef.current);
-        videoDomRef.current = null;
-      }
+      cleanupDomElements();
       setProxyCanvas(null);
       proxyCtxRef.current = null;
       return;
     }
 
-    console.log(`[TokenAnim] Carregando ${isGif ? 'GIF' : 'WebM'} para token "${token.name}":`, token.image_url);
-
-    // Cria o canvas proxy que será a fonte do KonvaImage
+    let cancelled = false;
     const canvas = document.createElement('canvas');
 
-    const startAnimationLoop = (mediaEl: HTMLImageElement | HTMLVideoElement, w: number, h: number) => {
-      canvas.width = Math.min(w, 512); // Limita resolução para performance
-      canvas.height = Math.min(h, 512);
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        console.error(`[TokenAnim] ❌ Falha ao criar contexto 2D para "${token.name}"`);
-        return;
-      }
-      proxyCtxRef.current = ctx;
-      setProxyCanvas(canvas);
-      console.log(`[TokenAnim] ✅ Proxy canvas criado para "${token.name}" (${canvas.width}x${canvas.height})`);
-    };
+    console.log(`[TokenAnim] Carregando ${isGif ? 'GIF' : 'WebM'} para token "${token.name}":`, token.image_url);
 
     if (isGif) {
-      // --- GIF: usa <img> no DOM ---
-      // O elemento PRECISA ser visualmente renderizado pelo browser para que
-      // o motor de animação do GIF avance os frames. Elementos com opacity~0
-      // ou 1x1px são otimizados pelo Chrome e param de animar.
-      // Solução: criar um container com overflow:hidden de 1x1px contendo
-      // a imagem em tamanho real — o browser processa os frames mas só
-      // 1 pixel é visível (atrás do canvas).
-      const container = document.createElement('div');
-      container.style.cssText = 'position:fixed;bottom:0;right:0;width:1px;height:1px;overflow:hidden;pointer-events:none;z-index:-9999;';
-      const img = document.createElement('img');
-      img.crossOrigin = 'anonymous';
-      // Imagem em tamanho natural dentro do container recortado
-      img.style.cssText = 'display:block;width:auto;height:auto;';
-      container.appendChild(img);
-      document.body.appendChild(container);
-      gifDomRef.current = img;
-
-      img.onload = () => {
-        console.log(`[TokenAnim] ✅ GIF carregado para "${token.name}" (${img.naturalWidth}x${img.naturalHeight})`);
-        startAnimationLoop(img, img.naturalWidth, img.naturalHeight);
-      };
-      img.onerror = (e) => {
-        console.error(`[TokenAnim] ❌ Erro ao carregar GIF para "${token.name}":`, e);
-      };
-      img.src = token.image_url;
-
+      // --- GIF: usa ImageDecoder API se disponível ---
+      if ('ImageDecoder' in window) {
+        loadGifWithImageDecoder(token.image_url, token.name, canvas, cancelled);
+      } else {
+        loadGifWithFallback(token.image_url, token.name, canvas, cancelled);
+      }
     } else if (isWebM) {
-      // --- WebM: usa <video> no DOM ---
-      const video = document.createElement('video');
-      video.crossOrigin = 'anonymous';
-      video.loop = true;
-      video.muted = true;
-      video.playsInline = true;
-      video.autoplay = true;
-      video.style.cssText = 'position:fixed;bottom:0;right:0;width:1px;height:1px;pointer-events:none;z-index:-9999;opacity:0.01;';
-      document.body.appendChild(video);
-      videoDomRef.current = video;
-
-      video.addEventListener('loadeddata', () => {
-        console.log(`[TokenAnim] ✅ WebM carregado para "${token.name}" (${video.videoWidth}x${video.videoHeight})`);
-        video.play().catch(() => {});
-        startAnimationLoop(video, video.videoWidth, video.videoHeight);
-      });
-      video.addEventListener('error', (e) => {
-        console.error(`[TokenAnim] ❌ Erro ao carregar WebM para "${token.name}":`, e);
-      });
-      video.src = token.image_url;
-      video.load();
+      loadWebM(token.image_url, token.name, canvas, cancelled);
     }
 
     return () => {
-      // Cleanup completo
+      cancelled = true;
       if (konvaAnimRef.current) {
         konvaAnimRef.current.stop();
         konvaAnimRef.current = null;
       }
-      if (gifDomRef.current) {
-        gifDomRef.current.onload = null;
-        gifDomRef.current.onerror = null;
-        const parentContainer = gifDomRef.current.parentNode;
-        if (parentContainer?.parentNode) {
-          parentContainer.parentNode.removeChild(parentContainer);
-        } else if (gifDomRef.current.parentNode) {
-          gifDomRef.current.parentNode.removeChild(gifDomRef.current);
-        }
-        gifDomRef.current = null;
+      // Limpa timer de frames GIF
+      if (gifFrameTimerRef.current) {
+        clearTimeout(gifFrameTimerRef.current);
+        gifFrameTimerRef.current = null;
       }
-      if (videoDomRef.current) {
-        videoDomRef.current.pause();
-        videoDomRef.current.src = '';
-        if (videoDomRef.current.parentNode) videoDomRef.current.parentNode.removeChild(videoDomRef.current);
-        videoDomRef.current = null;
-      }
+      cleanupDomElements();
       setProxyCanvas(null);
       proxyCtxRef.current = null;
     };
   }, [token.image_url, isGif, isWebM, isAnimated, token.name]);
 
+  // Ref para timer de frames do GIF (ImageDecoder)
+  const gifFrameTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Ref para ImageDecoder
+  const imageDecoderRef = useRef<any>(null);
+
+  /** Limpa elementos DOM auxiliares (img/video ocultos) */
+  const cleanupDomElements = useCallback(() => {
+    if (gifDomRef.current) {
+      gifDomRef.current.onload = null;
+      gifDomRef.current.onerror = null;
+      const parent = gifDomRef.current.parentNode;
+      if (parent?.parentNode) parent.parentNode.removeChild(parent);
+      else if (gifDomRef.current.parentNode) gifDomRef.current.parentNode.removeChild(gifDomRef.current);
+      gifDomRef.current = null;
+    }
+    if (videoDomRef.current) {
+      videoDomRef.current.pause();
+      videoDomRef.current.src = '';
+      if (videoDomRef.current.parentNode) videoDomRef.current.parentNode.removeChild(videoDomRef.current);
+      videoDomRef.current = null;
+    }
+    if (imageDecoderRef.current) {
+      try { imageDecoderRef.current.close?.(); } catch {}
+      imageDecoderRef.current = null;
+    }
+  }, []);
+
   /**
-   * Inicia Konva.Animation quando o proxyCanvas estiver pronto.
-   * A cada frame, copia pixels frescos da mídia para o proxy canvas,
-   * então Konva redesenha o KonvaImage com os novos pixels.
+   * Carrega GIF usando ImageDecoder API (WebCodecs) — decodifica frame a frame.
+   * Funciona em Chrome 94+, Edge 94+. Não depende da visibilidade do elemento.
+   */
+  const loadGifWithImageDecoder = useCallback(async (
+    url: string, name: string, canvas: HTMLCanvasElement, cancelled: boolean
+  ) => {
+    try {
+      const response = await fetch(url);
+      if (cancelled || !response.body) return;
+
+      const decoder = new (window as any).ImageDecoder({
+        data: response.body,
+        type: 'image/gif',
+      });
+      imageDecoderRef.current = decoder;
+
+      await decoder.tracks.ready;
+      if (cancelled) { decoder.close(); return; }
+
+      const track = decoder.tracks.selectedTrack;
+      const frameCount = track.frameCount;
+      console.log(`[TokenAnim] ✅ GIF decodificado para "${name}" — ${frameCount} frames`);
+
+      // Configura canvas proxy
+      // Usa dimensões do primeiro frame
+      const firstFrame = await decoder.decode({ frameIndex: 0 });
+      if (cancelled) { decoder.close(); return; }
+      
+      const w = firstFrame.image.displayWidth;
+      const h = firstFrame.image.displayHeight;
+      canvas.width = Math.min(w, 512);
+      canvas.height = Math.min(h, 512);
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      proxyCtxRef.current = ctx;
+      setProxyCanvas(canvas);
+
+      // Desenha primeiro frame
+      ctx.drawImage(firstFrame.image, 0, 0, canvas.width, canvas.height);
+      firstFrame.image.close();
+
+      let frameIndex = 0;
+
+      // Loop de frames — usa setTimeout com duração real de cada frame
+      const drawNextFrame = async () => {
+        if (cancelled) return;
+        try {
+          frameIndex = (frameIndex + 1) % frameCount;
+          const result = await decoder.decode({ frameIndex });
+          if (cancelled) { result.image.close(); return; }
+
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(result.image, 0, 0, canvas.width, canvas.height);
+
+          // Duração do frame em microsegundos → milissegundos
+          const durationMs = Math.max((result.image.duration || 100000) / 1000, 16);
+          result.image.close();
+
+          gifFrameTimerRef.current = setTimeout(drawNextFrame, durationMs);
+        } catch (e) {
+          // Frame pode não estar disponível ainda, retry
+          if (!cancelled) {
+            gifFrameTimerRef.current = setTimeout(drawNextFrame, 100);
+          }
+        }
+      };
+
+      // Inicia loop após duração do primeiro frame
+      gifFrameTimerRef.current = setTimeout(drawNextFrame, 100);
+      console.log(`[TokenAnim] 🎬 Loop de frames ImageDecoder iniciado para "${name}"`);
+
+    } catch (error) {
+      console.error(`[TokenAnim] ❌ ImageDecoder falhou para "${name}":`, error);
+      // Fallback para método <img>
+      loadGifWithFallback(url, name, canvas, cancelled);
+    }
+  }, []);
+
+  /**
+   * Fallback: carrega GIF via <img> visível no DOM (para browsers sem ImageDecoder).
+   * Posiciona a img em tamanho real mas com z-index: -1 (atrás do canvas).
+   */
+  const loadGifWithFallback = useCallback((
+    url: string, name: string, canvas: HTMLCanvasElement, cancelled: boolean
+  ) => {
+    const img = document.createElement('img');
+    img.crossOrigin = 'anonymous';
+    // Imagem visível no viewport, tamanho real, atrás de tudo
+    img.style.cssText = 'position:fixed;left:0;top:0;width:200px;height:200px;z-index:-1;pointer-events:none;opacity:1;';
+    document.body.appendChild(img);
+    gifDomRef.current = img;
+
+    img.onload = () => {
+      if (cancelled) return;
+      console.log(`[TokenAnim] ✅ GIF (fallback) carregado para "${name}" (${img.naturalWidth}x${img.naturalHeight})`);
+      canvas.width = Math.min(img.naturalWidth, 512);
+      canvas.height = Math.min(img.naturalHeight, 512);
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      proxyCtxRef.current = ctx;
+      setProxyCanvas(canvas);
+    };
+    img.onerror = (e) => {
+      console.error(`[TokenAnim] ❌ Erro ao carregar GIF (fallback) para "${name}":`, e);
+    };
+    img.src = url;
+  }, []);
+
+  /** Carrega WebM via <video> */
+  const loadWebM = useCallback((
+    url: string, name: string, canvas: HTMLCanvasElement, cancelled: boolean
+  ) => {
+    const video = document.createElement('video');
+    video.crossOrigin = 'anonymous';
+    video.loop = true;
+    video.muted = true;
+    video.playsInline = true;
+    video.autoplay = true;
+    video.style.cssText = 'position:fixed;left:0;top:0;width:1px;height:1px;pointer-events:none;z-index:-1;opacity:0.01;';
+    document.body.appendChild(video);
+    videoDomRef.current = video;
+
+    video.addEventListener('loadeddata', () => {
+      if (cancelled) return;
+      console.log(`[TokenAnim] ✅ WebM carregado para "${name}" (${video.videoWidth}x${video.videoHeight})`);
+      video.play().catch(() => {});
+      canvas.width = Math.min(video.videoWidth, 512);
+      canvas.height = Math.min(video.videoHeight, 512);
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      proxyCtxRef.current = ctx;
+      setProxyCanvas(canvas);
+    });
+    video.addEventListener('error', (e) => {
+      console.error(`[TokenAnim] ❌ Erro ao carregar WebM para "${name}":`, e);
+    });
+    video.src = url;
+    video.load();
+  }, []);
+
+  /**
+   * Inicia Konva.Animation para atualizar o canvas proxy.
+   * Para ImageDecoder (GIF): só precisa de batchDraw periódico (frames já são escritos pelo timer).
+   * Para fallback (GIF <img>) ou WebM (<video>): copia pixels da mídia a cada frame.
    */
   useEffect(() => {
     if (!proxyCanvas) return;
 
-    // Espera o próximo frame para garantir que o KonvaImage já montou
     const raf = requestAnimationFrame(() => {
       const node = konvaImageRef.current;
       const layer = node?.getLayer();
-      const ctx = proxyCtxRef.current;
-      const mediaEl = gifDomRef.current || videoDomRef.current;
-
-      if (!layer || !ctx || !mediaEl) {
-        console.warn(`[TokenAnim] ⚠️ Aguardando dependências para "${token.name}" (layer=${!!layer}, ctx=${!!ctx}, media=${!!mediaEl})`);
-        // Retry após 200ms
+      if (!layer) {
+        // Retry
         const retry = setTimeout(() => {
           const retryLayer = konvaImageRef.current?.getLayer();
-          if (retryLayer && proxyCtxRef.current && (gifDomRef.current || videoDomRef.current)) {
-            const retryMedia = (gifDomRef.current || videoDomRef.current)!;
-            const anim = new Konva.Animation(() => {
-              proxyCtxRef.current?.clearRect(0, 0, proxyCanvas.width, proxyCanvas.height);
-              proxyCtxRef.current?.drawImage(retryMedia, 0, 0, proxyCanvas.width, proxyCanvas.height);
-            }, retryLayer);
-            anim.start();
-            konvaAnimRef.current = anim;
-            console.log(`[TokenAnim] 🎬 Animação iniciada (retry) para "${token.name}"`);
-          } else {
-            console.error(`[TokenAnim] ❌ Não foi possível iniciar animação para "${token.name}" após retry`);
-          }
+          if (retryLayer) startKonvaAnim(retryLayer);
         }, 200);
         return () => clearTimeout(retry);
       }
-
-      console.log(`[TokenAnim] 🎬 Iniciando Konva.Animation com proxy canvas para "${token.name}"`);
-      const anim = new Konva.Animation(() => {
-        // Copia frame atual da mídia para o proxy canvas
-        ctx.clearRect(0, 0, proxyCanvas.width, proxyCanvas.height);
-        ctx.drawImage(mediaEl, 0, 0, proxyCanvas.width, proxyCanvas.height);
-      }, layer);
-      anim.start();
-      konvaAnimRef.current = anim;
+      startKonvaAnim(layer);
     });
+
+    function startKonvaAnim(layer: Konva.Layer) {
+      const mediaEl = gifDomRef.current || videoDomRef.current;
+      const ctx = proxyCtxRef.current;
+
+      if (imageDecoderRef.current) {
+        // ImageDecoder: frames já são escritos pelo timer, só precisa batchDraw
+        console.log(`[TokenAnim] 🎬 batchDraw loop (ImageDecoder) para "${token.name}"`);
+        const anim = new Konva.Animation(() => {
+          // Noop — o timer do ImageDecoder já escreve no canvas
+        }, layer);
+        anim.start();
+        konvaAnimRef.current = anim;
+      } else if (mediaEl && ctx) {
+        // Fallback: copia pixels da mídia (img/video) para o proxy canvas
+        console.log(`[TokenAnim] 🎬 Konva.Animation (fallback) para "${token.name}"`);
+        const anim = new Konva.Animation(() => {
+          ctx.clearRect(0, 0, proxyCanvas.width, proxyCanvas.height);
+          ctx.drawImage(mediaEl, 0, 0, proxyCanvas.width, proxyCanvas.height);
+        }, layer);
+        anim.start();
+        konvaAnimRef.current = anim;
+      } else {
+        console.warn(`[TokenAnim] ⚠️ Sem mídia para animar "${token.name}"`);
+      }
+    }
 
     return () => {
       cancelAnimationFrame(raf);
       if (konvaAnimRef.current) {
         konvaAnimRef.current.stop();
         konvaAnimRef.current = null;
-        console.log(`[TokenAnim] ⏹️ Animação parada para "${token.name}"`);
       }
     };
   }, [proxyCanvas, token.name]);
