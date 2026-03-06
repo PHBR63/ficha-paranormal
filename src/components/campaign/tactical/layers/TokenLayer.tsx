@@ -468,7 +468,7 @@ function TokenShape({
         }}>
           <KonvaImage
             ref={(node) => { konvaImageRef.current = node; }}
-            image={animatedSource}
+            image={proxyCanvas as unknown as HTMLImageElement}
             x={0}
             y={0}
             width={size}
