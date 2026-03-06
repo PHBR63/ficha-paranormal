@@ -463,57 +463,58 @@ function TokenShape({
   }, []);
 
   /**
-   * Inicia Konva.Animation quando o proxyCanvas estiver pronto.
-   * A cada frame, copia pixels frescos da mídia para o proxy canvas,
-   * então Konva redesenha o KonvaImage com os novos pixels.
+   * Inicia Konva.Animation para atualizar o canvas proxy.
+   * Para ImageDecoder (GIF): só precisa de batchDraw periódico (frames já são escritos pelo timer).
+   * Para fallback (GIF <img>) ou WebM (<video>): copia pixels da mídia a cada frame.
    */
   useEffect(() => {
     if (!proxyCanvas) return;
 
-    // Espera o próximo frame para garantir que o KonvaImage já montou
     const raf = requestAnimationFrame(() => {
       const node = konvaImageRef.current;
       const layer = node?.getLayer();
-      const ctx = proxyCtxRef.current;
-      const mediaEl = gifDomRef.current || videoDomRef.current;
-
-      if (!layer || !ctx || !mediaEl) {
-        console.warn(`[TokenAnim] ⚠️ Aguardando dependências para "${token.name}" (layer=${!!layer}, ctx=${!!ctx}, media=${!!mediaEl})`);
-        // Retry após 200ms
+      if (!layer) {
+        // Retry
         const retry = setTimeout(() => {
           const retryLayer = konvaImageRef.current?.getLayer();
-          if (retryLayer && proxyCtxRef.current && (gifDomRef.current || videoDomRef.current)) {
-            const retryMedia = (gifDomRef.current || videoDomRef.current)!;
-            const anim = new Konva.Animation(() => {
-              proxyCtxRef.current?.clearRect(0, 0, proxyCanvas.width, proxyCanvas.height);
-              proxyCtxRef.current?.drawImage(retryMedia, 0, 0, proxyCanvas.width, proxyCanvas.height);
-            }, retryLayer);
-            anim.start();
-            konvaAnimRef.current = anim;
-            console.log(`[TokenAnim] 🎬 Animação iniciada (retry) para "${token.name}"`);
-          } else {
-            console.error(`[TokenAnim] ❌ Não foi possível iniciar animação para "${token.name}" após retry`);
-          }
+          if (retryLayer) startKonvaAnim(retryLayer);
         }, 200);
         return () => clearTimeout(retry);
       }
-
-      console.log(`[TokenAnim] 🎬 Iniciando Konva.Animation com proxy canvas para "${token.name}"`);
-      const anim = new Konva.Animation(() => {
-        // Copia frame atual da mídia para o proxy canvas
-        ctx.clearRect(0, 0, proxyCanvas.width, proxyCanvas.height);
-        ctx.drawImage(mediaEl, 0, 0, proxyCanvas.width, proxyCanvas.height);
-      }, layer);
-      anim.start();
-      konvaAnimRef.current = anim;
+      startKonvaAnim(layer);
     });
+
+    function startKonvaAnim(layer: Konva.Layer) {
+      const mediaEl = gifDomRef.current || videoDomRef.current;
+      const ctx = proxyCtxRef.current;
+
+      if (imageDecoderRef.current) {
+        // ImageDecoder: frames já são escritos pelo timer, só precisa batchDraw
+        console.log(`[TokenAnim] 🎬 batchDraw loop (ImageDecoder) para "${token.name}"`);
+        const anim = new Konva.Animation(() => {
+          // Noop — o timer do ImageDecoder já escreve no canvas
+        }, layer);
+        anim.start();
+        konvaAnimRef.current = anim;
+      } else if (mediaEl && ctx) {
+        // Fallback: copia pixels da mídia (img/video) para o proxy canvas
+        console.log(`[TokenAnim] 🎬 Konva.Animation (fallback) para "${token.name}"`);
+        const anim = new Konva.Animation(() => {
+          ctx.clearRect(0, 0, proxyCanvas.width, proxyCanvas.height);
+          ctx.drawImage(mediaEl, 0, 0, proxyCanvas.width, proxyCanvas.height);
+        }, layer);
+        anim.start();
+        konvaAnimRef.current = anim;
+      } else {
+        console.warn(`[TokenAnim] ⚠️ Sem mídia para animar "${token.name}"`);
+      }
+    }
 
     return () => {
       cancelAnimationFrame(raf);
       if (konvaAnimRef.current) {
         konvaAnimRef.current.stop();
         konvaAnimRef.current = null;
-        console.log(`[TokenAnim] ⏹️ Animação parada para "${token.name}"`);
       }
     };
   }, [proxyCanvas, token.name]);
