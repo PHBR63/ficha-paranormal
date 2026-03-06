@@ -9,7 +9,7 @@
  * - Badges de condições
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Layer, Group, Circle, Text, Rect, Image as KonvaImage } from 'react-konva';
 import Konva from 'konva';
 import { MapToken } from '@/hooks/campaign/useTacticalBoard';
