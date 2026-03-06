@@ -40,6 +40,10 @@ interface TextLayerProps {
   currentUserId?: string;
   /** Desabilita interação (quando outra ferramenta está ativa) */
   listening?: boolean;
+  /** Largura do mapa em pixels (para Rect de captura) */
+  mapWidth?: number;
+  /** Altura do mapa em pixels (para Rect de captura) */
+  mapHeight?: number;
   /** Callback ao criar um novo texto */
   onTextCreate: (text: Omit<MapText, 'id' | 'map_id' | 'created_by' | 'created_at'>) => void;
   /** Callback ao atualizar texto */

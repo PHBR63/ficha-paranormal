@@ -215,7 +215,7 @@ export function TacticalBoardKonva({
     const cell = pixelToCell(mapX, mapY);
 
     // Ação baseada na ferramenta ativa
-    switch (activeTool) {
+     switch (activeTool) {
       case 'select':
         onTokenSelect(null);
         break;
@@ -233,6 +233,12 @@ export function TacticalBoardKonva({
         if (isMaster) {
           onFogToggle?.([cell]);
         }
+        break;
+      case 'text':
+        // Texto é tratado pelo TextLayer - não consumir aqui
+        break;
+      case 'draw':
+        // Desenho é tratado pelo DrawingLayer - não consumir aqui
         break;
       default:
         onCellClick?.(cell.x, cell.y);
