@@ -329,33 +329,58 @@ function TokenShape({
     url: string, name: string, canvas: HTMLCanvasElement, cancelled: boolean
   ) => {
     try {
+      // Busca o GIF completo como ArrayBuffer para garantir que todos os frames estejam disponíveis
       const response = await fetch(url);
-      if (cancelled || !response.body) return;
+      if (cancelled) return;
+      const blob = await response.blob();
+      if (cancelled) return;
 
       const decoder = new (window as any).ImageDecoder({
-        data: response.body,
+        data: blob,
         type: 'image/gif',
       });
       imageDecoderRef.current = decoder;
 
+      // Aguarda o decoder processar completamente o blob
       await decoder.tracks.ready;
+      if (cancelled) { decoder.close(); return; }
+
+      // Aguarda decoder.completed para garantir que TODOS os frames foram parseados
+      await decoder.completed;
       if (cancelled) { decoder.close(); return; }
 
       const track = decoder.tracks.selectedTrack;
       const frameCount = track.frameCount;
-      console.log(`[TokenAnim] ✅ GIF decodificado para "${name}" — ${frameCount} frames`);
+      console.log(`[TokenAnim] ✅ GIF decodificado para "${name}" — ${frameCount} frames (completo)`);
 
-      // Configura canvas proxy
-      // Usa dimensões do primeiro frame
+      // Se for GIF estático (1 frame), trata como imagem normal
+      if (frameCount <= 1) {
+        const firstFrame = await decoder.decode({ frameIndex: 0 });
+        if (cancelled) { firstFrame.image.close(); decoder.close(); return; }
+        const w = firstFrame.image.displayWidth;
+        const h = firstFrame.image.displayHeight;
+        canvas.width = Math.min(w, 512);
+        canvas.height = Math.min(h, 512);
+        const ctx = canvas.getContext('2d');
+        if (!ctx) { firstFrame.image.close(); return; }
+        proxyCtxRef.current = ctx;
+        ctx.drawImage(firstFrame.image, 0, 0, canvas.width, canvas.height);
+        firstFrame.image.close();
+        setProxyCanvas(canvas);
+        console.log(`[TokenAnim] ℹ️ GIF estático para "${name}" — renderizado como imagem fixa`);
+        return;
+      }
+
+      // Configura canvas proxy com dimensões do primeiro frame
       const firstFrame = await decoder.decode({ frameIndex: 0 });
-      if (cancelled) { decoder.close(); return; }
+      if (cancelled) { firstFrame.image.close(); decoder.close(); return; }
       
       const w = firstFrame.image.displayWidth;
       const h = firstFrame.image.displayHeight;
       canvas.width = Math.min(w, 512);
       canvas.height = Math.min(h, 512);
       const ctx = canvas.getContext('2d');
-      if (!ctx) return;
+      if (!ctx) { firstFrame.image.close(); return; }
       proxyCtxRef.current = ctx;
       setProxyCanvas(canvas);
 
@@ -382,7 +407,7 @@ function TokenShape({
 
           gifFrameTimerRef.current = setTimeout(drawNextFrame, durationMs);
         } catch (e) {
-          // Frame pode não estar disponível ainda, retry
+          // Frame pode não estar disponível, retry
           if (!cancelled) {
             gifFrameTimerRef.current = setTimeout(drawNextFrame, 100);
           }
