@@ -405,6 +405,8 @@ export function TacticalBoardKonva({
         isMaster={isMaster}
         currentUserId={currentUserId}
         listening={activeTool !== 'draw'}
+        mapWidth={mapWidth}
+        mapHeight={mapHeight}
         onTextCreate={onTextCreate}
         onTextUpdate={onTextUpdate}
         onTextDelete={onTextDelete}
