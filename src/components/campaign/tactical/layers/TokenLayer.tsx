@@ -349,10 +349,15 @@ function TokenShape({
         konvaAnimRef.current.stop();
         konvaAnimRef.current = null;
       }
-      if (gifDomRef.current?.parentNode) {
+      if (gifDomRef.current) {
         gifDomRef.current.onload = null;
         gifDomRef.current.onerror = null;
-        gifDomRef.current.parentNode.removeChild(gifDomRef.current);
+        const parentContainer = gifDomRef.current.parentNode;
+        if (parentContainer?.parentNode) {
+          parentContainer.parentNode.removeChild(parentContainer);
+        } else if (gifDomRef.current.parentNode) {
+          gifDomRef.current.parentNode.removeChild(gifDomRef.current);
+        }
         gifDomRef.current = null;
       }
       if (videoDomRef.current) {
