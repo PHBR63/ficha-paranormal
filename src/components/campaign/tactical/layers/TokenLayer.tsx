@@ -359,8 +359,8 @@ function TokenShape({
         if (cancelled) { firstFrame.image.close(); decoder.close(); return; }
         const w = firstFrame.image.displayWidth;
         const h = firstFrame.image.displayHeight;
-        canvas.width = Math.min(w, 512);
-        canvas.height = Math.min(h, 512);
+      canvas.width = Math.min(w, 1024);
+      canvas.height = Math.min(h, 1024);
         const ctx = canvas.getContext('2d');
         if (!ctx) { firstFrame.image.close(); return; }
         proxyCtxRef.current = ctx;
@@ -377,8 +377,8 @@ function TokenShape({
       
       const w = firstFrame.image.displayWidth;
       const h = firstFrame.image.displayHeight;
-      canvas.width = Math.min(w, 512);
-      canvas.height = Math.min(h, 512);
+      canvas.width = Math.min(w, 1024);
+      canvas.height = Math.min(h, 1024);
       const ctx = canvas.getContext('2d');
       if (!ctx) { firstFrame.image.close(); return; }
       proxyCtxRef.current = ctx;
@@ -443,8 +443,8 @@ function TokenShape({
     img.onload = () => {
       if (cancelled) return;
       console.log(`[TokenAnim] ✅ GIF (fallback) carregado para "${name}" (${img.naturalWidth}x${img.naturalHeight})`);
-      canvas.width = Math.min(img.naturalWidth, 512);
-      canvas.height = Math.min(img.naturalHeight, 512);
+      canvas.width = Math.min(img.naturalWidth, 1024);
+      canvas.height = Math.min(img.naturalHeight, 1024);
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
       proxyCtxRef.current = ctx;
@@ -474,8 +474,8 @@ function TokenShape({
       if (cancelled) return;
       console.log(`[TokenAnim] ✅ WebM carregado para "${name}" (${video.videoWidth}x${video.videoHeight})`);
       video.play().catch(() => {});
-      canvas.width = Math.min(video.videoWidth, 512);
-      canvas.height = Math.min(video.videoHeight, 512);
+      canvas.width = Math.min(video.videoWidth, 1024);
+      canvas.height = Math.min(video.videoHeight, 1024);
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
       proxyCtxRef.current = ctx;
