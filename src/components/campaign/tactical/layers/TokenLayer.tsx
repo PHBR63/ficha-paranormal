@@ -253,8 +253,14 @@ function TokenShape({
         konvaAnimRef.current.stop();
         konvaAnimRef.current = null;
       }
-      if (gifDomRef.current?.parentNode) {
-        gifDomRef.current.parentNode.removeChild(gifDomRef.current);
+      if (gifDomRef.current) {
+        // Remove o container pai (div com overflow:hidden) que contém a img
+        const parentContainer = gifDomRef.current.parentNode;
+        if (parentContainer?.parentNode) {
+          parentContainer.parentNode.removeChild(parentContainer);
+        } else if (gifDomRef.current.parentNode) {
+          gifDomRef.current.parentNode.removeChild(gifDomRef.current);
+        }
         gifDomRef.current = null;
       }
       if (videoDomRef.current) {
