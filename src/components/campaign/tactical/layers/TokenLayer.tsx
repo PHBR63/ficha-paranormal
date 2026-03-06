@@ -200,18 +200,20 @@ function TokenShape({
   const [image, setImage] = useState<HTMLImageElement | null>(null);
   const [gifImage, setGifImage] = useState<HTMLImageElement | null>(null);
   const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(null);
-  const animFrameRef = useRef<number>(0);
   const konvaImageRef = useRef<Konva.Image | null>(null);
+  const konvaAnimRef = useRef<Konva.Animation | null>(null);
+  // Ref para o elemento DOM do GIF (para cleanup)
+  const gifDomRef = useRef<HTMLImageElement | null>(null);
   
   const size = token.size * gridSize;
   const color = TOKEN_COLORS[token.token_type] || '#666';
 
   // Detecta tipo de mídia animada (suporta URLs com query params)
   const imageUrl = token.image_url ?? '';
-  const urlPath = (() => {
+  const urlPath = useMemo(() => {
     try { return new URL(imageUrl).pathname.toLowerCase(); }
     catch { return imageUrl.toLowerCase(); }
-  })();
+  }, [imageUrl]);
   const isWebM = urlPath.endsWith('.webm');
   const isGif = urlPath.endsWith('.gif');
   const isAnimated = isWebM || isGif;
@@ -235,29 +237,6 @@ function TokenShape({
     };
   }, [token.image_url, isAnimated]);
 
-  /**
-   * Loop de animação compartilhado para GIF e WebM.
-   * Chama batchDraw na layer para capturar o frame atual da mídia.
-   * Usa throttle (~30fps) para evitar sobrecarga em múltiplos tokens.
-   */
-  const startAnimationLoop = useCallback(() => {
-    let lastTime = 0;
-    const FPS_INTERVAL = 1000 / 30; // ~30fps max
-
-    const animate = (timestamp: number) => {
-      if (timestamp - lastTime >= FPS_INTERVAL) {
-        const layer = konvaImageRef.current?.getLayer();
-        if (layer) {
-          layer.batchDraw();
-        }
-        lastTime = timestamp;
-      }
-      animFrameRef.current = requestAnimationFrame(animate);
-    };
-
-    animFrameRef.current = requestAnimationFrame(animate);
-  }, []);
-
   // Carrega e anima GIF — o elemento DEVE estar no DOM para o browser avançar frames
   useEffect(() => {
     if (!token.image_url || !isGif) {
@@ -265,32 +244,35 @@ function TokenShape({
       return;
     }
 
+    console.log(`[TokenAnim] Carregando GIF para token "${token.name}":`, token.image_url);
+
     const img = document.createElement('img');
     img.crossOrigin = 'anonymous';
-    img.src = token.image_url;
-    // Esconde o elemento mas mantém no DOM para que o browser anime o GIF
-    // Posiciona fora da tela mas com tamanho real e visível para o browser
-    // NÃO usar opacity:0 nem width/height:1px — o browser pode pular frames de GIFs "invisíveis"
-    img.style.position = 'fixed';
-    img.style.left = '-9999px';
-    img.style.top = '-9999px';
-    img.style.pointerEvents = 'none';
-    img.style.zIndex = '-1';
+    // Posiciona fora da tela — NÃO usar opacity:0 / visibility:hidden / width:0
+    img.style.cssText = 'position:fixed;left:-9999px;top:0;pointer-events:none;z-index:-1;';
     document.body.appendChild(img);
+    gifDomRef.current = img;
 
     img.onload = () => {
-      // Seta estado para disparar re-render e montar o KonvaImage
+      console.log(`[TokenAnim] ✅ GIF carregado para "${token.name}" (${img.naturalWidth}x${img.naturalHeight})`);
       setGifImage(img);
     };
-
-    return () => {
-      cancelAnimationFrame(animFrameRef.current);
-      if (img.parentNode) {
-        img.parentNode.removeChild(img);
-      }
+    img.onerror = (e) => {
+      console.error(`[TokenAnim] ❌ Erro ao carregar GIF para "${token.name}":`, e);
       setGifImage(null);
     };
-  }, [token.image_url, isGif, startAnimationLoop]);
+
+    // Seta src DEPOIS de anexar ao DOM e configurar handlers
+    img.src = token.image_url;
+
+    return () => {
+      img.onload = null;
+      img.onerror = null;
+      if (img.parentNode) img.parentNode.removeChild(img);
+      gifDomRef.current = null;
+      setGifImage(null);
+    };
+  }, [token.image_url, isGif, token.name]);
 
   // Carrega e anima WebM via <video>
   useEffect(() => {
@@ -299,35 +281,88 @@ function TokenShape({
         if (prev) { prev.pause(); prev.src = ''; }
         return null;
       });
-      if (!isGif && animFrameRef.current) {
-        cancelAnimationFrame(animFrameRef.current);
-      }
       return;
     }
 
+    console.log(`[TokenAnim] Carregando WebM para token "${token.name}":`, token.image_url);
+
     const video = document.createElement('video');
     video.crossOrigin = 'anonymous';
-    video.src = token.image_url;
     video.loop = true;
     video.muted = true;
     video.playsInline = true;
     video.autoplay = true;
+    // Anexa ao DOM para garantir decode de frames
+    video.style.cssText = 'position:fixed;left:-9999px;top:0;pointer-events:none;z-index:-1;width:1px;height:1px;';
+    document.body.appendChild(video);
 
     video.addEventListener('loadeddata', () => {
+      console.log(`[TokenAnim] ✅ WebM carregado para "${token.name}"`);
       video.play().catch(() => {});
-      // Seta estado para disparar re-render e montar o KonvaImage
       setVideoElement(video);
     });
 
+    video.addEventListener('error', (e) => {
+      console.error(`[TokenAnim] ❌ Erro ao carregar WebM para "${token.name}":`, e);
+    });
+
+    video.src = token.image_url;
     video.load();
 
     return () => {
-      cancelAnimationFrame(animFrameRef.current);
       video.pause();
       video.src = '';
+      if (video.parentNode) video.parentNode.removeChild(video);
       setVideoElement(null);
     };
-  }, [token.image_url, isWebM, isGif, startAnimationLoop]);
+  }, [token.image_url, isWebM, token.name]);
+
+  // Inicia Konva.Animation quando a mídia animada E o KonvaImage estiverem prontos
+  useEffect(() => {
+    if (!gifImage && !videoElement) return;
+
+    // Espera o próximo frame para garantir que o KonvaImage ref foi setado
+    const raf = requestAnimationFrame(() => {
+      const node = konvaImageRef.current;
+      const layer = node?.getLayer();
+      if (!layer) {
+        console.warn(`[TokenAnim] ⚠️ Layer não encontrada para "${token.name}" - tentando novamente...`);
+        // Tenta novamente após pequeno delay
+        const retry = setTimeout(() => {
+          const retryNode = konvaImageRef.current;
+          const retryLayer = retryNode?.getLayer();
+          if (retryLayer) {
+            console.log(`[TokenAnim] ✅ Layer encontrada na retentativa para "${token.name}"`);
+            const anim = new Konva.Animation(() => {
+              // Não precisa fazer nada - o Konva.Animation já chama layer.batchDraw() automaticamente
+            }, retryLayer);
+            anim.start();
+            konvaAnimRef.current = anim;
+            console.log(`[TokenAnim] 🎬 Animação iniciada (retry) para "${token.name}"`);
+          } else {
+            console.error(`[TokenAnim] ❌ Layer ainda não disponível após retry para "${token.name}"`);
+          }
+        }, 100);
+        return () => clearTimeout(retry);
+      }
+
+      console.log(`[TokenAnim] 🎬 Iniciando Konva.Animation para "${token.name}"`);
+      const anim = new Konva.Animation(() => {
+        // Callback vazio — o Konva.Animation atualiza a layer automaticamente a cada frame
+      }, layer);
+      anim.start();
+      konvaAnimRef.current = anim;
+    });
+
+    return () => {
+      cancelAnimationFrame(raf);
+      if (konvaAnimRef.current) {
+        konvaAnimRef.current.stop();
+        konvaAnimRef.current = null;
+        console.log(`[TokenAnim] ⏹️ Animação parada para "${token.name}"`);
+      }
+    };
+  }, [gifImage, videoElement, token.name]);
 
   // Handlers de drag - cancela bubble para não mover o Stage junto
   const handleDragStart = useCallback((e: Konva.KonvaEventObject<DragEvent>) => {
@@ -353,14 +388,6 @@ function TokenShape({
 
   // Verifica se pode arrastar
   const canDrag = !token.locked && (isMaster || token.token_type === 'pc');
-
-  // Inicia loop de animação quando a mídia animada estiver pronta
-  useEffect(() => {
-    if (gifImage || videoElement) {
-      startAnimationLoop();
-    }
-    return () => { cancelAnimationFrame(animFrameRef.current); };
-  }, [gifImage, videoElement, startAnimationLoop]);
 
   // Determina a fonte da imagem animada (GIF ou WebM)
   const animatedSource = isGif 
