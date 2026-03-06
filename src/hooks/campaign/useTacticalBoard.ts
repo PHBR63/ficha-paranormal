@@ -756,25 +756,46 @@ export function useTacticalBoard({
     }
   }, [activeMap]);
 
+  // Campos válidos da tabela map_tokens (filtra campos extras como hp_current, san_current, etc.)
+  const DB_TOKEN_FIELDS = useMemo(() => new Set([
+    'character_id', 'conditions', 'created_by', 'image_url', 'layer',
+    'light_color', 'light_radius', 'locked', 'map_id', 'name', 'notes',
+    'rotation', 'size', 'token_type', 'visible_to', 'x', 'y',
+  ]), []);
+
   const updateToken = useCallback(async (tokenId: string, data: Partial<MapToken>): Promise<boolean> => {
+    console.log(`[Token] updateToken("${tokenId}"):`, data);
     // Atualização otimista do estado local
     setTokens(prev => prev.map(t => t.id === tokenId ? { ...t, ...data } : t));
     
     try {
+      // Filtra apenas campos que existem na tabela map_tokens
+      const dbData: Record<string, unknown> = {};
+      for (const [key, value] of Object.entries(data)) {
+        if (DB_TOKEN_FIELDS.has(key)) {
+          dbData[key] = value;
+        }
+      }
+      if (Object.keys(dbData).length === 0) {
+        console.warn('[Token] Nenhum campo válido para atualizar no DB');
+        return true; // Só atualização local
+      }
+      
       const { error } = await supabase
         .from('map_tokens')
-        .update(data)
+        .update(dbData)
         .eq('id', tokenId);
       
       if (error) throw error;
+      console.log(`[Token] ✅ Token "${tokenId}" atualizado com sucesso`);
       return true;
     } catch (error: any) {
-      console.error('Erro ao atualizar token:', error);
+      console.error('[Token] ❌ Erro ao atualizar token:', error);
       // Reverte em caso de erro
       if (activeMap) loadTokens(activeMap.id);
       return false;
     }
-  }, [activeMap, loadTokens]);
+  }, [activeMap, loadTokens, DB_TOKEN_FIELDS]);
 
   const moveToken = useCallback(async (tokenId: string, x: number, y: number): Promise<boolean> => {
     // Atualização otimista
@@ -789,7 +810,11 @@ export function useTacticalBoard({
   }, [activeMap, updateToken, loadTokens]);
 
   const deleteToken = useCallback(async (tokenId: string): Promise<boolean> => {
-    if (!isMasterRef.current) return false;
+    console.log(`[Token] deleteToken("${tokenId}"), isMaster=${isMasterRef.current}`);
+    if (!isMasterRef.current) {
+      console.warn('[Token] ⚠️ deleteToken bloqueado: não é mestre');
+      return false;
+    }
     
     // Remoção otimista do estado local
     const previousTokens = [...tokens];
@@ -803,8 +828,10 @@ export function useTacticalBoard({
         .eq('id', tokenId);
       
       if (error) throw error;
+      console.log(`[Token] ✅ Token "${tokenId}" deletado com sucesso`);
       return true;
     } catch (error: any) {
+      console.error('[Token] ❌ Erro ao excluir token:', error);
       // Reverte em caso de erro
       setTokens(previousTokens);
       toastRef.current?.({

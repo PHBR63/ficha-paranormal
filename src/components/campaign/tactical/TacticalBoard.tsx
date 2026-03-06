@@ -1352,7 +1352,7 @@ export function TacticalBoard({
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 10 }}
-              className="absolute bottom-4 left-4 right-4 bg-card/95 border border-border rounded-lg p-3"
+              className="absolute bottom-4 left-4 right-4 bg-card/95 border border-border rounded-lg p-3 z-30 pointer-events-auto"
             >
               {(() => {
                 const token = board.tokens.find(t => t.id === board.selectedTokenId);
