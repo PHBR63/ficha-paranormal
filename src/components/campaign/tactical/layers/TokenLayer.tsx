@@ -253,8 +253,14 @@ function TokenShape({
         konvaAnimRef.current.stop();
         konvaAnimRef.current = null;
       }
-      if (gifDomRef.current?.parentNode) {
-        gifDomRef.current.parentNode.removeChild(gifDomRef.current);
+      if (gifDomRef.current) {
+        // Remove o container pai (div com overflow:hidden) que contém a img
+        const parentContainer = gifDomRef.current.parentNode;
+        if (parentContainer?.parentNode) {
+          parentContainer.parentNode.removeChild(parentContainer);
+        } else if (gifDomRef.current.parentNode) {
+          gifDomRef.current.parentNode.removeChild(gifDomRef.current);
+        }
         gifDomRef.current = null;
       }
       if (videoDomRef.current) {
@@ -288,12 +294,20 @@ function TokenShape({
 
     if (isGif) {
       // --- GIF: usa <img> no DOM ---
+      // O elemento PRECISA ser visualmente renderizado pelo browser para que
+      // o motor de animação do GIF avance os frames. Elementos com opacity~0
+      // ou 1x1px são otimizados pelo Chrome e param de animar.
+      // Solução: criar um container com overflow:hidden de 1x1px contendo
+      // a imagem em tamanho real — o browser processa os frames mas só
+      // 1 pixel é visível (atrás do canvas).
+      const container = document.createElement('div');
+      container.style.cssText = 'position:fixed;bottom:0;right:0;width:1px;height:1px;overflow:hidden;pointer-events:none;z-index:-9999;';
       const img = document.createElement('img');
       img.crossOrigin = 'anonymous';
-      // Elemento DEVE estar visível para o browser animar frames do GIF
-      // Usamos 1x1px real no canto, não -9999px (Chrome otimiza offscreen)
-      img.style.cssText = 'position:fixed;bottom:0;right:0;width:1px;height:1px;pointer-events:none;z-index:-9999;opacity:0.01;';
-      document.body.appendChild(img);
+      // Imagem em tamanho natural dentro do container recortado
+      img.style.cssText = 'display:block;width:auto;height:auto;';
+      container.appendChild(img);
+      document.body.appendChild(container);
       gifDomRef.current = img;
 
       img.onload = () => {
@@ -335,10 +349,15 @@ function TokenShape({
         konvaAnimRef.current.stop();
         konvaAnimRef.current = null;
       }
-      if (gifDomRef.current?.parentNode) {
+      if (gifDomRef.current) {
         gifDomRef.current.onload = null;
         gifDomRef.current.onerror = null;
-        gifDomRef.current.parentNode.removeChild(gifDomRef.current);
+        const parentContainer = gifDomRef.current.parentNode;
+        if (parentContainer?.parentNode) {
+          parentContainer.parentNode.removeChild(parentContainer);
+        } else if (gifDomRef.current.parentNode) {
+          gifDomRef.current.parentNode.removeChild(gifDomRef.current);
+        }
         gifDomRef.current = null;
       }
       if (videoDomRef.current) {

@@ -757,6 +757,9 @@ export function useTacticalBoard({
   }, [activeMap]);
 
   const updateToken = useCallback(async (tokenId: string, data: Partial<MapToken>): Promise<boolean> => {
+    // Atualização otimista do estado local
+    setTokens(prev => prev.map(t => t.id === tokenId ? { ...t, ...data } : t));
+    
     try {
       const { error } = await supabase
         .from('map_tokens')
@@ -767,9 +770,11 @@ export function useTacticalBoard({
       return true;
     } catch (error: any) {
       console.error('Erro ao atualizar token:', error);
+      // Reverte em caso de erro
+      if (activeMap) loadTokens(activeMap.id);
       return false;
     }
-  }, []);
+  }, [activeMap, loadTokens]);
 
   const moveToken = useCallback(async (tokenId: string, x: number, y: number): Promise<boolean> => {
     // Atualização otimista
@@ -786,6 +791,11 @@ export function useTacticalBoard({
   const deleteToken = useCallback(async (tokenId: string): Promise<boolean> => {
     if (!isMasterRef.current) return false;
     
+    // Remoção otimista do estado local
+    const previousTokens = [...tokens];
+    setTokens(prev => prev.filter(t => t.id !== tokenId));
+    setSelectedTokenId(null);
+    
     try {
       const { error } = await supabase
         .from('map_tokens')
@@ -793,10 +803,10 @@ export function useTacticalBoard({
         .eq('id', tokenId);
       
       if (error) throw error;
-      
-      setSelectedTokenId(null);
       return true;
     } catch (error: any) {
+      // Reverte em caso de erro
+      setTokens(previousTokens);
       toastRef.current?.({
         title: 'Erro ao excluir token',
         description: error.message,
@@ -804,7 +814,7 @@ export function useTacticalBoard({
       });
       return false;
     }
-  }, []);
+  }, [tokens]);
 
   const selectToken = useCallback((tokenId: string | null) => {
     setSelectedTokenId(tokenId);
