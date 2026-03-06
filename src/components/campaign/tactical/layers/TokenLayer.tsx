@@ -198,12 +198,14 @@ function TokenShape({
   onResize,
 }: TokenShapeProps) {
   const [image, setImage] = useState<HTMLImageElement | null>(null);
-  const [gifImage, setGifImage] = useState<HTMLImageElement | null>(null);
-  const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(null);
+  // Canvas proxy: é o que o Konva realmente renderiza — recebe pixels frescos a cada frame
+  const [proxyCanvas, setProxyCanvas] = useState<HTMLCanvasElement | null>(null);
   const konvaImageRef = useRef<Konva.Image | null>(null);
   const konvaAnimRef = useRef<Konva.Animation | null>(null);
-  // Ref para o elemento DOM do GIF (para cleanup)
+  // Refs para elementos DOM de mídia (não disparam re-render)
   const gifDomRef = useRef<HTMLImageElement | null>(null);
+  const videoDomRef = useRef<HTMLVideoElement | null>(null);
+  const proxyCtxRef = useRef<CanvasRenderingContext2D | null>(null);
   
   const size = token.size * gridSize;
   const color = TOKEN_COLORS[token.token_type] || '#666';
