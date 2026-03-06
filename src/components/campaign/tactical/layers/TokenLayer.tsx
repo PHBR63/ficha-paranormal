@@ -336,7 +336,7 @@ function TokenShape({
       if (cancelled) return;
 
       const decoder = new (window as any).ImageDecoder({
-        data: arrayBuffer,
+        data: new Uint8Array(arrayBuffer),
         type: 'image/gif',
       });
       imageDecoderRef.current = decoder;
