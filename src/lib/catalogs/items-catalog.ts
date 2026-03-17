@@ -576,7 +576,7 @@ export const AMMUNITION: CatalogItem[] = [
     id: 'combustivel',
     name: 'Combustível',
     type: 'municao',
-    category: '0',
+    category: 'I',
     spaces: 1,
     description: 'Galão de combustível para lança-chamas. Cada galão representa combustível suficiente para uma cena de combate.',
     effect: 'Suficiente para uma cena de combate. Armas: lança-chamas.',
