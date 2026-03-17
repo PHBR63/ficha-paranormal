@@ -1041,7 +1041,52 @@ export function InventoryPanel({
     });
   };
 
-  // Handler genérico para abrir modal de modificação (arma, proteção ou acessório)
+  // Handler para abrir modal de modificação de munição
+  const handleOpenAmmoMod = (item: ExtendedInventoryItem) => {
+    setAmmoToModify(item);
+    setAmmoModModalOpen(true);
+  };
+
+  // Handler para aplicar modificações em munição
+  const handleApplyAmmoModifications = (modifications: AmmoModification[]) => {
+    if (!ammoToModify || !onInventoryChange) return;
+
+    const hasModifications = modifications.length > 0;
+    const baseName = ammoToModify.name.replace(/\s*\(Mod\.\)$/, '');
+
+    // Calcular categoria final (cada mod = +1 categoria)
+    const CATEGORY_ORDER_LOCAL = ['0', 'I', 'II', 'III', 'IV'] as const;
+    const baseCategory = (ammoToModify as any).baseAmmoCategory || ammoToModify.category;
+    const baseCatIndex = CATEGORY_ORDER_LOCAL.indexOf(baseCategory as typeof CATEGORY_ORDER_LOCAL[number]);
+    const finalCatIndex = Math.min(baseCatIndex + modifications.length, CATEGORY_ORDER_LOCAL.length - 1);
+    const finalCategory = CATEGORY_ORDER_LOCAL[finalCatIndex] as ExtendedInventoryItem['category'];
+
+    const updatedInventory = inventory.map(item => {
+      if (item.id === ammoToModify.id) {
+        return {
+          ...item,
+          name: hasModifications ? `${baseName} (Mod.)` : baseName,
+          category: finalCategory,
+          appliedAmmoModifications: modifications,
+          baseAmmoCategory: baseCategory,
+        } as ExtendedInventoryItem;
+      }
+      return item;
+    });
+
+    onInventoryChange(updatedInventory);
+    setAmmoModModalOpen(false);
+    setAmmoToModify(null);
+
+    toast({
+      title: hasModifications ? 'Modificações aplicadas' : 'Modificações removidas',
+      description: hasModifications
+        ? `${modifications.length} modificação(ões) aplicada(s) em ${baseName}.`
+        : `Todas as modificações foram removidas de ${baseName}.`,
+    });
+  };
+
+  // Handler genérico para abrir modal de modificação (arma, proteção, acessório ou munição)
   const handleOpenModification = (item: ExtendedInventoryItem) => {
     if (item.itemType === 'weapon') {
       handleOpenWeaponMod(item);
@@ -1049,6 +1094,8 @@ export function InventoryPanel({
       handleOpenArmorMod(item);
     } else if (item.catalogType === 'acessorio') {
       handleOpenAccessoryMod(item);
+    } else if (item.catalogType === 'municao') {
+      handleOpenAmmoMod(item);
     }
   };
 
