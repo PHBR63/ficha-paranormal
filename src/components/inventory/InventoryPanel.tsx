@@ -241,6 +241,9 @@ export function InventoryPanel({
   // Estado para modal de modificação de acessórios
   const [accessoryModModalOpen, setAccessoryModModalOpen] = useState(false);
   const [accessoryToModify, setAccessoryToModify] = useState<ExtendedInventoryItem | null>(null);
+  // Estado para modal de modificação de munições
+  const [ammoModModalOpen, setAmmoModModalOpen] = useState(false);
+  const [ammoToModify, setAmmoToModify] = useState<ExtendedInventoryItem | null>(null);
   // Estado para modal de detalhes do item
   const [itemDetailOpen, setItemDetailOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<ExtendedInventoryItem | null>(null);
