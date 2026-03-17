@@ -1,46 +1,27 @@
 
 
-# Otimização de Bundle JS e CSS
+## Plano: Corrigir categorias de munições e garantir unicidade de modificações
 
-## Diagnóstico Atual
+### Problema 1: Categorias erradas nas munições
+Munição Longa, Cartuchos e Combustível estão com `category: '0'` no catálogo (`src/lib/catalogs/items-catalog.ts`), mas deveriam ser `category: 'I'` (Categoria I).
 
-**JS (1,1 MB):** O lazy loading por rota já está implementado para a maioria das páginas. Porém:
-- `Index` (346 linhas), `Auth` (600 linhas) e `NotFound` são importados eagerly no bundle principal
-- Não há `manualChunks` no Vite — todas as dependências de vendor (react, supabase, konva, framer-motion, recharts, dnd-kit) ficam num único chunk
-- Bibliotecas pesadas como `konva`, `react-konva`, `framer-motion`, `recharts` e `@rive-app/react-canvas` entram no bundle mesmo quando não são usadas na rota atual
+### Problema 2: Modificações de munição (Dum Dum / Explosiva) em munições do inventário
+Munições no inventário precisam poder receber as modificações Dum Dum e Explosiva (que aumentam a categoria em +1 cada). Atualmente o `WeaponModificationModal` só funciona para armas, não para itens de munição.
 
-**CSS (190 KB / 1120 linhas em `index.css`):** O `content` do Tailwind já está configurado corretamente (`src/**/*.{ts,tsx}`). Os 190 KB vêm principalmente de:
-- CSS custom extenso (variáveis de 5 temas, animações, efeitos atmosféricos, gradients por tema)
-- Muitas keyframes e animações customizadas no `tailwind.config.ts`
-- Arquivo `App.css` com estilos legados não utilizados (logo spin, .card, .read-the-docs)
+### Problema 3: Unicidade de modificações
+A regra de que cada modificação só pode ser aplicada uma vez já está implementada no `WeaponModificationModal` (modificações aplicadas ficam bloqueadas via `alreadyAppliedMods`). Preciso verificar se o mesmo padrão existe nos modais de armadura e acessório.
 
-## Plano de Implementação
+### Alterações
 
-### 1. Configurar `manualChunks` no Vite (maior impacto)
+**1. `src/lib/catalogs/items-catalog.ts`**
+- Alterar `category` de `'0'` para `'I'` nos itens: `municao_longa`, `cartuchos`, `combustivel`
 
-Adicionar em `vite.config.ts` a configuração `build.rollupOptions.output.manualChunks` para separar vendors pesados em chunks independentes:
+**2. Verificar modais de armadura e acessório**
+- Confirmar que `ArmorModificationModal` e `AccessoryModificationModal` já bloqueiam modificações duplicadas (mesmo padrão do `WeaponModificationModal`)
+- Se não implementam, adicionar a mesma lógica de `alreadyAppliedMods`
 
-- **`vendor-react`**: react, react-dom, react-router-dom
-- **`vendor-supabase`**: @supabase/supabase-js, @tanstack/react-query
-- **`vendor-ui`**: @radix-ui/*, class-variance-authority, tailwind-merge, cmdk, sonner, vaul
-- **`vendor-canvas`**: konva, react-konva (carregado apenas na rota do mapa)
-- **`vendor-motion`**: framer-motion (carregado apenas quando componentes animados são usados)
-- **`vendor-charts`**: recharts (carregado apenas em páginas com gráficos)
-
-Isso permite caching granular — atualizar código da app não invalida o cache dos vendors.
-
-### 2. Lazy load de `Auth` e `NotFound`
-
-Converter `Auth` e `NotFound` para `lazy()` — são páginas que não precisam estar no bundle inicial. A landing page (`Index`) permanece eager pois é o first paint.
-
-### 3. Remover `App.css` legado
-
-O arquivo `src/App.css` contém apenas estilos não utilizados (`.logo`, `.card`, `.read-the-docs`, `logo-spin`). Será removido e qualquer import eliminado.
-
-### 4. Resultado esperado
-
-- Bundle inicial reduzido de ~1,1 MB para ~400-500 KB (vendors separados + lazy routes)
-- Vendors cacheados independentemente pelo browser
-- CSS reduzido em ~2-3 KB (remoção do App.css legado)
-- O CSS de 190 KB em si é majoritariamente variáveis de tema necessárias — a redução significativa exigiria remover temas, o que não é desejável
+**3. Sistema de modificação de munições**
+- Permitir que itens de munição no inventário recebam modificações Dum Dum e Explosiva
+- Isso requer que o `InventoryPanel` reconheça munições como modificáveis e abra um modal adequado (pode reutilizar parte da lógica do `WeaponModificationModal` filtrada apenas para modificações de munição)
+- Ao aplicar modificações, recalcular a categoria da munição (+1 por modificação)
 
