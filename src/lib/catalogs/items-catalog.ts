@@ -546,7 +546,7 @@ export const AMMUNITION: CatalogItem[] = [
     id: 'municao_longa',
     name: 'Munição Longa',
     type: 'municao',
-    category: '0',
+    category: 'I',
     spaces: 1,
     description: 'Pacote de munição para fuzis, carabinas, metralhadoras e outras armas de calibre médio/grande. Cada pacote representa munição suficiente para uma cena de combate.',
     effect: 'Suficiente para uma cena de combate. Armas: fuzis, carabinas, metralhadoras.',
