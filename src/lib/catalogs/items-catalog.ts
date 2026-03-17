@@ -556,7 +556,7 @@ export const AMMUNITION: CatalogItem[] = [
     id: 'cartuchos',
     name: 'Cartuchos',
     type: 'municao',
-    category: '0',
+    category: 'I',
     spaces: 1,
     description: 'Pacote de cartuchos para espingardas. Cada pacote representa munição suficiente para uma cena de combate.',
     effect: 'Suficiente para uma cena de combate. Armas: espingardas.',
