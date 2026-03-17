@@ -94,7 +94,8 @@ import { ItemCatalogModal } from './ItemCatalogModal';
 import { WeaponModificationModal } from './WeaponModificationModal';
 import { ArmorModificationModal } from './ArmorModificationModal';
 import { AccessoryModificationModal, type AccessoryModification } from './AccessoryModificationModal';
-import type { CatalogWeapon, WeaponModification, CatalogArmor, ArmorModification, CatalogItem } from '@/lib/catalogs';
+import { AmmoModificationModal } from './AmmoModificationModal';
+import type { CatalogWeapon, WeaponModification, AmmoModification, CatalogArmor, ArmorModification, CatalogItem } from '@/lib/catalogs';
 import { 
   calculateModifiedWeaponStats, 
   getModifiedCategory, 
