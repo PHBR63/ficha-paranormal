@@ -187,28 +187,62 @@ export function WeaponModificationModal({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Lista de modificações */}
             <div className="space-y-3">
-              <h4 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
-                <Sparkles className="h-4 w-4" />
-                Modificações Disponíveis
-              </h4>
-              
-              <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1">
-                {displayModifications.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-4">
-                    Esta arma não pode ser modificada.
-                  </p>
-                ) : (
-                  displayModifications.map((mod) => (
-                    <ModificationCard
-                      key={mod.id}
-                      modification={mod}
-                      isSelected={selectedMods.includes(mod.id)}
-                      isApplied={alreadyAppliedMods.has(mod.id)}
-                      onToggle={() => toggleModification(mod.id)}
-                    />
-                  ))
-                )}
-              </div>
+              {/* Seção: Modificações de Arma de Fogo */}
+              {(() => {
+                const weaponMods = displayModifications.filter(m => !AMMO_MODIFICATION_IDS.has(m.id));
+                const ammoMods = displayModifications.filter(m => AMMO_MODIFICATION_IDS.has(m.id));
+                
+                return (
+                  <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1">
+                    {displayModifications.length === 0 ? (
+                      <p className="text-sm text-muted-foreground text-center py-4">
+                        Esta arma não pode ser modificada.
+                      </p>
+                    ) : (
+                      <>
+                        {/* Modificações da arma */}
+                        {weaponMods.length > 0 && (
+                          <>
+                            <h4 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                              <Sparkles className="h-4 w-4" />
+                              Modificações da Arma
+                            </h4>
+                            {weaponMods.map((mod) => (
+                              <ModificationCard
+                                key={mod.id}
+                                modification={mod}
+                                isSelected={selectedMods.includes(mod.id)}
+                                isApplied={alreadyAppliedMods.has(mod.id)}
+                                onToggle={() => toggleModification(mod.id)}
+                              />
+                            ))}
+                          </>
+                        )}
+                        
+                        {/* Modificações de munição */}
+                        {ammoMods.length > 0 && (
+                          <>
+                            <Separator className="my-3" />
+                            <h4 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                              <Target className="h-4 w-4" />
+                              Modificações de Munição
+                            </h4>
+                            {ammoMods.map((mod) => (
+                              <ModificationCard
+                                key={mod.id}
+                                modification={mod}
+                                isSelected={selectedMods.includes(mod.id)}
+                                isApplied={alreadyAppliedMods.has(mod.id)}
+                                onToggle={() => toggleModification(mod.id)}
+                              />
+                            ))}
+                          </>
+                        )}
+                      </>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
             
             {/* Preview das estatísticas */}
