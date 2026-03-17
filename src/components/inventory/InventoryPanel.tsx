@@ -1413,6 +1413,18 @@ export function InventoryPanel({
           onApplyModifications={handleApplyAccessoryModifications}
         />
       )}
+
+      {/* Ammo Modification Modal */}
+      {ammoToModify && (
+        <AmmoModificationModal
+          open={ammoModModalOpen}
+          onOpenChange={setAmmoModModalOpen}
+          itemName={ammoToModify.name.replace(/\s*\(Mod\.\)$/, '')}
+          itemCategory={(ammoToModify as any).baseAmmoCategory || ammoToModify.category || '0'}
+          currentModifications={(ammoToModify as any).appliedAmmoModifications || []}
+          onApplyModifications={handleApplyAmmoModifications}
+        />
+      )}
       <Dialog open={useItemConfirmOpen} onOpenChange={setUseItemConfirmOpen}>
         <DialogContent className="sm:max-w-md bg-popover">
           <DialogHeader>
