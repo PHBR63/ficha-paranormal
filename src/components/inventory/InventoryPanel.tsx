@@ -1761,7 +1761,7 @@ export function InventoryPanel({
                           onEquip={!readOnly && canEquipItem(item) ? handleEquipItem : undefined}
                           onUnequip={!readOnly && item.isEquipped ? handleUnequipItem : undefined}
                           onUse={!readOnly && canUseItem(item) ? handleRequestUseItem : undefined}
-                          onModify={!readOnly && (item.itemType === 'weapon' || item.itemType === 'armor' || item.catalogType === 'acessorio') ? handleOpenModification : undefined}
+                          onModify={!readOnly && (item.itemType === 'weapon' || item.itemType === 'armor' || item.catalogType === 'acessorio' || item.catalogType === 'municao') ? handleOpenModification : undefined}
                           onToggleFavorite={!readOnly && categoryAbilities.length > 0 && item.itemType === 'weapon' ? handleToggleFavorite : undefined}
                           availableAbilities={categoryAbilities}
                           onViewDetails={(itemToView) => {
