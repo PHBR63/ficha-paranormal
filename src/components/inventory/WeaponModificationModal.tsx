@@ -30,6 +30,7 @@ import {
   calculateModifiedWeaponStats,
   getWeaponModificationById,
   MODIFICATION_LABELS,
+  AMMO_MODIFICATION_IDS,
 } from '@/lib/catalogs';
 
 // Mapa de ícones para modificações

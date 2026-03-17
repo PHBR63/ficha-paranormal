@@ -204,6 +204,11 @@ export const AMMO_MODIFICATIONS: WeaponModificationData[] = [
   },
 ];
 
+// IDs das modificações de munição (para separação na UI)
+export const AMMO_MODIFICATION_IDS: Set<string> = new Set(
+  AMMO_MODIFICATIONS.map(m => m.id)
+);
+
 // Todas as modificações disponíveis
 export const ALL_WEAPON_MODIFICATIONS: WeaponModificationData[] = [
   ...MELEE_WEAPON_MODIFICATIONS,
