@@ -161,10 +161,10 @@ export const FIREARM_MODIFICATIONS: WeaponModificationData[] = [
   {
     id: 'silenciador',
     name: 'Silenciador',
-    description: 'Reduz em –5 a penalidade em Furtividade para se esconder após atacar.',
+    description: 'Reduz em –10 a penalidade em Furtividade para se esconder após atacar.',
     applicableTo: ['firearm'],
     categoryIncrease: 1,
-    special: 'Reduz em –5 a penalidade em Furtividade para se esconder após atacar',
+    special: 'Reduz em –10 a penalidade em Furtividade para se esconder após atacar',
   },
   {
     id: 'tatica_firearm',
