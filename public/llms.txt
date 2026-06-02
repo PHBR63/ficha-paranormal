@@ -1,0 +1,11 @@
+# Let's Roll — VTT Ordem Paranormal
+
+> Mesa Virtual (VTT) gratuita para o RPG Ordem Paranormal v1.3, com fichas digitais automatizadas, rolagem de dados, rituais, combate e campanhas em tempo real.
+
+Let's Roll é uma plataforma web para jogar Ordem Paranormal RPG online. Permite criar e gerenciar fichas de agentes, conduzir campanhas com mapa tático, rolagens nativas, sistema de Sanidade, rituais e todos os elementos paranormais oficiais.
+
+## Pages
+
+- [Início](/): Apresentação da plataforma e recursos da VTT.
+- [Entrar / Criar conta](/auth): Acesso e cadastro de novos agentes.
+- [Instalar App](/install): Como instalar o Let's Roll como aplicativo (PWA) no celular ou desktop.
