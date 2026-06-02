@@ -123,6 +123,7 @@ export default function Install() {
             variant="ghost"
             size="icon"
             onClick={() => navigate(-1)}
+            aria-label="Voltar"
             className="mr-2 text-[#808080] hover:text-[#F5F5F5] hover:bg-[#8B0000]/10"
           >
             <ArrowLeft className="h-5 w-5" />

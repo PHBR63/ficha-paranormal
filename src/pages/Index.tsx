@@ -7,6 +7,7 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
+import { SEO } from '@/components/SEO';
 import { Particles } from '@/components/ui/particles';
 import { LogoBox, LogoHero } from '@/components/ui/logo';
 import { ChevronRight } from 'lucide-react';
@@ -24,6 +25,11 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-[#0D0A0B] relative overflow-hidden">
+      <SEO
+        title="LET'S ROLL — VTT de Ordem Paranormal RPG"
+        description="Mesa Virtual gratuita para Ordem Paranormal RPG v1.3: fichas automatizadas, rolagem de dados, rituais, combate e campanhas em tempo real."
+        path="/"
+      />
       {/* Background Effects - Horror Investigativo */}
       <div className="absolute inset-0 bg-landing-gradient" />
       
@@ -72,8 +78,8 @@ const Index = () => {
           <div className="flex items-center gap-2 sm:gap-3">
             <LogoBox size="md" />
             <div>
-              <h1 className="font-display text-xl sm:text-2xl tracking-wide text-[#F5F5F5]">LET'S ROLL</h1>
-              <p className="text-[8px] sm:text-[10px] text-[#8B0000] tracking-[0.2em] sm:tracking-[0.3em] uppercase hidden sm:block">Ordem Paranormal VTT</p>
+              <h1 className="font-display text-xl sm:text-2xl tracking-wide text-[#F5F5F5]">LET'S ROLL — Ordem Paranormal VTT</h1>
+              <p className="text-[8px] sm:text-[10px] text-[#8B0000] tracking-[0.2em] sm:tracking-[0.3em] uppercase hidden sm:block">Mesa Virtual oficial fan-made</p>
             </div>
           </div>
           

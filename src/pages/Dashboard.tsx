@@ -6,6 +6,7 @@ import { Particles } from '@/components/ui/particles';
 import { FlickeringGrid } from '@/components/ui/flickering-grid';
 import { DecryptedText } from '@/components/ui/decrypted-text';
 import { BlurText } from '@/components/ui/blur-text';
+import { SEO } from '@/components/SEO';
 import { useThemeColors } from '@/hooks';
 import { useDashboardData } from '@/hooks/useDashboardData';
 import {
@@ -36,6 +37,11 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
+      <SEO
+        title="Dashboard do Agente — Let's Roll"
+        description="Central de operações do agente: gerencie suas fichas de Ordem Paranormal, campanhas ativas e atividade recente em um só lugar."
+        path="/dashboard"
+      />
       {/* === Background Effects === */}
       <div className="absolute inset-0 bg-landing-gradient-theme" />
       
