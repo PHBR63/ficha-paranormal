@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast, useThemeColors } from '@/hooks';
 import { Particles } from '@/components/ui/particles';
+import { SEO } from '@/components/SEO';
 import { FlickeringGrid } from '@/components/ui/flickering-grid';
 import { DecryptedText } from '@/components/ui/decrypted-text';
 import { Loader2, ArrowLeft, EyeOff, Eye as EyeIcon, KeyRound, Mail } from 'lucide-react';
@@ -296,6 +297,11 @@ export default function Auth() {
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden flex items-center justify-center p-4">
+      <SEO
+        title="Entrar ou criar conta — Let's Roll VTT"
+        description="Acesse o Let's Roll: faça login ou crie sua conta gratuita para jogar Ordem Paranormal RPG online com fichas digitais e mesa virtual."
+        path="/auth"
+      />
       {/* Background gradient - Dynamic */}
       <div className="absolute inset-0 bg-landing-gradient-theme" />
       
