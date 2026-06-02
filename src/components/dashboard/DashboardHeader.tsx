@@ -44,20 +44,20 @@ export function DashboardHeader({ displayName, hasLowStats }: DashboardHeaderPro
           
           {isAdmin && (
             <Link to="/admin/import" className="hidden sm:flex">
-              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground hover:bg-primary/10">
+              <Button variant="ghost" size="icon" aria-label="Importação administrativa" className="text-muted-foreground hover:text-foreground hover:bg-primary/10">
                 <ShieldStar className="w-5 h-5" weight="duotone" />
               </Button>
             </Link>
           )}
           
           <Link to="/my-templates" className="hidden sm:flex">
-            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground hover:bg-primary/10">
+            <Button variant="ghost" size="icon" aria-label="Meus templates" className="text-muted-foreground hover:text-foreground hover:bg-primary/10">
               <SquaresFour className="w-5 h-5" weight="duotone" />
             </Button>
           </Link>
 
           <Link to="/install" className="hidden sm:flex">
-            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground hover:bg-primary/10">
+            <Button variant="ghost" size="icon" aria-label="Instalar aplicativo" className="text-muted-foreground hover:text-foreground hover:bg-primary/10">
               <DeviceMobile className="w-5 h-5" weight="duotone" />
             </Button>
           </Link>
@@ -67,7 +67,7 @@ export function DashboardHeader({ displayName, hasLowStats }: DashboardHeaderPro
             <span className="text-sm hidden md:block">{displayName}</span>
           </div>
 
-          <Button variant="ghost" size="icon" onClick={signOut} className="text-muted-foreground hover:text-foreground hover:bg-primary/10">
+          <Button variant="ghost" size="icon" onClick={signOut} aria-label="Sair da conta" className="text-muted-foreground hover:text-foreground hover:bg-primary/10">
             <SignOut className="w-5 h-5" weight="duotone" />
           </Button>
         </div>

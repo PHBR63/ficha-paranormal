@@ -323,6 +323,7 @@ export default function MyTemplates() {
                           <Button
                             variant="outline"
                             size="sm"
+                            aria-label={`Excluir template ${template.name}`}
                             className="text-destructive hover:text-destructive hover:bg-destructive/10"
                             onClick={() => setDeletingTemplate(template)}
                           >
