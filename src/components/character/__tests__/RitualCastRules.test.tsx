@@ -5,6 +5,7 @@ import { getRitualById } from '@/lib/rituals/ritual-registry';
 import { RitualCastModal } from '../RitualCastModal';
 import { MobileRitualCastModal } from '../mobile/MobileRitualCastModal';
 import { useRitualBonusesFromSUE } from '@/hooks/useRitualBonusesFromSUE';
+import { useUnifiedEffects } from '@/hooks/useUnifiedEffects';
 
 // Isola somente a fachada de hooks, mantendo a validação real de regras.
 vi.mock('@/hooks', async () => await import('@/hooks/useRitualValidation'));
@@ -32,6 +33,32 @@ describe.each([
   ['desktop', RitualCastModal],
   ['mobile', MobileRitualCastModal],
 ] as const)('Modal de conjuração %s', (_name, Modal) => {
+  it.each(['condutor', 'Conduíte', 'conduite'])('oferece Ampliar inativo da trilha %s e confirma custo 3 uma vez', async classTrack => {
+    vi.useFakeTimers();
+    const attributes = { strength: 1, agility: 1, vigor: 2, intellect: 3, presence: 3 };
+    const { result } = renderHook(() => {
+      const effects = useUnifiedEffects({ origin: 'vitima', classId: 'Ocultista', classTrack,
+        nex: 20, attributes, conditions: [], activeRituals: [], currentPE: 27 });
+      return useRitualBonusesFromSUE(effects, attributes, [], 27);
+    });
+    const modifier = result.current.availableModifiers.find(mod => mod.id === 'ampliar-ritual-alcance');
+    expect(modifier).toMatchObject({ isActive: false, canActivate: true, peCost: 2 });
+    expect(result.current.peReduction).toBe(0);
+    const ritual = getRitualById('perturbacao')!;
+    expect(ritual).toBeDefined();
+    const onConfirm = vi.fn();
+    render(<Modal open onOpenChange={vi.fn()} ritual={ritual} peCurrent={27} peMax={28}
+      nex={20} ritualBonuses={result.current} onConfirm={onConfirm} />);
+    expect(onConfirm).not.toHaveBeenCalled();
+    fireEvent.click(_name === 'desktop' ? screen.getAllByRole('switch')[0]
+      : screen.getByRole('button', { name: /Ampliar Ritual \(Alcance\)/ }));
+    expect(onConfirm).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: /conjurar/i }));
+    await act(async () => { await vi.advanceTimersByTimeAsync(350); });
+    expect(onConfirm).toHaveBeenCalledTimes(1);
+    expect(onConfirm).toHaveBeenCalledWith(ritual, 3, [], [modifier!.id], undefined);
+  });
+
   it('valida o custo depois do desconto, igual ao valor cobrado', async () => {
     vi.useFakeTimers();
     const { result } = renderHook(() => useRitualBonusesFromSUE(null, { strength: 2, agility: 2, vigor: 2, intellect: 2, presence: 2 }));
