@@ -14,6 +14,8 @@ import {
   type DetailedResistanceResult,
 } from '@/lib/rules-engine';
 import type { DiceRollResult } from '@/lib/dice-roller';
+import { getSUEBonusesForCharacter, getTestDicePenalty } from '@/lib/rules-engine/sue-bridge';
+import { getAttributeDicePool } from '@/lib/attribute-dice-pool';
 
 // =====================================================
 // TIPOS
@@ -235,25 +237,21 @@ export function useResistanceRollWithSUE(config: ResistanceRollCharacterConfig) 
     const attributeName = ATTRIBUTE_NAMES[attributeKey];
     const resistanceName = RESISTANCE_NAMES[resistance];
     
-    const sources: Array<{ label: string; value: number; type: string }> = [
-      {
-        label: attributeName,
-        value: attributeValue,
-        type: 'attribute',
-      },
-    ];
-    
-    // TODO: Integrar bônus do SUE para exibição prévia
-    
+    const computed = getSUEBonusesForCharacter(characterState).rawSUE;
+    const level = characterState.skills[resistance];
+    const training = level === 'expert' ? 15 : level === 'veterano' ? 10 : level === 'treinado' ? 5 : 0;
+    const sources = [
+      { label: `Treinamento em ${resistanceName}`, value: training, type: 'skill' },
+      ...computed.resistances.breakdown.filter(entry => entry.resistance === resistance)
+        .map(entry => ({ label: entry.source, value: entry.value, type: 'power' })),
+      { label: 'Bônus de perícia', value: (computed.skills[resistance]?.bonus ?? 0) + (computed.skills['_all']?.bonus ?? 0), type: 'power' },
+    ].filter(source => source.value !== 0);
     return {
-      resistance,
-      resistanceName,
-      attributeName,
-      attributeValue,
-      sources,
-      total: attributeValue,
+      resistance, resistanceName, attributeName, attributeValue, sources,
+      dicePool: getAttributeDicePool(attributeValue, getTestDicePenalty(computed, resistance, attributeKey)),
+      total: sources.reduce((sum, source) => sum + source.value, 0),
     };
-  }, [config.attributes]);
+  }, [config.attributes, characterState]);
   
   return {
     executeResistanceRoll,

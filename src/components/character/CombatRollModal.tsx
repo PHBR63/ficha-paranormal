@@ -25,13 +25,15 @@ import {
   useDisparoLetalState,
   calculateDisparoLetalResult,
 } from '@/components/character/DisparoLetalSelector';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { getAttributeDicePool } from '@/lib/attribute-dice-pool';
+import { getConditionTestDicePenalty } from '@/lib/conditions/condition-test-penalty';
 import { rollSkillTest, rollDamage, DiceRollResult } from '@/lib/dice-roller';
 // Integração SUE: useCombatRollWithSUE encapsula rollAttackWithContext e rollDamageWithContext
 // com integração completa ao SUE para bônus automáticos
@@ -502,6 +504,11 @@ export function CombatRollModal({
       training: skillValue 
     };
   }, [weapon, skills]);
+
+  const rangedAttack = weapon?.type === 'Disparo' || weapon?.type === 'Arremesso';
+  const attackDicePenalty = getConditionTestDicePenalty(activeConditions,
+    rangedAttack ? 'agility' : 'strength', attackSkill.name, rangedAttack ? 'ranged' : 'melee');
+  const attackDicePool = getAttributeDicePool(attackAttribute, attackDicePenalty);
 
   // Calcular bônus disponíveis baseado nas habilidades do personagem
   // NOTA: Ataque Especial agora é gerenciado pelo SpecialAttackSelector (distribuição flexível)
@@ -1274,6 +1281,7 @@ export function CombatRollModal({
     // Rolar ataque
     const result = rollSkillTest({
       attributeValue: attackAttribute,
+      dicePenalty: attackDicePenalty,
       skillBonus: totalAttackBonus,
       otherBonuses: 0,
       label: `Ataque: ${weapon.name}`,
@@ -1665,6 +1673,7 @@ export function CombatRollModal({
             )}
             {weapon.name}
           </DialogTitle>
+          <DialogDescription className="sr-only">Rolagem de ataque e dano com modificadores e Defesa do alvo.</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -1982,7 +1991,7 @@ export function CombatRollModal({
                     </p>
                     <div className="flex flex-wrap items-center gap-1.5 text-sm">
                       <span className="px-2 py-0.5 rounded bg-secondary/50 font-medium">
-                        {weapon.type === 'Disparo' ? 'AGI' : 'FOR'}: {attackAttribute}
+                        {rangedAttack ? 'AGI' : 'FOR'}: {attackAttribute} · {attackDicePool.count}d20 ({attackDicePool.keep === 'lowest' ? 'menor' : 'maior'})
                       </span>
                     {attackBonusSources.map((source, idx) => (
                       <span key={idx} className="flex items-center gap-1">
@@ -2441,7 +2450,7 @@ export function CombatRollModal({
 
                   {attackResult.isDisadvantage && (
                     <p className="text-xs text-destructive">
-                      (Desvantagem - atributo 0)
+                      (Desvantagem - mantém o menor dado)
                     </p>
                   )}
                   

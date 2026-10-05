@@ -12,7 +12,7 @@ Fontes: Livro Base v1.3, pp. 11, 27, 39–40, 75 e 310–312. Para o caso de atr
 
 ## 2. Arquivos alterados/criados
 
-São 31 arquivos de código, testes e configuração, mais este documento. Arquivos de evidência, livros e extrações não foram incluídos no repositório. As dependências e os consumidores abaixo foram identificados estaticamente; chamadas dinâmicas podem exigir conferência adicional.
+São 44 arquivos de código, testes e configuração, mais este documento após a validação local das telas. Arquivos de evidência, livros e extrações não foram incluídos no repositório. As dependências e os consumidores abaixo foram identificados estaticamente; chamadas dinâmicas podem exigir conferência adicional.
 
 ### `package-lock.json`
 
@@ -282,8 +282,8 @@ Resultados finais desta execução:
 | Verificação | Resultado |
 |---|---|
 | Suíte antes das alterações | 2338 aprovados / 2481 testes; 143 falhas |
-| Suíte após as alterações | 2395 aprovados / 2536 testes; 141 falhas |
-| Novos cenários | 55/55 aprovados |
+| Suíte após as alterações | 2406 aprovados / 2547 testes; 141 falhas |
+| Novos cenários | 66/66 aprovados |
 | Novas falhas contra a baseline | 0 |
 | TypeScript da aplicação | aprovado |
 | Compilação e PWA | aprovadas |
@@ -304,3 +304,74 @@ npm run build
 O comando geral `npm test` ainda encerra com falha pelos testes preexistentes. Para validar instalação sem atualizar a stack, o lock foi resolvido localmente com `npm install --package-lock-only --ignore-scripts --offline --legacy-peer-deps`; isso não prova instalação limpa em outro ambiente nem compatibilidade de todos os peers.
 
 UAT pendente em ambiente de teste: comparar computador/celular com personagem sintético; conferir Força 2, atributo zero, Fraco, Caído, Desprevenido, Machucado, Vulnerável e Surdo; conferir iniciativa de Operações Especiais por ID e nome e via Versatilidade; garantir que 20 selecionado ainda possa errar Defesa alta; confirmar que duração, eventos periódicos e salvamento não sejam confundidos com o resultado calculado em memória.
+
+## Complemento: integração verificada nas telas locais
+
+### 1. Resumo da alteração
+
+A validação reproduziu uma lacuna: Fraco com Força 2 ainda lançava 2d20 nos modais, pois o caminho legado ignorava as condições. Os modais agora passam uma penalidade em dados ao pool compartilhado, preservando os bônus de poderes/dano já preparados pela tela. Isso não constitui migração integral dos bônus ao SUE. Também foi corrigido o fallback móvel que convertia atributo zero em um, além da prévia de resistência que somava o atributo ao bônus.
+
+### 2. Arquivos deste complemento
+
+| Arquivo | Função e dependências | Entradas e saídas |
+|---|---|---|
+| `src/lib/conditions/condition-test-penalty.ts` (novo) | Consulta `condition-definitions` e `condition-effects-adapter`; utilizado pelos quatro modais de perícia/combate. Centraliza normalização e seleção do atributo. | IDs ou nomes legados de condições, atributo, perícia e tipo de ataque → penalidade positiva em d20. Não grava dados. |
+| `src/lib/dice-roller.ts` | Usa `attribute-dice-pool`; atende modais e consumidores legados. Acrescenta `dicePenalty` opcional ao contrato existente. | Atributo, dados extras, penalidade, bônus e margem → dados, seleção e total compatíveis. |
+| `src/components/dice/DiceRollModal.tsx` | Usa os dois módulos anteriores; chamado por `CharacterSheet` e outros consumidores existentes. Retira inicialização de hook sem uso e conserva ativação de poderes. | Props de teste e condições → prévia do pool, resultado e callback. |
+| `src/components/character/mobile/MobileDiceRollModal.tsx` | Versão móvel do mesmo contrato; chamada por `MobileCharacterSheet`. | Props de teste e condições → drawer e callback de resultado. |
+| `src/components/character/CombatRollModal.tsx` | Usa o helper de condições e o pool; mantém cálculo existente de bônus e dano. Corrige texto de desvantagem e descrição acessível. | Arma, atributos, condições, bônus e Defesa → resultado e bloqueio de dano quando erra. |
+| `src/components/character/mobile/MobileCombatRollModal.tsx` | Recebe `activeConditions` opcional e usa o mesmo helper; chamado pela ficha móvel. | Mesmos dados de combate → drawer, resultado e callbacks existentes. |
+| `src/components/character/CombatWeaponsTable.tsx` | Transmite condições de `CharacterSheet` para `CombatRollModal`. | Props existentes + condições → seleção de arma e abertura do modal. |
+| `src/components/character/MobileCharacterSheet.tsx` | Fornece IDs das condições aos dois modais e preserva zero usando `??`. | Estado existente da ficha → props dos modais. Salvamento existente permanece sob responsabilidade da ficha. |
+| `src/pages/CharacterSheet.tsx` | Transmite condições, atributos e treinamento para tabela, perícia, iniciativa e resistência. Converte graus usando `getSkillBonus` de `character-data`. | Ficha carregada → props de componentes; não adiciona gravações, endpoints ou migrations. |
+| `src/components/character/TrackCombatBonusesBar.tsx` | Encaminha `skillBonuses` opcional ao hook de iniciativa. | Bônus de treinamento, atributos e condições → prévia e resultado de iniciativa. |
+| `src/components/character/ResistanceCheckModal.tsx` | Encaminha `targetSkills` opcional ao hook; conserva atributo zero; prévia mostra quantidade e critério de seleção reais. | Ritual/efeito, atributos, condições e treinamento → resultado, dano ajustado e callback. |
+| `src/hooks/sue/useResistanceRollWithSUE.ts` | Consulta a ponte SUE e o pool para a prévia, sem lançar dados; utilizado pelo modal e demais consumidores existentes. | Estado mínimo do personagem → prévia numérica/dados coerente com a rolagem. |
+| `src/lib/__tests__/dice-ui-integration.vitest.ts` (novo) | Executa o caminho usado pelos modais com as condições canônicas. | Cenários sintéticos → oito verificações de regressão, sem banco. |
+| `src/hooks/__tests__/dice-ui-preview.vitest.ts` (novo) | Executa hooks reais com treinamento e catálogo. | Cenários sintéticos → três verificações de prévia/resultado, sem banco. |
+
+### 3. Fluxo de comunicação
+
+Ficha desktop/móvel → IDs de condições e atributos → modal → helper de condições → `dicePenalty` → `rollSkillTest` → pool compartilhado → resultado compatível → callback existente. O cálculo de bônus de poderes/dano preparado pelas telas é preservado para evitar dupla aplicação durante esta integração parcial.
+
+Para iniciativa e resistência: ficha → conversão de grau em bônus → componente → hook → ponte SUE → pool/resultado. A prévia usa treinamento e bônus numéricos; o atributo determina o conjunto de dados. Não há novos endpoints, headers, payloads de rede, tabelas ou migrations. O laboratório não monta a ficha completa nem executa seus salvamentos.
+
+### 4. Código ou patch
+
+```ts
+getConditionTestDicePenalty(['Fraco'], 'strength', 'atletismo'); // 1d20 de penalidade
+rollSkillTest({ attributeValue: 2, skillBonus: 5, dicePenalty: 1 }); // 1d20 + 5
+```
+
+O patch completo atualizado está na entrega. Props novas são opcionais, preservando consumidores anteriores.
+
+### 5. Observações importantes e limites da validação
+
+Ambiente: laboratório local `http://127.0.0.1:5177/`, com componentes reais importados do projeto e personagem inteiramente sintético. Navegador via Playwright; a skill Browser não está disponível nesta sessão. Viewports: computador 1366×900 e celular 390×844. Requisições HTTP externas foram bloqueadas antes da navegação; a conferência de rede não mostrou requisições ao Supabase. Não foi realizada UAT autenticada, validação de salvamento, PWA em dispositivo físico ou abertura de personagem real.
+
+Foram exercitados 22 cenários, 11 por viewport: cinco de perícia (atributo 2, Fraco, Machucado, zero e negativo), dois de combate (Caído e 20 contra Defesa 100), dois de resistência (Fortitude treinada e Reflexos com Desprevenido), iniciativa com Surdo e Defesa com Vulnerável. Os resultados observados correspondem às regras conferidas. No caso de Vulnerável, a visualização é um indicador do laboratório ligado ao motor real; não prova toda a apresentação de Defesa da ficha autenticada.
+
+Console: nenhum erro de execução observado nos fluxos finais; há um aviso preexistente de descrição acessível ausente no drawer de combate móvel. Nenhuma tela vazia ou sobreposição de erro do Vite foi observada. Capturas de computador/celular foram inspecionadas; os controles principais ficaram utilizáveis nos tamanhos testados e não houve rolagem horizontal no cenário móvel conferido. As capturas mostram os componentes isolados, não a ficha completa.
+
+Lint dos arquivos tocados neste complemento: antes, 63 erros e 22 avisos; depois, 63 erros e 21 avisos. A comparação por arquivo/regra/mensagem não encontrou novos diagnósticos. As pendências legadas de lint permanecem e não devem ser descritas como aprovadas globalmente.
+
+Atributo zero/negativo com penalidade em dados continua aguardando definição. Misturas de bônus positivos e penalidades em dados não foram homologadas nesta validação. Integração completa dos bônus, eventos periódicos, duração/persistência de condições e os outros limites listados neste relatório permanecem pendentes. Nada foi publicado ou incorporado a main.
+
+### 6. Como testar e resultados
+
+- 11 novos testes deste complemento: aprovados; 66 novos testes no lote completo: aprovados.
+- Suíte completa atual: 2406 aprovados de 2547; mesmas 141 falhas preexistentes; nenhuma falha nova contra a baseline.
+- TypeScript da aplicação e compilação/PWA: aprovados.
+- Lint: nenhuma regressão identificada; pendências legadas mantidas.
+- Integridade do patch: sem erro de whitespace.
+
+```powershell
+npm test -- src/lib/__tests__/dice-ui-integration.vitest.ts src/hooks/__tests__/dice-ui-preview.vitest.ts
+npm test
+node node_modules/typescript/bin/tsc --noEmit -p tsconfig.app.json
+npm run build
+```
+
+Para repetir a validação visual em ambiente de testes, usar personagem sintético com atributos 2 e perícias treinadas. Comparar: Fraco lança 1d20 em Atletismo; atributo zero lança 2d20 mantendo o menor; atributo -1 lança 3d20 mantendo o menor; Caído lança 4d20 mantendo o menor no ataque corpo a corpo com Força 2; Desprevenido reduz Reflexos para 1d20; Machucado não acrescenta penalidade; Vulnerável aplica -2 na Defesa; Surdo modifica os dados de Iniciativa. Com Operações Especiais NEX 50 e Iniciativa treinada, a prévia e o resultado recebem +10. Forçar 20 no laboratório e usar Defesa 100 deve mostrar erro e bloquear dano. Isso não deve ser executado sobre ficha real para homologação.
+
+Evidências salvas junto ao relatório: `ORDEM_ROLL_QA_ANTES_DESKTOP.png`, `ORDEM_ROLL_QA_DEPOIS_DESKTOP.png` e `ORDEM_ROLL_QA_DEPOIS_MOBILE.png`.

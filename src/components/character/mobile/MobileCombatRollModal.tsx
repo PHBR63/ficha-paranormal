@@ -56,6 +56,8 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import { getAttributeDicePool } from '@/lib/attribute-dice-pool';
+import { getConditionTestDicePenalty } from '@/lib/conditions/condition-test-penalty';
 import confetti from 'canvas-confetti';
 import { rollSkillTest, rollDamage, DiceRollResult } from '@/lib/dice-roller';
 // TODO: Migração Fase 2 - Substituir rollSkillTest/rollDamage por useCombatRollWithSUE
@@ -144,6 +146,7 @@ interface MobileCombatRollModalProps {
   abilities: string[];
   nex: number;
   unifiedEffects?: ComputedEffects;
+  activeConditions?: string[];
   weaponBuffs?: WeaponBuff[];
   onRollComplete?: (result: DiceRollResult) => void;
   // NOVAS PROPS - Paridade com desktop
@@ -228,6 +231,7 @@ export function MobileCombatRollModal({
   abilities,
   nex,
   unifiedEffects,
+  activeConditions = [],
   weaponBuffs = [],
   onRollComplete,
   // NOVAS PROPS - Paridade com desktop
@@ -255,7 +259,7 @@ export function MobileCombatRollModal({
     generalPowers: [],
     paranormalPowers,
     unifiedEffects,
-    activeConditions: [], // Mobile não tem prop activeConditions direta
+    activeConditions,
     activatedPowers: activeConditionalBonuses,
     activeConditionalBonuses,
   });
@@ -465,6 +469,11 @@ export function MobileCombatRollModal({
       bonus 
     };
   }, [weapon, skills]);
+
+  const rangedAttack = weapon?.type === 'Disparo' || weapon?.type === 'Arremesso';
+  const attackDicePenalty = getConditionTestDicePenalty(activeConditions,
+    rangedAttack ? 'agility' : 'strength', attackSkill.name, rangedAttack ? 'ranged' : 'melee');
+  const attackDicePool = getAttributeDicePool(attackAttribute, attackDicePenalty);
 
   // Bônus disponíveis - ATUALIZADO com poderes paranormais e rituais
   const availableBonuses = useMemo((): CombatBonus[] => {
@@ -1122,6 +1131,7 @@ export function MobileCombatRollModal({
     setTimeout(() => {
       const result = rollSkillTest({
         attributeValue: attackAttribute,
+        dicePenalty: attackDicePenalty,
         skillBonus: totalAttackBonus,
         criticalThreshold: criticalMargin,
         label: `Ataque com ${weapon.name}`,
@@ -1175,7 +1185,7 @@ export function MobileCombatRollModal({
       
       onRollComplete?.(result);
     }, 500);
-  }, [weapon, attackAttribute, totalAttackBonus, criticalMargin, totalPECost, canAffordPE, currentPE, onPEChange, onRollComplete, targetDefense, combatFeedback]);
+  }, [attackDicePenalty, weapon, attackAttribute, totalAttackBonus, criticalMargin, totalPECost, canAffordPE, currentPE, onPEChange, onRollComplete, targetDefense, combatFeedback]);
 
   // Rolar dano - ATUALIZADO com advancedBonuses e buffDiceResult
   const rollDamageAction = useCallback(() => {
@@ -1878,7 +1888,7 @@ export function MobileCombatRollModal({
                   
                   <div className="flex items-center justify-between text-xs text-muted-foreground mt-2">
                     <span>Pool de dados</span>
-                    <span>{attackAttribute}d20</span>
+                    <span>{attackDicePool.count}d20 · {attackDicePool.keep === 'lowest' ? 'menor' : 'maior'}</span>
                   </div>
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
                     <span>Margem de crítico</span>

@@ -49,7 +49,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { MobileActionSheet, useActionSheet } from '@/components/ui/mobile-action-sheet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ORIGINS, CLASSES, getTrackById, getOcultistRituals } from '@/lib/character-data';
+import { ORIGINS, CLASSES, getTrackById, getOcultistRituals, getSkillBonus } from '@/lib/character-data';
 import { ALL_RITUALS } from '@/lib/rituals/legacy-exports';
 import { ALL_CLASS_ABILITIES } from '@/lib/class-abilities';
 import { PARANORMAL_POWERS, ParanormalPower, ParanormalElement, SavedParanormalPower, getPowerById } from '@/lib/paranormal-powers';
@@ -3486,6 +3486,9 @@ export default function CharacterSheet() {
                 damageReduction={bonusSummary.damageReduction}
                 effectResistances={bonusSummary.effectResistances}
                 agility={character.agility}
+                attributes={attributes}
+                activeConditions={activeConditionsForSUE}
+                skillBonuses={Object.fromEntries(Object.entries(character.skills).map(([skill, grade]) => [skill, getSkillBonus(grade)]))}
                 characterClass={character.class}
                 classTrack={character.class_track}
                 nex={character.nex}
@@ -3496,6 +3499,7 @@ export default function CharacterSheet() {
 
               {/* Tabela de Combate */}
               <CombatWeaponsTable
+                activeConditions={activeConditionsForSUE}
                 weapons={equippedWeapons}
                 attributes={attributes}
                 skills={character.skills}
@@ -4048,6 +4052,7 @@ export default function CharacterSheet() {
         skillBonus={rollSkillBonus}
         resistanceBonus={rollResistanceBonus}
         extraDice={rollExtraDice}
+        activeConditions={activeConditionsForSUE}
         bonusSources={rollBonusSources}
         onRollComplete={handleRollComplete}
         activatablePowers={activatablePowersForCharacter}
@@ -4221,6 +4226,11 @@ export default function CharacterSheet() {
 
       {/* Modal de teste de resistência (Fase 4) */}
       <ResistanceCheckModal
+        characterClass={character.class}
+        classTrack={character.class_track}
+        nex={character.nex}
+        activeConditions={activeConditionsForSUE}
+        targetSkills={Object.fromEntries(Object.entries(character.skills).map(([skill, grade]) => [skill, getSkillBonus(grade)]))}
         open={resistanceModalOpen}
         onOpenChange={setResistanceModalOpen}
         ritual={ritualForDamage}

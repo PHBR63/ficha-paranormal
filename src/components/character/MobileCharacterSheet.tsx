@@ -2567,7 +2567,8 @@ export function MobileCharacterSheet({
           setRollTestedAttribute(undefined);
         }}
         label={diceModalConfig?.skillName || 'Rolagem'}
-        attributeValue={diceModalConfig?.pool || 1}
+        attributeValue={diceModalConfig?.pool ?? 1}
+        activeConditions={activeConditions.map(condition => condition.id)}
         skillBonus={diceModalConfig?.bonus}
         extraDice={globalDiceBonus}
         bonusSources={diceModalConfig?.bonusSources}
@@ -2639,6 +2640,7 @@ export function MobileCharacterSheet({
           abilities={character.abilities}
           nex={character.nex}
           unifiedEffects={unifiedEffects?.computed}
+          activeConditions={activeConditions.map(condition => condition.id)}
           excludedEffects={unifiedEffects?.hardening?.excludedEffects || []}
           weaponBuffs={weaponBuffs}
           paranormalPowers={character.paranormal_powers?.map(p => ({
