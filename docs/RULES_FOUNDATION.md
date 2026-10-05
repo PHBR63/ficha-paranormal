@@ -375,3 +375,69 @@ npm run build
 Para repetir a validação visual em ambiente de testes, usar personagem sintético com atributos 2 e perícias treinadas. Comparar: Fraco lança 1d20 em Atletismo; atributo zero lança 2d20 mantendo o menor; atributo -1 lança 3d20 mantendo o menor; Caído lança 4d20 mantendo o menor no ataque corpo a corpo com Força 2; Desprevenido reduz Reflexos para 1d20; Machucado não acrescenta penalidade; Vulnerável aplica -2 na Defesa; Surdo modifica os dados de Iniciativa. Com Operações Especiais NEX 50 e Iniciativa treinada, a prévia e o resultado recebem +10. Forçar 20 no laboratório e usar Defesa 100 deve mostrar erro e bloquear dano. Isso não deve ser executado sobre ficha real para homologação.
 
 Evidências salvas junto ao relatório: `ORDEM_ROLL_QA_ANTES_DESKTOP.png`, `ORDEM_ROLL_QA_DEPOIS_DESKTOP.png` e `ORDEM_ROLL_QA_DEPOIS_MOBILE.png`.
+
+## Complemento da QA autenticada — 05/10/2026
+
+### 1. Resumo da alteração
+
+Corrige os problemas reproduzidos na versão publicada: grau de treinamento tratado como bônus no celular, chaves acentuadas e catálogo incompleto, Reflexos somado à Defesa permanente, condição Vulnerável omitida no cabeçalho, margem crítica móvel divergente, aviso falso de perícias e detalhamento duplicado do dano corpo a corpo. A regra personalizada do 20 natural continua exigindo acerto contra a Defesa.
+
+### 2. Arquivos alterados/criados
+
+| Arquivo | Responsabilidade, dependências e dados |
+|---|---|
+| `src/lib/skill-training.ts` (novo) | Recebe mapa de graus e nome/ID; normaliza acentos e converte 0/1/2/3 em 0/5/10/15 usando `character-data`. Lido pela ficha e lista móveis; ID canônico com zero prevalece sobre nome legado. Não grava dados. |
+| `src/lib/constants/game-ids.ts` | Inclui Iniciativa nas perícias de Agilidade; usado pelos utilitários de atributos e testes de integridade. |
+| `src/components/character/mobile/MobileSkillsTab.tsx` | Recebe graus e callback; usa `SKILLS` centralizado e `skill-training`; mostra as 28 perícias e emite ID canônico ao tocar. |
+| `src/components/character/MobileCharacterSheet.tsx` | Recebe ficha e callbacks de edição; fornece atributo, treinamento, efeitos e iniciativa aos modais. Preserva atributo zero, não reaplica o SUE e lê `critical` da arma antes do campo legado. |
+| `src/hooks/useDefenseBonuses.ts` | Recebe origem, poderes, equipamento e rituais; retorna fontes de Defesa. Reflexos continua pertencendo à esquiva; a prop `skills` foi mantida para compatibilidade. Usado pelo resumo de bônus e pela ficha. |
+| `src/hooks/useBonusSummaryFromSUE.ts` | Recebe contexto da ficha, combina motor e hooks legados e retorna resumo. Mantém penalidades não nulas de perícias. Consumido pelas fichas e barras. |
+| `src/pages/CharacterSheet.tsx` | Passa ao cabeçalho o resumo de Defesa, proteção e escudo; inclui condições uma única vez. |
+| `src/components/character/CharacterSheetHeader.tsx` | Recebe Defesa/bônus/fontes do desktop; exibe também valores negativos, com sinal e cor de penalidade. |
+| `src/components/character/mobile/MobileOverviewTab.tsx` | Recebe ficha e resumo móvel; exibe modificador negativo de Defesa com a mesma convenção. |
+| `src/components/character/CombatRollModal.tsx` e `src/components/character/mobile/MobileCombatRollModal.tsx` | Recebem arma, atributos e efeitos; explicam cada parcela de dano sem repetir o subtotal corpo a corpo/distância já detalhado. Mantêm callbacks e cálculo de dano existentes. |
+| `src/lib/rules-engine/validate-character.ts` | Recebe `CharacterState` e retorna avisos; utiliza regras de classe do builder, origens e poderes para contar treinamentos e reconhecer poderes por ID ou nome. |
+| `src/lib/rulebook-content.ts` | Fornece textos às etapas de criação, `CreationHelpModal` e `RuleBookTip`; corrige treinamento, NEX, marcos de trilha e separação entre exposição e Prestígio. Textos autorais deixam de ser atribuídos ao livro. |
+| `src/lib/__tests__/authenticated-qa-fixes.vitest.ts` (novo) | 12 regressões: graus, nomes legados, zero, atributo centralizado e validação da ficha sintética. Usa helpers e motor reais. |
+| `src/hooks/__tests__/authenticated-defense.vitest.ts` (novo) | 2 regressões de hooks reais: Reflexos fora da Defesa permanente e Vulnerável aplicado/revertido no resumo. |
+| `src/lib/__tests__/game-ids-integrity.test.ts` | Expectativa usa o total canônico, incluindo Iniciativa; nenhuma perícia foi removida. |
+| `src/lib/__tests__/validate-character-skills-powers.vitest.ts` | Atualiza fixtures conforme treinamentos de origem e classe; mantém as verificações do validador. |
+| `docs/RULES_FOUNDATION.md` | Documenta este complemento; não é executado pela aplicação. |
+
+### 3. Fluxo de comunicação
+
+Ficha salva → lista móvel lê graus → toque envia ID canônico → ficha converte treinamento e reúne efeitos → modal seleciona d20 e soma bônus → callback existente recebe resultado. Nenhuma transformação reescreve as chaves de fichas antigas no banco.
+
+Condições → motor SUE → resumo de Defesa → ficha soma proteção/escudo → cabeçalhos mostram valor e fontes. Treinamento de Reflexos é utilizado na reação de esquiva, sem entrar permanentemente nessa soma.
+
+Estado da ficha → validador consulta builder/origem/poderes → lista de avisos. Este complemento não muda endpoints, tabelas, autenticação ou dependências.
+
+### 4. Código ou patch
+
+```ts
+getSkillTrainingBonus({ 'Investigação': 1 }, 'investigacao'); // 5
+getSkillTrainingBonus({ investigacao: 0, 'Investigação': 2 }, 'investigacao'); // 0
+// Atributo zero chega intacto ao modal: 2d20, mantém o menor, soma treinamento.
+const totalDefenseBonus = bonusSummary.defense.total
+  + armorStats.armorDefenseBonus + armorStats.shieldDefenseBonus;
+```
+
+O diff do PR registra o código completo. Sessões e combate compartilhado possuem contrato separado em `docs/CAMPAIGN_COMBAT_SYNC.md`.
+
+### 5. Observações importantes
+
+Não houve publicação no Lovable. O teste autenticado anterior encontrou os defeitos no site; a conferência posterior usa componentes reais isolados, dados sintéticos e navegador em 390×844. Não equivale à homologação da ficha inteira publicada.
+
+O aviso de design em `CharacterSheetHeader` aponta a paleta roxa preexistente de patente; ela foi preservada para manter o padrão visual do projeto. Nenhuma configuração de supressão foi adicionada.
+
+O validador continua sendo auxiliar: não homologa todas as escolhas de origem, classe, aumento de treinamento e poderes. Permanecem os limites do lote anterior, inclusive a decisão pendente sobre atributo zero/negativo combinado com penalidade em dados.
+
+### 6. Como testar
+
+```powershell
+npm test -- src/lib/__tests__/authenticated-qa-fixes.vitest.ts src/hooks/__tests__/authenticated-defense.vitest.ts
+node node_modules/typescript/bin/tsc --noEmit -p tsconfig.app.json
+npm run build
+```
+
+Em homologação, conferir uma ficha sintética com AGI 2, PRE 0, Investigação/Vontade treinadas e Faca: catálogo 28, treinamento +5, Vontade com menor de 2d20, Defesa 12 sem proteção e 10 com Vulnerável, margem 19×2 nos dois layouts. Conferir iniciativa com treinamento e trilha, aviso de perícias coerente com criação e ausência de repetição de Mão Pesada no detalhamento. Confirmar que 20 abaixo da Defesa bloqueia dano.

@@ -837,7 +837,9 @@ export function MobileCombatRollModal({
     if (unifiedEffects) {
       // Breakdown detalhado do dano geral
       if (unifiedEffects.damage.breakdown && unifiedEffects.damage.breakdown.length > 0) {
-        unifiedEffects.damage.breakdown.forEach(entry => {
+        unifiedEffects.damage.breakdown.filter(entry =>
+          (entry.conditional !== 'corpo a corpo' || isMelee) && (entry.conditional !== 'distância' || !isMelee)
+        ).forEach(entry => {
           sources.push({
             label: entry.source,
             value: entry.value,
@@ -856,7 +858,7 @@ export function MobileCombatRollModal({
       
       // Bônus específico melee/ranged
       const specificDamage = isMelee ? unifiedEffects.damage.melee : unifiedEffects.damage.ranged;
-      if (specificDamage !== 0) {
+      if (specificDamage !== 0 && !unifiedEffects.damage.breakdown.some(entry => entry.conditional === (isMelee ? 'corpo a corpo' : 'distância'))) {
         sources.push({
           label: isMelee ? 'Corpo a Corpo' : 'À Distância',
           value: specificDamage,

@@ -324,7 +324,7 @@ export function useBonusSummaryFromSUE({
     // === PERÍCIAS (do SUE) ===
     const skillBonuses: SkillBonuses = {};
     for (const [skill, data] of Object.entries(computed.skills)) {
-      if (data.bonus > 0) {
+      if (data.bonus !== 0) {
         skillBonuses[skill] = {
           total: data.bonus,
           breakdown: data.sources.map(s => convertToBreakdown(s, data.bonus, 'ability')),

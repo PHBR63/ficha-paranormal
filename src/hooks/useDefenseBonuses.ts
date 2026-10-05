@@ -7,12 +7,11 @@
  * - Habilidade de Classe: "Tanque de Guerra" (+2 Defesa com proteção pesada)
  * - Poder Geral: "Esquiva" (+2 Defesa, não cumulativo com armadura média/pesada)
  * - Rituais Ativos: Rituais sustentados com defenseModifier (Embaralhar, etc.)
- * - Treinamento em Reflexos: +5 (Treinado), +10 (Veterano), +15 (Expert)
+ * Treinamento em Reflexos pertence à reação de esquiva, não à Defesa permanente.
  */
 
 import { useMemo } from 'react';
 import { getActiveRitualEffect } from '@/lib/rituals/legacy-exports';
-import { getSkillBonus, getTrainingLabel } from '@/lib/character-data';
 
 // Interface para breakdown de bônus de defesa
 export interface DefenseBonusBreakdown {
@@ -116,7 +115,6 @@ export function useDefenseBonuses({
   inventory = [],
   activeRituals = [],
   activatedEffects = [],
-  skills = {},
   activeConditionalBonuses = [],
   intellect = 1,
   agility = 1,
@@ -270,17 +268,7 @@ export function useDefenseBonuses({
       }
     });
     
-    // 8. TREINAMENTO EM REFLEXOS: +5 (Treinado), +10 (Veterano), +15 (Expert)
-    const reflexosTraining = skills['reflexos'] || skills['Reflexos'] || 0;
-    if (reflexosTraining > 0) {
-      const trainingBonus = getSkillBonus(reflexosTraining);
-      breakdown.push({
-        source: `Reflexos (${getTrainingLabel(reflexosTraining)})`,
-        type: 'skill_training',
-        bonus: trainingBonus,
-        active: true,
-      });
-    }
+    // Reflexos é somado pelo fluxo de esquiva ao escolher essa reação.
     
     // 9. EFEITOS ATIVADOS DO SUE: Processa efeitos temporários manuais
     // Resgate (Médico de Campo NEX 65%) - +5 Defesa ao curar aliado
@@ -446,7 +434,7 @@ export function useDefenseBonuses({
         breakdown: resistanceBreakdown,
       }
     };
-  }, [origin, abilities, generalPowers, classPowers, inventory, activeRituals, activatedEffects, skills, activeConditionalBonuses, intellect, agility, isLightMeleeEquipped, armorBaseDefense]);
+  }, [origin, abilities, generalPowers, classPowers, inventory, activeRituals, activatedEffects, activeConditionalBonuses, intellect, agility, isLightMeleeEquipped, armorBaseDefense]);
 }
 
 /**

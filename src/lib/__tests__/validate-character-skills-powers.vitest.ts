@@ -194,7 +194,7 @@ describe('Validação de Quantidade de Perícias', () => {
       skills: {
         tecnologia: 'treinado',
         ciencias: 'treinado',
-        // Deveria ter 4 + INT(3) = 7 perícias
+        // Origem 2 + livres 7 + INT 3 = 12 perícias.
       },
     });
     
@@ -204,7 +204,7 @@ describe('Validação de Quantidade de Perícias', () => {
     );
     
     expect(skillCountWarning).toBeDefined();
-    expect(skillCountWarning?.message).toContain('4 + INT 3');
+    expect(skillCountWarning?.message).toContain('2 de 12');
   });
   
   it('Não deve alertar se quantidade de perícias estiver correta', () => {
@@ -215,7 +215,10 @@ describe('Validação de Quantidade de Perícias', () => {
         luta: 'treinado',
         fortitude: 'treinado',
         atletismo: 'treinado',
-        // 2 + INT(1) = 3 perícias
+        pontaria: 'treinado',
+        tatica: 'treinado',
+        investigacao: 'treinado',
+        // Militar 2 + escolhas da classe 2 + livres 1 + INT 1 = 6.
       },
     });
     
@@ -489,7 +492,12 @@ describe('Cenários Integrados de Validação', () => {
         ciencias: 'treinado',
         diplomacia: 'treinado',
         religiao: 'treinado',
-        // 2 + INT(3) = 5 perícias
+        pontaria: 'treinado',
+        tatica: 'treinado',
+        investigacao: 'treinado',
+        medicina: 'treinado',
+        percepcao: 'treinado',
+        // Militar 2 + obrigatórias 2 + livres 3 + INT 3 = 10.
       },
     });
     

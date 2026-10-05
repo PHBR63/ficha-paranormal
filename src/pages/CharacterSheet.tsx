@@ -2291,7 +2291,7 @@ export default function CharacterSheet() {
 
   // Bônus total de defesa combinando todas as fontes (defenseBonuses já está definido acima)
   // Inclui: poderes paranormais + bônus de origem/habilidades + bônus de armadura + bônus de escudo
-  const totalDefenseBonus = paranormalEffects.defenseBonus + defenseBonuses.totalBonus + armorStats.armorDefenseBonus + armorStats.shieldDefenseBonus;
+  const totalDefenseBonus = bonusSummary.defense.total + armorStats.armorDefenseBonus + armorStats.shieldDefenseBonus;
 
   // OTIMIZAÇÃO: Memoiza arrays que eram recriados inline a cada render
   const memoizedDefenseBonusBreakdown = useMemo(() => [
@@ -2309,15 +2309,9 @@ export default function CharacterSheet() {
       bonus: armorStats.shieldDefenseBonus,
       active: true,
     }] : []),
-    // Bônus paranormais
-    ...(paranormalEffects.defenseBonus > 0 ? [{
-      source: 'Poderes Paranormais',
-      type: 'paranormal' as const,
-      bonus: paranormalEffects.defenseBonus,
-      active: true,
-    }] : []),
-    ...defenseBonuses.breakdown,
-  ], [armorStats, paranormalEffects.defenseBonus, defenseBonuses.breakdown]);
+    // Inclui condições consolidadas pelo SUE, sem reaplicar suas penalidades.
+    ...bonusSummary.defense.breakdown,
+  ], [armorStats, bonusSummary.defense.breakdown]);
 
   // OTIMIZAÇÃO: Memoiza contagem de bônus ativos
   const activeBonusCount = useMemo(() => (
