@@ -25,11 +25,13 @@ import { MasterQuickActions } from '@/components/campaign/v3/master/MasterQuickA
 import { CombatTracker } from '@/components/campaign/v3/master/CombatTracker';
 import { BulkDamageModal } from '@/components/campaign/v3/master/BulkDamageModal';
 import type { CampaignMemberV2 } from '@/hooks/campaign/useCampaignData';
+import type { CampaignCombatController } from '@/hooks/campaign/useCampaignCombat';
 
 /** Sub-aba ativa no painel do mestre */
 type MasterPanelTab = 'players' | 'combat';
 
 interface MasterMapPanelProps {
+  combat?: CampaignCombatController;
   /** Indica se o painel está aberto */
   open: boolean;
   /** Alterna aberto/fechado */
@@ -84,6 +86,7 @@ export const MasterMapPanel = memo(function MasterMapPanel({
   open,
   onToggle,
   members,
+  combat,
   onModifyHP,
   onModifySAN,
   onModifyPE,
@@ -220,7 +223,7 @@ export const MasterMapPanel = memo(function MasterMapPanel({
               <TabsContent value="combat" className="flex-1 m-0 min-h-0">
                 <ScrollArea className="h-full">
                   <div className="p-3">
-                    <CombatTracker members={members} />
+                    {combat ? <CombatTracker members={members} combat={combat} /> : <p>O combate compartilhado está disponível para campanhas da versão atual.</p>}
                   </div>
                 </ScrollArea>
               </TabsContent>

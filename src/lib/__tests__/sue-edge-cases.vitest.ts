@@ -314,16 +314,11 @@ describe('SUE Edge Cases: Unicidade', () => {
   });
 
   it('deve processar efeitos com IDs duplicados', () => {
-    // Caso onde dois efeitos têm o mesmo ID (não deveria acontecer, mas sistema deve lidar)
-    const effects: UnifiedEffect[] = [
+    const result = consolidateEffects([
       createSimpleEffect('duplicado', { attackBonus: 2 }),
       createSimpleEffect('duplicado', { attackBonus: 3 }),
-    ];
-
-    const result = consolidateEffects(effects, createMinimalContext());
-
-    // Ambos devem ser processados
-    expect(result.attack.general).toBe(5);
+    ], createMinimalContext());
+    expect(result.attack.general).toBe(3); // A mesma habilidade não duplica seu bônus.
   });
 });
 

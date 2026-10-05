@@ -348,6 +348,7 @@ export type SkillId = typeof SKILL_IDS[keyof typeof SKILL_IDS];
 export const SKILLS_BY_ATTRIBUTE = {
   agility: [
     SKILL_IDS.ACROBACIA,
+    SKILL_IDS.INICIATIVA,
     SKILL_IDS.CRIME,
     SKILL_IDS.FURTIVIDADE,
     SKILL_IDS.PILOTAGEM,

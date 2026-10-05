@@ -4,6 +4,7 @@
  * Detecta crítico dinamicamente baseado na arma e poderes ativos
  */
 
+import { getCombatPowerDicePenalty } from '@/lib/class-powers/combat-test-dice';
 import { useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sword, Target, Zap, Sparkles, Flame, X, Dices, Shield, Skull, Info, Plus, Minus, RotateCcw, Clock, RefreshCw, Timer, Infinity, Droplets, Crosshair, AlertCircle } from 'lucide-react';
@@ -25,13 +26,15 @@ import {
   useDisparoLetalState,
   calculateDisparoLetalResult,
 } from '@/components/character/DisparoLetalSelector';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { getAttributeDicePool } from '@/lib/attribute-dice-pool';
+import { getConditionTestDicePenalty } from '@/lib/conditions/condition-test-penalty';
 import { rollSkillTest, rollDamage, DiceRollResult } from '@/lib/dice-roller';
 // Integração SUE: useCombatRollWithSUE encapsula rollAttackWithContext e rollDamageWithContext
 // com integração completa ao SUE para bônus automáticos
@@ -503,6 +506,12 @@ export function CombatRollModal({
     };
   }, [weapon, skills]);
 
+  const rangedAttack = weapon?.type === 'Disparo' || weapon?.type === 'Arremesso';
+  const attackDicePenalty = getConditionTestDicePenalty(activeConditions,
+    rangedAttack ? 'agility' : 'strength', attackSkill.name, rangedAttack ? 'ranged' : 'melee')
+    + getCombatPowerDicePenalty([...activeConditionalBonuses, ...selectedBonuses]);
+  const attackDicePool = getAttributeDicePool(attackAttribute, attackDicePenalty);
+
   // Calcular bônus disponíveis baseado nas habilidades do personagem
   // NOTA: Ataque Especial agora é gerenciado pelo SpecialAttackSelector (distribuição flexível)
   const availableBonuses = useMemo((): CombatBonus[] => {
@@ -513,7 +522,7 @@ export function CombatRollModal({
 
     // Golpe Pesado é PASSIVO - aplicado automaticamente no rollDamage (não precisa de toggle)
 
-    // Combater com Duas Armas (Combatente) - Penalidade de -2 no ataque
+    // Combater com Duas Armas (Combatente) - Penalidade de -1d20 no ataque
     // IMPORTANTE: Se ativo via activeConditionalBonuses, é aplicado automaticamente
     // Se NÃO ativo, aparece como opção selecionável
     const isCombaterDuasArmasActive = activeConditionalBonuses.includes('combater-duas-armas');
@@ -528,16 +537,15 @@ export function CombatRollModal({
         // Ainda não ativado - mostra como opção selecionável
         bonuses.push({
           id: 'combater-duas-armas',
-          name: 'Combater com Duas Armas (-2 ataque)',
+          name: 'Combater com Duas Armas (-1d20 ataque)',
           source: 'class',
-          attackBonus: -2,
           peCost: 0,
-          description: 'Dois ataques com duas armas. Penalidade de -2 em todos os testes de ataque até o próximo turno.',
+          description: 'Dois ataques com duas armas. Penalidade de -1d20 em todos os testes de ataque até o próximo turno.',
         });
       }
     }
 
-    // Combate Defensivo (Combatente) - Penalidade de -2 no ataque, +5 Defesa
+    // Combate Defensivo (Combatente) - Penalidade de -1d20 no ataque, +5 Defesa
     // IMPORTANTE: Se ativo via activeConditionalBonuses, é aplicado automaticamente (não selecionável)
     // Se NÃO ativo, aparece como opção selecionável
     const isCombateDefensivoActive = activeConditionalBonuses.includes('combate-defensivo');
@@ -551,11 +559,10 @@ export function CombatRollModal({
         // Ainda não ativado - mostra como opção selecionável
         bonuses.push({
           id: 'combate-defensivo',
-          name: 'Combate Defensivo (-2 ataque, +5 Def)',
+          name: 'Combate Defensivo (-1d20 ataque, +5 Def)',
           source: 'class',
-          attackBonus: -2,
           peCost: 0,
-          description: 'Sofre -2 em ataques, mas recebe +5 na Defesa até o próximo turno.',
+          description: 'Sofre -1d20 em ataques, mas recebe +5 na Defesa até o próximo turno.',
         });
       }
     }
@@ -623,7 +630,7 @@ export function CombatRollModal({
     });
 
     return bonuses;
-  }, [abilities, paranormalPowers, hasAffinity, affinityElement, weapon, attributes, ritualBonuses]);
+  }, [abilities, paranormalPowers, hasAffinity, affinityElement, weapon, attributes, ritualBonuses, activeConditionalBonuses]);
 
   // Bônus passivos (sempre ativos)
   const passiveBonuses = useMemo(() => 
@@ -753,14 +760,10 @@ export function CombatRollModal({
     total += manualAttackMod;
     
     // === PENALIDADE DE COMBATE DEFENSIVO (se ativo via painel) ===
-    if (activeConditionalBonuses.includes('combate-defensivo')) {
-      total -= 2; // Penalidade oficial: -2 ataque
-    }
+    // A penalidade deste poder está no pool de dados, acima.
     
     // === PENALIDADE DE COMBATER COM DUAS ARMAS (se ativo via painel) ===
-    if (activeConditionalBonuses.includes('combater-duas-armas')) {
-      total -= 2; // Penalidade oficial: -2 ataque (p.46)
-    }
+    // A penalidade deste poder está no pool de dados, acima.
     
     // === PENALIDADE DE PROFICIÊNCIA ===
     // Regra oficial: -5 no ataque se não tiver proficiência adequada
@@ -769,7 +772,7 @@ export function CombatRollModal({
     }
     
     return total;
-  }, [attackSkill.bonus, passiveBonuses, selectedBonuses, availableBonuses, classPowerBonuses, manualAttackMod, weaponBuffBonuses, unifiedEffects, weapon, trackCombatBonuses, specialAttackConfig.enabled, specialAttackResult.attackBonus, proficiencyCheck, activeConditionalBonuses]);
+  }, [attackSkill.bonus, passiveBonuses, selectedBonuses, availableBonuses, classPowerBonuses, manualAttackMod, weaponBuffBonuses, unifiedEffects, weapon, trackCombatBonuses, specialAttackConfig.enabled, specialAttackResult.attackBonus, proficiencyCheck]);
 
   // === Detalhamento das fontes de bônus de ataque para exibição ===
   const attackBonusSources = useMemo(() => {
@@ -904,26 +907,10 @@ export function CombatRollModal({
     }
     
     // === PENALIDADE DE COMBATE DEFENSIVO (se ativo via painel) ===
-    if (activeConditionalBonuses.includes('combate-defensivo')) {
-      sources.push({
-        label: 'Combate Defensivo',
-        value: -2,
-        type: 'power',
-        sourceName: 'Combate Defensivo',
-        description: 'Penalidade de -2 no ataque em troca de +5 na Defesa (ativo)',
-      });
-    }
+    // A penalidade deste poder está no pool de dados, acima.
     
     // === PENALIDADE DE COMBATER COM DUAS ARMAS (se ativo via painel) ===
-    if (activeConditionalBonuses.includes('combater-duas-armas')) {
-      sources.push({
-        label: 'Combater c/ Duas Armas',
-        value: -2,
-        type: 'power',
-        sourceName: 'Combater com Duas Armas',
-        description: 'Penalidade de -2 no ataque para fazer dois ataques (ativo)',
-      });
-    }
+    // A penalidade deste poder está no pool de dados, acima.
     
     // === TÉCNICAS DO ANIQUILADOR ATIVAS ===
     // Exibe as técnicas selecionadas para que o usuário saiba que estão aplicadas
@@ -969,7 +956,9 @@ export function CombatRollModal({
     if (unifiedEffects) {
       // Bônus geral de dano
       if (unifiedEffects.damage.general !== 0 || unifiedEffects.damage.breakdown.length > 0) {
-        unifiedEffects.damage.breakdown.forEach(entry => {
+        unifiedEffects.damage.breakdown.filter(entry =>
+          (entry.conditional !== 'corpo a corpo' || isMelee) && (entry.conditional !== 'distância' || !isMelee)
+        ).forEach(entry => {
           sources.push({
             label: entry.source,
             value: entry.value,
@@ -980,7 +969,7 @@ export function CombatRollModal({
       }
       // Bônus específico melee/ranged
       const specificDamage = isMelee ? unifiedEffects.damage.melee : unifiedEffects.damage.ranged;
-      if (specificDamage !== 0) {
+      if (specificDamage !== 0 && !unifiedEffects.damage.breakdown.some(entry => entry.conditional === (isMelee ? 'corpo a corpo' : 'distância'))) {
         sources.push({
           label: isMelee ? 'Dano Corpo a Corpo' : 'Dano à Distância',
           value: specificDamage,
@@ -1274,6 +1263,7 @@ export function CombatRollModal({
     // Rolar ataque
     const result = rollSkillTest({
       attributeValue: attackAttribute,
+      dicePenalty: attackDicePenalty,
       skillBonus: totalAttackBonus,
       otherBonuses: 0,
       label: `Ataque: ${weapon.name}`,
@@ -1665,6 +1655,7 @@ export function CombatRollModal({
             )}
             {weapon.name}
           </DialogTitle>
+          <DialogDescription className="sr-only">Rolagem de ataque e dano com modificadores e Defesa do alvo.</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -1982,8 +1973,11 @@ export function CombatRollModal({
                     </p>
                     <div className="flex flex-wrap items-center gap-1.5 text-sm">
                       <span className="px-2 py-0.5 rounded bg-secondary/50 font-medium">
-                        {weapon.type === 'Disparo' ? 'AGI' : 'FOR'}: {attackAttribute}
+                        {rangedAttack ? 'AGI' : 'FOR'}: {attackAttribute} · {attackDicePool.count}d20 ({attackDicePool.keep === 'lowest' ? 'menor' : 'maior'})
                       </span>
+                      {attackDicePenalty > 0 && (
+                        <span className="text-xs text-destructive">Penalidades: -{attackDicePenalty}d20</span>
+                      )}
                     {attackBonusSources.map((source, idx) => (
                       <span key={idx} className="flex items-center gap-1">
                         <span className="text-muted-foreground">+</span>
@@ -2441,7 +2435,7 @@ export function CombatRollModal({
 
                   {attackResult.isDisadvantage && (
                     <p className="text-xs text-destructive">
-                      (Desvantagem - atributo 0)
+                      (Desvantagem - mantém o menor dado)
                     </p>
                   )}
                   

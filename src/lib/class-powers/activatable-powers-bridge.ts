@@ -616,19 +616,19 @@ export function getActivatablePowersForCharacter(
   }
   
   // Incansável (duas opções: Força ou Agilidade)
-  // Permite usar For ou Agi como atributo-base e dá +5 no teste (1x/cena)
+  // Ação de investigação adicional usando For ou Agi, sem bônus numérico (p. 25).
   if (hasPowerOrAbility(powers, abilities, 'incansavel', 'Incansável')) {
     // Opção 1: Usar Força
     activatable.push({
       id: 'incansavel-forca',
       name: 'Incansável (Força)',
-      description: 'Usa Força como atributo-base. +5 no teste de investigação. 1x/cena.',
+      description: 'Investigação adicional usando Força como atributo-base. 1x/cena.',
       peCost: 2,
-      effect: '+5, usar FOR',
+      effect: 'Investigação extra, usar FOR',
       icon: 'search',
       effectType: 'attribute_swap',
       newAttribute: 'strength',
-      skillBonus: 5,
+      skillBonus: 0,
       applicableSkills: ['atletismo', 'acrobacia', 'furtividade', 'percepcao', 'sobrevivencia'],
     });
     
@@ -636,13 +636,13 @@ export function getActivatablePowersForCharacter(
     activatable.push({
       id: 'incansavel-agilidade',
       name: 'Incansável (Agilidade)',
-      description: 'Usa Agilidade como atributo-base. +5 no teste de investigação. 1x/cena.',
+      description: 'Investigação adicional usando Agilidade como atributo-base. 1x/cena.',
       peCost: 2,
-      effect: '+5, usar AGI',
+      effect: 'Investigação extra, usar AGI',
       icon: 'search',
       effectType: 'attribute_swap',
       newAttribute: 'agility',
-      skillBonus: 5,
+      skillBonus: 0,
       applicableSkills: ['atletismo', 'acrobacia', 'furtividade', 'percepcao', 'sobrevivencia'],
     });
   }
@@ -764,7 +764,7 @@ export function getActivatablePowersForCharacter(
     activatable.push({
       id: 'combate-defensivo',
       name: 'Combate Defensivo',
-      description: 'Sofre -2 em ataques, mas recebe +5 em Defesa até seu próximo turno.',
+      description: 'Sofre -1d20 em ataques, mas recebe +5 em Defesa até seu próximo turno.',
       peCost: 0,
       effect: '-2 ataque / +5 Defesa',
       icon: 'shield',
@@ -778,9 +778,9 @@ export function getActivatablePowersForCharacter(
     activatable.push({
       id: 'combater-duas-armas',
       name: 'Combater com Duas Armas',
-      description: 'Dois ataques (um com cada arma), -2 em todos os ataques até próximo turno.',
+      description: 'Dois ataques (um com cada arma), -1d20 em todos os ataques até próximo turno.',
       peCost: 0,
-      effect: '2 ataques (-2 cada)',
+      effect: '2 ataques (-1d20 cada)',
       icon: 'swords',
       effectType: 'extra_attack',
       applicableSkills: ['luta', 'pontaria'],
@@ -806,11 +806,11 @@ export function getActivatablePowersForCharacter(
     activatable.push({
       id: 'golpe-demolidor',
       name: 'Golpe Demolidor',
-      description: 'Dobra o dano ao usar manobra quebrar ou atacar um objeto.',
+      description: 'Acrescenta dois dados do tipo da arma ao quebrar ou atacar um objeto.',
       peCost: 1,
-      effect: 'Dano x2 (objetos)',
+      effect: '+2 dados da arma (objetos)',
       icon: 'hammer',
-      effectType: 'damage_multiplier',
+      effectType: 'damage_bonus',
       applicableSkills: ['luta'],
     });
   }
@@ -897,6 +897,7 @@ export function calculatePowerActivationEffects(
   isActionFree?: boolean;
   specialNote?: string;
   attackBonus?: number;
+  attackDicePenalty?: number;
   damageBonus?: number;
   defenseBonus?: number;
   movementBonus?: number;
@@ -969,16 +970,16 @@ export function calculatePowerActivationEffects(
     case 'incansavel':
     case 'incansavel-forca':
       return {
-        skillBonusChange: 5,
+        skillBonusChange: 0,
         attributeSwap: 'strength',
-        specialNote: 'Usa Força como atributo-base. +5 no teste. 1x/cena.',
+        specialNote: 'Investigação adicional usando Força como atributo-base. 1x/cena.',
       };
       
     case 'incansavel-agilidade':
       return {
-        skillBonusChange: 5,
+        skillBonusChange: 0,
         attributeSwap: 'agility',
-        specialNote: 'Usa Agilidade como atributo-base. +5 no teste. 1x/cena.',
+        specialNote: 'Investigação adicional usando Agilidade como atributo-base. 1x/cena.',
       };
     
     case 'presteza-atletica-forca':
@@ -1037,16 +1038,16 @@ export function calculatePowerActivationEffects(
     case 'combate-defensivo':
       return {
         skillBonusChange: 0,
-        attackBonus: -2,
+        attackDicePenalty: 1,
         defenseBonus: 5,
-        specialNote: '-2 em ataques, +5 em Defesa até próximo turno',
+        specialNote: '-1d20 em ataques, +5 em Defesa até próximo turno',
       };
     
     case 'combater-duas-armas':
       return {
         skillBonusChange: 0,
-        attackBonus: -2,
-        specialNote: 'Dois ataques com -2 cada (arma leve)',
+        attackDicePenalty: 1,
+        specialNote: 'Dois ataques com -1d20 cada (arma leve)',
       };
     
     case 'golpe-pesado':
@@ -1058,7 +1059,8 @@ export function calculatePowerActivationEffects(
     case 'golpe-demolidor':
       return {
         skillBonusChange: 0,
-        specialNote: 'Dobra dano vs objetos/manobra quebrar',
+        extraDice: '2W',
+        specialNote: 'Dois dados extras do tipo da arma, somente contra objetos/manobra quebrar',
       };
     
     case 'segurar-gatilho':

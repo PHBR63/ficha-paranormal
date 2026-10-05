@@ -19,6 +19,8 @@ import { getClassBaseStats } from './helpers/class-stats';
 import { deriveCharacter } from './derive-character';
 import { getPowerById, meetsPrerequisites, ALL_CLASS_POWERS } from '../class-powers';
 import type { PowerPrerequisites, TrainingLevel } from '../class-powers/types';
+import { getClassSkillRules } from '../character-builder-engine';
+import { normalizeSkillId } from '../skill-training';
 
 // Importar validadores especializados
 import { validateRituals } from './helpers/ritual-validation';
@@ -35,18 +37,6 @@ const CLASS_MANDATORY_SKILLS: Record<string, string[]> = {
   'Combatente': [], // Escolha entre Luta/Pontaria e Fortitude/Reflexos
   'Especialista': [],
   'Ocultista': ['ocultismo', 'vontade'],
-};
-
-/**
- * Quantidade base de perícias por classe (Livro Base v1.3)
- * Combatente: 2 + INT perícias
- * Especialista: 4 + INT perícias  
- * Ocultista: 2 + INT perícias
- */
-const CLASS_BASE_SKILLS: Record<string, number> = {
-  'Combatente': 2,
-  'Especialista': 4,
-  'Ocultista': 2,
 };
 
 /**
@@ -363,7 +353,7 @@ function validateOrigin(state: CharacterState): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
   
   // Normaliza ID da origem
-  const originId = state.origin.toLowerCase().replace(/\s+/g, '-');
+  const originId = normalizeSkillId(state.origin);
   
   // Amnésico não tem perícias fixas - pula validação
   if (originId === 'amnesico') {
@@ -535,15 +525,24 @@ function validateSkills(state: CharacterState): ValidationIssue[] {
     level => level && level !== 'destreinado'
   ).length;
   
-  const baseSkillCount = CLASS_BASE_SKILLS[state.characterClass] || 2;
   const intellect = state.attributes.intellect || 0;
-  const expectedSkillCount = baseSkillCount + intellect;
+  // Usa as mesmas concessões do criador, inclusive substituições de conflitos.
+  const classRules = getClassSkillRules(state.characterClass, intellect);
+  const originId = normalizeSkillId(state.origin);
+  const originCount = originId === 'amnesico' ? 2 : (ORIGIN_GRANTED_SKILLS[originId]?.length ?? 0);
+  const classCount = classRules.mandatory.length + classRules.choices.reduce((count, choice) => count + choice.pick, 0);
+  const trainingPowers = state.classPowers.reduce((count, id) => {
+    const power = getPowerById(id) ?? ALL_CLASS_POWERS.find(entry => normalizeSkillId(entry.name) === normalizeSkillId(id));
+    return count + (power?.effects.base.skillTraining?.count ?? 0);
+  }, 0);
+  const baseSkillCount = originCount + classCount + classRules.freePoints;
+  const expectedSkillCount = baseSkillCount + trainingPowers;
   
   if (trainedSkillsCount < expectedSkillCount) {
     issues.push({
       severity: 'warning',
       ruleId: 'low-trained-skills',
-      message: `Perícias treinadas insuficientes: ${trainedSkillsCount} de ${expectedSkillCount} (${baseSkillCount} + INT ${intellect})`,
+      message: `Perícias treinadas insuficientes: ${trainedSkillsCount} de ${expectedSkillCount} (origem, classe e escolhas livres)`,
       path: 'skills',
     });
   } else if (trainedSkillsCount > expectedSkillCount) {
@@ -623,7 +622,7 @@ function validatePowers(state: CharacterState): ValidationIssue[] {
   
   // Validar cada poder
   for (const powerId of allPowers) {
-    const power = getPowerById(powerId);
+    const power = getPowerById(powerId) ?? ALL_CLASS_POWERS.find(entry => normalizeSkillId(entry.name) === normalizeSkillId(powerId));
     
     if (!power) {
       // Poder não encontrado no catálogo - pode ser homebrew ou ID incorreto

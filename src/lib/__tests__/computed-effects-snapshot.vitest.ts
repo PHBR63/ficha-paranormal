@@ -321,7 +321,7 @@ describe('ComputedEffects - Snapshot de Estrutura', () => {
       const expectedKeys = [
         'attack', 'damage', 'critical', 'defense',
         'resistances', 'damageReduction', 'damageResistance',
-        'skills', 'resources', 'movement', 'initiative',
+        'skills', 'testDice', 'resources', 'movement', 'initiative',
         'specialEffects', 'proficiencies', 'flags',
         'toggleableEffects', 'rituals',
         'combatAdvanced', 'inventory', 'counterSpellAbilities',

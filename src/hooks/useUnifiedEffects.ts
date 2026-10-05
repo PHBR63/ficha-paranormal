@@ -369,7 +369,9 @@ export function useUnifiedEffects(
     const calculationContext = createCalculationContext(characterState, combatContext);
 
     // ===== FASE 4: SUE HARDENING - Pré-processa com ordem e stacking =====
-    const hardeningResult = preprocessEffectsWithHardening(allEffects);
+    const hardeningResult = preprocessEffectsWithHardening(
+      allEffects.filter(effect => effect.isActive && checkEffectConditions(effect, calculationContext))
+    );
 
     // ===== FASE 5: Consolida com regras de stacking =====
     const computed = consolidateEffects(allEffects, calculationContext);
@@ -400,9 +402,8 @@ export function useUnifiedEffects(
     };
 
     const isBonusExcludedByStacking = (effectId: string, category: BonusCategory): boolean => {
-      const prepared = hardeningResult.effects.find(e => e.id === effectId);
-      if (!prepared) return false;
-      return prepared.excludedByStacking?.some(id => id.includes(category)) ?? false;
+      return hardeningResult.stackingBreakdowns.get(category)?.excluded
+        .some(bonus => bonus.id.startsWith(`${effectId}#`)) ?? false;
     };
 
     // ===== FASE 9: Monta resultado final =====
@@ -429,9 +430,7 @@ export function useUnifiedEffects(
       getEffectPriority: getEffectPriorityHelper,
       isBonusExcludedByStacking,
     };
-  // OTIMIZAÇÃO DE PERFORMANCE: Removemos currentHP/PE/SAN das dependências
-  // Esses valores não afetam bônus mecânicos e causavam recálculos desnecessários
-  // (~40% menos re-renders ao alterar recursos durante combate)
+  // Recursos e contexto de ataque podem alterar a elegibilidade dos efeitos.
   }, [
     characterState.origin,
     characterState.classId,
@@ -443,13 +442,18 @@ export function useUnifiedEffects(
     characterState.elementalAffinity,
     characterState.affinityActive,
     characterState.versatilityTrack,
-    // HP/PE/SAN removidos - não afetam bônus mecânicos, apenas contexto
+    // HP e PE fazem parte do contexto usado pelas condições dos efeitos.
+    characterState.currentHP,
+    characterState.maxHP,
+    characterState.currentPE,
+    characterState.maxPE,
     characterState.paranormalPowers,
     characterState.classPowers,
     characterState.generalPowers,
     characterState.abilities,
     characterState.activeConditionalBonuses,
     characterState.activatedEffectIds,
+    combatContext?.isAttacking,
     combatContext?.inCombat,
     combatContext?.isFirstRound,
     combatContext?.currentRound,

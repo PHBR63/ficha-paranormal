@@ -14,6 +14,8 @@ import {
   type DetailedResistanceResult,
 } from '@/lib/rules-engine';
 import type { DiceRollResult } from '@/lib/dice-roller';
+import { getSUEBonusesForCharacter, getTestDicePenalty } from '@/lib/rules-engine/sue-bridge';
+import { getAttributeDicePool } from '@/lib/attribute-dice-pool';
 
 // =====================================================
 // TIPOS
@@ -38,6 +40,7 @@ export interface ResistanceRollCharacterConfig {
     vigor: number;
   };
   
+  skills?: Record<string, number>;
   classPowers?: string[];
   generalPowers?: string[];
   paranormalPowers?: Array<{ id: string; name: string; element: string }>;
@@ -91,11 +94,11 @@ function convertResultToCompat(result: DetailedResistanceResult): ResistanceRoll
     // Campos do DiceRollResult
     dice: roll.diceRolled,
     keptDice: roll.diceKept[0] || roll.diceRolled[0],
-    skillBonus: 0, // Resistência não usa perícia
+    skillBonus: breakdown.baseBonus,
     otherBonuses: breakdown.sueBonuses.reduce((sum, b) => sum + b.value, 0) + breakdown.manualModifiers,
     extraDice: 0,
     total: roll.total,
-    isDisadvantage: breakdown.attribute.value <= 0,
+    isDisadvantage: roll.isDisadvantage ?? breakdown.attribute.value <= 0,
     isCritical: breakdown.isCriticalSuccess,
     criticalThreshold: 20,
     timestamp: new Date(),
@@ -140,7 +143,9 @@ export function useResistanceRollWithSUE(config: ResistanceRollCharacterConfig) 
       origin: config.origin || 'desconhecida',
       
       attributes: convertAttributesToState(config.attributes),
-      skills: {},
+      skills: Object.fromEntries(Object.entries(config.skills ?? {}).map(([skill, value]) => [
+        skill, value >= 15 ? 'expert' : value >= 10 ? 'veterano' : value >= 5 ? 'treinado' : 'destreinado',
+      ])) as CharacterState['skills'],
       
       classPowers: config.classPowers || [],
       generalPowers: config.generalPowers || [],
@@ -171,6 +176,7 @@ export function useResistanceRollWithSUE(config: ResistanceRollCharacterConfig) 
     config.nex,
     config.origin,
     config.attributes,
+    config.skills,
     config.classPowers,
     config.generalPowers,
     config.paranormalPowers,
@@ -231,25 +237,21 @@ export function useResistanceRollWithSUE(config: ResistanceRollCharacterConfig) 
     const attributeName = ATTRIBUTE_NAMES[attributeKey];
     const resistanceName = RESISTANCE_NAMES[resistance];
     
-    const sources: Array<{ label: string; value: number; type: string }> = [
-      {
-        label: attributeName,
-        value: attributeValue,
-        type: 'attribute',
-      },
-    ];
-    
-    // TODO: Integrar bônus do SUE para exibição prévia
-    
+    const computed = getSUEBonusesForCharacter(characterState).rawSUE;
+    const level = characterState.skills[resistance];
+    const training = level === 'expert' ? 15 : level === 'veterano' ? 10 : level === 'treinado' ? 5 : 0;
+    const sources = [
+      { label: `Treinamento em ${resistanceName}`, value: training, type: 'skill' },
+      ...computed.resistances.breakdown.filter(entry => entry.resistance === resistance)
+        .map(entry => ({ label: entry.source, value: entry.value, type: 'power' })),
+      { label: 'Bônus de perícia', value: (computed.skills[resistance]?.bonus ?? 0) + (computed.skills['_all']?.bonus ?? 0), type: 'power' },
+    ].filter(source => source.value !== 0);
     return {
-      resistance,
-      resistanceName,
-      attributeName,
-      attributeValue,
-      sources,
-      total: attributeValue,
+      resistance, resistanceName, attributeName, attributeValue, sources,
+      dicePool: getAttributeDicePool(attributeValue, getTestDicePenalty(computed, resistance, attributeKey)),
+      total: sources.reduce((sum, source) => sum + source.value, 0),
     };
-  }, [config.attributes]);
+  }, [config.attributes, characterState]);
   
   return {
     executeResistanceRoll,

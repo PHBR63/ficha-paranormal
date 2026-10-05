@@ -120,7 +120,7 @@ function convertResultToCompat(
     otherBonuses: breakdown.sueBonuses.reduce((sum, b) => sum + b.value, 0) + breakdown.manualModifiers,
     extraDice: 0,
     total: roll.total,
-    isDisadvantage: breakdown.attribute.value <= 0,
+    isDisadvantage: roll.isDisadvantage ?? breakdown.attribute.value <= 0,
     isCritical: breakdown.isCriticalSuccess,
     criticalThreshold: 20,
     timestamp: new Date(),

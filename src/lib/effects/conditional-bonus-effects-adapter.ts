@@ -114,7 +114,7 @@ export const CONDITIONAL_BONUS_CATALOG: ConditionalBonusDefinition[] = [
     source: 'ability',
     condition: 'Ação agredir (até próximo turno)',
     mechanics: {
-      attackBonus: -2, // Penalidade oficial do livro
+      testDice: { attacks: -1 }, // Livro Base p. 25: reduz o pool, não o total.
       defenseBonus: 5,
     },
     requirements: { ability: 'combate defensivo' },
@@ -125,7 +125,7 @@ export const CONDITIONAL_BONUS_CATALOG: ConditionalBonusDefinition[] = [
     source: 'ability',
     condition: 'Ação agredir com duas armas (até próximo turno)',
     mechanics: {
-      attackBonus: -2, // Penalidade oficial do livro (p.46)
+      testDice: { attacks: -1 },
       specialEffects: ['Permite dois ataques (um com cada arma)'],
     },
     requirements: { ability: 'combater com duas armas' },

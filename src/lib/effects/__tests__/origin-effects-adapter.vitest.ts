@@ -50,8 +50,8 @@ describe('Integridade do Mapeamento de Origens', () => {
       'eu-ja-sabia', // Teórico da Conspiração
       'desbravador', // Trabalhador Rural
       'impostor', // Trambiqueiro
-      'aprendizagem-aplicada', // Universitário
-      'cicatrizes', // Vítima
+      'dedicacao', // Universitário, Livro Base p.21
+      'cicatrizes-psicologicas', // Vítima, Livro Base p.21
     ];
 
     for (const powerId of origensBase) {
@@ -162,14 +162,20 @@ describe('Poderes Togglable', () => {
 // =====================================================
 
 describe('Proficiências Concedidas', () => {
-  it('Para Bellum deve conceder armas táticas', () => {
+  it('Para Bellum deve dar +2 apenas em dano de armas de fogo, sem conceder proficiência', () => {
     const power = ORIGIN_POWER_EFFECTS['para-bellum'];
-    expect(power.mechanics.grantsProficiency).toContain('Armas táticas');
+    expect(power.mechanics.firearmDamageBonus).toBe(2);
+    expect(power.mechanics.rangedDamageBonus).toBeUndefined();
+    expect(power.mechanics.grantsProficiency).toBeUndefined();
   });
 
-  it('Ferramenta de Trabalho deve conceder armas pesadas', () => {
+  it('Ferramenta de Trabalho deve vincular os bônus à arma escolhida, sem conceder armas pesadas', () => {
     const power = ORIGIN_POWER_EFFECTS['ferramenta-de-trabalho'];
-    expect(power.mechanics.grantsProficiency).toContain('Armas pesadas');
+    expect(power.mechanics.requiresChosenWeapon).toBe(true);
+    expect(power.mechanics.attackBonus).toBe(1);
+    expect(power.mechanics.damageBonus).toBe(1);
+    expect(power.mechanics.criticalMarginBonus).toBe(1);
+    expect(power.mechanics.grantsProficiency).toBeUndefined();
   });
 });
 

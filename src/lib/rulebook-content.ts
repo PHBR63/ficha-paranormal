@@ -27,7 +27,7 @@ export interface RulebookSection {
 // ========================================
 
 export const GLOSSARY: Record<string, string> = {
-  'NEX': 'Nível de Experiência - representa o quanto seu agente evoluiu dentro da Ordo Realitas.',
+  'NEX': 'Nível de Exposição Paranormal - representa a exposição do personagem ao Outro Lado.',
   'PV': 'Pontos de Vida - representam a saúde física do personagem. Quando chegam a zero, ele fica inconsciente.',
   'PE': 'Pontos de Esforço - usados para ativar habilidades especiais, rituais e esforços extras.',
   'SAN': 'Sanidade - representa a estabilidade mental. Diminui ao enfrentar horrores do Outro Lado.',
@@ -35,8 +35,8 @@ export const GLOSSARY: Record<string, string> = {
   'RD': 'Resistência a Dano - absorve parte do dano recebido, geralmente vindo de armaduras.',
   'DEF': 'Defesa - representa o quão difícil é acertar você em combate. DEF = 10 + Agilidade.',
   'Treinado': 'Perícia em que você tem +5 de bônus. Algumas perícias só podem ser usadas se você for treinado.',
-  'Destreinado': 'Perícia sem bônus. Você rola apenas o d20 + atributo.',
-  'Teste': 'Rolagem de 1d20 + modificadores contra uma Dificuldade (DT).',
+  'Destreinado': 'Perícia sem bônus. O atributo determina os d20; o treinamento não acrescenta bônus.',
+  'Teste': 'Role os d20 determinados pelo atributo, selecione o resultado e some treinamento e outros modificadores contra a DT.',
   'Outro Lado': 'Dimensão paranormal de onde vêm as criaturas e energias sobrenaturais.',
   'Ordo Realitas': 'Organização secreta que combate ameaças paranormais. Seu personagem é um agente.',
   'Elemento': 'Tipo de energia paranormal: Sangue, Morte, Conhecimento, Energia ou Medo.',
@@ -49,7 +49,7 @@ export const GLOSSARY: Record<string, string> = {
 // ========================================
 
 export const QUICK_FORMULAS = [
-  { name: 'Teste de Perícia', formula: '1d20 + Atributo + Treinamento vs DT' },
+  { name: 'Teste de Perícia', formula: 'd20 selecionado + Treinamento + modificadores vs DT' },
   { name: 'Defesa (DEF)', formula: '10 + Agilidade' },
   { name: 'PV (Combatente)', formula: '20 + Vigor (por NEX: +4 + Vigor)' },
   { name: 'PV (Especialista)', formula: '16 + Vigor (por NEX: +3 + Vigor)' },
@@ -74,7 +74,7 @@ export const STEP_CONTENT: Record<string, RulebookSection> = {
       title: 'O que é um Agente?',
       content: 'Seu personagem é um agente da Ordo Realitas, uma organização secreta que investiga e combate ameaças paranormais. O conceito é uma frase curta que resume quem seu personagem é — sua essência.',
       quote: '"Antes de ser um agente, você era alguém. O que aconteceu para você entrar nesse mundo?"',
-      quoteSource: 'Livro de Regras',
+      quoteSource: 'Texto de ambientação do aplicativo',
       details: [
         'Um bom conceito ajuda a guiar suas decisões durante o jogo',
         'Pense em algo que explique por que seu personagem está nessa vida',
@@ -95,13 +95,10 @@ export const STEP_CONTENT: Record<string, RulebookSection> = {
       title: 'Nível de Experiência (NEX)',
       content: 'O NEX representa o quanto seu agente evoluiu na Ordo Realitas. Vai de 5% (recruta) até 99% (lenda viva). A cada aumento de NEX, você recebe benefícios como mais atributos, perícias e habilidades.',
       quote: '"Quanto maior seu NEX, mais você viu, mais você sabe — e mais você perdeu."',
-      quoteSource: 'Livro de Regras',
+      quoteSource: 'Texto de ambientação do aplicativo',
       details: [
-        'NEX 5%: Recruta - Você acabou de entrar na organização',
-        'NEX 10-15%: Operador - Já enfrentou algumas missões',
-        'NEX 20-35%: Agente Especial - Veterano de campo',
-        'NEX 50%+: Elite - Poucos chegam tão longe',
-        'NEX 99%: Patente máxima - Os mais poderosos (e traumatizados)',
+        'NEX mede a exposição ao paranormal, com progressão de 5% a 99% para agentes.',
+        'NEX e patente são progressões distintas; a patente depende de Prestígio.',
       ],
     },
     extras: [
@@ -122,7 +119,7 @@ export const STEP_CONTENT: Record<string, RulebookSection> = {
       title: 'Os Cinco Atributos',
       content: 'Atributos representam as capacidades fundamentais do seu personagem. Cada um vai de 0 a 5 e afeta diferentes aspectos do jogo. Você distribui pontos entre eles na criação.',
       quote: '"Seu corpo e mente são suas ferramentas mais importantes. Escolha sabiamente onde investir."',
-      quoteSource: 'Livro de Regras',
+      quoteSource: 'Texto de ambientação do aplicativo',
       details: [
         'Agilidade (AGI): Reflexos, equilíbrio, precisão. Afeta Defesa.',
         'Força (FOR): Poder físico. Afeta dano corpo a corpo.',
@@ -138,7 +135,7 @@ export const STEP_CONTENT: Record<string, RulebookSection> = {
       },
       {
         title: 'Fórmulas Importantes',
-        content: 'DEF = 10 + Agilidade. PV depende de Vigor + Classe. PE depende de Presença + Classe. INT dá perícias livres extras (INT × 1 para Especialistas, INT × 0,5 para outros).',
+        content: 'DEF = 10 + Agilidade. PV depende de Vigor + Classe. PE depende de Presença + Classe. Perícias livres: Combatente INT + 1; Especialista INT + 7; Ocultista INT + 3. Somam-se às concessões da origem e obrigatórias da classe.',
       }
     ]
   },
@@ -149,7 +146,7 @@ export const STEP_CONTENT: Record<string, RulebookSection> = {
       title: 'De Onde Você Veio?',
       content: 'A origem representa a vida do seu personagem ANTES de entrar para a Ordo Realitas. Ela define 2 perícias treinadas automaticamente e concede um poder especial único.',
       quote: '"Todo mundo tem um passado. O seu trouxe você até aqui."',
-      quoteSource: 'Livro de Regras',
+      quoteSource: 'Texto de ambientação do aplicativo',
       details: [
         'Cada origem dá 2 perícias já treinadas',
         'O poder de origem é uma habilidade única e permanente',
@@ -160,7 +157,7 @@ export const STEP_CONTENT: Record<string, RulebookSection> = {
     extras: [
       {
         title: 'Perícias da Origem',
-        content: 'As perícias dadas pela origem são automáticas e não contam contra seu limite de perícias livres. Se uma perícia da origem conflitar com uma obrigatória da classe, você pode substituí-la.',
+        content: 'As perícias dadas pela origem são automáticas e não contam contra seu limite de perícias livres. Se uma perícia da origem conflitar com uma obrigatória da classe, escolha outra perícia para compensar o treinamento repetido.',
       },
       {
         title: 'Origens Especiais',
@@ -175,7 +172,7 @@ export const STEP_CONTENT: Record<string, RulebookSection> = {
       title: 'As Três Classes',
       content: 'A classe define o papel do seu personagem em combate e investigação. Cada uma tem PV, PE e SAN diferentes, além de perícias e habilidades exclusivas.',
       quote: '"Há três caminhos na Ordem. O da força, o da perícia, e o do conhecimento proibido."',
-      quoteSource: 'Livro de Regras',
+      quoteSource: 'Texto de ambientação do aplicativo',
       details: [
         'Combatente: Mais PV, foco em combate direto. Ideal para linha de frente.',
         'Especialista: Equilibrado, mais perícias. Versátil e adaptável.',
@@ -189,7 +186,7 @@ export const STEP_CONTENT: Record<string, RulebookSection> = {
       },
       {
         title: 'Especialista',
-        content: 'O coringa. PV médio (16 + VIG), PE médio (3 + PRE). Ganha mais perícias que qualquer classe (INT + 8). Excelente para investigação e utilidade fora de combate.',
+        content: 'O coringa. PV médio (16 + VIG), PE médio (3 + PRE). Ganha mais perícias que qualquer classe (INT + 7). Excelente para investigação e utilidade fora de combate.',
       },
       {
         title: 'Ocultista',
@@ -202,12 +199,12 @@ export const STEP_CONTENT: Record<string, RulebookSection> = {
   track: {
     main: {
       title: 'Especialização de Classe',
-      content: 'A trilha representa a especialização do seu personagem dentro da classe. Cada trilha oferece 5 habilidades que desbloqueiam em NEX específicos (5%, 25%, 50%, 75%, 99%).',
+      content: 'A trilha representa a especialização do seu personagem dentro da classe. Cada trilha oferece quatro habilidades, desbloqueadas em NEX 10%, 40%, 65% e 99%.',
       quote: '"Encontre seu caminho e domine-o. Não há espaço para meias medidas."',
-      quoteSource: 'Livro de Regras',
+      quoteSource: 'Texto de ambientação do aplicativo',
       details: [
-        'Você escolhe uma trilha no NEX 5%',
-        'A primeira habilidade da trilha é desbloqueada imediatamente',
+        'Você recebe a primeira habilidade de trilha em NEX 10%; o criador permite planejar sua escolha antes desse marco.',
+        'Escolher a trilha antes de NEX 10% não libera sua primeira habilidade.',
         'Habilidades seguintes desbloqueiam conforme o NEX aumenta',
         'A trilha define seu estilo de jogo dentro da classe',
       ],
@@ -215,7 +212,7 @@ export const STEP_CONTENT: Record<string, RulebookSection> = {
     extras: [
       {
         title: 'Marcos de Trilha',
-        content: 'NEX 5%: 1ª habilidade. NEX 25%: 2ª habilidade. NEX 50%: 3ª habilidade. NEX 75%: 4ª habilidade. NEX 99%: Habilidade máxima (extremamente poderosa).',
+        content: 'NEX 10%: 1ª habilidade. NEX 40%: 2ª. NEX 65%: 3ª. NEX 99%: 4ª.',
       }
     ]
   },
@@ -226,10 +223,10 @@ export const STEP_CONTENT: Record<string, RulebookSection> = {
       title: 'Sistema de Perícias',
       content: 'Perícias representam conhecimentos e habilidades específicas. Ser treinado em uma perícia dá +5 nos testes. Algumas perícias só podem ser usadas se você for treinado.',
       quote: '"Conhecimento é poder. Treinamento é sobrevivência."',
-      quoteSource: 'Livro de Regras',
+      quoteSource: 'Texto de ambientação do aplicativo',
       details: [
-        'Teste de perícia: 1d20 + Atributo + Treinamento vs DT',
-        'Treinado: +5 no teste. Destreinado: apenas d20 + atributo',
+        'Teste de perícia: d20 selecionado + Treinamento + modificadores vs DT',
+        'Treinado: +5. Veterano: +10. Expert: +15. O atributo define os dados e não é somado ao total.',
         'Perícias marcadas com ⚠ requerem treinamento para serem usadas',
         'Você recebe perícias da origem, classe, e escolhe perícias livres',
       ],
@@ -237,7 +234,7 @@ export const STEP_CONTENT: Record<string, RulebookSection> = {
     extras: [
       {
         title: 'Fontes de Perícias',
-        content: 'Origem: 2 perícias automáticas. Classe: Perícias obrigatórias e escolhas. Livres: Baseado na classe + INT. Exemplo: Especialista recebe INT + 8 perícias à escolha.',
+        content: 'Origem: 2 perícias automáticas. Classe: Perícias obrigatórias e escolhas. Livres: Baseado na classe + INT. Exemplo: Especialista recebe INT + 7 perícias à escolha.',
       },
       {
         title: 'Perícias que Requerem Treinamento',
@@ -252,7 +249,7 @@ export const STEP_CONTENT: Record<string, RulebookSection> = {
       title: 'Rituais Paranormais',
       content: 'Rituais são poderes sobrenaturais disponíveis apenas para Ocultistas. Usam PE para serem conjurados e pertencem a um dos cinco Elementos paranormais.',
       quote: '"O Outro Lado oferece poder, mas cobra seu preço. Sempre."',
-      quoteSource: 'Livro de Regras',
+      quoteSource: 'Texto de ambientação do aplicativo',
       details: [
         'Elementos: Sangue, Morte, Conhecimento, Energia, Medo',
         'Círculos: 1º ao 4º. Quanto maior, mais poderoso e caro',
@@ -278,7 +275,7 @@ export const STEP_CONTENT: Record<string, RulebookSection> = {
       title: 'Habilidades de Classe',
       content: 'Além das habilidades da trilha, cada classe possui habilidades gerais que você pode escolher conforme sobe de NEX. Algumas são automáticas, outras são opcionais.',
       quote: '"Com experiência vem poder. Escolha bem como usar o seu."',
-      quoteSource: 'Livro de Regras',
+      quoteSource: 'Texto de ambientação do aplicativo',
       details: [
         'Habilidades Fundamentais: Concedidas automaticamente pela classe',
         'Habilidades Opcionais: Você escolhe entre várias opções',
@@ -303,7 +300,7 @@ export const STEP_CONTENT: Record<string, RulebookSection> = {
     extras: [
       {
         title: 'Resumo das Fórmulas',
-        content: 'DEF = 10 + AGI. PV/PE/SAN dependem da classe e atributos. Teste = 1d20 + Atributo + Treinamento (+5 se treinado). Atributo 0 = desvantagem (2d20, menor).',
+        content: 'DEF = 10 + AGI. PV/PE/SAN dependem da classe e atributos. Teste = d20 selecionado + Treinamento (+5 se treinado) + modificadores. Atributo 0 = desvantagem (2d20, menor).',
       }
     ]
   },
@@ -314,7 +311,7 @@ export const STEP_CONTENT: Record<string, RulebookSection> = {
       title: 'Identificação do Agente',
       content: 'As informações básicas ajudam a dar vida ao seu personagem. O nome, o jogador que o controla e o histórico formam a base da identidade do seu agente.',
       quote: '"Um agente sem história é apenas uma ficha. Dê vida ao seu personagem."',
-      quoteSource: 'Livro de Regras',
+      quoteSource: 'Texto de ambientação do aplicativo',
       details: [
         'Nome do Personagem: Como ele é conhecido na Ordo',
         'Nome do Jogador: Quem controla este agente',
@@ -335,26 +332,25 @@ export const STEP_CONTENT: Record<string, RulebookSection> = {
       title: 'Patentes na Ordo Realitas',
       content: `A patente representa seu posto hierárquico dentro da Ordem. Ela determina seu acesso a recursos, influência e responsabilidades.
 
-| Patente | NEX Mínimo | Descrição |
-|---------|------------|-----------|
-| Recruta | 5% | Acabou de entrar na organização |
-| Operador | 10% | Agente de campo básico |
-| Agente Especial | 20% | Veterano com experiência |
-| Oficial de Operações | 50% | Lidera operações |
-| Agente de Elite | 75% | Poucos chegam a este nível |
-| Veterano | 99% | Lendas vivas da Ordem |`,
+| Patente | Pontos de Prestígio |
+|---------|--------------------|
+| Recruta | 0–19 |
+| Operador | 20–49 |
+| Agente Especial | 50–99 |
+| Oficial de Operações | 100–199 |
+| Agente de Elite | 200 ou mais |`,
       quote: '"A patente não é apenas um título. É prova do que você sobreviveu."',
-      quoteSource: 'Livro de Regras',
+      quoteSource: 'Texto de ambientação do aplicativo',
       details: [
         'A patente determina: limite de crédito, equipamentos disponíveis, acesso a informações',
         'Patentes mais altas trazem mais responsabilidade e missões perigosas',
-        'Você pode ter uma patente menor que seu NEX permitiria (cobertura, escolha pessoal)',
+        'Patente e NEX são progressões distintas: a patente depende de Pontos de Prestígio e decisão da campanha.',
       ],
     },
     extras: [
       {
         title: 'Importante',
-        content: '> Mesmo que seu NEX permita uma patente alta, você pode escolher uma menor por motivos narrativos. Alguns agentes preferem manter um perfil baixo.',
+        content: 'O NEX não determina automaticamente a patente. Confira os Pontos de Prestígio e a orientação do mestre.',
       },
       {
         title: 'Limite de Crédito',

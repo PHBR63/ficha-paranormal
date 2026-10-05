@@ -41,6 +41,7 @@ export interface CharacterState {
   // Classe e progressão
   characterClass: ClassId;
   classTrack?: string;
+  versatilityTrack?: { trackId: string; abilityId: string };
   nex: number;
   origin: string;
   
@@ -450,6 +451,7 @@ export interface ActionResult {
 }
 
 export interface RollResult {
+  isDisadvantage?: boolean;       // Critério real do pool, inclusive penalidades com atributo positivo
   diceRolled: number[];           // Resultados individuais dos dados
   diceKept: number[];             // Dados mantidos (após highest/lowest)
   baseValue: number;              // Valor base (atributo, perícia, etc.)

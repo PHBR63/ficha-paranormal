@@ -14,6 +14,7 @@ import {
   MobileDrawerContent, 
   MobileDrawerHeader, 
   MobileDrawerTitle, 
+  MobileDrawerDescription,
   MobileDrawerBody,
   MobileDrawerFooter 
 } from '@/components/ui/mobile-drawer';
@@ -62,6 +63,7 @@ import { Ritual } from '@/lib/rituals/legacy-exports';
 import type { UnifiedRitual } from '@/lib/rituals/types';
 import { getElementConfig } from '@/lib/element-config';
 import { useRitualValidation, TurnPEState, type RitualBonuses } from '@/hooks';
+import { getRitualById } from '@/lib/rituals/ritual-registry';
 import { MobileRitualEffectWizard } from './MobileRitualEffectWizard';
 import { ActiveCondition } from './MobileConditionManager';
 import type { AnyDamageType, SustainConfig } from '@/lib/rituals/legacy-exports';
@@ -151,7 +153,7 @@ export function MobileRitualCastModal({
     peLimitPerTurn,
     validatePECost,
     getAvailableEnhancements,
-  } = useRitualValidation(nex, elementalAffinity, peCurrent, peMax, turnPEState, peLimitBonus);
+  } = useRitualValidation(nex, elementalAffinity, peCurrent, peMax, turnPEState, peLimitBonus, isNonOccultist);
 
   const enhancementsWithValidation = useMemo(() => {
     if (!ritual) return [];
@@ -206,11 +208,11 @@ export function MobileRitualCastModal({
 
   const elementConfig = getElementConfig(ritual.element);
   const ElementIcon = elementConfig?.icon || Sparkles;
-  const costMultiplier = isNonOccultist ? 2 : 1;
-
   // Calcula custo base (com redução do SUE)
-  const rawBaseCost = ritual.cost * costMultiplier;
-  const baseCost = Math.max(1, rawBaseCost - sueReduction);
+  // p.119: todas as classes usam o mesmo custo. Custos gratuitos explícitos continuam gratuitos.
+  // Atualiza objetos legados pelo ID; mantém rituais personalizados e gratuidade explícita.
+  const rawBaseCost = ritual.cost === 0 ? 0 : (getRitualById(ritual.id)?.cost ?? ritual.cost);
+  const baseCost = rawBaseCost === 0 ? 0 : Math.max(1, rawBaseCost - sueReduction);
 
   const validSelectedEnhancements = selectedEnhancements.filter(enhName => {
     const enh = enhancementsWithValidation.find(e => e.name === enhName);
@@ -219,31 +221,24 @@ export function MobileRitualCastModal({
 
   const enhancementsCost = validSelectedEnhancements.reduce((total, enhName) => {
     const enh = ritual.enhancements?.find(e => e.name === enhName);
-    return total + (enh ? enh.cost * costMultiplier : 0);
+    return total + (enh ? enh.cost : 0);
   }, 0);
 
   // Custo total (inclui modificadores de trilha)
   const totalCost = baseCost + enhancementsCost + modifiersCost;
 
-  const peValidation = validatePECost(
-    ritual.cost,
-    validSelectedEnhancements.map(name => {
-      const enh = ritual.enhancements?.find(e => e.name === name);
-      return { name, cost: enh?.cost || 0 };
-    }),
-    isNonOccultist
-  );
+  // Valida exatamente o débito confirmado, incluindo descontos e modificadores.
+  const peValidation = validatePECost(totalCost, []);
 
-  const canCast = peValidation.isValid;
+  const canCast = peValidation.isValid && ritual.circle <= maxCircle;
 
   const toggleEnhancement = (enhName: string) => {
     const enh = enhancementsWithValidation.find(e => e.name === enhName);
     if (!enh?.validation.isValid) return;
 
     setSelectedEnhancements(prev =>
-      prev.includes(enhName)
-        ? prev.filter(e => e !== enhName)
-        : [...prev, enhName]
+      // Livro Base v1.3 p.121: selecionar outra forma substitui a anterior.
+      prev.includes(enhName) ? [] : [enhName]
     );
   };
 
@@ -323,6 +318,9 @@ export function MobileRitualCastModal({
               )}>
                 {ritual.name}
               </MobileDrawerTitle>
+              <MobileDrawerDescription className="sr-only">
+                Escolha o aprimoramento e confira o custo em PE antes de conjurar.
+              </MobileDrawerDescription>
               <div className="flex items-center gap-2 mt-0.5">
                 <Badge variant="outline" className={cn("text-[10px]", elementConfig?.badgeBg)}>
                   {ritual.circle}º Círculo
@@ -415,7 +413,7 @@ export function MobileRitualCastModal({
                 <p className="text-[10px] text-muted-foreground uppercase">Aprimoramentos</p>
                 <div className="flex flex-wrap gap-1.5">
                   {enhancementsWithValidation.map((enh, i) => {
-                    const enhCost = enh.cost * costMultiplier;
+                    const enhCost = enh.cost;
                     const isSelected = selectedEnhancements.includes(enh.name);
                     const isLocked = !enh.validation.isValid;
                     
@@ -708,10 +706,10 @@ export function MobileRitualCastModal({
               </div>
 
               {/* Erro de validação */}
-              {!peValidation.isValid && peValidation.reason && (
+              {!canCast && (
                 <p className="text-[10px] text-destructive mt-2 flex items-center gap-1">
                   <Zap className="w-3 h-3" />
-                  {peValidation.reason}
+                  {ritual.circle > maxCircle ? `Requer ${ritual.circle}º círculo (seu máximo: ${maxCircle}º)` : peValidation.reason}
                 </p>
               )}
             </div>

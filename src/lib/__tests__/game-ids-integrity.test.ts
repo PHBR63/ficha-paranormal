@@ -406,8 +406,8 @@ describe('game-ids.ts - Integridade de IDs', () => {
         SKILLS_BY_ATTRIBUTE.presence.length +
         SKILLS_BY_ATTRIBUTE.vigor.length;
       
-      // Total menos 'iniciativa' que é especial
-      expect(totalByAttribute).toBe(VALID_SKILL_IDS.length - 1);
+      // Iniciativa também usa Agilidade; nenhum ID fica fora do catálogo.
+      expect(totalByAttribute).toBe(VALID_SKILL_IDS.length);
     });
   });
 

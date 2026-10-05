@@ -24,12 +24,14 @@ import { cn } from '@/lib/utils';
 import type { CampaignMemberV2 } from '@/hooks/campaign/useCampaignData';
 import type { CampaignSession } from '@/hooks/campaign/useCampaignRealtime';
 import type { UserPresence } from '@/hooks/campaign/useCampaignPresence';
+import type { CampaignCombatController } from '@/hooks/campaign/useCampaignCombat';
 
 // =====================================================
 // TIPOS
 // =====================================================
 
 interface PanelTabProps {
+  combat?: CampaignCombatController;
   /** Membros da campanha */
   members: CampaignMemberV2[];
   /** Sessão ativa (se houver) */
@@ -367,6 +369,7 @@ export const PanelTab = memo(function PanelTab({
   members,
   activeSession,
   presenceMap,
+  combat,
   className,
 }: PanelTabProps) {
   // Filtra membros com personagem
@@ -396,6 +399,21 @@ export const PanelTab = memo(function PanelTab({
 
   return (
     <ScrollArea className={cn('h-full', className)}>
+      {combat && (
+        <Card className="m-4 border-primary/30">
+          <CardContent className="p-4 space-y-2">
+            <h2 className="text-sm font-semibold">Combate da campanha</h2>
+            {combat.error ? <p role="alert">{combat.error}</p> : combat.loading ? <p role="status">Carregando combate...</p> : combat.state.active ? (
+              <>
+                <p role="status">Rodada {combat.state.round} · {combat.state.combatants.length ? `Turno de ${combat.state.combatants[combat.state.currentTurnIndex]?.name}` : 'Aguardando participantes'}</p>
+                <ol className="text-sm space-y-1">{combat.state.combatants.map((entry, index) => (
+                  <li key={entry.id} className={index === combat.state.currentTurnIndex ? 'font-semibold text-primary' : ''}>{entry.name} · Iniciativa {entry.initiative}</li>
+                ))}</ol>
+              </>
+            ) : <p>Nenhum combate em andamento.</p>}
+          </CardContent>
+        </Card>
+      )}
       <div className="p-4 space-y-4">
         {/* Título + Resumo */}
         <div className="space-y-2">

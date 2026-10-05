@@ -34,6 +34,7 @@ import {
   TRACK_EFFECT_MAPPINGS,
 } from '../track-effects-adapter';
 import type { AttributeType } from '../../unified-effects-engine';
+import { getTrackAbilityById } from '../../class-powers/track-registry';
 
 // =====================================================
 // Helpers
@@ -367,25 +368,32 @@ describe('SUE Fase 3: Ocultist Track Ritual Modifiers', () => {
       expect(hasPvAsPe).toBe(true);
     });
 
-    it('Absorver Angústia deve ter PE temporário', () => {
+    it('Absorver Agonia concede PE temporário ao reduzir inimigo a zero com ritual', () => {
       const effects = getTrackEffects('flagelador', 65, createTestAttributes());
       const absorver = effects.find(e => e.sourceId === 'absorver-angustia');
 
       expect(absorver).toBeDefined();
-      const hasTemporaryPE = absorver?.mechanics.specialEffects?.some(s =>
-        s.toLowerCase().includes('recupera pe')
-      );
-      expect(hasTemporaryPE).toBe(true);
+      // Livro Base v1.3, p.34–35: o gatilho não é sofrer dano; o valor segue o círculo.
+      expect(getTrackAbilityById('absorver-angustia')?.effects.base.temporaryPE)
+        .toMatchObject({ trigger: 'on-kill-with-ritual', amount: 'ritual-circle' });
+      expect(absorver?.name).toBe('Absorver Agonia');
     });
   });
 
   describe('Graduado', () => {
-    it('Grimório Ritualístico deve ter ritualDTBonus = 5', () => {
+    it('Grimório prepara rituais em NEX 40; Rituais Eficientes aumenta DT apenas em NEX 65', () => {
+      const effectsAt40 = getTrackEffects('graduado', 40, createTestAttributes());
       const effects = getTrackEffects('graduado', 65, createTestAttributes());
       const grimorio = effects.find(e => e.sourceId === 'grimorio-ritualistico');
+      const eficientes = effects.find(e => e.sourceId === 'rituais-eficientes');
 
+      // Livro Base v1.3, p.35: grimório e bônus de DT são habilidades distintas.
+      expect(effectsAt40.some(e => e.sourceId === 'grimorio-ritualistico')).toBe(true);
+      expect(effectsAt40.some(e => e.sourceId === 'rituais-eficientes')).toBe(false);
       expect(grimorio).toBeDefined();
-      expect(grimorio?.mechanics.ritualDTBonus).toBe(5);
+      expect(grimorio?.mechanics.grimoire?.preparationAction).toBe('full');
+      expect(grimorio?.mechanics.ritualDTBonus ?? 0).toBe(0);
+      expect(eficientes?.mechanics.ritualDTBonus).toBe(5);
     });
 
     it('Saber Ampliado deve ter specialEffect de rituais extras', () => {
@@ -401,12 +409,15 @@ describe('SUE Fase 3: Ocultist Track Ritual Modifiers', () => {
   });
 
   describe('Intuitivo', () => {
-    it('Mente Sã deve ter paranormalDamageReduction = 5', () => {
+    it('Mente Sã concede bônus contextual de resistência, sem redução de dano', () => {
       const effects = getTrackEffects('intuitivo', 10, createTestAttributes());
       const menteSa = effects.find(e => e.sourceId === 'mente-sa');
 
       expect(menteSa).toBeDefined();
-      expect(menteSa?.mechanics.mentalDamageResistance).toBe(5);
+      // Livro Base v1.3, p.35: +5 nos testes contra efeitos paranormais, sem RD geral.
+      expect(menteSa?.mechanics.paranormalResistanceTestBonus).toBe(5);
+      expect(menteSa?.mechanics.mentalDamageResistance ?? 0).toBe(0);
+      expect(menteSa?.mechanics.damageReduction ?? 0).toBe(0);
     });
 
     it('Presença Poderosa deve ter specialEffect de PE por turno', () => {

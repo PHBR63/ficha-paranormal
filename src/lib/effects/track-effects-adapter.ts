@@ -156,10 +156,10 @@ export const TRACK_EFFECT_MAPPINGS = {
         description: 'Reação: reduz dano não-paranormal pela metade'
       },
       'track-absorver-angustia': {
-        name: 'Absorver Angústia',
+        name: 'Absorver Agonia',
         minNex: 65,
         peCost: 0, // Passivo com trigger
-        description: 'Ao sofrer dano, ganha PE temporário igual a metade do dano'
+        description: 'Ao reduzir inimigo a 0 PV com ritual, ganha PE temporários iguais ao círculo usado'
       },
     }
   },
@@ -178,7 +178,7 @@ export const TRACK_EFFECT_MAPPINGS = {
     trackId: 'intuitivo',
     effects: {
       // Intuitivo foca em resistência mental e paranormal
-      // - Mente Sã (NEX 10%): Resistência paranormal +5 (passivo)
+      // - Mente Sã (NEX 10%): +5 nos testes de resistência contra efeitos paranormais
       // - Presença Poderosa (NEX 40%): Adiciona Presença ao limite de PE por turno para rituais (passivo)
       // - Inabalável (NEX 65%): Resistência a dano mental 10 + teste de Vontade (passivo)
       // - Presença do Medo (NEX 99%): Aprende ritual (passivo)
@@ -321,13 +321,20 @@ function convertTrackAbilityToMechanics(
 
   // === PV ADICIONAL POR NEX (Tropa de Choque - Casca Grossa) ===
   if (m.hpPerNexPercent) {
-    const bonus = m.hpPerNexPercent * Math.floor(nex / 5);
+    // O catálogo guarda PV por ponto de NEX (0,2), não por incremento de 5%.
+    const bonus = Math.floor(m.hpPerNexPercent * nex);
     mechanics.hpBonus = bonus;
   }
 
   // === RESISTÊNCIA PARANORMAL ===
   if (m.paranormalResistance) {
     mechanics.paranormalDamageReduction = m.paranormalResistance;
+  }
+
+  // Mente Sã concede bônus apenas ao teste contra o paranormal; não é RD.
+  if (m.paranormalResistanceTestBonus) {
+    mechanics.paranormalResistanceTestBonus = m.paranormalResistanceTestBonus;
+    mechanics.conditionalNote = `+${m.paranormalResistanceTestBonus} em testes de resistência contra efeitos paranormais`;
   }
 
   // === RESISTÊNCIA A DANO MENTAL ===
@@ -352,6 +359,7 @@ function convertTrackAbilityToMechanics(
 
   // Usar PV como PE (Flagelador)
   if (m.hpAsPE) {
+    mechanics.hpCostPerPE = m.hpCostPerPE;
     if (!mechanics.specialEffects) mechanics.specialEffects = [];
     mechanics.specialEffects.push('Pode usar PV como PE para rituais');
   }
@@ -402,7 +410,7 @@ function convertTrackAbilityToMechanics(
   }
 
   // === EFEITOS QUANDO MACHUCADO (Inquebrável) ===
-  // IMPORTANTE: Bônus são CONDICIONAIS (só quando machucado, PV < 50%)
+    // IMPORTANTE: Bônus são CONDICIONAIS (metade ou menos dos PV).
   // NÃO mapear para campos estáticos (defenseBonus, damageReduction) para evitar duplicação
   if (m.whenWounded) {
     // Mapeia apenas para EffectMechanics.whenWounded (condicional)
@@ -414,7 +422,7 @@ function convertTrackAbilityToMechanics(
     };
 
     // Nota para exibição (sem valores mapeados estaticamente)
-    mechanics.conditionalNote = 'Quando machucado (PV < 50%)';
+    mechanics.conditionalNote = 'Quando machucado (PV ≤ 50%)';
   }
 
   // === EFEITOS QUANDO MORRENDO (Inquebrável) ===
@@ -1022,7 +1030,7 @@ function convertTrackAbilityToMechanics(
   // === RECURSO: PV COMO PE (Flagelador) ===
   if (m.hpAsPE) {
     if (!mechanics.specialEffects) mechanics.specialEffects = [];
-    mechanics.specialEffects.push('Pode usar PV como PE para rituais (1 PV = 1 PE)');
+    mechanics.specialEffects.push(`Pode usar PV como PE para rituais (${m.hpCostPerPE ?? 2} PV = 1 PE)`);
   }
 
   // === PE TEMPORÁRIO (Flagelador, Lâmina Paranormal) ===
@@ -1064,6 +1072,7 @@ function convertTrackAbilityToMechanics(
       allowedCircles: m.grimoire.allowedCircles,
       bonusPerNewCircle: m.grimoire.bonusPerNewCircle ?? 0,
       castingAction: (m.grimoire.castingAction as 'standard' | 'complete' | 'extended') || 'complete',
+      preparationAction: m.grimoire.preparationAction === 'complete' ? 'full' : undefined,
       requiresWielding: m.grimoire.requiresWielding ?? true,
       inventorySlots: m.grimoire.inventorySlots ?? 1,
     };
@@ -1124,14 +1133,17 @@ function convertTrackAbilityToMechanics(
       testSkill: m.paranormalDamageTest.testSkill || 'vontade',
       onSuccess: m.paranormalDamageTest.onSuccess as 'negate' | 'half',
       onFailure: m.paranormalDamageTest.onFailure as 'half' | 'full',
-      dtType: m.paranormalDamageTest.dtType as 'fixed' | 'ritual-dt' | 'caster-presence',
+      dtType: m.paranormalDamageTest.dtType as 'fixed' | 'ritual-dt' | 'caster-presence' | 'existing-test',
+      requiresExistingHalfDamageSave: m.paranormalDamageTest.requiresExistingHalfDamageSave,
       fixedDT: m.paranormalDamageTest.fixedDT,
     };
 
     if (!mechanics.specialEffects) mechanics.specialEffects = [];
     const successEffect = m.paranormalDamageTest.onSuccess === 'negate' ? 'nega' : 'reduz pela metade';
     mechanics.specialEffects.push(
-      `Teste de ${m.paranormalDamageTest.testSkill} vs dano paranormal: ${successEffect} em sucesso`
+      m.paranormalDamageTest.requiresExistingHalfDamageSave
+        ? 'Em efeito paranormal com teste para metade do dano: sucesso evita o dano; falha aplica o dano normal'
+        : `Teste de ${m.paranormalDamageTest.testSkill} vs dano paranormal: ${successEffect} em sucesso`
     );
   }
 
@@ -1396,13 +1408,22 @@ export function getTrackEffects(
   if (!track) return effects;
 
   const unlockedAbilities = getUnlockedAbilities(trackId, nex);
+  // Aniquilador troca a redução I por II/III; esses patamares não são cumulativos.
+  const favoriteCategoryReduction = track.id === 'aniquilador'
+    ? Math.max(0, ...unlockedAbilities.map(ability => ability.effects.base.categoryReduction?.amount ?? 0))
+    : 0;
 
   for (const ability of unlockedAbilities) {
     const mechanics = convertTrackAbilityToMechanics(ability, attributes, nex);
+    if (favoriteCategoryReduction && mechanics.categoryReduction &&
+        mechanics.categoryReduction.amount < favoriteCategoryReduction) {
+      delete mechanics.categoryReduction;
+    }
 
     // Verifica se a habilidade tem mecânicas relevantes
     const hasMechanics = Object.keys(mechanics).length > 0;
-    if (!hasMechanics) continue;
+    // Técnica Sublime contém apenas subefeitos. Eles também precisam ser emitidos.
+    if (!hasMechanics && !ability.effects?.base?.techniqueEffects?.length) continue;
 
     // Verifica se é uma habilidade que requer ativação
     const needsActivation = requiresActivation(ability.effects?.base);
@@ -1421,15 +1442,36 @@ export function getTrackEffects(
         ? activatedEffects.includes(`track-${ability.id}`)
         : true,
       isToggleable: needsActivation,
-      conditions: needsActivation ? {
-        requiresActivation: true,
+      conditions: {
+        // Técnica Letal é exclusiva de ataques corpo a corpo, inclusive nos helpers.
+        attackType: ability.effects?.base?.criticalBonus?.conditions?.weaponType === 'melee' ? 'melee' : undefined,
+        requiresActivation: needsActivation || undefined,
         costPE,
         costAction: actionType as 'free' | 'movement' | 'standard' | 'full' | 'reaction' | undefined,
-      } : undefined,
+      },
       priority: ability.minNex, // Maior NEX = maior prioridade
     };
 
-    effects.push(effect);
+    // Técnica Secreta e Remendão combinam ações pagas e categoria permanente (Base p.26/31).
+    // Separar o benefício passivo evita perdê-lo ao desativar a ação ou contá-lo duas vezes.
+    if (needsActivation && mechanics.categoryReduction) {
+      const categoryReduction = mechanics.categoryReduction;
+      delete mechanics.categoryReduction;
+      effects.push({
+        id: `track-${ability.id}-category-reduction`,
+        name: `${ability.name}: redução de categoria`,
+        description: `Redução de categoria: ${categoryReduction.amount}.`,
+        source: 'track',
+        sourceId: ability.id,
+        sourceName: effect.sourceName,
+        mechanics: { categoryReduction },
+        isActive: true,
+        isToggleable: false,
+        priority: ability.minNex,
+      });
+    }
+
+    if (hasMechanics) effects.push(effect);
 
     // === TÉCNICAS ATIVÁVEIS DO ANIQUILADOR ===
     // Processa techniqueEffects para criar efeitos individuais
@@ -1481,32 +1523,7 @@ export function getTrackEffects(
       }
     }
 
-    // === DISPARO LETAL (Atirador de Elite) ===
-    // Adiciona efeito específico para Disparo Letal
-    if (ability.id === 'disparo-letal' && ability.effects?.base?.criticalBonus) {
-      const disparoLetalId = 'track-disparo-letal';
-      const isActive = activatedEffects.includes(disparoLetalId);
-      
-      effects.push({
-        id: disparoLetalId,
-        name: 'Disparo Letal',
-        description: ability.description,
-        source: 'track',
-        sourceId: 'disparo-letal',
-        sourceName: `Trilha ${track.name}: Disparo Letal`,
-        mechanics: {
-          criticalMarginBonus: ability.effects.base.criticalBonus.marginBonus || 2,
-        },
-        isActive,
-        isToggleable: true,
-        conditions: {
-          requiresActivation: true,
-          costPE: 1,
-          costAction: 'free',
-        },
-        priority: ability.minNex,
-      });
-    }
+    // Disparo Letal já foi emitido pela conversão normal acima (+2 uma única vez).
   }
 
   return effects;
@@ -1585,7 +1602,7 @@ export function getTrackActivatableEffects(trackId: string): Array<{
   peCost: number;
 }> {
   // Normaliza o trackId para encontrar no mapping
-  const normalizedId = trackId.toLowerCase().replace(/-/g, '');
+  const normalizedId = (getTrackById(trackId)?.id ?? trackId).toLowerCase().replace(/-/g, '');
 
   for (const [key, trackData] of Object.entries(TRACK_EFFECT_MAPPINGS)) {
     const mappingId = trackData.trackId.toLowerCase().replace(/-/g, '');

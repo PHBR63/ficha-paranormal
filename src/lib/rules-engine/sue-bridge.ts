@@ -19,7 +19,21 @@ import type {
 import { consolidateEffects } from '../unified-effects-engine';
 import { getOriginEffects } from '../effects/origin-effects-adapter';
 import { getConditionEffects } from '../effects/condition-effects-adapter';
-import { getTrackEffects } from '../effects/track-effects-adapter';
+import { getTrackEffects, getVersatilityTrackEffects } from '../effects/track-effects-adapter';
+
+/** Soma apenas modificadores em dados aplicáveis ao teste; não altera o bônus numérico. */
+export function getTestDicePenalty(
+  computed: ComputedEffects,
+  skill: string,
+  attribute: AttributeType,
+  attackType?: 'melee' | 'ranged',
+): number {
+  const dice = computed.testDice;
+  const modifier = (dice?.all ?? 0) + (dice?.attributes?.[attribute] ?? 0)
+    + (dice?.skills?.[skill] ?? 0)
+    + (attackType ? (dice?.attacks ?? 0) + (dice?.[attackType] ?? 0) : 0);
+  return Math.max(0, -modifier);
+}
 
 // =====================================================
 // TIPOS DO BRIDGE
@@ -149,7 +163,7 @@ function collectAllEffects(state: CharacterState, context: EffectCalculationCont
   effects.push(...originEffects);
   
   // 2. Efeitos de Condições (getConditionEffects(activeConditions[], attackContext?))
-  const conditionIds = state.activeConditions.map(c => c.conditionId);
+  const conditionIds = state.activeConditions.map(c => ({ id: c.conditionId, params: c.params }));
   if (conditionIds.length > 0) {
     const conditionEffects = getConditionEffects(conditionIds);
     effects.push(...conditionEffects);
@@ -166,6 +180,13 @@ function collectAllEffects(state: CharacterState, context: EffectCalculationCont
     effects.push(...trackEffects);
   }
   
+  if (state.versatilityTrack && state.nex >= 50) {
+    effects.push(...getVersatilityTrackEffects(
+      state.versatilityTrack.trackId, state.versatilityTrack.abilityId,
+      context.attributes, context.activatedEffects, state.nex,
+    ));
+  }
+
   // TODO: 4. Efeitos de Poderes de Classe
   // TODO: 5. Efeitos de Poderes Gerais
   // TODO: 6. Efeitos de Poderes Paranormais
