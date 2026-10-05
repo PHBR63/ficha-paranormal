@@ -14,6 +14,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCampaignData } from '@/hooks/campaign/useCampaignData';
 import { useCampaignRealtime } from '@/hooks/campaign/useCampaignRealtime';
+import { useCampaignCombat } from '@/hooks/campaign/useCampaignCombat';
 import { useMasterActions } from '@/hooks/campaign/useMasterActions';
 import { useTacticalBoard } from '@/hooks/campaign/useTacticalBoard';
 import { useAreaEffects } from '@/hooks/campaign/useAreaEffects';
@@ -60,12 +61,15 @@ export default function TacticalMapFullscreen() {
   });
 
   const { campaign, members, isMaster, loading: campaignLoading } = campaignData;
+  const combat = useCampaignCombat(campaignId || '', userId || '', isMaster,
+    !campaignLoading && campaign?.id === campaignId && campaignData.schemaVersion === 'v2');
 
   // Chat e sessões em tempo real (para enviar mensagens de sistema do mestre)
   const realtimeData = useCampaignRealtime({
     campaignId: campaignId || '',
     userId: userId || '',
-    enabled: !!campaignId && !!userId && !campaignLoading && !!campaign,
+    schemaVersion: campaignData.schemaVersion ?? 'v2',
+    enabled: !!campaignId && !!userId && !campaignLoading && campaign?.id === campaignId,
   });
 
   const { sendMessage, messages } = realtimeData;
@@ -391,6 +395,7 @@ export default function TacticalMapFullscreen() {
         {/* Painel lateral do mestre (overlay sobre o mapa) */}
         {isMaster && (
           <MasterMapPanel
+            combat={campaignData.schemaVersion === 'v2' ? combat : undefined}
             open={masterPanelOpen}
             onToggle={toggleMasterPanel}
             members={members}

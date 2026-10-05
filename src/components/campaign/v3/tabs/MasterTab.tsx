@@ -31,6 +31,7 @@ import { MacrosPanel } from '@/components/campaign/chat';
 import { HandoutsManager } from '@/components/campaign/master/HandoutsManager';
 import { MemberBonusesPanel } from '@/components/campaign/MemberBonusesPanel';
 import type { CampaignMemberV2 } from '@/hooks/campaign/useCampaignData';
+import type { CampaignCombatController } from '@/hooks/campaign/useCampaignCombat';
 import type { SoundScene, CampaignAudio, AudioState } from '@/hooks/campaign/useCampaignAudio';
 
 type MasterSubTab = 'players' | 'combat' | 'npcs' | 'audio' | 'handouts' | 'macros' | 'bonuses';
@@ -38,6 +39,8 @@ type MasterSubTab = 'players' | 'combat' | 'npcs' | 'audio' | 'handouts' | 'macr
 interface MasterTabProps {
   members: CampaignMemberV2[];
   campaignId: string;
+  combat: CampaignCombatController;
+  combatAvailable: boolean;
   onModifyHP?: (characterId: string, delta: number) => Promise<boolean>;
   onModifySAN?: (characterId: string, delta: number) => Promise<boolean>;
   onModifyPE?: (characterId: string, delta: number) => Promise<boolean>;
@@ -65,6 +68,8 @@ interface MasterTabProps {
 export const MasterTab = memo(function MasterTab({
   members,
   campaignId,
+  combat,
+  combatAvailable,
   onModifyHP,
   onModifySAN,
   onModifyPE,
@@ -189,7 +194,7 @@ export const MasterTab = memo(function MasterTab({
         <TabsContent value="combat" className="flex-1 m-0 min-h-0">
           <ScrollArea className="h-full">
             <div className="p-4">
-              <CombatTracker members={members} />
+              {combatAvailable ? <CombatTracker members={members} combat={combat} /> : <p>O combate compartilhado está disponível para campanhas da versão atual.</p>}
             </div>
           </ScrollArea>
         </TabsContent>

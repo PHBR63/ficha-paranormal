@@ -17,6 +17,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCampaignData } from '@/hooks/campaign/useCampaignData';
 import { useCampaignRealtime } from '@/hooks/campaign/useCampaignRealtime';
+import { useCampaignCombat } from '@/hooks/campaign/useCampaignCombat';
 import { useCampaignPresence } from '@/hooks/campaign/useCampaignPresence';
 import { useTacticalBoard } from '@/hooks/campaign/useTacticalBoard';
 import { useMasterActions } from '@/hooks/campaign/useMasterActions';
@@ -63,12 +64,15 @@ export default function CampaignShell() {
   });
 
   const { campaign, members, isMaster, loading: campaignLoading } = campaignData;
+  const combat = useCampaignCombat(campaignId || '', userId || '', isMaster,
+    !campaignLoading && campaign?.id === campaignId && campaignData.schemaVersion === 'v2');
 
   // Chat e sessões em tempo real
   const realtimeData = useCampaignRealtime({
     campaignId: campaignId || '',
     userId: userId || '',
-    enabled: !!campaignId && !!userId && !campaignLoading,
+    schemaVersion: campaignData.schemaVersion ?? 'v2',
+    enabled: !!campaignId && !!userId && !campaignLoading && campaign?.id === campaignId,
   });
 
   const { 
@@ -253,6 +257,7 @@ export default function CampaignShell() {
           <PanelTab
             members={members}
             activeSession={activeSession}
+            combat={campaignData.schemaVersion === 'v2' ? combat : undefined}
             presenceMap={presenceMap}
           />
         )}
@@ -301,6 +306,8 @@ export default function CampaignShell() {
           <MasterTab
             members={members}
             campaignId={campaignId}
+            combat={combat}
+            combatAvailable={campaignData.schemaVersion === 'v2'}
             onModifyHP={async (charId, delta) => {
               const member = members.find(m => m.characters?.id === charId);
               const charName = member?.characters?.name || 'Personagem';
