@@ -138,7 +138,7 @@ export const CombatTracker = memo(function CombatTracker({
     <fieldset disabled={combat.saving} className={cn('space-y-4 min-w-0', className)}>
       <p role="status" className="text-xs text-muted-foreground">{combat.saving ? 'Salvando combate...' : combat.connected ? 'Combate sincronizado' : 'Reconectando ao combate...'}</p>
       {/* Header do combate */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-3">
           <Badge variant="default" className="text-sm px-3 py-1 gap-1.5">
             <SwordIcon weight="duotone" className="h-4 w-4" />
