@@ -30,6 +30,15 @@ const createContext = (overrides: Partial<PowerCalculationContext> = {}): PowerC
   ...overrides,
 });
 
+describe('Referências de poderes salvas em versões anteriores', () => {
+  it('aceita id e nome e ignora entradas incompletas sem interromper a ficha', () => {
+    const references = [{ id: 'ritual-potente' }, { name: 'Ritual Potente' }, {}, null] as unknown as Parameters<typeof calculatePowerBonuses>[0];
+    expect(() => calculatePowerBonuses(references, createContext())).not.toThrow();
+    expect(hasPower(references, 'ritual-potente')).toBe(true);
+    expect(hasPower([{}] as unknown as typeof references, 'ritual-potente')).toBe(false);
+  });
+});
+
 // ========================================
 // TESTES DE CRIAÇÃO DE SUMÁRIO
 // ========================================

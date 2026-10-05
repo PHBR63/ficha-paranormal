@@ -89,7 +89,7 @@ describe('Extração de modificadores de ritual da trilha Conduíte', () => {
     
     // Procura efeito com ritualModifiers
     const hasAmpliar = effects.some(e => 
-      e.mechanics.ritualModifiers?.some(m => m.id === 'ampliar-alcance' || m.id === 'ampliar-area')
+      e.mechanics.ritualModifiers?.some(m => m.id === 'ampliar-ritual-alcance' || m.id === 'ampliar-ritual-area')
     );
     
     expect(hasAmpliar).toBe(true);
@@ -124,7 +124,7 @@ describe('Extração de modificadores de ritual da trilha Conduíte', () => {
     for (const effect of effects) {
       if (effect.mechanics.ritualModifiers) {
         for (const mod of effect.mechanics.ritualModifiers) {
-          if (mod.id === 'ampliar-alcance' || mod.id === 'ampliar-area') {
+          if (mod.id === 'ampliar-ritual-alcance' || mod.id === 'ampliar-ritual-area') {
             ampliarCost = mod.peCost;
           }
           if (mod.id === 'acelerar-ritual') {
@@ -146,11 +146,45 @@ describe('Extração de modificadores de ritual da trilha Conduíte', () => {
 describe('Consolidação de modificadores de ritual no SUE', () => {
   const context = createTestContext();
 
+  it('deve oferecer modificadores inativos sem aplicar seus bônus ou cobrar PE', () => {
+    const effect = createRitualModifierEffect('ampliar', 'Ampliar Ritual', [
+      { id: 'ampliar-ritual-alcance', name: 'Ampliar', type: 'range', effect: '+1 passo', peCost: 2 },
+    ]);
+    effect.isActive = false;
+    effect.isToggleable = true;
+    effect.conditions = { requiresActivation: true, costPE: 2 };
+    effect.mechanics.attackBonus = 99;
+    const result = consolidateEffects([effect], context);
+
+    expect(result.rituals.availableModifiers).toHaveLength(1);
+    expect(result.rituals.availableModifiers[0].peCost).toBe(2);
+    expect(result.attack.general).toBe(0);
+    expect(result.toggleableEffects[0].isActive).toBe(false);
+    expect(context.peCurrent).toBe(20);
+  });
+
+  it('disponibilidade deve preservar condições de contexto além da ativação', () => {
+    const effect = createRitualModifierEffect('ampliar', 'Ampliar Ritual', [
+      { id: 'ampliar-ritual-alcance', name: 'Ampliar', type: 'range', effect: '+1 passo', peCost: 2 },
+    ]);
+    effect.isActive = false;
+    effect.isToggleable = true;
+    effect.conditions = { requiresActivation: true, inCombat: true };
+    expect(consolidateEffects([effect], context).rituals.availableModifiers).toEqual([]);
+  });
+
+  it('deve listar cada modificador uma vez mesmo com referências duplicadas', () => {
+    const effect = createRitualModifierEffect('ampliar', 'Ampliar Ritual', [
+      { id: 'ampliar-ritual-alcance', name: 'Ampliar', type: 'range', effect: '+1 passo', peCost: 2 },
+    ]);
+    expect(consolidateEffects([effect, effect], context).rituals.availableModifiers).toHaveLength(1);
+  });
+
   it('deve consolidar ritualModifiers de múltiplos efeitos', () => {
     const effects: UnifiedEffect[] = [
       createRitualModifierEffect('ampliar', 'Ampliar Ritual', [
-        { id: 'ampliar-alcance', name: 'Aumentar Alcance', type: 'range', effect: '+1 passo de alcance', peCost: 2 },
-        { id: 'ampliar-area', name: 'Dobrar Área', type: 'area', effect: 'Dobra área de efeito', peCost: 2 },
+        { id: 'ampliar-ritual-alcance', name: 'Aumentar Alcance', type: 'range', effect: '+1 passo de alcance', peCost: 2 },
+        { id: 'ampliar-ritual-area', name: 'Dobrar Área', type: 'area', effect: 'Dobra área de efeito', peCost: 2 },
       ]),
       createRitualModifierEffect('acelerar', 'Acelerar Ritual', [
         { id: 'acelerar-ritual', name: 'Ação Livre', type: 'action', effect: 'Conjura como ação livre', peCost: 4, perRound: true },
@@ -160,8 +194,8 @@ describe('Consolidação de modificadores de ritual no SUE', () => {
     const result = consolidateEffects(effects, context);
 
     expect(result.rituals.availableModifiers).toHaveLength(3);
-    expect(result.rituals.availableModifiers.map(m => m.id)).toContain('ampliar-alcance');
-    expect(result.rituals.availableModifiers.map(m => m.id)).toContain('ampliar-area');
+    expect(result.rituals.availableModifiers.map(m => m.id)).toContain('ampliar-ritual-alcance');
+    expect(result.rituals.availableModifiers.map(m => m.id)).toContain('ampliar-ritual-area');
     expect(result.rituals.availableModifiers.map(m => m.id)).toContain('acelerar-ritual');
   });
 
@@ -185,7 +219,7 @@ describe('Consolidação de modificadores de ritual no SUE', () => {
   it('deve incluir source do efeito nos modificadores', () => {
     const effects: UnifiedEffect[] = [
       createRitualModifierEffect('ampliar', 'Ampliar Ritual', [
-        { id: 'ampliar-alcance', name: 'Aumentar Alcance', type: 'range', effect: '+1 passo', peCost: 2 },
+        { id: 'ampliar-ritual-alcance', name: 'Aumentar Alcance', type: 'range', effect: '+1 passo', peCost: 2 },
       ]),
     ];
 
@@ -408,8 +442,8 @@ describe('Integração completa: Trilha Conduíte + Cálculo de PE', () => {
     // Deve ter Ampliar (NEX 10%) e Acelerar (NEX 40%)
     const modifierIds = result.rituals.availableModifiers.map(m => m.id);
     
-    expect(modifierIds).toContain('ampliar-alcance');
-    expect(modifierIds).toContain('ampliar-area');
+    expect(modifierIds).toContain('ampliar-ritual-alcance');
+    expect(modifierIds).toContain('ampliar-ritual-area');
     expect(modifierIds).toContain('acelerar-ritual');
   });
 
@@ -419,7 +453,7 @@ describe('Integração completa: Trilha Conduíte + Cálculo de PE', () => {
     const result = consolidateEffects(effects, context);
 
     // Simula seleção de modificadores pelo usuário
-    const activeModifierIds = ['ampliar-alcance', 'acelerar-ritual'];
+    const activeModifierIds = ['ampliar-ritual-alcance', 'acelerar-ritual'];
     const activeModifiers = result.rituals.availableModifiers.filter(
       m => activeModifierIds.includes(m.id)
     );

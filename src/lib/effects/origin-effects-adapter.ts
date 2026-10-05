@@ -173,7 +173,7 @@ export const ORIGIN_POWER_EFFECTS: Record<string, {
   // REGRA OFICIAL (Livro Base v1.3): "+2 em rolagens de dano com armas de fogo"
   'para-bellum': {
     mechanics: {
-      rangedDamageBonus: 2, // +2 dano com armas de fogo (tipo Disparo)
+      firearmDamageBonus: 2, // Livro Base p.20: armas de fogo, sem beneficiar arcos/bestas.
       conditionalNote: 'Apenas com armas de fogo (tipo Disparo)',
     },
     description: 'Você recebe +2 em rolagens de dano com armas de fogo.',

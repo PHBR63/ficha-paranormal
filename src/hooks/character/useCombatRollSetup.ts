@@ -7,9 +7,13 @@
  * @module hooks/character/useCombatRollSetup
  */
 
-import { useMemo, useCallback } from 'react';
+import { useCallback } from 'react';
 import type { WeaponBuff } from '@/hooks/useWeaponBuffs';
 import type { BonusSource } from '@/components/dice/DiceRollModal';
+
+// Defaults compartilhados mantêm os callbacks estáveis quando as listas são omitidas.
+const EMPTY_WEAPON_BUFFS: WeaponBuff[] = [];
+const EMPTY_BONUS_SOURCES: BonusSource[] = [];
 
 /** Tipo de arma para cálculo de ataque */
 export type WeaponType = 'melee' | 'ranged' | 'firearm' | 'thrown';
@@ -94,8 +98,8 @@ export function useCombatRollSetup({
   nex,
   attackBonus = 0,
   damageBonus = 0,
-  weaponBuffs = [],
-  bonusSources = [],
+  weaponBuffs = EMPTY_WEAPON_BUFFS,
+  bonusSources = EMPTY_BONUS_SOURCES,
 }: UseCombatRollSetupParams) {
   
   /**

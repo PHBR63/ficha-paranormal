@@ -47,10 +47,10 @@ describe('Motor de Efeitos - Funções de Rolagem de Dados', () => {
   });
 
   it('rollDice deve aplicar bônus corretamente', () => {
-    vi.mocked(Math.random).mockReturnValue(0.5); // ~3.5 arredondado = 3
+    vi.mocked(Math.random).mockReturnValue(0.5); // floor(0.5 × 6) + 1 = 4
     
     const result = rollDice(1, 6, 5);
-    expect(result).toBe(3 + 5); // 3 (valor médio) + 5 (bônus) = 8
+    expect(result).toBe(4 + 5); // Valor do dado + bônus fixo.
   });
 
   it('parseAndRollDice deve parsear formato XdY corretamente', () => {
@@ -118,7 +118,7 @@ describe('Motor de Efeitos - Aplicação de Rituais', () => {
     expect(result.level).toBe('discente');
   });
 
-  it('applyRitual para não-ocultista deve dobrar custo', () => {
+  it('applyRitual usa o mesmo custo para qualquer classe (Base v1.3 p.119)', () => {
     const ritual = getRitualById('arma-atroz');
     if (!ritual) {
       expect(true).toBe(true);
@@ -128,7 +128,7 @@ describe('Motor de Efeitos - Aplicação de Rituais', () => {
     const resultOcultista = applyRitual('arma-atroz');
     const resultNaoOcultista = applyRitual('arma-atroz', [], { isNonOccultist: true });
     
-    expect(resultNaoOcultista.peSpent).toBe(resultOcultista.peSpent * 2);
+    expect(resultNaoOcultista.peSpent).toBe(resultOcultista.peSpent);
   });
 
   it('applyRitual deve gerar mensagens de efeitos aplicados', () => {
@@ -161,21 +161,20 @@ describe('Motor de Efeitos - Cálculo de Custo de PE', () => {
     expect(cost).toBe(ritual.cost);
   });
 
-  it('calculateRitualCost deve somar aprimoramentos selecionados', () => {
+  it('calculateRitualCost soma o custo da forma avançada escolhida (Base v1.3 p.121)', () => {
     const ritual = getRitualById('arma-atroz');
     if (!ritual || !ritual.enhancements) {
       expect(true).toBe(true);
       return;
     }
     
-    const allEnhancementsCost = ritual.enhancements.reduce((sum, e) => sum + e.cost, 0);
-    const enhancementNames = ritual.enhancements.map(e => e.name);
+    const enhancement = ritual.enhancements[0];
     
-    const cost = calculateRitualCost(ritual, enhancementNames);
-    expect(cost).toBe(ritual.cost + allEnhancementsCost);
+    const cost = calculateRitualCost(ritual, [enhancement.name]);
+    expect(cost).toBe(ritual.cost + enhancement.cost);
   });
 
-  it('calculateRitualCost deve dobrar para não-ocultistas', () => {
+  it('calculateRitualCost não multiplica por classe (Base v1.3 p.119)', () => {
     const ritual = getRitualById('arma-atroz');
     if (!ritual) {
       expect(true).toBe(true);
@@ -185,7 +184,7 @@ describe('Motor de Efeitos - Cálculo de Custo de PE', () => {
     const normalCost = calculateRitualCost(ritual, []);
     const nonOccultistCost = calculateRitualCost(ritual, [], true);
     
-    expect(nonOccultistCost).toBe(normalCost * 2);
+    expect(nonOccultistCost).toBe(normalCost);
   });
 
   it('calculateRitualCost deve retornar 0 para ritual inexistente', () => {

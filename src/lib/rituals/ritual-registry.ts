@@ -96,7 +96,7 @@ export function getRitualEffect(
 export function calculateRitualCost(
   ritualOrId: UnifiedRitual | string,
   selectedEnhancements: string[] = [],
-  isNonOccultist: boolean = false
+  _isNonOccultist: boolean = false
 ): number {
   const ritual = typeof ritualOrId === 'string' 
     ? getRitualById(ritualOrId) 
@@ -117,10 +117,8 @@ export function calculateRitualCost(
     }
   }
 
-  // Dobra o custo para não-ocultistas
-  if (isNonOccultist) {
-    totalCost *= 2;
-  }
+  // Livro Base v1.3 p.119: o custo é igual para todas as classes.
+  // O terceiro argumento legado permanece aceito para preservar consumidores existentes.
 
   return totalCost;
 }

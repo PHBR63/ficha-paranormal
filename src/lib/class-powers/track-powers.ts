@@ -192,7 +192,7 @@ function convertTrackAbilityToPower(
     ritualPowerBonus: baseMechanics.ritualPowerBonus,
     
     // PV como PE (Flagelador)
-    hpAsPE: baseMechanics.hpAsPE ? { ratio: 1 } : undefined,
+    hpAsPE: baseMechanics.hpAsPE ? { ratio: baseMechanics.hpCostPerPE ?? 2 } : undefined,
     hpRecoveryRestriction: baseMechanics.hpRecoveryRestriction as 'rest-only' | 'magic-only' | undefined,
   };
   

@@ -46,9 +46,16 @@ export interface TurnPEState {
  * Calcula o círculo máximo baseado no NEX
  * Regra oficial do Ordem Paranormal
  */
-function getMaxRitualCircle(nex: number): number {
-  if (nex >= 99) return 4;
-  if (nex >= 50) return 3;
+function getMaxRitualCircle(nex: number, isNonOccultist: boolean): number {
+  // Livro Base v1.3 p.114: Aprender Ritual permite 2º/3º círculo em NEX 45%/75%.
+  if (isNonOccultist) {
+    if (nex >= 75) return 3;
+    if (nex >= 45) return 2;
+    return 1;
+  }
+  // Escolhido pelo Outro Lado (p.32): progressão própria do Ocultista.
+  if (nex >= 85) return 4;
+  if (nex >= 55) return 3;
   if (nex >= 25) return 2;
   return 1;
 }
@@ -69,6 +76,7 @@ function getMaxRitualCircle(nex: number): number {
  * @param peMax - PE máximo do personagem
  * @param turnPEState - Estado de PE do turno atual
  * @param peLimitBonus - Bônus de limite de PE (ex: Universitário: Dedicação = +1)
+ * @param isNonOccultist - Usa os círculos de Aprender Ritual em vez da progressão de Ocultista
  */
 export function useRitualValidation(
   nex: number,
@@ -76,10 +84,11 @@ export function useRitualValidation(
   peCurrent: number = 0,
   peMax: number = 0,
   turnPEState?: TurnPEState,
-  peLimitBonus: number = 0
+  peLimitBonus: number = 0,
+  isNonOccultist: boolean = false
 ) {
   // Calcula o círculo máximo do personagem
-  const maxCircle = useMemo(() => getMaxRitualCircle(nex), [nex]);
+  const maxCircle = useMemo(() => getMaxRitualCircle(nex, isNonOccultist), [nex, isNonOccultist]);
 
   // Calcula o limite de PE por turno COM BÔNUS de origem (Universitário: Dedicação)
   const peLimitPerTurn = useMemo(() => {
@@ -176,13 +185,48 @@ export function useRitualValidation(
   const validatePECost = useCallback((
     baseCost: number,
     selectedEnhancements: { name: string; cost: number }[],
-    isNonOccultist: boolean = false
+    _isNonOccultist: boolean = false
   ): PEValidation => {
-    const costMultiplier = isNonOccultist ? 2 : 1;
+    // Entradas inválidas não podem virar um débito negativo que aumente PE.
+    const isValidAmount = (amount: number) => Number.isFinite(amount) && amount >= 0;
+    if (!isValidAmount(baseCost) || !isValidAmount(peCurrent) ||
+      selectedEnhancements.some(enhancement => !isValidAmount(enhancement.cost))) {
+      return {
+        isValid: false,
+        reason: 'Custo ou saldo de PE inválido',
+        totalCost: 0,
+        peLimitPerTurn,
+        peRemaining: isValidAmount(peCurrent) ? peCurrent : 0,
+        exceedsLimit: false,
+      };
+    }
 
-    // Custo base + aprimoramentos
+    // Livro Base v1.3 p.119: o custo depende do círculo, sem multiplicador por classe.
     const enhancementCost = selectedEnhancements.reduce((sum, e) => sum + e.cost, 0);
-    const totalCost = (baseCost + enhancementCost) * costMultiplier;
+    const totalCost = baseCost + enhancementCost;
+
+    if (!Number.isFinite(totalCost)) {
+      return {
+        isValid: false,
+        reason: 'Custo de PE fora do intervalo válido',
+        totalCost: 0,
+        peLimitPerTurn,
+        peRemaining: peCurrent,
+        exceedsLimit: false,
+      };
+    }
+
+    // p.121: apenas uma forma avançada pode ser usada na mesma conjuração.
+    if (selectedEnhancements.length > 1) {
+      return {
+        isValid: false,
+        reason: 'Selecione apenas um aprimoramento por conjuração',
+        totalCost,
+        peLimitPerTurn,
+        peRemaining: peCurrent,
+        exceedsLimit: false,
+      };
+    }
 
     // Verifica PE disponível
     if (peCurrent < totalCost) {
