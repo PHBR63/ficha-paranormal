@@ -5,6 +5,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { normalizeCampaignSession } from '@/lib/campaign-realtime-compat';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -83,7 +84,7 @@ export function SessionManager({
         .order('session_number', { ascending: false });
 
       if (error) throw error;
-      setSessions(data || []);
+      setSessions((data || []).map(normalizeCampaignSession));
     } catch (error: any) {
       console.error('Erro ao buscar sessões:', error);
       toastRef.current({
@@ -214,7 +215,7 @@ export function SessionManager({
       const { error } = await supabase
         .from('campaign_sessions')
         .update({ 
-          status: 'active', 
+          status: 'in_progress',
           started_at: new Date().toISOString() 
         })
         .eq('id', sessionId);

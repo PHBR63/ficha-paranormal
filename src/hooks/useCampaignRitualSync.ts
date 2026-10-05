@@ -103,7 +103,7 @@ export function useCampaignRitualSync({
             .from('campaign_sessions')
             .select('id')
             .eq('campaign_id', campaign.id)
-            .eq('status', 'active')
+            .eq('status', 'in_progress')
             .maybeSingle();
 
           if (sessionData) {

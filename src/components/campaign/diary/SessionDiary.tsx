@@ -6,6 +6,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { normalizeCampaignSession } from '@/lib/campaign-realtime-compat';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 // ScrollArea removido - usando overflow nativo para evitar bug #185 com React 19
@@ -104,7 +105,7 @@ export function SessionDiary({ campaignId, campaignName = 'Campanha', isMaster }
 
       if (notesError) throw notesError;
 
-      setSessions(sessionsData || []);
+      setSessions((sessionsData || []).map(normalizeCampaignSession));
       setNotes(notesData || []);
     } catch (error: any) {
       console.error('Erro ao buscar dados do diário:', error);
