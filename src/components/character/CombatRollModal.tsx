@@ -4,6 +4,7 @@
  * Detecta crítico dinamicamente baseado na arma e poderes ativos
  */
 
+import { getCombatPowerDicePenalty } from '@/lib/class-powers/combat-test-dice';
 import { useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sword, Target, Zap, Sparkles, Flame, X, Dices, Shield, Skull, Info, Plus, Minus, RotateCcw, Clock, RefreshCw, Timer, Infinity, Droplets, Crosshair, AlertCircle } from 'lucide-react';
@@ -507,7 +508,8 @@ export function CombatRollModal({
 
   const rangedAttack = weapon?.type === 'Disparo' || weapon?.type === 'Arremesso';
   const attackDicePenalty = getConditionTestDicePenalty(activeConditions,
-    rangedAttack ? 'agility' : 'strength', attackSkill.name, rangedAttack ? 'ranged' : 'melee');
+    rangedAttack ? 'agility' : 'strength', attackSkill.name, rangedAttack ? 'ranged' : 'melee')
+    + getCombatPowerDicePenalty([...activeConditionalBonuses, ...selectedBonuses]);
   const attackDicePool = getAttributeDicePool(attackAttribute, attackDicePenalty);
 
   // Calcular bônus disponíveis baseado nas habilidades do personagem
@@ -520,7 +522,7 @@ export function CombatRollModal({
 
     // Golpe Pesado é PASSIVO - aplicado automaticamente no rollDamage (não precisa de toggle)
 
-    // Combater com Duas Armas (Combatente) - Penalidade de -2 no ataque
+    // Combater com Duas Armas (Combatente) - Penalidade de -1d20 no ataque
     // IMPORTANTE: Se ativo via activeConditionalBonuses, é aplicado automaticamente
     // Se NÃO ativo, aparece como opção selecionável
     const isCombaterDuasArmasActive = activeConditionalBonuses.includes('combater-duas-armas');
@@ -535,16 +537,15 @@ export function CombatRollModal({
         // Ainda não ativado - mostra como opção selecionável
         bonuses.push({
           id: 'combater-duas-armas',
-          name: 'Combater com Duas Armas (-2 ataque)',
+          name: 'Combater com Duas Armas (-1d20 ataque)',
           source: 'class',
-          attackBonus: -2,
           peCost: 0,
-          description: 'Dois ataques com duas armas. Penalidade de -2 em todos os testes de ataque até o próximo turno.',
+          description: 'Dois ataques com duas armas. Penalidade de -1d20 em todos os testes de ataque até o próximo turno.',
         });
       }
     }
 
-    // Combate Defensivo (Combatente) - Penalidade de -2 no ataque, +5 Defesa
+    // Combate Defensivo (Combatente) - Penalidade de -1d20 no ataque, +5 Defesa
     // IMPORTANTE: Se ativo via activeConditionalBonuses, é aplicado automaticamente (não selecionável)
     // Se NÃO ativo, aparece como opção selecionável
     const isCombateDefensivoActive = activeConditionalBonuses.includes('combate-defensivo');
@@ -558,11 +559,10 @@ export function CombatRollModal({
         // Ainda não ativado - mostra como opção selecionável
         bonuses.push({
           id: 'combate-defensivo',
-          name: 'Combate Defensivo (-2 ataque, +5 Def)',
+          name: 'Combate Defensivo (-1d20 ataque, +5 Def)',
           source: 'class',
-          attackBonus: -2,
           peCost: 0,
-          description: 'Sofre -2 em ataques, mas recebe +5 na Defesa até o próximo turno.',
+          description: 'Sofre -1d20 em ataques, mas recebe +5 na Defesa até o próximo turno.',
         });
       }
     }
@@ -630,7 +630,7 @@ export function CombatRollModal({
     });
 
     return bonuses;
-  }, [abilities, paranormalPowers, hasAffinity, affinityElement, weapon, attributes, ritualBonuses]);
+  }, [abilities, paranormalPowers, hasAffinity, affinityElement, weapon, attributes, ritualBonuses, activeConditionalBonuses]);
 
   // Bônus passivos (sempre ativos)
   const passiveBonuses = useMemo(() => 
@@ -760,14 +760,10 @@ export function CombatRollModal({
     total += manualAttackMod;
     
     // === PENALIDADE DE COMBATE DEFENSIVO (se ativo via painel) ===
-    if (activeConditionalBonuses.includes('combate-defensivo')) {
-      total -= 2; // Penalidade oficial: -2 ataque
-    }
+    // A penalidade deste poder está no pool de dados, acima.
     
     // === PENALIDADE DE COMBATER COM DUAS ARMAS (se ativo via painel) ===
-    if (activeConditionalBonuses.includes('combater-duas-armas')) {
-      total -= 2; // Penalidade oficial: -2 ataque (p.46)
-    }
+    // A penalidade deste poder está no pool de dados, acima.
     
     // === PENALIDADE DE PROFICIÊNCIA ===
     // Regra oficial: -5 no ataque se não tiver proficiência adequada
@@ -776,7 +772,7 @@ export function CombatRollModal({
     }
     
     return total;
-  }, [attackSkill.bonus, passiveBonuses, selectedBonuses, availableBonuses, classPowerBonuses, manualAttackMod, weaponBuffBonuses, unifiedEffects, weapon, trackCombatBonuses, specialAttackConfig.enabled, specialAttackResult.attackBonus, proficiencyCheck, activeConditionalBonuses]);
+  }, [attackSkill.bonus, passiveBonuses, selectedBonuses, availableBonuses, classPowerBonuses, manualAttackMod, weaponBuffBonuses, unifiedEffects, weapon, trackCombatBonuses, specialAttackConfig.enabled, specialAttackResult.attackBonus, proficiencyCheck]);
 
   // === Detalhamento das fontes de bônus de ataque para exibição ===
   const attackBonusSources = useMemo(() => {
@@ -911,26 +907,10 @@ export function CombatRollModal({
     }
     
     // === PENALIDADE DE COMBATE DEFENSIVO (se ativo via painel) ===
-    if (activeConditionalBonuses.includes('combate-defensivo')) {
-      sources.push({
-        label: 'Combate Defensivo',
-        value: -2,
-        type: 'power',
-        sourceName: 'Combate Defensivo',
-        description: 'Penalidade de -2 no ataque em troca de +5 na Defesa (ativo)',
-      });
-    }
+    // A penalidade deste poder está no pool de dados, acima.
     
     // === PENALIDADE DE COMBATER COM DUAS ARMAS (se ativo via painel) ===
-    if (activeConditionalBonuses.includes('combater-duas-armas')) {
-      sources.push({
-        label: 'Combater c/ Duas Armas',
-        value: -2,
-        type: 'power',
-        sourceName: 'Combater com Duas Armas',
-        description: 'Penalidade de -2 no ataque para fazer dois ataques (ativo)',
-      });
-    }
+    // A penalidade deste poder está no pool de dados, acima.
     
     // === TÉCNICAS DO ANIQUILADOR ATIVAS ===
     // Exibe as técnicas selecionadas para que o usuário saiba que estão aplicadas
@@ -1995,6 +1975,9 @@ export function CombatRollModal({
                       <span className="px-2 py-0.5 rounded bg-secondary/50 font-medium">
                         {rangedAttack ? 'AGI' : 'FOR'}: {attackAttribute} · {attackDicePool.count}d20 ({attackDicePool.keep === 'lowest' ? 'menor' : 'maior'})
                       </span>
+                      {attackDicePenalty > 0 && (
+                        <span className="text-xs text-destructive">Penalidades: -{attackDicePenalty}d20</span>
+                      )}
                     {attackBonusSources.map((source, idx) => (
                       <span key={idx} className="flex items-center gap-1">
                         <span className="text-muted-foreground">+</span>

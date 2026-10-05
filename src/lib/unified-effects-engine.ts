@@ -90,6 +90,8 @@ export interface EffectMechanics {
   reflexosBonus?: number;
   vontadeBonus?: number;
   allResistancesBonus?: number;   // Bônus em todas as resistências
+  paranormalResistanceTestBonus?: number; // Apenas testes contra efeitos paranormais (Mente Sã)
+  hpCostPerPE?: number; // PV gastos por PE substituído em rituais (Poder do Flagelo)
 
   // === Redução de Dano ===
   damageReduction?: number;        // RD física geral
@@ -484,6 +486,7 @@ export interface EffectMechanics {
 
   // === Grimório (Graduado) ===
   grimoire?: {
+    preparationAction?: 'full'; // Ação para consultar o grimório, não substitui a execução do ritual
     maxRituals: number | 'intellect';                          // Máximo de rituais no grimório
     allowedCircles: number[];                                  // Círculos permitidos
     bonusPerNewCircle: number;                                 // Rituais extras ao desbloquear círculo
@@ -510,7 +513,8 @@ export interface EffectMechanics {
     testSkill: string;                                         // Perícia do teste (Ocultismo, Vontade)
     onSuccess: 'negate' | 'half';                              // Efeito em sucesso
     onFailure: 'half' | 'full';                                // Efeito em falha
-    dtType: 'fixed' | 'ritual-dt' | 'caster-presence';         // Tipo de DT
+    dtType: 'fixed' | 'ritual-dt' | 'caster-presence' | 'existing-test'; // Usa o teste original do efeito
+    requiresExistingHalfDamageSave?: boolean;
     fixedDT?: number;                                          // DT fixo (se dtType = 'fixed')
   };
 
@@ -1136,6 +1140,8 @@ export interface ComputedEffects {
   // =====================================================
   occultist: {
     available: boolean;                                    // Se tem mecânicas de ocultista avançado
+    paranormalResistanceTestBonus: number; // Condicional, nunca vira RD ou bônus geral
+    hpCostPerPE: number | null;
 
     // === Rituais Bônus (Saber Ampliado) ===
     bonusRituals: {
@@ -1148,6 +1154,7 @@ export interface ComputedEffects {
     // === Grimório (Graduado) ===
     grimoire: {
       available: boolean;
+      preparationAction?: 'full';
       maxRituals: number | 'intellect';
       allowedCircles: number[];
       bonusPerNewCircle: number;
@@ -1180,7 +1187,8 @@ export interface ComputedEffects {
         testSkill: string;
         onSuccess: 'negate' | 'half';
         onFailure: 'half' | 'full';
-        dtType: 'fixed' | 'ritual-dt' | 'caster-presence';
+        dtType: 'fixed' | 'ritual-dt' | 'caster-presence' | 'existing-test';
+        requiresExistingHalfDamageSave?: boolean;
         fixedDT?: number;
         source: string;
       }>;
@@ -1524,6 +1532,8 @@ export function consolidateEffects(
     // === OCULTISTA AVANÇADO (Fase 5) ===
     occultist: {
       available: false,
+      paranormalResistanceTestBonus: 0,
+      hpCostPerPE: null,
       bonusRituals: {
         perCircle: 0,
         ignoresLimit: false,
@@ -1580,6 +1590,24 @@ export function consolidateEffects(
         condition: effect.conditions?.requiresActivation ? 'Ativação manual' : undefined,
         costPE: effect.conditions?.costPE,
       });
+    }
+
+    // O seletor precisa oferecer modificadores conhecidos antes de sua ativação.
+    // Disponibilidade não aplica bônus nem debita PE; o modal cobra só os selecionados.
+    const availabilityEffect = {
+      ...effect,
+      conditions: effect.conditions ? { ...effect.conditions, requiresActivation: false } : undefined,
+    };
+    if (effect.mechanics.ritualModifiers && checkEffectConditions(availabilityEffect, context)) {
+      for (const mod of effect.mechanics.ritualModifiers) {
+        if (!result.rituals.availableModifiers.some(existing => existing.id === mod.id)) {
+          result.rituals.availableModifiers.push({ ...mod, source: effect.sourceName });
+          result.rituals.breakdown.push({
+            source: effect.sourceName,
+            effect: `${mod.name}: ${mod.effect} (+${mod.peCost} PE)`,
+          });
+        }
+      }
     }
 
     // Verifica condições
@@ -1911,7 +1939,8 @@ export function consolidateEffects(
     // === Bônus quando Machucado ===
     if (m.whenWounded) {
       const hpPercent = (context.hpCurrent / context.hpMax) * 100;
-      const isWounded = hpPercent < m.whenWounded.hpThreshold;
+      // Machucado inclui exatamente metade dos PV (Livro Base v1.3, p. 311).
+      const isWounded = hpPercent <= m.whenWounded.hpThreshold;
 
       if (isWounded) {
         result.combatAdvanced.conditionalBonuses.whenWounded.active = true;
@@ -2452,20 +2481,6 @@ export function consolidateEffects(
       }
     }
 
-    // Modificadores de trilha (Conduíte, etc.)
-    if (m.ritualModifiers) {
-      for (const mod of m.ritualModifiers) {
-        result.rituals.availableModifiers.push({
-          ...mod,
-          source,
-        });
-        result.rituals.breakdown.push({
-          source,
-          effect: `${mod.name}: ${mod.effect} (+${mod.peCost} PE)`
-        });
-      }
-    }
-
     // =====================================================
     // FASE 3: SUPORTE - Mecânicas de Médico de Campo e Resgate
     // =====================================================
@@ -2613,6 +2628,14 @@ export function consolidateEffects(
     }
 
     // === Grimório (Graduado) ===
+    if (m.paranormalResistanceTestBonus) {
+      result.occultist.available = true;
+      result.occultist.paranormalResistanceTestBonus += m.paranormalResistanceTestBonus;
+    }
+    if (m.hpCostPerPE) {
+      result.occultist.available = true;
+      result.occultist.hpCostPerPE = m.hpCostPerPE;
+    }
     if (m.grimoire) {
       result.occultist.available = true;
       result.occultist.grimoire.available = true;
@@ -2620,6 +2643,7 @@ export function consolidateEffects(
       result.occultist.grimoire.allowedCircles = m.grimoire.allowedCircles;
       result.occultist.grimoire.bonusPerNewCircle = m.grimoire.bonusPerNewCircle;
       result.occultist.grimoire.castingAction = m.grimoire.castingAction;
+      result.occultist.grimoire.preparationAction = m.grimoire.preparationAction;
       result.occultist.grimoire.requiresWielding = m.grimoire.requiresWielding;
       result.occultist.grimoire.inventorySlots = m.grimoire.inventorySlots;
       result.occultist.grimoire.source = source;
@@ -2677,6 +2701,7 @@ export function consolidateEffects(
         onSuccess: m.paranormalDamageTest.onSuccess,
         onFailure: m.paranormalDamageTest.onFailure,
         dtType: m.paranormalDamageTest.dtType,
+        requiresExistingHalfDamageSave: m.paranormalDamageTest.requiresExistingHalfDamageSave,
         fixedDT: m.paranormalDamageTest.fixedDT,
         source,
       });

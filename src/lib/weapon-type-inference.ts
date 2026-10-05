@@ -11,6 +11,7 @@ export type WeaponType = CatalogWeapon['type'];
 
 interface WeaponLikeItem {
   weaponType?: WeaponType;
+  type?: WeaponType; // Campo equivalente nos objetos do catálogo.
   ammoType?: string;
   range?: string;
   properties?: string[];
@@ -23,12 +24,10 @@ interface WeaponLikeItem {
  * Infere o tipo de arma baseado em suas características
  * 
  * Ordem de prioridade:
- * 1. Se já tem weaponType definido, usar
- * 2. Se tem ammoType, é uma arma de fogo
- * 3. Se o range é "Corpo a corpo", é melee
- * 4. Se tem propriedade Arremessável, é ranged
- * 5. Se o tipo de dano é Balístico, é firearm
- * 6. Fallback para melee
+ * Preserva weaponType do inventário ou type do catálogo antes das heurísticas.
+ * Nos itens legados, flechas/virotes indicam disparo; combustível em uma
+ * arma corpo a corpo não transforma a arma em arma de fogo.
+ * Sem informação explícita, usa munição, dano, nome, propriedades e alcance.
  */
 export function inferWeaponType(item: WeaponLikeItem): WeaponType {
   // Se já tem weaponType definido, usar
@@ -36,8 +35,17 @@ export function inferWeaponType(item: WeaponLikeItem): WeaponType {
     return item.weaponType;
   }
 
-  // Se tem ammoType, é uma arma de fogo
+  if (item.type) {
+    return item.type;
+  }
+
+  // Arcos e bestas usam munição, mas não são armas de fogo (Base 1.3, p. 56–57).
   if (item.ammoType) {
+    const ammoType = item.ammoType.toLowerCase();
+    if (ammoType === 'flechas' || ammoType === 'virotes') return 'ranged';
+    if (ammoType === 'combustivel' && item.range?.toLowerCase() === 'corpo a corpo') {
+      return 'melee';
+    }
     return 'firearm';
   }
 

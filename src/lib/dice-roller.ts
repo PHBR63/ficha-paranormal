@@ -228,19 +228,11 @@ export const TRAINING_BONUS = {
   'Expert': 15,
 } as const;
 
-// Limite de PE por turno baseado no NEX (sem bônus de origem)
+/** Limite por turno da tabela de progressão, Livro Base v1.3 p.23; sem bônus de origem. */
 export function getPELimitByNex(nex: number): number {
-  if (nex <= 5) return 1;
-  if (nex <= 15) return 2;
-  if (nex <= 25) return 3;
-  if (nex <= 35) return 4;
-  if (nex <= 45) return 5;
-  if (nex <= 55) return 6;
-  if (nex <= 65) return 8;
-  if (nex <= 75) return 10;
-  if (nex <= 85) return 12;
-  if (nex <= 95) return 15;
-  return 20;
+  if (!Number.isFinite(nex)) return 1;
+  if (nex >= 99) return 20;
+  return Math.max(1, Math.floor(nex / 5));
 }
 
 /**

@@ -51,6 +51,20 @@ import {
   isRangedWeapon,
 } from '../weapon-type-inference';
 
+// Falhar claramente se uma fixture desaparecer, em vez de não executar suas asserções.
+function requireWeapon(id: string): CatalogWeapon {
+  const weapon = getWeaponById(id);
+  expect(weapon, `Arma de referência ausente: ${id}`).toBeDefined();
+  return weapon!;
+}
+
+// Base 1.3, tabela 3.3, p. 57: duas armas de fogo pesadas não causam dano balístico.
+function expectFirearmDamageType(weapon: CatalogWeapon): void {
+  const expected = weapon.id === 'bazuca' ? 'Impacto'
+    : weapon.id === 'lanca_chamas' ? 'Fogo' : 'Balístico';
+  expect(weapon.damageType, weapon.id).toBe(expected);
+}
+
 // ========================================
 // 1. TESTES DE ESTRUTURA DO CATÁLOGO
 // ========================================
@@ -318,11 +332,13 @@ describe('weapons-catalog.ts - Tipos e Valores Válidos', () => {
 
   describe('Formato de Dano', () => {
     it('damage deve seguir padrão de dados (ex: 1d6, 2d8)', () => {
-      const dicePattern = /^\d+d\d+(\+\d+)?$/;
+      const dicePattern = /^\d+d\d+(\+\d+)?(\/\d+d\d+)?$/;
       ALL_WEAPONS.forEach(weapon => {
-        // Alguns explosivos ou armas especiais podem ter formatos especiais
-        if (!weapon.damage.includes('/') && !weapon.damage.includes('área')) {
-          expect(weapon.damage).toMatch(dicePattern);
+        // Contrato personalizado já existente: munição soma dano à arma que a dispara.
+        if (weapon.id === 'municao_consagrada') {
+          expect(weapon.damage).toBe('+1d6');
+        } else {
+          expect(weapon.damage, weapon.id).toMatch(dicePattern);
         }
       });
     });
@@ -350,10 +366,10 @@ describe('weapons-catalog.ts - Consistência de Dados', () => {
       });
     });
 
-    it('armas de fogo devem ter damageType "Balístico"', () => {
+    it('armas de fogo devem preservar dano balístico e as exceções pesadas da tabela 3.3', () => {
       const firearms = ALL_WEAPONS.filter(w => w.type === 'firearm');
       firearms.forEach(weapon => {
-        expect(weapon.damageType).toBe('Balístico');
+        expectFirearmDamageType(weapon);
       });
     });
   });
@@ -368,10 +384,11 @@ describe('weapons-catalog.ts - Consistência de Dados', () => {
       });
     });
 
-    it('armas melee não devem ter ammoType', () => {
+    it('armas melee não usam munição, preservando combustível personalizado da motosserra', () => {
       const meleeWeapons = ALL_WEAPONS.filter(w => w.type === 'melee');
       meleeWeapons.forEach(weapon => {
-        expect(weapon.ammoType).toBeUndefined();
+        // Consumo de combustível é configuração local; não é regra afirmada pelo livro.
+        expect(weapon.ammoType, weapon.id).toBe(weapon.id === 'motosserra' ? 'combustivel' : undefined);
       });
     });
   });
@@ -386,10 +403,16 @@ describe('weapons-catalog.ts - Consistência de Dados', () => {
   });
 
   describe('Armas Ranged', () => {
-    it('armas ranged devem ter range definido', () => {
+    it('armas ranged têm alcance próprio, exceto munição consagrada personalizada', () => {
       const rangedWeapons = ALL_WEAPONS.filter(w => w.type === 'ranged');
       rangedWeapons.forEach(weapon => {
-        expect(weapon.range).toBeDefined();
+        if (weapon.id === 'municao_consagrada') {
+          expect(weapon.range).toBeUndefined();
+          expect(weapon.properties).toContain('Consumível');
+          expect(weapon.damage).toBe('+1d6');
+        } else {
+          expect(weapon.range, weapon.id).toBeDefined();
+        }
       });
     });
   });
@@ -539,11 +562,10 @@ describe('weapons-catalog.ts - Aplicação de Modificações', () => {
       }
     });
 
-    it('deve bloquear modificações em armas especiais', () => {
-      const special = SPECIAL_WEAPONS[0];
-      if (special) {
-        expect(canApplyModification(special, 'certeira')).toBe(false);
-      }
+    it('deve bloquear modificações em categoria especial (coronhada)', () => {
+      const special = requireWeapon('coronhada');
+      expect(special.category).toBe('especial');
+      expect(canApplyModification(special, 'certeira')).toBe(false);
     });
 
     it('modificações melee não devem aplicar a firearms', () => {
@@ -563,10 +585,8 @@ describe('weapons-catalog.ts - Aplicação de Modificações', () => {
     });
 
     it('modificações melee devem aplicar a armas melee', () => {
-      const melee = MELEE_WEAPONS[0];
-      if (melee) {
-        expect(canApplyModification(melee, 'certeira')).toBe(true);
-      }
+      const melee = requireWeapon('faca');
+      expect(canApplyModification(melee, 'certeira')).toBe(true);
     });
 
     it('modificações firearm devem aplicar a armas firearm', () => {
@@ -575,19 +595,22 @@ describe('weapons-catalog.ts - Aplicação de Modificações', () => {
         expect(canApplyModification(firearm, 'calibre_grosso')).toBe(true);
       }
     });
+
+    it('compensador exige arma automática (Base 1.3, p. 60)', () => {
+      expect(canApplyModification(requireWeapon('pistola'), 'compensador')).toBe(false);
+      expect(canApplyModification(requireWeapon('submetralhadora'), 'compensador')).toBe(true);
+    });
   });
 
   describe('getAvailableModifications', () => {
     it('deve retornar modificações melee para armas melee', () => {
-      const melee = MELEE_WEAPONS[0];
-      if (melee) {
-        const available = getAvailableModifications(melee);
-        expect(available.length).toBeGreaterThan(0);
-        // Todas as modificações disponíveis devem aplicar a melee
-        available.forEach(mod => {
-          expect(mod.applicableTo).toContain('melee');
-        });
-      }
+      const melee = requireWeapon('faca');
+      const available = getAvailableModifications(melee);
+      expect(available.length).toBeGreaterThan(0);
+      // Todas as modificações disponíveis devem aplicar a melee
+      available.forEach(mod => {
+        expect(mod.applicableTo).toContain('melee');
+      });
     });
 
     it('deve retornar modificações firearm para armas de fogo', () => {
@@ -608,6 +631,15 @@ describe('weapons-catalog.ts - Aplicação de Modificações', () => {
         const available = getAvailableModifications(explosive);
         expect(available.length).toBe(0);
       }
+    });
+
+    it('ferrolho automático instalado habilita compensador sem oferecer novamente o ferrolho', () => {
+      const available = getAvailableModifications(requireWeapon('pistola'), ['ferrolho_automatico']);
+      expect(available.map(mod => mod.id)).toContain('compensador');
+      expect(available.map(mod => mod.id)).not.toContain('ferrolho_automatico');
+      expect(canApplyModification({
+        ...requireWeapon('pistola'), appliedModifications: ['ferrolho_automatico'],
+      }, 'compensador')).toBe(true);
     });
   });
 });
@@ -648,36 +680,52 @@ describe('weapons-catalog.ts - Cálculo de Estatísticas Modificadas', () => {
       }
     });
 
-    it('cruel deve reduzir margem de crítico em 1 (criticalMargin)', () => {
-      const melee = MELEE_WEAPONS.find(w => w.critical === 20);
-      if (melee) {
-        const modified = calculateModifiedWeaponStats(melee, ['cruel']);
-        expect(modified.criticalMargin).toBe(19);
-      }
+    // Efeitos conferidos na Base 1.3, p. 60–61, tabela 3.5.
+    it('cruel deve adicionar +2 ao dano e preservar margem de crítico', () => {
+      const melee = requireWeapon('martelo');
+      const modified = calculateModifiedWeaponStats(melee, ['cruel']);
+      expect(modified.damage).toBe('1d6+2');
+      expect(modified.criticalMargin).toBe(melee.critical);
     });
 
-    it('perigosa deve aumentar dado de dano', () => {
-      const melee = MELEE_WEAPONS.find(w => w.damage === '1d4');
-      if (melee) {
-        const modified = calculateModifiedWeaponStats(melee, ['perigosa']);
-        expect(modified.damage).toBe('1d6');
-      }
+    it('perigosa deve aumentar margem de ameaça em 2 e preservar dado de dano', () => {
+      const melee = requireWeapon('faca');
+      const modified = calculateModifiedWeaponStats(melee, ['perigosa']);
+      expect(modified.damage).toBe('1d4');
+      expect(modified.criticalMargin).toBe(17);
     });
 
-    it('calibre_grosso deve aumentar dado de dano de firearm', () => {
-      const firearm = FIREARMS.find(w => w.damage === '1d12');
-      if (firearm) {
-        const modified = calculateModifiedWeaponStats(firearm, ['calibre_grosso']);
-        expect(modified.damage).toBe('2d8');
-      }
+    it('calibre_grosso deve adicionar um dado do mesmo tipo à pistola', () => {
+      const firearm = requireWeapon('pistola');
+      const modified = calculateModifiedWeaponStats(firearm, ['calibre_grosso']);
+      expect(modified.damage).toBe('2d12');
     });
 
-    it('compensador deve adicionar +2 ao ataque', () => {
-      const firearm = FIREARMS[0];
-      if (firearm) {
-        const modified = calculateModifiedWeaponStats(firearm, ['compensador']);
-        expect(modified.attackBonus).toBe(2);
-      }
+    it('compensador deve anular penalidade de rajada sem bônus fixo de ataque', () => {
+      const firearm = requireWeapon('submetralhadora');
+      const modified = calculateModifiedWeaponStats(firearm, ['compensador']);
+      expect(modified.attackBonus).toBe(0);
+      expect(modified.specialEffects).toContain('Anula penalidade por rajadas');
+    });
+
+    it('compensador inválido informa incompatibilidade e preserva lista/categoria legadas', () => {
+      const modified = calculateModifiedWeaponStats(requireWeapon('pistola'), ['compensador']);
+      expect(modified.specialEffects).toContain('Compensador exige uma arma automática; seu efeito não foi aplicado.');
+      expect(modified.specialEffects).not.toContain('Anula penalidade por rajadas');
+      expect(modified.modifications).toEqual(['compensador']);
+      expect(modified.finalCategory).toBe('II');
+      expect(modified.attackBonus).toBe(0);
+    });
+
+    it.each([
+      ['compensador', 'ferrolho_automatico'],
+      ['ferrolho_automatico', 'compensador'],
+    ] as WeaponModification[][])('ferrolho e compensador funcionam na ordem %s, %s', (...modifications) => {
+      const modified = calculateModifiedWeaponStats(requireWeapon('pistola'), modifications);
+      expect(modified.addedProperties).toContain('Automática');
+      expect(modified.specialEffects).toContain('Anula penalidade por rajadas');
+      expect(modified.attackBonus).toBe(0);
+      expect(modified.finalCategory).toBe('III');
     });
 
     it('múltiplas modificações devem acumular', () => {
@@ -685,7 +733,8 @@ describe('weapons-catalog.ts - Cálculo de Estatísticas Modificadas', () => {
       if (melee) {
         const modified = calculateModifiedWeaponStats(melee, ['certeira', 'cruel']);
         expect(modified.attackBonus).toBe(2);
-        expect(modified.criticalMargin).toBe(melee.critical - 1);
+        expect(modified.damage).toBe('1d4+2');
+        expect(modified.criticalMargin).toBe(melee.critical);
       }
     });
 
@@ -795,6 +844,25 @@ describe('weapons-catalog.ts - Funções de Busca', () => {
 
 describe('weapon-type-inference.ts - Inferência de Tipo de Arma', () => {
   describe('inferWeaponType', () => {
+    it('preserva type do catálogo, incluindo arma melee arremessável e explosivo', () => {
+      expect(inferWeaponType(requireWeapon('faca'))).toBe('melee');
+      expect(inferWeaponType({ type: 'thrown', range: 'Curto' })).toBe('thrown');
+      expect(inferWeaponType({ type: 'melee', ammoType: 'combustivel' })).toBe('melee');
+    });
+
+    it('weaponType do inventário tem prioridade sobre type e heurísticas', () => {
+      expect(inferWeaponType({ weaponType: 'ranged', type: 'firearm', ammoType: 'balas_longas' })).toBe('ranged');
+    });
+
+    it('itens legados com flechas ou virotes são armas de disparo, mesmo com recarga', () => {
+      expect(inferWeaponType({ ammoType: 'flechas', properties: ['Recarga'] })).toBe('ranged');
+      expect(inferWeaponType({ ammoType: 'virotes' })).toBe('ranged');
+    });
+
+    it('combustível preserva tipo melee legado quando o alcance é corpo a corpo', () => {
+      expect(inferWeaponType({ ammoType: 'combustivel', range: 'Corpo a corpo' })).toBe('melee');
+      expect(inferWeaponType({ ammoType: 'combustivel', range: 'Curto' })).toBe('firearm');
+    });
     it('deve retornar weaponType se já definido', () => {
       expect(inferWeaponType({ weaponType: 'melee' })).toBe('melee');
       expect(inferWeaponType({ weaponType: 'firearm' })).toBe('firearm');
@@ -930,10 +998,8 @@ describe('Sincronização Catálogo ↔ Sistema de Combate', () => {
   });
 
   describe('Consistência Damage/DamageType', () => {
-    it('armas de fogo devem ter dano Balístico', () => {
-      FIREARMS.forEach(weapon => {
-        expect(weapon.damageType).toBe('Balístico');
-      });
+    it('armas de fogo devem ter dano da tabela 3.3, incluindo bazuca e lança-chamas', () => {
+      FIREARMS.forEach(expectFirearmDamageType);
     });
 
     it('armas melee devem ter dano físico', () => {
@@ -1015,10 +1081,8 @@ describe('Sincronização Catálogo ↔ Sistema de Combate', () => {
   });
 
   describe('Consistência Damage/DamageType', () => {
-    it('armas de fogo devem ter dano Balístico', () => {
-      FIREARMS.forEach(weapon => {
-        expect(weapon.damageType).toBe('Balístico');
-      });
+    it('armas de fogo devem ter dano da tabela 3.3, incluindo bazuca e lança-chamas', () => {
+      FIREARMS.forEach(expectFirearmDamageType);
     });
 
     it('armas melee devem ter dano físico', () => {

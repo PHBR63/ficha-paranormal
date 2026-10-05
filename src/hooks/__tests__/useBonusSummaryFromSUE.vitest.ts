@@ -10,38 +10,21 @@
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 
-// Mock dos hooks legados
-vi.mock('@/hooks/useDefenseBonuses', () => ({
-  useDefenseBonuses: vi.fn(() => ({
-    defenseBonus: 0,
-    breakdown: [],
-    armorBonus: 0,
-    shieldBonus: 0,
-    agilityBonus: 0,
-    otherBonuses: 0
-  }))
-}));
+// Spies transparentes preservam os contratos e cálculos reais dos hooks.
+vi.mock('@/hooks/useDefenseBonuses', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/hooks/useDefenseBonuses')>();
+  return { ...actual, useDefenseBonuses: vi.fn(actual.useDefenseBonuses) };
+});
 
-vi.mock('@/hooks/useParanormalEffects', () => ({
-  useParanormalEffects: vi.fn(() => ({
-    defenseBonus: 0,
-    attackBonus: 0,
-    damageBonus: 0,
-    resistanceBonus: 0,
-    activePowers: [],
-    hasActiveEffects: false
-  }))
-}));
+vi.mock('@/hooks/useParanormalEffects', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/hooks/useParanormalEffects')>();
+  return { ...actual, useParanormalEffects: vi.fn(actual.useParanormalEffects) };
+});
 
-vi.mock('@/hooks/useClassPowerBonuses', () => ({
-  useClassPowerBonuses: vi.fn(() => ({
-    meleeDamageBonus: 0,
-    rangedDamageBonus: 0,
-    attackBonus: 0,
-    criticalMarginBonus: 0,
-    breakdown: []
-  }))
-}));
+vi.mock('@/hooks/useClassPowerBonuses', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/hooks/useClassPowerBonuses')>();
+  return { ...actual, useClassPowerBonuses: vi.fn(actual.useClassPowerBonuses) };
+});
 
 // =============================================================================
 // HELPERS DE TESTE

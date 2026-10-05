@@ -165,8 +165,8 @@ describe('E2E: Fluxo Completo de Ocultista', () => {
   };
 
   it('deve combinar origem + trilha + poderes paranormais', () => {
-    // 1. Origem: Vidente (bônus em Ocultismo)
-    const originEffects = getOriginEffects('vidente', 'Vidente', attributes.intellect, []);
+    // 1. Origem do Livro Base: Eu Já Sabia concede RD mental igual a INT.
+    const originEffects = getOriginEffects('teorico-da-conspiracao', 'Teórico da Conspiração', attributes.intellect, []);
 
     // 2. Trilha: Conduíte NEX 50%
     const trackEffects = getTrackEffects('condutor', 50, attributes);
@@ -189,6 +189,7 @@ describe('E2E: Fluxo Completo de Ocultista', () => {
 
     // Precognição dá +2 Defesa (com afinidade Conhecimento)
     expect(result.defense.general).toBeGreaterThanOrEqual(2);
+    expect(result.damageResistance.mental).toBe(attributes.intellect);
     
     // Conduíte dá modificadores de ritual
     expect(result.rituals.availableModifiers.length).toBeGreaterThan(0);
@@ -202,7 +203,7 @@ describe('E2E: Fluxo Completo de Ocultista', () => {
 
     // Deve ter Ampliar e Acelerar Ritual
     const modifierIds = result.rituals.availableModifiers.map(m => m.id);
-    expect(modifierIds).toContain('ampliar-alcance');
+    expect(modifierIds).toContain('ampliar-ritual-alcance');
     expect(modifierIds).toContain('acelerar-ritual');
   });
 });
@@ -216,26 +217,15 @@ describe('E2E: Progressão de NEX', () => {
     strength: 2, agility: 2, vigor: 2, intellect: 2, presence: 2 
   };
 
-  it('deve atualizar efeitos ao progredir de NEX 45% para 50%', () => {
-    // NEX 45%: ainda não tem Acelerar Ritual
-    const effectsNex45 = getTrackEffects('condutor', 45, attributes);
-    const contextNex45 = createContext({ attributes, nex: 45 });
-    const resultNex45 = consolidateEffects(effectsNex45, contextNex45);
+  it('deve desbloquear Acelerar Ritual ao progredir de NEX 35% para 40%', () => {
+    // Livro Base p.34: atravessa o patamar real de desbloqueio.
+    const before = consolidateEffects(getTrackEffects('condutor', 35, attributes), createContext({ attributes, nex: 35 }));
+    const after = consolidateEffects(getTrackEffects('condutor', 40, attributes), createContext({ attributes, nex: 40 }));
 
-    // NEX 50%: tem Acelerar Ritual (NEX 40%)
-    const effectsNex50 = getTrackEffects('condutor', 50, attributes);
-    const contextNex50 = createContext({ attributes, nex: 50 });
-    const resultNex50 = consolidateEffects(effectsNex50, contextNex50);
-
-    // Ambos devem ter Ampliar (NEX 10%)
-    const hasAmpliarNex45 = resultNex45.rituals.availableModifiers.some(
-      m => m.id === 'ampliar-alcance'
-    );
-    const hasAmpliarNex50 = resultNex50.rituals.availableModifiers.some(
-      m => m.id === 'ampliar-alcance'
-    );
-    expect(hasAmpliarNex45).toBe(true);
-    expect(hasAmpliarNex50).toBe(true);
+    expect(before.rituals.availableModifiers.some(m => m.id === 'ampliar-ritual-alcance')).toBe(true);
+    expect(after.rituals.availableModifiers.some(m => m.id === 'ampliar-ritual-alcance')).toBe(true);
+    expect(before.rituals.availableModifiers.some(m => m.id === 'acelerar-ritual')).toBe(false);
+    expect(after.rituals.availableModifiers.find(m => m.id === 'acelerar-ritual')?.peCost).toBe(4);
   });
 
   it('deve calcular bônus de HP baseado em NEX para poderes paranormais', () => {
@@ -293,9 +283,10 @@ describe('E2E: Condições Automáticas', () => {
     });
     const result = consolidateEffects(conditionEffects, context);
 
-    // Morrendo: -5 em testes, não pode agir
+    // Livro Base p.311: morrendo causa inconsciência; não concede penalidade numérica fictícia.
     expect(result.flags.cannotAct).toBe(true);
-    expect(result.attack.general).toBeLessThan(0);
+    expect(result.flags.isUnconscious).toBe(true);
+    expect(result.flags.isHelpless).toBe(true);
   });
 });
 
@@ -435,7 +426,7 @@ describe('E2E: Cenários de Combate Real', () => {
     // Acelerar: +4 PE
     // Total: 9 PE
     const baseCost = 3;
-    const ampliar = result.rituals.availableModifiers.find(m => m.id === 'ampliar-alcance');
+    const ampliar = result.rituals.availableModifiers.find(m => m.id === 'ampliar-ritual-alcance');
     const acelerar = result.rituals.availableModifiers.find(m => m.id === 'acelerar-ritual');
 
     const totalCost = baseCost + (ampliar?.peCost || 0) + (acelerar?.peCost || 0);

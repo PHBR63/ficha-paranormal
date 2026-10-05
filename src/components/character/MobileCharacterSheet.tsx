@@ -136,8 +136,8 @@ import {
   getItemIcon,
 } from './mobile/utils';
 
-// Inferência de tipo de arma (corrige pistola como corpo a corpo)
-import { normalizeWeaponTypeForDisplay } from '@/lib/weapon-type-inference';
+// Conversão do inventário para o contrato compartilhado pelo painel e modal de combate.
+import { toMobileWeaponEntry } from './mobile/weapon-entry';
 import { VersatilityAbilityCard } from './VersatilityAbilityCard';
 
 import { useWeaponBuffs, useUnifiedEffects, useRoundTracking, useActivatedEffects } from '@/hooks';
@@ -193,6 +193,8 @@ interface MobileCharacterSheetProps {
       range?: string;
       special?: string;
       ammoType?: string;
+      ammoCurrent?: number;
+      ammoMax?: number;
       weaponType?: string;
       proficiency?: string;
       properties?: string[];
@@ -804,6 +806,8 @@ export function MobileCharacterSheet({
       range: item.range,
       special: item.special,
       ammoType: item.ammoType,
+      ammoCurrent: item.ammoCurrent,
+      ammoMax: item.ammoMax,
       weaponType: item.weaponType,
       proficiency: item.proficiency,
       properties: item.properties,
@@ -890,44 +894,11 @@ export function MobileCharacterSheet({
   });
 
   // Lista de armas equipadas para o painel de combate
-  // Usa normalizeWeaponTypeForDisplay para inferir corretamente o tipo de arma
+  // Mantém margens de crítico e munição nos campos lidos pelos consumidores.
   const equippedWeapons: WeaponEntry[] = useMemo(() => {
     return normalizedInventory
       .filter(item => item.itemType === 'weapon' && item.isEquipped)
-      .map(item => {
-        const weaponData = (item as any);
-        // Usa inferência inteligente para classificar a arma corretamente
-        const displayType = normalizeWeaponTypeForDisplay({
-          weaponType: weaponData.weaponType,
-          ammoType: weaponData.ammoType,
-          range: weaponData.range,
-          properties: weaponData.properties,
-          damageType: weaponData.damageType,
-        });
-        
-        // Detecta se a arma é a favorita do Aniquilador
-        const isFavoriteWeapon = !!(weaponData.favoriteAbilityId);
-        
-        // Normaliza criticalMultiplier para string (ex: 'x2', 'x3')
-        const normalizedCritMultiplier = typeof weaponData.criticalMultiplier === 'number'
-          ? `x${weaponData.criticalMultiplier}`
-          : weaponData.criticalMultiplier || 'x2';
-        
-        return {
-          id: item.id,
-          name: item.name,
-          type: displayType,
-          damage: weaponData.damage || '1d6',
-          damageType: weaponData.damageType, // Tipo de dano (Balístico, Corte, etc.)
-          criticalRange: Number.parseInt(String(weaponData.critical ?? weaponData.criticalRange ?? 20), 10) || 20,
-          criticalMultiplier: normalizedCritMultiplier,
-          range: weaponData.range,
-          ammo: weaponData.ammo,
-          maxAmmo: weaponData.maxAmmo,
-          ammoType: weaponData.ammoType,
-          isFavoriteWeapon,
-        };
-      });
+      .map(toMobileWeaponEntry);
   }, [normalizedInventory]);
 
   // Handler para abrir combate com arma

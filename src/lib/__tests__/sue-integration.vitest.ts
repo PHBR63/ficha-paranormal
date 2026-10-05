@@ -221,7 +221,7 @@ describe('SUE Integration: Ocultista + Conduíte', () => {
     // Especialista em Elemento (Sangue): +2 DT
     const especialista = classPowerEffects.find(e => e.sourceId === 'especialista-em-elemento');
     expect(especialista).toBeDefined();
-    expect(especialista?.mechanics.ritualDTBonusByElement?.['Sangue']).toBe(2);
+    expect(especialista?.mechanics.ritualDTBonusByElement?.['sangue']).toBe(2);
   });
 
   it('ritual-potente deve adicionar INT em dano/cura de rituais', () => {

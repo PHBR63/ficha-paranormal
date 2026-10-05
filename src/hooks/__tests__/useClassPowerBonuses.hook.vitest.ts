@@ -14,6 +14,7 @@ import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useClassPowerBonuses, useHasPower, useHasTrackAbility } from '../useClassPowerBonuses';
 import type { ClassPowerBonusConfig } from '../useClassPowerBonuses';
+import { calculateSneakAttackDice } from '../../lib/class-powers/track-effects-engine';
 
 // =====================================================
 // FIXTURES
@@ -366,11 +367,14 @@ describe('useClassPowerBonuses hook', () => {
   });
 
   describe('Dados extras de dano', () => {
-    it('Infiltrador deve ter dados extras de ataque furtivo', () => {
+    it('Infiltrador conhece Ataque Furtivo em NEX 65 sem somar dano condicional automaticamente', () => {
       const { result } = renderHook(() => useClassPowerBonuses(infiltradorConfig));
       
-      // Ataque Furtivo: +3d6 em NEX 65
-      expect(result.current.extraDamageDice.length).toBeGreaterThan(0);
+      // Base v1.3, p.30: exige alvo elegível, 1 PE e limite por rodada.
+      // Este hook legado não recebe essas condições; NEX sozinho não aplica dano.
+      expect(result.current.hasTrackAbility('ataque-furtivo-trilha')).toBe(true);
+      expect(calculateSneakAttackDice(infiltradorConfig.nex)).toBe('+3d6');
+      expect(result.current.extraDamageDice).toEqual([]);
     });
 
     it('Guerreiro não deve ter dados extras por padrão', () => {

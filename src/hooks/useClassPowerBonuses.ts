@@ -157,11 +157,11 @@ export function useClassPowerBonuses(config: ClassPowerBonusConfig): ClassPowerB
     const powerContext: PowerCalculationContext = {
       nex,
       attributes: {
-        strength: attributes.strength || 1,
-        agility: attributes.agility || 1,
-        vigor: attributes.vigor || 1,
-        intellect: attributes.intellect || 1,
-        presence: attributes.presence || 1,
+        strength: attributes.strength ?? 1,
+        agility: attributes.agility ?? 1,
+        vigor: attributes.vigor ?? 1,
+        intellect: attributes.intellect ?? 1,
+        presence: attributes.presence ?? 1,
       },
       equippedWeaponType,
       equippedProtectionType,
