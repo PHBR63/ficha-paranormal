@@ -1592,6 +1592,24 @@ export function consolidateEffects(
       });
     }
 
+    // O seletor precisa oferecer modificadores conhecidos antes de sua ativação.
+    // Disponibilidade não aplica bônus nem debita PE; o modal cobra só os selecionados.
+    const availabilityEffect = {
+      ...effect,
+      conditions: effect.conditions ? { ...effect.conditions, requiresActivation: false } : undefined,
+    };
+    if (effect.mechanics.ritualModifiers && checkEffectConditions(availabilityEffect, context)) {
+      for (const mod of effect.mechanics.ritualModifiers) {
+        if (!result.rituals.availableModifiers.some(existing => existing.id === mod.id)) {
+          result.rituals.availableModifiers.push({ ...mod, source: effect.sourceName });
+          result.rituals.breakdown.push({
+            source: effect.sourceName,
+            effect: `${mod.name}: ${mod.effect} (+${mod.peCost} PE)`,
+          });
+        }
+      }
+    }
+
     // Verifica condições
     if (!checkEffectConditions(effect, context) || !effect.isActive) {
       continue;
@@ -2460,20 +2478,6 @@ export function consolidateEffects(
         result.rituals.peReductionByRange[range] =
           (result.rituals.peReductionByRange[range] || 0) + reduction!;
         result.rituals.breakdown.push({ source, effect: `-${reduction} PE rituais de alcance ${range}` });
-      }
-    }
-
-    // Modificadores de trilha (Conduíte, etc.)
-    if (m.ritualModifiers) {
-      for (const mod of m.ritualModifiers) {
-        result.rituals.availableModifiers.push({
-          ...mod,
-          source,
-        });
-        result.rituals.breakdown.push({
-          source,
-          effect: `${mod.name}: ${mod.effect} (+${mod.peCost} PE)`
-        });
       }
     }
 

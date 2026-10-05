@@ -1408,9 +1408,17 @@ export function getTrackEffects(
   if (!track) return effects;
 
   const unlockedAbilities = getUnlockedAbilities(trackId, nex);
+  // Aniquilador troca a redução I por II/III; esses patamares não são cumulativos.
+  const favoriteCategoryReduction = track.id === 'aniquilador'
+    ? Math.max(0, ...unlockedAbilities.map(ability => ability.effects.base.categoryReduction?.amount ?? 0))
+    : 0;
 
   for (const ability of unlockedAbilities) {
     const mechanics = convertTrackAbilityToMechanics(ability, attributes, nex);
+    if (favoriteCategoryReduction && mechanics.categoryReduction &&
+        mechanics.categoryReduction.amount < favoriteCategoryReduction) {
+      delete mechanics.categoryReduction;
+    }
 
     // Verifica se a habilidade tem mecânicas relevantes
     const hasMechanics = Object.keys(mechanics).length > 0;
@@ -1443,6 +1451,25 @@ export function getTrackEffects(
       },
       priority: ability.minNex, // Maior NEX = maior prioridade
     };
+
+    // Técnica Secreta e Remendão combinam ações pagas e categoria permanente (Base p.26/31).
+    // Separar o benefício passivo evita perdê-lo ao desativar a ação ou contá-lo duas vezes.
+    if (needsActivation && mechanics.categoryReduction) {
+      const categoryReduction = mechanics.categoryReduction;
+      delete mechanics.categoryReduction;
+      effects.push({
+        id: `track-${ability.id}-category-reduction`,
+        name: `${ability.name}: redução de categoria`,
+        description: `Redução de categoria: ${categoryReduction.amount}.`,
+        source: 'track',
+        sourceId: ability.id,
+        sourceName: effect.sourceName,
+        mechanics: { categoryReduction },
+        isActive: true,
+        isToggleable: false,
+        priority: ability.minNex,
+      });
+    }
 
     if (hasMechanics) effects.push(effect);
 

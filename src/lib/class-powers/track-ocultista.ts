@@ -44,7 +44,7 @@ export const OCULTISTA_TRACKS: UnifiedTrack[] = [
                         },
                         ritualModifier: {
                             type: 'range', // Simplificado para 'range', lógica de escolha tratada na implementação
-                            additionalPECost: 0,
+                            additionalPECost: 2, // Livro Base p.34: +2 PE na conjuração selecionada.
                             effect: 'ampliar'
                         }
                     }

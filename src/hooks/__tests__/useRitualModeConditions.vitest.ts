@@ -371,9 +371,9 @@ describe('Integração com Sistema de Rituais Sustentados', () => {
     expect(Array.isArray(modes)).toBe(true);
   });
 
-  it('getRitualModeDescription deve retornar undefined para modo inexistente', () => {
+  it('getRitualModeDescription deve retornar null para modo inexistente', () => {
     const description = getRitualModeDescription('ritual-inexistente', 'modo-inexistente');
-    expect(description).toBeUndefined();
+    expect(description).toBeNull();
   });
 });
 

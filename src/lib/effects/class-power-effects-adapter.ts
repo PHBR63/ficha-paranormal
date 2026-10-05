@@ -135,6 +135,12 @@ function convertPowerMechanicsToEffects(
   // === COMBATE - DANO ===
   if (mechanics.damageBonus) {
     let damageValue: number = 0;
+    const damageConditions = mechanics.damageBonus.conditions ?? mechanics.conditions;
+
+    // Ritual Potente soma INT ao ritual, sem conceder dano geral aos ataques.
+    if (power.id === 'ritual-potente' && mechanics.damageBonus.attribute) {
+      effects.ritualDamageAttributeBonus = mechanics.damageBonus.attribute;
+    }
     
     // Resolve valor numérico ou escalável
     if (mechanics.damageBonus.value !== undefined) {
@@ -147,10 +153,10 @@ function convertPowerMechanicsToEffects(
     }
     
     // Aplica condição de tipo de arma
-    if (mechanics.conditions?.weaponType) {
-      const weaponTypes = Array.isArray(mechanics.conditions.weaponType) 
-        ? mechanics.conditions.weaponType 
-        : [mechanics.conditions.weaponType];
+    if (damageConditions?.weaponType) {
+      const weaponTypes = Array.isArray(damageConditions.weaponType)
+        ? damageConditions.weaponType
+        : [damageConditions.weaponType];
       
       // Verifica cada tipo de arma e aplica bônus adequadamente
       // Ninja Urbano: ['melee', 'ranged-nonfirearm'] = corpo a corpo + distância (sem fogo)
@@ -257,6 +263,12 @@ function convertPowerMechanicsToEffects(
   // === MODIFICADORES DE PE PARA RITUAIS ===
   if (mechanics.peModifiers) {
     for (const mod of mechanics.peModifiers) {
+      if (mod.targets?.includes('pessoal')) {
+        effects.ritualPEReductionByRange = {
+          ...effects.ritualPEReductionByRange,
+          pessoal: (effects.ritualPEReductionByRange?.pessoal ?? 0) + Math.abs(mod.value),
+        };
+      }
       if (mod.targets?.includes('ritual')) {
         effects.ritualPEReduction = (effects.ritualPEReduction || 0) + Math.abs(mod.value);
       }
@@ -594,13 +606,14 @@ function convertPowerMechanicsToEffects(
   }
   
   // === NOTA CONDICIONAL ===
-  if (mechanics.conditions) {
+  const displayConditions = mechanics.conditions ?? mechanics.damageBonus?.conditions;
+  if (displayConditions) {
     const condNotes: string[] = [];
     
-    if (mechanics.conditions.weaponType) {
-      const types = Array.isArray(mechanics.conditions.weaponType)
-        ? mechanics.conditions.weaponType
-        : [mechanics.conditions.weaponType];
+    if (displayConditions.weaponType) {
+      const types = Array.isArray(displayConditions.weaponType)
+        ? displayConditions.weaponType
+        : [displayConditions.weaponType];
       const typeNames: Record<string, string> = {
         melee: 'corpo a corpo',
         ranged: 'distância',
@@ -612,12 +625,12 @@ function convertPowerMechanicsToEffects(
       condNotes.push(types.map(t => typeNames[t] || t).join(', '));
     }
     
-    if (mechanics.conditions.onCritical) {
+    if (displayConditions.onCritical) {
       condNotes.push('em acerto crítico');
     }
     
-    if (mechanics.conditions.targetState) {
-      condNotes.push(`alvo ${mechanics.conditions.targetState.join(', ')}`);
+    if (displayConditions.targetState) {
+      condNotes.push(`alvo ${displayConditions.targetState.join(', ')}`);
     }
     
     if (condNotes.length > 0) {
@@ -895,19 +908,10 @@ export function hasPowerEffects(powerId: string): boolean {
   if (!power) return !!LEGACY_POWER_CONFIGS[powerId];
   
   const mechanics = power.effects.base;
-  return !!(
-    mechanics.attackBonus ||
-    mechanics.damageBonus ||
-    mechanics.defenseBonus ||
-    mechanics.criticalBonus ||
-    mechanics.resistanceBonus ||
-    mechanics.damageReduction ||
-    mechanics.skillBonuses ||
-    mechanics.proficiencies ||
-    mechanics.peModifiers ||
-    mechanics.grantsUnarmedDamage ||
-    mechanics.extraActions
-  );
+  // Usa o mesmo conversor da ficha; poderes com escolha só geram bônus após escolhê-la.
+  return Object.keys(convertPowerMechanicsToEffects(mechanics, power, power.minNex)).length > 0
+    || mechanics.requiresChoice?.type === 'element'
+    || mechanics.requiresChoice?.type === 'ritual';
 }
 
 /**
