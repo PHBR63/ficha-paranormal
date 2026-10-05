@@ -44,7 +44,7 @@ describe('Inventário → combate móvel', () => {
   it('mantém a margem 19 da faca no painel e ao abrir o modal real', () => {
     render(<WeaponFlow />);
     expect(screen.getByText('19', { exact: true })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'ATACAR', exact: true }));
+    fireEvent.click(screen.getByRole('button', { name: 'ATACAR' }));
     expect(within(screen.getByRole('dialog', { name: 'Faca' })).getByText('Crit: 19+ x2')).toBeInTheDocument();
   });
 
@@ -54,8 +54,8 @@ describe('Inventário → combate móvel', () => {
       vi.spyOn(Math, 'random').mockReturnValue(random);
       const onRollComplete = vi.fn();
       render(<WeaponFlow onRollComplete={onRollComplete} />);
-      fireEvent.click(screen.getByRole('button', { name: 'ATACAR', exact: true }));
-      fireEvent.click(screen.getByRole('button', { name: 'Rolar Ataque', exact: true }));
+      fireEvent.click(screen.getByRole('button', { name: 'ATACAR' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Rolar Ataque' }));
       await act(async () => { await vi.advanceTimersByTimeAsync(600); });
       expect(onRollComplete).toHaveBeenCalledTimes(1);
       expect(onRollComplete).toHaveBeenCalledWith(expect.objectContaining({ keptDice, isCritical, criticalThreshold: 19 }));
@@ -66,9 +66,9 @@ describe('Inventário → combate móvel', () => {
     vi.useFakeTimers();
     vi.spyOn(Math, 'random').mockReturnValue(0.99);
     render(<WeaponFlow />);
-    fireEvent.click(screen.getByRole('button', { name: 'ATACAR', exact: true }));
+    fireEvent.click(screen.getByRole('button', { name: 'ATACAR' }));
     fireEvent.change(screen.getByRole('spinbutton'), { target: { value: '100' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Rolar Ataque', exact: true }));
+    fireEvent.click(screen.getByRole('button', { name: 'Rolar Ataque' }));
     await act(async () => { await vi.advanceTimersByTimeAsync(600); });
     expect(screen.getByText('CRÍTICO, mas Errou')).toBeInTheDocument();
     expect(screen.queryByText(/Acertou!/)).not.toBeInTheDocument();
@@ -78,7 +78,7 @@ describe('Inventário → combate móvel', () => {
     const firearm = toMobileWeaponEntry({ ...knife, weaponType: 'firearm', ammoCurrent: 0, ammoMax: 6 });
     render(<MobileCombatPanel weapons={[firearm]} agility={2} onWeaponClick={vi.fn()} />);
     expect(screen.getByText('0/6')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'ATACAR', exact: true })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'ATACAR' })).toBeDisabled();
   });
 
   it.each([
