@@ -184,26 +184,33 @@ describe('Integração: useActivatedEffects ↔ getTrackEffects', () => {
 
 describe('Integração: getTrackEffects ↔ consolidateEffects (SUE)', () => {
   describe('Trilha Aniquilador', () => {
-    it('Técnica Destruidor deve adicionar +5 dano geral', () => {
+    it.each([[10, 1], [40, 2], [65, 2], [99, 3]])('NEX %i consolida categoria final %i sem somar patamares', (nex, amount) => {
+      const result = consolidateTrackEffectsForTest('aniquilador', nex, []);
+      expect(result.inventory.totalCategoryReduction).toBe(amount);
+      expect(result.inventory.categoryReductions).toHaveLength(1);
+      expect(result.inventory.categoryReductions[0].targetType).toBe('specific-weapon');
+    });
+
+    it('Técnica Destruidor aumenta o multiplicador crítico em 1 sem bônus de dano', () => {
       const result = consolidateTrackEffectsForTest(
         'aniquilador',
         50,
         ['track-tecnica-destruidor']
       );
       
-      // Técnica Destruidor: +5 dano
-      expect(result.damage.general).toBeGreaterThanOrEqual(5);
+      // Livro Base v1.3, p.26: Destruidor modifica o crítico, não o dano base.
+      expect(result.critical.multiplierBonus).toBe(1);
+      expect(result.damage.general).toBe(0);
     });
 
-    it('Técnica Letal deve adicionar +1 crítico', () => {
+    it('Técnica Letal deve adicionar +2 na margem de ameaça', () => {
       const result = consolidateTrackEffectsForTest(
         'aniquilador',
         70, // NEX 70% para Técnica Letal (65%)
         ['track-tecnica-letal']
       );
       
-      // Técnica Letal: +1 margem de crítico
-      expect(result.critical.marginBonus).toBeGreaterThanOrEqual(1);
+      expect(result.critical.marginBonus).toBe(2);
     });
 
     it('Múltiplas técnicas devem acumular bônus', () => {
@@ -253,7 +260,7 @@ describe('Integração: getTrackEffects ↔ consolidateEffects (SUE)', () => {
   });
 
   describe('Trilha Atirador de Elite', () => {
-    it('Disparo Letal deve adicionar bônus de dano baseado em INT', () => {
+    it('Disparo Letal aumenta margem em 2 sem duplicar dano de Mira de Elite', () => {
       const customAttrs = { ...DEFAULT_ATTRIBUTES, intellect: 4 };
       
       const effects = getTrackEffects(
@@ -271,8 +278,9 @@ describe('Integração: getTrackEffects ↔ consolidateEffects (SUE)', () => {
       
       const result = consolidateEffects(effects, context);
       
-      // Disparo Letal: +INT×2 dano ranged (INT 4 = +8)
-      expect(result.damage.ranged).toBeGreaterThanOrEqual(8);
+      // Livro Base v1.3, p.30: INT no dano vem de Mira de Elite; Disparo modifica margem.
+      expect(result.damage.ranged).toBe(customAttrs.intellect);
+      expect(result.critical.marginBonus).toBe(2);
     });
   });
 
@@ -313,7 +321,7 @@ describe('Integração: getTrackEffects ↔ consolidateEffects (SUE)', () => {
   });
 
   describe('Trilha Tropa de Choque', () => {
-    it('Casca Grossa deve adicionar redução de dano', () => {
+    it('Casca Grossa habilita Vigor no bloqueio sem conceder RD permanente', () => {
       const effects = getTrackEffects(
         'tropa-choque',
         20,
@@ -328,10 +336,18 @@ describe('Integração: getTrackEffects ↔ consolidateEffects (SUE)', () => {
       
       const result = consolidateEffects(effects, context);
       
-      // Casca Grossa: RD = VIG
-      expect(result.damageReduction.physical).toBeGreaterThanOrEqual(
-        DEFAULT_ATTRIBUTES.vigor
-      );
+      // Livro Base v1.3, p.27: Vigor soma apenas à RD recebida quando bloqueia.
+      expect(result.damageReduction.physical).toBe(0);
+      expect(result.combatAdvanced.blockVigorBonus.enabled).toBe(true);
+    });
+  });
+
+  describe('Trilha Técnico', () => {
+    it.each([{ activatedIds: [] }, { activatedIds: ['track-remendao'] }])('Remendão conserva categoria passiva uma única vez (ativações: $activatedIds)', ({ activatedIds }) => {
+      const result = consolidateTrackEffectsForTest('tecnico', 40, activatedIds);
+      expect(result.inventory.totalCategoryReduction).toBe(1);
+      expect(result.inventory.categoryReductions).toHaveLength(1);
+      expect(result.inventory.categoryReductions[0].targetType).toBe('general-equipment');
     });
   });
 });
@@ -372,10 +388,8 @@ describe('Integração: SUE ↔ getTrackCombatBonuses', () => {
       activatedIds
     );
     
-    // Disparo Letal: +INT×2 dano ranged
-    expect(combatBonuses.damageBonus).toBeGreaterThanOrEqual(
-      DEFAULT_ATTRIBUTES.intellect * 2
-    );
+    expect(combatBonuses.damageBonus).toBe(DEFAULT_ATTRIBUTES.intellect);
+    expect(combatBonuses.criticalMarginBonus).toBe(2);
   });
 
   it('Infiltrador com Ataque Furtivo deve retornar dados extras', () => {
@@ -542,8 +556,9 @@ describe('Fluxo End-to-End Completo', () => {
       activatedEffectsHook.current.activatedEffectIds
     );
 
-    // 8. Verifica bônus aplicado
-    expect(combatBonuses.damageBonus).toBeGreaterThanOrEqual(5);
+    // 8. Destruidor altera o multiplicador crítico, sem bônus fixo no dano.
+    expect(combatBonuses.criticalMultiplierBonus).toBe(1);
+    expect(combatBonuses.damageBonus).toBe(0);
 
     // 9. Consome efeito após ataque
     act(() => {
@@ -609,8 +624,8 @@ describe('Fluxo End-to-End Completo', () => {
       result.current.activatedEffectIds
     );
 
-    // Disparo Letal: +INT×2 = 8 dano
-    expect(combatBonuses.damageBonus).toBeGreaterThanOrEqual(8);
+    expect(combatBonuses.damageBonus).toBe(4); // Mira de Elite, uma única vez.
+    expect(combatBonuses.criticalMarginBonus).toBe(2);
 
     // Consome e verifica
     act(() => {
@@ -625,8 +640,9 @@ describe('Fluxo End-to-End Completo', () => {
       result.current.activatedEffectIds
     );
 
-    // Sem efeito ativo, bônus deve ser menor
-    expect(bonusesAfter.damageBonus).toBeLessThan(combatBonuses.damageBonus);
+    // Consumir Disparo remove margem; o dano passivo de Mira de Elite permanece.
+    expect(bonusesAfter.criticalMarginBonus).toBe(0);
+    expect(bonusesAfter.damageBonus).toBe(combatBonuses.damageBonus);
   });
 });
 

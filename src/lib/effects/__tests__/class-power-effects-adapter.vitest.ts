@@ -105,20 +105,25 @@ describe('class-power-effects-adapter: getClassPowerEffects Estrutura', () => {
 // =====================================================
 
 describe('class-power-effects-adapter: Poderes de Combatente', () => {
-  it('golpe-pesado deve ter +2 dano corpo a corpo', () => {
+  it('golpe-pesado deve acrescentar um dado da arma, sem bônus fixo de dano', () => {
     const power = createTestPower({ id: 'golpe-pesado', classId: 'combatente' });
     const effects = getClassPowerEffects([power], 25, createTestAttributes());
     
     expect(effects).toHaveLength(1);
-    expect(effects[0].mechanics.meleeDamageBonus).toBe(2);
+    expect(effects[0].mechanics.extraDamageDice).toBe('+1d');
+    expect(effects[0].mechanics.meleeDamageBonus ?? 0).toBe(0);
+    expect(effects[0].mechanics.conditionalNote).toContain('corpo a corpo');
   });
 
-  it('golpe-demolidor deve ter +4 dano corpo a corpo', () => {
+  it('golpe-demolidor deve oferecer dois dados da arma mediante ativação, sem dano fixo', () => {
     const power = createTestPower({ id: 'golpe-demolidor', classId: 'combatente' });
     const effects = getClassPowerEffects([power], 50, createTestAttributes());
     
     expect(effects).toHaveLength(1);
-    expect(effects[0].mechanics.meleeDamageBonus).toBe(4);
+    expect(effects[0].mechanics.extraDamageDice).toBe('2W');
+    expect(effects[0].mechanics.meleeDamageBonus).toBeUndefined();
+    expect(effects[0].isActive).toBe(false);
+    expect(effects[0].conditions?.costPE).toBe(1);
   });
 
   it('golpe-brutal deve ter +2 margem de ameaça', () => {
@@ -130,13 +135,14 @@ describe('class-power-effects-adapter: Poderes de Combatente', () => {
     expect(effects[0].mechanics.conditionalNote).toContain('corpo a corpo');
   });
 
-  it('ataque-especial-combatente deve ter efeito especial', () => {
-    const power = createTestPower({ id: 'ataque-especial-combatente', classId: 'combatente' });
+  it('ataque-especial deve oferecer o bônus escalonado e exigir ativação', () => {
+    const power = createTestPower({ id: 'ataque-especial', classId: 'combatente' });
     const effects = getClassPowerEffects([power], 25, createTestAttributes());
     
     expect(effects).toHaveLength(1);
-    expect(effects[0].mechanics.specialEffects).toBeDefined();
-    expect(effects[0].mechanics.specialEffects!.length).toBeGreaterThan(0);
+    expect(effects[0].mechanics.attackBonus).toBe(10);
+    expect(effects[0].conditions?.costPE).toBe(3);
+    expect(effects[0].isActive).toBe(false);
   });
 });
 
@@ -158,7 +164,8 @@ describe('class-power-effects-adapter: Poderes de Especialista', () => {
     const effects = getClassPowerEffects([power], 50, createTestAttributes());
     
     expect(effects).toHaveLength(1);
-    expect(effects[0].mechanics.rangedDamageBonus).toBe(2);
+    expect(effects[0].mechanics.firearmDamageBonus).toBe(2);
+    expect(effects[0].mechanics.damageBonus).toBeUndefined();
     expect(effects[0].mechanics.conditionalNote).toContain('armas de fogo');
   });
 });
@@ -177,7 +184,7 @@ describe('class-power-effects-adapter: Poderes de Ocultista com Rituais', () => 
     const effects = getClassPowerEffects([power], 25, createTestAttributes());
     
     expect(effects).toHaveLength(1);
-    expect(effects[0].mechanics.ritualDTBonusByElement).toEqual({ Sangue: 2 });
+    expect(effects[0].mechanics.ritualDTBonusByElement).toEqual({ sangue: 2 });
   });
 
   it('especialista-em-elemento sem escolha não gera efeito', () => {
@@ -200,7 +207,7 @@ describe('class-power-effects-adapter: Poderes de Ocultista com Rituais', () => 
     const effects = getClassPowerEffects([power], 50, createTestAttributes());
     
     expect(effects).toHaveLength(1);
-    expect(effects[0].mechanics.ritualPEReductionByElement).toEqual({ Morte: 1 });
+    expect(effects[0].mechanics.ritualPEReductionByElement).toEqual({ morte: 1 });
   });
 
   it('ritual-potente deve ter bônus de Intelecto em dano de rituais', () => {
@@ -417,14 +424,11 @@ describe('class-power-effects-adapter: Múltiplos Poderes', () => {
 
 describe('class-power-effects-adapter: Ativação Manual', () => {
   it('poderes com custo de PE devem requerer ativação', () => {
-    const power = createTestPower({ id: 'ataque-especial-combatente' });
+    const power = createTestPower({ id: 'ataque-especial' });
     const effects = getClassPowerEffects([power], 25, createTestAttributes());
     
-    if (effects.length > 0) {
-      // Ataque especial tem custo de PE, então deve requerer ativação
-      const hasActivation = effects[0].conditions?.requiresActivation;
-      expect(hasActivation).toBeDefined();
-    }
+    expect(effects).toHaveLength(1);
+    expect(effects[0].conditions?.requiresActivation).toBe(true);
   });
 
   it('poderes passivos devem estar sempre ativos', () => {
@@ -437,19 +441,20 @@ describe('class-power-effects-adapter: Ativação Manual', () => {
   });
 
   it('deve respeitar lista de efeitos ativados', () => {
-    const power = createTestPower({ id: 'ataque-especial-combatente' });
+    const power = createTestPower({ id: 'ataque-especial' });
     const effectsInactive = getClassPowerEffects([power], 25, createTestAttributes(), []);
     const effectsActive = getClassPowerEffects(
       [power],
       25,
       createTestAttributes(),
-      ['class-power-ataque-especial-combatente']
+      ['class-power-ataque-especial']
     );
     
     // O estado de ativação deve mudar baseado na lista
-    if (effectsInactive.length > 0 && effectsActive.length > 0) {
-      expect(effectsInactive[0].isActive).not.toBe(effectsActive[0].isActive);
-    }
+    expect(effectsInactive).toHaveLength(1);
+    expect(effectsActive).toHaveLength(1);
+    expect(effectsInactive[0].isActive).toBe(false);
+    expect(effectsActive[0].isActive).toBe(true);
   });
 });
 
