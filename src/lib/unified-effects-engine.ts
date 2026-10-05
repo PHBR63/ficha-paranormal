@@ -11,6 +11,8 @@
 /**
  * Tipo de fonte do efeito - de onde ele vem
  */
+import { preprocessEffectsWithHardening } from './sue/consolidation-with-hardening';
+
 export type EffectSource =
   | 'origin'           // Origem do personagem
   | 'class_ability'    // Habilidade de classe
@@ -49,7 +51,18 @@ export type AttributeType = 'strength' | 'agility' | 'vigor' | 'intellect' | 'pr
 /**
  * Mecânicas de efeito - todos os modificadores possíveis
  */
+/** Modificadores em quantidade de d20, separados de bônus numéricos. */
+export interface TestDiceModifiers {
+  all?: number;
+  attributes?: Partial<Record<AttributeType, number>>;
+  skills?: Record<string, number>;
+  attacks?: number;
+  melee?: number;
+  ranged?: number;
+}
+
 export interface EffectMechanics {
+  testDice?: TestDiceModifiers;
   // === Combate - Ataque ===
   attackBonus?: number;           // Bônus em testes de ataque
   meleeAttackBonus?: number;      // Bônus apenas em corpo a corpo
@@ -627,6 +640,7 @@ export interface EffectCalculationContext {
  * Resultado do cálculo de efeitos consolidados
  */
 export interface ComputedEffects {
+  testDice?: TestDiceModifiers;
   // === Combate ===
   attack: {
     general: number;
@@ -1322,7 +1336,13 @@ export function consolidateEffects(
   context: EffectCalculationContext
 ): ComputedEffects {
   // === SUE HARDENING: Ordena efeitos pela ordem fixa de aplicação ===
-  const orderedEffects = orderEffectsByPriority(effects);
+  // Filtra pelo contexto antes do acúmulo: um efeito inelegível não pode substituir outro.
+  const eligible = effects.filter(effect => effect.isActive && checkEffectConditions(effect, context));
+  const prepared = preprocessEffectsWithHardening(eligible);
+  const orderedEffects = orderEffectsByPriority([
+    ...prepared.effects,
+    ...effects.filter(effect => effect.isToggleable && !eligible.includes(effect)),
+  ]);
   
   const result: ComputedEffects = {
     attack: { general: 0, melee: 0, ranged: 0, breakdown: [] },
@@ -1333,6 +1353,7 @@ export function consolidateEffects(
     damageReduction: { physical: 0, paranormal: 0, byType: {}, breakdown: [] },
     damageResistance: {},
     skills: {},
+    testDice: { all: 0, attacks: 0, melee: 0, ranged: 0, attributes: {}, skills: {} },
     resources: { hpBonus: 0, peBonus: 0, peLimitBonus: 0, sanityBonus: 0, tempHP: 0, breakdown: [] },
     movement: { bonus: 0, multiplier: 1, breakdown: [] },
     initiative: { bonus: 0, breakdown: [] },
@@ -1568,6 +1589,19 @@ export function consolidateEffects(
 
     const m = effect.mechanics;
     const source = effect.sourceName;
+    if (m.testDice) {
+      const target = result.testDice!;
+      for (const key of ['all', 'attacks', 'melee', 'ranged'] as const) {
+        target[key] = (target[key] ?? 0) + (m.testDice[key] ?? 0);
+      }
+      for (const [attribute, value] of Object.entries(m.testDice.attributes ?? {})) {
+        const key = attribute as AttributeType;
+        target.attributes![key] = (target.attributes![key] ?? 0) + value;
+      }
+      for (const [skill, value] of Object.entries(m.testDice.skills ?? {})) {
+        target.skills![skill] = (target.skills![skill] ?? 0) + value;
+      }
+    }
 
     // === Ataque ===
     if (m.attackBonus) {

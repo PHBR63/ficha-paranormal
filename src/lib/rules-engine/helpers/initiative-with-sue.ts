@@ -13,7 +13,8 @@ import type {
   BreakdownSource,
   LogEvent,
 } from '../types';
-import { getSUEBonusesForCharacter } from '../sue-bridge';
+import { getSUEBonusesForCharacter, getTestDicePenalty } from '../sue-bridge';
+import { rollAttributeDicePool } from '../../attribute-dice-pool';
 
 // =====================================================
 // TIPOS
@@ -79,50 +80,33 @@ export function rollInitiativeWithContext(context: InitiativeRollContext): Detai
   // ou expandimos para incluir bônus de iniciativa específicos
   const sueComputed = getSUEBonusesForCharacter(characterState);
   
-  // 3. Coletar bônus de iniciativa do SUE
-  const sueBonusSources: BreakdownSource[] = [];
-  let totalSUEBonus = 0;
-  
-  // Verificar bônus de trilha (ex: Operações Especiais tem bônus de iniciativa)
-  // TODO: Expandir SUE para incluir initiativeBonus
-  // Por enquanto, usamos a lógica de trilha diretamente
-  if (characterState.classTrack === 'operacoes-especiais' || 
-      characterState.classTrack === 'Operações Especiais') {
-    // Combatente: Operações Especiais dá bônus de iniciativa por NEX
-    // NEX 5%: +2, NEX 50%: +4, NEX 80%: +6 (baseado na progressão)
-    const nexBonus = Math.floor(characterState.nex / 5) >= 16 ? 6 
-      : Math.floor(characterState.nex / 5) >= 10 ? 4 
-      : 2;
-    totalSUEBonus += nexBonus;
-    sueBonusSources.push({
-      name: 'Operações Especiais',
-      sourceType: 'track',
-      value: nexBonus,
-    });
-  }
-  
-  // Verificar origem (algumas dão bônus de iniciativa)
-  // Ex: Militar pode ter bônus em combate
-  if (characterState.origin === 'Militar' || characterState.origin === 'militar') {
-    // Militar não dá bônus de iniciativa diretamente, mas verificamos
-    // outras origens que possam dar
-  }
-  
+  // O mesmo catálogo fornece a previsão e o bônus real, sem progressão inventada por NEX.
+  const totalSUEBonus = sueComputed.rawSUE.initiative.bonus;
+  const sueBonusSources: BreakdownSource[] = sueComputed.rawSUE.initiative.breakdown.map(entry => ({
+    name: entry.source.includes('Operações Especiais') ? 'Operações Especiais' : entry.source,
+    sourceType: 'track', value: entry.value,
+  }));
+
   // 4. Calcular total de modificadores
-  const totalModifiers = agilityValue + totalSUEBonus + manualModifiers;
+  const trainingBonus = characterState.skills.iniciativa === 'expert' ? 15
+    : characterState.skills.iniciativa === 'veterano' ? 10
+    : characterState.skills.iniciativa === 'treinado' ? 5 : 0;
+  const totalModifiers = trainingBonus + totalSUEBonus + manualModifiers;
   
   // 5. Rolar d20
-  const diceResult = rollD20();
+  const pool = rollAttributeDicePool(agilityValue, getTestDicePenalty(sueComputed.rawSUE, 'iniciativa', 'agility'));
+  const diceResult = pool.kept;
   
   // 6. Calcular total
   const total = diceResult + totalModifiers;
   
   // 7. Construir resultado
   const roll: RollResult = {
-    diceRolled: [diceResult],
+    diceRolled: pool.dice,
+    isDisadvantage: pool.keep === 'lowest',
     diceKept: [diceResult],
     baseValue: agilityValue,
-    modifiers: totalSUEBonus + manualModifiers,
+    modifiers: totalModifiers,
     total,
     naturalRoll: diceResult,
   };
@@ -134,11 +118,11 @@ export function rollInitiativeWithContext(context: InitiativeRollContext): Detai
       action: 'Iniciativa',
       components: [
         { label: 'd20', value: diceResult },
-        { label: 'Agilidade', value: agilityValue, source: 'attribute' },
+        { label: 'Treinamento', value: trainingBonus },
         ...sueBonusSources.map(s => ({ label: s.name, value: s.value })),
         ...(manualModifiers !== 0 ? [{ label: 'Modificador', value: manualModifiers }] : []),
       ],
-      formula: 'd20 + AGI + bônus',
+      formula: `${pool.count}d20 (${pool.keep === 'highest' ? 'maior' : 'menor'}) + treinamento + bônus`,
       result: `Iniciativa: ${total}`,
     },
     logEvent: createLogEvent(characterState.id, characterState.name, total),
@@ -155,10 +139,6 @@ export function rollInitiativeWithContext(context: InitiativeRollContext): Detai
 // =====================================================
 // HELPERS
 // =====================================================
-
-function rollD20(): number {
-  return Math.floor(Math.random() * 20) + 1;
-}
 
 function createLogEvent(
   actorId: string,

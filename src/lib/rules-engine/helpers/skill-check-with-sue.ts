@@ -14,7 +14,9 @@ import type {
   AttributeKey,
   LogEvent,
 } from '../types';
-import { getSUEBonusesForCharacter, type SUEComputedForRulesEngine } from '../sue-bridge';
+import { getSUEBonusesForCharacter } from '../sue-bridge';
+import { rollAttributeDicePool } from '../../attribute-dice-pool';
+import { getTestDicePenalty } from '../sue-bridge';
 
 // =====================================================
 // TIPOS
@@ -103,6 +105,7 @@ const SKILL_ATTRIBUTE_MAP: Record<string, AttributeKey> = {
   'pilotagem': 'agility',
   'pontaria': 'agility',
   'reflexos': 'agility',
+  'iniciativa': 'agility',
   
   // Vigor
   'fortitude': 'vigor',
@@ -181,8 +184,8 @@ export function rollSkillCheckWithContext(context: SkillCheckContext): DetailedS
   let totalSUEBonus = 0;
   
   // Bônus específico da perícia do SUE
-  const skillSUEBonus = sueComputed.skillBonuses[skill] || sueComputed.skillBonuses[skillKey] || 0;
-  if (skillSUEBonus > 0) {
+  const skillSUEBonus = (sueComputed.skillBonuses[skill] ?? sueComputed.skillBonuses[skillKey] ?? 0) + (sueComputed.skillBonuses['_all'] ?? 0);
+  if (skillSUEBonus !== 0) {
     totalSUEBonus += skillSUEBonus;
     sueBonusSources.push({
       name: 'Bônus de Perícia',
@@ -191,26 +194,27 @@ export function rollSkillCheckWithContext(context: SkillCheckContext): DetailedS
     });
   }
   
+  // Fortitude, Reflexos, Vontade e Iniciativa também recebem seus bônus específicos.
+  const specializedBonus = skillKey === 'iniciativa'
+    ? sueComputed.rawSUE.initiative.bonus
+    : skillKey === 'fortitude' ? sueComputed.fortitudeBonus
+    : skillKey === 'reflexos' ? sueComputed.reflexosBonus
+    : skillKey === 'vontade' ? sueComputed.vontadeBonus : 0;
+  if (specializedBonus !== 0) {
+    totalSUEBonus += specializedBonus;
+    sueBonusSources.push({ name: `Efeitos de ${skill}`, sourceType: 'power', value: specializedBonus });
+  }
+
   // 5. Verificar poderes ativados que afetam testes
   // (ex: Nerd, Conhecimento Aplicado, etc.)
   // TODO: Integrar com sistema de poderes ativados
   
-  // 6. Calcular total de modificadores
-  const totalModifiers = attributeValue + trainingBonus + totalSUEBonus + manualModifiers;
-  
-  // 7. Rolar d20 (considerando pool de dados por atributo positivo/negativo)
-  const dicePool = Math.abs(attributeValue) + 1;
-  const useHighest = attributeValue >= 0;
-  const diceResults: number[] = [];
-  
-  for (let i = 0; i < dicePool; i++) {
-    diceResults.push(rollD20());
-  }
-  
-  const keptDice = useHighest 
-    ? Math.max(...diceResults) 
-    : Math.min(...diceResults);
-  
+  // O atributo define o pool; treinamento e bônus numéricos entram apenas no total.
+  const dicePenalty = getTestDicePenalty(sueComputed.rawSUE, skillKey, attributeKey);
+  const pool = rollAttributeDicePool(attributeValue, dicePenalty);
+  const diceResults = pool.dice;
+  const keptDice = pool.kept;
+
   // 8. Calcular total
   const total = keptDice + trainingBonus + totalSUEBonus + manualModifiers;
   
@@ -221,6 +225,7 @@ export function rollSkillCheckWithContext(context: SkillCheckContext): DetailedS
   
   // 10. Construir resultado
   const roll: RollResult = {
+    isDisadvantage: pool.keep === 'lowest',
     diceRolled: diceResults,
     diceKept: [keptDice],
     baseValue: attributeValue,
@@ -242,12 +247,11 @@ export function rollSkillCheckWithContext(context: SkillCheckContext): DetailedS
       action: `Teste de ${skill}`,
       components: [
         { label: 'd20', value: keptDice },
-        { label: attributeName, value: attributeValue, source: 'attribute' },
         ...(trainingBonus > 0 ? [{ label: `Treinamento (${trainingLevel})`, value: trainingBonus }] : []),
         ...sueBonusSources.map(s => ({ label: s.name, value: s.value })),
         ...(manualModifiers !== 0 ? [{ label: 'Modificador', value: manualModifiers }] : []),
       ],
-      formula: `d20 + ${attributeName} + treinamento + bônus`,
+      formula: `${pool.count}d20 (${pool.keep === 'highest' ? 'maior' : 'menor'}) + treinamento + bônus`,
       result: `${total}${dt !== undefined ? ` vs DT ${dt}` : ''} - ${resultText}`,
     },
     logEvent: createLogEvent(characterState.id, skill, total, passed, isCriticalSuccess, isCriticalFailure, dt),

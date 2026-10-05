@@ -14,6 +14,7 @@ import {
   type DetailedInitiativeResult,
 } from '@/lib/rules-engine';
 import type { DiceRollResult } from '@/lib/dice-roller';
+import { getSUEBonusesForCharacter } from '@/lib/rules-engine/sue-bridge';
 
 // =====================================================
 // TIPOS
@@ -91,11 +92,11 @@ function convertResultToCompat(result: DetailedInitiativeResult): InitiativeRoll
     // Campos do DiceRollResult
     dice: roll.diceRolled,
     keptDice: roll.diceKept[0] || roll.diceRolled[0],
-    skillBonus: 0, // Iniciativa não usa perícia
-    otherBonuses: breakdown.agilityBonus + breakdown.sueBonuses.reduce((sum, b) => sum + b.value, 0) + breakdown.manualModifiers,
+    skillBonus: roll.modifiers - breakdown.sueBonuses.reduce((sum, b) => sum + b.value, 0) - breakdown.manualModifiers,
+    otherBonuses: breakdown.sueBonuses.reduce((sum, b) => sum + b.value, 0) + breakdown.manualModifiers,
     extraDice: 0,
     total: roll.total,
-    isDisadvantage: false,
+    isDisadvantage: roll.isDisadvantage ?? false,
     isCritical: false, // Iniciativa não tem crítico
     timestamp: new Date(),
     type: 'skill',
@@ -132,11 +133,14 @@ export function useInitiativeRollWithSUE(config: InitiativeRollCharacterConfig) 
       name: config.characterName || 'Personagem',
       characterClass: config.characterClass as 'Combatente' | 'Especialista' | 'Ocultista',
       classTrack: config.classTrack,
+      versatilityTrack: config.versatilityTrack ?? undefined,
       nex: config.nex,
       origin: config.origin || 'desconhecida',
       
       attributes: convertAttributesToState(config.attributes),
-      skills: {},
+      skills: Object.fromEntries(Object.entries(config.skills ?? {}).map(([skill, value]) => [
+        skill, value >= 15 ? 'expert' : value >= 10 ? 'veterano' : value >= 5 ? 'treinado' : 'destreinado',
+      ])) as CharacterState['skills'],
       
       classPowers: [],
       generalPowers: [],
@@ -167,6 +171,7 @@ export function useInitiativeRollWithSUE(config: InitiativeRollCharacterConfig) 
     config.nex,
     config.origin,
     config.attributes,
+    config.skills,
     config.activeConditions,
     config.versatilityTrack,
   ]);
@@ -194,61 +199,18 @@ export function useInitiativeRollWithSUE(config: InitiativeRollCharacterConfig) 
     return convertResultToCompat(result);
   }, [characterState]);
   
-  /**
-   * Verifica se tem Operações Especiais (trilha principal ou via Versatilidade)
-   */
-  const hasOperacoesEspeciais = useMemo(() => {
-    // Trilha principal
-    const mainTrack = config.classTrack?.toLowerCase().replace(/\s+/g, '-') || '';
-    if (mainTrack.includes('operacoes-especiais') || mainTrack.includes('operações-especiais')) {
-      return { has: true, isVersatility: false };
-    }
-    
-    // Trilha via Versatilidade
-    if (config.versatilityTrack?.trackId) {
-      const versTrackId = config.versatilityTrack.trackId.toLowerCase().replace(/\s+/g, '-');
-      if (versTrackId.includes('operacoes-especiais') || versTrackId.includes('operações-especiais')) {
-        return { has: true, isVersatility: true };
-      }
-    }
-    
-    return { has: false, isVersatility: false };
-  }, [config.classTrack, config.versatilityTrack]);
-  
-  /**
-   * Obtém breakdown de bônus de iniciativa (para exibição prévia)
-   */
+  /** Recebe o estado atual e mostra os mesmos bônus usados na rolagem, sem somar AGI. */
   const getInitiativeBonusBreakdown = useCallback(() => {
-    const sources: Array<{ label: string; value: number; type: string }> = [];
-    
-    // Agilidade
-    sources.push({
-      label: 'Agilidade',
-      value: config.attributes.agility,
-      type: 'attribute',
-    });
-    
-    // Bônus de trilha (Operações Especiais - principal ou via Versatilidade)
-    if (hasOperacoesEspeciais.has) {
-      // Calcula bônus baseado no NEX
-      // Iniciativa Aprimorada: +5 em Iniciativa (Livro Base v1.3)
-      const initiativeBonus = 5;
-      
-      sources.push({
-        label: hasOperacoesEspeciais.isVersatility 
-          ? 'Operações Especiais (Versatilidade)' 
-          : 'Operações Especiais',
-        value: initiativeBonus,
-        type: 'track',
-      });
-    }
-    
-    return {
-      sources,
-      total: sources.reduce((sum, s) => sum + s.value, 0),
-    };
-  }, [config.attributes.agility, hasOperacoesEspeciais]);
-  
+    const computed = getSUEBonusesForCharacter(characterState).rawSUE;
+    const level = characterState.skills.iniciativa;
+    const training = level === 'expert' ? 15 : level === 'veterano' ? 10 : level === 'treinado' ? 5 : 0;
+    const sources = [
+      { label: 'Treinamento em Iniciativa', value: training, type: 'skill' },
+      ...computed.initiative.breakdown.map(entry => ({ label: entry.source, value: entry.value, type: 'track' })),
+    ];
+    return { sources, total: sources.reduce((sum, source) => sum + source.value, 0) };
+  }, [characterState]);
+
   return {
     executeInitiativeRoll,
     getInitiativeBonusBreakdown,

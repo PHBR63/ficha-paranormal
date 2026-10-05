@@ -38,6 +38,7 @@ export interface ResistanceRollCharacterConfig {
     vigor: number;
   };
   
+  skills?: Record<string, number>;
   classPowers?: string[];
   generalPowers?: string[];
   paranormalPowers?: Array<{ id: string; name: string; element: string }>;
@@ -91,11 +92,11 @@ function convertResultToCompat(result: DetailedResistanceResult): ResistanceRoll
     // Campos do DiceRollResult
     dice: roll.diceRolled,
     keptDice: roll.diceKept[0] || roll.diceRolled[0],
-    skillBonus: 0, // Resistência não usa perícia
+    skillBonus: breakdown.baseBonus,
     otherBonuses: breakdown.sueBonuses.reduce((sum, b) => sum + b.value, 0) + breakdown.manualModifiers,
     extraDice: 0,
     total: roll.total,
-    isDisadvantage: breakdown.attribute.value <= 0,
+    isDisadvantage: roll.isDisadvantage ?? breakdown.attribute.value <= 0,
     isCritical: breakdown.isCriticalSuccess,
     criticalThreshold: 20,
     timestamp: new Date(),
@@ -140,7 +141,9 @@ export function useResistanceRollWithSUE(config: ResistanceRollCharacterConfig) 
       origin: config.origin || 'desconhecida',
       
       attributes: convertAttributesToState(config.attributes),
-      skills: {},
+      skills: Object.fromEntries(Object.entries(config.skills ?? {}).map(([skill, value]) => [
+        skill, value >= 15 ? 'expert' : value >= 10 ? 'veterano' : value >= 5 ? 'treinado' : 'destreinado',
+      ])) as CharacterState['skills'],
       
       classPowers: config.classPowers || [],
       generalPowers: config.generalPowers || [],
@@ -171,6 +174,7 @@ export function useResistanceRollWithSUE(config: ResistanceRollCharacterConfig) 
     config.nex,
     config.origin,
     config.attributes,
+    config.skills,
     config.classPowers,
     config.generalPowers,
     config.paranormalPowers,

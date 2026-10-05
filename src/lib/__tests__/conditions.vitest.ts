@@ -151,10 +151,9 @@ describe('Modificadores Contextuais de Defesa', () => {
     expect(CONTEXTUAL_DEFENSE_MODIFIERS.caido.ranged).toBe(+5);
   });
 
-  it('deve ter modificador contextual para Desprevenido', () => {
-    expect(CONTEXTUAL_DEFENSE_MODIFIERS.desprevenido).toBeDefined();
-    expect(CONTEXTUAL_DEFENSE_MODIFIERS.desprevenido.melee).toBe(-5);
-    expect(CONTEXTUAL_DEFENSE_MODIFIERS.desprevenido.ranged).toBe(-5);
+  it('Desprevenido não duplica sua Defesa no mapa contextual', () => {
+    // Desprevenido é uma penalidade geral de Defesa, não uma segunda penalidade contextual.
+    expect(CONTEXTUAL_DEFENSE_MODIFIERS.desprevenido).toBeUndefined();
   });
 
   it('getContextualDefenseModifier deve retornar valor correto', () => {
@@ -175,17 +174,17 @@ describe('Modificadores Contextuais de Defesa', () => {
 
 describe('Modificadores de Ataque', () => {
   it('deve ter modificador de ataque para Cego', () => {
-    expect(ATTACK_MODIFIERS.cego).toBe(-5);
+    expect(ATTACK_MODIFIERS.cego).toBeUndefined();
   });
 
   it('deve ter modificador de ataque para Enredado', () => {
-    expect(ATTACK_MODIFIERS.enredado).toBe(-2);
+    expect(ATTACK_MODIFIERS.enredado).toBeUndefined();
   });
 
   it('getAttackModifierFromConditions deve calcular corretamente', () => {
-    expect(getAttackModifierFromConditions(['cego'])).toBe(-5);
-    expect(getAttackModifierFromConditions(['enredado'])).toBe(-2);
-    expect(getAttackModifierFromConditions(['cego', 'enredado'])).toBe(-7);
+    expect(getAttackModifierFromConditions(['cego'])).toBe(0);
+    expect(getAttackModifierFromConditions(['enredado'])).toBe(0);
+    expect(getAttackModifierFromConditions(['cego', 'enredado'])).toBe(0);
   });
 
   it('getAttackModifierFromConditions deve retornar 0 sem condições relevantes', () => {
@@ -200,11 +199,11 @@ describe('Modificadores de Ataque', () => {
 
 describe('Modificadores de Iniciativa', () => {
   it('deve ter modificador de iniciativa para Surdo', () => {
-    expect(INITIATIVE_MODIFIERS.surdo).toBe(-2);
+    expect(INITIATIVE_MODIFIERS.surdo).toBeUndefined();
   });
 
   it('getInitiativeModifierFromConditions deve calcular corretamente', () => {
-    expect(getInitiativeModifierFromConditions(['surdo'])).toBe(-2);
+    expect(getInitiativeModifierFromConditions(['surdo'])).toBe(0);
     expect(getInitiativeModifierFromConditions([])).toBe(0);
   });
 });
@@ -215,16 +214,16 @@ describe('Modificadores de Iniciativa', () => {
 
 describe('Modificadores Gerais de Teste', () => {
   it('deve ter modificadores para condições que afetam testes', () => {
-    expect(TEST_MODIFIERS.apavorado).toBe(-2);
-    expect(TEST_MODIFIERS.debilitado).toBe(-1);
-    expect(TEST_MODIFIERS.doente).toBe(-2);
-    expect(TEST_MODIFIERS.envenenado).toBe(-2);
+    expect(TEST_MODIFIERS.apavorado).toBeUndefined();
+    expect(TEST_MODIFIERS.debilitado).toBeUndefined();
+    expect(TEST_MODIFIERS.doente).toBeUndefined();
+    expect(TEST_MODIFIERS.envenenado).toBeUndefined();
   });
 
   it('getTestModifierFromConditions deve acumular modificadores', () => {
-    expect(getTestModifierFromConditions(['apavorado'])).toBe(-2);
-    expect(getTestModifierFromConditions(['apavorado', 'doente'])).toBe(-4);
-    expect(getTestModifierFromConditions(['debilitado'])).toBe(-1);
+    expect(getTestModifierFromConditions(['apavorado'])).toBe(0);
+    expect(getTestModifierFromConditions(['apavorado', 'doente'])).toBe(0);
+    expect(getTestModifierFromConditions(['debilitado'])).toBe(0);
   });
 
   it('getTestModifierFromConditions deve retornar 0 sem condições relevantes', () => {
@@ -238,8 +237,8 @@ describe('Modificadores Gerais de Teste', () => {
 // =====================================================
 
 describe('Restrições de Condições', () => {
-  it('canSpendPEWithConditions deve bloquear com Frustrado', () => {
-    expect(canSpendPEWithConditions(['frustrado'])).toBe(false);
+  it('canSpendPEWithConditions não bloqueia com Frustrado', () => {
+    expect(canSpendPEWithConditions(['frustrado'])).toBe(true);
     expect(canSpendPEWithConditions([])).toBe(true);
     expect(canSpendPEWithConditions(['cego', 'surdo'])).toBe(true);
   });
@@ -249,8 +248,8 @@ describe('Restrições de Condições', () => {
     expect(getMaxActionsFromConditions([])).toBe(2);
   });
 
-  it('getMaxActionsFromConditions deve limitar com Lento', () => {
-    expect(getMaxActionsFromConditions(['lento'])).toBe(1);
+  it('Lento limita movimento, não o número de ações', () => {
+    expect(getMaxActionsFromConditions(['lento'])).toBe(2);
   });
 
   it('getMaxActionsFromConditions deve retornar 2 normalmente', () => {
@@ -294,7 +293,7 @@ describe('Tipos de Dano', () => {
 describe('Parâmetros de Condições', () => {
   it('conditionRequiresParams deve identificar Fragilizado', () => {
     expect(conditionRequiresParams('fragilizado')).toBe(true);
-    expect(conditionRequiresParams('machucado')).toBe(true);
+    expect(conditionRequiresParams('machucado')).toBe(false);
     expect(conditionRequiresParams('envenenado')).toBe(true);
   });
 
@@ -316,8 +315,7 @@ describe('Parâmetros de Condições', () => {
       weaponMaxDamage: 12,
       weaponName: 'Espada',
     });
-    expect(effect).toContain('12');
-    expect(effect).toContain('Espada');
+    expect(effect).toBe(CONDITIONS.machucado.effect);
   });
 
   it('getConditionEffectWithParams deve formatar Envenenado', () => {
@@ -342,9 +340,9 @@ describe('Parâmetros de Condições', () => {
 // =====================================================
 
 describe('Cálculos Especiais', () => {
-  it('getMachucadoDamage deve retornar dano da arma', () => {
-    expect(getMachucadoDamage({ weaponMaxDamage: 10 })).toBe(10);
-    expect(getMachucadoDamage({ weaponMaxDamage: 18 })).toBe(18);
+  it('getMachucadoDamage não causa dano ao agir', () => {
+    expect(getMachucadoDamage({ weaponMaxDamage: 10 })).toBe(0);
+    expect(getMachucadoDamage({ weaponMaxDamage: 18 })).toBe(0);
   });
 
   it('getMachucadoDamage deve retornar 0 sem parâmetros', () => {

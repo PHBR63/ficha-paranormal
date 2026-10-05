@@ -136,7 +136,7 @@ describe('TrackCombatBonusesBar - Snapshots', () => {
     it('renderiza botão de iniciativa com breakdown detalhado', () => {
       const combat = createSpecOps50Scenario();
       const mockOnRoll = () => {};
-      const { container } = render(
+      const { getByRole } = render(
         <TrackCombatBonusesBar 
           combat={combat} 
           {...defaultProps}
@@ -147,7 +147,8 @@ describe('TrackCombatBonusesBar - Snapshots', () => {
           onInitiativeRoll={mockOnRoll}
         />
       );
-      expect(container).toMatchSnapshot();
+      // Livro Base v1.3, p. 27: +5 da trilha; AGI 3 determina o pool, não soma +3.
+      expect(getByRole('button', { name: /Iniciativa/ })).toHaveTextContent(/Iniciativa\s*\+5/);
     });
 
     it('não renderiza nada sem bônus de trilha e sem callback de iniciativa', () => {

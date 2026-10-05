@@ -1,3 +1,5 @@
+import { BASE_CONDITION_TEXT, expandBaseConditionIds } from './base-condition-rules';
+
 // Ordem Paranormal RPG v1.3 - Sistema de Condições
 // Baseado no livro de regras oficial - Atualizado com todas as condições e efeitos contextuais
 
@@ -421,6 +423,17 @@ export const CONDITIONS: Record<string, Omit<Condition, 'turnsRemaining'>> = {
   },
 };
 
+// Compatibilidade: mantém os cadastros/IDs existentes e centraliza o texto conferido.
+for (const [id, effect] of Object.entries(BASE_CONDITION_TEXT)) {
+  if (CONDITIONS[id]) CONDITIONS[id].effect = effect;
+}
+for (const [id, name] of [['abalado', 'Abalado'], ['fatigado', 'Fatigado']] as const) {
+  CONDITIONS[id] = { id, name, icon: '⚠️', color: 'warning', description: BASE_CONDITION_TEXT[id], effect: BASE_CONDITION_TEXT[id] };
+}
+CONDITIONS.machucado.hasParams = false;
+CONDITIONS.machucado.description = BASE_CONDITION_TEXT.machucado;
+CONDITIONS.vulneravel.removal = 'Fim da cena, salvo duração definida pela fonte.';
+
 /**
  * Modificadores de defesa contextuais por condição
  * Usado para condições como Caído que têm efeitos diferentes por tipo de ataque
@@ -430,42 +443,27 @@ export const CONTEXTUAL_DEFENSE_MODIFIERS: Record<string, ContextualModifier> = 
     melee: -5,
     ranged: +5,
   },
-  desprevenido: {
-    melee: -5,
-    ranged: -5,
-  },
-  surpreendido: {
-    melee: -5,
-    ranged: -5,
-  },
 };
 
 /**
  * Modificadores de ataque por condição
  */
 export const ATTACK_MODIFIERS: Record<string, number> = {
-  cego: -5,
-  enredado: -2,
+  // Penalidades em dados são calculadas pelo SUE, não por este mapa numérico.
 };
 
 /**
  * Modificadores de iniciativa por condição
  */
 export const INITIATIVE_MODIFIERS: Record<string, number> = {
-  surdo: -2,
+  // Surdo aplica –2d20 em Iniciativa pelo SUE.
 };
 
 /**
  * Modificadores gerais de teste por condição (acumulam)
  */
 export const TEST_MODIFIERS: Record<string, number> = {
-  apavorado: -2,
-  debilitado: -1,
-  doente: -2,
-  envenenado: -2,
-  esmorecido: -2,
-  exausto: -2,
-  perturbado: -2,
+  // Não representa penalidades em quantidade de dados nem efeitos dependentes de fonte.
 };
 
 /**
@@ -474,8 +472,8 @@ export const TEST_MODIFIERS: Record<string, number> = {
 export const CONDITION_CATEGORIES = {
   combat: ['agarrado', 'atordoado', 'caido', 'desprevenido', 'enredado', 'pasmo', 'sangrando', 'surpreendido', 'vulneravel'],
   sensory: ['cego', 'surdo'],
-  mental: ['apavorado', 'confuso', 'enlouquecendo', 'fascinado', 'frustrado', 'perturbado'],
-  physical: ['debilitado', 'doente', 'enjoado', 'envenenado', 'esmorecido', 'exausto', 'fraco', 'fragilizado', 'imobilizado', 'lento', 'machucado'],
+  mental: ['abalado', 'apavorado', 'confuso', 'enlouquecendo', 'fascinado', 'frustrado', 'perturbado'],
+  physical: ['fatigado', 'debilitado', 'doente', 'enjoado', 'envenenado', 'esmorecido', 'exausto', 'fraco', 'fragilizado', 'imobilizado', 'lento', 'machucado'],
   critical: ['inconsciente', 'indefeso', 'morrendo', 'paralisado'],
   ritual: ['velocidade-mortal-inverso', 'velocidade-mortal-buff', 'velocidade-mortal-discente'],
 };
@@ -555,26 +553,8 @@ export function getTestModifierFromConditions(conditions: string[]): number {
  * Calcula o modificador de defesa total
  */
 export function getTotalDefenseModifier(conditions: string[]): number {
-  let modifier = 0;
-  
-  for (const conditionId of conditions) {
-    const condition = CONDITIONS[conditionId];
-    if (!condition) continue;
-    
-    switch (conditionId) {
-      case 'agarrado':
-      case 'atordoado':
-      case 'pasmo':
-      case 'vulneravel':
-        modifier -= 2;
-        break;
-      case 'desprevenido':
-        modifier -= 5;
-        break;
-    }
-  }
-  
-  return modifier;
+  const ids = expandBaseConditionIds(conditions);
+  return (ids.includes('desprevenido') ? -5 : 0) + (ids.includes('vulneravel') ? -2 : 0);
 }
 
 /**
@@ -588,17 +568,17 @@ export function getActionPenalties(conditions: string[]): { canAct: boolean; can
   for (const conditionId of conditions) {
     switch (conditionId) {
       case 'atordoado':
+      case 'pasmo':
+      case 'surpreendido':
+        canAct = false;
+        break;
       case 'inconsciente':
       case 'morrendo':
       case 'paralisado':
         canAct = false;
         canReact = false;
         break;
-      case 'desprevenido':
-        canReact = false;
-        break;
       case 'enjoado':
-      case 'lento':
         actionsReduced = true;
         break;
     }
@@ -618,7 +598,7 @@ export function hasCondition(conditions: string[], conditionId: string): boolean
  * Verifica se pode realizar ações
  */
 export function canPerformActions(conditions: string[]): boolean {
-  const incapacitating = ['atordoado', 'inconsciente', 'morrendo', 'paralisado', 'enlouquecendo'];
+  const incapacitating = ['atordoado', 'pasmo', 'surpreendido', 'inconsciente', 'morrendo', 'paralisado', 'enlouquecendo'];
   return !conditions.some(c => incapacitating.includes(c));
 }
 
@@ -633,23 +613,7 @@ export function isIncapacitated(conditions: string[]): boolean {
  * Calcula modificador de defesa com stacking
  */
 export function getStackingDefenseModifier(conditions: string[]): number {
-  let total = 0;
-  
-  const defenseModifiers: Record<string, number> = {
-    'agarrado': -2,
-    'atordoado': -2,
-    'pasmo': -2,
-    'vulneravel': -2,
-    'desprevenido': -5,
-  };
-  
-  for (const conditionId of conditions) {
-    if (defenseModifiers[conditionId]) {
-      total += defenseModifiers[conditionId];
-    }
-  }
-  
-  return total;
+  return getTotalDefenseModifier(conditions);
 }
 
 // ==================== FUNÇÕES DE PARÂMETROS ====================
@@ -659,7 +623,7 @@ export function getStackingDefenseModifier(conditions: string[]): number {
  * Livro Base v1.3 - Condições com efeitos variáveis
  */
 export function conditionRequiresParams(id: string): boolean {
-  return ['fragilizado', 'machucado', 'envenenado'].includes(id);
+  return ['fragilizado', 'envenenado'].includes(id);
 }
 
 /**
@@ -677,12 +641,12 @@ export function getConditionEffectWithParams(id: string, params?: ConditionParam
         ? `Vulnerável a dano ${params.damageType.charAt(0).toUpperCase() + params.damageType.slice(1)} (+50% de dano).`
         : condition.effect;
     case 'machucado':
-      const weapon = params.weaponName ? ` (${params.weaponName})` : '';
-      return `Ao realizar qualquer ação, sofre ${params.weaponMaxDamage ?? 0} de dano${weapon}.`;
-    case 'envenenado':
+      return condition.effect;
+    case 'envenenado': {
       const poison = params.poisonName ? ` (${params.poisonName})` : '';
       const dt = params.poisonDT ? ` DT ${params.poisonDT}` : '';
-      return `–2 em todos os testes. Dano de veneno: ${params.poisonDamage ?? '1d6'}${poison}${dt}.`;
+      return `Dano de veneno: ${params.poisonDamage ?? '1d6'}${poison}${dt}.`;
+    }
     default:
       return condition.effect;
   }
@@ -690,10 +654,11 @@ export function getConditionEffectWithParams(id: string, params?: ConditionParam
 
 /**
  * Retorna o dano da condição Machucado
- * Livro Base v1.3 - Dano igual ao máximo da arma que causou
+ * Compatibilidade legada: Machucado não causa dano ao agir.
  */
-export function getMachucadoDamage(params?: ConditionParams): number {
-  return params?.weaponMaxDamage ?? 0;
+export function getMachucadoDamage(_params?: ConditionParams): number {
+  // Assinatura legada preservada; Machucado não causa dano ao agir.
+  return 0;
 }
 
 /**
@@ -709,17 +674,17 @@ export function getFragilizadoMultiplier(damageType?: string, params?: Condition
 
 /**
  * Verifica se o personagem pode gastar PE com as condições atuais
- * Livro Base v1.3 - Frustrado impede gasto de PE
+ * Frustrado não impede gasto de PE; os efeitos são aplicados aos dados.
  */
 export function canSpendPEWithConditions(conditions: string[]): boolean {
-  return !conditions.includes('frustrado');
+  return true; // Frustrado modifica dados de testes; não proíbe gasto de PE.
 }
 
 /**
  * Retorna o número máximo de ações por turno considerando condições
- * Livro Base v1.3 - Enjoado e Lento limitam a 1 ação
+ * Livro Base v1.3: Enjoado limita a uma ação padrão ou de movimento.
  */
 export function getMaxActionsFromConditions(conditions: string[]): number {
-  if (conditions.some(c => ['enjoado', 'lento'].includes(c))) return 1;
+  if (conditions.includes('enjoado')) return 1;
   return 2;
 }

@@ -207,12 +207,12 @@ describe('Regras de Stacking - Condições Especiais', () => {
     expect(conditionAccumulatesDamage('Envenenado')).toBe(true);
   });
   
-  it('Sangrando: dano recorrente deve acumular de múltiplas fontes', () => {
-    expect(conditionAccumulatesDamage('sangrando')).toBe(true);
+  it('Sangrando: acúmulo depende de uma exceção da fonte', () => {
+    expect(conditionAccumulatesDamage('sangrando')).toBe(false);
   });
   
-  it('Machucado: dano ao agir deve acumular', () => {
-    expect(conditionAccumulatesDamage('machucado')).toBe(true);
+  it('Machucado: não causa dano ao agir', () => {
+    expect(conditionAccumulatesDamage('machucado')).toBe(false);
   });
   
   it('Outras condições não devem acumular dano', () => {
