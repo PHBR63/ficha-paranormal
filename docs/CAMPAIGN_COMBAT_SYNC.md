@@ -73,9 +73,13 @@ A autorização e validação precedem esse trecho na RPC completa. O diff do PR
 
 A migration foi validada em PostgreSQL 18.4 local e descartável, com tabelas/funções de autorização existentes do repositório, papéis `authenticated`/`anon` e `auth.uid` simulado pelas claims da sessão SQL. Isso confirma o comportamento SQL exercitado, mas não autenticação Supabase, entrega real de Realtime nem duas contas no projeto remoto.
 
-O projeto Supabase correto é `rctbxgpjtgkinwzdymbt`. Ele não estava acessível pelo conector desta sessão. A migration NÃO foi aplicada remotamente; não houve publicação, merge, alteração de permissões existentes ou escrita em fichas reais. Nenhum projeto de outra aplicação deve ser usado como substituto.
+O backend é Supabase gerenciado pelo Lovable Cloud, identificado por `rctbxgpjtgkinwzdymbt`, no projeto Lovable `166ab2c8-39e3-4384-851c-154cbc88eece` (Ordem Roll). O acesso foi confirmado pelo conector Lovable; esse identificador não exige conectar um projeto Supabase externo.
 
-Ativar a migration antes de publicar o frontend que depende dela. Sem a tabela/RPC, o painel informa erro de carregamento; não finge persistência. Conferir histórico remoto de migrations e backup antes da aplicação. Campanhas v1 mantêm chat/sessões, mas este combate compartilhado está disponível apenas em v2.
+Após autorização explícita do usuário, a migration foi aplicada em 05/10/2026 ao banco atual. Tabela, RPC, política de leitura, permissões e publicação Realtime foram criadas numa transação junto do registro `20261005183000` em `supabase_migrations.schema_migrations`. Foi solicitado recarregamento do schema do PostgREST. A conferência posterior confirmou o corpo da RPC e o SQL registrado iguais ao arquivo revisado, RLS ativo, escrita direta bloqueada, execução da RPC permitida a authenticated e negada a anon.
+
+O teste SQL também passou no banco real com papéis reais e claims sintéticas: mestre grava, jogador lê sem gravar, externo/anônimo não acessam, revisão antiga é rejeitada e turno/duplicatas inválidos são recusados. A transação de testes foi revertida; campanha sintética removida e tabela de combate com zero registros depois do rollback. Isso não substitui autenticação via JWT no navegador, entrega Realtime ou UAT de duas contas.
+
+O frontend deste PR ainda NÃO foi publicado ou integrado a main. A migração preparou o banco; a interface publicada continua dependendo da integração das alterações. Campanhas v1 mantêm chat/sessões, mas este combate compartilhado está disponível apenas em v2. Nas próximas aplicações, conferir primeiro o registro existente e não executar esta migration novamente ou repetir migrations antigas.
 
 A revisão protege o combate. O início de sessão evita duplicação na mesma instância; não implementa uma nova transação de exclusividade entre abas. PV dos participantes é uma fotografia inicial, sem sincronizar automaticamente mudanças de ficha. Perda de conexão pode atrasar a visão do jogador; a tela do mestre indica reconexão e recarrega ao voltar online.
 
