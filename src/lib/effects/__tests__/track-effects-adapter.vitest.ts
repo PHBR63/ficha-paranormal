@@ -17,6 +17,9 @@ import {
   getTrackCombatBonuses,
   getTrackBonusSummary,
   getTrackEffects,
+  getActivatableEffectInfo,
+  getTrackActivatableEffects,
+  isEffectAvailableAtNex,
   TRACK_EFFECT_MAPPINGS,
 } from '../track-effects-adapter';
 import type { AttributeType } from '../../unified-effects-engine';
@@ -419,9 +422,9 @@ describe('Trilha Flagelador - TRACK_EFFECT_MAPPINGS', () => {
     expect(effect.peCost).toBe(2);
   });
 
-  it('Absorver Angústia: NEX 65, custo 0 PE (passivo com trigger)', () => {
+  it('Absorver Agonia: NEX 65, custo 0 PE (passivo com trigger)', () => {
     const effect = TRACK_EFFECT_MAPPINGS.flagelador.effects['track-absorver-angustia'];
-    expect(effect.name).toBe('Absorver Angústia');
+    expect(effect.name).toBe('Absorver Agonia');
     expect(effect.minNex).toBe(65);
     expect(effect.peCost).toBe(0);
   });
@@ -471,9 +474,10 @@ describe('Trilha Flagelador - Integração com getTrackBonusSummary', () => {
 
   it('deve incluir Abraçar a Dor em NEX 40%', () => {
     const summary = getTrackBonusSummary('flagelador', 40, baseAttrs);
-    expect(summary.specialAbilities.some(a => 
-      a.toLowerCase().includes('dor') || a.toLowerCase().includes('redução')
-    )).toBe(true);
+    expect(summary.activatableAbilities).toContainEqual(expect.objectContaining({
+      name: 'Abraçar a Dor',
+      peCost: 2,
+    }));
   });
 });
 
@@ -813,12 +817,14 @@ describe('Efeitos Especiais (specialEffects)', () => {
     )).toBe(true);
   });
 
-  it('Casca Grossa deve mencionar bloqueio', () => {
-    const result = getTrackCombatBonuses('tropa-choque', 10, defaultAttributes, 'melee');
-    
-    // O efeito de somar Vigor no bloqueio pode aparecer nos specialEffects
-    // ou estar implementado como mecânica separada
-    expect(result.specialEffects.length).toBeGreaterThanOrEqual(0);
+  it('Casca Grossa soma Vigor apenas ao bloquear, sem RD passiva', () => {
+    const effect = getTrackEffects('tropa-choque', 10, defaultAttributes)
+      .find(item => item.name === 'Casca Grossa');
+
+    expect(effect).toBeDefined();
+    expect(effect?.mechanics.blockVigorBonus).toBe(true);
+    expect(effect?.mechanics.damageReduction ?? 0).toBe(0);
+    expect(effect?.mechanics.damageResistance).toBeUndefined();
   });
 });
 
@@ -831,17 +837,17 @@ describe('Integração com activatedEffects', () => {
     const semAtivacao = getTrackCombatBonuses('aniquilador', 40, defaultAttributes, 'melee', []);
     const comAtivacao = getTrackCombatBonuses('aniquilador', 40, defaultAttributes, 'melee', ['track-tecnica-destruidor']);
     
-    // Se implementado, ativação deve aumentar o multiplicador
-    // Este teste documenta o comportamento esperado
-    expect(comAtivacao.criticalMultiplierBonus).toBeGreaterThanOrEqual(semAtivacao.criticalMultiplierBonus);
+    expect(comAtivacao.criticalMultiplierBonus - semAtivacao.criticalMultiplierBonus).toBe(1);
+    expect(comAtivacao.damageBonus).toBe(semAtivacao.damageBonus);
   });
 
   it('efeito Disparo Letal deve aumentar margem crítico quando ativado', () => {
     const semAtivacao = getTrackCombatBonuses('atirador-elite', 40, defaultAttributes, 'ranged', []);
     const comAtivacao = getTrackCombatBonuses('atirador-elite', 40, defaultAttributes, 'ranged', ['track-disparo-letal']);
     
-    // Disparo Letal: +2 margem de ameaça
-    expect(comAtivacao.criticalMarginBonus).toBeGreaterThanOrEqual(semAtivacao.criticalMarginBonus);
+    expect(comAtivacao.criticalMarginBonus - semAtivacao.criticalMarginBonus).toBe(2);
+    expect(comAtivacao.damageBonus).toBe(defaultAttributes.intellect);
+    expect(comAtivacao.damageBonus).toBe(semAtivacao.damageBonus);
   });
 
   it('activatedEffects vazio deve funcionar normalmente', () => {
@@ -1062,9 +1068,10 @@ describe('Trilhas do Ocultista - Conduíte', () => {
       
       const ampliarEffect = effects.find(e => e.id === 'track-ampliar-ritual');
       expect(ampliarEffect).toBeDefined();
-      expect(ampliarEffect?.mechanics.specialEffects?.some(
-        e => e.includes('Aumenta alcance') || e.includes('dobra área')
-      )).toBe(true);
+      expect(ampliarEffect?.mechanics.ritualModifiers).toEqual(expect.arrayContaining([
+        expect.objectContaining({ type: 'range' }),
+        expect.objectContaining({ type: 'area' }),
+      ]));
     });
 
     it('NEX 40 deve ter efeito Acelerar Ritual nos efeitos especiais', () => {
@@ -1090,7 +1097,7 @@ describe('Trilhas do Ocultista - Conduíte', () => {
     it('NEX 99 deve ter ritual concedido Canalizar o Medo', () => {
       const effects = getTrackEffects('condutor', 99, defaultAttributes);
       
-      const canalizarEffect = effects.find(e => e.id === 'track-canalizar-o-medo');
+      const canalizarEffect = effects.find(e => e.name === 'Canalizar o Medo');
       expect(canalizarEffect).toBeDefined();
       expect(canalizarEffect?.mechanics.specialEffects?.some(
         e => e.includes('Ritual concedido') || e.includes('Canalizar')
@@ -1179,19 +1186,15 @@ describe('Trilhas do Ocultista - Conduíte', () => {
 
   describe('Integração com Sistema de Ativação', () => {
     it('getActivatableEffectInfo deve retornar info para Ampliar Ritual', () => {
-      const { getActivatableEffectInfo } = require('../track-effects-adapter');
-      
       const info = getActivatableEffectInfo('track-ampliar-ritual');
       
       expect(info).not.toBeNull();
       expect(info?.name).toBe('Ampliar Ritual');
       expect(info?.peCost).toBe(2);
-      expect(info?.trackId).toBe('conduite');
+      expect(info?.trackId).toBe('condutor');
     });
 
     it('getTrackActivatableEffects deve listar todos os efeitos do Conduíte', () => {
-      const { getTrackActivatableEffects } = require('../track-effects-adapter');
-      
       const effects = getTrackActivatableEffects('conduite');
       
       expect(effects.length).toBe(3);
@@ -1201,8 +1204,6 @@ describe('Trilhas do Ocultista - Conduíte', () => {
     });
 
     it('isEffectAvailableAtNex deve funcionar corretamente para Conduíte', () => {
-      const { isEffectAvailableAtNex } = require('../track-effects-adapter');
-      
       // Ampliar Ritual: NEX 10
       expect(isEffectAvailableAtNex('track-ampliar-ritual', 5)).toBe(false);
       expect(isEffectAvailableAtNex('track-ampliar-ritual', 10)).toBe(true);
@@ -1536,7 +1537,9 @@ describe('Trilha Intuitivo (Ocultista) - SUE Integration', () => {
       
       expect(menteSa).toBeDefined();
       // Mente Sã dá resistência paranormal +5
-      expect(menteSa?.description).toContain('paranormal');
+      // O bônus contextual não pode ser convertido em RD ou Vontade geral.
+      expect(menteSa?.mechanics.mentalDamageResistance ?? 0).toBe(0);
+      expect(menteSa?.mechanics.skillBonus?.vontade ?? 0).toBe(0);
     });
 
     it('Presença Poderosa deve estar disponível em NEX 40', () => {

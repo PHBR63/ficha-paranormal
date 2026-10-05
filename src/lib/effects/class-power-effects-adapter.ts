@@ -106,6 +106,9 @@ function convertPowerMechanicsToEffects(
   choices?: ActiveClassPower['choices']
 ): EffectMechanics {
   const effects: EffectMechanics = {};
+  if (mechanics.attackDicePenalty) {
+    effects.testDice = { attacks: -mechanics.attackDicePenalty };
+  }
   
   // === COMBATE - ATAQUE ===
   if (mechanics.attackBonus) {
@@ -819,8 +822,8 @@ const LEGACY_POWER_CONFIGS: Record<string, {
   },
   'golpe-demolidor': {
     name: 'Golpe Demolidor',
-    description: 'Dobra o dano ao quebrar objetos (1 PE)',
-    getEffects: () => ({}), // Efeito narrativo: dobro do dano em manobra Quebrar ou atacar objeto
+    description: 'Dois dados extras do tipo da arma ao quebrar objetos (1 PE)',
+    getEffects: () => ({}), // Requer declarar o ataque contra objeto/manobra quebrar.
   },
   'mira-firme': {
     name: 'Mira Firme',

@@ -321,6 +321,8 @@ export interface PowerMechanics {
   
   // === COMBATE OFENSIVO ===
   attackBonus?: AttackBonusConfig;
+  /** Quantidade de d20 removidos de testes de ataque; separada do bônus numérico. */
+  attackDicePenalty?: number;
   damageBonus?: DamageBonusConfig;
   criticalBonus?: CriticalBonusConfig;
   

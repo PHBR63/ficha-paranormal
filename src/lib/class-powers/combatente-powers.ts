@@ -294,7 +294,7 @@ export const COMBATENTE_POWERS: UnifiedClassPower[] = [
     classId: 'Combatente',
     isCore: false,
     minNex: 15,
-    description: 'Se estiver empunhando duas armas (e pelo menos uma for leve) e fizer a ação agredir, você pode fazer dois ataques, um com cada arma. Se fizer isso, sofre –2 em todos os testes de ataque até o seu próximo turno. Pré-requisitos: Agi 3, treinado em Luta ou Pontaria.',
+    description: 'Ao agredir com duas armas, sendo ao menos uma leve, pode atacar com ambas. Até o próximo turno, seus testes de ataque perdem 1d20. Pré-requisitos: Agi 3, treinado em Luta ou Pontaria.',
     pageReference: 'Livro Base p.46',
     prerequisites: {
       attributes: { agility: 3 },
@@ -307,7 +307,7 @@ export const COMBATENTE_POWERS: UnifiedClassPower[] = [
           cost: 0,
           action: 'standard',
         },
-        attackBonus: { value: -2 }, // Penalidade oficial do livro
+        attackDicePenalty: 1, // Livro Base v1.3, p. 25: penalidade em dados.
       },
     },
     tags: ['combate', 'múltiplos-ataques'],
@@ -319,7 +319,7 @@ export const COMBATENTE_POWERS: UnifiedClassPower[] = [
     classId: 'Combatente',
     isCore: false,
     minNex: 15,
-    description: 'Quando usa a ação agredir, você pode combater defensivamente. Se fizer isso, até seu próximo turno, sofre –2 em todos os testes de ataque, mas recebe +5 na Defesa. Pré-requisito: Int 2.',
+    description: 'Ao agredir, pode combater defensivamente: até o próximo turno, seus testes de ataque perdem 1d20 e sua Defesa aumenta em +5. Pré-requisito: Int 2.',
     pageReference: 'Livro Base p.46',
     prerequisites: {
       attributes: { intellect: 2 },
@@ -331,7 +331,7 @@ export const COMBATENTE_POWERS: UnifiedClassPower[] = [
           cost: 0,
           action: 'none',
         },
-        attackBonus: { value: -2 }, // Penalidade oficial: -2
+        attackDicePenalty: 1, // Penalidade em dados, sem subtrair do resultado numérico.
         defenseBonus: { value: 5 }, // Bônus oficial: +5
         conditions: {
           inCombat: true,
@@ -347,7 +347,7 @@ export const COMBATENTE_POWERS: UnifiedClassPower[] = [
     classId: 'Combatente',
     isCore: false,
     minNex: 15,
-    description: 'Quando usa a manobra quebrar ou ataca um objeto, você pode gastar 1 PE para causar o dobro de dano, do mesmo tipo de dano da sua arma. Pré-requisitos: For 2, treinado em Luta.',
+    description: 'Quando usa a manobra quebrar ou ataca um objeto, você pode gastar 1 PE para causar dois dados de dano extra do mesmo tipo de sua arma. Pré-requisitos: For 2, treinado em Luta.',
     pageReference: 'Livro Base p.46',
     prerequisites: {
       attributes: { strength: 2 },
@@ -361,7 +361,7 @@ export const COMBATENTE_POWERS: UnifiedClassPower[] = [
           action: 'free',
         },
         damageBonus: {
-          extraDice: 'x2', // Dobra o dano total (Manobra Quebrar ou atacar objeto)
+          extraDice: '2W', // Dois dados do tipo da arma, apenas ao quebrar ou atacar objetos.
         },
       },
     },
@@ -396,7 +396,7 @@ export const COMBATENTE_POWERS: UnifiedClassPower[] = [
     classId: 'Combatente',
     isCore: false,
     minNex: 15,
-    description: 'Uma vez por cena, você pode gastar 2 PE para fazer uma ação de investigação adicional, mas deve usar Força ou Agilidade como atributo-base do teste. Você recebe +5 no teste.',
+    description: 'Uma vez por cena, você pode gastar 2 PE para fazer uma ação de investigação adicional, mas deve usar Força ou Agilidade como atributo-base do teste.',
     pageReference: 'Livro Base p.46',
     effects: {
       base: {
@@ -410,7 +410,7 @@ export const COMBATENTE_POWERS: UnifiedClassPower[] = [
           actionType: 'investigation',
           cost: 2,
           perScene: true,
-          skillBonus: 5,
+          skillBonus: 0,
         }],
       },
     },

@@ -2,15 +2,15 @@
  * useActivatableClassPowers - Hook para gerenciar poderes de classe ativáveis
  * 
  * Gerencia poderes que gastam PE e têm limites por cena/rodada/turno:
- * - Incansável (2 PE, 1x/cena) - Ação de investigação extra com +5
+ * - Incansável (2 PE, 1x/cena) - Investigação extra usando Força ou Agilidade
  * - Segurar o Gatilho (2 PE × ataques, por turno) - Ataque extra com arma de fogo
- * - Combate Defensivo (livre, 1x/rodada) - -5 ataque, +2 Defesa
- * - Golpe Pesado (1 PE, por ataque) - Troca penalidade por dano
+ * - Combate Defensivo - Penalidade em ataques e +5 Defesa
+ * - Golpe Demolidor (1 PE) - Dois dados extras contra objetos
  * 
  * @module hooks/useActivatableClassPowers
  */
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { toast } from 'sonner';
 
 // =====================================================
@@ -114,8 +114,8 @@ export const ACTIVATABLE_COMBATENTE_POWERS: ActivatableClassPower[] = [
   {
     id: 'incansavel',
     name: 'Incansável',
-    shortEffect: 'Ação de investigação extra com +5',
-    description: 'Você pode fazer uma ação de investigação adicional usando Força ou Agilidade como atributo-base. Você recebe +5 no teste.',
+    shortEffect: 'Investigação extra usando Força ou Agilidade',
+    description: 'Uma vez por cena, você pode fazer uma ação de investigação adicional usando Força ou Agilidade como atributo-base, sem bônus numérico adicional.',
     basePECost: 2,
     limit: 'perScene',
     minNex: 15,
@@ -151,8 +151,8 @@ export const ACTIVATABLE_COMBATENTE_POWERS: ActivatableClassPower[] = [
   {
     id: 'golpe-demolidor',
     name: 'Golpe Demolidor',
-    shortEffect: 'Dobra dano contra objetos/manobra quebrar',
-    description: 'Quando usa a manobra quebrar ou ataca um objeto, você pode gastar 1 PE para causar o dobro de dano.',
+    shortEffect: '+2 dados de dano contra objetos/manobra quebrar',
+    description: 'Quando usa a manobra quebrar ou ataca um objeto, você pode gastar 1 PE para causar dois dados de dano extra do mesmo tipo de sua arma.',
     basePECost: 1,
     limit: 'none',
     minNex: 15,
@@ -198,8 +198,8 @@ export const ACTIVATABLE_COMBATENTE_POWERS: ActivatableClassPower[] = [
   {
     id: 'combate-defensivo',
     name: 'Combate Defensivo',
-    shortEffect: '-2 ataque, +5 Defesa até o próximo turno',
-    description: 'Ao usar a ação agredir, você pode combater defensivamente. Sofre -2 em todos os testes de ataque, mas recebe +5 na Defesa até o seu próximo turno.',
+    shortEffect: '-1d20 ataque, +5 Defesa até o próximo turno',
+    description: 'Ao usar a ação agredir, você pode combater defensivamente. Sofre -1d20 em todos os testes de ataque, mas recebe +5 na Defesa até o seu próximo turno.',
     basePECost: 0,
     limit: 'perRound',
     minNex: 15,
@@ -210,8 +210,8 @@ export const ACTIVATABLE_COMBATENTE_POWERS: ActivatableClassPower[] = [
   {
     id: 'combater-duas-armas',
     name: 'Combater com Duas Armas',
-    shortEffect: '-2 ataque, dois ataques (até próximo turno)',
-    description: 'Se estiver empunhando duas armas (pelo menos uma leve) e fizer a ação agredir, pode fazer dois ataques. Sofre -2 em todos os testes de ataque até o próximo turno.',
+    shortEffect: '-1d20 ataque, dois ataques (até próximo turno)',
+    description: 'Se estiver empunhando duas armas (pelo menos uma leve) e fizer a ação agredir, pode fazer dois ataques. Sofre -1d20 em todos os testes de ataque até o próximo turno.',
     basePECost: 0,
     limit: 'perRound',
     minNex: 15,
@@ -361,6 +361,18 @@ export function useActivatableClassPowers(
 
   // Estado de uso de cada poder
   const [usageStates, setUsageStates] = useState<Record<string, PowerUsageState>>({});
+  // Reservas síncronas evitam usar o mesmo saldo/contador em ativações antes do render.
+  const usageStatesRef = useRef(usageStates);
+  const availablePERef = useRef(peCurrent);
+  useEffect(() => {
+    availablePERef.current = peCurrent;
+  }, [peCurrent]);
+
+  /** Publica um novo estado de uso e atualiza a reserva usada pelo próximo comando. */
+  const updateUsageStates = useCallback((next: Record<string, PowerUsageState>) => {
+    usageStatesRef.current = next;
+    setUsageStates(next);
+  }, []);
 
   // Filtra poderes disponíveis para o personagem (Combatente + Especialista)
   const availablePowers = useMemo(() => {
@@ -377,7 +389,7 @@ export function useActivatableClassPowers(
     const power = ALL_ACTIVATABLE_POWERS.find((p) => p.id === powerId);
     if (!power) return 0;
 
-    const state = usageStates[powerId] || { usageCount: 0, isUsed: false };
+    const state = usageStatesRef.current[powerId] || { usageCount: 0, isUsed: false };
 
     // Se tem escalonamento, multiplica
     if (power.scalingCost) {
@@ -387,14 +399,14 @@ export function useActivatableClassPowers(
     }
 
     return power.basePECost;
-  }, [usageStates]);
+  }, []);
 
   // Verifica se pode pagar
   const canAfford = useCallback((powerId: string): boolean => {
-    const power = ALL_ACTIVATABLE_POWERS.find((p) => p.id === powerId);
+    const power = availablePowers.find((p) => p.id === powerId);
     if (!power) return false;
 
-    const state = usageStates[powerId] || { usageCount: 0, isUsed: false };
+    const state = usageStatesRef.current[powerId] || { usageCount: 0, isUsed: false };
 
     // Poderes com scalingCost podem ser usados várias vezes no período
     // Só os poderes sem scalingCost respeitam isUsed como bloqueio absoluto
@@ -404,14 +416,14 @@ export function useActivatableClassPowers(
 
     // Verifica PE
     const cost = getCurrentCost(powerId);
-    return peCurrent >= cost;
-  }, [usageStates, peCurrent, getCurrentCost]);
+    return Number.isFinite(availablePERef.current) && availablePERef.current >= cost;
+  }, [availablePowers, getCurrentCost]);
 
   // Usa um poder
   const usePower = useCallback((powerId: string): boolean => {
-    const power = ALL_ACTIVATABLE_POWERS.find((p) => p.id === powerId);
+    const power = availablePowers.find((p) => p.id === powerId);
     if (!power) {
-      toast.error('Poder não encontrado');
+      toast.error('Poder indisponível para este personagem');
       return false;
     }
 
@@ -421,11 +433,22 @@ export function useActivatableClassPowers(
     }
 
     const cost = getCurrentCost(powerId);
-    const state = usageStates[powerId] || { usageCount: 0, isUsed: false };
+    const state = usageStatesRef.current[powerId] || { usageCount: 0, isUsed: false };
+
+    // Reserva o uso antes de callbacks externos, inclusive em ativações reentrantes.
+    updateUsageStates({
+      ...usageStatesRef.current,
+      [powerId]: {
+        usageCount: state.usageCount + 1,
+        isUsed: power.limit !== 'none' && !power.scalingCost,
+      },
+    });
 
     // Gasta PE
     if (cost > 0) {
-      onPEChange(peCurrent - cost);
+      const remainingPE = availablePERef.current - cost;
+      availablePERef.current = remainingPE;
+      onPEChange(remainingPE);
       onTrackPESpent?.(power.name, cost);
     }
 
@@ -433,17 +456,6 @@ export function useActivatableClassPowers(
     if (power.conditionalBonusId && onToggleConditionalBonus) {
       onToggleConditionalBonus(power.conditionalBonusId, true);
     }
-
-    // Atualiza estado de uso
-    // Para poderes com scalingCost: NÃO marca isUsed (permite repetição)
-    // Para poderes sem scalingCost: marca isUsed se tiver limite
-    setUsageStates((prev) => ({
-      ...prev,
-      [powerId]: {
-        usageCount: state.usageCount + 1,
-        isUsed: power.limit !== 'none' && !power.scalingCost,
-      },
-    }));
 
     // Mensagem específica para Conhecimento Aplicado
     if (powerId === 'conhecimento-aplicado') {
@@ -457,7 +469,7 @@ export function useActivatableClassPowers(
     }
 
     return true;
-  }, [canAfford, getCurrentCost, usageStates, peCurrent, onPEChange, onTrackPESpent, onToggleConditionalBonus]);
+  }, [availablePowers, canAfford, getCurrentCost, updateUsageStates, onPEChange, onTrackPESpent, onToggleConditionalBonus]);
 
   // Reset por turno (limpa Segurar o Gatilho)
   const resetTurn = useCallback(() => {
@@ -468,17 +480,15 @@ export function useActivatableClassPowers(
       }
     });
 
-    setUsageStates((prev) => {
-      const next = { ...prev };
-      Object.keys(next).forEach((id) => {
-        const power = ALL_ACTIVATABLE_POWERS.find((p) => p.id === id);
-        if (power?.limit === 'perTurn') {
-          next[id] = { usageCount: 0, isUsed: false };
-        }
-      });
-      return next;
+    const next = { ...usageStatesRef.current };
+    Object.keys(next).forEach((id) => {
+      const power = ALL_ACTIVATABLE_POWERS.find((p) => p.id === id);
+      if (power?.limit === 'perTurn') {
+        next[id] = { usageCount: 0, isUsed: false };
+      }
     });
-  }, [onToggleConditionalBonus]);
+    updateUsageStates(next);
+  }, [onToggleConditionalBonus, updateUsageStates]);
 
   // Reset por rodada
   const resetRound = useCallback(() => {
@@ -490,17 +500,15 @@ export function useActivatableClassPowers(
       }
     });
 
-    setUsageStates((prev) => {
-      const next = { ...prev };
-      Object.keys(next).forEach((id) => {
-        const power = ALL_ACTIVATABLE_POWERS.find((p) => p.id === id);
-        if (power?.limit === 'perRound' || power?.limit === 'perTurn') {
-          next[id] = { usageCount: 0, isUsed: false };
-        }
-      });
-      return next;
+    const next = { ...usageStatesRef.current };
+    Object.keys(next).forEach((id) => {
+      const power = ALL_ACTIVATABLE_POWERS.find((p) => p.id === id);
+      if (power?.limit === 'perRound' || power?.limit === 'perTurn') {
+        next[id] = { usageCount: 0, isUsed: false };
+      }
     });
-  }, [onToggleConditionalBonus]);
+    updateUsageStates(next);
+  }, [onToggleConditionalBonus, updateUsageStates]);
 
   // Reset por cena
   const resetScene = useCallback(() => {
@@ -511,8 +519,8 @@ export function useActivatableClassPowers(
       }
     });
 
-    setUsageStates({});
-  }, [onToggleConditionalBonus]);
+    updateUsageStates({});
+  }, [onToggleConditionalBonus, updateUsageStates]);
 
   // Verifica se um bônus condicional de poder está ativo
   const isBonusActive = useCallback((powerId: string): boolean => {

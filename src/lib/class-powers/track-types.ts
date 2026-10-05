@@ -165,6 +165,9 @@ export interface TrackAbilityMechanics {
   /** Resistência paranormal */
   paranormalResistance?: number;
 
+  /** Bônus somente em testes de resistência contra efeitos paranormais; não é RD. */
+  paranormalResistanceTestBonus?: number;
+
   /** Resistência a dano mental */
   mentalDamageResistance?: number;
 
@@ -173,6 +176,9 @@ export interface TrackAbilityMechanics {
 
   /** Permite usar PV como PE */
   hpAsPE?: boolean;
+
+  /** Quantidade de PV consumida por PE substituído durante a conjuração. */
+  hpCostPerPE?: number;
 
   /** Permite usar Ocultismo como ataque */
   occultismAsAttack?: boolean;
@@ -396,6 +402,8 @@ export interface TrackAbilityMechanics {
     requiresWielding: boolean;
     inventorySlots: number;
     recreationCost: string;
+    /** Preparação do grimório antes da conjuração; não substitui a execução do ritual. */
+    preparationAction?: ActionType;
     anyRitual?: boolean;
   };
 
@@ -423,6 +431,8 @@ export interface TrackAbilityMechanics {
     onFailure: string;
     dtType: string;
     fixedDT?: number;
+    /** Só modifica sucesso de Vontade que já reduziria dano paranormal à metade. */
+    requiresExistingHalfDamageSave?: boolean;
   };
 }
 

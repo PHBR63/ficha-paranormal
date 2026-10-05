@@ -69,7 +69,7 @@ export const CONDITIONAL_BONUSES: Omit<ConditionalBonus, 'active'>[] = [
     id: 'combate-defensivo',
     name: 'Combate Defensivo',
     condition: 'Ação agredir (até próximo turno)',
-    effects: ['-5 ataque', '+5 Defesa'],
+    effects: ['-1d20 em ataques', '+5 Defesa'],
     source: 'ability',
   },
   {
@@ -580,7 +580,7 @@ export function useCharacterBonusSummary({
 
     // === HABILIDADES ATIVAS DE COMBATE (toggleáveis) ===
     
-    // Combate Defensivo: +5 Defesa, -5 ataque (habilidade de classe)
+    // Combate Defensivo: +5 Defesa e penalidade em dados, aplicada pela rolagem.
     if (hasAbility('combate defensivo')) {
       const isActive = isConditionalActive('combate-defensivo');
       conditionalBonuses.push({
@@ -588,22 +588,10 @@ export function useCharacterBonusSummary({
         name: 'Combate Defensivo',
         condition: 'Ação agredir (até próximo turno)',
         active: isActive,
-        effects: ['+5 Defesa', '-5 ataque'],
+        effects: ['+5 Defesa', '-1d20 em ataques'],
         source: 'ability',
       });
-      // Penalidade de ataque quando ativo
-      if (isActive) {
-        combat.attack.breakdown.push({
-          source: 'Combate Defensivo',
-          value: -5,
-          type: 'ability',
-          conditional: 'modo defensivo ativo',
-          active: true,
-          toggleable: true,
-          toggleId: 'combate-defensivo',
-        });
-        combat.attack.total -= 5;
-      }
+      // Não desconta pontos do resultado: o modal calcula a redução do pool.
     }
 
     // Sentido Tático: +INT Defesa e resistências (habilidade de classe)

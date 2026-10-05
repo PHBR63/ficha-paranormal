@@ -26,7 +26,7 @@ export const KNOWLEDGE_FOURTH_CIRCLE: UnifiedRitual[] = [
     target: '1 pessoa ou animal',
     duration: 'Sustentada',
     description: 'Você domina a mente do alvo, que obedece todos os seus comandos, exceto ordens suicidas. Um alvo tem direito a um teste de Vontade no final de cada um de seus turnos para se livrar do efeito. Alvos que passarem no teste ficam pasmos por 1 rodada (apenas uma vez por cena). Requer afinidade com Conhecimento.',
-    cost: 6,
+    cost: 10,
     resistance: { type: 'vontade', effect: 'parcial' },
     isSustainable: true,
     effects: {
@@ -61,7 +61,7 @@ export const KNOWLEDGE_FOURTH_CIRCLE: UnifiedRitual[] = [
     target: '1 ser',
     duration: 'Instantânea',
     description: 'Este é um ritual extremamente cruel, que já condenou grandes agentes da Ordem ao oblívio. Você toca o alvo com a intenção de apagá-lo por completo da existência, causando 10d12+10 pontos de dano de Conhecimento. Se o alvo passar no teste de resistência, em vez disso sofre 2d12 pontos de dano e fica debilitado por uma rodada. Se os PV do alvo forem reduzidos a 0 ou menos, ele será completamente apagado, não restando nenhum traço de sua existência. Requer afinidade.',
-    cost: 6,
+    cost: 10,
     resistance: { type: 'vontade', effect: 'parcial' },
     effects: {
       base: {
@@ -97,7 +97,7 @@ export const KNOWLEDGE_FOURTH_CIRCLE: UnifiedRitual[] = [
     target: '1 pessoa viva ou morta',
     duration: '1 dia',
     description: 'Você projeta sua consciência no corpo de uma pessoa viva ou morta. Enquanto possuir o alvo, você assume o controle total do corpo dele (se o alvo estiver vivo, a consciência dele troca de lugar com a sua, ficando inerte dentro do seu corpo desacordado). Você usa sua ficha, mas com os atributos físicos (AGI, FOR, VIG) e deslocamento do alvo. Se o alvo passar no teste de resistência, sabe que você tentou possuí-lo e fica imune por um dia. Se qualquer um dos envolvidos morrer, a mente sobrevivente fica presa no corpo novo permanentemente.',
-    cost: 6,
+    cost: 10,
     resistance: { type: 'vontade', effect: 'anula' },
     effects: {
       base: {
@@ -126,7 +126,7 @@ export const ENERGY_FOURTH_CIRCLE: UnifiedRitual[] = [
     target: 'Você',
     duration: 'Instantânea',
     description: 'Você vislumbra seu futuro próximo, analisando milhões de possibilidades e escolhendo a melhor. Você recebe +15 em um teste de resistência ou na Defesa contra um ataque.',
-    cost: 6,
+    cost: 10,
     hasHooks: true,
     effects: {
       base: {
@@ -158,7 +158,7 @@ export const ENERGY_FOURTH_CIRCLE: UnifiedRitual[] = [
     area: 'Explosão de 15m de raio',
     duration: 'Instantânea',
     description: 'Você acumula uma quantidade imensa de Energia, então a libera em uma explosão intensa, como uma estrela em plena terra. Todos na área sofrem 3d10 x 10 pontos de dano de Energia e todos os itens tecnológicos (armas de fogo, acessórios e utensílios) param de funcionar (estão quebrados). Você não é afetado pela explosão. Alvos que passem no teste de Fortitude sofrem metade do dano e seus itens voltam a funcionar após 1d4 rodadas.',
-    cost: 6,
+    cost: 10,
     resistance: { type: 'fortitude', effect: 'reduz_metade' },
     effects: {
       base: {
@@ -187,7 +187,7 @@ export const ENERGY_FOURTH_CIRCLE: UnifiedRitual[] = [
     target: 'Até 5 seres voluntários',
     duration: 'Instantânea',
     description: 'O ritual transforma o corpo e equipamento dos alvos em energia pura e os faz reaparecer num lugar a sua escolha a até 1.000km. Teste de Ocultismo define precisão: DT 25 (frequente), DT 30 (uma vez), DT 35 (descrição). Se falhar, chega em lugar errado (até 1d10x10 km). Se falhar por 5+, ritual falha, gasta PE e fica atordoado 1d4 rodadas.',
-    cost: 6,
+    cost: 10,
     effects: {
       base: {
         kind: 'utility',
@@ -219,7 +219,7 @@ export const FEAR_FOURTH_CIRCLE: UnifiedRitual[] = [
     target: '1 pessoa',
     duration: 'Permanente até ser descarregada',
     description: 'Você transfere parte de seu poder para outra pessoa. Escolha um ritual de até 3º círculo que você conheça; o alvo pode conjurar este ritual em sua forma básica uma vez, sem pagar seu custo em PE (mas pode usar formas avançadas gastando seus próprios PE para isso). Até o ritual transferido ser conjurado, seus PE máximos diminuem em um valor igual ao custo dele.',
-    cost: 6,
+    cost: 10,
     effects: {
       base: {
         kind: 'buff',
@@ -238,7 +238,7 @@ export const FEAR_FOURTH_CIRCLE: UnifiedRitual[] = [
     target: '1 pessoa',
     duration: 'Instantânea',
     description: 'Você manifesta medo absoluto na mente do alvo. Se ele falhar no teste de resistência, a Sanidade dele é reduzida a 0 e ele fica enlouquecendo. Se ele passar, sofre 10d6 pontos de dano mental e fica apavorado por 1 rodada. Uma pessoa que fique insana pelo efeito deste ritual se transforma em uma criatura paranormal a critério do mestre.',
-    cost: 6,
+    cost: 10,
     resistance: { type: 'vontade', effect: 'parcial' },
     effects: {
       base: {
@@ -261,7 +261,7 @@ export const FEAR_FOURTH_CIRCLE: UnifiedRitual[] = [
     target: '1 ser',
     duration: 'Instantânea',
     description: 'Você manifesta uma lâmina impossível, descrita apenas como uma "fenda na Realidade", com a qual golpeia um alvo adjacente. Se o alvo falhar no teste de Fortitude, seus PV são reduzidos a 0 e ele fica morrendo; se passar, sofre 10d8 pontos de dano de Medo (ignora todas as resistências) e fica apavorado por uma rodada. Se sobreviver, o ferimento nunca cicatriza e a pessoa vive em dor constante. Aprender este ritual requer um poder de trilha específico.',
-    cost: 6,
+    cost: 10,
     resistance: { type: 'fortitude', effect: 'parcial' },
     effects: {
       base: {
@@ -284,7 +284,7 @@ export const FEAR_FOURTH_CIRCLE: UnifiedRitual[] = [
     target: 'Você',
     duration: 'Cena',
     description: 'O ritual transforma seu corpo em uma manifestação do Medo, tornando-o imune a efeitos mundanos. Você fica imune às condições atordoado, cego, debilitado, enjoado, envenenado, exausto, fatigado, fraco, lento, ofuscado e paralisado, além de doenças e venenos, e não sofre dano adicional por acertos críticos e ataques furtivos. Além disso, dano do tipo balístico, corte, impacto ou perfuração não podem reduzir seu total de pontos de vida abaixo de 1.',
-    cost: 6,
+    cost: 10,
     hasHooks: true,
     effects: {
       base: {
@@ -307,7 +307,7 @@ export const FEAR_FOURTH_CIRCLE: UnifiedRitual[] = [
     area: 'Emanação de 9m de raio',
     duration: 'Sustentada',
     description: 'Você se torna um receptáculo para o Medo puro, emanando ondas de pavor e ruína. Alvos dentro da área no momento da conjuração ou no início de cada um de seus turnos sofrem 5d8 de dano mental e 5d8 de dano de Medo (Vontade reduz ambos à metade). Alvos que falharem no teste ficam atordoados por uma rodada (este efeito funciona apenas uma vez por cena).',
-    cost: 6,
+    cost: 10,
     resistance: { type: 'vontade', effect: 'parcial' },
     isSustainable: true,
     effects: {
@@ -340,7 +340,7 @@ export const DEATH_FOURTH_CIRCLE: UnifiedRitual[] = [
     target: '1 pessoa',
     duration: 'Sustentada',
     description: 'Usando os medos subconscientes do alvo, você manipula a espiral da Morte para criar uma imagem daquilo que ele mais teme. Apenas a vítima vê o algoz com nitidez; outros enxergam um vulto sombrio. O algoz surge adjacente a você. No fim de cada turno seu, ele flutua 12m em direção à vítima. Em alcance curto: Vontade ou abalado. Adjacente: Fortitude ou 0 PV; se passar, 6d6 Morte (não mata). O algoz é incorpóreo, imune a dano, e só desaparece se deixar o alvo morrendo ou for dissipado.',
-    cost: 6,
+    cost: 10,
     resistance: { type: 'vontade', effect: 'parcial' },
     isSustainable: true,
     effects: {
@@ -364,7 +364,7 @@ export const DEATH_FOURTH_CIRCLE: UnifiedRitual[] = [
     target: 'Veja texto',
     duration: '3 rodadas',
     description: 'Este ritual distorce o fluxo de tempo em relação a você, criando um pequeno bolsão temporal que dura 3 rodadas. Durante este tempo, você pode agir, mas não pode se deslocar do lugar nem interagir com seres e objetos. Da mesma forma, efeitos contínuos não o afetam, e quaisquer efeitos que você iniciar não afetarão a área ao seu redor. Efeitos de área com duração maior que este efeito vão agir normalmente quando o bolsão temporal acabar.',
-    cost: 6,
+    cost: 10,
     effects: {
       base: {
         kind: 'stateOverride',
@@ -383,7 +383,7 @@ export const DEATH_FOURTH_CIRCLE: UnifiedRitual[] = [
     area: 'Buraco negro com 1,5m de diâmetro',
     duration: '4 rodadas',
     description: 'Você cria um vácuo em um espaço desocupado a sua escolha. No início de cada um de seus quatro turnos seguintes, todos os seres a até 90m do vácuo, incluindo você, devem fazer um teste de Fortitude. Em caso de falha, ficam caídos e são puxados 30m na direção do vácuo. Objetos soltos também são puxados. Seres podem gastar uma ação de movimento para se segurar em objeto fixo (+5 no teste). Seres e objetos que iniciem seu turno tocando o vácuo sofrem 100 pontos de dano de Morte por rodada.',
-    cost: 6,
+    cost: 10,
     resistance: { type: 'fortitude', effect: 'parcial' },
     effects: {
       base: {
@@ -425,7 +425,7 @@ export const BLOOD_FOURTH_CIRCLE: UnifiedRitual[] = [
     target: '1 pessoa',
     duration: 'Cena',
     description: 'Você desperta uma paixão doentia e obcecada por você no alvo, que passa a querer agradá-lo a todo custo, mesmo que para isso precise ficar contra seus amigos. No início de cada turno do alvo ele deve fazer um teste de Vontade. Se falhar, age de forma a ajudá-lo na melhor de suas capacidades naquele turno. Se o alvo passar nesse teste dois turnos seguidos o efeito termina.',
-    cost: 6,
+    cost: 10,
     resistance: { type: 'vontade', effect: 'parcial' },
     effects: {
       base: {
@@ -447,7 +447,7 @@ export const BLOOD_FOURTH_CIRCLE: UnifiedRitual[] = [
     area: '1 clone seu',
     duration: 'Cena',
     description: 'Você manifesta uma poça de sangue no chão, de onde emerge uma cópia sua. Ela é idêntica em aparência e capacidades (mesmas estatísticas) e surge com uma cópia de todo equipamento mundano que você estiver carregando. A cópia não tem consciência (INT e PRE nulos) e não age sem ordem. Você pode gastar uma ação de movimento para dar uma ordem, ou entrar em transe e controlá-la diretamente. Percepção (DT do ritual) identifica como cópia. A cópia se desfaz se chegar a 0 PV ou sair do alcance.',
-    cost: 6,
+    cost: 10,
     effects: {
       base: {
         kind: 'summon',
@@ -467,7 +467,7 @@ export const BLOOD_FOURTH_CIRCLE: UnifiedRitual[] = [
     target: '1 ser',
     duration: 'Cena',
     description: 'Você manifesta um símbolo de Sangue no seu corpo e no corpo do alvo. Sempre que você sofrer dano, o alvo deve fazer um teste de Fortitude. Se ele falhar, você sofre apenas metade do dano e ele sofre a metade restante. Você pode conjurar o ritual com efeito inverso, fazendo com que você receba metade de todo o dano que o alvo receberia. Alvos voluntários não precisam fazer testes de resistência.',
-    cost: 6,
+    cost: 10,
     resistance: { type: 'fortitude', effect: 'anula' },
     hasModes: true,
     hasHooks: true,

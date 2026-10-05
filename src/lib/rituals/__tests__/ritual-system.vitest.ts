@@ -16,6 +16,14 @@ import type { RitualElement, RitualCircle } from '../types';
 // ========================================
 
 describe('Sistema de Rituais Unificado - Integridade', () => {
+  it('todos os 17 rituais de 4º círculo têm custo base 10 PE (Base v1.3 p.119)', () => {
+    const rituals = getRitualsByCircle(4);
+    expect(rituals).toHaveLength(17);
+    for (const ritual of rituals) {
+      expect(ritual.cost, ritual.id).toBe(10);
+    }
+  });
+
   it('deve ter todos os rituais com IDs únicos', () => {
     const ids = UNIFIED_RITUALS.map(r => r.id);
     const duplicates = ids.filter((id, index) => ids.indexOf(id) !== index);

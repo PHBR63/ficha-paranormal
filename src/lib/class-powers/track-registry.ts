@@ -45,7 +45,7 @@ ALL_TRACKS.forEach(track => {
  * Remove hifens, converte para minúsculas
  */
 function normalizeTrackId(id: string): string {
-  return id.toLowerCase().replace(/-/g, '').replace(/\s+/g, '');
+  return id.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[-\s]+/g, '');
 }
 
 /**
@@ -69,8 +69,10 @@ export function getTrackById(id: string): UnifiedTrack | undefined {
   
   // 3. Busca normalizada (remove hifens e espaços)
   const normalizedInput = normalizeTrackId(id);
+  // Nome oficial e slug novo resolvem o ID histórico usado nas fichas salvas.
+  if (normalizedInput === 'conduite') return TRACK_BY_ID.get('condutor');
   for (const track of ALL_TRACKS) {
-    if (normalizeTrackId(track.id) === normalizedInput) {
+    if (normalizeTrackId(track.id) === normalizedInput || normalizeTrackId(track.name) === normalizedInput) {
       return track;
     }
   }

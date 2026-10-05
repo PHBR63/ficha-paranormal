@@ -257,7 +257,7 @@ export function useDefenseBonuses({
     
     // 7. RITUAIS ATIVOS: Processa rituais sustentados com defenseModifier
     activeRituals.forEach(ritual => {
-      const effect = getActiveRitualEffect(ritual.ritualId, ritual.enhancements);
+      const effect = getActiveRitualEffect(ritual.ritualId, ritual.enhancements ?? []);
       if (effect?.defenseModifier) {
         breakdown.push({
           source: ritual.ritualName,
