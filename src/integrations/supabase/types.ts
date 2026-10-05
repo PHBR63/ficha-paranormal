@@ -247,6 +247,35 @@ export type Database = {
           },
         ]
       }
+      campaign_combat_state_v2: {
+        Row: {
+          campaign_id: string
+          revision: number
+          state: Json
+          updated_at: string
+        }
+        Insert: {
+          campaign_id: string
+          revision?: number
+          state?: Json
+          updated_at?: string
+        }
+        Update: {
+          campaign_id?: string
+          revision?: number
+          state?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_combat_state_v2_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: true
+            referencedRelation: "campaigns_v2"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaign_handouts: {
         Row: {
           campaign_id: string
@@ -2335,6 +2364,25 @@ export type Database = {
       is_campaign_member_v2: {
         Args: { _campaign_id: string; _user_id: string }
         Returns: boolean
+      }
+      save_campaign_combat_v2: {
+        Args: {
+          p_campaign_id: string
+          p_expected_revision: number
+          p_state: Json
+        }
+        Returns: {
+          campaign_id: string
+          revision: number
+          state: Json
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "campaign_combat_state_v2"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       validate_campaign_invite: {
         Args: { code: string }
