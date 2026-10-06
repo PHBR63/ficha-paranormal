@@ -60,10 +60,10 @@ describe('checkAutoConditions', () => {
       expect(result.messages.some(m => m.includes('consciência'))).toBe(true);
     });
 
-    it('deve remover Morrendo quando HP > 0', () => {
+    it('cura de PV não estabiliza Morrendo automaticamente', () => {
       const result = checkAutoConditions(5, 20, 30, 30, ['morrendo', 'inconsciente']);
       
-      expect(result.conditionsToRemove).toContain('morrendo');
+      expect(result.conditionsToRemove).not.toContain('morrendo');
       expect(result.conditionsToRemove).toContain('inconsciente');
     });
 
@@ -89,12 +89,12 @@ describe('checkAutoConditions', () => {
       expect(result.conditionsToRemove).toContain('enlouquecendo');
     });
 
-    it('deve adicionar Perturbado quando SAN ≤ 30%', () => {
+    it('deve adicionar Perturbado quando SAN abaixo da metade', () => {
       // 30% de 30 = 9
       const result = checkAutoConditions(20, 20, 9, 30, []);
       
       expect(result.conditionsToAdd).toContain('perturbado');
-      expect(result.messages.some(m => m.includes('30%'))).toBe(true);
+      expect(result.messages.some(m => m.includes('metade'))).toBe(true);
     });
 
     it('não deve adicionar Perturbado se SAN = 0 (prefere Enlouquecendo)', () => {
@@ -110,7 +110,7 @@ describe('checkAutoConditions', () => {
       expect(result.conditionsToAdd).not.toContain('perturbado');
     });
 
-    it('deve remover Perturbado quando SAN > 30%', () => {
+    it('deve remover Perturbado quando SAN >= metade', () => {
       // 30% de 30 = 9, então 10 está acima
       const result = checkAutoConditions(20, 20, 15, 30, ['perturbado']);
       
@@ -290,7 +290,7 @@ describe('Lógica de Processamento de Condições', () => {
       ]
     );
     
-    expect(result.newConditions.some(c => c.id === 'morrendo')).toBe(false);
+    expect(result.newConditions.some(c => c.id === 'morrendo')).toBe(true);
     expect(result.newConditions.some(c => c.id === 'inconsciente')).toBe(false);
   });
 

@@ -4,6 +4,7 @@
  */
 
 import { useState, useCallback, useMemo, memo } from 'react';
+import { ConditionTurnResolver, type PrepareTurnApplication } from '../ConditionTurnResolver';
 import { motion, AnimatePresence, PanInfo } from 'framer-motion';
 import {
   Sheet,
@@ -65,6 +66,8 @@ export interface ActiveCondition {
 interface MobileConditionManagerProps {
   conditions: ActiveCondition[];
   onConditionsChange: (conditions: ActiveCondition[]) => void | Promise<void>;
+  vigor?: number;
+  prepareTurnApplication?: PrepareTurnApplication;
   characterName?: string;
   onDamageFromCondition?: (damage: number, isVerdadeiro: boolean) => void;
   onCharacterDeath?: () => void;
@@ -466,7 +469,8 @@ export const MobileConditionManager = memo(function MobileConditionManager({
   conditions,
   onConditionsChange,
   characterName = 'Personagem',
-  onDamageFromCondition,
+  vigor,
+  prepareTurnApplication,
   onCharacterDeath,
   className,
 }: MobileConditionManagerProps) {
@@ -493,7 +497,7 @@ export const MobileConditionManager = memo(function MobileConditionManager({
 
     if ('vibrate' in navigator) navigator.vibrate(30);
     if (!await saveConditions([...conditions, newCondition])) return false;
-    if (conditionId === 'morrendo') toast.error('💀 Condição MORRENDO adicionada! 3 rodadas até a morte.', { duration: 5000 });
+    if (conditionId === 'morrendo') toast.error('Morrendo registrado. Confira os três inícios de turno cumulativos na cena com o mestre.', { duration: 5000 });
     toast.success(`${conditionData.icon} ${conditionData.name} adicionada`);
     return true;
   }, [conditions, saveConditions]);
@@ -527,83 +531,19 @@ export const MobileConditionManager = memo(function MobileConditionManager({
     const morrendoCondition = conditions.find(c => c.id === 'morrendo');
     if (!morrendoCondition || morrendoCondition.dyingCounter === undefined) return;
 
-    const newCounter = morrendoCondition.dyingCounter - 1;
+    const newCounter = Math.max(0, morrendoCondition.dyingCounter - 1);
     
-    if (newCounter <= 0) {
-      toast.error('💀 MORTE! O contador de morrendo chegou a 0.', { duration: 10000 });
-      if ('vibrate' in navigator) navigator.vibrate([100, 50, 100, 50, 200]);
-      onCharacterDeath?.();
-      return;
-    }
 
     if (!await saveConditions(
       conditions.map(c => c.id === 'morrendo' ? { ...c, dyingCounter: newCounter } : c)
     )) return false;
-    toast.warning(`⚠️ Contador de morrendo: ${newCounter} rodadas restantes.`);
+    toast.warning(newCounter === 0 ? 'Contagem registrada. Confira morte e turnos cumulativos da cena com o mestre.' : `Morrendo: ${newCounter} inícios de turno restantes na contagem manual.`);
   }, [conditions, saveConditions, onCharacterDeath]);
-
-  // Processar início de turno
-  const handleProcessStartOfTurn = useCallback(async () => {
-    const messages: string[] = [];
-    let totalDamage = 0;
-
-    // Processa condições que causam dano
-    for (const condition of conditions) {
-      if (condition.id === 'sangrando') {
-        totalDamage += 5; // Dano fixo de sangrando
-        messages.push('🩸 Sangrando: 5 de dano');
-      }
-      if (condition.id === 'envenenado' && condition.params?.poisonDamage) {
-        // Rola dano de veneno
-        const damage = parseInt(condition.params.poisonDamage) || 0;
-        if (damage > 0) {
-          totalDamage += damage;
-          messages.push(`🧪 Envenenado: ${damage} de dano`);
-        }
-      }
-      if (condition.id === 'em-chamas') {
-        totalDamage += 6; // 1d6 médio
-        messages.push('🔥 Em Chamas: 6 de dano (média)');
-      }
-    }
-
-    // Aplica dano
-    if (totalDamage > 0) {
-      onDamageFromCondition?.(totalDamage, false);
-    }
-
-    // Processa morrendo
-    const morrendo = conditions.find(c => c.id === 'morrendo');
-    if (morrendo?.dyingCounter !== undefined) {
-      const newCounter = morrendo.dyingCounter - 1;
-      if (newCounter <= 0) {
-        toast.error('💀 MORTE! O contador de morrendo chegou a 0.', { duration: 10000 });
-        if ('vibrate' in navigator) navigator.vibrate([100, 50, 100, 50, 200]);
-        onCharacterDeath?.();
-        return;
-      }
-      messages.push(`💀 Morrendo: ${newCounter} rodadas restantes`);
-      if (!await saveConditions(
-        conditions.map(c => c.id === 'morrendo' ? { ...c, dyingCounter: newCounter } : c)
-      )) return false;
-    }
-
-    // Feedback
-    if ('vibrate' in navigator) navigator.vibrate(30);
-    if (messages.length > 0) {
-      toast.info('⏰ Início de turno calculado — confira aplicação', {
-        description: messages.join('\n'),
-        duration: 5000,
-      });
-    } else {
-      toast.info('Início de turno: nenhum efeito calculado.');
-    }
-  }, [conditions, saveConditions, onDamageFromCondition, onCharacterDeath]);
 
   const existingConditionIds = useMemo(() => conditions.map(c => c.id), [conditions]);
   const hasMorrendo = conditions.some(c => c.id === 'morrendo');
   const hasStartOfTurnEffects = conditions.some(c => 
-    ['sangrando', 'envenenado', 'em-chamas', 'morrendo'].includes(c.id)
+    ['sangrando', 'envenenado', 'em-chamas', 'morrendo', 'enlouquecendo'].includes(c.id)
   );
 
   return (
@@ -623,17 +563,6 @@ export const MobileConditionManager = memo(function MobileConditionManager({
         </div>
         
         <div className="flex items-center gap-1">
-          {hasStartOfTurnEffects && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-7 text-xs gap-1"
-              onClick={handleProcessStartOfTurn}
-            >
-              <Play className="w-3 h-3" />
-              Início Turno
-            </Button>
-          )}
           <Button
             variant="outline"
             size="sm"
@@ -645,6 +574,8 @@ export const MobileConditionManager = memo(function MobileConditionManager({
           </Button>
         </div>
       </div>
+
+      {hasStartOfTurnEffects && <div className="p-3"><ConditionTurnResolver conditions={conditions} vigor={vigor} prepareApplication={prepareTurnApplication} /></div>}
 
       {/* Lista de condições */}
       <div className="p-3 space-y-2">

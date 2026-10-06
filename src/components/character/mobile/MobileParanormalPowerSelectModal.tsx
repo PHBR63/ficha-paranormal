@@ -231,7 +231,7 @@ export const MobileParanormalPowerSelectModal = memo(function MobileParanormalPo
         return false;
       }
     }
-    return canChoosePower(power, chosenPowerIds);
+    return canChoosePower(power, chosenPowerIds, affinityActive, elementalAffinity || undefined);
   }, [chosenPowerIds, characterPowers, affinityActive, elementalAffinity]);
 
   // Retorna informações detalhadas sobre o bloqueio

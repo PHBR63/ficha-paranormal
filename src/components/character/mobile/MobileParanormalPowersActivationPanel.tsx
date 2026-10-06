@@ -79,7 +79,7 @@ export function MobileParanormalPowersActivationPanel(props: MobileParanormalPow
     usageStates,
     canUse,
     getRemainingUses,
-    usePower,
+    usePower: consultPower,
     resetTurn,
     resetRound,
     resetScene,
@@ -112,13 +112,13 @@ export function MobileParanormalPowersActivationPanel(props: MobileParanormalPow
               remainingUses={getRemainingUses(power.id)}
               canUse={canUse(power.id)}
               isBonusActive={isBonusActive(power.id)}
-              onUse={() => usePower(power.id)}
+              onUse={() => consultPower(power.id)}
             />
           ))}
         </AnimatePresence>
 
         {/* Botões de Reset */}
-        <div className="grid grid-cols-4 gap-1.5 pt-2 border-t border-border/30">
+        {availablePowers.some(power => !power.manualResolution) && <div className="grid grid-cols-4 gap-1.5 pt-2 border-t border-border/30">
           <Button
             variant="outline"
             size="sm"
@@ -155,7 +155,7 @@ export function MobileParanormalPowersActivationPanel(props: MobileParanormalPow
             <RotateCcw className="w-3 h-3" />
             Sessão
           </Button>
-        </div>
+        </div>}
       </div>
     </MobileCollapsibleSection>
   );
@@ -197,7 +197,7 @@ function MobilePowerCard({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -5 }}
       className={cn(
-        'flex items-center gap-2 p-2 rounded-md border',
+        'flex flex-wrap items-center gap-2 p-2 rounded-md border',
         isUsed 
           ? 'bg-muted/50 opacity-60' 
           : isBonusActive 
@@ -261,7 +261,7 @@ function MobilePowerCard({
           {/* Limite ilimitado */}
           {!hasLimitedUses && power.costType === 'none' && (
             <Badge variant="secondary" className="text-[8px] px-1 py-0 h-4">
-              {LIMIT_LABELS['none']}
+              {power.manualResolution ? 'Manual' : LIMIT_LABELS['none']}
             </Badge>
           )}
         </div>
@@ -276,6 +276,10 @@ function MobilePowerCard({
         <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" />
       )}
 
+      {power.manualResolution && <details className="text-xs max-w-full">
+        <summary>Regra</summary><p className="whitespace-normal break-words">{power.description}</p>
+        <p>Consulta manual: nenhum efeito, gasto ou uso é confirmado aqui.</p>
+      </details>}
       {/* Botão */}
       <Button
         size="sm"
@@ -287,7 +291,7 @@ function MobilePowerCard({
           !isUsed && canUse && !isBonusActive && 'bg-purple-600 hover:bg-purple-700'
         )}
       >
-        {isUsed ? 'Usada' : isBonusActive ? 'Ativo' : 'Usar'}
+        {power.manualResolution ? 'Conferir' : isUsed ? 'Usada' : isBonusActive ? 'Ativo' : 'Usar'}
       </Button>
     </motion.div>
   );

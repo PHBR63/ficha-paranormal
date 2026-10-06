@@ -374,31 +374,27 @@ export function checkAutoConditions(
   const messages: string[] = [];
   let dyingCounter: number | undefined;
 
-  // HP = 0 → Inconsciente
-  if (hp === 0 && !currentConditions.includes('inconsciente')) {
+  // Base v1.3 p.88: não existem PV negativos; zero inicia ambas as condições.
+  if (hp <= 0 && !currentConditions.includes('inconsciente')) {
     conditionsToAdd.push('inconsciente');
     messages.push('Você caiu inconsciente (HP = 0)!');
   }
 
-  // HP < 0 → Morrendo (além de inconsciente)
-  if (hp < 0 && !currentConditions.includes('morrendo')) {
+  if (hp <= 0 && !currentConditions.includes('morrendo')) {
     conditionsToAdd.push('morrendo');
-    if (!currentConditions.includes('inconsciente')) {
+    if (!currentConditions.includes('inconsciente') && !conditionsToAdd.includes('inconsciente')) {
       conditionsToAdd.push('inconsciente');
     }
     dyingCounter = 3; // Inicia com 3 rodadas
-    messages.push('Você está MORRENDO! 3 rodadas até a morte.');
+    messages.push('Você está MORRENDO! Confira os três inícios de turno na mesma cena, inclusive os não consecutivos.');
   }
 
-  // HP > 0 → Remover Inconsciente e Morrendo
+  // Cura encerra Inconsciente. Morrendo exige Medicina ou efeito específico;
+  // subir o saldo não comprova estabilização nem reinicia a contagem da cena.
   if (hp > 0) {
     if (currentConditions.includes('inconsciente')) {
       conditionsToRemove.push('inconsciente');
       messages.push('Você recuperou a consciência!');
-    }
-    if (currentConditions.includes('morrendo')) {
-      conditionsToRemove.push('morrendo');
-      messages.push('Você foi estabilizado!');
     }
   }
 
@@ -414,15 +410,14 @@ export function checkAutoConditions(
     messages.push('Você recuperou parte da sanidade.');
   }
 
-  // SAN ≤ 30% do máximo → Perturbado
-  const sanThreshold = sanMax * 0.3;
-  if (san > 0 && san <= sanThreshold && !currentConditions.includes('perturbado') && !currentConditions.includes('enlouquecendo')) {
+  // Base v1.3 pp.88/111: estritamente abaixo da metade, sem penalidade em testes.
+  const sanThreshold = sanMax * 0.5;
+  if (san > 0 && san < sanThreshold && !currentConditions.includes('perturbado') && !currentConditions.includes('enlouquecendo')) {
     conditionsToAdd.push('perturbado');
-    messages.push('Sua mente está abalada (SAN ≤ 30%).');
+    messages.push('Sua mente está perturbada (SAN abaixo da metade). Confira o primeiro efeito de insanidade desta cena com o mestre.');
   }
 
-  // SAN > 30% → Remover Perturbado (se não tiver outra causa)
-  if (san > sanThreshold && currentConditions.includes('perturbado')) {
+  if (san >= sanThreshold && currentConditions.includes('perturbado')) {
     conditionsToRemove.push('perturbado');
     messages.push('Sua mente se acalmou.');
   }

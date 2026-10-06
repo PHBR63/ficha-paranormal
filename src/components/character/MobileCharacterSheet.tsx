@@ -1,3 +1,5 @@
+import { BaseRulesNotice } from '@/components/character/BaseRulesNotice';
+import { useConditionTurnApplication } from '@/hooks/character/useConditionTurnApplication';
 import { useCharacterResourceUpdate } from '@/hooks/character/useCharacterResourceUpdate';
 import { ritualRollHistory } from '@/lib/ritual-roll-history';
 import { confirmConditionReplacement } from '@/services/character-resource-service';
@@ -613,7 +615,7 @@ export function MobileCharacterSheet({
     dismissIssue,
   } = useCharacterAudit(characterForAudit, user?.id || null, { 
     autoRun: true,
-    autoFixCritical: true,
+    autoFixCritical: false,
     onFixComplete: onRefetch,
   });
 
@@ -640,6 +642,9 @@ export function MobileCharacterSheet({
   
   // Hook de aplicação automática de condições (paridade desktop)
   const { processResourceChange } = useAutoConditions();
+  const prepareTurnApplication = useConditionTurnApplication(character, () => {
+    void Promise.resolve(onRefetch?.()).catch(() => toast.error('Efeitos confirmados. Recarregue para atualizar a ficha.'));
+  });
   
   // Hook para rastrear "Primeira Impressão" do Especialista (paridade desktop)
   // Concede +1d20 no primeiro teste de Diplomacia, Enganação, Intimidação ou Intuição da cena
@@ -1673,18 +1678,6 @@ export function MobileCharacterSheet({
     (Array.isArray(character.conditions) ? character.conditions : []) as (string | PersistedCondition)[]
   ), [character.conditions]);
 
-  // Handler para dano de condições (ex: sangrando, envenenado)
-  const handleConditionDamage = useCallback((damage: number, isVerdadeiro: boolean) => {
-    console.log(`Dano de condição: ${damage} (${isVerdadeiro ? 'verdadeiro' : 'normal'})`);
-    // Implementar lógica de dano quando necessário
-  }, []);
-
-  // Handler para morte do personagem
-  const handleCharacterDeath = useCallback(() => {
-    console.log('Personagem morreu!');
-    // Implementar lógica de morte quando necessário
-  }, []);
-
   // Handler para seleção de afinidade elemental
   const handleAffinitySelect = useCallback(async (element: string) => {
     if (onSelectAffinity) {
@@ -1804,6 +1797,7 @@ export function MobileCharacterSheet({
         }}
       />
       
+      <BaseRulesNotice />
       {/* Conteúdo baseado na tab ativa */}
       <AnimatePresence mode="wait">
         {/* Tab Overview - Componente extraído */}
@@ -1834,8 +1828,7 @@ export function MobileCharacterSheet({
               onClearHistory={clearHistory}
               onRemoveRoll={removeRoll}
               onConditionsChange={handleConditionsChange}
-              onDamageFromCondition={handleConditionDamage}
-              onCharacterDeath={handleCharacterDeath}
+              prepareTurnApplication={prepareTurnApplication}
               especialistaArmaGroups={especialistaArmaGroups}
               roundTracking={{
                 currentRound: roundTracking.currentRound,

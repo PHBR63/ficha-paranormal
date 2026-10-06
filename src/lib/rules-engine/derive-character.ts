@@ -1,3 +1,4 @@
+import { getNexLevel } from '@/lib/rules/nex-progression';
 /**
  * deriveCharacter - Função principal de derivação de estatísticas
  * Ordem Paranormal RPG v1.3
@@ -143,8 +144,8 @@ interface ClassBaseStats {
  * Calcula HP máximo auxiliar (usado para contexto)
  */
 function calculateMaxHP(state: CharacterState, classStats: ClassBaseStats): number {
-  const nexMultiplier = Math.floor(state.nex / 5) - 1;
-  return classStats.pvBase + state.attributes.vigor + (classStats.pvPerNex * Math.max(0, nexMultiplier));
+  const nexMultiplier = getNexLevel(state.nex) - 1;
+  return classStats.pvBase + state.attributes.vigor + ((classStats.pvPerNex + state.attributes.vigor) * Math.max(0, nexMultiplier));
 }
 
 /**
@@ -155,7 +156,7 @@ function calculateHP(
   classStats: ClassBaseStats,
   bonuses: BreakdownSource[]
 ): StatBreakdown {
-  const nexMultiplier = Math.floor(state.nex / 5) - 1;
+  const nexMultiplier = getNexLevel(state.nex) - 1;
   const sources: BreakdownSource[] = [];
   
   // Base da classe
@@ -168,9 +169,9 @@ function calculateHP(
   
   // Vigor
   sources.push({
-    name: 'Vigor',
+    name: `Vigor × ${Math.max(1, getNexLevel(state.nex))} patamares`,
     sourceType: 'attribute',
-    value: state.attributes.vigor,
+    value: state.attributes.vigor * Math.max(1, getNexLevel(state.nex)),
   });
   
   // Por NEX
@@ -186,7 +187,7 @@ function calculateHP(
   // Adicionar bônus de outras fontes
   sources.push(...bonuses);
   
-  const base = classBase + state.attributes.vigor + nexBonus;
+  const base = classBase + state.attributes.vigor * Math.max(1, getNexLevel(state.nex)) + nexBonus;
   const total = sources.reduce((sum, s) => sum + s.value, 0);
   
   return { total, base, sources };
@@ -200,7 +201,7 @@ function calculatePE(
   classStats: ClassBaseStats,
   bonuses: BreakdownSource[]
 ): StatBreakdown {
-  const nexMultiplier = Math.floor(state.nex / 5) - 1;
+  const nexMultiplier = getNexLevel(state.nex) - 1;
   const sources: BreakdownSource[] = [];
   
   // Base da classe
@@ -212,9 +213,9 @@ function calculatePE(
   
   // Presença
   sources.push({
-    name: 'Presença',
+    name: `Presença × ${Math.max(1, getNexLevel(state.nex))} patamares`,
     sourceType: 'attribute',
-    value: state.attributes.presence,
+    value: state.attributes.presence * Math.max(1, getNexLevel(state.nex)),
   });
   
   // Por NEX
@@ -230,7 +231,7 @@ function calculatePE(
   // Adicionar bônus de outras fontes
   sources.push(...bonuses);
   
-  const base = classStats.peBase + state.attributes.presence + nexBonus;
+  const base = classStats.peBase + state.attributes.presence * Math.max(1, getNexLevel(state.nex)) + nexBonus;
   const total = sources.reduce((sum, s) => sum + s.value, 0);
   
   return { total, base, sources };
@@ -244,7 +245,7 @@ function calculateSAN(
   classStats: ClassBaseStats,
   bonuses: BreakdownSource[]
 ): StatBreakdown {
-  const nexMultiplier = Math.floor(state.nex / 5) - 1;
+  const nexMultiplier = getNexLevel(state.nex) - 1;
   const sources: BreakdownSource[] = [];
   
   // Base da classe

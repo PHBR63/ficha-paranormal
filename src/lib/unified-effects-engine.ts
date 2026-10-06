@@ -1,3 +1,4 @@
+import { getNexLevel } from '@/lib/rules/nex-progression';
 // =====================================================
 // Sistema Unificado de Efeitos (SUE) - Motor Central
 // Ordem Paranormal RPG v1.3
@@ -1762,7 +1763,7 @@ export function consolidateEffects(
       result.resources.breakdown.push({ source, value: m.hpBonus, resource: 'hp' });
     }
     if (m.hpBonusPerNex) {
-      const bonus = m.hpBonusPerNex * Math.floor(context.nex / 5);
+      const bonus = m.hpBonusPerNex * getNexLevel(context.nex);
       result.resources.hpBonus += bonus;
       result.resources.breakdown.push({ source, value: bonus, resource: 'hp' });
     }
@@ -1771,7 +1772,7 @@ export function consolidateEffects(
       result.resources.breakdown.push({ source, value: m.peBonus, resource: 'pe' });
     }
     if (m.peBonusPerNex) {
-      const bonus = m.peBonusPerNex * Math.floor(context.nex / 5);
+      const bonus = m.peBonusPerNex * getNexLevel(context.nex);
       result.resources.peBonus += bonus;
       result.resources.breakdown.push({ source, value: bonus, resource: 'pe' });
     }
@@ -1798,7 +1799,7 @@ export function consolidateEffects(
     
     // === Bônus SAN por NEX (Vítima: Cicatrizes Psicológicas) ===
     if (m.sanityBonusPerNex) {
-      const bonus = m.sanityBonusPerNex * Math.floor(context.nex / 5);
+      const bonus = m.sanityBonusPerNex * getNexLevel(context.nex);
       result.resources.sanityBonus += bonus;
       result.resources.breakdown.push({ source, value: bonus, resource: 'sanity' });
     }

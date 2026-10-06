@@ -85,7 +85,7 @@ export function ParanormalPowerSelectModal({
         return false;
       }
     }
-    return canChoosePower(power, chosenPowerIds);
+    return canChoosePower(power, chosenPowerIds, affinityActive, elementalAffinity || undefined);
   };
 
   // Retorna informações detalhadas sobre o bloqueio do poder

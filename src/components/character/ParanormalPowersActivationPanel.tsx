@@ -119,7 +119,7 @@ function PowerCard({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
       className={cn(
-        'flex items-center gap-3 p-3 rounded-lg border transition-all',
+        'flex flex-wrap items-center gap-3 p-3 rounded-lg border transition-all',
         isUsed
           ? 'bg-muted/30 border-muted opacity-60'
           : isBonusActive
@@ -192,6 +192,10 @@ function PowerCard({
         </div>
       )}
 
+      {power.manualResolution && <details className="text-xs max-w-full">
+        <summary>Regra e aplicação manual</summary><p className="whitespace-normal break-words">{power.description}</p>
+        <p>Esta consulta não aplica efeito, não debita recursos e não registra usos. Confira a cena com o mestre.</p>
+      </details>}
       {/* Botão de uso */}
       <Button
         size="sm"
@@ -203,7 +207,7 @@ function PowerCard({
           !canUse && 'opacity-50'
         )}
       >
-        {isUsed ? 'Usada' : isBonusActive ? 'Ativo' : 'Usar'}
+        {power.manualResolution ? 'Conferir' : isUsed ? 'Usada' : isBonusActive ? 'Ativo' : 'Usar'}
       </Button>
 
       {/* Indicador de PE/PV insuficiente */}
@@ -238,7 +242,7 @@ export function ParanormalPowersActivationPanel(props: ParanormalPowersActivatio
     usageStates,
     canUse,
     getRemainingUses,
-    usePower,
+    usePower: consultPower,
     resetTurn,
     resetRound,
     resetScene,
@@ -290,13 +294,13 @@ export function ParanormalPowersActivationPanel(props: ParanormalPowersActivatio
                     remainingUses={getRemainingUses(power.id)}
                     canUse={canUse(power.id)}
                     isBonusActive={isBonusActive(power.id)}
-                    onUse={() => usePower(power.id)}
+                    onUse={() => consultPower(power.id)}
                   />
                 ))}
               </AnimatePresence>
 
               {/* Botões de Reset */}
-              <div className="flex flex-wrap gap-2 pt-2 border-t border-border/30">
+              <div hidden={availablePowers.every(power => power.manualResolution)} className="flex flex-wrap gap-2 pt-2 border-t border-border/30">
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button

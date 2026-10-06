@@ -1,3 +1,4 @@
+import { getNexLevel } from '@/lib/rules/nex-progression';
 /**
  * Hook de Setup de Rolagem de Combate
  * 
@@ -139,7 +140,7 @@ export function useCombatRollSetup({
    */
   const getProficiencyBonus = useCallback((proficiency?: string): number => {
     const halfProficiency = Math.floor(nex / 10);
-    const fullProficiency = Math.floor(nex / 5);
+    const fullProficiency = getNexLevel(nex);
     
     if (proficiency === 'simples' || proficiency === 'simple') {
       return halfProficiency;

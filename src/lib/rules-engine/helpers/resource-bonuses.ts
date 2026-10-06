@@ -1,3 +1,4 @@
+import { getNexLevel } from '@/lib/rules/nex-progression';
 /**
  * Helpers de cálculo de bônus de recursos
  * Ordem Paranormal RPG v1.3
@@ -122,7 +123,7 @@ function getOriginResourceBonuses(
   
   // Vítima: +1 SAN por 5% NEX
   if (normalizedOrigin === 'vitima') {
-    const sanBonus = Math.floor(context.nex / 5);
+    const sanBonus = getNexLevel(context.nex);
     san.push({
       name: 'Cicatrizes Psicológicas (Vítima)',
       sourceType: 'origin',
@@ -143,7 +144,7 @@ function getOriginResourceBonuses(
   
   // Desgarrado: +1 PV por 5% NEX
   if (normalizedOrigin === 'desgarrado') {
-    const hpBonus = Math.floor(context.nex / 5);
+    const hpBonus = getNexLevel(context.nex);
     hp.push({
       name: 'Calejado (Desgarrado)',
       sourceType: 'origin',

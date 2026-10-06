@@ -1,3 +1,4 @@
+import { getNexLevel } from '@/lib/rules/nex-progression';
 /**
  * Ordem Paranormal RPG v1.3 - Character Data (Atualizado com dados oficiais do livro)
  * Classes oficiais: Combatente, Especialista, Ocultista (15 trilhas no total)
@@ -866,8 +867,8 @@ export function calculateDerivedStats(
     return { hp: 0, pe: 0, san: 0 };
   }
 
-  const nexMultiplier = Math.floor(nex / 5) - 1;
-  const nexLevels = Math.floor(nex / 5); // Total de "níveis" (5% = 1, 10% = 2, etc.)
+  const nexMultiplier = getNexLevel(nex) - 1;
+  const nexLevels = getNexLevel(nex); // Total de "níveis" (5% = 1, 10% = 2, etc.)
 
   // PV = Base + VIG + (Multiplicador * (ProgressãoPV + VIG))
   let hp = classData.pvBase + vigor + Math.max(0, nexMultiplier) * (classData.pvPerNex + vigor);

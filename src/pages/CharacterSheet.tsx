@@ -1,3 +1,5 @@
+import { BaseRulesNotice } from '@/components/character/BaseRulesNotice';
+import { useConditionTurnApplication } from '@/hooks/character/useConditionTurnApplication';
 import { useCharacterResourceUpdate } from '@/hooks/character/useCharacterResourceUpdate';
 import { ritualRollHistory } from '@/lib/ritual-roll-history';
 import { confirmConditionReplacement } from '@/services/character-resource-service';
@@ -372,6 +374,15 @@ export default function CharacterSheet() {
   const activity = useCharacterActivity(id || '');
   const { addRoll: saveActivityRoll, hideHistory: hideActivityHistory, refresh: refreshActivity } = activity;
   const resourceUpdate = useCharacterResourceUpdate(id || '');
+  const prepareTurnApplication = useConditionTurnApplication(character, receipt => {
+    const payload = receipt.payload as Record<string, import('@/integrations/supabase/types').Json>;
+    const after = payload.after as { hp_current: number; pe_current: number; san_current: number; conditions: Character['conditions'] };
+    setHpCurrent(after.hp_current); setPeCurrent(after.pe_current); setSanCurrent(after.san_current);
+    setCharacter(previous => previous?.id === receipt.character_id ? { ...previous, ...after } : previous);
+    void activity.refetch();
+    // Em um retry, o recibo pode ser anterior a outra edição: recuperar também o estado atual.
+    void refetchCharacter().catch(() => toast({ title:'Turno confirmado', description:'Recarregue para conferir o estado atual.', variant:'destructive' }));
+  });
   const rollHistory = activityRollEntries(activity.events, id || '').map(entryDiceResult);
   
   // Modais
@@ -1824,7 +1835,7 @@ export default function CharacterSheet() {
     dismissIssue,
   } = useCharacterAudit(characterForAudit, user?.id || null, { 
     autoRun: true,
-    autoFixCritical: true, // Corrige problemas automaticamente
+    autoFixCritical: false, // A revisão não sobrescreve a ficha ao abri-la.
     onFixComplete: refetchCharacter,
   });
   
@@ -2759,6 +2770,7 @@ export default function CharacterSheet() {
                 onRoll={handleAttributeRoll}
               />
 
+              <BaseRulesNotice />
               {/* Gerenciador de condições */}
               <div className="sheet-panel p-4">
                 <h3 className="font-display text-sm tracking-wider text-primary mb-3 uppercase">
@@ -2766,6 +2778,8 @@ export default function CharacterSheet() {
                 </h3>
                 <ConditionManager
                   conditions={parsedConditions}
+                  vigor={character.vigor}
+                  prepareTurnApplication={prepareTurnApplication}
                   onConditionsChange={async (newConditions) => {
                     const serializedConditions = newConditions.map(serializeCondition);
                     // Só atualiza a tela depois do recibo do servidor; conflito preserva o estado anterior.

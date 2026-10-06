@@ -3167,8 +3167,8 @@ describe('combatAdvanced - Integração com outras mecânicas', () => {
     const context = createTestContext({ nex: 99, hpCurrent: 10, hpMax: 30 });
     const result = consolidateEffects(effects, context);
     
-    // HP bonus per NEX (99/5 = 19)
-    expect(result.resources.hpBonus).toBe(19);
+    // NEX 99: vigésimo patamar
+    expect(result.resources.hpBonus).toBe(20);
     
     // Block Vigor
     expect(result.combatAdvanced.blockVigorBonus.enabled).toBe(true);
