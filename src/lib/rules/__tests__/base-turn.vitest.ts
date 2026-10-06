@@ -55,8 +55,8 @@ describe('Livro Base — situações de início de turno', () => {
     expect(result.effects).toEqual([]); expect(result.notices).toHaveLength(1);
   });
   it('PV zero inicia Morrendo uma vez; cura não estabiliza; limite de Perturbado é estrito', () => {
-    expect(checkAutoConditions(0, 20, 30, 30, []).conditionsToAdd).toEqual(['inconsciente', 'morrendo']);
-    expect(checkAutoConditions(0, 20, 30, 30, ['inconsciente', 'morrendo']).conditionsToAdd).toEqual([]);
+    expect(checkAutoConditions(0, 20, 30, 30, []).conditionsToAdd).toEqual(['machucado', 'inconsciente', 'morrendo']);
+    expect(checkAutoConditions(0, 20, 30, 30, ['machucado', 'inconsciente', 'morrendo']).conditionsToAdd).toEqual([]);
     expect(checkAutoConditions(5, 20, 30, 30, ['morrendo']).conditionsToRemove).not.toContain('morrendo');
     expect(checkAutoConditions(20, 20, 15, 30, []).conditionsToAdd).not.toContain('perturbado');
     expect(checkAutoConditions(20, 20, 14, 30, []).conditionsToAdd).toContain('perturbado');

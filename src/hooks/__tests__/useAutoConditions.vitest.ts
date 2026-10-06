@@ -104,10 +104,10 @@ describe('checkAutoConditions', () => {
       expect(result.conditionsToAdd).not.toContain('perturbado');
     });
 
-    it('não deve adicionar Perturbado se já tem Enlouquecendo', () => {
+    it('cura que encerra Enlouquecendo indica Perturbado se SAN ainda está abaixo da metade', () => {
       const result = checkAutoConditions(20, 20, 5, 30, ['enlouquecendo']);
       
-      expect(result.conditionsToAdd).not.toContain('perturbado');
+      expect(result.conditionsToAdd).toContain('perturbado');
     });
 
     it('deve remover Perturbado quando SAN >= metade', () => {
@@ -175,20 +175,20 @@ describe('processDyingCounter', () => {
 });
 
 describe('reduceDyingCounterFromDamage', () => {
-  it('deve reduzir contador ao receber dano', () => {
+  it('dano recebido não conta como início de turno morrendo', () => {
     const result = reduceDyingCounterFromDamage(3, 5);
     
-    expect(result.newCounter).toBe(2);
+    expect(result.newCounter).toBe(3);
     expect(result.isDead).toBe(false);
     expect(result.message).toContain('Dano enquanto morrendo');
   });
 
-  it('deve resultar em morte se dano reduz contador a 0', () => {
+  it('dano não antecipa a morte quando resta um início de turno', () => {
     const result = reduceDyingCounterFromDamage(1, 10);
     
-    expect(result.newCounter).toBe(0);
-    expect(result.isDead).toBe(true);
-    expect(result.message).toContain('MORTE');
+    expect(result.newCounter).toBe(1);
+    expect(result.isDead).toBe(false);
+    expect(result.message).toContain('não avança');
   });
 
   it('não deve reduzir contador sem dano', () => {

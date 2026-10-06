@@ -30,7 +30,7 @@ describe('Pedido transacional de início de turno',() => {
     mocks.rpc.mockResolvedValue({data:{},error:null});
     const {result}=renderHook(() => useConditionTurnApplication({...character,hp_current:0,conditions:[]},vi.fn()));
     await result.current(prepareConditionTurn([],2))();
-    expect(mocks.rpc.mock.calls[0][1].p_conditions).toEqual([]);
+    expect(mocks.rpc.mock.calls[0][1].p_conditions.map((entry:{id:string}) => entry.id)).toEqual(['machucado']);
   });
   it('repete UUID/snapshot originais após falha, sem atualizar a ficha antes do recibo',async () => {
     mocks.rpc.mockResolvedValueOnce({data:null,error:{message:'Sem conexão'}}).mockResolvedValue({data:{},error:null});

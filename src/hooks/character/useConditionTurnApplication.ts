@@ -24,11 +24,10 @@ export function useConditionTurnApplication(character: TurnCharacterSnapshot | n
     const amount = validateTurnResolution(resolution);
     const hp = Math.max(0, character.hp_current - amount);
     const next = conditionsAfterTurn(parseConditions(character.conditions), resolution);
-    // Sem perda de PV, apenas resolvemos a condição. Um teste bem-sucedido não
-    // pode recolocar Morrendo numa ficha estabilizada que continua com zero PV.
-    const newConditions = amount > 0
-      ? processResourceChange(hp, character.hp_max, character.san_current, character.san_max, next, false).newConditions
-      : next;
+    // O snapshot anterior preserva estabilização/acalmamento, e hpLoss identifica
+    // nova perda mesmo em zero PV. Machucado acompanha o saldo em ambos os casos.
+    const newConditions = processResourceChange(hp, character.hp_max, character.san_current, character.san_max, next, false,
+      { hp: character.hp_current, san: character.san_current, hpLoss: amount }).newConditions;
     const operationId = crypto.randomUUID();
     const characterId = character.id;
     const args = { p_operation_id: operationId, p_character_id: characterId,
