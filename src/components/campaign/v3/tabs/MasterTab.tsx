@@ -1,7 +1,7 @@
 /**
  * MasterTab - Aba do mestre da campanha v3 (completa)
  * 
- * Sub-abas: Jogadores | Combate | NPCs | Áudio | Handouts | Macros | Bônus
+ * Sub-abas: Fichas | Combate | NPCs | Áudio | Handouts | Macros | Bônus
  * 
  * @module components/campaign/v3/tabs/MasterTab
  */
@@ -95,8 +95,9 @@ export const MasterTab = memo(function MasterTab({
   const [activeSubTab, setActiveSubTab] = useState<MasterSubTab>('players');
   const [bulkDamageOpen, setBulkDamageOpen] = useState(false);
   
-  // Filtra jogadores com personagem
-  const playersWithCharacter = members.filter(m => m.characters && m.role !== 'master');
+  // O papel do membro não invalida uma ficha vinculada. O servidor continua
+  // conferindo a autorização do mestre em cada ajuste individual.
+  const membersWithCharacter = members.filter(m => m.characters);
 
   // Handler para dano em área
   const handleBulkDamage = useCallback(async (characterIds: string[], damage: number) => {
@@ -131,7 +132,7 @@ export const MasterTab = memo(function MasterTab({
           <TabsList className="bg-transparent h-9">
             <TabsTrigger value="players" className="gap-1.5 text-xs">
               <Swords className="h-3.5 w-3.5" />
-              Jogadores
+              Fichas
             </TabsTrigger>
             <TabsTrigger value="combat" className="gap-1.5 text-xs">
               <SwordIcon weight="duotone" className="h-3.5 w-3.5" />
@@ -160,12 +161,12 @@ export const MasterTab = memo(function MasterTab({
           </TabsList>
         </div>
 
-        {/* Jogadores */}
+        {/* Fichas vinculadas */}
         <TabsContent value="players" className="flex-1 m-0 min-h-0">
           <ScrollArea className="h-full">
             <div className="p-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-                {playersWithCharacter.map((member) => (
+                {membersWithCharacter.map((member) => (
                   <PlayerControlCard
                     key={member.id}
                     member={member}
@@ -180,10 +181,10 @@ export const MasterTab = memo(function MasterTab({
                 ))}
               </div>
 
-              {playersWithCharacter.length === 0 && (
+              {membersWithCharacter.length === 0 && (
                 <div className="text-center py-8 text-muted-foreground">
                   <Users className="h-10 w-10 mx-auto mb-3 opacity-50" />
-                  <p className="text-sm">Nenhum jogador com personagem</p>
+                  <p className="text-sm">Nenhuma ficha vinculada à campanha</p>
                 </div>
               )}
             </div>
