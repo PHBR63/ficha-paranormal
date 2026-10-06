@@ -55,10 +55,10 @@ export const OfflineBanner = React.memo(function OfflineBanner({
             className
           )}
         >
-          <div className="flex items-center justify-center gap-3 px-4 py-2">
+          <div role="status" className="flex flex-wrap items-center justify-center gap-3 px-4 py-2">
             <WifiOff className="h-4 w-4 shrink-0" />
             <span className="text-sm font-medium">
-              Você está offline. Alterações serão salvas localmente.
+              Você está offline. Alterações só ficam confirmadas após resposta do servidor. Confira as pendências no histórico ao reconectar.
             </span>
             {showRetryButton && (
               <Button
