@@ -81,6 +81,15 @@ describe('Cena, avisos e histórico visíveis', () => {
     expect(screen.queryByText(/A cena ou o combate mudou em outra aba/)).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Confirmando no servidor...' })).toBeDisabled();
   });
+  it('aguarda a confirmação local mesmo se o hook já recebeu a nova cena e liberou saving', () => {
+    const client = new QueryClient();
+    const combat = controller({ endScene: vi.fn(() => new Promise<boolean>(() => {})) });
+    const view = render(<QueryClientProvider client={client}><CampaignScenePanel campaignId="campaign" combat={combat} isMaster /></QueryClientProvider>);
+    fireEvent.click(screen.getByRole('button', { name: 'Encerrar cena' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar encerramento' }));
+    view.rerender(<QueryClientProvider client={client}><CampaignScenePanel campaignId="campaign" combat={{ ...combat, sceneNumber: 5, saving: false, sceneEndPending: false }} isMaster /></QueryClientProvider>);
+    expect(screen.queryByText(/A cena ou o combate mudou em outra aba/)).not.toBeInTheDocument();
+  });
   it('histórico paginado mantém ordem e carrega apenas cenas anteriores', async () => {
     fake.history.mockResolvedValueOnce({ entries: [{ operation_id: 'a', scene_number: 3, ended_combat: true, created_at: '2026-10-06T20:00:00Z' }], nextCursor: 3 });
     fake.history.mockResolvedValueOnce({ entries: [{ operation_id: 'b', scene_number: 2, ended_combat: false, created_at: '2026-10-06T19:00:00Z' }], nextCursor: undefined });

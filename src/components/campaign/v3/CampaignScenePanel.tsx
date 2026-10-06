@@ -14,6 +14,7 @@ interface CampaignScenePanelProps {
 /** Cena confirmada e recibos paginados; o mestre confirma o encerramento no servidor. */
 export function CampaignScenePanel({ campaignId, combat, isMaster = false }: CampaignScenePanelProps) {
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [submittedLocally, setSubmittedLocally] = useState(false);
   const [confirmation, setConfirmation] = useState({ sceneNumber: combat.sceneNumber, endCombat: combat.state.active });
   const [historyOpen, setHistoryOpen] = useState(false);
   const history = useInfiniteQuery({
@@ -26,13 +27,22 @@ export function CampaignScenePanel({ campaignId, combat, isMaster = false }: Cam
   if (combat.loading) return null;
   const confirmationChanged = confirmation.sceneNumber !== combat.sceneNumber || confirmation.endCombat !== combat.state.active;
   const title = confirmation.endCombat ? `Encerrar combate e cena ${confirmation.sceneNumber}?` : `Encerrar a cena ${confirmation.sceneNumber}?`;
+
+  /** Conserva a autoria local até fechar o diálogo, incluindo a animação de saída. */
+  const confirmSceneEnd = () => {
+    setSubmittedLocally(true);
+    void combat.endScene(confirmation.endCombat, confirmation.sceneNumber).then(saved => {
+      if (saved) setConfirmOpen(false);
+      else setSubmittedLocally(false);
+    });
+  };
   return (
     <section aria-label="Cena de regras" className="space-y-2 rounded-lg border p-3 min-w-0">
       <div className="flex flex-wrap items-center gap-2 justify-between">
         <p role="status" className="text-sm font-medium">{combat.error ? 'Cena aguardando conferência' : `Cena ${combat.sceneNumber}`}</p>
         <div className="flex flex-wrap gap-2">
           <Button size="sm" variant="outline" onClick={() => setHistoryOpen(true)}>Histórico de cenas</Button>
-          {isMaster && !combat.sceneEndPending && <Button size="sm" disabled={combat.saving || !!combat.error} onClick={() => { setConfirmation({ sceneNumber: combat.sceneNumber, endCombat: combat.state.active }); setConfirmOpen(true); }}>{combat.state.active ? 'Encerrar combate e cena' : 'Encerrar cena'}</Button>}
+          {isMaster && !combat.sceneEndPending && <Button size="sm" disabled={combat.saving || !!combat.error} onClick={() => { setSubmittedLocally(false); setConfirmation({ sceneNumber: combat.sceneNumber, endCombat: combat.state.active }); setConfirmOpen(true); }}>{combat.state.active ? 'Encerrar combate e cena' : 'Encerrar cena'}</Button>}
           {isMaster && combat.sceneEndPending && <Button size="sm" disabled={combat.saving} onClick={() => { void combat.endScene(combat.state.active); }}>Conferir encerramento pendente</Button>}
         </div>
       </div>
@@ -44,10 +54,10 @@ export function CampaignScenePanel({ campaignId, combat, isMaster = false }: Cam
         <DialogContent className="max-h-[85dvh] overflow-y-auto">
           <DialogHeader><DialogTitle>{title}</DialogTitle><DialogDescription>A próxima cena será aberta e o encerramento ficará salvo no servidor. Confira manualmente efeitos, limites de uso e contadores desta cena.</DialogDescription></DialogHeader>
           {combat.error && <p role="alert">{combat.error}</p>}
-          {confirmationChanged && !combat.saving && !combat.sceneEndPending && <p role="alert">A cena ou o combate mudou em outra aba. Cancele e confira antes de abrir uma nova confirmação.</p>}
+          {confirmationChanged && !submittedLocally && !combat.saving && !combat.sceneEndPending && <p role="alert">A cena ou o combate mudou em outra aba. Cancele e confira antes de abrir uma nova confirmação.</p>}
           <div className="flex flex-wrap gap-2 justify-end">
             <Button variant="outline" disabled={combat.saving} onClick={() => setConfirmOpen(false)}>Cancelar</Button>
-            <Button disabled={combat.saving || confirmationChanged} onClick={() => { void combat.endScene(confirmation.endCombat, confirmation.sceneNumber).then(saved => { if (saved) setConfirmOpen(false); }); }}>{combat.saving ? 'Confirmando no servidor...' : 'Confirmar encerramento'}</Button>
+            <Button disabled={combat.saving || submittedLocally || confirmationChanged} onClick={confirmSceneEnd}>{combat.saving || submittedLocally ? 'Confirmando no servidor...' : 'Confirmar encerramento'}</Button>
           </div>
         </DialogContent>
       </Dialog>

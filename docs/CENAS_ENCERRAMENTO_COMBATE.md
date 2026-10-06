@@ -15,6 +15,8 @@ a cena; cenas sem combate são encerradas manualmente pelo mestre. Uma cena
   ou mudar a atividade do combate, a confirmação fica bloqueada para revisão.
 - Enquanto a operação local está salvando/conferindo, o retorno Realtime não é
   atribuído a outra aba. A tela aguarda a confirmação ou informa o erro real.
+- O diálogo também conserva a autoria local durante o fechamento/animação,
+  mesmo quando o hook já recebeu a nova cena e liberou o indicador de gravação.
 - Nenhum sucesso é anunciado antes da resposta do servidor. Resposta de rede
   incerta conserva UUID/argumentos durante a montagem do hook, bloqueia outras
   gravações e oferece conferir a mesma operação. Reabrir a página consulta o
