@@ -25,12 +25,14 @@ import type { CampaignMemberV2 } from '@/hooks/campaign/useCampaignData';
 import type { CampaignSession } from '@/hooks/campaign/useCampaignRealtime';
 import type { UserPresence } from '@/hooks/campaign/useCampaignPresence';
 import type { CampaignCombatController } from '@/hooks/campaign/useCampaignCombat';
+import { CampaignScenePanel } from '../CampaignScenePanel';
 
 // =====================================================
 // TIPOS
 // =====================================================
 
 interface PanelTabProps {
+  campaignId?: string;
   combat?: CampaignCombatController;
   /** Membros da campanha */
   members: CampaignMemberV2[];
@@ -366,6 +368,7 @@ const AgentDossierCard = memo(function AgentDossierCard({
 // =====================================================
 
 export const PanelTab = memo(function PanelTab({
+  campaignId,
   members,
   activeSession,
   presenceMap,
@@ -402,6 +405,7 @@ export const PanelTab = memo(function PanelTab({
       {combat && (
         <Card className="m-4 border-primary/30">
           <CardContent className="p-4 space-y-2">
+            {campaignId && <CampaignScenePanel key={campaignId} campaignId={campaignId} combat={combat} />}
             <h2 className="text-sm font-semibold">Combate da campanha</h2>
             {combat.error ? <p role="alert">{combat.error}</p> : combat.loading ? <p role="status">Carregando combate...</p> : combat.state.active ? (
               <>

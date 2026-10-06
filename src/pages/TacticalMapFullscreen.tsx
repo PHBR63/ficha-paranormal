@@ -395,6 +395,7 @@ export default function TacticalMapFullscreen() {
         {/* Painel lateral do mestre (overlay sobre o mapa) */}
         {isMaster && (
           <MasterMapPanel
+            campaignId={campaignId || ''}
             combat={campaignData.schemaVersion === 'v2' ? combat : undefined}
             open={masterPanelOpen}
             onToggle={toggleMasterPanel}

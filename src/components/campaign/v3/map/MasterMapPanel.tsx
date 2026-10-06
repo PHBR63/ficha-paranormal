@@ -31,6 +31,7 @@ import type { CampaignCombatController } from '@/hooks/campaign/useCampaignComba
 type MasterPanelTab = 'players' | 'combat';
 
 interface MasterMapPanelProps {
+  campaignId: string;
   combat?: CampaignCombatController;
   /** Indica se o painel está aberto */
   open: boolean;
@@ -83,6 +84,7 @@ const MasterToggleButton = memo(function MasterToggleButton({
 });
 
 export const MasterMapPanel = memo(function MasterMapPanel({
+  campaignId,
   open,
   onToggle,
   members,
@@ -223,7 +225,7 @@ export const MasterMapPanel = memo(function MasterMapPanel({
               <TabsContent value="combat" className="flex-1 m-0 min-h-0">
                 <ScrollArea className="h-full">
                   <div className="p-3">
-                    {combat ? <CombatTracker members={members} combat={combat} /> : <p>O combate compartilhado está disponível para campanhas da versão atual.</p>}
+                    {combat ? <CombatTracker campaignId={campaignId} members={members} combat={combat} /> : <p>O combate compartilhado está disponível para campanhas da versão atual.</p>}
                   </div>
                 </ScrollArea>
               </TabsContent>

@@ -12,23 +12,23 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Sword as SwordIcon,
   Play as PlayIcon,
-  Stop as StopIcon,
   SkipForward as SkipForwardIcon,
   ArrowCounterClockwise as ArrowCounterClockwiseIcon,
-  DotsSixVertical as DotsSixVerticalIcon,
 } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
+import { CampaignScenePanel } from '../CampaignScenePanel';
 import type { CampaignMemberV2 } from '@/hooks/campaign/useCampaignData';
 import type { CampaignCombatController } from '@/hooks/campaign/useCampaignCombat';
-import { advanceCombatTurn, emptyCampaignCombat, removeCombatant, sortCombatants, type CombatantEntry } from '@/lib/campaign-combat';
+import { advanceCombatTurn, removeCombatant, sortCombatants, type CombatantEntry } from '@/lib/campaign-combat';
 
 interface CombatTrackerProps {
+  campaignId: string;
   members: CampaignMemberV2[];
   combat: CampaignCombatController;
   className?: string;
@@ -41,6 +41,7 @@ function isValidInitiative(value: string): boolean {
 }
 
 export const CombatTracker = memo(function CombatTracker({
+  campaignId,
   members,
   combat,
   className,
@@ -73,11 +74,6 @@ export const CombatTracker = memo(function CombatTracker({
 
     void updateCombat(() => ({ active: true, round: 1, currentTurnIndex: 0, combatants: entries }));
   }, [members, updateCombat]);
-
-  // Encerra combate
-  const handleEndCombat = useCallback(() => {
-    void updateCombat(emptyCampaignCombat);
-  }, [updateCombat]);
 
   // Próximo turno
   const handleNextTurn = useCallback(() => {
@@ -115,6 +111,7 @@ export const CombatTracker = memo(function CombatTracker({
   if (combat.loading) return <p role="status">Carregando combate...</p>;
   if (combat.error) return (
     <div role="alert" className="space-y-3">
+      <CampaignScenePanel key={campaignId} campaignId={campaignId} combat={combat} isMaster />
       <p>{combat.error}</p>
       <Button onClick={() => { void combat.reload(); }}>Recarregar combate</Button>
     </div>
@@ -124,9 +121,10 @@ export const CombatTracker = memo(function CombatTracker({
   if (!combatActive) {
     return (
       <div className={cn('flex flex-col items-center justify-center py-12', className)}>
+        <CampaignScenePanel key={campaignId} campaignId={campaignId} combat={combat} isMaster />
         <SwordIcon weight="duotone" className="h-12 w-12 text-muted-foreground/50 mb-4" />
         <p className="text-sm text-muted-foreground mb-4">Nenhum combate em andamento</p>
-        <Button disabled={combat.saving} onClick={handleStartCombat} className="gap-2">
+        <Button disabled={combat.saving || combat.sceneEndPending} onClick={handleStartCombat} className="gap-2 mt-4">
           <PlayIcon weight="duotone" className="h-4 w-4" />
           Iniciar Combate
         </Button>
@@ -135,7 +133,9 @@ export const CombatTracker = memo(function CombatTracker({
   }
 
   return (
-    <fieldset disabled={combat.saving} className={cn('space-y-4 min-w-0', className)}>
+    <div className={cn('space-y-4 min-w-0', className)}>
+      <CampaignScenePanel key={campaignId} campaignId={campaignId} combat={combat} isMaster />
+      <fieldset disabled={combat.saving || combat.sceneEndPending} className="space-y-4 min-w-0">
       <p role="status" className="text-xs text-muted-foreground">{combat.saving ? 'Salvando combate...' : combat.connected ? 'Combate sincronizado' : 'Reconectando ao combate...'}</p>
       {/* Header do combate */}
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -168,15 +168,6 @@ export const CombatTracker = memo(function CombatTracker({
             aria-label="Reiniciar ordem de combate"
           >
             <ArrowCounterClockwiseIcon weight="duotone" className="h-3.5 w-3.5" />
-          </Button>
-          <Button
-            variant="destructive"
-            size="sm"
-            className="h-7 text-xs gap-1"
-            onClick={handleEndCombat}
-          >
-            <StopIcon weight="duotone" className="h-3.5 w-3.5" />
-            Encerrar
           </Button>
         </div>
       </div>
@@ -296,6 +287,7 @@ export const CombatTracker = memo(function CombatTracker({
         </Button>
       </div>
     </fieldset>
+    </div>
   );
 });
 
