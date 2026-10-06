@@ -37,6 +37,25 @@ describe.each([
   ['desktop', RitualEffectWizard],
   ['mobile', MobileRitualEffectWizard],
 ] as const)('Fórmula no wizard %s', (_name, Wizard) => {
+  it('apresenta cura rolada sem alegar recuperação antes de confirmar aplicação', async () => {
+    vi.useFakeTimers();
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+    let reject!: (reason: Error) => void;
+    const onApplyHealing = vi.fn(() => new Promise<void>((_resolve, fail) => { reject = fail; }));
+    render(<Wizard open onOpenChange={vi.fn()} ritual={unifiedToLegacy(getRitualById('cicatrizacao')!)}
+      enhancements={[]} peCost={1} onApplyHealing={onApplyHealing} healingBonusFromOrigin={3} />);
+    fireEvent.click(screen.getByRole('button', { name: /Processar Efeitos/ }));
+    await act(async () => { await vi.advanceTimersByTimeAsync(600); });
+    expect(screen.getByText('PV de cura rolados')).toBeInTheDocument();
+    expect(screen.queryByText('PV Recuperados')).not.toBeInTheDocument();
+    expect(onApplyHealing).not.toHaveBeenCalled();
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: /Continuar/ })); });
+    expect(screen.getByText('Aguardando confirmação do servidor…')).toBeInTheDocument();
+    await act(async () => { reject(new Error('Servidor indisponível')); });
+    expect(screen.getByRole('alert')).toBeInTheDocument();
+    expect(screen.getByText('PV de cura rolados')).toBeInTheDocument();
+    expect(screen.queryByText('PV Recuperados')).not.toBeInTheDocument();
+  });
   it.each(['anula', 'parcial'] as const)('sucesso %s evita condições sem chamar aplicação', async resistanceEffect => {
     vi.spyOn(legacyEffects, 'getActiveRitualEffect').mockReturnValue({
       resistance: { type: 'vontade', effect: resistanceEffect, dt: 20 },

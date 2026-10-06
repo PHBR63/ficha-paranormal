@@ -434,7 +434,7 @@ const DamageStep = memo(function DamageStep({
                   {result.total}
                 </span>
                 <span className="text-xs text-muted-foreground mt-0.5 capitalize">
-                  {hasDamage ? `Dano de ${result.damageType}` : hasHealing ? 'PV Recuperados' : 'PV Temporários'}
+                  {hasDamage ? `Dano de ${result.damageType}` : hasHealing ? 'PV de cura rolados' : 'PV temporários calculados'}
                   {result.ignoresRD && ' (ignora RD)'}
                 </span>
               </motion.div>
@@ -589,10 +589,10 @@ const BuffsStep = memo(function BuffsStep({
       <div className="p-3 rounded-lg bg-warning/10 border border-warning/30">
         <div className="flex items-center gap-2 mb-1">
           <Sparkles className="w-4 h-4 text-warning" />
-          <span className="font-medium text-sm">Buffs Ativos</span>
+          <span className="font-medium text-sm">Bônus previstos</span>
         </div>
         <p className="text-xs text-muted-foreground">
-          Ativos até o fim da cena
+          Confira os bônus e sua duração. A aplicação precisa ser confirmada.
         </p>
       </div>
 
@@ -905,6 +905,7 @@ export const MobileRitualEffectWizard = memo(function MobileRitualEffectWizard({
               size="icon"
               className="h-8 w-8"
               onClick={() => onOpenChange(false)}
+              aria-label="Fechar efeitos do ritual"
             >
               <X className="w-4 h-4" />
             </Button>

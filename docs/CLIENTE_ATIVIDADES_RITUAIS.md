@@ -61,3 +61,13 @@ O painel agora oferece todo o histórico/últimos 7 dias/últimos 30 dias e sess
 A primeira tentativa conserva UUID, condições e estado esperado por ficha e valores de recursos. Uma resposta perdida repete o pedido integral mesmo que condições automáticas recebam novo horário. Conflito, permissão negada ou entrada inválida libera novo pedido, exigindo que a tela recarregue o estado adequado. Um clique concorrente é bloqueado antes de enviar outra operação. A resposta de uma ficha anteriormente aberta não confirma alteração na nova ficha.
 
 `src/hooks/character/__tests__/useCharacterResourceUpdate.test.tsx`: três cenários passaram — clique duplicado pendente, retry com mesmo UUID/snapshot/condições, e conflito sem sucesso local com novo pedido após atualização. Total de cenários novos do cliente: 42.
+
+## Conferência final do modal compartilhado de perícias
+
+`src/components/dice/DiceRollModal.tsx` separa treinamento de outros modificadores no DTO enviado ao histórico, mantendo o total já calculado e os dados extras. Quando há origem numérica `skill`, a mesma soma determina o requisito de treinamento; sem origem explícita, mantém o agregado legado. O nível explícito continua prioritário. A fórmula visual apresenta ambos os valores.
+
+Poderes `combat_bonus`, como Ataque Especial, não entram na interface, nos efeitos ativados nem no custo de PE deste modal de perícias. O modal de combate permanece responsável por esses poderes.
+
+A implementação existente de Eclético no catálogo/bridge estabelece substituição do treinamento por 5/10/15; o executor ignorava esse valor. Agora troca somente o treinamento, conserva bônus externos conhecidos e mostra o treinamento efetivamente utilizado. O custo de PE continua o da opção selecionada, sem cobrança adicional criada por esta correção.
+
+`src/components/dice/__tests__/DiceRollModalBonusOrigins.test.tsx` cobre nove cenários com modal montado: origens 5+5, penalidades/dados extras, agregado legado, exclusão de Ataque Especial em Iniciativa/Luta, requisitos do Eclético e substituição real com preservação de poder externo e cobrança única de PE. Não altera a política personalizada de sucesso crítico.

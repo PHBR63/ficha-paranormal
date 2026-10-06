@@ -60,6 +60,8 @@ export const CampaignHeader = memo(function CampaignHeader({
               size="icon"
               className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
               onClick={() => navigate('/campaigns')}
+              aria-label="Voltar para campanhas"
+              title="Voltar para campanhas"
             >
               <ArrowLeft className="h-4 w-4" />
             </Button>
@@ -134,6 +136,8 @@ export const CampaignHeader = memo(function CampaignHeader({
             size="icon"
             className="h-8 w-8 text-muted-foreground hover:text-foreground"
             onClick={onOpenSettings}
+            aria-label="Abrir configurações da campanha"
+            title="Abrir configurações da campanha"
           >
             <Settings className="h-4 w-4" />
           </Button>

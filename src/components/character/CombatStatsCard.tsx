@@ -3,7 +3,7 @@
  * Mostra HP, PE, SAN em um layout compacto e visual
  */
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Heart, Zap, Brain, Edit2, Check, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -19,7 +19,7 @@ interface CombatStatsCardProps {
   peMax: number;
   sanCurrent: number;
   sanMax: number;
-  onStatsChange?: (stats: { hp: number; pe: number; san: number }) => void;
+  onStatsChange?: (stats: { hp: number; pe: number; san: number }) => void | boolean | Promise<void | boolean>;
   className?: string;
 }
 
@@ -37,6 +37,9 @@ export function CombatStatsCard({
   const [tempHp, setTempHp] = useState(hpCurrent);
   const [tempPe, setTempPe] = useState(peCurrent);
   const [tempSan, setTempSan] = useState(sanCurrent);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const saveLock = useRef(false);
 
   // Percentuais para animações (clampados entre 0 e 100)
   const hpPercent = Math.min(100, Math.max(0, (hpCurrent / hpMax) * 100));
@@ -56,13 +59,21 @@ export function CombatStatsCard({
   const isUnconscious = displayHp === 0; // Inconsciente
   const isMentalCollapse = displaySan === 0; // Colapso mental
 
-  const handleSave = () => {
-    onStatsChange?.({
-      hp: Math.max(0, Math.min(hpMax, tempHp)),
-      pe: Math.max(0, Math.min(peMax, tempPe)),
-      san: Math.max(0, Math.min(sanMax, tempSan)),
-    });
-    setEditMode(false);
+  // Fecha somente após a gravação confirmada; valores inválidos não são ajustados silenciosamente.
+  const handleSave = async () => {
+    if (saveLock.current || !onStatsChange) return;
+    if ([[tempHp, hpMax], [tempPe, peMax], [tempSan, sanMax]].some(([value, max]) => !Number.isInteger(value) || value < 0 || value > max)) {
+      setSaveError('Informe valores inteiros entre zero e o máximo de cada recurso.');
+      return;
+    }
+    saveLock.current = true; setSaving(true); setSaveError(null);
+    try {
+      const confirmed = await onStatsChange({ hp: tempHp, pe: tempPe, san: tempSan });
+      if (confirmed === false) throw new Error('Gravação não confirmada.');
+      setEditMode(false);
+    }
+    catch { setSaveError('Não foi possível confirmar os recursos. Confira a conexão e tente novamente.'); }
+    finally { saveLock.current = false; setSaving(false); }
   };
 
   const handleCancel = () => {
@@ -73,6 +84,7 @@ export function CombatStatsCard({
   };
 
   const startEdit = () => {
+    setSaveError(null);
     setTempHp(hpCurrent);
     setTempPe(peCurrent);
     setTempSan(sanCurrent);
@@ -137,6 +149,8 @@ export function CombatStatsCard({
               size="icon" 
               className="h-6 w-6"
               onClick={handleSave}
+              aria-label="Salvar recursos"
+              disabled={saving}
             >
               <Check className="w-3 h-3 text-primary" />
             </Button>
@@ -145,6 +159,8 @@ export function CombatStatsCard({
               size="icon" 
               className="h-6 w-6"
               onClick={handleCancel}
+              aria-label="Cancelar edição de recursos"
+              disabled={saving}
             >
               <X className="w-3 h-3 text-destructive" />
             </Button>
@@ -155,25 +171,32 @@ export function CombatStatsCard({
             size="icon" 
             className="h-6 w-6"
             onClick={startEdit}
+            aria-label="Editar recursos"
+            disabled={!onStatsChange}
           >
             <Edit2 className="w-3 h-3 text-muted-foreground" />
           </Button>
         )}
       </div>
 
+      {saveError && <p role="alert" className="text-sm text-destructive">{saveError}</p>}
+      {saving && <p role="status" className="text-sm text-muted-foreground">Salvando recursos...</p>}
+
       {/* HP - Pontos de Vida */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <HeartbeatIcon hpPercent={hpPercent} size="md" />
-            <span className="text-sm font-medium">HP</span>
+            <span className="text-sm font-medium">PV</span>
           </div>
           {editMode ? (
             <div className="flex items-center gap-1">
               <Input
                 type="number"
-                value={tempHp}
-                onChange={(e) => setTempHp(parseInt(e.target.value) || 0)}
+                value={Number.isNaN(tempHp) ? '' : tempHp}
+                onChange={(e) => setTempHp(e.target.value === '' ? NaN : Number(e.target.value))}
+                aria-label="PV atual"
+                disabled={saving}
                 className="w-16 h-7 text-center text-sm"
                 min={0}
                 max={hpMax}
@@ -215,8 +238,10 @@ export function CombatStatsCard({
             <div className="flex items-center gap-1">
               <Input
                 type="number"
-                value={tempPe}
-                onChange={(e) => setTempPe(parseInt(e.target.value) || 0)}
+                value={Number.isNaN(tempPe) ? '' : tempPe}
+                onChange={(e) => setTempPe(e.target.value === '' ? NaN : Number(e.target.value))}
+                aria-label="PE atual"
+                disabled={saving}
                 className="w-16 h-7 text-center text-sm"
                 min={0}
                 max={peMax}
@@ -261,8 +286,10 @@ export function CombatStatsCard({
             <div className="flex items-center gap-1">
               <Input
                 type="number"
-                value={tempSan}
-                onChange={(e) => setTempSan(parseInt(e.target.value) || 0)}
+                value={Number.isNaN(tempSan) ? '' : tempSan}
+                onChange={(e) => setTempSan(e.target.value === '' ? NaN : Number(e.target.value))}
+                aria-label="SAN atual"
+                disabled={saving}
                 className="w-16 h-7 text-center text-sm"
                 min={0}
                 max={sanMax}

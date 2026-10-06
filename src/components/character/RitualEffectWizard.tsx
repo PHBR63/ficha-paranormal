@@ -431,7 +431,7 @@ function DamageStep({
                   {result.total}
                 </span>
                 <span className="text-sm text-muted-foreground mt-1 capitalize">
-                  {hasDamage ? `Dano de ${result.damageType}` : hasHealing ? 'PV Recuperados' : 'PV Temporários'}
+                  {hasDamage ? `Dano de ${result.damageType}` : hasHealing ? 'PV de cura rolados' : 'PV temporários calculados'}
                   {result.ignoresRD && ' (ignora RD)'}
                 </span>
               </motion.div>
@@ -559,10 +559,10 @@ function BuffsStep({
       <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/30">
         <div className="flex items-center gap-2 mb-2">
           <Sparkles className="w-5 h-5 text-amber-400" />
-          <span className="font-medium">Buffs Aplicados</span>
+          <span className="font-medium">Bônus previstos</span>
         </div>
         <p className="text-sm text-muted-foreground">
-          Os seguintes bônus estão ativos até o fim da cena:
+          Confira os bônus e sua duração. A aplicação precisa ser confirmada:
         </p>
       </div>
 

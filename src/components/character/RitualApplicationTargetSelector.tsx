@@ -27,7 +27,7 @@ export function RitualApplicationTargetSelector({ characterId, value, onChange, 
           {targets.map(target => <SelectItem key={target.id} value={target.id}>{target.name} — PV {target.hp_current}/{target.hp_max}</SelectItem>)}
         </SelectContent>
       </Select>
-      <p id={`${id}-warning`} className="text-xs text-muted-foreground">Dano reduz os PV do alvo selecionado. Confira a ficha antes de aplicar. Sem alvo, o resultado permanece para resolução manual.</p>
+      <p id={`${id}-warning`} className="text-xs text-muted-foreground">O efeito será aplicado à ficha selecionada. Confira o alvo e o resultado antes de aplicar. Sem alvo, o resultado permanece para resolução manual.</p>
       {error && <div role="alert" className="space-y-1 text-sm text-destructive">
         <p>Não foi possível carregar os alvos autorizados.</p>
         <Button type="button" variant="outline" size="sm" onClick={() => void refetch()}>Tentar novamente</Button>

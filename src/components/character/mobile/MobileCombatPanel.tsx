@@ -235,6 +235,8 @@ function WeaponCard({
         <Button
           variant="ghost"
           size="sm"
+          aria-label={`Detalhes da arma ${weapon.name}`}
+          aria-expanded={expanded}
           onClick={(e) => {
             e.stopPropagation();
             setExpanded(!expanded);
