@@ -33,6 +33,36 @@ describe.each([
   ['desktop', RitualCastModal],
   ['mobile', MobileRitualCastModal],
 ] as const)('Modal de conjuração %s', (_name, Modal) => {
+  it('mantém a preparação aberta quando o débito não é confirmado', async () => {
+    vi.useFakeTimers();
+    const onConfirm = vi.fn().mockResolvedValue(false);
+    const onOpenChange = vi.fn();
+    render(<Modal open onOpenChange={onOpenChange} ritual={getRitualById('perturbacao')!}
+      peCurrent={10} peMax={10} nex={20} onConfirm={onConfirm} />);
+    fireEvent.click(screen.getByRole('button', { name: /conjurar/i }));
+    await act(async () => { await vi.advanceTimersByTimeAsync(350); });
+    expect(onConfirm).toHaveBeenCalledTimes(1);
+    expect(onOpenChange).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: /conjurar/i })).toBeEnabled();
+  });
+
+  it('ignora clique duplicado enquanto aguarda o débito e só avança após sucesso', async () => {
+    vi.useFakeTimers();
+    let resolveCast: (value: boolean) => void = () => {};
+    const onConfirm = vi.fn(() => new Promise<boolean>(resolve => { resolveCast = resolve; }));
+    const onOpenChange = vi.fn();
+    render(<Modal open onOpenChange={onOpenChange} ritual={getRitualById('perturbacao')!}
+      peCurrent={10} peMax={10} nex={20} onConfirm={onConfirm} />);
+    const confirm = screen.getByRole('button', { name: /conjurar/i });
+    fireEvent.click(confirm);
+    fireEvent.click(confirm);
+    await act(async () => { await vi.advanceTimersByTimeAsync(350); });
+    expect(onConfirm).toHaveBeenCalledTimes(1);
+    expect(onOpenChange).not.toHaveBeenCalled();
+    await act(async () => { resolveCast(true); await vi.advanceTimersByTimeAsync(350); });
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
   it.each(['condutor', 'Conduíte', 'conduite'])('oferece Ampliar inativo da trilha %s e confirma custo 3 uma vez', async classTrack => {
     vi.useFakeTimers();
     const attributes = { strength: 1, agility: 1, vigor: 2, intellect: 3, presence: 3 };
