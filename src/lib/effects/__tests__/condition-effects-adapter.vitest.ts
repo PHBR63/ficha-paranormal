@@ -76,13 +76,14 @@ describe('condition-effects-adapter: Condições Críticas', () => {
     expect(mech?.cannotMove).toBe(true);
   });
 
-  it('morrendo deve definir cannotAct, isUnconscious e isHelpless', () => {
+  it('Morrendo sozinho não recria Inconsciente após cura de PV', () => {
     const mech = CONDITION_MECHANICS['morrendo']?.mechanics;
     
-    expect(mech?.cannotAct).toBe(true);
-    expect(mech?.cannotReact).toBe(true);
-    expect(mech?.isUnconscious).toBe(true);
-    expect(mech?.isHelpless).toBe(true);
+    expect(mech?.cannotAct).toBeUndefined();
+    expect(mech?.cannotReact).toBeUndefined();
+    expect(mech?.isUnconscious).toBeUndefined();
+    expect(mech?.isHelpless).toBeUndefined();
+    expect(mech?.specialEffects?.[0]).toContain('mesma cena');
   });
 
   it('paralisado deve definir isHelpless e cannotAct', () => {
@@ -264,10 +265,11 @@ describe('condition-effects-adapter: Condições Mentais', () => {
     expect(mech?.cannotAct).toBe(true);
   });
 
-  it('enlouquecendo deve ter cannotAct', () => {
+  it('Enlouquecendo não retira ações antes da conclusão da contagem da cena', () => {
     const mech = CONDITION_MECHANICS['enlouquecendo']?.mechanics;
     
-    expect(mech?.cannotAct).toBe(true);
+    expect(mech?.cannotAct).toBeUndefined();
+    expect(mech?.specialEffects?.[0]).toContain('NPC');
   });
 
   it('perturbado não inventa penalidade genérica', () => {

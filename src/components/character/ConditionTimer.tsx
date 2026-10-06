@@ -212,7 +212,7 @@ export function ConditionTimerSegmented({
 
 /**
  * DyingTimer - Timer especial para condição Morrendo
- * Mostra os 3 contadores de rodada até a morte
+ * Mostra a contagem manual; o saldo local não certifica os turnos da cena.
  */
 interface DyingTimerProps {
   counter: number; // 3, 2, 1, 0
@@ -227,7 +227,9 @@ export function DyingTimer({ counter, className }: DyingTimerProps) {
   ];
 
   return (
-    <div className={cn('flex items-center gap-1', className)}>
+    <div className={cn('flex items-center gap-1', className)} role="img"
+      aria-label={`Contagem manual de Morrendo: ${counter} inícios de turno restantes. Confira a mesma cena com o mestre.`}
+      title="Contagem manual: confira os inícios de turno na mesma cena, inclusive não consecutivos. Zero exige conferência com o mestre.">
       {segments.map((seg, index) => (
         <motion.div
           key={index}
@@ -258,7 +260,7 @@ export function DyingTimer({ counter, className }: DyingTimerProps) {
         }}
         className={cn(
           'w-5 h-5 rounded-full flex items-center justify-center text-xs',
-          counter === 0 && 'animate-bounce'
+          counter === 0 && 'text-destructive'
         )}
       >
         💀

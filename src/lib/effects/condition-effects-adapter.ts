@@ -64,13 +64,6 @@ export const CONDITION_MECHANICS: Record<string, {
     },
   },
   
-  enlouquecendo: {
-    mechanics: {
-      cannotAct: true,
-      specialEffects: ['Não controla suas ações - Mestre decide'],
-    },
-  },
-  
   fascinado: {
     mechanics: {
       skillBonus: { percepcao: -5 },
@@ -80,39 +73,6 @@ export const CONDITION_MECHANICS: Record<string, {
   },
 
   // === CONDIÇÕES CRÍTICAS ===
-  inconsciente: {
-    mechanics: {
-      cannotAct: true,
-      cannotReact: true,
-      cannotMove: true,
-      isUnconscious: true,
-      isHelpless: true,
-      specialEffects: ['Defesa 5', 'Indefeso'],
-    },
-  },
-  
-  indefeso: {
-    mechanics: {
-      isHelpless: true,
-      specialEffects: ['Ataques são acertos automáticos', 'Dano sempre crítico'],
-    },
-  },
-  
-  morrendo: {
-    mechanics: {
-      cannotAct: true,
-      cannotReact: true,
-      cannotMove: true,
-      isUnconscious: true,
-      isHelpless: true,
-      specialEffects: [
-        'Inconsciente',
-        'Contador de 3 rodadas até morrer',
-        'Dano adicional reduz 1 rodada',
-      ],
-    },
-  },
-  
   paralisado: {
     mechanics: {
       cannotAct: true,

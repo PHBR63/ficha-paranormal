@@ -265,7 +265,7 @@ export const CONDITION_EFFECTS: Record<string, ConditionEffect> = {
     movementModifier: 0,
     canAct: true,
     canMove: true,
-    // Dano ao agir - processado manualmente pelo sistema
+    // Machucado não causa dano ao agir nem penalidade própria (Base p.88).
   },
 
   // === MENTAIS ===
@@ -287,7 +287,7 @@ export const CONDITION_EFFECTS: Record<string, ConditionEffect> = {
     defenseModifier: 0,
     testModifier: 0,
     movementModifier: 0,
-    canAct: false, // Mestre decide
+    canAct: true, // Torna-se NPC somente após a contagem cumulativa da cena.
     canMove: true,
   },
   fascinado: {
@@ -315,30 +315,30 @@ export const CONDITION_EFFECTS: Record<string, ConditionEffect> = {
 
   // === CRÍTICAS ===
   inconsciente: {
-    defenseModifier: -10, // Defesa 5 flat
-    testModifier: -20,
+    defenseModifier: -10, // Indefeso; não é Defesa fixa 5.
+    testModifier: 0,
     movementModifier: -2,
     canAct: false,
     canMove: false,
     canReact: false,
   },
   indefeso: {
-    defenseModifier: -20, // Acerto automático + crítico
+    defenseModifier: -10, // Golpe de misericórdia exige resolução própria.
     testModifier: 0,
     movementModifier: 0,
-    canAct: false,
-    canMove: false,
-    canReact: false,
+    canAct: true,
+    canMove: true,
+    canReact: true,
   },
   morrendo: {
-    defenseModifier: -10,
-    testModifier: -20,
-    movementModifier: -2,
-    canAct: false,
-    canMove: false,
-    canReact: false,
+    defenseModifier: 0,
+    testModifier: 0,
+    movementModifier: 0,
+    canAct: true,
+    canMove: true,
+    canReact: true,
     startOfTurnEffect: () => ({
-      message: 'Contador de morte avança! Aliado pode fazer Medicina DT 20.'
+      message: 'Confira os inícios de turno Morrendo na mesma cena e a DT de Medicina com o mestre.'
     })
   },
   paralisado: {

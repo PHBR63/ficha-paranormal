@@ -21,6 +21,7 @@ import {
 import { getTrackEffects } from '../effects/track-effects-adapter';
 import { getOriginEffects } from '../effects/origin-effects-adapter';
 import { getConditionEffects } from '../effects/condition-effects-adapter';
+import { checkAutoConditions } from '../game-engine';
 import { getParanormalPowerEffects } from '../effects/paranormal-powers-effects-adapter';
 import type { SavedParanormalPower, ParanormalElement } from '../paranormal-powers';
 
@@ -269,24 +270,22 @@ describe('E2E: Condições Automáticas', () => {
       peMax: 20,
     });
 
-    // PE negativo causa exaustão (regra oficial)
+    // Simulação legada; não certifica regra do Livro Base. A ficha limita PE a zero.
     const isExhausted = context.peCurrent < 0;
     expect(isExhausted).toBe(true);
   });
 
-  it('deve aplicar penalidades de morrendo corretamente', () => {
-    const conditionEffects = getConditionEffects(['morrendo']);
-
-    const context = createContext({
-      hpCurrent: 0,
-      activeConditions: ['morrendo'],
-    });
-    const result = consolidateEffects(conditionEffects, context);
-
-    // Livro Base p.311: morrendo causa inconsciência; não concede penalidade numérica fictícia.
-    expect(result.flags.cannotAct).toBe(true);
-    expect(result.flags.isUnconscious).toBe(true);
-    expect(result.flags.isHelpless).toBe(true);
+  it('cura de PV permite agir ao encerrar Inconsciente, conservando Morrendo', () => {
+    const initial = ['morrendo', 'inconsciente'];
+    const before = consolidateEffects(getConditionEffects(initial), createContext({ hpCurrent: 0, activeConditions: initial }));
+    expect(before.flags.cannotAct).toBe(true);
+    const change = checkAutoConditions(1, 30, 15, 15, initial, { hp: 0, san: 15 });
+    const afterConditions = [...initial.filter(id => !change.conditionsToRemove.includes(id)), ...change.conditionsToAdd];
+    const result = consolidateEffects(getConditionEffects(afterConditions), createContext({ hpCurrent: 1, activeConditions: afterConditions }));
+    expect(afterConditions).toContain('morrendo');
+    expect(result.flags.cannotAct).toBe(false);
+    expect(result.flags.isUnconscious).toBe(false);
+    expect(result.flags.isHelpless).toBe(false);
   });
 });
 
