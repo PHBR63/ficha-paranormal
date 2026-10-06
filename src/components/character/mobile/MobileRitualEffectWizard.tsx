@@ -58,7 +58,7 @@ import { CONDITIONS } from '@/lib/conditions';
 import { ActiveCondition } from './MobileConditionManager';
 import { WeaponBuff } from '@/hooks';
 import { rollRitualDamage } from '@/lib/rituals/ritual-damage';
-import { getRitualConditionTurns, formatRitualConditionDuration } from '@/lib/rituals/ritual-condition-duration';
+import { getRitualConditionDuration, getRitualConditionTurns, formatRitualConditionDuration } from '@/lib/rituals/ritual-condition-duration';
 
 // ==================== TIPOS ====================
 
@@ -513,6 +513,7 @@ const ConditionsStep = memo(function ConditionsStep({
     ? effect.appliesConditions.map(c => ({
         id: c.conditionId,
         name: CONDITIONS[c.conditionId]?.name || c.conditionId,
+        duration: getRitualConditionDuration(c),
         turnsRemaining: getRitualConditionTurns(c),
         addedAt: new Date().toISOString(),
       }))

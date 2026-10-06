@@ -4,7 +4,7 @@ import type { Json } from '@/integrations/supabase/types';
 import { campaignCombatSchema, emptyCampaignCombat, type CampaignCombatState } from '@/lib/campaign-combat';
 
 type CombatRow = { campaign_id: string; revision: number; state: Json; updated_at: string; scene_number: number; last_scene_ended_at: string | null };
-export type SceneEndReceipt = { operation_id: string; campaign_id: string; scene_number: number; ended_combat: boolean; created_at: string };
+export type SceneEndReceipt = { operation_id: string; campaign_id: string; scene_number: number; ended_combat: boolean; created_at: string; expired_effects_count?: number | null };
 
 // Contrato isolado da migration nova; evita alterar tipos gerados de outras tabelas.
 type CombatDatabase = { public: {
@@ -59,7 +59,7 @@ export async function endCampaignScene(campaignId: string, expectedRevision: num
 
 /** Página de dez recibos por campanha, com cursor estável por número de cena. */
 export async function loadCampaignSceneHistory(campaignId: string, beforeScene?: number) {
-  let query = combatClient.from('campaign_scene_events_v2').select('operation_id,campaign_id,scene_number,ended_combat,created_at')
+  let query = combatClient.from('campaign_scene_events_v2').select('operation_id,campaign_id,scene_number,ended_combat,created_at,expired_effects_count')
     .eq('campaign_id', campaignId).order('scene_number', { ascending: false }).limit(11);
   if (beforeScene !== undefined) query = query.lt('scene_number', beforeScene);
   const { data, error } = await query;

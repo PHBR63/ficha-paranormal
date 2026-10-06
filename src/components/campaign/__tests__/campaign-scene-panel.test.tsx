@@ -23,7 +23,7 @@ describe('Cena, avisos e histórico visíveis', () => {
   it('jogador acompanha cena e limites manuais sem controle de encerramento', () => {
     mount(controller(), false);
     expect(screen.getByText('Cena 4')).toBeVisible();
-    expect(screen.getByText(/contadores críticos ainda exigem conferência manual/)).toBeVisible();
+    expect(screen.getByText(/contadores críticos exigem conferência manual/)).toBeVisible();
     expect(screen.queryByRole('button', { name: 'Encerrar cena' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Histórico de cenas' })).toBeEnabled();
   });

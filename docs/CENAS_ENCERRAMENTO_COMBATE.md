@@ -1,5 +1,9 @@
 # Encerramento de cenas — opção 2
 
+Atualização: a etapa de [origem e expiração de efeitos](EFEITOS_ORIGEM_E_EXPIRACAO_CENA.md)
+agora cobre novas condições e bônus de ritual com origem comprovada em v2.
+As limitações descritas abaixo referem-se à entrega inicial do limite de cena.
+
 Decisão confirmada pelo usuário em 06/10/2026: encerrar combate também encerra
 a cena; cenas sem combate são encerradas manualmente pelo mestre. Uma cena
 é um limite de regras independente da sessão de jogo e da cena sonora.

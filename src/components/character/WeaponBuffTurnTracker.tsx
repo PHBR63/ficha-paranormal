@@ -1,3 +1,4 @@
+import { EffectDurationNotice } from './EffectDurationNotice';
 /**
  * WeaponBuffTurnTracker - Componente para controlar rodadas de weapon buffs
  * Permite avançar turnos, ajustar rodadas manualmente e ver buffs expirados
@@ -219,7 +220,7 @@ export function WeaponBuffTurnTracker({
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20, scale: 0.9 }}
                 className={cn(
-                  'flex items-center justify-between p-2 rounded-lg border',
+                  'flex flex-wrap gap-2 items-center justify-between p-2 rounded-lg border',
                   colors.bg,
                   colors.border,
                   isExpiring && 'ring-1 ring-red-500/50 animate-pulse'
@@ -236,7 +237,7 @@ export function WeaponBuffTurnTracker({
 
                 <div className="flex items-center gap-2">
                   {/* Badge de duração */}
-                  <DurationBadge buff={buff} />
+                  <div className="max-w-56"><DurationBadge buff={buff} /><EffectDurationNotice effect={buff} /></div>
 
                   {/* Controles de ajuste de rodadas (apenas para buffs de rodadas) */}
                   {isRoundsBuff && (

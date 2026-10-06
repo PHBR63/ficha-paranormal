@@ -41,6 +41,7 @@ export async function awaitActivityResponse<T>(request: PromiseLike<T>, timeoutM
 /** Traduz falhas sem expor consultas, identificadores ou detalhes internos do banco. */
 export function activityFailure(context: string, error: { code?: string }): Error {
   const detail = error.code === '40001' ? 'O estado da ficha mudou. Recarregue antes de uma nova ação.'
+    : error.code === '55000' ? 'A cena da conjuração foi encerrada. O efeito continua pendente para conferência do mestre; PE não foi estornado.'
     : error.code === '42501' ? 'Sua conta não tem permissão para esta ação.'
     : error.code === '23505' ? 'A operação já existe com outros dados. Confira o histórico antes de continuar.'
     : error.code === '0A000' ? 'Este efeito exige conferência e aplicação manual.'

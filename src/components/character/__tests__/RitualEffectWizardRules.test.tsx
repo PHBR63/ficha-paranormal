@@ -68,8 +68,17 @@ describe.each([
     expect(screen.getByText('1 rodada')).toBeInTheDocument();
     await act(async () => { fireEvent.click(screen.getByRole('button', { name: /^Aplicar/ })); });
     expect(onApplyConditions).toHaveBeenCalledWith([
-      expect.objectContaining({ id: 'vulneravel', turnsRemaining: 1 }),
+      expect.objectContaining({ id: 'vulneravel', turnsRemaining: 1, duration: 'rodadas' }),
     ]);
+  });
+
+  it('envia duração de cena sem transformá-la em condição permanente', async () => {
+    vi.spyOn(legacyEffects, 'getActiveRitualEffect').mockReturnValue({ appliesConditions: [{ conditionId: 'lento', duration: 'cena' }] });
+    const onApplyConditions = vi.fn();
+    render(<Wizard open onOpenChange={vi.fn()} ritual={unifiedToLegacy(getRitualById('perturbacao')!)} enhancements={[]} peCost={1} onApplyConditions={onApplyConditions} />);
+    fireEvent.click(screen.getByRole('button', { name: /Processar Efeitos/ }));
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: /^Aplicar/ })); });
+    expect(onApplyConditions).toHaveBeenCalledWith([expect.objectContaining({ id: 'lento', duration: 'cena', turnsRemaining: null })]);
   });
 
   it.each(['anula', 'parcial'] as const)('sucesso %s evita condições sem chamar aplicação', async resistanceEffect => {
