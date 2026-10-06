@@ -345,10 +345,10 @@ export function CombatStatsCard({
               transition={{ duration: 0.8, repeat: Infinity }}
               className="text-destructive font-display text-sm tracking-wider"
             >
-              💀 COLAPSO TOTAL
+              PV E SAN EM ZERO
             </motion.div>
             <p className="text-[10px] text-foreground/60 mt-0.5">
-              Inconsciente + Colapso Mental
+              Confira as condições ativas e a contagem da cena com o mestre.
             </p>
           </motion.div>
         )}
@@ -378,11 +378,11 @@ export function CombatStatsCard({
             >
               <Heart className="w-4 h-4 text-destructive" />
               <span className="text-destructive font-display text-sm tracking-wider">
-                INCONSCIENTE
+                PV EM ZERO
               </span>
             </motion.div>
             <p className="text-[10px] text-foreground/60 mt-0.5">
-              HP chegou a 0 - Caído em combate
+              Confira Inconsciente e Morrendo nas condições ativas.
             </p>
           </motion.div>
         )}
@@ -415,11 +415,11 @@ export function CombatStatsCard({
             >
               <Brain className="w-4 h-4 text-paranormal" />
               <span className="text-paranormal font-display text-sm tracking-wider">
-                COLAPSO MENTAL
+                SAN EM ZERO
               </span>
             </motion.div>
             <p className="text-[10px] text-foreground/60 mt-0.5">
-              SAN chegou a 0 - Enlouquecido temporariamente
+              Confira Enlouquecendo e a contagem da cena; estabilização pode encerrar a condição com SAN ainda em zero.
             </p>
           </motion.div>
         )}

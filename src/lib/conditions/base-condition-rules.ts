@@ -12,6 +12,7 @@ export const BASE_CONDITION_TEXT: Record<string, string> = {
   desprevenido: '–5 na Defesa e –1d20 em Reflexos.',
   doente: 'Sob efeito de uma doença; os efeitos e a duração dependem da doença.',
   enjoado: 'Uma ação padrão ou de movimento por rodada, não ambas.',
+  enlouquecendo: 'Três inícios de turno nesta condição na mesma cena, inclusive não consecutivos, tornam o personagem um NPC do mestre. Confira a contagem da cena; a condição não retira o controle das ações imediatamente.',
   enredado: 'Lento e vulnerável. –1d20 em testes de ataque.',
   envenenado: 'Efeitos e duração dependem do veneno. Dano recorrente de venenos sempre se acumula.',
   esmorecido: '–2d20 em testes de Intelecto e Presença.',
@@ -19,8 +20,11 @@ export const BASE_CONDITION_TEXT: Record<string, string> = {
   fatigado: 'Fraco e vulnerável. Uma nova aplicação torna o personagem exausto.',
   fraco: '–1d20 em testes de Agilidade, Força e Vigor. Uma nova aplicação torna o personagem debilitado.',
   frustrado: '–1d20 em testes de Intelecto e Presença. Uma nova aplicação torna o personagem esmorecido.',
+  inconsciente: 'Indefeso e não pode fazer ações, incluindo reações. Conferir a causa e a forma de despertar.',
+  indefeso: '–10 na Defesa, falha automaticamente em Reflexos e pode sofrer golpes de misericórdia. Não torna todos os ataques acertos ou críticos automáticos.',
   lento: 'Deslocamento pela metade, arredondado para baixo em incrementos de 1,5m. Não pode correr nem fazer investidas.',
   machucado: 'Metade ou menos dos PV totais. Esta condição não causa penalidade nem dano adicional.',
+  morrendo: 'Três inícios de turno Morrendo na mesma cena, inclusive não consecutivos, causam morte. Dano recebido não avança a contagem. Cura de PV pode encerrar Inconsciente, mas não estabiliza Morrendo.',
   pasmo: 'Não pode fazer ações.',
   perturbado: 'Na primeira ocorrência na cena, recebe um efeito de insanidade.',
   sangrando: 'Início do turno: teste de Vigor DT 20. Sucesso remove a condição; falha perde 1d6 PV. Medicina DT 20 com ação completa também estabiliza.',
@@ -64,6 +68,7 @@ export const BASE_CONDITION_MECHANICS: Record<string, {
   desprevenido: { mechanics: { defenseBonus: -5, testDice: { skills: { reflexos: -1 } } } },
   doente: { mechanics: {} },
   enjoado: { mechanics: { specialEffects: [BASE_CONDITION_TEXT.enjoado] } },
+  enlouquecendo: { mechanics: { specialEffects: [BASE_CONDITION_TEXT.enlouquecendo] } },
   enredado: { mechanics: { testDice: { attacks: -1 } } },
   envenenado: { mechanics: {} },
   esmorecido: { mechanics: { testDice: { attributes: mental(-2) } } },
@@ -71,8 +76,12 @@ export const BASE_CONDITION_MECHANICS: Record<string, {
   fatigado: { mechanics: {} },
   fraco: { mechanics: { testDice: { attributes: physical(-1) } } },
   frustrado: { mechanics: { testDice: { attributes: mental(-1) } } },
+  inconsciente: { mechanics: { cannotAct: true, cannotReact: true, cannotMove: true, isUnconscious: true, isHelpless: true,
+    specialEffects: [BASE_CONDITION_TEXT.inconsciente] } },
+  indefeso: { mechanics: { defenseBonus: -10, isHelpless: true, specialEffects: [BASE_CONDITION_TEXT.indefeso] } },
   lento: { mechanics: { movementMultiplier: 0.5, specialEffects: ['Não pode correr nem fazer investidas'] } },
   machucado: { mechanics: {} },
+  morrendo: { mechanics: { specialEffects: [BASE_CONDITION_TEXT.morrendo] } },
   pasmo: { mechanics: { cannotAct: true } },
   perturbado: { mechanics: { specialEffects: [BASE_CONDITION_TEXT.perturbado] } },
   sangrando: { mechanics: { specialEffects: [BASE_CONDITION_TEXT.sangrando] } },
@@ -86,6 +95,7 @@ const DERIVED_CONDITIONS: Record<string, string[]> = {
   cego: ['desprevenido', 'lento'], enredado: ['lento', 'vulneravel'],
   fatigado: ['fraco', 'vulneravel'], exausto: ['debilitado', 'lento', 'vulneravel'],
   surpreendido: ['desprevenido'],
+  inconsciente: ['indefeso'],
 };
 
 /** Expande condições compostas uma vez, preserva IDs persistidos e remove os graus substituídos. */
@@ -98,5 +108,7 @@ export function expandBaseConditionIds(ids: string[]): string[] {
   if (expanded.has('debilitado')) expanded.delete('fraco');
   if (expanded.has('esmorecido')) expanded.delete('frustrado');
   if (expanded.has('apavorado')) expanded.delete('abalado');
+  // Indefeso substitui a penalidade de Defesa de Desprevenido, sem somar −5 a −10.
+  if (expanded.has('indefeso')) expanded.delete('desprevenido');
   return [...expanded];
 }

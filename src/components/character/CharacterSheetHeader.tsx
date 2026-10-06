@@ -689,7 +689,7 @@ export const CharacterSheetHeader = memo(function CharacterSheetHeader({
                 transition={{ duration: 0.8, repeat: Infinity }}
                 className="text-destructive font-display text-xs tracking-wider"
               >
-                💀 COLAPSO TOTAL - Inconsciente + Enlouquecido
+                PV e SAN em zero — confira as condições ativas
               </motion.span>
             </motion.div>
           </motion.div>
@@ -719,7 +719,7 @@ export const CharacterSheetHeader = memo(function CharacterSheetHeader({
                 <Heart className="w-3.5 h-3.5 text-destructive" />
               </motion.div>
               <span className="text-destructive font-display text-xs tracking-wider">
-                INCONSCIENTE - HP zerado
+                PV em zero — confira Inconsciente e Morrendo
               </span>
             </motion.div>
           </motion.div>
@@ -752,7 +752,7 @@ export const CharacterSheetHeader = memo(function CharacterSheetHeader({
                 <Star className="w-3.5 h-3.5 text-paranormal" />
               </motion.div>
               <span className="text-paranormal font-display text-xs tracking-wider">
-                COLAPSO MENTAL - SAN zerada
+                SAN em zero — confira Enlouquecendo e a contagem da cena
               </span>
             </motion.div>
           </motion.div>

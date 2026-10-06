@@ -371,14 +371,16 @@ describe('Cálculos Especiais', () => {
 // =====================================================
 
 describe('Condições Específicas', () => {
-  it('Morrendo deve ter contador de rodadas', () => {
+  it('Morrendo informa inícios de turno cumulativos na mesma cena', () => {
     const morrendo = CONDITIONS.morrendo;
-    expect(morrendo.effect).toContain('3 rodadas');
+    expect(morrendo.effect).toContain('Três inícios de turno');
+    expect(morrendo.effect).toContain('não consecutivos');
   });
 
-  it('Inconsciente deve ter Defesa 5', () => {
+  it('Inconsciente é Indefeso, sem substituir Defesa por valor fixo', () => {
     const inconsciente = CONDITIONS.inconsciente;
-    expect(inconsciente.effect).toContain('Defesa 5');
+    expect(inconsciente.effect).toContain('Indefeso');
+    expect(inconsciente.effect).not.toContain('Defesa 5');
   });
 
   it('Sangrando deve causar dano por turno', () => {

@@ -122,6 +122,24 @@ describe('useUnifiedEffects: Estrutura do Retorno', () => {
 // =====================================================
 
 describe('useUnifiedEffects: Efeitos de Condições', () => {
+  it.each(['morrendo', 'enlouquecendo'])('%s isolado preserva ações, reações e consciência', condition => {
+    const { result } = renderHook(() => useUnifiedEffects(createTestCharacterState({ conditions: [condition] })));
+    expect(result.current.computed.flags).toMatchObject({
+      cannotAct: false, cannotReact: false, cannotMove: false, isUnconscious: false, isHelpless: false,
+    });
+  });
+
+  it('Inconsciente continua impedindo ações mesmo com Morrendo ou Enlouquecendo', () => {
+    const { result } = renderHook(() => useUnifiedEffects(createTestCharacterState({
+      conditions: ['morrendo', 'enlouquecendo', 'inconsciente', 'indefeso', 'desprevenido'],
+    })));
+    expect(result.current.computed.flags).toMatchObject({ cannotAct: true, cannotReact: true, isUnconscious: true });
+    const conditions = result.current.bySource.condition;
+    expect(conditions.filter(effect => effect.sourceId === 'indefeso')).toHaveLength(1);
+    expect(conditions.some(effect => effect.sourceId === 'desprevenido')).toBe(false);
+    expect(conditions.find(effect => effect.sourceId === 'indefeso')?.mechanics.defenseBonus).toBe(-10);
+  });
+
   it('deve coletar efeitos de condições ativas', () => {
     const state = createTestCharacterState({
       conditions: ['desprevenido'],
