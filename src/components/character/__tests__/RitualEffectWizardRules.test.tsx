@@ -6,6 +6,9 @@ import { unifiedToLegacy } from '@/lib/rituals/ritual-adapter';
 import { RitualEffectWizard } from '../RitualEffectWizard';
 import { MobileRitualEffectWizard } from '../mobile/MobileRitualEffectWizard';
 import { RitualDamageModal } from '../RitualDamageModal';
+import { MobileRitualCastModal } from '../mobile/MobileRitualCastModal';
+
+vi.mock('canvas-confetti', () => ({ default: vi.fn() }));
 
 // Animação visual não participa das regras. Mantém elementos e eventos da tela.
 vi.mock('framer-motion', async () => {
@@ -33,6 +36,26 @@ describe.each([
   ['desktop', RitualEffectWizard],
   ['mobile', MobileRitualEffectWizard],
 ] as const)('Fórmula no wizard %s', (_name, Wizard) => {
+  it.each([14, 35, 22])('usa DT %s recebida do conjurador e preserva ajuste manual', async (casterResistanceDT) => {
+    vi.useFakeTimers();
+    const ritual = unifiedToLegacy(getRitualById('deflagracao-de-energia')!);
+    render(<Wizard open onOpenChange={vi.fn()} ritual={ritual} enhancements={[]} peCost={10}
+      casterResistanceDT={casterResistanceDT} targetAttributes={{ vigor: 1, agility: 1, presence: 1 }} />);
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+    fireEvent.click(screen.getByRole('button', { name: /Processar Efeitos/ }));
+    await act(async () => { await vi.advanceTimersByTimeAsync(600); });
+    fireEvent.click(screen.getByRole('button', { name: /Continuar/ }));
+    const dtInput = screen.getByRole('spinbutton', { name: 'Dificuldade da resistência' });
+    expect(dtInput).toHaveValue(casterResistanceDT);
+    fireEvent.change(dtInput, { target: { value: '0' } });
+    expect(screen.getByRole('alert')).toHaveTextContent('Informe uma DT inteira maior que zero.');
+    expect(screen.getByRole('button', { name: _name === 'desktop' ? /Rolar Resistência/ : /^Rolar d20/ })).toBeDisabled();
+    fireEvent.change(dtInput, { target: { value: '27' } });
+    fireEvent.click(screen.getByRole('button', { name: _name === 'desktop' ? /Rolar Resistência/ : /^Rolar d20/ }));
+    expect(dtInput).toHaveValue(27);
+    expect(screen.getByText('FALHOU!')).toBeInTheDocument();
+  });
+
   it.each([
     { passed: false, bonus: 0, expected: 160 },
     { passed: true, bonus: 4, expected: 82 },
@@ -55,6 +78,20 @@ describe.each([
     fireEvent.click(screen.getByRole('button', { name: /Continuar/ }));
     expect(onApplyDamage).toHaveBeenCalledWith(expected, 'energia', false);
   });
+});
+
+it('a preparação mobile encaminha a Presença e o limite de PE ao wizard real', async () => {
+  vi.useFakeTimers();
+  render(<MobileRitualCastModal open onOpenChange={vi.fn()} ritual={getRitualById('deflagracao-de-energia')!}
+    nex={99} casterPresence={5} peLimitBonus={1} peCurrent={50} peMax={50}
+    onConfirm={vi.fn().mockResolvedValue(true)} />);
+  vi.spyOn(Math, 'random').mockReturnValue(0);
+  fireEvent.click(screen.getByRole('button', { name: /conjurar/i }));
+  await act(async () => { await vi.advanceTimersByTimeAsync(350); });
+  fireEvent.click(screen.getByRole('button', { name: /Processar Efeitos/ }));
+  await act(async () => { await vi.advanceTimersByTimeAsync(600); });
+  fireEvent.click(screen.getByRole('button', { name: /Continuar/ }));
+  expect(screen.getByRole('spinbutton', { name: 'Dificuldade da resistência' })).toHaveValue(36);
 });
 
 it('modal de dano legado preserva os três dados, multiplicador e bônus fixo', async () => {

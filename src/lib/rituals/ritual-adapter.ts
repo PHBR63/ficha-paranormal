@@ -173,6 +173,7 @@ export function mechanicsToLegacyEffect(mechanics: RitualMechanics): LegacyRitua
     effect.resistance = {
       type: mechanics.resistance.type,
       effect: mechanics.resistance.effect,
+      dt: mechanics.resistance.dt,
     };
   }
 
