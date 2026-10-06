@@ -1085,7 +1085,7 @@ export default function CharacterSheet() {
 
   // Recursos e condições são comparados e gravados em uma única operação.
   const handleCombatStatsChange = async (stats: { hp: number; pe: number; san: number }) => {
-    if (!character) return;
+    if (!character) return false;
     const values = { hp: Math.max(0, Math.min(stats.hp, character.hp_max)),
       pe: Math.max(0, Math.min(stats.pe, character.pe_max)), san: Math.max(0, Math.min(stats.san, character.san_max)) };
     const autoResult = processResourceChange(values.hp, character.hp_max, values.san, character.san_max,
@@ -1097,7 +1097,7 @@ export default function CharacterSheet() {
       { hp_current: character.hp_current, hp_max: character.hp_max, pe_current: character.pe_current,
         pe_max: character.pe_max, san_current: character.san_current, san_max: character.san_max,
         conditions: activityJson(character.conditions) });
-    if (!receipt) { setSaveStatus('error'); return; }
+    if (!receipt) { setSaveStatus('error'); return false; }
     setHpCurrent(values.hp); setPeCurrent(values.pe); setSanCurrent(values.san);
     setCharacter(prev => prev ? { ...prev, hp_current: values.hp, pe_current: values.pe,
       san_current: values.san, conditions } : null);
@@ -1105,6 +1105,7 @@ export default function CharacterSheet() {
     if (autoResult.messages.length) toast({ title: 'Condições confirmadas', description: autoResult.messages.join(' ') });
     void activity.refetch();
     if (!await refetchCharacter()) toast({ title: 'Recursos confirmados', description: 'A ficha não foi atualizada. Recarregue para conferir o estado atual.', variant: 'destructive' });
+    return true;
   };
 
   // ==================== CALLBACKS MEMOIZADOS (REFATORAÇÃO) ====================

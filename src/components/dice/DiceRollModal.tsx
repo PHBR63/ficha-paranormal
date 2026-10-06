@@ -165,11 +165,15 @@ export function DiceRollModal({
   characterConfig,
   activeConditions = [],
 }: DiceRollModalProps) {
-  // Calcula o nível de treinamento automaticamente baseado no skillBonus se não fornecido
+  const sourceTrainingBonus = useMemo(() => {
+    const trainingSources = bonusSources.filter(source => source.type === 'skill' && Number.isFinite(source.value));
+    return trainingSources.length > 0 ? trainingSources.reduce((sum, source) => sum + source.value, 0) : undefined;
+  }, [bonusSources]);
+  // Bônus de poder não eleva o treinamento usado para os requisitos do Eclético.
   const effectiveTrainingLevel: SkillTrainingLevel = useMemo(() => {
     if (currentSkillTrainingLevel) return currentSkillTrainingLevel;
-    return bonusToTrainingLevel(skillBonus);
-  }, [currentSkillTrainingLevel, skillBonus]);
+    return bonusToTrainingLevel(sourceTrainingBonus ?? skillBonus);
+  }, [currentSkillTrainingLevel, sourceTrainingBonus, skillBonus]);
   // === FASE DE ROLAGEM ===
   // 'preparing' = modal aberto, aguardando seleção de poderes
   // 'rolling' = animação de dados
@@ -179,15 +183,19 @@ export function DiceRollModal({
   const [displayDice, setDisplayDice] = useState<number[]>([]);
   const [result, setResult] = useState<DiceRollResult | null>(null);
   const [isPowerPanelExpanded, setIsPowerPanelExpanded] = useState(true);
+  // Poderes exclusivos de ataque/dano pertencem ao modal de combate; não
+  // podem alterar testes de perícia nem consumir PE neste fluxo.
+  const skillPowers = useMemo(() => activatablePowers.filter(power => power.effectType !== 'combat_bonus'), [activatablePowers]);
   
   // Hook para gerenciar ativação de poderes
   const {
     activationStates,
     togglePower,
     resetActivations,
-    getActivePowers,
-    getTotalPECost,
-  } = usePowerActivation(activatablePowers);
+    getActivePowers: getStoredActivePowers,
+  } = usePowerActivation(skillPowers);
+  const getActivePowers = useCallback(() => getStoredActivePowers().filter(state => skillPowers.some(power => power.id === state.powerId)), [getStoredActivePowers, skillPowers]);
+  const getTotalPECost = useCallback(() => getActivePowers().reduce((sum, state) => sum + state.peCost, 0), [getActivePowers]);
   
   // Ref para controlar se já rolou nesta abertura (React 19: valor inicial obrigatório)
   const hasRolledRef = useRef<boolean>(false);
@@ -209,10 +217,10 @@ export function DiceRollModal({
   const activatedPowerEffects = useMemo(() => {
     const activePowers = getActivePowers();
     let extraBonus = 0;
-    let extraDice: string[] = [];
+    const extraDice: string[] = [];
     let attributeSwap: string | undefined;
     let skillSwap: string | undefined; // Impostor/Motor de Busca: substitui perícia
-    let notes: string[] = [];
+    const notes: string[] = [];
     
     // Eclético: bônus de treinamento temporário (substitui, não soma)
     // Verifica qual tier de Eclético está ativo para calcular bônus de substituição
@@ -321,8 +329,16 @@ export function DiceRollModal({
     
     // Calcula bônus final: usa effectiveSkillBonus se swapToSkill estiver ativo
     const powerBonus = activatedPowerEffects.extraBonus;
-    const baseSkillBonus = activatedPowerEffects.skillSwap ? effectiveSkillBonus : skillBonus;
+    const ecleticoReplacesTraining = !activatedPowerEffects.skillSwap && activatedPowerEffects.ecleticoBonus !== undefined;
+    // Eclético substitui somente o treinamento. Bônus numéricos já preparados
+    // de poderes/itens continuam somados; não adicionamos o treinamento duas vezes.
+    const baseSkillBonus = activatedPowerEffects.skillSwap ? effectiveSkillBonus
+      : ecleticoReplacesTraining ? effectiveSkillBonus + skillBonus - (sourceTrainingBonus ?? skillBonus) : skillBonus;
     const totalBonus = baseSkillBonus + resistanceBonus + powerBonus;
+    // As telas podem preparar skillBonus como total agregado. Só separamos o
+    // treinamento quando existe uma origem explícita, sem recalcular o total.
+    const recordedSkillBonus = activatedPowerEffects.skillSwap || ecleticoReplacesTraining ? effectiveSkillBonus
+      : sourceTrainingBonus ?? baseSkillBonus;
     
     // Calcula atributo efetivo (Conhecimento Aplicado OU swapToSkill OU troca por poder ativado)
     let finalAttribute = attributeValue;
@@ -369,7 +385,8 @@ export function DiceRollModal({
         const rollResult = rollSkillTest({
           attributeValue: finalAttribute,
           dicePenalty,
-          skillBonus: totalBonus,
+          skillBonus: recordedSkillBonus,
+          otherBonuses: totalBonus - recordedSkillBonus,
           extraDice,  // Passa dados extras do Discurso Motivador
           label,
         });
@@ -407,6 +424,7 @@ export function DiceRollModal({
     dicePenalty,
     extraDice,
     skillBonus, 
+    sourceTrainingBonus,
     effectiveSkillBonus,
     resistanceBonus, 
     attributeValue, 
@@ -476,6 +494,9 @@ export function DiceRollModal({
 
   const total = result?.total || 0;
   const isRolling = phase === 'rolling';
+  const resultBonusSources: BonusSource[] = result && !activatedPowerEffects.skillSwap && activatedPowerEffects.ecleticoBonus !== undefined
+    ? [...bonusSources.filter(source => source.type !== 'skill'), { label: 'Treinamento (Eclético)', value: result.skillBonus, type: 'skill' }]
+    : bonusSources;
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
@@ -495,7 +516,7 @@ export function DiceRollModal({
 
         <div className="space-y-6 py-4">
           {/* Painel de ativação de poderes - APARECE PRIMEIRO na fase preparing */}
-          {phase === 'preparing' && activatablePowers.length > 0 && peCurrent > 0 && (
+          {phase === 'preparing' && skillPowers.length > 0 && peCurrent > 0 && (
             <div className="border-b border-border pb-4">
               <button
                 onClick={() => setIsPowerPanelExpanded(!isPowerPanelExpanded)}
@@ -503,7 +524,7 @@ export function DiceRollModal({
               >
                 <span className="flex items-center gap-2">
                   <Zap className="w-4 h-4 text-yellow-500" />
-                  Poderes Ativáveis ({activatablePowers.length})
+                  Poderes Ativáveis ({skillPowers.length})
                 </span>
                 <span className="text-xs">
                   PE: {peCurrent} | Custo: {getTotalPECost()}
@@ -512,7 +533,7 @@ export function DiceRollModal({
               
               {isPowerPanelExpanded && (
                 <PowerActivationPanel
-                  availablePowers={activatablePowers}
+                  availablePowers={skillPowers}
                   activationStates={activationStates}
                   onPowerToggle={togglePower}
                   peCurrent={peCurrent}
@@ -571,7 +592,7 @@ export function DiceRollModal({
           )}
 
           {/* Painel de ativação de poderes - versão compacta APÓS rolagem */}
-          {phase !== 'preparing' && activatablePowers.length > 0 && peCurrent > 0 && (
+          {phase !== 'preparing' && skillPowers.length > 0 && peCurrent > 0 && (
             <div className="border-t border-border pt-4">
               <button
                 onClick={() => setIsPowerPanelExpanded(!isPowerPanelExpanded)}
@@ -579,7 +600,7 @@ export function DiceRollModal({
               >
                 <span className="flex items-center gap-2">
                   <Zap className="w-4 h-4 text-yellow-500" />
-                  Poderes Ativáveis ({activatablePowers.length})
+                  Poderes Ativáveis ({skillPowers.length})
                 </span>
                 <span className="text-xs">
                   PE: {peCurrent} | Custo: {getTotalPECost()}
@@ -588,7 +609,7 @@ export function DiceRollModal({
               
               {isPowerPanelExpanded && (
                 <PowerActivationPanel
-                  availablePowers={activatablePowers}
+                  availablePowers={skillPowers}
                   activationStates={activationStates}
                   onPowerToggle={togglePower}
                   peCurrent={peCurrent}
@@ -620,8 +641,8 @@ export function DiceRollModal({
                     </span>
                     
                     {/* Se há detalhamento de bônus, mostra por origem com tooltips */}
-                    {bonusSources.length > 0 ? (
-                      bonusSources.filter(s => s.value !== 0).map((source, idx) => (
+                    {resultBonusSources.length > 0 ? (
+                      resultBonusSources.filter(s => s.value !== 0).map((source, idx) => (
                         <span key={idx} className="flex items-center gap-1">
                           <span className="text-muted-foreground">+</span>
                           {source.description || source.sourceName ? (
@@ -675,6 +696,9 @@ export function DiceRollModal({
                     )}
                   </div>
                 </TooltipProvider>
+                <p className="text-center text-xs text-muted-foreground">
+                  Cálculo: {result.keptDice} + perícia ({result.skillBonus}) + outros bônus ({result.otherBonuses}) = {result.total}
+                </p>
 
                 {/* Total grande */}
                 <div className="text-center">

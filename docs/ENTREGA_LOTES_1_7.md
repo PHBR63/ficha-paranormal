@@ -148,6 +148,6 @@ Uma única conta real está disponível. Isolamento mestre/jogador/estranho/anô
 - Tipos e build passaram; regressão completa: **3.029 testes / 113 arquivos**. Regressão adicional após ajustes de callbacks: 19 testes passaram.
 - Lint global permanece com débito anterior; comparação das unidades alteradas exige zero diagnósticos novos antes do merge.
 - Ensaios SQL das migrations novas executados antes/depois, com rollback; verificação confirmou ausência de fixtures residuais.
-- Aceite publicado: em andamento, sem declarar concluído nesta versão do relatório.
+- A PR #11 foi integrada e publicada; a conferência autenticada e os ajustes encontrados estão em [CONFERENCIA_PUBLICADA_LOTES_1_7.md](CONFERENCIA_PUBLICADA_LOTES_1_7.md). A regressão posterior passou com 3.049 testes/116 arquivos, mais três cenários de rótulos de campanha. A conferência da publicação final é registrada nas evidências da execução.
 
 Roteiro: ficha A/B e recarga; filtros/tipo/período/sessão; ocultar/recuperar; falha e retry; clicar duas vezes; mudar recurso entre abas; conjurar e cancelar; selecionar alvo e aplicar; controlar arma/sustentação; campanhas v1/v2 e convite inválido; mobile 320/360/390 e desktop.

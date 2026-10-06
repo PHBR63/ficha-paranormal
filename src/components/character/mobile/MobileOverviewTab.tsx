@@ -23,9 +23,9 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import type { BonusBreakdown } from '@/hooks/useCharacterBonusSummary';
+import type { DefenseBonusBreakdown } from '@/hooks/useDefenseBonuses';
 import { Progress } from '@/components/ui/progress';
-import { AnimatedProgress } from '@/components/ui/animated-progress';
+import { CombatStatsCard } from '../CombatStatsCard';
 import {
   Tooltip,
   TooltipContent,
@@ -132,6 +132,7 @@ interface MobileOverviewTabProps {
   } | null;
   /** Callback para alterar HP */
   onHPChange?: (newHP: number) => void;
+  onResourcesChange?: (stats: { hp: number; pe: number; san: number }) => void | boolean | Promise<void | boolean>;
   onOpenDiceRoller: () => void;
   onOpenRest: () => void;
   onLevelUp: () => void;
@@ -172,6 +173,7 @@ export const MobileOverviewTab = memo(function MobileOverviewTab({
   affinityActive = false,
   favoriteWeapon,
   onHPChange,
+  onResourcesChange,
   onOpenDiceRoller,
   onOpenRest,
   onLevelUp,
@@ -190,12 +192,6 @@ export const MobileOverviewTab = memo(function MobileOverviewTab({
 }: MobileOverviewTabProps) {
   const peLimit = getPELimitByNex(character.nex);
   
-  // Estados críticos
-  const hpPercent = (character.hp_current / character.hp_max) * 100;
-  const sanPercent = (character.san_current / character.san_max) * 100;
-  const isHpLow = hpPercent <= 25;
-  const isSanLow = sanPercent <= 30;
-
   return (
     <motion.div
       initial={{ opacity: 0, x: -20 }}
@@ -369,45 +365,10 @@ export const MobileOverviewTab = memo(function MobileOverviewTab({
 
       {/* Barras de recursos */}
       <div className="ordo-panel p-3 space-y-2">
-        <div className="flex items-center justify-between text-xs mb-1">
-          <span className="text-muted-foreground">RECURSOS</span>
-          <Button variant="ghost" size="sm" onClick={onEditStats} className="h-6 text-[10px]">
-            Editar
-          </Button>
-        </div>
-
-        {/* HP */}
-        <div className="flex items-center gap-2">
-          <Heart className={cn("w-4 h-4 flex-shrink-0", isHpLow ? "text-destructive" : "text-hp")} />
-          <div className="flex-1">
-            <AnimatedProgress value={character.hp_current} max={character.hp_max} variant="hp" size="sm" />
-          </div>
-          <span className={cn("text-xs font-display w-14 text-right", isHpLow ? "text-destructive" : "text-hp")}>
-            {character.hp_current}/{character.hp_max}
-          </span>
-        </div>
-
-        {/* PE */}
-        <div className="flex items-center gap-2">
-          <Zap className="w-4 h-4 text-pe flex-shrink-0" />
-          <div className="flex-1">
-            <AnimatedProgress value={character.pe_current} max={character.pe_max} variant="pe" size="sm" />
-          </div>
-          <span className="text-xs font-display text-pe w-14 text-right">
-            {character.pe_current}/{character.pe_max}
-          </span>
-        </div>
-
-        {/* SAN */}
-        <div className="flex items-center gap-2">
-          <Brain className={cn("w-4 h-4 flex-shrink-0", isSanLow ? "text-paranormal" : "text-san")} />
-          <div className="flex-1">
-            <AnimatedProgress value={character.san_current} max={character.san_max} variant="san" size="sm" />
-          </div>
-          <span className={cn("text-xs font-display w-14 text-right", isSanLow ? "text-paranormal" : "text-san")}>
-            {character.san_current}/{character.san_max}
-          </span>
-        </div>
+        <CombatStatsCard hpCurrent={character.hp_current} hpMax={character.hp_max}
+          peCurrent={character.pe_current} peMax={character.pe_max}
+          sanCurrent={character.san_current} sanMax={character.san_max}
+          onStatsChange={onResourcesChange} className="border-0 p-0 shadow-none" />
 
         {/* Stats rápidos */}
         <div className="flex justify-between pt-2 mt-2 border-t border-border text-xs">
@@ -445,9 +406,9 @@ export const MobileOverviewTab = memo(function MobileOverviewTab({
                 <div className="space-y-1 text-xs">
                   <p className="font-medium">Defesa: {totalDefense}</p>
                   <p className="text-muted-foreground">Base (10 + AGI): {character.defense}</p>
-                  {bonusSummary.defense?.breakdown?.map((entry: BonusBreakdown, index: number) => (
+                  {bonusSummary.defense?.breakdown?.map((entry: DefenseBonusBreakdown, index: number) => (
                     <p key={`${entry.source}-${index}`} className={cn('text-xs', (!entry.active || entry.excluded) && 'text-muted-foreground')}>
-                      {entry.source}: {typeof entry.value === 'number' && entry.value > 0 ? '+' : ''}{entry.value}
+                      {entry.source}: {entry.bonus > 0 ? '+' : ''}{entry.bonus}
                       {entry.excluded ? ` (não acumula${entry.excludedReason ? `: ${entry.excludedReason}` : ''})` : !entry.active ? ' (inativo)' : ''}
                     </p>
                   ))}

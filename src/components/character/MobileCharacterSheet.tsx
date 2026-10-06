@@ -1058,11 +1058,12 @@ export function MobileCharacterSheet({
       { hp_current: character.hp_current, hp_max: character.hp_max, pe_current: character.pe_current,
         pe_max: character.pe_max, san_current: character.san_current, san_max: character.san_max,
         conditions: activityJson(character.conditions || []) });
-    if (!receipt) return;
+    if (!receipt) return false;
     onConfirmed?.();
     if (autoResult.messages.length) toast.info('Condições confirmadas', { description: autoResult.messages.join(' ') });
     try { await onRefetch?.(); }
     catch { toast.error('Recursos salvos, mas a ficha não foi atualizada. Recarregue para conferir.'); }
+    return true;
   }, [character, processResourceChange, executeResourceUpdate, onRefetch]);
 
   const handlePEChange = useCallback(async (newPE: number) => {
@@ -1827,6 +1828,7 @@ export function MobileCharacterSheet({
               onOpenRest={() => setRestModalOpen(true)}
               onLevelUp={() => setNexModalOpen(true)}
               onEditStats={() => setEditModalOpen(true)}
+              onResourcesChange={handleCombatStatsChange}
               onOpenCombat={handleOpenCombat}
               onRollInitiative={handleRollInitiative}
               onClearHistory={clearHistory}

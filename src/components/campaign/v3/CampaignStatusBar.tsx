@@ -81,6 +81,7 @@ const MemberAvatar = memo(function MemberAvatar({
         <button
           className="relative focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-full"
           title={displayName}
+          aria-label={`Ver presença de ${displayName}: ${statusLabel}`}
         >
           <Avatar className="h-8 w-8 border-2 border-background ring-1 ring-border/50 hover:ring-primary/50 transition-all">
             <AvatarImage src={avatarUrl || undefined} alt={displayName} />
@@ -197,6 +198,8 @@ export const CampaignStatusBar = memo(function CampaignStatusBar({
                   size="sm"
                   className="gap-1.5 text-destructive hover:text-destructive"
                   onClick={onEndSession}
+                  aria-label="Encerrar sessão atual"
+                  title="Encerrar sessão atual"
                 >
                   <Square className="h-3.5 w-3.5" />
                   <span className="hidden sm:inline">Encerrar</span>
@@ -212,6 +215,8 @@ export const CampaignStatusBar = memo(function CampaignStatusBar({
                   size="sm"
                   className="gap-1.5 text-primary hover:text-primary"
                   onClick={onStartSession}
+                  aria-label="Iniciar nova sessão"
+                  title="Iniciar nova sessão"
                 >
                   <Play className="h-3.5 w-3.5" />
                   <span className="hidden sm:inline">Iniciar</span>
@@ -224,7 +229,7 @@ export const CampaignStatusBar = memo(function CampaignStatusBar({
 
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-9 w-9" onClick={onOpenDice}>
+            <Button variant="ghost" size="icon" className="h-9 w-9" onClick={onOpenDice} aria-label="Rolar dados" title="Rolar dados">
               <Dice6 className="h-4 w-4" />
             </Button>
           </TooltipTrigger>
@@ -233,7 +238,7 @@ export const CampaignStatusBar = memo(function CampaignStatusBar({
 
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-9 w-9" onClick={onOpenNotes}>
+            <Button variant="ghost" size="icon" className="h-9 w-9" onClick={onOpenNotes} aria-label="Abrir notas rápidas" title="Abrir notas rápidas">
               <FileText className="h-4 w-4" />
             </Button>
           </TooltipTrigger>

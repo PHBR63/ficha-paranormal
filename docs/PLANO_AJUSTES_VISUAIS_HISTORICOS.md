@@ -1,7 +1,7 @@
 # Plano de ajustes — interface, avisos, históricos e efeitos
 
 **Projeto:** Ordem Roll / ficha-paranormal. **Data:** 06/10/2026.
-**Situação:** lote 0/S0 concluídos. Lotes 1–6 implementados e verificados no código/banco em 06/10/2026; lote 7 em conferência de publicação. As decisões de histórico, autorização, cancelamento e ocultação foram confirmadas pelo usuário. Contratos e evidências atuais em [ENTREGA_LOTES_1_7.md](ENTREGA_LOTES_1_7.md), [CONTRATO_ATIVIDADE_SERVIDOR.md](CONTRATO_ATIVIDADE_SERVIDOR.md) e [CLIENTE_ATIVIDADES_RITUAIS.md](CLIENTE_ATIVIDADES_RITUAIS.md).
+**Situação:** lote 0/S0 concluídos. Lotes 1–6 implementados e verificados no código/banco em 06/10/2026. PR #11 integrada e publicada; lote 7 passou por conferência autenticada e correções adicionais documentadas em [CONFERENCIA_PUBLICADA_LOTES_1_7.md](CONFERENCIA_PUBLICADA_LOTES_1_7.md). As decisões de histórico, autorização, cancelamento e ocultação foram confirmadas pelo usuário. Contratos em [ENTREGA_LOTES_1_7.md](ENTREGA_LOTES_1_7.md), [CONTRATO_ATIVIDADE_SERVIDOR.md](CONTRATO_ATIVIDADE_SERVIDOR.md) e [CLIENTE_ATIVIDADES_RITUAIS.md](CLIENTE_ATIVIDADES_RITUAIS.md).
 **Base:** auditoria visual de 06/10/2026 e código `06dcc1e0fe6b3ca6758356a310010414dd6a1b63`.
 
 ## 1. Resumo e objetivo
