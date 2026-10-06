@@ -136,9 +136,9 @@ const ConditionCard = memo(function ConditionCard({
         <div className="flex items-start gap-3">
           {/* Ícone e nome */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <span className="text-lg">{conditionData.icon}</span>
-              <span className="font-medium text-sm truncate">{conditionData.name}</span>
+              <span className="font-medium text-sm break-words">{conditionData.name}</span>
               
               {/* Timer de morrendo */}
               {showDyingCounter && (
@@ -154,7 +154,8 @@ const ConditionCard = memo(function ConditionCard({
               )}
             </div>
             
-            <p className="text-[11px] text-muted-foreground mt-1 line-clamp-2">
+            {/* Regras ativas precisam ser legíveis por toque, sem depender de tooltip ou corte de linhas. */}
+            <p className="text-xs text-muted-foreground mt-1 break-words">
               {CONDITIONS[condition.id] ? getConditionEffectWithParams(condition.id, condition.params) : conditionData.effect}
             </p>
             {!CONDITIONS[condition.id] && condition.params?.customEffect && (
