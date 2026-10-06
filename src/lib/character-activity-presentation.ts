@@ -71,8 +71,8 @@ export function describeCharacterActivity(event: CharacterActivityEvent): string
         .map(([key, name]) => `${name} ${before[key]} → ${after[key]}`);
       return `${kind} · ${changes.join(' · ')}${conditionChanges}`;
     }
-    if (typeof before.hp_current === 'number' && typeof after.hp_current === 'number') return `${kind} · PV ${before.hp_current} → ${after.hp_current}${typeof payload.value === 'number' ? ` · quantidade ${payload.value}` : ''}`;
-    if (typeof before.current === 'number' && typeof after.current === 'number') return `${kind} · ${resource} ${before.current} → ${after.current}`;
+    if (typeof before.hp_current === 'number' && typeof after.hp_current === 'number') return `${kind} · PV ${before.hp_current} → ${after.hp_current}${typeof payload.value === 'number' ? ` · quantidade ${payload.value}` : ''}${conditionChanges}`;
+    if (typeof before.current === 'number' && typeof after.current === 'number') return `${kind} · ${resource} ${before.current} → ${after.current}${conditionChanges}`;
     if (Array.isArray(before.conditions) && Array.isArray(after.conditions)) return `${kind} · ${before.conditions.length} → ${after.conditions.length} condição(ões)${conditionChanges}`;
   }
   return kind;

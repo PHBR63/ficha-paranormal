@@ -22,9 +22,9 @@ DO $$ DECLARE e public.character_activity_events; BEGIN
  PERFORM public.change_character_resource('98ba0000-0000-4000-8000-000000000012',e.character_id,'san','set',100,15,15);
  IF (SELECT pe_current FROM public.characters WHERE id=e.character_id)<>0 OR (SELECT san_current FROM public.characters WHERE id=e.character_id)<>15 THEN RAISE EXCEPTION 'Clamp incorreto'; END IF;
  PERFORM public.replace_character_conditions('98ba0000-0000-4000-8000-000000000013',e.character_id,
- '[{"id":"custom","name":"Caseira","params":{"n":7}}]', '[{"id":"custom","name":"Caseira","params":{"n":7}},"Machucado"]');
+ '[{"id":"custom","name":"Caseira","params":{"n":7}}]', '[{"id":"custom","name":"Caseira","params":{"n":7}}]');
  PERFORM public.replace_character_conditions('98ba0000-0000-4000-8000-000000000013',e.character_id,
- '[{"id":"custom","name":"Caseira","params":{"n":7}}]', '[{"id":"custom","name":"Caseira","params":{"n":7}},"Machucado"]');
+ '[{"id":"custom","name":"Caseira","params":{"n":7}}]', '[{"id":"custom","name":"Caseira","params":{"n":7}}]');
  IF (SELECT conditions->0->'params'->>'n' FROM public.characters WHERE id=e.character_id)<>'7' THEN RAISE EXCEPTION 'Metadados perdidos'; END IF;
  BEGIN
   PERFORM public.replace_character_conditions('98ba0000-0000-4000-8000-000000000014',e.character_id,'[]','[]');
