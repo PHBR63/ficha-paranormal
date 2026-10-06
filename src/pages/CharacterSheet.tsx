@@ -2465,7 +2465,7 @@ export default function CharacterSheet() {
       {/* Header fixo - responsivo para mobile */}
       <header className="border-b border-border bg-card/80 sticky top-0 z-10 backdrop-blur-md relative">
         <div className="container mx-auto px-2 sm:px-4 py-2 sm:py-3">
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             {/* Lado esquerdo: Voltar + Nome */}
             <div className="flex items-center gap-2 min-w-0 flex-1">
               <Link to="/dashboard" className="flex-shrink-0">
@@ -2479,8 +2479,8 @@ export default function CharacterSheet() {
               </h1>
             </div>
             
-            {/* Lado direito: Ações - Desktop */}
-            <div className="hidden sm:flex items-center gap-1 flex-shrink-0">
+            {/* Ações em linha própria; tablet pode quebrar botões sem cortar o nome. */}
+            <div className="hidden w-full min-w-0 flex-wrap items-center gap-2 sm:flex" aria-label="Ações da ficha">
               {/* Indicador de Status de Salvamento - Fase 6 UX */}
               <SaveStatusIndicator
                 status={!isOnline ? 'offline' : saveStatus}
@@ -2500,12 +2500,12 @@ export default function CharacterSheet() {
                 rolls={rollHistory}
                 onClear={handleClearHistory}
               />
-              {ritualApplication.error && <p role="alert" className="text-sm text-destructive">{ritualApplication.error}</p>}
-      {resourceUpdate.error && <p role="alert" className="text-sm text-destructive">{resourceUpdate.error}</p>}
-      {activity.saveError && <p role="alert" className="text-sm text-destructive">{activity.saveError}</p>}
-      {activity.pendingRolls.length > 0 && <p role="status" className="text-sm text-muted-foreground">{activity.pendingRolls.length} rolagem(ns) aguardando gravação. Abra o histórico salvo para recuperar.</p>}
-      {ritualSyncError && <p role="alert" className="text-sm text-destructive">{ritualSyncError} A gravação da ficha e a sincronização da campanha são verificações separadas.</p>}
-      <CharacterActivityPanel characterId={character.id} characterName={character.name} />
+              {ritualApplication.error && <p role="alert" className="w-full text-sm text-destructive">{ritualApplication.error}</p>}
+              {resourceUpdate.error && <p role="alert" className="w-full text-sm text-destructive">{resourceUpdate.error}</p>}
+              {activity.saveError && <p role="alert" className="w-full text-sm text-destructive">{activity.saveError}</p>}
+              {activity.pendingRolls.length > 0 && <p role="status" className="w-full text-sm text-muted-foreground">{activity.pendingRolls.length} rolagem(ns) aguardando gravação. Abra o histórico salvo para recuperar.</p>}
+              {ritualSyncError && <p role="alert" className="w-full text-sm text-destructive">{ritualSyncError} A gravação da ficha e a sincronização da campanha são verificações separadas.</p>}
+              <CharacterActivityPanel characterId={character.id} characterName={character.name} />
             <CharacterHistoryPanel
                 characterId={character.id} 
                 characterName={character.name} 
@@ -2542,6 +2542,7 @@ export default function CharacterSheet() {
                 variant="ghost" 
                 size="icon"
                 onClick={handleDelete}
+                aria-label="Excluir personagem"
                 className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-8"
               >
                 <Trash2 className="w-4 h-4" />
@@ -2555,6 +2556,7 @@ export default function CharacterSheet() {
                 size="icon" 
                 className="h-8 w-8"
                 onClick={mobileActionsSheet.open}
+                aria-label="Ações do personagem"
               >
                 <MoreVertical className="w-4 h-4" />
               </Button>

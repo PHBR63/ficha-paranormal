@@ -116,6 +116,7 @@ export const KeyboardShortcutsHelp = React.memo(function KeyboardShortcutsHelp({
           size="icon"
           className={cn('h-8 w-8', className)}
           title="Atalhos de teclado (F1)"
+          aria-label="Atalhos de teclado"
         >
           <Keyboard className="h-4 w-4" />
         </Button>
