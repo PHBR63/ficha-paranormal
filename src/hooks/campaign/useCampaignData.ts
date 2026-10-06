@@ -74,6 +74,7 @@ export interface UseCampaignDataReturn {
   members: CampaignMemberV2[];
   isMaster: boolean;
   loading: boolean;
+  isRefreshing: boolean;
   error: string | null;
   refetch: () => Promise<void>;
 }
@@ -94,9 +95,13 @@ export function useCampaignData({
   const [members, setMembers] = useState<CampaignMemberV2[]>([]);
   const memberCharacterIds = useRef(new Set<string>());
   const currentContext = useRef(`${userId}:${campaignId}`);
+  // Apenas a consulta mais recente pode publicar dados, erros e fim do carregamento.
+  const requestSequence = useRef(0);
+  const invalidatePendingRequests = useCallback(() => { requestSequence.current++; }, []);
   currentContext.current = `${userId}:${campaignId}`;
   memberCharacterIds.current = new Set(members.flatMap(member => member.character_id ? [member.character_id] : []));
   const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Calcula isMaster de forma derivada (estável)
@@ -105,8 +110,9 @@ export function useCampaignData({
   /**
    * Fallback para carregar membros v1 (compatibilidade)
    */
-  const loadMembersV1 = useCallback(async (campId: string) => {
+  const loadMembersV1 = useCallback(async (campId: string, requestId: number) => {
     const requestContext = `${userId}:${campId}`;
+    const isCurrentRequest = () => currentContext.current === requestContext && requestSequence.current === requestId;
     try {
       const { data: membersRaw, error: membersError } = await supabase
         .from('campaign_members')
@@ -117,7 +123,7 @@ export function useCampaignData({
         .eq('campaign_id', campId);
 
       if (membersError) throw membersError;
-      if (currentContext.current !== requestContext) return;
+      if (!isCurrentRequest()) return;
 
       const userIds = (membersRaw || []).map(m => m.user_id);
       const { data: profiles, error: profilesError } = await supabase
@@ -125,7 +131,7 @@ export function useCampaignData({
         .select('user_id, display_name, avatar_url')
         .in('user_id', userIds);
       if (profilesError) throw profilesError;
-      if (currentContext.current !== requestContext) return;
+      if (!isCurrentRequest()) return;
 
       const profileLookup: Record<string, { display_name: string | null; avatar_url: string | null }> = {};
       (profiles || []).forEach(p => { profileLookup[p.user_id] = p; });
@@ -146,11 +152,11 @@ export function useCampaignData({
       setMembers(membersWithData);
       setError(null);
     } catch (err: unknown) {
-      if (currentContext.current !== requestContext) return;
+      if (!isCurrentRequest()) return;
       console.error('Erro ao carregar membros v1:', err);
       setError('Não foi possível carregar os membros da campanha. Verifique a conexão e o acesso.');
     } finally {
-      if (currentContext.current === requestContext) setLoading(false);
+      if (isCurrentRequest()) setLoading(false);
     }
   }, [userId]);
 
@@ -160,10 +166,15 @@ export function useCampaignData({
    */
   const refetch = useCallback(async () => {
     const requestContext = `${userId}:${campaignId}`;
+    if (currentContext.current !== requestContext) return;
+    const requestId = ++requestSequence.current;
+    const isCurrentRequest = () => currentContext.current === requestContext && requestSequence.current === requestId;
     if (!campaignId || !userId) {
       setLoading(false);
       return;
     }
+
+    setIsRefreshing(true);
 
     try {
       // 1. Fetch campanha v2 - usa .limit(1) para evitar erro 406 (Not Acceptable)
@@ -174,7 +185,7 @@ export function useCampaignData({
         .limit(1);
 
       const campaignData = campaignDataArr?.[0];
-      if (currentContext.current !== requestContext) return;
+      if (!isCurrentRequest()) return;
 
       if (campaignError || !campaignData) {
         // Se não encontrar na v2, tenta v1 como fallback
@@ -185,7 +196,7 @@ export function useCampaignData({
           .limit(1);
 
         const campaignV1 = campaignV1Arr?.[0];
-        if (currentContext.current !== requestContext) return;
+        if (!isCurrentRequest()) return;
         if (v1Error || !campaignV1) throw v1Error || new Error('Campanha não encontrada');
 
         // Adapta dados v1 para interface v2
@@ -197,12 +208,9 @@ export function useCampaignData({
         });
 
         // Continua com membros v1
-        await loadMembersV1(campaignId);
+        await loadMembersV1(campaignId, requestId);
         return;
       }
-
-      setCampaign(campaignData as CampaignV2);
-      setSchemaVersion('v2');
 
       // 2. Fetch membros v2 com join em characters
       const { data: membersRaw, error: membersError } = await supabase
@@ -214,7 +222,7 @@ export function useCampaignData({
         .eq('campaign_id', campaignId);
 
       if (membersError) throw membersError;
-      if (currentContext.current !== requestContext) return;
+      if (!isCurrentRequest()) return;
 
       // 3. Busca profiles em lote (sem FK, usa IN)
       const userIds = (membersRaw || []).map(m => m.user_id);
@@ -223,7 +231,7 @@ export function useCampaignData({
         .select('user_id, display_name, avatar_url')
         .in('user_id', userIds);
       if (profilesError) throw profilesError;
-      if (currentContext.current !== requestContext) return;
+      if (!isCurrentRequest()) return;
 
       // 4. Cria lookup Map para O(1) e mescla
       const profileLookup: Record<string, { display_name: string | null; avatar_url: string | null }> = {};
@@ -239,11 +247,13 @@ export function useCampaignData({
         } : null,
       })) as CampaignMemberV2[];
 
+      setCampaign(campaignData as CampaignV2);
+      setSchemaVersion('v2');
       setMembers(membersWithData);
       setError(null);
 
     } catch (err: unknown) {
-      if (currentContext.current !== requestContext) return;
+      if (!isCurrentRequest()) return;
       console.error('Erro ao carregar campanha:', err);
       setError('Não foi possível carregar a campanha. Verifique a conexão e o acesso.');
       toastRef.current?.({
@@ -252,15 +262,19 @@ export function useCampaignData({
         variant: 'destructive',
       });
     } finally {
-      if (currentContext.current === requestContext) setLoading(false);
+      if (isCurrentRequest()) { setLoading(false); setIsRefreshing(false); }
     }
   }, [campaignId, userId, loadMembersV1]); // Deps mínimas - toast usa ref
 
   // Carregamento inicial e realtime
   useEffect(() => {
     setMembers([]); setCampaign(null); setSchemaVersion(null); setError(null); setLoading(true);
+    setIsRefreshing(false);
     memberCharacterIds.current.clear();
-    if (!campaignId || !userId) return;
+    if (!campaignId || !userId) { setLoading(false); return; }
+
+    let active = true;
+    const refreshCampaign = () => { if (active) void refetch(); };
 
     refetch();
 
@@ -273,13 +287,13 @@ export function useCampaignData({
         schema: 'public',
         table: 'campaign_members_v2',
         filter: `campaign_id=eq.${campaignId}`,
-      }, () => refetch())
+      }, refreshCampaign)
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
         table: 'campaign_members',
         filter: `campaign_id=eq.${campaignId}`,
-      }, () => refetch())
+      }, refreshCampaign)
       .on('postgres_changes', {
         event: 'UPDATE',
         schema: 'public',
@@ -287,17 +301,26 @@ export function useCampaignData({
       }, payload => {
         // Recursos/condições confirmados podem mudar sem UPDATE no membro.
         // RLS filtra o servidor; este filtro evita recarregar campanhas alheias.
-        if (typeof payload.new.id === 'string' && memberCharacterIds.current.has(payload.new.id)) void refetch();
+        if (typeof payload.new.id === 'string' && memberCharacterIds.current.has(payload.new.id)) refreshCampaign();
       })
       .subscribe(status => {
         // SUBSCRIBED também ocorre após reconexão: recupera eventos perdidos.
-        if (status === 'SUBSCRIBED') void refetch();
+        if (status === 'SUBSCRIBED') refreshCampaign();
       });
 
+    // Retomar uma aba suspensa também exige leitura: notificações podem ter sido perdidas.
+    const onResume = () => { if (document.visibilityState === 'visible') refreshCampaign(); };
+    document.addEventListener('visibilitychange', onResume);
+    window.addEventListener('online', onResume);
+
     return () => {
+      active = false;
+      invalidatePendingRequests();
       supabase.removeChannel(channel);
+      document.removeEventListener('visibilitychange', onResume);
+      window.removeEventListener('online', onResume);
     };
-  }, [campaignId, userId, refetch]);
+  }, [campaignId, userId, refetch, invalidatePendingRequests]);
 
   return {
     schemaVersion,
@@ -305,6 +328,7 @@ export function useCampaignData({
     members,
     isMaster,
     loading,
+    isRefreshing,
     error,
     refetch,
   };

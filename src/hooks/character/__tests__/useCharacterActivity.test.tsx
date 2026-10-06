@@ -3,17 +3,54 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ReactNode } from 'react';
 import { useCharacterActivity } from '../useCharacterActivity';
-const fake = vi.hoisted(() => ({ record: vi.fn(), list: vi.fn(), sessions: vi.fn(), hide: vi.fn(), toast: vi.fn(), user: { id: 'owner' } }));
+const fake = vi.hoisted(() => ({ record: vi.fn(), list: vi.fn(), sessions: vi.fn(), hide: vi.fn(), toast: vi.fn(), user: { id: 'owner' }, subscriptions: [] as Array<(status: string) => void> }));
 vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: fake.user }) }));
 vi.mock('@/hooks/use-toast', () => ({ useToast: () => ({ toast: fake.toast }) }));
 vi.mock('@/services/character-activity-service', () => ({ recordCharacterRoll: fake.record, listCharacterActivity: fake.list, listCharacterActivitySessions: fake.sessions, hideCharacterActivity: fake.hide }));
-vi.mock('@/integrations/supabase/client', () => ({ supabase: { channel: () => { const channel = { on: vi.fn(() => channel), subscribe: vi.fn(() => channel) }; return channel; }, removeChannel: vi.fn() } }));
+vi.mock('@/integrations/supabase/client', () => ({ supabase: { channel: () => { const channel = { on: vi.fn(() => channel), subscribe: vi.fn((callback: (status: string) => void) => { fake.subscriptions.push(callback); return channel; }) }; return channel; }, removeChannel: vi.fn() } }));
 const characterA = '00000000-0000-4000-8000-000000000001';
 const characterB = '00000000-0000-4000-8000-000000000002';
 const operationId = '00000000-0000-4000-8000-000000000003';
 function wrapper({ children }: { children: ReactNode }) { return <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })}>{children}</QueryClientProvider>; }
-beforeEach(() => { vi.restoreAllMocks(); localStorage.clear(); fake.user.id = 'owner'; vi.clearAllMocks(); fake.list.mockResolvedValue([]); fake.sessions.mockResolvedValue([]); fake.record.mockRejectedValue(new Error('Sem conexão')); });
+beforeEach(() => { vi.restoreAllMocks(); localStorage.clear(); fake.user.id = 'owner'; fake.subscriptions.length = 0; vi.clearAllMocks(); fake.list.mockResolvedValue([]); fake.sessions.mockResolvedValue([]); fake.record.mockRejectedValue(new Error('Sem conexão')); });
 describe('isolamento e recuperação de atividade', () => {
+  it('reconectar atualiza recursos/condições da ficha além do histórico', async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    client.setQueryData(['character', characterA], { san_current: 15 });
+    const invalidate = vi.spyOn(client, 'invalidateQueries');
+    const received: string[] = [];
+    const listener = (event: Event) => { received.push((event as CustomEvent<string>).detail); };
+    window.addEventListener('character-server-updated', listener);
+    const { unmount } = renderHook(() => useCharacterActivity(characterA), {
+      wrapper: ({ children }: { children: ReactNode }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>,
+    });
+    try {
+      const subscribe = fake.subscriptions.at(-1)!;
+      await act(async () => { subscribe('SUBSCRIBED'); });
+      expect(invalidate).toHaveBeenCalledWith({ queryKey: ['character', characterA] });
+      expect(client.getQueryState(['character', characterA])?.isInvalidated).toBe(true);
+      expect(received).toEqual([characterA]);
+      unmount();
+      await act(async () => { subscribe('SUBSCRIBED'); window.dispatchEvent(new Event('online')); });
+      expect(received).toEqual([characterA]);
+    } finally { window.removeEventListener('character-server-updated', listener); }
+  });
+  it('retomar conexão ou aba busca apenas a ficha atualmente aberta', async () => {
+    const received: string[] = [];
+    const listener = (event: Event) => { received.push((event as CustomEvent<string>).detail); };
+    window.addEventListener('character-server-updated', listener);
+    const { rerender, unmount } = renderHook(({ id }) => useCharacterActivity(id), { initialProps: { id: characterA }, wrapper });
+    try {
+      await act(async () => { window.dispatchEvent(new Event('online')); });
+      expect(received).toEqual([characterA]);
+      rerender({ id: characterB });
+      await act(async () => { document.dispatchEvent(new Event('visibilitychange')); });
+      expect(received).toEqual([characterA, characterB]);
+      unmount();
+      await act(async () => { document.dispatchEvent(new Event('visibilitychange')); });
+      expect(received).toEqual([characterA, characterB]);
+    } finally { window.removeEventListener('character-server-updated', listener); }
+  });
   it('mantém fila da ficha original e não mistura ao navegar para outra', async () => {
     const { result, rerender } = renderHook(({ id }) => useCharacterActivity(id), { initialProps: { id: characterA }, wrapper });
     await act(async () => { expect(await result.current.addRoll({ total: 17 }, operationId)).toBe(false); });

@@ -23,6 +23,7 @@ import { useTacticalBoard } from '@/hooks/campaign/useTacticalBoard';
 import { useMasterActions } from '@/hooks/campaign/useMasterActions';
 import { useCampaignAudio } from '@/hooks/campaign/useCampaignAudio';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
 import {
   CampaignHeader,
   CampaignNavigation,
@@ -210,11 +211,18 @@ export default function CampaignShell() {
     );
   }
 
-  if (!campaign) {
+  if (campaignData.error || !campaign) {
     return (
       <div className="h-screen flex items-center justify-center bg-background">
         <div className="text-center space-y-4">
-          <p className="text-muted-foreground">Campanha não encontrada</p>
+          <p role="alert" className="text-muted-foreground max-w-md px-4">
+            {campaignData.error || 'Campanha não encontrada'}
+          </p>
+          {campaignData.error && (
+            <Button disabled={campaignData.isRefreshing} onClick={() => { void campaignData.refetch(); }}>
+              {campaignData.isRefreshing ? 'Atualizando campanha…' : 'Tentar carregar novamente'}
+            </Button>
+          )}
           <button 
             onClick={() => navigate('/campaigns')}
             className="text-primary hover:underline"
