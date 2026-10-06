@@ -137,7 +137,10 @@ export function useMasterActions({
       const { error: updateError } = await supabase
         .from('characters')
         .update({ hp_current: newHP })
-        .eq('id', characterId);
+        .eq('id', characterId)
+        // Exige uma linha retornada: RLS pode negar UPDATE sem erro SQL.
+        .select('id')
+        .single();
       
       if (updateError) throw updateError;
       
@@ -184,7 +187,10 @@ export function useMasterActions({
       const { error: updateError } = await supabase
         .from('characters')
         .update({ pe_current: newPE })
-        .eq('id', characterId);
+        .eq('id', characterId)
+        // Exige uma linha retornada: RLS pode negar UPDATE sem erro SQL.
+        .select('id')
+        .single();
       
       if (updateError) throw updateError;
       
@@ -231,7 +237,10 @@ export function useMasterActions({
       const { error: updateError } = await supabase
         .from('characters')
         .update({ san_current: newSAN })
-        .eq('id', characterId);
+        .eq('id', characterId)
+        // Exige uma linha retornada: RLS pode negar UPDATE sem erro SQL.
+        .select('id')
+        .single();
       
       if (updateError) throw updateError;
       
@@ -278,7 +287,10 @@ export function useMasterActions({
       const { error: updateError } = await supabase
         .from('characters')
         .update({ hp_current: newHP })
-        .eq('id', characterId);
+        .eq('id', characterId)
+        // Exige uma linha retornada: RLS pode negar UPDATE sem erro SQL.
+        .select('id')
+        .single();
       
       if (updateError) throw updateError;
       
@@ -325,7 +337,10 @@ export function useMasterActions({
       const { error: updateError } = await supabase
         .from('characters')
         .update({ pe_current: newPE })
-        .eq('id', characterId);
+        .eq('id', characterId)
+        // Exige uma linha retornada: RLS pode negar UPDATE sem erro SQL.
+        .select('id')
+        .single();
       
       if (updateError) throw updateError;
       
@@ -372,7 +387,10 @@ export function useMasterActions({
       const { error: updateError } = await supabase
         .from('characters')
         .update({ san_current: newSAN })
-        .eq('id', characterId);
+        .eq('id', characterId)
+        // Exige uma linha retornada: RLS pode negar UPDATE sem erro SQL.
+        .select('id')
+        .single();
       
       if (updateError) throw updateError;
       
@@ -434,7 +452,10 @@ export function useMasterActions({
       const { error: updateError } = await supabase
         .from('characters')
         .update({ conditions: newConditions })
-        .eq('id', characterId);
+        .eq('id', characterId)
+        // Exige uma linha retornada: RLS pode negar UPDATE sem erro SQL.
+        .select('id')
+        .single();
       
       if (updateError) throw updateError;
       
@@ -482,7 +503,10 @@ export function useMasterActions({
       const { error: updateError } = await supabase
         .from('characters')
         .update({ conditions: newConditions })
-        .eq('id', characterId);
+        .eq('id', characterId)
+        // Exige uma linha retornada: RLS pode negar UPDATE sem erro SQL.
+        .select('id')
+        .single();
       
       if (updateError) throw updateError;
       
@@ -519,7 +543,10 @@ export function useMasterActions({
       const { error: updateError } = await supabase
         .from('characters')
         .update({ conditions: [] })
-        .eq('id', characterId);
+        .eq('id', characterId)
+        // Exige uma linha retornada: RLS pode negar UPDATE sem erro SQL.
+        .select('id')
+        .single();
       
       if (updateError) throw updateError;
       
