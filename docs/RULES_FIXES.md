@@ -54,3 +54,55 @@ Após casos adicionais de compatibilidade e expansão para testes do sistema de
 rituais:203/203 aprovados. Tipos da aplicação aprovados.
 Verificações reproduzíveis: `ritual-system.vitest.ts`, `RitualCastRules.test.tsx`
 e os demais testes em `src/lib/rituals`, além de `ritual-casting.vitest.ts`.
+
+## Lote 2 — dano de Deflagração de Energia
+
+### 1. Resumo
+
+Livro Base v1.3, impressa 129/PDF 139: rolar três d10 e multiplicar a soma por
+dez. Corrigida a representação anterior de 30d10, que alterava a distribuição.
+As formas básica e verdadeira herdam a mesma fórmula de dano.
+
+### 2. Arquivos e responsabilidades
+
+- `src/lib/rituals/fourth-circle.ts`: catálogo de Deflagração; fornece a fórmula.
+- `src/lib/rituals/types.ts` e `legacy-exports.ts`: contratos e apresentação do
+  multiplicador opcional; fórmulas antigas continuam com multiplicador 1.
+- `src/lib/rituals/ritual-adapter.ts`: transporta o multiplicador ao modelo legado.
+- `src/lib/rituals/ritual-damage.ts`: recebe fórmula e bônus, valida entradas,
+  retorna dados originais, multiplicador, bônus e total; sem acesso ao banco.
+- `src/lib/rituals/ritual-effects-engine.ts`: utiliza o cálculo nos efeitos.
+- `src/hooks/sue/useRitualDamageWithSUE.ts`: aplica o cálculo antes dos adicionais
+  do SUE; usado pelo modal legado.
+- `src/components/character/RitualDamageModal.tsx`: apresenta e entrega o resultado.
+- `src/components/character/RitualEffectWizard.tsx` e
+  `mobile/MobileRitualEffectWizard.tsx`: processam dano e resistência nas fichas.
+- `src/lib/rituals/__tests__/ritual-damage.vitest.ts` e
+  `src/components/character/__tests__/RitualEffectWizardRules.test.tsx`: regressões
+  do catálogo, motor, cálculo e três caminhos de interface.
+- `docs/RULES_FIXES.md`: documentação sem consumidor no aplicativo.
+
+### 3. Comunicação
+
+Catálogo → registro/adaptador → motor, wizards ou hook SUE → callback da ficha.
+O multiplicador afeta os dados; bônus fixos entram depois. Resistência reduz o
+total pela metade antes do callback. Não há alteração de tabelas ou migration.
+
+### 4. Patch
+
+`{ diceCount: 3, diceType: 10, diceMultiplier: 10 }` substitui 30d10.
+O total compartilhado é `somaDosDados * multiplicador + bonus`.
+
+### 5. Observações
+
+Este lote verifica o dano e sua redução. Não implementa seleção de todos os
+alvos, imunidade do conjurador ou destruição de eletrônicos. Callbacks de dano
+que apenas exibem avisos continuam sujeitos à integração com o alvo correto.
+Cura e PV temporários não recebem o novo multiplicador.
+
+### 6. Testes
+
+Reproduzidas três falhas reais no catálogo/motor antes da correção. Depois,
+14 casos focados passaram, incluindo dados 1/5/10 → 160, bônus +4 → 164 e
+resistência bem-sucedida → 82. Expansão de rituais e interfaces: 217/217.
+Incluídos casos sem multiplicador e rejeição de valores inválidos.

@@ -56,6 +56,7 @@ import {
 import { CONDITIONS } from '@/lib/conditions';
 import { ActiveCondition } from './ConditionManager';
 import { WeaponBuff } from '@/hooks/useWeaponBuffs';
+import { rollRitualDamage } from '@/lib/rituals/ritual-damage';
 
 // ==================== TIPOS ====================
 
@@ -67,6 +68,7 @@ interface DamageRollResult {
   dice: number[];
   diceType: number;
   bonus: number;
+  diceMultiplier?: number;
   total: number;
   damageType: AnyDamageType;
   ignoresRD: boolean;
@@ -421,6 +423,9 @@ function DamageStep({
                     {die}
                   </motion.div>
                 ))}
+                {result.diceMultiplier && result.diceMultiplier !== 1 && (
+                  <span className="font-mono text-muted-foreground">×{result.diceMultiplier}</span>
+                )}
                 {result.bonus !== 0 && (
                   <span className="text-muted-foreground font-mono">
                     {result.bonus > 0 ? `+${result.bonus}` : result.bonus}
@@ -926,12 +931,14 @@ export function RitualEffectWizard({
     
     setTimeout(() => {
       let dice: number[], diceType: number, bonus: number, damageType: AnyDamageType, ignoresRD: boolean;
+      let diceMultiplier = 1;
+      let calculatedDamageTotal: number | undefined;
       
       if (activeEffect.damage) {
-        dice = rollDice(activeEffect.damage.diceCount, activeEffect.damage.diceType);
-        diceType = activeEffect.damage.diceType;
-        // Aplica bônus do ritual + bônus do SUE apenas para dano
-        bonus = (activeEffect.damage.bonus || 0) + sueBonus;
+        // Usa a mesma regra do motor e preserva bônus fixos após o multiplicador.
+        const damageRoll = rollRitualDamage(activeEffect.damage, sueBonus);
+        ({ dice, diceType, bonus, diceMultiplier } = damageRoll);
+        calculatedDamageTotal = damageRoll.total;
         damageType = activeEffect.damage.damageType;
         ignoresRD = activeEffect.damage.ignoresRD || false;
       } else if (activeEffect.healing) {
@@ -952,8 +959,8 @@ export function RitualEffectWizard({
         return;
       }
 
-      const total = dice.reduce((a, b) => a + b, 0) + bonus;
-      setDamageResult({ dice, diceType, bonus, total, damageType, ignoresRD });
+      const total = calculatedDamageTotal ?? (dice.reduce((a, b) => a + b, 0) + bonus);
+      setDamageResult({ dice, diceType, bonus, diceMultiplier, total, damageType, ignoresRD });
       setIsRolling(false);
     }, 500);
   }, [activeEffect, ritualDamageBonus, damageAttributeBonus, healingBonusFromOrigin]);

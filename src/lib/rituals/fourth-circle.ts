@@ -163,10 +163,10 @@ export const ENERGY_FOURTH_CIRCLE: UnifiedRitual[] = [
     effects: {
       base: {
         kind: 'damage',
-        damage: { diceCount: 30, diceType: 10, damageType: 'energia' },
+        damage: { diceCount: 3, diceType: 10, diceMultiplier: 10, damageType: 'energia' },
         areaEffect: { shape: 'esfera', radius: 15 },
         resistance: { type: 'fortitude', effect: 'reduz_metade' },
-        summary: '3d10x10 (30d10) Energia em 15m. Quebra eletrônicos. Você é imune.',
+        summary: '3d10×10 Energia em 15m. Quebra eletrônicos. Você é imune.',
       },
       verdadeiro: {
         kind: 'damage',

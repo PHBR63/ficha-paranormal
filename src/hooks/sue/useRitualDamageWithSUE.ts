@@ -8,6 +8,7 @@
 
 import { useCallback, useMemo } from 'react';
 import type { CharacterState } from '@/lib/rules-engine/types';
+import { rollRitualDamage } from '@/lib/rituals/ritual-damage';
 
 // =====================================================
 // TIPOS
@@ -50,6 +51,8 @@ export interface RitualDamageConfig {
   
   /** Fórmula de dano base (ex: "2d6", "3d8") */
   baseDamage: string;
+  /** Multiplica os dados base, sem multiplicar modificadores fixos. */
+  diceMultiplier?: number;
   
   /** Tipo de dano */
   damageType?: string;
@@ -82,6 +85,7 @@ export interface RitualDamageResult {
   
   /** Dados do dano base do ritual */
   baseDice: number[];
+  diceMultiplier?: number;
   baseSubtotal: number;
   baseFormula: string;
   
@@ -226,8 +230,10 @@ export function useRitualDamageWithSUE(config: RitualDamageCharacterConfig) {
     // 1. Rolar dano base do ritual
     const baseFormula = parseDamageFormula(ritualConfig.baseDamage);
     const baseDiceCount = baseFormula.count * criticalMultiplier;
-    const baseDice = rollDice(baseDiceCount, baseFormula.sides);
-    const baseSubtotal = baseDice.reduce((sum, d) => sum + d, 0) + baseFormula.bonus;
+    const baseRoll = rollRitualDamage({ diceCount: baseDiceCount, diceType: baseFormula.sides,
+      bonus: baseFormula.bonus, diceMultiplier: ritualConfig.diceMultiplier });
+    const baseDice = baseRoll.dice;
+    const baseSubtotal = baseRoll.total;
     
     // 2. Rolar dados de potenciações
     const enhancementDice: RitualDamageResult['enhancementDice'] = [];
@@ -286,6 +292,7 @@ export function useRitualDamageWithSUE(config: RitualDamageCharacterConfig) {
       total,
       isCritical,
       baseDice,
+      diceMultiplier: baseRoll.diceMultiplier,
       baseSubtotal,
       baseFormula: ritualConfig.baseDamage,
       enhancementDice,
@@ -305,7 +312,7 @@ export function useRitualDamageWithSUE(config: RitualDamageCharacterConfig) {
     // Dano base
     sources.push({
       label: 'Dano Base',
-      value: ritualConfig.baseDamage,
+      value: `${ritualConfig.baseDamage}${ritualConfig.diceMultiplier && ritualConfig.diceMultiplier !== 1 ? `×${ritualConfig.diceMultiplier}` : ''}`,
       type: 'ritual',
     });
     

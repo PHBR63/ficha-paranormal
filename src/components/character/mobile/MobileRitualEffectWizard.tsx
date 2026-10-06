@@ -54,6 +54,7 @@ import {
 import { CONDITIONS } from '@/lib/conditions';
 import { ActiveCondition } from './MobileConditionManager';
 import { WeaponBuff } from '@/hooks';
+import { rollRitualDamage } from '@/lib/rituals/ritual-damage';
 
 // ==================== TIPOS ====================
 
@@ -65,6 +66,7 @@ interface DamageRollResult {
   dice: number[];
   diceType: number;
   bonus: number;
+  diceMultiplier?: number;
   total: number;
   damageType: AnyDamageType;
   ignoresRD: boolean;
@@ -418,6 +420,9 @@ const DamageStep = memo(function DamageStep({
                     {die}
                   </motion.div>
                 ))}
+                {result.diceMultiplier && result.diceMultiplier !== 1 && (
+                  <span className="font-mono text-muted-foreground">×{result.diceMultiplier}</span>
+                )}
                 {result.bonus !== 0 && (
                   <span className="text-sm text-muted-foreground font-mono">
                     {result.bonus > 0 ? `+${result.bonus}` : result.bonus}
@@ -943,12 +948,13 @@ export const MobileRitualEffectWizard = memo(function MobileRitualEffectWizard({
     
     setTimeout(() => {
       let dice: number[], diceType: number, bonus: number, damageType: AnyDamageType, ignoresRD: boolean;
+      let diceMultiplier = 1;
+      let calculatedDamageTotal: number | undefined;
       
       if (activeEffect.damage) {
-        dice = rollDice(activeEffect.damage.diceCount, activeEffect.damage.diceType);
-        diceType = activeEffect.damage.diceType;
-        // Aplica bônus do ritual + bônus do SUE apenas para dano
-        bonus = (activeEffect.damage.bonus || 0) + sueBonus;
+        const damageRoll = rollRitualDamage(activeEffect.damage, sueBonus);
+        ({ dice, diceType, bonus, diceMultiplier } = damageRoll);
+        calculatedDamageTotal = damageRoll.total;
         damageType = activeEffect.damage.damageType;
         ignoresRD = activeEffect.damage.ignoresRD || false;
       } else if (activeEffect.healing) {
@@ -969,8 +975,8 @@ export const MobileRitualEffectWizard = memo(function MobileRitualEffectWizard({
         return;
       }
 
-      const total = dice.reduce((a, b) => a + b, 0) + bonus;
-      setDamageResult({ dice, diceType, bonus, total, damageType, ignoresRD });
+      const total = calculatedDamageTotal ?? (dice.reduce((a, b) => a + b, 0) + bonus);
+      setDamageResult({ dice, diceType, bonus, diceMultiplier, total, damageType, ignoresRD });
       setIsRolling(false);
     }, 400);
   }, [activeEffect, ritualDamageBonus, damageAttributeBonus]);
