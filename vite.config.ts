@@ -14,7 +14,7 @@ export default defineConfig(({ mode }) => ({
     react(),
     mode === "development" && componentTagger(),
     VitePWA({
-      registerType: "autoUpdate",
+      registerType: "prompt",
       includeAssets: ["favicon.ico", "robots.txt", "apple-touch-icon.png", "apple-touch-icon-152x152.png"],
       // Habilita PWA em modo desenvolvimento para debug
       devOptions: {

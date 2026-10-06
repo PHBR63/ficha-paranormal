@@ -190,6 +190,7 @@ export function usePWAUpdate(): UsePWAUpdateReturn {
     };
 
     navigator.serviceWorker.addEventListener('controllerchange', handleControllerChange);
+    window.addEventListener('app-update-available', handleControllerChange);
 
     // Configura listener para detectar novas versões
     const setupUpdateListener = async () => {
@@ -227,6 +228,7 @@ export function usePWAUpdate(): UsePWAUpdateReturn {
 
     return () => {
       navigator.serviceWorker.removeEventListener('controllerchange', handleControllerChange);
+      window.removeEventListener('app-update-available', handleControllerChange);
     };
   }, [isDismissed]);
 

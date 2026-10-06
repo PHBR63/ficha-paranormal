@@ -6,6 +6,7 @@ import "./index.css";
 // PWA: garante que atualizações do Service Worker não deixem o app preso em bundles antigos.
 // Motivo: quando o SW mantém um cache antigo, o usuário pode continuar carregando chunks antigos
 // (ex.: CampaignView-*.js) e ver erros como "ReactCurrentBatchConfig" mesmo após atualizar dependências.
+import { registerAppWorker } from "./lib/register-app-worker";
 import { registerSW } from "virtual:pwa-register";
 
 /**
@@ -39,17 +40,8 @@ async function purgeServiceWorkerOnce() {
   }
 }
 
-// Registra o SW com modo autoUpdate e força refresh quando necessário.
-const updateSW = registerSW({
-  immediate: true,
-  onNeedRefresh() {
-    // Força ativação do SW novo e recarrega.
-    updateSW(true);
-  },
-  onOfflineReady() {
-    // Sem UI extra aqui para não mudar UX além do necessário.
-  },
-});
+// A interface oferece "Atualizar"; detectar uma versão não interrompe um ritual.
+registerAppWorker(registerSW);
 
 // Em caso de cache “preso”, faz purge uma vez no boot.
 // Isso é especialmente útil quando o usuário está bloqueado por um bundle antigo.
