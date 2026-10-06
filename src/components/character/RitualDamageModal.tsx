@@ -1,3 +1,4 @@
+import { useRitualEffectExecution } from '@/hooks/character/useRitualEffectExecution';
 /**
  * RitualDamageModal - Modal de resultado de dano de rituais
  * Fase 4: Migração para useRitualDamageWithSUE
@@ -130,8 +131,8 @@ interface RitualDamageModalProps {
   onOpenChange: (open: boolean) => void;
   ritual: Ritual | null;
   enhancements: string[];
-  onApplyDamage?: (result: RitualDamageResult) => void;
-  onApplyHealing?: (result: RitualHealingResult) => void;
+  onApplyDamage?: (result: RitualDamageResult) => void | Promise<void>;
+  onApplyHealing?: (result: RitualHealingResult) => void | Promise<void>;
   onRequestResistance?: (damage: number) => void; // Callback para solicitar teste de resistência
   onRequestConditions?: () => void; // Callback para abrir modal de condições (Fase 6)
   onClose?: () => void;
@@ -326,20 +327,14 @@ export function RitualDamageModal({
     onClose?.();
   };
 
+  const effectExecution = useRitualEffectExecution();
+
   // Handler para aplicar dano
   const handleApplyDamage = () => {
-    if (damageResult) {
-      onApplyDamage?.(damageResult);
-    }
-    handleClose();
+    if (damageResult) void effectExecution.execute(onApplyDamage ? () => onApplyDamage(damageResult) : undefined, handleClose);
   };
-
-  // Handler para aplicar cura
   const handleApplyHealing = () => {
-    if (healingResult) {
-      onApplyHealing?.(healingResult);
-    }
-    handleClose();
+    if (healingResult) void effectExecution.execute(onApplyHealing ? () => onApplyHealing(healingResult) : undefined, handleClose);
   };
 
   if (!ritual || !activeEffect) return null;
@@ -366,6 +361,8 @@ export function RitualDamageModal({
           `bg-gradient-to-b ${elementConfig?.color || 'from-primary/20 to-transparent'}`
         )} />
 
+        {effectExecution.error && <p role="alert" className="text-sm text-destructive">{effectExecution.error}</p>}
+        {effectExecution.pending && <p role="status">Aguardando confirmação do servidor…</p>}
         <DialogHeader className="relative">
           <div className="flex items-center gap-3">
             <motion.div

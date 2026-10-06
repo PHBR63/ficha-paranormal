@@ -270,7 +270,7 @@ export function CharacterSheetHelp({ characterClass, nex, mode = 'floating', onC
           onDragEnd={handleDragEnd}
           initial={{ x: 0, y: 0 }}
           animate={{ x: dragPosition.x, y: dragPosition.y }}
-          className="fixed top-20 right-4 z-50 pointer-events-auto"
+          className="fixed bottom-36 right-4 z-40 pointer-events-auto"
         >
           <div className="relative group">
             <Button
@@ -291,7 +291,7 @@ export function CharacterSheetHelp({ characterClass, nex, mode = 'floating', onC
             {/* Botão de fechar/dispensar */}
             <button
               onClick={handleDismiss}
-              className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+              className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center"
               aria-label="Fechar ajuda"
             >
               <X className="w-3 h-3" />

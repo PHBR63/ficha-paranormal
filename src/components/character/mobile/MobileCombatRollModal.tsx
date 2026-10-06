@@ -1402,6 +1402,15 @@ export function MobileCombatRollModal({
       const buffDiceTotal = weaponBuffDice.reduce((a, b) => a + b, 0);
       
       const total = weaponDiceTotal + extraDiceTotal + buffDiceTotal + damageBonus;
+      // O histórico inclui cada dado adicional, sem recalcular nem sortear de novo.
+      const historyDice = [...mainDice, ...allExtraDice, ...weaponBuffDice];
+      onRollComplete?.({
+        type: 'damage', label: `Dano: ${weapon.name}${total < 1 ? ' (mínimo 1)' : ''}`,
+        dice: historyDice, keptDice: historyDice.reduce((sum, die) => sum + die, 0),
+        skillBonus: 0, otherBonuses: damageBonus, extraDice: allExtraDice.length + weaponBuffDice.length,
+        total: Math.max(1, total), isCritical, isDisadvantage: false, timestamp: new Date(),
+      });
+
       
       setDamageResult({
         dice: mainDice,
@@ -1434,7 +1443,7 @@ export function MobileCombatRollModal({
       setIsRolling(false);
       setPhase('damage');
     }, 500);
-  }, [weapon, attackResult, selectedBonuses, availableBonuses, attributes, unifiedEffects, maquinaDeMatarActive, criticalMultiplier, advancedBonuses, trackCombatBonuses, weaponBuffBonuses, weaponBuffs, passiveBonuses, manualDamageMod, nex]);
+  }, [weapon, attackResult, selectedBonuses, availableBonuses, attributes, unifiedEffects, maquinaDeMatarActive, criticalMultiplier, advancedBonuses, trackCombatBonuses, weaponBuffBonuses, weaponBuffs, passiveBonuses, manualDamageMod, nex, onRollComplete]);
 
   if (!weapon) return null;
 

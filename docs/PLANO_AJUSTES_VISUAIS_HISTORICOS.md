@@ -1,7 +1,7 @@
 # Plano de ajustes — interface, avisos, históricos e efeitos
 
 **Projeto:** Ordem Roll / ficha-paranormal. **Data:** 06/10/2026.
-**Situação:** lote 0 concluído em 06/10/2026. S0 aplicada no servidor: 22 guards restritivos, políticas específicas preservadas e testes SQL antes/depois aprovados. Confirmação das nove ações do mestre corrigida no código. Evidências em [BASELINE_LOTE_0.md](BASELINE_LOTE_0.md) e [CORRECAO_S0.md](CORRECAO_S0.md). Lotes 1–7 e definições de aplicação em outra ficha permanecem pendentes.
+**Situação:** lote 0/S0 concluídos. Lotes 1–6 implementados e verificados no código/banco em 06/10/2026; lote 7 em conferência de publicação. As decisões de histórico, autorização, cancelamento e ocultação foram confirmadas pelo usuário. Contratos e evidências atuais em [ENTREGA_LOTES_1_7.md](ENTREGA_LOTES_1_7.md), [CONTRATO_ATIVIDADE_SERVIDOR.md](CONTRATO_ATIVIDADE_SERVIDOR.md) e [CLIENTE_ATIVIDADES_RITUAIS.md](CLIENTE_ATIVIDADES_RITUAIS.md).
 **Base:** auditoria visual de 06/10/2026 e código `06dcc1e0fe6b3ca6758356a310010414dd6a1b63`.
 
 ## 1. Resumo e objetivo
@@ -28,15 +28,15 @@ Inclui V01–V13: apresentação dos bônus; históricos; controles responsivos;
 
 Não inclui redesenho geral, troca de stack, migração completa das campanhas antigas, novas regras de classe, interpretação de todo ritual ainda não suportado, alteração de regras personalizadas ou dependências novas. Quando o motor não resolver um efeito, a interface deve identificá-lo como resolução manual, em vez de prometer automação.
 
-### Decisões necessárias, sem bloquear os primeiros lotes
+### Decisões confirmadas pelo usuário (06/10/2026)
 
 | Decisão | Proposta | Momento de definição |
 | --- | --- | --- |
 | Persistência de dados e rituais fora da campanha | Históricos no servidor por usuário/personagem; sessão é filtro. A autorização anterior para persistir combate não decide automaticamente todos os históricos. | Antes de criar as migrations do lote 4. |
-| Quem aplica efeito em outra ficha | Pergunta enviada nesta conversa. Proposta: mestre confirma; jogador aplica na própria ficha. | Antes de definir permissões do lote 5. |
+| Quem aplica efeito em outra ficha | Confirmado: jogador aplica na própria ficha; mestre nas fichas realmente vinculadas à sua campanha. | Antes de definir permissões do lote 5. |
 | Alvo e resolução manual | Alvo explícito, sem escolher automaticamente o conjurador. Fora de campanha: própria ficha ou resultado manual informado. Alvos externos não vinculados permanecem resolução manual. | Antes do contrato de aplicação do lote 5. |
 | Cancelamento depois do consumo de PE | Registrar conjuração com efeito pendente; não debitar novamente ao retomar. Estorno somente como operação explícita, autorizada e registrada. Não definir uma nova regra de reembolso por acidente. | Antes do lote 5. |
-| Ocultar e excluir históricos | Nesta entrega, filtros/ocultação local podem simplificar a lista sem apagar o registro canônico. A exclusão permanente e sua retenção exigem especificação própria. | Antes de alterar a ação Limpar nos históricos persistidos. |
+| Ocultar e excluir históricos | Confirmado: ocultação por usuário no servidor, com recuperação; nenhum registro excluído canônico. A exclusão permanente e sua retenção exigem especificação própria. | Antes de alterar a ação Limpar nos históricos persistidos. |
 
 As propostas são escolhas a validar, não mudanças já autorizadas de regra de negócio. Enquanto faltarem definições, avançam as correções de apresentação e os testes dos contratos existentes.
 

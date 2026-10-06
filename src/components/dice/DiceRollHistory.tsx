@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { History, Sparkles, AlertTriangle, X, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { DiceRollResult } from '@/lib/dice-roller';
@@ -56,7 +56,7 @@ function HistoryEntry({ roll, index }: { roll: DiceRollResult; index: number }) 
       </div>
 
       {/* Dados rolados */}
-      <div className="flex items-center gap-2 mb-2">
+      <div className="flex flex-wrap items-center gap-2 mb-2">
         <div className="flex gap-1 flex-wrap">
           {roll.dice.map((die, i) => (
             <span
@@ -75,9 +75,14 @@ function HistoryEntry({ roll, index }: { roll: DiceRollResult; index: number }) 
           ))}
         </div>
         
-        {roll.skillBonus > 0 && (
+        {roll.skillBonus !== 0 && (
           <span className="text-xs text-primary">
-            +{roll.skillBonus}
+            {roll.skillBonus > 0 ? '+' : ''}{roll.skillBonus} perícia
+          </span>
+        )}
+        {(roll.otherBonuses ?? 0) !== 0 && (
+          <span className="text-xs text-primary">
+            {roll.otherBonuses > 0 ? '+' : ''}{roll.otherBonuses} outros modificadores
           </span>
         )}
       </div>
@@ -148,12 +153,14 @@ export function DiceRollHistoryDrawer({
             <History className="w-5 h-5 text-primary" />
             Histórico de Rolagens
           </SheetTitle>
+          <SheetDescription className="sr-only">Dados selecionados, modificadores e resultados desta ficha.</SheetDescription>
           
           {rolls.length > 0 && onClear && (
             <Button 
               variant="ghost" 
               size="sm"
               onClick={onClear}
+              aria-label="Ocultar histórico de rolagens"
               className="text-muted-foreground hover:text-destructive"
             >
               <Trash2 className="w-4 h-4" />

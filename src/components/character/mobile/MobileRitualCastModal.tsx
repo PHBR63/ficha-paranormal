@@ -1,3 +1,5 @@
+import type { RitualResolutionRoll } from '@/lib/ritual-roll-history';
+import type { RitualResistanceBonuses } from '@/lib/rituals/ritual-resistance';
 /**
  * MobileRitualCastModal - Modal de conjuração de rituais para mobile
  * Interface compacta com seleção de aprimoramentos como chips
@@ -95,12 +97,16 @@ interface MobileRitualCastModalProps {
   turnPEState?: TurnPEState;
   onConfirm: (ritual: RitualInput, peCost: number, enhancements: string[], activeModifiers?: string[], counterRitualCost?: number) => RitualConfirmationResult;
   // Callbacks para efeitos do wizard
+  applicationTargetId?: string;
+  targetResistanceBonuses?: RitualResistanceBonuses;
   targetAttributes?: { vigor: number; agility: number; presence: number };
-  onApplyDamage?: (damage: number, type: AnyDamageType, ignoresRD: boolean) => void;
-  onApplyHealing?: (amount: number, type: 'healing' | 'tempHP') => void;
-  onApplyConditions?: (conditions: ActiveCondition[]) => void;
-  onAddWeaponBuff?: (ritual: Ritual, enhancements: string[]) => void;
-  onActivateSustained?: (ritual: Ritual, enhancements: string[], sustain: SustainConfig) => void;
+  applicationTarget?: React.ReactNode;
+  onApplyDamage?: (damage: number, type: AnyDamageType, ignoresRD: boolean) => void | Promise<void>;
+  onApplyHealing?: (amount: number, type: 'healing' | 'tempHP') => void | Promise<void>;
+  onApplyConditions?: (conditions: ActiveCondition[]) => void | Promise<void>;
+  onResolutionRoll?: (result: RitualResolutionRoll) => void;
+  onAddWeaponBuff?: (ritual: Ritual, enhancements: string[]) => void | Promise<void>;
+  onActivateSustained?: (ritual: Ritual, enhancements: string[], sustain: SustainConfig) => void | Promise<void>;
   // Se true, abre o wizard automaticamente após conjurar
   autoOpenWizard?: boolean;
   // === Bônus do SUE ===
@@ -125,9 +131,13 @@ export function MobileRitualCastModal({
   onConfirm,
   // Props do wizard
   targetAttributes,
+  targetResistanceBonuses,
+  applicationTargetId,
+  applicationTarget,
   onApplyDamage,
   onApplyHealing,
   onApplyConditions,
+  onResolutionRoll,
   onAddWeaponBuff,
   onActivateSustained,
   autoOpenWizard = true,
@@ -415,10 +425,11 @@ export function MobileRitualCastModal({
                     const isLocked = !enh.validation.isValid;
                     
                     return (
+                      <div key={i} className="max-w-full space-y-1">
                       <motion.button
-                        key={i}
                         onClick={() => toggleEnhancement(enh.name)}
                         disabled={isLocked}
+                        aria-describedby={isLocked ? `enhancement-requirement-${i}` : undefined}
                         whileTap={{ scale: isLocked ? 1 : 0.95 }}
                         className={cn(
                           "px-2.5 py-1.5 rounded-full text-xs font-medium transition-all",
@@ -438,6 +449,12 @@ export function MobileRitualCastModal({
                         {enh.name}
                         <span className="text-[10px] opacity-70">+{enhCost}</span>
                       </motion.button>
+                      {isLocked && (
+                        <p id={`enhancement-requirement-${i}`} className="max-w-[260px] text-xs text-muted-foreground">
+                          {enh.validation.reason || 'Requisitos deste aprimoramento não atendidos.'}
+                        </p>
+                      )}
+                      </div>
                     );
                   })}
                 </div>
@@ -646,6 +663,7 @@ export function MobileRitualCastModal({
                       <Label htmlFor="wizard-toggle" className="text-xs cursor-pointer">
                         Processar efeitos
                       </Label>
+                      <span className="text-xs text-muted-foreground">Guia a resolução após consumir PE. Efeitos exigem alvo e confirmação; cancelar mantém o registro pendente.</span>
                     </div>
                   </TooltipTrigger>
                   <TooltipContent side="top" className="max-w-[200px] text-center">
@@ -753,9 +771,13 @@ export function MobileRitualCastModal({
         castRitual ? ritualBonuses?.getDTForRitual(castRitual.element) ?? 0 : 0,
       )}
       targetAttributes={targetAttributes}
+      targetResistanceBonuses={targetResistanceBonuses}
+      applicationTargetId={applicationTargetId}
+      applicationTarget={applicationTarget}
       onApplyDamage={onApplyDamage}
       onApplyHealing={onApplyHealing}
       onApplyConditions={onApplyConditions}
+      onResolutionRoll={onResolutionRoll}
       onAddWeaponBuff={onAddWeaponBuff}
       onActivateSustained={onActivateSustained}
       onComplete={handleWizardComplete}

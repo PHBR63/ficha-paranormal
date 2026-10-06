@@ -1,7 +1,9 @@
+import { useToast } from '@/hooks/use-toast';
+import { getCharacterActivityHiddenBefore, hideCharacterActivity } from '@/services/character-activity-service';
 // Painel de Histórico de Alterações do Personagem
 // Mostra todas as mudanças feitas no personagem ao longo do tempo
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format } from 'date-fns';
@@ -115,19 +117,32 @@ export function CharacterHistoryPanel({
     user
   } = useAuth();
   const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const [clearing, setClearing] = useState(false);
   const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    const showSaveFailure = (event: Event) => {
+      if ((event as CustomEvent<string>).detail === characterId) toast({ title: 'Histórico de edição não gravado', description: 'A alteração principal pode ter sido salva. Confira a ficha; o registro do histórico não foi confirmado.', variant: 'destructive' });
+    };
+    window.addEventListener('character-history-save-failed', showSaveFailure);
+    return () => window.removeEventListener('character-history-save-failed', showSaveFailure);
+  }, [characterId, toast]);
 
   // OTIMIZAÇÃO: Migrado para useQuery com staleTime de 5 minutos
   // Reduz requisições em ~80% ao abrir o painel múltiplas vezes
-  const { data: history = [], isLoading: loading } = useQuery({
-    queryKey: ['character-history', characterId],
+  const { data: history = [], isLoading: loading, isError, refetch } = useQuery({
+    queryKey: ['character-history', user?.id, characterId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const hiddenBefore = await getCharacterActivityHiddenBefore(characterId);
+      let request = supabase
         .from('character_change_history')
         .select('*')
         .eq('character_id', characterId)
         .order('created_at', { ascending: false })
         .limit(100);
+      if (hiddenBefore) request = request.gt('created_at', hiddenBefore);
+      const { data, error } = await request;
       if (error) throw error;
       return (data || []) as ChangeEntry[];
     },
@@ -136,19 +151,17 @@ export function CharacterHistoryPanel({
     gcTime: 10 * 60 * 1000,    // 10 minutos em cache
   });
 
-  // Função para limpar histórico
+  // Limpar altera somente a preferência do usuário. Os registros continuam recuperáveis.
   const clearHistory = async () => {
-    if (!confirm('Tem certeza que deseja limpar todo o histórico?')) return;
+    if (clearing) return;
+    setClearing(true);
     try {
-      const { error } = await supabase
-        .from('character_change_history')
-        .delete()
-        .eq('character_id', characterId);
-      if (error) throw error;
-      queryClient.invalidateQueries({ queryKey: ['character-history', characterId] });
-    } catch (error) {
-      console.error('Erro ao limpar histórico:', error);
-    }
+      await hideCharacterActivity(characterId);
+      await queryClient.invalidateQueries({ queryKey: ['character-history', user?.id, characterId] });
+      await queryClient.invalidateQueries({ queryKey: ['character-activity', user?.id, characterId] });
+    } catch (cause) {
+      toast({ title: 'Histórico não ocultado', description: cause instanceof Error ? cause.message : 'Tente novamente.', variant: 'destructive' });
+    } finally { setClearing(false); }
   };
 
   // Agrupa histórico por data
@@ -168,6 +181,7 @@ export function CharacterHistoryPanel({
           variant="outline" 
           size="sm" 
           className="gap-2 text-xs text-justify"
+          aria-label="Histórico de edição"
           data-character-history-trigger
         >
           <History className="w-4 h-4" />
@@ -186,14 +200,17 @@ export function CharacterHistoryPanel({
         <div className="mt-4 space-y-4">
           {/* Ações */}
           {history.length > 0 && <div className="flex justify-end">
-              <Button variant="ghost" size="sm" onClick={clearHistory} className="text-destructive hover:text-destructive">
+              <Button variant="ghost" size="sm" onClick={clearHistory} disabled={clearing} className="text-destructive hover:text-destructive">
                 <Trash2 className="w-4 h-4 mr-2" />
-                Limpar Histórico
+                Ocultar Histórico
               </Button>
             </div>}
 
           <ScrollArea className="h-[calc(100vh-200px)]">
-            {loading ?
+            {isError ? <div role="alert" className="p-4 space-y-2 text-sm">
+              <p>Não foi possível carregar o histórico. Nenhum registro foi apagado.</p>
+              <Button onClick={() => void refetch()}>Tentar novamente</Button>
+            </div> : loading ?
           // Loading skeleton
           <div className="space-y-4">
                 {[...Array(5)].map((_, i) => <div key={i} className="space-y-2">
@@ -205,7 +222,7 @@ export function CharacterHistoryPanel({
           <div className="text-center py-12">
                 <History className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
                 <p className="text-muted-foreground">
-                  Nenhuma alteração registrada ainda.
+                  Nenhuma alteração visível. Os registros ocultos podem ser recuperados no Histórico salvo.
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
                   As alterações feitas no personagem aparecerão aqui.
@@ -298,9 +315,11 @@ export async function logCharacterChange(characterId: string, userId: string, ch
     });
     if (error) {
       console.error('Erro ao registrar alteração:', error);
+      window.dispatchEvent(new CustomEvent('character-history-save-failed', { detail: characterId }));
     }
   } catch (error) {
     console.error('Erro ao registrar alteração:', error);
+      window.dispatchEvent(new CustomEvent('character-history-save-failed', { detail: characterId }));
   }
 }
 
@@ -328,8 +347,10 @@ export async function logCharacterChanges(characterId: string, userId: string, c
     } = await supabase.from('character_change_history').insert(entries);
     if (error) {
       console.error('Erro ao registrar alterações:', error);
+      window.dispatchEvent(new CustomEvent('character-history-save-failed', { detail: characterId }));
     }
   } catch (error) {
     console.error('Erro ao registrar alterações:', error);
+      window.dispatchEvent(new CustomEvent('character-history-save-failed', { detail: characterId }));
   }
 }

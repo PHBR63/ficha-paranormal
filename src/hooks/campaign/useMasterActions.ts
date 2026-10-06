@@ -14,6 +14,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { prepareResourceChange, prepareConditionChange, type ConfirmResourceOperation, type CharacterResource, type ResourceMode } from '@/services/character-resource-service';
 
 // Tipos para condições do personagem
 export interface Condition {
@@ -107,469 +108,46 @@ export function useMasterActions({
     return true;
   }, []); // Sem dependências - usa refs
 
-  // =====================================================
-  // AÇÕES DE STATUS (PV/PE/SAN)
-  // =====================================================
-
-  /**
-   * Ajusta PV do personagem (delta pode ser positivo ou negativo)
-   */
-  const adjustHP = useCallback(async (characterId: string, delta: number): Promise<boolean> => {
+  // Mantém a mesma requisição após falha de conexão; uma confirmação encerra
+  // a operação e permite um novo ajuste intencional com outro UUID.
+  const pendingOperations = useRef(new Map<string, Promise<ConfirmResourceOperation>>());
+  const runConfirmed = useCallback(async (key: string, prepare: () => Promise<ConfirmResourceOperation>, title: string): Promise<boolean> => {
     if (!checkAuth()) return false;
-    
-    setIsUpdating(true);
-    setLastError(null);
-    
+    setIsUpdating(true); setLastError(null);
+    let requestPrepared = false;
     try {
-      // Busca valores atuais
-      const { data: char, error: fetchError } = await supabase
-        .from('characters')
-        .select('hp_current, hp_max')
-        .eq('id', characterId)
-        .single();
-      
-      if (fetchError) throw fetchError;
-      
-      // Calcula novo valor (clamped entre 0 e max)
-      const newHP = Math.max(0, Math.min(char.hp_max, char.hp_current + delta));
-      
-      // Atualiza no banco
-      const { error: updateError } = await supabase
-        .from('characters')
-        .update({ hp_current: newHP })
-        .eq('id', characterId)
-        // Exige uma linha retornada: RLS pode negar UPDATE sem erro SQL.
-        .select('id')
-        .single();
-      
-      if (updateError) throw updateError;
-      
-      toastRef.current({
-        title: delta > 0 ? 'PV restaurado' : 'Dano aplicado',
-        description: `PV ${delta > 0 ? '+' : ''}${delta} → ${newHP}/${char.hp_max}`,
-      });
-      
+      let prepared = pendingOperations.current.get(key);
+      if (!prepared) { prepared = prepare(); pendingOperations.current.set(key, prepared); }
+      const operation = await prepared;
+      requestPrepared = true;
+      await operation();
+      pendingOperations.current.delete(key);
+      toastRef.current({ title, description: 'Alteração confirmada e registrada no servidor.' });
       onUpdateRef.current?.();
       return true;
-    } catch (error: any) {
-      setLastError(error.message);
-      toastRef.current({
-        title: 'Erro ao ajustar PV',
-        description: error.message,
-        variant: 'destructive',
-      });
+    } catch (cause) {
+      if (!requestPrepared) pendingOperations.current.delete(key);
+      // Um conflito confirmado não foi aplicado: a próxima ação relê a ficha.
+      // Falha de rede conserva a requisição porque o resultado é desconhecido.
+      if (cause && typeof cause === 'object' && 'code' in cause && ['40001', '42501', '22023'].includes(String(cause.code))) pendingOperations.current.delete(key);
+      const message = cause instanceof Error ? cause.message : 'Alteração não confirmada.';
+      setLastError(message);
+      toastRef.current({ title: 'Alteração não confirmada', description: message, variant: 'destructive' });
       return false;
-    } finally {
-      setIsUpdating(false);
-    }
-  }, [checkAuth]); // Apenas checkAuth (que é estável)
-
-  /**
-   * Ajusta PE do personagem
-   */
-  const adjustPE = useCallback(async (characterId: string, delta: number): Promise<boolean> => {
-    if (!checkAuth()) return false;
-    
-    setIsUpdating(true);
-    setLastError(null);
-    
-    try {
-      const { data: char, error: fetchError } = await supabase
-        .from('characters')
-        .select('pe_current, pe_max')
-        .eq('id', characterId)
-        .single();
-      
-      if (fetchError) throw fetchError;
-      
-      const newPE = Math.max(0, Math.min(char.pe_max, char.pe_current + delta));
-      
-      const { error: updateError } = await supabase
-        .from('characters')
-        .update({ pe_current: newPE })
-        .eq('id', characterId)
-        // Exige uma linha retornada: RLS pode negar UPDATE sem erro SQL.
-        .select('id')
-        .single();
-      
-      if (updateError) throw updateError;
-      
-      toastRef.current({
-        title: delta > 0 ? 'PE restaurado' : 'PE consumido',
-        description: `PE ${delta > 0 ? '+' : ''}${delta} → ${newPE}/${char.pe_max}`,
-      });
-      
-      onUpdateRef.current?.();
-      return true;
-    } catch (error: any) {
-      setLastError(error.message);
-      toastRef.current({
-        title: 'Erro ao ajustar PE',
-        description: error.message,
-        variant: 'destructive',
-      });
-      return false;
-    } finally {
-      setIsUpdating(false);
-    }
+    } finally { setIsUpdating(false); }
   }, [checkAuth]);
 
-  /**
-   * Ajusta SAN do personagem
-   */
-  const adjustSAN = useCallback(async (characterId: string, delta: number): Promise<boolean> => {
-    if (!checkAuth()) return false;
-    
-    setIsUpdating(true);
-    setLastError(null);
-    
-    try {
-      const { data: char, error: fetchError } = await supabase
-        .from('characters')
-        .select('san_current, san_max')
-        .eq('id', characterId)
-        .single();
-      
-      if (fetchError) throw fetchError;
-      
-      const newSAN = Math.max(0, Math.min(char.san_max, char.san_current + delta));
-      
-      const { error: updateError } = await supabase
-        .from('characters')
-        .update({ san_current: newSAN })
-        .eq('id', characterId)
-        // Exige uma linha retornada: RLS pode negar UPDATE sem erro SQL.
-        .select('id')
-        .single();
-      
-      if (updateError) throw updateError;
-      
-      toastRef.current({
-        title: delta > 0 ? 'Sanidade restaurada' : 'Sanidade perdida',
-        description: `SAN ${delta > 0 ? '+' : ''}${delta} → ${newSAN}/${char.san_max}`,
-      });
-      
-      onUpdateRef.current?.();
-      return true;
-    } catch (error: any) {
-      setLastError(error.message);
-      toastRef.current({
-        title: 'Erro ao ajustar Sanidade',
-        description: error.message,
-        variant: 'destructive',
-      });
-      return false;
-    } finally {
-      setIsUpdating(false);
-    }
-  }, [checkAuth]);
-
-  /**
-   * Define PV para valor absoluto
-   */
-  const setHP = useCallback(async (characterId: string, value: number): Promise<boolean> => {
-    if (!checkAuth()) return false;
-    
-    setIsUpdating(true);
-    setLastError(null);
-    
-    try {
-      const { data: char, error: fetchError } = await supabase
-        .from('characters')
-        .select('hp_max')
-        .eq('id', characterId)
-        .single();
-      
-      if (fetchError) throw fetchError;
-      
-      const newHP = Math.max(0, Math.min(char.hp_max, value));
-      
-      const { error: updateError } = await supabase
-        .from('characters')
-        .update({ hp_current: newHP })
-        .eq('id', characterId)
-        // Exige uma linha retornada: RLS pode negar UPDATE sem erro SQL.
-        .select('id')
-        .single();
-      
-      if (updateError) throw updateError;
-      
-      toastRef.current({
-        title: 'PV definido',
-        description: `PV → ${newHP}/${char.hp_max}`,
-      });
-      
-      onUpdateRef.current?.();
-      return true;
-    } catch (error: any) {
-      setLastError(error.message);
-      toastRef.current({
-        title: 'Erro ao definir PV',
-        description: error.message,
-        variant: 'destructive',
-      });
-      return false;
-    } finally {
-      setIsUpdating(false);
-    }
-  }, [checkAuth]);
-
-  /**
-   * Define PE para valor absoluto
-   */
-  const setPE = useCallback(async (characterId: string, value: number): Promise<boolean> => {
-    if (!checkAuth()) return false;
-    
-    setIsUpdating(true);
-    setLastError(null);
-    
-    try {
-      const { data: char, error: fetchError } = await supabase
-        .from('characters')
-        .select('pe_max')
-        .eq('id', characterId)
-        .single();
-      
-      if (fetchError) throw fetchError;
-      
-      const newPE = Math.max(0, Math.min(char.pe_max, value));
-      
-      const { error: updateError } = await supabase
-        .from('characters')
-        .update({ pe_current: newPE })
-        .eq('id', characterId)
-        // Exige uma linha retornada: RLS pode negar UPDATE sem erro SQL.
-        .select('id')
-        .single();
-      
-      if (updateError) throw updateError;
-      
-      toastRef.current({
-        title: 'PE definido',
-        description: `PE → ${newPE}/${char.pe_max}`,
-      });
-      
-      onUpdateRef.current?.();
-      return true;
-    } catch (error: any) {
-      setLastError(error.message);
-      toastRef.current({
-        title: 'Erro ao definir PE',
-        description: error.message,
-        variant: 'destructive',
-      });
-      return false;
-    } finally {
-      setIsUpdating(false);
-    }
-  }, [checkAuth]);
-
-  /**
-   * Define SAN para valor absoluto
-   */
-  const setSAN = useCallback(async (characterId: string, value: number): Promise<boolean> => {
-    if (!checkAuth()) return false;
-    
-    setIsUpdating(true);
-    setLastError(null);
-    
-    try {
-      const { data: char, error: fetchError } = await supabase
-        .from('characters')
-        .select('san_max')
-        .eq('id', characterId)
-        .single();
-      
-      if (fetchError) throw fetchError;
-      
-      const newSAN = Math.max(0, Math.min(char.san_max, value));
-      
-      const { error: updateError } = await supabase
-        .from('characters')
-        .update({ san_current: newSAN })
-        .eq('id', characterId)
-        // Exige uma linha retornada: RLS pode negar UPDATE sem erro SQL.
-        .select('id')
-        .single();
-      
-      if (updateError) throw updateError;
-      
-      toastRef.current({
-        title: 'Sanidade definida',
-        description: `SAN → ${newSAN}/${char.san_max}`,
-      });
-      
-      onUpdateRef.current?.();
-      return true;
-    } catch (error: any) {
-      setLastError(error.message);
-      toastRef.current({
-        title: 'Erro ao definir Sanidade',
-        description: error.message,
-        variant: 'destructive',
-      });
-      return false;
-    } finally {
-      setIsUpdating(false);
-    }
-  }, [checkAuth]);
-
-  // =====================================================
-  // AÇÕES DE CONDIÇÕES
-  // =====================================================
-
-  /**
-   * Aplica uma condição ao personagem
-   */
-  const applyCondition = useCallback(async (characterId: string, conditionName: string): Promise<boolean> => {
-    if (!checkAuth()) return false;
-    
-    setIsUpdating(true);
-    setLastError(null);
-    
-    try {
-      // Busca condições atuais
-      const { data: char, error: fetchError } = await supabase
-        .from('characters')
-        .select('conditions')
-        .eq('id', characterId)
-        .single();
-      
-      if (fetchError) throw fetchError;
-      
-      // Adiciona nova condição se não existir
-      const currentConditions = Array.isArray(char.conditions) ? char.conditions : [];
-      if (currentConditions.includes(conditionName)) {
-        toastRef.current({
-          title: 'Condição já aplicada',
-          description: `O personagem já possui a condição "${conditionName}".`,
-        });
-        return true;
-      }
-      
-      const newConditions = [...currentConditions, conditionName];
-      
-      const { error: updateError } = await supabase
-        .from('characters')
-        .update({ conditions: newConditions })
-        .eq('id', characterId)
-        // Exige uma linha retornada: RLS pode negar UPDATE sem erro SQL.
-        .select('id')
-        .single();
-      
-      if (updateError) throw updateError;
-      
-      toastRef.current({
-        title: 'Condição aplicada',
-        description: `"${conditionName}" foi aplicada ao personagem.`,
-      });
-      
-      onUpdateRef.current?.();
-      return true;
-    } catch (error: any) {
-      setLastError(error.message);
-      toastRef.current({
-        title: 'Erro ao aplicar condição',
-        description: error.message,
-        variant: 'destructive',
-      });
-      return false;
-    } finally {
-      setIsUpdating(false);
-    }
-  }, [checkAuth]);
-
-  /**
-   * Remove uma condição do personagem
-   */
-  const removeCondition = useCallback(async (characterId: string, conditionName: string): Promise<boolean> => {
-    if (!checkAuth()) return false;
-    
-    setIsUpdating(true);
-    setLastError(null);
-    
-    try {
-      const { data: char, error: fetchError } = await supabase
-        .from('characters')
-        .select('conditions')
-        .eq('id', characterId)
-        .single();
-      
-      if (fetchError) throw fetchError;
-      
-      const currentConditions = Array.isArray(char.conditions) ? char.conditions : [];
-      const newConditions = currentConditions.filter((c: string) => c !== conditionName);
-      
-      const { error: updateError } = await supabase
-        .from('characters')
-        .update({ conditions: newConditions })
-        .eq('id', characterId)
-        // Exige uma linha retornada: RLS pode negar UPDATE sem erro SQL.
-        .select('id')
-        .single();
-      
-      if (updateError) throw updateError;
-      
-      toastRef.current({
-        title: 'Condição removida',
-        description: `"${conditionName}" foi removida do personagem.`,
-      });
-      
-      onUpdateRef.current?.();
-      return true;
-    } catch (error: any) {
-      setLastError(error.message);
-      toastRef.current({
-        title: 'Erro ao remover condição',
-        description: error.message,
-        variant: 'destructive',
-      });
-      return false;
-    } finally {
-      setIsUpdating(false);
-    }
-  }, [checkAuth]);
-
-  /**
-   * Remove todas as condições do personagem
-   */
-  const clearAllConditions = useCallback(async (characterId: string): Promise<boolean> => {
-    if (!checkAuth()) return false;
-    
-    setIsUpdating(true);
-    setLastError(null);
-    
-    try {
-      const { error: updateError } = await supabase
-        .from('characters')
-        .update({ conditions: [] })
-        .eq('id', characterId)
-        // Exige uma linha retornada: RLS pode negar UPDATE sem erro SQL.
-        .select('id')
-        .single();
-      
-      if (updateError) throw updateError;
-      
-      toastRef.current({
-        title: 'Condições limpas',
-        description: 'Todas as condições foram removidas.',
-      });
-      
-      onUpdateRef.current?.();
-      return true;
-    } catch (error: any) {
-      setLastError(error.message);
-      toastRef.current({
-        title: 'Erro ao limpar condições',
-        description: error.message,
-        variant: 'destructive',
-      });
-      return false;
-    } finally {
-      setIsUpdating(false);
-    }
-  }, [checkAuth]);
-
+  const changeResource = useCallback((id: string, resource: CharacterResource, mode: ResourceMode, value: number, title: string) =>
+    runConfirmed(`${id}:${resource}:${mode}:${value}`, () => prepareResourceChange(id, resource, mode, value), title), [runConfirmed]);
+  const adjustHP = useCallback((id: string, value: number) => changeResource(id, 'hp', 'delta', value, value > 0 ? 'PV restaurado' : 'Dano aplicado'), [changeResource]);
+  const adjustPE = useCallback((id: string, value: number) => changeResource(id, 'pe', 'delta', value, value > 0 ? 'PE restaurado' : 'PE consumido'), [changeResource]);
+  const adjustSAN = useCallback((id: string, value: number) => changeResource(id, 'san', 'delta', value, value > 0 ? 'Sanidade restaurada' : 'Sanidade perdida'), [changeResource]);
+  const setHP = useCallback((id: string, value: number) => changeResource(id, 'hp', 'set', value, 'PV definido'), [changeResource]);
+  const setPE = useCallback((id: string, value: number) => changeResource(id, 'pe', 'set', value, 'PE definido'), [changeResource]);
+  const setSAN = useCallback((id: string, value: number) => changeResource(id, 'san', 'set', value, 'Sanidade definida'), [changeResource]);
+  const applyCondition = useCallback((id: string, name: string) => runConfirmed(`${id}:add:${name}`, () => prepareConditionChange(id, 'add', name), 'Condição aplicada'), [runConfirmed]);
+  const removeCondition = useCallback((id: string, name: string) => runConfirmed(`${id}:remove:${name}`, () => prepareConditionChange(id, 'remove', name), 'Condição removida'), [runConfirmed]);
+  const clearAllConditions = useCallback((id: string) => runConfirmed(`${id}:clear`, () => prepareConditionChange(id, 'clear'), 'Condições limpas'), [runConfirmed]);
   // =====================================================
   // AÇÕES DE HANDOUTS
   // =====================================================
@@ -638,7 +216,9 @@ export function useMasterActions({
       const { error } = await supabase
         .from('campaign_handouts')
         .update(updateData)
-        .eq('id', handoutId);
+        .eq('id', handoutId)
+        .select('id')
+        .single();
       
       if (error) throw error;
       
@@ -677,7 +257,9 @@ export function useMasterActions({
       const { error } = await supabase
         .from('campaign_handouts')
         .update({ visibility: 'hidden', shared_with: [] })
-        .eq('id', handoutId);
+        .eq('id', handoutId)
+        .select('id')
+        .single();
       
       if (error) throw error;
       
@@ -714,7 +296,9 @@ export function useMasterActions({
       const { error } = await supabase
         .from('campaign_handouts')
         .delete()
-        .eq('id', handoutId);
+        .eq('id', handoutId)
+        .select('id')
+        .single();
       
       if (error) throw error;
       

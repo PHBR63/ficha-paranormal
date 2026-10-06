@@ -56,19 +56,6 @@ interface UseWeaponBuffsReturn {
 }
 
 /**
- * Filtra buffs muito antigos (mais de 24h - provavelmente sessão expirada)
- */
-function filterExpiredBuffs(buffs: WeaponBuff[]): WeaponBuff[] {
-  const dayInMs = 24 * 60 * 60 * 1000;
-  const now = Date.now();
-  
-  return buffs.filter(buff => {
-    const appliedAt = new Date(buff.appliedAt).getTime();
-    return now - appliedAt < dayInMs;
-  });
-}
-
-/**
  * Normaliza e valida bonusDamage de buffs carregados do banco
  * Corrige formatos incorretos ou incompletos que podem ter sido salvos
  */
@@ -143,16 +130,15 @@ function normalizeBuffBonusDamage(buff: WeaponBuff): WeaponBuff {
 }
 
 /**
- * Processa buffs do banco: filtra expirados e normaliza bonusDamage
+ * Normaliza a apresentação sem expirar bônus por tempo de relógio ou regravar o servidor.
  */
 function processLoadedBuffs(buffs: WeaponBuff[]): { 
   processed: WeaponBuff[]; 
   hadCorrections: boolean;
 } {
-  const filtered = filterExpiredBuffs(buffs);
   let hadCorrections = false;
   
-  const processed = filtered.map(buff => {
+  const processed = buffs.map(buff => {
     const normalized = normalizeBuffBonusDamage(buff);
     if (normalized !== buff) {
       hadCorrections = true;
@@ -176,7 +162,7 @@ export function useWeaponBuffs(
 ): UseWeaponBuffsReturn {
   // Ref para evitar chamadas desnecessárias ao onBuffsChange
   const isInitialMount = useRef(true);
-  const correctionsPersisted = useRef(false);
+  const loadedBuffs = useRef<WeaponBuff[] | null>(null);
   
   // Estado para indicar que houve auto-correções (para UI)
   const [hadAutoCorrections, setHadAutoCorrections] = useState(false);
@@ -189,7 +175,7 @@ export function useWeaponBuffs(
     
     // Se houve correções, marca para persistir depois e para exibir na UI
     if (hadCorrections) {
-      correctionsPersisted.current = false;
+      // A correção é somente de apresentação; não grava dados recebidos.
     }
     
     return { activeBuffs: processed };
@@ -201,15 +187,9 @@ export function useWeaponBuffs(
       const { processed, hadCorrections } = processLoadedBuffs(initialBuffs);
       setState({ activeBuffs: processed });
       
-      // Se houve correções, persiste imediatamente e marca para UI
-      if (hadCorrections && onBuffsChange && !correctionsPersisted.current) {
-        console.log('[useWeaponBuffs] Persistindo correções de buffs...');
-        setHadAutoCorrections(true);
-        onBuffsChange(processed);
-        correctionsPersisted.current = true;
-      } else {
-        isInitialMount.current = true; // Reseta flag para não disparar onChange
-      }
+      loadedBuffs.current = processed;
+      setHadAutoCorrections(hadCorrections);
+      isInitialMount.current = true;
     }
   }, [initialBuffs, onBuffsChange]);
   
@@ -225,6 +205,7 @@ export function useWeaponBuffs(
       return;
     }
     
+    if (state.activeBuffs === loadedBuffs.current) return;
     if (onBuffsChange) {
       onBuffsChange(state.activeBuffs);
     }

@@ -1,7 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { joinCampaignInvite } from '@/services/campaign-invite-service';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -44,6 +47,7 @@ interface Campaign {
   current_session: number;
   created_at: string;
   member_count?: number;
+  schemaVersion?: 'v1' | 'v2';
 }
 
 export default function Campaigns() {
@@ -61,51 +65,50 @@ export default function Campaigns() {
   const [newCampaignName, setNewCampaignName] = useState('');
   const [newCampaignDescription, setNewCampaignDescription] = useState('');
   const [inviteCode, setInviteCode] = useState('');
-
+  const [joinCharacterId, setJoinCharacterId] = useState('none');
+  const [ownCharacters, setOwnCharacters] = useState<Array<{ id: string; name: string }>>([]);
+  const [loadingCharacters, setLoadingCharacters] = useState(false);
+  const [charactersError, setCharactersError] = useState<string | null>(null);
+  const [characterReload, setCharacterReload] = useState(0);
+  const [joinError, setJoinError] = useState<string | null>(null);
+  const joinLock = useRef(false);
   useEffect(() => {
-    fetchCampaigns();
-  }, [user]);
+    if (!joinDialogOpen || !user?.id) return;
+    let cancelled = false;
+    setOwnCharacters([]); setJoinCharacterId('none'); setCharactersError(null); setJoinError(null); setLoadingCharacters(true);
+    void (async () => {
+      try {
+        const { data, error } = await supabase.from('characters').select('id, name').eq('user_id', user.id).order('name');
+        if (error) throw error;
+        if (!cancelled) setOwnCharacters(data ?? []);
+      } catch { if (!cancelled) setCharactersError('Não foi possível carregar suas fichas. Tente novamente.'); }
+      finally { if (!cancelled) setLoadingCharacters(false); }
+    })();
+    return () => { cancelled = true; };
+  }, [joinDialogOpen, user?.id, characterReload]);
 
-  const fetchCampaigns = async () => {
+  const fetchCampaigns = useCallback(async () => {
     if (!user) return;
 
     try {
-      const { data: memberCampaigns, error: memberError } = await supabase
-        .from('campaign_members')
-        .select('campaign_id')
-        .eq('user_id', user.id);
-
-      if (memberError) throw memberError;
-
-      const campaignIds = memberCampaigns?.map(m => m.campaign_id) || [];
-      
-      if (campaignIds.length === 0) {
-        setCampaigns([]);
-        setLoading(false);
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from('campaigns')
-        .select('*')
-        .in('id', campaignIds)
-        .order('updated_at', { ascending: false });
-
-      if (error) throw error;
-
-      const campaignsWithCounts = await Promise.all(
-        (data || []).map(async (campaign) => {
-          const { count } = await supabase
-            .from('campaign_members')
-            .select('*', { count: 'exact', head: true })
-            .eq('campaign_id', campaign.id);
-          
-          return { ...campaign, member_count: count || 0 };
-        })
-      );
-
-      setCampaigns(campaignsWithCounts);
-    } catch (error: any) {
+      const loadVersion = async (version: 'v1' | 'v2'): Promise<Campaign[]> => {
+        const memberTable = version === 'v2' ? 'campaign_members_v2' : 'campaign_members';
+        const campaignTable = version === 'v2' ? 'campaigns_v2' : 'campaigns';
+        const { data: membership, error: membershipError } = await supabase.from(memberTable).select('campaign_id').eq('user_id', user.id);
+        if (membershipError) throw membershipError;
+        const ids = [...new Set((membership ?? []).map(member => member.campaign_id))];
+        if (!ids.length) return [];
+        const { data, error } = await supabase.from(campaignTable).select('*').in('id', ids).order('updated_at', { ascending: false });
+        if (error) throw error;
+        return Promise.all((data ?? []).map(async campaign => {
+          const { count, error: countError } = await supabase.from(memberTable).select('*', { count: 'exact', head: true }).eq('campaign_id', campaign.id);
+          if (countError) throw countError;
+          return { ...campaign, member_count: count ?? 0, schemaVersion: version };
+        }));
+      };
+      const [v1, v2] = await Promise.all([loadVersion('v1'), loadVersion('v2')]);
+      setCampaigns([...v2, ...v1]);
+    } catch (error) {
       console.error('Error fetching campaigns:', error);
       toast({
         title: 'Erro',
@@ -115,7 +118,11 @@ export default function Campaigns() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, toast]);
+
+  useEffect(() => {
+    void fetchCampaigns();
+  }, [fetchCampaigns]);
 
   const handleCreateCampaign = async () => {
     if (!user || !newCampaignName.trim()) return;
@@ -143,10 +150,10 @@ export default function Campaigns() {
       setNewCampaignName('');
       setNewCampaignDescription('');
       navigate(`/campaigns/${data.id}`);
-    } catch (error: any) {
+    } catch {
       toast({
         title: 'Erro ao criar campanha',
-        description: error.message,
+        description: 'Não foi possível confirmar a criação da campanha. Tente novamente.',
         variant: 'destructive',
       });
     } finally {
@@ -155,66 +162,19 @@ export default function Campaigns() {
   };
 
   const handleJoinCampaign = async () => {
-    if (!user || !inviteCode.trim()) return;
-
-    setJoining(true);
+    if (!user || !inviteCode.trim() || loadingCharacters || charactersError || joinLock.current) return;
+    joinLock.current = true; setJoining(true); setJoinError(null);
     try {
-      const { data: validation, error: validationError } = await supabase
-        .rpc('validate_campaign_invite', { code: inviteCode.trim() });
-
-      if (validationError) throw validationError;
-
-      const result = validation?.[0];
-      if (!result?.valid) {
-        throw new Error(result?.message || 'Código de convite inválido.');
-      }
-
-      const campaignId = result.campaign_id;
-
-      const { data: existingMember } = await supabase
-        .from('campaign_members')
-        .select('id')
-        .eq('campaign_id', campaignId)
-        .eq('user_id', user.id)
-        .single();
-
-      if (existingMember) {
-        throw new Error('Você já é membro desta campanha.');
-      }
-
-      const { error: memberError } = await supabase
-        .from('campaign_members')
-        .insert({
-          campaign_id: campaignId,
-          user_id: user.id,
-          role: 'player',
-        });
-
-      if (memberError) throw memberError;
-
-      const { data: campaign } = await supabase
-        .from('campaigns')
-        .select('name')
-        .eq('id', campaignId)
-        .single();
-
-      toast({
-        title: 'Você entrou na campanha!',
-        description: `Bem-vindo a "${campaign?.name || 'campanha'}".`,
-      });
-
-      setJoinDialogOpen(false);
-      setInviteCode('');
-      fetchCampaigns();
-    } catch (error: any) {
-      toast({
-        title: 'Erro ao entrar na campanha',
-        description: error.message,
-        variant: 'destructive',
-      });
-    } finally {
-      setJoining(false);
-    }
+      if (joinCharacterId !== 'none' && !ownCharacters.some(character => character.id === joinCharacterId)) throw new Error('Selecione uma ficha da sua conta.');
+      const receipt = await joinCampaignInvite(inviteCode, joinCharacterId === 'none' ? undefined : joinCharacterId);
+      toast({ title: receipt.already_member ? 'Participação confirmada' : 'Você entrou na campanha!', description: `Bem-vindo a "${receipt.campaign_name}".` });
+      setJoinDialogOpen(false); setInviteCode(''); setJoinCharacterId('none');
+      navigate(`/campaigns/${receipt.campaign_id}`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Não foi possível confirmar sua entrada na campanha.';
+      setJoinError(message);
+      toast({ title: 'Erro ao entrar na campanha', description: message, variant: 'destructive' });
+    } finally { joinLock.current = false; setJoining(false); }
   };
 
   const themeColors = useThemeColors();
@@ -301,13 +261,28 @@ export default function Campaigns() {
                       onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
                       placeholder="CÓDIGO DE CONVITE"
                       className="font-display text-center text-lg sm:text-xl tracking-widest bg-[#0D0A0B]/50 border-[#8B0000]/30 text-[#F5F5F5] placeholder:text-[#505050] focus:border-[#8B0000]"
-                      maxLength={8}
+                      maxLength={80}
+                      disabled={joining}
+                      aria-label="Código de convite"
                     />
+                  </div>
+                  <div className="space-y-2 pb-4">
+                    <Label>Ficha que participará da campanha</Label>
+                    <Select value={joinCharacterId} onValueChange={setJoinCharacterId} disabled={joining || loadingCharacters || Boolean(charactersError)}>
+                      <SelectTrigger aria-label="Ficha que participará da campanha"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Não vincular agora</SelectItem>
+                        {ownCharacters.map(character => <SelectItem key={character.id} value={character.id}>{character.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                    {loadingCharacters && <p role="status" className="text-xs text-muted-foreground">Carregando suas fichas...</p>}
+                    {charactersError && <div><p role="alert" className="text-sm text-destructive">{charactersError}</p><Button variant="outline" onClick={() => setCharacterReload(value => value + 1)}>Tentar carregar fichas</Button></div>}
+                    {joinError && <p role="alert" className="text-sm text-destructive">{joinError}</p>}
                   </div>
                   <DialogFooter>
                     <Button
                       onClick={handleJoinCampaign}
-                      disabled={joining || !inviteCode.trim()}
+                      disabled={joining || !inviteCode.trim() || loadingCharacters || Boolean(charactersError)}
                       className="font-display tracking-wider w-full sm:w-auto bg-[#8B0000] hover:bg-[#B22222] text-white border border-[#B22222]/30"
                     >
                       {joining && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
@@ -367,7 +342,7 @@ export default function Campaigns() {
               const isMaster = campaign.master_id === user?.id;
               
               return (
-                <Link key={campaign.id} to={`/campaigns/${campaign.id}`} className="group block">
+                <Link key={`${campaign.schemaVersion}:${campaign.id}`} to={`/campaigns/${campaign.id}`} className="group block">
                   <div className={cn(
                     'dossier-classified p-6 sm:p-8 h-full transition-all duration-300 min-h-[200px] sm:min-h-[240px]',
                     'hover:border-[#8B0000]/60 hover:shadow-[0_0_40px_rgba(139,0,0,0.25)] hover:scale-[1.02]',
