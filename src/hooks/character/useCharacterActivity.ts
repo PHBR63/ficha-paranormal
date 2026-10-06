@@ -100,15 +100,27 @@ export function useCharacterActivity(characterId: string) {
   }, [queueKey, user, recoverPending]);
   useEffect(() => {
     if (!userId || !characterId) return;
+    let active = true;
+    // Recupera recursos/condições além do feed; a ficha ativa escuta este evento.
+    const refreshCharacter = () => {
+      if (!active) return;
+      void queryClient.invalidateQueries({ queryKey: ['character', characterId] });
+      window.dispatchEvent(new CustomEvent('character-server-updated', { detail: characterId }));
+    };
+    const onResume = () => { if (document.visibilityState === 'visible') refreshCharacter(); };
     const channel = supabase.channel(`activity:${userId}:${characterId}:${crypto.randomUUID()}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'character_activity_events', filter: `character_id=eq.${characterId}` }, () => { void refresh(); })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'character_activity_visibility', filter: `character_id=eq.${characterId}` }, () => { void refresh(); })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'characters', filter: `id=eq.${characterId}` }, () => {
-        void queryClient.invalidateQueries({ queryKey: ['character', characterId] });
-        window.dispatchEvent(new CustomEvent('character-server-updated', { detail: characterId }));
-      })
-      .subscribe(status => { if (status === 'SUBSCRIBED') { void refresh(); void recoverPending(); } });
-    return () => { void supabase.removeChannel(channel); };
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'characters', filter: `id=eq.${characterId}` }, refreshCharacter)
+      .subscribe(status => { if (active && status === 'SUBSCRIBED') { refreshCharacter(); void refresh(); void recoverPending(); } });
+    document.addEventListener('visibilitychange', onResume);
+    window.addEventListener('online', onResume);
+    return () => {
+      active = false;
+      void supabase.removeChannel(channel);
+      document.removeEventListener('visibilitychange', onResume);
+      window.removeEventListener('online', onResume);
+    };
   }, [userId, characterId, refresh, recoverPending, queryClient]);
   const addRoll = useCallback(async (payload: ActivityPayload, operationId: string = crypto.randomUUID()): Promise<boolean> => {
     if (!user || !characterId) { setSaveError('Entre na conta para salvar o histórico.'); return false; }
