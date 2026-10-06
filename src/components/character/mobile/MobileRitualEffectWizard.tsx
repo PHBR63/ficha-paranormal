@@ -58,6 +58,7 @@ import { CONDITIONS } from '@/lib/conditions';
 import { ActiveCondition } from './MobileConditionManager';
 import { WeaponBuff } from '@/hooks';
 import { rollRitualDamage } from '@/lib/rituals/ritual-damage';
+import { getRitualConditionTurns, formatRitualConditionDuration } from '@/lib/rituals/ritual-condition-duration';
 
 // ==================== TIPOS ====================
 
@@ -512,7 +513,7 @@ const ConditionsStep = memo(function ConditionsStep({
     ? effect.appliesConditions.map(c => ({
         id: c.conditionId,
         name: CONDITIONS[c.conditionId]?.name || c.conditionId,
-        turnsRemaining: c.duration === 'rodada' ? (c.turnsCount || 1) : null,
+        turnsRemaining: getRitualConditionTurns(c),
         addedAt: new Date().toISOString(),
       }))
     : [];
@@ -550,7 +551,7 @@ const ConditionsStep = memo(function ConditionsStep({
                 </div>
                 <Badge variant="outline" className="text-[10px] shrink-0">
                   <Timer className="w-3 h-3 mr-0.5" />
-                  {c.duration}
+                  {formatRitualConditionDuration(c)}
                 </Badge>
               </motion.div>
             );
