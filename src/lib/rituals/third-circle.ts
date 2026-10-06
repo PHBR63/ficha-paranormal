@@ -1,6 +1,7 @@
 /**
  * Ordem Paranormal RPG - Rituais de 3º Círculo (Oficiais)
  * Baseado no documento oficial - 17 rituais
+ * Livro Base v1.3, tabela5.2, p.119: custo básico de 3º círculo = 6 PE.
  * 
  * Conhecimento (4): Alterar Memória, Contato Paranormal, Mergulho Mental, Vidência
  * Energia (4): Convocação Instantânea, Salto Fantasma, Transfigurar Água, Transfigurar Terra
@@ -26,7 +27,7 @@ export const KNOWLEDGE_THIRD_CIRCLE: UnifiedRitual[] = [
     target: '1 pessoa',
     duration: 'Instantânea',
     description: 'Você invade a mente do alvo e altera ou apaga suas memórias de até uma hora atrás. Se escolher alterar as memórias, você pode mudar detalhes de eventos recentes, como a identidade de alguém encontrado ou o endereço de um lugar visitado, mas não reescrever completamente esses eventos. O alvo recupera suas memórias após 1d4 dias.',
-    cost: 4,
+    cost: 6,
     resistance: { type: 'vontade', effect: 'anula' },
     effects: {
       base: {
@@ -54,7 +55,7 @@ export const KNOWLEDGE_THIRD_CIRCLE: UnifiedRitual[] = [
     target: 'Você',
     duration: '1 dia',
     description: 'Você barganha com a entidade de Conhecimento para que o auxilie durante o dia, em troca de se alimentar de sua Sanidade. Quando o ritual é conjurado, você recebe seis d6. Sempre que fizer um teste de perícia, você pode gastar um desses d6, rolá-lo e adicionar o resultado no teste. No entanto, essa ajuda tem um preço: sempre que rolar um 6 no dado, a entidade toma 2 pontos de Sanidade de você. Se você ficar sem dados ou chegar a Sanidade 0, o ritual acaba.',
-    cost: 4,
+    cost: 6,
     effects: {
       base: {
         kind: 'buff',
@@ -84,7 +85,7 @@ export const KNOWLEDGE_THIRD_CIRCLE: UnifiedRitual[] = [
     target: '1 pessoa',
     duration: 'Sustentada',
     description: 'Você mergulha nos pensamentos do alvo para descobrir informações sobre ele. Durante o mergulho, você fica desprevenido. No início de cada turno seu que estiver sustentando o efeito e tocando o alvo, ele deve fazer um teste de Vontade. Se falhar, deve responder uma pergunta sua que possa ser respondida com "sim" ou "não", sendo incapaz de mentir.',
-    cost: 4,
+    cost: 6,
     resistance: { type: 'vontade', effect: 'parcial' },
     isSustainable: true,
     effects: {
@@ -114,7 +115,7 @@ export const KNOWLEDGE_THIRD_CIRCLE: UnifiedRitual[] = [
     target: '1 ser',
     duration: '5 rodadas',
     description: 'Através de uma superfície reflexiva, como um espelho, uma bacia de água ou mesmo uma TV desligada, você pode ver e ouvir um ser escolhido e seus arredores (cerca de 6m em qualquer direção). O alvo pode estar a qualquer distância, mas tem direito a um teste de resistência no início de cada um de seus turnos para impedir a Vidência naquele turno. Se o alvo passar em dois testes seguidos, o ritual é encerrado e o alvo fica imune a ele por uma semana.',
-    cost: 4,
+    cost: 6,
     resistance: { type: 'vontade', effect: 'anula' },
     effects: {
       base: {
@@ -143,7 +144,7 @@ export const ENERGY_THIRD_CIRCLE: UnifiedRitual[] = [
     target: '1 objeto de até 2 espaços',
     duration: 'Instantânea',
     description: 'Você invoca um objeto de qualquer lugar para sua mão. O item deve ter sido previamente preparado com o símbolo do ritual e pode ocupar no máximo 2 espaços. Se o objeto estiver sendo empunhado por outra pessoa, ela pode fazer um teste de Vontade para negar o efeito, mas você saberá onde o objeto está e quem o está carregando. Por até 1h depois da convocação, você pode gastar uma ação de movimento para enviar o objeto de volta.',
-    cost: 4,
+    cost: 6,
     resistance: { type: 'vontade', effect: 'anula' },
     effects: {
       base: {
@@ -174,7 +175,7 @@ export const ENERGY_THIRD_CIRCLE: UnifiedRitual[] = [
     target: 'Você',
     duration: 'Instantânea',
     description: 'Seu corpo se transforma momentaneamente em Energia pura e viaja até outro ponto. Você não precisa perceber nem ter linha de efeito ao seu destino, podendo apenas imaginá-lo, desde que já tenha observado o local de alguma forma. Uma vez transportado, você não pode agir pelo resto do seu turno. Este ritual não permite que você apareça dentro de um corpo sólido.',
-    cost: 4,
+    cost: 6,
     effects: {
       base: {
         kind: 'utility',
@@ -205,7 +206,7 @@ export const ENERGY_THIRD_CIRCLE: UnifiedRitual[] = [
     area: 'Esfera com 30m de raio',
     duration: 'Cena',
     description: 'Você canaliza Energia sobre um corpo de água, para que ele adquira movimentos e comportamentos paranormais e caóticos. Escolha um efeito: Congelar (congela água, prende nadadores), Derreter (gelo vira água), Enchente (eleva nível 4,5m ou +6m deslocamento de barco), Evaporar (5d8 dano de Energia, Fortitude metade), Partir (diminui nível 4,5m ou cria redemoinho).',
-    cost: 4,
+    cost: 6,
     hasModes: true,
     effects: {
       base: {
@@ -240,7 +241,7 @@ export const ENERGY_THIRD_CIRCLE: UnifiedRitual[] = [
     area: '9 cubos com 1,5m de lado',
     duration: 'Instantânea',
     description: 'Você imbui terra, pedra, lama, argila ou areia na área com Energia. Escolha um efeito: Amolecer (desabamento 10d6 ou terreno difícil), Modelar (cria objetos Enormes ou menores, sem mecanismos), Solidificar (transforma lama/areia em terra/pedra, prende pés).',
-    cost: 4,
+    cost: 6,
     hasModes: true,
     effects: {
       base: {
@@ -283,7 +284,7 @@ export const FEAR_THIRD_CIRCLE: UnifiedRitual[] = [
     target: '1 ser ou objeto, ou esfera com 3m de raio',
     duration: 'Instantânea',
     description: 'Você dissipa rituais ativos, como se a duração deles tivesse acabado. Efeitos de rituais instantâneos não podem ser dissipados. Faça um teste de Ocultismo; você anula quaisquer rituais ativos no alvo ou na área com DT igual ou menor que o resultado do teste. Você pode conjurar esse ritual em um item amaldiçoado para que se torne um item mundano (perdendo seus poderes) por um dia. Se o item estiver em posse de alguém, seu usuário pode fazer um teste de Vontade para negar o efeito.',
-    cost: 4,
+    cost: 6,
     effects: {
       base: {
         kind: 'utility',
@@ -309,7 +310,7 @@ export const DEATH_THIRD_CIRCLE: UnifiedRitual[] = [
     target: '1 ser',
     duration: 'Cena',
     description: 'Uma aura espiralada surge sobre o alvo. No início de cada turno dele, ele deve fazer um teste de Vontade. Se falhar, não poderá se deslocar naquele turno (ele ainda pode agir, só não pode se deslocar). Se o alvo passar nesse teste dois turnos seguidos o efeito termina.',
-    cost: 4,
+    cost: 6,
     resistance: { type: 'vontade', effect: 'parcial' },
     effects: {
       base: {
@@ -337,7 +338,7 @@ export const DEATH_THIRD_CIRCLE: UnifiedRitual[] = [
     area: 'Nuvem com 6m de raio',
     duration: 'Sustentada',
     description: 'Você manifesta uma nuvem de poeira que apodrece os seres na área. Ao conjurar o ritual, e no início de cada um de seus turnos, seres e objetos na área sofrem 4d8 pontos de dano de Morte (Fortitude reduz à metade). Alvos que falharem no teste também não podem recuperar PV de nenhuma forma por uma rodada.',
-    cost: 4,
+    cost: 6,
     resistance: { type: 'fortitude', effect: 'reduz_metade' },
     isSustainable: true,
     effects: {
@@ -369,7 +370,7 @@ export const DEATH_THIRD_CIRCLE: UnifiedRitual[] = [
     area: 'Círculo com 6m de raio',
     duration: 'Cena',
     description: 'Uma fenda sombria se abre no chão, de onde surgem tentáculos feitos de Lodo da Morte. Ao conjurar o ritual e no início de cada um de seus turnos, você faz um teste da manobra agarrar (usando Ocultismo em vez de Luta) contra cada alvo na área. Se você vencer, o ser é agarrado; se já estava agarrado, é esmagado, sofrendo 4d6 pontos de dano (metade impacto, metade Morte). A área conta como terreno difícil. Os tentáculos são imunes a dano.',
-    cost: 4,
+    cost: 6,
     effects: {
       base: {
         kind: 'control',
@@ -399,7 +400,7 @@ export const DEATH_THIRD_CIRCLE: UnifiedRitual[] = [
     target: '1 pessoa',
     duration: 'Cena',
     description: 'Você zera completamente a entropia do alvo em relação ao ambiente, deixando-o paralisado. Se passar na resistência, em vez disso fica lento. No início de cada um de seus turnos, o alvo pode gastar uma ação completa para fazer um novo teste de Vontade. Se passar, encerra o efeito.',
-    cost: 4,
+    cost: 6,
     resistance: { type: 'vontade', effect: 'parcial' },
     effects: {
       base: {
@@ -439,7 +440,7 @@ export const BLOOD_THIRD_CIRCLE: UnifiedRitual[] = [
     target: '1 ser',
     duration: 'Sustentada',
     description: 'O sangue do alvo aquece até entrar em ebulição. Quando o ritual é conjurado, e no início de cada turno do alvo, ele deve fazer um teste de Fortitude. Se falhar, sofre 4d8 pontos de dano de Sangue e fica fraco; se passar, sofre metade do dano e não fica fraco nesta rodada. Se o alvo passar nesse teste dois turnos seguidos o efeito termina.',
-    cost: 4,
+    cost: 6,
     resistance: { type: 'fortitude', effect: 'parcial' },
     isSustainable: true,
     effects: {
@@ -470,7 +471,7 @@ export const BLOOD_THIRD_CIRCLE: UnifiedRitual[] = [
     target: 'Você',
     duration: 'Cena',
     description: 'Seu corpo se transforma, assumindo uma forma que combina suas características com as de uma criatura de Sangue. Seu tamanho muda para Grande e você recebe +5 em testes de ataque e rolagens de dano corpo a corpo e 30 PV temporários. Enquanto transformado, você não pode falar nem conjurar rituais e deve atacar o ser mais próximo. Se for aliado, teste de Vontade para escolher outro alvo.',
-    cost: 4,
+    cost: 6,
     effects: {
       base: {
         kind: 'transformation',
@@ -507,7 +508,7 @@ export const BLOOD_THIRD_CIRCLE: UnifiedRitual[] = [
     area: 'Área de 6m de raio',
     duration: 'Sustentada',
     description: 'Você faz brotar uma poça de sangue pegajoso na área afetada. Inimigos na área se tornam vulneráveis a dano balístico, de corte, de impacto e de perfuração. Um alvo que tente sair da área é acometido de uma dor terrível; sofre 6d6 pontos de dano de Sangue e deve fazer um teste de Fortitude. Se passar, consegue sair. Se falhar, não consegue se mover e perde a ação de movimento.',
-    cost: 4,
+    cost: 6,
     resistance: { type: 'fortitude', effect: 'parcial' },
     isSustainable: true,
     effects: {
@@ -533,7 +534,7 @@ export const BLOOD_THIRD_CIRCLE: UnifiedRitual[] = [
     area: 'Enxame Grande (quadrado de 3m)',
     duration: 'Sustentada',
     description: 'Você vomita um enxame de pequenas criaturas de Sangue, que surge em um ponto adjacente a sua escolha. O enxame pode passar pelo espaço de outros seres. No final de cada um de seus turnos, o enxame causa 5d12 pontos de dano de Sangue a qualquer ser no espaço dele (Reflexos reduz à metade). Você pode gastar uma ação de movimento para mover o enxame com deslocamento de 12m.',
-    cost: 4,
+    cost: 6,
     resistance: { type: 'reflexos', effect: 'reduz_metade' },
     isSustainable: true,
     effects: {

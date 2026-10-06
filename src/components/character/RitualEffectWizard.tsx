@@ -56,6 +56,7 @@ import {
 import { CONDITIONS } from '@/lib/conditions';
 import { ActiveCondition } from './ConditionManager';
 import { WeaponBuff } from '@/hooks/useWeaponBuffs';
+import { rollRitualDamage } from '@/lib/rituals/ritual-damage';
 
 // ==================== TIPOS ====================
 
@@ -67,6 +68,7 @@ interface DamageRollResult {
   dice: number[];
   diceType: number;
   bonus: number;
+  diceMultiplier?: number;
   total: number;
   damageType: AnyDamageType;
   ignoresRD: boolean;
@@ -89,6 +91,8 @@ interface RitualEffectWizardProps {
   ritual: Ritual | null;
   enhancements: string[];
   peCost: number;
+  /** DT calculada com os dados do conjurador, distinta dos atributos do alvo. */
+  casterResistanceDT?: number;
   // Dados do personagem para testes de resistência
   targetAttributes?: {
     vigor: number;
@@ -160,11 +164,6 @@ function rollDie(sides: number): number {
 
 function rollDice(count: number, sides: number): number[] {
   return Array.from({ length: count }, () => rollDie(sides));
-}
-
-// DT padrão por círculo
-function getDefaultDT(circle: number): number {
-  return 10 + (circle * 5); // 1º: 15, 2º: 20, 3º: 25, 4º: 30
 }
 
 // Atributo de resistência
@@ -421,6 +420,9 @@ function DamageStep({
                     {die}
                   </motion.div>
                 ))}
+                {result.diceMultiplier && result.diceMultiplier !== 1 && (
+                  <span className="font-mono text-muted-foreground">×{result.diceMultiplier}</span>
+                )}
                 {result.bonus !== 0 && (
                   <span className="text-muted-foreground font-mono">
                     {result.bonus > 0 ? `+${result.bonus}` : result.bonus}
@@ -469,11 +471,13 @@ function DamageStep({
 function ResistanceStep({ 
   effect,
   damage,
+  casterResistanceDT,
   targetAttributes,
   onResult,
 }: { 
   effect: RitualEffect;
   damage: number;
+  casterResistanceDT?: number;
   targetAttributes?: { vigor: number; agility: number; presence: number };
   onResult: (passed: boolean, adjustedDamage?: number) => void;
 }) {
@@ -487,10 +491,12 @@ function ResistanceStep({
   const resistEffect = effect.resistance.effect;
   const attrKey = getResistanceAttribute(resistType);
   const attrValue = targetAttributes?.[attrKey as keyof typeof targetAttributes] || 0;
-  const defaultDT = effect.resistance.dt || 15;
-  const dt = customDT ? parseInt(customDT) : defaultDT;
+  const defaultDT = effect.resistance.dt ?? casterResistanceDT ?? 15;
+  const dt = customDT ? Number(customDT) : defaultDT;
+  const isValidDT = Number.isInteger(dt) && dt >= 1;
 
   const handleRoll = (rollValue?: number) => {
+    if (!isValidDT) return;
     const roll = rollValue || rollDie(20);
     const modifier = attrValue;
     const total = roll + modifier;
@@ -531,12 +537,16 @@ function ResistanceStep({
         <Label className="text-sm">DT:</Label>
         <Input
           type="number"
+          aria-label="Dificuldade da resistência"
+          aria-invalid={!isValidDT}
+          min={1}
           value={customDT || defaultDT}
-          onChange={(e) => setCustomDT(e.target.value)}
+          onChange={(e) => { setCustomDT(e.target.value); setResult(null); }}
           className="w-20 text-center"
         />
         <span className="text-xs text-muted-foreground">(padrão: {defaultDT})</span>
       </div>
+      {!isValidDT && <p role="alert" className="text-sm text-destructive">Informe uma DT inteira maior que zero.</p>}
 
       {/* Resultado */}
       {result ? (
@@ -575,7 +585,7 @@ function ResistanceStep({
       ) : (
         <div className="space-y-3">
           {/* Rolagem automática */}
-          <Button onClick={() => handleRoll()} className="w-full gap-2">
+          <Button onClick={() => handleRoll()} disabled={!isValidDT} className="w-full gap-2">
             <Dices className="w-4 h-4" />
             Rolar Resistência (d20 + {attrValue})
           </Button>
@@ -594,7 +604,7 @@ function ResistanceStep({
             <Button 
               variant="outline" 
               onClick={() => handleRoll(parseInt(manualRoll))}
-              disabled={!manualRoll || parseInt(manualRoll) < 1 || parseInt(manualRoll) > 20}
+              disabled={!isValidDT || !manualRoll || parseInt(manualRoll) < 1 || parseInt(manualRoll) > 20}
             >
               Usar
             </Button>
@@ -840,6 +850,7 @@ export function RitualEffectWizard({
   ritual,
   enhancements,
   peCost,
+  casterResistanceDT,
   targetAttributes,
   onApplyDamage,
   onApplyHealing,
@@ -926,12 +937,14 @@ export function RitualEffectWizard({
     
     setTimeout(() => {
       let dice: number[], diceType: number, bonus: number, damageType: AnyDamageType, ignoresRD: boolean;
+      let diceMultiplier = 1;
+      let calculatedDamageTotal: number | undefined;
       
       if (activeEffect.damage) {
-        dice = rollDice(activeEffect.damage.diceCount, activeEffect.damage.diceType);
-        diceType = activeEffect.damage.diceType;
-        // Aplica bônus do ritual + bônus do SUE apenas para dano
-        bonus = (activeEffect.damage.bonus || 0) + sueBonus;
+        // Usa a mesma regra do motor e preserva bônus fixos após o multiplicador.
+        const damageRoll = rollRitualDamage(activeEffect.damage, sueBonus);
+        ({ dice, diceType, bonus, diceMultiplier } = damageRoll);
+        calculatedDamageTotal = damageRoll.total;
         damageType = activeEffect.damage.damageType;
         ignoresRD = activeEffect.damage.ignoresRD || false;
       } else if (activeEffect.healing) {
@@ -952,8 +965,8 @@ export function RitualEffectWizard({
         return;
       }
 
-      const total = dice.reduce((a, b) => a + b, 0) + bonus;
-      setDamageResult({ dice, diceType, bonus, total, damageType, ignoresRD });
+      const total = calculatedDamageTotal ?? (dice.reduce((a, b) => a + b, 0) + bonus);
+      setDamageResult({ dice, diceType, bonus, diceMultiplier, total, damageType, ignoresRD });
       setIsRolling(false);
     }, 500);
   }, [activeEffect, ritualDamageBonus, damageAttributeBonus, healingBonusFromOrigin]);
@@ -1075,6 +1088,7 @@ export function RitualEffectWizard({
                   <ResistanceStep
                     effect={activeEffect}
                     damage={damageResult?.total || 0}
+                    casterResistanceDT={casterResistanceDT}
                     targetAttributes={targetAttributes}
                     onResult={handleResistanceResult}
                   />

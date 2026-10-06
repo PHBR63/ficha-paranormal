@@ -62,6 +62,7 @@ import { ParanormalPowersPanel } from '@/components/character/ParanormalPowersPa
 import { TranscenderHistoryPanel } from '@/components/character/TranscenderHistoryPanel';
 import { cn } from '@/lib/utils';
 import { DiceRollResult } from '@/lib/dice-roller';
+import { calculateRitualResistanceDT } from '@/lib/rituals/ritual-resistance';
 import { InventoryPanel } from '@/components/inventory/InventoryPanel';
 import { DataErrorBoundary } from '@/components/DataErrorBoundary';
 import { InventoryItem, hasInventarioOtimizado, calculateCarryCapacity } from '@/lib/inventory-system';
@@ -4309,6 +4310,12 @@ export default function CharacterSheet() {
         ritual={wizardRitual}
         enhancements={wizardEnhancements}
         peCost={wizardPeCost}
+        casterResistanceDT={calculateRitualResistanceDT(
+          character.nex,
+          character.presence,
+          bonusSummary?.unifiedEffects?.computed?.resources?.peLimitBonus || 0,
+          wizardRitual ? ritualBonuses.getDTForRitual(wizardRitual.element) : 0,
+        )}
         // Bônus do SUE para dano de rituais
         ritualDamageBonus={ritualBonuses.damageBonus}
         damageAttributeBonus={ritualBonuses.damageAttributeBonus}

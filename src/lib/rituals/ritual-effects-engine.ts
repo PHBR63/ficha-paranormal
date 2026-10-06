@@ -27,6 +27,7 @@ import type {
   RitualDamage,
   RitualHealing,
 } from './types';
+import { rollRitualDamage } from './ritual-damage';
 
 // ========================================
 // TYPE GUARDS
@@ -85,6 +86,7 @@ export interface AppliedEffects {
   damage?: {
     diceCount: number;
     diceType: number;
+    diceMultiplier?: number;
     bonus?: number;
     damageType: string;
     rolled?: number; // Valor rolado
@@ -314,15 +316,17 @@ export function applyRitual(
     effects.damage = {
       diceCount: dmg.diceCount,
       diceType: dmg.diceType,
+      diceMultiplier: dmg.diceMultiplier,
       bonus: dmg.bonus,
       damageType: dmg.damageType || 'não especificado',
     };
     
     if (options?.rollDice) {
-      effects.damage.rolled = rollDice(dmg.diceCount, dmg.diceType, dmg.bonus || 0);
+      effects.damage.rolled = rollRitualDamage(dmg).total;
       messages.push(`Causa ${effects.damage.rolled} de dano de ${dmg.damageType || 'não especificado'}`);
     } else {
-      messages.push(`Causa ${dmg.diceCount}d${dmg.diceType}${dmg.bonus ? `+${dmg.bonus}` : ''} de dano de ${dmg.damageType || 'não especificado'}`);
+      const multiplierText = dmg.diceMultiplier && dmg.diceMultiplier !== 1 ? `×${dmg.diceMultiplier}` : '';
+      messages.push(`Causa ${dmg.diceCount}d${dmg.diceType}${multiplierText}${dmg.bonus ? `+${dmg.bonus}` : ''} de dano de ${dmg.damageType || 'não especificado'}`);
     }
   } else if (typeof mechanics.damage === 'string') {
     // Dano em formato string (ex: "2d6+3")

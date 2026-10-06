@@ -101,6 +101,7 @@ function rollDice(count: number, sides: number): number[] {
 export interface RitualDamageResult {
   dice: number[];
   diceType: number;
+  diceMultiplier?: number;
   bonus: number;
   total: number;
   damageType: AnyDamageType;
@@ -225,7 +226,7 @@ export function RitualDamageModal({
     setShowDice(false);
     setSueResult(null);
 
-    const { diceCount, diceType, bonus = 0, damageType, ignoresRD = false } = activeEffect.damage;
+    const { diceCount, diceType, diceMultiplier = 1, bonus = 0, damageType, ignoresRD = false } = activeEffect.damage;
     
     // Calcula bônus legado (retrocompatibilidade)
     const legacyBonus = ritualDamageBonus + (damageAttributeBonus?.value || 0);
@@ -239,6 +240,7 @@ export function RitualDamageModal({
         element: ritual.element,
         circle: ritual.circle,
         baseDamage: `${diceCount}d${diceType}${bonus > 0 ? `+${bonus}` : ''}`,
+        diceMultiplier,
         damageType,
         manualModifiers: legacyBonus, // Aplica bônus legado como modificador
       });
@@ -249,11 +251,13 @@ export function RitualDamageModal({
       setDamageResult({
         dice: sueRollResult.baseDice,
         diceType,
+        diceMultiplier,
         bonus: sueRollResult.bonusSources.reduce((sum, b) => sum + b.value, 0) + bonus,
         total: sueRollResult.total,
         damageType,
         ignoresRD,
-        formula: `${diceCount}d${diceType}${sueRollResult.total > diceCount ? `+${sueRollResult.total - sueRollResult.baseDice.reduce((a, b) => a + b, 0)}` : ''}`,
+        formula: formatDamageFormula({ ...activeEffect.damage,
+          bonus: bonus + sueRollResult.bonusSources.reduce((sum, source) => sum + source.value, 0) }),
         ritualName: ritual.name,
         ritualId: ritual.id,
         enhancements,
@@ -447,6 +451,9 @@ export function RitualDamageModal({
                         {die}
                       </motion.div>
                     ))}
+                    {damageResult?.diceMultiplier && damageResult.diceMultiplier !== 1 && (
+                      <span className="font-mono text-muted-foreground">×{damageResult.diceMultiplier}</span>
+                    )}
                     {(damageResult?.bonus || healingResult?.bonus || 0) !== 0 && (
                       <motion.div
                         initial={{ y: -20, opacity: 0 }}

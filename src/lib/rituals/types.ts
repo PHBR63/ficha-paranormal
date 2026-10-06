@@ -41,6 +41,8 @@ export interface RitualResistance {
 export interface RitualDamage {
   diceCount: number;
   diceType: number;
+  /** Multiplica apenas a soma dos dados; ausência equivale a1. */
+  diceMultiplier?: number;
   bonus?: number;
   damageType?: string;
 }

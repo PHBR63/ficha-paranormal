@@ -32,6 +32,7 @@ import { cn } from '@/lib/utils';
 import { Ritual, getRitualKind, RitualKind, ritualHasHooks, getRitualHooks } from '@/lib/rituals/legacy-exports';
 import { ELEMENT_CONFIG, getElementConfig } from '@/lib/element-config';
 import { getTriggerLabel, getTriggerIcon } from '@/lib/ritual-hooks-engine';
+import { getRitualById } from '@/lib/rituals/ritual-registry';
 
 // Configuração visual dos tipos de ritual
 const RITUAL_KIND_CONFIG: Record<RitualKind, { 
@@ -56,21 +57,22 @@ const RITUAL_KIND_CONFIG: Record<RitualKind, {
 
 interface RitualCardProps {
   ritual: Ritual;
+  /** Compatibilidade com a ficha: a classe não multiplica o custo (Base p.119). */
   isNonOccultist?: boolean;
   onCast: (ritual: Ritual) => void;
   peCurrent?: number;
 }
 
-function RitualCardComponent({ ritual, isNonOccultist = false, onCast, peCurrent }: RitualCardProps) {
+function RitualCardComponent({ ritual, onCast, peCurrent }: RitualCardProps) {
   const [isOpen, setIsOpen] = useState(false);
   
   // Obtém configuração visual do elemento
   const elementConfig = getElementConfig(ritual.element);
   const ElementIcon = elementConfig?.icon || Sparkles;
   
-  // Calcula custo real (×2 para não-ocultistas)
-  const baseCost = ritual.cost;
-  const actualCost = isNonOccultist ? baseCost * 2 : baseCost;
+  // Mesmo custo do modal: atualiza catálogo conhecido, preserva ritual livre/gratuidade explícita.
+  // Livro Base v1.3 p.119: o custo é igual para todas as classes.
+  const actualCost = ritual.cost === 0 ? 0 : (getRitualById(ritual.id)?.cost ?? ritual.cost);
   const canAfford = peCurrent === undefined || peCurrent >= actualCost;
   
   // Obtém tipo semântico do ritual
@@ -179,9 +181,6 @@ function RitualCardComponent({ ritual, isNonOccultist = false, onCast, peCurrent
               )}>
                 <span className="text-xs font-bold">{actualCost}</span>
                 <span className="text-[10px] ml-0.5">PE</span>
-                {isNonOccultist && (
-                  <span className="text-[8px] block text-yellow-400">×2</span>
-                )}
               </div>
               
               <ChevronDown className={cn(
@@ -283,7 +282,7 @@ function RitualCardComponent({ ritual, isNonOccultist = false, onCast, peCurrent
                       Aprimoramentos
                     </p>
                     {ritual.enhancements.map((enh, i) => {
-                      const enhCost = isNonOccultist ? enh.cost * 2 : enh.cost;
+                      const enhCost = enh.cost;
                       const totalCost = actualCost + enhCost;
                       const canAffordEnh = peCurrent === undefined || peCurrent >= totalCost;
                       

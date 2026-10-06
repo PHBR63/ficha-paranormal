@@ -122,6 +122,7 @@ export type ResistanceEffect = 'anula' | 'parcial' | 'reduz_metade';
 export interface DamageFormula {
   diceCount: number;
   diceType: number;
+  diceMultiplier?: number;
   bonus?: number;
   damageType: AnyDamageType;
   ignoresResistance?: boolean;
@@ -427,6 +428,9 @@ export function formatDamageFormula(formula: DamageFormula): string {
   
   if (formula.diceCount > 0 && formula.diceType > 0) {
     result = `${formula.diceCount}d${formula.diceType}`;
+    if (formula.diceMultiplier && formula.diceMultiplier !== 1) {
+      result += `×${formula.diceMultiplier}`;
+    }
   }
   
   if (formula.bonus && formula.bonus > 0) {

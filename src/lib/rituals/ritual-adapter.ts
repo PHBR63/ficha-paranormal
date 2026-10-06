@@ -94,6 +94,7 @@ export function mechanicsToLegacyEffect(mechanics: RitualMechanics): LegacyRitua
       effect.damage = {
         diceCount: mechanics.damage.diceCount,
         diceType: mechanics.damage.diceType,
+        diceMultiplier: mechanics.damage.diceMultiplier,
         bonus: mechanics.damage.bonus,
         damageType: mechanics.damage.damageType as any,
       };
@@ -172,6 +173,7 @@ export function mechanicsToLegacyEffect(mechanics: RitualMechanics): LegacyRitua
     effect.resistance = {
       type: mechanics.resistance.type,
       effect: mechanics.resistance.effect,
+      dt: mechanics.resistance.dt,
     };
   }
 

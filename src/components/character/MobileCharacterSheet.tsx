@@ -2679,6 +2679,7 @@ export function MobileCharacterSheet({
           isNonOccultist={character.class !== 'Ocultista'}
           onConfirm={handleConfirmRitualCast}
           ritualBonuses={ritualBonuses}
+          casterPresence={character.presence}
           intellect={character.intellect}
           peLimitBonus={bonusSummary?.unifiedEffects?.computed?.resources?.peLimitBonus || 0}
         />

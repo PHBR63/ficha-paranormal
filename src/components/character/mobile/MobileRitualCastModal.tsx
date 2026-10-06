@@ -65,6 +65,7 @@ import type { UnifiedRitual } from '@/lib/rituals/types';
 import { getElementConfig } from '@/lib/element-config';
 import { useRitualValidation, TurnPEState, type RitualBonuses } from '@/hooks';
 import { getRitualById } from '@/lib/rituals/ritual-registry';
+import { calculateRitualResistanceDT } from '@/lib/rituals/ritual-resistance';
 import { MobileRitualEffectWizard } from './MobileRitualEffectWizard';
 import { ActiveCondition } from './MobileConditionManager';
 import type { AnyDamageType, SustainConfig } from '@/lib/rituals/legacy-exports';
@@ -107,6 +108,8 @@ interface MobileRitualCastModalProps {
   intellect?: number;
   /** Bônus de limite de PE por turno do SUE (ex: Universitário: Dedicação = +1) */
   peLimitBonus?: number;
+  /** Presença de quem conjura; não usa os atributos do alvo para calcular a DT. */
+  casterPresence?: number;
 }
 
 export function MobileRitualCastModal({
@@ -132,6 +135,7 @@ export function MobileRitualCastModal({
   ritualBonuses,
   intellect = 0,
   peLimitBonus = 0,
+  casterPresence = 0,
 }: MobileRitualCastModalProps) {
   const confirmation = useRitualConfirmation(open);
   const [selectedEnhancements, setSelectedEnhancements] = useState<string[]>([]);
@@ -744,6 +748,10 @@ export function MobileRitualCastModal({
       ritual={castRitual}
       enhancements={castEnhancements}
       peCost={castPeCost}
+      casterResistanceDT={calculateRitualResistanceDT(
+        nex, casterPresence, peLimitBonus,
+        castRitual ? ritualBonuses?.getDTForRitual(castRitual.element) ?? 0 : 0,
+      )}
       targetAttributes={targetAttributes}
       onApplyDamage={onApplyDamage}
       onApplyHealing={onApplyHealing}
