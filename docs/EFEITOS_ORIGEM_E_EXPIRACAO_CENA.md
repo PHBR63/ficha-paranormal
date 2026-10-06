@@ -55,6 +55,7 @@ envia autorização, cena confiável ou origem. As respostas são eventos confir
 | --- | --- |
 | `supabase/migrations/20261006230000_scene_effect_expiration.sql` | Recebe os contratos das RPCs existentes; usa validadores de vínculo, funções anteriores, combate/cena, personagens e eventos. Salva origem/efeitos/recibos; trigger só remove instâncias elegíveis. |
 | `supabase/tests/scene_effect_expiration.sql` | Fixtures e rollback; chama RPCs reais como jogador/mestre. Verifica permissões, legado, outra campanha, crítico, retry e PE. |
+| `supabase/migrations/20261006235000_scene_expiration_nullable_fields.sql` | Trata condições e bônus independentemente; usa o mesmo trigger privado e conserva NULL/formatos antigos do outro campo, sem impedir expiração de uma instância comprovada. Não muda permissões ou dados em massa. |
 | `src/types/effect-duration.ts` | Contrato compartilhado de duração e origem; importado pelos modelos de condições/bônus e aviso. Não grava dados. |
 | `src/lib/rituals/ritual-condition-duration.ts` | Recebe condição do catálogo; devolve categoria, rodadas e texto. Usado nos dois wizards; não transforma duração ausente em cena. |
 | `src/components/character/RitualEffectWizard.tsx` | Recebe ritual/efeito/alvo; envia condições com duração ao callback da ficha, que usa `useRitualApplication`. |
