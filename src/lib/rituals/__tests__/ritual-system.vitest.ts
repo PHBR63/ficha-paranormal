@@ -8,7 +8,8 @@
 
 import { describe, it, expect } from 'vitest';
 import { UNIFIED_RITUALS, RITUAL_BY_ID } from '../unified-rituals';
-import { getAllRituals, getRitualById, getRitualsByElement, getRitualsByCircle } from '../ritual-registry';
+import { calculateRitualCost, canCastRitual, getAllRituals, getRitualById, getRitualsByElement, getRitualsByCircle } from '../ritual-registry';
+import { unifiedToLegacy } from '../ritual-adapter';
 import type { RitualElement, RitualCircle } from '../types';
 
 // ========================================
@@ -175,6 +176,26 @@ describe('Sistema de Rituais Unificado - Funções do Registry', () => {
 // ========================================
 
 describe('Sistema de Rituais Unificado - Custos de PE', () => {
+  // Oráculo independente: Livro Base v1.3, tabela5.2, p.119 (PDF129).
+  // Verifica cada entrada no registro, no cálculo e na ponte usada pela ficha.
+  const officialBaseCosts = { 1: 1, 2: 3, 3: 6, 4: 10 } as const;
+
+  it.each(getAllRituals())('$name respeita o custo básico de seu círculo', ritual => {
+    const expected = officialBaseCosts[ritual.circle];
+    expect(ritual.cost).toBe(expected);
+    expect(calculateRitualCost(ritual.id)).toBe(expected);
+    expect(calculateRitualCost(ritual.id, [], true)).toBe(expected);
+    expect(unifiedToLegacy(ritual).cost).toBe(expected);
+  });
+
+  it.each([
+    ['aprimorar-mente', 3],
+    ['alterar-memoria', 6],
+  ] as const)('%s exige saldo suficiente para o custo oficial', (id, cost) => {
+    expect(canCastRitual(id, 4, cost - 1).canCast).toBe(false);
+    expect(canCastRitual(id, 4, cost).canCast).toBe(true);
+  });
+
   it('deve ter custos de PE válidos (0-10)', () => {
     const errors: string[] = [];
     

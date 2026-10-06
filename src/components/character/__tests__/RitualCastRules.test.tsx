@@ -6,6 +6,8 @@ import { RitualCastModal } from '../RitualCastModal';
 import { MobileRitualCastModal } from '../mobile/MobileRitualCastModal';
 import { useRitualBonusesFromSUE } from '@/hooks/useRitualBonusesFromSUE';
 import { useUnifiedEffects } from '@/hooks/useUnifiedEffects';
+import { unifiedToLegacy } from '@/lib/rituals/ritual-adapter';
+import { RitualCard } from '../RitualCard';
 
 // Isola somente a fachada de hooks, mantendo a validação real de regras.
 vi.mock('@/hooks', async () => await import('@/hooks/useRitualValidation'));
@@ -14,6 +16,33 @@ vi.mock('canvas-confetti', () => ({ default: vi.fn() }));
 afterEach(() => {
   cleanup();
   vi.useRealTimers();
+});
+
+describe('Custo mostrado na ficha (Base v1.3 p.119)', () => {
+  it.each([
+    ['aprimorar-mente', 2, 3],
+    ['alterar-memoria', 4, 6],
+    ['ritual-da-mesa', 7, 7],
+    ['inexistir', 0, 0],
+  ] as const)('%s corrige o custo legado sem multiplicar por classe', (id, savedCost, cost) => {
+    const ritual = { ...unifiedToLegacy(getRitualById(id) ?? getRitualById('arma-atroz')!), id, cost: savedCost };
+    const onCast = vi.fn();
+    render(<RitualCard ritual={ritual} isNonOccultist peCurrent={cost} onCast={onCast} />);
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(ritual.name) }));
+    const cast = screen.getByRole('button', { name: `Conjurar (${cost} PE)` });
+    expect(cast).toBeEnabled();
+    expect(screen.queryByText('×2')).not.toBeInTheDocument();
+    fireEvent.click(cast);
+    expect(onCast).toHaveBeenCalledWith(ritual);
+  });
+
+  it('mostra o adicional do aprimoramento sem dobrar para não ocultista', () => {
+    const ritual = unifiedToLegacy(getRitualById('arma-atroz')!);
+    render(<RitualCard ritual={ritual} isNonOccultist peCurrent={10} onCast={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: /Arma Atroz/ }));
+    expect(screen.getByText('+2 PE')).toBeInTheDocument();
+    expect(screen.queryByText('+4 PE')).not.toBeInTheDocument();
+  });
 });
 
 it('a caixa de aprimoramento desktop altera a seleção apenas uma vez', () => {
@@ -33,6 +62,34 @@ describe.each([
   ['desktop', RitualCastModal],
   ['mobile', MobileRitualCastModal],
 ] as const)('Modal de conjuração %s', (_name, Modal) => {
+  it.each([
+    ['aprimorar-mente', 2, 3],
+    ['alterar-memoria', 4, 6],
+  ] as const)('%s envia o custo oficial apesar do objeto legado', async (id, savedCost, cost) => {
+    vi.useFakeTimers();
+    const ritual = { ...getRitualById(id)!, cost: savedCost };
+    const onConfirm = vi.fn().mockResolvedValue(true);
+    render(<Modal open onOpenChange={vi.fn()} ritual={ritual} peCurrent={cost} peMax={50}
+      nex={99} isNonOccultist onConfirm={onConfirm} />);
+    const confirm = screen.getByRole('button', { name: /conjurar/i });
+    expect(confirm).toBeEnabled();
+    fireEvent.click(confirm);
+    await act(async () => { await vi.advanceTimersByTimeAsync(350); });
+    expect(onConfirm).toHaveBeenCalledWith(ritual, cost, [], [], undefined);
+  });
+
+  it.each([
+    ['aprimorar-mente', 2, 3],
+    ['alterar-memoria', 4, 6],
+  ] as const)('%s impede confirmar com saldo inferior ao custo oficial', (id, savedCost, cost) => {
+    const ritual = { ...getRitualById(id)!, cost: savedCost };
+    const onConfirm = vi.fn();
+    render(<Modal open onOpenChange={vi.fn()} ritual={ritual} peCurrent={cost - 1} peMax={50}
+      nex={99} isNonOccultist onConfirm={onConfirm} />);
+    expect(screen.getByRole('button', { name: /conjurar/i })).toBeDisabled();
+    expect(onConfirm).not.toHaveBeenCalled();
+  });
+
   it('mantém a preparação aberta quando o débito não é confirmado', async () => {
     vi.useFakeTimers();
     const onConfirm = vi.fn().mockResolvedValue(false);

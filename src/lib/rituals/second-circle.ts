@@ -1,6 +1,7 @@
 /**
  * Ordem Paranormal RPG - Rituais de 2º Círculo (Oficiais)
  * Baseado no Livro Base v1.3
+ * Tabela5.2, p.119: custo básico de 2º círculo = 3 PE.
  */
 
 import type { UnifiedRitual } from './types';
@@ -20,7 +21,7 @@ export const KNOWLEDGE_SECOND_CIRCLE: UnifiedRitual[] = [
     target: '1 ser',
     duration: 'Cena',
     description: 'O alvo tem sua mente energizada por fagulhos do Conhecimento. Ele recebe +1 em Intelecto ou Presença, à escolha dele.',
-    cost: 2,
+    cost: 3,
     effects: {
       base: {
         kind: 'buff',
@@ -50,7 +51,7 @@ export const KNOWLEDGE_SECOND_CIRCLE: UnifiedRitual[] = [
     area: 'Esfera de 18m de raio',
     duration: 'Cena',
     description: 'Você recebe uma percepção aguçada sobre perigos à sua volta. Quando um ser hostil ou armadilha entra na área do efeito, você tem uma sensação de perigo e pode gastar uma ação de movimento para fazer um teste de Percepção (DT 20). Se passar, sabe a direção e distância do perigo.',
-    cost: 2,
+    cost: 3,
     effects: {
       base: {
         kind: 'sense',
@@ -81,7 +82,7 @@ export const KNOWLEDGE_SECOND_CIRCLE: UnifiedRitual[] = [
     target: 'Você',
     duration: 'Cena',
     description: 'Você fica invisível, incluindo seu equipamento, recebendo camuflagem total e +15 em testes de Furtividade. O efeito termina se você faz um ataque ou usa uma habilidade hostil.',
-    cost: 2,
+    cost: 3,
     effects: {
       base: {
         kind: 'buff',
@@ -115,7 +116,7 @@ export const KNOWLEDGE_SECOND_CIRCLE: UnifiedRitual[] = [
     target: '1 ser ou 2 pessoas voluntárias',
     duration: 'Instantânea',
     description: 'Rajada Mental: 6d6 dano de Conhecimento e atordoado (Vontade metade e não atordoa). Ligação Telepática: elo mental entre duas pessoas por 1 dia.',
-    cost: 2,
+    cost: 3,
     resistance: { type: 'vontade', effect: 'parcial' },
     hasModes: true,
     effects: {
@@ -154,7 +155,7 @@ export const KNOWLEDGE_SECOND_CIRCLE: UnifiedRitual[] = [
     area: 'Círculo com 90m de raio',
     duration: 'Cena',
     description: 'Encontra direção/distância de pessoa ou objeto. Pode pensar em termos gerais ou específicos.',
-    cost: 2,
+    cost: 3,
     effects: {
       base: {
         kind: 'sense',
@@ -193,7 +194,7 @@ export const ENERGY_SECOND_CIRCLE: UnifiedRitual[] = [
     target: 'Veja texto',
     duration: 'Cena',
     description: 'Manipula calor e fogo. Chamejar: +1d6 dano fogo em arma. Esquentar: objeto causa 1d6 dano/rodada. Extinguir: apaga chama, cria fumaça. Modelar: move chama, causa 3d6 ao atravessar.',
-    cost: 2,
+    cost: 3,
     hasModes: true,
     effects: {
       base: {
@@ -233,7 +234,7 @@ export const ENERGY_SECOND_CIRCLE: UnifiedRitual[] = [
     target: '1 ser',
     duration: 'Cena',
     description: 'Três laços de Energia surgem e prendem o alvo (agarrado). Pode tentar quebrar com Atletismo ou destruir: cada laço tem Def 10, 10 PV, RD 5.',
-    cost: 2,
+    cost: 3,
     resistance: { type: 'reflexos', effect: 'anula' },
     effects: {
       base: {
@@ -266,7 +267,7 @@ export const ENERGY_SECOND_CIRCLE: UnifiedRitual[] = [
     area: 'Esfera com 6m de raio',
     duration: 'Sustentada',
     description: 'Cria área de dissonância sonora. Seres dentro ficam surdos e não podem conjurar rituais.',
-    cost: 2,
+    cost: 3,
     isSustainable: true,
     effects: {
       base: {
@@ -299,7 +300,7 @@ export const ENERGY_SECOND_CIRCLE: UnifiedRitual[] = [
     area: 'Varia',
     duration: 'Sustentada',
     description: 'Ascender: levita alvo Médio (vulnerável). Sopro: empurra em cone 4,5m. Vento: cria/aumenta vento forte.',
-    cost: 2,
+    cost: 3,
     isSustainable: true,
     hasModes: true,
     effects: {
@@ -336,7 +337,7 @@ export const ENERGY_SECOND_CIRCLE: UnifiedRitual[] = [
     target: 'Você',
     duration: 'Cena',
     description: 'Cria película de Energia que absorve energia cinética. Recebe 30 PV temporários contra dano físico. Alternativamente, conjura como reação para resistência 15 contra um dano.',
-    cost: 2,
+    cost: 3,
     effects: {
       base: {
         kind: 'buff',
@@ -375,7 +376,7 @@ export const FEAR_SECOND_CIRCLE: UnifiedRitual[] = [
     target: '1 ser',
     duration: 'Cena',
     description: 'Você canaliza uma aura de Medo puro, que protege o alvo contra efeitos paranormais. O alvo recebe resistência a dano paranormal 5 e +5 em testes de resistência contra rituais e habilidades de criaturas paranormais.',
-    cost: 2,
+    cost: 3,
     effects: {
       base: {
         kind: 'buff',
@@ -409,7 +410,7 @@ export const FEAR_SECOND_CIRCLE: UnifiedRitual[] = [
     area: 'Nuvem de 6m de raio',
     duration: 'Cena',
     description: 'Rituais conjurados dentro da área têm seu custo aumentado em +2 PE por círculo e sua execução aumentada em um passo. Anula os efeitos de Cinerária.',
-    cost: 2,
+    cost: 3,
     effects: {
       base: {
         kind: 'debuff',
@@ -447,7 +448,7 @@ export const DEATH_SECOND_CIRCLE: UnifiedRitual[] = [
     target: '1 ser ou objetos somando até 10 espaços',
     duration: 'Especial',
     description: 'O alvo cai lentamente (18m/rodada) sem causar dano. Se o alvo for um projétil, causa metade do dano normal.',
-    cost: 2,
+    cost: 3,
     effects: {
       base: {
         kind: 'interceptor',
@@ -472,7 +473,7 @@ export const DEATH_SECOND_CIRCLE: UnifiedRitual[] = [
     target: '1 ser',
     duration: '2 rodadas',
     description: 'Manifesta cópia do alvo feita de cinzas. No 1º turno concentra, no 2º descarrega: alvo sofre dano de Morte igual ao dano que sofreu na rodada de concentração.',
-    cost: 2,
+    cost: 3,
     resistance: { type: 'fortitude', effect: 'reduz_metade' },
     effects: {
       base: {
@@ -503,7 +504,7 @@ export const DEATH_SECOND_CIRCLE: UnifiedRitual[] = [
     area: 'Nuvem com 6m de raio',
     duration: 'Instantânea',
     description: 'Cria explosão de emanações tóxicas. Seres na área sofrem 4d8 pontos de dano químico e ficam enjoados por 1 rodada. Se passarem na resistência, sofrem metade do dano e não ficam enjoados.',
-    cost: 2,
+    cost: 3,
     resistance: { type: 'fortitude', effect: 'parcial' },
     effects: {
       base: {
@@ -538,7 +539,7 @@ export const DEATH_SECOND_CIRCLE: UnifiedRitual[] = [
     target: '1 ser ou objeto, ou esfera com 3m de raio',
     duration: 'Instantânea',
     description: 'Dissipa rituais ativos. Faça um teste de Ocultismo; anula rituais com DT igual ou menor que o resultado. Pode tornar item amaldiçoado mundano por 1 dia.',
-    cost: 2,
+    cost: 3,
     effects: {
       base: {
         kind: 'utility',
@@ -557,7 +558,7 @@ export const DEATH_SECOND_CIRCLE: UnifiedRitual[] = [
     target: '1 ser',
     duration: 'Sustentada',
     description: 'Você distorce a passagem do tempo ao redor do alvo, tornando-o extremamente veloz. O alvo pode realizar uma ação de movimento adicional por turno.',
-    cost: 2,
+    cost: 3,
     isSustainable: true,
     effects: {
       base: {
@@ -595,7 +596,7 @@ export const BLOOD_SECOND_CIRCLE: UnifiedRitual[] = [
     target: '1 ser',
     duration: 'Cena',
     description: 'O alvo tem seus músculos tonificados e seus ligamentos reforçados, recebendo +1 em Agilidade ou Força, à escolha dele.',
-    cost: 2,
+    cost: 3,
     effects: {
       base: {
         kind: 'buff',
@@ -625,7 +626,7 @@ export const BLOOD_SECOND_CIRCLE: UnifiedRitual[] = [
     target: '1 ser',
     duration: 'Instantânea',
     description: 'Lacerações se manifestam na pele e órgãos do alvo, que sofre 6d8 pontos de dano (metade corte, metade Sangue) e fica com hemorragia severa (2d8/turno, Fortitude para estancar).',
-    cost: 2,
+    cost: 3,
     resistance: { type: 'fortitude', effect: 'parcial' },
     effects: {
       base: {
@@ -661,7 +662,7 @@ export const BLOOD_SECOND_CIRCLE: UnifiedRitual[] = [
     target: '1 pessoa',
     duration: 'Cena',
     description: 'Você toca uma pessoa, gravando uma marca escarificada no corpo dela enquanto profere uma ordem. A cada rodada que o alvo desobedecer, a marca causa 10d6 dano de Sangue e deixa o alvo enjoado.',
-    cost: 2,
+    cost: 3,
     resistance: { type: 'fortitude', effect: 'parcial' },
     effects: {
       base: {
@@ -694,7 +695,7 @@ export const BLOOD_SECOND_CIRCLE: UnifiedRitual[] = [
     target: '1 ser',
     duration: 'Instantânea',
     description: 'Você arranca o sangue do corpo do alvo através da pele dele, causando 6d6 pontos de dano de Sangue. Você então absorve esse sangue, recuperando pontos de vida iguais à metade do dano causado.',
-    cost: 2,
+    cost: 3,
     resistance: { type: 'fortitude', effect: 'reduz_metade' },
     effects: {
       base: {
@@ -728,7 +729,7 @@ export const BLOOD_SECOND_CIRCLE: UnifiedRitual[] = [
     target: '1 ser',
     duration: 'Instantânea',
     description: 'Você toca outro ser e transfere sua própria energia vital para ele, podendo perder até 30 pontos de vida para que o alvo recupere a mesma quantidade em PV. Você não pode ficar com menos de 1 PV.',
-    cost: 2,
+    cost: 3,
     effects: {
       base: {
         kind: 'healing',
