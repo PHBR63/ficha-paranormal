@@ -1,3 +1,4 @@
+import { getNexLevel } from '@/lib/rules/nex-progression';
 /**
  * Ordem Paranormal RPG v1.3 - Dice Roller Engine
  * Sistema de Pool de Dados (Dice Pool)
@@ -232,7 +233,7 @@ export const TRAINING_BONUS = {
 export function getPELimitByNex(nex: number): number {
   if (!Number.isFinite(nex)) return 1;
   if (nex >= 99) return 20;
-  return Math.max(1, Math.floor(nex / 5));
+  return Math.max(1, getNexLevel(nex));
 }
 
 /**

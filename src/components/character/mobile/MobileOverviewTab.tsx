@@ -4,6 +4,7 @@
  */
 
 import { memo, useCallback, useMemo } from 'react';
+import type { PrepareTurnApplication } from '../ConditionTurnResolver';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   User, 
@@ -142,6 +143,7 @@ interface MobileOverviewTabProps {
   onClearHistory: () => void;
   onRemoveRoll: (id: string) => void;
   onConditionsChange: (conditions: ActiveCondition[]) => void;
+  prepareTurnApplication?: PrepareTurnApplication;
   onDamageFromCondition?: (damage: number, isVerdadeiro: boolean) => void;
   onCharacterDeath?: () => void;
   onPEChange: (newPE: number) => void;
@@ -183,6 +185,7 @@ export const MobileOverviewTab = memo(function MobileOverviewTab({
   onClearHistory,
   onRemoveRoll,
   onConditionsChange,
+  prepareTurnApplication,
   onDamageFromCondition,
   onCharacterDeath,
   onPEChange,
@@ -691,6 +694,8 @@ export const MobileOverviewTab = memo(function MobileOverviewTab({
       {/* Gerenciador de Condições Mobile */}
       <MobileConditionManager
         conditions={conditions}
+        vigor={character.vigor}
+        prepareTurnApplication={prepareTurnApplication}
         onConditionsChange={onConditionsChange}
         onDamageFromCondition={onDamageFromCondition}
         onCharacterDeath={onCharacterDeath}

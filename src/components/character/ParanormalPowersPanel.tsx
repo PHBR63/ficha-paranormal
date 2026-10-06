@@ -335,9 +335,9 @@ export function ParanormalPowersPanel({
 
                 {elementPowers.map((power) => {
                   const fullPower = getPowerById(power.id);
-                  const showAffinity = isAffinityElement && affinityActive && fullPower?.affinityEffect;
+                  const showAffinity = isAffinityElement && affinityActive && powers.filter(entry => entry.id === power.id).length >= 2 && fullPower?.affinityEffect;
                   const effectText = fullPower 
-                    ? getPowerEffect(fullPower, affinityActive, elementalAffinity || undefined)
+                    ? getPowerEffect(fullPower, affinityActive && powers.filter(entry => entry.id === power.id).length >= 2, elementalAffinity || undefined)
                     : power.description;
                   
                   // Extrai escolhas salvas se existirem

@@ -1,0 +1,63 @@
+/** Mapa de capacidades por família; não representa percentual de fidelidade nem todas as combinações. */
+export type RuleCoverageStatus = 'automatic' | 'partial' | 'manual' | 'missing' | 'house' | 'unverified';
+export interface BaseRuleCoverage {
+  id: string; title: string; domain: string; status: RuleCoverageStatus;
+  pages: number[]; behavior: string; remaining: string;
+}
+export const RULE_COVERAGE_LABELS: Record<RuleCoverageStatus, string> = {
+  automatic: 'Automático', partial: 'Parcial', manual: 'Manual', missing: 'Ausente', house: 'Regra da mesa', unverified: 'Conferência pendente',
+};
+
+// Cada entrada delimita a unidade conferida. Catálogo existente não equivale a efeito aplicado.
+type CoverageRow = [string, string, string, RuleCoverageStatus, number[], string, string];
+const rows: CoverageRow[] = [
+  ['pool', 'Dados de atributos e treinamento', 'Testes', 'partial', [11, 39, 75], 'O teste calcula o pool, seleciona o dado e soma treinamento e bônus separados.', 'Bônus positivos em quantidade de dados e todas as combinações situacionais ainda precisam de conferência. Atributos negativos legados são preservados, sem habilitar suplemento.'],
+  ['twenty', '20 natural e crítico ampliado', 'Testes', 'house', [76, 84], '20 natural continua exigindo total suficiente; margem ampliada também depende de acertar.', 'Esta é a política aprovada da mesa, diferente do sucesso automático do livro.'],
+  ['skill-requirements', 'Treino obrigatório, kit e novas tentativas', 'Testes', 'partial', [39, 40, 41, 49], 'A ficha apresenta treinamento e descrição das perícias.', 'Um botão genérico não verifica todos os usos, kits, ações e restrições de cada perícia.'],
+  ['extended-tests', 'Testes estendidos, ajuda e escolher 10/20', 'Testes', 'manual', [76, 77, 78], 'Mestre e jogadores definem contexto, duração e consequências.', 'Conferir limites, tentativas e modificadores antes da rolagem.'],
+  ['attributes', 'Criação e distribuição de atributos', 'Personagem', 'partial', [14, 15], 'O criador e o validador conferem atributos e pontos.', 'Escolhas e exceções de poderes precisam ser verificadas por personagem.'],
+  ['progression', 'Progressão, recursos e NEX 99', 'Personagem', 'partial', [23, 24, 28, 32], 'Cálculos de PV/PE somam Vigor/Presença por patamar, e NEX 99 corresponde ao vigésimo patamar. A auditoria ao abrir a ficha não sobrescreve recursos salvos.', 'Conferir todos os caminhos de máximos, efeitos retroativos e recursos ajustados antes de corrigir uma ficha existente.'],
+  ['transcend', 'Transcender e perda de ganho de SAN', 'Personagem', 'partial', [110, 114], 'Existem escolhas e cálculos de Transcender.', 'Histórico da aquisição e requisitos de todas as fontes não são certificados pelo catálogo.'],
+  ['affinity', 'Afinidade e segunda aquisição de poderes', 'Personagem', 'partial', [110, 114], 'Aprimoramentos numéricos conferidos exigem duas aquisições e afinidade ativa no elemento; a segunda cópia não duplica o bônus base.', 'A aquisição e os pré-requisitos dos poderes genéricos pelo elemento escolhido, bônus contra o elemento e opressor, e todos os efeitos situacionais ainda exigem conferência.'],
+  ['origins', 'Origens e seus requisitos de uso', 'Personagem', 'partial', [16, 17, 18, 19, 20, 21, 22], 'Bônus e origens são apresentados na ficha e nas rolagens.', 'Efeitos narrativos, uso por cena, alvo e exceções exigem conferência individual.'],
+  ['tracks', 'Classes, trilhas e poderes', 'Personagem', 'partial', [24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35], 'Há catálogos, escolhas e adaptadores de poderes.', 'Presença no catálogo não prova custo, duração, requisito e aplicação integral de cada habilidade.'],
+  ['paranormal-powers', 'Poderes paranormais', 'Personagem', 'partial', [114, 115, 116], 'Catálogo dos 22 poderes conferido. Bônus passivos seguros compartilham a mesma fonte; efeitos situacionais aparecem como resolução manual.', 'Conferir gatilhos, ações, alvos e duração com o mestre. Consultar um poder não aplica efeito, não debita recursos e não confirma uso. Expansão exige registro do poder de outra classe; escolhas antigas de perícia são preservadas sem +5 indevido.'],
+  ['load', 'Carga, patente e categorias de equipamento', 'Equipamento', 'partial', [51, 52, 53, 54], 'Inventário calcula carga e mostra requisitos e categorias.', 'Crédito, itens escolhidos, exceções e permissões da missão dependem do mestre.'],
+  ['weapons', 'Armas, proficiência, mãos e alcance', 'Equipamento', 'partial', [54, 55, 56, 57, 58, 59], 'Armas possuem dados e controles de ataque e dano.', 'Conferir equipamento empunhado, alcance, munição e restrições antes do ataque.'],
+  ['modifications', 'Modificações, maldições e itens especiais', 'Equipamento', 'partial', [60, 61, 62, 63, 64, 65, 66, 67, 143, 144, 145, 146, 147, 148, 149, 150, 151], 'O inventário aceita modificações e calcula parte dos bônus.', 'Compatibilidade e efeito de cada item copiado precisam de conferência; itens antigos não são substituídos automaticamente.'],
+  ['initiative', 'Iniciativa, ordem e rodada', 'Combate', 'partial', [83], 'A campanha salva e sincroniza participantes, ordem, rodada e turno.', 'Avançar o tracker não executa automaticamente todos os efeitos da ficha.'],
+  ['action-budget', 'Ações, reações e limite de PE', 'Combate', 'partial', [23, 83, 84, 85, 86, 87, 88], 'Há controles e validação local de custos.', 'As fontes de gasto e todas as reações ainda não compartilham um orçamento autoritativo por turno.'],
+  ['attack', 'Ataque, acerto e crítico', 'Combate', 'partial', [84], 'Rolagens distinguem acerto, crítico e bônus.', 'Manobras, camuflagem, cobertura total, alvo e contexto exigem conferência.'],
+  ['damage', 'Dano, cura, resistência e perda de PV', 'Combate', 'partial', [88, 312], 'Efeitos confirmados salvam PV e histórico; Sangrando é perda de PV sem RD.', 'Conferir tipo, imunidade, multiplicadores, dano massivo e componentes antes de informar o valor final.'],
+  ['nonlethal', 'Dano não letal e dano massivo', 'Combate', 'manual', [88], 'O mestre confere dano e consequências.', 'A ficha não separa integralmente dano letal/não letal nem automatiza todos os gatilhos de dano massivo.'],
+  ['temporary', 'PV e PE temporários', 'Combate', 'missing', [115, 125, 179], 'Efeitos temporários têm avisos de resolução manual.', 'Falta armazenamento integrado, ordem de consumo e encerramento por fonte. Não adicionar ao máximo normal.'],
+  ['maneuvers', 'Manobras e reações especiais de defesa', 'Combate', 'partial', [85, 88], 'A ficha disponibiliza ataques e valores de defesa/resistência.', 'Usos por rodada e testes opostos devem ser confirmados com o mestre.'],
+  ['movement', 'Movimento, terreno, cobertura e camuflagem', 'Combate', 'partial', [89, 90], 'Existe mapa e cálculo de deslocamento.', 'Mapa visual não comprova custo de diagonais, terreno, flanqueamento ou chance de falha.'],
+  ['hp-zero', 'PV zero, cura e Morrendo', 'Condições', 'partial', [88, 311], 'Zero PV inicia Inconsciente e Morrendo; curar PV não remove Morrendo automaticamente.', 'Estabilização específica e contagem cumulativa por cena precisam de confirmação; um contador local não certifica a cena.'],
+  ['sanity', 'Perturbado e Enlouquecendo', 'Condições', 'partial', [88, 111, 310, 311], 'Perturbado é indicado abaixo de metade da SAN; zero inicia Enlouquecendo.', 'Efeito de insanidade na primeira ocorrência, Diplomacia e três turnos cumulativos exigem acompanhamento da cena.'],
+  ['condition-dice', 'Penalidades em dados e condições compostas', 'Condições', 'partial', [310, 311], 'As condições conferidas alteram dados e defesa; compostas expandem suas consequências.', 'Todos os contextos, imunidades e agravamentos não são certificados por esta unidade.'],
+  ['bleeding', 'Sangrando no início de turno', 'Condições', 'partial', [311], 'A prévia testa Vigor DT 20; sucesso remove Sangrando, falha sorteia 1d6 de perda de PV. A aplicação aguarda o servidor.', 'O início de turno é confirmado pelo jogador; não há execução automática ao avançar a iniciativa.'],
+  ['fire-poison', 'Em Chamas e veneno recorrente', 'Condições', 'partial', [310, 311], 'Em Chamas sorteia 1d6; veneno usa sua fórmula informada, sem dano padrão inventado.', 'Conferir resistência, tipo e duração da fonte. Venenos repetidos e suas instâncias ainda exigem atenção.'],
+  ['condition-duration', 'Duração, agravamento e encerramento', 'Condições', 'partial', [310, 311], 'A ficha preserva metadados e permite duração e remoção explícitas.', 'Ausência de duração não autoriza o sistema a remover todas as condições; conferir fonte e fim da cena.'],
+  ['condition-unknown', 'Condições personalizadas e antigas', 'Condições', 'manual', [310, 311], 'Registros desconhecidos permanecem visíveis e são preservados.', 'Conferir efeito com o mestre; não atribuir mecanicamente uma regra pelo nome aproximado.'],
+  ['ritual-cost', 'Custos básicos e versões de rituais', 'Rituais', 'partial', [119, 121, 122], 'Custos básicos 1/3/6/10 PE e aprimoramentos são calculados; o gasto é confirmado e registrado.', 'Cada forma, redução, multiplicador e exceção exige cenário próprio; custo correto não prova efeito aplicado.'],
+  ['ritual-dt', 'DT e resistência de rituais', 'Rituais', 'partial', [121], 'DT deriva do conjurador; resistência usa os atributos do alvo e permite conferência de bônus.', 'Testes contra efeitos elementais, opções situacionais e resistências específicas precisam de contexto.'],
+  ['ritual-requirements', 'Gestos, componentes, círculo e afinidade', 'Rituais', 'partial', [119, 120, 121, 122], 'O modal confere círculo, aprimoramentos, afinidade e PE.', 'Mão livre, componentes, condição ruim, ação e requisitos materiais ainda precisam de confirmação explícita.'],
+  ['paranormal-cost', 'Custo do Paranormal e concentração', 'Rituais', 'manual', [120, 122], 'Há cálculo em módulo separado, sem certificar integração completa ao fluxo da ficha.', 'Conferir Ocultismo, perdas de SAN, concentração e proteções; não presumir que o débito de PE resolveu essas etapas.'],
+  ['ritual-effects', 'Alvos, aplicação e cancelamento', 'Rituais', 'partial', [119, 120, 121, 122], 'Alvo explícito, permissão de campanha, confirmação e proteção contra repetição para efeitos suportados.', 'Cancelar após consumir PE mantém o registro pendente, sem estorno automático. Outros efeitos precisam de resolução manual.'],
+  ['sustain', 'Sustentação e duração de rituais', 'Rituais', 'partial', [120], 'Sustentações são registradas no servidor.', 'Cobrança única por turno, término e vínculo com avanço do combate ainda precisam de integração completa.'],
+  ['rest', 'Descanso e interlúdio', 'Cenas', 'house', [92, 93], 'Mantida a recuperação atual por decisão anterior da mesa.', 'Dormir, relaxar, refeições e outras ações do interlúdio do livro continuam manuais.'],
+  ['investigation', 'Investigação, pistas e urgência', 'Cenas', 'manual', [79, 80, 81, 82], 'Notas, mensagens e rolagens apoiam a condução do mestre.', 'Pistas básicas/complementares, urgência e consequências dependem da cena.'],
+  ['threats', 'Ameaças, NPCs e habilidades', 'Mestre', 'partial', [178, 179, 180, 181, 182, 183], 'Mestre registra participantes e controla fichas autorizadas.', 'Cadastrar um NPC não automatiza todas as habilidades, imunidades ou estatísticas das ameaças do livro.'],
+  ['narrative', 'Julgamento e decisões do mestre', 'Mestre', 'manual', [69, 70, 71, 72, 73, 74], 'O mestre define a situação e decide as consequências narrativas.', 'Decisões narrativas não devem ser convertidas em automatismos obrigatórios.'],
+];
+
+export const BASE_RULE_COVERAGE: BaseRuleCoverage[] = rows.map(([id, title, domain, status, pages, behavior, remaining]) => ({ id, title, domain, status, pages, behavior, remaining }));
+
+/** Filtra o mapa sem ocultar casos pendentes nem misturar suplemento com Livro Base. */
+export function filterBaseRuleCoverage(query: string, status = 'all', domain = 'all'): BaseRuleCoverage[] {
+  const normalize = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const search = normalize(query.trim());
+  return BASE_RULE_COVERAGE.filter(rule => (status === 'all' || status === rule.status) &&
+    (domain === 'all' || domain === rule.domain) && normalize(`${rule.title} ${rule.behavior} ${rule.remaining}`).includes(search));
+}

@@ -11,6 +11,7 @@
  */
 
 import { useState } from 'react';
+import { ConditionTurnResolver, type PrepareTurnApplication } from './ConditionTurnResolver';
 import { useConditionMutation } from '@/hooks/character/useConditionMutation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -68,9 +69,6 @@ import {
 } from '@/lib/conditions';
 import { 
   CONDITION_EFFECTS, 
-  processStartOfTurn, 
-  type CombatantState,
-  type ActiveConditionWithParams,
 } from '@/lib/game-engine';
 import { toast } from 'sonner';
 import { getConditionPresentation } from '@/lib/conditions/condition-identity';
@@ -89,6 +87,8 @@ export interface ActiveCondition {
 interface ConditionManagerProps {
   conditions: ActiveCondition[];
   onConditionsChange: (conditions: ActiveCondition[]) => void | Promise<void>;
+  vigor?: number;
+  prepareTurnApplication?: PrepareTurnApplication;
   characterName?: string; // Para mensagens de início de turno
   onDamageFromCondition?: (damage: number, isVerdadeiro: boolean) => void; // Callback para aplicar dano
   onCharacterDeath?: () => void; // Callback quando morre
@@ -115,8 +115,8 @@ const CATEGORY_LABELS: Record<string, string> = {
 export function ConditionManager({ 
   conditions, 
   onConditionsChange,
-  characterName = 'Personagem',
-  onDamageFromCondition,
+  vigor,
+  prepareTurnApplication,
   onCharacterDeath,
 }: ConditionManagerProps) {
   // Estado para controlar abertura do modal
@@ -128,7 +128,6 @@ export function ConditionManager({
   // Estado para categoria expandida no modal
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   // Estado para mostrar resultados do início de turno
-  const [turnResults, setTurnResults] = useState<string[]>([]);
   const { saveConditions, isSaving, saveError } = useConditionMutation(onConditionsChange);
 
   // Adiciona uma condição com parâmetros opcionais
@@ -156,7 +155,7 @@ export function ConditionManager({
     }
 
     if (!await saveConditions([...conditions, newCondition])) return false;
-    if (conditionId === 'morrendo') toast.error('💀 Condição MORRENDO adicionada! 3 rodadas até a morte.', { duration: 5000 });
+    if (conditionId === 'morrendo') toast.error('Morrendo registrado. Confira os três inícios de turno cumulativos na cena com o mestre.', { duration: 5000 });
     toast.success(`${conditionData.name} adicionada`);
 
     // Toast informativo para condições com parâmetros
@@ -207,13 +206,8 @@ export function ConditionManager({
     const morrendoCondition = conditions.find(c => c.id === 'morrendo');
     if (!morrendoCondition || morrendoCondition.dyingCounter === undefined) return;
 
-    const newCounter = morrendoCondition.dyingCounter - 1;
+    const newCounter = Math.max(0, morrendoCondition.dyingCounter - 1);
     
-    if (newCounter <= 0) {
-      toast.error('💀 MORTE! O contador de morrendo chegou a 0.', { duration: 10000 });
-      onCharacterDeath?.();
-      return;
-    }
 
     if (!await saveConditions(
       conditions.map(c => {
@@ -222,90 +216,7 @@ export function ConditionManager({
       })
     )) return;
     
-    toast.warning(`⚠️ Contador de morrendo: ${newCounter} rodadas restantes.`, { duration: 3000 });
-  };
-
-  // Processa início de turno - aplica dano de condições e reduz contadores
-  const handleProcessStartOfTurn = async () => {
-    const conditionIds = conditions.map(c => c.id);
-    const morrendoCondition = conditions.find(c => c.id === 'morrendo');
-    
-    // Converte condições ativas para o formato com parâmetros
-    const activeConditionsWithParams: ActiveConditionWithParams[] = conditions.map(c => ({
-      id: c.id,
-      params: c.params,
-    }));
-    
-    // Cria um CombatantState mock para usar o processStartOfTurn
-    const mockCombatant: CombatantState = {
-      id: 'current',
-      name: characterName,
-      initiative: 0,
-      initiativeRoll: [],
-      hp: 1, // Não usado aqui
-      hpMax: 1,
-      pe: 0,
-      peMax: 0,
-      san: 0,
-      sanMax: 0,
-      defense: 10,
-      baseDefense: 10,
-      conditions: conditionIds,
-      turnState: { peSpentThisTurn: 0, peLimit: 0, hasActed: false, hasMoved: false, hasReacted: false, actionsRemaining: 2 },
-      dyingCounter: morrendoCondition?.dyingCounter,
-    };
-
-    const result = processStartOfTurn(mockCombatant, activeConditionsWithParams);
-    const messages: string[] = [];
-
-    // Processa dano
-    if (result.damage > 0) {
-      messages.push(`🩸 Dano de condições: ${result.damage}`);
-      onDamageFromCondition?.(result.damage, result.isDamageVerdadeiro);
-    }
-
-    // Processa contador de morrendo
-    if (result.dyingResult) {
-      if (result.dyingResult.isDead) {
-        toast.error(result.dyingResult.message, { duration: 10000 });
-        onCharacterDeath?.();
-        return;
-      }
-      
-      // Atualiza contador de morrendo
-      const newConditions = conditions.map(c => {
-        if (c.id === 'morrendo') {
-          return { ...c, dyingCounter: result.dyingResult!.newCounter };
-        }
-        return c;
-      });
-      
-      messages.push(result.dyingResult.message);
-      if (!await saveConditions(newConditions.filter(c => !result.removedConditions.includes(c.id)))) return;
-    } else {
-      // Remove condições autoRemove
-      if (result.removedConditions.length > 0) {
-        if (!await saveConditions(conditions.filter(c => !result.removedConditions.includes(c.id)))) return;
-      }
-    }
-
-    // Adiciona mensagens de remoção
-    result.messages.forEach(msg => {
-      if (!messages.includes(msg)) {
-        messages.push(msg);
-      }
-    });
-
-    setTurnResults(messages);
-    
-    if (messages.length > 0) {
-      toast.info(`⏰ Início de turno calculado — confira aplicação`, {
-        description: messages.join('\n'),
-        duration: 5000,
-      });
-    } else {
-      toast.info('Início de turno: nenhum efeito calculado.');
-    }
+    toast.warning(newCounter === 0 ? 'Contagem registrada. Confira morte e turnos cumulativos da cena com o mestre.' : `Morrendo: ${newCounter} inícios de turno restantes na contagem manual.`, { duration: 5000 });
   };
 
   // Reduz todos os contadores (para usar no fim do turno)
@@ -348,7 +259,7 @@ export function ConditionManager({
   // Verifica se tem condições que causam efeito no início do turno
   const hasStartOfTurnEffects = conditions.some(c => {
     const effect = CONDITION_EFFECTS[c.id];
-    return effect?.startOfTurnEffect || c.id === 'morrendo';
+    return effect?.startOfTurnEffect || ['morrendo', 'enlouquecendo', 'sangrando', 'envenenado', 'em-chamas'].includes(c.id);
   });
 
   return (
@@ -376,7 +287,7 @@ export function ConditionManager({
 
         <CollapsibleContent>
           <div className="p-4 pt-0 space-y-3 border-t border-border">
-            {hasStartOfTurnEffects && <p className="text-xs text-muted-foreground">Confira testes de resistência e dano com o mestre antes de processar o início de turno. O cálculo destes efeitos requer conferência manual.</p>}
+            {hasStartOfTurnEffects && <p className="text-xs text-muted-foreground">Confira testes de resistência e dano com o mestre antes de processar o início de turno. A prévia permite conferir os resultados e confirmar a aplicação no servidor.</p>}
             {/* Lista de condições ativas */}
             {conditions.length > 0 ? (
               <div className="space-y-2">
@@ -520,18 +431,7 @@ export function ConditionManager({
                   })}
                 </AnimatePresence>
 
-                {/* Botão Processar Início de Turno */}
-                {hasStartOfTurnEffects && (
-                  <Button
-                    variant="default"
-                    size="sm"
-                    className="w-full text-xs bg-orange-600 hover:bg-orange-700"
-                    onClick={handleProcessStartOfTurn}
-                  >
-                    <Play className="w-3 h-3 mr-2" />
-                    Processar Início de Turno
-                  </Button>
-                )}
+                {hasStartOfTurnEffects && <ConditionTurnResolver conditions={conditions} vigor={vigor} prepareApplication={prepareTurnApplication} />}
 
                 {/* Botão para reduzir todos os turnos */}
                 {conditions.some(c => c.turnsRemaining !== null) && (
@@ -546,15 +446,6 @@ export function ConditionManager({
                   </Button>
                 )}
 
-                {/* Resultados do início de turno */}
-                {turnResults.length > 0 && (
-                  <div className="p-2 bg-muted/50 rounded-lg border border-border">
-                    <p className="text-xs font-medium mb-1">Último início de turno:</p>
-                    {turnResults.map((msg, i) => (
-                      <p key={i} className="text-xs text-muted-foreground">{msg}</p>
-                    ))}
-                  </div>
-                )}
               </div>
             ) : (
               <p className="text-sm text-muted-foreground text-center py-4">

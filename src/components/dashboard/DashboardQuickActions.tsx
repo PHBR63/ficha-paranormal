@@ -23,6 +23,13 @@ export function DashboardQuickActions() {
       description: 'Abrir operação',
     },
     {
+      label: 'Regras e Mecânicas',
+      icon: Folder,
+      href: '/rules',
+      variant: 'outline' as const,
+      description: 'Conferir cobertura',
+    },
+    {
       label: 'Campanhas',
       icon: Folder,
       href: '/campaigns',

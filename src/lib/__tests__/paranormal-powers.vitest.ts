@@ -116,7 +116,7 @@ describe('Poderes Paranormais - Busca', () => {
 
 describe('Poderes Paranormais - Pré-requisitos', () => {
   it('poder sem pré-requisito pode ser escolhido livremente', () => {
-    const anatomia = getPowerById('anatomia-insana');
+    const anatomia = getPowerById('arma-de-sangue');
     expect(anatomia?.prerequisite).toBeUndefined();
     
     const canChoose = canChoosePower(anatomia!, []);
@@ -124,7 +124,7 @@ describe('Poderes Paranormais - Pré-requisitos', () => {
   });
 
   it('poder com pré-requisito "elemento: 1" requer 1 poder do elemento', () => {
-    const sangueFervente = getPowerById('sangue-fervente');
+    const sangueFervente = getPowerById('sangue-vivo');
     expect(sangueFervente?.prerequisite).toEqual({ element: 'sangue', count: 1 });
     
     // Sem poderes de sangue: não pode escolher
@@ -135,7 +135,7 @@ describe('Poderes Paranormais - Pré-requisitos', () => {
   });
 
   it('poder com pré-requisito "elemento: 2" requer 2 poderes do elemento', () => {
-    const sangueVivo = getPowerById('sangue-vivo');
+    const sangueVivo = getPowerById('sangue-fervente');
     expect(sangueVivo?.prerequisite).toEqual({ element: 'sangue', count: 2 });
     
     // Com 1 poder de sangue: não pode escolher
@@ -198,7 +198,7 @@ describe('Poderes Paranormais - Efeitos com Afinidade', () => {
     
     const effect = getPowerEffect(power, true, 'sangue');
     expect(effect).toBe(power.affinityEffect);
-    expect(effect).toContain('+5');
+    expect(effect).toContain('Imunidade');
   });
 
   it('getPowerEffect deve retornar descrição base se afinidade não corresponde', () => {
@@ -222,11 +222,11 @@ describe('Poderes Paranormais - Cálculo de Modificadores', () => {
     expect(modifiers['pv_bonus']).toBe(20);
   });
 
-  it('Sangue de Ferro deve dar +4 PV por NEX (com afinidade)', () => {
-    const modifiers = calculatePowerModifiers(['sangue-de-ferro'], 50, true, 'sangue');
+  it('Sangue de Ferro deve dar +2 PV e +5 Fortitude por NEX (com afinidade)', () => {
+    const modifiers = calculatePowerModifiers(['sangue-de-ferro','sangue-de-ferro'], 50, true, 'sangue');
     
-    // 50 NEX = 10 incrementos de 5% = 40 PV
-    expect(modifiers['pv_bonus']).toBe(40);
+    // Duas aquisições: +2 PV por patamar, sem dobrar PV.
+    expect(modifiers['pv_bonus']).toBe(20);
   });
 
   it('Potencial Aprimorado deve dar +1 PE por NEX (sem afinidade)', () => {
@@ -237,20 +237,20 @@ describe('Poderes Paranormais - Cálculo de Modificadores', () => {
   });
 
   it('Potencial Aprimorado deve dar +2 PE por NEX (com afinidade)', () => {
-    const modifiers = calculatePowerModifiers(['potencial-aprimorado'], 50, true, 'morte');
+    const modifiers = calculatePowerModifiers(['potencial-aprimorado','potencial-aprimorado'], 50, true, 'morte');
     
     // 50 NEX = 10 incrementos = 20 PE
     expect(modifiers['pe_bonus']).toBe(20);
   });
 
-  it('Anatomia Insana deve dar +2 Fortitude (sem afinidade)', () => {
+  it('Anatomia Insana não dá bônus de Fortitude (sem afinidade)', () => {
     const modifiers = calculatePowerModifiers(['anatomia-insana'], 50, false);
-    expect(modifiers['fortitude']).toBe(2);
+    expect(modifiers['fortitude']).toBeUndefined();
   });
 
-  it('Anatomia Insana deve dar +5 Fortitude (com afinidade)', () => {
-    const modifiers = calculatePowerModifiers(['anatomia-insana'], 50, true, 'sangue');
-    expect(modifiers['fortitude']).toBe(5);
+  it('Anatomia Insana não dá Fortitude com afinidade (com afinidade)', () => {
+    const modifiers = calculatePowerModifiers(['anatomia-insana','anatomia-insana'], 50, true, 'sangue');
+    expect(modifiers['fortitude']).toBeUndefined();
   });
 
   it('Precognição deve dar +2 Defesa e resistências (sem afinidade)', () => {
@@ -260,11 +260,11 @@ describe('Poderes Paranormais - Cálculo de Modificadores', () => {
     expect(modifiers['resistance']).toBe(2);
   });
 
-  it('Precognição deve dar +5 Defesa e resistências (com afinidade)', () => {
-    const modifiers = calculatePowerModifiers(['precognicao'], 50, true, 'conhecimento');
+  it('Precognição deve dar +2 Defesa e resistências (com afinidade)', () => {
+    const modifiers = calculatePowerModifiers(['precognicao','precognicao'], 50, true, 'conhecimento');
     
-    expect(modifiers['defense']).toBe(5);
-    expect(modifiers['resistance']).toBe(5);
+    expect(modifiers['defense']).toBe(2);
+    expect(modifiers['resistance']).toBe(2);
   });
 
   it('Sensitivo deve dar bônus em perícias sociais', () => {
@@ -275,12 +275,12 @@ describe('Poderes Paranormais - Cálculo de Modificadores', () => {
     expect(modifiers['intuicao']).toBe(5);
   });
 
-  it('Sensitivo com afinidade deve dar +10 em perícias sociais', () => {
-    const modifiers = calculatePowerModifiers(['sensitivo'], 50, true, 'conhecimento');
+  it('Sensitivo com afinidade deve dar +5 em perícias sociais', () => {
+    const modifiers = calculatePowerModifiers(['sensitivo','sensitivo'], 50, true, 'conhecimento');
     
-    expect(modifiers['diplomacia']).toBe(10);
-    expect(modifiers['intimidacao']).toBe(10);
-    expect(modifiers['intuicao']).toBe(10);
+    expect(modifiers['diplomacia']).toBe(5);
+    expect(modifiers['intimidacao']).toBe(5);
+    expect(modifiers['intuicao']).toBe(5);
   });
 
   it('Golpe de Sorte deve dar +1 margem de ameaça', () => {
@@ -288,20 +288,21 @@ describe('Poderes Paranormais - Cálculo de Modificadores', () => {
     expect(modifiers['threat_margin']).toBe(1);
   });
 
-  it('Golpe de Sorte com afinidade deve dar +2 margem de ameaça', () => {
-    const modifiers = calculatePowerModifiers(['golpe-de-sorte'], 50, true, 'energia');
-    expect(modifiers['threat_margin']).toBe(2);
+  it('Golpe de Sorte com afinidade mantém margem +1 e aumenta multiplicador', () => {
+    const modifiers = calculatePowerModifiers(['golpe-de-sorte','golpe-de-sorte'], 50, true, 'energia');
+    expect(modifiers['threat_margin']).toBe(1);
+    expect(modifiers['critical_multiplier']).toBe(1);
   });
 
   it('múltiplos poderes devem acumular modificadores', () => {
     const modifiers = calculatePowerModifiers(
-      ['sangue-de-ferro', 'anatomia-insana'],
+      ['sangue-de-ferro','sangue-de-ferro','anatomia-insana'],
       50,
       true,
       'sangue'
     );
     
-    expect(modifiers['pv_bonus']).toBe(40);
+    expect(modifiers['pv_bonus']).toBe(20);
     expect(modifiers['fortitude']).toBe(5);
   });
 });
@@ -326,8 +327,8 @@ describe('Poderes Paranormais - Afortunado', () => {
     expect(getRerollRange(['afortunado'], true, 'sangue')).toBe(1); // Afinidade errada
   });
 
-  it('getRerollRange deve retornar 2 para Afortunado com afinidade de Energia', () => {
-    expect(getRerollRange(['afortunado'], true, 'energia')).toBe(2);
+  it('getRerollRange deve continuar rerrolando apenas resultado 1 para Afortunado com afinidade de Energia', () => {
+    expect(getRerollRange(['afortunado'], true, 'energia')).toBe(1);
   });
 
   it('getRerollRange deve retornar 0 sem Afortunado', () => {
@@ -345,15 +346,15 @@ describe('Poderes Paranormais - Poderes Específicos do Livro Base', () => {
     const power = getPowerById('arma-de-sangue');
     
     expect(power?.effect.type).toBe('special');
-    expect(power?.description).toContain('1d10');
-    expect(power?.description).toContain('19');
+    expect(power?.description).toContain('1d6');
+    expect(power?.description).toContain('2 PE');
   });
 
-  it('Sangue Vivo deve ter pré-requisito Sangue 2', () => {
+  it('Sangue Vivo deve ter pré-requisito Sangue 1', () => {
     const power = getPowerById('sangue-vivo');
     
     expect(power?.prerequisite?.element).toBe('sangue');
-    expect(power?.prerequisite?.count).toBe(2);
+    expect(power?.prerequisite?.count).toBe(1);
   });
 
   it('Surto Temporal deve ter pré-requisito Morte 2', () => {
@@ -363,10 +364,11 @@ describe('Poderes Paranormais - Poderes Específicos do Livro Base', () => {
     expect(power?.prerequisite?.count).toBe(2);
   });
 
-  it('Expansão de Conhecimento deve requerer escolha de perícia', () => {
+  it('Expansão de Conhecimento deve orientar escolha de poder de outra classe', () => {
     const power = getPowerById('expansao-de-conhecimento');
     
-    expect(power?.requiresChoice).toBe('skill_intellect');
+    expect(power?.requiresChoice).toBeUndefined();
+    expect(power?.description).toContain('outra classe');
   });
 
   it('Aprender Ritual deve requerer escolha de ritual', () => {
@@ -381,17 +383,17 @@ describe('Poderes Paranormais - Poderes Específicos do Livro Base', () => {
     expect(power?.requiresChoice).toBe('element_resistance');
   });
 
-  it('Manipular Entropia deve ter pré-requisito Energia 2', () => {
+  it('Manipular Entropia deve ter pré-requisito Energia 1', () => {
     const power = getPowerById('manipular-entropia');
     
     expect(power?.prerequisite?.element).toBe('energia');
-    expect(power?.prerequisite?.count).toBe(2);
+    expect(power?.prerequisite?.count).toBe(1);
   });
 
-  it('Visão do Oculto deve ter pré-requisito Conhecimento 2', () => {
+  it('Visão do Oculto não possui pré-requisito de quantidade', () => {
     const power = getPowerById('visao-do-oculto');
     
-    expect(power?.prerequisite?.element).toBe('conhecimento');
-    expect(power?.prerequisite?.count).toBe(2);
+    expect(power?.prerequisite).toBeUndefined();
+    expect(power?.description).toContain('visão no escuro');
   });
 });

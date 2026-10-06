@@ -94,18 +94,18 @@ describe('Adaptador de Poderes Paranormais - Mapeamento', () => {
 // ========================================
 
 describe('Adaptador de Poderes Paranormais - Mecânicas', () => {
-  it('Anatomia Insana deve ter bônus de Fortitude', () => {
+  it('Anatomia Insana não aplica Fortitude', () => {
     const power = PARANORMAL_POWER_EFFECTS['anatomia-insana'];
     
-    expect(power.mechanics.fortitudeBonus).toBe(2);
-    expect(power.affinityMechanics?.fortitudeBonus).toBe(5);
+    expect(power.mechanics.fortitudeBonus).toBeUndefined();
+    expect(power.affinityMechanics?.fortitudeBonus).toBeUndefined();
   });
 
   it('Sangue de Ferro deve ter bônus de HP por NEX', () => {
     const power = PARANORMAL_POWER_EFFECTS['sangue-de-ferro'];
     
     expect(power.mechanics.hpBonusPerNex).toBe(2);
-    expect(power.affinityMechanics?.hpBonusPerNex).toBe(4);
+    expect(power.affinityMechanics?.hpBonusPerNex).toBe(2);
   });
 
   it('Potencial Aprimorado deve ter bônus de PE por NEX', () => {
@@ -123,7 +123,7 @@ describe('Adaptador de Poderes Paranormais - Mecânicas', () => {
     expect(power.mechanics.reflexosBonus).toBe(2);
     expect(power.mechanics.vontadeBonus).toBe(2);
     
-    expect(power.affinityMechanics?.defenseBonus).toBe(5);
+    expect(power.affinityMechanics?.defenseBonus).toBe(2);
   });
 
   it('Sensitivo deve ter bônus de perícias', () => {
@@ -133,21 +133,22 @@ describe('Adaptador de Poderes Paranormais - Mecânicas', () => {
     expect(power.mechanics.skillBonus?.intimidacao).toBe(5);
     expect(power.mechanics.skillBonus?.intuicao).toBe(5);
     
-    expect(power.affinityMechanics?.skillBonus?.diplomacia).toBe(10);
+    expect(power.affinityMechanics?.skillBonus?.diplomacia).toBe(5);
   });
 
   it('Golpe de Sorte deve ter bônus de margem crítica', () => {
     const power = PARANORMAL_POWER_EFFECTS['golpe-de-sorte'];
     
     expect(power.mechanics.criticalMarginBonus).toBe(1);
-    expect(power.affinityMechanics?.criticalMarginBonus).toBe(2);
+    expect(power.affinityMechanics?.criticalMarginBonus).toBe(1);
+    expect(power.affinityMechanics?.criticalMultiplierBonus).toBe(1);
   });
 
-  it('Surto Temporal deve ter ação extra', () => {
+  it('Surto Temporal descreve ação extra com custo sem concedê-la permanentemente', () => {
     const power = PARANORMAL_POWER_EFFECTS['surto-temporal'];
     
-    expect(power.mechanics.extraAction).toBe('standard');
-    expect(power.mechanics.specialEffects).toContain('1x/cena: ação padrão adicional');
+    expect(power.mechanics.extraAction).toBeUndefined();
+    expect(power.mechanics.specialEffects?.join(' ')).toContain('3 PE');
   });
 });
 
@@ -182,7 +183,7 @@ describe('Adaptador de Poderes Paranormais - Conversão', () => {
     expect(effects[0].id).toBe('paranormal-anatomia-insana');
     expect(effects[0].name).toBe('Anatomia Insana');
     expect(effects[0].source).toBe('paranormal_power');
-    expect(effects[0].mechanics.fortitudeBonus).toBe(2);
+    expect(effects[0].mechanics.fortitudeBonus).toBeUndefined();
   });
 
   it('getParanormalPowerEffects deve aplicar bônus de afinidade', () => {
@@ -196,9 +197,10 @@ describe('Adaptador de Poderes Paranormais - Conversão', () => {
     ];
 
     // Com afinidade de Sangue
-    const effects = getParanormalPowerEffects(savedPowers, 50, 'sangue', true);
+    const effects = getParanormalPowerEffects([...savedPowers,...savedPowers], 50, 'sangue', true);
     
-    expect(effects[0].mechanics.fortitudeBonus).toBe(5);
+    expect(effects[0].mechanics.fortitudeBonus).toBeUndefined();
+    expect(effects[0].description).toContain('Imunidade');
     expect(effects[0].sourceName).toContain('Afinidade');
   });
 
@@ -215,7 +217,7 @@ describe('Adaptador de Poderes Paranormais - Conversão', () => {
     // Afinidade de Energia, poder de Sangue
     const effects = getParanormalPowerEffects(savedPowers, 50, 'energia', true);
     
-    expect(effects[0].mechanics.fortitudeBonus).toBe(2); // Valor base
+    expect(effects[0].mechanics.fortitudeBonus).toBeUndefined(); // Valor base
   });
 
   it('getParanormalPowerEffects deve calcular bônus baseado em NEX', () => {
@@ -234,8 +236,8 @@ describe('Adaptador de Poderes Paranormais - Conversão', () => {
     // NEX 50 = 10 steps × 2 = 20 HP bonus
     expect(effects50[0].mechanics.hpBonus).toBe(20);
     
-    // NEX 99 = 19 steps × 2 = 38 HP bonus
-    expect(effects99[0].mechanics.hpBonus).toBe(38);
+    // NEX 99 = 20 patamares × 2 = 40 HP bonus
+    expect(effects99[0].mechanics.hpBonus).toBe(40);
   });
 
   it('getParanormalPowerEffects deve converter múltiplos poderes', () => {
@@ -256,7 +258,7 @@ describe('Adaptador de Poderes Paranormais - Conversão', () => {
     ];
 
     const effectsNoAffinity = getParanormalPowerEffects(savedPowers, 50, null, false);
-    const effectsWithAffinity = getParanormalPowerEffects(savedPowers, 50, 'sangue', true);
+    const effectsWithAffinity = getParanormalPowerEffects([...savedPowers,...savedPowers], 50, 'sangue', true);
     
     expect(effectsNoAffinity[0].priority).toBe(50);
     expect(effectsWithAffinity[0].priority).toBe(60);
@@ -268,7 +270,7 @@ describe('Adaptador de Poderes Paranormais - Conversão', () => {
 // ========================================
 
 describe('Adaptador de Poderes Paranormais - Escolhas', () => {
-  it('Expansão de Conhecimento deve aplicar bônus na perícia escolhida', () => {
+  it('Expansão de Conhecimento preserva escolha legada sem inventar bônus de perícia', () => {
     const savedPowers: SavedParanormalPower[] = [
       {
         id: 'expansao-de-conhecimento',
@@ -283,10 +285,11 @@ describe('Adaptador de Poderes Paranormais - Escolhas', () => {
 
     const effects = getParanormalPowerEffects(savedPowers, 50, null, false);
     
-    expect(effects[0].mechanics.skillBonus?.ciencias).toBe(5);
+    expect(effects[0].mechanics.skillBonus?.ciencias).toBeUndefined();
+    expect(savedPowers[0].choices?.skills).toEqual(['ciencias']);
   });
 
-  it('Expansão de Conhecimento com afinidade deve permitir 2 perícias', () => {
+  it('Expansão de Conhecimento com afinidade não inventa bônus de duas perícias', () => {
     const savedPowers: SavedParanormalPower[] = [
       {
         id: 'expansao-de-conhecimento',
@@ -301,8 +304,8 @@ describe('Adaptador de Poderes Paranormais - Escolhas', () => {
 
     const effects = getParanormalPowerEffects(savedPowers, 50, 'conhecimento', true);
     
-    expect(effects[0].mechanics.skillBonus?.ciencias).toBe(5);
-    expect(effects[0].mechanics.skillBonus?.medicina).toBe(5);
+    expect(effects[0].mechanics.skillBonus?.ciencias).toBeUndefined();
+    expect(effects[0].mechanics.skillBonus?.medicina).toBeUndefined();
   });
 
   it('Resistir a Elemento deve aplicar resistência ao elemento escolhido', () => {
@@ -320,7 +323,7 @@ describe('Adaptador de Poderes Paranormais - Escolhas', () => {
 
     const effects = getParanormalPowerEffects(savedPowers, 50, null, false);
     
-    expect(effects[0].mechanics.damageResistance?.sangue).toBe(5);
+    expect(effects[0].mechanics.damageResistance?.sangue).toBe(10);
   });
 });
 
@@ -377,8 +380,8 @@ describe('Adaptador de Poderes Paranormais - Resumo', () => {
 
     const summary = getParanormalPowersSummary(savedPowers, 50, 'sangue', true);
     
-    // NEX 50 = 10 steps × 4 (com afinidade) = 40 HP bonus
-    expect(summary.totalHP).toBe(40);
+    // NEX 50 = 10 patamares × 2 = 20 PV; afinidade não dobra PV
+    expect(summary.totalHP).toBe(20);
   });
 
   it('getParanormalPowersSummary deve calcular bônus de PE', () => {
@@ -386,7 +389,7 @@ describe('Adaptador de Poderes Paranormais - Resumo', () => {
       { id: 'potencial-aprimorado', name: 'Potencial Aprimorado', element: 'morte', description: '' },
     ];
 
-    const summary = getParanormalPowersSummary(savedPowers, 50, 'morte', true);
+    const summary = getParanormalPowersSummary([...savedPowers,...savedPowers], 50, 'morte', true);
     
     // NEX 50 = 10 steps × 2 (com afinidade) = 20 PE bonus
     expect(summary.totalPE).toBe(20);

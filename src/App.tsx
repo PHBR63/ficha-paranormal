@@ -25,6 +25,7 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const CharacterCreate = lazy(() => import("./pages/CharacterCreate"));
 const CharacterSheet = lazy(() => import("./pages/CharacterSheet"));
+const RulesCoverage = lazy(() => import("./pages/RulesCoverage"));
 const Campaigns = lazy(() => import("./pages/Campaigns"));
 const CampaignCreate = lazy(() => import("./pages/CampaignCreate"));
 const CampaignShell = lazy(() => import("./pages/CampaignShell")); // Nova versão v3
@@ -75,6 +76,7 @@ const App = () => (
                       <Dashboard />
                     </ProtectedRoute>
                   } />
+                  <Route path="/rules" element={<ProtectedRoute><RulesCoverage /></ProtectedRoute>} />
                   <Route path="/character/create" element={
                     <ProtectedRoute>
                       <CharacterCreate />

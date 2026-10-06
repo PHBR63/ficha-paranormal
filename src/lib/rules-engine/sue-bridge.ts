@@ -1,3 +1,4 @@
+import { getNexLevel } from '@/lib/rules/nex-progression';
 /**
  * SUE-RulesEngine Bridge
  * Ordem Paranormal RPG v1.3
@@ -217,7 +218,7 @@ function convertToRulesEngineFormat(
   };
   
   // Calcular bônus de HP escalável por NEX (ex: Desgarrado)
-  const nexMultiplier = Math.floor(state.nex / 5);
+  const nexMultiplier = getNexLevel(state.nex);
   let hpBonusTotal = computed.resources.hpBonus;
   const hpBreakdown: BreakdownSource[] = [];
   
@@ -387,9 +388,9 @@ function estimateMaxHP(state: CharacterState): number {
   
   const base = classBaseHP[state.characterClass] || 12;
   const perNex = classHPPerNex[state.characterClass] || 3;
-  const nexMultiplier = Math.floor(state.nex / 5) - 1;
+  const nexMultiplier = getNexLevel(state.nex) - 1;
   
-  return base + state.attributes.vigor + (perNex * Math.max(0, nexMultiplier));
+  return base + state.attributes.vigor + ((perNex + state.attributes.vigor) * Math.max(0, nexMultiplier));
 }
 
 /**
@@ -409,7 +410,7 @@ function estimateMaxPE(state: CharacterState): number {
   
   const base = classBasePE[state.characterClass] || 3;
   const perNex = classPEPerNex[state.characterClass] || 3;
-  const nexMultiplier = Math.floor(state.nex / 5) - 1;
+  const nexMultiplier = getNexLevel(state.nex) - 1;
   
-  return base + state.attributes.presence + (perNex * Math.max(0, nexMultiplier));
+  return base + state.attributes.presence + ((perNex + state.attributes.presence) * Math.max(0, nexMultiplier));
 }

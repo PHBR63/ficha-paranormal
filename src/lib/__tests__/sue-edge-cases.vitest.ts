@@ -110,11 +110,11 @@ describe('SUE Edge Cases: NEX Extremos', () => {
       createSimpleEffect('trilha', { peBonusPerNex: 1 }), // +1 PE por 5% NEX
     ];
 
-    // NEX 99% = 19 incrementos de 5%
+    // NEX 99% = 20 patamares de 5%
     const result = consolidateEffects(effects, createMinimalContext({ nex: 99 }));
 
-    expect(result.resources.hpBonus).toBe(38); // 2 * 19
-    expect(result.resources.peBonus).toBe(19); // 1 * 19
+    expect(result.resources.hpBonus).toBe(40); // 2 * 20
+    expect(result.resources.peBonus).toBe(20); // 1 * 20
   });
 
   it('deve processar NEX 0% sem erros', () => {

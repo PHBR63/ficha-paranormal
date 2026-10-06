@@ -1,0 +1,72 @@
+import type { EffectMechanics } from '../unified-effects-engine';
+import type { ParanormalElement, PowerChoiceType } from '../paranormal-powers/power-definitions';
+
+interface BasePowerRule {
+  id: string; name: string; element: ParanormalElement | 'generic';
+  description: string; affinityDescription?: string; mechanics: EffectMechanics;
+  affinityMechanics?: EffectMechanics; prerequisiteCount?: number; choice?: PowerChoiceType;
+}
+const manual = (description: string): EffectMechanics => ({ specialEffects: [`Conferir com o mestre: ${description}`] });
+
+/** Fonte compartilhada do catálogo e dos bônus seguros. Efeitos situacionais não viram bônus permanentes. Base pp. 114–116. */
+export const BASE_PARANORMAL_POWER_RULES: BasePowerRule[] = [
+  { id:'anatomia-insana', name:'Anatomia Insana', element:'sangue', prerequisiteCount:2,
+    description:'50% de chance de ignorar o dano adicional de críticos e ataques furtivos.', affinityDescription:'Imunidade ao dano adicional de críticos e ataques furtivos.',
+    mechanics:manual('sortear a proteção contra dano adicional, sem bônus de Fortitude'), affinityMechanics:manual('ignorar apenas o dano adicional protegido') },
+  { id:'arma-de-sangue', name:'Arma de Sangue', element:'sangue',
+    description:'Movimento e 2 PE: arma simples, leve, corpo a corpo, sem ocupar mão, com 1d6 de Sangue até o fim da cena. Uma vez por turno, após agredir, 1 PE permite ataque adicional com ela.',
+    affinityDescription:'Arma permanente com 1d10 de Sangue; conserva as regras do ataque adicional.', mechanics:manual('criar/usar arma e conferir ações e custos'), affinityMechanics:manual('arma permanente 1d10; conferir ataque adicional') },
+  { id:'sangue-de-ferro', name:'Sangue de Ferro', element:'sangue', description:'+2 PV por patamar de NEX.',
+    affinityDescription:'Conserva +2 PV por patamar, recebe +5 Fortitude e imunidade a veneno e doença.', mechanics:{hpBonusPerNex:2},
+    affinityMechanics:{hpBonusPerNex:2,fortitudeBonus:5,specialEffects:['Imunidade a veneno e doença: conferir a fonte do efeito.']} },
+  { id:'sangue-fervente', name:'Sangue Fervente', element:'sangue', prerequisiteCount:2,
+    description:'Enquanto Machucado, escolha +1 em Agilidade ou Força a cada ativação.', affinityDescription:'O atributo escolhido recebe +2 enquanto Machucado.',
+    mechanics:manual('escolher atributo ao ficar Machucado'), affinityMechanics:manual('escolher atributo +2 ao ficar Machucado') },
+  { id:'sangue-vivo', name:'Sangue Vivo', element:'sangue', prerequisiteCount:1,
+    description:'Na primeira vez que ficar Machucado na cena, cura acelerada 2, limitada à metade dos PV máximos; termina ao deixar Machucado ou encerrar a cena.', affinityDescription:'Cura acelerada 5, com os mesmos gatilhos e limite.',
+    mechanics:manual('cura acelerada 2 com limite e gatilho da cena'), affinityMechanics:manual('cura acelerada 5 com limite e gatilho da cena') },
+  { id:'encarar-a-morte', name:'Encarar a Morte', element:'morte', description:'Em cenas de ação, +1 no limite de PE; não aumenta a DT dos rituais.', affinityDescription:'O bônus no limite de PE passa a +3.',
+    mechanics:manual('+1 no limite de PE apenas em cena de ação; não muda DT'), affinityMechanics:manual('+3 no limite de PE apenas em cena de ação; não muda DT') },
+  { id:'escapar-da-morte', name:'Escapar da Morte', element:'morte', prerequisiteCount:1,
+    description:'Uma vez por cena, dano que reduziria PV a zero deixa 1 PV, exceto dano massivo.', affinityDescription:'Evita esse dano; se for massivo, fica com 1 PV.',
+    mechanics:manual('conferir gatilho, dano massivo e uso por cena'), affinityMechanics:manual('evitar dano ou ficar com 1 PV em dano massivo; uma vez por cena') },
+  { id:'potencial-aprimorado', name:'Potencial Aprimorado', element:'morte', description:'+1 PE por patamar de NEX.', affinityDescription:'+2 PE por patamar de NEX.', mechanics:{peBonusPerNex:1}, affinityMechanics:{peBonusPerNex:2} },
+  { id:'potencial-reaproveitado', name:'Potencial Reaproveitado', element:'morte',
+    description:'Uma vez por rodada, sucesso em teste de resistência concede 2 PE temporários cumulativos, que acabam no fim da cena.', affinityDescription:'Concede 3 PE temporários por uso.',
+    mechanics:manual('2 PE temporários após resistência; não recuperar PE normal'), affinityMechanics:manual('3 PE temporários após resistência; não recuperar PE normal') },
+  { id:'surto-temporal', name:'Surto Temporal', element:'morte', prerequisiteCount:2,
+    description:'No seu turno, 3 PE permitem uma ação padrão adicional, uma vez por cena.', affinityDescription:'Pode usar uma vez por turno, pagando 3 PE.',
+    mechanics:manual('conferir turno, ação adicional, 3 PE e uso por cena'), affinityMechanics:manual('conferir ação adicional e 3 PE, uma vez por turno') },
+  { id:'expansao-de-conhecimento', name:'Expansão de Conhecimento', element:'conhecimento', prerequisiteCount:1,
+    description:'Escolha um poder de outra classe, atendendo seus pré-requisitos. Registre a escolha com o mestre; não concede +5 em perícia.', affinityDescription:'Escolha um segundo poder de outra classe, também atendendo seus requisitos.',
+    mechanics:manual('escolher e registrar poder de outra classe; escolhas legadas de perícia precisam de revisão'), affinityMechanics:manual('escolher segundo poder de outra classe') },
+  { id:'percepcao-paranormal', name:'Percepção Paranormal', element:'conhecimento',
+    description:'Em investigação de pistas, rerrole um dado abaixo de 10 e aceite o novo resultado.', affinityDescription:'Pode rerrolar até dois dados abaixo de 10.',
+    mechanics:manual('rerrolagem de pista; não detecta entidades automaticamente'), affinityMechanics:manual('rerrolagem de até dois dados de pistas') },
+  { id:'precognicao', name:'Precognição', element:'conhecimento', prerequisiteCount:1,
+    description:'+2 Defesa e testes de resistência.', affinityDescription:'Conserva +2 e recebe imunidade a Desprevenido.',
+    mechanics:{defenseBonus:2,fortitudeBonus:2,reflexosBonus:2,vontadeBonus:2}, affinityMechanics:{defenseBonus:2,fortitudeBonus:2,reflexosBonus:2,vontadeBonus:2,specialEffects:['Imunidade a Desprevenido: conferir antes de aplicar a condição.']} },
+  { id:'sensitivo', name:'Sensitivo', element:'conhecimento', description:'+5 Diplomacia, Intimidação e Intuição.',
+    affinityDescription:'Conserva +5; o oponente perde um dado nos testes opostos dessas perícias.', mechanics:{skillBonus:{diplomacia:5,intimidacao:5,intuicao:5}},
+    affinityMechanics:{skillBonus:{diplomacia:5,intimidacao:5,intuicao:5},specialEffects:['Em teste oposto, conferir −1 dado do oponente.']} },
+  { id:'visao-do-oculto', name:'Visão do Oculto', element:'conhecimento', description:'+5 Percepção e visão no escuro.', affinityDescription:'Conserva +5 e ignora camuflagem.',
+    mechanics:{skillBonus:{percepcao:5},specialEffects:['Visão no escuro.']}, affinityMechanics:{skillBonus:{percepcao:5},specialEffects:['Visão no escuro e ignora camuflagem: conferir o alvo.']} },
+  { id:'afortunado', name:'Afortunado', element:'energia', description:'Uma vez por rolagem, rerrole um resultado 1 em dado que não seja d20.', affinityDescription:'Também pode rerrolar um 1 em d20 uma vez por teste.',
+    mechanics:manual('rerrolar 1 em dado não d20, uma vez por rolagem'), affinityMechanics:manual('também rerrolar um 1 em d20 uma vez por teste; não rerrolar 2') },
+  { id:'campo-protetor', name:'Campo Protetor', element:'energia', prerequisiteCount:1,
+    description:'Ao esquivar, 1 PE concede +5 Defesa.', affinityDescription:'Também +5 Reflexos até o próximo turno; sucesso que reduziria dano à metade passa a anulá-lo.',
+    mechanics:manual('esquiva com 1 PE, +5 Defesa apenas no contexto do efeito'), affinityMechanics:manual('esquiva com 1 PE, +5 Defesa e Reflexos até próximo turno; conferir redução de dano') },
+  { id:'causalidade-fortuita', name:'Causalidade Fortuita', element:'energia',
+    description:'Em investigação, DT de perícias diminui 5 até encontrar uma pista.', affinityDescription:'A redução de DT vale em todas as perícias de investigação.',
+    mechanics:manual('−5 DT de investigação até encontrar pista'), affinityMechanics:manual('−5 DT nas perícias de investigação') },
+  { id:'golpe-de-sorte', name:'Golpe de Sorte', element:'energia', prerequisiteCount:1,
+    description:'+1 na margem de ameaça.', affinityDescription:'Conserva +1 na margem e recebe +1 no multiplicador de crítico.', mechanics:{criticalMarginBonus:1}, affinityMechanics:{criticalMarginBonus:1,criticalMultiplierBonus:1} },
+  { id:'manipular-entropia', name:'Manipular Entropia', element:'energia', prerequisiteCount:1,
+    description:'Quando outra criatura em alcance curto faz teste de perícia, 2 PE permitem que ela rerrole um dado.', affinityDescription:'Pode fazê-la rerrolar todos os dados escolhidos.',
+    mechanics:manual('conferir alvo em alcance curto e pagar 2 PE pela rerrolagem'), affinityMechanics:manual('conferir alvo e pagar 2 PE para rerrolar dados escolhidos') },
+  { id:'aprender-ritual', name:'Aprender Ritual', element:'generic', choice:'ritual',
+    description:'Aprenda ritual de 1º círculo; 2º a partir de NEX 45 e 3º a partir de NEX 75, respeitando limites. O poder conta como o elemento do ritual escolhido.', mechanics:manual('conferir círculo, limite e elemento do ritual escolhido') },
+  { id:'resistir-a-elemento', name:'Resistir a Elemento', element:'generic', choice:'element_resistance',
+    description:'RD 10 contra o elemento escolhido; conta como poder desse elemento.', affinityDescription:'Na segunda aquisição com afinidade nesse elemento, RD passa a 20.',
+    mechanics:manual('selecionar elemento para RD 10'), affinityMechanics:manual('RD 20 contra elemento escolhido com segunda aquisição elegível') },
+];

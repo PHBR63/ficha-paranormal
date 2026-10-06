@@ -1,3 +1,4 @@
+import { getNexLevel } from '@/lib/rules/nex-progression';
 /**
  * Helpers de estatísticas base de classe
  * Ordem Paranormal RPG v1.3
@@ -57,8 +58,8 @@ export function getClassBaseStats(classId: ClassId, nex: number): ClassBaseStats
  */
 export function calculateBaseHP(classId: ClassId, nex: number, vigor: number): number {
   const stats = getClassBaseStats(classId, nex);
-  const nexMultiplier = Math.floor(nex / 5) - 1;
-  return stats.pvBase + vigor + (stats.pvPerNex * Math.max(0, nexMultiplier));
+  const nexMultiplier = getNexLevel(nex) - 1;
+  return stats.pvBase + vigor + ((stats.pvPerNex + vigor) * Math.max(0, nexMultiplier));
 }
 
 /**
@@ -66,8 +67,8 @@ export function calculateBaseHP(classId: ClassId, nex: number, vigor: number): n
  */
 export function calculateBasePE(classId: ClassId, nex: number, presence: number): number {
   const stats = getClassBaseStats(classId, nex);
-  const nexMultiplier = Math.floor(nex / 5) - 1;
-  return stats.peBase + presence + (stats.pePerNex * Math.max(0, nexMultiplier));
+  const nexMultiplier = getNexLevel(nex) - 1;
+  return stats.peBase + presence + ((stats.pePerNex + presence) * Math.max(0, nexMultiplier));
 }
 
 /**
@@ -75,6 +76,6 @@ export function calculateBasePE(classId: ClassId, nex: number, presence: number)
  */
 export function calculateBaseSAN(classId: ClassId, nex: number): number {
   const stats = getClassBaseStats(classId, nex);
-  const nexMultiplier = Math.floor(nex / 5) - 1;
+  const nexMultiplier = getNexLevel(nex) - 1;
   return stats.sanBase + (stats.sanPerNex * Math.max(0, nexMultiplier));
 }

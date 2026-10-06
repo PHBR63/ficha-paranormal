@@ -196,7 +196,7 @@ describe('useCombatRollSetup', () => {
       );
       
       expect(result.current.getProficiencyBonus('simples')).toBe(9); // 99/10 = 9
-      expect(result.current.getProficiencyBonus('marcial')).toBe(19); // 99/5 = 19
+      expect(result.current.getProficiencyBonus('marcial')).toBe(20); // NEX 99: vigésimo patamar
     });
   });
 

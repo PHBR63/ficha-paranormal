@@ -25,6 +25,19 @@ export function describeCharacterActivity(event: CharacterActivityEvent): string
   const resource = payload.resource === 'hp' ? 'PV' : payload.resource === 'pe' ? 'PE' : payload.resource === 'san' ? 'SAN' : '';
   const before = payload.before;
   const after = payload.after;
+  if (payload.kind === 'condition_turn') {
+    const resolution = payload.resolution;
+    const effects = resolution && typeof resolution === 'object' && !Array.isArray(resolution) && Array.isArray(resolution.effects)
+      ? resolution.effects.filter(effect => effect && typeof effect === 'object' && !Array.isArray(effect)) : [];
+    const details = effects.map(effect => typeof effect === 'object' && effect && !Array.isArray(effect)
+      ? `${effect.label ?? 'Condição'}: dados [${Array.isArray(effect.dice) ? effect.dice.join(', ') : ''}], resultado ${effect.rolled}, final ${effect.finalAmount}` : '');
+    const hp = before && after && typeof before === 'object' && typeof after === 'object' && !Array.isArray(before) && !Array.isArray(after)
+      ? ` · PV ${before.hp_current} → ${after.hp_current}` : '';
+    const tests = resolution && typeof resolution === 'object' && !Array.isArray(resolution) && Array.isArray(resolution.bleedingTests)
+      ? resolution.bleedingTests.map(test => test && typeof test === 'object' && !Array.isArray(test)
+        ? `Vigor: ${test.total} contra DT ${test.dt} (${test.passed ? 'sucesso' : 'falha'})` : '').filter(Boolean) : [];
+    return `Início de turno confirmado${hp} · ${[...tests, ...details].join(' · ')}`;
+  }
   if (before && after && typeof before === 'object' && typeof after === 'object' && !Array.isArray(before) && !Array.isArray(after)) {
     if (payload.kind === 'resources') {
       const changes = [['hp_current', 'PV'], ['pe_current', 'PE'], ['san_current', 'SAN']]
