@@ -22,6 +22,7 @@ import { getAttributeDicePool } from '@/lib/attribute-dice-pool';
 import { getConditionTestDicePenalty, resolveConditionTestAttribute } from '@/lib/conditions/condition-test-penalty';
 import confetti from 'canvas-confetti';
 import { DiceRollResult, rollSkillTest } from '@/lib/dice-roller';
+import { useConfirmedDiceRoll, type ConfirmDicePE } from '@/hooks/useConfirmedDiceRoll';
 import { 
   PowerActivationPanel, 
   usePowerActivation, 
@@ -80,7 +81,7 @@ interface DiceRollModalProps {
   agility?: number;    // Agilidade para Incansável/Presteza Atlética
   presence?: number;   // Presença para Impostor (Enganação usa Presença)
   vigor?: number;      // Vigor para completar mapeamento de atributos
-  onPEChange?: (newPE: number) => void;
+  onPEChange?: ConfirmDicePE;
   // Perícia sendo testada (ID para filtrar poderes aplicáveis como Perito)
   currentSkill?: string;
   // Nível de treinamento atual da perícia (para filtrar Eclético)
@@ -180,6 +181,7 @@ export function DiceRollModal({
   // 'done' = resultado exibido
   // Estados
   const [phase, setPhase] = useState<'preparing' | 'rolling' | 'done'>('preparing');
+  const { confirm: confirmRoll, reset: resetRoll, pending: pendingConfirmation, confirming: confirmingPE, error: confirmationError } = useConfirmedDiceRoll();
   const [displayDice, setDisplayDice] = useState<number[]>([]);
   const [result, setResult] = useState<DiceRollResult | null>(null);
   const [isPowerPanelExpanded, setIsPowerPanelExpanded] = useState(true);
@@ -315,6 +317,8 @@ export function DiceRollModal({
 
   // Função para executar a rolagem
   const executeRoll = useCallback(() => {
+    if (confirmingPE) return;
+    if (pendingConfirmation) { void confirmRoll(); return; }
     // Limpa qualquer animação anterior
     if (animationRef.current) {
       clearInterval(animationRef.current);
@@ -391,36 +395,36 @@ export function DiceRollModal({
           label,
         });
         
-        setDisplayDice(rollResult.dice);
-        setResult(rollResult);
-        setPhase('done');
-        
-        // Desconta PE dos poderes ativados
         const peCost = getTotalPECost();
-        if (peCost > 0 && onPEChange) {
-          onPEChange(Math.max(0, peCurrent - peCost));
-        }
-        
-        // Confetti em crítico
-        if (rollResult.isCritical) {
-          confetti({
-            particleCount: 100,
-            spread: 70,
-            origin: { y: 0.6 },
-            colors: ['#ffd700', '#ff6b6b', '#4ecdc4'],
-          });
-        }
-        
-        // Callback
-        onRollComplete?.(rollResult);
-        
-        // Consome Conhecimento Aplicado se foi usado
-        if (usedConhecimentoAplicado && onConhecimentoAplicadoUsed) {
-          onConhecimentoAplicadoUsed();
-        }
+        void confirmRoll({ result: rollResult, nextPE: peCost > 0 ? Math.max(0, peCurrent - peCost) : undefined, confirmPE: onPEChange,
+          onConfirmed: () => {
+            setDisplayDice(rollResult.dice);
+            setResult(rollResult);
+            setPhase('done');
+
+            // Confetti em crítico
+            if (rollResult.isCritical) {
+              confetti({
+                particleCount: 100,
+                spread: 70,
+                origin: { y: 0.6 },
+                colors: ['#ffd700', '#ff6b6b', '#4ecdc4'],
+              });
+            }
+
+            // Callback
+            onRollComplete?.(rollResult);
+
+            // Consome Conhecimento Aplicado se foi usado
+            if (usedConhecimentoAplicado && onConhecimentoAplicadoUsed) {
+              onConhecimentoAplicadoUsed();
+            }
+          },
+        }).then(confirmed => { if (!confirmed) setPhase('done'); });
       }
     }, 100);
   }, [
+    pendingConfirmation, confirmingPE, confirmRoll,
     dicePenalty,
     extraDice,
     skillBonus, 
@@ -467,8 +471,9 @@ export function DiceRollModal({
       hasRolledRef.current = false;
       // Reset ativações de poderes
       resetActivations();
+      resetRoll();
     }
-  }, [open, resetActivations]);
+  }, [open, resetActivations, resetRoll]);
 
   // Handler para iniciar a rolagem (clique no botão "Rolar Dados")
   const handleStartRoll = useCallback(() => {
@@ -493,13 +498,13 @@ export function DiceRollModal({
   };
 
   const total = result?.total || 0;
-  const isRolling = phase === 'rolling';
+  const isRolling = phase === 'rolling' || confirmingPE;
   const resultBonusSources: BonusSource[] = result && !activatedPowerEffects.skillSwap && activatedPowerEffects.ecleticoBonus !== undefined
     ? [...bonusSources.filter(source => source.type !== 'skill'), { label: 'Treinamento (Eclético)', value: result.skillBonus, type: 'skill' }]
     : bonusSources;
 
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && !confirmingPE && onClose()}>
       <DialogContent className="sm:max-w-md bg-card border-border">
         <DialogHeader>
           <DialogTitle className="font-display text-xl tracking-wider text-center flex items-center justify-center gap-2">
@@ -746,6 +751,7 @@ export function DiceRollModal({
             </div>
           )}
 
+          {confirmationError && <p role="alert" className="text-sm text-destructive">{confirmationError}</p>}
           {/* Botões de ação */}
           <div className="flex gap-3 pt-4">
             <Button
@@ -755,11 +761,12 @@ export function DiceRollModal({
               className="flex-1 font-display"
             >
               <RotateCcw className={cn('w-4 h-4 mr-2', isRolling && 'animate-spin')} />
-              ROLAR NOVAMENTE
+              {pendingConfirmation ? 'TENTAR CONFIRMAÇÃO' : 'ROLAR NOVAMENTE'}
             </Button>
             <Button
               variant="ghost"
               onClick={onClose}
+              disabled={confirmingPE}
               className="font-display"
             >
               <X className="w-4 h-4 mr-2" />
