@@ -195,7 +195,7 @@ export const MasterTab = memo(function MasterTab({
         <TabsContent value="combat" className="flex-1 m-0 min-h-0">
           <ScrollArea className="h-full">
             <div className="p-4">
-              {combatAvailable ? <CombatTracker members={members} combat={combat} /> : <p>O combate compartilhado está disponível para campanhas da versão atual.</p>}
+              {combatAvailable ? <CombatTracker campaignId={campaignId} members={members} combat={combat} /> : <p>O combate compartilhado está disponível para campanhas da versão atual.</p>}
             </div>
           </ScrollArea>
         </TabsContent>

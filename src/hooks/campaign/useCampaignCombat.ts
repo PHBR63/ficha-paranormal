@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { loadCampaignCombat, saveCampaignCombat, type CombatSnapshot } from '@/services/campaign-combat-service';
+import { endCampaignScene, loadCampaignCombat, saveCampaignCombat, type CombatSnapshot } from '@/services/campaign-combat-service';
 import { emptyCampaignCombat, type CampaignCombatState } from '@/lib/campaign-combat';
 
 export interface CampaignCombatController {
@@ -9,6 +9,10 @@ export interface CampaignCombatController {
   saving: boolean;
   error: string | null;
   connected: boolean;
+  sceneNumber: number;
+  lastSceneEndedAt: string | null;
+  sceneEndPending: boolean;
+  endScene: (endCombat: boolean, expectedScene?: number) => Promise<boolean>;
   reload: () => Promise<void>;
   update: (change: (state: CampaignCombatState) => CampaignCombatState) => Promise<boolean>;
 }
@@ -23,6 +27,8 @@ export function useCampaignCombat(campaignId: string, userId: string, isMaster: 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const savingRef = useRef(false);
+  const pendingEnd = useRef<{ operationId: string; revision: number; endCombat: boolean } | null>(null);
+  const [sceneEndPending, setSceneEndPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [connected, setConnected] = useState(false);
 
@@ -53,6 +59,8 @@ export function useCampaignCombat(campaignId: string, userId: string, isMaster: 
     setLoading(enabled);
     setError(null);
     setConnected(false);
+    pendingEnd.current = null;
+    setSceneEndPending(false);
     if (!enabled) return;
     void reload();
     const channel = supabase.channel(`campaign-combat-${campaignId}-${userId}`)
@@ -69,7 +77,7 @@ export function useCampaignCombat(campaignId: string, userId: string, isMaster: 
   }, [campaignId, userId, enabled, identity, reload]);
 
   const update = useCallback(async (change: (state: CampaignCombatState) => CampaignCombatState) => {
-    if (!enabled || !isMaster || loading || error || savingRef.current) return false;
+    if (!enabled || !isMaster || loading || error || savingRef.current || pendingEnd.current) return false;
     savingRef.current = true;
     setSaving(true);
     try {
@@ -90,5 +98,44 @@ export function useCampaignCombat(campaignId: string, userId: string, isMaster: 
     }
   }, [enabled, isMaster, loading, error, campaignId, identity, accept, reload]);
 
-  return { state: snapshot.state, loading, saving, error, connected, reload, update };
+  /** Conserva UUID/argumentos após falha de rede: retry não encerra uma segunda cena. */
+  const endScene = useCallback(async (endCombat: boolean, expectedScene?: number) => {
+    if (!enabled || !isMaster || loading || savingRef.current || (error && !pendingEnd.current)) return false;
+    if (!pendingEnd.current && expectedScene !== undefined && expectedScene !== (current.current.sceneNumber ?? 1)) {
+      setError('A cena mudou enquanto a confirmação estava aberta. Recarregue e confira a nova cena.');
+      return false;
+    }
+    savingRef.current = true;
+    setSaving(true);
+    const request = pendingEnd.current ?? { operationId: crypto.randomUUID(), revision: current.current.revision, endCombat };
+    pendingEnd.current = request;
+    setSceneEndPending(true);
+    try {
+      const saved = await endCampaignScene(campaignId, request.revision, request.endCombat, request.operationId);
+      if (identityRef.current !== identity) return false;
+      accept(saved);
+      pendingEnd.current = null;
+      setSceneEndPending(false);
+      setError(null);
+      return true;
+    } catch (cause) {
+      if (identityRef.current !== identity) return false;
+      const code = typeof cause === 'object' && cause !== null && 'code' in cause ? cause.code : undefined;
+      if (code === '40001' || code === '22023' || code === '42501' || code === '23505') {
+        pendingEnd.current = null;
+        setSceneEndPending(false);
+      }
+      await reload();
+      setError(code === '40001' ? 'A cena mudou em outra aba. Confira o estado e tente novamente.' : pendingEnd.current
+        ? 'O encerramento ainda não foi confirmado nesta tela. Confira a mesma operação antes de continuar.'
+        : 'Não foi possível encerrar a cena. Recarregue e confira sua permissão.');
+      return false;
+    } finally {
+      savingRef.current = false;
+      if (identityRef.current === identity) setSaving(false);
+    }
+  }, [enabled, isMaster, loading, error, campaignId, identity, accept, reload]);
+
+  return { state: snapshot.state, loading, saving, error, connected, reload, update,
+    sceneNumber: snapshot.sceneNumber ?? 1, lastSceneEndedAt: snapshot.lastSceneEndedAt ?? null, sceneEndPending, endScene };
 }

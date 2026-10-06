@@ -263,6 +263,7 @@ export default function CampaignShell() {
       <main className="flex-1 min-h-0 overflow-hidden">
         {activeTab === 'panel' && (
           <PanelTab
+            campaignId={campaignId}
             members={members}
             activeSession={activeSession}
             combat={campaignData.schemaVersion === 'v2' ? combat : undefined}
