@@ -42,6 +42,10 @@ Executar regressão completa, tipos e build; conferir o lint dos módulos altera
 4. Com recursos em zero após encerramento manual das condições, verificar aviso que manda conferir a lista, sem apresentar NPC ou condição ativa inexistente.
 5. Conferir textos e contador em desktop/mobile, histórico após recarga e preservação da condição personalizada. Repor a ficha QA ao estado anterior conservando histórico.
 
+## Complemento visual no mobile
+
+O UAT publicado revelou que `MobileConditionManager.tsx` cortava o efeito ativo em duas linhas. O cartão agora exibe todo o texto, com quebra de palavras e fonte de 12 px; nomes e contadores podem ocupar mais de uma linha. A origem segue `getConditionPresentation`/`getConditionEffectWithParams`; as props e o fluxo de gravação por `useConditionMutation` permanecem iguais. Nenhum dado ou duração é alterado por essa mudança de apresentação. Conferir em 390 × 844 os textos completos de Morrendo e Enlouquecendo, controles e rolagem vertical.
+
 ## Limites
 
 Sem migração, sem atualização em massa de fichas e sem novas permissões. As definições atuais são usadas na próxima renderização. Não há cena de regras persistente neste lote, morte/NPC automático, automatização de golpes de misericórdia ou falha automática contextual nos testes de Reflexos. O mapa `/rules` continua parcial. Outras condições e variantes mantêm os limites documentados anteriormente.
