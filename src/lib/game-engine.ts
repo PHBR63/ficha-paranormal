@@ -353,34 +353,53 @@ export const CONDITION_EFFECTS: Record<string, ConditionEffect> = {
 
 // ============== APLICAÇÃO AUTOMÁTICA DE CONDIÇÕES ==============
 
+/** Snapshot anterior distingue perda/cura de uma simples edição de PE. */
+export interface ResourceConditionContext {
+  hp: number;
+  san: number;
+  /** Perda efetiva informada pelo início de turno, mesmo quando PV já era zero. */
+  hpLoss?: number;
+}
+
 /**
- * Verifica e aplica condições automaticamente baseado nos recursos do personagem
- * @param hp - HP atual
- * @param hpMax - HP máximo
- * @param san - Sanidade atual
- * @param sanMax - Sanidade máxima
- * @param currentConditions - Condições atuais
- * @returns Resultado com condições a adicionar/remover
+ * Recebe PV/SAN, máximos, IDs ativos e snapshot anterior; retorna mudanças e avisos.
+ * Sem snapshot, conserva o modo de reconciliação legado. As telas ativas sempre
+ * fornecem o snapshot para não confundir uma edição de PE com perda ou cura.
  */
 export function checkAutoConditions(
   hp: number,
   hpMax: number,
   san: number,
   sanMax: number,
-  currentConditions: string[]
+  currentConditions: string[],
+  previous?: ResourceConditionContext
 ): AutoConditionResult {
   const conditionsToAdd: string[] = [];
   const conditionsToRemove: string[] = [];
   const messages: string[] = [];
   let dyingCounter: number | undefined;
+  const lostHP = !previous || hp < previous.hp || (previous.hpLoss ?? 0) > 0;
+  const healedHP = !previous || hp > previous.hp;
+  const lostSAN = !previous || san < previous.san;
+  const healedSAN = !previous || san > previous.san;
+
+  // Base v1.3 p.88: Machucado é um estado do saldo, sem penalidade própria.
+  if (Number.isFinite(hpMax) && hpMax > 0 && hp <= hpMax / 2 && !currentConditions.includes('machucado')) {
+    conditionsToAdd.push('machucado');
+    messages.push('Você está Machucado (metade ou menos dos PV). Esta condição não causa penalidade por si só.');
+  }
+  if (hp > hpMax / 2 && currentConditions.includes('machucado')) {
+    conditionsToRemove.push('machucado');
+    messages.push('Você deixou de estar Machucado (PV acima da metade).');
+  }
 
   // Base v1.3 p.88: não existem PV negativos; zero inicia ambas as condições.
-  if (hp <= 0 && !currentConditions.includes('inconsciente')) {
+  if (hp <= 0 && lostHP && !currentConditions.includes('inconsciente')) {
     conditionsToAdd.push('inconsciente');
     messages.push('Você caiu inconsciente (HP = 0)!');
   }
 
-  if (hp <= 0 && !currentConditions.includes('morrendo')) {
+  if (hp <= 0 && lostHP && !currentConditions.includes('morrendo')) {
     conditionsToAdd.push('morrendo');
     if (!currentConditions.includes('inconsciente') && !conditionsToAdd.includes('inconsciente')) {
       conditionsToAdd.push('inconsciente');
@@ -391,7 +410,7 @@ export function checkAutoConditions(
 
   // Cura encerra Inconsciente. Morrendo exige Medicina ou efeito específico;
   // subir o saldo não comprova estabilização nem reinicia a contagem da cena.
-  if (hp > 0) {
+  if (hp > 0 && healedHP) {
     if (currentConditions.includes('inconsciente')) {
       conditionsToRemove.push('inconsciente');
       messages.push('Você recuperou a consciência!');
@@ -399,20 +418,21 @@ export function checkAutoConditions(
   }
 
   // SAN = 0 → Enlouquecendo
-  if (san === 0 && !currentConditions.includes('enlouquecendo')) {
+  if (san === 0 && lostSAN && !currentConditions.includes('enlouquecendo')) {
     conditionsToAdd.push('enlouquecendo');
     messages.push('Colapso mental total! Você está enlouquecendo.');
   }
 
   // SAN > 0 → Remover Enlouquecendo
-  if (san > 0 && currentConditions.includes('enlouquecendo')) {
+  if (san > 0 && healedSAN && currentConditions.includes('enlouquecendo')) {
     conditionsToRemove.push('enlouquecendo');
     messages.push('Você recuperou parte da sanidade.');
   }
 
   // Base v1.3 pp.88/111: estritamente abaixo da metade, sem penalidade em testes.
   const sanThreshold = sanMax * 0.5;
-  if (san > 0 && san < sanThreshold && !currentConditions.includes('perturbado') && !currentConditions.includes('enlouquecendo')) {
+  const stillGoingInsane = currentConditions.includes('enlouquecendo') && !conditionsToRemove.includes('enlouquecendo');
+  if (san > 0 && san < sanThreshold && !currentConditions.includes('perturbado') && !stillGoingInsane) {
     conditionsToAdd.push('perturbado');
     messages.push('Sua mente está perturbada (SAN abaixo da metade). Confira o primeiro efeito de insanidade desta cena com o mestre.');
   }
@@ -462,10 +482,11 @@ export function processDyingCounter(currentCounter: number): DyingResult {
 }
 
 /**
- * Reduz o contador de morrendo quando recebe dano adicional
+ * Preserva o contador ao receber dano: Base v1.3 p.88 conta inícios de turno,
+ * não golpes recebidos. Mantém o contrato legado sem antecipar uma morte.
  * @param currentCounter - Contador atual
- * @param damageReceived - Dano recebido (qualquer dano reduz 1)
- * @returns Novo contador
+ * @param damageReceived - Dano recebido
+ * @returns Contador preservado e aviso para conferência da cena
  */
 export function reduceDyingCounterFromDamage(currentCounter: number, damageReceived: number): DyingResult {
   if (damageReceived <= 0) {
@@ -476,20 +497,10 @@ export function reduceDyingCounterFromDamage(currentCounter: number, damageRecei
     };
   }
 
-  const newCounter = Math.max(0, currentCounter - 1);
-  
-  if (newCounter === 0) {
-    return {
-      isDead: true,
-      newCounter: 0,
-      message: '💀 MORTE! Dano adicional enquanto morrendo.'
-    };
-  }
-
   return {
     isDead: false,
-    newCounter,
-    message: `⚠️ Dano enquanto morrendo! Contador: ${newCounter} rodada${newCounter > 1 ? 's' : ''}.`
+    newCounter: currentCounter,
+    message: 'Dano enquanto morrendo não avança a contagem. Confira os inícios de turno cumulativos da mesma cena.'
   };
 }
 

@@ -7,7 +7,7 @@ import {
   processDyingCounter,
   reduceDyingCounterFromDamage,
   stabilizeDyingCharacter,
-  type AutoConditionResult,
+  type ResourceConditionContext,
   type DyingResult 
 } from '@/lib/game-engine';
 import { toast } from 'sonner';
@@ -39,7 +39,8 @@ export interface ConditionProcessResult {
  */
 export function useAutoConditions() {
   /**
-   * Processa mudanças de HP/SAN e aplica condições automaticamente
+   * Recebe saldos novos, condições e snapshot anterior; retorna condições sem
+   * perder metadados. Com notify=false, a tela só avisa após confirmação do servidor.
    */
   const processResourceChange = useCallback((
     hp: number,
@@ -47,17 +48,18 @@ export function useAutoConditions() {
     san: number,
     sanMax: number,
     currentConditions: SimpleActiveCondition[],
-    notify = true
+    notify = true,
+    previous?: ResourceConditionContext
   ): ConditionProcessResult => {
     // Extrai IDs das condições atuais
     const conditionIds = currentConditions.map(c => c.id);
     
     // Verifica condições automáticas
-    const result = checkAutoConditions(hp, hpMax, san, sanMax, conditionIds);
+    const result = checkAutoConditions(hp, hpMax, san, sanMax, conditionIds, previous);
     
     let newConditions = [...currentConditions];
     const allMessages: string[] = [];
-    let isDead = false;
+    const isDead = false;
 
     // Remove condições que devem ser removidas
     if (result.conditionsToRemove.length > 0) {
@@ -242,6 +244,7 @@ export function useAutoConditions() {
  */
 function getConditionName(id: string): string {
   const names: Record<string, string> = {
+    machucado: 'Machucado',
     inconsciente: 'Inconsciente',
     morrendo: 'Morrendo',
     enlouquecendo: 'Enlouquecendo',

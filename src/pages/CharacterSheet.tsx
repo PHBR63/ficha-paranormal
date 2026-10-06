@@ -1100,7 +1100,7 @@ export default function CharacterSheet() {
     const values = { hp: Math.max(0, Math.min(stats.hp, character.hp_max)),
       pe: Math.max(0, Math.min(stats.pe, character.pe_max)), san: Math.max(0, Math.min(stats.san, character.san_max)) };
     const autoResult = processResourceChange(values.hp, character.hp_max, values.san, character.san_max,
-      character.conditions.map(parseCondition), false);
+      character.conditions.map(parseCondition), false, { hp: character.hp_current, san: character.san_current });
     const conditions = autoResult.newConditions.map(serializeCondition);
     setSaveStatus('saving');
     const receipt = await resourceUpdate.execute(values,

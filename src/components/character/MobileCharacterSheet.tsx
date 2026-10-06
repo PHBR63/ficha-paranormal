@@ -1057,7 +1057,8 @@ export function MobileCharacterSheet({
     const values = { hp: Math.max(0, Math.min(stats.hp, character.hp_max)),
       pe: Math.max(0, Math.min(stats.pe, character.pe_max)), san: Math.max(0, Math.min(stats.san, character.san_max)) };
     const parsed = parseConditions((character.conditions || []) as (string | PersistedCondition)[]);
-    const autoResult = processResourceChange(values.hp, character.hp_max, values.san, character.san_max, parsed, false);
+    const autoResult = processResourceChange(values.hp, character.hp_max, values.san, character.san_max, parsed, false,
+      { hp: character.hp_current, san: character.san_current });
     const receipt = await executeResourceUpdate(values,
       activityJson(serializeConditions(autoResult.newConditions)) as import('@/integrations/supabase/types').Json[],
       { hp_current: character.hp_current, hp_max: character.hp_max, pe_current: character.pe_current,

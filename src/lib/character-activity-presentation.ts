@@ -1,4 +1,27 @@
 import type { CharacterActivityEvent } from '@/types/character-activity';
+import type { Json } from '@/integrations/supabase/types';
+import { resolveConditionId } from '@/lib/conditions/condition-identity';
+
+/** Compara instâncias por identidade; aceita strings antigas e não inventa dados ausentes. */
+function describeConditionChanges(before: Json | undefined, after: Json | undefined): string {
+  if (!Array.isArray(before) || !Array.isArray(after)) return '';
+  const entries = (values: Json[]) => values.flatMap(value => {
+    const id = typeof value === 'string' ? value
+      : value && typeof value === 'object' && !Array.isArray(value) && typeof value.id === 'string' ? value.id : undefined;
+    if (!id) return [];
+    const name = value && typeof value === 'object' && !Array.isArray(value) && typeof value.name === 'string' ? value.name : id;
+    return [{ id: resolveConditionId(id), name }];
+  });
+  const removed = entries(before);
+  const added = entries(after).filter(condition => {
+    const index = removed.findIndex(previous => previous.id === condition.id);
+    if (index < 0) return true;
+    removed.splice(index, 1);
+    return false;
+  });
+  const changes = [...added.map(condition => `+${condition.name}`), ...removed.map(condition => `−${condition.name}`)];
+  return changes.length ? ` · Condições: ${changes.join('; ')}` : '';
+}
 
 /** Apresenta o payload sem inventar dados ausentes em registros antigos. */
 export function describeCharacterActivity(event: CharacterActivityEvent): string {
@@ -25,6 +48,8 @@ export function describeCharacterActivity(event: CharacterActivityEvent): string
   const resource = payload.resource === 'hp' ? 'PV' : payload.resource === 'pe' ? 'PE' : payload.resource === 'san' ? 'SAN' : '';
   const before = payload.before;
   const after = payload.after;
+  const conditionChanges = before && after && typeof before === 'object' && typeof after === 'object' && !Array.isArray(before) && !Array.isArray(after)
+    ? describeConditionChanges(before.conditions, after.conditions) : '';
   if (payload.kind === 'condition_turn') {
     const resolution = payload.resolution;
     const effects = resolution && typeof resolution === 'object' && !Array.isArray(resolution) && Array.isArray(resolution.effects)
@@ -36,18 +61,19 @@ export function describeCharacterActivity(event: CharacterActivityEvent): string
     const tests = resolution && typeof resolution === 'object' && !Array.isArray(resolution) && Array.isArray(resolution.bleedingTests)
       ? resolution.bleedingTests.map(test => test && typeof test === 'object' && !Array.isArray(test)
         ? `Vigor: ${test.total} contra DT ${test.dt} (${test.passed ? 'sucesso' : 'falha'})` : '').filter(Boolean) : [];
-    return `Início de turno confirmado${hp} · ${[...tests, ...details].join(' · ')}`;
+    const turnDetails = [...tests, ...details].join(' · ');
+    return `Início de turno confirmado${hp}${turnDetails ? ` · ${turnDetails}` : ''}${conditionChanges}`;
   }
   if (before && after && typeof before === 'object' && typeof after === 'object' && !Array.isArray(before) && !Array.isArray(after)) {
     if (payload.kind === 'resources') {
       const changes = [['hp_current', 'PV'], ['pe_current', 'PE'], ['san_current', 'SAN']]
         .filter(([key]) => typeof before[key] === 'number' && typeof after[key] === 'number')
         .map(([key, name]) => `${name} ${before[key]} → ${after[key]}`);
-      return `${kind} · ${changes.join(' · ')}`;
+      return `${kind} · ${changes.join(' · ')}${conditionChanges}`;
     }
     if (typeof before.hp_current === 'number' && typeof after.hp_current === 'number') return `${kind} · PV ${before.hp_current} → ${after.hp_current}${typeof payload.value === 'number' ? ` · quantidade ${payload.value}` : ''}`;
     if (typeof before.current === 'number' && typeof after.current === 'number') return `${kind} · ${resource} ${before.current} → ${after.current}`;
-    if (Array.isArray(before.conditions) && Array.isArray(after.conditions)) return `${kind} · ${before.conditions.length} → ${after.conditions.length} condição(ões)`;
+    if (Array.isArray(before.conditions) && Array.isArray(after.conditions)) return `${kind} · ${before.conditions.length} → ${after.conditions.length} condição(ões)${conditionChanges}`;
   }
   return kind;
 }
