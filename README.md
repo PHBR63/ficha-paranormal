@@ -351,11 +351,16 @@ flowchart LR
 ```bash
 git clone <URL-DO-REPOSITORIO>
 cd <PASTA-DO-REPOSITORIO>
-npm install
+npm ci --legacy-peer-deps
 npm run dev
 ```
 
 O servidor de desenvolvimento usa `http://localhost:8080`.
+
+O arquivo de dependências fixa as versões para uma instalação reproduzível. A opção
+`--legacy-peer-deps` mantém compatibilidade com os avisos de dependências pares das
+bibliotecas atuais do projeto em React 19. A biblioteca `@testing-library/dom` é
+usada apenas em desenvolvimento, pelos testes React existentes e de regressão.
 
 ### Variáveis de ambiente
 
@@ -377,14 +382,23 @@ Não envie arquivos `.env`, tokens privados ou chaves administrativas ao GitHub.
 | `npm run build` | Gera o build de produção |
 | `npm run build:dev` | Gera o build em modo de desenvolvimento |
 | `npm run lint` | Executa as verificações do ESLint |
+| `npm test` | Executa a suíte Vitest uma vez |
 | `npm run preview` | Serve localmente o build gerado |
 
 ### Testes
 
-Os testes estão organizados junto aos módulos e usam Vitest. Como o projeto ainda não expõe um atalho no `package.json`, execute:
+Os testes estão organizados junto aos módulos e usam Vitest. Execute:
 
 ```bash
-npx vitest run
+npm test
+```
+
+Vitest e o build do Vite não substituem a checagem de tipos. Para validar os dois
+projetos TypeScript, inclusive os testes dentro de `src`, execute:
+
+```bash
+npx tsc -p tsconfig.app.json --noEmit
+npx tsc -p tsconfig.node.json --noEmit
 ```
 
 Para acompanhar alterações durante o desenvolvimento:
