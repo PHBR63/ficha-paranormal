@@ -407,6 +407,17 @@ export function applyMechanics(
 
 // ================== CÁLCULO PRINCIPAL ==================
 
+/** Normaliza IDs e referências de fichas antigas; registros inválidos são ignorados. */
+function getPowerReferenceId(reference: unknown): string | undefined {
+  if (typeof reference === 'string') return reference.trim() || undefined;
+  if (!reference || typeof reference !== 'object') return undefined;
+  const legacy = reference as { powerId?: unknown; id?: unknown; name?: unknown };
+  for (const candidate of [legacy.powerId, legacy.id, legacy.name]) {
+    if (typeof candidate === 'string' && candidate.trim()) return candidate.trim();
+  }
+  return undefined;
+}
+
 /**
  * Calcula todos os bônus dos poderes de classe de um personagem
  * @param characterPowers - Lista de poderes do personagem (IDs ou ActiveClassPower)
@@ -420,7 +431,8 @@ export function calculatePowerBonuses(
   const summary = createEmptyBonusSummary();
   
   for (const powerRef of characterPowers) {
-    const powerId = typeof powerRef === 'string' ? powerRef : powerRef.powerId;
+    const powerId = getPowerReferenceId(powerRef);
+    if (!powerId) continue;
     const power = getPowerById(powerId);
     
     if (!power) {
@@ -482,7 +494,8 @@ export function hasPower(
   const normalizedSearch = powerIdOrName.toLowerCase();
   
   for (const powerRef of characterPowers) {
-    const powerId = typeof powerRef === 'string' ? powerRef : powerRef.powerId;
+    const powerId = getPowerReferenceId(powerRef);
+    if (!powerId) continue;
     
     // Busca por ID direto
     if (powerId.toLowerCase() === normalizedSearch) {
@@ -503,8 +516,8 @@ export function hasPower(
   
   if (foundPower) {
     return characterPowers.some(powerRef => {
-      const id = typeof powerRef === 'string' ? powerRef : powerRef.powerId;
-      return id === foundPower.id || id.toLowerCase() === foundPower.name.toLowerCase();
+      const id = getPowerReferenceId(powerRef);
+      return id !== undefined && (id === foundPower.id || id.toLowerCase() === foundPower.name.toLowerCase());
     });
   }
   

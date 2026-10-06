@@ -458,12 +458,6 @@ export const MobilePowersTab = memo(function MobilePowersTab({
   onConfigureTrainingGrade,
   ritualHistoryButton,
 }: MobilePowersTabProps) {
-  // Buscar descrição de habilidade de classe e dados completos
-  const getAbilityDescription = useCallback((abilityName: string): string => {
-    const ability = ALL_CLASS_ABILITIES.find(a => a.name === abilityName);
-    return ability?.description || '';
-  }, []);
-  
   // Buscar dados completos da habilidade (para identificar ID e verificar sub-escolhas)
   const getAbilityData = useCallback((abilityName: string) => {
     return ALL_CLASS_ABILITIES.find(
@@ -561,8 +555,9 @@ export const MobilePowersTab = memo(function MobilePowersTab({
         >
           <div className="space-y-2">
             {abilities.map((ability, i) => {
-              const description = getAbilityDescription(ability);
               const abilityData = getAbilityData(ability);
+              // Habilidades homônimas devem usar a descrição da classe da ficha.
+              const description = abilityData?.description || '';
               
               // Verifica se há sub-escolha para este poder
               const powerSubchoice = abilityData?.id ? classPowerChoices[abilityData.id] : undefined;

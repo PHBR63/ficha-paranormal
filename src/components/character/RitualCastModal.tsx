@@ -10,7 +10,7 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import confetti from 'canvas-confetti';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -44,6 +44,7 @@ import { Ritual } from '@/lib/rituals/legacy-exports';
 import type { UnifiedRitual } from '@/lib/rituals/types';
 import { getElementConfig } from '@/lib/element-config';
 import { useRitualValidation, TurnPEState, type RitualBonuses } from '@/hooks';
+import { getRitualById } from '@/lib/rituals/ritual-registry';
 
 // Função para disparar efeito de partículas do elemento
 function triggerElementParticles(elementHex: string, elementHexLight: string) {
@@ -133,7 +134,7 @@ export function RitualCastModal({
     validateEnhancement,
     validatePECost,
     getAvailableEnhancements,
-  } = useRitualValidation(nex, elementalAffinity, peCurrent, peMax, turnPEState, peLimitBonus);
+  } = useRitualValidation(nex, elementalAffinity, peCurrent, peMax, turnPEState, peLimitBonus, isNonOccultist);
 
   // Aprimoramentos com validação
   const enhancementsWithValidation = useMemo(() => {
@@ -191,12 +192,11 @@ export function RitualCastModal({
   const elementConfig = getElementConfig(ritual.element);
   const ElementIcon = elementConfig?.icon || Sparkles;
 
-  // Multiplicador de custo para não-ocultistas
-  const costMultiplier = isNonOccultist ? 2 : 1;
-
   // Calcula custo base (com redução do SUE)
-  const rawBaseCost = ritual.cost * costMultiplier;
-  const baseCost = Math.max(1, rawBaseCost - sueReduction);
+  // p.119: todas as classes usam o mesmo custo. Custos gratuitos explícitos continuam gratuitos.
+  // Atualiza objetos legados pelo ID; mantém rituais personalizados e gratuidade explícita.
+  const rawBaseCost = ritual.cost === 0 ? 0 : (getRitualById(ritual.id)?.cost ?? ritual.cost);
+  const baseCost = rawBaseCost === 0 ? 0 : Math.max(1, rawBaseCost - sueReduction);
 
   // Filtra apenas aprimoramentos válidos selecionados
   const validSelectedEnhancements = selectedEnhancements.filter(enhName => {
@@ -207,24 +207,18 @@ export function RitualCastModal({
   // Calcula custo dos aprimoramentos (apenas válidos)
   const enhancementsCost = validSelectedEnhancements.reduce((total, enhName) => {
     const enh = ritual.enhancements?.find(e => e.name === enhName);
-    return total + (enh ? enh.cost * costMultiplier : 0);
+    return total + (enh ? enh.cost : 0);
   }, 0);
 
   // Custo total (inclui modificadores de trilha)
   const totalCost = baseCost + enhancementsCost + modifiersCost;
 
   // Validação de PE com limite por turno
-  const peValidation = validatePECost(
-    ritual.cost,
-    validSelectedEnhancements.map(name => {
-      const enh = ritual.enhancements?.find(e => e.name === name);
-      return { name, cost: enh?.cost || 0 };
-    }),
-    isNonOccultist
-  );
+  // Valida exatamente o débito confirmado, incluindo descontos e modificadores.
+  const peValidation = validatePECost(totalCost, []);
 
   // Pode conjurar se validação de PE passar
-  const canCast = peValidation.isValid;
+  const canCast = peValidation.isValid && ritual.circle <= maxCircle;
 
   // Toggle de aprimoramento (só permite se válido)
   const toggleEnhancement = (enhName: string) => {
@@ -232,9 +226,8 @@ export function RitualCastModal({
     if (!enh?.validation.isValid) return;
 
     setSelectedEnhancements(prev =>
-      prev.includes(enhName)
-        ? prev.filter(e => e !== enhName)
-        : [...prev, enhName]
+      // Livro Base v1.3 p.121: selecionar outra forma substitui a anterior.
+      prev.includes(enhName) ? [] : [enhName]
     );
   };
 
@@ -307,6 +300,9 @@ export function RitualCastModal({
               )}>
                 Conjurar {ritual.name}
               </DialogTitle>
+              <DialogDescription className="sr-only">
+                Escolha o aprimoramento e confira o custo em PE antes de conjurar.
+              </DialogDescription>
               <div className="flex items-center gap-2 mt-1">
                 <Badge variant="outline" className={cn("text-xs", elementConfig?.badgeBg)}>
                   {ritual.circle}º Círculo
@@ -689,11 +685,6 @@ export function RitualCastModal({
                 <Badge className="bg-pe/20 text-pe border-pe/50">
                   {baseCost} PE
                 </Badge>
-                {isNonOccultist && (
-                  <span className="text-[10px] text-yellow-400">
-                    (×2 não-ocultista)
-                  </span>
-                )}
               </div>
             </div>
 
@@ -724,7 +715,7 @@ export function RitualCastModal({
                   </TooltipProvider>
                 </div>
                 {enhancementsWithValidation.map((enh, i) => {
-                  const enhCost = enh.cost * costMultiplier;
+                  const enhCost = enh.cost;
                   const isSelected = selectedEnhancements.includes(enh.name);
                   const isLocked = !enh.validation.isValid;
                   
@@ -757,7 +748,10 @@ export function RitualCastModal({
                                 <Lock className="w-4 h-4 mt-0.5 text-muted-foreground" />
                               ) : (
                                 <Checkbox
+                                  aria-label={`Aprimoramento ${enh.name}`}
                                   checked={isSelected}
+                                  // O cartão também alterna a seleção; evita executar duas vezes.
+                                  onClick={(event) => event.stopPropagation()}
                                   onCheckedChange={() => toggleEnhancement(enh.name)}
                                   className="mt-0.5"
                                   disabled={isLocked}
@@ -902,7 +896,7 @@ export function RitualCastModal({
               {!canCast && (
                 <p className="text-xs text-destructive mt-2 flex items-center gap-1">
                   <AlertTriangle className="w-3 h-3" />
-                  {peValidation.reason}
+                  {ritual.circle > maxCircle ? `Requer ${ritual.circle}º círculo (seu máximo: ${maxCircle}º)` : peValidation.reason}
                 </p>
               )}
             </div>

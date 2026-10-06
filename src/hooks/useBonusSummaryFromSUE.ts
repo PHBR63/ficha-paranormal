@@ -324,7 +324,7 @@ export function useBonusSummaryFromSUE({
     // === PERÍCIAS (do SUE) ===
     const skillBonuses: SkillBonuses = {};
     for (const [skill, data] of Object.entries(computed.skills)) {
-      if (data.bonus > 0) {
+      if (data.bonus !== 0) {
         skillBonuses[skill] = {
           total: data.bonus,
           breakdown: data.sources.map(s => convertToBreakdown(s, data.bonus, 'ability')),
@@ -490,13 +490,10 @@ export function useBonusSummaryFromSUE({
         name: 'Combate Defensivo',
         condition: 'Ação agredir (até próximo turno)',
         active: isActive,
-        effects: ['+5 Defesa', '-2 ataque'],
+        effects: ['+5 Defesa', '-1d20 em ataques'],
         source: 'ability',
       });
-      if (isActive) {
-        combat.attack.total -= 2;
-        combat.attack.breakdown.push(convertToBreakdown('Combate Defensivo', -2, 'ability', 'modo defensivo ativo'));
-      }
+      // A penalidade em dados é aplicada na rolagem; não altera o bônus numérico.
     }
     
     // Sentido Tático
@@ -615,7 +612,8 @@ export function useBonusSummaryFromSUE({
       special,
       paranormalEffects,
       conditionalBonuses,
-      hpBonus: computed.resources.hpBonus + paranormalEffects.hpBonus + classPowerBonuses.totals.bonusHP,
+      // A trilha já foi consolidada pelo SUE; não repetir o subtotal do hook legado.
+      hpBonus: computed.resources.hpBonus + paranormalEffects.hpBonus,
       peBonus: computed.resources.peBonus + paranormalEffects.peBonus,
       // Bônus de movimento (Ligeireza, condições, etc.)
       movementBonus: computed.movement.bonus,

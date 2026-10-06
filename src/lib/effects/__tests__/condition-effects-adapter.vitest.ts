@@ -105,35 +105,32 @@ describe('condition-effects-adapter: Condições Críticas', () => {
 // =====================================================
 
 describe('condition-effects-adapter: Condições de Combate', () => {
-  it('agarrado deve ter deslocamento 0, -2 Defesa e cannotMove', () => {
-    const mech = CONDITION_MECHANICS['agarrado']?.mechanics;
-    
-    expect(mech?.movementBonus).toBe(-999);
-    expect(mech?.defenseBonus).toBe(-2);
-    expect(mech?.cannotMove).toBe(true);
+  it('agarrado deriva Desprevenido e Imóvel, e penaliza dados de ataque', () => {
+    const effects = getConditionEffects(['agarrado']);
+    expect(effects.find(e => e.sourceId === 'agarrado')?.mechanics.testDice?.attacks).toBe(-1);
+    expect(effects.find(e => e.sourceId === 'desprevenido')?.mechanics.defenseBonus).toBe(-5);
+    expect(effects.find(e => e.sourceId === 'imobilizado')?.mechanics.cannotMove).toBe(true);
   });
 
-  it('atordoado deve ter cannotAct, cannotReact e -2 Defesa', () => {
-    const mech = CONDITION_MECHANICS['atordoado']?.mechanics;
-    
-    expect(mech?.cannotAct).toBe(true);
-    expect(mech?.cannotReact).toBe(true);
-    expect(mech?.defenseBonus).toBe(-2);
+  it('atordoado impede ações e preserva reações', () => {
+    const summary = getConditionModifiersSummary(['atordoado']);
+    expect(summary.canAct).toBe(false);
+    expect(summary.canReact).toBe(true);
+    expect(summary.defenseMod).toBe(-5);
   });
 
-  it('desprevenido deve ter -5 Defesa e cannotReact', () => {
-    const mech = CONDITION_MECHANICS['desprevenido']?.mechanics;
-    
-    expect(mech?.defenseBonus).toBe(-5);
-    expect(mech?.cannotReact).toBe(true);
+  it('desprevenido penaliza Defesa e dados de Reflexos', () => {
+    const mech = CONDITION_MECHANICS.desprevenido.mechanics;
+    expect(mech.defenseBonus).toBe(-5);
+    expect(mech.testDice?.skills?.reflexos).toBe(-1);
+    expect(mech.cannotReact).not.toBe(true);
   });
 
-  it('surpreendido deve ter -5 Defesa, cannotAct e cannotReact', () => {
-    const mech = CONDITION_MECHANICS['surpreendido']?.mechanics;
-    
-    expect(mech?.defenseBonus).toBe(-5);
-    expect(mech?.cannotAct).toBe(true);
-    expect(mech?.cannotReact).toBe(true);
+  it('surpreendido deriva Desprevenido e impede ações', () => {
+    const summary = getConditionModifiersSummary(['surpreendido']);
+    expect(summary.defenseMod).toBe(-5);
+    expect(summary.canAct).toBe(false);
+    expect(summary.canReact).toBe(true);
   });
 
   it('vulneravel deve ter -2 Defesa', () => {
@@ -142,19 +139,17 @@ describe('condition-effects-adapter: Condições de Combate', () => {
     expect(mech?.defenseBonus).toBe(-2);
   });
 
-  it('enredado deve ter -3m deslocamento, -2 ataque e -2 Reflexos', () => {
-    const mech = CONDITION_MECHANICS['enredado']?.mechanics;
-    
-    expect(mech?.movementBonus).toBe(-3);
-    expect(mech?.attackBonus).toBe(-2);
-    expect(mech?.reflexosBonus).toBe(-2);
+  it('enredado deriva Lento e Vulnerável e penaliza dados de ataque', () => {
+    const effects = getConditionEffects(['enredado']);
+    expect(effects.find(e => e.sourceId === 'lento')?.mechanics.movementMultiplier).toBe(0.5);
+    expect(effects.find(e => e.sourceId === 'vulneravel')?.mechanics.defenseBonus).toBe(-2);
+    expect(effects.find(e => e.sourceId === 'enredado')?.mechanics.testDice?.attacks).toBe(-1);
   });
 
-  it('pasmo deve ter cannotAct e -2 Defesa', () => {
-    const mech = CONDITION_MECHANICS['pasmo']?.mechanics;
-    
-    expect(mech?.cannotAct).toBe(true);
-    expect(mech?.defenseBonus).toBe(-2);
+  it('pasmo impede ações sem inventar penalidade na Defesa', () => {
+    const mech = CONDITION_MECHANICS.pasmo.mechanics;
+    expect(mech.cannotAct).toBe(true);
+    expect(mech.defenseBonus).toBeUndefined();
   });
 });
 
@@ -199,16 +194,16 @@ describe('condition-effects-adapter: Modificadores Contextuais', () => {
 // =====================================================
 
 describe('condition-effects-adapter: Condições Sensoriais', () => {
-  it('cego deve ter -5 ataque', () => {
-    const mech = CONDITION_MECHANICS['cego']?.mechanics;
-    
-    expect(mech?.attackBonus).toBe(-5);
+  it('cego penaliza dados de Agilidade e Força', () => {
+    const mech = CONDITION_MECHANICS.cego.mechanics;
+    expect(mech.testDice?.attributes).toEqual({ agility: -2, strength: -2 });
+    expect(mech.attackBonus).toBeUndefined();
   });
 
-  it('surdo deve ter -2 iniciativa', () => {
-    const mech = CONDITION_MECHANICS['surdo']?.mechanics;
-    
-    expect(mech?.initiativeBonus).toBe(-2);
+  it('surdo penaliza dados de Iniciativa', () => {
+    const mech = CONDITION_MECHANICS.surdo.mechanics;
+    expect(mech.testDice?.skills?.iniciativa).toBe(-2);
+    expect(mech.initiativeBonus).toBeUndefined();
   });
 });
 
@@ -217,26 +212,17 @@ describe('condition-effects-adapter: Condições Sensoriais', () => {
 // =====================================================
 
 describe('condition-effects-adapter: Condições Físicas', () => {
-  it('debilitado deve ter -1 em todos os testes', () => {
-    const mech = CONDITION_MECHANICS['debilitado']?.mechanics;
-    
-    expect(mech?.allSkillsBonus).toBe(-1);
-    expect(mech?.attackBonus).toBe(-1);
+  it('debilitado penaliza dois dados dos testes físicos', () => {
+    expect(CONDITION_MECHANICS.debilitado.mechanics.testDice?.attributes).toEqual({ agility: -2, strength: -2, vigor: -2 });
   });
 
-  it('doente deve ter -2 em todos os testes', () => {
-    const mech = CONDITION_MECHANICS['doente']?.mechanics;
-    
-    expect(mech?.allSkillsBonus).toBe(-2);
-    expect(mech?.attackBonus).toBe(-2);
+  it('doente depende da doença e não inventa penalidade genérica', () => {
+    expect(CONDITION_MECHANICS.doente.mechanics).toEqual({});
   });
 
-  it('exausto deve ter -2 em testes e deslocamento pela metade', () => {
-    const mech = CONDITION_MECHANICS['exausto']?.mechanics;
-    
-    expect(mech?.allSkillsBonus).toBe(-2);
-    expect(mech?.attackBonus).toBe(-2);
-    expect(mech?.movementMultiplier).toBe(0.5);
+  it('exausto deriva Debilitado, Lento e Vulnerável', () => {
+    const effects = getConditionEffects(['exausto']);
+    expect(effects.map(e => e.sourceId)).toEqual(['exausto', 'debilitado', 'lento', 'vulneravel']);
   });
 
   it('imobilizado deve ter deslocamento 0 e cannotMove', () => {
@@ -252,18 +238,12 @@ describe('condition-effects-adapter: Condições Físicas', () => {
     expect(mech?.movementMultiplier).toBe(0.5);
   });
 
-  it('fraco deve ter -2 em Força e Luta', () => {
-    const mech = CONDITION_MECHANICS['fraco']?.mechanics;
-    
-    expect(mech?.skillBonus?.luta).toBe(-2);
-    expect(mech?.attributeSkillsBonus?.strength).toBe(-2);
+  it('fraco penaliza um dado dos testes físicos', () => {
+    expect(CONDITION_MECHANICS.fraco.mechanics.testDice?.attributes).toEqual({ agility: -1, strength: -1, vigor: -1 });
   });
 
-  it('envenenado deve ter -2 em todos os testes', () => {
-    const mech = CONDITION_MECHANICS['envenenado']?.mechanics;
-    
-    expect(mech?.allSkillsBonus).toBe(-2);
-    expect(mech?.attackBonus).toBe(-2);
+  it('envenenado depende do veneno e não inventa penalidade genérica', () => {
+    expect(CONDITION_MECHANICS.envenenado.mechanics).toEqual({});
   });
 });
 
@@ -272,11 +252,9 @@ describe('condition-effects-adapter: Condições Físicas', () => {
 // =====================================================
 
 describe('condition-effects-adapter: Condições Mentais', () => {
-  it('apavorado deve ter -2 em todos os testes', () => {
-    const mech = CONDITION_MECHANICS['apavorado']?.mechanics;
-    
-    expect(mech?.allSkillsBonus).toBe(-2);
-    expect(mech?.attackBonus).toBe(-2);
+  it('apavorado penaliza dois dados dos testes', () => {
+    expect(CONDITION_MECHANICS.apavorado.mechanics.testDice?.all).toBe(-2);
+    expect(CONDITION_MECHANICS.apavorado.mechanics.attackBonus).toBeUndefined();
   });
 
   it('fascinado deve ter -5 em Percepção e cannotAct', () => {
@@ -292,11 +270,11 @@ describe('condition-effects-adapter: Condições Mentais', () => {
     expect(mech?.cannotAct).toBe(true);
   });
 
-  it('perturbado deve ter -2 em todos os testes', () => {
-    const mech = CONDITION_MECHANICS['perturbado']?.mechanics;
-    
-    expect(mech?.allSkillsBonus).toBe(-2);
-    expect(mech?.attackBonus).toBe(-2);
+  it('perturbado não inventa penalidade genérica', () => {
+    const mech = CONDITION_MECHANICS.perturbado.mechanics;
+    expect(mech.allSkillsBonus).toBeUndefined();
+    expect(mech.attackBonus).toBeUndefined();
+    expect(mech.specialEffects?.[0]).toContain('insanidade');
   });
 });
 
@@ -342,9 +320,7 @@ describe('condition-effects-adapter: getConditionEffects', () => {
 
   it('deve converter múltiplas condições', () => {
     const effects = getConditionEffects(['desprevenido', 'cego', 'exausto']);
-    
-    expect(effects).toHaveLength(3);
-    expect(effects.map(e => e.sourceId)).toEqual(['desprevenido', 'cego', 'exausto']);
+    expect(effects.map(e => e.sourceId)).toEqual(['desprevenido', 'cego', 'exausto', 'lento', 'debilitado', 'vulneravel']);
   });
 
   it('deve ter source = "condition" em todos os efeitos', () => {
@@ -368,10 +344,10 @@ describe('condition-effects-adapter: getConditionEffects', () => {
   });
 
   it('deve incluir mecânicas corretas no efeito', () => {
-    const effects = getConditionEffects(['desprevenido']);
-    
-    expect(effects[0].mechanics.defenseBonus).toBe(-5);
-    expect(effects[0].mechanics.cannotReact).toBe(true);
+    const [effect] = getConditionEffects(['desprevenido']);
+    expect(effect.mechanics.defenseBonus).toBe(-5);
+    expect(effect.mechanics.testDice?.skills?.reflexos).toBe(-1);
+    expect(effect.mechanics.cannotReact).not.toBe(true);
   });
 });
 
@@ -393,11 +369,8 @@ describe('condition-effects-adapter: getConditionModifiersSummary', () => {
     expect(summary.isHelpless).toBe(false);
   });
 
-  it('deve acumular modificadores de ataque', () => {
-    const summary = getConditionModifiersSummary(['cego', 'enredado']);
-    
-    // cego: -5, enredado: -2
-    expect(summary.attackMod).toBe(-7);
+  it('resumo numérico não mistura penalidades em dados de ataque', () => {
+    expect(getConditionModifiersSummary(['cego', 'enredado']).attackMod).toBe(0);
   });
 
   it('deve acumular modificadores de defesa', () => {
@@ -407,17 +380,12 @@ describe('condition-effects-adapter: getConditionModifiersSummary', () => {
     expect(summary.defenseMod).toBe(-7);
   });
 
-  it('deve acumular modificadores de iniciativa', () => {
-    const summary = getConditionModifiersSummary(['surdo']);
-    
-    expect(summary.initiativeMod).toBe(-2);
+  it('resumo numérico não mistura penalidade em dados de Iniciativa', () => {
+    expect(getConditionModifiersSummary(['surdo']).initiativeMod).toBe(0);
   });
 
-  it('deve acumular modificadores gerais de testes', () => {
-    const summary = getConditionModifiersSummary(['debilitado', 'doente', 'exausto']);
-    
-    // debilitado: -1, doente: -2, exausto: -2
-    expect(summary.allTestsMod).toBe(-5);
+  it('resumo numérico não inventa penalidades gerais de testes', () => {
+    expect(getConditionModifiersSummary(['debilitado', 'doente', 'exausto']).allTestsMod).toBe(0);
   });
 
   it('deve detectar cannotAct corretamente', () => {
@@ -426,10 +394,8 @@ describe('condition-effects-adapter: getConditionModifiersSummary', () => {
     expect(summary.canAct).toBe(false);
   });
 
-  it('deve detectar cannotReact corretamente', () => {
-    const summary = getConditionModifiersSummary(['desprevenido']);
-    
-    expect(summary.canReact).toBe(false);
+  it('Desprevenido preserva reações', () => {
+    expect(getConditionModifiersSummary(['desprevenido']).canReact).toBe(true);
   });
 
   it('deve detectar cannotMove corretamente', () => {
@@ -453,12 +419,11 @@ describe('condition-effects-adapter: getConditionModifiersSummary', () => {
 
   it('deve lidar com múltiplas condições combinadas', () => {
     const summary = getConditionModifiersSummary(['inconsciente', 'cego', 'envenenado']);
-    
     expect(summary.canAct).toBe(false);
     expect(summary.canReact).toBe(false);
     expect(summary.isHelpless).toBe(true);
-    expect(summary.attackMod).toBe(-5); // cego
-    expect(summary.allTestsMod).toBe(-2); // envenenado
+    expect(summary.attackMod).toBe(0);
+    expect(summary.allTestsMod).toBe(0);
   });
 });
 

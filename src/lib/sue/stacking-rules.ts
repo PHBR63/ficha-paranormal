@@ -11,12 +11,12 @@
  * 3. Bônus de RITUAIS não acumulam entre si (usa o maior ritual)
  * 4. Bônus de ITENS não acumulam entre si (exceto proteção + escudo + paranormal)
  * 5. Condição ENVENENADO: dano recorrente de múltiplas fontes SEMPRE acumula
- * 6. Condição SANGRANDO: dano recorrente de múltiplas fontes SEMPRE acumula
+ * 6. Sangramento acumulado exige uma fonte que autorize essa exceção (ex.: Sanguinária).
  * 
  * @module sue/stacking-rules
  */
 
-import type { EffectSource } from '../unified-effects-engine';
+import type { EffectSource, EffectMechanics } from '../unified-effects-engine';
 
 // ========================================
 // TIPOS DE REGRAS DE STACKING
@@ -162,12 +162,10 @@ export const STACKING_RULES: Readonly<Record<EffectSource, SourceStackingConfig>
 // ========================================
 
 /**
- * Condições que acumulam dano recorrente (exceção oficial v1.3 p.321)
+ * Condições que acumulam dano recorrente (Livro Base v1.3, p. 311)
  */
 export const DAMAGE_ACCUMULATING_CONDITIONS: readonly string[] = [
   'envenenado',
-  'sangrando',
-  'machucado',
 ] as const;
 
 /**
@@ -194,6 +192,8 @@ export function conditionAccumulatesDamage(conditionId: string): boolean {
  * Entrada de bônus para cálculo de stacking
  */
 export interface StackableBonus {
+  mechanicKey?: keyof EffectMechanics;
+  mechanicEntry?: string;
   /** Identificador único do bônus */
   id: string;
   
@@ -269,7 +269,14 @@ export function applyStackingRules(
     const config = STACKING_RULES[source];
     const rule = config.categoryOverrides?.[category] ?? config.defaultRule;
     
-    processSourceGroup(group, rule, category, applied, excluded, breakdown, config);
+    const partitions = new Map<string, StackableBonus[]>();
+    for (const bonus of group) {
+      const key = `${bonus.subtype ?? 'general'}:${bonus.value < 0 ? 'penalty' : 'bonus'}`;
+      partitions.set(key, [...(partitions.get(key) ?? []), bonus]);
+    }
+    for (const partition of partitions.values()) {
+      processSourceGroup(partition, rule, category, applied, excluded, breakdown, config);
+    }
   }
   
   const total = applied.reduce((sum, b) => sum + b.value, 0);
@@ -289,19 +296,9 @@ function processSourceGroup(
   breakdown: StackingResult['breakdown'],
   config: SourceStackingConfig
 ): void {
+  // A mesma habilidade não acumula consigo: deduplica por fonte e característica.
+  if (rule === 'sum_all') rule = 'highest_per_source';
   switch (rule) {
-    case 'sum_all':
-      // Todos os bônus acumulam
-      for (const bonus of group) {
-        applied.push(bonus);
-        breakdown.push({
-          source: bonus.sourceName,
-          value: bonus.value,
-          excluded: false,
-        });
-      }
-      break;
-      
     case 'highest_per_source': {
       // Usa apenas o maior de cada fonte específica (mesmo sourceId)
       const bySourceId = new Map<string, StackableBonus[]>();
@@ -312,7 +309,7 @@ function processSourceGroup(
       }
       
       for (const [, sourceGroup] of bySourceId) {
-        const highest = sourceGroup.reduce((max, b) => b.value > max.value ? b : max);
+        const highest = sourceGroup.reduce((max, b) => Math.abs(b.value) > Math.abs(max.value) ? b : max);
         applied.push(highest);
         breakdown.push({
           source: highest.sourceName,
@@ -337,7 +334,7 @@ function processSourceGroup(
     
     case 'highest_same_type': {
       // Usa apenas o maior de TODA a fonte (rituais, equipamentos)
-      const highest = group.reduce((max, b) => b.value > max.value ? b : max);
+      const highest = group.reduce((max, b) => Math.abs(b.value) > Math.abs(max.value) ? b : max);
       applied.push(highest);
       breakdown.push({
         source: highest.sourceName,
@@ -442,7 +439,7 @@ function processDefenseSpecial(
   for (const [subtype, subtypeGroup] of bySubtype) {
     if (DEFENSE_STACKING_EQUIPMENT.includes(subtype)) {
       // Tipos que acumulam entre categorias, mas não consigo mesmos
-      const highest = subtypeGroup.reduce((max, b) => b.value > max.value ? b : max);
+      const highest = subtypeGroup.reduce((max, b) => Math.abs(b.value) > Math.abs(max.value) ? b : max);
       applied.push(highest);
       breakdown.push({
         source: highest.sourceName,
@@ -463,7 +460,7 @@ function processDefenseSpecial(
       }
     } else {
       // Outros tipos: usa apenas o maior
-      const highest = subtypeGroup.reduce((max, b) => b.value > max.value ? b : max);
+      const highest = subtypeGroup.reduce((max, b) => Math.abs(b.value) > Math.abs(max.value) ? b : max);
       applied.push(highest);
       breakdown.push({
         source: highest.sourceName,

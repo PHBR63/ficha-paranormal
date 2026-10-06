@@ -16,7 +16,7 @@ import {
   MobileModalFooter,
   MobileModalTitle,
 } from '@/components/ui/mobile-modal';
-import { DialogHeader } from '@/components/ui/dialog';
+import { DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -101,6 +101,7 @@ interface ResistanceCheckModalProps {
   nex?: number;
   activeConditions?: string[];
   defaultDT?: number;
+  targetSkills?: Record<string, number>;
 }
 
 export function ResistanceCheckModal({
@@ -116,6 +117,7 @@ export function ResistanceCheckModal({
   nex = 5,
   activeConditions = [],
   defaultDT = 15,
+  targetSkills,
 }: ResistanceCheckModalProps) {
   // Estados
   const [customDT, setCustomDT] = useState<string>('');
@@ -134,10 +136,10 @@ export function ResistanceCheckModal({
     classTrack,
     nex,
     attributes: targetAttributes ? {
-      strength: targetAttributes.strength || 1,
+      strength: targetAttributes.strength ?? 1,
       agility: targetAttributes.agility,
       vigor: targetAttributes.vigor,
-      intellect: targetAttributes.intellect || 1,
+      intellect: targetAttributes.intellect ?? 1,
       presence: targetAttributes.presence,
     } : {
       strength: 1,
@@ -147,7 +149,8 @@ export function ResistanceCheckModal({
       presence: 1,
     },
     activeConditions,
-  }), [characterClass, classTrack, nex, targetAttributes, activeConditions]);
+    skills: targetSkills,
+  }), [characterClass, classTrack, nex, targetAttributes, activeConditions, targetSkills]);
 
   // Hook de resistência integrado com SUE - DEVE ficar antes do early return
   const { executeResistanceRoll, getResistanceBonusBreakdown } = useResistanceRollWithSUE(characterConfig);
@@ -303,9 +306,9 @@ export function ResistanceCheckModal({
               <MobileModalTitle className="font-display tracking-wider">
                 Teste de {resistance.type.charAt(0).toUpperCase() + resistance.type.slice(1)}
               </MobileModalTitle>
-              <p className="text-sm text-muted-foreground">
+              <DialogDescription className="text-sm text-muted-foreground">
                 {ritual.name}
-              </p>
+              </DialogDescription>
             </div>
           </div>
         </MobileModalHeader>
@@ -357,7 +360,7 @@ export function ResistanceCheckModal({
                     variant="outline"
                   >
                     <Dices className={cn("w-4 h-4", isRolling && "animate-spin")} />
-                    Rolar {targetAttribute}d20 ({attributeLabel} {targetAttribute})
+                    Rolar {resistanceBreakdown.dicePool.count}d20 ({attributeLabel} {targetAttribute}, {resistanceBreakdown.dicePool.keep === 'lowest' ? 'menor' : 'maior'})
                     {resistanceBreakdown.total > 0 && (
                       <span className="text-primary">+{resistanceBreakdown.total}</span>
                     )}

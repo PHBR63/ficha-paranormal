@@ -5,6 +5,8 @@
  * Cada condição possui seus efeitos mecânicos conforme o sistema oficial.
  */
 
+import { BASE_CONDITION_TEXT } from './conditions/base-condition-rules';
+
 export type ConditionCategory = 'mental' | 'physical' | 'movement' | 'sensory' | 'combat' | 'special';
 
 export interface ConditionDefinition {
@@ -365,6 +367,13 @@ export const CONDITIONS: Record<string, ConditionDefinition> = {
 /**
  * Lista de todas as condições ordenadas por categoria
  */
+for (const [id, text] of Object.entries(BASE_CONDITION_TEXT)) {
+  if (CONDITIONS[id]) CONDITIONS[id].mechanicalEffect = text;
+}
+CONDITIONS.machucado.description = BASE_CONDITION_TEXT.machucado;
+CONDITIONS.vulneravel.description = 'Sua defesa está comprometida.';
+CONDITIONS.vulneravel.stackable = false;
+
 export const CONDITION_LIST = Object.values(CONDITIONS);
 
 /**

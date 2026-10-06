@@ -383,7 +383,7 @@ describe('Cenário de Campanha: Exploração com Condições Ambientais', () => 
 
     // Penalidade de escuridão aplicada
     expect(result.attack.general).toBeLessThanOrEqual(0);
-    expect(result.skills['percepcao'] ?? 0).toBeLessThanOrEqual(0);
+    expect(result.skills['percepcao']?.bonus).toBe(-5);
   });
 
   it('deve processar múltiplas condições ambientais simultaneamente', () => {
@@ -540,7 +540,7 @@ describe('Cenário de Campanha: Rituais em Grupo', () => {
 
     // Ambos rituais devem contribuir
     expect(result.defense.general).toBe(2);
-    expect(result.skills['reflexos'] ?? 0).toBe(2);
+    expect(result.skills['reflexos']?.bonus).toBe(2);
   });
 });
 

@@ -6,12 +6,13 @@
 // Converte condições ativas para o formato UnifiedEffect
 //
 
+import { BASE_CONDITION_MECHANICS, expandBaseConditionIds } from '../conditions/base-condition-rules';
 import type { UnifiedEffect, EffectMechanics } from '../unified-effects-engine';
 import { CONDITIONS, CONTEXTUAL_DEFENSE_MODIFIERS, ATTACK_MODIFIERS, TEST_MODIFIERS, INITIATIVE_MODIFIERS, type ConditionParams } from '../conditions';
 
 /**
  * Interface para condição ativa com parâmetros dinâmicos
- * Permite passar informações específicas para condições como Machucado, Fragilizado, Envenenado
+ * Permite passar informações específicas para Fragilizado e Envenenado
  */
 export interface ActiveConditionWithParams {
   id: string;
@@ -30,155 +31,11 @@ export const CONDITION_MECHANICS: Record<string, {
   };
 }> = {
   // === CONDIÇÕES DE COMBATE ===
-  agarrado: {
-    mechanics: {
-      movementBonus: -999, // Deslocamento 0
-      defenseBonus: -2,
-      cannotMove: true,
-      specialEffects: ['Não pode atacar à distância'],
-    },
-  },
-  
-  atordoado: {
-    mechanics: {
-      defenseBonus: -2,
-      cannotAct: true,
-      cannotReact: true,
-      specialEffects: ['Não pode realizar ações ou reações'],
-    },
-  },
-  
-  caido: {
-    mechanics: {
-      specialEffects: ['–5 Defesa vs corpo a corpo', '+5 Defesa vs distância'],
-    },
-    contextual: {
-      melee: { defenseBonusMelee: -5 },
-      ranged: { defenseBonusRanged: 5 },
-    },
-  },
-  
-  desprevenido: {
-    mechanics: {
-      defenseBonus: -5,
-      cannotReact: true,
-      specialEffects: ['Não pode usar reações'],
-    },
-  },
-  
-  enredado: {
-    mechanics: {
-      movementBonus: -3,
-      attackBonus: -2,
-      reflexosBonus: -2,
-    },
-  },
-  
-  pasmo: {
-    mechanics: {
-      defenseBonus: -2,
-      cannotAct: true,
-      specialEffects: ['Não pode realizar ações'],
-    },
-  },
-  
-  sangrando: {
-    mechanics: {
-      specialEffects: ['Início do turno: sofre 1d6 de dano (ignora RD)'],
-    },
-  },
-  
-  surpreendido: {
-    mechanics: {
-      defenseBonus: -5,
-      cannotAct: true,
-      cannotReact: true,
-      specialEffects: ['Não age na primeira rodada', 'Desprevenido contra atacantes'],
-    },
-  },
-  
-  vulneravel: {
-    mechanics: {
-      defenseBonus: -2,
-    },
-  },
-  
+
   // === CONDIÇÕES SENSORIAIS ===
-  cego: {
-    mechanics: {
-      attackBonus: -5,
-      specialEffects: [
-        'Falha automática em Percepção visual',
-        'Todos os inimigos são invisíveis',
-      ],
-    },
-  },
-  
-  surdo: {
-    mechanics: {
-      initiativeBonus: -2,
-      specialEffects: ['Falha automática em Percepção auditiva'],
-    },
-  },
-  
+
   // === CONDIÇÕES FÍSICAS ===
-  debilitado: {
-    mechanics: {
-      allSkillsBonus: -1,
-      attackBonus: -1,
-      specialEffects: ['–1 em todos os testes'],
-    },
-  },
-  
-  doente: {
-    mechanics: {
-      allSkillsBonus: -2,
-      attackBonus: -2,
-      specialEffects: [
-        '–2 em todos os testes',
-        'Descanso não recupera PV, PE ou Sanidade',
-      ],
-    },
-  },
-  
-  enjoado: {
-    mechanics: {
-      specialEffects: ['Só pode realizar uma ação padrão por rodada'],
-    },
-  },
-  
-  envenenado: {
-    mechanics: {
-      allSkillsBonus: -2,
-      attackBonus: -2,
-      specialEffects: ['–2 em todos os testes'],
-    },
-    // Mecânicas dinâmicas adicionadas em getConditionEffects baseado em params.poisonDamage
-  },
-  
-  esmorecido: {
-    mechanics: {
-      allSkillsBonus: -2,
-    },
-  },
-  
-  exausto: {
-    mechanics: {
-      allSkillsBonus: -2,
-      attackBonus: -2,
-      movementMultiplier: 0.5,
-      specialEffects: ['–2 em todos os testes', 'Deslocamento pela metade'],
-    },
-  },
-  
-  fraco: {
-    mechanics: {
-      skillBonus: { luta: -2 },
-      attributeSkillsBonus: { strength: -2 },
-      specialEffects: ['–2 em testes de Força e Luta', 'Capacidade de carga pela metade'],
-    },
-  },
-  
+
   fragilizado: {
     mechanics: {
       // Mecânicas dinâmicas adicionadas em getConditionEffects baseado em params.damageType
@@ -192,30 +49,9 @@ export const CONDITION_MECHANICS: Record<string, {
       cannotMove: true,
     },
   },
-  
-  lento: {
-    mechanics: {
-      movementMultiplier: 0.5,
-      specialEffects: ['Apenas 1 ação por turno'],
-    },
-  },
-  
-  machucado: {
-    mechanics: {
-      // Mecânicas dinâmicas adicionadas em getConditionEffects baseado em params.weaponMaxDamage
-    },
-    // Requer params.weaponMaxDamage para efeito completo
-  },
-  
+
   // === CONDIÇÕES MENTAIS ===
-  apavorado: {
-    mechanics: {
-      allSkillsBonus: -2,
-      attackBonus: -2,
-      specialEffects: ['Deve fugir da fonte do medo', '–2 em todos os testes'],
-    },
-  },
-  
+
   confuso: {
     mechanics: {
       specialEffects: [
@@ -241,21 +77,7 @@ export const CONDITION_MECHANICS: Record<string, {
       specialEffects: ['–5 em Percepção', 'Só pode observar a fonte'],
     },
   },
-  
-  frustrado: {
-    mechanics: {
-      specialEffects: ['Não pode gastar PE'],
-    },
-  },
-  
-  perturbado: {
-    mechanics: {
-      allSkillsBonus: -2,
-      attackBonus: -2,
-      specialEffects: ['–2 em todos os testes', 'Pode agir de forma irracional'],
-    },
-  },
-  
+
   // === CONDIÇÕES CRÍTICAS ===
   inconsciente: {
     mechanics: {
@@ -319,11 +141,12 @@ export const CONDITION_MECHANICS: Record<string, {
       specialEffects: ['Ação padrão adicional por turno'],
     },
   },
+  ...BASE_CONDITION_MECHANICS,
 };
 
 /**
  * Converte condições ativas de um personagem para UnifiedEffect[]
- * Suporta parâmetros dinâmicos para condições como Machucado, Fragilizado e Envenenado
+ * Suporta parâmetros dinâmicos para Fragilizado e Envenenado
  * 
  * @param activeConditions - Array de IDs ou objetos com parâmetros
  * @param attackContext - Contexto de ataque para efeitos condicionais
@@ -335,10 +158,12 @@ export function getConditionEffects(
 ): UnifiedEffect[] {
   const effects: UnifiedEffect[] = [];
   
-  for (const condition of activeConditions) {
+  const normalized = activeConditions.map(condition => typeof condition === 'string' ? { id: condition } : condition);
+  const expanded = expandBaseConditionIds(normalized.map(condition => condition.id));
+  for (const conditionId of expanded) {
+    const condition = normalized.find(condition => condition.id === conditionId) ?? { id: conditionId };
     // Normaliza para objeto com params
-    const conditionId = typeof condition === 'string' ? condition : condition.id;
-    const params = typeof condition === 'string' ? undefined : condition.params;
+    const params = condition.params;
     
     const conditionDef = CONDITIONS[conditionId];
     if (!conditionDef) continue;
@@ -367,17 +192,6 @@ export function getConditionEffects(
     
     // === PARÂMETROS DINÂMICOS ===
     
-    // Machucado: dano igual ao máximo da arma
-    if (conditionId === 'machucado' && params?.weaponMaxDamage) {
-      const weaponRef = params.weaponName ? ` (${params.weaponName})` : '';
-      mechanics.specialEffects = [
-        `Ao realizar ação: sofre ${params.weaponMaxDamage} de dano${weaponRef}`,
-      ];
-      mechanics.damageOnAction = params.weaponMaxDamage;
-    } else if (conditionId === 'machucado') {
-      mechanics.specialEffects = ['Ao realizar ação: sofre dano igual ao máximo da arma (não configurado)'];
-    }
-    
     // Fragilizado: vulnerável a tipo de dano específico
     if (conditionId === 'fragilizado' && params?.damageType) {
       mechanics.specialEffects = [
@@ -396,7 +210,6 @@ export function getConditionEffects(
       const poisonRef = params.poisonName ? ` (${params.poisonName})` : '';
       const dtRef = params.poisonDT ? ` DT ${params.poisonDT}` : '';
       mechanics.specialEffects = [
-        '–2 em todos os testes',
         `Dano de veneno: ${params.poisonDamage}${poisonRef}`,
         ...(dtRef ? [`Fortitude${dtRef} para resistir`] : []),
       ];
@@ -423,11 +236,11 @@ export function getConditionEffects(
       }
     }
     
-    if (ATTACK_MODIFIERS[conditionId] && !mechanics.attackBonus) {
+    if (!BASE_CONDITION_MECHANICS[conditionId] && ATTACK_MODIFIERS[conditionId] && !mechanics.attackBonus) {
       mechanics.attackBonus = ATTACK_MODIFIERS[conditionId];
     }
     
-    if (INITIATIVE_MODIFIERS[conditionId] && !mechanics.initiativeBonus) {
+    if (!BASE_CONDITION_MECHANICS[conditionId] && INITIATIVE_MODIFIERS[conditionId] && !mechanics.initiativeBonus) {
       mechanics.initiativeBonus = INITIATIVE_MODIFIERS[conditionId];
     }
     
@@ -479,7 +292,7 @@ export function getConditionModifiersSummary(activeConditions: string[]): {
   let canMove = true;
   let isHelpless = false;
   
-  for (const conditionId of activeConditions) {
+  for (const conditionId of expandBaseConditionIds(activeConditions)) {
     const mech = CONDITION_MECHANICS[conditionId];
     if (!mech) continue;
     

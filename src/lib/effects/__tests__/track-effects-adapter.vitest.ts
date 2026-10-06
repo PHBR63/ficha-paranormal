@@ -17,6 +17,9 @@ import {
   getTrackCombatBonuses,
   getTrackBonusSummary,
   getTrackEffects,
+  getActivatableEffectInfo,
+  getTrackActivatableEffects,
+  isEffectAvailableAtNex,
   TRACK_EFFECT_MAPPINGS,
 } from '../track-effects-adapter';
 import type { AttributeType } from '../../unified-effects-engine';
@@ -131,18 +134,16 @@ describe('Trilhas do Combatente - Bônus de Combate', () => {
   // ANIQUILADOR
   // -------------------------------------------------
   describe('Aniquilador', () => {
-    it('NEX 10 deve ter redução de categoria (efeito especial)', () => {
-      const result = getTrackCombatBonuses('aniquilador', 10, defaultAttributes, 'melee');
-      
-      // A Favorita: Categoria -1 na arma favorita
-      expect(result.specialEffects.some(e => e.includes('Categoria -1'))).toBe(true);
+    it('NEX 10 disponibiliza redução I para a arma favorita', () => {
+      const effect = getTrackEffects('aniquilador', 10, defaultAttributes)
+        .find(item => item.sourceId === 'a-favorita');
+      expect(effect?.mechanics.categoryReduction).toMatchObject({ amount: 1, targetType: 'specific-weapon' });
     });
 
     it('NEX 40 deve ter redução de categoria -2', () => {
-      const result = getTrackCombatBonuses('aniquilador', 40, defaultAttributes, 'melee');
-      
-      // Técnica Secreta: Categoria -2
-      expect(result.specialEffects.some(e => e.includes('Categoria -2'))).toBe(true);
+      const effect = getTrackEffects('aniquilador', 40, defaultAttributes)
+        .find(item => item.sourceId === 'tecnica-secreta');
+      expect(effect?.mechanics.categoryReduction).toMatchObject({ amount: 2, targetType: 'specific-weapon' });
     });
 
     it('NEX 99 deve ter margem crítico +2 e dados extras de dano', () => {
@@ -154,9 +155,9 @@ describe('Trilhas do Combatente - Bônus de Combate', () => {
     });
 
     it('NEX 99 deve ter categoria -3', () => {
-      const result = getTrackCombatBonuses('aniquilador', 99, defaultAttributes, 'ranged');
-      
-      expect(result.specialEffects.some(e => e.includes('Categoria -3'))).toBe(true);
+      const effect = getTrackEffects('aniquilador', 99, defaultAttributes)
+        .find(item => item.sourceId === 'maquina-de-matar');
+      expect(effect?.mechanics.categoryReduction).toMatchObject({ amount: 3, targetType: 'specific-weapon' });
     });
 
     it('bônus devem aplicar em melee e ranged', () => {
@@ -166,6 +167,14 @@ describe('Trilhas do Combatente - Bônus de Combate', () => {
       // Aniquilador funciona com qualquer arma favorita (melee ou ranged)
       expect(melee.criticalMarginBonus).toBe(2);
       expect(ranged.criticalMarginBonus).toBe(2);
+    });
+
+    it.each([[10, 1], [40, 2], [65, 2], [99, 3]])('NEX %i emite apenas redução final %i, sem ativar técnica', (nex, amount) => {
+      const reductions = getTrackEffects('aniquilador', nex, defaultAttributes)
+        .filter(effect => effect.mechanics.categoryReduction);
+      expect(reductions).toHaveLength(1);
+      expect(reductions[0].isActive).toBe(true);
+      expect(reductions[0].mechanics.categoryReduction?.amount).toBe(amount);
     });
   });
 
@@ -182,7 +191,7 @@ describe('Trilhas do Combatente - Bônus de Combate', () => {
     });
 
     it('NEX 40 deve ter efeito Estrategista', () => {
-      const result = getTrackCombatBonuses('comandante-campo', 40, defaultAttributes, 'melee');
+      const result = getTrackCombatBonuses('comandante-campo', 40, defaultAttributes, 'melee', ['track-estrategista']);
       
       // Estrategista dá ações extras para aliados
       expect(result.specialEffects.some(e => 
@@ -271,7 +280,7 @@ describe('Trilhas do Combatente - Bônus de Combate', () => {
     });
 
     it('NEX 40 deve ter acesso a Ataque Extra', () => {
-      const result = getTrackCombatBonuses('operacoes-especiais', 40, defaultAttributes, 'melee');
+      const result = getTrackCombatBonuses('operacoes-especiais', 40, defaultAttributes, 'melee', ['track-ataque-extra']);
       
       expect(result.specialEffects.some(e => 
         e.includes('ataque') || e.includes('Ataque')
@@ -322,7 +331,7 @@ describe('Trilhas do Combatente - Bônus de Combate', () => {
     });
 
     it('NEX 65 deve ter acesso a Duro de Matar', () => {
-      const result = getTrackCombatBonuses('tropa-choque', 65, defaultAttributes, 'melee');
+      const result = getTrackCombatBonuses('tropa-choque', 65, defaultAttributes, 'melee', ['track-duro-de-matar']);
       
       expect(result.specialEffects.some(e => 
         e.includes('dano') || e.includes('metade') || e.includes('Reduz')
@@ -419,9 +428,9 @@ describe('Trilha Flagelador - TRACK_EFFECT_MAPPINGS', () => {
     expect(effect.peCost).toBe(2);
   });
 
-  it('Absorver Angústia: NEX 65, custo 0 PE (passivo com trigger)', () => {
+  it('Absorver Agonia: NEX 65, custo 0 PE (passivo com trigger)', () => {
     const effect = TRACK_EFFECT_MAPPINGS.flagelador.effects['track-absorver-angustia'];
-    expect(effect.name).toBe('Absorver Angústia');
+    expect(effect.name).toBe('Absorver Agonia');
     expect(effect.minNex).toBe(65);
     expect(effect.peCost).toBe(0);
   });
@@ -471,9 +480,10 @@ describe('Trilha Flagelador - Integração com getTrackBonusSummary', () => {
 
   it('deve incluir Abraçar a Dor em NEX 40%', () => {
     const summary = getTrackBonusSummary('flagelador', 40, baseAttrs);
-    expect(summary.specialAbilities.some(a => 
-      a.toLowerCase().includes('dor') || a.toLowerCase().includes('redução')
-    )).toBe(true);
+    expect(summary.activatableAbilities).toContainEqual(expect.objectContaining({
+      name: 'Abraçar a Dor',
+      peCost: 2,
+    }));
   });
 });
 
@@ -570,11 +580,14 @@ describe('Trilha Flagelador - Casos Extremos', () => {
     });
 
     it('NEX 65 deve ter Assassinar disponível', () => {
-      const result = getTrackCombatBonuses('infiltrador', 65, defaultAttributes, 'melee');
-      
-      expect(result.specialEffects.some(e => 
-        e.includes('Ataque Furtivo') || e.includes('dobr') || e.includes('x2')
-      )).toBe(true);
+      const inactive = getTrackEffects('infiltrador', 65, defaultAttributes)
+        .find(effect => effect.id === 'track-assassinar');
+      const active = getTrackEffects('infiltrador', 65, defaultAttributes, ['track-assassinar'])
+        .find(effect => effect.id === 'track-assassinar');
+      expect(inactive?.isActive).toBe(false);
+      expect(active?.isActive).toBe(true);
+      expect(active?.mechanics.sneakAttackMultiplier).toBe(2);
+      expect(active?.conditions?.costPE).toBe(3);
     });
   });
 
@@ -591,28 +604,29 @@ describe('Trilha Flagelador - Casos Extremos', () => {
       )).toBe(true);
     });
 
-    it('NEX 40 deve ter cura 3d10', () => {
-      const result = getTrackCombatBonuses('medico-campo', 40, defaultAttributes, 'melee');
-      
-      expect(result.specialEffects.some(e => 
-        e.includes('3d10') || e.includes('Cura')
-      )).toBe(true);
+    it('NEX 40 permite cura 3d10 pagando o dado adicional', () => {
+      const healing = getTrackEffects('medico-campo', 40, defaultAttributes)
+        .find(item => item.sourceId === 'paramedico')?.mechanics.healing;
+      expect(healing?.baseDice).toBe(2);
+      expect(healing?.scaling?.[40]).toEqual({ dice: 3, dieType: 'd10' });
+      expect(healing?.peCost).toBe(2);
+      expect(healing?.extraDicePECost).toBe(1);
     });
 
-    it('NEX 65 deve ter cura 4d10', () => {
-      const result = getTrackCombatBonuses('medico-campo', 65, defaultAttributes, 'melee');
-      
-      expect(result.specialEffects.some(e => 
-        e.includes('4d10') || e.includes('Cura')
-      )).toBe(true);
+    it('NEX 65 permite cura 4d10 pagando dois dados adicionais', () => {
+      const healing = getTrackEffects('medico-campo', 65, defaultAttributes)
+        .find(item => item.sourceId === 'paramedico')?.mechanics.healing;
+      expect(healing?.baseDice).toBe(2);
+      expect(healing?.scaling?.[65]).toEqual({ dice: 4, dieType: 'd10' });
+      expect(healing?.extraDicePECost).toBe(1);
     });
 
-    it('NEX 99 deve ter cura 5d10', () => {
-      const result = getTrackCombatBonuses('medico-campo', 99, defaultAttributes, 'melee');
-      
-      expect(result.specialEffects.some(e => 
-        e.includes('5d10') || e.includes('Cura')
-      )).toBe(true);
+    it('NEX 99 permite cura 5d10 pagando três dados adicionais', () => {
+      const healing = getTrackEffects('medico-campo', 99, defaultAttributes)
+        .find(item => item.sourceId === 'paramedico')?.mechanics.healing;
+      expect(healing?.baseDice).toBe(2);
+      expect(healing?.scaling?.[99]).toEqual({ dice: 5, dieType: 'd10' });
+      expect(healing?.extraDicePECost).toBe(1);
     });
 
     it('não deve ter bônus numéricos de combate', () => {
@@ -668,12 +682,12 @@ describe('Trilha Flagelador - Casos Extremos', () => {
     });
 
     it('NEX 40 deve ter redução de categoria em equipamentos', () => {
-      const result = getTrackCombatBonuses('tecnico', 40, defaultAttributes, 'melee');
-      
-      // Remendo: categoria -1 em equipamentos carregados
-      expect(result.specialEffects.some(e => 
-        e.includes('Categoria') || e.includes('categoria')
-      )).toBe(true);
+      const effects = getTrackEffects('tecnico', 40, defaultAttributes);
+      const passive = effects.find(item => item.mechanics.categoryReduction);
+      expect(passive?.isActive).toBe(true);
+      expect(passive?.isToggleable).toBe(false);
+      expect(passive?.mechanics.categoryReduction).toMatchObject({ amount: 1, targetType: 'general-equipment' });
+      expect(effects.find(item => item.id === 'track-remendao')?.isActive).toBe(false);
     });
 
     it('não deve ter bônus numéricos de combate direto', () => {
@@ -742,7 +756,7 @@ describe('Escalamento de Bônus por NEX', () => {
       return result.extraDamageDice.join('');
     };
     
-    expect(diceAtNex(5)).toContain('1'); // 1d6
+    expect(diceAtNex(5)).toBe(''); // Trilha só é recebida em NEX 10 (Base v1.3, p.28–30).
     expect(diceAtNex(10)).toContain('1'); // 1d6
     expect(diceAtNex(40)).toContain('2'); // 2d6
     expect(diceAtNex(65)).toContain('3'); // 3d6
@@ -758,16 +772,15 @@ describe('Escalamento de Bônus por NEX', () => {
     expect(hpAtNex(50)).toBeLessThan(hpAtNex(99));
   });
 
-  it('Médico de Campo deve escalar cura por NEX', () => {
-    const healingAtNex = (nex: number) => {
-      const result = getTrackCombatBonuses('medico-campo', nex, defaultAttributes, 'melee');
-      return result.specialEffects.find(e => e.includes('d10')) || '';
-    };
-    
-    expect(healingAtNex(10)).toContain('2d10');
-    expect(healingAtNex(40)).toContain('3d10');
-    expect(healingAtNex(65)).toContain('4d10');
-    expect(healingAtNex(99)).toContain('5d10');
+  it('Médico de Campo amplia cura disponível por NEX, mantendo custo por dado', () => {
+    for (const [nex, dice] of [[10, 2], [40, 3], [65, 4], [99, 5]]) {
+      const healing = getTrackEffects('medico-campo', nex, defaultAttributes)
+        .find(item => item.sourceId === 'paramedico')?.mechanics.healing;
+      expect(healing?.scaling?.[nex].dice).toBe(dice);
+      expect(healing?.baseDice).toBe(2);
+      expect(healing?.peCost).toBe(2);
+      expect(healing?.extraDicePECost).toBe(1);
+    }
   });
 
   it('habilidades de NEX alto não devem estar disponíveis em NEX baixo', () => {
@@ -785,12 +798,12 @@ describe('Escalamento de Bônus por NEX', () => {
 // =====================================================
 
 describe('Efeitos Especiais (specialEffects)', () => {
-  it('Máquina de Matar deve aparecer em specialEffects', () => {
-    const result = getTrackCombatBonuses('aniquilador', 99, defaultAttributes, 'melee');
-    
-    expect(result.specialEffects.some(e => 
-      e.includes('Categoria -3') || e.includes('crítico') || e.includes('dado')
-    )).toBe(true);
+  it('Máquina de Matar expõe categoria III, margem +2 e um dado da arma', () => {
+    const effect = getTrackEffects('aniquilador', 99, defaultAttributes)
+      .find(item => item.sourceId === 'maquina-de-matar');
+    expect(effect?.mechanics.categoryReduction?.amount).toBe(3);
+    expect(effect?.mechanics.criticalMarginBonus).toBe(2);
+    expect(effect?.mechanics.extraDamageDice).toBe('1W');
   });
 
   it('Técnica Letal do Guerreiro deve ser refletida em margem crítico', () => {
@@ -813,12 +826,14 @@ describe('Efeitos Especiais (specialEffects)', () => {
     )).toBe(true);
   });
 
-  it('Casca Grossa deve mencionar bloqueio', () => {
-    const result = getTrackCombatBonuses('tropa-choque', 10, defaultAttributes, 'melee');
-    
-    // O efeito de somar Vigor no bloqueio pode aparecer nos specialEffects
-    // ou estar implementado como mecânica separada
-    expect(result.specialEffects.length).toBeGreaterThanOrEqual(0);
+  it('Casca Grossa soma Vigor apenas ao bloquear, sem RD passiva', () => {
+    const effect = getTrackEffects('tropa-choque', 10, defaultAttributes)
+      .find(item => item.name === 'Casca Grossa');
+
+    expect(effect).toBeDefined();
+    expect(effect?.mechanics.blockVigorBonus).toBe(true);
+    expect(effect?.mechanics.damageReduction ?? 0).toBe(0);
+    expect(effect?.mechanics.damageResistance).toBeUndefined();
   });
 });
 
@@ -831,17 +846,17 @@ describe('Integração com activatedEffects', () => {
     const semAtivacao = getTrackCombatBonuses('aniquilador', 40, defaultAttributes, 'melee', []);
     const comAtivacao = getTrackCombatBonuses('aniquilador', 40, defaultAttributes, 'melee', ['track-tecnica-destruidor']);
     
-    // Se implementado, ativação deve aumentar o multiplicador
-    // Este teste documenta o comportamento esperado
-    expect(comAtivacao.criticalMultiplierBonus).toBeGreaterThanOrEqual(semAtivacao.criticalMultiplierBonus);
+    expect(comAtivacao.criticalMultiplierBonus - semAtivacao.criticalMultiplierBonus).toBe(1);
+    expect(comAtivacao.damageBonus).toBe(semAtivacao.damageBonus);
   });
 
   it('efeito Disparo Letal deve aumentar margem crítico quando ativado', () => {
     const semAtivacao = getTrackCombatBonuses('atirador-elite', 40, defaultAttributes, 'ranged', []);
     const comAtivacao = getTrackCombatBonuses('atirador-elite', 40, defaultAttributes, 'ranged', ['track-disparo-letal']);
     
-    // Disparo Letal: +2 margem de ameaça
-    expect(comAtivacao.criticalMarginBonus).toBeGreaterThanOrEqual(semAtivacao.criticalMarginBonus);
+    expect(comAtivacao.criticalMarginBonus - semAtivacao.criticalMarginBonus).toBe(2);
+    expect(comAtivacao.damageBonus).toBe(defaultAttributes.intellect);
+    expect(comAtivacao.damageBonus).toBe(semAtivacao.damageBonus);
   });
 
   it('activatedEffects vazio deve funcionar normalmente', () => {
@@ -1006,9 +1021,7 @@ describe('getTrackEffects', () => {
   it('efeitos devem ter sourceId correto', () => {
     const effects = getTrackEffects('atirador-elite', 10, defaultAttributes);
     
-    effects.forEach(effect => {
-      expect(effect.sourceId).toBe('atirador-elite');
-    });
+    expect(effects.map(effect => effect.sourceId)).toEqual(['mira-elite']);
   });
 });
 
@@ -1062,9 +1075,10 @@ describe('Trilhas do Ocultista - Conduíte', () => {
       
       const ampliarEffect = effects.find(e => e.id === 'track-ampliar-ritual');
       expect(ampliarEffect).toBeDefined();
-      expect(ampliarEffect?.mechanics.specialEffects?.some(
-        e => e.includes('Aumenta alcance') || e.includes('dobra área')
-      )).toBe(true);
+      expect(ampliarEffect?.mechanics.ritualModifiers).toEqual(expect.arrayContaining([
+        expect.objectContaining({ type: 'range' }),
+        expect.objectContaining({ type: 'area' }),
+      ]));
     });
 
     it('NEX 40 deve ter efeito Acelerar Ritual nos efeitos especiais', () => {
@@ -1090,7 +1104,7 @@ describe('Trilhas do Ocultista - Conduíte', () => {
     it('NEX 99 deve ter ritual concedido Canalizar o Medo', () => {
       const effects = getTrackEffects('condutor', 99, defaultAttributes);
       
-      const canalizarEffect = effects.find(e => e.id === 'track-canalizar-o-medo');
+      const canalizarEffect = effects.find(e => e.name === 'Canalizar o Medo');
       expect(canalizarEffect).toBeDefined();
       expect(canalizarEffect?.mechanics.specialEffects?.some(
         e => e.includes('Ritual concedido') || e.includes('Canalizar')
@@ -1179,19 +1193,15 @@ describe('Trilhas do Ocultista - Conduíte', () => {
 
   describe('Integração com Sistema de Ativação', () => {
     it('getActivatableEffectInfo deve retornar info para Ampliar Ritual', () => {
-      const { getActivatableEffectInfo } = require('../track-effects-adapter');
-      
       const info = getActivatableEffectInfo('track-ampliar-ritual');
       
       expect(info).not.toBeNull();
       expect(info?.name).toBe('Ampliar Ritual');
       expect(info?.peCost).toBe(2);
-      expect(info?.trackId).toBe('conduite');
+      expect(info?.trackId).toBe('condutor');
     });
 
     it('getTrackActivatableEffects deve listar todos os efeitos do Conduíte', () => {
-      const { getTrackActivatableEffects } = require('../track-effects-adapter');
-      
       const effects = getTrackActivatableEffects('conduite');
       
       expect(effects.length).toBe(3);
@@ -1201,8 +1211,6 @@ describe('Trilhas do Ocultista - Conduíte', () => {
     });
 
     it('isEffectAvailableAtNex deve funcionar corretamente para Conduíte', () => {
-      const { isEffectAvailableAtNex } = require('../track-effects-adapter');
-      
       // Ampliar Ritual: NEX 10
       expect(isEffectAvailableAtNex('track-ampliar-ritual', 5)).toBe(false);
       expect(isEffectAvailableAtNex('track-ampliar-ritual', 10)).toBe(true);
@@ -1536,7 +1544,9 @@ describe('Trilha Intuitivo (Ocultista) - SUE Integration', () => {
       
       expect(menteSa).toBeDefined();
       // Mente Sã dá resistência paranormal +5
-      expect(menteSa?.description).toContain('paranormal');
+      // O bônus contextual não pode ser convertido em RD ou Vontade geral.
+      expect(menteSa?.mechanics.mentalDamageResistance ?? 0).toBe(0);
+      expect(menteSa?.mechanics.skillBonus?.vontade ?? 0).toBe(0);
     });
 
     it('Presença Poderosa deve estar disponível em NEX 40', () => {

@@ -10,7 +10,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { getCampaignRows, mergeCampaignMessages, mergeCampaignRows, normalizeCampaignSession } from '@/lib/campaign-realtime-compat';
 
 // Interface de mensagem
 export interface CampaignMessage {
@@ -29,6 +28,16 @@ export interface CampaignMessage {
   characters?: {
     name: string;
   } | null;
+}
+
+/** Mantém compatibilidade com eventos já salvos como system nas tabelas SQL. */
+function readMessageType(type: string, metadata: unknown): CampaignMessage['message_type'] {
+  const eventTypes = ['event_damage', 'event_heal', 'event_ritual', 'event_condition', 'event_attack', 'event_defense'];
+  if (type === 'system' && typeof metadata === 'object' && metadata !== null && 'eventType' in metadata
+    && typeof metadata.eventType === 'string' && eventTypes.includes(metadata.eventType)) {
+    return metadata.eventType as CampaignMessage['message_type'];
+  }
+  return type as CampaignMessage['message_type'];
 }
 
 // Interface de sessão
@@ -50,6 +59,7 @@ export interface CampaignSession {
 interface UseCampaignRealtimeProps {
   campaignId: string;
   userId: string;
+  schemaVersion?: 'v1' | 'v2';
   enabled?: boolean;
 }
 
@@ -70,8 +80,12 @@ export function useCampaignRealtime({
   campaignId,
   userId,
   enabled = true,
+  schemaVersion = 'v2',
 }: UseCampaignRealtimeProps): UseCampaignRealtimeReturn {
   const { toast } = useToast();
+  // A versão vem do carregamento da campanha; nunca tentar gravar em outra FK.
+  const messagesTable = schemaVersion === 'v2' ? 'campaign_messages_v2' : 'campaign_messages';
+  const sessionsTable = schemaVersion === 'v2' ? 'campaign_sessions_v2' : 'campaign_sessions';
   
   // Ref-First: estabiliza toast
   const toastRef = useRef(toast);
@@ -85,9 +99,12 @@ export function useCampaignRealtime({
   
   // Ref para rastrear última mensagem lida
   const lastReadIdRef = useRef<string | null>(null);
-  const sessionSourcesRef = useRef<Record<string, 'campaign_sessions' | 'campaign_sessions_v2'>>({});
-  const seenMessageIdsRef = useRef(new Set<string>());
-  const loadVersionRef = useRef(0);
+  const startingSession = useRef(false);
+  const messagesEpoch = useRef(0);
+  const sessionsEpoch = useRef(0);
+  const scope = `${campaignId}:${userId}:${schemaVersion}`;
+  const scopeRef = useRef(scope);
+  scopeRef.current = scope;
   
   // Sessão ativa derivada
   const activeSession = sessions.find(s => s.status === 'active') || null;
@@ -97,27 +114,18 @@ export function useCampaignRealtime({
    */
   const fetchMessages = useCallback(async () => {
     if (!campaignId) return;
-    const loadVersion = loadVersionRef.current;
+    const epoch = messagesEpoch.current;
     
     try {
-      // Os demais produtores ainda gravam em v1; v2 contém cópias históricas.
-      const [legacyResult, migratedResult] = await Promise.all([
-        supabase
-          .from('campaign_messages')
-          .select('*')
-          .eq('campaign_id', campaignId)
-          .order('created_at', { ascending: false })
-          .limit(100),
-        supabase
-          .from('campaign_messages_v2')
-          .select('*')
-          .eq('campaign_id', campaignId)
-          .order('created_at', { ascending: false })
-          .limit(100),
-      ]);
-      const messagesRaw = mergeCampaignMessages(
-        getCampaignRows(legacyResult), getCampaignRows(migratedResult),
-      );
+      const { data: messagesRaw, error } = await supabase
+        .from(messagesTable)
+        .select('*')
+        .eq('campaign_id', campaignId)
+        .order('created_at', { ascending: true })
+        .limit(100);
+      
+      if (error) throw error;
+      if (!messagesRaw) return;
       
       // Busca profiles em lote
       const userIds = [...new Set(messagesRaw.map(m => m.user_id))];
@@ -140,72 +148,54 @@ export function useCampaignRealtime({
       // Mescla dados
       const messagesWithData = messagesRaw.map(msg => ({
         ...msg,
-        message_type: msg.message_type as CampaignMessage['message_type'],
-        recipient_id: msg.recipient_id || null,
+        message_type: readMessageType(msg.message_type, msg.metadata),
+        recipient_id: ('recipient_id' in msg ? msg.recipient_id : null) || null,
         metadata: msg.metadata as Record<string, unknown> | null,
         profiles: profileLookup[msg.user_id] || { display_name: null },
         characters: msg.character_id ? charLookup[msg.character_id] || null : null,
       })) as CampaignMessage[];
       
-      if (loadVersion !== loadVersionRef.current) return;
-      // Preserva mensagens recebidas enquanto o histórico estava sendo consultado.
-      setMessages(previous => mergeCampaignMessages(previous, messagesWithData));
-      messagesWithData.forEach(message => seenMessageIdsRef.current.add(message.id));
+      // Uma leitura iniciada antes de uma escrita não pode apagar o resultado novo.
+      if (messagesEpoch.current !== epoch || scopeRef.current !== scope) return;
+      setMessages(messagesWithData);
       
       // Marca última como lida
       if (messagesWithData.length > 0) {
         lastReadIdRef.current = messagesWithData[messagesWithData.length - 1].id;
       }
       
-    } catch (err: unknown) {
-      if (loadVersion !== loadVersionRef.current) return;
+    } catch (err: any) {
       console.error('Erro ao carregar mensagens:', err);
-      toastRef.current?.({ title: 'Erro ao carregar mensagens', description: 'Não foi possível carregar o histórico da campanha.', variant: 'destructive' });
     }
-  }, [campaignId]);
+  }, [campaignId, messagesTable, scope]);
   
   /**
    * Carrega sessões
    */
   const fetchSessions = useCallback(async () => {
     if (!campaignId) return;
-    const loadVersion = loadVersionRef.current;
+    const epoch = sessionsEpoch.current;
     
     try {
-      const [legacyResult, migratedResult] = await Promise.all([
-        supabase
-          .from('campaign_sessions')
-          .select('*')
-          .eq('campaign_id', campaignId)
-          .order('session_number', { ascending: false }),
-        supabase
-          .from('campaign_sessions_v2')
-          .select('*')
-          .eq('campaign_id', campaignId)
-          .order('session_number', { ascending: false }),
-      ]);
-      const legacy = getCampaignRows(legacyResult);
-      const migrated = getCampaignRows(migratedResult);
-      if (loadVersion !== loadVersionRef.current) return;
-      const sources: typeof sessionSourcesRef.current = {};
-      migrated.forEach(session => { sources[session.id] = 'campaign_sessions_v2'; });
-      legacy.forEach(session => { sources[session.id] = 'campaign_sessions'; });
-      sessionSourcesRef.current = sources;
-
-      setSessions(mergeCampaignRows(legacy, migrated)
-        .sort((a, b) => b.session_number - a.session_number)
-        .map(normalizeCampaignSession).map(s => ({
+      const { data, error } = await supabase
+        .from(sessionsTable)
+        .select('*')
+        .eq('campaign_id', campaignId)
+        .order('session_number', { ascending: false });
+      
+      if (error) throw error;
+      if (sessionsEpoch.current !== epoch || scopeRef.current !== scope) return;
+      
+      setSessions((data || []).map(s => ({
         ...s,
-        status: s.status as CampaignSession['status'],
+        status: (s.status === 'in_progress' ? 'active' : s.status) as CampaignSession['status'],
         notes: s.notes as Record<string, unknown> | null,
       })));
       
-    } catch (err: unknown) {
-      if (loadVersion !== loadVersionRef.current) return;
+    } catch (err: any) {
       console.error('Erro ao carregar sessões:', err);
-      toastRef.current?.({ title: 'Erro ao carregar sessões', description: 'Não foi possível carregar as sessões da campanha.', variant: 'destructive' });
     }
-  }, [campaignId]);
+  }, [campaignId, sessionsTable, scope]);
   
   /**
    * Envia mensagem
@@ -219,37 +209,47 @@ export function useCampaignRealtime({
     if (!enabled || !campaignId || !userId || !content.trim()) return false;
     
     try {
-      // Mantém o mesmo destino dos eventos e sussurros existentes.
-      const { error } = await supabase
-        .from('campaign_messages')
+      const { data, error } = await supabase
+        .from(messagesTable)
         .insert([{
           campaign_id: campaignId,
           user_id: userId,
           character_id: characterId || null,
-          message_type: type,
+          // Eventos da ficha usam o tipo SQL system e preservam o subtipo no JSON.
+          message_type: type.startsWith('event_') ? 'system' : type,
           content: content.trim(),
-          metadata: metadata ? JSON.parse(JSON.stringify(metadata)) : null,
-        }]);
+          metadata: metadata || type.startsWith('event_')
+            ? JSON.parse(JSON.stringify({ ...metadata, ...(type.startsWith('event_') ? { eventType: type } : {}) })) : null,
+        }])
+        .select('*')
+        .single();
       
       if (error) throw error;
+      if (scopeRef.current !== scope) return true;
+      messagesEpoch.current += 1;
+      const sent = { ...data, message_type: type, recipient_id: null, metadata: data.metadata as Record<string, unknown> | null } as CampaignMessage;
+      setMessages(previous => previous.some(message => message.id === sent.id) ? previous : [...previous, sent]);
       
       return true;
-    } catch (err: unknown) {
+    } catch (err: any) {
       console.error('Erro ao enviar mensagem:', err);
       toastRef.current?.({
         title: 'Erro ao enviar mensagem',
-        description: 'Não foi possível enviar a mensagem. Tente novamente.',
+        description: 'A mensagem não foi enviada. Confira sua conexão e tente novamente.',
         variant: 'destructive',
       });
       return false;
     }
-  }, [enabled, campaignId, userId]);
+  }, [enabled, campaignId, userId, messagesTable, scope]);
   
   /**
    * Inicia nova sessão
    */
   const startSession = useCallback(async (title?: string): Promise<CampaignSession | null> => {
     if (!enabled || !campaignId || !userId) return null;
+    if (activeSession) return activeSession;
+    if (startingSession.current) return null;
+    startingSession.current = true;
     
     try {
       // Calcula próximo número de sessão
@@ -261,20 +261,20 @@ export function useCampaignRealtime({
         campaign_id: campaignId,
         session_number: nextNumber,
         title: title || `Sessão ${nextNumber}`,
-        status: 'in_progress',
+        status: schemaVersion === 'v2' ? 'active' : 'in_progress',
         started_at: new Date().toISOString(),
       };
       
-      // Usa tabela v1 que já existe
       const { data, error } = await supabase
-        .from('campaign_sessions')
+        .from(sessionsTable)
         .insert([insertData])
         .select()
         .single();
       
       if (error) throw error;
-      const session = normalizeCampaignSession(data) as CampaignSession;
-      sessionSourcesRef.current[session.id] = 'campaign_sessions';
+      if (scopeRef.current !== scope) return null;
+      sessionsEpoch.current += 1;
+      const session = { ...data, status: 'active' } as CampaignSession;
       setSessions(previous => [session, ...previous.filter(item => item.id !== session.id)]);
       
       toastRef.current?.({
@@ -283,43 +283,42 @@ export function useCampaignRealtime({
       });
       
       return session;
-    } catch (err: unknown) {
+    } catch (err: any) {
       console.error('Erro ao iniciar sessão:', err);
       toastRef.current?.({
         title: 'Erro ao iniciar sessão',
-        description: 'Não foi possível iniciar a sessão. Tente novamente.',
+        description: 'A sessão não foi iniciada. Confira sua conexão e o acesso de mestre à campanha.',
         variant: 'destructive',
       });
       return null;
+    } finally {
+      startingSession.current = false;
     }
-  }, [enabled, campaignId, userId, sessions]);
+  }, [enabled, campaignId, userId, sessions, sessionsTable, schemaVersion, activeSession, scope]);
   
   /**
    * Encerra sessão
    */
   const endSession = useCallback(async (sessionId: string): Promise<boolean> => {
-    if (!enabled || !campaignId || !userId || !sessionId) return false;
+    if (!enabled || !campaignId || !userId) return false;
     try {
-      const table = sessionSourcesRef.current[sessionId];
-      if (!table) throw new Error('Sessão não carregada nesta campanha');
       const updateData = {
         status: 'completed',
         ended_at: new Date().toISOString(),
       };
       
-      // Atualiza a origem real, inclusive para sessões exclusivas de v2.
-      const { data, error } = await supabase
-        .from(table)
+      const { error } = await supabase
+        .from(sessionsTable)
         .update(updateData)
         .eq('id', sessionId)
         .eq('campaign_id', campaignId)
         .select('id')
-        .maybeSingle();
+        .single();
       
       if (error) throw error;
-      if (!data) throw new Error('A sessão não foi atualizada');
-      setSessions(previous => previous.map(session => session.id === sessionId
-        ? { ...session, ...updateData, status: 'completed' } : session));
+      if (scopeRef.current !== scope) return true;
+      sessionsEpoch.current += 1;
+      setSessions(previous => previous.map(session => session.id === sessionId ? { ...session, status: 'completed', ended_at: updateData.ended_at } : session));
       
       toastRef.current?.({
         title: 'Sessão encerrada',
@@ -327,16 +326,16 @@ export function useCampaignRealtime({
       });
       
       return true;
-    } catch (err: unknown) {
+    } catch (err: any) {
       console.error('Erro ao encerrar sessão:', err);
       toastRef.current?.({
         title: 'Erro ao encerrar sessão',
-        description: 'Não foi possível encerrar a sessão. Atualize a campanha e tente novamente.',
+        description: 'A sessão não foi encerrada. Confira sua conexão e tente novamente.',
         variant: 'destructive',
       });
       return false;
     }
-  }, [enabled, campaignId, userId]);
+  }, [enabled, campaignId, userId, sessionsTable, scope]);
   
   /**
    * Marca mensagens como lidas
@@ -350,40 +349,16 @@ export function useCampaignRealtime({
   
   // Carregamento inicial e realtime
   useEffect(() => {
-    const loadVersion = ++loadVersionRef.current;
+    messagesEpoch.current += 1;
+    sessionsEpoch.current += 1;
     setMessages([]);
     setSessions([]);
     setUnreadCount(0);
     setIsConnected(false);
-    seenMessageIdsRef.current.clear();
-    sessionSourcesRef.current = {};
-    lastReadIdRef.current = null;
-    if (!enabled || !campaignId || !userId) return;
+    if (!enabled || !campaignId) return;
     
     fetchMessages();
     fetchSessions();
-
-    /** Enriquece eventos recebidos sem duplicar cópias migradas nem os não lidos. */
-    const receiveMessage = async (newMsg: CampaignMessage) => {
-      const [profileRes, charRes] = await Promise.all([
-        supabase.from('profiles').select('display_name').eq('user_id', newMsg.user_id).limit(1),
-        newMsg.character_id
-          ? supabase.from('characters').select('name').eq('id', newMsg.character_id).limit(1)
-          : Promise.resolve({ data: [] }),
-      ]);
-      if (loadVersion !== loadVersionRef.current) return;
-      const messageWithData: CampaignMessage = {
-        ...newMsg,
-        recipient_id: newMsg.recipient_id ?? null,
-        profiles: profileRes.data?.[0] || { display_name: null },
-        characters: charRes.data?.[0] || null,
-      };
-      const alreadySeen = seenMessageIdsRef.current.has(newMsg.id);
-      seenMessageIdsRef.current.add(newMsg.id);
-      setMessages(previous => alreadySeen ? previous
-        : mergeCampaignMessages([...previous, messageWithData], []));
-      if (!alreadySeen && newMsg.user_id !== userId) setUnreadCount(previous => previous + 1);
-    };
     
     // Canal único para mensagens e sessões
     const channelName = `campaign-realtime-${campaignId}`;
@@ -393,39 +368,48 @@ export function useCampaignRealtime({
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
-        table: 'campaign_messages_v2',
+        table: messagesTable,
         filter: `campaign_id=eq.${campaignId}`,
-      }, payload => receiveMessage(payload.new as CampaignMessage))
-      // Mensagens v1 (fallback)
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'campaign_messages',
-        filter: `campaign_id=eq.${campaignId}`,
-      }, payload => receiveMessage(payload.new as CampaignMessage))
-      // Sessões v2
+      }, async (payload) => {
+        const newMsg = payload.new as CampaignMessage;
+        newMsg.message_type = readMessageType(newMsg.message_type, newMsg.metadata);
+        
+        // Busca dados adicionais - usa .limit(1) para evitar erro 406
+        const [profileRes, charRes] = await Promise.all([
+          supabase.from('profiles').select('display_name').eq('user_id', newMsg.user_id).limit(1),
+          newMsg.character_id
+            ? supabase.from('characters').select('name').eq('id', newMsg.character_id).limit(1)
+            : Promise.resolve({ data: [] }),
+        ]);
+        
+        const messageWithData: CampaignMessage = {
+          ...newMsg,
+          profiles: profileRes.data?.[0] || { display_name: null },
+          characters: charRes.data?.[0] || null,
+        };
+        if (scopeRef.current !== scope) return;
+        messagesEpoch.current += 1;
+        setMessages(prev => prev.some(message => message.id === messageWithData.id) ? prev.map(message => message.id === messageWithData.id ? messageWithData : message) : [...prev, messageWithData]);
+        
+        // Incrementa não lidas se não for do usuário atual
+        if (newMsg.user_id !== userId) {
+          setUnreadCount(prev => prev + 1);
+        }
+      })
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
-        table: 'campaign_sessions_v2',
-        filter: `campaign_id=eq.${campaignId}`,
-      }, () => fetchSessions())
-      // Sessões v1 (fallback)
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'campaign_sessions',
+        table: sessionsTable,
         filter: `campaign_id=eq.${campaignId}`,
       }, () => fetchSessions())
       .subscribe((status) => {
-        setIsConnected(status === 'SUBSCRIBED');
+        if (scopeRef.current === scope) setIsConnected(status === 'SUBSCRIBED');
       });
     
     return () => {
-      loadVersionRef.current += 1;
       supabase.removeChannel(channel);
     };
-  }, [enabled, campaignId, userId, fetchMessages, fetchSessions]);
+  }, [enabled, campaignId, userId, messagesTable, sessionsTable, scope, fetchMessages, fetchSessions]);
   
   return {
     messages,

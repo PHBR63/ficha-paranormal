@@ -266,8 +266,13 @@ describe('Realtime Sync: Buffs de Combate', () => {
   it('deve manter ordem de buffs consistente entre clientes', () => {
     const buffs = ['buff-1', 'buff-2', 'buff-3'];
     
-    const estadoMestre = createSyncedState('mestre', { activeBuffIds: [...buffs] });
-    const estadoJogador = mergeStates(createSyncedState('jogador'), estadoMestre);
+    // Mesmo personagem, atualização remota mais recente: não depender do relógio real.
+    const estadoMestre = createSyncedState('char-1', {
+      activeBuffIds: [...buffs], lastUpdated: 2000, version: 2,
+    });
+    const estadoJogador = mergeStates(
+      createSyncedState('char-1', { lastUpdated: 1000, version: 1 }), estadoMestre,
+    );
 
     // Ordem deve ser mantida
     expect(estadoJogador.activeBuffIds).toEqual(buffs);

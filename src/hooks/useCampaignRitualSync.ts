@@ -98,7 +98,7 @@ export function useCampaignRitualSync({
           setCampaignId(campaign.id);
           setIsMaster(campaign.master_id === userId);
 
-          // Busca a sessão ativa (se houver)
+          // A associação consultada é v1, cuja sessão ativa usa in_progress no SQL.
           const { data: sessionData } = await supabase
             .from('campaign_sessions')
             .select('id')

@@ -1,9 +1,10 @@
 /**
  * Catálogo de Armas - Ordem Paranormal RPG
  * 
- * Baseado EXATAMENTE no livro de regras oficial (pgs. 94-97)
+ * Catálogo baseado no livro de regras oficial (Base 1.3, p. 56–61),
+ * com itens e configurações personalizadas preservados.
  * Inclui armas corpo a corpo, à distância, de fogo e explosivos
- * Modificações conforme Tabela 3.5 (pg. 93)
+ * Modificações conforme Tabela 3.5 (p. 60–61).
  */
 
 // Tipos de dano disponíveis
@@ -139,6 +140,7 @@ export const FIREARM_MODIFICATIONS: WeaponModificationData[] = [
     description: 'A arma se torna automática.',
     applicableTo: ['firearm'],
     categoryIncrease: 1,
+    properties: ['Automática'],
     special: 'A arma se torna automática',
   },
   {
@@ -422,6 +424,11 @@ export const SIMPLE_RANGED_WEAPONS: CatalogWeapon[] = [
     ammoType: 'virotes',
     description: 'Besta mecânica. Requer virotes para disparar.',
   },
+];
+
+// ==================== ARMAS SIMPLES - DE FOGO ====================
+
+export const SIMPLE_FIREARMS: CatalogWeapon[] = [
   {
     id: 'fuzil_caca',
     name: 'Fuzil de Caça',
@@ -438,11 +445,6 @@ export const SIMPLE_RANGED_WEAPONS: CatalogWeapon[] = [
     ammoType: 'balas_longas',
     description: 'Rifle de caça de ação manual. Usado para caçar animais de grande porte.',
   },
-];
-
-// ==================== ARMAS SIMPLES - DE FOGO ====================
-
-export const SIMPLE_FIREARMS: CatalogWeapon[] = [
   {
     id: 'pistola',
     name: 'Pistola',
@@ -1054,6 +1056,13 @@ export function canApplyModification(weapon: CatalogWeapon, modId: WeaponModific
   // Verifica se o tipo da arma é compatível
   if (weapon.type === 'thrown') return false; // Explosivos não podem ser modificados
   if (weapon.category === 'especial') return false; // Armas especiais não podem ser modificadas
+
+  // Base 1.3, p. 60: Compensador exige arma automática, inclusive por Ferrolho Automático.
+  if (modId === 'compensador') {
+    const isAutomatic = weapon.properties?.some(property => /autom[aá]tica/i.test(property))
+      || weapon.appliedModifications?.includes('ferrolho_automatico');
+    if (!isAutomatic) return false;
+  }
   
   return mod.applicableTo.includes(weapon.type);
 }
@@ -1063,8 +1072,13 @@ export function getAvailableModifications(
   weapon: CatalogWeapon, 
   excludeApplied: WeaponModification[] = []
 ): WeaponModificationData[] {
+  // As modificações já instaladas também podem habilitar outra modificação.
+  const currentWeapon = {
+    ...weapon,
+    appliedModifications: [...(weapon.appliedModifications ?? []), ...excludeApplied],
+  };
   return ALL_WEAPON_MODIFICATIONS.filter(mod => 
-    canApplyModification(weapon, mod.id) && 
+    canApplyModification(currentWeapon, mod.id) &&
     !excludeApplied.includes(mod.id)
   );
 }
@@ -1129,9 +1143,22 @@ export function calculateModifiedWeaponStats(
   let range = baseWeapon.range;
   const addedProperties: string[] = [];
   const specialEffects: string[] = [];
+
+  // Considera o ferrolho instalado na mesma operação, independentemente da ordem da lista.
+  const currentWeapon = {
+    ...baseWeapon,
+    appliedModifications: [...(baseWeapon.appliedModifications ?? []), ...modifications],
+  };
+  const applicableModifications = modifications.filter(modId =>
+    modId !== 'compensador' || canApplyModification(currentWeapon, modId)
+  );
+  if (applicableModifications.length !== modifications.length) {
+    // Não reescreve melhorias/categoria de itens legados; explica por que o efeito não foi aplicado.
+    specialEffects.push('Compensador exige uma arma automática; seu efeito não foi aplicado.');
+  }
   
   // Aplica cada modificação
-  for (const modId of modifications) {
+  for (const modId of applicableModifications) {
     const mod = getWeaponModificationById(modId);
     if (!mod) continue;
     

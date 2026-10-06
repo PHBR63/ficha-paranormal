@@ -15,7 +15,8 @@ import {
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import { TRAINING_BONUS_MAP, TRAINING_LABELS } from '@/lib/character-data';
+import { SKILLS, getSkillBonus, TRAINING_LABELS } from '@/lib/character-data';
+import { getSkillTrainingLevel, normalizeSkillId } from '@/lib/skill-training';
 import { 
   getSkillAttributeAbbrev, 
   getAttributeColor,
@@ -80,7 +81,7 @@ const SkillItem = memo(function SkillItem({
             "text-sm capitalize",
             !isTrained && "text-muted-foreground"
           )}>
-            {skill.replace(/_/g, ' ')}
+            {SKILLS.find(entry => entry.id === skill)?.name ?? skill}
           </span>
           {isTrained && (
             <span className={cn(
@@ -125,37 +126,9 @@ export const MobileSkillsTab = memo(function MobileSkillsTab({
   const parentRef = useRef<HTMLDivElement>(null);
 
   // Lista completa de perícias com bônus padrão 0
-  const allSkills: Record<string, number> = useMemo(() => ({
-    // Agilidade
-    'acrobacia': skills['acrobacia'] || 0,
-    'furtividade': skills['furtividade'] || 0,
-    'pilotagem': skills['pilotagem'] || 0,
-    'pontaria': skills['pontaria'] || 0,
-    'reflexos': skills['reflexos'] || 0,
-    // Força
-    'atletismo': skills['atletismo'] || 0,
-    'luta': skills['luta'] || 0,
-    // Intelecto
-    'atualidades': skills['atualidades'] || 0,
-    'ciências': skills['ciências'] || 0,
-    'investigação': skills['investigação'] || 0,
-    'medicina': skills['medicina'] || 0,
-    'ocultismo': skills['ocultismo'] || 0,
-    'profissão': skills['profissão'] || 0,
-    'sobrevivência': skills['sobrevivência'] || 0,
-    'tática': skills['tática'] || 0,
-    'tecnologia': skills['tecnologia'] || 0,
-    // Presença
-    'artes': skills['artes'] || 0,
-    'diplomacia': skills['diplomacia'] || 0,
-    'enganação': skills['enganação'] || 0,
-    'intimidação': skills['intimidação'] || 0,
-    'intuição': skills['intuição'] || 0,
-    'percepção': skills['percepção'] || 0,
-    'vontade': skills['vontade'] || 0,
-    // Vigor
-    'fortitude': skills['fortitude'] || 0,
-  }), [skills]);
+  const allSkills: Record<string, number> = useMemo(() => Object.fromEntries(
+    SKILLS.map(skill => [skill.id, getSkillTrainingLevel(skills, skill.id)])
+  ), [skills]);
 
   // Filtrar e ordenar perícias
   const filteredSkills = useMemo(() => {
@@ -164,7 +137,7 @@ export const MobileSkillsTab = memo(function MobileSkillsTab({
     // Aplicar filtro de busca
     if (searchQuery.trim()) {
       entries = entries.filter(([skill]) =>
-        skill.toLowerCase().includes(searchQuery.toLowerCase())
+        normalizeSkillId(skill).includes(normalizeSkillId(searchQuery))
       );
     }
 
@@ -320,7 +293,7 @@ export const MobileSkillsTab = memo(function MobileSkillsTab({
                 const skillAttr = getSkillAttributeAbbrev(skill);
                 const attrColor = getAttributeColor(skillAttr);
                 // Converter nível de treinamento para bônus
-                const bonus = TRAINING_BONUS_MAP[trainingLevel] || 0;
+                const bonus = getSkillBonus(trainingLevel);
                 
                 return (
                   <SkillItem

@@ -3,8 +3,7 @@
  * Usa Drawer (vaul) para melhor UX em telas pequenas
  * Rola automaticamente ao abrir e exibe resultado com animação
  * 
- * FASE 5: Migrado para usar useSkillRollWithSUE
- * Integra automaticamente todos os bônus do SUE nas rolagens
+ * Usa o pool compartilhado e as condições canônicas, preservando bônus preparados pela tela.
  */
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
@@ -29,6 +28,8 @@ import {
 } from '@/components/ui/tooltip';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
+import { getAttributeDicePool } from '@/lib/attribute-dice-pool';
+import { getConditionTestDicePenalty, resolveConditionTestAttribute } from '@/lib/conditions/condition-test-penalty';
 import confetti from 'canvas-confetti';
 import { DiceRollResult, rollSkillTest } from '@/lib/dice-roller';
 import { 
@@ -39,7 +40,7 @@ import {
   getTrainingLevelValue,
 } from '@/components/dice/PowerActivationPanel';
 import { calculatePowerActivationEffects } from '@/lib/class-powers/activatable-powers-bridge';
-import { useSkillRollWithSUE, type SkillRollCharacterConfig } from '@/hooks/sue/useSkillRollWithSUE';
+import { type SkillRollCharacterConfig } from '@/hooks/sue/useSkillRollWithSUE';
 
 // Interface para detalhamento de bônus por origem
 export interface BonusSource {
@@ -99,6 +100,7 @@ interface MobileDiceRollModalProps {
   characterSkills?: Record<string, number>;
   // Props para integração SUE (opcional - para migração incremental)
   characterConfig?: SkillRollCharacterConfig;
+  activeConditions?: string[];
 }
 
 // Componente de dado individual
@@ -158,29 +160,13 @@ export function MobileDiceRollModal({
   characterSkills = {}, // Bônus de perícias do personagem
   // SUE Config (migração incremental)
   characterConfig,
+  activeConditions = [],
 }: MobileDiceRollModalProps) {
   // Calcula o nível de treinamento automaticamente baseado no skillBonus se não fornecido
   const effectiveTrainingLevel: SkillTrainingLevel = useMemo(() => {
     if (currentSkillTrainingLevel) return currentSkillTrainingLevel;
     return bonusToTrainingLevel(skillBonus);
   }, [currentSkillTrainingLevel, skillBonus]);
-  // Hook SUE para rolagens integradas (inicializa apenas se config disponível)
-  const defaultConfig: SkillRollCharacterConfig = useMemo(() => ({
-    characterClass: 'Especialista',
-    nex: nex,
-    attributes: {
-      agility: agility,
-      strength: strength,
-      presence: 1,
-      intellect: intellect,
-      vigor: 1,
-    },
-    skills: { [currentSkill || label]: skillBonus },
-  }), [nex, agility, strength, intellect, currentSkill, label, skillBonus]);
-  
-  const sueConfig = characterConfig || defaultConfig;
-  const { executeSkillRoll, getSkillBonusBreakdown } = useSkillRollWithSUE(sueConfig);
-  
   // === FASE DE ROLAGEM ===
   // 'preparing' = modal aberto, aguardando seleção de poderes
   // 'rolling' = animação de dados
@@ -295,7 +281,11 @@ export function MobileDiceRollModal({
     return attributeValue;
   }, [activatedPowerEffects.skillSwap, activatedPowerEffects.attributeSwap, intellect, strength, agility, presence, vigor, attributeValue]);
   
-  const diceCount = effectiveAttribute <= 0 ? 2 : effectiveAttribute;
+  const testedSkill = activatedPowerEffects.skillSwap || currentSkill || label;
+  const testedAttribute = resolveConditionTestAttribute(testedSkill, SKILL_ATTRIBUTE_MAP, activatedPowerEffects.attributeSwap);
+  const dicePenalty = getConditionTestDicePenalty(characterConfig?.activeConditions ?? activeConditions, testedAttribute as keyof SkillRollCharacterConfig['attributes'], testedSkill);
+  const dicePool = getAttributeDicePool(effectiveAttribute > 0 ? effectiveAttribute + extraDice : effectiveAttribute, dicePenalty);
+  const diceCount = dicePool.count;
 
   // Função para executar a rolagem
   const executeRoll = useCallback(() => {
@@ -353,6 +343,7 @@ export function MobileDiceRollModal({
         
         const rollResult = rollSkillTest({
           attributeValue: finalAttribute,
+          dicePenalty,
           skillBonus: totalBonus,
           extraDice,  // Passa dados extras do Discurso Motivador
           label,
@@ -381,7 +372,7 @@ export function MobileDiceRollModal({
         onRollComplete?.(rollResult);
       }
     }, 80);
-  }, [attributeValue, skillBonus, effectiveSkillBonus, resistanceBonus, extraDice, activatedPowerEffects, label, diceCount, onRollComplete, getTotalPECost, onPEChange, peCurrent, intellect, strength, agility, presence, vigor]);
+  }, [dicePenalty, attributeValue, skillBonus, effectiveSkillBonus, resistanceBonus, extraDice, activatedPowerEffects, label, diceCount, onRollComplete, getTotalPECost, onPEChange, peCurrent, intellect, strength, agility, presence, vigor]);
 
   // Handler para iniciar a rolagem (clique no botão "Rolar Dados")
   const handleStartRoll = useCallback(() => {
@@ -438,7 +429,7 @@ export function MobileDiceRollModal({
             </MobileDrawerTitle>
           </div>
           <MobileDrawerDescription className="text-xs">
-            {attributeValue <= 0 
+            {dicePool.keep === 'lowest'
               ? `Desvantagem: ${diceCount}d20, pega o menor`
               : `Pool de ${diceCount}d20, pega o maior`
             }

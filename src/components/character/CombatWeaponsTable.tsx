@@ -90,6 +90,7 @@ interface CombatWeaponsTableProps {
   
   // NOVO: Efeitos consolidados do Sistema Unificado de Efeitos (SUE)
   unifiedEffects?: ComputedEffects;
+  activeConditions?: string[];
   
   // NOVO: Efeitos excluídos por stacking (SUE Hardening)
   excludedEffects?: Array<{
@@ -156,6 +157,7 @@ export function CombatWeaponsTable({
   classPowerBonuses,
   // NOVO: Efeitos consolidados do SUE
   unifiedEffects,
+  activeConditions = [],
   // NOVO: Efeitos excluídos por stacking (SUE Hardening)
   excludedEffects = [],
   // NOVO: Bônus condicionais ativos
@@ -387,6 +389,7 @@ export function CombatWeaponsTable({
           nex={nex || 5}
           classPowerBonuses={classPowerBonuses}
           unifiedEffects={unifiedEffects}
+          activeConditions={activeConditions}
           excludedEffects={excludedEffects}
           weaponBuffs={weaponBuffs}
           isFavoriteWeapon={selectedWeapon?.isFavoriteWeapon || false}

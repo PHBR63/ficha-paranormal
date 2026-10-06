@@ -11,9 +11,11 @@
  * - useResistanceRollWithSUE (resistências)
  * - useRitualDamageWithSUE (dano de rituais)
  * 
- * Este módulo é mantido para rolagens SIMPLES sem contexto de personagem
- * (chat de campanha, comandos /r) onde bônus automáticos não são necessários.
+ * Este módulo atende chat e fluxos legados de modal com bônus pré-calculados.
+ * Os modais passam as penalidades de condições separadamente para o pool compartilhado.
  */
+
+import { getAttributeDicePool } from './attribute-dice-pool';
 
 export interface DiceRollResult {
   dice: number[];
@@ -32,6 +34,8 @@ export interface DiceRollResult {
 
 export interface SkillTestParams {
   attributeValue: number;
+  /** Penalidade positiva em quantidade de d20, separada dos bônus numéricos. */
+  dicePenalty?: number;
   skillBonus: number;
   otherBonuses?: number;
   extraDice?: number;           // Dados extras ao pool (ex: Discurso Motivador +1d20)
@@ -85,6 +89,7 @@ function rollDice(count: number, sides: number): number[] {
  * 
  * - Se atributo > 0: rola N d20 e pega o MAIOR
  * - Se atributo == 0: rola 2d20 e pega o MENOR (desvantagem)
+ * - Se atributo < 0: rola 2 + valor absoluto do atributo e pega o MENOR
  * 
  * @deprecated Para rolagens com bônus de personagem, use useSkillRollWithSUE.
  * Esta função é mantida para rolagens simples (chat, comandos /r).
@@ -92,6 +97,7 @@ function rollDice(count: number, sides: number): number[] {
 export function rollSkillTest(params: SkillTestParams): DiceRollResult {
   const { 
     attributeValue, 
+    dicePenalty = 0,
     skillBonus, 
     otherBonuses = 0, 
     extraDice = 0,  // Dados extras (Discurso Motivador, etc.)
@@ -99,22 +105,11 @@ export function rollSkillTest(params: SkillTestParams): DiceRollResult {
     criticalThreshold = 20 
   } = params;
   
-  let dice: number[];
-  let keptDice: number;
-  let isDisadvantage = false;
-
-  if (attributeValue <= 0) {
-    // Regra do Zero: rola 2d20 e pega o MENOR
-    // IMPORTANTE: Dados extras são IGNORADOS na Regra do Zero (conforme regras oficiais)
-    dice = [rollD20(), rollD20()];
-    keptDice = Math.min(...dice);
-    isDisadvantage = true;
-  } else {
-    // Pool normal: rola (atributo + dados extras) d20 e pega o MAIOR
-    const totalDice = attributeValue + extraDice;
-    dice = Array.from({ length: totalDice }, () => rollD20());
-    keptDice = Math.max(...dice);
-  }
+  // Conserva a política legada de dados extras para atributo não positivo.
+  const pool = getAttributeDicePool(attributeValue > 0 ? attributeValue + extraDice : attributeValue, dicePenalty);
+  const dice = rollDice(pool.count, 20);
+  const isDisadvantage = pool.keep === 'lowest';
+  const keptDice = isDisadvantage ? Math.min(...dice) : Math.max(...dice);
 
   const total = keptDice + skillBonus + otherBonuses;
   const isCritical = keptDice >= criticalThreshold;
@@ -233,19 +228,11 @@ export const TRAINING_BONUS = {
   'Expert': 15,
 } as const;
 
-// Limite de PE por turno baseado no NEX (sem bônus de origem)
+/** Limite por turno da tabela de progressão, Livro Base v1.3 p.23; sem bônus de origem. */
 export function getPELimitByNex(nex: number): number {
-  if (nex <= 5) return 1;
-  if (nex <= 15) return 2;
-  if (nex <= 25) return 3;
-  if (nex <= 35) return 4;
-  if (nex <= 45) return 5;
-  if (nex <= 55) return 6;
-  if (nex <= 65) return 8;
-  if (nex <= 75) return 10;
-  if (nex <= 85) return 12;
-  if (nex <= 95) return 15;
-  return 20;
+  if (!Number.isFinite(nex)) return 1;
+  if (nex >= 99) return 20;
+  return Math.max(1, Math.floor(nex / 5));
 }
 
 /**

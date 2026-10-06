@@ -14,7 +14,9 @@ import type {
   AttackRollAction,
   LogEvent,
 } from '../types';
-import { getSUEBonusesForCharacter, type SUEComputedForRulesEngine } from '../sue-bridge';
+import { getSUEBonusesForCharacter } from '../sue-bridge';
+import { rollAttributeDicePool } from '../../attribute-dice-pool';
+import { getTestDicePenalty } from '../sue-bridge';
 
 // =====================================================
 // TIPOS
@@ -160,7 +162,7 @@ export function rollAttackWithContext(context: AttackRollContext): DetailedAttac
   let totalSUEBonus = 0;
   
   // Bônus geral de ataque
-  if (sueComputed.attackBonus > 0) {
+  if (sueComputed.attackBonus !== 0) {
     totalSUEBonus += sueComputed.attackBonus;
     sueBonusSources.push({
       name: 'Poderes',
@@ -170,7 +172,7 @@ export function rollAttackWithContext(context: AttackRollContext): DetailedAttac
   }
   
   // Bônus específico por tipo de arma
-  if (weapon.attackSkill === 'luta' && sueComputed.meleeAttackBonus > 0) {
+  if (weapon.attackSkill === 'luta' && sueComputed.meleeAttackBonus !== 0) {
     totalSUEBonus += sueComputed.meleeAttackBonus;
     sueBonusSources.push({
       name: 'Ataque Corpo a Corpo',
@@ -179,7 +181,7 @@ export function rollAttackWithContext(context: AttackRollContext): DetailedAttac
     });
   }
   
-  if (weapon.attackSkill === 'pontaria' && sueComputed.rangedAttackBonus > 0) {
+  if (weapon.attackSkill === 'pontaria' && sueComputed.rangedAttackBonus !== 0) {
     totalSUEBonus += sueComputed.rangedAttackBonus;
     sueBonusSources.push({
       name: 'Ataque à Distância',
@@ -191,7 +193,7 @@ export function rollAttackWithContext(context: AttackRollContext): DetailedAttac
   // Bônus de buffs temporários da arma
   if (weapon.temporaryBuffs) {
     for (const buff of weapon.temporaryBuffs) {
-      if (buff.bonusAttack && buff.bonusAttack > 0) {
+      if (buff.bonusAttack !== undefined && buff.bonusAttack !== 0) {
         totalSUEBonus += buff.bonusAttack;
         sueBonusSources.push({
           name: buff.sourceName,
@@ -202,22 +204,12 @@ export function rollAttackWithContext(context: AttackRollContext): DetailedAttac
     }
   }
   
-  // 6. Calcular total de modificadores
-  const totalModifiers = attributeValue + skillBonus + totalSUEBonus + manualModifiers;
-  
-  // 7. Rolar d20 (considerando pool de dados por atributo positivo/negativo)
-  const dicePool = Math.abs(attributeValue) + 1;
-  const useHighest = attributeValue >= 0;
-  const diceResults: number[] = [];
-  
-  for (let i = 0; i < dicePool; i++) {
-    diceResults.push(rollD20());
-  }
-  
-  const keptDice = useHighest 
-    ? Math.max(...diceResults) 
-    : Math.min(...diceResults);
-  
+  // O atributo define o pool; treinamento e bônus numéricos entram apenas no total.
+  const dicePenalty = getTestDicePenalty(sueComputed.rawSUE, skillName, attackAttribute, weapon.attackSkill === 'luta' ? 'melee' : 'ranged');
+  const pool = rollAttributeDicePool(attributeValue, dicePenalty);
+  const diceResults = pool.dice;
+  const keptDice = pool.kept;
+
   // 8. Calcular margem de ameaça (crítico)
   let criticalThreshold = weapon.criticalMargin;
   if (sueComputed.criticalMarginBonus > 0) {
@@ -236,6 +228,7 @@ export function rollAttackWithContext(context: AttackRollContext): DetailedAttac
   
   // 12. Construir resultado
   const roll: RollResult = {
+    isDisadvantage: pool.keep === 'lowest',
     diceRolled: diceResults,
     diceKept: [keptDice],
     baseValue: attributeValue,

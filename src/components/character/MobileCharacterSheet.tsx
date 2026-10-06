@@ -29,6 +29,7 @@ import { hasInventarioOtimizado, calculateCarryCapacity } from '@/lib/inventory-
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { ORIGINS, getTrackById, getSkillBonus, getTrainingLabel } from '@/lib/character-data';
+import { getSkillTrainingBonus, normalizeSkillId } from '@/lib/skill-training';
 import { PowerDetailModal, PowerDetailData } from './PowerDetailModal';
 import { ALL_RITUALS, getActiveRitualEffect, Ritual, SustainConfig } from '@/lib/rituals/legacy-exports';
 import { 
@@ -135,8 +136,8 @@ import {
   getItemIcon,
 } from './mobile/utils';
 
-// Inferência de tipo de arma (corrige pistola como corpo a corpo)
-import { normalizeWeaponTypeForDisplay } from '@/lib/weapon-type-inference';
+// Conversão do inventário para o contrato compartilhado pelo painel e modal de combate.
+import { toMobileWeaponEntry } from './mobile/weapon-entry';
 import { VersatilityAbilityCard } from './VersatilityAbilityCard';
 
 import { useWeaponBuffs, useUnifiedEffects, useRoundTracking, useActivatedEffects } from '@/hooks';
@@ -192,6 +193,8 @@ interface MobileCharacterSheetProps {
       range?: string;
       special?: string;
       ammoType?: string;
+      ammoCurrent?: number;
+      ammoMax?: number;
       weaponType?: string;
       proficiency?: string;
       properties?: string[];
@@ -803,6 +806,8 @@ export function MobileCharacterSheet({
       range: item.range,
       special: item.special,
       ammoType: item.ammoType,
+      ammoCurrent: item.ammoCurrent,
+      ammoMax: item.ammoMax,
       weaponType: item.weaponType,
       proficiency: item.proficiency,
       properties: item.properties,
@@ -889,44 +894,11 @@ export function MobileCharacterSheet({
   });
 
   // Lista de armas equipadas para o painel de combate
-  // Usa normalizeWeaponTypeForDisplay para inferir corretamente o tipo de arma
+  // Mantém margens de crítico e munição nos campos lidos pelos consumidores.
   const equippedWeapons: WeaponEntry[] = useMemo(() => {
     return normalizedInventory
       .filter(item => item.itemType === 'weapon' && item.isEquipped)
-      .map(item => {
-        const weaponData = (item as any);
-        // Usa inferência inteligente para classificar a arma corretamente
-        const displayType = normalizeWeaponTypeForDisplay({
-          weaponType: weaponData.weaponType,
-          ammoType: weaponData.ammoType,
-          range: weaponData.range,
-          properties: weaponData.properties,
-          damageType: weaponData.damageType,
-        });
-        
-        // Detecta se a arma é a favorita do Aniquilador
-        const isFavoriteWeapon = !!(weaponData.favoriteAbilityId);
-        
-        // Normaliza criticalMultiplier para string (ex: 'x2', 'x3')
-        const normalizedCritMultiplier = typeof weaponData.criticalMultiplier === 'number'
-          ? `x${weaponData.criticalMultiplier}`
-          : weaponData.criticalMultiplier || 'x2';
-        
-        return {
-          id: item.id,
-          name: item.name,
-          type: displayType,
-          damage: weaponData.damage || '1d6',
-          damageType: weaponData.damageType, // Tipo de dano (Balístico, Corte, etc.)
-          criticalRange: weaponData.criticalRange || 20,
-          criticalMultiplier: normalizedCritMultiplier,
-          range: weaponData.range,
-          ammo: weaponData.ammo,
-          maxAmmo: weaponData.maxAmmo,
-          ammoType: weaponData.ammoType,
-          isFavoriteWeapon,
-        };
-      });
+      .map(toMobileWeaponEntry);
   }, [normalizedInventory]);
 
   // Handler para abrir combate com arma
@@ -966,7 +938,7 @@ export function MobileCharacterSheet({
 
   // Handler para rolagem de perícia (abre modal de dados)
   const handleSkillRoll = useCallback((skillName: string) => {
-    const trainingBonus = character.skills?.[skillName.toLowerCase()] || 0;
+    const trainingBonus = getSkillTrainingBonus(character.skills || {}, skillName);
     const skillAttr = getSkillAttributeAbbrev(skillName);
     const attrValue = {
       'AGI': character.agility,
@@ -974,7 +946,7 @@ export function MobileCharacterSheet({
       'INT': character.intellect,
       'PRE': character.presence,
       'VIG': character.vigor,
-    }[skillAttr] || 1;
+    }[skillAttr] ?? 1;
     
     // Detectar atributo sendo testado para filtrar poderes ativáveis (paridade desktop)
     const attrMap: Record<string, 'agility' | 'intellect' | 'strength' | 'presence' | 'vigor'> = {
@@ -986,23 +958,15 @@ export function MobileCharacterSheet({
     };
     // CORREÇÃO: Define o skillId para filtrar poderes ativáveis (ex: Desbravador, Saber é Poder)
     // Antes passava apenas o atributo, agora passa o ID real da perícia
-    const skillKey = skillName.toLowerCase().replace(/\s+/g, '-');
+    const skillKey = normalizeSkillId(skillName);
     setRollTestedAttribute(skillKey as typeof rollTestedAttribute);
-    const classPowerBonus = bonusSummary?.skills?.[skillKey]?.total || 0;
+    const classPowerBonus = skillKey === 'iniciativa'
+      ? bonusSummary.combat.initiative.total
+      : bonusSummary.skills[skillKey]?.total ?? 0;
     
     
-    // Busca bônus do SUE para esta perícia (efeitos ativos)
-    let sueSkillBonus = 0;
-    if (unifiedEffects?.computed?.skills) {
-      const skillsMap = unifiedEffects.computed.skills;
-      const normalizedKey = skillName.toLowerCase();
-      if (skillsMap[normalizedKey] && typeof skillsMap[normalizedKey] === 'number') {
-        sueSkillBonus = skillsMap[normalizedKey] as number;
-      }
-    }
-    
-    // Total de bônus = treinamento + poderes de classe + SUE
-    const totalSkillBonus = trainingBonus + classPowerBonus + sueSkillBonus;
+    // O resumo já contém o SUE: aplicá-lo novamente duplicaria as fontes.
+    const totalSkillBonus = trainingBonus + classPowerBonus;
     
     // Verifica se aplica +1d20 de "Primeira Impressão" (Especialista)
     // Se for o primeiro teste de Diplomacia/Enganação/Intimidação/Intuição na cena
@@ -1013,7 +977,7 @@ export function MobileCharacterSheet({
     if (trainingBonus > 0) {
       bonusSources.push({ label: 'Treinamento', value: trainingBonus, type: 'skill' as const });
     }
-    if (classPowerBonus > 0) {
+    if (classPowerBonus !== 0) {
       const powerSourceName = bonusSummary?.skills?.[skillKey]?.breakdown?.[0]?.source || 'Poder de Classe';
       bonusSources.push({ 
         label: 'Poder de Classe', 
@@ -1021,9 +985,6 @@ export function MobileCharacterSheet({
         type: 'power' as const,
         sourceName: powerSourceName,
       });
-    }
-    if (sueSkillBonus > 0) {
-      bonusSources.push({ label: 'Efeitos Ativos', value: sueSkillBonus, type: 'other' as const });
     }
     // Adiciona fonte de "Primeira Impressão" se aplicável
     if (primeiraImpressaoBonus > 0) {
@@ -1042,7 +1003,7 @@ export function MobileCharacterSheet({
       bonusSources: bonusSources.filter(b => b.value !== 0),
     });
     setDiceModalOpen(true);
-  }, [character, unifiedEffects, bonusSummary, primeiraImpressao]);
+  }, [character, bonusSummary, primeiraImpressao]);
 
   // Handler para abrir modal de conjuração de ritual
   const handleOpenRitualModal = useCallback((ritualId: string) => {
@@ -1686,7 +1647,11 @@ export function MobileCharacterSheet({
       });
     
     // Usa o total já calculado pelo SUE (não precisa somar manualmente)
-    const totalBonus = bonusSummary.combat.initiative.total;
+    const trainingBonus = getSkillTrainingBonus(character.skills || {}, 'iniciativa');
+    if (trainingBonus !== 0) {
+      bonusSources.unshift({ label: 'Treinamento', value: trainingBonus, type: 'skill' });
+    }
+    const totalBonus = bonusSummary.combat.initiative.total + trainingBonus;
     
     setDiceModalConfig({
       skillName: 'Iniciativa',
@@ -1695,7 +1660,7 @@ export function MobileCharacterSheet({
       bonusSources,
     });
     setDiceModalOpen(true);
-  }, [character.agility, bonusSummary.combat.initiative]);
+  }, [character.agility, character.skills, bonusSummary.combat.initiative]);
 
   // Handler para atualizar condições (converte ActiveCondition[] para formato do banco)
   const handleConditionsChange = useCallback(async (newConditions: ActiveCondition[]) => {
@@ -2567,7 +2532,8 @@ export function MobileCharacterSheet({
           setRollTestedAttribute(undefined);
         }}
         label={diceModalConfig?.skillName || 'Rolagem'}
-        attributeValue={diceModalConfig?.pool || 1}
+        attributeValue={diceModalConfig?.pool ?? 1}
+        activeConditions={activeConditions.map(condition => condition.id)}
         skillBonus={diceModalConfig?.bonus}
         extraDice={globalDiceBonus}
         bonusSources={diceModalConfig?.bonusSources}
@@ -2639,6 +2605,7 @@ export function MobileCharacterSheet({
           abilities={character.abilities}
           nex={character.nex}
           unifiedEffects={unifiedEffects?.computed}
+          activeConditions={activeConditions.map(condition => condition.id)}
           excludedEffects={unifiedEffects?.hardening?.excludedEffects || []}
           weaponBuffs={weaponBuffs}
           paranormalPowers={character.paranormal_powers?.map(p => ({

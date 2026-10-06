@@ -425,14 +425,14 @@ export const MobileOverviewTab = memo(function MobileOverviewTab({
                     </motion.span>
                   </AnimatePresence>
                   <AnimatePresence>
-                    {bonusSummary.defense?.total > 0 && (
+                    {bonusSummary.defense?.total !== 0 && (
                       <motion.span 
                         initial={{ opacity: 0, x: -3 }}
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: -3 }}
-                        className="text-[9px] text-success"
+                        className={cn('text-[9px]', bonusSummary.defense.total > 0 ? 'text-success' : 'text-destructive')}
                       >
-                        (+{bonusSummary.defense.total})
+                        ({bonusSummary.defense.total > 0 ? '+' : ''}{bonusSummary.defense.total})
                       </motion.span>
                     )}
                   </AnimatePresence>

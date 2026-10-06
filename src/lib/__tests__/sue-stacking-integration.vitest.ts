@@ -181,10 +181,8 @@ describe('SUE Stacking: Mesma Fonte - Maior Prevalece', () => {
 
     const result = consolidateEffects(effects, createStackingContext());
 
-    // Nota: O engine atual SOMA perícias de qualquer fonte
-    // Este teste documenta o comportamento atual
-    // TODO: Implementar regra de não-acúmulo para rituais
-    expect(result.skills['percepcao']?.bonus).toBe(8); // Atualmente soma: 3 + 5
+    // Livro Base v1.3, p. 312: rituais não acumulam.
+    expect(result.skills['percepcao']?.bonus).toBe(5);
   });
 
   it('deve usar MAIOR bônus de defesa quando dois rituais concedem defesa', () => {
@@ -196,9 +194,7 @@ describe('SUE Stacking: Mesma Fonte - Maior Prevalece', () => {
 
     const result = consolidateEffects(effects, createStackingContext());
 
-    // Comportamento atual: soma
-    // Comportamento esperado (regra): maior (5)
-    expect(result.defense.general).toBe(8); // Documenta comportamento atual
+    expect(result.defense.general).toBe(5); // Maior bônus de ritual.
   });
 
   it('deve usar MAIOR bônus de PV temporário (não acumula)', () => {
@@ -223,9 +219,7 @@ describe('SUE Stacking: Mesma Fonte - Maior Prevalece', () => {
 
     const result = consolidateEffects(effects, createStackingContext());
 
-    // Comportamento atual: soma
-    // Comportamento esperado: maior (2)
-    expect(result.attack.general).toBe(3); // Documenta comportamento atual
+    expect(result.attack.general).toBe(2); // Maior bônus de item.
   });
 });
 

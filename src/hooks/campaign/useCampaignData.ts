@@ -68,6 +68,7 @@ interface UseCampaignDataProps {
 
 // Retorno do hook
 export interface UseCampaignDataReturn {
+  schemaVersion: 'v1' | 'v2' | null;
   campaign: CampaignV2 | null;
   members: CampaignMemberV2[];
   isMaster: boolean;
@@ -88,6 +89,7 @@ export function useCampaignData({
   
   // Estado principal
   const [campaign, setCampaign] = useState<CampaignV2 | null>(null);
+  const [schemaVersion, setSchemaVersion] = useState<'v1' | 'v2' | null>(null);
   const [members, setMembers] = useState<CampaignMemberV2[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -127,6 +129,7 @@ export function useCampaignData({
         if (v1Error || !campaignV1) throw v1Error || new Error('Campanha não encontrada');
         
         // Adapta dados v1 para interface v2
+        setSchemaVersion('v1');
         setCampaign({
           ...campaignV1,
           status: campaignV1.status as CampaignV2['status'],
@@ -139,6 +142,7 @@ export function useCampaignData({
       }
       
       setCampaign(campaignData as CampaignV2);
+      setSchemaVersion('v2');
       
       // 2. Fetch membros v2 com join em characters
       const { data: membersRaw, error: membersError } = await supabase
@@ -269,6 +273,7 @@ export function useCampaignData({
   }, [campaignId, userId, refetch]);
   
   return {
+    schemaVersion,
     campaign,
     members,
     isMaster,

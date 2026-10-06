@@ -3,7 +3,7 @@
  * 
  * Implementa o fluxo completo de conjuração conforme PDF p.129-132:
  * 1. Validações (mão livre, componentes, ação, limite PE, círculo, afinidade)
- * 2. Custo de PE (base + aprimoramentos, x2 se não-ocultista)
+ * 2. Custo de PE (base + um aprimoramento)
  * 3. Concentração (teste de Vontade se sofrer dano durante execução)
  * 4. Custo do Paranormal:
  *    - Elementos não-Medo: teste Ocultismo DT 20+custo, falha perde SAN=custo, falha 5+ perde 1 SAN permanente
@@ -14,7 +14,8 @@
  * @module ritual-casting-engine
  */
 
-import { getRitualById, calculateRitualCost, getEffectiveLevel } from './ritual-registry';
+import { getRitualById, calculateRitualCost, getEffectiveLevel, getRitualEffect } from './ritual-registry';
+import { rollAttributeDicePool } from '../attribute-dice-pool';
 import type { UnifiedRitual, RitualMechanics } from './types';
 
 // ========================================
@@ -54,7 +55,8 @@ export interface CastRitualResult {
   permanentSanityLost: number;  // Sanidade permanente perdida
   
   // Testes realizados
-  concentrationTest?: CastingTestResult;  // Teste de Vontade (se sofreu dano)
+  concentrationTest?: CastingTestResult;  // Último teste, para consumidores antigos
+  concentrationTests?: CastingTestResult[]; // Testes distintos por proteção e dano
   occultismTest?: CastingTestResult;      // Teste de Ocultismo (Custo do Paranormal)
   
   // Efeitos aplicados (se sucesso)
@@ -87,7 +89,7 @@ export interface CastRitualParams {
     intellect: number;        // Atributo Intelecto (para pool de dados de Ocultismo)
     
     // Configurações
-    isOccultist: boolean;     // Se é Ocultista (custo normal) ou não (custo x2)
+    isOccultist: boolean;     // Classe de conjuração; não altera o custo base
     maxCircle: number;        // Círculo máximo permitido pelo NEX
     elementalAffinity?: string; // Afinidade elemental (se houver)
     
@@ -143,17 +145,7 @@ const FEAR_PERMANENT_SAN_LOSS = {
  * @returns O maior valor rolado (ou menor se atributo <= 0)
  */
 function rollDicePool(attributeValue: number): number {
-  if (attributeValue <= 0) {
-    // Regra do Zero: 2d20, pega o menor
-    const dice = [Math.floor(Math.random() * 20) + 1, Math.floor(Math.random() * 20) + 1];
-    return Math.min(...dice);
-  }
-  
-  // Pool normal: rola N d20, pega o maior
-  const dice = Array.from({ length: attributeValue }, () => 
-    Math.floor(Math.random() * 20) + 1
-  );
-  return Math.max(...dice);
+  return rollAttributeDicePool(attributeValue).kept;
 }
 
 /**
@@ -206,9 +198,9 @@ function validateCasting(
     errors.push(`PE insuficiente: custo ${peCost}, você tem ${characterState.peCurrent}`);
   }
   
-  // 3. Verifica mão livre (exceto Medo que não requer gestos)
+  // Gestos exigem mão livre, inclusive em Medo (Livro Base, p.119).
   const isFearElement = ritual.element.toLowerCase() === 'medo';
-  if (!isFearElement && !characterState.hasFreeHand) {
+  if (!characterState.hasFreeHand) {
     errors.push('Requer uma mão livre para realizar gestos');
   }
   
@@ -217,12 +209,18 @@ function validateCasting(
     errors.push('Requer componentes ritualísticos');
   }
   
+  if (selectedEnhancements.length > 1) errors.push('Selecione apenas um aprimoramento');
+
   // 5. Verifica requisitos de aprimoramentos
   for (const enhName of selectedEnhancements) {
     const enh = ritual.enhancements?.find(e => 
       e.name.toLowerCase() === enhName.toLowerCase()
     );
     
+    if (!enh) {
+      errors.push(`Aprimoramento desconhecido: ${enhName}`);
+      continue;
+    }
     if (enh) {
       // Verifica círculo do aprimoramento
       if (enh.circleReq && enh.circleReq > characterState.maxCircle) {
@@ -249,7 +247,8 @@ function validateCasting(
 
 /**
  * Executa a conjuração completa de um ritual
- * Implementa todas as regras do Livro Base v1.3 (PDF p.129-132)
+ * Calcula validações, concentração e custo paranormal (Livro Base, pp.119–121).
+ * A integração com recursos e sustentação pertence aos consumidores.
  * 
  * @param params - Parâmetros de conjuração
  * @returns Resultado completo da conjuração
@@ -279,12 +278,12 @@ export function castRitual(params: CastRitualParams): CastRitualResult {
   }
   
   const level = getEffectiveLevel(selectedEnhancements);
-  const peCost = calculateRitualCost(ritual, selectedEnhancements, !characterState.isOccultist);
+  const peCost = calculateRitualCost(ritual, selectedEnhancements);
   const isFearElement = ritual.element.toLowerCase() === 'medo';
   
   breakdown.push(`Ritual: ${ritual.name} (${ritual.element}, ${ritual.circle}º círculo)`);
   breakdown.push(`Nível: ${level === 'base' ? 'Base' : level.charAt(0).toUpperCase() + level.slice(1)}`);
-  breakdown.push(`Custo: ${peCost} PE${!characterState.isOccultist ? ' (x2 não-ocultista)' : ''}`);
+  breakdown.push(`Custo: ${peCost} PE`);
   
   // ========================================
   // ETAPA 1: VALIDAÇÕES
@@ -312,9 +311,16 @@ export function castRitual(params: CastRitualParams): CastRitualResult {
   // ========================================
   let concentrationTest: CastingTestResult | undefined;
   
-  if (characterState.damageTakenDuringCast && characterState.damageTakenDuringCast > 0) {
-    const concentrationDT = CONCENTRATION_BASE_DT + 
-      (characterState.armorType === 'pesada' ? CONCENTRATION_HEAVY_ARMOR_BONUS : 0);
+  // Cada impedimento tem seu teste: proteção (15/20 + PE) e dano (DT = dano).
+  const concentrationDTs: number[] = [];
+  const concentrationTests: CastingTestResult[] = [];
+  if (characterState.armorType === 'leve' || characterState.armorType === 'pesada') {
+    concentrationDTs.push(getConcentrationDT(characterState.armorType, peCost));
+  }
+  if ((characterState.damageTakenDuringCast ?? 0) > 0) {
+    concentrationDTs.push(characterState.damageTakenDuringCast!);
+  }
+  for (const concentrationDT of concentrationDTs) {
     
     concentrationTest = performTest(
       characterState.presence,
@@ -323,6 +329,7 @@ export function castRitual(params: CastRitualParams): CastRitualResult {
       rollOptions?.preRolledWillpower?.diceResult
     );
     
+    concentrationTests.push(concentrationTest);
     breakdown.push(`Teste de Concentração (Vontade): ${concentrationTest.total} vs DT ${concentrationDT}`);
     
     if (!concentrationTest.success) {
@@ -339,6 +346,7 @@ export function castRitual(params: CastRitualParams): CastRitualResult {
         sanityLost: 0,
         permanentSanityLost: 0,
         concentrationTest,
+        concentrationTests,
         breakdown,
         errors: ['Falha no teste de Vontade - ritual interrompido, PE perdido'],
       };
@@ -392,8 +400,7 @@ export function castRitual(params: CastRitualParams): CastRitualResult {
   // ========================================
   // ETAPA 4: APLICAR EFEITOS DO RITUAL
   // ========================================
-  // Importa dinamicamente para evitar dependência circular
-  const { getRitualEffect } = require('./ritual-registry');
+  // O registro já é uma dependência deste módulo; usa a mesma importação ESM.
   const appliedEffects = getRitualEffect(ritualId, selectedEnhancements);
   
   if (appliedEffects) {
@@ -415,6 +422,7 @@ export function castRitual(params: CastRitualParams): CastRitualResult {
     sanityLost,
     permanentSanityLost,
     concentrationTest,
+    concentrationTests,
     occultismTest,
     appliedEffects,
     breakdown,
@@ -436,8 +444,8 @@ export function getOccultismDT(peCost: number): number {
 /**
  * Calcula DT de Concentração
  */
-export function getConcentrationDT(armorType: 'none' | 'leve' | 'pesada' = 'none'): number {
-  return CONCENTRATION_BASE_DT + (armorType === 'pesada' ? CONCENTRATION_HEAVY_ARMOR_BONUS : 0);
+export function getConcentrationDT(armorType: 'none' | 'leve' | 'pesada' = 'none', peCost = 0): number {
+  return CONCENTRATION_BASE_DT + peCost + (armorType === 'pesada' ? CONCENTRATION_HEAVY_ARMOR_BONUS : 0);
 }
 
 /**

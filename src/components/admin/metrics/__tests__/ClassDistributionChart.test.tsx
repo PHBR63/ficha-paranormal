@@ -4,10 +4,21 @@
  * Valida renderização do gráfico de distribuição de classes
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+import { cloneElement, type ReactElement } from 'react';
 import { render } from '@testing-library/react';
 import { ClassDistributionChart } from '../ClassDistributionChart';
 import type { ClassDistribution } from '../AdminMetricsDashboard';
+
+// jsdom não mede layout. Fornece dimensões sem substituir o gráfico real ou seus rótulos.
+vi.mock('recharts', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('recharts')>();
+  return {
+    ...actual,
+    ResponsiveContainer: ({ children }: { children: ReactElement<{ width: number; height: number }> }) =>
+      cloneElement(children, { width: 400, height: 300 }),
+  };
+});
 
 describe('ClassDistributionChart', () => {
   describe('Renderização', () => {
@@ -65,7 +76,7 @@ describe('ClassDistributionChart', () => {
   });
 
   describe('Cálculos', () => {
-    it('deve calcular percentuais corretamente', () => {
+    it('deve calcular percentuais corretamente', async () => {
       // Total = 100, então cada classe deve ter seu percentual exato
       const data: ClassDistribution[] = [
         { class: 'Combatente', count: 50 }, // 50%
@@ -73,11 +84,14 @@ describe('ClassDistributionChart', () => {
         { class: 'Ocultista', count: 20 } // 20%
       ];
 
-      const { container } = render(<ClassDistributionChart data={data} />);
+      const { container, findByText } = render(<ClassDistributionChart data={data} />);
 
       // O gráfico deve estar presente
       const chart = container.querySelector('.recharts-wrapper');
       expect(chart).toBeInTheDocument();
+      expect(await findByText('Combatente (50.0%)', {}, { timeout: 3000 })).toBeInTheDocument();
+      expect(await findByText('Especialista (30.0%)')).toBeInTheDocument();
+      expect(await findByText('Ocultista (20.0%)')).toBeInTheDocument();
     });
   });
 

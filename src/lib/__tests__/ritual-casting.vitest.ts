@@ -300,10 +300,10 @@ describe('Concentração em Rituais (PDF p.129)', () => {
     const result = castRitual(params);
 
     expect(result.concentrationTest).toBeDefined();
-    expect(result.concentrationTest?.dt).toBe(15);
+    expect(result.concentrationTest?.dt).toBe(5);
   });
 
-  it('proteção pesada deve aumentar DT em +5', () => {
+  it('proteção pesada exige teste separado com DT 20 + PE', () => {
     const params = createBaseParams({
       characterState: {
         ...createBaseParams().characterState,
@@ -311,21 +311,29 @@ describe('Concentração em Rituais (PDF p.129)', () => {
         armorType: 'pesada',
       },
       rollOptions: {
-        preRolledWillpower: { diceResult: 15 },
+        preRolledWillpower: { diceResult: 20 },
         preRolledOccultism: { diceResult: 15 },
       },
     });
 
     const result = castRitual(params);
 
-    expect(result.concentrationTest?.dt).toBe(20); // 15 + 5
+    expect(result.concentrationTests?.map(test => test.dt)).toEqual([21, 5]);
+  });
+
+  it('proteção leve exige concentração mesmo sem dano, DT 15 + PE', () => {
+    const params = createBaseParams({
+      characterState: { ...createBaseParams().characterState, armorType: 'leve' },
+      rollOptions: { preRolledWillpower: { diceResult: 20 }, preRolledOccultism: { diceResult: 20 } },
+    });
+    expect(castRitual(params).concentrationTest?.dt).toBe(16);
   });
 
   it('falha no teste deve cancelar ritual e perder PE', () => {
     const params = createBaseParams({
       characterState: {
         ...createBaseParams().characterState,
-        damageTakenDuringCast: 5,
+        damageTakenDuringCast: 15,
       },
       rollOptions: {
         preRolledWillpower: { diceResult: 5 }, // 5 + 5 = 10 < 15 = FALHA
@@ -377,7 +385,7 @@ describe('Validações de Conjuração', () => {
 
     expect(result.success).toBe(false);
     expect(result.interrupted).toBe(true);
-    expect(result.errors).toContain(expect.stringMatching(/círculo insuficiente/i));
+    expect(result.errors).toEqual(expect.arrayContaining([expect.stringMatching(/círculo insuficiente/i)]));
   });
 
   it('deve falhar se PE insuficiente', () => {
@@ -393,10 +401,10 @@ describe('Validações de Conjuração', () => {
     const result = castRitual(params);
 
     expect(result.success).toBe(false);
-    expect(result.errors).toContain(expect.stringMatching(/PE insuficiente/i));
+    expect(result.errors).toEqual(expect.arrayContaining([expect.stringMatching(/PE insuficiente/i)]));
   });
 
-  it('deve falhar se não tiver mão livre (exceto Medo)', () => {
+  it('deve falhar se não tiver mão livre', () => {
     const params = createBaseParams({
       characterState: {
         ...createBaseParams().characterState,
@@ -407,10 +415,10 @@ describe('Validações de Conjuração', () => {
     const result = castRitual(params);
 
     expect(result.success).toBe(false);
-    expect(result.errors).toContain(expect.stringMatching(/mão livre/i));
+    expect(result.errors).toEqual(expect.arrayContaining([expect.stringMatching(/mão livre/i)]));
   });
 
-  it('Medo não deve exigir mão livre', () => {
+  it('Medo exige mão livre mesmo sem componentes', () => {
     const params = createBaseParams({
       ritualId: 'amedrontar',
       characterState: {
@@ -422,7 +430,8 @@ describe('Validações de Conjuração', () => {
 
     const result = castRitual(params);
 
-    expect(result.success).toBe(true);
+    expect(result.success).toBe(false);
+    expect(result.errors.join(' ')).toMatch(/mão livre/i);
   });
 
   it('deve falhar se não tiver componentes (exceto Medo)', () => {
@@ -436,7 +445,7 @@ describe('Validações de Conjuração', () => {
     const result = castRitual(params);
 
     expect(result.success).toBe(false);
-    expect(result.errors).toContain(expect.stringMatching(/componentes/i));
+    expect(result.errors).toEqual(expect.arrayContaining([expect.stringMatching(/componentes/i)]));
   });
 });
 

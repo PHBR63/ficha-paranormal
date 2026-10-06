@@ -15,7 +15,7 @@
  * @module sue/consolidation-with-hardening
  */
 
-import type { UnifiedEffect, EffectSource } from '../unified-effects-engine';
+import type { UnifiedEffect, EffectSource, EffectMechanics } from '../unified-effects-engine';
 import { 
   sortEffectsByPriority, 
   groupEffectsBySource, 
@@ -94,7 +94,9 @@ function toOrderableEffect(effect: UnifiedEffect): OrderableEffect & { original:
 /**
  * Converte mecânicas de efeito para StackableBonus por categoria
  */
-function effectToStackableBonuses(effect: UnifiedEffect): StackableBonus[] {
+function effectToStackableBonuses(input: UnifiedEffect, instanceIndex = 0): StackableBonus[] {
+  // IDs de instância evitam que uma exclusão remova também o vencedor com ID legado repetido.
+  const effect = { ...input, id: `${input.id}#${instanceIndex}` };
   const bonuses: StackableBonus[] = [];
   const m = effect.mechanics;
   
@@ -105,7 +107,7 @@ function effectToStackableBonuses(effect: UnifiedEffect): StackableBonus[] {
     bonuses.push({
       id: `${effect.id}_attack`,
       source: effect.source,
-      sourceId: effect.id,
+      sourceId: effect.sourceId,
       sourceName: effect.sourceName,
       value: m.attackBonus,
       category: 'attack',
@@ -116,7 +118,7 @@ function effectToStackableBonuses(effect: UnifiedEffect): StackableBonus[] {
     bonuses.push({
       id: `${effect.id}_melee_attack`,
       source: effect.source,
-      sourceId: effect.id,
+      sourceId: effect.sourceId,
       sourceName: effect.sourceName,
       value: m.meleeAttackBonus,
       category: 'attack',
@@ -128,7 +130,7 @@ function effectToStackableBonuses(effect: UnifiedEffect): StackableBonus[] {
     bonuses.push({
       id: `${effect.id}_ranged_attack`,
       source: effect.source,
-      sourceId: effect.id,
+      sourceId: effect.sourceId,
       sourceName: effect.sourceName,
       value: m.rangedAttackBonus,
       category: 'attack',
@@ -142,7 +144,7 @@ function effectToStackableBonuses(effect: UnifiedEffect): StackableBonus[] {
     bonuses.push({
       id: `${effect.id}_damage`,
       source: effect.source,
-      sourceId: effect.id,
+      sourceId: effect.sourceId,
       sourceName: effect.sourceName,
       value: m.damageBonus,
       category: 'damage',
@@ -153,7 +155,7 @@ function effectToStackableBonuses(effect: UnifiedEffect): StackableBonus[] {
     bonuses.push({
       id: `${effect.id}_melee_damage`,
       source: effect.source,
-      sourceId: effect.id,
+      sourceId: effect.sourceId,
       sourceName: effect.sourceName,
       value: m.meleeDamageBonus,
       category: 'damage',
@@ -165,7 +167,7 @@ function effectToStackableBonuses(effect: UnifiedEffect): StackableBonus[] {
     bonuses.push({
       id: `${effect.id}_ranged_damage`,
       source: effect.source,
-      sourceId: effect.id,
+      sourceId: effect.sourceId,
       sourceName: effect.sourceName,
       value: m.rangedDamageBonus,
       category: 'damage',
@@ -193,7 +195,7 @@ function effectToStackableBonuses(effect: UnifiedEffect): StackableBonus[] {
     bonuses.push({
       id: `${effect.id}_defense`,
       source: effect.source,
-      sourceId: effect.id,
+      sourceId: effect.sourceId,
       sourceName: effect.sourceName,
       value: m.defenseBonus,
       category: 'defense',
@@ -207,7 +209,7 @@ function effectToStackableBonuses(effect: UnifiedEffect): StackableBonus[] {
     bonuses.push({
       id: `${effect.id}_fortitude`,
       source: effect.source,
-      sourceId: effect.id,
+      sourceId: effect.sourceId,
       sourceName: effect.sourceName,
       value: m.fortitudeBonus,
       category: 'resistance',
@@ -219,7 +221,7 @@ function effectToStackableBonuses(effect: UnifiedEffect): StackableBonus[] {
     bonuses.push({
       id: `${effect.id}_reflexos`,
       source: effect.source,
-      sourceId: effect.id,
+      sourceId: effect.sourceId,
       sourceName: effect.sourceName,
       value: m.reflexosBonus,
       category: 'resistance',
@@ -231,7 +233,7 @@ function effectToStackableBonuses(effect: UnifiedEffect): StackableBonus[] {
     bonuses.push({
       id: `${effect.id}_vontade`,
       source: effect.source,
-      sourceId: effect.id,
+      sourceId: effect.sourceId,
       sourceName: effect.sourceName,
       value: m.vontadeBonus,
       category: 'resistance',
@@ -245,7 +247,7 @@ function effectToStackableBonuses(effect: UnifiedEffect): StackableBonus[] {
     bonuses.push({
       id: `${effect.id}_hp`,
       source: effect.source,
-      sourceId: effect.id,
+      sourceId: effect.sourceId,
       sourceName: effect.sourceName,
       value: m.hpBonus,
       category: 'resource',
@@ -257,7 +259,7 @@ function effectToStackableBonuses(effect: UnifiedEffect): StackableBonus[] {
     bonuses.push({
       id: `${effect.id}_pe`,
       source: effect.source,
-      sourceId: effect.id,
+      sourceId: effect.sourceId,
       sourceName: effect.sourceName,
       value: m.peBonus,
       category: 'resource',
@@ -269,7 +271,7 @@ function effectToStackableBonuses(effect: UnifiedEffect): StackableBonus[] {
     bonuses.push({
       id: `${effect.id}_san`,
       source: effect.source,
-      sourceId: effect.id,
+      sourceId: effect.sourceId,
       sourceName: effect.sourceName,
       value: m.sanityBonus,
       category: 'resource',
@@ -283,7 +285,7 @@ function effectToStackableBonuses(effect: UnifiedEffect): StackableBonus[] {
     bonuses.push({
       id: `${effect.id}_movement`,
       source: effect.source,
-      sourceId: effect.id,
+      sourceId: effect.sourceId,
       sourceName: effect.sourceName,
       value: m.movementBonus,
       category: 'movement',
@@ -296,7 +298,7 @@ function effectToStackableBonuses(effect: UnifiedEffect): StackableBonus[] {
     bonuses.push({
       id: `${effect.id}_initiative`,
       source: effect.source,
-      sourceId: effect.id,
+      sourceId: effect.sourceId,
       sourceName: effect.sourceName,
       value: m.initiativeBonus,
       category: 'initiative',
@@ -309,7 +311,7 @@ function effectToStackableBonuses(effect: UnifiedEffect): StackableBonus[] {
     bonuses.push({
       id: `${effect.id}_crit_margin`,
       source: effect.source,
-      sourceId: effect.id,
+      sourceId: effect.sourceId,
       sourceName: effect.sourceName,
       value: m.criticalMarginBonus,
       category: 'critical',
@@ -321,7 +323,7 @@ function effectToStackableBonuses(effect: UnifiedEffect): StackableBonus[] {
     bonuses.push({
       id: `${effect.id}_crit_mult`,
       source: effect.source,
-      sourceId: effect.id,
+      sourceId: effect.sourceId,
       sourceName: effect.sourceName,
       value: m.criticalMultiplierBonus,
       category: 'critical',
@@ -335,7 +337,7 @@ function effectToStackableBonuses(effect: UnifiedEffect): StackableBonus[] {
     bonuses.push({
       id: `${effect.id}_dr`,
       source: effect.source,
-      sourceId: effect.id,
+      sourceId: effect.sourceId,
       sourceName: effect.sourceName,
       value: m.damageReduction,
       category: 'damage_reduction',
@@ -343,6 +345,38 @@ function effectToStackableBonuses(effect: UnifiedEffect): StackableBonus[] {
     });
   }
   
+  // Mantém a dimensão de cada mecânica para remover só a parcela excluída do efeito.
+  const keys: Record<string, keyof EffectMechanics> = {
+    attack: 'attackBonus', melee_attack: 'meleeAttackBonus', ranged_attack: 'rangedAttackBonus',
+    damage: 'damageBonus', melee_damage: 'meleeDamageBonus', ranged_damage: 'rangedDamageBonus',
+    defense: 'defenseBonus', fortitude: 'fortitudeBonus', reflexos: 'reflexosBonus', vontade: 'vontadeBonus',
+    hp: 'hpBonus', pe: 'peBonus', san: 'sanityBonus', movement: 'movementBonus',
+    initiative: 'initiativeBonus', crit_margin: 'criticalMarginBonus', crit_mult: 'criticalMultiplierBonus', dr: 'damageReduction',
+  };
+  for (const bonus of bonuses) {
+    const suffix = bonus.id.slice(effect.id.length + 1);
+    bonus.mechanicKey = keys[suffix];
+  }
+  for (const [skill, value] of Object.entries(m.skillBonus ?? {})) {
+    if (value !== 0) bonuses.push({
+      id: `${effect.id}_skill_${skill}`, source: effect.source, sourceId: effect.sourceId,
+      sourceName: effect.sourceName, value, category: 'skill', active: effect.isActive,
+      subtype: skill, mechanicKey: 'skillBonus', mechanicEntry: skill,
+    });
+  }
+  for (const [key, category] of [
+    ['allSkillsBonus', 'skill'], ['allResistancesBonus', 'resistance'],
+    ['firearmDamageBonus', 'damage'], ['defenseBonusMelee', 'defense'], ['defenseBonusRanged', 'defense'],
+    ['hpBonusPerNex', 'resource'], ['peBonusPerNex', 'resource'], ['sanityBonusPerNex', 'resource'],
+    ['peLimitBonus', 'resource'], ['paranormalDamageReduction', 'damage_reduction'],
+  ] as const) {
+    const value = m[key];
+    if (value) bonuses.push({
+      id: `${effect.id}_${key}`, source: effect.source, sourceId: effect.sourceId,
+      sourceName: effect.sourceName, value, category, active: effect.isActive,
+      subtype: key, mechanicKey: key,
+    });
+  }
   return bonuses;
 }
 
@@ -362,8 +396,8 @@ export function preprocessEffectsWithHardening(
   
   // 2. Extrai todos os bônus para aplicar stacking
   const allBonuses: StackableBonus[] = [];
-  for (const item of sorted) {
-    const bonuses = effectToStackableBonuses(item.original);
+  for (const [index, item] of sorted.entries()) {
+    const bonuses = effectToStackableBonuses(item.original, index);
     allBonuses.push(...bonuses);
   }
   
@@ -399,19 +433,19 @@ export function preprocessEffectsWithHardening(
     const effect = item.original;
     
     // Verifica se todos os bônus do efeito foram excluídos
-    const effectBonuses = effectToStackableBonuses(effect);
+    const effectBonuses = effectToStackableBonuses(effect, i);
     const excludedBonuses = effectBonuses.filter(b => excludedBonusIds.has(b.id));
     const hasRemainingBonuses = effectBonuses.some(b => !excludedBonusIds.has(b.id));
     
-    // Se o efeito tem bônus que não foram excluídos, inclui
-    if (hasRemainingBonuses || effectBonuses.length === 0) {
-      preparedEffects.push({
-        ...effect,
-        applicationOrder: i,
-        stackingApplied: true,
-        excludedByStacking: excludedBonuses.map(b => b.id),
-      });
-    } else if (excludedBonuses.length > 0) {
+    // Preserva flags e mecânicas válidas, mesmo quando todos os bônus numéricos foram excluídos.
+    preparedEffects.push({
+      ...effect,
+      mechanics: removeExcludedMechanics(effect.mechanics, excludedBonuses),
+      applicationOrder: i,
+      stackingApplied: true,
+      excludedByStacking: excludedBonuses.map(b => b.id),
+    });
+    if (!hasRemainingBonuses && excludedBonuses.length > 0) {
       // Efeito completamente excluído por stacking
       const replacedBy = findReplacingEffect(effect, sorted.map(s => s.original));
       excludedEffects.push({
@@ -435,6 +469,21 @@ export function preprocessEffectsWithHardening(
       processingTimeMs: endTime - startTime,
     },
   };
+}
+
+/** Remove apenas os campos excluídos; recebe mecânicas e devolve uma cópia sem mutar a origem. */
+function removeExcludedMechanics(mechanics: EffectMechanics, excluded: StackableBonus[]): EffectMechanics {
+  const result = { ...mechanics };
+  for (const bonus of excluded) {
+    if (!bonus.mechanicKey) continue;
+    if (bonus.mechanicKey === 'skillBonus' && bonus.mechanicEntry) {
+      result.skillBonus = { ...result.skillBonus };
+      delete result.skillBonus[bonus.mechanicEntry];
+    } else {
+      delete result[bonus.mechanicKey];
+    }
+  }
+  return result;
 }
 
 /**

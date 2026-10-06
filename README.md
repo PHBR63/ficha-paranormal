@@ -393,6 +393,14 @@ Os testes estão organizados junto aos módulos e usam Vitest. Execute:
 npm test
 ```
 
+Vitest e o build do Vite não substituem a checagem de tipos. Para validar os dois
+projetos TypeScript, inclusive os testes dentro de `src`, execute:
+
+```bash
+npx tsc -p tsconfig.app.json --noEmit
+npx tsc -p tsconfig.node.json --noEmit
+```
+
 Para acompanhar alterações durante o desenvolvimento:
 
 ```bash

@@ -157,7 +157,7 @@ describe('useUnifiedEffects: Efeitos de Condições', () => {
     });
     const { result } = renderHook(() => useUnifiedEffects(state));
     
-    expect(result.current.bySource.condition.length).toBe(2);
+    expect(result.current.bySource.condition.map(e => e.sourceId)).toEqual(['desprevenido', 'cego', 'lento']);
   });
 });
 
@@ -190,7 +190,7 @@ describe('useUnifiedEffects: Helpers', () => {
     
     const conditionEffects = result.current.getEffectsFromSource('condition');
     
-    expect(conditionEffects.length).toBe(2);
+    expect(conditionEffects.map(e => e.sourceId)).toEqual(['desprevenido', 'cego', 'lento']);
     for (const effect of conditionEffects) {
       expect(effect.source).toBe('condition');
     }
@@ -402,7 +402,7 @@ describe('useUnifiedEffects: Edge Cases', () => {
     
     const { result } = renderHook(() => useUnifiedEffects(state));
     
-    expect(result.current.bySource.condition.length).toBe(5);
+    expect(result.current.bySource.condition.map(e => e.sourceId)).toEqual(['desprevenido', 'cego', 'surdo', 'exausto', 'envenenado', 'lento', 'debilitado', 'vulneravel']);
   });
 });
 

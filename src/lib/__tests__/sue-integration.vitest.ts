@@ -221,7 +221,7 @@ describe('SUE Integration: Ocultista + Conduíte', () => {
     // Especialista em Elemento (Sangue): +2 DT
     const especialista = classPowerEffects.find(e => e.sourceId === 'especialista-em-elemento');
     expect(especialista).toBeDefined();
-    expect(especialista?.mechanics.ritualDTBonusByElement?.['Sangue']).toBe(2);
+    expect(especialista?.mechanics.ritualDTBonusByElement?.['sangue']).toBe(2);
   });
 
   it('ritual-potente deve adicionar INT em dano/cura de rituais', () => {
@@ -287,20 +287,18 @@ describe('SUE Integration: Condições em Combate', () => {
     expect(effects[0].mechanics.defenseBonus).toBe(-5);
   });
 
-  it('desprevenido deve definir cannotReact', () => {
+  it('desprevenido penaliza Reflexos e preserva reações', () => {
     const effects = getConditionEffects(['desprevenido']);
-    
-    expect(effects[0].mechanics.cannotReact).toBe(true);
+    expect(effects[0].mechanics.cannotReact).not.toBe(true);
+    expect(effects[0].mechanics.testDice?.skills?.reflexos).toBe(-1);
   });
 
   it('múltiplas condições devem ser consolidadas', () => {
     const summary = getConditionModifiersSummary(['desprevenido', 'cego', 'atordoado']);
-    
-    // desprevenido: -5 defesa, cego: -5 ataque, atordoado: -2 defesa + cannotAct
-    expect(summary.defenseMod).toBe(-7); // -5 + -2
-    expect(summary.attackMod).toBe(-5);
+    expect(summary.defenseMod).toBe(-5); // Desprevenido conta uma vez.
+    expect(summary.attackMod).toBe(0); // Penalidade em dados, não numérica.
     expect(summary.canAct).toBe(false);
-    expect(summary.canReact).toBe(false);
+    expect(summary.canReact).toBe(true);
   });
 
   it('caido deve ter bônus contextuais diferentes', () => {
@@ -367,7 +365,7 @@ describe('SUE Integration: useUnifiedEffects Completo', () => {
     const { result } = renderHook(() => useUnifiedEffects(character));
     
     const conditionEffects = result.current.getEffectsFromSource('condition');
-    expect(conditionEffects.length).toBe(2);
+    expect(conditionEffects.map(e => e.sourceId)).toEqual(['cego', 'surdo', 'desprevenido', 'lento']);
     
     for (const effect of conditionEffects) {
       expect(effect.source).toBe('condition');

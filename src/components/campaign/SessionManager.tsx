@@ -207,7 +207,7 @@ export function SessionManager({
     }
   };
 
-  // Inicia uma sessão
+  // Grava o status aceito pelo schema v1; a leitura o apresenta como active.
   const startSession = async (sessionId: string) => {
     if (!isMaster) return;
 

@@ -804,14 +804,14 @@ export const CharacterSheetHeader = memo(function CharacterSheetHeader({
                     </motion.span>
                   </AnimatePresence>
                   <AnimatePresence>
-                    {defenseBonus > 0 && (
+                    {defenseBonus !== 0 && (
                       <motion.span 
                         initial={{ opacity: 0, x: -5 }}
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: -5 }}
-                        className="text-[10px] text-success font-medium"
+                        className={cn('text-[10px] font-medium', defenseBonus > 0 ? 'text-success' : 'text-destructive')}
                       >
-                        (+{defenseBonus})
+                        ({defenseBonus > 0 ? '+' : ''}{defenseBonus})
                       </motion.span>
                     )}
                   </AnimatePresence>
