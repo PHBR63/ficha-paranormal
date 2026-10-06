@@ -56,6 +56,22 @@ describe.each([
     expect(screen.getByText('PV de cura rolados')).toBeInTheDocument();
     expect(screen.queryByText('PV Recuperados')).not.toBeInTheDocument();
   });
+  it('salva Vulnerável da Eletrocussão por uma rodada, igual ao aviso', async () => {
+    vi.useFakeTimers();
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+    const onApplyConditions = vi.fn();
+    render(<Wizard open onOpenChange={vi.fn()} ritual={unifiedToLegacy(getRitualById('eletrocussao')!)}
+      enhancements={[]} peCost={1} onApplyDamage={vi.fn()} onApplyConditions={onApplyConditions} />);
+    fireEvent.click(screen.getByRole('button', { name: /Processar Efeitos/ }));
+    await act(async () => { await vi.advanceTimersByTimeAsync(600); });
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: /Continuar/ })); });
+    expect(screen.getByText('1 rodada')).toBeInTheDocument();
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: /^Aplicar/ })); });
+    expect(onApplyConditions).toHaveBeenCalledWith([
+      expect.objectContaining({ id: 'vulneravel', turnsRemaining: 1 }),
+    ]);
+  });
+
   it.each(['anula', 'parcial'] as const)('sucesso %s evita condições sem chamar aplicação', async resistanceEffect => {
     vi.spyOn(legacyEffects, 'getActiveRitualEffect').mockReturnValue({
       resistance: { type: 'vontade', effect: resistanceEffect, dt: 20 },
