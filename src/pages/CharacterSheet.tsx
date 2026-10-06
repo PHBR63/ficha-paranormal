@@ -1,6 +1,7 @@
 import { BaseRulesNotice } from '@/components/character/BaseRulesNotice';
 import { useConditionTurnApplication } from '@/hooks/character/useConditionTurnApplication';
 import { useCharacterResourceUpdate } from '@/hooks/character/useCharacterResourceUpdate';
+import { useCharacterServerRead } from '@/hooks/character/useCharacterServerRead';
 import { ritualRollHistory } from '@/lib/ritual-roll-history';
 import { confirmConditionReplacement } from '@/services/character-resource-service';
 import { parseCondition, serializeCondition, getConditionNames } from '@/lib/conditions/condition-serialization';
@@ -352,13 +353,20 @@ export default function CharacterSheet() {
   // Hook de modo desenvolvedor (para exibir widget de debug)
   const { developerMode } = useDeveloperMode();
   const [character, setCharacter] = useState<Character | null>(null);
+  const readCharacter = useCharacterServerRead(id || '', user?.id || '');
   const [loading, setLoading] = useState(true);
+  const [readError, setReadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   // Stats editáveis
   const [hpCurrent, setHpCurrent] = useState(0);
   const [peCurrent, setPeCurrent] = useState(0);
   const [sanCurrent, setSanCurrent] = useState(0);
+
+  // Uma nova ficha/conta começa sem saldos e condições herdados da tela anterior.
+  useEffect(() => {
+    setCharacter(null); setHpCurrent(0); setPeCurrent(0); setSanCurrent(0); setLoading(true); setReadError(null);
+  }, [id, user?.id]);
   
   // Estado da modal de rolagem imediata
   const [diceModalOpen, setDiceModalOpen] = useState(false);
@@ -831,20 +839,13 @@ export default function CharacterSheet() {
     async function fetchCharacter() {
       if (!id || !user) return;
 
-      const { data, error } = await supabase
-        .from('characters')
-        .select('*')
-        .eq('id', id)
-        .eq('user_id', user.id)
-        .single();
+      const read = await readCharacter();
+      if (!read) return;
+      const { data, error } = read;
 
       if (error || !data) {
-        toast({
-          title: 'Erro',
-          description: 'Personagem não encontrado.',
-          variant: 'destructive',
-        });
-        navigate('/dashboard');
+        setReadError('Não foi possível carregar a ficha. Verifique a conexão e o acesso.');
+        setLoading(false);
         return;
       }
 
@@ -855,6 +856,7 @@ export default function CharacterSheet() {
       
       // Executa migração automática de equipamentos se necessário
       const migrationResult = await runMigration(id, inventory as any);
+      if (!read.isCurrent()) return;
       if (migrationResult) {
         inventory = migrationResult.inventory as unknown as InventoryItemPersisted[];
         console.log('[CharacterSheet] Equipamentos migrados automaticamente');
@@ -879,6 +881,7 @@ export default function CharacterSheet() {
 
       // Usa função utilitária para parsing consistente
       const charData = parseCharacterDataFromDB(data, inventory);
+      setReadError(null);
       setCharacter(charData as unknown as Character);
       setHpCurrent(data.hp_current);
       setPeCurrent(data.pe_current);
@@ -891,19 +894,16 @@ export default function CharacterSheet() {
     }
 
     fetchCharacter();
-  }, [id, user, navigate, toast, runMigration, resetMigration]);
+  }, [id, user, navigate, toast, runMigration, resetMigration, readCharacter]);
   
   // Função de refetch para atualizar dados do personagem após correções
   // Retorna os dados atualizados para uso imediato (ex: revalidação)
   const refetchCharacter = useCallback(async (): Promise<Character | null> => {
     if (!id || !user) return null;
     
-    const { data, error } = await supabase
-      .from('characters')
-      .select('*')
-      .eq('id', id)
-      .eq('user_id', user.id)
-      .single();
+    const read = await readCharacter();
+    if (!read) return null;
+    const { data, error } = read;
     
     if (!error && data) {
       const inventory = Array.isArray(data.inventory) 
@@ -912,17 +912,21 @@ export default function CharacterSheet() {
       
       // Usa função utilitária para parsing consistente
       const charData = parseCharacterDataFromDB(data, inventory);
+      setReadError(null);
       
       setCharacter(charData);
       setHpCurrent(data.hp_current);
       setPeCurrent(data.pe_current);
       setSanCurrent(data.san_current);
+      setLoading(false);
       
       console.log('[CharacterSheet] Dados do personagem atualizados após correção');
       return charData;
     }
+    setReadError('Não foi possível atualizar a ficha. Verifique a conexão e tente carregar novamente.');
+    setLoading(false);
     return null;
-  }, [id, user]);
+  }, [id, user, readCharacter]);
 
   useEffect(() => {
     const refreshFromServer = (event: Event) => {
@@ -2352,7 +2356,19 @@ export default function CharacterSheet() {
     );
   }
 
-  if (!character) return null;
+  if (readError) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="max-w-md text-center space-y-4">
+          <p role="alert" className="text-muted-foreground">{readError}</p>
+          <Button onClick={() => { setLoading(true); void refetchCharacter(); }}>Tentar carregar novamente</Button>
+          <Link to="/dashboard" className="block text-primary hover:underline">Voltar para fichas</Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (!character || character.id !== id) return null;
 
   // Verificar sanidade baixa para efeito visual
   const sanPercentage = (sanCurrent / character.san_max) * 100;
