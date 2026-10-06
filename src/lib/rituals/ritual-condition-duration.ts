@@ -1,8 +1,15 @@
 import type { RitualEffect } from './legacy-exports';
+import type { EffectDuration } from '@/types/effect-duration';
 
 type ConditionDuration = NonNullable<RitualEffect['appliesConditions']>[number];
 
-/** Converte a duração do catálogo em rodadas; cena/sustentação continuam manuais. */
+/** Preserva a categoria: null no contador nunca significa automaticamente "cena". */
+export function getRitualConditionDuration(condition: ConditionDuration): EffectDuration {
+  if (typeof condition.duration === 'number' || condition.duration === 'rodada') return 'rodadas';
+  return condition.duration ?? 'manual';
+}
+
+/** Converte a duração do catálogo em rodadas, sem perder sua categoria. */
 export function getRitualConditionTurns(condition: ConditionDuration): number | null {
   if (typeof condition.duration === 'number') return condition.duration;
   return condition.duration === 'rodada' ? (condition.turnsCount ?? 1) : null;

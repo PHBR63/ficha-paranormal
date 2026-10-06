@@ -1,3 +1,4 @@
+import { EffectDurationNotice } from './EffectDurationNotice';
 /**
  * WeaponBuffIndicator - Indicador visual de buffs ativos em armas
  * Mostra os bônus de rituais como Amaldiçoar Arma na tabela de combate
@@ -94,7 +95,7 @@ function BuffBadge({
           </TooltipTrigger>
           <TooltipContent side="top" className="max-w-xs">
             <div className="space-y-1">
-              <p className="font-semibold">{buff.ritualName}</p>
+              <p className="font-semibold">{buff.ritualName}</p><EffectDurationNotice effect={buff} />
               <p className="text-xs text-muted-foreground">
                 {effectParts.join(' • ')}
               </p>
@@ -125,7 +126,7 @@ function BuffBadge({
     >
       <ElementIcon element={buff.element} className="w-4 h-4" />
       <div className="flex flex-col">
-        <span className="font-medium">{buff.ritualName}</span>
+        <span className="font-medium">{buff.ritualName}</span><EffectDurationNotice effect={buff} />
         <span className="text-[10px] opacity-80">{effectParts.join(' • ')}</span>
       </div>
       {onRemove && (

@@ -1,3 +1,4 @@
+import type { EffectDurationMetadata } from '@/types/effect-duration';
 /**
  * Serialização de Condições
  * 
@@ -15,7 +16,7 @@ import { resolveConditionId } from './condition-identity';
 // ==================== TIPOS ====================
 
 /** Formato de condição persistido no banco */
-export interface PersistedCondition {
+export interface PersistedCondition extends EffectDurationMetadata {
   id: string;
   name: string;
   turnsRemaining: number | null;

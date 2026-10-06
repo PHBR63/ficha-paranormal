@@ -1,3 +1,4 @@
+import type { EffectDurationMetadata } from '@/types/effect-duration';
 /**
  * useWeaponBuffs - Hook para gerenciar buffs temporários em armas
  * Fase 5: Rituais como Amaldiçoar Arma aplicam buffs que aparecem na tabela de combate
@@ -8,7 +9,7 @@ import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { RitualEffect, getActiveRitualEffect, formatDamageFormula, DamageFormula, Ritual } from '@/lib/rituals/legacy-exports';
 
 // Interface para buff de arma ativo
-export interface WeaponBuff {
+export interface WeaponBuff extends EffectDurationMetadata {
   id: string;
   ritualId: string;
   ritualName: string;

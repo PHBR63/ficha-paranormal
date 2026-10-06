@@ -1,3 +1,5 @@
+import { EffectDurationNotice } from '../EffectDurationNotice';
+import type { EffectDurationMetadata } from '@/types/effect-duration';
 /**
  * MobileConditionManager - Gerenciador de condições otimizado para mobile
  * Permite adicionar, remover e editar condições com swipe e contadores
@@ -54,7 +56,7 @@ import { getConditionPresentation } from '@/lib/conditions/condition-identity';
 import { DyingTimer } from '../ConditionTimer';
 
 // Interface para condição ativa
-export interface ActiveCondition {
+export interface ActiveCondition extends EffectDurationMetadata {
   id: string;
   name: string;
   turnsRemaining: number | null;
@@ -158,7 +160,8 @@ const ConditionCard = memo(function ConditionCard({
             <p className="text-xs text-muted-foreground mt-1 break-words">
               {CONDITIONS[condition.id] ? getConditionEffectWithParams(condition.id, condition.params) : conditionData.effect}
             </p>
-            {!CONDITIONS[condition.id] && condition.params?.customEffect && (
+            <EffectDurationNotice effect={condition} />
+                            {!CONDITIONS[condition.id] && condition.params?.customEffect && (
               <p className="text-xs text-muted-foreground mt-1">{condition.params.customEffect}</p>
             )}
             
@@ -513,7 +516,7 @@ export const MobileConditionManager = memo(function MobileConditionManager({
   // Controles de turno
   const handleIncreaseTurns = useCallback(async (conditionId: string) => {
     if (!await saveConditions(conditions.map(c =>
-      c.id === conditionId ? { ...c, turnsRemaining: (c.turnsRemaining || 0) + 1 } : c
+      c.id === conditionId ? { ...c, duration: 'rodadas' as const, turnsRemaining: (c.turnsRemaining || 0) + 1 } : c
     ))) return false;
   }, [conditions, saveConditions]);
 

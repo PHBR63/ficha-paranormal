@@ -47,12 +47,12 @@ export function CampaignScenePanel({ campaignId, combat, isMaster = false }: Cam
         </div>
       </div>
       <p className="text-xs text-muted-foreground">Encerrar o combate também encerra a cena. Sem combate, o mestre encerra a cena manualmente.</p>
-      <p className="text-xs text-muted-foreground">Efeitos até o fim da cena, limites por cena e contadores críticos ainda exigem conferência manual.</p>
+      <p className="text-xs text-muted-foreground">Novos efeitos de ritual com duração de cena e origem confirmada expiram no servidor. Efeitos antigos, limites de uso e contadores críticos exigem conferência manual.</p>
       {combat.lastSceneEndedAt && <p className="text-xs">Último encerramento confirmado: {new Date(combat.lastSceneEndedAt).toLocaleString('pt-BR')}.</p>}
       {combat.error && <p role="alert" className="text-sm text-destructive">{combat.error}</p>}
       <Dialog open={confirmOpen} onOpenChange={open => { if (!combat.saving) setConfirmOpen(open); }}>
         <DialogContent className="max-h-[85dvh] overflow-y-auto">
-          <DialogHeader><DialogTitle>{title}</DialogTitle><DialogDescription>A próxima cena será aberta e o encerramento ficará salvo no servidor. Confira manualmente efeitos, limites de uso e contadores desta cena.</DialogDescription></DialogHeader>
+          <DialogHeader><DialogTitle>{title}</DialogTitle><DialogDescription>A próxima cena será aberta e o encerramento ficará salvo no servidor. Efeitos de ritual desta cena com origem confirmada serão removidos. Confira manualmente os efeitos antigos, limites de uso e contadores críticos.</DialogDescription></DialogHeader>
           {combat.error && <p role="alert">{combat.error}</p>}
           {confirmationChanged && !submittedLocally && !combat.saving && !combat.sceneEndPending && <p role="alert">A cena ou o combate mudou em outra aba. Cancele e confira antes de abrir uma nova confirmação.</p>}
           <div className="flex flex-wrap gap-2 justify-end">
@@ -67,7 +67,7 @@ export function CampaignScenePanel({ campaignId, combat, isMaster = false }: Cam
           {history.isPending && <p role="status">Carregando histórico...</p>}
           {history.isError && <div role="alert"><p>Não foi possível carregar o histórico de cenas.</p><Button disabled={history.isFetching} onClick={() => { void history.refetch(); }}>Tentar carregar histórico novamente</Button></div>}
           {!history.isPending && !history.isError && !history.data?.pages[0]?.entries.length && <p>Nenhuma cena encerrada ainda.</p>}
-          <ol className="space-y-3">{history.data?.pages.flatMap(page => page.entries).map(entry => <li key={entry.operation_id} className="rounded border p-3 text-sm"><p className="font-medium">Cena {entry.scene_number} encerrada {entry.ended_combat ? 'com o combate' : 'manualmente'}</p><time dateTime={entry.created_at}>{new Date(entry.created_at).toLocaleString('pt-BR')}</time></li>)}</ol>
+          <ol className="space-y-3">{history.data?.pages.flatMap(page => page.entries).map(entry => <li key={entry.operation_id} className="rounded border p-3 text-sm"><p className="font-medium">Cena {entry.scene_number} encerrada {entry.ended_combat ? 'com o combate' : 'manualmente'}</p>{entry.expired_effects_count != null && <p>{entry.expired_effects_count} efeito(s) expirado(s) no servidor.</p>}<time dateTime={entry.created_at}>{new Date(entry.created_at).toLocaleString('pt-BR')}</time></li>)}</ol>
           {history.hasNextPage && <Button disabled={history.isFetching} onClick={() => { void history.fetchNextPage(); }}>{history.isFetchingNextPage ? 'Carregando...' : 'Carregar cenas anteriores'}</Button>}
         </DialogContent>
       </Dialog>

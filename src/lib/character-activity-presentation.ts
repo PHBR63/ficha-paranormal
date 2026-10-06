@@ -43,6 +43,7 @@ export function describeCharacterActivity(event: CharacterActivityEvent): string
     return `${label}${total}${dice.length ? ` · dados [${dice.join(', ')}]` : ''}${breakdown}`;
   }
   if (event.category === 'ritual') return `${label}${typeof payload.peCost === 'number' ? ` · ${payload.peCost} PE` : ''}${typeof payload.peBefore === 'number' && typeof payload.peAfter === 'number' ? ` (${payload.peBefore} → ${payload.peAfter})` : ''}`;
+  if (payload.kind === 'scene_expiry') return `Cena ${payload.sceneNumber} encerrada · ${payload.expiredEffectsCount} efeito(s) expirado(s)${describeConditionChanges((payload.before as { conditions?: Json })?.conditions, (payload.after as { conditions?: Json })?.conditions)}`;
   const kinds: Record<string, string> = { heal: 'Cura', damage: 'Dano', conditions: 'Condições adicionadas', replace_conditions: 'Condições alteradas', resource: 'Recurso alterado', resources: 'Recursos alterados', weapon_buff: 'Bônus de arma aplicado à ficha', sustain: 'Sustentação ativada' };
   const kind = typeof payload.kind === 'string' ? kinds[payload.kind] ?? 'Efeito registrado' : 'Efeito registrado';
   const resource = payload.resource === 'hp' ? 'PV' : payload.resource === 'pe' ? 'PE' : payload.resource === 'san' ? 'SAN' : '';

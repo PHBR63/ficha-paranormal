@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatRitualConditionDuration, getRitualConditionTurns } from '../ritual-condition-duration';
+import { formatRitualConditionDuration, getRitualConditionDuration, getRitualConditionTurns } from '../ritual-condition-duration';
 
 describe('Duração de condições do ritual', () => {
   it.each([
@@ -14,5 +14,6 @@ describe('Duração de condições do ritual', () => {
   ])('preserva prazo $duration/$turnsCount', ({ expected, label, ...condition }) => {
     expect(getRitualConditionTurns(condition)).toBe(expected);
     expect(formatRitualConditionDuration(condition)).toBe(label);
+    expect(getRitualConditionDuration(condition)).toBe(expected !== null ? 'rodadas' : condition.duration ?? 'manual');
   });
 });

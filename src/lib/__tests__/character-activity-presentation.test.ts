@@ -8,6 +8,11 @@ const event = (payload: CharacterActivityEvent['payload']): CharacterActivityEve
 });
 
 describe('Histórico de alterações de condições', () => {
+  it('mostra o encerramento e a condição removida sem apagar o histórico anterior', () => {
+    expect(describeCharacterActivity(event({ kind: 'scene_expiry', sceneNumber: 3, expiredEffectsCount: 2,
+      before: { conditions: [{ id: 'lento', name: 'Lento' }, 'Legada'] }, after: { conditions: ['Legada'] },
+    }))).toBe('Cena 3 encerrada · 2 efeito(s) expirado(s) · Condições: −Lento');
+  });
   it('apresenta cura de ritual sem estabilização automática', () => {
     const text = describeCharacterActivity(event({ kind: 'heal', value: 1,
       before: { hp_current: 0, conditions: ['Inconsciente', 'Morrendo'] },

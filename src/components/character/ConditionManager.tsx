@@ -1,3 +1,5 @@
+import { EffectDurationNotice } from './EffectDurationNotice';
+import type { EffectDurationMetadata } from '@/types/effect-duration';
 /**
  * ConditionManager - Gerenciador de condições do personagem
  * 
@@ -75,10 +77,10 @@ import { getConditionPresentation } from '@/lib/conditions/condition-identity';
 import { ConditionTimer, ConditionTimerSegmented, DyingTimer } from './ConditionTimer';
 
 // Interface para condição ativa com duração e parâmetros
-export interface ActiveCondition {
+export interface ActiveCondition extends EffectDurationMetadata {
   id: string;
   name: string;
-  turnsRemaining: number | null; // null = permanente até remoção manual
+  turnsRemaining: number | null; // null = sem contador de rodadas; conferir duration/origem
   addedAt: Date | string;
   dyingCounter?: number; // Para condição Morrendo (3, 2, 1, 0 = morte)
   params?: ConditionParams; // Parâmetros adicionais para condições especiais
@@ -196,7 +198,7 @@ export function ConditionManager({
     if (!await saveConditions(
       conditions.map(c => {
         if (c.id !== conditionId) return c;
-        return { ...c, turnsRemaining: (c.turnsRemaining || 0) + 1 };
+        return { ...c, duration: 'rodadas' as const, turnsRemaining: (c.turnsRemaining || 0) + 1 };
       })
     )) return;
   };
@@ -340,6 +342,7 @@ export function ConditionManager({
                             <p className="text-xs text-foreground/70 mt-1 line-clamp-2">
                               {CONDITIONS[condition.id] ? getConditionEffectWithParams(condition.id, condition.params) : conditionData.effect}
                             </p>
+                            <EffectDurationNotice effect={condition} />
                             {!CONDITIONS[condition.id] && condition.params?.customEffect && (
                               <p className="text-xs text-muted-foreground mt-1">{condition.params.customEffect}</p>
                             )}

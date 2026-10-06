@@ -138,6 +138,7 @@ export function RitualConditionModal({
     const newConditions: ActiveCondition[] = conditionsToApply.map(pc => ({
       id: pc.conditionId,
       name: CONDITIONS[pc.conditionId]?.name || pc.conditionName,
+      duration: pc.duration === 'rodada' ? 'rodadas' : pc.duration,
       turnsRemaining: durationToTurns(pc.duration, pc.turnsCount),
       addedAt: new Date(),
     }));
