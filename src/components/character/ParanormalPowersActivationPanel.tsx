@@ -300,7 +300,7 @@ export function ParanormalPowersActivationPanel(props: ParanormalPowersActivatio
               </AnimatePresence>
 
               {/* Botões de Reset */}
-              <div hidden={availablePowers.every(power => power.manualResolution)} className="flex flex-wrap gap-2 pt-2 border-t border-border/30">
+              {availablePowers.some(power => !power.manualResolution) && <div className="flex flex-wrap gap-2 pt-2 border-t border-border/30">
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
@@ -368,7 +368,7 @@ export function ParanormalPowersActivationPanel(props: ParanormalPowersActivatio
                     <p className="text-xs">Reseta TODOS os poderes (incluindo Escapar da Morte)</p>
                   </TooltipContent>
                 </Tooltip>
-              </div>
+              </div>}
             </CardContent>
           </CollapsibleContent>
         </Collapsible>
