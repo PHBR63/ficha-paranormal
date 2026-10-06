@@ -8,6 +8,36 @@ const event = (payload: CharacterActivityEvent['payload']): CharacterActivityEve
 });
 
 describe('Histórico de alterações de condições', () => {
+  it('apresenta cura de ritual sem estabilização automática', () => {
+    const text = describeCharacterActivity(event({ kind: 'heal', value: 1,
+      before: { hp_current: 0, conditions: ['Inconsciente', 'Morrendo'] },
+      after: { hp_current: 1, conditions: ['Morrendo'] },
+    }));
+    expect(text).toBe('Cura · PV 0 → 1 · quantidade 1 · Condições: −Inconsciente');
+  });
+
+  it('apresenta condições críticas junto ao dano de ritual', () => {
+    const text = describeCharacterActivity(event({ kind: 'damage', value: 5,
+      before: { hp_current: 5, conditions: ['Machucado'] },
+      after: { hp_current: 0, conditions: ['Machucado', { id: 'inconsciente', name: 'Inconsciente' }, { id: 'morrendo', name: 'Morrendo' }] },
+    }));
+    expect(text).toBe('Dano · PV 5 → 0 · quantidade 5 · Condições: +Inconsciente; +Morrendo');
+  });
+
+  it('mostra a transição de SAN numa alteração individual de campanha', () => {
+    const text = describeCharacterActivity(event({ kind: 'resource', resource: 'san',
+      before: { current: 0, conditions: ['Enlouquecendo'] },
+      after: { current: 1, conditions: [{ id: 'perturbado', name: 'Perturbado' }] },
+    }));
+    expect(text).toBe('Recurso alterado · SAN 0 → 1 · Condições: +Perturbado; −Enlouquecendo');
+  });
+
+  it('continua apresentando recibo antigo de PV sem inventar condições', () => {
+    expect(describeCharacterActivity(event({ kind: 'heal', value: 2,
+      before: { hp_current: 5 }, after: { hp_current: 7 },
+    }))).toBe('Cura · PV 5 → 7 · quantidade 2');
+  });
+
   it('mostra a condição adicionada junto da alteração de PV', () => {
     const text = describeCharacterActivity(event({ kind: 'resources',
       before: { hp_current: 11, pe_current: 10, san_current: 15, conditions: [] },
