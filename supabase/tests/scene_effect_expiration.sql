@@ -111,4 +111,40 @@ DO $$ BEGIN
  IF (SELECT conditions FROM public.characters WHERE id='00000000-0000-4000-8000-000000000201') @> '[{"id":"lento"}]' THEN RAISE EXCEPTION 'Cliente legado manteve efeito'; END IF;
  IF (SELECT count(*) FROM public.character_activity_events WHERE payload->>'kind'='scene_expiry')<>2 THEN RAISE EXCEPTION 'Cliente legado sem histórico'; END IF;
 END $$;
+-- Campos legados nulos não impedem expiração no outro campo válido.
+RESET ROLE;
+UPDATE public.characters SET conditions=NULL,active_buffs='[]' WHERE id='00000000-0000-4000-8000-000000000201';
+SET LOCAL ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000212',true);
+DO $$ DECLARE e public.character_activity_events; BEGIN
+ e:=public.cast_character_ritual(gen_random_uuid(),'00000000-0000-4000-8000-000000000201',9,0,
+   '{"ritualId":"nulos","ritualName":"Campos nulos"}','00000000-0000-4000-8000-000000000202','v2');
+ PERFORM public.apply_character_effect(gen_random_uuid(),e.character_id,'weapon_buff',
+   '{"ritualId":"nulos","ritualName":"Campos nulos","element":"conhecimento","duration":"cena","attackBonus":1,"enhancements":[]}',
+   '{"active_buffs":[]}',e.id,e.campaign_id,e.campaign_version);
+END $$;
+SELECT set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000211',true);
+DO $$ BEGIN
+ PERFORM public.end_campaign_scene_v2(gen_random_uuid(),'00000000-0000-4000-8000-000000000202',3,false);
+ IF (SELECT active_buffs FROM public.characters WHERE id='00000000-0000-4000-8000-000000000201')<>'[]'::jsonb
+   OR (SELECT conditions FROM public.characters WHERE id='00000000-0000-4000-8000-000000000201') IS NOT NULL THEN
+   RAISE EXCEPTION 'Condição nula impediu expiração de bônus ou foi normalizada'; END IF;
+END $$;
+RESET ROLE;
+UPDATE public.characters SET conditions='[]',active_buffs=NULL WHERE id='00000000-0000-4000-8000-000000000201';
+SET LOCAL ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000212',true);
+DO $$ DECLARE e public.character_activity_events; BEGIN
+ e:=public.cast_character_ritual(gen_random_uuid(),'00000000-0000-4000-8000-000000000201',9,0,
+   '{"ritualId":"nulos","ritualName":"Campos nulos"}','00000000-0000-4000-8000-000000000202','v2');
+ PERFORM public.apply_character_effect(gen_random_uuid(),e.character_id,'conditions','[{"id":"lento","name":"Lento","duration":"cena"}]',
+   '{"conditions":[]}',e.id,e.campaign_id,e.campaign_version);
+END $$;
+SELECT set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000211',true);
+DO $$ BEGIN
+ PERFORM public.end_campaign_scene_v2(gen_random_uuid(),'00000000-0000-4000-8000-000000000202',4,false);
+ IF (SELECT conditions FROM public.characters WHERE id='00000000-0000-4000-8000-000000000201')<>'[]'::jsonb
+   OR (SELECT active_buffs FROM public.characters WHERE id='00000000-0000-4000-8000-000000000201') IS NOT NULL THEN
+   RAISE EXCEPTION 'Buff nulo impediu expiração de condição ou foi normalizado'; END IF;
+END $$;
 ROLLBACK;
