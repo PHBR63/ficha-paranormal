@@ -4,7 +4,7 @@
  * OTIMIZAÇÃO: Componente memoizado para evitar re-renders desnecessários
  */
 
-import { useState, memo } from 'react';
+import { useRef, useState, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, Heart, Zap, Star, Edit2, Check, X, Award, Crown, Gem, Sparkles, Droplet, Skull, BookOpen, Sword, Dices, Weight, AlertTriangle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -130,7 +130,7 @@ interface CharacterSheetHeaderProps {
   activeBonusSources?: string[];
   bonusSummary?: BonusSummary; // Dados completos para o painel expandido
   elementalAffinity?: string | null; // Afinidade elemental escolhida
-  onStatsChange?: (stats: { hp: number; pe: number; san: number }) => void;
+  onStatsChange?: (stats: { hp: number; pe: number; san: number }) => void | boolean | Promise<void | boolean>;
   onLevelUp?: () => void;
   onToggleConditionalBonus?: (bonusId: string, active: boolean) => void; // Toggle de bônus condicionais
   className?: string;
@@ -189,6 +189,9 @@ export const CharacterSheetHeader = memo(function CharacterSheetHeader({
   const [tempHp, setTempHp] = useState(hpCurrent);
   const [tempPe, setTempPe] = useState(peCurrent);
   const [tempSan, setTempSan] = useState(sanCurrent);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const saveLock = useRef(false);
   
   // Estado do painel de bônus expandido e filtro de categoria
   const [bonusPanelOpen, setBonusPanelOpen] = useState(false);
@@ -223,13 +226,20 @@ export const CharacterSheetHeader = memo(function CharacterSheetHeader({
   const isUnconscious = displayHp === 0;
   const isMentalCollapse = displaySan === 0;
 
-  const handleSave = () => {
-    onStatsChange?.({
-      hp: Math.max(0, Math.min(totalHpMax, tempHp)),
-      pe: Math.max(0, Math.min(totalPeMax, tempPe)),
-      san: Math.max(0, Math.min(sanMax, tempSan)),
-    });
-    setEditMode(false);
+  // Preserva a edição até confirmar o servidor; os limites são os já exibidos na ficha.
+  const handleSave = async () => {
+    if (saveLock.current || !onStatsChange) return;
+    if ([[tempHp, totalHpMax], [tempPe, totalPeMax], [tempSan, sanMax]].some(([value, max]) => !Number.isInteger(value) || value < 0 || value > max)) {
+      setSaveError('Informe valores inteiros entre zero e o máximo de cada recurso.');
+      return;
+    }
+    saveLock.current = true; setSaving(true); setSaveError(null);
+    try {
+      const confirmed = await onStatsChange({ hp: tempHp, pe: tempPe, san: tempSan });
+      if (confirmed === false) throw new Error('Gravação não confirmada.');
+      setEditMode(false);
+    } catch { setSaveError('Não foi possível confirmar os recursos. Confira a conexão e tente novamente.'); }
+    finally { saveLock.current = false; setSaving(false); }
   };
 
   const handleCancel = () => {
@@ -240,6 +250,7 @@ export const CharacterSheetHeader = memo(function CharacterSheetHeader({
   };
 
   const startEdit = () => {
+    setSaveError(null);
     setTempHp(hpCurrent);
     setTempPe(peCurrent);
     setTempSan(sanCurrent);
@@ -380,20 +391,23 @@ export const CharacterSheetHeader = memo(function CharacterSheetHeader({
         <div className="flex flex-col items-end">
           {editMode ? (
             <div className="flex gap-1">
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleSave}>
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleSave} aria-label="Salvar recursos da ficha" disabled={saving}>
                 <Check className="w-4 h-4 text-primary" />
               </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleCancel}>
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleCancel} aria-label="Cancelar edição de recursos" disabled={saving}>
                 <X className="w-4 h-4 text-destructive" />
               </Button>
             </div>
           ) : (
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={startEdit}>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={startEdit} aria-label="Editar recursos da ficha" disabled={!onStatsChange}>
               <Edit2 className="w-4 h-4 text-muted-foreground" />
             </Button>
           )}
         </div>
       </div>
+
+      {saveError && <p role="alert" className="text-sm text-destructive">{saveError}</p>}
+      {saving && <p role="status" className="text-sm text-muted-foreground">Salvando recursos...</p>}
 
       {/* Barras de recursos: HP, PE, SAN */}
       <div className="grid grid-cols-3 gap-4">
@@ -437,8 +451,10 @@ export const CharacterSheetHeader = memo(function CharacterSheetHeader({
             {editMode ? (
               <Input
                 type="number"
-                value={tempHp}
-                onChange={(e) => setTempHp(parseInt(e.target.value) || 0)}
+                value={Number.isNaN(tempHp) ? '' : tempHp}
+                onChange={(e) => setTempHp(e.target.value === '' ? NaN : Number(e.target.value))}
+                aria-label="PV atual"
+                disabled={saving}
                 className="w-14 h-6 text-center text-xs"
                 min={0}
                 max={totalHpMax}
@@ -475,8 +491,10 @@ export const CharacterSheetHeader = memo(function CharacterSheetHeader({
             {editMode ? (
               <Input
                 type="number"
-                value={tempPe}
-                onChange={(e) => setTempPe(parseInt(e.target.value) || 0)}
+                value={Number.isNaN(tempPe) ? '' : tempPe}
+                onChange={(e) => setTempPe(e.target.value === '' ? NaN : Number(e.target.value))}
+                aria-label="PE atual"
+                disabled={saving}
                 className="w-14 h-6 text-center text-xs"
                 min={0}
                 max={totalPeMax}
@@ -525,8 +543,10 @@ export const CharacterSheetHeader = memo(function CharacterSheetHeader({
             {editMode ? (
               <Input
                 type="number"
-                value={tempSan}
-                onChange={(e) => setTempSan(parseInt(e.target.value) || 0)}
+                value={Number.isNaN(tempSan) ? '' : tempSan}
+                onChange={(e) => setTempSan(e.target.value === '' ? NaN : Number(e.target.value))}
+                aria-label="SAN atual"
+                disabled={saving}
                 className="w-14 h-6 text-center text-xs"
                 min={0}
                 max={sanMax}
