@@ -1,4 +1,4 @@
-import { BASE_CONDITION_TEXT, expandBaseConditionIds } from './base-condition-rules';
+import { BASE_CONDITION_REMOVAL, BASE_CONDITION_TEXT, expandBaseConditionIds } from './base-condition-rules';
 
 // Ordem Paranormal RPG v1.3 - Sistema de Condições
 // Baseado no livro de regras oficial - Atualizado com todas as condições e efeitos contextuais
@@ -433,6 +433,9 @@ for (const [id, name] of [['abalado', 'Abalado'], ['fatigado', 'Fatigado']] as c
 CONDITIONS.machucado.hasParams = false;
 CONDITIONS.machucado.description = BASE_CONDITION_TEXT.machucado;
 CONDITIONS.vulneravel.removal = 'Fim da cena, salvo duração definida pela fonte.';
+for (const [id, removal] of Object.entries(BASE_CONDITION_REMOVAL)) {
+  if (CONDITIONS[id]) CONDITIONS[id].removal = removal;
+}
 
 /**
  * Modificadores de defesa contextuais por condição
@@ -645,7 +648,7 @@ export function getConditionEffectWithParams(id: string, params?: ConditionParam
     case 'envenenado': {
       const poison = params.poisonName ? ` (${params.poisonName})` : '';
       const dt = params.poisonDT ? ` DT ${params.poisonDT}` : '';
-      return `Dano de veneno: ${params.poisonDamage ?? '1d6'}${poison}${dt}.`;
+      return `Dano de veneno: ${params.poisonDamage ?? 'conferir a fórmula da fonte'}${poison}${dt}.`;
     }
     default:
       return condition.effect;

@@ -3,7 +3,7 @@ import { useConditionTurnApplication } from '@/hooks/character/useConditionTurnA
 import { useCharacterResourceUpdate } from '@/hooks/character/useCharacterResourceUpdate';
 import { ritualRollHistory } from '@/lib/ritual-roll-history';
 import { confirmConditionReplacement } from '@/services/character-resource-service';
-import { parseConditions, serializeConditions, type PersistedCondition } from '@/lib/conditions/condition-serialization';
+import { getConditionNames, parseConditions, serializeConditions, type PersistedCondition } from '@/lib/conditions/condition-serialization';
 import { ritualTargetSkillBonuses } from '@/lib/ritual-target-skills';
 import { useRitualApplicationTargets } from '@/hooks/character/useRitualApplicationTargets';
 import { useCharacterActivity } from '@/hooks/character/useCharacterActivity';
@@ -181,7 +181,7 @@ interface MobileCharacterSheetProps {
     intellect: number;
     presence: number;
     vigor: number;
-    conditions: string[];
+    conditions: (string | PersistedCondition)[];
     abilities: string[];
     powers: Array<{ name: string; description: string }>;
     rituals: string[];
@@ -710,7 +710,7 @@ export function MobileCharacterSheet({
     classId: character?.class,
     classTrack: character?.class_track,
     classPowers: character?.powers?.map(p => p.name) || [],
-    activeConditions: character?.conditions || [],
+    activeConditions: parseConditions(character?.conditions || []).map(condition => condition.id),
     // Novos campos para bônus condicionais do SUE
     hpCurrent: localHpCurrent,
     hpMax: character?.hp_max || 0,
@@ -904,7 +904,7 @@ export function MobileCharacterSheet({
       intellect: character.intellect,
       presence: character.presence,
     },
-    conditions: character.conditions || [],
+    conditions: parseConditions(character.conditions || []).map(condition => condition.id),
     activeRituals: activeRitualsForSUE,
     paranormalPowers: paranormalPowersForSUE,
   });
@@ -2782,7 +2782,7 @@ export function MobileCharacterSheet({
           san_max: character.san_max,
           vigor: character.vigor,
           presence: character.presence,
-          conditions: character.conditions || [],
+          conditions: getConditionNames(character.conditions || []),
         }}
         onRest={async (newStats) => {
           // Adapta interface do RestModal para o handleCombatStatsChange

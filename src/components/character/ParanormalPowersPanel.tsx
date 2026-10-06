@@ -250,7 +250,7 @@ export function ParanormalPowersPanel({
             <TooltipContent side="bottom" className="max-w-xs">
               <p className="font-medium mb-1">Slots de NEX</p>
               <p className="text-xs text-muted-foreground">
-                A cada NEX de escolha (25%, 50%, 75%, 99%), você escolhe entre um Poder de Classe ou Transcender para um Poder Paranormal.
+                Nos NEX 15%, 30%, 45%, 60%, 75% e 90%, você pode escolher Transcender no lugar de um poder de classe.
               </p>
               <p className="text-xs mt-1 text-destructive/80">
                 Transcender: Não recebe o aumento de Sanidade daquele NEX.
@@ -282,7 +282,7 @@ export function ParanormalPowersPanel({
           </div>
           {affinityActive && (
             <p className="text-xs text-muted-foreground mt-2">
-              Poderes de {ELEMENT_LABELS[elementalAffinity]} têm efeitos aprimorados.
+              Aprimorar um poder de {ELEMENT_LABELS[elementalAffinity]} exige escolhê-lo uma segunda vez e conferir seus requisitos.
             </p>
           )}
         </div>

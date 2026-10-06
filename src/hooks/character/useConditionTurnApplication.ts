@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { toast } from 'sonner';
-import { activityClient, activityFailure, activityJson, confirmActivity } from '@/services/character-activity-service';
+import { activityClient, activityFailure, activityJson, awaitActivityResponse, confirmActivity } from '@/services/character-activity-service';
 import { conditionsAfterTurn, validateTurnResolution, type ConditionTurnResolution } from '@/lib/rules/condition-turn';
 import { parseConditions, serializeConditions, type PersistedCondition } from '@/lib/conditions/condition-serialization';
 import { useAutoConditions } from '@/hooks/useAutoConditions';
@@ -38,7 +38,7 @@ export function useConditionTurnApplication(character: TurnCharacterSnapshot | n
         san_max: character.san_max, conditions: character.conditions }),
       p_conditions: activityJson(serializeConditions(newConditions)), p_resolution: activityJson(resolution) };
     return async () => {
-      const { data, error } = await activityClient.rpc('resolve_character_condition_turn', args);
+      const { data, error } = await awaitActivityResponse(activityClient.rpc('resolve_character_condition_turn', args));
       if (error) throw activityFailure('O início de turno não foi confirmado.', error);
       const receipt = confirmActivity(data, characterId, operationId);
       if (scope.current === characterId) {

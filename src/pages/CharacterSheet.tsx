@@ -2654,7 +2654,7 @@ export default function CharacterSheet() {
               intellect: character.intellect,
               presence: character.presence,
               vigor: character.vigor,
-              conditions: getConditionNames(character.conditions),
+              conditions: character.conditions,
               abilities: character.abilities,
               powers: character.powers,
               rituals: character.rituals,

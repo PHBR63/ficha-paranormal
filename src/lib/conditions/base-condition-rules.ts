@@ -30,6 +30,20 @@ export const BASE_CONDITION_TEXT: Record<string, string> = {
 };
 
 const physical = (value: number) => ({ agility: value, strength: value, vigor: value });
+/** Encerramento informado pela fonte; não presume DTs ou duração por turno. */
+export const BASE_CONDITION_REMOVAL: Record<string, string> = {
+  ...Object.fromEntries(Object.keys(BASE_CONDITION_TEXT).map(id => [id,
+    'Fim da cena, salvo duração ou encerramento específicos definidos pela fonte. Confira com o mestre.'])),
+  caido: 'Ação de movimento para levantar-se.',
+  machucado: 'Ter mais da metade dos PV totais.',
+  perturbado: 'Ter pelo menos metade da SAN total; o efeito narrativo da cena exige conferência com o mestre.',
+  sangrando: 'Vigor DT 20 no início do turno, ou ação completa com Medicina DT 20.',
+  morrendo: 'Medicina DT 20 +5 por estabilização anterior na cena, ou efeito específico. Curar PV não encerra Morrendo.',
+  enlouquecendo: 'Diplomacia DT 20 +5 por vez que foi acalmado na cena, ou recuperar ao menos 1 SAN.',
+  inconsciente: 'Conferir a causa. Se causada por zero PV, um efeito que cure ao menos 1 PV a encerra.',
+  envenenado: 'Duração e tratamento definidos pelo veneno; sem duração informada, termina no fim da cena.',
+  fascinado: 'Ação hostil contra o personagem, ação padrão para sacudi-lo, ou encerramento definido pela fonte.',
+};
 const mental = (value: number) => ({ intellect: value, presence: value });
 
 /** Mecânicas do lote conferido, separando modificadores de d20 dos valores numéricos. */
