@@ -48,6 +48,8 @@ import {
   getConditionEffectWithParams,
 } from '@/lib/conditions';
 import { toast } from 'sonner';
+import { useConditionMutation } from '@/hooks/character/useConditionMutation';
+import { getConditionPresentation } from '@/lib/conditions/condition-identity';
 import { DyingTimer } from '../ConditionTimer';
 
 // Interface para condição ativa
@@ -62,7 +64,7 @@ export interface ActiveCondition {
 
 interface MobileConditionManagerProps {
   conditions: ActiveCondition[];
-  onConditionsChange: (conditions: ActiveCondition[]) => void;
+  onConditionsChange: (conditions: ActiveCondition[]) => void | Promise<void>;
   characterName?: string;
   onDamageFromCondition?: (damage: number, isVerdadeiro: boolean) => void;
   onCharacterDeath?: () => void;
@@ -93,11 +95,9 @@ const ConditionCard = memo(function ConditionCard({
   onReduceDyingCounter?: () => void;
 }) {
   const [dragX, setDragX] = useState(0);
-  const conditionData = CONDITIONS[condition.id];
-  
-  if (!conditionData) return null;
+  const conditionData = getConditionPresentation(condition.id, condition.name);
 
-  const handleDragEnd = (_: any, info: PanInfo) => {
+  const handleDragEnd = (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     if (info.offset.x < -100) {
       if ('vibrate' in navigator) navigator.vibrate(30);
       onRemove();
@@ -152,8 +152,11 @@ const ConditionCard = memo(function ConditionCard({
             </div>
             
             <p className="text-[11px] text-muted-foreground mt-1 line-clamp-2">
-              {getConditionEffectWithParams(condition.id, condition.params)}
+              {CONDITIONS[condition.id] ? getConditionEffectWithParams(condition.id, condition.params) : conditionData.effect}
             </p>
+            {!CONDITIONS[condition.id] && condition.params?.customEffect && (
+              <p className="text-xs text-muted-foreground mt-1">{condition.params.customEffect}</p>
+            )}
             
             {/* Parâmetros especiais */}
             {condition.params && (
@@ -180,6 +183,7 @@ const ConditionCard = memo(function ConditionCard({
                 size="icon"
                 className="h-7 w-7 text-destructive"
                 onClick={onReduceDyingCounter}
+                aria-label={`Reduzir contador de morte de ${condition.name}`}
               >
                 <Skull className="h-4 w-4" />
               </Button>
@@ -193,6 +197,7 @@ const ConditionCard = memo(function ConditionCard({
                   size="icon"
                   className="h-7 w-7"
                   onClick={onDecreaseTurns}
+                  aria-label={`Reduzir duração de ${condition.name}`}
                 >
                   <Minus className="h-3 w-3" />
                 </Button>
@@ -201,6 +206,7 @@ const ConditionCard = memo(function ConditionCard({
                   size="icon"
                   className="h-7 w-7"
                   onClick={onIncreaseTurns}
+                  aria-label={`Aumentar duração de ${condition.name}`}
                 >
                   <Plus className="h-3 w-3" />
                 </Button>
@@ -213,6 +219,7 @@ const ConditionCard = memo(function ConditionCard({
               size="icon"
               className="h-7 w-7 text-muted-foreground"
               onClick={onRemove}
+              aria-label={`Remover condição ${condition.name}`}
             >
               <X className="h-4 w-4" />
             </Button>
@@ -229,10 +236,14 @@ function AddConditionSheet({
   onOpenChange,
   onAdd,
   existingConditions,
+  isSaving,
+  saveError,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onAdd: (conditionId: string, turns: number | null, params?: ConditionParams) => void;
+  onAdd: (conditionId: string, turns: number | null, params?: ConditionParams) => Promise<boolean>;
+  isSaving: boolean;
+  saveError: string | null;
   existingConditions: string[];
 }) {
   const [search, setSearch] = useState('');
@@ -268,10 +279,10 @@ function AddConditionSheet({
     return groups;
   }, [filteredConditions]);
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!selectedCondition) return;
     const turnsNum = turns ? parseInt(turns) : null;
-    onAdd(selectedCondition, turnsNum, Object.keys(params).length > 0 ? params : undefined);
+    if (!await onAdd(selectedCondition, turnsNum, Object.keys(params).length > 0 ? params : undefined)) return;
     setSelectedCondition(null);
     setTurns('');
     setParams({});
@@ -283,6 +294,9 @@ function AddConditionSheet({
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="h-[85vh]">
+        <fieldset disabled={isSaving} className="border-0 min-w-0">
+          {saveError && <p role="alert" className="text-sm text-destructive">{saveError}</p>}
+          {isSaving && <p role="status" className="text-xs">Salvando condições...</p>}
         <SheetHeader className="pb-4">
           <SheetTitle className="flex items-center gap-2">
             <AlertTriangle className="w-5 h-5 text-warning" />
@@ -441,6 +455,7 @@ function AddConditionSheet({
             </div>
           </CustomScroll>
         )}
+      </fieldset>
       </SheetContent>
     </Sheet>
   );
@@ -456,11 +471,12 @@ export const MobileConditionManager = memo(function MobileConditionManager({
   className,
 }: MobileConditionManagerProps) {
   const [addSheetOpen, setAddSheetOpen] = useState(false);
+  const { saveConditions, isSaving, saveError } = useConditionMutation(onConditionsChange);
 
   // Adicionar condição
-  const handleAddCondition = useCallback((conditionId: string, turns: number | null, params?: ConditionParams) => {
+  const handleAddCondition = useCallback(async (conditionId: string, turns: number | null, params?: ConditionParams) => {
     const conditionData = CONDITIONS[conditionId];
-    if (!conditionData) return;
+    if (!conditionData) return false;
 
     const newCondition: ActiveCondition = {
       id: conditionId,
@@ -472,40 +488,42 @@ export const MobileConditionManager = memo(function MobileConditionManager({
 
     if (conditionId === 'morrendo') {
       newCondition.dyingCounter = 3;
-      toast.error('💀 Condição MORRENDO adicionada! 3 rodadas até a morte.', { duration: 5000 });
+
     }
 
     if ('vibrate' in navigator) navigator.vibrate(30);
-    onConditionsChange([...conditions, newCondition]);
+    if (!await saveConditions([...conditions, newCondition])) return false;
+    if (conditionId === 'morrendo') toast.error('💀 Condição MORRENDO adicionada! 3 rodadas até a morte.', { duration: 5000 });
     toast.success(`${conditionData.icon} ${conditionData.name} adicionada`);
-  }, [conditions, onConditionsChange]);
+    return true;
+  }, [conditions, saveConditions]);
 
   // Remover condição
-  const handleRemoveCondition = useCallback((conditionId: string) => {
+  const handleRemoveCondition = useCallback(async (conditionId: string) => {
     const condition = CONDITIONS[conditionId];
-    onConditionsChange(conditions.filter(c => c.id !== conditionId));
+    if (!await saveConditions(conditions.filter(c => c.id !== conditionId))) return false;
     toast.info(`${condition?.icon || '❌'} ${condition?.name || conditionId} removida`);
-  }, [conditions, onConditionsChange]);
+  }, [conditions, saveConditions]);
 
   // Controles de turno
-  const handleIncreaseTurns = useCallback((conditionId: string) => {
-    onConditionsChange(conditions.map(c => 
+  const handleIncreaseTurns = useCallback(async (conditionId: string) => {
+    if (!await saveConditions(conditions.map(c =>
       c.id === conditionId ? { ...c, turnsRemaining: (c.turnsRemaining || 0) + 1 } : c
-    ));
-  }, [conditions, onConditionsChange]);
+    ))) return false;
+  }, [conditions, saveConditions]);
 
-  const handleDecreaseTurns = useCallback((conditionId: string) => {
-    onConditionsChange(
+  const handleDecreaseTurns = useCallback(async (conditionId: string) => {
+    if (!await saveConditions(
       conditions.map(c => {
         if (c.id !== conditionId || c.turnsRemaining === null) return c;
         const newTurns = c.turnsRemaining - 1;
-        return newTurns <= 0 ? c : { ...c, turnsRemaining: newTurns };
+        return { ...c, turnsRemaining: newTurns };
       }).filter(c => c.turnsRemaining === null || c.turnsRemaining > 0)
-    );
-  }, [conditions, onConditionsChange]);
+    )) return false;
+  }, [conditions, saveConditions]);
 
   // Reduzir contador de morrendo
-  const handleReduceDyingCounter = useCallback((conditionId: string) => {
+  const handleReduceDyingCounter = useCallback(async (conditionId: string) => {
     const morrendoCondition = conditions.find(c => c.id === 'morrendo');
     if (!morrendoCondition || morrendoCondition.dyingCounter === undefined) return;
 
@@ -518,14 +536,14 @@ export const MobileConditionManager = memo(function MobileConditionManager({
       return;
     }
 
-    onConditionsChange(
+    if (!await saveConditions(
       conditions.map(c => c.id === 'morrendo' ? { ...c, dyingCounter: newCounter } : c)
-    );
+    )) return false;
     toast.warning(`⚠️ Contador de morrendo: ${newCounter} rodadas restantes.`);
-  }, [conditions, onConditionsChange, onCharacterDeath]);
+  }, [conditions, saveConditions, onCharacterDeath]);
 
   // Processar início de turno
-  const handleProcessStartOfTurn = useCallback(() => {
+  const handleProcessStartOfTurn = useCallback(async () => {
     const messages: string[] = [];
     let totalDamage = 0;
 
@@ -565,22 +583,22 @@ export const MobileConditionManager = memo(function MobileConditionManager({
         return;
       }
       messages.push(`💀 Morrendo: ${newCounter} rodadas restantes`);
-      onConditionsChange(
+      if (!await saveConditions(
         conditions.map(c => c.id === 'morrendo' ? { ...c, dyingCounter: newCounter } : c)
-      );
+      )) return false;
     }
 
     // Feedback
     if ('vibrate' in navigator) navigator.vibrate(30);
     if (messages.length > 0) {
-      toast.info('⏰ Início de Turno', {
+      toast.info('⏰ Início de turno calculado — confira aplicação', {
         description: messages.join('\n'),
         duration: 5000,
       });
     } else {
-      toast.success('Início de turno: nenhum efeito de condição ativo.');
+      toast.info('Início de turno: nenhum efeito calculado.');
     }
-  }, [conditions, onConditionsChange, onDamageFromCondition, onCharacterDeath]);
+  }, [conditions, saveConditions, onDamageFromCondition, onCharacterDeath]);
 
   const existingConditionIds = useMemo(() => conditions.map(c => c.id), [conditions]);
   const hasMorrendo = conditions.some(c => c.id === 'morrendo');
@@ -589,7 +607,9 @@ export const MobileConditionManager = memo(function MobileConditionManager({
   );
 
   return (
-    <div className={cn("ordo-panel", className)}>
+    <fieldset disabled={isSaving} className={cn("ordo-panel min-w-0", className)}>
+      {saveError && <p role="alert" className="p-3 text-sm text-destructive">{saveError}</p>}
+      {isSaving && <p role="status" className="p-3 text-xs">Salvando condições...</p>}
       {/* Header */}
       <div className="p-3 flex items-center justify-between border-b border-border">
         <div className="flex items-center gap-2">
@@ -619,6 +639,7 @@ export const MobileConditionManager = memo(function MobileConditionManager({
             size="sm"
             className="h-7 text-xs"
             onClick={() => setAddSheetOpen(true)}
+            aria-label="Adicionar condição"
           >
             <Plus className="w-4 h-4" />
           </Button>
@@ -627,6 +648,7 @@ export const MobileConditionManager = memo(function MobileConditionManager({
 
       {/* Lista de condições */}
       <div className="p-3 space-y-2">
+        {hasStartOfTurnEffects && <p className="text-xs text-muted-foreground">Confira testes de resistência e dano com o mestre antes de processar o início de turno. O cálculo destes efeitos requer conferência manual.</p>}
         {conditions.length === 0 ? (
           <div className="text-center py-4 text-sm text-muted-foreground">
             <Heart className="w-6 h-6 mx-auto mb-2 opacity-50" />
@@ -666,8 +688,10 @@ export const MobileConditionManager = memo(function MobileConditionManager({
         onOpenChange={setAddSheetOpen}
         onAdd={handleAddCondition}
         existingConditions={existingConditionIds}
+        isSaving={isSaving}
+        saveError={saveError}
       />
-    </div>
+    </fieldset>
   );
 });
 

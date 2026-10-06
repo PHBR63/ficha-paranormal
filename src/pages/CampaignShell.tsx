@@ -391,6 +391,7 @@ export default function CampaignShell() {
           open={isSettingsOpen}
           onOpenChange={setIsSettingsOpen}
           campaignId={campaignId}
+          schemaVersion={campaignData.schemaVersion ?? 'v1'}
           campaignName={campaign.name}
           campaignDescription={campaign.description}
           members={members}

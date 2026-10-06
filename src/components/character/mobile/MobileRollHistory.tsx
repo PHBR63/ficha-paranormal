@@ -30,6 +30,9 @@ import {
   X,
   Clock,
 } from 'lucide-react';
+import { useCharacterActivity } from '@/hooks/character/useCharacterActivity';
+import { activityJson } from '@/services/character-activity-service';
+import { activityRollEntries } from '@/lib/roll-history-adapter';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -45,9 +48,16 @@ export interface RollHistoryEntry {
   timestamp: Date;
   // Dados da rolagem
   diceCount: number;
+  diceType?: number;
+  diceMultiplier?: number;
   results: number[];
   bestResult: number;
   bonus: number;
+  skillBonus?: number;
+  otherBonuses?: number;
+  extraDice?: number;
+  criticalThreshold?: number;
+  isDisadvantage?: boolean;
   total: number;
   // Contexto adicional
   targetDT?: number;
@@ -448,71 +458,15 @@ export function RollHistoryPreview({
   );
 }
 
-// Hook para gerenciar histórico de rolagens
-export function useRollHistory(maxEntries: number = 50) {
-  const [rolls, setRolls] = useState<RollHistoryEntry[]>(() => {
-    // Tenta carregar do localStorage
-    try {
-      const saved = localStorage.getItem('roll_history');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        return parsed.map((r: any) => ({
-          ...r,
-          timestamp: new Date(r.timestamp),
-        }));
-      }
-    } catch (e) {
-      console.warn('Erro ao carregar histórico de rolagens:', e);
-    }
-    return [];
-  });
-  
-  // Salva no localStorage quando muda
-  const saveToStorage = (newRolls: RollHistoryEntry[]) => {
-    try {
-      localStorage.setItem('roll_history', JSON.stringify(newRolls.slice(0, maxEntries)));
-    } catch (e) {
-      console.warn('Erro ao salvar histórico de rolagens:', e);
-    }
-  };
-  
-  // Adiciona nova rolagem
+/** Histórico confirmado pelo servidor, sempre delimitado pela ficha autenticada. */
+export function useRollHistory(characterId: string) {
+  const activity = useCharacterActivity(characterId);
+  const rolls = activityRollEntries(activity.events, characterId);
   const addRoll = (roll: Omit<RollHistoryEntry, 'id' | 'timestamp'>) => {
-    const newRoll: RollHistoryEntry = {
-      ...roll,
-      id: crypto.randomUUID(),
-      timestamp: new Date(),
-    };
-    
-    setRolls(prev => {
-      const updated = [newRoll, ...prev].slice(0, maxEntries);
-      saveToStorage(updated);
-      return updated;
-    });
-    
+    const newRoll: RollHistoryEntry = { ...roll, id: crypto.randomUUID(), timestamp: new Date() };
+    void activity.addRoll({ entry: activityJson(roll), label: roll.label, type: roll.type }, newRoll.id);
     return newRoll;
   };
-  
-  // Remove uma rolagem
-  const removeRoll = (id: string) => {
-    setRolls(prev => {
-      const updated = prev.filter(r => r.id !== id);
-      saveToStorage(updated);
-      return updated;
-    });
-  };
-  
-  // Limpa histórico
-  const clearHistory = () => {
-    setRolls([]);
-    localStorage.removeItem('roll_history');
-  };
-  
-  return {
-    rolls,
-    addRoll,
-    removeRoll,
-    clearHistory,
-    hasRolls: rolls.length > 0,
-  };
+  const clearHistory = () => { void activity.hideHistory().catch(() => undefined); };
+  return { rolls, addRoll, removeRoll: undefined, clearHistory, hasRolls: rolls.length > 0 };
 }

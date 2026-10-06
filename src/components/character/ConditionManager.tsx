@@ -11,6 +11,7 @@
  */
 
 import { useState } from 'react';
+import { useConditionMutation } from '@/hooks/character/useConditionMutation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -72,6 +73,7 @@ import {
   type ActiveConditionWithParams,
 } from '@/lib/game-engine';
 import { toast } from 'sonner';
+import { getConditionPresentation } from '@/lib/conditions/condition-identity';
 import { ConditionTimer, ConditionTimerSegmented, DyingTimer } from './ConditionTimer';
 
 // Interface para condição ativa com duração e parâmetros
@@ -86,7 +88,7 @@ export interface ActiveCondition {
 
 interface ConditionManagerProps {
   conditions: ActiveCondition[];
-  onConditionsChange: (conditions: ActiveCondition[]) => void;
+  onConditionsChange: (conditions: ActiveCondition[]) => void | Promise<void>;
   characterName?: string; // Para mensagens de início de turno
   onDamageFromCondition?: (damage: number, isVerdadeiro: boolean) => void; // Callback para aplicar dano
   onCharacterDeath?: () => void; // Callback quando morre
@@ -127,15 +129,16 @@ export function ConditionManager({
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   // Estado para mostrar resultados do início de turno
   const [turnResults, setTurnResults] = useState<string[]>([]);
+  const { saveConditions, isSaving, saveError } = useConditionMutation(onConditionsChange);
 
   // Adiciona uma condição com parâmetros opcionais
-  const handleAddCondition = (conditionId: string, turns: number | null = null, params?: ConditionParams) => {
+  const handleAddCondition = async (conditionId: string, turns: number | null = null, params?: ConditionParams) => {
     const conditionData = CONDITIONS[conditionId];
-    if (!conditionData) return;
+    if (!conditionData) return false;
 
     // Verifica se já existe
     if (conditions.some(c => c.id === conditionId)) {
-      return;
+      return false;
     }
 
     const newCondition: ActiveCondition = {
@@ -149,8 +152,12 @@ export function ConditionManager({
     // Se for condição Morrendo, inicia com contador 3
     if (conditionId === 'morrendo') {
       newCondition.dyingCounter = 3;
-      toast.error('💀 Condição MORRENDO adicionada! 3 rodadas até a morte.', { duration: 5000 });
+
     }
+
+    if (!await saveConditions([...conditions, newCondition])) return false;
+    if (conditionId === 'morrendo') toast.error('💀 Condição MORRENDO adicionada! 3 rodadas até a morte.', { duration: 5000 });
+    toast.success(`${conditionData.name} adicionada`);
 
     // Toast informativo para condições com parâmetros
     if (params) {
@@ -164,38 +171,39 @@ export function ConditionManager({
       }
     }
 
-    onConditionsChange([...conditions, newCondition]);
     setIsAddModalOpen(false);
+    return true;
   };
 
   // Remove uma condição
-  const handleRemoveCondition = (conditionId: string) => {
-    onConditionsChange(conditions.filter(c => c.id !== conditionId));
+  const handleRemoveCondition = async (conditionId: string) => {
+    if (!await saveConditions(conditions.filter(c => c.id !== conditionId))) return;
+    toast.info(`${conditions.find(c => c.id === conditionId)?.name ?? conditionId} removida`);
   };
 
   // Reduz turnos de uma condição
-  const handleReduceTurns = (conditionId: string) => {
-    onConditionsChange(
+  const handleReduceTurns = async (conditionId: string) => {
+    if (!await saveConditions(
       conditions.map(c => {
         if (c.id !== conditionId || c.turnsRemaining === null) return c;
         const newTurns = c.turnsRemaining - 1;
-        return newTurns <= 0 ? c : { ...c, turnsRemaining: newTurns };
+        return { ...c, turnsRemaining: newTurns };
       }).filter(c => c.turnsRemaining === null || c.turnsRemaining > 0)
-    );
+    )) return;
   };
 
   // Aumenta turnos de uma condição
-  const handleIncreaseTurns = (conditionId: string) => {
-    onConditionsChange(
+  const handleIncreaseTurns = async (conditionId: string) => {
+    if (!await saveConditions(
       conditions.map(c => {
         if (c.id !== conditionId) return c;
         return { ...c, turnsRemaining: (c.turnsRemaining || 0) + 1 };
       })
-    );
+    )) return;
   };
 
   // Reduz contador de morrendo manualmente
-  const handleReduceDyingCounter = (conditionId: string) => {
+  const handleReduceDyingCounter = async (conditionId: string) => {
     const morrendoCondition = conditions.find(c => c.id === 'morrendo');
     if (!morrendoCondition || morrendoCondition.dyingCounter === undefined) return;
 
@@ -207,18 +215,18 @@ export function ConditionManager({
       return;
     }
 
-    onConditionsChange(
+    if (!await saveConditions(
       conditions.map(c => {
         if (c.id !== 'morrendo') return c;
         return { ...c, dyingCounter: newCounter };
       })
-    );
+    )) return;
     
     toast.warning(`⚠️ Contador de morrendo: ${newCounter} rodadas restantes.`, { duration: 3000 });
   };
 
   // Processa início de turno - aplica dano de condições e reduz contadores
-  const handleProcessStartOfTurn = () => {
+  const handleProcessStartOfTurn = async () => {
     const conditionIds = conditions.map(c => c.id);
     const morrendoCondition = conditions.find(c => c.id === 'morrendo');
     
@@ -273,11 +281,11 @@ export function ConditionManager({
       });
       
       messages.push(result.dyingResult.message);
-      onConditionsChange(newConditions.filter(c => !result.removedConditions.includes(c.id)));
+      if (!await saveConditions(newConditions.filter(c => !result.removedConditions.includes(c.id)))) return;
     } else {
       // Remove condições autoRemove
       if (result.removedConditions.length > 0) {
-        onConditionsChange(conditions.filter(c => !result.removedConditions.includes(c.id)));
+        if (!await saveConditions(conditions.filter(c => !result.removedConditions.includes(c.id)))) return;
       }
     }
 
@@ -291,17 +299,17 @@ export function ConditionManager({
     setTurnResults(messages);
     
     if (messages.length > 0) {
-      toast.info(`⏰ Início de Turno processado`, {
+      toast.info(`⏰ Início de turno calculado — confira aplicação`, {
         description: messages.join('\n'),
         duration: 5000,
       });
     } else {
-      toast.success('Início de turno: nenhum efeito de condição ativo.');
+      toast.info('Início de turno: nenhum efeito calculado.');
     }
   };
 
   // Reduz todos os contadores (para usar no fim do turno)
-  const handleReduceAllTurns = () => {
+  const handleReduceAllTurns = async () => {
     const updatedConditions = conditions
       .map(c => {
         if (c.turnsRemaining === null) return c;
@@ -309,7 +317,7 @@ export function ConditionManager({
       })
       .filter(c => c.turnsRemaining === null || c.turnsRemaining > 0);
     
-    onConditionsChange(updatedConditions);
+    if (!await saveConditions(updatedConditions)) return;
   };
 
   // Filtra condições pela busca
@@ -345,7 +353,9 @@ export function ConditionManager({
 
   return (
     <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
-      <div className="ordo-panel overflow-hidden">
+      <fieldset disabled={isSaving} className="ordo-panel overflow-hidden min-w-0">
+        {saveError && <p role="alert" className="p-3 text-sm text-destructive">{saveError}</p>}
+        {isSaving && <p role="status" className="p-3 text-xs">Salvando condições...</p>}
         {/* Header colapsável */}
         <CollapsibleTrigger className="w-full p-4 flex items-center justify-between hover:bg-muted/30 transition-colors">
           <div className="flex items-center gap-3">
@@ -366,13 +376,13 @@ export function ConditionManager({
 
         <CollapsibleContent>
           <div className="p-4 pt-0 space-y-3 border-t border-border">
+            {hasStartOfTurnEffects && <p className="text-xs text-muted-foreground">Confira testes de resistência e dano com o mestre antes de processar o início de turno. O cálculo destes efeitos requer conferência manual.</p>}
             {/* Lista de condições ativas */}
             {conditions.length > 0 ? (
               <div className="space-y-2">
                 <AnimatePresence>
                   {conditions.map((condition) => {
-                    const conditionData = CONDITIONS[condition.id];
-                    if (!conditionData) return null;
+                    const conditionData = getConditionPresentation(condition.id, condition.name);
 
                     return (
                       <motion.div
@@ -417,8 +427,11 @@ export function ConditionManager({
                               )}
                             </div>
                             <p className="text-xs text-foreground/70 mt-1 line-clamp-2">
-                              {getConditionEffectWithParams(condition.id, condition.params)}
+                              {CONDITIONS[condition.id] ? getConditionEffectWithParams(condition.id, condition.params) : conditionData.effect}
                             </p>
+                            {!CONDITIONS[condition.id] && condition.params?.customEffect && (
+                              <p className="text-xs text-muted-foreground mt-1">{condition.params.customEffect}</p>
+                            )}
                             {/* Badge de parâmetro configurado */}
                             {condition.params && (
                               <div className="flex items-center gap-1 mt-1">
@@ -449,6 +462,7 @@ export function ConditionManager({
                                     size="icon"
                                     className="h-7 w-7"
                                     onClick={() => handleReduceTurns(condition.id)}
+                                    aria-label={`Reduzir duração de ${condition.name}`}
                                     disabled={condition.turnsRemaining === null}
                                   >
                                     <Minus className="h-3 w-3" />
@@ -466,6 +480,7 @@ export function ConditionManager({
                                     size="icon"
                                     className="h-7 w-7"
                                     onClick={() => handleIncreaseTurns(condition.id)}
+                                    aria-label={`Aumentar duração de ${condition.name}`}
                                   >
                                     <Plus className="h-3 w-3" />
                                   </Button>
@@ -483,6 +498,7 @@ export function ConditionManager({
                                     size="icon"
                                     className="h-7 w-7 text-destructive hover:text-destructive"
                                     onClick={() => handleRemoveCondition(condition.id)}
+                                    aria-label={`Remover condição ${condition.name}`}
                                   >
                                     <X className="h-3 w-3" />
                                   </Button>
@@ -556,6 +572,9 @@ export function ConditionManager({
               </DialogTrigger>
 
               <DialogContent className="sm:max-w-lg max-h-[80vh] flex flex-col">
+                <fieldset disabled={isSaving} className="border-0 min-w-0">
+                  {saveError && <p role="alert" className="text-sm text-destructive">{saveError}</p>}
+                  {isSaving && <p role="status" className="text-xs">Salvando condições...</p>}
                 <DialogHeader>
                   <DialogTitle className="flex items-center gap-2">
                     <AlertTriangle className="w-5 h-5 text-orange-500" />
@@ -625,11 +644,12 @@ export function ConditionManager({
                     ))}
                   </div>
                 </CustomScroll>
+              </fieldset>
               </DialogContent>
             </Dialog>
           </div>
         </CollapsibleContent>
-      </div>
+      </fieldset>
     </Collapsible>
   );
 }
@@ -639,7 +659,7 @@ interface ConditionOptionProps {
   id: string;
   condition: typeof CONDITIONS[string];
   isActive: boolean;
-  onAdd: (id: string, turns: number | null, params?: ConditionParams) => void;
+  onAdd: (id: string, turns: number | null, params?: ConditionParams) => Promise<boolean>;
 }
 
 function ConditionOption({ id, condition, isActive, onAdd }: ConditionOptionProps) {
@@ -657,7 +677,7 @@ function ConditionOption({ id, condition, isActive, onAdd }: ConditionOptionProp
 
   const requiresParams = conditionRequiresParams(id);
 
-  const handleAdd = (permanent: boolean = false) => {
+  const handleAdd = async (permanent: boolean = false) => {
     const turnsNum = permanent ? null : (parseInt(turns) || null);
     
     // Monta parâmetros se necessário
@@ -678,7 +698,7 @@ function ConditionOption({ id, condition, isActive, onAdd }: ConditionOptionProp
       };
     }
     
-    onAdd(id, turnsNum, params);
+    if (!await onAdd(id, turnsNum, params)) return;
     resetState();
   };
 

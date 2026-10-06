@@ -1,3 +1,4 @@
+import type { RitualResolutionRoll } from '@/lib/ritual-roll-history';
 /**
  * MobileRitualEffectWizard - Wizard de efeitos de rituais para mobile
  * Versão otimizada com Drawer e layout compacto
@@ -5,6 +6,10 @@
  */
 
 import { useState, useEffect, useMemo, useCallback, memo } from 'react';
+import { RitualResistanceStep } from '@/components/character/RitualResistanceStep';
+import { RitualFinalDamageConfirmation } from '@/components/character/RitualFinalDamageConfirmation';
+import type { RitualResistanceBonuses } from '@/lib/rituals/ritual-resistance';
+import { useRitualEffectExecution } from '@/hooks/character/useRitualEffectExecution';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   MobileDrawer,
@@ -16,7 +21,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Input } from '@/components/ui/input';
 import { MobileButtonGroup } from '@/components/ui/mobile-button-group';
 import {
   Dices,
@@ -46,7 +50,6 @@ import {
   RitualEffect, 
   DamageFormula,
   AnyDamageType,
-  ResistanceType,
   ResistanceEffect,
   getActiveRitualEffect,
   formatDamageFormula,
@@ -72,15 +75,6 @@ interface DamageRollResult {
   ignoresRD: boolean;
 }
 
-// Resultado de resistência
-interface ResistanceResult {
-  roll: number;
-  modifier: number;
-  total: number;
-  dt: number;
-  passed: boolean;
-  adjustedDamage?: number;
-}
 
 // Props do wizard
 export interface MobileRitualEffectWizardProps {
@@ -92,17 +86,21 @@ export interface MobileRitualEffectWizardProps {
   /** DT calculada com os dados do conjurador, distinta dos atributos do alvo. */
   casterResistanceDT?: number;
   // Dados do personagem para testes de resistência
+  applicationTargetId?: string;
+  targetResistanceBonuses?: RitualResistanceBonuses;
   targetAttributes?: {
     vigor: number;
     agility: number;
     presence: number;
   };
   // Callbacks
-  onApplyDamage?: (damage: number, type: AnyDamageType, ignoresRD: boolean) => void;
-  onApplyHealing?: (amount: number, type: 'healing' | 'tempHP') => void;
-  onApplyConditions?: (conditions: ActiveCondition[]) => void;
-  onAddWeaponBuff?: (ritual: Ritual, enhancements: string[]) => void;
-  onActivateSustained?: (ritual: Ritual, enhancements: string[], sustain: import('@/lib/rituals/legacy-exports').SustainConfig) => void;
+  applicationTarget?: React.ReactNode;
+  onResolutionRoll?: (result: RitualResolutionRoll) => void;
+  onApplyDamage?: (damage: number, type: AnyDamageType, ignoresRD: boolean) => void | Promise<void>;
+  onApplyHealing?: (amount: number, type: 'healing' | 'tempHP') => void | Promise<void>;
+  onApplyConditions?: (conditions: ActiveCondition[]) => void | Promise<void>;
+  onAddWeaponBuff?: (ritual: Ritual, enhancements: string[]) => void | Promise<void>;
+  onActivateSustained?: (ritual: Ritual, enhancements: string[], sustain: import('@/lib/rituals/legacy-exports').SustainConfig) => void | Promise<void>;
   onComplete?: () => void;
   // === Bônus do SUE (Sistema Unificado de Efeitos) ===
   ritualDamageBonus?: number; // Bônus fixo de dano de rituais
@@ -163,14 +161,6 @@ function rollDice(count: number, sides: number): number[] {
   return Array.from({ length: count }, () => rollDie(sides));
 }
 
-// Atributo de resistência
-function getResistanceAttribute(type: ResistanceType): string {
-  switch (type) {
-    case 'fortitude': return 'vigor';
-    case 'reflexos': return 'agility';
-    case 'vontade': return 'presence';
-  }
-}
 
 // ==================== COMPONENTES DE STEP (MOBILE) ====================
 
@@ -351,7 +341,7 @@ const DamageStep = memo(function DamageStep({
   onRoll: () => void;
   result: DamageRollResult | null;
   isRolling: boolean;
-  onNext: () => void;
+  onNext: (finalDamage?: number) => void;
   onReroll: () => void;
   ritualDamageBonus?: number;
   damageAttributeBonus?: { attribute: string; value: number };
@@ -374,7 +364,7 @@ const DamageStep = memo(function DamageStep({
     if (!result && !isRolling) {
       onRoll();
     }
-  }, []);
+  }, [result, isRolling, onRoll]);
 
   return (
     <div className="space-y-4">
@@ -470,6 +460,9 @@ const DamageStep = memo(function DamageStep({
         </div>
       )}
 
+      {result && hasDamage && !effect.resistance && (
+        <RitualFinalDamageConfirmation key={result.total} suggestedDamage={result.total} onConfirm={onNext} />
+      )}
       {result && (
         <MobileButtonGroup
           buttons={[
@@ -481,171 +474,16 @@ const DamageStep = memo(function DamageStep({
               variant: 'outline',
               type: 'secondary',
             },
-            {
+            ...(!hasDamage || effect.resistance ? [{
               id: 'continue',
               label: 'Continuar',
               icon: <ChevronRight className="w-4 h-4" />,
-              onClick: onNext,
-              type: 'secondary',
-            },
+              onClick: () => onNext(),
+              type: 'secondary' as const,
+            }] : []),
           ]}
           layout="row"
         />
-      )}
-    </div>
-  );
-});
-
-// Step: Resistência (Mobile)
-const ResistanceStep = memo(function ResistanceStep({ 
-  effect,
-  damage,
-  casterResistanceDT,
-  targetAttributes,
-  onResult,
-}: { 
-  effect: RitualEffect;
-  damage: number;
-  casterResistanceDT?: number;
-  targetAttributes?: { vigor: number; agility: number; presence: number };
-  onResult: (passed: boolean, adjustedDamage?: number) => void;
-}) {
-  const [manualRoll, setManualRoll] = useState<string>('');
-  const [result, setResult] = useState<ResistanceResult | null>(null);
-  const [customDT, setCustomDT] = useState<string>('');
-
-  if (!effect.resistance) return null;
-
-  const resistType = effect.resistance.type;
-  const resistEffect = effect.resistance.effect;
-  const attrKey = getResistanceAttribute(resistType);
-  const attrValue = targetAttributes?.[attrKey as keyof typeof targetAttributes] || 0;
-  const defaultDT = effect.resistance.dt ?? casterResistanceDT ?? 15;
-  const dt = customDT ? Number(customDT) : defaultDT;
-  const isValidDT = Number.isInteger(dt) && dt >= 1;
-
-  const handleRoll = (rollValue?: number) => {
-    if (!isValidDT) return;
-    const roll = rollValue || rollDie(20);
-    const modifier = attrValue;
-    const total = roll + modifier;
-    const passed = total >= dt;
-    
-    let adjustedDamage: number | undefined;
-    if (passed && resistEffect !== 'anula') {
-      adjustedDamage = Math.floor(damage / 2);
-    } else if (!passed) {
-      adjustedDamage = damage;
-    }
-
-    setResult({ roll, modifier, total, dt, passed, adjustedDamage });
-  };
-
-  const handleConfirm = () => {
-    if (result) {
-      onResult(result.passed, result.adjustedDamage);
-    }
-  };
-
-  return (
-    <div className="space-y-3">
-      {/* Info do teste */}
-      <div className="p-3 rounded-lg bg-warning/10 border border-warning/30">
-        <div className="flex items-center gap-2 mb-1">
-          <Shield className="w-4 h-4 text-warning" />
-          <span className="font-medium text-sm">Teste de {resistType}</span>
-        </div>
-        <p className="text-xs text-muted-foreground">
-          {resistEffect === 'anula' && 'Sucesso anula o efeito'}
-          {resistEffect === 'parcial' && 'Sucesso reduz dano/evita condições'}
-          {resistEffect === 'reduz_metade' && 'Sucesso reduz dano pela metade'}
-        </p>
-      </div>
-
-      {/* DT */}
-      <div className="flex items-center gap-2">
-        <span className="text-sm text-muted-foreground">DT:</span>
-        <Input
-          type="number"
-          aria-label="Dificuldade da resistência"
-          aria-invalid={!isValidDT}
-          min={1}
-          value={customDT || defaultDT}
-          onChange={(e) => { setCustomDT(e.target.value); setResult(null); }}
-          className="w-16 h-8 text-center text-sm"
-        />
-      </div>
-      {!isValidDT && <p role="alert" className="text-xs text-destructive">Informe uma DT inteira maior que zero.</p>}
-
-      {/* Resultado */}
-      {result ? (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className={cn(
-            "p-3 rounded-lg border text-center",
-            result.passed 
-              ? "bg-success/10 border-success/30" 
-              : "bg-destructive/10 border-destructive/30"
-          )}
-        >
-          <div className="flex items-center justify-center gap-1.5 mb-1">
-            <span className="text-xl font-mono">{result.roll}</span>
-            <span className="text-muted-foreground text-sm">+</span>
-            <span className="text-lg font-mono">{result.modifier}</span>
-            <span className="text-muted-foreground text-sm">=</span>
-            <span className={cn(
-              "text-2xl font-bold",
-              result.passed ? "text-success" : "text-destructive"
-            )}>
-              {result.total}
-            </span>
-          </div>
-          <p className={cn("text-sm font-medium", result.passed ? "text-success" : "text-destructive")}>
-            {result.passed ? 'SUCESSO!' : 'FALHOU!'}
-          </p>
-          {result.adjustedDamage !== undefined && (
-            <p className="text-xs text-muted-foreground mt-1">
-              Dano: {damage} → {result.passed && resistEffect !== 'anula' ? result.adjustedDamage : result.passed ? 0 : damage}
-            </p>
-          )}
-        </motion.div>
-      ) : (
-        <div className="space-y-2">
-          {/* Rolagem automática */}
-          <Button onClick={() => handleRoll()} disabled={!isValidDT} className="w-full gap-2" size="sm">
-            <Dices className="w-4 h-4" />
-            Rolar d20 + {attrValue}
-          </Button>
-
-          {/* Rolagem manual */}
-          <div className="flex items-center gap-2">
-            <Input
-              type="number"
-              placeholder="d20"
-              value={manualRoll}
-              onChange={(e) => setManualRoll(e.target.value)}
-              className="text-center h-8 text-sm"
-              min={1}
-              max={20}
-            />
-            <Button 
-              variant="outline" 
-              onClick={() => handleRoll(parseInt(manualRoll))}
-              disabled={!isValidDT || !manualRoll || parseInt(manualRoll) < 1 || parseInt(manualRoll) > 20}
-              size="sm"
-            >
-              Usar
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {result && (
-        <Button onClick={handleConfirm} className="w-full gap-2" size="sm">
-          Continuar
-          <ChevronRight className="w-4 h-4" />
-        </Button>
       )}
     </div>
   );
@@ -668,7 +506,7 @@ const ConditionsStep = memo(function ConditionsStep({
   }
 
   // Se passou na resistência e o efeito anula, não aplica condições
-  const shouldApply = !(resistancePassed && resistanceEffect === 'anula');
+  const shouldApply = !(resistancePassed && (resistanceEffect === 'anula' || resistanceEffect === 'parcial'));
 
   const conditions: ActiveCondition[] = shouldApply 
     ? effect.appliesConditions.map(c => ({
@@ -850,7 +688,7 @@ const CompleteStep = memo(function CompleteStep({
 
       <div>
         <h3 className="text-lg font-display">{ritual.name}</h3>
-        <p className={cn("text-sm", elementConfig?.text)}>Conjuração completa!</p>
+        <p className={cn("text-sm", elementConfig?.text)}>PE consumidos. Confira os efeitos aplicados ou pendentes no histórico.</p>
       </div>
 
       <div className="inline-block px-4 py-2 rounded-lg bg-muted/30">
@@ -874,6 +712,10 @@ export const MobileRitualEffectWizard = memo(function MobileRitualEffectWizard({
   peCost,
   casterResistanceDT,
   targetAttributes,
+  targetResistanceBonuses,
+  applicationTargetId,
+  applicationTarget,
+  onResolutionRoll,
   onApplyDamage,
   onApplyHealing,
   onApplyConditions,
@@ -988,9 +830,12 @@ export const MobileRitualEffectWizard = memo(function MobileRitualEffectWizard({
 
       const total = calculatedDamageTotal ?? (dice.reduce((a, b) => a + b, 0) + bonus);
       setDamageResult({ dice, diceType, bonus, diceMultiplier, total, damageType, ignoresRD });
+      onResolutionRoll?.({ dice, diceType, bonus, diceMultiplier, total, damageType, ignoresRD });
       setIsRolling(false);
     }, 400);
-  }, [activeEffect, ritualDamageBonus, damageAttributeBonus]);
+  }, [activeEffect, ritualDamageBonus, damageAttributeBonus, healingBonusFromOrigin, onResolutionRoll]);
+
+  const effectExecution = useRitualEffectExecution();
 
   // Handler de resistência
   const handleResistanceResult = useCallback((passed: boolean, damage?: number) => {
@@ -999,32 +844,36 @@ export const MobileRitualEffectWizard = memo(function MobileRitualEffectWizard({
     
     // Aplica dano/cura aqui
     if (damageResult && activeEffect?.damage) {
-      const finalDamage = passed && activeEffect.resistance?.effect !== 'anula' 
-        ? Math.floor(damageResult.total / 2) 
-        : passed ? 0 : damageResult.total;
-      onApplyDamage?.(finalDamage, damageResult.damageType, damageResult.ignoresRD);
+      const finalDamage = damage ?? (passed ? activeEffect.resistance?.effect === 'anula' ? 0 : Math.floor(damageResult.total / 2) : damageResult.total);
+      void effectExecution.execute(onApplyDamage ? () => onApplyDamage(finalDamage, damageResult.damageType, damageResult.ignoresRD) : undefined, goToNextStep);
+      return;
     }
     
     goToNextStep();
-  }, [damageResult, activeEffect, goToNextStep, onApplyDamage]);
+  }, [damageResult, activeEffect, goToNextStep, onApplyDamage, effectExecution]);
 
   // Handler de condições
   const handleApplyConditions = useCallback((conditions: ActiveCondition[]) => {
-    onApplyConditions?.(conditions);
-    goToNextStep();
-  }, [onApplyConditions, goToNextStep]);
+    if (resistancePassed && ['anula', 'parcial'].includes(activeEffect?.resistance?.effect ?? '')) {
+      goToNextStep();
+      return;
+    }
+    void effectExecution.execute(onApplyConditions ? () => onApplyConditions(conditions) : undefined, goToNextStep);
+  }, [onApplyConditions, goToNextStep, effectExecution, resistancePassed, activeEffect]);
 
-  // Handler de buffs
+  // Confirma cada efeito antes de avançar; a falha mantém a etapa pendente.
   const handleApplyBuffs = useCallback(() => {
-    if (ritual && activeEffect?.weaponEffect) {
-      onAddWeaponBuff?.(ritual, enhancements);
-    }
-    // Ativa ritual sustentado se tiver configuração de sustentação
-    if (ritual && activeEffect?.sustain) {
-      onActivateSustained?.(ritual, enhancements, activeEffect.sustain);
-    }
-    goToNextStep();
-  }, [ritual, enhancements, activeEffect, onAddWeaponBuff, onActivateSustained, goToNextStep]);
+    void effectExecution.execute(async () => {
+      if (ritual && activeEffect?.weaponEffect) {
+        if (!onAddWeaponBuff) throw new Error('Bônus da arma pendente de aplicação manual.');
+        await onAddWeaponBuff(ritual, enhancements);
+      }
+      if (ritual && activeEffect?.sustain) {
+        if (!onActivateSustained) throw new Error('Sustentação pendente de aplicação manual.');
+        await onActivateSustained(ritual, enhancements, activeEffect.sustain);
+      }
+    }, goToNextStep);
+  }, [ritual, enhancements, activeEffect, onAddWeaponBuff, onActivateSustained, goToNextStep, effectExecution]);
 
   // Handler de fechamento
   const handleClose = useCallback(() => {
@@ -1069,7 +918,11 @@ export const MobileRitualEffectWizard = memo(function MobileRitualEffectWizard({
 
         {/* Conteúdo do step atual */}
         <MobileDrawerBody useScrollArea={false}>
-          <AnimatePresence mode="wait">
+          {applicationTarget}
+            {effectExecution.error && <p role="alert" className="mb-3 text-sm text-destructive">{effectExecution.error}</p>}
+            {effectExecution.pending && <p role="status" className="mb-3 text-sm">Aguardando confirmação do servidor…</p>}
+            <fieldset disabled={effectExecution.pending} className="min-w-0">
+            <AnimatePresence mode="wait">
             <motion.div
               key={currentStep}
               initial={{ opacity: 0, x: 20 }}
@@ -1094,18 +947,18 @@ export const MobileRitualEffectWizard = memo(function MobileRitualEffectWizard({
                   onRoll={handleDamageRoll}
                   result={damageResult}
                   isRolling={isRolling}
-                  onNext={() => {
+                  onNext={(finalDamage) => {
                     if (steps.includes('resistance')) {
                       goToNextStep();
                     } else {
-                      if (damageResult && activeEffect.damage) {
-                        onApplyDamage?.(damageResult.total, damageResult.damageType, damageResult.ignoresRD);
-                      } else if (damageResult && activeEffect.healing) {
-                        onApplyHealing?.(damageResult.total, 'healing');
-                      } else if (damageResult && activeEffect.tempHP) {
-                        onApplyHealing?.(damageResult.total, 'tempHP');
-                      }
-                      goToNextStep();
+                      const apply = damageResult && activeEffect.damage
+                        ? onApplyDamage && (() => onApplyDamage(finalDamage ?? damageResult.total, damageResult.damageType, damageResult.ignoresRD))
+                        : damageResult && activeEffect.healing
+                          ? onApplyHealing && (() => onApplyHealing(damageResult.total, 'healing'))
+                          : damageResult && activeEffect.tempHP
+                            ? onApplyHealing && (() => onApplyHealing(damageResult.total, 'tempHP'))
+                            : undefined;
+                      void effectExecution.execute(apply || undefined, goToNextStep);
                     }
                   }}
                   onReroll={handleDamageRoll}
@@ -1115,11 +968,13 @@ export const MobileRitualEffectWizard = memo(function MobileRitualEffectWizard({
               )}
 
               {currentStep === 'resistance' && (
-                <ResistanceStep
+                <RitualResistanceStep key={applicationTargetId}
                   effect={activeEffect}
                   damage={damageResult?.total || 0}
                   casterResistanceDT={casterResistanceDT}
                   targetAttributes={targetAttributes}
+                    targetResistanceBonuses={targetResistanceBonuses}
+                    mobile
                   onResult={handleResistanceResult}
                 />
               )}
@@ -1150,6 +1005,7 @@ export const MobileRitualEffectWizard = memo(function MobileRitualEffectWizard({
               )}
             </motion.div>
           </AnimatePresence>
+            </fieldset>
         </MobileDrawerBody>
       </MobileDrawerContent>
     </MobileDrawer>

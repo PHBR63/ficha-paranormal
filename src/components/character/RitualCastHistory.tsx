@@ -24,7 +24,8 @@ import { getElementConfig } from '@/lib/element-config';
 // Interface para registro de conjuração
 export interface RitualCastRecord {
   id: string;
-  ritual: Ritual;
+  ritual: Omit<Ritual, 'circle' | 'element'> & { circle: number | null; element: Ritual['element'] | null };
+  unknownRitual?: boolean;
   peCost: number;
   enhancements: string[];
   timestamp: Date;
@@ -96,6 +97,7 @@ function CastRecordCard({ record }: { record: RitualCastRecord }) {
             )}>
               {record.ritual.name}
             </h4>
+            {record.unknownRitual && <p className="text-xs text-muted-foreground">Ritual fora do catálogo; registro preservado.</p>}
             <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
               <Clock className="w-3 h-3" />
               <span>{formatTime(record.timestamp)}</span>
@@ -110,7 +112,7 @@ function CastRecordCard({ record }: { record: RitualCastRecord }) {
           variant="outline" 
           className={cn("text-[10px] flex-shrink-0", elementConfig?.badgeBg)}
         >
-          {record.ritual.circle}º
+          {record.ritual.circle === null ? '?' : `${record.ritual.circle}º`}
         </Badge>
       </div>
 
@@ -204,7 +206,7 @@ export function RitualCastHistory({ history, onClear, characterName }: RitualCas
           </SheetTitle>
           {characterName && (
             <p className="text-sm text-muted-foreground">
-              Sessão de {characterName}
+              Histórico salvo de {characterName}
             </p>
           )}
         </SheetHeader>
@@ -230,9 +232,9 @@ export function RitualCastHistory({ history, onClear, characterName }: RitualCas
               <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mb-4">
                 <Sparkles className="w-8 h-8 text-foreground/50" />
               </div>
-              <h4 className="font-medium text-foreground/70">Nenhum ritual conjurado</h4>
+              <h4 className="font-medium text-foreground/70">Nenhum ritual visível nesta página</h4>
               <p className="text-sm text-foreground/60 mt-1 max-w-[200px]">
-                Os rituais conjurados nesta sessão aparecerão aqui
+                Confira registros anteriores, efeitos pendentes e páginas adicionais no Histórico salvo
               </p>
             </div>
           ) : (
@@ -256,10 +258,10 @@ export function RitualCastHistory({ history, onClear, characterName }: RitualCas
               className="w-full text-destructive hover:text-destructive hover:bg-destructive/10"
             >
               <Trash2 className="w-4 h-4 mr-2" />
-              Limpar Histórico
+              Ocultar Histórico
             </Button>
             <p className="text-[10px] text-muted-foreground text-center mt-2">
-              O histórico é resetado ao sair da ficha
+              Ocultar mantém os registros no servidor. Recupere no Histórico salvo.
             </p>
           </div>
         )}

@@ -7,6 +7,7 @@
 //
 
 import { BASE_CONDITION_MECHANICS, expandBaseConditionIds } from '../conditions/base-condition-rules';
+import { resolveConditionId } from '../conditions/condition-identity';
 import type { UnifiedEffect, EffectMechanics } from '../unified-effects-engine';
 import { CONDITIONS, CONTEXTUAL_DEFENSE_MODIFIERS, ATTACK_MODIFIERS, TEST_MODIFIERS, INITIATIVE_MODIFIERS, type ConditionParams } from '../conditions';
 
@@ -158,7 +159,9 @@ export function getConditionEffects(
 ): UnifiedEffect[] {
   const effects: UnifiedEffect[] = [];
   
-  const normalized = activeConditions.map(condition => typeof condition === 'string' ? { id: condition } : condition);
+  const normalized = activeConditions.map(condition => typeof condition === 'string'
+    ? { id: resolveConditionId(condition) }
+    : { ...condition, id: resolveConditionId(condition.id) });
   const expanded = expandBaseConditionIds(normalized.map(condition => condition.id));
   for (const conditionId of expanded) {
     const condition = normalized.find(condition => condition.id === conditionId) ?? { id: conditionId };

@@ -86,6 +86,8 @@ export function NavigationTabs({
             <TabsTrigger
               key={tab.value}
               value={tab.value}
+              aria-label={tab.label}
+              title={tab.label}
               className={cn(
                 'relative font-display tracking-wider text-xs sm:text-sm px-3 sm:px-5 h-10 sm:h-12',
                 'text-white/70 hover:text-white transition-all',

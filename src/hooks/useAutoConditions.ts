@@ -46,7 +46,8 @@ export function useAutoConditions() {
     hpMax: number,
     san: number,
     sanMax: number,
-    currentConditions: SimpleActiveCondition[]
+    currentConditions: SimpleActiveCondition[],
+    notify = true
   ): ConditionProcessResult => {
     // Extrai IDs das condições atuais
     const conditionIds = currentConditions.map(c => c.id);
@@ -87,6 +88,7 @@ export function useAutoConditions() {
     for (const message of result.messages) {
       allMessages.push(message);
       
+      if (!notify) continue; // Chamadas transacionais mostram avisos somente após confirmação.
       // Toast visual para condições críticas
       if (message.includes('MORRENDO') || message.includes('enlouquecendo')) {
         toast.error(message, { duration: 5000 });

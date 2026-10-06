@@ -1,4 +1,8 @@
-import { getPELimitWithBonus } from '@/lib/dice-roller';
+import { getPELimitWithBonus, rollSkillTest } from '@/lib/dice-roller';
+import { getAttributeDicePool } from '@/lib/attribute-dice-pool';
+
+export type RitualResistanceBonuses = Record<'fortitude' | 'reflexos' | 'vontade', number>;
+export type RitualTargetAttributes = Record<'vigor' | 'agility' | 'presence', number>;
 
 /**
  * DT dos rituais do conjurador: 10 + limite de PE + PRE (Base v1.3 p.121).
@@ -16,4 +20,18 @@ export function calculateRitualResistanceDT(
     throw new RangeError('Dificuldade de resistência do ritual inválida');
   }
   return dt;
+}
+
+/** Atributo define somente o pool. Perícia e ajustes numéricos compõem o modificador. */
+export function rollRitualResistance(attribute: number, bonus: number, dt: number, selectedDie?: number) {
+  const pool = getAttributeDicePool(attribute);
+  if (!Number.isSafeInteger(bonus) || !Number.isSafeInteger(dt) || dt < 1 ||
+    (selectedDie !== undefined && (!Number.isInteger(selectedDie) || selectedDie < 1 || selectedDie > 20))) {
+    throw new Error('Informe bônus e DT inteiros e um dado selecionado entre 1 e 20.');
+  }
+  const rolled = selectedDie === undefined ? rollSkillTest({ attributeValue: attribute, skillBonus: bonus }) : undefined;
+  const kept = rolled?.keptDice ?? selectedDie!;
+  const total = kept + bonus;
+  // Regra personalizada: até um 20 selecionado depende do total contra a DT.
+  return { dice: rolled?.dice ?? [kept], kept, modifier: bonus, total, dt, passed: total >= dt, pool };
 }

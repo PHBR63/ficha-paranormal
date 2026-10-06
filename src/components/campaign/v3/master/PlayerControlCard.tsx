@@ -21,11 +21,13 @@ import {
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { CharacterActivityPanel } from '@/components/character/CharacterActivityPanel';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { ConditionSelector, OP_CONDITIONS } from './ConditionSelector';
+import { getConditionPresentation, resolveConditionId } from '@/lib/conditions/condition-identity';
 import type { CampaignMemberV2 } from '@/hooks/campaign/useCampaignData';
 
 // Presets de ajuste rápido
@@ -260,6 +262,7 @@ export const PlayerControlCard = memo(function PlayerControlCard({
 
             {/* Ações: descanso + condições */}
             <div className="flex items-center gap-1">
+              <CharacterActivityPanel characterId={characterId} characterName={displayName} compact />
               {onRestFull && (
                 <Button
                   variant="ghost"
@@ -292,8 +295,9 @@ export const PlayerControlCard = memo(function PlayerControlCard({
                 className="flex flex-wrap gap-1 mt-2"
               >
                 {activeConditions.map((condId) => {
-                  const cond = OP_CONDITIONS.find(c => c.id === condId);
-                  if (!cond) return null;
+                  const known = OP_CONDITIONS.find(c => c.id === resolveConditionId(condId));
+                  const presentation = getConditionPresentation(condId, condId);
+                  const cond = known ?? { name: presentation.name, description: presentation.effect, color: 'bg-muted-foreground' };
                   return (
                     <Badge
                       key={condId}

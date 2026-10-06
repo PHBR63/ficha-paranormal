@@ -1607,6 +1607,15 @@ export function CombatRollModal({
     const buffDiceTotal = weaponBuffDice.reduce((a, b) => a + b, 0);
     
     const total = weaponDiceTotal + extraDiceTotal + buffDiceTotal + damageBonus;
+      // O histórico inclui cada dado adicional, sem recalcular nem sortear de novo.
+      const historyDice = [...mainDice, ...allExtraDice, ...weaponBuffDice];
+      onRollComplete?.({
+        type: 'damage', label: `Dano: ${weapon.name}${total < 1 ? ' (mínimo 1)' : ''}`,
+        dice: historyDice, keptDice: historyDice.reduce((sum, die) => sum + die, 0),
+        skillBonus: 0, otherBonuses: damageBonus, extraDice: allExtraDice.length + weaponBuffDice.length,
+        total: Math.max(1, total), isCritical, isDisadvantage: false, timestamp: new Date(),
+      });
+
 
     // Armazenar resultado de dano da arma (SEM os dados do buff)
     setDamageResult({

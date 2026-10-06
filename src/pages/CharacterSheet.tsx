@@ -1,3 +1,17 @@
+import { useCharacterResourceUpdate } from '@/hooks/character/useCharacterResourceUpdate';
+import { ritualRollHistory } from '@/lib/ritual-roll-history';
+import { confirmConditionReplacement } from '@/services/character-resource-service';
+import { parseCondition, serializeCondition, getConditionNames } from '@/lib/conditions/condition-serialization';
+import { ritualTargetSkillBonuses } from '@/lib/ritual-target-skills';
+import { useRitualApplicationTargets } from '@/hooks/character/useRitualApplicationTargets';
+import { activityRitualEntries } from '@/lib/ritual-history-adapter';
+import { useRitualApplication } from '@/hooks/character/useRitualApplication';
+import { RitualApplicationTargetSelector } from '@/components/character/RitualApplicationTargetSelector';
+import { CharacterActivityPanel } from '@/components/character/CharacterActivityPanel';
+import { useCharacterActivity } from '@/hooks/character/useCharacterActivity';
+import { activityJson } from '@/services/character-activity-service';
+import { buildWeaponBuff, buildSustainPayload } from '@/lib/ritual-application-payload';
+import { activityRollEntries, diceHistoryEntry, entryDiceResult } from '@/lib/roll-history-adapter';
 /**
  * CharacterSheet - Ficha de personagem redesenhada
  * Layout de 2 colunas em desktop estilo ficha de papel
@@ -8,7 +22,6 @@ import { useEffect, useState, useCallback, useMemo, lazy, Suspense } from 'react
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { debitCharacterPE } from '@/services/character-pe-service';
 import { Button } from '@/components/ui/button';
 import { useToast, useIsMobile, useThemeColors } from '@/hooks';
 import { ThemeSelector } from '@/components/ui/theme-selector';
@@ -296,41 +309,6 @@ interface Character {
   };
 }
 
-// Helper para converter condições persistidas para ActiveCondition
-function parseCondition(c: string | PersistedCondition): ActiveCondition {
-  if (typeof c === 'string') {
-    return { 
-      id: c.toLowerCase().replace(/\s+/g, ''), 
-      name: c, 
-      turnsRemaining: null, 
-      addedAt: new Date() 
-    };
-  }
-  return {
-    id: c.id,
-    name: c.name,
-    turnsRemaining: c.turnsRemaining,
-    addedAt: new Date(c.addedAt), // Converte string ISO para Date
-    dyingCounter: c.dyingCounter, // Preserva contador de morrendo
-  };
-}
-
-// Helper para converter ActiveCondition para persistência
-function serializeCondition(c: ActiveCondition): PersistedCondition {
-  return {
-    id: c.id,
-    name: c.name,
-    turnsRemaining: c.turnsRemaining,
-    addedAt: c.addedAt instanceof Date ? c.addedAt.toISOString() : c.addedAt as string,
-    dyingCounter: c.dyingCounter, // Preserva contador de morrendo
-  };
-}
-
-// Helper para extrair nomes de condições (para compatibilidade com MobileCharacterSheet)
-function getConditionNames(conditions: (string | PersistedCondition)[]): string[] {
-  return conditions.map(c => typeof c === 'string' ? c : c.name);
-}
-
 // ==================== UTILITÁRIO DE PARSING ====================
 
 /**
@@ -391,7 +369,10 @@ export default function CharacterSheet() {
   const [rollTestedAttribute, setRollTestedAttribute] = useState<'strength' | 'agility' | 'vigor' | 'intellect' | 'presence' | undefined>(undefined);
   
   // Histórico de rolagens
-  const [rollHistory, setRollHistory] = useState<DiceRollResult[]>([]);
+  const activity = useCharacterActivity(id || '');
+  const { addRoll: saveActivityRoll, hideHistory: hideActivityHistory, refresh: refreshActivity } = activity;
+  const resourceUpdate = useCharacterResourceUpdate(id || '');
+  const rollHistory = activityRollEntries(activity.events, id || '').map(entryDiceResult);
   
   // Modais
   const [nexModalOpen, setNexModalOpen] = useState(false);
@@ -453,7 +434,7 @@ export default function CharacterSheet() {
   const [wizardPeCost, setWizardPeCost] = useState(0);
   
   // Histórico de rituais conjurados na sessão
-  const [castHistory, setCastHistory] = useState<RitualCastRecord[]>([]);
+  const castHistory = activityRitualEntries(activity.events, id || '');
   
   // Modal de salvar como template
   const [templateSaveModalOpen, setTemplateSaveModalOpen] = useState(false);
@@ -739,6 +720,9 @@ export default function CharacterSheet() {
   const { 
     isInCampaign, 
     syncRitualCast,
+    campaignId: ritualCampaignId, campaignVersion: ritualCampaignVersion,
+    sessionId: ritualCampaignSessionId,
+    error: ritualSyncError,
   } = useCampaignRitualSync({
     characterId: id || '',
     userId: user?.id || '',
@@ -791,17 +775,17 @@ export default function CharacterSheet() {
 
   // Callback para adicionar rolagem ao histórico e marcar perícia testada
   const handleRollComplete = useCallback((result: DiceRollResult) => {
-    setRollHistory(prev => [result, ...prev].slice(0, 50));
+    void saveActivityRoll({ entry: activityJson(diceHistoryEntry(result)), label: result.label || 'Teste', type: result.type });
     // Marca a perícia como testada para Primeira Impressão
     if (rollTestedAttribute) {
       primeiraImpressao.markSkillAsTested(rollTestedAttribute);
     }
-  }, [rollTestedAttribute, primeiraImpressao]);
+  }, [rollTestedAttribute, primeiraImpressao, saveActivityRoll]);
 
   // Limpar histórico
   const handleClearHistory = useCallback(() => {
-    setRollHistory([]);
-  }, []);
+    void hideActivityHistory().catch(() => undefined);
+  }, [hideActivityHistory]);
 
   // Verifica se personagem já usou Transcender em NEX >= 50
   // Isso determina se o seletor de afinidade elemental deve aparecer
@@ -928,6 +912,14 @@ export default function CharacterSheet() {
     }
     return null;
   }, [id, user]);
+
+  useEffect(() => {
+    const refreshFromServer = (event: Event) => {
+      if ((event as CustomEvent<string>).detail === id) void refetchCharacter();
+    };
+    window.addEventListener('character-server-updated', refreshFromServer);
+    return () => window.removeEventListener('character-server-updated', refreshFromServer);
+  }, [id, refetchCharacter]);
 
   // Handler para rolar atributo (inclui detecção de resistências)
   const handleAttributeRoll = useCallback((attributeValue: number, attributeName: string) => {
@@ -1091,77 +1083,28 @@ export default function CharacterSheet() {
     setDiceModalOpen(true);
   }, [defenseBonuses.resistances, bonusSummary.skills]);
 
-  // Handler para mudança de stats com aplicação automática de condições
-  // Atualizado para integrar com SaveStatusIndicator (Fase 6 UX)
+  // Recursos e condições são comparados e gravados em uma única operação.
   const handleCombatStatsChange = async (stats: { hp: number; pe: number; san: number }) => {
     if (!character) return;
-
-    // Atualiza status para "saving"
+    const values = { hp: Math.max(0, Math.min(stats.hp, character.hp_max)),
+      pe: Math.max(0, Math.min(stats.pe, character.pe_max)), san: Math.max(0, Math.min(stats.san, character.san_max)) };
+    const autoResult = processResourceChange(values.hp, character.hp_max, values.san, character.san_max,
+      character.conditions.map(parseCondition), false);
+    const conditions = autoResult.newConditions.map(serializeCondition);
     setSaveStatus('saving');
-
-    // Verifica e aplica condições automáticas baseado nos novos valores
-    const currentConditions = character.conditions.map(parseCondition);
-    const autoResult = processResourceChange(
-      stats.hp,
-      character.hp_max,
-      stats.san,
-      character.san_max,
-      currentConditions
-    );
-
-    // Se houver mudanças nas condições, inclui na atualização
-    const hasConditionChanges = autoResult.newConditions.length !== currentConditions.length ||
-      autoResult.newConditions.some((c, i) => c.id !== currentConditions[i]?.id);
-
-    const updateData: Record<string, unknown> = {
-      hp_current: stats.hp,
-      pe_current: stats.pe,
-      san_current: stats.san,
-    };
-
-    if (hasConditionChanges) {
-      const serializedConditions = autoResult.newConditions.map(serializeCondition);
-      updateData.conditions = JSON.parse(JSON.stringify(serializedConditions));
-    }
-
-    const { error } = await supabase
-      .from('characters')
-      .update(updateData)
-      .eq('id', character.id);
-
-    if (!error) {
-      setHpCurrent(stats.hp);
-      setPeCurrent(stats.pe);
-      setSanCurrent(stats.san);
-      
-      if (hasConditionChanges) {
-        const serializedConditions = autoResult.newConditions.map(serializeCondition);
-        setCharacter(prev => prev ? {
-          ...prev,
-          hp_current: stats.hp,
-          pe_current: stats.pe,
-          san_current: stats.san,
-          conditions: serializedConditions,
-        } : null);
-      } else {
-        setCharacter(prev => prev ? {
-          ...prev,
-          hp_current: stats.hp,
-          pe_current: stats.pe,
-          san_current: stats.san,
-        } : null);
-      }
-      
-      // Atualiza status para "saved" e registra timestamp
-      setSaveStatus('saved');
-      setLastSaved(new Date());
-      
-      // Volta para idle após 3 segundos
-      setTimeout(() => setSaveStatus('idle'), 3000);
-    } else {
-      // Erro ao salvar
-      setSaveStatus('error');
-    }
+    const receipt = await resourceUpdate.execute(values,
+      activityJson(conditions) as import('@/integrations/supabase/types').Json[],
+      { hp_current: character.hp_current, hp_max: character.hp_max, pe_current: character.pe_current,
+        pe_max: character.pe_max, san_current: character.san_current, san_max: character.san_max,
+        conditions: activityJson(character.conditions) });
+    if (!receipt) { setSaveStatus('error'); return; }
+    setHpCurrent(values.hp); setPeCurrent(values.pe); setSanCurrent(values.san);
+    setCharacter(prev => prev ? { ...prev, hp_current: values.hp, pe_current: values.pe,
+      san_current: values.san, conditions } : null);
+    setSaveStatus('saved'); setLastSaved(new Date());
+    if (autoResult.messages.length) toast({ title: 'Condições confirmadas', description: autoResult.messages.join(' ') });
+    void activity.refetch();
+    if (!await refetchCharacter()) toast({ title: 'Recursos confirmados', description: 'A ficha não foi atualizada. Recarregue para conferir o estado atual.', variant: 'destructive' });
   };
 
   // ==================== CALLBACKS MEMOIZADOS (REFATORAÇÃO) ====================
@@ -1256,10 +1199,23 @@ export default function CharacterSheet() {
   }, [character, saving, hpCurrent, peCurrent, sanCurrent]);
 
   // Handler para abrir modal de conjuração de ritual
+  const ritualApplication = useRitualApplication(id || '', refetchCharacter);
+  const { beginCast: beginRitualCast, cast: confirmRitualCast } = ritualApplication;
+  const [ritualTargetId, setRitualTargetId] = useState<string | null>(null);
+  const ritualTargets = useRitualApplicationTargets(id || '');
+  const selectedRitualTarget = ritualTargets.targets.find(target => target.id === ritualTargetId);
+  // O alvo precisa ser selecionado. O snapshot do servidor protege contra sobrescrever outra alteração.
+  const applyRitualToTarget = async (kind: 'heal' | 'damage' | 'conditions' | 'weapon_buff' | 'sustain', value: import('@/integrations/supabase/types').Json) => {
+    if (!ritualTargetId) throw new Error('Selecione a ficha que receberá o efeito.');
+    await ritualApplication.apply(kind, value, {}, ritualTargetId);
+  };
+
   const handleOpenCastModal = useCallback((ritual: Ritual) => {
+    if (!beginRitualCast()) return;
     setRitualToCast(ritual);
+    setRitualTargetId(null);
     setCastModalOpen(true);
-  }, []);
+  }, [beginRitualCast]);
 
   // Handler para confirmar conjuração de ritual (desconta PE e registra no histórico)
   const handleCastRitual = useCallback(async (ritual: Ritual, peCost: number, enhancements: string[]) => {
@@ -1268,7 +1224,12 @@ export default function CharacterSheet() {
     const peBeforeCast = peCurrent;
     let newPe: number;
     try {
-      newPe = await debitCharacterPE(character.id, peBeforeCast, peCost);
+      const event = await confirmRitualCast(peBeforeCast, peCost, {
+        ritualId: ritual.id, ritualName: ritual.name, ritualElement: ritual.element, ritualCircle: ritual.circle, enhancements, sessionId: ritualCampaignSessionId,
+      }, ritualCampaignId && ritualCampaignVersion ? { campaignId: ritualCampaignId, campaignVersion: ritualCampaignVersion } : {});
+      const payload = event.payload as { peAfter?: number };
+      if (typeof payload.peAfter !== 'number') throw new Error('O servidor não confirmou o saldo de PE.');
+      newPe = payload.peAfter;
     } catch (error) {
       toast({
         title: 'Erro ao conjurar',
@@ -1282,20 +1243,13 @@ export default function CharacterSheet() {
     setCharacter(prev => prev ? { ...prev, pe_current: newPe } : null);
 
     // Registrar no histórico da sessão
-    const castRecord: RitualCastRecord = {
-      id: `${ritual.id}-${Date.now()}`,
-      ritual,
-      peCost,
-      enhancements,
-      timestamp: new Date(),
-      peBeforeCast,
-      peAfterCast: newPe,
-    };
-    setCastHistory(prev => [castRecord, ...prev]);
+    try { await refreshActivity(); }
+    catch { window.dispatchEvent(new CustomEvent('character-history-save-failed', { detail: character.id })); }
 
     // Sincroniza com a campanha em tempo real (se estiver em uma)
     if (isInCampaign) {
-      await syncRitualCast(ritual, peCost, enhancements, peBeforeCast, newPe);
+      try { await syncRitualCast(ritual, peCost, enhancements, peBeforeCast, newPe); }
+      catch { window.dispatchEvent(new CustomEvent('character-history-save-failed', { detail: character.id })); }
     }
 
     const enhText = enhancements.length > 0 
@@ -1329,7 +1283,7 @@ export default function CharacterSheet() {
       // Ritual sem efeitos mapeados
       toast({
         title: `${ritual.name} conjurado!`,
-        description: `${peCost} PE consumido${enhText}. PE restante: ${newPe}${isInCampaign ? ' • Sincronizado' : ''}`,
+        description: `${peCost} PE consumido${enhText}. PE restante: ${newPe} • Histórico salvo`,
       });
     }
 
@@ -1342,16 +1296,12 @@ export default function CharacterSheet() {
       description: `Conjurou ${ritual.name}${enhText} (-${peCost} PE)`,
     }]);
     return true;
-  }, [character, peCurrent, toast, user?.id, isInCampaign, syncRitualCast]);
+  }, [character, peCurrent, toast, user?.id, isInCampaign, syncRitualCast, confirmRitualCast, ritualCampaignId, ritualCampaignVersion, ritualCampaignSessionId, refreshActivity]);
 
   // Limpar histórico de conjurações
   const handleClearCastHistory = useCallback(() => {
-    setCastHistory([]);
-    toast({
-      title: 'Histórico limpo',
-      description: 'O histórico de conjurações foi resetado.',
-    });
-  }, [toast]);
+    void hideActivityHistory().catch(() => { toast({ title: 'Histórico não ocultado', description: 'Tente novamente.', variant: 'destructive' }); });
+  }, [hideActivityHistory, toast]);
 
   // Handler para deletar personagem
   const handleDelete = async () => {
@@ -2555,7 +2505,13 @@ export default function CharacterSheet() {
                 rolls={rollHistory}
                 onClear={handleClearHistory}
               />
-              <CharacterHistoryPanel 
+              {ritualApplication.error && <p role="alert" className="text-sm text-destructive">{ritualApplication.error}</p>}
+      {resourceUpdate.error && <p role="alert" className="text-sm text-destructive">{resourceUpdate.error}</p>}
+      {activity.saveError && <p role="alert" className="text-sm text-destructive">{activity.saveError}</p>}
+      {activity.pendingRolls.length > 0 && <p role="status" className="text-sm text-muted-foreground">{activity.pendingRolls.length} rolagem(ns) aguardando gravação. Abra o histórico salvo para recuperar.</p>}
+      {ritualSyncError && <p role="alert" className="text-sm text-destructive">{ritualSyncError} A gravação da ficha e a sincronização da campanha são verificações separadas.</p>}
+      <CharacterActivityPanel characterId={character.id} characterName={character.name} />
+            <CharacterHistoryPanel
                 characterId={character.id} 
                 characterName={character.name} 
               />
@@ -2814,27 +2770,14 @@ export default function CharacterSheet() {
                 <ConditionManager
                   conditions={parsedConditions}
                   onConditionsChange={async (newConditions) => {
-                    // Serializa condições completas para persistir na nuvem
                     const serializedConditions = newConditions.map(serializeCondition);
-                    
-                    const { error } = await supabase
-                      .from('characters')
-                      .update({ conditions: JSON.parse(JSON.stringify(serializedConditions)) })
-                      .eq('id', character.id);
-
-                    if (error) {
-                      toast({
-                        title: 'Erro ao salvar condições',
-                        description: error.message,
-                        variant: 'destructive',
-                      });
-                      return;
-                    }
-
-                    setCharacter(prev => prev ? {
-                      ...prev,
-                      conditions: serializedConditions,
-                    } : null);
+                    // Só atualiza a tela depois do recibo do servidor; conflito preserva o estado anterior.
+                    await confirmConditionReplacement(character.id,
+                      activityJson(serializedConditions) as import('@/integrations/supabase/types').Json[],
+                      activityJson(character.conditions || []) as import('@/integrations/supabase/types').Json[],
+                      crypto.randomUUID());
+                    setCharacter(prev => prev ? { ...prev, conditions: serializedConditions } : null);
+                    void activity.refetch();
                   }}
                 />
               </div>
@@ -4160,34 +4103,10 @@ export default function CharacterSheet() {
         // Bônus do SUE para dano de rituais
         ritualDamageBonus={ritualBonuses.damageBonus}
         damageAttributeBonus={ritualBonuses.damageAttributeBonus}
-        onApplyDamage={(result) => {
-          // Log do resultado de dano para o mestre/jogador
-          toast({
-            title: `${result.total} de dano!`,
-            description: `${result.formula} de ${result.damageType}${result.ignoresRD ? ' (ignora RD)' : ''}`,
-          });
-        }}
-        onApplyHealing={(result) => {
-          // Aplica cura automaticamente no personagem
-          if (result.type === 'healing') {
-            const newHp = Math.min(character.hp_max, hpCurrent + result.total);
-            setHpCurrent(newHp);
-            setCharacter(prev => prev ? { ...prev, hp_current: newHp } : null);
-            supabase
-              .from('characters')
-              .update({ hp_current: newHp })
-              .eq('id', character.id);
-            toast({
-              title: `+${result.total} PV recuperados!`,
-              description: `PV atual: ${newHp}/${character.hp_max}`,
-            });
-          } else {
-            // PV temporários - apenas mostra o resultado
-            toast({
-              title: `+${result.total} PV Temporários!`,
-              description: `Dura até o final da cena.`,
-            });
-          }
+        onApplyDamage={async result => { await applyRitualToTarget('damage', result.total); }}
+        onApplyHealing={async result => {
+          if (result.type !== 'healing') throw new Error('PV temporários permanecem pendentes de controle manual.');
+          await applyRitualToTarget('heal', result.total);
         }}
         onRequestResistance={(damage) => {
           // Abre o modal de resistência com o dano atual
@@ -4322,77 +4241,25 @@ export default function CharacterSheet() {
         // Bônus de Cura de Origem (Agente de Saúde / Técnica Medicinal)
         healingBonusFromOrigin={ritualBonuses.healingBonusFromOrigin}
         healingBonusFromOriginSource={ritualBonuses.healingBonusFromOriginSource}
-        targetAttributes={{
-          vigor: character.vigor,
-          agility: character.agility,
-          presence: character.presence,
+        targetAttributes={selectedRitualTarget ? { vigor: selectedRitualTarget.vigor, agility: selectedRitualTarget.agility, presence: selectedRitualTarget.presence } : undefined}
+          applicationTargetId={ritualTargetId ?? undefined}
+          onResolutionRoll={result => {
+            const entry = ritualRollHistory(wizardRitual?.name ?? 'Ritual', result);
+            void saveActivityRoll({ entry: activityJson(entry), label: entry.label, type: entry.type });
+          }}
+          targetResistanceBonuses={selectedRitualTarget ? ritualTargetSkillBonuses(selectedRitualTarget.skills) : undefined}
+        applicationTarget={<>
+          <RitualApplicationTargetSelector characterId={character.id} value={ritualTargetId} onChange={setRitualTargetId} disabled={ritualApplication.busy} />
+          {wizardRitual && getActiveRitualEffect(wizardRitual.id, wizardEnhancements)?.weaponEffect && <p role="status" className="text-sm text-amber-300">O bônus de arma será associado à ficha escolhida e usado em seus ataques. Este fluxo ainda não diferencia uma arma específica.</p>}
+        </>}
+        onApplyDamage={async damage => { await applyRitualToTarget('damage', damage); }}
+        onApplyHealing={async (amount, type) => {
+          if (type !== 'healing') throw new Error('PV temporários exigem controle manual nesta versão. O efeito permanece pendente.');
+          await applyRitualToTarget('heal', amount);
         }}
-        onApplyDamage={(damage, type, ignoresRD) => {
-          toast({
-            title: `${damage} de dano!`,
-            description: `Dano de ${type}${ignoresRD ? ' (ignora RD)' : ''}`,
-          });
-        }}
-        onApplyHealing={(amount, type) => {
-          if (type === 'healing') {
-            const newHp = Math.min(character.hp_max, hpCurrent + amount);
-            setHpCurrent(newHp);
-            setCharacter(prev => prev ? { ...prev, hp_current: newHp } : null);
-            supabase
-              .from('characters')
-              .update({ hp_current: newHp })
-              .eq('id', character.id);
-            toast({
-              title: `+${amount} PV recuperados!`,
-              description: `PV atual: ${newHp}/${character.hp_max}`,
-            });
-          } else {
-            // PV Temporários
-            toast({
-              title: `+${amount} PV Temporários!`,
-              description: `Dura até o final da cena.`,
-            });
-          }
-        }}
-        onApplyConditions={async (newConditions) => {
-          if (newConditions.length === 0) return;
-          
-          const existingConditions = (character.conditions || []).map(parseCondition);
-          
-          const uniqueNew = newConditions.filter(
-            nc => !existingConditions.some(ec => ec.id === nc.id)
-          );
-          
-          if (uniqueNew.length === 0) return;
-          
-          const allConditions = [...existingConditions, ...uniqueNew];
-          const serializedConditions = allConditions.map(serializeCondition);
-          
-          await supabase
-            .from('characters')
-            .update({ conditions: JSON.parse(JSON.stringify(serializedConditions)) })
-            .eq('id', character.id);
-
-          setCharacter(prev => prev ? {
-            ...prev,
-            conditions: serializedConditions,
-          } : null);
-
-          toast({
-            title: 'Condições aplicadas!',
-            description: uniqueNew.map(c => c.name).join(', '),
-          });
-        }}
-        onAddWeaponBuff={(ritual, enhancements) => {
-          addWeaponBuff(ritual, enhancements);
-        }}
-        onActivateSustained={async (ritual, enhancements, sustain) => {
-          await activateRitual(ritual, enhancements, sustain);
-          toast({
-            title: 'Ritual Sustentado Ativo!',
-            description: `${ritual.name} está ativo. Efeitos aplicados automaticamente.`,
-          });
-        }}
+        onApplyConditions={async conditions => { await applyRitualToTarget('conditions', activityJson(conditions)); }}
+        onAddWeaponBuff={async (ritual, enhancements) => { await applyRitualToTarget('weapon_buff', activityJson(buildWeaponBuff(ritual, enhancements))); }}
+        onActivateSustained={async (ritual, enhancements, sustain) => { await applyRitualToTarget('sustain', activityJson(buildSustainPayload(ritual, enhancements, sustain))); }}
         onComplete={() => {
           setWizardRitual(null);
           setWizardEnhancements([]);

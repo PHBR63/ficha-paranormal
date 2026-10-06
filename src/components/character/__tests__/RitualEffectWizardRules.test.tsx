@@ -7,6 +7,7 @@ import { RitualEffectWizard } from '../RitualEffectWizard';
 import { MobileRitualEffectWizard } from '../mobile/MobileRitualEffectWizard';
 import { RitualDamageModal } from '../RitualDamageModal';
 import { MobileRitualCastModal } from '../mobile/MobileRitualCastModal';
+import * as legacyEffects from '@/lib/rituals/legacy-exports';
 
 vi.mock('canvas-confetti', () => ({ default: vi.fn() }));
 
@@ -36,6 +37,26 @@ describe.each([
   ['desktop', RitualEffectWizard],
   ['mobile', MobileRitualEffectWizard],
 ] as const)('Fórmula no wizard %s', (_name, Wizard) => {
+  it.each(['anula', 'parcial'] as const)('sucesso %s evita condições sem chamar aplicação', async resistanceEffect => {
+    vi.spyOn(legacyEffects, 'getActiveRitualEffect').mockReturnValue({
+      resistance: { type: 'vontade', effect: resistanceEffect, dt: 20 },
+      appliesConditions: [{ conditionId: 'vulneravel', duration: 'cena' }],
+    });
+    const ritual = unifiedToLegacy(getRitualById('perturbacao')!);
+    const onApplyConditions = vi.fn();
+    render(<Wizard open onOpenChange={vi.fn()} ritual={ritual} enhancements={[]} peCost={1}
+      onApplyConditions={onApplyConditions} targetAttributes={{ vigor: 1, agility: 1, presence: 1 }}
+      targetResistanceBonuses={{ fortitude: 0, reflexos: 0, vontade: 5 }} />);
+    fireEvent.click(screen.getByRole('button', { name: /Processar Efeitos/ }));
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Dado selecionado do pool' }), { target: { value: '15' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Usar' }));
+    expect(screen.getByText('SUCESSO!')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+    expect(screen.getByText(/anuladas!/)).toBeInTheDocument();
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Continuar' })); });
+    expect(onApplyConditions).not.toHaveBeenCalled();
+  });
+
   it.each([14, 35, 22])('usa DT %s recebida do conjurador e preserva ajuste manual', async (casterResistanceDT) => {
     vi.useFakeTimers();
     const ritual = unifiedToLegacy(getRitualById('deflagracao-de-energia')!);

@@ -9,8 +9,8 @@
  * @module components/campaign/v3/modals/CampaignSettingsModal
  */
 
-import { memo, useState, useCallback, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { memo, useState, useCallback, useEffect, useRef } from 'react';
+import { createCampaignInvite, loadCampaignInvite, removeCampaignMember, saveCampaignSettings, type CampaignVersion } from '@/services/campaign-invite-service';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import {
@@ -18,6 +18,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -45,6 +46,7 @@ interface CampaignSettingsModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   campaignId: string;
+  schemaVersion?: CampaignVersion;
   campaignName: string;
   campaignDescription?: string | null;
   members: CampaignMemberV2[];
@@ -55,6 +57,7 @@ export const CampaignSettingsModal = memo(function CampaignSettingsModal({
   open,
   onOpenChange,
   campaignId,
+  schemaVersion = 'v1',
   campaignName,
   campaignDescription,
   members,
@@ -69,97 +72,62 @@ export const CampaignSettingsModal = memo(function CampaignSettingsModal({
   const [isSaving, setIsSaving] = useState(false);
   const [isLoadingInvite, setIsLoadingInvite] = useState(false);
 
-  // Sincroniza quando abre o modal
-  useEffect(() => {
-    if (open) {
-      setName(campaignName);
-      setDescription(campaignDescription || '');
-      loadInviteCode();
-    }
-  }, [open, campaignName, campaignDescription]);
+  const [settingsError, setSettingsError] = useState<string | null>(null);
+  const [isMutating, setIsMutating] = useState(false);
+  const mutationLock = useRef(false);
+  const runMutation = useCallback(async (action: () => Promise<void>) => {
+    if (mutationLock.current) return;
+    mutationLock.current = true;
+    setIsMutating(true);
+    setSettingsError(null);
+    try { await action(); }
+    catch (error) { setSettingsError(error instanceof Error ? error.message : 'Não foi possível confirmar a alteração.'); }
+    finally { mutationLock.current = false; setIsMutating(false); }
+  }, []);
 
-  // Carregar código de convite existente
   const loadInviteCode = useCallback(async () => {
     setIsLoadingInvite(true);
-    const { data } = await supabase
-      .from('campaign_invites')
-      .select('invite_code')
-      .eq('campaign_id', campaignId)
-      .order('created_at', { ascending: false })
-      .limit(1);
+    setInviteCode(null);
+    try { setInviteCode(await loadCampaignInvite(campaignId, schemaVersion)); }
+    catch (error) { setSettingsError(error instanceof Error ? error.message : 'Não foi possível carregar o convite.'); }
+    finally { setIsLoadingInvite(false); }
+  }, [campaignId, schemaVersion]);
 
-    if (data && data.length > 0) {
-      setInviteCode(data[0].invite_code);
-    }
-    setIsLoadingInvite(false);
-  }, [campaignId]);
+  useEffect(() => {
+    if (!open) return;
+    setName(campaignName);
+    setDescription(campaignDescription || '');
+    setSettingsError(null);
+    void loadInviteCode();
+  }, [open, campaignName, campaignDescription, loadInviteCode]);
 
-  // Salvar configurações gerais
-  const handleSave = useCallback(async () => {
-    if (!name.trim()) {
-      toast.error('Nome da campanha é obrigatório');
-      return;
-    }
+  const handleSave = useCallback(() => runMutation(async () => {
     setIsSaving(true);
-    const { error } = await supabase
-      .from('campaigns')
-      .update({ name: name.trim(), description: description.trim() || null })
-      .eq('id', campaignId);
-
-    if (error) {
-      toast.error('Erro ao salvar configurações');
-    } else {
+    try {
+      await saveCampaignSettings(campaignId, schemaVersion, name, description);
       toast.success('Configurações salvas!');
-    }
-    setIsSaving(false);
-  }, [campaignId, name, description]);
+      onMemberUpdate?.();
+    } finally { setIsSaving(false); }
+  }), [runMutation, campaignId, schemaVersion, name, description, onMemberUpdate]);
 
-  // Gerar novo código de convite
-  const handleGenerateInvite = useCallback(async () => {
-    if (!user) return;
-    const code = Math.random().toString(36).substring(2, 8).toUpperCase();
-    
-    const { error } = await supabase
-      .from('campaign_invites')
-      .insert({
-        campaign_id: campaignId,
-        invite_code: code,
-        created_by: user.id,
-        max_uses: 10,
-      });
-
-    if (error) {
-      toast.error('Erro ao gerar convite');
-      return;
-    }
-
+  const handleGenerateInvite = useCallback(() => runMutation(async () => {
+    if (!user) throw new Error('Entre na conta para gerar um convite.');
+    const code = await createCampaignInvite(campaignId, user.id, schemaVersion);
     setInviteCode(code);
     toast.success('Novo código de convite gerado!');
-  }, [campaignId, user]);
+  }), [runMutation, campaignId, schemaVersion, user]);
 
-  // Copiar código
-  const handleCopyCode = useCallback(() => {
-    if (inviteCode) {
-      navigator.clipboard.writeText(inviteCode);
-      toast.success('Código copiado!');
-    }
-  }, [inviteCode]);
+  const handleCopyCode = useCallback(() => runMutation(async () => {
+    if (!inviteCode) return;
+    await navigator.clipboard.writeText(inviteCode);
+    toast.success('Código copiado!');
+  }), [runMutation, inviteCode]);
 
-  // Remover membro
-  const handleKickMember = useCallback(async (memberId: string, memberName: string) => {
-    const { error } = await supabase
-      .from('campaign_members')
-      .delete()
-      .eq('id', memberId);
-
-    if (error) {
-      toast.error('Erro ao remover membro');
-      return;
-    }
-
+  const handleKickMember = useCallback((memberId: string, memberName: string) => runMutation(async () => {
+    await removeCampaignMember(campaignId, schemaVersion, memberId);
     toast.success(`${memberName} removido da campanha`);
     onMemberUpdate?.();
-  }, [onMemberUpdate]);
+  }), [runMutation, campaignId, schemaVersion, onMemberUpdate]);
 
   // Filtra jogadores (exclui mestre)
   const players = members.filter(m => m.role !== 'master');
@@ -172,8 +140,10 @@ export const CampaignSettingsModal = memo(function CampaignSettingsModal({
             <Settings className="h-5 w-5 text-primary" />
             Configurações da Campanha
           </DialogTitle>
+          <DialogDescription>Edite a campanha, seus convites e os membros autorizados.</DialogDescription>
         </DialogHeader>
 
+        {settingsError && <p role="alert" className="text-sm text-destructive">{settingsError}</p>}
         <Tabs defaultValue="general" className="mt-2">
           <TabsList className="w-full">
             <TabsTrigger value="general" className="flex-1 gap-1.5 text-xs">
@@ -215,7 +185,7 @@ export const CampaignSettingsModal = memo(function CampaignSettingsModal({
 
             <Button 
               onClick={handleSave} 
-              disabled={isSaving}
+              disabled={isSaving || isMutating}
               className="w-full"
             >
               {isSaving ? 'Salvando...' : 'Salvar Alterações'}
@@ -228,10 +198,10 @@ export const CampaignSettingsModal = memo(function CampaignSettingsModal({
               <Label>Código de Convite</Label>
               {inviteCode ? (
                 <div className="flex items-center gap-2">
-                  <code className="flex-1 px-3 py-2 bg-muted rounded-md text-center font-mono text-lg tracking-widest">
+                  <code className="flex-1 min-w-0 break-all px-3 py-2 bg-muted rounded-md text-center font-mono text-lg tracking-widest">
                     {inviteCode}
                   </code>
-                  <Button variant="outline" size="icon" onClick={handleCopyCode}>
+                  <Button variant="outline" size="icon" onClick={handleCopyCode} disabled={isMutating} aria-label="Copiar código de convite">
                     <Copy className="h-4 w-4" />
                   </Button>
                 </div>
@@ -246,6 +216,7 @@ export const CampaignSettingsModal = memo(function CampaignSettingsModal({
               variant="outline"
               className="w-full gap-2"
               onClick={handleGenerateInvite}
+              disabled={isMutating || isLoadingInvite}
             >
               <RefreshCw className="h-4 w-4" />
               Gerar Novo Código
@@ -292,7 +263,7 @@ export const CampaignSettingsModal = memo(function CampaignSettingsModal({
 
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
+                          <Button variant="ghost" size="icon" disabled={isMutating} aria-label={`Remover ${displayName} da campanha`} className="h-8 w-8 text-destructive hover:text-destructive">
                             <UserMinus className="h-4 w-4" />
                           </Button>
                         </AlertDialogTrigger>
@@ -307,6 +278,7 @@ export const CampaignSettingsModal = memo(function CampaignSettingsModal({
                             <AlertDialogCancel>Cancelar</AlertDialogCancel>
                             <AlertDialogAction
                               onClick={() => handleKickMember(member.id, displayName)}
+                              disabled={isMutating}
                               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                             >
                               Remover

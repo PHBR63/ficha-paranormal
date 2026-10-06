@@ -22,6 +22,8 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import type { BonusBreakdown } from '@/hooks/useCharacterBonusSummary';
 import { Progress } from '@/components/ui/progress';
 import { AnimatedProgress } from '@/components/ui/animated-progress';
 import {
@@ -257,7 +259,7 @@ export const MobileOverviewTab = memo(function MobileOverviewTab({
         </div>
 
         {/* Ações rápidas */}
-        <div className="flex gap-2 mt-3 pt-3 border-t border-border">
+        <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-border">
           <TooltipProvider delayDuration={300}>
             {/* Botão Rolar Dados */}
             <Tooltip>
@@ -266,7 +268,7 @@ export const MobileOverviewTab = memo(function MobileOverviewTab({
                   variant="outline"
                   size="sm"
                   onClick={onOpenDiceRoller}
-                  className="flex-1 text-xs"
+                  className="flex-1 min-w-[90px] text-xs"
                 >
                   <Dices className="w-4 h-4 mr-1" />
                   Rolar
@@ -284,7 +286,7 @@ export const MobileOverviewTab = memo(function MobileOverviewTab({
                   variant="outline"
                   size="sm"
                   onClick={onOpenRest}
-                  className="flex-1 text-xs"
+                  className="flex-1 min-w-[90px] text-xs"
                 >
                   <Moon className="w-4 h-4 mr-1" />
                   Descanso
@@ -309,6 +311,7 @@ export const MobileOverviewTab = memo(function MobileOverviewTab({
                   variant="outline"
                   size="sm"
                   onClick={onEditStats}
+                  aria-label="Editar ficha"
                   className="text-xs"
                 >
                   <Edit2 className="w-4 h-4" />
@@ -327,6 +330,7 @@ export const MobileOverviewTab = memo(function MobileOverviewTab({
                     variant="outline"
                     size="sm"
                     onClick={onLevelUp}
+                    aria-label="Subir de NEX"
                     className="text-xs text-primary border-primary/50"
                   >
                     <ArrowUp className="w-4 h-4" />
@@ -407,10 +411,9 @@ export const MobileOverviewTab = memo(function MobileOverviewTab({
 
         {/* Stats rápidos */}
         <div className="flex justify-between pt-2 mt-2 border-t border-border text-xs">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="flex items-center gap-1 cursor-help">
+          <Popover>
+              <PopoverTrigger asChild>
+                <button type="button" aria-label="Detalhes da Defesa" className="flex items-center gap-1 cursor-help">
                   <Shield className="w-3 h-3 text-muted-foreground" />
                   <span>DEF </span>
                   <AnimatePresence mode="wait">
@@ -436,16 +439,21 @@ export const MobileOverviewTab = memo(function MobileOverviewTab({
                       </motion.span>
                     )}
                   </AnimatePresence>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" className="max-w-xs">
+                </button>
+              </PopoverTrigger>
+              <PopoverContent side="bottom" className="max-w-xs">
                 <div className="space-y-1 text-xs">
                   <p className="font-medium">Defesa: {totalDefense}</p>
                   <p className="text-muted-foreground">Base (10 + AGI): {character.defense}</p>
+                  {bonusSummary.defense?.breakdown?.map((entry: BonusBreakdown, index: number) => (
+                    <p key={`${entry.source}-${index}`} className={cn('text-xs', (!entry.active || entry.excluded) && 'text-muted-foreground')}>
+                      {entry.source}: {typeof entry.value === 'number' && entry.value > 0 ? '+' : ''}{entry.value}
+                      {entry.excluded ? ` (não acumula${entry.excludedReason ? `: ${entry.excludedReason}` : ''})` : !entry.active ? ' (inativo)' : ''}
+                    </p>
+                  ))}
                 </div>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+              </PopoverContent>
+          </Popover>
           {/* Deslocamento com tooltip de breakdown e indicador de sobrecarga */}
           <TooltipProvider delayDuration={200}>
             <Tooltip>

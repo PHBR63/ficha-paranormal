@@ -9,6 +9,8 @@
  */
 
 import type { ActiveCondition } from '@/components/character/ConditionManager';
+import type { ConditionParams } from './condition-definitions';
+import { resolveConditionId } from './condition-identity';
 
 // ==================== TIPOS ====================
 
@@ -19,6 +21,7 @@ export interface PersistedCondition {
   turnsRemaining: number | null;
   addedAt: string; // ISO string para serialização
   dyingCounter?: number; // Para condição Morrendo (3, 2, 1, 0 = morte)
+  params?: ConditionParams;
 }
 
 // ==================== FUNÇÕES ====================
@@ -27,21 +30,27 @@ export interface PersistedCondition {
  * Converte condição persistida (banco) para ActiveCondition (runtime)
  * Suporta tanto o formato string legado quanto o objeto completo
  */
-export function parseCondition(c: string | PersistedCondition): ActiveCondition {
+export function parseCondition(c: string | PersistedCondition | Partial<PersistedCondition>): ActiveCondition {
   if (typeof c === 'string') {
     return { 
-      id: c.toLowerCase().replace(/\s+/g, ''), 
+      id: resolveConditionId(c),
       name: c, 
       turnsRemaining: null, 
       addedAt: new Date() 
     };
   }
+  const originalId = typeof c.id === 'string' && c.id.trim() ? c.id : typeof c.name === 'string' && c.name.trim() ? c.name : 'condicao-sem-identificacao';
+  const name = typeof c.name === 'string' && c.name.trim() ? c.name : originalId;
+  const sourceDate = c.addedAt ?? '';
+  const date = new Date(sourceDate);
   return {
-    id: c.id,
-    name: c.name,
-    turnsRemaining: c.turnsRemaining,
-    addedAt: new Date(c.addedAt), // Converte string ISO para Date
+    ...c,
+    id: resolveConditionId(originalId),
+    name,
+    turnsRemaining: c.turnsRemaining ?? null,
+    addedAt: Number.isNaN(date.getTime()) ? sourceDate : date,
     dyingCounter: c.dyingCounter, // Preserva contador de morrendo
+    params: c.params,
   };
 }
 
@@ -50,11 +59,13 @@ export function parseCondition(c: string | PersistedCondition): ActiveCondition 
  */
 export function serializeCondition(c: ActiveCondition): PersistedCondition {
   return {
+    ...c,
     id: c.id,
     name: c.name,
     turnsRemaining: c.turnsRemaining,
-    addedAt: c.addedAt instanceof Date ? c.addedAt.toISOString() : c.addedAt as string,
+    addedAt: c.addedAt instanceof Date && !Number.isNaN(c.addedAt.getTime()) ? c.addedAt.toISOString() : String(c.addedAt),
     dyingCounter: c.dyingCounter, // Preserva contador de morrendo
+    params: c.params,
   };
 }
 

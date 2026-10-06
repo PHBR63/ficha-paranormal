@@ -99,15 +99,17 @@ export const CampaignNavigation = memo(function CampaignNavigation({
               <TabsTrigger
                 key={tabKey}
                 value={tabKey}
+                aria-label={config.label}
+                title={config.description}
                 className={cn(
-                  'relative gap-2 px-4 py-2 text-sm font-medium transition-colors',
+                  'relative flex-col sm:flex-row gap-1 sm:gap-2 px-2 sm:px-4 py-1 sm:py-2 text-sm font-medium transition-colors',
                   'data-[state=active]:bg-primary/10 data-[state=active]:text-primary',
                   'data-[state=active]:shadow-none',
                   tabKey === 'master' && 'text-primary/80'
                 )}
               >
                 <Icon className="h-4 w-4" />
-                <span className="hidden sm:inline">{config.label}</span>
+                <span className="text-[10px] sm:text-sm">{config.label}</span>
 
                 {/* Badge de não lidos */}
                 {showBadge && (
