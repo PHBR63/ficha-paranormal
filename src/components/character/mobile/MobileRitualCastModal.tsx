@@ -6,7 +6,8 @@
  * ATUALIZADO: Integrado ao Sistema Unificado de Efeitos (SUE)
  */
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo } from 'react';
+import { useRitualConfirmation, type RitualConfirmationResult } from '@/hooks/character/useRitualConfirmation';
 import { motion } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { 
@@ -91,7 +92,7 @@ interface MobileRitualCastModalProps {
   nex?: number;
   elementalAffinity?: string | null;
   turnPEState?: TurnPEState;
-  onConfirm: (ritual: RitualInput, peCost: number, enhancements: string[], activeModifiers?: string[], counterRitualCost?: number) => void;
+  onConfirm: (ritual: RitualInput, peCost: number, enhancements: string[], activeModifiers?: string[], counterRitualCost?: number) => RitualConfirmationResult;
   // Callbacks para efeitos do wizard
   targetAttributes?: { vigor: number; agility: number; presence: number };
   onApplyDamage?: (damage: number, type: AnyDamageType, ignoresRD: boolean) => void;
@@ -132,6 +133,7 @@ export function MobileRitualCastModal({
   intellect = 0,
   peLimitBonus = 0,
 }: MobileRitualCastModalProps) {
+  const confirmation = useRitualConfirmation(open);
   const [selectedEnhancements, setSelectedEnhancements] = useState<string[]>([]);
   // Estado dos modificadores de trilha ativados
   const [activeModifiers, setActiveModifiers] = useState<string[]>([]);
@@ -251,44 +253,35 @@ export function MobileRitualCastModal({
     );
   };
 
-  const handleConfirm = useCallback(() => {
+  const handleConfirm = () => {
     if (!canCast || !ritual) return;
-    
-    if (elementConfig) {
-      triggerElementParticles(elementConfig.hex, elementConfig.hexLight);
-    }
-    
-    // Chama o callback de confirmação (inclui counterRitualCost se Anular Ritual estiver ativo)
-    onConfirm(ritual, totalCost, validSelectedEnhancements, activeModifiers, isCounterActive ? counterRitualCost : undefined);
-    
-    // Se wizard está ativo e o ritual é do tipo Ritual (não UnifiedRitual), abre o wizard
-    if (wizardEnabled && 'id' in ritual) {
-      setCastRitual(ritual as Ritual);
-      setCastEnhancements(validSelectedEnhancements);
-      setCastPeCost(totalCost);
-      
-      // Fecha o modal de cast e abre o wizard após um delay
-      setTimeout(() => {
+    void confirmation.confirm(
+      () => onConfirm(ritual, totalCost, validSelectedEnhancements, activeModifiers, isCounterActive ? counterRitualCost : undefined),
+      () => {
+        if (elementConfig) triggerElementParticles(elementConfig.hex, elementConfig.hexLight);
+        // Efeitos só começam depois que o débito foi confirmado.
+        if (wizardEnabled && 'id' in ritual) {
+          setCastRitual(ritual as Ritual);
+          setCastEnhancements(validSelectedEnhancements);
+          setCastPeCost(totalCost);
+          setWizardOpen(true);
+        }
         setSelectedEnhancements([]);
         setActiveModifiers([]);
         onOpenChange(false);
-        setWizardOpen(true);
-      }, 300);
-    } else {
-      setSelectedEnhancements([]);
-      setActiveModifiers([]);
-      onOpenChange(false);
-    }
-  }, [canCast, ritual, elementConfig, totalCost, validSelectedEnhancements, activeModifiers, isCounterActive, counterRitualCost, wizardEnabled, onConfirm, onOpenChange]);
+      },
+    );
+  };
 
   // Handler para fechar wizard e limpar estado
-  const handleWizardComplete = useCallback(() => {
+  const handleWizardComplete = () => {
     setCastRitual(null);
     setCastEnhancements([]);
     setCastPeCost(0);
-  }, []);
+  };
 
   const handleOpenChange = (isOpen: boolean) => {
+    if (confirmation.isConfirming) return;
     if (!isOpen) {
       setSelectedEnhancements([]);
       setActiveModifiers([]);
@@ -717,15 +710,16 @@ export function MobileRitualCastModal({
         </MobileDrawerBody>
 
         <MobileDrawerFooter>
+          {confirmation.error && <p role="alert" className="text-sm text-destructive">{confirmation.error}</p>}
           <MobileButtonGroup
             buttons={[
               {
                 id: 'cast',
-                label: 'CONJURAR',
+                label: confirmation.isConfirming ? 'CONFIRMANDO...' : 'CONJURAR',
                 icon: <Sparkles />,
                 onClick: handleConfirm,
                 type: 'primary',
-                disabled: !canCast,
+                disabled: !canCast || confirmation.isConfirming,
                 className: canCast && elementConfig?.bg ? elementConfig.bg : undefined,
               },
               {
@@ -733,6 +727,7 @@ export function MobileRitualCastModal({
                 label: 'CANCELAR',
                 icon: <X />,
                 onClick: () => handleOpenChange(false),
+                disabled: confirmation.isConfirming,
                 variant: 'ghost',
                 type: 'secondary',
               },

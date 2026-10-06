@@ -8,6 +8,7 @@
  */
 
 import { useState, useMemo } from 'react';
+import { useRitualConfirmation, type RitualConfirmationResult } from '@/hooks/character/useRitualConfirmation';
 import { motion } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -88,7 +89,7 @@ interface RitualCastModalProps {
   nex?: number;
   elementalAffinity?: string | null;
   turnPEState?: TurnPEState;
-  onConfirm: (ritual: RitualInput, peCost: number, enhancements: string[], activeModifiers?: string[], counterRitualCost?: number) => void;
+  onConfirm: (ritual: RitualInput, peCost: number, enhancements: string[], activeModifiers?: string[], counterRitualCost?: number) => RitualConfirmationResult;
   // === Bônus do SUE ===
   ritualBonuses?: RitualBonuses | null;
   intellect?: number; // Para cálculo de Ritual Potente
@@ -120,6 +121,7 @@ export function RitualCastModal({
   intellect = 0,
   peLimitBonus = 0,
 }: RitualCastModalProps) {
+  const confirmation = useRitualConfirmation(open);
   // Estado dos aprimoramentos selecionados
   const [selectedEnhancements, setSelectedEnhancements] = useState<string[]>([]);
   // Estado dos modificadores de trilha ativados
@@ -242,28 +244,21 @@ export function RitualCastModal({
 
   // Handler de confirmação com efeito visual
   const handleConfirm = () => {
-    if (canCast && elementConfig) {
-      // Dispara efeito de partículas antes de fechar
-      triggerElementParticles(elementConfig.hex, elementConfig.hexLight);
-      
-      // Pequeno delay para o efeito ser visível
-      setTimeout(() => {
-        onConfirm(ritual, totalCost, validSelectedEnhancements, activeModifiers, isCounterActive ? counterRitualCost : undefined);
+    if (!canCast) return;
+    void confirmation.confirm(
+      () => onConfirm(ritual, totalCost, validSelectedEnhancements, activeModifiers, isCounterActive ? counterRitualCost : undefined),
+      () => {
+        if (elementConfig) triggerElementParticles(elementConfig.hex, elementConfig.hexLight);
         setSelectedEnhancements([]);
         setActiveModifiers([]);
         onOpenChange(false);
-      }, 300);
-    } else if (canCast) {
-      // Fallback sem efeito se não tiver config de elemento
-      onConfirm(ritual, totalCost, validSelectedEnhancements, activeModifiers, isCounterActive ? counterRitualCost : undefined);
-      setSelectedEnhancements([]);
-      setActiveModifiers([]);
-      onOpenChange(false);
-    }
+      },
+    );
   };
 
   // Reset ao fechar
   const handleOpenChange = (isOpen: boolean) => {
+    if (confirmation.isConfirming) return;
     if (!isOpen) {
       setSelectedEnhancements([]);
       setActiveModifiers([]);
@@ -904,15 +899,17 @@ export function RitualCastModal({
         </ScrollArea>
 
         <DialogFooter className="gap-2">
+          {confirmation.error && <p role="alert" className="text-sm text-destructive">{confirmation.error}</p>}
           <Button
             variant="outline"
             onClick={() => handleOpenChange(false)}
+            disabled={confirmation.isConfirming}
           >
             Cancelar
           </Button>
           <Button
             onClick={handleConfirm}
-            disabled={!canCast}
+            disabled={!canCast || confirmation.isConfirming}
             className={cn(
               "gap-2",
               canCast && elementConfig?.bg,
@@ -921,7 +918,7 @@ export function RitualCastModal({
             )}
           >
             <Zap className="w-4 h-4" />
-            Conjurar ({totalCost} PE)
+            {confirmation.isConfirming ? 'Confirmando...' : `Conjurar (${totalCost} PE)`}
           </Button>
         </DialogFooter>
       </DialogContent>

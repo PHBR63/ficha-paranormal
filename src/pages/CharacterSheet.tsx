@@ -8,6 +8,7 @@ import { useEffect, useState, useCallback, useMemo, lazy, Suspense } from 'react
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { debitCharacterPE } from '@/services/character-pe-service';
 import { Button } from '@/components/ui/button';
 import { useToast, useIsMobile, useThemeColors } from '@/hooks';
 import { ThemeSelector } from '@/components/ui/theme-selector';
@@ -1261,24 +1262,19 @@ export default function CharacterSheet() {
 
   // Handler para confirmar conjuração de ritual (desconta PE e registra no histórico)
   const handleCastRitual = useCallback(async (ritual: Ritual, peCost: number, enhancements: string[]) => {
-    if (!character) return;
+    if (!character) return false;
 
     const peBeforeCast = peCurrent;
-    const newPe = peCurrent - peCost;
-    if (newPe < 0) return;
-
-    const { error } = await supabase
-      .from('characters')
-      .update({ pe_current: newPe })
-      .eq('id', character.id);
-
-    if (error) {
+    let newPe: number;
+    try {
+      newPe = await debitCharacterPE(character.id, peBeforeCast, peCost);
+    } catch (error) {
       toast({
         title: 'Erro ao conjurar',
-        description: error.message,
+        description: error instanceof Error ? error.message : 'O gasto de PE não foi confirmado. Recarregue a ficha.',
         variant: 'destructive',
       });
-      return;
+      return false;
     }
 
     setPeCurrent(newPe);
@@ -1344,6 +1340,7 @@ export default function CharacterSheet() {
       newValue: String(newPe),
       description: `Conjurou ${ritual.name}${enhText} (-${peCost} PE)`,
     }]);
+    return true;
   }, [character, peCurrent, toast, user?.id, isInCampaign, syncRitualCast]);
 
   // Limpar histórico de conjurações

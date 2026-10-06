@@ -55,4 +55,44 @@ describe('Sincronização e falhas do combate', () => {
     await act(async () => { resolveFirst({ revision: 100, state: { ...emptyCampaignCombat(), round: 99 } }); });
     expect(result.current.state.round).toBe(2);
   });
+  it('recupera uma leitura que falhou sem liberar escrita com estado desconhecido', async () => {
+    fake.load.mockRejectedValueOnce(new Error('offline'));
+    const { result } = renderHook(() => useCampaignCombat('campaign', 'master', true));
+    await waitFor(() => expect(result.current.error).toContain('carregar'));
+    await act(async () => { expect(await result.current.update(emptyCampaignCombat)).toBe(false); });
+    expect(fake.save).not.toHaveBeenCalled();
+    await act(async () => { await result.current.reload(); });
+    expect(result.current.error).toBeNull();
+    expect(result.current.state.round).toBe(2);
+  });
+  it('falha de gravação preserva o estado confirmado e permite tentar após recarregar', async () => {
+    const { result } = renderHook(() => useCampaignCombat('campaign', 'master', true));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    fake.save.mockRejectedValueOnce(new Error('offline'));
+    await act(async () => { expect(await result.current.update(emptyCampaignCombat)).toBe(false); });
+    expect(result.current.state.round).toBe(2);
+    expect(result.current.error).toContain('Nenhuma alteração foi confirmada');
+    await act(async () => { await result.current.reload(); });
+    fake.save.mockResolvedValueOnce({ revision: 4, state: emptyCampaignCombat() });
+    await act(async () => { expect(await result.current.update(emptyCampaignCombat)).toBe(true); });
+    expect(result.current.error).toBeNull();
+    expect(result.current.state.active).toBe(false);
+  });
+  it('retorno da conexão busca o estado atual do servidor', async () => {
+    const { result } = renderHook(() => useCampaignCombat('campaign', 'master', true));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    fake.load.mockResolvedValueOnce({ revision: 4, state: { ...emptyCampaignCombat(), active: true, round: 3 } });
+    await act(async () => { window.dispatchEvent(new Event('online')); });
+    await waitFor(() => expect(result.current.state.round).toBe(3));
+  });
+  it('resposta atrasada não reverte uma revisão mais recente', async () => {
+    const { result } = renderHook(() => useCampaignCombat('campaign', 'master', true));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    fake.load.mockResolvedValueOnce({ revision: 5, state: { ...emptyCampaignCombat(), active: true, round: 4 } });
+    await act(async () => { fake.notify(); });
+    await waitFor(() => expect(result.current.state.round).toBe(4));
+    fake.load.mockResolvedValueOnce({ revision: 4, state: { ...emptyCampaignCombat(), active: true, round: 3 } });
+    await act(async () => { await result.current.reload(); });
+    expect(result.current.state.round).toBe(4);
+  });
 });

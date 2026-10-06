@@ -52,6 +52,7 @@ import { CharacterForAudit, getMaxParanormalPowers } from '@/lib/character-audit
 import { useAuth } from '@/contexts/AuthContext';
 import { TRAINING_GRADE_KEYS } from '@/lib/constants/game-ids';
 import { supabase } from '@/integrations/supabase/client';
+import { debitCharacterPE } from '@/services/character-pe-service';
 import { SavedParanormalPower, PARANORMAL_POWERS, ParanormalElement } from '@/lib/paranormal-powers';
 // useAttributeValidation já importado acima
 // Modais de paridade desktop
@@ -1038,13 +1039,16 @@ export function MobileCharacterSheet({
     activeModifiers?: string[],
     counterRitualCost?: number
   ) => {
-    if (!character) return;
+    if (!character) return false;
     
     const peBeforeCast = character.pe_current;
-    const newPe = peBeforeCast - peCost;
-    if (newPe < 0) return;
-    
-    await handlePEChange(newPe);
+    let newPe: number;
+    try {
+      newPe = await debitCharacterPE(character.id, peBeforeCast, peCost);
+    } catch (error) {
+      toast.error('Erro ao conjurar', { description: error instanceof Error ? error.message : 'O gasto de PE não foi confirmado. Recarregue a ficha.' });
+      return false;
+    }
     
     // Registrar no histórico da sessão (paridade com desktop)
     const castRecord: RitualCastRecord = {
@@ -1062,6 +1066,15 @@ export function MobileCharacterSheet({
     if (isInCampaign) {
       await syncRitualCast(ritual, peCost, enhancements, peBeforeCast, newPe);
     }
+    await logCharacterChanges(character.id, user?.id || '', [{
+      fieldName: 'pe_current', changeType: 'ritual_cast', oldValue: String(peBeforeCast), newValue: String(newPe),
+      description: `Conjurou ${ritual.name} (-${peCost} PE)`,
+    }]);
+    try {
+      await onRefetch?.();
+    } catch {
+      toast.error('PE consumido, mas a ficha não foi atualizada. Recarregue para conferir o saldo.');
+    }
     
     // Toast de confirmação com detalhes
     const enhText = enhancements.length > 0 
@@ -1077,7 +1090,8 @@ export function MobileCharacterSheet({
     toast.success(`${ritual.name} conjurado!`, {
       description: `${peCost} PE consumido${enhText}${modText}${counterText}. PE restante: ${newPe}`,
     });
-  }, [character, handlePEChange, isInCampaign, syncRitualCast]);
+    return true;
+  }, [character, isInCampaign, syncRitualCast, onRefetch, user?.id]);
 
   // Handler para limpar histórico de rituais
   const handleClearCastHistory = useCallback(() => {
@@ -2655,7 +2669,7 @@ export function MobileCharacterSheet({
           open={ritualCastModalOpen}
           onOpenChange={(open) => {
             setRitualCastModalOpen(open);
-            if (!open) setSelectedRitual(null);
+            // Mantém o componente montado para concluir o wizard após fechar a preparação.
           }}
           ritual={selectedRitual}
           peCurrent={character.pe_current}
