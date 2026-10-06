@@ -612,17 +612,17 @@ html.dark[data-color-theme="amber"] {
     animation: pulse-glow 2s ease-in-out infinite;
   }
 
-  /* Gradientes de texto */
+  /* Aliases legados com cor sólida: mantêm texto legível sem máscara de fundo. */
   .text-gradient-primary {
-    @apply bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent;
+    @apply text-primary;
   }
 
   .text-gradient-accent {
-    @apply bg-gradient-to-r from-accent to-accent/70 bg-clip-text text-transparent;
+    @apply text-accent;
   }
 
   .text-gradient-paranormal {
-    @apply bg-gradient-to-r from-paranormal to-paranormal/70 bg-clip-text text-transparent;
+    @apply text-paranormal;
   }
 
   /* Bordas com glow */

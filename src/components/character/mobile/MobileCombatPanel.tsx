@@ -1,3 +1,4 @@
+import { WeaponBuffIndicator } from '../WeaponBuffIndicator';
 /**
  * MobileCombatPanel - Painel de combate otimizado para mobile
  * Lista armas equipadas com stats e botões de ataque
@@ -313,6 +314,7 @@ export function MobileCombatPanel({
           </div>
         </div>
 
+        <WeaponBuffIndicator buffs={weaponBuffs} />
         {/* Ataque Desarmado */}
         <div className="space-y-2">
           <p className="text-[10px] text-muted-foreground uppercase tracking-wider px-1">
@@ -386,27 +388,7 @@ export function MobileCombatPanel({
           <div className="mt-3 pt-3 border-t border-border">
             <p className="text-[10px] text-muted-foreground mb-2">Buffs ativos:</p>
             <div className="flex flex-wrap gap-1.5">
-              {weaponBuffs.map(buff => {
-                const elementConfig = getElementConfig(buff.element);
-                return (
-                  <span
-                    key={buff.id}
-                    className={cn(
-                      "px-2 py-1 rounded-full text-[10px] font-medium",
-                      "flex items-center gap-1.5",
-                      elementConfig?.bg || "bg-primary/10",
-                      elementConfig?.text || "text-primary",
-                      elementConfig?.border || "border-primary/30",
-                      "border"
-                    )}
-                  >
-                    <Flame className="w-3 h-3" />
-                    {buff.ritualName}
-                    {buff.attackBonus && <span>+{buff.attackBonus} atk</span>}
-                    {buff.criticalBonus && <span>-{buff.criticalBonus} crit</span>}
-                  </span>
-                );
-              })}
+              <WeaponBuffIndicator buffs={weaponBuffs} />
             </div>
           </div>
         )}

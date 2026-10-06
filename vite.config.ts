@@ -14,7 +14,7 @@ export default defineConfig(({ mode }) => ({
     react(),
     mode === "development" && componentTagger(),
     VitePWA({
-      registerType: "autoUpdate",
+      registerType: "prompt",
       includeAssets: ["favicon.ico", "robots.txt", "apple-touch-icon.png", "apple-touch-icon-152x152.png"],
       // Habilita PWA em modo desenvolvimento para debug
       devOptions: {
@@ -79,8 +79,8 @@ export default defineConfig(({ mode }) => ({
       navigateFallback: "/index.html",
       navigateFallbackAllowlist: [/^\/$/,  /^\/map\//],
       navigateFallbackDenylist: [/^\/api/, /^\/auth/],
-        // Força ativação imediata do novo Service Worker
-        skipWaiting: true,
+        // A nova versão só assume após o botão Atualizar enviar SKIP_WAITING.
+        skipWaiting: false,
         clientsClaim: true,
         // Limpa caches antigos automaticamente
         cleanupOutdatedCaches: true,

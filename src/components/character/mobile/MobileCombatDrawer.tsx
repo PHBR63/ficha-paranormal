@@ -1,3 +1,4 @@
+import { WeaponBuffIndicator } from '../WeaponBuffIndicator';
 /**
  * MobileCombatDrawer - Drawer dedicado para combate mobile
  * Inclui lista de armas, iniciativa, resistências e ações rápidas
@@ -372,22 +373,7 @@ export const MobileCombatDrawer = memo(function MobileCombatDrawer({
                   Buffs Ativos
                 </p>
                 <div className="flex flex-wrap gap-1.5">
-                  {weaponBuffs.map(buff => {
-                    const config = getElementConfig(buff.element);
-                    return (
-                      <span
-                        key={buff.id}
-                        className={cn(
-                          "px-2 py-1 rounded-full text-[10px] font-medium flex items-center gap-1",
-                          config?.bg || "bg-primary/10",
-                          config?.text || "text-primary"
-                        )}
-                      >
-                        {buff.ritualName}
-                        {buff.attackBonus && <span>+{buff.attackBonus}</span>}
-                      </span>
-                    );
-                  })}
+                  <WeaponBuffIndicator buffs={weaponBuffs} />
                 </div>
               </div>
             )}

@@ -193,7 +193,7 @@ export function CombatWeaponsTable({
     }
   };
 
-  // Se não há armas, mostra mensagem
+  // Buffs persistidos continuam visíveis mesmo sem arma equipada.
   if (weapons.length === 0) {
     return (
       <div className={cn("sheet-panel p-4", className)}>
@@ -203,6 +203,7 @@ export function CombatWeaponsTable({
         <p className="text-sm text-muted-foreground text-center py-4">
           Nenhuma arma equipada. Equipe armas no inventário.
         </p>
+        <WeaponBuffIndicator buffs={weaponBuffs} />
       </div>
     );
   }
