@@ -7,7 +7,7 @@
  * @module components/campaign/v3/master/PlayerControlCard
  */
 
-import { memo, useState, useCallback } from 'react';
+import { memo, useState, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Heart as HeartIcon, 
@@ -63,11 +63,15 @@ const ResourceBar = memo(function ResourceBar({
   max: number;
   color: 'hp' | 'san' | 'pe';
   presets: number[];
-  onModify: (delta: number) => void;
+  onModify: (delta: number) => Promise<boolean>;
   isUpdating?: boolean;
 }) {
   const [customValue, setCustomValue] = useState('');
   const [showInput, setShowInput] = useState(false);
+  const [isApplying, setIsApplying] = useState(false);
+  const [adjustmentError, setAdjustmentError] = useState<string | null>(null);
+  const pendingAdjustment = useRef(false);
+  const isBusy = isUpdating || isApplying;
 
   const percentage = max > 0 ? (current / max) * 100 : 0;
 
@@ -82,15 +86,35 @@ const ResourceBar = memo(function ResourceBar({
     pe: 'bg-primary',
   };
 
-  // Aplica valor customizado
-  const handleCustomApply = useCallback(() => {
-    const val = parseInt(customValue);
-    if (!isNaN(val) && val !== 0) {
-      onModify(val);
+  /** Envia um delta inteiro e aguarda confirmação; falhas conservam a entrada. */
+  const applyAdjustment = useCallback(async (value: number) => {
+    if (pendingAdjustment.current || isUpdating) return false;
+    if (!Number.isSafeInteger(value) || value === 0 || Math.abs(value) > 1000000) {
+      setAdjustmentError('Informe um ajuste inteiro diferente de zero.');
+      return false;
+    }
+    pendingAdjustment.current = true;
+    setIsApplying(true);
+    setAdjustmentError(null);
+    try {
+      const confirmed = await onModify(value);
+      if (!confirmed) setAdjustmentError('Alteração não confirmada. Confira o histórico antes de tentar novamente.');
+      return confirmed;
+    } catch {
+      setAdjustmentError('Alteração não confirmada. Confira o histórico antes de tentar novamente.');
+      return false;
+    } finally {
+      pendingAdjustment.current = false;
+      setIsApplying(false);
+    }
+  }, [isUpdating, onModify]);
+
+  const handleCustomApply = useCallback(async () => {
+    if (await applyAdjustment(customValue.trim() ? Number(customValue) : NaN)) {
       setCustomValue('');
       setShowInput(false);
     }
-  }, [customValue, onModify]);
+  }, [customValue, applyAdjustment]);
 
   return (
     <div className="space-y-1.5">
@@ -110,6 +134,9 @@ const ResourceBar = memo(function ResourceBar({
           <div className="flex items-center gap-1">
             <Input
               type="number"
+              aria-label={`Ajuste de ${label}`}
+              step={1}
+              disabled={isBusy}
               value={customValue}
               onChange={(e) => setCustomValue(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleCustomApply()}
@@ -122,7 +149,8 @@ const ResourceBar = memo(function ResourceBar({
               size="icon"
               className="h-6 w-6"
               onClick={handleCustomApply}
-              disabled={isUpdating}
+              aria-label={`Aplicar ajuste de ${label}`}
+              disabled={isBusy}
             >
               <CaretUpIcon weight="bold" className="h-3 w-3" />
             </Button>
@@ -131,6 +159,8 @@ const ResourceBar = memo(function ResourceBar({
               size="icon"
               className="h-6 w-6"
               onClick={() => { setShowInput(false); setCustomValue(''); }}
+              aria-label={`Cancelar ajuste de ${label}`}
+              disabled={isBusy}
             >
               <CaretDownIcon weight="bold" className="h-3 w-3" />
             </Button>
@@ -138,8 +168,10 @@ const ResourceBar = memo(function ResourceBar({
         ) : (
           <button
             onClick={() => setShowInput(true)}
+            aria-label={`${label}: ajustar quantidade`}
+            disabled={isBusy}
             className="text-xs font-bold tabular-nums hover:underline cursor-pointer"
-            title="Clique para digitar valor exato"
+            title="Digite quanto acrescentar ou retirar; o valor informado é um ajuste."
           >
             {current}/{max}
           </button>
@@ -168,13 +200,15 @@ const ResourceBar = memo(function ResourceBar({
               val < 0 && 'text-destructive hover:bg-destructive/10',
               val > 0 && 'text-emerald-600 hover:bg-emerald-500/10',
             )}
-            onClick={() => onModify(val)}
-            disabled={isUpdating}
+            onClick={() => void applyAdjustment(val)}
+            aria-label={`${label}: ${val > 0 ? 'aumentar' : 'reduzir'} ${Math.abs(val)}`}
+            disabled={isBusy}
           >
             {val > 0 ? `+${val}` : val}
           </Button>
         ))}
       </div>
+      {adjustmentError && <p role="alert" className="text-xs text-destructive">{adjustmentError}</p>}
     </div>
   );
 });
@@ -193,16 +227,16 @@ export const PlayerControlCard = memo(function PlayerControlCard({
   const characterId = character?.id || '';
 
   // Handlers memoizados
-  const handleHP = useCallback((delta: number) => {
-    if (characterId) onModifyHP?.(characterId, delta);
+  const handleHP = useCallback(async (delta: number) => {
+    return characterId && onModifyHP ? onModifyHP(characterId, delta) : false;
   }, [characterId, onModifyHP]);
 
-  const handleSAN = useCallback((delta: number) => {
-    if (characterId) onModifySAN?.(characterId, delta);
+  const handleSAN = useCallback(async (delta: number) => {
+    return characterId && onModifySAN ? onModifySAN(characterId, delta) : false;
   }, [characterId, onModifySAN]);
 
-  const handlePE = useCallback((delta: number) => {
-    if (characterId) onModifyPE?.(characterId, delta);
+  const handlePE = useCallback(async (delta: number) => {
+    return characterId && onModifyPE ? onModifyPE(characterId, delta) : false;
   }, [characterId, onModifyPE]);
 
   const handleApplyCondition = useCallback((conditionId: string) => {
