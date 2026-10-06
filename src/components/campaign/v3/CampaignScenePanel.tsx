@@ -44,7 +44,7 @@ export function CampaignScenePanel({ campaignId, combat, isMaster = false }: Cam
         <DialogContent className="max-h-[85dvh] overflow-y-auto">
           <DialogHeader><DialogTitle>{title}</DialogTitle><DialogDescription>A próxima cena será aberta e o encerramento ficará salvo no servidor. Confira manualmente efeitos, limites de uso e contadores desta cena.</DialogDescription></DialogHeader>
           {combat.error && <p role="alert">{combat.error}</p>}
-          {confirmationChanged && <p role="alert">A cena ou o combate mudou em outra aba. Cancele e confira antes de abrir uma nova confirmação.</p>}
+          {confirmationChanged && !combat.saving && !combat.sceneEndPending && <p role="alert">A cena ou o combate mudou em outra aba. Cancele e confira antes de abrir uma nova confirmação.</p>}
           <div className="flex flex-wrap gap-2 justify-end">
             <Button variant="outline" disabled={combat.saving} onClick={() => setConfirmOpen(false)}>Cancelar</Button>
             <Button disabled={combat.saving || confirmationChanged} onClick={() => { void combat.endScene(confirmation.endCombat, confirmation.sceneNumber).then(saved => { if (saved) setConfirmOpen(false); }); }}>{combat.saving ? 'Confirmando no servidor...' : 'Confirmar encerramento'}</Button>
