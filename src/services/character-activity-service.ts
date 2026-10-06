@@ -27,6 +27,17 @@ type ActivityDatabase = { public: {
 } };
 /** Contrato local da migration; mantém o cliente autenticado e suas políticas. */
 export const activityClient = supabase as unknown as SupabaseClient<ActivityDatabase>;
+/** Libera a interface se a resposta não chegar; o pedido original pode continuar no servidor.
+ * O chamador deve conservar UUID e payload para recuperar o recibo sem duplicar o efeito.
+ */
+export async function awaitActivityResponse<T>(request: PromiseLike<T>, timeoutMs = 30000): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error('O servidor ainda não confirmou. O pedido pode estar em processamento. Repita a mesma confirmação para recuperar o resultado.')), timeoutMs);
+  });
+  try { return await Promise.race([Promise.resolve(request), timeout]); }
+  finally { clearTimeout(timer); }
+}
 /** Traduz falhas sem expor consultas, identificadores ou detalhes internos do banco. */
 export function activityFailure(context: string, error: { code?: string }): Error {
   const detail = error.code === '40001' ? 'O estado da ficha mudou. Recarregue antes de uma nova ação.'

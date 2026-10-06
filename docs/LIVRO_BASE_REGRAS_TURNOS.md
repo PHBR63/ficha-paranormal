@@ -2,7 +2,7 @@
 
 ## Escopo adotado
 
-Somente Livro Base v1.3. A mesa mantém o 20 natural que exige total suficiente e o descanso personalizado existente. Nenhum suplemento ou variante foi habilitado. As 38 famílias da página `/rules` são um mapa de comportamento e pendências, não uma porcentagem de fidelidade ao livro.
+Somente Livro Base v1.3. A mesa mantém o 20 natural que exige total suficiente e o descanso personalizado existente. Nenhum suplemento ou variante foi habilitado. As 39 famílias da página `/rules` são um mapa de comportamento e pendências, não uma porcentagem de fidelidade ao livro.
 
 Fonte: exemplar fornecido pelo usuário, páginas impressas 88 (recursos), 114–116 (poderes) e 310–311 (condições). O arquivo original não faz parte desta entrega. Resumos de regras foram escritos em palavras próprias.
 
@@ -13,6 +13,7 @@ Fonte: exemplar fornecido pelo usuário, páginas impressas 88 (recursos), 114�
 - Início de turno mostra os dados antes de confirmar: Sangrando usa Vigor DT 20 e perda de 1d6 sem RD; Em Chamas usa 1d6; veneno exige fórmula informada pela fonte. Fórmulas inválidas são recusadas. Resistência ao fogo/veneno é informada pelo jogador, com limite entre zero e o valor rolado.
 - Condições desconhecidas e seus parâmetros são preservados. Um turno sem perda de PV não recoloca Morrendo numa ficha estabilizada que permanece com zero PV.
 - A confirmação salva recursos, condições e um evento por ficha na mesma transação. Falha não apresenta sucesso nem atualiza a ficha antecipadamente. Repetir o mesmo pedido aberto conserva UUID e snapshot.
+- No mobile, a ficha recebe as condições completas do banco, incluindo datas, contadores e parâmetros. Somente os adaptadores que pedem IDs ou nomes recebem essas representações. Resposta ausente por 30 segundos libera a interface com aviso de confirmação pendente e permite repetir o mesmo UUID; não presume rollback da requisição original.
 - O catálogo dos 22 poderes foi confrontado com o Livro Base. Bônus permanentes seguros usam uma fonte compartilhada. Afinidade aprimorada exige duas escolhas do poder e afinidade ativa elegível, não apenas possuir o elemento. Efeitos situacionais têm consulta explícita ao mestre.
 - Os nove poderes situacionais do painel agora exibem `Conferir`: consulta não cobra recursos, registra uso ou confirma efeito. Os controles de reset sem efeito ficam ocultos. Isso substitui ativações antigas que afirmavam resultados sem confirmação adequada.
 
@@ -41,6 +42,8 @@ Todos os caminhos abaixo são relativos à raiz do repositório. A interface rec
 | `src/pages/CharacterSheet.tsx` | Integra o fluxo desktop, recibo, refetch e aviso; desliga correção automática de máximos ao abrir. |
 | `src/lib/character-activity-presentation.ts` | Converte evento `condition_turn` em resumo de PV, testes e dados para histórico existente. |
 | `src/lib/game-engine.ts` | Corrige condições automáticas de PV/SAN; usado por useAutoConditions e fluxos existentes de recursos. |
+| `src/lib/conditions/base-condition-rules.ts` | Orientações de encerramento conferidas, consumidas pelo catálogo de condições; dados narrativos, sem remoção automática. |
+| `src/lib/conditions/condition-definitions.ts` | Usa as orientações compartilhadas nos gerenciadores e não presume 1d6 no texto de veneno sem fórmula. |
 | `src/lib/character-data.ts` | Cálculos principais passam a usar patamar canônico. |
 | `src/lib/rules-engine/helpers/class-stats.ts` | Auxiliares de máximos por classe/NEX/atributos, alinhados ao principal. |
 | `src/lib/rules-engine/derive-character.ts` | Recursos derivados e detalhamento dos bônus por patamar; recebe ficha normalizada. |
@@ -88,4 +91,6 @@ Executar `npx tsc -p tsconfig.app.json --noEmit`, `npm test -- --maxWorkers=2` e
 
 Na publicação: conferir `/rules` autenticada, busca e filtros; abrir ficha desktop/mobile; cancelar prévia sem alterar PV; confirmar teste controlado; verificar evento após recarregar; repetir uma falha transitória no mesmo dialog; conferir que `Conferir` dos poderes não afirma ativação. Verificar mestre/jogador reais quando houver segunda conta disponível.
 
-Validação desta entrega (06/10/2026): 122 arquivos de teste e 3.099 testes passaram; checagem de tipos e build passaram. O lint dos arquivos alterados mantém 64 erros anteriores em cinco arquivos existentes, sem erros novos; dois erros anteriores dos painéis foram removidos. O build alerta sobre chunks grandes e dados antigos de Browserslist. Migration instalada e registrada no Lovable Cloud PHZF; testes transacionais com rollback passaram. A publicação e o UAT visual devem ser conferidos separadamente desses resultados locais.
+Validação desta entrega (06/10/2026): 122 arquivos de teste e 3.101 testes passaram; checagem de tipos e build passaram. O lint dos arquivos alterados mantém 64 erros anteriores em cinco arquivos existentes, sem erros novos; dois erros anteriores dos painéis foram removidos. O build alerta sobre chunks grandes e dados antigos de Browserslist. Migration instalada e registrada no Lovable Cloud PHZF; testes transacionais com rollback passaram. A publicação e o UAT visual devem ser conferidos separadamente desses resultados locais.
+
+No UAT publicado, a página de regras, filtros e detalhes foram conferidos em 1280×800 e 390×844. Cancelar prévia preservou PV; confirmar no desktop gravou dados e PV 28→22 no histórico, e os PV foram repostos. O teste encontrou perda de metadados no repasse ao mobile: corrigida preservando condições completas e limitando espera sem recibo a 30 segundos. Avisos de encerramento antigos foram substituídos por instruções do livro ou conferência da fonte, sem remoção automática. Uma ficha `[QA] Livro Base — poderes e condições` foi criada exclusivamente para verificar consultas e condições personalizadas; não é uma conta adicional.

@@ -5,9 +5,18 @@ import { calculateBaseHP, calculateBasePE, calculateBaseSAN } from '@/lib/rules-
 import { checkAutoConditions } from '@/lib/game-engine';
 import { BASE_RULE_COVERAGE, filterBaseRuleCoverage } from '../base-rule-coverage';
 import type { ActiveCondition } from '@/components/character/ConditionManager';
+import { getConditionById, getConditionEffectWithParams } from '@/lib/conditions/condition-definitions';
 
 const condition = (id: string, params?: ActiveCondition['params']): ActiveCondition => ({ id, name: id, turnsRemaining: null, addedAt: '2026-10-06', params });
 describe('Livro Base — situações de início de turno', () => {
+  it('avisos de encerramento conferem a regra sem prometer cura ou DT incorreta', () => {
+    expect(getConditionById('sangrando')?.removal).toContain('Vigor DT 20');
+    expect(getConditionById('sangrando')?.removal).not.toContain('Fortitude');
+    expect(getConditionById('morrendo')?.removal).toContain('Curar PV não encerra');
+    expect(getConditionById('enlouquecendo')?.removal).toContain('+5');
+    expect(getConditionById('atordoado')?.removal).toContain('definidos pela fonte');
+    expect(getConditionEffectWithParams('envenenado', {})).not.toContain('1d6');
+  });
   it('Sangrando não recebe treinamento; conserva 20 personalizado e estabiliza apenas no sucesso', () => {
     const failed = prepareConditionTurn([condition('sangrando')], 1, -1, () => .999);
     expect(failed.bleedingTests[0]).toMatchObject({ kept: 20, total: 19, passed: false });

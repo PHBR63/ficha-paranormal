@@ -11,6 +11,21 @@ const character={id:'94ba0000-0000-4000-8000-000000000001',vigor:2,hp_current:10
   conditions:[{id:'sangrando',name:'Sangrando',turnsRemaining:null,addedAt:'2026-10-06'},{id:'caseira',name:'Caseira',params:{poisonDamage:'2',valor:7},turnsRemaining:null,addedAt:'2026-10-06'}]};
 beforeEach(() => {vi.clearAllMocks();mocks.confirmed.mockReturnValue({id:'receipt',character_id:character.id,payload:{}});});
 describe('Pedido transacional de início de turno',() => {
+  it('libera espera sem resposta e recupera o mesmo pedido sem trocar UUID',async () => {
+    vi.useFakeTimers();
+    try {
+      mocks.rpc.mockReturnValueOnce(new Promise(() => {})).mockResolvedValue({data:{},error:null});
+      const onConfirmed=vi.fn();
+      const {result}=renderHook(() => useConditionTurnApplication(character,onConfirmed));
+      const execute=result.current(prepareConditionTurn([],2));
+      const pending=expect(execute()).rejects.toThrow('Repita a mesma confirmação');
+      await vi.advanceTimersByTimeAsync(30000); await pending;
+      expect(onConfirmed).not.toHaveBeenCalled();
+      await execute();
+      expect(mocks.rpc.mock.calls[1][1]).toEqual(mocks.rpc.mock.calls[0][1]);
+      expect(onConfirmed).toHaveBeenCalledOnce();
+    } finally { vi.useRealTimers(); }
+  });
   it('resolver sem dano mantém a estabilização de uma ficha com zero PV',async () => {
     mocks.rpc.mockResolvedValue({data:{},error:null});
     const {result}=renderHook(() => useConditionTurnApplication({...character,hp_current:0,conditions:[]},vi.fn()));
