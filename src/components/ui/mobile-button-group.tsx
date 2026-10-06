@@ -23,6 +23,8 @@ export interface MobileButtonConfig {
   id: string;
   /** Texto do botão */
   label: string;
+  /** Nome acessível para ações cujo texto não aparece (ex.: somente ícone). */
+  ariaLabel?: string;
   /** Ícone do botão (componente React) */
   icon?: React.ReactNode;
   /** Callback de clique */
@@ -90,6 +92,7 @@ interface MobileButtonProps extends MobileButtonConfig {
 const MobileButton = React.forwardRef<HTMLButtonElement, MobileButtonProps>(
   ({ 
     label, 
+    ariaLabel,
     icon, 
     onClick, 
     variant = "default", 
@@ -115,6 +118,8 @@ const MobileButton = React.forwardRef<HTMLButtonElement, MobileButtonProps>(
         variant={variant}
         onClick={onClick}
         disabled={disabled || loading}
+        aria-label={ariaLabel}
+        title={ariaLabel}
         className={cn(
           heightClass,
           widthClass,

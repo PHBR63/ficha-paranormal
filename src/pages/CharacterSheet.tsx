@@ -1110,16 +1110,10 @@ export default function CharacterSheet() {
 
   // ==================== CALLBACKS MEMOIZADOS (REFATORAÇÃO) ====================
   
-  /**
-   * Handler memoizado para mudança de PE
-   * Substitui os 15+ callbacks inline `onPEChange` nos painéis de trilha
-   */
-  const handlePEChange = useCallback(
-    (newPE: number) => {
-      handleCombatStatsChange({ hp: hpCurrent, pe: newPE, san: sanCurrent });
-    },
-    [hpCurrent, sanCurrent]
-  );
+  // Usa o snapshot atual da ficha. A confirmação de uma rolagem conserva este
+  // callback para repetir o mesmo pedido sem sobrescrever uma alteração concorrente.
+  const handlePEChange = (newPE: number) =>
+    handleCombatStatsChange({ hp: hpCurrent, pe: newPE, san: sanCurrent });
 
   /**
    * Handler memoizado para mudança de PE com delta (ex: Infiltrador)

@@ -1067,7 +1067,7 @@ export function MobileCharacterSheet({
   }, [character, processResourceChange, executeResourceUpdate, onRefetch]);
 
   const handlePEChange = useCallback(async (newPE: number) => {
-    await handleCombatStatsChange({ hp: character.hp_current, pe: newPE, san: character.san_current });
+    return handleCombatStatsChange({ hp: character.hp_current, pe: newPE, san: character.san_current });
   }, [handleCombatStatsChange, character.hp_current, character.san_current]);
 
   // Handler completo para conjuração de ritual (paridade com desktop)

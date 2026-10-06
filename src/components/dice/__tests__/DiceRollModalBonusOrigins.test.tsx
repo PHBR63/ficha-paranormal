@@ -81,4 +81,25 @@ describe('origens numéricas da rolagem compartilhada', () => {
     expect(screen.getByText('Treinamento (Eclético): +10')).toBeTruthy();
     expect(screen.queryByText('Treinamento: +5')).toBeNull();
   });
+  it('aguarda confirmação de PE e repete o mesmo sorteio após rejeição', async () => {
+    let reject!: (cause: Error) => void;
+    const pe = vi.fn().mockImplementationOnce(() => new Promise<boolean>((_, fail) => { reject = fail; })).mockResolvedValueOnce(true);
+    const complete = vi.fn();
+    render(<DiceRollModal open onClose={() => undefined} label="Iniciativa" attributeValue={1} skillBonus={10}
+      bonusSources={[{ label: 'Treinamento', type: 'skill', value: 5 }, { label: 'Poder', type: 'power', value: 5 }]}
+      peCurrent={10} onPEChange={pe} onRollComplete={complete}
+      activatablePowers={[{ id: 'ecletico-veterano', name: 'Eclético (Veterano)', description: 'Treinamento temporário',
+        peCost: 4, effect: '+10 veterano', effectType: 'skill_trained', icon: 'zap' }]} />);
+    fireEvent.click(screen.getByRole('switch'));
+    fireEvent.click(screen.getByRole('button', { name: /ROLAR DADOS/ }));
+    await act(async () => { vi.advanceTimersByTime(1200); });
+    expect(complete).not.toHaveBeenCalled();
+    await act(async () => { reject(new Error('Servidor desconectado')); });
+    expect(screen.getByRole('alert').textContent).toContain('desconectado');
+    const randomCalls = vi.mocked(Math.random).mock.calls.length;
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'TENTAR CONFIRMAÇÃO' })); });
+    expect(vi.mocked(Math.random).mock.calls.length).toBe(randomCalls);
+    expect(pe.mock.calls).toEqual([[6], [6]]);
+    expect(complete).toHaveBeenCalledTimes(1);
+  });
 });

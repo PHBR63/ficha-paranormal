@@ -32,6 +32,7 @@ import { getAttributeDicePool } from '@/lib/attribute-dice-pool';
 import { getConditionTestDicePenalty, resolveConditionTestAttribute } from '@/lib/conditions/condition-test-penalty';
 import confetti from 'canvas-confetti';
 import { DiceRollResult, rollSkillTest } from '@/lib/dice-roller';
+import { useConfirmedDiceRoll, type ConfirmDicePE } from '@/hooks/useConfirmedDiceRoll';
 import { 
   usePowerActivation, 
   type ActivatablePower,
@@ -90,7 +91,7 @@ interface MobileDiceRollModalProps {
   agility?: number;    // Agilidade para Incansável/Presteza Atlética
   presence?: number;   // Presença para Impostor (Enganação usa Presença)
   vigor?: number;      // Vigor para completar mapeamento de atributos
-  onPEChange?: (newPE: number) => void;
+  onPEChange?: ConfirmDicePE;
   // Perícia sendo testada (ID para filtrar poderes aplicáveis como Perito)
   currentSkill?: string;
   // Nível de treinamento atual da perícia (para filtrar Eclético)
@@ -162,16 +163,35 @@ export function MobileDiceRollModal({
   characterConfig,
   activeConditions = [],
 }: MobileDiceRollModalProps) {
-  // Calcula o nível de treinamento automaticamente baseado no skillBonus se não fornecido
+  const sourceTrainingBonus = useMemo(() => {
+    const sources = bonusSources.filter(source => source.type === 'skill' && Number.isFinite(source.value));
+    return sources.length ? sources.reduce((sum, source) => sum + source.value, 0) : undefined;
+  }, [bonusSources]);
   const effectiveTrainingLevel: SkillTrainingLevel = useMemo(() => {
     if (currentSkillTrainingLevel) return currentSkillTrainingLevel;
-    return bonusToTrainingLevel(skillBonus);
-  }, [currentSkillTrainingLevel, skillBonus]);
+    return bonusToTrainingLevel(sourceTrainingBonus ?? skillBonus);
+  }, [currentSkillTrainingLevel, sourceTrainingBonus, skillBonus]);
+  // O mobile renderiza sua própria lista: aplica os mesmos requisitos do painel
+  // desktop antes de permitir ativação ou cobrança de poderes neste teste.
+  const skillPowers = useMemo(() => {
+    const normalize = (value: string) => value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[\s-]+/g, '');
+    const skill = normalize(currentSkill || label);
+    const matches = (value: string) => skill === normalize(value) || skill.includes(normalize(value)) || normalize(value).includes(skill);
+    return activatablePowers.filter(power => {
+      if (power.effectType === 'combat_bonus') return false;
+      if (power.applicableSkills?.length && !power.applicableSkills.some(matches)) return false;
+      if (power.excludedSkills?.some(matches)) return false;
+      const offeredTraining = power.id === 'ecletico' || power.id === 'ecletico-treinado' ? 1
+        : power.id === 'ecletico-veterano' ? 2 : power.id === 'ecletico-expert' ? 3 : undefined;
+      return offeredTraining === undefined || getTrainingLevelValue(effectiveTrainingLevel) < offeredTraining;
+    });
+  }, [activatablePowers, currentSkill, label, effectiveTrainingLevel]);
   // === FASE DE ROLAGEM ===
   // 'preparing' = modal aberto, aguardando seleção de poderes
   // 'rolling' = animação de dados
   // 'done' = resultado exibido
   const [phase, setPhase] = useState<'preparing' | 'rolling' | 'done'>('preparing');
+  const { confirm: confirmRoll, reset: resetRoll, pending: pendingConfirmation, confirming: confirmingPE, error: confirmationError } = useConfirmedDiceRoll();
   const [displayDice, setDisplayDice] = useState<number[]>([]);
   const [result, setResult] = useState<DiceRollResult | null>(null);
   const [isPowerPanelExpanded, setIsPowerPanelExpanded] = useState(true);
@@ -185,9 +205,10 @@ export function MobileDiceRollModal({
     activationStates,
     togglePower,
     resetActivations,
-    getActivePowers,
-    getTotalPECost,
-  } = usePowerActivation(activatablePowers);
+    getActivePowers: getStoredActivePowers,
+  } = usePowerActivation(skillPowers);
+  const getActivePowers = useCallback(() => getStoredActivePowers().filter(state => skillPowers.some(power => power.id === state.powerId)), [getStoredActivePowers, skillPowers]);
+  const getTotalPECost = useCallback(() => getActivePowers().reduce((sum, state) => sum + state.peCost, 0), [getActivePowers]);
 
   // Calcular efeitos dos poderes ativados
   const activatedPowerEffects = useMemo(() => {
@@ -289,6 +310,8 @@ export function MobileDiceRollModal({
 
   // Função para executar a rolagem
   const executeRoll = useCallback(() => {
+    if (confirmingPE) return;
+    if (pendingConfirmation) { void confirmRoll(); return; }
     // Limpa animação anterior
     if (animationRef.current) {
       clearInterval(animationRef.current);
@@ -320,8 +343,10 @@ export function MobileDiceRollModal({
         const powerBonus = activatedPowerEffects.extraBonus;
         // Usa effectiveSkillBonus se skillSwap OU ecleticoBonus estiver ativo
         const hasSkillReplacement = activatedPowerEffects.skillSwap || activatedPowerEffects.ecleticoBonus !== undefined;
-        const baseSkillBonus = hasSkillReplacement ? effectiveSkillBonus : skillBonus;
+        const baseSkillBonus = activatedPowerEffects.skillSwap ? effectiveSkillBonus
+          : activatedPowerEffects.ecleticoBonus !== undefined ? effectiveSkillBonus + skillBonus - (sourceTrainingBonus ?? skillBonus) : skillBonus;
         const totalBonus = baseSkillBonus + resistanceBonus + powerBonus;
+        const recordedSkillBonus = hasSkillReplacement ? effectiveSkillBonus : sourceTrainingBonus ?? baseSkillBonus;
         
         // Calcula atributo efetivo (considera swapToSkill ou troca de atributo)
         let finalAttribute = attributeValue;
@@ -344,35 +369,35 @@ export function MobileDiceRollModal({
         const rollResult = rollSkillTest({
           attributeValue: finalAttribute,
           dicePenalty,
-          skillBonus: totalBonus,
+          skillBonus: recordedSkillBonus,
+          otherBonuses: totalBonus - recordedSkillBonus,
           extraDice,  // Passa dados extras do Discurso Motivador
           label,
         });
         
-        setDisplayDice(rollResult.dice);
-        setResult(rollResult);
-        setPhase('done');
-        
-        // Descontar PE dos poderes ativados
         const peCost = getTotalPECost();
-        if (peCost > 0 && onPEChange) {
-          onPEChange(Math.max(0, peCurrent - peCost));
-        }
-        
-        // Confetti em crítico
-        if (rollResult.isCritical) {
-          confetti({
-            particleCount: 80,
-            spread: 60,
-            origin: { y: 0.7 },
-            colors: ['#ffd700', '#ff6b6b', '#4ecdc4'],
-          });
-        }
-        
-        onRollComplete?.(rollResult);
+        void confirmRoll({ result: rollResult, nextPE: peCost > 0 ? Math.max(0, peCurrent - peCost) : undefined, confirmPE: onPEChange,
+          onConfirmed: () => {
+            setDisplayDice(rollResult.dice);
+            setResult(rollResult);
+            setPhase('done');
+
+            // Confetti em crítico
+            if (rollResult.isCritical) {
+              confetti({
+                particleCount: 80,
+                spread: 60,
+                origin: { y: 0.7 },
+                colors: ['#ffd700', '#ff6b6b', '#4ecdc4'],
+              });
+            }
+
+            onRollComplete?.(rollResult);
+          },
+        }).then(confirmed => { if (!confirmed) setPhase('done'); });
       }
     }, 80);
-  }, [dicePenalty, attributeValue, skillBonus, effectiveSkillBonus, resistanceBonus, extraDice, activatedPowerEffects, label, diceCount, onRollComplete, getTotalPECost, onPEChange, peCurrent, intellect, strength, agility, presence, vigor]);
+  }, [pendingConfirmation, confirmingPE, confirmRoll, dicePenalty, attributeValue, skillBonus, sourceTrainingBonus, effectiveSkillBonus, resistanceBonus, extraDice, activatedPowerEffects, label, diceCount, onRollComplete, getTotalPECost, onPEChange, peCurrent, intellect, strength, agility, presence, vigor]);
 
   // Handler para iniciar a rolagem (clique no botão "Rolar Dados")
   const handleStartRoll = useCallback(() => {
@@ -402,9 +427,10 @@ export function MobileDiceRollModal({
       setDisplayDice([]);
       setResult(null);
       hasRolledRef.current = false;
-      resetActivations(); // Reset ativação de poderes
+      resetActivations();
+      resetRoll(); // Reset ativação de poderes
     }
-  }, [open, resetActivations]);
+  }, [open, resetActivations, resetRoll]);
 
   // Cleanup
   useEffect(() => {
@@ -416,10 +442,13 @@ export function MobileDiceRollModal({
   }, []);
 
   const total = result?.total || 0;
-  const isRolling = phase === 'rolling';
+  const isRolling = phase === 'rolling' || confirmingPE;
+  const resultBonusSources: BonusSource[] = result && !activatedPowerEffects.skillSwap && activatedPowerEffects.ecleticoBonus !== undefined
+    ? [...bonusSources.filter(source => source.type !== 'skill'), { label: 'Treinamento (Eclético)', value: result.skillBonus, type: 'skill' }]
+    : bonusSources;
 
   return (
-    <MobileDrawer open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
+    <MobileDrawer open={open} onOpenChange={(isOpen) => !isOpen && !confirmingPE && onClose()}>
       <MobileDrawerContent maxHeight="lg">
         <MobileDrawerHeader className="text-center">
           <div className="flex items-center justify-center gap-2 mb-1">
@@ -439,7 +468,7 @@ export function MobileDiceRollModal({
         <MobileDrawerBody useScrollArea={false}>
           <div className="space-y-4">
             {/* Painel de ativação de poderes - APARECE PRIMEIRO na fase preparing */}
-            {phase === 'preparing' && activatablePowers.length > 0 && peCurrent > 0 && (
+            {phase === 'preparing' && skillPowers.length > 0 && peCurrent > 0 && (
               <div className="border-b border-border pb-3">
                 <button
                   onClick={() => setIsPowerPanelExpanded(!isPowerPanelExpanded)}
@@ -447,7 +476,7 @@ export function MobileDiceRollModal({
                 >
                   <span className="flex items-center gap-1.5">
                     <Zap className="w-3.5 h-3.5 text-yellow-500" />
-                    Poderes Ativáveis ({activatablePowers.length})
+                    Poderes Ativáveis ({skillPowers.length})
                   </span>
                   <span className="flex items-center gap-2">
                     <span className="text-[10px]">
@@ -471,9 +500,9 @@ export function MobileDiceRollModal({
                       className="overflow-hidden"
                     >
                       <div className="space-y-2">
-                        {activatablePowers.map((power) => {
+                        {skillPowers.map((power) => {
                           const isActive = activationStates.find(s => s.powerId === power.id)?.isActive || false;
-                          const canAfford = peCurrent >= (power.peCost || 0);
+                          const canAfford = isActive || peCurrent >= getTotalPECost() + (power.peCost || 0);
                           
                           return (
                             <div
@@ -579,7 +608,7 @@ export function MobileDiceRollModal({
             )}
 
             {/* Painel de ativação de poderes - versão compacta APÓS rolagem */}
-            {phase !== 'preparing' && activatablePowers.length > 0 && peCurrent > 0 && (
+            {phase !== 'preparing' && skillPowers.length > 0 && peCurrent > 0 && (
               <div className="border-t border-border pt-3 mt-3">
                 <button
                   onClick={() => setIsPowerPanelExpanded(!isPowerPanelExpanded)}
@@ -587,7 +616,7 @@ export function MobileDiceRollModal({
                 >
                   <span className="flex items-center gap-1.5">
                     <Zap className="w-3.5 h-3.5 text-yellow-500" />
-                    Poderes Ativáveis ({activatablePowers.length})
+                    Poderes Ativáveis ({skillPowers.length})
                   </span>
                   <span className="flex items-center gap-2">
                     <span className="text-[10px]">
@@ -611,9 +640,9 @@ export function MobileDiceRollModal({
                       className="overflow-hidden"
                     >
                       <div className="space-y-2">
-                        {activatablePowers.map((power) => {
+                        {skillPowers.map((power) => {
                           const isActive = activationStates.find(s => s.powerId === power.id)?.isActive || false;
-                          const canAfford = peCurrent >= (power.peCost || 0);
+                          const canAfford = isActive || peCurrent >= getTotalPECost() + (power.peCost || 0);
                           
                           return (
                             <div
@@ -689,8 +718,8 @@ export function MobileDiceRollModal({
                       d20: {result.keptDice}
                     </span>
                     
-                    {bonusSources.length > 0 ? (
-                      bonusSources.filter(s => s.value !== 0).map((source, idx) => (
+                    {resultBonusSources.length > 0 ? (
+                      resultBonusSources.filter(s => s.value !== 0).map((source, idx) => (
                         <TooltipProvider key={idx} delayDuration={300}>
                           <Tooltip>
                             <TooltipTrigger asChild>
@@ -733,10 +762,11 @@ export function MobileDiceRollModal({
                     {/* Badges de poderes ativados - indicador visual no breakdown */}
                     {getActivePowers().map((activePower) => {
                       // Buscar dados completos do poder na lista de poderes ativáveis
-                      const powerData = activatablePowers.find(p => p.id === activePower.powerId);
+                      const powerData = skillPowers.find(p => p.id === activePower.powerId);
                       if (!powerData) return null;
                       
                       const effects = calculatePowerActivationEffects(activePower.powerId, nex, intellect);
+                      if (activePower.powerId.startsWith('ecletico')) return null;
                       if (effects.skillBonusChange === 0) return null;
                       
                       return (
@@ -768,6 +798,7 @@ export function MobileDiceRollModal({
                   </div>
 
                   {/* Total grande */}
+                  <p className="text-center text-xs text-muted-foreground">Cálculo: {result.keptDice} + perícia ({result.skillBonus}) + outros bônus ({result.otherBonuses}) = {result.total}</p>
                   <div className="text-center">
                     <motion.div 
                       initial={{ scale: 0.5 }}
@@ -814,12 +845,13 @@ export function MobileDiceRollModal({
           </div>
         </MobileDrawerBody>
 
+        {confirmationError && <p role="alert" className="px-4 text-sm text-destructive">{confirmationError}</p>}
         <MobileDrawerFooter>
           <MobileButtonGroup
             buttons={[
               {
                 id: 'reroll',
-                label: 'ROLAR NOVAMENTE',
+                label: pendingConfirmation ? 'TENTAR CONFIRMAÇÃO' : 'ROLAR NOVAMENTE',
                 icon: <RotateCcw className={cn(isRolling && 'animate-spin')} />,
                 onClick: executeRoll,
                 variant: 'outline',
@@ -829,6 +861,8 @@ export function MobileDiceRollModal({
               {
                 id: 'close',
                 label: '',
+                ariaLabel: 'Fechar rolagem',
+                disabled: confirmingPE,
                 icon: <X />,
                 onClick: onClose,
                 variant: 'ghost',
