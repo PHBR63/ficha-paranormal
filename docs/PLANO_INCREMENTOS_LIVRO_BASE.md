@@ -42,8 +42,8 @@ Este documento organiza a continuidade da auditoria. Não é uma declaração de
 
 Uma regra listada ou um teste local aprovado não provam funcionamento publicado. Cada entrega deve registrar separadamente código/testes, migração aplicada quando necessária, autorização no banco, publicação e conferência autenticada. Regras narrativas com resolução manual precisam de instrução e registro claros; sua ausência de automação não é, por si só, uma falha.
 
-## Fluxo atual da entrega 1
+## Fluxo atual das entregas 1 a 3
 
-`CharacterSheet` / `MobileCharacterSheet` fornecem recursos e o callback de confirmação. `CombatRollModal` / `MobileCombatRollModal` calculam o custo selecionado e sorteiam uma vez. `useConfirmedDiceRoll` guarda resultado, valor alvo e callback para repetição. O callback da ficha usa `useCharacterResourceUpdate` e o serviço de recursos para obter aceitação do servidor. Só então o modal publica o resultado via `onRollComplete` e libera a próxima etapa.
+`CharacterSheet` / `MobileCharacterSheet` fornecem PE normais, temporários, contexto de turno e callback. Os modais calculam a seleção e sorteiam uma vez. `useConfirmedDiceRoll` conserva a intenção nas falhas de conexão. `combat-attack-service` envia uma única operação a `confirm_character_combat_attack`, que valida classe, NEX, arma equipada, custo e orçamento, consome temporários primeiro e grava saldo, histórico e gasto na mesma transação. Recusa explícita permite corrigir a seleção; resposta incerta mantém UUID e sorteio.
 
-Esse fluxo corrige a apresentação prematura. Ainda não equivale à validação autoritativa de todos os custos de habilidades nem a uma transação única com o histórico de ataque, que correspondem às entregas 2 e 3.
+Cobertura desta integração: Ataque Especial, técnicas do Aniquilador, Ataque Furtivo e Disparo Letal. Outros poderes pagos, requisitos circunstanciais, frequência de uso, ações, reações, munição e dano aplicado ao alvo ainda exigem os próximos incrementos. A entrega 2 permanece parcial para o conjunto completo de habilidades. Detalhes: `COMBATE_ORCAMENTO_SERVIDOR.md`.

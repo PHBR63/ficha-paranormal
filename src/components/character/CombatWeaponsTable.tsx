@@ -1,3 +1,4 @@
+import type { ConfirmCombatAttack } from '@/services/combat-attack-service';
 /**
  * CombatWeaponsTable - Tabela de armas/combate estilo ficha de papel
  * Mostra armas equipadas com detalhes de dano, munição, alcance
@@ -75,6 +76,9 @@ interface CombatWeaponsTableProps {
   currentPE?: number;
   maxPE?: number;
   onPEChange?: ConfirmDicePE;
+  onConfirmAttack?: ConfirmCombatAttack;
+  temporaryPE?: number;
+  confirmationUnavailable?: string;
   
   // Dados de classe e poderes
   characterClass?: string;
@@ -146,7 +150,9 @@ export function CombatWeaponsTable({
   currentPE,
   maxPE,
   onPEChange,
-  characterClass,
+  onConfirmAttack,
+  temporaryPE,
+  confirmationUnavailable,  characterClass,
   classTrack,
   abilities,
   paranormalPowers,
@@ -381,6 +387,9 @@ export function CombatWeaponsTable({
           currentPE={currentPE}
           maxPE={maxPE}
           onPEChange={onPEChange}
+          onConfirmAttack={onConfirmAttack}
+          temporaryPE={temporaryPE}
+          confirmationUnavailable={confirmationUnavailable}
           characterClass={characterClass || ''}
           classTrack={classTrack || ''}
           abilities={abilities || []}

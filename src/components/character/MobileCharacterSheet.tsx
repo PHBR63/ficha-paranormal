@@ -1,3 +1,4 @@
+import { confirmCombatAttack } from '@/services/combat-attack-service';
 import { PETurnBudgetPanel } from './PETurnBudgetPanel';
 import { usePETurnBudget } from '@/hooks/character/usePETurnBudget';
 import { DEFAULT_CASTING_CONCENTRATION, getCastingWillConfig, rollCastingConcentration, type CastingConcentrationContext } from '@/lib/rituals/casting-concentration';
@@ -2559,6 +2560,14 @@ export function MobileCharacterSheet({
           currentPE={character.pe_current}
           maxPE={character.pe_max}
           onPEChange={handlePEChange}
+          temporaryPE={temporaryResources.pe}
+          confirmationUnavailable={peBudget.isLoading ? "Carregando o orçamento de PE do servidor…" : peBudget.error || !peBudget.data ? "Não foi possível conferir o turno. Recarregue a ficha antes de atacar." : undefined}
+          onConfirmAttack={async request => {
+            await confirmCombatAttack(character.id, request, peBudget.data?.key ?? null);
+            try { await onRefetch?.(); await peBudget.refetch(); await temporaryResources.refetch(); }
+            catch { toast.error('Ataque confirmado. Recarregue para atualizar a ficha.'); }
+            return true;
+          }}
           characterClass={character.class}
           classTrack={character.class_track || undefined}
           abilities={character.abilities}
@@ -2591,6 +2600,7 @@ export function MobileCharacterSheet({
           activatedTrackEffects={activatedEffects.activatedEffectIds}
           activeConditionalBonuses={character.active_conditional_bonuses || []}
           onRollComplete={(result) => {
+            if (result.activityOperationId) return;
             addRoll({
               type: result.type,
               label: result.label || `Ataque: ${selectedWeapon.name}`,

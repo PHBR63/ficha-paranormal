@@ -19,6 +19,8 @@ import { getNexLevel } from '@/lib/rules/nex-progression';
 import { getAttributeDicePool } from './attribute-dice-pool';
 
 export interface DiceRollResult {
+  /** Recibo do servidor quando custo e rolagem já foram gravados juntos. */
+  activityOperationId?: string;
   dice: number[];
   keptDice: number;
   skillBonus: number;

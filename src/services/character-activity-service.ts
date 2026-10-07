@@ -33,6 +33,7 @@ type ActivityDatabase = { public: {
     change_character_resource: { Args: { p_operation_id: string; p_character_id: string; p_resource: 'hp' | 'pe' | 'san'; p_mode: 'delta' | 'set'; p_value: number; p_expected_current: number; p_expected_max: number }; Returns: CharacterActivityEvent };
     replace_character_conditions: { Args: { p_operation_id: string; p_character_id: string; p_conditions: Json; p_expected: Json }; Returns: CharacterActivityEvent };
     change_character_resources: { Args: { p_operation_id: string; p_character_id: string; p_values: Json; p_expected: Json; p_conditions: Json }; Returns: CharacterActivityEvent };
+    confirm_character_combat_attack: { Args: { p_operation_id: string; p_character_id: string; p_expected_pe: number; p_expected_cost: number; p_expected_turn_key: string | null; p_selection: Json; p_payload: Json }; Returns: CharacterActivityEvent };
     resolve_character_condition_turn: { Args: { p_operation_id: string; p_character_id: string; p_values: Json; p_expected: Json; p_conditions: Json; p_resolution: Json }; Returns: CharacterActivityEvent };
   };
 } };

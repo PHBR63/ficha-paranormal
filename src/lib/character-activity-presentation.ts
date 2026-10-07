@@ -56,7 +56,9 @@ export function describeCharacterActivity(event: CharacterActivityEvent): string
     const signed = (value: number) => value >= 0 ? `+${value}` : `${value}`;
     const selected = typeof result.diceMultiplier === 'number' && result.diceMultiplier !== 1 && dice.every(die => typeof die === 'number') ? `(${dice.join(' + ')}) × ${result.diceMultiplier}` : String(kept);
     const breakdown = typeof kept === 'number' ? ` · ${selected}${skill !== undefined ? ` ${signed(skill)} perícia` : ''}${other !== undefined ? ` ${signed(other)} outros bônus` : ''}${skill === undefined && bonus !== undefined ? ` ${signed(bonus)} bônus` : ''}` : '';
-    return `${label}${total}${dice.length ? ` · dados [${dice.join(', ')}]` : ''}${breakdown}`;
+    const attackCost = payload.kind === 'combat_attack' && typeof payload.peCost === 'number'
+      ? ` · Custo ${payload.peCost} PE · PE ${payload.peBefore} → ${payload.peAfter}${temporaryPE}${peBudgetDetails}` : '';
+    return `${label}${total}${dice.length ? ` · dados [${dice.join(', ')}]` : ''}${breakdown}${attackCost}`;
   }
   if (event.category === 'ritual') {
     const cost = payload.paranormalCost;

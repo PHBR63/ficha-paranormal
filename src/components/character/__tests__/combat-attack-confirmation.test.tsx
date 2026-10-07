@@ -47,6 +47,22 @@ it('a tabela desktop repassa trilha, arma favorita e rejeição do servidor ao m
 describe.each([
   ['desktop', CombatRollModal], ['mobile', MobileCombatRollModal],
 ] as const)('Ataque confirmado: %s', (_name, Modal) => {
+  it('avisa e bloqueia nova rolagem enquanto o turno não puder ser conferido', () => {
+    render(<Modal {...props} onPEChange={vi.fn()} confirmationUnavailable="Carregando orçamento" />);
+    expect(screen.getByRole('status')).toHaveTextContent('Carregando orçamento');
+    expect(screen.getByRole('button', { name: /rolar ataque/i })).toBeDisabled();
+    expect(rollSkillTest).not.toHaveBeenCalled();
+  });
+  it('permite fechar e corrigir a seleção após recusa definitiva do servidor', async () => {
+    const close = vi.fn();
+    const confirm = vi.fn().mockRejectedValue(Object.assign(new Error('Limite excedido'), { serverRejected: true }));
+    render(<Modal {...props} onPEChange={vi.fn()} onClose={close} onConfirmAttack={confirm} />);
+    fireEvent.click(screen.getByRole('button', { name: /rolar ataque/i }));
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Limite excedido'));
+    expect(screen.getByRole('button', { name: /rolar ataque/i })).toBeEnabled();
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(close).toHaveBeenCalled();
+  });
   it('aguarda o servidor e bloqueia cliques duplicados durante confirmação', async () => {
     let resolve!: (accepted: boolean) => void;
     const save = vi.fn(() => new Promise<boolean>(done => { resolve = done; }));
@@ -114,5 +130,23 @@ describe.each([
     await waitFor(() => expect(screen.queryByRole('button', { name: 'Confirmar Técnica' })).not.toBeInTheDocument());
     fireEvent.click(screen.getByRole('button', { name: /^cancelar( técnica)?$/i }));
     expect(save).not.toHaveBeenCalled();
+  });
+
+  it('usa confirmação atômica, inclui temporários e repete a mesma intenção após rejeição', async () => {
+    const save = vi.fn();
+    const confirm = vi.fn().mockRejectedValueOnce(new Error('Limite do turno excedido. Nenhuma cobrança.')).mockResolvedValueOnce(true);
+    const complete = vi.fn();
+    render(<Modal {...props} currentPE={0} temporaryPE={2} onPEChange={save}
+      onConfirmAttack={confirm} onRollComplete={complete} />);
+    fireEvent.click(screen.getByRole('button', { name: /rolar ataque/i }));
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Limite do turno excedido'));
+    expect(complete).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: /tentar confirmar ataque/i }));
+    await waitFor(() => expect(complete).toHaveBeenCalledOnce());
+    expect(save).not.toHaveBeenCalled();
+    expect(rollSkillTest).toHaveBeenCalledOnce();
+    expect(confirm.mock.calls[0][0]).toBe(confirm.mock.calls[1][0]);
+    expect(confirm.mock.calls[0][0]).toEqual(expect.objectContaining({ expectedPE: 0, expectedCost: 2,
+      selection: expect.objectContaining({ weaponId: 'test', specialAttackIncrements: 1 }) }));
   });
 });

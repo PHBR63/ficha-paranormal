@@ -6,6 +6,7 @@ interface RollConfirmation {
   result: DiceRollResult;
   nextPE?: number;
   confirmPE?: ConfirmDicePE;
+  confirmOperation?: () => Promise<boolean>;
   onConfirmed: (result: DiceRollResult) => void;
 }
 
@@ -23,7 +24,9 @@ export function useConfirmedDiceRoll() {
     const current = request.current;
     lock.current = true; setConfirming(true); setPending(true); setError(null);
     try {
-      if (current.nextPE !== undefined) {
+      if (current.confirmOperation) {
+        if (!await current.confirmOperation()) throw new Error('A operação não foi confirmada. Tente novamente.');
+      } else if (current.nextPE !== undefined) {
         if (!current.confirmPE) throw new Error('Não há confirmação de PE disponível para esta rolagem.');
         const accepted = await current.confirmPE(current.nextPE);
         if (accepted === false) throw new Error('O gasto de PE não foi confirmado. Tente confirmar novamente ou recarregue a ficha.');
@@ -31,6 +34,10 @@ export function useConfirmedDiceRoll() {
     } catch (cause) {
       if (request.current !== current) return true;
       setError(cause instanceof Error ? cause.message : 'O gasto de PE não foi confirmado.');
+      // Recusa definitiva permite corrigir a seleção; resposta incerta conserva UUID/dados.
+      if (cause instanceof Error && 'serverRejected' in cause && cause.serverRejected === true) {
+        request.current = null; setPending(false);
+      }
       return false;
     } finally { lock.current = false; setConfirming(false); }
     // Fechar cancela a apresentação; um débito já aceito continua no histórico
