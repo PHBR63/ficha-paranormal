@@ -79,7 +79,15 @@ export function StepSkills({ formData, updateFormData, buildResult }: StepSkills
 
   // Total de perícias livres = apenas base da classe (perícias extras vêm do poder "Treinamento em Perícia")
   const totalFreePoints = classRules.freePoints;
-  const usedFreePoints = formData.freeSkills.length;
+  // Templates legados podem repetir treinamentos de origem/classe na lista livre.
+  // Conte apenas escolhas livres distintas, preservando os dados recebidos.
+  const grantedSkills = new Set([
+    ...originSkills,
+    ...classSkills.mandatory,
+    ...classSkills.fromChoices,
+    ...Object.values(formData.conflictResolutions),
+  ]);
+  const usedFreePoints = new Set(formData.freeSkills.filter(skill => !grantedSkills.has(skill))).size;
   const remainingFreePoints = Math.max(0, totalFreePoints - usedFreePoints);
   const progressPercentage = totalFreePoints > 0 ? ((totalFreePoints - remainingFreePoints) / totalFreePoints) * 100 : 0;
 
@@ -589,7 +597,7 @@ export function StepSkills({ formData, updateFormData, buildResult }: StepSkills
         <div className="ordo-panel p-4 bg-primary/5 border-primary/20">
           <p className="text-sm text-muted-foreground">
             <span className="text-primary font-medium">NOTA:</span> Perícias marcadas com <span className="text-warning">T</span> requerem treinamento para serem usadas.
-            Cada perícia treinada adiciona +5 ao bônus base do atributo.
+            O atributo define os dados rolados; o treinamento adiciona +5 ao d20 selecionado, junto dos demais modificadores.
           </p>
         </div>
 
