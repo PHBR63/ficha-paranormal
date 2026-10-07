@@ -824,16 +824,20 @@ export const BLOOD_FIRST_CIRCLE: UnifiedRitual[] = [
       base: {
         kind: 'buff',
         weaponEffect: { attackBonus: 2, criticalBonus: 1 },
+        // A duração sustentada precisa chegar ao assistente de aplicação, além do texto.
+        sustain: { action: 'free' },
         summary: '+2 em testes de ataque, +1 na margem de ameaça.',
       },
       discente: {
         kind: 'buff',
         weaponEffect: { attackBonus: 5, criticalBonus: 1 },
+        sustain: { action: 'free' },
         summary: '+5 em testes de ataque.',
       },
       verdadeiro: {
         kind: 'buff',
         weaponEffect: { attackBonus: 5, criticalBonus: 2, criticalMultiplierBonus: 1 },
+        sustain: { action: 'free' },
         summary: '+5 ataque, +2 margem de ameaça, +1 multiplicador de crítico.',
       },
     },

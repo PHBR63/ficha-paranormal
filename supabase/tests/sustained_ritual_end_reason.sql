@@ -1,8 +1,9 @@
 -- Exercita as RPCs reais em fixtures locais, sem conservar dados de teste.
 BEGIN;
 INSERT INTO auth.users(id) VALUES ('00000000-0000-4000-8000-000000000411');
-INSERT INTO public.characters(id,user_id,name) VALUES
- ('00000000-0000-4000-8000-000000000401','00000000-0000-4000-8000-000000000411','QA motivos');
+-- Campos obrigatórios e saldo correspondem ao contrato real da ficha.
+INSERT INTO public.characters(id,user_id,name,origin,class,pe_current,pe_max) VALUES
+ ('00000000-0000-4000-8000-000000000401','00000000-0000-4000-8000-000000000411','QA motivos','Vítima','Ocultista',10,10);
 CREATE FUNCTION pg_temp.ending_snapshot(c uuid) RETURNS jsonb LANGUAGE sql AS $$
  SELECT jsonb_agg(jsonb_build_object('id',r->'id','ritual_id',r->'ritual_id','turns_active',r->'turns_active',
  'pe_spent_total',r->'pe_spent_total','sustain_config',r->'sustain_config','is_concentrating',r->'is_concentrating') ORDER BY r->>'id')

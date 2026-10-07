@@ -1,6 +1,7 @@
 import { ALL_RITUALS, type Ritual } from '@/lib/rituals/legacy-exports';
 import type { RitualCastRecord } from '@/components/character/RitualCastHistory';
 import type { CharacterActivityEvent } from '@/types/character-activity';
+import { describeCharacterActivity } from '@/lib/character-activity-presentation';
 
 /** Reconstrói os cartões a partir do registro confirmado, sem recalcular custos históricos. */
 export function activityRitualEntries(events: CharacterActivityEvent[], characterId?: string): RitualCastRecord[] {
@@ -23,6 +24,8 @@ export function activityRitualEntries(events: CharacterActivityEvent[], characte
       id: event.id, ritual, unknownRitual: !catalog, peCost: payload.peCost as number,
       enhancements: Array.isArray(payload.enhancements) ? payload.enhancements.filter((value): value is string => typeof value === 'string') : [],
       timestamp, peBeforeCast: payload.peBefore as number, peAfterCast: payload.peAfter as number,
+      // Registros antigos sem resultado continuam sem uma conclusão inventada.
+      resolutionDescription: typeof payload.castingOutcome === 'string' ? describeCharacterActivity(event) : undefined,
     }];
   });
 }

@@ -26,6 +26,8 @@ export interface RitualCastRecord {
   id: string;
   ritual: Omit<Ritual, 'circle' | 'element'> & { circle: number | null; element: Ritual['element'] | null };
   unknownRitual?: boolean;
+  /** Resultado do recibo, sem refazer testes com os bônus atuais. */
+  resolutionDescription?: string;
   peCost: number;
   enhancements: string[];
   timestamp: Date;
@@ -115,6 +117,8 @@ function CastRecordCard({ record }: { record: RitualCastRecord }) {
           {record.ritual.circle === null ? '?' : `${record.ritual.circle}º`}
         </Badge>
       </div>
+
+      {record.resolutionDescription && <p className="mt-2 text-xs break-words">{record.resolutionDescription}</p>}
 
       {/* Detalhes de custo */}
       <div className="mt-2 pt-2 border-t border-border/50">

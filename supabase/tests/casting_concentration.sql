@@ -1,6 +1,8 @@
 BEGIN;
 INSERT INTO auth.users(id) VALUES ('00000000-0000-4000-8000-000000000511');
-INSERT INTO public.characters(id,user_id,name) VALUES ('00000000-0000-4000-8000-000000000501','00000000-0000-4000-8000-000000000511','QA concentração');
+-- Recursos explícitos correspondem aos snapshots usados nas RPCs abaixo.
+INSERT INTO public.characters(id,user_id,name,origin,class,hp_current,hp_max,pe_current,pe_max)
+VALUES ('00000000-0000-4000-8000-000000000501','00000000-0000-4000-8000-000000000511','QA concentração','Vítima','Ocultista',20,20,10,10);
 SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000511',true);
 DO $$
