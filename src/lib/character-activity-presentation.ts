@@ -44,6 +44,14 @@ export function describeCharacterActivity(event: CharacterActivityEvent): string
   }
   if (event.category === 'ritual') return `${label}${typeof payload.peCost === 'number' ? ` · ${payload.peCost} PE` : ''}${typeof payload.peBefore === 'number' && typeof payload.peAfter === 'number' ? ` (${payload.peBefore} → ${payload.peAfter})` : ''}`;
   if (payload.kind === 'scene_expiry') return `Cena ${payload.sceneNumber} encerrada · ${payload.expiredEffectsCount} efeito(s) expirado(s)${describeConditionChanges((payload.before as { conditions?: Json })?.conditions, (payload.after as { conditions?: Json })?.conditions)}`;
+  if (payload.kind === 'sustain_maintenance' || payload.kind === 'sustain_end') {
+    const before = payload.before;
+    const rituals = before && typeof before === 'object' && !Array.isArray(before) && Array.isArray(before.sustained_rituals)
+      ? before.sustained_rituals : [];
+    const names = rituals.map(ritual => ritual && typeof ritual === 'object' && !Array.isArray(ritual)
+      ? String(ritual.ritual_name ?? ritual.ritual_id ?? 'Ritual') : 'Ritual').join(', ');
+    return `${payload.kind === 'sustain_maintenance' ? 'Manutenção confirmada' : 'Sustentação encerrada'} · ${names} · Custo ${payload.peCost ?? 0} PE · PE ${payload.peBefore} → ${payload.peAfter}`;
+  }
   const kinds: Record<string, string> = { heal: 'Cura', damage: 'Dano', conditions: 'Condições adicionadas', replace_conditions: 'Condições alteradas', resource: 'Recurso alterado', resources: 'Recursos alterados', weapon_buff: 'Bônus de arma aplicado à ficha', sustain: 'Sustentação ativada' };
   const kind = typeof payload.kind === 'string' ? kinds[payload.kind] ?? 'Efeito registrado' : 'Efeito registrado';
   const resource = payload.resource === 'hp' ? 'PV' : payload.resource === 'pe' ? 'PE' : payload.resource === 'san' ? 'SAN' : '';
