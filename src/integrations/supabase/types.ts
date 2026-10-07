@@ -250,19 +250,25 @@ export type Database = {
       campaign_combat_state_v2: {
         Row: {
           campaign_id: string
+          last_scene_ended_at: string | null
           revision: number
+          scene_number: number
           state: Json
           updated_at: string
         }
         Insert: {
           campaign_id: string
+          last_scene_ended_at?: string | null
           revision?: number
+          scene_number?: number
           state?: Json
           updated_at?: string
         }
         Update: {
           campaign_id?: string
+          last_scene_ended_at?: string | null
           revision?: number
+          scene_number?: number
           state?: Json
           updated_at?: string
         }
@@ -366,6 +372,47 @@ export type Database = {
             columns: ["campaign_id"]
             isOneToOne: false
             referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaign_invites_v2: {
+        Row: {
+          campaign_id: string
+          created_at: string
+          created_by: string
+          expires_at: string | null
+          id: string
+          invite_code: string
+          max_uses: number | null
+          uses: number
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string
+          created_by: string
+          expires_at?: string | null
+          id?: string
+          invite_code: string
+          max_uses?: number | null
+          uses?: number
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string
+          created_by?: string
+          expires_at?: string | null
+          id?: string
+          invite_code?: string
+          max_uses?: number | null
+          uses?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_invites_v2_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns_v2"
             referencedColumns: ["id"]
           },
         ]
@@ -902,6 +949,47 @@ export type Database = {
           },
         ]
       }
+      campaign_scene_events_v2: {
+        Row: {
+          author_id: string
+          campaign_id: string
+          created_at: string
+          ended_combat: boolean
+          expected_revision: number
+          expired_effects_count: number | null
+          operation_id: string
+          scene_number: number
+        }
+        Insert: {
+          author_id: string
+          campaign_id: string
+          created_at?: string
+          ended_combat: boolean
+          expected_revision: number
+          expired_effects_count?: number | null
+          operation_id: string
+          scene_number: number
+        }
+        Update: {
+          author_id?: string
+          campaign_id?: string
+          created_at?: string
+          ended_combat?: boolean
+          expected_revision?: number
+          expired_effects_count?: number | null
+          operation_id?: string
+          scene_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_scene_events_v2_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns_v2"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaign_scene_notes: {
         Row: {
           campaign_id: string
@@ -1347,6 +1435,82 @@ export type Database = {
           },
         ]
       }
+      character_activity_events: {
+        Row: {
+          author_id: string
+          campaign_id: string | null
+          campaign_version: string | null
+          category: string
+          character_id: string
+          created_at: string
+          id: string
+          operation_id: string
+          payload: Json
+          request_hash: string
+          status: string
+        }
+        Insert: {
+          author_id: string
+          campaign_id?: string | null
+          campaign_version?: string | null
+          category: string
+          character_id: string
+          created_at?: string
+          id: string
+          operation_id: string
+          payload: Json
+          request_hash: string
+          status: string
+        }
+        Update: {
+          author_id?: string
+          campaign_id?: string | null
+          campaign_version?: string | null
+          category?: string
+          character_id?: string
+          created_at?: string
+          id?: string
+          operation_id?: string
+          payload?: Json
+          request_hash?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "character_activity_events_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: false
+            referencedRelation: "characters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      character_activity_visibility: {
+        Row: {
+          character_id: string
+          hidden_before: string | null
+          user_id: string
+        }
+        Insert: {
+          character_id: string
+          hidden_before?: string | null
+          user_id: string
+        }
+        Update: {
+          character_id?: string
+          hidden_before?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "character_activity_visibility_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: false
+            referencedRelation: "characters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       character_change_history: {
         Row: {
           change_type: string
@@ -1484,6 +1648,88 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "character_removed_powers_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: false
+            referencedRelation: "characters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      character_scene_casts_v2: {
+        Row: {
+          campaign_id: string
+          cast_event_id: string
+          scene_number: number
+        }
+        Insert: {
+          campaign_id: string
+          cast_event_id: string
+          scene_number: number
+        }
+        Update: {
+          campaign_id?: string
+          cast_event_id?: string
+          scene_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "character_scene_casts_v2_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "character_scene_casts_v2_cast_event_id_fkey"
+            columns: ["cast_event_id"]
+            isOneToOne: true
+            referencedRelation: "character_activity_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      character_scene_effects_v2: {
+        Row: {
+          application_id: string
+          campaign_id: string
+          character_id: string
+          effect_id: string
+          field: string
+          scene_number: number
+        }
+        Insert: {
+          application_id: string
+          campaign_id: string
+          character_id: string
+          effect_id: string
+          field: string
+          scene_number: number
+        }
+        Update: {
+          application_id?: string
+          campaign_id?: string
+          character_id?: string
+          effect_id?: string
+          field?: string
+          scene_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "character_scene_effects_v2_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "character_activity_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "character_scene_effects_v2_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "character_scene_effects_v2_character_id_fkey"
             columns: ["character_id"]
             isOneToOne: false
             referencedRelation: "characters"
@@ -2231,6 +2477,46 @@ export type Database = {
         }
         Relationships: []
       }
+      sustained_ritual_origins: {
+        Row: {
+          cast_event_id: string
+          caster_character_id: string
+          sustained_id: string
+        }
+        Insert: {
+          cast_event_id: string
+          caster_character_id: string
+          sustained_id: string
+        }
+        Update: {
+          cast_event_id?: string
+          caster_character_id?: string
+          sustained_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sustained_ritual_origins_cast_event_id_fkey"
+            columns: ["cast_event_id"]
+            isOneToOne: false
+            referencedRelation: "character_activity_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sustained_ritual_origins_caster_character_id_fkey"
+            columns: ["caster_character_id"]
+            isOneToOne: false
+            referencedRelation: "characters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sustained_ritual_origins_sustained_id_fkey"
+            columns: ["sustained_id"]
+            isOneToOne: true
+            referencedRelation: "character_sustained_rituals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       template_applications: {
         Row: {
           applied_at: string
@@ -2331,6 +2617,396 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      activity_json_integer: {
+        Args: { p_max: number; p_min: number; p_value: Json }
+        Returns: boolean
+      }
+      apply_character_effect: {
+        Args: {
+          p_campaign_id?: string
+          p_campaign_version?: string
+          p_cast_event_id?: string
+          p_character_id: string
+          p_expected: Json
+          p_kind: string
+          p_operation_id: string
+          p_value: Json
+        }
+        Returns: {
+          author_id: string
+          campaign_id: string | null
+          campaign_version: string | null
+          category: string
+          character_id: string
+          created_at: string
+          id: string
+          operation_id: string
+          payload: Json
+          request_hash: string
+          status: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "character_activity_events"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      apply_character_effect_concentration_core: {
+        Args: {
+          p_campaign_id?: string
+          p_campaign_version?: string
+          p_cast_event_id?: string
+          p_character_id: string
+          p_expected: Json
+          p_kind: string
+          p_operation_id: string
+          p_value: Json
+        }
+        Returns: {
+          author_id: string
+          campaign_id: string | null
+          campaign_version: string | null
+          category: string
+          character_id: string
+          created_at: string
+          id: string
+          operation_id: string
+          payload: Json
+          request_hash: string
+          status: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "character_activity_events"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      apply_character_effect_core: {
+        Args: {
+          p_campaign_id?: string
+          p_campaign_version?: string
+          p_cast_event_id?: string
+          p_character_id: string
+          p_expected: Json
+          p_kind: string
+          p_operation_id: string
+          p_value: Json
+        }
+        Returns: {
+          author_id: string
+          campaign_id: string | null
+          campaign_version: string | null
+          category: string
+          character_id: string
+          created_at: string
+          id: string
+          operation_id: string
+          payload: Json
+          request_hash: string
+          status: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "character_activity_events"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      apply_character_effect_scene_core: {
+        Args: {
+          p_campaign_id?: string
+          p_campaign_version?: string
+          p_cast_event_id?: string
+          p_character_id: string
+          p_expected: Json
+          p_kind: string
+          p_operation_id: string
+          p_value: Json
+        }
+        Returns: {
+          author_id: string
+          campaign_id: string | null
+          campaign_version: string | null
+          category: string
+          character_id: string
+          created_at: string
+          id: string
+          operation_id: string
+          payload: Json
+          request_hash: string
+          status: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "character_activity_events"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      can_manage_character_activity: {
+        Args: { p_character_id: string }
+        Returns: boolean
+      }
+      cast_character_ritual: {
+        Args: {
+          p_campaign_id?: string
+          p_campaign_version?: string
+          p_character_id: string
+          p_expected_pe: number
+          p_operation_id: string
+          p_payload: Json
+          p_pe_cost: number
+        }
+        Returns: {
+          author_id: string
+          campaign_id: string | null
+          campaign_version: string | null
+          category: string
+          character_id: string
+          created_at: string
+          id: string
+          operation_id: string
+          payload: Json
+          request_hash: string
+          status: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "character_activity_events"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      cast_character_ritual_concentration_core: {
+        Args: {
+          p_campaign_id?: string
+          p_campaign_version?: string
+          p_character_id: string
+          p_expected_pe: number
+          p_operation_id: string
+          p_payload: Json
+          p_pe_cost: number
+        }
+        Returns: {
+          author_id: string
+          campaign_id: string | null
+          campaign_version: string | null
+          category: string
+          character_id: string
+          created_at: string
+          id: string
+          operation_id: string
+          payload: Json
+          request_hash: string
+          status: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "character_activity_events"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      cast_character_ritual_scene_core: {
+        Args: {
+          p_campaign_id?: string
+          p_campaign_version?: string
+          p_character_id: string
+          p_expected_pe: number
+          p_operation_id: string
+          p_payload: Json
+          p_pe_cost: number
+        }
+        Returns: {
+          author_id: string
+          campaign_id: string | null
+          campaign_version: string | null
+          category: string
+          character_id: string
+          created_at: string
+          id: string
+          operation_id: string
+          payload: Json
+          request_hash: string
+          status: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "character_activity_events"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      change_character_resource: {
+        Args: {
+          p_character_id: string
+          p_expected_current: number
+          p_expected_max: number
+          p_mode: string
+          p_operation_id: string
+          p_resource: string
+          p_value: number
+        }
+        Returns: {
+          author_id: string
+          campaign_id: string | null
+          campaign_version: string | null
+          category: string
+          character_id: string
+          created_at: string
+          id: string
+          operation_id: string
+          payload: Json
+          request_hash: string
+          status: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "character_activity_events"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      change_character_resources: {
+        Args: {
+          p_character_id: string
+          p_conditions: Json
+          p_expected: Json
+          p_operation_id: string
+          p_values: Json
+        }
+        Returns: {
+          author_id: string
+          campaign_id: string | null
+          campaign_version: string | null
+          category: string
+          character_id: string
+          created_at: string
+          id: string
+          operation_id: string
+          payload: Json
+          request_hash: string
+          status: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "character_activity_events"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      confirm_sustained_ritual_action: {
+        Args: {
+          p_action: string
+          p_character_id: string
+          p_expected: Json
+          p_expected_pe: number
+          p_operation_id: string
+        }
+        Returns: {
+          author_id: string
+          campaign_id: string | null
+          campaign_version: string | null
+          category: string
+          character_id: string
+          created_at: string
+          id: string
+          operation_id: string
+          payload: Json
+          request_hash: string
+          status: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "character_activity_events"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      confirm_sustained_ritual_end: {
+        Args: {
+          p_action: string
+          p_character_id: string
+          p_expected: Json
+          p_operation_id: string
+          p_reason: Json
+        }
+        Returns: {
+          author_id: string
+          campaign_id: string | null
+          campaign_version: string | null
+          category: string
+          character_id: string
+          created_at: string
+          id: string
+          operation_id: string
+          payload: Json
+          request_hash: string
+          status: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "character_activity_events"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      create_campaign_invite_v2: {
+        Args: {
+          p_campaign_id: string
+          p_expires_at?: string
+          p_max_uses?: number
+        }
+        Returns: {
+          campaign_id: string
+          created_at: string
+          created_by: string
+          expires_at: string | null
+          id: string
+          invite_code: string
+          max_uses: number | null
+          uses: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "campaign_invites_v2"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      effect_belongs_to_sustained: {
+        Args: {
+          p_character: string
+          p_field: string
+          p_ids: string[]
+          p_item: Json
+        }
+        Returns: boolean
+      }
+      end_campaign_scene_v2: {
+        Args: {
+          p_campaign_id: string
+          p_end_combat: boolean
+          p_expected_revision: number
+          p_operation_id: string
+        }
+        Returns: {
+          campaign_id: string
+          last_scene_ended_at: string | null
+          revision: number
+          scene_number: number
+          state: Json
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "campaign_combat_state_v2"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       get_push_subscriptions_for_campaign: {
         Args: { _campaign_id: string; _user_ids?: string[] }
         Returns: {
@@ -2347,6 +3023,20 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      hide_character_activity: {
+        Args: { p_character_id: string; p_hidden?: boolean }
+        Returns: {
+          character_id: string
+          hidden_before: string | null
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "character_activity_visibility"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_campaign_master: {
@@ -2365,6 +3055,212 @@ export type Database = {
         Args: { _campaign_id: string; _user_id: string }
         Returns: boolean
       }
+      join_campaign_with_invite: {
+        Args: { p_character_id?: string; p_code: string }
+        Returns: {
+          already_member: boolean
+          campaign_id: string
+          campaign_name: string
+          campaign_version: string
+        }[]
+      }
+      list_character_activity: {
+        Args: {
+          p_before_created_at?: string
+          p_before_id?: string
+          p_category?: string
+          p_character_id: string
+          p_include_hidden?: boolean
+          p_limit?: number
+        }
+        Returns: {
+          author_id: string
+          campaign_id: string | null
+          campaign_version: string | null
+          category: string
+          character_id: string
+          created_at: string
+          id: string
+          operation_id: string
+          payload: Json
+          request_hash: string
+          status: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "character_activity_events"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      list_character_activity_filtered: {
+        Args: {
+          p_after_created_at?: string
+          p_before_created_at?: string
+          p_before_id?: string
+          p_category?: string
+          p_character_id: string
+          p_include_hidden?: boolean
+          p_limit?: number
+          p_session_campaign_id?: string
+          p_session_campaign_version?: string
+          p_session_id?: string
+        }
+        Returns: {
+          author_id: string
+          campaign_id: string | null
+          campaign_version: string | null
+          category: string
+          character_id: string
+          created_at: string
+          id: string
+          operation_id: string
+          payload: Json
+          request_hash: string
+          status: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "character_activity_events"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      list_character_activity_sessions: {
+        Args: { p_character_id: string }
+        Returns: {
+          campaign_id: string
+          campaign_name: string
+          campaign_version: string
+          id: string
+          session_date: string
+          session_number: number
+          title: string
+        }[]
+      }
+      list_character_sustained_rituals: {
+        Args: { p_character_id: string }
+        Returns: Json[]
+      }
+      reconcile_resource_conditions: {
+        Args: {
+          p_conditions: Json
+          p_hp: number
+          p_hp_loss?: number
+          p_hp_max: number
+          p_previous_hp: number
+          p_previous_san: number
+          p_san: number
+          p_san_max: number
+        }
+        Returns: Json
+      }
+      record_character_activity: {
+        Args: {
+          p_campaign_id?: string
+          p_campaign_version?: string
+          p_category: string
+          p_character_id: string
+          p_operation_id: string
+          p_payload: Json
+        }
+        Returns: {
+          author_id: string
+          campaign_id: string | null
+          campaign_version: string | null
+          category: string
+          character_id: string
+          created_at: string
+          id: string
+          operation_id: string
+          payload: Json
+          request_hash: string
+          status: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "character_activity_events"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      replace_character_conditions: {
+        Args: {
+          p_character_id: string
+          p_conditions: Json
+          p_expected: Json
+          p_operation_id: string
+        }
+        Returns: {
+          author_id: string
+          campaign_id: string | null
+          campaign_version: string | null
+          category: string
+          character_id: string
+          created_at: string
+          id: string
+          operation_id: string
+          payload: Json
+          request_hash: string
+          status: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "character_activity_events"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      resolve_character_condition_turn: {
+        Args: {
+          p_character_id: string
+          p_conditions: Json
+          p_expected: Json
+          p_operation_id: string
+          p_resolution: Json
+          p_values: Json
+        }
+        Returns: {
+          author_id: string
+          campaign_id: string | null
+          campaign_version: string | null
+          category: string
+          character_id: string
+          created_at: string
+          id: string
+          operation_id: string
+          payload: Json
+          request_hash: string
+          status: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "character_activity_events"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      save_campaign_combat_state_core_v2: {
+        Args: {
+          p_campaign_id: string
+          p_expected_revision: number
+          p_state: Json
+        }
+        Returns: {
+          campaign_id: string
+          last_scene_ended_at: string | null
+          revision: number
+          scene_number: number
+          state: Json
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "campaign_combat_state_v2"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       save_campaign_combat_v2: {
         Args: {
           p_campaign_id: string
@@ -2373,7 +3269,9 @@ export type Database = {
         }
         Returns: {
           campaign_id: string
+          last_scene_ended_at: string | null
           revision: number
+          scene_number: number
           state: Json
           updated_at: string
         }[]
@@ -2391,6 +3289,14 @@ export type Database = {
           message: string
           valid: boolean
         }[]
+      }
+      validate_character_activity_context: {
+        Args: {
+          p_campaign_id: string
+          p_campaign_version: string
+          p_character_id: string
+        }
+        Returns: undefined
       }
     }
     Enums: {
