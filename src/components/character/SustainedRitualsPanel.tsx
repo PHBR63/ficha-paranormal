@@ -286,6 +286,8 @@ function SustainedRitualCard({ ritual, onDeactivate }: SustainedRitualCardProps)
         variant="ghost"
         size="sm"
         onClick={onDeactivate}
+          aria-label={`Encerrar ${ritual.ritualName}`}
+          title={`Encerrar ${ritual.ritualName}`}
         className="h-7 w-7 p-0 shrink-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
       >
         <X className="w-4 h-4" />

@@ -174,6 +174,8 @@ const RitualCard = memo(function RitualCard({
           variant="ghost"
           size="sm"
           onClick={onDeactivate}
+          aria-label={`Encerrar ${ritual.ritualName}`}
+          title={`Encerrar ${ritual.ritualName}`}
           className="h-8 w-8 p-0 shrink-0 text-muted-foreground hover:text-destructive"
         >
           <X className="w-4 h-4" />
