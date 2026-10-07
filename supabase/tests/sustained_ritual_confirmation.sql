@@ -1,13 +1,16 @@
 -- Fixtures isoladas; valida as funções reais com permissões e rollback.
 BEGIN;
 INSERT INTO auth.users(id) VALUES ('00000000-0000-4000-8000-000000000311'),('00000000-0000-4000-8000-000000000312');
-INSERT INTO public.characters(id,user_id,name) VALUES
- ('00000000-0000-4000-8000-000000000301','00000000-0000-4000-8000-000000000311','QA sustentação'),
- ('00000000-0000-4000-8000-000000000302','00000000-0000-4000-8000-000000000312','QA alvo');
+-- Campos obrigatórios e saldo correspondem ao contrato real da ficha.
+INSERT INTO public.characters(id,user_id,name,origin,class,pe_current,pe_max) VALUES
+ ('00000000-0000-4000-8000-000000000301','00000000-0000-4000-8000-000000000311','QA sustentação','Vítima','Ocultista',10,10),
+ ('00000000-0000-4000-8000-000000000302','00000000-0000-4000-8000-000000000312','QA alvo','Vítima','Ocultista',10,10);
 INSERT INTO public.campaigns_v2(id,master_id,name) VALUES
  ('00000000-0000-4000-8000-000000000303','00000000-0000-4000-8000-000000000311','QA sustentações');
+-- A criação da campanha já insere o mestre por trigger.
+UPDATE public.campaign_members_v2 SET character_id='00000000-0000-4000-8000-000000000301'
+WHERE campaign_id='00000000-0000-4000-8000-000000000303' AND user_id='00000000-0000-4000-8000-000000000311';
 INSERT INTO public.campaign_members_v2(campaign_id,user_id,character_id,role) VALUES
- ('00000000-0000-4000-8000-000000000303','00000000-0000-4000-8000-000000000311','00000000-0000-4000-8000-000000000301','player'),
  ('00000000-0000-4000-8000-000000000303','00000000-0000-4000-8000-000000000312','00000000-0000-4000-8000-000000000302','player');
 SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000311',true);

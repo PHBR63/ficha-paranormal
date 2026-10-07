@@ -15,6 +15,16 @@ const entry = { type: 'attack', label: 'Ataque', results: [20, 10], diceCount: 2
   skillBonus: 5, otherBonuses: -10, bonus: -5, total: 15, critical: false, extraDice: 1, criticalThreshold: 19 };
 
 describe('projeção conservadora de históricos', () => {
+  it('mostra a falha e os dados confirmados da concentração no histórico resumido', () => {
+    const payload = { ritualId: 'eletrocussao', peCost: 1, peBefore: 10, peAfter: 9,
+      castingOutcome: 'failed_concentration', concentration: { tests: [{ trigger: 'dano', dice: [11, 5, 12],
+        kept: 12, bonus: 5, total: 17, dt: 100, success: false, bonuses: [{ name: 'Treinamento', value: 5 }] }] } };
+    const [record] = activityRitualEntries([event(payload, 'ritual')]);
+    expect(record.resolutionDescription).toContain('17 vs DT 100');
+    expect(record.resolutionDescription).toContain('Treinamento: 5');
+    expect(record.resolutionDescription).toContain('efeitos bloqueados, sem estorno de PE');
+    expect(activityRitualEntries([event({ ritualId: 'mesa', peCost: 0, peBefore: 5, peAfter: 5 }, 'ritual')])[0].resolutionDescription).toBeUndefined();
+  });
   it('preserva dados originais e multiplicador de Deflagração antes do bônus', () => {
     const snapshot = ritualRollHistory('Deflagração de Energia', { dice: [10, 10, 10], diceType: 10, diceMultiplier: 10, bonus: 5, total: 305, damageType: 'energia', ignoresRD: false });
     expect(snapshot).toMatchObject({ results: [10, 10, 10], diceCount: 3, diceType: 10, diceMultiplier: 10, bestResult: 300, bonus: 5, total: 305 });

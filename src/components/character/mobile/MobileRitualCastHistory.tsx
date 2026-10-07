@@ -33,6 +33,8 @@ export interface RitualCastRecord {
   id: string;
   ritual: Omit<Ritual, 'circle' | 'element'> & { circle: number | null; element: Ritual['element'] | null };
   unknownRitual?: boolean;
+  /** Resultado confirmado, preservado pelo adaptador do histórico. */
+  resolutionDescription?: string;
   peCost: number;
   enhancements: string[];
   timestamp: Date;
@@ -119,6 +121,8 @@ const CastRecordCard = memo(function CastRecordCard({
           -{record.peCost} PE
         </Badge>
       </div>
+
+      {record.resolutionDescription && <p className="mt-2 text-xs break-words">{record.resolutionDescription}</p>}
 
       {/* Barra de PE */}
       <div className="mt-2 pt-2 border-t border-border/50">
