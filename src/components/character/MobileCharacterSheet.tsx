@@ -631,7 +631,8 @@ export function MobileCharacterSheet({
   });
 
   const sustainedState = useSustainedRituals({ characterId: character?.id, enabled: !!character });
-  const { rituals: sustainedRituals } = sustainedState;
+  // Sustentações em terceiros aparecem no controle, sem conceder seus bônus ao conjurador.
+  const sustainedRituals = useMemo(() => sustainedState.rituals.filter(ritual => ritual.characterId === character?.id), [sustainedState.rituals, character?.id]);
   
   // Hook de aplicação automática de condições (paridade desktop)
   const { processResourceChange } = useAutoConditions();
@@ -1032,6 +1033,7 @@ export function MobileCharacterSheet({
   const applyRitualToTarget = async (kind: 'heal' | 'damage' | 'conditions' | 'weapon_buff' | 'sustain', value: import('@/integrations/supabase/types').Json) => {
     if (!ritualTargetId) throw new Error('Selecione a ficha que receberá o efeito.');
     await ritualApplication.apply(kind, value, {}, ritualTargetId);
+    if (kind === 'sustain') await sustainedState.reload();
   };
 
   // Handler para abrir modal de conjuração de ritual

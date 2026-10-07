@@ -532,7 +532,8 @@ export default function CharacterSheet() {
   // OTIMIZAÇÃO: Evita chamadas duplicadas de hooks
   
   const sustainedState = useSustainedRituals({ characterId: character?.id, enabled: !!character });
-  const { rituals: sustainedRituals } = sustainedState;
+  // O controle inclui sustentações conjuradas em outros alvos; bônus só afetam o destinatário.
+  const sustainedRituals = useMemo(() => sustainedState.rituals.filter(ritual => ritual.characterId === character?.id), [sustainedState.rituals, character?.id]);
   
   // Bônus de combate de rituais sustentados (ataque, dano, dados extras)
   const ritualCombatSummary = useRitualCombatBonuses(sustainedRituals);
@@ -1214,6 +1215,7 @@ export default function CharacterSheet() {
   const applyRitualToTarget = async (kind: 'heal' | 'damage' | 'conditions' | 'weapon_buff' | 'sustain', value: import('@/integrations/supabase/types').Json) => {
     if (!ritualTargetId) throw new Error('Selecione a ficha que receberá o efeito.');
     await ritualApplication.apply(kind, value, {}, ritualTargetId);
+    if (kind === 'sustain') await sustainedState.reload();
   };
 
   const handleOpenCastModal = useCallback((ritual: Ritual) => {
