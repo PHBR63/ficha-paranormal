@@ -2674,6 +2674,8 @@ export default function CharacterSheet() {
               abilities: character.abilities,
               powers: character.powers,
               rituals: character.rituals,
+              // Repassa os efeitos confirmados para combate e sincronização mobile.
+              active_buffs: character.active_buffs,
               // Campos que estavam faltando:
               skills: character.skills,
               paranormal_powers: character.paranormal_powers,
