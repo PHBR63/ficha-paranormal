@@ -41,6 +41,14 @@ function WeaponFlow({ onRollComplete = vi.fn() }) {
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.useRealTimers(); });
 
 describe('Inventário → combate móvel', () => {
+  it.each(['a-favorita', 'tecnica-secreta', 'maquina-de-matar'])('preserva a arma favorita do Aniquilador: %s', favoriteAbilityId => {
+    expect(toMobileWeaponEntry({ ...knife, favoriteAbilityId }).isFavoriteWeapon).toBe(true);
+  });
+
+  it.each([undefined, 'ferramenta-favorita', 'ferramenta-de-trabalho', 'desconhecida'])('não confunde outras reduções com A Favorita: %s', favoriteAbilityId => {
+    expect(toMobileWeaponEntry({ ...knife, favoriteAbilityId }).isFavoriteWeapon).toBe(false);
+  });
+
   it('mantém a margem 19 da faca no painel e ao abrir o modal real', () => {
     render(<WeaponFlow />);
     expect(screen.getByText('19', { exact: true })).toBeInTheDocument();

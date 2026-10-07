@@ -1,3 +1,4 @@
+import { isAniquiladorFavoriteWeapon } from '@/lib/category-reduction';
 import { PETurnBudgetPanel } from '@/components/character/PETurnBudgetPanel';
 import { usePETurnBudget } from '@/hooks/character/usePETurnBudget';
 import { DEFAULT_CASTING_CONCENTRATION, getCastingWillConfig, rollCastingConcentration, type CastingConcentrationContext } from '@/lib/rituals/casting-concentration';
@@ -2446,6 +2447,7 @@ export default function CharacterSheet() {
     .map(item => ({
       id: item.id || crypto.randomUUID(),
       name: item.name,
+      isFavoriteWeapon: isAniquiladorFavoriteWeapon(item),
       // Usa inferência centralizada (mesmo que o mobile) para consistência
       type: normalizeWeaponTypeForDisplay({
         weaponType: item.weaponType,
@@ -3490,16 +3492,8 @@ export default function CharacterSheet() {
                 skills={character.skills}
                 currentPE={peCurrent}
                 maxPE={character.pe_max}
-                onPEChange={async (newPE) => {
-                  const { error } = await supabase
-                    .from('characters')
-                    .update({ pe_current: newPE })
-                    .eq('id', character.id);
-                  if (!error) {
-                    setPeCurrent(newPE);
-                    setCharacter(prev => prev ? { ...prev, pe_current: newPE } : null);
-                  }
-                }}
+                onPEChange={handlePEChange}
+                classTrack={character.class_track || undefined}
                 characterClass={character.class}
                 abilities={character.abilities || []}
                 paranormalPowers={character.paranormal_powers?.map(p => ({

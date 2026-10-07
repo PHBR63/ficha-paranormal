@@ -6,6 +6,7 @@
  */
 
 import { useState } from 'react';
+import type { ConfirmDicePE } from '@/hooks/useConfirmedDiceRoll';
 import { motion } from 'framer-motion';
 import { Sword, Target, Crosshair, Dices, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -73,7 +74,7 @@ interface CombatWeaponsTableProps {
   // Recursos
   currentPE?: number;
   maxPE?: number;
-  onPEChange?: (newPE: number) => void;
+  onPEChange?: ConfirmDicePE;
   
   // Dados de classe e poderes
   characterClass?: string;

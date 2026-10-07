@@ -2587,7 +2587,7 @@ export function MobileCharacterSheet({
             atirarParaMatar: character.active_conditional_bonuses?.includes('atirar-matar'),
             ataqueFurtivo: character.active_conditional_bonuses?.includes('ataque-furtivo'),
           }}
-          isFavoriteWeapon={selectedWeapon?.id === (character as any).favorite_weapon_id}
+          isFavoriteWeapon={selectedWeapon.isFavoriteWeapon}
           activatedTrackEffects={activatedEffects.activatedEffectIds}
           activeConditionalBonuses={character.active_conditional_bonuses || []}
           onRollComplete={(result) => {

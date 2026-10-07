@@ -1,4 +1,5 @@
 import type { InventoryItem } from '@/lib/inventory-system';
+import { isAniquiladorFavoriteWeapon } from '@/lib/category-reduction';
 import { normalizeWeaponTypeForDisplay } from '@/lib/weapon-type-inference';
 import type { WeaponEntry } from './MobileCombatPanel';
 
@@ -30,6 +31,6 @@ export function toMobileWeaponEntry(item: MobileWeaponInventoryData): WeaponEntr
     ammoCurrent: item.ammoCurrent,
     ammoMax: item.ammoMax,
     ammoType: item.ammoType,
-    isFavoriteWeapon: !!item.favoriteAbilityId,
+    isFavoriteWeapon: isAniquiladorFavoriteWeapon(item),
   };
 }
