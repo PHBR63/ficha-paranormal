@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CombatRollModal } from '../CombatRollModal';
 import { MobileCombatRollModal } from '../mobile/MobileCombatRollModal';
 import { rollSkillTest } from '@/lib/dice-roller';
+import { CombatWeaponsTable } from '../CombatWeaponsTable';
 vi.mock('@/hooks/useCombatFeedback', () => ({ useCombatFeedback: () => ({ triggerRoll: vi.fn(), triggerFumble: vi.fn(), triggerCriticalMiss: vi.fn(), triggerCritical: vi.fn(), triggerHit: vi.fn(), triggerMiss: vi.fn() }) }));
 
 vi.mock('../SpecialAttackSelector', () => ({
@@ -28,6 +29,20 @@ const props = {
   skills: { luta: 0 }, currentPE: 10, maxPE: 10,
   characterClass: 'Combatente', abilities: [], paranormalPowers: [], hasAffinity: false, nex: 5,
 };
+
+it('a tabela desktop repassa trilha, arma favorita e rejeição do servidor ao modal real', async () => {
+  const save = vi.fn().mockResolvedValue(false);
+  const complete = vi.fn();
+  render(<CombatWeaponsTable weapons={[{ ...props.weapon, isFavoriteWeapon: true }]}
+    attributes={props.attributes} skills={props.skills} characterClass="Combatente"
+    classTrack="aniquilador" currentPE={10} maxPE={10} nex={40}
+    onPEChange={save} onRollComplete={complete} />);
+  fireEvent.click(screen.getByRole('cell', { name: 'Faca' }));
+  expect(screen.getByRole('button', { name: 'Usar Técnica Secreta' })).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: /rolar ataque/i }));
+  await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('não foi confirmado'));
+  expect(complete).not.toHaveBeenCalled();
+});
 
 describe.each([
   ['desktop', CombatRollModal], ['mobile', MobileCombatRollModal],

@@ -32,6 +32,11 @@ export interface CategoryReductionConfig {
  * Catálogo de habilidades que reduzem categoria
  * Inclui progressão completa do Aniquilador
  */
+/** Identifica a arma do Aniquilador sem confundir outras reduções de categoria. */
+export function isAniquiladorFavoriteWeapon(item: { favoriteAbilityId?: string }): boolean {
+  return ['a-favorita', 'tecnica-secreta', 'maquina-de-matar'].includes(item.favoriteAbilityId ?? '');
+}
+
 export const CATEGORY_REDUCTION_ABILITIES: CategoryReductionConfig[] = [
   // ===== ANIQUILADOR (COMBATENTE) =====
   {
