@@ -74,6 +74,7 @@ export function SustainedRitualControl({ characterId, peCurrent, state, onRefetc
             disabled={ritual.casterCharacterId !== characterId}
             onChange={event => setSelected(previous => event.target.checked ? [...previous, ritual.id] : previous.filter(id => id !== ritual.id))} />
           <span>{ritual.ritualName} — 1 PE
+            <span className="block text-muted-foreground">Manutenções confirmadas: {Number.isInteger(ritual.turnsActive) ? ritual.turnsActive : 'conferir'} · PE consumidos: {Number.isInteger(ritual.peSpentTotal) ? ritual.peSpentTotal : 'conferir'}</span>
             {ritual.casterCharacterId !== characterId && <span className="block text-muted-foreground">Manutenção manual: {ritual.casterCharacterId ? 'o conjurador é outra ficha.' : 'origem antiga não comprovada.'}</span>}
           </span>
         </label>)}
