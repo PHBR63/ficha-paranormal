@@ -26,6 +26,8 @@ import {
   Users
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getBasePowerReference } from '@/lib/class-powers/base-power-reference';
+import type { ClassId } from '@/lib/class-powers/types';
 import { 
   getAbilityDetails, 
   parsePrerequisitesFromDescription,
@@ -118,6 +120,7 @@ export function AbilityDetailModal({
                   <DialogTitle className="text-2xl font-bold">
                     {ability.name}
                   </DialogTitle>
+                  <p className="text-xs text-muted-foreground">{getBasePowerReference(ability.name, ability.classId as ClassId)}</p>
                   
                   <div className="flex items-center gap-2 mt-2 flex-wrap">
                     {/* Badge de NEX mínimo */}

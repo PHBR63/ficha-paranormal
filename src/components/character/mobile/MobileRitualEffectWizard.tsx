@@ -193,6 +193,7 @@ const SummaryStep = memo(function SummaryStep({
 
   return (
     <div className="space-y-3">
+      {effect.summary && <p role="status" className="rounded-lg border p-3 text-sm">{effect.summary}</p>}
       {/* Cabeçalho do ritual - versão compacta */}
       <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 border border-border">
         <div className={cn(
@@ -247,7 +248,7 @@ const SummaryStep = memo(function SummaryStep({
             <EffectChip 
               icon={Shield} 
               label="PV Temp" 
-              value={`${effect.tempHP!.diceCount}d${effect.tempHP!.diceType}`}
+              value={`${effect.tempHP!.diceCount}d${effect.tempHP!.diceType}${effect.tempHP!.bonus ? `+${effect.tempHP!.bonus}` : ''}`}
               color="text-pe"
             />
           )}

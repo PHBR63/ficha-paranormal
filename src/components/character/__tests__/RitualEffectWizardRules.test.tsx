@@ -151,6 +151,7 @@ it('a preparação mobile encaminha a Presença e o limite de PE ao wizard real'
     nex={99} casterPresence={5} peLimitBonus={1} peCurrent={50} peMax={50}
     onConfirm={vi.fn().mockResolvedValue(true)} />);
   vi.spyOn(Math, 'random').mockReturnValue(0);
+  fireEvent.click(screen.getByRole('checkbox', { name: /Conferi gestos/ }));
   fireEvent.click(screen.getByRole('button', { name: /conjurar/i }));
   await act(async () => { await vi.advanceTimersByTimeAsync(350); });
   fireEvent.click(screen.getByRole('button', { name: /Processar Efeitos/ }));

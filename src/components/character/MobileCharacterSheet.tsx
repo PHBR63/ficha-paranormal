@@ -1,6 +1,9 @@
 import { DEFAULT_CASTING_CONCENTRATION, getCastingWillConfig, rollCastingConcentration, type CastingConcentrationContext } from '@/lib/rituals/casting-concentration';
+import { rollParanormalCost } from '@/lib/rituals/paranormal-cost';
 import { getConcentrationFailureMessage } from '@/lib/rituals/casting-concentration-result';
 import { SustainedRitualControl } from './SustainedRitualControl';
+import { TemporaryResourcesPanel } from './TemporaryResourcesPanel';
+import { useTemporaryResources } from '@/hooks/character/useTemporaryResources';
 import { BaseRulesNotice } from '@/components/character/BaseRulesNotice';
 import { useConditionTurnApplication } from '@/hooks/character/useConditionTurnApplication';
 import { useCharacterResourceUpdate } from '@/hooks/character/useCharacterResourceUpdate';
@@ -288,6 +291,7 @@ export function MobileCharacterSheet({
   onAddParanormalPower,
   campaignId,
 }: MobileCharacterSheetProps) {
+  const temporaryResources = useTemporaryResources(character.id);
   const [activeTab, setActiveTab] = useState<MobileTab>('overview');
   const [powerModalOpen, setPowerModalOpen] = useState(false);
   const [selectedPower, setSelectedPower] = useState<PowerDetailData | null>(null);
@@ -1030,9 +1034,9 @@ export function MobileCharacterSheet({
   const ritualTargets = useRitualApplicationTargets(character.id);
   const selectedRitualTarget = ritualTargets.targets.find(target => target.id === ritualTargetId);
   // O alvo precisa ser selecionado. O snapshot do servidor protege contra sobrescrever outra alteração.
-  const applyRitualToTarget = async (kind: 'heal' | 'damage' | 'conditions' | 'weapon_buff' | 'sustain', value: import('@/integrations/supabase/types').Json) => {
+  const applyRitualToTarget = async (kind: 'heal' | 'damage' | 'temporary_hp' | 'conditions' | 'weapon_buff' | 'sustain', value: import('@/integrations/supabase/types').Json, damageType?: string) => {
     if (!ritualTargetId) throw new Error('Selecione a ficha que receberá o efeito.');
-    await ritualApplication.apply(kind, value, {}, ritualTargetId);
+    await ritualApplication.apply(kind, value, damageType ? { damageType } : {}, ritualTargetId);
     if (kind === 'sustain') await sustainedState.reload();
   };
 
@@ -1089,7 +1093,9 @@ export function MobileCharacterSheet({
       const event = await confirmRitualCast(peBeforeCast, peCost, {
         ritualId: ritual.id, ritualName: ritual.name, ritualElement: ritual.element, ritualCircle: ritual.circle, enhancements, sessionId: ritualCampaignSessionId,
       }, ritualCampaignId && ritualCampaignVersion ? { campaignId: ritualCampaignId, campaignVersion: ritualCampaignVersion } : {},
-        () => ({ concentration: activityJson(rollCastingConcentration(concentration, getCastingWillConfig(character.presence, character.skills || {}, bonusSummary, parseConditions(character.conditions || []).map(condition => condition.id), globalDiceBonus))) }));
+        () => ({ concentration: activityJson(rollCastingConcentration(concentration, getCastingWillConfig(character.presence, character.skills || {}, bonusSummary, parseConditions(character.conditions || []).map(condition => condition.id), globalDiceBonus))),
+          paranormalCost: activityJson(rollParanormalCost(ritual.element, character.intellect, character.skills || {}, bonusSummary, parseConditions(character.conditions || []).map(condition => condition.id), globalDiceBonus)),
+          expectedSan: character.san_current, expectedSanMax: character.san_max, requirementsConfirmed: concentration.requirementsConfirmed === true }));
       const payload = event.payload as { peAfter?: number };
       if (typeof payload.peAfter !== 'number') throw new Error('O servidor não confirmou o saldo de PE.');
       newPe = payload.peAfter;
@@ -1381,10 +1387,9 @@ export function MobileCharacterSheet({
     setWizardOpen(true);
   }, []);
 
-  const handleWizardApplyDamage = async (damage: number) => { await applyRitualToTarget('damage', damage); };
+  const handleWizardApplyDamage = async (damage: number, type: string) => { await applyRitualToTarget('damage', damage, type); };
   const handleWizardApplyHealing = async (amount: number, type: 'healing' | 'tempHP') => {
-    if (type !== 'healing') throw new Error('PV temporários permanecem pendentes de controle manual.');
-    await applyRitualToTarget('heal', amount);
+    await applyRitualToTarget(type === 'healing' ? 'heal' : 'temporary_hp', amount);
   };
   const handleWizardApplyConditions = async (conditions: ActiveCondition[]) => { await applyRitualToTarget('conditions', activityJson(conditions)); };
   const handleWizardAddWeaponBuff = async (ritual: Ritual, enhancements: string[]) => { await applyRitualToTarget('weapon_buff', activityJson(buildWeaponBuff(ritual, enhancements))); };
@@ -1890,6 +1895,7 @@ export function MobileCharacterSheet({
             {/* Painel de Rituais Sustentados */}
               <SustainedRitualControl key={character.id} characterId={character.id}
                 state={sustainedState} peCurrent={character.pe_current} onRefetch={onRefetch} mobile />
+              <TemporaryResourcesPanel characterId={character.id} />
 
               {/* Painel de Efeitos Ativos (SUE) */}
             {unifiedEffects && (
@@ -2608,7 +2614,7 @@ export function MobileCharacterSheet({
             // Mantém o componente montado para concluir o wizard após fechar a preparação.
           }}
           ritual={selectedRitual}
-          peCurrent={character.pe_current}
+          peCurrent={character.pe_current + temporaryResources.pe}
           peMax={character.pe_max}
           nex={character.nex}
           elementalAffinity={character.elemental_affinity}
@@ -2625,10 +2631,9 @@ export function MobileCharacterSheet({
             <RitualApplicationTargetSelector characterId={character.id} value={ritualTargetId} onChange={setRitualTargetId} disabled={ritualApplication.busy} />
             {selectedRitual && getActiveRitualEffect(selectedRitual.id, [])?.weaponEffect && <p role="status" className="text-sm text-amber-300">O bônus de arma será associado à ficha escolhida e usado em seus ataques. Este fluxo ainda não diferencia uma arma específica.</p>}
           </>}
-          onApplyDamage={async damage => { await applyRitualToTarget('damage', damage); }}
+          onApplyDamage={async (damage, type) => { await applyRitualToTarget('damage', damage, type); }}
           onApplyHealing={async (amount, type) => {
-            if (type !== 'healing') throw new Error('PV temporários exigem controle manual nesta versão. O efeito permanece pendente.');
-            await applyRitualToTarget('heal', amount);
+            await applyRitualToTarget(type === 'healing' ? 'heal' : 'temporary_hp', amount);
           }}
           onApplyConditions={async conditions => { await applyRitualToTarget('conditions', activityJson(conditions)); }}
           onAddWeaponBuff={handleWizardAddWeaponBuff}

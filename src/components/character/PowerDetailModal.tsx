@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Sparkles, Zap, User, Scroll, BookOpen, Info, Play } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { getBasePowerReference } from '@/lib/class-powers/base-power-reference';
 
 // Tipos de poderes suportados
 export type PowerType = 'ability' | 'paranormal' | 'general' | 'origin' | 'ritual';
@@ -137,6 +138,7 @@ export function PowerDetailModal({ open, onOpenChange, power, onCastRitual }: Po
                 <DialogTitle className={cn("text-lg font-display tracking-wider", config.color)}>
                   {power.name}
                 </DialogTitle>
+                {power.type === 'ability' && <p className="text-xs text-muted-foreground">{getBasePowerReference(power.name)}</p>}
                 
                 <div className="flex items-center gap-2 mt-1 flex-wrap">
                   <Badge variant="outline" className={cn("text-[10px]", config.color, config.borderColor)}>

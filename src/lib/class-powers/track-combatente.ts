@@ -26,7 +26,7 @@ export const COMBATENTE_TRACKS: UnifiedTrack[] = [
     name: 'Aniquilador',
     classId: 'Combatente',
     description: 'Você é treinado para abater alvos com eficiência e velocidade. Suas armas são suas melhores amigas e você cuida tão bem delas quanto de seus companheiros de equipe. Talvez até melhor.',
-    pageReference: 'Livro Base p.47',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.24–27',
     abilities: [
       {
         id: 'a-favorita',
@@ -34,7 +34,7 @@ export const COMBATENTE_TRACKS: UnifiedTrack[] = [
         trackId: 'aniquilador',
         minNex: 10,
         description: 'Escolha uma arma para ser sua favorita, como katana ou fuzil de assalto. A categoria da arma escolhida é reduzida em I.',
-        pageReference: 'Livro Base p.47',
+        pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.24–27',
         isInitial: true,
         effects: {
           base: {
@@ -55,7 +55,7 @@ export const COMBATENTE_TRACKS: UnifiedTrack[] = [
         trackId: 'aniquilador',
         minNex: 40,
         description: 'A categoria da arma favorita passa a ser reduzida em II. Quando faz um ataque com ela, você pode gastar 2 PE para executar um dos efeitos abaixo como parte do ataque. Você pode adicionar mais efeitos gastando +2 PE por efeito adicional.\n\n• Amplo. O ataque pode atingir um alvo adicional em seu alcance e adjacente ao original (use o mesmo teste de ataque para ambos).\n• Destruidor. Aumenta o multiplicador de crítico da arma em +1.',
-        pageReference: 'Livro Base p.47',
+        pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.24–27',
         effects: {
           base: {
             kind: 'activated',
@@ -95,7 +95,7 @@ export const COMBATENTE_TRACKS: UnifiedTrack[] = [
         trackId: 'aniquilador',
         minNex: 65,
         description: 'Você adiciona os seguintes efeitos à lista de sua Técnica Secreta:\n\n• Letal. Aumenta a margem de ameaça em +2. Você pode escolher este efeito duas vezes para aumentar a margem de ameaça em +5.\n• Perfurante. Ignora até 5 pontos de resistência a dano de qualquer tipo do alvo.',
-        pageReference: 'Livro Base p.47',
+        pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.24–27',
         effects: {
           base: {
             kind: 'activated',
@@ -125,7 +125,7 @@ export const COMBATENTE_TRACKS: UnifiedTrack[] = [
         trackId: 'aniquilador',
         minNex: 99,
         description: 'A categoria da arma favorita passa a ser reduzida em III, ela recebe +2 na margem de ameaça e seu dano aumenta em um dado do mesmo tipo.',
-        pageReference: 'Livro Base p.47',
+        pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.24–27',
         effects: {
           base: {
             kind: 'passive',
@@ -157,7 +157,7 @@ export const COMBATENTE_TRACKS: UnifiedTrack[] = [
     name: 'Comandante de Campo',
     classId: 'Combatente',
     description: 'Sem um oficial uma batalha não passa de uma briga de bar. Você é treinado para coordenar e auxiliar seus companheiros em combate, tomando decisões rápidas e tirando melhor proveito da situação e do talento de seus aliados.',
-    pageReference: 'Livro Base p.47',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.24–27',
     abilities: [
       {
         id: 'inspirar-confianca',
@@ -165,7 +165,7 @@ export const COMBATENTE_TRACKS: UnifiedTrack[] = [
         trackId: 'comandante-campo',
         minNex: 10,
         description: 'Sua liderança inspira seus aliados. Você pode gastar uma reação e 2 PE para fazer um aliado em alcance curto rolar novamente um teste recém realizado.',
-        pageReference: 'Livro Base p.47',
+        pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.24–27',
         isInitial: true,
         effects: {
           base: {
@@ -189,7 +189,7 @@ export const COMBATENTE_TRACKS: UnifiedTrack[] = [
         trackId: 'comandante-campo',
         minNex: 40,
         description: 'Você pode direcionar aliados em alcance curto. Gaste uma ação padrão e 1 PE para direcionar aliados (máximo igual ao seu Intelecto). No próximo turno dos aliados afetados, eles ganham uma ação de movimento adicional.',
-        pageReference: 'Livro Base p.47',
+        pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.24–27',
         effects: {
           base: {
             kind: 'activated',
@@ -213,7 +213,7 @@ export const COMBATENTE_TRACKS: UnifiedTrack[] = [
         trackId: 'comandante-campo',
         minNex: 65,
         description: 'Uma vez por rodada, quando um aliado causar dano em um inimigo que esteja em seu alcance curto, você pode gastar uma reação e 2 PE para que você ou outro aliado em alcance curto faça um ataque adicional contra o mesmo inimigo. Além disso, o alcance de Inspirar Confiança e Estrategista aumenta para médio.',
-        pageReference: 'Livro Base p.47',
+        pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.24–27',
         effects: {
           base: {
             kind: 'reaction',
@@ -237,7 +237,7 @@ export const COMBATENTE_TRACKS: UnifiedTrack[] = [
         trackId: 'comandante-campo',
         minNex: 99,
         description: 'Você pode gastar uma ação padrão e 5 PE para que cada aliado que você possa ver em alcance médio receba uma ação padrão adicional no próximo turno dele.',
-        pageReference: 'Livro Base p.47',
+        pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.24–27',
         effects: {
           base: {
             kind: 'activated',
@@ -267,7 +267,7 @@ export const COMBATENTE_TRACKS: UnifiedTrack[] = [
     name: 'Guerreiro',
     classId: 'Combatente',
     description: 'Você treinou sua musculatura e movimentos a ponto de transformar seu corpo em uma verdadeira arma. Com golpes corpo a corpo tão poderosos quanto uma bala, você enfrenta inimigos sem medo.',
-    pageReference: 'Livro Base p.47',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.24–27',
     abilities: [
       {
         id: 'tecnica-letal',
@@ -275,7 +275,7 @@ export const COMBATENTE_TRACKS: UnifiedTrack[] = [
         trackId: 'guerreiro',
         minNex: 10,
         description: 'Você recebe um aumento de +2 na margem de ameaça com todos os seus ataques corpo a corpo.',
-        pageReference: 'Livro Base p.47',
+        pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.24–27',
         isInitial: true,
         effects: {
           base: {
@@ -294,7 +294,7 @@ export const COMBATENTE_TRACKS: UnifiedTrack[] = [
         trackId: 'guerreiro',
         minNex: 40,
         description: 'Sempre que bloquear um ataque, você pode gastar uma reação e 2 PE para fazer um ataque corpo a corpo no inimigo que o atacou.',
-        pageReference: 'Livro Base p.47',
+        pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.24–27',
         effects: {
           base: {
             kind: 'reaction',
@@ -317,7 +317,7 @@ export const COMBATENTE_TRACKS: UnifiedTrack[] = [
         trackId: 'guerreiro',
         minNex: 65,
         description: 'Quando acerta um ataque corpo a corpo, você pode gastar 1 PE para realizar uma manobra derrubar ou empurrar contra o alvo do ataque como ação livre. Se escolher empurrar, recebe um bônus de +5 para cada 10 pontos de dano que causou no alvo. Se escolher derrubar e vencer no teste oposto, você pode gastar 1 PE para fazer um ataque adicional contra o alvo caído.',
-        pageReference: 'Livro Base p.47',
+        pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.24–27',
         effects: {
           base: {
             kind: 'triggered',
@@ -340,7 +340,7 @@ export const COMBATENTE_TRACKS: UnifiedTrack[] = [
         trackId: 'guerreiro',
         minNex: 99,
         description: 'Quando usa seu Ataque Especial com armas corpo a corpo, todos os bônus numéricos são dobrados. Por exemplo, se usar 5 PE para receber +5 no ataque e +15 no dano, você recebe +10 no ataque e +30 no dano.',
-        pageReference: 'Livro Base p.47',
+        pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.24–27',
         effects: {
           base: {
             kind: 'passive',
@@ -363,7 +363,7 @@ export const COMBATENTE_TRACKS: UnifiedTrack[] = [
     name: 'Operações Especiais',
     classId: 'Combatente',
     description: 'Você é um combatente eficaz. Suas ações são calculadas e otimizadas, sempre antevendo os movimentos inimigos e se posicionando da maneira mais inteligente no campo de batalha.',
-    pageReference: 'Livro Base p.47',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.24–27',
     abilities: [
       {
         id: 'iniciativa-aprimorada',
@@ -371,7 +371,7 @@ export const COMBATENTE_TRACKS: UnifiedTrack[] = [
         trackId: 'operacoes-especiais',
         minNex: 10,
         description: 'Você recebe +5 em Iniciativa e uma ação de movimento adicional na primeira rodada.',
-        pageReference: 'Livro Base p.47',
+        pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.24–27',
         isInitial: true,
         effects: {
           base: {
@@ -391,7 +391,7 @@ export const COMBATENTE_TRACKS: UnifiedTrack[] = [
         trackId: 'operacoes-especiais',
         minNex: 40,
         description: 'Uma vez por rodada, quando faz um ataque, você pode gastar 2 PE para fazer um ataque adicional.',
-        pageReference: 'Livro Base p.47',
+        pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.24–27',
         effects: {
           base: {
             kind: 'activated',
@@ -414,7 +414,7 @@ export const COMBATENTE_TRACKS: UnifiedTrack[] = [
         trackId: 'operacoes-especiais',
         minNex: 65,
         description: 'Uma vez por rodada, você pode gastar 5 PE para realizar uma ação padrão ou de movimento adicional.',
-        pageReference: 'Livro Base p.47',
+        pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.24–27',
         effects: {
           base: {
             kind: 'activated',
@@ -437,7 +437,7 @@ export const COMBATENTE_TRACKS: UnifiedTrack[] = [
         trackId: 'operacoes-especiais',
         minNex: 99,
         description: 'Você recebe uma ação padrão adicional no início de cada cena de combate.',
-        pageReference: 'Livro Base p.47',
+        pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.24–27',
         effects: {
           base: {
             kind: 'passive',
@@ -462,7 +462,7 @@ export const COMBATENTE_TRACKS: UnifiedTrack[] = [
     name: 'Tropa de Choque',
     classId: 'Combatente',
     description: 'Você é duro na queda. Treinou seu corpo para resistir a traumas físicos, tornando-o praticamente inquebrável, e por isso não teme se colocar entre seus aliados e o perigo.',
-    pageReference: 'Livro Base p.47',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.24–27',
     abilities: [
       {
         id: 'casca-grossa',
@@ -470,7 +470,7 @@ export const COMBATENTE_TRACKS: UnifiedTrack[] = [
         trackId: 'tropa-choque',
         minNex: 10,
         description: 'Você recebe +1 PV para cada 5% de NEX e, quando faz um bloqueio, soma seu Vigor na resistência a dano recebida.',
-        pageReference: 'Livro Base p.47',
+        pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.24–27',
         isInitial: true,
         effects: {
           base: {
@@ -487,7 +487,7 @@ export const COMBATENTE_TRACKS: UnifiedTrack[] = [
         trackId: 'tropa-choque',
         minNex: 40,
         description: 'Sempre que um oponente em alcance curto ataca um de seus aliados, você pode gastar uma reação e 1 PE para fazer com que esse oponente faça um teste de Vontade (DT Vig). Se falhar, o oponente deve atacar você em vez de seu aliado. Este poder só funciona se você puder ser efetivamente atacado e estiver no alcance do ataque. Um oponente que passe no teste de Vontade não pode ser afetado por seu poder Cai Dentro até o final da cena.',
-        pageReference: 'Livro Base p.47',
+        pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.24–27',
         effects: {
           base: {
             kind: 'reaction',
@@ -511,7 +511,7 @@ export const COMBATENTE_TRACKS: UnifiedTrack[] = [
         trackId: 'tropa-choque',
         minNex: 65,
         description: 'Ao sofrer dano não paranormal, você pode gastar uma reação e 2 PE para reduzir esse dano à metade. Em NEX 85%, você pode usar esta habilidade para reduzir dano paranormal.',
-        pageReference: 'Livro Base p.47',
+        pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.24–27',
         effects: {
           base: {
             kind: 'reaction',
@@ -542,7 +542,7 @@ export const COMBATENTE_TRACKS: UnifiedTrack[] = [
         trackId: 'tropa-choque',
         minNex: 99,
         description: 'Enquanto estiver machucado, você recebe +5 na Defesa e resistência a dano 5. Enquanto estiver morrendo, em vez do normal, você não fica indefeso e ainda pode realizar ações. Você ainda segue as regras de morte normalmente.',
-        pageReference: 'Livro Base p.47',
+        pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.24–27',
         effects: {
           base: {
             kind: 'triggered',

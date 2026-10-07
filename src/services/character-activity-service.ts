@@ -12,6 +12,12 @@ type ActivityDatabase = { public: {
     character_activity_events: { Row: ActivityRow; Insert: never; Update: never; Relationships: [] };
   }; Views: Record<string, never>; Enums: Record<string, never>; CompositeTypes: Record<string, never>;
   Functions: {
+    list_character_temporary_resources: { Args: { p_character_id: string }; Returns: Json[] };
+    confirm_temporary_resource: { Args: { p_operation_id: string; p_character_id: string; p_resource: string; p_source_key: string; p_source_name: string; p_amount: number; p_cumulative: boolean }; Returns: CharacterActivityEvent };
+    end_temporary_resource: { Args: { p_operation_id: string; p_character_id: string; p_resource_id: string; p_expected: number }; Returns: CharacterActivityEvent };
+    get_character_ritual_turn: { Args: { p_character_id: string }; Returns: Json };
+    begin_character_manual_turn: { Args: { p_operation_id: string; p_character_id: string; p_expected_turn: number }; Returns: CharacterActivityEvent };
+    confirm_sustained_ritual_maintenance: { Args: { p_operation_id: string; p_character_id: string; p_expected: Json; p_expected_pe: number | null; p_turn: Json }; Returns: CharacterActivityEvent };
     confirm_sustained_ritual_end: { Args: { p_operation_id: string; p_character_id: string; p_action: string; p_expected: Json; p_reason: Json }; Returns: CharacterActivityEvent };
     list_character_sustained_rituals: { Args: { p_character_id: string }; Returns: Json[] };
     confirm_sustained_ritual_action: { Args: { p_operation_id: string; p_character_id: string; p_action: string; p_expected: Json; p_expected_pe: number | null }; Returns: CharacterActivityEvent };

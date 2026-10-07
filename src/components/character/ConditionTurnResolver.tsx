@@ -71,8 +71,8 @@ export function ConditionTurnResolver({ conditions, vigor, prepareApplication }:
             </>}
           </div>)}
           {preview.notices.map((notice, index) => <p key={index} className="text-sm text-warning">{notice}</p>)}
-          {!preview.effects.length && !preview.removeIndexes.length && <p>Nenhuma alteração automática para este turno.</p>}
-          {prepareApplication && (preview.effects.length > 0 || preview.removeIndexes.length > 0) && !done && <Button disabled={busy} onClick={() => void confirm()}>{busy ? 'Confirmando no servidor...' : operation.current ? 'Repetir a mesma confirmação' : 'Confirmar efeitos na ficha'}</Button>}
+          {!preview.effects.length && !preview.removeIndexes.length && <p>Nenhuma alteração automática de recursos para este turno. Os avisos podem ser registrados na confirmação.</p>}
+          {prepareApplication && (preview.effects.length > 0 || preview.removeIndexes.length > 0 || preview.notices.length > 0) && !done && <Button disabled={busy} onClick={() => void confirm()}>{busy ? 'Confirmando no servidor...' : operation.current ? 'Repetir a mesma confirmação' : 'Confirmar efeitos na ficha'}</Button>}
           {!prepareApplication && <p role="status">Resolução manual: esta tela não tem aplicação conectada ao servidor.</p>}
         </div>}
         {error && <p role="alert" className="text-sm text-destructive">{error}</p>}

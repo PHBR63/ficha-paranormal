@@ -8,6 +8,11 @@ export function CastingConcentrationForm({ value, onChange, peCost, disabled }: 
   const error = validateCastingConcentration(value);
   return <fieldset disabled={disabled} className="rounded-lg border p-3 space-y-2 min-w-0 text-sm">
     <legend className="px-1 font-medium">Concentração durante a execução</legend>
+    <label className="flex items-start gap-2">
+      <input type="checkbox" checked={value.requirementsConfirmed === true} onChange={event => onChange({ ...value, requirementsConfirmed: event.target.checked })} />
+      <span>Conferi gestos e mão livre, componentes ou dispensa pela afinidade/Medo, ação de execução, alcance, percepção do alvo e linha de efeito.</span>
+    </label>
+    <p className="text-xs text-muted-foreground">Custo do Paranormal: ao confirmar, Ocultismo contra DT {20 + peCost}; falha perde {peCost} SAN, falha por 5 ou mais também perde 1 SAN máxima. Medo dispensa Ocultismo e causa perdas próprias, inclusive permanentes, conforme a forma (p.121).</p>
     <p className="text-muted-foreground">Livro Base, p.119. Ao confirmar, o sistema rola Vontade com os bônus atuais da ficha. Falhar consome os PE e impede os efeitos.</p>
     <label className="block space-y-1"><span>Situação da conjuração</span>
       <select className="w-full min-w-0 rounded-md border bg-background p-2" value={value.situation}

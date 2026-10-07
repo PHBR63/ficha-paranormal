@@ -86,7 +86,10 @@ export function unifiedArrayToLegacy(rituals: UnifiedRitual[]): LegacyRitual[] {
 export function mechanicsToLegacyEffect(mechanics: RitualMechanics): LegacyRitualEffect {
   const effect: LegacyRitualEffect = {
     kind: mechanics.kind,
+    summary: mechanics.summary,
   };
+  // Uma forma pode remover explicitamente os PV temporários herdados da base.
+  if (Object.prototype.hasOwnProperty.call(mechanics, 'tempHP') && !mechanics.tempHP) effect.tempHP = undefined;
 
   // Dano - pode ser string ou objeto
   if (mechanics.damage) {

@@ -315,8 +315,8 @@ export const CONDITIONS: Record<string, Omit<Condition, 'turnsRemaining'>> = {
     icon: '❓',
     color: 'sanity',
     description: 'Você não sabe distinguir amigo de inimigo.',
-    effect: 'No início do turno, role 1d6: 1-2 ataca aliado mais próximo, 3-4 não faz nada, 5-6 age normalmente.',
-    removal: 'Teste de Vontade DT 15 ou fim do efeito.',
+    effect: BASE_CONDITION_TEXT.confuso,
+    removal: BASE_CONDITION_REMOVAL.confuso,
   },
   enlouquecendo: {
     id: 'enlouquecendo',

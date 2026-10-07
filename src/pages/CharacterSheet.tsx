@@ -1,4 +1,7 @@
 import { DEFAULT_CASTING_CONCENTRATION, getCastingWillConfig, rollCastingConcentration, type CastingConcentrationContext } from '@/lib/rituals/casting-concentration';
+import { rollParanormalCost } from '@/lib/rituals/paranormal-cost';
+import { TemporaryResourcesPanel } from '@/components/character/TemporaryResourcesPanel';
+import { useTemporaryResources } from '@/hooks/character/useTemporaryResources';
 import { getConcentrationFailureMessage } from '@/lib/rituals/casting-concentration-result';
 import { BaseRulesNotice } from '@/components/character/BaseRulesNotice';
 import { useConditionTurnApplication } from '@/hooks/character/useConditionTurnApplication';
@@ -1207,14 +1210,15 @@ export default function CharacterSheet() {
 
   // Handler para abrir modal de conjuração de ritual
   const ritualApplication = useRitualApplication(id || '', refetchCharacter);
+  const temporaryResources = useTemporaryResources(id || '');
   const { beginCast: beginRitualCast, cast: confirmRitualCast } = ritualApplication;
   const [ritualTargetId, setRitualTargetId] = useState<string | null>(null);
   const ritualTargets = useRitualApplicationTargets(id || '');
   const selectedRitualTarget = ritualTargets.targets.find(target => target.id === ritualTargetId);
   // O alvo precisa ser selecionado. O snapshot do servidor protege contra sobrescrever outra alteração.
-  const applyRitualToTarget = async (kind: 'heal' | 'damage' | 'conditions' | 'weapon_buff' | 'sustain', value: import('@/integrations/supabase/types').Json) => {
+  const applyRitualToTarget = async (kind: 'heal' | 'damage' | 'temporary_hp' | 'conditions' | 'weapon_buff' | 'sustain', value: import('@/integrations/supabase/types').Json, damageType?: string) => {
     if (!ritualTargetId) throw new Error('Selecione a ficha que receberá o efeito.');
-    await ritualApplication.apply(kind, value, {}, ritualTargetId);
+    await ritualApplication.apply(kind, value, damageType ? { damageType } : {}, ritualTargetId);
     if (kind === 'sustain') await sustainedState.reload();
   };
 
@@ -1236,10 +1240,17 @@ export default function CharacterSheet() {
       const event = await confirmRitualCast(peBeforeCast, peCost, {
         ritualId: ritual.id, ritualName: ritual.name, ritualElement: ritual.element, ritualCircle: ritual.circle, enhancements, sessionId: ritualCampaignSessionId,
       }, ritualCampaignId && ritualCampaignVersion ? { campaignId: ritualCampaignId, campaignVersion: ritualCampaignVersion } : {},
-        () => ({ concentration: activityJson(rollCastingConcentration(concentration, getCastingWillConfig(character.presence, character.skills || {}, bonusSummary, activeConditionsForSUE, globalDiceBonus))) }));
+        () => ({ concentration: activityJson(rollCastingConcentration(concentration, getCastingWillConfig(character.presence, character.skills || {}, bonusSummary, activeConditionsForSUE, globalDiceBonus))),
+          paranormalCost: activityJson(rollParanormalCost(ritual.element, character.intellect, character.skills || {}, bonusSummary, activeConditionsForSUE, globalDiceBonus)),
+          expectedSan: sanCurrent, expectedSanMax: character.san_max, requirementsConfirmed: concentration.requirementsConfirmed === true }));
       const payload = event.payload as { peAfter?: number };
       if (typeof payload.peAfter !== 'number') throw new Error('O servidor não confirmou o saldo de PE.');
       newPe = payload.peAfter;
+      const confirmed = event.payload as { sanAfter?: number; sanMaxAfter?: number };
+      if (typeof confirmed.sanAfter === 'number' && typeof confirmed.sanMaxAfter === 'number') {
+        setSanCurrent(confirmed.sanAfter);
+        setCharacter(prev => prev ? { ...prev, san_current: confirmed.sanAfter!, san_max: confirmed.sanMaxAfter! } : null);
+      }
       concentrationFailure = getConcentrationFailureMessage(event.payload);
     } catch (error) {
       toast({
@@ -4093,7 +4104,7 @@ export default function CharacterSheet() {
         open={castModalOpen}
         onOpenChange={setCastModalOpen}
         ritual={ritualToCast}
-        peCurrent={peCurrent}
+        peCurrent={peCurrent + temporaryResources.pe}
         peMax={character.pe_max}
         isNonOccultist={character.class !== 'Ocultista'}
         nex={character.nex}
@@ -4113,7 +4124,7 @@ export default function CharacterSheet() {
         // Bônus do SUE para dano de rituais
         ritualDamageBonus={ritualBonuses.damageBonus}
         damageAttributeBonus={ritualBonuses.damageAttributeBonus}
-        onApplyDamage={async result => { await applyRitualToTarget('damage', result.total); }}
+        onApplyDamage={async result => { await applyRitualToTarget('damage', result.total, result.damageType); }}
         onApplyHealing={async result => {
           if (result.type !== 'healing') throw new Error('PV temporários permanecem pendentes de controle manual.');
           await applyRitualToTarget('heal', result.total);
@@ -4233,6 +4244,7 @@ export default function CharacterSheet() {
       />
 
       {/* Wizard de efeitos integrado (Fase 7) */}
+      <TemporaryResourcesPanel characterId={character.id} />
       <RitualEffectWizard
         open={wizardOpen}
         onOpenChange={setWizardOpen}
@@ -4262,10 +4274,9 @@ export default function CharacterSheet() {
           <RitualApplicationTargetSelector characterId={character.id} value={ritualTargetId} onChange={setRitualTargetId} disabled={ritualApplication.busy} />
           {wizardRitual && getActiveRitualEffect(wizardRitual.id, wizardEnhancements)?.weaponEffect && <p role="status" className="text-sm text-amber-300">O bônus de arma será associado à ficha escolhida e usado em seus ataques. Este fluxo ainda não diferencia uma arma específica.</p>}
         </>}
-        onApplyDamage={async damage => { await applyRitualToTarget('damage', damage); }}
+        onApplyDamage={async (damage, type) => { await applyRitualToTarget('damage', damage, type); }}
         onApplyHealing={async (amount, type) => {
-          if (type !== 'healing') throw new Error('PV temporários exigem controle manual nesta versão. O efeito permanece pendente.');
-          await applyRitualToTarget('heal', amount);
+          await applyRitualToTarget(type === 'healing' ? 'heal' : 'temporary_hp', amount);
         }}
         onApplyConditions={async conditions => { await applyRitualToTarget('conditions', activityJson(conditions)); }}
         onAddWeaponBuff={async (ritual, enhancements) => { await applyRitualToTarget('weapon_buff', activityJson(buildWeaponBuff(ritual, enhancements))); }}

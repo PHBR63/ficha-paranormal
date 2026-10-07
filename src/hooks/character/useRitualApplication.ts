@@ -54,9 +54,14 @@ export function useRitualApplication(characterId: string, onRefetch?: () => void
       if (!request) {
         // Captura a ficha autorizada atual antes do primeiro pedido. Em retry,
         // conserva exatamente esse estado para reconhecer uma confirmação perdida.
-        const { data, error: readError } = await supabase.from('characters').select('hp_current,hp_max,conditions,active_buffs').eq('id', targetCharacterId).single();
+        const { data, error: readError } = await supabase.from('characters').select('hp_current,hp_max,conditions,active_buffs,age').eq('id', targetCharacterId).single();
         if (readError || !data) throw new Error('Não foi possível consultar o estado atual do alvo. Recarregue a ficha.');
-        const snapshot: ActivityPayload = kind === 'conditions' ? { conditions: data.conditions } : kind === 'heal' || kind === 'damage' ? { hp_current: data.hp_current, hp_max: data.hp_max } : kind === 'weapon_buff' ? { active_buffs: data.active_buffs } : expected;
+        const snapshot: ActivityPayload = kind === 'conditions' ? { conditions: data.conditions } : kind === 'heal' || kind === 'damage' ? { hp_current: data.hp_current, hp_max: data.hp_max, age: data.age } : kind === 'weapon_buff' ? { active_buffs: data.active_buffs } : expected;
+        if (kind === 'damage' && typeof expected.damageType === 'string') snapshot.damageType = expected.damageType;
+        if (kind === 'heal' && castRef.current.payload && typeof castRef.current.payload === 'object'
+          && !Array.isArray(castRef.current.payload) && castRef.current.payload.ritualId === 'cicatrizacao' && data.age === null) {
+          throw new Error('Cadastre a idade do alvo antes de aplicar Cicatrização. A conjuração permanece pendente, sem estorno de PE.');
+        }
         request = { characterId: targetCharacterId, operationId: crypto.randomUUID(), kind, value: JSON.parse(JSON.stringify(value)) as Json, expected: JSON.parse(JSON.stringify(snapshot)) as ActivityPayload, castEventId: castRef.current.id,
           campaignId: castRef.current.campaign_id ?? undefined, campaignVersion: castRef.current.campaign_version ?? undefined };
         effectsRef.current.set(key, request);
