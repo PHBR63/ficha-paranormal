@@ -23,6 +23,9 @@ arma automaticamente. A associação continua por ficha, conforme o fluxo atual.
 | `src/hooks/usePWAUpdate.ts` | Recebe evento do registro e alterações do worker; devolve estado/ações ao aviso existente. Detecção não chama `applyUpdate`; botão Atualizar continua acionando aplicação. |
 | `src/components/character/CombatWeaponsTable.tsx` | Recebe armas/bônus da ficha; ramo sem armas também usa WeaponBuffIndicator. Não grava banco. |
 | `src/pages/CharacterSheet.tsx` | Repassa `active_buffs` recebido do banco ao contrato da ficha mobile, incluindo mudanças confirmadas por Realtime. |
+| `src/components/character/RitualApplicationTargetSelector.tsx` | Recebe ficha, alvo explícito e callbacks; mantém o Select controlado desde o estado vazio, sem escolher um alvo automaticamente. Usa useRitualApplicationTargets para consultar fichas autorizadas. |
+| `src/components/character/CharacterActivityPanel.tsx` | Recebe ID/nome da ficha; usa useCharacterActivity para filtros, páginas e visibilidade. SheetDescription associa a descrição existente ao diálogo, sem mudar eventos ou consultas. |
+| `src/hooks/character/__tests__/useRitualApplication.test.tsx` | Testa idempotência e feedback: descarte de leitura antiga não gera aviso; falha real continua visível, sem repetir débito. |
 | `src/components/character/MobileCharacterSheet.tsx` | Recebe bônus no tipo compartilhado WeaponBuff e os entrega a useWeaponBuffs, visão geral e combate. Não altera os dados ao fazer esse repasse. |
 | `src/components/character/mobile/MobileCombatPanel.tsx` | Recebe armas/bônus/atributos/callbacks; mostra indicador no ramo desarmado e normal. Reutiliza indicador sem duplicar formatação. |
 | `src/components/character/mobile/MobileCombatDrawer.tsx` | Recebe mesmos dados e callbacks; substitui resumo incompleto por indicador compartilhado. |
@@ -45,3 +48,11 @@ mostrar os bônus, mas CharacterSheet não enviava `active_buffs` na propriedade
 `character`. O repasse foi corrigido e o contrato antigo específico de arma foi
 substituído pelo tipo compartilhado WeaponBuff. A validação precisa incluir a
 tela publicada completa; testes isolados do painel não verificam esse repasse.
+
+Outra conferência mostrou aviso de atualização apesar de a ficha ter recebido
+os dados recentes. useCharacterServerRead descarta respostas superadas para
+evitar sobrescrita; CharacterSheet agora devolve undefined para esse descarte,
+em vez de null, que permanece indicando falha atual. useRitualApplication já
+distinguia esses valores. A confirmação do servidor e a proteção contra repetição
+continuam iguais. Os demais consumidores que exigem dados imediatos continuam
+podendo conferir a ausência de retorno antes de prosseguir.

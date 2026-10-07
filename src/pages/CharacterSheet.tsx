@@ -898,11 +898,13 @@ export default function CharacterSheet() {
   
   // Função de refetch para atualizar dados do personagem após correções
   // Retorna os dados atualizados para uso imediato (ex: revalidação)
-  const refetchCharacter = useCallback(async (): Promise<Character | null> => {
+  const refetchCharacter = useCallback(async (): Promise<Character | null | undefined> => {
     if (!id || !user) return null;
     
     const read = await readCharacter();
-    if (!read) return null;
+    // Uma leitura mais recente substituiu esta; isso não é falha de conexão.
+    // null permanece reservado à falha atual, undefined indica descarte seguro.
+    if (!read) return undefined;
     const { data, error } = read;
     
     if (!error && data) {
