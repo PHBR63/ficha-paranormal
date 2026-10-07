@@ -1,3 +1,4 @@
+import { confirmCombatAttack } from '@/services/combat-attack-service';
 import { isAniquiladorFavoriteWeapon } from '@/lib/category-reduction';
 import { PETurnBudgetPanel } from '@/components/character/PETurnBudgetPanel';
 import { usePETurnBudget } from '@/hooks/character/usePETurnBudget';
@@ -795,7 +796,7 @@ export default function CharacterSheet() {
 
   // Callback para adicionar rolagem ao histórico e marcar perícia testada
   const handleRollComplete = useCallback((result: DiceRollResult) => {
-    void saveActivityRoll({ entry: activityJson(diceHistoryEntry(result)), label: result.label || 'Teste', type: result.type });
+    if (!result.activityOperationId) void saveActivityRoll({ entry: activityJson(diceHistoryEntry(result)), label: result.label || 'Teste', type: result.type });
     // Marca a perícia como testada para Primeira Impressão
     if (rollTestedAttribute) {
       primeiraImpressao.markSkillAsTested(rollTestedAttribute);
@@ -3493,6 +3494,14 @@ export default function CharacterSheet() {
                 currentPE={peCurrent}
                 maxPE={character.pe_max}
                 onPEChange={handlePEChange}
+                temporaryPE={temporaryResources.pe}
+                confirmationUnavailable={peBudget.isLoading ? "Carregando o orçamento de PE do servidor…" : peBudget.error || !peBudget.data ? "Não foi possível conferir o turno. Recarregue a ficha antes de atacar." : undefined}
+                onConfirmAttack={async request => {
+                  await confirmCombatAttack(character.id, request, peBudget.data?.key ?? null);
+                  try { await refetchCharacter(); await peBudget.refetch(); await temporaryResources.refetch(); }
+                  catch { toast({ title: 'Ataque confirmado', description: 'Recarregue para atualizar a ficha.' }); }
+                  return true;
+                }}
                 classTrack={character.class_track || undefined}
                 characterClass={character.class}
                 abilities={character.abilities || []}

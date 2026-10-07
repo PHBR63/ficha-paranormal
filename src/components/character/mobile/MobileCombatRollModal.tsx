@@ -1,3 +1,4 @@
+import type { ConfirmCombatAttack, CombatCostSelection } from '@/services/combat-attack-service';
 /**
  * MobileCombatRollModal - Modal de combate completo para mobile
  * Interface step-by-step: Setup → Ataque → Dano
@@ -144,6 +145,9 @@ interface MobileCombatRollModalProps {
   currentPE: number;
   maxPE: number;
   onPEChange: ConfirmDicePE;
+  onConfirmAttack?: ConfirmCombatAttack;
+  temporaryPE?: number;
+  confirmationUnavailable?: string;
   characterClass: string;
   classTrack?: string;
   abilities: string[];
@@ -229,6 +233,9 @@ export function MobileCombatRollModal({
   currentPE,
   maxPE,
   onPEChange,
+  onConfirmAttack,
+  temporaryPE = 0,
+  confirmationUnavailable,
   characterClass,
   classTrack,
   abilities,
@@ -642,7 +649,7 @@ export function MobileCombatRollModal({
     return total + (activeTechniqueEffects?.peCost ?? 0);
   }, [activeTechniqueEffects?.peCost, selectedBonuses, availableBonuses, specialAttackConfig.enabled, specialAttackResult.peCost, isInfiltrador, sneakAttackConfig.enabled, sneakAttackResult.peCost, isAtiradorElite, disparoLetalConfig.enabled, disparoLetalResult.peCost]);
 
-  const canAffordPE = currentPE >= totalPECost;
+  const canAffordPE = currentPE + temporaryPE >= totalPECost;
 
   // === VERIFICAÇÃO DE PROFICIÊNCIA COM ARMA ===
   // Regra oficial: -5 no ataque se não tiver proficiência adequada
@@ -1112,7 +1119,7 @@ export function MobileCombatRollModal({
   const rollAttack = useCallback(() => {
     if (preparingAttack.current || attackConfirmation.confirming) return;
     if (attackConfirmation.pending) { void attackConfirmation.confirm(); return; }
-    if (!weapon || !canAffordPE) return;
+    if (!weapon || !canAffordPE || confirmationUnavailable) return;
     preparingAttack.current = true;
 
     setIsRolling(true);
@@ -1127,10 +1134,21 @@ export function MobileCombatRollModal({
       label: `Ataque com ${weapon.name}`,
     });
 
+    const selection: CombatCostSelection = {
+      weaponId: weapon.id,
+      specialAttackIncrements: specialAttackConfig.enabled ? specialAttackConfig.attackIncrements + specialAttackConfig.damageIncrements : 0,
+      sneakAttack: !!(isInfiltrador && sneakAttackConfig.enabled),
+      lethalShot: !!(isAtiradorElite && disparoLetalConfig.enabled),
+      techniques: [...(activeTechniqueEffects?.selectedTechniques ?? [])],
+      lethalCount: activeTechniqueEffects?.letalCount ?? 0,
+      otherPaidBonuses: selectedBonuses.filter(id => (availableBonuses.find(b => b.id === id)?.peCost ?? 0) > 0),
+    };
+    const request = { operationId: crypto.randomUUID(), expectedPE: currentPE, expectedCost: totalPECost, selection, result };
     void attackConfirmation.confirm({
       result,
       nextPE: totalPECost > 0 ? currentPE - totalPECost : undefined,
       confirmPE: onPEChange,
+      confirmOperation: onConfirmAttack ? () => onConfirmAttack(request) : undefined,
       onConfirmed: (result) => {
         setAttackResult(result);
         setIsRolling(false);
@@ -1177,7 +1195,7 @@ export function MobileCombatRollModal({
       },
 
     }).finally(() => { preparingAttack.current = false; setIsRolling(false); });
-  }, [attackConfirmation, attackDicePenalty, weapon, attackAttribute, totalAttackBonus, criticalMargin, totalPECost, canAffordPE, currentPE, onPEChange, onRollComplete, targetDefense, combatFeedback]);
+  }, [confirmationUnavailable, onConfirmAttack, specialAttackConfig, isInfiltrador, sneakAttackConfig, isAtiradorElite, disparoLetalConfig, activeTechniqueEffects, selectedBonuses, availableBonuses, attackConfirmation, attackDicePenalty, weapon, attackAttribute, totalAttackBonus, criticalMargin, totalPECost, canAffordPE, currentPE, onPEChange, onRollComplete, targetDefense, combatFeedback]);
 
   // Rolar dano - ATUALIZADO com advancedBonuses e buffDiceResult
   const rollDamageAction = useCallback(() => {
@@ -1663,7 +1681,7 @@ export function MobileCombatRollModal({
                     abilities={abilities}
                     weaponType={weapon.type}
                     hasPotenciaMaxima={advancedBonuses.potenciaMaxima}
-                    currentPE={currentPE}
+                    currentPE={currentPE + temporaryPE}
                     config={specialAttackConfig}
                     onConfigChange={setSpecialAttackConfig}
                     variant="compact"
@@ -1674,7 +1692,7 @@ export function MobileCombatRollModal({
                 {isAtiradorElite && nex >= 40 && (
                   <DisparoLetalSelector
                     nex={nex}
-                    currentPE={currentPE}
+                    currentPE={currentPE + temporaryPE}
                     config={disparoLetalConfig}
                     onConfigChange={setDisparoLetalConfig}
                     variant="compact"
@@ -2206,7 +2224,9 @@ export function MobileCombatRollModal({
           </AnimatePresence>
         </MobileDrawerBody>
 
-{attackConfirmation.error && (
+        {temporaryPE > 0 && <p className="text-sm text-muted-foreground">PE disponíveis: {currentPE} normais + {temporaryPE} temporários. Temporários são consumidos primeiro.</p>}
+        {confirmationUnavailable && !attackConfirmation.pending && <p role="status" className="p-3 text-sm text-muted-foreground">{confirmationUnavailable}</p>}
+        {attackConfirmation.error && (
           <p role="alert" className="p-3 text-sm text-destructive">{attackConfirmation.error}</p>
         )}
         <MobileDrawerFooter>
@@ -2227,7 +2247,7 @@ export function MobileCombatRollModal({
                     ) : <Target className="w-5 h-5" />,
                     onClick: rollAttack,
                     type: 'primary',
-                    disabled: attackConfirmation.confirming || isRolling || (!attackConfirmation.pending && !canAffordPE),
+                    disabled: attackConfirmation.confirming || isRolling || (!attackConfirmation.pending && (!canAffordPE || !!confirmationUnavailable)),
                   }
                 ]}
               />
@@ -2384,7 +2404,7 @@ export function MobileCombatRollModal({
         open={showTechniqueModal}
         onClose={() => setShowTechniqueModal(false)}
         nex={nex}
-        currentPE={currentPE}
+        currentPE={currentPE + temporaryPE}
         onConfirm={handleConfirmTechnique}
         weaponName={weapon?.name || 'Arma'}
       />

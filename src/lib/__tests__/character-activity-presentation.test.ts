@@ -8,6 +8,14 @@ const event = (payload: CharacterActivityEvent['payload']): CharacterActivityEve
 });
 
 describe('Histórico de alterações de condições', () => {
+  it('mostra custo, temporários e orçamento no mesmo recibo do ataque', () => {
+    const text = describeCharacterActivity({ ...event({ kind: 'combat_attack', peCost: 2, peBefore: 8, peAfter: 7,
+      temporaryPEUsed: 1, peBudget: { mode: 'manual', number: 3, tracked: true, spentAfter: 4 },
+      entry: { label: 'Ataque: Faca', results: [12], bestResult: 12, skillBonus: 5, otherBonuses: 0, total: 17 } }), category: 'roll' });
+    expect(text).toContain('Custo 2 PE · PE 8 → 7');
+    expect(text).toContain('1 PE temporários consumidos');
+    expect(text).toContain('Turno manual 3: 4 PE gastos');
+  });
   it('mostra orçamento confirmado e pausa sem inventar dados em recibos antigos', () => {
     expect(describeCharacterActivity(event({ kind: 'manual_turn_pause', turnNumber: 2 }))).toContain('Saldo e efeitos preservados');
     const receipt = { ...event({ ritualName: 'Arma Atroz', peBudget: { tracked: true, mode: 'manual', number: 2, spentAfter: 4, minimumCostException: true } }), category: 'ritual' as const };

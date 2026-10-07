@@ -1,3 +1,4 @@
+import type { ConfirmCombatAttack, CombatCostSelection } from '@/services/combat-attack-service';
 /**
  * CombatRollModal - Modal de combate com rolagem de ataque e dano
  * Permite selecionar bônus de classe, poderes paranormais e rituais
@@ -138,6 +139,9 @@ interface CombatRollModalProps {
   currentPE: number;
   maxPE: number;
   onPEChange: ConfirmDicePE;
+  onConfirmAttack?: ConfirmCombatAttack;
+  temporaryPE?: number;
+  confirmationUnavailable?: string;
   
   // Dados de classe e poderes
   characterClass: string;
@@ -238,6 +242,9 @@ export function CombatRollModal({
   currentPE,
   maxPE,
   onPEChange,
+  onConfirmAttack,
+  temporaryPE = 0,
+  confirmationUnavailable,
   characterClass,
   classTrack = '',
   abilities,
@@ -695,7 +702,7 @@ export function CombatRollModal({
   }, [activeTechniqueEffects?.peCost, selectedBonuses, availableBonuses, specialAttackConfig.enabled, specialAttackResult.peCost, isInfiltrador, sneakAttackConfig.enabled, sneakAttackResult.peCost, isAtiradorElite, disparoLetalConfig.enabled, disparoLetalResult.peCost]);
 
   // Verificar se pode pagar o PE
-  const canAffordPE = currentPE >= totalPECost;
+  const canAffordPE = currentPE + temporaryPE >= totalPECost;
 
   // === VERIFICAÇÃO DE PROFICIÊNCIA COM ARMA ===
   // Regra oficial: -5 no ataque se não tiver proficiência adequada
@@ -1258,7 +1265,7 @@ export function CombatRollModal({
   const handleRollAttack = () => {
     if (preparingAttack.current || attackConfirmation.confirming) return;
     if (attackConfirmation.pending) { void attackConfirmation.confirm(); return; }
-    if (!weapon || !canAffordPE) return;
+    if (!weapon || !canAffordPE || confirmationUnavailable) return;
     preparingAttack.current = true;
 
     // Feedback de rolagem
@@ -1274,11 +1281,22 @@ export function CombatRollModal({
       criticalThreshold: effectiveCritical,
     });
 
+    const selection: CombatCostSelection = {
+      weaponId: weapon.id,
+      specialAttackIncrements: specialAttackConfig.enabled ? specialAttackConfig.attackIncrements + specialAttackConfig.damageIncrements : 0,
+      sneakAttack: !!(isInfiltrador && sneakAttackConfig.enabled),
+      lethalShot: !!(isAtiradorElite && disparoLetalConfig.enabled),
+      techniques: [...(activeTechniqueEffects?.selectedTechniques ?? [])],
+      lethalCount: activeTechniqueEffects?.letalCount ?? 0,
+      otherPaidBonuses: selectedBonuses.filter(id => (availableBonuses.find(b => b.id === id)?.peCost ?? 0) > 0),
+    };
+    const request = { operationId: crypto.randomUUID(), expectedPE: currentPE, expectedCost: totalPECost, selection, result };
     // O resultado só é publicado depois de o servidor aceitar o custo.
     void attackConfirmation.confirm({
       result,
       nextPE: totalPECost > 0 ? currentPE - totalPECost : undefined,
       confirmPE: onPEChange,
+      confirmOperation: onConfirmAttack ? () => onConfirmAttack(request) : undefined,
       onConfirmed: (result) => {
         // Feedback baseado no resultado
         // Fumble = todos os d20 rolaram 1 (falha crítica)
@@ -2085,7 +2103,7 @@ export function CombatRollModal({
                     abilities={abilities}
                     weaponType={weapon.type}
                     hasPotenciaMaxima={advancedBonuses.potenciaMaxima}
-                    currentPE={currentPE}
+                    currentPE={currentPE + temporaryPE}
                     config={specialAttackConfig}
                     onConfigChange={setSpecialAttackConfig}
                     variant="default"
@@ -2096,7 +2114,7 @@ export function CombatRollModal({
                 {isInfiltrador && (
                   <SneakAttackSelector
                     nex={nex}
-                    currentPE={currentPE}
+                    currentPE={currentPE + temporaryPE}
                     assassinarActive={advancedBonuses.assassinar || false}
                     config={sneakAttackConfig}
                     onConfigChange={setSneakAttackConfig}
@@ -2108,7 +2126,7 @@ export function CombatRollModal({
                 {isAtiradorElite && nex >= 40 && (
                   <DisparoLetalSelector
                     nex={nex}
-                    currentPE={currentPE}
+                    currentPE={currentPE + temporaryPE}
                     config={disparoLetalConfig}
                     onConfigChange={setDisparoLetalConfig}
                     variant="default"
@@ -2233,7 +2251,7 @@ export function CombatRollModal({
                         <Checkbox
                           checked={selectedBonuses.includes(bonus.id)}
                           onCheckedChange={() => toggleBonus(bonus.id)}
-                          disabled={!selectedBonuses.includes(bonus.id) && bonus.peCost && currentPE < bonus.peCost}
+                          disabled={!selectedBonuses.includes(bonus.id) && bonus.peCost && currentPE + temporaryPE < bonus.peCost}
                         />
                         <div className="flex-1">
                           <p className="text-sm font-medium">{bonus.name}</p>
@@ -2376,7 +2394,9 @@ export function CombatRollModal({
                 )}
 
 </div>
-                {attackConfirmation.error && (
+                {temporaryPE > 0 && <p className="text-sm text-muted-foreground">PE disponíveis: {currentPE} normais + {temporaryPE} temporários. Temporários são consumidos primeiro.</p>}
+        {confirmationUnavailable && !attackConfirmation.pending && <p role="status" className="p-3 text-sm text-muted-foreground">{confirmationUnavailable}</p>}
+        {attackConfirmation.error && (
           <p role="alert" className="p-3 text-sm text-destructive">{attackConfirmation.error}</p>
         )}
                 {/* Botão de rolar */}
@@ -2384,7 +2404,7 @@ export function CombatRollModal({
                   className="w-full font-display"
                   size="lg"
                   onClick={handleRollAttack}
-                  disabled={attackConfirmation.confirming || (!attackConfirmation.pending && !canAffordPE)}
+                  disabled={attackConfirmation.confirming || (!attackConfirmation.pending && (!canAffordPE || !!confirmationUnavailable))}
                 >
                   <Dices className="w-5 h-5 mr-2" />
                   {attackConfirmation.confirming ? "CONFIRMANDO PE…" : attackConfirmation.pending ? "TENTAR CONFIRMAR ATAQUE" : "ROLAR ATAQUE"}
@@ -2882,7 +2902,7 @@ export function CombatRollModal({
         onClose={() => setShowTechniqueModal(false)}
         onConfirm={handleConfirmTechnique}
         nex={nex}
-        currentPE={currentPE}
+        currentPE={currentPE + temporaryPE}
         weaponName={weapon?.name || ''}
       />
     </Dialog>

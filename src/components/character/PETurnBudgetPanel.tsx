@@ -46,13 +46,13 @@ export function PETurnBudgetPanel({ characterId }: { characterId: string }) {
   }
 
   return <section aria-label="Orçamento de PE por turno" className="rounded-lg border p-3 space-y-3 min-w-0">
-    <h3 className="font-semibold">PE por turno — rituais e manutenção</h3>
+    <h3 className="font-semibold">PE por turno — rituais, manutenção e ataques</h3>
     {query.isLoading && <p role="status">Conferindo orçamento no servidor…</p>}
     {(query.error || failure) && <p role="alert">{failure ?? (query.error instanceof Error ? query.error.message : 'Orçamento não confirmado.')}</p>}
     {budget && <>
       <p>{budget.tracked ? `${budget.mode === 'manual' ? `Turno manual ${budget.number}` : `Combate · rodada ${budget.round}`} · ${budget.spent} PE gastos · limite ${budget.limit}` : 'Sem controle de turnos ativo. Gastos são registrados sem criar turnos artificiais.'}</p>
       {budget.ritualLimit !== budget.limit && <p>Limite para conjuração: {budget.ritualLimit} PE, incluindo Presença Poderosa.</p>}
-      <p className="text-xs text-muted-foreground">Temporários contam pelo custo total. Iniciar turno não mantém rituais nem cobra PE. Gastos de poderes em outros fluxos ainda exigem conferência.</p>
+      <p className="text-xs text-muted-foreground">Ataque Especial, técnicas do Aniquilador, Ataque Furtivo e Disparo Letal compartilham o orçamento com rituais e manutenção. Temporários contam pelo custo total. Outros poderes, ações e requisitos situacionais ainda exigem conferência.</p>
       <div className="flex flex-wrap gap-2">
         {budget.mode !== 'combat' && <Button variant="outline" disabled={busy || !!request || !!query.error} onClick={() => { void prepare('start'); }}>Iniciar ou avançar turno manual</Button>}
         {budget.mode === 'manual' && <Button variant="outline" disabled={busy || !!request || !!query.error} onClick={() => { void prepare('pause'); }}>Pausar controle manual</Button>}
