@@ -5,17 +5,19 @@
  * ATUALIZADO: Agora usa o sistema unificado de rituais
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { listSustainedRituals, type SustainedSnapshot } from '@/services/sustained-ritual-service';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { getActiveRitualEffectUnified } from '@/lib/rituals/ritual-adapter';
-import { getRitualById, getEffectiveLevel, getRitualEffect } from '@/lib/rituals/ritual-registry';
-import type { UnifiedRitual, RitualMechanics } from '@/lib/rituals/types';
-import type { Ritual as LegacyRitual, RitualEffect, SustainConfig } from '@/lib/rituals/legacy-exports';
+import { getRitualEffect } from '@/lib/rituals/ritual-registry';
+import type { RitualMechanics } from '@/lib/rituals/types';
+import type { RitualEffect, SustainConfig } from '@/lib/rituals/legacy-exports';
 import { Json } from '@/integrations/supabase/types';
 
 // Interface para ritual sustentado (do banco)
 interface SustainedRitualRow {
+  caster_character_id?: string | null;
   id: string;
   character_id: string;
   user_id: string;
@@ -34,6 +36,9 @@ interface SustainedRitualRow {
 
 // Interface para uso no frontend (compatível com sistema existente)
 export interface SustainedRitual {
+  /** Retornado pelo servidor a partir de prova privada; ausente em legados. */
+  casterCharacterId?: string | null;
+  snapshot?: SustainedSnapshot;
   id: string;
   characterId: string;
   ritualId: string;
@@ -59,18 +64,12 @@ interface UseSustainedRitualsProps {
 }
 
 // Retorno do hook
-interface UseSustainedRitualsReturn {
+export interface UseSustainedRitualsReturn {
+  error: string | null;
+  reload: () => Promise<boolean>;
   rituals: SustainedRitual[];
   loading: boolean;
-  activateRitual: (
-    ritual: LegacyRitual | UnifiedRitual,
-    enhancements: string[],
-    sustain: SustainConfig
-  ) => Promise<void>;
-  deactivateRitual: (ritualId: string) => Promise<void>;
-  deactivateByRitualId: (ritualId: string) => Promise<void>;
-  updateTurns: (id: string, turns: number) => Promise<void>;
-  clearAll: () => Promise<void>;
+
 }
 
 // Converte do formato DB para o formato frontend
@@ -86,6 +85,9 @@ function fromDB(row: SustainedRitualRow): SustainedRitual {
     : {};
   
   return {
+    casterCharacterId: row.caster_character_id ?? null,
+    snapshot: { id: row.id, ritual_id: row.ritual_id, turns_active: row.turns_active,
+      pe_spent_total: row.pe_spent_total, sustain_config: row.sustain_config, is_concentrating: row.is_concentrating },
     id: row.id,
     characterId: row.character_id,
     ritualId: row.ritual_id,
@@ -111,46 +113,62 @@ export function useSustainedRituals({
   enabled = true,
 }: UseSustainedRitualsProps): UseSustainedRitualsReturn {
   const { user } = useAuth();
+  const userId = user?.id;
   const [rituals, setRituals] = useState<SustainedRitual[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const context = `${userId ?? ''}:${characterId ?? ''}:${enabled}`;
+  const currentContext = useRef(context); currentContext.current = context;
+  const sequence = useRef(0);
 
   // Carrega rituais do banco
   const loadRituals = useCallback(async () => {
-    if (!characterId || !user || !enabled) {
+    const request = ++sequence.current;
+    const isCurrent = () => currentContext.current === context && sequence.current === request;
+    if (!characterId || !userId || !enabled) {
       setRituals([]);
       setLoading(false);
-      return;
+      setError(null);
+      return false;
     }
-
+    setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('character_sustained_rituals')
-        .select('*')
-        .eq('character_id', characterId)
-        .eq('user_id', user.id);
-
-      if (error) {
-        console.error('Erro ao carregar rituais sustentados:', error);
-        setRituals([]);
-      } else {
-        setRituals((data || []).map(row => fromDB(row as SustainedRitualRow)));
+      const rows = await listSustainedRituals(characterId);
+      if (!isCurrent()) return currentContext.current === context;
+      if (rows.some(row => !row || typeof row !== 'object' || Array.isArray(row) || row.character_id !== characterId || typeof row.id !== 'string')) {
+        throw new Error('A lista recebida não corresponde à ficha atual.');
       }
+      setRituals(rows.map(row => fromDB(row as unknown as SustainedRitualRow)));
+      setError(null);
+      return true;
     } catch (err) {
-      console.error('Erro inesperado ao carregar rituais:', err);
-      setRituals([]);
+      if (isCurrent()) setError(err instanceof Error ? err.message : 'Não foi possível carregar os rituais sustentados.');
+      // Falha de releitura não equivale a encerramento: mantém os últimos dados.
+      return false;
     } finally {
-      setLoading(false);
+      if (isCurrent()) setLoading(false);
     }
-  }, [characterId, user, enabled]);
+  }, [characterId, userId, enabled, context]);
 
   // Carrega inicialmente
   useEffect(() => {
-    loadRituals();
+    currentContext.current = context;
+    setRituals([]); setError(null);
+    void loadRituals();
+    return () => { currentContext.current = ""; };
+  }, [loadRituals, context]);
+
+  // Após reconexão, recupera o estado confirmado em vez de presumir eventos recebidos.
+  useEffect(() => {
+    const refresh = () => { void loadRituals(); };
+    const resume = () => { if (document.visibilityState === 'visible') refresh(); };
+    window.addEventListener('online', refresh); document.addEventListener('visibilitychange', resume);
+    return () => { window.removeEventListener('online', refresh); document.removeEventListener('visibilitychange', resume); };
   }, [loadRituals]);
 
   // Escuta atualizações em tempo real
   useEffect(() => {
-    if (!characterId || !user || !enabled) return;
+    if (!characterId || !userId || !enabled) return;
 
     const channel = supabase
       .channel(`sustained-rituals-${characterId}`)
@@ -162,169 +180,15 @@ export function useSustainedRituals({
           table: 'character_sustained_rituals',
           filter: `character_id=eq.${characterId}`,
         },
-        (payload) => {
-          console.log('[Realtime] Sustained ritual change:', payload.eventType);
-          
-          if (payload.eventType === 'INSERT') {
-            const newRitual = fromDB(payload.new as SustainedRitualRow);
-            setRituals(prev => {
-              // Evita duplicatas
-              if (prev.some(r => r.id === newRitual.id)) return prev;
-              return [...prev, newRitual];
-            });
-          } else if (payload.eventType === 'UPDATE') {
-            const updated = fromDB(payload.new as SustainedRitualRow);
-            setRituals(prev => 
-              prev.map(r => r.id === updated.id ? updated : r)
-            );
-          } else if (payload.eventType === 'DELETE') {
-            const deletedId = (payload.old as { id: string }).id;
-            setRituals(prev => prev.filter(r => r.id !== deletedId));
-          }
-        }
+        () => { void loadRituals(); }
+
       )
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [characterId, user, enabled]);
+  }, [characterId, userId, enabled, loadRituals]);
 
-  // Ativa um ritual sustentado
-  const activateRitual = useCallback(async (
-    ritual: LegacyRitual | UnifiedRitual,
-    enhancements: string[],
-    sustain: SustainConfig
-  ) => {
-    if (!characterId || !user) {
-      console.error('Não é possível ativar ritual: characterId ou user ausente');
-      return;
-    }
-
-    // Verifica se já existe um ritual igual ativo
-    const existing = rituals.find(r => r.ritualId === ritual.id);
-    if (existing) {
-      console.log('Ritual já está ativo, ignorando:', ritual.id);
-      return;
-    }
-
-    try {
-      const insertData = {
-        character_id: characterId,
-        user_id: user.id,
-        ritual_id: ritual.id,
-        ritual_name: ritual.name,
-        element: ritual.element,
-        circle: ritual.circle,
-        selected_enhancements: enhancements,
-        sustain_config: sustain as unknown as Json,
-        turns_active: 0,
-        pe_spent_total: 0,
-        is_concentrating: sustain.concentration || false,
-      };
-
-      const { error } = await supabase
-        .from('character_sustained_rituals')
-        .insert(insertData);
-
-      if (error) {
-        console.error('Erro ao ativar ritual sustentado:', error);
-      } else {
-        console.log('Ritual sustentado ativado:', ritual.name);
-      }
-    } catch (err) {
-      console.error('Erro inesperado ao ativar ritual:', err);
-    }
-  }, [characterId, user, rituals]);
-
-  // Desativa um ritual por ID do registro
-  const deactivateRitual = useCallback(async (id: string) => {
-    if (!user) return;
-
-    try {
-      const { error } = await supabase
-        .from('character_sustained_rituals')
-        .delete()
-        .eq('id', id)
-        .eq('user_id', user.id);
-
-      if (error) {
-        console.error('Erro ao desativar ritual:', error);
-      } else {
-        console.log('Ritual sustentado desativado:', id);
-      }
-    } catch (err) {
-      console.error('Erro inesperado ao desativar ritual:', err);
-    }
-  }, [user]);
-
-  // Desativa por ritual_id (para quando não temos o ID do registro)
-  const deactivateByRitualId = useCallback(async (ritualId: string) => {
-    if (!user || !characterId) return;
-
-    try {
-      const { error } = await supabase
-        .from('character_sustained_rituals')
-        .delete()
-        .eq('ritual_id', ritualId)
-        .eq('character_id', characterId)
-        .eq('user_id', user.id);
-
-      if (error) {
-        console.error('Erro ao desativar ritual por ID:', error);
-      }
-    } catch (err) {
-      console.error('Erro inesperado ao desativar ritual por ID:', err);
-    }
-  }, [user, characterId]);
-
-  // Atualiza contagem de turnos
-  const updateTurns = useCallback(async (id: string, turns: number) => {
-    if (!user) return;
-
-    try {
-      const { error } = await supabase
-        .from('character_sustained_rituals')
-        .update({ turns_active: turns })
-        .eq('id', id)
-        .eq('user_id', user.id);
-
-      if (error) {
-        console.error('Erro ao atualizar turnos:', error);
-      }
-    } catch (err) {
-      console.error('Erro inesperado ao atualizar turnos:', err);
-    }
-  }, [user]);
-
-  // Limpa todos os rituais do personagem
-  const clearAll = useCallback(async () => {
-    if (!user || !characterId) return;
-
-    try {
-      const { error } = await supabase
-        .from('character_sustained_rituals')
-        .delete()
-        .eq('character_id', characterId)
-        .eq('user_id', user.id);
-
-      if (error) {
-        console.error('Erro ao limpar rituais:', error);
-      } else {
-        console.log('Todos rituais sustentados removidos');
-      }
-    } catch (err) {
-      console.error('Erro inesperado ao limpar rituais:', err);
-    }
-  }, [user, characterId]);
-
-  return {
-    rituals,
-    loading,
-    activateRitual,
-    deactivateRitual,
-    deactivateByRitualId,
-    updateTurns,
-    clearAll,
-  };
+  return { error, reload: loadRituals, rituals, loading };
 }

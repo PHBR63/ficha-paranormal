@@ -76,7 +76,7 @@ const RitualCard = memo(function RitualCard({
   const hasTempHP = effect?.tempHP !== undefined;
   const hasDamageReduction = effect?.damageReduction !== undefined;
 
-  const handleDragEnd = (_: any, info: PanInfo) => {
+  const handleDragEnd = (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     if (info.offset.x < -100) {
       if ('vibrate' in navigator) navigator.vibrate(30);
       onDeactivate();
@@ -197,17 +197,17 @@ export const MobileSustainedRitualsPanel = memo(function MobileSustainedRitualsP
   return (
     <div className={cn("ordo-panel", className)}>
       {/* Header colapsável */}
-      <button
-        onClick={() => setIsExpanded(!isExpanded)}
+      <div
+        role="group"
         className="w-full p-3 flex items-center justify-between hover:bg-muted/30 transition-colors"
       >
-        <div className="flex items-center gap-2">
+        <button type="button" aria-expanded={isExpanded} onClick={() => setIsExpanded(!isExpanded)} className="flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-paranormal" />
           <span className="text-sm font-medium">Rituais Sustentados</span>
           <Badge variant="secondary" className="text-[10px]">
             {rituals.length}
           </Badge>
-        </div>
+        </button>
         
         <div className="flex items-center gap-2">
           {rituals.length > 1 && (
@@ -221,7 +221,7 @@ export const MobileSustainedRitualsPanel = memo(function MobileSustainedRitualsP
               }}
             >
               <Trash2 className="w-3 h-3 mr-1" />
-              Limpar
+              Encerrar todos
             </Button>
           )}
           {isExpanded ? (
@@ -230,7 +230,7 @@ export const MobileSustainedRitualsPanel = memo(function MobileSustainedRitualsP
             <ChevronDown className="w-4 h-4 text-muted-foreground" />
           )}
         </div>
-      </button>
+      </div>
 
       {/* Conteúdo */}
       <AnimatePresence>

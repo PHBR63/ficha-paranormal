@@ -1,3 +1,4 @@
+import { SustainedRitualControl } from './SustainedRitualControl';
 import { BaseRulesNotice } from '@/components/character/BaseRulesNotice';
 import { useConditionTurnApplication } from '@/hooks/character/useConditionTurnApplication';
 import { useCharacterResourceUpdate } from '@/hooks/character/useCharacterResourceUpdate';
@@ -112,7 +113,6 @@ import {
   useRollHistory,
   // Componentes de paridade desktop/mobile
   MobileConditionManager,
-  MobileSustainedRitualsPanel,
   MobileConditionalBonusesPanel,
   MobileAffinitySelectorCard,
   MobileRitualCastHistory,
@@ -628,17 +628,8 @@ export function MobileCharacterSheet({
     inventory: character?.inventory || [],
   });
 
-  // Hook reativo de rituais sustentados (com realtime para defesa)
-  const { 
-    rituals: sustainedRituals,
-    activateRitual,
-    deactivateRitual,
-    deactivateByRitualId,
-    clearAll: clearSustainedRituals,
-  } = useSustainedRituals({
-    characterId: character?.id,
-    enabled: !!character,
-  });
+  const sustainedState = useSustainedRituals({ characterId: character?.id, enabled: !!character });
+  const { rituals: sustainedRituals } = sustainedState;
   
   // Hook de aplicação automática de condições (paridade desktop)
   const { processResourceChange } = useAutoConditions();
@@ -1882,21 +1873,10 @@ export function MobileCharacterSheet({
             )}
             
             {/* Painel de Rituais Sustentados */}
-            {sustainedRituals.length > 0 && (
-              <MobileSustainedRitualsPanel
-                rituals={sustainedRituals}
-                onDeactivate={async (ritualId) => {
-                  // O hook useSustainedRituals já cuida da remoção
-                  if (onRefetch) await onRefetch();
-                }}
-                onClearAll={async () => {
-                  // Desativar todos os rituais sustentados
-                  if (onRefetch) await onRefetch();
-                }}
-              />
-            )}
-            
-            {/* Painel de Efeitos Ativos (SUE) */}
+              <SustainedRitualControl key={character.id} characterId={character.id}
+                state={sustainedState} peCurrent={character.pe_current} onRefetch={onRefetch} mobile />
+
+              {/* Painel de Efeitos Ativos (SUE) */}
             {unifiedEffects && (
               <MobileActiveEffectsPanel
                 effectsResult={unifiedEffects}

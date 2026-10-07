@@ -124,7 +124,7 @@ import {
 } from '@/hooks';
 import { normalizeWeaponTypeForDisplay } from '@/lib/weapon-type-inference';
 import { BonusSummaryCard } from '@/components/character/BonusSummaryCard';
-import { SustainedRitualsPanel } from '@/components/character/SustainedRitualsPanel';
+import { SustainedRitualControl } from '@/components/character/SustainedRitualControl';
 import { ConditionalBonusesPanel } from '@/components/character/ConditionalBonusesPanel';
 import { TrackCombatBonusesBar } from '@/components/character/TrackCombatBonusesBar';
 import { ActiveAdvancedBonusesBar, useActiveAdvancedBonuses } from '@/components/character/ActiveAdvancedBonusesBar';
@@ -529,16 +529,8 @@ export default function CharacterSheet() {
   // Hook CONSOLIDADO de todos os bônus do personagem (inclui defenseBonuses e paranormalEffects)
   // OTIMIZAÇÃO: Evita chamadas duplicadas de hooks
   
-  // Hook reativo de rituais sustentados (com persistência e realtime)
-  const {
-    rituals: sustainedRituals,
-    activateRitual,
-    deactivateRitual,
-    clearAll: clearSustainedRituals,
-  } = useSustainedRituals({
-    characterId: character?.id,
-    enabled: !!character,
-  });
+  const sustainedState = useSustainedRituals({ characterId: character?.id, enabled: !!character });
+  const { rituals: sustainedRituals } = sustainedState;
   
   // Bônus de combate de rituais sustentados (ataque, dano, dados extras)
   const ritualCombatSummary = useRitualCombatBonuses(sustainedRituals);
@@ -3826,34 +3818,8 @@ export default function CharacterSheet() {
               </SheetAccordionSection>
 
               {/* Painel de Rituais Sustentados */}
-              <SustainedRitualsPanel
-                rituals={sustainedRituals}
-                onDeactivate={(id) => {
-                  const ritual = sustainedRituals.find(r => r.id === id);
-                  deactivateRitual(id);
-                  if (ritual) {
-                    const defenseBonus = ritual.effect?.defenseModifier;
-                    toast({
-                      title: 'Ritual Encerrado',
-                      description: defenseBonus 
-                        ? `${ritual.ritualName} desativado. Defesa reduzida em ${defenseBonus}.`
-                        : `${ritual.ritualName} foi encerrado.`,
-                    });
-                  }
-                }}
-                onClearAll={() => {
-                  const totalDefenseBonus = sustainedRituals.reduce(
-                    (sum, r) => sum + (r.effect?.defenseModifier || 0), 0
-                  );
-                  clearSustainedRituals();
-                  toast({
-                    title: 'Todos os Rituais Encerrados',
-                    description: totalDefenseBonus > 0 
-                      ? `${sustainedRituals.length} rituais desativados. Defesa reduzida em ${totalDefenseBonus}.`
-                      : `${sustainedRituals.length} rituais foram encerrados.`,
-                  });
-                }}
-              />
+              <SustainedRitualControl key={character.id} characterId={character.id}
+                state={sustainedState} peCurrent={peCurrent} onRefetch={refetchCharacter}  />
 
               {/* Painel do Sistema Unificado de Efeitos */}
               <ActiveEffectsPanel effectsResult={unifiedEffects} />
