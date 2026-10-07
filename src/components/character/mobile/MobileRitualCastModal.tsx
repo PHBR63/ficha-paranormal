@@ -348,7 +348,8 @@ export function MobileRitualCastModal({
           </div>
         </MobileDrawerHeader>
 
-        <MobileDrawerBody>
+        {/* Rolagem nativa mantém custos acessíveis dentro da altura flexível do drawer. */}
+        <MobileDrawerBody useScrollArea={false}>
           <div className="space-y-4">
 <CastingConcentrationForm value={concentration} onChange={setConcentration} peCost={totalCost} disabled={confirmation.isConfirming} />
             {/* Info compacta */}
