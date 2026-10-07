@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { History, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { useCharacterActivity } from '@/hooks/character/useCharacterActivity';
 import { describeCharacterActivity } from '@/lib/character-activity-presentation';
 import type { ActivityCategory, ActivityPeriod } from '@/types/character-activity';
@@ -26,8 +26,10 @@ export function CharacterActivityPanel({ characterId, characterName, compact = f
   return <Sheet>
     <SheetTrigger asChild><Button variant="outline" size={compact ? 'icon' : 'sm'} aria-label={`Histórico salvo de ${characterName}`}><History className="h-4 w-4" />{!compact && <span className="ml-2">Histórico salvo</span>}</Button></SheetTrigger>
     <SheetContent className="flex w-full flex-col sm:max-w-lg">
-      <SheetHeader><SheetTitle>Histórico de {characterName}</SheetTitle></SheetHeader>
-      <p className="text-sm text-muted-foreground">Registros por ficha confirmados pelo servidor. Ocultar não exclui eventos; você pode recuperá-los.</p>
+      <SheetHeader>
+        <SheetTitle>Histórico de {characterName}</SheetTitle>
+        <SheetDescription>Registros por ficha confirmados pelo servidor. Ocultar não exclui eventos; você pode recuperá-los.</SheetDescription>
+      </SheetHeader>
       {hasUnassignedLegacy && <p role="status" className="rounded border p-3 text-sm">Há um histórico antigo neste navegador sem identificação de ficha. Ele foi preservado separadamente e não será misturado aos registros desta ficha.</p>}
       <label className="text-sm">Tipo de registro
         <select className="mt-1 w-full rounded border bg-background p-2" value={activity.category ?? ''} onChange={event => activity.setCategory(event.target.value as ActivityCategory || undefined)}>

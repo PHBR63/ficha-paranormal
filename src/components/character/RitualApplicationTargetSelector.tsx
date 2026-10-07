@@ -19,7 +19,7 @@ export function RitualApplicationTargetSelector({ characterId, value, onChange, 
   return (
     <div className="space-y-2 rounded-md border p-3">
       <Label htmlFor={id}>Ficha que receberá o efeito</Label>
-      <Select value={validSelection ? value! : undefined} onValueChange={onChange} disabled={disabled || isLoading || Boolean(error)}>
+      <Select value={validSelection ? value! : ''} onValueChange={onChange} disabled={disabled || isLoading || Boolean(error)}>
         <SelectTrigger id={id} aria-describedby={`${id}-warning`}>
           <SelectValue placeholder={isLoading ? 'Carregando fichas autorizadas…' : 'Selecione o alvo explicitamente'} />
         </SelectTrigger>

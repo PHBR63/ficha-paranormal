@@ -10,6 +10,18 @@ const id = '00000000-0000-4000-8000-000000000001';
 function wrapper({ children }: { children: ReactNode }) { return <QueryClientProvider client={new QueryClient()}>{children}</QueryClientProvider>; }
 beforeEach(() => { vi.clearAllMocks(); fake.cast.mockResolvedValue({ id }); fake.apply.mockResolvedValue({ id }); fake.single.mockResolvedValue({ data: { hp_current: 20, hp_max: 30, conditions: [] }, error: null }); });
 describe('pedidos de ritual idempotentes', () => {
+  it('leitura substituída por outra mais recente não anuncia falha de atualização', async () => {
+    const { result } = renderHook(() => useRitualApplication(id, async () => undefined), { wrapper });
+    await act(async () => { await result.current.cast(10, 1, {}); });
+    expect(result.current.castEventId).toBe(id);
+    expect(result.current.error).toBeNull();
+  });
+  it('falha da leitura atual continua visível sem repetir o débito confirmado', async () => {
+    const { result } = renderHook(() => useRitualApplication(id, async () => null), { wrapper });
+    await act(async () => { await result.current.cast(10, 1, {}); });
+    expect(result.current.error).toContain('confirmada pelo servidor');
+    expect(fake.cast).toHaveBeenCalledTimes(1);
+  });
   it('mantém saldo/custo/payload originais quando a resposta de débito se perde', async () => {
     const { result } = renderHook(() => useRitualApplication(id), { wrapper });
     fake.cast.mockRejectedValueOnce(new Error('Conexão perdida'));
