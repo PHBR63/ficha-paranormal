@@ -10,6 +10,22 @@ const id = '00000000-0000-4000-8000-000000000001';
 function wrapper({ children }: { children: ReactNode }) { return <QueryClientProvider client={new QueryClient()}>{children}</QueryClientProvider>; }
 beforeEach(() => { vi.clearAllMocks(); fake.cast.mockResolvedValue({ id }); fake.apply.mockResolvedValue({ id }); fake.single.mockResolvedValue({ data: { hp_current: 20, hp_max: 30, conditions: [] }, error: null }); });
 describe('pedidos de ritual idempotentes', () => {
+  it('sorteia e prepara payload uma vez, mesmo ao recuperar resposta perdida', async () => {
+    const prepare = vi.fn(() => ({ concentration: { source: 'system_roll', tests: [] } }));
+    fake.cast.mockRejectedValueOnce(new Error('Conexão perdida'));
+    const { result } = renderHook(() => useRitualApplication(id), { wrapper });
+    await act(async () => { await expect(result.current.cast(10, 1, {}, {}, prepare)).rejects.toThrow('perdida'); });
+    await act(async () => { await result.current.cast(9, 2, {}, {}, prepare); });
+    expect(prepare).toHaveBeenCalledOnce();
+    expect(fake.cast.mock.calls[1][0]).toEqual(fake.cast.mock.calls[0][0]);
+  });
+  it('não aplica efeito quando concentração falhou no recibo', async () => {
+    fake.cast.mockResolvedValueOnce({ id, payload: { castingOutcome: 'failed_concentration' } });
+    const { result } = renderHook(() => useRitualApplication(id), { wrapper });
+    await act(async () => { await result.current.cast(10, 1, {}); });
+    await act(async () => { await expect(result.current.apply('heal', 5, {})).rejects.toThrow('concentração falhou'); });
+    expect(fake.apply).not.toHaveBeenCalled();
+  });
   it('leitura substituída por outra mais recente não anuncia falha de atualização', async () => {
     const { result } = renderHook(() => useRitualApplication(id, async () => undefined), { wrapper });
     await act(async () => { await result.current.cast(10, 1, {}); });

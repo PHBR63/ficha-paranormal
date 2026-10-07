@@ -1,4 +1,4 @@
-import { activityClient, activityContextArgs, activityFailure, activityJson, confirmActivity, validateActivityId } from './character-activity-service';
+import { activityClient, activityContextArgs, activityFailure, activityJson, awaitActivityResponse, confirmActivity, validateActivityId } from './character-activity-service';
 import type { ActivityContext, ActivityPayload, ApplyCharacterEffectInput, CharacterActivityEvent } from '@/types/character-activity';
 
 export interface CastCharacterRitualInput extends ActivityContext {
@@ -8,12 +8,22 @@ export interface CastCharacterRitualInput extends ActivityContext {
 export async function castCharacterRitual(input: CastCharacterRitualInput): Promise<CharacterActivityEvent> {
   validateActivityId(input.characterId); validateActivityId(input.operationId);
   if (!Number.isSafeInteger(input.expectedPE) || !Number.isSafeInteger(input.peCost) || input.peCost < 0 || input.expectedPE < input.peCost) throw new Error('Saldo ou custo de PE inválido ou insuficiente.');
-  const { data, error } = await activityClient.rpc('cast_character_ritual', {
+  const { data, error } = await awaitActivityResponse(activityClient.rpc('cast_character_ritual', {
     p_character_id: input.characterId, p_operation_id: input.operationId, p_expected_pe: input.expectedPE,
     p_pe_cost: input.peCost, p_payload: activityJson(input.payload), ...activityContextArgs(input),
-  });
+  }));
   if (error) throw activityFailure('A conjuração não foi confirmada.', error);
-  return confirmActivity(data, input.characterId, input.operationId);
+  const event = confirmActivity(data, input.characterId, input.operationId);
+  if (input.payload.concentration) {
+    const payload = event.payload;
+    if (!payload || typeof payload !== 'object' || Array.isArray(payload)
+      || payload.concentrationResolution !== 'server_checked'
+      || !['passed_concentration', 'failed_concentration'].includes(String(payload.castingOutcome))
+      || payload.peAfter !== input.expectedPE - input.peCost) {
+      throw new Error('O servidor não confirmou a resolução da concentração. Recupere a mesma conjuração.');
+    }
+  }
+  return event;
 }
 /** Só retorna após confirmação. Repetir o mesmo operationId não duplica efeitos. */
 export async function applyCharacterEffect(input: ApplyCharacterEffectInput): Promise<CharacterActivityEvent> {

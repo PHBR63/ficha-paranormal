@@ -1,3 +1,5 @@
+import { CastingConcentrationForm } from '@/components/character/CastingConcentrationForm';
+import { DEFAULT_CASTING_CONCENTRATION, validateCastingConcentration, type CastingConcentrationContext } from '@/lib/rituals/casting-concentration';
 import type { RitualResolutionRoll } from '@/lib/ritual-roll-history';
 import type { RitualResistanceBonuses } from '@/lib/rituals/ritual-resistance';
 /**
@@ -95,7 +97,7 @@ interface MobileRitualCastModalProps {
   nex?: number;
   elementalAffinity?: string | null;
   turnPEState?: TurnPEState;
-  onConfirm: (ritual: RitualInput, peCost: number, enhancements: string[], activeModifiers?: string[], counterRitualCost?: number) => RitualConfirmationResult;
+  onConfirm: (ritual: RitualInput, peCost: number, enhancements: string[], activeModifiers?: string[], counterRitualCost?: number, concentration?: CastingConcentrationContext) => RitualConfirmationResult;
   // Callbacks para efeitos do wizard
   applicationTargetId?: string;
   targetResistanceBonuses?: RitualResistanceBonuses;
@@ -148,6 +150,7 @@ export function MobileRitualCastModal({
   casterPresence = 0,
 }: MobileRitualCastModalProps) {
   const confirmation = useRitualConfirmation(open);
+  const [concentration, setConcentration] = useState(DEFAULT_CASTING_CONCENTRATION);
   const [selectedEnhancements, setSelectedEnhancements] = useState<string[]>([]);
   // Estado dos modificadores de trilha ativados
   const [activeModifiers, setActiveModifiers] = useState<string[]>([]);
@@ -268,18 +271,20 @@ export function MobileRitualCastModal({
   };
 
   const handleConfirm = () => {
-    if (!canCast || !ritual) return;
+    if (!canCast || !ritual || validateCastingConcentration(concentration)) return;
     void confirmation.confirm(
-      () => onConfirm(ritual, totalCost, validSelectedEnhancements, activeModifiers, isCounterActive ? counterRitualCost : undefined),
-      () => {
-        if (elementConfig) triggerElementParticles(elementConfig.hex, elementConfig.hexLight);
+      () => onConfirm(ritual, totalCost, validSelectedEnhancements, activeModifiers, isCounterActive ? counterRitualCost : undefined, concentration),
+      result => {
+        const effectsAllowed = typeof result !== 'object' || result.effectsAllowed;
+        if (effectsAllowed && elementConfig) triggerElementParticles(elementConfig.hex, elementConfig.hexLight);
         // Efeitos só começam depois que o débito foi confirmado.
-        if (wizardEnabled && 'id' in ritual) {
+        if (effectsAllowed && wizardEnabled && 'id' in ritual) {
           setCastRitual(ritual as Ritual);
           setCastEnhancements(validSelectedEnhancements);
           setCastPeCost(totalCost);
           setWizardOpen(true);
         }
+        setConcentration(DEFAULT_CASTING_CONCENTRATION);
         setSelectedEnhancements([]);
         setActiveModifiers([]);
         onOpenChange(false);
@@ -297,6 +302,7 @@ export function MobileRitualCastModal({
   const handleOpenChange = (isOpen: boolean) => {
     if (confirmation.isConfirming) return;
     if (!isOpen) {
+      setConcentration(DEFAULT_CASTING_CONCENTRATION);
       setSelectedEnhancements([]);
       setActiveModifiers([]);
       setCounterRitualCost(0);
@@ -342,6 +348,7 @@ export function MobileRitualCastModal({
 
         <MobileDrawerBody>
           <div className="space-y-4">
+<CastingConcentrationForm value={concentration} onChange={setConcentration} peCost={totalCost} disabled={confirmation.isConfirming} />
             {/* Info compacta */}
             <div className="grid grid-cols-2 gap-2 text-[10px] text-muted-foreground">
               <div className="flex items-center gap-1">
@@ -741,7 +748,7 @@ export function MobileRitualCastModal({
                 icon: <Sparkles />,
                 onClick: handleConfirm,
                 type: 'primary',
-                disabled: !canCast || confirmation.isConfirming,
+                disabled: !canCast || !!validateCastingConcentration(concentration) || confirmation.isConfirming,
                 className: canCast && elementConfig?.bg ? elementConfig.bg : undefined,
               },
               {
