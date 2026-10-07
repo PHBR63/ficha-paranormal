@@ -63,6 +63,15 @@ describe.each([
   ['desktop', RitualCastModal],
   ['mobile', MobileRitualCastModal],
 ] as const)('Modal de conjuração %s', (_name, Modal) => {
+  it('separa o saldo normal e permite usar PE temporários para conjurar', () => {
+    render(<Modal open onOpenChange={vi.fn()} ritual={getRitualById('perturbacao')!}
+      peCurrent={0} peMax={10} temporaryPE={1} nex={20} onConfirm={vi.fn()} />);
+    expect(screen.getByText('0 / 10')).toBeInTheDocument();
+    expect(screen.getByText(/PE temporários: 1 · Disponível: 1 PE/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('checkbox', { name: /Conferi gestos/ }));
+    expect(screen.getByRole('button', { name: /conjurar/i })).toBeEnabled();
+  });
+
   it('envia situação e dano declarados e encerra sem efeitos quando a concentração falha', async () => {
     vi.useFakeTimers();
     const ritual = getRitualById('perturbacao')!;

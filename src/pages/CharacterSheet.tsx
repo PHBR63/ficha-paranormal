@@ -4104,7 +4104,8 @@ export default function CharacterSheet() {
         open={castModalOpen}
         onOpenChange={setCastModalOpen}
         ritual={ritualToCast}
-        peCurrent={peCurrent + temporaryResources.pe}
+        peCurrent={peCurrent}
+        temporaryPE={temporaryResources.pe}
         peMax={character.pe_max}
         isNonOccultist={character.class !== 'Ocultista'}
         nex={character.nex}
@@ -4244,7 +4245,7 @@ export default function CharacterSheet() {
       />
 
       {/* Wizard de efeitos integrado (Fase 7) */}
-      <TemporaryResourcesPanel characterId={character.id} />
+      {!isMobile && <TemporaryResourcesPanel characterId={character.id} />}
       <RitualEffectWizard
         open={wizardOpen}
         onOpenChange={setWizardOpen}

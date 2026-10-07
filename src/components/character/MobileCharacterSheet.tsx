@@ -2614,7 +2614,8 @@ export function MobileCharacterSheet({
             // Mantém o componente montado para concluir o wizard após fechar a preparação.
           }}
           ritual={selectedRitual}
-          peCurrent={character.pe_current + temporaryResources.pe}
+          peCurrent={character.pe_current}
+          temporaryPE={temporaryResources.pe}
           peMax={character.pe_max}
           nex={character.nex}
           elementalAffinity={character.elemental_affinity}

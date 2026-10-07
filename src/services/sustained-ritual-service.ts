@@ -74,7 +74,10 @@ export async function confirmSustainedAction(request: SustainedActionRequest) {
     });
   const { data, error } = await awaitActivityResponse(response);
   if (error) {
-    const failure = activityFailure('A operação de sustentação não foi confirmada.', error);
+    // Distingue a proteção por turno do conflito de UUID sem expor mensagens arbitrárias do banco.
+    const failure = error.code === '23505' && error.message === 'Manutenção já confirmada neste turno. Nenhuma nova cobrança.'
+      ? new Error('Manutenção já confirmada neste turno. Nenhuma nova cobrança. Registre o próximo turno antes de manter novamente.')
+      : activityFailure('A operação de sustentação não foi confirmada.', error);
     // Somente códigos SQL explícitos garantem rollback; falhas de transporte podem ter sido confirmadas.
     throw Object.assign(failure, { serverRejected: ['40001', '42501', '23505', '0A000', '22023'].includes(error.code ?? '') });
   }

@@ -9,6 +9,14 @@ const request: SustainedActionRequest = { characterId: character, operationId: o
 const receipt = { id: operation, operation_id: operation, character_id: character, category: 'application', status: 'confirmed', payload: { kind: 'sustain_maintenance', turn: request.turn } };
 beforeEach(() => { vi.resetAllMocks(); fake.rpc.mockResolvedValue({ data: receipt, error: null }); });
 describe('contrato servidor de sustentação', () => {
+  it('explica a manutenção repetida sem confundir com conflito de identidade', async () => {
+    fake.rpc.mockResolvedValueOnce({ data: null, error: { code: '23505', message: 'Manutenção já confirmada neste turno. Nenhuma nova cobrança.' } });
+    await expect(confirmSustainedAction(request)).rejects.toMatchObject({
+      serverRejected: true, message: expect.stringContaining('Registre o próximo turno'),
+    });
+    fake.rpc.mockResolvedValueOnce({ data: null, error: { code: '23505', message: 'Operação reutilizada.' } });
+    await expect(confirmSustainedAction(request)).rejects.toThrow('outros dados');
+  });
   it('só aceita início manual confirmado para a ficha e número esperados', async () => {
     fake.rpc.mockResolvedValueOnce({ data: { ...receipt, payload: { kind: 'manual_turn', turnAfter: 2 } }, error: null });
     await beginManualTurn(character, operation, 1);
