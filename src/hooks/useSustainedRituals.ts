@@ -135,7 +135,7 @@ export function useSustainedRituals({
     try {
       const rows = await listSustainedRituals(characterId);
       if (!isCurrent()) return currentContext.current === context;
-      if (rows.some(row => !row || typeof row !== 'object' || Array.isArray(row) || row.character_id !== characterId || typeof row.id !== 'string')) {
+      if (rows.some(row => !row || typeof row !== 'object' || Array.isArray(row) || (row.character_id !== characterId && row.caster_character_id !== characterId) || typeof row.id !== 'string')) {
         throw new Error('A lista recebida não corresponde à ficha atual.');
       }
       setRituals(rows.map(row => fromDB(row as unknown as SustainedRitualRow)));
@@ -183,7 +183,13 @@ export function useSustainedRituals({
         () => { void loadRituals(); }
 
       )
-      .subscribe();
+      // A criação em outro alvo gera um recibo com a autoria do conjurador.
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'character_activity_events', filter: `author_id=eq.${userId}` }, payload => {
+        const event = payload.new as { category?: string; payload?: { kind?: string } };
+        if (event.category === 'application' && ['sustain', 'sustain_maintenance', 'sustain_end'].includes(event.payload?.kind ?? '')) void loadRituals();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'character_activity_events', filter: `character_id=eq.${characterId}` }, () => { void loadRituals(); })
+      .subscribe(status => { if (status === 'SUBSCRIBED') void loadRituals(); });
 
     return () => {
       supabase.removeChannel(channel);

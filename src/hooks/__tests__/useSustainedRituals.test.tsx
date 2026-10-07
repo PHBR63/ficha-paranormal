@@ -1,7 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useSustainedRituals } from '../useSustainedRituals';
-const fake = vi.hoisted(() => ({ list: vi.fn(), change: undefined as undefined | (() => void) }));
+const fake = vi.hoisted(() => ({ list: vi.fn(), change: undefined as undefined | ((payload: unknown) => void) }));
 vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { id: 'owner' } }) }));
 vi.mock('@/services/sustained-ritual-service', () => ({ listSustainedRituals: fake.list }));
 vi.mock('@/integrations/supabase/client', () => ({ supabase: { channel: () => { const channel = { on: vi.fn((_event, _filter, callback) => { fake.change = callback; return channel; }), subscribe: () => channel }; return channel; }, removeChannel: vi.fn() } }));
@@ -9,6 +9,13 @@ const row = { id: 'sustain', character_id: 'first', ritual_id: 'qa', ritual_name
   selected_enhancements: [], sustain_config: {}, turns_active: 0, pe_spent_total: 0, is_concentrating: false, started_at: '2026-10-06T12:00:00Z' };
 beforeEach(() => { vi.clearAllMocks(); fake.list.mockResolvedValue([row]); });
 describe('leitura confiável das sustentações', () => {
+  it('recupera manutenção conjurada em outro alvo pelo recibo do autor', async () => {
+    fake.list.mockResolvedValueOnce([]).mockResolvedValueOnce([{ ...row, character_id: 'target', caster_character_id: 'first' }]);
+    const { result } = renderHook(() => useSustainedRituals({ characterId: 'first' }));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    await act(async () => { fake.change?.({ new: { category: 'application', payload: { kind: 'sustain' } } }); });
+    await waitFor(() => expect(result.current.rituals[0]).toMatchObject({ characterId: 'target', casterCharacterId: 'first' }));
+  });
   it('erro de reconexão não apaga os últimos efeitos confirmados', async () => {
     const { result } = renderHook(() => useSustainedRituals({ characterId: 'first' }));
     await waitFor(() => expect(result.current.rituals).toHaveLength(1));

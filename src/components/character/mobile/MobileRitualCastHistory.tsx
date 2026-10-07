@@ -180,13 +180,14 @@ export const MobileRitualCastHistory = memo(function MobileRitualCastHistory({
         <Button
           variant="outline"
           size="sm"
+          aria-label={`Histórico de rituais (${history.length})`}
           className={cn(
             "gap-1.5 relative",
             history.length > 0 && "border-paranormal/50 text-paranormal"
           )}
         >
           <History className="w-4 h-4" />
-          <span className="hidden sm:inline text-xs">Histórico</span>
+          <span className="text-xs">Histórico</span>
           {history.length > 0 && (
             <Badge 
               className="absolute -top-2 -right-2 h-4 w-4 p-0 flex items-center justify-center bg-paranormal text-paranormal-foreground text-[9px]"
