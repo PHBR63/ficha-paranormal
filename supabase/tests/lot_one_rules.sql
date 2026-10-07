@@ -1,8 +1,9 @@
 -- Rodar apenas após as migrations do lote. Dados sintéticos são revertidos.
 BEGIN;
 INSERT INTO auth.users(id) VALUES('00000000-0000-4000-8000-000000000711');
-INSERT INTO public.characters(id,user_id,name,origin,class,hp_current,hp_max,pe_current,pe_max,san_current,san_max,age,conditions)
-VALUES('00000000-0000-4000-8000-000000000701','00000000-0000-4000-8000-000000000711','QA lote 1','Vítima','Ocultista',10,20,20,20,30,30,20,'[]');
+-- Orçamento amplo para isolar as regras do lote 1 do limite cumulativo do lote 2.
+INSERT INTO public.characters(id,user_id,name,origin,class,nex,hp_current,hp_max,pe_current,pe_max,san_current,san_max,age,conditions)
+VALUES('00000000-0000-4000-8000-000000000701','00000000-0000-4000-8000-000000000711','QA lote 1','Vítima','Ocultista',70,10,20,20,20,30,30,20,'[]');
 SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000711',true);
 DO $$

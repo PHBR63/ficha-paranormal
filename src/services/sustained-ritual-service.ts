@@ -32,7 +32,7 @@ export async function beginManualTurn(characterId: string, operationId: string, 
   if (error) {
     const failure = activityFailure('O novo turno não foi confirmado.', error);
     // Erros SQL explícitos desfazem a transação; falhas de conexão conservam a tentativa.
-    throw Object.assign(failure, { serverRejected: ['40001', '42501', '23505', '0A000', '22023'].includes(error.code ?? '') });
+    throw Object.assign(failure, { serverRejected: ['40001', '42501', '23505', '0A000', '22023', '55002'].includes(error.code ?? '') });
   }
   const receipt = confirmActivity(data, characterId, operationId);
   const payload = receipt.payload;
@@ -79,7 +79,7 @@ export async function confirmSustainedAction(request: SustainedActionRequest) {
       ? new Error('Manutenção já confirmada neste turno. Nenhuma nova cobrança. Registre o próximo turno antes de manter novamente.')
       : activityFailure('A operação de sustentação não foi confirmada.', error);
     // Somente códigos SQL explícitos garantem rollback; falhas de transporte podem ter sido confirmadas.
-    throw Object.assign(failure, { serverRejected: ['40001', '42501', '23505', '0A000', '22023'].includes(error.code ?? '') });
+    throw Object.assign(failure, { serverRejected: ['40001', '42501', '23505', '0A000', '22023', '55002'].includes(error.code ?? '') });
   }
   const receipt = confirmActivity(data, request.characterId, request.operationId);
   const payload = receipt.payload;

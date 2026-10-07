@@ -12,6 +12,8 @@ type ActivityDatabase = { public: {
     character_activity_events: { Row: ActivityRow; Insert: never; Update: never; Relationships: [] };
   }; Views: Record<string, never>; Enums: Record<string, never>; CompositeTypes: Record<string, never>;
   Functions: {
+    get_character_pe_budget: { Args: { p_character_id: string }; Returns: Json };
+    pause_character_manual_turn: { Args: { p_operation_id: string; p_character_id: string; p_expected_turn: number }; Returns: CharacterActivityEvent };
     list_character_temporary_resources: { Args: { p_character_id: string }; Returns: Json[] };
     confirm_temporary_resource: { Args: { p_operation_id: string; p_character_id: string; p_resource: string; p_source_key: string; p_source_name: string; p_amount: number; p_cumulative: boolean }; Returns: CharacterActivityEvent };
     end_temporary_resource: { Args: { p_operation_id: string; p_character_id: string; p_resource_id: string; p_expected: number }; Returns: CharacterActivityEvent };
@@ -49,7 +51,8 @@ export async function awaitActivityResponse<T>(request: PromiseLike<T>, timeoutM
 }
 /** Traduz falhas sem expor consultas, identificadores ou detalhes internos do banco. */
 export function activityFailure(context: string, error: { code?: string }): Error {
-  const detail = error.code === '55001' ? 'A concentração falhou. Os PE foram consumidos e o ritual não pode aplicar efeitos.'
+  const detail = error.code === '55002' ? 'O limite de PE deste turno foi excedido. Nenhum PE ou SAN foi consumido. Confira o orçamento do turno.'
+    : error.code === '55001' ? 'A concentração falhou. Os PE foram consumidos e o ritual não pode aplicar efeitos.'
     : error.code === '40001' ? 'O estado da ficha mudou. Recarregue antes de uma nova ação.'
     : error.code === '55000' ? 'A cena da conjuração foi encerrada. O efeito continua pendente para conferência do mestre; PE não foi estornado.'
     : error.code === '42501' ? 'Sua conta não tem permissão para esta ação.'

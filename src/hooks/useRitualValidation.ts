@@ -40,6 +40,10 @@ export interface PEValidation {
 export interface TurnPEState {
   peSpentThisTurn: number;
   turnNumber: number;
+  /** Limite de conjuração confirmado pelo servidor, com fontes da ficha. */
+  confirmedLimit?: number;
+  /** Sem relógio ativo, o gasto é registrado sem aplicar um turno presumido. */
+  tracked?: boolean;
 }
 
 /**
@@ -92,12 +96,14 @@ export function useRitualValidation(
 
   // Calcula o limite de PE por turno COM BÔNUS de origem (Universitário: Dedicação)
   const peLimitPerTurn = useMemo(() => {
+    if (turnPEState?.confirmedLimit !== undefined) return turnPEState.confirmedLimit;
     const baseLimit = getPELimitByNex(nex);
     return baseLimit + peLimitBonus;
-  }, [nex, peLimitBonus]);
+  }, [nex, peLimitBonus, turnPEState?.confirmedLimit]);
 
   // PE já gasto neste turno (padrão 0 se não rastreado)
   const peSpentThisTurn = turnPEState?.peSpentThisTurn ?? 0;
+  const trackLimit = turnPEState?.tracked !== false;
 
   /**
    * Valida se um aprimoramento pode ser selecionado
@@ -185,11 +191,13 @@ export function useRitualValidation(
   const validatePECost = useCallback((
     baseCost: number,
     selectedEnhancements: { name: string; cost: number }[],
-    _isNonOccultist: boolean = false
+    _isNonOccultist: boolean = false,
+    minimumCostEligible: boolean = true
   ): PEValidation => {
     // Entradas inválidas não podem virar um débito negativo que aumente PE.
     const isValidAmount = (amount: number) => Number.isFinite(amount) && amount >= 0;
     if (!isValidAmount(baseCost) || !isValidAmount(peCurrent) ||
+      !isValidAmount(peSpentThisTurn) || !isValidAmount(peLimitPerTurn) ||
       selectedEnhancements.some(enhancement => !isValidAmount(enhancement.cost))) {
       return {
         isValid: false,
@@ -240,9 +248,11 @@ export function useRitualValidation(
       };
     }
 
-    // Verifica limite de PE por turno
+    // Base p.23: uma habilidade em seu custo mínimo pode exceder o limite.
+    // Não concede a exceção a aprimoramentos nem após outro gasto no turno.
     const totalPEThisTurn = peSpentThisTurn + totalCost;
-    if (totalPEThisTurn > peLimitPerTurn) {
+    const minimumCostException = minimumCostEligible && peSpentThisTurn === 0 && selectedEnhancements.length === 0;
+    if (trackLimit && totalCost > 0 && totalPEThisTurn > peLimitPerTurn && !minimumCostException) {
       const exceededBy = totalPEThisTurn - peLimitPerTurn;
       return {
         isValid: false,
@@ -262,7 +272,7 @@ export function useRitualValidation(
       peRemaining: peCurrent - totalCost,
       exceedsLimit: false,
     };
-  }, [peCurrent, peLimitPerTurn, peSpentThisTurn]);
+  }, [peCurrent, peLimitPerTurn, peSpentThisTurn, trackLimit]);
 
   /**
    * Verifica se o personagem pode conjurar um ritual específico

@@ -63,6 +63,18 @@ describe.each([
   ['desktop', RitualCastModal],
   ['mobile', MobileRitualCastModal],
 ] as const)('Modal de conjuração %s', (_name, Modal) => {
+  it('bloqueia orçamento não confirmado e gasto acima do turno salvo', () => {
+    const props = { open: true, onOpenChange: vi.fn(), ritual: getRitualById('perturbacao')!, peCurrent: 10, peMax: 10, nex: 20, onConfirm: vi.fn() };
+    const view = render(<Modal {...props} peBudgetLoading />);
+    fireEvent.click(screen.getByRole('checkbox', { name: /Conferi gestos/ }));
+    expect(screen.getByRole('button', { name: /conjurar/i })).toBeDisabled();
+    view.rerender(<Modal {...props} peBudget={{ mode: 'manual', tracked: true, key: 'manual:1', number: 1, spent: 4, limit: 4, ritualLimit: 4, remaining: 0, ritualRemaining: 0 }} />);
+    expect(screen.getByRole('button', { name: /conjurar/i })).toBeDisabled();
+    expect(screen.getByText(/Gasto confirmado neste turno: 4 PE/)).toBeInTheDocument();
+    view.rerender(<Modal {...props} peBudgetError="Orçamento indisponível" />);
+    expect(screen.getByText('Orçamento indisponível')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /conjurar/i })).toBeDisabled();
+  });
   it('separa o saldo normal e permite usar PE temporários para conjurar', () => {
     render(<Modal open onOpenChange={vi.fn()} ritual={getRitualById('perturbacao')!}
       peCurrent={0} peMax={10} temporaryPE={1} nex={20} onConfirm={vi.fn()} />);

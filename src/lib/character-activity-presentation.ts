@@ -3,6 +3,15 @@ import type { Json } from '@/integrations/supabase/types';
 import { resolveConditionId } from '@/lib/conditions/condition-identity';
 import { RITUAL_END_REASONS } from '@/lib/rituals/ritual-ending';
 
+/** Explica o orçamento salvo na operação, sem aplicar o estado atual a eventos antigos. */
+function describePETurnBudget(value: Json | undefined): string {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return '';
+  if (value.tracked === false) return ' · Sem controle de turnos ativo';
+  if (value.tracked !== true || typeof value.spentAfter !== 'number') return '';
+  const context = value.mode === 'manual' ? `Turno manual ${value.number}` : `Rodada ${value.round}`;
+  return ` · ${context}: ${value.spentAfter} PE gastos${value.minimumCostException === true ? ' · Exceção do custo mínimo' : ''}`;
+}
+
 /** Compara instâncias por identidade; aceita strings antigas e não inventa dados ausentes. */
 function describeConditionChanges(before: Json | undefined, after: Json | undefined): string {
   if (!Array.isArray(before) || !Array.isArray(after)) return '';
@@ -28,6 +37,7 @@ function describeConditionChanges(before: Json | undefined, after: Json | undefi
 export function describeCharacterActivity(event: CharacterActivityEvent): string {
   const payload = event.payload;
   if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return 'Registro sem detalhes';
+  const peBudgetDetails = describePETurnBudget(payload.peBudget);
   const nested = payload.entry ?? payload.result;
   const result = nested && typeof nested === 'object' && !Array.isArray(nested) ? nested : payload;
   // O saldo normal pode ficar igual quando a fonte temporária absorve todo o gasto.
@@ -57,10 +67,11 @@ export function describeCharacterActivity(event: CharacterActivityEvent): string
       ? concentration.tests : [];
     const details = tests.map(test => test && typeof test === 'object' && !Array.isArray(test)
       ? `Vontade (${test.trigger}) · dados [${Array.isArray(test.dice) ? test.dice.join(', ') : 'conferir'}] · ${test.kept} + bônus ${test.bonus} = ${test.total} vs DT ${test.dt} · ${test.success ? 'sucesso' : 'falha'}${Array.isArray(test.bonuses) ? ` · Fontes: ${test.bonuses.map(source => source && typeof source === 'object' && !Array.isArray(source) ? `${source.name}: ${source.value}` : 'conferir').join('; ')}` : ''}` : 'Teste antigo: conferir').join('; ');
-    return `${label}${typeof payload.peCost === 'number' ? ` · ${payload.peCost} PE` : ''}${typeof payload.peBefore === 'number' && typeof payload.peAfter === 'number' ? ` (${payload.peBefore} → ${payload.peAfter})` : ''}${temporaryPE}${details ? ` · ${details}` : ''}${payload.castingOutcome === 'failed_concentration' ? ' · Concentração falhou; efeitos bloqueados, sem estorno de PE' : ''}${costDetails}`;
+    return `${label}${typeof payload.peCost === 'number' ? ` · ${payload.peCost} PE` : ''}${typeof payload.peBefore === 'number' && typeof payload.peAfter === 'number' ? ` (${payload.peBefore} → ${payload.peAfter})` : ''}${temporaryPE}${details ? ` · ${details}` : ''}${payload.castingOutcome === 'failed_concentration' ? ' · Concentração falhou; efeitos bloqueados, sem estorno de PE' : ''}${costDetails}${peBudgetDetails}`;
   }
   if (payload.kind === 'scene_expiry') return `Cena ${payload.sceneNumber} encerrada · ${payload.expiredEffectsCount} efeito(s) expirado(s)${describeConditionChanges((payload.before as { conditions?: Json })?.conditions, (payload.after as { conditions?: Json })?.conditions)}`;
   if (payload.kind === 'manual_turn') return `Turno manual confirmado: ${payload.turnBefore} → ${payload.turnAfter} · Sem gasto de PE`;
+  if (payload.kind === 'manual_turn_pause') return `Controle manual pausado no turno ${payload.turnNumber} · Saldo e efeitos preservados`;
   if (payload.kind === 'temporary_resource' || payload.kind === 'temporary_end') {
     const before = payload.before as { current?: number } | undefined;
     const after = payload.after as { current?: number } | undefined;
@@ -78,7 +89,7 @@ export function describeCharacterActivity(event: CharacterActivityEvent): string
     const turn = payload.turn;
     const turnDetails = turn && typeof turn === 'object' && !Array.isArray(turn)
       ? turn.mode === 'manual' ? ` · Turno manual ${turn.number}` : ` · Cena ${turn.scene} · Rodada ${turn.round}` : '';
-    return `${payload.kind === 'sustain_maintenance' ? 'Manutenção confirmada' : 'Sustentação encerrada'} · ${names} · Custo ${payload.peCost ?? 0} PE · PE ${payload.peBefore} → ${payload.peAfter}${temporaryPE}${turnDetails}${reasonDetails}`;
+    return `${payload.kind === 'sustain_maintenance' ? 'Manutenção confirmada' : 'Sustentação encerrada'} · ${names} · Custo ${payload.peCost ?? 0} PE · PE ${payload.peBefore} → ${payload.peAfter}${temporaryPE}${turnDetails}${reasonDetails}${peBudgetDetails}`;
   }
   const kinds: Record<string, string> = { heal: 'Cura', damage: 'Dano', conditions: 'Condições adicionadas', replace_conditions: 'Condições alteradas', resource: 'Recurso alterado', resources: 'Recursos alterados', weapon_buff: 'Bônus de arma aplicado à ficha', sustain: 'Sustentação ativada' };
   const kind = typeof payload.kind === 'string' ? kinds[payload.kind] ?? 'Efeito registrado' : 'Efeito registrado';
