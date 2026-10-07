@@ -9,10 +9,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 export function PETurnBudgetPanel({ characterId }: { characterId: string }) {
   const query = usePETurnBudget(characterId);
   const [request, setRequest] = useState<{ operationId: string; number: number; action: 'start' | 'pause' } | null>(null);
+  // Mantém o contexto visual durante a animação de fechamento, sem reutilizá-lo para enviar operações.
+  const displayedRequest = useRef<typeof request>(null);
   const [failure, setFailure] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const executing = useRef(false);
   const budget = query.data;
+  const dialogRequest = request ?? displayedRequest.current;
 
   async function prepare(action: 'start' | 'pause') {
     if (executing.current || request) return;
@@ -20,7 +23,9 @@ export function PETurnBudgetPanel({ characterId }: { characterId: string }) {
     try {
       const turn = await getRitualTurn(characterId);
       if (turn.mode !== 'manual' || !Number.isSafeInteger(turn.number)) throw new Error('Use o turno do combate ativo.');
-      setRequest({ operationId: crypto.randomUUID(), number: turn.number!, action });
+      const prepared = { operationId: crypto.randomUUID(), number: turn.number!, action };
+      displayedRequest.current = prepared;
+      setRequest(prepared);
     } catch (cause) { setFailure(cause instanceof Error ? cause.message : 'Turno não confirmado.'); }
     finally { executing.current = false; setBusy(false); }
   }
@@ -58,10 +63,10 @@ export function PETurnBudgetPanel({ characterId }: { characterId: string }) {
     <Dialog open={!!request} onOpenChange={open => { if (!open && !busy && !failure) setRequest(null); }}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{request?.action === 'pause' ? 'Pausar controle manual?' : 'Confirmar novo turno manual?'}</DialogTitle>
-          <DialogDescription>{request?.action === 'pause'
+          <DialogTitle>{dialogRequest?.action === 'pause' ? 'Pausar controle manual?' : 'Confirmar novo turno manual?'}</DialogTitle>
+          <DialogDescription>{dialogRequest?.action === 'pause'
             ? 'A contagem cumulativa será pausada. Saldo, efeitos e histórico serão preservados; rituais sustentados continuam exigindo conferência e encerramento explícitos.'
-            : `Turno ${request?.number} → ${(request?.number ?? 0) + 1}. Confirme apenas no início real do turno. Nenhum PE será cobrado.`}</DialogDescription>
+            : `Turno ${dialogRequest?.number ?? 0} → ${(dialogRequest?.number ?? 0) + 1}. Confirme apenas no início real do turno. Nenhum PE será cobrado.`}</DialogDescription>
         </DialogHeader>
         {failure && <p role="alert">{failure}</p>}
         <div className="flex flex-wrap gap-2">
