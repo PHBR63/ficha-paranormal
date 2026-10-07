@@ -51,7 +51,19 @@ export function prepareConditionTurn(conditions: ActiveCondition[], vigor: numbe
   for (const [index, condition] of conditions.entries()) {
     const id = resolveConditionId(condition.id);
     let formula: string | undefined;
-    if (id === 'sangrando') {
+    if (id === 'confuso') {
+      const die = roll(6);
+      if (die === 6) {
+        resolution.removeIndexes.push(index);
+        resolution.notices.push('Confuso: d6 = 6. A condição termina na confirmação; pode agir normalmente.');
+      } else if (die === 1) {
+        resolution.notices.push(`Confuso: d6 = 1; direção d8 = ${roll(8)}. Movimente-se na direção correspondente do mapa, conferida com o mestre.`);
+      } else if (die <= 3) {
+        resolution.notices.push(`Confuso: d6 = ${die}. Não pode fazer ações neste turno.`);
+      } else {
+        resolution.notices.push(`Confuso: d6 = ${die}. Ataque com a arma empunhada o ser mais próximo; se estiver sozinho, role apenas o dano contra si. Resolva alvo e ataque com o mestre.`);
+      }
+    } else if (id === 'sangrando') {
       const pool = getAttributeDicePool(vigor, penalty);
       const dice = Array.from({ length: pool.count }, () => roll(20));
       const kept = pool.keep === 'highest' ? Math.max(...dice) : Math.min(...dice);

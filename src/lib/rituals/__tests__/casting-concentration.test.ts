@@ -5,7 +5,7 @@ afterEach(() => vi.restoreAllMocks());
 describe('Vontade na execução de rituais', () => {
   it('não sorteia em situação normal sem dano', () => {
     const random = vi.spyOn(Math, 'random');
-    expect(rollCastingConcentration(DEFAULT_CASTING_CONCENTRATION, { attribute: 3, dicePenalty: 0, bonuses: [] }).tests).toEqual([]);
+    expect(rollCastingConcentration({ ...DEFAULT_CASTING_CONCENTRATION, requirementsConfirmed: true }, { attribute: 3, dicePenalty: 0, bonuses: [] }).tests).toEqual([]);
     expect(random).not.toHaveBeenCalled();
   });
   it('separa teste situacional e dano e mantém dados e bônus', () => {

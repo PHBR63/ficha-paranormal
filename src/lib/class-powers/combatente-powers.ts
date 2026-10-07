@@ -22,7 +22,7 @@ export const COMBATENTE_POWERS: UnifiedClassPower[] = [
     isCore: true,
     minNex: 5,
     description: 'Quando faz um ataque, você pode gastar 2 PE para receber +5 no teste de ataque ou na rolagem de dano. Conforme avança de NEX, pode gastar mais PE para receber bônus maiores: 3 PE para +10 em NEX 25%, 4 PE para +15 em NEX 55%, 5 PE para +20 em NEX 85%. Você pode dividir o bônus entre ataque e dano.',
-    pageReference: 'Livro Base p.45',
+    pageReference: 'Livro Base v1.3, p.24',
     effects: {
       base: {
         kind: 'activated',
@@ -64,7 +64,7 @@ export const COMBATENTE_POWERS: UnifiedClassPower[] = [
     isCore: true,
     minNex: 10,
     description: 'Em NEX 10% você escolhe uma das trilhas de combatente e recebe o primeiro poder da trilha escolhida. Você recebe um novo poder da trilha escolhida em NEX 40%, 65% e 99%.',
-    pageReference: 'Livro Base p.45',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.24–27',
     effects: {
       base: {
         kind: 'choice',
@@ -84,7 +84,7 @@ export const COMBATENTE_POWERS: UnifiedClassPower[] = [
     isCore: true,
     minNex: 20,
     description: 'Aumente um atributo em +1. Você não pode aumentar um atributo além de 5 dessa forma.',
-    pageReference: 'Livro Base p.45',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.24–27',
     effects: {
       base: {
         kind: 'choice',
@@ -104,7 +104,7 @@ export const COMBATENTE_POWERS: UnifiedClassPower[] = [
     isCore: true,
     minNex: 35,
     description: 'Escolha um número de perícias treinadas igual a 2 + Int. Seu grau de treinamento nessas perícias aumenta (de treinado para veterano, ou de veterano para expert).',
-    pageReference: 'Livro Base p.45',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.24–27',
     effects: {
       base: {
         kind: 'choice',
@@ -124,7 +124,7 @@ export const COMBATENTE_POWERS: UnifiedClassPower[] = [
     isCore: true,
     minNex: 50,
     description: 'Aumente um atributo em +1. Você não pode aumentar um atributo além de 5 dessa forma.',
-    pageReference: 'Livro Base p.45',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.24–27',
     effects: {
       base: {
         kind: 'choice',
@@ -144,7 +144,7 @@ export const COMBATENTE_POWERS: UnifiedClassPower[] = [
     isCore: true,
     minNex: 50,
     description: 'Escolha entre receber um poder de combatente ou o primeiro poder de uma trilha de combatente que não a sua.',
-    pageReference: 'Livro Base p.45',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.24–27',
     effects: {
       base: {
         kind: 'choice',
@@ -164,7 +164,7 @@ export const COMBATENTE_POWERS: UnifiedClassPower[] = [
     isCore: true,
     minNex: 70,
     description: 'Escolha um número de perícias treinadas igual a 2 + Int. Seu grau de treinamento nessas perícias aumenta (de treinado para veterano, ou de veterano para expert).',
-    pageReference: 'Livro Base p.45',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.24–27',
     effects: {
       base: {
         kind: 'choice',
@@ -184,7 +184,7 @@ export const COMBATENTE_POWERS: UnifiedClassPower[] = [
     isCore: true,
     minNex: 80,
     description: 'Aumente um atributo em +1. Você não pode aumentar um atributo além de 5 dessa forma.',
-    pageReference: 'Livro Base p.45',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.24–27',
     effects: {
       base: {
         kind: 'choice',
@@ -204,7 +204,7 @@ export const COMBATENTE_POWERS: UnifiedClassPower[] = [
     isCore: true,
     minNex: 95,
     description: 'Aumente um atributo em +1. Você não pode aumentar um atributo além de 5 dessa forma.',
-    pageReference: 'Livro Base p.45',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.24–27',
     effects: {
       base: {
         kind: 'choice',
@@ -226,7 +226,7 @@ export const COMBATENTE_POWERS: UnifiedClassPower[] = [
     isCore: false,
     minNex: 15,
     description: 'Você recebe proficiência com armas pesadas. Pré-requisito: For 2.',
-    pageReference: 'Livro Base p.46',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.24–27',
     prerequisites: {
       attributes: { strength: 2 },
     },
@@ -248,7 +248,7 @@ export const COMBATENTE_POWERS: UnifiedClassPower[] = [
     isCore: false,
     minNex: 15,
     description: 'Seus ataques desarmados causam 1d6 pontos de dano, podem causar dano letal e se tornam ágeis (veja p. 89). Em NEX 35%, o dano aumenta para 1d8 e, em NEX 70%, para 1d10.',
-    pageReference: 'Livro Base p.46',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.24–27',
     effects: {
       base: {
         kind: 'scaling',
@@ -272,7 +272,7 @@ export const COMBATENTE_POWERS: UnifiedClassPower[] = [
     isCore: false,
     minNex: 15,
     description: 'Sempre que um ser sair voluntariamente de um espaço adjacente ao seu, você pode gastar uma reação e 1 PE para fazer um ataque corpo a corpo contra ele.',
-    pageReference: 'Livro Base p.46',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.24–27',
     effects: {
       base: {
         kind: 'reaction',
@@ -295,7 +295,7 @@ export const COMBATENTE_POWERS: UnifiedClassPower[] = [
     isCore: false,
     minNex: 15,
     description: 'Ao agredir com duas armas, sendo ao menos uma leve, pode atacar com ambas. Até o próximo turno, seus testes de ataque perdem 1d20. Pré-requisitos: Agi 3, treinado em Luta ou Pontaria.',
-    pageReference: 'Livro Base p.46',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.24–27',
     prerequisites: {
       attributes: { agility: 3 },
       skills: [{ skill: 'luta' }, { skill: 'pontaria' }], // OR logic
@@ -320,7 +320,7 @@ export const COMBATENTE_POWERS: UnifiedClassPower[] = [
     isCore: false,
     minNex: 15,
     description: 'Ao agredir, pode combater defensivamente: até o próximo turno, seus testes de ataque perdem 1d20 e sua Defesa aumenta em +5. Pré-requisito: Int 2.',
-    pageReference: 'Livro Base p.46',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.24–27',
     prerequisites: {
       attributes: { intellect: 2 },
     },
@@ -348,7 +348,7 @@ export const COMBATENTE_POWERS: UnifiedClassPower[] = [
     isCore: false,
     minNex: 15,
     description: 'Quando usa a manobra quebrar ou ataca um objeto, você pode gastar 1 PE para causar dois dados de dano extra do mesmo tipo de sua arma. Pré-requisitos: For 2, treinado em Luta.',
-    pageReference: 'Livro Base p.46',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.24–27',
     prerequisites: {
       attributes: { strength: 2 },
       skills: [{ skill: 'luta', level: 'trained' }],
@@ -375,7 +375,7 @@ export const COMBATENTE_POWERS: UnifiedClassPower[] = [
     isCore: false,
     minNex: 15,
     description: 'Enquanto estiver empunhando uma arma corpo a corpo, o dano dela aumenta em mais um dado do mesmo tipo.',
-    pageReference: 'Livro Base p.46',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.24–27',
     effects: {
       base: {
         kind: 'passive',
@@ -397,7 +397,7 @@ export const COMBATENTE_POWERS: UnifiedClassPower[] = [
     isCore: false,
     minNex: 15,
     description: 'Uma vez por cena, você pode gastar 2 PE para fazer uma ação de investigação adicional, mas deve usar Força ou Agilidade como atributo-base do teste.',
-    pageReference: 'Livro Base p.46',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.24–27',
     effects: {
       base: {
         kind: 'resource',
@@ -424,7 +424,7 @@ export const COMBATENTE_POWERS: UnifiedClassPower[] = [
     isCore: false,
     minNex: 15,
     description: 'Quando fizer um teste para facilitar uma investigação, você pode gastar 1 PE para usar Força ou Agilidade no lugar do atributo-base da perícia. Se passar no teste, o próximo aliado que usar esse bônus também recebe +1d20 no teste.',
-    pageReference: 'Livro Base p.46',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.24–27',
     effects: {
       base: {
         kind: 'activated',
@@ -447,7 +447,7 @@ export const COMBATENTE_POWERS: UnifiedClassPower[] = [
     isCore: false,
     minNex: 30,
     description: 'Você recebe proficiência com Proteções Pesadas. Pré-requisito: NEX 30%.',
-    pageReference: 'Livro Base p.46',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.24–27',
     effects: {
       base: {
         kind: 'proficiency',
@@ -466,7 +466,7 @@ export const COMBATENTE_POWERS: UnifiedClassPower[] = [
     isCore: false,
     minNex: 15,
     description: 'Você recebe +2 em Defesa e em testes de resistência. Pré-requisitos: Agi 2.',
-    pageReference: 'Livro Base p.46',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.24–27',
     prerequisites: {
       attributes: { agility: 2 },
     },
@@ -487,7 +487,7 @@ export const COMBATENTE_POWERS: UnifiedClassPower[] = [
     isCore: false,
     minNex: 15,
     description: 'Você pode sacar ou guardar itens como uma ação livre (em vez de ação de movimento). Além disso, caso esteja usando a regra opcional de contagem de munição, uma vez por rodada pode recarregar uma arma de disparo como uma ação livre. Pré-requisito: treinado em Iniciativa.',
-    pageReference: 'Livro Base p.47',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.24–27',
     prerequisites: {
       skills: [{ skill: 'iniciativa', level: 'trained' }],
     },
@@ -506,7 +506,7 @@ export const COMBATENTE_POWERS: UnifiedClassPower[] = [
     isCore: false,
     minNex: 60,
     description: 'Sempre que acerta um ataque com uma arma de fogo, pode fazer outro ataque com a mesma arma contra o mesmo alvo, pagando 2 PE por cada ataque já realizado no turno. Pré-requisito: NEX 60%.',
-    pageReference: 'Livro Base p.47',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.24–27',
     effects: {
       base: {
         kind: 'triggered',
@@ -530,7 +530,7 @@ export const COMBATENTE_POWERS: UnifiedClassPower[] = [
     isCore: false,
     minNex: 15,
     description: 'Você pode gastar uma ação de movimento e 2 PE para analisar o ambiente. Se fizer isso, recebe um bônus em Defesa e testes de resistência igual ao seu Intelecto até o final da cena. Pré-requisitos: Int 2, treinado em Percepção e Tática.',
-    pageReference: 'Livro Base p.47',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.24–27',
     prerequisites: {
       attributes: { intellect: 2 },
       skills: [
@@ -559,7 +559,7 @@ export const COMBATENTE_POWERS: UnifiedClassPower[] = [
     isCore: false,
     minNex: 30,
     description: 'Se estiver usando uma proteção pesada, sua Defesa e resistência a dano que ela fornece aumentam em +2. Pré-requisito: Proteção Pesada.',
-    pageReference: 'Livro Base p.47',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.24–27',
     prerequisites: {
       powers: ['protecao-pesada'],
     },
@@ -590,7 +590,7 @@ export const COMBATENTE_POWERS: UnifiedClassPower[] = [
     isCore: false,
     minNex: 15,
     description: 'Se estiver usando uma arma de disparo, você soma sua Agilidade nas rolagens de dano e ignora a penalidade contra alvos envolvidos em combate corpo a corpo (mesmo se não usar a ação mirar). Pré-requisito: treinado em Pontaria.',
-    pageReference: 'Livro Base p.47',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.24–27',
     prerequisites: {
       skills: [{ skill: 'pontaria', level: 'trained' }],
     },
@@ -615,7 +615,7 @@ export const COMBATENTE_POWERS: UnifiedClassPower[] = [
     isCore: false,
     minNex: 15,
     description: 'Você pode gastar uma ação padrão e 1 PE para disparar uma arma de fogo na direção de um ser no alcance da arma para forçá-lo a se proteger. Faça um teste de Pontaria contra a Vontade do alvo. Se vencer, até o início do seu próximo turno o alvo não pode sair do lugar onde está e sofre –5 em testes de ataque. Este é um efeito de medo.',
-    pageReference: 'Livro Base p.47',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.24–27',
     effects: {
       base: {
         kind: 'activated',
@@ -638,7 +638,7 @@ export const COMBATENTE_POWERS: UnifiedClassPower[] = [
     isCore: false,
     minNex: 15,
     description: 'Escolha um poder paranormal (veja a página 114). Você recebe o poder escolhido, mas não ganha Sanidade neste aumento de NEX. Você pode escolher este poder várias vezes.',
-    pageReference: 'Livro Base p.47',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.24–27',
     isRepeatable: true,
     effects: {
       base: {
@@ -660,7 +660,7 @@ export const COMBATENTE_POWERS: UnifiedClassPower[] = [
     isCore: false,
     minNex: 15,
     description: 'Escolha duas perícias. Você se torna treinado nessas perícias. A partir de NEX 35%, você pode escolher perícias nas quais já é treinado para se tornar veterano. A partir de NEX 70%, pode escolher perícias nas quais já é veterano para se tornar expert. Você pode escolher este poder várias vezes.',
-    pageReference: 'Livro Base p.47',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.24–27',
     isRepeatable: true,
     effects: {
       base: {

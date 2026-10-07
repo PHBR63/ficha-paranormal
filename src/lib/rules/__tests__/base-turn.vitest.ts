@@ -75,6 +75,6 @@ describe('Progressão conferida e cobertura', () => {
     expect(new Set(BASE_RULE_COVERAGE.map(rule => rule.id)).size).toBe(BASE_RULE_COVERAGE.length);
     expect(filterBaseRuleCoverage('sangrando')[0].status).toBe('partial');
     expect(filterBaseRuleCoverage('investigacao', 'manual').length).toBeGreaterThan(0);
-    expect(filterBaseRuleCoverage('', 'missing').some(rule => rule.id === 'temporary')).toBe(true);
+    expect(filterBaseRuleCoverage('', 'partial').some(rule => rule.id === 'temporary')).toBe(true);
   });
 });

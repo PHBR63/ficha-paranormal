@@ -22,7 +22,7 @@ export const ESPECIALISTA_POWERS: UnifiedClassPower[] = [
     isCore: true,
     minNex: 5,
     description: 'Quando faz um teste de uma perícia, você pode gastar 2 PE para receber os benefícios de ser treinado nessa perícia.',
-    pageReference: 'Livro Base p.49',
+    pageReference: 'Livro Base v1.3, p.28',
     effects: {
       base: {
         kind: 'activated',
@@ -42,7 +42,7 @@ export const ESPECIALISTA_POWERS: UnifiedClassPower[] = [
     isCore: true,
     minNex: 5,
     description: 'Escolha duas perícias nas quais você é treinado (exceto Luta e Pontaria). Quando faz um teste de uma dessas perícias, pode gastar 2 PE para somar +1d6 ao resultado. Conforme avança de NEX, o dado e custo melhoram: +1d8 (3 PE) em NEX 25%, +1d10 (4 PE) em NEX 55%, +1d12 (5 PE) em NEX 85%.',
-    pageReference: 'Livro Base p.49',
+    pageReference: 'Livro Base v1.3, p.28',
     effects: {
       base: {
         kind: 'activated',
@@ -87,7 +87,7 @@ export const ESPECIALISTA_POWERS: UnifiedClassPower[] = [
     isCore: true,
     minNex: 10,
     description: 'Em NEX 10%, você escolhe uma das trilhas de especialista disponíveis e recebe o primeiro poder da trilha escolhida. Você recebe um novo poder da trilha escolhida em NEX 40%, 65% e 99%.',
-    pageReference: 'Livro Base p.49',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.28–31',
     effects: {
       base: {
         kind: 'choice',
@@ -107,7 +107,7 @@ export const ESPECIALISTA_POWERS: UnifiedClassPower[] = [
     isCore: true,
     minNex: 20,
     description: 'Aumente um atributo em +1. Você não pode aumentar um atributo além de 5 dessa forma.',
-    pageReference: 'Livro Base p.49',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.28–31',
     effects: {
       base: {
         kind: 'choice',
@@ -127,7 +127,7 @@ export const ESPECIALISTA_POWERS: UnifiedClassPower[] = [
     isCore: true,
     minNex: 35,
     description: 'Escolha um número de perícias treinadas igual a 5 + Int. O grau de treinamento dessas perícias aumenta em um nível (treinado → veterano → expert).',
-    pageReference: 'Livro Base p.49',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.28–31',
     effects: {
       base: {
         kind: 'choice',
@@ -148,7 +148,7 @@ export const ESPECIALISTA_POWERS: UnifiedClassPower[] = [
     isCore: true,
     minNex: 40,
     description: 'Em NEX 40%, quando usa sua habilidade Eclético, você pode gastar 2 PE adicionais para receber os benefícios de ser veterano na perícia. Em NEX 75%, você pode gastar 4 PE adicionais para receber os benefícios de ser expert na perícia.',
-    pageReference: 'Livro Base p.49',
+    pageReference: 'Livro Base v1.3, p.30',
     effects: {
       base: {
         kind: 'passive',
@@ -178,7 +178,7 @@ export const ESPECIALISTA_POWERS: UnifiedClassPower[] = [
     isCore: true,
     minNex: 50,
     description: 'Aumente um atributo em +1. Você não pode aumentar um atributo além de 5 dessa forma.',
-    pageReference: 'Livro Base p.49',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.28–31',
     effects: {
       base: {
         kind: 'choice',
@@ -198,7 +198,7 @@ export const ESPECIALISTA_POWERS: UnifiedClassPower[] = [
     isCore: true,
     minNex: 50,
     description: 'Escolha entre receber um poder de especialista ou o primeiro poder de uma trilha de especialista que não a sua.',
-    pageReference: 'Livro Base p.49',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.28–31',
     effects: {
       base: {
         kind: 'choice',
@@ -218,7 +218,7 @@ export const ESPECIALISTA_POWERS: UnifiedClassPower[] = [
     isCore: true,
     minNex: 70,
     description: 'Escolha um número de perícias treinadas igual a 5 + Int. O grau de treinamento dessas perícias aumenta em um nível (treinado → veterano → expert).',
-    pageReference: 'Livro Base p.49',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.28–31',
     effects: {
       base: {
         kind: 'choice',
@@ -240,7 +240,7 @@ export const ESPECIALISTA_POWERS: UnifiedClassPower[] = [
     isCore: true,
     minNex: 80,
     description: 'Aumente um atributo em +1. Você não pode aumentar um atributo além de 5 dessa forma.',
-    pageReference: 'Livro Base p.49',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.28–31',
     effects: {
       base: {
         kind: 'choice',
@@ -260,7 +260,7 @@ export const ESPECIALISTA_POWERS: UnifiedClassPower[] = [
     isCore: true,
     minNex: 95,
     description: 'Aumente um atributo em +1. Você não pode aumentar um atributo além de 5 dessa forma.',
-    pageReference: 'Livro Base p.49',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.28–31',
     effects: {
       base: {
         kind: 'choice',
@@ -282,7 +282,7 @@ export const ESPECIALISTA_POWERS: UnifiedClassPower[] = [
     isCore: false,
     minNex: 15,
     description: 'Seus ataques desarmados causam 1d6 de dano, podendo causar dano letal e contam como armas ágeis. Em NEX 35%, o dano aumenta para 1d8 e, em NEX 70%, para 1d10.',
-    pageReference: 'Livro Base p.50',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.28–31',
     effects: {
       base: {
         kind: 'scaling',
@@ -306,7 +306,7 @@ export const ESPECIALISTA_POWERS: UnifiedClassPower[] = [
     isCore: false,
     minNex: 15,
     description: 'Você recebe proficiência com armas táticas de fogo e +2 em rolagens de dano com armas de fogo.',
-    pageReference: 'Livro Base p.50',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.28–31',
     effects: {
       base: {
         kind: 'passive',
@@ -331,7 +331,7 @@ export const ESPECIALISTA_POWERS: UnifiedClassPower[] = [
     isCore: false,
     minNex: 15,
     description: 'Quando faz um teste de perícia (exceto Luta e Pontaria), você pode gastar 2 PE para mudar o atributo-base da perícia para Intelecto. Pré-requisito: Int 2.',
-    pageReference: 'Livro Base p.50',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.28–31',
     prerequisites: {
       attributes: { intellect: 2 },
     },
@@ -359,7 +359,7 @@ export const ESPECIALISTA_POWERS: UnifiedClassPower[] = [
     isCore: false,
     minNex: 15,
     description: 'Você recebe +5 em testes de Tecnologia para invadir sistemas e elimina o tempo necessário para hackear qualquer sistema para uma ação completa. Pré-requisito: treinado em Tecnologia.',
-    pageReference: 'Livro Base p.50',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.28–31',
     prerequisites: {
       skills: [{ skill: 'tecnologia', level: 'trained' }],
     },
@@ -382,7 +382,7 @@ export const ESPECIALISTA_POWERS: UnifiedClassPower[] = [
     isCore: false,
     minNex: 15,
     description: 'Ao fazer um teste de Crime, você pode pagar 1 PE para fazê-lo como uma ação livre. Pré-requisitos: Agi 3, treinado em Crime.',
-    pageReference: 'Livro Base p.50',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.28–31',
     prerequisites: {
       attributes: { agility: 3 },
       skills: [{ skill: 'crime', level: 'trained' }],
@@ -406,7 +406,7 @@ export const ESPECIALISTA_POWERS: UnifiedClassPower[] = [
     isCore: false,
     minNex: 15,
     description: 'Um item à sua escolha (exceto armas) conta como se estivesse uma categoria abaixo e ocupa 1 espaço a menos.',
-    pageReference: 'Livro Base p.50',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.28–31',
     effects: {
       base: {
         kind: 'passive',
@@ -427,7 +427,7 @@ export const ESPECIALISTA_POWERS: UnifiedClassPower[] = [
     minNex: 15,
     // Corrigido: texto oficial usa "por escalar" e não "se posicionar"
     description: 'Você pode gastar 1 PE para ignorar a penalidade em deslocamento por terreno difícil e por escalar até o final do turno. Pré-requisito: treinado em Atletismo.',
-    pageReference: 'Livro Base p.50',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.28–31',
     prerequisites: {
       skills: [{ skill: 'atletismo', level: 'trained' }],
     },
@@ -452,7 +452,7 @@ export const ESPECIALISTA_POWERS: UnifiedClassPower[] = [
     // CRÍTICO: Corrigido de +5 para +1d20 conforme texto oficial
     // Os custos e bônus são cumulativos (1 PE = +1d20, 2 PE = +2d20, etc.)
     description: 'Sempre que tiver sucesso em um teste para procurar pistas, você pode gastar 1 PE para receber +1d20 no próximo teste. Os custos e os bônus são cumulativos: se passar num segundo teste, pode pagar 2 PE para receber um total de +2d20 no próximo teste, e assim por diante.',
-    pageReference: 'Livro Base p.50',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.28–31',
     effects: {
       base: {
         kind: 'triggered',
@@ -481,7 +481,7 @@ export const ESPECIALISTA_POWERS: UnifiedClassPower[] = [
     isCore: false,
     minNex: 15,
     description: 'Você é um repositório de conhecimento útil (e inútil). Uma vez por cena, pode gastar 2 PE para fazer um teste de Atualidades (DT 20). Se passar: Em investigação: recebe uma pista extra. Em combate: descobre uma fraqueza do inimigo. Em outro contexto: o mestre fornece uma informação relevante.',
-    pageReference: 'Livro Base p.50',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.28–31',
     effects: {
       base: {
         kind: 'activated',
@@ -503,7 +503,7 @@ export const ESPECIALISTA_POWERS: UnifiedClassPower[] = [
     minNex: 15,
     // Corrigido: texto oficial EXCLUI armas de fogo da proficiência e do bônus de dano
     description: 'Você recebe proficiência com armas táticas de ataque corpo a corpo e de disparo (exceto de fogo) e +2 em rolagens de dano com armas de corpo a corpo e de disparo.',
-    pageReference: 'Livro Base p.50',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.28–31',
     effects: {
       base: {
         kind: 'passive',
@@ -530,7 +530,7 @@ export const ESPECIALISTA_POWERS: UnifiedClassPower[] = [
     isCore: false,
     minNex: 15,
     description: 'Uma vez por rodada, durante uma cena de investigação, você pode gastar 2 PE para fazer uma ação de procurar pistas adicional.',
-    pageReference: 'Livro Base p.51',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.28–31',
     effects: {
       base: {
         kind: 'activated',
@@ -558,7 +558,7 @@ export const ESPECIALISTA_POWERS: UnifiedClassPower[] = [
     isCore: false,
     minNex: 15,
     description: 'Você soma seu Intelecto à DT para resistir aos seus explosivos e pode excluir um número de alvos da explosão igual ao seu valor de Intelecto.',
-    pageReference: 'Livro Base p.51',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.28–31',
     effects: {
       base: {
         kind: 'passive',
@@ -576,7 +576,7 @@ export const ESPECIALISTA_POWERS: UnifiedClassPower[] = [
     minNex: 15,
     // CRÍTICO: Corrigido de +5 para +1d20 conforme texto oficial
     description: 'Você recebe +1d20 no primeiro teste de Diplomacia, Enganação, Intimidação ou Intuição que fizer em uma cena.',
-    pageReference: 'Livro Base p.51',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.28–31',
     effects: {
       base: {
         kind: 'passive',
@@ -600,7 +600,7 @@ export const ESPECIALISTA_POWERS: UnifiedClassPower[] = [
     minNex: 15,
     // Corrigido: texto oficial diz "não ganha Sanidade neste aumento de NEX" (sem menção a NEX)
     description: 'Escolha um poder paranormal (veja a página 114). Você recebe o poder escolhido, mas não ganha Sanidade neste aumento de NEX. Você pode escolher este poder várias vezes.',
-    pageReference: 'Livro Base p.51',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.28–31',
     isRepeatable: true,
     effects: {
       base: {
@@ -624,7 +624,7 @@ export const ESPECIALISTA_POWERS: UnifiedClassPower[] = [
     isCore: false,
     minNex: 15,
     description: 'Escolha duas perícias. Em NEX 35%, pode escolher perícias treinadas para se tornarem veteranas. Em NEX 70%, pode escolher perícias veteranas para se tornarem expert. Você pode escolher este poder várias vezes.',
-    pageReference: 'Livro Base p.51',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.28–31',
     isRepeatable: true,
     effects: {
       base: {
@@ -663,7 +663,7 @@ export const ESPECIALISTA_POWERS: UnifiedClassPower[] = [
     isCore: false,
     minNex: 15,
     description: 'Quando você falha em um teste, pode gastar 1 PE para rolar novamente, somando +1 no segundo teste para cada vez que usou este poder na cena. Você pode usar este poder uma vez por rodada.',
-    pageReference: 'Livro Base p.50',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.28–31',
     effects: {
       base: {
         kind: 'triggered',
@@ -685,7 +685,7 @@ export const ESPECIALISTA_POWERS: UnifiedClassPower[] = [
     isCore: false,
     minNex: 15,
     description: 'Quando está empunhando uma arma leve corpo a corpo, você soma sua Agilidade na Defesa (limitado pela Defesa base da proteção que estiver usando, se houver). Pré-requisitos: Agi 3, treinado em Luta.',
-    pageReference: 'Livro Base p.50',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.28–31',
     prerequisites: {
       attributes: { agility: 3 },
       skills: [{ skill: 'luta', level: 'trained' }],
@@ -711,7 +711,7 @@ export const ESPECIALISTA_POWERS: UnifiedClassPower[] = [
     isCore: false,
     minNex: 45,
     description: 'Quando você acerta um ataque contra um alvo desprevenido, pode gastar 2 PE para rolar novamente todos os dados de dano que não resultaram em seu valor máximo. Pré-requisitos: NEX 45%, treinado em Furtividade.',
-    pageReference: 'Livro Base p.50',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.28–31',
     prerequisites: {
       minNex: 45,
       skills: [{ skill: 'furtividade', level: 'trained' }],
@@ -738,7 +738,7 @@ export const ESPECIALISTA_POWERS: UnifiedClassPower[] = [
     isCore: false,
     minNex: 15,
     description: 'Quando sofre um efeito que permite um teste de resistência para reduzir o dano à metade, você não sofre nenhum dano se passar. Você ainda sofre dano normal se falhar. Pré-requisito: Agi 3.',
-    pageReference: 'Livro Base p.50',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.28–31',
     prerequisites: {
       attributes: { agility: 3 },
     },
@@ -758,7 +758,7 @@ export const ESPECIALISTA_POWERS: UnifiedClassPower[] = [
     isCore: false,
     minNex: 15,
     description: 'Você recebe +5 em testes de Iniciativa e pode sacar uma arma como ação livre.',
-    pageReference: 'Livro Base p.50',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.28–31',
     effects: {
       base: {
         kind: 'passive',
@@ -778,7 +778,7 @@ export const ESPECIALISTA_POWERS: UnifiedClassPower[] = [
     isCore: false,
     minNex: 30,
     description: 'Quando você acerta um ataque contra um inimigo que teve uma fraqueza revelada por meio de um teste de perícia (como Intuição ou Ocultismo), pode gastar 2 PE para aumentar o dano causado em +2d6. Pré-requisito: NEX 30%.',
-    pageReference: 'Livro Base p.50',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.28–31',
     prerequisites: {
       minNex: 30,
     },
@@ -807,7 +807,7 @@ export const ESPECIALISTA_POWERS: UnifiedClassPower[] = [
     isCore: false,
     minNex: 15,
     description: 'Seu deslocamento aumenta em +3m.',
-    pageReference: 'Livro Base p.50',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.28–31',
     effects: {
       base: {
         kind: 'passive',
@@ -824,7 +824,7 @@ export const ESPECIALISTA_POWERS: UnifiedClassPower[] = [
     isCore: false,
     minNex: 15,
     description: 'Quando você faz um teste de Medicina para primeiros socorros, o paciente recupera 1d6 PV (além de estabilizar se estiver morrendo). O dado aumenta para 2d6 em NEX 35%, 3d6 em NEX 55% e 4d6 em NEX 75%. Pré-requisito: treinado em Medicina.',
-    pageReference: 'Livro Base p.50',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.28–31',
     prerequisites: {
       skills: [{ skill: 'medicina', level: 'trained' }],
     },
@@ -849,7 +849,7 @@ export const ESPECIALISTA_POWERS: UnifiedClassPower[] = [
     isCore: false,
     minNex: 15,
     description: 'Você pode gastar 1 PE e uma ação de movimento para desaparecer em uma multidão. Enquanto houver um número de pessoas igual ou maior que 10 num raio de 30m, você fica oculto e pode se esconder mesmo sem ter onde se esconder. Pré-requisito: treinado em Furtividade.',
-    pageReference: 'Livro Base p.51',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.28–31',
     prerequisites: {
       skills: [{ skill: 'furtividade', level: 'trained' }],
     },
@@ -875,7 +875,7 @@ export const ESPECIALISTA_POWERS: UnifiedClassPower[] = [
     isCore: false,
     minNex: 15,
     description: 'Você recebe +5 em testes de Medicina e pode usar um kit médico para tratar de um paciente em uma ação padrão (em vez de ação completa). Pré-requisito: treinado em Medicina.',
-    pageReference: 'Livro Base p.51',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.28–31',
     prerequisites: {
       skills: [{ skill: 'medicina', level: 'trained' }],
     },
@@ -898,7 +898,7 @@ export const ESPECIALISTA_POWERS: UnifiedClassPower[] = [
     isCore: false,
     minNex: 15,
     description: 'Você recebe +5 em testes de Crime para sabotagem e pode fazer esses testes como uma ação padrão (em vez de ação de intento). Pré-requisito: treinado em Crime.',
-    pageReference: 'Livro Base p.51',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.28–31',
     prerequisites: {
       skills: [{ skill: 'crime', level: 'trained' }],
     },
@@ -921,7 +921,7 @@ export const ESPECIALISTA_POWERS: UnifiedClassPower[] = [
     isCore: false,
     minNex: 15,
     description: 'Você recebe +1 em Intelecto, até um máximo de 5.',
-    pageReference: 'Livro Base p.50',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.28–31',
     effects: {
       base: {
         kind: 'passive',
@@ -942,7 +942,7 @@ export const ESPECIALISTA_POWERS: UnifiedClassPower[] = [
     isCore: false,
     minNex: 15,
     description: 'Você pode roubar um objeto pequeno de uma criatura em alcance corpo a corpo sem ser notado. Faça um teste de Crime oposto pela Percepção da vítima. Se você passar, rouba o item. Se falhar, não rouba e a vítima percebe a tentativa.',
-    pageReference: 'Livro Base p.51',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.28–31',
     effects: {
       base: {
         kind: 'activated',
@@ -962,7 +962,7 @@ export const ESPECIALISTA_POWERS: UnifiedClassPower[] = [
     isCore: false,
     minNex: 15,
     description: 'Você sabe criar e aplicar venenos. Você pode comprar venenos e aplicá-los em armas ou bebidas. Além disso, recebe +5 em testes de Fortitude contra venenos.',
-    pageReference: 'Livro Base p.51',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.28–31',
     effects: {
       base: {
         kind: 'passive',

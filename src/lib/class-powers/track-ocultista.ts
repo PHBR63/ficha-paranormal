@@ -25,7 +25,7 @@ export const OCULTISTA_TRACKS: UnifiedTrack[] = [
         name: 'Conduíte',
         classId: 'Ocultista',
         description: 'Você funciona como um canal direto para o Outro Lado.',
-        pageReference: 'Livro Base v1.3 p.34',
+        pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.32–35',
         abilities: [
             {
                 id: 'ampliar-ritual',
@@ -33,7 +33,7 @@ export const OCULTISTA_TRACKS: UnifiedTrack[] = [
                 trackId: 'condutor',
                 minNex: 10,
                 description: 'Você pode gastar 2 PE para aumentar o alcance de um ritual em um passo (curto para médio, médio para longo, longo para extremo) ou dobrar sua área de efeito.',
-                pageReference: 'Livro Base v1.3 p.34',
+                pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.32–35',
                 isInitial: true,
                 effects: {
                     base: {
@@ -57,7 +57,7 @@ export const OCULTISTA_TRACKS: UnifiedTrack[] = [
                 trackId: 'condutor',
                 minNex: 40,
                 description: 'Uma vez por rodada, aumente o custo do ritual em 4 PE para conjurá-lo como ação livre.',
-                pageReference: 'Livro Base v1.3 p.34',
+                pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.32–35',
                 effects: {
                     base: {
                         kind: 'activated',
@@ -81,7 +81,7 @@ export const OCULTISTA_TRACKS: UnifiedTrack[] = [
                 trackId: 'condutor',
                 minNex: 65,
                 description: 'Quando for alvo de um ritual, pague o custo gasto pelo conjurador e dispute Ocultismo para tentar anulá-lo.',
-                pageReference: 'Livro Base v1.3 p.34',
+                pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.32–35',
                 effects: {
                     base: {
                         kind: 'reaction',
@@ -109,7 +109,7 @@ export const OCULTISTA_TRACKS: UnifiedTrack[] = [
                 trackId: 'condutor',
                 minNex: 99,
                 description: 'Você aprende o ritual Canalizar o Medo.',
-                pageReference: 'Livro Base v1.3 p.34',
+                pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.32–35',
                 effects: {
                     base: {
                         kind: 'passive',
@@ -130,7 +130,7 @@ export const OCULTISTA_TRACKS: UnifiedTrack[] = [
         name: 'Flagelador',
         classId: 'Ocultista',
         description: 'Você usa seu próprio corpo como combustível para o paranormal.',
-        pageReference: 'Livro Base v1.3 p.34',
+        pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.32–35',
         abilities: [
             {
                 id: 'poder-do-sangue',
@@ -138,7 +138,7 @@ export const OCULTISTA_TRACKS: UnifiedTrack[] = [
                 trackId: 'flagelador',
                 minNex: 10,
                 description: 'Ao conjurar rituais, cada PE pode ser pago com 2 PV; esses PV só se recuperam com descanso.',
-                pageReference: 'Livro Base v1.3 p.34',
+                pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.32–35',
                 isInitial: true,
                 effects: {
                     base: {
@@ -156,7 +156,7 @@ export const OCULTISTA_TRACKS: UnifiedTrack[] = [
                 trackId: 'flagelador',
                 minNex: 40,
                 description: 'Uma reação e 2 PE reduzem à metade um dano não paranormal sofrido.',
-                pageReference: 'Livro Base v1.3 p.34',
+                pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.32–35',
                 effects: {
                     base: {
                         kind: 'reaction',
@@ -178,7 +178,7 @@ export const OCULTISTA_TRACKS: UnifiedTrack[] = [
                 trackId: 'flagelador',
                 minNex: 65,
                 description: 'Ao reduzir inimigo(s) a 0 PV com um ritual, receba PE temporários iguais ao círculo usado.',
-                pageReference: 'Livro Base v1.3 p.34–35',
+                pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.32–35',
                 effects: {
                     base: {
                         kind: 'passive',
@@ -196,7 +196,7 @@ export const OCULTISTA_TRACKS: UnifiedTrack[] = [
                 trackId: 'flagelador',
                 minNex: 99,
                 description: 'Você aprende o ritual Medo Tangível.',
-                pageReference: 'Livro Base v1.3 p.35',
+                pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.32–35',
                 effects: {
                     base: {
                         kind: 'passive',
@@ -217,7 +217,7 @@ export const OCULTISTA_TRACKS: UnifiedTrack[] = [
         name: 'Graduado',
         classId: 'Ocultista',
         description: 'Você estuda o paranormal de forma acadêmica através de um grimório.',
-        pageReference: 'Livro Base v1.3 p.35',
+        pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.32–35',
         abilities: [
             {
                 id: 'saber-ampliado',
@@ -225,7 +225,7 @@ export const OCULTISTA_TRACKS: UnifiedTrack[] = [
                 trackId: 'graduado',
                 minNex: 10,
                 description: 'Aprenda um ritual extra ao acessar cada círculo; essas escolhas não ocupam o limite de rituais conhecidos.',
-                pageReference: 'Livro Base v1.3 p.35',
+                pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.32–35',
                 isInitial: true,
                 effects: {
                     base: {
@@ -244,7 +244,7 @@ export const OCULTISTA_TRACKS: UnifiedTrack[] = [
                 trackId: 'graduado',
                 minNex: 40,
                 description: 'Um grimório guarda rituais de 1º/2º círculo iguais ao Intelecto, sem ocupar o limite; exige empunhá-lo e preparar a leitura com ação completa.',
-                pageReference: 'Livro Base v1.3 p.35',
+                pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.32–35',
                 effects: {
                     base: {
                         kind: 'passive',
@@ -270,7 +270,7 @@ export const OCULTISTA_TRACKS: UnifiedTrack[] = [
                 trackId: 'graduado',
                 minNex: 65,
                 description: 'A DT para resistir a todos os seus rituais aumenta em 5.',
-                pageReference: 'Livro Base v1.3 p.35',
+                pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.32–35',
                 effects: {
                     base: {
                         kind: 'passive',
@@ -285,7 +285,7 @@ export const OCULTISTA_TRACKS: UnifiedTrack[] = [
                 trackId: 'graduado',
                 minNex: 99,
                 description: 'Você aprende o ritual Conhecendo o Medo.',
-                pageReference: 'Livro Base v1.3 p.35',
+                pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.32–35',
                 effects: {
                     base: {
                         kind: 'passive',
@@ -306,7 +306,7 @@ export const OCULTISTA_TRACKS: UnifiedTrack[] = [
         name: 'Intuitivo',
         classId: 'Ocultista',
         description: 'Sua mente é uma fortaleza contra os horrores do Outro Lado.',
-        pageReference: 'Livro Base v1.3 p.35',
+        pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.32–35',
         abilities: [
             {
                 id: 'mente-sa',
@@ -314,7 +314,7 @@ export const OCULTISTA_TRACKS: UnifiedTrack[] = [
                 trackId: 'intuitivo',
                 minNex: 10,
                 description: 'Receba +5 em testes de resistência contra efeitos paranormais.',
-                pageReference: 'Livro Base v1.3 p.35',
+                pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.32–35',
                 isInitial: true,
                 effects: {
                     base: {
@@ -330,7 +330,7 @@ export const OCULTISTA_TRACKS: UnifiedTrack[] = [
                 trackId: 'intuitivo',
                 minNex: 40,
                 description: 'Some Presença ao limite de PE por turno somente para conjurar rituais; a DT não muda.',
-                pageReference: 'Livro Base v1.3 p.35',
+                pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.32–35',
                 effects: {
                     base: {
                         kind: 'passive',
@@ -345,7 +345,7 @@ export const OCULTISTA_TRACKS: UnifiedTrack[] = [
                 trackId: 'intuitivo',
                 minNex: 65,
                 description: 'Receba RD mental e paranormal 10; sucesso em Vontade que já reduziria dano paranormal à metade passa a anulá-lo.',
-                pageReference: 'Livro Base v1.3 p.35',
+                pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.32–35',
                 effects: {
                     base: {
                         kind: 'passive',
@@ -368,7 +368,7 @@ export const OCULTISTA_TRACKS: UnifiedTrack[] = [
                 trackId: 'intuitivo',
                 minNex: 99,
                 description: 'Você aprende o ritual Presença do Medo.',
-                pageReference: 'Livro Base v1.3 p.35',
+                pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.32–35',
                 effects: {
                     base: {
                         kind: 'passive',
@@ -389,7 +389,7 @@ export const OCULTISTA_TRACKS: UnifiedTrack[] = [
         name: 'Lâmina Paranormal',
         classId: 'Ocultista',
         description: 'Você canaliza o medo através de uma arma corpo a corpo.',
-        pageReference: 'Livro Base v1.3 p.35',
+        pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.32–35',
         abilities: [
             {
                 id: 'lamina-maldita',
@@ -397,7 +397,7 @@ export const OCULTISTA_TRACKS: UnifiedTrack[] = [
                 trackId: 'lamina-paranormal',
                 minNex: 10,
                 description: 'Aprenda Amaldiçoar Arma; se já o conhecia, +1 PE permite execução de movimento. Sob seu ritual, a arma usa Ocultismo em vez de Luta ou Pontaria.',
-                pageReference: 'Livro Base v1.3 p.35',
+                pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.32–35',
                 isInitial: true,
                 effects: {
                     base: {
@@ -414,7 +414,7 @@ export const OCULTISTA_TRACKS: UnifiedTrack[] = [
                 trackId: 'lamina-paranormal',
                 minNex: 40,
                 description: 'Acerto corpo a corpo em inimigo gera 2 PE temporários, limitados por cena ao limite de PE e perdidos ao fim dela.',
-                pageReference: 'Livro Base v1.3 p.35',
+                pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.32–35',
                 effects: {
                     base: {
                         kind: 'passive',
@@ -433,7 +433,7 @@ export const OCULTISTA_TRACKS: UnifiedTrack[] = [
                 trackId: 'lamina-paranormal',
                 minNex: 65,
                 description: 'Uma vez por rodada, após ritual de execução padrão, 2 PE permitem um ataque corpo a corpo livre.',
-                pageReference: 'Livro Base v1.3 p.35',
+                pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.32–35',
                 effects: {
                     base: {
                         kind: 'activated',
@@ -459,7 +459,7 @@ export const OCULTISTA_TRACKS: UnifiedTrack[] = [
                 trackId: 'lamina-paranormal',
                 minNex: 99,
                 description: 'Você aprende o ritual Lâmina do Medo.',
-                pageReference: 'Livro Base v1.3 p.35',
+                pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.32–35',
                 effects: {
                     base: {
                         kind: 'passive',

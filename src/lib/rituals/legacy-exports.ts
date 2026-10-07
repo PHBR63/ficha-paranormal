@@ -151,6 +151,7 @@ export type ActionRestriction =
   | 'cannotStealth';
 
 export interface RitualEffect {
+  summary?: string;
   kind?: RitualKind;
   hooks?: Hook[];
   sustain?: SustainConfig;

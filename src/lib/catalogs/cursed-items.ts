@@ -1,5 +1,6 @@
 /**
- * Ordem Paranormal RPG - Suplemento Sobrevivendo ao Horror
+ * Catálogo legado de itens amaldiçoados — origem individual não homologada.
+ * Estes registros não constituem catálogo oficial do Livro Base ou de suplemento.
  * Sistema de Itens Amaldiçoados
  * 
  * Itens amaldiçoados são artefatos paranormais com poderes e maldições.

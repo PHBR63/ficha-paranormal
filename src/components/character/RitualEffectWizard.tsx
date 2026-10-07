@@ -223,6 +223,7 @@ function SummaryStep({
       </div>
 
       {/* Lista de efeitos a processar */}
+      {effect.summary && <p role="status" className="text-sm rounded-md border p-3 break-words">{effect.summary}</p>}
       <div className="space-y-2">
         <p className="text-sm text-muted-foreground font-medium">Efeitos a processar:</p>
         

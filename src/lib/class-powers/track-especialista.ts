@@ -26,7 +26,7 @@ export const ESPECIALISTA_TRACKS: UnifiedTrack[] = [
     name: 'Atirador de Elite',
     classId: 'Especialista',
     description: 'Um tiro, uma morte. Ao contrário dos combatentes, você é perito em neutralizar ameaças à distância, terminando uma briga antes mesmo que ela comece. Você trata sua arma como uma ferramenta de precisão, sendo capaz de executar façanhas incríveis.',
-    pageReference: 'Livro Base p.54',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.28–31',
     abilities: [
       {
         id: 'mira-elite',
@@ -34,7 +34,7 @@ export const ESPECIALISTA_TRACKS: UnifiedTrack[] = [
         trackId: 'atirador-elite',
         minNex: 10,
         description: 'Você recebe proficiência com armas de fogo que usam balas longas e soma seu Intelecto nas rolagens de dano com essas armas.',
-        pageReference: 'Livro Base p.54',
+        pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.28–31',
         isInitial: true,
         effects: {
           base: {
@@ -54,7 +54,7 @@ export const ESPECIALISTA_TRACKS: UnifiedTrack[] = [
         trackId: 'atirador-elite',
         minNex: 40,
         description: 'Uma vez por rodada, quando faz a ação Mirar, você pode gastar 1 PE para aumentar em +2 a margem de ameaça do próximo ataque que fizer até o final de seu próximo turno.',
-        pageReference: 'Livro Base p.54',
+        pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.28–31',
         effects: {
           base: {
             kind: 'activated',
@@ -78,7 +78,7 @@ export const ESPECIALISTA_TRACKS: UnifiedTrack[] = [
         trackId: 'atirador-elite',
         minNex: 65,
         description: 'Quando ataca com uma arma de fogo, você pode gastar 2 PE e, em vez de causar dano, fazer uma manobra entre: derrubar, desarmar, empurrar ou quebrar.',
-        pageReference: 'Livro Base p.54',
+        pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.28–31',
         effects: {
           base: {
             kind: 'activated',
@@ -102,7 +102,7 @@ export const ESPECIALISTA_TRACKS: UnifiedTrack[] = [
         trackId: 'atirador-elite',
         minNex: 99,
         description: 'Quando faz um acerto crítico com uma arma de fogo, você causa dano máximo, sem precisar rolar os dados.',
-        pageReference: 'Livro Base p.54',
+        pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.28–31',
         effects: {
           base: {
             kind: 'triggered',
@@ -127,7 +127,7 @@ export const ESPECIALISTA_TRACKS: UnifiedTrack[] = [
     name: 'Infiltrador',
     classId: 'Especialista',
     description: 'Você é um perito em infiltração e sabe neutralizar alvos desprevenidos sem causar alarde. Combinando talento acrobático, destreza manual e conhecimento técnico, você é capaz de superar qualquer barreira de defesa, mesmo quando a missão parece impossível.',
-    pageReference: 'Livro Base p.54',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.28–31',
     abilities: [
       {
         id: 'ataque-furtivo-trilha',
@@ -135,7 +135,7 @@ export const ESPECIALISTA_TRACKS: UnifiedTrack[] = [
         trackId: 'infiltrador',
         minNex: 10,
         description: 'Você sabe atingir os pontos vitais de um inimigo distraído. Uma vez por rodada, quando atinge um alvo desprevenido com um ataque corpo a corpo ou em alcance curto, ou um alvo que você esteja flanqueando, você pode gastar 1 PE para causar +1d6 pontos de dano do mesmo tipo da arma. O dano adicional aumenta para +2d6 em NEX 40%, +3d6 em NEX 65% e +4d6 em NEX 99%.',
-        pageReference: 'Livro Base p.54',
+        pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.28–31',
         isInitial: true,
         effects: {
           base: {
@@ -170,7 +170,7 @@ export const ESPECIALISTA_TRACKS: UnifiedTrack[] = [
         trackId: 'infiltrador',
         minNex: 40,
         description: 'Você recebe +5 em Atletismo e Crime e pode percorrer seu deslocamento normal quando se esconder sem penalidade (veja a perícia Furtividade).',
-        pageReference: 'Livro Base p.54',
+        pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.28–31',
         effects: {
           base: {
             kind: 'passive',
@@ -190,7 +190,7 @@ export const ESPECIALISTA_TRACKS: UnifiedTrack[] = [
         trackId: 'infiltrador',
         minNex: 65,
         description: 'Você pode gastar uma ação de movimento e 3 PE para analisar um alvo em alcance curto. Até o final do seu próximo turno, seu primeiro Ataque Furtivo que causar dano a ele tem seus dados de dano extras dessa habilidade dobrados. Além disso, se sofrer dano de seu ataque, o alvo fica inconsciente ou morrendo, à sua escolha (Fortitude — DT Agi evita).',
-        pageReference: 'Livro Base p.54',
+        pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.28–31',
         effects: {
           base: {
             kind: 'activated',
@@ -218,7 +218,7 @@ export const ESPECIALISTA_TRACKS: UnifiedTrack[] = [
         trackId: 'infiltrador',
         minNex: 99,
         description: 'Quando faz um teste de Furtividade após atacar ou fazer outra ação chamativa, você pode gastar 3 PE para não sofrer a penalidade de –3d20 no teste.',
-        pageReference: 'Livro Base p.54',
+        pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.28–31',
         effects: {
           base: {
             kind: 'activated',
@@ -249,7 +249,7 @@ export const ESPECIALISTA_TRACKS: UnifiedTrack[] = [
     name: 'Médico de Campo',
     classId: 'Especialista',
     description: 'Você é treinado em técnicas de primeiros socorros e tratamento de emergência, o que torna você um membro valioso para qualquer grupo de agentes. Ao contrário dos profissionais de saúde convencionais, você está acostumado com o campo de batalha e sabe tomar decisões rápidas no meio do caos.',
-    pageReference: 'Livro Base p.54',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.28–31',
     requirements: {
       trainedSkills: ['Medicina'],
       items: ['kit de medicina']
@@ -261,7 +261,7 @@ export const ESPECIALISTA_TRACKS: UnifiedTrack[] = [
         trackId: 'medico-campo',
         minNex: 10,
         description: 'Você pode usar 1 ação padrão e 2 PE para curar 2d10 pontos de vida de si mesmo ou de um aliado adjacente. Você pode curar +1d10 PV respectivamente em NEX 40%, 65% e 99%, gastando +1 PE por dado adicional de cura.',
-        pageReference: 'Livro Base p.54',
+        pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.28–31',
         isInitial: true,
         effects: {
           base: {
@@ -292,7 +292,7 @@ export const ESPECIALISTA_TRACKS: UnifiedTrack[] = [
         trackId: 'medico-campo',
         minNex: 40,
         description: 'Você pode usar uma ação padrão e 2 PE para remover uma condição negativa (exceto morrendo) de um aliado adjacente.',
-        pageReference: 'Livro Base p.54',
+        pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.28–31',
         effects: {
           base: {
             kind: 'activated',
@@ -314,7 +314,7 @@ export const ESPECIALISTA_TRACKS: UnifiedTrack[] = [
         trackId: 'medico-campo',
         minNex: 65,
         description: 'Uma vez por rodada, se estiver em alcance curto de um aliado machucado ou morrendo, você pode se aproximar do aliado com 1 ação livre (desde que seja capaz de fazê-lo usando seu deslocamento normal). Além disso, sempre que curar PV ou remover condições do aliado, você e o aliado recebem +5 na Defesa até o início do seu próximo turno. Por fim, para você, o total de espaços ocupados por carregar um personagem é reduzido pela metade.',
-        pageReference: 'Livro Base p.54',
+        pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.28–31',
         effects: {
           base: {
             kind: 'passive',
@@ -344,7 +344,7 @@ export const ESPECIALISTA_TRACKS: UnifiedTrack[] = [
         trackId: 'medico-campo',
         minNex: 99,
         description: 'Uma vez por cena, você pode gastar uma ação completa e 10 PE para trazer de volta à vida um personagem que tenha morrido na mesma cena (exceto morte por dano massivo).',
-        pageReference: 'Livro Base p.54',
+        pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.28–31',
         effects: {
           base: {
             kind: 'activated',
@@ -374,7 +374,7 @@ export const ESPECIALISTA_TRACKS: UnifiedTrack[] = [
     name: 'Negociador',
     classId: 'Especialista',
     description: 'Você é um diplomata habilidoso e consegue influenciar outras pessoas, seja por lábia ou intimidação. Sua capacidade de avaliar situações com rapidez e eficiência pode tirar o grupo de apuros que nem a mais poderosa das armas poderia resolver.',
-    pageReference: 'Livro Base p.54',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.28–31',
     abilities: [
       {
         id: 'eloquencia',
@@ -382,7 +382,7 @@ export const ESPECIALISTA_TRACKS: UnifiedTrack[] = [
         trackId: 'negociador',
         minNex: 10,
         description: 'Você pode usar 1 ação completa e 1 PE por alvo em alcance curto para afetar outras pessoas com sua fala. Faça um teste de Diplomacia, Enganação ou Intimidação contra a Vontade dos alvos. Se você vencer, os alvos ficam fascinados enquanto você se concentrar (1 ação padrão por rodada). Um alvo hostil ou que esteja envolvido em combate recebe +5 em seu teste de resistência e tem direito a um novo teste por rodada, sempre que você se concentrar. Uma pessoa que passar no teste fica imune a este efeito por 1 dia.',
-        pageReference: 'Livro Base p.54',
+        pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.28–31',
         isInitial: true,
         effects: {
           base: {
@@ -414,7 +414,7 @@ export const ESPECIALISTA_TRACKS: UnifiedTrack[] = [
         trackId: 'negociador',
         minNex: 40,
         description: 'Você pode gastar 1 ação padrão e 4 PE para inspirar seus aliados com suas palavras. Você e todos os seus aliados em alcance curto ganham +1d20 em testes de perícia até o fim da cena. A partir de NEX 65%, você pode gastar 8 PE para fornecer um bônus total de +2d20.',
-        pageReference: 'Livro Base p.54',
+        pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.28–31',
         effects: {
           base: {
             kind: 'scaling',
@@ -457,7 +457,7 @@ export const ESPECIALISTA_TRACKS: UnifiedTrack[] = [
         trackId: 'negociador',
         minNex: 65,
         description: 'Uma vez por missão, você pode ativar sua rede de contatos para trocar equipamentos, obter informações, resgatar alguém ou resolver um problema similar. O mestre define quando essa habilidade pode ser usada e quais favores podem ser obtidos.',
-        pageReference: 'Livro Base p.54',
+        pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.28–31',
         effects: {
           base: {
             kind: 'activated',
@@ -480,7 +480,7 @@ export const ESPECIALISTA_TRACKS: UnifiedTrack[] = [
         trackId: 'negociador',
         minNex: 99,
         description: 'Você pode gastar 5 PE para simular o efeito de qualquer habilidade que tenha visto um aliado usar durante a cena. Você ignora pré-requisitos, paga todos os custos e usa os parâmetros como se tivesse a habilidade.',
-        pageReference: 'Livro Base p.54',
+        pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.28–31',
         effects: {
           base: {
             kind: 'activated',
@@ -511,7 +511,7 @@ export const ESPECIALISTA_TRACKS: UnifiedTrack[] = [
     name: 'Técnico',
     classId: 'Especialista',
     description: 'Sua principal habilidade é a manutenção e reparo do valioso equipamento que seu time carrega em missão. Seu conhecimento técnico também permite que você improvise ferramentas com o que tiver à disposição e sabote os itens usados por seus inimigos.',
-    pageReference: 'Livro Base p.54',
+    pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.28–31',
     abilities: [
       {
         id: 'inventario-otimizado',
@@ -519,7 +519,7 @@ export const ESPECIALISTA_TRACKS: UnifiedTrack[] = [
         trackId: 'tecnico',
         minNex: 10,
         description: 'Você soma seu Intelecto à sua Força para calcular sua capacidade de carga.',
-        pageReference: 'Livro Base p.54',
+        pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.28–31',
         isInitial: true,
         effects: {
           base: {
@@ -538,7 +538,7 @@ export const ESPECIALISTA_TRACKS: UnifiedTrack[] = [
         trackId: 'tecnico',
         minNex: 40,
         description: 'Você pode gastar 1 ação completa e 1 PE para remover a condição quebrado de um equipamento adjacente até o final da cena. Além disso, qualquer equipamento geral tem sua categoria reduzida em I para você.',
-        pageReference: 'Livro Base p.54',
+        pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.28–31',
         effects: {
           base: {
             kind: 'activated',
@@ -566,7 +566,7 @@ export const ESPECIALISTA_TRACKS: UnifiedTrack[] = [
         trackId: 'tecnico',
         minNex: 65,
         description: 'Você pode improvisar equipamentos com materiais ao seu redor. Escolha um equipamento geral e gaste 1 ação completa e 2 PE, mais 2 PE por categoria do item escolhido. Você cria uma versão funcional do equipamento, que segue as regras de espaço e categoria como normal. Ao final da cena, seu equipamento improvisado se torna inútil.',
-        pageReference: 'Livro Base p.54',
+        pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.28–31',
         effects: {
           base: {
             kind: 'activated',
@@ -592,7 +592,7 @@ export const ESPECIALISTA_TRACKS: UnifiedTrack[] = [
         trackId: 'tecnico',
         minNex: 99,
         description: 'Você sempre tem o que precisa para qualquer situação. Sempre que precisar de um item qualquer (exceto armas), você pode gastar 1 ação de movimento e 2 PE por categoria do item para "lembrar" que colocou ele no fundo da bolsa. Depois de encontrado, o item segue normalmente as regras de inventário.',
-        pageReference: 'Livro Base p.54',
+        pageReference: 'Referência individual pendente; seção da classe no Livro Base v1.3, pp.28–31',
         effects: {
           base: {
             kind: 'activated',

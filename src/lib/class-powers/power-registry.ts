@@ -9,6 +9,7 @@
  */
 
 import { UnifiedClassPower, ClassId } from './types';
+import { getBasePowerReference } from './base-power-reference';
 import { COMBATENTE_POWERS } from './combatente-powers';
 import { ESPECIALISTA_POWERS } from './especialista-powers';
 import { OCULTISTA_POWERS } from './ocultista-powers';
@@ -52,7 +53,7 @@ export const ALL_CLASS_POWERS: UnifiedClassPower[] = [
   ...ESPECIALISTA_POWERS,
   ...OCULTISTA_POWERS,
   ...ALL_TRACK_POWERS,
-];
+].map(power => ({ ...power, pageReference: getBasePowerReference(power.name, power.classId) }));
 
 /**
  * Mapa para busca rápida por ID

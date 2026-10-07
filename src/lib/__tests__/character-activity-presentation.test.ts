@@ -8,6 +8,20 @@ const event = (payload: CharacterActivityEvent['payload']): CharacterActivityEve
 });
 
 describe('Histórico de alterações de condições', () => {
+  it('mostra turno manual sem cobrança e identifica a manutenção correspondente', () => {
+    expect(describeCharacterActivity(event({ kind: 'manual_turn', turnBefore: 3, turnAfter: 4, peCost: 0 })))
+      .toBe('Turno manual confirmado: 3 → 4 · Sem gasto de PE');
+    const text = describeCharacterActivity(event({ kind: 'sustain_maintenance', peCost: 1, peBefore: 10, peAfter: 10,
+      temporaryPEUsed: 1, turn: { mode: 'manual', number: 4 } }));
+    expect(text).toContain('Turno manual 4');
+    expect(text).toContain('1 PE temporários consumidos');
+  });
+  it('explica dano absorvido quando os PV normais permanecem iguais', () => {
+    const text = describeCharacterActivity(event({ kind: 'damage', value: 3, temporaryHPUsed: 3,
+      before: { hp_current: 10 }, after: { hp_current: 10 } }));
+    expect(text).toContain('PV 10 → 10');
+    expect(text).toContain('3 PV temporários consumidos');
+  });
   it('mostra motivo informado e preserva recibos antigos sem motivo', () => {
     const previous = describeCharacterActivity(event({ kind: 'sustain_end' }));
     expect(previous).not.toContain('Motivo informado');

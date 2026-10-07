@@ -73,9 +73,10 @@ describe.each([
     fireEvent.change(screen.getByRole('combobox', { name: 'Situação da conjuração' }), { target: { value: 'terrivel' } });
     fireEvent.change(screen.getByRole('spinbutton', { name: 'Dano durante a execução' }), { target: { value: '30' } });
     expect(onConfirm).not.toHaveBeenCalled();
+    if (!(screen.getByRole('checkbox', { name: /Conferi gestos/ }) as HTMLInputElement).checked) fireEvent.click(screen.getByRole('checkbox', { name: /Conferi gestos/ }));
     fireEvent.click(screen.getByRole('button', { name: /conjurar/i }));
     await act(async () => { await vi.advanceTimersByTimeAsync(350); });
-    expect(onConfirm).toHaveBeenCalledWith(ritual, 1, [], [], undefined, { situation: 'terrivel', damage: 30 });
+    expect(onConfirm).toHaveBeenCalledWith(ritual, 1, [], [], undefined, { situation: 'terrivel', damage: 30, requirementsConfirmed: true });
     expect(onOpenChange).toHaveBeenCalledWith(false);
     expect(screen.queryByText('Selecionar Alvos')).not.toBeInTheDocument();
   });
@@ -84,9 +85,19 @@ describe.each([
     const onConfirm = vi.fn();
     render(<Modal open onOpenChange={vi.fn()} ritual={getRitualById('perturbacao')!}
       peCurrent={10} peMax={10} nex={20} onConfirm={onConfirm} />);
+    fireEvent.click(screen.getByRole('checkbox', { name: /Conferi gestos/ }));
     fireEvent.change(screen.getByRole('spinbutton', { name: 'Dano durante a execução' }), { target: { value: '-1' } });
     expect(screen.getByRole('button', { name: /conjurar/i })).toBeDisabled();
     expect(onConfirm).not.toHaveBeenCalled();
+  });
+
+  it('exige confirmação de requisitos antes de habilitar a conjuração', () => {
+    render(<Modal open onOpenChange={vi.fn()} ritual={getRitualById('perturbacao')!}
+      peCurrent={10} peMax={10} nex={20} onConfirm={vi.fn()} />);
+    const cast = screen.getByRole('button', { name: /conjurar/i });
+    expect(cast).toBeDisabled();
+    fireEvent.click(screen.getByRole('checkbox', { name: /Conferi gestos/ }));
+    expect(cast).toBeEnabled();
   });
 
   it.each([
@@ -98,11 +109,12 @@ describe.each([
     const onConfirm = vi.fn().mockResolvedValue(true);
     render(<Modal open onOpenChange={vi.fn()} ritual={ritual} peCurrent={cost} peMax={50}
       nex={99} isNonOccultist onConfirm={onConfirm} />);
+    fireEvent.click(screen.getByRole('checkbox', { name: /Conferi gestos/ }));
     const confirm = screen.getByRole('button', { name: /conjurar/i });
     expect(confirm).toBeEnabled();
     fireEvent.click(confirm);
     await act(async () => { await vi.advanceTimersByTimeAsync(350); });
-    expect(onConfirm).toHaveBeenCalledWith(ritual, cost, [], [], undefined, DEFAULT_CASTING_CONCENTRATION);
+    expect(onConfirm).toHaveBeenCalledWith(ritual, cost, [], [], undefined, { ...DEFAULT_CASTING_CONCENTRATION, requirementsConfirmed: true });
   });
 
   it.each([
@@ -123,6 +135,7 @@ describe.each([
     const onOpenChange = vi.fn();
     render(<Modal open onOpenChange={onOpenChange} ritual={getRitualById('perturbacao')!}
       peCurrent={10} peMax={10} nex={20} onConfirm={onConfirm} />);
+    if (!(screen.getByRole('checkbox', { name: /Conferi gestos/ }) as HTMLInputElement).checked) fireEvent.click(screen.getByRole('checkbox', { name: /Conferi gestos/ }));
     fireEvent.click(screen.getByRole('button', { name: /conjurar/i }));
     await act(async () => { await vi.advanceTimersByTimeAsync(350); });
     expect(onConfirm).toHaveBeenCalledTimes(1);
@@ -137,6 +150,7 @@ describe.each([
     const onOpenChange = vi.fn();
     render(<Modal open onOpenChange={onOpenChange} ritual={getRitualById('perturbacao')!}
       peCurrent={10} peMax={10} nex={20} onConfirm={onConfirm} />);
+    fireEvent.click(screen.getByRole('checkbox', { name: /Conferi gestos/ }));
     const confirm = screen.getByRole('button', { name: /conjurar/i });
     fireEvent.click(confirm);
     fireEvent.click(confirm);
@@ -167,10 +181,11 @@ describe.each([
     fireEvent.click(_name === 'desktop' ? screen.getAllByRole('switch')[0]
       : screen.getByRole('button', { name: /Ampliar Ritual \(Alcance\)/ }));
     expect(onConfirm).not.toHaveBeenCalled();
+    if (!(screen.getByRole('checkbox', { name: /Conferi gestos/ }) as HTMLInputElement).checked) fireEvent.click(screen.getByRole('checkbox', { name: /Conferi gestos/ }));
     fireEvent.click(screen.getByRole('button', { name: /conjurar/i }));
     await act(async () => { await vi.advanceTimersByTimeAsync(350); });
     expect(onConfirm).toHaveBeenCalledTimes(1);
-    expect(onConfirm).toHaveBeenCalledWith(ritual, 3, [], [modifier!.id], undefined, DEFAULT_CASTING_CONCENTRATION);
+    expect(onConfirm).toHaveBeenCalledWith(ritual, 3, [], [modifier!.id], undefined, { ...DEFAULT_CASTING_CONCENTRATION, requirementsConfirmed: true });
   });
 
   it('valida o custo depois do desconto, igual ao valor cobrado', async () => {
@@ -181,11 +196,12 @@ describe.each([
     const onConfirm = vi.fn();
     render(<Modal open onOpenChange={vi.fn()} ritual={ritual} peCurrent={8} peMax={50}
       nex={99} ritualBonuses={ritualBonuses} onConfirm={onConfirm} />);
+    fireEvent.click(screen.getByRole('checkbox', { name: /Conferi gestos/ }));
     const confirm = screen.getByRole('button', { name: /conjurar/i });
     expect(confirm).toBeEnabled();
     fireEvent.click(confirm);
     await act(async () => { await vi.advanceTimersByTimeAsync(350); });
-    expect(onConfirm).toHaveBeenCalledWith(ritual, 8, [], [], undefined, DEFAULT_CASTING_CONCENTRATION);
+    expect(onConfirm).toHaveBeenCalledWith(ritual, 8, [], [], undefined, { ...DEFAULT_CASTING_CONCENTRATION, requirementsConfirmed: true });
   });
 
   it('inclui o custo do modificador na validação do saldo', () => {
@@ -211,9 +227,10 @@ describe.each([
     const onConfirm = vi.fn();
     render(<Modal open onOpenChange={vi.fn()} ritual={ritual} peCurrent={50} peMax={50}
       nex={99} onConfirm={onConfirm} />);
+    if (!(screen.getByRole('checkbox', { name: /Conferi gestos/ }) as HTMLInputElement).checked) fireEvent.click(screen.getByRole('checkbox', { name: /Conferi gestos/ }));
     fireEvent.click(screen.getByRole('button', { name: /conjurar/i }));
     await act(async () => { await vi.advanceTimersByTimeAsync(350); });
-    expect(onConfirm).toHaveBeenCalledWith(ritual, expectedCost, [], [], undefined, DEFAULT_CASTING_CONCENTRATION);
+    expect(onConfirm).toHaveBeenCalledWith(ritual, expectedCost, [], [], undefined, { ...DEFAULT_CASTING_CONCENTRATION, requirementsConfirmed: true });
   });
 
   it('valida o saldo usando o custo atual do catálogo para um objeto legado', () => {
@@ -233,11 +250,12 @@ describe.each([
 
     fireEvent.click(screen.getByText('Discente'));
     fireEvent.click(screen.getByText('Verdadeiro'));
+    if (!(screen.getByRole('checkbox', { name: /Conferi gestos/ }) as HTMLInputElement).checked) fireEvent.click(screen.getByRole('checkbox', { name: /Conferi gestos/ }));
     fireEvent.click(screen.getByRole('button', { name: /conjurar/i }));
     await act(async () => { await vi.advanceTimersByTimeAsync(350); });
 
     const enhancement = ritual.enhancements!.find(item => item.name === 'Verdadeiro')!;
-    expect(onConfirm).toHaveBeenCalledWith(ritual, ritual.cost + enhancement.cost, ['Verdadeiro'], [], undefined, DEFAULT_CASTING_CONCENTRATION);
+    expect(onConfirm).toHaveBeenCalledWith(ritual, ritual.cost + enhancement.cost, ['Verdadeiro'], [], undefined, { ...DEFAULT_CASTING_CONCENTRATION, requirementsConfirmed: true });
   });
 
   it('bloqueia um ritual acima da capacidade da classe (p.114)', () => {

@@ -628,8 +628,9 @@ export const DEATH_FIRST_CIRCLE: UnifiedRitual[] = [
       verdadeiro: {
         kind: 'damage',
         damage: { diceCount: 3, diceType: 6, damageType: 'morte' },
+        tempHP: undefined,
         areaEffect: { shape: 'esfera', radius: 6 },
-        summary: 'Área 6m. 3d6 dano de Morte em todos. PV temporários = dano total.',
+        summary: 'Área 6m. 3d6 dano de Morte em todos. Após confirmar o dano em cada alvo, registre os PV temporários na ficha do conjurador pela soma do dano efetivamente causado; não role PV adicionais.',
       },
     },
     enhancements: [

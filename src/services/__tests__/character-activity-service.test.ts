@@ -56,9 +56,13 @@ describe('conjuração e aplicação atômicas', () => {
     await castCharacterRitual({ characterId, operationId, expectedPE: 0, peCost: 0, payload: {} });
     expect(fake.rpc.mock.calls[0][1].p_pe_cost).toBe(0);
   });
-  it('não envia custo insuficiente ou fracionário', async () => {
-    await expect(castCharacterRitual({ characterId, operationId, expectedPE: 1, peCost: 2, payload: {} })).rejects.toThrow('insuficiente');
+  it('rejeita custo fracionário antes de enviar ao servidor', async () => {
+    await expect(castCharacterRitual({ characterId, operationId, expectedPE: 1, peCost: 2.5, payload: {} })).rejects.toThrow('inválido');
     expect(fake.rpc).not.toHaveBeenCalled();
+  });
+  it('delega saldo total ao servidor, pois PE temporários são separados', async () => {
+    await castCharacterRitual({ characterId, operationId, expectedPE: 1, peCost: 2, payload: {} });
+    expect(fake.rpc).toHaveBeenCalledWith('cast_character_ritual', expect.objectContaining({ p_expected_pe: 1, p_pe_cost: 2 }));
   });
   it('envia número JSON para dano e não afirma sucesso negado', async () => {
     fake.rpc.mockResolvedValue({ data: null, error: { message: 'negado' } });

@@ -4,8 +4,8 @@ import { getConditionTestDicePenalty } from '@/lib/conditions/condition-test-pen
 import type { BonusSummary } from '@/hooks/useCharacterBonusSummary';
 import type { TestDiceModifiers } from '@/lib/unified-effects-engine';
 
-export interface CastingConcentrationContext { situation: 'normal' | 'ruim' | 'terrivel'; damage: number }
-export const DEFAULT_CASTING_CONCENTRATION: CastingConcentrationContext = { situation: 'normal', damage: 0 };
+export interface CastingConcentrationContext { situation: 'normal' | 'ruim' | 'terrivel'; damage: number; requirementsConfirmed?: boolean }
+export const DEFAULT_CASTING_CONCENTRATION: CastingConcentrationContext = { situation: 'normal', damage: 0, requirementsConfirmed: false };
 export interface CastingWillConfig { attribute: number; dicePenalty: number; bonuses: { name: string; value: number }[] }
 
 /** Reutiliza treinamento, resumo SUE e penalidades atuais, sem somar SUE duas vezes. */
@@ -27,6 +27,7 @@ export function getCastingWillConfig(presence: number, skills: Record<string, nu
 
 /** Contexto narrativo é declarado; dano informado aqui não desconta PV novamente. */
 export function validateCastingConcentration(context: CastingConcentrationContext): string | null {
+  if (context.requirementsConfirmed === false) return 'Confirme os requisitos materiais e de alvo antes da conjuração.';
   if (!['normal', 'ruim', 'terrivel'].includes(context.situation)) return 'Confira a situação da conjuração.';
   if (!Number.isSafeInteger(context.damage) || context.damage < 0 || context.damage > 1000000) return 'Informe um dano inteiro entre 0 e 1.000.000.';
   return null;

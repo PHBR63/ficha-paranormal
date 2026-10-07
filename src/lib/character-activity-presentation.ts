@@ -30,6 +30,11 @@ export function describeCharacterActivity(event: CharacterActivityEvent): string
   if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return 'Registro sem detalhes';
   const nested = payload.entry ?? payload.result;
   const result = nested && typeof nested === 'object' && !Array.isArray(nested) ? nested : payload;
+  // O saldo normal pode ficar igual quando a fonte temporária absorve todo o gasto.
+  const temporaryUsage = (resource: 'PV' | 'PE', value: Json | undefined) =>
+    typeof value === 'number' && value > 0 ? ` · ${value} ${resource} temporários consumidos` : '';
+  const temporaryPE = temporaryUsage('PE', payload.temporaryPEUsed);
+  const temporaryHP = temporaryUsage('PV', payload.temporaryHPUsed);
   const label = typeof result.label === 'string' ? result.label : typeof payload.ritualName === 'string' ? payload.ritualName : typeof payload.label === 'string' ? payload.label : event.category === 'roll' ? 'Rolagem' : event.category === 'ritual' ? 'Conjuração' : 'Efeito';
   if (event.category === 'roll') {
     const total = typeof result.total === 'number' ? `: ${result.total}` : '';
@@ -44,14 +49,23 @@ export function describeCharacterActivity(event: CharacterActivityEvent): string
     return `${label}${total}${dice.length ? ` · dados [${dice.join(', ')}]` : ''}${breakdown}`;
   }
   if (event.category === 'ritual') {
+    const cost = payload.paranormalCost;
+    const costDetails = cost && typeof cost === 'object' && !Array.isArray(cost)
+      ? ` · Custo do Paranormal: ${typeof cost.total === 'number' ? `Ocultismo ${cost.total} / DT ${cost.dt}` : cost.skipped ? 'não executado: concentração falhou' : 'Medo'} · SAN ${payload.sanBefore} → ${payload.sanAfter} · SAN máxima ${payload.sanMaxBefore} → ${payload.sanMaxAfter}` : '';
     const concentration = payload.concentration;
     const tests = concentration && typeof concentration === 'object' && !Array.isArray(concentration) && Array.isArray(concentration.tests)
       ? concentration.tests : [];
     const details = tests.map(test => test && typeof test === 'object' && !Array.isArray(test)
       ? `Vontade (${test.trigger}) · dados [${Array.isArray(test.dice) ? test.dice.join(', ') : 'conferir'}] · ${test.kept} + bônus ${test.bonus} = ${test.total} vs DT ${test.dt} · ${test.success ? 'sucesso' : 'falha'}${Array.isArray(test.bonuses) ? ` · Fontes: ${test.bonuses.map(source => source && typeof source === 'object' && !Array.isArray(source) ? `${source.name}: ${source.value}` : 'conferir').join('; ')}` : ''}` : 'Teste antigo: conferir').join('; ');
-    return `${label}${typeof payload.peCost === 'number' ? ` · ${payload.peCost} PE` : ''}${typeof payload.peBefore === 'number' && typeof payload.peAfter === 'number' ? ` (${payload.peBefore} → ${payload.peAfter})` : ''}${details ? ` · ${details}` : ''}${payload.castingOutcome === 'failed_concentration' ? ' · Concentração falhou; efeitos bloqueados, sem estorno de PE' : ''}`;
+    return `${label}${typeof payload.peCost === 'number' ? ` · ${payload.peCost} PE` : ''}${typeof payload.peBefore === 'number' && typeof payload.peAfter === 'number' ? ` (${payload.peBefore} → ${payload.peAfter})` : ''}${temporaryPE}${details ? ` · ${details}` : ''}${payload.castingOutcome === 'failed_concentration' ? ' · Concentração falhou; efeitos bloqueados, sem estorno de PE' : ''}${costDetails}`;
   }
   if (payload.kind === 'scene_expiry') return `Cena ${payload.sceneNumber} encerrada · ${payload.expiredEffectsCount} efeito(s) expirado(s)${describeConditionChanges((payload.before as { conditions?: Json })?.conditions, (payload.after as { conditions?: Json })?.conditions)}`;
+  if (payload.kind === 'manual_turn') return `Turno manual confirmado: ${payload.turnBefore} → ${payload.turnAfter} · Sem gasto de PE`;
+  if (payload.kind === 'temporary_resource' || payload.kind === 'temporary_end') {
+    const before = payload.before as { current?: number } | undefined;
+    const after = payload.after as { current?: number } | undefined;
+    return `${payload.kind === 'temporary_end' ? 'Fonte encerrada' : 'Recurso temporário confirmado'} · ${payload.sourceName} · ${payload.resource === 'hp' ? 'PV' : 'PE'} ${before?.current} → ${after?.current}`;
+  }
   if (payload.kind === 'sustain_maintenance' || payload.kind === 'sustain_end') {
     const before = payload.before;
     const rituals = before && typeof before === 'object' && !Array.isArray(before) && Array.isArray(before.sustained_rituals)
@@ -61,7 +75,10 @@ export function describeCharacterActivity(event: CharacterActivityEvent): string
     const reason = payload.endReason;
     const reasonDetails = payload.kind === 'sustain_end' && reason && typeof reason === 'object' && !Array.isArray(reason)
       ? ` · Motivo informado: ${RITUAL_END_REASONS.find(entry => entry.kind === reason.kind)?.label ?? 'Conferência manual'}${typeof reason.note === 'string' && reason.note ? ` — ${reason.note}` : ''}` : '';
-    return `${payload.kind === 'sustain_maintenance' ? 'Manutenção confirmada' : 'Sustentação encerrada'} · ${names} · Custo ${payload.peCost ?? 0} PE · PE ${payload.peBefore} → ${payload.peAfter}${reasonDetails}`;
+    const turn = payload.turn;
+    const turnDetails = turn && typeof turn === 'object' && !Array.isArray(turn)
+      ? turn.mode === 'manual' ? ` · Turno manual ${turn.number}` : ` · Cena ${turn.scene} · Rodada ${turn.round}` : '';
+    return `${payload.kind === 'sustain_maintenance' ? 'Manutenção confirmada' : 'Sustentação encerrada'} · ${names} · Custo ${payload.peCost ?? 0} PE · PE ${payload.peBefore} → ${payload.peAfter}${temporaryPE}${turnDetails}${reasonDetails}`;
   }
   const kinds: Record<string, string> = { heal: 'Cura', damage: 'Dano', conditions: 'Condições adicionadas', replace_conditions: 'Condições alteradas', resource: 'Recurso alterado', resources: 'Recursos alterados', weapon_buff: 'Bônus de arma aplicado à ficha', sustain: 'Sustentação ativada' };
   const kind = typeof payload.kind === 'string' ? kinds[payload.kind] ?? 'Efeito registrado' : 'Efeito registrado';
@@ -81,8 +98,10 @@ export function describeCharacterActivity(event: CharacterActivityEvent): string
     const tests = resolution && typeof resolution === 'object' && !Array.isArray(resolution) && Array.isArray(resolution.bleedingTests)
       ? resolution.bleedingTests.map(test => test && typeof test === 'object' && !Array.isArray(test)
         ? `Vigor: ${test.total} contra DT ${test.dt} (${test.passed ? 'sucesso' : 'falha'})` : '').filter(Boolean) : [];
-    const turnDetails = [...tests, ...details].join(' · ');
-    return `Início de turno confirmado${hp}${turnDetails ? ` · ${turnDetails}` : ''}${conditionChanges}`;
+    const notices = resolution && typeof resolution === 'object' && !Array.isArray(resolution) && Array.isArray(resolution.notices)
+      ? resolution.notices.filter((notice): notice is string => typeof notice === 'string') : [];
+    const turnDetails = [...tests, ...details, ...notices].join(' · ');
+    return `Início de turno confirmado${hp}${temporaryHP}${turnDetails ? ` · ${turnDetails}` : ''}${conditionChanges}`;
   }
   if (before && after && typeof before === 'object' && typeof after === 'object' && !Array.isArray(before) && !Array.isArray(after)) {
     if (payload.kind === 'resources') {
@@ -91,8 +110,8 @@ export function describeCharacterActivity(event: CharacterActivityEvent): string
         .map(([key, name]) => `${name} ${before[key]} → ${after[key]}`);
       return `${kind} · ${changes.join(' · ')}${conditionChanges}`;
     }
-    if (typeof before.hp_current === 'number' && typeof after.hp_current === 'number') return `${kind} · PV ${before.hp_current} → ${after.hp_current}${typeof payload.value === 'number' ? ` · quantidade ${payload.value}` : ''}${conditionChanges}`;
-    if (typeof before.current === 'number' && typeof after.current === 'number') return `${kind} · ${resource} ${before.current} → ${after.current}${conditionChanges}`;
+    if (typeof before.hp_current === 'number' && typeof after.hp_current === 'number') return `${kind} · PV ${before.hp_current} → ${after.hp_current}${temporaryHP}${typeof payload.value === 'number' ? ` · quantidade ${payload.value}` : ''}${typeof before.age === 'number' && typeof after.age === 'number' ? ` · Idade ${before.age} → ${after.age}` : ''}${conditionChanges}`;
+    if (typeof before.current === 'number' && typeof after.current === 'number') return `${kind} · ${resource} ${before.current} → ${after.current}${temporaryUsage(payload.resource === 'pe' ? 'PE' : 'PV', payload.temporaryUsed)}${conditionChanges}`;
     if (Array.isArray(before.conditions) && Array.isArray(after.conditions)) return `${kind} · ${before.conditions.length} → ${after.conditions.length} condição(ões)${conditionChanges}`;
   }
   return kind;
