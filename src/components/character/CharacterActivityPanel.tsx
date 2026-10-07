@@ -5,6 +5,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTr
 import { useCharacterActivity } from '@/hooks/character/useCharacterActivity';
 import { describeCharacterActivity } from '@/lib/character-activity-presentation';
 import type { ActivityCategory, ActivityPeriod } from '@/types/character-activity';
+import { getConcentrationFailureMessage } from '@/lib/rituals/casting-concentration-result';
 
 interface CharacterActivityPanelProps { characterId: string; characterName: string; compact?: boolean }
 const categories: Array<{ value: ActivityCategory | ''; label: string }> = [
@@ -65,7 +66,7 @@ export function CharacterActivityPanel({ characterId, characterName, compact = f
         {!activity.isLoading && !activity.isError && activity.events.length === 0 && <p className="text-sm text-muted-foreground">Nenhum registro visível. Recupere os ocultos ou faça uma nova rolagem.</p>}
         {activity.events.map(event => <article key={event.id} className="rounded border p-3">
           <p className="break-words text-sm">{describeCharacterActivity(event)}</p>
-          <p className="mt-1 text-xs text-muted-foreground">{new Date(event.created_at).toLocaleString('pt-BR')} · {event.status === 'pending' ? 'Conjuração registrada; confira os eventos de aplicação' : 'Confirmado pelo servidor'}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{new Date(event.created_at).toLocaleString('pt-BR')} · {getConcentrationFailureMessage(event.payload) ? 'Falha de concentração confirmada pelo servidor' : event.status === 'pending' ? 'Conjuração registrada; confira os eventos de aplicação' : 'Confirmado pelo servidor'}</p>
         </article>)}
         {activity.hasNextPage && <Button variant="outline" className="w-full" onClick={() => { void activity.fetchNextPage(); }} disabled={activity.isFetchingNextPage}>Carregar mais</Button>}
       </div>

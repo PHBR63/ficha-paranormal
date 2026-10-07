@@ -8,6 +8,7 @@ import { useRitualBonusesFromSUE } from '@/hooks/useRitualBonusesFromSUE';
 import { useUnifiedEffects } from '@/hooks/useUnifiedEffects';
 import { unifiedToLegacy } from '@/lib/rituals/ritual-adapter';
 import { RitualCard } from '../RitualCard';
+import { DEFAULT_CASTING_CONCENTRATION } from '@/lib/rituals/casting-concentration';
 
 // Isola somente a fachada de hooks, mantendo a validação real de regras.
 vi.mock('@/hooks', async () => await import('@/hooks/useRitualValidation'));
@@ -62,6 +63,32 @@ describe.each([
   ['desktop', RitualCastModal],
   ['mobile', MobileRitualCastModal],
 ] as const)('Modal de conjuração %s', (_name, Modal) => {
+  it('envia situação e dano declarados e encerra sem efeitos quando a concentração falha', async () => {
+    vi.useFakeTimers();
+    const ritual = getRitualById('perturbacao')!;
+    const onConfirm = vi.fn().mockResolvedValue({ effectsAllowed: false });
+    const onOpenChange = vi.fn();
+    render(<Modal open onOpenChange={onOpenChange} ritual={ritual}
+      peCurrent={10} peMax={10} nex={20} onConfirm={onConfirm} />);
+    fireEvent.change(screen.getByRole('combobox', { name: 'Situação da conjuração' }), { target: { value: 'terrivel' } });
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Dano durante a execução' }), { target: { value: '30' } });
+    expect(onConfirm).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: /conjurar/i }));
+    await act(async () => { await vi.advanceTimersByTimeAsync(350); });
+    expect(onConfirm).toHaveBeenCalledWith(ritual, 1, [], [], undefined, { situation: 'terrivel', damage: 30 });
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+    expect(screen.queryByText('Selecionar Alvos')).not.toBeInTheDocument();
+  });
+
+  it('recusa dano negativo antes de enviar a conjuração', () => {
+    const onConfirm = vi.fn();
+    render(<Modal open onOpenChange={vi.fn()} ritual={getRitualById('perturbacao')!}
+      peCurrent={10} peMax={10} nex={20} onConfirm={onConfirm} />);
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Dano durante a execução' }), { target: { value: '-1' } });
+    expect(screen.getByRole('button', { name: /conjurar/i })).toBeDisabled();
+    expect(onConfirm).not.toHaveBeenCalled();
+  });
+
   it.each([
     ['aprimorar-mente', 2, 3],
     ['alterar-memoria', 4, 6],
@@ -75,7 +102,7 @@ describe.each([
     expect(confirm).toBeEnabled();
     fireEvent.click(confirm);
     await act(async () => { await vi.advanceTimersByTimeAsync(350); });
-    expect(onConfirm).toHaveBeenCalledWith(ritual, cost, [], [], undefined);
+    expect(onConfirm).toHaveBeenCalledWith(ritual, cost, [], [], undefined, DEFAULT_CASTING_CONCENTRATION);
   });
 
   it.each([
@@ -143,7 +170,7 @@ describe.each([
     fireEvent.click(screen.getByRole('button', { name: /conjurar/i }));
     await act(async () => { await vi.advanceTimersByTimeAsync(350); });
     expect(onConfirm).toHaveBeenCalledTimes(1);
-    expect(onConfirm).toHaveBeenCalledWith(ritual, 3, [], [modifier!.id], undefined);
+    expect(onConfirm).toHaveBeenCalledWith(ritual, 3, [], [modifier!.id], undefined, DEFAULT_CASTING_CONCENTRATION);
   });
 
   it('valida o custo depois do desconto, igual ao valor cobrado', async () => {
@@ -158,7 +185,7 @@ describe.each([
     expect(confirm).toBeEnabled();
     fireEvent.click(confirm);
     await act(async () => { await vi.advanceTimersByTimeAsync(350); });
-    expect(onConfirm).toHaveBeenCalledWith(ritual, 8, [], [], undefined);
+    expect(onConfirm).toHaveBeenCalledWith(ritual, 8, [], [], undefined, DEFAULT_CASTING_CONCENTRATION);
   });
 
   it('inclui o custo do modificador na validação do saldo', () => {
@@ -186,7 +213,7 @@ describe.each([
       nex={99} onConfirm={onConfirm} />);
     fireEvent.click(screen.getByRole('button', { name: /conjurar/i }));
     await act(async () => { await vi.advanceTimersByTimeAsync(350); });
-    expect(onConfirm).toHaveBeenCalledWith(ritual, expectedCost, [], [], undefined);
+    expect(onConfirm).toHaveBeenCalledWith(ritual, expectedCost, [], [], undefined, DEFAULT_CASTING_CONCENTRATION);
   });
 
   it('valida o saldo usando o custo atual do catálogo para um objeto legado', () => {
@@ -210,7 +237,7 @@ describe.each([
     await act(async () => { await vi.advanceTimersByTimeAsync(350); });
 
     const enhancement = ritual.enhancements!.find(item => item.name === 'Verdadeiro')!;
-    expect(onConfirm).toHaveBeenCalledWith(ritual, ritual.cost + enhancement.cost, ['Verdadeiro'], [], undefined);
+    expect(onConfirm).toHaveBeenCalledWith(ritual, ritual.cost + enhancement.cost, ['Verdadeiro'], [], undefined, DEFAULT_CASTING_CONCENTRATION);
   });
 
   it('bloqueia um ritual acima da capacidade da classe (p.114)', () => {

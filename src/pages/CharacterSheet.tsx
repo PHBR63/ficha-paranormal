@@ -1,3 +1,5 @@
+import { DEFAULT_CASTING_CONCENTRATION, getCastingWillConfig, rollCastingConcentration, type CastingConcentrationContext } from '@/lib/rituals/casting-concentration';
+import { getConcentrationFailureMessage } from '@/lib/rituals/casting-concentration-result';
 import { BaseRulesNotice } from '@/components/character/BaseRulesNotice';
 import { useConditionTurnApplication } from '@/hooks/character/useConditionTurnApplication';
 import { useCharacterResourceUpdate } from '@/hooks/character/useCharacterResourceUpdate';
@@ -1222,18 +1224,21 @@ export default function CharacterSheet() {
   }, [beginRitualCast]);
 
   // Handler para confirmar conjuração de ritual (desconta PE e registra no histórico)
-  const handleCastRitual = useCallback(async (ritual: Ritual, peCost: number, enhancements: string[]) => {
+  const handleCastRitual = useCallback(async (ritual: Ritual, peCost: number, enhancements: string[], _activeModifiers?: string[], _counterRitualCost?: number, concentration: CastingConcentrationContext = DEFAULT_CASTING_CONCENTRATION) => {
     if (!character) return false;
 
     const peBeforeCast = peCurrent;
     let newPe: number;
+    let concentrationFailure: string | null = null;
     try {
       const event = await confirmRitualCast(peBeforeCast, peCost, {
         ritualId: ritual.id, ritualName: ritual.name, ritualElement: ritual.element, ritualCircle: ritual.circle, enhancements, sessionId: ritualCampaignSessionId,
-      }, ritualCampaignId && ritualCampaignVersion ? { campaignId: ritualCampaignId, campaignVersion: ritualCampaignVersion } : {});
+      }, ritualCampaignId && ritualCampaignVersion ? { campaignId: ritualCampaignId, campaignVersion: ritualCampaignVersion } : {},
+        () => ({ concentration: activityJson(rollCastingConcentration(concentration, getCastingWillConfig(character.presence, character.skills || {}, bonusSummary, activeConditionsForSUE, globalDiceBonus))) }));
       const payload = event.payload as { peAfter?: number };
       if (typeof payload.peAfter !== 'number') throw new Error('O servidor não confirmou o saldo de PE.');
       newPe = payload.peAfter;
+      concentrationFailure = getConcentrationFailureMessage(event.payload);
     } catch (error) {
       toast({
         title: 'Erro ao conjurar',
@@ -1245,6 +1250,12 @@ export default function CharacterSheet() {
 
     setPeCurrent(newPe);
     setCharacter(prev => prev ? { ...prev, pe_current: newPe } : null);
+
+    if (concentrationFailure) {
+      await refreshActivity().catch(() => undefined);
+      toast({ title: 'Concentração falhou', description: concentrationFailure, variant: 'destructive' });
+      return { effectsAllowed: false };
+    }
 
     // Registrar no histórico da sessão
     try { await refreshActivity(); }
@@ -1300,7 +1311,7 @@ export default function CharacterSheet() {
       description: `Conjurou ${ritual.name}${enhText} (-${peCost} PE)`,
     }]);
     return true;
-  }, [character, peCurrent, toast, user?.id, isInCampaign, syncRitualCast, confirmRitualCast, ritualCampaignId, ritualCampaignVersion, ritualCampaignSessionId, refreshActivity]);
+  }, [character, peCurrent, toast, user?.id, isInCampaign, syncRitualCast, confirmRitualCast, ritualCampaignId, ritualCampaignVersion, ritualCampaignSessionId, refreshActivity, bonusSummary, globalDiceBonus, activeConditionsForSUE]);
 
   // Limpar histórico de conjurações
   const handleClearCastHistory = useCallback(() => {

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-export type RitualConfirmationResult = boolean | void | Promise<boolean | void>;
+export interface RitualConfirmationOutcome { effectsAllowed: boolean }
+export type RitualConfirmationResult = boolean | void | RitualConfirmationOutcome | Promise<boolean | void | RitualConfirmationOutcome>;
 
 /**
  * Aguarda a persistência antes de fechar a preparação ou iniciar efeitos.
@@ -11,20 +12,24 @@ export function useRitualConfirmation(open: boolean) {
   const pending = useRef(false);
   const [isConfirming, setIsConfirming] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  useEffect(() => { if (open) setError(null); }, [open]);
+  const attempt = useRef<{ persist: () => RitualConfirmationResult; onSuccess: (result: boolean | void | RitualConfirmationOutcome) => void } | null>(null);
+  useEffect(() => { if (open) { setError(null); attempt.current = null; } }, [open]);
 
-  const confirm = useCallback(async (persist: () => RitualConfirmationResult, onSuccess: () => void) => {
+  const confirm = useCallback(async (persist: () => RitualConfirmationResult, onSuccess: (result: boolean | void | RitualConfirmationOutcome) => void) => {
     if (pending.current) return;
     pending.current = true;
     setIsConfirming(true);
     setError(null);
     try {
-      const result = await persist();
+      attempt.current ??= { persist, onSuccess };
+      const frozen = attempt.current;
+      const result = await frozen.persist();
       if (result === false) {
         setError('A conjuração não foi confirmada. Confira o saldo e a conexão antes de tentar novamente.');
         return;
       }
-      onSuccess();
+      frozen.onSuccess(result);
+      attempt.current = null;
     } catch {
       setError('Não foi possível confirmar a conjuração. Recarregue a ficha para conferir o saldo.');
     } finally {

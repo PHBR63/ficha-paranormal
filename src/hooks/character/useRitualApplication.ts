@@ -27,12 +27,12 @@ export function useRitualApplication(characterId: string, onRefetch?: () => void
     try { await queryClient.invalidateQueries({ queryKey: ['character-activity'] }); const refreshed = await onRefetch?.(); if (refreshed === null) throw new Error('Ficha não atualizada.'); }
     catch { setError('Operação confirmada pelo servidor, mas a tela não atualizou. Recarregue a ficha.'); }
   }, [queryClient, onRefetch]);
-  const cast = useCallback(async (expectedPE: number, peCost: number, payload: ActivityPayload, context: ActivityContext = {}) => {
+  const cast = useCallback(async (expectedPE: number, peCost: number, payload: ActivityPayload, context: ActivityContext = {}, preparePayload?: () => ActivityPayload) => {
     if (busyRef.current) throw new Error('Aguarde a confirmação da operação atual.');
     busyRef.current = true; setBusy(true); setError(null);
     operationRef.current ??= crypto.randomUUID();
     try {
-      castRequest.current ??= { characterId, operationId: operationRef.current, expectedPE, peCost, payload: JSON.parse(JSON.stringify(payload)) as ActivityPayload, ...context };
+      castRequest.current ??= { characterId, operationId: operationRef.current, expectedPE, peCost, payload: JSON.parse(JSON.stringify({ ...payload, ...preparePayload?.() })) as ActivityPayload, ...context };
       const request = castRequest.current;
       const event = await castCharacterRitual(request);
       if (currentCharacter.current === characterId) { castRef.current = event; setCastEventId(event.id); }
@@ -42,6 +42,10 @@ export function useRitualApplication(characterId: string, onRefetch?: () => void
   }, [characterId, refresh]);
   const apply = useCallback(async (kind: EffectKind, value: Json, expected: ActivityPayload, targetCharacterId = characterId) => {
     if (!castRef.current) throw new Error('Confirme a conjuração antes de aplicar efeitos.');
+    const castPayload = castRef.current.payload;
+    if (castPayload && typeof castPayload === 'object' && !Array.isArray(castPayload) && castPayload.castingOutcome === 'failed_concentration') {
+      throw new Error('A concentração falhou. Este ritual não pode aplicar efeitos.');
+    }
     if (busyRef.current) throw new Error('Aguarde a confirmação da operação atual.');
     const key = `${castRef.current.id}:${targetCharacterId}:${kind}`;
     busyRef.current = true; setBusy(true); setError(null);

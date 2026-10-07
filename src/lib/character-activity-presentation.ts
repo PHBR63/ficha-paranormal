@@ -43,7 +43,14 @@ export function describeCharacterActivity(event: CharacterActivityEvent): string
     const breakdown = typeof kept === 'number' ? ` · ${selected}${skill !== undefined ? ` ${signed(skill)} perícia` : ''}${other !== undefined ? ` ${signed(other)} outros bônus` : ''}${skill === undefined && bonus !== undefined ? ` ${signed(bonus)} bônus` : ''}` : '';
     return `${label}${total}${dice.length ? ` · dados [${dice.join(', ')}]` : ''}${breakdown}`;
   }
-  if (event.category === 'ritual') return `${label}${typeof payload.peCost === 'number' ? ` · ${payload.peCost} PE` : ''}${typeof payload.peBefore === 'number' && typeof payload.peAfter === 'number' ? ` (${payload.peBefore} → ${payload.peAfter})` : ''}`;
+  if (event.category === 'ritual') {
+    const concentration = payload.concentration;
+    const tests = concentration && typeof concentration === 'object' && !Array.isArray(concentration) && Array.isArray(concentration.tests)
+      ? concentration.tests : [];
+    const details = tests.map(test => test && typeof test === 'object' && !Array.isArray(test)
+      ? `Vontade (${test.trigger}) · dados [${Array.isArray(test.dice) ? test.dice.join(', ') : 'conferir'}] · ${test.kept} + bônus ${test.bonus} = ${test.total} vs DT ${test.dt} · ${test.success ? 'sucesso' : 'falha'}${Array.isArray(test.bonuses) ? ` · Fontes: ${test.bonuses.map(source => source && typeof source === 'object' && !Array.isArray(source) ? `${source.name}: ${source.value}` : 'conferir').join('; ')}` : ''}` : 'Teste antigo: conferir').join('; ');
+    return `${label}${typeof payload.peCost === 'number' ? ` · ${payload.peCost} PE` : ''}${typeof payload.peBefore === 'number' && typeof payload.peAfter === 'number' ? ` (${payload.peBefore} → ${payload.peAfter})` : ''}${details ? ` · ${details}` : ''}${payload.castingOutcome === 'failed_concentration' ? ' · Concentração falhou; efeitos bloqueados, sem estorno de PE' : ''}`;
+  }
   if (payload.kind === 'scene_expiry') return `Cena ${payload.sceneNumber} encerrada · ${payload.expiredEffectsCount} efeito(s) expirado(s)${describeConditionChanges((payload.before as { conditions?: Json })?.conditions, (payload.after as { conditions?: Json })?.conditions)}`;
   if (payload.kind === 'sustain_maintenance' || payload.kind === 'sustain_end') {
     const before = payload.before;

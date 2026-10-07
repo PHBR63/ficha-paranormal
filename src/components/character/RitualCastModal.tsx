@@ -1,3 +1,5 @@
+import { CastingConcentrationForm } from '@/components/character/CastingConcentrationForm';
+import { DEFAULT_CASTING_CONCENTRATION, validateCastingConcentration, type CastingConcentrationContext } from '@/lib/rituals/casting-concentration';
 /**
  * RitualCastModal - Modal de confirmação para conjurar rituais
  * Permite escolher aprimoramentos e mostra custo total em PE
@@ -89,7 +91,7 @@ interface RitualCastModalProps {
   nex?: number;
   elementalAffinity?: string | null;
   turnPEState?: TurnPEState;
-  onConfirm: (ritual: RitualInput, peCost: number, enhancements: string[], activeModifiers?: string[], counterRitualCost?: number) => RitualConfirmationResult;
+  onConfirm: (ritual: RitualInput, peCost: number, enhancements: string[], activeModifiers?: string[], counterRitualCost?: number, concentration?: CastingConcentrationContext) => RitualConfirmationResult;
   // === Bônus do SUE ===
   ritualBonuses?: RitualBonuses | null;
   intellect?: number; // Para cálculo de Ritual Potente
@@ -122,6 +124,7 @@ export function RitualCastModal({
   peLimitBonus = 0,
 }: RitualCastModalProps) {
   const confirmation = useRitualConfirmation(open);
+  const [concentration, setConcentration] = useState(DEFAULT_CASTING_CONCENTRATION);
   // Estado dos aprimoramentos selecionados
   const [selectedEnhancements, setSelectedEnhancements] = useState<string[]>([]);
   // Estado dos modificadores de trilha ativados
@@ -244,11 +247,13 @@ export function RitualCastModal({
 
   // Handler de confirmação com efeito visual
   const handleConfirm = () => {
-    if (!canCast) return;
+    if (!canCast || validateCastingConcentration(concentration)) return;
     void confirmation.confirm(
-      () => onConfirm(ritual, totalCost, validSelectedEnhancements, activeModifiers, isCounterActive ? counterRitualCost : undefined),
-      () => {
-        if (elementConfig) triggerElementParticles(elementConfig.hex, elementConfig.hexLight);
+      () => onConfirm(ritual, totalCost, validSelectedEnhancements, activeModifiers, isCounterActive ? counterRitualCost : undefined, concentration),
+      result => {
+        const effectsAllowed = typeof result !== 'object' || result.effectsAllowed;
+        if (effectsAllowed && elementConfig) triggerElementParticles(elementConfig.hex, elementConfig.hexLight);
+        setConcentration(DEFAULT_CASTING_CONCENTRATION);
         setSelectedEnhancements([]);
         setActiveModifiers([]);
         onOpenChange(false);
@@ -260,6 +265,7 @@ export function RitualCastModal({
   const handleOpenChange = (isOpen: boolean) => {
     if (confirmation.isConfirming) return;
     if (!isOpen) {
+      setConcentration(DEFAULT_CASTING_CONCENTRATION);
       setSelectedEnhancements([]);
       setActiveModifiers([]);
       setCounterRitualCost(0);
@@ -312,6 +318,7 @@ export function RitualCastModal({
 
         <ScrollArea className="max-h-[60vh]">
           <div className="space-y-4 py-4">
+<CastingConcentrationForm value={concentration} onChange={setConcentration} peCost={totalCost} disabled={confirmation.isConfirming} />
             {/* Info do ritual */}
             <div className="grid grid-cols-2 gap-2 text-xs">
               <div className="flex items-center gap-1.5 text-muted-foreground">
@@ -909,7 +916,7 @@ export function RitualCastModal({
           </Button>
           <Button
             onClick={handleConfirm}
-            disabled={!canCast || confirmation.isConfirming}
+            disabled={!canCast || !!validateCastingConcentration(concentration) || confirmation.isConfirming}
             className={cn(
               "gap-2",
               canCast && elementConfig?.bg,
