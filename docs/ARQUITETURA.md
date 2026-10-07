@@ -1,7 +1,7 @@
 # Arquitetura do Projeto - Ordem Paranormal RPG
 
 > **Última atualização:** 2026-01-26  
-> **TODAS AS FASES CONCLUÍDAS** ✅ - Sistema completo com motor de regras, validação automática e ~560 testes.
+> **Cobertura em validação contínua.** A presença de uma regra no catálogo não garante sua automação. Consulte `src/lib/rules/base-rule-coverage.ts` e valide separadamente código, servidor e aplicação publicada.
 
 ## Visão Geral
 

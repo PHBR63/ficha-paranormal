@@ -1,0 +1,103 @@
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { CombatRollModal } from '../CombatRollModal';
+import { MobileCombatRollModal } from '../mobile/MobileCombatRollModal';
+import { rollSkillTest } from '@/lib/dice-roller';
+vi.mock('@/hooks/useCombatFeedback', () => ({ useCombatFeedback: () => ({ triggerRoll: vi.fn(), triggerFumble: vi.fn(), triggerCriticalMiss: vi.fn(), triggerCritical: vi.fn(), triggerHit: vi.fn(), triggerMiss: vi.fn() }) }));
+
+vi.mock('../SpecialAttackSelector', () => ({
+  SpecialAttackSelector: () => null,
+  useSpecialAttackState: () => ({
+    config: { enabled: true, attackIncrements: 1, damageIncrements: 0 },
+    setConfig: vi.fn(), reset: vi.fn(),
+  }),
+}));
+vi.mock('@/lib/dice-roller', async importOriginal => ({
+  ...await importOriginal<typeof import('@/lib/dice-roller')>(),
+  rollSkillTest: vi.fn(() => ({
+    dice: [12], total: 17, bonus: 5, keptDice: [12], discardedDice: [],
+    formula: '1d20+5', label: 'Ataque', isCritical: false,
+  })),
+}));
+afterEach(() => { cleanup(); vi.clearAllMocks(); });
+
+const props = {
+  open: true, onClose: vi.fn(),
+  weapon: { id: 'test', name: 'Faca', type: 'Corpo a Corpo' as const, damage: '1d4', critical: '19' },
+  attributes: { agility: 1, strength: 1, presence: 1, intellect: 1, vigor: 1 },
+  skills: { luta: 0 }, currentPE: 10, maxPE: 10,
+  characterClass: 'Combatente', abilities: [], paranormalPowers: [], hasAffinity: false, nex: 5,
+};
+
+describe.each([
+  ['desktop', CombatRollModal], ['mobile', MobileCombatRollModal],
+] as const)('Ataque confirmado: %s', (_name, Modal) => {
+  it('aguarda o servidor e bloqueia cliques duplicados durante confirmação', async () => {
+    let resolve!: (accepted: boolean) => void;
+    const save = vi.fn(() => new Promise<boolean>(done => { resolve = done; }));
+    const complete = vi.fn();
+    const close = vi.fn();
+    render(<Modal {...props} onClose={close} onPEChange={save} onRollComplete={complete} />);
+    const button = screen.getByRole('button', { name: /rolar ataque/i });
+    fireEvent.click(button); fireEvent.click(button);
+    expect(save).toHaveBeenCalledOnce();
+    expect(save).toHaveBeenCalledWith(8);
+    expect(rollSkillTest).toHaveBeenCalledOnce();
+    expect(complete).not.toHaveBeenCalled();
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(close).not.toHaveBeenCalled();
+    await act(async () => resolve(true));
+    expect(complete).toHaveBeenCalledOnce();
+  });
+
+  it('mantém o sorteio após falha e repete somente a confirmação do mesmo custo', async () => {
+    const save = vi.fn().mockResolvedValueOnce(false).mockResolvedValueOnce(true);
+    const complete = vi.fn();
+    render(<Modal {...props} onPEChange={save} onRollComplete={complete} />);
+    fireEvent.click(screen.getByRole('button', { name: /rolar ataque/i }));
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('não foi confirmado'));
+    expect(complete).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: /tentar confirmar ataque/i }));
+    await waitFor(() => expect(complete).toHaveBeenCalledOnce());
+    expect(rollSkillTest).toHaveBeenCalledOnce();
+    expect(save.mock.calls).toEqual([[8], [8]]);
+  });
+
+  it('não inicia ataque com custo maior que os PE disponíveis', () => {
+    const save = vi.fn();
+    render(<Modal {...props} currentPE={0} onPEChange={save} />);
+    const button = screen.getByRole('button', { name: /rolar ataque/i });
+    expect(button).toBeDisabled();
+    fireEvent.click(button);
+    expect(save).not.toHaveBeenCalled();
+    expect(rollSkillTest).not.toHaveBeenCalled();
+  });
+
+  it('prepara técnica sem debitar e inclui seu custo somente ao confirmar o ataque', async () => {
+    const save = vi.fn().mockResolvedValue(true);
+    const complete = vi.fn();
+    render(<Modal {...props} classTrack="aniquilador" nex={40} isFavoriteWeapon
+      onPEChange={save} onRollComplete={complete} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Usar Técnica Secreta' }));
+    fireEvent.click(screen.getByText('Destruidor', { exact: true }));
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar Técnica' }));
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Confirmar Técnica' })).not.toBeInTheDocument());
+    expect(save).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: /rolar ataque/i }));
+    await waitFor(() => expect(complete).toHaveBeenCalledOnce());
+    // Incremento selecionado de Ataque Especial custa 2 PE; técnica custa mais 2 PE.
+    expect(save).toHaveBeenCalledWith(6);
+    expect(save).toHaveBeenCalledOnce();
+  });
+
+  it('cancelar uma técnica preparada não cria estorno', async () => {
+    const save = vi.fn();
+    render(<Modal {...props} classTrack="aniquilador" nex={40} isFavoriteWeapon onPEChange={save} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Usar Técnica Secreta' }));
+    fireEvent.click(screen.getByText('Destruidor', { exact: true }));
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar Técnica' }));
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Confirmar Técnica' })).not.toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: /^cancelar( técnica)?$/i }));
+    expect(save).not.toHaveBeenCalled();
+  });
+});

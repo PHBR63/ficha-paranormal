@@ -15,8 +15,9 @@
  * - Breakdown detalhado de bônus com tooltips
  */
 
+import { useConfirmedDiceRoll, type ConfirmDicePE } from '@/hooks/useConfirmedDiceRoll';
 import { getCombatPowerDicePenalty } from '@/lib/class-powers/combat-test-dice';
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Sword, 
@@ -142,7 +143,7 @@ interface MobileCombatRollModalProps {
   skills: Record<string, number>;
   currentPE: number;
   maxPE: number;
-  onPEChange: (newPE: number) => void;
+  onPEChange: ConfirmDicePE;
   characterClass: string;
   classTrack?: string;
   abilities: string[];
@@ -425,8 +426,13 @@ export function MobileCombatRollModal({
     };
   }, [weaponBuffs]);
 
+  const attackConfirmation = useConfirmedDiceRoll();
+  const preparingAttack = useRef(false);
+
   // Reset ao fechar
   const handleClose = useCallback(() => {
+    if (attackConfirmation.confirming) return;
+    attackConfirmation.reset();
     setPhase('setup');
     setSelectedBonuses([]);
     setAttackResult(null);
@@ -441,15 +447,13 @@ export function MobileCombatRollModal({
     resetSneakAttack();
     resetDisparoLetal();
     onClose();
-  }, [onClose, resetSpecialAttack, resetSneakAttack, resetDisparoLetal]);
+  }, [onClose, resetSpecialAttack, resetSneakAttack, resetDisparoLetal, attackConfirmation]);
   
   // Handler para confirmar técnicas do Aniquilador
+  // Selecionar prepara o custo; o débito pertence à confirmação do ataque.
   const handleConfirmTechnique = useCallback((effects: TechniqueEffects) => {
     setActiveTechniqueEffects(effects);
-    if (effects.peCost > 0) {
-      onPEChange(currentPE - effects.peCost);
-    }
-  }, [currentPE, onPEChange]);
+  }, []);
 
   // Determinar atributo e perícia baseado no tipo de arma
   const attackAttribute = useMemo(() => {
@@ -635,8 +639,8 @@ export function MobileCombatRollModal({
     if (isAtiradorElite && disparoLetalConfig.enabled) {
       total += disparoLetalResult.peCost;
     }
-    return total;
-  }, [selectedBonuses, availableBonuses, specialAttackConfig.enabled, specialAttackResult.peCost, isInfiltrador, sneakAttackConfig.enabled, sneakAttackResult.peCost, isAtiradorElite, disparoLetalConfig.enabled, disparoLetalResult.peCost]);
+    return total + (activeTechniqueEffects?.peCost ?? 0);
+  }, [activeTechniqueEffects?.peCost, selectedBonuses, availableBonuses, specialAttackConfig.enabled, specialAttackResult.peCost, isInfiltrador, sneakAttackConfig.enabled, sneakAttackResult.peCost, isAtiradorElite, disparoLetalConfig.enabled, disparoLetalResult.peCost]);
 
   const canAffordPE = currentPE >= totalPECost;
 
@@ -1106,69 +1110,74 @@ export function MobileCombatRollModal({
 
   // Rolar ataque
   const rollAttack = useCallback(() => {
-    if (!weapon) return;
-    
+    if (preparingAttack.current || attackConfirmation.confirming) return;
+    if (attackConfirmation.pending) { void attackConfirmation.confirm(); return; }
+    if (!weapon || !canAffordPE) return;
+    preparingAttack.current = true;
+
     setIsRolling(true);
     combatFeedback.triggerRoll();
-    
-    setTimeout(() => {
-      const result = rollSkillTest({
-        attributeValue: attackAttribute,
-        dicePenalty: attackDicePenalty,
-        skillBonus: totalAttackBonus,
-        criticalThreshold: criticalMargin,
-        label: `Ataque com ${weapon.name}`,
-      });
-      
-      setAttackResult(result);
-      setIsRolling(false);
-      setPhase('attack');
-      
-      // Feedback baseado no resultado
-      const isFumble = result.dice.every(d => d === 1);
-      
-      // Verifica se acertou (regra personalizada: crítico NÃO é acerto automático)
-      const didHit = targetDefense !== null ? result.total >= targetDefense : true;
-      
-      if (isFumble) {
-        combatFeedback.triggerFumble();
-      } else if (result.isCritical && !didHit) {
-        // REGRA PERSONALIZADA: Crítico que não acerta - som único de expectativa frustrada
-        // Confetti âmbar (não verde) para indicar crítico mas erro
-        confetti({
-          particleCount: 50,
-          spread: 40,
-          origin: { y: 0.6 },
-          colors: ['#f59e0b', '#d97706', '#92400e'], // Cores âmbar/laranja
-        });
-        combatFeedback.triggerCriticalMiss();
-      } else if (result.isCritical && didHit) {
-        // Crítico que acerta - confetti dourado normal
-        confetti({
-          particleCount: 100,
-          spread: 70,
-          origin: { y: 0.6 },
-          colors: ['#ffd700', '#ff6b6b', '#4ecdc4'],
-        });
-        combatFeedback.triggerCritical();
-      } else if (targetDefense !== null) {
-        if (didHit) {
-          combatFeedback.triggerHit();
+
+
+    const result = rollSkillTest({
+      attributeValue: attackAttribute,
+      dicePenalty: attackDicePenalty,
+      skillBonus: totalAttackBonus,
+      criticalThreshold: criticalMargin,
+      label: `Ataque com ${weapon.name}`,
+    });
+
+    void attackConfirmation.confirm({
+      result,
+      nextPE: totalPECost > 0 ? currentPE - totalPECost : undefined,
+      confirmPE: onPEChange,
+      onConfirmed: (result) => {
+        setAttackResult(result);
+        setIsRolling(false);
+        setPhase('attack');
+
+        // Feedback baseado no resultado
+        const isFumble = result.dice.every(d => d === 1);
+
+        // Verifica se acertou (regra personalizada: crítico NÃO é acerto automático)
+        const didHit = targetDefense !== null ? result.total >= targetDefense : true;
+
+        if (isFumble) {
+          combatFeedback.triggerFumble();
+        } else if (result.isCritical && !didHit) {
+          // REGRA PERSONALIZADA: Crítico que não acerta - som único de expectativa frustrada
+          // Confetti âmbar (não verde) para indicar crítico mas erro
+          confetti({
+            particleCount: 50,
+            spread: 40,
+            origin: { y: 0.6 },
+            colors: ['#f59e0b', '#d97706', '#92400e'], // Cores âmbar/laranja
+          });
+          combatFeedback.triggerCriticalMiss();
+        } else if (result.isCritical && didHit) {
+          // Crítico que acerta - confetti dourado normal
+          confetti({
+            particleCount: 100,
+            spread: 70,
+            origin: { y: 0.6 },
+            colors: ['#ffd700', '#ff6b6b', '#4ecdc4'],
+          });
+          combatFeedback.triggerCritical();
+        } else if (targetDefense !== null) {
+          if (didHit) {
+            combatFeedback.triggerHit();
+          } else {
+            combatFeedback.triggerMiss();
+          }
         } else {
-          combatFeedback.triggerMiss();
+          combatFeedback.triggerHit();
         }
-      } else {
-        combatFeedback.triggerHit();
-      }
-      
-      // Paga PE
-      if (totalPECost > 0 && canAffordPE) {
-        onPEChange(currentPE - totalPECost);
-      }
-      
-      onRollComplete?.(result);
-    }, 500);
-  }, [attackDicePenalty, weapon, attackAttribute, totalAttackBonus, criticalMargin, totalPECost, canAffordPE, currentPE, onPEChange, onRollComplete, targetDefense, combatFeedback]);
+
+        onRollComplete?.(result);
+      },
+
+    }).finally(() => { preparingAttack.current = false; setIsRolling(false); });
+  }, [attackConfirmation, attackDicePenalty, weapon, attackAttribute, totalAttackBonus, criticalMargin, totalPECost, canAffordPE, currentPE, onPEChange, onRollComplete, targetDefense, combatFeedback]);
 
   // Rolar dano - ATUALIZADO com advancedBonuses e buffDiceResult
   const rollDamageAction = useCallback(() => {
@@ -1443,7 +1452,7 @@ export function MobileCombatRollModal({
       setIsRolling(false);
       setPhase('damage');
     }, 500);
-  }, [weapon, attackResult, selectedBonuses, availableBonuses, attributes, unifiedEffects, maquinaDeMatarActive, criticalMultiplier, advancedBonuses, trackCombatBonuses, weaponBuffBonuses, weaponBuffs, passiveBonuses, manualDamageMod, nex, onRollComplete]);
+  }, [abilities, isInfiltrador, sneakAttackConfig, weapon, attackResult, selectedBonuses, availableBonuses, attributes, unifiedEffects, maquinaDeMatarActive, criticalMultiplier, advancedBonuses, trackCombatBonuses, weaponBuffBonuses, weaponBuffs, passiveBonuses, manualDamageMod, nex, onRollComplete]);
 
   if (!weapon) return null;
 
@@ -1506,6 +1515,7 @@ export function MobileCombatRollModal({
             {phase === 'setup' && (
               <motion.div
                 key="setup"
+                inert={attackConfirmation.pending}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
@@ -1720,9 +1730,6 @@ export function MobileCombatRollModal({
                           variant="ghost"
                           size="sm"
                           onClick={() => {
-                            if (activeTechniqueEffects?.peCost) {
-                              onPEChange(currentPE + activeTechniqueEffects.peCost);
-                            }
                             setActiveTechniqueEffects(null);
                           }}
                           className="w-full h-8 text-xs text-muted-foreground"
@@ -2199,6 +2206,9 @@ export function MobileCombatRollModal({
           </AnimatePresence>
         </MobileDrawerBody>
 
+{attackConfirmation.error && (
+          <p role="alert" className="p-3 text-sm text-destructive">{attackConfirmation.error}</p>
+        )}
         <MobileDrawerFooter>
           {phase === 'setup' && (
             <>
@@ -2206,7 +2216,7 @@ export function MobileCombatRollModal({
                 buttons={[
                   {
                     id: 'roll-attack',
-                    label: isRolling ? '' : 'Rolar Ataque',
+                    label: attackConfirmation.confirming ? 'Confirmando PE…' : attackConfirmation.pending ? 'Tentar confirmar ataque' : 'Rolar Ataque',
                     icon: isRolling ? (
                       <motion.div
                         animate={{ rotate: 360 }}
@@ -2217,7 +2227,7 @@ export function MobileCombatRollModal({
                     ) : <Target className="w-5 h-5" />,
                     onClick: rollAttack,
                     type: 'primary',
-                    disabled: !canAffordPE || isRolling,
+                    disabled: attackConfirmation.confirming || isRolling || (!attackConfirmation.pending && !canAffordPE),
                   }
                 ]}
               />

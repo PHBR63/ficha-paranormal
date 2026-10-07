@@ -4,10 +4,11 @@
  * Detecta crítico dinamicamente baseado na arma e poderes ativos
  */
 
+import { useConfirmedDiceRoll, type ConfirmDicePE } from '@/hooks/useConfirmedDiceRoll';
 import { getCombatPowerDicePenalty } from '@/lib/class-powers/combat-test-dice';
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sword, Target, Zap, Sparkles, Flame, X, Dices, Shield, Skull, Info, Plus, Minus, RotateCcw, Clock, RefreshCw, Timer, Infinity, Droplets, Crosshair, AlertCircle } from 'lucide-react';
+import { Sword, Target, Zap, Sparkles, Flame, X, Dices, Shield, Skull, Info, Plus, Minus, RotateCcw, Clock, RefreshCw, Timer, Infinity as InfinityIcon, Droplets, Crosshair, AlertCircle } from 'lucide-react';
 import { SpecialAttackSelector, useSpecialAttackState } from './SpecialAttackSelector';
 import {
   getSpecialAttackOptions,
@@ -136,7 +137,7 @@ interface CombatRollModalProps {
   // Recursos
   currentPE: number;
   maxPE: number;
-  onPEChange: (newPE: number) => void;
+  onPEChange: ConfirmDicePE;
   
   // Dados de classe e poderes
   characterClass: string;
@@ -393,6 +394,9 @@ export function CombatRollModal({
     damageType?: string;
     isCritical: boolean;
     extraDice?: number[];
+    useMaxDamage?: boolean;
+    potenciaMaximaActive?: boolean;
+    assassinarActive?: boolean;
   } | null>(null);
   
   // Estado separado para dados do buff (Amaldiçoar Arma, etc.)
@@ -456,8 +460,13 @@ export function CombatRollModal({
     );
   }, [nex, specialAttackConfig, hasForcaBruta, advancedBonuses.potenciaMaxima, isMeleeForSpecialAttack]);
 
+  const attackConfirmation = useConfirmedDiceRoll();
+  const preparingAttack = useRef(false);
+
   // Reset ao abrir/fechar
   const handleClose = () => {
+    if (attackConfirmation.confirming) return;
+    attackConfirmation.reset();
     setPhase('setup');
     setSelectedBonuses([]);
     setAttackResult(null);
@@ -474,13 +483,10 @@ export function CombatRollModal({
   };
   
   // Handler para confirmar técnicas do Aniquilador
+  // Selecionar prepara o custo; o débito pertence à confirmação do ataque.
   const handleConfirmTechnique = useCallback((effects: TechniqueEffects) => {
     setActiveTechniqueEffects(effects);
-    // Deduzir PE das técnicas
-    if (effects.peCost > 0) {
-      onPEChange(currentPE - effects.peCost);
-    }
-  }, [currentPE, onPEChange]);
+  }, []);
 
   // Determinar atributo e perícia baseado no tipo de arma
   const attackAttribute = useMemo(() => {
@@ -685,8 +691,8 @@ export function CombatRollModal({
       total += disparoLetalResult.peCost;
     }
     
-    return total;
-  }, [selectedBonuses, availableBonuses, specialAttackConfig.enabled, specialAttackResult.peCost, isInfiltrador, sneakAttackConfig.enabled, sneakAttackResult.peCost, isAtiradorElite, disparoLetalConfig.enabled, disparoLetalResult.peCost]);
+    return total + (activeTechniqueEffects?.peCost ?? 0);
+  }, [activeTechniqueEffects?.peCost, selectedBonuses, availableBonuses, specialAttackConfig.enabled, specialAttackResult.peCost, isInfiltrador, sneakAttackConfig.enabled, sneakAttackResult.peCost, isAtiradorElite, disparoLetalConfig.enabled, disparoLetalResult.peCost]);
 
   // Verificar se pode pagar o PE
   const canAffordPE = currentPE >= totalPECost;
@@ -935,7 +941,7 @@ export function CombatRollModal({
     }
     
     return sources;
-  }, [attackSkill, classPowerBonuses, passiveBonuses, selectedBonuses, availableBonuses, manualAttackMod, weaponBuffBonuses, unifiedEffects, weapon, trackCombatBonuses, specialAttackConfig.enabled, specialAttackResult, proficiencyCheck, activeConditionalBonuses]);
+  }, [activeTechniqueEffects, attackSkill, classPowerBonuses, passiveBonuses, selectedBonuses, availableBonuses, manualAttackMod, weaponBuffBonuses, unifiedEffects, weapon, trackCombatBonuses, specialAttackConfig.enabled, specialAttackResult, proficiencyCheck, activeConditionalBonuses]);
 
   // === Detalhamento das fontes de bônus de dano para exibição ===
   const damageBonusSources = useMemo(() => {
@@ -1250,15 +1256,13 @@ export function CombatRollModal({
 
   // Rolar ataque
   const handleRollAttack = () => {
+    if (preparingAttack.current || attackConfirmation.confirming) return;
+    if (attackConfirmation.pending) { void attackConfirmation.confirm(); return; }
     if (!weapon || !canAffordPE) return;
+    preparingAttack.current = true;
 
     // Feedback de rolagem
     combatFeedback.triggerRoll();
-
-    // Deduzir PE
-    if (totalPECost > 0) {
-      onPEChange(currentPE - totalPECost);
-    }
 
     // Rolar ataque
     const result = rollSkillTest({
@@ -1270,35 +1274,43 @@ export function CombatRollModal({
       criticalThreshold: effectiveCritical,
     });
 
-    // Feedback baseado no resultado
-    // Fumble = todos os d20 rolaram 1 (falha crítica)
-    const isFumble = result.dice.every(d => d === 1);
-    
-    // Verifica se acertou (regra personalizada: crítico NÃO é acerto automático)
-    const didHit = targetDefense !== null ? result.total >= targetDefense : true;
-    
-    if (isFumble) {
-      combatFeedback.triggerFumble();
-    } else if (result.isCritical && !didHit) {
-      // REGRA PERSONALIZADA: Crítico que não acerta - som único de expectativa frustrada
-      combatFeedback.triggerCriticalMiss();
-    } else if (result.isCritical && didHit) {
-      combatFeedback.triggerCritical();
-    } else if (targetDefense !== null) {
-      // Se defesa foi informada, verifica acerto/erro
-      if (didHit) {
-        combatFeedback.triggerHit();
-      } else {
-        combatFeedback.triggerMiss();
-      }
-    } else {
-      // Sem defesa, feedback neutro de rolagem completa
-      combatFeedback.triggerHit();
-    }
+    // O resultado só é publicado depois de o servidor aceitar o custo.
+    void attackConfirmation.confirm({
+      result,
+      nextPE: totalPECost > 0 ? currentPE - totalPECost : undefined,
+      confirmPE: onPEChange,
+      onConfirmed: (result) => {
+        // Feedback baseado no resultado
+        // Fumble = todos os d20 rolaram 1 (falha crítica)
+        const isFumble = result.dice.every(d => d === 1);
 
-    setAttackResult(result);
-    setPhase('attack');
-    onRollComplete?.(result);
+        // Verifica se acertou (regra personalizada: crítico NÃO é acerto automático)
+        const didHit = targetDefense !== null ? result.total >= targetDefense : true;
+
+        if (isFumble) {
+          combatFeedback.triggerFumble();
+        } else if (result.isCritical && !didHit) {
+          // REGRA PERSONALIZADA: Crítico que não acerta - som único de expectativa frustrada
+          combatFeedback.triggerCriticalMiss();
+        } else if (result.isCritical && didHit) {
+          combatFeedback.triggerCritical();
+        } else if (targetDefense !== null) {
+          // Se defesa foi informada, verifica acerto/erro
+          if (didHit) {
+            combatFeedback.triggerHit();
+          } else {
+            combatFeedback.triggerMiss();
+          }
+        } else {
+          // Sem defesa, feedback neutro de rolagem completa
+          combatFeedback.triggerHit();
+        }
+
+        setAttackResult(result);
+        setPhase('attack');
+        onRollComplete?.(result);
+      },
+    }).finally(() => { preparingAttack.current = false; });
   };
 
   // Rolar dano
@@ -1628,7 +1640,7 @@ export function CombatRollModal({
       useMaxDamage,
       potenciaMaximaActive: advancedBonuses.potenciaMaxima && isMelee,
       assassinarActive: advancedBonuses.assassinar,
-    } as any);
+    });
     
     // Armazenar resultado do buff SEPARADAMENTE
     if (weaponBuffDice.length > 0 && weaponBuffs.length > 0) {
@@ -1727,7 +1739,7 @@ export function CombatRollModal({
                     default:
                       return { 
                         text: 'Permanente', 
-                        icon: <Infinity className="w-3 h-3" />, 
+                        icon: <InfinityIcon className="w-3 h-3" />,
                         color: 'bg-blue-500/20 text-blue-400 border-blue-500/40' 
                       };
                   }
@@ -1975,6 +1987,7 @@ export function CombatRollModal({
                   exit={{ opacity: 0, y: -10 }}
                   className="space-y-4"
                 >
+                <div inert={attackConfirmation.pending} className="space-y-4">
                   {/* Base de ataque com detalhamento de fontes */}
                   <div className="p-3 rounded-lg bg-muted/50 space-y-2">
                     <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
@@ -2136,10 +2149,7 @@ export function CombatRollModal({
                             size="sm"
                             className="h-6 px-2 text-xs"
                             onClick={() => {
-                              // Reembolsar PE ao cancelar
-                              if (activeTechniqueEffects.peCost > 0) {
-                                onPEChange(currentPE + activeTechniqueEffects.peCost);
-                              }
+                              // Cancela apenas a preparação: o custo ainda não foi confirmado.
                               setActiveTechniqueEffects(null);
                             }}
                           >
@@ -2365,15 +2375,19 @@ export function CombatRollModal({
                   </div>
                 )}
 
+</div>
+                {attackConfirmation.error && (
+          <p role="alert" className="p-3 text-sm text-destructive">{attackConfirmation.error}</p>
+        )}
                 {/* Botão de rolar */}
                 <Button
                   className="w-full font-display"
                   size="lg"
                   onClick={handleRollAttack}
-                  disabled={!canAffordPE}
+                  disabled={attackConfirmation.confirming || (!attackConfirmation.pending && !canAffordPE)}
                 >
                   <Dices className="w-5 h-5 mr-2" />
-                  ROLAR ATAQUE
+                  {attackConfirmation.confirming ? "CONFIRMANDO PE…" : attackConfirmation.pending ? "TENTAR CONFIRMAR ATAQUE" : "ROLAR ATAQUE"}
                 </Button>
               </motion.div>
             )}
