@@ -234,7 +234,7 @@ interface MobileCharacterSheetProps {
     elemental_affinity?: string | null;
     affinity_active?: boolean;
     // Buffs ativos em armas
-    active_buffs?: Array<{ weaponId: string; buffType: string; turnsRemaining: number }>;
+    active_buffs?: WeaponBuff[];
     // Trilha de Versatilidade (NEX 50%)
     versatility_track?: {
       trackId: string;
@@ -676,7 +676,7 @@ export function MobileCharacterSheet({
     removeBuff: removeWeaponBuff,
     clearAllBuffs: clearWeaponBuffs,
     advanceTurn: advanceWeaponBuffTurn,
-  } = useWeaponBuffs(character.id, (character.active_buffs as unknown as WeaponBuff[]) || undefined, handleWeaponBuffsChange);
+  } = useWeaponBuffs(character.id, character.active_buffs, handleWeaponBuffsChange);
 
   // Converte rituais sustentados para formato de defesa
   const activeRitualsForDefense = useMemo(() => 
