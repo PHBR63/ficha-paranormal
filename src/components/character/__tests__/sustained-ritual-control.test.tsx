@@ -18,6 +18,36 @@ function setup(mobile = false, rituals = [ritual], error: string | null = null) 
     state={{ rituals, loading: false, error, reload }} onRefetch={refetch} />);
 }
 describe('confirmação explícita da sustentação', () => {
+  it('bloqueia encerramento sem motivo e permite cancelar sem alteração', () => {
+    setup(); fireEvent.click(screen.getByText('Encerrar ritual'));
+    expect((screen.getByText('Confirmar') as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.click(screen.getByText('Cancelar'));
+    expect(fake.confirm).not.toHaveBeenCalled();
+  });
+  it('exige confirmação de alcance e explicação para ajuste manual', () => {
+    setup(); fireEvent.click(screen.getByText('Encerrar ritual'));
+    fireEvent.change(screen.getByLabelText('Motivo do encerramento'), { target: { value: 'voluntario' } });
+    expect((screen.getByText('Confirmar') as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.click(screen.getByLabelText('Confirmo que o conjurador está dentro do alcance do ritual.'));
+    expect((screen.getByText('Confirmar') as HTMLButtonElement).disabled).toBe(false);
+    fireEvent.change(screen.getByLabelText('Motivo do encerramento'), { target: { value: 'ajuste_manual' } });
+    expect((screen.getByText('Confirmar') as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.change(screen.getByLabelText('Descrição do motivo (obrigatória)'), { target: { value: 'Conferência do legado' } });
+    expect((screen.getByText('Confirmar') as HTMLButtonElement).disabled).toBe(false);
+    expect(fake.confirm).not.toHaveBeenCalled();
+  });
+  it('conserva motivo e identidade ao recuperar um encerramento incerto', async () => {
+    fake.confirm.mockRejectedValueOnce(new Error('Sem resposta')).mockResolvedValueOnce({});
+    setup(); fireEvent.click(screen.getByText('Encerrar ritual'));
+    fireEvent.change(screen.getByLabelText('Motivo do encerramento'), { target: { value: 'nao_mantido' } });
+    fireEvent.click(screen.getByText('Confirmar'));
+    await screen.findByText('Recuperar mesma confirmação');
+    expect((screen.getByLabelText('Motivo do encerramento').closest('fieldset') as HTMLFieldSetElement).disabled).toBe(true);
+    fireEvent.click(screen.getByText('Recuperar mesma confirmação'));
+    await waitFor(() => expect(fake.success).toHaveBeenCalledOnce());
+    expect(fake.confirm.mock.calls[1][0]).toEqual(fake.confirm.mock.calls[0][0]);
+    expect(fake.confirm.mock.calls[0][0].endReason.kind).toBe('nao_mantido');
+  });
   it('mostra saldo e custo, sem enviar cobrança na seleção nem ao cancelar', () => {
     setup(); fireEvent.click(screen.getByRole('checkbox')); fireEvent.click(screen.getByText('Revisar manutenção'));
     expect(screen.getByText(/Saldo: 10 → 9 PE/)).toBeTruthy();
@@ -45,7 +75,9 @@ describe('confirmação explícita da sustentação', () => {
   });
   it('encerramento mobile envia operação real somente após confirmar', async () => {
     setup(true); fireEvent.click(screen.getByText('Encerrar ritual mobile'));
-    expect(fake.confirm).not.toHaveBeenCalled(); fireEvent.click(screen.getByText('Confirmar'));
+    expect(fake.confirm).not.toHaveBeenCalled();
+    fireEvent.change(screen.getByLabelText('Motivo do encerramento'), { target: { value: 'nao_mantido' } });
+    fireEvent.click(screen.getByText('Confirmar'));
     await waitFor(() => expect(fake.confirm).toHaveBeenCalledOnce());
     expect(fake.confirm.mock.calls[0][0].action).toBe('end');
   });

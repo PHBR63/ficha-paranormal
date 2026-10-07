@@ -1,5 +1,6 @@
 import { activityClient, activityFailure, activityJson, awaitActivityResponse, confirmActivity, validateActivityId } from './character-activity-service';
 import type { Json } from '@/integrations/supabase/types';
+import { validateRitualEndReason, type RitualEndReason } from '@/lib/rituals/ritual-ending';
 
 export interface SustainedSnapshot {
   id: string; ritual_id: string; turns_active: number | null; pe_spent_total: number | null;
@@ -8,6 +9,7 @@ export interface SustainedSnapshot {
 export interface SustainedActionRequest {
   operationId: string; characterId: string; action: 'maintain' | 'end' | 'end_all';
   expected: SustainedSnapshot[]; expectedPE: number | null;
+  endReason?: RitualEndReason;
 }
 
 /** Consulta autorizada e enriquecida com a origem protegida; não modifica dados. */
@@ -27,10 +29,20 @@ export async function confirmSustainedAction(request: SustainedActionRequest) {
   if (request.action === 'maintain' && (!Number.isSafeInteger(request.expectedPE) || request.expectedPE! < request.expected.length)) {
     throw new Error('PE insuficiente para manter os rituais selecionados. Nenhuma cobrança foi enviada.');
   }
-  const { data, error } = await awaitActivityResponse(activityClient.rpc('confirm_sustained_ritual_action', {
-    p_operation_id: request.operationId, p_character_id: request.characterId, p_action: request.action,
-    p_expected: activityJson(request.expected), p_expected_pe: request.expectedPE,
-  }));
+  if (request.action !== 'maintain') {
+    const invalid = validateRitualEndReason(request.endReason);
+    if (invalid) throw new Error(invalid);
+  }
+  const response = request.action === 'maintain'
+    ? activityClient.rpc('confirm_sustained_ritual_action', {
+      p_operation_id: request.operationId, p_character_id: request.characterId, p_action: request.action,
+      p_expected: activityJson(request.expected), p_expected_pe: request.expectedPE,
+    })
+    : activityClient.rpc('confirm_sustained_ritual_end', {
+      p_operation_id: request.operationId, p_character_id: request.characterId, p_action: request.action,
+      p_expected: activityJson(request.expected), p_reason: activityJson(request.endReason),
+    });
+  const { data, error } = await awaitActivityResponse(response);
   if (error) {
     const failure = activityFailure('A operação de sustentação não foi confirmada.', error);
     // Somente códigos SQL explícitos garantem rollback; falhas de transporte podem ter sido confirmadas.
@@ -42,6 +54,15 @@ export async function confirmSustainedAction(request: SustainedActionRequest) {
   if (receipt.status !== 'confirmed' || receipt.category !== 'application' || !payload
     || typeof payload !== 'object' || Array.isArray(payload) || payload.kind !== kind) {
     throw new Error('O servidor ainda não confirmou esta ação de sustentação. Recupere a mesma operação.');
+  }
+  if (request.action !== 'maintain') {
+    const reason = payload.endReason;
+    const expected = request.endReason!;
+    if (payload.reasonSource !== 'user_confirmed' || !reason || typeof reason !== 'object'
+      || Array.isArray(reason) || reason.kind !== expected.kind
+      || reason.note !== expected.note || reason.rangeConfirmed !== expected.rangeConfirmed) {
+      throw new Error('O servidor não confirmou o motivo informado. Recupere a mesma operação.');
+    }
   }
   return receipt;
 }

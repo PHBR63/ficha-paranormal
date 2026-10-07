@@ -8,6 +8,13 @@ const event = (payload: CharacterActivityEvent['payload']): CharacterActivityEve
 });
 
 describe('Histórico de alterações de condições', () => {
+  it('mostra motivo informado e preserva recibos antigos sem motivo', () => {
+    const previous = describeCharacterActivity(event({ kind: 'sustain_end' }));
+    expect(previous).not.toContain('Motivo informado');
+    const current = describeCharacterActivity(event({ kind: 'sustain_end', endReason: { kind: 'ajuste_manual', note: 'Legado conferido' } }));
+    expect(current).toContain('Motivo informado: Ajuste manual');
+    expect(current).toContain('Legado conferido');
+  });
   it('mostra o encerramento e a condição removida sem apagar o histórico anterior', () => {
     expect(describeCharacterActivity(event({ kind: 'scene_expiry', sceneNumber: 3, expiredEffectsCount: 2,
       before: { conditions: [{ id: 'lento', name: 'Lento' }, 'Legada'] }, after: { conditions: ['Legada'] },
