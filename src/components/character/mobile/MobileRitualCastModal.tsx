@@ -92,6 +92,7 @@ interface MobileRitualCastModalProps {
   onOpenChange: (open: boolean) => void;
   ritual: RitualInput | null;
   peCurrent: number;
+  temporaryPE?: number;
   peMax: number;
   isNonOccultist?: boolean;
   nex?: number;
@@ -125,6 +126,7 @@ export function MobileRitualCastModal({
   onOpenChange,
   ritual,
   peCurrent,
+  temporaryPE = 0,
   peMax,
   isNonOccultist = false,
   nex = 5,
@@ -172,7 +174,7 @@ export function MobileRitualCastModal({
     peLimitPerTurn,
     validatePECost,
     getAvailableEnhancements,
-  } = useRitualValidation(nex, elementalAffinity, peCurrent, peMax, turnPEState, peLimitBonus, isNonOccultist);
+  } = useRitualValidation(nex, elementalAffinity, peCurrent + temporaryPE, peMax + temporaryPE, turnPEState, peLimitBonus, isNonOccultist);
 
   const enhancementsWithValidation = useMemo(() => {
     if (!ritual) return [];
@@ -617,22 +619,22 @@ export function MobileRitualCastModal({
                                 <div className="flex items-center justify-between text-[9px]">
                                   <span className="text-muted-foreground">PE disponível</span>
                                   <span className={cn(
-                                    peCurrent >= counterRitualCost ? "text-green-500" : "text-destructive"
+                                    peCurrent + temporaryPE >= counterRitualCost ? "text-green-500" : "text-destructive"
                                   )}>
-                                    {peCurrent} / {counterRitualCost}
+                                    {peCurrent + temporaryPE} / {counterRitualCost}
                                   </span>
                                 </div>
                                 <div className="h-1 rounded-full bg-muted overflow-hidden">
                                   <motion.div
                                     initial={{ width: 0 }}
-                                    animate={{ width: `${Math.min(100, (peCurrent / counterRitualCost) * 100)}%` }}
+                                    animate={{ width: `${Math.min(100, ((peCurrent + temporaryPE) / counterRitualCost) * 100)}%` }}
                                     className={cn(
                                       "h-full rounded-full",
-                                      peCurrent >= counterRitualCost ? "bg-green-500" : "bg-destructive"
+                                      peCurrent + temporaryPE >= counterRitualCost ? "bg-green-500" : "bg-destructive"
                                     )}
                                   />
                                 </div>
-                                {peCurrent < counterRitualCost && (
+                                {peCurrent + temporaryPE < counterRitualCost && (
                                   <p className="text-[8px] text-destructive">
                                     PE insuficiente
                                   </p>
@@ -716,6 +718,7 @@ export function MobileRitualCastModal({
                   <span>PE Atual</span>
                   <span>{peCurrent} / {peMax}</span>
                 </div>
+                {temporaryPE > 0 && <p role="status" className="text-xs text-muted-foreground">PE temporários: {temporaryPE} · Disponível: {peCurrent + temporaryPE} PE. Temporários serão consumidos primeiro.</p>}
                 <div className="h-1.5 bg-muted rounded-full overflow-hidden">
                   <div 
                     className={cn(

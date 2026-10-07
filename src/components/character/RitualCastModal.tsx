@@ -86,6 +86,7 @@ interface RitualCastModalProps {
   onOpenChange: (open: boolean) => void;
   ritual: RitualInput | null;
   peCurrent: number;
+  temporaryPE?: number;
   peMax: number;
   isNonOccultist?: boolean;
   nex?: number;
@@ -113,6 +114,7 @@ export function RitualCastModal({
   onOpenChange,
   ritual,
   peCurrent,
+  temporaryPE = 0,
   peMax,
   isNonOccultist = false,
   nex = 5,
@@ -139,7 +141,7 @@ export function RitualCastModal({
     validateEnhancement,
     validatePECost,
     getAvailableEnhancements,
-  } = useRitualValidation(nex, elementalAffinity, peCurrent, peMax, turnPEState, peLimitBonus, isNonOccultist);
+  } = useRitualValidation(nex, elementalAffinity, peCurrent + temporaryPE, peMax + temporaryPE, turnPEState, peLimitBonus, isNonOccultist);
 
   // Aprimoramentos com validação
   const enhancementsWithValidation = useMemo(() => {
@@ -558,22 +560,22 @@ export function RitualCastModal({
                                     <div className="flex items-center justify-between text-[10px]">
                                       <span className="text-muted-foreground">PE disponível</span>
                                       <span className={cn(
-                                        peCurrent >= counterRitualCost ? "text-green-500" : "text-destructive"
+                                        peCurrent + temporaryPE >= counterRitualCost ? "text-green-500" : "text-destructive"
                                       )}>
-                                        {peCurrent} / {counterRitualCost} PE
+                                        {peCurrent + temporaryPE} / {counterRitualCost} PE
                                       </span>
                                     </div>
                                     <div className="h-1.5 rounded-full bg-muted overflow-hidden">
                                       <motion.div
                                         initial={{ width: 0 }}
-                                        animate={{ width: `${Math.min(100, (peCurrent / counterRitualCost) * 100)}%` }}
+                                        animate={{ width: `${Math.min(100, ((peCurrent + temporaryPE) / counterRitualCost) * 100)}%` }}
                                         className={cn(
                                           "h-full rounded-full transition-colors",
-                                          peCurrent >= counterRitualCost ? "bg-green-500" : "bg-destructive"
+                                          peCurrent + temporaryPE >= counterRitualCost ? "bg-green-500" : "bg-destructive"
                                         )}
                                       />
                                     </div>
-                                    {peCurrent < counterRitualCost && (
+                                    {peCurrent + temporaryPE < counterRitualCost && (
                                       <p className="text-[9px] text-destructive flex items-center gap-1">
                                         <AlertTriangle className="w-3 h-3" />
                                         PE insuficiente para anular este ritual
@@ -847,6 +849,7 @@ export function RitualCastModal({
                   <span>PE Atual</span>
                   <span>{peCurrent} / {peMax}</span>
                 </div>
+                {temporaryPE > 0 && <p role="status" className="text-xs text-muted-foreground">PE temporários: {temporaryPE} · Disponível: {peCurrent + temporaryPE} PE. Temporários serão consumidos primeiro.</p>}
                 <div className="h-2 bg-muted rounded-full overflow-hidden">
                   <div 
                     className={cn(
@@ -859,17 +862,17 @@ export function RitualCastModal({
                   <div 
                     className="h-full bg-foreground/30 -mt-2"
                     style={{ 
-                      width: `${(totalCost / peMax) * 100}%`,
-                      marginLeft: `${Math.max(0, ((peCurrent - totalCost) / peMax) * 100)}%`
+                      width: `${(Math.max(0, totalCost - temporaryPE) / peMax) * 100}%`,
+                      marginLeft: `${Math.max(0, ((peCurrent - Math.max(0, totalCost - temporaryPE)) / peMax) * 100)}%`
                     }}
                   />
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Após conjurar: <span className={cn(
+                  Saldo disponível após conjurar: <span className={cn(
                     "font-medium",
-                    peCurrent - totalCost < 0 ? "text-destructive" : "text-pe"
+                    peCurrent + temporaryPE - totalCost < 0 ? "text-destructive" : "text-pe"
                   )}>
-                    {Math.max(0, peCurrent - totalCost)} PE
+                    {Math.max(0, peCurrent + temporaryPE - totalCost)} PE
                   </span>
                 </p>
               </div>

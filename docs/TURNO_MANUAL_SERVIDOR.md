@@ -4,7 +4,7 @@
 
 O controle de sustentação aceita turnos manuais fora de um combate v2 ativo. Registrar um turno e confirmar a manutenção são operações diferentes: iniciar o turno não consome PE. Cada ritual pode ter apenas uma manutenção confirmada por identidade de turno.
 
-Implementação e validação concluídas no ambiente de desenvolvimento. A migration foi exercitada no banco real dentro de uma transação revertida; ainda não foi instalada permanentemente nem publicada nesta entrega.
+Implementação integrada pela PR #41. A migration foi instalada permanentemente em 07/10/2026 junto ao lote; o contrato SQL passou novamente contra o banco instalado. A interface publicada autenticada confirmou turno manual sem gasto e manutenção consumindo PE temporário primeiro.
 
 ## 2. Arquivos alterados/criados
 
@@ -75,10 +75,10 @@ O início manual usa comparação do contador antes de avançar e retorna o mesm
 
 ### Evidências executadas
 
-- Regressão completa: **142 arquivos de teste, 3263 testes aprovados**. Os dois novos cenários de apresentação do histórico também passaram na execução específica de 13 testes.
+- Regressão completa: **143 arquivos de teste, 3271 testes aprovados**. Os dois novos cenários de apresentação do histórico também passaram na execução específica de 13 testes.
 - Checagem de tipos: aprovada.
 - Build: aprovado; permanece aviso de tamanho de pacote já existente.
 - Verificação estática dos arquivos de turno e apresentação: aprovada.
 - SQL integrado: aprovado em transação revertida, incluindo cobrança única, repetição sem avanço duplicado, snapshot antigo, turno adulterado e falta de autorização.
-- Conferência após rollback: tabela nova ausente e zero fichas sintéticas remanescentes, confirmando que o ensaio não instalou a alteração.
-- Teste visual autenticado com o código novo e publicação: ainda não realizados nesta entrega.
+- O ensaio transacional preserva dados reais; a instalação permanente posterior foi registrada no histórico de migrations.
+- Teste publicado autenticado: concessão, conjuração, início manual, manutenção e tentativa repetida sem nova cobrança. A tentativa repetida recebeu aviso; sua mensagem foi refinada para explicar a próxima ação.

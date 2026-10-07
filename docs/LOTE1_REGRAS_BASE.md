@@ -20,6 +20,7 @@ O lote corrige as falhas identificadas; não certifica a automação de todas as
 - `src/lib/catalogs/cursed-items.ts`: deixa explícita a origem não certificada do catálogo legado, sem afirmar que pertence ao livro ou a um suplemento.
 - `src/components/character/AbilityDetailModal.tsx` e `PowerDetailModal.tsx`: mostram referência e aviso de conferência nos detalhes.
 - `src/components/character/CastingConcentrationForm.tsx`: recebe contexto/custo e devolve a confirmação explícita de requisitos ao modal de conjuração.
+- `src/components/character/RitualCastModal.tsx` e `mobile/MobileRitualCastModal.tsx`: recebem PE normal e temporário separadamente, mostram os dois saldos e validam o total disponível sem inflar o máximo normal. As fichas chamam esses modais; a confirmação segue pelos serviços existentes.
 - `src/components/character/ConditionTurnResolver.tsx`: permite gravar resultados informativos de Confuso mesmo sem mudança de recursos.
 - `src/components/character/RitualEffectWizard.tsx` e `mobile/MobileRitualEffectWizard.tsx`: mostram avisos da forma selecionada; o resumo mobile inclui bônus fixo de PV temporários.
 - `src/components/character/SustainedRitualControl.tsx`: usa o serviço de sustentação; confirma turno manual e manutenção em operações separadas.
@@ -91,3 +92,11 @@ O banco persiste custo, efeitos e eventos com o mesmo UUID; repetir uma solicita
 Executar checagem de tipos, regressão Vitest e build. Exercitar o SQL em transação revertida antes da instalação. Depois conferir as versões das migrations instaladas, SHA integrado/sincronizado, deploy e páginas publicadas.
 
 No publicado, usar ficha isolada: confirmar concessão, reload/histórico, conjuração com Ocultismo, fonte temporária, início manual sem PE, manutenção única e recuperação. Conferir desktop e mobile, avisos e erros. Preservar fichas/campanhas reais e remover somente dados sintéticos criados para essa validação.
+
+### Fechamento de 07/10/2026
+
+- PR #41 integrado à main; quatro migrations instaladas em transação única e registradas no histórico do banco.
+- Regressão completa: 143 arquivos e 3271 testes aprovados. Após os ajustes visuais finais, os 48 testes de conjuração passaram, incluindo dois novos casos de PE normal zerado com temporário suficiente.
+- Contrato SQL novamente aprovado contra o banco instalado, com rollback dos dados de ensaio.
+- Interface publicada autenticada: concessão de 3 PE temporários; conjuração com Ocultismo; consumo de 1 PE temporário sem alterar PE normal; aplicação e sustentação de Arma Atroz; turno manual sem cobrança; manutenção consumindo temporário antes do PE normal.
+- Ajustes finais: um único painel temporário no mobile e apresentação separada de saldo normal/temporário nos dois modais. A validação publicada final e a limpeza da ficha isolada complementam estes registros.
