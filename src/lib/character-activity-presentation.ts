@@ -1,6 +1,7 @@
 import type { CharacterActivityEvent } from '@/types/character-activity';
 import type { Json } from '@/integrations/supabase/types';
 import { resolveConditionId } from '@/lib/conditions/condition-identity';
+import { RITUAL_END_REASONS } from '@/lib/rituals/ritual-ending';
 
 /** Compara instâncias por identidade; aceita strings antigas e não inventa dados ausentes. */
 function describeConditionChanges(before: Json | undefined, after: Json | undefined): string {
@@ -50,7 +51,10 @@ export function describeCharacterActivity(event: CharacterActivityEvent): string
       ? before.sustained_rituals : [];
     const names = rituals.map(ritual => ritual && typeof ritual === 'object' && !Array.isArray(ritual)
       ? String(ritual.ritual_name ?? ritual.ritual_id ?? 'Ritual') : 'Ritual').join(', ');
-    return `${payload.kind === 'sustain_maintenance' ? 'Manutenção confirmada' : 'Sustentação encerrada'} · ${names} · Custo ${payload.peCost ?? 0} PE · PE ${payload.peBefore} → ${payload.peAfter}`;
+    const reason = payload.endReason;
+    const reasonDetails = payload.kind === 'sustain_end' && reason && typeof reason === 'object' && !Array.isArray(reason)
+      ? ` · Motivo informado: ${RITUAL_END_REASONS.find(entry => entry.kind === reason.kind)?.label ?? 'Conferência manual'}${typeof reason.note === 'string' && reason.note ? ` — ${reason.note}` : ''}` : '';
+    return `${payload.kind === 'sustain_maintenance' ? 'Manutenção confirmada' : 'Sustentação encerrada'} · ${names} · Custo ${payload.peCost ?? 0} PE · PE ${payload.peBefore} → ${payload.peAfter}${reasonDetails}`;
   }
   const kinds: Record<string, string> = { heal: 'Cura', damage: 'Dano', conditions: 'Condições adicionadas', replace_conditions: 'Condições alteradas', resource: 'Recurso alterado', resources: 'Recursos alterados', weapon_buff: 'Bônus de arma aplicado à ficha', sustain: 'Sustentação ativada' };
   const kind = typeof payload.kind === 'string' ? kinds[payload.kind] ?? 'Efeito registrado' : 'Efeito registrado';

@@ -12,6 +12,7 @@ type ActivityDatabase = { public: {
     character_activity_events: { Row: ActivityRow; Insert: never; Update: never; Relationships: [] };
   }; Views: Record<string, never>; Enums: Record<string, never>; CompositeTypes: Record<string, never>;
   Functions: {
+    confirm_sustained_ritual_end: { Args: { p_operation_id: string; p_character_id: string; p_action: string; p_expected: Json; p_reason: Json }; Returns: CharacterActivityEvent };
     list_character_sustained_rituals: { Args: { p_character_id: string }; Returns: Json[] };
     confirm_sustained_ritual_action: { Args: { p_operation_id: string; p_character_id: string; p_action: string; p_expected: Json; p_expected_pe: number | null }; Returns: CharacterActivityEvent };
     list_character_activity: { Args: { p_character_id: string; p_limit: number; p_category?: ActivityCategory; p_before_created_at?: string; p_before_id?: string; p_include_hidden: boolean }; Returns: CharacterActivityEvent[] };
